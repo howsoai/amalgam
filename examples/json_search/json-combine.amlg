@@ -1,0 +1,21 @@
+#!./amalgam-mt
+(seq
+	(declare (assoc
+		file_a (get argv 1)
+		file_b (get argv 2)
+	))
+	
+	(if (or (not file_a) (not file_b)) 
+		(seq
+			(print "Given two json files, stochastically combines them and prints the result.\nUsage: json-combine.amlg json_file1.json json_file2.json\n")
+			(system "exit")
+		)
+	)
+
+	(declare (assoc
+		source_a (load file_a)
+		source_b (load file_b)
+	))
+	
+	(print (format (mix source_a source_b) "code" "json")
+)

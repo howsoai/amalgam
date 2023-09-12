@@ -1,0 +1,56 @@
+#!amalgam-mt
+(seq
+	;find all json files from cwd
+	(declare (assoc
+		json_files
+		(if (= (system "os") "Windows")
+			(split (last (system "system" "dir \"*.json\" /S /B")) "\n")
+			(split (last (system "system" "find . -name \"*.json\"")) "\n")
+		)
+	))
+
+	(declare (assoc source_file (get argv 1)))
+	(if (not source_file)
+		(seq
+			(print "Given a json file, lists the most similar json files anywhere within the cwd.\nUsage: json-search.amlg json_file.json\n")
+			(system "exit")
+		)
+	)
+	(declare (assoc source_data (load source_file)))
+			
+	(declare (assoc
+		edit_dist
+		(map (lambda
+				(let (assoc
+						cur_file (concat (target_value 1))
+						cur_data (load (target_value 1))
+					)
+
+					(list cur_file (edit_distance source_data cur_data))
+				)
+			)
+			json_files
+		)
+	))
+	
+	;sort by edit distance
+	(assign (assoc edit_dist
+		(sort (lambda (- (get (target_value) 1) (get (target_value 1) 1) )) edit_dist)
+	))
+	
+	(print "*** exact matches:\n")
+	(map (lambda
+			(print (get (target_value) 0) "\n")
+		)
+	
+		(filter (lambda (= (get (target_value) 1) 0)) edit_dist)
+	)
+	
+	(print "*** best nonexact matches:\n")
+	(map (lambda
+			(print (get (target_value) 0) "\n")
+		)
+	
+		(trunc (filter (lambda (> (get (target_value) 1) 0)) edit_dist) 5)
+	)
+)

@@ -1,0 +1,23 @@
+#pragma once
+
+//this is the version number of Amalgam
+#define AMALGAM_VERSION_MAJOR  @AMALGAM_VERSION_MAJOR@
+#define AMALGAM_VERSION_MINOR  @AMALGAM_VERSION_MINOR@
+#define AMALGAM_VERSION_PATCH  @AMALGAM_VERSION_PATCH@
+#define AMALGAM_VERSION_SUFFIX "@AMALGAM_VERSION_SUFFIX@"
+
+//helper macro functions to convert the version numbers above to a string
+//seems unusual, but need an extra layer of indirection to ensure that the preprocessor macros are converted to strings
+// this is known regarding the c preprocessor standard and its necessity has been tested when used multiple times in a single file
+#define VERSION_NUMBER_TO_STRING(x) #x
+#define VERSION_NUMBER_STRING(x) VERSION_NUMBER_TO_STRING(x)
+
+//macro that can be used to get a string of the current version
+#define AMALGAM_VERSION_STRING \
+    VERSION_NUMBER_STRING(AMALGAM_VERSION_MAJOR) "." \
+    VERSION_NUMBER_STRING(AMALGAM_VERSION_MINOR) "." \
+    VERSION_NUMBER_STRING(AMALGAM_VERSION_PATCH) \
+    AMALGAM_VERSION_SUFFIX
+
+//data that can be accessed via system command; any length is allowed
+#define AMALGAM_BUILT_IN_DATA { 0x00, 0x00, 0x00, 0x00 }

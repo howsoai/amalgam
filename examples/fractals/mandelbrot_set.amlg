@@ -1,0 +1,107 @@
+;
+; Mandelbrot set
+; adapted from example https://medium.com/swlh/visualizing-the-mandelbrot-set-using-python-50-lines-f6aa5a05cf0f
+;
+(seq
+
+	(declare (assoc
+		width 100
+		x -0.65
+		y 0
+		x_range 3.4
+		aspect_ratio (/ 5 3)
+		;y_range = x_range / aspect_ratio
+		y_range (/ x_range (/ 5 3))
+		precision 500
+	))
+
+	(declare (assoc
+		;init board to 0s
+		canvas_map (range (lambda (range (lambda 0) 1 width 1) ) 1 (/ width aspect_ratio) 1)
+
+		height (/ width aspect_ratio)
+		min_x (- x (/ x_range 2))
+		max_x (+ x (/ x_range 2))
+		min_y (- y (/ y_range 2))
+		max_y (+ y (/ y_range 2))
+	))
+
+	(assign (assoc
+		canvas_map
+			(map
+				(lambda (let
+					(assoc
+						row (target_index 1)
+						row_pixels (target_value 1)
+					)
+
+					(map
+						(lambda (let
+							(assoc
+								col (target_index 1)
+								pixel 0
+								old_x 0
+								old_y 0
+								i 0
+							)
+							(assign (assoc
+								x (+ min_x (* col (/ x_range width)) )
+								y (- max_y (* row (/ y_range height)) )
+							))
+							(assign (assoc
+								old_x x
+								old_y y
+							))
+
+							(while
+								(and
+									(< i (+ 1 precision))
+									(<= (+ (* x x) (* y y)) 4)
+								)
+								(let
+									(assoc
+										;real component of z^2
+										a (- (* x x) (* y y))
+										;imaginary component of z^2
+										b (* 2 x y)
+									)
+									(assign (assoc
+										;real component of new z
+										x (+ a old_x)
+										;imaginary component of new z
+										y (+ b old_y)
+										i (+ 1 i)
+									))
+								)
+							)
+
+							(if (< i precision)
+								(assign (assoc
+									pixel (pow (/ (+ i 1) (+ precision 1)) 0.2)
+								))
+							)
+
+							pixel
+
+						))
+						row_pixels
+					)
+
+				))
+				canvas_map
+			)
+	))
+
+	;display the board
+	(map
+		(lambda (seq
+			(map
+				(lambda (print (if (target_value) " X" " -") ) )
+				(target_value)
+			)
+			(print "\n")
+		))
+		canvas_map
+	)
+
+)

@@ -1,0 +1,103 @@
+;
+;a simple Amalgam API with a demo for API spec generation using "get_api"
+;
+(null
+
+	;concatenated version
+	#version (get (load "version.json") "version")
+	
+	;major version
+	#major_version 0
+	
+	;minor version
+	#minor_version 1
+	
+	;patch version
+	#patch_version 0
+	
+	;returns a structure containing all of the API details for this module
+	#get_api
+		(seq
+			(assoc
+				"description"
+				(get_entity_comments)
+				
+				"labels"
+				(map (lambda
+						(assoc
+							"description"
+							(target_value 1)
+							"parameters"
+							(get_entity_comments (null) (target_index 1) (true))
+						)
+					)
+					(get_entity_comments (null) (null) (true))
+				)
+			)
+		)
+		
+	
+	;returns true if number is even, false if it is not
+	;works for infinity, -infinity
+	;does not yet support negative numbers -- if a negative number is passed in,
+	; it returns a string indicating lack of support
+	;if nan is passed in, it will return a list of true and false to represent
+	; the superposition
+	;please avoid passing in the number 42...
+	#is_even
+		(declare (assoc
+				; number to be passed in.  if none is passed in, defaults to 0
+				number 0
+			)
+			
+			(if
+				(= number .infinity)
+				(true)
+				
+				(= number -.infinity)
+				(true)
+				
+				(= number 42)
+				(assoc "a" (list .nan 3 (null) (list) (assoc "x" 12) .infinity) )
+				
+				(= number .nan)
+				(list (true) (false))
+				
+				(< number 0)
+				"Negative numbers are not yet supported."
+				
+				(!= (get_type_string number) "number")
+				"That's not a number."
+			
+				(if (mod number 2) (false) (true))
+			)
+		)
+	
+	;given the list of numbers, returns an associative array with each key
+	; being the number and the value being the result of is_even
+	#are_even
+		(declare (assoc
+				;list of numbers
+				numbers (list)
+			)
+			
+			(zip numbers (map (lambda (call is_even (assoc number (target_value 1)))) numbers) )
+			
+		)
+	
+	;given a and b, adds the numbers and returns the result of is_even
+	; if either a or b is null, then it will return null
+	#is_sum_even
+		(declare (assoc
+				;the first number. also, here's a test of different utf-8 and special characters: ! ; < > & ^ اَلْعَرَبِيَّةُ 日本語 -- ` ~ ‽ ü " " ' ' '' \n\r\n\r\n
+				; and a second line!
+				a (null)
+				;the second number
+				b (null)
+			)
+			(if (or (= a (null)) (= b (null)) )
+				(null)
+				(call is_even (assoc number (+ a b)))
+			)
+		)
+)

@@ -1,0 +1,52 @@
+{
+  "version": "0.2.1",
+  "defaults": {},
+  "configurations": [
+    {
+      "type": "exe",
+      "project": "CMakeLists.txt",
+      "projectTarget": "amalgam-mt.exe",
+      "name": "amalgam-mt.exe",
+      "currentDir": "${workspaceRoot}/Amalgam/",
+      "args": [
+        "amlg_code/full_test.amlg"
+      ]
+    },
+    {
+      "type": "exe",
+      "project": "CMakeLists.txt",
+      "projectTarget": "amalgam-st.exe",
+      "name": "amalgam-st.exe",
+      "currentDir": "${workspaceRoot}/Amalgam/",
+      "args": [
+        "amlg_code/full_test.amlg"
+      ]
+    },
+    {
+      "type": "cppgdb",
+      "name": "amalgam-mt",
+      "project": "CMakeLists.txt",
+      "projectTarget": "amalgam-mt",
+      "debuggerConfiguration": "gdb",
+      "cwd": "Amalgam/",
+      "args": [
+        "amlg_code/full_test.amlg"
+      ],
+      "comment": "Learn how to configure WSL debugging. For more info, see http://aka.ms/vslinuxdebug",
+      "env": {}
+    },
+    {
+      "type": "cppgdb",
+      "name": "amalgam-st",
+      "project": "CMakeLists.txt",
+      "projectTarget": "amalgam-st",
+      "debuggerConfiguration": "gdb",
+      "cwd": "Amalgam/",
+      "args": [
+        "amlg_code/full_test.amlg"
+      ],
+      "comment": "Learn how to configure WSL debugging. For more info, see http://aka.ms/vslinuxdebug",
+      "env": {}
+    }
+  ]
+}

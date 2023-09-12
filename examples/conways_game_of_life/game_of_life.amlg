@@ -1,0 +1,167 @@
+;
+; Conway's Game of Life: https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life
+;
+; Note: scale your terminal to get full effect
+;
+
+(seq
+
+	; 80x80 wrap-around map
+	(declare (assoc edge_index 79))
+
+	;init the 80x80 grid to be all 0s
+	(declare (assoc
+		board_map (range (lambda (range (lambda 0) 0 edge_index 1) ) 0 edge_index 1)
+		done (null)
+	))
+
+	;create some initial 'life'
+	;glider	
+    (assign (assoc
+        board_map
+            (set board_map
+                (list 0 4) 1
+                (list 1 4) 1
+                (list 2 4) 1
+                (list 2 3) 1
+                (list 1 2) 1
+            )
+    ))
+
+    ;oscillator
+    (assign (assoc
+        board_map
+            (set board_map
+                (list 30 44) 1
+                (list 31 44) 1
+                (list 32 44) 1
+            )
+    ))
+
+    ;still
+    (assign (assoc
+        board_map
+            (set board_map
+                (list 70 24) 1
+                (list 71 23) 1
+                (list 71 25) 1
+                (list 72 24) 1
+            )
+    ))
+
+    ;acorn methuseiah
+    (assign (assoc
+        board_map
+            (set board_map
+                (list 50 15) 1
+                (list 52 14) 1
+                (list 52 15) 1
+                (list 51 17) 1
+                (list 52 18) 1
+                (list 52 19) 1
+                (list 52 20) 1
+            )
+    ))
+
+	;any live cell with two or three live neighbours survives.
+	;any dead cell with three live neighbours becomes a live cell.
+	;all other live cells die in the next generation. Similarly, all other dead cells stay dead.
+	(null
+		#CountNeighbors
+			(declare
+				(assoc
+					row_index 0
+					col_index 0
+				)
+
+				(declare (assoc
+					left_index (- col_index 1)
+					right_index (+ col_index 1)
+					top_index (- row_index 1)
+					bottom_index (+ row_index 1)
+				))
+
+				(if (< left_index 0) (assign (assoc left_index edge_index)) )
+				(if (< top_index 0) (assign (assoc top_index edge_index)) )
+				(if (> right_index edge_index) (assign (assoc right_index 0)) )
+				(if (> bottom_index edge_index) (assign (assoc bottom_index 0)) )
+
+				;count how many of the 8 neighbors are alive
+				( +
+					(get board_map (list top_index left_index))
+					(get board_map (list top_index col_index))
+					(get board_map (list top_index right_index))
+					(get board_map (list row_index left_index))
+					(get board_map (list row_index right_index))
+					(get board_map (list bottom_index left_index))
+					(get board_map (list bottom_index col_index))
+					(get board_map (list bottom_index right_index))
+				)
+			)
+	)
+
+	(while (!= "q" done)
+
+		(map
+			(lambda (seq
+				(map
+					(lambda (print (if (target_value) " X" " -") ) )
+					(target_value)
+				)
+				(print "\n")
+			))
+			board_map
+		)
+
+		(assign (assoc
+			board_map
+				||(map
+					(lambda (let
+						(assoc
+							row_index (target_index 1)
+							row (target_value 1)
+						)
+
+						(map
+							(lambda (let
+								(assoc
+									col_index (target_index 1)
+									cell (target_value 1)
+									num_neighbors 0
+								)
+
+								(assign (assoc
+									num_neighbors
+										(call CountNeighbors (assoc
+											row_index row_index
+											col_index col_index
+										))
+								))
+
+								(if (= 0 cell)
+									;dead cell with 3 neighbors becomes a live cell
+									(if (= 3 num_neighbors)
+										(assign (assoc cell 1))
+									)
+
+									;else live cell dies if neighbors aren't 2 or 3
+									(if (or (> num_neighbors 3) (< num_neighbors 2))
+										(assign (assoc cell 0))
+									)
+								)
+
+								cell
+							))
+							row
+						)
+
+					))
+					board_map
+				)
+		))
+
+		(print "enter for next tick, q to quit: ")
+		(assign (assoc done (system "readline") ))
+	)
+
+)

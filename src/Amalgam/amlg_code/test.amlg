@@ -1,0 +1,4 @@
+(seq
+	;(print (format (list (assoc a 3 b 4) (assoc c "c" d (null))) "code" "yaml") "\n")
+	(print (format (true) "code" "yaml") "\n")
+)

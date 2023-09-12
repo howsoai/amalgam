@@ -1,0 +1,12 @@
+(parallel
+  #b 2
+  (#yello print
+    "yello\n"
+  )
+  
+  #kill_inter
+    (destroy_entities "PersistTreeInter")
+	
+  #clean_backup
+    (destroy_entities "leaf_backup")
+)

@@ -1,0 +1,489 @@
+﻿{
+  "version": 5,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 26
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "description": "Base preset (http://aka.ms/cmakepresetsvs)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "installDir": "${sourceDir}/out/install/${presetName}",
+      "cacheVariables": {
+        "CMAKE_CXX_STANDARD": "17",
+        "CMAKE_CXX_STANDARD_REQUIRED": "YES",
+        "CMAKE_CXX_EXTENSIONS": "OFF",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+
+    {
+      "name": "windows",
+      "hidden": true,
+      "description": "Sets windows os"
+    },
+    {
+      "name": "linux",
+      "hidden": true,
+      "description": "Sets linux os"
+    },
+    {
+      "name": "macos",
+      "hidden": true,
+      "description": "Sets macos os",
+      "cacheVariables": {
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "11"
+      }
+    },
+
+    {
+      "name": "amd64",
+      "hidden": true,
+      "description": "Sets amd64 arch",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      }
+    },
+    {
+      "name": "arm64",
+      "hidden": true,
+      "description": "Sets arm64 arch",
+      "cacheVariables": {
+        "ARCH": "arm64"
+      },
+      "architecture": {
+        "value": "arm64",
+        "strategy": "external"
+      }
+    },
+    {
+      "name": "arm64_8a",
+      "hidden": true,
+      "description": "Sets arm64_8a arch",
+      "cacheVariables": {
+        "ARCH": "arm64_8a"
+      },
+      "architecture": {
+        "value": "arm64",
+        "strategy": "external"
+      }
+    },
+    {
+      "name": "wasm64",
+      "hidden": true,
+      "description": "Sets wasm64 arch",
+      "cacheVariables": {
+        "ARCH": "wasm64"
+      },
+      "architecture": {
+        "value": "amd64",
+        "strategy": "external"
+      }
+    },
+
+    {
+      "name": "debug",
+      "hidden": true,
+      "description": "Sets debug build type",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "debug"
+      }
+    },
+    {
+      "name": "release",
+      "hidden": true,
+      "description": "Sets release build type",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "release"
+      }
+    },
+
+    {
+      "name": "msvc",
+      "hidden": true,
+      "description": "Sets msvc compiler",
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "cl.exe"
+      },
+      "toolset": {
+        "value": "host=x64",
+        "strategy": "external"
+      }
+    },
+    {
+      "name": "clang",
+      "hidden": true,
+      "description": "Sets clang compiler",
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "clang++"
+      }
+    },
+    {
+      "name": "gcc",
+      "hidden": true,
+      "description": "Sets gcc compiler",
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "g++-10"
+      }
+    },
+    {
+      "name": "gcc-arm",
+      "hidden": true,
+      "description": "Sets gcc-arm compiler",
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "aarch64-linux-gnu-g++-10"
+      }
+    },
+    {
+      "name": "emcc",
+      "hidden": true,
+      "description": "Sets emcc wasm64 compiler",
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "em++"
+      }
+    },
+
+    {
+      "name": "macos-amd64",
+      "hidden": true,
+      "description": "Sets macos-amd64 deploy target",
+      "inherits": [ "macos" ],
+      "cacheVariables": {
+        "CMAKE_OSX_ARCHITECTURES": "x86_64"
+      }
+    },
+    {
+      "name": "macos-arm64",
+      "hidden": true,
+      "description": "Sets macos-arm64 deploy target",
+      "inherits": [ "macos" ],
+      "cacheVariables": {
+        "CMAKE_OSX_ARCHITECTURES": "arm64"
+      }
+    },
+
+    {
+      "name": "amd64-debug-windows",
+      "description": "msvc for amd64 (debug) for windows",
+      "inherits": [ "base", "windows", "amd64", "debug", "msvc" ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "amd64-release-windows",
+      "description": "msvc for amd64 (release) for windows",
+      "inherits": [ "base", "windows", "amd64", "release", "msvc" ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+
+    {
+      "name": "amd64-windows-vs",
+      "description": "msvc for amd64 for windows for Visual Studio sln",
+      "inherits": [ "base", "windows", "amd64", "msvc" ],
+      "generator": "Visual Studio 17 2022",
+      "cacheVariables": {
+        "CMAKE_CONFIGURATION_TYPES": "debug;release"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+
+    {
+      "name": "amd64-debug-linux",
+      "description": "gcc for amd64 (debug) for linux",
+      "inherits": [ "base", "linux", "amd64", "debug", "gcc" ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "amd64-release-linux",
+      "description": "gcc for amd64 (release) for linux",
+      "inherits": [ "base", "linux", "amd64", "release", "gcc" ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "arm64-debug-linux",
+      "description": "gcc for arm64 (debug) for linux",
+      "inherits": [ "base", "linux", "arm64", "debug", "gcc-arm" ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "arm64-release-linux",
+      "description": "gcc for arm64 (release) for linux",
+      "inherits": [ "base", "linux", "arm64", "release", "gcc-arm" ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "arm64_8a-debug-linux",
+      "description": "gcc for arm64_8a (debug) for linux",
+      "inherits": [ "base", "linux", "arm64_8a", "debug", "gcc-arm" ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "arm64_8a-release-linux",
+      "description": "gcc for arm64_8a (release) for linux",
+      "inherits": [ "base", "linux", "arm64_8a", "release", "gcc-arm" ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "wasm64-debug-linux",
+      "description": "emcc for wasm64 (debug) for linux",
+      "inherits": [ "base", "linux", "wasm64", "debug", "emcc" ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "wasm64-release-linux",
+      "description": "emcc for wasm64 (release) for linux",
+      "inherits": [ "base", "linux", "wasm64", "release", "emcc" ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+
+    {
+      "name": "amd64-debug-macos",
+      "description": "clang for amd64 (debug) for macos",
+      "inherits": [ "base", "macos-amd64", "amd64", "debug", "clang" ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      }
+    },
+    {
+      "name": "amd64-release-macos",
+      "description": "clang for amd64 (release) for macos",
+      "inherits": [ "base", "macos-amd64", "amd64", "release", "clang" ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      }
+    },
+
+    {
+      "name": "arm64-debug-macos",
+      "description": "clang for arm64 (debug) for macos",
+      "inherits": [ "base", "macos-arm64", "arm64", "debug", "clang" ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      }
+    },
+    {
+      "name": "arm64-release-macos",
+      "description": "clang for arm64 (release) for macos",
+      "inherits": [ "base", "macos-arm64", "arm64", "release", "clang" ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "amd64-debug-windows",
+      "configurePreset": "amd64-debug-windows",
+      "description": "windows amd64 debug build"
+    },
+    {
+      "name": "amd64-release-windows",
+      "configurePreset": "amd64-release-windows",
+      "description": "windows amd64 release build"
+    },
+    {
+      "name": "amd64-debug-linux",
+      "configurePreset": "amd64-debug-linux",
+      "description": "linux amd64 debug build"
+    },
+    {
+      "name": "amd64-release-linux",
+      "configurePreset": "amd64-release-linux",
+      "description": "linux amd64 release build"
+    },
+    {
+      "name": "arm64-debug-linux",
+      "configurePreset": "arm64-debug-linux",
+      "description": "linux arm64 debug build"
+    },
+    {
+      "name": "arm64-release-linux",
+      "configurePreset": "arm64-release-linux",
+      "description": "linux arm64 release build"
+    },
+    {
+      "name": "arm64_8a-release-linux",
+      "configurePreset": "arm64_8a-release-linux",
+      "description": "linux arm64_8a release build"
+    },
+    {
+      "name": "wasm64-debug-linux",
+      "configurePreset": "wasm64-debug-linux",
+      "description": "linux wasm64 debug build"
+    },
+    {
+      "name": "wasm64-release-linux",
+      "configurePreset": "wasm64-release-linux",
+      "description": "linux wasm64 release build"
+    },
+    {
+      "name": "amd64-debug-macos",
+      "configurePreset": "amd64-debug-macos",
+      "description": "macos amd64 debug build"
+    },
+    {
+      "name": "amd64-release-macos",
+      "configurePreset": "amd64-release-macos",
+      "description": "macos amd64 release build"
+    },
+    {
+      "name": "arm64-debug-macos",
+      "configurePreset": "arm64-debug-macos",
+      "description": "macos arm64 debug build"
+    },
+    {
+      "name": "arm64-release-macos",
+      "configurePreset": "arm64-release-macos",
+      "description": "macos arm64 release build"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "base",
+      "description": "Enable output on failure",
+      "hidden": true,
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "amd64-release-windows",
+      "description": "windows amd64 release tests",
+      "inherits": "base",
+      "configurePreset": "amd64-release-windows"
+    },
+    {
+      "name": "amd64-debug-windows",
+      "description": "windows amd64 debug tests",
+      "inherits": "base",
+      "configurePreset": "amd64-debug-windows"
+    },
+    {
+      "name": "amd64-release-linux",
+      "description": "linux amd64 release tests",
+      "inherits": "base",
+      "configurePreset": "amd64-release-linux"
+    },
+    {
+      "name": "amd64-debug-linux",
+      "description": "linux amd64 debug tests",
+      "inherits": "base",
+      "configurePreset": "amd64-debug-linux"
+    },
+    {
+      "name": "arm64-release-linux",
+      "description": "linux arm64 release tests",
+      "inherits": "base",
+      "configurePreset": "arm64-release-linux"
+    },
+    {
+      "name": "arm64-debug-linux",
+      "description": "linux arm64 debug tests",
+      "inherits": "base",
+      "configurePreset": "arm64-debug-linux"
+    },
+    {
+      "name": "arm64_8a-release-linux",
+      "description": "linux arm64_8a release tests",
+      "inherits": "base",
+      "configurePreset": "arm64_8a-release-linux"
+    },
+    {
+      "name": "arm64_8a-debug-linux",
+      "description": "linux arm64_8a debug tests",
+      "inherits": "base",
+      "configurePreset": "arm64_8a-debug-linux"
+    },
+    {
+      "name": "wasm64-release-linux",
+      "description": "linux wasm64 release tests",
+      "inherits": "base",
+      "configurePreset": "wasm64-release-linux"
+    },
+    {
+      "name": "wasm64-debug-linux",
+      "description": "linux wasm64 debug tests",
+      "inherits": "base",
+      "configurePreset": "wasm64-debug-linux"
+    },
+    {
+      "name": "amd64-release-macos",
+      "description": "macos amd64 release tests",
+      "inherits": "base",
+      "configurePreset": "amd64-release-macos"
+    },
+    {
+      "name": "amd64-debug-macos",
+      "description": "macos amd64 debug tests",
+      "inherits": "base",
+      "configurePreset": "amd64-debug-macos"
+    },
+    {
+      "name": "arm64-release-macos",
+      "description": "macos arm64 release tests",
+      "inherits": "base",
+      "configurePreset": "arm64-release-macos"
+    },
+    {
+      "name": "arm64-debug-macos",
+      "description": "macos arm64 debug tests",
+      "inherits": "base",
+      "configurePreset": "arm64-debug-macos"
+    }
+  ]
+}

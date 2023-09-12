@@ -1,0 +1,666 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="ST_Debug_EXE|x64">
+      <Configuration>ST_Debug_EXE</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MT_Debug_DLL|x64">
+      <Configuration>MT_Debug_DLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MT_Debug_EXE|x64">
+      <Configuration>MT_Debug_EXE</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MT_Release_DLL|x64">
+      <Configuration>MT_Release_DLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MT_Release_EXE|x64">
+      <Configuration>MT_Release_EXE</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="OMP_Release_DLL|x64">
+      <Configuration>OMP_Release_DLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="OMP_Release_EXE|x64">
+      <Configuration>OMP_Release_EXE</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ST_Release_EXE|x64">
+      <Configuration>ST_Release_EXE</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ST_Debug_DLL|x64">
+      <Configuration>ST_Debug_DLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ST_Release_DLL|x64">
+      <Configuration>ST_Release_DLL</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{640515C4-B87F-4210-A603-F091804FAE5A}</ProjectGuid>
+    <RootNamespace>Amalgam</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ST_Debug_EXE|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MT_Debug_EXE|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ST_Release_EXE|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='OMP_Release_EXE|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MT_Release_EXE|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ST_Debug_DLL|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MT_Debug_DLL|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ST_Release_DLL|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='OMP_Release_DLL|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MT_Release_DLL|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ST_Debug_EXE|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='MT_Debug_EXE|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ST_Release_EXE|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='OMP_Release_EXE|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='MT_Release_EXE|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ST_Debug_DLL|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='MT_Debug_DLL|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ST_Release_DLL|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='OMP_Release_DLL|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='MT_Release_DLL|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ST_Debug_EXE|x64'">
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <CustomBuildBeforeTargets>ClCompile</CustomBuildBeforeTargets>
+    <IncludePath>$(SolutionDir)/src/3rd_party;$(ProjectDir);$(ProjectDir)/entity;$(ProjectDir)/evaluablenode;$(ProjectDir)/importexport;$(ProjectDir)/interpreter;$(ProjectDir)/rand;$(ProjectDir)/string;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MT_Debug_EXE|x64'">
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <CustomBuildBeforeTargets>ClCompile</CustomBuildBeforeTargets>
+    <IncludePath>$(SolutionDir)/src/3rd_party;$(ProjectDir);$(ProjectDir)/entity;$(ProjectDir)/evaluablenode;$(ProjectDir)/importexport;$(ProjectDir)/interpreter;$(ProjectDir)/rand;$(ProjectDir)/string;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ST_Release_EXE|x64'">
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <CustomBuildBeforeTargets>ClCompile</CustomBuildBeforeTargets>
+    <IncludePath>$(SolutionDir)/src/3rd_party;$(ProjectDir);$(ProjectDir)/entity;$(ProjectDir)/evaluablenode;$(ProjectDir)/importexport;$(ProjectDir)/interpreter;$(ProjectDir)/rand;$(ProjectDir)/string;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='OMP_Release_EXE|x64'">
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <CustomBuildBeforeTargets>ClCompile</CustomBuildBeforeTargets>
+    <IncludePath>$(SolutionDir)/src/3rd_party;$(ProjectDir);$(ProjectDir)/entity;$(ProjectDir)/evaluablenode;$(ProjectDir)/importexport;$(ProjectDir)/interpreter;$(ProjectDir)/rand;$(ProjectDir)/string;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MT_Release_EXE|x64'">
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <CustomBuildBeforeTargets>ClCompile</CustomBuildBeforeTargets>
+    <IncludePath>$(SolutionDir)/src/3rd_party;$(ProjectDir);$(ProjectDir)/entity;$(ProjectDir)/evaluablenode;$(ProjectDir)/importexport;$(ProjectDir)/interpreter;$(ProjectDir)/rand;$(ProjectDir)/string;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ST_Debug_DLL|x64'">
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <CustomBuildBeforeTargets>ClCompile</CustomBuildBeforeTargets>
+    <IncludePath>$(SolutionDir)/src/3rd_party;$(ProjectDir);$(ProjectDir)/entity;$(ProjectDir)/evaluablenode;$(ProjectDir)/importexport;$(ProjectDir)/interpreter;$(ProjectDir)/rand;$(ProjectDir)/string;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MT_Debug_DLL|x64'">
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <CustomBuildBeforeTargets>ClCompile</CustomBuildBeforeTargets>
+    <IncludePath>$(SolutionDir)/src/3rd_party;$(ProjectDir);$(ProjectDir)/entity;$(ProjectDir)/evaluablenode;$(ProjectDir)/importexport;$(ProjectDir)/interpreter;$(ProjectDir)/rand;$(ProjectDir)/string;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ST_Release_DLL|x64'">
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <CustomBuildBeforeTargets>ClCompile</CustomBuildBeforeTargets>
+    <IncludePath>$(SolutionDir)/src/3rd_party;$(ProjectDir);$(ProjectDir)/entity;$(ProjectDir)/evaluablenode;$(ProjectDir)/importexport;$(ProjectDir)/interpreter;$(ProjectDir)/rand;$(ProjectDir)/string;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='OMP_Release_DLL|x64'">
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <CustomBuildBeforeTargets>ClCompile</CustomBuildBeforeTargets>
+    <IncludePath>$(SolutionDir)/src/3rd_party;$(ProjectDir);$(ProjectDir)/entity;$(ProjectDir)/evaluablenode;$(ProjectDir)/importexport;$(ProjectDir)/interpreter;$(ProjectDir)/rand;$(ProjectDir)/string;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MT_Release_DLL|x64'">
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <CustomBuildBeforeTargets>ClCompile</CustomBuildBeforeTargets>
+    <IncludePath>$(SolutionDir)/src/3rd_party;$(ProjectDir);$(ProjectDir)/entity;$(ProjectDir)/evaluablenode;$(ProjectDir)/importexport;$(ProjectDir)/interpreter;$(ProjectDir)/rand;$(ProjectDir)/string;$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ST_Debug_EXE|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <EnablePREfast>false</EnablePREfast>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <StackReserveSize>67108864</StackReserveSize>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <CustomBuildStep>
+      <Outputs>$(ProjectDir)AmalgamVersion.h</Outputs>
+      <Command>powershell -nologo -File "$(SolutionDir)build/powershell/Create-Amalgam-Version-Header.ps1"</Command>
+      <Message>Creating Version header</Message>
+      <TreatOutputAsContent>false</TreatOutputAsContent>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MT_Debug_EXE|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <EnablePREfast>false</EnablePREfast>
+      <PreprocessorDefinitions>MULTITHREAD_SUPPORT;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <StackReserveSize>67108864</StackReserveSize>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <CustomBuildStep>
+      <Outputs>$(ProjectDir)AmalgamVersion.h</Outputs>
+      <Command>powershell -nologo -File "$(SolutionDir)build/powershell/Create-Amalgam-Version-Header.ps1"</Command>
+      <Message>Creating Version header</Message>
+      <TreatOutputAsContent>false</TreatOutputAsContent>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ST_Release_EXE|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Full</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <EnablePREfast>false</EnablePREfast>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <StackReserveSize>67108864</StackReserveSize>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <CustomBuildStep>
+      <Outputs>$(ProjectDir)AmalgamVersion.h</Outputs>
+      <Command>powershell -nologo -File "$(SolutionDir)build/powershell/Create-Amalgam-Version-Header.ps1"</Command>
+      <Message>Creating Version header</Message>
+      <TreatOutputAsContent>false</TreatOutputAsContent>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='OMP_Release_EXE|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Full</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <EnablePREfast>false</EnablePREfast>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <OpenMPSupport>true</OpenMPSupport>
+      <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <StackReserveSize>67108864</StackReserveSize>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <CustomBuildStep>
+      <Outputs>$(ProjectDir)AmalgamVersion.h</Outputs>
+      <Command>powershell -nologo -File "$(SolutionDir)build/powershell/Create-Amalgam-Version-Header.ps1"</Command>
+      <Message>Creating Version header</Message>
+      <TreatOutputAsContent>false</TreatOutputAsContent>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MT_Release_EXE|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Full</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <EnablePREfast>false</EnablePREfast>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PreprocessorDefinitions>MULTITHREAD_SUPPORT;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <AssemblerOutput>AssemblyAndSourceCode</AssemblerOutput>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <StackReserveSize>67108864</StackReserveSize>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <CustomBuildStep>
+      <Outputs>$(ProjectDir)AmalgamVersion.h</Outputs>
+      <Command>powershell -nologo -File "$(SolutionDir)build/powershell/Create-Amalgam-Version-Header.ps1"</Command>
+      <Message>Creating Version header</Message>
+      <TreatOutputAsContent>false</TreatOutputAsContent>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ST_Debug_DLL|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <EnablePREfast>false</EnablePREfast>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <StackReserveSize>67108864</StackReserveSize>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <CustomBuildStep>
+      <Outputs>$(ProjectDir)AmalgamVersion.h</Outputs>
+      <Command>powershell -nologo -File "$(SolutionDir)build/powershell/Create-Amalgam-Version-Header.ps1"</Command>
+      <Message>Creating Version header</Message>
+      <TreatOutputAsContent>false</TreatOutputAsContent>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MT_Debug_DLL|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <EnablePREfast>false</EnablePREfast>
+      <PreprocessorDefinitions>MULTITHREAD_SUPPORT;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <StackReserveSize>67108864</StackReserveSize>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <CustomBuildStep>
+      <Outputs>$(ProjectDir)AmalgamVersion.h</Outputs>
+      <Command>powershell -nologo -File "$(SolutionDir)build/powershell/Create-Amalgam-Version-Header.ps1"</Command>
+      <Message>Creating Version header</Message>
+      <TreatOutputAsContent>false</TreatOutputAsContent>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ST_Release_DLL|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Full</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <EnablePREfast>false</EnablePREfast>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <StackReserveSize>67108864</StackReserveSize>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <CustomBuildStep>
+      <Outputs>$(ProjectDir)AmalgamVersion.h</Outputs>
+      <Command>powershell -nologo -File "$(SolutionDir)build/powershell/Create-Amalgam-Version-Header.ps1"</Command>
+      <Message>Creating Version header</Message>
+      <TreatOutputAsContent>false</TreatOutputAsContent>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='OMP_Release_DLL|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Full</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <EnablePREfast>false</EnablePREfast>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <OpenMPSupport>true</OpenMPSupport>
+      <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <StackReserveSize>67108864</StackReserveSize>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <CustomBuildStep>
+      <Outputs>$(ProjectDir)AmalgamVersion.h</Outputs>
+      <Command>powershell -nologo -File "$(SolutionDir)build/powershell/Create-Amalgam-Version-Header.ps1"</Command>
+      <Message>Creating Version header</Message>
+      <TreatOutputAsContent>false</TreatOutputAsContent>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MT_Release_DLL|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Full</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <EnablePREfast>false</EnablePREfast>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <PreprocessorDefinitions>MULTITHREAD_SUPPORT;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <DisableSpecificWarnings>26496;26446;26490;26467;4530;26481;26440;26439;26447;26432;26115;26110;26135;26482;26429;26455;26461;26426;26409;26460;26400;26472;26403;26476;26495;26433;26401;26497;26819;26462;26457</DisableSpecificWarnings>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <StackReserveSize>67108864</StackReserveSize>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <CustomBuildStep>
+      <Outputs>$(ProjectDir)AmalgamVersion.h</Outputs>
+      <Command>powershell -nologo -File "$(SolutionDir)build/powershell/Create-Amalgam-Version-Header.ps1"</Command>
+      <Message>Creating Version header</Message>
+      <TreatOutputAsContent>false</TreatOutputAsContent>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resource.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="$(SolutionDir)/docs/icon/amalgam.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\3rd_party\date\tz.cpp" />
+    <ClCompile Include="..\3rd_party\murmurhash3\MurmurHash3.cpp" />
+    <ClCompile Include="..\3rd_party\simdjson\simdjson.cpp" />
+    <ClCompile Include="..\3rd_party\swiftdtoa\SwiftDtoa.cpp" />
+    <ClCompile Include="..\3rd_party\tweetnacl\tweetnacl.cpp" />
+    <ClCompile Include="AmalgamAPI.cpp" />
+    <ClCompile Include="AmalgamMain.cpp" />
+    <ClCompile Include="AmalgamTrace.cpp" />
+    <ClCompile Include="AssetManager.cpp" />
+    <ClCompile Include="BinaryPacking.cpp" />
+    <ClCompile Include="Concurrency.cpp" />
+    <ClCompile Include="Cryptography.cpp" />
+    <ClCompile Include="DateTimeFormat.cpp" />
+    <ClCompile Include="entity\Entity.cpp" />
+    <ClCompile Include="entity\EntityExternalInterface.cpp" />
+    <ClCompile Include="entity\EntityManipulation.cpp" />
+    <ClCompile Include="entity\EntityQueries.cpp" />
+    <ClCompile Include="entity\EntityQueryCaches.cpp" />
+    <ClCompile Include="entity\EntityWriteListener.cpp" />
+    <ClCompile Include="evaluablenode\EvaluableNode.cpp" />
+    <ClCompile Include="evaluablenode\EvaluableNodeManagement.cpp" />
+    <ClCompile Include="evaluablenode\EvaluableNodeTreeDifference.cpp" />
+    <ClCompile Include="evaluablenode\EvaluableNodeTreeFunctions.cpp" />
+    <ClCompile Include="evaluablenode\EvaluableNodeTreeManipulation.cpp" />
+    <ClCompile Include="importexport\FileSupportCSV.cpp" />
+    <ClCompile Include="importexport\FileSupportJSON.cpp" />
+    <ClCompile Include="importexport\FileSupportYAML.cpp" />
+    <ClCompile Include="interpreter\Interpreter.cpp" />
+    <ClCompile Include="interpreter\InterpreterDebugger.cpp" />
+    <ClCompile Include="interpreter\InterpreterOpcodesBase.cpp" />
+    <ClCompile Include="interpreter\InterpreterOpcodesCodeMixing.cpp" />
+    <ClCompile Include="interpreter\InterpreterOpcodesDataTypes.cpp" />
+    <ClCompile Include="interpreter\InterpreterOpcodesEntityAccess.cpp" />
+    <ClCompile Include="interpreter\InterpreterOpcodesEntityControl.cpp" />
+    <ClCompile Include="interpreter\InterpreterOpcodesListManipulation.cpp" />
+    <ClCompile Include="interpreter\InterpreterOpcodesLogic.cpp" />
+    <ClCompile Include="interpreter\InterpreterOpcodesMath.cpp" />
+    <ClCompile Include="interpreter\InterpreterOpcodesTransformations.cpp" />
+    <ClCompile Include="Opcodes.cpp" />
+    <ClCompile Include="Parser.cpp" />
+    <ClCompile Include="PerformanceProfiler.cpp" />
+    <ClCompile Include="PlatformSpecific.cpp" />
+    <ClCompile Include="PrintListener.cpp" />
+    <ClCompile Include="rand\RandomStream.cpp" />
+    <ClCompile Include="SeparableBoxFilterDataStore.cpp" />
+    <ClCompile Include="string\StringInternPool.cpp" />
+    <ClCompile Include="string\StringManipulation.cpp" />
+    <ClCompile Include="ThreadPool.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\3rd_party\date\date.h" />
+    <ClInclude Include="..\3rd_party\date\ios.h" />
+    <ClInclude Include="..\3rd_party\date\tz.h" />
+    <ClInclude Include="..\3rd_party\date\tz_private.h" />
+    <ClInclude Include="..\3rd_party\fast_log\src\exp_table.h" />
+    <ClInclude Include="..\3rd_party\murmurhash3\MurmurHash3.h" />
+    <ClInclude Include="..\3rd_party\simdjson\simdjson.h" />
+    <ClInclude Include="..\3rd_party\skarupke_maps\bytell_hash_map.hpp" />
+    <ClInclude Include="..\3rd_party\skarupke_maps\flat_hash_map.hpp" />
+    <ClInclude Include="..\3rd_party\swiftdtoa\SwiftDtoa.h" />
+    <ClInclude Include="..\3rd_party\tweetnacl\tweetnacl.h" />
+    <ClInclude Include="Amalgam.h" />
+    <ClInclude Include="AmalgamVersion.h" />
+    <ClInclude Include="AssetManager.h" />
+    <ClInclude Include="BinaryPacking.h" />
+    <ClInclude Include="Concurrency.h" />
+    <ClInclude Include="Conviction.h" />
+    <ClInclude Include="ConvictionUtil.h" />
+    <ClInclude Include="Cryptography.h" />
+    <ClInclude Include="DateTimeFormat.h" />
+    <ClInclude Include="DistanceReferencePair.h" />
+    <ClInclude Include="entity\Entity.h" />
+    <ClInclude Include="entity\EntityExternalInterface.h" />
+    <ClInclude Include="entity\EntityManipulation.h" />
+    <ClInclude Include="entity\EntityQueries.h" />
+    <ClInclude Include="entity\EntityQueriesStatistics.h" />
+    <ClInclude Include="entity\EntityQueryBuilder.h" />
+    <ClInclude Include="entity\EntityQueryCaches.h" />
+    <ClInclude Include="entity\EntityQueryManager.h" />
+    <ClInclude Include="entity\EntityWriteListener.h" />
+    <ClInclude Include="evaluablenode\EvaluableNode.h" />
+    <ClInclude Include="evaluablenode\EvaluableNodeManagement.h" />
+    <ClInclude Include="evaluablenode\EvaluableNodeTreeDifference.h" />
+    <ClInclude Include="evaluablenode\EvaluableNodeTreeFunctions.h" />
+    <ClInclude Include="evaluablenode\EvaluableNodeTreeManipulation.h" />
+    <ClInclude Include="FastEMath.h" />
+    <ClInclude Include="FastMath.h" />
+    <ClInclude Include="FilenameEscapeProcessor.h" />
+    <ClInclude Include="GeneralizedDistance.h" />
+    <ClInclude Include="HashMaps.h" />
+    <ClInclude Include="importexport\FileSupportCSV.h" />
+    <ClInclude Include="importexport\FileSupportJSON.h" />
+    <ClInclude Include="importexport\FileSupportYAML.h" />
+    <ClInclude Include="IntegerSet.h" />
+    <ClInclude Include="interpreter\Interpreter.h" />
+    <ClInclude Include="KnnCache.h" />
+    <ClInclude Include="Merger.h" />
+    <ClInclude Include="Opcodes.h" />
+    <ClInclude Include="Parser.h" />
+    <ClInclude Include="PartialSum.h" />
+    <ClInclude Include="PerformanceProfiler.h" />
+    <ClInclude Include="PlatformSpecific.h" />
+    <ClInclude Include="PrintListener.h" />
+    <ClInclude Include="rand\RandomStream.h" />
+    <ClInclude Include="rand\WeightedDiscreteRandomStream.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="SBFDSColumnData.h" />
+    <ClInclude Include="SeparableBoxFilterDataStore.h" />
+    <ClInclude Include="string\StringInternPool.h" />
+    <ClInclude Include="string\StringManipulation.h" />
+    <ClInclude Include="ThreadPool.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="out.txt" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

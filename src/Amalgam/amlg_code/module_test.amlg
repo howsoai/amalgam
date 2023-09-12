@@ -1,0 +1,8 @@
+(assoc
+	a #a 1
+	hello #hello (print "hello\n")
+	b #b (true)
+	c #c 0.1
+	d #d 100000000
+)
+

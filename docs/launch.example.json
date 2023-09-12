@@ -1,0 +1,26 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "debug-windows",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${command:cmake.launchTargetPath}",
+      "args": [ "amlg_code/full_test.amlg" ],
+      "cwd": "${workspaceFolder}/Amalgam/",
+      "stopAtEntry": false
+    },
+    {
+      "name": "debug-linux",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${command:cmake.launchTargetPath}",
+      "args": [ "amlg_code/full_test.amlg" ],
+      "cwd": "${workspaceFolder}/Amalgam/",
+      "stopAtEntry": false
+    }
+  ]
+}

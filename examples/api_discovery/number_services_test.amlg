@@ -1,0 +1,25 @@
+:
+;tests for: number_services.amlg
+:
+(seq
+	(load_entity "number_services.amlg" "ns")
+	(set_entity_root_permission "ns" (true)) ; ns entity needs root access to open version file
+
+	(print (call_entity "ns" "get_api") "\n")
+	(print (call_entity "ns" "version") "\n")
+	(print (call_entity "ns" "major_version") "\n")
+
+	(print (call_entity "ns" "is_even" (assoc number 1)) "\n")
+	(print (call_entity "ns" "is_even" (assoc number 2)) "\n")
+	(print (call_entity "ns" "is_even" (assoc number .infinity)) "\n")
+	(print (call_entity "ns" "is_even" (assoc number -.infinity)) "\n")
+	(print (call_entity "ns" "is_even" (assoc number .nan)) "\n")
+	(print (call_entity "ns" "is_even" (assoc number -1)) "\n")
+	(print (call_entity "ns" "is_even" (assoc number "blue")) "\n")
+	(print (call_entity "ns" "is_even" (assoc number 42)) "\n")
+	
+	(print (call_entity "ns" "are_even" (assoc numbers (list 1 2 3 "0" .nan 4 4.5)) "\n"))
+	
+	(print (call_entity "ns" "is_sum_even" (assoc a 1 b 3)) "\n")
+	(print (call_entity "ns" "is_sum_even" (assoc a 1)) "\n")
+)

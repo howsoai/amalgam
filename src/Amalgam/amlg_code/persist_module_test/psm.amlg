@@ -1,0 +1,5 @@
+(parallel
+	#a 8
+	#hello
+	(print "hello from psm\n")
+)

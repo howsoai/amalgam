@@ -1,0 +1,46 @@
+## Use glob syntax
+syntax: glob
+
+## Files created by build
+src/Amalgam/AmalgamVersion.h
+
+## User-specific files
+*.suo
+*.user
+*.sln.docstates
+.vs/
+.vscode/
+.direnv
+.envrc
+.env
+
+## Amalgam metadata files
+*.mdam
+
+## Build results
+out/
+x64/
+
+## Visual C++ cache files
+ipch/
+*.aps
+*.ncb
+*.opensdf
+*.sdf
+*.cachefile
+*.opendb
+*.VC.db
+
+## Visual Studio profiler
+*.psess
+*.vsp
+*.vspx
+
+## Windows Ignores
+$RECYCLE.BIN/
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+## Mac Ignores
+.DS_Store

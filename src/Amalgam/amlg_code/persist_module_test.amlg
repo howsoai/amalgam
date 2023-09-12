@@ -1,0 +1,5 @@
+(parallel
+	#a 1
+	#hello
+	(print "hello\n")
+)

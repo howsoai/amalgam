@@ -1,0 +1,10 @@
+;
+;converts number_services.amlg into a caml file
+;
+(seq
+	(load_entity "number_services.amlg" "ns")
+
+	(store
+		(concat "./number_services.caml") (retrieve_entity_root "ns" 1)
+	)
+)

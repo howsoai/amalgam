@@ -734,6 +734,7 @@ bool Interpreter::InterpretNodeIntoBoolValue(EvaluableNode *n, bool value_if_nul
 
 void Interpreter::InterpretNodeIntoDestinationEntity(EvaluableNode *n, Entity *&destination_entity_parent, StringInternRef &new_entity_id)
 {
+	//TODO 10975: update this to lock
 	EvaluableNodeReference new_entity_id_node = InterpretNodeForImmediateUse(n);
 	TraverseEntityToNewDestinationViaEvaluableNodeIDPath(curEntity, new_entity_id_node, destination_entity_parent, new_entity_id);
 	evaluableNodeManager->FreeNodeTreeIfPossible(new_entity_id_node);
@@ -764,22 +765,6 @@ EvaluableNode **Interpreter::TraverseToDestinationFromTraversalPathList(Evaluabl
 	EvaluableNode **destination = GetRelativeEvaluableNodeFromTraversalPathList(source, address_list, address_list_length, create_destination_if_necessary ? evaluableNodeManager : nullptr, max_num_nodes);
 
 	return destination;
-}
-
-Entity *Interpreter::InterpretNodeIntoRelativeSourceEntityFromInterpretedEvaluableNodeIDPath(EvaluableNode *node_id_path_to_interpret)
-{
-	if(curEntity == nullptr)
-		return nullptr;
-
-	if(EvaluableNode::IsEmptyNode(node_id_path_to_interpret))
-		return curEntity;
-
-	//only need to interpret if not idempotent
-	EvaluableNodeReference source_id_node = InterpretNodeForImmediateUse(node_id_path_to_interpret);
-	Entity *source_entity = TraverseToExistingEntityViaEvaluableNodeIDPath(curEntity, source_id_node);
-	evaluableNodeManager->FreeNodeTreeIfPossible(source_id_node);
-	
-	return source_entity;
 }
 
 EvaluableNode *Interpreter::RewriteByFunction(EvaluableNodeReference function, EvaluableNode *top_node, EvaluableNode *n, EvaluableNode::ReferenceSetType &references)

@@ -298,7 +298,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TOTAL_ENTITY_SIZE(Evaluabl
 		return EvaluableNodeReference::Null();
 
 	//get the id of the first source entity
-	Entity *source_entity = InterpretNodeIntoRelativeSourceEntityFromInterpretedEvaluableNodeIDPath(ocn[0]);
+	EntityReadReference source_entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
 	if(source_entity == nullptr)
 		return EvaluableNodeReference::Null();
 
@@ -313,11 +313,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FLATTEN_ENTITY(EvaluableNo
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
 
-	//get the id of the first source entity
-	Entity *source_entity = InterpretNodeIntoRelativeSourceEntityFromInterpretedEvaluableNodeIDPath(ocn[0]);
-	if(source_entity == nullptr)
-		return EvaluableNodeReference::Null();
-
 	bool include_rand_seeds = true;
 	if(ocn.size() > 1)
 		include_rand_seeds = InterpretNodeIntoBoolValue(ocn[1]);
@@ -326,11 +321,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FLATTEN_ENTITY(EvaluableNo
 	if(ocn.size() > 2)
 		parallel_create = InterpretNodeIntoBoolValue(ocn[2]);
 
-#ifdef MULTITHREAD_SUPPORT
-	//TODO 10975: move this into the entity access above and lock all contained entities
-	auto read_lock = source_entity->CreateEntityLock<Concurrency::ReadLock>();
-#endif
-
+	//get the id of the first source entity
+	EntityReadReference source_entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
+	if(source_entity == nullptr)
+		return EvaluableNodeReference::Null();
+	
 	return EntityManipulation::FlattenEntity(this, source_entity, include_rand_seeds, parallel_create);
 }
 
@@ -346,7 +341,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 		return EvaluableNodeReference::Null();
 
 	//get the id of the first source entity
-	Entity *source_entity = InterpretNodeIntoRelativeSourceEntityFromInterpretedEvaluableNodeIDPath(ocn[0]);
+	//TODO 10975: change this to lock all entities at once
+	EntityReadReference source_entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
 	//need a source entity, and can't copy self! (that could cause badness)
 	if(source_entity == nullptr || source_entity == curEntity)
 		return EvaluableNodeReference::Null();
@@ -422,13 +418,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY_ENTITIES(Evalu
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
+	//TODO 10975: change this to lock all entities at once
 	//get the id of the first source entity
-	Entity *source_entity_1 = InterpretNodeIntoRelativeSourceEntityFromInterpretedEvaluableNodeIDPath(ocn[0]);
+	Entity *source_entity_1 = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
 	if(source_entity_1 == nullptr)
 		return EvaluableNodeReference::Null();
 
 	//get the id of the second source entity
-	Entity *source_entity_2 = InterpretNodeIntoRelativeSourceEntityFromInterpretedEvaluableNodeIDPath(ocn[1]);
+	Entity *source_entity_2 = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[1]);
 	if(source_entity_2 == nullptr)
 		return EvaluableNodeReference::Null();
 
@@ -443,13 +440,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE_ENTITIES(Eva
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
+	//TODO 10975: change this to lock all entities at once
 	//get the id of the first source entity
-	Entity *source_entity_1 = InterpretNodeIntoRelativeSourceEntityFromInterpretedEvaluableNodeIDPath(ocn[0]);
+	Entity *source_entity_1 = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
 	if(source_entity_1 == nullptr)
 		return EvaluableNodeReference::Null();
 
 	//get the id of the second source entity
-	Entity *source_entity_2 = InterpretNodeIntoRelativeSourceEntityFromInterpretedEvaluableNodeIDPath(ocn[1]);
+	Entity *source_entity_2 = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[1]);
 	if(source_entity_2 == nullptr)
 		return EvaluableNodeReference::Null();
 
@@ -468,14 +466,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT_ENTITIES(Evaluab
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
+	//TODO 10975: change this to lock all entities at once
 	//get the id of the first source entity
-	Entity *source_entity_1 = InterpretNodeIntoRelativeSourceEntityFromInterpretedEvaluableNodeIDPath(ocn[0]);
+	Entity *source_entity_1 = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
 	//need a source entity, and can't copy self! (that could cause badness)
 	if(source_entity_1 == nullptr || source_entity_1 == curEntity)
 		return EvaluableNodeReference::Null();
 
 	//get the id of the second source entity
-	Entity *source_entity_2 = InterpretNodeIntoRelativeSourceEntityFromInterpretedEvaluableNodeIDPath(ocn[1]);
+	Entity *source_entity_2 = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[1]);
 	//need a source entity, and can't copy self! (that could cause badness)
 	if(source_entity_2 == nullptr || source_entity_2 == curEntity)
 		return EvaluableNodeReference::Null();
@@ -520,14 +519,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION_ENTITIES(EvaluableNo
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
+	//TODO 10975: change this to lock all entities at once
 	//get the id of the first source entity
-	Entity *source_entity_1 = InterpretNodeIntoRelativeSourceEntityFromInterpretedEvaluableNodeIDPath(ocn[0]);
+	Entity *source_entity_1 = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
 	//need a source entity, and can't copy self! (that could cause badness)
 	if(source_entity_1 == nullptr || source_entity_1 == curEntity)
 		return EvaluableNodeReference::Null();
 
 	//get the id of the second source entity
-	Entity *source_entity_2 = InterpretNodeIntoRelativeSourceEntityFromInterpretedEvaluableNodeIDPath(ocn[1]);
+	Entity *source_entity_2 = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[1]);
 	//need a source entity, and can't copy self! (that could cause badness)
 	if(source_entity_2 == nullptr || source_entity_2 == curEntity)
 		return EvaluableNodeReference::Null();
@@ -568,14 +568,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DIFFERENCE_ENTITIES(Evalua
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
+	//TODO 10975: change this to lock all entities at once
 	//get the id of the first source entity
-	Entity *entity_1 = InterpretNodeIntoRelativeSourceEntityFromInterpretedEvaluableNodeIDPath(ocn[0]);
+	Entity *entity_1 = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
 	//need a source entity, and can't copy self! (that could cause badness)
 	if(entity_1 == nullptr || entity_1 == curEntity)
 		return EvaluableNodeReference::Null();
 
 	//get the id of the second source entity
-	Entity *entity_2 = InterpretNodeIntoRelativeSourceEntityFromInterpretedEvaluableNodeIDPath(ocn[1]);
+	Entity *entity_2 = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[1]);
 	//need a source entity, and can't copy self! (that could cause badness)
 	if(entity_2 == nullptr || entity_2 == curEntity)
 		return EvaluableNodeReference::Null();
@@ -594,14 +595,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
+	//TODO 10975: change this to lock all entities at once
 	//get the id of the first source entity
-	Entity *source_entity_1 = InterpretNodeIntoRelativeSourceEntityFromInterpretedEvaluableNodeIDPath(ocn[0]);
+	Entity *source_entity_1 = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
 	//need a source entity, and can't copy self! (that could cause badness)
 	if(source_entity_1 == nullptr || source_entity_1 == curEntity)
 		return EvaluableNodeReference::Null();
 
 	//get the id of the second source entity
-	Entity *source_entity_2 = InterpretNodeIntoRelativeSourceEntityFromInterpretedEvaluableNodeIDPath(ocn[1]);
+	Entity *source_entity_2 = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[1]);
 	//need a source entity, and can't copy self! (that could cause badness)
 	if(source_entity_2 == nullptr || source_entity_2 == curEntity)
 		return EvaluableNodeReference::Null();

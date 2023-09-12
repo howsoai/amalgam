@@ -56,12 +56,14 @@ public:
 	// Uses max_num_nodes as the maximum number of nodes that can be allocated in memory by this and any subordinate operations called. If max_num_nodes is 0, then it will allow unlimited allocations
 	// If on_self is true, then it will be allowed to access private variables
 	// If locked_memory_modification_lock is specified, then it will unlock it prior to the execution, but lock it again before
+	// If entity_write_lock is specified, then it will unlock prior to execution after locked_memory_modification_lock is locked
 	// potentially writing anything out to destination_temp_enm
 	EvaluableNodeReference Execute(ExecutionCycleCount max_num_steps, ExecutionCycleCount &num_steps_executed, size_t max_num_nodes, size_t &num_nodes_allocated,
 		std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
 		EvaluableNode *call_stack = nullptr, bool on_self = false, EvaluableNodeManager *destination_temp_enm = nullptr,
 	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::ReadLock *locked_memory_modification_lock = nullptr,
+		Concurrency::WriteLock *entity_write_lock = nullptr,
 	#endif
 		StringInternPool::StringID label_sid = StringInternPool::NOT_A_STRING_ID,
 		Interpreter *calling_interpreter = nullptr);
@@ -73,6 +75,7 @@ public:
 		EvaluableNode *call_stack, bool on_self, EvaluableNodeManager *destination_temp_enm,
 	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::ReadLock *locked_memory_modification_lock,
+		Concurrency::WriteLock *entity_write_lock,
 	#endif
 		const std::string &label_name,
 		Interpreter *calling_interpreter = nullptr)
@@ -81,7 +84,7 @@ public:
 		return Execute(max_num_steps, num_steps_executed, max_num_nodes, num_nodes_allocated, write_listeners, print_listener,
 			call_stack, on_self, destination_temp_enm,
 		#ifdef MULTITHREAD_SUPPORT
-			locked_memory_modification_lock,
+			locked_memory_modification_lock, entity_write_lock,
 		#endif
 			label_sid, calling_interpreter);
 	}
@@ -189,7 +192,7 @@ public:
 	// if num_new_nodes_allocated is not null, then it will be set to the total amount of new memory taken up by the entity at the end of the call
 	// other parameters match those of SetValueAtLabel, and will call SetValueAtLabel with batch_call = true
 	// if copy_entity is true, then it will make a full copy of the entity before setting the labels in a copy-on-write fashion (for concurrent access)
-	std::pair<bool, bool> SetValuesAtLabels(EvaluableNodeReference &new_label_values, bool accum_values, bool direct_set,
+	std::pair<bool, bool> SetValuesAtLabels(EvaluableNodeReference new_label_values, bool accum_values, bool direct_set,
 		std::vector<EntityWriteListener *> *write_listeners, size_t *num_new_nodes_allocated, bool on_self, bool copy_entity);
 
 	//Rebuilds label index for retrieval
@@ -306,6 +309,7 @@ public:
 	//returns a list of all entities contained, all entities they contain, etc.
 	//the returned vector will include a nullptr after each group of entities that are all contained
 	// by the same entity
+	//TODO 10975: update this for read locks as appropriate
 	inline std::vector<Entity *> GetAllDeeplyContainedEntitiesGrouped()
 	{
 		std::vector<Entity *> entities;
@@ -805,6 +809,7 @@ protected:
 template<typename LockType>
 class EntityReferenceWithLock : public EntityReferenceBase
 {
+public:
 	EntityReferenceWithLock() : EntityReferenceBase()
 	{	}
 
@@ -812,9 +817,10 @@ class EntityReferenceWithLock : public EntityReferenceBase
 	{
 		if(e != nullptr)
 			lock = e->CreateEntityLock<LockType>();
+		else
+			lock = LockType();
 	}
 
-protected:
 	LockType lock;
 };
 

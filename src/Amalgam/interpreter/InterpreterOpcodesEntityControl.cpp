@@ -25,19 +25,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	Entity *target_entity = curEntity;
 	auto &ocn = en->GetOrderedChildNodes();
 
+	EntityReadReference target_entity;
 	if(ocn.size() > 0)
-		target_entity = InterpretNodeIntoRelativeSourceEntityFromInterpretedEvaluableNodeIDPath(ocn[0]);
+		target_entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
+	else
+		target_entity = EntityReadReference(curEntity);
 
 	if(target_entity == nullptr)
 		return EvaluableNodeReference::Null();
-
-#ifdef MULTITHREAD_SUPPORT
-	//TODO 10975: move this into the entity access above
-	auto read_lock = target_entity->CreateEntityLock<Concurrency::ReadLock>();
-#endif
 
 	StringInternPool::StringID label_sid = StringInternPool::NOT_A_STRING_ID;
 	if(ocn.size() > 1)
@@ -118,19 +115,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_ENTITY_ROOT(Evalu
 		return EvaluableNodeReference::Null();
 
 	//get entity by id parameter if exists
-	Entity *target_entity = curEntity;
+	EntityReadReference target_entity;
 	auto &ocn = en->GetOrderedChildNodes();
-
 	if(ocn.size() > 0)
-	{
-		auto id_path_node = InterpretNodeForImmediateUse(ocn[0]);
-		//if there's a path, then overwrite the entity with something new, otherwise leave as curEntity
-		if(id_path_node != nullptr)
-		{
-			target_entity = TraverseToExistingEntityViaEvaluableNodeIDPath(curEntity, id_path_node);
-			evaluableNodeManager->FreeNodeTreeIfPossible(id_path_node);
-		}
-	}
+		target_entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
+	else 
+		target_entity = EntityReadReference(curEntity);
 
 	if(target_entity == nullptr)
 		return EvaluableNodeReference::Null();
@@ -159,24 +149,31 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_AC
 
 	for(size_t i = 0; i < ocn.size(); i += 2)
 	{
-		Entity *target_entity = curEntity;
-		if(i + 1 < ocn.size())
-		{
-			target_entity = InterpretNodeIntoRelativeSourceEntityFromInterpretedEvaluableNodeIDPath(ocn[i]);
-
-			//if didn't find an entity, then use current one
-			if(target_entity == nullptr)
-			{
-				all_assignments_successful = false;
-				continue;
-			}
-		}
-
+		//get value to assign first before getting the entity in case it needs to be locked
 		EvaluableNodeReference new_code = EvaluableNodeReference::Null();
 		if(i + 1 < ocn.size())
 			new_code = InterpretNode(ocn[i + 1]);
 		else
 			new_code = InterpretNode(ocn[i]);
+		auto node_stack = CreateInterpreterNodeStackStateSaver(new_code);
+
+		EntityWriteReference target_entity;
+		if(i + 1 < ocn.size())
+		{
+			target_entity = InterpretNodeIntoRelativeSourceEntityWriteReferenceFromInterpretedEvaluableNodeIDPath(ocn[i]);
+
+			//if didn't find an entity, then use current one
+			if(target_entity == nullptr)
+			{
+				all_assignments_successful = false;
+				evaluableNodeManager->FreeNodeTreeIfPossible(new_code);
+				continue;
+			}
+		}
+		else
+		{
+			target_entity = EntityWriteReference(curEntity);
+		}
 
 		if(accum)
 		{
@@ -227,14 +224,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_RAND_SEED(Evalu
 		return EvaluableNodeReference::Null();
 
 	//get the id of the entity
-	Entity *entity = InterpretNodeIntoRelativeSourceEntityFromInterpretedEvaluableNodeIDPath(ocn[0]);
+	EntityReadReference entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
 	if(entity == nullptr)
 		return EvaluableNodeReference::Null();
-
-#ifdef MULTITHREAD_SUPPORT
-	//TODO 10975: move this into the entity access above
-	auto read_lock = entity->CreateEntityLock<Concurrency::ReadLock>();
-#endif
 
 	std::string rand_state_string = entity->GetRandomState();
 	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, rand_state_string), true);
@@ -252,36 +244,29 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED(Evalu
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	//the opcode parameter index of the seed
-	size_t seed_param_index = 0;
-
-	//get the entity
-	Entity *entity = curEntity;
-	if(num_params > 1)
-	{
-		entity = InterpretNodeIntoRelativeSourceEntityFromInterpretedEvaluableNodeIDPath(ocn[0]);
-		seed_param_index++;
-	}
-
-	if(entity == nullptr)
-		return EvaluableNodeReference::Null();
-
 	//retrieve parameter to determine whether to deep set the seeds, if applicable
 	bool deep_set = true;
 	if(num_params == 3)
 		deep_set = InterpretNodeIntoBoolValue(ocn[2], true);
 
-	auto seed_node = InterpretNode(ocn[seed_param_index]);
+	//the opcode parameter index of the seed
+	auto seed_node = InterpretNodeForImmediateUse(ocn[num_params > 1 ? 1 : 0]);
 	std::string seed_string;
 	if(seed_node != nullptr && seed_node->GetType() == ENT_STRING)
 		seed_string = seed_node->GetStringValue();
 	else
 		seed_string = Parser::Unparse(seed_node, evaluableNodeManager, false, false, true);
+	auto node_stack = CreateInterpreterNodeStackStateSaver(seed_node);
 
-#ifdef MULTITHREAD_SUPPORT
-	//TODO 10975: move this into the entity access above and, if deep_set is true, lock all contained entities
-	auto write_lock = entity->CreateEntityLock<Concurrency::WriteLock>();
-#endif
+	//get the entity
+	EntityWriteReference entity;
+	if(num_params > 1)
+		entity = InterpretNodeIntoRelativeSourceEntityWriteReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
+	else
+		entity = EntityWriteReference(curEntity);
+
+	if(entity == nullptr)
+		return EvaluableNodeReference::Null();
 
 	entity->SetRandomState(seed_string, deep_set, writeListeners);
 
@@ -299,7 +284,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_ROOT_PERMISSION
 		return EvaluableNodeReference::Null();
 
 	//get the id of the entity
-	Entity *entity = InterpretNodeIntoRelativeSourceEntityFromInterpretedEvaluableNodeIDPath(ocn[0]);
+	EntityReadReference entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
 	if(entity == nullptr)
 		return EvaluableNodeReference::Null();
 
@@ -320,7 +305,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_ROOT_PERMISSION
 
 	//get the id of the entity
 	auto id_node = InterpretNode(ocn[0]);
-	Entity *entity = TraverseToExistingEntityViaEvaluableNodeIDPath(curEntity, id_node);
+	EntityWriteReference entity = TraverseToExistingEntityWriteReferenceViaEvaluableNodeIDPath(curEntity, id_node);
 
 	asset_manager.SetRootPermission(entity, permission);
 
@@ -405,10 +390,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CLONE_ENTITIES(EvaluableNo
 	new_entity_ids_list->ReserveOrderedChildNodes((ocn.size() + 1) / 2);
 	auto node_stack = CreateInterpreterNodeStackStateSaver(new_entity_ids_list);
 
+	//TODO 10975: change this to lock all entities at once
 	for(size_t i = 0; i < ocn.size(); i += 2)
 	{
 		//get the id of the source entity
-		Entity *source_entity = InterpretNodeIntoRelativeSourceEntityFromInterpretedEvaluableNodeIDPath(ocn[i]);
+		Entity *source_entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[i]);
 		//need a source entity, and can't copy self! (that could cause badness)
 		if(source_entity == nullptr || source_entity == curEntity)
 		{
@@ -727,9 +713,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 		return EvaluableNodeReference::Null();
 
 	//get the id of the source entity to store.  Don't need to keep the reference because it won't be used once the source entety pointer is looked up
-	auto source_id_node = InterpretNodeForImmediateUse(ocn[1]);
-	Entity *source_entity = TraverseToExistingEntityViaEvaluableNodeIDPath(curEntity, source_id_node);
-	evaluableNodeManager->FreeNodeTreeIfPossible(source_id_node);
+	EntityReadReference source_entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[1]);
 
 	if(source_entity == nullptr || source_entity == curEntity)
 		return EvaluableNodeReference::Null();

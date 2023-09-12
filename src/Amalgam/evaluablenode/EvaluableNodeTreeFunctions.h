@@ -79,7 +79,63 @@ void TraverseToEntityViaEvaluableNodeIDPath(Entity *container, EvaluableNode *id
 
 //Starts at the container specified and traverses the id list specified, finding the relative Entity from container
 // if id_path does not exist or is invalid then returns nullptr
-Entity *TraverseToExistingEntityViaEvaluableNodeIDPath(Entity *container, EvaluableNode *id_path);
+template<typename EntityReferenceType>
+EntityReferenceType TraverseToExistingEntityReferenceViaEvaluableNodeIDPath(Entity *container, EvaluableNode *id_path)
+{
+	if(container == nullptr)
+		return EntityReferenceType(nullptr);
+
+	if(EvaluableNode::IsEmptyNode(id_path))
+		return EntityReferenceType(container);
+
+	auto &ocn = id_path->GetOrderedChildNodes();
+
+	//always keep one to two locks active at once to walk down the entity containers
+	EntityReadReference relative_entity_read(container);
+
+	if(ocn.size() == 0)
+	{
+		//if the string doesn't exist, then there can't be an entity with that name
+		StringInternPool::StringID sid = EvaluableNode::ToStringIDIfExists(id_path);
+		return EntityReferenceType(container->GetContainedEntity(sid));
+	}
+
+	size_t last_ce = ocn.size();
+	for(size_t i = 0; i < last_ce; i++)
+	{
+		EvaluableNode *cn = ocn[i];
+		//if the string doesn't exist, then there can't be an entity with that name
+		StringInternPool::StringID sid = EvaluableNode::ToStringIDIfExists(cn);
+		if(i + 1 == last_ce)
+		{
+			//last reference, use destination type
+			return EntityReferenceType(relative_entity_read->GetContainedEntity(sid));
+		}
+		else
+		{
+			//assignment should keep both read locks simultaneously
+			relative_entity_read = relative_entity_read->GetContainedEntity(sid);
+			//if doesn't exist, exit gracefully
+			if(relative_entity_read == nullptr)
+				return EntityReferenceType(nullptr);
+		}
+	}
+
+	//shouldn't make it here
+	return EntityReferenceType(nullptr);
+}
+
+//like TraverseToExistingEntityReferenceViaEvaluableNodeIDPath but returns EntityReadReference
+inline EntityReadReference TraverseToExistingEntityReadReferenceViaEvaluableNodeIDPath(Entity *container, EvaluableNode *id_path)
+{
+	return TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReadReference>(container, id_path);
+}
+
+//like TraverseToExistingEntityReferenceViaEvaluableNodeIDPath but returns EntityWriteReference
+inline EntityWriteReference TraverseToExistingEntityWriteReferenceViaEvaluableNodeIDPath(Entity *container, EvaluableNode *id_path)
+{
+	return TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityWriteReference>(container, id_path);
+}
 
 //Like TraverseToEntityViaEvaluableNodeIDPath, except ensures that the final destination does not exist (or if it does, it will place it within the entity specified
 //Note that destination_id is allocated in the string_intern_pool, and the caller is responsible for freeing the allocation

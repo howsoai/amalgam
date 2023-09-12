@@ -4,6 +4,7 @@
 #include "Entity.h"
 #include "EvaluableNode.h"
 #include "EvaluableNodeManagement.h"
+#include "EvaluableNodeTreeFunctions.h"
 #include "FastMath.h"
 #include "Parser.h"
 #include "PerformanceProfiler.h"
@@ -288,7 +289,34 @@ public:
 	}
 
 	//Interprets node_id_path_to_interpret and then attempts to find the Entity relative to curEntity. Returns nullptr if cannot find
-	Entity *InterpretNodeIntoRelativeSourceEntityFromInterpretedEvaluableNodeIDPath(EvaluableNode *node_id_path_to_interpret);
+	template<typename EntityReferenceType>
+	EntityReferenceType InterpretNodeIntoRelativeSourceEntityReferenceFromInterpretedEvaluableNodeIDPath(EvaluableNode *node_id_path_to_interpret)
+	{
+		if(curEntity == nullptr)
+			return EntityReferenceType(nullptr);
+
+		if(EvaluableNode::IsEmptyNode(node_id_path_to_interpret))
+			return EntityReferenceType(curEntity);
+
+		//only need to interpret if not idempotent
+		EvaluableNodeReference source_id_node = InterpretNodeForImmediateUse(node_id_path_to_interpret);
+		EntityReferenceType source_entity = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReferenceType>(curEntity, source_id_node);
+		evaluableNodeManager->FreeNodeTreeIfPossible(source_id_node);
+
+		return source_entity;
+	}
+
+	//like InterpretNodeIntoRelativeSourceEntityReferenceFromInterpretedEvaluableNodeIDPath but with a read reference
+	inline EntityReadReference InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(EvaluableNode *node_id_path_to_interpret)
+	{
+		return InterpretNodeIntoRelativeSourceEntityReferenceFromInterpretedEvaluableNodeIDPath<EntityReadReference>(node_id_path_to_interpret);
+	}
+
+	//like InterpretNodeIntoRelativeSourceEntityReferenceFromInterpretedEvaluableNodeIDPath but with a write reference
+	inline EntityWriteReference InterpretNodeIntoRelativeSourceEntityWriteReferenceFromInterpretedEvaluableNodeIDPath(EvaluableNode *node_id_path_to_interpret)
+	{
+		return InterpretNodeIntoRelativeSourceEntityReferenceFromInterpretedEvaluableNodeIDPath<EntityWriteReference>(node_id_path_to_interpret);
+	}
 
 protected:
 
@@ -439,6 +467,8 @@ protected:
 	//returns true if it is able to interpret the nodes concurrently
 	bool InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node, std::vector<EvaluableNode *> &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes);
 
+#endif
+
 	//returns false if this or any calling interpreter is currently running on the entity specified or if there is any active concurrency
 	// actively editing an entity's EvaluableNode data can cause memory errors if being accessed elsewhere, so a copy must be made
 	bool IsEntitySafeForModification(Entity *entity)
@@ -446,14 +476,17 @@ protected:
 		for(Interpreter *cur_interpreter = this; cur_interpreter != nullptr; cur_interpreter = cur_interpreter->callingInterpreter)
 		{
 			//if accessing the entity or have multiple threads, can't ensure safety
-			if(cur_interpreter->curEntity == entity || cur_interpreter->callStackSharedAccessStartingDepth > 0)
+			if(cur_interpreter->curEntity == entity)
 				return false;
+
+		#ifdef MULTITHREAD_SUPPORT
+			if(cur_interpreter->callStackSharedAccessStartingDepth > 0)
+				return false;
+		#endif
 		}
 
 		return true;
 	}
-
-#endif
 
 	//recalculates curNumExecutionNodes
 	__forceinline void UpdateCurNumExecutionNodes()

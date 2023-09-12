@@ -64,7 +64,7 @@ void EntityExternalInterface::ExecuteEntity(std::string &handle, std::string &la
 	bundle->entity->Execute(max_num_steps, num_steps_executed, max_num_nodes, num_nodes_allocated, &bundle->writeListeners, bundle->printListener,
 		nullptr, false, nullptr,
 	#ifdef MULTITHREAD_SUPPORT
-		nullptr,
+		nullptr, nullptr,
 	#endif
 		label);
 }
@@ -545,7 +545,7 @@ std::string EntityExternalInterface::ExecuteEntityJSON(std::string &handle, std:
 	EvaluableNodeReference returned_value = bundle->entity->Execute(max_num_steps, num_steps_executed, max_num_nodes,
 		num_nodes_allocated, &bundle->writeListeners, bundle->printListener, call_stack, false, enm,
 	#ifdef MULTITHREAD_SUPPORT
-		nullptr,
+		nullptr, nullptr,
 	#endif
 		label);
 

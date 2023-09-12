@@ -115,13 +115,6 @@ EvaluableNodeReference Entity::GetValueAtLabel(StringInternPool::StringID label_
 	if(!on_self && IsLabelPrivate(label_sid))
 		return EvaluableNodeReference::Null();
 
-#ifdef MULTITHREAD_SUPPORT
-	//don't lock if batch_call is set
-	Concurrency::ReadLock lock(mutex, std::defer_lock);
-	if(!batch_call)
-		lock.lock();
-#endif
-
 	const auto &label = labelIndex.find(label_sid);
 
 	if(label == end(labelIndex))
@@ -339,7 +332,7 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 }
 
 //like SetValuesAtLabels, except accumulates each value at each label instead
-std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference &new_label_values, bool accum_values, bool direct_set,
+std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label_values, bool accum_values, bool direct_set,
 	std::vector<EntityWriteListener *> *write_listeners, size_t *num_new_nodes_allocated, bool on_self, bool copy_entity)
 {
 	//can only work with assoc arrays
@@ -422,7 +415,8 @@ EvaluableNodeReference Entity::Execute(ExecutionCycleCount max_num_steps, Execut
 	EvaluableNode *call_stack, bool on_self, EvaluableNodeManager *destination_temp_enm,
 #ifdef MULTITHREAD_SUPPORT
 	Concurrency::ReadLock *locked_memory_modification_lock,
-#endif	
+	Concurrency::WriteLock *entity_write_lock,
+#endif
 	StringInternPool::StringID label_sid, Interpreter *calling_interpreter)
 {
 	if(!on_self && IsLabelPrivate(label_sid))
@@ -431,8 +425,6 @@ EvaluableNodeReference Entity::Execute(ExecutionCycleCount max_num_steps, Execut
 #ifdef MULTITHREAD_SUPPORT
 	if(locked_memory_modification_lock != nullptr)
 		locked_memory_modification_lock->unlock();
-
-	Concurrency::WriteLock write_lock(mutex);
 #endif
 
 	EvaluableNode *node_to_execute = nullptr;
@@ -464,7 +456,8 @@ EvaluableNodeReference Entity::Execute(ExecutionCycleCount max_num_steps, Execut
 
 #ifdef MULTITHREAD_SUPPORT
 	interpreter.memoryModificationLock = Concurrency::ReadLock(interpreter.evaluableNodeManager->memoryModificationMutex);
-	write_lock.unlock();
+	if(entity_write_lock != nullptr)
+		entity_write_lock->unlock();
 #endif
 
 	EvaluableNodeReference retval = interpreter.ExecuteNode(node_to_execute, call_stack);
@@ -591,11 +584,6 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, StringInternPoo
 	if(t == nullptr)
 		return StringInternPool::NOT_A_STRING_ID;
 
-#ifdef MULTITHREAD_SUPPORT
-	Concurrency::WriteLock lock(mutex);
-	Concurrency::WriteLock lock_t(t->mutex);
-#endif
-
 	EnsureHasContainedEntities();
 
 	auto &id_to_index_lookup = entityRelationships.relationships->containedEntityStringIdToIndex;
@@ -642,15 +630,6 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, StringInternPoo
 
 	t->SetEntityContainer(this);
 
-#ifdef MULTITHREAD_SUPPORT
-	//relock the contained entity for read-only
-	// do this while the this, the container, remains exclusively locked to prevent something else from editing it
-	lock_t.unlock();
-	Concurrency::ReadLock read_lock_t(t->mutex);
-	////done writing to the this entity, the container
-	lock.unlock();
-#endif
-
 	EntityQueryManager::AddEntity(this, t, t_index);
 
 	if(write_listeners != nullptr)
@@ -667,11 +646,6 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, std::string id_
 {
 	if(t == nullptr)
 		return StringInternPool::NOT_A_STRING_ID;
-
-#ifdef MULTITHREAD_SUPPORT
-	Concurrency::WriteLock lock(mutex);
-	Concurrency::WriteLock lock_t(t->mutex);
-#endif
 
 	EnsureHasContainedEntities();
 
@@ -721,15 +695,6 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, std::string id_
 
 	t->SetEntityContainer(this);
 
-#ifdef MULTITHREAD_SUPPORT
-	//relock the contained entity for read-only
-	// do this while the this, the container, remains exclusively locked to prevent something else from editing it
-	lock_t.unlock();
-	Concurrency::ReadLock read_lock_t(t->mutex);
-	//done writing to the this entity, the container
-	lock.unlock();
-#endif
-
 	EntityQueryManager::AddEntity(this, t, t_index);
 
 	if(write_listeners != nullptr)
@@ -745,11 +710,6 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, std::string id_
 
 void Entity::RemoveContainedEntity(StringInternPool::StringID id, std::vector<EntityWriteListener *> *write_listeners)
 {
-
-#ifdef MULTITHREAD_SUPPORT
-	Concurrency::WriteLock write_lock(mutex);
-#endif
-
 	if(!hasContainedEntities)
 		return;
 
@@ -889,31 +849,16 @@ void Entity::SetRandomStream(const RandomStream &new_stream, std::vector<EntityW
 
 std::string Entity::CreateOtherRandomStreamStateViaString(const std::string &seed_string)
 {
-	//TODO 10975: move this up/out a layer to what is handling the Entity
-#ifdef MULTITHREAD_SUPPORT
-	Concurrency::ReadLock read_lock(mutex);
-#endif
-
 	return randomStream.CreateOtherStreamStateViaString(seed_string);
 }
 
 RandomStream Entity::CreateOtherRandomStreamViaString(const std::string &seed_string)
 {
-	//TODO 10975: move this up/out a layer to what is handling the Entity
-#ifdef MULTITHREAD_SUPPORT
-	Concurrency::ReadLock read_lock(mutex);
-#endif
-
 	return randomStream.CreateOtherStreamViaString(seed_string);
 }
 
 RandomStream Entity::CreateOtherRandomStreamViaRand()
 {
-	//TODO 10975: move this up/out a layer to what is handling the Entity
-#ifdef MULTITHREAD_SUPPORT
-	Concurrency::WriteLock write_lock(mutex);
-#endif
-
 	return randomStream.CreateOtherStreamViaRand();
 }
 
@@ -966,10 +911,6 @@ void Entity::SetRoot(std::string &code_string, EvaluableNodeManager::EvaluableNo
 
 void Entity::AccumRoot(EvaluableNode *accum_code, bool allocated_with_entity_enm, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier, std::vector<EntityWriteListener *> *write_listeners)
 {
-#ifdef MULTITHREAD_SUPPORT
-	Concurrency::WriteLock write_lock(mutex);
-#endif
-
 	if( !(allocated_with_entity_enm && metadata_modifier == EvaluableNodeManager::ENMM_NO_CHANGE))
 	{
 		auto code_copy = evaluableNodeManager.DeepAllocCopy(accum_code, metadata_modifier);
@@ -1047,10 +988,6 @@ void Entity::AccumRoot(EvaluableNode *accum_code, bool allocated_with_entity_enm
 
 void Entity::GetAllDeeplyContainedEntitiesGroupedRecurse(std::vector<Entity *> &entities)
 {
-#ifdef MULTITHREAD_SUPPORT
-	Concurrency::ReadLock lock(mutex);
-#endif
-
 	if(!hasContainedEntities)
 		return;
 

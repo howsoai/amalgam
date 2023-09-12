@@ -1657,27 +1657,36 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 				auto second_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
 				std::swap(n->GetOrderedChildNodes()[first_index], n->GetOrderedChildNodes()[second_index]);
 			}
-			else if(n->GetMappedChildNodes().size() > 0)
+			else if(n->GetMappedChildNodes().size() > 1)
 			{
-				size_t num_child_nodes = n->GetMappedChildNodesReference().size();
+				auto &n_mcn = n->GetMappedChildNodesReference();
+				size_t num_child_nodes = n_mcn.size();
 				auto first_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
 				auto second_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
 
-				auto first_entry = begin(n->GetMappedChildNodes());
-				while(first_index > 0 && first_entry != end(n->GetMappedChildNodes()))
+				auto first_entry = begin(n_mcn);
+				auto first_key = string_intern_pool.EMPTY_STRING_ID;
+				while(first_index > 0 && first_entry != end(n_mcn))
 				{
 					first_entry++;
 					first_index++;
 				}
+				first_key = first_entry->first;
 
-				auto second_entry = begin(n->GetMappedChildNodes());
-				while(second_index > 0 && second_entry != end(n->GetMappedChildNodes()))
+				auto second_entry = begin(n_mcn);
+				auto second_key = string_intern_pool.EMPTY_STRING_ID;
+				while(second_index > 0 && second_entry != end(n_mcn))
 				{
 					second_entry++;
 					second_index++;
 				}
+				second_key = second_entry->first;
 
-				std::swap(first_entry->second, second_entry->second);
+				//need to do a manual swap because the first iterator is invalidated
+				EvaluableNode *temp = n_mcn[second_key];
+				n_mcn[second_key] = n_mcn[first_key];
+				n_mcn[first_key] = temp;
+
 			}
 			break;
 

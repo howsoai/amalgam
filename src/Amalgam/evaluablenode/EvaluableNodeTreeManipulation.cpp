@@ -1664,29 +1664,22 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 				auto first_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
 				auto second_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
 
-				auto first_entry = begin(n_mcn);
-				auto first_key = string_intern_pool.EMPTY_STRING_ID;
-				while(first_index > 0 && first_entry != end(n_mcn))
+				if(first_index != second_index)
 				{
-					first_entry++;
-					first_index++;
+					if(first_index > second_index)
+						std::swap(first_index, second_index);
+
+					auto first_entry = begin(n_mcn);
+					for(size_t i = 0; i < first_index && first_entry != end(n_mcn); i++)
+						++first_entry;
+
+					auto second_entry = first_entry;
+					++second_entry;
+					for(size_t i = first_index + 1; i < second_index && second_entry != end(n_mcn); i++)
+						++second_entry;
+
+					std::swap(first_entry->second, second_entry->second);
 				}
-				first_key = first_entry->first;
-
-				auto second_entry = begin(n_mcn);
-				auto second_key = string_intern_pool.EMPTY_STRING_ID;
-				while(second_index > 0 && second_entry != end(n_mcn))
-				{
-					second_entry++;
-					second_index++;
-				}
-				second_key = second_entry->first;
-
-				//need to do a manual swap because the first iterator is invalidated
-				EvaluableNode *temp = n_mcn[second_key];
-				n_mcn[second_key] = n_mcn[first_key];
-				n_mcn[first_key] = temp;
-
 			}
 			break;
 

@@ -1,7 +1,5 @@
 {
-  // Use IntelliSense to learn about possible attributes.
-  // Hover to view descriptions of existing attributes.
-  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "comment": "Amalgam VSCode Debugging Examples (CMake built)",
   "version": "0.2.0",
   "configurations": [
     {
@@ -10,7 +8,7 @@
       "request": "launch",
       "program": "${command:cmake.launchTargetPath}",
       "args": [ "amlg_code/full_test.amlg" ],
-      "cwd": "${workspaceFolder}/Amalgam/",
+      "cwd": "${workspaceFolder}/src/Amalgam/",
       "stopAtEntry": false
     },
     {
@@ -19,7 +17,17 @@
       "request": "launch",
       "program": "${command:cmake.launchTargetPath}",
       "args": [ "amlg_code/full_test.amlg" ],
-      "cwd": "${workspaceFolder}/Amalgam/",
+      "cwd": "${workspaceFolder}/src/Amalgam/",
+      "stopAtEntry": false
+    },
+    {
+      "name": "debug-macos",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${command:cmake.launchTargetPath}",
+      "args": [ "amlg_code/full_test.amlg" ],
+      "cwd": "${workspaceFolder}/src/Amalgam/",
+      "MIMode": "lldb",
       "stopAtEntry": false
     }
   ]

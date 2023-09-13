@@ -1657,27 +1657,29 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 				auto second_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
 				std::swap(n->GetOrderedChildNodes()[first_index], n->GetOrderedChildNodes()[second_index]);
 			}
-			else if(n->GetMappedChildNodes().size() > 0)
+			else if(n->GetMappedChildNodes().size() > 1)
 			{
-				size_t num_child_nodes = n->GetMappedChildNodesReference().size();
+				auto &n_mcn = n->GetMappedChildNodesReference();
+				size_t num_child_nodes = n_mcn.size();
 				auto first_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
 				auto second_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
 
-				auto first_entry = begin(n->GetMappedChildNodes());
-				while(first_index > 0 && first_entry != end(n->GetMappedChildNodes()))
+				if(first_index != second_index)
 				{
-					first_entry++;
-					first_index++;
-				}
+					if(first_index > second_index)
+						std::swap(first_index, second_index);
 
-				auto second_entry = begin(n->GetMappedChildNodes());
-				while(second_index > 0 && second_entry != end(n->GetMappedChildNodes()))
-				{
-					second_entry++;
-					second_index++;
-				}
+					auto first_entry = begin(n_mcn);
+					for(size_t i = 0; i < first_index && first_entry != end(n_mcn); i++)
+						++first_entry;
 
-				std::swap(first_entry->second, second_entry->second);
+					auto second_entry = first_entry;
+					++second_entry;
+					for(size_t i = first_index + 1; i < second_index && second_entry != end(n_mcn); i++)
+						++second_entry;
+
+					std::swap(first_entry->second, second_entry->second);
+				}
 			}
 			break;
 

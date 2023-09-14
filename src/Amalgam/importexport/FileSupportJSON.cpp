@@ -277,6 +277,32 @@ EvaluableNode *EvaluableNodeJSONTranslation::JsonToEvaluableNode(EvaluableNodeMa
 	auto json_padded = simdjson::padded_string(json_str);
 	auto json_top_element = json_parser.iterate(json_padded);
 
+	//simdjson needs special handling if the top element is a scalar
+	if(json_top_element.is_scalar())
+	{
+		switch(json_top_element.type())
+		{
+		case simdjson::ondemand::json_type::number:
+			return enm->AllocNode(json_top_element.get_double());
+
+		case simdjson::ondemand::json_type::string:
+		{
+			std::string_view str_view = json_top_element.get_string();
+			std::string str(str_view);
+			return enm->AllocNode(ENT_STRING, str);
+		}
+
+		case simdjson::ondemand::json_type::boolean:
+			if(json_top_element.get_bool())
+				return enm->AllocNode(ENT_TRUE);
+			else
+				return enm->AllocNode(ENT_FALSE);
+
+		default:
+			return nullptr;
+		}
+	}
+
 	try
 	{
 		return JsonToEvaluableNodeRecurse(enm, json_top_element);

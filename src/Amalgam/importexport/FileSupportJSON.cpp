@@ -58,10 +58,12 @@ EvaluableNode *JsonToEvaluableNodeRecurse(EvaluableNodeManager *enm, simdjson::o
 	}
 
 	case simdjson::ondemand::json_type::boolean:
+	{
 		if(element.get_bool())
 			return enm->AllocNode(ENT_TRUE);
 		else
 			return enm->AllocNode(ENT_FALSE);
+	}
 
 	case simdjson::ondemand::json_type::null:
 		return nullptr;
@@ -293,10 +295,12 @@ EvaluableNode *EvaluableNodeJSONTranslation::JsonToEvaluableNode(EvaluableNodeMa
 		}
 
 		case simdjson::ondemand::json_type::boolean:
+		{
 			if(json_top_element.get_bool())
 				return enm->AllocNode(ENT_TRUE);
 			else
 				return enm->AllocNode(ENT_FALSE);
+		}
 
 		default:
 			return nullptr;

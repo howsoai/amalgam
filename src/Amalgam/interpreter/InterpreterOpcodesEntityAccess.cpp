@@ -237,7 +237,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 			evaluableNodeManager->FreeNodeTreeIfPossible(assigned_vars);
 			continue;
 		}
-
 		auto node_stack = CreateInterpreterNodeStackStateSaver(assigned_vars);
 
 		EntityWriteReference target_entity;
@@ -316,6 +315,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
+	//get lookup reference
+	size_t lookup_param_index = (ocn.size() > 1 ? 1 : 0);
+	auto to_lookup = InterpretNode(ocn[lookup_param_index]);
+	auto node_stack = CreateInterpreterNodeStackStateSaver(to_lookup);
+
+	bool direct = (en->GetType() == ENT_DIRECT_RETRIEVE_FROM_ENTITY);
+
 	//get the id of the source to check
 	EntityReadReference target_entity;
 	if(ocn.size() > 1)
@@ -325,12 +331,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 
 	if(target_entity == nullptr)
 		return EvaluableNodeReference::Null();
-
-	//get lookup reference
-	size_t lookup_param_index = (ocn.size() > 1 ? 1 : 0);
-	auto to_lookup = InterpretNode(ocn[lookup_param_index]);
-
-	bool direct = (en->GetType() == ENT_DIRECT_RETRIEVE_FROM_ENTITY);
 
 	//get the value(s)
 	if(to_lookup == nullptr || IsEvaluableNodeTypeImmediate(to_lookup->GetType()))
@@ -351,9 +351,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 
 		//need to return an assoc, so see if need to make copy; will overwrite all values
 		if(!to_lookup.unique)
+		{
 			to_lookup = EvaluableNodeReference(evaluableNodeManager->AllocNode(to_lookup), true);
-
-		auto node_stack = CreateInterpreterNodeStackStateSaver(to_lookup);
+			node_stack.PushEvaluableNode(to_lookup);
+		}
 
 		//overwrite values in the ordered 
 		for(auto &[cn_id, cn] : to_lookup->GetMappedChildNodesReference())
@@ -379,9 +380,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 
 		//need to return an assoc, so see if need to make copy; will overwrite all values
 		if(!to_lookup.unique)
+		{
 			to_lookup = EvaluableNodeReference(evaluableNodeManager->AllocNode(to_lookup), true);
-
-		auto node_stack = CreateInterpreterNodeStackStateSaver(to_lookup);
+			node_stack.PushEvaluableNode(to_lookup);
+		}
 
 		//overwrite values in the ordered
 		for(auto &cn : to_lookup->GetOrderedChildNodes())

@@ -236,6 +236,7 @@ int StringNaturalCompare(const std::string &a, const std::string &b)
 
 void TraverseToEntityViaEvaluableNodeIDPath(Entity *container, EvaluableNode *id_path, Entity *&relative_entity_parent, StringInternRef &id, Entity *&relative_entity)
 {
+	//TODO 10975: make this use locks as appropriate
 	relative_entity_parent = nullptr;
 	id = StringInternPool::NOT_A_STRING_ID;
 	relative_entity = nullptr;
@@ -274,36 +275,9 @@ void TraverseToEntityViaEvaluableNodeIDPath(Entity *container, EvaluableNode *id
 	}
 }
 
-Entity *TraverseToExistingEntityViaEvaluableNodeIDPath(Entity *container, EvaluableNode *id_path)
-{
-	if(container == nullptr)
-		return nullptr;
-
-	if(EvaluableNode::IsEmptyNode(id_path))
-		return container;
-
-	if(id_path->GetOrderedChildNodes().size() == 0)
-	{
-		//if the string doesn't exist, then there can't be an entity with that name
-		StringInternPool::StringID sid = EvaluableNode::ToStringIDIfExists(id_path);
-		return container->GetContainedEntity(sid);
-	}
-
-	Entity *relative_entity = container;
-	for(auto &cn : id_path->GetOrderedChildNodes())
-	{
-		//if the string doesn't exist, then there can't be an entity with that name
-		StringInternPool::StringID sid = EvaluableNode::ToStringIDIfExists(cn);
-		relative_entity = relative_entity->GetContainedEntity(sid);
-		if(relative_entity == nullptr)
-			return nullptr;
-	}
-
-	return relative_entity;
-}
-
 void TraverseEntityToNewDestinationViaEvaluableNodeIDPath(Entity *container, EvaluableNode *id_path, Entity *&destination_entity_parent, StringInternRef &destination_id)
 {
+	//TODO 10975: make this use locks as appropriate
 	Entity *destination_entity = nullptr;
 	TraverseToEntityViaEvaluableNodeIDPath(container, id_path, destination_entity_parent, destination_id, destination_entity);
 

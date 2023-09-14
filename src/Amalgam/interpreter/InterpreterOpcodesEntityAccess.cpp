@@ -35,7 +35,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_ENTITY(EvaluableN
 
 	//get the id of the source entity
 	auto source_id_node = InterpretNodeForImmediateUse(ocn[0]);
-	Entity *source_entity = TraverseToExistingEntityViaEvaluableNodeIDPath(curEntity, source_id_node);
+	EntityReadReference source_entity = TraverseToExistingEntityReadReferenceViaEvaluableNodeIDPath(curEntity, source_id_node);
 	evaluableNodeManager->FreeNodeTreeIfPossible(source_id_node);
 
 	return EvaluableNodeReference(evaluableNodeManager->AllocNode(source_entity != nullptr ? 1.0 : 0.0), true);
@@ -49,7 +49,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 
 	bool return_query_value = (en->GetType() == ENT_COMPUTE_ON_CONTAINED_ENTITIES);
 
-	Entity *source_entity = curEntity;
+	EntityReadReference source_entity;
 
 	//parameters to search entities for
 	EvaluableNode *query_params = nullptr;
@@ -68,7 +68,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 			}
 			else //first parameter is the id
 			{
-				source_entity = TraverseToExistingEntityViaEvaluableNodeIDPath(curEntity, first_param);
+				source_entity = TraverseToExistingEntityReadReferenceViaEvaluableNodeIDPath(curEntity, first_param);
 				evaluableNodeManager->FreeNodeTreeIfPossible(first_param);
 
 				if(source_entity == nullptr)
@@ -84,8 +84,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 		}
 	}
 
+	//if haven't determined source_entity, use current
 	if(source_entity == nullptr)
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
+	{
+		//if no entity, can't do anything
+		if(curEntity == nullptr)
+			return EvaluableNodeReference::Null();
+
+		source_entity = EntityReadReference(curEntity);
+	}
 
 	//if no query, just return all contained entities
 	if(query_params == nullptr || query_params->GetOrderedChildNodes().size() == 0)
@@ -188,9 +195,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_LABEL(EvaluableNo
 		return EvaluableNodeReference::Null();
 
 	//get the id of the entity
-	Entity *target_entity = curEntity;
+	EntityReadReference target_entity;
 	if(ocn.size() > 1)
-		target_entity = InterpretNodeIntoRelativeSourceEntityFromInterpretedEvaluableNodeIDPath(ocn[0]);
+		target_entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
+	else
+		target_entity = EntityReadReference(curEntity);
 
 	//if no entity, clean up assignment assoc
 	if(target_entity == nullptr)
@@ -212,59 +221,47 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 
 	auto &ocn = en->GetOrderedChildNodes();
 
+	bool direct = (en->GetType() == ENT_DIRECT_ASSIGN_TO_ENTITIES);
+	bool accum_assignment = (en->GetType() == ENT_ACCUM_TO_ENTITIES);
+
 	bool all_assignments_successful = true;
 	for(size_t i = 0; i < ocn.size(); i += 2)
 	{
-		//get the id of the entity before the variables to assign
-		// so don't need to create a node stack
-		Entity *target_entity = curEntity;
-		if(i + 1 < ocn.size())
+		//get variables to assign
+		size_t assoc_param_index = (i + 1 < ocn.size() ? i + 1 : i);
+		auto assigned_vars = InterpretNode(ocn[assoc_param_index]);
+
+		if(assigned_vars == nullptr || assigned_vars->GetType() != ENT_ASSOC)
 		{
-			auto source_id_node = InterpretNodeForImmediateUse(ocn[i]);
-			target_entity = TraverseToExistingEntityViaEvaluableNodeIDPath(curEntity, source_id_node);
-			evaluableNodeManager->FreeNodeTreeIfPossible(source_id_node);
+			all_assignments_successful = false;
+			evaluableNodeManager->FreeNodeTreeIfPossible(assigned_vars);
+			continue;
 		}
+		auto node_stack = CreateInterpreterNodeStackStateSaver(assigned_vars);
+
+		EntityWriteReference target_entity;
+		if(i + 1 < ocn.size())
+			target_entity = InterpretNodeIntoRelativeSourceEntityWriteReferenceFromInterpretedEvaluableNodeIDPath(ocn[i]);
+		else
+			target_entity = EntityWriteReference(curEntity);
 
 		//if no entity, can't successfully assign
 		if(target_entity == nullptr)
 		{
 			all_assignments_successful = false;
+			evaluableNodeManager->FreeNodeTreeIfPossible(assigned_vars);
 			continue;
 		}
-
-		//get variables to assign
-		size_t assoc_param_index = (i + 1 < ocn.size() ? i + 1 : i);
-		auto assigned_vars = InterpretNode(ocn[assoc_param_index]);
-
-		if(assigned_vars == nullptr)
-		{
-			all_assignments_successful = false;
-			continue;
-		}
-
-		bool direct = (en->GetType() == ENT_DIRECT_ASSIGN_TO_ENTITIES);
-		bool accum_assignment = (en->GetType() == ENT_ACCUM_TO_ENTITIES);
 
 		size_t num_new_nodes_allocated = 0;
-		bool any_successful_assignment = false;
 
-		{ //use a block so lock can go out of scope as appropriate
-		#ifdef MULTITHREAD_SUPPORT
-			auto write_lock = target_entity->CreateEntityLock<Concurrency::WriteLock>();
+		bool copy_entity = IsEntitySafeForModification(target_entity);
 
-			bool copy_entity = IsEntitySafeForModification(target_entity);
-		#else
-			bool copy_entity = false;
-		#endif
+		auto [any_success, all_success] = target_entity->SetValuesAtLabels(
+										assigned_vars, accum_assignment, direct, writeListeners,
+										(AllowUnlimitedExecutionNodes() ? nullptr : &num_new_nodes_allocated), target_entity == curEntity, copy_entity);
 
-			auto [any_success, all_success] = target_entity->SetValuesAtLabels(
-											assigned_vars, accum_assignment, direct, writeListeners,
-											(AllowUnlimitedExecutionNodes() ? nullptr : &num_new_nodes_allocated), target_entity == curEntity, copy_entity);
-
-			any_successful_assignment = any_success;
-		}
-
-		if(any_successful_assignment)
+		if(any_success)
 		{
 			if(!AllowUnlimitedExecutionNodes())
 				curNumExecutionNodesAllocatedToEntities += num_new_nodes_allocated;
@@ -287,10 +284,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 				//ValidateEvaluableNodeIntegrity();
 			}
 		}
-		else
+
+		//if assigning to a different entity and it was unique, it can be cleared
+		if(target_entity != curEntity && assigned_vars.unique)
 		{
-			all_assignments_successful = false;
+			target_entity = EntityWriteReference();
+			node_stack.PopEvaluableNode();
+			evaluableNodeManager->FreeNodeTreeIfPossible(assigned_vars);
 		}
+
+		if(!all_success)
+			all_assignments_successful = false;
 
 		//check this at the end of each iteration in case need to exit
 		if(AreExecutionResourcesExhausted())
@@ -311,19 +315,22 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	//get the id of the source to check
-	Entity *target_entity = curEntity;
-	if(ocn.size() > 1)
-		target_entity = InterpretNodeIntoRelativeSourceEntityFromInterpretedEvaluableNodeIDPath(ocn[0]);
-
-	if(target_entity == nullptr)
-		return EvaluableNodeReference::Null();
-
 	//get lookup reference
 	size_t lookup_param_index = (ocn.size() > 1 ? 1 : 0);
 	auto to_lookup = InterpretNode(ocn[lookup_param_index]);
+	auto node_stack = CreateInterpreterNodeStackStateSaver(to_lookup);
 
 	bool direct = (en->GetType() == ENT_DIRECT_RETRIEVE_FROM_ENTITY);
+
+	//get the id of the source to check
+	EntityReadReference target_entity;
+	if(ocn.size() > 1)
+		target_entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
+	else
+		target_entity = EntityReadReference(curEntity);
+
+	if(target_entity == nullptr)
+		return EvaluableNodeReference::Null();
 
 	//get the value(s)
 	if(to_lookup == nullptr || IsEvaluableNodeTypeImmediate(to_lookup->GetType()))
@@ -344,9 +351,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 
 		//need to return an assoc, so see if need to make copy; will overwrite all values
 		if(!to_lookup.unique)
+		{
 			to_lookup = EvaluableNodeReference(evaluableNodeManager->AllocNode(to_lookup), true);
-
-		auto node_stack = CreateInterpreterNodeStackStateSaver(to_lookup);
+			node_stack.PushEvaluableNode(to_lookup);
+		}
 
 		//overwrite values in the ordered 
 		for(auto &[cn_id, cn] : to_lookup->GetMappedChildNodesReference())
@@ -372,9 +380,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 
 		//need to return an assoc, so see if need to make copy; will overwrite all values
 		if(!to_lookup.unique)
+		{
 			to_lookup = EvaluableNodeReference(evaluableNodeManager->AllocNode(to_lookup), true);
-
-		auto node_stack = CreateInterpreterNodeStackStateSaver(to_lookup);
+			node_stack.PushEvaluableNode(to_lookup);
+		}
 
 		//overwrite values in the ordered
 		for(auto &cn : to_lookup->GetOrderedChildNodes())
@@ -408,10 +417,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	Entity *called_entity = InterpretNodeIntoRelativeSourceEntityFromInterpretedEvaluableNodeIDPath(ocn[0]);
-	if(called_entity == nullptr)
-		return EvaluableNodeReference::Null();
-
 	StringInternPool::StringID entity_label_sid = StringInternPool::NOT_A_STRING_ID;
 	if(ocn.size() > 1)
 		entity_label_sid = InterpretNodeIntoStringIDValueWithReference(ocn[1]);
@@ -430,6 +435,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		num_steps_allowed_specified = true;
 	}
 
+	//compute execution limits
+	if(AllowUnlimitedExecutionSteps() && (!num_steps_allowed_specified || num_steps_allowed == 0))
+		num_steps_allowed = 0;
+	else
+	{
+		//if unlimited steps are allowed, then leave the value as specified, otherwise clamp to what is remaining
+		if(!AllowUnlimitedExecutionSteps())
+			num_steps_allowed = std::min(num_steps_allowed, GetRemainingNumExecutionSteps());
+	}
+
 	//number of execution nodes
 	//evaluate before context so don't need to keep/remove reference for context
 	size_t num_nodes_allowed = GetRemainingNumExecutionNodes();
@@ -438,6 +453,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	{
 		num_nodes_allowed = static_cast<size_t>(InterpretNodeIntoNumberValue(ocn[4]));
 		num_nodes_allowed_specified = true;
+	}
+
+	if(AllowUnlimitedExecutionNodes() && (!num_nodes_allowed_specified || num_nodes_allowed == 0))
+		num_nodes_allowed = 0;
+	else
+	{
+		//if unlimited nodes are allowed, then leave the value as specified, otherwise clamp to what is remaining
+		if(!AllowUnlimitedExecutionNodes())
+			num_nodes_allowed = std::min(num_nodes_allowed, GetRemainingNumExecutionNodes());
 	}
 
 	//attempt to get arguments
@@ -449,12 +473,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		// need to make a copy, and the contained entity should not treat args as unique
 		args.unique = false;
 	}
+	auto node_stack = CreateInterpreterNodeStackStateSaver(args);
+
+	//get a write lock on the entity
+	EntityWriteReference called_entity = InterpretNodeIntoRelativeSourceEntityWriteReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
+	if(called_entity == nullptr)
+		return EvaluableNodeReference::Null();
 
 	EvaluableNodeManager *called_entity_enm = &called_entity->evaluableNodeManager;
 
 	//if have arguments, use them
 	EvaluableNodeReference call_stack = ConvertArgsToCallStack(args, called_entity_enm);
-	auto node_stack = CreateInterpreterNodeStackStateSaver(call_stack);
+	node_stack.PushEvaluableNode(call_stack);
 
 	//current pointer to write listeners
 	std::vector<EntityWriteListener *> *cur_write_listeners = writeListeners;
@@ -470,32 +500,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		cur_write_listeners = &get_changes_write_listeners;
 	}
 
-	//compute execution limits
-	if(AllowUnlimitedExecutionSteps() && (!num_steps_allowed_specified || num_steps_allowed == 0))
-		num_steps_allowed = 0;
-	else
-	{
-		//if unlimited steps are allowed, then leave the value as specified, otherwise clamp to what is remaining
-		if(!AllowUnlimitedExecutionSteps())
-			num_steps_allowed = std::min(num_steps_allowed, GetRemainingNumExecutionSteps());
-	}
-
-	if(AllowUnlimitedExecutionNodes() && (!num_nodes_allowed_specified || num_nodes_allowed == 0))
-		num_nodes_allowed = 0;
-	else
-	{
-		//if unlimited nodes are allowed, then leave the value as specified, otherwise clamp to what is remaining
-		if(!AllowUnlimitedExecutionNodes())
-			num_nodes_allowed = std::min(num_nodes_allowed, GetRemainingNumExecutionNodes());
-	}
-
 	ExecutionCycleCount num_steps_executed = 0;
 	size_t num_nodes_allocated = 0;
 	EvaluableNodeReference retval = called_entity->Execute(num_steps_allowed, num_steps_executed,
 		num_nodes_allowed, num_nodes_allocated,
 		cur_write_listeners, printListener, call_stack, called_entity == curEntity, evaluableNodeManager,
 	#ifdef MULTITHREAD_SUPPORT
-		&memoryModificationLock,
+		&memoryModificationLock, &called_entity.lock,
 	#endif
 		entity_label_sid, this);
 
@@ -543,9 +554,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	Entity *container = curEntity->GetContainer();
+	//lock the current entity
+	EntityReadReference cur_entity(curEntity);
+	StringInternPool::StringID cur_entity_sid = curEntity->GetIdStringId();
+	EntityWriteReference container(curEntity->GetContainer());
 	if(container == nullptr)
 		return EvaluableNodeReference::Null();
+
+	//don't need the curEntity as a reference anymore -- can free the lock
+	cur_entity = EntityReadReference();
 
 	std::string orig_container_label_name = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
 	if(orig_container_label_name == "")
@@ -598,7 +615,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	auto node_stack = CreateInterpreterNodeStackStateSaver(call_stack);
 
 	//add accessing_entity to arguments. If accessing_entity already specified (it shouldn't be), let garbage collection clean it up
-	args->SetMappedChildNode(ENBISI_accessing_entity, container_enm->AllocNode(ENT_STRING, curEntity->GetIdStringId()));
+	args->SetMappedChildNode(ENBISI_accessing_entity, container_enm->AllocNode(ENT_STRING, cur_entity_sid));
 
 	//compute execution limits
 	if(AllowUnlimitedExecutionSteps() && (!num_steps_allowed_specified || num_steps_allowed == 0))
@@ -624,7 +641,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	EvaluableNodeReference retval = container->Execute(num_steps_allowed, num_steps_executed, num_nodes_allowed, num_nodes_allocated,
 		writeListeners, printListener, call_stack, false, evaluableNodeManager,
 	#ifdef MULTITHREAD_SUPPORT
-		&memoryModificationLock,
+		&memoryModificationLock, &container.lock,
 	#endif
 		container_label_name, this);
 

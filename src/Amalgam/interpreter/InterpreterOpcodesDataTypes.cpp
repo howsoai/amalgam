@@ -200,8 +200,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en)
 		return value;
 
 	//if didn't find it in the stack, try it in the labels
-	if(curEntity != nullptr)
-		return curEntity->GetValueAtLabel(sid, nullptr, true, true);
+	EntityReadReference cur_entity_ref(curEntity);
+	if(cur_entity_ref != nullptr)
+		return cur_entity_ref->GetValueAtLabel(sid, nullptr, true, true);
 
 	return EvaluableNodeReference::Null();
 }

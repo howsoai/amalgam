@@ -1,52 +1,53 @@
 {
+  "comment": "Amalgam VisualStudio2022 Debugging Examples (CMake built)",
   "version": "0.2.1",
   "defaults": {},
   "configurations": [
     {
+      "comment": "Windows multi-threaded",
       "type": "exe",
       "project": "CMakeLists.txt",
       "projectTarget": "amalgam-mt.exe",
       "name": "amalgam-mt.exe",
-      "currentDir": "${workspaceRoot}/Amalgam/",
+      "currentDir": "${workspaceRoot}/src/Amalgam/",
       "args": [
         "amlg_code/full_test.amlg"
       ]
     },
     {
+      "comment": "Windows single threaded",
       "type": "exe",
       "project": "CMakeLists.txt",
       "projectTarget": "amalgam-st.exe",
       "name": "amalgam-st.exe",
-      "currentDir": "${workspaceRoot}/Amalgam/",
+      "currentDir": "${workspaceRoot}/src/Amalgam/",
       "args": [
         "amlg_code/full_test.amlg"
       ]
     },
     {
+      "comment": "Remote liunx multi-threaded (WSL: http://aka.ms/vslinuxdebug)",
       "type": "cppgdb",
       "name": "amalgam-mt",
       "project": "CMakeLists.txt",
       "projectTarget": "amalgam-mt",
       "debuggerConfiguration": "gdb",
-      "cwd": "Amalgam/",
+      "cwd": "src/Amalgam/",
       "args": [
         "amlg_code/full_test.amlg"
-      ],
-      "comment": "Learn how to configure WSL debugging. For more info, see http://aka.ms/vslinuxdebug",
-      "env": {}
+      ]
     },
     {
+      "comment": "Remote liunx single threaded (WSL: http://aka.ms/vslinuxdebug)",
       "type": "cppgdb",
       "name": "amalgam-st",
       "project": "CMakeLists.txt",
       "projectTarget": "amalgam-st",
       "debuggerConfiguration": "gdb",
-      "cwd": "Amalgam/",
+      "cwd": "src/Amalgam/",
       "args": [
         "amlg_code/full_test.amlg"
-      ],
-      "comment": "Learn how to configure WSL debugging. For more info, see http://aka.ms/vslinuxdebug",
-      "env": {}
+      ]
     }
   ]
 }

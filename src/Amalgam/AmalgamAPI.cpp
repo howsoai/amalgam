@@ -61,14 +61,14 @@ extern "C"
 		//however and an alternative that returns with minimal amount of allocations that secure should
 		//be explored. wcsncpy_s was explored as an option but is not guaranteed to exist in the STL for
 		//linux.
-#ifdef _MSC_VER
-#pragma warning( push )
-#pragma warning( disable: 4996 )
-#endif
+	#ifdef _MSC_VER
+	#pragma warning( push )
+	#pragma warning( disable: 4996 )
+	#endif
 		wcsncpy(wct, widestr.c_str(), widestr.length());
-#ifdef _MSC_VER
-#pragma warning( pop )
-#endif
+	#ifdef _MSC_VER
+	#pragma warning( pop )
+	#endif
 		return wct;
 	}
 

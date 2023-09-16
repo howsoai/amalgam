@@ -152,17 +152,17 @@ public:
 	__forceinline double ComputeDeviationPart(const double diff, const double deviation)
 	{
 		if(defaultPrecision == ExactApproxValuePair::EXACT)
-	#ifdef DISTANCE_USE_LAPLACE_LK_METRIC
+		#ifdef DISTANCE_USE_LAPLACE_LK_METRIC
 			return ComputeDeviationPartLaplace(diff, deviation);
-	#else
+		#else
 			return ComputeDeviationPartGaussian(diff, deviation);
-	#endif
+		#endif
 		else
-	#ifdef DISTANCE_USE_LAPLACE_LK_METRIC
+		#ifdef DISTANCE_USE_LAPLACE_LK_METRIC
 			return ComputeDeviationPartLaplaceApprox(diff, deviation);
-	#else
+		#else
 			return ComputeDeviationPartGaussianApprox(diff, deviation);
-	#endif
+		#endif
 	}
 
 	//constrains the difference to the cycle length for cyclic distances

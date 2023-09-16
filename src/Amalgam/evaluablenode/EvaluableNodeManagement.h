@@ -331,12 +331,12 @@ public:
 		}
 		else //more costly cyclic free
 		{
-	#ifdef MULTITHREAD_SUPPORT
+		#ifdef MULTITHREAD_SUPPORT
 			//need to acquire a read lock, because if any node is reclaimed or compacted while this free is taking place,
 			// and another thread allocates it, then this cyclic free could accidentally free a node that was freed and
 			// reclaimed by another thread
 			Concurrency::ReadLock lock(managerAttributesMutex);
-	#endif
+		#endif
 			FreeNodeTreeWithCyclesRecurse(en);
 		}
 

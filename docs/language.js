@@ -52,7 +52,7 @@ var data = [
 	{
 		"parameter" : "seq [code c1] [code c2] ... [code cN]",
 		"output" : "*",
-		"description" : "Runs each code block sequentially. Evaluates to the result of the last code block run, unless it encounters a conclude, in which case it will halt processing and evaluate to the value returned by conclude.",
+		"description" : "Runs each code block sequentially. Evaluates to the result of the last code block run, unless it encounters a conclude in an earlier step, in which case it will halt processing and evaluate to the value returned by conclude. Note that the last step will not consume a concluded value.",
 		"example" : "(seq (print 1) (print 2) (print 3))"
 	},
 
@@ -74,7 +74,7 @@ var data = [
 	{
 		"parameter" : "conclude * conclusion",
 		"output" : "*",
-		"description" : "Evaluates to the conclusion wrapped in a conclude opcode.  If a step in a seq, while, let, or declare evaluates to a conclude in evaluating its evaluation, then it will conclude the execution and evaluate to conclusion.",
+		"description" : "Evaluates to the conclusion wrapped in a conclude opcode.  If a step in a seq, let, declare, or while evaluates to a conclude (excluding variable declarations for let and declare, the last step in set, let, and declare, or the condition of while), then it will conclude the execution and evaluate to the value conclusion.  Note that conclude opcodes may be nested to break out of outer opcodes",
 		"example" : "(print (seq (print \"seq1 \") (conclude \"success\") (print \"seq2\") ) )"
 	},
 
@@ -105,14 +105,14 @@ var data = [
 		"parameter" : "let assoc data [code function1] [code function2] ... [code functionN]",
 		"output" : "*",
 		"new scope" : true,
-		"description" : "Pushes the key-value pairs of data onto the scope stack so that they become the new variables, then runs each code block sequentially, evaluating to the last code block run, unless it encounters a conclude, in which case it will halt processing and evaluate to the value returned by conclude.",
+		"description" : "Pushes the key-value pairs of data onto the scope stack so that they become the new variables, then runs each code block sequentially, evaluating to the last code block run, unless it encounters a conclude, in which case it will halt processing and evaluate to the value returned by conclude.  Note that the last step will not consume a concluded value.",
 		"example" : "(let (assoc x 4 y 6) (print (+ x y)))"
 	},
 
 	{
 		"parameter" : "declare assoc data [code function1] [code function2] ... [code functionN]",
 		"output" : "*",
-		"description" : "For each key-value pair of data, if not already in the current context in the scope stack, it will define them.  Then runs each code block sequentially, evaluating to the last code block run, unless it encounters a conclude, in which case it will halt processing and evaluate to the value returned by conclude.",
+		"description" : "For each key-value pair of data, if not already in the current context in the scope stack, it will define them.  Then runs each code block sequentially, evaluating to the last code block run, unless it encounters a conclude, in which case it will halt processing and evaluate to the value returned by conclude.  Note that the last step will not consume a concluded value.",
 		"example" : "(let (assoc x 4 y 6)\n  (declare (assoc x 5 z 1)\n    (print (+ x y z)) )\n)"
 	},
 

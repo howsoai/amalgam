@@ -712,6 +712,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 	if(resource_name == "")
 		return EvaluableNodeReference::Null();
 
+	//TODO 10975: lock entire entity tree
 	//get the id of the source entity to store.  Don't need to keep the reference because it won't be used once the source entety pointer is looked up
 	EntityReadReference source_entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[1]);
 

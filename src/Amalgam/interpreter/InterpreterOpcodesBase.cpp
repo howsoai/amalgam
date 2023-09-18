@@ -425,9 +425,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCLUDE(EvaluableNode *en
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
-	//if no parameter, then return itself
+	//if no parameter, then return itself for performance
 	if(ocn.size() == 0 || ocn[0] == nullptr)
 		return EvaluableNodeReference(en, false);
+
+	//if idempotent, can just return a copy without any metadata
+	if(en->GetIsIdempotent())
+		return evaluableNodeManager->DeepAllocCopy(en, EvaluableNodeManager::ENMM_REMOVE_ALL);
 
 	EvaluableNodeReference conclusion_value = InterpretNode(ocn[0]);
 

@@ -59,9 +59,9 @@ public:
 	void CreateEntity(Entity *entity);
 	inline void DestroyEntity(Entity *entity)
 	{
-#ifdef MULTITHREAD_INTERFACE
+	#ifdef MULTITHREAD_INTERFACE
 		Concurrency::WriteLock lock(persistentEntitiesMutex);
-#endif
+	#endif
 
 		RemoveRootPermissions(entity);
 		

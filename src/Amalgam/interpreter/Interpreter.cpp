@@ -513,9 +513,9 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en)
 		curExecutionStep++;
 		if(curExecutionStep >= maxNumExecutionSteps)
 		{
-#ifdef INTERPRETER_PROFILE_OPCODES
+		#ifdef INTERPRETER_PROFILE_OPCODES
 			performance_profiler.EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
-#endif
+		#endif
 			return EvaluableNodeReference::Null();
 		}
 	}
@@ -552,9 +552,9 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en)
 		UpdateCurNumExecutionNodes();
 		if(curNumExecutionNodes >= maxNumExecutionNodes)
 		{
-#ifdef INTERPRETER_PROFILE_OPCODES
+		#ifdef INTERPRETER_PROFILE_OPCODES
 			performance_profiler.EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
-#endif
+		#endif
 			return EvaluableNodeReference::Null();
 		}
 	}

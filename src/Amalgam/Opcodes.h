@@ -485,6 +485,7 @@ constexpr bool IsEvaluableNodeTypePotentiallyIdempotent(EvaluableNodeType type)
 	return (type == ENT_NUMBER || type == ENT_STRING
 		|| type == ENT_TRUE || type == ENT_FALSE
 		|| type == ENT_NULL || type == ENT_LIST || type == ENT_ASSOC
+		|| type == ENT_CONCLUDE
 		|| IsEvaluableNodeTypeQuery(type));
 }
 

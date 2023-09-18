@@ -71,11 +71,11 @@ public:
 	//collects garbage on evaluableNodeManager
 	__forceinline void CollectGarbage()
 	{
-#ifdef MULTITHREAD_SUPPORT
+	#ifdef MULTITHREAD_SUPPORT
 		evaluableNodeManager->CollectGarbage(&memoryModificationLock);
-#else
+	#else
 		evaluableNodeManager->CollectGarbage();
-#endif
+	#endif
 	}
 
 	//pushes new_context on the stack; new_context should be a unique associative array,

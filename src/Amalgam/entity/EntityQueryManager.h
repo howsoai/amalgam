@@ -109,19 +109,21 @@ public:
 	// then this function will move the entity data that was previously in index 5 to be referenced by index 3 for all caches
 	inline static void RemoveEntity(Entity *container, Entity *entity, size_t entity_index, size_t entity_index_to_reassign)
 	{
-		if(entity == nullptr || container == nullptr)
+		if(entity == nullptr)
 			return;
 
 	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::WriteLock write_lock(queryCacheMutex);
 	#endif
 
-		auto found_cache = queryCaches.find(container);
-		if(found_cache != end(queryCaches))
+		if(container != nullptr)
 		{
-			found_cache->second->RemoveEntity(entity, entity_index, entity_index_to_reassign);
-			queryCaches.erase(entity);
-		}	
+			auto found_cache = queryCaches.find(container);
+			if(found_cache != end(queryCaches))
+				found_cache->second->RemoveEntity(entity, entity_index, entity_index_to_reassign);
+		}
+
+		queryCaches.erase(entity);
 	}
 
 	//sorts the entities by their string ids

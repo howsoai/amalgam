@@ -22,31 +22,6 @@ public:
 	// uses efficient querying methods with a query database, one database per container
 	static EvaluableNodeReference GetMatchingEntitiesFromQueryCaches(Entity *container, std::vector<EntityQueryCondition> &conditions, EvaluableNodeManager *enm, bool return_query_value);
 
-	//returns the numeric query cache associated with the specified container, creates one if one does not already exist
-	static EntityQueryCaches *GetQueryCachesForContainer(Entity *container);
-
-	//like UpdateEntityLabels, but removes the entity from the cache and reassigns entity_index_to_reassign to use the old
-	// entity_index; for example, if entity_index 3 is being removed and 5 is the highest index, if entity_index_to_reassign is 5,
-	// then this function will move the entity data that was previously in index 5 to be referenced by index 3 for all caches
-	inline static void RemoveEntity(Entity *container, Entity *entity, size_t entity_index, size_t entity_index_to_reassign)
-	{
-		if(entity == nullptr)
-			return;
-
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::WriteLock write_lock(queryCacheMutex);
-	#endif
-
-		if(container != nullptr)
-		{
-			auto found_cache = queryCaches.find(container);
-			if(found_cache != end(queryCaches))
-				found_cache->second->RemoveEntity(entity, entity_index, entity_index_to_reassign);
-		}
-
-		queryCaches.erase(entity);
-	}
-
 	//sorts the entities by their string ids
 	inline static void SortEntitiesByID(std::vector<Entity *> &entities)
 	{

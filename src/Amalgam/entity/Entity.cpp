@@ -83,13 +83,20 @@ Entity::~Entity()
 	Concurrency::WriteLock lock(mutex);
 #endif
 
-	Entity *container = GetContainer();
-	size_t last_index_of_container = 0;
-	if(container != nullptr)
-		last_index_of_container = container->GetNumContainedEntities() - 1; //if there's no contained entities, then it wouldn't have a container!
+	//clear query caches before destroying contained entities for performance
+	ClearQueryCaches();
 
-	EntityQueryManager::RemoveEntity(container, this, GetEntityIndexOfContainer(), last_index_of_container);
-	
+	//if contained in another entity, remove it
+	EntityQueryCaches *container_caches = GetContainerQueryCaches();
+	if(container_caches != nullptr)
+	{
+		//must have a container, overwrite with the entity in the last index
+		Entity *container = GetContainer();
+		size_t last_index_of_container = container->GetNumContainedEntities() - 1;
+
+		container_caches->RemoveEntity(this, GetEntityIndexOfContainer(), last_index_of_container);
+	}
+
 	if(hasContainedEntities)
 	{
 		//delete the entities from highest index to lowest index to reduce churn when freeing the query caches
@@ -730,10 +737,6 @@ void Entity::RemoveContainedEntity(StringInternPool::StringID id, std::vector<En
 	size_t index_to_remove = id_to_index_it_to_remove->second;
 	size_t index_to_replace = contained_entities.size() - 1;
 	Entity *entity_to_remove = contained_entities[index_to_remove];
-
-#ifdef MULTITHREAD_SUPPORT
-	Concurrency::WriteLock write_lock_t(entity_to_remove->mutex);
-#endif
 		
 	//record the entity as being deleted
 	if(write_listeners != nullptr)
@@ -744,7 +747,9 @@ void Entity::RemoveContainedEntity(StringInternPool::StringID id, std::vector<En
 		asset_manager.DestroyEntity(entity_to_remove);
 	}
 
-	EntityQueryManager::RemoveEntity(this, entity_to_remove, index_to_remove, index_to_replace);
+	EntityQueryCaches *caches = GetQueryCaches();
+	if(caches != nullptr)
+		caches->RemoveEntity(entity_to_remove, index_to_remove, index_to_replace);
 
 	entity_to_remove->SetEntityContainer(nullptr);
 

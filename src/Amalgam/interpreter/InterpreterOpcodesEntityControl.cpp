@@ -450,6 +450,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MOVE_ENTITIES(EvaluableNod
 	new_entity_ids_list->ReserveOrderedChildNodes((ocn.size() + 1) / 2);
 	auto node_stack = CreateInterpreterNodeStackStateSaver(new_entity_ids_list);
 
+	//TODO 10975: change this to lock the entities
 	for(size_t i = 0; i < ocn.size(); i += 2)
 	{
 		//get the id of the source entity
@@ -512,6 +513,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DESTROY_ENTITIES(Evaluable
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
+	//TODO 10975: change this to lock all entities at once
 	bool all_destroys_successful = true;
 	for(auto &cn : en->GetOrderedChildNodes())
 	{

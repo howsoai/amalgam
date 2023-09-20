@@ -815,40 +815,12 @@ static bool CanUseQueryCaches(std::vector<EntityQueryCondition> &conditions)
 	return true;
 }
 
-EntityQueryCaches *EntityQueryManager::GetQueryCachesForContainer(Entity *container)
-{
-#ifdef MULTITHREAD_SUPPORT
-	Concurrency::ReadLock lock(queryCacheMutex);
-#endif
-
-	auto found_cache = queryCaches.find(container);
-	if(found_cache != end(queryCaches))
-		return &(*found_cache->second);
-
-#ifdef MULTITHREAD_SUPPORT
-	//not found, so need to insert a new one
-	lock.unlock();
-
-	Concurrency::WriteLock write_lock(queryCacheMutex);
-
-	//need to double-check to make sure no other thread inserted the cache between the locks
-	found_cache = queryCaches.find(container);
-	if(found_cache != end(queryCaches))
-		return &(*found_cache->second);
-#endif
-
-	//doesn't exist, so insert it and return; it is a double lookup compared to above,
-	//but it is rare, and it needs a write lock
-	queryCaches.emplace(container, std::make_unique<EntityQueryCaches>(container));
-	return &(*queryCaches[container]);
-}
-
 EvaluableNodeReference EntityQueryManager::GetMatchingEntitiesFromQueryCaches(Entity *container,
 	std::vector<EntityQueryCondition> &conditions, EvaluableNodeManager *enm, bool return_query_value)
 {
 	//get the label existance cache associated with this container
 	// use the first condition as an heuristic for building it if it doesn't exist
-	EntityQueryCaches *entity_caches = GetQueryCachesForContainer(container);
+	EntityQueryCaches *entity_caches = container->GetOrCreateQueryCaches();
 
 	//starting collection of matching entities, initialized to all entities with the requested labels
 	// reuse existing buffer

@@ -280,6 +280,25 @@ public:
 			return entityRelationships.container;
 	}
 
+	//clears any query caches if they exist
+	inline void ClearQueryCaches()
+	{
+		if(hasContainedEntities)
+			entityRelationships.relationships->queryCaches.release();
+	}
+
+	//returns a pointer to the query caches for this entity
+	//creates one if it does not have an active cache
+	inline EntityQueryCaches *GetOrCreateQueryCaches()
+	{
+		EnsureHasContainedEntities();
+
+		if(!entityRelationships.relationships->queryCaches)
+			entityRelationships.relationships->queryCaches = std::make_unique<EntityQueryCaches>();
+
+		return entityRelationships.relationships->queryCaches.get();		
+	}
+
 	//returns a pointer to the query caches for this entity
 	//returns a nullptr if does not have an active cache
 	inline EntityQueryCaches *GetQueryCaches()

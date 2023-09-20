@@ -1,7 +1,6 @@
 #pragma once
 
 //project headers:
-#include "Entity.h"
 #include "EvaluableNode.h"
 #include "GeneralizedDistance.h"
 
@@ -12,6 +11,9 @@
 #include <string>
 #include <utility>
 #include <vector>
+
+//forward declarations:
+class Entity;
 
 //if set to false, will not allow use of the SBF datastore
 extern bool _enable_SBF_datastore;

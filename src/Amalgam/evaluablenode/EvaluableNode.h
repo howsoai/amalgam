@@ -39,7 +39,11 @@ public:
 	//lookup a keyword string and find the type
 	using KeywordLookupType = FastHashMap<std::string, EvaluableNodeType>;
 
+	//EvaluableNode assoc storage
 	using AssocType = CompactHashMap<StringInternPool::StringID, EvaluableNode *>;
+
+	//Storage for labels
+	using LabelsAssocType = CompactHashMap<StringInternPool::StringID, EvaluableNode *>;
 
 	//constructors
 	__forceinline EvaluableNode() { InitializeUnallocated(); }

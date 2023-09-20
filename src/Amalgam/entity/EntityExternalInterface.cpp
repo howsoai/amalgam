@@ -4,6 +4,7 @@
 #include "EntityQueryManager.h"
 #include "EntityWriteListener.h"
 #include "FileSupportJSON.h"
+#include "Interpreter.h"
 
 bool EntityExternalInterface::LoadEntity(std::string &handle, std::string &path, bool persistent, bool load_contained_entities,
 	std::string &write_log_filename, std::string &print_log_filename, std::string rand_seed)

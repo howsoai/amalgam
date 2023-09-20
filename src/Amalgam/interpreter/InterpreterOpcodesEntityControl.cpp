@@ -305,7 +305,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_ROOT_PERMISSION
 
 	//get the id of the entity
 	auto id_node = InterpretNode(ocn[0]);
-	EntityWriteReference entity = TraverseToExistingEntityWriteReferenceViaEvaluableNodeIDPath(curEntity, id_node);
+	EntityWriteReference entity = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityWriteReference>(curEntity, id_node);
 
 	asset_manager.SetRootPermission(entity, permission);
 

@@ -89,29 +89,13 @@ public:
 		virtual bool KeepSomeNonMergeableValues()
 		{	return true;	}
 
-		virtual bool KeepNonMergeableValue()
-		{
-			return interpreter->randomStream.Rand() < fractionAOrB;
-		}
+		virtual bool KeepNonMergeableValue();
+		virtual bool KeepNonMergeableAInsteadOfB();
 
-		virtual bool KeepNonMergeableAInsteadOfB()
-		{
-			return interpreter->randomStream.Rand() < fractionAInsteadOfB;
-		}
+		virtual bool KeepNonMergeableA();
+		virtual bool KeepNonMergeableB();
 
-		virtual bool KeepNonMergeableA()
-		{
-			return interpreter->randomStream.Rand() < fractionA;
-		}
-		virtual bool KeepNonMergeableB()
-		{
-			return interpreter->randomStream.Rand() < fractionB;
-		}
-
-		virtual bool AreMergeable(Entity *a, Entity *b)
-		{
-			return interpreter->randomStream.Rand() < fractionEntitiesToMix;
-		}
+		virtual bool AreMergeable(Entity *a, Entity *b);
 
 	protected:
 

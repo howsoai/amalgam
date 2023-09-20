@@ -4,7 +4,6 @@
 #include "EvaluableNode.h"
 #include "EvaluableNodeManagement.h"
 #include "HashMaps.h"
-#include "Interpreter.h"
 #include "Merger.h"
 #include "WeightedDiscreteRandomStream.h"
 
@@ -14,6 +13,9 @@
 #include <string>
 #include <string_view>
 #include <vector>
+
+//forward declarations:
+class Interpreter;
 
 //Functor to transform EvaluableNode into doubles
 class EvaluableNodeAsDouble
@@ -458,12 +460,12 @@ public:
 	//if force_normalization_on_en, it will normalize en by collapsing nodes that share the same label, to ensure that each label will only have a single node
 	// *Note* that force_normalization_on_en will modify en, potentially removing some nodes
 	// if, when normalizing, the tree is no longer cycle free, en_cycle_free will be set to false regardless of its initial value
-	static std::pair<Entity::LabelsAssocType, bool> RetrieveLabelIndexesFromTreeAndNormalize(EvaluableNode *en);
+	static std::pair<EvaluableNode::LabelsAssocType, bool> RetrieveLabelIndexesFromTreeAndNormalize(EvaluableNode *en);
 
 	//like RetrieveNormalizedLabelIndexesFromTree, except collects all labels overwriting duplicates
-	inline static Entity::LabelsAssocType RetrieveLabelIndexesFromTree(EvaluableNode *en)
+	inline static EvaluableNode::LabelsAssocType RetrieveLabelIndexesFromTree(EvaluableNode *en)
 	{
-		Entity::LabelsAssocType index;
+		EvaluableNode::LabelsAssocType index;
 		EvaluableNode::ReferenceSetType checked;
 
 		//can check faster if don't need to check for cycles
@@ -523,17 +525,17 @@ protected:
 	//  checked should only be nullptr when tree is known to be cycle free
 	//If there is a label collision, meaning the same label is used by more than one node, then it will exit early (not populating the index) and return true
 	//Returns false if no collision and nothing further is needed to be done.
-	static bool CollectLabelIndexesFromNormalTree(EvaluableNode *tree, Entity::LabelsAssocType &index, EvaluableNode::ReferenceSetType *checked);
+	static bool CollectLabelIndexesFromNormalTree(EvaluableNode *tree, EvaluableNode::LabelsAssocType &index, EvaluableNode::ReferenceSetType *checked);
 
 	//like CollectLabelIndexesFromNormalTree but overwrites duplicate labels
-	static void CollectAllLabelIndexesFromTree(EvaluableNode *tree, Entity::LabelsAssocType &index, EvaluableNode::ReferenceSetType *checked);
+	static void CollectAllLabelIndexesFromTree(EvaluableNode *tree, EvaluableNode::LabelsAssocType &index, EvaluableNode::ReferenceSetType *checked);
 
 	//Recursively traverses tree, storing any nodes with labels into index.  Ignores any nodes already in checked, and adds them to checked when they are traversed.
 	// if the current top of the tree contains a label and should be replaced by something that exists in index, it will set replace_tree_by to the proper
 	// node that should replace the top of the tree.
 	//returns two boolean value if any have been replaced, meaning another pass must be made
 	// and the tree needs to be updated with regard to cycle checks
-	static bool CollectLabelIndexesFromTreeAndMakeLabelNormalizationPass(EvaluableNode *tree, Entity::LabelsAssocType &index,
+	static bool CollectLabelIndexesFromTreeAndMakeLabelNormalizationPass(EvaluableNode *tree, EvaluableNode::LabelsAssocType &index,
 		EvaluableNode::ReferenceSetType &checked, EvaluableNode *&replace_tree_by);
 
 	//recursive helper function for ReplaceLabelInTree

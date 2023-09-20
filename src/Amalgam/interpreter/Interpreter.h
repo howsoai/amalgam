@@ -2,6 +2,7 @@
 
 //project headers:
 #include "Entity.h"
+#include "EntityWriteListener.h"
 #include "EvaluableNode.h"
 #include "EvaluableNodeManagement.h"
 #include "EvaluableNodeTreeFunctions.h"
@@ -19,7 +20,7 @@
 #include <type_traits>
 #include <vector>
 
-//Forward declarations:
+//forward declarations:
 class EntityQueryCondition;
 
 //if defined, will instrument and profile timing for each opcode, reported when profiling is enabled

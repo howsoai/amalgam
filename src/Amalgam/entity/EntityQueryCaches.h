@@ -2,18 +2,20 @@
 
 //project headers:
 #include "Conviction.h"
-#include "Entity.h"
-#include "HashMaps.h"
+#include "DistanceReferencePair.h"
+#include "EntityQueries.h"
+#include "EvaluableNode.h"
 #include "IntegerSet.h"
 #include "KnnCache.h"
 #include "SeparableBoxFilterDataStore.h"
-#include "StringInternPool.h"
-#include "WeightedDiscreteRandomStream.h"
 
 //system headers:
 #include <algorithm>
 #include <memory>
 #include <vector>
+
+//forward declarations:
+class Entity;
 
 //stores all of the types of caches needed for queries on a particular entity
 class EntityQueryCaches

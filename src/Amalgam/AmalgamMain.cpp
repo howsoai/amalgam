@@ -10,6 +10,7 @@
 #include "EntityWriteListener.h"
 #include "EvaluableNode.h"
 #include "EvaluableNodeTreeFunctions.h"
+#include "Interpreter.h"
 #include "Parser.h"
 #include "PerformanceProfiler.h"
 #include "PlatformSpecific.h"

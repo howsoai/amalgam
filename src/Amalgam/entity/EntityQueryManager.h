@@ -3,6 +3,7 @@
 //project headers:
 #include "EntityQueryCaches.h"
 #include "IntegerSet.h"
+#include "StringManipulation.h"
 
 //system headers:
 #include <memory>
@@ -21,21 +22,6 @@ public:
 	//returns the collection of entities (and optionally associated compute values) that satisfy the specified chain of query conditions
 	// uses efficient querying methods with a query database, one database per container
 	static EvaluableNodeReference GetMatchingEntitiesFromQueryCaches(Entity *container, std::vector<EntityQueryCondition> &conditions, EvaluableNodeManager *enm, bool return_query_value);
-
-	//sorts the entities by their string ids
-	inline static void SortEntitiesByID(std::vector<Entity *> &entities)
-	{
-		//for performance reasons, it may be worth considering other data structures if sort ever becomes or remains significant
-		std::sort(begin(entities), end(entities),
-			[](Entity *a, Entity *b)
-			{
-				const std::string a_id = a->GetId();
-				const std::string b_id = b->GetId();
-
-				int comp = StringNaturalCompare(a_id, b_id);
-				return comp < 0;
-			});
-	}
 
 	//converts a set of DistanceReferencePair into the appropriate EvaluableNode structure
 	template<typename EntityReference, typename GetEntityFunction>

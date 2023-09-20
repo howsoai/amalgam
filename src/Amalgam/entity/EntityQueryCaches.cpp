@@ -1,7 +1,15 @@
 //project headers:
 #include "Conviction.h"
+#include "Entity.h"
 #include "EntityQueries.h"
 #include "EntityQueryCaches.h"
+#include "HashMaps.h"
+#include "IntegerSet.h"
+#include "KnnCache.h"
+#include "SeparableBoxFilterDataStore.h"
+#include "StringInternPool.h"
+#include "WeightedDiscreteRandomStream.h"
+
 
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 thread_local

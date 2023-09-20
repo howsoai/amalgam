@@ -6,6 +6,7 @@
 #include "EntityWriteListener.h"
 #include "EvaluableNodeTreeManipulation.h"
 #include "EvaluableNodeTreeFunctions.h"
+#include "Interpreter.h"
 
 std::vector<Entity *> Entity::emptyContainedEntities;
 
@@ -569,7 +570,7 @@ size_t Entity::GetEstimatedUsedDeepSizeInBytes()
 	return total_size;
 }
 
-Entity::LabelsAssocType Entity::RebuildLabelIndex()
+EvaluableNode::LabelsAssocType Entity::RebuildLabelIndex()
 {
 	auto [new_labels, renormalized] = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTreeAndNormalize(evaluableNodeManager.GetRootNode());
 
@@ -821,6 +822,16 @@ StringInternPool::StringID Entity::GetContainedEntityIdFromIndex(size_t entity_i
 	return contained_entities[entity_index]->GetIdStringId();
 }
 
+EntityQueryCaches *Entity::GetOrCreateQueryCaches()
+{
+	EnsureHasContainedEntities();
+
+	if(!entityRelationships.relationships->queryCaches)
+		entityRelationships.relationships->queryCaches = std::make_unique<EntityQueryCaches>(this);
+
+	return entityRelationships.relationships->queryCaches.get();
+}
+
 void Entity::SetRandomState(const std::string &new_state, bool deep_set_seed, std::vector<EntityWriteListener *> *write_listeners)
 {
 	randomStream.SetState(new_state);
@@ -957,7 +968,7 @@ void Entity::AccumRoot(EvaluableNode *accum_code, bool allocated_with_entity_enm
 
 	if(accum_has_labels)
 	{
-		LabelsAssocType prev_labels = RebuildLabelIndex();
+		EvaluableNode::LabelsAssocType prev_labels = RebuildLabelIndex();
 
 		//if have all new labels or RebuildLabelIndex had to renormalize (in which case prev_labels will be empty)
 		// then update all labels just in case

@@ -6,6 +6,9 @@
 //system headers:
 #include <fstream>
 
+//forward declarations:
+class Entity;
+
 class EntityWriteListener
 {
 public:

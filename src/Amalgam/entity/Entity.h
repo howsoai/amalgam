@@ -2,6 +2,7 @@
 
 //project headers:
 #include "Concurrency.h"
+#include "EntityQueryCaches.h"
 #include "HashMaps.h"
 #include "Parser.h"
 #include "RandomStream.h"
@@ -35,9 +36,6 @@ public:
 
 	//set of entities
 	using EntitySetType = FastHashSet<Entity *>;
-
-	//StringID to EvaluableNode *
-	using LabelsAssocType = CompactHashMap<StringInternPool::StringID, EvaluableNode *>;
 
 	Entity();
 
@@ -199,7 +197,7 @@ public:
 	//Rebuilds label index for retrieval
 	// returns the previous label index prior to rebuild; if the label index had to be rebuilt from scratch
 	// due to a label collision, then the previous label index will be empty
-	LabelsAssocType RebuildLabelIndex();
+	EvaluableNode::LabelsAssocType RebuildLabelIndex();
 
 	//Returns the id for this Entity
 	inline const std::string &GetId()
@@ -289,15 +287,7 @@ public:
 
 	//returns a pointer to the query caches for this entity
 	//creates one if it does not have an active cache
-	inline EntityQueryCaches *GetOrCreateQueryCaches()
-	{
-		EnsureHasContainedEntities();
-
-		if(!entityRelationships.relationships->queryCaches)
-			entityRelationships.relationships->queryCaches = std::make_unique<EntityQueryCaches>();
-
-		return entityRelationships.relationships->queryCaches.get();		
-	}
+	EntityQueryCaches *GetOrCreateQueryCaches();
 
 	//returns a pointer to the query caches for this entity
 	//returns a nullptr if does not have an active cache
@@ -779,7 +769,7 @@ protected:
 	};
 
 	//current list of all labels and where they are in the code
-	LabelsAssocType labelIndex;
+	EvaluableNode::AssocType labelIndex;
 
 	//the random stream associated with this Entity
 	RandomStream randomStream;

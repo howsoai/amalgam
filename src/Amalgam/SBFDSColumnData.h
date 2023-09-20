@@ -3,7 +3,6 @@
 //project headers:
 #include "DistanceReferencePair.h"
 #include "EvaluableNode.h"
-#include "EvaluableNodeTreeFunctions.h"
 #include "HashMaps.h"
 #include "IntegerSet.h"
 

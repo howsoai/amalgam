@@ -7,6 +7,21 @@
 
 bool _enable_SBF_datastore = true;
 
+//sorts the entities by their string ids
+inline void SortEntitiesByID(std::vector<Entity *> &entities)
+{
+	//for performance reasons, it may be worth considering other data structures if sort ever becomes or remains significant
+	std::sort(begin(entities), end(entities),
+		[](Entity *a, Entity *b)
+		{
+			const std::string a_id = a->GetId();
+			const std::string b_id = b->GetId();
+
+			int comp = StringManipulation::StringNaturalCompare(a_id, b_id);
+			return comp < 0;
+		});
+}
+
 bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 {
 	if(e == nullptr)
@@ -292,7 +307,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 	case ENT_QUERY_SELECT:
 	{
 		//regardless of options, need to sort entities by entity id
-		EntityQueryManager::SortEntitiesByID(matching_entities);
+		SortEntitiesByID(matching_entities);
 
 		size_t start_offset = std::min(matching_entities.size(), startOffset);
 		size_t num_to_select = std::min(matching_entities.size() - start_offset, static_cast<size_t>(maxToRetrieve));

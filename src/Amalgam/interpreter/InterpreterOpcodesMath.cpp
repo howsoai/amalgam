@@ -6,7 +6,6 @@
 #include "EntityQueryBuilder.h"
 #include "EntityManipulation.h"
 #include "EntityQueries.h"
-#include "EntityQueryManager.h"
 #include "EvaluableNodeTreeFunctions.h"
 #include "EvaluableNodeTreeManipulation.h"
 #include "EvaluableNodeTreeDifference.h"

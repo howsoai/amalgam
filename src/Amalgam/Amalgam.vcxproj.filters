@@ -272,9 +272,6 @@
     <ClInclude Include="entity\EntityQueryCaches.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="entity\EntityQueryManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="entity\EntityWriteListener.h">
       <Filter>Header Files</Filter>
     </ClInclude>

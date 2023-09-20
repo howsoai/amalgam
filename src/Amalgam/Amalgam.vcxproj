@@ -623,7 +623,6 @@
     <ClInclude Include="entity\EntityQueriesStatistics.h" />
     <ClInclude Include="entity\EntityQueryBuilder.h" />
     <ClInclude Include="entity\EntityQueryCaches.h" />
-    <ClInclude Include="entity\EntityQueryManager.h" />
     <ClInclude Include="entity\EntityWriteListener.h" />
     <ClInclude Include="evaluablenode\EvaluableNode.h" />
     <ClInclude Include="evaluablenode\EvaluableNodeManagement.h" />

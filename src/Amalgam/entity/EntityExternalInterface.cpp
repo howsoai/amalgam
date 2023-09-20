@@ -1,7 +1,6 @@
 //project headers:
 #include "EntityExternalInterface.h"
 #include "EntityQueries.h"
-#include "EntityQueryManager.h"
 #include "EntityWriteListener.h"
 #include "FileSupportJSON.h"
 #include "Interpreter.h"

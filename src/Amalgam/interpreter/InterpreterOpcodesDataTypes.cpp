@@ -10,7 +10,6 @@
 #include "EvaluableNodeTreeDifference.h"
 #include "EntityManipulation.h"
 #include "EntityQueries.h"
-#include "EntityQueryManager.h"
 #include "EntityWriteListener.h"
 #include "FileSupportJSON.h"
 #include "FileSupportYAML.h"

@@ -6,7 +6,6 @@
 #include "Entity.h"
 #include "EntityExternalInterface.h"
 #include "EntityQueries.h"
-#include "EntityQueryManager.h"
 #include "EntityWriteListener.h"
 #include "EvaluableNode.h"
 #include "EvaluableNodeTreeFunctions.h"

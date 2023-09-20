@@ -5,7 +5,6 @@
 #include "AssetManager.h"
 #include "EntityManipulation.h"
 #include "EntityQueries.h"
-#include "EntityQueryManager.h"
 #include "EvaluableNodeTreeDifference.h"
 #include "EvaluableNodeTreeFunctions.h"
 #include "EvaluableNodeTreeManipulation.h"

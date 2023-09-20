@@ -792,6 +792,20 @@ EvaluableNodeReference EntityManipulation::FlattenEntity(Interpreter *interprete
 	return EvaluableNodeReference(let_new_entity, true);
 }
 
+void EntityManipulation::SortEntitiesByID(std::vector<Entity *> &entities)
+{
+	//for performance reasons, it may be worth considering other data structures if sort ever becomes or remains significant
+	std::sort(begin(entities), end(entities),
+		[](Entity *a, Entity *b)
+		{
+			const std::string a_id = a->GetId();
+			const std::string b_id = b->GetId();
+
+			int comp = StringManipulation::StringNaturalCompare(a_id, b_id);
+			return comp < 0;
+		});
+}
+
 void EntityManipulation::RecursivelyRenameAllEntityReferences(Entity *entity, CompactHashMap<StringInternPool::StringID, StringInternPool::StringID> &entities_renamed)
 {
 	EvaluableNodeTreeManipulation::ReplaceStringsInTree(entity->GetRoot(), entities_renamed);

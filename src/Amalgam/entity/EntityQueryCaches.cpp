@@ -1,6 +1,7 @@
 //project headers:
 #include "Conviction.h"
 #include "Entity.h"
+#include "EntityManipulation.h"
 #include "EntityQueries.h"
 #include "EntityQueryCaches.h"
 #include "EvaluableNodeTreeFunctions.h"
@@ -1225,7 +1226,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 			|| last_query_type == ENT_COMPUTE_ENTITY_CONVICTIONS
 			|| last_query_type == ENT_COMPUTE_ENTITY_KL_DIVERGENCES)
 		{
-			return ConvertResultsToEvaluableNodes<size_t>(compute_results,
+			return EntityManipulation::ConvertResultsToEvaluableNodes<size_t>(compute_results,
 				enm, last_query->returnSortedList, last_query->additionalSortedListLabel,
 				[&contained_entities](auto entity_index) { return contained_entities[entity_index]; });
 		}
@@ -1311,6 +1312,6 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(Entity *conta
 	if(query_return_value != nullptr)
 		return query_return_value;
 
-	SortEntitiesByID(matching_entities);
+	EntityManipulation::SortEntitiesByID(matching_entities);
 	return CreateListOfStringsIdsFromIteratorAndFunction(matching_entities, enm, [](Entity *e) { return e->GetIdStringId(); });
 }

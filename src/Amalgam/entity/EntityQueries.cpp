@@ -1,25 +1,11 @@
 //project headers:
 #include "EntityQueries.h"
 #include "Concurrency.h"
+#include "EntityManipulation.h"
 #include "EntityQueryCaches.h"
 #include "EvaluableNodeTreeFunctions.h"
 
 bool _enable_SBF_datastore = true;
-
-//sorts the entities by their string ids
-void SortEntitiesByID(std::vector<Entity *> &entities)
-{
-	//for performance reasons, it may be worth considering other data structures if sort ever becomes or remains significant
-	std::sort(begin(entities), end(entities),
-		[](Entity *a, Entity *b)
-		{
-			const std::string a_id = a->GetId();
-			const std::string b_id = b->GetId();
-
-			int comp = StringManipulation::StringNaturalCompare(a_id, b_id);
-			return comp < 0;
-		});
-}
 
 bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 {
@@ -306,7 +292,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 	case ENT_QUERY_SELECT:
 	{
 		//regardless of options, need to sort entities by entity id
-		SortEntitiesByID(matching_entities);
+		EntityManipulation::SortEntitiesByID(matching_entities);
 
 		size_t start_offset = std::min(matching_entities.size(), startOffset);
 		size_t num_to_select = std::min(matching_entities.size() - start_offset, static_cast<size_t>(maxToRetrieve));
@@ -763,7 +749,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 
 		distance_transform.TransformDistances(entity_values, returnSortedList);
 
-		return ConvertResultsToEvaluableNodes<Entity *>(entity_values,
+		return EntityManipulation::ConvertResultsToEvaluableNodes<Entity *>(entity_values,
 			enm, returnSortedList, additionalSortedListLabel, [](auto entity) { return entity;  });
 	}
 
@@ -798,7 +784,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 
 		distance_transform.TransformDistances(entity_values, returnSortedList);
 
-		return ConvertResultsToEvaluableNodes<Entity *>(entity_values,
+		return EntityManipulation::ConvertResultsToEvaluableNodes<Entity *>(entity_values,
 			enm, returnSortedList, additionalSortedListLabel, [](auto entity) { return entity;  });
 	}
 

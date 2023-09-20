@@ -314,11 +314,9 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 
 	if(!batch_call)
 	{
-		Entity *container = GetContainer();
-		if(direct_set)
-			EntityQueryManager::UpdateAllEntityLabels(container, this, GetEntityIndexOfContainer());
-		else
-			EntityQueryManager::UpdateEntityLabel(container, this, GetEntityIndexOfContainer(), label_sid);
+		EntityQueryCaches *container_caches = GetContainerQueryCaches();
+		if(container_caches != nullptr)
+			container_caches->UpdateAllEntityLabels(this, GetEntityIndexOfContainer());
 
 		asset_manager.UpdateEntity(this);
 		if(write_listeners != nullptr)
@@ -379,15 +377,18 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 
 	if(any_successful_assignment)
 	{
+		EntityQueryCaches *container_caches = GetContainerQueryCaches();
 		if(direct_set)
 		{
 			//direct assigments need a rebuild of the index just in case a label collision occurs
 			RebuildLabelIndex();
-			EntityQueryManager::UpdateAllEntityLabels(GetContainer(), this, GetEntityIndexOfContainer());
+			if(container_caches != nullptr)
+				container_caches->UpdateAllEntityLabels(this, GetEntityIndexOfContainer());
 		}
 		else
 		{
-			EntityQueryManager::UpdateEntityLabels(GetContainer(), this, GetEntityIndexOfContainer(), new_label_values_mcn);
+			if(container_caches != nullptr)
+				container_caches->UpdateEntityLabels(this, GetEntityIndexOfContainer(), new_label_values_mcn);
 		}
 
 		asset_manager.UpdateEntity(this);
@@ -888,7 +889,10 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, Evalu
 
 	RebuildLabelIndex();
 
-	EntityQueryManager::UpdateAllEntityLabels(GetContainer(), this, GetEntityIndexOfContainer());
+	EntityQueryCaches *container_caches = GetContainerQueryCaches();
+	if(container_caches != nullptr)
+		container_caches->UpdateAllEntityLabels(this, GetEntityIndexOfContainer());
+
 	if(write_listeners != nullptr)
 	{
 		if(write_listeners->size() > 0)
@@ -940,6 +944,8 @@ void Entity::AccumRoot(EvaluableNode *accum_code, bool allocated_with_entity_enm
 	if(new_root != nullptr)
 		num_root_labels_to_update = new_root->GetNumLabels();
 
+	EntityQueryCaches *container_caches = GetContainerQueryCaches();
+
 	if(accum_has_labels)
 	{
 		LabelsAssocType prev_labels = RebuildLabelIndex();
@@ -948,15 +954,17 @@ void Entity::AccumRoot(EvaluableNode *accum_code, bool allocated_with_entity_enm
 		// then update all labels just in case
 		if(prev_labels.size() == 0 && labelIndex.size() > 0)
 		{
-			EntityQueryManager::UpdateAllEntityLabels(GetContainer(), this, GetEntityIndexOfContainer());
+			if(container_caches != nullptr)
+				container_caches->UpdateAllEntityLabels(this, GetEntityIndexOfContainer());
 
 			//root labels have been updated
 			num_root_labels_to_update = 0;
 		}
 		else //clean rebuild
 		{
-			EntityQueryManager::UpdateEntityLabelsAddedOrChanged(GetContainer(), this, GetEntityIndexOfContainer(),
-				prev_labels, labelIndex);
+			if(container_caches != nullptr)
+				container_caches->UpdateEntityLabelsAddedOrChanged(this, GetEntityIndexOfContainer(),
+					prev_labels, labelIndex);
 		}
 	}
 	
@@ -967,7 +975,8 @@ void Entity::AccumRoot(EvaluableNode *accum_code, bool allocated_with_entity_enm
 		for(size_t i = 0; i < num_root_labels_to_update; i++)
 		{
 			auto label_sid = new_root->GetLabelStringId(i);
-			EntityQueryManager::UpdateEntityLabel(GetContainer(), this, GetEntityIndexOfContainer(), label_sid);
+			if(container_caches != nullptr)
+				container_caches->UpdateEntityLabel(this, GetEntityIndexOfContainer(), label_sid);
 		}
 	}
 

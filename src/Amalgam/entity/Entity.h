@@ -262,7 +262,7 @@ public:
 			return 0;
 	}
 
-	//Returns direct access to vector of pointers to Entity objects contained by this Entity
+	//returns direct access to vector of pointers to Entity objects contained by this Entity
 	inline std::vector<Entity *> &GetContainedEntities()
 	{
 		if(hasContainedEntities)
@@ -271,13 +271,32 @@ public:
 			return emptyContainedEntities;
 	}
 
-	//Returns the containing entity
+	//returns the containing entity
 	inline Entity *GetContainer()
 	{
 		if(hasContainedEntities)
 			return entityRelationships.relationships->container;
 		else
 			return entityRelationships.container;
+	}
+
+	//returns a pointer to the query caches for this entity
+	//returns a nullptr if does not have an active cache
+	inline EntityQueryCaches *GetQueryCaches()
+	{
+		if(hasContainedEntities)
+			return &(*entityRelationships.relationships->queryCaches);
+		return nullptr;
+	}
+
+	//returns a pointer to the query caches for this entity's container
+	//returns a nullptr if it does not have a container or the container does not have an active cache
+	inline EntityQueryCaches *GetContainerQueryCaches()
+	{
+		Entity *container = GetContainer();
+		if(container == nullptr)
+			return nullptr;
+		return container->GetQueryCaches();
 	}
 
 	//returns the index of the entity as listed by its container
@@ -729,8 +748,8 @@ protected:
 		//reference to the Entity that this Entity is contained by
 		Entity *container;
 
-		//cache for querying contained entities, constructed if needed
-		std::unique_ptr<EntityQueryCaches> queryCache;
+		//caches for querying contained entities, constructed if needed
+		std::unique_ptr<EntityQueryCaches> queryCaches;
 	};
 
 	//pointer to either the container or the EntityRelationships

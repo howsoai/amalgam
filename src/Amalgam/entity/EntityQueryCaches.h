@@ -16,6 +16,7 @@
 
 //forward declarations:
 class Entity;
+class EntityQueryCondition;
 
 //stores all of the types of caches needed for queries on a particular entity
 class EntityQueryCaches

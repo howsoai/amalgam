@@ -2,6 +2,7 @@
 
 //project headers:
 #include "DistanceReferencePair.h"
+#include "Entity.h"
 #include "EvaluableNode.h"
 #include "GeneralizedDistance.h"
 

@@ -7,6 +7,8 @@
 //system headers:
 #include <memory>
 
+//TODO 17568: remove this entire class and move remaining methods over to EntityQueries
+
 class EntityQueryManager
 {
 public:
@@ -22,72 +24,6 @@ public:
 
 	//returns the numeric query cache associated with the specified container, creates one if one does not already exist
 	static EntityQueryCaches *GetQueryCachesForContainer(Entity *container);
-
-	//updates when entity contents have changed
-	// container should contain entity
-	// entity_index is the index that the entity should be stored as
-	inline static void UpdateAllEntityLabels(Entity *container, Entity *entity, size_t entity_index)
-	{
-		if(entity == nullptr || container == nullptr)
-			return;
-
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::ReadLock lock(queryCacheMutex);
-	#endif
-
-		auto found_cache = queryCaches.find(container);
-		if(found_cache != end(queryCaches))
-			found_cache->second->UpdateAllEntityLabels(entity, entity_index);
-	}
-
-	//like UpdateAllEntityLabels, but only updates labels for the keys of labels_updated
-	inline static void UpdateEntityLabels(Entity *container, Entity *entity, size_t entity_index,
-		EvaluableNode::AssocType &labels_updated)
-	{
-		if(entity == nullptr || container == nullptr)
-			return;
-
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::ReadLock lock(queryCacheMutex);
-	#endif
-
-		auto found_cache = queryCaches.find(container);
-		if(found_cache != end(queryCaches))
-			found_cache->second->UpdateEntityLabels(entity, entity_index, labels_updated);
-	}
-
-	//like UpdateEntityLabels, but only updates labels for the keys of labels_updated that are not in labels_previous
-	// or where the value has changed
-	inline static void UpdateEntityLabelsAddedOrChanged(Entity *container, Entity *entity, size_t entity_index,
-		EvaluableNode::AssocType &labels_previous, EvaluableNode::AssocType &labels_updated)
-	{
-		if(entity == nullptr || container == nullptr)
-			return;
-
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::ReadLock lock(queryCacheMutex);
-	#endif
-
-		auto found_cache = queryCaches.find(container);
-		if(found_cache != end(queryCaches))
-			found_cache->second->UpdateEntityLabelsAddedOrChanged(entity, entity_index, labels_previous, labels_updated);
-	}
-
-	//like UpdateAllEntityLabels, but only updates labels for label_updated
-	inline static void UpdateEntityLabel(Entity *container, Entity *entity, size_t entity_index,
-		StringInternPool::StringID label_updated)
-	{
-		if(entity == nullptr || container == nullptr)
-			return;
-
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::ReadLock lock(queryCacheMutex);
-	#endif
-
-		auto found_cache = queryCaches.find(container);
-		if(found_cache != end(queryCaches))
-			found_cache->second->UpdateEntityLabel(entity, entity_index, label_updated);
-	}
 
 	//like UpdateEntityLabels, but adds the entity to the cache
 	inline static void AddEntity(Entity *container, Entity *entity, size_t entity_index)
@@ -197,14 +133,6 @@ public:
 	}
 
 protected:
-
-#ifdef MULTITHREAD_SUPPORT
-	//mutex for operations that may edit or modify the entity's properties and attributes
-	static Concurrency::ReadWriteMutex queryCacheMutex;
-#endif
-
-	//set of caches for numeric queries
-	static FastHashMap<Entity *, std::unique_ptr<EntityQueryCaches>> queryCaches;
 
 	//maximum number of entities which to apply a brute force search (not building up caches, etc.)
 	static size_t maxEntitiesBruteForceSearch;

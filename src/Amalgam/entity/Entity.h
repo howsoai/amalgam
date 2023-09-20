@@ -14,6 +14,7 @@
 #include <vector>
 
 //forward declarations:
+class EntityQueryCaches;
 class EntityWriteListener;
 class EvaluableNode;
 class EvaluableNodeManagement;
@@ -717,7 +718,7 @@ protected:
 	//when an entity has contained entities, then it needs to store the container and the contained entities
 	struct EntityRelationships
 	{
-		//Entities contained by this Entity
+		//entities contained by this Entity
 		std::vector<Entity *> containedEntities;
 
 		//lookup from StringInternPool::StringID to the index in containedEntities corresponding to that entity
@@ -725,8 +726,11 @@ protected:
 		// because the entities are keeping track; if an entity exists, then its ID will still be a valid string reference
 		StringIdToIndexAssocType containedEntityStringIdToIndex;
 
-		//Reference to the Entity that this Entity is contained by
+		//reference to the Entity that this Entity is contained by
 		Entity *container;
+
+		//cache for querying contained entities, constructed if needed
+		std::unique_ptr<EntityQueryCaches> queryCache;
 	};
 
 	//pointer to either the container or the EntityRelationships

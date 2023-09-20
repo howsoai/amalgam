@@ -25,21 +25,6 @@ public:
 	//returns the numeric query cache associated with the specified container, creates one if one does not already exist
 	static EntityQueryCaches *GetQueryCachesForContainer(Entity *container);
 
-	//like UpdateEntityLabels, but adds the entity to the cache
-	inline static void AddEntity(Entity *container, Entity *entity, size_t entity_index)
-	{
-		if(entity == nullptr || container == nullptr)
-			return;
-
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::ReadLock lock(queryCacheMutex);
-	#endif
-
-		auto found_cache = queryCaches.find(container);
-		if(found_cache != end(queryCaches))
-			found_cache->second->AddEntity(entity, entity_index);
-	}
-
 	//like UpdateEntityLabels, but removes the entity from the cache and reassigns entity_index_to_reassign to use the old
 	// entity_index; for example, if entity_index 3 is being removed and 5 is the highest index, if entity_index_to_reassign is 5,
 	// then this function will move the entity data that was previously in index 5 to be referenced by index 3 for all caches
@@ -131,9 +116,4 @@ public:
 			);
 		}
 	}
-
-protected:
-
-	//maximum number of entities which to apply a brute force search (not building up caches, etc.)
-	static size_t maxEntitiesBruteForceSearch;
 };

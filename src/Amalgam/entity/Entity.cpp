@@ -631,7 +631,9 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, StringInternPoo
 
 	t->SetEntityContainer(this);
 
-	EntityQueryManager::AddEntity(this, t, t_index);
+	EntityQueryCaches *container_caches = GetQueryCaches();
+	if(container_caches != nullptr)
+		container_caches->AddEntity(t, t_index);
 
 	if(write_listeners != nullptr)
 	{
@@ -696,7 +698,9 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, std::string id_
 
 	t->SetEntityContainer(this);
 
-	EntityQueryManager::AddEntity(this, t, t_index);
+	EntityQueryCaches *container_caches = GetQueryCaches();
+	if(container_caches != nullptr)
+		container_caches->AddEntity(t, t_index);
 
 	if(write_listeners != nullptr)
 	{

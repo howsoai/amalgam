@@ -284,8 +284,8 @@ public:
 	//returns a nullptr if does not have an active cache
 	inline EntityQueryCaches *GetQueryCaches()
 	{
-		if(hasContainedEntities)
-			return &(*entityRelationships.relationships->queryCaches);
+		if(hasContainedEntities && entityRelationships.relationships->queryCaches)
+			return entityRelationships.relationships->queryCaches.get();
 		return nullptr;
 	}
 

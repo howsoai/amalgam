@@ -7,14 +7,6 @@
 
 bool _enable_SBF_datastore = true;
 
-#ifdef MULTITHREAD_SUPPORT
-Concurrency::ReadWriteMutex EntityQueryManager::queryCacheMutex;
-#endif
-
-FastHashMap<Entity *, std::unique_ptr<EntityQueryCaches>> EntityQueryManager::queryCaches;
-
-size_t EntityQueryManager::maxEntitiesBruteForceSearch = 10;
-
 bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 {
 	if(e == nullptr)

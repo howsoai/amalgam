@@ -180,12 +180,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en)
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_NUMBER(EvaluableNode *en)
 {
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(en->GetNumberValue()), true);
+	return EvaluableNodeReference(evaluableNodeManager->AllocNode(en->GetNumberValueReference()), true);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_STRING(EvaluableNode *en)
 {
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, en->GetStringID()), true);
+	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, en->GetStringIDReference()), true);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en)
@@ -1840,7 +1840,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en)
 			if(DoesEvaluableNodeTypeUseStringData(cur->GetType()))
 				s = cur->GetStringValue();
 			else if(DoesEvaluableNodeTypeUseNumberData(cur->GetType()))
-				s = EvaluableNode::NumberToString(cur->GetNumberValue());
+				s = EvaluableNode::NumberToString(cur->GetNumberValueReference());
 			else
 				s = EvaluableNode::ToString(cur);
 		}

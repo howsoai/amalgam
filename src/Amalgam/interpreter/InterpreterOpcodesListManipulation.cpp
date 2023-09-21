@@ -74,7 +74,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en)
 	{
 		if(DoesEvaluableNodeTypeUseStringData(list->GetType()))
 		{
-			auto sid = list->GetStringID();
+			auto sid = list->GetStringIDReference();
 			if(sid <= string_intern_pool.EMPTY_STRING_ID)
 				return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, StringInternPool::NOT_A_STRING_ID), true);
 
@@ -89,7 +89,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en)
 		if(DoesEvaluableNodeTypeUseNumberData(list->GetType()))
 		{
 			//return 0 if zero
-			double value = list->GetNumberValue();
+			double value = list->GetNumberValueReference();
 			if(FastIsNaN(value))
 				return EvaluableNodeReference(evaluableNodeManager->AllocNode(std::numeric_limits<double>::quiet_NaN()), true);
 
@@ -190,7 +190,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en)
 	{
 		if(DoesEvaluableNodeTypeUseStringData(list->GetType()))
 		{
-			auto sid = list->GetStringID();
+			auto sid = list->GetStringIDReference();
 			if(sid <= string_intern_pool.EMPTY_STRING_ID)
 				return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, StringInternPool::NOT_A_STRING_ID), true);
 
@@ -220,7 +220,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en)
 		if(DoesEvaluableNodeTypeUseNumberData(list->GetType()))
 		{
 			//return 0 if zero
-			double value = list->GetNumberValue();
+			double value = list->GetNumberValueReference();
 			if(value == 0.0)
 				return list;
 
@@ -292,7 +292,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en)
 	{
 		if(DoesEvaluableNodeTypeUseStringData(list->GetType()))
 		{
-			auto sid = list->GetStringID();
+			auto sid = list->GetStringIDReference();
 			if(sid <= string_intern_pool.EMPTY_STRING_ID)
 				return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, StringInternPool::NOT_A_STRING_ID), true);
 
@@ -307,7 +307,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en)
 		if(DoesEvaluableNodeTypeUseNumberData(list->GetType()))
 		{
 			//return 0 if zero
-			double value = list->GetNumberValue();
+			double value = list->GetNumberValueReference();
 			if(value == 0.0)
 				return list;
 
@@ -401,7 +401,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en)
 	{
 		if(DoesEvaluableNodeTypeUseStringData(list->GetType()))
 		{
-			auto sid = list->GetStringID();
+			auto sid = list->GetStringIDReference();
 			if(sid <= string_intern_pool.EMPTY_STRING_ID)
 				return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, StringInternPool::NOT_A_STRING_ID), true);
 
@@ -432,7 +432,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en)
 		if(DoesEvaluableNodeTypeUseNumberData(list->GetType()))
 		{
 			//return 0 if zero
-			double value = list->GetNumberValue();
+			double value = list->GetNumberValueReference();
 			if(value == 0.0)
 				return list;
 

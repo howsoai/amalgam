@@ -1312,7 +1312,7 @@ EvaluableNodeReference GenerateRandomValueBasedOnRandParam(EvaluableNodeReferenc
 
 	if(DoesEvaluableNodeTypeUseNumberData(param->GetType()))
 	{
-		double value = random_stream.RandFull() * param->GetNumberValue();
+		double value = random_stream.RandFull() * param->GetNumberValueReference();
 		return EvaluableNodeReference(enm->AllocNode(value), true);
 	}
 

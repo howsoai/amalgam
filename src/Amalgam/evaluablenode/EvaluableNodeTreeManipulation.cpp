@@ -119,8 +119,8 @@ EvaluableNode *EvaluableNodeTreeManipulation::NodesMixMethod::MergeValues(Evalua
 			}
 			else if(merged->GetType() == ENT_STRING && a->GetType() == ENT_STRING && b->GetType() == ENT_STRING)
 			{
-				auto a_value = a->GetStringID();
-				auto b_value = b->GetStringID();
+				auto a_value = a->GetStringIDReference();
+				auto b_value = b->GetStringIDReference();
 				auto mixed_value = MixStringValues(a_value, b_value,
 					randomStream.CreateOtherStreamViaRand(), fractionA, fractionB);
 				merged->SetStringIDWithReferenceHandoff(mixed_value);
@@ -1536,7 +1536,7 @@ void MutateImmediateNode(EvaluableNode *n, RandomStream &rs, std::vector<std::st
 {
 	if(DoesEvaluableNodeTypeUseNumberData(n->GetType()))
 	{
-		double cur_value = n->GetNumberValue();
+		double cur_value = n->GetNumberValueReference();
 
 		//if it's a NaN, then sometimes randomly replace it with a non-null value (which can be mutated further below)
 		if(FastIsNaN(cur_value) && rs.Rand() < 0.9)

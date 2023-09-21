@@ -119,8 +119,8 @@ EvaluableNode *EvaluableNodeTreeManipulation::NodesMixMethod::MergeValues(Evalua
 			}
 			else if(merged->GetType() == ENT_STRING && a->GetType() == ENT_STRING && b->GetType() == ENT_STRING)
 			{
-				auto a_value = a->GetStringID();
-				auto b_value = b->GetStringID();
+				auto a_value = a->GetStringIDReference();
+				auto b_value = b->GetStringIDReference();
 				auto mixed_value = MixStringValues(a_value, b_value,
 					randomStream.CreateOtherStreamViaRand(), fractionA, fractionB);
 				merged->SetStringIDWithReferenceHandoff(mixed_value);
@@ -332,9 +332,9 @@ bool EvaluableNodeTreeManipulation::DoesTreeContainLabels(EvaluableNode *en)
 	return DoesTreeContainLabels(en, checked);
 }
 
-std::pair<Entity::LabelsAssocType, bool> EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTreeAndNormalize(EvaluableNode *en)
+std::pair<EvaluableNode::LabelsAssocType, bool> EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTreeAndNormalize(EvaluableNode *en)
 {
-	Entity::LabelsAssocType index;
+	EvaluableNode::LabelsAssocType index;
 	EvaluableNode::ReferenceSetType checked;
 
 	//can check faster if don't need to check for cycles
@@ -1073,7 +1073,7 @@ bool EvaluableNodeTreeManipulation::DoesTreeContainLabels(EvaluableNode *en, Eva
 	return false;
 }
 
-bool EvaluableNodeTreeManipulation::CollectLabelIndexesFromNormalTree(EvaluableNode *tree, Entity::LabelsAssocType &index, EvaluableNode::ReferenceSetType *checked)
+bool EvaluableNodeTreeManipulation::CollectLabelIndexesFromNormalTree(EvaluableNode *tree, EvaluableNode::LabelsAssocType &index, EvaluableNode::ReferenceSetType *checked)
 {
 	if(tree == nullptr)
 		return false;
@@ -1123,7 +1123,7 @@ bool EvaluableNodeTreeManipulation::CollectLabelIndexesFromNormalTree(EvaluableN
 	return false;
 }
 
-void EvaluableNodeTreeManipulation::CollectAllLabelIndexesFromTree(EvaluableNode *tree, Entity::LabelsAssocType &index, EvaluableNode::ReferenceSetType *checked)
+void EvaluableNodeTreeManipulation::CollectAllLabelIndexesFromTree(EvaluableNode *tree, EvaluableNode::LabelsAssocType &index, EvaluableNode::ReferenceSetType *checked)
 {
 	if(tree == nullptr)
 		return;
@@ -1161,7 +1161,7 @@ void EvaluableNodeTreeManipulation::CollectAllLabelIndexesFromTree(EvaluableNode
 	}
 }
 
-bool EvaluableNodeTreeManipulation::CollectLabelIndexesFromTreeAndMakeLabelNormalizationPass(EvaluableNode *tree, Entity::LabelsAssocType &index,
+bool EvaluableNodeTreeManipulation::CollectLabelIndexesFromTreeAndMakeLabelNormalizationPass(EvaluableNode *tree, EvaluableNode::LabelsAssocType &index,
 	EvaluableNode::ReferenceSetType &checked, EvaluableNode *&replace_tree_by)
 {
 	if(tree == nullptr)
@@ -1536,7 +1536,7 @@ void MutateImmediateNode(EvaluableNode *n, RandomStream &rs, std::vector<std::st
 {
 	if(DoesEvaluableNodeTypeUseNumberData(n->GetType()))
 	{
-		double cur_value = n->GetNumberValue();
+		double cur_value = n->GetNumberValueReference();
 
 		//if it's a NaN, then sometimes randomly replace it with a non-null value (which can be mutated further below)
 		if(FastIsNaN(cur_value) && rs.Rand() < 0.9)

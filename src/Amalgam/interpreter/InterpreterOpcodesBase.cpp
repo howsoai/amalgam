@@ -8,7 +8,6 @@
 #include "DateTimeFormat.h"
 #include "EntityManipulation.h"
 #include "EntityQueries.h"
-#include "EntityQueryManager.h"
 #include "EntityWriteListener.h"
 #include "EvaluableNodeTreeFunctions.h"
 #include "PerformanceProfiler.h"
@@ -1313,7 +1312,7 @@ EvaluableNodeReference GenerateRandomValueBasedOnRandParam(EvaluableNodeReferenc
 
 	if(DoesEvaluableNodeTypeUseNumberData(param->GetType()))
 	{
-		double value = random_stream.RandFull() * param->GetNumberValue();
+		double value = random_stream.RandFull() * param->GetNumberValueReference();
 		return EvaluableNodeReference(enm->AllocNode(value), true);
 	}
 

@@ -10,6 +10,7 @@
 #include <string_view>
 
 //forward declarations:
+class Entity;
 class Interpreter;
 
 //used for any operation that must sort different values - for passing in a lambda to run on every operation
@@ -33,39 +34,6 @@ private:
 // merge sort is the preferrable sort due to the lack of weak ordering and bottleneck being interpretation
 //returns a newly sorted list
 std::vector<EvaluableNode *> CustomEvaluableNodeOrderedChildNodesSort(std::vector<EvaluableNode *> &list, CustomEvaluableNodeComparator &cenc);
-
-//Returns positive if a is less than b,
-// negative if greater, or 0 if equal or not numerically comparable
-int StringNaturalCompare(const std::string &a, const std::string &b);
-
-inline int StringNaturalCompare(const StringInternPool::StringID a, const StringInternPool::StringID b)
-{
-	return StringNaturalCompare(string_intern_pool.GetStringFromID(a), string_intern_pool.GetStringFromID(b));
-}
-
-inline bool StringNaturalCompareSort(const std::string &a, const std::string &b)
-{ 
-	int comp = StringNaturalCompare(a, b);
-	return comp < 0;
-}
-
-inline bool StringIDNaturalCompareSort(const StringInternPool::StringID a, const StringInternPool::StringID b)
-{
-	int comp = StringNaturalCompare(string_intern_pool.GetStringFromID(a), string_intern_pool.GetStringFromID(b));
-	return comp < 0;
-}
-
-inline bool StringNaturalCompareSortReverse(const std::string &a, const std::string &b)
-{
-	int comp = StringNaturalCompare(a, b);
-	return comp > 0;
-}
-
-inline bool StringIDNaturalCompareSortReverse(const StringInternPool::StringID a, const StringInternPool::StringID b)
-{
-	int comp = StringNaturalCompare(a, b);
-	return comp > 0;
-}
 
 //Starts at the container specified and traverses the id list specified, finding the relative Entity from container
 // if id_path is nullptr, then it will set relative_entity to the container itself, leaving relative_entity_parent to nullptr
@@ -123,18 +91,6 @@ EntityReferenceType TraverseToExistingEntityReferenceViaEvaluableNodeIDPath(Enti
 
 	//shouldn't make it here
 	return EntityReferenceType(nullptr);
-}
-
-//like TraverseToExistingEntityReferenceViaEvaluableNodeIDPath but returns EntityReadReference
-inline EntityReadReference TraverseToExistingEntityReadReferenceViaEvaluableNodeIDPath(Entity *container, EvaluableNode *id_path)
-{
-	return TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReadReference>(container, id_path);
-}
-
-//like TraverseToExistingEntityReferenceViaEvaluableNodeIDPath but returns EntityWriteReference
-inline EntityWriteReference TraverseToExistingEntityWriteReferenceViaEvaluableNodeIDPath(Entity *container, EvaluableNode *id_path)
-{
-	return TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityWriteReference>(container, id_path);
 }
 
 //Like TraverseToEntityViaEvaluableNodeIDPath, except ensures that the final destination does not exist (or if it does, it will place it within the entity specified

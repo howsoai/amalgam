@@ -136,7 +136,7 @@ bool EvaluableNodeToYamlStringRecurse(EvaluableNode *en, ryml::NodeRef &built_el
 	{
 		if(DoesEvaluableNodeTypeUseNumberData(en->GetType()))
 		{
-			double number = en->GetNumberValue();
+			double number = en->GetNumberValueReference();
 			built_element << number;
 		}
 		else

@@ -6,7 +6,7 @@
 #include "EntityManipulation.h"
 #include "EntityQueries.h"
 #include "EntityQueryBuilder.h"
-#include "EntityQueryManager.h"
+#include "EntityQueryCaches.h"
 #include "EntityWriteListener.h"
 #include "EvaluableNodeTreeDifference.h"
 #include "EvaluableNodeTreeFunctions.h"
@@ -35,7 +35,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_ENTITY(EvaluableN
 
 	//get the id of the source entity
 	auto source_id_node = InterpretNodeForImmediateUse(ocn[0]);
-	EntityReadReference source_entity = TraverseToExistingEntityReadReferenceViaEvaluableNodeIDPath(curEntity, source_id_node);
+	EntityReadReference source_entity = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReadReference>(curEntity, source_id_node);
 	evaluableNodeManager->FreeNodeTreeIfPossible(source_id_node);
 
 	return EvaluableNodeReference(evaluableNodeManager->AllocNode(source_entity != nullptr ? 1.0 : 0.0), true);
@@ -68,7 +68,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 			}
 			else //first parameter is the id
 			{
-				source_entity = TraverseToExistingEntityReadReferenceViaEvaluableNodeIDPath(curEntity, first_param);
+				source_entity = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReadReference>(curEntity, first_param);
 				evaluableNodeManager->FreeNodeTreeIfPossible(first_param);
 
 				if(source_entity == nullptr)
@@ -148,7 +148,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 		return EvaluableNodeReference::Null();
 
 	//perform query
-	return EntityQueryManager::GetEntitiesMatchingQuery(source_entity, conditionsBuffer, evaluableNodeManager, return_query_value);
+	return EntityQueryCaches::GetEntitiesMatchingQuery(source_entity, conditionsBuffer, evaluableNodeManager, return_query_value);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes(EvaluableNode *en)

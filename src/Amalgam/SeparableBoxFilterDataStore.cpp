@@ -1,4 +1,5 @@
 //project headers:
+#include "Entity.h"
 #include "SeparableBoxFilterDataStore.h"
 
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
@@ -6,465 +7,31 @@ thread_local
 #endif
 SeparableBoxFilterDataStore::SBFDSParametersAndBuffers SeparableBoxFilterDataStore::parametersAndBuffers;
 
-double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(GeneralizedDistance &dist_params,
-	EvaluableNodeImmediateValue value, EvaluableNodeImmediateValueType value_type,
-	size_t num_entities_to_populate, bool expand_search_if_optimal,
-	size_t query_feature_index, size_t absolute_feature_index, BitArrayIntegerSet &enabled_indices)
+void SeparableBoxFilterDataStore::BuildLabel(size_t column_index, const std::vector<Entity *> &entities)
 {
-	auto &column = columnData[absolute_feature_index];
-	auto feature_type = dist_params.featureParams[query_feature_index].featureType;
+	auto &column_data = columnData[column_index];
+	auto label_id = column_data->stringId;
 
-	bool value_is_null = (value_type == ENIVT_NULL || (value_type == ENIVT_NUMBER && FastIsNaN(value.number)));
-	//need to accumulate values for nulls if the value is a null
-	if(value_is_null)
+	auto &entities_with_number_values = parametersAndBuffers.entitiesWithValues;
+	entities_with_number_values.clear();
+
+	//populate matrix and get values
+	// maintaining the order of insertion of the entities from smallest to largest allows for better performance of the insertions
+	// and every function called here assumes that entities are inserted in increasing order
+	for(size_t entity_index = 0; entity_index < entities.size(); entity_index++)
 	{
-		double unknown_unknown_term = dist_params.ComputeDistanceTermUnknownToUnknown(query_feature_index);
-		AccumulatePartialSums(column->nullIndices, query_feature_index, unknown_unknown_term);
-		AccumulatePartialSums(column->nanIndices, query_feature_index, unknown_unknown_term);
+		EvaluableNodeImmediateValueType value_type;
+		EvaluableNodeImmediateValue value;
+		value_type = entities[entity_index]->GetValueAtLabelAsImmediateValue(label_id, value);
+		matrix[GetMatrixCellIndex(entity_index) + column_index] = value;
 
-		//if nominal, need to compute null matches to keep the inner loops fast
-		// if a data set is mostly nulls, it'll be slower, but this is acceptable as a more rare situation
-		//if the known-unknown term is less than unknown_unknown (this should be rare if nulls have semantic meaning)
-		//then need to populate the rest of the cases
-		double known_unknown_term = dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index);
-		if(feature_type == FDT_NOMINAL || known_unknown_term < unknown_unknown_term)
-		{
-			BitArrayIntegerSet &known_unknown_indices = parametersAndBuffers.potentialMatchesSet;
-			known_unknown_indices = enabled_indices;
-			column->nullIndices.EraseTo(known_unknown_indices);
-			column->nanIndices.EraseTo(known_unknown_indices);
-			AccumulatePartialSums(known_unknown_indices, query_feature_index, known_unknown_term);
-		}
-
-		return known_unknown_term;
+		column_data->InsertNextIndexValueExceptNumbers(value_type, value, entity_index, entities_with_number_values);
 	}
 
-	//need to accumulate nulls if they're closer than an exact match
-	//but if made it here, then the value itself isn't null
-	if(dist_params.IsKnownToUnknownDistanceLessThanOrEqualToExactMatch(query_feature_index))
-	{
-		double known_unknown_term = dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index);
-		AccumulatePartialSums(column->nullIndices, query_feature_index, known_unknown_term);
-		AccumulatePartialSums(column->nanIndices, query_feature_index, known_unknown_term);
-	}
+	//sort the number values for efficient insertion, but keep the entities in their order
+	std::stable_sort(begin(entities_with_number_values), end(entities_with_number_values));
 
-	//if nominal, only need to compute the exact match
-	if(feature_type == FDT_NOMINAL)
-	{
-		if(value_type == ENIVT_NUMBER)
-		{
-			auto [value_index, exact_index_found] = column->FindExactIndexForValue(value.number);
-			if(exact_index_found)
-			{
-				double term = dist_params.ComputeDistanceTermNominalExactMatch(query_feature_index);
-				AccumulatePartialSums(*column->sortedNumberValueIndexPairs[value_index].second, query_feature_index, term);
-			}
-		}
-		else if(value_type == ENIVT_STRING_ID)
-		{
-			auto value_found = column->stringIdValueToIndices.find(value.stringID);
-			if(value_found != end(column->stringIdValueToIndices))
-			{
-				double term = dist_params.ComputeDistanceTermNominalExactMatch(query_feature_index);
-				AccumulatePartialSums(*(value_found->second), query_feature_index, term);
-			}
-		}
-		else if(value_type == ENIVT_CODE)
-		{
-			//compute partial sums for all code of matching size
-			size_t code_size = 1;
-			if(value_type == ENIVT_CODE)
-				code_size = EvaluableNode::GetDeepSize(value.code);
-
-			auto value_found = column->valueCodeSizeToIndices.find(code_size);
-			if(value_found != end(column->valueCodeSizeToIndices))
-			{
-				auto &entity_indices = *(value_found->second);
-				ComputeAndAccumulatePartialSums(dist_params, value, value_type,
-					entity_indices, query_feature_index, absolute_feature_index);
-			}
-		}
-		//else value_type == ENIVT_NULL
-
-		//didn't find the value
-		return dist_params.ComputeDistanceTermNominalNonMatch(query_feature_index);
-	}
-	else if(feature_type == FDT_CONTINUOUS_STRING)
-	{
-		if(value_type == ENIVT_STRING_ID)
-		{
-			auto value_found = column->stringIdValueToIndices.find(value.stringID);
-			if(value_found != end(column->stringIdValueToIndices))
-			{
-				double term = dist_params.ComputeDistanceTermNonNominalExactMatch(query_feature_index);
-				AccumulatePartialSums(*(value_found->second), query_feature_index, term);
-			}
-		}
-
-		//the next closest string will have an edit distance of 1
-		return dist_params.ComputeDistanceTermNonNominalNonCyclicNonNullRegular(1.0, query_feature_index);
-	}
-	else if(feature_type == FDT_CONTINUOUS_CODE)
-	{
-		//compute partial sums for all code of matching size
-		size_t code_size = 1;
-		if(value_type == ENIVT_CODE)
-			code_size = EvaluableNode::GetDeepSize(value.code);
-		
-		auto value_found = column->valueCodeSizeToIndices.find(code_size);
-		if(value_found != end(column->valueCodeSizeToIndices))
-		{
-			auto &entity_indices = *(value_found->second);
-			ComputeAndAccumulatePartialSums(dist_params, value, value_type,
-				entity_indices, query_feature_index, absolute_feature_index);
-		}
-
-		//next most similar code must be at least a distance of 1 edit away
-		return dist_params.ComputeDistanceTermNonNominalNonCyclicNonNullRegular(1.0, query_feature_index);
-	}
-	//else feature_type == FDT_CONTINUOUS_NUMERIC or FDT_CONTINUOUS_UNIVERSALLY_NUMERIC
-
-	//if not a number or no numbers available, then no size
-	if(value_type != ENIVT_NUMBER || column->sortedNumberValueIndexPairs.size() == 0)
-		return GetMaxDistanceTermFromValue(dist_params, value, value_type, query_feature_index, absolute_feature_index);
-
-	bool cyclic_feature = dist_params.IsFeatureCyclic(query_feature_index);
-	double cycle_length = std::numeric_limits<double>::infinity();
-	if(cyclic_feature)
-		cycle_length = dist_params.featureParams[query_feature_index].typeAttributes.maxCyclicDifference;
-
-	auto [value_index, exact_index_found] = column->FindClosestValueIndexForValue(value.number, cycle_length);
-
-	double term = 0.0;
-	if(exact_index_found)
-		term = dist_params.ComputeDistanceTermNonNominalExactMatch(query_feature_index);
-	else
-		term = dist_params.ComputeDistanceTermNonNominalNonNullRegular(value.number - column->sortedNumberValueIndexPairs[value_index].first, query_feature_index);
-
-	size_t num_entities_computed = AccumulatePartialSums(*column->sortedNumberValueIndexPairs[value_index].second, query_feature_index, term);
-
-	//the logic below assumes there are at least two entries
-	size_t num_unique_number_values = column->sortedNumberValueIndexPairs.size();
-	if(num_unique_number_values <= 1)
-		return term;
-
-	//if we haven't filled max_count results, or searched num_buckets, keep expanding search to neighboring buckets
-	size_t lower_value_index = value_index;
-	size_t upper_value_index = value_index;
-	double largest_term = term;
-
-	//used for calculating the gaps between values
-	double last_diff = 0.0;
-	double largest_diff_delta = 0.0;
-
-	//put a max limit to the number of cases
-	size_t max_cases_relative_to_total = std::min(static_cast<size_t>(2000), static_cast<size_t>(parametersAndBuffers.partialSums.numInstances / 8) );
-	size_t max_num_to_find = std::max(num_entities_to_populate, max_cases_relative_to_total);
-
-	//if one dimension or don't want to expand search, then cut off early
-	if(!expand_search_if_optimal)
-		max_num_to_find = num_entities_to_populate;
-
-	//compute along the feature
-	while(num_entities_computed < max_num_to_find)
-	{
-		//see if can compute one bucket lower
-		bool compute_lower = false;
-		double lower_diff = 0.0;
-		size_t next_lower_index = 0;
-		if(!cyclic_feature)
-		{
-			if(lower_value_index > 0)
-			{
-				next_lower_index = lower_value_index - 1;
-				lower_diff = std::abs(value.number - column->sortedNumberValueIndexPairs[next_lower_index].first);
-				compute_lower = true;
-			}
-		}
-		else //cyclic_feature
-		{
-			size_t next_index;
-			if(lower_value_index > 0)
-				next_index = lower_value_index - 1;
-			else
-				next_index = num_unique_number_values - 1;
-
-			//make sure didn't wrap all the way around for cyclic features
-			if(next_index != value_index)
-			{
-				next_lower_index = next_index;
-				lower_diff = GeneralizedDistance::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueIndexPairs[next_lower_index].first), cycle_length);
-				compute_lower = true;
-			}
-		}
-
-		//see if can compute one bucket upper
-		bool compute_upper = false;
-		double upper_diff = 0.0;
-		size_t next_upper_index = 0;
-		if(!cyclic_feature)
-		{
-			if(upper_value_index + 1 < num_unique_number_values)
-			{
-				next_upper_index = upper_value_index + 1;
-				upper_diff = std::abs(value.number - column->sortedNumberValueIndexPairs[next_upper_index].first);
-				compute_upper = true;
-			}
-		}
-		else //cyclic_feature
-		{
-			size_t next_index;
-			if(upper_value_index + 1 < num_unique_number_values)
-				next_index = upper_value_index + 1;
-			else
-				next_index = 0;
-
-			//make sure didn't wrap all the way around for cyclic features
-			//either from the value itself or overlapping with the next_lower_index
-			if(next_index != value_index)
-			{
-				if((!compute_lower || next_index != next_lower_index))
-				{
-					next_upper_index = next_index;
-					upper_diff = GeneralizedDistance::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueIndexPairs[next_upper_index].first), cycle_length);
-					compute_upper = true;
-				}
-				else //upper and lower have overlapped, want to exit the loop
-					next_upper_index = next_lower_index;
-			}
-		}
-
-		//determine the next closest point and its difference
-		double next_closest_diff;
-		size_t next_closest_index;
-
-		//if can only compute lower or lower is closer, then compute lower
-		if( (compute_lower && !compute_upper)
-			|| (compute_lower && compute_upper && lower_diff < upper_diff) )
-		{
-			next_closest_diff = lower_diff;
-			next_closest_index = next_lower_index;
-			lower_value_index = next_lower_index;
-		}
-		else if(compute_upper)
-		{
-			next_closest_diff = upper_diff;
-			next_closest_index = next_upper_index;
-			upper_value_index = next_upper_index;
-		}
-		else //nothing left, end
-		{
-			break;
-		}
-
-		//if running into the extra_iterations
-		if(num_entities_computed >= num_entities_to_populate)
-		{
-			//use heuristic to decide whether to continue populating based on whether this diff will help the overall distance cutoffs
-			// look at the rate of change of the difference compared to before, and how many new entities will be populated
-			// if it is too small and doesn't fill enough (or fills too many), then stop expanding
-			size_t potential_entities = column->sortedNumberValueIndexPairs[next_closest_index].second->size();
-			if(num_entities_computed + potential_entities > max_num_to_find)
-				break;
-			
-			//determine if it should continue based on how much this difference will contribute to the total; either a big jump or enough entities
-			bool should_continue = false;
-			double diff_delta = next_closest_diff - last_diff;
-
-			if(diff_delta >= largest_diff_delta)
-				should_continue = true;
-
-			if(diff_delta >= largest_diff_delta / 2 && potential_entities >= 2)
-				should_continue = true;
-
-			//going out n deviations is likely to only miss 0.5^n of the likely values of nearest neighbors
-			// so 0.5^5 should catch ~97% of the values
-			if(dist_params.DoesFeatureHaveDeviation(query_feature_index)
-					&& next_closest_diff < 5 * dist_params.featureParams[query_feature_index].deviation)
-				should_continue = true;
-
-			if(!should_continue)
-				break;
-		}
-
-		term = dist_params.ComputeDistanceTermNonNominalNonNullRegular(next_closest_diff, query_feature_index);
-		num_entities_computed += AccumulatePartialSums(*column->sortedNumberValueIndexPairs[next_closest_index].second, query_feature_index, term);
-
-		//track the rate of change of difference
-		if(next_closest_diff - last_diff > largest_diff_delta)
-			largest_diff_delta = next_closest_diff - last_diff;
-		last_diff = next_closest_diff;
-
-		//keep track of the largest seen so far
-		if(term > largest_term)
-			largest_term = term;
-
-		//if cyclic and have wrapped around, then exit
-		if(lower_value_index >= upper_value_index)
-			break;
-	}
-
-	//return the largest computed so far
-	return largest_term;
-}
-
-void SeparableBoxFilterDataStore::PopulateInitialPartialSums(GeneralizedDistance &dist_params, size_t top_k, size_t num_enabled_features,
-	BitArrayIntegerSet &enabled_indices, std::vector<double> &min_unpopulated_distances, std::vector<double> &min_distance_by_unpopulated_count)
-{
-	size_t num_entities_to_populate = top_k;
-	//populate sqrt(2)^p * top_k, which will yield 2 for p=2, 1 for p=0, and about 1.2 for p=0.5
-	if(num_enabled_features > 1)
-		num_entities_to_populate = static_cast<size_t>(std::lround(FastPow(GeneralizedDistance::s_sqrt_2, dist_params.pValue) * top_k)) + 1;
-	
-	min_unpopulated_distances.resize(num_enabled_features);
-	for(size_t i = 0; i < num_enabled_features; i++)
-	{
-		double next_closest_distance = PopulatePartialSumsWithSimilarFeatureValue(dist_params,
-			parametersAndBuffers.targetValues[i], parametersAndBuffers.targetValueTypes[i],
-			num_entities_to_populate,
-			//expand search if using more than one dimension
-			num_enabled_features > 1 ,
-			i, parametersAndBuffers.targetColumnIndices[i], enabled_indices);
-
-		min_unpopulated_distances[i] = next_closest_distance;
-	}
-	std::sort(begin(min_unpopulated_distances), end(min_unpopulated_distances));
-
-	//compute min distance based on the number of features that are unpopulated
-	min_distance_by_unpopulated_count.clear();
-	//need to add a 0 for when all distances are computed
-	min_distance_by_unpopulated_count.push_back(0.0);
-	//append all of the sorted distances so they can be accumulated and assigned
-	min_distance_by_unpopulated_count.insert(end(min_distance_by_unpopulated_count), begin(min_unpopulated_distances), end(min_unpopulated_distances));
-	for(size_t i = 1; i < min_distance_by_unpopulated_count.size(); i++)
-		min_distance_by_unpopulated_count[i] += min_distance_by_unpopulated_count[i - 1];
-}
-
-void SeparableBoxFilterDataStore::PopulatePotentialGoodMatches(FlexiblePriorityQueue<CountDistanceReferencePair<size_t>> &potential_good_matches,
-	BitArrayIntegerSet &enabled_indices, PartialSumCollection &partial_sums, size_t top_k)
-{
-	potential_good_matches.clear();
-	potential_good_matches.Reserve(top_k);
-
-	//first, build up top_k that have at least one feature
-	size_t entity_index = 0;
-	size_t indices_considered = 0;
-	size_t end_index = enabled_indices.GetEndInteger();
-	for(; entity_index < end_index; entity_index++)
-	{
-		//don't need to check maximum index, because already checked in loop
-		if(!enabled_indices.ContainsWithoutMaximumIndexCheck(entity_index))
-			continue;
-
-		indices_considered++;
-
-		auto [num_calculated_feature_deltas, cur_sum] = partial_sums.GetNumFilledAndSum(entity_index);
-		if(num_calculated_feature_deltas == 0)
-			continue;
-
-		potential_good_matches.emplace(num_calculated_feature_deltas, cur_sum, entity_index);
-		if(potential_good_matches.size() == top_k)
-		{
-			entity_index++;
-			break;
-		}
-	}
-
-	//heuristically attempt to find some cases with the most number of features calculated (by the closest matches) and the lowest distances
-	//iterate until at least index_end / e cases are seen, but cap at a maximum number
-	size_t total_indices = enabled_indices.size();
-	size_t num_indices_to_consider = static_cast<size_t>(std::floor(total_indices * 0.3678794411714));
-	num_indices_to_consider = std::min(static_cast<size_t>(1000), num_indices_to_consider);
-
-	//find a good number of features based on the discrete logarithm of the number of features
-	size_t good_number_of_features = 0;
-	size_t num_features = partial_sums.numDimensions;
-	while(num_features >>= 1)
-		good_number_of_features++;
-
-	//start with requiring at least one feature matching to be considered a good match
-	size_t good_match_threshold_count = 1;
-	double good_match_threshold_value = std::numeric_limits<double>::infinity();
-	if(potential_good_matches.size() > 0)
-	{
-		const auto &top = potential_good_matches.top();
-		good_match_threshold_count = top.count;
-		good_match_threshold_value = top.distance;
-	}
-
-	//continue on starting at the next unexamined index until have seen at least max_considerable_good_index
-	// or k filled with entities having good_number_of_features calculated
-	for(; indices_considered < num_indices_to_consider && entity_index < end_index; entity_index++)
-	{
-		//don't need to check maximum index, because already checked in loop
-		if(!enabled_indices.ContainsWithoutMaximumIndexCheck(entity_index))
-			continue;
-
-		indices_considered++;
-
-		auto [num_calculated_feature_deltas, cur_sum] = partial_sums.GetNumFilledAndSum(entity_index);
-		//skip if not good enough
-		if(num_calculated_feature_deltas < good_match_threshold_count)
-			continue;
-
-		//either needs to exceed the calculated features or have smaller distance
-		if(num_calculated_feature_deltas > good_match_threshold_count
-			|| cur_sum < good_match_threshold_value)
-		{
-			//have top_k, but this one is better
-			potential_good_matches.emplace(num_calculated_feature_deltas, cur_sum, entity_index);
-			potential_good_matches.pop();
-
-			const auto &top = potential_good_matches.top();
-			good_match_threshold_count = top.count;
-			good_match_threshold_value = top.distance;
-
-			//if have found enough features, stop searching
-			if(good_match_threshold_count >= good_number_of_features)
-				break;
-		}
-	}
-}
-
-size_t SeparableBoxFilterDataStore::AddLabelsAsEmptyColumns(std::vector<size_t> &label_ids, size_t num_entities)
-{
-	size_t num_existing_columns = columnData.size();
-	size_t num_inserted_columns = 0;
-
-	//create columns for the labels, don't count any that already exist
-	for(auto label_id : label_ids)
-	{
-		auto [_, inserted] = labelIdToColumnIndex.insert(std::make_pair(label_id, columnData.size()));
-		if(inserted)
-		{
-			columnData.emplace_back(std::make_unique<SBFDSColumnData>(label_id));
-			num_inserted_columns++;
-		}
-	}
-	
-	//if nothing has been populated, then just create an empty matrix
-	if(matrix.size() == 0)
-	{
-		numEntities = num_entities;
-		matrix.resize(columnData.size() * numEntities);
-		return num_inserted_columns;
-	}
-
-	//expand the matrix to add the empty columns
-	std::vector<EvaluableNodeImmediateValue> old_matrix;
-	std::swap(old_matrix, matrix); //swap data pointers to free old memory
-	matrix.resize(columnData.size() * numEntities);
-
-	size_t num_columns_new = columnData.size();
-
-	//copy over existing data in blocks per entity
-	for(size_t i = 0; i < num_entities; i++)
-		memcpy((char *)&matrix[i * num_columns_new], (char *)&old_matrix[i * num_existing_columns], sizeof(EvaluableNodeImmediateValue) * num_existing_columns);
-
-	//update the number of entities
-	numEntities = num_entities;
-
-	return num_inserted_columns;
+	column_data->AppendSortedNumberIndicesWithSortedIndices(entities_with_number_values);
 }
 
 void SeparableBoxFilterDataStore::RemoveColumnIndex(size_t column_index_to_remove)
@@ -508,13 +75,133 @@ void SeparableBoxFilterDataStore::RemoveColumnIndex(size_t column_index_to_remov
 		memcpy((char *)&matrix[i * columnData.size()], (char *)&old_matrix[i * (columnData.size() + 1)], sizeof(EvaluableNodeImmediateValue) * (columnData.size()));
 }
 
-void SeparableBoxFilterDataStore::DeleteEntityIndexFromColumns(size_t index)
+void SeparableBoxFilterDataStore::AddEntity(Entity *entity, size_t entity_index)
 {
-	for(size_t i = 0; i < columnData.size(); i++)
+	size_t starting_cell_index = GetMatrixCellIndex(entity_index);
+
+	//fill with missing values, including any empty indices
+	matrix.resize(starting_cell_index + columnData.size());
+
+	//fill in matrix cells from entity
+	size_t cell_index = starting_cell_index;
+	for(size_t column_index = 0; column_index < columnData.size(); column_index++, cell_index++)
 	{
-		auto &feature_value = GetValue(index, i);
-		columnData[i]->DeleteIndexValue(feature_value, index);
+		EvaluableNodeImmediateValueType value_type;
+		EvaluableNodeImmediateValue value;
+		value_type = entity->GetValueAtLabelAsImmediateValue(columnData[column_index]->stringId, value);
+
+		matrix[cell_index] = value;
+
+		columnData[column_index]->InsertIndexValue(value_type, value, entity_index);
 	}
+
+	//count this entity
+	if(entity_index >= numEntities)
+		numEntities = entity_index + 1;
+}
+
+void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_index, size_t entity_index_to_reassign)
+{
+	if(entity_index >= numEntities || columnData.size() == 0)
+		return;
+
+	//if was the last entity and reassigning the last one or one out of bounds,
+	// simply delete from column data, delete last row, and return
+	if(entity_index + 1 == GetNumInsertedEntities() && entity_index_to_reassign >= entity_index)
+	{
+		DeleteEntityIndexFromColumns(entity_index);
+		DeleteLastRow();
+		return;
+	}
+
+	//make sure it's a valid rassignment
+	if(entity_index_to_reassign >= numEntities)
+		return;
+
+	//if deleting a row and not replacing it, just fill as if it has no data
+	if(entity_index == entity_index_to_reassign)
+	{
+		DeleteEntityIndexFromColumns(entity_index);
+
+		//fill with missing values
+		size_t starting_cell_index = GetMatrixCellIndex(entity_index);
+		for(size_t column_index = 0; column_index < columnData.size(); column_index++)
+			matrix[starting_cell_index + column_index].number = std::numeric_limits<double>::quiet_NaN();
+		return;
+	}
+
+	//reassign index for each column
+	for(size_t column_index = 0; column_index < columnData.size(); column_index++)
+	{
+		auto &val_to_overwrite = GetValue(entity_index, column_index);
+		auto &value_of_index_to_reassign = GetValue(entity_index_to_reassign, column_index);
+		auto value_type_to_reassign = columnData[column_index]->GetIndexValueType(entity_index_to_reassign);
+
+		//remove the value where it is
+		columnData[column_index]->DeleteIndexValue(value_of_index_to_reassign, entity_index_to_reassign);
+
+		//change the destination to the value
+		columnData[column_index]->ChangeIndexValue(val_to_overwrite, value_type_to_reassign, value_of_index_to_reassign, entity_index);
+	}
+
+	//copy data from entity_index_to_reassign to entity_index
+	memcpy((char *)&(matrix[entity_index * columnData.size()]), (char *)&(matrix[entity_index_to_reassign * columnData.size()]), sizeof(EvaluableNodeImmediateValue) * columnData.size());
+
+	//truncate matrix cache if removing the last entry, either by moving the last entity or by directly removing the last
+	if(entity_index_to_reassign + 1 == numEntities
+		|| (entity_index_to_reassign + 1 >= numEntities && entity_index + 1 == numEntities))
+		DeleteLastRow();
+
+	//clean up any labels that aren't relevant
+	RemoveAnyUnusedLabels();
+}
+
+void SeparableBoxFilterDataStore::UpdateAllEntityLabels(Entity *entity, size_t entity_index)
+{
+	if(entity_index >= numEntities)
+		return;
+
+	size_t matrix_index = GetMatrixCellIndex(entity_index);
+	for(size_t column_index = 0; column_index < columnData.size(); column_index++)
+	{
+		EvaluableNodeImmediateValueType value_type;
+		EvaluableNodeImmediateValue value;
+		value_type = entity->GetValueAtLabelAsImmediateValue(columnData[column_index]->stringId, value);
+
+		columnData[column_index]->ChangeIndexValue(matrix[matrix_index], value_type, value, entity_index);
+		matrix[matrix_index] = value;
+
+		matrix_index++;
+	}
+
+	//clean up any labels that aren't relevant
+	RemoveAnyUnusedLabels();
+}
+
+void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entity_index, StringInternPool::StringID label_updated)
+{
+	if(entity_index >= numEntities)
+		return;
+
+	//find the column
+	auto column = labelIdToColumnIndex.find(label_updated);
+	if(column == end(labelIdToColumnIndex))
+		return;
+	size_t column_index = column->second;
+
+	//get the new value
+	EvaluableNodeImmediateValueType value_type;
+	EvaluableNodeImmediateValue value;
+	value_type = entity->GetValueAtLabelAsImmediateValue(columnData[column_index]->stringId, value);
+
+	//update the value
+	auto &matrix_value = GetValue(entity_index, column_index);
+	columnData[column_index]->ChangeIndexValue(matrix_value, value_type, value, entity_index);
+	matrix_value = value;
+
+	//remove the label if no longer relevant
+	if(IsColumnIndexRemovable(column_index))
+		RemoveColumnIndex(column_index);
 }
 
 //populates distances_out with all entities and their distances that have a distance to target less than max_dist
@@ -1059,5 +746,475 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistance &dist_
 		previous_nn_cache[output_index] = drp.reference;
 
 		sorted_results.Pop();
+	}
+}
+
+void SeparableBoxFilterDataStore::DeleteEntityIndexFromColumns(size_t index)
+{
+	for(size_t i = 0; i < columnData.size(); i++)
+	{
+		auto &feature_value = GetValue(index, i);
+		columnData[i]->DeleteIndexValue(feature_value, index);
+	}
+}
+
+size_t SeparableBoxFilterDataStore::AddLabelsAsEmptyColumns(std::vector<size_t> &label_ids, size_t num_entities)
+{
+	size_t num_existing_columns = columnData.size();
+	size_t num_inserted_columns = 0;
+
+	//create columns for the labels, don't count any that already exist
+	for(auto label_id : label_ids)
+	{
+		auto [_, inserted] = labelIdToColumnIndex.insert(std::make_pair(label_id, columnData.size()));
+		if(inserted)
+		{
+			columnData.emplace_back(std::make_unique<SBFDSColumnData>(label_id));
+			num_inserted_columns++;
+		}
+	}
+
+	//if nothing has been populated, then just create an empty matrix
+	if(matrix.size() == 0)
+	{
+		numEntities = num_entities;
+		matrix.resize(columnData.size() * numEntities);
+		return num_inserted_columns;
+	}
+
+	//expand the matrix to add the empty columns
+	std::vector<EvaluableNodeImmediateValue> old_matrix;
+	std::swap(old_matrix, matrix); //swap data pointers to free old memory
+	matrix.resize(columnData.size() * numEntities);
+
+	size_t num_columns_new = columnData.size();
+
+	//copy over existing data in blocks per entity
+	for(size_t i = 0; i < num_entities; i++)
+		memcpy((char *)&matrix[i * num_columns_new], (char *)&old_matrix[i * num_existing_columns], sizeof(EvaluableNodeImmediateValue) * num_existing_columns);
+
+	//update the number of entities
+	numEntities = num_entities;
+
+	return num_inserted_columns;
+}
+
+double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(GeneralizedDistance &dist_params,
+	EvaluableNodeImmediateValue value, EvaluableNodeImmediateValueType value_type,
+	size_t num_entities_to_populate, bool expand_search_if_optimal,
+	size_t query_feature_index, size_t absolute_feature_index, BitArrayIntegerSet &enabled_indices)
+{
+	auto &column = columnData[absolute_feature_index];
+	auto feature_type = dist_params.featureParams[query_feature_index].featureType;
+
+	bool value_is_null = (value_type == ENIVT_NULL || (value_type == ENIVT_NUMBER && FastIsNaN(value.number)));
+	//need to accumulate values for nulls if the value is a null
+	if(value_is_null)
+	{
+		double unknown_unknown_term = dist_params.ComputeDistanceTermUnknownToUnknown(query_feature_index);
+		AccumulatePartialSums(column->nullIndices, query_feature_index, unknown_unknown_term);
+		AccumulatePartialSums(column->nanIndices, query_feature_index, unknown_unknown_term);
+
+		//if nominal, need to compute null matches to keep the inner loops fast
+		// if a data set is mostly nulls, it'll be slower, but this is acceptable as a more rare situation
+		//if the known-unknown term is less than unknown_unknown (this should be rare if nulls have semantic meaning)
+		//then need to populate the rest of the cases
+		double known_unknown_term = dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index);
+		if(feature_type == FDT_NOMINAL || known_unknown_term < unknown_unknown_term)
+		{
+			BitArrayIntegerSet &known_unknown_indices = parametersAndBuffers.potentialMatchesSet;
+			known_unknown_indices = enabled_indices;
+			column->nullIndices.EraseTo(known_unknown_indices);
+			column->nanIndices.EraseTo(known_unknown_indices);
+			AccumulatePartialSums(known_unknown_indices, query_feature_index, known_unknown_term);
+		}
+
+		return known_unknown_term;
+	}
+
+	//need to accumulate nulls if they're closer than an exact match
+	//but if made it here, then the value itself isn't null
+	if(dist_params.IsKnownToUnknownDistanceLessThanOrEqualToExactMatch(query_feature_index))
+	{
+		double known_unknown_term = dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index);
+		AccumulatePartialSums(column->nullIndices, query_feature_index, known_unknown_term);
+		AccumulatePartialSums(column->nanIndices, query_feature_index, known_unknown_term);
+	}
+
+	//if nominal, only need to compute the exact match
+	if(feature_type == FDT_NOMINAL)
+	{
+		if(value_type == ENIVT_NUMBER)
+		{
+			auto [value_index, exact_index_found] = column->FindExactIndexForValue(value.number);
+			if(exact_index_found)
+			{
+				double term = dist_params.ComputeDistanceTermNominalExactMatch(query_feature_index);
+				AccumulatePartialSums(*column->sortedNumberValueIndexPairs[value_index].second, query_feature_index, term);
+			}
+		}
+		else if(value_type == ENIVT_STRING_ID)
+		{
+			auto value_found = column->stringIdValueToIndices.find(value.stringID);
+			if(value_found != end(column->stringIdValueToIndices))
+			{
+				double term = dist_params.ComputeDistanceTermNominalExactMatch(query_feature_index);
+				AccumulatePartialSums(*(value_found->second), query_feature_index, term);
+			}
+		}
+		else if(value_type == ENIVT_CODE)
+		{
+			//compute partial sums for all code of matching size
+			size_t code_size = 1;
+			if(value_type == ENIVT_CODE)
+				code_size = EvaluableNode::GetDeepSize(value.code);
+
+			auto value_found = column->valueCodeSizeToIndices.find(code_size);
+			if(value_found != end(column->valueCodeSizeToIndices))
+			{
+				auto &entity_indices = *(value_found->second);
+				ComputeAndAccumulatePartialSums(dist_params, value, value_type,
+					entity_indices, query_feature_index, absolute_feature_index);
+			}
+		}
+		//else value_type == ENIVT_NULL
+
+		//didn't find the value
+		return dist_params.ComputeDistanceTermNominalNonMatch(query_feature_index);
+	}
+	else if(feature_type == FDT_CONTINUOUS_STRING)
+	{
+		if(value_type == ENIVT_STRING_ID)
+		{
+			auto value_found = column->stringIdValueToIndices.find(value.stringID);
+			if(value_found != end(column->stringIdValueToIndices))
+			{
+				double term = dist_params.ComputeDistanceTermNonNominalExactMatch(query_feature_index);
+				AccumulatePartialSums(*(value_found->second), query_feature_index, term);
+			}
+		}
+
+		//the next closest string will have an edit distance of 1
+		return dist_params.ComputeDistanceTermNonNominalNonCyclicNonNullRegular(1.0, query_feature_index);
+	}
+	else if(feature_type == FDT_CONTINUOUS_CODE)
+	{
+		//compute partial sums for all code of matching size
+		size_t code_size = 1;
+		if(value_type == ENIVT_CODE)
+			code_size = EvaluableNode::GetDeepSize(value.code);
+
+		auto value_found = column->valueCodeSizeToIndices.find(code_size);
+		if(value_found != end(column->valueCodeSizeToIndices))
+		{
+			auto &entity_indices = *(value_found->second);
+			ComputeAndAccumulatePartialSums(dist_params, value, value_type,
+				entity_indices, query_feature_index, absolute_feature_index);
+		}
+
+		//next most similar code must be at least a distance of 1 edit away
+		return dist_params.ComputeDistanceTermNonNominalNonCyclicNonNullRegular(1.0, query_feature_index);
+	}
+	//else feature_type == FDT_CONTINUOUS_NUMERIC or FDT_CONTINUOUS_UNIVERSALLY_NUMERIC
+
+	//if not a number or no numbers available, then no size
+	if(value_type != ENIVT_NUMBER || column->sortedNumberValueIndexPairs.size() == 0)
+		return GetMaxDistanceTermFromValue(dist_params, value, value_type, query_feature_index, absolute_feature_index);
+
+	bool cyclic_feature = dist_params.IsFeatureCyclic(query_feature_index);
+	double cycle_length = std::numeric_limits<double>::infinity();
+	if(cyclic_feature)
+		cycle_length = dist_params.featureParams[query_feature_index].typeAttributes.maxCyclicDifference;
+
+	auto [value_index, exact_index_found] = column->FindClosestValueIndexForValue(value.number, cycle_length);
+
+	double term = 0.0;
+	if(exact_index_found)
+		term = dist_params.ComputeDistanceTermNonNominalExactMatch(query_feature_index);
+	else
+		term = dist_params.ComputeDistanceTermNonNominalNonNullRegular(value.number - column->sortedNumberValueIndexPairs[value_index].first, query_feature_index);
+
+	size_t num_entities_computed = AccumulatePartialSums(*column->sortedNumberValueIndexPairs[value_index].second, query_feature_index, term);
+
+	//the logic below assumes there are at least two entries
+	size_t num_unique_number_values = column->sortedNumberValueIndexPairs.size();
+	if(num_unique_number_values <= 1)
+		return term;
+
+	//if we haven't filled max_count results, or searched num_buckets, keep expanding search to neighboring buckets
+	size_t lower_value_index = value_index;
+	size_t upper_value_index = value_index;
+	double largest_term = term;
+
+	//used for calculating the gaps between values
+	double last_diff = 0.0;
+	double largest_diff_delta = 0.0;
+
+	//put a max limit to the number of cases
+	size_t max_cases_relative_to_total = std::min(static_cast<size_t>(2000), static_cast<size_t>(parametersAndBuffers.partialSums.numInstances / 8));
+	size_t max_num_to_find = std::max(num_entities_to_populate, max_cases_relative_to_total);
+
+	//if one dimension or don't want to expand search, then cut off early
+	if(!expand_search_if_optimal)
+		max_num_to_find = num_entities_to_populate;
+
+	//compute along the feature
+	while(num_entities_computed < max_num_to_find)
+	{
+		//see if can compute one bucket lower
+		bool compute_lower = false;
+		double lower_diff = 0.0;
+		size_t next_lower_index = 0;
+		if(!cyclic_feature)
+		{
+			if(lower_value_index > 0)
+			{
+				next_lower_index = lower_value_index - 1;
+				lower_diff = std::abs(value.number - column->sortedNumberValueIndexPairs[next_lower_index].first);
+				compute_lower = true;
+			}
+		}
+		else //cyclic_feature
+		{
+			size_t next_index;
+			if(lower_value_index > 0)
+				next_index = lower_value_index - 1;
+			else
+				next_index = num_unique_number_values - 1;
+
+			//make sure didn't wrap all the way around for cyclic features
+			if(next_index != value_index)
+			{
+				next_lower_index = next_index;
+				lower_diff = GeneralizedDistance::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueIndexPairs[next_lower_index].first), cycle_length);
+				compute_lower = true;
+			}
+		}
+
+		//see if can compute one bucket upper
+		bool compute_upper = false;
+		double upper_diff = 0.0;
+		size_t next_upper_index = 0;
+		if(!cyclic_feature)
+		{
+			if(upper_value_index + 1 < num_unique_number_values)
+			{
+				next_upper_index = upper_value_index + 1;
+				upper_diff = std::abs(value.number - column->sortedNumberValueIndexPairs[next_upper_index].first);
+				compute_upper = true;
+			}
+		}
+		else //cyclic_feature
+		{
+			size_t next_index;
+			if(upper_value_index + 1 < num_unique_number_values)
+				next_index = upper_value_index + 1;
+			else
+				next_index = 0;
+
+			//make sure didn't wrap all the way around for cyclic features
+			//either from the value itself or overlapping with the next_lower_index
+			if(next_index != value_index)
+			{
+				if((!compute_lower || next_index != next_lower_index))
+				{
+					next_upper_index = next_index;
+					upper_diff = GeneralizedDistance::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueIndexPairs[next_upper_index].first), cycle_length);
+					compute_upper = true;
+				}
+				else //upper and lower have overlapped, want to exit the loop
+					next_upper_index = next_lower_index;
+			}
+		}
+
+		//determine the next closest point and its difference
+		double next_closest_diff;
+		size_t next_closest_index;
+
+		//if can only compute lower or lower is closer, then compute lower
+		if((compute_lower && !compute_upper)
+			|| (compute_lower && compute_upper && lower_diff < upper_diff))
+		{
+			next_closest_diff = lower_diff;
+			next_closest_index = next_lower_index;
+			lower_value_index = next_lower_index;
+		}
+		else if(compute_upper)
+		{
+			next_closest_diff = upper_diff;
+			next_closest_index = next_upper_index;
+			upper_value_index = next_upper_index;
+		}
+		else //nothing left, end
+		{
+			break;
+		}
+
+		//if running into the extra_iterations
+		if(num_entities_computed >= num_entities_to_populate)
+		{
+			//use heuristic to decide whether to continue populating based on whether this diff will help the overall distance cutoffs
+			// look at the rate of change of the difference compared to before, and how many new entities will be populated
+			// if it is too small and doesn't fill enough (or fills too many), then stop expanding
+			size_t potential_entities = column->sortedNumberValueIndexPairs[next_closest_index].second->size();
+			if(num_entities_computed + potential_entities > max_num_to_find)
+				break;
+
+			//determine if it should continue based on how much this difference will contribute to the total; either a big jump or enough entities
+			bool should_continue = false;
+			double diff_delta = next_closest_diff - last_diff;
+
+			if(diff_delta >= largest_diff_delta)
+				should_continue = true;
+
+			if(diff_delta >= largest_diff_delta / 2 && potential_entities >= 2)
+				should_continue = true;
+
+			//going out n deviations is likely to only miss 0.5^n of the likely values of nearest neighbors
+			// so 0.5^5 should catch ~97% of the values
+			if(dist_params.DoesFeatureHaveDeviation(query_feature_index)
+				&& next_closest_diff < 5 * dist_params.featureParams[query_feature_index].deviation)
+				should_continue = true;
+
+			if(!should_continue)
+				break;
+		}
+
+		term = dist_params.ComputeDistanceTermNonNominalNonNullRegular(next_closest_diff, query_feature_index);
+		num_entities_computed += AccumulatePartialSums(*column->sortedNumberValueIndexPairs[next_closest_index].second, query_feature_index, term);
+
+		//track the rate of change of difference
+		if(next_closest_diff - last_diff > largest_diff_delta)
+			largest_diff_delta = next_closest_diff - last_diff;
+		last_diff = next_closest_diff;
+
+		//keep track of the largest seen so far
+		if(term > largest_term)
+			largest_term = term;
+
+		//if cyclic and have wrapped around, then exit
+		if(lower_value_index >= upper_value_index)
+			break;
+	}
+
+	//return the largest computed so far
+	return largest_term;
+}
+
+void SeparableBoxFilterDataStore::PopulateInitialPartialSums(GeneralizedDistance &dist_params, size_t top_k, size_t num_enabled_features,
+	BitArrayIntegerSet &enabled_indices, std::vector<double> &min_unpopulated_distances, std::vector<double> &min_distance_by_unpopulated_count)
+{
+	size_t num_entities_to_populate = top_k;
+	//populate sqrt(2)^p * top_k, which will yield 2 for p=2, 1 for p=0, and about 1.2 for p=0.5
+	if(num_enabled_features > 1)
+		num_entities_to_populate = static_cast<size_t>(std::lround(FastPow(GeneralizedDistance::s_sqrt_2, dist_params.pValue) * top_k)) + 1;
+
+	min_unpopulated_distances.resize(num_enabled_features);
+	for(size_t i = 0; i < num_enabled_features; i++)
+	{
+		double next_closest_distance = PopulatePartialSumsWithSimilarFeatureValue(dist_params,
+			parametersAndBuffers.targetValues[i], parametersAndBuffers.targetValueTypes[i],
+			num_entities_to_populate,
+			//expand search if using more than one dimension
+			num_enabled_features > 1,
+			i, parametersAndBuffers.targetColumnIndices[i], enabled_indices);
+
+		min_unpopulated_distances[i] = next_closest_distance;
+	}
+	std::sort(begin(min_unpopulated_distances), end(min_unpopulated_distances));
+
+	//compute min distance based on the number of features that are unpopulated
+	min_distance_by_unpopulated_count.clear();
+	//need to add a 0 for when all distances are computed
+	min_distance_by_unpopulated_count.push_back(0.0);
+	//append all of the sorted distances so they can be accumulated and assigned
+	min_distance_by_unpopulated_count.insert(end(min_distance_by_unpopulated_count), begin(min_unpopulated_distances), end(min_unpopulated_distances));
+	for(size_t i = 1; i < min_distance_by_unpopulated_count.size(); i++)
+		min_distance_by_unpopulated_count[i] += min_distance_by_unpopulated_count[i - 1];
+}
+
+void SeparableBoxFilterDataStore::PopulatePotentialGoodMatches(FlexiblePriorityQueue<CountDistanceReferencePair<size_t>> &potential_good_matches,
+	BitArrayIntegerSet &enabled_indices, PartialSumCollection &partial_sums, size_t top_k)
+{
+	potential_good_matches.clear();
+	potential_good_matches.Reserve(top_k);
+
+	//first, build up top_k that have at least one feature
+	size_t entity_index = 0;
+	size_t indices_considered = 0;
+	size_t end_index = enabled_indices.GetEndInteger();
+	for(; entity_index < end_index; entity_index++)
+	{
+		//don't need to check maximum index, because already checked in loop
+		if(!enabled_indices.ContainsWithoutMaximumIndexCheck(entity_index))
+			continue;
+
+		indices_considered++;
+
+		auto [num_calculated_feature_deltas, cur_sum] = partial_sums.GetNumFilledAndSum(entity_index);
+		if(num_calculated_feature_deltas == 0)
+			continue;
+
+		potential_good_matches.emplace(num_calculated_feature_deltas, cur_sum, entity_index);
+		if(potential_good_matches.size() == top_k)
+		{
+			entity_index++;
+			break;
+		}
+	}
+
+	//heuristically attempt to find some cases with the most number of features calculated (by the closest matches) and the lowest distances
+	//iterate until at least index_end / e cases are seen, but cap at a maximum number
+	size_t total_indices = enabled_indices.size();
+	size_t num_indices_to_consider = static_cast<size_t>(std::floor(total_indices * 0.3678794411714));
+	num_indices_to_consider = std::min(static_cast<size_t>(1000), num_indices_to_consider);
+
+	//find a good number of features based on the discrete logarithm of the number of features
+	size_t good_number_of_features = 0;
+	size_t num_features = partial_sums.numDimensions;
+	while(num_features >>= 1)
+		good_number_of_features++;
+
+	//start with requiring at least one feature matching to be considered a good match
+	size_t good_match_threshold_count = 1;
+	double good_match_threshold_value = std::numeric_limits<double>::infinity();
+	if(potential_good_matches.size() > 0)
+	{
+		const auto &top = potential_good_matches.top();
+		good_match_threshold_count = top.count;
+		good_match_threshold_value = top.distance;
+	}
+
+	//continue on starting at the next unexamined index until have seen at least max_considerable_good_index
+	// or k filled with entities having good_number_of_features calculated
+	for(; indices_considered < num_indices_to_consider && entity_index < end_index; entity_index++)
+	{
+		//don't need to check maximum index, because already checked in loop
+		if(!enabled_indices.ContainsWithoutMaximumIndexCheck(entity_index))
+			continue;
+
+		indices_considered++;
+
+		auto [num_calculated_feature_deltas, cur_sum] = partial_sums.GetNumFilledAndSum(entity_index);
+		//skip if not good enough
+		if(num_calculated_feature_deltas < good_match_threshold_count)
+			continue;
+
+		//either needs to exceed the calculated features or have smaller distance
+		if(num_calculated_feature_deltas > good_match_threshold_count
+			|| cur_sum < good_match_threshold_value)
+		{
+			//have top_k, but this one is better
+			potential_good_matches.emplace(num_calculated_feature_deltas, cur_sum, entity_index);
+			potential_good_matches.pop();
+
+			const auto &top = potential_good_matches.top();
+			good_match_threshold_count = top.count;
+			good_match_threshold_value = top.distance;
+
+			//if have found enough features, stop searching
+			if(good_match_threshold_count >= good_number_of_features)
+				break;
+		}
 	}
 }

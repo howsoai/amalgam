@@ -253,7 +253,7 @@ bool EvaluableNodeToJsonStringRecurse(EvaluableNode *en, std::string &json_str, 
 	{
 		if(DoesEvaluableNodeTypeUseNumberData(en->GetType()))
 		{
-			double number = en->GetNumberValue();
+			double number = en->GetNumberValueReference();
 
 			if(number == std::numeric_limits<double>::infinity())
 				json_str += StringManipulation::NumberToString(std::numeric_limits<double>::max());

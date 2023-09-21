@@ -197,7 +197,7 @@ int EvaluableNode::Compare(EvaluableNode *a, EvaluableNode *b)
 
 	std::string a_str = EvaluableNode::ToString(a);
 	std::string b_str = EvaluableNode::ToString(b);
-	return StringNaturalCompare(a_str, b_str);
+	return StringManipulation::StringNaturalCompare(a_str, b_str);
 }
 
 double EvaluableNode::ToNumber(EvaluableNode *e, double value_if_null)

@@ -196,3 +196,153 @@ std::string StringManipulation::Base64ToBinaryString(std::string &base64_string)
 
 	return binary_string;
 }
+
+int StringManipulation::CompareNumberInStringRightJustified(const std::string &a, const std::string &b, size_t &a_index, size_t &b_index)
+{
+	//comparison result of first non-matching digit
+	int compare_val_if_same_length = 0;
+
+	while(1)
+	{
+		unsigned char a_value;
+		unsigned char b_value;
+
+		//treat as if zero terminated strings
+		if(a_index < a.size())
+			a_value = a[a_index];
+		else
+			a_value = '\0';
+
+		if(b_index < b.size())
+			b_value = b[b_index];
+		else
+			b_value = '\0';
+
+		if(!std::isdigit(a_value) && !std::isdigit(b_value))
+			return compare_val_if_same_length;
+		if(!std::isdigit(a_value))
+			return -1;
+		if(!std::isdigit(b_value))
+			return +1;
+
+		//see if found first nonmatching digit
+		if(a_value < b_value)
+		{
+			if(compare_val_if_same_length == 0)
+				compare_val_if_same_length = -1;
+		}
+		else if(a_value > b_value)
+		{
+			if(compare_val_if_same_length == 0)
+				compare_val_if_same_length = +1;
+		}
+
+		a_index++;
+		b_index++;
+	}
+
+	//can't make it here
+	return 0;
+}
+
+int StringManipulation::CompareNumberInStringLeftJustified(const std::string &a, const std::string &b, size_t &a_index, size_t &b_index)
+{
+	while(1)
+	{
+		unsigned char a_value;
+		unsigned char b_value;
+
+		//treat as if zero terminated strings
+		if(a_index < a.size())
+			a_value = a[a_index];
+		else
+			a_value = '\0';
+
+		if(b_index < b.size())
+			b_value = b[b_index];
+		else
+			b_value = '\0';
+
+		//if out of digits, then they're equal
+		if(!std::isdigit(a_value) && !std::isdigit(b_value))
+			return 0;
+
+		//if one ran out of digits, then it's less
+		if(!std::isdigit(a_value))
+			return -1;
+		if(!std::isdigit(b_value))
+			return +1;
+
+		//compare values
+		if(a_value < b_value)
+			return -1;
+		if(a_value > b_value)
+			return +1;
+
+		a_index++;
+		b_index++;
+	}
+
+	//can't get here
+	return 0;
+}
+
+int StringManipulation::StringNaturalCompare(const std::string &a, const std::string &b)
+{
+	size_t a_index = 0, b_index = 0;
+
+	while(1)
+	{
+		unsigned char a_value;
+		unsigned char b_value;
+
+		//skip over spaces
+		while(a_index < a.size() && std::isspace(static_cast<unsigned char>(a[a_index])))
+			a_index++;
+		//treat as if zero terminated string
+		if(a_index < a.size())
+			a_value = a[a_index];
+		else
+			a_value = '\0';
+
+		//skip over spaces
+		while(b_index < b.size() && std::isspace(static_cast<unsigned char>(b[b_index])))
+			b_index++;
+		if(b_index < b.size())
+			b_value = b[b_index];
+		else
+			b_value = '\0';
+
+		//check for group of digits
+		if(std::isdigit(a_value) && std::isdigit(static_cast<unsigned char>(b_value)))
+		{
+			int result;
+			//if starts with leading zeros, then do a comparison from the left, otherwise from the right
+			if(a_value == '0' || b_value == '0')
+				result = CompareNumberInStringLeftJustified(a, b, a_index, b_index);
+			else
+				result = CompareNumberInStringRightJustified(a, b, a_index, b_index);
+
+			if(result != 0)
+				return result;
+
+			//if made it here, then the numbers were equal; move on to the next character
+			continue;
+		}
+
+		//if strings are identical from a natural sorting perspective, then use regular compare to make sure order consistency is preserved
+		if(a_value == '\0' && b_value == '\0')
+			return a.compare(b);
+
+		if(a_value < b_value)
+			return -1;
+
+		if(a_value > b_value)
+			return +1;
+
+		a_index++;
+		b_index++;
+	}
+
+	return 0;
+}

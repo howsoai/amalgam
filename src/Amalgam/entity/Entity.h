@@ -2,6 +2,7 @@
 
 //project headers:
 #include "Concurrency.h"
+#include "EntityQueryCaches.h"
 #include "HashMaps.h"
 #include "Parser.h"
 #include "RandomStream.h"
@@ -14,6 +15,7 @@
 #include <vector>
 
 //forward declarations:
+class EntityQueryCaches;
 class EntityWriteListener;
 class EvaluableNode;
 class EvaluableNodeManagement;
@@ -34,9 +36,6 @@ public:
 
 	//set of entities
 	using EntitySetType = FastHashSet<Entity *>;
-
-	//StringID to EvaluableNode *
-	using LabelsAssocType = CompactHashMap<StringInternPool::StringID, EvaluableNode *>;
 
 	Entity();
 
@@ -198,7 +197,7 @@ public:
 	//Rebuilds label index for retrieval
 	// returns the previous label index prior to rebuild; if the label index had to be rebuilt from scratch
 	// due to a label collision, then the previous label index will be empty
-	LabelsAssocType RebuildLabelIndex();
+	EvaluableNode::LabelsAssocType RebuildLabelIndex();
 
 	//Returns the id for this Entity
 	inline const std::string &GetId()
@@ -261,7 +260,7 @@ public:
 			return 0;
 	}
 
-	//Returns direct access to vector of pointers to Entity objects contained by this Entity
+	//returns direct access to vector of pointers to Entity objects contained by this Entity
 	inline std::vector<Entity *> &GetContainedEntities()
 	{
 		if(hasContainedEntities)
@@ -270,13 +269,43 @@ public:
 			return emptyContainedEntities;
 	}
 
-	//Returns the containing entity
+	//returns the containing entity
 	inline Entity *GetContainer()
 	{
 		if(hasContainedEntities)
 			return entityRelationships.relationships->container;
 		else
 			return entityRelationships.container;
+	}
+
+	//clears any query caches if they exist
+	inline void ClearQueryCaches()
+	{
+		if(hasContainedEntities)
+			entityRelationships.relationships->queryCaches.release();
+	}
+
+	//returns a pointer to the query caches for this entity
+	//creates one if it does not have an active cache
+	EntityQueryCaches *GetOrCreateQueryCaches();
+
+	//returns a pointer to the query caches for this entity
+	//returns a nullptr if does not have an active cache
+	inline EntityQueryCaches *GetQueryCaches()
+	{
+		if(hasContainedEntities && entityRelationships.relationships->queryCaches)
+			return entityRelationships.relationships->queryCaches.get();
+		return nullptr;
+	}
+
+	//returns a pointer to the query caches for this entity's container
+	//returns a nullptr if it does not have a container or the container does not have an active cache
+	inline EntityQueryCaches *GetContainerQueryCaches()
+	{
+		Entity *container = GetContainer();
+		if(container == nullptr)
+			return nullptr;
+		return container->GetQueryCaches();
 	}
 
 	//returns the index of the entity as listed by its container
@@ -717,7 +746,7 @@ protected:
 	//when an entity has contained entities, then it needs to store the container and the contained entities
 	struct EntityRelationships
 	{
-		//Entities contained by this Entity
+		//entities contained by this Entity
 		std::vector<Entity *> containedEntities;
 
 		//lookup from StringInternPool::StringID to the index in containedEntities corresponding to that entity
@@ -725,8 +754,11 @@ protected:
 		// because the entities are keeping track; if an entity exists, then its ID will still be a valid string reference
 		StringIdToIndexAssocType containedEntityStringIdToIndex;
 
-		//Reference to the Entity that this Entity is contained by
+		//reference to the Entity that this Entity is contained by
 		Entity *container;
+
+		//caches for querying contained entities, constructed if needed
+		std::unique_ptr<EntityQueryCaches> queryCaches;
 	};
 
 	//pointer to either the container or the EntityRelationships
@@ -737,7 +769,7 @@ protected:
 	};
 
 	//current list of all labels and where they are in the code
-	LabelsAssocType labelIndex;
+	EvaluableNode::AssocType labelIndex;
 
 	//the random stream associated with this Entity
 	RandomStream randomStream;

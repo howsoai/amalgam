@@ -1,10 +1,10 @@
 //project headers:
-#include "EntityManipulation.h"
-
 #include "Entity.h"
+#include "EntityManipulation.h"
 #include "EvaluableNodeTreeDifference.h"
 #include "EvaluableNodeTreeFunctions.h"
 #include "EvaluableNodeTreeManipulation.h"
+#include "Interpreter.h"
 #include "Merger.h"
 
 Entity *EntityManipulation::EntitiesMergeMethod::MergeValues(Entity *a, Entity *b, bool must_merge)
@@ -137,6 +137,30 @@ Entity *EntityManipulation::EntitiesMixMethod::MergeValues(Entity *a, Entity *b,
 
 	MergeContainedEntities(this, a, b, merged_entity);
 	return merged_entity;
+}
+
+bool EntityManipulation::EntitiesMixMethod::KeepNonMergeableValue()
+{
+	return interpreter->randomStream.Rand() < fractionAOrB;
+}
+
+bool EntityManipulation::EntitiesMixMethod::KeepNonMergeableAInsteadOfB()
+{
+	return interpreter->randomStream.Rand() < fractionAInsteadOfB;
+}
+
+bool EntityManipulation::EntitiesMixMethod::KeepNonMergeableA()
+{
+	return interpreter->randomStream.Rand() < fractionA;
+}
+bool EntityManipulation::EntitiesMixMethod::KeepNonMergeableB()
+{
+	return interpreter->randomStream.Rand() < fractionB;
+}
+
+bool EntityManipulation::EntitiesMixMethod::AreMergeable(Entity *a, Entity *b)
+{
+	return interpreter->randomStream.Rand() < fractionEntitiesToMix;
 }
 
 Entity *EntityManipulation::IntersectEntities(Interpreter *interpreter, Entity *entity1, Entity *entity2)
@@ -766,6 +790,20 @@ EvaluableNodeReference EntityManipulation::FlattenEntity(Interpreter *interprete
 		EvaluableNodeManager::UpdateFlagsForNodeTree(let_new_entity);
 
 	return EvaluableNodeReference(let_new_entity, true);
+}
+
+void EntityManipulation::SortEntitiesByID(std::vector<Entity *> &entities)
+{
+	//for performance reasons, it may be worth considering other data structures if sort ever becomes or remains significant
+	std::sort(begin(entities), end(entities),
+		[](Entity *a, Entity *b)
+		{
+			const std::string a_id = a->GetId();
+			const std::string b_id = b->GetId();
+
+			int comp = StringManipulation::StringNaturalCompare(a_id, b_id);
+			return comp < 0;
+		});
 }
 
 void EntityManipulation::RecursivelyRenameAllEntityReferences(Entity *entity, CompactHashMap<StringInternPool::StringID, StringInternPool::StringID> &entities_renamed)

@@ -6,7 +6,6 @@
 #include "EntityManipulation.h"
 #include "EntityQueries.h"
 #include "EntityQueryBuilder.h"
-#include "EntityQueryManager.h"
 #include "EvaluableNodeTreeDifference.h"
 #include "EvaluableNodeTreeFunctions.h"
 #include "EvaluableNodeTreeManipulation.h"
@@ -689,7 +688,7 @@ double Interpreter::InterpretNodeIntoNumberValue(EvaluableNode *n)
 {
 	//shortcut if the node has what is being asked
 	if(n != nullptr && n->GetType() == ENT_NUMBER)
-		return n->GetNumberValue();
+		return n->GetNumberValueReference();
 
 	auto result = InterpretNodeForImmediateUse(n);
 	double result_value = EvaluableNode::ToNumber(result);

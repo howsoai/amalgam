@@ -419,4 +419,35 @@ namespace StringManipulation
 		uint8_t value3 = value_of_quad & 255;
 		return { value1, value2, value3 };
 	}
+
+	//compares right-aligned numbers in a string.  searches for first digit that isn't equal,
+	// figures out which one is greater, and remembers it.  then it sees which number string is longer
+	// if the number strings are the same length, then go with whichever was remembered to be bigger
+	// both indices will be updated along the way
+	int CompareNumberInStringRightJustified(const std::string &a, const std::string &b, size_t &a_index, size_t &b_index);
+
+	//compares left-aligned numbers in a string until a difference is found, then uses that for comparison
+	// starts at the specified indicies
+	// both indices will be updated along the way
+	int CompareNumberInStringLeftJustified(const std::string &a, const std::string &b, size_t &a_index, size_t &b_index);
+
+	//compares two strings "naturally" as applicable, ignoring spaces and treating numbers how a person would
+	// however, if the strings are "identical" via natural comparison, then it falls back to regular string comparison to ensure
+	// that strings are always ordered the same way
+	int StringNaturalCompare(const std::string &a, const std::string &b);
+
+	//variant of StringNaturalCompare for sorting
+	inline bool StringNaturalCompareSort(const std::string &a, const std::string &b)
+	{
+		int comp = StringNaturalCompare(a, b);
+		return comp < 0;
+	}
+
+	//variant of StringNaturalCompare for reverse sorting
+	inline bool StringNaturalCompareSortReverse(const std::string &a, const std::string &b)
+	{
+		int comp = StringNaturalCompare(a, b);
+		return comp > 0;
+	}
+
 };

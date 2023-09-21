@@ -39,7 +39,11 @@ public:
 	//lookup a keyword string and find the type
 	using KeywordLookupType = FastHashMap<std::string, EvaluableNodeType>;
 
+	//EvaluableNode assoc storage
 	using AssocType = CompactHashMap<StringInternPool::StringID, EvaluableNode *>;
+
+	//Storage for labels
+	using LabelsAssocType = CompactHashMap<StringInternPool::StringID, EvaluableNode *>;
 
 	//constructors
 	__forceinline EvaluableNode() { InitializeUnallocated(); }
@@ -967,13 +971,13 @@ union EvaluableNodeImmediateValue
 
 		if(en_type == ENT_NUMBER)
 		{
-			number = en->GetNumberValue();
+			number = en->GetNumberValueReference();
 			return ENIVT_NUMBER;
 		}
 
 		if(en_type == ENT_STRING)
 		{
-			stringID = en->GetStringID();
+			stringID = en->GetStringIDReference();
 			return ENIVT_STRING_ID;
 		}
 
@@ -1064,14 +1068,14 @@ public:
 		if(en_type == ENT_NUMBER)
 		{
 			nodeType = ENIVT_NUMBER;
-			nodeValue = EvaluableNodeImmediateValue(en->GetNumberValue());
+			nodeValue = EvaluableNodeImmediateValue(en->GetNumberValueReference());
 			return;
 		}
 
 		if(en_type == ENT_STRING)
 		{
 			nodeType = ENIVT_STRING_ID;
-			nodeValue = EvaluableNodeImmediateValue(en->GetStringID());
+			nodeValue = EvaluableNodeImmediateValue(en->GetStringIDReference());
 			return;
 		}
 

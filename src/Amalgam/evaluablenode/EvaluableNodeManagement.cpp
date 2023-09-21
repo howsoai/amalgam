@@ -847,20 +847,16 @@ void EvaluableNodeManager::SetAllReferencedNodesGCCollectIterationRecurse(Evalua
 	{
 		for(auto &[_, e] : tree->GetMappedChildNodesReference())
 		{
-			if(e == nullptr || e->GetGarbageCollectionIteration() == gc_collect_iteration)
-				continue;
-
-			SetAllReferencedNodesGCCollectIterationRecurse(e, gc_collect_iteration);
+			if(e != nullptr && e->GetGarbageCollectionIteration() != gc_collect_iteration)
+				SetAllReferencedNodesGCCollectIterationRecurse(e, gc_collect_iteration);
 		}
 	}
 	else if(!tree->IsImmediate())
 	{
 		for(auto &e : tree->GetOrderedChildNodesReference())
 		{
-			if(e == nullptr || e->GetGarbageCollectionIteration() == gc_collect_iteration)
-				continue;
-
-			SetAllReferencedNodesGCCollectIterationRecurse(e, gc_collect_iteration);
+			if(e != nullptr && e->GetGarbageCollectionIteration() != gc_collect_iteration)
+				SetAllReferencedNodesGCCollectIterationRecurse(e, gc_collect_iteration);
 		}
 	}	
 }

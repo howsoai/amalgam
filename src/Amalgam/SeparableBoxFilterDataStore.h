@@ -9,7 +9,6 @@
 //project headers:
 #include "Concurrency.h"
 #include "FastMath.h"
-#include "Entity.h"
 #include "EntityQueriesStatistics.h"
 #include "EvaluableNode.h"
 #include "IntegerSet.h"
@@ -25,6 +24,9 @@
 #include <cstring>
 #include <limits>
 #include <vector>
+
+//forward declarations:
+class Entity;
 
 //supports cheap modification of:
 //p-value, nominals, weights, distance accuracy, feature selections, case sub-selections
@@ -110,32 +112,7 @@ public:
 
 	//populates the matrix with the label and builds column data
 	// assumes column data is empty
-	void BuildLabel(size_t column_index, const std::vector<Entity *> &entities)
-	{
-		auto &column_data = columnData[column_index];
-		auto label_id = column_data->stringId;
-
-		auto &entities_with_number_values = parametersAndBuffers.entitiesWithValues;
-		entities_with_number_values.clear();
-
-		//populate matrix and get values
-		// maintaining the order of insertion of the entities from smallest to largest allows for better performance of the insertions
-		// and every function called here assumes that entities are inserted in increasing order
-		for(size_t entity_index = 0; entity_index < entities.size(); entity_index++)
-		{
-			EvaluableNodeImmediateValueType value_type;
-			EvaluableNodeImmediateValue value;
-			value_type = entities[entity_index]->GetValueAtLabelAsImmediateValue(label_id, value);
-			matrix[GetMatrixCellIndex(entity_index) + column_index] = value;
-
-			column_data->InsertNextIndexValueExceptNumbers(value_type, value, entity_index, entities_with_number_values);
-		}
-
-		//sort the number values for efficient insertion, but keep the entities in their order
-		std::stable_sort(begin(entities_with_number_values), end(entities_with_number_values));
-
-		column_data->AppendSortedNumberIndicesWithSortedIndices(entities_with_number_values);
-	}
+	void BuildLabel(size_t column_index, const std::vector<Entity *> &entities);
 
 	//expand the structure by adding a new column/label/feature and populating with data from entities
 	void AddLabels(std::vector<size_t> &label_ids, const std::vector<Entity *> &entities)
@@ -209,137 +186,16 @@ public:
 	}
 
 	//adds an entity to the database
-	inline void AddEntity(Entity *entity, size_t entity_index)
-	{
-		size_t starting_cell_index = GetMatrixCellIndex(entity_index);
-
-		//fill with missing values, including any empty indices
-		matrix.resize(starting_cell_index + columnData.size());
-
-		//fill in matrix cells from entity
-		size_t cell_index = starting_cell_index;
-		for(size_t column_index = 0; column_index < columnData.size(); column_index++, cell_index++)
-		{
-			EvaluableNodeImmediateValueType value_type;
-			EvaluableNodeImmediateValue value;
-			value_type = entity->GetValueAtLabelAsImmediateValue(columnData[column_index]->stringId, value);
-
-			matrix[cell_index] = value;
-
-			columnData[column_index]->InsertIndexValue(value_type, value, entity_index);
-		}
-
-		//count this entity
-		if(entity_index >= numEntities)
-			numEntities = entity_index + 1;
-	}
+	void AddEntity(Entity *entity, size_t entity_index);
 
 	//removes an entity to the database using an incremental update scheme
-	inline void RemoveEntity(Entity *entity, size_t entity_index, size_t entity_index_to_reassign)
-	{
-		if(entity_index >= numEntities || columnData.size() == 0)
-			return;
-
-		//if was the last entity and reassigning the last one or one out of bounds,
-		// simply delete from column data, delete last row, and return
-		if(entity_index + 1 == GetNumInsertedEntities() && entity_index_to_reassign >= entity_index)
-		{
-			DeleteEntityIndexFromColumns(entity_index);
-			DeleteLastRow();
-			return;
-		}
-
-		//make sure it's a valid rassignment
-		if(entity_index_to_reassign >= numEntities)
-			return;
-
-		//if deleting a row and not replacing it, just fill as if it has no data
-		if(entity_index == entity_index_to_reassign)
-		{
-			DeleteEntityIndexFromColumns(entity_index);
-
-			//fill with missing values
-			size_t starting_cell_index = GetMatrixCellIndex(entity_index);
-			for(size_t column_index = 0; column_index < columnData.size(); column_index++)
-				matrix[starting_cell_index + column_index].number = std::numeric_limits<double>::quiet_NaN();
-			return;
-		}
-
-		//reassign index for each column
-		for(size_t column_index = 0; column_index < columnData.size(); column_index++)
-		{
-			auto &val_to_overwrite = GetValue(entity_index, column_index);
-			auto &value_of_index_to_reassign = GetValue(entity_index_to_reassign, column_index);
-			auto value_type_to_reassign = columnData[column_index]->GetIndexValueType(entity_index_to_reassign);
-
-			//remove the value where it is
-			columnData[column_index]->DeleteIndexValue(value_of_index_to_reassign, entity_index_to_reassign);
-
-			//change the destination to the value
-			columnData[column_index]->ChangeIndexValue(val_to_overwrite, value_type_to_reassign, value_of_index_to_reassign, entity_index);
-		}
-
-		//copy data from entity_index_to_reassign to entity_index
-		memcpy((char *)&(matrix[entity_index * columnData.size()]), (char *)&(matrix[entity_index_to_reassign * columnData.size()]), sizeof(EvaluableNodeImmediateValue) * columnData.size());
-
-		//truncate matrix cache if removing the last entry, either by moving the last entity or by directly removing the last
-		if(entity_index_to_reassign + 1 == numEntities
-				|| (entity_index_to_reassign + 1 >= numEntities && entity_index + 1 == numEntities))
-			DeleteLastRow();
-
-		//clean up any labels that aren't relevant
-		RemoveAnyUnusedLabels();
-	}
+	void RemoveEntity(Entity *entity, size_t entity_index, size_t entity_index_to_reassign);
 
 	//updates all of the label values for entity with index entity_index
-	inline void UpdateAllEntityLabels(Entity *entity, size_t entity_index)
-	{
-		if(entity_index >= numEntities)
-			return;
-
-		size_t matrix_index = GetMatrixCellIndex(entity_index);
-		for(size_t column_index = 0; column_index < columnData.size(); column_index++)
-		{
-			EvaluableNodeImmediateValueType value_type;
-			EvaluableNodeImmediateValue value;
-			value_type = entity->GetValueAtLabelAsImmediateValue(columnData[column_index]->stringId, value);
-
-			columnData[column_index]->ChangeIndexValue(matrix[matrix_index], value_type, value, entity_index);
-			matrix[matrix_index] = value;
-
-			matrix_index++;
-		}
-
-		//clean up any labels that aren't relevant
-		RemoveAnyUnusedLabels();
-	}
+	void UpdateAllEntityLabels(Entity *entity, size_t entity_index);
 
 	//like UpdateAllEntityLabels, but only updates labels for label_updated
-	inline void UpdateEntityLabel(Entity *entity, size_t entity_index, StringInternPool::StringID label_updated)
-	{
-		if(entity_index >= numEntities)
-			return;
-
-		//find the column
-		auto column = labelIdToColumnIndex.find(label_updated);
-		if(column == end(labelIdToColumnIndex))
-			return;
-		size_t column_index = column->second;
-
-		//get the new value
-		EvaluableNodeImmediateValueType value_type;
-		EvaluableNodeImmediateValue value;
-		value_type = entity->GetValueAtLabelAsImmediateValue(columnData[column_index]->stringId, value);
-
-		//update the value
-		auto &matrix_value = GetValue(entity_index, column_index);
-		columnData[column_index]->ChangeIndexValue(matrix_value, value_type, value, entity_index);
-		matrix_value = value;
-
-		//remove the label if no longer relevant
-		if(IsColumnIndexRemovable(column_index))
-			RemoveColumnIndex(column_index);
-	}
+	void UpdateEntityLabel(Entity *entity, size_t entity_index, StringInternPool::StringID label_updated);
 
 	constexpr size_t GetNumInsertedEntities()
 	{

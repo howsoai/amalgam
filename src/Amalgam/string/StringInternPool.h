@@ -4,6 +4,7 @@
 #include "Concurrency.h"
 #include "HashMaps.h"
 #include "PlatformSpecific.h"
+#include "StringManipulation.h"
 
 //system headers:
 #include <queue>
@@ -461,3 +462,20 @@ private:
 
 	StringInternPool::StringID id;
 };
+
+inline int StringNaturalCompare(const StringInternPool::StringID a, const StringInternPool::StringID b)
+{
+	return StringManipulation::StringNaturalCompare(string_intern_pool.GetStringFromID(a), string_intern_pool.GetStringFromID(b));
+}
+
+inline bool StringIDNaturalCompareSort(const StringInternPool::StringID a, const StringInternPool::StringID b)
+{
+	int comp = StringManipulation::StringNaturalCompare(string_intern_pool.GetStringFromID(a), string_intern_pool.GetStringFromID(b));
+	return comp < 0;
+}
+
+inline bool StringIDNaturalCompareSortReverse(const StringInternPool::StringID a, const StringInternPool::StringID b)
+{
+	int comp = StringNaturalCompare(a, b);
+	return comp > 0;
+}

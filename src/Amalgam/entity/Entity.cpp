@@ -867,19 +867,11 @@ void Entity::SetRandomStream(const RandomStream &new_stream, std::vector<EntityW
 	}
 }
 
-std::string Entity::CreateOtherRandomStreamStateViaString(const std::string &seed_string)
+std::string Entity::CreateRandomStreamFromStringAndRand(const std::string &seed_string)
 {
+	//consume a random number to advance the state for creating the new state
+	randomStream.RandUInt32();
 	return randomStream.CreateOtherStreamStateViaString(seed_string);
-}
-
-RandomStream Entity::CreateOtherRandomStreamViaString(const std::string &seed_string)
-{
-	return randomStream.CreateOtherStreamViaString(seed_string);
-}
-
-RandomStream Entity::CreateOtherRandomStreamViaRand()
-{
-	return randomStream.CreateOtherStreamViaRand();
 }
 
 void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier, std::vector<EntityWriteListener *> *write_listeners)

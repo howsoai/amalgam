@@ -1,5 +1,5 @@
 --Amalgam Version--
-43.0.1-alpha+local.dev
+0.0.0
 --system_time--
 --label--
 hello world: 12 and 2
@@ -1227,7 +1227,7 @@ abcdef
 				8
 			)
 		accum_string "abcdef"
-		argv (list "C:\\Users\\Chris Hazard\\Desktop\\DP_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg")
+		argv (list "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg")
 		bar (declare
 				(assoc x 6)
 				(+ x 2)
@@ -1240,10 +1240,10 @@ abcdef
 				A (assoc B 2)
 				B 2
 			)
-		interpreter "C:\\Users\\Chris Hazard\\Desktop\\DP_repos\\amalgam\\out\\build\\amd64-windows-vs\\release\\amalgam-mt.exe"
+		interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1693777318.473619
+		start_time 1695320985.913567
 		www 1
 		x 12
 		zz 10
@@ -1270,7 +1270,7 @@ abcdef
 			8
 		)
 	accum_string "abcdef"
-	argv (list "C:\\Users\\Chris Hazard\\Desktop\\DP_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg")
+	argv (list "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg")
 	bar (declare
 			(assoc x 6)
 			(+ x 2)
@@ -1283,10 +1283,10 @@ abcdef
 			A (assoc B 2)
 			B 2
 		)
-	interpreter "C:\\Users\\Chris Hazard\\Desktop\\DP_repos\\amalgam\\out\\build\\amd64-windows-vs\\release\\amalgam-mt.exe"
+	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1693777318.473619
+	start_time 1695320985.913567
 	www 1
 	x 12
 	zz 10
@@ -1312,7 +1312,7 @@ abcdef
 			8
 		)
 	accum_string "abcdef"
-	argv (list "C:\\Users\\Chris Hazard\\Desktop\\DP_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg")
+	argv (list "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg")
 	bar (declare
 			(assoc x 6)
 			(+ x 2)
@@ -1325,10 +1325,10 @@ abcdef
 			A (assoc B 2)
 			B 2
 		)
-	interpreter "C:\\Users\\Chris Hazard\\Desktop\\DP_repos\\amalgam\\out\\build\\amd64-windows-vs\\release\\amalgam-mt.exe"
+	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1693777318.473619
+	start_time 1695320985.913567
 	www 1
 	x 12
 	zz 10
@@ -1596,7 +1596,7 @@ e:
   - .inf
 
 25: (assoc a 1)
-current date-time in epoch: 2023-09-03-17.41.58.7387200
+current date-time in epoch: 2023-09-21-14.29.45.9780260
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -2410,12 +2410,12 @@ abcdeomxyz
 37
 45
 --flatten_entity--
-0.4400722390196604
-0dë« aµ…S‚¾ûgélÿ
-0.14275602939442433
-0.14275602939442433
-0.17137441590511793
-0.17137441590511793
+0.4476445420518951
+iûÛA;@Vëó¬OV-ÿ
+0.9810549023242581
+0.9810549023242581
+0.5142400294051881
+0.5142400294051881
 flatten restore with seeds test
 (let
 	(assoc
@@ -2429,7 +2429,7 @@ flatten restore with seeds test
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "0dë« aµ…S‚¾ûgélÿ")
+	(set_entity_rand_seed new_entity "»¶Â£=ô€mVëó¬OV-ÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -2444,7 +2444,7 @@ flatten restore with seeds test
 				)
 			)
 		)
-		"b(p½‚^ŸßfXE7ÿ"
+		"‡aE&K\"Øà¸Õ(X&€\0ÿ"
 	)
 	new_entity
 )
@@ -2460,7 +2460,7 @@ flatten restore with seeds test
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "0dë« aµ…S‚¾ûgélÿ")
+	(set_entity_rand_seed new_entity "M:ù÷püVVëó¬OV-ÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -2475,7 +2475,7 @@ flatten restore with seeds test
 				)
 			)
 		)
-		"b(p½‚^ŸßfXE7ÿ"
+		"‡aE&K\"Øà¸Õ(X&€\0ÿ"
 	)
 	new_entity
 )
@@ -2521,7 +2521,7 @@ flatten restore without seeds test
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "«ï¢AÏ%EnDiDè«ÿ")
+	(set_entity_rand_seed new_entity "¤›·ºR}ÒĞ]’Ù’Í«ÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -2536,7 +2536,7 @@ flatten restore without seeds test
 				)
 			)
 		)
-		"ùdÂÌAWV\t\rvA†ÿ"
+		"Qô´v¬ú&rìSˆ¸Ë™ÿ"
 	)
 	new_entity
 )
@@ -2557,7 +2557,7 @@ flatten restore with parallel
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "0dë« aµ…S‚¾ûgélÿ")
+	(set_entity_rand_seed new_entity "»¶Â£=ô€mVëó¬OV-ÿ")
 	||(parallel
 		(set_entity_rand_seed
 			(first
@@ -2573,7 +2573,7 @@ flatten restore with parallel
 					)
 				)
 			)
-			"b(p½‚^ŸßfXE7ÿ"
+			"‡aE&K\"Øà¸Õ(X&€\0ÿ"
 		)
 	)
 	||(parallel)
@@ -2591,7 +2591,7 @@ flatten restore with parallel
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "0dë« aµ…S‚¾ûgélÿ")
+	(set_entity_rand_seed new_entity "M:ù÷püVVëó¬OV-ÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -2606,7 +2606,7 @@ flatten restore with parallel
 				)
 			)
 		)
-		"b(p½‚^ŸßfXE7ÿ"
+		"‡aE&K\"Øà¸Õ(X&€\0ÿ"
 	)
 	new_entity
 )
@@ -2662,9 +2662,9 @@ MergeEntityChild2
 (associate "p" 3 "q" 4)
 MergeEntityChild1
 (associate "x" 3 "y" 4)
-_2430269628
+_2169689611
 (associate "e" 3 "f" 4)
-_3605899036
+_2280722175
 (associate "E" 3 "F" 4)
 --union_entities--
 (associate "b" 4 "a" 3 "c" 3)
@@ -2683,7 +2683,7 @@ MergeEntityChild2
 )
 MergeEntityChild1
 (associate "x" 3 "y" 4 "z" 5)
-_2430269628
+_2169689611
 (associate
 	"e"
 	3
@@ -2694,7 +2694,7 @@ _2430269628
 	"h"
 	6
 )
-_3605899036
+_2280722175
 (associate
 	"E"
 	3
@@ -2707,9 +2707,9 @@ _3605899036
 )
 (parallel
 	##p
-	(list "_20985349" "_111317518" "_20985349" "_111317518")
+	(list "_3990396532" "_3330773578" "_3990396532" "_3330773578")
 )
-_20985349
+_3990396532
 (associate
 	"E"
 	3
@@ -2720,7 +2720,7 @@ _20985349
 	"H"
 	6
 )
-_111317518
+_3330773578
 (associate
 	"e"
 	3
@@ -2887,7 +2887,7 @@ _111317518
 		(create_entities
 			(append
 				new_entity
-				(list "_1984154169")
+				(list "_523256902")
 			)
 			(call
 				(lambda
@@ -2930,7 +2930,7 @@ _111317518
 					_ (retrieve_entity_root
 							(append
 								_
-								(list "_1984154169")
+								(list "_523256902")
 							)
 						)
 				)
@@ -2939,7 +2939,7 @@ _111317518
 		(create_entities
 			(append
 				new_entity
-				(list "_2509820770")
+				(list "_3895405527")
 			)
 			(call
 				(lambda
@@ -2978,7 +2978,7 @@ _111317518
 					_ (retrieve_entity_root
 							(append
 								_
-								(list "_2509820770")
+								(list "_3895405527")
 							)
 						)
 				)
@@ -2987,8 +2987,8 @@ _111317518
 		new_entity
 	)
 )
-_1472511973
-(list "DiffEntityChild1" "OnlyIn2" "_2861876625" "_3906509543")
+_432807187
+(list "DiffEntityChild1" "OnlyIn2" "_350925375" "_2742810479")
 (declare
 	(assoc _ (null))
 	(let
@@ -3116,7 +3116,7 @@ _1472511973
 		(create_entities
 			(append
 				new_entity
-				(list "_2861876625")
+				(list "_350925375")
 			)
 			(call
 				(lambda
@@ -3159,7 +3159,7 @@ _1472511973
 					_ (retrieve_entity_root
 							(append
 								_
-								(list "_2861876625")
+								(list "_350925375")
 							)
 						)
 				)
@@ -3168,7 +3168,7 @@ _1472511973
 		(create_entities
 			(append
 				new_entity
-				(list "_3906509543")
+				(list "_2742810479")
 			)
 			(call
 				(lambda
@@ -3207,7 +3207,7 @@ _1472511973
 					_ (retrieve_entity_root
 							(append
 								_
-								(list "_3906509543")
+								(list "_2742810479")
 							)
 						)
 				)
@@ -3226,10 +3226,10 @@ _1472511973
 		new_entity
 	)
 )
-_4022098522
+_41032496
 (associate "c" 3 "b" 4)
 (associate "x" 3 "y" 4 "z" 5)
-(list "DiffEntityChild1" "OnlyIn2" "_2861876625" "_3906509543")
+(list "DiffEntityChild1" "OnlyIn2" "_350925375" "_2742810479")
 (declare
 	(assoc _ (null))
 	(let
@@ -3304,7 +3304,7 @@ _4022098522
 		(create_entities
 			(append
 				new_entity
-				(list "_3778675809")
+				(list "_3631850880")
 			)
 			(call
 				(lambda
@@ -3347,7 +3347,7 @@ _4022098522
 					_ (retrieve_entity_root
 							(append
 								_
-								(list "_3778675809")
+								(list "_3631850880")
 							)
 						)
 				)
@@ -3356,7 +3356,7 @@ _4022098522
 		(create_entities
 			(append
 				new_entity
-				(list "_80566068")
+				(list "_1938178219")
 			)
 			(call
 				(lambda
@@ -3395,7 +3395,7 @@ _4022098522
 					_ (retrieve_entity_root
 							(append
 								_
-								(list "_80566068")
+								(list "_1938178219")
 							)
 						)
 				)
@@ -3414,10 +3414,10 @@ _4022098522
 		new_entity
 	)
 )
-_30261739
+_3128546630
 (associate "c" 3 "b" 4)
 (associate "x" 3 "y" 4 "z" 6)
-(list "OnlyIn2" "_3778675809" "_80566068" "DiffEntityChild1")
+(list "OnlyIn2" "_3631850880" "_1938178219" "DiffEntityChild1")
 --mix_entities--
 (associate "b" 4 "a" 3)
 MergeEntityChild2
@@ -3433,7 +3433,7 @@ MergeEntityChild2
 )
 MergeEntityChild1
 (associate "x" 3 "y" 4)
-_2430269628
+_2169689611
 (associate
 	"e"
 	3
@@ -3444,7 +3444,7 @@ _2430269628
 	"h"
 	6
 )
-_3605899036
+_2280722175
 (associate "E" 3 "F" 4 "H" 6)
 --get_entity_comments--
 Full test
@@ -3487,20 +3487,20 @@ this is a fully described entity
 	#c 3
 )
 --get_entity_rand_seed--
-0.4592555439678171
-ó+µµ–ÉYûv·¾Œwÿ
+0.8630628998576303
+T°FJKx–sŒ­ {ÿ
 --set_entity_rand_seed--
-0.7000791742912007
-0.7000791742912007
+0.24310795234706906
+0.24310795234706906
 deep sets
-0.4762978676528419
-0.4762978676528419
+0.4287046636426344
+0.4287046636426344
 --get_entity_root_permission--
 (false)
 
 --set_entity_root_permission--
 RootTest
-1693777319.008049
+1695320986.253307
 (true)
 
 RootTest
@@ -3527,12 +3527,12 @@ RootTest
 	"MergeEntity1"
 	"MergeEntity2"
 	"FlattenTest"
-	"_188112517"
-	"_2375701353"
-	"_4247396121"
-	"_1437856364"
 	"_2356538064"
-	"_360979289"
+	"_1472511973"
+	"_30261739"
+	"_4184234785"
+	"_2744839071"
+	"_1157464536"
 	"MutateEntity"
 	"MutatedEntity"
 	"MutatedEntity2"
@@ -3542,12 +3542,12 @@ RootTest
 	"ComplexMergeEntity1"
 	"ComplexMergeEntity2"
 	"ComplexOredEntities"
-	"_1472511973"
+	"_432807187"
 	"DiffEntity1"
 	"DiffEntity2"
-	"_4022098522"
+	"_41032496"
 	"DiffContainer"
-	"_30261739"
+	"_3128546630"
 	"MixedEntities"
 	"descriptive_entity"
 	"SetGetCodeTest"
@@ -3565,12 +3565,12 @@ RootTest
 	"MergeEntity1"
 	"MergeEntity2"
 	"FlattenTest"
-	"_188112517"
-	"_2375701353"
-	"_4247396121"
-	"_1437856364"
 	"_2356538064"
-	"_360979289"
+	"_1472511973"
+	"_30261739"
+	"_4184234785"
+	"_2744839071"
+	"_1157464536"
 	"MutateEntity"
 	"MutatedEntity"
 	"MutatedEntity2"
@@ -3580,12 +3580,12 @@ RootTest
 	"ComplexMergeEntity1"
 	"ComplexMergeEntity2"
 	"ComplexOredEntities"
-	"_1472511973"
+	"_432807187"
 	"DiffEntity1"
 	"DiffEntity2"
-	"_4022098522"
+	"_41032496"
 	"DiffContainer"
-	"_30261739"
+	"_3128546630"
 	"MixedEntities"
 	"descriptive_entity"
 	"SetGetCodeTest"
@@ -3602,12 +3602,12 @@ RootTest
 	"MergeEntity1"
 	"MergeEntity2"
 	"FlattenTest"
-	"_188112517"
-	"_2375701353"
-	"_4247396121"
-	"_1437856364"
 	"_2356538064"
-	"_360979289"
+	"_1472511973"
+	"_30261739"
+	"_4184234785"
+	"_2744839071"
+	"_1157464536"
 	"MutateEntity"
 	"MutatedEntity"
 	"MutatedEntity2"
@@ -3617,12 +3617,12 @@ RootTest
 	"ComplexMergeEntity1"
 	"ComplexMergeEntity2"
 	"ComplexOredEntities"
-	"_1472511973"
+	"_432807187"
 	"DiffEntity1"
 	"DiffEntity2"
-	"_4022098522"
+	"_41032496"
 	"DiffContainer"
-	"_30261739"
+	"_3128546630"
 	"MixedEntities"
 	"descriptive_entity"
 	"SetGetCodeTest"
@@ -3676,7 +3676,7 @@ hello
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "rGkûã•’îgUnê<¾vÿ")
+	(set_entity_rand_seed new_entity "Å”K@­æ›íû\\üŞFË*ÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3693,7 +3693,7 @@ hello
 				)
 			)
 		)
-		"S0â²lût!\rL]é¤ÿ"
+		"ƒBµ!\\áï,ÏT*İ&ÿ"
 	)
 	(set_entity_rand_seed
 		(first
@@ -3711,7 +3711,7 @@ hello
 				)
 			)
 		)
-		" \nõÍUâj<3±áxß{âÿ"
+		"ğ!€…š|ØÓ.âV±Úqÿ"
 	)
 	new_entity
 )
@@ -3730,7 +3730,7 @@ hello
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "FTW%ú0Ñ”-I´»ÿ")
+	(set_entity_rand_seed new_entity "ºŞÀT1Sx0Ñ”-I´»ÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3743,7 +3743,7 @@ hello
 				)
 			)
 		)
-		"H_ŞüåÙ‹ÙzDæ}Vÿ"
+		"TìxÊ\"½ÖJüğ‡²5O´ÿ"
 	)
 	(set_entity_rand_seed
 		(first
@@ -3779,7 +3779,7 @@ hello
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "FTW%ú0Ñ”-I´»ÿ")
+	(set_entity_rand_seed new_entity "ºŞÀT1Sx0Ñ”-I´»ÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -4024,14 +4024,14 @@ weighted query list of lists: (list
 )
 (list
 	(list
-		"_947038256"
-		"_2476908569"
-		"_1622730115"
-		"_1882706188"
-		"_1511931498"
-		"_2097559681"
-		"_2555472093"
-		"_3857964124"
+		"_290180734"
+		"_2132214562"
+		"_618957962"
+		"_2562810924"
+		"_1879706689"
+		"_3384474322"
+		"_2598595616"
+		"_2997245921"
 	)
 	(list
 		8.333333333333327
@@ -4723,4 +4723,4 @@ Expecting 1000: 1000
 concurrent entity writes successful: (true)
 
 --total execution time--
-1.288715124130249
+1.1435298919677734

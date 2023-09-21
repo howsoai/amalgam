@@ -357,7 +357,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableN
 			curNumExecutionNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
 
 		const std::string &new_entity_id_string = string_intern_pool.GetStringFromID(new_entity_id);
-		new_entity->SetRandomState(destination_entity_parent->CreateOtherRandomStreamStateViaString(new_entity_id_string), false);
+		new_entity->SetRandomState(destination_entity_parent->CreateRandomStreamFromStringAndRand(new_entity_id_string), false);
 
 		destination_entity_parent->AddContainedEntityViaReference(new_entity, new_entity_id, writeListeners);
 
@@ -618,7 +618,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSI
 			file_type = file_type_temp;
 	}
 
-	std::string random_seed = destination_entity_parent->CreateOtherRandomStreamStateViaString(resource_name);
+	std::string random_seed = destination_entity_parent->CreateRandomStreamFromStringAndRand(resource_name);
 	Entity *loaded_entity = asset_manager.LoadEntityFromResourcePath(resource_name, file_type,
 		persistent, true, escape_filename, escape_contained_filenames, random_seed);
 

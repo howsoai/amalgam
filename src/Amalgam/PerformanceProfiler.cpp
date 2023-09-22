@@ -90,10 +90,6 @@ void PerformanceProfiler::EndOperation(int64_t memory_use = 0)
 
 void PerformanceProfiler::PrintProfilingInformation()
 {
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	Concurrency::SingleLock lock(performance_profiler_mutex);
-#endif
-
 	size_t max_num_perf_counters_to_display = 20;
 	std::cout << "Operations that took the longest total time (s): " << std::endl;
 	auto longest_total_time = PerformanceProfiler::GetNumCallsByTotalTime();
@@ -147,11 +143,7 @@ void PerformanceProfiler::PrintProfilingInformation()
 	}
 	std::cout << std::endl;
 
-	//TODO 17597: put this back in a method and put under lock
-	size_t total_call_count = 0;
-	for(auto &c : _profiler_num_calls_by_instruction_type)
-		total_call_count += c.second;
-
+	size_t total_call_count = GetTotalNumCalls();
 	std::cout << "Total number of operations: " << total_call_count << std::endl;
 
 	auto [total_mem_increase, positive_mem_increase] = PerformanceProfiler::GetTotalAndPositiveMemoryIncreases();
@@ -159,8 +151,24 @@ void PerformanceProfiler::PrintProfilingInformation()
 	std::cout << "Total node increases: " << positive_mem_increase << std::endl;
 }
 
+size_t PerformanceProfiler::GetTotalNumCalls()
+{
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	Concurrency::SingleLock lock(performance_profiler_mutex);
+#endif
+
+	size_t total_call_count = 0;
+	for(auto &c : _profiler_num_calls_by_instruction_type)
+		total_call_count += c.second;
+	return total_call_count;
+}
+
 std::pair<int64_t, int64_t> PerformanceProfiler::GetTotalAndPositiveMemoryIncreases()
 {
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	Concurrency::SingleLock lock(performance_profiler_mutex);
+#endif
+
 	int64_t total_mem_increase = 0;
 	int64_t positive_mem_increase = 0;
 	for(auto &c : _profiler_memory_accumulated_in_instruction_type)
@@ -174,6 +182,10 @@ std::pair<int64_t, int64_t> PerformanceProfiler::GetTotalAndPositiveMemoryIncrea
 
 std::vector<std::pair<std::string, size_t>> PerformanceProfiler::GetNumCallsByType()
 {
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	Concurrency::SingleLock lock(performance_profiler_mutex);
+#endif
+
 	//copy to proper data structure
 	std::vector<std::pair<std::string, size_t>> results;
 	results.reserve(_profiler_num_calls_by_instruction_type.size());
@@ -189,6 +201,10 @@ std::vector<std::pair<std::string, size_t>> PerformanceProfiler::GetNumCallsByTy
 
 std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByTotalTime()
 {
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	Concurrency::SingleLock lock(performance_profiler_mutex);
+#endif
+
 	//copy to proper data structure
 	std::vector<std::pair<std::string, double>> results;
 	results.reserve(_profiler_num_calls_by_instruction_type.size());
@@ -204,6 +220,10 @@ std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByTo
 
 std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByAveTime()
 {
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	Concurrency::SingleLock lock(performance_profiler_mutex);
+#endif
+
 	//copy to proper data structure
 	std::vector<std::pair<std::string, double>> results;
 	results.reserve(_profiler_num_calls_by_instruction_type.size());
@@ -226,6 +246,10 @@ std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByAv
 
 std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByTotalMemoryIncrease()
 {
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	Concurrency::SingleLock lock(performance_profiler_mutex);
+#endif
+
 	//copy to proper data structure
 	std::vector<std::pair<std::string, double>> results;
 	results.reserve(_profiler_memory_accumulated_in_instruction_type.size());
@@ -241,6 +265,10 @@ std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByTo
 
 std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByAveMemoryIncrease()
 {
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	Concurrency::SingleLock lock(performance_profiler_mutex);
+#endif
+
 	//copy to proper data structure
 	std::vector<std::pair<std::string, double>> results;
 	results.reserve(_profiler_memory_accumulated_in_instruction_type.size());

@@ -23,6 +23,8 @@ namespace PerformanceProfiler
 
 	void PrintProfilingInformation();
 
+	size_t GetTotalNumCalls();
+
 	std::pair<int64_t, int64_t> GetTotalAndPositiveMemoryIncreases();
 	
 	std::vector<std::pair<std::string, size_t>> GetNumCallsByType();

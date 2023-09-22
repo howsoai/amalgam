@@ -32,14 +32,13 @@ PLATFORM_MAIN_CONSOLE
 			<< "Concurrency type: " << GetConcurrencyTypeString() << std::endl
 			<< "Must specify an input file.  Flags:" << std::endl
 			<< "-l [filename]: specify a debug log file." << std::endl
-		#if defined(INTERPRETER_PROFILE_OPCODES) || defined(INTERPRETER_PROFILE_LABELS_CALLED)
-			<< "-p: display engine performance counters upon completion" << std::endl
-		#endif
 			<< "-s [random number seed]: specify a particular random number seed -- can be any alphanumeric string." << std::endl
 			<< "-t [filename]: specify a code-based transaction log file." << std::endl
 		#if defined(MULTITHREAD_SUPPORT) || defined(_OPENMP)
 			<< "--numthreads [number]: maximum number of threads to use (if unspecified or set to zero, may use unlimited)." << std::endl
 		#endif
+			<< "--p-opcodes: display engine profiling information for opcodes upon completion (one profiling type allowed at a time); when used with --debug-sources, reports line numbers" << std::endl
+			<< "--p-labels: display engine profiling information for labels upon completion (one profiling type allowed at a time)" << std::endl
 			<< "--debug: when specified, begins in debugging mode." << std::endl
 			<< "--debug-minimal: when specified, begins in debugging mode with minimal output while stepping." << std::endl
 			<< "--debug-sources: when specified, prepends all node comments with the source of the node when applicable." << std::endl
@@ -54,6 +53,8 @@ PLATFORM_MAIN_CONSOLE
 	bool debug_state = false;
 	bool debug_minimal = false;
 	bool debug_sources = false;
+	bool profile_opcodes = false;
+	bool profile_labels = false;
 	bool run_trace = false;
 	bool run_tracefile = false;
 	std::string tracefile;
@@ -82,10 +83,10 @@ PLATFORM_MAIN_CONSOLE
 		{
 			print_log_filename = args[++i];
 		}
-	#if defined(INTERPRETER_PROFILE_OPCODES) || defined(INTERPRETER_PROFILE_LABELS_CALLED)
-		else if(args[i] == "-p")
-			PerformanceProfiler::EnableProfiling();
-	#endif
+		else if(args[i] == "--p-opcodes")
+			profile_opcodes = true;
+		else if(args[i] == "--p-labels")
+			profile_labels = true;
 		else if(args[i] == "-q")
 			print_to_stdio = false;
 		else if(args[i] == "-s" && i + 1 < args.size())
@@ -144,6 +145,12 @@ PLATFORM_MAIN_CONSOLE
 	if(debug_minimal)
 		asset_manager.debugMinimal = true;
 
+	if(profile_opcodes)
+		Interpreter::SetOpcodeProfilingState(true);
+
+	if(profile_labels)
+		Interpreter::SetLabelProfilingState(true);
+
 	if(run_trace)
 	{
 		return RunAmalgamTrace(&std::cin, &std::cout, random_seed);
@@ -154,7 +161,7 @@ PLATFORM_MAIN_CONSOLE
 		int ret = RunAmalgamTrace(trace_stream, &std::cout, random_seed);
 		delete trace_stream;
 
-		if(PerformanceProfiler::IsProfilingEnabled())
+		if(profile_opcodes || profile_labels)
 			PerformanceProfiler::PrintProfilingInformation();
 
 		return ret;
@@ -227,7 +234,7 @@ PLATFORM_MAIN_CONSOLE
 			}
 		}
 
-		if(PerformanceProfiler::IsProfilingEnabled())
+		if(profile_opcodes || profile_labels)
 			PerformanceProfiler::PrintProfilingInformation();
 
 		if(Platform_IsDebuggerPresent())

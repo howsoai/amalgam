@@ -3,7 +3,7 @@
 #include "Concurrency.h"
 
 //if true, then will record profiling data
-bool _profiler_enabled;
+bool PerformanceProfiler::_profiler_enabled;
 
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 Concurrency::SingleMutex performance_profiler_mutex;
@@ -28,29 +28,13 @@ inline double GetCurTime()
 	return cur_time / 1000.0 / 1000.0 / 1000.0;
 }
 
-void PerformanceProfiler::EnableProfiling(bool enable)
-{
-	_profiler_enabled = enable;
-}
-
-bool PerformanceProfiler::IsProfilingEnabled()
-{
-	return _profiler_enabled;
-}
-
 void PerformanceProfiler::StartOperation(const std::string &t, int64_t memory_use)
-{
-	if(!_profiler_enabled)
-		return;
-	
+{	
 	instructionStackTypeAndStartTimeAndMemUse.push_back(std::make_pair(t, std::make_pair(GetCurTime(), memory_use)));
 }
 
 void PerformanceProfiler::EndOperation(int64_t memory_use = 0)
 {
-	if(!_profiler_enabled)
-		return;
-	
 	//get and remove data from call stack
 	auto type_and_time_and_mem = instructionStackTypeAndStartTimeAndMemUse.back();
 	auto inst_type = type_and_time_and_mem.first;

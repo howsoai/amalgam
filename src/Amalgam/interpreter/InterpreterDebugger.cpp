@@ -1,7 +1,7 @@
 //project headers:
-#include "Interpreter.h"
-
 #include "AssetManager.h"
+#include "Interpreter.h"
+#include "PerformanceProfiler.h"
 #include "StringManipulation.h"
 
 //makes an array of all the same value
@@ -17,6 +17,13 @@ constexpr std::array<T, N> make_array_of_duplicate_values(T value)
 //initially all set to point to debug
 std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter::_debug_opcodes
 = make_array_of_duplicate_values<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1>(&Interpreter::InterpretNode_DEBUG);
+
+//initially all set to point to profile
+std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter::_profile_opcodes
+= make_array_of_duplicate_values<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1>(&Interpreter::InterpretNode_PROFILE);
+
+bool Interpreter::_opcode_profiling_enabled = false;
+bool Interpreter::_label_profiling_enabled = false;
 
 //global static data for debugging
 struct InterpreterDebugData
@@ -581,6 +588,39 @@ void Interpreter::SetDebuggingState(bool debugging_enabled)
 		std::swap(_opcodes[i], _debug_opcodes[i]);
 }
 
+void Interpreter::SetOpcodeProfilingState(bool opcode_profiling_enabled)
+{
+	if(opcode_profiling_enabled)
+	{
+		//skip if already debugging or profiling
+		if(_opcodes[0] == &Interpreter::InterpretNode_DEBUG
+				|| _opcodes[0] == &Interpreter::InterpretNode_PROFILE)
+			return;
+
+		_opcode_profiling_enabled = true;
+	}
+	else //!opcode_profiling_enabled
+	{
+		//skip if already not debugging
+		if(_profile_opcodes[0] == &Interpreter::InterpretNode_PROFILE)
+			return;
+
+		_opcode_profiling_enabled = false;
+	}
+
+	PerformanceProfiler::SetProfilingState(_opcode_profiling_enabled);
+
+	//swap debug opcodes for real ones
+	for(size_t i = 0; i < _opcodes.size(); i++)
+		std::swap(_opcodes[i], _profile_opcodes[i]);
+}
+
+void Interpreter::SetLabelProfilingState(bool label_profiling_enabled)
+{
+	_label_profiling_enabled = label_profiling_enabled;
+	PerformanceProfiler::SetProfilingState(_label_profiling_enabled);
+}
+
 void Interpreter::DebugCheckBreakpointsAndUpdateState(EvaluableNode *en, bool before_opcode)
 {
 	EvaluableNodeType cur_node_type = ENT_NULL;
@@ -744,4 +784,44 @@ void Interpreter::DebugCheckBreakpointsAndUpdateState(EvaluableNode *en, bool be
 			}
 		}
 	}
+}
+
+EvaluableNodeReference Interpreter::InterpretNode_PROFILE(EvaluableNode *en)
+{
+	std::string opcode_str;
+
+	//if debugging sources is enabled, then concatenate the opcode to the first line of the comment
+	if(asset_manager.debugSources)
+	{
+		if(en->HasComments())
+		{
+			auto &comment = en->GetCommentsString();
+			auto first_line_end = comment.find('\n');
+			if(first_line_end == std::string::npos)
+				opcode_str = comment;
+			else //copy up until newline
+			{
+				opcode_str = comment.substr(0, first_line_end);
+				if(opcode_str.size() > 0 && opcode_str.back() == '\r')
+					opcode_str.pop_back();
+			}
+
+			opcode_str += ": ";
+		}
+	}
+
+	opcode_str += GetStringFromEvaluableNodeType(en->GetType(), true);
+	PerformanceProfiler::StartOperation(opcode_str, evaluableNodeManager->GetNumberOfUsedNodes());
+
+	EvaluableNodeType cur_node_type = ENT_NULL;
+	if(en != nullptr)
+		cur_node_type = en->GetType();
+
+	//get corresponding opcode stored in _profile_opcodes
+	auto oc = _profile_opcodes[cur_node_type];
+	EvaluableNodeReference retval = (this->*oc)(en);
+
+	PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
+
+	return retval;
 }

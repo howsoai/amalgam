@@ -23,12 +23,6 @@
 //forward declarations:
 class EntityQueryCondition;
 
-//if defined, will instrument and profile timing for each opcode, reported when profiling is enabled
-//#define INTERPRETER_PROFILE_OPCODES
-
-//if defined, will instrument and profile timing for each entity label called
-//#define INTERPRETER_PROFILE_LABELS_CALLED
-
 class Interpreter
 {
 public:
@@ -63,7 +57,16 @@ public:
 #endif
 
 	//changes debugging state to debugging_enabled
+	//cannot be enabled at the same time as profiling
 	static void SetDebuggingState(bool debugging_enabled);
+
+	//changes opcode profiling state to opcode_profiling_enabled
+	//cannot be enabled at the same time as other profiling or debugging
+	static void SetOpcodeProfilingState(bool opcode_profiling_enabled);
+
+	//changes opcode profiling state to opcode_profiling_enabled
+	//cannot be enabled at the same time as other profiling or debugging
+	static void SetLabelProfilingState(bool label_profiling_enabled);
 
 	//when debugging, checks any relevant breakpoints and update debugger state if any are triggered
 	// if before_opcode is true, then it is checking before it is run, otherwise it'll check after it is completed
@@ -773,6 +776,9 @@ protected:
 	//override hook for debugging
 	EvaluableNodeReference InterpretNode_DEBUG(EvaluableNode *en);
 
+	//override hook for profiling
+	EvaluableNodeReference InterpretNode_PROFILE(EvaluableNode *en);
+
 	//ensures that there are no reachable nodes that are deallocated
 	void ValidateEvaluableNodeIntegrity();
 
@@ -844,6 +850,16 @@ protected:
 	//opcodes that all point to debugging
 	// can be swapped with _opcodes
 	static std::array<OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> _debug_opcodes;
+
+	//opcodes that all point to profiling
+	// can be swapped with _opcodes
+	static std::array<OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> _profile_opcodes;
+
+	//set to true if opcode profiling is enabled
+	static bool _opcode_profiling_enabled;
+
+	//set to true if label profiling is enabled
+	static bool _label_profiling_enabled;
 
 	//number of items in each level of the constructionStack
 	static constexpr int64_t constructionStackOffsetStride = 3;

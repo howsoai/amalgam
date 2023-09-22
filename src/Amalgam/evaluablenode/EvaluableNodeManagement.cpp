@@ -1,5 +1,6 @@
 //project headers:
 #include "EvaluableNodeManagement.h"
+#include "PerformanceProfiler.h"
 
 //system headers:
 #include <limits>
@@ -195,6 +196,12 @@ void EvaluableNodeManager::CollectGarbage()
 	if(!RecommendGarbageCollection())
 		return;
 
+	if(PerformanceProfiler::IsProfilingEnabled())
+	{
+		static const std::string collect_garbage_string = ".collect_garbage";
+		PerformanceProfiler::StartOperation(collect_garbage_string, GetNumberOfUsedNodes());
+	}
+
 #ifdef MULTITHREAD_SUPPORT
 		
 	//free lock so can attempt to enter write lock to collect garbage
@@ -209,6 +216,10 @@ void EvaluableNodeManager::CollectGarbage()
 		{
 			if(memory_modification_lock != nullptr)
 				memory_modification_lock->lock();
+
+			if(PerformanceProfiler::IsProfilingEnabled())
+				PerformanceProfiler::EndOperation(GetNumberOfUsedNodes());
+
 			return;
 		}
 
@@ -220,6 +231,10 @@ void EvaluableNodeManager::CollectGarbage()
 		write_lock.unlock();
 		if(memory_modification_lock != nullptr)
 			memory_modification_lock->lock();
+
+		if(PerformanceProfiler::IsProfilingEnabled())
+			PerformanceProfiler::EndOperation(GetNumberOfUsedNodes());
+
 		return;
 	}
 #endif
@@ -233,6 +248,9 @@ void EvaluableNodeManager::CollectGarbage()
 	if(memory_modification_lock != nullptr)
 		memory_modification_lock->lock();
 #endif
+
+	if(PerformanceProfiler::IsProfilingEnabled())
+		PerformanceProfiler::EndOperation(GetNumberOfUsedNodes());
 }
 
 void EvaluableNodeManager::FreeAllNodes()

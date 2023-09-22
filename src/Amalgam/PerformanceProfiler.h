@@ -10,9 +10,17 @@
 
 namespace PerformanceProfiler
 {
-	void EnableProfiling(bool enable = true);
+	extern bool _profiler_enabled;
 
-	bool IsProfilingEnabled();
+	inline void SetProfilingState(bool enabled)
+	{
+		_profiler_enabled = enabled;
+	}
+
+	inline bool IsProfilingEnabled()
+	{
+		return _profiler_enabled;
+	}
 	
 	//begins performance timers for the specified operation type, specified by the string t
 	// pushes current instruction on the stack, such that it will be cleared when the

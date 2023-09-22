@@ -1,17 +1,24 @@
 //project headers:
 #include "PerformanceProfiler.h"
+#include "Concurrency.h"
 
 //if true, then will record profiling data
-bool profilingEnabled;
+bool _profiler_enabled;
+
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+Concurrency::SingleMutex performance_profiler_mutex;
+#endif
 
 //keeps track of number of instructions and time spent in them
-FastHashMap<std::string, size_t> numCallsByInstructionType;
-FastHashMap<std::string, double> timeSpentInInstructionType;
-FastHashMap<std::string, int64_t> memoryAccumulatedInInstructionType;
+FastHashMap<std::string, size_t> _profiler_num_calls_by_instruction_type;
+FastHashMap<std::string, double> _profiler_time_spent_in_instruction_type;
+FastHashMap<std::string, int64_t> _profiler_memory_accumulated_in_instruction_type;
 
-//TODO 17597: make thread local
 //contains the type and start time of each instruction
-std::vector<std::pair<std::string, std::pair<double, int64_t>>> instructionStackTypeAndStartTimeAndMemUse;
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+thread_local
+#endif
+	std::vector<std::pair<std::string, std::pair<double, int64_t>>> instructionStackTypeAndStartTimeAndMemUse;
 
 //gets the current time with nanosecond resolution cast to a double measured in seconds
 inline double GetCurTime()
@@ -23,17 +30,17 @@ inline double GetCurTime()
 
 void PerformanceProfiler::EnableProfiling(bool enable)
 {
-	profilingEnabled = enable;
+	_profiler_enabled = enable;
 }
 
 bool PerformanceProfiler::IsProfilingEnabled()
 {
-	return profilingEnabled;
+	return _profiler_enabled;
 }
 
 void PerformanceProfiler::StartOperation(const std::string &t, int64_t memory_use)
 {
-	if(!profilingEnabled)
+	if(!_profiler_enabled)
 		return;
 	
 	instructionStackTypeAndStartTimeAndMemUse.push_back(std::make_pair(t, std::make_pair(GetCurTime(), memory_use)));
@@ -41,7 +48,7 @@ void PerformanceProfiler::StartOperation(const std::string &t, int64_t memory_us
 
 void PerformanceProfiler::EndOperation(int64_t memory_use = 0)
 {
-	if(!profilingEnabled)
+	if(!_profiler_enabled)
 		return;
 	
 	//get and remove data from call stack
@@ -53,20 +60,24 @@ void PerformanceProfiler::EndOperation(int64_t memory_use = 0)
 	
 	double total_instruction_time = GetCurTime() - inst_start_time;
 	int64_t total_instruction_memory = memory_use - inst_start_mem;
-	
+
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	Concurrency::SingleLock lock(performance_profiler_mutex);
+#endif
+
 	//accumulate stats
-	auto stat = numCallsByInstructionType.find(inst_type);
-	if(stat != end(numCallsByInstructionType))
+	auto stat = _profiler_num_calls_by_instruction_type.find(inst_type);
+	if(stat != end(_profiler_num_calls_by_instruction_type))
 	{
-		numCallsByInstructionType[inst_type]++;
-		timeSpentInInstructionType[inst_type] += total_instruction_time;
-		memoryAccumulatedInInstructionType[inst_type] += total_instruction_memory;
+		_profiler_num_calls_by_instruction_type[inst_type]++;
+		_profiler_time_spent_in_instruction_type[inst_type] += total_instruction_time;
+		_profiler_memory_accumulated_in_instruction_type[inst_type] += total_instruction_memory;
 	}
 	else
 	{
-		numCallsByInstructionType[inst_type] = 1;
-		timeSpentInInstructionType[inst_type] = total_instruction_time;
-		memoryAccumulatedInInstructionType[inst_type] = total_instruction_memory;
+		_profiler_num_calls_by_instruction_type[inst_type] = 1;
+		_profiler_time_spent_in_instruction_type[inst_type] = total_instruction_time;
+		_profiler_memory_accumulated_in_instruction_type[inst_type] = total_instruction_memory;
 	}
 	
 	//remove the time on this instruction for any that are currently pending on the stack by adding it to start time
@@ -79,6 +90,10 @@ void PerformanceProfiler::EndOperation(int64_t memory_use = 0)
 
 void PerformanceProfiler::PrintProfilingInformation()
 {
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	Concurrency::SingleLock lock(performance_profiler_mutex);
+#endif
+
 	size_t max_num_perf_counters_to_display = 20;
 	std::cout << "Operations that took the longest total time (s): " << std::endl;
 	auto longest_total_time = PerformanceProfiler::GetNumCallsByTotalTime();
@@ -132,8 +147,9 @@ void PerformanceProfiler::PrintProfilingInformation()
 	}
 	std::cout << std::endl;
 
+	//TODO 17597: put this back in a method and put under lock
 	size_t total_call_count = 0;
-	for(auto &c : numCallsByInstructionType)
+	for(auto &c : _profiler_num_calls_by_instruction_type)
 		total_call_count += c.second;
 
 	std::cout << "Total number of operations: " << total_call_count << std::endl;
@@ -147,7 +163,7 @@ std::pair<int64_t, int64_t> PerformanceProfiler::GetTotalAndPositiveMemoryIncrea
 {
 	int64_t total_mem_increase = 0;
 	int64_t positive_mem_increase = 0;
-	for(auto &c : memoryAccumulatedInInstructionType)
+	for(auto &c : _profiler_memory_accumulated_in_instruction_type)
 	{
 		total_mem_increase += c.second;
 		if(c.second > 0)
@@ -160,8 +176,8 @@ std::vector<std::pair<std::string, size_t>> PerformanceProfiler::GetNumCallsByTy
 {
 	//copy to proper data structure
 	std::vector<std::pair<std::string, size_t>> results;
-	results.reserve(numCallsByInstructionType.size());
-	for(auto &[s, value] : numCallsByInstructionType)
+	results.reserve(_profiler_num_calls_by_instruction_type.size());
+	for(auto &[s, value] : _profiler_num_calls_by_instruction_type)
 		results.push_back(std::make_pair(s, value));
 	
 	//sort high to low
@@ -175,8 +191,8 @@ std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByTo
 {
 	//copy to proper data structure
 	std::vector<std::pair<std::string, double>> results;
-	results.reserve(numCallsByInstructionType.size());
-	for(auto &[s, value] : timeSpentInInstructionType)
+	results.reserve(_profiler_num_calls_by_instruction_type.size());
+	for(auto &[s, value] : _profiler_time_spent_in_instruction_type)
 		results.push_back(std::make_pair(static_cast<std::string>(s), value));
 	
 	//sort high to low
@@ -190,11 +206,11 @@ std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByAv
 {
 	//copy to proper data structure
 	std::vector<std::pair<std::string, double>> results;
-	results.reserve(numCallsByInstructionType.size());
-	for(auto &[s, value] : timeSpentInInstructionType)
+	results.reserve(_profiler_num_calls_by_instruction_type.size());
+	for(auto &[s, value] : _profiler_time_spent_in_instruction_type)
 	{
-		auto ncbit = numCallsByInstructionType.find(s);
-		if(ncbit != end(numCallsByInstructionType))
+		auto ncbit = _profiler_num_calls_by_instruction_type.find(s);
+		if(ncbit != end(_profiler_num_calls_by_instruction_type))
 		{
 			size_t num_calls = ncbit->second;
 			results.push_back(std::make_pair(static_cast<std::string>(s), value / num_calls));
@@ -212,8 +228,8 @@ std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByTo
 {
 	//copy to proper data structure
 	std::vector<std::pair<std::string, double>> results;
-	results.reserve(memoryAccumulatedInInstructionType.size());
-	for(auto &[s, value] : memoryAccumulatedInInstructionType)
+	results.reserve(_profiler_memory_accumulated_in_instruction_type.size());
+	for(auto &[s, value] : _profiler_memory_accumulated_in_instruction_type)
 		results.push_back(std::make_pair(static_cast<std::string>(s), static_cast<double>(value)));
 
 	//sort high to low
@@ -227,11 +243,11 @@ std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByAv
 {
 	//copy to proper data structure
 	std::vector<std::pair<std::string, double>> results;
-	results.reserve(memoryAccumulatedInInstructionType.size());
-	for(auto &[s, value] : memoryAccumulatedInInstructionType)
+	results.reserve(_profiler_memory_accumulated_in_instruction_type.size());
+	for(auto &[s, value] : _profiler_memory_accumulated_in_instruction_type)
 	{
-		auto ncbit = numCallsByInstructionType.find(s);
-		if(ncbit != end(numCallsByInstructionType))
+		auto ncbit = _profiler_num_calls_by_instruction_type.find(s);
+		if(ncbit != end(_profiler_num_calls_by_instruction_type))
 		{
 			size_t num_calls = ncbit->second;
 			results.push_back(std::make_pair(static_cast<std::string>(s), static_cast<double>(value) / num_calls));

@@ -503,7 +503,7 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en)
 	}
 
 	opcode_str += GetStringFromEvaluableNodeType(en->GetType(), true);
-	performance_profiler.StartOperation(opcode_str, evaluableNodeManager->GetNumberOfUsedNodes());
+	PerformanceProfiler::StartOperation(opcode_str, evaluableNodeManager->GetNumberOfUsedNodes());
 #endif
 
 	//make sure don't run for longer than allowed
@@ -513,7 +513,7 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en)
 		if(curExecutionStep >= maxNumExecutionSteps)
 		{
 		#ifdef INTERPRETER_PROFILE_OPCODES
-			performance_profiler.EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
+			PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
 		#endif
 			return EvaluableNodeReference::Null();
 		}
@@ -534,9 +534,9 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en)
 	const std::string collect_garbage_string = ".collect_garbage";
 	if(evaluableNodeManager->RecommendGarbageCollection())
 	{
-		performance_profiler.StartOperation(collect_garbage_string, evaluableNodeManager->GetNumberOfUsedNodes());
+		PerformanceProfiler::StartOperation(collect_garbage_string, evaluableNodeManager->GetNumberOfUsedNodes());
 		CollectGarbage();
-		performance_profiler.EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
+		PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
 	}
 #else
 	CollectGarbage();
@@ -552,7 +552,7 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en)
 		if(curNumExecutionNodes >= maxNumExecutionNodes)
 		{
 		#ifdef INTERPRETER_PROFILE_OPCODES
-			performance_profiler.EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
+			PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
 		#endif
 			return EvaluableNodeReference::Null();
 		}
@@ -568,7 +568,7 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en)
 	//ValidateEvaluableNodeIntegrity();
 
 #ifdef INTERPRETER_PROFILE_OPCODES
-	performance_profiler.EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
+	PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
 #endif
 
 	//finished with opcode

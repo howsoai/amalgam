@@ -1,7 +1,35 @@
 //project headers:
 #include "PerformanceProfiler.h"
 
-PerformanceProfiler performance_profiler;
+//if true, then will record profiling data
+bool profilingEnabled;
+
+//keeps track of number of instructions and time spent in them
+FastHashMap<std::string, size_t> numCallsByInstructionType;
+FastHashMap<std::string, double> timeSpentInInstructionType;
+FastHashMap<std::string, int64_t> memoryAccumulatedInInstructionType;
+
+//TODO 17597: make thread local
+//contains the type and start time of each instruction
+std::vector<std::pair<std::string, std::pair<double, int64_t>>> instructionStackTypeAndStartTimeAndMemUse;
+
+//gets the current time with nanosecond resolution cast to a double measured in seconds
+inline double GetCurTime()
+{
+	typedef std::chrono::steady_clock clk;
+	auto cur_time = std::chrono::duration_cast<std::chrono::nanoseconds>(clk::now().time_since_epoch()).count();
+	return cur_time / 1000.0 / 1000.0 / 1000.0;
+}
+
+void PerformanceProfiler::EnableProfiling(bool enable)
+{
+	profilingEnabled = enable;
+}
+
+bool PerformanceProfiler::IsProfilingEnabled()
+{
+	return profilingEnabled;
+}
 
 void PerformanceProfiler::StartOperation(const std::string &t, int64_t memory_use)
 {
@@ -49,12 +77,70 @@ void PerformanceProfiler::EndOperation(int64_t memory_use = 0)
 	}
 }
 
-size_t PerformanceProfiler::GetTotalNumCalls()
+void PerformanceProfiler::PrintProfilingInformation()
 {
+	size_t max_num_perf_counters_to_display = 20;
+	std::cout << "Operations that took the longest total time (s): " << std::endl;
+	auto longest_total_time = PerformanceProfiler::GetNumCallsByTotalTime();
+	for(size_t i = 0; i < max_num_perf_counters_to_display && i < longest_total_time.size(); i++)
+		std::cout << longest_total_time[i].first << ": " << longest_total_time[i].second << std::endl;
+	std::cout << std::endl;
+
+	std::cout << "Operations called the most number of times: " << std::endl;
+	auto most_calls = PerformanceProfiler::GetNumCallsByType();
+	for(size_t i = 0; i < max_num_perf_counters_to_display && i < most_calls.size(); i++)
+		std::cout << most_calls[i].first << ": " << most_calls[i].second << std::endl;
+	std::cout << std::endl;
+
+	std::cout << "Operations that took the longest average time (s): " << std::endl;
+	auto longest_ave_time = PerformanceProfiler::GetNumCallsByAveTime();
+	for(size_t i = 0; i < max_num_perf_counters_to_display && i < longest_ave_time.size(); i++)
+		std::cout << longest_ave_time[i].first << ": " << longest_ave_time[i].second << std::endl;
+	std::cout << std::endl;
+
+	std::cout << "Operations that increased the memory usage the most in total (nodes): " << std::endl;
+	auto most_total_memory = PerformanceProfiler::GetNumCallsByTotalMemoryIncrease();
+	for(size_t i = 0; i < max_num_perf_counters_to_display && i < most_total_memory.size(); i++)
+		std::cout << most_total_memory[i].first << ": " << most_total_memory[i].second << std::endl;
+	std::cout << std::endl;
+
+	std::cout << "Operations that increased the memory usage the most on average (nodes): " << std::endl;
+	auto most_ave_memory = PerformanceProfiler::GetNumCallsByAveMemoryIncrease();
+	for(size_t i = 0; i < max_num_perf_counters_to_display && i < most_ave_memory.size(); i++)
+		std::cout << most_ave_memory[i].first << ": " << most_ave_memory[i].second << std::endl;
+	std::cout << std::endl;
+
+	std::cout << "Operations that decreased the memory usage the most in total (nodes): " << std::endl;
+	for(size_t i = 0; i < max_num_perf_counters_to_display && i < most_total_memory.size(); i++)
+	{
+		//only write out those that had a net decrease
+		double mem_delta = most_total_memory[most_total_memory.size() - 1 - i].second;
+		if(mem_delta >= 0)
+			break;
+		std::cout << most_total_memory[i].first << ": " << mem_delta << std::endl;
+	}
+	std::cout << std::endl;
+
+	std::cout << "Operations that decreased the memory usage the most on average (nodes): " << std::endl;
+	for(size_t i = 0; i < max_num_perf_counters_to_display && i < most_ave_memory.size(); i++)
+	{
+		//only write out those that had a net decrease
+		double mem_delta = most_ave_memory[most_total_memory.size() - 1 - i].second;
+		if(mem_delta >= 0)
+			break;
+		std::cout << most_total_memory[i].first << ": " << mem_delta << std::endl;
+	}
+	std::cout << std::endl;
+
 	size_t total_call_count = 0;
 	for(auto &c : numCallsByInstructionType)
 		total_call_count += c.second;
-	return total_call_count;
+
+	std::cout << "Total number of operations: " << total_call_count << std::endl;
+
+	auto [total_mem_increase, positive_mem_increase] = PerformanceProfiler::GetTotalAndPositiveMemoryIncreases();
+	std::cout << "Net number of nodes allocated: " << total_mem_increase << std::endl;
+	std::cout << "Total node increases: " << positive_mem_increase << std::endl;
 }
 
 std::pair<int64_t, int64_t> PerformanceProfiler::GetTotalAndPositiveMemoryIncreases()

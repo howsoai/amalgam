@@ -457,7 +457,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en)
 
 #ifdef INTERPRETER_PROFILE_LABELS_CALLED
 	if(function->GetNumLabels() > 0)
-		performance_profiler.StartOperation(function->GetLabel(0), evaluableNodeManager->GetNumberOfUsedNodes());
+		PerformanceProfiler::StartOperation(function->GetLabel(0), evaluableNodeManager->GetNumberOfUsedNodes());
 #endif
 
 	//if have an execution context of variables specified, then use it
@@ -475,7 +475,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en)
 
 #ifdef INTERPRETER_PROFILE_LABELS_CALLED
 	if(function->GetNumLabels() > 0)
-		performance_profiler.EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
+		PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
 #endif
 
 	return retval;
@@ -516,7 +516,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 
 #ifdef INTERPRETER_PROFILE_LABELS_CALLED
 	if(function->GetNumLabels() > 0)
-		performance_profiler.StartOperation(function->GetLabel(0), evaluableNodeManager->GetNumberOfUsedNodes());
+		PerformanceProfiler::StartOperation(function->GetLabel(0), evaluableNodeManager->GetNumberOfUsedNodes());
 #endif
 
 	//if have an execution context of variables specified, then use it
@@ -572,7 +572,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 
 #ifdef INTERPRETER_PROFILE_LABELS_CALLED
 	if(function->GetNumLabels() > 0)
-		performance_profiler.EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
+		PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
 #endif
 
 	return result;

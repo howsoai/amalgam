@@ -422,7 +422,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		entity_label_sid = InterpretNodeIntoStringIDValueWithReference(ocn[1]);
 
 #ifdef INTERPRETER_PROFILE_LABELS_CALLED
-	performance_profiler.StartOperation(string_intern_pool.GetStringFromID(entity_label_sid), evaluableNodeManager->GetNumberOfUsedNodes());
+	PerformanceProfiler::StartOperation(string_intern_pool.GetStringFromID(entity_label_sid), evaluableNodeManager->GetNumberOfUsedNodes());
 #endif
 
 	//number of execution steps
@@ -537,7 +537,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	called_entity_enm->FreeNode(call_stack);
 
 #ifdef INTERPRETER_PROFILE_LABELS_CALLED
-	performance_profiler.EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
+	PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
 #endif
 
 	return retval;
@@ -573,7 +573,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	container_label_name = '^' + orig_container_label_name;
 
 #ifdef INTERPRETER_PROFILE_LABELS_CALLED
-	performance_profiler.StartOperation(container_label_name, evaluableNodeManager->GetNumberOfUsedNodes());
+	PerformanceProfiler::StartOperation(container_label_name, evaluableNodeManager->GetNumberOfUsedNodes());
 #endif
 
 	//number of execution steps
@@ -653,7 +653,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	evaluableNodeManager->FreeNode(call_stack);
 
 #ifdef INTERPRETER_PROFILE_LABELS_CALLED
-	performance_profiler.EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
+	PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
 #endif
 
 	return retval;

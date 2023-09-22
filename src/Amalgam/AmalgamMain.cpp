@@ -22,71 +22,6 @@
 
 int RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::string &random_seed);
 
-void PrintProfilingInformationIfApplicable()
-{
-	if(performance_profiler.IsProfilingEnabled())
-	{
-		size_t max_num_perf_counters_to_display = 20;
-		std::cout << "Operations that took the longest total time (s): " << std::endl;
-		auto longest_total_time = performance_profiler.GetNumCallsByTotalTime();
-		for(size_t i = 0; i < max_num_perf_counters_to_display && i < longest_total_time.size(); i++)
-			std::cout << longest_total_time[i].first << ": " << longest_total_time[i].second << std::endl;
-		std::cout << std::endl;
-
-		std::cout << "Operations called the most number of times: " << std::endl;
-		auto most_calls = performance_profiler.GetNumCallsByType();
-		for(size_t i = 0; i < max_num_perf_counters_to_display && i < most_calls.size(); i++)
-			std::cout << most_calls[i].first << ": " << most_calls[i].second << std::endl;
-		std::cout << std::endl;
-
-		std::cout << "Operations that took the longest average time (s): " << std::endl;
-		auto longest_ave_time = performance_profiler.GetNumCallsByAveTime();
-		for(size_t i = 0; i < max_num_perf_counters_to_display && i < longest_ave_time.size(); i++)
-			std::cout << longest_ave_time[i].first << ": " << longest_ave_time[i].second << std::endl;
-		std::cout << std::endl;
-
-		std::cout << "Operations that increased the memory usage the most in total (nodes): " << std::endl;
-		auto most_total_memory = performance_profiler.GetNumCallsByTotalMemoryIncrease();
-		for(size_t i = 0; i < max_num_perf_counters_to_display && i < most_total_memory.size(); i++)
-			std::cout << most_total_memory[i].first << ": " << most_total_memory[i].second << std::endl;
-		std::cout << std::endl;
-
-		std::cout << "Operations that increased the memory usage the most on average (nodes): " << std::endl;
-		auto most_ave_memory = performance_profiler.GetNumCallsByAveMemoryIncrease();
-		for(size_t i = 0; i < max_num_perf_counters_to_display && i < most_ave_memory.size(); i++)
-			std::cout << most_ave_memory[i].first << ": " << most_ave_memory[i].second << std::endl;
-		std::cout << std::endl;
-
-		std::cout << "Operations that decreased the memory usage the most in total (nodes): " << std::endl;
-		for(size_t i = 0; i < max_num_perf_counters_to_display && i < most_total_memory.size(); i++)
-		{
-			//only write out those that had a net decrease
-			double mem_delta = most_total_memory[most_total_memory.size() - 1 - i].second;
-			if(mem_delta >= 0)
-				break;
-			std::cout << most_total_memory[i].first << ": " << mem_delta << std::endl;
-		}
-		std::cout << std::endl;
-
-		std::cout << "Operations that decreased the memory usage the most on average (nodes): " << std::endl;
-		for(size_t i = 0; i < max_num_perf_counters_to_display && i < most_ave_memory.size(); i++)
-		{
-			//only write out those that had a net decrease
-			double mem_delta = most_ave_memory[most_total_memory.size() - 1 - i].second;
-			if(mem_delta >= 0)
-				break;
-			std::cout << most_total_memory[i].first << ": " << mem_delta << std::endl;
-		}
-		std::cout << std::endl;
-
-		std::cout << "Total number of operations: " << performance_profiler.GetTotalNumCalls() << std::endl;
-
-		auto [total_mem_increase, positive_mem_increase] = performance_profiler.GetTotalAndPositiveMemoryIncreases();
-		std::cout << "Net number of nodes allocated: " << total_mem_increase << std::endl;
-		std::cout << "Total node increases: " << positive_mem_increase << std::endl;
-	}
-}
-
 PLATFORM_MAIN_CONSOLE
 {
 	PLATFORM_ARGS_CONSOLE;
@@ -149,7 +84,7 @@ PLATFORM_MAIN_CONSOLE
 		}
 	#if defined(INTERPRETER_PROFILE_OPCODES) || defined(INTERPRETER_PROFILE_LABELS_CALLED)
 		else if(args[i] == "-p")
-			performance_profiler.EnableProfiling();
+			PerformanceProfiler::EnableProfiling();
 	#endif
 		else if(args[i] == "-q")
 			print_to_stdio = false;
@@ -219,7 +154,9 @@ PLATFORM_MAIN_CONSOLE
 		int ret = RunAmalgamTrace(trace_stream, &std::cout, random_seed);
 		delete trace_stream;
 
-		PrintProfilingInformationIfApplicable();
+		if(PerformanceProfiler::IsProfilingEnabled())
+			PerformanceProfiler::PrintProfilingInformation();
+
 		return ret;
 	}
 	else
@@ -290,7 +227,8 @@ PLATFORM_MAIN_CONSOLE
 			}
 		}
 
-		PrintProfilingInformationIfApplicable();
+		if(PerformanceProfiler::IsProfilingEnabled())
+			PerformanceProfiler::PrintProfilingInformation();
 
 		if(Platform_IsDebuggerPresent())
 		{

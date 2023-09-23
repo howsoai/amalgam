@@ -10,9 +10,17 @@
 
 namespace PerformanceProfiler
 {
-	void EnableProfiling(bool enable = true);
+	extern bool _profiler_enabled;
 
-	bool IsProfilingEnabled();
+	inline void SetProfilingState(bool enabled)
+	{
+		_profiler_enabled = enabled;
+	}
+
+	inline bool IsProfilingEnabled()
+	{
+		return _profiler_enabled;
+	}
 	
 	//begins performance timers for the specified operation type, specified by the string t
 	// pushes current instruction on the stack, such that it will be cleared when the
@@ -21,7 +29,10 @@ namespace PerformanceProfiler
 	
 	void EndOperation(int64_t memory_use);
 
-	void PrintProfilingInformation();
+	//prints profiling information
+	//if outfile_name is empty string, will print to stdout
+	//if max_print_count is 0, will print a default of 20 for stdout, will print all for a file
+	void PrintProfilingInformation(std::string outfile_name = "", size_t max_print_count = 0);
 
 	size_t GetTotalNumCalls();
 

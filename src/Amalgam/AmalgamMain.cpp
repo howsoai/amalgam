@@ -32,28 +32,34 @@ PLATFORM_MAIN_CONSOLE
 			<< "Concurrency type: " << GetConcurrencyTypeString() << std::endl
 			<< "Must specify an input file.  Flags:" << std::endl
 			<< "-l [filename]: specify a debug log file." << std::endl
-		#if defined(INTERPRETER_PROFILE_OPCODES) || defined(INTERPRETER_PROFILE_LABELS_CALLED)
-			<< "-p: display engine performance counters upon completion" << std::endl
-		#endif
 			<< "-s [random number seed]: specify a particular random number seed -- can be any alphanumeric string." << std::endl
 			<< "-t [filename]: specify a code-based transaction log file." << std::endl
 		#if defined(MULTITHREAD_SUPPORT) || defined(_OPENMP)
 			<< "--numthreads [number]: maximum number of threads to use (if unspecified or set to zero, may use unlimited)." << std::endl
 		#endif
+			<< "--p-opcodes: display engine profiling information for opcodes upon completion (one profiling type allowed at a time); when used with --debug-sources, reports line numbers" << std::endl
+			<< "--p-labels: display engine profiling information for labels upon completion (one profiling type allowed at a time)" << std::endl
+			<< "--p-count [number]: when used with --p-opcodes or --p-labels, specifies the count of the top profile information elements to display; "
+				<< "the default is 20 for command line, all when --p - file is specified" << std::endl
+			<< "--p-file [filename]: when used with --p-opcodes or --p-labels, writes the profile information to a file" << std::endl
 			<< "--debug: when specified, begins in debugging mode." << std::endl
 			<< "--debug-minimal: when specified, begins in debugging mode with minimal output while stepping." << std::endl
 			<< "--debug-sources: when specified, prepends all node comments with the source of the node when applicable." << std::endl
 			<< "--nosbfds: disables the sbfds acceleration, which is generally preferred in the heuristics." << std::endl
 			<< "--trace: uses commands via stdio to act as if it were being called as a library." << std::endl
-			<< "--tracefile [file]: like trace, but pulls the data from the file specified." << std::endl
+			<< "--tracefile [filename]: like trace, but pulls the data from the file specified." << std::endl
 			<< "--version: prints the current version." << std::endl;
 		return 0;
 	}
-
+	
 	//run options
 	bool debug_state = false;
 	bool debug_minimal = false;
 	bool debug_sources = false;
+	bool profile_opcodes = false;
+	bool profile_labels = false;
+	size_t profile_count = 0;
+	std::string profile_out_file;
 	bool run_trace = false;
 	bool run_tracefile = false;
 	std::string tracefile;
@@ -82,10 +88,14 @@ PLATFORM_MAIN_CONSOLE
 		{
 			print_log_filename = args[++i];
 		}
-	#if defined(INTERPRETER_PROFILE_OPCODES) || defined(INTERPRETER_PROFILE_LABELS_CALLED)
-		else if(args[i] == "-p")
-			PerformanceProfiler::EnableProfiling();
-	#endif
+		else if(args[i] == "--p-opcodes")
+			profile_opcodes = true;
+		else if(args[i] == "--p-labels")
+			profile_labels = true;
+		else if(args[i] == "--p-count" && i + 1 < args.size())
+			profile_count = static_cast<size_t>(std::max(std::atoi(args[++i].data()), 0));
+		else if(args[i] == "--p-file" && i + 1 < args.size())
+			profile_out_file = args[++i];
 		else if(args[i] == "-q")
 			print_to_stdio = false;
 		else if(args[i] == "-s" && i + 1 < args.size())
@@ -144,6 +154,12 @@ PLATFORM_MAIN_CONSOLE
 	if(debug_minimal)
 		asset_manager.debugMinimal = true;
 
+	if(profile_opcodes)
+		Interpreter::SetOpcodeProfilingState(true);
+
+	if(profile_labels)
+		Interpreter::SetLabelProfilingState(true);
+
 	if(run_trace)
 	{
 		return RunAmalgamTrace(&std::cin, &std::cout, random_seed);
@@ -154,8 +170,8 @@ PLATFORM_MAIN_CONSOLE
 		int ret = RunAmalgamTrace(trace_stream, &std::cout, random_seed);
 		delete trace_stream;
 
-		if(PerformanceProfiler::IsProfilingEnabled())
-			PerformanceProfiler::PrintProfilingInformation();
+		if(profile_opcodes || profile_labels)
+			PerformanceProfiler::PrintProfilingInformation(profile_out_file, profile_count);
 
 		return ret;
 	}
@@ -227,8 +243,8 @@ PLATFORM_MAIN_CONSOLE
 			}
 		}
 
-		if(PerformanceProfiler::IsProfilingEnabled())
-			PerformanceProfiler::PrintProfilingInformation();
+		if(profile_opcodes || profile_labels)
+			PerformanceProfiler::PrintProfilingInformation(profile_out_file, profile_count);
 
 		if(Platform_IsDebuggerPresent())
 		{

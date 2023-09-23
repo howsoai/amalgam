@@ -421,9 +421,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	if(ocn.size() > 1)
 		entity_label_sid = InterpretNodeIntoStringIDValueWithReference(ocn[1]);
 
-#ifdef INTERPRETER_PROFILE_LABELS_CALLED
-	PerformanceProfiler::StartOperation(string_intern_pool.GetStringFromID(entity_label_sid), evaluableNodeManager->GetNumberOfUsedNodes());
-#endif
+	if(_label_profiling_enabled)
+		PerformanceProfiler::StartOperation(string_intern_pool.GetStringFromID(entity_label_sid), evaluableNodeManager->GetNumberOfUsedNodes());
 
 	//number of execution steps
 	//evaluate before context so don't need to keep/remove reference for context
@@ -536,9 +535,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	//ConvertArgsToCallStack always adds an outer list that is safe to free using called_entity_enm
 	called_entity_enm->FreeNode(call_stack);
 
-#ifdef INTERPRETER_PROFILE_LABELS_CALLED
-	PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
-#endif
+	if(_label_profiling_enabled)
+		PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
 
 	return retval;
 }
@@ -572,9 +570,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	container_label_name.reserve(orig_container_label_name.size() + 2);
 	container_label_name = '^' + orig_container_label_name;
 
-#ifdef INTERPRETER_PROFILE_LABELS_CALLED
-	PerformanceProfiler::StartOperation(container_label_name, evaluableNodeManager->GetNumberOfUsedNodes());
-#endif
+	if(_label_profiling_enabled)
+		PerformanceProfiler::StartOperation(container_label_name, evaluableNodeManager->GetNumberOfUsedNodes());
 
 	//number of execution steps
 	//evaluate before context so don't need to keep/remove reference for context
@@ -652,9 +649,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	//ConvertArgsToCallStack always adds an outer list that is safe to free
 	evaluableNodeManager->FreeNode(call_stack);
 
-#ifdef INTERPRETER_PROFILE_LABELS_CALLED
-	PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
-#endif
+	if(_label_profiling_enabled)
+		PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
 
 	return retval;
 }

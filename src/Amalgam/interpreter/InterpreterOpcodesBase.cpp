@@ -455,10 +455,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en)
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(function);
 
-#ifdef INTERPRETER_PROFILE_LABELS_CALLED
-	if(function->GetNumLabels() > 0)
+	if(_label_profiling_enabled && function->GetNumLabels() > 0)
 		PerformanceProfiler::StartOperation(function->GetLabel(0), evaluableNodeManager->GetNumberOfUsedNodes());
-#endif
 
 	//if have an execution context of variables specified, then use it
 	EvaluableNodeReference new_context = EvaluableNodeReference::Null();
@@ -473,10 +471,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en)
 	//all finished with new context, but can't free it in case returning something
 	PopExecutionContext();
 
-#ifdef INTERPRETER_PROFILE_LABELS_CALLED
-	if(function->GetNumLabels() > 0)
+	if(_label_profiling_enabled && function->GetNumLabels() > 0)
 		PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
-#endif
 
 	return retval;
 }
@@ -514,10 +510,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(function);
 
-#ifdef INTERPRETER_PROFILE_LABELS_CALLED
-	if(function->GetNumLabels() > 0)
+	if(_label_profiling_enabled && function->GetNumLabels() > 0)
 		PerformanceProfiler::StartOperation(function->GetLabel(0), evaluableNodeManager->GetNumberOfUsedNodes());
-#endif
 
 	//if have an execution context of variables specified, then use it
 	EvaluableNodeReference args = EvaluableNodeReference::Null();
@@ -570,10 +564,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 
 	curExecutionStep += sandbox.curExecutionStep;
 
-#ifdef INTERPRETER_PROFILE_LABELS_CALLED
-	if(function->GetNumLabels() > 0)
+	if(_label_profiling_enabled && function->GetNumLabels() > 0)
 		PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
-#endif
 
 	return result;
 }

@@ -479,44 +479,12 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en)
 	if(EvaluableNode::IsNull(en))
 		return EvaluableNodeReference::Null();
 
-#ifdef INTERPRETER_PROFILE_OPCODES
-	std::string opcode_str;
-
-	//if debugging sources is enabled, then concatenate the opcode to the first line of the comment
-	if(asset_manager.debugSources)
-	{
-		if(en->HasComments())
-		{
-			auto &comment = en->GetCommentsString();
-			auto first_line_end = comment.find('\n');
-			if(first_line_end == std::string::npos)
-				opcode_str = comment;
-			else //copy up until newline
-			{
-				opcode_str = comment.substr(0, first_line_end);
-				if(opcode_str.size() > 0 && opcode_str.back() == '\r')
-					opcode_str.pop_back();
-			}
-
-			opcode_str += ": ";
-		}
-	}
-
-	opcode_str += GetStringFromEvaluableNodeType(en->GetType(), true);
-	PerformanceProfiler::StartOperation(opcode_str, evaluableNodeManager->GetNumberOfUsedNodes());
-#endif
-
 	//make sure don't run for longer than allowed
 	if(!AllowUnlimitedExecutionSteps())
 	{
 		curExecutionStep++;
 		if(curExecutionStep >= maxNumExecutionSteps)
-		{
-		#ifdef INTERPRETER_PROFILE_OPCODES
-			PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
-		#endif
 			return EvaluableNodeReference::Null();
-		}
 	}
 
 	evaluableNodeManager->executionCyclesSinceLastGarbageCollection++;
@@ -529,18 +497,7 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en)
 	//for deep debugging only
 	//ValidateEvaluableNodeIntegrity();
 
-	//perform garbage collection
-#if defined(INTERPRETER_PROFILE_OPCODES) || defined(INTERPRETER_PROFILE_LABELS_CALLED)
-	const std::string collect_garbage_string = ".collect_garbage";
-	if(evaluableNodeManager->RecommendGarbageCollection())
-	{
-		PerformanceProfiler::StartOperation(collect_garbage_string, evaluableNodeManager->GetNumberOfUsedNodes());
-		CollectGarbage();
-		PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
-	}
-#else
 	CollectGarbage();
-#endif
 
 	//for deep debugging only
 	//ValidateEvaluableNodeIntegrity();
@@ -550,12 +507,7 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en)
 	{
 		UpdateCurNumExecutionNodes();
 		if(curNumExecutionNodes >= maxNumExecutionNodes)
-		{
-		#ifdef INTERPRETER_PROFILE_OPCODES
-			PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
-		#endif
 			return EvaluableNodeReference::Null();
-		}
 	}
 
 	//get corresponding opcode
@@ -566,10 +518,6 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en)
 
 	//for deep debugging only
 	//ValidateEvaluableNodeIntegrity();
-
-#ifdef INTERPRETER_PROFILE_OPCODES
-	PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
-#endif
 
 	//finished with opcode
 	interpreterNodeStackNodes->pop_back();

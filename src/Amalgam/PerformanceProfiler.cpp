@@ -72,67 +72,88 @@ void PerformanceProfiler::EndOperation(int64_t memory_use = 0)
 	}
 }
 
-void PerformanceProfiler::PrintProfilingInformation()
+void PerformanceProfiler::PrintProfilingInformation(std::string outfile_name, size_t max_print_count)
 {
-	size_t max_num_perf_counters_to_display = 20;
-	std::cout << "Operations that took the longest total time (s): " << std::endl;
+	std::ofstream outfile;
+	if(outfile_name != "")
+		outfile.open(outfile_name);
+
+	std::ostream &out_dest = (outfile.is_open() ? outfile : std::cout);
+
+	if(max_print_count == 0)
+	{
+		if(outfile.is_open())
+			max_print_count = std::numeric_limits<size_t>::max();
+		else
+			max_print_count = 20;
+	}
+
+	out_dest << "------------------------------------------------------" << std::endl;
+	out_dest << "Operations that took the longest total time (s): " << std::endl;
 	auto longest_total_time = PerformanceProfiler::GetNumCallsByTotalTime();
-	for(size_t i = 0; i < max_num_perf_counters_to_display && i < longest_total_time.size(); i++)
-		std::cout << longest_total_time[i].first << ": " << longest_total_time[i].second << std::endl;
-	std::cout << std::endl;
+	for(size_t i = 0; i < max_print_count && i < longest_total_time.size(); i++)
+		out_dest << longest_total_time[i].first << ": " << longest_total_time[i].second << std::endl;
+	out_dest << std::endl;
 
-	std::cout << "Operations called the most number of times: " << std::endl;
+	out_dest << "------------------------------------------------------" << std::endl;
+	out_dest << "Operations called the most number of times: " << std::endl;
 	auto most_calls = PerformanceProfiler::GetNumCallsByType();
-	for(size_t i = 0; i < max_num_perf_counters_to_display && i < most_calls.size(); i++)
-		std::cout << most_calls[i].first << ": " << most_calls[i].second << std::endl;
-	std::cout << std::endl;
+	for(size_t i = 0; i < max_print_count && i < most_calls.size(); i++)
+		out_dest << most_calls[i].first << ": " << most_calls[i].second << std::endl;
+	out_dest << std::endl;
 
-	std::cout << "Operations that took the longest average time (s): " << std::endl;
+	out_dest << "------------------------------------------------------" << std::endl;
+	out_dest << "Operations that took the longest average time (s): " << std::endl;
 	auto longest_ave_time = PerformanceProfiler::GetNumCallsByAveTime();
-	for(size_t i = 0; i < max_num_perf_counters_to_display && i < longest_ave_time.size(); i++)
-		std::cout << longest_ave_time[i].first << ": " << longest_ave_time[i].second << std::endl;
-	std::cout << std::endl;
+	for(size_t i = 0; i < max_print_count && i < longest_ave_time.size(); i++)
+		out_dest << longest_ave_time[i].first << ": " << longest_ave_time[i].second << std::endl;
+	out_dest << std::endl;
 
-	std::cout << "Operations that increased the memory usage the most in total (nodes): " << std::endl;
+	out_dest << "------------------------------------------------------" << std::endl;
+	out_dest << "Operations that increased the memory usage the most in total (nodes): " << std::endl;
 	auto most_total_memory = PerformanceProfiler::GetNumCallsByTotalMemoryIncrease();
-	for(size_t i = 0; i < max_num_perf_counters_to_display && i < most_total_memory.size(); i++)
-		std::cout << most_total_memory[i].first << ": " << most_total_memory[i].second << std::endl;
-	std::cout << std::endl;
+	for(size_t i = 0; i < max_print_count && i < most_total_memory.size(); i++)
+		out_dest << most_total_memory[i].first << ": " << most_total_memory[i].second << std::endl;
+	out_dest << std::endl;
 
-	std::cout << "Operations that increased the memory usage the most on average (nodes): " << std::endl;
+	out_dest << "------------------------------------------------------" << std::endl;
+	out_dest << "Operations that increased the memory usage the most on average (nodes): " << std::endl;
 	auto most_ave_memory = PerformanceProfiler::GetNumCallsByAveMemoryIncrease();
-	for(size_t i = 0; i < max_num_perf_counters_to_display && i < most_ave_memory.size(); i++)
-		std::cout << most_ave_memory[i].first << ": " << most_ave_memory[i].second << std::endl;
-	std::cout << std::endl;
+	for(size_t i = 0; i < max_print_count && i < most_ave_memory.size(); i++)
+		out_dest << most_ave_memory[i].first << ": " << most_ave_memory[i].second << std::endl;
+	out_dest << std::endl;
 
-	std::cout << "Operations that decreased the memory usage the most in total (nodes): " << std::endl;
-	for(size_t i = 0; i < max_num_perf_counters_to_display && i < most_total_memory.size(); i++)
+	out_dest << "------------------------------------------------------" << std::endl;
+	out_dest << "Operations that decreased the memory usage the most in total (nodes): " << std::endl;
+	for(size_t i = 0; i < max_print_count && i < most_total_memory.size(); i++)
 	{
 		//only write out those that had a net decrease
 		double mem_delta = most_total_memory[most_total_memory.size() - 1 - i].second;
 		if(mem_delta >= 0)
 			break;
-		std::cout << most_total_memory[i].first << ": " << mem_delta << std::endl;
+		out_dest << most_total_memory[i].first << ": " << mem_delta << std::endl;
 	}
-	std::cout << std::endl;
+	out_dest << std::endl;
 
-	std::cout << "Operations that decreased the memory usage the most on average (nodes): " << std::endl;
-	for(size_t i = 0; i < max_num_perf_counters_to_display && i < most_ave_memory.size(); i++)
+	out_dest << "------------------------------------------------------" << std::endl;
+	out_dest << "Operations that decreased the memory usage the most on average (nodes): " << std::endl;
+	for(size_t i = 0; i < max_print_count && i < most_ave_memory.size(); i++)
 	{
 		//only write out those that had a net decrease
 		double mem_delta = most_ave_memory[most_total_memory.size() - 1 - i].second;
 		if(mem_delta >= 0)
 			break;
-		std::cout << most_total_memory[i].first << ": " << mem_delta << std::endl;
+		out_dest << most_total_memory[i].first << ": " << mem_delta << std::endl;
 	}
-	std::cout << std::endl;
+	out_dest << std::endl;
 
+	out_dest << "------------------------------------------------------" << std::endl;
 	size_t total_call_count = GetTotalNumCalls();
-	std::cout << "Total number of operations: " << total_call_count << std::endl;
+	out_dest << "Total number of operations: " << total_call_count << std::endl;
 
 	auto [total_mem_increase, positive_mem_increase] = PerformanceProfiler::GetTotalAndPositiveMemoryIncreases();
-	std::cout << "Net number of nodes allocated: " << total_mem_increase << std::endl;
-	std::cout << "Total node increases: " << positive_mem_increase << std::endl;
+	out_dest << "Net number of nodes allocated: " << total_mem_increase << std::endl;
+	out_dest << "Total node increases: " << positive_mem_increase << std::endl;
 }
 
 size_t PerformanceProfiler::GetTotalNumCalls()

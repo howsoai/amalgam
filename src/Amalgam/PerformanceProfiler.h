@@ -29,7 +29,10 @@ namespace PerformanceProfiler
 	
 	void EndOperation(int64_t memory_use);
 
-	void PrintProfilingInformation();
+	//prints profiling information
+	//if outfile_name is empty string, will print to stdout
+	//if max_print_count is 0, will print a default of 20 for stdout, will print all for a file
+	void PrintProfilingInformation(std::string outfile_name = "", size_t max_print_count = 0);
 
 	size_t GetTotalNumCalls();
 

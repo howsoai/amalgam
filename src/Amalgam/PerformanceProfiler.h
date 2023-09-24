@@ -45,12 +45,12 @@ namespace PerformanceProfiler
 	std::vector<std::pair<std::string, double>> GetNumCallsByTotalTimeExclusive();
 	std::vector<std::pair<std::string, double>> GetNumCallsByAveTimeExclusive();
 
-	//std::vector<std::pair<std::string, double>> GetNumCallsByTotalTimeInclusive();
-	//std::vector<std::pair<std::string, double>> GetNumCallsByAveTimeInclusive();
+	std::vector<std::pair<std::string, double>> GetNumCallsByTotalTimeInclusive();
+	std::vector<std::pair<std::string, double>> GetNumCallsByAveTimeInclusive();
 
 	std::vector<std::pair<std::string, double>> GetNumCallsByTotalMemoryIncreaseExclusive();
 	std::vector<std::pair<std::string, double>> GetNumCallsByAveMemoryIncreaseExclusive();
 
-	//std::vector<std::pair<std::string, double>> GetNumCallsByTotalMemoryIncreaseInclusive();
-	//std::vector<std::pair<std::string, double>> GetNumCallsByAveMemoryIncreaseInclusive();
+	std::vector<std::pair<std::string, double>> GetNumCallsByTotalMemoryIncreaseInclusive();
+	std::vector<std::pair<std::string, double>> GetNumCallsByAveMemoryIncreaseInclusive();
 };

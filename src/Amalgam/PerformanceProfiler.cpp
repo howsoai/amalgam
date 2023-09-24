@@ -116,10 +116,17 @@ void PerformanceProfiler::PrintProfilingInformation(std::string outfile_name, si
 	}
 
 	out_dest << "------------------------------------------------------" << std::endl;
-	out_dest << "Operations that took the longest total time (s): " << std::endl;
-	auto longest_total_time = PerformanceProfiler::GetNumCallsByTotalTimeExclusive();
-	for(size_t i = 0; i < max_print_count && i < longest_total_time.size(); i++)
-		out_dest << longest_total_time[i].first << ": " << longest_total_time[i].second << std::endl;
+	out_dest << "Operations that took the longest total exclusive time (s): " << std::endl;
+	auto longest_total_time_exclusive = PerformanceProfiler::GetNumCallsByTotalTimeExclusive();
+	for(size_t i = 0; i < max_print_count && i < longest_total_time_exclusive.size(); i++)
+		out_dest << longest_total_time_exclusive[i].first << ": " << longest_total_time_exclusive[i].second << std::endl;
+	out_dest << std::endl;
+
+	out_dest << "------------------------------------------------------" << std::endl;
+	out_dest << "Operations that took the longest total inclusive time (s): " << std::endl;
+	auto longest_total_time_inclusive = PerformanceProfiler::GetNumCallsByTotalTimeInclusive();
+	for(size_t i = 0; i < max_print_count && i < longest_total_time_inclusive.size(); i++)
+		out_dest << longest_total_time_inclusive[i].first << ": " << longest_total_time_inclusive[i].second << std::endl;
 	out_dest << std::endl;
 
 	out_dest << "------------------------------------------------------" << std::endl;
@@ -130,47 +137,68 @@ void PerformanceProfiler::PrintProfilingInformation(std::string outfile_name, si
 	out_dest << std::endl;
 
 	out_dest << "------------------------------------------------------" << std::endl;
-	out_dest << "Operations that took the longest average time (s): " << std::endl;
-	auto longest_ave_time = PerformanceProfiler::GetNumCallsByAveTimeExclusive();
-	for(size_t i = 0; i < max_print_count && i < longest_ave_time.size(); i++)
-		out_dest << longest_ave_time[i].first << ": " << longest_ave_time[i].second << std::endl;
+	out_dest << "Operations that took the longest average exclusive time (s): " << std::endl;
+	auto longest_ave_time_exclusive = PerformanceProfiler::GetNumCallsByAveTimeExclusive();
+	for(size_t i = 0; i < max_print_count && i < longest_ave_time_exclusive.size(); i++)
+		out_dest << longest_ave_time_exclusive[i].first << ": " << longest_ave_time_exclusive[i].second << std::endl;
 	out_dest << std::endl;
 
 	out_dest << "------------------------------------------------------" << std::endl;
-	out_dest << "Operations that increased the memory usage the most in total (nodes): " << std::endl;
-	auto most_total_memory = PerformanceProfiler::GetNumCallsByTotalMemoryIncreaseExclusive();
-	for(size_t i = 0; i < max_print_count && i < most_total_memory.size(); i++)
-		out_dest << most_total_memory[i].first << ": " << most_total_memory[i].second << std::endl;
+	out_dest << "Operations that took the longest average inclusive time (s): " << std::endl;
+	auto longest_ave_time_inclusive = PerformanceProfiler::GetNumCallsByAveTimeInclusive();
+	for(size_t i = 0; i < max_print_count && i < longest_ave_time_inclusive.size(); i++)
+		out_dest << longest_ave_time_inclusive[i].first << ": " << longest_ave_time_inclusive[i].second << std::endl;
 	out_dest << std::endl;
 
 	out_dest << "------------------------------------------------------" << std::endl;
-	out_dest << "Operations that increased the memory usage the most on average (nodes): " << std::endl;
-	auto most_ave_memory = PerformanceProfiler::GetNumCallsByAveMemoryIncreaseExclusive();
-	for(size_t i = 0; i < max_print_count && i < most_ave_memory.size(); i++)
-		out_dest << most_ave_memory[i].first << ": " << most_ave_memory[i].second << std::endl;
+	out_dest << "Operations that increased the memory usage the most in total exclusive (nodes): " << std::endl;
+	auto most_total_memory_exclusive = PerformanceProfiler::GetNumCallsByTotalMemoryIncreaseExclusive();
+	for(size_t i = 0; i < max_print_count && i < most_total_memory_exclusive.size(); i++)
+		out_dest << most_total_memory_exclusive[i].first << ": " << most_total_memory_exclusive[i].second << std::endl;
 	out_dest << std::endl;
 
 	out_dest << "------------------------------------------------------" << std::endl;
-	out_dest << "Operations that decreased the memory usage the most in total (nodes): " << std::endl;
-	for(size_t i = 0; i < max_print_count && i < most_total_memory.size(); i++)
+	out_dest << "Operations that increased the memory usage the most in total inclusive (nodes): " << std::endl;
+	auto most_total_memory_inclusive = PerformanceProfiler::GetNumCallsByTotalMemoryIncreaseInclusive();
+	for(size_t i = 0; i < max_print_count && i < most_total_memory_inclusive.size(); i++)
+		out_dest << most_total_memory_inclusive[i].first << ": " << most_total_memory_inclusive[i].second << std::endl;
+	out_dest << std::endl;
+
+	out_dest << "------------------------------------------------------" << std::endl;
+	out_dest << "Operations that increased the memory usage the most on average exclusive (nodes): " << std::endl;
+	auto most_ave_memory_exclusive = PerformanceProfiler::GetNumCallsByAveMemoryIncreaseExclusive();
+	for(size_t i = 0; i < max_print_count && i < most_ave_memory_exclusive.size(); i++)
+		out_dest << most_ave_memory_exclusive[i].first << ": " << most_ave_memory_exclusive[i].second << std::endl;
+	out_dest << std::endl;
+
+	out_dest << "------------------------------------------------------" << std::endl;
+	out_dest << "Operations that increased the memory usage the most on average inclusive (nodes): " << std::endl;
+	auto most_ave_memory_inclusive = PerformanceProfiler::GetNumCallsByAveMemoryIncreaseInclusive();
+	for(size_t i = 0; i < max_print_count && i < most_ave_memory_inclusive.size(); i++)
+		out_dest << most_ave_memory_inclusive[i].first << ": " << most_ave_memory_inclusive[i].second << std::endl;
+	out_dest << std::endl;
+
+	out_dest << "------------------------------------------------------" << std::endl;
+	out_dest << "Operations that decreased the memory usage the most in total exclusive (nodes): " << std::endl;
+	for(size_t i = 0; i < max_print_count && i < most_total_memory_exclusive.size(); i++)
 	{
 		//only write out those that had a net decrease
-		double mem_delta = most_total_memory[most_total_memory.size() - 1 - i].second;
+		double mem_delta = most_total_memory_exclusive[most_total_memory_exclusive.size() - 1 - i].second;
 		if(mem_delta >= 0)
 			break;
-		out_dest << most_total_memory[i].first << ": " << mem_delta << std::endl;
+		out_dest << most_total_memory_exclusive[i].first << ": " << mem_delta << std::endl;
 	}
 	out_dest << std::endl;
 
 	out_dest << "------------------------------------------------------" << std::endl;
-	out_dest << "Operations that decreased the memory usage the most on average (nodes): " << std::endl;
-	for(size_t i = 0; i < max_print_count && i < most_ave_memory.size(); i++)
+	out_dest << "Operations that decreased the memory usage the most on average exclusive (nodes): " << std::endl;
+	for(size_t i = 0; i < max_print_count && i < most_ave_memory_exclusive.size(); i++)
 	{
 		//only write out those that had a net decrease
-		double mem_delta = most_ave_memory[most_total_memory.size() - 1 - i].second;
+		double mem_delta = most_ave_memory_exclusive[most_total_memory_exclusive.size() - 1 - i].second;
 		if(mem_delta >= 0)
 			break;
-		out_dest << most_total_memory[i].first << ": " << mem_delta << std::endl;
+		out_dest << most_total_memory_exclusive[i].first << ": " << mem_delta << std::endl;
 	}
 	out_dest << std::endl;
 
@@ -269,6 +297,45 @@ std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByAv
 	return results;
 }
 
+
+std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByTotalTimeInclusive()
+{
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	Concurrency::SingleLock lock(performance_profiler_mutex);
+#endif
+
+	//copy to proper data structure
+	std::vector<std::pair<std::string, double>> results;
+	results.reserve(_profiler_counters.size());
+	for(auto &[s, value] : _profiler_counters)
+		results.push_back(std::make_pair(static_cast<std::string>(s), value.totalTimeInclusive));
+
+	//sort high to low
+	std::sort(begin(results), end(results),
+		[](std::pair<std::string, double> a, std::pair<std::string, double> b) -> bool
+		{	return (a.second) > (b.second);	});
+	return results;
+}
+
+std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByAveTimeInclusive()
+{
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	Concurrency::SingleLock lock(performance_profiler_mutex);
+#endif
+
+	//copy to proper data structure
+	std::vector<std::pair<std::string, double>> results;
+	results.reserve(_profiler_counters.size());
+	for(auto &[s, value] : _profiler_counters)
+		results.push_back(std::make_pair(static_cast<std::string>(s), value.totalTimeInclusive / value.numCalls));
+
+	//sort high to low
+	std::sort(begin(results), end(results),
+		[](std::pair<std::string, double> a, std::pair<std::string, double> b) -> bool
+		{	return (a.second) > (b.second);	});
+	return results;
+}
+
 std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByTotalMemoryIncreaseExclusive()
 {
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
@@ -304,5 +371,43 @@ std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByAv
 	std::sort(begin(results), end(results),
 		[](std::pair<std::string, double> a, std::pair<std::string, double> b) -> bool
 	{	return (a.second) > (b.second);	});
+	return results;
+}
+
+std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByTotalMemoryIncreaseInclusive()
+{
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	Concurrency::SingleLock lock(performance_profiler_mutex);
+#endif
+
+	//copy to proper data structure
+	std::vector<std::pair<std::string, double>> results;
+	results.reserve(_profiler_counters.size());
+	for(auto &[s, value] : _profiler_counters)
+		results.push_back(std::make_pair(static_cast<std::string>(s), static_cast<double>(value.totalMemChangeInclusive)));
+
+	//sort high to low
+	std::sort(begin(results), end(results),
+		[](std::pair<std::string, double> a, std::pair<std::string, double> b) -> bool
+		{	return (a.second) > (b.second);	});
+	return results;
+}
+
+std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByAveMemoryIncreaseInclusive()
+{
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	Concurrency::SingleLock lock(performance_profiler_mutex);
+#endif
+
+	//copy to proper data structure
+	std::vector<std::pair<std::string, double>> results;
+	results.reserve(_profiler_counters.size());
+	for(auto &[s, value] : _profiler_counters)
+		results.push_back(std::make_pair(static_cast<std::string>(s), static_cast<double>(value.totalMemChangeInclusive) / value.numCalls));
+
+	//sort high to low
+	std::sort(begin(results), end(results),
+		[](std::pair<std::string, double> a, std::pair<std::string, double> b) -> bool
+		{	return (a.second) > (b.second);	});
 	return results;
 }

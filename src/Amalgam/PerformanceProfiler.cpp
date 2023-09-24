@@ -9,16 +9,26 @@ bool PerformanceProfiler::_profiler_enabled;
 Concurrency::SingleMutex performance_profiler_mutex;
 #endif
 
-//keeps track of number of instructions and time spent in them
-FastHashMap<std::string, size_t> _profiler_num_calls_by_instruction_type;
-FastHashMap<std::string, double> _profiler_time_spent_in_instruction_type;
-FastHashMap<std::string, int64_t> _profiler_memory_accumulated_in_instruction_type;
+struct PerformanceCounters
+{
+	size_t numCalls;
+	double totalTimeExclusive;
+	int64_t totalMemChangeExclusive;
+};
+
+struct StartTimeAndMemUse
+{
+	double startTimeExclusive;
+	int64_t memUseExclusive;
+};
+
+FastHashMap<std::string, PerformanceCounters> _profiler_counters;
 
 //contains the type and start time of each instruction
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 thread_local
 #endif
-	std::vector<std::pair<std::string, std::pair<double, int64_t>>> instructionStackTypeAndStartTimeAndMemUse;
+	std::vector<std::pair<std::string, StartTimeAndMemUse>> instructionStackTypeAndStartTimeAndMemUse;
 
 //gets the current time with nanosecond resolution cast to a double measured in seconds
 inline double GetCurTime()
@@ -30,7 +40,7 @@ inline double GetCurTime()
 
 void PerformanceProfiler::StartOperation(const std::string &t, int64_t memory_use)
 {	
-	instructionStackTypeAndStartTimeAndMemUse.push_back(std::make_pair(t, std::make_pair(GetCurTime(), memory_use)));
+	instructionStackTypeAndStartTimeAndMemUse.push_back(std::make_pair(t, StartTimeAndMemUse{ GetCurTime(), memory_use }));
 }
 
 void PerformanceProfiler::EndOperation(int64_t memory_use = 0)
@@ -38,8 +48,8 @@ void PerformanceProfiler::EndOperation(int64_t memory_use = 0)
 	//get and remove data from call stack
 	auto type_and_time_and_mem = instructionStackTypeAndStartTimeAndMemUse.back();
 	auto inst_type = type_and_time_and_mem.first;
-	double inst_start_time = type_and_time_and_mem.second.first;
-	int64_t inst_start_mem = type_and_time_and_mem.second.second;
+	double inst_start_time = type_and_time_and_mem.second.startTimeExclusive;
+	int64_t inst_start_mem = type_and_time_and_mem.second.memUseExclusive;
 	instructionStackTypeAndStartTimeAndMemUse.pop_back();
 	
 	double total_instruction_time = GetCurTime() - inst_start_time;
@@ -50,25 +60,25 @@ void PerformanceProfiler::EndOperation(int64_t memory_use = 0)
 #endif
 
 	//accumulate stats
-	auto stat = _profiler_num_calls_by_instruction_type.find(inst_type);
-	if(stat != end(_profiler_num_calls_by_instruction_type))
+	auto stat = _profiler_counters.find(inst_type);
+	if(stat != end(_profiler_counters))
 	{
-		_profiler_num_calls_by_instruction_type[inst_type]++;
-		_profiler_time_spent_in_instruction_type[inst_type] += total_instruction_time;
-		_profiler_memory_accumulated_in_instruction_type[inst_type] += total_instruction_memory;
+		auto &perf_counter = stat->second;
+		perf_counter.numCalls++;
+		perf_counter.totalTimeExclusive += total_instruction_time;
+		perf_counter.totalMemChangeExclusive += total_instruction_memory;
 	}
 	else
 	{
-		_profiler_num_calls_by_instruction_type[inst_type] = 1;
-		_profiler_time_spent_in_instruction_type[inst_type] = total_instruction_time;
-		_profiler_memory_accumulated_in_instruction_type[inst_type] = total_instruction_memory;
+		PerformanceCounters pc = { 1, total_instruction_time, total_instruction_memory };
+		_profiler_counters[inst_type] = pc;
 	}
 	
 	//remove the time on this instruction for any that are currently pending on the stack by adding it to start time
 	for(auto &record : instructionStackTypeAndStartTimeAndMemUse)
 	{
-		record.second.first += total_instruction_time;
-		record.second.second += total_instruction_memory;
+		record.second.startTimeExclusive += total_instruction_time;
+		record.second.memUseExclusive += total_instruction_memory;
 	}
 }
 
@@ -163,8 +173,8 @@ size_t PerformanceProfiler::GetTotalNumCalls()
 #endif
 
 	size_t total_call_count = 0;
-	for(auto &c : _profiler_num_calls_by_instruction_type)
-		total_call_count += c.second;
+	for(auto &c : _profiler_counters)
+		total_call_count += c.second.numCalls;
 	return total_call_count;
 }
 
@@ -176,11 +186,11 @@ std::pair<int64_t, int64_t> PerformanceProfiler::GetTotalAndPositiveMemoryIncrea
 
 	int64_t total_mem_increase = 0;
 	int64_t positive_mem_increase = 0;
-	for(auto &c : _profiler_memory_accumulated_in_instruction_type)
+	for(auto &c : _profiler_counters)
 	{
-		total_mem_increase += c.second;
-		if(c.second > 0)
-			positive_mem_increase += c.second;
+		total_mem_increase += c.second.totalMemChangeExclusive;
+		if(c.second.totalMemChangeExclusive > 0)
+			positive_mem_increase += c.second.totalMemChangeExclusive;
 	}
 	return std::make_pair(total_mem_increase, positive_mem_increase);
 }
@@ -193,9 +203,9 @@ std::vector<std::pair<std::string, size_t>> PerformanceProfiler::GetNumCallsByTy
 
 	//copy to proper data structure
 	std::vector<std::pair<std::string, size_t>> results;
-	results.reserve(_profiler_num_calls_by_instruction_type.size());
-	for(auto &[s, value] : _profiler_num_calls_by_instruction_type)
-		results.push_back(std::make_pair(s, value));
+	results.reserve(_profiler_counters.size());
+	for(auto &[s, value] : _profiler_counters)
+		results.push_back(std::make_pair(s, value.numCalls));
 	
 	//sort high to low
 	std::sort(begin(results), end(results),
@@ -212,9 +222,9 @@ std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByTo
 
 	//copy to proper data structure
 	std::vector<std::pair<std::string, double>> results;
-	results.reserve(_profiler_num_calls_by_instruction_type.size());
-	for(auto &[s, value] : _profiler_time_spent_in_instruction_type)
-		results.push_back(std::make_pair(static_cast<std::string>(s), value));
+	results.reserve(_profiler_counters.size());
+	for(auto &[s, value] : _profiler_counters)
+		results.push_back(std::make_pair(static_cast<std::string>(s), value.totalTimeExclusive));
 	
 	//sort high to low
 	std::sort(begin(results), end(results),
@@ -231,16 +241,9 @@ std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByAv
 
 	//copy to proper data structure
 	std::vector<std::pair<std::string, double>> results;
-	results.reserve(_profiler_num_calls_by_instruction_type.size());
-	for(auto &[s, value] : _profiler_time_spent_in_instruction_type)
-	{
-		auto ncbit = _profiler_num_calls_by_instruction_type.find(s);
-		if(ncbit != end(_profiler_num_calls_by_instruction_type))
-		{
-			size_t num_calls = ncbit->second;
-			results.push_back(std::make_pair(static_cast<std::string>(s), value / num_calls));
-		}
-	}
+	results.reserve(_profiler_counters.size());
+	for(auto &[s, value] : _profiler_counters)
+		results.push_back(std::make_pair(static_cast<std::string>(s), value.totalTimeExclusive / value.numCalls));
 	
 	//sort high to low
 	std::sort(begin(results), end(results),
@@ -257,9 +260,9 @@ std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByTo
 
 	//copy to proper data structure
 	std::vector<std::pair<std::string, double>> results;
-	results.reserve(_profiler_memory_accumulated_in_instruction_type.size());
-	for(auto &[s, value] : _profiler_memory_accumulated_in_instruction_type)
-		results.push_back(std::make_pair(static_cast<std::string>(s), static_cast<double>(value)));
+	results.reserve(_profiler_counters.size());
+	for(auto &[s, value] : _profiler_counters)
+		results.push_back(std::make_pair(static_cast<std::string>(s), static_cast<double>(value.totalMemChangeExclusive)));
 
 	//sort high to low
 	std::sort(begin(results), end(results),
@@ -276,16 +279,9 @@ std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByAv
 
 	//copy to proper data structure
 	std::vector<std::pair<std::string, double>> results;
-	results.reserve(_profiler_memory_accumulated_in_instruction_type.size());
-	for(auto &[s, value] : _profiler_memory_accumulated_in_instruction_type)
-	{
-		auto ncbit = _profiler_num_calls_by_instruction_type.find(s);
-		if(ncbit != end(_profiler_num_calls_by_instruction_type))
-		{
-			size_t num_calls = ncbit->second;
-			results.push_back(std::make_pair(static_cast<std::string>(s), static_cast<double>(value) / num_calls));
-		}
-	}
+	results.reserve(_profiler_counters.size());
+	for(auto &[s, value] : _profiler_counters)
+		results.push_back(std::make_pair(static_cast<std::string>(s), static_cast<double>(value.totalMemChangeExclusive) / value.numCalls));
 
 	//sort high to low
 	std::sort(begin(results), end(results),

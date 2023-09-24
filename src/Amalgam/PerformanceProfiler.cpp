@@ -14,12 +14,16 @@ struct PerformanceCounters
 	size_t numCalls;
 	double totalTimeExclusive;
 	int64_t totalMemChangeExclusive;
+	double totalTimeInclusive;
+	int64_t totalMemChangeInclusive;
 };
 
 struct StartTimeAndMemUse
 {
 	double startTimeExclusive;
 	int64_t memUseExclusive;
+	double startTimeInclusive;
+	int64_t memUseInclusive;
 };
 
 FastHashMap<std::string, PerformanceCounters> _profiler_counters;
@@ -39,46 +43,59 @@ inline double GetCurTime()
 }
 
 void PerformanceProfiler::StartOperation(const std::string &t, int64_t memory_use)
-{	
-	instructionStackTypeAndStartTimeAndMemUse.push_back(std::make_pair(t, StartTimeAndMemUse{ GetCurTime(), memory_use }));
+{
+	double cur_time = GetCurTime();
+	instructionStackTypeAndStartTimeAndMemUse.push_back(std::make_pair(t,
+			StartTimeAndMemUse{ cur_time, memory_use, cur_time, memory_use }));
 }
 
 void PerformanceProfiler::EndOperation(int64_t memory_use = 0)
 {
 	//get and remove data from call stack
 	auto type_and_time_and_mem = instructionStackTypeAndStartTimeAndMemUse.back();
-	auto inst_type = type_and_time_and_mem.first;
-	double inst_start_time = type_and_time_and_mem.second.startTimeExclusive;
-	int64_t inst_start_mem = type_and_time_and_mem.second.memUseExclusive;
+	auto operation_type = type_and_time_and_mem.first;
+	auto counters = type_and_time_and_mem.second;
 	instructionStackTypeAndStartTimeAndMemUse.pop_back();
-	
-	double total_instruction_time = GetCurTime() - inst_start_time;
-	int64_t total_instruction_memory = memory_use - inst_start_mem;
+
+	double cur_time = GetCurTime();
+	double total_operation_time_exclusive = cur_time - counters.startTimeExclusive;
+	int64_t total_operation_memory_exclusive = memory_use - counters.memUseExclusive;
+
+	double total_operation_time_inclusive = cur_time - counters.startTimeInclusive;
+	int64_t total_operation_memory_inclusive = memory_use - counters.memUseInclusive;
 
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 	Concurrency::SingleLock lock(performance_profiler_mutex);
 #endif
 
 	//accumulate stats
-	auto stat = _profiler_counters.find(inst_type);
+	auto stat = _profiler_counters.find(operation_type);
 	if(stat != end(_profiler_counters))
 	{
 		auto &perf_counter = stat->second;
+
 		perf_counter.numCalls++;
-		perf_counter.totalTimeExclusive += total_instruction_time;
-		perf_counter.totalMemChangeExclusive += total_instruction_memory;
+
+		perf_counter.totalTimeExclusive += total_operation_time_exclusive;
+		perf_counter.totalMemChangeExclusive += total_operation_memory_exclusive;
+
+		perf_counter.totalTimeInclusive += total_operation_time_inclusive;
+		perf_counter.totalMemChangeInclusive += total_operation_memory_inclusive;
 	}
 	else
 	{
-		PerformanceCounters pc = { 1, total_instruction_time, total_instruction_memory };
-		_profiler_counters[inst_type] = pc;
+		PerformanceCounters pc = { 1,
+			total_operation_time_exclusive, total_operation_memory_exclusive,
+			total_operation_time_inclusive, total_operation_memory_inclusive };
+		_profiler_counters[operation_type] = pc;
 	}
 	
-	//remove the time on this instruction for any that are currently pending on the stack by adding it to start time
+	//for exclusive counters, remove the time on this instruction for any that are currently pending
+	// on the stack by adding it to start time
 	for(auto &record : instructionStackTypeAndStartTimeAndMemUse)
 	{
-		record.second.startTimeExclusive += total_instruction_time;
-		record.second.memUseExclusive += total_instruction_memory;
+		record.second.startTimeExclusive += total_operation_time_exclusive;
+		record.second.memUseExclusive += total_operation_memory_exclusive;
 	}
 }
 
@@ -100,7 +117,7 @@ void PerformanceProfiler::PrintProfilingInformation(std::string outfile_name, si
 
 	out_dest << "------------------------------------------------------" << std::endl;
 	out_dest << "Operations that took the longest total time (s): " << std::endl;
-	auto longest_total_time = PerformanceProfiler::GetNumCallsByTotalTime();
+	auto longest_total_time = PerformanceProfiler::GetNumCallsByTotalTimeExclusive();
 	for(size_t i = 0; i < max_print_count && i < longest_total_time.size(); i++)
 		out_dest << longest_total_time[i].first << ": " << longest_total_time[i].second << std::endl;
 	out_dest << std::endl;
@@ -114,21 +131,21 @@ void PerformanceProfiler::PrintProfilingInformation(std::string outfile_name, si
 
 	out_dest << "------------------------------------------------------" << std::endl;
 	out_dest << "Operations that took the longest average time (s): " << std::endl;
-	auto longest_ave_time = PerformanceProfiler::GetNumCallsByAveTime();
+	auto longest_ave_time = PerformanceProfiler::GetNumCallsByAveTimeExclusive();
 	for(size_t i = 0; i < max_print_count && i < longest_ave_time.size(); i++)
 		out_dest << longest_ave_time[i].first << ": " << longest_ave_time[i].second << std::endl;
 	out_dest << std::endl;
 
 	out_dest << "------------------------------------------------------" << std::endl;
 	out_dest << "Operations that increased the memory usage the most in total (nodes): " << std::endl;
-	auto most_total_memory = PerformanceProfiler::GetNumCallsByTotalMemoryIncrease();
+	auto most_total_memory = PerformanceProfiler::GetNumCallsByTotalMemoryIncreaseExclusive();
 	for(size_t i = 0; i < max_print_count && i < most_total_memory.size(); i++)
 		out_dest << most_total_memory[i].first << ": " << most_total_memory[i].second << std::endl;
 	out_dest << std::endl;
 
 	out_dest << "------------------------------------------------------" << std::endl;
 	out_dest << "Operations that increased the memory usage the most on average (nodes): " << std::endl;
-	auto most_ave_memory = PerformanceProfiler::GetNumCallsByAveMemoryIncrease();
+	auto most_ave_memory = PerformanceProfiler::GetNumCallsByAveMemoryIncreaseExclusive();
 	for(size_t i = 0; i < max_print_count && i < most_ave_memory.size(); i++)
 		out_dest << most_ave_memory[i].first << ": " << most_ave_memory[i].second << std::endl;
 	out_dest << std::endl;
@@ -214,7 +231,7 @@ std::vector<std::pair<std::string, size_t>> PerformanceProfiler::GetNumCallsByTy
 	return results;
 }
 
-std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByTotalTime()
+std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByTotalTimeExclusive()
 {
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 	Concurrency::SingleLock lock(performance_profiler_mutex);
@@ -233,7 +250,7 @@ std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByTo
 	return results;
 }
 
-std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByAveTime()
+std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByAveTimeExclusive()
 {
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 	Concurrency::SingleLock lock(performance_profiler_mutex);
@@ -252,7 +269,7 @@ std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByAv
 	return results;
 }
 
-std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByTotalMemoryIncrease()
+std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByTotalMemoryIncreaseExclusive()
 {
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 	Concurrency::SingleLock lock(performance_profiler_mutex);
@@ -271,7 +288,7 @@ std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByTo
 	return results;
 }
 
-std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByAveMemoryIncrease()
+std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByAveMemoryIncreaseExclusive()
 {
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 	Concurrency::SingleLock lock(performance_profiler_mutex);

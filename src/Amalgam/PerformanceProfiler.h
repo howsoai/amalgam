@@ -39,12 +39,16 @@ namespace PerformanceProfiler
 	std::pair<int64_t, int64_t> GetTotalAndPositiveMemoryIncreases();
 	
 	std::vector<std::pair<std::string, size_t>> GetNumCallsByType();
-	
-	std::vector<std::pair<std::string, double>> GetNumCallsByTotalTime();
-	
-	std::vector<std::pair<std::string, double>> GetNumCallsByAveTime();
 
-	std::vector<std::pair<std::string, double>> GetNumCallsByTotalMemoryIncrease();
+	std::vector<std::pair<std::string, double>> GetNumCallsByTotalTimeExclusive();
+	std::vector<std::pair<std::string, double>> GetNumCallsByAveTimeExclusive();
 
-	std::vector<std::pair<std::string, double>> GetNumCallsByAveMemoryIncrease();
+	std::vector<std::pair<std::string, double>> GetNumCallsByTotalTimeInclusive();
+	std::vector<std::pair<std::string, double>> GetNumCallsByAveTimeInclusive();
+
+	std::vector<std::pair<std::string, double>> GetNumCallsByTotalMemoryIncreaseExclusive();
+	std::vector<std::pair<std::string, double>> GetNumCallsByAveMemoryIncreaseExclusive();
+
+	std::vector<std::pair<std::string, double>> GetNumCallsByTotalMemoryIncreaseInclusive();
+	std::vector<std::pair<std::string, double>> GetNumCallsByAveMemoryIncreaseInclusive();
 };

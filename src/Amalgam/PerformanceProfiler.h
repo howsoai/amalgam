@@ -40,8 +40,6 @@ namespace PerformanceProfiler
 	
 	std::vector<std::pair<std::string, size_t>> GetNumCallsByType();
 
-	//TODO 17620: implement the commented out methods and include them in printing
-
 	std::vector<std::pair<std::string, double>> GetNumCallsByTotalTimeExclusive();
 	std::vector<std::pair<std::string, double>> GetNumCallsByAveTimeExclusive();
 

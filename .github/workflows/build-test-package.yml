@@ -195,7 +195,7 @@ jobs:
         set -e
         cd ./amalgam/bin
         for f in *; do
-          echo -n "$f: " && "$f" --version
+          echo -n "$f: " && "./$f" --version
         done
 
   smoke-test-linux-arm64:
@@ -222,7 +222,7 @@ jobs:
           PATH=$PATH:/usr/aarch64-linux-gnu
           cd ./amalgam/bin
           for f in *; do
-            echo -n "$f: " && "$f" --version
+            echo -n "$f: " && "./$f" --version
           done
 
   smoke-test-linux-arm64_8a:
@@ -249,7 +249,7 @@ jobs:
           PATH=$PATH:/usr/aarch64-linux-gnu
           cd ./amalgam/bin
           for f in *; do
-            echo -n "$f: " && "$f" --version
+            echo -n "$f: " && "./$f" --version
           done
 
   smoke-test-macos-amd64:
@@ -272,7 +272,31 @@ jobs:
         set -e
         cd ./amalgam/bin
         for f in *noavx*; do
-          echo -n "$f: " && "$f" --version
+          echo -n "$f: " && "./$f" --version
+        done
+
+  # Turned off until GitHub runners support arm64 macOS
+  smoke-test-macos-arm64:
+    if: false
+    needs: ['build-macos']
+    runs-on: macos-latest
+    steps:
+    - name: Download Artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: amalgam-${{ inputs.version }}-darwin-amd64
+
+    - name: Extract Amalgam
+      run: |
+        mkdir ./amalgam
+        tar -xvf ./amalgam-${{ inputs.version }}-darwin-arm64.tar.gz -C ./amalgam
+
+    - name: Smoke test
+      run: |
+        set -e
+        cd ./amalgam/bin
+        for f in *; do
+          echo -n "$f: " && "./$f" --version
         done
 
   smoke-test-windows-amd64:
@@ -294,5 +318,5 @@ jobs:
         set -e
         cd ./amalgam/bin
         for f in *; do
-          echo -n "$f: " && "$f" --version
+          echo -n "$f: " && "./$f" --version
         done

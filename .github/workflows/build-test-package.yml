@@ -266,7 +266,7 @@ jobs:
         mkdir ./amalgam
         tar -xvf ./amalgam-${{ inputs.version }}-darwin-amd64.tar.gz -C ./amalgam
 
-    # GitHub macos runner does not support AVX
+    # GitHub macOS runner does not support AVX
     - name: Smoke test
       run: |
         set -e

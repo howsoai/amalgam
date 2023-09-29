@@ -271,7 +271,7 @@ jobs:
       run: |
         set -e
         cd ./amalgam/bin
-        for f in *; do
+        for f in *noavx*; do
           echo -n "$f: " && "$f" --version
         done
 

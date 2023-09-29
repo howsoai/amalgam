@@ -280,7 +280,6 @@ endif()
 # Additional artifacts/test/etc
 #
 
-include(create_no_suffix_artifacts)
 include(create_tests)
 include(create_package)
 include(create_static_targets)

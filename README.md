@@ -73,7 +73,7 @@ Pre-built binaries are provided for specific target systems. They are as statica
 
 An interpreter application and shared library (dll/so/dylib) are built for each release. A versioned tarball is created for each target platform in the build matrix:
 
-| Platform                     | Variants <sup>1,2</sup>       | Automated Testing  | Notes |
+| Platform                     | Variants <sup>1</sup>         | Automated Testing  | Notes |
 |------------------------------|-------------------------------|:------------------:|-------|
 | Windows amd64                | MT, ST, OMP, MT-NoAVX         | :heavy_check_mark: |       |
 | Linux amd64                  | MT, ST, OMP, MT-NoAVX, ST-PGC | :heavy_check_mark: | ST-PGC is for testing only, not packaged for release |
@@ -107,8 +107,6 @@ An interpreter application and shared library (dll/so/dylib) are built for each 
         * Binary postfix: '-st-pgc'
         * Interpreter does not use any threads and performs garbage collection at every operation
         * Very slow by nature, intended only be used for verification during testing or debugging
-* <sup>2</sup> Most platforms create a bare binary with no postfix
-    * These are just clones of their respective MT binary and can be used for better symlinking, cleaner library linking, and simpler CLI usage.
 
 #### Build Tools
 

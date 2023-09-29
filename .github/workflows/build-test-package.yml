@@ -194,7 +194,6 @@ jobs:
       run: |
         set -e
         BIN=./amalgam/bin
-        echo -n "amalgam: " && $BIN/amalgam --version
         echo -n "amalgam-mt: " && $BIN/amalgam-mt --version
         echo -n "amalgam-mt-noavx: " && $BIN/amalgam-mt-noavx --version
         echo -n "amalgam-st: " && $BIN/amalgam-st --version
@@ -223,7 +222,6 @@ jobs:
           set -e
           PATH=$PATH:/usr/aarch64-linux-gnu
           BIN=./amalgam/bin
-          echo -n "amalgam: " && $BIN/amalgam --version
           echo -n "amalgam-mt: " && $BIN/amalgam-mt --version
           echo -n "amalgam-st: " && $BIN/amalgam-st --version
           echo -n "amalgam-omp: " && $BIN/amalgam-omp --version
@@ -251,7 +249,6 @@ jobs:
           set -e
           PATH=$PATH:/usr/aarch64-linux-gnu
           BIN=./amalgam/bin
-          echo -n "amalgam: " && $BIN/amalgam --version
           echo -n "amalgam-st: " && $BIN/amalgam-st --version
 
   smoke-test-macos-amd64:
@@ -293,7 +290,6 @@ jobs:
       run: |
         set -e
         BIN=./amalgam/bin
-        echo -n "amalgam: " && $BIN/amalgam --version
         echo -n "amalgam-mt: " && $BIN/amalgam-mt --version
         echo -n "amalgam-mt-noavx: " && $BIN/amalgam-mt-noavx --version
         echo -n "amalgam-st: " && $BIN/amalgam-st --version

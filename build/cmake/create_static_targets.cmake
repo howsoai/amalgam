@@ -3,7 +3,7 @@
 #
 
 # Build files:
-file(GLOB_RECURSE CONFIG_FILES "build/*")
+file(GLOB_RECURSE CONFIG_FILES ".github/*" "build/*")
 list(APPEND CONFIG_FILES
     .gitignore
     CMakeLists.txt

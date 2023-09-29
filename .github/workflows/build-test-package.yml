@@ -16,7 +16,7 @@ jobs:
   build-linux:
     runs-on: ubuntu-20.04
     container:
-      image: ghcr.io/howsoai/amalgam-build-container-linux:0.13.0
+      image: ghcr.io/howsoai/amalgam-build-container-linux:1.0.0
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -193,12 +193,10 @@ jobs:
     - name: Smoke test
       run: |
         set -e
-        BIN=./amalgam/bin
-        echo -n "amalgam: " && $BIN/amalgam --version
-        echo -n "amalgam-mt: " && $BIN/amalgam-mt --version
-        echo -n "amalgam-mt-noavx: " && $BIN/amalgam-mt-noavx --version
-        echo -n "amalgam-st: " && $BIN/amalgam-st --version
-        echo -n "amalgam-omp: " && $BIN/amalgam-omp --version
+        cd ./amalgam/bin
+        for f in *; do
+          echo -n "$f: " && "./$f" --version
+        done
 
   smoke-test-linux-arm64:
     needs: ['build-linux']
@@ -222,11 +220,10 @@ jobs:
         commands: |
           set -e
           PATH=$PATH:/usr/aarch64-linux-gnu
-          BIN=./amalgam/bin
-          echo -n "amalgam: " && $BIN/amalgam --version
-          echo -n "amalgam-mt: " && $BIN/amalgam-mt --version
-          echo -n "amalgam-st: " && $BIN/amalgam-st --version
-          echo -n "amalgam-omp: " && $BIN/amalgam-omp --version
+          cd ./amalgam/bin
+          for f in *; do
+            echo -n "$f: " && "./$f" --version
+          done
 
   smoke-test-linux-arm64_8a:
     needs: ['build-linux']
@@ -250,9 +247,10 @@ jobs:
         commands: |
           set -e
           PATH=$PATH:/usr/aarch64-linux-gnu
-          BIN=./amalgam/bin
-          echo -n "amalgam: " && $BIN/amalgam --version
-          echo -n "amalgam-st: " && $BIN/amalgam-st --version
+          cd ./amalgam/bin
+          for f in *; do
+            echo -n "$f: " && "./$f" --version
+          done
 
   smoke-test-macos-amd64:
     needs: ['build-macos']
@@ -268,12 +266,38 @@ jobs:
         mkdir ./amalgam
         tar -xvf ./amalgam-${{ inputs.version }}-darwin-amd64.tar.gz -C ./amalgam
 
-    # GitHub macos runner does not support AVX
+    # GitHub macOS runner does not support AVX
     - name: Smoke test
       run: |
         set -e
-        BIN=./amalgam/bin
-        echo -n "amalgam-mt-noavx: " && $BIN/amalgam-mt-noavx --version
+        cd ./amalgam/bin
+        for f in *noavx*; do
+          echo -n "$f: " && "./$f" --version
+        done
+
+  # Turned off until GitHub runners support arm64 macOS
+  smoke-test-macos-arm64:
+    if: false
+    needs: ['build-macos']
+    runs-on: macos-latest
+    steps:
+    - name: Download Artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: amalgam-${{ inputs.version }}-darwin-amd64
+
+    - name: Extract Amalgam
+      run: |
+        mkdir ./amalgam
+        tar -xvf ./amalgam-${{ inputs.version }}-darwin-arm64.tar.gz -C ./amalgam
+
+    - name: Smoke test
+      run: |
+        set -e
+        cd ./amalgam/bin
+        for f in *; do
+          echo -n "$f: " && "./$f" --version
+        done
 
   smoke-test-windows-amd64:
     needs: ['build-windows']
@@ -292,9 +316,7 @@ jobs:
     - name: Smoke test
       run: |
         set -e
-        BIN=./amalgam/bin
-        echo -n "amalgam: " && $BIN/amalgam --version
-        echo -n "amalgam-mt: " && $BIN/amalgam-mt --version
-        echo -n "amalgam-mt-noavx: " && $BIN/amalgam-mt-noavx --version
-        echo -n "amalgam-st: " && $BIN/amalgam-st --version
-        echo -n "amalgam-omp: " && $BIN/amalgam-omp --version
+        cd ./amalgam/bin
+        for f in *; do
+          echo -n "$f: " && "./$f" --version
+        done

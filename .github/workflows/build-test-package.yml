@@ -193,11 +193,10 @@ jobs:
     - name: Smoke test
       run: |
         set -e
-        BIN=./amalgam/bin
-        echo -n "amalgam-mt: " && $BIN/amalgam-mt --version
-        echo -n "amalgam-mt-noavx: " && $BIN/amalgam-mt-noavx --version
-        echo -n "amalgam-st: " && $BIN/amalgam-st --version
-        echo -n "amalgam-omp: " && $BIN/amalgam-omp --version
+        cd ./amalgam/bin
+        for f in *; do
+          echo -n "$f: " && "$f" --version
+        done
 
   smoke-test-linux-arm64:
     needs: ['build-linux']
@@ -221,10 +220,10 @@ jobs:
         commands: |
           set -e
           PATH=$PATH:/usr/aarch64-linux-gnu
-          BIN=./amalgam/bin
-          echo -n "amalgam-mt: " && $BIN/amalgam-mt --version
-          echo -n "amalgam-st: " && $BIN/amalgam-st --version
-          echo -n "amalgam-omp: " && $BIN/amalgam-omp --version
+          cd ./amalgam/bin
+          for f in *; do
+            echo -n "$f: " && "$f" --version
+          done
 
   smoke-test-linux-arm64_8a:
     needs: ['build-linux']
@@ -248,8 +247,10 @@ jobs:
         commands: |
           set -e
           PATH=$PATH:/usr/aarch64-linux-gnu
-          BIN=./amalgam/bin
-          echo -n "amalgam-st: " && $BIN/amalgam-st --version
+          cd ./amalgam/bin
+          for f in *; do
+            echo -n "$f: " && "$f" --version
+          done
 
   smoke-test-macos-amd64:
     needs: ['build-macos']
@@ -269,8 +270,10 @@ jobs:
     - name: Smoke test
       run: |
         set -e
-        BIN=./amalgam/bin
-        echo -n "amalgam-mt-noavx: " && $BIN/amalgam-mt-noavx --version
+        cd ./amalgam/bin
+        for f in *; do
+          echo -n "$f: " && "$f" --version
+        done
 
   smoke-test-windows-amd64:
     needs: ['build-windows']
@@ -289,8 +292,7 @@ jobs:
     - name: Smoke test
       run: |
         set -e
-        BIN=./amalgam/bin
-        echo -n "amalgam-mt: " && $BIN/amalgam-mt --version
-        echo -n "amalgam-mt-noavx: " && $BIN/amalgam-mt-noavx --version
-        echo -n "amalgam-st: " && $BIN/amalgam-st --version
-        echo -n "amalgam-omp: " && $BIN/amalgam-omp --version
+        cd ./amalgam/bin
+        for f in *; do
+          echo -n "$f: " && "$f" --version
+        done

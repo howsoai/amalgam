@@ -16,6 +16,37 @@
 class SBFDSColumnData
 {
 public:
+
+	struct ValueEntry
+	{
+		//indicates the column does not use indices
+		static constexpr size_t NO_INDEX = std::numeric_limits<size_t>::max();
+
+		//if empty, initialize to invalid index
+		ValueEntry()
+			: value(), indicesWithValue(),
+			valueInternIndex(NO_INDEX)
+		{	}
+
+		ValueEntry(double number_value, size_t intern_index = NO_INDEX)
+			: value(number_value), indicesWithValue(),
+			valueInternIndex(intern_index)
+		{	}
+
+		ValueEntry(StringInternPool::StringID sid_value, size_t intern_index = NO_INDEX)
+			: value(sid_value), indicesWithValue(),
+			valueInternIndex(intern_index)
+		{	}
+
+		ValueEntry(ValueEntry &ve)
+			: value(ve.value), indicesWithValue(ve.indicesWithValue), valueInternIndex(ve.valueInternIndex)
+		{	}
+
+		EvaluableNodeImmediateValue value;
+		SortedIntegerSet indicesWithValue;
+		size_t valueInternIndex;
+	};
+
 	//column needs to be named when it is created
 	inline SBFDSColumnData(StringInternPool::StringID sid)
 		: stringId(sid)
@@ -107,10 +138,10 @@ public:
 		for(auto &index_value : index_values)
 		{
 			//if don't have the right bucket, then need to create one
-			if(sortedNumberValueIndexPairs.size() == 0 || sortedNumberValueIndexPairs.back().first != index_value.distance)
-				sortedNumberValueIndexPairs.emplace_back(index_value.distance, std::make_unique<SortedIntegerSet>());
+			if(sortedNumberValueIndexPairs.size() == 0 || sortedNumberValueIndexPairs.back()->value.number != index_value.distance)
+				sortedNumberValueIndexPairs.emplace_back(std::make_unique<ValueEntry>(index_value.distance));
 
-			sortedNumberValueIndexPairs.back().second->InsertNewLargestInteger(index_value.reference);
+			sortedNumberValueIndexPairs.back()->indicesWithValue.InsertNewLargestInteger(index_value.reference);
 			numberIndices.insert(index_value.reference);
 		}
 	}
@@ -171,13 +202,13 @@ public:
 					return;
 
 				//if the bucket has only one entry, we must delete the entire bucket
-				if(sortedNumberValueIndexPairs[value_index].second->size() == 1)
+				if(sortedNumberValueIndexPairs[value_index]->indicesWithValue.size() == 1)
 				{
 					sortedNumberValueIndexPairs.erase(sortedNumberValueIndexPairs.begin() + value_index);
 				}
 				else //else we can just remove the id from the bucket
 				{
-					sortedNumberValueIndexPairs[value_index].second->erase(index);
+					sortedNumberValueIndexPairs[value_index]->indicesWithValue.erase(index);
 				}
 			}
 
@@ -266,14 +297,16 @@ public:
 			auto [value_index, exact_index_found] = FindExactIndexForValue(value.number);
 			if(exact_index_found)
 			{
-				sortedNumberValueIndexPairs[value_index].second->insert(index);
+				sortedNumberValueIndexPairs[value_index]->indicesWithValue.insert(index);
 				return;
 			}
 
+			//TODO 17630: update this to insert correctly if numberValuesInterred
 			//insert new value in correct position
 			size_t new_value_index = FindUpperBoundIndexForValue(value.number);
-			auto inserted = sortedNumberValueIndexPairs.emplace(sortedNumberValueIndexPairs.begin() + new_value_index, value.number, std::make_unique<SortedIntegerSet>());
-			inserted->second->insert(index);
+			auto inserted = sortedNumberValueIndexPairs.emplace(sortedNumberValueIndexPairs.begin() + new_value_index,
+				std::make_unique<ValueEntry>(value.number));
+			(*inserted)->indicesWithValue.insert(index);
 
 			return;
 		}
@@ -325,7 +358,7 @@ public:
 			if(sortedNumberValueIndexPairs.size() <= 1)
 				return 0.0;
 
-			return sortedNumberValueIndexPairs.back().first - sortedNumberValueIndexPairs[0].first;
+			return sortedNumberValueIndexPairs.back()->value.number - sortedNumberValueIndexPairs[0]->value.number;
 
 		case FDT_CONTINUOUS_NUMERIC_CYCLIC:
 			//maximum is the other side of the cycle
@@ -371,12 +404,12 @@ public:
 	inline std::pair<size_t, bool> FindExactIndexForValue(double value, bool return_index_lower_bound = false)
 	{
 		auto target_iter = std::lower_bound(begin(sortedNumberValueIndexPairs), end(sortedNumberValueIndexPairs), value,
-			[](const auto& value_index_pair, double value)
+			[](const auto &value_entry, double value)
 			{
-				return value_index_pair.first < value;
+				return value_entry->value.number < value;
 			});
 
-		if ((target_iter == end(sortedNumberValueIndexPairs)) || (target_iter->first != value)) // not exact match
+		if((target_iter == end(sortedNumberValueIndexPairs)) || ((*target_iter)->value.number != value)) // not exact match
 		{
 			return std::make_pair(return_index_lower_bound ? std::distance(begin(sortedNumberValueIndexPairs), target_iter) : -1 , false);
 		}
@@ -388,9 +421,9 @@ public:
 	inline size_t FindLowerBoundIndexForValue(double value)
 	{
 		auto target_iter = std::lower_bound(begin(sortedNumberValueIndexPairs), end(sortedNumberValueIndexPairs), value,
-			[](const auto &value_index_pair, double value)
+			[](const auto &value_entry, double value)
 			{
-				return value_index_pair.first < value;
+				return value_entry->value.number < value;
 			});
 		return std::distance(begin(sortedNumberValueIndexPairs), target_iter);
 	}
@@ -399,9 +432,9 @@ public:
 	inline size_t FindUpperBoundIndexForValue(double value)
 	{
 		auto target_iter = std::upper_bound(begin(sortedNumberValueIndexPairs), end(sortedNumberValueIndexPairs), value,
-			[](double value, const auto &value_index_pair)
+			[](double value, const auto &value_entry)
 			{
-				return value < value_index_pair.first;
+				return value < value_entry->value.number;
 			});
 		return std::distance(begin(sortedNumberValueIndexPairs), target_iter);
 	}
@@ -416,9 +449,7 @@ public:
 		// returns the closest index (lower_bound) if an exact match is not found
 		auto [value_index, exact_index_found] = FindExactIndexForValue(value, true);
 		if(exact_index_found)
-		{
 			return std::make_pair(value_index, true);
-		}
 
 		//if only have one element (or zero), short circuit code below
 		if(sortedNumberValueIndexPairs.size() <= 1)
@@ -434,15 +465,15 @@ public:
 			//need to check index again in case not cyclic
 			// return index with the closer difference
 			if(target_index < max_valid_index
-					&& (std::abs(sortedNumberValueIndexPairs[target_index + 1].first - value) < std::abs(sortedNumberValueIndexPairs[target_index].first - value)))
+					&& (std::abs(sortedNumberValueIndexPairs[target_index + 1]->value.number - value) < std::abs(sortedNumberValueIndexPairs[target_index]->value.number - value)))
 				return std::make_pair(target_index + 1, false);
 			else
 				return std::make_pair(target_index, false);
 		}
 		else //cyclic
 		{
-			double dist_to_max_index = std::abs(sortedNumberValueIndexPairs[max_valid_index].first - value);
-			double dist_to_0_index = std::abs(sortedNumberValueIndexPairs[0].first - value);
+			double dist_to_max_index = std::abs(sortedNumberValueIndexPairs[max_valid_index]->value.number - value);
+			double dist_to_0_index = std::abs(sortedNumberValueIndexPairs[0]->value.number - value);
 			size_t other_closest_index;
 
 			if(target_index == 0)
@@ -458,7 +489,7 @@ public:
 				other_closest_index = max_valid_index - 1;
 			}
 
-			double dist_to_other_closest_index = std::abs(sortedNumberValueIndexPairs[other_closest_index].first - value);
+			double dist_to_other_closest_index = std::abs(sortedNumberValueIndexPairs[other_closest_index]->value.number - value);
 			if(dist_to_0_index <= dist_to_other_closest_index && dist_to_0_index <= dist_to_max_index)
 				return std::make_pair(0, false);
 			else if(dist_to_other_closest_index <= dist_to_0_index)
@@ -534,19 +565,19 @@ public:
 				if(between_values)
 				{
 					size_t index = value_index;
-					out.InsertInBatch(*sortedNumberValueIndexPairs[index].second);
+					out.InsertInBatch(sortedNumberValueIndexPairs[index]->indicesWithValue);
 				}
 				else //if not within, populate with all indices not equal to value
 				{
 					//include nans
 					nanIndices.CopyTo(out);
 
-					for(auto &[bucket_val, bucket] : sortedNumberValueIndexPairs)
+					for(auto &value_entry : sortedNumberValueIndexPairs)
 					{
-						if(bucket_val == low_number)
+						if(value_entry->value.number == low_number)
 							continue;
 
-						out.InsertInBatch(*bucket);
+						out.InsertInBatch(value_entry->indicesWithValue);
 					}
 				}
 
@@ -560,21 +591,21 @@ public:
 			{
 				//insert everything between the two indices
 				for(size_t i = start_index; i < end_index; i++)
-					out.InsertInBatch(*sortedNumberValueIndexPairs[i].second);
+					out.InsertInBatch(sortedNumberValueIndexPairs[i]->indicesWithValue);
 
 				//include end_index if value matches
-				if(end_index < sortedNumberValueIndexPairs.size() && sortedNumberValueIndexPairs[end_index].first == high_number)
-					out.InsertInBatch(*sortedNumberValueIndexPairs[end_index].second);
+				if(end_index < sortedNumberValueIndexPairs.size() && sortedNumberValueIndexPairs[end_index]->value.number == high_number)
+					out.InsertInBatch(sortedNumberValueIndexPairs[end_index]->indicesWithValue);
 			}
 			else //not between_values
 			{
 				//insert everything left of range
 				for(size_t i = 0; i < start_index; i++)
-					out.InsertInBatch(*sortedNumberValueIndexPairs[i].second);
+					out.InsertInBatch(sortedNumberValueIndexPairs[i]->indicesWithValue);
 
 				//insert everything right of range
 				for(size_t i = end_index; i < sortedNumberValueIndexPairs.size(); i++)
-					out.InsertInBatch(*sortedNumberValueIndexPairs[i].second);
+					out.InsertInBatch(sortedNumberValueIndexPairs[i]->indicesWithValue);
 			}
 
 		}
@@ -636,7 +667,7 @@ public:
 
 			auto [value_index, exact_index_found] = FindExactIndexForValue(value.number);
 			if(exact_index_found)
-				out.InsertInBatch(*sortedNumberValueIndexPairs[value_index].second);
+				out.InsertInBatch(sortedNumberValueIndexPairs[value_index]->indicesWithValue);
 		}
 		else if(value_type == ENIVT_STRING_ID)
 		{
@@ -663,7 +694,7 @@ public:
 			while(value_index < static_cast<int64_t>(sortedNumberValueIndexPairs.size()) && value_index >= 0)
 			{
 				//add each index to the out indices and optionally output compute results
-				for(const auto &index : *sortedNumberValueIndexPairs[value_index].second)
+				for(const auto &index : sortedNumberValueIndexPairs[value_index]->indicesWithValue)
 				{
 					if(indices_to_consider != nullptr && !indices_to_consider->contains(index))
 						continue;
@@ -746,8 +777,9 @@ public:
 	StringInternPool::StringID stringId;
 
 	//stores values in sorted order and the entities that have each value
-	std::vector< std::pair<double, std::unique_ptr<SortedIntegerSet>> > sortedNumberValueIndexPairs;
+	std::vector<std::unique_ptr<ValueEntry>> sortedNumberValueIndexPairs;
 
+	//TODO 17630: update to use ValueEntry
 	//maps a string id to a vector of indices that have that string
 	CompactHashMap<StringInternPool::StringID, std::unique_ptr<SortedIntegerSet>> stringIdValueToIndices;
 
@@ -783,4 +815,16 @@ public:
 	size_t indexWithLargestCode;
 	//the largest code size for this label
 	size_t largestCodeSize;
+
+	//TODO 17630: use these where appropriate, possibly change internedNumberIndexToNumberValue to reference the unique pointers of sortedNumberValueIndexPairs?
+
+	//if numberValuesInterned is true, then contains an index of each value to its location in sortedNumberValueIndexPairs
+	//if a given index isn't used, then it will contain the maximum value for the index
+	std::vector<double> internedNumberIndexToNumberValue;
+
+	//unused / free indices in internedNumberIndexToNumberValue to make adding and removing new values efficient
+	std::vector<size_t> unusedNumberValueIndices;
+
+	//if true, then the indices of the values should be used and internedNumberIndexToValue populated
+	bool numberValuesInterned;
 };

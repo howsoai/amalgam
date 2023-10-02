@@ -278,13 +278,13 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 			// unless it happens to be that enabled_indices is very skewed
 			if(column_data->sortedNumberValueIndexPairs.size() < enabled_indices.size())
 			{
-				for(auto &[entity_list_value, entity_list] : column_data->sortedNumberValueIndexPairs)
+				for(auto &value_entry : column_data->sortedNumberValueIndexPairs)
 				{
 					//get distance term that is applicable to each entity in this bucket
-					double distance_term = dist_params.ComputeDistanceTermRegularOneNonNull(target_value.number - entity_list_value, query_feature_index);
+					double distance_term = dist_params.ComputeDistanceTermRegularOneNonNull(target_value.number - value_entry->value.number, query_feature_index);
 
 					//for each bucket, add term to their sums
-					for(auto entity_index : *entity_list)
+					for(auto entity_index : value_entry->indicesWithValue)
 					{
 						if(!enabled_indices.contains(entity_index))
 							continue;
@@ -850,7 +850,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 			if(exact_index_found)
 			{
 				double term = dist_params.ComputeDistanceTermNominalExactMatch(query_feature_index);
-				AccumulatePartialSums(*column->sortedNumberValueIndexPairs[value_index].second, query_feature_index, term);
+				AccumulatePartialSums(column->sortedNumberValueIndexPairs[value_index]->indicesWithValue, query_feature_index, term);
 			}
 		}
 		else if(value_type == ENIVT_STRING_ID)
@@ -932,9 +932,9 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 	if(exact_index_found)
 		term = dist_params.ComputeDistanceTermNonNominalExactMatch(query_feature_index);
 	else
-		term = dist_params.ComputeDistanceTermNonNominalNonNullRegular(value.number - column->sortedNumberValueIndexPairs[value_index].first, query_feature_index);
+		term = dist_params.ComputeDistanceTermNonNominalNonNullRegular(value.number - column->sortedNumberValueIndexPairs[value_index]->value.number, query_feature_index);
 
-	size_t num_entities_computed = AccumulatePartialSums(*column->sortedNumberValueIndexPairs[value_index].second, query_feature_index, term);
+	size_t num_entities_computed = AccumulatePartialSums(column->sortedNumberValueIndexPairs[value_index]->indicesWithValue, query_feature_index, term);
 
 	//the logic below assumes there are at least two entries
 	size_t num_unique_number_values = column->sortedNumberValueIndexPairs.size();
@@ -970,7 +970,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 			if(lower_value_index > 0)
 			{
 				next_lower_index = lower_value_index - 1;
-				lower_diff = std::abs(value.number - column->sortedNumberValueIndexPairs[next_lower_index].first);
+				lower_diff = std::abs(value.number - column->sortedNumberValueIndexPairs[next_lower_index]->value.number);
 				compute_lower = true;
 			}
 		}
@@ -986,7 +986,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 			if(next_index != value_index)
 			{
 				next_lower_index = next_index;
-				lower_diff = GeneralizedDistance::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueIndexPairs[next_lower_index].first), cycle_length);
+				lower_diff = GeneralizedDistance::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueIndexPairs[next_lower_index]->value.number), cycle_length);
 				compute_lower = true;
 			}
 		}
@@ -1000,7 +1000,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 			if(upper_value_index + 1 < num_unique_number_values)
 			{
 				next_upper_index = upper_value_index + 1;
-				upper_diff = std::abs(value.number - column->sortedNumberValueIndexPairs[next_upper_index].first);
+				upper_diff = std::abs(value.number - column->sortedNumberValueIndexPairs[next_upper_index]->value.number);
 				compute_upper = true;
 			}
 		}
@@ -1019,7 +1019,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 				if((!compute_lower || next_index != next_lower_index))
 				{
 					next_upper_index = next_index;
-					upper_diff = GeneralizedDistance::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueIndexPairs[next_upper_index].first), cycle_length);
+					upper_diff = GeneralizedDistance::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueIndexPairs[next_upper_index]->value.number), cycle_length);
 					compute_upper = true;
 				}
 				else //upper and lower have overlapped, want to exit the loop
@@ -1056,7 +1056,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 			//use heuristic to decide whether to continue populating based on whether this diff will help the overall distance cutoffs
 			// look at the rate of change of the difference compared to before, and how many new entities will be populated
 			// if it is too small and doesn't fill enough (or fills too many), then stop expanding
-			size_t potential_entities = column->sortedNumberValueIndexPairs[next_closest_index].second->size();
+			size_t potential_entities = column->sortedNumberValueIndexPairs[next_closest_index]->indicesWithValue.size();
 			if(num_entities_computed + potential_entities > max_num_to_find)
 				break;
 
@@ -1081,7 +1081,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 		}
 
 		term = dist_params.ComputeDistanceTermNonNominalNonNullRegular(next_closest_diff, query_feature_index);
-		num_entities_computed += AccumulatePartialSums(*column->sortedNumberValueIndexPairs[next_closest_index].second, query_feature_index, term);
+		num_entities_computed += AccumulatePartialSums(column->sortedNumberValueIndexPairs[next_closest_index]->indicesWithValue, query_feature_index, term);
 
 		//track the rate of change of difference
 		if(next_closest_diff - last_diff > largest_diff_delta)

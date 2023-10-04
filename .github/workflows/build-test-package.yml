@@ -90,12 +90,6 @@ jobs:
 
     - name: Install build dependencies
       run: |
-        echo "========================="
-        brew config
-        echo "========================="
-        brew doctor
-        echo "========================="
-
         if [ "${{ matrix.preset.arch }}" = "arm64" ]; then
           brew uninstall --ignore-dependencies libomp
           brew cleanup -s

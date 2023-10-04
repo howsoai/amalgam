@@ -1,7 +1,7 @@
 #ifndef _RYML_SINGLE_HEADER_AMALGAMATED_HPP_
 #define _RYML_SINGLE_HEADER_AMALGAMATED_HPP_
 
-#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#pragma clang diagnostic ignored "-Wunused-but-set-variable"
 
 //
 // Rapid YAML - a library to parse and emit YAML, and do it fast.

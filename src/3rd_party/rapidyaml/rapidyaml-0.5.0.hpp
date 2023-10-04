@@ -1,8 +1,6 @@
 #ifndef _RYML_SINGLE_HEADER_AMALGAMATED_HPP_
 #define _RYML_SINGLE_HEADER_AMALGAMATED_HPP_
 
-#pragma clang diagnostic ignored "-Wunused-but-set-variable"
-
 //
 // Rapid YAML - a library to parse and emit YAML, and do it fast.
 //
@@ -197,6 +195,7 @@
      * @see http://stackoverflow.com/questions/32047685/variadic-macro-without-arguments */
 #   pragma clang diagnostic push
 #   pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments" // warning: token pasting of ',' and __VA_ARGS__ is a GNU extension
+#   pragma clang diagnostic ignored "-Wunused-but-set-variable"
 #elif defined(__GNUC__)
     /* GCC also issues a warning for zero-args calls to variadic macros.
      * This warning is switched on with -pedantic and apparently there is no

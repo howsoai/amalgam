@@ -94,8 +94,8 @@ jobs:
           brew uninstall --ignore-dependencies libomp
           brew cleanup -s
           rm -rf `brew --cache`
-          brew fetch --force --bottle-tag=arm64_big_sur libomp
-          brew install `brew --cache --bottle-tag=arm64_big_sur libomp`
+          brew fetch --force --bottle-tag=arm64_monterey libomp
+          brew install `brew --cache --bottle-tag=arm64_monterey libomp`
         else
           brew install libomp
         fi

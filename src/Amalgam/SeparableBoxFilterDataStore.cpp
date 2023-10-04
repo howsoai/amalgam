@@ -89,10 +89,7 @@ void SeparableBoxFilterDataStore::AddEntity(Entity *entity, size_t entity_index)
 		EvaluableNodeImmediateValueType value_type;
 		EvaluableNodeImmediateValue value;
 		value_type = entity->GetValueAtLabelAsImmediateValue(columnData[column_index]->stringId, value);
-
-		matrix[cell_index] = value;
-
-		columnData[column_index]->InsertIndexValue(value_type, value, entity_index);
+		matrix[cell_index] = columnData[column_index]->InsertIndexValue(value_type, value, entity_index);
 	}
 
 	//count this entity
@@ -276,9 +273,9 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 			//if there are fewer enabled_indices than the number of unique values for this feature, plus one for unknown values
 			// it is usually faster (less distances to compute) to just compute distance for each unique value and add to associated sums
 			// unless it happens to be that enabled_indices is very skewed
-			if(column_data->sortedNumberValueIndexPairs.size() < enabled_indices.size())
+			if(column_data->sortedNumberValueEntries.size() < enabled_indices.size())
 			{
-				for(auto &value_entry : column_data->sortedNumberValueIndexPairs)
+				for(auto &value_entry : column_data->sortedNumberValueEntries)
 				{
 					//get distance term that is applicable to each entity in this bucket
 					double distance_term = dist_params.ComputeDistanceTermRegularOneNonNull(target_value.number - value_entry->value.number, query_feature_index);
@@ -850,7 +847,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 			if(exact_index_found)
 			{
 				double term = dist_params.ComputeDistanceTermNominalExactMatch(query_feature_index);
-				AccumulatePartialSums(column->sortedNumberValueIndexPairs[value_index]->indicesWithValue, query_feature_index, term);
+				AccumulatePartialSums(column->sortedNumberValueEntries[value_index]->indicesWithValue, query_feature_index, term);
 			}
 		}
 		else if(value_type == ENIVT_STRING_ID)
@@ -918,7 +915,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 	//else feature_type == FDT_CONTINUOUS_NUMERIC or FDT_CONTINUOUS_UNIVERSALLY_NUMERIC
 
 	//if not a number or no numbers available, then no size
-	if(value_type != ENIVT_NUMBER || column->sortedNumberValueIndexPairs.size() == 0)
+	if(value_type != ENIVT_NUMBER || column->sortedNumberValueEntries.size() == 0)
 		return GetMaxDistanceTermFromValue(dist_params, value, value_type, query_feature_index, absolute_feature_index);
 
 	bool cyclic_feature = dist_params.IsFeatureCyclic(query_feature_index);
@@ -932,12 +929,12 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 	if(exact_index_found)
 		term = dist_params.ComputeDistanceTermNonNominalExactMatch(query_feature_index);
 	else
-		term = dist_params.ComputeDistanceTermNonNominalNonNullRegular(value.number - column->sortedNumberValueIndexPairs[value_index]->value.number, query_feature_index);
+		term = dist_params.ComputeDistanceTermNonNominalNonNullRegular(value.number - column->sortedNumberValueEntries[value_index]->value.number, query_feature_index);
 
-	size_t num_entities_computed = AccumulatePartialSums(column->sortedNumberValueIndexPairs[value_index]->indicesWithValue, query_feature_index, term);
+	size_t num_entities_computed = AccumulatePartialSums(column->sortedNumberValueEntries[value_index]->indicesWithValue, query_feature_index, term);
 
 	//the logic below assumes there are at least two entries
-	size_t num_unique_number_values = column->sortedNumberValueIndexPairs.size();
+	size_t num_unique_number_values = column->sortedNumberValueEntries.size();
 	if(num_unique_number_values <= 1)
 		return term;
 
@@ -970,7 +967,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 			if(lower_value_index > 0)
 			{
 				next_lower_index = lower_value_index - 1;
-				lower_diff = std::abs(value.number - column->sortedNumberValueIndexPairs[next_lower_index]->value.number);
+				lower_diff = std::abs(value.number - column->sortedNumberValueEntries[next_lower_index]->value.number);
 				compute_lower = true;
 			}
 		}
@@ -986,7 +983,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 			if(next_index != value_index)
 			{
 				next_lower_index = next_index;
-				lower_diff = GeneralizedDistance::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueIndexPairs[next_lower_index]->value.number), cycle_length);
+				lower_diff = GeneralizedDistance::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueEntries[next_lower_index]->value.number), cycle_length);
 				compute_lower = true;
 			}
 		}
@@ -1000,7 +997,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 			if(upper_value_index + 1 < num_unique_number_values)
 			{
 				next_upper_index = upper_value_index + 1;
-				upper_diff = std::abs(value.number - column->sortedNumberValueIndexPairs[next_upper_index]->value.number);
+				upper_diff = std::abs(value.number - column->sortedNumberValueEntries[next_upper_index]->value.number);
 				compute_upper = true;
 			}
 		}
@@ -1019,7 +1016,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 				if((!compute_lower || next_index != next_lower_index))
 				{
 					next_upper_index = next_index;
-					upper_diff = GeneralizedDistance::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueIndexPairs[next_upper_index]->value.number), cycle_length);
+					upper_diff = GeneralizedDistance::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueEntries[next_upper_index]->value.number), cycle_length);
 					compute_upper = true;
 				}
 				else //upper and lower have overlapped, want to exit the loop
@@ -1056,7 +1053,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 			//use heuristic to decide whether to continue populating based on whether this diff will help the overall distance cutoffs
 			// look at the rate of change of the difference compared to before, and how many new entities will be populated
 			// if it is too small and doesn't fill enough (or fills too many), then stop expanding
-			size_t potential_entities = column->sortedNumberValueIndexPairs[next_closest_index]->indicesWithValue.size();
+			size_t potential_entities = column->sortedNumberValueEntries[next_closest_index]->indicesWithValue.size();
 			if(num_entities_computed + potential_entities > max_num_to_find)
 				break;
 
@@ -1081,7 +1078,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 		}
 
 		term = dist_params.ComputeDistanceTermNonNominalNonNullRegular(next_closest_diff, query_feature_index);
-		num_entities_computed += AccumulatePartialSums(column->sortedNumberValueIndexPairs[next_closest_index]->indicesWithValue, query_feature_index, term);
+		num_entities_computed += AccumulatePartialSums(column->sortedNumberValueEntries[next_closest_index]->indicesWithValue, query_feature_index, term);
 
 		//track the rate of change of difference
 		if(next_closest_diff - last_diff > largest_diff_delta)

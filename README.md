@@ -121,7 +121,7 @@ Though Amalgam is intended to support any C++17 compliant compiler, the current 
 * Linux:
     * Ubuntu 20.04, gcc-10
 * macOS (Darwin):
-    * macOS 12, AppleClang 13.0
+    * macOS 12, AppleClang 14.0
 * WASM:
     * Ubuntu 20.04, emscripten 3.1.32
 

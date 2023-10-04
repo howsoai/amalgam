@@ -18384,7 +18384,7 @@ bool is_debugger_attached()
     // https://stackoverflow.com/questions/2200277/detecting-debugger-on-mac-os-x
     // Returns true if the current process is being debugged (either
     // running under the debugger or has a debugger attached post facto).
-    int                 junk;
+    int                 junk [[maybe_unused]];
     int                 mib[4];
     struct kinfo_proc   info;
     size_t              size;

@@ -769,15 +769,33 @@ protected:
 		return (numberIndices.size() * 0.38 < sortedNumberValueEntries.size());
 	}
 
+	//TODO 17630: finish this and use it where appropriate
+	//TODO 17630: add method to get intern index for value and vice versa; may just always use it and put the logic in this class
+	//clears number intern caches and changes state to not perform interning for numbers
 	void ConvertNumberInternsToValues()
 	{
-		//TODO 17630: finish this and use it where appropriate
+		if(!numberValuesInterned)
+			return;
+
+		internedNumberIndexToNumberValue.clear();
+		unusedNumberValueIndices.clear();
 		numberValuesInterned = false;
 	}
 
+	//initializes and sets up number value interning caches and changes state to perform interning for numbers
 	void ConvertNumberValuesToInterns()
 	{
-		//TODO 17630: finish this and use it where appropriate
+		if(numberValuesInterned)
+			return;
+
+		internedNumberIndexToNumberValue.resize(sortedNumberValueEntries.size());
+		for(size_t i = 0; i < internedNumberIndexToNumberValue.size(); i++)
+		{
+			auto &value_entry = sortedNumberValueEntries[i];
+			value_entry->valueInternIndex = i;
+			internedNumberIndexToNumberValue.emplace_back(value_entry->value);
+		}
+
 		numberValuesInterned = true;
 	}
 

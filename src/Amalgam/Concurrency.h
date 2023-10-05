@@ -10,8 +10,6 @@
 #include <omp.h>
 #endif
 
-#include <thread>
-
 #ifdef MULTITHREAD_SUPPORT
 	#include "ThreadPool.h"
 	#define MULTITHREAD_INTERFACE
@@ -32,6 +30,7 @@
 #include <atomic>
 #include <mutex>
 #include <shared_mutex>
+#include <thread>
 #include <vector>
 
 namespace Concurrency

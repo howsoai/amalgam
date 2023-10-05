@@ -227,9 +227,9 @@ std::string Platform_RunSystemCommand(std::string command, bool &successful_run,
 	std::string stdout_data;
 
 	//not the fastest, but robust
-	char ch;
-	while((ch = fgetc(p)) != EOF)
-		stdout_data.push_back(ch);
+	//char ch;
+	//while((ch = fgetc(p)) != EOF)
+	//	stdout_data.push_back(ch);
 
 #ifdef OS_WINDOWS
 	exit_code = _pclose(p);

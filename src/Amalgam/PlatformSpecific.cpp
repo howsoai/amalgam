@@ -228,7 +228,7 @@ std::string Platform_RunSystemCommand(std::string command, bool &successful_run,
 	std::array<char, 128> buffer;
 	std::string stdout_data;
 	while(!feof(p)) {
-		if(fgets(buffer.data(), buffer.size(), p) != nullptr)
+		if(fgets(buffer.data(), static_cast<int>(buffer.size()), p) != nullptr)
 			stdout_data += buffer.data();
 	}
 

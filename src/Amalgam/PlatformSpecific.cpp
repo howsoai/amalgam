@@ -216,7 +216,7 @@ std::string Platform_RunSystemCommand(std::string command, bool &successful_run,
 	p = popen(command.c_str(), "r");
 #endif
 
-	if(p == NULL)
+	if(p == nullptr)
 	{
 		exit_code = 0;
 		successful_run = false;
@@ -227,7 +227,8 @@ std::string Platform_RunSystemCommand(std::string command, bool &successful_run,
 
 	std::array<char, 128> buffer;
 	std::string stdout_data;
-	while(!feof(p)) {
+	while(!feof(p))
+	{
 		if(fgets(buffer.data(), static_cast<int>(buffer.size()), p) != nullptr)
 			stdout_data += buffer.data();
 	}

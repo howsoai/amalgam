@@ -160,6 +160,15 @@ public:
 		return ENIVT_CODE;
 	}
 
+	//TODO 17630: use this where appropriate
+	//returns the number value from value, performing a number intern lookup if necessary
+	__forceinline double GetNumberValue(EvaluableNodeImmediateValue value)
+	{
+		if(numberValuesInterned)
+			return internedNumberIndexToNumberValue[value.indirectionIndex];
+		return value.number;
+	}
+
 	//moves index from being associated with key old_value to key new_value
 	void ChangeIndexValue(EvaluableNodeImmediateValue old_value, EvaluableNodeImmediateValueType new_value_type, EvaluableNodeImmediateValue new_value, size_t index)
 	{
@@ -769,8 +778,7 @@ protected:
 		return (numberIndices.size() * 0.38 < sortedNumberValueEntries.size());
 	}
 
-	//TODO 17630: finish this and use it where appropriate
-	//TODO 17630: add method to get intern index for value and vice versa; may just always use it and put the logic in this class
+	//TODO 17630: use these next two methods where appropriate
 	//clears number intern caches and changes state to not perform interning for numbers
 	void ConvertNumberInternsToValues()
 	{

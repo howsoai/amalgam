@@ -3,6 +3,7 @@
 
 //system headers:
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <codecvt>
 #include <cstdio>
@@ -215,7 +216,7 @@ std::string Platform_RunSystemCommand(std::string command, bool &successful_run,
 	p = popen(command.c_str(), "r");
 #endif
 
-	if(p == NULL)
+	if(p == nullptr)
 	{
 		exit_code = 0;
 		successful_run = false;
@@ -224,12 +225,13 @@ std::string Platform_RunSystemCommand(std::string command, bool &successful_run,
 
 	successful_run = true;
 
+	std::array<char, 128> buffer;
 	std::string stdout_data;
-
-	//not the fastest, but robust
-	char ch;
-	while((ch = fgetc(p)) != EOF)
-		stdout_data.push_back(ch);
+	while(!feof(p))
+	{
+		if(fgets(buffer.data(), static_cast<int>(buffer.size()), p) != nullptr)
+			stdout_data += buffer.data();
+	}
 
 #ifdef OS_WINDOWS
 	exit_code = _pclose(p);

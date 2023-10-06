@@ -32,6 +32,14 @@ void SeparableBoxFilterDataStore::BuildLabel(size_t column_index, const std::vec
 	std::stable_sort(begin(entities_with_number_values), end(entities_with_number_values));
 
 	column_data->AppendSortedNumberIndicesWithSortedIndices(entities_with_number_values);
+
+	OptimizeColumn(column_index);
+}
+
+void SeparableBoxFilterDataStore::OptimizeColumn(size_t column_index)
+{
+	auto &column_data = columnData[column_index];
+	//TODO 17630: implement this
 }
 
 void SeparableBoxFilterDataStore::RemoveColumnIndex(size_t column_index_to_remove)

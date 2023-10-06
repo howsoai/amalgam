@@ -114,6 +114,9 @@ public:
 	// assumes column data is empty
 	void BuildLabel(size_t column_index, const std::vector<Entity *> &entities);
 
+	//changes column to/from interning as would yield best performance
+	void OptimizeColumn(size_t column_ndex);
+
 	//expand the structure by adding a new column/label/feature and populating with data from entities
 	void AddLabels(std::vector<size_t> &label_ids, const std::vector<Entity *> &entities)
 	{

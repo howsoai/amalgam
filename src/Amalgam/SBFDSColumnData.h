@@ -760,8 +760,6 @@ public:
 		}
 	}
 
-protected:
-
 	//returns true if switching to number interning would be expected to yield better results
 	// than number values given the current data
 	inline bool AreNumberInternsPreferredToValues()
@@ -806,6 +804,8 @@ protected:
 
 		numberValuesInterned = true;
 	}
+
+protected:
 
 	//updates longestStringLength and indexWithLongestString based on parameters
 	inline void UpdateLongestString(StringInternPool::StringID sid, size_t index)

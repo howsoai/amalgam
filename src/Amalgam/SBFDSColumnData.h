@@ -200,6 +200,7 @@ public:
 		if(nullIndices.EraseAndRetrieve(index))
 			return;
 
+		//TODO 17630: handle interning
 		if(numberIndices.EraseAndRetrieve(index))
 		{
 			//remove, and if not a nan, then need to also remove the number
@@ -776,7 +777,6 @@ public:
 		return (numberIndices.size() * 0.38 < sortedNumberValueEntries.size());
 	}
 
-	//TODO 17630: use these next two methods where appropriate
 	//clears number intern caches and changes state to not perform interning for numbers
 	void ConvertNumberInternsToValues()
 	{
@@ -874,7 +874,7 @@ public:
 	//the largest code size for this label
 	size_t largestCodeSize;
 
-	//TODO 17630: use these where appropriate, possibly change internedNumberIndexToNumberValue to reference the unique pointers of sortedNumberValueEntries?
+	//TODO 17630: use these where appropriate
 
 	//if numberValuesInterned is true, then contains an index of each value to its location in sortedNumberValueEntries
 	//if a given index isn't used, then it will contain the maximum value for the index

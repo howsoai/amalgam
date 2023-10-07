@@ -117,6 +117,13 @@ public:
 	//changes column to/from interning as would yield best performance
 	void OptimizeColumn(size_t column_ndex);
 
+	//calls OptimizeColumn on all columns
+	inline void OptimizeAllColumns()
+	{
+		for(size_t column_index = 0; column_index < columnData.size(); column_index++)
+			OptimizeColumn(column_index);
+	}
+
 	//expand the structure by adding a new column/label/feature and populating with data from entities
 	void AddLabels(std::vector<size_t> &label_ids, const std::vector<Entity *> &entities)
 	{
@@ -813,6 +820,8 @@ protected:
 		}
 		else // mkdist_feature_type == FDT_CONTINUOUS_NUMERIC or FDT_CONTINUOUS_NUMERIC_CYCLIC
 		{
+			//17630: need to add new types to handle indirect lookups based on value interning
+
 			//if everything is either non-existant or numeric, then can shortcut later
 			auto &column_data = columnData[column_index];
 			size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();

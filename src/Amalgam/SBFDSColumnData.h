@@ -200,7 +200,6 @@ public:
 		if(nullIndices.EraseAndRetrieve(index))
 			return;
 
-		//TODO 17630: handle interning
 		if(numberIndices.EraseAndRetrieve(index))
 		{
 			//remove, and if not a nan, then need to also remove the number
@@ -218,6 +217,30 @@ public:
 				}
 				else //else we can just remove the id from the bucket
 				{
+					if(numberValuesInterned)
+					{
+						size_t value_intern_index = sortedNumberValueEntries[value_index]->valueInternIndex;
+						//if the last entry, can just resize
+						if(value_intern_index == internedNumberIndexToNumberValue.size() - 1)
+						{
+							internedNumberIndexToNumberValue.resize(value_intern_index);
+						}
+						else //need to actually erase it
+						{
+							internedNumberIndexToNumberValue[value_intern_index] = std::numeric_limits<double>::quiet_NaN();
+							unusedNumberValueIndices.push_back(value_intern_index);
+						}
+
+						//clear out any unusedNumberValueIndices at the end
+						while(internedNumberIndexToNumberValue.size() > 0
+							&& FastIsNaN(internedNumberIndexToNumberValue.back()))
+						{
+							size_t last_index = internedNumberIndexToNumberValue.size() - 1;
+							auto location = std::find(begin(unusedNumberValueIndices), end(unusedNumberValueIndices), last_index);
+							unusedNumberValueIndices.erase(location);
+						}
+					}
+
 					sortedNumberValueEntries[value_index]->indicesWithValue.erase(index);
 				}
 			}

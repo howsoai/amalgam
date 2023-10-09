@@ -17,10 +17,14 @@
 enum FeatureDifferenceType : uint64_t
 {
 	FDT_NOMINAL,
-	//continuous, but without cycles
-	FDT_CONTINUOUS_NUMERIC,
-	//like FDT_CONTINUOUS_NUMERIC, but guarantees everything is always numeric
+	//continuous with or without cycles, but everything is always numeric and all numbers interned
+	FDT_CONTINUOUS_UNIVERSALLY_NUMERIC_INTERNED,
+	//continuous without cycles, but everything is always numeric
 	FDT_CONTINUOUS_UNIVERSALLY_NUMERIC,
+	//continuous without cycles, may contain nonnumeric data
+	FDT_CONTINUOUS_NUMERIC,
+	//continuous with or without cycles, but all numbers interned
+	FDT_CONTINUOUS_NUMERIC_INTERNED,
 	//like FDT_CONTINUOUS_NUMERIC, but has cycles
 	FDT_CONTINUOUS_NUMERIC_CYCLIC,
 	//edit distance between strings

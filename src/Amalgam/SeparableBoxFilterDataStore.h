@@ -820,7 +820,7 @@ protected:
 		}
 		else // mkdist_feature_type == FDT_CONTINUOUS_NUMERIC or FDT_CONTINUOUS_NUMERIC_CYCLIC
 		{
-			//17630: need to add new types to handle indirect lookups based on value interning
+			//17630: use new types to handle indirect lookups based on value interning, and populate/convert where appropriate
 
 			//if everything is either non-existant or numeric, then can shortcut later
 			auto &column_data = columnData[column_index];

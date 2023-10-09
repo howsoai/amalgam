@@ -123,6 +123,29 @@ public:
 		}
 	}
 
+	//for the feature index, computes and stores the distance terms as measured from value to each interned value
+	inline void ComputeAndStoreInternedNumberValuesAndDistanceTerms(size_t index, double value, std::vector<double> *interned_values)
+	{
+		auto &feature_params = featureParams[index];
+
+		feature_params.precomputedNumberInternDistanceTermsPrecision = defaultPrecision;
+
+		if(interned_values == nullptr)
+		{
+			feature_params.internedNumberIndexToNumberValue = nullptr;
+			feature_params.precomputedNumberInternDistanceTerms.clear();
+			feature_params.precomputedNumberInternDistanceTermsPrecision = defaultPrecision;
+			return;
+		}
+
+		feature_params.precomputedNumberInternDistanceTerms.resize(interned_values->size());
+		for(size_t i = 0; i < feature_params.precomputedNumberInternDistanceTerms.size(); i++)
+		{
+			double difference = value - interned_values->at(i);
+			feature_params.precomputedNumberInternDistanceTerms[i] = ComputeDifferenceTermNonNominal(difference, index);
+		}
+	}
+
 	// 2/sqrt(pi) = 2.0 / std::sqrt(3.141592653589793238462643383279502884L);
 	static constexpr double s_two_over_sqrt_pi = 1.12837916709551257390;
 
@@ -632,8 +655,8 @@ public:
 	__forceinline static double ComputeDifference(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
 		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, FeatureDifferenceType feature_type)
 	{
-		//TODO 17630: add value intern types here
-		if(feature_type == FDT_CONTINUOUS_NUMERIC || feature_type == FDT_CONTINUOUS_UNIVERSALLY_NUMERIC
+		if(feature_type == FDT_CONTINUOUS_UNIVERSALLY_NUMERIC_INTERNED || feature_type == FDT_CONTINUOUS_UNIVERSALLY_NUMERIC
+			|| feature_type == FDT_CONTINUOUS_NUMERIC || feature_type == FDT_CONTINUOUS_NUMERIC_INTERNED
 			|| feature_type == FDT_CONTINUOUS_NUMERIC_CYCLIC)
 		{
 			if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)
@@ -786,6 +809,8 @@ public:
 
 		//pointer to a lookup table of indices to values if the feature is an interned number
 		std::vector<double> *internedNumberIndexToNumberValue;
+		int precomputedNumberInternDistanceTermsPrecision;
+		std::vector<double> precomputedNumberInternDistanceTerms;
 
 		//type attributes dependent on featureType
 		union

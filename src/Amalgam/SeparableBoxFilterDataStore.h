@@ -426,10 +426,10 @@ public:
 	template<typename Iter>
 	inline std::function<bool(Iter, double &)> GetNumberValueFromEntityIteratorFunction(size_t column_index)
 	{
-		auto &column_data = columnData[column_index];
+		auto column_data = columnData[column_index].get();
 		auto number_indices_ptr = &column_data->numberIndices;
 
-		return [&, number_indices_ptr, column_index, &column_data]
+		return [&, number_indices_ptr, column_index, column_data]
 		(Iter i, double &value)
 		{
 			size_t entity_index = *i;
@@ -449,10 +449,10 @@ public:
 		if(column_index >= columnData.size())
 			return [](size_t i, double &value) { return false; };
 
-		auto &column_data = columnData[column_index];
+		auto column_data = columnData[column_index].get();
 		auto number_indices_ptr = &column_data->numberIndices;
 
-		return [&, number_indices_ptr, column_index, &column_data]
+		return [&, number_indices_ptr, column_index, column_data]
 			(size_t i, double &value)
 			{
 				if(!number_indices_ptr->contains(i))
@@ -703,7 +703,10 @@ protected:
 		{
 			const size_t column_index = target_label_indices[query_feature_index];
 
-			//TODO 17630: add value intern types here
+			if(feature_type == FDT_CONTINUOUS_UNIVERSALLY_NUMERIC_INTERNED)
+			{
+				//TODO 17630: call special method from GeneralizedDistance here; if the precision matches, just use lookup, if not, then needs to recompute
+			}
 			if(feature_type == FDT_CONTINUOUS_UNIVERSALLY_NUMERIC)
 			{
 				return dist_params.ComputeDistanceTermNonNominalNonCyclicOneNonNullRegular(target_values[query_feature_index].number - GetValue(entity_index, column_index).number, query_feature_index);
@@ -713,6 +716,17 @@ protected:
 				auto &column_data = columnData[column_index];
 				if(column_data->numberIndices.contains(entity_index))
 					return dist_params.ComputeDistanceTermNonNominalNonCyclicOneNonNullRegular(target_values[query_feature_index].number - GetValue(entity_index, column_index).number, query_feature_index);
+				else
+					return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index);
+			}
+			else if(feature_type == FDT_CONTINUOUS_NUMERIC_INTERNED)
+			{
+				auto &column_data = columnData[column_index];
+				if(column_data->numberIndices.contains(entity_index))
+				{
+					double difference = target_values[query_feature_index].number - column_data->GetNumberValue(GetValue(entity_index, column_index));
+					return dist_params.ComputeDistanceTermNonNominalNonCyclicOneNonNullRegular(difference, query_feature_index);
+				}
 				else
 					return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index);
 			}
@@ -826,6 +840,11 @@ protected:
 		}
 		else // feature_type == FDT_CONTINUOUS_NUMERIC or FDT_CONTINUOUS_NUMERIC_CYCLIC
 		{
+			//looking for continuous; if not a number, so just put as nan
+			double position_value_numeric = (position_value_type == ENIVT_NUMBER ? position_value.number : std::numeric_limits<double>::quiet_NaN());
+			target_values.push_back(position_value_numeric);
+			target_value_types.push_back(ENIVT_NUMBER);
+
 			//if everything is either non-existant or numeric, then can shortcut later
 			auto &column_data = columnData[column_index];
 			size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
@@ -836,7 +855,7 @@ protected:
 				if(column_data->numberValuesInterned)
 				{
 					feature_type = FDT_CONTINUOUS_UNIVERSALLY_NUMERIC_INTERNED;
-					dist_params.featureParams[query_feature_index].internedNumberIndexToNumberValue = &column_data->internedNumberIndexToNumberValue;
+					dist_params.ComputeAndStoreInternedNumberValuesAndDistanceTerms(query_feature_index, position_value_numeric, &column_data->internedNumberIndexToNumberValue);
 				}
 				else if(feature_type == FDT_CONTINUOUS_NUMERIC)
 				{
@@ -847,18 +866,7 @@ protected:
 			{
 				//if number values are interned, then it doesn't matter if cyclic or not
 				feature_type = FDT_CONTINUOUS_NUMERIC_INTERNED;
-				dist_params.featureParams[query_feature_index].internedNumberIndexToNumberValue = &column_data->internedNumberIndexToNumberValue;
-			}
-
-			if(position_value_type == ENIVT_NUMBER)
-			{
-				target_values.push_back(position_value);
-				target_value_types.push_back(ENIVT_NUMBER);
-			}
-			else //looking for continuous and not a number, so just put as nan
-			{
-				target_values.push_back(std::numeric_limits<double>::quiet_NaN());
-				target_value_types.push_back(ENIVT_NUMBER);
+				dist_params.ComputeAndStoreInternedNumberValuesAndDistanceTerms(query_feature_index, position_value_numeric, &column_data->internedNumberIndexToNumberValue);
 			}
 		}
 	}

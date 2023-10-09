@@ -228,17 +228,12 @@ public:
 						else //need to actually erase it
 						{
 							internedNumberIndexToNumberValue[value_intern_index] = std::numeric_limits<double>::quiet_NaN();
-							unusedNumberValueIndices.push_back(value_intern_index);
+							unusedNumberValueIndices.emplace(value_intern_index);
 						}
 
 						//clear out any unusedNumberValueIndices at the end
-						while(internedNumberIndexToNumberValue.size() > 0
-							&& FastIsNaN(internedNumberIndexToNumberValue.back()))
-						{
-							size_t last_index = internedNumberIndexToNumberValue.size() - 1;
-							auto location = std::find(begin(unusedNumberValueIndices), end(unusedNumberValueIndices), last_index);
-							unusedNumberValueIndices.erase(location);
-						}
+						while(internedNumberIndexToNumberValue.size() > 0 && FastIsNaN(internedNumberIndexToNumberValue.back()))
+							internedNumberIndexToNumberValue.pop_back();
 					}
 
 					sortedNumberValueEntries[value_index]->indicesWithValue.erase(index);
@@ -336,14 +331,45 @@ public:
 				return value;
 			}
 
-			//TODO 17630: update this to insert correctly if numberValuesInterred and return the index
 			//insert new value in correct position
 			size_t new_value_index = FindUpperBoundIndexForValue(value.number);
 			auto inserted = sortedNumberValueEntries.emplace(sortedNumberValueEntries.begin() + new_value_index,
 				std::make_unique<ValueEntry>(value.number));
-			(*inserted)->indicesWithValue.insert(index);
 
-			return value;
+			ValueEntry *value_entry = inserted->get();
+			value_entry->indicesWithValue.insert(index);
+
+			if(numberValuesInterned)
+			{
+				if(value_entry->valueInternIndex == ValueEntry::NO_INDEX)
+				{
+					//get the highest value 
+					if(unusedNumberValueIndices.size() > 0)
+					{
+						value_entry->valueInternIndex = unusedNumberValueIndices.top();
+
+						//make sure the value is valid
+						if(value_entry->valueInternIndex < sortedNumberValueEntries.size())
+						{
+							unusedNumberValueIndices.pop();
+						}
+						else //not valid, clear queue
+						{
+							unusedNumberValueIndices.clear();
+							//just use a new value
+							value_entry->valueInternIndex = sortedNumberValueEntries.size() - 1;
+						}
+					}
+					else //just use new value
+					{
+						value_entry->valueInternIndex = sortedNumberValueEntries.size() - 1;
+					}
+				}
+
+				return value_entry->valueInternIndex;
+			}
+			else //just return the value
+				return value;
 		}
 
 		if(value_type == ENIVT_STRING_ID)
@@ -822,7 +848,7 @@ public:
 		{
 			auto &value_entry = sortedNumberValueEntries[i];
 			value_entry->valueInternIndex = i;
-			internedNumberIndexToNumberValue.emplace_back(value_entry->value);
+			internedNumberIndexToNumberValue.emplace_back(value_entry->value.number);
 		}
 
 		numberValuesInterned = true;
@@ -860,7 +886,6 @@ public:
 	//stores values in sorted order and the entities that have each value
 	std::vector<std::unique_ptr<ValueEntry>> sortedNumberValueEntries;
 
-	//TODO 17630: update to use ValueEntry
 	//maps a string id to a vector of indices that have that string
 	CompactHashMap<StringInternPool::StringID, std::unique_ptr<SortedIntegerSet>> stringIdValueToIndices;
 
@@ -897,14 +922,13 @@ public:
 	//the largest code size for this label
 	size_t largestCodeSize;
 
-	//TODO 17630: use these where appropriate
-
 	//if numberValuesInterned is true, then contains an index of each value to its location in sortedNumberValueEntries
 	//if a given index isn't used, then it will contain the maximum value for the index
 	std::vector<double> internedNumberIndexToNumberValue;
 
 	//unused / free indices in internedNumberIndexToNumberValue to make adding and removing new values efficient
-	std::vector<size_t> unusedNumberValueIndices;
+	//always want to fetch the lowest index to keep the interned NumberIndexToNumberValue small
+	FlexiblePriorityQueue<size_t, std::vector<size_t>, std::greater<size_t>> unusedNumberValueIndices;
 
 	//if true, then the indices of the values should be used and internedNumberIndexToValue populated
 	bool numberValuesInterned;

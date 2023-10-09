@@ -416,8 +416,10 @@ public:
 		case FDT_NOMINAL:
 			return 1.0;
 
-		case FDT_CONTINUOUS_NUMERIC:
+		case FDT_CONTINUOUS_UNIVERSALLY_NUMERIC_INTERNED:
 		case FDT_CONTINUOUS_UNIVERSALLY_NUMERIC:
+		case FDT_CONTINUOUS_NUMERIC:
+		case FDT_CONTINUOUS_NUMERIC_INTERNED:
 			if(sortedNumberValueEntries.size() <= 1)
 				return 0.0;
 

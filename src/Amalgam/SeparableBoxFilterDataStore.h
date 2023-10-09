@@ -699,6 +699,7 @@ protected:
 		{
 			const size_t column_index = target_label_indices[query_feature_index];
 
+			//TODO 17630: add value intern types here
 			if(feature_type == FDT_CONTINUOUS_UNIVERSALLY_NUMERIC)
 			{
 				return dist_params.ComputeDistanceTermNonNominalNonCyclicOneNonNullRegular(target_values[query_feature_index].number - GetValue(entity_index, column_index).number, query_feature_index);
@@ -820,16 +821,25 @@ protected:
 		}
 		else // mkdist_feature_type == FDT_CONTINUOUS_NUMERIC or FDT_CONTINUOUS_NUMERIC_CYCLIC
 		{
-			//17630: use new types to handle indirect lookups based on value interning, and populate/convert where appropriate
-
 			//if everything is either non-existant or numeric, then can shortcut later
 			auto &column_data = columnData[column_index];
 			size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
-			if(GetNumInsertedEntities() == num_values_stored_as_numbers && mkdist_feature_type == FDT_CONTINUOUS_NUMERIC)
-				mkdist_feature_type = FDT_CONTINUOUS_UNIVERSALLY_NUMERIC;
+			if(GetNumInsertedEntities() == num_values_stored_as_numbers)
+			{
+				//if number values are interned, then it doesn't matter if cyclic or not
+				// if not interned and cyclic, then needs to be handled specially, so leave the type as FDT_CONTINUOUS_NUMERIC_CYCLIC
+				if(column_data->numberValuesInterned)
+					mkdist_feature_type = FDT_CONTINUOUS_UNIVERSALLY_NUMERIC_INTERNED;
+				else if(mkdist_feature_type == FDT_CONTINUOUS_NUMERIC)
+					mkdist_feature_type = FDT_CONTINUOUS_UNIVERSALLY_NUMERIC;
+			}
+			else if(column_data->numberValuesInterned)
+			{
+				//if number values are interned, then it doesn't matter if cyclic or not
+				mkdist_feature_type = FDT_CONTINUOUS_NUMERIC_INTERNED;
+			}
 
-			auto value_type = position_value_type;
-			if(value_type == ENIVT_NUMBER)
+			if(position_value_type == ENIVT_NUMBER)
 			{
 				target_values.push_back(position_value);
 				target_value_types.push_back(ENIVT_NUMBER);

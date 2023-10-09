@@ -632,6 +632,7 @@ public:
 	__forceinline static double ComputeDifference(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
 		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, FeatureDifferenceType feature_type)
 	{
+		//TODO 17630: add value intern types here
 		if(feature_type == FDT_CONTINUOUS_NUMERIC || feature_type == FDT_CONTINUOUS_UNIVERSALLY_NUMERIC
 			|| feature_type == FDT_CONTINUOUS_NUMERIC_CYCLIC)
 		{

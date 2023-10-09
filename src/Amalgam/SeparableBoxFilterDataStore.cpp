@@ -426,10 +426,9 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 			auto &value = matrix[matrix_index_base + column_index];
 			auto value_type = columnData[column_index]->GetIndexValueType(search_index);
 
-			PopulateNextTargetAttributes(*dist_params,
+			PopulateNextTargetAttributes(*dist_params, i,
 				target_column_indices, target_values, target_value_types,
-				column_index, value, value_type,
-				dist_params->featureParams[i].featureType);
+				column_index, value, value_type);
 		}
 	}
 

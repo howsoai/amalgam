@@ -763,7 +763,8 @@ public:
 	{
 	public:
 		inline FeatureParams()
-			: featureType(FDT_CONTINUOUS_NUMERIC), weight(1.0), deviation(0.0),
+			: featureType(FDT_CONTINUOUS_NUMERIC), weight(1.0),
+			internedNumberIndexToNumberValue(nullptr), deviation(0.0),
 			unknownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
 			knownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
 			unknownToUnknownDifference(std::numeric_limits<double>::quiet_NaN()),
@@ -782,6 +783,9 @@ public:
 		//distance terms for nominals
 		ExactApproxValuePair nominalMatchDistanceTerm;
 		ExactApproxValuePair nominalNonMatchDistanceTerm;
+
+		//pointer to a lookup table of indices to values if the feature is an interned number
+		std::vector<double> *internedNumberIndexToNumberValue;
 
 		//type attributes dependent on featureType
 		union

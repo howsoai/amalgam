@@ -296,9 +296,10 @@ public:
 		if(column == labelIdToColumnIndex.end())
 			return;
 		size_t column_index = column->second;
+		auto &column_data = columnData[column_index];
 
-		columnData[column_index]->numberIndices.CopyTo(enabled_entities);
-		columnData[column_index]->nanIndices.EraseTo(enabled_entities);
+		column_data->numberIndices.CopyTo(enabled_entities);
+		column_data->nanIndices.EraseTo(enabled_entities);
 
 		//resize buffers and place each entity and value into its respective buffer
 		entities.resize(enabled_entities.size());
@@ -307,7 +308,7 @@ public:
 		for(auto entity_index : enabled_entities)
 		{
 			entities[index] = entity_index;
-			values[index] = GetValue(entity_index, column_index).number;
+			values[index] = column_data->GetNumberValue(GetValue(entity_index, column_index));
 			index++;
 		}
 	}
@@ -324,9 +325,10 @@ public:
 		if(column == labelIdToColumnIndex.end())
 			return;
 		size_t column_index = column->second;
+		auto &column_data = columnData[column_index];
 
-		columnData[column_index]->numberIndices.IntersectTo(enabled_entities);
-		columnData[column_index]->nanIndices.EraseTo(enabled_entities);
+		column_data->numberIndices.IntersectTo(enabled_entities);
+		column_data->nanIndices.EraseTo(enabled_entities);
 
 		//resize buffers and place each entity and value into its respective buffer
 		entities.resize(enabled_entities.size());
@@ -335,7 +337,7 @@ public:
 		for(auto entity_index : enabled_entities)
 		{
 			entities[index] = entity_index;
-			values[index] = GetValue(entity_index, column_index).number;
+			values[index] = column_data->GetNumberValue(GetValue(entity_index, column_index));
 			index++;
 		}
 	}
@@ -424,16 +426,17 @@ public:
 	template<typename Iter>
 	inline std::function<bool(Iter, double &)> GetNumberValueFromEntityIteratorFunction(size_t column_index)
 	{
-		auto number_indices_ptr = &columnData[column_index]->numberIndices;
+		auto &column_data = columnData[column_index];
+		auto number_indices_ptr = &column_data->numberIndices;
 
-		return [&, number_indices_ptr, column_index]
+		return [&, number_indices_ptr, column_index, &column_data]
 		(Iter i, double &value)
 		{
 			size_t entity_index = *i;
 			if(!number_indices_ptr->contains(entity_index))
 				return false;
 
-			value = GetValue(entity_index, column_index).number;
+			value = column_data->GetNumberValue(GetValue(entity_index, column_index));
 			return true;
 		};
 	}
@@ -446,15 +449,16 @@ public:
 		if(column_index >= columnData.size())
 			return [](size_t i, double &value) { return false; };
 
-		auto number_indices_ptr = &columnData[column_index]->numberIndices;
+		auto &column_data = columnData[column_index];
+		auto number_indices_ptr = &column_data->numberIndices;
 
-		return [&, number_indices_ptr, column_index]
+		return [&, number_indices_ptr, column_index, &column_data]
 			(size_t i, double &value)
 			{
 				if(!number_indices_ptr->contains(i))
 					return false;
 
-				value = GetValue(i, column_index).number;
+				value = column_data->GetNumberValue(GetValue(i, column_index));
 				return true;
 			};
 	}
@@ -804,22 +808,23 @@ protected:
 		return std::make_pair(true, distance);
 	}
 
-	//populates the next target attribute in each vector based on column_index, position data, and mkdist_feature_type
-	// if mkdist_feature_type can be modified for efficiency, this function will update it, which is why it is passed by reference
-	__forceinline void PopulateNextTargetAttributes(GeneralizedDistance &dist_params,
+	//populates the next target attribute in each vector based on column_index, position data
+	//if there is a specialization of the feature type, it will update it and update dist_params accordingly
+	__forceinline void PopulateNextTargetAttributes(GeneralizedDistance &dist_params, size_t query_feature_index,
 		std::vector<size_t> &target_column_indices, std::vector<EvaluableNodeImmediateValue> &target_values,
 		std::vector<EvaluableNodeImmediateValueType> &target_value_types, size_t column_index,
-		EvaluableNodeImmediateValue &position_value, EvaluableNodeImmediateValueType position_value_type,
-		FeatureDifferenceType &mkdist_feature_type)
+		EvaluableNodeImmediateValue &position_value, EvaluableNodeImmediateValueType position_value_type)
 	{
 		target_column_indices.push_back(column_index);
 
-		if(mkdist_feature_type == FDT_NOMINAL || mkdist_feature_type == FDT_CONTINUOUS_STRING || mkdist_feature_type == FDT_CONTINUOUS_CODE)
+		auto &feature_type = dist_params.featureParams[query_feature_index].featureType;
+
+		if(feature_type == FDT_NOMINAL || feature_type == FDT_CONTINUOUS_STRING || feature_type == FDT_CONTINUOUS_CODE)
 		{
 			target_values.push_back(position_value);
 			target_value_types.push_back(position_value_type);
 		}
-		else // mkdist_feature_type == FDT_CONTINUOUS_NUMERIC or FDT_CONTINUOUS_NUMERIC_CYCLIC
+		else // feature_type == FDT_CONTINUOUS_NUMERIC or FDT_CONTINUOUS_NUMERIC_CYCLIC
 		{
 			//if everything is either non-existant or numeric, then can shortcut later
 			auto &column_data = columnData[column_index];
@@ -829,14 +834,20 @@ protected:
 				//if number values are interned, then it doesn't matter if cyclic or not
 				// if not interned and cyclic, then needs to be handled specially, so leave the type as FDT_CONTINUOUS_NUMERIC_CYCLIC
 				if(column_data->numberValuesInterned)
-					mkdist_feature_type = FDT_CONTINUOUS_UNIVERSALLY_NUMERIC_INTERNED;
-				else if(mkdist_feature_type == FDT_CONTINUOUS_NUMERIC)
-					mkdist_feature_type = FDT_CONTINUOUS_UNIVERSALLY_NUMERIC;
+				{
+					feature_type = FDT_CONTINUOUS_UNIVERSALLY_NUMERIC_INTERNED;
+					dist_params.featureParams[query_feature_index].internedNumberIndexToNumberValue = &column_data->internedNumberIndexToNumberValue;
+				}
+				else if(feature_type == FDT_CONTINUOUS_NUMERIC)
+				{
+					feature_type = FDT_CONTINUOUS_UNIVERSALLY_NUMERIC;
+				}
 			}
 			else if(column_data->numberValuesInterned)
 			{
 				//if number values are interned, then it doesn't matter if cyclic or not
-				mkdist_feature_type = FDT_CONTINUOUS_NUMERIC_INTERNED;
+				feature_type = FDT_CONTINUOUS_NUMERIC_INTERNED;
+				dist_params.featureParams[query_feature_index].internedNumberIndexToNumberValue = &column_data->internedNumberIndexToNumberValue;
 			}
 
 			if(position_value_type == ENIVT_NUMBER)
@@ -875,10 +886,9 @@ protected:
 
 			if(dist_params.IsFeatureEnabled(i))
 			{
-				PopulateNextTargetAttributes(dist_params,
+				PopulateNextTargetAttributes(dist_params, i,
 					target_column_indices, target_values, target_value_types,
-					column->second, position_values[i], position_value_types[i],
-					dist_params.featureParams[i].featureType);
+					column->second, position_values[i], position_value_types[i]);
 			}
 		}
 	}

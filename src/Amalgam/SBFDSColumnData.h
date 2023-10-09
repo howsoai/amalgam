@@ -160,7 +160,6 @@ public:
 		return ENIVT_CODE;
 	}
 
-	//TODO 17630: use this where appropriate
 	//returns the number value from value, performing a number intern lookup if necessary
 	__forceinline double GetNumberValue(EvaluableNodeImmediateValue value)
 	{

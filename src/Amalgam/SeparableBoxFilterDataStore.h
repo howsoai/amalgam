@@ -719,7 +719,7 @@ protected:
 				auto &column_data = columnData[column_index];
 				if(column_data->numberIndices.contains(entity_index))
 				{
-					double difference = target_values[query_feature_index].number - column_data->GetResolvedValue(GetValue(entity_index, column_index), ENIVT_NUMBER).number;
+					double difference = target_values[query_feature_index].number - column_data->GetResolvedValue(GetValue(entity_index, column_index), ENIVT_NUMBER_INDIRECTION_INDEX).number;
 					return dist_params.ComputeDistanceTermNonNominalOneNonNullRegular(difference, query_feature_index);
 				}
 				else
@@ -742,7 +742,7 @@ protected:
 				auto &column_data = columnData[column_index];
 				if(column_data->numberIndices.contains(entity_index))
 				{
-					double difference = target_values[query_feature_index].number - column_data->GetResolvedValue(GetValue(entity_index, column_index), ENIVT_NUMBER).number;
+					double difference = target_values[query_feature_index].number - column_data->GetResolvedValue(GetValue(entity_index, column_index), ENIVT_NUMBER_INDIRECTION_INDEX).number;
 					return dist_params.ComputeDistanceTermNonNominalOneNonNullRegular(difference, query_feature_index);
 				}
 				else

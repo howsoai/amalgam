@@ -21,6 +21,8 @@ public:
 	{
 		//indicates the column does not use indices
 		static constexpr size_t NO_INDEX = std::numeric_limits<size_t>::max();
+		//nan value is always the 0th index
+		static constexpr size_t NAN_INDEX = 0;
 
 		//if empty, initialize to invalid index
 		ValueEntry()
@@ -239,10 +241,10 @@ public:
 					if(numberValuesInterned)
 					{
 						size_t value_intern_index = sortedNumberValueEntries[value_index]->valueInternIndex;
-						//if the last entry, can just resize
-						if(value_intern_index == internedNumberIndexToNumberValue.size() - 1)
+						//if the last entry, can just resize, including the 0th element for NaN
+						if(value_intern_index == internedNumberIndexToNumberValue.size())
 						{
-							internedNumberIndexToNumberValue.resize(value_intern_index);
+							internedNumberIndexToNumberValue.resize(value_intern_index + 1);
 						}
 						else //need to actually erase it
 						{
@@ -250,8 +252,8 @@ public:
 							unusedNumberValueIndices.emplace(value_intern_index);
 						}
 
-						//clear out any unusedNumberValueIndices at the end
-						while(internedNumberIndexToNumberValue.size() > 0 && FastIsNaN(internedNumberIndexToNumberValue.back()))
+						//clear out any unusedNumberValueIndices at the end other than the 0th entry
+						while(internedNumberIndexToNumberValue.size() > 1 && FastIsNaN(internedNumberIndexToNumberValue.back()))
 							internedNumberIndexToNumberValue.pop_back();
 					}
 
@@ -340,7 +342,10 @@ public:
 			if(FastIsNaN(number_value))
 			{
 				nanIndices.insert(index);
-				return value;
+				if(numberValuesInterned)
+					return EvaluableNodeImmediateValue(ValueEntry::NAN_INDEX);
+				else
+					return value;
 			}
 			
 			//if the value already exists, then put the index in the list
@@ -865,12 +870,13 @@ public:
 		if(numberValuesInterned)
 			return;
 
-		internedNumberIndexToNumberValue.resize(sortedNumberValueEntries.size());
-		for(size_t i = 0; i < internedNumberIndexToNumberValue.size(); i++)
+		internedNumberIndexToNumberValue.resize(sortedNumberValueEntries.size() + 1);
+		internedNumberIndexToNumberValue[0] = std::numeric_limits<double>::quiet_NaN();
+		for(size_t i = 0; i < sortedNumberValueEntries.size(); i++)
 		{
 			auto &value_entry = sortedNumberValueEntries[i];
-			value_entry->valueInternIndex = i;
-			internedNumberIndexToNumberValue[i] = value_entry->value.number;
+			value_entry->valueInternIndex = i + 1;
+			internedNumberIndexToNumberValue[i + 1] = value_entry->value.number;
 		}
 
 		numberValuesInterned = true;
@@ -927,7 +933,6 @@ public:
 	//indices of entities with a null for this feature
 	EfficientIntegerSet nullIndices;
 
-	//TODO 17630: remove nanIndices and just have it be a special number value -- will need to do special comparator for sorted number values
 	//indices of entities with a NaN for this feature
 	// the entities will also be included in numberIndices
 	EfficientIntegerSet nanIndices;
@@ -947,6 +952,7 @@ public:
 
 	//if numberValuesInterned is true, then contains an index of each value to its location in sortedNumberValueEntries
 	//if a given index isn't used, then it will contain the maximum value for the index
+	//the 0th index is reserved for NaN, regardless of whether NaN appears in the data
 	std::vector<double> internedNumberIndexToNumberValue;
 
 	//unused / free indices in internedNumberIndexToNumberValue to make adding and removing new values efficient

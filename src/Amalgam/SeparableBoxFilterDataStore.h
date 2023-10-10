@@ -715,24 +715,34 @@ protected:
 
 			if(feature_type == FDT_CONTINUOUS_UNIVERSALLY_NUMERIC)
 			{
-				//TODO 17630: if have nonnull intern values, call special method from GeneralizedDistance here
-				return dist_params.ComputeDistanceTermNonNominalNonCyclicOneNonNullRegular(target_values[query_feature_index].number - GetValue(entity_index, column_index).number, query_feature_index);
+				if(dist_params.HasNumberInternValues(query_feature_index))
+					return dist_params.ComputeDistanceTermNumberInterned(GetValue(entity_index, column_index).indirectionIndex, query_feature_index);
+				else
+					return dist_params.ComputeDistanceTermNonNominalNonCyclicOneNonNullRegular(target_values[query_feature_index].number - GetValue(entity_index, column_index).number, query_feature_index);
 			}
 			else if(feature_type == FDT_CONTINUOUS_NUMERIC)
 			{
-				//TODO 17630: if have nonnull intern values, call special method from GeneralizedDistance here
 				auto &column_data = columnData[column_index];
 				if(column_data->numberIndices.contains(entity_index))
-					return dist_params.ComputeDistanceTermNonNominalNonCyclicOneNonNullRegular(target_values[query_feature_index].number - GetValue(entity_index, column_index).number, query_feature_index);
+				{
+					if(dist_params.HasNumberInternValues(query_feature_index))
+						return dist_params.ComputeDistanceTermNumberInterned(GetValue(entity_index, column_index).indirectionIndex, query_feature_index);
+					else
+						return dist_params.ComputeDistanceTermNonNominalNonCyclicOneNonNullRegular(target_values[query_feature_index].number - GetValue(entity_index, column_index).number, query_feature_index);
+				}
 				else
 					return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index);
 			}
 			else if(feature_type == FDT_CONTINUOUS_NUMERIC_CYCLIC)
 			{
-				//TODO 17630: if have nonnull intern values, call special method from GeneralizedDistance here
 				auto &column_data = columnData[column_index];
 				if(column_data->numberIndices.contains(entity_index))
-					return dist_params.ComputeDistanceTermNonNominalOneNonNullRegular(target_values[query_feature_index].number - GetValue(entity_index, column_index).number, query_feature_index);
+				{
+					if(dist_params.HasNumberInternValues(query_feature_index))
+						return dist_params.ComputeDistanceTermNumberInterned(GetValue(entity_index, column_index).indirectionIndex, query_feature_index);
+					else
+						return dist_params.ComputeDistanceTermNonNominalOneNonNullRegular(target_values[query_feature_index].number - GetValue(entity_index, column_index).number, query_feature_index);
+				}
 				else
 					return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index);
 			}

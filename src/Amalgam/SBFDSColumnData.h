@@ -234,17 +234,13 @@ public:
 				//if the bucket has only one entry, we must delete the entire bucket
 				if(sortedNumberValueEntries[value_index]->indicesWithValue.size() == 1)
 				{
-					sortedNumberValueEntries.erase(sortedNumberValueEntries.begin() + value_index);
-				}
-				else //else we can just remove the id from the bucket
-				{
 					if(numberValuesInterned)
 					{
 						size_t value_intern_index = sortedNumberValueEntries[value_index]->valueInternIndex;
-						//if the last entry, can just resize, including the 0th element for NaN
-						if(value_intern_index == internedNumberIndexToNumberValue.size())
+						//if the last entry, can just resize
+						if(value_intern_index == internedNumberIndexToNumberValue.size() - 1)
 						{
-							internedNumberIndexToNumberValue.resize(value_intern_index + 1);
+							internedNumberIndexToNumberValue.resize(value_intern_index);
 						}
 						else //need to actually erase it
 						{
@@ -257,6 +253,10 @@ public:
 							internedNumberIndexToNumberValue.pop_back();
 					}
 
+					sortedNumberValueEntries.erase(sortedNumberValueEntries.begin() + value_index);
+				}
+				else //else we can just remove the id from the bucket
+				{
 					sortedNumberValueEntries[value_index]->indicesWithValue.erase(index);
 				}
 			}
@@ -342,6 +342,7 @@ public:
 			if(FastIsNaN(number_value))
 			{
 				nanIndices.insert(index);
+
 				if(numberValuesInterned)
 					return EvaluableNodeImmediateValue(ValueEntry::NAN_INDEX);
 				else
@@ -353,7 +354,11 @@ public:
 			if(exact_index_found)
 			{
 				sortedNumberValueEntries[value_index]->indicesWithValue.insert(index);
-				return value;
+
+				if(numberValuesInterned)
+					return EvaluableNodeImmediateValue(sortedNumberValueEntries[value_index]->valueInternIndex);
+				else
+					return value;
 			}
 
 			//insert new value in correct position
@@ -381,14 +386,19 @@ public:
 						else //not valid, clear queue
 						{
 							unusedNumberValueIndices.clear();
-							//just use a new value
-							value_entry->valueInternIndex = sortedNumberValueEntries.size() - 1;
+							//just use a new value, leaving a spot open for NAN_INDEX
+							value_entry->valueInternIndex = sortedNumberValueEntries.size() + 1;
 						}
 					}
 					else //just use new value
 					{
-						value_entry->valueInternIndex = sortedNumberValueEntries.size() - 1;
+						value_entry->valueInternIndex = sortedNumberValueEntries.size() + 1;
 					}
+
+					if(value_entry->valueInternIndex >= internedNumberIndexToNumberValue.size())
+						internedNumberIndexToNumberValue.resize(value_entry->valueInternIndex + 1, std::numeric_limits<double>::quiet_NaN());
+
+					internedNumberIndexToNumberValue[value_entry->valueInternIndex] = number_value;
 				}
 
 				return value_entry->valueInternIndex;

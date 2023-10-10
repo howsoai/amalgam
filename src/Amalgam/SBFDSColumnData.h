@@ -49,13 +49,9 @@ public:
 
 	//column needs to be named when it is created
 	inline SBFDSColumnData(StringInternPool::StringID sid)
-		: stringId(sid)
-	{	
-		indexWithLongestString = 0;
-		longestStringLength = 0;
-		indexWithLargestCode = 0;
-		largestCodeSize = 0;
-	}
+		: stringId(sid), indexWithLongestString(0), longestStringLength(0),
+		indexWithLargestCode(0), largestCodeSize(0), numberValuesInterned(false)
+	{	}
 
 	//like InsertIndexValue, but used only for building the column data from an empty column
 	//this function must be called on each index in ascending order; for example, index 2 must be called after index 1
@@ -150,7 +146,12 @@ public:
 	__forceinline EvaluableNodeImmediateValueType GetIndexValueType(size_t index)
 	{
 		if(numberIndices.contains(index))
+		{
+			if(numberValuesInterned)
+				return ENIVT_NUMBER_INDIRECTION_INDEX;
 			return ENIVT_NUMBER;
+		}
+
 		if(stringIdIndices.contains(index))
 			return ENIVT_STRING_ID;
 		if(nullIndices.contains(index))
@@ -160,12 +161,28 @@ public:
 		return ENIVT_CODE;
 	}
 
-	//returns the number value from value, performing a number intern lookup if necessary
-	__forceinline double GetNumberValue(EvaluableNodeImmediateValue value)
+	//returns the value type, performing any resolution for intern lookups
+	static __forceinline EvaluableNodeImmediateValueType GetResolvedValueType(EvaluableNodeImmediateValueType value_type)
 	{
-		if(numberValuesInterned)
-			return internedNumberIndexToNumberValue[value.indirectionIndex];
-		return value.number;
+		if(value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
+			return ENIVT_NUMBER;
+		return value_type;
+	}
+
+	//returns the value type that represents the values stored in this column, performing the reverse of any resolution for intern lookups
+	__forceinline EvaluableNodeImmediateValueType GetUnresolvedValueType(EvaluableNodeImmediateValueType value_type)
+	{
+		if(value_type == ENIVT_NUMBER && numberValuesInterned)
+			return ENIVT_NUMBER_INDIRECTION_INDEX;
+		return value_type;
+	}
+
+	//returns the value performing any intern lookup if necessary
+	__forceinline EvaluableNodeImmediateValue GetResolvedValue(EvaluableNodeImmediateValue value, EvaluableNodeImmediateValueType value_type)
+	{
+		if(value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
+			return EvaluableNodeImmediateValue(internedNumberIndexToNumberValue[value.indirectionIndex]);
+		return value;
 	}
 
 	//moves index from being associated with key old_value to key new_value
@@ -204,8 +221,11 @@ public:
 			//remove, and if not a nan, then need to also remove the number
 			if(!nanIndices.EraseAndRetrieve(index))
 			{
+				auto unresolved_value_type = GetUnresolvedValueType(ENIVT_NUMBER);
+				auto resolved_value = GetResolvedValue(value, unresolved_value_type);
+
 				//look up value
-				auto [value_index, exact_index_found] = FindExactIndexForValue(value.number);
+				auto [value_index, exact_index_found] = FindExactIndexForValue(resolved_value.number);
 				if(!exact_index_found)
 					return;
 
@@ -312,18 +332,19 @@ public:
 			return value;
 		}
 
-		if(value_type == ENIVT_NUMBER)
+		if(value_type == ENIVT_NUMBER || value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
 		{
 			numberIndices.insert(index);
 
-			if(FastIsNaN(value.number))
+			double number_value = GetResolvedValue(value, value_type).number;
+			if(FastIsNaN(number_value))
 			{
 				nanIndices.insert(index);
 				return value;
 			}
 			
 			//if the value already exists, then put the index in the list
-			auto [value_index, exact_index_found] = FindExactIndexForValue(value.number);
+			auto [value_index, exact_index_found] = FindExactIndexForValue(number_value);
 			if(exact_index_found)
 			{
 				sortedNumberValueEntries[value_index]->indicesWithValue.insert(index);
@@ -331,9 +352,9 @@ public:
 			}
 
 			//insert new value in correct position
-			size_t new_value_index = FindUpperBoundIndexForValue(value.number);
+			size_t new_value_index = FindUpperBoundIndexForValue(number_value);
 			auto inserted = sortedNumberValueEntries.emplace(sortedNumberValueEntries.begin() + new_value_index,
-				std::make_unique<ValueEntry>(value.number));
+				std::make_unique<ValueEntry>(number_value));
 
 			ValueEntry *value_entry = inserted->get();
 			value_entry->indicesWithValue.insert(index);
@@ -849,7 +870,7 @@ public:
 		{
 			auto &value_entry = sortedNumberValueEntries[i];
 			value_entry->valueInternIndex = i;
-			internedNumberIndexToNumberValue.emplace_back(value_entry->value.number);
+			internedNumberIndexToNumberValue[i] = value_entry->value.number;
 		}
 
 		numberValuesInterned = true;
@@ -906,6 +927,7 @@ public:
 	//indices of entities with a null for this feature
 	EfficientIntegerSet nullIndices;
 
+	//TODO 17630: remove nanIndices and just have it be a special number value -- will need to do special comparator for sorted number values
 	//indices of entities with a NaN for this feature
 	// the entities will also be included in numberIndices
 	EfficientIntegerSet nanIndices;

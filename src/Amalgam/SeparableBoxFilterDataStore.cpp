@@ -361,9 +361,10 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 		//else, there are less indices to consider than possible unique values, so save computation by just considering entities that are still valid
 		for(auto entity_index : enabled_indices)
 		{
-			auto &value = GetValue(entity_index, absolute_feature_index);
 			auto value_type = column_data->GetIndexValueType(entity_index);
-
+			auto value = column_data->GetResolvedValue(GetValue(entity_index, absolute_feature_index), value_type);
+			value_type = column_data->GetResolvedValueType(value_type);
+			
 			distances[entity_index] += dist_params.ComputeDistanceTermRegular(target_value, value, target_value_type, value_type, query_feature_index);
 
 			//remove entity if its distance is already greater than the max_dist
@@ -422,9 +423,12 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 		if(dist_params->IsFeatureEnabled(i))
 		{
 			size_t column_index = found->second;
+			auto &column_data = columnData[column_index];
 
-			auto &value = matrix[matrix_index_base + column_index];
-			auto value_type = columnData[column_index]->GetIndexValueType(search_index);
+			auto value_type = column_data->GetIndexValueType(search_index);
+			//overwrite value in case of value interning
+			auto value = column_data->GetResolvedValue(matrix[matrix_index_base + column_index], value_type);
+			value_type = column_data->GetResolvedValueType(value_type);
 
 			PopulateNextTargetAttributes(*dist_params, i,
 				target_column_indices, target_values, target_value_types,

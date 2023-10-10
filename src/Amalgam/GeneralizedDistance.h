@@ -614,7 +614,7 @@ public:
 	{
 		double diff = ComputeDifference(a, b, a_type, b_type, featureParams[index].featureType);
 		if(FastIsNaN(diff))
-			return LookupNullDistanceTerm(a, b, a_type, b_type, index);;
+			return LookupNullDistanceTerm(a, b, a_type, b_type, index);
 
 		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
 		if(IsFeatureNominal(index))

@@ -305,10 +305,11 @@ public:
 		entities.resize(enabled_entities.size());
 		values.resize(enabled_entities.size());
 		size_t index = 0;
+		auto value_type = column_data->GetUnresolvedValueType(ENIVT_NUMBER);
 		for(auto entity_index : enabled_entities)
 		{
 			entities[index] = entity_index;
-			values[index] = column_data->GetNumberValue(GetValue(entity_index, column_index));
+			values[index] = column_data->GetResolvedValue(GetValue(entity_index, column_index), value_type).number;
 			index++;
 		}
 	}
@@ -334,10 +335,11 @@ public:
 		entities.resize(enabled_entities.size());
 		values.resize(enabled_entities.size());
 		size_t index = 0;
+		auto value_type = column_data->GetUnresolvedValueType(ENIVT_NUMBER);
 		for(auto entity_index : enabled_entities)
 		{
 			entities[index] = entity_index;
-			values[index] = column_data->GetNumberValue(GetValue(entity_index, column_index));
+			values[index] = column_data->GetResolvedValue(GetValue(entity_index, column_index), value_type).number;
 			index++;
 		}
 	}
@@ -428,15 +430,16 @@ public:
 	{
 		auto column_data = columnData[column_index].get();
 		auto number_indices_ptr = &column_data->numberIndices;
+		auto value_type = column_data->GetUnresolvedValueType(ENIVT_NUMBER);
 
-		return [&, number_indices_ptr, column_index, column_data]
+		return [&, number_indices_ptr, column_index, column_data, value_type]
 		(Iter i, double &value)
 		{
 			size_t entity_index = *i;
 			if(!number_indices_ptr->contains(entity_index))
 				return false;
 
-			value = column_data->GetNumberValue(GetValue(entity_index, column_index));
+			value = column_data->GetResolvedValue(GetValue(entity_index, column_index), value_type).number;
 			return true;
 		};
 	}
@@ -451,14 +454,15 @@ public:
 
 		auto column_data = columnData[column_index].get();
 		auto number_indices_ptr = &column_data->numberIndices;
+		auto value_type = column_data->GetUnresolvedValueType(ENIVT_NUMBER);
 
-		return [&, number_indices_ptr, column_index, column_data]
+		return [&, number_indices_ptr, column_index, column_data, value_type]
 			(size_t i, double &value)
 			{
 				if(!number_indices_ptr->contains(i))
 					return false;
 
-				value = column_data->GetNumberValue(GetValue(i, column_index));
+				value = column_data->GetResolvedValue(GetValue(i, column_index), value_type).number;
 				return true;
 			};
 	}
@@ -536,12 +540,15 @@ protected:
 		auto &partial_sums = parametersAndBuffers.partialSums;
 		const auto accum_location = partial_sums.GetAccumLocation(query_feature_index);
 
+		auto &column_data = columnData[absolute_feature_index];
+
 		//for each found element, accumulate associated partial sums
 		for(size_t entity_index : entity_indices)
 		{
 			//get value
-			auto &other_value = GetValue(entity_index, absolute_feature_index);
-			auto other_value_type = columnData[absolute_feature_index]->GetIndexValueType(entity_index);
+			auto other_value_type = column_data->GetIndexValueType(entity_index);
+			auto other_value = column_data->GetResolvedValue(GetValue(entity_index, absolute_feature_index), other_value_type);
+			other_value_type = column_data->GetResolvedValueType(other_value_type);
 
 			//compute term
 			double term = dist_params.ComputeDistanceTermRegular(value, other_value, value_type, other_value_type, query_feature_index);
@@ -677,8 +684,11 @@ protected:
 			if(dist_params.IsFeatureEnabled(i))
 			{
 				size_t column_index = target_column_indices[i];
-				auto &other_value = matrix[matrix_base_position + column_index];
-				auto other_value_type = columnData[column_index]->GetIndexValueType(other_index);
+				auto &column_data = columnData[column_index];
+
+				auto other_value_type = column_data->GetIndexValueType(other_index);
+				auto other_value = column_data->GetResolvedValue(matrix[matrix_base_position + column_index], other_value_type);
+				other_value_type = column_data->GetResolvedValueType(other_value_type);
 
 				dist_accum += dist_params.ComputeDistanceTermRegular(target_values[i], other_value, target_value_types[i], other_value_type, i);
 			}
@@ -706,6 +716,14 @@ protected:
 			if(feature_type == FDT_CONTINUOUS_UNIVERSALLY_NUMERIC_INTERNED)
 			{
 				//TODO 17630: call special method from GeneralizedDistance here; if the precision matches, just use lookup, if not, then needs to recompute
+				auto &column_data = columnData[column_index];
+				if(column_data->numberIndices.contains(entity_index))
+				{
+					double difference = target_values[query_feature_index].number - column_data->GetResolvedValue(GetValue(entity_index, column_index), ENIVT_NUMBER).number;
+					return dist_params.ComputeDistanceTermNonNominalOneNonNullRegular(difference, query_feature_index);
+				}
+				else
+					return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index);
 			}
 			if(feature_type == FDT_CONTINUOUS_UNIVERSALLY_NUMERIC)
 			{
@@ -724,8 +742,8 @@ protected:
 				auto &column_data = columnData[column_index];
 				if(column_data->numberIndices.contains(entity_index))
 				{
-					double difference = target_values[query_feature_index].number - column_data->GetNumberValue(GetValue(entity_index, column_index));
-					return dist_params.ComputeDistanceTermNonNominalNonCyclicOneNonNullRegular(difference, query_feature_index);
+					double difference = target_values[query_feature_index].number - column_data->GetResolvedValue(GetValue(entity_index, column_index), ENIVT_NUMBER).number;
+					return dist_params.ComputeDistanceTermNonNominalOneNonNullRegular(difference, query_feature_index);
 				}
 				else
 					return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index);
@@ -740,8 +758,9 @@ protected:
 			}
 			else //feature_type == FDT_CONTINUOUS_CODE
 			{
-				auto &other_value = GetValue(entity_index, column_index);
-				auto other_value_type = columnData[column_index]->GetIndexValueType(entity_index);
+				auto &column_data = columnData[column_index];
+				auto other_value_type = column_data->GetIndexValueType(entity_index);
+				auto other_value = column_data->GetResolvedValue(GetValue(entity_index, column_index), other_value_type);
 
 				return dist_params.ComputeDistanceTermRegular(target_values[query_feature_index], other_value, target_value_types[query_feature_index], other_value_type, query_feature_index);
 			}
@@ -838,7 +857,7 @@ protected:
 			target_values.push_back(position_value);
 			target_value_types.push_back(position_value_type);
 		}
-		else // feature_type == FDT_CONTINUOUS_NUMERIC or FDT_CONTINUOUS_NUMERIC_CYCLIC
+		else // feature_type is some form of numeric
 		{
 			//looking for continuous; if not a number, so just put as nan
 			double position_value_numeric = (position_value_type == ENIVT_NUMBER ? position_value.number : std::numeric_limits<double>::quiet_NaN());

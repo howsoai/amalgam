@@ -143,10 +143,8 @@ namespace EntityQueryBuilder
 						}
 						break;
 
-					case FDT_CONTINUOUS_UNIVERSALLY_NUMERIC_INTERNED:
 					case FDT_CONTINUOUS_UNIVERSALLY_NUMERIC:
 					case FDT_CONTINUOUS_NUMERIC:
-					case FDT_CONTINUOUS_NUMERIC_INTERNED:
 					case FDT_CONTINUOUS_STRING:
 					case FDT_CONTINUOUS_CODE:
 						if(found && !EvaluableNode::IsNull(en))

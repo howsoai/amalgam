@@ -17,14 +17,10 @@
 enum FeatureDifferenceType : uint64_t
 {
 	FDT_NOMINAL,
-	//continuous with or without cycles, but everything is always numeric and all numbers interned
-	FDT_CONTINUOUS_UNIVERSALLY_NUMERIC_INTERNED,
 	//continuous without cycles, but everything is always numeric
 	FDT_CONTINUOUS_UNIVERSALLY_NUMERIC,
 	//continuous without cycles, may contain nonnumeric data
 	FDT_CONTINUOUS_NUMERIC,
-	//continuous with or without cycles, but all numbers interned
-	FDT_CONTINUOUS_NUMERIC_INTERNED,
 	//like FDT_CONTINUOUS_NUMERIC, but has cycles
 	FDT_CONTINUOUS_NUMERIC_CYCLIC,
 	//edit distance between strings
@@ -655,8 +651,8 @@ public:
 	__forceinline static double ComputeDifference(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
 		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, FeatureDifferenceType feature_type)
 	{
-		if(feature_type == FDT_CONTINUOUS_UNIVERSALLY_NUMERIC_INTERNED || feature_type == FDT_CONTINUOUS_UNIVERSALLY_NUMERIC
-			|| feature_type == FDT_CONTINUOUS_NUMERIC || feature_type == FDT_CONTINUOUS_NUMERIC_INTERNED
+		if(feature_type == FDT_CONTINUOUS_UNIVERSALLY_NUMERIC
+			|| feature_type == FDT_CONTINUOUS_NUMERIC
 			|| feature_type == FDT_CONTINUOUS_NUMERIC_CYCLIC)
 		{
 			if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)

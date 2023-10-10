@@ -713,43 +713,23 @@ protected:
 		{
 			const size_t column_index = target_label_indices[query_feature_index];
 
-			if(feature_type == FDT_CONTINUOUS_UNIVERSALLY_NUMERIC_INTERNED)
-			{
-				//TODO 17630: call special method from GeneralizedDistance here; if the precision matches, just use lookup, if not, then needs to recompute
-				auto &column_data = columnData[column_index];
-				if(column_data->numberIndices.contains(entity_index))
-				{
-					double difference = target_values[query_feature_index].number - column_data->GetResolvedValue(ENIVT_NUMBER_INDIRECTION_INDEX, GetValue(entity_index, column_index)).number;
-					return dist_params.ComputeDistanceTermNonNominalOneNonNullRegular(difference, query_feature_index);
-				}
-				else
-					return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index);
-			}
 			if(feature_type == FDT_CONTINUOUS_UNIVERSALLY_NUMERIC)
 			{
+				//TODO 17630: if have nonnull intern values, call special method from GeneralizedDistance here
 				return dist_params.ComputeDistanceTermNonNominalNonCyclicOneNonNullRegular(target_values[query_feature_index].number - GetValue(entity_index, column_index).number, query_feature_index);
 			}
 			else if(feature_type == FDT_CONTINUOUS_NUMERIC)
 			{
+				//TODO 17630: if have nonnull intern values, call special method from GeneralizedDistance here
 				auto &column_data = columnData[column_index];
 				if(column_data->numberIndices.contains(entity_index))
 					return dist_params.ComputeDistanceTermNonNominalNonCyclicOneNonNullRegular(target_values[query_feature_index].number - GetValue(entity_index, column_index).number, query_feature_index);
 				else
 					return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index);
 			}
-			else if(feature_type == FDT_CONTINUOUS_NUMERIC_INTERNED)
-			{
-				auto &column_data = columnData[column_index];
-				if(column_data->numberIndices.contains(entity_index))
-				{
-					double difference = target_values[query_feature_index].number - column_data->GetResolvedValue(ENIVT_NUMBER_INDIRECTION_INDEX, GetValue(entity_index, column_index)).number;
-					return dist_params.ComputeDistanceTermNonNominalOneNonNullRegular(difference, query_feature_index);
-				}
-				else
-					return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index);
-			}
 			else if(feature_type == FDT_CONTINUOUS_NUMERIC_CYCLIC)
 			{
+				//TODO 17630: if have nonnull intern values, call special method from GeneralizedDistance here
 				auto &column_data = columnData[column_index];
 				if(column_data->numberIndices.contains(entity_index))
 					return dist_params.ComputeDistanceTermNonNominalOneNonNullRegular(target_values[query_feature_index].number - GetValue(entity_index, column_index).number, query_feature_index);
@@ -867,26 +847,11 @@ protected:
 			//if everything is either non-existant or numeric, then can shortcut later
 			auto &column_data = columnData[column_index];
 			size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
-			if(GetNumInsertedEntities() == num_values_stored_as_numbers)
-			{
-				//if number values are interned, then it doesn't matter if cyclic or not
-				// if not interned and cyclic, then needs to be handled specially, so leave the type as FDT_CONTINUOUS_NUMERIC_CYCLIC
-				if(column_data->numberValuesInterned)
-				{
-					feature_type = FDT_CONTINUOUS_UNIVERSALLY_NUMERIC_INTERNED;
-					dist_params.ComputeAndStoreInternedNumberValuesAndDistanceTerms(query_feature_index, position_value_numeric, &column_data->internedNumberIndexToNumberValue);
-				}
-				else if(feature_type == FDT_CONTINUOUS_NUMERIC)
-				{
-					feature_type = FDT_CONTINUOUS_UNIVERSALLY_NUMERIC;
-				}
-			}
-			else if(column_data->numberValuesInterned)
-			{
-				//if number values are interned, then it doesn't matter if cyclic or not
-				feature_type = FDT_CONTINUOUS_NUMERIC_INTERNED;
+			if(GetNumInsertedEntities() == num_values_stored_as_numbers && feature_type == FDT_CONTINUOUS_NUMERIC)
+				feature_type = FDT_CONTINUOUS_UNIVERSALLY_NUMERIC;
+
+			if(column_data->numberValuesInterned)
 				dist_params.ComputeAndStoreInternedNumberValuesAndDistanceTerms(query_feature_index, position_value_numeric, &column_data->internedNumberIndexToNumberValue);
-			}
 		}
 	}
 

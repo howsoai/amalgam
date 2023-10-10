@@ -1027,7 +1027,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 		size_t next_lower_index = 0;
 		if(!cyclic_feature)
 		{
-			if(lower_value_index > 0)
+			if(lower_value_index > 1)
 			{
 				next_lower_index = lower_value_index - 1;
 				lower_diff = std::abs(value.number - column->sortedNumberValueEntries[next_lower_index]->value.number);
@@ -1037,7 +1037,8 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 		else //cyclic_feature
 		{
 			size_t next_index;
-			if(lower_value_index > 0)
+			//0th index is unknown
+			if(lower_value_index > 1)
 				next_index = lower_value_index - 1;
 			else
 				next_index = num_unique_number_values - 1;
@@ -1069,8 +1070,8 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 			size_t next_index;
 			if(upper_value_index + 1 < num_unique_number_values)
 				next_index = upper_value_index + 1;
-			else
-				next_index = 0;
+			else //0th index is unknown, start at 1st
+				next_index = 1;
 
 			//make sure didn't wrap all the way around for cyclic features
 			//either from the value itself or overlapping with the next_lower_index

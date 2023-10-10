@@ -309,7 +309,7 @@ public:
 		for(auto entity_index : enabled_entities)
 		{
 			entities[index] = entity_index;
-			values[index] = column_data->GetResolvedValue(GetValue(entity_index, column_index), value_type).number;
+			values[index] = column_data->GetResolvedValue(value_type, GetValue(entity_index, column_index)).number;
 			index++;
 		}
 	}
@@ -339,7 +339,7 @@ public:
 		for(auto entity_index : enabled_entities)
 		{
 			entities[index] = entity_index;
-			values[index] = column_data->GetResolvedValue(GetValue(entity_index, column_index), value_type).number;
+			values[index] = column_data->GetResolvedValue(value_type, GetValue(entity_index, column_index)).number;
 			index++;
 		}
 	}
@@ -439,7 +439,7 @@ public:
 			if(!number_indices_ptr->contains(entity_index))
 				return false;
 
-			value = column_data->GetResolvedValue(GetValue(entity_index, column_index), value_type).number;
+			value = column_data->GetResolvedValue(value_type, GetValue(entity_index, column_index)).number;
 			return true;
 		};
 	}
@@ -462,7 +462,7 @@ public:
 				if(!number_indices_ptr->contains(i))
 					return false;
 
-				value = column_data->GetResolvedValue(GetValue(i, column_index), value_type).number;
+				value = column_data->GetResolvedValue(value_type, GetValue(i, column_index)).number;
 				return true;
 			};
 	}
@@ -522,7 +522,7 @@ protected:
 	}
 
 	//deletes the index and associated data
-	void DeleteEntityIndexFromColumns(size_t index);
+	void DeleteEntityIndexFromColumns(size_t entity_index);
 
 	//adds a new labels to the database, populating new cells with -NaN, and updating the number of entities
 	// assumes label_ids is not empty and num_entities is nonzero
@@ -547,7 +547,7 @@ protected:
 		{
 			//get value
 			auto other_value_type = column_data->GetIndexValueType(entity_index);
-			auto other_value = column_data->GetResolvedValue(GetValue(entity_index, absolute_feature_index), other_value_type);
+			auto other_value = column_data->GetResolvedValue(other_value_type, GetValue(entity_index, absolute_feature_index));
 			other_value_type = column_data->GetResolvedValueType(other_value_type);
 
 			//compute term
@@ -687,7 +687,7 @@ protected:
 				auto &column_data = columnData[column_index];
 
 				auto other_value_type = column_data->GetIndexValueType(other_index);
-				auto other_value = column_data->GetResolvedValue(matrix[matrix_base_position + column_index], other_value_type);
+				auto other_value = column_data->GetResolvedValue(other_value_type, matrix[matrix_base_position + column_index]);
 				other_value_type = column_data->GetResolvedValueType(other_value_type);
 
 				dist_accum += dist_params.ComputeDistanceTermRegular(target_values[i], other_value, target_value_types[i], other_value_type, i);
@@ -719,7 +719,7 @@ protected:
 				auto &column_data = columnData[column_index];
 				if(column_data->numberIndices.contains(entity_index))
 				{
-					double difference = target_values[query_feature_index].number - column_data->GetResolvedValue(GetValue(entity_index, column_index), ENIVT_NUMBER_INDIRECTION_INDEX).number;
+					double difference = target_values[query_feature_index].number - column_data->GetResolvedValue(ENIVT_NUMBER_INDIRECTION_INDEX, GetValue(entity_index, column_index)).number;
 					return dist_params.ComputeDistanceTermNonNominalOneNonNullRegular(difference, query_feature_index);
 				}
 				else
@@ -742,7 +742,7 @@ protected:
 				auto &column_data = columnData[column_index];
 				if(column_data->numberIndices.contains(entity_index))
 				{
-					double difference = target_values[query_feature_index].number - column_data->GetResolvedValue(GetValue(entity_index, column_index), ENIVT_NUMBER_INDIRECTION_INDEX).number;
+					double difference = target_values[query_feature_index].number - column_data->GetResolvedValue(ENIVT_NUMBER_INDIRECTION_INDEX, GetValue(entity_index, column_index)).number;
 					return dist_params.ComputeDistanceTermNonNominalOneNonNullRegular(difference, query_feature_index);
 				}
 				else
@@ -760,7 +760,7 @@ protected:
 			{
 				auto &column_data = columnData[column_index];
 				auto other_value_type = column_data->GetIndexValueType(entity_index);
-				auto other_value = column_data->GetResolvedValue(GetValue(entity_index, column_index), other_value_type);
+				auto other_value = column_data->GetResolvedValue(other_value_type, GetValue(entity_index, column_index));
 
 				return dist_params.ComputeDistanceTermRegular(target_values[query_feature_index], other_value, target_value_types[query_feature_index], other_value_type, query_feature_index);
 			}

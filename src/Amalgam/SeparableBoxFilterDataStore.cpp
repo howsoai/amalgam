@@ -171,15 +171,19 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 	//reassign index for each column
 	for(size_t column_index = 0; column_index < columnData.size(); column_index++)
 	{
+		auto &column_data = columnData[column_index];
+
 		auto &val_to_overwrite = GetValue(entity_index, column_index);
-		auto &value_of_index_to_reassign = GetValue(entity_index_to_reassign, column_index);
+		auto type_to_overwrite = column_data->GetIndexValueType(entity_index);
+
+		auto &value_to_reassign = GetValue(entity_index_to_reassign, column_index);
 		auto value_type_to_reassign = columnData[column_index]->GetIndexValueType(entity_index_to_reassign);
 
 		//remove the value where it is
-		columnData[column_index]->DeleteIndexValue(value_of_index_to_reassign, entity_index_to_reassign);
+		columnData[column_index]->DeleteIndexValue(value_type_to_reassign, value_to_reassign, entity_index_to_reassign);
 
 		//change the destination to the value
-		columnData[column_index]->ChangeIndexValue(val_to_overwrite, value_type_to_reassign, value_of_index_to_reassign, entity_index);
+		columnData[column_index]->ChangeIndexValue(type_to_overwrite, val_to_overwrite, value_type_to_reassign, value_to_reassign, entity_index);
 	}
 
 	//copy data from entity_index_to_reassign to entity_index
@@ -204,12 +208,17 @@ void SeparableBoxFilterDataStore::UpdateAllEntityLabels(Entity *entity, size_t e
 	size_t matrix_index = GetMatrixCellIndex(entity_index);
 	for(size_t column_index = 0; column_index < columnData.size(); column_index++)
 	{
+		auto &column_data = columnData[column_index];
+
 		EvaluableNodeImmediateValueType value_type;
 		EvaluableNodeImmediateValue value;
 		value_type = entity->GetValueAtLabelAsImmediateValue(columnData[column_index]->stringId, value);
 
-		columnData[column_index]->ChangeIndexValue(matrix[matrix_index], value_type, value, entity_index);
-		matrix[matrix_index] = value;
+		//update the value
+		auto &matrix_value = matrix[matrix_index];
+		auto previous_value_type = column_data->GetIndexValueType(entity_index);
+		column_data->ChangeIndexValue(previous_value_type, matrix_value, value_type, value, entity_index);
+		matrix_value = value;
 
 		matrix_index++;
 	}
@@ -230,15 +239,17 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 	if(column == end(labelIdToColumnIndex))
 		return;
 	size_t column_index = column->second;
+	auto &column_data = columnData[column_index];
 
 	//get the new value
 	EvaluableNodeImmediateValueType value_type;
 	EvaluableNodeImmediateValue value;
-	value_type = entity->GetValueAtLabelAsImmediateValue(columnData[column_index]->stringId, value);
+	value_type = entity->GetValueAtLabelAsImmediateValue(column_data->stringId, value);
 
 	//update the value
 	auto &matrix_value = GetValue(entity_index, column_index);
-	columnData[column_index]->ChangeIndexValue(matrix_value, value_type, value, entity_index);
+	auto previous_value_type = column_data->GetIndexValueType(entity_index);
+	column_data->ChangeIndexValue(previous_value_type, matrix_value, value_type, value, entity_index);
 	matrix_value = value;
 
 	//remove the label if no longer relevant
@@ -368,7 +379,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 		for(auto entity_index : enabled_indices)
 		{
 			auto value_type = column_data->GetIndexValueType(entity_index);
-			auto value = column_data->GetResolvedValue(GetValue(entity_index, absolute_feature_index), value_type);
+			auto value = column_data->GetResolvedValue(value_type, GetValue(entity_index, absolute_feature_index));
 			value_type = column_data->GetResolvedValueType(value_type);
 			
 			distances[entity_index] += dist_params.ComputeDistanceTermRegular(target_value, value, target_value_type, value_type, query_feature_index);
@@ -433,7 +444,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 
 			auto value_type = column_data->GetIndexValueType(search_index);
 			//overwrite value in case of value interning
-			auto value = column_data->GetResolvedValue(matrix[matrix_index_base + column_index], value_type);
+			auto value = column_data->GetResolvedValue(value_type, matrix[matrix_index_base + column_index]);
 			value_type = column_data->GetResolvedValueType(value_type);
 
 			PopulateNextTargetAttributes(*dist_params, i,
@@ -796,12 +807,14 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistance &dist_
 	}
 }
 
-void SeparableBoxFilterDataStore::DeleteEntityIndexFromColumns(size_t index)
+void SeparableBoxFilterDataStore::DeleteEntityIndexFromColumns(size_t entity_index)
 {
 	for(size_t i = 0; i < columnData.size(); i++)
 	{
-		auto &feature_value = GetValue(index, i);
-		columnData[i]->DeleteIndexValue(feature_value, index);
+		auto &column_data = columnData[i];
+		auto &feature_value = GetValue(entity_index, i);
+		auto feature_type = column_data->GetIndexValueType(entity_index);
+		columnData[i]->DeleteIndexValue(feature_type, feature_value, entity_index);
 	}
 }
 

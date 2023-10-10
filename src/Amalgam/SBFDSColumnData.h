@@ -180,7 +180,7 @@ public:
 	}
 
 	//returns the value performing any intern lookup if necessary
-	__forceinline EvaluableNodeImmediateValue GetResolvedValue(EvaluableNodeImmediateValue value, EvaluableNodeImmediateValueType value_type)
+	__forceinline EvaluableNodeImmediateValue GetResolvedValue(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value)
 	{
 		if(value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
 			return EvaluableNodeImmediateValue(internedNumberIndexToNumberValue[value.indirectionIndex]);
@@ -188,28 +188,29 @@ public:
 	}
 
 	//moves index from being associated with key old_value to key new_value
-	void ChangeIndexValue(EvaluableNodeImmediateValue old_value, EvaluableNodeImmediateValueType new_value_type, EvaluableNodeImmediateValue new_value, size_t index)
+	void ChangeIndexValue(EvaluableNodeImmediateValueType old_value_type, EvaluableNodeImmediateValue old_value,
+		EvaluableNodeImmediateValueType new_value_type, EvaluableNodeImmediateValue new_value, size_t index)
 	{
 		//if new one is invalid, can quickly delete or return
 		if(new_value_type == ENIVT_NOT_EXIST)
 		{
 			if(!invalidIndices.contains(index))
 			{
-				DeleteIndexValue(old_value, index);
+				DeleteIndexValue(old_value_type, old_value, index);
 				invalidIndices.insert(index);
 			}
 			return;
 		}
 
 		//delete index at old value
-		DeleteIndexValue(old_value, index);
+		DeleteIndexValue(old_value_type, old_value, index);
 
 		//add index at new value bucket 
 		InsertIndexValue(new_value_type, new_value, index);
 	}
 
 	//deletes everything involving the value at the index
-	void DeleteIndexValue(EvaluableNodeImmediateValue value, size_t index)
+	void DeleteIndexValue(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value, size_t index)
 	{
 		if(invalidIndices.EraseAndRetrieve(index))
 			return;
@@ -223,8 +224,7 @@ public:
 			//remove, and if not a nan, then need to also remove the number
 			if(!nanIndices.EraseAndRetrieve(index))
 			{
-				auto unresolved_value_type = GetUnresolvedValueType(ENIVT_NUMBER);
-				auto resolved_value = GetResolvedValue(value, unresolved_value_type);
+				auto resolved_value = GetResolvedValue(value_type, value);
 
 				//look up value
 				auto [value_index, exact_index_found] = FindExactIndexForValue(resolved_value.number);
@@ -338,7 +338,7 @@ public:
 		{
 			numberIndices.insert(index);
 
-			double number_value = GetResolvedValue(value, value_type).number;
+			double number_value = GetResolvedValue(value_type, value).number;
 			if(FastIsNaN(number_value))
 			{
 				nanIndices.insert(index);

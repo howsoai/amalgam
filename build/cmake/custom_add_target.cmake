@@ -31,9 +31,9 @@ function(add_compiled_target)
     set(NO_INSTALL ${args_NO_INSTALL})
 
     # For armv8-a targets, we do not build any threading binaries:
-    if(IS_ARM64_8A AND (USE_THREADS OR USE_OPENMP))
-        return()
-    endif()
+    #if(IS_ARM64_8A AND (USE_THREADS OR USE_OPENMP))
+    #    return()
+    #endif()
 
     # Validate naming combination:
     if(AUTO_NAME AND NOT "${args_NAME}" STREQUAL "")

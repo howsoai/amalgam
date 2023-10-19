@@ -84,7 +84,7 @@ set(COMMON_SOURCE
     src/3rd_party/murmurhash3/MurmurHash3.h
     src/3rd_party/simdjson/simdjson.cpp
     src/3rd_party/simdjson/simdjson.h
-	src/3rd_party/rapidyaml/rapidyaml-0.5.0.hpp
+    src/3rd_party/rapidyaml/rapidyaml-0.5.0.hpp
     src/3rd_party/skarupke_maps/bytell_hash_map.hpp
     src/3rd_party/skarupke_maps/flat_hash_map.hpp
     src/3rd_party/swiftdtoa/SwiftDtoa.cpp
@@ -138,7 +138,7 @@ set(COMMON_SOURCE
     src/Amalgam/importexport/FileSupportCSV.h
     src/Amalgam/importexport/FileSupportJSON.cpp
     src/Amalgam/importexport/FileSupportJSON.h
-	src/Amalgam/importexport/FileSupportYAML.cpp
+    src/Amalgam/importexport/FileSupportYAML.cpp
     src/Amalgam/importexport/FileSupportYAML.h
     src/Amalgam/IntegerSet.h
     src/Amalgam/interpreter/Interpreter.cpp
@@ -195,12 +195,32 @@ if(IS_MSVC)
 endif()
 set(AMALGAM_APP_ONLY_SOURCE
     src/Amalgam/AmalgamMain.cpp
-    src/Amalgam/AmalgamTrace.cpp
+    src/Amalgam/AmalgamMainImpls.cpp
     ${RESOURCE_SOURCE}
 )
 set(AMALGAM_LIB_ONLY_SOURCE ${RESOURCE_SOURCE})
 set(AMALGAM_ALL_SOURCE ${AMALGAM_APP_ONLY_SOURCE} ${COMMON_SOURCE_THREADS})
 source_group(TREE ${CMAKE_SOURCE_DIR} FILES ${AMALGAM_ALL_SOURCE})
+
+# Get other non-source files from around the filesytem:
+file(GLOB_RECURSE AUX_FILES
+    .gitignore
+    ci-build.ps1
+    CMakeLists.txt
+    CMakePresets.json
+    LICENSE.txt
+    LICENSE-3RD-PARTY.txt
+    open-in-vs.bat
+    README.md
+    "build/*"
+    "config/*"
+    "doc/*"
+    "examples/*"
+    "src/Amalgam/amlg_code/*"
+    "src/Amalgam/out.txt"
+)
+source_group(TREE ${CMAKE_SOURCE_DIR} FILES ${AUX_FILES})
+list(APPEND AMALGAM_APP_ONLY_SOURCE ${AUX_FILES})
 
 
 #
@@ -208,14 +228,14 @@ source_group(TREE ${CMAKE_SOURCE_DIR} FILES ${AMALGAM_ALL_SOURCE})
 #
 
 include_directories(
-    "${PROJECT_SOURCE_DIR}/src/3rd_party"
-    "${PROJECT_SOURCE_DIR}/src/Amalgam"
-    "${PROJECT_SOURCE_DIR}/src/Amalgam/entity"
-    "${PROJECT_SOURCE_DIR}/src/Amalgam/evaluablenode"
-    "${PROJECT_SOURCE_DIR}/src/Amalgam/importexport"
-    "${PROJECT_SOURCE_DIR}/src/Amalgam/interpreter"
-    "${PROJECT_SOURCE_DIR}/src/Amalgam/rand"
-    "${PROJECT_SOURCE_DIR}/src/Amalgam/string"
+    "${CMAKE_SOURCE_DIR}/src/3rd_party"
+    "${CMAKE_SOURCE_DIR}/src/Amalgam"
+    "${CMAKE_SOURCE_DIR}/src/Amalgam/entity"
+    "${CMAKE_SOURCE_DIR}/src/Amalgam/evaluablenode"
+    "${CMAKE_SOURCE_DIR}/src/Amalgam/importexport"
+    "${CMAKE_SOURCE_DIR}/src/Amalgam/interpreter"
+    "${CMAKE_SOURCE_DIR}/src/Amalgam/rand"
+    "${CMAKE_SOURCE_DIR}/src/Amalgam/string"
 )
 
 
@@ -282,4 +302,3 @@ endif()
 
 include(create_tests)
 include(create_package)
-include(create_static_targets)

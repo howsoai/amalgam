@@ -198,16 +198,16 @@ function(add_compiled_target)
 
     # Unfortunately, this is needed for all Unix targets, not just multithreaded ones,
     # see: https://howardhinnant.github.io/date/tz.html#Installation
-    # TODO: Maybe when moving to C++20 and the official verision of the date library, this won't be needed
+    # TODO 15993: Maybe when moving to C++20 and the official verision of the date library, this won't be needed
     #       for single threaded targets
-    # TODO: move to using official CMake Threads include when it works
+    # TODO 15993: move to using official CMake Threads include when it works
     if(IS_UNIX AND NOT IS_WASM)
         target_compile_options(${TARGET_NAME} PUBLIC -pthread)
         target_link_libraries(${TARGET_NAME} PUBLIC pthread)
     endif()
 
     # OpenMP:
-    # TODO: move to using official CMake OpenMP include when it works
+    # TODO 15993: move to using official CMake OpenMP include when it works
     if(USE_OPENMP)
         if(IS_MSVC)
             target_compile_options(${TARGET_NAME} PUBLIC /openmp)

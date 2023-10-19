@@ -60,7 +60,7 @@ public:
 	std::string GetJSONFromLabel(std::string &handle, std::string &label);
 	std::string ExecuteEntityJSON(std::string &handle, std::string &label, std::string_view json);
 
-protected:
+//protected:
 
 	//a class that manages the entity
 	// when the bundle is destroyed, everything in it is also destroyed

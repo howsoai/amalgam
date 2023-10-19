@@ -552,7 +552,7 @@
     <ClCompile Include="..\3rd_party\tweetnacl\tweetnacl.cpp" />
     <ClCompile Include="AmalgamAPI.cpp" />
     <ClCompile Include="AmalgamMain.cpp" />
-    <ClCompile Include="AmalgamTrace.cpp" />
+    <ClCompile Include="AmalgamMainImpls.cpp" />
     <ClCompile Include="AssetManager.cpp" />
     <ClCompile Include="BinaryPacking.cpp" />
     <ClCompile Include="Concurrency.cpp" />

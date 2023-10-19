@@ -27,7 +27,7 @@
     <ClCompile Include="AmalgamMain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AmalgamTrace.cpp">
+    <ClCompile Include="AmalgamMainImpls.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="PrintListener.cpp">

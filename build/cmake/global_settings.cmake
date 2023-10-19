@@ -5,11 +5,8 @@
 # For IDEs that support it, turn on folders:
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-# Testing:
-enable_testing()
-
 # Remove library prefix for compatibility with callers who don't expect a lib prefix:
-# TODO: evantually update callers to understand libs on platforms that typically have prefix
+# TODO 15993: evantually update callers to understand libs on platforms that typically have prefix
 #       Example: libamalgam.so/libamalgam.dylib/amalgam.dll
 set(CMAKE_STATIC_LIBRARY_PREFIX "")
 set(CMAKE_SHARED_LIBRARY_PREFIX "")

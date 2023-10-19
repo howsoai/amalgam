@@ -23,7 +23,7 @@ const std::string FAILURE_RESPONSE = std::string("failure");
 
 //runs a loop processing commands in the same manner as the API
 // Message structure: <COMMAND> [ADDITIONAL ARGS] [DATA]
-int RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::string &random_seed)
+int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::string &random_seed)
 {
 	if(in_stream == nullptr)
 		return 0;
@@ -138,6 +138,44 @@ int RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::stri
 
 	if(Platform_IsDebuggerPresent())
 		std::cout << "Trace file complete." << std::endl;
+
+	return 0;
+}
+
+//runs a loop processing amalgam code
+int32_t RunAmalgamComm(std::istream *in_stream, std::ostream *out_stream, std::string &random_seed)
+{
+	if(in_stream == nullptr)
+		return 0;
+
+	RandomStream random_stream(random_seed);
+
+	// Define all these variables outside the main loop to reduce memory churn.
+	std::string input;
+	std::string handle = "1";
+	std::string label = "";
+	std::string data = "";
+
+	// program loop
+	while(in_stream->good())
+	{
+		// read external input
+		getline(*in_stream, input, '\n');
+
+		Entity* new_entity = new Entity();
+		auto enm = &new_entity->evaluableNodeManager;
+		auto code = Parser::Parse(input, enm);
+		new_entity->SetRoot(code, true);
+		std::string default_random_seed = random_stream.CreateOtherStreamStateViaString("comm");
+		new_entity->SetRandomState(default_random_seed, true);
+
+		std::vector<EntityWriteListener*> wl;
+		auto pl = new PrintListener("", true);
+		entint.AddEntityBundle(handle, new EntityExternalInterface::EntityListenerBundle(new_entity, wl, pl));
+
+		entint.ExecuteEntity(handle, label);
+		std::cout << std::endl;
+	}
 
 	return 0;
 }

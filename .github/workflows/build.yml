@@ -343,7 +343,7 @@ jobs:
 
     - name: Smoke test
       run: |
-        AMALGAM_WASM_DIR=$(pwd)/amalgam/bin
+        export AMALGAM_WASM_DIR=$(pwd)/amalgam/bin
         cd test/wasm_test
         npm install
         npm run test
@@ -355,6 +355,7 @@ jobs:
       - smoke-test-linux-arm64
       - smoke-test-linux-arm64_8a
       - smoke-test-macos-amd64
+      - smoke-test-macos-arm64
       - smoke-test-windows-amd64
       - smoke-test-wasm64
     runs-on: ubuntu-latest

@@ -81,7 +81,7 @@ An interpreter application and shared library (dll/so/dylib) are built for each 
 | Linux arm64: 8-a+simd        | ST                            | :heavy_check_mark: | Tested with [qemu](https://www.qemu.org/) |
 | macOS amd64                  | MT, ST, OMP, MT-NoAVX         | :heavy_check_mark: | Only **MT-NoAVX** tested currently |
 | macOS arm64: 8.4-a+simd      | MT, ST, OMP                   | :x:                | Manually tested, M1 and newer supported |
-| WASM 64-bit                  | ST                            | :x:                | Built on linux using emscripten. Planned testing: headless test with node + jest |
+| WASM 64-bit                  | ST                            | :heavy_check_mark: | Built on linux using emscripten, headless test with node:18 + jest |
 
 * <sup>1</sup> Variant meanings:
     * MT

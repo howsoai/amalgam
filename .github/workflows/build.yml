@@ -332,7 +332,7 @@ jobs:
     - name: Download Artifact
       uses: actions/download-artifact@v3
       with:
-        name: amalgam-${{ inputs.version }}-wasm64
+        name: amalgam-${{ inputs.version }}-linux-wasm64
 
     - name: Extract Amalgam
       run: |

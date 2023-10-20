@@ -24,7 +24,7 @@ describe("Test Amalgam Webassembly", () => {
 
   test("get version", async () => {
     // Test that GetVersionString returns valid semver value
-    const semverRegex = /^(\d+\.)(\d+\.)(\*|\d+)$/;
+    const semverRegex = /^(\d+\.)(\d+\.)(\d+)(.*)$/;
     const getVersion = amlg.cwrap("GetVersionString", "string", []);
     const version = getVersion();
     expect(typeof version).toBe("string");

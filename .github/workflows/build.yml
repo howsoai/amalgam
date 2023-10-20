@@ -326,9 +326,8 @@ jobs:
 
   smoke-test-wasm64:
     needs: ['build-linux']
-    runs-on: linux-latest
-    container:
-      image: node:latest
+    runs-on: ubuntu-latest
+    container: node:latest
     steps:
     - name: Download Artifact
       uses: actions/download-artifact@v3

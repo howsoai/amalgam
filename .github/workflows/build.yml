@@ -6,6 +6,9 @@ on:
       version:
         required: true
         type: string
+      build-type:
+        required: false
+        type: string
 
 defaults:
   run:
@@ -320,3 +323,52 @@ jobs:
         for f in *; do
           echo -n "$f: " && "./$f" --version
         done
+
+  smoke-test-wasm64:
+    needs: ['build-linux']
+    runs-on: linux-latest
+    container:
+      image: node:latest
+    steps:
+    - name: Download Artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: amalgam-${{ inputs.version }}-wasm64
+
+    - name: Extract Amalgam
+      run: |
+        mkdir ./amalgam
+        tar -xvf ./amalgam-${{ inputs.version }}-wasm64.tar.gz -C ./amalgam
+
+    - name: Smoke test
+      run: |
+        AMALGAM_WASM_DIR=./amalgam
+        npm install
+        npm run test
+
+  release:
+    if: inputs.build-type == 'release'
+    needs:
+      - smoke-test-linux-amd64
+      - smoke-test-linux-arm64
+      - smoke-test-linux-arm64_8a
+      - smoke-test-macos-amd64
+      - smoke-test-windows-amd64
+      - smoke-test-wasm64
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Download Artifacts
+      uses: actions/download-artifact@v3
+
+    - name: Create Release
+      uses: ncipollo/release-action@v1
+      with:
+        tag: ${{ inputs.version }}
+        commit: ${{ github.sha }}
+        name: "Amalgam ${{ inputs.version }}"
+        artifactErrorsFailBuild: true
+        generateReleaseNotes: true
+        makeLatest: legacy
+        artifacts: amalgam-*/amalgam-*.tar.gz
+        artifactContentType: application/gzip

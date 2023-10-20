@@ -341,7 +341,7 @@ jobs:
 
     - name: Smoke test
       run: |
-        AMALGAM_WASM_DIR=$(pwd)/amalgam
+        AMALGAM_WASM_DIR=$(pwd)/amalgam/bin
         cd test/wasm_test
         npm install
         npm run test

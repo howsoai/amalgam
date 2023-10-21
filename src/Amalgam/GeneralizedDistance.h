@@ -121,7 +121,7 @@ public:
 
 		//the first interned value is always against a NaN
 		if(HasNumberInternValues(index))
-			feature_params.precomputedNumberInternDistanceTerms[0] = feature_params.knownToUnknownDistanceTerm.GetValue(defaultPrecision);
+			feature_params.precomputedInternDistanceTerms[0] = feature_params.knownToUnknownDistanceTerm.GetValue(defaultPrecision);
 	}
 
 	//for the feature index, computes and stores the distance terms as measured from value to each interned value
@@ -132,17 +132,17 @@ public:
 
 		if(interned_values == nullptr)
 		{
-			feature_params.precomputedNumberInternDistanceTerms.clear();
+			feature_params.precomputedInternDistanceTerms.clear();
 			return;
 		}
 
-		feature_params.precomputedNumberInternDistanceTerms.resize(interned_values->size());
+		feature_params.precomputedInternDistanceTerms.resize(interned_values->size());
 		//first entry is known-unknown distance
-		feature_params.precomputedNumberInternDistanceTerms[0] = ComputeDistanceTermKnownToUnknown(index);
-		for(size_t i = 1; i < feature_params.precomputedNumberInternDistanceTerms.size(); i++)
+		feature_params.precomputedInternDistanceTerms[0] = ComputeDistanceTermKnownToUnknown(index);
+		for(size_t i = 1; i < feature_params.precomputedInternDistanceTerms.size(); i++)
 		{
 			double difference = value - interned_values->at(i);
-			feature_params.precomputedNumberInternDistanceTerms[i] = ComputeDistanceTermNonNominalNonNullRegular(difference, index);
+			feature_params.precomputedInternDistanceTerms[i] = ComputeDistanceTermNonNominalNonNullRegular(difference, index);
 		}
 	}
 
@@ -468,7 +468,7 @@ public:
 	//returns the precomputed distance term for the interned number with intern_value_index
 	__forceinline double ComputeDistanceTermNumberInterned(size_t intern_value_index, size_t index)
 	{
-		return featureParams[index].precomputedNumberInternDistanceTerms[intern_value_index];
+		return featureParams[index].precomputedInternDistanceTerms[intern_value_index];
 	}
 
 	//computes the inner term for a non-nominal with an exact match of values
@@ -821,7 +821,9 @@ public:
 
 		//pointer to a lookup table of indices to values if the feature is an interned number
 		std::vector<double> *internedNumberIndexToNumberValue;
-		std::vector<double> precomputedNumberInternDistanceTerms;
+
+		//precomputed distance terms for each interned value looked up by intern index
+		std::vector<double> precomputedInternDistanceTerms;
 
 		//type attributes dependent on featureType
 		union

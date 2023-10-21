@@ -42,7 +42,8 @@ void SeparableBoxFilterDataStore::OptimizeColumn(size_t column_index)
 
 	if(column_data->numberValuesInterned)
 	{
-		if(column_data->AreNumberValuesPreferredToInterns())
+		//TODO 17630: remove false
+		if(false || column_data->AreNumberValuesPreferredToInterns())
 		{
 			for(auto &value_entry : column_data->sortedNumberValueEntries)
 			{
@@ -60,7 +61,8 @@ void SeparableBoxFilterDataStore::OptimizeColumn(size_t column_index)
 			column_data->ConvertNumberInternsToValues();
 		}
 	}
-	else if(column_data->AreNumberInternsPreferredToValues())
+	//TODO 17630: remove true
+	else if(true || column_data->AreNumberInternsPreferredToValues())
 	{
 		column_data->ConvertNumberValuesToInterns();
 

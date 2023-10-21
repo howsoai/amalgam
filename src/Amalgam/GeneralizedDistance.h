@@ -128,10 +128,10 @@ public:
 	inline void ComputeAndStoreInternedNumberValuesAndDistanceTerms(size_t index, double value, std::vector<double> *interned_values)
 	{
 		auto &feature_params = featureParams[index];
+		feature_params.internedNumberIndexToNumberValue = interned_values;
 
 		if(interned_values == nullptr)
 		{
-			feature_params.internedNumberIndexToNumberValue = nullptr;
 			feature_params.precomputedNumberInternDistanceTerms.clear();
 			return;
 		}

@@ -325,13 +325,21 @@ public:
 		if(value_type == ENIVT_NOT_EXIST)
 		{
 			invalidIndices.insert(index);
-			return value;
+
+			if(numberValuesInterned)
+				return EvaluableNodeImmediateValue(ValueEntry::NAN_INDEX);
+			else
+				return value;
 		}
 
 		if(value_type == ENIVT_NULL)
 		{
 			nullIndices.insert(index);
-			return value;
+
+			if(numberValuesInterned)
+				return EvaluableNodeImmediateValue(ValueEntry::NAN_INDEX);
+			else
+				return value;
 		}
 
 		if(value_type == ENIVT_NUMBER || value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
@@ -849,16 +857,16 @@ public:
 	// than number values given the current data
 	inline bool AreNumberInternsPreferredToValues()
 	{
-		//use 1/e but round down to reduce flipping back and forth
-		return (sortedNumberValueEntries.size() < numberIndices.size() * 0.36);
+		//use 1/e^2 but round down to reduce flipping back and forth
+		return (sortedNumberValueEntries.size() < numberIndices.size() * 0.14);
 	}
 
 	//returns true if switching to number values would be expected to yield better results
 	// than number interning given the current data
 	inline bool AreNumberValuesPreferredToInterns()
 	{
-		//use 1/e but round up to reduce flipping back and forth
-		return (numberIndices.size() * 0.38 < sortedNumberValueEntries.size());
+		//use 1/e^2 but round up to reduce flipping back and forth
+		return (numberIndices.size() * 0.16 < sortedNumberValueEntries.size());
 	}
 
 	//clears number intern caches and changes state to not perform interning for numbers

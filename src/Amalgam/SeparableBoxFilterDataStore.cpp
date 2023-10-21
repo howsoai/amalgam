@@ -54,6 +54,9 @@ void SeparableBoxFilterDataStore::OptimizeColumn(size_t column_index)
 			for(auto entity_index : column_data->nanIndices)
 				GetValue(entity_index, column_index).number = std::numeric_limits<double>::quiet_NaN();
 
+			for(auto entity_index : column_data->nullIndices)
+				GetValue(entity_index, column_index).number = std::numeric_limits<double>::quiet_NaN();
+
 			column_data->ConvertNumberInternsToValues();
 		}
 	}
@@ -69,6 +72,9 @@ void SeparableBoxFilterDataStore::OptimizeColumn(size_t column_index)
 		}
 
 		for(auto entity_index : column_data->nanIndices)
+			GetValue(entity_index, column_index).number = SBFDSColumnData::ValueEntry::NAN_INDEX;
+
+		for(auto entity_index : column_data->nullIndices)
 			GetValue(entity_index, column_index).number = SBFDSColumnData::ValueEntry::NAN_INDEX;
 	}
 }

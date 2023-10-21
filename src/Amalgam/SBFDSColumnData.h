@@ -850,7 +850,7 @@ public:
 	inline bool AreNumberInternsPreferredToValues()
 	{
 		//use 1/e but round down to reduce flipping back and forth
-		return (numberIndices.size() * 0.36 < sortedNumberValueEntries.size());
+		return (sortedNumberValueEntries.size() < numberIndices.size() * 0.36);
 	}
 
 	//returns true if switching to number values would be expected to yield better results

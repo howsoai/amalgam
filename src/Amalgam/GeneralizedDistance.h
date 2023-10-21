@@ -142,7 +142,7 @@ public:
 		for(size_t i = 1; i < feature_params.precomputedNumberInternDistanceTerms.size(); i++)
 		{
 			double difference = value - interned_values->at(i);
-			feature_params.precomputedNumberInternDistanceTerms[i] = ComputeDifferenceTermNonNominal(difference, index);
+			feature_params.precomputedNumberInternDistanceTerms[i] = ComputeDistanceTermNonNominalNonNullRegular(difference, index);
 		}
 	}
 
@@ -484,8 +484,8 @@ public:
 		return ExponentiateDifferenceTerm(diff, defaultPrecision) * featureParams[index].weight;
 	}
 
-	//computes the difference between two values non-nominal (e.g., continuous)
-	__forceinline double ComputeDifferenceTermNonNominal(double diff, size_t index)
+	//computes the base of the difference between two values non-nominal (e.g., continuous)
+	__forceinline double ComputeDifferenceTermBaseNonNominal(double diff, size_t index)
 	{
 		//compute absolute value
 		diff = std::abs(diff);
@@ -501,8 +501,8 @@ public:
 		return diff;
 	}
 
-	//computes the difference between two values non-nominal (e.g., continuous) that isn't cyclic
-	__forceinline double ComputeDifferenceTermNonNominalNonCyclic(double diff, size_t index)
+	//computes the base of the difference between two values non-nominal (e.g., continuous) that isn't cyclic
+	__forceinline double ComputeDifferenceTermBaseNonNominalNonCyclic(double diff, size_t index)
 	{
 		//compute absolute value
 		diff = std::abs(diff);
@@ -518,7 +518,7 @@ public:
 	// diff can be negative
 	__forceinline double ComputeDistanceTermNonNominalNonNullRegular(double diff, size_t index)
 	{
-		diff = ComputeDifferenceTermNonNominal(diff, index);
+		diff = ComputeDifferenceTermBaseNonNominal(diff, index);
 
 		//exponentiate and return with weight
 		return ExponentiateDifferenceTerm(diff, defaultPrecision) * featureParams[index].weight;
@@ -528,7 +528,7 @@ public:
 	// diff can be negative
 	__forceinline double ComputeDistanceTermNonNominalOneNonNullRegular(double diff, size_t index)
 	{
-		diff = ComputeDifferenceTermNonNominal(diff, index);
+		diff = ComputeDifferenceTermBaseNonNominal(diff, index);
 
 		//exponentiate and return with weight
 		return ExponentiateDifferenceTerm(diff, defaultPrecision) * featureParams[index].weight;
@@ -538,7 +538,7 @@ public:
 	// diff can be negative
 	__forceinline double ComputeDistanceTermNonNominalNonCyclicNonNullRegular(double diff, size_t index)
 	{
-		diff = ComputeDifferenceTermNonNominalNonCyclic(diff, index);
+		diff = ComputeDifferenceTermBaseNonNominalNonCyclic(diff, index);
 
 		//exponentiate and return with weight
 		return ExponentiateDifferenceTerm(diff, defaultPrecision) * featureParams[index].weight;
@@ -551,7 +551,7 @@ public:
 		if(FastIsNaN(diff))
 			return ComputeDistanceTermKnownToUnknown(index);
 
-		diff = ComputeDifferenceTermNonNominalNonCyclic(diff, index);
+		diff = ComputeDifferenceTermBaseNonNominalNonCyclic(diff, index);
 
 		//exponentiate and return with weight
 		return ExponentiateDifferenceTerm(diff, defaultPrecision) * featureParams[index].weight;
@@ -569,7 +569,7 @@ public:
 		if(IsFeatureNominal(index))
 			return (diff == 0.0) ? ComputeDistanceTermNominalExactMatch(index) : ComputeDistanceTermNominalNonMatch(index);
 
-		diff = ComputeDifferenceTermNonNominal(diff, index);
+		diff = ComputeDifferenceTermBaseNonNominal(diff, index);
 
 		return std::pow(diff, featureParams[index].weight);
 	}
@@ -586,7 +586,7 @@ public:
 		if(IsFeatureNominal(index))
 			return (diff == 0.0) ? ComputeDistanceTermNominalExactMatch(index) : ComputeDistanceTermNominalNonMatch(index);
 
-		diff = ComputeDifferenceTermNonNominal(diff, index);
+		diff = ComputeDifferenceTermBaseNonNominal(diff, index);
 
 		return diff * featureParams[index].weight;
 	}
@@ -595,7 +595,7 @@ public:
 	__forceinline double ComputeDistanceTermNonNull(double diff, size_t index, int precision)
 	{
 		if(!IsFeatureNominal(index))
-			diff = ComputeDifferenceTermNonNominal(diff, index);
+			diff = ComputeDifferenceTermBaseNonNominal(diff, index);
 
 		if(pValue == 0.0)
 			return std::pow(diff, featureParams[index].weight);

@@ -15,6 +15,9 @@ void SeparableBoxFilterDataStore::BuildLabel(size_t column_index, const std::vec
 	auto &entities_with_number_values = parametersAndBuffers.entitiesWithValues;
 	entities_with_number_values.clear();
 
+	//clear value interning if applied
+	column_data->ConvertNumberInternsToValues();
+
 	//populate matrix and get values
 	// maintaining the order of insertion of the entities from smallest to largest allows for better performance of the insertions
 	// and every function called here assumes that entities are inserted in increasing order
@@ -223,8 +226,9 @@ void SeparableBoxFilterDataStore::UpdateAllEntityLabels(Entity *entity, size_t e
 		//update the value
 		auto &matrix_value = matrix[matrix_index];
 		auto previous_value_type = column_data->GetIndexValueType(entity_index);
-		column_data->ChangeIndexValue(previous_value_type, matrix_value, value_type, value, entity_index);
-		matrix_value = value;
+
+		//assign the matrix location to the updated value (which may be an index)
+		matrix_value = column_data->ChangeIndexValue(previous_value_type, matrix_value, value_type, value, entity_index);
 
 		matrix_index++;
 	}
@@ -255,8 +259,9 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 	//update the value
 	auto &matrix_value = GetValue(entity_index, column_index);
 	auto previous_value_type = column_data->GetIndexValueType(entity_index);
-	column_data->ChangeIndexValue(previous_value_type, matrix_value, value_type, value, entity_index);
-	matrix_value = value;
+
+	//assign the matrix location to the updated value (which may be an index)
+	matrix_value = column_data->ChangeIndexValue(previous_value_type, matrix_value, value_type, value, entity_index);
 
 	//remove the label if no longer relevant
 	if(IsColumnIndexRemovable(column_index))

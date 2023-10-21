@@ -188,7 +188,9 @@ public:
 	}
 
 	//moves index from being associated with key old_value to key new_value
-	void ChangeIndexValue(EvaluableNodeImmediateValueType old_value_type, EvaluableNodeImmediateValue old_value,
+	//returns the value that should be used to reference the value, which may be an index
+	//depending on the state of the column data
+	EvaluableNodeImmediateValue ChangeIndexValue(EvaluableNodeImmediateValueType old_value_type, EvaluableNodeImmediateValue old_value,
 		EvaluableNodeImmediateValueType new_value_type, EvaluableNodeImmediateValue new_value, size_t index)
 	{
 		//if new one is invalid, can quickly delete or return
@@ -199,14 +201,18 @@ public:
 				DeleteIndexValue(old_value_type, old_value, index);
 				invalidIndices.insert(index);
 			}
-			return;
+
+			if(numberValuesInterned)
+				return EvaluableNodeImmediateValue(ValueEntry::NAN_INDEX);
+			else
+				return EvaluableNodeImmediateValue();
 		}
 
 		//delete index at old value
 		DeleteIndexValue(old_value_type, old_value, index);
 
-		//add index at new value bucket 
-		InsertIndexValue(new_value_type, new_value, index);
+		//add index at new value bucket
+		return InsertIndexValue(new_value_type, new_value, index);
 	}
 
 	//deletes everything involving the value at the index
@@ -320,7 +326,8 @@ public:
 	//inserts the value at id
 	//returns the value that should be used to reference the value, which may be an index
 	//depending on the state of the column data
-	EvaluableNodeImmediateValue InsertIndexValue(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue &value, size_t index)
+	EvaluableNodeImmediateValue InsertIndexValue(EvaluableNodeImmediateValueType value_type,
+		EvaluableNodeImmediateValue &value, size_t index)
 	{
 		if(value_type == ENIVT_NOT_EXIST)
 		{

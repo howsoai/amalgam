@@ -863,16 +863,21 @@ public:
 	// than number values given the current data
 	inline bool AreNumberInternsPreferredToValues()
 	{
-		//use 1/e^2 but round down to reduce flipping back and forth
-		return (sortedNumberValueEntries.size() < numberIndices.size() * 0.14);
+		//use heuristic of sqrt number of values compared to num unique values
+		// (but computed with a multiply instead of sqrt)
+		size_t num_unique_values = sortedNumberValueEntries.size();
+		return (num_unique_values * num_unique_values <= numberIndices.size());
 	}
 
 	//returns true if switching to number values would be expected to yield better results
 	// than number interning given the current data
 	inline bool AreNumberValuesPreferredToInterns()
 	{
-		//use 1/e^2 but round up to reduce flipping back and forth
-		return (numberIndices.size() * 0.16 < sortedNumberValueEntries.size());
+		//use heuristic of sqrt number of values compared to num unique values
+		// (but computed with a multiply instead of sqrt)
+		//round up to reduce flipping back and forth
+		size_t num_unique_values = sortedNumberValueEntries.size();
+		return (num_unique_values * num_unique_values > numberIndices.size() - num_unique_values);
 	}
 
 	//clears number intern caches and changes state to not perform interning for numbers

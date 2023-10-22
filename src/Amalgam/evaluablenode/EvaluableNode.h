@@ -1003,6 +1003,14 @@ union EvaluableNodeImmediateValue
 			return EvaluableNode::AreDeepEqual(value_1.code, value_2.code);
 	}
 
+	//returns true if it is a null or null equivalent
+	static bool IsNullEquivalent(EvaluableNodeImmediateValueType type, EvaluableNodeImmediateValue &value)
+	{
+		return (type == ENIVT_NULL
+				|| (type == ENIVT_NUMBER && FastIsNaN(value.number))
+				|| (type == ENIVT_STRING_ID && value.stringID == string_intern_pool.NOT_A_STRING_ID));
+	}
+
 	double number;
 	StringInternPool::StringID stringID;
 	EvaluableNode *code;

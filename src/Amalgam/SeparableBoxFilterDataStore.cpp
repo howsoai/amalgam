@@ -676,7 +676,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistance &dist_
 		//skip this entity in the next loops
 		enabled_indices.erase(good_match_index);
 
-		double distance = ResolveDistanceToNonMatchTargetValues(dist_params,\
+		double distance = ResolveDistanceToNonMatchTargetValues(dist_params,
 			target_column_indices, target_values, target_value_types, partial_sums, good_match_index, num_enabled_features);
 		sorted_results.Push(DistanceReferencePair(distance, good_match_index));
 	}
@@ -878,7 +878,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 	auto &column = columnData[absolute_feature_index];
 	auto effective_feature_type = dist_params.featureParams[query_feature_index].effectiveFeatureType;
 
-	bool value_is_null = (value_type == ENIVT_NULL || (value_type == ENIVT_NUMBER && FastIsNaN(value.number)));
+	bool value_is_null = EvaluableNodeImmediateValue::IsNullEquivalent(value_type, value);
 	//need to accumulate values for nulls if the value is a null
 	if(value_is_null)
 	{

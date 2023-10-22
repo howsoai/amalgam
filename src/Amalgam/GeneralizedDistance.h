@@ -37,13 +37,15 @@ public:
 	{
 		EFDT_NOMINAL,
 		//everything is precomputed from interned values that are looked up
-		EFDT_INTERNED_VALUES_PRECOMPUTED,
+		EFDT_VALUES_UNIVERSALLY_PRECOMPUTED,
 		//continuous without cycles, but everything is always numeric
 		EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC,
 		//continuous without cycles, may contain nonnumeric data
 		EFDT_CONTINUOUS_NUMERIC,
 		//like FDT_CONTINUOUS_NUMERIC, but has cycles
 		EFDT_CONTINUOUS_NUMERIC_CYCLIC,
+		//continuous precomputed (cyclic or not), may contain nonnumeric data
+		EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED,
 		//edit distance between strings
 		EFDT_CONTINUOUS_STRING,
 		//continuous measures of the number of nodes different between two sets of code
@@ -84,7 +86,8 @@ public:
 
 	//computes and sets unknownToUnknownDistanceTerm and knownToUnknownDistanceTerm based on
 	// unknownToUnknownDifference and knownToUnknownDifference respectively
-	inline void ComputeAndStoreUncertaintyDistanceTerms(size_t index)
+	//if target_value_is_null_equivalent is true, it will update any precomputed values as necessary
+	inline void ComputeAndStoreUncertaintyDistanceTerms(size_t index, bool target_value_is_null_equivalent = false)
 	{
 		bool compute_accurate = NeedToPrecomputeAccurate();
 		bool compute_approximate = NeedToPrecomputeApproximate();
@@ -133,9 +136,22 @@ public:
 			}
 		}
 
-		//the first interned value is always against a NaN
 		if(HasNumberInternValues(index))
-			feature_params.precomputedInternDistanceTerms[0] = feature_params.knownToUnknownDistanceTerm.GetValue(defaultPrecision);
+		{
+			auto &precomputed_terms = feature_params.precomputedInternDistanceTerms;
+
+			if(target_value_is_null_equivalent)
+			{
+				precomputed_terms[0] = feature_params.unknownToUnknownDistanceTerm.GetValue(defaultPrecision);
+				auto k_to_unk = feature_params.knownToUnknownDistanceTerm.GetValue(defaultPrecision);
+				for(size_t i = 1; i < precomputed_terms.size(); i++)
+					precomputed_terms[i] = k_to_unk;
+			}
+			else //just set the unknown value
+			{
+				precomputed_terms[0] = feature_params.knownToUnknownDistanceTerm.GetValue(defaultPrecision);
+			}			
+		}
 	}
 
 	//for the feature index, computes and stores the distance terms as measured from value to each interned value

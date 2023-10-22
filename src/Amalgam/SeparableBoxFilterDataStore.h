@@ -807,14 +807,13 @@ protected:
 				entity_index, query_feature_index);
 
 			//break out of the loop before the iterator is incremented to save a few cycles
-			if(distance > reject_distance)
-				return std::make_pair(false, distance);
-
-			if(num_uncalculated_features == 0)
-				break;
+			//do this via logic to minimize the number of branches
+			bool unacceptable_distance = (distance > reject_distance);
+			if(unacceptable_distance || num_uncalculated_features == 0)
+				return std::make_pair(!unacceptable_distance, distance);
 		}
 
-		//done with computation
+		//shouldn't make it here
 		return std::make_pair(true, distance);
 	}
 

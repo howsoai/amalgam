@@ -250,6 +250,8 @@ public:
 			
 				return new_value;
 			}
+
+			//TODO 17861: add logic for numbers and interned numbers
 		}
 
 		//delete index at old value

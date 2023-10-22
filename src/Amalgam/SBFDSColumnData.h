@@ -244,14 +244,16 @@ public:
 					}
 				}
 			
-				//see if need to compute new longest string
+				//update longest string as appropriate
 				if(index == indexWithLongestString)
 					RecomputeLongestString();
+				else
+					UpdateLongestString(new_value.stringID, index);
 			
 				return new_value;
 			}
 
-			//TODO 17861: add logic for numbers and interned numbers
+			//TODO 17861: add logic for code, numbers and interned numbers
 		}
 
 		//delete index at old value

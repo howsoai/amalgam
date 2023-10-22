@@ -208,6 +208,50 @@ public:
 				return EvaluableNodeImmediateValue();
 		}
 
+		//if the types are the same, some shortcuts may apply
+		if(old_value_type == new_value_type)
+		{
+			if(old_value_type == ENIVT_STRING_ID)
+			{
+				if(old_value.stringID == new_value.stringID)
+					return new_value;
+
+				//try to insert the new value if not already there
+				auto [new_id_entry, inserted] = stringIdValueToIndices.emplace(new_value.stringID, nullptr);
+			
+				auto old_id_entry = stringIdValueToIndices.find(old_value.stringID);
+				if(old_id_entry != end(stringIdValueToIndices))
+				{
+					//if there are multiple entries for this string, just move the id
+					if(old_id_entry->second->size() > 1)
+					{
+						if(inserted)
+							new_id_entry->second = std::make_unique<SortedIntegerSet>();
+			
+						new_id_entry->second->insert(index);
+						old_id_entry->second->erase(index);
+					}
+					else //it's the last old_id_entry
+					{
+						//put the SortedIntegerSet in the new value or move the container
+						if(inserted)
+							new_id_entry->second = std::move(old_id_entry->second);
+						else
+							new_id_entry->second->insert(index);
+			
+						//erase after no longer need inserted_id_entry, as it may be invalidated
+						stringIdValueToIndices.erase(old_id_entry);
+					}
+				}
+			
+				//see if need to compute new longest string
+				if(index == indexWithLongestString)
+					RecomputeLongestString();
+			
+				return new_value;
+			}
+		}
+
 		//delete index at old value
 		DeleteIndexValue(old_value_type, old_value, index);
 
@@ -285,13 +329,7 @@ public:
 
 			//see if need to compute new longest string
 			if(index == indexWithLongestString)
-			{
-				longestStringLength = 0;
-				//initialize to 0 in case there are no entities with strings
-				indexWithLongestString = 0;
-				for(auto &[s_id, s_entry] : stringIdValueToIndices)
-					UpdateLongestString(s_id, *s_entry->begin());
-			}
+				RecomputeLongestString();
 
 			return;
 		}
@@ -432,7 +470,6 @@ public:
 				inserted_id_entry->second = std::make_unique<SortedIntegerSet>();
 
 			auto &ids = *(inserted_id_entry->second);
-			
 			ids.insert(index);
 
 			UpdateLongestString(value.stringID, index);
@@ -921,6 +958,16 @@ protected:
 			longestStringLength = str_size;
 			indexWithLongestString = index;
 		}
+	}
+
+	//should be called when the longest string is now invalid to recompute
+	inline void RecomputeLongestString()
+	{
+		longestStringLength = 0;
+		//initialize to 0 in case there are no entities with strings
+		indexWithLongestString = 0;
+		for(auto &[s_id, s_entry] : stringIdValueToIndices)
+			UpdateLongestString(s_id, *s_entry->begin());
 	}
 
 	//updates largestCodeSize and indexWithLargestCode based on parameters

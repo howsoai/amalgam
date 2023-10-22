@@ -993,7 +993,9 @@ union EvaluableNodeImmediateValue
 			return false;
 
 		//types are the same, just use type_1 for reference
-		if(type_1 == ENIVT_NUMBER)
+		if(type_1 == ENIVT_NULL)
+			return true;
+		else if(type_1 == ENIVT_NUMBER)
 			return EqualIncludingNaN(value_1.number, value_2.number);
 		else if(type_1 == ENIVT_STRING_ID)
 			return (value_1.stringID == value_2.stringID);

@@ -876,7 +876,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 	size_t query_feature_index, size_t absolute_feature_index, BitArrayIntegerSet &enabled_indices)
 {
 	auto &column = columnData[absolute_feature_index];
-	auto feature_type = dist_params.featureParams[query_feature_index].featureType;
+	auto effective_feature_type = dist_params.featureParams[query_feature_index].effectiveFeatureType;
 
 	bool value_is_null = (value_type == ENIVT_NULL || (value_type == ENIVT_NUMBER && FastIsNaN(value.number)));
 	//need to accumulate values for nulls if the value is a null
@@ -891,7 +891,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 		//if the known-unknown term is less than unknown_unknown (this should be rare if nulls have semantic meaning)
 		//then need to populate the rest of the cases
 		double known_unknown_term = dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index);
-		if(feature_type == FDT_NOMINAL || known_unknown_term < unknown_unknown_term)
+		if(effective_feature_type == GeneralizedDistance::EFDT_NOMINAL || known_unknown_term < unknown_unknown_term)
 		{
 			BitArrayIntegerSet &known_unknown_indices = parametersAndBuffers.potentialMatchesSet;
 			known_unknown_indices = enabled_indices;
@@ -913,7 +913,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 	}
 
 	//if nominal, only need to compute the exact match
-	if(feature_type == FDT_NOMINAL)
+	if(effective_feature_type == GeneralizedDistance::EFDT_NOMINAL)
 	{
 		if(value_type == ENIVT_NUMBER)
 		{
@@ -953,7 +953,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 		//didn't find the value
 		return dist_params.ComputeDistanceTermNominalNonMatch(query_feature_index);
 	}
-	else if(feature_type == FDT_CONTINUOUS_STRING)
+	else if(effective_feature_type == GeneralizedDistance::EFDT_CONTINUOUS_STRING)
 	{
 		if(value_type == ENIVT_STRING_ID)
 		{
@@ -968,7 +968,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 		//the next closest string will have an edit distance of 1
 		return dist_params.ComputeDistanceTermNonNominalNonCyclicNonNullRegular(1.0, query_feature_index);
 	}
-	else if(feature_type == FDT_CONTINUOUS_CODE)
+	else if(effective_feature_type == GeneralizedDistance::EFDT_CONTINUOUS_CODE)
 	{
 		//compute partial sums for all code of matching size
 		size_t code_size = 1;

@@ -12,29 +12,43 @@
 //If defined, will use the Laplace LK metric (default).  Otherwise will use Gaussian.
 #define DISTANCE_USE_LAPLACE_LK_METRIC true
 
-//general class of feature comparisons
-// align at 64-bits in order to play nice with data alignment where it is used
-enum FeatureDifferenceType : uint64_t
-{
-	FDT_NOMINAL,
-	//continuous without cycles, but everything is always numeric
-	FDT_CONTINUOUS_UNIVERSALLY_NUMERIC,
-	//continuous without cycles, may contain nonnumeric data
-	FDT_CONTINUOUS_NUMERIC,
-	//like FDT_CONTINUOUS_NUMERIC, but has cycles
-	FDT_CONTINUOUS_NUMERIC_CYCLIC,
-	//edit distance between strings
-	FDT_CONTINUOUS_STRING,
-	//continuous measures of the number of nodes different between two sets of code
-	FDT_CONTINUOUS_CODE,
-};
-
 //base data struct for holding distance parameters and metadata
 //generalizes Minkowski distance, information theoretic surprisal as a distance, and Lukaszyk–Karmowski
 class GeneralizedDistance
 {
 public:
-	//initialization functions
+
+	//general class of feature comparisons
+	// align at 32-bits in order to play nice with data alignment where it is used
+	enum FeatureDifferenceType : uint32_t
+	{
+		FDT_NOMINAL,
+		//continuous without cycles, may contain nonnumeric data
+		FDT_CONTINUOUS_NUMERIC,
+		//like FDT_CONTINUOUS_NUMERIC, but has cycles
+		FDT_CONTINUOUS_NUMERIC_CYCLIC,
+		//edit distance between strings
+		FDT_CONTINUOUS_STRING,
+		//continuous measures of the number of nodes different between two sets of code
+		FDT_CONTINUOUS_CODE,
+	};
+
+	enum EffectiveFeatureDifferenceType : uint32_t
+	{
+		EFDT_NOMINAL,
+		//everything is precomputed from interned values that are looked up
+		EFDT_INTERNED_VALUES_PRECOMPUTED,
+		//continuous without cycles, but everything is always numeric
+		EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC,
+		//continuous without cycles, may contain nonnumeric data
+		EFDT_CONTINUOUS_NUMERIC,
+		//like FDT_CONTINUOUS_NUMERIC, but has cycles
+		EFDT_CONTINUOUS_NUMERIC_CYCLIC,
+		//edit distance between strings
+		EFDT_CONTINUOUS_STRING,
+		//continuous measures of the number of nodes different between two sets of code
+		EFDT_CONTINUOUS_CODE,
+	};
 
 	//dynamically precompute and cache nominal deltas and defaults everytime the pValue is set
 	inline void SetAndConstrainParams()
@@ -667,8 +681,7 @@ public:
 	__forceinline static double ComputeDifference(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
 		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, FeatureDifferenceType feature_type)
 	{
-		if(feature_type == FDT_CONTINUOUS_UNIVERSALLY_NUMERIC
-			|| feature_type == FDT_CONTINUOUS_NUMERIC
+		if(feature_type == FDT_CONTINUOUS_NUMERIC
 			|| feature_type == FDT_CONTINUOUS_NUMERIC_CYCLIC)
 		{
 			if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)
@@ -798,7 +811,9 @@ public:
 	{
 	public:
 		inline FeatureParams()
-			: featureType(FDT_CONTINUOUS_NUMERIC), weight(1.0),
+			: featureType(FDT_CONTINUOUS_NUMERIC),
+			effectiveFeatureType(EFDT_CONTINUOUS_NUMERIC),
+			weight(1.0),
 			internedNumberIndexToNumberValue(nullptr), deviation(0.0),
 			unknownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
 			knownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
@@ -809,8 +824,12 @@ public:
 		}
 
 		//the type of comparison for each feature
-		// this type is 64-bit aligned to make sure the whole structure is aligned
+		// this type is 32-bit aligned to make sure the whole structure is aligned
 		FeatureDifferenceType featureType;
+
+		//the effective comparison for the feature type, specialized for performance
+		// this type is 32-bit aligned to make sure the whole structure is aligned
+		EffectiveFeatureDifferenceType effectiveFeatureType;
 
 		//weight of the feature
 		double weight;

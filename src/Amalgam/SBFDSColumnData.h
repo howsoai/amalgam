@@ -463,21 +463,20 @@ public:
 	{
 		switch(feature_params.featureType)
 		{
-		case FDT_NOMINAL:
+		case GeneralizedDistance::FDT_NOMINAL:
 			return 1.0;
 
-		case FDT_CONTINUOUS_UNIVERSALLY_NUMERIC:
-		case FDT_CONTINUOUS_NUMERIC:
+		case GeneralizedDistance::FDT_CONTINUOUS_NUMERIC:
 			if(sortedNumberValueEntries.size() <= 1)
 				return 0.0;
 
 			return sortedNumberValueEntries.back()->value.number - sortedNumberValueEntries[0]->value.number;
 
-		case FDT_CONTINUOUS_NUMERIC_CYCLIC:
+		case GeneralizedDistance::FDT_CONTINUOUS_NUMERIC_CYCLIC:
 			//maximum is the other side of the cycle
 			return feature_params.typeAttributes.maxCyclicDifference / 2;
 
-		case FDT_CONTINUOUS_STRING:
+		case GeneralizedDistance::FDT_CONTINUOUS_STRING:
 			//the max difference is the worst case edit distance, of removing all the characters
 			// and adding all the new ones
 			if(value_type == ENIVT_STRING_ID)
@@ -495,7 +494,7 @@ public:
 				return static_cast<double>(longestStringLength + 1);
 			}
 
-		case FDT_CONTINUOUS_CODE:
+		case GeneralizedDistance::FDT_CONTINUOUS_CODE:
 			if(value_type == ENIVT_CODE)
 				return static_cast<double>(largestCodeSize + EvaluableNode::GetDeepSize(value.code));
 			else if(value_type == ENIVT_NULL)

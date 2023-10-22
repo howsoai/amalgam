@@ -705,56 +705,43 @@ protected:
 		std::vector<EvaluableNodeImmediateValue> &target_values, std::vector<EvaluableNodeImmediateValueType> &target_value_types,
 		size_t entity_index, size_t query_feature_index)
 	{
-		auto feature_type = dist_params.featureParams[query_feature_index].featureType;
+		auto effective_feature_type = dist_params.featureParams[query_feature_index].effectiveFeatureType;
 
-		if(feature_type == FDT_NOMINAL)
+		if(effective_feature_type == GeneralizedDistance::EFDT_NOMINAL)
 			return dist_params.ComputeDistanceTermNominalNonMatch(query_feature_index);
-		else
+
+		const size_t column_index = target_label_indices[query_feature_index];
+
+		if(effective_feature_type == GeneralizedDistance::EFDT_INTERNED_VALUES_PRECOMPUTED)
+			return dist_params.ComputeDistanceTermNumberInterned(GetValue(entity_index, column_index).indirectionIndex, query_feature_index);
+
+		if(effective_feature_type == GeneralizedDistance::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC)
+			return dist_params.ComputeDistanceTermNonNominalNonCyclicOneNonNullRegular(target_values[query_feature_index].number - GetValue(entity_index, column_index).number, query_feature_index);
+
+		if(effective_feature_type == GeneralizedDistance::EFDT_CONTINUOUS_NUMERIC)
 		{
-			const size_t column_index = target_label_indices[query_feature_index];
-
-			if(feature_type == FDT_CONTINUOUS_UNIVERSALLY_NUMERIC)
-			{
-				if(dist_params.HasNumberInternValues(query_feature_index))
-					return dist_params.ComputeDistanceTermNumberInterned(GetValue(entity_index, column_index).indirectionIndex, query_feature_index);
-				else
-					return dist_params.ComputeDistanceTermNonNominalNonCyclicOneNonNullRegular(target_values[query_feature_index].number - GetValue(entity_index, column_index).number, query_feature_index);
-			}
-			else if(feature_type == FDT_CONTINUOUS_NUMERIC)
-			{
-				auto &column_data = columnData[column_index];
-				if(column_data->numberIndices.contains(entity_index))
-				{
-					if(dist_params.HasNumberInternValues(query_feature_index))
-						return dist_params.ComputeDistanceTermNumberInterned(GetValue(entity_index, column_index).indirectionIndex, query_feature_index);
-					else
-						return dist_params.ComputeDistanceTermNonNominalNonCyclicOneNonNullRegular(target_values[query_feature_index].number - GetValue(entity_index, column_index).number, query_feature_index);
-				}
-				else
-					return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index);
-			}
-			else if(feature_type == FDT_CONTINUOUS_NUMERIC_CYCLIC)
-			{
-				auto &column_data = columnData[column_index];
-				if(column_data->numberIndices.contains(entity_index))
-				{
-					if(dist_params.HasNumberInternValues(query_feature_index))
-						return dist_params.ComputeDistanceTermNumberInterned(GetValue(entity_index, column_index).indirectionIndex, query_feature_index);
-					else
-						return dist_params.ComputeDistanceTermNonNominalOneNonNullRegular(target_values[query_feature_index].number - GetValue(entity_index, column_index).number, query_feature_index);
-				}
-				else
-					return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index);
-			}
-			else //feature_type == FDT_CONTINUOUS_CODE
-			{
-				auto &column_data = columnData[column_index];
-				auto other_value_type = column_data->GetIndexValueType(entity_index);
-				auto other_value = column_data->GetResolvedValue(other_value_type, GetValue(entity_index, column_index));
-
-				return dist_params.ComputeDistanceTermRegular(target_values[query_feature_index], other_value, target_value_types[query_feature_index], other_value_type, query_feature_index);
-			}
+			auto &column_data = columnData[column_index];
+			if(column_data->numberIndices.contains(entity_index))
+				return dist_params.ComputeDistanceTermNonNominalNonCyclicOneNonNullRegular(target_values[query_feature_index].number - GetValue(entity_index, column_index).number, query_feature_index);
+			else
+				return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index);
 		}
+
+		if(effective_feature_type == GeneralizedDistance::EFDT_CONTINUOUS_NUMERIC_CYCLIC)
+		{
+			auto &column_data = columnData[column_index];
+			if(column_data->numberIndices.contains(entity_index))
+				return dist_params.ComputeDistanceTermNonNominalOneNonNullRegular(target_values[query_feature_index].number - GetValue(entity_index, column_index).number, query_feature_index);
+			else
+				return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index);
+		}
+
+		//effective_feature_type == GeneralizedDistance::EFDT_CONTINUOUS_CODE
+		auto &column_data = columnData[column_index];
+		auto other_value_type = column_data->GetIndexValueType(entity_index);
+		auto other_value = column_data->GetResolvedValue(other_value_type, GetValue(entity_index, column_index));
+
+		return dist_params.ComputeDistanceTermRegular(target_values[query_feature_index], other_value, target_value_types[query_feature_index], other_value_type, query_feature_index);
 	}
 
 	//given an estimate of distance that uses best_possible_feature_distance filled in for any features not computed,
@@ -841,11 +828,21 @@ protected:
 		target_column_indices.push_back(column_index);
 
 		auto &feature_type = dist_params.featureParams[query_feature_index].featureType;
+		auto &effective_feature_type = dist_params.featureParams[query_feature_index].effectiveFeatureType;
 
-		if(feature_type == FDT_NOMINAL || feature_type == FDT_CONTINUOUS_STRING || feature_type == FDT_CONTINUOUS_CODE)
+		if(feature_type == GeneralizedDistance::FDT_NOMINAL
+			|| feature_type == GeneralizedDistance::FDT_CONTINUOUS_STRING
+			|| feature_type == GeneralizedDistance::FDT_CONTINUOUS_CODE)
 		{
 			target_values.push_back(position_value);
 			target_value_types.push_back(position_value_type);
+
+			if(feature_type == GeneralizedDistance::FDT_NOMINAL)
+				effective_feature_type = GeneralizedDistance::EFDT_NOMINAL;
+			else if(feature_type == GeneralizedDistance::FDT_CONTINUOUS_STRING)
+				effective_feature_type = GeneralizedDistance::EFDT_CONTINUOUS_STRING;
+			else if(feature_type == GeneralizedDistance::FDT_CONTINUOUS_CODE)
+				effective_feature_type = GeneralizedDistance::EFDT_CONTINUOUS_CODE;
 		}
 		else // feature_type is some form of numeric
 		{
@@ -854,14 +851,23 @@ protected:
 			target_values.push_back(position_value_numeric);
 			target_value_types.push_back(ENIVT_NUMBER);
 
-			//if everything is either non-existant or numeric, then can shortcut later
+			//set up effective_feature_type
 			auto &column_data = columnData[column_index];
-			size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
-			if(GetNumInsertedEntities() == num_values_stored_as_numbers && feature_type == FDT_CONTINUOUS_NUMERIC)
-				feature_type = FDT_CONTINUOUS_UNIVERSALLY_NUMERIC;
-
 			if(column_data->numberValuesInterned)
+			{
+				effective_feature_type = GeneralizedDistance::EFDT_INTERNED_VALUES_PRECOMPUTED;
 				dist_params.ComputeAndStoreInternedNumberValuesAndDistanceTerms(query_feature_index, position_value_numeric, &column_data->internedNumberIndexToNumberValue);
+			}
+			else
+			{
+				size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
+				if(GetNumInsertedEntities() == num_values_stored_as_numbers && feature_type == GeneralizedDistance::FDT_CONTINUOUS_NUMERIC)
+					effective_feature_type = GeneralizedDistance::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC;
+				else if(feature_type == GeneralizedDistance::FDT_CONTINUOUS_NUMERIC_CYCLIC)
+					effective_feature_type = GeneralizedDistance::EFDT_CONTINUOUS_NUMERIC_CYCLIC;
+				else
+					effective_feature_type = GeneralizedDistance::EFDT_CONTINUOUS_NUMERIC;
+			}
 		}
 	}
 

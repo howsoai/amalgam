@@ -712,11 +712,11 @@ protected:
 
 		const size_t column_index = target_label_indices[query_feature_index];
 
-		if(effective_feature_type == GeneralizedDistance::EFDT_INTERNED_VALUES_PRECOMPUTED)
-			return dist_params.ComputeDistanceTermNumberInterned(GetValue(entity_index, column_index).indirectionIndex, query_feature_index);
-
 		if(effective_feature_type == GeneralizedDistance::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC)
 			return dist_params.ComputeDistanceTermNonNominalNonCyclicOneNonNullRegular(target_values[query_feature_index].number - GetValue(entity_index, column_index).number, query_feature_index);
+
+		if(effective_feature_type == GeneralizedDistance::EFDT_INTERNED_VALUES_PRECOMPUTED)
+			return dist_params.ComputeDistanceTermNumberInterned(GetValue(entity_index, column_index).indirectionIndex, query_feature_index);
 
 		if(effective_feature_type == GeneralizedDistance::EFDT_CONTINUOUS_NUMERIC)
 		{

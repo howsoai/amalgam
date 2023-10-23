@@ -242,43 +242,67 @@ public:
 						return EvaluableNodeImmediateValue(std::numeric_limits<double>::quiet_NaN());
 				}
 
-				//TODO 17861: finish number change efficiency
-				/*
-				//try to insert the new value if not already there
-				auto [new_id_entry, inserted] = stringIdValueToIndices.emplace(new_value.stringID, nullptr);
-
-				auto old_id_entry = stringIdValueToIndices.find(old_value.stringID);
-				if(old_id_entry != end(stringIdValueToIndices))
+				//if the value already exists, then put the index in the list
+				//but return the lower bound if not found so don't have to search a second time
+				//need to search the old value before inserting, as FindExactIndexForValue is fragile a placeholder empty entry
+				auto [new_value_index, new_exact_index_found] = FindExactIndexForValue(new_number_value, true);
+				auto [old_value_index, old_exact_index_found] = FindExactIndexForValue(old_number_value, true);
+				if(!new_exact_index_found)
 				{
-					//if there are multiple entries for this string, just move the id
-					if(old_id_entry->second->size() > 1)
-					{
-						if(inserted)
-							new_id_entry->second = std::make_unique<SortedIntegerSet>();
+					sortedNumberValueEntries.emplace(sortedNumberValueEntries.begin() + new_value_index, nullptr);
 
-						new_id_entry->second->insert(index);
-						old_id_entry->second->erase(index);
-					}
-					else //it's the last old_id_entry
-					{
-						//put the SortedIntegerSet in the new value or move the container
-						if(inserted)
-							new_id_entry->second = std::move(old_id_entry->second);
-						else
-							new_id_entry->second->insert(index);
-
-						//erase after no longer need inserted_id_entry, as it may be invalidated
-						stringIdValueToIndices.erase(old_id_entry);
-					}
-				}
-				else if(inserted) //shouldn't make it here, but ensure integrity just in case
-				{
-					new_id_entry->second = std::make_unique<SortedIntegerSet>();
+					//if emplaced earlier, need to bump up the old value index
+					if(new_number_value < old_number_value)
+						old_value_index++;
 				}
 
+				if(old_exact_index_found)
+				{
+					auto *old_number_entry = sortedNumberValueEntries[old_value_index].get();
+					//if there are multiple entries for this number, just move the id
+					if(old_number_entry->indicesWithValue.size() > 1)
+					{
+						if(!new_exact_index_found)
+						{
+							sortedNumberValueEntries[new_value_index] = std::make_unique<ValueEntry>(new_number_value);
+							InsertFirstIndexIntoNumberValueEntry(index, new_value_index);
+						}
+						else //just insert
+						{
+							sortedNumberValueEntries[new_value_index]->indicesWithValue.insert(index);
+						}
 
-				return;
-				*/
+						sortedNumberValueEntries[old_value_index]->indicesWithValue.erase(index);
+					}
+					else //it's the last old_number_entry
+					{
+						if(!new_exact_index_found)
+						{
+							//can reuse all the properties of the old value entry, but need to update the number value
+							sortedNumberValueEntries[new_value_index] = std::move(sortedNumberValueEntries[old_value_index]);
+							sortedNumberValueEntries[new_value_index]->value.number = new_number_value;
+							sortedNumberValueEntries.erase(sortedNumberValueEntries.begin() + old_value_index);
+						}
+						else //already has an entry for the new value, just delete as normal
+						{
+							sortedNumberValueEntries[new_value_index]->indicesWithValue.insert(index);
+							DeleteNumberValueEntry(old_value_index);
+						}
+					}
+				}
+				else //shouldn't make it here, but ensure integrity just in case
+				{
+					//insert new value in correct position
+					auto inserted = sortedNumberValueEntries.emplace(sortedNumberValueEntries.begin() + new_value_index,
+						std::make_unique<ValueEntry>(new_number_value));
+
+					InsertFirstIndexIntoNumberValueEntry(index, new_value_index);
+				}
+
+				if(numberValuesInterned)
+					return EvaluableNodeImmediateValue(new_value_index);
+				else
+					return EvaluableNodeImmediateValue(new_value);
 			}
 
 			if(old_value_type == ENIVT_STRING_ID)
@@ -288,7 +312,7 @@ public:
 
 				//try to insert the new value if not already there
 				auto [new_id_entry, inserted] = stringIdValueToIndices.emplace(new_value.stringID, nullptr);
-			
+
 				auto old_id_entry = stringIdValueToIndices.find(old_value.stringID);
 				if(old_id_entry != end(stringIdValueToIndices))
 				{
@@ -297,7 +321,7 @@ public:
 					{
 						if(inserted)
 							new_id_entry->second = std::make_unique<SortedIntegerSet>();
-			
+
 						new_id_entry->second->insert(index);
 						old_id_entry->second->erase(index);
 					}
@@ -308,7 +332,7 @@ public:
 							new_id_entry->second = std::move(old_id_entry->second);
 						else
 							new_id_entry->second->insert(index);
-			
+
 						//erase after no longer need inserted_id_entry, as it may be invalidated
 						stringIdValueToIndices.erase(old_id_entry);
 					}
@@ -316,14 +340,15 @@ public:
 				else if(inserted) //shouldn't make it here, but ensure integrity just in case
 				{
 					new_id_entry->second = std::make_unique<SortedIntegerSet>();
+					new_id_entry->second->insert(index);
 				}
-			
+
 				//update longest string as appropriate
 				if(index == indexWithLongestString)
 					RecomputeLongestString();
 				else
 					UpdateLongestString(new_value.stringID, index);
-			
+
 				return new_value;
 			}
 
@@ -367,7 +392,10 @@ public:
 						}
 					}
 					else if(inserted) //shouldn't make it here, but ensure integrity just in case
+					{
 						new_size_entry->second = std::make_unique<SortedIntegerSet>();
+						new_size_entry->second->insert(index);
+					}
 				}
 
 				//update longest string as appropriate
@@ -386,6 +414,31 @@ public:
 
 		//add index at new value bucket
 		return InsertIndexValue(new_value_type, new_value, index);
+	}
+
+	//deletes a particular value based on the value_index
+	void DeleteNumberValueEntry(size_t value_index)
+	{
+		if(numberValuesInterned)
+		{
+			size_t value_intern_index = sortedNumberValueEntries[value_index]->valueInternIndex;
+			//if the last entry, can just resize
+			if(value_intern_index == internedNumberIndexToNumberValue.size() - 1)
+			{
+				internedNumberIndexToNumberValue.resize(value_intern_index);
+			}
+			else //need to actually erase it
+			{
+				internedNumberIndexToNumberValue[value_intern_index] = std::numeric_limits<double>::quiet_NaN();
+				unusedNumberValueIndices.emplace(value_intern_index);
+			}
+
+			//clear out any unusedNumberValueIndices at the end other than the 0th entry
+			while(internedNumberIndexToNumberValue.size() > 1 && FastIsNaN(internedNumberIndexToNumberValue.back()))
+				internedNumberIndexToNumberValue.pop_back();
+		}
+
+		sortedNumberValueEntries.erase(sortedNumberValueEntries.begin() + value_index);
 	}
 
 	//deletes everything involving the value at the index
@@ -417,32 +470,9 @@ public:
 
 				//if the bucket has only one entry, we must delete the entire bucket
 				if(sortedNumberValueEntries[value_index]->indicesWithValue.size() == 1)
-				{
-					if(numberValuesInterned)
-					{
-						size_t value_intern_index = sortedNumberValueEntries[value_index]->valueInternIndex;
-						//if the last entry, can just resize
-						if(value_intern_index == internedNumberIndexToNumberValue.size() - 1)
-						{
-							internedNumberIndexToNumberValue.resize(value_intern_index);
-						}
-						else //need to actually erase it
-						{
-							internedNumberIndexToNumberValue[value_intern_index] = std::numeric_limits<double>::quiet_NaN();
-							unusedNumberValueIndices.emplace(value_intern_index);
-						}
-
-						//clear out any unusedNumberValueIndices at the end other than the 0th entry
-						while(internedNumberIndexToNumberValue.size() > 1 && FastIsNaN(internedNumberIndexToNumberValue.back()))
-							internedNumberIndexToNumberValue.pop_back();
-					}
-
-					sortedNumberValueEntries.erase(sortedNumberValueEntries.begin() + value_index);
-				}
+					DeleteNumberValueEntry(value_index);
 				else //else we can just remove the id from the bucket
-				{
 					sortedNumberValueEntries[value_index]->indicesWithValue.erase(index);
-				}
 			}
 			break;
 
@@ -491,6 +521,44 @@ public:
 
 		default: //shouldn't make it here
 			break;
+		}
+	}
+
+	//deletes a particular value based on the value_index
+	void InsertFirstIndexIntoNumberValueEntry(size_t index, size_t value_index)
+	{
+		ValueEntry *value_entry = sortedNumberValueEntries[value_index].get();
+
+		value_entry->indicesWithValue.insert(index);
+		if(numberValuesInterned)
+		{
+			if(value_entry->valueInternIndex == ValueEntry::NO_INDEX)
+			{
+				//get the highest value 
+				if(unusedNumberValueIndices.size() > 0)
+				{
+					value_entry->valueInternIndex = unusedNumberValueIndices.top();
+
+					//make sure the value is valid
+					if(value_entry->valueInternIndex < sortedNumberValueEntries.size())
+					{
+						unusedNumberValueIndices.pop();
+					}
+					else //not valid, clear queue
+					{
+						unusedNumberValueIndices.clear();
+						//just use a new value, leaving a spot open for NAN_INDEX
+						value_entry->valueInternIndex = sortedNumberValueEntries.size() + 1;
+					}
+				}
+				else //just use new value
+				{
+					value_entry->valueInternIndex = sortedNumberValueEntries.size() + 1;
+				}
+
+				if(value_entry->valueInternIndex >= internedNumberIndexToNumberValue.size())
+					internedNumberIndexToNumberValue.resize(value_entry->valueInternIndex + 1, std::numeric_limits<double>::quiet_NaN());
+			}
 		}
 	}
 
@@ -549,47 +617,14 @@ public:
 			}
 
 			//insert new value in correct position
-			auto inserted = sortedNumberValueEntries.emplace(sortedNumberValueEntries.begin() + value_index,
+			sortedNumberValueEntries.emplace(sortedNumberValueEntries.begin() + value_index,
 				std::make_unique<ValueEntry>(number_value));
 
-			ValueEntry *value_entry = inserted->get();
-			value_entry->indicesWithValue.insert(index);
+			InsertFirstIndexIntoNumberValueEntry(index, value_index);
 
 			if(numberValuesInterned)
-			{
-				if(value_entry->valueInternIndex == ValueEntry::NO_INDEX)
-				{
-					//get the highest value 
-					if(unusedNumberValueIndices.size() > 0)
-					{
-						value_entry->valueInternIndex = unusedNumberValueIndices.top();
-
-						//make sure the value is valid
-						if(value_entry->valueInternIndex < sortedNumberValueEntries.size())
-						{
-							unusedNumberValueIndices.pop();
-						}
-						else //not valid, clear queue
-						{
-							unusedNumberValueIndices.clear();
-							//just use a new value, leaving a spot open for NAN_INDEX
-							value_entry->valueInternIndex = sortedNumberValueEntries.size() + 1;
-						}
-					}
-					else //just use new value
-					{
-						value_entry->valueInternIndex = sortedNumberValueEntries.size() + 1;
-					}
-
-					if(value_entry->valueInternIndex >= internedNumberIndexToNumberValue.size())
-						internedNumberIndexToNumberValue.resize(value_entry->valueInternIndex + 1, std::numeric_limits<double>::quiet_NaN());
-
-					internedNumberIndexToNumberValue[value_entry->valueInternIndex] = number_value;
-				}
-
-				return value_entry->valueInternIndex;
-			}
-			else //just return the value
+				return sortedNumberValueEntries[value_index]->valueInternIndex;
+			else
 				return value;
 		}
 

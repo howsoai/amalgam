@@ -253,7 +253,74 @@ public:
 				return new_value;
 			}
 
-			//TODO 17861: add logic for code, numbers and interned numbers
+			if(old_value_type == ENIVT_CODE)
+			{
+				//only early exit if the pointers to the code are exactly the same,
+				// as equivalent code may be garbage collected
+				if(old_value.code == new_value.code)
+					return new_value;
+
+				//TODO: finish from here down
+				/*
+				size_t old_code_size = EvaluableNode::GetDeepSize(old_value.code);
+				size_t new_code_size = EvaluableNode::GetDeepSize(new_value.code);
+
+				//only need to do insert / removal logic if sizes are different
+				if(old_code_size != new_code_size)
+				{
+					auto [new_size_entry, inserted] = valueCodeSizeToIndices.emplace(new_code_size, nullptr);
+
+
+					if(inserted)
+						new_size_entry->second = std::make_unique<SortedIntegerSet>();
+
+					//add the entity
+					new_size_entry->second->insert(index);
+
+					auto old_size_entry = valueCodeSizeToIndices.find(old_code_size);
+
+
+					//try to insert the new value if not already there
+					auto [new_id_entry, inserted] = stringIdValueToIndices.emplace(new_value.stringID, nullptr);
+
+					auto old_id_entry = stringIdValueToIndices.find(old_value.stringID);
+					if(old_id_entry != end(stringIdValueToIndices))
+					{
+						//if there are multiple entries for this string, just move the id
+						if(old_id_entry->second->size() > 1)
+						{
+							if(inserted)
+								new_id_entry->second = std::make_unique<SortedIntegerSet>();
+
+							new_id_entry->second->insert(index);
+							old_id_entry->second->erase(index);
+						}
+						else //it's the last old_id_entry
+						{
+							//put the SortedIntegerSet in the new value or move the container
+							if(inserted)
+								new_id_entry->second = std::move(old_id_entry->second);
+							else
+								new_id_entry->second->insert(index);
+
+							//erase after no longer need inserted_id_entry, as it may be invalidated
+							stringIdValueToIndices.erase(old_id_entry);
+						}
+					}
+				}
+
+				//update longest string as appropriate
+				//see if need to update largest code
+				if(index == indexWithLargestCode)
+					RecomputeLargestCode();
+				else
+					UpdateLargestCode(new_code_size, index);
+
+				return new_value;
+				*/
+
+			}
+			//TODO 17861: finish logic numbers and interned numbers
 		}
 
 		//delete index at old value

@@ -209,21 +209,27 @@ public:
 		}
 
 		//if the types are the same, some shortcuts may apply
+		//note that if the values match types and match resolved values, the old_value should be returned
+		//because it is already in the correct storage format for the column
 		if(old_value_type == new_value_type)
 		{
 			if(old_value_type == ENIVT_NULL)
+				return old_value;
+
+			if(old_value_type == ENIVT_NUMBER)
 			{
-				//if both are null, don't need to do anything, just return correct value
-				if(numberValuesInterned)
-					return EvaluableNodeImmediateValue(ValueEntry::NAN_INDEX);
-				else
-					return new_value;
+				double old_number_value = GetResolvedValue(old_value_type, old_value).number;
+				double new_number_value = GetResolvedValue(new_value_type, new_value).number;
+				if(EqualIncludingNaN(old_number_value, new_number_value))
+					return old_value;
+
+				//TODO 17861: finish number change efficiency
 			}
 
 			if(old_value_type == ENIVT_STRING_ID)
 			{
 				if(old_value.stringID == new_value.stringID)
-					return new_value;
+					return old_value;
 
 				//try to insert the new value if not already there
 				auto [new_id_entry, inserted] = stringIdValueToIndices.emplace(new_value.stringID, nullptr);
@@ -271,7 +277,7 @@ public:
 				//only early exit if the pointers to the code are exactly the same,
 				// as equivalent code may be garbage collected
 				if(old_value.code == new_value.code)
-					return new_value;
+					return old_value;
 
 				size_t old_code_size = EvaluableNode::GetDeepSize(old_value.code);
 				size_t new_code_size = EvaluableNode::GetDeepSize(new_value.code);
@@ -318,7 +324,6 @@ public:
 
 				return new_value;
 			}
-			//TODO 17861: finish logic numbers and interned numbers
 		}
 
 		//delete index at old value

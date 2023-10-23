@@ -293,7 +293,7 @@ public:
 				else //shouldn't make it here, but ensure integrity just in case
 				{
 					//insert new value in correct position
-					auto inserted = sortedNumberValueEntries.emplace(sortedNumberValueEntries.begin() + new_value_index,
+					sortedNumberValueEntries.emplace(sortedNumberValueEntries.begin() + new_value_index,
 						std::make_unique<ValueEntry>(new_number_value));
 
 					InsertFirstIndexIntoNumberValueEntry(index, new_value_index);

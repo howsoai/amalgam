@@ -1,0 +1,16 @@
+{
+  "name": "amalgam-wasm-test",
+  "version": "0.0.1",
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "test": "jest"
+  },
+  "engines": {
+    "node": ">=18.12"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0"
+  }
+}

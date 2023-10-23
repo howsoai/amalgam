@@ -73,8 +73,8 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" S
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
 
     set(IS_APPLECLANG True)
-    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 13)
-        message(WARNING "AppleClang version '${CMAKE_CXX_COMPILER_VERSION}' < 13, usage is not officially supported")
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 14)
+        message(WARNING "AppleClang version '${CMAKE_CXX_COMPILER_VERSION}' < 14, usage is not officially supported")
     endif()
 
     string(APPEND CMAKE_CXX_FLAGS " -fPIC -fno-strict-aliasing -Wall -Wno-unknown-pragmas -Werror")

@@ -81,7 +81,7 @@ An interpreter application and shared library (dll/so/dylib) are built for each 
 | Linux arm64: 8-a+simd        | ST                            | :heavy_check_mark: | Tested with [qemu](https://www.qemu.org/) |
 | macOS amd64                  | MT, ST, OMP, MT-NoAVX         | :heavy_check_mark: | Only **MT-NoAVX** tested currently |
 | macOS arm64: 8.4-a+simd      | MT, ST, OMP                   | :x:                | Manually tested, M1 and newer supported |
-| WASM 64-bit                  | ST                            | :x:                | Built on linux using emscripten. Planned testing: headless test with node + jest |
+| WASM 64-bit                  | ST                            | :heavy_check_mark: | Built on linux using emscripten, headless test with node:18 + jest |
 
 * <sup>1</sup> Variant meanings:
     * MT
@@ -121,7 +121,7 @@ Though Amalgam is intended to support any C++17 compliant compiler, the current 
 * Linux:
     * Ubuntu 20.04, gcc-10
 * macOS (Darwin):
-    * macOS 11, AppleClang 13.0
+    * macOS 12, AppleClang 14.0
 * WASM:
     * Ubuntu 20.04, emscripten 3.1.32
 
@@ -154,7 +154,7 @@ Running the pre-built interpreter has specific runtime requirements per platform
 
 ##### macOS (Darwin)
 
-* macOS 11 or higher
+* macOS 12 or higher
 * Arch: amd64 or arm64
     * Specific arm64 builds: `armv8.4-a+simd` (M1 or later)
 

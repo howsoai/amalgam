@@ -356,13 +356,7 @@ public:
 
 		//see if need to update largest code
 		if(index == indexWithLargestCode)
-		{
-			largestCodeSize = 0;
-			//initialize to 0 in case there are no entities with code
-			indexWithLargestCode = 0;
-			for(auto &[size, entry] : valueCodeSizeToIndices)
-				UpdateLargestCode(size, *entry->begin());
-		}
+			RecomputeLargestCode();
 	}
 
 	//inserts the value at id
@@ -964,7 +958,7 @@ protected:
 		}
 	}
 
-	//should be called when the longest string is now invalid to recompute
+	//should be called when the longest string is invalidated
 	inline void RecomputeLongestString()
 	{
 		longestStringLength = 0;
@@ -982,6 +976,16 @@ protected:
 			largestCodeSize = code_size;
 			indexWithLargestCode = index;
 		}
+	}
+
+	//should be called when the largest code is invalidated
+	inline void RecomputeLargestCode()
+	{
+		largestCodeSize = 0;
+		//initialize to 0 in case there are no entities with code
+		indexWithLargestCode = 0;
+		for(auto &[size, entry] : valueCodeSizeToIndices)
+			UpdateLargestCode(size, *entry->begin());
 	}
 
 public:

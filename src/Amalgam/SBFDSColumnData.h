@@ -243,6 +243,10 @@ public:
 						stringIdValueToIndices.erase(old_id_entry);
 					}
 				}
+				else if(inserted) //shouldn't make it here, but ensure integrity just in case
+				{
+					new_id_entry->second = std::make_unique<SortedIntegerSet>();
+				}
 			
 				//update longest string as appropriate
 				if(index == indexWithLongestString)
@@ -260,8 +264,6 @@ public:
 				if(old_value.code == new_value.code)
 					return new_value;
 
-				//TODO: finish from here down
-				/*
 				size_t old_code_size = EvaluableNode::GetDeepSize(old_value.code);
 				size_t new_code_size = EvaluableNode::GetDeepSize(new_value.code);
 
@@ -270,43 +272,32 @@ public:
 				{
 					auto [new_size_entry, inserted] = valueCodeSizeToIndices.emplace(new_code_size, nullptr);
 
-
-					if(inserted)
-						new_size_entry->second = std::make_unique<SortedIntegerSet>();
-
-					//add the entity
-					new_size_entry->second->insert(index);
-
 					auto old_size_entry = valueCodeSizeToIndices.find(old_code_size);
-
-
-					//try to insert the new value if not already there
-					auto [new_id_entry, inserted] = stringIdValueToIndices.emplace(new_value.stringID, nullptr);
-
-					auto old_id_entry = stringIdValueToIndices.find(old_value.stringID);
-					if(old_id_entry != end(stringIdValueToIndices))
+					if(old_size_entry != end(valueCodeSizeToIndices))
 					{
 						//if there are multiple entries for this string, just move the id
-						if(old_id_entry->second->size() > 1)
+						if(old_size_entry->second->size() > 1)
 						{
 							if(inserted)
-								new_id_entry->second = std::make_unique<SortedIntegerSet>();
+								new_size_entry->second = std::make_unique<SortedIntegerSet>();
 
-							new_id_entry->second->insert(index);
-							old_id_entry->second->erase(index);
+							new_size_entry->second->insert(index);
+							old_size_entry->second->erase(index);
 						}
-						else //it's the last old_id_entry
+						else //it's the last old_size_entry
 						{
 							//put the SortedIntegerSet in the new value or move the container
 							if(inserted)
-								new_id_entry->second = std::move(old_id_entry->second);
+								new_size_entry->second = std::move(old_size_entry->second);
 							else
-								new_id_entry->second->insert(index);
+								new_size_entry->second->insert(index);
 
-							//erase after no longer need inserted_id_entry, as it may be invalidated
-							stringIdValueToIndices.erase(old_id_entry);
+							//erase after no longer need inserted_size_entry, as it may be invalidated
+							valueCodeSizeToIndices.erase(old_size_entry);
 						}
 					}
+					else if(inserted) //shouldn't make it here, but ensure integrity just in case
+						new_size_entry->second = std::make_unique<SortedIntegerSet>();
 				}
 
 				//update longest string as appropriate
@@ -317,8 +308,6 @@ public:
 					UpdateLargestCode(new_code_size, index);
 
 				return new_value;
-				*/
-
 			}
 			//TODO 17861: finish logic numbers and interned numbers
 		}

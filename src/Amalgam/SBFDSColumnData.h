@@ -243,6 +243,42 @@ public:
 				}
 
 				//TODO 17861: finish number change efficiency
+				/*
+				//try to insert the new value if not already there
+				auto [new_id_entry, inserted] = stringIdValueToIndices.emplace(new_value.stringID, nullptr);
+
+				auto old_id_entry = stringIdValueToIndices.find(old_value.stringID);
+				if(old_id_entry != end(stringIdValueToIndices))
+				{
+					//if there are multiple entries for this string, just move the id
+					if(old_id_entry->second->size() > 1)
+					{
+						if(inserted)
+							new_id_entry->second = std::make_unique<SortedIntegerSet>();
+
+						new_id_entry->second->insert(index);
+						old_id_entry->second->erase(index);
+					}
+					else //it's the last old_id_entry
+					{
+						//put the SortedIntegerSet in the new value or move the container
+						if(inserted)
+							new_id_entry->second = std::move(old_id_entry->second);
+						else
+							new_id_entry->second->insert(index);
+
+						//erase after no longer need inserted_id_entry, as it may be invalidated
+						stringIdValueToIndices.erase(old_id_entry);
+					}
+				}
+				else if(inserted) //shouldn't make it here, but ensure integrity just in case
+				{
+					new_id_entry->second = std::make_unique<SortedIntegerSet>();
+				}
+
+
+				return;
+				*/
 			}
 
 			if(old_value_type == ENIVT_STRING_ID)
@@ -500,7 +536,8 @@ public:
 			}
 			
 			//if the value already exists, then put the index in the list
-			auto [value_index, exact_index_found] = FindExactIndexForValue(number_value);
+			//but return the lower bound if not found so don't have to search a second time
+			auto [value_index, exact_index_found] = FindExactIndexForValue(number_value, true);
 			if(exact_index_found)
 			{
 				sortedNumberValueEntries[value_index]->indicesWithValue.insert(index);
@@ -512,8 +549,7 @@ public:
 			}
 
 			//insert new value in correct position
-			size_t new_value_index = FindUpperBoundIndexForValue(number_value);
-			auto inserted = sortedNumberValueEntries.emplace(sortedNumberValueEntries.begin() + new_value_index,
+			auto inserted = sortedNumberValueEntries.emplace(sortedNumberValueEntries.begin() + value_index,
 				std::make_unique<ValueEntry>(number_value));
 
 			ValueEntry *value_entry = inserted->get();

@@ -223,18 +223,26 @@ public:
 				if(EqualIncludingNaN(old_number_value, new_number_value))
 					return old_value;
 
-				//TODO 17861: attempt to get rid of 2nd lookup in DeleteIndexValue after GetIndexValueType
-				//TODO 17861: finish number change efficiency
 				//if made it here, then at least one of the values is not a NaN
+				//if one value is a NaN, just insert or delete as regular since there's little to be saved
 				if(FastIsNaN(old_number_value))
 				{
-
+					nanIndices.erase(index);
+					return InsertIndexValue(new_value_type, new_value, index);
 				}
 
 				if(FastIsNaN(new_number_value))
 				{
+					DeleteIndexValue(old_value_type, old_value, index);
+					nanIndices.insert(index);
 
+					if(numberValuesInterned)
+						return EvaluableNodeImmediateValue(ValueEntry::NAN_INDEX);
+					else
+						return EvaluableNodeImmediateValue(std::numeric_limits<double>::quiet_NaN());
 				}
+
+				//TODO 17861: finish number change efficiency
 			}
 
 			if(old_value_type == ENIVT_STRING_ID)

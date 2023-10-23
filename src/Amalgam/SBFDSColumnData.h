@@ -211,6 +211,15 @@ public:
 		//if the types are the same, some shortcuts may apply
 		if(old_value_type == new_value_type)
 		{
+			if(old_value_type == ENIVT_NULL)
+			{
+				//if both are null, don't need to do anything, just return correct value
+				if(numberValuesInterned)
+					return EvaluableNodeImmediateValue(ValueEntry::NAN_INDEX);
+				else
+					return new_value;
+			}
+
 			if(old_value_type == ENIVT_STRING_ID)
 			{
 				if(old_value.stringID == new_value.stringID)

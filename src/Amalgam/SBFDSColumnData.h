@@ -347,15 +347,20 @@ public:
 	//deletes everything involving the value at the index
 	void DeleteIndexValue(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value, size_t index)
 	{
-		if(invalidIndices.EraseAndRetrieve(index))
-			return;
-
-		//if value is null, just need to remove from the appropriate index
-		if(nullIndices.EraseAndRetrieve(index))
-			return;
-
-		if(numberIndices.EraseAndRetrieve(index))
+		switch(value_type)
 		{
+		case ENIVT_NOT_EXIST:
+			invalidIndices.erase(index);
+			break;
+
+		case ENIVT_NULL:
+			nullIndices.erase(index);
+			break;
+
+		case ENIVT_NUMBER:
+		case ENIVT_NUMBER_INDIRECTION_INDEX:
+			numberIndices.erase(index);
+
 			//remove, and if not a nan, then need to also remove the number
 			if(!nanIndices.EraseAndRetrieve(index))
 			{
@@ -395,18 +400,17 @@ public:
 					sortedNumberValueEntries[value_index]->indicesWithValue.erase(index);
 				}
 			}
+			break;
 
-			return;
-		}
-
-		if(stringIdIndices.EraseAndRetrieve(index))
+		case ENIVT_STRING_ID:
 		{
+			stringIdIndices.erase(index);
 			auto id_entry = stringIdValueToIndices.find(value.stringID);
 			if(id_entry != end(stringIdValueToIndices))
 			{
 				auto &entities = *(id_entry->second);
 				entities.erase(index);
-				
+
 				//if no more entries have the value, remove it
 				if(entities.size() == 0)
 					stringIdValueToIndices.erase(id_entry);
@@ -415,29 +419,35 @@ public:
 			//see if need to compute new longest string
 			if(index == indexWithLongestString)
 				RecomputeLongestString();
+		}
+		break;
 
-			return;
+		case ENIVT_CODE:
+		{
+			codeIndices.erase(index);
+
+			//find the entities that have the correspending size
+			size_t num_indices = EvaluableNode::GetDeepSize(value.code);
+			auto id_entry = valueCodeSizeToIndices.find(num_indices);
+			if(id_entry == end(valueCodeSizeToIndices))
+				return;
+
+			//remove the entity
+			auto &entities = *(id_entry->second);
+			entities.erase(index);
+
+			if(entities.size() == 0)
+				valueCodeSizeToIndices.erase(id_entry);
+
+			//see if need to update largest code
+			if(index == indexWithLargestCode)
+				RecomputeLargestCode();
+			break;
 		}
 
-		//if made it here, then just remove from a code value type
-		codeIndices.erase(index);
-
-		//find the entities that have the correspending size
-		size_t num_indices = EvaluableNode::GetDeepSize(value.code);
-		auto id_entry = valueCodeSizeToIndices.find(num_indices);
-		if(id_entry == end(valueCodeSizeToIndices))
-			return;
-
-		//remove the entity
-		auto &entities = *(id_entry->second);
-		entities.erase(index);
-
-		if(entities.size() == 0)
-			valueCodeSizeToIndices.erase(id_entry);
-
-		//see if need to update largest code
-		if(index == indexWithLargestCode)
-			RecomputeLargestCode();
+		default: //shouldn't make it here
+			break;
+		}
 	}
 
 	//inserts the value at id

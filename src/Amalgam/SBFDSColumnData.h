@@ -223,7 +223,18 @@ public:
 				if(EqualIncludingNaN(old_number_value, new_number_value))
 					return old_value;
 
+				//TODO 17861: attempt to get rid of 2nd lookup in DeleteIndexValue after GetIndexValueType
 				//TODO 17861: finish number change efficiency
+				//if made it here, then at least one of the values is not a NaN
+				if(FastIsNaN(old_number_value))
+				{
+
+				}
+
+				if(FastIsNaN(new_number_value))
+				{
+
+				}
 			}
 
 			if(old_value_type == ENIVT_STRING_ID)

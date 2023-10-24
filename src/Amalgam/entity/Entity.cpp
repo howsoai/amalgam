@@ -425,7 +425,8 @@ EvaluableNodeReference Entity::Execute(ExecutionCycleCount max_num_steps, Execut
 	Concurrency::ReadLock *locked_memory_modification_lock,
 	Concurrency::WriteLock *entity_write_lock,
 #endif
-	StringInternPool::StringID label_sid, Interpreter *calling_interpreter)
+	StringInternPool::StringID label_sid,
+	Interpreter *calling_interpreter, bool copy_call_stack)
 {
 	if(!on_self && IsLabelPrivate(label_sid))
 		return EvaluableNodeReference(nullptr, true);
@@ -467,6 +468,9 @@ EvaluableNodeReference Entity::Execute(ExecutionCycleCount max_num_steps, Execut
 	if(entity_write_lock != nullptr)
 		entity_write_lock->unlock();
 #endif
+
+	if(copy_call_stack)
+		call_stack = evaluableNodeManager.DeepAllocCopy(call_stack);
 
 	EvaluableNodeReference retval = interpreter.ExecuteNode(node_to_execute, call_stack);
 	num_steps_executed = interpreter.GetNumStepsExecuted();

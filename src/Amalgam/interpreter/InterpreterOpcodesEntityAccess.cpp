@@ -479,10 +479,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	if(called_entity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	EvaluableNodeManager *called_entity_enm = &called_entity->evaluableNodeManager;
-
 	//if have arguments, use them
-	EvaluableNodeReference call_stack = ConvertArgsToCallStack(args, called_entity_enm);
+	EvaluableNodeReference call_stack = ConvertArgsToCallStack(args, evaluableNodeManager);
 	node_stack.PushEvaluableNode(call_stack);
 
 	//current pointer to write listeners
@@ -532,8 +530,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		retval.SetNeedCycleCheck(true);	//can't count on that due to things written in the write listener
 	}
 
-	//ConvertArgsToCallStack always adds an outer list that is safe to free using called_entity_enm
-	called_entity_enm->FreeNode(call_stack);
+	//ConvertArgsToCallStack always adds an outer list that is safe to free
+	evaluableNodeManager->FreeNode(call_stack);
 
 	if(_label_profiling_enabled)
 		PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
@@ -593,26 +591,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 		num_nodes_allowed_specified = true;
 	}
 
-	//use the container's EvaluableNodeManager to make sure that an outer entity
-	// does not free a node that an inner entity is using, which can occur when the inner 
-	// entity is calling its container and the container frees the node
-	EvaluableNodeManager *container_enm = &container->evaluableNodeManager;
-
 	//attempt to get arguments
 	EvaluableNodeReference args = EvaluableNodeReference::Null();
 	if(ocn.size() > 1)
-	{
 		args = InterpretNodeForImmediateUse(ocn[1]);
-		args = container_enm->DeepAllocCopy(args);
-	}
 
 	//need to create arguments regardless
-	EvaluableNodeReference call_stack = ConvertArgsToCallStack(args, container_enm);
+	EvaluableNodeReference call_stack = ConvertArgsToCallStack(args, evaluableNodeManager);
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(call_stack);
 
 	//add accessing_entity to arguments. If accessing_entity already specified (it shouldn't be), let garbage collection clean it up
-	args->SetMappedChildNode(ENBISI_accessing_entity, container_enm->AllocNode(ENT_STRING, cur_entity_sid));
+	args->SetMappedChildNode(ENBISI_accessing_entity, evaluableNodeManager->AllocNode(ENT_STRING, cur_entity_sid));
 
 	//compute execution limits
 	if(AllowUnlimitedExecutionSteps() && (!num_steps_allowed_specified || num_steps_allowed == 0))
@@ -640,7 +630,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	#ifdef MULTITHREAD_SUPPORT
 		&memoryModificationLock, &container.lock,
 	#endif
-		container_label_name, this);
+		container_label_name, this, true);
 
 	//accumulate costs of execution
 	curExecutionStep += num_steps_executed;

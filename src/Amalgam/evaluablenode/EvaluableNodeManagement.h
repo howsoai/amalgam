@@ -620,18 +620,20 @@ protected:
 
 	static void ValidateEvaluableNodeTreeMemoryIntegrityRecurse(EvaluableNode *en, EvaluableNode::ReferenceSetType &checked);
 
-#ifdef MULTITHREAD_SUPPORT
+#ifdef MULTITHREAD_SUPPORT	
 public:
 	//mutex to manage attributes of manager, including operations such as
 	// memory allocation, reference management, etc.
 	Concurrency::ReadWriteMutex managerAttributesMutex;
 
-	//mutex to manage whether memory nodes managed by this manager are being modified
+	//global mutex to manage whether memory nodes are being modified
 	//concurrent modifications can occur as long as there is only one unique thread
 	// that has allocated the memory
 	//garbage collection or destruction of the manager require a unique lock
 	// so that the memory can be traversed
-	Concurrency::ReadWriteMutex memoryModificationMutex;
+	//note that this is a global lock because nodes may be mixed among more than one
+	// EvaluableNodeManager and so garbage collection should not happening while memory is being modified
+	static Concurrency::ReadWriteMutex memoryModificationMutex;
 
 protected:
 #endif

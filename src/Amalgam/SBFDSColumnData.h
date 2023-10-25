@@ -407,6 +407,12 @@ public:
 
 				return new_value;
 			}
+
+			if(old_value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
+			{
+				if(old_value.indirectionIndex == new_value.indirectionIndex)
+					return old_value;
+			}
 		}
 
 		//delete index at old value
@@ -422,7 +428,7 @@ public:
 		if(numberValuesInterned)
 		{
 			size_t value_intern_index = sortedNumberValueEntries[value_index]->valueInternIndex;
-			//if the last entry, can just resize
+			//if the last entry (off by one, including ValueEntry::NO_INDEX), can just resize
 			if(value_intern_index == internedNumberIndexToNumberValue.size() - 1)
 			{
 				internedNumberIndexToNumberValue.resize(value_intern_index);
@@ -547,18 +553,20 @@ public:
 					else //not valid, clear queue
 					{
 						unusedNumberValueIndices.clear();
-						//just use a new value, leaving a spot open for NAN_INDEX
-						value_entry->valueInternIndex = sortedNumberValueEntries.size() + 1;
+						//just use a new value, 0-based but leaving a spot open for NAN_INDEX
+						value_entry->valueInternIndex = sortedNumberValueEntries.size();
 					}
 				}
-				else //just use new value
+				else //just use new value of the latest size, 0-based but leaving a spot open for NAN_INDEX
 				{
-					value_entry->valueInternIndex = sortedNumberValueEntries.size() + 1;
+					value_entry->valueInternIndex = sortedNumberValueEntries.size();
 				}
-
-				if(value_entry->valueInternIndex >= internedNumberIndexToNumberValue.size())
-					internedNumberIndexToNumberValue.resize(value_entry->valueInternIndex + 1, std::numeric_limits<double>::quiet_NaN());
 			}
+
+			if(value_entry->valueInternIndex >= internedNumberIndexToNumberValue.size())
+				internedNumberIndexToNumberValue.resize(value_entry->valueInternIndex + 1, std::numeric_limits<double>::quiet_NaN());
+
+			internedNumberIndexToNumberValue[value_entry->valueInternIndex] = value_entry->value.number;
 		}
 	}
 

@@ -247,40 +247,37 @@ public:
 				//need to search the old value before inserting, as FindExactIndexForValue is fragile a placeholder empty entry
 				auto [new_value_index, new_exact_index_found] = FindExactIndexForValue(new_number_value, true);
 				auto [old_value_index, old_exact_index_found] = FindExactIndexForValue(old_number_value, true);
-				if(!new_exact_index_found)
-				{
-					sortedNumberValueEntries.emplace(sortedNumberValueEntries.begin() + new_value_index, nullptr);
-
-					//if emplaced earlier, need to bump up the old value index
-					if(new_number_value < old_number_value)
-						old_value_index++;
-				}
 
 				if(old_exact_index_found)
 				{
-					auto *old_number_entry = sortedNumberValueEntries[old_value_index].get();
 					//if there are multiple entries for this number, just move the id
-					if(old_number_entry->indicesWithValue.size() > 1)
+					if(sortedNumberValueEntries[old_value_index]->indicesWithValue.size() > 1)
 					{
+						//erase with old_value_index first so don't need to update index
+						sortedNumberValueEntries[old_value_index]->indicesWithValue.erase(index);
+
 						if(!new_exact_index_found)
 						{
-							sortedNumberValueEntries[new_value_index] = std::make_unique<ValueEntry>(new_number_value);
+							sortedNumberValueEntries.emplace(sortedNumberValueEntries.begin() + new_value_index, std::make_unique<ValueEntry>(new_number_value));
 							InsertFirstIndexIntoNumberValueEntry(index, new_value_index);
 						}
 						else //just insert
 						{
 							sortedNumberValueEntries[new_value_index]->indicesWithValue.insert(index);
 						}
-
-						sortedNumberValueEntries[old_value_index]->indicesWithValue.erase(index);
 					}
 					else //it's the last old_number_entry
 					{
 						if(!new_exact_index_found)
 						{
 							//can reuse all the properties of the old value entry, but need to update the number value
-							sortedNumberValueEntries[new_value_index] = std::move(sortedNumberValueEntries[old_value_index]);
+							sortedNumberValueEntries.emplace(sortedNumberValueEntries.begin() + new_value_index, std::move(sortedNumberValueEntries[old_value_index]));
 							sortedNumberValueEntries[new_value_index]->value.number = new_number_value;
+
+							//if emplaced earlier, need to bump up the old value index
+							if(new_number_value < old_number_value)
+								old_value_index++;
+							
 							sortedNumberValueEntries.erase(sortedNumberValueEntries.begin() + old_value_index);
 						}
 						else //already has an entry for the new value, just delete as normal

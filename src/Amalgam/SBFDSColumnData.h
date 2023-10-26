@@ -270,15 +270,26 @@ public:
 					{
 						if(!new_exact_index_found)
 						{
-							//can reuse all the properties of the old value entry, but need to update the number value
-							sortedNumberValueEntries.emplace(sortedNumberValueEntries.begin() + new_value_index, std::move(sortedNumberValueEntries[old_value_index]));
-							sortedNumberValueEntries[new_value_index]->value.number = new_number_value;
+							//remove old value and update to new
+							std::unique_ptr<ValueEntry> new_value_entry = std::move(sortedNumberValueEntries[old_value_index]);
+							new_value_entry->value.number = new_number_value;
 
-							//if emplaced earlier, need to bump up the old value index
-							if(new_number_value < old_number_value)
-								old_value_index++;
-							
-							sortedNumberValueEntries.erase(sortedNumberValueEntries.begin() + old_value_index);
+							//move the other values out of the way
+							if(old_number_value < new_number_value)
+							{
+								for(size_t i = old_value_index; i + 1 < new_value_index; i++)
+									sortedNumberValueEntries[i] = std::move(sortedNumberValueEntries[i + 1]);
+
+								new_value_index--;
+							}
+							else
+							{
+								for(size_t i = old_value_index; i > new_value_index; i--)
+									sortedNumberValueEntries[i] = std::move(sortedNumberValueEntries[i - 1]);
+							}
+
+							//move new value in to empty slot created
+							sortedNumberValueEntries[new_value_index] = std::move(new_value_entry);
 						}
 						else //already has an entry for the new value, just delete as normal
 						{

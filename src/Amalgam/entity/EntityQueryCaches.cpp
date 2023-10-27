@@ -204,8 +204,12 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 					is_first = false;
 				}
 				else
-					sbfds.IntersectEntitiesWithFeature(label, matching_entities);
+					sbfds.IntersectEntitiesWithFeature(label, matching_entities, true);
 			}
+
+			if(!is_first || cond->existLabels.size() > 0)
+				matching_entities.UpdateNumElements();
+
 			return;
 		}
 
@@ -219,8 +223,12 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 					is_first = false;
 				}
 				else
-					sbfds.IntersectEntitiesWithoutFeature(label, matching_entities);
+					sbfds.IntersectEntitiesWithoutFeature(label, matching_entities, true);
 			}
+
+			if(!is_first || cond->existLabels.size() > 0)
+				matching_entities.UpdateNumElements();
+
 			return;
 		}
 
@@ -241,6 +249,21 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 			EntityQueriesStatistics::DistanceTransform<size_t> distance_transform(cond->transformSuprisalToProb,
 				cond->distanceWeightExponent, use_entity_weights, get_weight);
 
+			//if first, need to populate with all entities
+			if(is_first)
+			{
+				matching_entities.clear();
+				matching_entities.SetAllIds(sbfds.GetNumInsertedEntities());
+			}
+
+			//only select cases that have all of the correct features
+			for(auto i : cond->positionLabels)
+				sbfds.IntersectEntitiesWithFeature(i, matching_entities, true);
+			matching_entities.UpdateNumElements();
+
+			if(matching_entities.size() == 0)
+				return;
+
 			if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || cond->queryType == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)
 			{
 				//labels and values must have the same size
@@ -250,12 +273,14 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 					return;
 				}
 
-				//if first, need to populate with all entities
-				if(is_first)
-				{
-					matching_entities.clear();
-					matching_entities.SetAllIds(sbfds.GetNumInsertedEntities());
-				}
+				//TODO 18025: finish moving this here from EntityQueryBuilder
+				//for(size_t i = 0; i < cond->distParams.featureParams.size(); i++)
+				//{
+				//	if(!cond->distParams.IsFeatureEnabled(i))
+				//	{
+				//
+				//	}
+				//}
 
 				//if no position labels, then the weight must be zero so just randomly choose k
 				if(cond->positionLabels.size() == 0)
@@ -300,18 +325,9 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 			}
 			else //cond->queryType ==  ENT_COMPUTE_ENTITY_DISTANCE_CONTRIBUTIONS or ENT_COMPUTE_ENTITY_CONVICTIONS or ENT_COMPUTE_ENTITY_KL_DIVERGENCES or ENT_COMPUTE_ENTITY_GROUP_KL_DIVERGENCE
 			{
-				size_t total_contained_entities = sbfds.GetNumInsertedEntities();
-				if(total_contained_entities == 0)
-					return;
-
-				//if there are no existLabels, or number of existLabels is same as the number of entities in cache, we don't compute on subset
-				const bool compute_on_subset = (cond->existLabels.size() != 0 && cond->existLabels.size() < total_contained_entities);
-
-				size_t top_k = std::min(static_cast<size_t>(cond->maxToRetrieve), total_contained_entities);
-					
 				BitArrayIntegerSet *ents_to_compute_ptr = nullptr; //if nullptr, compute is done on all entities in the cache
 
-				if(compute_on_subset) //if subset is specified, set ents_to_compute_ptr to set of ents_to_compute
+				if(cond->existLabels.size() != 0) //if subset is specified, set ents_to_compute_ptr to set of ents_to_compute
 				{
 					ents_to_compute_ptr = &buffers.tempMatchingEntityIndices;
 					ents_to_compute_ptr->clear();
@@ -345,16 +361,12 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 					ents_to_compute_ptr = &matching_entities;
 				}
 
-				//only select cases that have all of the correct features
-				for(auto i : cond->positionLabels)
-					sbfds.IntersectEntitiesWithFeature(i, *ents_to_compute_ptr);
-
 			#ifdef MULTITHREAD_SUPPORT
 				ConvictionProcessor<KnnNonZeroDistanceQuerySBFCache, size_t, BitArrayIntegerSet> conviction_processor(buffers.convictionBuffers,
-					buffers.knnCache, distance_transform, top_k, cond->useConcurrency);
+					buffers.knnCache, distance_transform, static_cast<size_t>(cond->maxToRetrieve), cond->useConcurrency);
 			#else
 				ConvictionProcessor<KnnNonZeroDistanceQuerySBFCache, size_t, BitArrayIntegerSet> conviction_processor(buffers.convictionBuffers,
-					buffers.knnCache, distance_transform, top_k);
+					buffers.knnCache, distance_transform, static_cast<size_t>(cond->maxToRetrieve));
 			#endif
 				buffers.knnCache.ResetCache(sbfds, matching_entities, cond->distParams, cond->positionLabels);
 
@@ -548,7 +560,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 			if(is_first)
 				sbfds.FindAllEntitiesWithFeature(cond->singleLabel, matching_entities);
 			else
-				sbfds.IntersectEntitiesWithFeature(cond->singleLabel, matching_entities);
+				sbfds.IntersectEntitiesWithFeature(cond->singleLabel, matching_entities, false);
 
 			BitArrayIntegerSet &temp = buffers.tempMatchingEntityIndices;
 			temp.clear();

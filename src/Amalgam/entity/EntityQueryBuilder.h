@@ -417,11 +417,10 @@ namespace EntityQueryBuilder
 				}
 			}
 		}
-		else //entities may have missing data, so need exist query
-		{
+		else
 			need_exist_query = true;
-		}
 
+		//TODO: remove zeroed features where appropriate
 		if(need_exist_query)
 		{
 			//add exists query and swap, so the exists_condition is before cur_condition

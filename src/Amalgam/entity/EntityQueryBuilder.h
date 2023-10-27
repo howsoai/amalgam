@@ -64,18 +64,18 @@ namespace EntityQueryBuilder
 			[&dist_params](size_t i, bool found, EvaluableNode *en) {
 				if(i < dist_params.featureParams.size())
 				{
-					auto feature_type = FDT_CONTINUOUS_NUMERIC;
+					auto feature_type = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC;
 					if(found)
 					{
 						StringInternPool::StringID feature_type_id = EvaluableNode::ToStringIDIfExists(en);
 						switch(feature_type_id)
 						{
-						case ENBISI_nominal:								feature_type = FDT_NOMINAL;						break;
-						case ENBISI_continuous:								feature_type = FDT_CONTINUOUS_NUMERIC;			break;
-						case ENBISI_cyclic:									feature_type = FDT_CONTINUOUS_NUMERIC_CYCLIC;	break;
-						case GetStringIdFromNodeTypeFromString(ENT_STRING): feature_type = FDT_CONTINUOUS_STRING;			break;	
-						case ENBISI_code:									feature_type = FDT_CONTINUOUS_CODE;				break;
-						default:											feature_type = FDT_CONTINUOUS_NUMERIC;			break;
+						case ENBISI_nominal:								feature_type = GeneralizedDistance::FDT_NOMINAL;					break;
+						case ENBISI_continuous:								feature_type = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC;			break;
+						case ENBISI_cyclic:									feature_type = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC_CYCLIC;	break;
+						case GetStringIdFromNodeTypeFromString(ENT_STRING): feature_type = GeneralizedDistance::FDT_CONTINUOUS_STRING;			break;	
+						case ENBISI_code:									feature_type = GeneralizedDistance::FDT_CONTINUOUS_CODE;			break;
+						default:											feature_type = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC;			break;
 						}
 					}
 					dist_params.featureParams[i].featureType = feature_type;
@@ -93,7 +93,7 @@ namespace EntityQueryBuilder
 					//get attributes based on feature type
 					switch(dist_params.featureParams[i].featureType)
 					{
-					case FDT_NOMINAL:
+					case GeneralizedDistance::FDT_NOMINAL:
 						if(found && !EvaluableNode::IsNull(en))
 						{
 							if(en->EvaluableNode::IsOrderedArray())
@@ -118,7 +118,7 @@ namespace EntityQueryBuilder
 						}
 						break;
 
-					case FDT_CONTINUOUS_NUMERIC_CYCLIC:
+					case GeneralizedDistance::FDT_CONTINUOUS_NUMERIC_CYCLIC:
 						if(found && !EvaluableNode::IsNull(en))
 						{
 							if(en->EvaluableNode::IsOrderedArray())
@@ -139,14 +139,13 @@ namespace EntityQueryBuilder
 						}
 						else //can't be cyclic without a range
 						{
-							dist_params.featureParams[i].featureType = FDT_CONTINUOUS_NUMERIC;
+							dist_params.featureParams[i].featureType = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC;
 						}
 						break;
 
-					case FDT_CONTINUOUS_NUMERIC:
-					case FDT_CONTINUOUS_UNIVERSALLY_NUMERIC:
-					case FDT_CONTINUOUS_STRING:
-					case FDT_CONTINUOUS_CODE:
+					case GeneralizedDistance::FDT_CONTINUOUS_NUMERIC:
+					case GeneralizedDistance::FDT_CONTINUOUS_STRING:
+					case GeneralizedDistance::FDT_CONTINUOUS_CODE:
 						if(found && !EvaluableNode::IsNull(en))
 						{
 							if(en->EvaluableNode::IsOrderedArray())

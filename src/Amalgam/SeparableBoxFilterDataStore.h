@@ -114,6 +114,16 @@ public:
 	// assumes column data is empty
 	void BuildLabel(size_t column_index, const std::vector<Entity *> &entities);
 
+	//changes column to/from interning as would yield best performance
+	void OptimizeColumn(size_t column_ndex);
+
+	//calls OptimizeColumn on all columns
+	inline void OptimizeAllColumns()
+	{
+		for(size_t column_index = 0; column_index < columnData.size(); column_index++)
+			OptimizeColumn(column_index);
+	}
+
 	//expand the structure by adding a new column/label/feature and populating with data from entities
 	void AddLabels(std::vector<size_t> &label_ids, const std::vector<Entity *> &entities)
 	{
@@ -286,18 +296,20 @@ public:
 		if(column == labelIdToColumnIndex.end())
 			return;
 		size_t column_index = column->second;
+		auto &column_data = columnData[column_index];
 
-		columnData[column_index]->numberIndices.CopyTo(enabled_entities);
-		columnData[column_index]->nanIndices.EraseTo(enabled_entities);
+		column_data->numberIndices.CopyTo(enabled_entities);
+		column_data->nanIndices.EraseTo(enabled_entities);
 
 		//resize buffers and place each entity and value into its respective buffer
 		entities.resize(enabled_entities.size());
 		values.resize(enabled_entities.size());
 		size_t index = 0;
+		auto value_type = column_data->GetUnresolvedValueType(ENIVT_NUMBER);
 		for(auto entity_index : enabled_entities)
 		{
 			entities[index] = entity_index;
-			values[index] = GetValue(entity_index, column_index).number;
+			values[index] = column_data->GetResolvedValue(value_type, GetValue(entity_index, column_index)).number;
 			index++;
 		}
 	}
@@ -314,18 +326,20 @@ public:
 		if(column == labelIdToColumnIndex.end())
 			return;
 		size_t column_index = column->second;
+		auto &column_data = columnData[column_index];
 
-		columnData[column_index]->numberIndices.IntersectTo(enabled_entities);
-		columnData[column_index]->nanIndices.EraseTo(enabled_entities);
+		column_data->numberIndices.IntersectTo(enabled_entities);
+		column_data->nanIndices.EraseTo(enabled_entities);
 
 		//resize buffers and place each entity and value into its respective buffer
 		entities.resize(enabled_entities.size());
 		values.resize(enabled_entities.size());
 		size_t index = 0;
+		auto value_type = column_data->GetUnresolvedValueType(ENIVT_NUMBER);
 		for(auto entity_index : enabled_entities)
 		{
 			entities[index] = entity_index;
-			values[index] = GetValue(entity_index, column_index).number;
+			values[index] = column_data->GetResolvedValue(value_type, GetValue(entity_index, column_index)).number;
 			index++;
 		}
 	}
@@ -414,16 +428,18 @@ public:
 	template<typename Iter>
 	inline std::function<bool(Iter, double &)> GetNumberValueFromEntityIteratorFunction(size_t column_index)
 	{
-		auto number_indices_ptr = &columnData[column_index]->numberIndices;
+		auto column_data = columnData[column_index].get();
+		auto number_indices_ptr = &column_data->numberIndices;
+		auto value_type = column_data->GetUnresolvedValueType(ENIVT_NUMBER);
 
-		return [&, number_indices_ptr, column_index]
+		return [&, number_indices_ptr, column_index, column_data, value_type]
 		(Iter i, double &value)
 		{
 			size_t entity_index = *i;
 			if(!number_indices_ptr->contains(entity_index))
 				return false;
 
-			value = GetValue(entity_index, column_index).number;
+			value = column_data->GetResolvedValue(value_type, GetValue(entity_index, column_index)).number;
 			return true;
 		};
 	}
@@ -436,15 +452,17 @@ public:
 		if(column_index >= columnData.size())
 			return [](size_t i, double &value) { return false; };
 
-		auto number_indices_ptr = &columnData[column_index]->numberIndices;
+		auto column_data = columnData[column_index].get();
+		auto number_indices_ptr = &column_data->numberIndices;
+		auto value_type = column_data->GetUnresolvedValueType(ENIVT_NUMBER);
 
-		return [&, number_indices_ptr, column_index]
+		return [&, number_indices_ptr, column_index, column_data, value_type]
 			(size_t i, double &value)
 			{
 				if(!number_indices_ptr->contains(i))
 					return false;
 
-				value = GetValue(i, column_index).number;
+				value = column_data->GetResolvedValue(value_type, GetValue(i, column_index)).number;
 				return true;
 			};
 	}
@@ -504,7 +522,7 @@ protected:
 	}
 
 	//deletes the index and associated data
-	void DeleteEntityIndexFromColumns(size_t index);
+	void DeleteEntityIndexFromColumns(size_t entity_index);
 
 	//adds a new labels to the database, populating new cells with -NaN, and updating the number of entities
 	// assumes label_ids is not empty and num_entities is nonzero
@@ -522,12 +540,15 @@ protected:
 		auto &partial_sums = parametersAndBuffers.partialSums;
 		const auto accum_location = partial_sums.GetAccumLocation(query_feature_index);
 
+		auto &column_data = columnData[absolute_feature_index];
+
 		//for each found element, accumulate associated partial sums
 		for(size_t entity_index : entity_indices)
 		{
 			//get value
-			auto &other_value = GetValue(entity_index, absolute_feature_index);
-			auto other_value_type = columnData[absolute_feature_index]->GetIndexValueType(entity_index);
+			auto other_value_type = column_data->GetIndexValueType(entity_index);
+			auto other_value = column_data->GetResolvedValue(other_value_type, GetValue(entity_index, absolute_feature_index));
+			other_value_type = column_data->GetResolvedValueType(other_value_type);
 
 			//compute term
 			double term = dist_params.ComputeDistanceTermRegular(value, other_value, value_type, other_value_type, query_feature_index);
@@ -663,8 +684,11 @@ protected:
 			if(dist_params.IsFeatureEnabled(i))
 			{
 				size_t column_index = target_column_indices[i];
-				auto &other_value = matrix[matrix_base_position + column_index];
-				auto other_value_type = columnData[column_index]->GetIndexValueType(other_index);
+				auto &column_data = columnData[column_index];
+
+				auto other_value_type = column_data->GetIndexValueType(other_index);
+				auto other_value = column_data->GetResolvedValue(other_value_type, matrix[matrix_base_position + column_index]);
+				other_value_type = column_data->GetResolvedValueType(other_value_type);
 
 				dist_accum += dist_params.ComputeDistanceTermRegular(target_values[i], other_value, target_value_types[i], other_value_type, i);
 			}
@@ -681,41 +705,62 @@ protected:
 		std::vector<EvaluableNodeImmediateValue> &target_values, std::vector<EvaluableNodeImmediateValueType> &target_value_types,
 		size_t entity_index, size_t query_feature_index)
 	{
-		auto feature_type = dist_params.featureParams[query_feature_index].featureType;
-
-		if(feature_type == FDT_NOMINAL)
+		switch(dist_params.featureParams[query_feature_index].effectiveFeatureType)
+		{
+		case GeneralizedDistance::EFDT_NOMINAL:
 			return dist_params.ComputeDistanceTermNominalNonMatch(query_feature_index);
-		else
+
+		case GeneralizedDistance::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC:
 		{
 			const size_t column_index = target_label_indices[query_feature_index];
+			return dist_params.ComputeDistanceTermNonNominalNonCyclicOneNonNullRegular(target_values[query_feature_index].number - GetValue(entity_index, column_index).number, query_feature_index);
+		}
 
-			if(feature_type == FDT_CONTINUOUS_UNIVERSALLY_NUMERIC)
-			{
+		case GeneralizedDistance::EFDT_VALUES_UNIVERSALLY_PRECOMPUTED:
+		{
+			const size_t column_index = target_label_indices[query_feature_index];
+			return dist_params.ComputeDistanceTermNumberInterned(GetValue(entity_index, column_index).indirectionIndex, query_feature_index);
+		}
+
+		case GeneralizedDistance::EFDT_CONTINUOUS_NUMERIC:
+		{
+			const size_t column_index = target_label_indices[query_feature_index];
+			auto &column_data = columnData[column_index];
+			if(column_data->numberIndices.contains(entity_index))
 				return dist_params.ComputeDistanceTermNonNominalNonCyclicOneNonNullRegular(target_values[query_feature_index].number - GetValue(entity_index, column_index).number, query_feature_index);
-			}
-			else if(feature_type == FDT_CONTINUOUS_NUMERIC)
-			{
-				auto &column_data = columnData[column_index];
-				if(column_data->numberIndices.contains(entity_index))
-					return dist_params.ComputeDistanceTermNonNominalNonCyclicOneNonNullRegular(target_values[query_feature_index].number - GetValue(entity_index, column_index).number, query_feature_index);
-				else
-					return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index);
-			}
-			else if(feature_type == FDT_CONTINUOUS_NUMERIC_CYCLIC)
-			{
-				auto &column_data = columnData[column_index];
-				if(column_data->numberIndices.contains(entity_index))
-					return dist_params.ComputeDistanceTermNonNominalOneNonNullRegular(target_values[query_feature_index].number - GetValue(entity_index, column_index).number, query_feature_index);
-				else
-					return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index);
-			}
-			else //feature_type == FDT_CONTINUOUS_CODE
-			{
-				auto &other_value = GetValue(entity_index, column_index);
-				auto other_value_type = columnData[column_index]->GetIndexValueType(entity_index);
+			else
+				return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index);
+		}
 
-				return dist_params.ComputeDistanceTermRegular(target_values[query_feature_index], other_value, target_value_types[query_feature_index], other_value_type, query_feature_index);
-			}
+		case GeneralizedDistance::EFDT_CONTINUOUS_NUMERIC_CYCLIC:
+		{
+			const size_t column_index = target_label_indices[query_feature_index];
+			auto &column_data = columnData[column_index];
+			if(column_data->numberIndices.contains(entity_index))
+				return dist_params.ComputeDistanceTermNonNominalOneNonNullRegular(target_values[query_feature_index].number - GetValue(entity_index, column_index).number, query_feature_index);
+			else
+				return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index);
+		}
+
+		case GeneralizedDistance::EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED:
+		{
+			const size_t column_index = target_label_indices[query_feature_index];
+			auto &column_data = columnData[column_index];
+			if(column_data->numberIndices.contains(entity_index))
+				return dist_params.ComputeDistanceTermNumberInterned(GetValue(entity_index, column_index).indirectionIndex, query_feature_index);
+			else
+				return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index);
+		}
+
+		default: //GeneralizedDistance::EFDT_CONTINUOUS_STRING or GeneralizedDistance::EFDT_CONTINUOUS_CODE
+		{
+			const size_t column_index = target_label_indices[query_feature_index];
+			auto &column_data = columnData[column_index];
+			auto other_value_type = column_data->GetIndexValueType(entity_index);
+			auto other_value = column_data->GetResolvedValue(other_value_type, GetValue(entity_index, column_index));
+
+			return dist_params.ComputeDistanceTermRegular(target_values[query_feature_index], other_value, target_value_types[query_feature_index], other_value_type, query_feature_index);
+		}
 		}
 	}
 
@@ -782,50 +827,73 @@ protected:
 				entity_index, query_feature_index);
 
 			//break out of the loop before the iterator is incremented to save a few cycles
-			if(distance > reject_distance)
-				return std::make_pair(false, distance);
-
-			if(num_uncalculated_features == 0)
-				break;
+			//do this via logic to minimize the number of branches
+			bool unacceptable_distance = (distance > reject_distance);
+			if(unacceptable_distance || num_uncalculated_features == 0)
+				return std::make_pair(!unacceptable_distance, distance);
 		}
 
-		//done with computation
+		//shouldn't make it here
 		return std::make_pair(true, distance);
 	}
 
-	//populates the next target attribute in each vector based on column_index, position data, and mkdist_feature_type
-	// if mkdist_feature_type can be modified for efficiency, this function will update it, which is why it is passed by reference
-	__forceinline void PopulateNextTargetAttributes(GeneralizedDistance &dist_params,
+	//populates the next target attribute in each vector based on column_index, position data
+	//if there is a specialization of the feature type, it will update it and update dist_params accordingly
+	__forceinline void PopulateNextTargetAttributes(GeneralizedDistance &dist_params, size_t query_feature_index,
 		std::vector<size_t> &target_column_indices, std::vector<EvaluableNodeImmediateValue> &target_values,
 		std::vector<EvaluableNodeImmediateValueType> &target_value_types, size_t column_index,
-		EvaluableNodeImmediateValue &position_value, EvaluableNodeImmediateValueType position_value_type,
-		FeatureDifferenceType &mkdist_feature_type)
+		EvaluableNodeImmediateValue &position_value, EvaluableNodeImmediateValueType position_value_type)
 	{
 		target_column_indices.push_back(column_index);
 
-		if(mkdist_feature_type == FDT_NOMINAL || mkdist_feature_type == FDT_CONTINUOUS_STRING || mkdist_feature_type == FDT_CONTINUOUS_CODE)
+		auto &feature_type = dist_params.featureParams[query_feature_index].featureType;
+		auto &effective_feature_type = dist_params.featureParams[query_feature_index].effectiveFeatureType;
+
+		if(feature_type == GeneralizedDistance::FDT_NOMINAL
+			|| feature_type == GeneralizedDistance::FDT_CONTINUOUS_STRING
+			|| feature_type == GeneralizedDistance::FDT_CONTINUOUS_CODE)
 		{
 			target_values.push_back(position_value);
 			target_value_types.push_back(position_value_type);
-		}
-		else // mkdist_feature_type == FDT_CONTINUOUS_NUMERIC or FDT_CONTINUOUS_NUMERIC_CYCLIC
-		{
-			//if everything is either non-existant or numeric, then can shortcut later
-			auto &column_data = columnData[column_index];
-			size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
-			if(GetNumInsertedEntities() == num_values_stored_as_numbers && mkdist_feature_type == FDT_CONTINUOUS_NUMERIC)
-				mkdist_feature_type = FDT_CONTINUOUS_UNIVERSALLY_NUMERIC;
 
-			auto value_type = position_value_type;
-			if(value_type == ENIVT_NUMBER)
+			if(feature_type == GeneralizedDistance::FDT_NOMINAL)
+				effective_feature_type = GeneralizedDistance::EFDT_NOMINAL;
+			else if(feature_type == GeneralizedDistance::FDT_CONTINUOUS_STRING)
+				effective_feature_type = GeneralizedDistance::EFDT_CONTINUOUS_STRING;
+			else if(feature_type == GeneralizedDistance::FDT_CONTINUOUS_CODE)
+				effective_feature_type = GeneralizedDistance::EFDT_CONTINUOUS_CODE;
+		}
+		else // feature_type is some form of numeric
+		{
+			//looking for continuous; if not a number, so just put as nan
+			double position_value_numeric = (position_value_type == ENIVT_NUMBER ? position_value.number : std::numeric_limits<double>::quiet_NaN());
+			target_values.push_back(position_value_numeric);
+			target_value_types.push_back(ENIVT_NUMBER);
+
+			//set up effective_feature_type
+			auto &column_data = columnData[column_index];
+
+			//determine if all values are numeric
+			size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
+			bool all_values_numeric = (GetNumInsertedEntities() == num_values_stored_as_numbers);
+
+			if(column_data->numberValuesInterned)
 			{
-				target_values.push_back(position_value);
-				target_value_types.push_back(ENIVT_NUMBER);
+				if(all_values_numeric)
+					effective_feature_type = GeneralizedDistance::EFDT_VALUES_UNIVERSALLY_PRECOMPUTED;
+				else
+					effective_feature_type = GeneralizedDistance::EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED;
+
+				dist_params.ComputeAndStoreInternedNumberValuesAndDistanceTerms(query_feature_index, position_value_numeric, &column_data->internedNumberIndexToNumberValue);
 			}
-			else //looking for continuous and not a number, so just put as nan
+			else
 			{
-				target_values.push_back(std::numeric_limits<double>::quiet_NaN());
-				target_value_types.push_back(ENIVT_NUMBER);
+				if(all_values_numeric && feature_type == GeneralizedDistance::FDT_CONTINUOUS_NUMERIC)
+					effective_feature_type = GeneralizedDistance::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC;
+				else if(feature_type == GeneralizedDistance::FDT_CONTINUOUS_NUMERIC_CYCLIC)
+					effective_feature_type = GeneralizedDistance::EFDT_CONTINUOUS_NUMERIC_CYCLIC;
+				else
+					effective_feature_type = GeneralizedDistance::EFDT_CONTINUOUS_NUMERIC;
 			}
 		}
 	}
@@ -853,10 +921,9 @@ protected:
 
 			if(dist_params.IsFeatureEnabled(i))
 			{
-				PopulateNextTargetAttributes(dist_params,
+				PopulateNextTargetAttributes(dist_params, i,
 					target_column_indices, target_values, target_value_types,
-					column->second, position_values[i], position_value_types[i],
-					dist_params.featureParams[i].featureType);
+					column->second, position_values[i], position_value_types[i]);
 			}
 		}
 	}
@@ -889,7 +956,8 @@ protected:
 					feature_params.unknownToUnknownDifference = unknown_distance_term;
 			}
 
-			dist_params.ComputeAndStoreUncertaintyDistanceTerms(i);
+			dist_params.ComputeAndStoreUncertaintyDistanceTerms(i,
+				EvaluableNodeImmediateValue::IsNullEquivalent(target_value_types[i], target_values[i]));
 		}
 	}
 

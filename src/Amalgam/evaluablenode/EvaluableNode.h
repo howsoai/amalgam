@@ -916,11 +916,12 @@ protected:
 // compare two values based on their collective types
 enum EvaluableNodeImmediateValueType
 {
-	ENIVT_NOT_EXIST,	//there is nothing to even hold the data
-	ENIVT_NULL,			//no data being held
-	ENIVT_NUMBER,		//number
-	ENIVT_STRING_ID,	//stringID
-	ENIVT_CODE			//code (more general than any of the above)
+	ENIVT_NOT_EXIST,			//there is nothing to even hold the data
+	ENIVT_NULL,					//no data being held
+	ENIVT_NUMBER,				//number
+	ENIVT_STRING_ID,			//stringID
+	ENIVT_CODE,					//code (more general than any of the above)
+	ENIVT_NUMBER_INDIRECTION_INDEX		//not a real EvaluableNode type, but an index to some data structure that has a number
 };
 
 //structure that can hold the most immediate value type of an EvaluableNode 
@@ -992,28 +993,30 @@ union EvaluableNodeImmediateValue
 			return false;
 
 		//types are the same, just use type_1 for reference
-		if(type_1 == ENIVT_NUMBER)
-		{
-			if(EqualIncludingNaN(value_1.number, value_2.number))
-				return false;
-		}
+		if(type_1 == ENIVT_NULL)
+			return true;
+		else if(type_1 == ENIVT_NUMBER)
+			return EqualIncludingNaN(value_1.number, value_2.number);
 		else if(type_1 == ENIVT_STRING_ID)
-		{
-			if(value_1.stringID == value_2.stringID)
-				return false;
-		}
+			return (value_1.stringID == value_2.stringID);
+		else if(type_1 == ENIVT_NUMBER_INDIRECTION_INDEX)
+			return (value_1.indirectionIndex == value_2.indirectionIndex);
 		else
-		{
-			if(EvaluableNode::AreDeepEqual(value_1.code, value_2.code))
-				return false;
-		}
+			return EvaluableNode::AreDeepEqual(value_1.code, value_2.code);
+	}
 
-		return true;
+	//returns true if it is a null or null equivalent
+	static bool IsNullEquivalent(EvaluableNodeImmediateValueType type, EvaluableNodeImmediateValue &value)
+	{
+		return (type == ENIVT_NULL
+				|| (type == ENIVT_NUMBER && FastIsNaN(value.number))
+				|| (type == ENIVT_STRING_ID && value.stringID == string_intern_pool.NOT_A_STRING_ID));
 	}
 
 	double number;
 	StringInternPool::StringID stringID;
 	EvaluableNode *code;
+	size_t indirectionIndex;
 };
 
 //used for storing a value and type together

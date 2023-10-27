@@ -101,10 +101,7 @@ public:
 	__forceinline bool contains(size_t id)
 	{
 		auto location = std::lower_bound(std::begin(integers), std::end(integers), id);
-		if(location == std::end(integers))
-			return false;
-
-		return id == *location;
+		return (location != std::end(integers) && id == *location);
 	}
 
 	//returns true if the id exists in the set

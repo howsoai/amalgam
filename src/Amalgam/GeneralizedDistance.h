@@ -12,29 +12,45 @@
 //If defined, will use the Laplace LK metric (default).  Otherwise will use Gaussian.
 #define DISTANCE_USE_LAPLACE_LK_METRIC true
 
-//general class of feature comparisons
-// align at 64-bits in order to play nice with data alignment where it is used
-enum FeatureDifferenceType : uint64_t
-{
-	FDT_NOMINAL,
-	//continuous, but without cycles
-	FDT_CONTINUOUS_NUMERIC,
-	//like FDT_CONTINUOUS_NUMERIC, but guarantees everything is always numeric
-	FDT_CONTINUOUS_UNIVERSALLY_NUMERIC,
-	//like FDT_CONTINUOUS_NUMERIC, but has cycles
-	FDT_CONTINUOUS_NUMERIC_CYCLIC,
-	//edit distance between strings
-	FDT_CONTINUOUS_STRING,
-	//continuous measures of the number of nodes different between two sets of code
-	FDT_CONTINUOUS_CODE,
-};
-
 //base data struct for holding distance parameters and metadata
 //generalizes Minkowski distance, information theoretic surprisal as a distance, and Lukaszyk–Karmowski
 class GeneralizedDistance
 {
 public:
-	//initialization functions
+
+	//general class of feature comparisons
+	// align at 32-bits in order to play nice with data alignment where it is used
+	enum FeatureDifferenceType : uint32_t
+	{
+		FDT_NOMINAL,
+		//continuous without cycles, may contain nonnumeric data
+		FDT_CONTINUOUS_NUMERIC,
+		//like FDT_CONTINUOUS_NUMERIC, but has cycles
+		FDT_CONTINUOUS_NUMERIC_CYCLIC,
+		//edit distance between strings
+		FDT_CONTINUOUS_STRING,
+		//continuous measures of the number of nodes different between two sets of code
+		FDT_CONTINUOUS_CODE,
+	};
+
+	enum EffectiveFeatureDifferenceType : uint32_t
+	{
+		EFDT_NOMINAL,
+		//everything is precomputed from interned values that are looked up
+		EFDT_VALUES_UNIVERSALLY_PRECOMPUTED,
+		//continuous without cycles, but everything is always numeric
+		EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC,
+		//continuous without cycles, may contain nonnumeric data
+		EFDT_CONTINUOUS_NUMERIC,
+		//like FDT_CONTINUOUS_NUMERIC, but has cycles
+		EFDT_CONTINUOUS_NUMERIC_CYCLIC,
+		//continuous precomputed (cyclic or not), may contain nonnumeric data
+		EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED,
+		//edit distance between strings
+		EFDT_CONTINUOUS_STRING,
+		//continuous measures of the number of nodes different between two sets of code
+		EFDT_CONTINUOUS_CODE,
+	};
 
 	//dynamically precompute and cache nominal deltas and defaults everytime the pValue is set
 	inline void SetAndConstrainParams()
@@ -70,7 +86,8 @@ public:
 
 	//computes and sets unknownToUnknownDistanceTerm and knownToUnknownDistanceTerm based on
 	// unknownToUnknownDifference and knownToUnknownDifference respectively
-	inline void ComputeAndStoreUncertaintyDistanceTerms(size_t index)
+	//if target_value_is_null_equivalent is true, it will update any precomputed values as necessary
+	inline void ComputeAndStoreUncertaintyDistanceTerms(size_t index, bool target_value_is_null_equivalent = false)
 	{
 		bool compute_accurate = NeedToPrecomputeAccurate();
 		bool compute_approximate = NeedToPrecomputeApproximate();
@@ -98,24 +115,64 @@ public:
 		if(feature_params.knownToUnknownDifference == feature_params.unknownToUnknownDifference)
 		{
 			feature_params.knownToUnknownDistanceTerm = feature_params.unknownToUnknownDistanceTerm;
+		}
+		else
+		{
+			//compute knownToUnknownDistanceTerm
+			if(compute_accurate)
+			{
+				feature_params.knownToUnknownDistanceTerm.SetValue(
+					ComputeDistanceTermNonNull(feature_params.knownToUnknownDifference,
+						index, ExactApproxValuePair::EXACT),
+					ExactApproxValuePair::EXACT);
+			}
+
+			if(compute_approximate)
+			{
+				feature_params.knownToUnknownDistanceTerm.SetValue(
+					ComputeDistanceTermNonNull(feature_params.knownToUnknownDifference,
+						index, ExactApproxValuePair::APPROX),
+					ExactApproxValuePair::APPROX);
+			}
+		}
+
+		if(HasNumberInternValues(index))
+		{
+			auto &precomputed_terms = feature_params.precomputedInternDistanceTerms;
+
+			if(target_value_is_null_equivalent)
+			{
+				precomputed_terms[0] = feature_params.unknownToUnknownDistanceTerm.GetValue(defaultPrecision);
+				auto k_to_unk = feature_params.knownToUnknownDistanceTerm.GetValue(defaultPrecision);
+				for(size_t i = 1; i < precomputed_terms.size(); i++)
+					precomputed_terms[i] = k_to_unk;
+			}
+			else //just set the unknown value
+			{
+				precomputed_terms[0] = feature_params.knownToUnknownDistanceTerm.GetValue(defaultPrecision);
+			}			
+		}
+	}
+
+	//for the feature index, computes and stores the distance terms as measured from value to each interned value
+	inline void ComputeAndStoreInternedNumberValuesAndDistanceTerms(size_t index, double value, std::vector<double> *interned_values)
+	{
+		auto &feature_params = featureParams[index];
+		feature_params.internedNumberIndexToNumberValue = interned_values;
+
+		if(interned_values == nullptr)
+		{
+			feature_params.precomputedInternDistanceTerms.clear();
 			return;
 		}
 
-		//compute knownToUnknownDistanceTerm
-		if(compute_accurate)
+		feature_params.precomputedInternDistanceTerms.resize(interned_values->size());
+		//first entry is known-unknown distance
+		feature_params.precomputedInternDistanceTerms[0] = ComputeDistanceTermKnownToUnknown(index);
+		for(size_t i = 1; i < feature_params.precomputedInternDistanceTerms.size(); i++)
 		{
-			feature_params.knownToUnknownDistanceTerm.SetValue(
-				ComputeDistanceTermNonNull(feature_params.knownToUnknownDifference,
-					index, ExactApproxValuePair::EXACT),
-				ExactApproxValuePair::EXACT);
-		}
-
-		if(compute_approximate)
-		{
-			feature_params.knownToUnknownDistanceTerm.SetValue(
-				ComputeDistanceTermNonNull(feature_params.knownToUnknownDifference,
-					index, ExactApproxValuePair::APPROX),
-				ExactApproxValuePair::APPROX);
+			double difference = value - interned_values->at(i);
+			feature_params.precomputedInternDistanceTerms[i] = ComputeDistanceTermNonNominalNonNullRegular(difference, index);
 		}
 	}
 
@@ -432,6 +489,18 @@ public:
 		return featureParams[index].knownToUnknownDistanceTerm.GetValue(defaultPrecision);
 	}
 
+	//returns true if the feature at index has interned number values
+	__forceinline bool HasNumberInternValues(size_t index)
+	{
+		return featureParams[index].internedNumberIndexToNumberValue != nullptr;
+	}
+
+	//returns the precomputed distance term for the interned number with intern_value_index
+	__forceinline double ComputeDistanceTermNumberInterned(size_t intern_value_index, size_t index)
+	{
+		return featureParams[index].precomputedInternDistanceTerms[intern_value_index];
+	}
+
 	//computes the inner term for a non-nominal with an exact match of values
 	__forceinline double ComputeDistanceTermNonNominalExactMatch(size_t index)
 	{
@@ -445,8 +514,8 @@ public:
 		return ExponentiateDifferenceTerm(diff, defaultPrecision) * featureParams[index].weight;
 	}
 
-	//computes the difference between two values non-nominal (e.g., continuous)
-	__forceinline double ComputeDifferenceTermNonNominal(double diff, size_t index)
+	//computes the base of the difference between two values non-nominal (e.g., continuous)
+	__forceinline double ComputeDifferenceTermBaseNonNominal(double diff, size_t index)
 	{
 		//compute absolute value
 		diff = std::abs(diff);
@@ -462,8 +531,8 @@ public:
 		return diff;
 	}
 
-	//computes the difference between two values non-nominal (e.g., continuous) that isn't cyclic
-	__forceinline double ComputeDifferenceTermNonNominalNonCyclic(double diff, size_t index)
+	//computes the base of the difference between two values non-nominal (e.g., continuous) that isn't cyclic
+	__forceinline double ComputeDifferenceTermBaseNonNominalNonCyclic(double diff, size_t index)
 	{
 		//compute absolute value
 		diff = std::abs(diff);
@@ -479,7 +548,7 @@ public:
 	// diff can be negative
 	__forceinline double ComputeDistanceTermNonNominalNonNullRegular(double diff, size_t index)
 	{
-		diff = ComputeDifferenceTermNonNominal(diff, index);
+		diff = ComputeDifferenceTermBaseNonNominal(diff, index);
 
 		//exponentiate and return with weight
 		return ExponentiateDifferenceTerm(diff, defaultPrecision) * featureParams[index].weight;
@@ -489,7 +558,7 @@ public:
 	// diff can be negative
 	__forceinline double ComputeDistanceTermNonNominalOneNonNullRegular(double diff, size_t index)
 	{
-		diff = ComputeDifferenceTermNonNominal(diff, index);
+		diff = ComputeDifferenceTermBaseNonNominal(diff, index);
 
 		//exponentiate and return with weight
 		return ExponentiateDifferenceTerm(diff, defaultPrecision) * featureParams[index].weight;
@@ -499,7 +568,7 @@ public:
 	// diff can be negative
 	__forceinline double ComputeDistanceTermNonNominalNonCyclicNonNullRegular(double diff, size_t index)
 	{
-		diff = ComputeDifferenceTermNonNominalNonCyclic(diff, index);
+		diff = ComputeDifferenceTermBaseNonNominalNonCyclic(diff, index);
 
 		//exponentiate and return with weight
 		return ExponentiateDifferenceTerm(diff, defaultPrecision) * featureParams[index].weight;
@@ -512,7 +581,7 @@ public:
 		if(FastIsNaN(diff))
 			return ComputeDistanceTermKnownToUnknown(index);
 
-		diff = ComputeDifferenceTermNonNominalNonCyclic(diff, index);
+		diff = ComputeDifferenceTermBaseNonNominalNonCyclic(diff, index);
 
 		//exponentiate and return with weight
 		return ExponentiateDifferenceTerm(diff, defaultPrecision) * featureParams[index].weight;
@@ -530,7 +599,7 @@ public:
 		if(IsFeatureNominal(index))
 			return (diff == 0.0) ? ComputeDistanceTermNominalExactMatch(index) : ComputeDistanceTermNominalNonMatch(index);
 
-		diff = ComputeDifferenceTermNonNominal(diff, index);
+		diff = ComputeDifferenceTermBaseNonNominal(diff, index);
 
 		return std::pow(diff, featureParams[index].weight);
 	}
@@ -547,7 +616,7 @@ public:
 		if(IsFeatureNominal(index))
 			return (diff == 0.0) ? ComputeDistanceTermNominalExactMatch(index) : ComputeDistanceTermNominalNonMatch(index);
 
-		diff = ComputeDifferenceTermNonNominal(diff, index);
+		diff = ComputeDifferenceTermBaseNonNominal(diff, index);
 
 		return diff * featureParams[index].weight;
 	}
@@ -556,7 +625,7 @@ public:
 	__forceinline double ComputeDistanceTermNonNull(double diff, size_t index, int precision)
 	{
 		if(!IsFeatureNominal(index))
-			diff = ComputeDifferenceTermNonNominal(diff, index);
+			diff = ComputeDifferenceTermBaseNonNominal(diff, index);
 
 		if(pValue == 0.0)
 			return std::pow(diff, featureParams[index].weight);
@@ -587,7 +656,7 @@ public:
 	{
 		double diff = ComputeDifference(a, b, a_type, b_type, featureParams[index].featureType);
 		if(FastIsNaN(diff))
-			return LookupNullDistanceTerm(a, b, a_type, b_type, index);;
+			return LookupNullDistanceTerm(a, b, a_type, b_type, index);
 
 		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
 		if(IsFeatureNominal(index))
@@ -628,7 +697,7 @@ public:
 	__forceinline static double ComputeDifference(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
 		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, FeatureDifferenceType feature_type)
 	{
-		if(feature_type == FDT_CONTINUOUS_NUMERIC || feature_type == FDT_CONTINUOUS_UNIVERSALLY_NUMERIC
+		if(feature_type == FDT_CONTINUOUS_NUMERIC
 			|| feature_type == FDT_CONTINUOUS_NUMERIC_CYCLIC)
 		{
 			if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)
@@ -758,7 +827,10 @@ public:
 	{
 	public:
 		inline FeatureParams()
-			: featureType(FDT_CONTINUOUS_NUMERIC), weight(1.0), deviation(0.0),
+			: featureType(FDT_CONTINUOUS_NUMERIC),
+			effectiveFeatureType(EFDT_CONTINUOUS_NUMERIC),
+			weight(1.0),
+			internedNumberIndexToNumberValue(nullptr), deviation(0.0),
 			unknownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
 			knownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
 			unknownToUnknownDifference(std::numeric_limits<double>::quiet_NaN()),
@@ -768,8 +840,12 @@ public:
 		}
 
 		//the type of comparison for each feature
-		// this type is 64-bit aligned to make sure the whole structure is aligned
+		// this type is 32-bit aligned to make sure the whole structure is aligned
 		FeatureDifferenceType featureType;
+
+		//the effective comparison for the feature type, specialized for performance
+		// this type is 32-bit aligned to make sure the whole structure is aligned
+		EffectiveFeatureDifferenceType effectiveFeatureType;
 
 		//weight of the feature
 		double weight;
@@ -777,6 +853,12 @@ public:
 		//distance terms for nominals
 		ExactApproxValuePair nominalMatchDistanceTerm;
 		ExactApproxValuePair nominalNonMatchDistanceTerm;
+
+		//pointer to a lookup table of indices to values if the feature is an interned number
+		std::vector<double> *internedNumberIndexToNumberValue;
+
+		//precomputed distance terms for each interned value looked up by intern index
+		std::vector<double> precomputedInternDistanceTerms;
 
 		//type attributes dependent on featureType
 		union

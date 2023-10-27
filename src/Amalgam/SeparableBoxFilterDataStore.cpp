@@ -15,6 +15,9 @@ void SeparableBoxFilterDataStore::BuildLabel(size_t column_index, const std::vec
 	auto &entities_with_number_values = parametersAndBuffers.entitiesWithValues;
 	entities_with_number_values.clear();
 
+	//clear value interning if applied
+	column_data->ConvertNumberInternsToValues();
+
 	//populate matrix and get values
 	// maintaining the order of insertion of the entities from smallest to largest allows for better performance of the insertions
 	// and every function called here assumes that entities are inserted in increasing order
@@ -23,7 +26,7 @@ void SeparableBoxFilterDataStore::BuildLabel(size_t column_index, const std::vec
 		EvaluableNodeImmediateValueType value_type;
 		EvaluableNodeImmediateValue value;
 		value_type = entities[entity_index]->GetValueAtLabelAsImmediateValue(label_id, value);
-		matrix[GetMatrixCellIndex(entity_index) + column_index] = value;
+		GetValue(entity_index, column_index) = value;
 
 		column_data->InsertNextIndexValueExceptNumbers(value_type, value, entity_index, entities_with_number_values);
 	}
@@ -32,6 +35,51 @@ void SeparableBoxFilterDataStore::BuildLabel(size_t column_index, const std::vec
 	std::stable_sort(begin(entities_with_number_values), end(entities_with_number_values));
 
 	column_data->AppendSortedNumberIndicesWithSortedIndices(entities_with_number_values);
+
+	OptimizeColumn(column_index);
+}
+
+void SeparableBoxFilterDataStore::OptimizeColumn(size_t column_index)
+{
+	auto &column_data = columnData[column_index];
+
+	if(column_data->numberValuesInterned)
+	{
+		if(column_data->AreNumberValuesPreferredToInterns())
+		{
+			for(auto &value_entry : column_data->sortedNumberValueEntries)
+			{
+				double value = value_entry->value.number;
+				for(auto entity_index : value_entry->indicesWithValue)
+					GetValue(entity_index, column_index).number = value;
+			}
+
+			for(auto entity_index : column_data->nanIndices)
+				GetValue(entity_index, column_index).number = std::numeric_limits<double>::quiet_NaN();
+
+			for(auto entity_index : column_data->nullIndices)
+				GetValue(entity_index, column_index).number = std::numeric_limits<double>::quiet_NaN();
+
+			column_data->ConvertNumberInternsToValues();
+		}
+	}
+	else if(column_data->AreNumberInternsPreferredToValues())
+	{
+		column_data->ConvertNumberValuesToInterns();
+
+		for(auto &value_entry : column_data->sortedNumberValueEntries)
+		{
+			size_t value_index = value_entry->valueInternIndex;
+			for(auto entity_index : value_entry->indicesWithValue)
+				GetValue(entity_index, column_index).indirectionIndex = value_index;
+		}
+
+		for(auto entity_index : column_data->nanIndices)
+			GetValue(entity_index, column_index).number = SBFDSColumnData::ValueEntry::NAN_INDEX;
+
+		for(auto entity_index : column_data->nullIndices)
+			GetValue(entity_index, column_index).number = SBFDSColumnData::ValueEntry::NAN_INDEX;
+	}
 }
 
 void SeparableBoxFilterDataStore::RemoveColumnIndex(size_t column_index_to_remove)
@@ -89,15 +137,14 @@ void SeparableBoxFilterDataStore::AddEntity(Entity *entity, size_t entity_index)
 		EvaluableNodeImmediateValueType value_type;
 		EvaluableNodeImmediateValue value;
 		value_type = entity->GetValueAtLabelAsImmediateValue(columnData[column_index]->stringId, value);
-
-		matrix[cell_index] = value;
-
-		columnData[column_index]->InsertIndexValue(value_type, value, entity_index);
+		matrix[cell_index] = columnData[column_index]->InsertIndexValue(value_type, value, entity_index);
 	}
 
 	//count this entity
 	if(entity_index >= numEntities)
 		numEntities = entity_index + 1;
+
+	OptimizeAllColumns();
 }
 
 void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_index, size_t entity_index_to_reassign)
@@ -133,15 +180,19 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 	//reassign index for each column
 	for(size_t column_index = 0; column_index < columnData.size(); column_index++)
 	{
+		auto &column_data = columnData[column_index];
+
 		auto &val_to_overwrite = GetValue(entity_index, column_index);
-		auto &value_of_index_to_reassign = GetValue(entity_index_to_reassign, column_index);
+		auto type_to_overwrite = column_data->GetIndexValueType(entity_index);
+
+		auto &value_to_reassign = GetValue(entity_index_to_reassign, column_index);
 		auto value_type_to_reassign = columnData[column_index]->GetIndexValueType(entity_index_to_reassign);
 
 		//remove the value where it is
-		columnData[column_index]->DeleteIndexValue(value_of_index_to_reassign, entity_index_to_reassign);
+		columnData[column_index]->DeleteIndexValue(value_type_to_reassign, value_to_reassign, entity_index_to_reassign);
 
 		//change the destination to the value
-		columnData[column_index]->ChangeIndexValue(val_to_overwrite, value_type_to_reassign, value_of_index_to_reassign, entity_index);
+		columnData[column_index]->ChangeIndexValue(type_to_overwrite, val_to_overwrite, value_type_to_reassign, value_to_reassign, entity_index);
 	}
 
 	//copy data from entity_index_to_reassign to entity_index
@@ -149,11 +200,13 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 
 	//truncate matrix cache if removing the last entry, either by moving the last entity or by directly removing the last
 	if(entity_index_to_reassign + 1 == numEntities
-		|| (entity_index_to_reassign + 1 >= numEntities && entity_index + 1 == numEntities))
+			|| (entity_index_to_reassign + 1 >= numEntities && entity_index + 1 == numEntities))
 		DeleteLastRow();
 
 	//clean up any labels that aren't relevant
 	RemoveAnyUnusedLabels();
+
+	OptimizeAllColumns();
 }
 
 void SeparableBoxFilterDataStore::UpdateAllEntityLabels(Entity *entity, size_t entity_index)
@@ -164,18 +217,26 @@ void SeparableBoxFilterDataStore::UpdateAllEntityLabels(Entity *entity, size_t e
 	size_t matrix_index = GetMatrixCellIndex(entity_index);
 	for(size_t column_index = 0; column_index < columnData.size(); column_index++)
 	{
+		auto &column_data = columnData[column_index];
+
 		EvaluableNodeImmediateValueType value_type;
 		EvaluableNodeImmediateValue value;
 		value_type = entity->GetValueAtLabelAsImmediateValue(columnData[column_index]->stringId, value);
 
-		columnData[column_index]->ChangeIndexValue(matrix[matrix_index], value_type, value, entity_index);
-		matrix[matrix_index] = value;
+		//update the value
+		auto &matrix_value = matrix[matrix_index];
+		auto previous_value_type = column_data->GetIndexValueType(entity_index);
+
+		//assign the matrix location to the updated value (which may be an index)
+		matrix_value = column_data->ChangeIndexValue(previous_value_type, matrix_value, value_type, value, entity_index);
 
 		matrix_index++;
 	}
 
 	//clean up any labels that aren't relevant
 	RemoveAnyUnusedLabels();
+
+	OptimizeAllColumns();
 }
 
 void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entity_index, StringInternPool::StringID label_updated)
@@ -188,20 +249,25 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 	if(column == end(labelIdToColumnIndex))
 		return;
 	size_t column_index = column->second;
+	auto &column_data = columnData[column_index];
 
 	//get the new value
 	EvaluableNodeImmediateValueType value_type;
 	EvaluableNodeImmediateValue value;
-	value_type = entity->GetValueAtLabelAsImmediateValue(columnData[column_index]->stringId, value);
+	value_type = entity->GetValueAtLabelAsImmediateValue(column_data->stringId, value);
 
 	//update the value
 	auto &matrix_value = GetValue(entity_index, column_index);
-	columnData[column_index]->ChangeIndexValue(matrix_value, value_type, value, entity_index);
-	matrix_value = value;
+	auto previous_value_type = column_data->GetIndexValueType(entity_index);
+
+	//assign the matrix location to the updated value (which may be an index)
+	matrix_value = column_data->ChangeIndexValue(previous_value_type, matrix_value, value_type, value, entity_index);
 
 	//remove the label if no longer relevant
 	if(IsColumnIndexRemovable(column_index))
 		RemoveColumnIndex(column_index);
+
+	OptimizeColumn(column_index);
 }
 
 //populates distances_out with all entities and their distances that have a distance to target less than max_dist
@@ -276,15 +342,15 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 			//if there are fewer enabled_indices than the number of unique values for this feature, plus one for unknown values
 			// it is usually faster (less distances to compute) to just compute distance for each unique value and add to associated sums
 			// unless it happens to be that enabled_indices is very skewed
-			if(column_data->sortedNumberValueIndexPairs.size() < enabled_indices.size())
+			if(column_data->sortedNumberValueEntries.size() < enabled_indices.size())
 			{
-				for(auto &[entity_list_value, entity_list] : column_data->sortedNumberValueIndexPairs)
+				for(auto &value_entry : column_data->sortedNumberValueEntries)
 				{
 					//get distance term that is applicable to each entity in this bucket
-					double distance_term = dist_params.ComputeDistanceTermRegularOneNonNull(target_value.number - entity_list_value, query_feature_index);
+					double distance_term = dist_params.ComputeDistanceTermRegularOneNonNull(target_value.number - value_entry->value.number, query_feature_index);
 
 					//for each bucket, add term to their sums
-					for(auto entity_index : *entity_list)
+					for(auto entity_index : value_entry->indicesWithValue)
 					{
 						if(!enabled_indices.contains(entity_index))
 							continue;
@@ -323,9 +389,10 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 		//else, there are less indices to consider than possible unique values, so save computation by just considering entities that are still valid
 		for(auto entity_index : enabled_indices)
 		{
-			auto &value = GetValue(entity_index, absolute_feature_index);
 			auto value_type = column_data->GetIndexValueType(entity_index);
-
+			auto value = column_data->GetResolvedValue(value_type, GetValue(entity_index, absolute_feature_index));
+			value_type = column_data->GetResolvedValueType(value_type);
+			
 			distances[entity_index] += dist_params.ComputeDistanceTermRegular(target_value, value, target_value_type, value_type, query_feature_index);
 
 			//remove entity if its distance is already greater than the max_dist
@@ -384,14 +451,16 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 		if(dist_params->IsFeatureEnabled(i))
 		{
 			size_t column_index = found->second;
+			auto &column_data = columnData[column_index];
 
-			auto &value = matrix[matrix_index_base + column_index];
-			auto value_type = columnData[column_index]->GetIndexValueType(search_index);
+			auto value_type = column_data->GetIndexValueType(search_index);
+			//overwrite value in case of value interning
+			auto value = column_data->GetResolvedValue(value_type, matrix[matrix_index_base + column_index]);
+			value_type = column_data->GetResolvedValueType(value_type);
 
-			PopulateNextTargetAttributes(*dist_params,
+			PopulateNextTargetAttributes(*dist_params, i,
 				target_column_indices, target_values, target_value_types,
-				column_index, value, value_type,
-				dist_params->featureParams[i].featureType);
+				column_index, value, value_type);
 		}
 	}
 
@@ -607,7 +676,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistance &dist_
 		//skip this entity in the next loops
 		enabled_indices.erase(good_match_index);
 
-		double distance = ResolveDistanceToNonMatchTargetValues(dist_params,\
+		double distance = ResolveDistanceToNonMatchTargetValues(dist_params,
 			target_column_indices, target_values, target_value_types, partial_sums, good_match_index, num_enabled_features);
 		sorted_results.Push(DistanceReferencePair(distance, good_match_index));
 	}
@@ -749,12 +818,14 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistance &dist_
 	}
 }
 
-void SeparableBoxFilterDataStore::DeleteEntityIndexFromColumns(size_t index)
+void SeparableBoxFilterDataStore::DeleteEntityIndexFromColumns(size_t entity_index)
 {
 	for(size_t i = 0; i < columnData.size(); i++)
 	{
-		auto &feature_value = GetValue(index, i);
-		columnData[i]->DeleteIndexValue(feature_value, index);
+		auto &column_data = columnData[i];
+		auto &feature_value = GetValue(entity_index, i);
+		auto feature_type = column_data->GetIndexValueType(entity_index);
+		columnData[i]->DeleteIndexValue(feature_type, feature_value, entity_index);
 	}
 }
 
@@ -805,9 +876,9 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 	size_t query_feature_index, size_t absolute_feature_index, BitArrayIntegerSet &enabled_indices)
 {
 	auto &column = columnData[absolute_feature_index];
-	auto feature_type = dist_params.featureParams[query_feature_index].featureType;
+	auto effective_feature_type = dist_params.featureParams[query_feature_index].effectiveFeatureType;
 
-	bool value_is_null = (value_type == ENIVT_NULL || (value_type == ENIVT_NUMBER && FastIsNaN(value.number)));
+	bool value_is_null = EvaluableNodeImmediateValue::IsNullEquivalent(value_type, value);
 	//need to accumulate values for nulls if the value is a null
 	if(value_is_null)
 	{
@@ -820,7 +891,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 		//if the known-unknown term is less than unknown_unknown (this should be rare if nulls have semantic meaning)
 		//then need to populate the rest of the cases
 		double known_unknown_term = dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index);
-		if(feature_type == FDT_NOMINAL || known_unknown_term < unknown_unknown_term)
+		if(effective_feature_type == GeneralizedDistance::EFDT_NOMINAL || known_unknown_term < unknown_unknown_term)
 		{
 			BitArrayIntegerSet &known_unknown_indices = parametersAndBuffers.potentialMatchesSet;
 			known_unknown_indices = enabled_indices;
@@ -842,7 +913,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 	}
 
 	//if nominal, only need to compute the exact match
-	if(feature_type == FDT_NOMINAL)
+	if(effective_feature_type == GeneralizedDistance::EFDT_NOMINAL)
 	{
 		if(value_type == ENIVT_NUMBER)
 		{
@@ -850,7 +921,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 			if(exact_index_found)
 			{
 				double term = dist_params.ComputeDistanceTermNominalExactMatch(query_feature_index);
-				AccumulatePartialSums(*column->sortedNumberValueIndexPairs[value_index].second, query_feature_index, term);
+				AccumulatePartialSums(column->sortedNumberValueEntries[value_index]->indicesWithValue, query_feature_index, term);
 			}
 		}
 		else if(value_type == ENIVT_STRING_ID)
@@ -882,7 +953,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 		//didn't find the value
 		return dist_params.ComputeDistanceTermNominalNonMatch(query_feature_index);
 	}
-	else if(feature_type == FDT_CONTINUOUS_STRING)
+	else if(effective_feature_type == GeneralizedDistance::EFDT_CONTINUOUS_STRING)
 	{
 		if(value_type == ENIVT_STRING_ID)
 		{
@@ -897,7 +968,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 		//the next closest string will have an edit distance of 1
 		return dist_params.ComputeDistanceTermNonNominalNonCyclicNonNullRegular(1.0, query_feature_index);
 	}
-	else if(feature_type == FDT_CONTINUOUS_CODE)
+	else if(effective_feature_type == GeneralizedDistance::EFDT_CONTINUOUS_CODE)
 	{
 		//compute partial sums for all code of matching size
 		size_t code_size = 1;
@@ -918,7 +989,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 	//else feature_type == FDT_CONTINUOUS_NUMERIC or FDT_CONTINUOUS_UNIVERSALLY_NUMERIC
 
 	//if not a number or no numbers available, then no size
-	if(value_type != ENIVT_NUMBER || column->sortedNumberValueIndexPairs.size() == 0)
+	if(value_type != ENIVT_NUMBER || column->sortedNumberValueEntries.size() == 0)
 		return GetMaxDistanceTermFromValue(dist_params, value, value_type, query_feature_index, absolute_feature_index);
 
 	bool cyclic_feature = dist_params.IsFeatureCyclic(query_feature_index);
@@ -932,12 +1003,12 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 	if(exact_index_found)
 		term = dist_params.ComputeDistanceTermNonNominalExactMatch(query_feature_index);
 	else
-		term = dist_params.ComputeDistanceTermNonNominalNonNullRegular(value.number - column->sortedNumberValueIndexPairs[value_index].first, query_feature_index);
+		term = dist_params.ComputeDistanceTermNonNominalNonNullRegular(value.number - column->sortedNumberValueEntries[value_index]->value.number, query_feature_index);
 
-	size_t num_entities_computed = AccumulatePartialSums(*column->sortedNumberValueIndexPairs[value_index].second, query_feature_index, term);
+	size_t num_entities_computed = AccumulatePartialSums(column->sortedNumberValueEntries[value_index]->indicesWithValue, query_feature_index, term);
 
 	//the logic below assumes there are at least two entries
-	size_t num_unique_number_values = column->sortedNumberValueIndexPairs.size();
+	size_t num_unique_number_values = column->sortedNumberValueEntries.size();
 	if(num_unique_number_values <= 1)
 		return term;
 
@@ -967,17 +1038,18 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 		size_t next_lower_index = 0;
 		if(!cyclic_feature)
 		{
-			if(lower_value_index > 0)
+			if(lower_value_index > 1)
 			{
 				next_lower_index = lower_value_index - 1;
-				lower_diff = std::abs(value.number - column->sortedNumberValueIndexPairs[next_lower_index].first);
+				lower_diff = std::abs(value.number - column->sortedNumberValueEntries[next_lower_index]->value.number);
 				compute_lower = true;
 			}
 		}
 		else //cyclic_feature
 		{
 			size_t next_index;
-			if(lower_value_index > 0)
+			//0th index is unknown
+			if(lower_value_index > 1)
 				next_index = lower_value_index - 1;
 			else
 				next_index = num_unique_number_values - 1;
@@ -986,7 +1058,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 			if(next_index != value_index)
 			{
 				next_lower_index = next_index;
-				lower_diff = GeneralizedDistance::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueIndexPairs[next_lower_index].first), cycle_length);
+				lower_diff = GeneralizedDistance::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueEntries[next_lower_index]->value.number), cycle_length);
 				compute_lower = true;
 			}
 		}
@@ -1000,7 +1072,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 			if(upper_value_index + 1 < num_unique_number_values)
 			{
 				next_upper_index = upper_value_index + 1;
-				upper_diff = std::abs(value.number - column->sortedNumberValueIndexPairs[next_upper_index].first);
+				upper_diff = std::abs(value.number - column->sortedNumberValueEntries[next_upper_index]->value.number);
 				compute_upper = true;
 			}
 		}
@@ -1009,8 +1081,8 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 			size_t next_index;
 			if(upper_value_index + 1 < num_unique_number_values)
 				next_index = upper_value_index + 1;
-			else
-				next_index = 0;
+			else //0th index is unknown, start at 1st
+				next_index = 1;
 
 			//make sure didn't wrap all the way around for cyclic features
 			//either from the value itself or overlapping with the next_lower_index
@@ -1019,7 +1091,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 				if((!compute_lower || next_index != next_lower_index))
 				{
 					next_upper_index = next_index;
-					upper_diff = GeneralizedDistance::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueIndexPairs[next_upper_index].first), cycle_length);
+					upper_diff = GeneralizedDistance::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueEntries[next_upper_index]->value.number), cycle_length);
 					compute_upper = true;
 				}
 				else //upper and lower have overlapped, want to exit the loop
@@ -1056,7 +1128,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 			//use heuristic to decide whether to continue populating based on whether this diff will help the overall distance cutoffs
 			// look at the rate of change of the difference compared to before, and how many new entities will be populated
 			// if it is too small and doesn't fill enough (or fills too many), then stop expanding
-			size_t potential_entities = column->sortedNumberValueIndexPairs[next_closest_index].second->size();
+			size_t potential_entities = column->sortedNumberValueEntries[next_closest_index]->indicesWithValue.size();
 			if(num_entities_computed + potential_entities > max_num_to_find)
 				break;
 
@@ -1081,7 +1153,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 		}
 
 		term = dist_params.ComputeDistanceTermNonNominalNonNullRegular(next_closest_diff, query_feature_index);
-		num_entities_computed += AccumulatePartialSums(*column->sortedNumberValueIndexPairs[next_closest_index].second, query_feature_index, term);
+		num_entities_computed += AccumulatePartialSums(column->sortedNumberValueEntries[next_closest_index]->indicesWithValue, query_feature_index, term);
 
 		//track the rate of change of difference
 		if(next_closest_diff - last_diff > largest_diff_delta)

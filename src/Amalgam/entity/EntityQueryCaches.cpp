@@ -257,12 +257,31 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 			}
 
 			//only select cases that have all of the correct features
-			for(auto i : cond->positionLabels)
-				sbfds.IntersectEntitiesWithFeature(i, matching_entities, true);
+			//but remove features that have 0 weight for better performance
+			for(size_t i = 0; i < cond->positionLabels.size(); i++)
+			{
+				sbfds.IntersectEntitiesWithFeature(cond->positionLabels[i], matching_entities, true);
+				if(!cond->distParams.IsFeatureEnabled(i))
+				{
+					cond->positionLabels.erase(cond->positionLabels.begin() + i);
+					cond->distParams.featureParams.erase(begin(cond->distParams.featureParams) + i);
+
+					if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || cond->queryType == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)
+					{
+						cond->valueToCompare.erase(cond->valueToCompare.begin() + i);
+						cond->valueTypes.erase(cond->valueTypes.begin() + i);
+					}
+
+					//need to process the new value in this feature slot
+					i--;
+				}
+			}
 			matching_entities.UpdateNumElements();
 
 			if(matching_entities.size() == 0)
 				return;
+
+			cond->distParams.SetAndConstrainParams();
 
 			if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || cond->queryType == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)
 			{
@@ -272,15 +291,6 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 					matching_entities.clear();
 					return;
 				}
-
-				//TODO 18025: finish moving this here from EntityQueryBuilder
-				//for(size_t i = 0; i < cond->distParams.featureParams.size(); i++)
-				//{
-				//	if(!cond->distParams.IsFeatureEnabled(i))
-				//	{
-				//
-				//	}
-				//}
 
 				//if no position labels, then the weight must be zero so just randomly choose k
 				if(cond->positionLabels.size() == 0)

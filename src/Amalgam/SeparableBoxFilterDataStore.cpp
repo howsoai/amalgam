@@ -299,11 +299,6 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 	distances.clear();
 	distances.resize(GetNumInsertedEntities(), 0.0);
 
-	//remove any entities that are missing labels
-	for(auto absolute_feature_index : target_column_indices)
-		columnData[absolute_feature_index]->invalidIndices.EraseInBatchFrom(enabled_indices);
-	enabled_indices.UpdateNumElements();
-
 	//for each desired feature, compute and add distance terms of possible window query candidate entities
 	for(size_t query_feature_index = 0; query_feature_index < target_column_indices.size(); query_feature_index++)
 	{
@@ -476,11 +471,6 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 	possible_knn_indices.erase(search_index);
 	possible_knn_indices.erase(ignore_index);
 
-	//remove invalid cases
-	for(size_t absolute_feature_index : target_column_indices)
-		columnData[absolute_feature_index]->invalidIndices.EraseInBatchFrom(possible_knn_indices);
-	possible_knn_indices.UpdateNumElements();
-
 	//if num enabled indices < top_k, return sorted distances
 	if(GetNumInsertedEntities() <= top_k || possible_knn_indices.size() <= top_k)
 		return FindAllValidElementDistances(*dist_params, target_column_indices, target_values, target_value_types, possible_knn_indices, distances_out, rand_stream);
@@ -633,11 +623,6 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistance &dist_
 		return;
 
 	PopulateUnknownFeatureValueTerms(dist_params);
-
-	//ignore cases with missing labels
-	for(size_t i = 0; i < num_enabled_features; i++)
-		columnData[target_column_indices[i]]->invalidIndices.EraseInBatchFrom(enabled_indices);
-	enabled_indices.UpdateNumElements();
 
 	enabled_indices.erase(ignore_entity_index);
 

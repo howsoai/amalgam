@@ -266,7 +266,9 @@ public:
 	}
 
 	//filters out to include only entities that have the given feature
-	inline void IntersectEntitiesWithFeature(size_t feature_id, BitArrayIntegerSet &out)
+	//if in_batch is true, will update out in batch for performance,
+	//meaning its number of elements will need to be updated
+	inline void IntersectEntitiesWithFeature(size_t feature_id, BitArrayIntegerSet &out, bool in_batch)
 	{
 		if(numEntities == 0)
 		{
@@ -281,7 +283,7 @@ public:
 			return;
 		}
 
-		columnData[column->second]->invalidIndices.EraseTo(out);
+		columnData[column->second]->invalidIndices.EraseTo(out, in_batch);
 	}
 
 	//sets out to include only entities that have the given feature and records the values into
@@ -364,7 +366,9 @@ public:
 	}
 
 	//filters out to include only entities that don't have the given feature
-	inline void IntersectEntitiesWithoutFeature(size_t feature_id, BitArrayIntegerSet &out)
+	//if in_batch is true, will update out in batch for performance,
+	//meaning its number of elements will need to be updated
+	inline void IntersectEntitiesWithoutFeature(size_t feature_id, BitArrayIntegerSet &out, bool in_batch)
 	{
 		if(numEntities == 0)
 			return;
@@ -373,7 +377,7 @@ public:
 		if(column == labelIdToColumnIndex.end())
 			return;
 
-		columnData[column->second]->invalidIndices.IntersectTo(out);
+		columnData[column->second]->invalidIndices.IntersectTo(out, in_batch);
 	}
 
 	//given a feature_id, value_type, and value, inserts into out all the entities that have the value
@@ -488,6 +492,7 @@ public:
 
 	//populates distances_out with all entities and their distances that have a distance to target less than max_dist
 	//if enabled_indices is not nullptr, intersects with the enabled_indices set.
+	//assumes that enabled_indices only contains indices that have valid values for all the features
 	void FindEntitiesWithinDistance(GeneralizedDistance &dist_params, std::vector<size_t> &position_label_ids,
 		std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types,
 		double max_dist, BitArrayIntegerSet &enabled_indices, std::vector<DistanceReferencePair<size_t>> &distances_out);
@@ -496,6 +501,7 @@ public:
 	// if expand_to_first_nonzero_distance is set, then it will expand top_k until it it finds the first nonzero distance or until it includes all enabled indices 
 	// if const_dist_params is true, then it will make a copy before making any modifications
 	//will not modify enabled_indices, but instead will make a copy for any modifications
+	//assumes that enabled_indices only contains indices that have valid values for all the features
 	void FindEntitiesNearestToIndexedEntity(GeneralizedDistance *dist_params_ref, std::vector<size_t> &position_label_ids,
 		bool constant_dist_params, size_t search_index, size_t top_k, BitArrayIntegerSet &enabled_indices,
 		bool expand_to_first_nonzero_distance, std::vector<DistanceReferencePair<size_t>> &distances_out,
@@ -503,6 +509,7 @@ public:
 	
 	//Finds the nearest neighbors
 	//enabled_indices is the set of entities to find from, and will be modified
+	//assumes that enabled_indices only contains indices that have valid values for all the features
 	void FindNearestEntities(GeneralizedDistance &dist_params, std::vector<size_t> &position_label_ids,
 		std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types,
 		size_t top_k, size_t ignore_entity_index, BitArrayIntegerSet &enabled_indices,

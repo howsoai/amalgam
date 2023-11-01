@@ -97,7 +97,8 @@ var data = [
 	{
 		"parameter" : "while bool condition [code c1] [code c2] ... [code cN]",
 		"output" : "*",
-		"description" : "Each time the condition evaluates to true, it runs each of the code trees sequentially, looping. Evaluates to the last codeN or null if the condition was initially false or if it encounters a conclude, it will halt processing and evaluate to the value returned by conclude.",
+		"new target scope": true,
+		"description" : "Each time the condition evaluates to true, it runs each of the code trees sequentially, looping. Evaluates to the last codeN or null if the condition was initially false or if it encounters a conclude, it will halt processing and evaluate to the value returned by conclude.  For iteration of the loop, pushes a new target scope onto the target stack, with target_index being the iteration count.",
 		"example" : "(let (assoc zz 1)\n  (while (< zz 10)\n    (print zz)\n    (assign (assoc zz (+ zz 1)))\n  )\n)"
 	},
 

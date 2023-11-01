@@ -113,7 +113,7 @@ public:
 
 	//pushes a new construction context on the stack, which is assumed to not be nullptr
 	//the stack is indexed via the constructionStackOffset* constants
-	//returns the new size
+	//target_origin is the original node of target useful for keeping track of the reference
 	static inline void PushNewConstructionContextToStack(std::vector<EvaluableNode *> &stack_nodes,
 		std::vector<EvaluableNodeImmediateValueWithType> &stack_node_indices,
 		EvaluableNode *target_origin, EvaluableNode *target, EvaluableNodeImmediateValueWithType target_index, EvaluableNode *target_value)
@@ -130,7 +130,7 @@ public:
 
 	//pushes a new construction context on the stack
 	//the stack is indexed via the constructionStackOffset* constants
-	//returns the new size
+	//target_origin is the original node of target useful for keeping track of the reference
 	__forceinline void PushNewConstructionContext(EvaluableNode *target_origin, EvaluableNode *target, EvaluableNodeImmediateValueWithType target_index, EvaluableNode *target_value)
 	{
 		return PushNewConstructionContextToStack(*constructionStackNodes, constructionStackIndices, target_origin, target, target_index, target_value);
@@ -869,6 +869,7 @@ protected:
 	static constexpr int64_t constructionStackOffsetStride = 3;
 
 	//index of each item for a given level in the constructionStack relative to the size of the stack minus the level * constructionStackOffsetStride
+	//target origin is the original node of target useful for keeping track of the reference
 	static constexpr int64_t constructionStackOffsetTargetOrigin = -3;
 	static constexpr int64_t constructionStackOffsetTarget = -2;
 	static constexpr int64_t constructionStackOffsetTargetValue = -1;

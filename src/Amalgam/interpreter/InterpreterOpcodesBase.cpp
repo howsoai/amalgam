@@ -578,7 +578,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en)
 		return EvaluableNodeReference::Null();
 
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
+
+	PushNewConstructionContext(nullptr, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
+
 	auto node_stack = CreateInterpreterNodeStackStateSaver();
+	size_t loop_iteration = 0;
 	for(;;)
 	{
 		//keep the result before testing condition
@@ -596,13 +600,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en)
 		for(size_t i = 1; i < ocn.size(); i++)
 		{
 			if(result != nullptr && result->GetType() == ENT_CONCLUDE)
+			{
+				PopConstructionContext();
 				return RemoveConcludeFromConclusion(result, evaluableNodeManager);
+			}
+
+			SetTopTargetValueIndexInConstructionStack(static_cast<double>(loop_iteration++));
 
 			evaluableNodeManager->FreeNodeTreeIfPossible(result);
 			result = InterpretNode(ocn[i]);
 		}
 	}
 
+	PopConstructionContext();
 	return result;
 }
 

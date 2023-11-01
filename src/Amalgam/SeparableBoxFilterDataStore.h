@@ -714,7 +714,7 @@ protected:
 	{
 		switch(dist_params.featureParams[query_feature_index].effectiveFeatureType)
 		{
-		case GeneralizedDistance::EFDT_NOMINAL:
+		case GeneralizedDistance::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED:
 			return dist_params.ComputeDistanceTermNominalNonMatch(query_feature_index);
 
 		case GeneralizedDistance::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC:
@@ -726,7 +726,7 @@ protected:
 		case GeneralizedDistance::EFDT_VALUES_UNIVERSALLY_PRECOMPUTED:
 		{
 			const size_t column_index = target_label_indices[query_feature_index];
-			return dist_params.ComputeDistanceTermNumberInterned(GetValue(entity_index, column_index).indirectionIndex, query_feature_index);
+			return dist_params.LookupDistanceTermNumberInternedPrecomputed(GetValue(entity_index, column_index).indirectionIndex, query_feature_index);
 		}
 
 		case GeneralizedDistance::EFDT_CONTINUOUS_NUMERIC:
@@ -754,7 +754,7 @@ protected:
 			const size_t column_index = target_label_indices[query_feature_index];
 			auto &column_data = columnData[column_index];
 			if(column_data->numberIndices.contains(entity_index))
-				return dist_params.ComputeDistanceTermNumberInterned(GetValue(entity_index, column_index).indirectionIndex, query_feature_index);
+				return dist_params.LookupDistanceTermNumberInternedPrecomputed(GetValue(entity_index, column_index).indirectionIndex, query_feature_index);
 			else
 				return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index);
 		}
@@ -864,7 +864,7 @@ protected:
 			target_value_types.push_back(position_value_type);
 
 			if(feature_type == GeneralizedDistance::FDT_NOMINAL)
-				effective_feature_type = GeneralizedDistance::EFDT_NOMINAL;
+				effective_feature_type = GeneralizedDistance::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED;
 			else if(feature_type == GeneralizedDistance::FDT_CONTINUOUS_STRING)
 				effective_feature_type = GeneralizedDistance::EFDT_CONTINUOUS_STRING;
 			else if(feature_type == GeneralizedDistance::FDT_CONTINUOUS_CODE)

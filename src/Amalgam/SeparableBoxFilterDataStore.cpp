@@ -876,7 +876,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 		//if the known-unknown term is less than unknown_unknown (this should be rare if nulls have semantic meaning)
 		//then need to populate the rest of the cases
 		double known_unknown_term = dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index);
-		if(effective_feature_type == GeneralizedDistance::EFDT_NOMINAL || known_unknown_term < unknown_unknown_term)
+		if(effective_feature_type == GeneralizedDistance::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED || known_unknown_term < unknown_unknown_term)
 		{
 			BitArrayIntegerSet &known_unknown_indices = parametersAndBuffers.potentialMatchesSet;
 			known_unknown_indices = enabled_indices;
@@ -898,7 +898,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 	}
 
 	//if nominal, only need to compute the exact match
-	if(effective_feature_type == GeneralizedDistance::EFDT_NOMINAL)
+	if(effective_feature_type == GeneralizedDistance::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED)
 	{
 		if(value_type == ENIVT_NUMBER)
 		{

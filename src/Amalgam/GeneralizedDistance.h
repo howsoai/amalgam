@@ -35,7 +35,9 @@ public:
 
 	enum EffectiveFeatureDifferenceType : uint32_t
 	{
-		EFDT_NOMINAL,
+		//nominal values, but every nominal relationship is the same and symmetric:
+		//A is as different as B as B is as different as C
+		EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED,
 		//everything is precomputed from interned values that are looked up
 		EFDT_VALUES_UNIVERSALLY_PRECOMPUTED,
 		//continuous without cycles, but everything is always numeric
@@ -465,14 +467,28 @@ public:
 				return -std::numeric_limits<double>::infinity();
 		}
 	}
-	//computes the distance term for a nominal when two nominals are equal
-	__forceinline double ComputeDistanceTermNominalExactMatch(size_t index)
+
+	//TODO 18066: Integrate these
+	//computes the distance term for a nominal when two universally symmetric nominals are equal
+	__forceinline double ComputeDistanceTermNominalUniversallySymmetricExactMatch(size_t index)
 	{
 		return featureParams[index].nominalMatchDistanceTerm.GetValue(defaultPrecision);
 	}
 
-	//computes the distance term for a nominal when two nominals are not equal
-	__forceinline double ComputeDistanceTermNominalNonMatch(size_t index)
+	//computes the distance term for a nominal when two universally symmetric nominals are not equal
+	__forceinline double ComputeDistanceTermNominalUniversallySymmetricNonMatch(size_t index)
+	{
+		return featureParams[index].nominalNonMatchDistanceTerm.GetValue(defaultPrecision);
+	}
+
+	//returns the precomputed distance term for a nominal when two universally symmetric nominals are equal
+	__forceinline double ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(size_t index)
+	{
+		return featureParams[index].nominalMatchDistanceTerm.GetValue(defaultPrecision);
+	}
+
+	//returns the precomputed distance term for a nominal when two universally symmetric nominals are not equal
+	__forceinline double ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(size_t index)
 	{
 		return featureParams[index].nominalNonMatchDistanceTerm.GetValue(defaultPrecision);
 	}
@@ -496,7 +512,7 @@ public:
 	}
 
 	//returns the precomputed distance term for the interned number with intern_value_index
-	__forceinline double ComputeDistanceTermNumberInterned(size_t intern_value_index, size_t index)
+	__forceinline double ComputeDistanceTermNumberInternedPrecomputed(size_t intern_value_index, size_t index)
 	{
 		return featureParams[index].precomputedInternDistanceTerms[intern_value_index];
 	}
@@ -597,7 +613,7 @@ public:
 
 		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
 		if(IsFeatureNominal(index))
-			return (diff == 0.0) ? ComputeDistanceTermNominalExactMatch(index) : ComputeDistanceTermNominalNonMatch(index);
+			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index) : ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index);
 
 		diff = ComputeDifferenceTermBaseNonNominal(diff, index);
 
@@ -614,7 +630,7 @@ public:
 
 		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
 		if(IsFeatureNominal(index))
-			return (diff == 0.0) ? ComputeDistanceTermNominalExactMatch(index) : ComputeDistanceTermNominalNonMatch(index);
+			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index) : ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index);
 
 		diff = ComputeDifferenceTermBaseNonNominal(diff, index);
 
@@ -645,7 +661,7 @@ public:
 
 		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
 		if(IsFeatureNominal(index))
-			return (diff == 0.0) ? ComputeDistanceTermNominalExactMatch(index) : ComputeDistanceTermNominalNonMatch(index);
+			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index) : ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index);
 
 		return ComputeDistanceTermNonNominalNonNullRegular(diff, index);
 	}
@@ -660,7 +676,7 @@ public:
 
 		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
 		if(IsFeatureNominal(index))
-			return (diff == 0.0) ? ComputeDistanceTermNominalExactMatch(index) : ComputeDistanceTermNominalNonMatch(index);
+			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index) : ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index);
 
 		return ComputeDistanceTermNonNominalNonNullRegular(diff, index);
 	}

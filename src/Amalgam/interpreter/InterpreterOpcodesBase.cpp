@@ -1204,7 +1204,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET(EvaluableNode *en)
 	return EvaluableNodeReference( (*constructionStackNodes)[offset], false);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET_INDEX(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_INDEX(EvaluableNode *en)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -1236,7 +1236,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET_INDEX(EvaluableNode
 	return EvaluableNodeReference(index_node, true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET_VALUE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_VALUE(EvaluableNode *en)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 

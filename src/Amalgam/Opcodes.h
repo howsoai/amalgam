@@ -38,8 +38,8 @@ enum EvaluableNodeType : uint8_t
 
 	//stack and node manipulation
 	ENT_TARGET,
-	ENT_TARGET_INDEX,
-	ENT_TARGET_VALUE,
+	ENT_CURRENT_INDEX,
+	ENT_CURRENT_VALUE,
 	ENT_STACK,
 	ENT_ARGS,
 
@@ -372,7 +372,7 @@ constexpr OrderedChildNodeType GetInstructionOrderedChildNodeType(EvaluableNodeT
 	case ENT_CALL:						case ENT_CALL_SANDBOXED:
 	case ENT_RETRIEVE:
 	case ENT_GET:
-	case ENT_TARGET:					case ENT_TARGET_INDEX:		case ENT_TARGET_VALUE:
+	case ENT_TARGET:					case ENT_CURRENT_INDEX:		case ENT_CURRENT_VALUE:
 	case ENT_STACK:						case ENT_ARGS:
 	case ENT_RAND:						case ENT_WEIGHTED_RAND:		case ENT_GET_RAND_SEED:		case ENT_SET_RAND_SEED:
 	case ENT_SYSTEM_TIME:

@@ -116,24 +116,24 @@ public:
 	//target_origin is the original node of target useful for keeping track of the reference
 	static inline void PushNewConstructionContextToStack(std::vector<EvaluableNode *> &stack_nodes,
 		std::vector<EvaluableNodeImmediateValueWithType> &stack_node_indices,
-		EvaluableNode *target_origin, EvaluableNode *target, EvaluableNodeImmediateValueWithType target_index, EvaluableNode *target_value)
+		EvaluableNode *target_origin, EvaluableNode *target, EvaluableNodeImmediateValueWithType current_index, EvaluableNode *current_value)
 	{
 		size_t new_size = stack_nodes.size() + constructionStackOffsetStride;
 		stack_nodes.resize(new_size, nullptr);
 
 		stack_nodes[new_size + constructionStackOffsetTargetOrigin] = target_origin;
 		stack_nodes[new_size + constructionStackOffsetTarget] = target;
-		stack_nodes[new_size + constructionStackOffsetTargetValue] = target_value;
+		stack_nodes[new_size + constructionStackOffsetTargetValue] = current_value;
 
-		stack_node_indices.emplace_back(target_index);
+		stack_node_indices.emplace_back(current_index);
 	}
 
 	//pushes a new construction context on the stack
 	//the stack is indexed via the constructionStackOffset* constants
 	//target_origin is the original node of target useful for keeping track of the reference
-	__forceinline void PushNewConstructionContext(EvaluableNode *target_origin, EvaluableNode *target, EvaluableNodeImmediateValueWithType target_index, EvaluableNode *target_value)
+	__forceinline void PushNewConstructionContext(EvaluableNode *target_origin, EvaluableNode *target, EvaluableNodeImmediateValueWithType current_index, EvaluableNode *current_value)
 	{
-		return PushNewConstructionContextToStack(*constructionStackNodes, constructionStackIndices, target_origin, target, target_index, target_value);
+		return PushNewConstructionContextToStack(*constructionStackNodes, constructionStackIndices, target_origin, target, current_index, current_value);
 	}
 
 	//pops the top construction context off the stack
@@ -365,16 +365,16 @@ protected:
 
 		//Enqueues a concurrent task resultFutures that needs a construction stack, using the relative interpreter
 		// executes node_to_execute with the following parameters matching those of pushing on the construction stack
-		// will allocate an approrpiate node matching the type of target_index_type and target_index
+		// will allocate an approrpiate node matching the type of current_index
 		void PushTaskToResultFuturesWithConstructionStack(EvaluableNode *node_to_execute,
-			EvaluableNode *target_origin, EvaluableNode *target, EvaluableNodeImmediateValueWithType target_index, EvaluableNode *target_value)
+			EvaluableNode *target_origin, EvaluableNode *target, EvaluableNodeImmediateValueWithType current_index, EvaluableNode *current_value)
 		{
 			//get the interpreter corresponding to the resultFutures
 			Interpreter *interpreter = interpreters[resultFutures.size()].get();
 
 			resultFutures.emplace_back(
 				Concurrency::threadPool.EnqueueBatchTask(
-					[this, interpreter, node_to_execute, target_origin, target, target_index, target_value]
+					[this, interpreter, node_to_execute, target_origin, target, current_index, current_value]
 					{
 						EvaluableNodeManager *enm = interpreter->evaluableNodeManager;
 						interpreter->memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
@@ -382,7 +382,7 @@ protected:
 						//build new construction stack
 						EvaluableNode *construction_stack = enm->AllocListNode(parentInterpreter->constructionStackNodes);
 						std::vector<EvaluableNodeImmediateValueWithType> construction_stack_indices(parentInterpreter->constructionStackIndices);
-						interpreter->PushNewConstructionContextToStack(construction_stack->GetOrderedChildNodes(), construction_stack_indices, target_origin, target, target_index, target_value);
+						interpreter->PushNewConstructionContextToStack(construction_stack->GetOrderedChildNodes(), construction_stack_indices, target_origin, target, current_index, current_value);
 
 						auto result = interpreter->ExecuteNode(node_to_execute,
 							enm->AllocListNode(parentInterpreter->callStackNodes),
@@ -642,8 +642,8 @@ protected:
 
 	//stack and node manipulation
 	EvaluableNodeReference InterpretNode_ENT_TARGET(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_TARGET_INDEX(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_TARGET_VALUE(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_CURRENT_INDEX(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_CURRENT_VALUE(EvaluableNode *en);
 	EvaluableNodeReference InterpretNode_ENT_STACK(EvaluableNode *en);
 	EvaluableNodeReference InterpretNode_ENT_ARGS(EvaluableNode *en);
 

@@ -60,8 +60,8 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 	
 	//stack and node manipulation
 	&Interpreter::InterpretNode_ENT_TARGET,															// ENT_TARGET
-	&Interpreter::InterpretNode_ENT_TARGET_INDEX,													// ENT_TARGET_INDEX
-	&Interpreter::InterpretNode_ENT_TARGET_VALUE,													// ENT_TARGET_VALUE
+	&Interpreter::InterpretNode_ENT_CURRENT_INDEX,													// ENT_CURRENT_INDEX
+	&Interpreter::InterpretNode_ENT_CURRENT_VALUE,													// ENT_CURRENT_VALUE
 	&Interpreter::InterpretNode_ENT_STACK,															// ENT_STACK
 	&Interpreter::InterpretNode_ENT_ARGS,															// ENT_ARGS
 

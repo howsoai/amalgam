@@ -1972,6 +1972,7 @@ CompactHashMap<EvaluableNodeType, double> EvaluableNodeTreeManipulation::evaluab
 	{ENT_TARGET,										0.1},
 	{ENT_CURRENT_INDEX,									0.1},
 	{ENT_CURRENT_VALUE,									0.1},
+	{ENT_PREVIOUS_RESULT,								0.05},
 	{ENT_STACK,											0.05},
 	{ENT_ARGS,											0.08},
 

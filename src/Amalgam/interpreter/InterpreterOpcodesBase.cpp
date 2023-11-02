@@ -596,6 +596,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en)
 		if(AreExecutionResourcesExhausted())
 			return EvaluableNodeReference::Null();
 
+		//TODO 18064: utilize previous_result and update documentation and tests
+
 		//run each step within the loop
 		for(size_t i = 1; i < ocn.size(); i++)
 		{
@@ -1256,6 +1258,30 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_VALUE(EvaluableNod
 
 	size_t offset = constructionStackNodes->size() - (constructionStackOffsetStride * depth) + constructionStackOffsetTargetValue;
 	return EvaluableNodeReference( (*constructionStackNodes)[offset], false);
+}
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_PREVIOUS_RESULT(EvaluableNode *en)
+{
+	auto &ocn = en->GetOrderedChildNodes();
+
+	size_t depth = 0;
+	if(ocn.size() > 0)
+	{
+		double value = InterpretNodeIntoNumberValue(ocn[0]);
+		if(value >= 0)
+			depth = static_cast<size_t>(value);
+		else
+			return EvaluableNodeReference::Null();
+	}
+
+	//make sure have a large enough stack
+	if(depth >= constructionStackIndices.size())
+		return EvaluableNodeReference::Null();
+
+	size_t offset = constructionStackNodes->size() - (constructionStackOffsetStride * depth) + constructionStackOffsetPreviousResult;
+	//TODO 18064: set the location to nullptr, also add tests for this; also, need to store and know whether it was unique reference or not
+	//TODO 18064: add to documentation and add tests
+	return EvaluableNodeReference((*constructionStackNodes)[offset], false);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_STACK(EvaluableNode *en)

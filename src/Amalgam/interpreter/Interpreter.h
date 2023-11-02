@@ -116,7 +116,8 @@ public:
 	//target_origin is the original node of target useful for keeping track of the reference
 	static inline void PushNewConstructionContextToStack(std::vector<EvaluableNode *> &stack_nodes,
 		std::vector<EvaluableNodeImmediateValueWithType> &stack_node_indices,
-		EvaluableNode *target_origin, EvaluableNode *target, EvaluableNodeImmediateValueWithType current_index, EvaluableNode *current_value)
+		EvaluableNode *target_origin, EvaluableNode *target,
+		EvaluableNodeImmediateValueWithType current_index, EvaluableNode *current_value, EvaluableNode *previous_result)
 	{
 		size_t new_size = stack_nodes.size() + constructionStackOffsetStride;
 		stack_nodes.resize(new_size, nullptr);
@@ -124,6 +125,7 @@ public:
 		stack_nodes[new_size + constructionStackOffsetTargetOrigin] = target_origin;
 		stack_nodes[new_size + constructionStackOffsetTarget] = target;
 		stack_nodes[new_size + constructionStackOffsetTargetValue] = current_value;
+		stack_nodes[new_size + constructionStackOffsetPreviousResult] = previous_result;
 
 		stack_node_indices.emplace_back(current_index);
 	}
@@ -131,9 +133,11 @@ public:
 	//pushes a new construction context on the stack
 	//the stack is indexed via the constructionStackOffset* constants
 	//target_origin is the original node of target useful for keeping track of the reference
-	__forceinline void PushNewConstructionContext(EvaluableNode *target_origin, EvaluableNode *target, EvaluableNodeImmediateValueWithType current_index, EvaluableNode *current_value)
+	__forceinline void PushNewConstructionContext(EvaluableNode *target_origin, EvaluableNode *target,
+		EvaluableNodeImmediateValueWithType current_index, EvaluableNode *current_value, EvaluableNode *previous_result)
 	{
-		return PushNewConstructionContextToStack(*constructionStackNodes, constructionStackIndices, target_origin, target, current_index, current_value);
+		return PushNewConstructionContextToStack(*constructionStackNodes, constructionStackIndices,
+			target_origin, target, current_index, current_value, previous_result);
 	}
 
 	//pops the top construction context off the stack
@@ -644,6 +648,7 @@ protected:
 	EvaluableNodeReference InterpretNode_ENT_TARGET(EvaluableNode *en);
 	EvaluableNodeReference InterpretNode_ENT_CURRENT_INDEX(EvaluableNode *en);
 	EvaluableNodeReference InterpretNode_ENT_CURRENT_VALUE(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_PREVIOUS_RESULT(EvaluableNode *en);
 	EvaluableNodeReference InterpretNode_ENT_STACK(EvaluableNode *en);
 	EvaluableNodeReference InterpretNode_ENT_ARGS(EvaluableNode *en);
 
@@ -866,11 +871,12 @@ protected:
 	static bool _label_profiling_enabled;
 
 	//number of items in each level of the constructionStack
-	static constexpr int64_t constructionStackOffsetStride = 3;
+	static constexpr int64_t constructionStackOffsetStride = 4;
 
 	//index of each item for a given level in the constructionStack relative to the size of the stack minus the level * constructionStackOffsetStride
 	//target origin is the original node of target useful for keeping track of the reference
-	static constexpr int64_t constructionStackOffsetTargetOrigin = -3;
-	static constexpr int64_t constructionStackOffsetTarget = -2;
-	static constexpr int64_t constructionStackOffsetTargetValue = -1;
+	static constexpr int64_t constructionStackOffsetTargetOrigin = -4;
+	static constexpr int64_t constructionStackOffsetTarget = -3;
+	static constexpr int64_t constructionStackOffsetTargetValue = -2;
+	static constexpr int64_t constructionStackOffsetPreviousResult = -1;
 };

@@ -905,7 +905,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 			auto [value_index, exact_index_found] = column->FindExactIndexForValue(value.number);
 			if(exact_index_found)
 			{
-				double term = dist_params.ComputeDistanceTermNominalExactMatch(query_feature_index);
+				double term = dist_params.ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(query_feature_index);
 				AccumulatePartialSums(column->sortedNumberValueEntries[value_index]->indicesWithValue, query_feature_index, term);
 			}
 		}
@@ -914,7 +914,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 			auto value_found = column->stringIdValueToIndices.find(value.stringID);
 			if(value_found != end(column->stringIdValueToIndices))
 			{
-				double term = dist_params.ComputeDistanceTermNominalExactMatch(query_feature_index);
+				double term = dist_params.ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(query_feature_index);
 				AccumulatePartialSums(*(value_found->second), query_feature_index, term);
 			}
 		}
@@ -936,7 +936,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 		//else value_type == ENIVT_NULL
 
 		//didn't find the value
-		return dist_params.ComputeDistanceTermNominalNonMatch(query_feature_index);
+		return dist_params.ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(query_feature_index);
 	}
 	else if(effective_feature_type == GeneralizedDistance::EFDT_CONTINUOUS_STRING)
 	{

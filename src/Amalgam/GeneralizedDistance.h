@@ -208,9 +208,9 @@ public:
 
 	//computes the Lukaszyk–Karmowski metric deviation component for the minkowski distance equation given the feature difference and feature deviation
 	//assumes deviation is nonnegative
-	__forceinline double ComputeDeviationPart(const double diff, const double deviation)
+	__forceinline double ComputeDeviationPart(const double diff, const double deviation, bool high_accuracy)
 	{
-		if(defaultPrecision == ExactApproxValuePair::EXACT)
+		if(high_accuracy)
 		#ifdef DISTANCE_USE_LAPLACE_LK_METRIC
 			return ComputeDeviationPartLaplace(diff, deviation);
 		#else
@@ -260,6 +260,11 @@ protected:
 		__forceinline ExactApproxValuePair(double initial_value = 0.0)
 		{
 			exactApproxPair = { initial_value, initial_value };
+		}
+
+		constexpr double GetValue(bool high_accuracy)
+		{
+			return exactApproxPair[high_accuracy ? EXACT : APPROX];
 		}
 
 		constexpr double GetValue(int offset)
@@ -419,7 +424,7 @@ public:
 	}
 
 	//computes the exponentiation of d to 1/p
-	__forceinline double InverseExponentiateDistance(double d)
+	__forceinline double InverseExponentiateDistance(double d, bool high_accuracy)
 	{
 		if(pValue == 1)
 			return d;
@@ -427,14 +432,14 @@ public:
 		if(pValue == 0.5)
 			return d * d;
 
-		if(defaultPrecision == ExactApproxValuePair::EXACT)
+		if(high_accuracy)
 			return std::pow(d, inversePValue);
 		else
 			return fastPowInverseP.FastPow(d);
 	}
 
 	//computes the exponentiation of d to p given precision being from ExactApproxValuePair
-	__forceinline double ExponentiateDifferenceTerm(double d, int precision)
+	__forceinline double ExponentiateDifferenceTerm(double d, bool high_accuracy)
 	{
 		if(pValue == 1)
 			return d;
@@ -442,7 +447,7 @@ public:
 		if(pValue == 2)
 			return d * d;
 
-		if(precision == ExactApproxValuePair::EXACT)
+		if(high_accuracy)
 			return std::pow(d, pValue);
 		else
 			return fastPowP.FastPow(d);
@@ -470,39 +475,39 @@ public:
 
 	//TODO 18066: Integrate these
 	//computes the distance term for a nominal when two universally symmetric nominals are equal
-	__forceinline double ComputeDistanceTermNominalUniversallySymmetricExactMatch(size_t index)
+	__forceinline double ComputeDistanceTermNominalUniversallySymmetricExactMatch(size_t index, bool high_accuracy)
 	{
-		return featureParams[index].nominalMatchDistanceTerm.GetValue(defaultPrecision);
+		return featureParams[index].nominalMatchDistanceTerm.GetValue(high_accuracy);
 	}
 
 	//computes the distance term for a nominal when two universally symmetric nominals are not equal
-	__forceinline double ComputeDistanceTermNominalUniversallySymmetricNonMatch(size_t index)
+	__forceinline double ComputeDistanceTermNominalUniversallySymmetricNonMatch(size_t index, bool high_accuracy)
 	{
-		return featureParams[index].nominalNonMatchDistanceTerm.GetValue(defaultPrecision);
+		return featureParams[index].nominalNonMatchDistanceTerm.GetValue(high_accuracy);
 	}
 
 	//returns the precomputed distance term for a nominal when two universally symmetric nominals are equal
-	__forceinline double ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(size_t index)
+	__forceinline double ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(size_t index, bool high_accuracy)
 	{
-		return featureParams[index].nominalMatchDistanceTerm.GetValue(defaultPrecision);
+		return featureParams[index].nominalMatchDistanceTerm.GetValue(high_accuracy);
 	}
 
 	//returns the precomputed distance term for a nominal when two universally symmetric nominals are not equal
-	__forceinline double ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(size_t index)
+	__forceinline double ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(size_t index, bool high_accuracy)
 	{
-		return featureParams[index].nominalNonMatchDistanceTerm.GetValue(defaultPrecision);
+		return featureParams[index].nominalNonMatchDistanceTerm.GetValue(high_accuracy);
 	}
 
 	//computes the distance term for an unknown-unknown
-	__forceinline double ComputeDistanceTermUnknownToUnknown(size_t index)
+	__forceinline double ComputeDistanceTermUnknownToUnknown(size_t index, bool high_accuracy)
 	{
-		return featureParams[index].unknownToUnknownDistanceTerm.GetValue(defaultPrecision);
+		return featureParams[index].unknownToUnknownDistanceTerm.GetValue(high_accuracy);
 	}
 
 	//computes the distance term for an known-unknown
-	__forceinline double ComputeDistanceTermKnownToUnknown(size_t index)
+	__forceinline double ComputeDistanceTermKnownToUnknown(size_t index, bool high_accuracy)
 	{
-		return featureParams[index].knownToUnknownDistanceTerm.GetValue(defaultPrecision);
+		return featureParams[index].knownToUnknownDistanceTerm.GetValue(high_accuracy);
 	}
 
 	//returns true if the feature at index has interned number values
@@ -511,6 +516,7 @@ public:
 		return featureParams[index].internedNumberIndexToNumberValue != nullptr;
 	}
 
+	//TODO 18066: make this use bool high_accuracy
 	//returns the precomputed distance term for the interned number with intern_value_index
 	__forceinline double ComputeDistanceTermNumberInternedPrecomputed(size_t intern_value_index, size_t index)
 	{
@@ -518,18 +524,19 @@ public:
 	}
 
 	//computes the inner term for a non-nominal with an exact match of values
-	__forceinline double ComputeDistanceTermNonNominalExactMatch(size_t index)
+	__forceinline double ComputeDistanceTermNonNominalExactMatch(size_t index, bool high_accuracy)
 	{
 		if(!DoesFeatureHaveDeviation(index))
 			return 0.0;
 
 		//apply deviations
-		double diff = ComputeDeviationPart(0.0, featureParams[index].deviation);
+		double diff = ComputeDeviationPart(0.0, featureParams[index].deviation, high_accuracy);
 
 		//exponentiate and return with weight
-		return ExponentiateDifferenceTerm(diff, defaultPrecision) * featureParams[index].weight;
+		return ExponentiateDifferenceTerm(diff, high_accuracy) * featureParams[index].weight;
 	}
 
+	//TODO 18066: add bool high_accuracy from here onward
 	//computes the base of the difference between two values non-nominal (e.g., continuous)
 	__forceinline double ComputeDifferenceTermBaseNonNominal(double diff, size_t index)
 	{
@@ -605,7 +612,7 @@ public:
 
 	//computes the inner term of the Minkowski norm summation for a single index for p=0
 	__forceinline double ComputeDistanceTermP0(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
-		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index)
+		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)
 	{
 		double diff = ComputeDifference(a, b, a_type, b_type, featureParams[index].featureType);
 		if(FastIsNaN(diff))
@@ -613,7 +620,8 @@ public:
 
 		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
 		if(IsFeatureNominal(index))
-			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index) : ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index);
+			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index, high_accuracy)
+			: ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index);
 
 		diff = ComputeDifferenceTermBaseNonNominal(diff, index);
 
@@ -622,7 +630,7 @@ public:
 
 	//computes the inner term of the Minkowski norm summation for a single index for p=infinity or -infinity
 	__forceinline double ComputeDistanceTermPInf(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
-		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index)
+		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)
 	{
 		double diff = ComputeDifference(a, b, a_type, b_type, featureParams[index].featureType);
 		if(FastIsNaN(diff))
@@ -630,7 +638,8 @@ public:
 
 		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
 		if(IsFeatureNominal(index))
-			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index) : ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index);
+			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index, high_accuracy)
+				: ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index);
 
 		diff = ComputeDifferenceTermBaseNonNominal(diff, index);
 
@@ -654,21 +663,22 @@ public:
 
 	//computes the inner term of the Minkowski norm summation for a single index for p non-zero and non-infinite
 	//where at least one of the values is non-null
-	__forceinline double ComputeDistanceTermRegularOneNonNull(double diff, size_t index)
+	__forceinline double ComputeDistanceTermRegularOneNonNull(double diff, size_t index, bool high_accuracy)
 	{
 		if(FastIsNaN(diff))
 			return ComputeDistanceTermKnownToUnknown(index);
 
 		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
 		if(IsFeatureNominal(index))
-			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index) : ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index);
+			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index, high_accuracy)
+				: ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index);
 
 		return ComputeDistanceTermNonNominalNonNullRegular(diff, index);
 	}
 
 	//computes the inner term of the Minkowski norm summation for a single index for p non-zero and non-infinite
 	__forceinline double ComputeDistanceTermRegular(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
-		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index)
+		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)
 	{
 		double diff = ComputeDifference(a, b, a_type, b_type, featureParams[index].featureType);
 		if(FastIsNaN(diff))
@@ -676,7 +686,8 @@ public:
 
 		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
 		if(IsFeatureNominal(index))
-			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index) : ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index);
+			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index, high_accuracy)
+				: ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index);
 
 		return ComputeDistanceTermNonNominalNonNullRegular(diff, index);
 	}
@@ -913,9 +924,6 @@ public:
 	double pValue;
 	//computed inverse of pValue
 	double inversePValue;
-
-	//the current precision for exact vs approximate terms
-	int defaultPrecision;
 
 	//if true, then all computations should be performed with high accuracy
 	bool highAccuracy;

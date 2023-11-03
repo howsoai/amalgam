@@ -609,7 +609,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en)
 			if(new_result != nullptr && new_result->GetType() == ENT_CONCLUDE)
 			{
 				//if previous result is unconsumed, free if possible
-				previous_result = GetTopPreviousResultInConstructionStack();
+				previous_result = GetAndClearPreviousResultInConstructionStack(0);
 				evaluableNodeManager->FreeNodeTreeIfPossible(previous_result);
 
 				PopConstructionContext();
@@ -622,7 +622,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en)
 		}
 
 		//if previous result is unconsumed, free if possible
-		previous_result = GetTopPreviousResultInConstructionStack();
+		previous_result = GetAndClearPreviousResultInConstructionStack(0);
 		evaluableNodeManager->FreeNodeTreeIfPossible(previous_result);
 
 		previous_result = new_result;
@@ -1292,16 +1292,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PREVIOUS_RESULT(EvaluableN
 	if(depth >= constructionStackIndicesAndUniqueness.size())
 		return EvaluableNodeReference::Null();
 
-	//depth is 1-based
-	size_t uniqueness_offset = constructionStackIndicesAndUniqueness.size() - depth - 1;
-	bool previous_result_unique = constructionStackIndicesAndUniqueness[uniqueness_offset].unique;
-
-	size_t previous_result_offset = constructionStackNodes->size() - (constructionStackOffsetStride * depth) + constructionStackOffsetPreviousResult;
-	EvaluableNodeReference previous_result(constructionStackNodes->at(previous_result_offset), previous_result_unique);
-
-	//clear the location to finish taking the result
-	constructionStackNodes->at(previous_result_offset) = nullptr;
-	return previous_result;
+	return GetAndClearPreviousResultInConstructionStack(depth);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_STACK(EvaluableNode *en)

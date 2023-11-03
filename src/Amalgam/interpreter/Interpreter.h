@@ -199,12 +199,28 @@ public:
 		constructionStackIndicesAndUniqueness.back().unique = previous_result.unique;
 	}
 
-	//gets the previous_result node for the top reference on the construction stack
-	//assumes there is at least one construction stack entry
-	__forceinline EvaluableNodeReference GetTopPreviousResultInConstructionStack()
+	//gets the previous_result node for the reference at depth on the construction stack
+	//assumes there is at least one construction stack entry and depth is a valid depth
+	__forceinline EvaluableNodeReference GetAndClearPreviousResultInConstructionStack(size_t depth)
 	{
-		return EvaluableNodeReference(constructionStackNodes->at(constructionStackNodes->size() + constructionStackOffsetPreviousResult),
-			constructionStackIndicesAndUniqueness.back().unique);
+		size_t uniqueness_offset = constructionStackIndicesAndUniqueness.size() - depth - 1;
+		bool previous_result_unique = constructionStackIndicesAndUniqueness[uniqueness_offset].unique;
+
+		size_t offset = constructionStackNodes->size() - (constructionStackOffsetStride * depth) + constructionStackOffsetPreviousResult;
+
+		//clear previous result
+		auto &previous_result_loc = constructionStackNodes->at(constructionStackNodes->size() + constructionStackOffsetPreviousResult);
+		EvaluableNode *previous_result = nullptr;
+		std::swap(previous_result, previous_result_loc);
+
+		return EvaluableNodeReference(previous_result, previous_result_unique);
+	}
+
+	//clears all uniqueness of previous_results in construction stack in case the construction stack is copied across threads
+	inline void RemoveUniquenessFromPreviousResultsInConstructionStack()
+	{
+		for(auto &entry : constructionStackIndicesAndUniqueness)
+			entry.unique = false;
 	}
 
 	//Makes sure that args is an active associative array is proper for execution context, meaning initialized assoc and a unique reference.
@@ -385,6 +401,10 @@ protected:
 			size_t max_execution_steps_per_element = 0;
 			if(parentInterpreter->maxNumExecutionSteps > 0)
 				max_execution_steps_per_element = (parentInterpreter->maxNumExecutionSteps - parentInterpreter->GetNumStepsExecuted()) / numElements;
+
+			//since each thread has a copy of the constructionStackNodes, it's possible that more than one of the threads
+			//obtains previous_results, so they must all be marked as not unique
+			parentInterpreter->RemoveUniquenessFromPreviousResultsInConstructionStack();
 
 			//set up all the interpreters
 			// do this as its own loop to make sure that the vector memory isn't reallocated once the threads have kicked off

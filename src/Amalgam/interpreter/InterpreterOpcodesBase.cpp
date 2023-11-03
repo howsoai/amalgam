@@ -1203,7 +1203,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET(EvaluableNode *en)
 		return EvaluableNodeReference::Null();
 
 	size_t offset = constructionStackNodes->size() - (constructionStackOffsetStride * depth) + constructionStackOffsetTarget;
-	return EvaluableNodeReference( (*constructionStackNodes)[offset], false);
+	return EvaluableNodeReference(constructionStackNodes->at(offset), false);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_INDEX(EvaluableNode *en)
@@ -1229,7 +1229,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_INDEX(EvaluableNod
 
 	//build the index node to return
 	EvaluableNode *index_node = nullptr;
-	EvaluableNodeImmediateValueWithType enivwt = constructionStackIndicesAndUniqueness[offset];
+	EvaluableNodeImmediateValueWithType enivwt = constructionStackIndicesAndUniqueness[offset].index;
 	if(enivwt.nodeType == ENIVT_NUMBER)
 		index_node = evaluableNodeManager->AllocNode(enivwt.nodeValue.number);
 	else if(enivwt.nodeType == ENIVT_STRING_ID)
@@ -1257,11 +1257,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_VALUE(EvaluableNod
 		return EvaluableNodeReference::Null();
 
 	size_t offset = constructionStackNodes->size() - (constructionStackOffsetStride * depth) + constructionStackOffsetTargetValue;
-	return EvaluableNodeReference( (*constructionStackNodes)[offset], false);
+	return EvaluableNodeReference(constructionStackNodes->at(offset), false);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_PREVIOUS_RESULT(EvaluableNode *en)
 {
+	//TODO 18064: add to documentation and add tests
 	auto &ocn = en->GetOrderedChildNodes();
 
 	size_t depth = 0;
@@ -1278,10 +1279,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PREVIOUS_RESULT(EvaluableN
 	if(depth >= constructionStackIndicesAndUniqueness.size())
 		return EvaluableNodeReference::Null();
 
-	size_t offset = constructionStackNodes->size() - (constructionStackOffsetStride * depth) + constructionStackOffsetPreviousResult;
-	//TODO 18064: set the location to nullptr, also add tests for this; also, need to store and know whether it was unique reference or not
-	//TODO 18064: add to documentation and add tests
-	return EvaluableNodeReference((*constructionStackNodes)[offset], false);
+	//depth is 1-based
+	size_t uniqueness_offset = constructionStackIndicesAndUniqueness.size() - depth - 1;
+	bool previous_result_unique = constructionStackIndicesAndUniqueness[uniqueness_offset].unique;
+
+	size_t previous_result_offset = constructionStackNodes->size() - (constructionStackOffsetStride * depth) + constructionStackOffsetPreviousResult;
+	EvaluableNodeReference previous_result(constructionStackNodes->at(previous_result_offset), previous_result_unique);
+
+	//clear the location to finish taking the result
+	constructionStackNodes->at(previous_result_offset) = nullptr;
+	return previous_result;
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_STACK(EvaluableNode *en)

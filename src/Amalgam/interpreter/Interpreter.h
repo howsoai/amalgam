@@ -131,8 +131,8 @@ public:
 	static inline void PushNewConstructionContextToStack(std::vector<EvaluableNode *> &stack_nodes,
 		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> &stack_node_indices,
 		EvaluableNode *target_origin, EvaluableNode *target,
-		ConstructionStackIndexAndPreviousResultUniqueness &current_index_and_uniqueness,
-		EvaluableNode *current_value, EvaluableNodeReference previous_result)
+		EvaluableNodeImmediateValueWithType current_index, EvaluableNode *current_value,
+		EvaluableNodeReference previous_result)
 	{
 		size_t new_size = stack_nodes.size() + constructionStackOffsetStride;
 		stack_nodes.resize(new_size, nullptr);
@@ -140,20 +140,20 @@ public:
 		stack_nodes[new_size + constructionStackOffsetTargetOrigin] = target_origin;
 		stack_nodes[new_size + constructionStackOffsetTarget] = target;
 		stack_nodes[new_size + constructionStackOffsetTargetValue] = current_value;
-		stack_nodes[new_size + constructionStackOffsetPreviousResult] = previous_result;
+		stack_nodes[new_size + constructionStackOffsetPreviousResult] = previous_result.reference;
 
-		stack_node_indices.emplace_back(current_index_and_uniqueness.index, previous_result.unique);
+		stack_node_indices.emplace_back(current_index, previous_result.unique);
 	}
 
 	//pushes a new construction context on the stack
 	//the stack is indexed via the constructionStackOffset* constants
 	//target_origin is the original node of target useful for keeping track of the reference
 	__forceinline void PushNewConstructionContext(EvaluableNode *target_origin, EvaluableNode *target,
-		ConstructionStackIndexAndPreviousResultUniqueness &current_index_and_uniqueness,
-		EvaluableNode *current_value, EvaluableNodeReference previous_result)
+		EvaluableNodeImmediateValueWithType current_index, EvaluableNode *current_value,
+		EvaluableNodeReference previous_result = EvaluableNodeReference::Null())
 	{
 		return PushNewConstructionContextToStack(*constructionStackNodes, constructionStackIndicesAndUniqueness,
-			target_origin, target, current_index_and_uniqueness, current_value, previous_result);
+			target_origin, target, current_index, current_value, previous_result);
 	}
 
 	//pops the top construction context off the stack
@@ -388,15 +388,15 @@ protected:
 		// will allocate an approrpiate node matching the type of current_index
 		void PushTaskToResultFuturesWithConstructionStack(EvaluableNode *node_to_execute,
 			EvaluableNode *target_origin, EvaluableNode *target,
-			ConstructionStackIndexAndPreviousResultUniqueness &current_index_and_uniqueness,
-			EvaluableNode *current_value, EvaluableNodeReference previous_result)
+			EvaluableNodeImmediateValueWithType current_index,
+			EvaluableNode *current_value, EvaluableNodeReference previous_result = EvaluableNodeReference::Null())
 		{
 			//get the interpreter corresponding to the resultFutures
 			Interpreter *interpreter = interpreters[resultFutures.size()].get();
 
 			resultFutures.emplace_back(
 				Concurrency::threadPool.EnqueueBatchTask(
-					[this, interpreter, node_to_execute, target_origin, target, &current_index_and_uniqueness, current_value, previous_result]
+					[this, interpreter, node_to_execute, target_origin, target, current_index, current_value, previous_result]
 					{
 						EvaluableNodeManager *enm = interpreter->evaluableNodeManager;
 						interpreter->memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
@@ -405,7 +405,7 @@ protected:
 						EvaluableNode *construction_stack = enm->AllocListNode(parentInterpreter->constructionStackNodes);
 						std::vector<ConstructionStackIndexAndPreviousResultUniqueness> csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
 						interpreter->PushNewConstructionContextToStack(construction_stack->GetOrderedChildNodes(),
-							csiau, target_origin, target, current_index_and_uniqueness, current_value, previous_result);
+							csiau, target_origin, target, current_index, current_value, previous_result);
 
 						auto result = interpreter->ExecuteNode(node_to_execute,
 							enm->AllocListNode(parentInterpreter->callStackNodes),

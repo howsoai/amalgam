@@ -574,10 +574,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
-	if(ocn.size() == 0)
+	size_t ocn_size = ocn.size();
+	if(ocn_size == 0)
 		return EvaluableNodeReference::Null();
 
-	EvaluableNodeReference result = EvaluableNodeReference::Null();
+	EvaluableNodeReference previous_result = EvaluableNodeReference::Null();
 
 	PushNewConstructionContext(nullptr, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 
@@ -586,7 +587,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en)
 	for(;;)
 	{
 		//keep the result before testing condition
-		node_stack.PushEvaluableNode(result);
+		node_stack.PushEvaluableNode(previous_result);
 		bool condition_true = InterpretNodeIntoBoolValue(ocn[0]);
 		node_stack.PopEvaluableNode();
 
@@ -596,13 +597,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en)
 		if(AreExecutionResourcesExhausted())
 			return EvaluableNodeReference::Null();
 
-		SetTopTargetValueIndexInConstructionStack(static_cast<double>(loop_iteration++));
-
-		//TODO 18064: utilize previous_result and update documentation and tests
+		SetTopCurrentIndexInConstructionStack(static_cast<double>(loop_iteration++));
+		SetTopPreviousResultInConstructionStack(previous_result);
 
 		//run each step within the loop
-		for(size_t i = 1; i < ocn.size(); i++)
+		for(size_t i = 1; i < ocn_size - 1; i++)
 		{
+			EvaluableNodeReference result = InterpretNode(ocn[i]);
 			if(result != nullptr && result->GetType() == ENT_CONCLUDE)
 			{
 				PopConstructionContext();
@@ -610,12 +611,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en)
 			}
 
 			evaluableNodeManager->FreeNodeTreeIfPossible(result);
-			result = InterpretNode(ocn[i]);
 		}
+
+		//TODO 18064: if previous result is unconsumed, free
+
+		if(ocn_size > 1)
+			previous_result = InterpretNode(ocn[ocn_size - 1]);
 	}
 
 	PopConstructionContext();
-	return result;
+	return previous_result;
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en)
@@ -1256,13 +1261,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_VALUE(EvaluableNod
 	if(depth >= constructionStackIndicesAndUniqueness.size())
 		return EvaluableNodeReference::Null();
 
-	size_t offset = constructionStackNodes->size() - (constructionStackOffsetStride * depth) + constructionStackOffsetTargetValue;
+	size_t offset = constructionStackNodes->size() - (constructionStackOffsetStride * depth) + constructionStackOffsetCurrentValue;
 	return EvaluableNodeReference(constructionStackNodes->at(offset), false);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_PREVIOUS_RESULT(EvaluableNode *en)
 {
-	//TODO 18064: add to documentation and add tests
 	auto &ocn = en->GetOrderedChildNodes();
 
 	size_t depth = 0;

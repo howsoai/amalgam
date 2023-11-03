@@ -139,7 +139,7 @@ public:
 
 		stack_nodes[new_size + constructionStackOffsetTargetOrigin] = target_origin;
 		stack_nodes[new_size + constructionStackOffsetTarget] = target;
-		stack_nodes[new_size + constructionStackOffsetTargetValue] = current_value;
+		stack_nodes[new_size + constructionStackOffsetCurrentValue] = current_value;
 		stack_nodes[new_size + constructionStackOffsetPreviousResult] = previous_result.reference;
 
 		stack_node_indices.emplace_back(current_index, previous_result.unique);
@@ -172,22 +172,31 @@ public:
 	}
 
 	//updates the construction index at top of the stack to the new value
-	__forceinline void SetTopTargetValueIndexInConstructionStack(double new_index)
+	//assumes there is at least one construction stack entry
+	__forceinline void SetTopCurrentIndexInConstructionStack(double new_index)
 	{
 		constructionStackIndicesAndUniqueness.back().index = EvaluableNodeImmediateValueWithType(new_index);
 	}
 
-	__forceinline void SetTopTargetValueIndexInConstructionStack(StringInternPool::StringID new_index)
+	__forceinline void SetTopCurrentIndexInConstructionStack(StringInternPool::StringID new_index)
 	{
 		constructionStackIndicesAndUniqueness.back().index = EvaluableNodeImmediateValueWithType(new_index);
 	}
 
 	//sets the value node for the top reference on the construction stack
 	//used for updating the current target value
-	//assumes there is at least one construction stack
-	__forceinline void SetTopTargetValueReferenceInConstructionStack(EvaluableNode *value)
+	//assumes there is at least one construction stack entry
+	__forceinline void SetTopCurrentValueInConstructionStack(EvaluableNode *value)
 	{
-		(*constructionStackNodes)[constructionStackNodes->size() + constructionStackOffsetTargetValue] = value;
+		constructionStackNodes->at(constructionStackNodes->size() + constructionStackOffsetCurrentValue) = value;
+	}
+
+	//sets the previous_result node for the top reference on the construction stack
+	//assumes there is at least one construction stack entry
+	__forceinline void SetTopPreviousResultInConstructionStack(EvaluableNodeReference previous_result)
+	{
+		constructionStackNodes->at(constructionStackNodes->size() + constructionStackOffsetPreviousResult) = previous_result.reference;
+		constructionStackIndicesAndUniqueness.back().unique = previous_result.unique;
 	}
 
 	//Makes sure that args is an active associative array is proper for execution context, meaning initialized assoc and a unique reference.
@@ -896,6 +905,6 @@ protected:
 	//target origin is the original node of target useful for keeping track of the reference
 	static constexpr int64_t constructionStackOffsetTargetOrigin = -4;
 	static constexpr int64_t constructionStackOffsetTarget = -3;
-	static constexpr int64_t constructionStackOffsetTargetValue = -2;
+	static constexpr int64_t constructionStackOffsetCurrentValue = -2;
 	static constexpr int64_t constructionStackOffsetPreviousResult = -1;
 };

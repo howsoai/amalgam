@@ -123,8 +123,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en)
 			for(size_t i = 0; i < list_ocn.size(); i++)
 			{
 				//pass value of list to be mapped
-				SetTopTargetValueIndexInConstructionStack(static_cast<double>(i));
-				SetTopTargetValueReferenceInConstructionStack(list_ocn[i]);
+				SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
+				SetTopCurrentValueInConstructionStack(list_ocn[i]);
 
 				EvaluableNodeReference element_result = InterpretNode(function);
 				result_ocn[i] = element_result;
@@ -177,8 +177,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en)
 
 			for(auto &[cn_id, cn] : result_mcn)
 			{
-				SetTopTargetValueIndexInConstructionStack(cn_id);
-				SetTopTargetValueReferenceInConstructionStack(cn);
+				SetTopCurrentIndexInConstructionStack(cn_id);
+				SetTopCurrentValueInConstructionStack(cn);
 
 				EvaluableNodeReference element_result = InterpretNode(function);
 				cn = element_result;
@@ -236,7 +236,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en)
 			for(size_t index = 0; index < largest_size; index++)
 			{
 				//set index value
-				SetTopTargetValueIndexInConstructionStack(static_cast<double>(index));
+				SetTopCurrentIndexInConstructionStack(static_cast<double>(index));
 
 				//combine input slices together into value
 				EvaluableNode *input_slice = evaluableNodeManager->AllocNode(ENT_LIST);
@@ -251,7 +251,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en)
 					}
 					is_ocn[i] = inputs[i]->GetOrderedChildNodes()[index];
 				}
-				SetTopTargetValueReferenceInConstructionStack(input_slice);
+				SetTopCurrentValueInConstructionStack(input_slice);
 
 				EvaluableNodeReference element_result = InterpretNode(function);
 				result->GetOrderedChildNodes()[index] = element_result;
@@ -271,7 +271,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en)
 			for(size_t index = 0; index < largest_size; index++)
 			{
 				//set index value
-				SetTopTargetValueIndexInConstructionStack(static_cast<double>(index));
+				SetTopCurrentIndexInConstructionStack(static_cast<double>(index));
 
 				//combine input slices together into value
 				EvaluableNode *input_slice = evaluableNodeManager->AllocNode(ENT_LIST);
@@ -296,7 +296,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en)
 							is_ocn[i] = inputs[i]->GetOrderedChildNodes()[index];
 					}
 				}
-				SetTopTargetValueReferenceInConstructionStack(input_slice);
+				SetTopCurrentValueInConstructionStack(input_slice);
 
 				EvaluableNodeReference element_result = InterpretNode(function);
 				std::string index_string = EvaluableNode::NumberToString(index);
@@ -314,7 +314,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en)
 			for(auto &index_sid : all_keys)
 			{
 				//set index value
-				SetTopTargetValueIndexInConstructionStack(index_sid);
+				SetTopCurrentIndexInConstructionStack(index_sid);
 
 				//combine input slices together into value
 				EvaluableNode *input_slice = evaluableNodeManager->AllocNode(ENT_LIST);
@@ -332,7 +332,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en)
 							is_ocn[i] = *found;
 					}
 				}
-				SetTopTargetValueReferenceInConstructionStack(input_slice);
+				SetTopCurrentValueInConstructionStack(input_slice);
 
 				EvaluableNodeReference element_result = InterpretNode(function);
 				result->SetMappedChildNode(index_sid, element_result);
@@ -491,8 +491,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en)
 			{
 				EvaluableNode *cur_value = list_ocn[i];
 
-				SetTopTargetValueIndexInConstructionStack(static_cast<double>(i));
-				SetTopTargetValueReferenceInConstructionStack(cur_value);
+				SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
+				SetTopCurrentValueInConstructionStack(cur_value);
 
 				//check current element
 				if(InterpretNodeIntoBoolValue(function))
@@ -574,8 +574,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en)
 		//result_list is a copy of list, so it should already be the same size (no need to reserve)
 		for(auto &[cn_id, cn] : list_mcn)
 		{
-			SetTopTargetValueIndexInConstructionStack(cn_id);
-			SetTopTargetValueReferenceInConstructionStack(cn);
+			SetTopCurrentIndexInConstructionStack(cn_id);
+			SetTopCurrentValueInConstructionStack(cn);
 
 			//if contained, add to result_list (and let SetMappedChildNode create the string reference)
 			if(InterpretNodeIntoBoolValue(function))
@@ -709,7 +709,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en)
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en)
 {
-	//TODO 18064: utilize previous_result and update documentation and tests
+	//TODO 18064: utilize SetTopPreviousResultInConstructionStack and update documentation and tests
 	auto &ocn = en->GetOrderedChildNodes();
 
 	if(ocn.size() < 2)
@@ -1524,7 +1524,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 			//get key
 			StringInternPool::StringID key_sid = InterpretNodeIntoStringIDValueWithReference(ocn[i]);
 
-			SetTopTargetValueIndexInConstructionStack(key_sid);
+			SetTopCurrentIndexInConstructionStack(key_sid);
 
 			//compute the value, but make sure have another node
 			EvaluableNodeReference value;

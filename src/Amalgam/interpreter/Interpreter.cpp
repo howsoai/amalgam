@@ -735,8 +735,8 @@ EvaluableNode *Interpreter::RewriteByFunction(EvaluableNodeReference function, E
 
 		for(auto &[e_id, e] : n->GetMappedChildNodesReference())
 		{
-			SetTopTargetValueIndexInConstructionStack(e_id);
-			SetTopTargetValueReferenceInConstructionStack(e);
+			SetTopCurrentIndexInConstructionStack(e_id);
+			SetTopCurrentValueInConstructionStack(e);
 			e = RewriteByFunction(function, top_node, e, references);
 		}
 
@@ -752,8 +752,8 @@ EvaluableNode *Interpreter::RewriteByFunction(EvaluableNodeReference function, E
 			//rewrite child nodes before rewriting this one
 			for(size_t i = 0; i < ocn.size(); i++)
 			{
-				SetTopTargetValueIndexInConstructionStack(static_cast<double>(i));
-				SetTopTargetValueReferenceInConstructionStack(ocn[i]);
+				SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
+				SetTopCurrentValueInConstructionStack(ocn[i]);
 				ocn[i] = RewriteByFunction(function, top_node, ocn[i], references);
 			}
 

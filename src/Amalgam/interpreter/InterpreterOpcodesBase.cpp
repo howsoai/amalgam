@@ -363,7 +363,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PARALLEL(EvaluableNode *en
 								evaluableNodeManager->AllocListNode(callStackNodes),
 								evaluableNodeManager->AllocListNode(interpreterNodeStackNodes),
 								evaluableNodeManager->AllocListNode(constructionStackNodes),
-								&constructionStackIndices,
+								&constructionStackIndicesAndUniqueness,
 								concurrency_manager.GetCallStackWriteMutex());
 
 							interpreter.evaluableNodeManager->FreeNodeTreeIfPossible(result);
@@ -1199,7 +1199,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET(EvaluableNode *en)
 	}
 
 	//make sure have a large enough stack
-	if(depth >= constructionStackIndices.size())
+	if(depth >= constructionStackIndicesAndUniqueness.size())
 		return EvaluableNodeReference::Null();
 
 	size_t offset = constructionStackNodes->size() - (constructionStackOffsetStride * depth) + constructionStackOffsetTarget;
@@ -1221,15 +1221,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_INDEX(EvaluableNod
 	}
 
 	//make sure have a large enough stack
-	if(depth >= constructionStackIndices.size())
+	if(depth >= constructionStackIndicesAndUniqueness.size())
 		return EvaluableNodeReference::Null();
 
 	//depth is 1-based
-	size_t offset = constructionStackIndices.size() - depth - 1;
+	size_t offset = constructionStackIndicesAndUniqueness.size() - depth - 1;
 
 	//build the index node to return
 	EvaluableNode *index_node = nullptr;
-	EvaluableNodeImmediateValueWithType enivwt = constructionStackIndices[offset];
+	EvaluableNodeImmediateValueWithType enivwt = constructionStackIndicesAndUniqueness[offset];
 	if(enivwt.nodeType == ENIVT_NUMBER)
 		index_node = evaluableNodeManager->AllocNode(enivwt.nodeValue.number);
 	else if(enivwt.nodeType == ENIVT_STRING_ID)
@@ -1253,7 +1253,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_VALUE(EvaluableNod
 	}
 
 	//make sure have a large enough stack
-	if(depth >= constructionStackIndices.size())
+	if(depth >= constructionStackIndicesAndUniqueness.size())
 		return EvaluableNodeReference::Null();
 
 	size_t offset = constructionStackNodes->size() - (constructionStackOffsetStride * depth) + constructionStackOffsetTargetValue;
@@ -1275,7 +1275,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PREVIOUS_RESULT(EvaluableN
 	}
 
 	//make sure have a large enough stack
-	if(depth >= constructionStackIndices.size())
+	if(depth >= constructionStackIndicesAndUniqueness.size())
 		return EvaluableNodeReference::Null();
 
 	size_t offset = constructionStackNodes->size() - (constructionStackOffsetStride * depth) + constructionStackOffsetPreviousResult;

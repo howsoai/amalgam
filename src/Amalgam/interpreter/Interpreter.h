@@ -27,6 +27,18 @@ class Interpreter
 {
 public:
 
+	//used with construction stack to store the index and whether previous_result is unique
+	struct ConstructionStackIndexAndPreviousResultUniqueness
+	{
+		inline ConstructionStackIndexAndPreviousResultUniqueness(EvaluableNodeImmediateValueWithType _index,
+			bool _unique)
+			: index(_index), unique(_unique)
+		{	}
+
+		EvaluableNodeImmediateValueWithType index;
+		bool unique;
+	};
+
 	//Creates a new interpreter to run code and to store labels.
 	// If no entity is specified via nullptr, then it will run sandboxed
 	// Uses max_num_steps as the maximum number of operations that can be executed by this and any subordinate operations called. If max_num_steps is 0, then it will execute unlimeted steps
@@ -48,12 +60,14 @@ public:
 	// and call_stack_write_mutex is the mutex needed to lock for writing
 	EvaluableNodeReference ExecuteNode(EvaluableNode *en,
 		EvaluableNode *call_stack = nullptr, EvaluableNode *interpreter_node_stack = nullptr,
-		EvaluableNode *construction_stack = nullptr, std::vector<EvaluableNodeImmediateValueWithType> *construction_stack_indices = nullptr,
+		EvaluableNode *construction_stack = nullptr,
+		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices = nullptr,
 		Concurrency::SingleMutex *call_stack_write_mutex = nullptr);
 #else
 	EvaluableNodeReference ExecuteNode(EvaluableNode *en,
 		EvaluableNode *call_stack = nullptr, EvaluableNode *interpreter_node_stack = nullptr,
-		EvaluableNode *construction_stack = nullptr, std::vector<EvaluableNodeImmediateValueWithType> *construction_stack_indices = nullptr);
+		EvaluableNode *construction_stack = nullptr,
+		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices = nullptr);
 #endif
 
 	//changes debugging state to debugging_enabled
@@ -115,9 +129,10 @@ public:
 	//the stack is indexed via the constructionStackOffset* constants
 	//target_origin is the original node of target useful for keeping track of the reference
 	static inline void PushNewConstructionContextToStack(std::vector<EvaluableNode *> &stack_nodes,
-		std::vector<EvaluableNodeImmediateValueWithType> &stack_node_indices,
+		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> &stack_node_indices,
 		EvaluableNode *target_origin, EvaluableNode *target,
-		EvaluableNodeImmediateValueWithType current_index, EvaluableNode *current_value, EvaluableNode *previous_result)
+		ConstructionStackIndexAndPreviousResultUniqueness &current_index_and_uniqueness,
+		EvaluableNode *current_value, EvaluableNodeReference previous_result)
 	{
 		size_t new_size = stack_nodes.size() + constructionStackOffsetStride;
 		stack_nodes.resize(new_size, nullptr);
@@ -127,17 +142,18 @@ public:
 		stack_nodes[new_size + constructionStackOffsetTargetValue] = current_value;
 		stack_nodes[new_size + constructionStackOffsetPreviousResult] = previous_result;
 
-		stack_node_indices.emplace_back(current_index);
+		stack_node_indices.emplace_back(current_index_and_uniqueness, previous_result.unique);
 	}
 
 	//pushes a new construction context on the stack
 	//the stack is indexed via the constructionStackOffset* constants
 	//target_origin is the original node of target useful for keeping track of the reference
 	__forceinline void PushNewConstructionContext(EvaluableNode *target_origin, EvaluableNode *target,
-		EvaluableNodeImmediateValueWithType current_index, EvaluableNode *current_value, EvaluableNode *previous_result)
+		ConstructionStackIndexAndPreviousResultUniqueness &current_index_and_uniqueness,
+		EvaluableNode *current_value, EvaluableNodeReference previous_result)
 	{
-		return PushNewConstructionContextToStack(*constructionStackNodes, constructionStackIndices,
-			target_origin, target, current_index, current_value, previous_result);
+		return PushNewConstructionContextToStack(*constructionStackNodes, constructionStackIndicesAndUniqueness,
+			target_origin, target, current_index_and_uniqueness, current_value, previous_result);
 	}
 
 	//pops the top construction context off the stack
@@ -151,19 +167,19 @@ public:
 
 		constructionStackNodes->resize(new_size);
 
-		if(constructionStackIndices.size() > 0)
-			constructionStackIndices.pop_back();
+		if(constructionStackIndicesAndUniqueness.size() > 0)
+			constructionStackIndicesAndUniqueness.pop_back();
 	}
 
 	//updates the construction index at top of the stack to the new value
 	__forceinline void SetTopTargetValueIndexInConstructionStack(double new_index)
 	{
-		constructionStackIndices.back() = EvaluableNodeImmediateValueWithType(new_index);
+		constructionStackIndicesAndUniqueness.back().index = EvaluableNodeImmediateValueWithType(new_index);
 	}
 
 	__forceinline void SetTopTargetValueIndexInConstructionStack(StringInternPool::StringID new_index)
 	{
-		constructionStackIndices.back() = EvaluableNodeImmediateValueWithType(new_index);
+		constructionStackIndicesAndUniqueness.back().index = EvaluableNodeImmediateValueWithType(new_index);
 	}
 
 	//sets the value node for the top reference on the construction stack
@@ -371,28 +387,31 @@ protected:
 		// executes node_to_execute with the following parameters matching those of pushing on the construction stack
 		// will allocate an approrpiate node matching the type of current_index
 		void PushTaskToResultFuturesWithConstructionStack(EvaluableNode *node_to_execute,
-			EvaluableNode *target_origin, EvaluableNode *target, EvaluableNodeImmediateValueWithType current_index, EvaluableNode *current_value)
+			EvaluableNode *target_origin, EvaluableNode *target,
+			ConstructionStackIndexAndPreviousResultUniqueness &current_index_and_uniqueness,
+			EvaluableNode *current_value, EvaluableNodeReference previous_result)
 		{
 			//get the interpreter corresponding to the resultFutures
 			Interpreter *interpreter = interpreters[resultFutures.size()].get();
 
 			resultFutures.emplace_back(
 				Concurrency::threadPool.EnqueueBatchTask(
-					[this, interpreter, node_to_execute, target_origin, target, current_index, current_value]
+					[this, interpreter, node_to_execute, target_origin, target, &current_index_and_uniqueness, current_value, previous_result]
 					{
 						EvaluableNodeManager *enm = interpreter->evaluableNodeManager;
 						interpreter->memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
 
 						//build new construction stack
 						EvaluableNode *construction_stack = enm->AllocListNode(parentInterpreter->constructionStackNodes);
-						std::vector<EvaluableNodeImmediateValueWithType> construction_stack_indices(parentInterpreter->constructionStackIndices);
-						interpreter->PushNewConstructionContextToStack(construction_stack->GetOrderedChildNodes(), construction_stack_indices, target_origin, target, current_index, current_value);
+						std::vector<ConstructionStackIndexAndPreviousResultUniqueness> csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
+						interpreter->PushNewConstructionContextToStack(construction_stack->GetOrderedChildNodes(),
+							csiau, target_origin, target, current_index_and_uniqueness, current_value, previous_result);
 
 						auto result = interpreter->ExecuteNode(node_to_execute,
 							enm->AllocListNode(parentInterpreter->callStackNodes),
 							enm->AllocListNode(parentInterpreter->interpreterNodeStackNodes),
 							construction_stack,
-							&construction_stack_indices,
+							&csiau,
 							GetCallStackWriteMutex());
 
 						enm->KeepNodeReference(result);
@@ -816,7 +835,7 @@ protected:
 
 	//current index for each level of constructionStackNodes;
 	//note, this should always be the same size as constructionStackNodes
-	std::vector<EvaluableNodeImmediateValueWithType> constructionStackIndices;
+	std::vector<ConstructionStackIndexAndPreviousResultUniqueness> constructionStackIndicesAndUniqueness;
 
 	//buffer to use as for parsing and querying conditions
 	//one per thread to save memory on Interpreter objects

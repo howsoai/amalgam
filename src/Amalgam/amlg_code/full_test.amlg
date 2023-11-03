@@ -548,7 +548,7 @@
 					       (= (get_type (current_value)) (lambda (+)))
 						   (= (size (current_value)) (size (filter (lambda (~ (current_value) 0)) (current_value))) )
 						 )
-					   (reduce (lambda (* (current_value 1) (current_value)) ) (current_value))
+					   (reduce (lambda (* (previous_result) (current_value)) ) (current_value))
 					   (current_value)
 					 )
 				 )
@@ -580,7 +580,7 @@
 					       (= (get_type (current_value)) (lambda (+)))
 						   (= (size (current_value)) (size (filter (lambda (~ (current_value) 0)) (current_value))) )
 						 )
-					   (reduce (lambda (+ (current_value 1) (current_value)) ) (current_value))
+					   (reduce (lambda (+ (previous_result) (current_value)) ) (current_value))
 					   (current_value)
 					 )
 				 )
@@ -692,8 +692,8 @@
  )
 
  (print "--reduce--\n")
- (print (reduce (lambda (* (current_value) (current_value 1))) (list 1 2 3 4)) "\n")
- (print (reduce (lambda (* (current_value) (current_value 1))) (associate "a" 1 "b" 2 "c" 3 "d" 4)) "\n")
+ (print (reduce (lambda (* (current_value) (previous_result))) (list 1 2 3 4)) "\n")
+ (print (reduce (lambda (* (current_value) (previous_result))) (associate "a" 1 "b" 2 "c" 3 "d" 4)) "\n")
 
  (print "--apply--\n")
  (print (apply (lambda (+)) (list 1 2 3 4)) "\n")
@@ -3364,7 +3364,7 @@
 	(pow
 		(reduce
 			(lambda
-				(+ (current_value 1) (current_value))
+				(+ (previous_result) (current_value))
 			)
 			(map
 				(lambda

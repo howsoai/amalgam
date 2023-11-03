@@ -726,58 +726,50 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en)
 	if(list == nullptr)
 		return EvaluableNodeReference::Null();
 
-	EvaluableNodeReference cur_value = EvaluableNodeReference::Null();
+	EvaluableNodeReference previous_result = EvaluableNodeReference::Null();
+
+	PushNewConstructionContext(nullptr, list, EvaluableNodeImmediateValueWithType(), nullptr, previous_result);
 
 	if(list->IsAssociativeArray())
 	{
-		bool first_node = (cur_value == nullptr);
+		bool first_node = true;
 		//iterate over list
 		for(auto &[n_id, n] : list->GetMappedChildNodesReference())
 		{
 			//grab a value if first one
 			if(first_node)
 			{
-				cur_value = EvaluableNodeReference(n, false);	//can't make any guarantees because used in a function
+				//can't make any guarantees about the first term because function may retrieve it
+				previous_result = EvaluableNodeReference(n, false);
 				first_node = false;
 				continue;
 			}
 
-			//pass values to be mapped
-			PushNewConstructionContext(nullptr, list, EvaluableNodeImmediateValueWithType(), cur_value);
-			PushNewConstructionContext(nullptr, list, EvaluableNodeImmediateValueWithType(n_id), n);
-
-			EvaluableNodeReference new_value = InterpretNode(function);
-
-			PopConstructionContext();
-			PopConstructionContext();
-
-			//move the current value over
-			cur_value = new_value;
+			SetTopCurrentIndexInConstructionStack(n_id);
+			SetTopCurrentValueInConstructionStack(n);
+			SetTopPreviousResultInConstructionStack(previous_result);
+			previous_result = InterpretNode(function);
 		}
 	}
 	else if(list->GetOrderedChildNodes().size() >= 1)
 	{
 		auto &list_ocn = list->GetOrderedChildNodes();
-		cur_value = EvaluableNodeReference(list_ocn[0], false);	//can't make any guarantees because used in a function
+		//can't make any guarantees about the first term because function may retrieve it
+		previous_result = EvaluableNodeReference(list_ocn[0], false);
 
 		//iterate over list
 		for(size_t i = 1; i < list_ocn.size(); i++)
 		{
-			//pass values to be mapped
-			PushNewConstructionContext(nullptr, list, EvaluableNodeImmediateValueWithType(), cur_value);
-			PushNewConstructionContext(nullptr, list, EvaluableNodeImmediateValueWithType(static_cast<double>(i)), list_ocn[i]);
-
-			EvaluableNodeReference new_value = InterpretNode(function);
-			
-			PopConstructionContext();
-			PopConstructionContext();
-
-			//move the current value over
-			cur_value = new_value;
+			SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
+			SetTopCurrentValueInConstructionStack(list_ocn[i]);
+			SetTopPreviousResultInConstructionStack(previous_result);
+			previous_result = InterpretNode(function);
 		}
 	}
 
-	return cur_value;
+	PopConstructionContext();
+
+	return previous_result;
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en)

@@ -95,10 +95,10 @@ var data = [
 	},
 
 	{
-		"parameter" : "while bool condition [code c1] [code c2] ... [code cN]",
+		"parameter" : "while bool condition [code code1] [code code2] ... [code codeN]",
 		"output" : "*",
 		"new target scope": true,
-		"description" : "Each time the condition evaluates to true, it runs each of the code trees sequentially, looping. Evaluates to the last codeN or null if the condition was initially false or if it encounters a conclude, it will halt processing and evaluate to the value returned by conclude.  For iteration of the loop, pushes a new target scope onto the target stack, with current_index being the iteration count.",
+		"description" : "Each time the condition evaluates to true, it runs each of the code trees sequentially, looping. Evaluates to the last codeN or null if the condition was initially false or if it encounters a conclude, it will halt processing and evaluate to the value returned by conclude.  For iteration of the loop, pushes a new target scope onto the target stack, with current_index being the iteration count, and previous_result being the last evaluated codeN of the previous loop.",
 		"example" : "(let (assoc zz 1)\n  (while (< zz 10)\n    (print zz)\n    (assign (assoc zz (+ zz 1)))\n  )\n)"
 	},
 

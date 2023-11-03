@@ -142,7 +142,7 @@ public:
 		stack_nodes[new_size + constructionStackOffsetTargetValue] = current_value;
 		stack_nodes[new_size + constructionStackOffsetPreviousResult] = previous_result;
 
-		stack_node_indices.emplace_back(current_index_and_uniqueness, previous_result.unique);
+		stack_node_indices.emplace_back(current_index_and_uniqueness.index, previous_result.unique);
 	}
 
 	//pushes a new construction context on the stack

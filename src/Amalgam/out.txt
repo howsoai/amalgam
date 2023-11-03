@@ -1210,11 +1210,11 @@ abcdef
 current_index: 0
 (null)
 current_index: 1
-(null)
+0
 current_index: 2
-(null)
+1
 current_index: 3
-(null)
+2
 --stack--
 (list
 	(assoc
@@ -1237,7 +1237,7 @@ current_index: 3
 				8
 			)
 		accum_string "abcdef"
-		argv (list "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg")
+		argv (list "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg")
 		bar (declare
 				(assoc x 6)
 				(+ x 2)
@@ -1250,10 +1250,10 @@ current_index: 3
 				A (assoc B 2)
 				B 2
 			)
-		interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+		interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1699016699.05558
+		start_time 1699025010.950304
 		www 1
 		x 12
 		zz 10
@@ -1280,7 +1280,7 @@ current_index: 3
 			8
 		)
 	accum_string "abcdef"
-	argv (list "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg")
+	argv (list "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg")
 	bar (declare
 			(assoc x 6)
 			(+ x 2)
@@ -1293,10 +1293,10 @@ current_index: 3
 			A (assoc B 2)
 			B 2
 		)
-	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1699016699.05558
+	start_time 1699025010.950304
 	www 1
 	x 12
 	zz 10
@@ -1322,7 +1322,7 @@ current_index: 3
 			8
 		)
 	accum_string "abcdef"
-	argv (list "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg")
+	argv (list "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg")
 	bar (declare
 			(assoc x 6)
 			(+ x 2)
@@ -1335,10 +1335,10 @@ current_index: 3
 			A (assoc B 2)
 			B 2
 		)
-	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1699016699.05558
+	start_time 1699025010.950304
 	www 1
 	x 12
 	zz 10
@@ -1606,7 +1606,7 @@ e:
   - .inf
 
 25: (assoc a 1)
-current date-time in epoch: 2023-11-03-09.04.59.1121390
+current date-time in epoch: 2023-11-03-11.23.31.2322560
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -3537,7 +3537,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1699016699.336932
+1699025011.493342
 (true)
 
 RootTest
@@ -3767,7 +3767,7 @@ hello
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "ÚYF˜Û:à0—î-I¥ªˇ")
+	(set_entity_rand_seed new_entity "z™Q˛´¸0—î-I¥ªˇ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3780,7 +3780,7 @@ hello
 				)
 			)
 		)
-		"Ë‘0Xº3&π‰˝u¸bˇ"
+		"zì{√Pz{#∆çÿtÙ!w6ˇ"
 	)
 	(set_entity_rand_seed
 		(first
@@ -3816,7 +3816,7 @@ hello
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "ÚYF˜Û:à0—î-I¥ªˇ")
+	(set_entity_rand_seed new_entity "z™Q˛´¸0—î-I¥ªˇ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -4760,4 +4760,4 @@ Expecting 1000: 1000
 concurrent entity writes successful: (true)
 
 --total execution time--
-2.3195180892944336
+1.2144110202789307

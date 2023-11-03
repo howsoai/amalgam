@@ -199,6 +199,14 @@ public:
 		constructionStackIndicesAndUniqueness.back().unique = previous_result.unique;
 	}
 
+	//gets the previous_result node for the top reference on the construction stack
+	//assumes there is at least one construction stack entry
+	__forceinline EvaluableNodeReference GetTopPreviousResultInConstructionStack()
+	{
+		return EvaluableNodeReference(constructionStackNodes->at(constructionStackNodes->size() + constructionStackOffsetPreviousResult),
+			constructionStackIndicesAndUniqueness.back().unique);
+	}
+
 	//Makes sure that args is an active associative array is proper for execution context, meaning initialized assoc and a unique reference.
 	// Will allocate a new node appropriately if it is not
 	//Then wraps the args on a list which will form the execution context stack and returns that

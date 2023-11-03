@@ -601,22 +601,31 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en)
 		SetTopPreviousResultInConstructionStack(previous_result);
 
 		//run each step within the loop
-		for(size_t i = 1; i < ocn_size - 1; i++)
+		EvaluableNodeReference new_result;
+		for(size_t i = 1; i < ocn_size; i++)
 		{
-			EvaluableNodeReference result = InterpretNode(ocn[i]);
-			if(result != nullptr && result->GetType() == ENT_CONCLUDE)
+			new_result = InterpretNode(ocn[i]);
+
+			if(new_result != nullptr && new_result->GetType() == ENT_CONCLUDE)
 			{
+				//if previous result is unconsumed, free if possible
+				previous_result = GetTopPreviousResultInConstructionStack();
+				evaluableNodeManager->FreeNodeTreeIfPossible(previous_result);
+
 				PopConstructionContext();
-				return RemoveConcludeFromConclusion(result, evaluableNodeManager);
+				return RemoveConcludeFromConclusion(new_result, evaluableNodeManager);
 			}
 
-			evaluableNodeManager->FreeNodeTreeIfPossible(result);
+			//don't free the last new_result
+			if(i < ocn_size - 1)
+				evaluableNodeManager->FreeNodeTreeIfPossible(new_result);
 		}
 
-		//TODO 18064: if previous result is unconsumed, free
+		//if previous result is unconsumed, free if possible
+		previous_result = GetTopPreviousResultInConstructionStack();
+		evaluableNodeManager->FreeNodeTreeIfPossible(previous_result);
 
-		if(ocn_size > 1)
-			previous_result = InterpretNode(ocn[ocn_size - 1]);
+		previous_result = new_result;
 	}
 
 	PopConstructionContext();

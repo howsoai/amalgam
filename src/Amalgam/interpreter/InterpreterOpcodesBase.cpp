@@ -596,6 +596,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en)
 		if(AreExecutionResourcesExhausted())
 			return EvaluableNodeReference::Null();
 
+		SetTopTargetValueIndexInConstructionStack(static_cast<double>(loop_iteration++));
+
 		//TODO 18064: utilize previous_result and update documentation and tests
 
 		//run each step within the loop
@@ -606,8 +608,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en)
 				PopConstructionContext();
 				return RemoveConcludeFromConclusion(result, evaluableNodeManager);
 			}
-
-			SetTopTargetValueIndexInConstructionStack(static_cast<double>(loop_iteration++));
 
 			evaluableNodeManager->FreeNodeTreeIfPossible(result);
 			result = InterpretNode(ocn[i]);

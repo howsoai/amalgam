@@ -1007,7 +1007,7 @@ abcdef
 	"2020-06-08 lunes 11.33.48"
 )
 --indices--
-(list "a" "4" "c" "b")
+(list "4" "a" "c" "b")
 (list
 	0
 	1
@@ -1019,7 +1019,7 @@ abcdef
 	7
 )
 --values--
-(list 1 "d" 3 2)
+(list "d" 1 3 2)
 (list
 	"a"
 	1
@@ -1040,7 +1040,7 @@ abcdef
 	4
 	"d"
 )
-(list 1 0 "d" 3 2)
+(list "d" 1 0 3 2)
 (list
 	1
 	2
@@ -1206,6 +1206,15 @@ abcdef
 (null)
 --current_value--
 (null)
+--previous_result--
+current_index: 0
+(null)
+current_index: 1
+(null)
+current_index: 2
+(null)
+current_index: 3
+(null)
 --stack--
 (list
 	(assoc
@@ -1244,7 +1253,7 @@ abcdef
 		interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1699014544.530727
+		start_time 1699016699.05558
 		www 1
 		x 12
 		zz 10
@@ -1287,7 +1296,7 @@ abcdef
 	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1699014544.530727
+	start_time 1699016699.05558
 	www 1
 	x 12
 	zz 10
@@ -1329,7 +1338,7 @@ abcdef
 	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1699014544.530727
+	start_time 1699016699.05558
 	www 1
 	x 12
 	zz 10
@@ -1477,7 +1486,7 @@ infinity test c or d: (list "c" @(get (target 0) 0) "d" @(get (target 0) 0))
 
 (assoc a 29 b 44 c 27)
 
-(list "2" "8" "1")
+(list "3" "8" "1")
 
 --get_rand_seed--
 °³È¼¿\¨KOaVÆT zÿ
@@ -1597,7 +1606,7 @@ e:
   - .inf
 
 25: (assoc a 1)
-current date-time in epoch: 2023-11-03-08.29.04.5996750
+current date-time in epoch: 2023-11-03-09.04.59.1121390
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -2695,18 +2704,16 @@ flatten restore with parallel
 35.26408699824403
 --intersect_entities--
 (associate "b" 4)
-MergeEntityChild1
-(associate "x" 3 "y" 4)
 MergeEntityChild2
 (associate "p" 3 "q" 4)
-_2280722175
-(associate "E" 3 "F" 4)
+MergeEntityChild1
+(associate "x" 3 "y" 4)
 _2169689611
 (associate "e" 3 "f" 4)
+_2280722175
+(associate "E" 3 "F" 4)
 --union_entities--
 (associate "b" 4 "a" 3 "c" 3)
-MergeEntityChild1
-(associate "x" 3 "y" 4 "z" 5)
 MergeEntityChild2
 (associate
 	"p"
@@ -2720,17 +2727,8 @@ MergeEntityChild2
 	"w"
 	7
 )
-_2280722175
-(associate
-	"E"
-	3
-	"F"
-	4
-	"G"
-	5
-	"H"
-	6
-)
+MergeEntityChild1
+(associate "x" 3 "y" 4 "z" 5)
 _2169689611
 (associate
 	"e"
@@ -2742,11 +2740,7 @@ _2169689611
 	"h"
 	6
 )
-(parallel
-	##p
-	(list "_3990396532" "_3330773578" "_3990396532" "_3330773578")
-)
-_3990396532
+_2280722175
 (associate
 	"E"
 	3
@@ -2757,6 +2751,10 @@ _3990396532
 	"H"
 	6
 )
+(parallel
+	##p
+	(list "_3990396532" "_3330773578" "_3990396532" "_3330773578")
+)
 _3330773578
 (associate
 	"e"
@@ -2766,6 +2764,17 @@ _3330773578
 	"g"
 	5
 	"h"
+	6
+)
+_3990396532
+(associate
+	"E"
+	3
+	"F"
+	4
+	"G"
+	5
+	"H"
 	6
 )
 --difference_entities--
@@ -3457,8 +3466,6 @@ _3128546630
 (list "OnlyIn2" "_3631850880" "_1938178219" "DiffEntityChild1")
 --mix_entities--
 (associate "b" 4 "a" 3)
-MergeEntityChild1
-(associate "x" 3 "y" 4)
 MergeEntityChild2
 (associate
 	"p"
@@ -3470,10 +3477,12 @@ MergeEntityChild2
 	"w"
 	7
 )
-_2280722175
-(associate "E" 3 "F" 4)
+MergeEntityChild1
+(associate "x" 3 "y" 4)
 _2169689611
-(associate "e" 3 "f" 4 "g" 5)
+(associate "e" 3 "f" 4)
+_2280722175
+(associate "E" 3 "F" 4 "G" 5)
 --get_entity_comments--
 Full test
 This is a suite of unit tests.
@@ -3528,7 +3537,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1699014545.048831
+1699016699.336932
 (true)
 
 RootTest
@@ -3758,7 +3767,7 @@ hello
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "¯%IÈ‹¨À0Ñ”-I´»ÿ")
+	(set_entity_rand_seed new_entity "òYF÷ó:ˆ0Ñ”-I´»ÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3771,7 +3780,7 @@ hello
 				)
 			)
 		)
-		"¼€Jÿçé>Zg¸‡n-Iÿ"
+		"èÔ0X¼3&¹äıuübÿ"
 	)
 	(set_entity_rand_seed
 		(first
@@ -3807,7 +3816,7 @@ hello
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "¯%IÈ‹¨À0Ñ”-I´»ÿ")
+	(set_entity_rand_seed new_entity "òYF÷ó:ˆ0Ñ”-I´»ÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -4751,4 +4760,4 @@ Expecting 1000: 1000
 concurrent entity writes successful: (true)
 
 --total execution time--
-2.4923160076141357
+2.3195180892944336

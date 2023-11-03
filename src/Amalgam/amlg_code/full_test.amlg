@@ -849,6 +849,13 @@
  (print "--current_value--\n")
  (list 1 2 3 (print (current_value) "\n") 4)
 
+ (print "--previous_result--\n")
+ (while (< (current_index) 3)
+	(print "current_index: " (current_index) "\n")
+	(print (previous_result) "\n")
+	(current_index)
+ )
+
  (print "--stack--\n")
  (print (stack))
 

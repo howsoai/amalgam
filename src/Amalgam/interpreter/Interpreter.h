@@ -206,8 +206,6 @@ public:
 		size_t uniqueness_offset = constructionStackIndicesAndUniqueness.size() - depth - 1;
 		bool previous_result_unique = constructionStackIndicesAndUniqueness[uniqueness_offset].unique;
 
-		size_t offset = constructionStackNodes->size() - (constructionStackOffsetStride * depth) + constructionStackOffsetPreviousResult;
-
 		//clear previous result
 		auto &previous_result_loc = constructionStackNodes->at(constructionStackNodes->size() + constructionStackOffsetPreviousResult);
 		EvaluableNode *previous_result = nullptr;

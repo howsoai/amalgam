@@ -474,14 +474,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	}
 	auto node_stack = CreateInterpreterNodeStackStateSaver(args);
 
+	//if have arguments, use them
+	EvaluableNodeReference call_stack = ConvertArgsToCallStack(args, evaluableNodeManager);
+	node_stack.PushEvaluableNode(call_stack);
+
 	//get a write lock on the entity
 	EntityWriteReference called_entity = InterpretNodeIntoRelativeSourceEntityWriteReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
 	if(called_entity == nullptr)
 		return EvaluableNodeReference::Null();
-
-	//if have arguments, use them
-	EvaluableNodeReference call_stack = ConvertArgsToCallStack(args, evaluableNodeManager);
-	node_stack.PushEvaluableNode(call_stack);
 
 	//current pointer to write listeners
 	std::vector<EntityWriteListener *> *cur_write_listeners = writeListeners;
@@ -550,16 +550,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	//lock the current entity
-	EntityReadReference cur_entity(curEntity);
-	StringInternPool::StringID cur_entity_sid = curEntity->GetIdStringId();
-	EntityWriteReference container(curEntity->GetContainer());
-	if(container == nullptr)
-		return EvaluableNodeReference::Null();
-
-	//don't need the curEntity as a reference anymore -- can free the lock
-	cur_entity = EntityReadReference();
-
 	std::string orig_container_label_name = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
 	if(orig_container_label_name == "")
 		return EvaluableNodeReference::Null();
@@ -601,9 +591,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(call_stack);
 
-	//add accessing_entity to arguments. If accessing_entity already specified (it shouldn't be), let garbage collection clean it up
-	args->SetMappedChildNode(ENBISI_accessing_entity, evaluableNodeManager->AllocNode(ENT_STRING, cur_entity_sid));
-
 	//compute execution limits
 	if(AllowUnlimitedExecutionSteps() && (!num_steps_allowed_specified || num_steps_allowed == 0))
 		num_steps_allowed = 0;
@@ -622,6 +609,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 		if(!AllowUnlimitedExecutionNodes())
 			num_nodes_allowed = std::min(num_nodes_allowed, GetRemainingNumExecutionNodes());
 	}
+
+	//lock the current entity
+	EntityReadReference cur_entity(curEntity);
+	StringInternPool::StringID cur_entity_sid = curEntity->GetIdStringId();
+	EntityWriteReference container(curEntity->GetContainer());
+	if(container == nullptr)
+		return EvaluableNodeReference::Null();
+
+	//don't need the curEntity as a reference anymore -- can free the lock
+	cur_entity = EntityReadReference();
+
+	//add accessing_entity to arguments. If accessing_entity already specified (it shouldn't be), let garbage collection clean it up
+	args->SetMappedChildNode(ENBISI_accessing_entity, evaluableNodeManager->AllocNode(ENT_STRING, cur_entity_sid));
 
 	ExecutionCycleCount num_steps_executed = 0;
 	size_t num_nodes_allocated = 0;

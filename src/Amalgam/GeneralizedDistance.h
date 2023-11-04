@@ -59,7 +59,7 @@ public:
 	{
 		inversePValue = 1.0 / pValue;
 
-		ComputeNominalDistanceTerms();
+		ComputeAndStoreUniversallySymmetricNominalDistanceTerms();
 
 		bool compute_approximate = NeedToPrecomputeApproximate();
 		if(compute_approximate)
@@ -269,7 +269,7 @@ protected:
 	};
 
 	//update cached nominal deltas based on highAccuracy and recomputeAccurateDistances, caching what is needed given those flags
-	inline void ComputeNominalDistanceTerms()
+	inline void ComputeAndStoreUniversallySymmetricNominalDistanceTerms()
 	{
 		bool compute_accurate = NeedToPrecomputeAccurate();
 		bool compute_approximate = NeedToPrecomputeApproximate();
@@ -299,22 +299,22 @@ protected:
 			{
 				if(compute_accurate)
 				{
-					feat_params.nominalMatchDistanceTerm.SetValue(0.0, ExactApproxValuePair::EXACT);
+					feat_params.nominalMatchDistanceTerm.SetValue(0.0, true);
 
 					if(pValue != 0)
-						feat_params.nominalNonMatchDistanceTerm.SetValue(weight, ExactApproxValuePair::EXACT);
+						feat_params.nominalNonMatchDistanceTerm.SetValue(weight, true);
 					else //1.0 to any power is still 1.0 when computed exactly
-						feat_params.nominalNonMatchDistanceTerm.SetValue(1.0, ExactApproxValuePair::EXACT);
+						feat_params.nominalNonMatchDistanceTerm.SetValue(1.0, true);
 				}
 
 				if(compute_approximate)
 				{
-					feat_params.nominalMatchDistanceTerm.SetValue(0.0, ExactApproxValuePair::APPROX);
+					feat_params.nominalMatchDistanceTerm.SetValue(0.0, false);
 
 					if(effective_p_value != 0)
-						feat_params.nominalNonMatchDistanceTerm.SetValue(weight * nominal_approximate_diff, ExactApproxValuePair::APPROX);
+						feat_params.nominalNonMatchDistanceTerm.SetValue(weight * nominal_approximate_diff, false);
 					else //pValue == 0
-						feat_params.nominalNonMatchDistanceTerm.SetValue(FastPow(1.0, weight), ExactApproxValuePair::APPROX);
+						feat_params.nominalNonMatchDistanceTerm.SetValue(FastPow(1.0, weight), false);
 				}
 			}
 			else //has deviations
@@ -338,18 +338,18 @@ protected:
 				{
 					if(effective_p_value == 1)
 					{
-						feat_params.nominalMatchDistanceTerm.SetValue(deviation * weight, ExactApproxValuePair::EXACT);
-						feat_params.nominalNonMatchDistanceTerm.SetValue(mismatch_deviation * weight, ExactApproxValuePair::EXACT);
+						feat_params.nominalMatchDistanceTerm.SetValue(deviation * weight, true);
+						feat_params.nominalNonMatchDistanceTerm.SetValue(mismatch_deviation * weight, true);
 					}
 					else if(effective_p_value != 0)
 					{
-						feat_params.nominalMatchDistanceTerm.SetValue(std::pow(deviation, effective_p_value) * weight, ExactApproxValuePair::EXACT);
-						feat_params.nominalNonMatchDistanceTerm.SetValue(std::pow(mismatch_deviation, effective_p_value) * weight, ExactApproxValuePair::EXACT);
+						feat_params.nominalMatchDistanceTerm.SetValue(std::pow(deviation, effective_p_value) * weight, true);
+						feat_params.nominalNonMatchDistanceTerm.SetValue(std::pow(mismatch_deviation, effective_p_value) * weight, true);
 					}
 					else //pValue == 0
 					{
-						feat_params.nominalMatchDistanceTerm.SetValue(std::pow(deviation, weight), ExactApproxValuePair::EXACT);
-						feat_params.nominalNonMatchDistanceTerm.SetValue(std::pow(mismatch_deviation, weight), ExactApproxValuePair::EXACT);
+						feat_params.nominalMatchDistanceTerm.SetValue(std::pow(deviation, weight), true);
+						feat_params.nominalNonMatchDistanceTerm.SetValue(std::pow(mismatch_deviation, weight), true);
 					}
 				}
 
@@ -357,18 +357,18 @@ protected:
 				{
 					if(effective_p_value == 1)
 					{
-						feat_params.nominalMatchDistanceTerm.SetValue(deviation * weight, ExactApproxValuePair::APPROX);
-						feat_params.nominalNonMatchDistanceTerm.SetValue(mismatch_deviation * weight, ExactApproxValuePair::APPROX);
+						feat_params.nominalMatchDistanceTerm.SetValue(deviation * weight, false);
+						feat_params.nominalNonMatchDistanceTerm.SetValue(mismatch_deviation * weight, false);
 					}
 					else if(effective_p_value != 0)
 					{
-						feat_params.nominalMatchDistanceTerm.SetValue(FastPow(deviation, effective_p_value) * weight, ExactApproxValuePair::APPROX);
-						feat_params.nominalNonMatchDistanceTerm.SetValue(FastPow(mismatch_deviation, effective_p_value) * weight, ExactApproxValuePair::APPROX);
+						feat_params.nominalMatchDistanceTerm.SetValue(FastPow(deviation, effective_p_value) * weight, false);
+						feat_params.nominalNonMatchDistanceTerm.SetValue(FastPow(mismatch_deviation, effective_p_value) * weight, false);
 					}
 					else //pValue == 0
 					{
-						feat_params.nominalMatchDistanceTerm.SetValue(FastPow(deviation, weight), ExactApproxValuePair::APPROX);
-						feat_params.nominalNonMatchDistanceTerm.SetValue(FastPow(mismatch_deviation, weight), ExactApproxValuePair::APPROX);
+						feat_params.nominalMatchDistanceTerm.SetValue(FastPow(deviation, weight), false);
+						feat_params.nominalNonMatchDistanceTerm.SetValue(FastPow(mismatch_deviation, weight), false);
 					}
 				}
 			}

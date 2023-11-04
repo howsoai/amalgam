@@ -290,87 +290,27 @@ protected:
 		for(size_t i = 0; i < num_features; i++)
 		{
 			auto &feat_params = featureParams[i];
-			if(feat_params.featureType != FDT_NOMINAL)
+			if(feat_params.featureType == FDT_NOMINAL)
 				continue;
 
-			double weight = feat_params.weight;
-
-			if(!DoesFeatureHaveDeviation(i))
+			//ensure if a feature has deviations they're not too small to underflow
+			if(DoesFeatureHaveDeviation(i))
 			{
-				if(compute_accurate)
-				{
-					feat_params.nominalMatchDistanceTerm.SetValue(0.0, true);
-
-					if(pValue != 0)
-						feat_params.nominalNonMatchDistanceTerm.SetValue(weight, true);
-					else //1.0 to any power is still 1.0 when computed exactly
-						feat_params.nominalNonMatchDistanceTerm.SetValue(1.0, true);
-				}
-
-				if(compute_approximate)
-				{
-					feat_params.nominalMatchDistanceTerm.SetValue(0.0, false);
-
-					if(effective_p_value != 0)
-						feat_params.nominalNonMatchDistanceTerm.SetValue(weight * nominal_approximate_diff, false);
-					else //pValue == 0
-						feat_params.nominalNonMatchDistanceTerm.SetValue(FastPow(1.0, weight), false);
-				}
-			}
-			else //has deviations
-			{
-				double deviation = feat_params.deviation;
-				double nominal_count = feat_params.typeAttributes.nominalCount;
-
-				// n = number of nominal classes
-				// match: deviation ^ p * weight
-				// non match: (deviation + (1 - deviation) / (n - 1)) ^ p * weight
-				//if there is only one nominal class, the smallest delta value it could be is the specified smallest delta, otherwise it's 1.0
 				constexpr double smallest_delta = 1e-100;
-				if(nominal_count == 1 && deviation < smallest_delta)
-					deviation = smallest_delta;
+				if(feat_params.typeAttributes.nominalCount == 1 && feat_params.deviation < smallest_delta)
+					feat_params.deviation = smallest_delta;
+			}
 
-				double mismatch_deviation = 1.0;
-				if(nominal_count > 1)
-					mismatch_deviation = (deviation + (1 - deviation) / (nominal_count - 1));
+			if(compute_accurate)
+			{
+				feat_params.nominalMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, true), true);
+				feat_params.nominalNonMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, true), true);
+			}
 
-				if(compute_accurate)
-				{
-					if(effective_p_value == 1)
-					{
-						feat_params.nominalMatchDistanceTerm.SetValue(deviation * weight, true);
-						feat_params.nominalNonMatchDistanceTerm.SetValue(mismatch_deviation * weight, true);
-					}
-					else if(effective_p_value != 0)
-					{
-						feat_params.nominalMatchDistanceTerm.SetValue(std::pow(deviation, effective_p_value) * weight, true);
-						feat_params.nominalNonMatchDistanceTerm.SetValue(std::pow(mismatch_deviation, effective_p_value) * weight, true);
-					}
-					else //pValue == 0
-					{
-						feat_params.nominalMatchDistanceTerm.SetValue(std::pow(deviation, weight), true);
-						feat_params.nominalNonMatchDistanceTerm.SetValue(std::pow(mismatch_deviation, weight), true);
-					}
-				}
-
-				if(compute_approximate)
-				{
-					if(effective_p_value == 1)
-					{
-						feat_params.nominalMatchDistanceTerm.SetValue(deviation * weight, false);
-						feat_params.nominalNonMatchDistanceTerm.SetValue(mismatch_deviation * weight, false);
-					}
-					else if(effective_p_value != 0)
-					{
-						feat_params.nominalMatchDistanceTerm.SetValue(FastPow(deviation, effective_p_value) * weight, false);
-						feat_params.nominalNonMatchDistanceTerm.SetValue(FastPow(mismatch_deviation, effective_p_value) * weight, false);
-					}
-					else //pValue == 0
-					{
-						feat_params.nominalMatchDistanceTerm.SetValue(FastPow(deviation, weight), false);
-						feat_params.nominalNonMatchDistanceTerm.SetValue(FastPow(mismatch_deviation, weight), false);
-					}
-				}
+			if(compute_approximate)
+			{
+				feat_params.nominalMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, false), false);
+				feat_params.nominalNonMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, false), false);
 			}
 		}
 	}
@@ -461,17 +401,100 @@ public:
 		}
 	}
 
-	//TODO 18066: Integrate these
 	//computes the distance term for a nominal when two universally symmetric nominals are equal
 	__forceinline double ComputeDistanceTermNominalUniversallySymmetricExactMatch(size_t index, bool high_accuracy)
 	{
-		return featureParams[index].nominalMatchDistanceTerm.GetValue(high_accuracy);
+		if(!DoesFeatureHaveDeviation(index))
+			return 0.0;
+
+		double weight = featureParams[index].weight;
+		double deviation = featureParams[index].deviation;
+
+		//infinite pValues are treated the same as 1 for distance terms,
+		//and are the same value regardless of high_accuracy
+		if(pValue == 1 || pValue == std::numeric_limits<double>::infinity()
+				|| pValue == -std::numeric_limits<double>::infinity())
+			return deviation * weight;
+
+		if(pValue == 0)
+		{
+			if(high_accuracy)
+				return std::pow(deviation, weight);
+			else
+				return FastPow(deviation, weight);
+		}
+		else
+		{
+			if(high_accuracy)
+				return std::pow(deviation, pValue) * weight;
+			else
+				return FastPow(deviation, pValue) * weight;
+		}
 	}
 
 	//computes the distance term for a nominal when two universally symmetric nominals are not equal
 	__forceinline double ComputeDistanceTermNominalUniversallySymmetricNonMatch(size_t index, bool high_accuracy)
 	{
-		return featureParams[index].nominalNonMatchDistanceTerm.GetValue(high_accuracy);
+		double weight = featureParams[index].weight;
+		if(DoesFeatureHaveDeviation(index))
+		{
+			double deviation = featureParams[index].deviation;
+			double nominal_count = featureParams[index].typeAttributes.nominalCount;
+
+			// n = number of nominal classes
+			// match: deviation ^ p * weight
+			// non match: (deviation + (1 - deviation) / (n - 1)) ^ p * weight
+			//if there is only one nominal class, the smallest delta value it could be is the specified smallest delta, otherwise it's 1.0
+			double mismatch_deviation = 1.0;
+			if(nominal_count > 1)
+				mismatch_deviation = (deviation + (1 - deviation) / (nominal_count - 1));
+
+			//infinite pValues are treated the same as 1 for distance terms,
+			//and are the same value regardless of high_accuracy
+			if(pValue == 1 || pValue == std::numeric_limits<double>::infinity()
+					|| pValue == -std::numeric_limits<double>::infinity())
+				return mismatch_deviation * weight;
+
+			if(pValue == 0)
+			{
+				if(high_accuracy)
+					return std::pow(mismatch_deviation, weight);
+				else
+					return FastPow(mismatch_deviation, weight);
+			}
+			else
+			{
+				if(high_accuracy)
+					return std::pow(mismatch_deviation, pValue) * weight;
+				else
+					return FastPow(mismatch_deviation, pValue) * weight;
+			}
+		}
+		else
+		{
+			if(high_accuracy)
+			{
+				if(pValue != 0.0)
+					return weight;
+				else
+					return 1.0;
+			}
+			else
+			{
+				if(pValue != 0.0)
+				{
+					//special handling for infinities
+					if(pValue == std::numeric_limits<double>::infinity() || pValue == -std::numeric_limits<double>::infinity())
+						return weight;
+					else //since FastPow isn't exact for 1.0, need to compute the value
+						return weight * FastPowNonZeroExp(1.0, pValue);
+				}
+				else //pValue == 0.0
+				{
+					return FastPow(1.0, weight);
+				}
+			}
+		}
 	}
 
 	//returns the precomputed distance term for a nominal when two universally symmetric nominals are equal

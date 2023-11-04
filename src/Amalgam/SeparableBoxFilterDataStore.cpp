@@ -401,14 +401,14 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 	bool need_recompute_distances = (dist_params.recomputeAccurateDistances && !dist_params.highAccuracy);
 	if(!need_recompute_distances)
 	{
+		bool high_accuracy = (dist_params.recomputeAccurateDistances || dist_params.highAccuracy);
 		for(auto index : enabled_indices)
-			distances_out.emplace_back(dist_params.InverseExponentiateDistance(distances[index]), index);
+			distances_out.emplace_back(dist_params.InverseExponentiateDistance(distances[index], high_accuracy), index);
 	}
 	else
 	{
-		dist_params.SetHighAccuracy(true);
 		for(auto index : enabled_indices)
-			distances_out.emplace_back(GetDistanceBetween(dist_params, target_values, target_value_types, target_column_indices, index), index);
+			distances_out.emplace_back(GetDistanceBetween(dist_params, target_values, target_value_types, target_column_indices, index, true), index);
 	}
 }
 
@@ -419,6 +419,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 	if(top_k == 0 || GetNumInsertedEntities() == 0)
 		return;
 
+	//TODO 18066: remove this logic and the variable parametersAndBuffers.distParams
 	GeneralizedDistance *dist_params = dist_params_ref;
 	if(constant_dist_params)
 	{
@@ -588,17 +589,16 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 	//return k nearest -- don't need to clear because the values will be clobbered
 	distances_out.resize(sorted_results.Size());
 	bool need_recompute_distances = (dist_params->recomputeAccurateDistances && !dist_params->highAccuracy);
-	if(need_recompute_distances)
-		dist_params->SetHighAccuracy(true);
+	bool high_accuracy = (dist_params->recomputeAccurateDistances || dist_params->highAccuracy);
 
 	while(sorted_results.Size() > 0)
 	{
 		auto &drp = sorted_results.Top();
 		double distance;
 		if(!need_recompute_distances)
-			distance = dist_params->InverseExponentiateDistance(drp.distance);
+			distance = dist_params->InverseExponentiateDistance(drp.distance, high_accuracy);
 		else
-			distance = GetDistanceBetween(*dist_params, target_values, target_value_types, target_column_indices, drp.reference);
+			distance = GetDistanceBetween(*dist_params, target_values, target_value_types, target_column_indices, drp.reference, true);
 
 		distances_out[sorted_results.Size() - 1] = DistanceReferencePair(distance, drp.reference);
 		sorted_results.Pop();
@@ -783,17 +783,16 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistance &dist_
 	distances_out.resize(num_results);
 	previous_nn_cache.resize(num_results);
 	bool need_recompute_distances = (dist_params.recomputeAccurateDistances && !dist_params.highAccuracy);
-	if(need_recompute_distances)
-		dist_params.SetHighAccuracy(true);
+	bool high_accuracy = (dist_params.recomputeAccurateDistances || dist_params.highAccuracy);
 
 	while(sorted_results.Size() > 0)
 	{
 		auto &drp = sorted_results.Top();
 		double distance;
 		if(!need_recompute_distances)
-			distance = dist_params.InverseExponentiateDistance(drp.distance);
+			distance = dist_params.InverseExponentiateDistance(drp.distance, high_accuracy);
 		else
-			distance = GetDistanceBetween(dist_params, target_values, target_value_types, target_column_indices, drp.reference);
+			distance = GetDistanceBetween(dist_params, target_values, target_value_types, target_column_indices, drp.reference, true);
 
 		size_t output_index = sorted_results.Size() - 1;
 		distances_out[output_index] = DistanceReferencePair(distance, drp.reference);

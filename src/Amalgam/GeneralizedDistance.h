@@ -280,14 +280,7 @@ protected:
 		if(pValue == std::numeric_limits<double>::infinity() || pValue == -std::numeric_limits<double>::infinity())
 			effective_p_value = 1;
 
-		const size_t num_features = featureParams.size();
-
-		//value of delta for nominal values when not using high accuracy, may be not exactly 1.0 due to using FastPow approximation for effective_p_values that aren't 1
-		double nominal_approximate_diff = 1.0;
-		if(compute_approximate)
-			nominal_approximate_diff = ( (effective_p_value == 1) ? 1.0 : FastPowNonZeroExp(1.0, effective_p_value) );
-
-		for(size_t i = 0; i < num_features; i++)
+		for(size_t i = 0; i < featureParams.size(); i++)
 		{
 			auto &feat_params = featureParams[i];
 			if(feat_params.featureType == FDT_NOMINAL)

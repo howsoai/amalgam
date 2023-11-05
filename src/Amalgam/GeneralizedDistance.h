@@ -274,12 +274,6 @@ protected:
 		bool compute_accurate = NeedToPrecomputeAccurate();
 		bool compute_approximate = NeedToPrecomputeApproximate();
 
-		//infinite pValue means take max or min, so just use 1 for computations below,
-		// and term aggregation (outside of this function) will take care of the rest
-		double effective_p_value = pValue;
-		if(pValue == std::numeric_limits<double>::infinity() || pValue == -std::numeric_limits<double>::infinity())
-			effective_p_value = 1;
-
 		for(size_t i = 0; i < featureParams.size(); i++)
 		{
 			auto &feat_params = featureParams[i];

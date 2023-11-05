@@ -291,26 +291,26 @@ protected:
 		{
 			auto &feat_params = featureParams[i];
 			if(feat_params.featureType == FDT_NOMINAL)
-				continue;
-
-			//ensure if a feature has deviations they're not too small to underflow
-			if(DoesFeatureHaveDeviation(i))
 			{
-				constexpr double smallest_delta = 1e-100;
-				if(feat_params.typeAttributes.nominalCount == 1 && feat_params.deviation < smallest_delta)
-					feat_params.deviation = smallest_delta;
-			}
+				//ensure if a feature has deviations they're not too small to underflow
+				if(DoesFeatureHaveDeviation(i))
+				{
+					constexpr double smallest_delta = 1e-100;
+					if(feat_params.typeAttributes.nominalCount == 1 && feat_params.deviation < smallest_delta)
+						feat_params.deviation = smallest_delta;
+				}
 
-			if(compute_accurate)
-			{
-				feat_params.nominalMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, true), true);
-				feat_params.nominalNonMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, true), true);
-			}
+				if(compute_accurate)
+				{
+					feat_params.nominalMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, true), true);
+					feat_params.nominalNonMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, true), true);
+				}
 
-			if(compute_approximate)
-			{
-				feat_params.nominalMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, false), false);
-				feat_params.nominalNonMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, false), false);
+				if(compute_approximate)
+				{
+					feat_params.nominalMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, false), false);
+					feat_params.nominalNonMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, false), false);
+				}
 			}
 		}
 	}

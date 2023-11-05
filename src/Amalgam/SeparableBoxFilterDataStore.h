@@ -499,11 +499,10 @@ public:
 
 	//Finds the top_k nearest neighbors results to the entity at search_index.
 	// if expand_to_first_nonzero_distance is set, then it will expand top_k until it it finds the first nonzero distance or until it includes all enabled indices 
-	// if const_dist_params is true, then it will make a copy before making any modifications
 	//will not modify enabled_indices, but instead will make a copy for any modifications
 	//assumes that enabled_indices only contains indices that have valid values for all the features
-	void FindEntitiesNearestToIndexedEntity(GeneralizedDistance *dist_params_ref, std::vector<size_t> &position_label_ids,
-		bool constant_dist_params, size_t search_index, size_t top_k, BitArrayIntegerSet &enabled_indices,
+	void FindEntitiesNearestToIndexedEntity(GeneralizedDistance &dist_params, std::vector<size_t> &position_label_ids,
+		size_t search_index, size_t top_k, BitArrayIntegerSet &enabled_indices,
 		bool expand_to_first_nonzero_distance, std::vector<DistanceReferencePair<size_t>> &distances_out,
 		size_t ignore_index = std::numeric_limits<size_t>::max(), RandomStream rand_stream = RandomStream());
 	

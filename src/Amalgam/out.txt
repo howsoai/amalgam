@@ -1243,7 +1243,7 @@ abcdef
 		interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1697958069.900312
+		start_time 1699158667.067612
 		www 1
 		x 12
 		zz 10
@@ -1286,7 +1286,7 @@ abcdef
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1697958069.900312
+	start_time 1699158667.067612
 	www 1
 	x 12
 	zz 10
@@ -1328,7 +1328,7 @@ abcdef
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1697958069.900312
+	start_time 1699158667.067612
 	www 1
 	x 12
 	zz 10
@@ -1596,7 +1596,7 @@ e:
   - .inf
 
 25: (assoc a 1)
-current date-time in epoch: 2023-10-22-03.01.10.1536540
+current date-time in epoch: 2023-11-05-00.31.07.3323480
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -3500,7 +3500,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1697958070.384504
+1699158667.574166
 (true)
 
 RootTest
@@ -3730,7 +3730,7 @@ hello
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "bÁ¬ò­«1L0Ñ”-I´»ÿ")
+	(set_entity_rand_seed new_entity "=?Õf'0Ñ”-I´»ÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3743,7 +3743,7 @@ hello
 				)
 			)
 		)
-		" ºþŽ9Öí8­ÕV­:oàÿ"
+		"I<,ŽÒÉªØ(¹ßß‚ÿ"
 	)
 	(set_entity_rand_seed
 		(first
@@ -3779,7 +3779,7 @@ hello
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "bÁ¬ò­«1L0Ñ”-I´»ÿ")
+	(set_entity_rand_seed new_entity "=?Õf'0Ñ”-I´»ÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -4219,11 +4219,11 @@ assoc-based: (list "Child2" "Child7")
 --compute_entity_convictions--
 case convictions:
 (assoc
-	entity1 2.032368048313694
-	entity2 0.6545062562638365
-	entity3 0.8110491600614946
-	entity4 1.921496391371212
-	entity5 0.8151983966326795
+	entity1 1.8849070781661639
+	entity2 0.6863118922121982
+	entity3 0.8222276770849821
+	entity4 1.9468118839925106
+	entity5 0.7797040417153973
 )
 case convictions:
 (assoc
@@ -4723,4 +4723,4 @@ Expecting 1000: 1000
 concurrent entity writes successful: (true)
 
 --total execution time--
-1.1228001117706299
+1.107090950012207

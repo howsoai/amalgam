@@ -114,18 +114,18 @@ public:
 
 		if(HasNumberInternValues(index))
 		{
-			auto &precomputed_terms = feature_params.precomputedInternDistanceTerms;
+			auto &interned_dist_terms = feature_params.internDistanceTerms;
 
 			if(target_value_is_null_equivalent)
 			{
-				precomputed_terms[0] = feature_params.unknownToUnknownDistanceTerm;
+				interned_dist_terms[0] = feature_params.unknownToUnknownDistanceTerm;
 				auto k_to_unk = feature_params.knownToUnknownDistanceTerm;
-				for(size_t i = 1; i < precomputed_terms.size(); i++)
-					precomputed_terms[i] = k_to_unk;
+				for(size_t i = 1; i < interned_dist_terms.size(); i++)
+					interned_dist_terms[i] = k_to_unk;
 			}
 			else //just set the unknown value
 			{
-				precomputed_terms[0] = feature_params.knownToUnknownDistanceTerm;
+				interned_dist_terms[0] = feature_params.knownToUnknownDistanceTerm;
 			}			
 		}
 	}
@@ -140,24 +140,24 @@ public:
 
 		if(interned_values == nullptr)
 		{
-			feature_params.precomputedInternDistanceTerms.clear();
+			feature_params.internDistanceTerms.clear();
 			return;
 		}
 
-		feature_params.precomputedInternDistanceTerms.resize(interned_values->size());
+		feature_params.internDistanceTerms.resize(interned_values->size());
 		//first entry is known-unknown distance
 		if(compute_accurate)
-			feature_params.precomputedInternDistanceTerms[0].SetValue(ComputeDistanceTermKnownToUnknown(index, true), true);
+			feature_params.internDistanceTerms[0].SetValue(ComputeDistanceTermKnownToUnknown(index, true), true);
 		if(compute_approximate)
-			feature_params.precomputedInternDistanceTerms[0].SetValue(ComputeDistanceTermKnownToUnknown(index, false), false);
+			feature_params.internDistanceTerms[0].SetValue(ComputeDistanceTermKnownToUnknown(index, false), false);
 
-		for(size_t i = 1; i < feature_params.precomputedInternDistanceTerms.size(); i++)
+		for(size_t i = 1; i < feature_params.internDistanceTerms.size(); i++)
 		{
 			double difference = value - interned_values->at(i);
 			if(compute_accurate)
-				feature_params.precomputedInternDistanceTerms[i].SetValue(ComputeDistanceTermNonNominalNonNullRegular(difference, index, true), true);
+				feature_params.internDistanceTerms[i].SetValue(ComputeDistanceTermNonNominalNonNullRegular(difference, index, true), true);
 			if(compute_approximate)
-				feature_params.precomputedInternDistanceTerms[i].SetValue(ComputeDistanceTermNonNominalNonNullRegular(difference, index, false), false);
+				feature_params.internDistanceTerms[i].SetValue(ComputeDistanceTermNonNominalNonNullRegular(difference, index, false), false);
 		}
 	}
 
@@ -517,7 +517,7 @@ public:
 	//returns the precomputed distance term for the interned number with intern_value_index
 	__forceinline double ComputeDistanceTermNumberInternedPrecomputed(size_t intern_value_index, size_t index, bool high_accuracy)
 	{
-		return featureParams[index].precomputedInternDistanceTerms[intern_value_index].GetValue(high_accuracy);
+		return featureParams[index].internDistanceTerms[intern_value_index].GetValue(high_accuracy);
 	}
 
 	//computes the inner term for a non-nominal with an exact match of values
@@ -894,7 +894,7 @@ public:
 		std::vector<double> *internedNumberIndexToNumberValue;
 
 		//precomputed distance terms for each interned value looked up by intern index
-		std::vector<ExactApproxValuePair> precomputedInternDistanceTerms;
+		std::vector<ExactApproxValuePair> internDistanceTerms;
 
 		//type attributes dependent on featureType
 		union

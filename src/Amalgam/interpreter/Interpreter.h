@@ -207,7 +207,9 @@ public:
 		bool previous_result_unique = constructionStackIndicesAndUniqueness[uniqueness_offset].unique;
 
 		//clear previous result
-		auto &previous_result_loc = constructionStackNodes->at(constructionStackNodes->size() + constructionStackOffsetPreviousResult);
+		size_t prev_result_offset = constructionStackNodes->size()
+						- (constructionStackOffsetStride * depth) + constructionStackOffsetPreviousResult;
+		auto &previous_result_loc = constructionStackNodes->at(prev_result_offset);
 		EvaluableNode *previous_result = nullptr;
 		std::swap(previous_result, previous_result_loc);
 

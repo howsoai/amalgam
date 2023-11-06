@@ -586,6 +586,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en)
 	size_t loop_iteration = 0;
 	for(;;)
 	{
+		SetTopCurrentIndexInConstructionStack(static_cast<double>(loop_iteration++));
+
 		//keep the result before testing condition
 		node_stack.PushEvaluableNode(previous_result);
 		bool condition_true = InterpretNodeIntoBoolValue(ocn[0]);
@@ -597,7 +599,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en)
 		if(AreExecutionResourcesExhausted())
 			return EvaluableNodeReference::Null();
 
-		SetTopCurrentIndexInConstructionStack(static_cast<double>(loop_iteration++));
 		SetTopPreviousResultInConstructionStack(previous_result);
 
 		//run each step within the loop

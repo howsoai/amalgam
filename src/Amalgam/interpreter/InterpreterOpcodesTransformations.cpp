@@ -709,7 +709,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en)
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en)
 {
-	//TODO 18064: utilize SetTopPreviousResultInConstructionStack and update documentation and tests
 	auto &ocn = en->GetOrderedChildNodes();
 
 	if(ocn.size() < 2)

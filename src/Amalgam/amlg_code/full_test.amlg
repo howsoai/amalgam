@@ -251,6 +251,7 @@
  (print (set_digits 1234567.8 10 (list 5 5 5 5 5) 4 8 (false)) "\n")
  (print (set_digits 1.2345678e100 10 (list 5 5 5 5 5) 0 4 (false)) "\n")
  (print (set_digits 1.2345678e100 10 (list 5 5 5 5 5) 4 8 (false)) "\n")
+ (print (set_digits 1.2345678e100 10 (list 5 (null) 5 (null) 5) 4 8 (false)) "\n")
  
  ;these should all print (list 1 0 1)
  (print (get_digits (set_digits 1234567.8 10 (list 1 0 1 0) 2 5 (false)) 10 2 5 (false)))

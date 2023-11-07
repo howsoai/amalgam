@@ -159,10 +159,10 @@ EvaluableNode *EvaluableNodeTreeDifference::DifferenceTrees(EvaluableNodeManager
 			}
 			else
 			{
-				//build (get (target_value 1) ...)
+				//build (get (current_value 1) ...)
 				EvaluableNode *retrieval = enm->AllocNode(ENT_GET);
 				replacement->AppendOrderedChildNode(retrieval);
-				EvaluableNode *target = enm->AllocNode(ENT_TARGET_VALUE);
+				EvaluableNode *target = enm->AllocNode(ENT_CURRENT_VALUE);
 				target->AppendOrderedChildNode(enm->AllocNode(1.0));
 				retrieval->AppendOrderedChildNode(target);
 
@@ -193,10 +193,10 @@ EvaluableNode *EvaluableNodeTreeDifference::DifferenceTrees(EvaluableNodeManager
 			}
 			else
 			{
-				//build (get (target_value 1) ...)
+				//build (get (current_value 1) ...)
 				EvaluableNode *retrieval = enm->AllocNode(ENT_GET);
 				replacement->AppendOrderedChildNode(retrieval);
-				EvaluableNode *target = enm->AllocNode(ENT_TARGET_VALUE);
+				EvaluableNode *target = enm->AllocNode(ENT_CURRENT_VALUE);
 				target->AppendOrderedChildNode(enm->AllocNode(1.0));
 				retrieval->AppendOrderedChildNode(target);
 

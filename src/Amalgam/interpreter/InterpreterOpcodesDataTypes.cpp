@@ -91,7 +91,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST(EvaluableNode *en)
 
 		for(size_t i = 0; i < ocn.size(); i++)
 		{
-			SetTopTargetValueIndexInConstructionStack(static_cast<double>(i));
+			SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
 
 			auto value = InterpretNode(ocn[i]);
 			//add it to the list
@@ -163,7 +163,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en)
 
 		for(auto &[cn_id, cn] : new_mcn)
 		{
-			SetTopTargetValueIndexInConstructionStack(cn_id);
+			SetTopCurrentIndexInConstructionStack(cn_id);
 
 			//compute the value
 			EvaluableNodeReference element_result = InterpretNode(cn);

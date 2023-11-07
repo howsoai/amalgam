@@ -46,8 +46,9 @@ void StringInternPool::InitializeStaticStrings()
 
 	//stack and node manipulation
 	EmplaceStaticString(GetStringIdFromNodeTypeFromString(ENT_TARGET), "target");
-	EmplaceStaticString(GetStringIdFromNodeTypeFromString(ENT_TARGET_INDEX), "target_index");
-	EmplaceStaticString(GetStringIdFromNodeTypeFromString(ENT_TARGET_VALUE), "target_value");
+	EmplaceStaticString(GetStringIdFromNodeTypeFromString(ENT_CURRENT_INDEX), "current_index");
+	EmplaceStaticString(GetStringIdFromNodeTypeFromString(ENT_CURRENT_VALUE), "current_value");
+	EmplaceStaticString(GetStringIdFromNodeTypeFromString(ENT_PREVIOUS_RESULT), "previous_result");
 	EmplaceStaticString(GetStringIdFromNodeTypeFromString(ENT_STACK), "stack");
 	EmplaceStaticString(GetStringIdFromNodeTypeFromString(ENT_ARGS), "args");
 

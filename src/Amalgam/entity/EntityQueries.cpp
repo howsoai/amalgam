@@ -207,7 +207,7 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 					radius = value;
 			}
 
-			double distance = distParams.ComputeMinkowskiDistance(position, position_types, valueToCompare, valueTypes);
+			double distance = distParams.ComputeMinkowskiDistance(position, position_types, valueToCompare, valueTypes, distParams.highAccuracy);
 			if(distance - radius > maxDistance)
 				return false;
 
@@ -232,7 +232,7 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 	return false;
 }
 
-double EntityQueryCondition::GetConditionDistanceMeasure(Entity *e)
+double EntityQueryCondition::GetConditionDistanceMeasure(Entity *e, bool high_accuracy)
 {
 	if(e == nullptr)
 		return std::numeric_limits<double>::quiet_NaN();
@@ -258,7 +258,7 @@ double EntityQueryCondition::GetConditionDistanceMeasure(Entity *e)
 			radius = value;
 	}
 		
-	double distance = distParams.ComputeMinkowskiDistance(position, position_types, valueToCompare, valueTypes);
+	double distance = distParams.ComputeMinkowskiDistance(position, position_types, valueToCompare, valueTypes, high_accuracy);
 	return distance - radius;
 }
 
@@ -701,7 +701,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		StochasticTieBreakingPriorityQueue<DistanceReferencePair<Entity *>> nearest_entities(randomStream.CreateOtherStreamViaRand());
 		for(size_t i = 0; i < matching_entities.size(); i++)
 		{
-			double value = GetConditionDistanceMeasure(matching_entities[i]);
+			double value = GetConditionDistanceMeasure(matching_entities[i], distParams.highAccuracy);
 			if(FastIsNaN(value))
 				continue;
 
@@ -730,18 +730,11 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		if(enm == nullptr)
 			return EvaluableNodeReference::Null();
 
-		if(distParams.recomputeAccurateDistances)
+		if(!distParams.highAccuracy && distParams.recomputeAccurateDistances)
 		{
-			//store state for reversion and overwrite with compute accurate distances
-			bool old_recalculate_distances_accurately_state = distParams.highAccuracy;
-			distParams.SetHighAccuracy(true);
-
 			//recompute distance accurately for each found entity result
 			for(auto &it : entity_values)
-				it.distance = GetConditionDistanceMeasure(it.reference);
-
-			//revert to original state
-			distParams.SetHighAccuracy(old_recalculate_distances_accurately_state);
+				it.distance = GetConditionDistanceMeasure(it.reference, true);
 		}
 
 		//transform distances as appropriate
@@ -775,10 +768,11 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		//compute distances
 		//Note that this recalculates the distance.  Since this is a small number of cases, it shouldn't be a big performance impact -- for larger queries, it will use faster methods
 		// if this becomes a performance issue, then DoesEntityMatchCondition can be refactored to optionally return the values it computed
+		bool high_accuracy = (distParams.highAccuracy || distParams.recomputeAccurateDistances);
 		std::vector<DistanceReferencePair<Entity *>> entity_values;
 		entity_values.reserve(matching_entities.size());
 		for(size_t i = 0; i < matching_entities.size(); i++)
-			entity_values.push_back(DistanceReferencePair<Entity *>(GetConditionDistanceMeasure(matching_entities[i]), matching_entities[i]));
+			entity_values.push_back(DistanceReferencePair<Entity *>(GetConditionDistanceMeasure(matching_entities[i], high_accuracy), matching_entities[i]));
 
 		//transform distances as appropriate
 		EntityQueriesStatistics::DistanceTransform<Entity *> distance_transform(transformSuprisalToProb,

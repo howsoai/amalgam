@@ -1251,7 +1251,7 @@ current_index: 2
 		interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1699309556.303361
+		start_time 1699368539.269825
 		www 1
 		x 12
 		zz 10
@@ -1294,7 +1294,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1699309556.303361
+	start_time 1699368539.269825
 	www 1
 	x 12
 	zz 10
@@ -1336,7 +1336,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1699309556.303361
+	start_time 1699368539.269825
 	www 1
 	x 12
 	zz 10
@@ -1604,12 +1604,12 @@ e:
   - .inf
 
 25: (assoc a 1)
-current date-time in epoch: 2023-11-06-17.25.56.7691060
+current date-time in epoch: 2023-11-07-09.48.59.6796740
 2020-06-07 00:22:59
 1391230800
 1391230800
 1391230800
--13134-10-22 10:56:41
+-6053-05-28 00:24:29
 2020-06-05 00:21:45
 06/05/20 00:21:45 EDT
 45
@@ -2670,8 +2670,8 @@ flatten restore with parallel
 	8
 	9
 	10
-	XX
-	(or)
+	XXWA6ez
+	12
 	(call_entity)
 	14
 	(associate b 1 "b" b)
@@ -3535,7 +3535,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1699309556.994523
+1699368539.937534
 (true)
 
 RootTest
@@ -3765,7 +3765,7 @@ hello
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "!‚è˘·<√0—î-I¥ªˇ")
+	(set_entity_rand_seed new_entity "J¬Fò3∞ì:0—î-I¥ªˇ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3778,7 +3778,7 @@ hello
 				)
 			)
 		)
-		"Áá|pê#î ∞}l√tXˇ"
+		"eı˚3ÃáB?Ä›'0øˇ"
 	)
 	(set_entity_rand_seed
 		(first
@@ -3814,7 +3814,7 @@ hello
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "!‚è˘·<√0—î-I¥ªˇ")
+	(set_entity_rand_seed new_entity "J¬Fò3∞ì:0—î-I¥ªˇ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -4254,11 +4254,11 @@ assoc-based: (list "Child2" "Child7")
 --compute_entity_convictions--
 case convictions:
 (assoc
-	entity1 2.032368048313694
-	entity2 0.6545062562638365
-	entity3 0.8110491600614946
-	entity4 1.921496391371212
-	entity5 0.8151983966326795
+	entity1 1.8849070781661639
+	entity2 0.6863118922121982
+	entity3 0.8222276770849821
+	entity4 1.9468118839925106
+	entity5 0.7797040417153973
 )
 case convictions:
 (assoc
@@ -4758,4 +4758,4 @@ Expecting 1000: 1000
 concurrent entity writes successful: (true)
 
 --total execution time--
-1.5134739875793457
+1.6134569644927979

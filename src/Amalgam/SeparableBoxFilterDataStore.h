@@ -73,14 +73,14 @@ public:
 	// query_feature_index is relative to dist_params
 	inline double GetMaxDistanceTermFromValue(GeneralizedDistance &dist_params,
 		EvaluableNodeImmediateValue &value, EvaluableNodeImmediateValueType value_type,
-		size_t query_feature_index, size_t absolute_feature_index)
+		size_t query_feature_index, size_t absolute_feature_index, bool high_accuracy)
 	{
 		if(dist_params.IsFeatureNominal(query_feature_index))
-			return dist_params.ComputeDistanceTermNominalNonMatch(query_feature_index);
+			return dist_params.ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(query_feature_index, high_accuracy);
 
 		double max_diff = columnData[absolute_feature_index]->GetMaxDifferenceTermFromValue(
 									dist_params.featureParams[query_feature_index], value_type, value);
-		return dist_params.ComputeDistanceTermNonNominalNonNullRegular(max_diff, query_feature_index);
+		return dist_params.ComputeDistanceTermNonNominalNonNullRegular(max_diff, query_feature_index, high_accuracy);
 	}
 
 	//gets the matrix cell index for the specified index
@@ -540,7 +540,7 @@ protected:
 	//returns the number of entities indices accumulated
 	size_t ComputeAndAccumulatePartialSums(GeneralizedDistance &dist_params,
 		EvaluableNodeImmediateValue value, EvaluableNodeImmediateValueType value_type,
-		SortedIntegerSet &entity_indices, size_t query_feature_index, size_t absolute_feature_index)
+		SortedIntegerSet &entity_indices, size_t query_feature_index, size_t absolute_feature_index, bool high_accuracy)
 	{
 		size_t num_entity_indices = entity_indices.size();
 
@@ -558,7 +558,7 @@ protected:
 			other_value_type = column_data->GetResolvedValueType(other_value_type);
 
 			//compute term
-			double term = dist_params.ComputeDistanceTermRegular(value, other_value, value_type, other_value_type, query_feature_index);
+			double term = dist_params.ComputeDistanceTermRegular(value, other_value, value_type, other_value_type, query_feature_index, high_accuracy);
 
 			//accumulate
 			partial_sums.Accum(entity_index, accum_location, term);
@@ -681,7 +681,7 @@ protected:
 	//returns the distance between two nodes while respecting the feature mask
 	inline double GetDistanceBetween(GeneralizedDistance &dist_params,
 		std::vector<EvaluableNodeImmediateValue> &target_values, std::vector<EvaluableNodeImmediateValueType> &target_value_types,
-		std::vector<size_t> &target_column_indices, size_t other_index)
+		std::vector<size_t> &target_column_indices, size_t other_index, bool high_accuracy)
 	{
 		const size_t matrix_base_position = other_index * columnData.size();
 
@@ -697,11 +697,12 @@ protected:
 				auto other_value = column_data->GetResolvedValue(other_value_type, matrix[matrix_base_position + column_index]);
 				other_value_type = column_data->GetResolvedValueType(other_value_type);
 
-				dist_accum += dist_params.ComputeDistanceTermRegular(target_values[i], other_value, target_value_types[i], other_value_type, i);
+				dist_accum += dist_params.ComputeDistanceTermRegular(
+					target_values[i], other_value, target_value_types[i], other_value_type, i, high_accuracy);
 			}
 		}
 
-		double dist = dist_params.InverseExponentiateDistance(dist_accum);
+		double dist = dist_params.InverseExponentiateDistance(dist_accum, high_accuracy);
 		return dist;
 	}
 
@@ -710,23 +711,26 @@ protected:
 	//assumes that null values have already been taken care of for nominals
 	__forceinline double ComputeDistanceTermNonMatch(GeneralizedDistance &dist_params, std::vector<size_t> &target_label_indices,
 		std::vector<EvaluableNodeImmediateValue> &target_values, std::vector<EvaluableNodeImmediateValueType> &target_value_types,
-		size_t entity_index, size_t query_feature_index)
+		size_t entity_index, size_t query_feature_index, bool high_accuracy)
 	{
 		switch(dist_params.featureParams[query_feature_index].effectiveFeatureType)
 		{
-		case GeneralizedDistance::EFDT_NOMINAL:
-			return dist_params.ComputeDistanceTermNominalNonMatch(query_feature_index);
+		case GeneralizedDistance::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED:
+			return dist_params.ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(query_feature_index, high_accuracy);
 
 		case GeneralizedDistance::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC:
 		{
 			const size_t column_index = target_label_indices[query_feature_index];
-			return dist_params.ComputeDistanceTermNonNominalNonCyclicOneNonNullRegular(target_values[query_feature_index].number - GetValue(entity_index, column_index).number, query_feature_index);
+			return dist_params.ComputeDistanceTermNonNominalNonCyclicOneNonNullRegular(
+				target_values[query_feature_index].number - GetValue(entity_index, column_index).number,
+				query_feature_index, high_accuracy);
 		}
 
 		case GeneralizedDistance::EFDT_VALUES_UNIVERSALLY_PRECOMPUTED:
 		{
 			const size_t column_index = target_label_indices[query_feature_index];
-			return dist_params.ComputeDistanceTermNumberInterned(GetValue(entity_index, column_index).indirectionIndex, query_feature_index);
+			return dist_params.ComputeDistanceTermNumberInternedPrecomputed(
+				GetValue(entity_index, column_index).indirectionIndex, query_feature_index, high_accuracy);
 		}
 
 		case GeneralizedDistance::EFDT_CONTINUOUS_NUMERIC:
@@ -734,9 +738,11 @@ protected:
 			const size_t column_index = target_label_indices[query_feature_index];
 			auto &column_data = columnData[column_index];
 			if(column_data->numberIndices.contains(entity_index))
-				return dist_params.ComputeDistanceTermNonNominalNonCyclicOneNonNullRegular(target_values[query_feature_index].number - GetValue(entity_index, column_index).number, query_feature_index);
+				return dist_params.ComputeDistanceTermNonNominalNonCyclicOneNonNullRegular(
+					target_values[query_feature_index].number - GetValue(entity_index, column_index).number,
+					query_feature_index, high_accuracy);
 			else
-				return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index);
+				return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
 		}
 
 		case GeneralizedDistance::EFDT_CONTINUOUS_NUMERIC_CYCLIC:
@@ -744,9 +750,11 @@ protected:
 			const size_t column_index = target_label_indices[query_feature_index];
 			auto &column_data = columnData[column_index];
 			if(column_data->numberIndices.contains(entity_index))
-				return dist_params.ComputeDistanceTermNonNominalOneNonNullRegular(target_values[query_feature_index].number - GetValue(entity_index, column_index).number, query_feature_index);
+				return dist_params.ComputeDistanceTermNonNominalOneNonNullRegular(
+					target_values[query_feature_index].number - GetValue(entity_index, column_index).number,
+					query_feature_index, high_accuracy);
 			else
-				return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index);
+				return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
 		}
 
 		case GeneralizedDistance::EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED:
@@ -754,9 +762,10 @@ protected:
 			const size_t column_index = target_label_indices[query_feature_index];
 			auto &column_data = columnData[column_index];
 			if(column_data->numberIndices.contains(entity_index))
-				return dist_params.ComputeDistanceTermNumberInterned(GetValue(entity_index, column_index).indirectionIndex, query_feature_index);
+				return dist_params.ComputeDistanceTermNumberInternedPrecomputed(
+					GetValue(entity_index, column_index).indirectionIndex, query_feature_index, high_accuracy);
 			else
-				return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index);
+				return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
 		}
 
 		default: //GeneralizedDistance::EFDT_CONTINUOUS_STRING or GeneralizedDistance::EFDT_CONTINUOUS_CODE
@@ -766,7 +775,9 @@ protected:
 			auto other_value_type = column_data->GetIndexValueType(entity_index);
 			auto other_value = column_data->GetResolvedValue(other_value_type, GetValue(entity_index, column_index));
 
-			return dist_params.ComputeDistanceTermRegular(target_values[query_feature_index], other_value, target_value_types[query_feature_index], other_value_type, query_feature_index);
+			return dist_params.ComputeDistanceTermRegular(
+				target_values[query_feature_index], other_value, target_value_types[query_feature_index], other_value_type,
+				query_feature_index, high_accuracy);
 		}
 		}
 	}
@@ -777,7 +788,7 @@ protected:
 	//assumes that all features that are exact matches have already been computed
 	__forceinline double ResolveDistanceToNonMatchTargetValues(GeneralizedDistance &dist_params, std::vector<size_t> &target_label_indices,
 		std::vector<EvaluableNodeImmediateValue> &target_values, std::vector<EvaluableNodeImmediateValueType> &target_value_types,
-		PartialSumCollection &partial_sums, size_t entity_index, size_t num_target_labels)
+		PartialSumCollection &partial_sums, size_t entity_index, size_t num_target_labels, bool high_accuracy)
 	{
 		//calculate full non-exponentiated Minkowski distance to the target
 		double distance = partial_sums.GetSum(entity_index);
@@ -789,7 +800,7 @@ protected:
 
 			size_t query_feature_index = *it;
 			distance += ComputeDistanceTermNonMatch(dist_params, target_label_indices, target_values, target_value_types,
-				entity_index, query_feature_index);
+				entity_index, query_feature_index, high_accuracy);
 		}
 
 		return distance;
@@ -804,7 +815,7 @@ protected:
 	__forceinline std::pair<bool, double> ResolveDistanceToNonMatchTargetValues(GeneralizedDistance &dist_params, std::vector<size_t> &target_label_indices,
 		std::vector<EvaluableNodeImmediateValue> &target_values, std::vector<EvaluableNodeImmediateValueType> &target_value_types,
 		PartialSumCollection &partial_sums, size_t entity_index, std::vector<double> &min_distance_by_unpopulated_count, size_t num_features,
-		double reject_distance, std::vector<double> &min_unpopulated_distances)
+		double reject_distance, std::vector<double> &min_unpopulated_distances, bool high_accuracy)
 	{
 		auto [num_calculated_features, distance] = partial_sums.GetNumFilledAndSum(entity_index);
 
@@ -831,7 +842,7 @@ protected:
 
 			const size_t query_feature_index = *it;
 			distance += ComputeDistanceTermNonMatch(dist_params, target_label_indices, target_values, target_value_types,
-				entity_index, query_feature_index);
+				entity_index, query_feature_index, high_accuracy);
 
 			//break out of the loop before the iterator is incremented to save a few cycles
 			//do this via logic to minimize the number of branches
@@ -864,7 +875,7 @@ protected:
 			target_value_types.push_back(position_value_type);
 
 			if(feature_type == GeneralizedDistance::FDT_NOMINAL)
-				effective_feature_type = GeneralizedDistance::EFDT_NOMINAL;
+				effective_feature_type = GeneralizedDistance::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED;
 			else if(feature_type == GeneralizedDistance::FDT_CONTINUOUS_STRING)
 				effective_feature_type = GeneralizedDistance::EFDT_CONTINUOUS_STRING;
 			else if(feature_type == GeneralizedDistance::FDT_CONTINUOUS_CODE)
@@ -978,11 +989,11 @@ protected:
 		sorted_results.clear();
 		sorted_results.SetStream(rand_stream);
 
-		dist_params.SetHighAccuracy(dist_params.highAccuracy || dist_params.recomputeAccurateDistances);
+		bool high_accuracy = (dist_params.highAccuracy || dist_params.recomputeAccurateDistances);
 
 		for(auto index : valid_indices)
 		{
-			double distance = GetDistanceBetween(dist_params, target_values, target_value_types, target_column_indices, index);
+			double distance = GetDistanceBetween(dist_params, target_values, target_value_types, target_column_indices, index, high_accuracy);
 			distances_out.emplace_back(distance, index);
 		}
 

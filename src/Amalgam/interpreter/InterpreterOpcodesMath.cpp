@@ -1109,7 +1109,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 		dist_params.ComputeAndStoreUncertaintyDistanceTerms(i);
 	}
 	
-	double value = dist_params.ComputeMinkowskiDistance(location, location_types, origin, origin_types);
+	double value = dist_params.ComputeMinkowskiDistance(location, location_types, origin, origin_types, true);
 
 	//free these after computation in case they had any code being used/referenced in the distance
 	evaluableNodeManager->FreeNodeTreeIfPossible(location_node);

@@ -192,10 +192,10 @@ var data = [
 	},
 
 	{
-		"parameter" : "set_digits number value [number base] [list of number digits] [number start_digit] [number end_digit] [bool relative_to_zero]",
+		"parameter" : "set_digits number value [number base] [list of number or null digits] [number start_digit] [number end_digit] [bool relative_to_zero]",
 		"output" : "number",
 		"new value" : "new",
-		"description" : "Evaluates to a number having each of the values in the list of digits replace each of the relative digits in value for the given base.  If base is omitted, 10 is the default.  The parameters start_digit and end_digit can be used to get a specific set of digits, but can also be infinite or null to catch all the digits on one side of the number.  The interpretation of start_digit and end_digit are with respect to relative_to_zero, which defaults to true.  If relative_to_zero is true, then the digits are indexed from their distance to zero, such as \"5 4 3 2 1 0 . -1 -2\".  If relative_to_zero is false, then the digits are indexed from their most significant digit, such as \"0 1 2 3 4 5 . 6  7\".  The default values of start_digit and end_digit are the most and least significant digits respectively.",
+		"description" : "Evaluates to a number having each of the values in the list of digits replace each of the relative digits in value for the given base.  If a digit is null in digits, then that digit is not set.  If base is omitted, 10 is the default.  The parameters start_digit and end_digit can be used to get a specific set of digits, but can also be infinite or null to catch all the digits on one side of the number.  The interpretation of start_digit and end_digit are with respect to relative_to_zero, which defaults to true.  If relative_to_zero is true, then the digits are indexed from their distance to zero, such as \"5 4 3 2 1 0 . -1 -2\".  If relative_to_zero is false, then the digits are indexed from their most significant digit, such as \"0 1 2 3 4 5 . 6  7\".  The default values of start_digit and end_digit are the most and least significant digits respectively.",
 		"example" : "(print (set_digits 16 8 (list 1 1)))\n(print (get_digits (set_digits 1234567.8 10 (list 1 0 1 0) 2 5 (false)) 10 2 5 (false)))"
 	},
 

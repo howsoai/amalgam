@@ -16,15 +16,44 @@
 class SBFDSColumnData
 {
 public:
+
+	struct ValueEntry
+	{
+		//indicates the column does not use indices
+		static constexpr size_t NO_INDEX = std::numeric_limits<size_t>::max();
+		//nan value is always the 0th index
+		static constexpr size_t NAN_INDEX = 0;
+
+		//if empty, initialize to invalid index
+		ValueEntry()
+			: value(), indicesWithValue(),
+			valueInternIndex(NO_INDEX)
+		{	}
+
+		ValueEntry(double number_value, size_t intern_index = NO_INDEX)
+			: value(number_value), indicesWithValue(),
+			valueInternIndex(intern_index)
+		{	}
+
+		ValueEntry(StringInternPool::StringID sid_value, size_t intern_index = NO_INDEX)
+			: value(sid_value), indicesWithValue(),
+			valueInternIndex(intern_index)
+		{	}
+
+		ValueEntry(ValueEntry &ve)
+			: value(ve.value), indicesWithValue(ve.indicesWithValue), valueInternIndex(ve.valueInternIndex)
+		{	}
+
+		EvaluableNodeImmediateValue value;
+		SortedIntegerSet indicesWithValue;
+		size_t valueInternIndex;
+	};
+
 	//column needs to be named when it is created
 	inline SBFDSColumnData(StringInternPool::StringID sid)
-		: stringId(sid)
-	{	
-		indexWithLongestString = 0;
-		longestStringLength = 0;
-		indexWithLargestCode = 0;
-		largestCodeSize = 0;
-	}
+		: stringId(sid), indexWithLongestString(0), longestStringLength(0),
+		indexWithLargestCode(0), largestCodeSize(0), numberValuesInterned(false)
+	{	}
 
 	//like InsertIndexValue, but used only for building the column data from an empty column
 	//this function must be called on each index in ascending order; for example, index 2 must be called after index 1
@@ -101,16 +130,16 @@ public:
 			}
 		}
 
-		sortedNumberValueIndexPairs.reserve(num_uniques);
+		sortedNumberValueEntries.reserve(num_uniques);
 		numberIndices.ReserveNumIntegers(index_values.back().reference + 1);
 
 		for(auto &index_value : index_values)
 		{
 			//if don't have the right bucket, then need to create one
-			if(sortedNumberValueIndexPairs.size() == 0 || sortedNumberValueIndexPairs.back().first != index_value.distance)
-				sortedNumberValueIndexPairs.emplace_back(index_value.distance, std::make_unique<SortedIntegerSet>());
+			if(sortedNumberValueEntries.size() == 0 || sortedNumberValueEntries.back()->value.number != index_value.distance)
+				sortedNumberValueEntries.emplace_back(std::make_unique<ValueEntry>(index_value.distance));
 
-			sortedNumberValueIndexPairs.back().second->InsertNewLargestInteger(index_value.reference);
+			sortedNumberValueEntries.back()->indicesWithValue.InsertNewLargestInteger(index_value.reference);
 			numberIndices.insert(index_value.reference);
 		}
 	}
@@ -119,7 +148,12 @@ public:
 	__forceinline EvaluableNodeImmediateValueType GetIndexValueType(size_t index)
 	{
 		if(numberIndices.contains(index))
+		{
+			if(numberValuesInterned)
+				return ENIVT_NUMBER_INDIRECTION_INDEX;
 			return ENIVT_NUMBER;
+		}
+
 		if(stringIdIndices.contains(index))
 			return ENIVT_STRING_ID;
 		if(nullIndices.contains(index))
@@ -129,69 +163,342 @@ public:
 		return ENIVT_CODE;
 	}
 
+	//returns the value type, performing any resolution for intern lookups
+	static __forceinline EvaluableNodeImmediateValueType GetResolvedValueType(EvaluableNodeImmediateValueType value_type)
+	{
+		if(value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
+			return ENIVT_NUMBER;
+		return value_type;
+	}
+
+	//returns the value type that represents the values stored in this column, performing the reverse of any resolution for intern lookups
+	__forceinline EvaluableNodeImmediateValueType GetUnresolvedValueType(EvaluableNodeImmediateValueType value_type)
+	{
+		if(value_type == ENIVT_NUMBER && numberValuesInterned)
+			return ENIVT_NUMBER_INDIRECTION_INDEX;
+		return value_type;
+	}
+
+	//returns the value performing any intern lookup if necessary
+	__forceinline EvaluableNodeImmediateValue GetResolvedValue(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value)
+	{
+		if(value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
+			return EvaluableNodeImmediateValue(internedNumberIndexToNumberValue[value.indirectionIndex]);
+		return value;
+	}
+
 	//moves index from being associated with key old_value to key new_value
-	void ChangeIndexValue(EvaluableNodeImmediateValue old_value, EvaluableNodeImmediateValueType new_value_type, EvaluableNodeImmediateValue new_value, size_t index)
+	//returns the value that should be used to reference the value, which may be an index
+	//depending on the state of the column data
+	EvaluableNodeImmediateValue ChangeIndexValue(EvaluableNodeImmediateValueType old_value_type, EvaluableNodeImmediateValue old_value,
+		EvaluableNodeImmediateValueType new_value_type, EvaluableNodeImmediateValue new_value, size_t index)
 	{
 		//if new one is invalid, can quickly delete or return
 		if(new_value_type == ENIVT_NOT_EXIST)
 		{
 			if(!invalidIndices.contains(index))
 			{
-				DeleteIndexValue(old_value, index);
+				DeleteIndexValue(old_value_type, old_value, index);
 				invalidIndices.insert(index);
 			}
-			return;
+
+			if(numberValuesInterned)
+				return EvaluableNodeImmediateValue(ValueEntry::NAN_INDEX);
+			else
+				return EvaluableNodeImmediateValue();
+		}
+
+		//if the types are the same, some shortcuts may apply
+		//note that if the values match types and match resolved values, the old_value should be returned
+		//because it is already in the correct storage format for the column
+		if(old_value_type == new_value_type)
+		{
+			if(old_value_type == ENIVT_NULL)
+				return old_value;
+
+			if(old_value_type == ENIVT_NUMBER)
+			{
+				double old_number_value = GetResolvedValue(old_value_type, old_value).number;
+				double new_number_value = GetResolvedValue(new_value_type, new_value).number;
+				if(EqualIncludingNaN(old_number_value, new_number_value))
+					return old_value;
+
+				//if made it here, then at least one of the values is not a NaN
+				//if one value is a NaN, just insert or delete as regular since there's little to be saved
+				if(FastIsNaN(old_number_value))
+				{
+					nanIndices.erase(index);
+					return InsertIndexValue(new_value_type, new_value, index);
+				}
+
+				if(FastIsNaN(new_number_value))
+				{
+					DeleteIndexValue(old_value_type, old_value, index);
+					nanIndices.insert(index);
+
+					if(numberValuesInterned)
+						return EvaluableNodeImmediateValue(ValueEntry::NAN_INDEX);
+					else
+						return EvaluableNodeImmediateValue(std::numeric_limits<double>::quiet_NaN());
+				}
+
+				//if the value already exists, then put the index in the list
+				//but return the lower bound if not found so don't have to search a second time
+				//need to search the old value before inserting, as FindExactIndexForValue is fragile a placeholder empty entry
+				auto [new_value_index, new_exact_index_found] = FindExactIndexForValue(new_number_value, true);
+				auto [old_value_index, old_exact_index_found] = FindExactIndexForValue(old_number_value, true);
+
+				if(old_exact_index_found)
+				{
+					//if there are multiple entries for this number, just move the id
+					if(sortedNumberValueEntries[old_value_index]->indicesWithValue.size() > 1)
+					{
+						//erase with old_value_index first so don't need to update index
+						sortedNumberValueEntries[old_value_index]->indicesWithValue.erase(index);
+
+						if(!new_exact_index_found)
+						{
+							sortedNumberValueEntries.emplace(sortedNumberValueEntries.begin() + new_value_index, std::make_unique<ValueEntry>(new_number_value));
+							InsertFirstIndexIntoNumberValueEntry(index, new_value_index);
+						}
+						else //just insert
+						{
+							sortedNumberValueEntries[new_value_index]->indicesWithValue.insert(index);
+						}
+					}
+					else //it's the last old_number_entry
+					{
+						if(!new_exact_index_found)
+						{
+							//remove old value and update to new
+							std::unique_ptr<ValueEntry> new_value_entry = std::move(sortedNumberValueEntries[old_value_index]);
+							new_value_entry->value.number = new_number_value;
+
+							//move the other values out of the way
+							if(old_number_value < new_number_value)
+							{
+								for(size_t i = old_value_index; i + 1 < new_value_index; i++)
+									sortedNumberValueEntries[i] = std::move(sortedNumberValueEntries[i + 1]);
+
+								new_value_index--;
+							}
+							else
+							{
+								for(size_t i = old_value_index; i > new_value_index; i--)
+									sortedNumberValueEntries[i] = std::move(sortedNumberValueEntries[i - 1]);
+							}
+
+							//move new value in to empty slot created
+							sortedNumberValueEntries[new_value_index] = std::move(new_value_entry);
+						}
+						else //already has an entry for the new value, just delete as normal
+						{
+							sortedNumberValueEntries[new_value_index]->indicesWithValue.insert(index);
+							DeleteNumberValueEntry(old_value_index);
+						}
+					}
+				}
+				else //shouldn't make it here, but ensure integrity just in case
+				{
+					//insert new value in correct position
+					sortedNumberValueEntries.emplace(sortedNumberValueEntries.begin() + new_value_index,
+						std::make_unique<ValueEntry>(new_number_value));
+
+					InsertFirstIndexIntoNumberValueEntry(index, new_value_index);
+				}
+
+				if(numberValuesInterned)
+					return EvaluableNodeImmediateValue(new_value_index);
+				else
+					return EvaluableNodeImmediateValue(new_value);
+			}
+
+			if(old_value_type == ENIVT_STRING_ID)
+			{
+				if(old_value.stringID == new_value.stringID)
+					return old_value;
+
+				//try to insert the new value if not already there
+				auto [new_id_entry, inserted] = stringIdValueToIndices.emplace(new_value.stringID, nullptr);
+
+				auto old_id_entry = stringIdValueToIndices.find(old_value.stringID);
+				if(old_id_entry != end(stringIdValueToIndices))
+				{
+					//if there are multiple entries for this string, just move the id
+					if(old_id_entry->second->size() > 1)
+					{
+						if(inserted)
+							new_id_entry->second = std::make_unique<SortedIntegerSet>();
+
+						new_id_entry->second->insert(index);
+						old_id_entry->second->erase(index);
+					}
+					else //it's the last old_id_entry
+					{
+						//put the SortedIntegerSet in the new value or move the container
+						if(inserted)
+							new_id_entry->second = std::move(old_id_entry->second);
+						else
+							new_id_entry->second->insert(index);
+
+						//erase after no longer need inserted_id_entry, as it may be invalidated
+						stringIdValueToIndices.erase(old_id_entry);
+					}
+				}
+				else if(inserted) //shouldn't make it here, but ensure integrity just in case
+				{
+					new_id_entry->second = std::make_unique<SortedIntegerSet>();
+					new_id_entry->second->insert(index);
+				}
+
+				//update longest string as appropriate
+				if(index == indexWithLongestString)
+					RecomputeLongestString();
+				else
+					UpdateLongestString(new_value.stringID, index);
+
+				return new_value;
+			}
+
+			if(old_value_type == ENIVT_CODE)
+			{
+				//only early exit if the pointers to the code are exactly the same,
+				// as equivalent code may be garbage collected
+				if(old_value.code == new_value.code)
+					return old_value;
+
+				size_t old_code_size = EvaluableNode::GetDeepSize(old_value.code);
+				size_t new_code_size = EvaluableNode::GetDeepSize(new_value.code);
+
+				//only need to do insert / removal logic if sizes are different
+				if(old_code_size != new_code_size)
+				{
+					auto [new_size_entry, inserted] = valueCodeSizeToIndices.emplace(new_code_size, nullptr);
+
+					auto old_size_entry = valueCodeSizeToIndices.find(old_code_size);
+					if(old_size_entry != end(valueCodeSizeToIndices))
+					{
+						//if there are multiple entries for this string, just move the id
+						if(old_size_entry->second->size() > 1)
+						{
+							if(inserted)
+								new_size_entry->second = std::make_unique<SortedIntegerSet>();
+
+							new_size_entry->second->insert(index);
+							old_size_entry->second->erase(index);
+						}
+						else //it's the last old_size_entry
+						{
+							//put the SortedIntegerSet in the new value or move the container
+							if(inserted)
+								new_size_entry->second = std::move(old_size_entry->second);
+							else
+								new_size_entry->second->insert(index);
+
+							//erase after no longer need inserted_size_entry, as it may be invalidated
+							valueCodeSizeToIndices.erase(old_size_entry);
+						}
+					}
+					else if(inserted) //shouldn't make it here, but ensure integrity just in case
+					{
+						new_size_entry->second = std::make_unique<SortedIntegerSet>();
+						new_size_entry->second->insert(index);
+					}
+				}
+
+				//update longest string as appropriate
+				//see if need to update largest code
+				if(index == indexWithLargestCode)
+					RecomputeLargestCode();
+				else
+					UpdateLargestCode(new_code_size, index);
+
+				return new_value;
+			}
+
+			if(old_value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
+			{
+				if(old_value.indirectionIndex == new_value.indirectionIndex)
+					return old_value;
+			}
 		}
 
 		//delete index at old value
-		DeleteIndexValue(old_value, index);
+		DeleteIndexValue(old_value_type, old_value, index);
 
-		//add index at new value bucket 
-		InsertIndexValue(new_value_type, new_value, index);
+		//add index at new value bucket
+		return InsertIndexValue(new_value_type, new_value, index);
+	}
+
+	//deletes a particular value based on the value_index
+	void DeleteNumberValueEntry(size_t value_index)
+	{
+		if(numberValuesInterned)
+		{
+			size_t value_intern_index = sortedNumberValueEntries[value_index]->valueInternIndex;
+			//if the last entry (off by one, including ValueEntry::NO_INDEX), can just resize
+			if(value_intern_index == internedNumberIndexToNumberValue.size() - 1)
+			{
+				internedNumberIndexToNumberValue.resize(value_intern_index);
+			}
+			else //need to actually erase it
+			{
+				internedNumberIndexToNumberValue[value_intern_index] = std::numeric_limits<double>::quiet_NaN();
+				unusedNumberValueIndices.emplace(value_intern_index);
+			}
+
+			//clear out any unusedNumberValueIndices at the end other than the 0th entry
+			while(internedNumberIndexToNumberValue.size() > 1 && FastIsNaN(internedNumberIndexToNumberValue.back()))
+				internedNumberIndexToNumberValue.pop_back();
+		}
+
+		sortedNumberValueEntries.erase(sortedNumberValueEntries.begin() + value_index);
 	}
 
 	//deletes everything involving the value at the index
-	void DeleteIndexValue(EvaluableNodeImmediateValue value, size_t index)
+	void DeleteIndexValue(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value, size_t index)
 	{
-		if(invalidIndices.EraseAndRetrieve(index))
-			return;
-
-		//if value is null, just need to remove from the appropriate index
-		if(nullIndices.EraseAndRetrieve(index))
-			return;
-
-		if(numberIndices.EraseAndRetrieve(index))
+		switch(value_type)
 		{
+		case ENIVT_NOT_EXIST:
+			invalidIndices.erase(index);
+			break;
+
+		case ENIVT_NULL:
+			nullIndices.erase(index);
+			break;
+
+		case ENIVT_NUMBER:
+		case ENIVT_NUMBER_INDIRECTION_INDEX:
+			numberIndices.erase(index);
+
 			//remove, and if not a nan, then need to also remove the number
 			if(!nanIndices.EraseAndRetrieve(index))
 			{
+				auto resolved_value = GetResolvedValue(value_type, value);
+
 				//look up value
-				auto [value_index, exact_index_found] = FindExactIndexForValue(value.number);
+				auto [value_index, exact_index_found] = FindExactIndexForValue(resolved_value.number);
 				if(!exact_index_found)
 					return;
 
 				//if the bucket has only one entry, we must delete the entire bucket
-				if(sortedNumberValueIndexPairs[value_index].second->size() == 1)
-				{
-					sortedNumberValueIndexPairs.erase(sortedNumberValueIndexPairs.begin() + value_index);
-				}
+				if(sortedNumberValueEntries[value_index]->indicesWithValue.size() == 1)
+					DeleteNumberValueEntry(value_index);
 				else //else we can just remove the id from the bucket
-				{
-					sortedNumberValueIndexPairs[value_index].second->erase(index);
-				}
+					sortedNumberValueEntries[value_index]->indicesWithValue.erase(index);
 			}
+			break;
 
-			return;
-		}
-
-		if(stringIdIndices.EraseAndRetrieve(index))
+		case ENIVT_STRING_ID:
 		{
+			stringIdIndices.erase(index);
 			auto id_entry = stringIdValueToIndices.find(value.stringID);
 			if(id_entry != end(stringIdValueToIndices))
 			{
 				auto &entities = *(id_entry->second);
 				entities.erase(index);
-				
+
 				//if no more entries have the value, remove it
 				if(entities.size() == 0)
 					stringIdValueToIndices.erase(id_entry);
@@ -199,83 +506,142 @@ public:
 
 			//see if need to compute new longest string
 			if(index == indexWithLongestString)
-			{
-				longestStringLength = 0;
-				//initialize to 0 in case there are no entities with strings
-				indexWithLongestString = 0;
-				for(auto &[s_id, s_entry] : stringIdValueToIndices)
-					UpdateLongestString(s_id, *s_entry->begin());
-			}
+				RecomputeLongestString();
+		}
+		break;
 
-			return;
+		case ENIVT_CODE:
+		{
+			codeIndices.erase(index);
+
+			//find the entities that have the correspending size
+			size_t num_indices = EvaluableNode::GetDeepSize(value.code);
+			auto id_entry = valueCodeSizeToIndices.find(num_indices);
+			if(id_entry == end(valueCodeSizeToIndices))
+				return;
+
+			//remove the entity
+			auto &entities = *(id_entry->second);
+			entities.erase(index);
+
+			if(entities.size() == 0)
+				valueCodeSizeToIndices.erase(id_entry);
+
+			//see if need to update largest code
+			if(index == indexWithLargestCode)
+				RecomputeLargestCode();
+			break;
 		}
 
-		//if made it here, then just remove from a code value type
-		codeIndices.erase(index);
+		default: //shouldn't make it here
+			break;
+		}
+	}
 
-		//find the entities that have the correspending size
-		size_t num_indices = EvaluableNode::GetDeepSize(value.code);
-		auto id_entry = valueCodeSizeToIndices.find(num_indices);
-		if(id_entry == end(valueCodeSizeToIndices))
-			return;
+	//deletes a particular value based on the value_index
+	void InsertFirstIndexIntoNumberValueEntry(size_t index, size_t value_index)
+	{
+		ValueEntry *value_entry = sortedNumberValueEntries[value_index].get();
 
-		//remove the entity
-		auto &entities = *(id_entry->second);
-		entities.erase(index);
-
-		if(entities.size() == 0)
-			valueCodeSizeToIndices.erase(id_entry);
-
-		//see if need to update largest code
-		if(index == indexWithLargestCode)
+		value_entry->indicesWithValue.insert(index);
+		if(numberValuesInterned)
 		{
-			largestCodeSize = 0;
-			//initialize to 0 in case there are no entities with code
-			indexWithLargestCode = 0;
-			for(auto &[size, entry] : valueCodeSizeToIndices)
-				UpdateLargestCode(size, *entry->begin());
+			if(value_entry->valueInternIndex == ValueEntry::NO_INDEX)
+			{
+				//get the highest value 
+				if(unusedNumberValueIndices.size() > 0)
+				{
+					value_entry->valueInternIndex = unusedNumberValueIndices.top();
+
+					//make sure the value is valid
+					if(value_entry->valueInternIndex < sortedNumberValueEntries.size())
+					{
+						unusedNumberValueIndices.pop();
+					}
+					else //not valid, clear queue
+					{
+						unusedNumberValueIndices.clear();
+						//just use a new value, 0-based but leaving a spot open for NAN_INDEX
+						value_entry->valueInternIndex = sortedNumberValueEntries.size();
+					}
+				}
+				else //just use new value of the latest size, 0-based but leaving a spot open for NAN_INDEX
+				{
+					value_entry->valueInternIndex = sortedNumberValueEntries.size();
+				}
+			}
+
+			if(value_entry->valueInternIndex >= internedNumberIndexToNumberValue.size())
+				internedNumberIndexToNumberValue.resize(value_entry->valueInternIndex + 1, std::numeric_limits<double>::quiet_NaN());
+
+			internedNumberIndexToNumberValue[value_entry->valueInternIndex] = value_entry->value.number;
 		}
 	}
 
 	//inserts the value at id
-	void InsertIndexValue(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue &value, size_t index)
+	//returns the value that should be used to reference the value, which may be an index
+	//depending on the state of the column data
+	EvaluableNodeImmediateValue InsertIndexValue(EvaluableNodeImmediateValueType value_type,
+		EvaluableNodeImmediateValue &value, size_t index)
 	{
 		if(value_type == ENIVT_NOT_EXIST)
 		{
 			invalidIndices.insert(index);
-			return;
+
+			if(numberValuesInterned)
+				return EvaluableNodeImmediateValue(ValueEntry::NAN_INDEX);
+			else
+				return value;
 		}
 
 		if(value_type == ENIVT_NULL)
 		{
 			nullIndices.insert(index);
-			return;
+
+			if(numberValuesInterned)
+				return EvaluableNodeImmediateValue(ValueEntry::NAN_INDEX);
+			else
+				return value;
 		}
 
-		if(value_type == ENIVT_NUMBER)
+		if(value_type == ENIVT_NUMBER || value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
 		{
 			numberIndices.insert(index);
 
-			if(FastIsNaN(value.number))
+			double number_value = GetResolvedValue(value_type, value).number;
+			if(FastIsNaN(number_value))
 			{
 				nanIndices.insert(index);
-				return;
+
+				if(numberValuesInterned)
+					return EvaluableNodeImmediateValue(ValueEntry::NAN_INDEX);
+				else
+					return value;
 			}
 			
 			//if the value already exists, then put the index in the list
-			auto [value_index, exact_index_found] = FindExactIndexForValue(value.number);
+			//but return the lower bound if not found so don't have to search a second time
+			auto [value_index, exact_index_found] = FindExactIndexForValue(number_value, true);
 			if(exact_index_found)
 			{
-				sortedNumberValueIndexPairs[value_index].second->insert(index);
-				return;
+				sortedNumberValueEntries[value_index]->indicesWithValue.insert(index);
+
+				if(numberValuesInterned)
+					return EvaluableNodeImmediateValue(sortedNumberValueEntries[value_index]->valueInternIndex);
+				else
+					return value;
 			}
 
 			//insert new value in correct position
-			size_t new_value_index = FindUpperBoundIndexForValue(value.number);
-			auto inserted = sortedNumberValueIndexPairs.emplace(sortedNumberValueIndexPairs.begin() + new_value_index, value.number, std::make_unique<SortedIntegerSet>());
-			inserted->second->insert(index);
+			sortedNumberValueEntries.emplace(sortedNumberValueEntries.begin() + value_index,
+				std::make_unique<ValueEntry>(number_value));
 
-			return;
+			InsertFirstIndexIntoNumberValueEntry(index, value_index);
+
+			if(numberValuesInterned)
+				return sortedNumberValueEntries[value_index]->valueInternIndex;
+			else
+				return value;
 		}
 
 		if(value_type == ENIVT_STRING_ID)
@@ -288,11 +654,10 @@ public:
 				inserted_id_entry->second = std::make_unique<SortedIntegerSet>();
 
 			auto &ids = *(inserted_id_entry->second);
-			
 			ids.insert(index);
 
 			UpdateLongestString(value.stringID, index);
-			return;
+			return value;
 		}
 
 		//value_type == ENIVT_CODE
@@ -309,6 +674,8 @@ public:
 		size_entry->second->insert(index);
 
 		UpdateLargestCode(code_size, index);
+
+		return value;
 	}
 
 	//returns the maximum difference between value and any other value for this column
@@ -317,21 +684,20 @@ public:
 	{
 		switch(feature_params.featureType)
 		{
-		case FDT_NOMINAL:
+		case GeneralizedDistance::FDT_NOMINAL:
 			return 1.0;
 
-		case FDT_CONTINUOUS_NUMERIC:
-		case FDT_CONTINUOUS_UNIVERSALLY_NUMERIC:
-			if(sortedNumberValueIndexPairs.size() <= 1)
+		case GeneralizedDistance::FDT_CONTINUOUS_NUMERIC:
+			if(sortedNumberValueEntries.size() <= 1)
 				return 0.0;
 
-			return sortedNumberValueIndexPairs.back().first - sortedNumberValueIndexPairs[0].first;
+			return sortedNumberValueEntries.back()->value.number - sortedNumberValueEntries[0]->value.number;
 
-		case FDT_CONTINUOUS_NUMERIC_CYCLIC:
+		case GeneralizedDistance::FDT_CONTINUOUS_NUMERIC_CYCLIC:
 			//maximum is the other side of the cycle
 			return feature_params.typeAttributes.maxCyclicDifference / 2;
 
-		case FDT_CONTINUOUS_STRING:
+		case GeneralizedDistance::FDT_CONTINUOUS_STRING:
 			//the max difference is the worst case edit distance, of removing all the characters
 			// and adding all the new ones
 			if(value_type == ENIVT_STRING_ID)
@@ -349,7 +715,7 @@ public:
 				return static_cast<double>(longestStringLength + 1);
 			}
 
-		case FDT_CONTINUOUS_CODE:
+		case GeneralizedDistance::FDT_CONTINUOUS_CODE:
 			if(value_type == ENIVT_CODE)
 				return static_cast<double>(largestCodeSize + EvaluableNode::GetDeepSize(value.code));
 			else if(value_type == ENIVT_NULL)
@@ -370,43 +736,43 @@ public:
 	// .second: true if exact index was found, false otherwise
 	inline std::pair<size_t, bool> FindExactIndexForValue(double value, bool return_index_lower_bound = false)
 	{
-		auto target_iter = std::lower_bound(begin(sortedNumberValueIndexPairs), end(sortedNumberValueIndexPairs), value,
-			[](const auto& value_index_pair, double value)
+		auto target_iter = std::lower_bound(begin(sortedNumberValueEntries), end(sortedNumberValueEntries), value,
+			[](const auto &value_entry, double value)
 			{
-				return value_index_pair.first < value;
+				return value_entry->value.number < value;
 			});
 
-		if ((target_iter == end(sortedNumberValueIndexPairs)) || (target_iter->first != value)) // not exact match
+		if((target_iter == end(sortedNumberValueEntries)) || ((*target_iter)->value.number != value)) // not exact match
 		{
-			return std::make_pair(return_index_lower_bound ? std::distance(begin(sortedNumberValueIndexPairs), target_iter) : -1 , false);
+			return std::make_pair(return_index_lower_bound ? std::distance(begin(sortedNumberValueEntries), target_iter) : -1 , false);
 		}
 
-		return std::make_pair(std::distance(begin(sortedNumberValueIndexPairs), target_iter), true); // exact match
+		return std::make_pair(std::distance(begin(sortedNumberValueEntries), target_iter), true); // exact match
 	}
 
 	//returns the index of the lower bound of value
 	inline size_t FindLowerBoundIndexForValue(double value)
 	{
-		auto target_iter = std::lower_bound(begin(sortedNumberValueIndexPairs), end(sortedNumberValueIndexPairs), value,
-			[](const auto &value_index_pair, double value)
+		auto target_iter = std::lower_bound(begin(sortedNumberValueEntries), end(sortedNumberValueEntries), value,
+			[](const auto &value_entry, double value)
 			{
-				return value_index_pair.first < value;
+				return value_entry->value.number < value;
 			});
-		return std::distance(begin(sortedNumberValueIndexPairs), target_iter);
+		return std::distance(begin(sortedNumberValueEntries), target_iter);
 	}
 
 	//returns the index of the upper bound of value
 	inline size_t FindUpperBoundIndexForValue(double value)
 	{
-		auto target_iter = std::upper_bound(begin(sortedNumberValueIndexPairs), end(sortedNumberValueIndexPairs), value,
-			[](double value, const auto &value_index_pair)
+		auto target_iter = std::upper_bound(begin(sortedNumberValueEntries), end(sortedNumberValueEntries), value,
+			[](double value, const auto &value_entry)
 			{
-				return value < value_index_pair.first;
+				return value < value_entry->value.number;
 			});
-		return std::distance(begin(sortedNumberValueIndexPairs), target_iter);
+		return std::distance(begin(sortedNumberValueEntries), target_iter);
 	}
 
-	//given a value, returns the index at which the value should be inserted into the sortedNumberValueIndexPairs
+	//given a value, returns the index at which the value should be inserted into the sortedNumberValueEntries
 	//returns true for .second when an exact match is found, false otherwise
 	//O(log(n))
 	//cycle_length will take into account whether wrapping around is closer
@@ -416,15 +782,13 @@ public:
 		// returns the closest index (lower_bound) if an exact match is not found
 		auto [value_index, exact_index_found] = FindExactIndexForValue(value, true);
 		if(exact_index_found)
-		{
 			return std::make_pair(value_index, true);
-		}
 
 		//if only have one element (or zero), short circuit code below
-		if(sortedNumberValueIndexPairs.size() <= 1)
+		if(sortedNumberValueEntries.size() <= 1)
 			return std::make_pair(0, false);
 
-		size_t max_valid_index = sortedNumberValueIndexPairs.size() - 1;
+		size_t max_valid_index = sortedNumberValueEntries.size() - 1;
 		size_t target_index = std::min(max_valid_index, value_index); //value_index is lower bound index since no exact match
 
 		//if not cyclic or cyclic and not at the edge
@@ -434,15 +798,15 @@ public:
 			//need to check index again in case not cyclic
 			// return index with the closer difference
 			if(target_index < max_valid_index
-					&& (std::abs(sortedNumberValueIndexPairs[target_index + 1].first - value) < std::abs(sortedNumberValueIndexPairs[target_index].first - value)))
+					&& (std::abs(sortedNumberValueEntries[target_index + 1]->value.number - value) < std::abs(sortedNumberValueEntries[target_index]->value.number - value)))
 				return std::make_pair(target_index + 1, false);
 			else
 				return std::make_pair(target_index, false);
 		}
 		else //cyclic
 		{
-			double dist_to_max_index = std::abs(sortedNumberValueIndexPairs[max_valid_index].first - value);
-			double dist_to_0_index = std::abs(sortedNumberValueIndexPairs[0].first - value);
+			double dist_to_max_index = std::abs(sortedNumberValueEntries[max_valid_index]->value.number - value);
+			double dist_to_0_index = std::abs(sortedNumberValueEntries[0]->value.number - value);
 			size_t other_closest_index;
 
 			if(target_index == 0)
@@ -458,7 +822,7 @@ public:
 				other_closest_index = max_valid_index - 1;
 			}
 
-			double dist_to_other_closest_index = std::abs(sortedNumberValueIndexPairs[other_closest_index].first - value);
+			double dist_to_other_closest_index = std::abs(sortedNumberValueEntries[other_closest_index]->value.number - value);
 			if(dist_to_0_index <= dist_to_other_closest_index && dist_to_0_index <= dist_to_max_index)
 				return std::make_pair(0, false);
 			else if(dist_to_other_closest_index <= dist_to_0_index)
@@ -477,7 +841,7 @@ public:
 		if(value_type == ENIVT_NUMBER)
 		{
 			//there are no ids for this column, so return no results
-			if(sortedNumberValueIndexPairs.size() == 0)
+			if(sortedNumberValueEntries.size() == 0)
 				return;
 
 			//make a copy because passed by reference, and may need to change value for logic below
@@ -534,19 +898,19 @@ public:
 				if(between_values)
 				{
 					size_t index = value_index;
-					out.InsertInBatch(*sortedNumberValueIndexPairs[index].second);
+					out.InsertInBatch(sortedNumberValueEntries[index]->indicesWithValue);
 				}
 				else //if not within, populate with all indices not equal to value
 				{
 					//include nans
 					nanIndices.CopyTo(out);
 
-					for(auto &[bucket_val, bucket] : sortedNumberValueIndexPairs)
+					for(auto &value_entry : sortedNumberValueEntries)
 					{
-						if(bucket_val == low_number)
+						if(value_entry->value.number == low_number)
 							continue;
 
-						out.InsertInBatch(*bucket);
+						out.InsertInBatch(value_entry->indicesWithValue);
 					}
 				}
 
@@ -554,27 +918,27 @@ public:
 			}
 
 			size_t start_index = (low_number == -std::numeric_limits<double>::infinity()) ? 0 : FindLowerBoundIndexForValue(low_number);
-			size_t end_index = (high_number == std::numeric_limits<double>::infinity()) ? sortedNumberValueIndexPairs.size() : FindUpperBoundIndexForValue(high_number);
+			size_t end_index = (high_number == std::numeric_limits<double>::infinity()) ? sortedNumberValueEntries.size() : FindUpperBoundIndexForValue(high_number);
 
 			if(between_values)
 			{
 				//insert everything between the two indices
 				for(size_t i = start_index; i < end_index; i++)
-					out.InsertInBatch(*sortedNumberValueIndexPairs[i].second);
+					out.InsertInBatch(sortedNumberValueEntries[i]->indicesWithValue);
 
 				//include end_index if value matches
-				if(end_index < sortedNumberValueIndexPairs.size() && sortedNumberValueIndexPairs[end_index].first == high_number)
-					out.InsertInBatch(*sortedNumberValueIndexPairs[end_index].second);
+				if(end_index < sortedNumberValueEntries.size() && sortedNumberValueEntries[end_index]->value.number == high_number)
+					out.InsertInBatch(sortedNumberValueEntries[end_index]->indicesWithValue);
 			}
 			else //not between_values
 			{
 				//insert everything left of range
 				for(size_t i = 0; i < start_index; i++)
-					out.InsertInBatch(*sortedNumberValueIndexPairs[i].second);
+					out.InsertInBatch(sortedNumberValueEntries[i]->indicesWithValue);
 
 				//insert everything right of range
-				for(size_t i = end_index; i < sortedNumberValueIndexPairs.size(); i++)
-					out.InsertInBatch(*sortedNumberValueIndexPairs[i].second);
+				for(size_t i = end_index; i < sortedNumberValueEntries.size(); i++)
+					out.InsertInBatch(sortedNumberValueEntries[i]->indicesWithValue);
 			}
 
 		}
@@ -636,7 +1000,7 @@ public:
 
 			auto [value_index, exact_index_found] = FindExactIndexForValue(value.number);
 			if(exact_index_found)
-				out.InsertInBatch(*sortedNumberValueIndexPairs[value_index].second);
+				out.InsertInBatch(sortedNumberValueEntries[value_index]->indicesWithValue);
 		}
 		else if(value_type == ENIVT_STRING_ID)
 		{
@@ -654,16 +1018,16 @@ public:
 		if(value_type == ENIVT_NUMBER)
 		{
 			//there are no ids for this column, so return no results
-			if(sortedNumberValueIndexPairs.size() == 0)
+			if(sortedNumberValueEntries.size() == 0)
 				return;
 
 			//search left to right for max (bucket 0 is largest) or right to left for min
-			int64_t value_index = find_max ? sortedNumberValueIndexPairs.size() - 1 : 0;
+			int64_t value_index = find_max ? sortedNumberValueEntries.size() - 1 : 0;
 
-			while(value_index < static_cast<int64_t>(sortedNumberValueIndexPairs.size()) && value_index >= 0)
+			while(value_index < static_cast<int64_t>(sortedNumberValueEntries.size()) && value_index >= 0)
 			{
 				//add each index to the out indices and optionally output compute results
-				for(const auto &index : *sortedNumberValueIndexPairs[value_index].second)
+				for(const auto &index : sortedNumberValueEntries[value_index]->indicesWithValue)
 				{
 					if(indices_to_consider != nullptr && !indices_to_consider->contains(index))
 						continue;
@@ -716,6 +1080,56 @@ public:
 		}
 	}
 
+	//returns true if switching to number interning would be expected to yield better results
+	// than number values given the current data
+	inline bool AreNumberInternsPreferredToValues()
+	{
+		//use heuristic of sqrt number of values compared to num unique values
+		// (but computed with a multiply instead of sqrt)
+		size_t num_unique_values = sortedNumberValueEntries.size();
+		return (num_unique_values * num_unique_values <= numberIndices.size());
+	}
+
+	//returns true if switching to number values would be expected to yield better results
+	// than number interning given the current data
+	inline bool AreNumberValuesPreferredToInterns()
+	{
+		//use heuristic of sqrt number of values compared to num unique values
+		// (but computed with a multiply instead of sqrt)
+		//round up to reduce flipping back and forth
+		size_t num_unique_values = sortedNumberValueEntries.size();
+		return (num_unique_values * num_unique_values > numberIndices.size() - num_unique_values);
+	}
+
+	//clears number intern caches and changes state to not perform interning for numbers
+	void ConvertNumberInternsToValues()
+	{
+		if(!numberValuesInterned)
+			return;
+
+		internedNumberIndexToNumberValue.clear();
+		unusedNumberValueIndices.clear();
+		numberValuesInterned = false;
+	}
+
+	//initializes and sets up number value interning caches and changes state to perform interning for numbers
+	void ConvertNumberValuesToInterns()
+	{
+		if(numberValuesInterned)
+			return;
+
+		internedNumberIndexToNumberValue.resize(sortedNumberValueEntries.size() + 1);
+		internedNumberIndexToNumberValue[0] = std::numeric_limits<double>::quiet_NaN();
+		for(size_t i = 0; i < sortedNumberValueEntries.size(); i++)
+		{
+			auto &value_entry = sortedNumberValueEntries[i];
+			value_entry->valueInternIndex = i + 1;
+			internedNumberIndexToNumberValue[i + 1] = value_entry->value.number;
+		}
+
+		numberValuesInterned = true;
+	}
+
 protected:
 
 	//updates longestStringLength and indexWithLongestString based on parameters
@@ -730,6 +1144,16 @@ protected:
 		}
 	}
 
+	//should be called when the longest string is invalidated
+	inline void RecomputeLongestString()
+	{
+		longestStringLength = 0;
+		//initialize to 0 in case there are no entities with strings
+		indexWithLongestString = 0;
+		for(auto &[s_id, s_entry] : stringIdValueToIndices)
+			UpdateLongestString(s_id, *s_entry->begin());
+	}
+
 	//updates largestCodeSize and indexWithLargestCode based on parameters
 	inline void UpdateLargestCode(size_t code_size, size_t index)
 	{
@@ -740,13 +1164,23 @@ protected:
 		}
 	}
 
+	//should be called when the largest code is invalidated
+	inline void RecomputeLargestCode()
+	{
+		largestCodeSize = 0;
+		//initialize to 0 in case there are no entities with code
+		indexWithLargestCode = 0;
+		for(auto &[size, entry] : valueCodeSizeToIndices)
+			UpdateLargestCode(size, *entry->begin());
+	}
+
 public:
 
 	//name of the column
 	StringInternPool::StringID stringId;
 
 	//stores values in sorted order and the entities that have each value
-	std::vector< std::pair<double, std::unique_ptr<SortedIntegerSet>> > sortedNumberValueIndexPairs;
+	std::vector<std::unique_ptr<ValueEntry>> sortedNumberValueEntries;
 
 	//maps a string id to a vector of indices that have that string
 	CompactHashMap<StringInternPool::StringID, std::unique_ptr<SortedIntegerSet>> stringIdValueToIndices;
@@ -783,4 +1217,16 @@ public:
 	size_t indexWithLargestCode;
 	//the largest code size for this label
 	size_t largestCodeSize;
+
+	//if numberValuesInterned is true, then contains an index of each value to its location in sortedNumberValueEntries
+	//if a given index isn't used, then it will contain the maximum value for the index
+	//the 0th index is reserved for NaN, regardless of whether NaN appears in the data
+	std::vector<double> internedNumberIndexToNumberValue;
+
+	//unused / free indices in internedNumberIndexToNumberValue to make adding and removing new values efficient
+	//always want to fetch the lowest index to keep the interned NumberIndexToNumberValue small
+	FlexiblePriorityQueue<size_t, std::vector<size_t>, std::greater<size_t>> unusedNumberValueIndices;
+
+	//if true, then the indices of the values should be used and internedNumberIndexToValue populated
+	bool numberValuesInterned;
 };

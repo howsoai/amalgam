@@ -45,17 +45,18 @@ jobs:
           PR_ITERATION=${{ github.run_attempt }}.${{ github.run_number }}
           echo "version=$(echo ${{ steps.next-semvers.outputs.patch }}-alpha+PR.${PR_NUMBER}.${PR_ITERATION})" >> $GITHUB_OUTPUT
 
-  build-test-package:
+  build:
     needs: ['set-pr-version']
-    uses: "./.github/workflows/build-test-package.yml"
+    uses: "./.github/workflows/build.yml"
     secrets: inherit
     with:
       version: ${{ needs.set-pr-version.outputs.version }}
+      build-type: "PR"
 
   # This job is here to have only one final step to add for "Status Checks"
-  # in GitHub, instead of adding every leaf test from 'build-test-package'
+  # in GitHub, instead of adding every leaf test from 'build'
   final-check:
-    needs: ['build-test-package']
+    needs: ['build']
     if: always() && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled'))
     runs-on: ubuntu-latest
     steps:

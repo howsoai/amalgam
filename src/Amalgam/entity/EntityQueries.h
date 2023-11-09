@@ -32,7 +32,7 @@ public:
 
 	//computes the distance measure of the condition
 	// returns NaN if invalid
-	double GetConditionDistanceMeasure(Entity *e);
+	double GetConditionDistanceMeasure(Entity *e, bool high_accuracy);
 
 	EvaluableNodeReference GetMatchingEntities(Entity *container, std::vector<Entity *> &matching_entities,
 		bool from_all_entities, EvaluableNodeManager *enm);

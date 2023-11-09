@@ -1,4 +1,28 @@
 (seq
-	;(print (format (list (assoc a 3 b 4) (assoc c "c" d (null))) "code" "yaml") "\n")
-	(print (format (true) "code" "yaml") "\n")
+ (create_entities "BoxConvictionTestContainer" (null) )
+
+ (create_entities (list "BoxConvictionTestContainer" "vert0") (lambda
+  (null ##x 0 ##y 0 ##weight 2)
+ ) )
+
+ (create_entities (list "BoxConvictionTestContainer" "vert1") (lambda
+  (null ##x 0 ##y 1 ##weight 1)
+ ) )
+
+ (create_entities (list "BoxConvictionTestContainer" "vert2") (lambda
+  (null ##x 1 ##y 0 ##weight 1)
+ ) )
+
+ (create_entities (list "BoxConvictionTestContainer" "vert3") (lambda
+  (null ##x 2 ##y 1 ##weight 1)
+ ) )
+
+  ;should print:
+  ;dc: (list
+	;(list "vert0" "vert1" "vert2" "vert3")
+	;(list 1 1 1 1.4142135623730951)
+  ;)
+  (print "dc: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
+  (compute_entity_distance_contributions 1 (list "x" "y") (list "vert3") (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise" (true))
+ )))
 )

@@ -101,10 +101,7 @@ public:
 	__forceinline bool contains(size_t id)
 	{
 		auto location = std::lower_bound(std::begin(integers), std::end(integers), id);
-		if(location == std::end(integers))
-			return false;
-
-		return id == *location;
+		return (location != std::end(integers) && id == *location);
 	}
 
 	//returns true if the id exists in the set
@@ -953,7 +950,8 @@ public:
 	}
 
 	//Sets this to the BitArrayIntegerSet to the set that contains only elements that it and another jointly contain
-	void Intersect(BitArrayIntegerSet &other)
+	// does NOT update the number of elements, so UpdateNumElements must be called
+	void IntersectInBatch(BitArrayIntegerSet &other)
 	{
 		//if no intersection, then just clear and exit
 		if(numElements == 0 || other.numElements == 0)
@@ -974,6 +972,12 @@ public:
 			bitBucket[i] = 0;
 
 		TrimBack();
+	}
+
+	//Sets this to the BitArrayIntegerSet to the set that contains only elements that it and another jointly contain
+	inline void Intersect(BitArrayIntegerSet &other)
+	{
+		IntersectInBatch(other);
 		UpdateNumElements();
 	}
 
@@ -1495,12 +1499,22 @@ public:
 	}
 
 	//removs all elements of this container from other
-	void EraseTo(BitArrayIntegerSet &other)
+	inline void EraseTo(BitArrayIntegerSet &other, bool in_batch = false)
 	{
 		if(isSisContainer)
-			other.erase(sisContainer);
+		{
+			if(in_batch)
+				other.EraseInBatch(sisContainer);
+			else
+				other.erase(sisContainer);
+		}
 		else
-			other.erase(baisContainer);
+		{
+			if(in_batch)
+				other.EraseInBatch(baisContainer);
+			else
+				other.erase(baisContainer);
+		}
 	}
 
 	//removes all elements contained by other, intended for calling in a batch
@@ -1663,12 +1677,22 @@ public:
 	}
 
 	//sets other to the set that contains only elements that it and other jointly contain
-	inline void IntersectTo(BitArrayIntegerSet &other)
+	inline void IntersectTo(BitArrayIntegerSet &other, bool in_batch = false)
 	{
 		if(IsSisContainer())
-			other.Intersect(sisContainer);
+		{
+			if(in_batch)
+				other.IntersectInBatch(sisContainer);
+			else
+				other.Intersect(sisContainer);
+		}
 		else
-			other.Intersect(baisContainer);
+		{
+			if(in_batch)
+				other.IntersectInBatch(baisContainer);
+			else
+				other.Intersect(baisContainer);
+		}
 	}
 
 	//flips the elements in the set starting with element 0 up to but not including up_to_id

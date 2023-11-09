@@ -95,9 +95,10 @@ var data = [
 	},
 
 	{
-		"parameter" : "while bool condition [code c1] [code c2] ... [code cN]",
+		"parameter" : "while bool condition [code code1] [code code2] ... [code codeN]",
 		"output" : "*",
-		"description" : "Each time the condition evaluates to true, it runs each of the code trees sequentially, looping. Evaluates to the last codeN or null if the condition was initially false or if it encounters a conclude, it will halt processing and evaluate to the value returned by conclude.",
+		"new target scope": true,
+		"description" : "Each time the condition evaluates to true, it runs each of the code trees sequentially, looping. Evaluates to the last codeN or null if the condition was initially false or if it encounters a conclude, it will halt processing and evaluate to the value returned by conclude.  For iteration of the loop, pushes a new target scope onto the target stack, with current_index being the iteration count, and previous_result being the last evaluated codeN of the previous loop.",
 		"example" : "(let (assoc zz 1)\n  (while (< zz 10)\n    (print zz)\n    (assign (assoc zz (+ zz 1)))\n  )\n)"
 	},
 
@@ -191,10 +192,10 @@ var data = [
 	},
 
 	{
-		"parameter" : "set_digits number value [number base] [list of number digits] [number start_digit] [number end_digit] [bool relative_to_zero]",
+		"parameter" : "set_digits number value [number base] [list of number or null digits] [number start_digit] [number end_digit] [bool relative_to_zero]",
 		"output" : "number",
 		"new value" : "new",
-		"description" : "Evaluates to a number having each of the values in the list of digits replace each of the relative digits in value for the given base.  If base is omitted, 10 is the default.  The parameters start_digit and end_digit can be used to get a specific set of digits, but can also be infinite or null to catch all the digits on one side of the number.  The interpretation of start_digit and end_digit are with respect to relative_to_zero, which defaults to true.  If relative_to_zero is true, then the digits are indexed from their distance to zero, such as \"5 4 3 2 1 0 . -1 -2\".  If relative_to_zero is false, then the digits are indexed from their most significant digit, such as \"0 1 2 3 4 5 . 6  7\".  The default values of start_digit and end_digit are the most and least significant digits respectively.",
+		"description" : "Evaluates to a number having each of the values in the list of digits replace each of the relative digits in value for the given base.  If a digit is null in digits, then that digit is not set.  If base is omitted, 10 is the default.  The parameters start_digit and end_digit can be used to get a specific set of digits, but can also be infinite or null to catch all the digits on one side of the number.  The interpretation of start_digit and end_digit are with respect to relative_to_zero, which defaults to true.  If relative_to_zero is true, then the digits are indexed from their distance to zero, such as \"5 4 3 2 1 0 . -1 -2\".  If relative_to_zero is false, then the digits are indexed from their most significant digit, such as \"0 1 2 3 4 5 . 6  7\".  The default values of start_digit and end_digit are the most and least significant digits respectively.",
 		"example" : "(print (set_digits 16 8 (list 1 1)))\n(print (get_digits (set_digits 1234567.8 10 (list 1 0 1 0) 2 5 (false)) 10 2 5 (false)))"
 	},
 
@@ -470,8 +471,8 @@ var data = [
 		"output" : "*",
 		"new value" : "new",
 		"new target scope": true,
-		"description" : "Rewrites target by applying the function in a bottom-up manner.  For each node in the target tree, pushes a new target scope onto the target stack, with target_value being the current node and target_index being to the index to the current node relative to the node passed into rewrite accessed via target, and evaluates function.  Returns the resulting tree, after have been rewritten by function.",
-		"example" : "(print (rewrite\n                 (lambda (if (~ (target_value) 0) (+ (target_value) 1) (target_value)) )\n                 (list (assoc \"a\" 13))  ) )\n ;rewrite all integer additions into multiplies and then fold constants\n(print (rewrite\n                 (lambda\n					;find any nodes with a + and where its list is filled to its size with integers\n					(if (and \n					       (= (get_type (target_value)) \"+\")\n						   (= (size (target_value)) (size (filter (lambda (~ (target_value) 0)) (target_value))) )\n						 )\n					   (reduce (lambda (* (target_value 1) (target_value)) ) (target_value))\n					   (target_value))\n				 )\n				 ;original code with additions to be rewritten\n             			    (lambda\n					(list (assoc \"a\" (+ 3 (+ 13 4 2)) ))  )\n) )\n(print (rewrite\n                 (lambda\n					(if (and \n					       (= (get_type (target_value)) \"+\")\n						   (= (size (target_value)) (size (filter (lambda (~ (target_value) 0)) (target_value))) )\n						 )\n					   (reduce (lambda (+ (target_value 1) (target_value)) ) (target_value))\n					   (target_value))\n				 )\n                 (lambda\n					(+ (+ 13 4) (target_value 1)) )\n) )"
+		"description" : "Rewrites target by applying the function in a bottom-up manner.  For each node in the target tree, pushes a new target scope onto the target stack, with current_value being the current node and current_index being to the index to the current node relative to the node passed into rewrite accessed via target, and evaluates function.  Returns the resulting tree, after have been rewritten by function.",
+		"example" : "(print (rewrite\n                 (lambda (if (~ (current_value) 0) (+ (current_value) 1) (current_value)) )\n                 (list (assoc \"a\" 13))  ) )\n ;rewrite all integer additions into multiplies and then fold constants\n(print (rewrite\n                 (lambda\n					;find any nodes with a + and where its list is filled to its size with integers\n					(if (and \n					       (= (get_type (current_value)) \"+\")\n						   (= (size (current_value)) (size (filter (lambda (~ (current_value) 0)) (current_value))) )\n						 )\n					   (reduce (lambda (* (previous_result) (current_value)) ) (current_value))\n					   (current_value))\n				 )\n				 ;original code with additions to be rewritten\n             			    (lambda\n					(list (assoc \"a\" (+ 3 (+ 13 4 2)) ))  )\n) )\n(print (rewrite\n                 (lambda\n					(if (and \n					       (= (get_type (current_value)) \"+\")\n						   (= (size (current_value)) (size (filter (lambda (~ (current_value) 0)) (current_value))) )\n						 )\n					   (reduce (lambda (+ (previous_result) (current_value)) ) (current_value))\n					   (current_value))\n				 )\n                 (lambda\n					(+ (+ 13 4) (current_value 1)) )\n) )"
 	},
 
 	{
@@ -480,8 +481,8 @@ var data = [
 		"new value" : "new",
 		"concurrency" : true,
 		"new target scope": true,
-		"description" : "For each element in the collection, pushes a new target scope onto the stack, so that target_value accesses the element or elements in the list and target_index accesses the list or assoc index, with target representing the outer set of lists or assocs, and evaluates the function.  Returns the list of results, mapping the list via the specified function. If multiple lists or assocs are specified, then it pulls from each list or assoc simultaneously (null if overrun or index does not exist) and (target_value) contains an array of the values in parameter order.  Note that concurrency is only available when one collection is specified.",
-		"example" : "(print (map (lambda (* (target_value) 2)) (list 1 2 3 4)))\n(print (map (lambda (+ (target_value) (target_index))) (assoc 10 1 20 2 30 3 40 4)))\n(print (map\n  (lambda\n    (+ (get (target_value) 0) (get (target_value) 1) (get (target_value) 2))\n  )\n  (assoc \"0\" 0 \"1\" 1 \"a\" 3)\n  (assoc \"a\" 1 \"b\" 4)\n  (list 2 2 2 2)\n))"
+		"description" : "For each element in the collection, pushes a new target scope onto the stack, so that current_value accesses the element or elements in the list and current_index accesses the list or assoc index, with target representing the outer set of lists or assocs, and evaluates the function.  Returns the list of results, mapping the list via the specified function. If multiple lists or assocs are specified, then it pulls from each list or assoc simultaneously (null if overrun or index does not exist) and (current_value) contains an array of the values in parameter order.  Note that concurrency is only available when one collection is specified.",
+		"example" : "(print (map (lambda (* (current_value) 2)) (list 1 2 3 4)))\n(print (map (lambda (+ (current_value) (current_index))) (assoc 10 1 20 2 30 3 40 4)))\n(print (map\n  (lambda\n    (+ (get (current_value) 0) (get (current_value) 1) (get (current_value) 2))\n  )\n  (assoc \"0\" 0 \"1\" 1 \"a\" 3)\n  (assoc \"a\" 1 \"b\" 4)\n  (list 2 2 2 2)\n))"
 	},
 
 	{
@@ -490,16 +491,16 @@ var data = [
 		"new value" : "new",
 		"concurrency" : true,
 		"new target scope": true,
-		"description" : "For each element in the collection, pushes a new target scope onto the stack, so that target_value accesses the element in the list and target_index accesses the list or assoc index, with target representing the original list or assoc, and evaluates the function.  If function evaluates to true, then the element is put in a new list or assoc (matching the input type) that is returned.  If function is omitted, then it will remove any elements in the collection that are null, .nan, or .nas string.",
-		"example" : "(print (filter (lambda (> (target_value) 2)) (list 1 2 3 4)))"
+		"description" : "For each element in the collection, pushes a new target scope onto the stack, so that current_value accesses the element in the list and current_index accesses the list or assoc index, with target representing the original list or assoc, and evaluates the function.  If function evaluates to true, then the element is put in a new list or assoc (matching the input type) that is returned.  If function is omitted, then it will remove any elements in the collection that are null, .nan, or .nas string.",
+		"example" : "(print (filter (lambda (> (current_value) 2)) (list 1 2 3 4)))"
 	},
 
 	{
 		"parameter" : "weave [* function] list|immediate values1 [list|immediate values2] [list|immediate values3]...",
 		"output" : "list",
 		"new target scope": true,
-		"description" : "Interleaves the values lists optionally by applying a function.  If only values1 is passed in, then it evaluates to values1. If values1 and values2 are passed in, or, if more values are passed in but function is null, it interleaves the two lists out to whichever list is longer, filling in the remainder with null, and if any value is an immediate, then it will repeat the immediate value.  If the function is specified and not nulll, it pushes a new target scope onto the stack, so that target_value accesses a list of elements to be woven together from the list, and target_index accesses the list or assoc index, with target representing the original list or assoc.  The function should evaluate to a list, and weave will evaluate to a concatenated list of all of the lists that the function evaluated to.",
-		"example" : "(print (weave (list 1 3 5) (list 2 4 6)) \"\\n\")\n(print (weave (lambda (list (apply \"min\" (target_value) ) ) (list 1 3 4 5 5 6) (list 2 2 3 4 6 7) )\"\\n\")\n(print (weave (lambda (if (<= (get (target_value) 0) 4) (list (apply \"min\" (target_value 1)) ) (target_value)) ) (list 1 3 4 5 5 6) (list 2 2 3 4 6 7) )\"\\n\")\n(print (weave (null) (list 2 4 6) (null) ) \"\\n\")"
+		"description" : "Interleaves the values lists optionally by applying a function.  If only values1 is passed in, then it evaluates to values1. If values1 and values2 are passed in, or, if more values are passed in but function is null, it interleaves the two lists out to whichever list is longer, filling in the remainder with null, and if any value is an immediate, then it will repeat the immediate value.  If the function is specified and not nulll, it pushes a new target scope onto the stack, so that current_value accesses a list of elements to be woven together from the list, and current_index accesses the list or assoc index, with target representing the original list or assoc.  The function should evaluate to a list, and weave will evaluate to a concatenated list of all of the lists that the function evaluated to.",
+		"example" : "(print (weave (list 1 3 5) (list 2 4 6)) \"\\n\")\n(print (weave (lambda (list (apply \"min\" (current_value) ) ) (list 1 3 4 5 5 6) (list 2 2 3 4 6 7) )\"\\n\")\n(print (weave (lambda (if (<= (get (current_value) 0) 4) (list (apply \"min\" (current_value 1)) ) (current_value)) ) (list 1 3 4 5 5 6) (list 2 2 3 4 6 7) )\"\\n\")\n(print (weave (null) (list 2 4 6) (null) ) \"\\n\")"
 	},
 
 	{
@@ -507,8 +508,8 @@ var data = [
 		"output" : "*",
 		"new value" : "new",
 		"new target scope": true,
-		"description" : "For each element in the collection after the first one, it pushes a pair of new target scope onto the stack, so that target_value accesses a list of elements from the list, and target_index accesses the list or assoc index if it is not already reduced, with target representing the original list or assoc, and evaluates function. If the collection is empty, null is returned. if the collection is of size one, the single element is returned.",
-		"example" : "(print (reduce (lambda (* (target_value 1) (target_value))) (list 1 2 3 4)))"
+		"description" : "For each element in the collection after the first one, it evaluates function with a new target scope on the stack where current_value accesses each of the elements from the collection, current_index accesses the list or assoc index, target accesses the original list or assoc, and previous_result accesses the previously reduced result. If the collection is empty, null is returned. if the collection is of size one, the single element is returned.",
+		"example" : "(print (reduce (lambda (* (previous_result) (current_value))) (list 1 2 3 4)))"
 	},
 
 	{
@@ -532,8 +533,8 @@ var data = [
 		"output" : "list",
 		"new value" : "new",
 		"new target scope": true,
-		"description" : "Returns a new list containing the list with its elements sorted in increasing order.  Numerical values come before strings, and code will be evaluated as the representative strings.  If function is specified, it pushes a pair of new target scope onto the stack, so that target_value accesses a list of elements to from the list, and target_index accesses the list or assoc index if it is not already reduced, with target representing the original list or assoc, and evaluates function. The function should return a number, positive if \"(target_value)\" is greater, negative if \"(target_value 1)\" is greater, 0 if equal.",
-		"example" : "(print (sort (list 4 9 3 5 1)))\n(print (sort (list \"n\" \"b\" \"hello\" 4 1 3.2 (list 1 2 3))))\n(print (sort (list 1 \"1x\" \"10\" 20 \"z2\" \"z10\" \"z100\")))\n(print (sort (lambda (- (target_value) (target_value 1))) (list 4 9 3 5 1)))"
+		"description" : "Returns a new list containing the list with its elements sorted in increasing order.  Numerical values come before strings, and code will be evaluated as the representative strings.  If function is specified, it pushes a pair of new target scope onto the stack, so that current_value accesses a list of elements to from the list, and current_index accesses the list or assoc index if it is not already reduced, with target representing the original list or assoc, and evaluates function. The function should return a number, positive if \"(current_value)\" is greater, negative if \"(current_value 1)\" is greater, 0 if equal.",
+		"example" : "(print (sort (list 4 9 3 5 1)))\n(print (sort (list \"n\" \"b\" \"hello\" 4 1 3.2 (list 1 2 3))))\n(print (sort (list 1 \"1x\" \"10\" 20 \"z2\" \"z10\" \"z100\")))\n(print (sort (lambda (- (current_value) (current_value 1))) (list 4 9 3 5 1)))"
 	},
 
 	{
@@ -589,7 +590,7 @@ var data = [
 		"new value" : "new",
 		"concurrency" : true,
 		"new target scope": true,
-		"description" : "Evaluates to the assoc, where each pair of parameters (e.g., index1 and value1) comprises a index/value pair. Pushes a new target scope such that (target), (target_index), and (target_value) access the assoc, the current index, and the current value.",
+		"description" : "Evaluates to the assoc, where each pair of parameters (e.g., index1 and value1) comprises a index/value pair. Pushes a new target scope such that (target), (current_index), and (current_value) access the assoc, the current index, and the current value.",
 		"example" : "(print (assoc \"a\" 1 \"b\" 2 \"c\" 3 4 \"d\"))"
 	},
 
@@ -598,7 +599,7 @@ var data = [
 		"output" : "assoc",
 		"new value" : "new",
 		"new target scope": true,
-		"description" : "Evaluates to a new assoc where the indices are the keys and the values are the values, with corresponding positions in the list matched. If the values is omitted, then it will use nulls for each of the values.  If values is not a list, then all of the values in the assoc returned are set to the same value.  When one parameter is specified, it is the list of indices.  When two parameters are specified, it is the indices and values.  When three values are specified, it is the function, indices and values.  Values defaults to (null) and function defaults to (lambda (target_value)).  When there is a collision of indices, the function is called, it pushes a pair of new target scope onto the stack, so that target_value accesses a list of elements from the list, target_index accesses the list or assoc index if it is not already reduced, with target representing the original list or assoc, evaluates function if one exists, and (target_value) is the new value attempted to be inserted over (target_value 1).",
+		"description" : "Evaluates to a new assoc where the indices are the keys and the values are the values, with corresponding positions in the list matched. If the values is omitted, then it will use nulls for each of the values.  If values is not a list, then all of the values in the assoc returned are set to the same value.  When one parameter is specified, it is the list of indices.  When two parameters are specified, it is the indices and values.  When three values are specified, it is the function, indices and values.  Values defaults to (null) and function defaults to (lambda (current_value)).  When there is a collision of indices, the function is called, it pushes a pair of new target scope onto the stack, so that current_value accesses a list of elements from the list, current_index accesses the list or assoc index if it is not already reduced, with target representing the original list or assoc, evaluates function if one exists, and (current_value) is the new value attempted to be inserted over (current_value 1).",
 		"example" : "(print (zip (list \"a\" \"b\" \"c\" \"d\") (list 1 2 3 4)))"
 	},
 
@@ -630,8 +631,8 @@ var data = [
 		"output" : "*",
 		"new value" : "new",
 		"new target scope": true,
-		"description" : "Performs a deep copy on data (a copy of all data structures referenced by it and its references), then looks at the remaining parameters as pairs.  For each pair, the first is any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values. function1 to functionN represent a function that will be used to replace in place of whatever is in the location, and will be passed the current node in (target_value).  The function does not need to be a function and can just be a constant (which it will be evaluated as).  If a particular location does not exist, it will be created assuming the most generic type that will support the index (as a null, list, or assoc). Note that the target operation will evaluate to the new copy of data, which is the base of the newly constructed data; this is useful for creating circular references.",
-		"example" : "(print (replace (list (assoc \"a\" 13)) ))\n(print (replace\n    (list (assoc \"a\" 1))\n	   (list 2) 1\n	   (list 0) (list 4 5 6)))\n\n(print (replace\n    (list (assoc \"a\" 1))\n	   (list 0) (lambda (set (target_value) \"b\" 2))\n ))"
+		"description" : "Performs a deep copy on data (a copy of all data structures referenced by it and its references), then looks at the remaining parameters as pairs.  For each pair, the first is any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values. function1 to functionN represent a function that will be used to replace in place of whatever is in the location, and will be passed the current node in (current_value).  The function does not need to be a function and can just be a constant (which it will be evaluated as).  If a particular location does not exist, it will be created assuming the most generic type that will support the index (as a null, list, or assoc). Note that the target operation will evaluate to the new copy of data, which is the base of the newly constructed data; this is useful for creating circular references.",
+		"example" : "(print (replace (list (assoc \"a\" 13)) ))\n(print (replace\n    (list (assoc \"a\" 1))\n	   (list 2) 1\n	   (list 0) (list 4 5 6)))\n\n(print (replace\n    (list (assoc \"a\" 1))\n	   (list 0) (lambda (set (current_value) \"b\" 2))\n ))"
 	},
 
 	{
@@ -642,18 +643,25 @@ var data = [
 	},
 
 	{
-		"parameter" : "target_index [number stack_distance]",
+		"parameter" : "current_index [number stack_distance]",
 		"output" : "*",
 		"new value" : "new",
 		"description" : "Like target, but evaluates to the index of the current node being iterated on within target.",
-		"example" : "(list 1 2 3 (print (target_index)) 4)"
+		"example" : "(list 1 2 3 (print (current_index)) 4)"
 	},
 
 	{
-		"parameter" : "target_value [number stack_distance]",
+		"parameter" : "current_value [number stack_distance]",
 		"output" : "*",
 		"description" : "Like target, but evaluates to the current node being iterated on within target.",
-		"example" : "(list 1 2 3 (print (target_value)) 4)"
+		"example" : "(list 1 2 3 (print (current_value)) 4)"
+	},
+	
+	{
+		"parameter" : "previous_result [number stack_distance]",
+		"output" : "*",
+		"description" : "Like target, but evaluates to the resulting node of the previous iteration for applicable opcodes.",
+		"example" : "(while (< (target_index) 3) (print (previous_result)) (target_index))"
 	},
 
 	{
@@ -845,7 +853,7 @@ var data = [
 		"new value" : "new",
 		"concurrency" : true,
 		"new target scope": true,
-		"description" : "Evaluates to the list specified by the parameters.  Pushes a new target scope such that (target), (target_index), and (target_value) access the list, the current index, and the current value.",
+		"description" : "Evaluates to the list specified by the parameters.  Pushes a new target scope such that (target), (current_index), and (current_value) access the list, the current index, and the current value.",
 		"example" : "(print (list \"a\" 1 \"b\"))"
 	},
 
@@ -855,7 +863,7 @@ var data = [
 		"new value" : "new",
 		"concurrency" : true,
 		"new target scope": true,
-		"description" : "Evaluates to the associative list, where each pair of parameters (e.g., index1 and value1) comprises a index/value pair. Pushes a new target scope such that (target), (target_index), and (target_value) access the assoc, the current index, and the current value.  If any of the bstrings do not have reserved characters or spaces, then quotes are optional; if spaces or reserved characters are present, then quotes are required.",
+		"description" : "Evaluates to the associative list, where each pair of parameters (e.g., index1 and value1) comprises a index/value pair. Pushes a new target scope such that (target), (current_index), and (current_value) access the assoc, the current index, and the current value.  If any of the bstrings do not have reserved characters or spaces, then quotes are optional; if spaces or reserved characters are present, then quotes are required.",
 		"example" : "(print (assoc b 2 c 3))\n(print (assoc a 1 \"b\\ttab\" 2 c 3 4 \"d\"))"
 	},
 

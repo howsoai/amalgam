@@ -380,6 +380,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_DIGITS(EvaluableNode *
 
 				if(cur_digit_index >= digits_ocn.size())
 					break;
+
+				//skip nulls
+				if(EvaluableNode::IsNull(digits_ocn[cur_digit_index]))
+				{
+					cur_digit_index++;
+					continue;
+				}
+
 				double new_digit = EvaluableNode::ToNumber(digits_ocn[cur_digit_index++]);
 
 				result_value -= value_digit * place_value;
@@ -405,6 +413,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_DIGITS(EvaluableNode *
 				{
 					if(cur_digit_index >= digits_ocn.size())
 						break;
+
+					//skip nulls
+					if(EvaluableNode::IsNull(digits_ocn[cur_digit_index]))
+					{
+						cur_digit_index++;
+						continue;
+					}
+
 					double new_digit = EvaluableNode::ToNumber(digits_ocn[cur_digit_index++]);
 
 					result_value -= value_digit * place_value;
@@ -1109,7 +1125,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 		dist_params.ComputeAndStoreUncertaintyDistanceTerms(i);
 	}
 	
-	double value = dist_params.ComputeMinkowskiDistance(location, location_types, origin, origin_types);
+	double value = dist_params.ComputeMinkowskiDistance(location, location_types, origin, origin_types, true);
 
 	//free these after computation in case they had any code being used/referenced in the distance
 	evaluableNodeManager->FreeNodeTreeIfPossible(location_node);

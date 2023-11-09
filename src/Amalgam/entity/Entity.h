@@ -57,6 +57,7 @@ public:
 	// If locked_memory_modification_lock is specified, then it will unlock it prior to the execution, but lock it again before
 	// If entity_write_lock is specified, then it will unlock prior to execution after locked_memory_modification_lock is locked
 	// potentially writing anything out to destination_temp_enm
+	// If copy_call_stack is true, it will copy call_stack into the evaluableNodeManager managed by this entity while under appropriate locks
 	EvaluableNodeReference Execute(ExecutionCycleCount max_num_steps, ExecutionCycleCount &num_steps_executed, size_t max_num_nodes, size_t &num_nodes_allocated,
 		std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
 		EvaluableNode *call_stack = nullptr, bool on_self = false, EvaluableNodeManager *destination_temp_enm = nullptr,
@@ -65,7 +66,7 @@ public:
 		Concurrency::WriteLock *entity_write_lock = nullptr,
 	#endif
 		StringInternPool::StringID label_sid = StringInternPool::NOT_A_STRING_ID,
-		Interpreter *calling_interpreter = nullptr);
+		Interpreter *calling_interpreter = nullptr, bool copy_call_stack = false);
 
 	//same as Execute but accepts a string for label name
 	inline EvaluableNodeReference Execute(ExecutionCycleCount max_num_steps, ExecutionCycleCount &num_steps_executed,
@@ -77,7 +78,7 @@ public:
 		Concurrency::WriteLock *entity_write_lock,
 	#endif
 		const std::string &label_name,
-		Interpreter *calling_interpreter = nullptr)
+		Interpreter *calling_interpreter = nullptr, bool copy_call_stack = false)
 	{
 		StringInternPool::StringID label_sid = string_intern_pool.GetIDFromString(label_name);
 		return Execute(max_num_steps, num_steps_executed, max_num_nodes, num_nodes_allocated, write_listeners, print_listener,
@@ -85,7 +86,7 @@ public:
 		#ifdef MULTITHREAD_SUPPORT
 			locked_memory_modification_lock, entity_write_lock,
 		#endif
-			label_sid, calling_interpreter);
+			label_sid, calling_interpreter, copy_call_stack);
 	}
 
 	//returns true if the entity or any of its contained entities are currently being executed, either because of multiple threads executing on it

@@ -363,7 +363,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PARALLEL(EvaluableNode *en
 								evaluableNodeManager->AllocListNode(callStackNodes),
 								evaluableNodeManager->AllocListNode(interpreterNodeStackNodes),
 								evaluableNodeManager->AllocListNode(constructionStackNodes),
-								&constructionStackIndices,
+								&constructionStackIndicesAndUniqueness,
 								concurrency_manager.GetCallStackWriteMutex());
 
 							interpreter.evaluableNodeManager->FreeNodeTreeIfPossible(result);
@@ -574,15 +574,22 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
-	if(ocn.size() == 0)
+	size_t ocn_size = ocn.size();
+	if(ocn_size == 0)
 		return EvaluableNodeReference::Null();
 
-	EvaluableNodeReference result = EvaluableNodeReference::Null();
+	EvaluableNodeReference previous_result = EvaluableNodeReference::Null();
+
+	PushNewConstructionContext(nullptr, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
+
 	auto node_stack = CreateInterpreterNodeStackStateSaver();
+	size_t loop_iteration = 0;
 	for(;;)
 	{
+		SetTopCurrentIndexInConstructionStack(static_cast<double>(loop_iteration++));
+
 		//keep the result before testing condition
-		node_stack.PushEvaluableNode(result);
+		node_stack.PushEvaluableNode(previous_result);
 		bool condition_true = InterpretNodeIntoBoolValue(ocn[0]);
 		node_stack.PopEvaluableNode();
 
@@ -592,18 +599,38 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en)
 		if(AreExecutionResourcesExhausted())
 			return EvaluableNodeReference::Null();
 
-		//run each step within the loop
-		for(size_t i = 1; i < ocn.size(); i++)
-		{
-			if(result != nullptr && result->GetType() == ENT_CONCLUDE)
-				return RemoveConcludeFromConclusion(result, evaluableNodeManager);
+		SetTopPreviousResultInConstructionStack(previous_result);
 
-			evaluableNodeManager->FreeNodeTreeIfPossible(result);
-			result = InterpretNode(ocn[i]);
+		//run each step within the loop
+		EvaluableNodeReference new_result;
+		for(size_t i = 1; i < ocn_size; i++)
+		{
+			new_result = InterpretNode(ocn[i]);
+
+			if(new_result != nullptr && new_result->GetType() == ENT_CONCLUDE)
+			{
+				//if previous result is unconsumed, free if possible
+				previous_result = GetAndClearPreviousResultInConstructionStack(0);
+				evaluableNodeManager->FreeNodeTreeIfPossible(previous_result);
+
+				PopConstructionContext();
+				return RemoveConcludeFromConclusion(new_result, evaluableNodeManager);
+			}
+
+			//don't free the last new_result
+			if(i < ocn_size - 1)
+				evaluableNodeManager->FreeNodeTreeIfPossible(new_result);
 		}
+
+		//if previous result is unconsumed, free if possible
+		previous_result = GetAndClearPreviousResultInConstructionStack(0);
+		evaluableNodeManager->FreeNodeTreeIfPossible(previous_result);
+
+		previous_result = new_result;
 	}
 
-	return result;
+	PopConstructionContext();
+	return previous_result;
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en)
@@ -1187,14 +1214,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET(EvaluableNode *en)
 	}
 
 	//make sure have a large enough stack
-	if(depth >= constructionStackIndices.size())
+	if(depth >= constructionStackIndicesAndUniqueness.size())
 		return EvaluableNodeReference::Null();
 
 	size_t offset = constructionStackNodes->size() - (constructionStackOffsetStride * depth) + constructionStackOffsetTarget;
-	return EvaluableNodeReference( (*constructionStackNodes)[offset], false);
+	return EvaluableNodeReference(constructionStackNodes->at(offset), false);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET_INDEX(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_INDEX(EvaluableNode *en)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -1209,15 +1236,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET_INDEX(EvaluableNode
 	}
 
 	//make sure have a large enough stack
-	if(depth >= constructionStackIndices.size())
+	if(depth >= constructionStackIndicesAndUniqueness.size())
 		return EvaluableNodeReference::Null();
 
 	//depth is 1-based
-	size_t offset = constructionStackIndices.size() - depth - 1;
+	size_t offset = constructionStackIndicesAndUniqueness.size() - depth - 1;
 
 	//build the index node to return
 	EvaluableNode *index_node = nullptr;
-	EvaluableNodeImmediateValueWithType enivwt = constructionStackIndices[offset];
+	EvaluableNodeImmediateValueWithType enivwt = constructionStackIndicesAndUniqueness[offset].index;
 	if(enivwt.nodeType == ENIVT_NUMBER)
 		index_node = evaluableNodeManager->AllocNode(enivwt.nodeValue.number);
 	else if(enivwt.nodeType == ENIVT_STRING_ID)
@@ -1226,7 +1253,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET_INDEX(EvaluableNode
 	return EvaluableNodeReference(index_node, true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET_VALUE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_VALUE(EvaluableNode *en)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -1241,11 +1268,32 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET_VALUE(EvaluableNode
 	}
 
 	//make sure have a large enough stack
-	if(depth >= constructionStackIndices.size())
+	if(depth >= constructionStackIndicesAndUniqueness.size())
 		return EvaluableNodeReference::Null();
 
-	size_t offset = constructionStackNodes->size() - (constructionStackOffsetStride * depth) + constructionStackOffsetTargetValue;
-	return EvaluableNodeReference( (*constructionStackNodes)[offset], false);
+	size_t offset = constructionStackNodes->size() - (constructionStackOffsetStride * depth) + constructionStackOffsetCurrentValue;
+	return EvaluableNodeReference(constructionStackNodes->at(offset), false);
+}
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_PREVIOUS_RESULT(EvaluableNode *en)
+{
+	auto &ocn = en->GetOrderedChildNodes();
+
+	size_t depth = 0;
+	if(ocn.size() > 0)
+	{
+		double value = InterpretNodeIntoNumberValue(ocn[0]);
+		if(value >= 0)
+			depth = static_cast<size_t>(value);
+		else
+			return EvaluableNodeReference::Null();
+	}
+
+	//make sure have a large enough stack
+	if(depth >= constructionStackIndicesAndUniqueness.size())
+		return EvaluableNodeReference::Null();
+
+	return GetAndClearPreviousResultInConstructionStack(depth);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_STACK(EvaluableNode *en)

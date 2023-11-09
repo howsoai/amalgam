@@ -670,7 +670,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en)
 	for(size_t i = 0; i < num_nodes; i++)
 	{
 		//pass index of list to be mapped -- leave value at nullptr
-		SetTopTargetValueIndexInConstructionStack(i * range_step_size + range_start);
+		SetTopCurrentIndexInConstructionStack(i * range_step_size + range_start);
 
 		EvaluableNodeReference element_result = InterpretNode(function);
 		result_ocn[i] = element_result;

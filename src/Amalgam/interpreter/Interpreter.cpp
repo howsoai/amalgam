@@ -21,6 +21,11 @@
 #include <iostream>
 #include <utility>
 
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+thread_local
+#endif
+	std::vector<EntityQueryCondition> Interpreter::conditionsBuffer;
+
 std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter::_opcodes = {
 	
 	//built-in / system specific
@@ -55,8 +60,9 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 	
 	//stack and node manipulation
 	&Interpreter::InterpretNode_ENT_TARGET,															// ENT_TARGET
-	&Interpreter::InterpretNode_ENT_TARGET_INDEX,													// ENT_TARGET_INDEX
-	&Interpreter::InterpretNode_ENT_TARGET_VALUE,													// ENT_TARGET_VALUE
+	&Interpreter::InterpretNode_ENT_CURRENT_INDEX,													// ENT_CURRENT_INDEX
+	&Interpreter::InterpretNode_ENT_CURRENT_VALUE,													// ENT_CURRENT_VALUE
+	&Interpreter::InterpretNode_ENT_PREVIOUS_RESULT,												// ENT_PREVIOUS_RESULT
 	&Interpreter::InterpretNode_ENT_STACK,															// ENT_STACK
 	&Interpreter::InterpretNode_ENT_ARGS,															// ENT_ARGS
 
@@ -330,12 +336,12 @@ Interpreter::Interpreter(EvaluableNodeManager *enm,
 #ifdef MULTITHREAD_SUPPORT
 EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	EvaluableNode *call_stack, EvaluableNode *interpreter_node_stack,
-	EvaluableNode *construction_stack, std::vector<EvaluableNodeImmediateValueWithType> *construction_stack_indices,
+	EvaluableNode *construction_stack, std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices,
 	Concurrency::SingleMutex *call_stack_write_mutex)
 #else
 EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	EvaluableNode *call_stack, EvaluableNode *interpreter_node_stack,
-	EvaluableNode *construction_stack, std::vector<EvaluableNodeImmediateValueWithType> *construction_stack_indices)
+	EvaluableNode *construction_stack, std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices)
 #endif
 {
 
@@ -369,7 +375,7 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	constructionStackNodes = &construction_stack->GetOrderedChildNodes();
 
 	if(construction_stack_indices != nullptr)
-		constructionStackIndices = *construction_stack_indices;
+		constructionStackIndicesAndUniqueness = *construction_stack_indices;
 
 	//protect all of the stacks with needing cycle free checks
 	// in case a node is added to one which isn't cycle free
@@ -729,8 +735,8 @@ EvaluableNode *Interpreter::RewriteByFunction(EvaluableNodeReference function, E
 
 		for(auto &[e_id, e] : n->GetMappedChildNodesReference())
 		{
-			SetTopTargetValueIndexInConstructionStack(e_id);
-			SetTopTargetValueReferenceInConstructionStack(e);
+			SetTopCurrentIndexInConstructionStack(e_id);
+			SetTopCurrentValueInConstructionStack(e);
 			e = RewriteByFunction(function, top_node, e, references);
 		}
 
@@ -746,8 +752,8 @@ EvaluableNode *Interpreter::RewriteByFunction(EvaluableNodeReference function, E
 			//rewrite child nodes before rewriting this one
 			for(size_t i = 0; i < ocn.size(); i++)
 			{
-				SetTopTargetValueIndexInConstructionStack(static_cast<double>(i));
-				SetTopTargetValueReferenceInConstructionStack(ocn[i]);
+				SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
+				SetTopCurrentValueInConstructionStack(ocn[i]);
 				ocn[i] = RewriteByFunction(function, top_node, ocn[i], references);
 			}
 
@@ -794,7 +800,7 @@ bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node
 						evaluableNodeManager->AllocListNode(callStackNodes),
 						evaluableNodeManager->AllocListNode(interpreterNodeStackNodes),
 						evaluableNodeManager->AllocListNode(constructionStackNodes),
-						&constructionStackIndices,
+						&constructionStackIndicesAndUniqueness,
 						concurrency_manager.GetCallStackWriteMutex());
 
 					evaluableNodeManager->KeepNodeReference(result);

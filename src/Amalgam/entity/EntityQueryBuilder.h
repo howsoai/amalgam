@@ -64,18 +64,18 @@ namespace EntityQueryBuilder
 			[&dist_params](size_t i, bool found, EvaluableNode *en) {
 				if(i < dist_params.featureParams.size())
 				{
-					auto feature_type = FDT_CONTINUOUS_NUMERIC;
+					auto feature_type = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC;
 					if(found)
 					{
 						StringInternPool::StringID feature_type_id = EvaluableNode::ToStringIDIfExists(en);
 						switch(feature_type_id)
 						{
-						case ENBISI_nominal:								feature_type = FDT_NOMINAL;						break;
-						case ENBISI_continuous:								feature_type = FDT_CONTINUOUS_NUMERIC;			break;
-						case ENBISI_cyclic:									feature_type = FDT_CONTINUOUS_NUMERIC_CYCLIC;	break;
-						case GetStringIdFromNodeTypeFromString(ENT_STRING): feature_type = FDT_CONTINUOUS_STRING;			break;	
-						case ENBISI_code:									feature_type = FDT_CONTINUOUS_CODE;				break;
-						default:											feature_type = FDT_CONTINUOUS_NUMERIC;			break;
+						case ENBISI_nominal:								feature_type = GeneralizedDistance::FDT_NOMINAL;					break;
+						case ENBISI_continuous:								feature_type = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC;			break;
+						case ENBISI_cyclic:									feature_type = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC_CYCLIC;	break;
+						case GetStringIdFromNodeTypeFromString(ENT_STRING): feature_type = GeneralizedDistance::FDT_CONTINUOUS_STRING;			break;	
+						case ENBISI_code:									feature_type = GeneralizedDistance::FDT_CONTINUOUS_CODE;			break;
+						default:											feature_type = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC;			break;
 						}
 					}
 					dist_params.featureParams[i].featureType = feature_type;
@@ -93,7 +93,7 @@ namespace EntityQueryBuilder
 					//get attributes based on feature type
 					switch(dist_params.featureParams[i].featureType)
 					{
-					case FDT_NOMINAL:
+					case GeneralizedDistance::FDT_NOMINAL:
 						if(found && !EvaluableNode::IsNull(en))
 						{
 							if(en->EvaluableNode::IsOrderedArray())
@@ -118,7 +118,7 @@ namespace EntityQueryBuilder
 						}
 						break;
 
-					case FDT_CONTINUOUS_NUMERIC_CYCLIC:
+					case GeneralizedDistance::FDT_CONTINUOUS_NUMERIC_CYCLIC:
 						if(found && !EvaluableNode::IsNull(en))
 						{
 							if(en->EvaluableNode::IsOrderedArray())
@@ -139,14 +139,13 @@ namespace EntityQueryBuilder
 						}
 						else //can't be cyclic without a range
 						{
-							dist_params.featureParams[i].featureType = FDT_CONTINUOUS_NUMERIC;
+							dist_params.featureParams[i].featureType = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC;
 						}
 						break;
 
-					case FDT_CONTINUOUS_NUMERIC:
-					case FDT_CONTINUOUS_UNIVERSALLY_NUMERIC:
-					case FDT_CONTINUOUS_STRING:
-					case FDT_CONTINUOUS_CODE:
+					case GeneralizedDistance::FDT_CONTINUOUS_NUMERIC:
+					case GeneralizedDistance::FDT_CONTINUOUS_STRING:
+					case GeneralizedDistance::FDT_CONTINUOUS_CODE:
 						if(found && !EvaluableNode::IsNull(en))
 						{
 							if(en->EvaluableNode::IsOrderedArray())
@@ -400,75 +399,6 @@ namespace EntityQueryBuilder
 				}
 			}
 		}
-		
-
-		//check if any of the positions are not valid
-		bool need_exist_query = false;
-		bool has_position_data = !DoesDistanceQueryUseEntitiesInsteadOfPosition(condition_type);
-
-		//check for any disabled features (e.g., zero'd weight)
-		if(has_position_data)
-		{
-			for(size_t i = 0; i < cur_condition->distParams.featureParams.size(); i++)
-			{
-				if(!cur_condition->distParams.IsFeatureEnabled(i))
-				{
-					need_exist_query = true;
-					break;
-				}
-			}
-		}
-		else //entities may have missing data, so need exist query
-		{
-			need_exist_query = true;
-		}
-
-		if(need_exist_query)
-		{
-			//add exists query and swap, so the exists_condition is before cur_condition
-			conditions.emplace_back();
-			EntityQueryCondition *exists_condition = &(conditions.back());
-
-			//need to reretrieve the pointer in case there has been a reallocation via emplace_back
-			// don't get the end one just placed, get the one before that
-			cur_condition = &conditions[conditions.size() - 2];
-
-			//swap data and pointers
-			std::swap(*exists_condition, *cur_condition);
-			std::swap(exists_condition, cur_condition);
-
-			exists_condition->queryType = ENT_QUERY_EXISTS;
-			//if has_position_data, then will add on those needed features below
-			// but if it doesn't, then need to include all labels
-			if(!has_position_data)
-				exists_condition->existLabels = cur_condition->positionLabels;
-
-			//remove any 0 weighted features; if has_position_data, then move them to the exist query
-			// don't increment i here because if a feature is moved to the exists_condition,
-			// then a new feature is moved into that new index and that feature position needs to be rechecked
-			for(size_t i = 0; i < cur_condition->positionLabels.size();)
-			{
-				if(cur_condition->distParams.featureParams[i].weight == 0.0)
-				{
-					//only move/remove data if the right type of query
-					if(has_position_data)
-					{
-						exists_condition->existLabels.push_back(cur_condition->positionLabels[i]);
-						cur_condition->valueToCompare.erase(cur_condition->valueToCompare.begin() + i);
-						cur_condition->valueTypes.erase(cur_condition->valueTypes.begin() + i);
-					}
-
-					cur_condition->positionLabels.erase(cur_condition->positionLabels.begin() + i);
-					cur_condition->distParams.featureParams.erase(begin(cur_condition->distParams.featureParams) + i);
-					continue;
-				}
-
-				i++;
-			}
-		}
-
-		//perform this last to make sure all changes are in
-		cur_condition->distParams.SetAndConstrainParams();
 	}
 
 	//builds a query condition from cn

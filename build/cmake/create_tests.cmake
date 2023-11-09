@@ -67,7 +67,9 @@ foreach(TEST_TARGET ${ALL_APP_TARGETS})
     # Unit tests (using REPL)
     if(NOT IS_WASM)
         set(TEST_EXE_NAME "${TEST_TARGET}-tester")
-        add_executable(${TEST_EXE_NAME} "test/interpreter_unit_tests/main.cpp" "test/3rd_party/subprocess_h/subprocess.h")
+        set(TEST_SOURCES "test/interpreter_unit_tests/main.cpp" "test/3rd_party/subprocess_h/subprocess.h")
+        source_group(TREE ${CMAKE_SOURCE_DIR} FILES ${TEST_SOURCES})
+        add_executable(${TEST_EXE_NAME} ${TEST_SOURCES})
         set_target_properties(${TEST_EXE_NAME} PROPERTIES FOLDER "Testing")
         target_include_directories(${TEST_EXE_NAME} PUBLIC "${CMAKE_SOURCE_DIR}/test/3rd_party")
 
@@ -87,7 +89,9 @@ foreach(TEST_TARGET ${ALL_SHAREDLIB_TARGETS})
 
     # Create test exe:
     set(TEST_EXE_NAME "${TEST_TARGET}-tester")
-    add_executable(${TEST_EXE_NAME} "test/lib_smoke_test/main.cpp" "test/lib_smoke_test/test.amlg")
+    set(TEST_SOURCES "test/lib_smoke_test/main.cpp" "test/lib_smoke_test/test.amlg")
+    source_group(TREE ${CMAKE_SOURCE_DIR} FILES ${TEST_SOURCES})
+    add_executable(${TEST_EXE_NAME} ${TEST_SOURCES})
     set_target_properties(${TEST_EXE_NAME} PROPERTIES FOLDER "Testing")
     target_link_libraries(${TEST_EXE_NAME} ${TEST_TARGET})
 

@@ -202,25 +202,11 @@ set(AMALGAM_LIB_ONLY_SOURCE ${RESOURCE_SOURCE})
 set(AMALGAM_ALL_SOURCE ${AMALGAM_APP_ONLY_SOURCE} ${COMMON_SOURCE_THREADS})
 source_group(TREE ${CMAKE_SOURCE_DIR} FILES ${AMALGAM_ALL_SOURCE})
 
-# Get other non-source files from around the filesytem:
-file(GLOB_RECURSE AUX_FILES
-    .gitignore
-    ci-build.ps1
-    CMakeLists.txt
-    CMakePresets.json
-    LICENSE.txt
-    LICENSE-3RD-PARTY.txt
-    open-in-vs.bat
-    README.md
-    "build/*"
-    "config/*"
-    "doc/*"
-    "examples/*"
-    "src/Amalgam/amlg_code/*"
-    "src/Amalgam/out.txt"
-)
-source_group(TREE ${CMAKE_SOURCE_DIR} FILES ${AUX_FILES})
-list(APPEND AMALGAM_APP_ONLY_SOURCE ${AUX_FILES})
+# Get all files we care about for easy access in project sources:
+file(GLOB_RECURSE ALL_FILES "${CMAKE_SOURCE_DIR}/*")
+list(FILTER ALL_FILES EXCLUDE REGEX "(.*/.git/.*|.*/out/.*|.*/src/.*|.*/test/.*|.*Amalgam\.sln.*)")
+source_group(TREE ${CMAKE_SOURCE_DIR} FILES ${ALL_FILES})
+list(APPEND AMALGAM_APP_ONLY_SOURCE ${ALL_FILES})
 
 
 #

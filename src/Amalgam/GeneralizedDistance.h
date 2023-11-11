@@ -910,6 +910,15 @@ public:
 		//uncertainty of each value
 		double deviation;
 
+		//TODO 17631: finish documenting this and fill in the doubles with a tuple of ExactApproxValuePair and a double for the difference; consider replacing symmetric nominal and unknown* with this triple
+		//when nominals have asymmetric deviations, 
+		struct NominalDeviationData
+		{
+			FastHashMap<StringInternPool::StringID, double> deviations;
+			double defaultDeviation;
+		};
+		FastHashMap<StringInternPool::StringID, std::unique_ptr<NominalDeviationData>> nominalSparseDeviationMatrix;
+
 		//distance term to use if both values being compared are unknown
 		ExactApproxValuePair unknownToUnknownDistanceTerm;
 

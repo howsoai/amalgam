@@ -266,8 +266,8 @@ protected:
 			distanceTerm[high_accuracy ? EXACT : APPROX] = value;
 		}
 
-		double difference;
 		std::array<double, 2> distanceTerm;
+		double difference;
 	};
 
 	//update cached nominal deltas based on highAccuracy and recomputeAccurateDistances, caching what is needed given those flags
@@ -915,9 +915,9 @@ public:
 		class NominalDeviationData
 		{
 		public:
-			FastHashMap<StringInternPool::StringID, double> deviations;
-			double defaultDeviation;
-			double unknownDeviation;
+			FastHashMap<StringInternPool::StringID, DistanceTermValues> deviations;
+			DistanceTermValues defaultDeviation;
+			DistanceTermValues unknownDeviation;
 		};
 		FastHashMap<StringInternPool::StringID, NominalDeviationData> nominalSparseDeviationMatrix;
 

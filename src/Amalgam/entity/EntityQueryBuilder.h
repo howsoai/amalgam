@@ -92,7 +92,7 @@ namespace EntityQueryBuilder
 					{
 					case GeneralizedDistance::FDT_NOMINAL:
 						if(found && !EvaluableNode::IsNull(en))
-							dist_params.featureParams[i].typeAttributes.nominalCount = EvaluableNode::ToNumber(en);
+							dist_params.featureParams[i].typeAttributes.nominalCount = EvaluableNode::ToNumber(en, 1);
 						break;
 
 					case GeneralizedDistance::FDT_CONTINUOUS_NUMERIC_CYCLIC:
@@ -113,6 +113,7 @@ namespace EntityQueryBuilder
 			[&dist_params](size_t i, bool found, EvaluableNode *en) {
 				if(i < dist_params.featureParams.size())
 				{
+					dist_params.featureParams[i].deviation = 0.0;
 					dist_params.featureParams[i].unknownToUnknownDifference = std::numeric_limits<double>::quiet_NaN();
 					dist_params.featureParams[i].knownToUnknownDifference = std::numeric_limits<double>::quiet_NaN();
 
@@ -127,10 +128,10 @@ namespace EntityQueryBuilder
 								auto &ocn = en->GetOrderedChildNodesReference();
 								size_t ocn_size = ocn.size();
 								//TODO 17631: update language.js
-								//TODO 17631: update unit tests
-								//TODO 17631: implement confusion matrix here
+								//TODO 17631: add sparse deviation matrix to unit tests
+								//TODO 17631: implement sparse deviation matrix here
 								if(ocn_size > 0)
-									dist_params.featureParams[i].deviation = EvaluableNode::ToNumber(ocn[0]);
+									dist_params.featureParams[i].deviation = EvaluableNode::ToNumber(ocn[0], 0.0);
 								if(ocn_size > 1)
 									dist_params.featureParams[i].knownToUnknownDifference = EvaluableNode::ToNumber(ocn[1]);
 								if(ocn_size > 2)
@@ -138,12 +139,8 @@ namespace EntityQueryBuilder
 							}
 							else //treat as singular value
 							{
-								dist_params.featureParams[i].deviation = EvaluableNode::ToNumber(en);
+								dist_params.featureParams[i].deviation = EvaluableNode::ToNumber(en, 0.0);
 							}
-						}
-						else
-						{
-							dist_params.featureParams[i].deviation = 0.0;
 						}
 						break;
 
@@ -165,10 +162,6 @@ namespace EntityQueryBuilder
 							{
 								dist_params.featureParams[i].deviation = EvaluableNode::ToNumber(en);
 							}
-						}
-						else
-						{
-							dist_params.featureParams[i].deviation = 0.0;
 						}
 						break;
 					}

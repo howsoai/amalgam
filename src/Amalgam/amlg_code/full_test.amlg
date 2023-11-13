@@ -404,10 +404,12 @@
  ;should print 4
  (print "31 " (generalized_distance (list 1 1 1) (list "continuous" "nominal" "nominal") (list (null) 5 5) (null) 1 (list 4 4 (null)) (list 2 2 (null))) "\n")
  ;should print 4
- (print "32 " (generalized_distance (list 1 1 1 1) (list "continuous" "nominal" "nominal" "continuous") (list 2 5 5 2) (null) 0 (list 4 4 4 4) (list 2 2 2 (null))) "\n")
+ (print "32 " (generalized_distance (list 1 1 1 1) (list "continuous" "nominal" "nominal" "continuous")
+	(list (null) 5 5 (null)) (list (list 0 2) (null) (null) (list 0 2)) 0 (list 4 4 4 4) (list 2 2 2 (null))) "\n")
 
  ;should print 4
- (print "33 " (generalized_distance (list 1 1 1 1) (list "continuous" "nominal" "nominal" "continuous") (list 1 5 5 1) (null) 1 (list 4 "s" "s" 4) (list 2 "s" 2 (null))) "\n")
+ (print "33 " (generalized_distance (list 1 1 1 1) (list "continuous" "nominal" "nominal" "continuous")
+	(list (null) 5 5 (null)) (list (list 0 1) (null) (null) (list 0 1)) 1 (list 4 "s" "s" 4) (list 2 "s" 2 (null))) "\n")
  
  ;should print 2
  (print "34 " (generalized_distance (list 1 1) (list "code" "nominal") (list 0 5) (null) 1 (list (list 1 2 3 4 5) "s") (list (list 1 2 3) "s") ) "\n")
@@ -3476,8 +3478,8 @@
             (list 9 2) ;values
             (null) ;weights
             (list "continuous" "continuous") ;distance types
-            (list (list 5 6) (list 5 5)) ;attributes
-            (null)
+			(null) ;attributes
+            (list (list 0 5 6) (list 0 5 5)) ;deviations 
     		2 ;p-value
          )
       ))
@@ -3494,8 +3496,8 @@
             (list (null) (null)) ;values
             (null) ;weights
             (list "continuous" "continuous") ;distance types
-            (list (list 1 0) (list 1 0)) ;attributes
-            (null)
+			(null) ;attributes
+            (list (list 0 1 0) (list 0 1 0)) ;deviations
 			2 ;p-value
          )
       ))

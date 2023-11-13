@@ -81,13 +81,13 @@ public:
 		//compute unknownToUnknownDistanceTerm
 		if(compute_accurate)
 		{
-			feature_params.unknownToUnknownDistanceTerm.SetValue(
+			feature_params.unknownToUnknownDistanceTerm.SetDistTerm(
 					ComputeDistanceTermNonNull(feature_params.unknownToUnknownDifference, index, true), true);
 		}
 
 		if(compute_approximate)
 		{
-			feature_params.unknownToUnknownDistanceTerm.SetValue(
+			feature_params.unknownToUnknownDistanceTerm.SetDistTerm(
 				ComputeDistanceTermNonNull(feature_params.unknownToUnknownDifference, index, false), false);
 		}
 
@@ -101,13 +101,13 @@ public:
 			//compute knownToUnknownDistanceTerm
 			if(compute_accurate)
 			{
-				feature_params.knownToUnknownDistanceTerm.SetValue(
+				feature_params.knownToUnknownDistanceTerm.SetDistTerm(
 					ComputeDistanceTermNonNull(feature_params.knownToUnknownDifference, index, true), true);
 			}
 
 			if(compute_approximate)
 			{
-				feature_params.knownToUnknownDistanceTerm.SetValue(
+				feature_params.knownToUnknownDistanceTerm.SetDistTerm(
 					ComputeDistanceTermNonNull(feature_params.knownToUnknownDifference, index, false), false);
 			}
 		}
@@ -147,17 +147,17 @@ public:
 		feature_params.internDistanceTerms.resize(interned_values->size());
 		//first entry is known-unknown distance
 		if(compute_accurate)
-			feature_params.internDistanceTerms[0].SetValue(ComputeDistanceTermKnownToUnknown(index, true), true);
+			feature_params.internDistanceTerms[0].SetDistTerm(ComputeDistanceTermKnownToUnknown(index, true), true);
 		if(compute_approximate)
-			feature_params.internDistanceTerms[0].SetValue(ComputeDistanceTermKnownToUnknown(index, false), false);
+			feature_params.internDistanceTerms[0].SetDistTerm(ComputeDistanceTermKnownToUnknown(index, false), false);
 
 		for(size_t i = 1; i < feature_params.internDistanceTerms.size(); i++)
 		{
 			double difference = value - interned_values->at(i);
 			if(compute_accurate)
-				feature_params.internDistanceTerms[i].SetValue(ComputeDistanceTermNonNominalNonNullRegular(difference, index, true), true);
+				feature_params.internDistanceTerms[i].SetDistTerm(ComputeDistanceTermNonNominalNonNullRegular(difference, index, true), true);
 			if(compute_approximate)
-				feature_params.internDistanceTerms[i].SetValue(ComputeDistanceTermNonNominalNonNullRegular(difference, index, false), false);
+				feature_params.internDistanceTerms[i].SetDistTerm(ComputeDistanceTermNonNominalNonNullRegular(difference, index, false), false);
 		}
 	}
 
@@ -230,42 +230,44 @@ protected:
 		return (highAccuracy || recomputeAccurateDistances);
 	}
 
-	//stores a pair of exact and approximate values
+	//stores the difference and computed exact and approximate distance terms
 	// which can be referenced by getting the value at the corresponding offset
 	//the values default to 0.0 on initialization
-	class ExactApproxValuePair
+	class DistanceTermValues
 	{
 	public:
 		//offset for each precision level
 		static constexpr int APPROX = 0;
 		static constexpr int EXACT = 1;
 
-		__forceinline ExactApproxValuePair(double initial_value = 0.0)
+		__forceinline DistanceTermValues(double initial_value = 0.0)
 		{
-			exactApproxPair = { initial_value, initial_value };
+			distanceTerm = { initial_value, initial_value };
+			difference = initial_value;
 		}
 
-		constexpr double GetValue(bool high_accuracy)
+		constexpr double GetDistTerm(bool high_accuracy)
 		{
-			return exactApproxPair[high_accuracy ? EXACT : APPROX];
+			return distanceTerm[high_accuracy ? EXACT : APPROX];
 		}
 
-		constexpr double GetValue(int offset)
+		constexpr double GetDistTerm(int offset)
 		{
-			return exactApproxPair[offset];
+			return distanceTerm[offset];
 		}
 
-		__forceinline void SetValue(double value, int offset)
+		__forceinline void SetDistTerm(double value, int offset)
 		{
-			exactApproxPair[offset] = value;
+			distanceTerm[offset] = value;
 		}
 
-		__forceinline void SetValue(double value, bool high_accuracy)
+		__forceinline void SetDistTerm(double value, bool high_accuracy)
 		{
-			exactApproxPair[high_accuracy ? EXACT : APPROX] = value;
+			distanceTerm[high_accuracy ? EXACT : APPROX] = value;
 		}
 
-		std::array<double, 2> exactApproxPair;
+		double difference;
+		std::array<double, 2> distanceTerm;
 	};
 
 	//update cached nominal deltas based on highAccuracy and recomputeAccurateDistances, caching what is needed given those flags
@@ -289,14 +291,14 @@ protected:
 
 				if(compute_accurate)
 				{
-					feat_params.nominalMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, true), true);
-					feat_params.nominalNonMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, true), true);
+					feat_params.nominalMatchDistanceTerm.SetDistTerm(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, true), true);
+					feat_params.nominalNonMatchDistanceTerm.SetDistTerm(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, true), true);
 				}
 
 				if(compute_approximate)
 				{
-					feat_params.nominalMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, false), false);
-					feat_params.nominalNonMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, false), false);
+					feat_params.nominalMatchDistanceTerm.SetDistTerm(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, false), false);
+					feat_params.nominalNonMatchDistanceTerm.SetDistTerm(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, false), false);
 				}
 			}
 		}
@@ -353,7 +355,7 @@ public:
 			return fastPowInverseP.FastPow(d);
 	}
 
-	//computes the exponentiation of d to p given precision being from ExactApproxValuePair
+	//computes the exponentiation of d to p given precision being from DistanceTermValues
 	__forceinline double ExponentiateDifferenceTerm(double d, bool high_accuracy)
 	{
 		if(pValue == 1)
@@ -487,25 +489,25 @@ public:
 	//returns the precomputed distance term for a nominal when two universally symmetric nominals are equal
 	__forceinline double ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(size_t index, bool high_accuracy)
 	{
-		return featureParams[index].nominalMatchDistanceTerm.GetValue(high_accuracy);
+		return featureParams[index].nominalMatchDistanceTerm.GetDistTerm(high_accuracy);
 	}
 
 	//returns the precomputed distance term for a nominal when two universally symmetric nominals are not equal
 	__forceinline double ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(size_t index, bool high_accuracy)
 	{
-		return featureParams[index].nominalNonMatchDistanceTerm.GetValue(high_accuracy);
+		return featureParams[index].nominalNonMatchDistanceTerm.GetDistTerm(high_accuracy);
 	}
 
 	//computes the distance term for an unknown-unknown
 	__forceinline double ComputeDistanceTermUnknownToUnknown(size_t index, bool high_accuracy)
 	{
-		return featureParams[index].unknownToUnknownDistanceTerm.GetValue(high_accuracy);
+		return featureParams[index].unknownToUnknownDistanceTerm.GetDistTerm(high_accuracy);
 	}
 
 	//computes the distance term for an known-unknown
 	__forceinline double ComputeDistanceTermKnownToUnknown(size_t index, bool high_accuracy)
 	{
-		return featureParams[index].knownToUnknownDistanceTerm.GetValue(high_accuracy);
+		return featureParams[index].knownToUnknownDistanceTerm.GetDistTerm(high_accuracy);
 	}
 
 	//returns true if the feature at index has interned number values
@@ -517,7 +519,7 @@ public:
 	//returns the precomputed distance term for the interned number with intern_value_index
 	__forceinline double ComputeDistanceTermNumberInternedPrecomputed(size_t intern_value_index, size_t index, bool high_accuracy)
 	{
-		return featureParams[index].internDistanceTerms[intern_value_index].GetValue(high_accuracy);
+		return featureParams[index].internDistanceTerms[intern_value_index].GetDistTerm(high_accuracy);
 	}
 
 	//computes the inner term for a non-nominal with an exact match of values
@@ -887,14 +889,14 @@ public:
 		double weight;
 
 		//distance terms for nominals
-		ExactApproxValuePair nominalMatchDistanceTerm;
-		ExactApproxValuePair nominalNonMatchDistanceTerm;
+		DistanceTermValues nominalMatchDistanceTerm;
+		DistanceTermValues nominalNonMatchDistanceTerm;
 
 		//pointer to a lookup table of indices to values if the feature is an interned number
 		std::vector<double> *internedNumberIndexToNumberValue;
 
 		//precomputed distance terms for each interned value looked up by intern index
-		std::vector<ExactApproxValuePair> internDistanceTerms;
+		std::vector<DistanceTermValues> internDistanceTerms;
 
 		//type attributes dependent on featureType
 		union
@@ -910,21 +912,22 @@ public:
 		//uncertainty of each value
 		double deviation;
 
-		//TODO 17631: finish documenting this and fill in the doubles with a tuple of ExactApproxValuePair and a double for the difference, and options for unknown differences;
+		//TODO 17631: finish documenting this and fill in the doubles with a tuple of DistanceTermValues and a double for the difference, and options for unknown differences;
 		//consider replacing symmetric nominal and unknown* with this when nominals have asymmetric deviations
-		//struct NominalDeviationData
-		//{
-		//	FastHashMap<StringInternPool::StringID, double> deviations;
-		//	double defaultDeviation;
-		//	double unknownDeviation;
-		//};
-		//FastHashMap<StringInternPool::StringID, std::unique_ptr<NominalDeviationData>> nominalSparseDeviationMatrix;
+		class NominalDeviationData
+		{
+		public:
+			FastHashMap<StringInternPool::StringID, double> deviations;
+			double defaultDeviation;
+			double unknownDeviation;
+		};
+		FastHashMap<StringInternPool::StringID, NominalDeviationData> nominalSparseDeviationMatrix;
 
 		//distance term to use if both values being compared are unknown
-		ExactApproxValuePair unknownToUnknownDistanceTerm;
+		DistanceTermValues unknownToUnknownDistanceTerm;
 
 		//distance term to use if one value is known and the other is unknown
-		ExactApproxValuePair knownToUnknownDistanceTerm;
+		DistanceTermValues knownToUnknownDistanceTerm;
 
 		//difference between two values if both are unknown (NaN if unknown)
 		double unknownToUnknownDifference;

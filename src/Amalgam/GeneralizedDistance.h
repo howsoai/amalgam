@@ -230,20 +230,19 @@ protected:
 		return (highAccuracy || recomputeAccurateDistances);
 	}
 
-	//stores the difference and computed exact and approximate distance terms
+	//stores the computed exact and approximate distance terms
 	// which can be referenced by getting the value at the corresponding offset
 	//the values default to 0.0 on initialization
-	class DistanceTermValues
+	class DistanceTerms
 	{
 	public:
 		//offset for each precision level
 		static constexpr int APPROX = 0;
 		static constexpr int EXACT = 1;
 
-		__forceinline DistanceTermValues(double initial_value = 0.0)
+		__forceinline DistanceTerms(double initial_value = 0.0)
 		{
 			distanceTerm = { initial_value, initial_value };
-			difference = initial_value;
 		}
 
 		constexpr double GetDistTerm(bool high_accuracy)
@@ -267,6 +266,20 @@ protected:
 		}
 
 		std::array<double, 2> distanceTerm;
+	};
+
+	//stores the computed exact and approximate distance terms, as well as the difference
+	//the values default to 0.0 on initialization
+	class DistanceTermsWithDifference
+		: public DistanceTerms
+	{
+	public:
+		__forceinline DistanceTermsWithDifference(double initial_value = 0.0)
+			: DistanceTerms(initial_value)
+		{
+			difference = initial_value;
+		}
+
 		double difference;
 	};
 
@@ -355,7 +368,7 @@ public:
 			return fastPowInverseP.FastPow(d);
 	}
 
-	//computes the exponentiation of d to p given precision being from DistanceTermValues
+	//computes the exponentiation of d to p given precision being from DistanceTermsWithDifference
 	__forceinline double ExponentiateDifferenceTerm(double d, bool high_accuracy)
 	{
 		if(pValue == 1)
@@ -887,14 +900,14 @@ public:
 		double weight;
 
 		//distance terms for nominals
-		DistanceTermValues nominalMatchDistanceTerm;
-		DistanceTermValues nominalNonMatchDistanceTerm;
+		DistanceTermsWithDifference nominalMatchDistanceTerm;
+		DistanceTermsWithDifference nominalNonMatchDistanceTerm;
 
 		//pointer to a lookup table of indices to values if the feature is an interned number
 		std::vector<double> *internedNumberIndexToNumberValue;
 
 		//precomputed distance terms for each interned value looked up by intern index
-		std::vector<DistanceTermValues> internDistanceTerms;
+		std::vector<DistanceTerms> internDistanceTerms;
 
 		//type attributes dependent on featureType
 		union
@@ -910,24 +923,23 @@ public:
 		//uncertainty of each value
 		double deviation;
 
-		//TODO 17631: finish documenting this and fill in the doubles with a tuple of DistanceTermValues and a double for the difference, and options for unknown differences;
-		//consider replacing symmetric nominal and unknown* with this when nominals have asymmetric deviations
+		//TODO 17631: document, populate, and use this data structure
 		class NominalDeviationData
 		{
 		public:
-			FastHashMap<StringInternPool::StringID, DistanceTermValues> deviations;
-			DistanceTermValues defaultDeviation;
-			DistanceTermValues unknownDeviation;
+			FastHashMap<StringInternPool::StringID, DistanceTermsWithDifference> deviations;
+			DistanceTermsWithDifference defaultDeviation;
+			DistanceTermsWithDifference unknownDeviation;
 		};
 		FastHashMap<StringInternPool::StringID, NominalDeviationData> nominalSparseDeviationMatrix;
 
 		//distance term to use if both values being compared are unknown
 		//the difference will be NaN if unknown
-		DistanceTermValues unknownToUnknownDistanceTerm;
+		DistanceTermsWithDifference unknownToUnknownDistanceTerm;
 
 		//distance term to use if one value is known and the other is unknown
 		//the difference will be NaN if unknown
-		DistanceTermValues knownToUnknownDistanceTerm;
+		DistanceTermsWithDifference knownToUnknownDistanceTerm;
 	};
 
 	std::vector<FeatureParams> featureParams;

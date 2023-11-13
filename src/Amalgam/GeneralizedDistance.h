@@ -82,17 +82,17 @@ public:
 		if(compute_accurate)
 		{
 			feature_params.unknownToUnknownDistanceTerm.SetDistTerm(
-					ComputeDistanceTermNonNull(feature_params.unknownToUnknownDifference, index, true), true);
+					ComputeDistanceTermNonNull(feature_params.unknownToUnknownDistanceTerm.difference, index, true), true);
 		}
 
 		if(compute_approximate)
 		{
 			feature_params.unknownToUnknownDistanceTerm.SetDistTerm(
-				ComputeDistanceTermNonNull(feature_params.unknownToUnknownDifference, index, false), false);
+				ComputeDistanceTermNonNull(feature_params.unknownToUnknownDistanceTerm.difference, index, false), false);
 		}
 
 		//if knownToUnknownDifference is same as unknownToUnknownDifference, can copy distance term instead of recomputing
-		if(feature_params.knownToUnknownDifference == feature_params.unknownToUnknownDifference)
+		if(feature_params.knownToUnknownDistanceTerm.difference == feature_params.unknownToUnknownDistanceTerm.difference)
 		{
 			feature_params.knownToUnknownDistanceTerm = feature_params.unknownToUnknownDistanceTerm;
 		}
@@ -102,13 +102,13 @@ public:
 			if(compute_accurate)
 			{
 				feature_params.knownToUnknownDistanceTerm.SetDistTerm(
-					ComputeDistanceTermNonNull(feature_params.knownToUnknownDifference, index, true), true);
+					ComputeDistanceTermNonNull(feature_params.knownToUnknownDistanceTerm.difference, index, true), true);
 			}
 
 			if(compute_approximate)
 			{
 				feature_params.knownToUnknownDistanceTerm.SetDistTerm(
-					ComputeDistanceTermNonNull(feature_params.knownToUnknownDifference, index, false), false);
+					ComputeDistanceTermNonNull(feature_params.knownToUnknownDistanceTerm.difference, index, false), false);
 			}
 		}
 
@@ -337,7 +337,7 @@ public:
 	__forceinline bool IsKnownToUnknownDistanceLessThanOrEqualToExactMatch(size_t feature_index)
 	{
 		auto &feature_params = featureParams[feature_index];
-		return (feature_params.knownToUnknownDifference <= feature_params.deviation);
+		return (feature_params.knownToUnknownDistanceTerm.difference <= feature_params.deviation);
 	}
 
 	//computes the exponentiation of d to 1/p
@@ -870,9 +870,7 @@ public:
 			weight(1.0),
 			internedNumberIndexToNumberValue(nullptr), deviation(0.0),
 			unknownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
-			knownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
-			unknownToUnknownDifference(std::numeric_limits<double>::quiet_NaN()),
-			knownToUnknownDifference(std::numeric_limits<double>::quiet_NaN())
+			knownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN())
 		{
 			typeAttributes.maxCyclicDifference = std::numeric_limits<double>::quiet_NaN();
 		}
@@ -924,16 +922,12 @@ public:
 		FastHashMap<StringInternPool::StringID, NominalDeviationData> nominalSparseDeviationMatrix;
 
 		//distance term to use if both values being compared are unknown
+		//the difference will be NaN if unknown
 		DistanceTermValues unknownToUnknownDistanceTerm;
 
 		//distance term to use if one value is known and the other is unknown
+		//the difference will be NaN if unknown
 		DistanceTermValues knownToUnknownDistanceTerm;
-
-		//difference between two values if both are unknown (NaN if unknown)
-		double unknownToUnknownDifference;
-
-		//difference between two values if one is known and the other is unknown (NaN if unknown)
-		double knownToUnknownDifference;
 	};
 
 	std::vector<FeatureParams> featureParams;

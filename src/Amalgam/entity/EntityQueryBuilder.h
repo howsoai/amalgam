@@ -114,8 +114,8 @@ namespace EntityQueryBuilder
 				if(i < dist_params.featureParams.size())
 				{
 					dist_params.featureParams[i].deviation = 0.0;
-					dist_params.featureParams[i].unknownToUnknownDifference = std::numeric_limits<double>::quiet_NaN();
-					dist_params.featureParams[i].knownToUnknownDifference = std::numeric_limits<double>::quiet_NaN();
+					dist_params.featureParams[i].unknownToUnknownDistanceTerm.difference = std::numeric_limits<double>::quiet_NaN();
+					dist_params.featureParams[i].knownToUnknownDistanceTerm.difference = std::numeric_limits<double>::quiet_NaN();
 
 					//get deviations based on feature type
 					switch(dist_params.featureParams[i].featureType)
@@ -133,9 +133,9 @@ namespace EntityQueryBuilder
 								if(ocn_size > 0)
 									dist_params.featureParams[i].deviation = EvaluableNode::ToNumber(ocn[0], 0.0);
 								if(ocn_size > 1)
-									dist_params.featureParams[i].knownToUnknownDifference = EvaluableNode::ToNumber(ocn[1]);
+									dist_params.featureParams[i].knownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[1]);
 								if(ocn_size > 2)
-									dist_params.featureParams[i].unknownToUnknownDifference = EvaluableNode::ToNumber(ocn[2]);
+									dist_params.featureParams[i].unknownToUnknownDistanceTerm = EvaluableNode::ToNumber(ocn[2]);
 							}
 							else //treat as singular value
 							{
@@ -154,9 +154,9 @@ namespace EntityQueryBuilder
 								if(ocn_size > 0)
 									dist_params.featureParams[i].deviation = EvaluableNode::ToNumber(ocn[0]);
 								if(ocn_size > 1)
-									dist_params.featureParams[i].knownToUnknownDifference = EvaluableNode::ToNumber(ocn[1]);
+									dist_params.featureParams[i].knownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[1]);
 								if(ocn_size > 2)
-									dist_params.featureParams[i].unknownToUnknownDifference = EvaluableNode::ToNumber(ocn[2]);
+									dist_params.featureParams[i].unknownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[2]);
 							}
 							else //treat as singular value
 							{

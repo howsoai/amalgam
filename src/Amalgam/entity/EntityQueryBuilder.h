@@ -129,7 +129,8 @@ namespace EntityQueryBuilder
 								size_t ocn_size = ocn.size();
 								//TODO 17631: update language.js
 								//TODO 17631: add sparse deviation matrix to unit tests
-								//TODO 17631: implement sparse deviation matrix here
+								//TODO 17631: populate nominalSparseDeviationMatrix here as appropriate
+								//TODO 17631: change type to EFDT_NOMINAL_STRING or EFDT_NOMINAL_NUMBER as appropriate
 								if(ocn_size > 0)
 									dist_params.featureParams[i].deviation = EvaluableNode::ToNumber(ocn[0], 0.0);
 								if(ocn_size > 1)

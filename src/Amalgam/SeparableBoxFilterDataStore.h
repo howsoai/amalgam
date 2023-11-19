@@ -768,6 +768,20 @@ protected:
 				return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
 		}
 
+		case GeneralizedDistance::EFDT_NOMINAL_STRING:
+		{
+			const size_t column_index = target_label_indices[query_feature_index];
+			auto &column_data = columnData[column_index];
+			//TODO 17631: finish this
+		}
+
+		case GeneralizedDistance::EFDT_NOMINAL_NUMBER:
+		{
+			const size_t column_index = target_label_indices[query_feature_index];
+			auto &column_data = columnData[column_index];
+			//TODO 17631: finish this
+		}
+
 		default: //GeneralizedDistance::EFDT_CONTINUOUS_STRING or GeneralizedDistance::EFDT_CONTINUOUS_CODE
 		{
 			const size_t column_index = target_label_indices[query_feature_index];
@@ -866,6 +880,8 @@ protected:
 
 		auto &feature_type = dist_params.featureParams[query_feature_index].featureType;
 		auto &effective_feature_type = dist_params.featureParams[query_feature_index].effectiveFeatureType;
+
+		//TODO 17631: change nominal to EFDT_NOMINAL_STRING or EFDT_NOMINAL_NUMBER based on whether nominalStringSparseDeviationMatrix and nominalNumberSparseDeviationMatrix being populated
 
 		if(feature_type == GeneralizedDistance::FDT_NOMINAL
 			|| feature_type == GeneralizedDistance::FDT_CONTINUOUS_STRING

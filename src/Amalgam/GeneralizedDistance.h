@@ -48,6 +48,10 @@ public:
 		EFDT_CONTINUOUS_NUMERIC_CYCLIC,
 		//continuous precomputed (cyclic or not), may contain nonnumeric data
 		EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED,
+		//nominal compraed to a string value where nominals may not be symmetric
+		EFDT_NOMINAL_STRING,
+		//nominal compraed to a number value where nominals may not be symmetric
+		EFDT_NOMINAL_NUMBER,
 		//edit distance between strings
 		EFDT_CONTINUOUS_STRING,
 		//continuous measures of the number of nodes different between two sets of code
@@ -923,15 +927,21 @@ public:
 		//uncertainty of each value
 		double deviation;
 
-		//TODO 17631: document, populate, and use this data structure
+		//contains the deviations for a given nominal value for each other nominal value
+		template<typename NominalValueType>
 		class NominalDeviationData
 		{
 		public:
-			FastHashMap<StringInternPool::StringID, DistanceTermsWithDifference> deviations;
+			FastHashMap<NominalValueType, DistanceTermsWithDifference> deviations;
 			DistanceTermsWithDifference defaultDeviation;
 			DistanceTermsWithDifference unknownDeviation;
 		};
-		FastHashMap<StringInternPool::StringID, NominalDeviationData> nominalSparseDeviationMatrix;
+
+		//sparse deviation matrix if the nominal is a string
+		FastHashMap<StringInternPool::StringID, NominalDeviationData<StringInternPool::StringID>> nominalStringSparseDeviationMatrix;
+
+		//sparse deviation matrix if the nominal is a number
+		FastHashMap<double, NominalDeviationData<double>> nominalNumberSparseDeviationMatrix;
 
 		//distance term to use if both values being compared are unknown
 		//the difference will be NaN if unknown

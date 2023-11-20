@@ -878,10 +878,9 @@ protected:
 	{
 		target_column_indices.push_back(column_index);
 
-		auto &feature_type = dist_params.featureParams[query_feature_index].featureType;
-		auto &effective_feature_type = dist_params.featureParams[query_feature_index].effectiveFeatureType;
-
-		//TODO 17631: change nominal to EFDT_NOMINAL_STRING or EFDT_NOMINAL_NUMBER based on whether nominalStringSparseDeviationMatrix and nominalNumberSparseDeviationMatrix being populated
+		auto &feature_params = dist_params.featureParams[query_feature_index];
+		auto &feature_type = feature_params.featureType;
+		auto &effective_feature_type = feature_params.effectiveFeatureType;
 
 		if(feature_type == GeneralizedDistance::FDT_NOMINAL
 			|| feature_type == GeneralizedDistance::FDT_CONTINUOUS_STRING
@@ -891,13 +890,24 @@ protected:
 			target_value_types.push_back(position_value_type);
 
 			if(feature_type == GeneralizedDistance::FDT_NOMINAL)
-				effective_feature_type = GeneralizedDistance::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED;
+			{
+				if(feature_params.nominalStringSparseDeviationMatrix.size() > 0)
+					effective_feature_type = GeneralizedDistance::EFDT_NOMINAL_STRING;
+				else if(feature_params.nominalNumberSparseDeviationMatrix.size() > 0)
+					effective_feature_type = GeneralizedDistance::EFDT_NOMINAL_NUMBER;
+				else
+					effective_feature_type = GeneralizedDistance::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED;
+			}
 			else if(feature_type == GeneralizedDistance::FDT_CONTINUOUS_STRING)
+			{
 				effective_feature_type = GeneralizedDistance::EFDT_CONTINUOUS_STRING;
+			}
 			else if(feature_type == GeneralizedDistance::FDT_CONTINUOUS_CODE)
+			{
 				effective_feature_type = GeneralizedDistance::EFDT_CONTINUOUS_CODE;
+			}
 		}
-		else // feature_type is some form of numeric
+		else // feature_type is not nominal and numeric
 		{
 			//looking for continuous; if not a number, so just put as nan
 			double position_value_numeric = (position_value_type == ENIVT_NUMBER ? position_value.number : std::numeric_limits<double>::quiet_NaN());

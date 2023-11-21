@@ -343,8 +343,8 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 				for(auto &value_entry : column_data->sortedNumberValueEntries)
 				{
 					//get distance term that is applicable to each entity in this bucket
-					double distance_term = dist_params.ComputeDistanceTermRegularOneNonNull(
-						target_value.number - value_entry->value.number, query_feature_index, high_accuracy);
+					double distance_term = dist_params.ComputeDistanceTermRegular(
+						target_value.number, value_entry->value.number, ENIVT_NUMBER, ENIVT_NUMBER, query_feature_index, high_accuracy);
 
 					//for each bucket, add term to their sums
 					for(auto entity_index : value_entry->indicesWithValue)

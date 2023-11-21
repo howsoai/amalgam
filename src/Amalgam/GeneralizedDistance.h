@@ -695,22 +695,6 @@ public:
 			return ExponentiateDifferenceTerm(diff, high_accuracy) * featureParams[index].weight;
 	}
 
-	//TODO 17631: eliminate this method in favor of others
-	//computes the inner term of the Minkowski norm summation for a single index for p non-zero and non-infinite
-	//where at least one of the values is non-null
-	__forceinline double ComputeDistanceTermRegularOneNonNull(double diff, size_t index, bool high_accuracy)
-	{
-		if(FastIsNaN(diff))
-			return ComputeDistanceTermKnownToUnknown(index, high_accuracy);
-
-		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
-		if(IsFeatureNominal(index))
-			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index, high_accuracy)
-				: ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index, high_accuracy);
-
-		return ComputeDistanceTermNonNominalNonNullRegular(diff, index, high_accuracy);
-	}
-
 	//computes the inner term of the Minkowski norm summation for a single index for p non-zero and non-infinite
 	__forceinline double ComputeDistanceTermRegular(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
 		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)

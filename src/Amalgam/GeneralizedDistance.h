@@ -515,6 +515,19 @@ public:
 		return featureParams[index].nominalNonMatchDistanceTerm.GetDistTerm(high_accuracy);
 	}
 
+	//returns the distance term given that it is nominal
+	__forceinline double ComputeDistanceTermNominal(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
+		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)
+	{
+		//TODO 17631: implement this and use where appropriate
+		double diff = ComputeDifference(a, b, a_type, b_type, featureParams[index].featureType);
+		if(FastIsNaN(diff))
+			return LookupNullDistanceTerm(a, b, a_type, b_type, index, high_accuracy);
+
+		return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index, high_accuracy)
+			: ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index, high_accuracy);
+	}
+
 	//computes the distance term for an unknown-unknown
 	__forceinline double ComputeDistanceTermUnknownToUnknown(size_t index, bool high_accuracy)
 	{
@@ -629,14 +642,13 @@ public:
 	__forceinline double ComputeDistanceTermP0(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
 		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)
 	{
+		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
+		if(IsFeatureNominal(index))
+			return ComputeDistanceTermNominal(a, b, a_type, b_type, index, high_accuracy);
+
 		double diff = ComputeDifference(a, b, a_type, b_type, featureParams[index].featureType);
 		if(FastIsNaN(diff))
 			return LookupNullDistanceTerm(a, b, a_type, b_type, index, high_accuracy);
-
-		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
-		if(IsFeatureNominal(index))
-			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index, high_accuracy)
-			: ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index, high_accuracy);
 
 		diff = ComputeDifferenceTermBaseNonNominal(diff, index, high_accuracy);
 
@@ -650,14 +662,13 @@ public:
 	__forceinline double ComputeDistanceTermPInf(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
 		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)
 	{
+		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
+		if(IsFeatureNominal(index))
+			return ComputeDistanceTermNominal(a, b, a_type, b_type, index, high_accuracy);
+
 		double diff = ComputeDifference(a, b, a_type, b_type, featureParams[index].featureType);
 		if(FastIsNaN(diff))
 			return LookupNullDistanceTerm(a, b, a_type, b_type, index, high_accuracy);
-
-		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
-		if(IsFeatureNominal(index))
-			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index, high_accuracy)
-				: ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index, high_accuracy);
 
 		diff = ComputeDifferenceTermBaseNonNominal(diff, index, high_accuracy);
 
@@ -684,6 +695,7 @@ public:
 			return ExponentiateDifferenceTerm(diff, high_accuracy) * featureParams[index].weight;
 	}
 
+	//TODO 17631: eliminate this method in favor of others
 	//computes the inner term of the Minkowski norm summation for a single index for p non-zero and non-infinite
 	//where at least one of the values is non-null
 	__forceinline double ComputeDistanceTermRegularOneNonNull(double diff, size_t index, bool high_accuracy)
@@ -703,14 +715,13 @@ public:
 	__forceinline double ComputeDistanceTermRegular(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
 		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)
 	{
+		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
+		if(IsFeatureNominal(index))
+			return ComputeDistanceTermNominal(a, b, a_type, b_type, index, high_accuracy);
+
 		double diff = ComputeDifference(a, b, a_type, b_type, featureParams[index].featureType);
 		if(FastIsNaN(diff))
 			return LookupNullDistanceTerm(a, b, a_type, b_type, index, high_accuracy);
-
-		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
-		if(IsFeatureNominal(index))
-			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index, high_accuracy)
-				: ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index, high_accuracy);
 
 		return ComputeDistanceTermNonNominalNonNullRegular(diff, index, high_accuracy);
 	}

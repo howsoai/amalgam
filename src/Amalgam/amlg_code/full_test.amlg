@@ -3510,7 +3510,7 @@
 		;types
 		(list "nominal" "nominal" "nominal" "continuous" "nominal" "continuous")
 		;attributes
-		(list 3 100 7 0 10 0)
+		(list 3 100 7 (null) 10 (null))
 		;deviations
 		(list 0.4	0.1	0.2	30	0.3	0.05)
 		;p
@@ -3527,7 +3527,7 @@
 		;types
 		(list "nominal" "nominal" "nominal" "continuous" "nominal" "continuous")
 		;attributes
-		(list 3 100 7 0 10 0)
+		(list 3 100 7 (null) 10 (null))
 		;deviations
 		(list 0.4	0.1	0.2	30	0.3	0.05)
 		;p
@@ -3546,7 +3546,7 @@
 		;types
 		(list "nominal" "nominal" "nominal" "continuous" "nominal" "continuous")
 		;attributes
-		(list 3 100 7 0 10 0)
+		(list 3 100 7 (null) 10 (null))
 		;deviations
 		(list 0.4	0.1	0.2	30	0.3	0.05)
 		;p
@@ -3653,7 +3653,7 @@
 			;types
 			(list "nominal" "nominal" "nominal" "continuous" "nominal" "continuous")
 			;attributes
-			(list 3 100 7 0 10 0)
+			(list 3 100 7 (null) 10 (null))
 			;deviations
 			(list 0.4	0.1	0.2	30	0.3	0.05)
 			;p

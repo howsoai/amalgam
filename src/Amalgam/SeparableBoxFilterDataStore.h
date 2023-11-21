@@ -768,21 +768,9 @@ protected:
 				return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
 		}
 
-		case GeneralizedDistance::EFDT_NOMINAL_STRING:
-		{
-			const size_t column_index = target_label_indices[query_feature_index];
-			auto &column_data = columnData[column_index];
-			//TODO 17631: finish this
-		}
-
-		case GeneralizedDistance::EFDT_NOMINAL_NUMBER:
-		{
-			const size_t column_index = target_label_indices[query_feature_index];
-			auto &column_data = columnData[column_index];
-			//TODO 17631: finish this
-		}
-
-		default: //GeneralizedDistance::EFDT_CONTINUOUS_STRING or GeneralizedDistance::EFDT_CONTINUOUS_CODE
+		default:
+			//GeneralizedDistance::EFDT_NOMINAL_STRING or GeneralizedDistance::EFDT_NOMINAL_NUMBER
+			//or GeneralizedDistance::EFDT_CONTINUOUS_STRING or GeneralizedDistance::EFDT_CONTINUOUS_CODE
 		{
 			const size_t column_index = target_label_indices[query_feature_index];
 			auto &column_data = columnData[column_index];

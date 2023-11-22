@@ -29,10 +29,10 @@ class Entity
 public:
 
 	//type for looking up an entity based on a StringID
-	using EntityLookupAssocType = CompactHashMap<StringInternPool::StringID, Entity *>;
+	using EntityLookupAssocType = FastHashMap<StringInternPool::StringID, Entity *>;
 
 	//StringID to index
-	using StringIdToIndexAssocType = CompactHashMap<StringInternPool::StringID, size_t>;
+	using StringIdToIndexAssocType = FastHashMap<StringInternPool::StringID, size_t>;
 
 	//set of entities
 	using EntitySetType = FastHashSet<Entity *>;

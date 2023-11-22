@@ -396,7 +396,7 @@ public:
 	//accumulates the code and recreates the index, modifying labels as specified
 	// if allocated_with_entity_enm is false, then it will copy the tree into the entity's EvaluableNodeManager, otherwise it will just assume it is already available
 	// write_listeners is optional, and if specified, will log the event
-	void AccumRoot(EvaluableNode *_code, bool allocated_with_entity_enm, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE, std::vector<EntityWriteListener *> *write_listeners = nullptr);
+	void AccumRoot(EvaluableNodeReference _code, bool allocated_with_entity_enm, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE, std::vector<EntityWriteListener *> *write_listeners = nullptr);
 
 	//collects garbage on evaluableNodeManager
 #ifdef MULTITHREAD_SUPPORT

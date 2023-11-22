@@ -367,7 +367,7 @@ public:
 	//Converts the node to a string
 	const static std::string ToString(EvaluableNode *e);
 
-	//converts node to an existing string. If it doesn't exist, it returns NOT_A_STRING_ID
+	//converts node to an existing string. If it doesn't exist, or any form of null/NaN/NaS, it returns NOT_A_STRING_ID
 	static StringInternPool::StringID ToStringIDIfExists(EvaluableNode *e);
 
 	//converts node to a string. Creates a reference to the string that must be destroyed, regardless of whether the string existed or not (if it did not exist, then it creates one)

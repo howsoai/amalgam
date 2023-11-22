@@ -49,7 +49,9 @@ public:
 		std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
 		Entity *t = nullptr, Interpreter *calling_interpreter = nullptr
 	);
-	~Interpreter();
+
+	~Interpreter()
+	{	}
 
 	//Executes the current Entity that this Interpreter is contained by
 	// sets up all of the stack and contextual structures, then calls InterpretNode on en
@@ -89,6 +91,9 @@ public:
 	//collects garbage on evaluableNodeManager
 	__forceinline void CollectGarbage()
 	{
+		if(!evaluableNodeManager->RecommendGarbageCollection())
+			return;
+
 	#ifdef MULTITHREAD_SUPPORT
 		evaluableNodeManager->CollectGarbage(&memoryModificationLock);
 	#else

@@ -197,9 +197,6 @@ void EvaluableNodeManager::CollectGarbage(Concurrency::ReadLock *memory_modifica
 void EvaluableNodeManager::CollectGarbage()
 #endif
 {
-	if(!RecommendGarbageCollection())
-		return;
-
 	if(PerformanceProfiler::IsProfilingEnabled())
 	{
 		static const std::string collect_garbage_string = ".collect_garbage";

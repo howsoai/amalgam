@@ -474,40 +474,36 @@ namespace EntityQueryBuilder
 		auto cur_condition = &(conditions.back());
 		cur_condition->singleLabel = 0;
 
-		//get label sid - always the first child node
-		StringInternPool::StringID label_sid = (ocn.size() >= 1) ? EvaluableNode::ToStringIDIfExists(ocn[0]) : StringInternPool::NOT_A_STRING_ID;
-
-		//switch to return if label sid is invalid
-		switch(type)
+		//get label sid and return if label is invalid
+		StringInternPool::StringID label_sid = StringInternPool::NOT_A_STRING_ID;
+		if(	   type == ENT_QUERY_NOT_EXISTS
+			|| type == ENT_QUERY_EXISTS
+			|| type == ENT_QUERY_MIN
+			|| type == ENT_QUERY_MAX
+			|| type == ENT_QUERY_SUM
+			|| type == ENT_QUERY_MODE
+			|| type == ENT_QUERY_QUANTILE
+			|| type == ENT_QUERY_GENERALIZED_MEAN
+			|| type == ENT_QUERY_MIN_DIFFERENCE
+			|| type == ENT_QUERY_MAX_DIFFERENCE
+			|| type == ENT_QUERY_VALUE_MASSES
+			|| type == ENT_QUERY_LESS_OR_EQUAL_TO
+			|| type == ENT_QUERY_GREATER_OR_EQUAL_TO
+			|| type == ENT_QUERY_NOT_EQUALS
+			|| type == ENT_QUERY_EQUALS
+			|| type == ENT_QUERY_BETWEEN
+			|| type == ENT_QUERY_NOT_BETWEEN
+			|| type == ENT_QUERY_AMONG
+			|| type == ENT_QUERY_NOT_AMONG)
 		{
-			case ENT_QUERY_NOT_EXISTS:
-			case ENT_QUERY_EXISTS:
-			case ENT_QUERY_MIN:
-			case ENT_QUERY_MAX:
-			case ENT_QUERY_SUM:
-			case ENT_QUERY_MODE:
-			case ENT_QUERY_QUANTILE:
-			case ENT_QUERY_GENERALIZED_MEAN:
-			case ENT_QUERY_MIN_DIFFERENCE:
-			case ENT_QUERY_MAX_DIFFERENCE:
-			case ENT_QUERY_VALUE_MASSES:
-			case ENT_QUERY_LESS_OR_EQUAL_TO:
-			case ENT_QUERY_GREATER_OR_EQUAL_TO:
-			case ENT_QUERY_NOT_EQUALS:
-			case ENT_QUERY_EQUALS:
-			case ENT_QUERY_BETWEEN:
-			case ENT_QUERY_NOT_BETWEEN:
-			case ENT_QUERY_AMONG:
-			case ENT_QUERY_NOT_AMONG:
+			if(ocn.size() >= 1)
+				label_sid = EvaluableNode::ToStringIDIfExists(ocn[0]);
+
+			if(!Entity::IsLabelValidAndPublic(label_sid))
 			{
-				if(!Entity::IsLabelValidAndPublic(label_sid))
-				{
-					cur_condition->queryType = ENT_NULL;
-					return;
-				}
-				break;
+				cur_condition->queryType = ENT_NULL;
+				return;
 			}
-			default:;
 		}
 
 		//actually populate the condition parameters from the evaluable nodes

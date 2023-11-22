@@ -398,11 +398,6 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	return retval;
 }
 
-Interpreter::~Interpreter()
-{
-	
-}
-
 EvaluableNodeReference Interpreter::ConvertArgsToCallStack(EvaluableNodeReference &args, EvaluableNodeManager *enm)
 {
 	if(enm == nullptr)

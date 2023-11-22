@@ -89,6 +89,9 @@ public:
 	//collects garbage on evaluableNodeManager
 	__forceinline void CollectGarbage()
 	{
+		if(!evaluableNodeManager->RecommendGarbageCollection())
+			return;
+
 	#ifdef MULTITHREAD_SUPPORT
 		evaluableNodeManager->CollectGarbage(&memoryModificationLock);
 	#else

@@ -283,9 +283,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNPARSE(EvaluableNode *en)
 
 	auto tree = InterpretNodeForImmediateUse(ocn[0]);
 	std::string s = Parser::Unparse(tree, evaluableNodeManager, pretty, true, deterministic_order);
-	evaluableNodeManager->FreeNodeTreeIfPossible(tree);
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, s), true);
+	//TODO 18479: causes an issue of an unfreed string
+	EvaluableNodeReference result = evaluableNodeManager->ReuseOrAllocNode(tree, ENT_STRING);
+	result->SetStringValue(s);
+	return result;
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_IF(EvaluableNode *en)
@@ -1410,14 +1412,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en)
 		//want to generate multiple values, so return a list
 		//try to reuse param if can so don't need to allocate more memory
 		EvaluableNodeReference retval;
-		bool free_param = false;
 		if(param.unique)
 		{
 			retval = param;
 		}
 		else
 		{
-			free_param = true;
 			retval = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
 			retval->SetOrderedChildNodes(param->GetOrderedChildNodes());
 		}
@@ -1435,9 +1435,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en)
 		//free unneeded nodes that weren't part of the shuffle
 		if(param.unique && !param->GetNeedCycleCheck())
 		{
-			if(free_param)
-				evaluableNodeManager->FreeNodeIfPossible(param);
-
 			for(size_t i = number_to_generate; i < num_elements; i++)
 				evaluableNodeManager->FreeNodeTree(retval_ocn[i]);
 		}

@@ -284,7 +284,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNPARSE(EvaluableNode *en)
 	auto tree = InterpretNodeForImmediateUse(ocn[0]);
 	std::string s = Parser::Unparse(tree, evaluableNodeManager, pretty, true, deterministic_order);
 
-	//TODO 18479: causes an issue of an unfreed string
 	EvaluableNodeReference result = evaluableNodeManager->ReuseOrAllocNode(tree, ENT_STRING);
 	result->SetStringValue(s);
 	return result;

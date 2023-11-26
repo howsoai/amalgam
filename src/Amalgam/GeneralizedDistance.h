@@ -519,7 +519,6 @@ public:
 	__forceinline double ComputeDistanceTermNominal(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
 		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)
 	{
-		//TODO 17631: implement this and use where appropriate
 		double diff = ComputeDifference(a, b, a_type, b_type, featureParams[index].featureType);
 		if(FastIsNaN(diff))
 			return LookupNullDistanceTerm(a, b, a_type, b_type, index, high_accuracy);
@@ -708,24 +707,6 @@ public:
 			return LookupNullDistanceTerm(a, b, a_type, b_type, index, high_accuracy);
 
 		return ComputeDistanceTermNonNominalNonNullRegular(diff, index, high_accuracy);
-	}
-
-	//computes the inner term of the Minkowski norm summation for a single index that isn't null,
-	//but computes only from the distance (does not take into account feature measurement type)
-	__forceinline double ComputeDistanceTermFromNonNullDifferenceOnly(double diff, size_t index, bool high_accuracy)
-	{
-		if(pValue == 0.0)
-		{
-			if(high_accuracy)
-				return std::pow(diff, featureParams[index].weight);
-			else
-				return FastPow(diff, featureParams[index].weight);
-		}
-		else if(pValue == std::numeric_limits<double>::infinity()
-				|| pValue == -std::numeric_limits<double>::infinity())
-			return diff * featureParams[index].weight;
-		else
-			return ExponentiateDifferenceTerm(diff, high_accuracy) * featureParams[index].weight;
 	}
 
 	//returns the distance term for the either one or two unknown values

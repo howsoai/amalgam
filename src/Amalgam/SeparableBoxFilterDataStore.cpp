@@ -982,6 +982,14 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 		//next most similar code must be at least a distance of 1 edit away
 		return dist_params.ComputeDistanceTermNonNominalNonCyclicNonNullRegular(1.0, query_feature_index, high_accuracy);
 	}
+	else if(effective_feature_type == GeneralizedDistance::EFDT_NOMINAL_STRING)
+	{
+		//TODO 17631: finish this
+	}
+	else if(effective_feature_type == GeneralizedDistance::EFDT_NOMINAL_NUMBER)
+	{
+		//TODO 17631: finish this
+	}
 	//else feature_type == FDT_CONTINUOUS_NUMERIC or FDT_CONTINUOUS_UNIVERSALLY_NUMERIC
 
 	//if not a number or no numbers available, then no size

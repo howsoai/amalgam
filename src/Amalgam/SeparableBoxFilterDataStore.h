@@ -75,6 +75,7 @@ public:
 		EvaluableNodeImmediateValue &value, EvaluableNodeImmediateValueType value_type,
 		size_t query_feature_index, size_t absolute_feature_index, bool high_accuracy)
 	{
+		//TODO 17631: need to cacount for nonsymmetric nominals
 		if(dist_params.IsFeatureNominal(query_feature_index))
 			return dist_params.ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(query_feature_index, high_accuracy);
 

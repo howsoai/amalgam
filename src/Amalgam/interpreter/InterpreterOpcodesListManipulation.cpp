@@ -212,9 +212,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en)
 			//drop the number of characters before this length
 			size_t utf8_start_offset = StringManipulation::GetNthUTF8CharacterOffset(s, num_chars_to_drop);
 
-			evaluableNodeManager->FreeNodeTreeIfPossible(list);
-
-			return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, s.substr(utf8_start_offset, s.size() - utf8_start_offset)), true);
+			EvaluableNodeReference result = evaluableNodeManager->ReuseOrAllocNode(list, ENT_STRING);
+			result->SetStringValue(s.substr(utf8_start_offset, s.size() - utf8_start_offset));
+			return result;
 		}
 
 		if(DoesEvaluableNodeTypeUseNumberData(list->GetType()))
@@ -224,10 +224,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en)
 			if(value == 0.0)
 				return list;
 
-			evaluableNodeManager->FreeNodeTreeIfPossible(list);
-
 			//return (value - 1.0) if nonzero
-			return EvaluableNodeReference(evaluableNodeManager->AllocNode(value - 1.0), true);
+			EvaluableNodeReference result = evaluableNodeManager->ReuseOrAllocNode(list, ENT_NUMBER);
+			result->SetNumberValue(value - 1.0);
+			return result;
 		}
 	}
 	
@@ -300,8 +300,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en)
 
 			auto [utf8_char_start_offset, utf8_char_length] = StringManipulation::GetLastUTF8CharacterOffsetAndLength(s);
 
-			evaluableNodeManager->FreeNodeTreeIfPossible(list);
-			return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, s.substr(utf8_char_start_offset, utf8_char_length)), true);
+			EvaluableNodeReference result = evaluableNodeManager->ReuseOrAllocNode(list, ENT_STRING);
+			result->SetStringValue(s.substr(utf8_char_start_offset, utf8_char_length));
+			return result;
 		}
 
 		if(DoesEvaluableNodeTypeUseNumberData(list->GetType()))
@@ -312,8 +313,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en)
 				return list;
 
 			//return 1 if nonzero
-			evaluableNodeManager->FreeNodeTreeIfPossible(list);
-			return EvaluableNodeReference(evaluableNodeManager->AllocNode(1.0), true);
+			EvaluableNodeReference result = evaluableNodeManager->ReuseOrAllocNode(list, ENT_NUMBER);
+			result->SetNumberValue(1.0);
+			return result;
 		}
 	}
 

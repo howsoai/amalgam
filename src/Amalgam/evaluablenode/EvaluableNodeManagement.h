@@ -199,6 +199,58 @@ public:
 	};
 	EvaluableNode *AllocNode(EvaluableNode *original, EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE);
 
+	//attempts to reuse candidate if it is unique and change it into the specified type
+	//if candidate is not unique, then it allocates and returns a new node
+	inline EvaluableNodeReference ReuseOrAllocNode(EvaluableNodeReference candidate, EvaluableNodeType type)
+	{
+		if(candidate.unique && candidate != nullptr)
+		{
+			//if not cyclic, can attempt to free all child nodes
+			//if cyclic, don't try, in case a child node points back to candidate
+			if(!candidate->GetNeedCycleCheck())
+			{
+				if(candidate->IsAssociativeArray())
+				{
+					for(auto &[_, e] : candidate->GetMappedChildNodesReference())
+					{
+						if(e != nullptr)
+							FreeNodeTreeRecurse(e);
+					}
+				}
+				else if(!candidate->IsImmediate())
+				{
+					for(auto &e : candidate->GetOrderedChildNodesReference())
+					{
+						if(e != nullptr)
+							FreeNodeTreeRecurse(e);
+					}
+				}
+			}
+
+			candidate->ClearAndSetType(type);
+			return candidate;
+		}
+		else
+		{
+			return EvaluableNodeReference(AllocNode(type), true);
+		}
+	}
+
+	//like ReuseOrAllocNode, but picks whichever node is reusable and frees the other if possible
+	//will try candidate_1 first
+	inline EvaluableNodeReference ReuseOrAllocOneOfNodes(
+		EvaluableNodeReference candidate_1, EvaluableNodeReference candidate_2, EvaluableNodeType type)
+	{
+		if(candidate_1.unique && candidate_1 != nullptr)
+		{
+			FreeNodeTreeIfPossible(candidate_2);
+			return ReuseOrAllocNode(candidate_1, type);
+		}
+
+		//candidate_1 wasn't unique, so try for candidate 2
+		return ReuseOrAllocNode(candidate_2, type);
+	}
+
 	//Copies the data structure and everything underneath it, modifying labels as specified
 	// if cycle_free is true on input, then it can perform a faster copy
 	inline EvaluableNodeReference DeepAllocCopy(EvaluableNode *tree, EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE)

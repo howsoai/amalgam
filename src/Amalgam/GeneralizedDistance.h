@@ -523,6 +523,9 @@ public:
 		if(FastIsNaN(diff))
 			return LookupNullDistanceTerm(a, b, a_type, b_type, index, high_accuracy);
 
+		//TODO 17631: implement other paths
+		//if(featureParams[index].effectiveFeatureType == EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED)
+
 		return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index, high_accuracy)
 			: ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index, high_accuracy);
 	}

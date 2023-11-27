@@ -493,7 +493,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	}
 
 	//get a write lock on the entity
-	EntityWriteReference called_entity = InterpretNodeIntoRelativeSourceEntityWriteReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
+	EntityReadReference called_entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
 	if(called_entity == nullptr)
 		return EvaluableNodeReference::Null();
 
@@ -613,7 +613,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	//lock the current entity
 	EntityReadReference cur_entity(curEntity);
 	StringInternPool::StringID cur_entity_sid = curEntity->GetIdStringId();
-	EntityWriteReference container(curEntity->GetContainer());
+	EntityReadReference container(curEntity->GetContainer());
 	if(container == nullptr)
 		return EvaluableNodeReference::Null();
 

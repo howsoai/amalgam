@@ -417,7 +417,7 @@ EvaluableNodeReference Entity::Execute(ExecutionCycleCount max_num_steps, Execut
 	EvaluableNode *call_stack, bool on_self, EvaluableNodeManager *destination_temp_enm,
 #ifdef MULTITHREAD_SUPPORT
 	Concurrency::ReadLock *locked_memory_modification_lock,
-	Concurrency::WriteLock *entity_write_lock,
+	Concurrency::ReadLock *entity_read_lock,
 #endif
 	StringInternPool::StringID label_sid,
 	Interpreter *calling_interpreter, bool copy_call_stack)
@@ -459,8 +459,8 @@ EvaluableNodeReference Entity::Execute(ExecutionCycleCount max_num_steps, Execut
 
 #ifdef MULTITHREAD_SUPPORT
 	interpreter.memoryModificationLock = Concurrency::ReadLock(interpreter.evaluableNodeManager->memoryModificationMutex);
-	if(entity_write_lock != nullptr)
-		entity_write_lock->unlock();
+	if(entity_read_lock != nullptr)
+		entity_read_lock->unlock();
 #endif
 
 	if(copy_call_stack)

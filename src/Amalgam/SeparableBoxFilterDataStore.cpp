@@ -12,6 +12,10 @@ void SeparableBoxFilterDataStore::BuildLabel(size_t column_index, const std::vec
 	auto &column_data = columnData[column_index];
 	auto label_id = column_data->stringId;
 
+	//if the label is accessible, then don't need to check every label for being private,
+	//can just inform entity to get on self for performance
+	bool is_label_accessible = !Entity::IsLabelPrivate(label_id);
+
 	auto &entities_with_number_values = parametersAndBuffers.entitiesWithValues;
 	entities_with_number_values.clear();
 
@@ -25,7 +29,7 @@ void SeparableBoxFilterDataStore::BuildLabel(size_t column_index, const std::vec
 	{
 		EvaluableNodeImmediateValueType value_type;
 		EvaluableNodeImmediateValue value;
-		value_type = entities[entity_index]->GetValueAtLabelAsImmediateValue(label_id, value);
+		value_type = entities[entity_index]->GetValueAtLabelAsImmediateValue(label_id, value, is_label_accessible);
 		GetValue(entity_index, column_index) = value;
 
 		column_data->InsertNextIndexValueExceptNumbers(value_type, value, entity_index, entities_with_number_values);

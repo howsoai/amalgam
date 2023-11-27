@@ -439,6 +439,7 @@ public:
 	//fully clears node and sets it to new_type
 	inline void ClearAndSetType(EvaluableNodeType new_type)
 	{
+		ClearMetadata();
 		DestructValue();
 		InitializeType(new_type);
 	}

@@ -522,16 +522,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOG(EvaluableNode *en)
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	double value = InterpretNodeIntoNumberValue(ocn[0]);
-	double log_value = log(value);
-
+	double divisor = 1.0;
 	if(ocn.size() > 1) //base is specified, need to scale
 	{
 		double log_base = InterpretNodeIntoNumberValue(ocn[1]);
-		log_value /= log(log_base);
+		divisor = log(log_base);
 	}
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(log_value), true);
+	EvaluableNode *retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(ocn[0]);
+	retval->SetNumberValue(std::log(retval->GetNumberValueReference()) / divisor);
+	return EvaluableNodeReference(retval, true);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SIN(EvaluableNode *en)
@@ -954,10 +954,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DOT_PRODUCT(EvaluableNode 
 		}
 	}
 
-	evaluableNodeManager->FreeNodeTreeIfPossible(elements1);
-	evaluableNodeManager->FreeNodeTreeIfPossible(elements2);
-
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(dot_product), true);
+	EvaluableNodeReference result = evaluableNodeManager->ReuseOrAllocOneOfNodes(elements1, elements2, ENT_NUMBER);
+	result->SetNumberValue(dot_product);
+	return result;
 }
 
 //builds a vector of the values in the node, using ordered or mapped child nodes as appropriate
@@ -1128,10 +1127,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 	double value = dist_params.ComputeMinkowskiDistance(location, location_types, origin, origin_types, true);
 
 	//free these after computation in case they had any code being used/referenced in the distance
-	evaluableNodeManager->FreeNodeTreeIfPossible(location_node);
-	evaluableNodeManager->FreeNodeTreeIfPossible(origin_node);
-
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
+	EvaluableNodeReference result = evaluableNodeManager->ReuseOrAllocOneOfNodes(location_node, origin_node, ENT_NUMBER);
+	result->SetNumberValue(value);
+	return result;
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en)
@@ -1342,10 +1340,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en)
 		accumulated_entropy += p_i_first_term * std::log(p_i_exponentiated * q_i);
 	}
 
-	//clean up
 	node_stack.PopEvaluableNode();
-	evaluableNodeManager->FreeNodeTreeIfPossible(p_node);
-	evaluableNodeManager->FreeNodeTreeIfPossible(q_node);
 
 	//negate
 	accumulated_entropy = -accumulated_entropy;
@@ -1355,5 +1350,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en)
 	//we take the max of the result and 0
 	accumulated_entropy = std::max(0.0, accumulated_entropy);
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(accumulated_entropy), true);
+	EvaluableNodeReference result = evaluableNodeManager->ReuseOrAllocOneOfNodes(p_node, q_node, ENT_NUMBER);
+	result->SetNumberValue(accumulated_entropy);
+	return result;
 }

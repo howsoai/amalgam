@@ -478,11 +478,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	EvaluableNodeReference call_stack = ConvertArgsToCallStack(args, evaluableNodeManager);
 	node_stack.PushEvaluableNode(call_stack);
 
-	//get a write lock on the entity
-	EntityWriteReference called_entity = InterpretNodeIntoRelativeSourceEntityWriteReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
-	if(called_entity == nullptr)
-		return EvaluableNodeReference::Null();
-
 	//current pointer to write listeners
 	std::vector<EntityWriteListener *> *cur_write_listeners = writeListeners;
 	//another storage container in case getting entity changes
@@ -496,6 +491,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		get_changes_write_listeners.push_back(new EntityWriteListener(curEntity, true));
 		cur_write_listeners = &get_changes_write_listeners;
 	}
+
+	//get a write lock on the entity
+	EntityWriteReference called_entity = InterpretNodeIntoRelativeSourceEntityWriteReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
+	if(called_entity == nullptr)
+		return EvaluableNodeReference::Null();
 
 	ExecutionCycleCount num_steps_executed = 0;
 	size_t num_nodes_allocated = 0;

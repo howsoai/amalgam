@@ -219,12 +219,6 @@ bool Entity::GetValueAtLabelAsString(StringInternPool::StringID label_sid, std::
 EvaluableNodeImmediateValueType Entity::GetValueAtLabelAsImmediateValue(StringInternPool::StringID label_sid,
 	EvaluableNodeImmediateValue &value_out, bool on_self)
 {
-	if(label_sid <= StringInternPool::EMPTY_STRING_ID)
-	{
-		value_out.number = std::numeric_limits<double>::quiet_NaN();
-		return ENIVT_NOT_EXIST;
-	}
-
 	if(!on_self && IsLabelPrivate(label_sid))
 	{
 		value_out.number = std::numeric_limits<double>::quiet_NaN();

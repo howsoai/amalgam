@@ -290,6 +290,7 @@ protected:
 	//update cached nominal deltas based on highAccuracy and recomputeAccurateDistances, caching what is needed given those flags
 	inline void ComputeAndStoreUniversallySymmetricNominalDistanceTerms()
 	{
+		//TODO 17631: change this to either only apply to appropriate nominals OR change it be called explicitly and called by SBFDS
 		bool compute_accurate = NeedToPrecomputeAccurate();
 		bool compute_approximate = NeedToPrecomputeApproximate();
 
@@ -523,11 +524,16 @@ public:
 		if(FastIsNaN(diff))
 			return LookupNullDistanceTerm(a, b, a_type, b_type, index, high_accuracy);
 
-		//TODO 17631: implement other paths
-		//if(featureParams[index].effectiveFeatureType == EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED)
+		if(featureParams[index].effectiveFeatureType == EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED)
+			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index, high_accuracy)
+				: ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index, high_accuracy);
 
-		return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index, high_accuracy)
-			: ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index, high_accuracy);
+		//TODO 17631: implement other paths depending on what is populated
+
+		if(diff == 0.0)
+			return ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, highAccuracy);
+		else
+			return ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, highAccuracy);
 	}
 
 	//computes the distance term for an unknown-unknown

@@ -28,7 +28,7 @@ public:
 		: path(path), process(nullptr), pStdin(nullptr), pStdout(nullptr), pStderr(nullptr)
 	{
 		// Create process:
-		const char* command_line[] = { path.c_str(), "--repl", NULL };
+		const char* command_line[] = { path.c_str(), "--comm", NULL };
 		struct subprocess_s subprocess;
 		int result = subprocess_create(command_line, subprocess_option_enable_async, &subprocess);
 		if(0 != result)

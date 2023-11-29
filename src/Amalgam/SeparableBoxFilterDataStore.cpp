@@ -471,7 +471,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 	bool high_accuracy = dist_params->highAccuracy;
 
 	//make a copy of the entities so that the list can be modified
-	BitArrayIntegerSet &possible_knn_indices = parametersAndBuffers.potentialMatchesSet;
+	BitArrayIntegerSet &possible_knn_indices = parametersAndBuffers.nullAccumSet;
 	possible_knn_indices = enabled_indices;
 
 	//remove search_index and ignore_index

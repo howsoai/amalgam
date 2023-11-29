@@ -51,8 +51,11 @@ public:
 		//when a local copy of distance params is needed
 		GeneralizedDistance distParams;
 
+		//used when finding a nearest entity to another nearest entity
 		BitArrayIntegerSet potentialMatchesSet;
-		BitArrayIntegerSet nonMatchesSet;
+
+		//used when needing to accum entities with nulls
+		BitArrayIntegerSet nullAccumSet;
 
 		std::vector<DistanceReferencePair<size_t>> entitiesWithValues;
 

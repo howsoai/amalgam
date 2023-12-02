@@ -635,8 +635,13 @@ EvaluableNode *Interpreter::InterpretNodeIntoUniqueStringIDValueEvaluableNode(Ev
 
 double Interpreter::InterpretNodeIntoNumberValue(EvaluableNode *n)
 {
+	if(n == nullptr)
+		return std::numeric_limits<double>::quiet_NaN();
+
+	auto type = n->GetType();
+
 	//shortcut if the node has what is being asked
-	if(n != nullptr && n->GetType() == ENT_NUMBER)
+	if(type == ENT_NUMBER)
 		return n->GetNumberValueReference();
 
 	auto result = InterpretNodeForImmediateUse(n);

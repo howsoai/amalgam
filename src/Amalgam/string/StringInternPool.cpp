@@ -66,20 +66,6 @@ StringInternPool::StringID StringInternPool::CreateStringReference(const std::st
 	return id;
 }
 
-StringInternPool::StringID StringInternPool::CreateStringReference(StringInternPool::StringID id)
-{
-	if(IsStringIDStatic(id))
-		return id;
-
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	//only need a ReadLock because the count is atomic
-	Concurrency::ReadLock lock(sharedMutex);
-#endif
-	IncrementRefCount(id);
-
-	return id;
-}
-
 void StringInternPool::DestroyStringReference(StringInternPool::StringID id)
 {
 	if(IsStringIDStatic(id))

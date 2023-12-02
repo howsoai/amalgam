@@ -376,14 +376,14 @@ void Parser::SkipToEndOfIdentifier(bool allow_leading_label_marks)
 	while(pos < code->size())
 	{
 		auto cur_char = code->at(pos);
-		if(!std::isspace(static_cast<unsigned char>(cur_char))
-				&& cur_char != ')'
-				&& cur_char != '('
-				&& cur_char != '#'
-				&& cur_char != ';')
-			pos++;
-		else
+		if(cur_char == '\t' || cur_char == '\n' || cur_char == '\v' || cur_char == '\f'
+				|| cur_char == '\r' || cur_char == ' '
+				|| cur_char == '#'
+				|| cur_char == '(' || cur_char == ')'
+				|| cur_char == ';')
 			break;
+
+		pos++;
 	}
 }
 

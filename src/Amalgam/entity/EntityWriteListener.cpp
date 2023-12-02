@@ -161,7 +161,7 @@ EvaluableNode *EntityWriteListener::BuildNewWriteOperation(EvaluableNodeType ass
 
 	if(target_entity != listeningEntity)
 	{
-		EvaluableNode *id_list = GetTraversalIDPathListFromAToB(&listenerStorage, listeningEntity, target_entity);
+		EvaluableNode *id_list = GetTraversalIDPathFromAToB(&listenerStorage, listeningEntity, target_entity);
 		new_write->AppendOrderedChildNode(id_list);
 	}
 

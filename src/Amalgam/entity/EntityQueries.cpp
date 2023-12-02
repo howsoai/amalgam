@@ -745,7 +745,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		distance_transform.TransformDistances(entity_values, returnSortedList);
 
 		return EntityManipulation::ConvertResultsToEvaluableNodes<Entity *>(entity_values,
-			enm, returnSortedList, additionalSortedListLabel, [](auto entity) { return entity;  });
+			enm, returnSortedList, additionalSortedListLabels, [](auto entity) { return entity;  });
 	}
 
 	case ENT_QUERY_WITHIN_GENERALIZED_DISTANCE:
@@ -782,7 +782,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		distance_transform.TransformDistances(entity_values, returnSortedList);
 
 		return EntityManipulation::ConvertResultsToEvaluableNodes<Entity *>(entity_values,
-			enm, returnSortedList, additionalSortedListLabel, [](auto entity) { return entity;  });
+			enm, returnSortedList, additionalSortedListLabels, [](auto entity) { return entity;  });
 	}
 
 	default:

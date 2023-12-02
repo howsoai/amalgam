@@ -371,15 +371,25 @@ namespace EntityQueryBuilder
 		}
 		
 		cur_condition->returnSortedList = false;
-		cur_condition->additionalSortedListLabel = string_intern_pool.NOT_A_STRING_ID;
+		cur_condition->additionalSortedListLabels.clear();
 		if(condition_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE || condition_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || condition_type == ENT_COMPUTE_ENTITY_DISTANCE_CONTRIBUTIONS)
 		{
 			if(ocn.size() > NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0)
 			{
 				EvaluableNode *list_param = ocn[NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0];
 				cur_condition->returnSortedList = EvaluableNode::IsTrue(list_param);
-				if(!EvaluableNode::IsEmptyNode(list_param) && list_param->GetType() != ENT_TRUE && list_param->GetType() != ENT_FALSE)
-					cur_condition->additionalSortedListLabel = EvaluableNode::ToStringIDIfExists(list_param);
+				if(!EvaluableNode::IsEmptyNode(list_param))
+				{
+					if(list_param->GetType() == ENT_STRING)
+					{
+						cur_condition->additionalSortedListLabels.push_back(list_param->GetStringIDReference());
+					}
+					else
+					{
+						for(auto label_node : list_param->GetOrderedChildNodes())
+							cur_condition->additionalSortedListLabels.push_back(EvaluableNode::ToStringIDIfExists(label_node));
+					}
+				}
 			}
 		}
 		else if(condition_type == ENT_COMPUTE_ENTITY_CONVICTIONS || condition_type == ENT_COMPUTE_ENTITY_GROUP_KL_DIVERGENCE || condition_type == ENT_COMPUTE_ENTITY_KL_DIVERGENCES)
@@ -394,8 +404,18 @@ namespace EntityQueryBuilder
 				{
 					EvaluableNode *list_param = ocn[NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 1];
 					cur_condition->returnSortedList = EvaluableNode::IsTrue(list_param);
-					if(!EvaluableNode::IsEmptyNode(list_param) && list_param->GetType() != ENT_TRUE && list_param->GetType() != ENT_FALSE)
-						cur_condition->additionalSortedListLabel = EvaluableNode::ToStringIDIfExists(list_param);
+					if(!EvaluableNode::IsEmptyNode(list_param))
+					{
+						if(list_param->GetType() == ENT_STRING)
+						{
+							cur_condition->additionalSortedListLabels.push_back(list_param->GetStringIDReference());
+						}
+						else
+						{
+							for(auto label_node : list_param->GetOrderedChildNodes())
+								cur_condition->additionalSortedListLabels.push_back(EvaluableNode::ToStringIDIfExists(label_node));
+						}
+					}
 				}
 			}
 		}

@@ -134,7 +134,7 @@ void TraverseEntityToNewDestinationViaEvaluableNodeIDPath(Entity *container, Eva
 		destination_entity_parent = container;
 }
 
-EvaluableNode *GetTraversalIDPathListFromAToB(EvaluableNodeManager *enm, Entity *a, Entity *b)
+EvaluableNode *GetTraversalIDPathFromAToB(EvaluableNodeManager *enm, Entity *a, Entity *b)
 {
 	//shouldn't happen, but check
 	if(b == nullptr)

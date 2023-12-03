@@ -125,7 +125,7 @@ class EvaluableNodeManager
 {
 public:
 	EvaluableNodeManager() :
-		firstUnusedNodeIndex(0), executionCyclesSinceLastGarbageCollection(0)
+		executionCyclesSinceLastGarbageCollection(0), firstUnusedNodeIndex(0)
 	{	}
 
 	~EvaluableNodeManager();

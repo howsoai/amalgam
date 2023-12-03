@@ -124,7 +124,9 @@ public:
 class EvaluableNodeManager
 {
 public:
-	EvaluableNodeManager();
+	EvaluableNodeManager() :
+		firstUnusedNodeIndex(0), executionCyclesSinceLastGarbageCollection(0)
+	{	}
 
 	~EvaluableNodeManager();
 
@@ -329,7 +331,30 @@ public:
 	}
 
 	//heuristic used to determine whether unused memory should be collected (e.g., by FreeAllNodesExcept*)
-	bool RecommendGarbageCollection();
+	//force this inline because it occurs in inner loops
+	__forceinline bool RecommendGarbageCollection()
+	{
+		//makes sure to perform garbage collection between every opcode to find memory reference errors
+	#ifdef PEDANTIC_GARBAGE_COLLECTION
+		return true;
+	#endif
+
+		if(executionCyclesSinceLastGarbageCollection > minCycleCountBetweenGarbageCollects)
+		{
+			auto cur_size = GetNumberOfUsedNodes();
+
+			size_t next_expansion_size = static_cast<size_t>(cur_size * allocExpansionFactor);
+			if(next_expansion_size < nodes.size())
+			{
+				executionCyclesSinceLastGarbageCollection = 0;
+				return false;
+			}
+
+			return true;
+		}
+
+		return false;
+	}
 
 	//moves garbage collection to be more likely to be triggered next time CollectGarbage is called
 	__forceinline void AdvanceGarbageCollectionTrigger()

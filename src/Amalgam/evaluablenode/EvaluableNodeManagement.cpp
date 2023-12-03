@@ -21,12 +21,6 @@ const
 #endif
 ExecutionCycleCountCompactDelta EvaluableNodeManager::minCycleCountBetweenGarbageCollects = 150000;
 
-EvaluableNodeManager::EvaluableNodeManager()
-{
-	firstUnusedNodeIndex = 0;
-	executionCyclesSinceLastGarbageCollection = 0;
-}
-
 EvaluableNodeManager::~EvaluableNodeManager()
 {
 #ifdef MULTITHREAD_SUPPORT
@@ -167,30 +161,6 @@ EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(Evaluabl
 
 	//shouldn't make it here
 	return retval;
-}
-
-bool EvaluableNodeManager::RecommendGarbageCollection()
-{
-	//makes sure to perform garbage collection between every opcode to find memory reference errors
-#ifdef PEDANTIC_GARBAGE_COLLECTION
-	return true;
-#endif
-
-	if(executionCyclesSinceLastGarbageCollection > minCycleCountBetweenGarbageCollects)
-	{
-		auto cur_size = GetNumberOfUsedNodes();
-
-		size_t next_expansion_size = static_cast<size_t>(cur_size * allocExpansionFactor);
-		if(next_expansion_size < nodes.size())
-		{
-			executionCyclesSinceLastGarbageCollection = 0;
-			return false;
-		}
-
-		return true;
-	}
-
-	return false;
 }
 
 #ifdef MULTITHREAD_SUPPORT

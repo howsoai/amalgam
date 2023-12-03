@@ -672,8 +672,21 @@ protected:
 
 	static void ValidateEvaluableNodeTreeMemoryIntegrityRecurse(EvaluableNode *en, EvaluableNode::ReferenceSetType &checked);
 
-#ifdef MULTITHREAD_SUPPORT	
+#ifdef MULTITHREAD_SUPPORT
 public:
+
+	//updates garbage collection process based on current number of threads and number of tasks
+	static inline void UpdateMinCycleCountBetweenGarbageCollectsBasedOnThreads(size_t num_tasks)
+	{
+		//can't go above the max number of threads
+		num_tasks = std::min(num_tasks, Concurrency::threadPool.GetCurrentMaxNumThreads());
+		//don't want to go below the number of threads being used by other things
+		num_tasks = std::max(num_tasks, Concurrency::threadPool.GetNumActiveThreads());
+
+		minCycleCountBetweenGarbageCollects = minCycleCountBetweenGarbageCollectsPerThread
+			* static_cast<ExecutionCycleCountCompactDelta>(num_tasks);
+	}
+
 	//mutex to manage attributes of manager, including operations such as
 	// memory allocation, reference management, etc.
 	Concurrency::ReadWriteMutex managerAttributesMutex;
@@ -707,6 +720,13 @@ protected:
 	//extra space to allocate when allocating
 	static const double allocExpansionFactor;
 
-	//minimum number of cycles between collects as to not spend too much time garbage collecting
-	static const ExecutionCycleCountCompactDelta minCycleCountBetweenGarbageCollects;
+#ifdef MULTITHREAD_SUPPORT
+	//minimum number of cycles between collects per thread
+	static const ExecutionCycleCountCompactDelta minCycleCountBetweenGarbageCollectsPerThread;
+#else
+	//make the next value constant if no threads
+	const
+#endif
+	//current number of cycles between collects based on number of threads
+	static ExecutionCycleCountCompactDelta minCycleCountBetweenGarbageCollects;
 };

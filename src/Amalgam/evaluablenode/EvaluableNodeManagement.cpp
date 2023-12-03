@@ -13,7 +13,13 @@ Concurrency::ReadWriteMutex EvaluableNodeManager::memoryModificationMutex;
 #endif
 
 const double EvaluableNodeManager::allocExpansionFactor = 1.5;
-const ExecutionCycleCountCompactDelta EvaluableNodeManager::minCycleCountBetweenGarbageCollects = 150000;
+#ifdef MULTITHREAD_SUPPORT
+const ExecutionCycleCountCompactDelta EvaluableNodeManager::minCycleCountBetweenGarbageCollectsPerThread = 150000;
+#else
+//make the next value constant if no threads
+const
+#endif
+ExecutionCycleCountCompactDelta EvaluableNodeManager::minCycleCountBetweenGarbageCollects = 150000;
 
 EvaluableNodeManager::EvaluableNodeManager()
 {
@@ -170,11 +176,7 @@ bool EvaluableNodeManager::RecommendGarbageCollection()
 	return true;
 #endif
 
-#ifdef MULTITHREAD_SUPPORT
-	if(executionCyclesSinceLastGarbageCollection > minCycleCountBetweenGarbageCollects * static_cast<ExecutionCycleCount>(Concurrency::threadPool.GetNumActiveThreads()))
-#else
 	if(executionCyclesSinceLastGarbageCollection > minCycleCountBetweenGarbageCollects)
-#endif
 	{
 		auto cur_size = GetNumberOfUsedNodes();
 

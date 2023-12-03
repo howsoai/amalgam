@@ -47,12 +47,12 @@ struct functor_storage : Functor
     {
     }
     template<typename... Args>
-    Result operator()(Args &&... args)
+	inline Result operator()(Args &&... args)
     {
         return static_cast<Functor &>(*this)(std::forward<Args>(args)...);
     }
     template<typename... Args>
-    Result operator()(Args &&... args) const
+	inline Result operator()(Args &&... args) const
     {
         return static_cast<const Functor &>(*this)(std::forward<Args>(args)...);
     }
@@ -66,15 +66,15 @@ struct functor_storage<Result, Result (*)(Args...)>
         : function(function)
     {
     }
-    Result operator()(Args... args) const
+	inline Result operator()(Args... args) const
     {
         return function(std::forward<Args>(args)...);
     }
-    operator function_ptr &()
+	inline operator function_ptr &()
     {
         return function;
     }
-    operator const function_ptr &()
+	inline operator const function_ptr &()
     {
         return function;
     }
@@ -88,29 +88,29 @@ struct KeyOrValueHasher : functor_storage<size_t, hasher>
         : hasher_storage(hash)
     {
     }
-    size_t operator()(const key_type & key)
+    inline size_t operator()(const key_type & key)
     {
         return static_cast<hasher_storage &>(*this)(key);
     }
-    size_t operator()(const key_type & key) const
+    inline size_t operator()(const key_type & key) const
     {
         return static_cast<const hasher_storage &>(*this)(key);
     }
-    size_t operator()(const value_type & value)
+	inline size_t operator()(const value_type & value)
     {
         return static_cast<hasher_storage &>(*this)(value.first);
     }
-    size_t operator()(const value_type & value) const
+	inline size_t operator()(const value_type & value) const
     {
         return static_cast<const hasher_storage &>(*this)(value.first);
     }
     template<typename F, typename S>
-    size_t operator()(const std::pair<F, S> & value)
+	inline size_t operator()(const std::pair<F, S> & value)
     {
         return static_cast<hasher_storage &>(*this)(value.first);
     }
     template<typename F, typename S>
-    size_t operator()(const std::pair<F, S> & value) const
+	inline size_t operator()(const std::pair<F, S> & value) const
     {
         return static_cast<const hasher_storage &>(*this)(value.first);
     }
@@ -124,44 +124,44 @@ struct KeyOrValueEquality : functor_storage<bool, key_equal>
         : equality_storage(equality)
     {
     }
-    bool operator()(const key_type & lhs, const key_type & rhs)
+	inline bool operator()(const key_type & lhs, const key_type & rhs)
     {
         return static_cast<equality_storage &>(*this)(lhs, rhs);
     }
-    bool operator()(const key_type & lhs, const value_type & rhs)
+	inline bool operator()(const key_type & lhs, const value_type & rhs)
     {
         return static_cast<equality_storage &>(*this)(lhs, rhs.first);
     }
-    bool operator()(const value_type & lhs, const key_type & rhs)
+	inline bool operator()(const value_type & lhs, const key_type & rhs)
     {
         return static_cast<equality_storage &>(*this)(lhs.first, rhs);
     }
-    bool operator()(const value_type & lhs, const value_type & rhs)
+	inline bool operator()(const value_type & lhs, const value_type & rhs)
     {
         return static_cast<equality_storage &>(*this)(lhs.first, rhs.first);
     }
     template<typename F, typename S>
-    bool operator()(const key_type & lhs, const std::pair<F, S> & rhs)
+	inline bool operator()(const key_type & lhs, const std::pair<F, S> & rhs)
     {
         return static_cast<equality_storage &>(*this)(lhs, rhs.first);
     }
     template<typename F, typename S>
-    bool operator()(const std::pair<F, S> & lhs, const key_type & rhs)
+	inline bool operator()(const std::pair<F, S> & lhs, const key_type & rhs)
     {
         return static_cast<equality_storage &>(*this)(lhs.first, rhs);
     }
     template<typename F, typename S>
-    bool operator()(const value_type & lhs, const std::pair<F, S> & rhs)
+	inline bool operator()(const value_type & lhs, const std::pair<F, S> & rhs)
     {
         return static_cast<equality_storage &>(*this)(lhs.first, rhs.first);
     }
     template<typename F, typename S>
-    bool operator()(const std::pair<F, S> & lhs, const value_type & rhs)
+	inline bool operator()(const std::pair<F, S> & lhs, const value_type & rhs)
     {
         return static_cast<equality_storage &>(*this)(lhs.first, rhs.first);
     }
     template<typename FL, typename SL, typename FR, typename SR>
-    bool operator()(const std::pair<FL, SL> & lhs, const std::pair<FR, SR> & rhs)
+	inline bool operator()(const std::pair<FL, SL> & lhs, const std::pair<FR, SR> & rhs)
     {
         return static_cast<equality_storage &>(*this)(lhs.first, rhs.first);
     }
@@ -170,10 +170,10 @@ static constexpr int8_t min_lookups = 4;
 template<typename T>
 struct sherwood_v3_entry
 {
-    sherwood_v3_entry()
+    inline sherwood_v3_entry()
     {
     }
-    sherwood_v3_entry(int8_t distance_from_desired)
+    inline sherwood_v3_entry(int8_t distance_from_desired)
         : distance_from_desired(distance_from_desired)
     {
     }
@@ -186,15 +186,15 @@ struct sherwood_v3_entry
         return result;
     }
 
-    bool has_value() const
+    inline bool has_value() const
     {
         return distance_from_desired >= 0;
     }
-    bool is_empty() const
+    inline bool is_empty() const
     {
         return distance_from_desired < 0;
     }
-    bool is_at_desired_position() const
+    inline bool is_at_desired_position() const
     {
         return distance_from_desired <= 0;
     }
@@ -205,7 +205,7 @@ struct sherwood_v3_entry
         distance_from_desired = distance;
     }
 
-    void destroy_value()
+    inline void destroy_value()
     {
         value.~T();
         distance_from_desired = -1;
@@ -454,15 +454,15 @@ public:
         deallocate_data(entries, num_slots_minus_one, max_lookups);
     }
 
-    const allocator_type & get_allocator() const
+	inline const allocator_type & get_allocator() const
     {
         return static_cast<const allocator_type &>(*this);
     }
-    const ArgumentEqual & key_eq() const
+	inline const ArgumentEqual & key_eq() const
     {
         return static_cast<const ArgumentEqual &>(*this);
     }
-    const ArgumentHash & hash_function() const
+	inline const ArgumentHash & hash_function() const
     {
         return static_cast<const ArgumentHash &>(*this);
     }
@@ -483,11 +483,11 @@ public:
         using pointer = ValueType *;
         using reference = ValueType &;
 
-        friend bool operator==(const templated_iterator & lhs, const templated_iterator & rhs)
+		inline friend bool operator==(const templated_iterator & lhs, const templated_iterator & rhs)
         {
             return lhs.current == rhs.current;
         }
-        friend bool operator!=(const templated_iterator & lhs, const templated_iterator & rhs)
+		inline friend bool operator!=(const templated_iterator & lhs, const templated_iterator & rhs)
         {
             return !(lhs == rhs);
         }
@@ -508,16 +508,16 @@ public:
             return copy;
         }
 
-        ValueType & operator*() const
+		inline ValueType & operator*() const
         {
             return current->value;
         }
-        ValueType * operator->() const
+		inline ValueType * operator->() const
         {
             return std::addressof(current->value);
         }
 
-        operator templated_iterator<const value_type>() const
+		inline operator templated_iterator<const value_type>() const
         {
             return { current };
         }
@@ -541,7 +541,7 @@ public:
                 return { it };
         }
     }
-    const_iterator cbegin() const
+	inline const_iterator cbegin() const
     {
         return begin();
     }
@@ -553,7 +553,7 @@ public:
     {
         return { entries + static_cast<ptrdiff_t>(num_slots_minus_one + max_lookups) };
     }
-    const_iterator cend() const
+	inline const_iterator cend() const
     {
         return end();
     }
@@ -569,11 +569,11 @@ public:
         }
         return end();
     }
-    const_iterator find(const FindKey & key) const
+	inline const_iterator find(const FindKey & key) const
     {
         return const_cast<sherwood_v3_table *>(this)->find(key);
     }
-    size_t count(const FindKey & key) const
+	inline size_t count(const FindKey & key) const
     {
         return find(key) == end() ? 0 : 1;
     }
@@ -608,37 +608,37 @@ public:
         return emplace_new_key(distance_from_desired, current_entry, std::forward<Key>(key), std::forward<Args>(args)...);
     }
 
-    std::pair<iterator, bool> insert(const value_type & value)
+	inline std::pair<iterator, bool> insert(const value_type & value)
     {
         return emplace(value);
     }
-    std::pair<iterator, bool> insert(value_type && value)
+	inline std::pair<iterator, bool> insert(value_type && value)
     {
         return emplace(std::move(value));
     }
     template<typename... Args>
-    iterator emplace_hint(const_iterator, Args &&... args)
+	inline iterator emplace_hint(const_iterator, Args &&... args)
     {
         return emplace(std::forward<Args>(args)...).first;
     }
-    iterator insert(const_iterator, const value_type & value)
+	inline iterator insert(const_iterator, const value_type & value)
     {
         return emplace(value).first;
     }
-    iterator insert(const_iterator, value_type && value)
+	inline iterator insert(const_iterator, value_type && value)
     {
         return emplace(std::move(value)).first;
     }
 
     template<typename It>
-    void insert(It begin, It end)
+	inline void insert(It begin, It end)
     {
         for (; begin != end; ++begin)
         {
             emplace(*begin);
         }
     }
-    void insert(std::initializer_list<value_type> il)
+	inline void insert(std::initializer_list<value_type> il)
     {
         insert(il.begin(), il.end());
     }
@@ -751,7 +751,7 @@ public:
         num_elements = 0;
     }
 
-    void shrink_to_fit()
+	inline void shrink_to_fit()
     {
         rehash_for_other_container(*this);
     }
@@ -766,7 +766,7 @@ public:
             swap(static_cast<EntryAlloc &>(*this), static_cast<EntryAlloc &>(other));
     }
 
-    size_t size() const
+	inline size_t size() const
     {
         return num_elements;
     }
@@ -800,12 +800,12 @@ public:
         _max_load_factor = value;
 #endif
     }
-    float max_load_factor() const
+	inline float max_load_factor() const
     {
         return _max_load_factor;
     }
 
-    bool empty() const
+	inline bool empty() const
     {
         return num_elements == 0;
     }
@@ -917,17 +917,17 @@ private:
     }
 
     template<typename U>
-    size_t hash_object(const U & key)
+	inline size_t hash_object(const U & key)
     {
         return static_cast<Hasher &>(*this)(key);
     }
     template<typename U>
-    size_t hash_object(const U & key) const
+	inline size_t hash_object(const U & key) const
     {
         return static_cast<const Hasher &>(*this)(key);
     }
     template<typename L, typename R>
-    bool compares_equal(const L & lhs, const R & rhs)
+	inline bool compares_equal(const L & lhs, const R & rhs)
     {
         return static_cast<Equal &>(*this)(lhs, rhs);
     }
@@ -1271,23 +1271,23 @@ private:
 
 struct power_of_two_hash_policy
 {
-    size_t index_for_hash(size_t hash, size_t num_slots_minus_one) const
+	inline size_t index_for_hash(size_t hash, size_t num_slots_minus_one) const
     {
         return hash & num_slots_minus_one;
     }
-    size_t keep_in_range(size_t index, size_t num_slots_minus_one) const
+	inline size_t keep_in_range(size_t index, size_t num_slots_minus_one) const
     {
         return index_for_hash(index, num_slots_minus_one);
     }
-    int8_t next_size_over(size_t & size) const
+	inline int8_t next_size_over(size_t & size) const
     {
         size = detailv3::next_power_of_two(size);
         return 0;
     }
-    void commit(int8_t)
+	inline void commit(int8_t)
     {
     }
-    void reset()
+	inline void reset()
     {
     }
 
@@ -1295,11 +1295,11 @@ struct power_of_two_hash_policy
 
 struct fibonacci_hash_policy
 {
-    size_t index_for_hash(size_t hash, size_t /*num_slots_minus_one*/) const
+	inline size_t index_for_hash(size_t hash, size_t /*num_slots_minus_one*/) const
     {
         return (11400714819323198485ull * hash) >> shift;
     }
-    size_t keep_in_range(size_t index, size_t num_slots_minus_one) const
+	inline size_t keep_in_range(size_t index, size_t num_slots_minus_one) const
     {
         return index & num_slots_minus_one;
     }
@@ -1309,11 +1309,11 @@ struct fibonacci_hash_policy
         size = std::max(size_t(2), detailv3::next_power_of_two(size));
         return 64 - detailv3::log2(size);
     }
-    void commit(int8_t shift)
+	inline void commit(int8_t shift)
     {
         this->shift = shift;
     }
-    void reset()
+	inline void reset()
     {
         shift = 63;
     }
@@ -1381,7 +1381,7 @@ public:
     }
 
     using Table::emplace;
-    std::pair<typename Table::iterator, bool> emplace()
+	inline std::pair<typename Table::iterator, bool> emplace()
     {
         return emplace(key_type(), convertible_to_value());
     }
@@ -1434,7 +1434,7 @@ public:
 private:
     struct convertible_to_value
     {
-        operator V() const
+		inline operator V() const
         {
             return V();
         }
@@ -1476,23 +1476,23 @@ public:
     }
 
     template<typename... Args>
-    std::pair<typename Table::iterator, bool> emplace(Args &&... args)
+	inline std::pair<typename Table::iterator, bool> emplace(Args &&... args)
     {
         return Table::emplace(T(std::forward<Args>(args)...));
     }
-    std::pair<typename Table::iterator, bool> emplace(const key_type & arg)
+	inline std::pair<typename Table::iterator, bool> emplace(const key_type & arg)
     {
         return Table::emplace(arg);
     }
-    std::pair<typename Table::iterator, bool> emplace(key_type & arg)
+	inline std::pair<typename Table::iterator, bool> emplace(key_type & arg)
     {
         return Table::emplace(arg);
     }
-    std::pair<typename Table::iterator, bool> emplace(const key_type && arg)
+	inline std::pair<typename Table::iterator, bool> emplace(const key_type && arg)
     {
         return Table::emplace(std::move(arg));
     }
-    std::pair<typename Table::iterator, bool> emplace(key_type && arg)
+	inline std::pair<typename Table::iterator, bool> emplace(key_type && arg)
     {
         return Table::emplace(std::move(arg));
     }
@@ -1508,7 +1508,7 @@ public:
         }
         return true;
     }
-    friend bool operator!=(const flat_hash_set & lhs, const flat_hash_set & rhs)
+	inline friend bool operator!=(const flat_hash_set & lhs, const flat_hash_set & rhs)
     {
         return !(lhs == rhs);
     }

@@ -13,13 +13,13 @@ Concurrency::ReadWriteMutex EvaluableNodeManager::memoryModificationMutex;
 #endif
 
 const double EvaluableNodeManager::allocExpansionFactor = 1.5;
-const ExecutionCycleCountCompactDelta EvaluableNodeManager::minCycleCountBetweenGarbageCollects = 150000;
-
-EvaluableNodeManager::EvaluableNodeManager()
-{
-	firstUnusedNodeIndex = 0;
-	executionCyclesSinceLastGarbageCollection = 0;
-}
+#ifdef MULTITHREAD_SUPPORT
+const ExecutionCycleCountCompactDelta EvaluableNodeManager::minCycleCountBetweenGarbageCollectsPerThread = 150000;
+#else
+//make the next value constant if no threads
+const
+#endif
+ExecutionCycleCountCompactDelta EvaluableNodeManager::minCycleCountBetweenGarbageCollects = 150000;
 
 EvaluableNodeManager::~EvaluableNodeManager()
 {
@@ -161,34 +161,6 @@ EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(Evaluabl
 
 	//shouldn't make it here
 	return retval;
-}
-
-bool EvaluableNodeManager::RecommendGarbageCollection()
-{
-	//makes sure to perform garbage collection between every opcode to find memory reference errors
-#ifdef PEDANTIC_GARBAGE_COLLECTION
-	return true;
-#endif
-
-#ifdef MULTITHREAD_SUPPORT
-	if(executionCyclesSinceLastGarbageCollection > minCycleCountBetweenGarbageCollects * static_cast<ExecutionCycleCount>(Concurrency::threadPool.GetNumActiveThreads()))
-#else
-	if(executionCyclesSinceLastGarbageCollection > minCycleCountBetweenGarbageCollects)
-#endif
-	{
-		auto cur_size = GetNumberOfUsedNodes();
-
-		size_t next_expansion_size = static_cast<size_t>(cur_size * allocExpansionFactor);
-		if(next_expansion_size < nodes.size())
-		{
-			executionCyclesSinceLastGarbageCollection = 0;
-			return false;
-		}
-
-		return true;
-	}
-
-	return false;
 }
 
 #ifdef MULTITHREAD_SUPPORT

@@ -394,18 +394,18 @@ protected:
 	public:
 
 		//constructs the concurrency manager.  Assumes parent_interpreter is NOT null
-		ConcurrencyManager(Interpreter *parent_interpreter, size_t num_elements)
+		ConcurrencyManager(Interpreter *parent_interpreter, size_t num_tasks)
 		{
 			parentInterpreter = parent_interpreter;
-			numElements = num_elements;
+			numTasks = num_tasks;
 
 			//set up data
-			interpreters.reserve(numElements);
-			resultFutures.reserve(numElements);
+			interpreters.reserve(numTasks);
+			resultFutures.reserve(numTasks);
 
 			size_t max_execution_steps_per_element = 0;
 			if(parentInterpreter->maxNumExecutionSteps > 0)
-				max_execution_steps_per_element = (parentInterpreter->maxNumExecutionSteps - parentInterpreter->GetNumStepsExecuted()) / numElements;
+				max_execution_steps_per_element = (parentInterpreter->maxNumExecutionSteps - parentInterpreter->GetNumStepsExecuted()) / numTasks;
 
 			//since each thread has a copy of the constructionStackNodes, it's possible that more than one of the threads
 			//obtains previous_results, so they must all be marked as not unique
@@ -413,13 +413,15 @@ protected:
 
 			//set up all the interpreters
 			// do this as its own loop to make sure that the vector memory isn't reallocated once the threads have kicked off
-			for(size_t element_index = 0; element_index < numElements; element_index++)
+			for(size_t element_index = 0; element_index < numTasks; element_index++)
 			{
 				//create interpreter
 				interpreters.emplace_back(std::make_unique<Interpreter>(parentInterpreter->evaluableNodeManager, max_execution_steps_per_element, parentInterpreter->maxNumExecutionNodes,
 					parentInterpreter->randomStream.CreateOtherStreamViaRand(),
 					parentInterpreter->writeListeners, parentInterpreter->printListener, parentInterpreter->curEntity));
 			}
+
+			EvaluableNodeManager::UpdateMinCycleCountBetweenGarbageCollectsBasedOnThreads(num_tasks);
 
 			//begins concurrency over all interpreters
 			parentInterpreter->memoryModificationLock.unlock();
@@ -482,6 +484,9 @@ protected:
 
 			Concurrency::threadPool.CountCurrentThreadAsResumed();
 
+			//merged back to one task (this method will attempt to account for other concurrency)
+			EvaluableNodeManager::UpdateMinCycleCountBetweenGarbageCollectsBasedOnThreads(1);
+
 			parentInterpreter->memoryModificationLock.lock();
 		}
 
@@ -491,11 +496,11 @@ protected:
 		inline std::vector<EvaluableNodeReference> GetResultsAndFreeReferences()
 		{
 			std::vector<EvaluableNodeReference> results;
-			results.resize(numElements);
+			results.resize(numTasks);
 
 			//fill in results from result_futures and free references
 			// note that std::future becomes invalid once get is called
-			for(size_t i = 0; i < numElements; i++)
+			for(size_t i = 0; i < numTasks; i++)
 				results[i] = resultFutures[i].get();
 
 			parentInterpreter->evaluableNodeManager->FreeNodeReferences(results);
@@ -514,10 +519,10 @@ protected:
 			return &callStackWriteMutex;
 		}
 
-		//interpreters run concurrently, the size of numElements
+		//interpreters run concurrently, the size of numTasks
 		std::vector<std::unique_ptr<Interpreter>> interpreters;
 
-		//where results are placed, the size of numElements
+		//where results are placed, the size of numTasks
 		std::vector<std::future<EvaluableNodeReference>> resultFutures;
 
 		//mutex to allow only one thread to write to a call stack symbol at once
@@ -528,7 +533,7 @@ protected:
 		Interpreter *parentInterpreter;
 
 		//the number of elements being processed
-		size_t numElements;
+		size_t numTasks;
 	};
 
 	//computes the nodes concurrently and stores the interpreted values into interpreted_nodes

@@ -26,10 +26,19 @@ public:
 		return numActiveThreads;
 	}
 
+	//returns the current maximum number of threads that are available
+	inline size_t GetCurrentMaxNumThreads()
+	{
+		std::unique_lock<std::mutex> lock(threadsMutex);
+		return threads.size();
+	}
+
 	//returns a vector of the thread ids for the thread pool
 	inline std::vector<std::thread::id> GetThreadIds()
 	{
 		std::vector<std::thread::id> thread_ids;
+
+		std::unique_lock<std::mutex> lock(threadsMutex);
 		thread_ids.reserve(threads.size() + 1);
 		thread_ids.push_back(mainThreadId);
 		for(std::thread &worker : threads)
@@ -147,7 +156,7 @@ public:
 			//need to make sure there's at least one extra thread available to make sure that this batch of tasks can be run
 			// in case there are any interdependencies, in order to prevent deadlock
 			if(taskQueue.size() + numActiveThreads >= threads.size())
-				btel.MarkAsNoThreadsAvailable();			
+				btel.MarkAsNoThreadsAvailable();
 		}
 
 		return btel;

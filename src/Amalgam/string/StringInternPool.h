@@ -40,7 +40,19 @@ public:
 	StringID CreateStringReference(const std::string &str);
 
 	//makes a new reference to the string id specified, returning the id passed in
-	StringID CreateStringReference(StringID id);
+	inline StringID CreateStringReference(StringID id)
+	{
+		if(!IsStringIDStatic(id))
+		{
+		#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+			//only need a ReadLock because the count is atomic
+			Concurrency::ReadLock lock(sharedMutex);
+		#endif
+			IncrementRefCount(id);
+		}
+
+		return id;
+	}
 
 	//creates new references from the references container and function
 	template<typename ReferencesContainer,
@@ -181,6 +193,17 @@ public:
 		}
 
 	#endif
+	}
+
+	//destroys 2 StringReferences
+	inline void DestroyStringReferences(StringID sid_1, StringID sid_2)
+	{
+		//skip overhead if possible
+		if(IsStringIDStatic(sid_1) && IsStringIDStatic(sid_2))
+			return;
+
+		std::array<StringInternPool::StringID, 2> string_ids = { sid_1, sid_2 };
+		DestroyStringReferences(string_ids);
 	}
 
 	//returns the number of strings that are still allocated

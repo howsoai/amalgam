@@ -134,8 +134,16 @@ void TraverseEntityToNewDestinationViaEvaluableNodeIDPath(Entity *container, Eva
 		destination_entity_parent = container;
 }
 
-EvaluableNode *GetTraversalIDPathListFromAToB(EvaluableNodeManager *enm, Entity *a, Entity *b)
+EvaluableNode *GetTraversalIDPathFromAToB(EvaluableNodeManager *enm, Entity *a, Entity *b)
 {
+	//shouldn't happen, but check
+	if(b == nullptr)
+		return nullptr;
+
+	//if immediate entity, can return a string instead of a list
+	if(b->GetContainer() == a)
+		return enm->AllocNode(ENT_STRING, b->GetIdStringId());
+
 	//create list to address entity
 	EvaluableNode *id_list = enm->AllocNode(ENT_LIST);
 	auto &ocn = id_list->GetOrderedChildNodes();

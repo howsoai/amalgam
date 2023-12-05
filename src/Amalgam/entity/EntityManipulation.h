@@ -137,7 +137,7 @@ public:
 	template<typename EntityReference, typename GetEntityFunction>
 	static inline EvaluableNodeReference ConvertResultsToEvaluableNodes(
 		std::vector<DistanceReferencePair<EntityReference>> &results,
-		EvaluableNodeManager *enm, bool as_sorted_list, StringInternPool::StringID additional_sorted_list_label,
+		EvaluableNodeManager *enm, bool as_sorted_list, std::vector<StringInternPool::StringID> &additional_sorted_list_labels,
 		GetEntityFunction get_entity)
 	{
 		if(as_sorted_list)
@@ -145,24 +145,27 @@ public:
 			//build list of results
 			EvaluableNode *query_return = enm->AllocNode(ENT_LIST);
 			auto &qr_ocn = query_return->GetOrderedChildNodesReference();
-			qr_ocn.resize(additional_sorted_list_label == string_intern_pool.NOT_A_STRING_ID ? 2 : 3);
+			//returning ids and computed values plus any additional values being retrieved
+			qr_ocn.resize(2 + additional_sorted_list_labels.size());
 
 			qr_ocn[0] = CreateListOfStringsIdsFromIteratorAndFunction(results, enm,
 				[get_entity](auto &drp) {  return get_entity(drp.reference)->GetIdStringId(); });
 			qr_ocn[1] = CreateListOfNumbersFromIteratorAndFunction(results, enm, [](auto drp) { return drp.distance; });
 
 			//if adding on a label, retrieve the values from the entities
-			if(additional_sorted_list_label != string_intern_pool.NOT_A_STRING_ID)
+			for(size_t label_offset = 0; label_offset < additional_sorted_list_labels.size(); label_offset++)
 			{
+				auto label = additional_sorted_list_labels[label_offset];
+
 				//make a copy of the value at additionalSortedListLabel for each entity
 				EvaluableNode *list_of_values = enm->AllocNode(ENT_LIST);
-				qr_ocn[2] = list_of_values;
+				qr_ocn[2 + label_offset] = list_of_values;
 				auto &list_ocn = list_of_values->GetOrderedChildNodes();
 				list_ocn.resize(results.size());
 				for(size_t i = 0; i < results.size(); i++)
 				{
 					Entity *entity = get_entity(results[i].reference);
-					list_ocn[i] = entity->GetValueAtLabel(additional_sorted_list_label, enm, false);
+					list_ocn[i] = entity->GetValueAtLabel(label, enm, false);
 
 					//update cycle checks and idempotency
 					if(list_ocn[i] != nullptr)

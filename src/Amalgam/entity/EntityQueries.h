@@ -52,8 +52,11 @@ public:
 	//pairs of ids and pairs of values
 	std::vector<std::pair<StringInternPool::StringID, std::pair<EvaluableNodeImmediateValue, EvaluableNodeImmediateValue>>> pairedLabels;
 
-	std::vector<StringInternPool::StringID> positionLabels;	//the labels that comprise each dimension of the position
-	std::vector<EvaluableNodeImmediateValue> valueToCompare;//sometimes used for position values in conjunction with positionLabels
+	//the labels that comprise each dimension of the position
+	std::vector<StringInternPool::StringID> positionLabels;
+
+	//the labels corresponding to positionLabels when appropriate
+	std::vector<EvaluableNodeImmediateValue> valueToCompare;
 
 	GeneralizedDistance distParams;
 
@@ -108,10 +111,12 @@ public:
 	//indicates whether a compute result should be returned as a sorted list
 	bool returnSortedList;
 
-	//for ENT_QUERY_NEAREST_GENERALIZED_DISTANCE and ENT_QUERY_WITHIN_GENERALIZED_DISTANCE, if returnSortedList is true, additionally return this label if valid
-	StringInternPool::StringID additionalSortedListLabel;
+	//for ENT_QUERY_NEAREST_GENERALIZED_DISTANCE and ENT_QUERY_WITHIN_GENERALIZED_DISTANCE, if returnSortedList is true,
+	// additionally return these labels if valid
+	std::vector<StringInternPool::StringID> additionalSortedListLabels;
 
-	//if conviction_of_removal is true, then it will compute the conviction as if the entities were removed, if false, will compute added or included
+	//if conviction_of_removal is true, then it will compute the conviction as if the entities were removed, if false,
+	// will compute added or included
 	bool convictionOfRemoval;
 
 	//if true, use concurrency if applicable

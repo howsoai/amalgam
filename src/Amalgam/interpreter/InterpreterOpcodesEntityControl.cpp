@@ -370,8 +370,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableN
 
 		if(destination_entity_parent == curEntity)
 			new_entity_ids_list->AppendOrderedChildNode(evaluableNodeManager->AllocNode(ENT_STRING, new_entity_id));
-		else //need an id list
-			new_entity_ids_list->AppendOrderedChildNode(GetTraversalIDPathListFromAToB(evaluableNodeManager, curEntity, new_entity));
+		else //need an id path
+			new_entity_ids_list->AppendOrderedChildNode(GetTraversalIDPathFromAToB(evaluableNodeManager, curEntity, new_entity));
 	}
 
 	return new_entity_ids_list;
@@ -430,8 +430,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CLONE_ENTITIES(EvaluableNo
 
 		if(destination_entity_parent == curEntity)
 			new_entity_ids_list->AppendOrderedChildNode(evaluableNodeManager->AllocNode(ENT_STRING, new_entity_id));
-		else //need an id list
-			new_entity_ids_list->AppendOrderedChildNode(GetTraversalIDPathListFromAToB(evaluableNodeManager, curEntity, new_entity));
+		else //need an id path
+			new_entity_ids_list->AppendOrderedChildNode(GetTraversalIDPathFromAToB(evaluableNodeManager, curEntity, new_entity));
 	}
 
 	return new_entity_ids_list;
@@ -499,8 +499,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MOVE_ENTITIES(EvaluableNod
 
 		if(destination_entity_parent == curEntity)
 			new_entity_ids_list->AppendOrderedChildNode(evaluableNodeManager->AllocNode(ENT_STRING, new_entity_id));
-		else //need an id list
-			new_entity_ids_list->AppendOrderedChildNode(GetTraversalIDPathListFromAToB(evaluableNodeManager, curEntity, source_entity));
+		else //need an id path
+			new_entity_ids_list->AppendOrderedChildNode(GetTraversalIDPathFromAToB(evaluableNodeManager, curEntity, source_entity));
 	}
 
 	return new_entity_ids_list;
@@ -640,8 +640,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSI
 
 	if(destination_entity_parent == curEntity)
 		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, new_entity_id), true);
-	else //need to return an id list
-		return EvaluableNodeReference(GetTraversalIDPathListFromAToB(evaluableNodeManager, curEntity, loaded_entity), true);
+	else //need to return an id path
+		return EvaluableNodeReference(GetTraversalIDPathFromAToB(evaluableNodeManager, curEntity, loaded_entity), true);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en)

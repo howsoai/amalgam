@@ -35,7 +35,7 @@ private:
 //returns a newly sorted list
 std::vector<EvaluableNode *> CustomEvaluableNodeOrderedChildNodesSort(std::vector<EvaluableNode *> &list, CustomEvaluableNodeComparator &cenc);
 
-//Starts at the container specified and traverses the id list specified, finding the relative Entity from container
+//Starts at the container specified and traverses the id path specified, finding the relative Entity from container
 // if id_path is nullptr, then it will set relative_entity to the container itself, leaving relative_entity_parent to nullptr
 // if id_path is invalid or container is nullptr, then it will set both relative_entity and relative_entity_parent to nullptr
 // if id_path is any form of a list, then it will treat the ids as a sequence of subcontainers
@@ -45,7 +45,7 @@ std::vector<EvaluableNode *> CustomEvaluableNodeOrderedChildNodesSort(std::vecto
 //Note that id is allocated in the string_intern_pool, and the caller is responsible for freeing the allocation
 void TraverseToEntityViaEvaluableNodeIDPath(Entity *container, EvaluableNode *id_path, Entity *&relative_entity_parent, StringInternRef &id, Entity *&relative_entity);
 
-//Starts at the container specified and traverses the id list specified, finding the relative Entity from container
+//Starts at the container specified and traverses the id path specified, finding the relative Entity from container
 // if id_path does not exist or is invalid then returns nullptr
 template<typename EntityReferenceType>
 EntityReferenceType TraverseToExistingEntityReferenceViaEvaluableNodeIDPath(Entity *container, EvaluableNode *id_path)
@@ -97,8 +97,8 @@ EntityReferenceType TraverseToExistingEntityReferenceViaEvaluableNodeIDPath(Enti
 //Note that destination_id is allocated in the string_intern_pool, and the caller is responsible for freeing the allocation
 void TraverseEntityToNewDestinationViaEvaluableNodeIDPath(Entity *container, EvaluableNode *id_path, Entity *&destination_entity_parent, StringInternRef &destination_id);
 
-//constructs a list of IDs that will traverse frome a to b, assuming that b is contained somewhere within a
-EvaluableNode *GetTraversalIDPathListFromAToB(EvaluableNodeManager *enm, Entity *a, Entity *b);
+//constructs an ID or list of IDs that will traverse frome a to b, assuming that b is contained somewhere within a
+EvaluableNode *GetTraversalIDPathFromAToB(EvaluableNodeManager *enm, Entity *a, Entity *b);
 
 //similar to Parser::GetCodeForPathFromAToB, but instead returns a list of how to traverse each node, such as which index or which key to use to traverse
 // returns nullptr if no path exists

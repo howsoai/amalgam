@@ -317,7 +317,7 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 		//         (call *entity difference code*
 		//           (assoc _ (get_entity_code (append new_entity *relative id*)) )
 		//    )
-		EvaluableNode *src_id_list = GetTraversalIDPathListFromAToB(enm, entity2, entity_to_create);
+		EvaluableNode *src_id_list = GetTraversalIDPathFromAToB(enm, entity2, entity_to_create);
 		EvaluableNode *src_append = enm->AllocNode(ENT_APPEND);
 		src_append->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI__));
 		src_append->AppendOrderedChildNode(src_id_list);
@@ -383,7 +383,7 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 		EvaluableNode *clone_entity = enm->AllocNode(ENT_CLONE_ENTITIES);
 		let_new_entity->AppendOrderedChildNode(clone_entity);
 
-		EvaluableNode *src_id_list = GetTraversalIDPathListFromAToB(enm, entity2, entity_to_clone);
+		EvaluableNode *src_id_list = GetTraversalIDPathFromAToB(enm, entity2, entity_to_clone);
 		EvaluableNode *src_append = enm->AllocNode(ENT_APPEND);
 		src_append->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI__));
 		src_append->AppendOrderedChildNode(src_id_list);
@@ -750,7 +750,7 @@ EvaluableNodeReference EntityManipulation::FlattenEntity(Interpreter *interprete
 		//   )
 		EvaluableNode *create_entity = enm->AllocNode(ENT_CREATE_ENTITIES);
 
-		EvaluableNode *src_id_list = GetTraversalIDPathListFromAToB(enm, entity, cur_entity);
+		EvaluableNode *src_id_list = GetTraversalIDPathFromAToB(enm, entity, cur_entity);
 		EvaluableNode *src_append = enm->AllocNode(ENT_APPEND);
 		src_append->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI_new_entity));
 		src_append->AppendOrderedChildNode(src_id_list);

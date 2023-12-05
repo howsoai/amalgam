@@ -956,7 +956,7 @@ union EvaluableNodeImmediateValue
 	}
 
 	//copies the value from en and returns the EvaluableNodeConcreteValueType
-	EvaluableNodeImmediateValueType CopyValueFromEvaluableNode(EvaluableNode *en)
+	inline EvaluableNodeImmediateValueType CopyValueFromEvaluableNode(EvaluableNode *en)
 	{
 		if(en == nullptr)
 		{
@@ -1007,7 +1007,7 @@ union EvaluableNodeImmediateValue
 	}
 
 	//returns true if it is a null or null equivalent
-	static bool IsNullEquivalent(EvaluableNodeImmediateValueType type, EvaluableNodeImmediateValue &value)
+	static constexpr bool IsNullEquivalent(EvaluableNodeImmediateValueType type, EvaluableNodeImmediateValue &value)
 	{
 		return (type == ENIVT_NULL
 				|| (type == ENIVT_NUMBER && FastIsNaN(value.number))

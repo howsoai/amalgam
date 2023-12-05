@@ -1589,8 +1589,7 @@ void EvaluableNode::DestructValue()
 			break;
 		case ENT_STRING:
 		case ENT_SYMBOL:
-			string_intern_pool.DestroyStringReference(value.stringValueContainer.stringID);
-			string_intern_pool.DestroyStringReference(value.stringValueContainer.labelStringID);
+			string_intern_pool.DestroyStringReferences(value.stringValueContainer.stringID, value.stringValueContainer.labelStringID);
 			break;
 		case ENT_ASSOC:
 			value.DestructMappedChildNodes();
@@ -1636,8 +1635,7 @@ void EvaluableNode::Invalidate()
 			break;
 		case ENT_STRING:
 		case ENT_SYMBOL:
-			string_intern_pool.DestroyStringReference(value.stringValueContainer.stringID);
-			string_intern_pool.DestroyStringReference(value.stringValueContainer.labelStringID);
+			string_intern_pool.DestroyStringReferences(value.stringValueContainer.stringID, value.stringValueContainer.labelStringID);
 			break;
 		case ENT_ASSOC:
 			value.DestructMappedChildNodes();
@@ -1676,7 +1674,6 @@ void EvaluableNode::Invalidate()
 
 	//delete extended if haven't returned yet
 	string_intern_pool.DestroyStringReferences(value.extension.extendedValue->labelsStringIds);
-
 	string_intern_pool.DestroyStringReference(value.extension.commentsStringId);
 
 	delete value.extension.extendedValue;

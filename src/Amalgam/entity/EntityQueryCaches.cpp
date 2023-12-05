@@ -84,10 +84,10 @@ void EntityQueryCaches::EnsureLabelsAreCached(EntityQueryCondition *cond)
 					labels_to_add.push_back(cond->weightLabel);
 			}
 
-			if(cond->additionalSortedListLabel != StringInternPool::NOT_A_STRING_ID)
+			for(auto label : cond->additionalSortedListLabels)
 			{
-				if(!DoesHaveLabel(cond->additionalSortedListLabel))
-					labels_to_add.push_back(cond->additionalSortedListLabel);
+				if(!DoesHaveLabel(label))
+					labels_to_add.push_back(label);
 			}
 
 			break;
@@ -1249,7 +1249,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 			|| last_query_type == ENT_COMPUTE_ENTITY_KL_DIVERGENCES)
 		{
 			return EntityManipulation::ConvertResultsToEvaluableNodes<size_t>(compute_results,
-				enm, last_query->returnSortedList, last_query->additionalSortedListLabel,
+				enm, last_query->returnSortedList, last_query->additionalSortedListLabels,
 				[&contained_entities](auto entity_index) { return contained_entities[entity_index]; });
 		}
 		else //if there are no compute results, return an assoc of the requested labels for each entity

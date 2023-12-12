@@ -39,6 +39,16 @@ namespace EntityQueryBuilder
 			|| type == ENT_COMPUTE_ENTITY_KL_DIVERGENCES);
 	}
 
+	//populates deviation data for feature_params from deviation_node
+	inline void PopulateFeatureDeviationData(GeneralizedDistance::FeatureParams &feature_params, EvaluableNode *deviation_node)
+	{
+		//TODO 17631: update language.js
+		//TODO 17631: add sparse deviation matrix to unit tests
+		//TODO 17631: populate nominalSparseDeviationMatrix here as appropriate
+		feature_params.deviation = EvaluableNode::ToNumber(deviation_node, 0.0);
+
+	}
+
 	//populates the features of dist_params based on either num_elements or element_names for each of the
 	// four different attribute parameters based on its type (using num_elements if list or immediate, element_names if assoc)
 	inline void PopulateDistanceFeatureParameters(GeneralizedDistance &dist_params,
@@ -127,19 +137,19 @@ namespace EntityQueryBuilder
 							{
 								auto &ocn = en->GetOrderedChildNodesReference();
 								size_t ocn_size = ocn.size();
-								//TODO 17631: update language.js
-								//TODO 17631: add sparse deviation matrix to unit tests
-								//TODO 17631: populate nominalSparseDeviationMatrix here as appropriate
+
 								if(ocn_size > 0)
-									dist_params.featureParams[i].deviation = EvaluableNode::ToNumber(ocn[0], 0.0);
+									PopulateFeatureDeviationData(dist_params.featureParams[i], ocn[0]);
+
 								if(ocn_size > 1)
 									dist_params.featureParams[i].knownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[1]);
+
 								if(ocn_size > 2)
 									dist_params.featureParams[i].unknownToUnknownDistanceTerm = EvaluableNode::ToNumber(ocn[2]);
 							}
 							else //treat as singular value
 							{
-								dist_params.featureParams[i].deviation = EvaluableNode::ToNumber(en, 0.0);
+								PopulateFeatureDeviationData(dist_params.featureParams[i], en);
 							}
 						}
 						break;

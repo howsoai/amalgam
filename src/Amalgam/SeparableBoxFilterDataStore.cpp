@@ -988,17 +988,17 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 	}
 	else if(effective_feature_type == GeneralizedDistance::EFDT_NOMINAL_STRING)
 	{
-		//TODO 17631: finish this
+		//TODO 17631: finish this; need to account for all values that are smaller than the current
 	}
 	else if(effective_feature_type == GeneralizedDistance::EFDT_NOMINAL_NUMBER)
 	{
-		//TODO 17631: finish this
+		//TODO 17631: finish this; need to account for all values that are smaller than the current
 	}
 	//else feature_type == FDT_CONTINUOUS_NUMERIC or FDT_CONTINUOUS_UNIVERSALLY_NUMERIC
 
 	//if not a number or no numbers available, then no size
 	if(value_type != ENIVT_NUMBER || column->sortedNumberValueEntries.size() == 0)
-		return GetMaxDistanceTermFromValue(dist_params, value, value_type, query_feature_index, absolute_feature_index, high_accuracy);
+		return GetMaxDistanceTermFromContinuousValue(dist_params, value, value_type, query_feature_index, absolute_feature_index, high_accuracy);
 
 	bool cyclic_feature = dist_params.IsFeatureCyclic(query_feature_index);
 	double cycle_length = std::numeric_limits<double>::infinity();

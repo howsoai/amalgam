@@ -2470,6 +2470,12 @@
 	))
  )
 
+ (print "weighted query list of lists with multiple values: "
+	(compute_on_contained_entities "TestContainerExec" (list
+		(query_nearest_generalized_distance 5 (list "y" ) (list 0) (null) (null) (null) (null) 1 1 (null) (null) (null) (null) (list "y" "x"))
+	))
+ )
+
  (create_entities "OverflowQueryContainer" (null) )
  (create_entities (list "OverflowQueryContainer" "sess") (lambda (null ##.steps (list 1 2))))
  (create_entities "OverflowQueryContainer" (lambda (null ##a 2)))

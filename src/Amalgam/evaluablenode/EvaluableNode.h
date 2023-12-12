@@ -367,7 +367,7 @@ public:
 	//Converts the node to a string
 	const static std::string ToString(EvaluableNode *e);
 
-	//converts node to an existing string. If it doesn't exist, it returns NOT_A_STRING_ID
+	//converts node to an existing string. If it doesn't exist, or any form of null/NaN/NaS, it returns NOT_A_STRING_ID
 	static StringInternPool::StringID ToStringIDIfExists(EvaluableNode *e);
 
 	//converts node to a string. Creates a reference to the string that must be destroyed, regardless of whether the string existed or not (if it did not exist, then it creates one)
@@ -439,6 +439,7 @@ public:
 	//fully clears node and sets it to new_type
 	inline void ClearAndSetType(EvaluableNodeType new_type)
 	{
+		ClearMetadata();
 		DestructValue();
 		InitializeType(new_type);
 	}
@@ -955,7 +956,7 @@ union EvaluableNodeImmediateValue
 	}
 
 	//copies the value from en and returns the EvaluableNodeConcreteValueType
-	EvaluableNodeImmediateValueType CopyValueFromEvaluableNode(EvaluableNode *en)
+	inline EvaluableNodeImmediateValueType CopyValueFromEvaluableNode(EvaluableNode *en)
 	{
 		if(en == nullptr)
 		{
@@ -1006,7 +1007,7 @@ union EvaluableNodeImmediateValue
 	}
 
 	//returns true if it is a null or null equivalent
-	static bool IsNullEquivalent(EvaluableNodeImmediateValueType type, EvaluableNodeImmediateValue &value)
+	static constexpr bool IsNullEquivalent(EvaluableNodeImmediateValueType type, EvaluableNodeImmediateValue &value)
 	{
 		return (type == ENIVT_NULL
 				|| (type == ENIVT_NUMBER && FastIsNaN(value.number))

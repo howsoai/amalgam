@@ -398,11 +398,6 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	return retval;
 }
 
-Interpreter::~Interpreter()
-{
-	
-}
-
 EvaluableNodeReference Interpreter::ConvertArgsToCallStack(EvaluableNodeReference &args, EvaluableNodeManager *enm)
 {
 	if(enm == nullptr)
@@ -640,8 +635,13 @@ EvaluableNode *Interpreter::InterpretNodeIntoUniqueStringIDValueEvaluableNode(Ev
 
 double Interpreter::InterpretNodeIntoNumberValue(EvaluableNode *n)
 {
+	if(n == nullptr)
+		return std::numeric_limits<double>::quiet_NaN();
+
+	auto type = n->GetType();
+
 	//shortcut if the node has what is being asked
-	if(n != nullptr && n->GetType() == ENT_NUMBER)
+	if(type == ENT_NUMBER)
 		return n->GetNumberValueReference();
 
 	auto result = InterpretNodeForImmediateUse(n);
@@ -775,21 +775,21 @@ bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node
 	if(!parent_node->GetConcurrency())
 		return false;
 	
-	size_t num_elements = nodes.size();
-	if(num_elements < 2)
+	size_t num_tasks = nodes.size();
+	if(num_tasks < 2)
 		return false;
 
 	auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
 	if(!enqueue_task_lock.AreThreadsAvailable())
 		return false;
 
-	ConcurrencyManager concurrency_manager(this, num_elements);
+	ConcurrencyManager concurrency_manager(this, num_tasks);
 
 	//kick off interpreters
-	for(size_t element_index = 0; element_index < num_elements; element_index++)
+	for(size_t task_index = 0; task_index < num_tasks; task_index++)
 	{
-		auto &interpreter = *concurrency_manager.interpreters[element_index];
-		EvaluableNode *node_to_execute = nodes[element_index];
+		auto &interpreter = *concurrency_manager.interpreters[task_index];
+		EvaluableNode *node_to_execute = nodes[task_index];
 
 		concurrency_manager.resultFutures.emplace_back(
 			Concurrency::threadPool.EnqueueBatchTask(

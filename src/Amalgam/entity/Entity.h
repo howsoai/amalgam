@@ -29,10 +29,10 @@ class Entity
 public:
 
 	//type for looking up an entity based on a StringID
-	using EntityLookupAssocType = CompactHashMap<StringInternPool::StringID, Entity *>;
+	using EntityLookupAssocType = FastHashMap<StringInternPool::StringID, Entity *>;
 
 	//StringID to index
-	using StringIdToIndexAssocType = CompactHashMap<StringInternPool::StringID, size_t>;
+	using StringIdToIndexAssocType = FastHashMap<StringInternPool::StringID, size_t>;
 
 	//set of entities
 	using EntitySetType = FastHashSet<Entity *>;
@@ -55,7 +55,7 @@ public:
 	// Uses max_num_nodes as the maximum number of nodes that can be allocated in memory by this and any subordinate operations called. If max_num_nodes is 0, then it will allow unlimited allocations
 	// If on_self is true, then it will be allowed to access private variables
 	// If locked_memory_modification_lock is specified, then it will unlock it prior to the execution, but lock it again before
-	// If entity_write_lock is specified, then it will unlock prior to execution after locked_memory_modification_lock is locked
+	// If entity_read_lock is specified, then it will unlock prior to execution after locked_memory_modification_lock is locked
 	// potentially writing anything out to destination_temp_enm
 	// If copy_call_stack is true, it will copy call_stack into the evaluableNodeManager managed by this entity while under appropriate locks
 	EvaluableNodeReference Execute(ExecutionCycleCount max_num_steps, ExecutionCycleCount &num_steps_executed, size_t max_num_nodes, size_t &num_nodes_allocated,
@@ -63,7 +63,7 @@ public:
 		EvaluableNode *call_stack = nullptr, bool on_self = false, EvaluableNodeManager *destination_temp_enm = nullptr,
 	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::ReadLock *locked_memory_modification_lock = nullptr,
-		Concurrency::WriteLock *entity_write_lock = nullptr,
+		Concurrency::ReadLock *entity_read_lock = nullptr,
 	#endif
 		StringInternPool::StringID label_sid = StringInternPool::NOT_A_STRING_ID,
 		Interpreter *calling_interpreter = nullptr, bool copy_call_stack = false);
@@ -75,7 +75,7 @@ public:
 		EvaluableNode *call_stack, bool on_self, EvaluableNodeManager *destination_temp_enm,
 	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::ReadLock *locked_memory_modification_lock,
-		Concurrency::WriteLock *entity_write_lock,
+		Concurrency::ReadLock *entity_read_lock,
 	#endif
 		const std::string &label_name,
 		Interpreter *calling_interpreter = nullptr, bool copy_call_stack = false)
@@ -84,7 +84,7 @@ public:
 		return Execute(max_num_steps, num_steps_executed, max_num_nodes, num_nodes_allocated, write_listeners, print_listener,
 			call_stack, on_self, destination_temp_enm,
 		#ifdef MULTITHREAD_SUPPORT
-			locked_memory_modification_lock, entity_write_lock,
+			locked_memory_modification_lock, entity_read_lock,
 		#endif
 			label_sid, calling_interpreter, copy_call_stack);
 	}
@@ -396,18 +396,24 @@ public:
 	//accumulates the code and recreates the index, modifying labels as specified
 	// if allocated_with_entity_enm is false, then it will copy the tree into the entity's EvaluableNodeManager, otherwise it will just assume it is already available
 	// write_listeners is optional, and if specified, will log the event
-	void AccumRoot(EvaluableNode *_code, bool allocated_with_entity_enm, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE, std::vector<EntityWriteListener *> *write_listeners = nullptr);
+	void AccumRoot(EvaluableNodeReference _code, bool allocated_with_entity_enm, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE, std::vector<EntityWriteListener *> *write_listeners = nullptr);
 
 	//collects garbage on evaluableNodeManager
 #ifdef MULTITHREAD_SUPPORT
 	//if multithreaded, then memory_modification_lock is the lock used for memoryModificationMutex
 	__forceinline void CollectGarbage(Concurrency::ReadLock *memory_modification_lock)
 	{
+		if(!evaluableNodeManager.RecommendGarbageCollection())
+			return;
+
 		evaluableNodeManager.CollectGarbage(memory_modification_lock);
 	}
 #else
 	__forceinline void CollectGarbage()
 	{
+		if(!evaluableNodeManager.RecommendGarbageCollection())
+			return;
+
 		evaluableNodeManager.CollectGarbage();
 	}
 #endif

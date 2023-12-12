@@ -19,8 +19,8 @@ namespace StringManipulation
 	inline bool IsUtf8Whitespace(std::string &s, size_t position)
 	{
 		auto cur_char = s[position];
-		if(cur_char == ' ' || cur_char == '\t' || cur_char == '\n' || cur_char == '\r'
-			|| cur_char == '\f' || cur_char == '\v')
+		if(cur_char == '\t' || cur_char == '\n' || cur_char == '\v' || cur_char == '\f'
+			|| cur_char == '\r' || cur_char == ' ')
 			return true;
 
 		//need to additionally check the following multicharacter utf-8 code points:

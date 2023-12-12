@@ -219,12 +219,6 @@ bool Entity::GetValueAtLabelAsString(StringInternPool::StringID label_sid, std::
 EvaluableNodeImmediateValueType Entity::GetValueAtLabelAsImmediateValue(StringInternPool::StringID label_sid,
 	EvaluableNodeImmediateValue &value_out, bool on_self)
 {
-	if(label_sid <= StringInternPool::EMPTY_STRING_ID)
-	{
-		value_out.number = std::numeric_limits<double>::quiet_NaN();
-		return ENIVT_NOT_EXIST;
-	}
-
 	if(!on_self && IsLabelPrivate(label_sid))
 	{
 		value_out.number = std::numeric_limits<double>::quiet_NaN();
@@ -423,7 +417,7 @@ EvaluableNodeReference Entity::Execute(ExecutionCycleCount max_num_steps, Execut
 	EvaluableNode *call_stack, bool on_self, EvaluableNodeManager *destination_temp_enm,
 #ifdef MULTITHREAD_SUPPORT
 	Concurrency::ReadLock *locked_memory_modification_lock,
-	Concurrency::WriteLock *entity_write_lock,
+	Concurrency::ReadLock *entity_read_lock,
 #endif
 	StringInternPool::StringID label_sid,
 	Interpreter *calling_interpreter, bool copy_call_stack)
@@ -465,8 +459,8 @@ EvaluableNodeReference Entity::Execute(ExecutionCycleCount max_num_steps, Execut
 
 #ifdef MULTITHREAD_SUPPORT
 	interpreter.memoryModificationLock = Concurrency::ReadLock(interpreter.evaluableNodeManager->memoryModificationMutex);
-	if(entity_write_lock != nullptr)
-		entity_write_lock->unlock();
+	if(entity_read_lock != nullptr)
+		entity_read_lock->unlock();
 #endif
 
 	if(copy_call_stack)
@@ -928,18 +922,15 @@ void Entity::SetRoot(std::string &code_string, EvaluableNodeManager::EvaluableNo
 	SetRoot(new_code.reference, true, metadata_modifier, write_listeners);
 }
 
-void Entity::AccumRoot(EvaluableNode *accum_code, bool allocated_with_entity_enm, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier, std::vector<EntityWriteListener *> *write_listeners)
+void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_entity_enm, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier, std::vector<EntityWriteListener *> *write_listeners)
 {
 	if( !(allocated_with_entity_enm && metadata_modifier == EvaluableNodeManager::ENMM_NO_CHANGE))
-	{
-		auto code_copy = evaluableNodeManager.DeepAllocCopy(accum_code, metadata_modifier);
-		accum_code = code_copy.reference;
-	}
+		accum_code = evaluableNodeManager.DeepAllocCopy(accum_code, metadata_modifier);
 
 	bool accum_has_labels = EvaluableNodeTreeManipulation::DoesTreeContainLabels(accum_code);
 
 	EvaluableNode *previous_root = evaluableNodeManager.GetRootNode();
-	EvaluableNodeReference new_root = AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeReference(previous_root, true), EvaluableNodeReference(accum_code, true), &evaluableNodeManager);
+	EvaluableNodeReference new_root = AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeReference(previous_root, true), accum_code, &evaluableNodeManager);
 
 	//need to check if still cycle free as it may no longer be
 	EvaluableNodeManager::UpdateFlagsForNodeTree(new_root);
@@ -994,7 +985,6 @@ void Entity::AccumRoot(EvaluableNode *accum_code, bool allocated_with_entity_enm
 				container_caches->UpdateEntityLabel(this, GetEntityIndexOfContainer(), label_sid);
 		}
 	}
-
 
 	if(write_listeners != nullptr)
 	{

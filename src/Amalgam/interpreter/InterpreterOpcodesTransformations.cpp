@@ -1052,24 +1052,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_INDEX(EvaluableNo
 	EvaluableNode **target = TraverseToDestinationFromTraversalPathList(&container.reference, index, false);
 	EvaluableNodeType result = (target != nullptr ? ENT_TRUE : ENT_FALSE);
 
-	evaluableNodeManager->FreeNodeTreeIfPossible(container);
-
-	//see if can reuse index node
-	EvaluableNodeReference retval;
-	if(index != nullptr && index.unique)
-	{
-		if(!index->GetNeedCycleCheck())
-			evaluableNodeManager->FreeNodeChildNodes(index);
-
-		index->ClearAndSetType(result);
-		retval = EvaluableNodeReference(index.reference, true);
-	}
-	else //need a new node
-	{
-		retval = EvaluableNodeReference(evaluableNodeManager->AllocNode(result), true);
-	}
-
-	return retval;
+	return evaluableNodeManager->ReuseOrAllocOneOfNodes(index, container, result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNode *en)
@@ -1137,24 +1120,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 			result = ENT_TRUE;
 	}
 
-	evaluableNodeManager->FreeNodeTreeIfPossible(collection);
-
-	//see if can reuse value node
-	EvaluableNodeReference retval;
-	if(value != nullptr && value.unique)
-	{
-		if(!value->GetNeedCycleCheck())
-			evaluableNodeManager->FreeNodeChildNodes(value);
-
-		value->ClearAndSetType(result);
-		retval = EvaluableNodeReference(value.reference, true);
-	}
-	else //need a new node
-	{
-		retval = EvaluableNodeReference(evaluableNodeManager->AllocNode(result), true);
-	}
-
-	return retval;
+	return evaluableNodeManager->ReuseOrAllocOneOfNodes(value, collection, result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en)

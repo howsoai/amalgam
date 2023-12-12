@@ -240,22 +240,12 @@ const std::string EvaluableNode::ToString(EvaluableNode *e)
 	switch(e->GetType())
 	{
 		case ENT_NUMBER:
-		{
-			double value = e->GetNumberValueReference();
-			if(FastIsNaN(value))
-				return ".nan";
-			if(std::isinf(value))
-			{
-				if(value > 0.0)
-					return ".infinity";
-				else
-					return "-.infinity";
-			}
-			return NumberToString(value);
-		}
+			return NumberToString(e->GetNumberValueReference());
+
 		case ENT_STRING:
 		case ENT_SYMBOL:
 			return e->GetStringValue();
+
 		default:
 			return GetStringFromEvaluableNodeType(e->GetType());
 	}
@@ -263,11 +253,15 @@ const std::string EvaluableNode::ToString(EvaluableNode *e)
 
 StringInternPool::StringID EvaluableNode::ToStringIDIfExists(EvaluableNode *e)
 {
-	if(IsEmptyNode(e))
+	if(e == nullptr)
 		return StringInternPool::NOT_A_STRING_ID;
 
 	if((e->GetType() == ENT_STRING || e->GetType() == ENT_SYMBOL))
 		return e->GetStringIDReference();
+
+	//this will catch any other form of null or NaN not yet caught
+	if(IsNaN(e))
+		return StringInternPool::NOT_A_STRING_ID;
 
 	//see if the string exists even if it is not stored as a StringID
 	const std::string str_value = ToString(e);
@@ -277,12 +271,15 @@ StringInternPool::StringID EvaluableNode::ToStringIDIfExists(EvaluableNode *e)
 
 StringInternPool::StringID EvaluableNode::ToStringIDWithReference(EvaluableNode *e)
 {
-	//NaS doesn't need a reference
-	if(IsEmptyNode(e))
+	if(e == nullptr)
 		return StringInternPool::NOT_A_STRING_ID;
 
 	if(e->GetType() == ENT_STRING || e->GetType() == ENT_SYMBOL)
 		return string_intern_pool.CreateStringReference(e->GetStringIDReference());
+
+	//this will catch any other form of null or NaN not yet caught
+	if(IsNaN(e))
+		return StringInternPool::NOT_A_STRING_ID;
 	
 	std::string stringified = ToString(e);
 	return string_intern_pool.CreateStringReference(stringified);
@@ -1592,8 +1589,7 @@ void EvaluableNode::DestructValue()
 			break;
 		case ENT_STRING:
 		case ENT_SYMBOL:
-			string_intern_pool.DestroyStringReference(value.stringValueContainer.stringID);
-			string_intern_pool.DestroyStringReference(value.stringValueContainer.labelStringID);
+			string_intern_pool.DestroyStringReferences(value.stringValueContainer.stringID, value.stringValueContainer.labelStringID);
 			break;
 		case ENT_ASSOC:
 			value.DestructMappedChildNodes();
@@ -1639,8 +1635,7 @@ void EvaluableNode::Invalidate()
 			break;
 		case ENT_STRING:
 		case ENT_SYMBOL:
-			string_intern_pool.DestroyStringReference(value.stringValueContainer.stringID);
-			string_intern_pool.DestroyStringReference(value.stringValueContainer.labelStringID);
+			string_intern_pool.DestroyStringReferences(value.stringValueContainer.stringID, value.stringValueContainer.labelStringID);
 			break;
 		case ENT_ASSOC:
 			value.DestructMappedChildNodes();
@@ -1679,7 +1674,6 @@ void EvaluableNode::Invalidate()
 
 	//delete extended if haven't returned yet
 	string_intern_pool.DestroyStringReferences(value.extension.extendedValue->labelsStringIds);
-
 	string_intern_pool.DestroyStringReference(value.extension.commentsStringId);
 
 	delete value.extension.extendedValue;

@@ -12,54 +12,54 @@ class EvaluableNodeReference
 {
 public:
 	constexpr EvaluableNodeReference()
-		: referenceAndImmediate(nullptr), unique(true), immediate(false)
+		: value(nullptr), unique(true)
 	{	}
 
 	constexpr EvaluableNodeReference(EvaluableNode *_reference, bool _unique)
-		: referenceAndImmediate(_reference), unique(_unique), immediate(false)
+		: value(_reference), unique(_unique)
 	{	}
 
 	__forceinline EvaluableNodeReference(const EvaluableNodeReference &inr)
-		: referenceAndImmediate(inr.referenceAndImmediate), unique(inr.unique), immediate(inr.immediate)
+		: value(inr.value), unique(inr.unique)
 	{	}
 
 	//when attached a child node, make sure that this node reflects the same properties
 	void UpdatePropertiesBasedOnAttachedNode(EvaluableNodeReference &attached)
 	{
-		if(attached.referenceAndImmediate.reference == nullptr)
+		if(attached.value.nodeValue.code == nullptr)
 			return;
 
 		if(!attached.unique)
 		{
 			unique = false;
 			//if new attachments aren't unique, then can't guarantee there isn't a cycle present
-			referenceAndImmediate.reference->SetNeedCycleCheck(true);
+			value.nodeValue.code->SetNeedCycleCheck(true);
 		}
-		else if(attached.referenceAndImmediate.reference->GetNeedCycleCheck())
+		else if(attached.value.nodeValue.code->GetNeedCycleCheck())
 		{
-			referenceAndImmediate.reference->SetNeedCycleCheck(true);
+			value.nodeValue.code->SetNeedCycleCheck(true);
 		}
 
-		if(!attached.referenceAndImmediate.reference->GetIsIdempotent())
-			referenceAndImmediate.reference->SetIsIdempotent(false);
+		if(!attached.value.nodeValue.code->GetIsIdempotent())
+			value.nodeValue.code->SetIsIdempotent(false);
 	}
 
 	//calls GetNeedCycleCheck if the reference is not nullptr, returns false if it is nullptr
 	constexpr bool GetNeedCycleCheck()
 	{
-		if(referenceAndImmediate.reference == nullptr)
+		if(value.nodeValue.code == nullptr)
 			return false;
 	
-		return referenceAndImmediate.reference->GetNeedCycleCheck();
+		return value.nodeValue.code->GetNeedCycleCheck();
 	}
 
 	//calls SetNeedCycleCheck if the reference is not nullptr
 	constexpr void SetNeedCycleCheck(bool need_cycle_check)
 	{
-		if(referenceAndImmediate.reference == nullptr)
+		if(value.nodeValue.code == nullptr)
 			return;
 	
-		referenceAndImmediate.reference->SetNeedCycleCheck(need_cycle_check);
+		value.nodeValue.code->SetNeedCycleCheck(need_cycle_check);
 	}
 
 	constexpr static EvaluableNodeReference Null()
@@ -67,73 +67,47 @@ public:
 		return EvaluableNodeReference(nullptr, true);
 	}
 
-	inline void SetReference(EvaluableNode *_reference)
+	__forceinline void SetReference(EvaluableNode *_reference)
 	{
-		referenceAndImmediate.reference = _reference;
+		value = _reference;
 	}
 
-	inline void SetReference(EvaluableNode *_reference, bool _unique)
+	__forceinline void SetReference(EvaluableNode *_reference, bool _unique)
 	{
-		referenceAndImmediate.reference = _reference;
+		value = _reference;
 		unique = _unique;
 	}
 
-	inline EvaluableNode *&GetReference()
+	constexpr EvaluableNode *&GetReference()
 	{
-		return referenceAndImmediate.reference;
+		return value.nodeValue.code;
 	}
 
 	//allow to use as an EvaluableNode *
 	constexpr operator EvaluableNode *&()
-	{	return referenceAndImmediate.reference;	}
+	{	return value.nodeValue.code;	}
 
 	//allow to use as an EvaluableNode *
 	constexpr EvaluableNode *operator->()
-	{	return referenceAndImmediate.reference;	}
+	{	return value.nodeValue.code;	}
 
 	__forceinline EvaluableNodeReference &operator =(const EvaluableNodeReference &enr)
 	{
 		//perform a memcpy because it's a union, to be safe; the compiler should optimize this out
-		std::memcpy(&referenceAndImmediate, &enr.referenceAndImmediate, sizeof(referenceAndImmediate));
+		value = enr.value;
 		unique = enr.unique;
-		immediate = enr.immediate;
 
 		return *this;
 	}
 
 protected:
 
-	//efficient way to handle whether an InterpretNode method
-	// is returning an immediate value based on the immediate attribute
-	union ReferenceAndImmediate
-	{
-		constexpr ReferenceAndImmediate()
-			: reference(nullptr)
-		{	}
-
-		constexpr ReferenceAndImmediate(EvaluableNode *_reference)
-			: reference(_reference)
-		{	}
-
-		__forceinline ReferenceAndImmediate(const ReferenceAndImmediate &rai)
-		{
-			//perform a memcpy because it's a union, to be safe; the compiler should optimize this out
-			std::memcpy(this, &rai, sizeof(this));
-		}
-
-		EvaluableNode *reference;
-		EvaluableNodeImmediateValue immediate;
-	} referenceAndImmediate;
+	EvaluableNodeImmediateValueWithType value;
 	
 public:
 
 	//this is the only reference to the result
 	bool unique;
-
-	//if immediate, then the storage is immediate
-	bool immediate;
-
-	EvaluableNodeImmediateValueType immediateType;
 };
 
 

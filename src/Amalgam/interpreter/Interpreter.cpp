@@ -475,7 +475,7 @@ EvaluableNode **Interpreter::GetOrCreateExecutionContextSymbolLocation(const Str
 	return context_to_use->GetOrCreateMappedChildNode(symbol_sid);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, bool immediate_result)
 {
 	if(EvaluableNode::IsNull(en))
 		return EvaluableNodeReference::Null();
@@ -515,7 +515,7 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en)
 	EvaluableNodeType ent = en->GetType();
 	auto oc = _opcodes[ent];
 
-	EvaluableNodeReference retval = (this->*oc)(en);
+	EvaluableNodeReference retval = (this->*oc)(en, immediate_result);
 
 	//for deep debugging only
 	//ValidateEvaluableNodeIntegrity();

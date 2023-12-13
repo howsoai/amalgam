@@ -67,7 +67,7 @@ public:
 	}
 
 	//allow to use as an EvaluableNode *
-	constexpr operator EvaluableNode *()
+	constexpr operator EvaluableNode *&()
 	{	return reference;	}
 
 	//allow to use as an EvaluableNode *

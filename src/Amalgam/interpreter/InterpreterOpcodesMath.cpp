@@ -20,7 +20,7 @@
 #include <iostream>
 #include <utility>
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_ADD(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ADD(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -46,7 +46,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ADD(EvaluableNode *en)
 	return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBTRACT(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBTRACT(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -76,7 +76,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBTRACT(EvaluableNode *en
 	return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_MULTIPLY(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_MULTIPLY(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -102,7 +102,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MULTIPLY(EvaluableNode *en
 	return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_DIVIDE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_DIVIDE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -160,7 +160,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DIVIDE(EvaluableNode *en)
 	return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_MODULUS(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_MODULUS(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -238,7 +238,7 @@ inline void NormalizeStartAndEndDigitToZerosPlace(double value, double base, boo
 		end_digit = start_digit - max_num_digits;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_DIGITS(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_DIGITS(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 	size_t num_params = ocn.size();
@@ -317,7 +317,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_DIGITS(EvaluableNode *
 	return digits;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_DIGITS(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_DIGITS(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 	size_t num_params = ocn.size();
@@ -436,7 +436,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_DIGITS(EvaluableNode *
 	return EvaluableNodeReference(evaluableNodeManager->AllocNode(result_value), true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_FLOOR(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_FLOOR(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -448,7 +448,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FLOOR(EvaluableNode *en)
 	return EvaluableNodeReference(retval, true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_CEILING(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CEILING(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -460,7 +460,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CEILING(EvaluableNode *en)
 	return EvaluableNodeReference(retval, true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_ROUND(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ROUND(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -503,7 +503,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ROUND(EvaluableNode *en)
 	return EvaluableNodeReference(retval, true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_EXPONENT(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_EXPONENT(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -515,7 +515,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EXPONENT(EvaluableNode *en
 	return EvaluableNodeReference(retval, true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_LOG(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_LOG(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -534,7 +534,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOG(EvaluableNode *en)
 	return EvaluableNodeReference(retval, true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SIN(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SIN(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -546,7 +546,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SIN(EvaluableNode *en)
 	return EvaluableNodeReference(retval, true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_ASIN(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ASIN(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -558,7 +558,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASIN(EvaluableNode *en)
 	return EvaluableNodeReference(retval, true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_COS(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_COS(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -570,7 +570,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COS(EvaluableNode *en)
 	return EvaluableNodeReference(retval, true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_ACOS(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ACOS(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -582,7 +582,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ACOS(EvaluableNode *en)
 	return EvaluableNodeReference(retval, true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_TAN(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_TAN(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -594,7 +594,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAN(EvaluableNode *en)
 	return EvaluableNodeReference(retval, true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_ATAN(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ATAN(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -616,7 +616,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ATAN(EvaluableNode *en)
 	return EvaluableNodeReference::Null();
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SINH(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SINH(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -628,7 +628,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SINH(EvaluableNode *en)
 	return EvaluableNodeReference(retval, true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_ASINH(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ASINH(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -640,7 +640,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASINH(EvaluableNode *en)
 	return EvaluableNodeReference(retval, true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_COSH(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_COSH(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -652,7 +652,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COSH(EvaluableNode *en)
 	return EvaluableNodeReference(retval, true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_ACOSH(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ACOSH(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -664,7 +664,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ACOSH(EvaluableNode *en)
 	return EvaluableNodeReference(retval, true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_TANH(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_TANH(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -676,7 +676,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TANH(EvaluableNode *en)
 	return EvaluableNodeReference(retval, true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_ATANH(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ATANH(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -688,7 +688,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ATANH(EvaluableNode *en)
 	return EvaluableNodeReference(retval, true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_ERF(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ERF(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -700,7 +700,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ERF(EvaluableNode *en)
 	return EvaluableNodeReference(retval, true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_TGAMMA(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_TGAMMA(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -712,7 +712,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TGAMMA(EvaluableNode *en)
 	return EvaluableNodeReference(retval, true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_LGAMMA(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_LGAMMA(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -724,7 +724,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LGAMMA(EvaluableNode *en)
 	return EvaluableNodeReference(retval, true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SQRT(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SQRT(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -736,7 +736,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SQRT(EvaluableNode *en)
 	return EvaluableNodeReference(retval, true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_POW(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_POW(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -748,7 +748,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_POW(EvaluableNode *en)
 	return EvaluableNodeReference(evaluableNodeManager->AllocNode(std::pow(f1, f2)), true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_ABS(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ABS(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -760,7 +760,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ABS(EvaluableNode *en)
 	return EvaluableNodeReference(retval, true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_MAX(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_MAX(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -826,7 +826,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAX(EvaluableNode *en)
 	return result;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_MIN(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_MIN(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -892,7 +892,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIN(EvaluableNode *en)
 	return result;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_DOT_PRODUCT(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_DOT_PRODUCT(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 	if(ocn.size() < 2)
@@ -1007,7 +1007,7 @@ inline void GetChildNodesAsENImmediateValueArray(EvaluableNode *node, std::vecto
 	}
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -1132,7 +1132,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 	return result;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 

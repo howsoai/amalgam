@@ -19,7 +19,7 @@
 #include <iostream>
 #include <utility>
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -107,7 +107,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en)
 	return EvaluableNodeReference::Null();
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -235,7 +235,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en)
 	return EvaluableNodeReference::Null();
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -323,7 +323,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en)
 	return EvaluableNodeReference::Null();
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -449,7 +449,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en)
 	return EvaluableNodeReference::Null();
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -539,7 +539,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en)
 	return new_list;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SIZE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SIZE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -566,7 +566,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SIZE(EvaluableNode *en)
 	return EvaluableNodeReference(evaluableNodeManager->AllocNode(static_cast<double>(size)), true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 	size_t num_params = ocn.size();

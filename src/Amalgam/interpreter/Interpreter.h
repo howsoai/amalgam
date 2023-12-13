@@ -145,7 +145,7 @@ public:
 		stack_nodes[new_size + constructionStackOffsetTargetOrigin] = target_origin;
 		stack_nodes[new_size + constructionStackOffsetTarget] = target;
 		stack_nodes[new_size + constructionStackOffsetCurrentValue] = current_value;
-		stack_nodes[new_size + constructionStackOffsetPreviousResult] = previous_result.reference;
+		stack_nodes[new_size + constructionStackOffsetPreviousResult] = previous_result;
 
 		stack_node_indices.emplace_back(current_index, previous_result.unique);
 	}
@@ -200,7 +200,7 @@ public:
 	//assumes there is at least one construction stack entry
 	__forceinline void SetTopPreviousResultInConstructionStack(EvaluableNodeReference previous_result)
 	{
-		constructionStackNodes->at(constructionStackNodes->size() + constructionStackOffsetPreviousResult) = previous_result.reference;
+		constructionStackNodes->at(constructionStackNodes->size() + constructionStackOffsetPreviousResult) = previous_result;
 		constructionStackIndicesAndUniqueness.back().unique = previous_result.unique;
 	}
 
@@ -268,7 +268,8 @@ public:
 	}
 
 	//keeps the current node on the stack and calls InterpretNodeExecution
-	EvaluableNodeReference InterpretNode(EvaluableNode *en);
+	//if immediate_result is true, it will not allocate a node
+	EvaluableNodeReference InterpretNode(EvaluableNode *en, bool immediate_result = false);
 
 	//returns the number of steps executed since Interpreter was created
 	constexpr ExecutionCycleCount GetNumStepsExecuted()
@@ -610,245 +611,245 @@ protected:
 	//further, for performance, en must be guaranteed to be a valid pointer, and not nullptr
 
 	//built-in / system specific
-	EvaluableNodeReference InterpretNode_ENT_SYSTEM(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_GET_DEFAULTS(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_SYSTEM(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_GET_DEFAULTS(EvaluableNode *en, bool immediate_result);
 
 	//parsing
-	EvaluableNodeReference InterpretNode_ENT_PARSE(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_UNPARSE(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_PARSE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_UNPARSE(EvaluableNode *en, bool immediate_result);
 
 	//core control
-	EvaluableNodeReference InterpretNode_ENT_IF(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_SEQUENCE(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_PARALLEL(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_LAMBDA(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_CONCLUDE(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_CALL(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_CALL_SANDBOXED(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_WHILE(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_IF(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_SEQUENCE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_PARALLEL(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_LAMBDA(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_CONCLUDE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_CALL(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_CALL_SANDBOXED(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_WHILE(EvaluableNode *en, bool immediate_result);
 
 	//definitions
-	EvaluableNodeReference InterpretNode_ENT_LET(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_DECLARE(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_ASSIGN_and_ACCUM(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_RETRIEVE(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_LET(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_DECLARE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_ASSIGN_and_ACCUM(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_RETRIEVE(EvaluableNode *en, bool immediate_result);
 
 	//base math
-	EvaluableNodeReference InterpretNode_ENT_ADD(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_SUBTRACT(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_MULTIPLY(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_DIVIDE(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_MODULUS(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_GET_DIGITS(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_SET_DIGITS(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_FLOOR(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_CEILING(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_ROUND(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_ADD(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_SUBTRACT(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_MULTIPLY(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_DIVIDE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_MODULUS(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_GET_DIGITS(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_SET_DIGITS(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_FLOOR(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_CEILING(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_ROUND(EvaluableNode *en, bool immediate_result);
 
 	//extended math
-	EvaluableNodeReference InterpretNode_ENT_EXPONENT(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_LOG(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_EXPONENT(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_LOG(EvaluableNode *en, bool immediate_result);
 
-	EvaluableNodeReference InterpretNode_ENT_SIN(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_ASIN(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_COS(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_ACOS(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_TAN(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_ATAN(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_SIN(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_ASIN(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_COS(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_ACOS(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_TAN(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_ATAN(EvaluableNode *en, bool immediate_result);
 
-	EvaluableNodeReference InterpretNode_ENT_SINH(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_ASINH(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_COSH(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_ACOSH(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_TANH(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_ATANH(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_SINH(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_ASINH(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_COSH(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_ACOSH(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_TANH(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_ATANH(EvaluableNode *en, bool immediate_result);
 
-	EvaluableNodeReference InterpretNode_ENT_ERF(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_TGAMMA(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_LGAMMA(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_ERF(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_TGAMMA(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_LGAMMA(EvaluableNode *en, bool immediate_result);
 
-	EvaluableNodeReference InterpretNode_ENT_SQRT(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_POW(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_ABS(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_MAX(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_MIN(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_DOT_PRODUCT(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_GENERALIZED_DISTANCE(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_ENTROPY(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_SQRT(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_POW(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_ABS(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_MAX(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_MIN(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_DOT_PRODUCT(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_GENERALIZED_DISTANCE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_ENTROPY(EvaluableNode *en, bool immediate_result);
 
 	//list manipulation
-	EvaluableNodeReference InterpretNode_ENT_FIRST(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_TAIL(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_LAST(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_TRUNC(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_APPEND(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_SIZE(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_RANGE(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_FIRST(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_TAIL(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_LAST(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_TRUNC(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_APPEND(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_SIZE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_RANGE(EvaluableNode *en, bool immediate_result);
 
 	//transformation
-	EvaluableNodeReference InterpretNode_ENT_REWRITE(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_MAP(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_FILTER(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_WEAVE(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_REDUCE(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_APPLY(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_REVERSE(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_SORT(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_REWRITE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_MAP(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_FILTER(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_WEAVE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_REDUCE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_APPLY(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_REVERSE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_SORT(EvaluableNode *en, bool immediate_result);
 
 	//associative list manipulation
-	EvaluableNodeReference InterpretNode_ENT_INDICES(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_VALUES(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_CONTAINS_INDEX(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_CONTAINS_VALUE(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_REMOVE(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_KEEP(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_ASSOCIATE(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_ZIP(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_UNZIP(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_INDICES(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_VALUES(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_CONTAINS_INDEX(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_CONTAINS_VALUE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_REMOVE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_KEEP(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_ASSOCIATE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_ZIP(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_UNZIP(EvaluableNode *en, bool immediate_result);
 
 	//retrieval
-	EvaluableNodeReference InterpretNode_ENT_GET(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_SET_and_REPLACE(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_GET(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_SET_and_REPLACE(EvaluableNode *en, bool immediate_result);
 
 	//stack and node manipulation
-	EvaluableNodeReference InterpretNode_ENT_TARGET(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_CURRENT_INDEX(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_CURRENT_VALUE(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_PREVIOUS_RESULT(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_STACK(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_ARGS(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_TARGET(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_CURRENT_INDEX(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_CURRENT_VALUE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_PREVIOUS_RESULT(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_STACK(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_ARGS(EvaluableNode *en, bool immediate_result);
 
 	//logic
-	EvaluableNodeReference InterpretNode_ENT_AND(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_OR(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_XOR(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_NOT(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_AND(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_OR(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_XOR(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_NOT(EvaluableNode *en, bool immediate_result);
 
 	//equivalence
-	EvaluableNodeReference InterpretNode_ENT_EQUAL(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_NEQUAL(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_LESS_and_LEQUAL(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_GREATER_and_GEQUAL(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_TYPE_EQUALS(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_TYPE_NEQUALS(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_EQUAL(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_NEQUAL(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_LESS_and_LEQUAL(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_GREATER_and_GEQUAL(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_TYPE_EQUALS(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_TYPE_NEQUALS(EvaluableNode *en, bool immediate_result);
 
 	//simulation and operations
-	EvaluableNodeReference InterpretNode_ENT_RAND(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_WEIGHTED_RAND(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_GET_RAND_SEED(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_SET_RAND_SEED(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_SYSTEM_TIME(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_RAND(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_WEIGHTED_RAND(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_GET_RAND_SEED(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_SET_RAND_SEED(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_SYSTEM_TIME(EvaluableNode *en, bool immediate_result);
 
 	//built-in constants and variables
-	EvaluableNodeReference InterpretNode_ENT_TRUE(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_FALSE(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_NULL(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_TRUE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_FALSE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_NULL(EvaluableNode *en, bool immediate_result);
 
 	//data types
-	EvaluableNodeReference InterpretNode_ENT_LIST(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_ASSOC(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_NUMBER(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_STRING(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_SYMBOL(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_LIST(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_ASSOC(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_NUMBER(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_STRING(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_SYMBOL(EvaluableNode *en, bool immediate_result);
 
 	//node types
-	EvaluableNodeReference InterpretNode_ENT_GET_TYPE(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_GET_TYPE_STRING(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_SET_TYPE(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_FORMAT(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_GET_TYPE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_GET_TYPE_STRING(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_SET_TYPE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_FORMAT(EvaluableNode *en, bool immediate_result);
 
 	//EvaluableNode management: labels, comments, and concurrency
-	EvaluableNodeReference InterpretNode_ENT_GET_LABELS(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_GET_ALL_LABELS(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_SET_LABELS(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_ZIP_LABELS(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_GET_LABELS(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_GET_ALL_LABELS(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_SET_LABELS(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_ZIP_LABELS(EvaluableNode *en, bool immediate_result);
 
-	EvaluableNodeReference InterpretNode_ENT_GET_COMMENTS(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_SET_COMMENTS(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_GET_COMMENTS(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_SET_COMMENTS(EvaluableNode *en, bool immediate_result);
 
-	EvaluableNodeReference InterpretNode_ENT_GET_CONCURRENCY(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_SET_CONCURRENCY(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_GET_CONCURRENCY(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_SET_CONCURRENCY(EvaluableNode *en, bool immediate_result);
 
-	EvaluableNodeReference InterpretNode_ENT_GET_VALUE(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_SET_VALUE(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_GET_VALUE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_SET_VALUE(EvaluableNode *en, bool immediate_result);
 
 	//string
-	EvaluableNodeReference InterpretNode_ENT_EXPLODE(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_SPLIT(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_SUBSTR(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_CONCAT(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_EXPLODE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_SPLIT(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_SUBSTR(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_CONCAT(EvaluableNode *en, bool immediate_result);
 
 	//encryption
-	EvaluableNodeReference InterpretNode_ENT_CRYPTO_SIGN(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_CRYPTO_SIGN_VERIFY(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_ENCRYPT(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_DECRYPT(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_CRYPTO_SIGN(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_CRYPTO_SIGN_VERIFY(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_ENCRYPT(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_DECRYPT(EvaluableNode *en, bool immediate_result);
 
 	//I/O
-	EvaluableNodeReference InterpretNode_ENT_PRINT(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_PRINT(EvaluableNode *en, bool immediate_result);
 
 	//tree merging
-	EvaluableNodeReference InterpretNode_ENT_TOTAL_SIZE(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_MUTATE(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_COMMONALITY(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_EDIT_DISTANCE(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_INTERSECT(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_UNION(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_DIFFERENCE(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_MIX(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_MIX_LABELS(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_TOTAL_SIZE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_MUTATE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_COMMONALITY(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_EDIT_DISTANCE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_INTERSECT(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_UNION(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_DIFFERENCE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_MIX(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_MIX_LABELS(EvaluableNode *en, bool immediate_result);
 
 	//entity merging
-	EvaluableNodeReference InterpretNode_ENT_TOTAL_ENTITY_SIZE(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_FLATTEN_ENTITY(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_MUTATE_ENTITY(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_COMMONALITY_ENTITIES(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_EDIT_DISTANCE_ENTITIES(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_INTERSECT_ENTITIES(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_UNION_ENTITIES(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_DIFFERENCE_ENTITIES(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_MIX_ENTITIES(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_TOTAL_ENTITY_SIZE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_FLATTEN_ENTITY(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_MUTATE_ENTITY(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_COMMONALITY_ENTITIES(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_EDIT_DISTANCE_ENTITIES(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_INTERSECT_ENTITIES(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_UNION_ENTITIES(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_DIFFERENCE_ENTITIES(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_MIX_ENTITIES(EvaluableNode *en, bool immediate_result);
 
 	//entity details
-	EvaluableNodeReference InterpretNode_ENT_GET_ENTITY_COMMENTS(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_RETRIEVE_ENTITY_ROOT(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_ACCUM_ENTITY_ROOTS(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_GET_ENTITY_RAND_SEED(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_SET_ENTITY_RAND_SEED(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_GET_ENTITY_ROOT_PERMISSION(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_SET_ENTITY_ROOT_PERMISSION(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_GET_ENTITY_COMMENTS(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_RETRIEVE_ENTITY_ROOT(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_ACCUM_ENTITY_ROOTS(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_GET_ENTITY_RAND_SEED(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_SET_ENTITY_RAND_SEED(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_GET_ENTITY_ROOT_PERMISSION(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_SET_ENTITY_ROOT_PERMISSION(EvaluableNode *en, bool immediate_result);
 
 	//entity base actions
-	EvaluableNodeReference InterpretNode_ENT_CREATE_ENTITIES(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_CLONE_ENTITIES(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_MOVE_ENTITIES(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_DESTROY_ENTITIES(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_LOAD(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSISTENT_ENTITY(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_STORE(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_STORE_ENTITY(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_CONTAINS_ENTITY(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_CREATE_ENTITIES(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_CLONE_ENTITIES(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_MOVE_ENTITIES(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_DESTROY_ENTITIES(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_LOAD(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSISTENT_ENTITY(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_STORE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_STORE_ENTITY(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_CONTAINS_ENTITY(EvaluableNode *en, bool immediate_result);
 
 	//entity query
-	EvaluableNodeReference InterpretNode_ENT_CONTAINED_ENTITIES_and_COMPUTE_ON_CONTAINED_ENTITIES(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_QUERY_and_COMPUTE_opcodes(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_CONTAINED_ENTITIES_and_COMPUTE_ON_CONTAINED_ENTITIES(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_QUERY_and_COMPUTE_opcodes(EvaluableNode *en, bool immediate_result);
 
 	//entity access
-	EvaluableNodeReference InterpretNode_ENT_CONTAINS_LABEL(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIRECT_ASSIGN_TO_ENTITIES_and_ACCUM_TO_ENTITIES(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_CONTAINS_LABEL(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIRECT_ASSIGN_TO_ENTITIES_and_ACCUM_TO_ENTITIES(EvaluableNode *en, bool immediate_result);
 
-	EvaluableNodeReference InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_DIRECT_RETRIEVE_FROM_ENTITY(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTITY_GET_CHANGES(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_CALL_CONTAINER(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_DIRECT_RETRIEVE_FROM_ENTITY(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTITY_GET_CHANGES(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_CALL_CONTAINER(EvaluableNode *en, bool immediate_result);
 
-	EvaluableNodeReference InterpretNode_ENT_DEALLOCATED(EvaluableNode *en);
-	EvaluableNodeReference InterpretNode_ENT_NOT_A_BUILT_IN_TYPE(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_ENT_DEALLOCATED(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_NOT_A_BUILT_IN_TYPE(EvaluableNode *en, bool immediate_result);
 
 	//override hook for debugging
-	EvaluableNodeReference InterpretNode_DEBUG(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_DEBUG(EvaluableNode *en, bool immediate_result);
 
 	//override hook for profiling
-	EvaluableNodeReference InterpretNode_PROFILE(EvaluableNode *en);
+	EvaluableNodeReference InterpretNode_PROFILE(EvaluableNode *en, bool immediate_result);
 
 	//ensures that there are no reachable nodes that are deallocated
 	void ValidateEvaluableNodeIntegrity();
@@ -919,7 +920,7 @@ protected:
 
 	//opcode function pointers
 	// each opcode function takes in an EvaluableNode
-	typedef EvaluableNodeReference(Interpreter::*OpcodeFunction) (EvaluableNode *);
+	typedef EvaluableNodeReference(Interpreter::*OpcodeFunction) (EvaluableNode *, bool);
 	static std::array<OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> _opcodes;
 
 	//opcodes that all point to debugging

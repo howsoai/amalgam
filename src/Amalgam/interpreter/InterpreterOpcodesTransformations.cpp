@@ -19,7 +19,7 @@
 #include <iomanip>
 #include <regex>
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -54,7 +54,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en)
 	return EvaluableNodeReference(result, false);	//can't make any guarantees about the new code
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -350,7 +350,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en)
 	return result;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -589,7 +589,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en)
 	return result_list;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -707,7 +707,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en)
 	return woven_list;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -771,7 +771,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en)
 	return previous_result;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -822,7 +822,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en)
 	return result;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_REVERSE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_REVERSE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -844,7 +844,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REVERSE(EvaluableNode *en)
 	return list;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -895,7 +895,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en)
 	}
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -941,7 +941,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en)
 	return index_list;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -1032,7 +1032,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en)
 	return EvaluableNodeReference(result, container.unique);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_INDEX(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_INDEX(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -1055,7 +1055,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_INDEX(EvaluableNo
 	return evaluableNodeManager->ReuseOrAllocOneOfNodes(index, container, result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -1123,7 +1123,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 	return evaluableNodeManager->ReuseOrAllocOneOfNodes(value, collection, result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -1235,7 +1235,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en)
 	return container;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -1418,7 +1418,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en)
 	return container;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *en, bool immediate_result)
 {
 	//use stack to lock it in place, but copy it back to temporary before returning
 	EvaluableNodeReference new_assoc(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
@@ -1499,7 +1499,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 	return new_assoc;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -1619,7 +1619,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en)
 	return result;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 

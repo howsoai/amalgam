@@ -352,7 +352,7 @@ EvaluableNode **GetRelativeEvaluableNodeFromTraversalPathList(EvaluableNode **so
 EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeReference value_destination_node, EvaluableNodeReference variable_value_node, EvaluableNodeManager *enm)
 {
 	//if the destination is empty, then just use the value specified
-	if(value_destination_node.reference == nullptr)
+	if(value_destination_node == nullptr)
 		return variable_value_node;
 
 	//if the value is unique, then can just edit in place
@@ -362,7 +362,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		{
 			double cur_value = EvaluableNode::ToNumber(value_destination_node);
 			double inc_value = EvaluableNode::ToNumber(variable_value_node);
-			value_destination_node.reference->SetType(ENT_NUMBER, enm);
+			value_destination_node->SetType(ENT_NUMBER, enm);
 			value_destination_node->SetNumberValue(cur_value + inc_value);
 		}
 		else if(value_destination_node->IsAssociativeArray())

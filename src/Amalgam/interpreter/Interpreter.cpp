@@ -542,6 +542,8 @@ std::pair<bool, std::string> Interpreter::InterpretNodeIntoStringValue(Evaluable
 	if(n->GetType() == ENT_STRING)
 		return std::make_pair(true, n->GetStringValue());
 
+	//TODO 18652: implement special paths for this
+
 	auto result = InterpretNodeForImmediateUse(n);
 	std::string result_string = EvaluableNode::ToString(result);
 	evaluableNodeManager->FreeNodeTreeIfPossible(result);
@@ -557,6 +559,8 @@ std::string Interpreter::InterpretNodeIntoStringValueEmptyNull(EvaluableNode *n)
 	//shortcut if the node has what is being asked
 	if(n->GetType() == ENT_STRING)
 		return n->GetStringValue();
+
+	//TODO 18652: implement special paths for this
 
 	auto result = InterpretNodeForImmediateUse(n);
 
@@ -575,6 +579,8 @@ StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueIfExists(E
 	if(n != nullptr && n->GetType() == ENT_STRING)
 		return n->GetStringID();
 
+	//TODO 18652: implement special paths for this
+
 	auto result = InterpretNodeForImmediateUse(n);
 	StringInternPool::StringID result_sid = EvaluableNode::ToStringIDIfExists(result);
 	evaluableNodeManager->FreeNodeTreeIfPossible(result);
@@ -587,6 +593,8 @@ StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueWithRefere
 	//shortcut if the node has what is being asked
 	if(n != nullptr && n->GetType() == ENT_STRING)
 		return string_intern_pool.CreateStringReference(n->GetStringID());
+
+	//TODO 18652: implement special paths for this
 
 	auto result = InterpretNodeForImmediateUse(n);
 
@@ -674,6 +682,8 @@ bool Interpreter::InterpretNodeIntoBoolValue(EvaluableNode *n, bool value_if_nul
 	//shortcut if the node has what is being asked
 	if(n == nullptr)
 		return value_if_null;
+
+	//TODO 18652: implement special paths for this
 
 	auto result = InterpretNodeForImmediateUse(n);
 	bool result_value = value_if_null;

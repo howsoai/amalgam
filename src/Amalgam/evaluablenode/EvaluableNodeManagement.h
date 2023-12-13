@@ -21,8 +21,16 @@ public:
 		: value(_reference), unique(_unique)
 	{	}
 
-	__forceinline EvaluableNodeReference(const EvaluableNodeReference &inr)
+	constexpr EvaluableNodeReference(const EvaluableNodeReference &inr)
 		: value(inr.value), unique(inr.unique)
+	{	}
+
+	constexpr EvaluableNodeReference(double value)
+		: value(value), unique(true)
+	{	}
+
+	constexpr EvaluableNodeReference(StringInternPool::StringID string_id)
+		: value(string_id), unique(true)
 	{	}
 
 	//when attached a child node, make sure that this node reflects the same properties

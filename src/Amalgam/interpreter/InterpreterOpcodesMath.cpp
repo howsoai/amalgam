@@ -36,14 +36,20 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ADD(EvaluableNode *en, boo
 		for(auto &cn : interpreted_nodes)
 			value += EvaluableNode::ToNumber(cn);
 
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
+		if(immediate_result)
+			return EvaluableNodeReference(value);
+		else
+			return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
 	}
 #endif
 
 	for(auto &cn : ocn)
 		value += InterpretNodeIntoNumberValue(cn);
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
+	if(immediate_result)
+		return EvaluableNodeReference(value);
+	else
+		return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBTRACT(EvaluableNode *en, bool immediate_result)
@@ -61,7 +67,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBTRACT(EvaluableNode *en
 		for(size_t i = 1; i < ocn.size(); i++)
 			value -= EvaluableNode::ToNumber(interpreted_nodes[i]);
 
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
+		if(immediate_result)
+			return EvaluableNodeReference(value);
+		else
+			return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
 	}
 #endif
 
@@ -73,7 +82,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBTRACT(EvaluableNode *en
 	if(ocn.size() == 1)
 		value = -value;
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
+	if(immediate_result)
+		return EvaluableNodeReference(value);
+	else
+		return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MULTIPLY(EvaluableNode *en, bool immediate_result)
@@ -92,14 +104,20 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MULTIPLY(EvaluableNode *en
 		for(auto &cn : interpreted_nodes)
 			value *= EvaluableNode::ToNumber(cn);
 
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
+		if(immediate_result)
+			return EvaluableNodeReference(value);
+		else
+			return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
 	}
 #endif
 
 	for(auto &cn : ocn)
 		value *= InterpretNodeIntoNumberValue(cn);
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
+	if(immediate_result)
+		return EvaluableNodeReference(value);
+	else
+		return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_DIVIDE(EvaluableNode *en, bool immediate_result)
@@ -133,7 +151,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DIVIDE(EvaluableNode *en, 
 			}
 		}
 
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
+		if(immediate_result)
+			return EvaluableNodeReference(value);
+		else
+			return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
 	}
 #endif
 
@@ -157,7 +178,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DIVIDE(EvaluableNode *en, 
 		}
 	}
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
+	if(immediate_result)
+		return EvaluableNodeReference(value);
+	else
+		return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MODULUS(EvaluableNode *en, bool immediate_result)
@@ -178,7 +202,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MODULUS(EvaluableNode *en,
 			value = std::fmod(value, mod);
 		}
 
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
+		if(immediate_result)
+			return EvaluableNodeReference(value);
+		else
+			return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
 	}
 #endif
 
@@ -189,7 +216,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MODULUS(EvaluableNode *en,
 		value = std::fmod(value, mod);
 	}
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
+	if(immediate_result)
+		return EvaluableNodeReference(value);
+	else
+		return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
 }
 
 //helper method for InterpretNode_ENT_GET_DIGITS and InterpretNode_ENT_SET_DIGITS
@@ -353,7 +383,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_DIGITS(EvaluableNode *
 		digits = InterpretNodeForImmediateUse(ocn[2]);
 
 	if(digits == nullptr || digits->GetType() != ENT_LIST)
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
+	{
+		if(immediate_result)
+			return EvaluableNodeReference(value);
+		else
+			return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
+	}
 
 	bool negative = (value < 0);
 	if(negative)
@@ -433,7 +468,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_DIGITS(EvaluableNode *
 	if(negative)
 		result_value = -result_value;
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(result_value), true);
+	if(immediate_result)
+		return EvaluableNodeReference(result_value);
+	else
+		return EvaluableNodeReference(evaluableNodeManager->AllocNode(result_value), true);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_FLOOR(EvaluableNode *en, bool immediate_result)
@@ -442,6 +480,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FLOOR(EvaluableNode *en, b
 
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
+
+	if(immediate_result)
+	{
+		double value = InterpretNodeIntoNumberValue(ocn[0]);
+		return EvaluableNodeReference(std::floor(value));
+	}
 
 	EvaluableNode *retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(ocn[0]);
 	retval->SetNumberValue(std::floor(retval->GetNumberValueReference()));
@@ -454,6 +498,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CEILING(EvaluableNode *en,
 
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
+
+	if(immediate_result)
+	{
+		double value = InterpretNodeIntoNumberValue(ocn[0]);
+		return EvaluableNodeReference(std::ceil(value));
+	}
 
 	EvaluableNode *retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(ocn[0]);
 	retval->SetNumberValue(std::ceil(retval->GetNumberValueReference()));
@@ -468,6 +518,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ROUND(EvaluableNode *en, b
 	if(num_params == 0)
 		return EvaluableNodeReference::Null();
 
+	//TODO 18652: revisit this method downward
 	EvaluableNode *retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(ocn[0]);
 	double number_value = retval->GetNumberValueReference();
 

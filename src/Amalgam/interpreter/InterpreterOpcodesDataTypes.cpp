@@ -251,8 +251,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_TYPE(EvaluableNode *en
 	if(source == nullptr)
 		source = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_NULL), true);
 
-	if(!source.unique)
-		source.reference = evaluableNodeManager->AllocNode(source);
+	evaluableNodeManager->EnsureNodeIsModifiable(source);
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(source);
 
@@ -947,8 +946,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_LABELS(EvaluableNode *
 	if(source == nullptr)
 		source = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_NULL), true);
 
-	if(!source.unique)
-		source.reference = evaluableNodeManager->AllocNode(source);
+	evaluableNodeManager->EnsureNodeIsModifiable(source);
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(source);
 
@@ -1002,8 +1000,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP_LABELS(EvaluableNode *
 	//start assuming that the copy will be unique, but set to not unique if any chance the assumption
 	// might not hold
 	EvaluableNodeReference retval = source;
-	if(!source.unique)
-		retval = EvaluableNodeReference(evaluableNodeManager->AllocNode(source), true);
+	evaluableNodeManager->EnsureNodeIsModifiable(source);
 
 	auto &label_list_ocn = label_list->GetOrderedChildNodesReference();
 
@@ -1088,7 +1085,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_COMMENTS(EvaluableNode
 	if(source == nullptr)
 		source = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_NULL), true);
 	if(!source.unique)
-		source.reference = evaluableNodeManager->AllocNode(source);
+		source.SetReference(evaluableNodeManager->AllocNode(source));
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(source);
 
@@ -1122,8 +1119,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_CONCURRENCY(EvaluableN
 	auto source = InterpretNode(ocn[0]);
 	if(source == nullptr)
 		source = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_NULL), true);
-	else if(!source.unique)
-		source.reference = evaluableNodeManager->AllocNode(source);
+	else
+		evaluableNodeManager->EnsureNodeIsModifiable(source);
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(source);
 
@@ -1150,9 +1147,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_VALUE(EvaluableNode *e
 	}
 	else
 	{
-		n.reference = evaluableNodeManager->AllocNode(n, EvaluableNodeManager::ENMM_REMOVE_ALL);
-		if(n->GetNumChildNodes() == 0)
-			n.unique = true;
+		evaluableNodeManager->EnsureNodeIsModifiable(n, EvaluableNodeManager::ENMM_REMOVE_ALL);
 	}
 
 	return n;
@@ -1168,8 +1163,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_VALUE(EvaluableNode *e
 	auto source = InterpretNode(ocn[0]);
 	if(source == nullptr)
 		source = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_NULL), true);
-	if(!source.unique)
-		source.reference = evaluableNodeManager->AllocNode(source);
+	else
+		evaluableNodeManager->EnsureNodeIsModifiable(source);
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(source);
 

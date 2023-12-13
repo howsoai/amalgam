@@ -109,12 +109,12 @@ public:
 		if(EvaluableNode::IsAssociativeArray(new_context))
 		{
 			if(!new_context.unique)
-				new_context.reference = evaluableNodeManager->AllocNode(new_context);
+				new_context.SetReference(evaluableNodeManager->AllocNode(new_context));
 		}
 		else //not assoc, make a new one
 		{
 			evaluableNodeManager->FreeNodeTreeIfPossible(new_context);
-			new_context.reference = evaluableNodeManager->AllocNode(ENT_ASSOC);
+			new_context.SetReference(evaluableNodeManager->AllocNode(ENT_ASSOC));
 		}
 
 		//just in case a variable is added which needs cycle checks

@@ -368,7 +368,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PARALLEL(EvaluableNode *en
 								concurrency_manager.GetCallStackWriteMutex());
 
 							interpreter.evaluableNodeManager->FreeNodeTreeIfPossible(result);
-							result.reference = EvaluableNodeReference::Null();
+							result = EvaluableNodeReference::Null();
 
 							interpreter.memoryModificationLock.unlock();
 							return result;
@@ -842,8 +842,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			{
 				//retrieve value_destination_node
 				EvaluableNodeReference value_destination_node;
-				value_destination_node.reference = *value_destination;
-				value_destination_node.unique = false;
+				value_destination_node.SetReference(*value_destination, false);
 
 			#ifdef MULTITHREAD_SUPPORT
 				//if editing a shared variable, then need to make a copy before editing in place to prevent another thread from reading the data structure mid-edit
@@ -899,8 +898,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		{
 			//create destination reference
 			EvaluableNodeReference value_destination_node;
-			value_destination_node.reference = *value_destination;
-			value_destination_node.unique = false;
+			value_destination_node.SetReference(*value_destination, false);
 
 		#ifdef MULTITHREAD_SUPPORT
 			//if editing a shared variable, then need to make a copy before editing in place to prevent another thread from reading the data structure mid-edit
@@ -970,8 +968,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			{
 				//create destination reference
 				EvaluableNodeReference value_destination_node;
-				value_destination_node.reference = *copy_destination;
-				value_destination_node.unique = false;
+				value_destination_node.SetReference(*copy_destination, false);
 
 				EvaluableNodeReference variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, new_value, evaluableNodeManager);
 
@@ -1010,8 +1007,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 	else if(to_lookup->IsAssociativeArray())
 	{
 		//need to return an assoc, so see if need to make copy
-		if(!to_lookup.unique)
-			to_lookup.reference = evaluableNodeManager->AllocNode(to_lookup);
+		evaluableNodeManager->EnsureNodeIsModifiable(to_lookup);
 
 		//overwrite values in the ordered 
 		for(auto &[cn_id, cn] : to_lookup->GetMappedChildNodesReference())
@@ -1027,9 +1023,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 	}
 	else //ordered params
 	{
-		//need to return an assoc, so see if need to make copy
-		if(!to_lookup.unique)
-			to_lookup.reference = evaluableNodeManager->AllocNode(to_lookup);
+		evaluableNodeManager->EnsureNodeIsModifiable(to_lookup);
 
 		//overwrite values in the ordered 
 		for(auto &cn : to_lookup->GetOrderedChildNodes())
@@ -1069,7 +1063,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET(EvaluableNode *en, boo
 	//if just a single index passed to get
 	if(ocn_size == 2)
 	{
-		EvaluableNode **target = InterpretNodeIntoDestinationFromTraversalPathList(&source.reference, ocn[1], false);
+		EvaluableNode **target = InterpretNodeIntoDestinationFromTraversalPathList(&source.GetReference(), ocn[1], false);
 
 		node_stack.PopEvaluableNode();
 
@@ -1089,7 +1083,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET(EvaluableNode *en, boo
 
 	for(size_t param_index = 1; param_index < ocn_size; param_index++)
 	{
-		EvaluableNode **target = InterpretNodeIntoDestinationFromTraversalPathList(&source.reference, ocn[param_index], false);
+		EvaluableNode **target = InterpretNodeIntoDestinationFromTraversalPathList(&source.GetReference(), ocn[param_index], false);
 		if(target != nullptr)
 			retrieved_list->AppendOrderedChildNode(*target);
 		else
@@ -1125,7 +1119,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_and_REPLACE(EvaluableN
 	{
 		//find replacement location, make sure it's a valid target
 		EvaluableNode *previous_result = result;
-		EvaluableNode **copy_destination = InterpretNodeIntoDestinationFromTraversalPathList(&result.reference, ocn[replace_change_index], true);
+		EvaluableNode **copy_destination = InterpretNodeIntoDestinationFromTraversalPathList(&result.GetReference(), ocn[replace_change_index], true);
 		//if the target changed, keep track of the proper reference
 		if(result != previous_result)
 		{

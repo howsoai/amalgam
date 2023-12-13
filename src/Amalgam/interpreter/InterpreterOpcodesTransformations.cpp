@@ -370,8 +370,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		EvaluableNodeReference result_list(list, list.unique);
 
 		//need to edit the list itself, so if not unique, make at least the top node unique
-		if(!result_list.unique)
-			result_list.reference = evaluableNodeManager->AllocNode(list);
+		evaluableNodeManager->EnsureNodeIsModifiable(result_list);
 
 		if(result_list->IsAssociativeArray())
 		{
@@ -783,8 +782,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, b
 	if(source == nullptr)
 		return EvaluableNodeReference::Null();
 
-	if(!source.unique)
-		source.reference = evaluableNodeManager->AllocNode(source);
+	evaluableNodeManager->EnsureNodeIsModifiable(source);
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(source);
 
@@ -835,8 +833,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REVERSE(EvaluableNode *en,
 		return EvaluableNodeReference::Null();
 
 	//make sure it is an editable copy
-	if(!list.unique)
-		list.reference = evaluableNodeManager->AllocNode(list);
+	evaluableNodeManager->EnsureNodeIsModifiable(list);
 
 	auto &list_ocn = list->GetOrderedChildNodes();
 	std::reverse(begin(list_ocn), end(list_ocn));
@@ -859,8 +856,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 			return EvaluableNodeReference::Null();
 
 		//make sure it is an editable copy
-		if(!list.unique)
-			list.reference = evaluableNodeManager->AllocNode(list);
+		evaluableNodeManager->EnsureNodeIsModifiable(list);
 
 		std::sort(begin(list->GetOrderedChildNodes()), end(list->GetOrderedChildNodes()), EvaluableNode::IsStrictlyLessThan);
 
@@ -881,8 +877,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 			return EvaluableNodeReference::Null();
 
 		//make sure it is an editable copy
-		if(!list.unique)
-			list.reference = evaluableNodeManager->AllocNode(list);
+		evaluableNodeManager->EnsureNodeIsModifiable(list);
 
 		CustomEvaluableNodeComparator comparator(this, function, list);
 
@@ -913,7 +908,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en,
 	if(container->IsAssociativeArray())
 	{
 		auto &container_mcn = container->GetMappedChildNodesReference();
-		index_list.reference = evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_STRING, container_mcn.size());
+		index_list.SetReference(evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_STRING, container_mcn.size()));
 
 		//create all the string references at once for speed (especially multithreading)
 		string_intern_pool.CreateStringReferences(container_mcn, [](auto n) { return n.first; });
@@ -926,14 +921,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en,
 	else if(container->IsOrderedArray())
 	{
 		size_t num_ordered_nodes = container->GetOrderedChildNodesReference().size();
-		index_list.reference = evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_NUMBER, num_ordered_nodes);
+		index_list.SetReference(evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_NUMBER, num_ordered_nodes));
 
 		auto &index_list_ocn = index_list->GetOrderedChildNodes();
 		for(size_t i = 0; i < num_ordered_nodes; i++)
 			index_list_ocn[i]->SetNumberValue(static_cast<double>(i));
 	}
 	else //no child nodes, just alloc an empty list
-		index_list.reference = evaluableNodeManager->AllocNode(ENT_LIST);
+		index_list.SetReference(evaluableNodeManager->AllocNode(ENT_LIST));
 
 	//none of the original container is needed
 	evaluableNodeManager->FreeNodeTreeIfPossible(container);
@@ -1049,7 +1044,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_INDEX(EvaluableNo
 	//get index to look up (will attempt to reuse this node below)
 	auto index = InterpretNodeForImmediateUse(ocn[1]);
 
-	EvaluableNode **target = TraverseToDestinationFromTraversalPathList(&container.reference, index, false);
+	EvaluableNode **target = TraverseToDestinationFromTraversalPathList(&container.GetReference(), index, false);
 	EvaluableNodeType result = (target != nullptr ? ENT_TRUE : ENT_FALSE);
 
 	return evaluableNodeManager->ReuseOrAllocOneOfNodes(index, container, result);
@@ -1135,8 +1130,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 	if(container == nullptr)
 		return EvaluableNodeReference::Null();
 	//make sure it's editable
-	if(!container.unique)
-		container.reference = evaluableNodeManager->AllocNode(container);
+	evaluableNodeManager->EnsureNodeIsModifiable(container);
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(container);
 
@@ -1155,7 +1149,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 		if(container->IsAssociativeArray())
 		{
 			StringInternPool::StringID key_sid = EvaluableNode::ToStringIDIfExists(indices);
-			removed_node.reference = container->EraseMappedChildNode(key_sid);
+			removed_node.SetReference(container->EraseMappedChildNode(key_sid));
 		}
 		else if(container->IsOrderedArray())
 		{
@@ -1172,7 +1166,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 			//if the position is valid, erase it
 			if(actual_pos >= 0 && actual_pos < container_ocn.size())
 			{
-				removed_node.reference = container_ocn[actual_pos];
+				removed_node.SetReference(container_ocn[actual_pos]);
 				container_ocn.erase(begin(container_ocn) + actual_pos);
 			}
 		}
@@ -1186,7 +1180,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 			for(auto &cn : indices_ocn)
 			{
 				StringInternPool::StringID key_sid = EvaluableNode::ToStringIDIfExists(cn);
-				removed_node.reference = container->EraseMappedChildNode(key_sid);
+				removed_node.SetReference(container->EraseMappedChildNode(key_sid));
 				evaluableNodeManager->FreeNodeTreeIfPossible(removed_node);
 			}
 		}
@@ -1223,7 +1217,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 				if(index >= container_ocn.size())
 					continue;
 
-				removed_node.reference = container_ocn[index];
+				removed_node.SetReference(container_ocn[index]);
 				container_ocn.erase(begin(container_ocn) + index);
 				evaluableNodeManager->FreeNodeTreeIfPossible(removed_node);
 			}
@@ -1247,8 +1241,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, bo
 	if(container == nullptr)
 		return EvaluableNodeReference::Null();
 	//make sure it's editable
-	if(!container.unique)
-		container.reference = evaluableNodeManager->AllocNode(container);
+	evaluableNodeManager->EnsureNodeIsModifiable(container);
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(container);
 

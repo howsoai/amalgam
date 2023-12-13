@@ -928,15 +928,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DOT_PRODUCT(EvaluableNode 
 		//if not an assoc, then convert
 		if(!elements1_assoc)
 		{
-			if(!elements1.unique)
-				elements1.reference = evaluableNodeManager->AllocNode(elements1);
+			evaluableNodeManager->EnsureNodeIsModifiable(elements1);
 			elements1->ConvertOrderedListToNumberedAssoc();
 		}
 
 		if(!elements2_assoc)
 		{
-			if(!elements2.unique)
-				elements2.reference = evaluableNodeManager->AllocNode(elements2);
+			evaluableNodeManager->EnsureNodeIsModifiable(elements2);
 			elements2->ConvertOrderedListToNumberedAssoc();
 		}
 

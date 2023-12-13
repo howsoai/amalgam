@@ -406,18 +406,16 @@ EvaluableNodeReference Interpreter::ConvertArgsToCallStack(EvaluableNodeReferenc
 	//ensure have arguments
 	if(args == nullptr)
 	{
-		args.reference = enm->AllocNode(ENT_ASSOC);
-		args.unique = true;
+		args.SetReference(enm->AllocNode(ENT_ASSOC), true);
 	}
 	else if(!args->IsAssociativeArray())
 	{
 		enm->FreeNodeTreeIfPossible(args);
-		args.reference = enm->AllocNode(ENT_ASSOC);
-		args.unique = true;
+		args.SetReference(enm->AllocNode(ENT_ASSOC), true);
 	}
 	else if(!args.unique)
 	{
-		args.reference = enm->AllocNode(args);
+		args.SetReference(enm->AllocNode(args));
 	}
 	
 	EvaluableNode *call_stack = enm->AllocNode(ENT_LIST);
@@ -708,7 +706,7 @@ EvaluableNode **Interpreter::TraverseToDestinationFromTraversalPathList(Evaluabl
 	}
 	else //it's only a single value; use default list length of 1
 	{
-		address_list = &(tpl.reference);
+		address_list = &tpl.GetReference();
 	}
 
 	size_t max_num_nodes = 0;

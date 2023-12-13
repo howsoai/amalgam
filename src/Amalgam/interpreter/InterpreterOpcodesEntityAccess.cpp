@@ -352,7 +352,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 		//need to return an assoc, so see if need to make copy; will overwrite all values
 		if(!to_lookup.unique)
 		{
-			to_lookup = EvaluableNodeReference(evaluableNodeManager->AllocNode(to_lookup), true);
+			evaluableNodeManager->EnsureNodeIsModifiable(to_lookup);
 			node_stack.PushEvaluableNode(to_lookup);
 		}
 
@@ -360,7 +360,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 		for(auto &[cn_id, cn] : to_lookup->GetMappedChildNodesReference())
 		{
 			//if there are values passed in, free them to be clobbered
-			cnr.reference = cn;
+			cnr.SetReference(cn);
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);
 
 			ExecutionCycleCount num_steps_executed = 0;
@@ -381,7 +381,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 		//need to return an assoc, so see if need to make copy; will overwrite all values
 		if(!to_lookup.unique)
 		{
-			to_lookup = EvaluableNodeReference(evaluableNodeManager->AllocNode(to_lookup), true);
+			evaluableNodeManager->EnsureNodeIsModifiable(to_lookup);
 			node_stack.PushEvaluableNode(to_lookup);
 		}
 
@@ -391,7 +391,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 			StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(cn);
 
 			//if there are values passed in, free them to be clobbered
-			cnr.reference = cn;
+			cnr.SetReference(cn);
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);
 
 			ExecutionCycleCount num_steps_executed = 0;
@@ -526,7 +526,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		//delete the write listener and all of its memory
 		delete wl;
 
-		retval.reference = list;
+		retval.SetReference(list);
 		retval.SetNeedCycleCheck(true);	//can't count on that due to things written in the write listener
 	}
 

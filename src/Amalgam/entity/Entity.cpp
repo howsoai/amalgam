@@ -887,7 +887,7 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, Evalu
 	else
 	{
 		auto code_copy = evaluableNodeManager.DeepAllocCopy(_code, metadata_modifier);
-		evaluableNodeManager.SetRootNode(code_copy.reference);
+		evaluableNodeManager.SetRootNode(code_copy);
 	}
 
 	//keep reference for current root
@@ -919,7 +919,7 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, Evalu
 void Entity::SetRoot(std::string &code_string, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier, std::vector<EntityWriteListener *> *write_listeners)
 {
 	EvaluableNodeReference new_code = Parser::Parse(code_string, &evaluableNodeManager);
-	SetRoot(new_code.reference, true, metadata_modifier, write_listeners);
+	SetRoot(new_code, true, metadata_modifier, write_listeners);
 }
 
 void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_entity_enm, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier, std::vector<EntityWriteListener *> *write_listeners)

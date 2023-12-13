@@ -66,6 +66,22 @@ public:
 		return EvaluableNodeReference(nullptr, true);
 	}
 
+	inline void SetReference(EvaluableNode *_reference)
+	{
+		reference = _reference;
+	}
+
+	inline void SetReference(EvaluableNode *_reference, bool _unique)
+	{
+		reference = _reference;
+		unique = _unique;
+	}
+
+	inline EvaluableNode *&GetReference()
+	{
+		return reference;
+	}
+
 	//allow to use as an EvaluableNode *
 	constexpr operator EvaluableNode *&()
 	{	return reference;	}
@@ -74,7 +90,9 @@ public:
 	constexpr EvaluableNode *operator->()
 	{	return reference;	}
 
+protected:
 	EvaluableNode *reference;
+public:
 
 	//this is the only reference to the result
 	bool unique;
@@ -200,6 +218,19 @@ public:
 		ENMM_REMOVE_ALL					//remove all metadata
 	};
 	EvaluableNode *AllocNode(EvaluableNode *original, EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE);
+
+	//ensures that the top node is modifiable -- will allocate the node if necessary,
+	// and if the result and any child nodes are all unique, then it will return an EvaluableNodeReference that is unique
+	inline void EnsureNodeIsModifiable(EvaluableNodeReference &original,
+		EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE)
+	{
+		if(original.unique)
+			return;
+
+		EvaluableNode *copy = AllocNode(original.GetReference(), metadata_modifier);
+		//the copy will only be unique if all child nodes are unique or there are no child nodes
+		original = EvaluableNodeReference(copy, original.unique || (copy->GetNumChildNodes() == 0));
+	}
 
 	//attempts to reuse candidate if it is unique and change it into the specified type
 	//if candidate is not unique, then it allocates and returns a new node

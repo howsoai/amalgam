@@ -441,8 +441,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 	{
 		double cur_value = EvaluableNode::ToNumber(value_destination_node);
 		double inc_value = EvaluableNode::ToNumber(variable_value_node);
-		value_destination_node.reference = enm->AllocNode(cur_value + inc_value);
-		value_destination_node.unique = true;
+		value_destination_node.SetReference(enm->AllocNode(cur_value + inc_value), true);
 	}
 	else if(value_destination_node->IsAssociativeArray())
 	{
@@ -470,16 +469,14 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 
 		enm->FreeNodeIfPossible(variable_value_node);
 
-		value_destination_node.reference = new_list;
+		value_destination_node.SetReference(new_list, value_destination_node.unique && variable_value_node.unique);
 		value_destination_node->SetNeedCycleCheck(true);
-		value_destination_node.unique = (value_destination_node.unique && variable_value_node.unique);
 	}
 	else if(value_destination_node->IsStringValue())
 	{
 		std::string cur_value = EvaluableNode::ToString(value_destination_node);
 		std::string inc_value = EvaluableNode::ToString(variable_value_node);
-		value_destination_node.reference = enm->AllocNode(ENT_STRING, cur_value.append(inc_value));
-		value_destination_node.unique = true;
+		value_destination_node.SetReference(enm->AllocNode(ENT_STRING, cur_value.append(inc_value)), true);
 	}
 	else //add ordered child node
 	{
@@ -512,9 +509,8 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 			new_list->AppendOrderedChildNode(variable_value_node);
 		}
 
-		value_destination_node.reference = new_list;
+		value_destination_node.SetReference(new_list, value_destination_node.unique &&variable_value_node.unique);
 		value_destination_node->SetNeedCycleCheck(true);
-		value_destination_node.unique = (value_destination_node.unique && variable_value_node.unique);
 	}
 
 	return value_destination_node;

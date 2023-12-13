@@ -642,11 +642,13 @@ double Interpreter::InterpretNodeIntoNumberValue(EvaluableNode *n)
 	if(type == ENT_NUMBER)
 		return n->GetNumberValueReference();
 
-	auto result = InterpretNodeForImmediateUse(n);
-	double result_value = EvaluableNode::ToNumber(result);
+	auto result = InterpretNodeForImmediateUse(n, true);
+	auto &result_value = result.GetValue();
+
+	double value = result_value.GetValueAsNumber();
 	evaluableNodeManager->FreeNodeTreeIfPossible(result);
 
-	return result_value;
+	return value;
 }
 
 EvaluableNode *Interpreter::InterpretNodeIntoUniqueNumberValueEvaluableNode(EvaluableNode *n)

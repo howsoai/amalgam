@@ -7,7 +7,9 @@
 typedef int64_t ExecutionCycleCount;
 typedef int32_t ExecutionCycleCountCompactDelta;
 
-//describes an EvaluableNode reference and whether it is uniquely referenced
+//describes an EvaluableNode value and whether it is uniquely referenced
+//this is mostly used for actual EvaluableNode *'s, and so most of the methods are built as such
+//however, if it may contain an immediate value, then that must be checked via 
 class EvaluableNodeReference
 {
 public:
@@ -76,6 +78,16 @@ public:
 	{
 		value = _reference;
 		unique = _unique;
+	}
+
+	constexpr bool IsImmediateValue()
+	{
+		return value.nodeType != ENIVT_CODE;
+	}
+
+	constexpr EvaluableNodeImmediateValueWithType &GetValue()
+	{
+		return value;
 	}
 
 	constexpr EvaluableNode *&GetReference()
@@ -428,7 +440,7 @@ public:
 	//attempts to free the node reference
 	__forceinline void FreeNodeIfPossible(EvaluableNodeReference &enr)
 	{
-		if(enr.unique)
+		if(enr.unique && !enr.IsImmediateValue())
 			FreeNode(enr);
 	}
 	
@@ -466,7 +478,7 @@ public:
 	//attempts to free the node reference
 	__forceinline void FreeNodeTreeIfPossible(EvaluableNodeReference &enr)
 	{
-		if(enr.unique)
+		if(enr.unique && !enr.IsImmediateValue())
 			FreeNodeTree(enr);
 	}
 

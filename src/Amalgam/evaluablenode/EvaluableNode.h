@@ -1088,6 +1088,29 @@ public:
 		nodeValue = EvaluableNodeImmediateValue(en);
 	}
 
+	double GetValueAsNumber(double value_if_null = std::numeric_limits<double>::quiet_NaN())
+	{
+		if(nodeType == ENIVT_NUMBER)
+			return nodeValue.number;
+
+		if(nodeType == ENIVT_STRING_ID)
+		{
+			if(nodeValue.stringID == string_intern_pool.NOT_A_STRING_ID)
+				return value_if_null;
+			const auto &str = string_intern_pool.GetStringFromID(nodeValue.stringID);
+			auto [value, success] = Platform_StringToNumber(str);
+			if(success)
+				return value;
+			return value_if_null;
+		}
+
+		if(nodeType == ENIVT_CODE)
+			return EvaluableNode::ToNumber(nodeValue.code);
+
+		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
+		return value_if_null;
+	}
+
 	static inline bool AreEqual(EvaluableNodeImmediateValueWithType &a, EvaluableNodeImmediateValueWithType &b)
 	{
 		return EvaluableNodeImmediateValue::AreEqual(a.nodeType, a.nodeValue, b.nodeType, b.nodeValue);

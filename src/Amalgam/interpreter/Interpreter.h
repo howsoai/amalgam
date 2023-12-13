@@ -296,11 +296,11 @@ public:
 	EvaluableNode *GetCurrentExecutionContext();
 
 	//if n is immediate, it just returns it, otherwise calls InterpretNode
-	__forceinline EvaluableNodeReference InterpretNodeForImmediateUse(EvaluableNode *n)
+	__forceinline EvaluableNodeReference InterpretNodeForImmediateUse(EvaluableNode *n, bool immediate_result = false)
 	{
 		if(n == nullptr || n->GetIsIdempotent())
 			return EvaluableNodeReference(n, false);
-		return InterpretNode(n);
+		return InterpretNode(n, immediate_result);
 	}
 
 	//Calls InterpretNode on n, converts to std::string and stores in value to return, then cleans up any resources used

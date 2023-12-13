@@ -332,7 +332,7 @@ public:
 	double InterpretNodeIntoNumberValue(EvaluableNode *n);
 
 	//Calls InterpnetNode on n, convers to a double, and makes sure that the node returned is new and unique so that it can be modified
-	EvaluableNode *InterpretNodeIntoUniqueNumberValueEvaluableNode(EvaluableNode *n);
+	EvaluableNodeReference InterpretNodeIntoUniqueNumberValueEvaluableNode(EvaluableNode *n);
 
 	//Calls InterpretNode on n, converts to boolean and returns, then cleans up any resources used
 	bool InterpretNodeIntoBoolValue(EvaluableNode *n, bool value_if_null = false);

@@ -659,15 +659,15 @@ double Interpreter::InterpretNodeIntoNumberValue(EvaluableNode *n)
 	return value;
 }
 
-EvaluableNode *Interpreter::InterpretNodeIntoUniqueNumberValueEvaluableNode(EvaluableNode *n)
+EvaluableNodeReference Interpreter::InterpretNodeIntoUniqueNumberValueEvaluableNode(EvaluableNode *n)
 {
 	if(n == nullptr || n->GetIsIdempotent())
-		return evaluableNodeManager->AllocNode(EvaluableNode::ToNumber(n));
+		return EvaluableNodeReference(evaluableNodeManager->AllocNode(EvaluableNode::ToNumber(n)), true);
 
 	auto result = InterpretNode(n);
 
 	if(result == nullptr || !result.unique)
-		return evaluableNodeManager->AllocNode(EvaluableNode::ToNumber(result));
+		return EvaluableNodeReference(evaluableNodeManager->AllocNode(EvaluableNode::ToNumber(result)), true);
 	
 	result->ClearMetadata();
 

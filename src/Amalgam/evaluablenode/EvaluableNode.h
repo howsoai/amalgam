@@ -915,7 +915,7 @@ protected:
 // concrete values can be stored for the EvaluableNode.  It is intended to
 // group types into the highest specificity that it is worth using to
 // compare two values based on their collective types
-enum EvaluableNodeImmediateValueType
+enum EvaluableNodeImmediateValueType : uint8_t
 {
 	ENIVT_NOT_EXIST,			//there is nothing to even hold the data
 	ENIVT_NULL,					//no data being held
@@ -949,9 +949,10 @@ union EvaluableNodeImmediateValue
 		: code(eniv.code)
 	{	}
 
-	constexpr EvaluableNodeImmediateValue &operator =(const EvaluableNodeImmediateValue &eniv)
+	__forceinline EvaluableNodeImmediateValue &operator =(const EvaluableNodeImmediateValue &eniv)
 	{
-		code = eniv.code;
+		//perform a memcpy because it's a union, to be safe; the compiler should optimize this out
+		std::memcpy(this, &eniv, sizeof(this));
 		return *this;
 	}
 
@@ -1044,7 +1045,7 @@ public:
 		: nodeType(enimvwt.nodeType), nodeValue(enimvwt.nodeValue)
 	{	}
 
-	constexpr EvaluableNodeImmediateValueWithType &operator =(const EvaluableNodeImmediateValueWithType &enimvwt)
+	__forceinline EvaluableNodeImmediateValueWithType &operator =(const EvaluableNodeImmediateValueWithType &enimvwt)
 	{
 		nodeType = enimvwt.nodeType;
 		nodeValue = enimvwt.nodeValue;

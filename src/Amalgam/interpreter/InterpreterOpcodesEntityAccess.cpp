@@ -22,6 +22,8 @@
 #include <iostream>
 #include <utility>
 
+//TODO 18652: evaluate InterpretNode_* for immediate returns
+
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_ENTITY(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();

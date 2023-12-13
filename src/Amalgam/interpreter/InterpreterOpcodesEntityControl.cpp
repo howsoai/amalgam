@@ -19,6 +19,8 @@
 #include <iostream>
 #include <utility>
 
+//TODO 18652: evaluate InterpretNode_* for immediate returns
+
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(EvaluableNode *en, bool immediate_result)
 {
 	if(curEntity == nullptr)

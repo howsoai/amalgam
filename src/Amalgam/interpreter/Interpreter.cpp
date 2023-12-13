@@ -683,7 +683,7 @@ bool Interpreter::InterpretNodeIntoBoolValue(EvaluableNode *n, bool value_if_nul
 	if(n == nullptr)
 		return value_if_null;
 
-	//TODO 18652: implement special paths for this
+	//TODO 18652: implement special paths for this -- need new value(s) for EvaluableNodeImmediateValueType?
 
 	auto result = InterpretNodeForImmediateUse(n);
 	bool result_value = value_if_null;

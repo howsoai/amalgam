@@ -19,6 +19,8 @@
 #include <iomanip>
 #include <regex>
 
+//TODO 18652: evaluate InterpretNode_* for immediate returns
+
 EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();

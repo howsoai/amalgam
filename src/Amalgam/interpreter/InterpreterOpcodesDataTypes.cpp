@@ -26,6 +26,8 @@
 #include <regex>
 #include <utility>
 
+//TODO 18652: evaluate InterpretNode_* for immediate returns
+
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUE(EvaluableNode *en, bool immediate_result)
 {
 	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_TRUE), true);

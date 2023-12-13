@@ -24,6 +24,8 @@
 #include <limits>
 #include <utility>
 
+//TODO 18652: evaluate InterpretNode_* for immediate returns
+
 //Used only for deep debugging of entity memory and garbage collection
 std::string GetEntityMemorySizeDiagnostics(Entity *e)
 {

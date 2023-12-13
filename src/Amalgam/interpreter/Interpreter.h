@@ -295,6 +295,14 @@ public:
 	//returns the current execution context, nullptr if none
 	EvaluableNode *GetCurrentExecutionContext();
 
+	//returns an EvaluableNodeReference for value, allocating if necessary based on if immediate result is needed
+	inline EvaluableNodeReference AllocNumberReturn(double value, bool immediate_result)
+	{
+		if(immediate_result)
+			return EvaluableNodeReference(value);
+		return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
+	}
+
 	//if n is immediate, it just returns it, otherwise calls InterpretNode
 	__forceinline EvaluableNodeReference InterpretNodeForImmediateUse(EvaluableNode *n, bool immediate_result = false)
 	{

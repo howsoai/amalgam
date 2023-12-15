@@ -84,7 +84,7 @@ set(COMMON_SOURCE
     src/3rd_party/murmurhash3/MurmurHash3.h
     src/3rd_party/simdjson/simdjson.cpp
     src/3rd_party/simdjson/simdjson.h
-	src/3rd_party/rapidyaml/rapidyaml-0.5.0.hpp
+    src/3rd_party/rapidyaml/rapidyaml-0.5.0.hpp
     src/3rd_party/skarupke_maps/bytell_hash_map.hpp
     src/3rd_party/skarupke_maps/flat_hash_map.hpp
     src/3rd_party/swiftdtoa/SwiftDtoa.cpp
@@ -138,7 +138,7 @@ set(COMMON_SOURCE
     src/Amalgam/importexport/FileSupportCSV.h
     src/Amalgam/importexport/FileSupportJSON.cpp
     src/Amalgam/importexport/FileSupportJSON.h
-	src/Amalgam/importexport/FileSupportYAML.cpp
+    src/Amalgam/importexport/FileSupportYAML.cpp
     src/Amalgam/importexport/FileSupportYAML.h
     src/Amalgam/IntegerSet.h
     src/Amalgam/interpreter/Interpreter.cpp
@@ -169,7 +169,6 @@ set(COMMON_SOURCE
     src/Amalgam/rand/RandomStream.cpp
     src/Amalgam/rand/RandomStream.h
     src/Amalgam/rand/WeightedDiscreteRandomStream.h
-    src/Amalgam/resource.h
     src/Amalgam/SBFDSColumnData.h
     src/Amalgam/SeparableBoxFilterDataStore.cpp
     src/Amalgam/SeparableBoxFilterDataStore.h
@@ -177,6 +176,8 @@ set(COMMON_SOURCE
     src/Amalgam/string/StringInternPool.h
     src/Amalgam/string/StringManipulation.cpp
     src/Amalgam/string/StringManipulation.h
+    # Add out.txt so it shows up in IDE
+    src/Amalgam/out.txt
 )
 set(COMMON_SOURCE_THREADS
     ${COMMON_SOURCE}
@@ -202,20 +203,26 @@ set(AMALGAM_LIB_ONLY_SOURCE ${RESOURCE_SOURCE})
 set(AMALGAM_ALL_SOURCE ${AMALGAM_APP_ONLY_SOURCE} ${COMMON_SOURCE_THREADS})
 source_group(TREE ${CMAKE_SOURCE_DIR} FILES ${AMALGAM_ALL_SOURCE})
 
+# Get all files we care about for easy access in projects (mainly IDEs)
+file(GLOB_RECURSE ALL_FILES "${CMAKE_SOURCE_DIR}/*")
+list(FILTER ALL_FILES EXCLUDE REGEX "(.*/.git/.*|.*/out/.*|.*/src/.*|.*/test/.*|.*Amalgam\.sln.*)")
+source_group(TREE ${CMAKE_SOURCE_DIR} FILES ${ALL_FILES})
+list(APPEND AMALGAM_APP_ONLY_SOURCE ${ALL_FILES})
+
 
 #
 # Include dirs
 #
 
 include_directories(
-    "${PROJECT_SOURCE_DIR}/src/3rd_party"
-    "${PROJECT_SOURCE_DIR}/src/Amalgam"
-    "${PROJECT_SOURCE_DIR}/src/Amalgam/entity"
-    "${PROJECT_SOURCE_DIR}/src/Amalgam/evaluablenode"
-    "${PROJECT_SOURCE_DIR}/src/Amalgam/importexport"
-    "${PROJECT_SOURCE_DIR}/src/Amalgam/interpreter"
-    "${PROJECT_SOURCE_DIR}/src/Amalgam/rand"
-    "${PROJECT_SOURCE_DIR}/src/Amalgam/string"
+    "${CMAKE_SOURCE_DIR}/src/3rd_party"
+    "${CMAKE_SOURCE_DIR}/src/Amalgam"
+    "${CMAKE_SOURCE_DIR}/src/Amalgam/entity"
+    "${CMAKE_SOURCE_DIR}/src/Amalgam/evaluablenode"
+    "${CMAKE_SOURCE_DIR}/src/Amalgam/importexport"
+    "${CMAKE_SOURCE_DIR}/src/Amalgam/interpreter"
+    "${CMAKE_SOURCE_DIR}/src/Amalgam/rand"
+    "${CMAKE_SOURCE_DIR}/src/Amalgam/string"
 )
 
 
@@ -282,4 +289,3 @@ endif()
 
 include(create_tests)
 include(create_package)
-include(create_static_targets)

@@ -142,9 +142,7 @@ PLATFORM_MAIN_CONSOLE
 		else if(args[i] == "-q" || args[i] == "--quiet")
 			print_to_stdio = false;
 		else if(args[i] == "-l" && i + 1 < args.size())
-		{
 			print_log_filename = args[++i];
-		}
 		else if(args[i] == "-s" && i + 1 < args.size())
 			random_seed = args[++i];
 		else if(args[i] == "-t" && i + 1 < args.size())

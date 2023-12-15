@@ -176,7 +176,7 @@ set(COMMON_SOURCE
     src/Amalgam/string/StringInternPool.h
     src/Amalgam/string/StringManipulation.cpp
     src/Amalgam/string/StringManipulation.h
-    # Add out.txt so it hows up in IDE
+    # Add out.txt so it shows up in IDE
     src/Amalgam/out.txt
 )
 set(COMMON_SOURCE_THREADS

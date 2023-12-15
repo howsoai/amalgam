@@ -2,8 +2,10 @@
 # Tests
 #
 
+enable_testing()
+
 # CTest args:
-set(CMAKE_CTEST_ARGUMENTS "-j" "--schedule-random" "--output-on-failure" "--output-log" "${PROJECT_SOURCE_DIR}/out/test/all_tests.log")
+set(CMAKE_CTEST_ARGUMENTS "-j" "--schedule-random" "--output-on-failure" "--output-log" "${CMAKE_SOURCE_DIR}/out/test/all_tests.log")
 
 # Not all tests can be run on all platforms:
 if(IS_MACOS)
@@ -45,7 +47,6 @@ foreach(TEST_TARGET ${ALL_APP_TARGETS})
     set(TEST_OUTPUT_LOG "${TEST_OUTPUT_LOG_BASE}/out.${TEST_NAME}.txt")
     add_test(NAME ${TEST_NAME}
         COMMAND ${TEST_RUNNER} "$<TARGET_FILE:${TEST_TARGET}>" --version
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
     )
     set_tests_properties(${TEST_NAME} PROPERTIES PASS_REGULAR_EXPRESSION "${AMALGAM_VERSION_FULL_ESCAPED}")
     list(APPEND ALL_TEST_TARGETS ${TEST_NAME})
@@ -56,7 +57,7 @@ foreach(TEST_TARGET ${ALL_APP_TARGETS})
     add_test(
         NAME ${TEST_NAME}
         COMMAND ${TEST_RUNNER} "$<TARGET_FILE:${TEST_TARGET}>" -l ${TEST_OUTPUT_LOG} amlg_code/full_test.amlg
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/Amalgam
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src/Amalgam
     )
     set_tests_properties(${TEST_NAME} PROPERTIES PASS_REGULAR_EXPRESSION "--total execution time--")
     list(APPEND ALL_TEST_TARGETS ${TEST_NAME})
@@ -68,7 +69,9 @@ foreach(TEST_TARGET ${ALL_SHAREDLIB_TARGETS})
 
     # Create test exe:
     set(TEST_EXE_NAME "${TEST_TARGET}-tester")
-    add_executable(${TEST_EXE_NAME} "test/lib_smoke_test/main.cpp" "test/lib_smoke_test/test.amlg")
+    set(TEST_SOURCES "test/lib_smoke_test/main.cpp" "test/lib_smoke_test/test.amlg")
+    source_group(TREE ${CMAKE_SOURCE_DIR} FILES ${TEST_SOURCES})
+    add_executable(${TEST_EXE_NAME} ${TEST_SOURCES})
     set_target_properties(${TEST_EXE_NAME} PROPERTIES FOLDER "Testing")
     target_link_libraries(${TEST_EXE_NAME} ${TEST_TARGET})
 
@@ -76,7 +79,7 @@ foreach(TEST_TARGET ${ALL_SHAREDLIB_TARGETS})
     set(TEST_NAME "Lib.SmokeTest.${TEST_EXE_NAME}")
     add_test(NAME ${TEST_NAME}
         COMMAND ${TEST_RUNNER} "$<TARGET_FILE:${TEST_EXE_NAME}>" test.amlg
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/test/lib_smoke_test
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/test/lib_smoke_test
     )
     set_tests_properties(${TEST_NAME} PROPERTIES PASS_REGULAR_EXPRESSION "${AMALGAM_VERSION_FULL_ESCAPED}")
     list(APPEND ALL_TEST_TARGETS ${TEST_NAME})

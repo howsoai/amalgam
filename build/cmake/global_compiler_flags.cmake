@@ -2,7 +2,7 @@
 # Global compiler defines & flags:
 #
 
-# TODO: do we need this? Can it be smaller? How do we set it on all platforms?
+# TODO 15993: do we need this? Can it be smaller? How do we set it on all platforms?
 set(DEFAULT_STACK_SIZE 67108864)
 
 set(IS_MSVC False)

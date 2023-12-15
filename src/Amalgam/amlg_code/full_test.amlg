@@ -361,6 +361,7 @@
 
   (print (dot_product (associate "0" 0.5 "1" 0.25 "2" 0.25) (list 4 8 8)) "\n")
 
+;TODO 18683: update tests and documentation for new types
  (print "--generalized_distance--\n")
  (print " 0 " (generalized_distance (null) (null) (null) (null) 0.01 (map 10000 (range 0 200)) ) "\n")
  (print " 1 " (generalized_distance (null) (null) (null) (null) 0.01 (list 1 2 3) (list 0 2 3) ) "\n")

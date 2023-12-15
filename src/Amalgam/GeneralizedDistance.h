@@ -22,7 +22,12 @@ public:
 	// align at 32-bits in order to play nice with data alignment where it is used
 	enum FeatureDifferenceType : uint32_t
 	{
-		FDT_NOMINAL,
+		//nominal based on numeric equivalence
+		FDT_NOMINAL_NUMERIC,
+		//nominal based on string equivalence
+		FDT_NOMINAL_STRING,
+		//nominal based on code equivalence
+		FDT_NOMINAL_CODE,
 		//continuous without cycles, may contain nonnumeric data
 		FDT_CONTINUOUS_NUMERIC,
 		//like FDT_CONTINUOUS_NUMERIC, but has cycles
@@ -276,9 +281,10 @@ protected:
 
 		for(size_t i = 0; i < featureParams.size(); i++)
 		{
-			auto &feat_params = featureParams[i];
-			if(feat_params.featureType == FDT_NOMINAL)
+			if(IsFeatureNominal(i))
 			{
+				auto &feat_params = featureParams[i];
+
 				//ensure if a feature has deviations they're not too small to underflow
 				if(DoesFeatureHaveDeviation(i))
 				{
@@ -315,7 +321,7 @@ public:
 	//returns true if the feature is nominal
 	__forceinline bool IsFeatureNominal(size_t feature_index)
 	{
-		return (featureParams[feature_index].featureType == FDT_NOMINAL);
+		return (featureParams[feature_index].featureType <= FDT_NOMINAL_CODE);
 	}
 
 	//returns true if the feature is cyclic
@@ -371,21 +377,16 @@ public:
 	//returns the maximum difference
 	inline double GetMaximumDifference(size_t index)
 	{
-		auto &feature_params = featureParams[index];
-		switch(feature_params.featureType)
-		{
-		case FDT_NOMINAL:
+		if(IsFeatureNominal(index))
 			return 1.0;
 
-		case FDT_CONTINUOUS_NUMERIC_CYCLIC:
-			return feature_params.typeAttributes.maxCyclicDifference / 2;
+		if(IsFeatureCyclic(index))
+			return featureParams[index].typeAttributes.maxCyclicDifference / 2;
 
-		default:
-			if(feature_params.weight > 0)
-				return std::numeric_limits<double>::infinity();
-			else
-				return -std::numeric_limits<double>::infinity();
-		}
+		if(featureParams[index].weight > 0)
+			return std::numeric_limits<double>::infinity();
+		else
+			return -std::numeric_limits<double>::infinity();
 	}
 
 	//computes the distance term for a nominal when two universally symmetric nominals are equal
@@ -748,7 +749,8 @@ public:
 		if(a_type == ENIVT_NULL || b_type == ENIVT_NULL)
 			return std::numeric_limits<double>::quiet_NaN();
 
-		if(feature_type == FDT_NOMINAL)
+		if(feature_type == FDT_NOMINAL_NUMERIC
+			|| feature_type == FDT_NOMINAL_STRING || feature_type == FDT_NOMINAL_CODE)
 		{
 			if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)
 				return (a.number == b.number ? 0.0 : 1.0);

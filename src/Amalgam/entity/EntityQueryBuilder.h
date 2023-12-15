@@ -70,11 +70,14 @@ namespace EntityQueryBuilder
 						StringInternPool::StringID feature_type_id = EvaluableNode::ToStringIDIfExists(en);
 						switch(feature_type_id)
 						{
-						case ENBISI_nominal:								feature_type = GeneralizedDistance::FDT_NOMINAL;					break;
-						case ENBISI_continuous:								feature_type = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC;			break;
-						case ENBISI_cyclic:									feature_type = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC_CYCLIC;	break;
-						case GetStringIdFromNodeTypeFromString(ENT_STRING): feature_type = GeneralizedDistance::FDT_CONTINUOUS_STRING;			break;	
-						case ENBISI_code:									feature_type = GeneralizedDistance::FDT_CONTINUOUS_CODE;			break;
+						case ENBISI_nominal_numeric:						feature_type = GeneralizedDistance::FDT_NOMINAL_NUMERIC;			break;
+						case ENBISI_nominal_string:							feature_type = GeneralizedDistance::FDT_NOMINAL_STRING;				break;
+						case ENBISI_nominal_code:							feature_type = GeneralizedDistance::FDT_NOMINAL_CODE;				break;
+						case ENBISI_continuous_numeric:						feature_type = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC;			break;
+						case ENBISI_continuous_numeric_cyclic:				feature_type = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC_CYCLIC;	break;
+						case ENBISI_continuous_string:						feature_type = GeneralizedDistance::FDT_CONTINUOUS_STRING;			break;
+						case ENBISI_continuous_code:						feature_type = GeneralizedDistance::FDT_CONTINUOUS_CODE;			break;
+
 						default:											feature_type = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC;			break;
 						}
 					}
@@ -93,7 +96,9 @@ namespace EntityQueryBuilder
 					//get attributes based on feature type
 					switch(dist_params.featureParams[i].featureType)
 					{
-					case GeneralizedDistance::FDT_NOMINAL:
+					case GeneralizedDistance::FDT_NOMINAL_NUMERIC:
+					case GeneralizedDistance::FDT_NOMINAL_STRING:
+					case GeneralizedDistance::FDT_NOMINAL_CODE:
 						if(found && !EvaluableNode::IsNull(en))
 						{
 							if(en->EvaluableNode::IsOrderedArray())

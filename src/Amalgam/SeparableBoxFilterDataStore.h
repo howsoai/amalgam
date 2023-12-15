@@ -870,21 +870,25 @@ protected:
 		auto &feature_type = dist_params.featureParams[query_feature_index].featureType;
 		auto &effective_feature_type = dist_params.featureParams[query_feature_index].effectiveFeatureType;
 
-		if(feature_type == GeneralizedDistance::FDT_NOMINAL
+		if(feature_type == GeneralizedDistance::FDT_NOMINAL_NUMERIC
+			|| feature_type == GeneralizedDistance::FDT_NOMINAL_STRING
+			|| feature_type == GeneralizedDistance::FDT_NOMINAL_CODE
 			|| feature_type == GeneralizedDistance::FDT_CONTINUOUS_STRING
 			|| feature_type == GeneralizedDistance::FDT_CONTINUOUS_CODE)
 		{
 			target_values.push_back(position_value);
 			target_value_types.push_back(position_value_type);
 
-			if(feature_type == GeneralizedDistance::FDT_NOMINAL)
+			if(feature_type == GeneralizedDistance::FDT_NOMINAL_NUMERIC
+					|| feature_type == GeneralizedDistance::FDT_NOMINAL_STRING
+					|| feature_type == GeneralizedDistance::FDT_NOMINAL_CODE)
 				effective_feature_type = GeneralizedDistance::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED;
 			else if(feature_type == GeneralizedDistance::FDT_CONTINUOUS_STRING)
 				effective_feature_type = GeneralizedDistance::EFDT_CONTINUOUS_STRING;
 			else if(feature_type == GeneralizedDistance::FDT_CONTINUOUS_CODE)
 				effective_feature_type = GeneralizedDistance::EFDT_CONTINUOUS_CODE;
 		}
-		else // feature_type is some form of numeric
+		else // feature_type is some form of continuous numeric
 		{
 			//looking for continuous; if not a number, so just put as nan
 			double position_value_numeric = (position_value_type == ENIVT_NUMBER ? position_value.number : std::numeric_limits<double>::quiet_NaN());

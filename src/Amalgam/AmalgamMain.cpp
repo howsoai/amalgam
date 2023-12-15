@@ -1,4 +1,4 @@
-//project headers: 
+//project headers:
 #include "Amalgam.h"
 #include "AmalgamVersion.h"
 #include "AssetManager.h"
@@ -20,38 +20,83 @@
 #include <fstream>
 #include <string>
 
-int RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::string &random_seed);
+//function prototypes:
+int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::string &random_seed);
 
+//usage:
+// Note: spaces in raw string are correct, do not replace with tabs
+std::string GetUsage()
+{
+	std::stringstream usage;
+	usage
+		<< "Amalgam Interpreter (" << AMALGAM_VERSION_STRING << ") - " << GetConcurrencyTypeString() << std::endl
+		<<
+R"(
+Usage: amalgam [options] [file]
+
+Options:
+    -h, --help       Show help
+
+    -v, --version    Show version
+
+    -q, --quiet      Silence all stdio
+
+    -l [file]        Specify a log file
+
+    -s [seed]        Specify a particular random number seed. Can be any alphanumeric string
+
+    -t [file]        Specify a code-based transaction log file
+
+    --p-opcodes      Display engine profiling information for opcodes upon completion (one profiling
+                     type allowed at a time); when used with --debug-sources, reports line numbers
+
+    --p-labels       Display engine profiling information for labels upon completion (one profiling
+                     type allowed at a time)
+
+    --p-count [number]
+                     When used with --p-opcodes or --p-labels, specifies the count of the top profile
+                     information elements to display; the default is 20 for command line, all when
+                     --p-file is specified
+
+    --p-file [file]  When used with --p-opcodes or --p-labels, writes the profile information to a file
+
+    --debug          When specified, begins in debugging mode
+
+    --debug-minimal  When specified, begins in debugging mode with minimal output while stepping
+
+    --debug-sources  When specified, prepends all node comments with the source of the node when applicable
+
+    --nosbfds        Disables the sbfds acceleration, which is generally preferred in the heuristics
+
+    --trace          Uses commands via stdio to act as if it were being called as a library
+
+    --tracefile [file]
+                     Like trace, but pulls the data from the file specified
+)";
+
+	//additional compiler defined options
+	usage
+#if defined(MULTITHREAD_SUPPORT) || defined(_OPENMP)
+		<< std::endl
+		<< "    --numthreads [number]" << std::endl
+		<< "                     Maximum number of threads to use (if unspecified or set to zero, may use unlimited)" << std::endl
+#endif
+		<< std::endl;
+
+	return usage.str();
+}
+
+//main
 PLATFORM_MAIN_CONSOLE
 {
 	PLATFORM_ARGS_CONSOLE;
 
 	if(args.size() == 1)
 	{
-		std::cout
-			<< "Concurrency type: " << GetConcurrencyTypeString() << std::endl
-			<< "Must specify an input file.  Flags:" << std::endl
-			<< "-l [filename]: specify a debug log file." << std::endl
-			<< "-s [random number seed]: specify a particular random number seed -- can be any alphanumeric string." << std::endl
-			<< "-t [filename]: specify a code-based transaction log file." << std::endl
-		#if defined(MULTITHREAD_SUPPORT) || defined(_OPENMP)
-			<< "--numthreads [number]: maximum number of threads to use (if unspecified or set to zero, may use unlimited)." << std::endl
-		#endif
-			<< "--p-opcodes: display engine profiling information for opcodes upon completion (one profiling type allowed at a time); when used with --debug-sources, reports line numbers" << std::endl
-			<< "--p-labels: display engine profiling information for labels upon completion (one profiling type allowed at a time)" << std::endl
-			<< "--p-count [number]: when used with --p-opcodes or --p-labels, specifies the count of the top profile information elements to display; "
-				<< "the default is 20 for command line, all when --p - file is specified" << std::endl
-			<< "--p-file [filename]: when used with --p-opcodes or --p-labels, writes the profile information to a file" << std::endl
-			<< "--debug: when specified, begins in debugging mode." << std::endl
-			<< "--debug-minimal: when specified, begins in debugging mode with minimal output while stepping." << std::endl
-			<< "--debug-sources: when specified, prepends all node comments with the source of the node when applicable." << std::endl
-			<< "--nosbfds: disables the sbfds acceleration, which is generally preferred in the heuristics." << std::endl
-			<< "--trace: uses commands via stdio to act as if it were being called as a library." << std::endl
-			<< "--tracefile [filename]: like trace, but pulls the data from the file specified." << std::endl
-			<< "--version: prints the current version." << std::endl;
+		std::cout << GetUsage() << std::endl;
 		return 0;
 	}
-	
+
 	//run options
 	bool debug_state = false;
 	bool debug_minimal = false;
@@ -84,10 +129,26 @@ PLATFORM_MAIN_CONSOLE
 
 	for(size_t i = 1; i < args.size(); i++)
 	{
-		if(args[i] == "-l" && i + 1 < args.size())
+		if(args[i] == "-h" || args[i] == "--help")
+		{
+			std::cout << GetUsage();
+			return 0;
+		}
+		else if(args[i] == "-v" || args[i] == "--version")
+		{
+			std::cout << AMALGAM_VERSION_STRING << std::endl;
+			return 0;
+		}
+		else if(args[i] == "-q" || args[i] == "--quiet")
+			print_to_stdio = false;
+		else if(args[i] == "-l" && i + 1 < args.size())
 		{
 			print_log_filename = args[++i];
 		}
+		else if(args[i] == "-s" && i + 1 < args.size())
+			random_seed = args[++i];
+		else if(args[i] == "-t" && i + 1 < args.size())
+			write_log_filename = args[++i];
 		else if(args[i] == "--p-opcodes")
 			profile_opcodes = true;
 		else if(args[i] == "--p-labels")
@@ -96,16 +157,6 @@ PLATFORM_MAIN_CONSOLE
 			profile_count = static_cast<size_t>(std::max(std::atoi(args[++i].data()), 0));
 		else if(args[i] == "--p-file" && i + 1 < args.size())
 			profile_out_file = args[++i];
-		else if(args[i] == "-q")
-			print_to_stdio = false;
-		else if(args[i] == "-s" && i + 1 < args.size())
-			random_seed = args[++i];
-		else if(args[i] == "-t" && i + 1 < args.size())
-			write_log_filename = args[++i];
-	#if defined(MULTITHREAD_SUPPORT) || defined(_OPENMP)
-		else if(args[i] == "--numthreads")
-			num_threads = static_cast<size_t>(std::max(std::atoi(args[++i].data()), 0));
-	#endif
 		else if(args[i] == "--debug")
 			debug_state = true;
 		else if(args[i] == "--debug-minimal")
@@ -124,8 +175,10 @@ PLATFORM_MAIN_CONSOLE
 			run_tracefile = true;
 			tracefile = args[++i];
 		}
-		else if(args[i] == "--version")
-			std::cout << "Amalgam Version: " << AMALGAM_VERSION_STRING << std::endl;
+#if defined(MULTITHREAD_SUPPORT) || defined(_OPENMP)
+		else if(args[i] == "--numthreads")
+			num_threads = static_cast<size_t>(std::max(std::atoi(args[++i].data()), 0));
+#endif
 		else if(amlg_file_to_run == "")
 		{
 			//if relative path, prepend current working dir to make absolute path
@@ -133,7 +186,7 @@ PLATFORM_MAIN_CONSOLE
 			std::filesystem::path file(args[i]);
 			if(file.is_relative())
 				file = std::filesystem::current_path() / file;
-			
+
 			amlg_file_to_run = file.string();
 			passthrough_params[0] = amlg_file_to_run;
 		}
@@ -274,7 +327,7 @@ PLATFORM_MAIN_CONSOLE
 
 			std::cout << "Memory reclaimation complete." << std::endl;
 		}
-
-		return 0;
 	}
+
+	return 0;
 }

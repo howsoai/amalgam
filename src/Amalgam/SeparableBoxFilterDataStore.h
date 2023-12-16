@@ -966,16 +966,16 @@ protected:
 			//if either known or unknown to unknown is missing, need to compute difference
 			// and store it where it is needed
 			double unknown_distance_term = 0.0;
-			if(FastIsNaN(feature_params.knownToUnknownDifference)
-				|| FastIsNaN(feature_params.unknownToUnknownDifference))
+			if(FastIsNaN(feature_params.knownToUnknownDistanceTerm.difference)
+				|| FastIsNaN(feature_params.unknownToUnknownDistanceTerm.difference))
 			{
 				unknown_distance_term = columnData[column_index]->GetMaxDifferenceTermFromValue(
 					feature_params, target_value_types[i], target_values[i]);
 
-				if(FastIsNaN(feature_params.knownToUnknownDifference))
-					feature_params.knownToUnknownDifference = unknown_distance_term;
-				if(FastIsNaN(feature_params.unknownToUnknownDifference))
-					feature_params.unknownToUnknownDifference = unknown_distance_term;
+				if(FastIsNaN(feature_params.knownToUnknownDistanceTerm.difference))
+					feature_params.knownToUnknownDistanceTerm.difference = unknown_distance_term;
+				if(FastIsNaN(feature_params.unknownToUnknownDistanceTerm.difference))
+					feature_params.unknownToUnknownDistanceTerm.difference = unknown_distance_term;
 			}
 
 			dist_params.ComputeAndStoreUncertaintyDistanceTerms(i,

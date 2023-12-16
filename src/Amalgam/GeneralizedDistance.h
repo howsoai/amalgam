@@ -18,6 +18,9 @@ class GeneralizedDistance
 {
 public:
 
+	//TODO 18683: update documentation for change in deviation location for distance queries
+	//TODO 18683: update distance logic to use FeatureDifferenceType instead of type of value
+
 	//general class of feature comparisons
 	// align at 32-bits in order to play nice with data alignment where it is used
 	enum FeatureDifferenceType : uint32_t
@@ -87,17 +90,17 @@ public:
 		if(compute_accurate)
 		{
 			feature_params.unknownToUnknownDistanceTerm.SetValue(
-					ComputeDistanceTermNonNull(feature_params.unknownToUnknownDifference, index, true), true);
+					ComputeDistanceTermNonNull(feature_params.unknownToUnknownDistanceTerm.difference, index, true), true);
 		}
 
 		if(compute_approximate)
 		{
 			feature_params.unknownToUnknownDistanceTerm.SetValue(
-				ComputeDistanceTermNonNull(feature_params.unknownToUnknownDifference, index, false), false);
+				ComputeDistanceTermNonNull(feature_params.unknownToUnknownDistanceTerm.difference, index, false), false);
 		}
 
 		//if knownToUnknownDifference is same as unknownToUnknownDifference, can copy distance term instead of recomputing
-		if(feature_params.knownToUnknownDifference == feature_params.unknownToUnknownDifference)
+		if(feature_params.knownToUnknownDistanceTerm.difference == feature_params.unknownToUnknownDistanceTerm.difference)
 		{
 			feature_params.knownToUnknownDistanceTerm = feature_params.unknownToUnknownDistanceTerm;
 		}
@@ -107,13 +110,13 @@ public:
 			if(compute_accurate)
 			{
 				feature_params.knownToUnknownDistanceTerm.SetValue(
-					ComputeDistanceTermNonNull(feature_params.knownToUnknownDifference, index, true), true);
+					ComputeDistanceTermNonNull(feature_params.knownToUnknownDistanceTerm.difference, index, true), true);
 			}
 
 			if(compute_approximate)
 			{
 				feature_params.knownToUnknownDistanceTerm.SetValue(
-					ComputeDistanceTermNonNull(feature_params.knownToUnknownDifference, index, false), false);
+					ComputeDistanceTermNonNull(feature_params.knownToUnknownDistanceTerm.difference, index, false), false);
 			}
 		}
 
@@ -273,6 +276,21 @@ protected:
 		std::array<double, 2> distanceTerm;
 	};
 
+	//stores the computed exact and approximate distance terms, as well as the difference
+	//the values default to 0.0 on initialization
+	class DistanceTermsWithDifference
+		: public DistanceTerms
+	{
+	public:
+		__forceinline DistanceTermsWithDifference(double initial_value = 0.0)
+			: DistanceTerms(initial_value)
+		{
+			difference = initial_value;
+		}
+
+		double difference;
+	};
+
 	//update cached nominal deltas based on highAccuracy and recomputeAccurateDistances, caching what is needed given those flags
 	inline void ComputeAndStoreUniversallySymmetricNominalDistanceTerms()
 	{
@@ -341,7 +359,7 @@ public:
 	__forceinline bool IsKnownToUnknownDistanceLessThanOrEqualToExactMatch(size_t feature_index)
 	{
 		auto &feature_params = featureParams[feature_index];
-		return (feature_params.knownToUnknownDifference <= feature_params.deviation);
+		return (feature_params.knownToUnknownDistanceTerm.difference <= feature_params.deviation);
 	}
 
 	//computes the exponentiation of d to 1/p
@@ -837,9 +855,7 @@ public:
 			weight(1.0),
 			internedNumberIndexToNumberValue(nullptr), deviation(0.0),
 			unknownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
-			knownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
-			unknownToUnknownDifference(std::numeric_limits<double>::quiet_NaN()),
-			knownToUnknownDifference(std::numeric_limits<double>::quiet_NaN())
+			knownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN())
 		{
 			typeAttributes.maxCyclicDifference = std::numeric_limits<double>::quiet_NaN();
 		}
@@ -880,16 +896,12 @@ public:
 		double deviation;
 
 		//distance term to use if both values being compared are unknown
-		DistanceTerms unknownToUnknownDistanceTerm;
+		//the difference will be NaN if unknown
+		DistanceTermsWithDifference unknownToUnknownDistanceTerm;
 
 		//distance term to use if one value is known and the other is unknown
-		DistanceTerms knownToUnknownDistanceTerm;
-
-		//difference between two values if both are unknown (NaN if unknown)
-		double unknownToUnknownDifference;
-
-		//difference between two values if one is known and the other is unknown (NaN if unknown)
-		double knownToUnknownDifference;
+		//the difference will be NaN if unknown
+		DistanceTermsWithDifference knownToUnknownDistanceTerm;
 	};
 
 	std::vector<FeatureParams> featureParams;

@@ -1097,6 +1097,7 @@ public:
 		{
 			if(nodeValue.stringID == string_intern_pool.NOT_A_STRING_ID)
 				return value_if_null;
+
 			const auto &str = string_intern_pool.GetStringFromID(nodeValue.stringID);
 			auto [value, success] = Platform_StringToNumber(str);
 			if(success)
@@ -1109,6 +1110,33 @@ public:
 
 		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
 		return value_if_null;
+	}
+
+	std::pair<bool, std::string> GetValueAsString()
+	{
+		//TODO 18652: make sure if type is ENIVT_CODE, that the return values are handled the same as empty nodes in Interpreter::InterpretNodeInto*
+		if(nodeType == ENIVT_NUMBER)
+		{
+			if(FastIsNaN(nodeValue.number))
+				return std::make_pair(false, "");
+
+			return std::make_pair(true, EvaluableNode::NumberToString(nodeValue.number));
+		}
+
+		if(nodeType == ENIVT_STRING_ID)
+		{
+			if(nodeValue.stringID == string_intern_pool.NOT_A_STRING_ID)
+				return std::make_pair(false, "");
+
+			const auto &str = string_intern_pool.GetStringFromID(nodeValue.stringID);
+			return std::make_pair(true, str);
+		}
+
+		if(nodeType == ENIVT_CODE)
+			return std::make_pair(true, EvaluableNode::ToString(nodeValue.code));
+
+		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
+		return std::make_pair(false, "");
 	}
 
 	static inline bool AreEqual(EvaluableNodeImmediateValueWithType &a, EvaluableNodeImmediateValueWithType &b)

@@ -1,8 +1,8 @@
 (assoc
+	b #b (true)
 	a #a 1
 	hello #hello
 		(print "hello\n")
 	d #d 100000000
 	c #c 0.1
-	b #b (true)
 )

@@ -361,7 +361,6 @@
 
   (print (dot_product (associate "0" 0.5 "1" 0.25 "2" 0.25) (list 4 8 8)) "\n")
 
-;TODO 18683: update tests and documentation for new types
  (print "--generalized_distance--\n")
  (print " 0 " (generalized_distance (null) (null) (null) (null) 0.01 (map 10000 (range 0 200)) ) "\n")
  (print " 1 " (generalized_distance (null) (null) (null) (null) 0.01 (list 1 2 3) (list 0 2 3) ) "\n")
@@ -380,21 +379,21 @@
  (print "14 " (generalized_distance (list 1 1) (null) (null) (null) 0 (list .nan 4) ) "\n")
  (print "15 " (generalized_distance (list 0.5 0.5) (null) (null) (null) 2 (list .nan 4) ) "\n")
  (print "16 " (generalized_distance (list 0.5 0.5) (null) (null) (null) 0 (list .nan 4) ) "\n")
- (print "17 " (generalized_distance (null) (list "nominal") (list 1) (null) 1 (list 1 2 3) (list 10 2 4) ) "\n")
- (print "18 " (generalized_distance (null) (list "nominal") (list 1) (null) 1 (list 1 2 3) (list 10 2 10) ) "\n")
- (print "19 " (generalized_distance (null) (list "nominal") (list 1) (null) 1 (list 1 2 3) (list 10 2 10) ) "\n")
- (print "20 " (generalized_distance (list 0.3333 0.3333 0.3333) (list "nominal") (list 1) (null) 1 (list 1 2 3) (list 10 2 4) ) "\n")
- (print "21 " (generalized_distance (list 0.3333 0.3333 0.3333) (list "nominal") (list 1) (null) 1 (list 1 2 3) (list 10 2 10) ) "\n")
- (print "22 " (generalized_distance (list 0.3333 0.3333 0.3333) (list "nominal") (list 1) (null) 1 (list 1 2 3) (list 10 2 10) ) "\n")
- (print "23 " (generalized_distance (list 0.3333 0.3333 0.3333) (list "nominal" "cyclic" "cyclic") (list 1 360 12) (null) 1 (list 1 2 3) (list 10 2 10) ) "\n")
- (print "24 " (generalized_distance (list 0.3333 0.3333 0.3333) (list "nominal") (list 1) (list 0.25 180 -12) 1 (list 1 2 3) (list 10 2 10) ) "\n")
- (print "25 " (generalized_distance (list 1 0 1 ) (list "continuous" "nominal" "nominal") (list (null) 5 5) (list .1 .1 .1 ) 2 (list 4 4 (null) ) (list 2 (null) (null) ) ) "\n" )
- (print "26 " (generalized_distance (list 1 0 1 ) (list "continuous" "nominal" "nominal") (list (null) 5 5) (null) 2 (list 4 4 (null) ) (list 2 (null) (null) ) ) "\n")
- (print "27 " (generalized_distance (list 1 0 1 1 ) (list "continuous" "nominal" "nominal") (list (null) 5 5) (list .1 .1 .1 .1) 2 (list 4 4 (null) 4) (list 2 (null) (null) 2) ) "\n" )
- (print "28 " (generalized_distance (list 1 0 1 1 ) (list "continuous" "nominal" "nominal") (list (null) 5 5) (null) 2 (list 4 4 (null) 4) (list 2 (null) (null) 2) ) "\n" )
+ (print "17 " (generalized_distance (null) (list "nominal_numeric") (list 1) (null) 1 (list 1 2 3) (list 10 2 4) ) "\n")
+ (print "18 " (generalized_distance (null) (list "nominal_numeric") (list 1) (null) 1 (list 1 2 3) (list 10 2 10) ) "\n")
+ (print "19 " (generalized_distance (null) (list "nominal_numeric") (list 1) (null) 1 (list 1 2 3) (list 10 2 10) ) "\n")
+ (print "20 " (generalized_distance (list 0.3333 0.3333 0.3333) (list "nominal_numeric") (list 1) (null) 1 (list 1 2 3) (list 10 2 4) ) "\n")
+ (print "21 " (generalized_distance (list 0.3333 0.3333 0.3333) (list "nominal_numeric") (list 1) (null) 1 (list 1 2 3) (list 10 2 10) ) "\n")
+ (print "22 " (generalized_distance (list 0.3333 0.3333 0.3333) (list "nominal_numeric") (list 1) (null) 1 (list 1 2 3) (list 10 2 10) ) "\n")
+ (print "23 " (generalized_distance (list 0.3333 0.3333 0.3333) (list "nominal_numeric" "continuous_numeric_cyclic" "continuous_numeric_cyclic") (list 1 360 12) (null) 1 (list 1 2 3) (list 10 2 10) ) "\n")
+ (print "24 " (generalized_distance (list 0.3333 0.3333 0.3333) (list "nominal_numeric") (list 1) (list 0.25 180 -12) 1 (list 1 2 3) (list 10 2 10) ) "\n")
+ (print "25 " (generalized_distance (list 1 0 1 ) (list "continuous_numeric" "nominal_numeric" "nominal_numeric") (list (null) 5 5) (list .1 .1 .1 ) 2 (list 4 4 (null) ) (list 2 (null) (null) ) ) "\n" )
+ (print "26 " (generalized_distance (list 1 0 1 ) (list "continuous_numeric" "nominal_numeric" "nominal_numeric") (list (null) 5 5) (null) 2 (list 4 4 (null) ) (list 2 (null) (null) ) ) "\n")
+ (print "27 " (generalized_distance (list 1 0 1 1 ) (list "continuous_numeric" "nominal_numeric" "nominal_numeric") (list (null) 5 5) (list .1 .1 .1 .1) 2 (list 4 4 (null) 4) (list 2 (null) (null) 2) ) "\n" )
+ (print "28 " (generalized_distance (list 1 0 1 1 ) (list "continuous_numeric" "nominal_numeric" "nominal_numeric") (list (null) 5 5) (null) 2 (list 4 4 (null) 4) (list 2 (null) (null) 2) ) "\n" )
  (print "29 " (generalized_distance (list 1 0 1 1 1) (null) (null) (null) 1 (list 4 4 4 4 4) (list 2 (null) 2 2 2) ) "\n" )
  (print "30 " (generalized_distance (assoc x 1 y 1 z 1)
-							(assoc y "continuous" x "nominal" z "continuous")
+							(assoc y "continuous_numeric" x "nominal_numeric" z "continuous_numeric")
 							(assoc z 5)
 							(null)
 							1
@@ -403,18 +402,18 @@
 							(null)
 							(list "x" "y" "z") ) "\n" )
  ;should print 4
- (print "31 " (generalized_distance (list 1 1 1) (list "continuous" "nominal" "nominal") (list (null) 5 5) (null) 1 (list 4 4 (null)) (list 2 2 (null))) "\n")
+ (print "31 " (generalized_distance (list 1 1 1) (list "continuous_numeric" "nominal_numeric" "nominal_numeric") (list (null) 5 5) (null) 1 (list 4 4 (null)) (list 2 2 (null))) "\n")
  ;should print 4
- (print "32 " (generalized_distance (list 1 1 1 1) (list "continuous" "nominal" "nominal" "continuous") (list 2 5 5 2) (null) 0 (list 4 4 4 4) (list 2 2 2 (null))) "\n")
+ (print "32 " (generalized_distance (list 1 1 1 1) (list "continuous_numeric" "nominal_numeric" "nominal_numeric" "continuous_numeric") (list 2 5 5 2) (null) 0 (list 4 4 4 4) (list 2 2 2 (null))) "\n")
 
  ;should print 4
- (print "33 " (generalized_distance (list 1 1 1 1) (list "continuous" "nominal" "nominal" "continuous") (list 1 5 5 1) (null) 1 (list 4 "s" "s" 4) (list 2 "s" 2 (null))) "\n")
+ (print "33 " (generalized_distance (list 1 1 1 1) (list "continuous_numeric" "nominal_string" "nominal_string" "continuous_numeric") (list 1 5 5 1) (null) 1 (list 4 "s" "s" 4) (list 2 "s" 2 (null))) "\n")
  
  ;should print 2
- (print "34 " (generalized_distance (list 1 1) (list "code" "nominal") (list 0 5) (null) 1 (list (list 1 2 3 4 5) "s") (list (list 1 2 3) "s") ) "\n")
+ (print "34 " (generalized_distance (list 1 1) (list "continuous_code" "nominal_string") (list 0 5) (null) 1 (list (list 1 2 3 4 5) "s") (list (list 1 2 3) "s") ) "\n")
  
  ;should print 3ish
- (print "35 " (generalized_distance (list 1 1) (list "code" "nominal") (list 0 5) (null) 1 (list (list 1.5 2 3 4 5) "s") (list (list 1 2 3) "s") ) "\n")
+ (print "35 " (generalized_distance (list 1 1) (list "continuous_code" "nominal_string") (list 0 5) (null) 1 (list (list 1.5 2 3 4 5) "s") (list (list 1 2 3) "s") ) "\n")
 
  (print "--entropy--\n")
  (print (entropy (list 0.5 0.5)) "\n")
@@ -2567,31 +2566,31 @@
 
   (print "1: "
 	(contained_entities "TestContainerSimilarCode" (list
-		(query_nearest_generalized_distance 2 (list "y" ) (list 1) (list 1) (list "code") (null) (null) 1 1)
+		(query_nearest_generalized_distance 2 (list "y" ) (list 1) (list 1) (list "continuous_code") (null) (null) 1 1)
 	))
   )
 
   (print "2: "
 	(contained_entities "TestContainerSimilarCode" (list
-		(query_nearest_generalized_distance 4 (list "y" ) (list (list 1 2)) (list 1) (list "code") (null) (null) 1 1)
+		(query_nearest_generalized_distance 4 (list "y" ) (list (list 1 2)) (list 1) (list "continuous_code") (null) (null) 1 1)
 	))
   )
 
   (print "3: "
 	(contained_entities "TestContainerSimilarCode" (list
-		(query_nearest_generalized_distance 4 (list "y" ) (list (list (list 1 2))) (list 1) (list "code") (null) (null) 1 1)
+		(query_nearest_generalized_distance 4 (list "y" ) (list (list (list 1 2))) (list 1) (list "continuous_code") (null) (null) 1 1)
 	))
   )
 
   (print "4: "
 	(contained_entities "TestContainerSimilarCode" (list
-		(query_nearest_generalized_distance 4 (list "x" "y" ) (list 1 (list (list 1 2))) (list 1 1) (list "continuous" "code") (null) (null) 1 1)
+		(query_nearest_generalized_distance 4 (list "x" "y" ) (list 1 (list (list 1 2))) (list 1 1) (list "continuous_numeric" "continuous_code") (null) (null) 1 1)
 	))
   )
 
    (print "5: "
 	(contained_entities "TestContainerSimilarCode" (list
-		(query_nearest_generalized_distance 3 (list "s" ) (list "s0") (list 1) (list "string") (null) (null) 1 1)
+		(query_nearest_generalized_distance 3 (list "s" ) (list "s0") (list 1) (list "continuous_string") (null) (null) 1 1)
 	))
   )
 
@@ -2804,17 +2803,17 @@
 
  (print (contained_entities "TestContainerExec" (list
   (query_exists "x")
-  (query_nearest_generalized_distance 2 (list "x" "y") (list 0.0 0.0) (list 2 1) (list "nominal" "cyclic") (list 1 360) (null) 0.01 1 (null) "random seed 1234" "radius")
+  (query_nearest_generalized_distance 2 (list "x" "y") (list 0.0 0.0) (list 2 1) (list "nominal_numeric" "continuous_numeric_cyclic") (list 1 360) (null) 0.01 1 (null) "random seed 1234" "radius")
  )))
 
   (print "assoc-based: " (contained_entities "TestContainerExec" (list
   (query_exists "x")
-  (query_nearest_generalized_distance 2 (list "x" "y") (list 0.0 0.0) (associate "x" 2 "y" 1) (associate "x" "nominal" "y" "cyclic") (list 1 360) (null) 0.01 1 (null) "random seed 1234" "radius")
+  (query_nearest_generalized_distance 2 (list "x" "y") (list 0.0 0.0) (associate "x" 2 "y" 1) (associate "x" "nominal_numeric" "y" "continuous_numeric_cyclic") (list 1 360) (null) 0.01 1 (null) "random seed 1234" "radius")
  )))
 
  (print (contained_entities "TestContainerExec" (list
   (query_exists "x")
-  (query_nearest_generalized_distance 2 (list "x" "y") (list 0.0 0.0) (list 2 1) (list "nominal" "continuous") (list 1) (list 0.1 -0.2) 0.01 1 (null) "random seed 1234" "radius")
+  (query_nearest_generalized_distance 2 (list "x" "y") (list 0.0 0.0) (list 2 1) (list "nominal_numeric" "continuous_numeric") (list 1) (list 0.1 -0.2) 0.01 1 (null) "random seed 1234" "radius")
  )))
 
  (print "--contained_entities caching and permissions--\n")
@@ -3142,7 +3141,7 @@
 
  (print (compute_on_contained_entities (list
   (query_exists "is_cyclic")
-  (query_nearest_generalized_distance 2 (list "rank_c" "degree_c") (list 4 0) (null) (list "continuous" "cyclic") (list (null) 360) (null) 1 1 (null) "random seed 1234" (null))
+  (query_nearest_generalized_distance 2 (list "rank_c" "degree_c") (list 4 0) (null) (list "continuous_numeric" "continuous_numeric_cyclic") (list (null) 360) (null) 1 1 (null) "random seed 1234" (null))
  )))
 
   (create_entities "CyclicTestEntity" (null))
@@ -3176,7 +3175,7 @@
 			(list "deg")
 			(list 350)
 			(null) ; weights
-			(list "cyclic") ; types
+			(list "continuous_numeric_cyclic") ; types
 			(list 360) ; attributes
 			(null); deviations
 			1 ; p
@@ -3482,7 +3481,7 @@
     		(list "A" "B") ;labels
             (list 9 2) ;values
             (null) ;weights
-            (list "continuous" "continuous") ;distance types
+            (list "continuous_numeric" "continuous_numeric") ;distance types
             (list (list 5 6) (list 5 5)) ;attributes
             (null)
     		2 ;p-value
@@ -3500,7 +3499,7 @@
 			(list "A" "B") ;labels
             (list (null) (null)) ;values
             (null) ;weights
-            (list "continuous" "continuous") ;distance types
+            (list "continuous_numeric" "continuous_numeric") ;distance types
             (list (list 1 0) (list 1 0)) ;attributes
             (null)
 			2 ;p-value
@@ -3513,7 +3512,7 @@
 		;weights
 		(list 2.5	10	5	0.033333333	3.333333333	20)
 		;types
-		(list "nominal" "nominal" "nominal" "continuous" "nominal" "continuous")
+		(list "nominal_numeric" "nominal_numeric" "nominal_numeric" "continuous_numeric" "nominal_numeric" "continuous_numeric")
 		;attributes
 		(list 3 100 7 0 10 0)
 		;deviations
@@ -3530,7 +3529,7 @@
 		;weights
 		(list 2.5	10	5	0.033333333	3.333333333	20)
 		;types
-		(list "nominal" "nominal" "nominal" "continuous" "nominal" "continuous")
+		(list "nominal_numeric" "nominal_numeric" "nominal_numeric" "continuous_numeric" "nominal_numeric" "continuous_numeric")
 		;attributes
 		(list 3 100 7 0 10 0)
 		;deviations
@@ -3549,7 +3548,7 @@
 		;weights
 		(list 2.5	10	5	0.033333333	3.333333333	20)
 		;types
-		(list "nominal" "nominal" "nominal" "continuous" "nominal" "continuous")
+		(list "nominal_numeric" "nominal_numeric" "nominal_numeric" "continuous_numeric" "nominal_numeric" "continuous_numeric")
 		;attributes
 		(list 3 100 7 0 10 0)
 		;deviations
@@ -3656,7 +3655,7 @@
 			;weights
 			(list 2.5	10	5	0.033333333	3.333333333	20)
 			;types
-			(list "nominal" "nominal" "nominal" "continuous" "nominal" "continuous")
+			(list "nominal_numeric" "nominal_numeric" "nominal_numeric" "continuous_numeric" "nominal_numeric" "continuous_numeric")
 			;attributes
 			(list 3 100 7 0 10 0)
 			;deviations
@@ -3721,7 +3720,7 @@
                 (list "A" "B")
                 (list 4 9)
                 (null) ; context_weights
-                (list "nominal" "nominal") ; types
+                (list "nominal_numeric" "nominal_numeric") ; types
                 (list 1 1) ; attributes
                 (null) ; context_deviations
 				0.1 ; p_parameter
@@ -3739,7 +3738,7 @@
 				(list "B" "A")
                 (list 9 4)
                 (null) ; context_weights
-                (list "nominal" "nominal") ; types
+                (list "nominal_numeric" "nominal_numeric") ; types
                 (list 1 1) ; attributes
                 (null) ; context_deviations
                 0.1 ; p_parameter
@@ -3855,15 +3854,15 @@
  )) "\n")
 
    (print "cyclic KL: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-   (compute_entity_kl_divergences 1 (list "x" "y") (null) (null) (list "cyclic" "continuous") (list 3.5 (null)) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise")
+   (compute_entity_kl_divergences 1 (list "x" "y") (null) (null) (list "continuous_numeric_cyclic" "continuous_numeric") (list 3.5 (null)) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise")
  )))
 
   (print "cyclic conviction: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-   (compute_entity_convictions 1 (list "x" "y") (null) (null) (list "cyclic" "continuous") (list 3.5 (null)) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise")
+   (compute_entity_convictions 1 (list "x" "y") (null) (null) (list "continuous_numeric_cyclic" "continuous_numeric") (list 3.5 (null)) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise")
  )))
 
  (print "cyclic group kl divergence: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-   (compute_entity_group_kl_divergence 1 (list "x" "y") (list "vert4") (null) (list "cyclic" "continuous") (list 3.5 (null)) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise")
+   (compute_entity_group_kl_divergence 1 (list "x" "y") (list "vert4") (null) (list "continuous_numeric_cyclic" "continuous_numeric") (list 3.5 (null)) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise")
  )) "\n")
 
  (print "surprisal transforms\n")
@@ -3896,7 +3895,7 @@
 			(list "x")
             (list 0)
             (null) ; context_weights
-            (list "continuous") ; types
+            (list "continuous_numeric") ; types
             (null) ; attributes
             (null) ; context_deviations
             1 ; p_parameter
@@ -3920,7 +3919,7 @@
 			(list "x")
             (list 0)
             (null) ; context_weights
-            (list "continuous") ; types
+            (list "continuous_numeric") ; types
             (null) ; attributes
             (null) ; context_deviations
             1 ; p_parameter

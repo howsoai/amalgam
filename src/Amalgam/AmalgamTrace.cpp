@@ -23,7 +23,7 @@ const std::string FAILURE_RESPONSE = std::string("failure");
 
 //runs a loop processing commands in the same manner as the API
 // Message structure: <COMMAND> [ADDITIONAL ARGS] [DATA]
-int RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::string &random_seed)
+int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::string &random_seed)
 {
 	if(in_stream == nullptr)
 		return 0;

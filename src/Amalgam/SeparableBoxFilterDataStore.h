@@ -71,16 +71,13 @@ public:
 		numEntities = 0;
 	}
 
-	//Gets the maximum possible distance term from value
+	//Gets the maximum possible distance term from value assuming the feature is continuous
 	// absolute_feature_index is the offset to access the feature relative to the entire data store
 	// query_feature_index is relative to dist_params
-	inline double GetMaxDistanceTermFromValue(GeneralizedDistance &dist_params,
+	inline double GetMaxDistanceTermFromContinuousValue(GeneralizedDistance &dist_params,
 		EvaluableNodeImmediateValue &value, EvaluableNodeImmediateValueType value_type,
 		size_t query_feature_index, size_t absolute_feature_index, bool high_accuracy)
 	{
-		if(dist_params.IsFeatureNominal(query_feature_index))
-			return dist_params.ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(query_feature_index, high_accuracy);
-
 		double max_diff = columnData[absolute_feature_index]->GetMaxDifferenceTermFromValue(
 									dist_params.featureParams[query_feature_index], value_type, value);
 		return dist_params.ComputeDistanceTermNonNominalNonNullRegular(max_diff, query_feature_index, high_accuracy);

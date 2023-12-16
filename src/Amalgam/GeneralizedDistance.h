@@ -18,8 +18,6 @@ class GeneralizedDistance
 {
 public:
 
-	//TODO 18683: update documentation for change in deviation location for distance queries
-
 	//general class of feature comparisons
 	// align at 32-bits in order to play nice with data alignment where it is used
 	enum FeatureDifferenceType : uint32_t

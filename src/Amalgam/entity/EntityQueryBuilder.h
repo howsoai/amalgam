@@ -154,7 +154,7 @@ namespace EntityQueryBuilder
 									dist_params.featureParams[i].knownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[1]);
 
 								if(ocn_size > 2)
-									dist_params.featureParams[i].unknownToUnknownDistanceTerm = EvaluableNode::ToNumber(ocn[2]);
+									dist_params.featureParams[i].unknownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[2]);
 							}
 							else //treat as singular value
 							{

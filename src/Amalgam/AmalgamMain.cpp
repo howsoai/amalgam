@@ -42,7 +42,7 @@ Options:
 
     -q, --quiet      Silence all stdio
 
-    -l [file]        Specify a debug log file
+    -l [file]        Specify a log file
 
     -s [seed]        Specify a particular random number seed. Can be any alphanumeric string
 
@@ -139,10 +139,19 @@ PLATFORM_MAIN_CONSOLE
 			std::cout << GetUsage();
 			return 0;
 		}
-		else if(args[i] == "-l" && i + 1 < args.size())
+		else if(args[i] == "-v" || args[i] == "--version")
 		{
-			print_log_filename = args[++i];
+			std::cout << AMALGAM_VERSION_STRING << std::endl;
+			return 0;
 		}
+		else if(args[i] == "-q" || args[i] == "--quiet")
+			print_to_stdio = false;
+		else if(args[i] == "-l" && i + 1 < args.size())
+			print_log_filename = args[++i];
+		else if(args[i] == "-s" && i + 1 < args.size())
+			random_seed = args[++i];
+		else if(args[i] == "-t" && i + 1 < args.size())
+			write_log_filename = args[++i];
 		else if(args[i] == "--p-opcodes")
 			profile_opcodes = true;
 		else if(args[i] == "--p-labels")
@@ -151,16 +160,6 @@ PLATFORM_MAIN_CONSOLE
 			profile_count = static_cast<size_t>(std::max(std::atoi(args[++i].data()), 0));
 		else if(args[i] == "--p-file" && i + 1 < args.size())
 			profile_out_file = args[++i];
-		else if(args[i] == "-q" || args[i] == "--quiet")
-			print_to_stdio = false;
-		else if(args[i] == "-s" && i + 1 < args.size())
-			random_seed = args[++i];
-		else if(args[i] == "-t" && i + 1 < args.size())
-			write_log_filename = args[++i];
-	#if defined(MULTITHREAD_SUPPORT) || defined(_OPENMP)
-		else if(args[i] == "--numthreads")
-			num_threads = static_cast<size_t>(std::max(std::atoi(args[++i].data()), 0));
-	#endif
 		else if(args[i] == "--debug")
 			debug_state = true;
 		else if(args[i] == "--debug-minimal")
@@ -181,8 +180,10 @@ PLATFORM_MAIN_CONSOLE
 			run_tracefile = true;
 			tracefile = args[++i];
 		}
-		else if(args[i] == "-v" || args[i] == "--version")
-			std::cout << AMALGAM_VERSION_STRING << std::endl;
+#if defined(MULTITHREAD_SUPPORT) || defined(_OPENMP)
+		else if(args[i] == "--numthreads")
+			num_threads = static_cast<size_t>(std::max(std::atoi(args[++i].data()), 0));
+#endif
 		else if(amlg_file_to_run == "")
 		{
 			//if relative path, prepend current working dir to make absolute path

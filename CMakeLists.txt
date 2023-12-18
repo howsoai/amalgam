@@ -176,6 +176,8 @@ set(COMMON_SOURCE
     src/Amalgam/string/StringInternPool.h
     src/Amalgam/string/StringManipulation.cpp
     src/Amalgam/string/StringManipulation.h
+    # Add out.txt so it shows up in IDE
+    src/Amalgam/out.txt
 )
 set(COMMON_SOURCE_THREADS
     ${COMMON_SOURCE}
@@ -201,7 +203,7 @@ set(AMALGAM_LIB_ONLY_SOURCE ${RESOURCE_SOURCE})
 set(AMALGAM_ALL_SOURCE ${AMALGAM_APP_ONLY_SOURCE} ${COMMON_SOURCE_THREADS})
 source_group(TREE ${CMAKE_SOURCE_DIR} FILES ${AMALGAM_ALL_SOURCE})
 
-# Get all files we care about for easy access in project sources:
+# Get all files we care about for easy access in projects (mainly IDEs)
 file(GLOB_RECURSE ALL_FILES "${CMAKE_SOURCE_DIR}/*")
 list(FILTER ALL_FILES EXCLUDE REGEX "(.*/.git/.*|.*/out/.*|.*/src/.*|.*/test/.*|.*Amalgam\.sln.*)")
 source_group(TREE ${CMAKE_SOURCE_DIR} FILES ${ALL_FILES})

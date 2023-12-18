@@ -6,7 +6,7 @@
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # Remove library prefix for compatibility with callers who don't expect a lib prefix:
-# TODO 15993: evantually update callers to understand libs on platforms that typically have prefix
+# TODO 15993: eventually update callers to understand libs on platforms that typically have prefix
 #       Example: libamalgam.so/libamalgam.dylib/amalgam.dll
 set(CMAKE_STATIC_LIBRARY_PREFIX "")
 set(CMAKE_SHARED_LIBRARY_PREFIX "")

@@ -196,7 +196,7 @@ if(IS_MSVC)
 endif()
 set(AMALGAM_APP_ONLY_SOURCE
     src/Amalgam/AmalgamMain.cpp
-    src/Amalgam/AmalgamTrace.cpp
+    src/Amalgam/AmalgamMainImpls.cpp
     ${RESOURCE_SOURCE}
 )
 set(AMALGAM_LIB_ONLY_SOURCE ${RESOURCE_SOURCE})

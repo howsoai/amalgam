@@ -22,6 +22,7 @@
 
 //function prototypes:
 int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::string &random_seed);
+int32_t RunAmalgamComm(std::istream *in_stream, std::ostream *out_stream, std::string &random_seed);
 
 //usage:
 // Note: spaces in raw string are correct, do not replace with tabs
@@ -72,6 +73,9 @@ Options:
 
     --tracefile [file]
                      Like trace, but pulls the data from the file specified
+
+    --comm           Executes Amalgam code via stdin in format '{int64_t:input_size_bytes}{str:input}' and
+                     output response having similar format: '{int64_t:output_size_bytes}{str:output}'
 )";
 
 	//additional compiler defined options
@@ -107,6 +111,7 @@ PLATFORM_MAIN_CONSOLE
 	std::string profile_out_file;
 	bool run_trace = false;
 	bool run_tracefile = false;
+	bool run_comm = false;
 	std::string tracefile;
 	std::string amlg_file_to_run;
 	bool print_to_stdio = true;
@@ -166,6 +171,8 @@ PLATFORM_MAIN_CONSOLE
 			debug_sources = true;
 		else if(args[i] == "--nosbfds")
 			_enable_SBF_datastore = false;
+		else if(args[i] == "--comm")
+			run_comm = true;
 		else if(args[i] == "--trace")
 			run_trace = true;
 		else if(args[i] == "--tracefile" && i + 1 < args.size())
@@ -214,6 +221,10 @@ PLATFORM_MAIN_CONSOLE
 	if(run_trace)
 	{
 		return RunAmalgamTrace(&std::cin, &std::cout, random_seed);
+	}
+	else if(run_comm)
+	{
+		return RunAmalgamComm(&std::cin, &std::cout, random_seed);
 	}
 	else if(run_tracefile)
 	{

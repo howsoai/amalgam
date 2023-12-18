@@ -3,6 +3,8 @@
 #
 
 enable_testing()
+#find_package(GTest REQUIRED)
+#include(GoogleTest)
 
 # CTest args:
 set(CMAKE_CTEST_ARGUMENTS "-j" "--schedule-random" "--output-on-failure" "--output-log" "${CMAKE_SOURCE_DIR}/out/test/all_tests.log")
@@ -61,6 +63,24 @@ foreach(TEST_TARGET ${ALL_APP_TARGETS})
     )
     set_tests_properties(${TEST_NAME} PROPERTIES PASS_REGULAR_EXPRESSION "--total execution time--")
     list(APPEND ALL_TEST_TARGETS ${TEST_NAME})
+
+    # Unit tests (using REPL)
+    if(NOT IS_WASM)
+        set(TEST_EXE_NAME "${TEST_TARGET}-tester")
+        set(TEST_SOURCES "test/interpreter_unit_tests/main.cpp" "test/3rd_party/subprocess_h/subprocess.h")
+        source_group(TREE ${CMAKE_SOURCE_DIR} FILES ${TEST_SOURCES})
+        add_executable(${TEST_EXE_NAME} ${TEST_SOURCES})
+        set_target_properties(${TEST_EXE_NAME} PROPERTIES FOLDER "Testing")
+        target_include_directories(${TEST_EXE_NAME} PUBLIC "${CMAKE_SOURCE_DIR}/test/3rd_party")
+
+        set(TEST_NAME "App.UnitTests.${TEST_EXE_NAME}")
+        set(TEST_OUTPUT_LOG "${TEST_OUTPUT_LOG_BASE}/out.${TEST_NAME}.txt")
+        add_test(
+            NAME ${TEST_NAME}
+            COMMAND ${TEST_RUNNER} "$<TARGET_FILE:${TEST_TARGET}>" -l ${TEST_OUTPUT_LOG} "$<TARGET_FILE_NAME:${TEST_TARGET}>"
+        )
+        list(APPEND ALL_TEST_TARGETS ${TEST_NAME})
+    endif()
 
 endforeach()
 

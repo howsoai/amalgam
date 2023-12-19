@@ -71,16 +71,13 @@ public:
 		numEntities = 0;
 	}
 
-	//Gets the maximum possible distance term from value
+	//Gets the maximum possible distance term from value assuming the feature is continuous
 	// absolute_feature_index is the offset to access the feature relative to the entire data store
 	// query_feature_index is relative to dist_params
-	inline double GetMaxDistanceTermFromValue(GeneralizedDistance &dist_params,
+	inline double GetMaxDistanceTermFromContinuousValue(GeneralizedDistance &dist_params,
 		EvaluableNodeImmediateValue &value, EvaluableNodeImmediateValueType value_type,
 		size_t query_feature_index, size_t absolute_feature_index, bool high_accuracy)
 	{
-		if(dist_params.IsFeatureNominal(query_feature_index))
-			return dist_params.ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(query_feature_index, high_accuracy);
-
 		double max_diff = columnData[absolute_feature_index]->GetMaxDifferenceTermFromValue(
 									dist_params.featureParams[query_feature_index], value_type, value);
 		return dist_params.ComputeDistanceTermNonNominalNonNullRegular(max_diff, query_feature_index, high_accuracy);
@@ -870,21 +867,25 @@ protected:
 		auto &feature_type = dist_params.featureParams[query_feature_index].featureType;
 		auto &effective_feature_type = dist_params.featureParams[query_feature_index].effectiveFeatureType;
 
-		if(feature_type == GeneralizedDistance::FDT_NOMINAL
+		if(feature_type == GeneralizedDistance::FDT_NOMINAL_NUMERIC
+			|| feature_type == GeneralizedDistance::FDT_NOMINAL_STRING
+			|| feature_type == GeneralizedDistance::FDT_NOMINAL_CODE
 			|| feature_type == GeneralizedDistance::FDT_CONTINUOUS_STRING
 			|| feature_type == GeneralizedDistance::FDT_CONTINUOUS_CODE)
 		{
 			target_values.push_back(position_value);
 			target_value_types.push_back(position_value_type);
 
-			if(feature_type == GeneralizedDistance::FDT_NOMINAL)
+			if(feature_type == GeneralizedDistance::FDT_NOMINAL_NUMERIC
+					|| feature_type == GeneralizedDistance::FDT_NOMINAL_STRING
+					|| feature_type == GeneralizedDistance::FDT_NOMINAL_CODE)
 				effective_feature_type = GeneralizedDistance::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED;
 			else if(feature_type == GeneralizedDistance::FDT_CONTINUOUS_STRING)
 				effective_feature_type = GeneralizedDistance::EFDT_CONTINUOUS_STRING;
 			else if(feature_type == GeneralizedDistance::FDT_CONTINUOUS_CODE)
 				effective_feature_type = GeneralizedDistance::EFDT_CONTINUOUS_CODE;
 		}
-		else // feature_type is some form of numeric
+		else // feature_type is some form of continuous numeric
 		{
 			//looking for continuous; if not a number, so just put as nan
 			double position_value_numeric = (position_value_type == ENIVT_NUMBER ? position_value.number : std::numeric_limits<double>::quiet_NaN());
@@ -965,16 +966,16 @@ protected:
 			//if either known or unknown to unknown is missing, need to compute difference
 			// and store it where it is needed
 			double unknown_distance_term = 0.0;
-			if(FastIsNaN(feature_params.knownToUnknownDifference)
-				|| FastIsNaN(feature_params.unknownToUnknownDifference))
+			if(FastIsNaN(feature_params.knownToUnknownDistanceTerm.difference)
+				|| FastIsNaN(feature_params.unknownToUnknownDistanceTerm.difference))
 			{
 				unknown_distance_term = columnData[column_index]->GetMaxDifferenceTermFromValue(
 					feature_params, target_value_types[i], target_values[i]);
 
-				if(FastIsNaN(feature_params.knownToUnknownDifference))
-					feature_params.knownToUnknownDifference = unknown_distance_term;
-				if(FastIsNaN(feature_params.unknownToUnknownDifference))
-					feature_params.unknownToUnknownDifference = unknown_distance_term;
+				if(FastIsNaN(feature_params.knownToUnknownDistanceTerm.difference))
+					feature_params.knownToUnknownDistanceTerm.difference = unknown_distance_term;
+				if(FastIsNaN(feature_params.unknownToUnknownDistanceTerm.difference))
+					feature_params.unknownToUnknownDistanceTerm.difference = unknown_distance_term;
 			}
 
 			dist_params.ComputeAndStoreUncertaintyDistanceTerms(i,

@@ -39,6 +39,18 @@ namespace EntityQueryBuilder
 			|| type == ENT_COMPUTE_ENTITY_KL_DIVERGENCES);
 	}
 
+	//populates deviation data for feature_params from deviation_node
+	inline void PopulateFeatureDeviationData(GeneralizedDistance::FeatureParams &feature_params, EvaluableNode *deviation_node)
+	{
+		if(deviation_node == nullptr)
+		{
+			feature_params.deviation = 0.0;
+			return;
+		}
+
+		feature_params.deviation = EvaluableNode::ToNumber(deviation_node, 0.0);
+	}
+
 	//populates the features of dist_params based on either num_elements or element_names for each of the
 	// four different attribute parameters based on its type (using num_elements if list or immediate, element_names if assoc)
 	inline void PopulateDistanceFeatureParameters(GeneralizedDistance &dist_params,
@@ -70,12 +82,15 @@ namespace EntityQueryBuilder
 						StringInternPool::StringID feature_type_id = EvaluableNode::ToStringIDIfExists(en);
 						switch(feature_type_id)
 						{
-						case ENBISI_nominal:								feature_type = GeneralizedDistance::FDT_NOMINAL;					break;
-						case ENBISI_continuous:								feature_type = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC;			break;
-						case ENBISI_cyclic:									feature_type = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC_CYCLIC;	break;
-						case GetStringIdFromNodeTypeFromString(ENT_STRING): feature_type = GeneralizedDistance::FDT_CONTINUOUS_STRING;			break;	
-						case ENBISI_code:									feature_type = GeneralizedDistance::FDT_CONTINUOUS_CODE;			break;
-						default:											feature_type = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC;			break;
+						case ENBISI_nominal_numeric:			feature_type = GeneralizedDistance::FDT_NOMINAL_NUMERIC;			break;
+						case ENBISI_nominal_string:				feature_type = GeneralizedDistance::FDT_NOMINAL_STRING;				break;
+						case ENBISI_nominal_code:				feature_type = GeneralizedDistance::FDT_NOMINAL_CODE;				break;
+						case ENBISI_continuous_numeric:			feature_type = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC;			break;
+						case ENBISI_continuous_numeric_cyclic:	feature_type = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC_CYCLIC;	break;
+						case ENBISI_continuous_string:			feature_type = GeneralizedDistance::FDT_CONTINUOUS_STRING;			break;
+						case ENBISI_continuous_code:			feature_type = GeneralizedDistance::FDT_CONTINUOUS_CODE;			break;
+
+						default:								feature_type = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC;			break;
 						}
 					}
 					dist_params.featureParams[i].featureType = feature_type;
@@ -87,81 +102,24 @@ namespace EntityQueryBuilder
 			[&dist_params](size_t i, bool found, EvaluableNode *en) {
 				if(i < dist_params.featureParams.size())
 				{
-					dist_params.featureParams[i].unknownToUnknownDifference = std::numeric_limits<double>::quiet_NaN();
-					dist_params.featureParams[i].knownToUnknownDifference = std::numeric_limits<double>::quiet_NaN();
-
 					//get attributes based on feature type
 					switch(dist_params.featureParams[i].featureType)
 					{
-					case GeneralizedDistance::FDT_NOMINAL:
+					case GeneralizedDistance::FDT_NOMINAL_NUMERIC:
+					case GeneralizedDistance::FDT_NOMINAL_STRING:
+					case GeneralizedDistance::FDT_NOMINAL_CODE:
 						if(found && !EvaluableNode::IsNull(en))
-						{
-							if(en->EvaluableNode::IsOrderedArray())
-							{
-								auto &ocn = en->GetOrderedChildNodesReference();
-								size_t ocn_size = ocn.size();
-								if(ocn_size > 0)
-									dist_params.featureParams[i].typeAttributes.nominalCount = EvaluableNode::ToNumber(ocn[0]);
-								if(ocn_size > 1)
-									dist_params.featureParams[i].knownToUnknownDifference = EvaluableNode::ToNumber(ocn[1]);
-								if(ocn_size > 2)
-									dist_params.featureParams[i].unknownToUnknownDifference = EvaluableNode::ToNumber(ocn[2]);
-							}
-							else //treat as singular value
-							{
-								dist_params.featureParams[i].typeAttributes.nominalCount = EvaluableNode::ToNumber(en);
-							}
-						}
-						else
-						{
-							dist_params.featureParams[i].typeAttributes.nominalCount = 0.0;
-						}
+							dist_params.featureParams[i].typeAttributes.nominalCount = EvaluableNode::ToNumber(en, 1);
 						break;
 
 					case GeneralizedDistance::FDT_CONTINUOUS_NUMERIC_CYCLIC:
 						if(found && !EvaluableNode::IsNull(en))
-						{
-							if(en->EvaluableNode::IsOrderedArray())
-							{
-								auto &ocn = en->GetOrderedChildNodesReference();
-								size_t ocn_size = ocn.size();
-								if(ocn_size > 0)
-									dist_params.featureParams[i].typeAttributes.maxCyclicDifference = EvaluableNode::ToNumber(ocn[0]);
-								if(ocn_size > 1)
-									dist_params.featureParams[i].knownToUnknownDifference = EvaluableNode::ToNumber(ocn[1]);
-								if(ocn_size > 2)
-									dist_params.featureParams[i].unknownToUnknownDifference = EvaluableNode::ToNumber(ocn[2]);
-							}
-							else //treat as singular value
-							{
-								dist_params.featureParams[i].typeAttributes.maxCyclicDifference = EvaluableNode::ToNumber(en);
-							}
-						}
+							dist_params.featureParams[i].typeAttributes.maxCyclicDifference = EvaluableNode::ToNumber(en);
 						else //can't be cyclic without a range
-						{
 							dist_params.featureParams[i].featureType = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC;
-						}
 						break;
 
-					case GeneralizedDistance::FDT_CONTINUOUS_NUMERIC:
-					case GeneralizedDistance::FDT_CONTINUOUS_STRING:
-					case GeneralizedDistance::FDT_CONTINUOUS_CODE:
-						if(found && !EvaluableNode::IsNull(en))
-						{
-							if(en->EvaluableNode::IsOrderedArray())
-							{
-								auto &ocn = en->GetOrderedChildNodesReference();
-								size_t ocn_size = ocn.size();
-								if(ocn_size > 0)
-									dist_params.featureParams[i].knownToUnknownDifference = EvaluableNode::ToNumber(ocn[0]);
-								if(ocn_size > 1)
-									dist_params.featureParams[i].unknownToUnknownDifference = EvaluableNode::ToNumber(ocn[1]);
-							}
-							else //treat as singular value
-							{
-								dist_params.featureParams[i].knownToUnknownDifference = EvaluableNode::ToNumber(en);
-							}
-						}
+					default:
 						break;
 					}
 				}
@@ -172,10 +130,60 @@ namespace EntityQueryBuilder
 			[&dist_params](size_t i, bool found, EvaluableNode *en) {
 				if(i < dist_params.featureParams.size())
 				{
-					if(found)
-						dist_params.featureParams[i].deviation = EvaluableNode::ToNumber(en);
-					else
-						dist_params.featureParams[i].deviation = 0.0;
+					dist_params.featureParams[i].deviation = 0.0;
+					dist_params.featureParams[i].unknownToUnknownDistanceTerm.difference = std::numeric_limits<double>::quiet_NaN();
+					dist_params.featureParams[i].knownToUnknownDistanceTerm.difference = std::numeric_limits<double>::quiet_NaN();
+
+					//get deviations based on feature type
+					switch(dist_params.featureParams[i].featureType)
+					{
+					case GeneralizedDistance::FDT_NOMINAL_NUMERIC:
+					case GeneralizedDistance::FDT_NOMINAL_STRING:
+					case GeneralizedDistance::FDT_NOMINAL_CODE:
+						if(found && !EvaluableNode::IsNull(en))
+						{
+							if(en->EvaluableNode::IsOrderedArray())
+							{
+								auto &ocn = en->GetOrderedChildNodesReference();
+								size_t ocn_size = ocn.size();
+
+								if(ocn_size > 0)
+									PopulateFeatureDeviationData(dist_params.featureParams[i], ocn[0]);
+
+								if(ocn_size > 1)
+									dist_params.featureParams[i].knownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[1]);
+
+								if(ocn_size > 2)
+									dist_params.featureParams[i].unknownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[2]);
+							}
+							else //treat as singular value
+							{
+								PopulateFeatureDeviationData(dist_params.featureParams[i], en);
+							}
+						}
+						break;
+
+					default:
+						if(found && !EvaluableNode::IsNull(en))
+						{
+							if(en->EvaluableNode::IsOrderedArray())
+							{
+								auto &ocn = en->GetOrderedChildNodesReference();
+								size_t ocn_size = ocn.size();
+								if(ocn_size > 0)
+									dist_params.featureParams[i].deviation = EvaluableNode::ToNumber(ocn[0]);
+								if(ocn_size > 1)
+									dist_params.featureParams[i].knownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[1]);
+								if(ocn_size > 2)
+									dist_params.featureParams[i].unknownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[2]);
+							}
+							else //treat as singular value
+							{
+								dist_params.featureParams[i].deviation = EvaluableNode::ToNumber(en);
+							}
+						}
+						break;
+					}
 				}
 			});
 	}

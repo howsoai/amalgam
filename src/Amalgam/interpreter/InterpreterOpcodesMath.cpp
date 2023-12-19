@@ -1230,16 +1230,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 		auto &feature_params = dist_params.featureParams[i];
 
 		//if one is nan and the other is not, the use the non-nan one for both
-		if(FastIsNaN(feature_params.unknownToUnknownDifference))
+		if(FastIsNaN(feature_params.unknownToUnknownDistanceTerm.difference))
 		{
-			if(!FastIsNaN(feature_params.knownToUnknownDifference))
-				feature_params.unknownToUnknownDifference = feature_params.knownToUnknownDifference;
+			if(!FastIsNaN(feature_params.knownToUnknownDistanceTerm.difference))
+				feature_params.unknownToUnknownDistanceTerm.difference = feature_params.knownToUnknownDistanceTerm.difference;
 			else
-				feature_params.unknownToUnknownDifference = dist_params.GetMaximumDifference(i);
+				feature_params.unknownToUnknownDistanceTerm.difference = dist_params.GetMaximumDifference(i);
 		}
 
-		if(FastIsNaN(feature_params.knownToUnknownDifference))
-			feature_params.knownToUnknownDifference = feature_params.unknownToUnknownDifference;
+		if(FastIsNaN(feature_params.knownToUnknownDistanceTerm.difference))
+			feature_params.knownToUnknownDistanceTerm.difference = feature_params.unknownToUnknownDistanceTerm.difference;
 
 		dist_params.ComputeAndStoreUncertaintyDistanceTerms(i);
 	}

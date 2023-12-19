@@ -316,11 +316,13 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_accessing_entity, "accessing_entity");
 
 	//distance types
-	EmplaceStaticString(ENBISI_nominal, "nominal");
-	EmplaceStaticString(ENBISI_continuous, "continuous");
-	EmplaceStaticString(ENBISI_cyclic, "cyclic");
-	//string already an opcode
-	EmplaceStaticString(ENBISI_code, "code");
+	EmplaceStaticString(ENBISI_nominal_numeric, "nominal_numeric");
+	EmplaceStaticString(ENBISI_nominal_string, "nominal_string");
+	EmplaceStaticString(ENBISI_nominal_code, "nominal_code");
+	EmplaceStaticString(ENBISI_continuous_numeric, "continuous_numeric");
+	EmplaceStaticString(ENBISI_continuous_numeric_cyclic, "continuous_numeric_cyclic");
+	EmplaceStaticString(ENBISI_continuous_string, "continuous_string");
+	EmplaceStaticString(ENBISI_continuous_code, "continuous_code");
 
 	//distance parameter values
 	EmplaceStaticString(ENBISI_surprisal_to_prob, "surprisal_to_prob");
@@ -331,6 +333,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_recompute_precise, "recompute_precise");
 
 	//format opcode types
+	EmplaceStaticString(ENBISI_code, "code");
 	EmplaceStaticString(ENBISI_Base16, "Base16");
 	EmplaceStaticString(ENBISI_Base64, "Base64");
 	EmplaceStaticString(ENBISI_int8, "int8");

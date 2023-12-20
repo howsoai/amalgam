@@ -54,6 +54,18 @@ public:
 		EFDT_CONTINUOUS_CODE,
 	};
 
+	//resets all data members
+	inline void Reset()
+	{
+		featureParams.clear();
+		fastPowP.Reset();
+		fastPowInverseP.Reset();
+		pValue = std::numeric_limits<double>::quiet_NaN();
+		inversePValue = std::numeric_limits<double>::quiet_NaN();
+		highAccuracy = false;
+		recomputeAccurateDistances = false;
+	}
+
 	//dynamically precompute and cache nominal deltas and defaults everytime the pValue is set
 	inline void SetAndConstrainParams()
 	{

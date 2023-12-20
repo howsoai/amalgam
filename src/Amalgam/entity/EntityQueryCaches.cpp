@@ -1,9 +1,11 @@
 //project headers:
+#include "EntityQueryCaches.h"
+
 #include "Conviction.h"
 #include "Entity.h"
 #include "EntityManipulation.h"
 #include "EntityQueries.h"
-#include "EntityQueryCaches.h"
+#include "EntityQueryBuilder.h"
 #include "EvaluableNodeTreeFunctions.h"
 #include "HashMaps.h"
 #include "IntegerSet.h"
@@ -12,13 +14,17 @@
 #include "StringInternPool.h"
 #include "WeightedDiscreteRandomStream.h"
 
-
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 thread_local
 #endif
 EntityQueryCaches::QueryCachesBuffers EntityQueryCaches::buffers;
 
-bool EntityQueryCaches::DoesCachedConditionMatch(EntityQueryCondition *cond, bool last_condition)
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+thread_local
+#endif
+EntityQueryCondition EntityQueryCaches::conditionBuffer;
+
+bool EntityQueryCaches::DoesCachedConditionMatch(EntityQueryCondition *cond)
 {
 	EvaluableNodeType qt = cond->queryType;
 
@@ -39,18 +45,14 @@ bool EntityQueryCaches::DoesCachedConditionMatch(EntityQueryCondition *cond, boo
 	return true;
 }
 
-//returns true if the chain of query conditions can be used in the query caches path (faster queries)
-static bool CanUseQueryCaches(std::vector<EntityQueryCondition> &conditions)
+//returns true if the query condition can be used in the query caches path (faster queries)
+static bool CanUseQueryCaches(EntityQueryCondition *cond)
 {
-	for(size_t i = 0; i < conditions.size(); i++)
-	{
-		if(!EntityQueryCaches::DoesCachedConditionMatch(&conditions[i], i + 1 == conditions.size()))
-			return false;
-	}
+	if(!EntityQueryCaches::DoesCachedConditionMatch(cond))
+		return false;
 
 	return true;
 }
-
 
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 void EntityQueryCaches::EnsureLabelsAreCached(EntityQueryCondition *cond, Concurrency::ReadLock &lock)
@@ -913,7 +915,7 @@ void EntityQueryCaches::GetMatchingEntitiesViaSamplingWithReplacement(EntityQuer
 }
 
 EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Entity *container,
-	std::vector<EntityQueryCondition> &conditions, EvaluableNodeManager *enm, bool return_query_value)
+	EntityQueryCondition &condition, EvaluableNodeManager *enm, bool return_query_value)
 {
 	//get the label existance cache associated with this container
 	// use the first condition as an heuristic for building it if it doesn't exist
@@ -1296,12 +1298,9 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 }
 
 
-EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(Entity *container, std::vector<EntityQueryCondition> &conditions, EvaluableNodeManager *enm, bool return_query_value)
+EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(Entity *container, EvaluableNode *query_params, EvaluableNodeManager *enm, RandomStream &random_stream, bool return_query_value)
 {
-	if(_enable_SBF_datastore && CanUseQueryCaches(conditions))
-		return GetMatchingEntitiesFromQueryCaches(container, conditions, enm, return_query_value);
-
-	if(container == nullptr)
+	if(container == nullptr || query_params == nullptr)
 		return EvaluableNodeReference(enm->AllocNode(ENT_LIST), true);
 
 	//list of the entities to be found, pruned down, and ultimately returned after converting to matching_entity_ids
@@ -1309,25 +1308,50 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(Entity *conta
 	EvaluableNodeReference query_return_value;
 
 	//start querying
-	for(size_t cond_index = 0; cond_index < conditions.size(); cond_index++)
+	conditionBuffer.Reset();
+	size_t query_param_count = 0,
+		   num_query_params = query_params->GetOrderedChildNodes().size();
+	for(auto &cn : query_params->GetOrderedChildNodes())
 	{
-		bool first_condition = (cond_index == 0);
-		bool last_condition = (cond_index + 1 == conditions.size());
+		if(cn == nullptr)
+			continue;
+
+		query_param_count++;
+		bool first_condition = (query_param_count == 1);
+		bool last_condition = (query_param_count == num_query_params);
+
+		//build query condition
+		conditionBuffer.queryType = cn->GetType();
+		switch(conditionBuffer.queryType)
+		{
+		case ENT_QUERY_WITHIN_GENERALIZED_DISTANCE:
+		case ENT_QUERY_NEAREST_GENERALIZED_DISTANCE:
+		case ENT_COMPUTE_ENTITY_CONVICTIONS:
+		case ENT_COMPUTE_ENTITY_GROUP_KL_DIVERGENCE:
+		case ENT_COMPUTE_ENTITY_DISTANCE_CONTRIBUTIONS:
+		case ENT_COMPUTE_ENTITY_KL_DIVERGENCES:
+			EntityQueryBuilder::BuildDistanceCondition(cn, conditionBuffer);
+			break;
+
+		default:
+			EntityQueryBuilder::BuildNonDistanceCondition(cn, conditionBuffer, *enm, random_stream);
+			break;
+		}
 
 		//reset to make sure it doesn't return an outdated list
 		query_return_value = EvaluableNodeReference::Null();
 
 		//check for any unsupported operations by brute force; if possible, use query caches, otherwise return null
-		if(conditions[cond_index].queryType == ENT_COMPUTE_ENTITY_CONVICTIONS || conditions[cond_index].queryType == ENT_COMPUTE_ENTITY_KL_DIVERGENCES
-			|| conditions[cond_index].queryType == ENT_COMPUTE_ENTITY_GROUP_KL_DIVERGENCE || conditions[cond_index].queryType == ENT_COMPUTE_ENTITY_DISTANCE_CONTRIBUTIONS)
+		if(conditionBuffer.queryType == ENT_COMPUTE_ENTITY_CONVICTIONS || conditionBuffer.queryType == ENT_COMPUTE_ENTITY_KL_DIVERGENCES
+			|| conditionBuffer.queryType == ENT_COMPUTE_ENTITY_GROUP_KL_DIVERGENCE || conditionBuffer.queryType == ENT_COMPUTE_ENTITY_DISTANCE_CONTRIBUTIONS)
 		{
-			if(CanUseQueryCaches(conditions))
-				return GetMatchingEntitiesFromQueryCaches(container, conditions, enm, return_query_value);
+			if(CanUseQueryCaches(&conditionBuffer))
+				return GetMatchingEntitiesFromQueryCaches(container, conditionBuffer, enm, return_query_value);
 			else
 				return EvaluableNodeReference::Null();
 		}
 
-		query_return_value = conditions[cond_index].GetMatchingEntities(container, matching_entities, first_condition, (return_query_value && last_condition) ? enm : nullptr);
+		query_return_value = conditionBuffer.GetMatchingEntities(container, matching_entities, first_condition, (return_query_value && last_condition) ? enm : nullptr);
 	}
 
 	//if need to return something specific, then do so, otherwise return list of matching entities

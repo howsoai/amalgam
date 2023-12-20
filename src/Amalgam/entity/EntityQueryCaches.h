@@ -107,7 +107,7 @@ public:
 	}
 
 	//specifies that this cache can be used for the input condition
-	static bool DoesCachedConditionMatch(EntityQueryCondition *cond, bool last_condition);
+	static bool DoesCachedConditionMatch(EntityQueryCondition *cond);
 
 	//returns true if the cache already has the label specified
 	inline bool DoesHaveLabel(StringInternPool::StringID label_id)
@@ -142,11 +142,11 @@ public:
 	//searches container for contained entities matching query.
 	// if return_query_value is false, then returns a list of all IDs of matching contained entities
 	// if return_query_value is true, then returns whatever the appropriate structure is for the query type for the final query
-	static EvaluableNodeReference GetEntitiesMatchingQuery(Entity *container, std::vector<EntityQueryCondition> &conditions, EvaluableNodeManager *enm, bool return_query_value);
+	static EvaluableNodeReference GetEntitiesMatchingQuery(Entity *container, EvaluableNode *query_params, EvaluableNodeManager *enm, RandomStream &random_stream, bool return_query_value);
 
 	//returns the collection of entities (and optionally associated compute values) that satisfy the specified chain of query conditions
 	// uses efficient querying methods with a query database, one database per container
-	static EvaluableNodeReference GetMatchingEntitiesFromQueryCaches(Entity *container, std::vector<EntityQueryCondition> &conditions, EvaluableNodeManager *enm, bool return_query_value);
+	static EvaluableNodeReference GetMatchingEntitiesFromQueryCaches(Entity *container, EntityQueryCondition &condition, EvaluableNodeManager *enm, bool return_query_value);
 
 	//the container this is a cache for
 	Entity *container;
@@ -195,4 +195,11 @@ public:
 #endif
 		//buffers that can be used for less memory churn (per-thread if multithreaded)
 		static QueryCachesBuffers buffers;
+
+	//for multithreading, there should be one of these per thread
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	thread_local
+#endif
+		//buffer to use as for parsing and querying conditions
+		static EntityQueryCondition conditionBuffer;
 };

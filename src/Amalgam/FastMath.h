@@ -134,6 +134,13 @@ public:
 		SetExponent(_exponent);
 	}
 
+	inline void Reset()
+	{
+		exponent = std::numeric_limits<double>::quiet_NaN();
+		absoluteIntegerExponent = 0;
+		fractionPartOfExponent = std::numeric_limits<double>::quiet_NaN();
+	}
+
 	inline void SetExponent(double _exponent)
 	{
 		exponent = _exponent;

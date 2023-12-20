@@ -7,6 +7,39 @@
 
 bool _enable_SBF_datastore = true;
 
+void EntityQueryCondition::Reset()
+{
+	queryType = ENT_NULL;
+	existLabels.clear();
+	valueTypes.clear();
+	singleLabels.clear();
+	pairedLabels.clear();
+	positionLabels.clear();
+	valueToCompare.clear();
+	distParams.Reset();
+	singleLabel = StringInternPool::NOT_A_STRING_ID;
+	singleLabelType = ENIVT_NULL;
+	exclusionLabel = StringInternPool::NOT_A_STRING_ID;
+	weightLabel = StringInternPool::NOT_A_STRING_ID;
+	maxDistance = std::numeric_limits<double>::quiet_NaN();
+	maxToRetrieve = std::numeric_limits<double>::quiet_NaN();
+	distanceWeightExponent = std::numeric_limits<double>::quiet_NaN();
+	transformSuprisalToProb = false;
+	hasStartOffset = false;
+	startOffset = 0;
+	hasRandomStream = false;
+	randomStream.CreateOtherStreamViaRand();
+	includeZeroDifferences = false;
+	qPercentage = std::numeric_limits<double>::quiet_NaN();
+	center = std::numeric_limits<double>::quiet_NaN();
+	calculateMoment = false;
+	absoluteValue = false;
+	returnSortedList = false;
+	additionalSortedListLabels.clear();
+	convictionOfRemoval = false;
+	useConcurrency = false;
+}
+
 bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 {
 	if(e == nullptr)

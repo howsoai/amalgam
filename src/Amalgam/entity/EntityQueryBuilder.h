@@ -182,7 +182,7 @@ namespace EntityQueryBuilder
 
 
 	//interpret evaluable node as a distance query
-	inline void BuildDistanceCondition(EvaluableNode *cn, EvaluableNodeType condition_type, std::vector<EntityQueryCondition> &conditions)
+	inline void BuildDistanceCondition(EvaluableNode *cn, EntityQueryCondition &cond)
 	{
 		//cache ordered child nodes so don't need to keep fetching
 		auto &ocn = cn->GetOrderedChildNodes();
@@ -192,9 +192,10 @@ namespace EntityQueryBuilder
 			return;
 
 		//if ENT_QUERY_NEAREST_GENERALIZED_DISTANCE, see if excluding an entity in the previous query -- if so, exclude here
-		EntityQueryCondition *cur_condition = nullptr;
-		if(condition_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE && conditions.size() > 0
-			&& conditions.back().queryType == ENT_QUERY_NOT_IN_ENTITY_LIST && conditions.back().existLabels.size() == 1)
+		//EntityQueryCondition *cur_condition = nullptr;
+		if(cond.queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
+			//&& conditions.size() > 0 && conditions.back().queryType == ENT_QUERY_NOT_IN_ENTITY_LIST && conditions.back().existLabels.size() == 1
+			)
 		{
 			cur_condition = &(conditions.back());
 			cur_condition->exclusionLabel = cur_condition->existLabels[0];
@@ -210,84 +211,83 @@ namespace EntityQueryBuilder
 		}
 
 		//set query condition type
-		cur_condition->queryType = condition_type;
-		cur_condition->useConcurrency = cn->GetConcurrency();
+		cond.useConcurrency = cn->GetConcurrency();
 
 		//set maximum distance and max number of results (top_k) to find
-		if(condition_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE) //maximum distance to search within
+		if(cond.queryType == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE) //maximum distance to search within
 		{
-			cur_condition->maxToRetrieve = std::numeric_limits<double>::infinity();
-			cur_condition->maxDistance = EvaluableNode::ToNumber(ocn[MAX_TO_FIND_OR_MAX_DISTANCE]);
-			if(FastIsNaN(cur_condition->maxDistance))
-				cur_condition->maxDistance = 0;
+			cond.maxToRetrieve = std::numeric_limits<double>::infinity();
+			cond.maxDistance = EvaluableNode::ToNumber(ocn[MAX_TO_FIND_OR_MAX_DISTANCE]);
+			if(FastIsNaN(cond.maxDistance))
+				cond.maxDistance = 0;
 		}
 		else //infinite range query, use param as number to find (top_k)
 		{
-			cur_condition->maxToRetrieve = EvaluableNode::ToNumber(ocn[MAX_TO_FIND_OR_MAX_DISTANCE]);
-			if(FastIsNaN(cur_condition->maxToRetrieve))
-				cur_condition->maxToRetrieve = 0;
-			cur_condition->maxDistance = std::numeric_limits<double>::infinity();
+			cond.maxToRetrieve = EvaluableNode::ToNumber(ocn[MAX_TO_FIND_OR_MAX_DISTANCE]);
+			if(FastIsNaN(cond.maxToRetrieve))
+				cond.maxToRetrieve = 0;
+			cond.maxDistance = std::numeric_limits<double>::infinity();
 		}
 
 		//set position labels
 		EvaluableNode *position_labels = ocn[POSITION_LABELS];
 		if(EvaluableNode::IsOrderedArray(position_labels))
 		{
-			cur_condition->positionLabels.reserve(position_labels->GetOrderedChildNodes().size());
+			cond.positionLabels.reserve(position_labels->GetOrderedChildNodes().size());
 			for(auto &pl : position_labels->GetOrderedChildNodes())
 			{
 				StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(pl);
 				if(Entity::IsLabelValidAndPublic(label_sid))
-					cur_condition->positionLabels.push_back(label_sid);
+					cond.positionLabels.push_back(label_sid);
 				else
-					cur_condition->queryType = ENT_NULL;
+					cond.queryType = ENT_NULL;
 			}
 		}
 
 		//select based on type for position or entities
-		if(DoesDistanceQueryUseEntitiesInsteadOfPosition(condition_type))
+		if(DoesDistanceQueryUseEntitiesInsteadOfPosition(cond.queryType))
 		{
 			EvaluableNode *entities = ocn[POSITION];
 			if(EvaluableNode::IsOrderedArray(entities))
 			{
 				auto &entities_ocn = entities->GetOrderedChildNodesReference();
-				cur_condition->existLabels.reserve(entities_ocn.size());
+				cond.existLabels.reserve(entities_ocn.size());
 				for(auto &entity_en : entities_ocn)
-					cur_condition->existLabels.push_back(EvaluableNode::ToStringIDIfExists(entity_en));
+					cond.existLabels.push_back(EvaluableNode::ToStringIDIfExists(entity_en));
 			}
 		}
 		else
 		{
 			//set position
 			EvaluableNode *position = ocn[POSITION];
-			if(EvaluableNode::IsOrderedArray(position) && (position->GetNumChildNodes() == cur_condition->positionLabels.size()))
+			if(EvaluableNode::IsOrderedArray(position) && (position->GetNumChildNodes() == cond.positionLabels.size()))
 			{
 				auto &position_ocn = position->GetOrderedChildNodesReference();
-				cur_condition->valueToCompare.reserve(position_ocn.size());
-				cur_condition->valueTypes.reserve(position_ocn.size());
+				cond.valueToCompare.reserve(position_ocn.size());
+				cond.valueTypes.reserve(position_ocn.size());
 				for(auto &pos_en : position_ocn)
 				{
 					EvaluableNodeImmediateValue imm_val;
 					auto value_type = imm_val.CopyValueFromEvaluableNode(pos_en);
-					cur_condition->valueTypes.push_back(value_type);
-					cur_condition->valueToCompare.push_back(imm_val);
+					cond.valueTypes.push_back(value_type);
+					cond.valueToCompare.push_back(imm_val);
 				}
 			}
 			else // no positions given, default to nulls for each label
 			{
-				cur_condition->valueToCompare.reserve(cur_condition->positionLabels.size());
-				cur_condition->valueTypes.reserve(cur_condition->positionLabels.size());
-				for(size_t i = 0; i < cur_condition->positionLabels.size(); i++)
+				cond.valueToCompare.reserve(cond.positionLabels.size());
+				cond.valueTypes.reserve(cond.positionLabels.size());
+				for(size_t i = 0; i < cond.positionLabels.size(); i++)
 				{
-					cur_condition->valueTypes.push_back(ENIVT_NULL);
-					cur_condition->valueToCompare.push_back(EvaluableNodeImmediateValue());
+					cond.valueTypes.push_back(ENIVT_NULL);
+					cond.valueToCompare.push_back(EvaluableNodeImmediateValue());
 				}
 			}
 		}
 		//else don't bother parsing this, it instead contains the cases to compute case conviction for
 
-		size_t num_elements = cur_condition->positionLabels.size();
-		auto &dist_params = cur_condition->distParams;
+		size_t num_elements = cond.positionLabels.size();
+		auto &dist_params = cond.distParams;
 
 		EvaluableNode *weights_node = nullptr;
 		if(ocn.size() > WEIGHTS)
@@ -305,7 +305,7 @@ namespace EntityQueryBuilder
 		if(ocn.size() > DEVIATIONS)
 			deviations_node = ocn[DEVIATIONS];
 
-		PopulateDistanceFeatureParameters(dist_params, num_elements, cur_condition->positionLabels,
+		PopulateDistanceFeatureParameters(dist_params, num_elements, cond.positionLabels,
 			weights_node, distance_types_node, attributes_node, deviations_node);
 
 		//set minkowski parameter; default to 2.0 for Euclidian distance
@@ -318,102 +318,102 @@ namespace EntityQueryBuilder
 			if(FastIsNaN(p_value) || p_value < 0)
 				p_value = 2;
 		}
-		cur_condition->distParams.pValue = p_value;
+		cond.distParams.pValue = p_value;
 
 		//value transforms for whatever is measured as "distance"
-		cur_condition->transformSuprisalToProb = false;
-		cur_condition->distanceWeightExponent = 1.0;
+		cond.transformSuprisalToProb = false;
+		cond.distanceWeightExponent = 1.0;
 		if(ocn.size() > DISTANCE_VALUE_TRANSFORM)
 		{
 			EvaluableNode *dwe_param = ocn[DISTANCE_VALUE_TRANSFORM];
 			if(!EvaluableNode::IsNull(dwe_param))
 			{
 				if(dwe_param->GetType() == ENT_STRING && dwe_param->GetStringIDReference() == ENBISI_surprisal_to_prob)
-					cur_condition->transformSuprisalToProb = true;
+					cond.transformSuprisalToProb = true;
 				else //try to convert to number
-					cur_condition->distanceWeightExponent = EvaluableNode::ToNumber(dwe_param, 1.0);
+					cond.distanceWeightExponent = EvaluableNode::ToNumber(dwe_param, 1.0);
 			}
 		}
 
-		cur_condition->weightLabel = StringInternPool::NOT_A_STRING_ID;
+		cond.weightLabel = StringInternPool::NOT_A_STRING_ID;
 		if(ocn.size() > ENTITY_WEIGHT_LABEL_NAME)
-			cur_condition->weightLabel = EvaluableNode::ToStringIDIfExists(ocn[ENTITY_WEIGHT_LABEL_NAME]);
+			cond.weightLabel = EvaluableNode::ToStringIDIfExists(ocn[ENTITY_WEIGHT_LABEL_NAME]);
 
 		//set random seed
 		std::string seed = "";
 		if(ocn.size() > RANDOM_SEED)
 			seed = EvaluableNode::ToString(ocn[RANDOM_SEED]);
-		cur_condition->randomStream.SetState(seed);
+		cond.randomStream.SetState(seed);
 
 		//set radius label
 		if(ocn.size() > RADIUS_LABEL)
-			cur_condition->singleLabel = EvaluableNode::ToStringIDIfExists(ocn[RADIUS_LABEL]);
+			cond.singleLabel = EvaluableNode::ToStringIDIfExists(ocn[RADIUS_LABEL]);
 		else
-			cur_condition->singleLabel = StringInternPool::NOT_A_STRING_ID;
+			cond.singleLabel = StringInternPool::NOT_A_STRING_ID;
 
 		//set numerical precision
-		cur_condition->distParams.highAccuracy = false;
-		cur_condition->distParams.recomputeAccurateDistances = true;
+		cond.distParams.highAccuracy = false;
+		cond.distParams.recomputeAccurateDistances = true;
 		if(ocn.size() > NUMERICAL_PRECISION)
 		{
 			StringInternPool::StringID np_sid = EvaluableNode::ToStringIDIfExists(ocn[NUMERICAL_PRECISION]);
 			if(np_sid == ENBISI_precise)
 			{
-				cur_condition->distParams.highAccuracy = true;
-				cur_condition->distParams.recomputeAccurateDistances = false;
+				cond.distParams.highAccuracy = true;
+				cond.distParams.recomputeAccurateDistances = false;
 			}
 			else if(np_sid == ENBISI_fast)
 			{
-				cur_condition->distParams.highAccuracy = false;
-				cur_condition->distParams.recomputeAccurateDistances = false;
+				cond.distParams.highAccuracy = false;
+				cond.distParams.recomputeAccurateDistances = false;
 			}
 			//don't need to do anything for np_sid == ENBISI_recompute_precise because it's default
 		}
 		
-		cur_condition->returnSortedList = false;
-		cur_condition->additionalSortedListLabels.clear();
-		if(condition_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE || condition_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || condition_type == ENT_COMPUTE_ENTITY_DISTANCE_CONTRIBUTIONS)
+		cond.returnSortedList = false;
+		cond.additionalSortedListLabels.clear();
+		if(cond.queryType == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE || cond.queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || cond.queryType == ENT_COMPUTE_ENTITY_DISTANCE_CONTRIBUTIONS)
 		{
 			if(ocn.size() > NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0)
 			{
 				EvaluableNode *list_param = ocn[NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0];
-				cur_condition->returnSortedList = EvaluableNode::IsTrue(list_param);
+				cond.returnSortedList = EvaluableNode::IsTrue(list_param);
 				if(!EvaluableNode::IsEmptyNode(list_param))
 				{
 					if(list_param->GetType() == ENT_STRING)
 					{
-						cur_condition->additionalSortedListLabels.push_back(list_param->GetStringIDReference());
+						cond.additionalSortedListLabels.push_back(list_param->GetStringIDReference());
 					}
 					else
 					{
 						for(auto label_node : list_param->GetOrderedChildNodes())
-							cur_condition->additionalSortedListLabels.push_back(EvaluableNode::ToStringIDIfExists(label_node));
+							cond.additionalSortedListLabels.push_back(EvaluableNode::ToStringIDIfExists(label_node));
 					}
 				}
 			}
 		}
-		else if(condition_type == ENT_COMPUTE_ENTITY_CONVICTIONS || condition_type == ENT_COMPUTE_ENTITY_GROUP_KL_DIVERGENCE || condition_type == ENT_COMPUTE_ENTITY_KL_DIVERGENCES)
+		else if(cond.queryType == ENT_COMPUTE_ENTITY_CONVICTIONS || cond.queryType == ENT_COMPUTE_ENTITY_GROUP_KL_DIVERGENCE || cond.queryType == ENT_COMPUTE_ENTITY_KL_DIVERGENCES)
 		{
-			cur_condition->convictionOfRemoval = false;
+			cond.convictionOfRemoval = false;
 			if(ocn.size() > NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0)
-				cur_condition->convictionOfRemoval = EvaluableNode::IsTrue(ocn[NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0]);
+				cond.convictionOfRemoval = EvaluableNode::IsTrue(ocn[NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0]);
 
-			if(condition_type == ENT_COMPUTE_ENTITY_CONVICTIONS || condition_type == ENT_COMPUTE_ENTITY_KL_DIVERGENCES)
+			if(cond.queryType == ENT_COMPUTE_ENTITY_CONVICTIONS || cond.queryType == ENT_COMPUTE_ENTITY_KL_DIVERGENCES)
 			{
 				if(ocn.size() > NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 1)
 				{
 					EvaluableNode *list_param = ocn[NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 1];
-					cur_condition->returnSortedList = EvaluableNode::IsTrue(list_param);
+					cond.returnSortedList = EvaluableNode::IsTrue(list_param);
 					if(!EvaluableNode::IsEmptyNode(list_param))
 					{
 						if(list_param->GetType() == ENT_STRING)
 						{
-							cur_condition->additionalSortedListLabels.push_back(list_param->GetStringIDReference());
+							cond.additionalSortedListLabels.push_back(list_param->GetStringIDReference());
 						}
 						else
 						{
 							for(auto label_node : list_param->GetOrderedChildNodes())
-								cur_condition->additionalSortedListLabels.push_back(EvaluableNode::ToStringIDIfExists(label_node));
+								cond.additionalSortedListLabels.push_back(EvaluableNode::ToStringIDIfExists(label_node));
 						}
 					}
 				}
@@ -422,13 +422,13 @@ namespace EntityQueryBuilder
 	}
 
 	//builds a query condition from cn
-	inline void BuildNonDistanceCondition(EvaluableNode *cn, EvaluableNodeType type,
-		std::vector<EntityQueryCondition> &conditions, EvaluableNodeManager &enm, RandomStream &rs)
+	inline void BuildNonDistanceCondition(EvaluableNode *cn, EntityQueryCondition &cond,
+		EvaluableNodeManager &enm, RandomStream &rs)
 	{
 		auto &ocn = cn->GetOrderedChildNodes();
 
 		//validate number of parameters
-		switch(type)
+		switch(cond.queryType)
 		{
 			case ENT_QUERY_BETWEEN: //all double parameter query types
 			case ENT_QUERY_NOT_BETWEEN:
@@ -456,14 +456,14 @@ namespace EntityQueryBuilder
 
 		//next, determine if a a new condition should be made, or reuse the current one
 		bool requires_new_condition = true; //if true, create a new condition rather than using current_condition
-		switch(type)
+		switch(cond.queryType)
 		{
 			case ENT_QUERY_NOT_EXISTS:
 			case ENT_QUERY_EXISTS:
 			case ENT_QUERY_NOT_EQUALS:
 			case ENT_QUERY_EQUALS:
 			case ENT_QUERY_NOT_BETWEEN:
-				requires_new_condition = (conditions.size() == 0 || conditions.back().queryType != type);
+				requires_new_condition = (conditions.size() == 0 || conditions.back().queryType != cond.queryType);
 				break;
 
 			case ENT_QUERY_BETWEEN:
@@ -496,71 +496,71 @@ namespace EntityQueryBuilder
 
 		//get label sid and return if label is invalid
 		StringInternPool::StringID label_sid = StringInternPool::NOT_A_STRING_ID;
-		if(	   type == ENT_QUERY_NOT_EXISTS
-			|| type == ENT_QUERY_EXISTS
-			|| type == ENT_QUERY_MIN
-			|| type == ENT_QUERY_MAX
-			|| type == ENT_QUERY_SUM
-			|| type == ENT_QUERY_MODE
-			|| type == ENT_QUERY_QUANTILE
-			|| type == ENT_QUERY_GENERALIZED_MEAN
-			|| type == ENT_QUERY_MIN_DIFFERENCE
-			|| type == ENT_QUERY_MAX_DIFFERENCE
-			|| type == ENT_QUERY_VALUE_MASSES
-			|| type == ENT_QUERY_LESS_OR_EQUAL_TO
-			|| type == ENT_QUERY_GREATER_OR_EQUAL_TO
-			|| type == ENT_QUERY_NOT_EQUALS
-			|| type == ENT_QUERY_EQUALS
-			|| type == ENT_QUERY_BETWEEN
-			|| type == ENT_QUERY_NOT_BETWEEN
-			|| type == ENT_QUERY_AMONG
-			|| type == ENT_QUERY_NOT_AMONG)
+		if(    cond.queryType == ENT_QUERY_NOT_EXISTS
+			|| cond.queryType == ENT_QUERY_EXISTS
+			|| cond.queryType == ENT_QUERY_MIN
+			|| cond.queryType == ENT_QUERY_MAX
+			|| cond.queryType == ENT_QUERY_SUM
+			|| cond.queryType == ENT_QUERY_MODE
+			|| cond.queryType == ENT_QUERY_QUANTILE
+			|| cond.queryType == ENT_QUERY_GENERALIZED_MEAN
+			|| cond.queryType == ENT_QUERY_MIN_DIFFERENCE
+			|| cond.queryType == ENT_QUERY_MAX_DIFFERENCE
+			|| cond.queryType == ENT_QUERY_VALUE_MASSES
+			|| cond.queryType == ENT_QUERY_LESS_OR_EQUAL_TO
+			|| cond.queryType == ENT_QUERY_GREATER_OR_EQUAL_TO
+			|| cond.queryType == ENT_QUERY_NOT_EQUALS
+			|| cond.queryType == ENT_QUERY_EQUALS
+			|| cond.queryType == ENT_QUERY_BETWEEN
+			|| cond.queryType == ENT_QUERY_NOT_BETWEEN
+			|| cond.queryType == ENT_QUERY_AMONG
+			|| cond.queryType == ENT_QUERY_NOT_AMONG)
 		{
 			if(ocn.size() >= 1)
 				label_sid = EvaluableNode::ToStringIDIfExists(ocn[0]);
 
 			if(!Entity::IsLabelValidAndPublic(label_sid))
 			{
-				cur_condition->queryType = ENT_NULL;
+				cond.queryType = ENT_NULL;
 				return;
 			}
 		}
 
 		//actually populate the condition parameters from the evaluable nodes
-		switch(type)
+		switch(cond.queryType)
 		{
 			case ENT_QUERY_SELECT:
 			{
-				cur_condition->maxToRetrieve = (ocn.size() >= 1) ? EvaluableNode::ToNumber(ocn[0], 0.0) : 0;
+				cond.maxToRetrieve = (ocn.size() >= 1) ? EvaluableNode::ToNumber(ocn[0], 0.0) : 0;
 
-				cur_condition->hasStartOffset = (ocn.size() >= 2);
-				cur_condition->startOffset = cur_condition->hasStartOffset ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[1], 0.0)) : 0;
+				cond.hasStartOffset = (ocn.size() >= 2);
+				cond.startOffset = cond.hasStartOffset ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[1], 0.0)) : 0;
 
-				cur_condition->hasRandomStream = (ocn.size() >= 3 && !EvaluableNode::IsEmptyNode(ocn[2]));
-				if(cur_condition->hasRandomStream)
-					cur_condition->randomStream.SetState(EvaluableNode::ToString(ocn[2]));
+				cond.hasRandomStream = (ocn.size() >= 3 && !EvaluableNode::IsEmptyNode(ocn[2]));
+				if(cond.hasRandomStream)
+					cond.randomStream.SetState(EvaluableNode::ToString(ocn[2]));
 
 				break;
 			}
 			case ENT_QUERY_SAMPLE:
 			{
-				cur_condition->maxToRetrieve = (ocn.size() > 0) ? EvaluableNode::ToNumber(ocn[0], 0.0) : 1;
-				cur_condition->hasRandomStream = (ocn.size() > 1 && !EvaluableNode::IsEmptyNode(ocn[1]));
-				if(cur_condition->hasRandomStream)
-					cur_condition->randomStream.SetState(EvaluableNode::ToString(ocn[1]));
+				cond.maxToRetrieve = (ocn.size() > 0) ? EvaluableNode::ToNumber(ocn[0], 0.0) : 1;
+				cond.hasRandomStream = (ocn.size() > 1 && !EvaluableNode::IsEmptyNode(ocn[1]));
+				if(cond.hasRandomStream)
+					cond.randomStream.SetState(EvaluableNode::ToString(ocn[1]));
 				else
-					cur_condition->randomStream = rs.CreateOtherStreamViaRand();
+					cond.randomStream = rs.CreateOtherStreamViaRand();
 			    break;
 			}
 			case ENT_QUERY_WEIGHTED_SAMPLE:
 			{
-				cur_condition->singleLabel = (ocn.size() > 0) ? EvaluableNode::ToStringIDIfExists(ocn[0]) : StringInternPool::NOT_A_STRING_ID;
-				cur_condition->maxToRetrieve = (ocn.size() > 1) ? EvaluableNode::ToNumber(ocn[1], 0.0) : 1;
-				cur_condition->hasRandomStream = (ocn.size() > 2 && !EvaluableNode::IsEmptyNode(ocn[2]));
-				if(cur_condition->hasRandomStream)
-					cur_condition->randomStream.SetState(EvaluableNode::ToString(ocn[2]));
+				cond.singleLabel = (ocn.size() > 0) ? EvaluableNode::ToStringIDIfExists(ocn[0]) : StringInternPool::NOT_A_STRING_ID;
+				cond.maxToRetrieve = (ocn.size() > 1) ? EvaluableNode::ToNumber(ocn[1], 0.0) : 1;
+				cond.hasRandomStream = (ocn.size() > 2 && !EvaluableNode::IsEmptyNode(ocn[2]));
+				if(cond.hasRandomStream)
+					cond.randomStream.SetState(EvaluableNode::ToString(ocn[2]));
 				else
-					cur_condition->randomStream = rs.CreateOtherStreamViaRand();
+					cond.randomStream = rs.CreateOtherStreamViaRand();
 				break;
 			}
 			case ENT_QUERY_IN_ENTITY_LIST:
@@ -571,11 +571,11 @@ namespace EntityQueryBuilder
 					EvaluableNode *entity_sids = ocn[0];
 					if(EvaluableNode::IsOrderedArray(entity_sids))
 					{
-						cur_condition->existLabels.reserve(entity_sids->GetOrderedChildNodes().size());
+						cond.existLabels.reserve(entity_sids->GetOrderedChildNodes().size());
 						for(auto &esid : entity_sids->GetOrderedChildNodes())
 						{
 							StringInternPool::StringID entity_sid = EvaluableNode::ToStringIDIfExists(esid);
-							cur_condition->existLabels.push_back(entity_sid);
+							cond.existLabels.push_back(entity_sid);
 						}
 					}
 				}
@@ -591,19 +591,19 @@ namespace EntityQueryBuilder
 				//since types need to match, force both to the same type
 				if(EvaluableNode::IsNativelyNumeric(low_value) || EvaluableNode::IsNativelyNumeric(high_value))
 				{
-					cur_condition->pairedLabels.push_back(std::make_pair(label_sid, std::make_pair(
+					cond.pairedLabels.push_back(std::make_pair(label_sid, std::make_pair(
 						EvaluableNode::ToNumber(low_value), EvaluableNode::ToNumber(high_value))));
 
-					cur_condition->valueTypes.push_back(ENIVT_NUMBER);
+					cond.valueTypes.push_back(ENIVT_NUMBER);
 				}
 				else
 				{
 					StringInternPool::StringID low_sid = EvaluableNode::ToStringIDIfExists(low_value);
 					StringInternPool::StringID high_sid = EvaluableNode::ToStringIDIfExists(high_value);
 
-					cur_condition->pairedLabels.push_back(std::make_pair(label_sid, std::make_pair(low_sid, high_sid)));
+					cond.pairedLabels.push_back(std::make_pair(label_sid, std::make_pair(low_sid, high_sid)));
 
-					cur_condition->valueTypes.push_back(ENIVT_STRING_ID);
+					cond.valueTypes.push_back(ENIVT_STRING_ID);
 				}
 
 				break;
@@ -612,7 +612,7 @@ namespace EntityQueryBuilder
 			case ENT_QUERY_AMONG:
 			case ENT_QUERY_NOT_AMONG:
 			{
-				cur_condition->singleLabel = label_sid;
+				cond.singleLabel = label_sid;
 
 				//already checked for nullptr above
 				auto &values_ocn = ocn[1]->GetOrderedChildNodes();
@@ -620,8 +620,8 @@ namespace EntityQueryBuilder
 				{
 					EvaluableNodeImmediateValue value;
 					auto value_type = value.CopyValueFromEvaluableNode(value_node);
-					cur_condition->valueToCompare.push_back(value);
-					cur_condition->valueTypes.push_back(value_type);
+					cond.valueToCompare.push_back(value);
+					cond.valueTypes.push_back(value_type);
 				}
 
 				break;
@@ -632,7 +632,7 @@ namespace EntityQueryBuilder
 			{
 				//get label and append it if it is valid (otherwise don't match on anything)
 				if(ocn.size() >= 1)
-					cur_condition->existLabels.push_back(label_sid);
+					cond.existLabels.push_back(label_sid);
 
 				break;
 			}
@@ -640,20 +640,20 @@ namespace EntityQueryBuilder
 			case ENT_QUERY_MIN:
 			case ENT_QUERY_MAX:
 			{
-				cur_condition->singleLabel = label_sid;
+				cond.singleLabel = label_sid;
 
 				//default to retrieve 1
-				cur_condition->maxToRetrieve = 1;
+				cond.maxToRetrieve = 1;
 				if(ocn.size() >= 2)
 				{
 					EvaluableNode *value = ocn[1];
-					cur_condition->maxToRetrieve = EvaluableNode::ToNumber(value);
+					cond.maxToRetrieve = EvaluableNode::ToNumber(value);
 				}
 
 				if(ocn.size() <= 2 || EvaluableNode::IsTrue(ocn[2]))
-					cur_condition->singleLabelType = ENIVT_NUMBER;
+					cond.singleLabelType = ENIVT_NUMBER;
 				else
-					cur_condition->singleLabelType = ENIVT_STRING_ID;
+					cond.singleLabelType = ENIVT_STRING_ID;
 
 				break;
 			}
@@ -668,28 +668,28 @@ namespace EntityQueryBuilder
 
 				if(EvaluableNode::IsNativelyNumeric(compare_value))
 				{
-					if(type == ENT_QUERY_LESS_OR_EQUAL_TO)
-						cur_condition->pairedLabels.push_back(std::make_pair(label_sid, std::make_pair(
+					if(cond.queryType == ENT_QUERY_LESS_OR_EQUAL_TO)
+						cond.pairedLabels.push_back(std::make_pair(label_sid, std::make_pair(
 							-std::numeric_limits<double>::infinity(), EvaluableNode::ToNumber(compare_value))));
 					else
-						cur_condition->pairedLabels.push_back(std::make_pair(label_sid, std::make_pair(
+						cond.pairedLabels.push_back(std::make_pair(label_sid, std::make_pair(
 							EvaluableNode::ToNumber(compare_value), std::numeric_limits<double>::infinity())));
 
-					cur_condition->valueTypes.push_back(ENIVT_NUMBER);
+					cond.valueTypes.push_back(ENIVT_NUMBER);
 				}
 				else
 				{
-					if(type == ENT_QUERY_LESS_OR_EQUAL_TO)
-						cur_condition->pairedLabels.push_back(std::make_pair(label_sid, std::make_pair(
+					if(cond.queryType == ENT_QUERY_LESS_OR_EQUAL_TO)
+						cond.pairedLabels.push_back(std::make_pair(label_sid, std::make_pair(
 							string_intern_pool.NOT_A_STRING_ID, EvaluableNode::ToStringIDIfExists(compare_value))));
 					else
-						cur_condition->pairedLabels.push_back(std::make_pair(label_sid, std::make_pair(
+						cond.pairedLabels.push_back(std::make_pair(label_sid, std::make_pair(
 							EvaluableNode::ToStringIDIfExists(compare_value), string_intern_pool.NOT_A_STRING_ID)));
 
-					cur_condition->valueTypes.push_back(ENIVT_STRING_ID);
+					cond.valueTypes.push_back(ENIVT_STRING_ID);
 				}
 
-				cur_condition->queryType = ENT_QUERY_BETWEEN;
+				cond.queryType = ENT_QUERY_BETWEEN;
 				break;
 			}
 
@@ -700,30 +700,30 @@ namespace EntityQueryBuilder
 				EvaluableNodeImmediateValue value;
 				EvaluableNodeImmediateValueType value_type = value.CopyValueFromEvaluableNode(ocn[1]);
 
-				cur_condition->valueTypes.push_back(value_type);
-				cur_condition->singleLabels.emplace_back(std::make_pair(label_sid, value));
+				cond.valueTypes.push_back(value_type);
+				cond.singleLabels.emplace_back(std::make_pair(label_sid, value));
 
 				break;
 			}
 
 			case ENT_QUERY_MIN_DIFFERENCE:
-				cur_condition->singleLabel = label_sid;
+				cond.singleLabel = label_sid;
 
-				cur_condition->maxDistance = std::numeric_limits<double>::quiet_NaN();
+				cond.maxDistance = std::numeric_limits<double>::quiet_NaN();
 				if(ocn.size() >= 2)
-					cur_condition->maxDistance = EvaluableNode::ToNumber(ocn[1]);
+					cond.maxDistance = EvaluableNode::ToNumber(ocn[1]);
 
-				cur_condition->includeZeroDifferences = true;
+				cond.includeZeroDifferences = true;
 				if(ocn.size() >= 3)
-					cur_condition->includeZeroDifferences = EvaluableNode::IsTrue(ocn[2]);
+					cond.includeZeroDifferences = EvaluableNode::IsTrue(ocn[2]);
 				break;
 
 			case ENT_QUERY_MAX_DIFFERENCE:
-				cur_condition->singleLabel = label_sid;
+				cond.singleLabel = label_sid;
 				
-				cur_condition->maxDistance = std::numeric_limits<double>::quiet_NaN();
+				cond.maxDistance = std::numeric_limits<double>::quiet_NaN();
 				if(ocn.size() >= 2)
-					cur_condition->maxDistance = EvaluableNode::ToNumber(ocn[1]);
+					cond.maxDistance = EvaluableNode::ToNumber(ocn[1]);
 
 				break;
 
@@ -731,18 +731,18 @@ namespace EntityQueryBuilder
 			case ENT_QUERY_MODE:
 			case ENT_QUERY_VALUE_MASSES:
 			{
-				cur_condition->singleLabel = label_sid;
+				cond.singleLabel = label_sid;
 
-				cur_condition->weightLabel = StringInternPool::NOT_A_STRING_ID;
+				cond.weightLabel = StringInternPool::NOT_A_STRING_ID;
 				if(ocn.size() >= 2)
-					cur_condition->weightLabel = EvaluableNode::ToStringIDIfExists(ocn[1]);
+					cond.weightLabel = EvaluableNode::ToStringIDIfExists(ocn[1]);
 
-				if(type == ENT_QUERY_MODE || type == ENT_QUERY_VALUE_MASSES)
+				if(cond.queryType == ENT_QUERY_MODE || cond.queryType == ENT_QUERY_VALUE_MASSES)
 				{
 					if(ocn.size() <= 2 || EvaluableNode::IsTrue(ocn[2]))
-						cur_condition->singleLabelType = ENIVT_NUMBER;
+						cond.singleLabelType = ENIVT_NUMBER;
 					else
-						cur_condition->singleLabelType = ENIVT_STRING_ID;
+						cond.singleLabelType = ENIVT_STRING_ID;
 				}
 
 				break;
@@ -750,42 +750,42 @@ namespace EntityQueryBuilder
 
 			case ENT_QUERY_QUANTILE:
 			{
-				cur_condition->singleLabel = label_sid;
+				cond.singleLabel = label_sid;
 
-				cur_condition->qPercentage = 0.5;
+				cond.qPercentage = 0.5;
 				if(ocn.size() >= 2)
-					cur_condition->qPercentage = EvaluableNode::ToNumber(ocn[1]);
+					cond.qPercentage = EvaluableNode::ToNumber(ocn[1]);
 
-				cur_condition->weightLabel = StringInternPool::NOT_A_STRING_ID;
+				cond.weightLabel = StringInternPool::NOT_A_STRING_ID;
 				if(ocn.size() >= 3)
-					cur_condition->weightLabel = EvaluableNode::ToStringIDIfExists(ocn[2]);
+					cond.weightLabel = EvaluableNode::ToStringIDIfExists(ocn[2]);
 
 				break;
 			}
 
 			case ENT_QUERY_GENERALIZED_MEAN:
 			{
-				cur_condition->singleLabel = label_sid;
+				cond.singleLabel = label_sid;
 
-				cur_condition->distParams.pValue = 1;
+				cond.distParams.pValue = 1;
 				if(ocn.size() >= 2)
-					cur_condition->distParams.pValue = EvaluableNode::ToNumber(ocn[1]);
+					cond.distParams.pValue = EvaluableNode::ToNumber(ocn[1]);
 
-				cur_condition->weightLabel = StringInternPool::NOT_A_STRING_ID;
+				cond.weightLabel = StringInternPool::NOT_A_STRING_ID;
 				if(ocn.size() >= 3)
-					cur_condition->weightLabel = EvaluableNode::ToStringIDIfExists(ocn[2]);
+					cond.weightLabel = EvaluableNode::ToStringIDIfExists(ocn[2]);
 
-				cur_condition->center = 0.0;
+				cond.center = 0.0;
 				if(ocn.size() >= 4)
-					cur_condition->center = EvaluableNode::ToNumber(ocn[3], 0.0);
+					cond.center = EvaluableNode::ToNumber(ocn[3], 0.0);
 
-				cur_condition->calculateMoment = false;
+				cond.calculateMoment = false;
 				if(ocn.size() >= 5)
-					cur_condition->calculateMoment = EvaluableNode::IsTrue(ocn[4]);
+					cond.calculateMoment = EvaluableNode::IsTrue(ocn[4]);
 
-				cur_condition->absoluteValue = false;
+				cond.absoluteValue = false;
 				if(ocn.size() >= 6)
-					cur_condition->absoluteValue = EvaluableNode::IsTrue(ocn[5]);
+					cond.absoluteValue = EvaluableNode::IsTrue(ocn[5]);
 
 				break;
 			}

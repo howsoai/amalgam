@@ -27,6 +27,9 @@ public:
 		: queryType(ENT_NULL)
 	{	}
 
+	//resets all data members
+	void Reset();
+
 	//returns true if the entity matches the condition
 	bool DoesEntityMatchCondition(Entity *e);
 

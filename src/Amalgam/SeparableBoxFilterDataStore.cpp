@@ -950,7 +950,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 		}
 		//else value_type == ENIVT_NULL
 
-		//didn't find the value
+		//return next smallest nominal distance term
 		return dist_params.ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(query_feature_index, high_accuracy);
 	}
 	else if(effective_feature_type == GeneralizedDistance::EFDT_CONTINUOUS_STRING)
@@ -1039,7 +1039,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 		size_t next_lower_index = 0;
 		if(!cyclic_feature)
 		{
-			if(lower_value_index > 1)
+			if(lower_value_index > 0)
 			{
 				next_lower_index = lower_value_index - 1;
 				lower_diff = std::abs(value.number - column->sortedNumberValueEntries[next_lower_index]->value.number);
@@ -1049,8 +1049,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 		else //cyclic_feature
 		{
 			size_t next_index;
-			//0th index is unknown
-			if(lower_value_index > 1)
+			if(lower_value_index > 0)
 				next_index = lower_value_index - 1;
 			else
 				next_index = num_unique_number_values - 1;

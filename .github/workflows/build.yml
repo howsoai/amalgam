@@ -255,6 +255,7 @@ jobs:
             echo -n "$f: " && "./$f" --version
           done
 
+  # Uses GitHub default macos runner (amd64)
   smoke-test-macos-amd64:
     needs: ['build-macos']
     runs-on: macos-latest
@@ -278,16 +279,61 @@ jobs:
           echo -n "$f: " && "./$f" --version
         done
 
-  # Turned off until GitHub runners support arm64 macOS
-  smoke-test-macos-arm64:
-    if: false
+  # Uses GitHub large macos runner (amd64)
+  smoke-test-macos-amd64-large:
     needs: ['build-macos']
-    runs-on: macos-latest
+    runs-on: macos-latest-large
     steps:
     - name: Download Artifact
       uses: actions/download-artifact@v3
       with:
         name: amalgam-${{ inputs.version }}-darwin-amd64
+
+    - name: Extract Amalgam
+      run: |
+        mkdir ./amalgam
+        tar -xvf ./amalgam-${{ inputs.version }}-darwin-amd64.tar.gz -C ./amalgam
+
+    # GitHub macOS runner does not support AVX
+    - name: Smoke test
+      run: |
+        set -e
+        cd ./amalgam/bin
+        for f in *noavx*; do
+          echo -n "$f: " && "./$f" --version
+        done
+
+  smoke-test-macos-amd64-on-arm64:
+    needs: ['build-macos']
+    runs-on: macos-latest-xlarge
+    steps:
+    - name: Download Artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: amalgam-${{ inputs.version }}-darwin-amd64
+
+    - name: Extract Amalgam
+      run: |
+        mkdir ./amalgam
+        tar -xvf ./amalgam-${{ inputs.version }}-darwin-amd64.tar.gz -C ./amalgam
+
+    # GitHub macOS runner does not support AVX
+    - name: Smoke test
+      run: |
+        set -e
+        cd ./amalgam/bin
+        for f in *noavx*; do
+          echo -n "$f: " && "./$f" --version
+        done
+
+  smoke-test-macos-arm64:
+    needs: ['build-macos']
+    runs-on: macos-latest-xlarge
+    steps:
+    - name: Download Artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: amalgam-${{ inputs.version }}-darwin-arm64
 
     - name: Extract Amalgam
       run: |

@@ -253,8 +253,24 @@ const std::string EvaluableNode::ToOpcodeString(EvaluableNode *e)
 
 std::pair<bool, std::string> EvaluableNode::ToString(EvaluableNode *e)
 {
-	//TODO 18755: implement this and replace uses of ToOpcodeString as appropriate
+	//TODO 18755: replace uses of ToOpcodeString as appropriate
 	//TODO 18755: pull in any parts of 18652 as appropriate
+
+	if(IsEmptyNode(e))
+		return std::make_pair(false, ".nas");
+
+	switch(e->GetType())
+	{
+	case ENT_NUMBER:
+		return std::make_pair(true, NumberToString(e->GetNumberValueReference()));
+
+	case ENT_STRING:
+	case ENT_SYMBOL:
+		return std::make_pair(true, e->GetStringValue());
+
+	default:
+		return std::make_pair(true, GetStringFromEvaluableNodeType(e->GetType()));
+	}
 
 	return std::make_pair(true, "");
 }

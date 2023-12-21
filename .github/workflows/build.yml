@@ -256,6 +256,7 @@ jobs:
           done
 
   # Uses GitHub default macos runner (amd64)
+  # Note: these runners do not support AVX so run the noavx binaries only
   smoke-test-macos-amd64:
     needs: ['build-macos']
     runs-on: macos-latest
@@ -270,7 +271,6 @@ jobs:
         mkdir ./amalgam
         tar -xvf ./amalgam-${{ inputs.version }}-darwin-amd64.tar.gz -C ./amalgam
 
-    # GitHub macOS runner does not support AVX
     - name: Smoke test
       run: |
         set -e
@@ -294,15 +294,18 @@ jobs:
         mkdir ./amalgam
         tar -xvf ./amalgam-${{ inputs.version }}-darwin-amd64.tar.gz -C ./amalgam
 
-    # GitHub macOS runner does not support AVX
     - name: Smoke test
       run: |
         set -e
         cd ./amalgam/bin
-        for f in *noavx*; do
+        for f in *; do
           echo -n "$f: " && "./$f" --version
         done
 
+  # Uses macOS arm64 xlarge runner but execute amd64 binaries
+  # Notes:
+  #   1) this is supported by Apple through emulator Rossetta 2
+  #   2) Rossetta 2 does support AVX+ instructions so only run noavx binaries
   smoke-test-macos-amd64-on-arm64:
     needs: ['build-macos']
     runs-on: macos-latest-xlarge
@@ -317,7 +320,6 @@ jobs:
         mkdir ./amalgam
         tar -xvf ./amalgam-${{ inputs.version }}-darwin-amd64.tar.gz -C ./amalgam
 
-    # GitHub macOS runner does not support AVX
     - name: Smoke test
       run: |
         set -e

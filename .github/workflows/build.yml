@@ -256,6 +256,7 @@ jobs:
           done
 
   # Uses GitHub default macos runner (amd64)
+  # Note: these runners do not support AVX so run the noavx binaries only
   smoke-test-macos-amd64:
     needs: ['build-macos']
     runs-on: macos-latest
@@ -323,7 +324,7 @@ jobs:
       run: |
         set -e
         cd ./amalgam/bin
-        for f in *noavx*; do
+        for f in *; do
           echo -n "$f: " && "./$f" --version
         done
 

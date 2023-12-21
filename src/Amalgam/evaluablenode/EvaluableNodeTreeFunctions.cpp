@@ -394,8 +394,8 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		}
 		else if(value_destination_node->IsStringValue())
 		{
-			std::string cur_value = EvaluableNode::ToString(value_destination_node);
-			std::string inc_value = EvaluableNode::ToString(variable_value_node);
+			std::string cur_value = EvaluableNode::ToOpcodeString(value_destination_node);
+			std::string inc_value = EvaluableNode::ToOpcodeString(variable_value_node);
 			value_destination_node->SetType(ENT_STRING, enm);
 			value_destination_node->SetStringValue(cur_value.append(inc_value));
 			value_destination_node.unique = true;
@@ -476,8 +476,8 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 	}
 	else if(value_destination_node->IsStringValue())
 	{
-		std::string cur_value = EvaluableNode::ToString(value_destination_node);
-		std::string inc_value = EvaluableNode::ToString(variable_value_node);
+		std::string cur_value = EvaluableNode::ToOpcodeString(value_destination_node);
+		std::string inc_value = EvaluableNode::ToOpcodeString(variable_value_node);
 		value_destination_node.reference = enm->AllocNode(ENT_STRING, cur_value.append(inc_value));
 		value_destination_node.unique = true;
 	}

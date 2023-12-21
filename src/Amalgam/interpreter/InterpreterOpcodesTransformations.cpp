@@ -795,7 +795,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en)
 	{
 		if(type_node->GetType() == ENT_STRING)
 		{
-			std::string new_type_string = EvaluableNode::ToString(type_node);
+			std::string new_type_string = EvaluableNode::ToOpcodeString(type_node);
 			new_type = GetEvaluableNodeTypeFromString(new_type_string, true);
 			evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
 		}
@@ -1103,7 +1103,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 		//compute regular expression
 		const std::string &s = collection->GetStringValue();
 
-		std::string value_as_str = EvaluableNode::ToString(value);
+		std::string value_as_str = EvaluableNode::ToOpcodeString(value);
 
 		//use nosubs to prevent unnecessary memory allocations since this is just matching
 		std::regex rx;

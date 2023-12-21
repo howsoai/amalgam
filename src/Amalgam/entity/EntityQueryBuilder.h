@@ -350,7 +350,7 @@ namespace EntityQueryBuilder
 		//set random seed
 		std::string seed = "";
 		if(ocn.size() > RANDOM_SEED)
-			seed = EvaluableNode::ToString(ocn[RANDOM_SEED]);
+			seed = EvaluableNode::ToOpcodeString(ocn[RANDOM_SEED]);
 		cur_condition->randomStream.SetState(seed);
 
 		//set radius label
@@ -546,7 +546,7 @@ namespace EntityQueryBuilder
 
 				cur_condition->hasRandomStream = (ocn.size() >= 3 && !EvaluableNode::IsEmptyNode(ocn[2]));
 				if(cur_condition->hasRandomStream)
-					cur_condition->randomStream.SetState(EvaluableNode::ToString(ocn[2]));
+					cur_condition->randomStream.SetState(EvaluableNode::ToOpcodeString(ocn[2]));
 
 				break;
 			}
@@ -555,7 +555,7 @@ namespace EntityQueryBuilder
 				cur_condition->maxToRetrieve = (ocn.size() > 0) ? EvaluableNode::ToNumber(ocn[0], 0.0) : 1;
 				cur_condition->hasRandomStream = (ocn.size() > 1 && !EvaluableNode::IsEmptyNode(ocn[1]));
 				if(cur_condition->hasRandomStream)
-					cur_condition->randomStream.SetState(EvaluableNode::ToString(ocn[1]));
+					cur_condition->randomStream.SetState(EvaluableNode::ToOpcodeString(ocn[1]));
 				else
 					cur_condition->randomStream = rs.CreateOtherStreamViaRand();
 			    break;
@@ -566,7 +566,7 @@ namespace EntityQueryBuilder
 				cur_condition->maxToRetrieve = (ocn.size() > 1) ? EvaluableNode::ToNumber(ocn[1], 0.0) : 1;
 				cur_condition->hasRandomStream = (ocn.size() > 2 && !EvaluableNode::IsEmptyNode(ocn[2]));
 				if(cur_condition->hasRandomStream)
-					cur_condition->randomStream.SetState(EvaluableNode::ToString(ocn[2]));
+					cur_condition->randomStream.SetState(EvaluableNode::ToOpcodeString(ocn[2]));
 				else
 					cur_condition->randomStream = rs.CreateOtherStreamViaRand();
 				break;

@@ -535,11 +535,13 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_accessing_entity,
 
 	//distance types
-	ENBISI_nominal,
-	ENBISI_continuous,
-	ENBISI_cyclic,
-	//ENBISI_string, //string is already covered
-	ENBISI_code,
+	ENBISI_nominal_numeric,
+	ENBISI_nominal_string,
+	ENBISI_nominal_code,
+	ENBISI_continuous_numeric,
+	ENBISI_continuous_numeric_cyclic,
+	ENBISI_continuous_string,
+	ENBISI_continuous_code,
 
 	//distance parameter values
 	ENBISI_surprisal_to_prob,
@@ -550,6 +552,7 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_recompute_precise,
 
 	//format opcode types
+	ENBISI_code,
 	ENBISI_Base16,
 	ENBISI_Base64,
 	ENBISI_int8,

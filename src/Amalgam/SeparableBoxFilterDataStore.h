@@ -870,30 +870,23 @@ protected:
 		auto &feature_type = feature_params.featureType;
 		auto &effective_feature_type = feature_params.effectiveFeatureType;
 
-		if(feature_type == GeneralizedDistance::FDT_NOMINAL
+		if(feature_type == GeneralizedDistance::FDT_NOMINAL_NUMERIC
+			|| feature_type == GeneralizedDistance::FDT_NOMINAL_STRING
+			|| feature_type == GeneralizedDistance::FDT_NOMINAL_CODE
 			|| feature_type == GeneralizedDistance::FDT_CONTINUOUS_STRING
 			|| feature_type == GeneralizedDistance::FDT_CONTINUOUS_CODE)
 		{
 			target_values.push_back(position_value);
 			target_value_types.push_back(position_value_type);
 
-			if(feature_type == GeneralizedDistance::FDT_NOMINAL)
-			{
-				if(feature_params.nominalStringSparseDeviationMatrix.size() > 0)
-					effective_feature_type = GeneralizedDistance::EFDT_NOMINAL_STRING;
-				else if(feature_params.nominalNumberSparseDeviationMatrix.size() > 0)
-					effective_feature_type = GeneralizedDistance::EFDT_NOMINAL_NUMBER;
-				else
-					effective_feature_type = GeneralizedDistance::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED;
-			}
+			if(feature_type == GeneralizedDistance::FDT_NOMINAL_NUMERIC
+					|| feature_type == GeneralizedDistance::FDT_NOMINAL_STRING
+					|| feature_type == GeneralizedDistance::FDT_NOMINAL_CODE)
+				effective_feature_type = GeneralizedDistance::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED;
 			else if(feature_type == GeneralizedDistance::FDT_CONTINUOUS_STRING)
-			{
 				effective_feature_type = GeneralizedDistance::EFDT_CONTINUOUS_STRING;
-			}
 			else if(feature_type == GeneralizedDistance::FDT_CONTINUOUS_CODE)
-			{
 				effective_feature_type = GeneralizedDistance::EFDT_CONTINUOUS_CODE;
-			}
 		}
 		else // feature_type is not nominal and numeric
 		{

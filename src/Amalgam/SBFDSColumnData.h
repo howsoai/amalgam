@@ -684,7 +684,9 @@ public:
 	{
 		switch(feature_params.featureType)
 		{
-		case GeneralizedDistance::FDT_NOMINAL:
+		case GeneralizedDistance::FDT_NOMINAL_NUMERIC:
+		case GeneralizedDistance::FDT_NOMINAL_STRING:
+		case GeneralizedDistance::FDT_NOMINAL_CODE:
 			return 1.0;
 
 		case GeneralizedDistance::FDT_CONTINUOUS_NUMERIC:

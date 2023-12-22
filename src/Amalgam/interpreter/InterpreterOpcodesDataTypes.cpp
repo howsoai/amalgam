@@ -532,12 +532,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en)
 					auto &mcn = from_params->GetMappedChildNodesReference();
 
 					auto found_locale = mcn.find(ENBISI_locale);
-					if(found_locale != end(mcn))
-						locale = EvaluableNode::ToString(found_locale->second);
+					if(found_locale != end(mcn) && !EvaluableNode::IsEmptyNode(found_locale->second))
+						locale = EvaluableNode::ToStringPreservingOpcodeType(found_locale->second);
 
 					auto found_timezone = mcn.find(ENBISI_timezone);
-					if(found_timezone != end(mcn))
-						timezone = EvaluableNode::ToString(found_timezone->second);
+					if(found_timezone != end(mcn) && !EvaluableNode::IsEmptyNode(found_timezone->second))
+						timezone = EvaluableNode::ToStringPreservingOpcodeType(found_timezone->second);
 				}
 
 				use_number = true;
@@ -859,12 +859,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en)
 				auto &mcn = to_params->GetMappedChildNodesReference();
 
 				auto found_locale = mcn.find(ENBISI_locale);
-				if(found_locale != end(mcn))
-					locale = EvaluableNode::ToString(found_locale->second);
+				if(found_locale != end(mcn) && !EvaluableNode::IsEmptyNode(found_locale->second))
+					locale = EvaluableNode::ToStringPreservingOpcodeType(found_locale->second);
 
 				auto found_timezone = mcn.find(ENBISI_timezone);
-				if(found_timezone != end(mcn))
-					timezone = EvaluableNode::ToString(found_timezone->second);
+				if(found_timezone != end(mcn) && !EvaluableNode::IsEmptyNode(found_timezone->second))
+					timezone = EvaluableNode::ToStringPreservingOpcodeType(found_timezone->second);
 			}
 
 			double num_secs_from_epoch = 0.0;
@@ -1842,7 +1842,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en)
 			else if(DoesEvaluableNodeTypeUseNumberData(cur->GetType()))
 				s = EvaluableNode::NumberToString(cur->GetNumberValueReference());
 			else
-				s = EvaluableNode::ToString(cur);
+				s = EvaluableNode::ToStringPreservingOpcodeType(cur);
 		}
 		else
 		{

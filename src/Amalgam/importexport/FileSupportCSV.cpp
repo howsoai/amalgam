@@ -194,7 +194,7 @@ bool FileSupportCSV::Store(EvaluableNode *code, const std::string &resource_path
 				if(EvaluableNode::IsEmptyNode(column_node))
 					continue;
 
-				std::string original_string = EvaluableNode::ToString(column_node);
+				std::string original_string = EvaluableNode::ToStringPreservingOpcodeType(column_node);
 				std::string escaped_str = EscapeCSVStringIfNeeded(original_string);
 				data_string.append(escaped_str);
 			}

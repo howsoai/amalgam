@@ -394,10 +394,13 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		}
 		else if(value_destination_node->IsStringValue())
 		{
-			std::string cur_value = EvaluableNode::ToString(value_destination_node);
-			std::string inc_value = EvaluableNode::ToString(variable_value_node);
+			auto [cur_value_valid, cur_value] = EvaluableNode::ToString(value_destination_node);
+			auto [inc_value_valid, inc_value] = EvaluableNode::ToString(variable_value_node);
 			value_destination_node->SetType(ENT_STRING, enm);
-			value_destination_node->SetStringValue(cur_value.append(inc_value));
+			//string will default to invalid value -- only set if both strings are valid
+			if(cur_value_valid && inc_value_valid)
+				value_destination_node->SetStringValue(cur_value.append(inc_value));
+
 			value_destination_node.unique = true;
 		}
 		else //add ordered child node
@@ -474,9 +477,14 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 	}
 	else if(value_destination_node->IsStringValue())
 	{
-		std::string cur_value = EvaluableNode::ToString(value_destination_node);
-		std::string inc_value = EvaluableNode::ToString(variable_value_node);
-		value_destination_node.SetReference(enm->AllocNode(ENT_STRING, cur_value.append(inc_value)), true);
+		auto [cur_value_valid, cur_value] = EvaluableNode::ToString(value_destination_node);
+		auto [inc_value_valid, inc_value] = EvaluableNode::ToString(variable_value_node);
+		value_destination_node->SetType(ENT_STRING, enm);
+		//string will default to invalid value -- only set if both strings are valid
+		if(cur_value_valid && inc_value_valid)
+			value_destination_node.SetReference(enm->AllocNode(ENT_STRING, cur_value.append(inc_value)), true);
+		else
+			value_destination_node.SetReference(enm->AllocNode(ENT_STRING), true);
 	}
 	else //add ordered child node
 	{

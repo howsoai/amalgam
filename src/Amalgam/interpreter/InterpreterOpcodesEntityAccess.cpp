@@ -136,11 +136,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 			case ENT_COMPUTE_ENTITY_GROUP_KL_DIVERGENCE:
 			case ENT_COMPUTE_ENTITY_DISTANCE_CONTRIBUTIONS:
 			case ENT_COMPUTE_ENTITY_KL_DIVERGENCES:
-				EntityQueryBuilder::BuildDistanceCondition(cn, type, conditionsBuffer);
+				EntityQueryBuilder::BuildDistanceCondition(cn, type, conditionsBuffer, randomStream);
 				break;
 
 			default:
-				EntityQueryBuilder::BuildNonDistanceCondition(cn, type, conditionsBuffer, *evaluableNodeManager, randomStream);
+				EntityQueryBuilder::BuildNonDistanceCondition(cn, type, conditionsBuffer, randomStream);
 				break;
 		}
 	}

@@ -154,7 +154,7 @@ void EntityExternalInterface::AppendToLabel(std::string &handle, std::string &la
 		//wrap the existing and new element in a list
 		//can use local stack instead of heap because the entity will copy anyway
 		EvaluableNode list(ENT_LIST);
-		EvaluableNode initial_value(ENT_STRING, EvaluableNode::ToString(label_val));
+		EvaluableNode initial_value(ENT_STRING, EvaluableNode::ToStringPreservingOpcodeType(label_val));
 		EvaluableNode parsed_input(ENT_STRING, value);
 		list.AppendOrderedChildNode(&initial_value);
 		list.AppendOrderedChildNode(&parsed_input);
@@ -209,7 +209,7 @@ std::string EntityExternalInterface::GetString(std::string &handle, std::string 
 	EvaluableNode *label_val = bundle->entity->GetValueAtLabel(label, &bundle->entity->evaluableNodeManager, false);
 
 	//Ensure you grab the return value before releasing resources
-	std::string ret = EvaluableNode::ToString(label_val);
+	std::string ret = EvaluableNode::ToStringPreservingOpcodeType(label_val);
 	return ret;
 }
 
@@ -227,11 +227,11 @@ std::string EntityExternalInterface::GetStringFromList(std::string &handle, std:
 	{
 		auto &children = label_val->GetOrderedChildNodes();
 		if(index < children.size())
-			ret = EvaluableNode::ToString(children[index]);
+			ret = EvaluableNode::ToStringPreservingOpcodeType(children[index]);
 	}
 	else
 	{
-		ret = EvaluableNode::ToString(label_val);
+		ret = EvaluableNode::ToStringPreservingOpcodeType(label_val);
 	}
 
 	return ret;
@@ -476,11 +476,11 @@ void EntityExternalInterface::GetStringList(std::string &handle, std::string &la
 		auto &children = label_val->GetOrderedChildNodes();
 		size_t min = std::min(children.size(), len);
 		for(size_t i = 0; i < min; i++)
-			out_arr[i] = EvaluableNode::ToString(children[i]);
+			out_arr[i] = EvaluableNode::ToStringPreservingOpcodeType(children[i]);
 	}
 	else
 	{
-		out_arr[0] = EvaluableNode::ToString(label_val);
+		out_arr[0] = EvaluableNode::ToStringPreservingOpcodeType(label_val);
 	}
 }
 

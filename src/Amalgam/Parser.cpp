@@ -792,7 +792,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 		switch(tree->GetType())
 		{
 		case ENT_NUMBER:
-			upd.result.append(EvaluableNode::ToString(tree));
+			upd.result.append(EvaluableNode::ToStringPreservingOpcodeType(tree));
 			break;
 		case ENT_STRING:
 		{

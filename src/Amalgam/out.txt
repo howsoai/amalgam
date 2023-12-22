@@ -1252,7 +1252,7 @@ current_index: 2
 		interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1702689639.314631
+		start_time 1703262703.950872
 		www 1
 		x 12
 		zz 10
@@ -1295,7 +1295,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1702689639.314631
+	start_time 1703262703.950872
 	www 1
 	x 12
 	zz 10
@@ -1337,7 +1337,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1702689639.314631
+	start_time 1703262703.950872
 	www 1
 	x 12
 	zz 10
@@ -1605,7 +1605,7 @@ e:
   - .inf
 
 25: (assoc a 1)
-current date-time in epoch: 2023-12-15-20.20.39.6032800
+current date-time in epoch: 2023-12-22-11.31.44.3873840
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -3431,7 +3431,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1702689639.806468
+1703262704.577977
 (true)
 
 RootTest
@@ -3655,7 +3655,7 @@ hello
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "˚;\t∑âüuﬁ0—î-I¥ªˇ")
+	(set_entity_rand_seed new_entity "«o¨ÅâOT40—î-I¥ªˇ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3665,7 +3665,7 @@ hello
 				)
 			)
 		)
-		"Ú~∏∑\t™€kø—∆_Wœ§ˇ"
+		"'lÚ›>áâÄ\0´:•äˇ"
 	)
 	(set_entity_rand_seed
 		(first
@@ -3698,7 +3698,7 @@ hello
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "˚;\t∑âüuﬁ0—î-I¥ªˇ")
+	(set_entity_rand_seed new_entity "«o¨ÅâOT40—î-I¥ªˇ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3803,33 +3803,55 @@ store to .json normally
 (list "Child2" "Child7")
 (list "Child1" "Child5")
 (list "Child3" "Child4")
-(list "Child1" "Child3" "Child5" "Child7")
-(list "Child2" "Child4" "Child6" "Child7")
+(list "Child3" "Child5" "Child6" "Child7")
+(list "Child1" "Child2" "Child4" "Child6")
 (list "Child4" "Child6")
 --query_sample--
+(list "Child5")
+(list "Child3" "Child7")
 (list "Child4")
-(list "Child7" "Child1")
-(list "Child6")
-(list "Child2")
+(list "Child3")
 --query_weighted_sample--
 (list "Child2")
 (list "Child2")
 (list
+	"Child5"
 	"Child2"
 	"Child2"
-	"Child2"
-	"Child1"
-	"Child2"
-	"Child2"
-	"Child2"
-	"Child1"
 	"Child4"
 	"Child1"
 	"Child2"
-	"Child2"
-	"Child6"
+	"Child1"
+	"Child1"
 	"Child2"
 	"Child1"
+	"Child2"
+	"Child7"
+	"Child2"
+	"Child1"
+	"Child1"
+	"Child1"
+	"Child7"
+	"Child1"
+	"Child1"
+	"Child1"
+)
+(list
+	"Child2"
+	"Child2"
+	"Child2"
+	"Child3"
+	"Child2"
+	"Child1"
+	"Child1"
+	"Child1"
+	"Child1"
+	"Child1"
+	"Child1"
+	"Child2"
+	"Child1"
+	"Child1"
+	"Child2"
 	"Child1"
 	"Child2"
 	"Child1"
@@ -3837,40 +3859,18 @@ store to .json normally
 	"Child2"
 )
 (list
-	"Child1"
-	"Child1"
-	"Child1"
 	"Child2"
 	"Child2"
-	"Child1"
-	"Child1"
-	"Child1"
 	"Child2"
-	"Child1"
-	"Child1"
-	"Child2"
-	"Child2"
-	"Child1"
-	"Child1"
-	"Child1"
-	"Child1"
-	"Child2"
-	"Child1"
-	"Child2"
-)
-(list
-	"Child6"
-	"Child2"
+	"Child7"
 	"Child5"
 	"Child2"
+	"Child2"
+	"Child2"
 	"Child6"
 	"Child2"
-	"Child2"
-	"Child2"
-	"Child2"
-	"Child2"
 )
-(list "Child2" "Child3")
+(list "Child2" "Child6")
 --query_in_entity_list--
 (list "Child6" "Child7")
 --query_not_in_entity_list--
@@ -3925,7 +3925,7 @@ unweighted query: (assoc
 weighted query: (assoc
 	Child1 1.8
 	Child2 0.45
-	Child4 2
+	Child3 2
 	Child6 0.04
 	Child7 0.2
 )
@@ -3939,7 +3939,7 @@ weighted query list of lists: (list
 	(list -1 2 4 10 100)
 )
 weighted query list of lists with multiple values: (list
-	(list "Child2" "Child6" "Child1" "Child7" "Child3")
+	(list "Child2" "Child6" "Child1" "Child7" "Child4")
 	(list 1 2 4 10 100)
 	(list -1 2 4 10 100)
 	(list -1 1 3 0 100)
@@ -4165,13 +4165,13 @@ case convictions unweighted:
 )
 case convictions weighted by object (with erroneously long nominal):
 (assoc
-	TestContainerExec 0.2828909712209332
-	vert0 1.2974898602334366
-	vert1 1.2974898602334366
-	vert2 1.1342260882087178
-	vert3 1.2974898602334366
-	vert4 73.7945497230898
-	vert5 3.880438191446671
+	TestContainerExec 0.28356810230095286
+	vert0 1.3005955468751227
+	vert1 1.3005955468751227
+	vert2 1.1369409848092722
+	vert3 1.272922458938727
+	vert4 73.971185205438
+	vert5 3.8897264529001325
 )
 case convictions x exists before:
 (assoc entity3 1.0000000933277426 entity4 0.9999998458521889 entity5 1.0000000608201045)
@@ -4424,13 +4424,13 @@ distance symmetry tests
 (list
 	(list
 		"B"
+		"D"
+		"F"
 		"I"
 		"A"
 		"C"
-		"F"
-		"D"
 		"J"
-		"G"
+		"E"
 	)
 	(list
 		0
@@ -4446,12 +4446,12 @@ distance symmetry tests
 (list
 	(list
 		"B"
-		"A"
-		"F"
 		"C"
 		"D"
+		"F"
 		"I"
-		"J"
+		"A"
+		"E"
 		"G"
 	)
 	(list
@@ -4645,4 +4645,4 @@ Expecting 1000: 1000
 concurrent entity writes successful: (true)
 
 --total execution time--
-1.1452429294586182
+1.1618399620056152

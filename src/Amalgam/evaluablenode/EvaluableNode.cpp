@@ -195,8 +195,8 @@ int EvaluableNode::Compare(EvaluableNode *a, EvaluableNode *b)
 			return 0;
 	}
 
-	std::string a_str = EvaluableNode::ToString(a);
-	std::string b_str = EvaluableNode::ToString(b);
+	std::string a_str = EvaluableNode::ToStringPreservingOpcodeType(a);
+	std::string b_str = EvaluableNode::ToStringPreservingOpcodeType(b);
 	return StringManipulation::StringNaturalCompare(a_str, b_str);
 }
 
@@ -232,7 +232,7 @@ double EvaluableNode::ToNumber(EvaluableNode *e, double value_if_null)
 	}
 }
 
-const std::string EvaluableNode::ToString(EvaluableNode *e)
+const std::string EvaluableNode::ToStringPreservingOpcodeType(EvaluableNode *e)
 {
 	if(e == nullptr)
 		return "null";
@@ -251,6 +251,27 @@ const std::string EvaluableNode::ToString(EvaluableNode *e)
 	}
 }
 
+std::pair<bool, std::string> EvaluableNode::ToString(EvaluableNode *e)
+{
+	if(IsEmptyNode(e))
+		return std::make_pair(false, ".nas");
+
+	switch(e->GetType())
+	{
+	case ENT_NUMBER:
+		return std::make_pair(true, NumberToString(e->GetNumberValueReference()));
+
+	case ENT_STRING:
+	case ENT_SYMBOL:
+		return std::make_pair(true, e->GetStringValue());
+
+	default:
+		return std::make_pair(true, GetStringFromEvaluableNodeType(e->GetType()));
+	}
+
+	return std::make_pair(true, "");
+}
+
 StringInternPool::StringID EvaluableNode::ToStringIDIfExists(EvaluableNode *e)
 {
 	if(e == nullptr)
@@ -264,7 +285,7 @@ StringInternPool::StringID EvaluableNode::ToStringIDIfExists(EvaluableNode *e)
 		return StringInternPool::NOT_A_STRING_ID;
 
 	//see if the string exists even if it is not stored as a StringID
-	const std::string str_value = ToString(e);
+	const std::string str_value = ToStringPreservingOpcodeType(e);
 	//will return empty string if not found
 	return string_intern_pool.GetIDFromString(str_value);
 }
@@ -281,7 +302,7 @@ StringInternPool::StringID EvaluableNode::ToStringIDWithReference(EvaluableNode 
 	if(IsNaN(e))
 		return StringInternPool::NOT_A_STRING_ID;
 	
-	std::string stringified = ToString(e);
+	std::string stringified = ToStringPreservingOpcodeType(e);
 	return string_intern_pool.CreateStringReference(stringified);
 }
 
@@ -300,7 +321,7 @@ StringInternPool::StringID EvaluableNode::ToStringIDTakingReferenceAndClearing(E
 		return sid_to_return;
 	}
 
-	std::string stringified = ToString(e);
+	std::string stringified = ToStringPreservingOpcodeType(e);
 	return string_intern_pool.CreateStringReference(stringified);
 }
 

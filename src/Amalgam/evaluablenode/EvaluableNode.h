@@ -364,8 +364,11 @@ public:
 		return StringManipulation::NumberToString(value);
 	}
 
-	//Converts the node to a string
-	const static std::string ToString(EvaluableNode *e);
+	//converts the node to a string that represents the opcode
+	const static std::string ToStringPreservingOpcodeType(EvaluableNode *e);
+
+	//converts the node to a string, returning true if valid.  If it doesn't exist, or any form of null/NaN/NaS, it returns false
+	static std::pair<bool, std::string> ToString(EvaluableNode *e);
 
 	//converts node to an existing string. If it doesn't exist, or any form of null/NaN/NaS, it returns NOT_A_STRING_ID
 	static StringInternPool::StringID ToStringIDIfExists(EvaluableNode *e);
@@ -952,7 +955,7 @@ union EvaluableNodeImmediateValue
 	__forceinline EvaluableNodeImmediateValue &operator =(const EvaluableNodeImmediateValue &eniv)
 	{
 		//perform a memcpy because it's a union, to be safe; the compiler should optimize this out
-		std::memcpy(this, &eniv, sizeof(this));
+		std::memcpy(this, &eniv, sizeof(*this));
 		return *this;
 	}
 
@@ -1133,7 +1136,7 @@ public:
 		}
 
 		if(nodeType == ENIVT_CODE)
-			return std::make_pair(true, EvaluableNode::ToString(nodeValue.code));
+			return std::make_pair(true, EvaluableNode::ToStringPreservingOpcodeType(nodeValue.code));
 
 		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
 		return std::make_pair(false, "");

@@ -1117,7 +1117,6 @@ public:
 
 	std::pair<bool, std::string> GetValueAsString()
 	{
-		//TODO 18652: make sure if type is ENIVT_CODE, that the return values are handled the same as empty nodes in Interpreter::InterpretNodeInto*
 		if(nodeType == ENIVT_NUMBER)
 		{
 			if(FastIsNaN(nodeValue.number))
@@ -1143,6 +1142,18 @@ public:
 
 		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
 		return std::make_pair(false, "");
+	}
+
+	StringInternPool::StringID GetValueAsStringIDIfExists()
+	{
+		//TODO 18652: implement this
+		return string_intern_pool.NOT_A_STRING_ID;
+	}
+
+	StringInternPool::StringID GetValueAsStringIDWithReference()
+	{
+		//TODO 18652: implement this
+		return string_intern_pool.NOT_A_STRING_ID;
 	}
 
 	static inline bool AreEqual(EvaluableNodeImmediateValueWithType &a, EvaluableNodeImmediateValueWithType &b)

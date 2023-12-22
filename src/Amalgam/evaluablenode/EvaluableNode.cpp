@@ -254,7 +254,6 @@ const std::string EvaluableNode::ToOpcodeString(EvaluableNode *e)
 std::pair<bool, std::string> EvaluableNode::ToString(EvaluableNode *e)
 {
 	//TODO 18755: replace uses of ToOpcodeString as appropriate
-	//TODO 18755: pull in any parts of 18652 as appropriate
 
 	if(IsEmptyNode(e))
 		return std::make_pair(false, ".nas");

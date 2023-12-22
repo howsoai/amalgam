@@ -1135,6 +1135,9 @@ public:
 			return std::make_pair(true, str);
 		}
 
+		if(nodeType == ENIVT_NULL)
+			return std::make_pair(false, "");
+
 		if(nodeType == ENIVT_CODE)
 			return std::make_pair(true, EvaluableNode::ToStringPreservingOpcodeType(nodeValue.code));
 

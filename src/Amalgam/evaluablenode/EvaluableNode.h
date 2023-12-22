@@ -955,7 +955,7 @@ union EvaluableNodeImmediateValue
 	__forceinline EvaluableNodeImmediateValue &operator =(const EvaluableNodeImmediateValue &eniv)
 	{
 		//perform a memcpy because it's a union, to be safe; the compiler should optimize this out
-		std::memcpy(this, &eniv, sizeof(this));
+		std::memcpy(this, &eniv, sizeof(*this));
 		return *this;
 	}
 

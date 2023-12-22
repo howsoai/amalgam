@@ -1134,9 +1134,6 @@ public:
 			return std::make_pair(true, str);
 		}
 
-		if(nodeType == ENIVT_NULL)
-			return std::make_pair(false, "");
-
 		if(nodeType == ENIVT_CODE)
 			return std::make_pair(true, EvaluableNode::ToStringPreservingOpcodeType(nodeValue.code));
 
@@ -1147,12 +1144,28 @@ public:
 	StringInternPool::StringID GetValueAsStringIDIfExists()
 	{
 		//TODO 18652: implement this
+		if(nodeType == ENIVT_NUMBER)
+		{
+			
+		}
+
+		if(nodeType == ENIVT_STRING_ID)
+			return nodeValue.stringID;
+
+		if(nodeType == ENIVT_CODE)
+		{
+
+		}
+
+		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
 		return string_intern_pool.NOT_A_STRING_ID;
 	}
 
 	StringInternPool::StringID GetValueAsStringIDWithReference()
 	{
 		//TODO 18652: implement this
+
+		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
 		return string_intern_pool.NOT_A_STRING_ID;
 	}
 

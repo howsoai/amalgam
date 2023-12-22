@@ -1098,12 +1098,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 			}
 		}
 	}
-	else if(collection->GetType() == ENT_STRING)
+	else if(collection->GetType() == ENT_STRING && !EvaluableNode::IsEmptyNode(value))
 	{
 		//compute regular expression
 		const std::string &s = collection->GetStringValue();
 
-		//TODO 18755: need to handle not a string
 		std::string value_as_str = EvaluableNode::ToStringPreservingOpcodeType(value);
 
 		//use nosubs to prevent unnecessary memory allocations since this is just matching

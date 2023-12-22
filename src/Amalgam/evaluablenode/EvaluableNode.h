@@ -368,7 +368,7 @@ public:
 	const static std::string ToOpcodeString(EvaluableNode *e);
 
 	//converts the node to a string, returning true if valid.  If it doesn't exist, or any form of null/NaN/NaS, it returns false
-	std::pair<bool, std::string> ToString(EvaluableNode *e);
+	static std::pair<bool, std::string> ToString(EvaluableNode *e);
 
 	//converts node to an existing string. If it doesn't exist, or any form of null/NaN/NaS, it returns NOT_A_STRING_ID
 	static StringInternPool::StringID ToStringIDIfExists(EvaluableNode *e);

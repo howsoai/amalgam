@@ -234,6 +234,7 @@ double EvaluableNode::ToNumber(EvaluableNode *e, double value_if_null)
 
 const std::string EvaluableNode::ToOpcodeString(EvaluableNode *e)
 {
+	//TODO 18755: rename this function
 	if(e == nullptr)
 		return "null";
 

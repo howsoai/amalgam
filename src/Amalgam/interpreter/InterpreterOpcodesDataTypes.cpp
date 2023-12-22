@@ -531,6 +531,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en)
 				{
 					auto &mcn = from_params->GetMappedChildNodesReference();
 
+					//TODO 18755: handle empty nodes as strings
+
 					auto found_locale = mcn.find(ENBISI_locale);
 					if(found_locale != end(mcn))
 						locale = EvaluableNode::ToOpcodeString(found_locale->second);
@@ -857,6 +859,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en)
 			if(EvaluableNode::IsAssociativeArray(to_params))
 			{
 				auto &mcn = to_params->GetMappedChildNodesReference();
+
+				//TODO 18755: handle empty nodes as strings
 
 				auto found_locale = mcn.find(ENBISI_locale);
 				if(found_locale != end(mcn))

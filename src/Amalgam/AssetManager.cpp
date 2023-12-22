@@ -164,7 +164,7 @@ bool AssetManager::StoreResourcePath(EvaluableNode *code, std::string &resource_
 		if(code != nullptr)
 		{
 			for(auto &cn : code->GetOrderedChildNodes())
-				string_map[EvaluableNode::ToString(cn)] = cur_index++;
+				string_map[EvaluableNode::ToStringPreservingOpcodeType(cn)] = cur_index++;
 		}
 
 		//compress and store
@@ -191,7 +191,7 @@ bool AssetManager::StoreResourcePath(EvaluableNode *code, std::string &resource_
 	}
 	else //binary string
 	{
-		std::string s = EvaluableNode::ToString(code);
+		std::string s = EvaluableNode::ToStringPreservingOpcodeType(code);
 		if(StoreFileFromBuffer<std::string>(processed_resource_path, s))
 			return EvaluableNodeReference(enm->AllocNode(ENT_TRUE), true);
 		else
@@ -226,7 +226,7 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 		{
 			EvaluableNode **seed = metadata->GetMappedChildNode(ENBISI_rand_seed);
 			if(seed != nullptr)
-				default_random_seed = EvaluableNode::ToString(*seed);
+				default_random_seed = EvaluableNode::ToStringPreservingOpcodeType(*seed);
 		}
 	}
 

@@ -535,11 +535,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en)
 
 					auto found_locale = mcn.find(ENBISI_locale);
 					if(found_locale != end(mcn))
-						locale = EvaluableNode::ToOpcodeString(found_locale->second);
+						locale = EvaluableNode::ToStringPreservingOpcodeType(found_locale->second);
 
 					auto found_timezone = mcn.find(ENBISI_timezone);
 					if(found_timezone != end(mcn))
-						timezone = EvaluableNode::ToOpcodeString(found_timezone->second);
+						timezone = EvaluableNode::ToStringPreservingOpcodeType(found_timezone->second);
 				}
 
 				use_number = true;
@@ -864,11 +864,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en)
 
 				auto found_locale = mcn.find(ENBISI_locale);
 				if(found_locale != end(mcn))
-					locale = EvaluableNode::ToOpcodeString(found_locale->second);
+					locale = EvaluableNode::ToStringPreservingOpcodeType(found_locale->second);
 
 				auto found_timezone = mcn.find(ENBISI_timezone);
 				if(found_timezone != end(mcn))
-					timezone = EvaluableNode::ToOpcodeString(found_timezone->second);
+					timezone = EvaluableNode::ToStringPreservingOpcodeType(found_timezone->second);
 			}
 
 			double num_secs_from_epoch = 0.0;
@@ -1846,7 +1846,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en)
 			else if(DoesEvaluableNodeTypeUseNumberData(cur->GetType()))
 				s = EvaluableNode::NumberToString(cur->GetNumberValueReference());
 			else
-				s = EvaluableNode::ToOpcodeString(cur);
+				s = EvaluableNode::ToStringPreservingOpcodeType(cur);
 		}
 		else
 		{

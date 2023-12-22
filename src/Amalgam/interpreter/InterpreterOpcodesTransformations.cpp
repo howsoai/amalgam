@@ -1104,7 +1104,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 		const std::string &s = collection->GetStringValue();
 
 		//TODO 18755: need to handle not a string
-		std::string value_as_str = EvaluableNode::ToOpcodeString(value);
+		std::string value_as_str = EvaluableNode::ToStringPreservingOpcodeType(value);
 
 		//use nosubs to prevent unnecessary memory allocations since this is just matching
 		std::regex rx;

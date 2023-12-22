@@ -195,8 +195,8 @@ int EvaluableNode::Compare(EvaluableNode *a, EvaluableNode *b)
 			return 0;
 	}
 
-	std::string a_str = EvaluableNode::ToOpcodeString(a);
-	std::string b_str = EvaluableNode::ToOpcodeString(b);
+	std::string a_str = EvaluableNode::ToStringPreservingOpcodeType(a);
+	std::string b_str = EvaluableNode::ToStringPreservingOpcodeType(b);
 	return StringManipulation::StringNaturalCompare(a_str, b_str);
 }
 
@@ -232,9 +232,8 @@ double EvaluableNode::ToNumber(EvaluableNode *e, double value_if_null)
 	}
 }
 
-const std::string EvaluableNode::ToOpcodeString(EvaluableNode *e)
+const std::string EvaluableNode::ToStringPreservingOpcodeType(EvaluableNode *e)
 {
-	//TODO 18755: rename this function
 	if(e == nullptr)
 		return "null";
 
@@ -254,8 +253,6 @@ const std::string EvaluableNode::ToOpcodeString(EvaluableNode *e)
 
 std::pair<bool, std::string> EvaluableNode::ToString(EvaluableNode *e)
 {
-	//TODO 18755: replace uses of ToOpcodeString as appropriate
-
 	if(IsEmptyNode(e))
 		return std::make_pair(false, ".nas");
 
@@ -288,7 +285,7 @@ StringInternPool::StringID EvaluableNode::ToStringIDIfExists(EvaluableNode *e)
 		return StringInternPool::NOT_A_STRING_ID;
 
 	//see if the string exists even if it is not stored as a StringID
-	const std::string str_value = ToOpcodeString(e);
+	const std::string str_value = ToStringPreservingOpcodeType(e);
 	//will return empty string if not found
 	return string_intern_pool.GetIDFromString(str_value);
 }
@@ -305,7 +302,7 @@ StringInternPool::StringID EvaluableNode::ToStringIDWithReference(EvaluableNode 
 	if(IsNaN(e))
 		return StringInternPool::NOT_A_STRING_ID;
 	
-	std::string stringified = ToOpcodeString(e);
+	std::string stringified = ToStringPreservingOpcodeType(e);
 	return string_intern_pool.CreateStringReference(stringified);
 }
 
@@ -324,7 +321,7 @@ StringInternPool::StringID EvaluableNode::ToStringIDTakingReferenceAndClearing(E
 		return sid_to_return;
 	}
 
-	std::string stringified = ToOpcodeString(e);
+	std::string stringified = ToStringPreservingOpcodeType(e);
 	return string_intern_pool.CreateStringReference(stringified);
 }
 

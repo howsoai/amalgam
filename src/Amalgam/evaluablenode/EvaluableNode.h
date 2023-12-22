@@ -365,7 +365,7 @@ public:
 	}
 
 	//converts the node to a string that represents the opcode
-	const static std::string ToOpcodeString(EvaluableNode *e);
+	const static std::string ToStringPreservingOpcodeType(EvaluableNode *e);
 
 	//converts the node to a string, returning true if valid.  If it doesn't exist, or any form of null/NaN/NaS, it returns false
 	static std::pair<bool, std::string> ToString(EvaluableNode *e);

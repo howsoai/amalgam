@@ -551,7 +551,7 @@ std::pair<bool, std::string> Interpreter::InterpretNodeIntoStringValue(Evaluable
 		return std::make_pair(false, "");
 	}
 
-	std::string result_string = EvaluableNode::ToOpcodeString(result);
+	std::string result_string = EvaluableNode::ToStringPreservingOpcodeType(result);
 	evaluableNodeManager->FreeNodeTreeIfPossible(result);
 
 	return std::make_pair(true, result_string);
@@ -571,7 +571,7 @@ std::string Interpreter::InterpretNodeIntoStringValueEmptyNull(EvaluableNode *n)
 	if(EvaluableNode::IsEmptyNode(result))
 		return "";
 
-	std::string result_string = EvaluableNode::ToOpcodeString(result);
+	std::string result_string = EvaluableNode::ToStringPreservingOpcodeType(result);
 	evaluableNodeManager->FreeNodeTreeIfPossible(result);
 
 	return result_string;

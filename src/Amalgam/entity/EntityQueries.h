@@ -91,10 +91,10 @@ public:
 	//ENT_QUERY_SELECT's value of the start offset
 	size_t startOffset;
 
-	//if ENT_QUERY_SELECT or ENT_QUERY_SAMPLE has a random stream
+	//whether ENT_QUERY_SELECT or ENT_QUERY_SAMPLE has a random stream; if not, it will use consistent order
 	bool hasRandomStream;
 
-	//ENT_QUERY_SELECT's or ENT_QUERY_SAMPLE's random stream
+	//the random stream for queries that use it
 	RandomStream randomStream;
 
 	//includes zero as a valid difference for ENT_QUERY_MIN_DIFFERENCE

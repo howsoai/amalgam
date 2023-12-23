@@ -170,7 +170,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT(EvaluableNode *en, boo
 	if(immediate_result)
 	{
 		evaluableNodeManager->FreeNodeTreeIfPossible(cur);
-		return EvaluableNodeReference(is_true);
+		return EvaluableNodeReference(!is_true);
 	}
 	return evaluableNodeManager->ReuseOrAllocNode(cur, is_true ? ENT_FALSE : ENT_TRUE);
 }

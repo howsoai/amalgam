@@ -19,8 +19,6 @@
 #include <iostream>
 #include <utility>
 
-//TODO 18652: evaluate InterpretNode_* for immediate returns
-
 EvaluableNodeReference Interpreter::InterpretNode_ENT_AND(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
@@ -56,7 +54,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_AND(EvaluableNode *en, boo
 		cur = InterpretNode(cn);
 
 		if(!EvaluableNode::IsTrue(cur))
+		{
+			if(immediate_result)
+			{
+				evaluableNodeManager->FreeNodeTreeIfPossible(cur);
+				return EvaluableNodeReference(false);
+			}
+
 			return evaluableNodeManager->ReuseOrAllocNode(cur, ENT_FALSE);
+		}
 	}
 
 	return cur;
@@ -101,6 +107,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OR(EvaluableNode *en, bool
 			return cur;
 	}
 
+	if(immediate_result)
+	{
+		evaluableNodeManager->FreeNodeTreeIfPossible(cur);
+		return EvaluableNodeReference(false);
+	}
 	return evaluableNodeManager->ReuseOrAllocNode(cur, ENT_FALSE);
 }
 
@@ -139,7 +150,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_XOR(EvaluableNode *en, boo
 	}
 
 	//if an odd number of true arguments, then return true
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode((num_true % 2 == 1) ? ENT_TRUE : ENT_FALSE), true);
+	bool result = (num_true % 2 == 1);
+
+	if(immediate_result)
+		return EvaluableNodeReference(result);
+	return EvaluableNodeReference(evaluableNodeManager->AllocNode(result ? ENT_TRUE : ENT_FALSE), true);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT(EvaluableNode *en, bool immediate_result)
@@ -152,9 +167,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT(EvaluableNode *en, boo
 	auto cur = InterpretNodeForImmediateUse(ocn[0]);
 	bool is_true = EvaluableNode::IsTrue(cur);
 
+	if(immediate_result)
+	{
+		evaluableNodeManager->FreeNodeTreeIfPossible(cur);
+		return EvaluableNodeReference(is_true);
+	}
 	return evaluableNodeManager->ReuseOrAllocNode(cur, is_true ? ENT_FALSE : ENT_TRUE);
 }
 
+//TODO 18652: evaluate InterpretNode_* for immediate returns
 EvaluableNodeReference Interpreter::InterpretNode_ENT_EQUAL(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();

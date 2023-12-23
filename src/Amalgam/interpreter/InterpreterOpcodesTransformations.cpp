@@ -1058,8 +1058,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_INDEX(EvaluableNo
 	return evaluableNodeManager->ReuseOrAllocOneOfNodes(index, container, found ? ENT_TRUE : ENT_FALSE);
 }
 
-//TODO 18652: evaluate InterpretNode_* for immediate returns
-
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
@@ -1068,45 +1066,45 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 		return EvaluableNodeReference::Null();
 
 	//get assoc array to look up
-	auto collection = InterpretNodeForImmediateUse(ocn[0]);
+	auto container = InterpretNodeForImmediateUse(ocn[0]);
 
-	if(collection == nullptr)
+	if(container == nullptr)
 		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_FALSE), true);
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(collection);
+	auto node_stack = CreateInterpreterNodeStackStateSaver(container);
 
 	//get value to look up (will attempt to reuse this node below)
 	auto value = InterpretNodeForImmediateUse(ocn[1]);
 
-	EvaluableNodeType result = ENT_FALSE;
+	bool found = false;
 
 	//try to find value
-	if(collection->IsAssociativeArray())
+	if(container->IsAssociativeArray())
 	{
-		for(auto &[_, cn] : collection->GetMappedChildNodesReference())
+		for(auto &[_, cn] : container->GetMappedChildNodesReference())
 		{
 			if(EvaluableNode::AreDeepEqual(cn, value))
 			{
-				result = ENT_TRUE;
+				found = true;
 				break;
 			}
 		}
 	}
-	else if(collection->IsOrderedArray())
+	else if(container->IsOrderedArray())
 	{
-		for(auto &cn : collection->GetOrderedChildNodesReference())
+		for(auto &cn : container->GetOrderedChildNodesReference())
 		{
 			if(EvaluableNode::AreDeepEqual(cn, value))
 			{
-				result = ENT_TRUE;
+				found = true;
 				break;
 			}
 		}
 	}
-	else if(collection->GetType() == ENT_STRING && !EvaluableNode::IsEmptyNode(value))
+	else if(container->GetType() == ENT_STRING && !EvaluableNode::IsEmptyNode(value))
 	{
 		//compute regular expression
-		const std::string &s = collection->GetStringValue();
+		const std::string &s = container->GetStringValue();
 
 		std::string value_as_str = EvaluableNode::ToStringPreservingOpcodeType(value);
 
@@ -1122,10 +1120,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 		}
 
 		if(valid_rx && std::regex_match(s, rx))
-			result = ENT_TRUE;
+			found = true;
 	}
 
-	return evaluableNodeManager->ReuseOrAllocOneOfNodes(value, collection, result);
+	if(immediate_result)
+	{
+		evaluableNodeManager->FreeNodeTreeIfPossible(value);
+		evaluableNodeManager->FreeNodeTreeIfPossible(container);
+		return EvaluableNodeReference(found);
+	}
+
+	return evaluableNodeManager->ReuseOrAllocOneOfNodes(value, container, found ? ENT_TRUE : ENT_FALSE);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, bool immediate_result)

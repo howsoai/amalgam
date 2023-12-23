@@ -557,13 +557,13 @@ StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueIfExists(E
 	if(n != nullptr && n->GetType() == ENT_STRING)
 		return n->GetStringID();
 
-	//TODO 18652: implement special paths for this
+	auto result = InterpretNodeForImmediateUse(n, true);
+	auto &result_value = result.GetValue();
 
-	auto result = InterpretNodeForImmediateUse(n);
-	StringInternPool::StringID result_sid = EvaluableNode::ToStringIDIfExists(result);
+	auto sid = result_value.GetValueAsStringIDIfExists();
 	evaluableNodeManager->FreeNodeTreeIfPossible(result);
 
-	return result_sid;
+	return sid;
 }
 
 StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueWithReference(EvaluableNode *n)
@@ -572,7 +572,7 @@ StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueWithRefere
 	if(n != nullptr && n->GetType() == ENT_STRING)
 		return string_intern_pool.CreateStringReference(n->GetStringID());
 
-	//TODO 18652: implement special paths for this
+	//TODO 18652: implement special paths for this -- need to balance extra overhead for methods that don't return immediates
 
 	auto result = InterpretNodeForImmediateUse(n);
 

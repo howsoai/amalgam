@@ -1184,19 +1184,21 @@ public:
 
 	StringInternPool::StringID GetValueAsStringIDIfExists()
 	{
-		//TODO 18652: implement this
 		if(nodeType == ENIVT_NUMBER)
 		{
-			
+			if(FastIsNaN(nodeValue.number))
+				return StringInternPool::NOT_A_STRING_ID;
+
+			const std::string str_value = EvaluableNode::NumberToString(nodeValue.number);
+			//will return empty string if not found
+			return string_intern_pool.GetIDFromString(str_value);
 		}
 
 		if(nodeType == ENIVT_STRING_ID)
 			return nodeValue.stringID;
 
 		if(nodeType == ENIVT_CODE)
-		{
-
-		}
+			return EvaluableNode::ToStringIDIfExists(nodeValue.code);
 
 		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
 		return string_intern_pool.NOT_A_STRING_ID;
@@ -1204,7 +1206,20 @@ public:
 
 	StringInternPool::StringID GetValueAsStringIDWithReference()
 	{
-		//TODO 18652: implement this
+		if(nodeType == ENIVT_NUMBER)
+		{
+			if(FastIsNaN(nodeValue.number))
+				return StringInternPool::NOT_A_STRING_ID;
+
+			const std::string str_value = EvaluableNode::NumberToString(nodeValue.number);
+			return string_intern_pool.CreateStringReference(str_value);
+		}
+
+		if(nodeType == ENIVT_STRING_ID)
+			return string_intern_pool.CreateStringReference(nodeValue.stringID);
+
+		if(nodeType == ENIVT_CODE)
+			return EvaluableNode::ToStringIDWithReference(nodeValue.code);
 
 		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
 		return string_intern_pool.NOT_A_STRING_ID;

@@ -1032,6 +1032,19 @@ public:
 		: nodeType(ENIVT_NULL)
 	{	}
 
+	__forceinline EvaluableNodeImmediateValueWithType(bool value)
+	{
+		if(value)
+		{
+			nodeType = ENIVT_NUMBER;
+			nodeValue.number = 1.0;
+		}
+		else
+		{
+			nodeType = ENIVT_NULL;
+		}
+	}
+
 	constexpr EvaluableNodeImmediateValueWithType(double number)
 		: nodeType(ENIVT_NUMBER), nodeValue(number)
 	{	}
@@ -1089,6 +1102,34 @@ public:
 
 		nodeType = ENIVT_CODE;
 		nodeValue = EvaluableNodeImmediateValue(en);
+	}
+
+	bool GetValueAsBoolean()
+	{
+		if(nodeType == ENIVT_NULL)
+			return false;
+
+		if(nodeType == ENIVT_NUMBER)
+		{
+			if(nodeValue.number == 0.0)
+				return false;
+			if(FastIsNaN(nodeValue.number))
+				return false;
+			return true;
+		}
+
+		if(nodeType == ENIVT_STRING_ID)
+		{
+			if(nodeValue.stringID <= StringInternPool::EMPTY_STRING_ID)
+				return false;
+			return true;
+		}
+
+		if(nodeType == ENIVT_CODE)
+			return EvaluableNode::IsTrue(nodeValue.code);
+
+		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NUMBER_INDIRECTION_INDEX
+		return false;
 	}
 
 	double GetValueAsNumber(double value_if_null = std::numeric_limits<double>::quiet_NaN())

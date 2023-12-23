@@ -661,16 +661,13 @@ bool Interpreter::InterpretNodeIntoBoolValue(EvaluableNode *n, bool value_if_nul
 	if(n == nullptr)
 		return value_if_null;
 
-	//TODO 18652: implement special paths for this -- need new value(s) for EvaluableNodeImmediateValueType?
+	auto result = InterpretNodeForImmediateUse(n, true);
+	auto &result_value = result.GetValue();
 
-	auto result = InterpretNodeForImmediateUse(n);
-	bool result_value = value_if_null;
-	if(!EvaluableNode::IsNull(result))
-		result_value = EvaluableNode::IsTrue(result);
-
+	bool value = result_value.GetValueAsBoolean();
 	evaluableNodeManager->FreeNodeTreeIfPossible(result);
 
-	return result_value;
+	return value;
 }
 
 void Interpreter::InterpretNodeIntoDestinationEntity(EvaluableNode *n, Entity *&destination_entity_parent, StringInternRef &new_entity_id)

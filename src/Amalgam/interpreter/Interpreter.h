@@ -317,7 +317,13 @@ public:
 
 	//Calls InterpretNode on n, converts to std::string and stores in value to return, then cleans up any resources used
 	// but if n is null, it will return an empty string
-	std::string InterpretNodeIntoStringValueEmptyNull(EvaluableNode *n);
+	inline std::string InterpretNodeIntoStringValueEmptyNull(EvaluableNode *n)
+	{
+		auto [valid, str] = InterpretNodeIntoStringValue(n);
+		if(!valid)
+			return "";
+		return str;
+	}
 
 	//like InterpretNodeIntoStringValue, but returns the ID only if the string already exists, otherwise it returns NOT_A_STRING_ID
 	StringInternPool::StringID InterpretNodeIntoStringIDValueIfExists(EvaluableNode *n);

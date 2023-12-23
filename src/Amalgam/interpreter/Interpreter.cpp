@@ -551,28 +551,6 @@ std::pair<bool, std::string> Interpreter::InterpretNodeIntoStringValue(Evaluable
 	return std::make_pair(valid, str);
 }
 
-std::string Interpreter::InterpretNodeIntoStringValueEmptyNull(EvaluableNode *n)
-{
-	if(EvaluableNode::IsEmptyNode(n))
-		return "";
-
-	//shortcut if the node has what is being asked
-	if(n->GetType() == ENT_STRING)
-		return n->GetStringValue();
-
-	//TODO 18652: implement special paths for this
-
-	auto result = InterpretNodeForImmediateUse(n);
-
-	if(EvaluableNode::IsEmptyNode(result))
-		return "";
-
-	std::string result_string = EvaluableNode::ToStringPreservingOpcodeType(result);
-	evaluableNodeManager->FreeNodeTreeIfPossible(result);
-
-	return result_string;
-}
-
 StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueIfExists(EvaluableNode *n)
 {
 	//shortcut if the node has what is being asked

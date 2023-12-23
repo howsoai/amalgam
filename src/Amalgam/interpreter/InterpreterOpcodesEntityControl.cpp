@@ -19,8 +19,6 @@
 #include <iostream>
 #include <utility>
 
-//TODO 18652: evaluate InterpretNode_* for immediate returns
-
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(EvaluableNode *en, bool immediate_result)
 {
 	if(curEntity == nullptr)
@@ -229,6 +227,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_RAND_SEED(Evalu
 	if(entity == nullptr)
 		return EvaluableNodeReference::Null();
 
+	//TODO 18652: revisit this with new string ids
 	std::string rand_state_string = entity->GetRandomState();
 	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, rand_state_string), true);
 }
@@ -289,7 +288,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_ROOT_PERMISSION
 	if(entity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(asset_manager.DoesEntityHaveRootPermission(entity) ? ENT_TRUE : ENT_FALSE), true);
+	bool has_root = asset_manager.DoesEntityHaveRootPermission(entity);
+	if(immediate_result)
+		return EvaluableNodeReference(has_root);
+
+	return EvaluableNodeReference(evaluableNodeManager->AllocNode(has_root ? ENT_TRUE : ENT_FALSE), true);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_ROOT_PERMISSION(EvaluableNode *en, bool immediate_result)
@@ -544,6 +547,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DESTROY_ENTITIES(Evaluable
 		delete source_entity;
 	}
 
+	if(immediate_result)
+		return EvaluableNodeReference(all_destroys_successful);
+
 	return EvaluableNodeReference(evaluableNodeManager->AllocNode(all_destroys_successful ? ENT_TRUE : ENT_FALSE), true);
 }
 
@@ -641,7 +647,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSI
 	destination_entity_parent->AddContainedEntityViaReference(loaded_entity, new_entity_id, writeListeners);
 
 	if(destination_entity_parent == curEntity)
+	{
+		if(immediate_result)
+			return EvaluableNodeReference(new_entity_id);
 		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, new_entity_id), true);
+	}
 	else //need to return an id path
 		return EvaluableNodeReference(GetTraversalIDPathFromAToB(evaluableNodeManager, curEntity, loaded_entity), true);
 }
@@ -698,6 +708,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, b
 
 	evaluableNodeManager->FreeNodeTreeIfPossible(to_store);
 
+	if(immediate_result)
+		return EvaluableNodeReference(successful_save);
 	return EvaluableNodeReference(evaluableNodeManager->AllocNode(successful_save ? ENT_TRUE : ENT_FALSE), true);
 }
 
@@ -758,5 +770,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 	bool stored_successfully = asset_manager.StoreEntityToResourcePath(source_entity, resource_name, file_type,
 		false, true, escape_filename, escape_contained_filenames, sort_keys);
 
+	if(immediate_result)
+		return EvaluableNodeReference(stored_successfully);
 	return EvaluableNodeReference(evaluableNodeManager->AllocNode(stored_successfully ? ENT_TRUE : ENT_FALSE), true);
 }

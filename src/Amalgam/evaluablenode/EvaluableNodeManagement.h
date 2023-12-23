@@ -25,6 +25,10 @@ public:
 		: value(inr.value), unique(inr.unique)
 	{	}
 
+	__forceinline EvaluableNodeReference(bool value)
+		: value(value), unique(true)
+	{	}
+
 	constexpr EvaluableNodeReference(double value)
 		: value(value), unique(true)
 	{	}

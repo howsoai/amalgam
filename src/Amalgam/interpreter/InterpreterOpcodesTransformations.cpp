@@ -19,8 +19,6 @@
 #include <iomanip>
 #include <regex>
 
-//TODO 18652: evaluate InterpretNode_* for immediate returns
-
 EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
@@ -482,7 +480,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 			}
 		}
 		else
-#endif
+	#endif
 		//need this in a block for multithreading above
 		{
 			PushNewConstructionContext(list, result_list, EvaluableNodeImmediateValueWithType(0.0), nullptr);
@@ -816,8 +814,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, b
 
 	source->SetType(new_type, evaluableNodeManager);
 
-	//apply the new type, using whether or not it was a unique reference
-	EvaluableNodeReference result = InterpretNode(source);
+	//apply the new type, using whether or not it was a unique reference,
+	//passing through whether an immediate_result is desired
+	EvaluableNodeReference result = InterpretNode(source, immediate_result);
 
 	return result;
 }
@@ -1047,10 +1046,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_INDEX(EvaluableNo
 	auto index = InterpretNodeForImmediateUse(ocn[1]);
 
 	EvaluableNode **target = TraverseToDestinationFromTraversalPathList(&container.GetReference(), index, false);
-	EvaluableNodeType result = (target != nullptr ? ENT_TRUE : ENT_FALSE);
+	bool found = (target != nullptr);
 
-	return evaluableNodeManager->ReuseOrAllocOneOfNodes(index, container, result);
+	if(immediate_result)
+	{
+		evaluableNodeManager->FreeNodeTreeIfPossible(index);
+		evaluableNodeManager->FreeNodeTreeIfPossible(container);
+		return EvaluableNodeReference(found);
+	}
+
+	return evaluableNodeManager->ReuseOrAllocOneOfNodes(index, container, found ? ENT_TRUE : ENT_FALSE);
 }
+
+//TODO 18652: evaluate InterpretNode_* for immediate returns
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNode *en, bool immediate_result)
 {

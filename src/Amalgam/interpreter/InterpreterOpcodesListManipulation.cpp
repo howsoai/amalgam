@@ -19,8 +19,6 @@
 #include <iostream>
 #include <utility>
 
-//TODO 18652: evaluate InterpretNode_* for immediate returns
-
 EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
@@ -85,6 +83,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, b
 
 			evaluableNodeManager->FreeNodeTreeIfPossible(list);
 
+			//TODO 18652: revisit this with new string ids
 			return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, s.substr(0, utf8_char_length)), true);
 		}
 
@@ -101,6 +100,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, b
 			//return 1 if nonzero
 			evaluableNodeManager->FreeNodeTreeIfPossible(list);
 
+			if(immediate_result)
+				return EvaluableNodeReference(1.0);
 			return EvaluableNodeReference(evaluableNodeManager->AllocNode(1.0), true);
 		}
 	}
@@ -214,6 +215,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, bo
 			//drop the number of characters before this length
 			size_t utf8_start_offset = StringManipulation::GetNthUTF8CharacterOffset(s, num_chars_to_drop);
 
+			//TODO 18652: revisit this with new string ids
 			EvaluableNodeReference result = evaluableNodeManager->ReuseOrAllocNode(list, ENT_STRING);
 			result->SetStringValue(s.substr(utf8_start_offset, s.size() - utf8_start_offset));
 			return result;
@@ -225,6 +227,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, bo
 			double value = list->GetNumberValueReference();
 			if(value == 0.0)
 				return list;
+
+			if(immediate_result)
+			{
+				evaluableNodeManager->FreeNodeTreeIfPossible(list);
+				return EvaluableNodeReference(value - 1.0);
+			}
 
 			//return (value - 1.0) if nonzero
 			EvaluableNodeReference result = evaluableNodeManager->ReuseOrAllocNode(list, ENT_NUMBER);
@@ -302,6 +310,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, bo
 
 			auto [utf8_char_start_offset, utf8_char_length] = StringManipulation::GetLastUTF8CharacterOffsetAndLength(s);
 
+			//TODO 18652: revisit this with new string ids
 			EvaluableNodeReference result = evaluableNodeManager->ReuseOrAllocNode(list, ENT_STRING);
 			result->SetStringValue(s.substr(utf8_char_start_offset, utf8_char_length));
 			return result;
@@ -313,6 +322,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, bo
 			double value = list->GetNumberValueReference();
 			if(value == 0.0)
 				return list;
+
+			if(immediate_result)
+			{
+				evaluableNodeManager->FreeNodeTreeIfPossible(list);
+				return EvaluableNodeReference(1.0);
+			}
 
 			//return 1 if nonzero
 			EvaluableNodeReference result = evaluableNodeManager->ReuseOrAllocNode(list, ENT_NUMBER);
@@ -430,6 +445,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, b
 
 			evaluableNodeManager->FreeNodeTreeIfPossible(list);
 
+			//TODO 18652: revisit this with new string ids
 			return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, s.substr(0, utf8_end_offset)), true);
 		}
 
@@ -442,6 +458,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, b
 
 			//return (value - 1.0) if nonzero
 			evaluableNodeManager->FreeNodeTreeIfPossible(list);
+
+			if(immediate_result)
+				return EvaluableNodeReference(value - 1.0);
 
 			return EvaluableNodeReference(evaluableNodeManager->AllocNode(value - 1.0), true);
 		}
@@ -565,6 +584,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SIZE(EvaluableNode *en, bo
 		evaluableNodeManager->FreeNodeTreeIfPossible(cur);
 	}
 
+	if(immediate_result)
+		return EvaluableNodeReference(static_cast<double>(size));
 	return EvaluableNodeReference(evaluableNodeManager->AllocNode(static_cast<double>(size)), true);
 }
 

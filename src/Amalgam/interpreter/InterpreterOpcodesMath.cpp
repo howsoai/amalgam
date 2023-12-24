@@ -472,7 +472,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ROUND(EvaluableNode *en, b
 	if(num_params == 0)
 		return EvaluableNodeReference::Null();
 
-	//TODO 18652: revisit this regarding immeditaes
 	EvaluableNodeReference retval;
 	double number_value = 0.0;
 

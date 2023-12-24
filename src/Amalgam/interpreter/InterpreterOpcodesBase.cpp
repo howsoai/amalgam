@@ -24,8 +24,6 @@
 #include <limits>
 #include <utility>
 
-//TODO 18652: evaluate InterpretNode_* for immediate returns
-
 //Used only for deep debugging of entity memory and garbage collection
 std::string GetEntityMemorySizeDiagnostics(Entity *e)
 {
@@ -286,6 +284,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNPARSE(EvaluableNode *en,
 	auto tree = InterpretNodeForImmediateUse(ocn[0]);
 	std::string s = Parser::Unparse(tree, evaluableNodeManager, pretty, true, deterministic_order);
 
+	//TODO 18652: revisit this with new string ids
+
 	EvaluableNodeReference result = evaluableNodeManager->ReuseOrAllocNode(tree, ENT_STRING);
 	result->SetStringValue(s);
 	return result;
@@ -300,12 +300,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_IF(EvaluableNode *en, bool
 	for(size_t condition_num = 0; condition_num + 1 < num_cn; condition_num += 2)
 	{
 		if(InterpretNodeIntoBoolValue(ocn[condition_num]))
-			return InterpretNode(ocn[condition_num + 1]);
+			return InterpretNode(ocn[condition_num + 1], immediate_result);
 	}
 
 	//if made it here and one more condition, then it hit the last "else" branch, so exit evaluating to the else
 	if(num_cn & 1)
-		return InterpretNode(ocn[num_cn - 1]);
+		return InterpretNode(ocn[num_cn - 1], immediate_result);
 
 	//none were true
 	return EvaluableNodeReference::Null();
@@ -328,11 +328,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SEQUENCE(EvaluableNode *en
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
 	for(auto &cn : en->GetOrderedChildNodes())
 	{
-		if(result != nullptr && result->GetType() == ENT_CONCLUDE)
+		if(!result.IsImmediateValue() && result != nullptr && result->GetType() == ENT_CONCLUDE)
 			return RemoveConcludeFromConclusion(result, evaluableNodeManager);
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(result);
-		result = InterpretNode(cn);
+		result = InterpretNode(cn, immediate_result);
 	}
 	return result;
 }
@@ -469,7 +469,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, bo
 	PushNewExecutionContext(new_context);
 	
 	//call the code
-	auto retval = InterpretNode(function);
+	auto retval = InterpretNode(function, immediate_result);
 
 	//all finished with new context, but can't free it in case returning something
 	PopExecutionContext();
@@ -608,9 +608,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, b
 		EvaluableNodeReference new_result;
 		for(size_t i = 1; i < ocn_size; i++)
 		{
-			new_result = InterpretNode(ocn[i]);
+			new_result = InterpretNode(ocn[i], immediate_result);
 
-			if(new_result != nullptr && new_result->GetType() == ENT_CONCLUDE)
+			if(!new_result.IsImmediateValue() && new_result != nullptr && new_result->GetType() == ENT_CONCLUDE)
 			{
 				//if previous result is unconsumed, free if possible
 				previous_result = GetAndClearPreviousResultInConstructionStack(0);
@@ -651,7 +651,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, boo
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
 	for(size_t i = 1; i < ocn.size(); i++)
 	{
-		if(result != nullptr && result->GetType() == ENT_CONCLUDE)
+		if(!result.IsImmediateValue() && result != nullptr && result->GetType() == ENT_CONCLUDE)
 		{
 			PopExecutionContext();
 			return RemoveConcludeFromConclusion(result, evaluableNodeManager);
@@ -659,7 +659,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, boo
 
 		//free from previous iteration
 		evaluableNodeManager->FreeNodeTreeIfPossible(result);
-		result = InterpretNode(ocn[i]);
+		result = InterpretNode(ocn[i], immediate_result);
 	}
 
 	//all finished with new context, but can't free it in case returning something
@@ -744,11 +744,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 	//run code 
 	for(size_t i = 1; i < ocn.size(); i++)
 	{
-		if(result != nullptr && result->GetType() == ENT_CONCLUDE)
+		if(!result.IsImmediateValue() && result != nullptr && result->GetType() == ENT_CONCLUDE)
 			return RemoveConcludeFromConclusion(result, evaluableNodeManager);
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(result);
-		result = InterpretNode(ocn[i]);
+		result = InterpretNode(ocn[i], immediate_result);
 	}
 
 	return result;
@@ -1217,6 +1217,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET(EvaluableNode *en, 
 	size_t offset = constructionStackNodes->size() - (constructionStackOffsetStride * depth) + constructionStackOffsetTarget;
 	return EvaluableNodeReference(constructionStackNodes->at(offset), false);
 }
+
+//TODO 18652: evaluate InterpretNode_* for immediate returns
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_INDEX(EvaluableNode *en, bool immediate_result)
 {

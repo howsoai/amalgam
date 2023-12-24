@@ -1034,15 +1034,11 @@ public:
 
 	__forceinline EvaluableNodeImmediateValueWithType(bool value)
 	{
+		nodeType = ENIVT_NUMBER;
 		if(value)
-		{
-			nodeType = ENIVT_NUMBER;
 			nodeValue.number = 1.0;
-		}
 		else
-		{
-			nodeType = ENIVT_NULL;
-		}
+			nodeValue.number = 0.0;
 	}
 
 	constexpr EvaluableNodeImmediateValueWithType(double number)
@@ -1106,9 +1102,6 @@ public:
 
 	bool GetValueAsBoolean()
 	{
-		if(nodeType == ENIVT_NULL)
-			return false;
-
 		if(nodeType == ENIVT_NUMBER)
 		{
 			if(nodeValue.number == 0.0)
@@ -1128,7 +1121,7 @@ public:
 		if(nodeType == ENIVT_CODE)
 			return EvaluableNode::IsTrue(nodeValue.code);
 
-		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NUMBER_INDIRECTION_INDEX
+		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
 		return false;
 	}
 

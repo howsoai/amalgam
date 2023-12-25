@@ -33,6 +33,9 @@ public:
 		: value(value), unique(true)
 	{	}
 
+
+	//TODO 18652: change the string ID methods to always create a reference and clean up as appropriate -- perhaps the string method always does a reference hand-off?
+	//TODO 18652: add constructor that uses std::string and creates the reference
 	constexpr EvaluableNodeReference(StringInternPool::StringID string_id)
 		: value(string_id), unique(true)
 	{	}

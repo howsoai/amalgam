@@ -1175,7 +1175,6 @@ public:
 		return std::make_pair(false, "");
 	}
 
-	//TODO 18652: change the string ID methods to always create a reference and clean up as appropriate -- perhaps the string method always does a reference hand-off?
 	StringInternPool::StringID GetValueAsStringID()
 	{
 		if(nodeType == ENIVT_NUMBER)

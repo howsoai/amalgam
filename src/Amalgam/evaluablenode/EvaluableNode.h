@@ -1176,7 +1176,7 @@ public:
 	}
 
 	//TODO 18652: change the string ID methods to always create a reference and clean up as appropriate -- perhaps the string method always does a reference hand-off?
-	StringInternPool::StringID GetValueAsStringIDIfExists()
+	StringInternPool::StringID GetValueAsStringID()
 	{
 		if(nodeType == ENIVT_NUMBER)
 		{
@@ -1193,27 +1193,6 @@ public:
 
 		if(nodeType == ENIVT_CODE)
 			return EvaluableNode::ToStringIDIfExists(nodeValue.code);
-
-		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
-		return string_intern_pool.NOT_A_STRING_ID;
-	}
-
-	StringInternPool::StringID GetValueAsStringIDWithReference()
-	{
-		if(nodeType == ENIVT_NUMBER)
-		{
-			if(FastIsNaN(nodeValue.number))
-				return StringInternPool::NOT_A_STRING_ID;
-
-			const std::string str_value = EvaluableNode::NumberToString(nodeValue.number);
-			return string_intern_pool.CreateStringReference(str_value);
-		}
-
-		if(nodeType == ENIVT_STRING_ID)
-			return string_intern_pool.CreateStringReference(nodeValue.stringID);
-
-		if(nodeType == ENIVT_CODE)
-			return EvaluableNode::ToStringIDWithReference(nodeValue.code);
 
 		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
 		return string_intern_pool.NOT_A_STRING_ID;

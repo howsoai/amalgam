@@ -560,7 +560,7 @@ StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueIfExists(E
 	auto result = InterpretNodeForImmediateUse(n, true);
 	auto &result_value = result.GetValue();
 
-	auto sid = result_value.GetValueAsStringIDIfExists();
+	auto sid = result_value.GetValueAsStringID();
 	evaluableNodeManager->FreeNodeTreeIfPossible(result);
 
 	return sid;

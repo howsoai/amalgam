@@ -26,15 +26,17 @@
 #include <regex>
 #include <utility>
 
-//TODO 18652: evaluate InterpretNode_* for immediate returns
-
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUE(EvaluableNode *en, bool immediate_result)
 {
+	if(immediate_result)
+		return EvaluableNodeReference(true);
 	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_TRUE), true);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_FALSE(EvaluableNode *en, bool immediate_result)
 {
+	if(immediate_result)
+		return EvaluableNodeReference(false);
 	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_FALSE), true);
 }
 
@@ -182,12 +184,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, b
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_NUMBER(EvaluableNode *en, bool immediate_result)
 {
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(en->GetNumberValueReference()), true);
+	double value = en->GetNumberValueReference();
+	if(immediate_result)
+		return EvaluableNodeReference(value);
+	return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_STRING(EvaluableNode *en, bool immediate_result)
 {
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, en->GetStringIDReference()), true);
+	StringInternPool::StringID value = en->GetStringIDReference();
+	if(immediate_result)
+		return EvaluableNodeReference(value);
+	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, value), true);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, bool immediate_result)
@@ -224,6 +232,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE(EvaluableNode *en
 	return EvaluableNodeReference(evaluableNodeManager->AllocNode(type), true);
 }
 
+//TODO 18652: evaluate InterpretNode_* below for immediate returns
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE_STRING(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();

@@ -1218,8 +1218,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET(EvaluableNode *en, 
 	return EvaluableNodeReference(constructionStackNodes->at(offset), false);
 }
 
-//TODO 18652: evaluate InterpretNode_* for immediate returns
-
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_INDEX(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
@@ -1245,9 +1243,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_INDEX(EvaluableNod
 	EvaluableNode *index_node = nullptr;
 	EvaluableNodeImmediateValueWithType enivwt = constructionStackIndicesAndUniqueness[offset].index;
 	if(enivwt.nodeType == ENIVT_NUMBER)
+	{
+		if(immediate_result)
+			return EvaluableNodeReference(enivwt.nodeValue.number);
 		index_node = evaluableNodeManager->AllocNode(enivwt.nodeValue.number);
+	}
 	else if(enivwt.nodeType == ENIVT_STRING_ID)
+	{
+		if(immediate_result)
+			return EvaluableNodeReference(enivwt.nodeValue.stringID);
 		index_node = evaluableNodeManager->AllocNode(ENT_STRING, enivwt.nodeValue.stringID);
+	}
 
 	return EvaluableNodeReference(index_node, true);
 }
@@ -1357,6 +1363,8 @@ EvaluableNodeReference GenerateRandomValueBasedOnRandParam(EvaluableNodeReferenc
 
 	return EvaluableNodeReference::Null();
 }
+
+//TODO 18652: evaluate InterpretNode_* below for immediate returns
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, bool immediate_result)
 {

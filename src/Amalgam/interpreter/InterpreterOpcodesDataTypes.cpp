@@ -232,7 +232,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE(EvaluableNode *en
 	return EvaluableNodeReference(evaluableNodeManager->AllocNode(type), true);
 }
 
-//TODO 18652: evaluate InterpretNode_* below for immediate returns
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE_STRING(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
@@ -247,6 +246,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE_STRING(EvaluableN
 	evaluableNodeManager->FreeNodeTreeIfPossible(cur);
 
 	std::string type_string = GetStringFromEvaluableNodeType(type, true);
+	if(immediate_result)
+		return EvaluableNodeReference(type_string);
 	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, type_string), true);
 }
 
@@ -295,6 +296,8 @@ constexpr DestinationType ExpandCharStorage(char &value)
 {
 	return static_cast<DestinationType>(reinterpret_cast<SourceType &>(value));
 }
+
+//TODO 18652: evaluate InterpretNode_* below for immediate returns
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, bool immediate_result)
 {

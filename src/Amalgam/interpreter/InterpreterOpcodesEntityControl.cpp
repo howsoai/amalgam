@@ -227,8 +227,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_RAND_SEED(Evalu
 	if(entity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	//TODO 18652: revisit this with new string ids
 	std::string rand_state_string = entity->GetRandomState();
+
+	if(immediate_result)
+		return EvaluableNodeReference(rand_state_string);
 	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, rand_state_string), true);
 }
 

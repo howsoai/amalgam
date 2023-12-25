@@ -547,6 +547,7 @@ std::pair<bool, std::string> Interpreter::InterpretNodeIntoStringValue(Evaluable
 
 	auto [valid, str] = result_value.GetValueAsString();
 	evaluableNodeManager->FreeNodeTreeIfPossible(result);
+	result.FreeImmediateResources();
 
 	return std::make_pair(valid, str);
 }
@@ -562,6 +563,8 @@ StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueIfExists(E
 
 	auto sid = result_value.GetValueAsStringID();
 	evaluableNodeManager->FreeNodeTreeIfPossible(result);
+	//ID already exists outside of this, so not expecting to keep this reference
+	result.FreeImmediateResources();
 
 	return sid;
 }
@@ -633,6 +636,7 @@ double Interpreter::InterpretNodeIntoNumberValue(EvaluableNode *n)
 
 	double value = result_value.GetValueAsNumber();
 	evaluableNodeManager->FreeNodeTreeIfPossible(result);
+	result.FreeImmediateResources();
 
 	return value;
 }

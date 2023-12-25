@@ -33,12 +33,19 @@ public:
 		: value(value), unique(true)
 	{	}
 
-
-	//TODO 18652: change the string ID methods to always create a reference and clean up as appropriate -- perhaps the string method always does a reference hand-off?
-	//TODO 18652: add constructor that uses std::string and creates the reference
-	constexpr EvaluableNodeReference(StringInternPool::StringID string_id)
-		: value(string_id), unique(true)
+	__forceinline EvaluableNodeReference(StringInternPool::StringID string_id)
+		: value(string_intern_pool.CreateStringReference(string_id)), unique(true)
 	{	}
+
+	//frees resources associated with immediate values
+	//note that this could be placed in a destructor, but this is such a rare use,
+	//i.e., only when an immediate value is requested, and the references are usually handled specially,
+	//that it's just as complex to put it in the destructor but will incur more overhead
+	__forceinline void FreeImmediateResources()
+	{
+		if(IsImmediateValue() && value.nodeType == ENIVT_STRING_ID)
+			string_intern_pool.DestroyStringReference(value.nodeValue.stringID);
+	}
 
 	//when attached a child node, make sure that this node reflects the same properties
 	void UpdatePropertiesBasedOnAttachedNode(EvaluableNodeReference &attached)

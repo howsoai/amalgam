@@ -649,7 +649,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSI
 	if(destination_entity_parent == curEntity)
 	{
 		if(immediate_result)
-			return EvaluableNodeReference(new_entity_id);
+			return EvaluableNodeReference(static_cast<StringInternPool::StringID>(new_entity_id));
 		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, new_entity_id), true);
 	}
 	else //need to return an id path

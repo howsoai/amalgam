@@ -37,6 +37,10 @@ public:
 		: value(string_intern_pool.CreateStringReference(string_id)), unique(true)
 	{	}
 
+	__forceinline EvaluableNodeReference(const std::string &str)
+		: value(string_intern_pool.CreateStringReference(str)), unique(true)
+	{	}
+
 	//frees resources associated with immediate values
 	//note that this could be placed in a destructor, but this is such a rare use,
 	//i.e., only when an immediate value is requested, and the references are usually handled specially,

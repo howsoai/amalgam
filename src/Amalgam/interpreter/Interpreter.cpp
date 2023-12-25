@@ -561,7 +561,7 @@ StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueIfExists(E
 	auto result = InterpretNodeForImmediateUse(n, true);
 	auto &result_value = result.GetValue();
 
-	auto sid = result_value.GetValueAsStringID();
+	auto sid = result_value.GetValueAsStringIDIfExists();
 	evaluableNodeManager->FreeNodeTreeIfPossible(result);
 	//ID already exists outside of this, so not expecting to keep this reference
 	result.FreeImmediateResources();
@@ -575,27 +575,38 @@ StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueWithRefere
 	if(n != nullptr && n->GetType() == ENT_STRING)
 		return string_intern_pool.CreateStringReference(n->GetStringID());
 
-	//TODO 18652: implement special paths for this -- need to balance extra overhead for methods that don't return immediates
+	auto result = InterpretNodeForImmediateUse(n, true);
 
-	auto result = InterpretNodeForImmediateUse(n);
-
-	StringInternPool::StringID result_sid = string_intern_pool.NOT_A_STRING_ID;
-	//if have a unique string, then just grab the string's reference instead of creating a new one
-	if(result.unique)
+	if(result.IsImmediateValue())
 	{
-		if(result != nullptr && result->IsStringValue())
-			result_sid = result->GetAndClearStringIDWithReference();
-		else
-			result_sid = EvaluableNode::ToStringIDWithReference(result);
+		auto &result_value = result.GetValue();
 
-		evaluableNodeManager->FreeNodeTree(result);
+		//reuse the reference if it has one
+		if(result_value.nodeType == ENIVT_STRING_ID)
+			return result_value.nodeValue.stringID;
+
+		//create new reference
+		return result_value.GetValueAsStringIDWithReference();
 	}
-	else //not unique, so can't free
+	else //not immediate
 	{
-		result_sid = EvaluableNode::ToStringIDWithReference(result);
-	}
+		//if have a unique string, then just grab the string's reference instead of creating a new one
+		if(result.unique)
+		{
+			StringInternPool::StringID result_sid = string_intern_pool.NOT_A_STRING_ID;
+			if(result != nullptr && result->IsStringValue())
+				result_sid = result->GetAndClearStringIDWithReference();
+			else
+				result_sid = EvaluableNode::ToStringIDWithReference(result);
 
-	return result_sid;
+			evaluableNodeManager->FreeNodeTree(result);
+			return result_sid;
+		}
+		else //not unique, so can't free
+		{
+			return EvaluableNode::ToStringIDWithReference(result);
+		}
+	}
 }
 
 EvaluableNode *Interpreter::InterpretNodeIntoUniqueStringIDValueEvaluableNode(EvaluableNode *n)

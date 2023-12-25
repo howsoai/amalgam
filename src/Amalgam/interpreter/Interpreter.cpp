@@ -681,6 +681,7 @@ bool Interpreter::InterpretNodeIntoBoolValue(EvaluableNode *n, bool value_if_nul
 
 	bool value = result_value.GetValueAsBoolean();
 	evaluableNodeManager->FreeNodeTreeIfPossible(result);
+	result.FreeImmediateResources();
 
 	return value;
 }

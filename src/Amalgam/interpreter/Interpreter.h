@@ -353,7 +353,7 @@ public:
 		if(immediate_result)
 		{
 			double value = InterpretNodeIntoNumberValue(n);
-			return EvaluableNodeReference(std::floor(value));
+			return EvaluableNodeReference(func(value));
 		}
 
 		auto retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(n);

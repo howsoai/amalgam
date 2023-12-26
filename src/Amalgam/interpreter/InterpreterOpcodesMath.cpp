@@ -514,11 +514,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ROUND(EvaluableNode *en, b
 		}
 	}
 
-	if(immediate_result)
-		return EvaluableNodeReference(number_value);
-
-	retval->SetNumberValue(number_value);
-	return retval;
+	return ReuseOrAllocReturn(retval, number_value, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_EXPONENT(EvaluableNode *en, bool immediate_result)
@@ -1067,16 +1063,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DOT_PRODUCT(EvaluableNode 
 		}
 	}
 
-	if(immediate_result)
-	{
-		evaluableNodeManager->FreeNodeTreeIfPossible(elements1);
-		evaluableNodeManager->FreeNodeTreeIfPossible(elements2);
-		return EvaluableNodeReference(dot_product);
-	}
-
-	EvaluableNodeReference result = evaluableNodeManager->ReuseOrAllocOneOfNodes(elements1, elements2, ENT_NUMBER);
-	result->SetNumberValue(dot_product);
-	return result;
+	return ReuseOrAllocOneOfReturn(elements1, elements2, dot_product, immediate_result);
 }
 
 //builds a vector of the values in the node, using ordered or mapped child nodes as appropriate
@@ -1245,18 +1232,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 	}
 	
 	double value = dist_params.ComputeMinkowskiDistance(location, location_types, origin, origin_types, true);
-
-	if(immediate_result)
-	{
-		evaluableNodeManager->FreeNodeTreeIfPossible(location_node);
-		evaluableNodeManager->FreeNodeTreeIfPossible(origin_node);
-		return EvaluableNodeReference(value);
-	}
-
-	//free these after computation in case they had any code being used/referenced in the distance
-	EvaluableNodeReference result = evaluableNodeManager->ReuseOrAllocOneOfNodes(location_node, origin_node, ENT_NUMBER);
-	result->SetNumberValue(value);
-	return result;
+	return ReuseOrAllocOneOfReturn(location_node, origin_node, value, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en, bool immediate_result)
@@ -1476,15 +1452,5 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 	//are larger than the values in p, the resulting value may wind up being a tiny negative, but since information gain cannot be negative,
 	//we take the max of the result and 0
 	accumulated_entropy = std::max(0.0, accumulated_entropy);
-
-	if(immediate_result)
-	{
-		evaluableNodeManager->FreeNodeTreeIfPossible(p_node);
-		evaluableNodeManager->FreeNodeTreeIfPossible(q_node);
-		return EvaluableNodeReference(accumulated_entropy);
-	}
-
-	EvaluableNodeReference result = evaluableNodeManager->ReuseOrAllocOneOfNodes(p_node, q_node, ENT_NUMBER);
-	result->SetNumberValue(accumulated_entropy);
-	return result;
+	return ReuseOrAllocOneOfReturn(p_node, q_node, accumulated_entropy, immediate_result);
 }

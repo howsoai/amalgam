@@ -1048,14 +1048,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_INDEX(EvaluableNo
 	EvaluableNode **target = TraverseToDestinationFromTraversalPathList(&container.GetReference(), index, false);
 	bool found = (target != nullptr);
 
-	if(immediate_result)
-	{
-		evaluableNodeManager->FreeNodeTreeIfPossible(index);
-		evaluableNodeManager->FreeNodeTreeIfPossible(container);
-		return EvaluableNodeReference(found);
-	}
-
-	return evaluableNodeManager->ReuseOrAllocOneOfNodes(index, container, found ? ENT_TRUE : ENT_FALSE);
+	return ReuseOrAllocOneOfReturn(index, container, found, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNode *en, bool immediate_result)
@@ -1123,14 +1116,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 			found = true;
 	}
 
-	if(immediate_result)
-	{
-		evaluableNodeManager->FreeNodeTreeIfPossible(value);
-		evaluableNodeManager->FreeNodeTreeIfPossible(container);
-		return EvaluableNodeReference(found);
-	}
-
-	return evaluableNodeManager->ReuseOrAllocOneOfNodes(value, container, found ? ENT_TRUE : ENT_FALSE);
+	return ReuseOrAllocOneOfReturn(value, container, found, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, bool immediate_result)

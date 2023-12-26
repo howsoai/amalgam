@@ -83,8 +83,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, b
 
 			evaluableNodeManager->FreeNodeTreeIfPossible(list);
 
-			//TODO 18652: revisit this with new string ids
-			return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, s.substr(0, utf8_char_length)), true);
+			std::string substring = s.substr(0, utf8_char_length);
+			if(immediate_result)
+				return EvaluableNodeReference(substring);
+			return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, substring), true);
 		}
 
 		if(DoesEvaluableNodeTypeUseNumberData(list->GetType()))
@@ -215,9 +217,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, bo
 			//drop the number of characters before this length
 			size_t utf8_start_offset = StringManipulation::GetNthUTF8CharacterOffset(s, num_chars_to_drop);
 
-			//TODO 18652: revisit this with new string ids
+			std::string substring = s.substr(utf8_start_offset, s.size() - utf8_start_offset);
+			if(immediate_result)
+			{
+				evaluableNodeManager->FreeNodeTreeIfPossible(list);
+				return EvaluableNodeReference(substring);
+			}
 			EvaluableNodeReference result = evaluableNodeManager->ReuseOrAllocNode(list, ENT_STRING);
-			result->SetStringValue(s.substr(utf8_start_offset, s.size() - utf8_start_offset));
+			result->SetStringValue(substring);
 			return result;
 		}
 
@@ -310,9 +317,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, bo
 
 			auto [utf8_char_start_offset, utf8_char_length] = StringManipulation::GetLastUTF8CharacterOffsetAndLength(s);
 
-			//TODO 18652: revisit this with new string ids
+			std::string substring = s.substr(utf8_char_start_offset, utf8_char_length);
+			if(immediate_result)
+			{
+				evaluableNodeManager->FreeNodeTreeIfPossible(list);
+				return EvaluableNodeReference(substring);
+			}
 			EvaluableNodeReference result = evaluableNodeManager->ReuseOrAllocNode(list, ENT_STRING);
-			result->SetStringValue(s.substr(utf8_char_start_offset, utf8_char_length));
+			result->SetStringValue(substring);
 			return result;
 		}
 
@@ -445,8 +457,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, b
 
 			evaluableNodeManager->FreeNodeTreeIfPossible(list);
 
-			//TODO 18652: revisit this with new string ids
-			return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, s.substr(0, utf8_end_offset)), true);
+			std::string substring = s.substr(0, utf8_end_offset);
+			if(immediate_result)
+				return EvaluableNodeReference(substring);
+			return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, substring), true);
 		}
 
 		if(DoesEvaluableNodeTypeUseNumberData(list->GetType()))

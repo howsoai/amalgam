@@ -151,11 +151,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_XOR(EvaluableNode *en, boo
 
 	//if an odd number of true arguments, then return true
 	bool result = (num_true % 2 == 1);
-
-	if(immediate_result)
-		return EvaluableNodeReference(result);
-
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(result ? ENT_TRUE : ENT_FALSE), true);
+	return AllocReturn(result, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT(EvaluableNode *en, bool immediate_result)
@@ -335,9 +331,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NEQUAL(EvaluableNode *en, 
 	for(size_t i = 0; i < values.size(); i++)
 		evaluableNodeManager->FreeNodeTreeIfPossible(values[i]);
 
-	if(immediate_result)
-		return EvaluableNodeReference(all_not_equal);
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(all_not_equal ? ENT_TRUE : ENT_FALSE), true);
+	return AllocReturn(all_not_equal, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LESS_and_LEQUAL(EvaluableNode *en, bool immediate_result)
@@ -655,8 +649,5 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TYPE_NEQUALS(EvaluableNode
 	for(size_t i = 0; i < values.size(); i++)
 		evaluableNodeManager->FreeNodeTreeIfPossible(values[i]);
 
-	if(immediate_result)
-		return EvaluableNodeReference(all_not_equal);
-
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(all_not_equal ? ENT_TRUE : ENT_FALSE), true);
+	return AllocReturn(all_not_equal, immediate_result);
 }

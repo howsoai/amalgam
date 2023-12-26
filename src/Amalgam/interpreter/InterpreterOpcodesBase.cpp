@@ -1243,22 +1243,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_INDEX(EvaluableNod
 	size_t offset = constructionStackIndicesAndUniqueness.size() - depth - 1;
 
 	//build the index node to return
-	EvaluableNode *index_node = nullptr;
 	EvaluableNodeImmediateValueWithType enivwt = constructionStackIndicesAndUniqueness[offset].index;
 	if(enivwt.nodeType == ENIVT_NUMBER)
 	{
-		if(immediate_result)
-			return EvaluableNodeReference(enivwt.nodeValue.number);
-		index_node = evaluableNodeManager->AllocNode(enivwt.nodeValue.number);
+		return AllocReturn(enivwt.nodeValue.number, immediate_result);
 	}
 	else if(enivwt.nodeType == ENIVT_STRING_ID)
 	{
 		if(immediate_result)
 			return EvaluableNodeReference(enivwt.nodeValue.stringID);
-		index_node = evaluableNodeManager->AllocNode(ENT_STRING, enivwt.nodeValue.stringID);
+		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, enivwt.nodeValue.stringID), true);
 	}
 
-	return EvaluableNodeReference(index_node, true);
+	return EvaluableNodeReference::Null();
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_VALUE(EvaluableNode *en, bool immediate_result)
@@ -1378,9 +1375,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, bo
 	if(ocn.size() == 0)
 	{
 		double r = randomStream.RandFull();
-		if(immediate_result)
-			return EvaluableNodeReference(r);
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(r), true);
+		return AllocReturn(r, immediate_result);
 	}
 
 	//get number to generate
@@ -1891,9 +1886,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM_TIME(EvaluableNode 
 	std::chrono::duration<double, std::ratio<1>> double_duration_us = duration_us;
 	double sec = double_duration_us.count();
 
-	if(immediate_result)
-		return EvaluableNodeReference(sec);
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(sec), true);
+	return AllocReturn(sec, immediate_result);
 }
 
 //error handling

@@ -285,16 +285,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_ROOT_PERMISSION
 	if(!asset_manager.DoesEntityHaveRootPermission(curEntity))
 		return EvaluableNodeReference::Null();
 
-	//get the id of the entity
 	EntityReadReference entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
-	if(entity == nullptr)
-		return EvaluableNodeReference::Null();
-
-	bool has_root = asset_manager.DoesEntityHaveRootPermission(entity);
-	if(immediate_result)
-		return EvaluableNodeReference(has_root);
-
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(has_root ? ENT_TRUE : ENT_FALSE), true);
+	return AllocReturn(asset_manager.DoesEntityHaveRootPermission(entity), immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_ROOT_PERMISSION(EvaluableNode *en, bool immediate_result)
@@ -549,10 +541,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DESTROY_ENTITIES(Evaluable
 		delete source_entity;
 	}
 
-	if(immediate_result)
-		return EvaluableNodeReference(all_destroys_successful);
-
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(all_destroys_successful ? ENT_TRUE : ENT_FALSE), true);
+	return AllocReturn(all_destroys_successful, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, bool immediate_result)
@@ -772,7 +761,5 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 	bool stored_successfully = asset_manager.StoreEntityToResourcePath(source_entity, resource_name, file_type,
 		false, true, escape_filename, escape_contained_filenames, sort_keys);
 
-	if(immediate_result)
-		return EvaluableNodeReference(stored_successfully);
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(stored_successfully ? ENT_TRUE : ENT_FALSE), true);
+	return AllocReturn(stored_successfully, immediate_result);
 }

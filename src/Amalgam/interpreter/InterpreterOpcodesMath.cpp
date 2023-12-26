@@ -35,14 +35,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ADD(EvaluableNode *en, boo
 		for(auto &cn : interpreted_nodes)
 			value += EvaluableNode::ToNumber(cn);
 
-		return AllocNumberReturn(value, immediate_result);
+		return AllocReturn(value, immediate_result);
 	}
 #endif
 
 	for(auto &cn : ocn)
 		value += InterpretNodeIntoNumberValue(cn);
 
-	return AllocNumberReturn(value, immediate_result);
+	return AllocReturn(value, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBTRACT(EvaluableNode *en, bool immediate_result)
@@ -59,7 +59,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBTRACT(EvaluableNode *en
 		for(size_t i = 1; i < ocn.size(); i++)
 			value -= EvaluableNode::ToNumber(interpreted_nodes[i]);
 
-		return AllocNumberReturn(value, immediate_result);
+		return AllocReturn(value, immediate_result);
 	}
 #endif
 
@@ -71,7 +71,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBTRACT(EvaluableNode *en
 	if(ocn.size() == 1)
 		value = -value;
 
-	return AllocNumberReturn(value, immediate_result);
+	return AllocReturn(value, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MULTIPLY(EvaluableNode *en, bool immediate_result)
@@ -89,14 +89,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MULTIPLY(EvaluableNode *en
 		for(auto &cn : interpreted_nodes)
 			value *= EvaluableNode::ToNumber(cn);
 
-		return AllocNumberReturn(value, immediate_result);
+		return AllocReturn(value, immediate_result);
 	}
 #endif
 
 	for(auto &cn : ocn)
 		value *= InterpretNodeIntoNumberValue(cn);
 
-	return AllocNumberReturn(value, immediate_result);
+	return AllocReturn(value, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_DIVIDE(EvaluableNode *en, bool immediate_result)
@@ -129,7 +129,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DIVIDE(EvaluableNode *en, 
 			}
 		}
 
-		return AllocNumberReturn(value, immediate_result);
+		return AllocReturn(value, immediate_result);
 	}
 #endif
 
@@ -153,7 +153,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DIVIDE(EvaluableNode *en, 
 		}
 	}
 
-	return AllocNumberReturn(value, immediate_result);
+	return AllocReturn(value, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MODULUS(EvaluableNode *en, bool immediate_result)
@@ -173,7 +173,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MODULUS(EvaluableNode *en,
 			value = std::fmod(value, mod);
 		}
 
-		return AllocNumberReturn(value, immediate_result);
+		return AllocReturn(value, immediate_result);
 	}
 #endif
 
@@ -184,7 +184,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MODULUS(EvaluableNode *en,
 		value = std::fmod(value, mod);
 	}
 
-	return AllocNumberReturn(value, immediate_result);
+	return AllocReturn(value, immediate_result);
 }
 
 //helper method for InterpretNode_ENT_GET_DIGITS and InterpretNode_ENT_SET_DIGITS
@@ -348,7 +348,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_DIGITS(EvaluableNode *
 		digits = InterpretNodeForImmediateUse(ocn[2]);
 
 	if(digits == nullptr || digits->GetType() != ENT_LIST)
-		return AllocNumberReturn(value, immediate_result);
+		return AllocReturn(value, immediate_result);
 
 	bool negative = (value < 0);
 	if(negative)
@@ -428,7 +428,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_DIGITS(EvaluableNode *
 	if(negative)
 		result_value = -result_value;
 
-	return AllocNumberReturn(result_value, immediate_result);
+	return AllocReturn(result_value, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_FLOOR(EvaluableNode *en, bool immediate_result)
@@ -670,7 +670,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ATAN(EvaluableNode *en, bo
 	{
 		double f1 = InterpretNodeIntoNumberValue(ocn[0]);
 		double f2 = InterpretNodeIntoNumberValue(ocn[1]);
-		return AllocNumberReturn(std::atan2(f1, f2), immediate_result);
+		return AllocReturn(std::atan2(f1, f2), immediate_result);
 	}
 	return EvaluableNodeReference::Null();
 }
@@ -855,7 +855,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_POW(EvaluableNode *en, boo
 
 	double f1 = InterpretNodeIntoNumberValue(ocn[0]);
 	double f2 = InterpretNodeIntoNumberValue(ocn[1]);
-	return AllocNumberReturn(std::pow(f1, f2), immediate_result);
+	return AllocReturn(std::pow(f1, f2), immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ABS(EvaluableNode *en, bool immediate_result)

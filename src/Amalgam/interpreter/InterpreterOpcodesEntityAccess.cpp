@@ -38,9 +38,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_ENTITY(EvaluableN
 	EntityReadReference source_entity = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReadReference>(curEntity, source_id_node);
 	evaluableNodeManager->FreeNodeTreeIfPossible(source_id_node);
 
-	if(immediate_result)
-		return EvaluableNodeReference(source_entity != nullptr);
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(source_entity != nullptr ? ENT_TRUE : ENT_FALSE), true);
+	return AllocReturn(source_entity != nullptr, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COMPUTE_ON_CONTAINED_ENTITIES(EvaluableNode *en, bool immediate_result)
@@ -211,10 +209,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_LABEL(EvaluableNo
 	if(target_entity != curEntity && Entity::IsLabelPrivate(label_sid))
 		return EvaluableNodeReference::Null();
 
-	bool contains_label = target_entity->DoesLabelExist(label_sid);
-	if(immediate_result)
-		return EvaluableNodeReference(contains_label);
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(contains_label ? ENT_TRUE : ENT_FALSE), true);
+	return AllocReturn(target_entity->DoesLabelExist(label_sid), immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIRECT_ASSIGN_TO_ENTITIES_and_ACCUM_TO_ENTITIES(EvaluableNode *en, bool immediate_result)
@@ -305,9 +300,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 			return EvaluableNodeReference::Null();
 	}
 
-	if(immediate_result)
-		return EvaluableNodeReference(all_assignments_successful);
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(all_assignments_successful ? ENT_TRUE : ENT_FALSE), true);
+	return AllocReturn(all_assignments_successful, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_DIRECT_RETRIEVE_FROM_ENTITY(EvaluableNode *en, bool immediate_result)

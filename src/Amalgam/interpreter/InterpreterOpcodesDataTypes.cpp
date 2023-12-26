@@ -28,16 +28,12 @@
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUE(EvaluableNode *en, bool immediate_result)
 {
-	if(immediate_result)
-		return EvaluableNodeReference(true);
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_TRUE), true);
+	return AllocReturn(true, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_FALSE(EvaluableNode *en, bool immediate_result)
 {
-	if(immediate_result)
-		return EvaluableNodeReference(false);
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_FALSE), true);
+	return AllocReturn(false, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_NULL(EvaluableNode *en, bool immediate_result)
@@ -185,9 +181,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, b
 EvaluableNodeReference Interpreter::InterpretNode_ENT_NUMBER(EvaluableNode *en, bool immediate_result)
 {
 	double value = en->GetNumberValueReference();
-	if(immediate_result)
-		return EvaluableNodeReference(value);
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
+	return AllocReturn(value, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_STRING(EvaluableNode *en, bool immediate_result)
@@ -1129,10 +1123,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_CONCURRENCY(EvaluableN
 	auto n = InterpretNodeForImmediateUse(ocn[0]);
 	if(n == nullptr)
 		return EvaluableNodeReference::Null();
-	
-	if(immediate_result)
-		return EvaluableNodeReference(n->GetConcurrency());
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(n->GetConcurrency() ? ENT_TRUE : ENT_FALSE), true);
+
+	return AllocReturn(n->GetConcurrency(), immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_CONCURRENCY(EvaluableNode *en, bool immediate_result)
@@ -1399,6 +1391,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SPLIT(EvaluableNode *en, b
 }
 
 //TODO 18652: evaluate InterpretNode_* below for immediate returns
+//TODO 18652: expand AllocReturn to include reusing 1 or 2 nodes, as well as handling string types (may need to remove the int/size variant of AllocNode)
+//TODO 18652: consider lambda function to make single value mathematical opcodes more compact
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();

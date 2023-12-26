@@ -241,6 +241,13 @@ public:
 		return n;
 	}
 
+	inline EvaluableNode *AllocNode(bool bool_value)
+	{
+		EvaluableNode *n = AllocUninitializedNode();
+		n->InitializeType(bool_value ? ENT_TRUE : ENT_FALSE);
+		return n;
+	}
+
 	inline EvaluableNode *AllocNode(EvaluableNodeType type)
 	{
 		EvaluableNode *n = AllocUninitializedNode();

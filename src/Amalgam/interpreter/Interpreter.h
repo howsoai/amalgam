@@ -296,7 +296,8 @@ public:
 	EvaluableNode *GetCurrentExecutionContext();
 
 	//returns an EvaluableNodeReference for value, allocating if necessary based on if immediate result is needed
-	inline EvaluableNodeReference AllocNumberReturn(double value, bool immediate_result)
+	template<typename T>
+	inline EvaluableNodeReference AllocReturn(T value, bool immediate_result)
 	{
 		if(immediate_result)
 			return EvaluableNodeReference(value);

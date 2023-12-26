@@ -410,9 +410,10 @@ public:
 	}
 
 	//like ReuseOrAllocOneOfNodes but allocates either ENT_TRUE or ENT_FALSE
-	inline EvaluableNodeReference ReuseOrAllocOneOfNodes(EvaluableNodeReference candidate, bool value)
+	inline EvaluableNodeReference ReuseOrAllocOneOfNodes(
+		EvaluableNodeReference candidate_1, EvaluableNodeReference candidate_2, bool value)
 	{
-		return ReuseOrAllocOneOfNodes(candidate, value ? ENT_TRUE : ENT_FALSE);
+		return ReuseOrAllocOneOfNodes(candidate_1, candidate_2, value ? ENT_TRUE : ENT_FALSE);
 	}
 
 	//Copies the data structure and everything underneath it, modifying labels as specified

@@ -413,13 +413,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, b
 
 			//remove everything after after this length
 			size_t utf8_end_offset = StringManipulation::GetNthUTF8CharacterOffset(s, num_chars_to_keep);
-
-			evaluableNodeManager->FreeNodeTreeIfPossible(list);
-
 			std::string substring = s.substr(0, utf8_end_offset);
-			if(immediate_result)
-				return EvaluableNodeReference(substring);
-			return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, substring), true);
+			return ReuseOrAllocReturn(list, substring, immediate_result);
 		}
 
 		if(DoesEvaluableNodeTypeUseNumberData(list->GetType()))

@@ -1345,7 +1345,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ARGS(EvaluableNode *en, bo
 
 //Generates an EvaluableNode containing a random value based on the random parameter param, using enm and random_stream
 // if any part of param is preserved in the return value, then can_free_param will be set to false, otherwise it will be left alone
-EvaluableNodeReference GenerateRandomValueBasedOnRandParam(EvaluableNodeReference param, EvaluableNodeManager *enm, RandomStream &random_stream, bool &can_free_param)
+EvaluableNodeReference GenerateRandomValueBasedOnRandParam(EvaluableNodeReference param, EvaluableNodeManager *enm,
+	RandomStream &random_stream, bool &can_free_param, bool immediate_result)
 {
 	if(param == nullptr)
 		return EvaluableNodeReference(enm->AllocNode(random_stream.RandFull()), true);
@@ -1361,20 +1362,26 @@ EvaluableNodeReference GenerateRandomValueBasedOnRandParam(EvaluableNodeReferenc
 	if(DoesEvaluableNodeTypeUseNumberData(param->GetType()))
 	{
 		double value = random_stream.RandFull() * param->GetNumberValueReference();
+
+		if(immediate_result)
+			return EvaluableNodeReference(value);
 		return EvaluableNodeReference(enm->AllocNode(value), true);
 	}
 
 	return EvaluableNodeReference::Null();
 }
 
-//TODO 18652: evaluate InterpretNode_* below for immediate returns
-
 EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
 	if(ocn.size() == 0)
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(randomStream.RandFull()), true);
+	{
+		double r = randomStream.RandFull();
+		if(immediate_result)
+			return EvaluableNodeReference(r);
+		return EvaluableNodeReference(evaluableNodeManager->AllocNode(r), true);
+	}
 
 	//get number to generate
 	bool generate_list = false;
@@ -1402,7 +1409,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, bo
 	if(!generate_list)
 	{
 		bool can_free_param = true;
-		EvaluableNodeReference rand_value = GenerateRandomValueBasedOnRandParam(param, evaluableNodeManager, randomStream, can_free_param);
+		EvaluableNodeReference rand_value = GenerateRandomValueBasedOnRandParam(param,
+			evaluableNodeManager, randomStream, can_free_param, immediate_result);
 
 		if(can_free_param)
 			evaluableNodeManager->FreeNodeTreeIfPossible(param);
@@ -1464,7 +1472,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, bo
 	bool can_free_param = true;
 	for(size_t i = 0; i < number_to_generate; i++)
 	{
-		EvaluableNodeReference rand_value = GenerateRandomValueBasedOnRandParam(param, evaluableNodeManager, randomStream, can_free_param);
+		EvaluableNodeReference rand_value = GenerateRandomValueBasedOnRandParam(param,
+			evaluableNodeManager, randomStream, can_free_param, immediate_result);
 		retval->AppendOrderedChildNode(rand_value);
 		retval.UpdatePropertiesBasedOnAttachedNode(rand_value);
 	}
@@ -1848,6 +1857,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEIGHTED_RAND(EvaluableNod
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_RAND_SEED(EvaluableNode *en, bool immediate_result)
 {
 	std::string rand_state_string = randomStream.GetState();
+	if(immediate_result)
+		return EvaluableNodeReference(rand_state_string);
 	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, rand_state_string), true);
 }
 
@@ -1880,6 +1891,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM_TIME(EvaluableNode 
 	std::chrono::duration<double, std::ratio<1>> double_duration_us = duration_us;
 	double sec = double_duration_us.count();
 
+	if(immediate_result)
+		return EvaluableNodeReference(sec);
 	return EvaluableNodeReference(evaluableNodeManager->AllocNode(sec), true);
 }
 

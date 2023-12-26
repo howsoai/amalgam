@@ -199,7 +199,7 @@ EvaluableNode *Parser::GetCodeForPathFromAToB(UnparseData &upd, EvaluableNode *a
 
 	//build code to get the reference
 	EvaluableNode *refpath = upd.enm->AllocNode(ENT_TARGET);
-	refpath->AppendOrderedChildNode(upd.enm->AllocNode(a_ancestor_depth));
+	refpath->AppendOrderedChildNode(upd.enm->AllocNode(static_cast<double>(a_ancestor_depth)));
 
 	//combine together
 	while(b_path_nodes.size() > 0)

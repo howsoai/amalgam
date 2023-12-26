@@ -88,7 +88,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY(EvaluableNode 
 		size_t s1_len = 0;
 		size_t s2_len = 0;
 		auto edit_distance = EvaluableNodeTreeManipulation::EditDistance(ocn[0]->GetStringValue(), ocn[1]->GetStringValue(), s1_len, s2_len);
-		auto commonality = static_cast<int64_t>(std::max(s1_len, s2_len) - edit_distance);
+		auto commonality = static_cast<double>(std::max(s1_len, s2_len) - edit_distance);
 		return EvaluableNodeReference(evaluableNodeManager->AllocNode(commonality), true);
 	}
 

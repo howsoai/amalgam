@@ -234,13 +234,6 @@ public:
 		return n;
 	}
 
-	inline EvaluableNode *AllocNode(int64_t int_value)
-	{
-		EvaluableNode *n = AllocUninitializedNode();
-		n->InitializeType(static_cast<double>(int_value));
-		return n;
-	}
-
 	inline EvaluableNode *AllocNode(bool bool_value)
 	{
 		EvaluableNode *n = AllocUninitializedNode();

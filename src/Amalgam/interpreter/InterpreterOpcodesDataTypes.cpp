@@ -297,8 +297,6 @@ constexpr DestinationType ExpandCharStorage(char &value)
 	return static_cast<DestinationType>(reinterpret_cast<SourceType &>(value));
 }
 
-//TODO 18652: evaluate InterpretNode_* below for immediate returns
-
 EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
@@ -587,12 +585,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			number_value = EvaluableNode::ToNumber(code_value);
 
 		string_intern_pool.DestroyStringReference(to_type);
-		evaluableNodeManager->FreeNodeTreeIfPossible(to_params);
 
-		//didn't return code_value, so can free it
-		evaluableNodeManager->FreeNodeTreeIfPossible(code_value);
+		if(immediate_result)
+		{
+			evaluableNodeManager->FreeNodeTreeIfPossible(to_params);
+			evaluableNodeManager->FreeNodeTreeIfPossible(code_value);
+			return EvaluableNodeReference(number_value);
+		}
 
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(number_value), true);
+		auto result = evaluableNodeManager->ReuseOrAllocOneOfNodes(to_params, code_value, ENT_NUMBER);
+		result->SetNumberValue(number_value);
+		return result;
 	}
 	else if(to_type == ENBISI_code)
 	{
@@ -891,12 +894,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 	}
 
 	string_intern_pool.DestroyStringReference(to_type);
-	evaluableNodeManager->FreeNodeTreeIfPossible(to_params);
 
-	//didn't return code_value, so can free it
-	evaluableNodeManager->FreeNodeTreeIfPossible(code_value);
+	if(immediate_result)
+	{
+		evaluableNodeManager->FreeNodeTreeIfPossible(to_params);
+		evaluableNodeManager->FreeNodeTreeIfPossible(code_value);
+		return EvaluableNodeReference(string_value);
+	}
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, string_value), true);
+	auto result = evaluableNodeManager->ReuseOrAllocOneOfNodes(to_params, code_value, ENT_STRING);
+	result->SetStringValue(string_value);
+	return result;
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_LABELS(EvaluableNode *en, bool immediate_result)
@@ -1068,6 +1076,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP_LABELS(EvaluableNode *
 	return retval;
 }
 
+//TODO 18652: evaluate InterpretNode_* below for immediate returns
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_COMMENTS(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();

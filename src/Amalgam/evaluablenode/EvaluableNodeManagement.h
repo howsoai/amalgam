@@ -359,6 +359,12 @@ public:
 		return node;
 	}
 
+	//like ReuseOrAllocNode but allocates either ENT_TRUE or ENT_FALSE
+	inline EvaluableNodeReference ReuseOrAllocNode(EvaluableNodeReference candidate, bool value)
+	{
+		return ReuseOrAllocNode(candidate, value ? ENT_TRUE: ENT_FALSE);
+	}
+
 	//like ReuseOrAllocNode, but picks whichever node is reusable and frees the other if possible
 	//will try candidate_1 first
 	inline EvaluableNodeReference ReuseOrAllocOneOfNodes(
@@ -401,6 +407,12 @@ public:
 		EvaluableNodeReference node = ReuseOrAllocOneOfNodes(candidate_1, candidate_2, ENT_STRING);
 		node->SetStringValue(value);
 		return node;
+	}
+
+	//like ReuseOrAllocOneOfNodes but allocates either ENT_TRUE or ENT_FALSE
+	inline EvaluableNodeReference ReuseOrAllocOneOfNodes(EvaluableNodeReference candidate, bool value)
+	{
+		return ReuseOrAllocOneOfNodes(candidate, value ? ENT_TRUE : ENT_FALSE);
 	}
 
 	//Copies the data structure and everything underneath it, modifying labels as specified

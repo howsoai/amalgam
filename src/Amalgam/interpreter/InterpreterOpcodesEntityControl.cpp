@@ -636,11 +636,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSI
 	destination_entity_parent->AddContainedEntityViaReference(loaded_entity, new_entity_id, writeListeners);
 
 	if(destination_entity_parent == curEntity)
-	{
-		if(immediate_result)
-			return EvaluableNodeReference(static_cast<StringInternPool::StringID>(new_entity_id));
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, new_entity_id), true);
-	}
+		return AllocReturn(static_cast<StringInternPool::StringID>(new_entity_id), immediate_result);
 	else //need to return an id path
 		return EvaluableNodeReference(GetTraversalIDPathFromAToB(evaluableNodeManager, curEntity, loaded_entity), true);
 }
@@ -695,11 +691,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, b
 	bool successful_save = asset_manager.StoreResourcePath(to_store,
 		resource_name, resource_base_path, file_type, evaluableNodeManager, escape_filename, sort_keys);
 
-	evaluableNodeManager->FreeNodeTreeIfPossible(to_store);
-
-	if(immediate_result)
-		return EvaluableNodeReference(successful_save);
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(successful_save ? ENT_TRUE : ENT_FALSE), true);
+	return ReuseOrAllocReturn(to_store, successful_save, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode *en, bool immediate_result)

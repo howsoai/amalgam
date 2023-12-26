@@ -80,13 +80,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, b
 
 			std::string s = string_intern_pool.GetStringFromID(sid);
 			size_t utf8_char_length = StringManipulation::GetUTF8CharacterLength(s, 0);
-
-			evaluableNodeManager->FreeNodeTreeIfPossible(list);
-
 			std::string substring = s.substr(0, utf8_char_length);
-			if(immediate_result)
-				return EvaluableNodeReference(substring);
-			return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, substring), true);
+			return ReuseOrAllocReturn(list, substring, immediate_result);
 		}
 
 		if(DoesEvaluableNodeTypeUseNumberData(list->GetType()))
@@ -100,11 +95,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, b
 				return list;
 
 			//return 1 if nonzero
-			evaluableNodeManager->FreeNodeTreeIfPossible(list);
-
-			if(immediate_result)
-				return EvaluableNodeReference(1.0);
-			return EvaluableNodeReference(evaluableNodeManager->AllocNode(1.0), true);
+			return ReuseOrAllocReturn(list, 1.0, immediate_result);
 		}
 	}
 
@@ -218,14 +209,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, bo
 			size_t utf8_start_offset = StringManipulation::GetNthUTF8CharacterOffset(s, num_chars_to_drop);
 
 			std::string substring = s.substr(utf8_start_offset, s.size() - utf8_start_offset);
-			if(immediate_result)
-			{
-				evaluableNodeManager->FreeNodeTreeIfPossible(list);
-				return EvaluableNodeReference(substring);
-			}
-			EvaluableNodeReference result = evaluableNodeManager->ReuseOrAllocNode(list, ENT_STRING);
-			result->SetStringValue(substring);
-			return result;
+			return ReuseOrAllocReturn(list, substring, immediate_result);
 		}
 
 		if(DoesEvaluableNodeTypeUseNumberData(list->GetType()))
@@ -235,16 +219,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, bo
 			if(value == 0.0)
 				return list;
 
-			if(immediate_result)
-			{
-				evaluableNodeManager->FreeNodeTreeIfPossible(list);
-				return EvaluableNodeReference(value - 1.0);
-			}
-
-			//return (value - 1.0) if nonzero
-			EvaluableNodeReference result = evaluableNodeManager->ReuseOrAllocNode(list, ENT_NUMBER);
-			result->SetNumberValue(value - 1.0);
-			return result;
+			return ReuseOrAllocReturn(list, value - 1.0, immediate_result);
 		}
 	}
 	
@@ -318,14 +293,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, bo
 			auto [utf8_char_start_offset, utf8_char_length] = StringManipulation::GetLastUTF8CharacterOffsetAndLength(s);
 
 			std::string substring = s.substr(utf8_char_start_offset, utf8_char_length);
-			if(immediate_result)
-			{
-				evaluableNodeManager->FreeNodeTreeIfPossible(list);
-				return EvaluableNodeReference(substring);
-			}
-			EvaluableNodeReference result = evaluableNodeManager->ReuseOrAllocNode(list, ENT_STRING);
-			result->SetStringValue(substring);
-			return result;
+			return ReuseOrAllocReturn(list, substring, immediate_result);
 		}
 
 		if(DoesEvaluableNodeTypeUseNumberData(list->GetType()))
@@ -335,16 +303,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, bo
 			if(value == 0.0)
 				return list;
 
-			if(immediate_result)
-			{
-				evaluableNodeManager->FreeNodeTreeIfPossible(list);
-				return EvaluableNodeReference(1.0);
-			}
-
-			//return 1 if nonzero
-			EvaluableNodeReference result = evaluableNodeManager->ReuseOrAllocNode(list, ENT_NUMBER);
-			result->SetNumberValue(1.0);
-			return result;
+			return ReuseOrAllocReturn(list, 1.0, immediate_result);
 		}
 	}
 
@@ -471,12 +430,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, b
 				return list;
 
 			//return (value - 1.0) if nonzero
-			evaluableNodeManager->FreeNodeTreeIfPossible(list);
-
-			if(immediate_result)
-				return EvaluableNodeReference(value - 1.0);
-
-			return EvaluableNodeReference(evaluableNodeManager->AllocNode(value - 1.0), true);
+			return ReuseOrAllocReturn(list, value - 1.0, immediate_result);
 		}
 	}
 
@@ -594,13 +548,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SIZE(EvaluableNode *en, bo
 		{
 			size = cur->GetNumChildNodes();
 		}
-
-		evaluableNodeManager->FreeNodeTreeIfPossible(cur);
 	}
 
-	if(immediate_result)
-		return EvaluableNodeReference(static_cast<double>(size));
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(static_cast<double>(size)), true);
+	return ReuseOrAllocReturn(cur, static_cast<double>(size), immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, bool immediate_result)

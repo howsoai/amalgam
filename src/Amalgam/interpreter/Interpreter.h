@@ -311,8 +311,10 @@ public:
 	{
 		if(immediate_result)
 		{
+			//need to allocate the result first just in case candidate is the only location of an interned value
+			EvaluableNodeReference result(value);
 			evaluableNodeManager->FreeNodeTreeIfPossible(candidate);
-			return EvaluableNodeReference(value);
+			return result;
 		}
 
 		return evaluableNodeManager->ReuseOrAllocNode(candidate, value);
@@ -326,9 +328,11 @@ public:
 	{
 		if(immediate_result)
 		{
+			//need to allocate the result first just in case one of the candidates is the only location of an interned value
+			EvaluableNodeReference result(value);
 			evaluableNodeManager->FreeNodeTreeIfPossible(candidate_1);
 			evaluableNodeManager->FreeNodeTreeIfPossible(candidate_2);
-			return EvaluableNodeReference(value);
+			return result;
 		}
 
 		return evaluableNodeManager->ReuseOrAllocOneOfNodes(candidate_1, candidate_2, value);

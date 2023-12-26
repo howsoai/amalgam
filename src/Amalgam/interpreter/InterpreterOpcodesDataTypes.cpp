@@ -187,9 +187,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NUMBER(EvaluableNode *en, 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_STRING(EvaluableNode *en, bool immediate_result)
 {
 	StringInternPool::StringID value = en->GetStringIDReference();
-	if(immediate_result)
-		return EvaluableNodeReference(value);
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, value), true);
+	return AllocReturn(value, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, bool immediate_result)
@@ -240,9 +238,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE_STRING(EvaluableN
 	evaluableNodeManager->FreeNodeTreeIfPossible(cur);
 
 	std::string type_string = GetStringFromEvaluableNodeType(type, true);
-	if(immediate_result)
-		return EvaluableNodeReference(type_string);
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, type_string), true);
+	return AllocReturn(type_string, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_TYPE(EvaluableNode *en, bool immediate_result)
@@ -580,16 +576,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 
 		string_intern_pool.DestroyStringReference(to_type);
 
-		if(immediate_result)
-		{
-			evaluableNodeManager->FreeNodeTreeIfPossible(to_params);
-			evaluableNodeManager->FreeNodeTreeIfPossible(code_value);
-			return EvaluableNodeReference(number_value);
-		}
-
-		auto result = evaluableNodeManager->ReuseOrAllocOneOfNodes(to_params, code_value, ENT_NUMBER);
-		result->SetNumberValue(number_value);
-		return result;
+		return ReuseOrAllocOneOfReturn(to_params, code_value, number_value, immediate_result);
 	}
 	else if(to_type == ENBISI_code)
 	{
@@ -889,16 +876,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 
 	string_intern_pool.DestroyStringReference(to_type);
 
-	if(immediate_result)
-	{
-		evaluableNodeManager->FreeNodeTreeIfPossible(to_params);
-		evaluableNodeManager->FreeNodeTreeIfPossible(code_value);
-		return EvaluableNodeReference(string_value);
-	}
-
-	auto result = evaluableNodeManager->ReuseOrAllocOneOfNodes(to_params, code_value, ENT_STRING);
-	result->SetStringValue(string_value);
-	return result;
+	return ReuseOrAllocOneOfReturn(to_params, code_value, string_value, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_LABELS(EvaluableNode *en, bool immediate_result)
@@ -1082,14 +1060,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_COMMENTS(EvaluableNode
 		return EvaluableNodeReference::Null();
 
 	StringInternPool::StringID comments_sid = n->GetCommentsStringId();
-	evaluableNodeManager->FreeNodeTreeIfPossible(n);
-
-	if(comments_sid == StringInternPool::NOT_A_STRING_ID)
-		return EvaluableNodeReference::Null();
-
-	if(immediate_result)
-		return EvaluableNodeReference(comments_sid);
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, comments_sid), true);
+	return ReuseOrAllocReturn(n, comments_sid, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_COMMENTS(EvaluableNode *en, bool immediate_result)

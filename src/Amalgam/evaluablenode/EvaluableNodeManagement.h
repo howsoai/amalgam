@@ -344,8 +344,10 @@ public:
 	//like ReuseOrAllocNode but allocates an ENT_STRING
 	inline EvaluableNodeReference ReuseOrAllocNode(EvaluableNodeReference candidate, StringInternPool::StringID value)
 	{
+		//perform a handoff in case candidate is the only value
+		string_intern_pool.CreateStringReference(value);
 		EvaluableNodeReference node = ReuseOrAllocNode(candidate, ENT_STRING);
-		node->SetStringID(value);
+		node->SetStringIDWithReferenceHandoff(value);
 		return node;
 	}
 
@@ -385,8 +387,10 @@ public:
 	inline EvaluableNodeReference ReuseOrAllocOneOfNodes(
 		EvaluableNodeReference candidate_1, EvaluableNodeReference candidate_2, StringInternPool::StringID value)
 	{
+		//perform a handoff in case one of the candidates is the only value
+		string_intern_pool.CreateStringReference(value);
 		EvaluableNodeReference node = ReuseOrAllocOneOfNodes(candidate_1, candidate_2, ENT_STRING);
-		node->SetStringID(value);
+		node->SetStringIDWithReferenceHandoff(value);
 		return node;
 	}
 

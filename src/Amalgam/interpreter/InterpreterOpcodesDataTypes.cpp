@@ -1076,7 +1076,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP_LABELS(EvaluableNode *
 	return retval;
 }
 
-//TODO 18652: evaluate InterpretNode_* below for immediate returns
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_COMMENTS(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
@@ -1094,6 +1093,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_COMMENTS(EvaluableNode
 	if(comments_sid == StringInternPool::NOT_A_STRING_ID)
 		return EvaluableNodeReference::Null();
 
+	if(immediate_result)
+		return EvaluableNodeReference(comments_sid);
 	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, comments_sid), true);
 }
 
@@ -1128,7 +1129,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_CONCURRENCY(EvaluableN
 	auto n = InterpretNodeForImmediateUse(ocn[0]);
 	if(n == nullptr)
 		return EvaluableNodeReference::Null();
-
+	
+	if(immediate_result)
+		return EvaluableNodeReference(n->GetConcurrency());
 	return EvaluableNodeReference(evaluableNodeManager->AllocNode(n->GetConcurrency() ? ENT_TRUE : ENT_FALSE), true);
 }
 
@@ -1165,13 +1168,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_VALUE(EvaluableNode *e
 		return EvaluableNodeReference::Null();
 
 	if(n.unique)
-	{
 		n->ClearMetadata();
-	}
 	else
-	{
 		evaluableNodeManager->EnsureNodeIsModifiable(n, EvaluableNodeManager::ENMM_REMOVE_ALL);
-	}
 
 	return n;
 }
@@ -1399,6 +1398,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SPLIT(EvaluableNode *en, b
 	return retval;
 }
 
+//TODO 18652: evaluate InterpretNode_* below for immediate returns
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();

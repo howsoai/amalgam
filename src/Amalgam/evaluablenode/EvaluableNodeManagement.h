@@ -207,10 +207,24 @@ public:
 		return n;
 	}
 
+	inline EvaluableNode *AllocNode(const std::string &string_value)
+	{
+		EvaluableNode *n = AllocUninitializedNode();
+		n->InitializeType(ENT_STRING, string_value);
+		return n;
+	}
+
 	inline EvaluableNode *AllocNode(EvaluableNodeType type, StringInternPool::StringID string_id)
 	{
 		EvaluableNode *n = AllocUninitializedNode();
 		n->InitializeType(type, string_id);
+		return n;
+	}
+
+	inline EvaluableNode *AllocNode(StringInternPool::StringID string_id)
+	{
+		EvaluableNode *n = AllocUninitializedNode();
+		n->InitializeType(ENT_STRING, string_id);
 		return n;
 	}
 

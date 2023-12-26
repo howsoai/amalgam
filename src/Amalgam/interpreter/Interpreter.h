@@ -384,7 +384,7 @@ public:
 	StringInternPool::StringID InterpretNodeIntoStringIDValueWithReference(EvaluableNode *n);
 
 	//Calls InterpnetNode on n, convers to a string, and makes sure that the node returned is new and unique so that it can be modified
-	EvaluableNode *InterpretNodeIntoUniqueStringIDValueEvaluableNode(EvaluableNode *n);
+	EvaluableNodeReference InterpretNodeIntoUniqueStringIDValueEvaluableNode(EvaluableNode *n);
 
 	//Calls InterpretNode on n, converts to double and returns, then cleans up any resources used
 	double InterpretNodeIntoNumberValue(EvaluableNode *n);

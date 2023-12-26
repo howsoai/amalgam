@@ -609,19 +609,19 @@ StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueWithRefere
 	}
 }
 
-EvaluableNode *Interpreter::InterpretNodeIntoUniqueStringIDValueEvaluableNode(EvaluableNode *n)
+EvaluableNodeReference Interpreter::InterpretNodeIntoUniqueStringIDValueEvaluableNode(EvaluableNode *n)
 {
 	//if can skip InterpretNode, then just allocate the string
 	if(n == nullptr || n->GetIsIdempotent()
 			|| n->GetType() == ENT_STRING || n->GetType() == ENT_NUMBER)
-		return evaluableNodeManager->AllocNodeWithReferenceHandoff(ENT_STRING,
-												EvaluableNode::ToStringIDWithReference(n));
+		return EvaluableNodeReference(evaluableNodeManager->AllocNodeWithReferenceHandoff(ENT_STRING,
+												EvaluableNode::ToStringIDWithReference(n)), true);
 
 	auto result = InterpretNode(n);
 
 	if(result == nullptr || !result.unique)
-		return evaluableNodeManager->AllocNodeWithReferenceHandoff(ENT_STRING,
-												EvaluableNode::ToStringIDWithReference(result));
+		return EvaluableNodeReference(evaluableNodeManager->AllocNodeWithReferenceHandoff(ENT_STRING,
+												EvaluableNode::ToStringIDWithReference(result)), true);
 
 	result->ClearMetadata();
 

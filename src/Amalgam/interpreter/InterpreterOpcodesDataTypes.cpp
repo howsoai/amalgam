@@ -1238,7 +1238,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SPLIT(EvaluableNode *en, b
 	//if only one element, nothing to split on, just return the string in a list
 	if(ocn.size() == 1)
 	{
-		EvaluableNode *str_node = InterpretNodeIntoUniqueStringIDValueEvaluableNode(ocn[0]);
+		auto str_node = InterpretNodeIntoUniqueStringIDValueEvaluableNode(ocn[0]);
 		retval->AppendOrderedChildNode(str_node);
 		return retval;
 	}
@@ -1361,7 +1361,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SPLIT(EvaluableNode *en, b
 	return retval;
 }
 
-//TODO 18652: evaluate InterpretNode_* below for immediate returns
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
@@ -1371,15 +1370,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 
 	//if only string as the parameter, just return a new copy of the string
 	if(ocn.size() == 1)
-	{
-		return EvaluableNodeReference(evaluableNodeManager->AllocNodeWithReferenceHandoff(ENT_STRING,
-			EvaluableNode::ToStringIDWithReference(ocn[0])), true);
-	}
+		return InterpretNodeIntoUniqueStringIDValueEvaluableNode(ocn[0]);
 
 	//have at least 2 params
 	auto [valid_string_to_substr, string_to_substr] = InterpretNodeIntoStringValue(ocn[0]);
 	if(!valid_string_to_substr)
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, string_intern_pool.NOT_A_STRING_ID), true);
+		return AllocReturn(string_intern_pool.NOT_A_STRING_ID, immediate_result);
 
 	bool replace_string = false;
 	std::string replacement_string;
@@ -1391,7 +1387,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 		std::swap(replacement_string, temp_replacement_string);
 
 		if(!valid_replacement_string)
-			return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, string_intern_pool.NOT_A_STRING_ID), true);
+			return AllocReturn(string_intern_pool.NOT_A_STRING_ID, immediate_result);
 	}
 
 	EvaluableNodeReference substr_node = InterpretNodeForImmediateUse(ocn[1]);
@@ -1481,7 +1477,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 			if(end_offset < string_to_substr.size())
 				rebuilt_string += string_to_substr.substr(end_offset);
 
-			return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, rebuilt_string), true);
+			return AllocReturn(rebuilt_string, immediate_result);
 		}
 		else //return just the substring
 		{
@@ -1489,7 +1485,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 			if(start_offset < string_to_substr.size() && end_offset > start_offset)
 				substr = string_to_substr.substr(start_offset, end_offset - start_offset);
 
-			return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, substr), true);
+			return AllocReturn(substr, immediate_result);
 		}
 	}
 	else if(substr_node->GetType() == ENT_STRING)
@@ -1517,7 +1513,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 			catch(...)
 			{
 				//bad regex, so nothing was replaced, just return original
-				return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, string_to_substr), true);
+				return AllocReturn(string_to_substr, immediate_result);
 			}
 
 			std::string updated_string;
@@ -1544,7 +1540,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 				out = std::copy(last_iter->suffix().first, last_iter->suffix().second, out);
 			}
 
-			return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, updated_string), true);
+			return AllocReturn(updated_string, immediate_result);
 		}
 		else //finding matches
 		{
@@ -1610,7 +1606,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 				catch(...)
 				{
 					//bad regex, return same as not found
-					return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, string_intern_pool.NOT_A_STRING_ID), true);
+					return AllocReturn(string_intern_pool.NOT_A_STRING_ID, immediate_result);
 				}
 
 				std::sregex_token_iterator iter(begin(string_to_substr), end(string_to_substr), rx);
@@ -1618,12 +1614,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 				if(iter == rx_end)
 				{
 					//not found
-					return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, string_intern_pool.NOT_A_STRING_ID), true);
+					return AllocReturn(string_intern_pool.NOT_A_STRING_ID, immediate_result);
 				}
 				else
 				{
 					std::string value = *iter;
-					return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, value), true);
+					return AllocReturn(value, immediate_result);
 				}
 			}
 			else if(full_matches)
@@ -1699,14 +1695,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCAT(EvaluableNode *en, 
 
 	//if only one parameter is specified, do a fast shortcut
 	if(ocn.size() == 1)
-		return EvaluableNodeReference(InterpretNodeIntoUniqueStringIDValueEvaluableNode(ocn[0]), true);
+		return InterpretNodeIntoUniqueStringIDValueEvaluableNode(ocn[0]);
 
 	std::string s;
 	for(auto &cn : ocn)
 	{
 		auto [valid, cur_string] = InterpretNodeIntoStringValue(cn);
 		if(!valid)
-			return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, string_intern_pool.NOT_A_STRING_ID), true);
+			return AllocReturn(string_intern_pool.NOT_A_STRING_ID, immediate_result);
 
 		//want to exit early if out of resources because
 		// this opcode can chew through memory with string concatenation via returned nulls
@@ -1717,7 +1713,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCAT(EvaluableNode *en, 
 		s += cur_string;
 	}
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, s), true);
+	return AllocReturn(s, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CRYPTO_SIGN(EvaluableNode *en, bool immediate_result)
@@ -1731,7 +1727,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CRYPTO_SIGN(EvaluableNode 
 
 	std::string signature = SignMessage(message, secret_key);
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, signature), true);
+	return AllocReturn(signature, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CRYPTO_SIGN_VERIFY(EvaluableNode *en, bool immediate_result)
@@ -1746,7 +1742,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CRYPTO_SIGN_VERIFY(Evaluab
 
 	bool valid_sig = IsSignatureValid(message, public_key, signature);
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(valid_sig ? ENT_TRUE : ENT_FALSE), true);
+	return AllocReturn(valid_sig, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ENCRYPT(EvaluableNode *en, bool immediate_result)
@@ -1774,7 +1770,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENCRYPT(EvaluableNode *en,
 	else //use public key encryption
 		cyphertext = EncryptMessage(plaintext, key_1, key_2, nonce);
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, cyphertext), true);
+	return AllocReturn(cyphertext, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_DECRYPT(EvaluableNode *en, bool immediate_result)
@@ -1802,7 +1798,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECRYPT(EvaluableNode *en,
 	else //use public key encryption
 		plaintext = DecryptMessage(cyphertext, key_1, key_2, nonce);
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, plaintext), true);
+	return AllocReturn(plaintext, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en, bool immediate_result)
@@ -1860,8 +1856,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TOTAL_SIZE(EvaluableNode *
 		return EvaluableNodeReference::Null();
 
 	auto cur = InterpretNodeForImmediateUse(ocn[0]);
-	size_t total_size = EvaluableNode::GetDeepSize(cur);
-	evaluableNodeManager->FreeNodeTreeIfPossible(cur);
-
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(static_cast<double>(total_size)), true);
+	double total_size = static_cast<double>(EvaluableNode::GetDeepSize(cur));
+	return ReuseOrAllocReturn(cur, total_size, immediate_result);
 }

@@ -284,14 +284,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNPARSE(EvaluableNode *en,
 	auto tree = InterpretNodeForImmediateUse(ocn[0]);
 	std::string s = Parser::Unparse(tree, evaluableNodeManager, pretty, true, deterministic_order);
 
-	if(immediate_result)
-	{
-		evaluableNodeManager->FreeNodeTreeIfPossible(tree);
-		return EvaluableNodeReference(s);
-	}
-	EvaluableNodeReference result = evaluableNodeManager->ReuseOrAllocNode(tree, ENT_STRING);
-	result->SetStringValue(s);
-	return result;
+	return ReuseOrAllocReturn(tree, s, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_IF(EvaluableNode *en, bool immediate_result)

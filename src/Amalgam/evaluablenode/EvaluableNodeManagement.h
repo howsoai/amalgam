@@ -333,6 +333,30 @@ public:
 		}
 	}
 
+	//like ReuseOrAllocNode but allocates an ENT_NUMBER
+	inline EvaluableNodeReference ReuseOrAllocNode(EvaluableNodeReference candidate, double value)
+	{
+		EvaluableNodeReference node = ReuseOrAllocNode(candidate, ENT_NUMBER);
+		node->SetNumberValue(value);
+		return node;
+	}
+
+	//like ReuseOrAllocNode but allocates an ENT_STRING
+	inline EvaluableNodeReference ReuseOrAllocNode(EvaluableNodeReference candidate, StringInternPool::StringID value)
+	{
+		EvaluableNodeReference node = ReuseOrAllocNode(candidate, ENT_STRING);
+		node->SetStringID(value);
+		return node;
+	}
+
+	//like ReuseOrAllocNode but allocates an ENT_STRING
+	inline EvaluableNodeReference ReuseOrAllocNode(EvaluableNodeReference candidate, const std::string &value)
+	{
+		EvaluableNodeReference node = ReuseOrAllocNode(candidate, ENT_STRING);
+		node->SetStringValue(value);
+		return node;
+	}
+
 	//like ReuseOrAllocNode, but picks whichever node is reusable and frees the other if possible
 	//will try candidate_1 first
 	inline EvaluableNodeReference ReuseOrAllocOneOfNodes(
@@ -346,6 +370,33 @@ public:
 
 		//candidate_1 wasn't unique, so try for candidate 2
 		return ReuseOrAllocNode(candidate_2, type);
+	}
+
+	//like ReuseOrAllocOneOfNodes but allocates an ENT_NUMBER
+	inline EvaluableNodeReference ReuseOrAllocOneOfNodes(
+		EvaluableNodeReference candidate_1, EvaluableNodeReference candidate_2, double value)
+	{
+		EvaluableNodeReference node = ReuseOrAllocOneOfNodes(candidate_1, candidate_2, ENT_NUMBER);
+		node->SetNumberValue(value);
+		return node;
+	}
+
+	//like ReuseOrAllocOneOfNodes but allocates an ENT_STRING
+	inline EvaluableNodeReference ReuseOrAllocOneOfNodes(
+		EvaluableNodeReference candidate_1, EvaluableNodeReference candidate_2, StringInternPool::StringID value)
+	{
+		EvaluableNodeReference node = ReuseOrAllocOneOfNodes(candidate_1, candidate_2, ENT_STRING);
+		node->SetStringID(value);
+		return node;
+	}
+
+	//like ReuseOrAllocOneOfNodes but allocates an ENT_STRING
+	inline EvaluableNodeReference ReuseOrAllocOneOfNodes(
+		EvaluableNodeReference candidate_1, EvaluableNodeReference candidate_2, const std::string &value)
+	{
+		EvaluableNodeReference node = ReuseOrAllocOneOfNodes(candidate_1, candidate_2, ENT_STRING);
+		node->SetStringValue(value);
+		return node;
 	}
 
 	//Copies the data structure and everything underneath it, modifying labels as specified

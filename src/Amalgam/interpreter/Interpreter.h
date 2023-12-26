@@ -304,6 +304,36 @@ public:
 		return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
 	}
 
+	//like AllocReturn, but if immediate_result, then it will attempt to free candidate,
+	//and if not immediate_result, will attempt to reuse candidate
+	template<typename T>
+	inline EvaluableNodeReference ReuseOrAllocReturn(EvaluableNodeReference candidate, T value, bool immediate_result)
+	{
+		if(immediate_result)
+		{
+			evaluableNodeManager->FreeNodeTreeIfPossible(candidate);
+			return EvaluableNodeReference(value);
+		}
+
+		return evaluableNodeManager->ReuseOrAllocNode(candidate, value);
+	}
+
+	//like ReuseOrAllocReturn, but if immediate_result, then it will attempt to free both candidates,
+	//and if not immediate_result, will attempt to reuse one of the candidates and free the other
+	template<typename T>
+	inline EvaluableNodeReference ReuseOrAllocOneOfReturn(
+		EvaluableNodeReference candidate_1, EvaluableNodeReference candidate_2, T value, bool immediate_result)
+	{
+		if(immediate_result)
+		{
+			evaluableNodeManager->FreeNodeTreeIfPossible(candidate_1);
+			evaluableNodeManager->FreeNodeTreeIfPossible(candidate_2);
+			return EvaluableNodeReference(value);
+		}
+
+		return evaluableNodeManager->ReuseOrAllocOneOfNodes(candidate_1, candidate_2, value);
+	}
+
 	//if n is immediate, it just returns it, otherwise calls InterpretNode
 	__forceinline EvaluableNodeReference InterpretNodeForImmediateUse(EvaluableNode *n, bool immediate_result = false)
 	{

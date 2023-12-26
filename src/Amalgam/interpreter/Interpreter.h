@@ -346,6 +346,23 @@ public:
 		return InterpretNode(n, immediate_result);
 	}
 
+	//computes a unary numeric function on the given node
+	__forceinline EvaluableNodeReference InterpretNodeUnaryNumericOperation(EvaluableNode *n, bool immediate_result,
+		std::function<double(double)> func)
+	{
+		if(immediate_result)
+		{
+			double value = InterpretNodeIntoNumberValue(n);
+			return EvaluableNodeReference(std::floor(value));
+		}
+
+		auto retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(n);
+		double value = retval->GetNumberValueReference();
+		double result = func(value);
+		retval->SetNumberValue(result);
+		return retval;
+	}
+
 	//Calls InterpretNode on n, converts to std::string and stores in value to return, then cleans up any resources used
 	//returns a pair of bool, whether it was a valid string (and not NaS), and the string
 	std::pair<bool, std::string> InterpretNodeIntoStringValue(EvaluableNode *n);

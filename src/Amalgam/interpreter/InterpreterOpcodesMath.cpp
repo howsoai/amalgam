@@ -437,15 +437,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FLOOR(EvaluableNode *en, b
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	if(immediate_result)
-	{
-		double value = InterpretNodeIntoNumberValue(ocn[0]);
-		return EvaluableNodeReference(std::floor(value));
-	}
-
-	auto retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(ocn[0]);
-	retval->SetNumberValue(std::floor(retval->GetNumberValueReference()));
-	return retval;
+	return InterpretNodeUnaryNumericOperation(ocn[0], immediate_result,
+		[](double value) {	return std::floor(value);	});
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CEILING(EvaluableNode *en, bool immediate_result)
@@ -454,15 +447,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CEILING(EvaluableNode *en,
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	if(immediate_result)
-	{
-		double value = InterpretNodeIntoNumberValue(ocn[0]);
-		return EvaluableNodeReference(std::ceil(value));
-	}
-
-	auto retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(ocn[0]);
-	retval->SetNumberValue(std::ceil(retval->GetNumberValueReference()));
-	return retval;
+	return InterpretNodeUnaryNumericOperation(ocn[0], immediate_result,
+		[](double value) {	return std::ceil(value);	});
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ROUND(EvaluableNode *en, bool immediate_result)
@@ -523,15 +509,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EXPONENT(EvaluableNode *en
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	if(immediate_result)
-	{
-		double value = InterpretNodeIntoNumberValue(ocn[0]);
-		return EvaluableNodeReference(std::exp(value));
-	}
-
-	auto retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(ocn[0]);
-	retval->SetNumberValue(std::exp(retval->GetNumberValueReference()));
-	return retval;
+	return InterpretNodeUnaryNumericOperation(ocn[0], immediate_result,
+		[](double value) {	return std::exp(value);	});
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LOG(EvaluableNode *en, bool immediate_result)
@@ -547,15 +526,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOG(EvaluableNode *en, boo
 		divisor = log(log_base);
 	}
 
-	if(immediate_result)
-	{
-		double value = InterpretNodeIntoNumberValue(ocn[0]);
-		return EvaluableNodeReference(std::log(value) / divisor);
-	}
-
-	auto retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(ocn[0]);
-	retval->SetNumberValue(std::log(retval->GetNumberValueReference()) / divisor);
-	return retval;
+	return InterpretNodeUnaryNumericOperation(ocn[0], immediate_result,
+		[divisor](double value) {	return std::log(value) / divisor;	});
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SIN(EvaluableNode *en, bool immediate_result)
@@ -564,15 +536,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SIN(EvaluableNode *en, boo
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	if(immediate_result)
-	{
-		double value = InterpretNodeIntoNumberValue(ocn[0]);
-		return EvaluableNodeReference(std::sin(value));
-	}
-
-	auto retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(ocn[0]);
-	retval->SetNumberValue(std::sin(retval->GetNumberValueReference()));
-	return retval;
+	return InterpretNodeUnaryNumericOperation(ocn[0], immediate_result,
+		[](double value) {	return std::sin(value);	});
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ASIN(EvaluableNode *en, bool immediate_result)
@@ -581,15 +546,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASIN(EvaluableNode *en, bo
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	if(immediate_result)
-	{
-		double value = InterpretNodeIntoNumberValue(ocn[0]);
-		return EvaluableNodeReference(std::asin(value));
-	}
-
-	auto retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(ocn[0]);
-	retval->SetNumberValue(std::asin(retval->GetNumberValueReference()));
-	return retval;
+	return InterpretNodeUnaryNumericOperation(ocn[0], immediate_result,
+		[](double value) {	return std::asin(value);	});
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_COS(EvaluableNode *en, bool immediate_result)
@@ -598,15 +556,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COS(EvaluableNode *en, boo
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	if(immediate_result)
-	{
-		double value = InterpretNodeIntoNumberValue(ocn[0]);
-		return EvaluableNodeReference(std::cos(value));
-	}
-
-	auto retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(ocn[0]);
-	retval->SetNumberValue(std::cos(retval->GetNumberValueReference()));
-	return retval;
+	return InterpretNodeUnaryNumericOperation(ocn[0], immediate_result,
+		[](double value) {	return std::cos(value);	});
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ACOS(EvaluableNode *en, bool immediate_result)
@@ -615,15 +566,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ACOS(EvaluableNode *en, bo
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	if(immediate_result)
-	{
-		double value = InterpretNodeIntoNumberValue(ocn[0]);
-		return EvaluableNodeReference(std::acos(value));
-	}
-
-	auto retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(ocn[0]);
-	retval->SetNumberValue(std::acos(retval->GetNumberValueReference()));
-	return retval;
+	return InterpretNodeUnaryNumericOperation(ocn[0], immediate_result,
+		[](double value) {	return std::acos(value);	});
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TAN(EvaluableNode *en, bool immediate_result)
@@ -632,15 +576,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAN(EvaluableNode *en, boo
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	if(immediate_result)
-	{
-		double value = InterpretNodeIntoNumberValue(ocn[0]);
-		return EvaluableNodeReference(std::tan(value));
-	}
-
-	auto retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(ocn[0]);
-	retval->SetNumberValue(std::tan(retval->GetNumberValueReference()));
-	return retval;
+	return InterpretNodeUnaryNumericOperation(ocn[0], immediate_result,
+		[](double value) {	return std::tan(value);	});
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ATAN(EvaluableNode *en, bool immediate_result)
@@ -652,15 +589,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ATAN(EvaluableNode *en, bo
 
 	if(ocn.size() == 1)
 	{
-		if(immediate_result)
-		{
-			double value = InterpretNodeIntoNumberValue(ocn[0]);
-			return EvaluableNodeReference(std::atan(value));
-		}
-
-		auto retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(ocn[0]);
-		retval->SetNumberValue(std::atan(retval->GetNumberValueReference()));
-		return retval;
+		return InterpretNodeUnaryNumericOperation(ocn[0], immediate_result,
+			[](double value) {	return std::atan(value);	});
 	}
 	else if(ocn.size() >= 2)
 	{
@@ -677,15 +607,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SINH(EvaluableNode *en, bo
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	if(immediate_result)
-	{
-		double value = InterpretNodeIntoNumberValue(ocn[0]);
-		return EvaluableNodeReference(std::sinh(value));
-	}
-
-	auto retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(ocn[0]);
-	retval->SetNumberValue(std::sinh(retval->GetNumberValueReference()));
-	return retval;
+	return InterpretNodeUnaryNumericOperation(ocn[0], immediate_result,
+		[](double value) {	return std::sinh(value);	});
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ASINH(EvaluableNode *en, bool immediate_result)
@@ -694,15 +617,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASINH(EvaluableNode *en, b
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	if(immediate_result)
-	{
-		double value = InterpretNodeIntoNumberValue(ocn[0]);
-		return EvaluableNodeReference(std::asinh(value));
-	}
-
-	auto retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(ocn[0]);
-	retval->SetNumberValue(std::asinh(retval->GetNumberValueReference()));
-	return retval;
+	return InterpretNodeUnaryNumericOperation(ocn[0], immediate_result,
+		[](double value) {	return std::asinh(value);	});
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_COSH(EvaluableNode *en, bool immediate_result)
@@ -711,15 +627,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COSH(EvaluableNode *en, bo
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	if(immediate_result)
-	{
-		double value = InterpretNodeIntoNumberValue(ocn[0]);
-		return EvaluableNodeReference(std::cosh(value));
-	}
-
-	auto retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(ocn[0]);
-	retval->SetNumberValue(std::cosh(retval->GetNumberValueReference()));
-	return retval;
+	return InterpretNodeUnaryNumericOperation(ocn[0], immediate_result,
+		[](double value) {	return std::cosh(value);	});
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ACOSH(EvaluableNode *en, bool immediate_result)
@@ -728,15 +637,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ACOSH(EvaluableNode *en, b
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	if(immediate_result)
-	{
-		double value = InterpretNodeIntoNumberValue(ocn[0]);
-		return EvaluableNodeReference(std::acosh(value));
-	}
-
-	auto retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(ocn[0]);
-	retval->SetNumberValue(std::acosh(retval->GetNumberValueReference()));
-	return retval;
+	return InterpretNodeUnaryNumericOperation(ocn[0], immediate_result,
+		[](double value) {	return std::acosh(value);	});
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TANH(EvaluableNode *en, bool immediate_result)
@@ -745,33 +647,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TANH(EvaluableNode *en, bo
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	if(immediate_result)
-	{
-		double value = InterpretNodeIntoNumberValue(ocn[0]);
-		return EvaluableNodeReference(std::tanh(value));
-	}
-
-	auto retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(ocn[0]);
-	retval->SetNumberValue(std::tanh(retval->GetNumberValueReference()));
-	return retval;
+	return InterpretNodeUnaryNumericOperation(ocn[0], immediate_result,
+		[](double value) {	return std::tanh(value);	});
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ATANH(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
-
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	if(immediate_result)
-	{
-		double value = InterpretNodeIntoNumberValue(ocn[0]);
-		return EvaluableNodeReference(std::atanh(value));
-	}
-
-	auto retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(ocn[0]);
-	retval->SetNumberValue(std::atanh(retval->GetNumberValueReference()));
-	return retval;
+	return InterpretNodeUnaryNumericOperation(ocn[0], immediate_result,
+		[](double value) {	return std::atanh(value);	});
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ERF(EvaluableNode *en, bool immediate_result)
@@ -780,15 +667,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ERF(EvaluableNode *en, boo
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	if(immediate_result)
-	{
-		double value = InterpretNodeIntoNumberValue(ocn[0]);
-		return EvaluableNodeReference(std::erf(value));
-	}
-
-	auto retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(ocn[0]);
-	retval->SetNumberValue(std::erf(retval->GetNumberValueReference()));
-	return retval;
+	return InterpretNodeUnaryNumericOperation(ocn[0], immediate_result,
+		[](double value) {	return std::erf(value);	});
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TGAMMA(EvaluableNode *en, bool immediate_result)
@@ -797,15 +677,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TGAMMA(EvaluableNode *en, 
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	if(immediate_result)
-	{
-		double value = InterpretNodeIntoNumberValue(ocn[0]);
-		return EvaluableNodeReference(std::tgamma(value));
-	}
-
-	auto retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(ocn[0]);
-	retval->SetNumberValue(std::tgamma(retval->GetNumberValueReference()));
-	return retval;
+	return InterpretNodeUnaryNumericOperation(ocn[0], immediate_result,
+		[](double value) {	return std::tgamma(value);	});
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LGAMMA(EvaluableNode *en, bool immediate_result)
@@ -814,15 +687,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LGAMMA(EvaluableNode *en, 
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	if(immediate_result)
-	{
-		double value = InterpretNodeIntoNumberValue(ocn[0]);
-		return EvaluableNodeReference(std::lgamma(value));
-	}
-
-	auto retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(ocn[0]);
-	retval->SetNumberValue(std::lgamma(retval->GetNumberValueReference()));
-	return retval;
+	return InterpretNodeUnaryNumericOperation(ocn[0], immediate_result,
+		[](double value) {	return std::lgamma(value);	});
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SQRT(EvaluableNode *en, bool immediate_result)
@@ -831,15 +697,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SQRT(EvaluableNode *en, bo
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	if(immediate_result)
-	{
-		double value = InterpretNodeIntoNumberValue(ocn[0]);
-		return EvaluableNodeReference(std::sqrt(value));
-	}
-
-	auto retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(ocn[0]);
-	retval->SetNumberValue(std::sqrt(retval->GetNumberValueReference()));
-	return retval;
+	return InterpretNodeUnaryNumericOperation(ocn[0], immediate_result,
+		[](double value) {	return std::sqrt(value);	});
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_POW(EvaluableNode *en, bool immediate_result)
@@ -860,15 +719,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ABS(EvaluableNode *en, boo
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	if(immediate_result)
-	{
-		double value = InterpretNodeIntoNumberValue(ocn[0]);
-		return EvaluableNodeReference(std::abs(value));
-	}
-
-	auto retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(ocn[0]);
-	retval->SetNumberValue(std::abs(retval->GetNumberValueReference()));
-	return retval;
+	return InterpretNodeUnaryNumericOperation(ocn[0], immediate_result,
+		[](double value) {	return std::abs(value);	});
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MAX(EvaluableNode *en, bool immediate_result)

@@ -1362,8 +1362,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SPLIT(EvaluableNode *en, b
 }
 
 //TODO 18652: evaluate InterpretNode_* below for immediate returns
-//TODO 18652: expand AllocReturn to include reusing 1 or 2 nodes, as well as handling string types
-//TODO 18652: consider lambda function to make single value mathematical opcodes more compact
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();

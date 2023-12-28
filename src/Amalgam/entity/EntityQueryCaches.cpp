@@ -25,10 +25,6 @@ bool EntityQueryCaches::DoesCachedConditionMatch(EntityQueryCondition *cond, boo
 	if(qt == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || qt == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE || qt == ENT_COMPUTE_ENTITY_CONVICTIONS
 		|| qt == ENT_COMPUTE_ENTITY_GROUP_KL_DIVERGENCE || qt == ENT_COMPUTE_ENTITY_DISTANCE_CONTRIBUTIONS || qt == ENT_COMPUTE_ENTITY_KL_DIVERGENCES)
 	{
-		//does not allow radii
-		if(cond->singleLabel != StringInternPool::NOT_A_STRING_ID)
-			return false;
-
 		//TODO 4948: sbfds does not fully support p0 acceleration; it requires templating and calling logs of differences, then performing an inverse transform at the end
 		if(cond->distParams.pValue == 0)
 			return false;
@@ -82,6 +78,13 @@ void EntityQueryCaches::EnsureLabelsAreCached(EntityQueryCondition *cond)
 			{
 				if(!DoesHaveLabel(cond->weightLabel))
 					labels_to_add.push_back(cond->weightLabel);
+			}
+
+			//radius
+			if(cond->singleLabel != StringInternPool::NOT_A_STRING_ID)
+			{
+				if(!DoesHaveLabel(cond->singleLabel))
+					labels_to_add.push_back(cond->singleLabel);
 			}
 
 			for(auto label : cond->additionalSortedListLabels)

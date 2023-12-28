@@ -279,7 +279,8 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 //if enabled_indices is not nullptr, it will only find distances to those entities, and it will modify enabled_indices in-place
 // removing entities that do not have the corresponding labels
 void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance &dist_params, std::vector<size_t> &position_label_ids,
-	std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types, double max_dist,
+	std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types,
+	double max_dist, StringInternPool::StringID radius_label,
 	BitArrayIntegerSet &enabled_indices, std::vector<DistanceReferencePair<size_t>> &distances_out)
 {
 	if(GetNumInsertedEntities() == 0)
@@ -303,6 +304,8 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 	auto &distances = parametersAndBuffers.entityDistances;
 	distances.clear();
 	distances.resize(GetNumInsertedEntities(), 0.0);
+
+	//TODO 18264: add radius logic here
 
 	//for each desired feature, compute and add distance terms of possible window query candidate entities
 	for(size_t query_feature_index = 0; query_feature_index < target_column_indices.size(); query_feature_index++)
@@ -418,8 +421,9 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 	}
 }
 
-void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(GeneralizedDistance *dist_params_ref, std::vector<size_t> &position_label_ids,
-	bool constant_dist_params, size_t search_index, size_t top_k, BitArrayIntegerSet &enabled_indices,
+void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(GeneralizedDistance *dist_params_ref,
+	std::vector<size_t> &position_label_ids, bool constant_dist_params, size_t search_index,
+	size_t top_k, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
 	bool expand_to_first_nonzero_distance, std::vector<DistanceReferencePair<size_t>> &distances_out, size_t ignore_index, RandomStream rand_stream)
 {
 	if(top_k == 0 || GetNumInsertedEntities() == 0)
@@ -492,7 +496,8 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 	// and populate the vectors of smallest possible distances that haven't been computed yet
 	auto &min_unpopulated_distances = parametersAndBuffers.minUnpopulatedDistances;
 	auto &min_distance_by_unpopulated_count = parametersAndBuffers.minDistanceByUnpopulatedCount;
-	PopulateInitialPartialSums(*dist_params, top_k, num_enabled_features, possible_knn_indices, min_unpopulated_distances, min_distance_by_unpopulated_count);
+	PopulateInitialPartialSums(*dist_params, top_k, radius_label,
+		num_enabled_features, possible_knn_indices, min_unpopulated_distances, min_distance_by_unpopulated_count);
 	
 	auto &potential_good_matches = parametersAndBuffers.potentialGoodMatches;
 	PopulatePotentialGoodMatches(potential_good_matches, possible_knn_indices, partial_sums, top_k);
@@ -615,9 +620,11 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 	}
 }
 
-void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistance &dist_params, std::vector<size_t> &position_label_ids,
-	std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types, size_t top_k,
-	size_t ignore_entity_index, BitArrayIntegerSet &enabled_indices, std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream)
+void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistance &dist_params,
+	std::vector<size_t> &position_label_ids, std::vector<EvaluableNodeImmediateValue> &position_values,
+	std::vector<EvaluableNodeImmediateValueType> &position_value_types,
+	size_t top_k, StringInternPool::StringID radius_label, size_t ignore_entity_index,
+	BitArrayIntegerSet &enabled_indices, std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream)
 {
 	if(top_k == 0 || GetNumInsertedEntities() == 0)
 		return;
@@ -638,7 +645,8 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistance &dist_
 
 	//if num enabled indices < top_k, return sorted distances
 	if(enabled_indices.size() <= top_k)
-		return FindAllValidElementDistances(dist_params, target_column_indices, target_values, target_value_types, enabled_indices, distances_out, rand_stream);
+		return FindAllValidElementDistances(dist_params,
+			target_column_indices, target_values, target_value_types, enabled_indices, distances_out, rand_stream);
 
 	//one past the maximum entity index to be considered
 	size_t end_index = enabled_indices.GetEndInteger();
@@ -652,7 +660,8 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistance &dist_
 	// and populate the vectors of smallest possible distances that haven't been computed yet
 	auto &min_unpopulated_distances = parametersAndBuffers.minUnpopulatedDistances;
 	auto &min_distance_by_unpopulated_count = parametersAndBuffers.minDistanceByUnpopulatedCount;
-	PopulateInitialPartialSums(dist_params, top_k, num_enabled_features, enabled_indices, min_unpopulated_distances, min_distance_by_unpopulated_count);
+	PopulateInitialPartialSums(dist_params, top_k, radius_label,
+		num_enabled_features, enabled_indices, min_unpopulated_distances, min_distance_by_unpopulated_count);
 
 	auto &potential_good_matches = parametersAndBuffers.potentialGoodMatches;
 	PopulatePotentialGoodMatches(potential_good_matches, enabled_indices, partial_sums, top_k);
@@ -1174,9 +1183,21 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 	return largest_term;
 }
 
-void SeparableBoxFilterDataStore::PopulateInitialPartialSums(GeneralizedDistance &dist_params, size_t top_k, size_t num_enabled_features,
+void SeparableBoxFilterDataStore::PopulateInitialPartialSums(GeneralizedDistance &dist_params,
+	size_t top_k, StringInternPool::StringID radius_label, size_t num_enabled_features,
 	BitArrayIntegerSet &enabled_indices, std::vector<double> &min_unpopulated_distances, std::vector<double> &min_distance_by_unpopulated_count)
 {
+	if(radius_label != StringInternPool::NOT_A_STRING_ID)
+	{
+		size_t column_index = GetColumnIndexFromLabelId(radius_label);
+		if(column_index < columnData.size())
+		{
+			//TODO 18264: finish this
+
+
+		}
+	}
+
 	size_t num_entities_to_populate = top_k;
 	//populate sqrt(2)^p * top_k, which will yield 2 for p=2, 1 for p=0, and about 1.2 for p=0.5
 	if(num_enabled_features > 1)

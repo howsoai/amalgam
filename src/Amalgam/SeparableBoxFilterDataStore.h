@@ -495,7 +495,8 @@ public:
 	//assumes that enabled_indices only contains indices that have valid values for all the features
 	void FindEntitiesWithinDistance(GeneralizedDistance &dist_params, std::vector<size_t> &position_label_ids,
 		std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types,
-		double max_dist, BitArrayIntegerSet &enabled_indices, std::vector<DistanceReferencePair<size_t>> &distances_out);
+		double max_dist, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
+		std::vector<DistanceReferencePair<size_t>> &distances_out);
 
 	//Finds the top_k nearest neighbors results to the entity at search_index.
 	// if expand_to_first_nonzero_distance is set, then it will expand top_k until it it finds the first nonzero distance or until it includes all enabled indices 
@@ -503,8 +504,9 @@ public:
 	//will not modify enabled_indices, but instead will make a copy for any modifications
 	//assumes that enabled_indices only contains indices that have valid values for all the features
 	void FindEntitiesNearestToIndexedEntity(GeneralizedDistance *dist_params_ref, std::vector<size_t> &position_label_ids,
-		bool constant_dist_params, size_t search_index, size_t top_k, BitArrayIntegerSet &enabled_indices,
-		bool expand_to_first_nonzero_distance, std::vector<DistanceReferencePair<size_t>> &distances_out,
+		bool constant_dist_params, size_t search_index, size_t top_k, StringInternPool::StringID radius_label,
+		BitArrayIntegerSet &enabled_indices, bool expand_to_first_nonzero_distance,
+		std::vector<DistanceReferencePair<size_t>> &distances_out,
 		size_t ignore_index = std::numeric_limits<size_t>::max(), RandomStream rand_stream = RandomStream());
 	
 	//Finds the nearest neighbors
@@ -512,7 +514,7 @@ public:
 	//assumes that enabled_indices only contains indices that have valid values for all the features
 	void FindNearestEntities(GeneralizedDistance &dist_params, std::vector<size_t> &position_label_ids,
 		std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types,
-		size_t top_k, size_t ignore_entity_index, BitArrayIntegerSet &enabled_indices,
+		size_t top_k, StringInternPool::StringID radius_label, size_t ignore_entity_index, BitArrayIntegerSet &enabled_indices,
 		std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream = RandomStream());
 
 protected:
@@ -670,9 +672,11 @@ protected:
 	//computes a heuristically derived set of partial sums across all the enabled features from parametersAndBuffers.targetValues[i] and parametersAndBuffers.targetColumnIndices[i]
 	// if enabled_indices is not nullptr, then will only use elements in that list
 	// uses top_k for heuristics as to how many partial sums to compute
+	// if radius_label is specified, it will populate the initial partial sums with them
 	// will compute and populate min_unpopulated_distances and min_distance_by_unpopulated_count, where the former is the next smallest uncomputed feature distance indexed by the number of features not computed
 	// and min_distance_by_unpopulated_count is the total distance of all uncomputed features where the index is the number of uncomputed features
-	void PopulateInitialPartialSums(GeneralizedDistance &dist_params, size_t top_k, size_t num_enabled_features, BitArrayIntegerSet &enabled_indices,
+	void PopulateInitialPartialSums(GeneralizedDistance &dist_params, size_t top_k, StringInternPool::StringID radius_label,
+		size_t num_enabled_features, BitArrayIntegerSet &enabled_indices,
 		std::vector<double> &min_unpopulated_distances, std::vector<double> &min_distance_by_unpopulated_count);
 
 	void PopulatePotentialGoodMatches(FlexiblePriorityQueue<CountDistanceReferencePair<size_t>> &potential_good_matches,
@@ -681,7 +685,7 @@ protected:
 	//returns the distance between two nodes while respecting the feature mask
 	inline double GetDistanceBetween(GeneralizedDistance &dist_params,
 		std::vector<EvaluableNodeImmediateValue> &target_values, std::vector<EvaluableNodeImmediateValueType> &target_value_types,
-		std::vector<size_t> &target_column_indices, size_t other_index, bool high_accuracy)
+		std::vector<size_t> &target_column_indices, size_t radius_index, size_t other_index, bool high_accuracy)
 	{
 		const size_t matrix_base_position = other_index * columnData.size();
 
@@ -701,6 +705,8 @@ protected:
 					target_values[i], other_value, target_value_types[i], other_value_type, i, high_accuracy);
 			}
 		}
+
+		//TODO 18264: add radius value
 
 		double dist = dist_params.InverseExponentiateDistance(dist_accum, high_accuracy);
 		return dist;

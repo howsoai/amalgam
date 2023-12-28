@@ -316,7 +316,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 		{
 			auto radius_value_type = radius_column_data->GetIndexValueType(entity_index);
 			double radius = 0.0;
-			if(radius_value_type == ENIVT_NUMBER)
+			if(radius_value_type == ENIVT_NUMBER || radius_value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
 				radius = radius_column_data->GetResolvedValue(radius_value_type, GetValue(entity_index, radius_column_index)).number;
 
 			if(radius == 0)

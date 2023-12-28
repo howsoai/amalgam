@@ -29,7 +29,8 @@ public:
 		StringInternPool::StringID radius_label, bool run_concurrently)
 #else
 	ConvictionProcessor(ConvictionProcessorBuffers &_buffers, KnnCache &cache,
-		EntityQueriesStatistics::DistanceTransform<EntityReference> &distance_transform, size_t num_nearest_neighbors)
+		EntityQueriesStatistics::DistanceTransform<EntityReference> &distance_transform, size_t num_nearest_neighbors,
+		StringInternPool::StringID radius_label)
 #endif
 	{
 		buffers = &_buffers;

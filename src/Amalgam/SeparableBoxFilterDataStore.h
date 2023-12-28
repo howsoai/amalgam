@@ -715,7 +715,7 @@ protected:
 		{
 			auto &column_data = columnData[radius_column_index];
 			auto radius_value_type = column_data->GetIndexValueType(other_index);
-			if(radius_value_type == ENIVT_NUMBER)
+			if(radius_value_type == ENIVT_NUMBER || radius_value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
 				dist -= column_data->GetResolvedValue(radius_value_type, matrix[matrix_base_position + radius_column_index]).number;
 		}
 

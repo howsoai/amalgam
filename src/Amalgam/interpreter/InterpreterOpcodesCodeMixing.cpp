@@ -89,7 +89,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY(EvaluableNode 
 		size_t s2_len = 0;
 		auto edit_distance = EvaluableNodeTreeManipulation::EditDistance(ocn[0]->GetStringValue(), ocn[1]->GetStringValue(), s1_len, s2_len);
 		auto commonality = static_cast<double>(std::max(s1_len, s2_len) - edit_distance);
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(commonality), true);
+		return AllocReturn(commonality, immediate_result);
 	}
 
 	//otherwise, treat both as nodes and calculate node commonality
@@ -104,7 +104,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY(EvaluableNode 
 	evaluableNodeManager->FreeNodeTreeIfPossible(tree1);
 	evaluableNodeManager->FreeNodeTreeIfPossible(tree2);
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(results.commonality), true);
+	return AllocReturn(results.commonality, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE(EvaluableNode *en, bool immediate_result)
@@ -142,7 +142,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE(EvaluableNod
 	evaluableNodeManager->FreeNodeTreeIfPossible(tree1);
 	evaluableNodeManager->FreeNodeTreeIfPossible(tree2);
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(edit_distance), true);
+	return AllocReturn(edit_distance, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT(EvaluableNode *en, bool immediate_result)
@@ -303,7 +303,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TOTAL_ENTITY_SIZE(Evaluabl
 		return EvaluableNodeReference::Null();
 
 	double size = static_cast<double>(source_entity->GetDeepSizeInNodes());
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(size), true);
+	return AllocReturn(size, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_FLATTEN_ENTITY(EvaluableNode *en, bool immediate_result)
@@ -407,7 +407,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 	}
 
 	if(destination_entity_parent == curEntity)
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, new_entity_id), true);
+		return AllocReturn(static_cast<StringInternPool::StringID>(new_entity_id), immediate_result);
 	else //need to return an id list
 		return EvaluableNodeReference(GetTraversalIDPathFromAToB(evaluableNodeManager, curEntity, new_entity), true);
 }
@@ -431,7 +431,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY_ENTITIES(Evalu
 		return EvaluableNodeReference::Null();
 
 	auto commonality = EntityManipulation::NumberOfSharedNodes(source_entity_1, source_entity_2);
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(commonality.commonality), true);
+	return AllocReturn(commonality.commonality, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE_ENTITIES(EvaluableNode *en, bool immediate_result)
@@ -453,7 +453,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE_ENTITIES(Eva
 		return EvaluableNodeReference::Null();
 
 	double edit_distance = EntityManipulation::EditDistance(source_entity_1, source_entity_2);
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(edit_distance), true);
+	return AllocReturn(edit_distance, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT_ENTITIES(EvaluableNode *en, bool immediate_result)
@@ -504,7 +504,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT_ENTITIES(Evaluab
 	}
 
 	if(destination_entity_parent == curEntity)
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, new_entity_id), true);
+		return AllocReturn(static_cast<StringInternPool::StringID>(new_entity_id), immediate_result);
 	else //need to return an id list
 		return EvaluableNodeReference(GetTraversalIDPathFromAToB(evaluableNodeManager, curEntity, new_entity), true);
 }
@@ -557,7 +557,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION_ENTITIES(EvaluableNo
 	}
 
 	if(destination_entity_parent == curEntity)
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, new_entity_id), true);
+		return AllocReturn(static_cast<StringInternPool::StringID>(new_entity_id), immediate_result);
 	else //need to return an id list
 		return EvaluableNodeReference(GetTraversalIDPathFromAToB(evaluableNodeManager, curEntity, new_entity), true);
 }
@@ -654,7 +654,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode
 	}
 
 	if(destination_entity_parent == curEntity)
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, new_entity_id), true);
+		return AllocReturn(static_cast<StringInternPool::StringID>(new_entity_id), immediate_result);
 	else //need to return an id list
 		return EvaluableNodeReference(GetTraversalIDPathFromAToB(evaluableNodeManager, curEntity, new_entity), true);
 }

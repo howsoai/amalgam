@@ -87,7 +87,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 		if(std::cin.bad() || std::cin.eof())
 			exit(0);
 
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, input), true);
+		return AllocReturn(input, immediate_result);
 	}
 	else if(command == "printline" && ocn.size() > 1)
 	{
@@ -102,7 +102,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 		if(ocn.size() == 1)
 		{
 			auto path = std::filesystem::current_path();
-			return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, path.string()), true);
+			return AllocReturn(path.string(), immediate_result);
 		}
 
 		std::string directory = InterpretNodeIntoStringValueEmptyNull(ocn[1]);
@@ -111,10 +111,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 		//try to set the directory
 		std::error_code error;
 		std::filesystem::current_path(directory, error);
-		if(error)
-			return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_FALSE), true);
-		else
-			return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_TRUE), true);
+		bool error_value = static_cast<bool>(error);
+		return AllocReturn(error_value, immediate_result);
 	}
 	else if(command == "system" && ocn.size() > 1)
 	{
@@ -136,7 +134,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 	else if(command == "os")
 	{
 		std::string os = Platform_GetOperatingSystemName();
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, os), true);
+		return AllocReturn(os, immediate_result);
 	}
 	else if(command == "sleep")
 	{
@@ -152,15 +150,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 	}
 	else if(command == "version")
 	{
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, AMALGAM_VERSION_STRING), true);
+		std::string version_string = AMALGAM_VERSION_STRING;
+		return AllocReturn(version_string, immediate_result);
 	}
 	else if(command == "est_mem_reserved")
 	{
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(static_cast<double>(curEntity->GetEstimatedReservedDeepSizeInBytes())), true);
+		return AllocReturn(static_cast<double>(curEntity->GetEstimatedReservedDeepSizeInBytes()), immediate_result);
 	}
 	else if(command == "est_mem_used")
 	{
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(static_cast<double>(curEntity->GetEstimatedUsedDeepSizeInBytes())), true);
+		return AllocReturn(static_cast<double>(curEntity->GetEstimatedUsedDeepSizeInBytes()), immediate_result);
 	}
 	else if(command == "mem_diagnostics")
 	{
@@ -169,7 +168,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 		auto lock = curEntity->CreateEntityLock<Concurrency::ReadLock>();
 	#endif
 
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, GetEntityMemorySizeDiagnostics(curEntity)), true);
+		return AllocReturn(GetEntityMemorySizeDiagnostics(curEntity), immediate_result);
 	}
 	else if(command == "rand" && ocn.size() > 1)
 	{
@@ -181,7 +180,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 		std::string rand_data(num_bytes, '\0');
 		Platform_GenerateSecureRandomData(&rand_data[0], num_bytes);
 		
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, rand_data), true);
+		return AllocReturn(rand_data, immediate_result);
 	}
 	else if(command == "sign_key_pair")
 	{
@@ -208,7 +207,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 	{
 		uint8_t built_in_data[] = AMALGAM_BUILT_IN_DATA;
 		std::string built_in_data_s(reinterpret_cast<char *>(&built_in_data[0]), sizeof(built_in_data));
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, built_in_data_s), true);
+		return AllocReturn(built_in_data_s, immediate_result);
 	}
 
 	return EvaluableNodeReference::Null();

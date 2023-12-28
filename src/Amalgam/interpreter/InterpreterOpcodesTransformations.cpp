@@ -1038,7 +1038,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_INDEX(EvaluableNo
 	//get assoc array to look up
 	auto container = InterpretNodeForImmediateUse(ocn[0]);
 	if(container == nullptr)
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_FALSE), true);
+		return AllocReturn(false, immediate_result);
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(container);
 
@@ -1062,7 +1062,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 	auto container = InterpretNodeForImmediateUse(ocn[0]);
 
 	if(container == nullptr)
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_FALSE), true);
+		return AllocReturn(false, immediate_result);
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(container);
 

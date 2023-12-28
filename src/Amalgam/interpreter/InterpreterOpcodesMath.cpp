@@ -317,18 +317,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_DIGITS(EvaluableNode *
 	auto &ocn = en->GetOrderedChildNodes();
 	size_t num_params = ocn.size();
 	if(num_params == 0)
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(std::numeric_limits<double>::quiet_NaN()), true);
+		return AllocReturn(std::numeric_limits<double>::quiet_NaN(), immediate_result);
 
 	double value = InterpretNodeIntoNumberValue(ocn[0]);
 	if(FastIsNaN(value) || value == std::numeric_limits<double>::infinity())
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
+		return AllocReturn(value, immediate_result);
 
 	double base = 10;
 	if(num_params > 1)
 	{
 		base = InterpretNodeIntoNumberValue(ocn[1]);
 		if(base <= 0)
-			return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
+			return AllocReturn(value, immediate_result);
 	}
 
 	bool relative_to_zero = true;
@@ -859,18 +859,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DOT_PRODUCT(EvaluableNode 
 {
 	auto &ocn = en->GetOrderedChildNodes();
 	if(ocn.size() < 2)
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(0.0), true);
+		return AllocReturn(0.0, immediate_result);
 
 	EvaluableNodeReference elements1 = InterpretNodeForImmediateUse(ocn[0]);
 	if(EvaluableNode::IsNull(elements1))
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(0.0), true);
+		return AllocReturn(0.0, immediate_result);
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(elements1);
 	EvaluableNodeReference elements2 = InterpretNodeForImmediateUse(ocn[1]);
 	node_stack.PopEvaluableNode();
 
 	if(EvaluableNode::IsNull(elements2))
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(0.0), true);
+		return AllocReturn(0.0, immediate_result);
 
 	bool elements1_assoc = elements1->IsAssociativeArray();
 	bool elements2_assoc = elements2->IsAssociativeArray();
@@ -1092,7 +1092,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 	auto &ocn = en->GetOrderedChildNodes();
 
 	if(ocn.size() == 0)
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(0.0), true);
+		return AllocReturn(0.0, immediate_result);
 
 	//get first list of probabilities, p
 	bool p_is_constant = false;
@@ -1207,7 +1207,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 	//if both are constants, then have no entropy (no probability mass), so return 0
 	if((p_is_constant || p_num_elements == std::numeric_limits<size_t>::max())
 		&& (q_is_constant || q_num_elements == std::numeric_limits<size_t>::max()))
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(0.0), true);
+		return AllocReturn(0.0, immediate_result);
 
 	//now that have the size of both p and q, can compute constant values if applicable
 	//if p_node is null then compute a constant value

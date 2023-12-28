@@ -76,7 +76,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, b
 		{
 			auto sid = list->GetStringIDReference();
 			if(sid <= string_intern_pool.EMPTY_STRING_ID)
-				return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, StringInternPool::NOT_A_STRING_ID), true);
+				return AllocReturn(StringInternPool::NOT_A_STRING_ID, immediate_result);
 
 			std::string s = string_intern_pool.GetStringFromID(sid);
 			size_t utf8_char_length = StringManipulation::GetUTF8CharacterLength(s, 0);
@@ -89,7 +89,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, b
 			//return 0 if zero
 			double value = list->GetNumberValueReference();
 			if(FastIsNaN(value))
-				return EvaluableNodeReference(evaluableNodeManager->AllocNode(std::numeric_limits<double>::quiet_NaN()), true);
+				return AllocReturn(std::numeric_limits<double>::quiet_NaN(), immediate_result);
 
 			if(value == 0.0)
 				return list;
@@ -188,7 +188,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, bo
 		{
 			auto sid = list->GetStringIDReference();
 			if(sid <= string_intern_pool.EMPTY_STRING_ID)
-				return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, StringInternPool::NOT_A_STRING_ID), true);
+				return AllocReturn(StringInternPool::NOT_A_STRING_ID, immediate_result);
 
 			std::string s = string_intern_pool.GetStringFromID(sid);
 
@@ -286,7 +286,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, bo
 		{
 			auto sid = list->GetStringIDReference();
 			if(sid <= string_intern_pool.EMPTY_STRING_ID)
-				return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, StringInternPool::NOT_A_STRING_ID), true);
+				return AllocReturn(StringInternPool::NOT_A_STRING_ID, immediate_result);
 
 			std::string s = string_intern_pool.GetStringFromID(sid);
 
@@ -393,7 +393,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, b
 		{
 			auto sid = list->GetStringIDReference();
 			if(sid <= string_intern_pool.EMPTY_STRING_ID)
-				return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, StringInternPool::NOT_A_STRING_ID), true);
+				return AllocReturn(StringInternPool::NOT_A_STRING_ID, immediate_result);
 
 			std::string s = string_intern_pool.GetStringFromID(sid);
 

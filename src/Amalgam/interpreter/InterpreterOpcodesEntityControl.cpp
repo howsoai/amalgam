@@ -46,7 +46,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 	if(label_sid == StringInternPool::NOT_A_STRING_ID)
 	{
 		if(!deep_comments)
-			return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, EvaluableNode::GetCommentsStringId(target_entity->GetRoot())), true);
+			return AllocReturn(EvaluableNode::GetCommentsStringId(target_entity->GetRoot()), immediate_result);
 
 		EvaluableNodeReference retval(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
 
@@ -68,7 +68,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 
 	//has valid label
 	if(!deep_comments)
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, label_value->GetCommentsStringId()), true);
+		return AllocReturn(label_value->GetCommentsStringId(), immediate_result);
 
 	//make sure a function based on declare that has parameters
 	if(label_value == nullptr || label_value->GetType() != ENT_DECLARE || label_value->GetOrderedChildNodes().size() < 1)
@@ -208,7 +208,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_AC
 	#endif
 	}
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(all_assignments_successful ? ENT_TRUE : ENT_FALSE), true);
+	return AllocReturn(all_assignments_successful, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_RAND_SEED(EvaluableNode *en, bool immediate_result)

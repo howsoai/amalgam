@@ -96,8 +96,11 @@ public:
 	}
 
 	//returns the column index for the label_id, or maximum value if not found
-	inline size_t GetColumnIndexFromLabelId(size_t label_id)
+	inline size_t GetColumnIndexFromLabelId(StringInternPool::StringID label_id)
 	{
+		if(label_id == string_intern_pool.NOT_A_STRING_ID)
+			return std::numeric_limits<size_t>::max();
+
 		auto column = labelIdToColumnIndex.find(label_id);
 		if(column == end(labelIdToColumnIndex))
 			return std::numeric_limits<size_t>::max();
@@ -672,10 +675,10 @@ protected:
 	//computes a heuristically derived set of partial sums across all the enabled features from parametersAndBuffers.targetValues[i] and parametersAndBuffers.targetColumnIndices[i]
 	// if enabled_indices is not nullptr, then will only use elements in that list
 	// uses top_k for heuristics as to how many partial sums to compute
-	// if radius_label is specified, it will populate the initial partial sums with them
+	// if radius_column_index is specified, it will populate the initial partial sums with them
 	// will compute and populate min_unpopulated_distances and min_distance_by_unpopulated_count, where the former is the next smallest uncomputed feature distance indexed by the number of features not computed
 	// and min_distance_by_unpopulated_count is the total distance of all uncomputed features where the index is the number of uncomputed features
-	void PopulateInitialPartialSums(GeneralizedDistance &dist_params, size_t top_k, StringInternPool::StringID radius_label,
+	void PopulateInitialPartialSums(GeneralizedDistance &dist_params, size_t top_k, size_t radius_column_index,
 		size_t num_enabled_features, BitArrayIntegerSet &enabled_indices,
 		std::vector<double> &min_unpopulated_distances, std::vector<double> &min_distance_by_unpopulated_count);
 
@@ -685,7 +688,7 @@ protected:
 	//returns the distance between two nodes while respecting the feature mask
 	inline double GetDistanceBetween(GeneralizedDistance &dist_params,
 		std::vector<EvaluableNodeImmediateValue> &target_values, std::vector<EvaluableNodeImmediateValueType> &target_value_types,
-		std::vector<size_t> &target_column_indices, size_t radius_index, size_t other_index, bool high_accuracy)
+		std::vector<size_t> &target_column_indices, size_t radius_column_index, size_t other_index, bool high_accuracy)
 	{
 		const size_t matrix_base_position = other_index * columnData.size();
 
@@ -706,9 +709,16 @@ protected:
 			}
 		}
 
-		//TODO 18264: add radius value
-
 		double dist = dist_params.InverseExponentiateDistance(dist_accum, high_accuracy);
+
+		if(radius_column_index < columnData.size())
+		{
+			auto &column_data = columnData[radius_column_index];
+			auto radius_value_type = column_data->GetIndexValueType(other_index);
+			if(radius_value_type == ENIVT_NUMBER)
+				dist -= column_data->GetResolvedValue(radius_value_type, matrix[matrix_base_position + radius_column_index]).number;
+		}
+
 		return dist;
 	}
 

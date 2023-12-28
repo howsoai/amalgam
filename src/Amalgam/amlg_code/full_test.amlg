@@ -2800,22 +2800,22 @@
 
  (print (contained_entities "TestContainerExec" (list
  	(query_exists "x")
- 	(query_nearest_generalized_distance 2 (list "x" "y") (list 0.0 0.0) (null) (null) (null) (null) 0.01 1 (null) "random seed 1234" "radius")
+ 	(query_nearest_generalized_distance 3 (list "x" "y") (list 0.0 0.0) (null) (null) (null) (null) 0.01 1 (null) "random seed 1234" "radius")
  )))
 
  (print (contained_entities "TestContainerExec" (list
   (query_exists "x")
-  (query_nearest_generalized_distance 2 (list "x" "y") (list 0.0 0.0) (list 2 1) (list "nominal_numeric" "continuous_numeric_cyclic") (list 1 360) (null) 0.01 1 (null) "random seed 1234" "radius")
+  (query_nearest_generalized_distance 3 (list "x" "y") (list 0.0 0.0) (list 2 1) (list "nominal_numeric" "continuous_numeric_cyclic") (list 1 360) (null) 0.01 1 (null) "random seed 1234" "radius")
  )))
 
   (print "assoc-based: " (contained_entities "TestContainerExec" (list
   (query_exists "x")
-  (query_nearest_generalized_distance 2 (list "x" "y") (list 0.0 0.0) (associate "x" 2 "y" 1) (associate "x" "nominal_numeric" "y" "continuous_numeric_cyclic") (list 1 360) (null) 0.01 1 (null) "random seed 1234" "radius")
+  (query_nearest_generalized_distance 3 (list "x" "y") (list 0.0 0.0) (associate "x" 2 "y" 1) (associate "x" "nominal_numeric" "y" "continuous_numeric_cyclic") (list 1 360) (null) 0.01 1 (null) "random seed 1234" "radius")
  )))
 
  (print (contained_entities "TestContainerExec" (list
   (query_exists "x")
-  (query_nearest_generalized_distance 2 (list "x" "y") (list 0.0 0.0) (list 2 1) (list "nominal_numeric" "continuous_numeric") (list 1) (list 0.1 -0.2) 0.01 1 (null) "random seed 1234" "radius")
+  (query_nearest_generalized_distance 3 (list "x" "y") (list 0.0 0.0) (list 2 1) (list "nominal_numeric" "continuous_numeric") (list 1) (list 0.1 -0.2) 0.01 1 (null) "random seed 1234" "radius")
  )))
 
  (print "--contained_entities caching and permissions--\n")

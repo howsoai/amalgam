@@ -1235,9 +1235,9 @@ void SeparableBoxFilterDataStore::PopulateInitialPartialSums(GeneralizedDistance
 			//transform the radius to a negative value with an inverse exponent
 			//note that this will correctly order the cases by distance (monotonic),
 			// but will yield incorrect distance values with the radius, so the distances will need to be recomputed
-			double value = -dist_params.InverseExponentiateDistance(number_value_entry->value.number, high_accuracy);
+			double value = -dist_params.ExponentiateDifferenceTerm(number_value_entry->value.number, high_accuracy);
 			for(auto entity_index : number_value_entry->indicesWithValue)
-				partial_sums.SetSum(entity_index, -value);
+				partial_sums.SetSum(entity_index, value);
 		}
 	}
 

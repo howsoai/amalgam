@@ -669,7 +669,7 @@ protected:
 	//returns the smallest partial sum for any value not yet computed
 	double PopulatePartialSumsWithSimilarFeatureValue(GeneralizedDistance &dist_params,
 		EvaluableNodeImmediateValue value, EvaluableNodeImmediateValueType value_type,
-		size_t num_entities_to_populate, bool expand_search_if_optimal,
+		size_t num_entities_to_populate, bool expand_search_if_optimal, bool high_accuracy,
 		size_t query_feature_index, size_t absolute_feature_index, BitArrayIntegerSet &enabled_indices);
 
 	//computes a heuristically derived set of partial sums across all the enabled features from parametersAndBuffers.targetValues[i] and parametersAndBuffers.targetColumnIndices[i]
@@ -679,7 +679,7 @@ protected:
 	// will compute and populate min_unpopulated_distances and min_distance_by_unpopulated_count, where the former is the next smallest uncomputed feature distance indexed by the number of features not computed
 	// and min_distance_by_unpopulated_count is the total distance of all uncomputed features where the index is the number of uncomputed features
 	void PopulateInitialPartialSums(GeneralizedDistance &dist_params, size_t top_k, size_t radius_column_index,
-		size_t num_enabled_features, BitArrayIntegerSet &enabled_indices,
+		size_t num_enabled_features, bool high_accuracy, BitArrayIntegerSet &enabled_indices,
 		std::vector<double> &min_unpopulated_distances, std::vector<double> &min_distance_by_unpopulated_count);
 
 	void PopulatePotentialGoodMatches(FlexiblePriorityQueue<CountDistanceReferencePair<size_t>> &potential_good_matches,
@@ -1003,7 +1003,8 @@ protected:
 	// at target_index, optionally limits results count to k
 	inline void FindAllValidElementDistances(GeneralizedDistance &dist_params, std::vector<size_t> &target_column_indices,
 		std::vector<EvaluableNodeImmediateValue> &target_values, std::vector<EvaluableNodeImmediateValueType> &target_value_types,
-		BitArrayIntegerSet &valid_indices, std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream)
+		size_t radius_column_index, BitArrayIntegerSet &valid_indices,
+		std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream)
 	{
 		auto &sorted_results = parametersAndBuffers.sortedResults;
 		sorted_results.clear();
@@ -1013,7 +1014,8 @@ protected:
 
 		for(auto index : valid_indices)
 		{
-			double distance = GetDistanceBetween(dist_params, target_values, target_value_types, target_column_indices, index, high_accuracy);
+			double distance = GetDistanceBetween(dist_params,
+				target_values, target_value_types, target_column_indices, radius_column_index, index, high_accuracy);
 			distances_out.emplace_back(distance, index);
 		}
 

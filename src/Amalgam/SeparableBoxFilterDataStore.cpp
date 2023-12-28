@@ -509,23 +509,25 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 	possible_knn_indices.erase(search_index);
 	possible_knn_indices.erase(ignore_index);
 
+	size_t radius_column_index = GetColumnIndexFromLabelId(radius_label);
+
 	//if num enabled indices < top_k, return sorted distances
 	if(GetNumInsertedEntities() <= top_k || possible_knn_indices.size() <= top_k)
-		return FindAllValidElementDistances(*dist_params, target_column_indices, target_values, target_value_types, possible_knn_indices, distances_out, rand_stream);
+		return FindAllValidElementDistances(*dist_params,
+			target_column_indices, target_values, target_value_types, radius_column_index, possible_knn_indices, distances_out, rand_stream);
 	
 	size_t end_index = possible_knn_indices.GetEndInteger();
 
 	//reuse the appropriate partial_sums_buffer buffer
 	auto &partial_sums = parametersAndBuffers.partialSums;
 	partial_sums.ResizeAndClear(num_enabled_features, end_index);
-	size_t radius_column_index = GetColumnIndexFromLabelId(radius_label);
 
 	//calculate the partial sums for the cases that best match for each feature
 	// and populate the vectors of smallest possible distances that haven't been computed yet
 	auto &min_unpopulated_distances = parametersAndBuffers.minUnpopulatedDistances;
 	auto &min_distance_by_unpopulated_count = parametersAndBuffers.minDistanceByUnpopulatedCount;
-	PopulateInitialPartialSums(*dist_params, top_k, radius_column_index,
-		num_enabled_features, possible_knn_indices, min_unpopulated_distances, min_distance_by_unpopulated_count);
+	PopulateInitialPartialSums(*dist_params, top_k, radius_column_index, num_enabled_features, high_accuracy,
+		possible_knn_indices, min_unpopulated_distances, min_distance_by_unpopulated_count);
 	
 	auto &potential_good_matches = parametersAndBuffers.potentialGoodMatches;
 	PopulatePotentialGoodMatches(potential_good_matches, possible_knn_indices, partial_sums, top_k);
@@ -675,10 +677,12 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistance &dist_
 
 	enabled_indices.erase(ignore_entity_index);
 
+	size_t radius_column_index = GetColumnIndexFromLabelId(radius_label);
+
 	//if num enabled indices < top_k, return sorted distances
 	if(enabled_indices.size() <= top_k)
 		return FindAllValidElementDistances(dist_params,
-			target_column_indices, target_values, target_value_types, enabled_indices, distances_out, rand_stream);
+			target_column_indices, target_values, target_value_types, radius_column_index, enabled_indices, distances_out, rand_stream);
 
 	//one past the maximum entity index to be considered
 	size_t end_index = enabled_indices.GetEndInteger();
@@ -687,14 +691,13 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistance &dist_
 	//reuse the appropriate partial_sums_buffer buffer
 	auto &partial_sums = parametersAndBuffers.partialSums;
 	partial_sums.ResizeAndClear(num_enabled_features, end_index);
-	size_t radius_column_index = GetColumnIndexFromLabelId(radius_label);
 
 	//calculate the partial sums for the cases that best match for each feature
 	// and populate the vectors of smallest possible distances that haven't been computed yet
 	auto &min_unpopulated_distances = parametersAndBuffers.minUnpopulatedDistances;
 	auto &min_distance_by_unpopulated_count = parametersAndBuffers.minDistanceByUnpopulatedCount;
-	PopulateInitialPartialSums(dist_params, top_k, radius_column_index,
-		num_enabled_features, enabled_indices, min_unpopulated_distances, min_distance_by_unpopulated_count);
+	PopulateInitialPartialSums(dist_params, top_k, radius_column_index, num_enabled_features, high_accuracy,
+		enabled_indices, min_unpopulated_distances, min_distance_by_unpopulated_count);
 
 	auto &potential_good_matches = parametersAndBuffers.potentialGoodMatches;
 	PopulatePotentialGoodMatches(potential_good_matches, enabled_indices, partial_sums, top_k);
@@ -917,12 +920,11 @@ size_t SeparableBoxFilterDataStore::AddLabelsAsEmptyColumns(std::vector<size_t> 
 
 double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(GeneralizedDistance &dist_params,
 	EvaluableNodeImmediateValue value, EvaluableNodeImmediateValueType value_type,
-	size_t num_entities_to_populate, bool expand_search_if_optimal,
+	size_t num_entities_to_populate, bool expand_search_if_optimal, bool high_accuracy,
 	size_t query_feature_index, size_t absolute_feature_index, BitArrayIntegerSet &enabled_indices)
 {
 	auto &column = columnData[absolute_feature_index];
 	auto effective_feature_type = dist_params.featureParams[query_feature_index].effectiveFeatureType;
-	bool high_accuracy = dist_params.highAccuracy;
 
 	bool value_is_null = EvaluableNodeImmediateValue::IsNullEquivalent(value_type, value);
 	//need to accumulate values for nulls if the value is a null
@@ -1221,7 +1223,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 }
 
 void SeparableBoxFilterDataStore::PopulateInitialPartialSums(GeneralizedDistance &dist_params,
-	size_t top_k, size_t radius_column_index, size_t num_enabled_features,
+	size_t top_k, size_t radius_column_index, size_t num_enabled_features, bool high_accuracy,
 	BitArrayIntegerSet &enabled_indices, std::vector<double> &min_unpopulated_distances, std::vector<double> &min_distance_by_unpopulated_count)
 {;
 	if(radius_column_index < columnData.size())
@@ -1251,7 +1253,7 @@ void SeparableBoxFilterDataStore::PopulateInitialPartialSums(GeneralizedDistance
 			parametersAndBuffers.targetValues[i], parametersAndBuffers.targetValueTypes[i],
 			num_entities_to_populate,
 			//expand search if using more than one dimension
-			num_enabled_features > 1,
+			num_enabled_features > 1, high_accuracy,
 			i, parametersAndBuffers.targetColumnIndices[i], enabled_indices);
 
 		min_unpopulated_distances[i] = next_closest_distance;

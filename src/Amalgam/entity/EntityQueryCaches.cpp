@@ -317,13 +317,13 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				else if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE)
 				{
 					sbfds.FindNearestEntities(cond->distParams, cond->positionLabels, cond->valueToCompare, cond->valueTypes,
-						static_cast<size_t>(cond->maxToRetrieve), cond->exclusionLabel, matching_entities,
+						static_cast<size_t>(cond->maxToRetrieve), cond->singleLabel, cond->exclusionLabel, matching_entities,
 						compute_results, cond->randomStream.CreateOtherStreamViaRand());
 				}
 				else //ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
 				{
 					sbfds.FindEntitiesWithinDistance(cond->distParams, cond->positionLabels, cond->valueToCompare, cond->valueTypes,
-						cond->maxDistance, matching_entities, compute_results);
+						cond->maxDistance, cond->singleLabel, matching_entities, compute_results);
 				}
 
 				distance_transform.TransformDistances(compute_results, cond->returnSortedList);
@@ -376,12 +376,12 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 
 			#ifdef MULTITHREAD_SUPPORT
 				ConvictionProcessor<KnnNonZeroDistanceQuerySBFCache, size_t, BitArrayIntegerSet> conviction_processor(buffers.convictionBuffers,
-					buffers.knnCache, distance_transform, static_cast<size_t>(cond->maxToRetrieve), cond->useConcurrency);
+					buffers.knnCache, distance_transform, static_cast<size_t>(cond->maxToRetrieve), cond->singleLabel, cond->useConcurrency);
 			#else
 				ConvictionProcessor<KnnNonZeroDistanceQuerySBFCache, size_t, BitArrayIntegerSet> conviction_processor(buffers.convictionBuffers,
-					buffers.knnCache, distance_transform, static_cast<size_t>(cond->maxToRetrieve));
+					buffers.knnCache, distance_transform, static_cast<size_t>(cond->maxToRetrieve), cond->singleLabel);
 			#endif
-				buffers.knnCache.ResetCache(sbfds, matching_entities, cond->distParams, cond->positionLabels);
+				buffers.knnCache.ResetCache(sbfds, matching_entities, cond->distParams, cond->positionLabels, cond->singleLabel);
 
 				auto &results_buffer = buffers.doubleVector;
 				results_buffer.clear();

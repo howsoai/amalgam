@@ -916,13 +916,16 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, Evalu
 	}
 }
 
-void Entity::SetRoot(std::string &code_string, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier, std::vector<EntityWriteListener *> *write_listeners)
+void Entity::SetRoot(std::string &code_string, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier,
+	std::vector<EntityWriteListener *> *write_listeners)
 {
 	EvaluableNodeReference new_code = Parser::Parse(code_string, &evaluableNodeManager);
 	SetRoot(new_code.reference, true, metadata_modifier, write_listeners);
 }
 
-void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_entity_enm, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier, std::vector<EntityWriteListener *> *write_listeners)
+void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_entity_enm,
+	EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier,
+	std::vector<EntityWriteListener *> *write_listeners)
 {
 	if( !(allocated_with_entity_enm && metadata_modifier == EvaluableNodeManager::ENMM_NO_CHANGE))
 		accum_code = evaluableNodeManager.DeepAllocCopy(accum_code, metadata_modifier);
@@ -930,7 +933,8 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 	bool accum_has_labels = EvaluableNodeTreeManipulation::DoesTreeContainLabels(accum_code);
 
 	EvaluableNode *previous_root = evaluableNodeManager.GetRootNode();
-	EvaluableNodeReference new_root = AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeReference(previous_root, true), accum_code, &evaluableNodeManager);
+	EvaluableNodeReference new_root = AccumulateEvaluableNodeIntoEvaluableNode(
+		EvaluableNodeReference(previous_root, true), accum_code, &evaluableNodeManager);
 
 	//need to check if still cycle free as it may no longer be
 	EvaluableNodeManager::UpdateFlagsForNodeTree(new_root);

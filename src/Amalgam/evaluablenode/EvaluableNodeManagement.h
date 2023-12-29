@@ -9,7 +9,7 @@ typedef int32_t ExecutionCycleCountCompactDelta;
 
 //describes an EvaluableNode value and whether it is uniquely referenced
 //this is mostly used for actual EvaluableNode *'s, and so most of the methods are built as such
-//however, if it may contain an immediate value, then that must be checked via 
+//however, if it may contain an immediate value, then that must be checked via IsImmediateValue()
 class EvaluableNodeReference
 {
 public:

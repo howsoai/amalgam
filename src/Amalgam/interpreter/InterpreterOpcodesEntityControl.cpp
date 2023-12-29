@@ -19,7 +19,7 @@
 #include <iostream>
 #include <utility>
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(EvaluableNode *en, bool immediate_result)
 {
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
@@ -46,7 +46,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 	if(label_sid == StringInternPool::NOT_A_STRING_ID)
 	{
 		if(!deep_comments)
-			return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, EvaluableNode::GetCommentsStringId(target_entity->GetRoot())), true);
+			return AllocReturn(EvaluableNode::GetCommentsStringId(target_entity->GetRoot()), immediate_result);
 
 		EvaluableNodeReference retval(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
 
@@ -68,7 +68,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 
 	//has valid label
 	if(!deep_comments)
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, label_value->GetCommentsStringId()), true);
+		return AllocReturn(label_value->GetCommentsStringId(), immediate_result);
 
 	//make sure a function based on declare that has parameters
 	if(label_value == nullptr || label_value->GetType() != ENT_DECLARE || label_value->GetOrderedChildNodes().size() < 1)
@@ -108,7 +108,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 	return retval;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_ENTITY_ROOT(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_ENTITY_ROOT(EvaluableNode *en, bool immediate_result)
 {
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
@@ -136,7 +136,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_ENTITY_ROOT(Evalu
 	return target_entity->GetRoot(evaluableNodeManager, label_escape_increment);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_ACCUM_ENTITY_ROOTS(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_ACCUM_ENTITY_ROOTS(EvaluableNode *en, bool immediate_result)
 {
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
@@ -208,10 +208,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_AC
 	#endif
 	}
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(all_assignments_successful ? ENT_TRUE : ENT_FALSE), true);
+	return AllocReturn(all_assignments_successful, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_RAND_SEED(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_RAND_SEED(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -228,10 +228,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_RAND_SEED(Evalu
 		return EvaluableNodeReference::Null();
 
 	std::string rand_state_string = entity->GetRandomState();
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, rand_state_string), true);
+
+	return AllocReturn(rand_state_string, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 	size_t num_params = ocn.size();
@@ -272,7 +273,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED(Evalu
 	return seed_node;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_ROOT_PERMISSION(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_ROOT_PERMISSION(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -282,15 +283,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_ROOT_PERMISSION
 	if(!asset_manager.DoesEntityHaveRootPermission(curEntity))
 		return EvaluableNodeReference::Null();
 
-	//get the id of the entity
 	EntityReadReference entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
-	if(entity == nullptr)
-		return EvaluableNodeReference::Null();
-
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(asset_manager.DoesEntityHaveRootPermission(entity) ? ENT_TRUE : ENT_FALSE), true);
+	return AllocReturn(asset_manager.DoesEntityHaveRootPermission(entity), immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_ROOT_PERMISSION(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_ROOT_PERMISSION(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -311,7 +308,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_ROOT_PERMISSION
 	return id_node;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableNode *en, bool immediate_result)
 {
 	//not allowed if don't have a Entity to create within
 	if(curEntity == nullptr)
@@ -377,7 +374,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableN
 	return new_entity_ids_list;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_CLONE_ENTITIES(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CLONE_ENTITIES(EvaluableNode *en, bool immediate_result)
 {
 	//not allowed if don't have a Entity to create within
 	if(curEntity == nullptr)
@@ -437,7 +434,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CLONE_ENTITIES(EvaluableNo
 	return new_entity_ids_list;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_MOVE_ENTITIES(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_MOVE_ENTITIES(EvaluableNode *en, bool immediate_result)
 {
 	//not allowed if don't have a Entity to create within
 	if(curEntity == nullptr)
@@ -506,7 +503,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MOVE_ENTITIES(EvaluableNod
 	return new_entity_ids_list;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_DESTROY_ENTITIES(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_DESTROY_ENTITIES(EvaluableNode *en, bool immediate_result)
 {
 	//not allowed if don't have a Entity to create within
 	if(curEntity == nullptr)
@@ -542,10 +539,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DESTROY_ENTITIES(Evaluable
 		delete source_entity;
 	}
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(all_destroys_successful ? ENT_TRUE : ENT_FALSE), true);
+	return AllocReturn(all_destroys_successful, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -575,7 +572,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en)
 	return asset_manager.LoadResourcePath(resource_name, resource_base_path, file_type, evaluableNodeManager, escape_filename);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSISTENT_ENTITY(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSISTENT_ENTITY(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -639,12 +636,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSI
 	destination_entity_parent->AddContainedEntityViaReference(loaded_entity, new_entity_id, writeListeners);
 
 	if(destination_entity_parent == curEntity)
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, new_entity_id), true);
+		return AllocReturn(static_cast<StringInternPool::StringID>(new_entity_id), immediate_result);
 	else //need to return an id path
 		return EvaluableNodeReference(GetTraversalIDPathFromAToB(evaluableNodeManager, curEntity, loaded_entity), true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -694,12 +691,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en)
 	bool successful_save = asset_manager.StoreResourcePath(to_store,
 		resource_name, resource_base_path, file_type, evaluableNodeManager, escape_filename, sort_keys);
 
-	evaluableNodeManager->FreeNodeTreeIfPossible(to_store);
-
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(successful_save ? ENT_TRUE : ENT_FALSE), true);
+	return ReuseOrAllocReturn(to_store, successful_save, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -756,5 +751,5 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 	bool stored_successfully = asset_manager.StoreEntityToResourcePath(source_entity, resource_name, file_type,
 		false, true, escape_filename, escape_contained_filenames, sort_keys);
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(stored_successfully ? ENT_TRUE : ENT_FALSE), true);
+	return AllocReturn(stored_successfully, immediate_result);
 }

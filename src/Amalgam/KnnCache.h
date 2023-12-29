@@ -20,12 +20,13 @@ public:
 	//clears all buffers and resizes and resets them based on the datastore of entities and the particular
 	// relevant_indices to use from the datastore
 	void ResetCache(SeparableBoxFilterDataStore &datastore, BitArrayIntegerSet &relevant_indices,
-		GeneralizedDistance &dist_params, std::vector<StringInternPool::StringID> &position_label_ids)
+		GeneralizedDistance &dist_params, std::vector<StringInternPool::StringID> &position_label_ids, StringInternPool::StringID radius_label)
 	{
 		sbfDataStore = &datastore;
 		relevantIndices = &relevant_indices;
 		distParams = &dist_params;
 		positionLabelIds = &position_label_ids;
+		radiusLabelId = radius_label;
 
 		cachedNeighbors.clear();
 		cachedNeighbors.resize(sbfDataStore->GetNumInsertedEntities());
@@ -60,7 +61,7 @@ public:
 								{
 									// could have knn cache constructor take in dist params and just get top_k from there, so don't need to pass it in everywhere
 									sbfDataStore->FindEntitiesNearestToIndexedEntity(distParams, *positionLabelIds, true, index,
-										top_k, *relevantIndices, true, cachedNeighbors[index]);
+										top_k, radiusLabelId, *relevantIndices, true, cachedNeighbors[index]);
 								}
 							)
 						);
@@ -87,7 +88,8 @@ public:
 			if(top_k > cachedNeighbors[index].size())
 			{
 				cachedNeighbors[index].clear();
-				sbfDataStore->FindEntitiesNearestToIndexedEntity(distParams, *positionLabelIds, false, index, top_k, *relevantIndices, true, cachedNeighbors[index]);
+				sbfDataStore->FindEntitiesNearestToIndexedEntity(distParams,
+					*positionLabelIds, false, index, top_k, radiusLabelId, *relevantIndices, true, cachedNeighbors[index]);
 			}
 		}
 	}
@@ -123,7 +125,8 @@ public:
 
 		//there were not enough results for this search, just do a new search
 		out.clear();
-		sbfDataStore->FindEntitiesNearestToIndexedEntity(distParams, *positionLabelIds, false, index, top_k, *relevantIndices, true, out, additional_holdout_index);
+		sbfDataStore->FindEntitiesNearestToIndexedEntity(distParams,
+			*positionLabelIds, false, index, top_k, radiusLabelId, *relevantIndices, true, out, additional_holdout_index);
 	}
 
 	//like the other GetKnn, but only considers from_indices
@@ -142,7 +145,8 @@ public:
 
 		//there were not enough results for this search, just do a new search
 		out.clear();
-		sbfDataStore->FindEntitiesNearestToIndexedEntity(distParams, *positionLabelIds, false, index, top_k, from_indices, true, out);
+		sbfDataStore->FindEntitiesNearestToIndexedEntity(distParams,
+			*positionLabelIds, false, index, top_k, radiusLabelId, from_indices, true, out);
 	}
 
 	//returns a pointer to the relevant indices of the cache
@@ -169,6 +173,8 @@ private:
 
 	//position labels
 	std::vector<StringInternPool::StringID> *positionLabelIds;
+
+	StringInternPool::StringID radiusLabelId;
 
 	//pointer to the indices of relevant entities used to populate the cache
 	BitArrayIntegerSet *relevantIndices;

@@ -406,18 +406,16 @@ EvaluableNodeReference Interpreter::ConvertArgsToCallStack(EvaluableNodeReferenc
 	//ensure have arguments
 	if(args == nullptr)
 	{
-		args.reference = enm->AllocNode(ENT_ASSOC);
-		args.unique = true;
+		args.SetReference(enm->AllocNode(ENT_ASSOC), true);
 	}
 	else if(!args->IsAssociativeArray())
 	{
 		enm->FreeNodeTreeIfPossible(args);
-		args.reference = enm->AllocNode(ENT_ASSOC);
-		args.unique = true;
+		args.SetReference(enm->AllocNode(ENT_ASSOC), true);
 	}
 	else if(!args.unique)
 	{
-		args.reference = enm->AllocNode(args);
+		args.SetReference(enm->AllocNode(args));
 	}
 	
 	EvaluableNode *call_stack = enm->AllocNode(ENT_LIST);
@@ -475,7 +473,7 @@ EvaluableNode **Interpreter::GetOrCreateExecutionContextSymbolLocation(const Str
 	return context_to_use->GetOrCreateMappedChildNode(symbol_sid);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, bool immediate_result)
 {
 	if(EvaluableNode::IsNull(en))
 		return EvaluableNodeReference::Null();
@@ -515,7 +513,7 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en)
 	EvaluableNodeType ent = en->GetType();
 	auto oc = _opcodes[ent];
 
-	EvaluableNodeReference retval = (this->*oc)(en);
+	EvaluableNodeReference retval = (this->*oc)(en, immediate_result);
 
 	//for deep debugging only
 	//ValidateEvaluableNodeIntegrity();
@@ -544,37 +542,14 @@ std::pair<bool, std::string> Interpreter::InterpretNodeIntoStringValue(Evaluable
 	if(n->GetType() == ENT_STRING)
 		return std::make_pair(true, n->GetStringValue());
 
-	auto result = InterpretNodeForImmediateUse(n);
-	if(EvaluableNode::IsEmptyNode(n))
-	{
-		evaluableNodeManager->FreeNodeTreeIfPossible(result);
-		return std::make_pair(false, "");
-	}
+	auto result = InterpretNodeForImmediateUse(n, true);
+	auto &result_value = result.GetValue();
 
-	std::string result_string = EvaluableNode::ToStringPreservingOpcodeType(result);
+	auto [valid, str] = result_value.GetValueAsString();
 	evaluableNodeManager->FreeNodeTreeIfPossible(result);
+	result.FreeImmediateResources();
 
-	return std::make_pair(true, result_string);
-}
-
-std::string Interpreter::InterpretNodeIntoStringValueEmptyNull(EvaluableNode *n)
-{
-	if(EvaluableNode::IsEmptyNode(n))
-		return "";
-
-	//shortcut if the node has what is being asked
-	if(n->GetType() == ENT_STRING)
-		return n->GetStringValue();
-
-	auto result = InterpretNodeForImmediateUse(n);
-
-	if(EvaluableNode::IsEmptyNode(result))
-		return "";
-
-	std::string result_string = EvaluableNode::ToStringPreservingOpcodeType(result);
-	evaluableNodeManager->FreeNodeTreeIfPossible(result);
-
-	return result_string;
+	return std::make_pair(valid, str);
 }
 
 StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueIfExists(EvaluableNode *n)
@@ -583,11 +558,15 @@ StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueIfExists(E
 	if(n != nullptr && n->GetType() == ENT_STRING)
 		return n->GetStringID();
 
-	auto result = InterpretNodeForImmediateUse(n);
-	StringInternPool::StringID result_sid = EvaluableNode::ToStringIDIfExists(result);
-	evaluableNodeManager->FreeNodeTreeIfPossible(result);
+	auto result = InterpretNodeForImmediateUse(n, true);
+	auto &result_value = result.GetValue();
 
-	return result_sid;
+	auto sid = result_value.GetValueAsStringIDIfExists();
+	evaluableNodeManager->FreeNodeTreeIfPossible(result);
+	//ID already exists outside of this, so not expecting to keep this reference
+	result.FreeImmediateResources();
+
+	return sid;
 }
 
 StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueWithReference(EvaluableNode *n)
@@ -596,40 +575,53 @@ StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueWithRefere
 	if(n != nullptr && n->GetType() == ENT_STRING)
 		return string_intern_pool.CreateStringReference(n->GetStringID());
 
-	auto result = InterpretNodeForImmediateUse(n);
+	auto result = InterpretNodeForImmediateUse(n, true);
 
-	StringInternPool::StringID result_sid = string_intern_pool.NOT_A_STRING_ID;
-	//if have a unique string, then just grab the string's reference instead of creating a new one
-	if(result.unique)
+	if(result.IsImmediateValue())
 	{
-		if(result != nullptr && result->IsStringValue())
-			result_sid = result->GetAndClearStringIDWithReference();
-		else
-			result_sid = EvaluableNode::ToStringIDWithReference(result);
+		auto &result_value = result.GetValue();
 
-		evaluableNodeManager->FreeNodeTree(result);
+		//reuse the reference if it has one
+		if(result_value.nodeType == ENIVT_STRING_ID)
+			return result_value.nodeValue.stringID;
+
+		//create new reference
+		return result_value.GetValueAsStringIDWithReference();
 	}
-	else //not unique, so can't free
+	else //not immediate
 	{
-		result_sid = EvaluableNode::ToStringIDWithReference(result);
-	}
+		//if have a unique string, then just grab the string's reference instead of creating a new one
+		if(result.unique)
+		{
+			StringInternPool::StringID result_sid = string_intern_pool.NOT_A_STRING_ID;
+			if(result != nullptr && result->IsStringValue())
+				result_sid = result->GetAndClearStringIDWithReference();
+			else
+				result_sid = EvaluableNode::ToStringIDWithReference(result);
 
-	return result_sid;
+			evaluableNodeManager->FreeNodeTree(result);
+			return result_sid;
+		}
+		else //not unique, so can't free
+		{
+			return EvaluableNode::ToStringIDWithReference(result);
+		}
+	}
 }
 
-EvaluableNode *Interpreter::InterpretNodeIntoUniqueStringIDValueEvaluableNode(EvaluableNode *n)
+EvaluableNodeReference Interpreter::InterpretNodeIntoUniqueStringIDValueEvaluableNode(EvaluableNode *n)
 {
 	//if can skip InterpretNode, then just allocate the string
 	if(n == nullptr || n->GetIsIdempotent()
 			|| n->GetType() == ENT_STRING || n->GetType() == ENT_NUMBER)
-		return evaluableNodeManager->AllocNodeWithReferenceHandoff(ENT_STRING,
-												EvaluableNode::ToStringIDWithReference(n));
+		return EvaluableNodeReference(evaluableNodeManager->AllocNodeWithReferenceHandoff(ENT_STRING,
+												EvaluableNode::ToStringIDWithReference(n)), true);
 
 	auto result = InterpretNode(n);
 
 	if(result == nullptr || !result.unique)
-		return evaluableNodeManager->AllocNodeWithReferenceHandoff(ENT_STRING,
-												EvaluableNode::ToStringIDWithReference(result));
+		return EvaluableNodeReference(evaluableNodeManager->AllocNodeWithReferenceHandoff(ENT_STRING,
+												EvaluableNode::ToStringIDWithReference(result)), true);
 
 	result->ClearMetadata();
 
@@ -650,22 +642,25 @@ double Interpreter::InterpretNodeIntoNumberValue(EvaluableNode *n)
 	if(type == ENT_NUMBER)
 		return n->GetNumberValueReference();
 
-	auto result = InterpretNodeForImmediateUse(n);
-	double result_value = EvaluableNode::ToNumber(result);
-	evaluableNodeManager->FreeNodeTreeIfPossible(result);
+	auto result = InterpretNodeForImmediateUse(n, true);
+	auto &result_value = result.GetValue();
 
-	return result_value;
+	double value = result_value.GetValueAsNumber();
+	evaluableNodeManager->FreeNodeTreeIfPossible(result);
+	result.FreeImmediateResources();
+
+	return value;
 }
 
-EvaluableNode *Interpreter::InterpretNodeIntoUniqueNumberValueEvaluableNode(EvaluableNode *n)
+EvaluableNodeReference Interpreter::InterpretNodeIntoUniqueNumberValueEvaluableNode(EvaluableNode *n)
 {
 	if(n == nullptr || n->GetIsIdempotent())
-		return evaluableNodeManager->AllocNode(EvaluableNode::ToNumber(n));
+		return EvaluableNodeReference(evaluableNodeManager->AllocNode(EvaluableNode::ToNumber(n)), true);
 
 	auto result = InterpretNode(n);
 
 	if(result == nullptr || !result.unique)
-		return evaluableNodeManager->AllocNode(EvaluableNode::ToNumber(result));
+		return EvaluableNodeReference(evaluableNodeManager->AllocNode(EvaluableNode::ToNumber(result)), true);
 	
 	result->ClearMetadata();
 
@@ -681,14 +676,14 @@ bool Interpreter::InterpretNodeIntoBoolValue(EvaluableNode *n, bool value_if_nul
 	if(n == nullptr)
 		return value_if_null;
 
-	auto result = InterpretNodeForImmediateUse(n);
-	bool result_value = value_if_null;
-	if(!EvaluableNode::IsNull(result))
-		result_value = EvaluableNode::IsTrue(result);
+	auto result = InterpretNodeForImmediateUse(n, true);
+	auto &result_value = result.GetValue();
 
+	bool value = result_value.GetValueAsBoolean();
 	evaluableNodeManager->FreeNodeTreeIfPossible(result);
+	result.FreeImmediateResources();
 
-	return result_value;
+	return value;
 }
 
 void Interpreter::InterpretNodeIntoDestinationEntity(EvaluableNode *n, Entity *&destination_entity_parent, StringInternRef &new_entity_id)
@@ -714,7 +709,7 @@ EvaluableNode **Interpreter::TraverseToDestinationFromTraversalPathList(Evaluabl
 	}
 	else //it's only a single value; use default list length of 1
 	{
-		address_list = &(tpl.reference);
+		address_list = &tpl.GetReference();
 	}
 
 	size_t max_num_nodes = 0;

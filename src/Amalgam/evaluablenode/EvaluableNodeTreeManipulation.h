@@ -466,11 +466,12 @@ public:
 	inline static EvaluableNode::LabelsAssocType RetrieveLabelIndexesFromTree(EvaluableNode *en)
 	{
 		EvaluableNode::LabelsAssocType index;
-		EvaluableNode::ReferenceSetType checked;
+		if(en == nullptr)
+			return index;
 
 		//can check faster if don't need to check for cycles
-		bool en_cycle_free = (en == nullptr || !en->GetNeedCycleCheck());
-		CollectAllLabelIndexesFromTree(en, index, en_cycle_free ? nullptr : &checked);
+		EvaluableNode::ReferenceSetType checked;
+		CollectAllLabelIndexesFromTree(en, index, en->GetNeedCycleCheck() ? &checked : nullptr);
 		return index;
 	}
 
@@ -521,13 +522,15 @@ protected:
 	static bool DoesTreeContainLabels(EvaluableNode *en, EvaluableNode::ReferenceSetType &checked);
 
 	//Recursively traverses tree, storing any nodes with labels into index.
-	// If checked is not nullptr, then it keeps track of previously visited nodes in checked, ignoring them if they are already in the set, and adds them to checked when they are traversed.
+	//assumes tree is not nullptr
+	//If checked is not nullptr, then it keeps track of previously visited nodes in checked, ignoring them if they are already in the set, and adds them to checked when they are traversed.
 	//  checked should only be nullptr when tree is known to be cycle free
 	//If there is a label collision, meaning the same label is used by more than one node, then it will exit early (not populating the index) and return true
 	//Returns false if no collision and nothing further is needed to be done.
 	static bool CollectLabelIndexesFromNormalTree(EvaluableNode *tree, EvaluableNode::LabelsAssocType &index, EvaluableNode::ReferenceSetType *checked);
 
 	//like CollectLabelIndexesFromNormalTree but overwrites duplicate labels
+	//assumes tree is not nullptr
 	static void CollectAllLabelIndexesFromTree(EvaluableNode *tree, EvaluableNode::LabelsAssocType &index, EvaluableNode::ReferenceSetType *checked);
 
 	//Recursively traverses tree, storing any nodes with labels into index.  Ignores any nodes already in checked, and adds them to checked when they are traversed.

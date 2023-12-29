@@ -209,7 +209,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en)
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE(EvaluableNode *en)
 {
 	auto &ocn = en->GetOrderedChildNodes();
-
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
@@ -225,7 +224,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE(EvaluableNode *en
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE_STRING(EvaluableNode *en)
 {
 	auto &ocn = en->GetOrderedChildNodes();
-
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
@@ -242,7 +240,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE_STRING(EvaluableN
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_TYPE(EvaluableNode *en)
 {
 	auto &ocn = en->GetOrderedChildNodes();
-
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
@@ -289,7 +286,6 @@ constexpr DestinationType ExpandCharStorage(char &value)
 EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en)
 {
 	auto &ocn = en->GetOrderedChildNodes();
-
 	if(ocn.size() < 3)
 		return EvaluableNodeReference::Null();
 
@@ -889,7 +885,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en)
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_LABELS(EvaluableNode *en)
 {
 	auto &ocn = en->GetOrderedChildNodes();
-
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
@@ -939,7 +934,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ALL_LABELS(EvaluableNo
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_LABELS(EvaluableNode *en)
 {
 	auto &ocn = en->GetOrderedChildNodes();
-
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
@@ -970,7 +964,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_LABELS(EvaluableNode *
 			if(e != nullptr)
 			{
 				StringInternPool::StringID label_sid = EvaluableNode::ToStringIDWithReference(e);
-				source->AppendLabelStringId(label_sid, true);
+				if(label_sid != string_intern_pool.NOT_A_STRING_ID)
+					source->AppendLabelStringId(label_sid, true);
 			}
 		}
 	}
@@ -982,7 +977,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_LABELS(EvaluableNode *
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP_LABELS(EvaluableNode *en)
 {
 	auto &ocn = en->GetOrderedChildNodes();
-
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
@@ -1060,7 +1054,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP_LABELS(EvaluableNode *
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_COMMENTS(EvaluableNode *en)
 {
 	auto &ocn = en->GetOrderedChildNodes();
-
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
@@ -1080,7 +1073,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_COMMENTS(EvaluableNode
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_COMMENTS(EvaluableNode *en)
 {
 	auto &ocn = en->GetOrderedChildNodes();
-
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 

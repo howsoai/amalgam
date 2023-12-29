@@ -335,11 +335,12 @@ bool EvaluableNodeTreeManipulation::DoesTreeContainLabels(EvaluableNode *en)
 std::pair<EvaluableNode::LabelsAssocType, bool> EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTreeAndNormalize(EvaluableNode *en)
 {
 	EvaluableNode::LabelsAssocType index;
-	EvaluableNode::ReferenceSetType checked;
+	if(en == nullptr)
+		return std::make_pair(index, false);
 
 	//can check faster if don't need to check for cycles
-	bool en_cycle_free = (en == nullptr || !en->GetNeedCycleCheck());
-	bool label_collision = CollectLabelIndexesFromNormalTree(en, index, en_cycle_free ? nullptr : &checked);
+	EvaluableNode::ReferenceSetType checked;
+	bool label_collision = CollectLabelIndexesFromNormalTree(en, index, en->GetNeedCycleCheck() ? &checked : nullptr);
 
 	//if no collision, return
 	if(!label_collision)
@@ -1075,9 +1076,6 @@ bool EvaluableNodeTreeManipulation::DoesTreeContainLabels(EvaluableNode *en, Eva
 
 bool EvaluableNodeTreeManipulation::CollectLabelIndexesFromNormalTree(EvaluableNode *tree, EvaluableNode::LabelsAssocType &index, EvaluableNode::ReferenceSetType *checked)
 {
-	if(tree == nullptr)
-		return false;
-
 	//attempt to insert, but if has already been checked and in checked list (circular code), then return false
 	if(checked != nullptr && checked->insert(tree).second == false)
 		return false;
@@ -1107,7 +1105,7 @@ bool EvaluableNodeTreeManipulation::CollectLabelIndexesFromNormalTree(EvaluableN
 	{
 		for(auto &[_, e] : tree->GetMappedChildNodesReference())
 		{
-			if(CollectLabelIndexesFromNormalTree(e, index, checked))
+			if(e != nullptr && CollectLabelIndexesFromNormalTree(e, index, checked))
 				return true;
 		}
 	}
@@ -1115,7 +1113,7 @@ bool EvaluableNodeTreeManipulation::CollectLabelIndexesFromNormalTree(EvaluableN
 	{
 		for(auto &e : tree->GetOrderedChildNodesReference())
 		{
-			if(CollectLabelIndexesFromNormalTree(e, index, checked))
+			if(e != nullptr && CollectLabelIndexesFromNormalTree(e, index, checked))
 				return true;
 		}
 	}
@@ -1125,9 +1123,6 @@ bool EvaluableNodeTreeManipulation::CollectLabelIndexesFromNormalTree(EvaluableN
 
 void EvaluableNodeTreeManipulation::CollectAllLabelIndexesFromTree(EvaluableNode *tree, EvaluableNode::LabelsAssocType &index, EvaluableNode::ReferenceSetType *checked)
 {
-	if(tree == nullptr)
-		return;
-
 	//attempt to insert, but if has already been checked and in checked list (circular code), then return false
 	if(checked != nullptr && checked->insert(tree).second == false)
 		return;
@@ -1152,12 +1147,18 @@ void EvaluableNodeTreeManipulation::CollectAllLabelIndexesFromTree(EvaluableNode
 	if(tree->IsAssociativeArray())
 	{
 		for(auto &[_, e] : tree->GetMappedChildNodesReference())
-			CollectAllLabelIndexesFromTree(e, index, checked);
+		{
+			if(e != nullptr)
+				CollectAllLabelIndexesFromTree(e, index, checked);
+		}
 	}
 	else if(tree->IsOrderedArray())
 	{
 		for(auto &e : tree->GetOrderedChildNodesReference())
-			CollectAllLabelIndexesFromTree(e, index, checked);
+		{
+			if(e != nullptr)
+				CollectAllLabelIndexesFromTree(e, index, checked);
+		}
 	}
 }
 

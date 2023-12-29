@@ -26,22 +26,22 @@
 #include <regex>
 #include <utility>
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUE(EvaluableNode *en, bool immediate_result)
 {
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_TRUE), true);
+	return AllocReturn(true, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_FALSE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_FALSE(EvaluableNode *en, bool immediate_result)
 {
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_FALSE), true);
+	return AllocReturn(false, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_NULL(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_NULL(EvaluableNode *en, bool immediate_result)
 {
 	return EvaluableNodeReference::Null();
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST(EvaluableNode *en, bool immediate_result)
 {
 	//if idempotent, can just return a copy without any metadata
 	if(en->GetIsIdempotent())
@@ -105,7 +105,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST(EvaluableNode *en)
 	return new_list;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, bool immediate_result)
 {
 	//if idempotent, can just return a copy without any metadata
 	if(en->GetIsIdempotent())
@@ -178,17 +178,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en)
 	return new_assoc;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_NUMBER(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_NUMBER(EvaluableNode *en, bool immediate_result)
 {
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(en->GetNumberValueReference()), true);
+	double value = en->GetNumberValueReference();
+	return AllocReturn(value, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_STRING(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_STRING(EvaluableNode *en, bool immediate_result)
 {
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, en->GetStringIDReference()), true);
+	StringInternPool::StringID value = en->GetStringIDReference();
+	return AllocReturn(value, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, bool immediate_result)
 {
 	StringInternPool::StringID sid = EvaluableNode::ToStringIDIfExists(en);
 	if(sid == StringInternPool::NOT_A_STRING_ID)
@@ -206,7 +208,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en)
 	return EvaluableNodeReference::Null();
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 	if(ocn.size() == 0)
@@ -221,7 +223,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE(EvaluableNode *en
 	return EvaluableNodeReference(evaluableNodeManager->AllocNode(type), true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE_STRING(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE_STRING(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 	if(ocn.size() == 0)
@@ -234,10 +236,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE_STRING(EvaluableN
 	evaluableNodeManager->FreeNodeTreeIfPossible(cur);
 
 	std::string type_string = GetStringFromEvaluableNodeType(type, true);
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, type_string), true);
+	return AllocReturn(type_string, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_TYPE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_TYPE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 	if(ocn.size() < 2)
@@ -248,8 +250,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_TYPE(EvaluableNode *en
 	if(source == nullptr)
 		source = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_NULL), true);
 
-	if(!source.unique)
-		source.reference = evaluableNodeManager->AllocNode(source);
+	evaluableNodeManager->EnsureNodeIsModifiable(source);
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(source);
 
@@ -283,7 +284,7 @@ constexpr DestinationType ExpandCharStorage(char &value)
 	return static_cast<DestinationType>(reinterpret_cast<SourceType &>(value));
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 	if(ocn.size() < 3)
@@ -570,12 +571,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en)
 			number_value = EvaluableNode::ToNumber(code_value);
 
 		string_intern_pool.DestroyStringReference(to_type);
-		evaluableNodeManager->FreeNodeTreeIfPossible(to_params);
 
-		//didn't return code_value, so can free it
-		evaluableNodeManager->FreeNodeTreeIfPossible(code_value);
-
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(number_value), true);
+		return ReuseOrAllocOneOfReturn(to_params, code_value, number_value, immediate_result);
 	}
 	else if(to_type == ENBISI_code)
 	{
@@ -874,15 +871,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en)
 	}
 
 	string_intern_pool.DestroyStringReference(to_type);
-	evaluableNodeManager->FreeNodeTreeIfPossible(to_params);
 
-	//didn't return code_value, so can free it
-	evaluableNodeManager->FreeNodeTreeIfPossible(code_value);
-
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, string_value), true);
+	return ReuseOrAllocOneOfReturn(to_params, code_value, string_value, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_LABELS(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_LABELS(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 	if(ocn.size() == 0)
@@ -907,7 +900,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_LABELS(EvaluableNode *
 	return result;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ALL_LABELS(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ALL_LABELS(EvaluableNode *en, bool immediate_result)
 {
 	EvaluableNodeReference n = EvaluableNodeReference::Null();
 
@@ -917,7 +910,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ALL_LABELS(EvaluableNo
 
 	EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_ASSOC), n.unique);
 
-	auto label_sids_to_nodes = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTree(n.reference);
+	auto label_sids_to_nodes = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTree(n);
 
 	string_intern_pool.CreateStringReferences(label_sids_to_nodes, [](auto it) { return it.first; });
 	result->ReserveMappedChildNodes(label_sids_to_nodes.size());
@@ -931,7 +924,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ALL_LABELS(EvaluableNo
 	return result;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_LABELS(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_LABELS(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 	if(ocn.size() < 2)
@@ -941,8 +934,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_LABELS(EvaluableNode *
 	if(source == nullptr)
 		source = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_NULL), true);
 
-	if(!source.unique)
-		source.reference = evaluableNodeManager->AllocNode(source);
+	evaluableNodeManager->EnsureNodeIsModifiable(source);
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(source);
 
@@ -974,7 +966,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_LABELS(EvaluableNode *
 	return source;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP_LABELS(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP_LABELS(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 	if(ocn.size() < 2)
@@ -996,8 +988,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP_LABELS(EvaluableNode *
 	//start assuming that the copy will be unique, but set to not unique if any chance the assumption
 	// might not hold
 	EvaluableNodeReference retval = source;
-	if(!source.unique)
-		retval = EvaluableNodeReference(evaluableNodeManager->AllocNode(source), true);
+	evaluableNodeManager->EnsureNodeIsModifiable(source);
 
 	auto &label_list_ocn = label_list->GetOrderedChildNodesReference();
 
@@ -1051,7 +1042,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP_LABELS(EvaluableNode *
 	return retval;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_COMMENTS(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_COMMENTS(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 	if(ocn.size() == 0)
@@ -1062,15 +1053,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_COMMENTS(EvaluableNode
 		return EvaluableNodeReference::Null();
 
 	StringInternPool::StringID comments_sid = n->GetCommentsStringId();
-	evaluableNodeManager->FreeNodeTreeIfPossible(n);
-
-	if(comments_sid == StringInternPool::NOT_A_STRING_ID)
-		return EvaluableNodeReference::Null();
-
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, comments_sid), true);
+	return ReuseOrAllocReturn(n, comments_sid, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_COMMENTS(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_COMMENTS(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 	if(ocn.size() < 2)
@@ -1080,7 +1066,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_COMMENTS(EvaluableNode
 	if(source == nullptr)
 		source = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_NULL), true);
 	if(!source.unique)
-		source.reference = evaluableNodeManager->AllocNode(source);
+		source.SetReference(evaluableNodeManager->AllocNode(source));
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(source);
 
@@ -1091,7 +1077,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_COMMENTS(EvaluableNode
 	return source;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_CONCURRENCY(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_CONCURRENCY(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -1101,10 +1087,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_CONCURRENCY(EvaluableN
 	if(n == nullptr)
 		return EvaluableNodeReference::Null();
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(n->GetConcurrency() ? ENT_TRUE : ENT_FALSE), true);
+	return AllocReturn(n->GetConcurrency(), immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_CONCURRENCY(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_CONCURRENCY(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -1114,8 +1100,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_CONCURRENCY(EvaluableN
 	auto source = InterpretNode(ocn[0]);
 	if(source == nullptr)
 		source = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_NULL), true);
-	else if(!source.unique)
-		source.reference = evaluableNodeManager->AllocNode(source);
+	else
+		evaluableNodeManager->EnsureNodeIsModifiable(source);
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(source);
 
@@ -1126,7 +1112,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_CONCURRENCY(EvaluableN
 	return source;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_VALUE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_VALUE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -1137,20 +1123,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_VALUE(EvaluableNode *e
 		return EvaluableNodeReference::Null();
 
 	if(n.unique)
-	{
 		n->ClearMetadata();
-	}
 	else
-	{
-		n.reference = evaluableNodeManager->AllocNode(n, EvaluableNodeManager::ENMM_REMOVE_ALL);
-		if(n->GetNumChildNodes() == 0)
-			n.unique = true;
-	}
+		evaluableNodeManager->EnsureNodeIsModifiable(n, EvaluableNodeManager::ENMM_REMOVE_ALL);
 
 	return n;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_VALUE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_VALUE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -1160,8 +1140,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_VALUE(EvaluableNode *e
 	auto source = InterpretNode(ocn[0]);
 	if(source == nullptr)
 		source = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_NULL), true);
-	if(!source.unique)
-		source.reference = evaluableNodeManager->AllocNode(source);
+	else
+		evaluableNodeManager->EnsureNodeIsModifiable(source);
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(source);
 
@@ -1173,7 +1153,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_VALUE(EvaluableNode *e
 	return source;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_EXPLODE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_EXPLODE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -1237,7 +1217,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EXPLODE(EvaluableNode *en)
 	return EvaluableNodeReference(result, true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SPLIT(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SPLIT(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -1250,7 +1230,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SPLIT(EvaluableNode *en)
 	//if only one element, nothing to split on, just return the string in a list
 	if(ocn.size() == 1)
 	{
-		EvaluableNode *str_node = InterpretNodeIntoUniqueStringIDValueEvaluableNode(ocn[0]);
+		auto str_node = InterpretNodeIntoUniqueStringIDValueEvaluableNode(ocn[0]);
 		retval->AppendOrderedChildNode(str_node);
 		return retval;
 	}
@@ -1373,7 +1353,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SPLIT(EvaluableNode *en)
 	return retval;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -1382,15 +1362,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en)
 
 	//if only string as the parameter, just return a new copy of the string
 	if(ocn.size() == 1)
-	{
-		return EvaluableNodeReference(evaluableNodeManager->AllocNodeWithReferenceHandoff(ENT_STRING,
-			EvaluableNode::ToStringIDWithReference(ocn[0])), true);
-	}
+		return InterpretNodeIntoUniqueStringIDValueEvaluableNode(ocn[0]);
 
 	//have at least 2 params
 	auto [valid_string_to_substr, string_to_substr] = InterpretNodeIntoStringValue(ocn[0]);
 	if(!valid_string_to_substr)
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, string_intern_pool.NOT_A_STRING_ID), true);
+		return AllocReturn(string_intern_pool.NOT_A_STRING_ID, immediate_result);
 
 	bool replace_string = false;
 	std::string replacement_string;
@@ -1402,7 +1379,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en)
 		std::swap(replacement_string, temp_replacement_string);
 
 		if(!valid_replacement_string)
-			return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, string_intern_pool.NOT_A_STRING_ID), true);
+			return AllocReturn(string_intern_pool.NOT_A_STRING_ID, immediate_result);
 	}
 
 	EvaluableNodeReference substr_node = InterpretNodeForImmediateUse(ocn[1]);
@@ -1492,7 +1469,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en)
 			if(end_offset < string_to_substr.size())
 				rebuilt_string += string_to_substr.substr(end_offset);
 
-			return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, rebuilt_string), true);
+			return AllocReturn(rebuilt_string, immediate_result);
 		}
 		else //return just the substring
 		{
@@ -1500,7 +1477,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en)
 			if(start_offset < string_to_substr.size() && end_offset > start_offset)
 				substr = string_to_substr.substr(start_offset, end_offset - start_offset);
 
-			return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, substr), true);
+			return AllocReturn(substr, immediate_result);
 		}
 	}
 	else if(substr_node->GetType() == ENT_STRING)
@@ -1528,7 +1505,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en)
 			catch(...)
 			{
 				//bad regex, so nothing was replaced, just return original
-				return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, string_to_substr), true);
+				return AllocReturn(string_to_substr, immediate_result);
 			}
 
 			std::string updated_string;
@@ -1555,7 +1532,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en)
 				out = std::copy(last_iter->suffix().first, last_iter->suffix().second, out);
 			}
 
-			return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, updated_string), true);
+			return AllocReturn(updated_string, immediate_result);
 		}
 		else //finding matches
 		{
@@ -1621,7 +1598,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en)
 				catch(...)
 				{
 					//bad regex, return same as not found
-					return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, string_intern_pool.NOT_A_STRING_ID), true);
+					return AllocReturn(string_intern_pool.NOT_A_STRING_ID, immediate_result);
 				}
 
 				std::sregex_token_iterator iter(begin(string_to_substr), end(string_to_substr), rx);
@@ -1629,12 +1606,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en)
 				if(iter == rx_end)
 				{
 					//not found
-					return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, string_intern_pool.NOT_A_STRING_ID), true);
+					return AllocReturn(string_intern_pool.NOT_A_STRING_ID, immediate_result);
 				}
 				else
 				{
 					std::string value = *iter;
-					return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, value), true);
+					return AllocReturn(value, immediate_result);
 				}
 			}
 			else if(full_matches)
@@ -1703,21 +1680,21 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en)
 	}
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCAT(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCAT(EvaluableNode *en, bool immediate_result)
 {
 	//build string from all child nodes
 	auto &ocn = en->GetOrderedChildNodes();
 
 	//if only one parameter is specified, do a fast shortcut
 	if(ocn.size() == 1)
-		return EvaluableNodeReference(InterpretNodeIntoUniqueStringIDValueEvaluableNode(ocn[0]), true);
+		return InterpretNodeIntoUniqueStringIDValueEvaluableNode(ocn[0]);
 
 	std::string s;
 	for(auto &cn : ocn)
 	{
 		auto [valid, cur_string] = InterpretNodeIntoStringValue(cn);
 		if(!valid)
-			return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, string_intern_pool.NOT_A_STRING_ID), true);
+			return AllocReturn(string_intern_pool.NOT_A_STRING_ID, immediate_result);
 
 		//want to exit early if out of resources because
 		// this opcode can chew through memory with string concatenation via returned nulls
@@ -1728,10 +1705,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCAT(EvaluableNode *en)
 		s += cur_string;
 	}
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, s), true);
+	return AllocReturn(s, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_CRYPTO_SIGN(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CRYPTO_SIGN(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 	if(ocn.size() < 2)
@@ -1742,10 +1719,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CRYPTO_SIGN(EvaluableNode 
 
 	std::string signature = SignMessage(message, secret_key);
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, signature), true);
+	return AllocReturn(signature, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_CRYPTO_SIGN_VERIFY(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CRYPTO_SIGN_VERIFY(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 	if(ocn.size() < 3)
@@ -1757,10 +1734,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CRYPTO_SIGN_VERIFY(Evaluab
 
 	bool valid_sig = IsSignatureValid(message, public_key, signature);
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(valid_sig ? ENT_TRUE : ENT_FALSE), true);
+	return AllocReturn(valid_sig, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_ENCRYPT(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ENCRYPT(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 	if(ocn.size() < 2)
@@ -1785,10 +1762,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENCRYPT(EvaluableNode *en)
 	else //use public key encryption
 		cyphertext = EncryptMessage(plaintext, key_1, key_2, nonce);
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, cyphertext), true);
+	return AllocReturn(cyphertext, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_DECRYPT(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_DECRYPT(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 	if(ocn.size() < 2)
@@ -1813,10 +1790,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECRYPT(EvaluableNode *en)
 	else //use public key encryption
 		plaintext = DecryptMessage(cyphertext, key_1, key_2, nonce);
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, plaintext), true);
+	return AllocReturn(plaintext, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en, bool immediate_result)
 {
 	for(auto &cn : en->GetOrderedChildNodes())
 	{
@@ -1863,7 +1840,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en)
 	return EvaluableNodeReference::Null();
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_TOTAL_SIZE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_TOTAL_SIZE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -1871,8 +1848,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TOTAL_SIZE(EvaluableNode *
 		return EvaluableNodeReference::Null();
 
 	auto cur = InterpretNodeForImmediateUse(ocn[0]);
-	size_t total_size = EvaluableNode::GetDeepSize(cur);
-	evaluableNodeManager->FreeNodeTreeIfPossible(cur);
-
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(static_cast<double>(total_size)), true);
+	double total_size = static_cast<double>(EvaluableNode::GetDeepSize(cur));
+	return ReuseOrAllocReturn(cur, total_size, immediate_result);
 }

@@ -247,8 +247,8 @@ EvaluableNode *EvaluableNodeTreeManipulation::MixTreesByCommonLabels(Interpreter
 	if(tree2 == nullptr)
 		return result_tree;
 
-	auto index1 = RetrieveLabelIndexesFromTree(tree1.reference);
-	auto index2 = RetrieveLabelIndexesFromTree(tree2.reference);
+	auto index1 = RetrieveLabelIndexesFromTree(tree1);
+	auto index2 = RetrieveLabelIndexesFromTree(tree2);
 
 	//normalize fraction to be less than 1
 	double total_fraction = fraction_a + fraction_b;
@@ -281,7 +281,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MixTreesByCommonLabels(Interpreter
 		all_labels.erase(begin(all_labels) + index_to_remove);
 
 		//remove its label. Reuse enm for temporary since used it to create the new tree
-		ReplaceLabelInTree(result_tree.reference, label_id, nullptr);
+		ReplaceLabelInTree(result_tree, label_id, nullptr);
 	}
 
 	//replace labels from the second
@@ -297,7 +297,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MixTreesByCommonLabels(Interpreter
 		if(replacement_index != end(index2))
 		{
 			EvaluableNode *replacement = enm->DeepAllocCopy(replacement_index->second);
-			ReplaceLabelInTree(result_tree.reference, label_id, replacement);
+			ReplaceLabelInTree(result_tree, label_id, replacement);
 		}
 	}
 

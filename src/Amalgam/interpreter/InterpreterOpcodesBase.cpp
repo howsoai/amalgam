@@ -57,7 +57,7 @@ std::string GetEntityMemorySizeDiagnostics(Entity *e)
 	return result;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 	if(ocn.size() == 0)
@@ -87,7 +87,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en)
 		if(std::cin.bad() || std::cin.eof())
 			exit(0);
 
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, input), true);
+		return AllocReturn(input, immediate_result);
 	}
 	else if(command == "printline" && ocn.size() > 1)
 	{
@@ -102,7 +102,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en)
 		if(ocn.size() == 1)
 		{
 			auto path = std::filesystem::current_path();
-			return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, path.string()), true);
+			return AllocReturn(path.string(), immediate_result);
 		}
 
 		std::string directory = InterpretNodeIntoStringValueEmptyNull(ocn[1]);
@@ -111,10 +111,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en)
 		//try to set the directory
 		std::error_code error;
 		std::filesystem::current_path(directory, error);
-		if(error)
-			return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_FALSE), true);
-		else
-			return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_TRUE), true);
+		bool error_value = static_cast<bool>(error);
+		return AllocReturn(error_value, immediate_result);
 	}
 	else if(command == "system" && ocn.size() > 1)
 	{
@@ -136,7 +134,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en)
 	else if(command == "os")
 	{
 		std::string os = Platform_GetOperatingSystemName();
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, os), true);
+		return AllocReturn(os, immediate_result);
 	}
 	else if(command == "sleep")
 	{
@@ -152,15 +150,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en)
 	}
 	else if(command == "version")
 	{
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, AMALGAM_VERSION_STRING), true);
+		std::string version_string = AMALGAM_VERSION_STRING;
+		return AllocReturn(version_string, immediate_result);
 	}
 	else if(command == "est_mem_reserved")
 	{
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(static_cast<double>(curEntity->GetEstimatedReservedDeepSizeInBytes())), true);
+		return AllocReturn(static_cast<double>(curEntity->GetEstimatedReservedDeepSizeInBytes()), immediate_result);
 	}
 	else if(command == "est_mem_used")
 	{
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(static_cast<double>(curEntity->GetEstimatedUsedDeepSizeInBytes())), true);
+		return AllocReturn(static_cast<double>(curEntity->GetEstimatedUsedDeepSizeInBytes()), immediate_result);
 	}
 	else if(command == "mem_diagnostics")
 	{
@@ -169,7 +168,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en)
 		auto lock = curEntity->CreateEntityLock<Concurrency::ReadLock>();
 	#endif
 
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, GetEntityMemorySizeDiagnostics(curEntity)), true);
+		return AllocReturn(GetEntityMemorySizeDiagnostics(curEntity), immediate_result);
 	}
 	else if(command == "rand" && ocn.size() > 1)
 	{
@@ -181,7 +180,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en)
 		std::string rand_data(num_bytes, '\0');
 		Platform_GenerateSecureRandomData(&rand_data[0], num_bytes);
 		
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, rand_data), true);
+		return AllocReturn(rand_data, immediate_result);
 	}
 	else if(command == "sign_key_pair")
 	{
@@ -208,13 +207,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en)
 	{
 		uint8_t built_in_data[] = AMALGAM_BUILT_IN_DATA;
 		std::string built_in_data_s(reinterpret_cast<char *>(&built_in_data[0]), sizeof(built_in_data));
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, built_in_data_s), true);
+		return AllocReturn(built_in_data_s, immediate_result);
 	}
 
 	return EvaluableNodeReference::Null();
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_DEFAULTS(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_DEFAULTS(EvaluableNode *en, bool immediate_result)
 {
 	if(en->GetOrderedChildNodes().size() == 0)
 		return EvaluableNodeReference::Null();
@@ -254,7 +253,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_DEFAULTS(EvaluableNode
 	return EvaluableNodeReference::Null();
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_PARSE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_PARSE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 	if(ocn.size() == 0)
@@ -267,7 +266,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PARSE(EvaluableNode *en)
 	return Parser::Parse(to_parse, evaluableNodeManager);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_UNPARSE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_UNPARSE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 	if(ocn.size() == 0)
@@ -284,12 +283,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNPARSE(EvaluableNode *en)
 	auto tree = InterpretNodeForImmediateUse(ocn[0]);
 	std::string s = Parser::Unparse(tree, evaluableNodeManager, pretty, true, deterministic_order);
 
-	EvaluableNodeReference result = evaluableNodeManager->ReuseOrAllocNode(tree, ENT_STRING);
-	result->SetStringValue(s);
-	return result;
+	return ReuseOrAllocReturn(tree, s, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_IF(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_IF(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 	size_t num_cn = ocn.size();
@@ -298,12 +295,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_IF(EvaluableNode *en)
 	for(size_t condition_num = 0; condition_num + 1 < num_cn; condition_num += 2)
 	{
 		if(InterpretNodeIntoBoolValue(ocn[condition_num]))
-			return InterpretNode(ocn[condition_num + 1]);
+			return InterpretNode(ocn[condition_num + 1], immediate_result);
 	}
 
 	//if made it here and one more condition, then it hit the last "else" branch, so exit evaluating to the else
 	if(num_cn & 1)
-		return InterpretNode(ocn[num_cn - 1]);
+		return InterpretNode(ocn[num_cn - 1], immediate_result);
 
 	//none were true
 	return EvaluableNodeReference::Null();
@@ -321,21 +318,21 @@ inline EvaluableNodeReference RemoveConcludeFromConclusion(EvaluableNodeReferenc
 	return EvaluableNodeReference(conclusion, result.unique);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SEQUENCE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SEQUENCE(EvaluableNode *en, bool immediate_result)
 {
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
 	for(auto &cn : en->GetOrderedChildNodes())
 	{
-		if(result != nullptr && result->GetType() == ENT_CONCLUDE)
+		if(!result.IsImmediateValue() && result != nullptr && result->GetType() == ENT_CONCLUDE)
 			return RemoveConcludeFromConclusion(result, evaluableNodeManager);
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(result);
-		result = InterpretNode(cn);
+		result = InterpretNode(cn, immediate_result);
 	}
 	return result;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_PARALLEL(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_PARALLEL(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -368,7 +365,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PARALLEL(EvaluableNode *en
 								concurrency_manager.GetCallStackWriteMutex());
 
 							interpreter.evaluableNodeManager->FreeNodeTreeIfPossible(result);
-							result.reference = EvaluableNodeReference::Null();
+							result = EvaluableNodeReference::Null();
 
 							interpreter.memoryModificationLock.unlock();
 							return result;
@@ -395,7 +392,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PARALLEL(EvaluableNode *en
 	return EvaluableNodeReference::Null();
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_LAMBDA(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_LAMBDA(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 	size_t ocn_size = ocn.size();
@@ -421,7 +418,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAMBDA(EvaluableNode *en)
 	}
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCLUDE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCLUDE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -443,7 +440,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCLUDE(EvaluableNode *en
 	return conclusion;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -467,7 +464,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en)
 	PushNewExecutionContext(new_context);
 	
 	//call the code
-	auto retval = InterpretNode(function);
+	auto retval = InterpretNode(function, immediate_result);
 
 	//all finished with new context, but can't free it in case returning something
 	PopExecutionContext();
@@ -478,7 +475,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en)
 	return retval;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -571,7 +568,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	return result;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -606,9 +603,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en)
 		EvaluableNodeReference new_result;
 		for(size_t i = 1; i < ocn_size; i++)
 		{
-			new_result = InterpretNode(ocn[i]);
+			new_result = InterpretNode(ocn[i], immediate_result);
 
-			if(new_result != nullptr && new_result->GetType() == ENT_CONCLUDE)
+			if(!new_result.IsImmediateValue() && new_result != nullptr && new_result->GetType() == ENT_CONCLUDE)
 			{
 				//if previous result is unconsumed, free if possible
 				previous_result = GetAndClearPreviousResultInConstructionStack(0);
@@ -634,7 +631,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en)
 	return previous_result;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -649,7 +646,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en)
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
 	for(size_t i = 1; i < ocn.size(); i++)
 	{
-		if(result != nullptr && result->GetType() == ENT_CONCLUDE)
+		if(!result.IsImmediateValue() && result != nullptr && result->GetType() == ENT_CONCLUDE)
 		{
 			PopExecutionContext();
 			return RemoveConcludeFromConclusion(result, evaluableNodeManager);
@@ -657,7 +654,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en)
 
 		//free from previous iteration
 		evaluableNodeManager->FreeNodeTreeIfPossible(result);
-		result = InterpretNode(ocn[i]);
+		result = InterpretNode(ocn[i], immediate_result);
 	}
 
 	//all finished with new context, but can't free it in case returning something
@@ -666,7 +663,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en)
 	return result;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -742,17 +739,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en)
 	//run code 
 	for(size_t i = 1; i < ocn.size(); i++)
 	{
-		if(result != nullptr && result->GetType() == ENT_CONCLUDE)
+		if(!result.IsImmediateValue() && result != nullptr && result->GetType() == ENT_CONCLUDE)
 			return RemoveConcludeFromConclusion(result, evaluableNodeManager);
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(result);
-		result = InterpretNode(ocn[i]);
+		result = InterpretNode(ocn[i], immediate_result);
 	}
 
 	return result;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 	size_t num_params = ocn.size();
@@ -842,8 +839,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			{
 				//retrieve value_destination_node
 				EvaluableNodeReference value_destination_node;
-				value_destination_node.reference = *value_destination;
-				value_destination_node.unique = false;
+				value_destination_node.SetReference(*value_destination, false);
 
 			#ifdef MULTITHREAD_SUPPORT
 				//if editing a shared variable, then need to make a copy before editing in place to prevent another thread from reading the data structure mid-edit
@@ -855,7 +851,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			}
 
 			//assign back into the context_to_use
-			*value_destination = variable_value_node.reference;
+			*value_destination = variable_value_node;
 		}
 
 		return EvaluableNodeReference::Null();
@@ -899,8 +895,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		{
 			//create destination reference
 			EvaluableNodeReference value_destination_node;
-			value_destination_node.reference = *value_destination;
-			value_destination_node.unique = false;
+			value_destination_node.SetReference(*value_destination, false);
 
 		#ifdef MULTITHREAD_SUPPORT
 			//if editing a shared variable, then need to make a copy before editing in place to prevent another thread from reading the data structure mid-edit
@@ -911,7 +906,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			EvaluableNodeReference variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, new_value, evaluableNodeManager);
 
 			//assign the new accumulation
-			*value_destination = variable_value_node.reference;
+			*value_destination = variable_value_node;
 		}
 		else
 		{
@@ -970,13 +965,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			{
 				//create destination reference
 				EvaluableNodeReference value_destination_node;
-				value_destination_node.reference = *copy_destination;
-				value_destination_node.unique = false;
+				value_destination_node.SetReference(*copy_destination, false);
 
 				EvaluableNodeReference variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, new_value, evaluableNodeManager);
 
 				//assign the new accumulation
-				*copy_destination = variable_value_node.reference;
+				*copy_destination = variable_value_node;
 			}
 			else
 			{
@@ -991,7 +985,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	return EvaluableNodeReference::Null();
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -1010,8 +1004,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 	else if(to_lookup->IsAssociativeArray())
 	{
 		//need to return an assoc, so see if need to make copy
-		if(!to_lookup.unique)
-			to_lookup.reference = evaluableNodeManager->AllocNode(to_lookup);
+		evaluableNodeManager->EnsureNodeIsModifiable(to_lookup);
 
 		//overwrite values in the ordered 
 		for(auto &[cn_id, cn] : to_lookup->GetMappedChildNodesReference())
@@ -1023,13 +1016,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 			cn = GetExecutionContextSymbol(cn_id);
 		}
 
-		return EvaluableNodeReference(to_lookup.reference, false);
+		return EvaluableNodeReference(to_lookup, false);
 	}
 	else //ordered params
 	{
-		//need to return an assoc, so see if need to make copy
-		if(!to_lookup.unique)
-			to_lookup.reference = evaluableNodeManager->AllocNode(to_lookup);
+		evaluableNodeManager->EnsureNodeIsModifiable(to_lookup);
 
 		//overwrite values in the ordered 
 		for(auto &cn : to_lookup->GetOrderedChildNodes())
@@ -1048,11 +1039,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 			cn = GetExecutionContextSymbol(symbol_name_sid);
 		}
 
-		return EvaluableNodeReference(to_lookup.reference, false);
+		return EvaluableNodeReference(to_lookup, false);
 	}
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GET(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GET(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 	size_t ocn_size = ocn.size();
@@ -1069,7 +1060,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET(EvaluableNode *en)
 	//if just a single index passed to get
 	if(ocn_size == 2)
 	{
-		EvaluableNode **target = InterpretNodeIntoDestinationFromTraversalPathList(&source.reference, ocn[1], false);
+		EvaluableNode **target = InterpretNodeIntoDestinationFromTraversalPathList(&source.GetReference(), ocn[1], false);
 
 		node_stack.PopEvaluableNode();
 
@@ -1089,7 +1080,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET(EvaluableNode *en)
 
 	for(size_t param_index = 1; param_index < ocn_size; param_index++)
 	{
-		EvaluableNode **target = InterpretNodeIntoDestinationFromTraversalPathList(&source.reference, ocn[param_index], false);
+		EvaluableNode **target = InterpretNodeIntoDestinationFromTraversalPathList(&source.GetReference(), ocn[param_index], false);
 		if(target != nullptr)
 			retrieved_list->AppendOrderedChildNode(*target);
 		else
@@ -1104,7 +1095,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET(EvaluableNode *en)
 	return retrieved_list;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_and_REPLACE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_and_REPLACE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -1125,7 +1116,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_and_REPLACE(EvaluableN
 	{
 		//find replacement location, make sure it's a valid target
 		EvaluableNode *previous_result = result;
-		EvaluableNode **copy_destination = InterpretNodeIntoDestinationFromTraversalPathList(&result.reference, ocn[replace_change_index], true);
+		EvaluableNode **copy_destination = InterpretNodeIntoDestinationFromTraversalPathList(&result.GetReference(), ocn[replace_change_index], true);
 		//if the target changed, keep track of the proper reference
 		if(result != previous_result)
 		{
@@ -1200,7 +1191,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_and_REPLACE(EvaluableN
 	return result;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -1222,7 +1213,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET(EvaluableNode *en)
 	return EvaluableNodeReference(constructionStackNodes->at(offset), false);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_INDEX(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_INDEX(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -1244,17 +1235,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_INDEX(EvaluableNod
 	size_t offset = constructionStackIndicesAndUniqueness.size() - depth - 1;
 
 	//build the index node to return
-	EvaluableNode *index_node = nullptr;
 	EvaluableNodeImmediateValueWithType enivwt = constructionStackIndicesAndUniqueness[offset].index;
 	if(enivwt.nodeType == ENIVT_NUMBER)
-		index_node = evaluableNodeManager->AllocNode(enivwt.nodeValue.number);
+		return AllocReturn(enivwt.nodeValue.number, immediate_result);
 	else if(enivwt.nodeType == ENIVT_STRING_ID)
-		index_node = evaluableNodeManager->AllocNode(ENT_STRING, enivwt.nodeValue.stringID);
-
-	return EvaluableNodeReference(index_node, true);
+		return AllocReturn(enivwt.nodeValue.stringID, immediate_result);
+	else
+		return EvaluableNodeReference::Null();
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_VALUE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_VALUE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -1276,7 +1266,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_VALUE(EvaluableNod
 	return EvaluableNodeReference(constructionStackNodes->at(offset), false);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_PREVIOUS_RESULT(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_PREVIOUS_RESULT(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -1297,7 +1287,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PREVIOUS_RESULT(EvaluableN
 	return GetAndClearPreviousResultInConstructionStack(depth);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_STACK(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_STACK(EvaluableNode *en, bool immediate_result)
 {
 #ifdef MULTITHREAD_SUPPORT
 	//accessing everything in the stack, so need exclusive access
@@ -1319,7 +1309,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STACK(EvaluableNode *en)
 	return evaluableNodeManager->DeepAllocCopy(&stack_top_holder);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_ARGS(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_ARGS(EvaluableNode *en, bool immediate_result)
 {
 	size_t depth = 0;
 	auto &ocn = en->GetOrderedChildNodes();
@@ -1338,10 +1328,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ARGS(EvaluableNode *en)
 
 //Generates an EvaluableNode containing a random value based on the random parameter param, using enm and random_stream
 // if any part of param is preserved in the return value, then can_free_param will be set to false, otherwise it will be left alone
-EvaluableNodeReference GenerateRandomValueBasedOnRandParam(EvaluableNodeReference param, EvaluableNodeManager *enm, RandomStream &random_stream, bool &can_free_param)
+EvaluableNodeReference GenerateRandomValueBasedOnRandParam(EvaluableNodeReference param, Interpreter *interpreter,
+	RandomStream &random_stream, bool &can_free_param, bool immediate_result)
 {
 	if(param == nullptr)
-		return EvaluableNodeReference(enm->AllocNode(random_stream.RandFull()), true);
+		return interpreter->AllocReturn(random_stream.RandFull(), immediate_result);
 
 	auto &ocn = param->GetOrderedChildNodes();
 	if(ocn.size() > 0)
@@ -1354,18 +1345,21 @@ EvaluableNodeReference GenerateRandomValueBasedOnRandParam(EvaluableNodeReferenc
 	if(DoesEvaluableNodeTypeUseNumberData(param->GetType()))
 	{
 		double value = random_stream.RandFull() * param->GetNumberValueReference();
-		return EvaluableNodeReference(enm->AllocNode(value), true);
+		return interpreter->AllocReturn(value, immediate_result);
 	}
 
 	return EvaluableNodeReference::Null();
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
 	if(ocn.size() == 0)
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(randomStream.RandFull()), true);
+	{
+		double r = randomStream.RandFull();
+		return AllocReturn(r, immediate_result);
+	}
 
 	//get number to generate
 	bool generate_list = false;
@@ -1393,7 +1387,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en)
 	if(!generate_list)
 	{
 		bool can_free_param = true;
-		EvaluableNodeReference rand_value = GenerateRandomValueBasedOnRandParam(param, evaluableNodeManager, randomStream, can_free_param);
+		EvaluableNodeReference rand_value = GenerateRandomValueBasedOnRandParam(param,
+			this, randomStream, can_free_param, immediate_result);
 
 		if(can_free_param)
 			evaluableNodeManager->FreeNodeTreeIfPossible(param);
@@ -1455,7 +1450,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en)
 	bool can_free_param = true;
 	for(size_t i = 0; i < number_to_generate; i++)
 	{
-		EvaluableNodeReference rand_value = GenerateRandomValueBasedOnRandParam(param, evaluableNodeManager, randomStream, can_free_param);
+		EvaluableNodeReference rand_value = GenerateRandomValueBasedOnRandParam(param,
+			this, randomStream, can_free_param, immediate_result);
 		retval->AppendOrderedChildNode(rand_value);
 		retval.UpdatePropertiesBasedOnAttachedNode(rand_value);
 	}
@@ -1656,7 +1652,7 @@ EvaluableNodeReference GenerateWeightedRandomValueBasedOnRandParam(EvaluableNode
 	return EvaluableNodeReference::Null();
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_WEIGHTED_RAND(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_WEIGHTED_RAND(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -1836,13 +1832,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEIGHTED_RAND(EvaluableNod
 	return retval;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_RAND_SEED(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_RAND_SEED(EvaluableNode *en, bool immediate_result)
 {
 	std::string rand_state_string = randomStream.GetState();
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_STRING, rand_state_string), true);
+	return AllocReturn(rand_state_string, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_RAND_SEED(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_RAND_SEED(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -1861,7 +1857,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_RAND_SEED(EvaluableNod
 	return seed_node;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM_TIME(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM_TIME(EvaluableNode *en, bool immediate_result)
 {
 	if(!asset_manager.DoesEntityHaveRootPermission(curEntity))
 		return EvaluableNodeReference::Null();
@@ -1871,18 +1867,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM_TIME(EvaluableNode 
 	std::chrono::duration<double, std::ratio<1>> double_duration_us = duration_us;
 	double sec = double_duration_us.count();
 
-	return EvaluableNodeReference(evaluableNodeManager->AllocNode(sec), true);
+	return AllocReturn(sec, immediate_result);
 }
 
 //error handling
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_DEALLOCATED(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_DEALLOCATED(EvaluableNode *en, bool immediate_result)
 {
 	std::cout << "ERROR: attempt to use freed memory\n";
 	return EvaluableNodeReference::Null();
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT_A_BUILT_IN_TYPE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT_A_BUILT_IN_TYPE(EvaluableNode *en, bool immediate_result)
 {
 	std::cout << "ERROR: encountered an invalid instruction\n";
 	return EvaluableNodeReference::Null();

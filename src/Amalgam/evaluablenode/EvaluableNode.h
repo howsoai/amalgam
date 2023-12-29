@@ -1032,6 +1032,15 @@ public:
 		: nodeType(ENIVT_NULL)
 	{	}
 
+	__forceinline EvaluableNodeImmediateValueWithType(bool value)
+	{
+		nodeType = ENIVT_NUMBER;
+		if(value)
+			nodeValue.number = 1.0;
+		else
+			nodeValue.number = 0.0;
+	}
+
 	constexpr EvaluableNodeImmediateValueWithType(double number)
 		: nodeType(ENIVT_NUMBER), nodeValue(number)
 	{	}
@@ -1089,6 +1098,125 @@ public:
 
 		nodeType = ENIVT_CODE;
 		nodeValue = EvaluableNodeImmediateValue(en);
+	}
+
+	bool GetValueAsBoolean()
+	{
+		if(nodeType == ENIVT_NUMBER)
+		{
+			if(nodeValue.number == 0.0)
+				return false;
+			if(FastIsNaN(nodeValue.number))
+				return false;
+			return true;
+		}
+
+		if(nodeType == ENIVT_STRING_ID)
+		{
+			if(nodeValue.stringID <= StringInternPool::EMPTY_STRING_ID)
+				return false;
+			return true;
+		}
+
+		if(nodeType == ENIVT_CODE)
+			return EvaluableNode::IsTrue(nodeValue.code);
+
+		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
+		return false;
+	}
+
+	double GetValueAsNumber(double value_if_null = std::numeric_limits<double>::quiet_NaN())
+	{
+		if(nodeType == ENIVT_NUMBER)
+			return nodeValue.number;
+
+		if(nodeType == ENIVT_STRING_ID)
+		{
+			if(nodeValue.stringID == string_intern_pool.NOT_A_STRING_ID)
+				return value_if_null;
+
+			const auto &str = string_intern_pool.GetStringFromID(nodeValue.stringID);
+			auto [value, success] = Platform_StringToNumber(str);
+			if(success)
+				return value;
+			return value_if_null;
+		}
+
+		if(nodeType == ENIVT_CODE)
+			return EvaluableNode::ToNumber(nodeValue.code);
+
+		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
+		return value_if_null;
+	}
+
+	std::pair<bool, std::string> GetValueAsString()
+	{
+		if(nodeType == ENIVT_NUMBER)
+		{
+			if(FastIsNaN(nodeValue.number))
+				return std::make_pair(false, "");
+
+			return std::make_pair(true, EvaluableNode::NumberToString(nodeValue.number));
+		}
+
+		if(nodeType == ENIVT_STRING_ID)
+		{
+			if(nodeValue.stringID == string_intern_pool.NOT_A_STRING_ID)
+				return std::make_pair(false, "");
+
+			const auto &str = string_intern_pool.GetStringFromID(nodeValue.stringID);
+			return std::make_pair(true, str);
+		}
+
+		if(nodeType == ENIVT_CODE)
+			return std::make_pair(true, EvaluableNode::ToStringPreservingOpcodeType(nodeValue.code));
+
+		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
+		return std::make_pair(false, "");
+	}
+
+	StringInternPool::StringID GetValueAsStringIDIfExists()
+	{
+		if(nodeType == ENIVT_NUMBER)
+		{
+			if(FastIsNaN(nodeValue.number))
+				return StringInternPool::NOT_A_STRING_ID;
+
+			const std::string str_value = EvaluableNode::NumberToString(nodeValue.number);
+			//will return empty string if not found
+			return string_intern_pool.GetIDFromString(str_value);
+		}
+
+		if(nodeType == ENIVT_STRING_ID)
+			return nodeValue.stringID;
+
+		if(nodeType == ENIVT_CODE)
+			return EvaluableNode::ToStringIDIfExists(nodeValue.code);
+
+		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
+		return string_intern_pool.NOT_A_STRING_ID;
+	}
+
+	StringInternPool::StringID GetValueAsStringIDWithReference()
+	{
+		if(nodeType == ENIVT_NUMBER)
+		{
+			if(FastIsNaN(nodeValue.number))
+				return StringInternPool::NOT_A_STRING_ID;
+
+			const std::string str_value = EvaluableNode::NumberToString(nodeValue.number);
+			//will return empty string if not found
+			return string_intern_pool.CreateStringReference(str_value);
+		}
+
+		if(nodeType == ENIVT_STRING_ID)
+			return string_intern_pool.CreateStringReference(nodeValue.stringID);
+
+		if(nodeType == ENIVT_CODE)
+			return EvaluableNode::ToStringIDWithReference(nodeValue.code);
+
+		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
+		return string_intern_pool.NOT_A_STRING_ID;
 	}
 
 	static inline bool AreEqual(EvaluableNodeImmediateValueWithType &a, EvaluableNodeImmediateValueWithType &b)

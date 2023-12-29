@@ -352,7 +352,7 @@ EvaluableNode **GetRelativeEvaluableNodeFromTraversalPathList(EvaluableNode **so
 EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeReference value_destination_node, EvaluableNodeReference variable_value_node, EvaluableNodeManager *enm)
 {
 	//if the destination is empty, then just use the value specified
-	if(value_destination_node.reference == nullptr)
+	if(value_destination_node == nullptr)
 		return variable_value_node;
 
 	//if the value is unique, then can just edit in place
@@ -362,7 +362,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		{
 			double cur_value = EvaluableNode::ToNumber(value_destination_node);
 			double inc_value = EvaluableNode::ToNumber(variable_value_node);
-			value_destination_node.reference->SetType(ENT_NUMBER, enm);
+			value_destination_node->SetType(ENT_NUMBER, enm);
 			value_destination_node->SetNumberValue(cur_value + inc_value);
 		}
 		else if(value_destination_node->IsAssociativeArray())
@@ -444,8 +444,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 	{
 		double cur_value = EvaluableNode::ToNumber(value_destination_node);
 		double inc_value = EvaluableNode::ToNumber(variable_value_node);
-		value_destination_node.reference = enm->AllocNode(cur_value + inc_value);
-		value_destination_node.unique = true;
+		value_destination_node.SetReference(enm->AllocNode(cur_value + inc_value), true);
 	}
 	else if(value_destination_node->IsAssociativeArray())
 	{
@@ -473,9 +472,8 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 
 		enm->FreeNodeIfPossible(variable_value_node);
 
-		value_destination_node.reference = new_list;
+		value_destination_node.SetReference(new_list, value_destination_node.unique && variable_value_node.unique);
 		value_destination_node->SetNeedCycleCheck(true);
-		value_destination_node.unique = (value_destination_node.unique && variable_value_node.unique);
 	}
 	else if(value_destination_node->IsStringValue())
 	{
@@ -484,9 +482,9 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		value_destination_node->SetType(ENT_STRING, enm);
 		//string will default to invalid value -- only set if both strings are valid
 		if(cur_value_valid && inc_value_valid)
-			value_destination_node->SetStringValue(cur_value.append(inc_value));
-
-		value_destination_node.unique = true;
+			value_destination_node.SetReference(enm->AllocNode(ENT_STRING, cur_value.append(inc_value)), true);
+		else
+			value_destination_node.SetReference(enm->AllocNode(ENT_STRING), true);
 	}
 	else //add ordered child node
 	{
@@ -519,9 +517,8 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 			new_list->AppendOrderedChildNode(variable_value_node);
 		}
 
-		value_destination_node.reference = new_list;
+		value_destination_node.SetReference(new_list, value_destination_node.unique &&variable_value_node.unique);
 		value_destination_node->SetNeedCycleCheck(true);
-		value_destination_node.unique = (value_destination_node.unique && variable_value_node.unique);
 	}
 
 	return value_destination_node;

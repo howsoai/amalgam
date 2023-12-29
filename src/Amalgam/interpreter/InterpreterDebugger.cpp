@@ -140,7 +140,7 @@ void PrintStackNode(EvaluableNode *en, EvaluableNodeManager *enm, size_t max_num
 	}
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, bool immediate_result)
 {
 	DebugCheckBreakpointsAndUpdateState(en, true);
 
@@ -165,9 +165,10 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en)
 
 	if(!enter_interactive_mode)
 	{
-		//get corresponding opcode stored in _debug_opcodes
+		//get corresponding opcode stored in _debug_opcodes,
+		//but don't ever request immediate when debugging
 		auto oc = _debug_opcodes[cur_node_type];
-		EvaluableNodeReference retval = (this->*oc)(en);
+		EvaluableNodeReference retval = (this->*oc)(en, false);
 
 		//check for debug after execution
 		DebugCheckBreakpointsAndUpdateState(en, false);
@@ -186,8 +187,9 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en)
 		lock.unlock();
 
 		//get corresponding opcode stored in _debug_opcodes
+		//don't request immediate when debugging
 		auto oc = _debug_opcodes[cur_node_type];
-		EvaluableNodeReference retval = (this->*oc)(en);
+		EvaluableNodeReference retval = (this->*oc)(en, false);
 
 		//check for debug after execution
 		DebugCheckBreakpointsAndUpdateState(en, false);
@@ -341,7 +343,8 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en)
 			lock.unlock();
 		#endif
 
-			EvaluableNodeReference retval = (this->*oc)(en);
+			//don't request immediate when debugging
+			EvaluableNodeReference retval = (this->*oc)(en, false);
 			return retval;
 		}
 		else if(command == "bl")
@@ -559,8 +562,9 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en)
 #endif
 
 	//get corresponding opcode stored in _debug_opcodes
+	//don't request immediate when debugging
 	auto oc = _debug_opcodes[en->GetType()];
-	EvaluableNodeReference retval = (this->*oc)(en);
+	EvaluableNodeReference retval = (this->*oc)(en, false);
 
 	//check for debug after execution
 	DebugCheckBreakpointsAndUpdateState(en, false);
@@ -786,7 +790,7 @@ void Interpreter::DebugCheckBreakpointsAndUpdateState(EvaluableNode *en, bool be
 	}
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_PROFILE(EvaluableNode *en)
+EvaluableNodeReference Interpreter::InterpretNode_PROFILE(EvaluableNode *en, bool immediate_result)
 {
 	std::string opcode_str;
 
@@ -819,7 +823,7 @@ EvaluableNodeReference Interpreter::InterpretNode_PROFILE(EvaluableNode *en)
 
 	//get corresponding opcode stored in _profile_opcodes
 	auto oc = _profile_opcodes[cur_node_type];
-	EvaluableNodeReference retval = (this->*oc)(en);
+	EvaluableNodeReference retval = (this->*oc)(en, immediate_result);
 
 	PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
 

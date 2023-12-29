@@ -7,58 +7,87 @@
 typedef int64_t ExecutionCycleCount;
 typedef int32_t ExecutionCycleCountCompactDelta;
 
-//describes an EvaluableNode reference and whether it is uniquely referenced
+//describes an EvaluableNode value and whether it is uniquely referenced
+//this is mostly used for actual EvaluableNode *'s, and so most of the methods are built as such
+//however, if it may contain an immediate value, then that must be checked via IsImmediateValue()
 class EvaluableNodeReference
 {
 public:
-	constexpr EvaluableNodeReference() : reference(nullptr), unique(true)
+	constexpr EvaluableNodeReference()
+		: value(nullptr), unique(true)
 	{	}
 
 	constexpr EvaluableNodeReference(EvaluableNode *_reference, bool _unique)
-		: reference(_reference), unique(_unique)
+		: value(_reference), unique(_unique)
 	{	}
 
 	constexpr EvaluableNodeReference(const EvaluableNodeReference &inr)
-		: reference(inr.reference), unique(inr.unique)
+		: value(inr.value), unique(inr.unique)
 	{	}
+
+	__forceinline EvaluableNodeReference(bool value)
+		: value(value), unique(true)
+	{	}
+
+	constexpr EvaluableNodeReference(double value)
+		: value(value), unique(true)
+	{	}
+
+	__forceinline EvaluableNodeReference(StringInternPool::StringID string_id)
+		: value(string_intern_pool.CreateStringReference(string_id)), unique(true)
+	{	}
+
+	__forceinline EvaluableNodeReference(const std::string &str)
+		: value(string_intern_pool.CreateStringReference(str)), unique(true)
+	{	}
+
+	//frees resources associated with immediate values
+	//note that this could be placed in a destructor, but this is such a rare use,
+	//i.e., only when an immediate value is requested, and the references are usually handled specially,
+	//that it's just as complex to put it in the destructor but will incur more overhead
+	__forceinline void FreeImmediateResources()
+	{
+		if(IsImmediateValue() && value.nodeType == ENIVT_STRING_ID)
+			string_intern_pool.DestroyStringReference(value.nodeValue.stringID);
+	}
 
 	//when attached a child node, make sure that this node reflects the same properties
 	void UpdatePropertiesBasedOnAttachedNode(EvaluableNodeReference &attached)
 	{
-		if(attached.reference == nullptr)
+		if(attached.value.nodeValue.code == nullptr)
 			return;
 
 		if(!attached.unique)
 		{
 			unique = false;
 			//if new attachments aren't unique, then can't guarantee there isn't a cycle present
-			reference->SetNeedCycleCheck(true);
+			value.nodeValue.code->SetNeedCycleCheck(true);
 		}
-		else if(attached.reference->GetNeedCycleCheck())
+		else if(attached.value.nodeValue.code->GetNeedCycleCheck())
 		{
-			reference->SetNeedCycleCheck(true);
+			value.nodeValue.code->SetNeedCycleCheck(true);
 		}
 
-		if(!attached.reference->GetIsIdempotent())
-			reference->SetIsIdempotent(false);
+		if(!attached.value.nodeValue.code->GetIsIdempotent())
+			value.nodeValue.code->SetIsIdempotent(false);
 	}
 
 	//calls GetNeedCycleCheck if the reference is not nullptr, returns false if it is nullptr
 	constexpr bool GetNeedCycleCheck()
 	{
-		if(reference == nullptr)
+		if(value.nodeValue.code == nullptr)
 			return false;
 	
-		return reference->GetNeedCycleCheck();
+		return value.nodeValue.code->GetNeedCycleCheck();
 	}
 
 	//calls SetNeedCycleCheck if the reference is not nullptr
 	constexpr void SetNeedCycleCheck(bool need_cycle_check)
 	{
-		if(reference == nullptr)
+		if(value.nodeValue.code == nullptr)
 			return;
 	
-		reference->SetNeedCycleCheck(need_cycle_check);
+		value.nodeValue.code->SetNeedCycleCheck(need_cycle_check);
 	}
 
 	constexpr static EvaluableNodeReference Null()
@@ -66,15 +95,54 @@ public:
 		return EvaluableNodeReference(nullptr, true);
 	}
 
+	__forceinline void SetReference(EvaluableNode *_reference)
+	{
+		value = _reference;
+	}
+
+	__forceinline void SetReference(EvaluableNode *_reference, bool _unique)
+	{
+		value = _reference;
+		unique = _unique;
+	}
+
+	constexpr bool IsImmediateValue()
+	{
+		return value.nodeType != ENIVT_CODE;
+	}
+
+	constexpr EvaluableNodeImmediateValueWithType &GetValue()
+	{
+		return value;
+	}
+
+	constexpr EvaluableNode *&GetReference()
+	{
+		return value.nodeValue.code;
+	}
+
 	//allow to use as an EvaluableNode *
-	constexpr operator EvaluableNode *()
-	{	return reference;	}
+	constexpr operator EvaluableNode *&()
+	{	return value.nodeValue.code;	}
 
 	//allow to use as an EvaluableNode *
 	constexpr EvaluableNode *operator->()
-	{	return reference;	}
+	{	return value.nodeValue.code;	}
 
-	EvaluableNode *reference;
+	__forceinline EvaluableNodeReference &operator =(const EvaluableNodeReference &enr)
+	{
+		//perform a memcpy because it's a union, to be safe; the compiler should optimize this out
+		value = enr.value;
+		unique = enr.unique;
+
+		return *this;
+	}
+
+protected:
+
+	EvaluableNodeImmediateValueWithType value;
+	
+public:
 
 	//this is the only reference to the result
 	bool unique;
@@ -139,10 +207,24 @@ public:
 		return n;
 	}
 
+	inline EvaluableNode *AllocNode(const std::string &string_value)
+	{
+		EvaluableNode *n = AllocUninitializedNode();
+		n->InitializeType(ENT_STRING, string_value);
+		return n;
+	}
+
 	inline EvaluableNode *AllocNode(EvaluableNodeType type, StringInternPool::StringID string_id)
 	{
 		EvaluableNode *n = AllocUninitializedNode();
 		n->InitializeType(type, string_id);
+		return n;
+	}
+
+	inline EvaluableNode *AllocNode(StringInternPool::StringID string_id)
+	{
+		EvaluableNode *n = AllocUninitializedNode();
+		n->InitializeType(ENT_STRING, string_id);
 		return n;
 	}
 
@@ -166,10 +248,10 @@ public:
 		return n;
 	}
 
-	inline EvaluableNode *AllocNode(int64_t int_value)
+	inline EvaluableNode *AllocNode(bool bool_value)
 	{
 		EvaluableNode *n = AllocUninitializedNode();
-		n->InitializeType(static_cast<double>(int_value));
+		n->InitializeType(bool_value ? ENT_TRUE : ENT_FALSE);
 		return n;
 	}
 
@@ -200,6 +282,19 @@ public:
 		ENMM_REMOVE_ALL					//remove all metadata
 	};
 	EvaluableNode *AllocNode(EvaluableNode *original, EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE);
+
+	//ensures that the top node is modifiable -- will allocate the node if necessary,
+	// and if the result and any child nodes are all unique, then it will return an EvaluableNodeReference that is unique
+	inline void EnsureNodeIsModifiable(EvaluableNodeReference &original,
+		EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE)
+	{
+		if(original.unique)
+			return;
+
+		EvaluableNode *copy = AllocNode(original.GetReference(), metadata_modifier);
+		//the copy will only be unique if all child nodes are unique or there are no child nodes
+		original = EvaluableNodeReference(copy, original.unique || (copy->GetNumChildNodes() == 0));
+	}
 
 	//attempts to reuse candidate if it is unique and change it into the specified type
 	//if candidate is not unique, then it allocates and returns a new node
@@ -238,6 +333,38 @@ public:
 		}
 	}
 
+	//like ReuseOrAllocNode but allocates an ENT_NUMBER
+	inline EvaluableNodeReference ReuseOrAllocNode(EvaluableNodeReference candidate, double value)
+	{
+		EvaluableNodeReference node = ReuseOrAllocNode(candidate, ENT_NUMBER);
+		node->SetNumberValue(value);
+		return node;
+	}
+
+	//like ReuseOrAllocNode but allocates an ENT_STRING
+	inline EvaluableNodeReference ReuseOrAllocNode(EvaluableNodeReference candidate, StringInternPool::StringID value)
+	{
+		//perform a handoff in case candidate is the only value
+		string_intern_pool.CreateStringReference(value);
+		EvaluableNodeReference node = ReuseOrAllocNode(candidate, ENT_STRING);
+		node->SetStringIDWithReferenceHandoff(value);
+		return node;
+	}
+
+	//like ReuseOrAllocNode but allocates an ENT_STRING
+	inline EvaluableNodeReference ReuseOrAllocNode(EvaluableNodeReference candidate, const std::string &value)
+	{
+		EvaluableNodeReference node = ReuseOrAllocNode(candidate, ENT_STRING);
+		node->SetStringValue(value);
+		return node;
+	}
+
+	//like ReuseOrAllocNode but allocates either ENT_TRUE or ENT_FALSE
+	inline EvaluableNodeReference ReuseOrAllocNode(EvaluableNodeReference candidate, bool value)
+	{
+		return ReuseOrAllocNode(candidate, value ? ENT_TRUE: ENT_FALSE);
+	}
+
 	//like ReuseOrAllocNode, but picks whichever node is reusable and frees the other if possible
 	//will try candidate_1 first
 	inline EvaluableNodeReference ReuseOrAllocOneOfNodes(
@@ -251,6 +378,42 @@ public:
 
 		//candidate_1 wasn't unique, so try for candidate 2
 		return ReuseOrAllocNode(candidate_2, type);
+	}
+
+	//like ReuseOrAllocOneOfNodes but allocates an ENT_NUMBER
+	inline EvaluableNodeReference ReuseOrAllocOneOfNodes(
+		EvaluableNodeReference candidate_1, EvaluableNodeReference candidate_2, double value)
+	{
+		EvaluableNodeReference node = ReuseOrAllocOneOfNodes(candidate_1, candidate_2, ENT_NUMBER);
+		node->SetNumberValue(value);
+		return node;
+	}
+
+	//like ReuseOrAllocOneOfNodes but allocates an ENT_STRING
+	inline EvaluableNodeReference ReuseOrAllocOneOfNodes(
+		EvaluableNodeReference candidate_1, EvaluableNodeReference candidate_2, StringInternPool::StringID value)
+	{
+		//perform a handoff in case one of the candidates is the only value
+		string_intern_pool.CreateStringReference(value);
+		EvaluableNodeReference node = ReuseOrAllocOneOfNodes(candidate_1, candidate_2, ENT_STRING);
+		node->SetStringIDWithReferenceHandoff(value);
+		return node;
+	}
+
+	//like ReuseOrAllocOneOfNodes but allocates an ENT_STRING
+	inline EvaluableNodeReference ReuseOrAllocOneOfNodes(
+		EvaluableNodeReference candidate_1, EvaluableNodeReference candidate_2, const std::string &value)
+	{
+		EvaluableNodeReference node = ReuseOrAllocOneOfNodes(candidate_1, candidate_2, ENT_STRING);
+		node->SetStringValue(value);
+		return node;
+	}
+
+	//like ReuseOrAllocOneOfNodes but allocates either ENT_TRUE or ENT_FALSE
+	inline EvaluableNodeReference ReuseOrAllocOneOfNodes(
+		EvaluableNodeReference candidate_1, EvaluableNodeReference candidate_2, bool value)
+	{
+		return ReuseOrAllocOneOfNodes(candidate_1, candidate_2, value ? ENT_TRUE : ENT_FALSE);
 	}
 
 	//Copies the data structure and everything underneath it, modifying labels as specified
@@ -385,7 +548,7 @@ public:
 	//attempts to free the node reference
 	__forceinline void FreeNodeIfPossible(EvaluableNodeReference &enr)
 	{
-		if(enr.unique)
+		if(enr.unique && !enr.IsImmediateValue())
 			FreeNode(enr);
 	}
 	
@@ -423,7 +586,7 @@ public:
 	//attempts to free the node reference
 	__forceinline void FreeNodeTreeIfPossible(EvaluableNodeReference &enr)
 	{
-		if(enr.unique)
+		if(enr.unique && !enr.IsImmediateValue())
 			FreeNodeTree(enr);
 	}
 

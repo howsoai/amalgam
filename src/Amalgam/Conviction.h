@@ -25,16 +25,19 @@ public:
 
 #ifdef MULTITHREAD_SUPPORT
 	ConvictionProcessor(ConvictionProcessorBuffers &_buffers, KnnCache &cache,
-		EntityQueriesStatistics::DistanceTransform<EntityReference> &distance_transform, size_t num_nearest_neighbors, bool run_concurrently)
+		EntityQueriesStatistics::DistanceTransform<EntityReference> &distance_transform, size_t num_nearest_neighbors,
+		StringInternPool::StringID radius_label, bool run_concurrently)
 #else
 	ConvictionProcessor(ConvictionProcessorBuffers &_buffers, KnnCache &cache,
-		EntityQueriesStatistics::DistanceTransform<EntityReference> &distance_transform, size_t num_nearest_neighbors)
+		EntityQueriesStatistics::DistanceTransform<EntityReference> &distance_transform, size_t num_nearest_neighbors,
+		StringInternPool::StringID radius_label)
 #endif
 	{
 		buffers = &_buffers;
 		knnCache = &cache;
 		distanceTransform = &distance_transform;
 		numNearestNeighbors = num_nearest_neighbors;
+		radiusLabel = radius_label;
 
 #ifdef MULTITHREAD_SUPPORT
 		runConcurrently = run_concurrently;
@@ -413,6 +416,9 @@ public:
 
 		//number of nearest neighbors
 		size_t numNearestNeighbors;
+
+		//radius label if applicable
+		StringInternPool::StringID radiusLabel;
 
 		//reusable memory buffers
 		ConvictionProcessorBuffers *buffers;

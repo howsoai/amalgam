@@ -488,7 +488,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 	}
 	else //add ordered child node
 	{
-		EvaluableNode *new_list = enm->AllocNode(ENT_LIST);
+		EvaluableNode *new_list = enm->AllocNode(value_destination_node->GetType());
 		if(EvaluableNode::IsAssociativeArray(variable_value_node))
 		{
 			//expand out into pairs

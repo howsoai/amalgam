@@ -452,9 +452,6 @@ public:
 	static MergeMetricResults<EvaluableNode *> NumberOfSharedNodes(EvaluableNode *tree1, EvaluableNode *tree2,
 		MergeMetricResultsCache &memoized, EvaluableNode::ReferenceSetType *checked);
 
-	//returns true if the tree contains any labels
-	static bool DoesTreeContainLabels(EvaluableNode *en);
-
 	//Recursively traverses tree, storing any nodes with labels into an index map, and returning the map,
 	// as well as a flag indicating whether the labels needed to be renormalized due to collision
 	//if force_normalization_on_en, it will normalize en by collapsing nodes that share the same label, to ensure that each label will only have a single node

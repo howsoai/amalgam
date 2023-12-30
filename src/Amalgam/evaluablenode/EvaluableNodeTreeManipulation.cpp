@@ -317,21 +317,6 @@ std::string EvaluableNodeTreeManipulation::MixStrings(const std::string &a, cons
 	return result;
 }
 
-bool EvaluableNodeTreeManipulation::DoesTreeContainLabels(EvaluableNode *en)
-{
-	if(en == nullptr)
-		return false;
-
-	if(en->GetNumChildNodes() == 0)
-		return (en->GetNumLabels() > 0);
-
-	if(!en->GetNeedCycleCheck())
-		return NonCycleDoesTreeContainLabels(en);
-
-	EvaluableNode::ReferenceSetType checked;
-	return DoesTreeContainLabels(en, checked);
-}
-
 std::pair<EvaluableNode::LabelsAssocType, bool> EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTreeAndNormalize(EvaluableNode *en)
 {
 	EvaluableNode::LabelsAssocType index;

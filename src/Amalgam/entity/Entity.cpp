@@ -935,8 +935,13 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 	EvaluableNodeReference new_root = AccumulateEvaluableNodeIntoEvaluableNode(
 		EvaluableNodeReference(previous_root, false), accum_code, &evaluableNodeManager);
 
+	EvaluableNode::LabelsAssocType new_labels;
+	EvaluableNode::ReferenceSetType checked;
+	bool label_collision = EvaluableNodeTreeManipulation::CollectLabelIndexesFromNormalTree(
+		accum_code, new_labels, accum_code->GetNeedCycleCheck() ? &checked : nullptr);
+
+
 	//TODO 18781: update here down
-	bool accum_has_labels = EvaluableNodeTreeManipulation::DoesTreeContainLabels(accum_code);
 
 	//need to check if still cycle free as it may no longer be
 	EvaluableNodeManager::UpdateFlagsForNodeTree(new_root);

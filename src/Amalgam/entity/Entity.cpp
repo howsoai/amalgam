@@ -569,7 +569,7 @@ size_t Entity::GetEstimatedUsedDeepSizeInBytes()
 
 EvaluableNode::LabelsAssocType Entity::RebuildLabelIndex()
 {
-	auto [new_labels, renormalized] = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTreeAndNormalize(evaluableNodeManager.GetRootNode());
+	auto [new_labels, collision_free] = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTreeAndNormalize(evaluableNodeManager.GetRootNode());
 
 	//update references (create new ones before destroying old ones so they do not need to be recreated)
 	string_intern_pool.CreateStringReferences(new_labels, [](auto l) { return l.first; } );
@@ -578,7 +578,8 @@ EvaluableNode::LabelsAssocType Entity::RebuildLabelIndex()
 	//let the destructor of new_labels deallocate the old labelIndex
 	std::swap(labelIndex, new_labels);
 
-	if(renormalized)
+	//TODO 18781: revisit this -- is it still needed?
+	if(!collision_free)
 		new_labels.clear();
 
 	//new_labels now holds the previous labels
@@ -930,12 +931,12 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 	if( !(allocated_with_entity_enm && metadata_modifier == EvaluableNodeManager::ENMM_NO_CHANGE))
 		accum_code = evaluableNodeManager.DeepAllocCopy(accum_code, metadata_modifier);
 
+	auto [new_labels, new_labels_collision_free] = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTree(accum_code);
+
 	EvaluableNode *previous_root = evaluableNodeManager.GetRootNode();
 	//accum, but can't treat as unique in case any other thread is accessing the data
 	EvaluableNodeReference new_root = AccumulateEvaluableNodeIntoEvaluableNode(
 		EvaluableNodeReference(previous_root, false), accum_code, &evaluableNodeManager);
-
-	auto [new_labels, label_collisions] = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTree(accum_code);
 
 	//TODO 18781: update here down
 

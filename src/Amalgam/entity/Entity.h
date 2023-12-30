@@ -198,10 +198,8 @@ public:
 	std::pair<bool, bool> SetValuesAtLabels(EvaluableNodeReference new_label_values, bool accum_values, bool direct_set,
 		std::vector<EntityWriteListener *> *write_listeners, size_t *num_new_nodes_allocated, bool on_self, bool copy_entity);
 
-	//Rebuilds label index for retrieval
-	// returns the previous label index prior to rebuild; if the label index had to be rebuilt from scratch
-	// due to a label collision, then the previous label index will be empty
-	EvaluableNode::LabelsAssocType RebuildLabelIndex();
+	//Rebuilds label index
+	void RebuildLabelIndex();
 
 	//Returns the id for this Entity
 	inline const std::string &GetId()

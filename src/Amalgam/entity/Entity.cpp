@@ -930,11 +930,13 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 	if( !(allocated_with_entity_enm && metadata_modifier == EvaluableNodeManager::ENMM_NO_CHANGE))
 		accum_code = evaluableNodeManager.DeepAllocCopy(accum_code, metadata_modifier);
 
-	bool accum_has_labels = EvaluableNodeTreeManipulation::DoesTreeContainLabels(accum_code);
-
 	EvaluableNode *previous_root = evaluableNodeManager.GetRootNode();
+	//accum, but can't treat as unique in case any other thread is accessing the data
 	EvaluableNodeReference new_root = AccumulateEvaluableNodeIntoEvaluableNode(
-		EvaluableNodeReference(previous_root, true), accum_code, &evaluableNodeManager);
+		EvaluableNodeReference(previous_root, false), accum_code, &evaluableNodeManager);
+
+	//TODO 18781: update here down
+	bool accum_has_labels = EvaluableNodeTreeManipulation::DoesTreeContainLabels(accum_code);
 
 	//need to check if still cycle free as it may no longer be
 	EvaluableNodeManager::UpdateFlagsForNodeTree(new_root);

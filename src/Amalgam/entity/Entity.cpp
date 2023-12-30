@@ -931,15 +931,12 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 		accum_code = evaluableNodeManager.DeepAllocCopy(accum_code, metadata_modifier);
 
 	EvaluableNode *previous_root = evaluableNodeManager.GetRootNode();
+	//TODO 18781: bug when change previous root to non-unique
 	//accum, but can't treat as unique in case any other thread is accessing the data
 	EvaluableNodeReference new_root = AccumulateEvaluableNodeIntoEvaluableNode(
-		EvaluableNodeReference(previous_root, false), accum_code, &evaluableNodeManager);
+		EvaluableNodeReference(previous_root, true), accum_code, &evaluableNodeManager);
 
-	EvaluableNode::LabelsAssocType new_labels;
-	EvaluableNode::ReferenceSetType checked;
-	bool label_collision = EvaluableNodeTreeManipulation::CollectLabelIndexesFromNormalTree(
-		accum_code, new_labels, accum_code->GetNeedCycleCheck() ? &checked : nullptr);
-
+	auto [new_labels, label_collisions] = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTree(accum_code);
 
 	//TODO 18781: update here down
 
@@ -963,7 +960,7 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 
 	EntityQueryCaches *container_caches = GetContainerQueryCaches();
 
-	if(accum_has_labels)
+	if(new_labels.size() > 0)
 	{
 		EvaluableNode::LabelsAssocType prev_labels = RebuildLabelIndex();
 

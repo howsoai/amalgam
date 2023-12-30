@@ -453,24 +453,24 @@ public:
 		MergeMetricResultsCache &memoized, EvaluableNode::ReferenceSetType *checked);
 
 	//Recursively traverses tree, storing any nodes with labels into an index map, and returning the map,
-	// as well as a flag indicating whether the labels needed to be renormalized due to collision
-	//if force_normalization_on_en, it will normalize en by collapsing nodes that share the same label, to ensure that each label will only have a single node
-	// *Note* that force_normalization_on_en will modify en, potentially removing some nodes
-	// if, when normalizing, the tree is no longer cycle free, en_cycle_free will be set to false regardless of its initial value
-	static std::pair<EvaluableNode::LabelsAssocType, bool> RetrieveLabelIndexesFromTreeAndNormalize(EvaluableNode *en);
-
-	//like RetrieveNormalizedLabelIndexesFromTree, except collects all labels overwriting duplicates
-	inline static EvaluableNode::LabelsAssocType RetrieveLabelIndexesFromTree(EvaluableNode *en)
+	// as well as a flag indicating true if it was able to just retrieve the labels, or false
+	// if a label collision occured
+	inline static std::pair<EvaluableNode::LabelsAssocType, bool> RetrieveLabelIndexesFromTree(EvaluableNode *en)
 	{
 		EvaluableNode::LabelsAssocType index;
 		if(en == nullptr)
-			return index;
+			return std::make_pair(index, true);
 
 		//can check faster if don't need to check for cycles
 		EvaluableNode::ReferenceSetType checked;
-		CollectAllLabelIndexesFromTree(en, index, en->GetNeedCycleCheck() ? &checked : nullptr);
-		return index;
+		bool collected_all_label_values = CollectLabelIndexesFromTree(en, index, en->GetNeedCycleCheck() ? &checked : nullptr);
+		return std::make_pair(index, collected_all_label_values);
 	}
+
+	//Recursively traverses tree, storing any nodes with labels into an index map, and returning the map,
+	// as well as a flag indicating true if it was able to just retrieve the labels, or false
+	// if the labels needed to be renormalized due to a collision and the node tree was modified
+	static std::pair<EvaluableNode::LabelsAssocType, bool> RetrieveLabelIndexesFromTreeAndNormalize(EvaluableNode *en);
 
 	//Directly replaces all occurrences of code under label in tree (including potentially the root node) with replacement.
 	// replacement should be allocated by the appropriate allocator and may be modified if necessary
@@ -522,18 +522,14 @@ protected:
 	//assumes tree is not nullptr
 	//If checked is not nullptr, then it keeps track of previously visited nodes in checked, ignoring them if they are already in the set, and adds them to checked when they are traversed.
 	//  checked should only be nullptr when tree is known to be cycle free
-	//If there is a label collision, meaning the same label is used by more than one node, then it will exit early (not populating the index) and return true
-	//Returns false if no collision and nothing further is needed to be done.
-	static bool CollectLabelIndexesFromNormalTree(EvaluableNode *tree, EvaluableNode::LabelsAssocType &index, EvaluableNode::ReferenceSetType *checked);
-
-	//like CollectLabelIndexesFromNormalTree but overwrites duplicate labels
-	//assumes tree is not nullptr
-	static void CollectAllLabelIndexesFromTree(EvaluableNode *tree, EvaluableNode::LabelsAssocType &index, EvaluableNode::ReferenceSetType *checked);
+	//If there is any collision of labels, meaning the same label is used by more than one node, then it will return true
+	//Returns true if was able to collect all labels and no collision
+	static bool CollectLabelIndexesFromTree(EvaluableNode *tree, EvaluableNode::LabelsAssocType &index, EvaluableNode::ReferenceSetType *checked);
 
 	//Recursively traverses tree, storing any nodes with labels into index.  Ignores any nodes already in checked, and adds them to checked when they are traversed.
 	// if the current top of the tree contains a label and should be replaced by something that exists in index, it will set replace_tree_by to the proper
 	// node that should replace the top of the tree.
-	//returns two boolean value if any have been replaced, meaning another pass must be made
+	//returns true if it was able to collect all labels, false if there was a label collision
 	// and the tree needs to be updated with regard to cycle checks
 	static bool CollectLabelIndexesFromTreeAndMakeLabelNormalizationPass(EvaluableNode *tree, EvaluableNode::LabelsAssocType &index,
 		EvaluableNode::ReferenceSetType &checked, EvaluableNode *&replace_tree_by);

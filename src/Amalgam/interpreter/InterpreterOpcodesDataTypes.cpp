@@ -910,7 +910,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ALL_LABELS(EvaluableNo
 
 	EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_ASSOC), n.unique);
 
-	auto label_sids_to_nodes = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTree(n);
+	auto [label_sids_to_nodes, _] = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTree(n);
 
 	string_intern_pool.CreateStringReferences(label_sids_to_nodes, [](auto it) { return it.first; });
 	result->ReserveMappedChildNodes(label_sids_to_nodes.size());

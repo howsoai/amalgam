@@ -355,6 +355,13 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 	if(value_destination_node == nullptr)
 		return variable_value_node;
 
+	//set up initial flags
+	bool result_unique = (value_destination_node.unique && variable_value_node.unique);
+	bool result_need_cycle_check = value_destination_node->GetNeedCycleCheck();
+	if(!variable_value_node.unique || (variable_value_node != nullptr && variable_value_node->GetNeedCycleCheck()))
+		result_need_cycle_check = true;
+	bool result_idempontent = (value_destination_node->GetIsIdempotent() && (variable_value_node == nullptr || variable_value_node->GetIsIdempotent()));
+
 	//if the value is unique, then can just edit in place
 	if(value_destination_node.unique)
 	{
@@ -389,8 +396,9 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 
 			enm->FreeNodeIfPossible(variable_value_node);
 
-			value_destination_node->SetNeedCycleCheck(true);
-			value_destination_node.unique = (value_destination_node.unique && variable_value_node.unique);
+			value_destination_node->SetNeedCycleCheck(result_need_cycle_check);
+			value_destination_node->SetIsIdempotent(result_idempontent);
+			value_destination_node.unique = result_unique;
 		}
 		else if(value_destination_node->IsStringValue())
 		{
@@ -432,8 +440,9 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 				value_destination_node->AppendOrderedChildNode(variable_value_node);
 			}
 
-			value_destination_node->SetNeedCycleCheck(true);
-			value_destination_node.unique = (value_destination_node.unique && variable_value_node.unique);
+			value_destination_node->SetNeedCycleCheck(result_need_cycle_check);
+			value_destination_node->SetIsIdempotent(result_idempontent);
+			value_destination_node.unique = result_unique;
 		}
 
 		return value_destination_node;
@@ -469,8 +478,9 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 
 		enm->FreeNodeIfPossible(variable_value_node);
 
-		value_destination_node.SetReference(new_list, value_destination_node.unique && variable_value_node.unique);
-		value_destination_node->SetNeedCycleCheck(true);
+		value_destination_node->SetNeedCycleCheck(result_need_cycle_check);
+		value_destination_node->SetIsIdempotent(result_idempontent);
+		value_destination_node.SetReference(new_list, result_unique);
 	}
 	else if(value_destination_node->IsStringValue())
 	{
@@ -511,8 +521,9 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 			new_list->AppendOrderedChildNode(variable_value_node);
 		}
 
-		value_destination_node.SetReference(new_list, value_destination_node.unique &&variable_value_node.unique);
-		value_destination_node->SetNeedCycleCheck(true);
+		value_destination_node->SetNeedCycleCheck(result_need_cycle_check);
+		value_destination_node->SetIsIdempotent(result_idempontent);
+		value_destination_node.SetReference(new_list, result_unique);
 	}
 
 	return value_destination_node;

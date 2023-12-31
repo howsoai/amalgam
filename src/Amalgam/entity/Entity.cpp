@@ -711,7 +711,6 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, std::string id_
 	return t->idStringId;
 }
 
-
 void Entity::RemoveContainedEntity(StringInternPool::StringID id, std::vector<EntityWriteListener *> *write_listeners)
 {
 	if(!hasContainedEntities)
@@ -921,12 +920,30 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 	EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier,
 	std::vector<EntityWriteListener *> *write_listeners)
 {
-	if( !(allocated_with_entity_enm && metadata_modifier == EvaluableNodeManager::ENMM_NO_CHANGE))
+	if(!(allocated_with_entity_enm && metadata_modifier == EvaluableNodeManager::ENMM_NO_CHANGE))
 		accum_code = evaluableNodeManager.DeepAllocCopy(accum_code, metadata_modifier);
 
 	auto [new_labels, no_label_collisions] = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTree(accum_code);
 
 	EvaluableNode *previous_root = evaluableNodeManager.GetRootNode();
+
+	//before accumulating, check to see if flags will need to be updated
+	bool node_flags_need_update = false;
+	if(previous_root == nullptr)
+	{
+		node_flags_need_update = true;
+	}
+	else
+	{
+		//need to update node flags if new_root is cycle free, but accum_node isn't
+		if(previous_root->GetNeedCycleCheck() && (accum_code != nullptr && !accum_code->GetNeedCycleCheck()))
+			node_flags_need_update = true;
+
+		//need to update node flags if new_root is idempotent and accum_node isn't
+		if(previous_root->GetIsIdempotent() && (accum_code != nullptr && accum_code->GetIsIdempotent()))
+			node_flags_need_update = true;
+	}
+
 	//accum, but can't treat as unique in case any other thread is accessing the data
 	EvaluableNodeReference new_root = AccumulateEvaluableNodeIntoEvaluableNode(
 		EvaluableNodeReference(previous_root, false), accum_code, &evaluableNodeManager);
@@ -958,15 +975,6 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 	//can do a much more straightforward update if there are no label collisions and the root has no labels
 	if(no_label_collisions && new_root->GetNumLabels() == 0)
 	{
-		bool node_flags_need_update = false;
-
-		if(accum_code != nullptr && accum_code->GetNeedCycleCheck() != new_root->GetNeedCycleCheck())
-			node_flags_need_update = true;
-
-		//need to update node flags if new_root is idempotent and accum_node isn't
-		if(new_root->GetIsIdempotent() && (accum_code != nullptr && accum_code->GetIsIdempotent()))
-			node_flags_need_update = true;
-
 		if(node_flags_need_update)
 			EvaluableNodeManager::UpdateFlagsForNodeTree(new_root);
 

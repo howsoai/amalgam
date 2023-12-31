@@ -448,18 +448,15 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 	}
 	else if(value_destination_node->IsAssociativeArray())
 	{
-		EvaluableNode *new_list = enm->AllocNode(value_destination_node->GetType());
+		EvaluableNode *new_list = enm->AllocNode(value_destination_node);
 
 		if(EvaluableNode::IsAssociativeArray(variable_value_node))
 		{
-			new_list->ReserveMappedChildNodes(value_destination_node->GetMappedChildNodes().size()
-											+ variable_value_node->GetMappedChildNodesReference().size());
 			new_list->SetMappedChildNodes(value_destination_node->GetMappedChildNodes(), true);
 			new_list->AppendMappedChildNodes(variable_value_node->GetMappedChildNodes());
 		}
 		else if(variable_value_node != nullptr) //treat ordered pairs as new entries as long as not nullptr
 		{
-			new_list->ReserveMappedChildNodes(value_destination_node->GetMappedChildNodes().size() + variable_value_node->GetOrderedChildNodes().size() / 2);
 			new_list->SetMappedChildNodes(value_destination_node->GetMappedChildNodes(), true);
 			//iterate as long as pairs exist
 			auto &vvn_ocn = variable_value_node->GetOrderedChildNodes();
@@ -488,12 +485,11 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 	}
 	else //add ordered child node
 	{
-		EvaluableNode *new_list = enm->AllocNode(value_destination_node->GetType());
+		EvaluableNode *new_list = enm->AllocNode(value_destination_node);
 		if(EvaluableNode::IsAssociativeArray(variable_value_node))
 		{
 			//expand out into pairs
 			new_list->ReserveOrderedChildNodes(value_destination_node->GetOrderedChildNodes().size() + 2 * variable_value_node->GetMappedChildNodes().size());
-			new_list->AppendOrderedChildNodes(value_destination_node->GetOrderedChildNodes());
 			for(auto &[cn_id, cn] : variable_value_node->GetMappedChildNodes())
 			{
 				new_list->AppendOrderedChildNode(enm->AllocNode(ENT_STRING, cn_id));
@@ -505,7 +501,6 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		else if(EvaluableNode::IsOrderedArray(variable_value_node))
 		{
 			new_list->ReserveOrderedChildNodes(value_destination_node->GetOrderedChildNodes().size() + variable_value_node->GetOrderedChildNodes().size());
-			new_list->AppendOrderedChildNodes(value_destination_node->GetOrderedChildNodes());
 			new_list->AppendOrderedChildNodes(variable_value_node->GetOrderedChildNodes());
 
 			enm->FreeNodeIfPossible(variable_value_node);
@@ -513,7 +508,6 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		else //just append one value
 		{
 			new_list->ReserveOrderedChildNodes(value_destination_node->GetOrderedChildNodes().size() + 1);
-			new_list->AppendOrderedChildNodes(value_destination_node->GetOrderedChildNodes());
 			new_list->AppendOrderedChildNode(variable_value_node);
 		}
 

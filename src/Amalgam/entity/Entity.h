@@ -39,9 +39,12 @@ public:
 
 	Entity();
 
-	//create Entity from existing code, rand_state is the current state of the random number generator, modifying labels as specified
-	Entity(Entity *_container, std::string &code_string, const std::string &rand_state, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE);
-	Entity(Entity *_container, EvaluableNode *_root, const std::string &rand_state, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE);
+	//create Entity from existing code, rand_state is the current state of the random number generator,
+	// modifying labels as specified
+	Entity(Entity *_container, std::string &code_string, const std::string &rand_state,
+		EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE);
+	Entity(Entity *_container, EvaluableNode *_root, const std::string &rand_state,
+		EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE);
 
 	//Creates a new Entity as a copy of the Entity passed in; everything is identical except for the time created and id
 	Entity(Entity *t);
@@ -193,10 +196,8 @@ public:
 	std::pair<bool, bool> SetValuesAtLabels(EvaluableNodeReference new_label_values, bool accum_values, bool direct_set,
 		std::vector<EntityWriteListener *> *write_listeners, size_t *num_new_nodes_allocated, bool on_self, bool copy_entity);
 
-	//Rebuilds label index for retrieval
-	// returns the previous label index prior to rebuild; if the label index had to be rebuilt from scratch
-	// due to a label collision, then the previous label index will be empty
-	EvaluableNode::LabelsAssocType RebuildLabelIndex();
+	//Rebuilds label index
+	void RebuildLabelIndex();
 
 	//Returns the id for this Entity
 	inline const std::string &GetId()
@@ -386,15 +387,21 @@ public:
 	}
 
 	//Sets the code and recreates the index, modifying labels as specified
-	// if allocated_with_entity_enm is false, then it will copy the tree into the entity's EvaluableNodeManager, otherwise it will just assume it is already available
-	// write_listeners is optional, and if specified, will log the event
-	void SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE, std::vector<EntityWriteListener *> *write_listeners = nullptr);
-	void SetRoot(std::string &code_string, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE, std::vector<EntityWriteListener *> *write_listeners = nullptr);
+	//if allocated_with_entity_enm is false, then it will copy the tree into the entity's EvaluableNodeManager, otherwise it will just assume it is already available
+	//write_listeners is optional, and if specified, will log the event
+	void SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm,
+		EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE,
+		std::vector<EntityWriteListener *> *write_listeners = nullptr);
+	void SetRoot(std::string &code_string,
+		EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE,
+		std::vector<EntityWriteListener *> *write_listeners = nullptr);
 
 	//accumulates the code and recreates the index, modifying labels as specified
-	// if allocated_with_entity_enm is false, then it will copy the tree into the entity's EvaluableNodeManager, otherwise it will just assume it is already available
-	// write_listeners is optional, and if specified, will log the event
-	void AccumRoot(EvaluableNodeReference _code, bool allocated_with_entity_enm, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE, std::vector<EntityWriteListener *> *write_listeners = nullptr);
+	//if allocated_with_entity_enm is false, then it will copy the tree into the entity's EvaluableNodeManager, otherwise it will just assume it is already available
+	//write_listeners is optional, and if specified, will log the event
+	void AccumRoot(EvaluableNodeReference _code, bool allocated_with_entity_enm,
+		EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE,
+		std::vector<EntityWriteListener *> *write_listeners = nullptr);
 
 	//collects garbage on evaluableNodeManager
 #ifdef MULTITHREAD_SUPPORT

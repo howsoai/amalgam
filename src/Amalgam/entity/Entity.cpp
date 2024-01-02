@@ -547,9 +547,9 @@ size_t Entity::GetEstimatedUsedDeepSizeInBytes()
 	return total_size;
 }
 
-EvaluableNode::LabelsAssocType Entity::RebuildLabelIndex()
+void Entity::RebuildLabelIndex()
 {
-	auto [new_labels, renormalized] = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTreeAndNormalize(evaluableNodeManager.GetRootNode());
+	auto [new_labels, collision_free] = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTreeAndNormalize(evaluableNodeManager.GetRootNode());
 
 	//update references (create new ones before destroying old ones so they do not need to be recreated)
 	string_intern_pool.CreateStringReferences(new_labels, [](auto l) { return l.first; } );
@@ -557,12 +557,6 @@ EvaluableNode::LabelsAssocType Entity::RebuildLabelIndex()
 
 	//let the destructor of new_labels deallocate the old labelIndex
 	std::swap(labelIndex, new_labels);
-
-	if(renormalized)
-		new_labels.clear();
-
-	//new_labels now holds the previous labels
-	return new_labels;
 }
 
 StringInternPool::StringID Entity::AddContainedEntity(Entity *t, StringInternPool::StringID id_sid, std::vector<EntityWriteListener *> *write_listeners)
@@ -696,7 +690,6 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, std::string id_
 
 	return t->idStringId;
 }
-
 
 void Entity::RemoveContainedEntity(StringInternPool::StringID id, std::vector<EntityWriteListener *> *write_listeners)
 {
@@ -896,74 +889,91 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, Evalu
 	}
 }
 
-void Entity::SetRoot(std::string &code_string, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier, std::vector<EntityWriteListener *> *write_listeners)
+void Entity::SetRoot(std::string &code_string, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier,
+	std::vector<EntityWriteListener *> *write_listeners)
 {
 	EvaluableNodeReference new_code = Parser::Parse(code_string, &evaluableNodeManager);
 	SetRoot(new_code, true, metadata_modifier, write_listeners);
 }
 
-void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_entity_enm, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier, std::vector<EntityWriteListener *> *write_listeners)
+void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_entity_enm,
+	EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier,
+	std::vector<EntityWriteListener *> *write_listeners)
 {
-	if( !(allocated_with_entity_enm && metadata_modifier == EvaluableNodeManager::ENMM_NO_CHANGE))
+	if(!(allocated_with_entity_enm && metadata_modifier == EvaluableNodeManager::ENMM_NO_CHANGE))
 		accum_code = evaluableNodeManager.DeepAllocCopy(accum_code, metadata_modifier);
 
-	bool accum_has_labels = EvaluableNodeTreeManipulation::DoesTreeContainLabels(accum_code);
+	auto [new_labels, no_label_collisions] = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTree(accum_code);
 
 	EvaluableNode *previous_root = evaluableNodeManager.GetRootNode();
-	EvaluableNodeReference new_root = AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeReference(previous_root, true), accum_code, &evaluableNodeManager);
 
-	//need to check if still cycle free as it may no longer be
-	EvaluableNodeManager::UpdateFlagsForNodeTree(new_root);
+	//before accumulating, check to see if flags will need to be updated
+	bool node_flags_need_update = false;
+	if(previous_root == nullptr)
+	{
+		node_flags_need_update = true;
+	}
+	else
+	{
+		//need to update node flags if new_root is cycle free, but accum_node isn't
+		if(previous_root->GetNeedCycleCheck() && (accum_code != nullptr && !accum_code->GetNeedCycleCheck()))
+			node_flags_need_update = true;
+
+		//need to update node flags if new_root is idempotent and accum_node isn't
+		if(previous_root->GetIsIdempotent() && (accum_code != nullptr && !accum_code->GetIsIdempotent()))
+			node_flags_need_update = true;
+	}
+
+	//accum, but can't treat as unique in case any other thread is accessing the data
+	EvaluableNodeReference new_root = AccumulateEvaluableNodeIntoEvaluableNode(
+		EvaluableNodeReference(previous_root, false), accum_code, &evaluableNodeManager);
 
 	if(new_root != previous_root)
 	{
-		//keep reference for current root (mainly in case a new node was added if the entity were previously empty)
+		//keep reference for current root before setting and freeing
 		evaluableNodeManager.KeepNodeReference(new_root);
-
 		evaluableNodeManager.SetRootNode(new_root);
-
-		//free current root reference
 		evaluableNodeManager.FreeNodeReference(previous_root);
 	}
 
-	size_t num_root_labels_to_update = 0;
-	if(new_root != nullptr)
-		num_root_labels_to_update = new_root->GetNumLabels();
+	//optimistically create references for the new labels, delete them if find collisions
+	string_intern_pool.CreateStringReferences(new_labels, [](auto l) { return l.first; });
+
+	//attempt to insert the new labels as long as there's no collision
+	for(auto &[label, value] : new_labels)
+	{
+		auto [new_entry, inserted] = labelIndex.emplace(label, value);
+		if(!inserted)
+		{
+			string_intern_pool.DestroyStringReference(label);
+			no_label_collisions = false;
+		}
+	}
 
 	EntityQueryCaches *container_caches = GetContainerQueryCaches();
 
-	if(accum_has_labels)
+	//can do a much more straightforward update if there are no label collisions and the root has no labels
+	if(no_label_collisions && new_root->GetNumLabels() == 0)
 	{
-		EvaluableNode::LabelsAssocType prev_labels = RebuildLabelIndex();
+		if(node_flags_need_update)
+			EvaluableNodeManager::UpdateFlagsForNodeTree(new_root);
 
-		//if have all new labels or RebuildLabelIndex had to renormalize (in which case prev_labels will be empty)
-		// then update all labels just in case
-		if(prev_labels.size() == 0 && labelIndex.size() > 0)
-		{
-			if(container_caches != nullptr)
-				container_caches->UpdateAllEntityLabels(this, GetEntityIndexOfContainer());
-
-			//root labels have been updated
-			num_root_labels_to_update = 0;
-		}
-		else //clean rebuild
-		{
-			if(container_caches != nullptr)
-				container_caches->UpdateEntityLabelsAddedOrChanged(this, GetEntityIndexOfContainer(),
-					prev_labels, labelIndex);
-		}
+		if(container_caches != nullptr)
+			container_caches->UpdateEntityLabels(this, GetEntityIndexOfContainer(), new_labels);
 	}
-	
-	//if any root labels left to update, then update them
-	if(num_root_labels_to_update > 0)
+	else //either collisions or root node has at least one label
 	{
-		//only need to update labels on root
-		for(size_t i = 0; i < num_root_labels_to_update; i++)
+		if(!no_label_collisions)
 		{
-			auto label_sid = new_root->GetLabelStringId(i);
-			if(container_caches != nullptr)
-				container_caches->UpdateEntityLabel(this, GetEntityIndexOfContainer(), label_sid);
+			//all new labels have already been inserted
+			auto [new_label_index, collision_free] = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTreeAndNormalize(
+				evaluableNodeManager.GetRootNode());
+
+			std::swap(labelIndex, new_labels);
 		}
+
+		if(container_caches != nullptr)
+			container_caches->UpdateAllEntityLabels(this, GetEntityIndexOfContainer());
 	}
 
 	if(write_listeners != nullptr)

@@ -1,6 +1,8 @@
 //project headers:
 #include "PlatformSpecific.h"
 
+#include "Concurrency.h"
+
 //system headers:
 #include <algorithm>
 #include <array>
@@ -313,7 +315,7 @@ bool Platform_ThreadsafeLocaltime(std::time_t time_value, std::tm &localized_tim
 #ifdef OS_WINDOWS
 	return localtime_s(&localized_time, &time_value) == 0; //MS swaps the values and returns the wrong thing
 #else // POSIX
-	return ::localtime_r(&time_value, *localized_time) != nullptr;
+	return ::localtime_r(&time_value, &localized_time) != nullptr;
 #endif
 }
 

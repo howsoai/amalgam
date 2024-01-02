@@ -39,9 +39,12 @@ public:
 
 	Entity();
 
-	//create Entity from existing code, rand_state is the current state of the random number generator, modifying labels as specified
-	Entity(Entity *_container, std::string &code_string, const std::string &rand_state, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE);
-	Entity(Entity *_container, EvaluableNode *_root, const std::string &rand_state, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE);
+	//create Entity from existing code, rand_state is the current state of the random number generator,
+	// modifying labels as specified
+	Entity(Entity *_container, std::string &code_string, const std::string &rand_state,
+		EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE);
+	Entity(Entity *_container, EvaluableNode *_root, const std::string &rand_state,
+		EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE);
 
 	//Creates a new Entity as a copy of the Entity passed in; everything is identical except for the time created and id
 	Entity(Entity *t);
@@ -50,43 +53,41 @@ public:
 
 	//executes the entity for up to max_num_steps on the given label_name (if empty string, then evaluates root node)
 	// Returns the result from the execution, sets num_steps_executed to the number executed, sets num_nodes_allocated to the number of nodes allocated in entities
-	// Uses the EvaluableNodeManager destination_temp_enm for any values returned that are temporary
 	// Uses max_num_steps as the maximum number of operations that can be executed by this and any subordinate operations called. If max_num_steps is 0, then it will execute unlimeted steps
 	// Uses max_num_nodes as the maximum number of nodes that can be allocated in memory by this and any subordinate operations called. If max_num_nodes is 0, then it will allow unlimited allocations
 	// If on_self is true, then it will be allowed to access private variables
 	// If locked_memory_modification_lock is specified, then it will unlock it prior to the execution, but lock it again before
 	// If entity_read_lock is specified, then it will unlock prior to execution after locked_memory_modification_lock is locked
 	// potentially writing anything out to destination_temp_enm
-	// If copy_call_stack is true, it will copy call_stack into the evaluableNodeManager managed by this entity while under appropriate locks
 	EvaluableNodeReference Execute(ExecutionCycleCount max_num_steps, ExecutionCycleCount &num_steps_executed, size_t max_num_nodes, size_t &num_nodes_allocated,
 		std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
-		EvaluableNode *call_stack = nullptr, bool on_self = false, EvaluableNodeManager *destination_temp_enm = nullptr,
+		EvaluableNode *call_stack = nullptr, bool on_self = false,
 	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::ReadLock *locked_memory_modification_lock = nullptr,
 		Concurrency::ReadLock *entity_read_lock = nullptr,
 	#endif
 		StringInternPool::StringID label_sid = StringInternPool::NOT_A_STRING_ID,
-		Interpreter *calling_interpreter = nullptr, bool copy_call_stack = false);
+		Interpreter *calling_interpreter = nullptr);
 
 	//same as Execute but accepts a string for label name
 	inline EvaluableNodeReference Execute(ExecutionCycleCount max_num_steps, ExecutionCycleCount &num_steps_executed,
 		size_t max_num_nodes, size_t &num_nodes_allocated,
 		std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
-		EvaluableNode *call_stack, bool on_self, EvaluableNodeManager *destination_temp_enm,
+		EvaluableNode *call_stack, bool on_self,
 	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::ReadLock *locked_memory_modification_lock,
 		Concurrency::ReadLock *entity_read_lock,
 	#endif
 		const std::string &label_name,
-		Interpreter *calling_interpreter = nullptr, bool copy_call_stack = false)
+		Interpreter *calling_interpreter = nullptr)
 	{
 		StringInternPool::StringID label_sid = string_intern_pool.GetIDFromString(label_name);
 		return Execute(max_num_steps, num_steps_executed, max_num_nodes, num_nodes_allocated, write_listeners, print_listener,
-			call_stack, on_self, destination_temp_enm,
+			call_stack, on_self,
 		#ifdef MULTITHREAD_SUPPORT
 			locked_memory_modification_lock, entity_read_lock,
 		#endif
-			label_sid, calling_interpreter, copy_call_stack);
+			label_sid, calling_interpreter);
 	}
 
 	//returns true if the entity or any of its contained entities are currently being executed, either because of multiple threads executing on it
@@ -195,10 +196,8 @@ public:
 	std::pair<bool, bool> SetValuesAtLabels(EvaluableNodeReference new_label_values, bool accum_values, bool direct_set,
 		std::vector<EntityWriteListener *> *write_listeners, size_t *num_new_nodes_allocated, bool on_self, bool copy_entity);
 
-	//Rebuilds label index for retrieval
-	// returns the previous label index prior to rebuild; if the label index had to be rebuilt from scratch
-	// due to a label collision, then the previous label index will be empty
-	EvaluableNode::LabelsAssocType RebuildLabelIndex();
+	//Rebuilds label index
+	void RebuildLabelIndex();
 
 	//Returns the id for this Entity
 	inline const std::string &GetId()
@@ -388,15 +387,21 @@ public:
 	}
 
 	//Sets the code and recreates the index, modifying labels as specified
-	// if allocated_with_entity_enm is false, then it will copy the tree into the entity's EvaluableNodeManager, otherwise it will just assume it is already available
-	// write_listeners is optional, and if specified, will log the event
-	void SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE, std::vector<EntityWriteListener *> *write_listeners = nullptr);
-	void SetRoot(std::string &code_string, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE, std::vector<EntityWriteListener *> *write_listeners = nullptr);
+	//if allocated_with_entity_enm is false, then it will copy the tree into the entity's EvaluableNodeManager, otherwise it will just assume it is already available
+	//write_listeners is optional, and if specified, will log the event
+	void SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm,
+		EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE,
+		std::vector<EntityWriteListener *> *write_listeners = nullptr);
+	void SetRoot(std::string &code_string,
+		EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE,
+		std::vector<EntityWriteListener *> *write_listeners = nullptr);
 
 	//accumulates the code and recreates the index, modifying labels as specified
-	// if allocated_with_entity_enm is false, then it will copy the tree into the entity's EvaluableNodeManager, otherwise it will just assume it is already available
-	// write_listeners is optional, and if specified, will log the event
-	void AccumRoot(EvaluableNodeReference _code, bool allocated_with_entity_enm, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE, std::vector<EntityWriteListener *> *write_listeners = nullptr);
+	//if allocated_with_entity_enm is false, then it will copy the tree into the entity's EvaluableNodeManager, otherwise it will just assume it is already available
+	//write_listeners is optional, and if specified, will log the event
+	void AccumRoot(EvaluableNodeReference _code, bool allocated_with_entity_enm,
+		EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE,
+		std::vector<EntityWriteListener *> *write_listeners = nullptr);
 
 	//collects garbage on evaluableNodeManager
 #ifdef MULTITHREAD_SUPPORT

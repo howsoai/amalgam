@@ -77,25 +77,6 @@ public:
 			sbfds.UpdateEntityLabel(entity, entity_index, label_id);
 	}
 
-	//like UpdateEntityLabels, but only updates labels for the keys of labels_updated that are not in labels_previous
-	// or where the value has changed
-	inline void UpdateEntityLabelsAddedOrChanged(Entity *entity, size_t entity_index,
-		EvaluableNode::AssocType &labels_previous, EvaluableNode::AssocType &labels_updated)
-	{
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		Concurrency::WriteLock write_lock(mutex);
-	#endif
-
-		for(auto &[label_id, label] : labels_updated)
-		{
-			auto prev_entry = labels_previous.find(label_id);
-
-			//if not found or different, need to update the label
-			if(prev_entry == end(labels_previous) || prev_entry->second != label)
-				sbfds.UpdateEntityLabel(entity, entity_index, label_id);
-		}
-	}
-
 	//like UpdateAllEntityLabels, but only updates labels for label_updated
 	inline void UpdateEntityLabel(Entity *entity, size_t entity_index, StringInternPool::StringID label_updated)
 	{

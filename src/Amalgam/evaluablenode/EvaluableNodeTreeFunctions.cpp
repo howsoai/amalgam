@@ -355,6 +355,13 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 	if(value_destination_node == nullptr)
 		return variable_value_node;
 
+	//set up initial flags
+	bool result_unique = (value_destination_node.unique && variable_value_node.unique);
+	bool result_need_cycle_check = value_destination_node->GetNeedCycleCheck();
+	if(!variable_value_node.unique || (variable_value_node != nullptr && variable_value_node->GetNeedCycleCheck()))
+		result_need_cycle_check = true;
+	bool result_idempontent = (value_destination_node->GetIsIdempotent() && (variable_value_node == nullptr || variable_value_node->GetIsIdempotent()));
+
 	//if the value is unique, then can just edit in place
 	if(value_destination_node.unique)
 	{
@@ -389,8 +396,9 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 
 			enm->FreeNodeIfPossible(variable_value_node);
 
-			value_destination_node->SetNeedCycleCheck(true);
-			value_destination_node.unique = (value_destination_node.unique && variable_value_node.unique);
+			value_destination_node->SetNeedCycleCheck(result_need_cycle_check);
+			value_destination_node->SetIsIdempotent(result_idempontent);
+			value_destination_node.unique = result_unique;
 		}
 		else if(value_destination_node->IsStringValue())
 		{
@@ -432,8 +440,9 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 				value_destination_node->AppendOrderedChildNode(variable_value_node);
 			}
 
-			value_destination_node->SetNeedCycleCheck(true);
-			value_destination_node.unique = (value_destination_node.unique && variable_value_node.unique);
+			value_destination_node->SetNeedCycleCheck(result_need_cycle_check);
+			value_destination_node->SetIsIdempotent(result_idempontent);
+			value_destination_node.unique = result_unique;
 		}
 
 		return value_destination_node;
@@ -448,18 +457,15 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 	}
 	else if(value_destination_node->IsAssociativeArray())
 	{
-		EvaluableNode *new_list = enm->AllocNode(value_destination_node->GetType());
+		EvaluableNode *new_list = enm->AllocNode(value_destination_node);
 
 		if(EvaluableNode::IsAssociativeArray(variable_value_node))
 		{
-			new_list->ReserveMappedChildNodes(value_destination_node->GetMappedChildNodes().size()
-											+ variable_value_node->GetMappedChildNodesReference().size());
 			new_list->SetMappedChildNodes(value_destination_node->GetMappedChildNodes(), true);
 			new_list->AppendMappedChildNodes(variable_value_node->GetMappedChildNodes());
 		}
 		else if(variable_value_node != nullptr) //treat ordered pairs as new entries as long as not nullptr
 		{
-			new_list->ReserveMappedChildNodes(value_destination_node->GetMappedChildNodes().size() + variable_value_node->GetOrderedChildNodes().size() / 2);
 			new_list->SetMappedChildNodes(value_destination_node->GetMappedChildNodes(), true);
 			//iterate as long as pairs exist
 			auto &vvn_ocn = variable_value_node->GetOrderedChildNodes();
@@ -472,8 +478,9 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 
 		enm->FreeNodeIfPossible(variable_value_node);
 
-		value_destination_node.SetReference(new_list, value_destination_node.unique && variable_value_node.unique);
-		value_destination_node->SetNeedCycleCheck(true);
+		value_destination_node->SetNeedCycleCheck(result_need_cycle_check);
+		value_destination_node->SetIsIdempotent(result_idempontent);
+		value_destination_node.SetReference(new_list, result_unique);
 	}
 	else if(value_destination_node->IsStringValue())
 	{
@@ -488,12 +495,11 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 	}
 	else //add ordered child node
 	{
-		EvaluableNode *new_list = enm->AllocNode(ENT_LIST);
+		EvaluableNode *new_list = enm->AllocNode(value_destination_node);
 		if(EvaluableNode::IsAssociativeArray(variable_value_node))
 		{
 			//expand out into pairs
 			new_list->ReserveOrderedChildNodes(value_destination_node->GetOrderedChildNodes().size() + 2 * variable_value_node->GetMappedChildNodes().size());
-			new_list->AppendOrderedChildNodes(value_destination_node->GetOrderedChildNodes());
 			for(auto &[cn_id, cn] : variable_value_node->GetMappedChildNodes())
 			{
 				new_list->AppendOrderedChildNode(enm->AllocNode(ENT_STRING, cn_id));
@@ -505,7 +511,6 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		else if(EvaluableNode::IsOrderedArray(variable_value_node))
 		{
 			new_list->ReserveOrderedChildNodes(value_destination_node->GetOrderedChildNodes().size() + variable_value_node->GetOrderedChildNodes().size());
-			new_list->AppendOrderedChildNodes(value_destination_node->GetOrderedChildNodes());
 			new_list->AppendOrderedChildNodes(variable_value_node->GetOrderedChildNodes());
 
 			enm->FreeNodeIfPossible(variable_value_node);
@@ -513,12 +518,12 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		else //just append one value
 		{
 			new_list->ReserveOrderedChildNodes(value_destination_node->GetOrderedChildNodes().size() + 1);
-			new_list->AppendOrderedChildNodes(value_destination_node->GetOrderedChildNodes());
 			new_list->AppendOrderedChildNode(variable_value_node);
 		}
 
-		value_destination_node.SetReference(new_list, value_destination_node.unique &&variable_value_node.unique);
-		value_destination_node->SetNeedCycleCheck(true);
+		value_destination_node->SetNeedCycleCheck(result_need_cycle_check);
+		value_destination_node->SetIsIdempotent(result_idempontent);
+		value_destination_node.SetReference(new_list, result_unique);
 	}
 
 	return value_destination_node;

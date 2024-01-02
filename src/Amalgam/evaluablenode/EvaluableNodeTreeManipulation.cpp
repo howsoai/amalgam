@@ -247,8 +247,8 @@ EvaluableNode *EvaluableNodeTreeManipulation::MixTreesByCommonLabels(Interpreter
 	if(tree2 == nullptr)
 		return result_tree;
 
-	auto index1 = RetrieveLabelIndexesFromTree(tree1);
-	auto index2 = RetrieveLabelIndexesFromTree(tree2);
+	auto [index1, _1] = RetrieveLabelIndexesFromTree(tree1);
+	auto [index2, _2] = RetrieveLabelIndexesFromTree(tree2);
 
 	//normalize fraction to be less than 1
 	double total_fraction = fraction_a + fraction_b;
@@ -317,33 +317,16 @@ std::string EvaluableNodeTreeManipulation::MixStrings(const std::string &a, cons
 	return result;
 }
 
-bool EvaluableNodeTreeManipulation::DoesTreeContainLabels(EvaluableNode *en)
-{
-	if(en == nullptr)
-		return false;
-
-	if(en->GetNumChildNodes() == 0)
-		return (en->GetNumLabels() > 0);
-
-	if(!en->GetNeedCycleCheck())
-		return NonCycleDoesTreeContainLabels(en);
-
-	EvaluableNode::ReferenceSetType checked;
-	return DoesTreeContainLabels(en, checked);
-}
-
 std::pair<EvaluableNode::LabelsAssocType, bool> EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTreeAndNormalize(EvaluableNode *en)
 {
 	EvaluableNode::LabelsAssocType index;
-	EvaluableNode::ReferenceSetType checked;
-
-	//can check faster if don't need to check for cycles
-	bool en_cycle_free = (en == nullptr || !en->GetNeedCycleCheck());
-	bool label_collision = CollectLabelIndexesFromNormalTree(en, index, en_cycle_free ? nullptr : &checked);
+	if(en == nullptr)
+		return std::make_pair(index, true);
 
 	//if no collision, return
-	if(!label_collision)
-		return std::make_pair(index, false);
+	EvaluableNode::ReferenceSetType checked;
+	if(CollectLabelIndexesFromTree(en, index, en->GetNeedCycleCheck() ? &checked : nullptr))
+		return std::make_pair(index, true);
 
 	//keep replacing until don't need to replace anymore
 	EvaluableNode *to_replace = nullptr;
@@ -351,16 +334,15 @@ std::pair<EvaluableNode::LabelsAssocType, bool> EvaluableNodeTreeManipulation::R
 	{
 		index.clear();
 		checked.clear();
-		bool replacement = CollectLabelIndexesFromTreeAndMakeLabelNormalizationPass(en, index, checked, to_replace);
 
-		if(!replacement)
+		if(CollectLabelIndexesFromTreeAndMakeLabelNormalizationPass(en, index, checked, to_replace))
 			break;
 	}
 
 	//things have been replaced, so anything might need to be updated
 	EvaluableNodeManager::UpdateFlagsForNodeTree(en, checked);
 
-	return std::make_pair(index, true);
+	return std::make_pair(index, false);
 }
 
 void EvaluableNodeTreeManipulation::ReplaceLabelInTreeRecurse(EvaluableNode *&tree, StringInternPool::StringID label_id,
@@ -1073,14 +1055,13 @@ bool EvaluableNodeTreeManipulation::DoesTreeContainLabels(EvaluableNode *en, Eva
 	return false;
 }
 
-bool EvaluableNodeTreeManipulation::CollectLabelIndexesFromNormalTree(EvaluableNode *tree, EvaluableNode::LabelsAssocType &index, EvaluableNode::ReferenceSetType *checked)
+bool EvaluableNodeTreeManipulation::CollectLabelIndexesFromTree(EvaluableNode *tree, EvaluableNode::LabelsAssocType &index, EvaluableNode::ReferenceSetType *checked)
 {
-	if(tree == nullptr)
-		return false;
-
 	//attempt to insert, but if has already been checked and in checked list (circular code), then return false
 	if(checked != nullptr && checked->insert(tree).second == false)
 		return false;
+
+	bool collected_all_label_values = true;
 
 	size_t num_labels = tree->GetNumLabels();
 	for(size_t i = 0; i < num_labels; i++)
@@ -1097,79 +1078,44 @@ bool EvaluableNodeTreeManipulation::CollectLabelIndexesFromNormalTree(EvaluableN
 
 		//attempt to put the label in the index
 		auto [_, inserted] = index.insert(std::make_pair(label_sid, tree));
-
-		//if label already exists
-		if(!inserted)
-			return true;
+		collected_all_label_values = inserted;
 	}
 
 	if(tree->IsAssociativeArray())
 	{
 		for(auto &[_, e] : tree->GetMappedChildNodesReference())
 		{
-			if(CollectLabelIndexesFromNormalTree(e, index, checked))
-				return true;
+			if(e != nullptr)
+			{
+				if(!CollectLabelIndexesFromTree(e, index, checked))
+					collected_all_label_values = false;
+			}
 		}
 	}
 	else if(tree->IsOrderedArray())
 	{
 		for(auto &e : tree->GetOrderedChildNodesReference())
 		{
-			if(CollectLabelIndexesFromNormalTree(e, index, checked))
-				return true;
+			if(e != nullptr)
+			{
+				if(!CollectLabelIndexesFromTree(e, index, checked))
+					collected_all_label_values = false;
+			}
 		}
 	}
 
-	return false;
-}
-
-void EvaluableNodeTreeManipulation::CollectAllLabelIndexesFromTree(EvaluableNode *tree, EvaluableNode::LabelsAssocType &index, EvaluableNode::ReferenceSetType *checked)
-{
-	if(tree == nullptr)
-		return;
-
-	//attempt to insert, but if has already been checked and in checked list (circular code), then return false
-	if(checked != nullptr && checked->insert(tree).second == false)
-		return;
-
-	size_t num_labels = tree->GetNumLabels();
-	for(size_t i = 0; i < num_labels; i++)
-	{
-		auto label_sid = tree->GetLabelStringId(i);
-		const std::string &label_name = string_intern_pool.GetStringFromID(label_sid);
-
-		if(label_name.size() == 0)
-			continue;
-
-		//ignore labels that have a # in the beginning
-		if(label_name[0] == '#')
-			continue;
-
-		//attempt to put the label in the index
-		index.insert(std::make_pair(label_sid, tree));
-	}
-
-	if(tree->IsAssociativeArray())
-	{
-		for(auto &[_, e] : tree->GetMappedChildNodesReference())
-			CollectAllLabelIndexesFromTree(e, index, checked);
-	}
-	else if(tree->IsOrderedArray())
-	{
-		for(auto &e : tree->GetOrderedChildNodesReference())
-			CollectAllLabelIndexesFromTree(e, index, checked);
-	}
+	return collected_all_label_values;
 }
 
 bool EvaluableNodeTreeManipulation::CollectLabelIndexesFromTreeAndMakeLabelNormalizationPass(EvaluableNode *tree, EvaluableNode::LabelsAssocType &index,
 	EvaluableNode::ReferenceSetType &checked, EvaluableNode *&replace_tree_by)
 {
 	if(tree == nullptr)
-		return false;
+		return true;
 	
 	//attempt to insert, but if has already been checked and in checked list (circular code), then return false
 	if(checked.insert(tree).second == false)
-		return false;
+		return true;
 
 	//if this node has any labels, insert them and check for collisions
 	size_t num_labels = tree->GetNumLabels();
@@ -1198,23 +1144,21 @@ bool EvaluableNodeTreeManipulation::CollectLabelIndexesFromTreeAndMakeLabelNorma
 				replace_tree_by->SetLabelsStringIds(EvaluableNodeTreeManipulation::UnionStringIDVectors(tree->GetLabelsStringIds(), replace_tree_by->GetLabelsStringIds()));
 
 			//more than one thing points to this label
-			return true;
+			return false;
 		}
 	}
 
 	//traverse child nodes. If find a replacement, then mark as such to return, and if need immediate replacement of a node, then do so
 	// continue to iterate over all children even if have a replacement, to reduce the total number of passes needed over the tree
-	bool had_any_replacement = false;
+	bool collected_all_label_values = true;
 	if(tree->IsAssociativeArray())
 	{
 		for(auto &[_, e] : tree->GetMappedChildNodesReference())
 		{
 			EvaluableNode *replace_node_by = nullptr;
-			auto replacement = CollectLabelIndexesFromTreeAndMakeLabelNormalizationPass(e, index, checked, replace_node_by);
-
-			if(replacement)
+			if(!CollectLabelIndexesFromTreeAndMakeLabelNormalizationPass(e, index, checked, replace_node_by))
 			{
-				had_any_replacement = true;
+				collected_all_label_values = false;
 				if(replace_node_by != nullptr)
 					e = replace_node_by;
 			}
@@ -1225,18 +1169,16 @@ bool EvaluableNodeTreeManipulation::CollectLabelIndexesFromTreeAndMakeLabelNorma
 		for(auto &e : tree->GetOrderedChildNodes())
 		{
 			EvaluableNode *replace_node_by = nullptr;
-			bool replacement = CollectLabelIndexesFromTreeAndMakeLabelNormalizationPass(e, index, checked, replace_node_by);
-
-			if(replacement)
+			if(!CollectLabelIndexesFromTreeAndMakeLabelNormalizationPass(e, index, checked, replace_node_by))
 			{
-				had_any_replacement = true;
+				collected_all_label_values = false;
 				if(replace_node_by != nullptr)
 					e = replace_node_by;
 			}
 		}
 	}
 
-	return had_any_replacement;
+	return collected_all_label_values;
 }
 
 MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::CommonalityBetweenNodes(EvaluableNode *n1, EvaluableNode *n2)

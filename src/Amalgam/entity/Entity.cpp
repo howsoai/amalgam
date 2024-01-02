@@ -920,7 +920,7 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 			node_flags_need_update = true;
 
 		//need to update node flags if new_root is idempotent and accum_node isn't
-		if(previous_root->GetIsIdempotent() && (accum_code != nullptr && accum_code->GetIsIdempotent()))
+		if(previous_root->GetIsIdempotent() && (accum_code != nullptr && !accum_code->GetIsIdempotent()))
 			node_flags_need_update = true;
 	}
 

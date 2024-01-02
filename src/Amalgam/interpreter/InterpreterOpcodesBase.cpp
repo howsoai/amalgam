@@ -517,7 +517,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 		args = InterpretNode(ocn[1]);
 
 	//build execution context from parameters
-	EvaluableNodeReference call_stack = ConvertArgsToCallStack(args, evaluableNodeManager);
+	EvaluableNodeReference call_stack = ConvertArgsToCallStack(args, *evaluableNodeManager);
 	node_stack.PushEvaluableNode(call_stack);
 
 	//compute execution limits

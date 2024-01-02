@@ -398,27 +398,23 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	return retval;
 }
 
-EvaluableNodeReference Interpreter::ConvertArgsToCallStack(EvaluableNodeReference &args, EvaluableNodeManager *enm)
+EvaluableNodeReference Interpreter::ConvertArgsToCallStack(EvaluableNodeReference args, EvaluableNodeManager &enm)
 {
-	if(enm == nullptr)
-		return EvaluableNodeReference::Null();
-
 	//ensure have arguments
 	if(args == nullptr)
 	{
-		args.SetReference(enm->AllocNode(ENT_ASSOC), true);
+		args.SetReference(enm.AllocNode(ENT_ASSOC), true);
 	}
 	else if(!args->IsAssociativeArray())
 	{
-		enm->FreeNodeTreeIfPossible(args);
-		args.SetReference(enm->AllocNode(ENT_ASSOC), true);
+		args.SetReference(enm.AllocNode(ENT_ASSOC), true);
 	}
 	else if(!args.unique)
 	{
-		args.SetReference(enm->AllocNode(args));
+		args.SetReference(enm.AllocNode(args));
 	}
 	
-	EvaluableNode *call_stack = enm->AllocNode(ENT_LIST);
+	EvaluableNode *call_stack = enm.AllocNode(ENT_LIST);
 	call_stack->AppendOrderedChildNode(args);
 
 	return EvaluableNodeReference(call_stack, args.unique);

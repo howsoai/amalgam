@@ -465,17 +465,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	//attempt to get arguments
 	EvaluableNodeReference args = EvaluableNodeReference::Null();
 	if(ocn.size() > 2)
-	{
 		args = InterpretNodeForImmediateUse(ocn[2]);
-		//since it is going to be called by a different entity, ConvertArgsToCallStack will
-		// need to make a copy, and the contained entity should not treat args as unique
-		args.unique = false;
-	}
+	
 	auto node_stack = CreateInterpreterNodeStackStateSaver(args);
-
-	//if have arguments, use them
-	EvaluableNodeReference call_stack = ConvertArgsToCallStack(args, evaluableNodeManager);
-	node_stack.PushEvaluableNode(call_stack);
 
 	//current pointer to write listeners
 	std::vector<EntityWriteListener *> *cur_write_listeners = writeListeners;
@@ -496,11 +488,27 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	if(called_entity == nullptr)
 		return EvaluableNodeReference::Null();
 
+	EvaluableNodeReference call_stack;
+	if(called_entity == curEntity)
+	{
+		call_stack = ConvertArgsToCallStack(args, called_entity->evaluableNodeManager);
+		node_stack.PushEvaluableNode(call_stack);
+	}
+	else
+	{
+		//copy arguments to called_entity, free args from this entity
+		EvaluableNodeReference called_entity_args = called_entity->evaluableNodeManager.DeepAllocCopy(args);
+		node_stack.PopEvaluableNode();
+		evaluableNodeManager->FreeNodeTreeIfPossible(args);
+
+		call_stack = ConvertArgsToCallStack(called_entity_args, called_entity->evaluableNodeManager);
+	}
+
 	ExecutionCycleCount num_steps_executed = 0;
 	size_t num_nodes_allocated = 0;
 	EvaluableNodeReference retval = called_entity->Execute(num_steps_allowed, num_steps_executed,
 		num_nodes_allowed, num_nodes_allocated,
-		cur_write_listeners, printListener, call_stack, called_entity == curEntity, evaluableNodeManager,
+		cur_write_listeners, printListener, call_stack, called_entity == curEntity,
 	#ifdef MULTITHREAD_SUPPORT
 		&memoryModificationLock, &called_entity.lock,
 	#endif
@@ -512,6 +520,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 
 	string_intern_pool.DestroyStringReference(entity_label_sid);
 
+	if(called_entity != curEntity)
+	{
+		EvaluableNodeReference copied_result = evaluableNodeManager->DeepAllocCopy(retval);
+		called_entity->evaluableNodeManager.FreeNodeTreeIfPossible(retval);
+		retval = copied_result;
+	}
+
 	if(en->GetType() == ENT_CALL_ENTITY_GET_CHANGES)
 	{
 		EntityWriteListener *wl = get_changes_write_listeners.back();
@@ -519,7 +534,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 
 		EvaluableNode *list = evaluableNodeManager->AllocNode(ENT_LIST);
 		//copy the data out of the write listener
-		list->AppendOrderedChildNode(evaluableNodeManager->DeepAllocCopy(retval));
+		list->AppendOrderedChildNode(retval);
 		list->AppendOrderedChildNode(evaluableNodeManager->DeepAllocCopy(writes));
 
 		//delete the write listener and all of its memory
@@ -527,10 +542,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 
 		retval.SetReference(list);
 		retval.SetNeedCycleCheck(true);	//can't count on that due to things written in the write listener
+		retval->SetIsIdempotent(false);
 	}
-
-	//ConvertArgsToCallStack always adds an outer list that is safe to free
-	evaluableNodeManager->FreeNode(call_stack);
 
 	if(_label_profiling_enabled)
 		PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
@@ -585,11 +598,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	if(ocn.size() > 1)
 		args = InterpretNodeForImmediateUse(ocn[1]);
 
-	//need to create arguments regardless
-	EvaluableNodeReference call_stack = ConvertArgsToCallStack(args, evaluableNodeManager);
-
-	auto node_stack = CreateInterpreterNodeStackStateSaver(call_stack);
-
 	//compute execution limits
 	if(AllowUnlimitedExecutionSteps() && (!num_steps_allowed_specified || num_steps_allowed == 0))
 		num_steps_allowed = 0;
@@ -619,27 +627,34 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	//don't need the curEntity as a reference anymore -- can free the lock
 	cur_entity = EntityReadReference();
 
+	//copy arguments to container, free args from this entity
+	EvaluableNodeReference called_entity_args = container->evaluableNodeManager.DeepAllocCopy(args);
+	evaluableNodeManager->FreeNodeTreeIfPossible(args);
+
+	EvaluableNodeReference call_stack = ConvertArgsToCallStack(called_entity_args, container->evaluableNodeManager);
+
 	//add accessing_entity to arguments. If accessing_entity already specified (it shouldn't be), let garbage collection clean it up
-	args->SetMappedChildNode(ENBISI_accessing_entity, evaluableNodeManager->AllocNode(ENT_STRING, cur_entity_sid));
+	EvaluableNode *call_stack_args = call_stack->GetOrderedChildNodesReference()[0];
+	call_stack_args->SetMappedChildNode(ENBISI_accessing_entity, container->evaluableNodeManager.AllocNode(ENT_STRING, cur_entity_sid));
 
 	ExecutionCycleCount num_steps_executed = 0;
 	size_t num_nodes_allocated = 0;
 	EvaluableNodeReference retval = container->Execute(num_steps_allowed, num_steps_executed, num_nodes_allowed, num_nodes_allocated,
-		writeListeners, printListener, call_stack, false, evaluableNodeManager,
+		writeListeners, printListener, call_stack, false,
 	#ifdef MULTITHREAD_SUPPORT
 		&memoryModificationLock, &container.lock,
 	#endif
-		container_label_name, this, true);
+		container_label_name, this);
 
 	//accumulate costs of execution
 	curExecutionStep += num_steps_executed;
 	curNumExecutionNodesAllocatedToEntities += num_nodes_allocated;
 
-	//ConvertArgsToCallStack always adds an outer list that is safe to free
-	evaluableNodeManager->FreeNode(call_stack);
+	EvaluableNodeReference copied_result = evaluableNodeManager->DeepAllocCopy(retval);
+	container->evaluableNodeManager.FreeNodeTreeIfPossible(retval);
 
 	if(_label_profiling_enabled)
 		PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
 
-	return retval;
+	return copied_result;
 }

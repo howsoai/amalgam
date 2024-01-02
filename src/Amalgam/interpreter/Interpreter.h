@@ -232,7 +232,7 @@ public:
 	// Will allocate a new node appropriately if it is not
 	//Then wraps the args on a list which will form the execution context stack and returns that
 	//ensures that args is still a valid EvaluableNodeReference after the call
-	static EvaluableNodeReference ConvertArgsToCallStack(EvaluableNodeReference &args, EvaluableNodeManager *enm);
+	static EvaluableNodeReference ConvertArgsToCallStack(EvaluableNodeReference args, EvaluableNodeManager &enm);
 
 	//finds a pointer to the location of the symbol's pointer to value in the top of the context stack and returns a pointer to the location of the symbol's pointer to value,
 	// nullptr if it does not exist

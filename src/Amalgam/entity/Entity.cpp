@@ -414,13 +414,13 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 EvaluableNodeReference Entity::Execute(ExecutionCycleCount max_num_steps, ExecutionCycleCount &num_steps_executed,
 	size_t max_num_nodes, size_t &num_nodes_allocated,
 	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
-	EvaluableNode *call_stack, bool on_self, EvaluableNodeManager *destination_temp_enm,
+	EvaluableNode *call_stack, bool on_self,
 #ifdef MULTITHREAD_SUPPORT
 	Concurrency::ReadLock *locked_memory_modification_lock,
 	Concurrency::ReadLock *entity_read_lock,
 #endif
 	StringInternPool::StringID label_sid,
-	Interpreter *calling_interpreter, bool copy_call_stack)
+	Interpreter *calling_interpreter)
 {
 	if(!on_self && IsLabelPrivate(label_sid))
 		return EvaluableNodeReference(nullptr, true);
@@ -463,9 +463,6 @@ EvaluableNodeReference Entity::Execute(ExecutionCycleCount max_num_steps, Execut
 		entity_read_lock->unlock();
 #endif
 
-	if(copy_call_stack)
-		call_stack = evaluableNodeManager.DeepAllocCopy(call_stack);
-
 	EvaluableNodeReference retval = interpreter.ExecuteNode(node_to_execute, call_stack);
 	num_steps_executed = interpreter.GetNumStepsExecuted();
 
@@ -474,23 +471,6 @@ EvaluableNodeReference Entity::Execute(ExecutionCycleCount max_num_steps, Execut
 	if(locked_memory_modification_lock != nullptr)
 		locked_memory_modification_lock->lock();
 #endif
-	//make a copy in the appropriate location if possible and necessary
-	if(destination_temp_enm != nullptr)
-	{
-		//only need to make a copy if it's a different destination
-		if(destination_temp_enm != &evaluableNodeManager)
-		{
-			//make a copy and free the original
-			EvaluableNodeReference retval_copy = destination_temp_enm->DeepAllocCopy(retval);
-			evaluableNodeManager.FreeNodeTreeIfPossible(retval);
-			retval = retval_copy;
-		}
-	}
-	else //don't want anything back
-	{
-		evaluableNodeManager.FreeNodeTreeIfPossible(retval);
-		retval = EvaluableNodeReference::Null();
-	}
 
 	//find difference in entity size
 	size_t post_entity_storage = evaluableNodeManager.GetNumberOfUsedNodes() + interpreter.GetNumEntityNodesAllocated();

@@ -62,7 +62,7 @@ void EntityExternalInterface::ExecuteEntity(std::string &handle, std::string &la
 	ExecutionCycleCount max_num_steps = 0, num_steps_executed = 0;
 	size_t max_num_nodes = 0, num_nodes_allocated = 0;
 	bundle->entity->Execute(max_num_steps, num_steps_executed, max_num_nodes, num_nodes_allocated, &bundle->writeListeners, bundle->printListener,
-		nullptr, false, nullptr,
+		nullptr, false,
 	#ifdef MULTITHREAD_SUPPORT
 		nullptr, nullptr,
 	#endif
@@ -535,25 +535,25 @@ std::string EntityExternalInterface::ExecuteEntityJSON(std::string &handle, std:
 	if(bundle == nullptr)
 		return "";
 
-	EvaluableNodeManager *enm = &bundle->entity->evaluableNodeManager;
-	EvaluableNodeReference args = EvaluableNodeReference(EvaluableNodeJSONTranslation::JsonToEvaluableNode(enm, json), true);
+	EvaluableNodeManager &enm = bundle->entity->evaluableNodeManager;
+	EvaluableNodeReference args = EvaluableNodeReference(EvaluableNodeJSONTranslation::JsonToEvaluableNode(&enm, json), true);
 
 	auto call_stack = Interpreter::ConvertArgsToCallStack(args, enm);
 
 	ExecutionCycleCount max_num_steps = 0, num_steps_executed = 0;
 	size_t max_num_nodes = 0, num_nodes_allocated = 0;
 	EvaluableNodeReference returned_value = bundle->entity->Execute(max_num_steps, num_steps_executed, max_num_nodes,
-		num_nodes_allocated, &bundle->writeListeners, bundle->printListener, call_stack, false, enm,
+		num_nodes_allocated, &bundle->writeListeners, bundle->printListener, call_stack, false,
 	#ifdef MULTITHREAD_SUPPORT
 		nullptr, nullptr,
 	#endif
 		label);
 
 	//ConvertArgsToCallStack always adds an outer list that is safe to free
-	enm->FreeNode(call_stack);
+	enm.FreeNode(call_stack);
 
 	std::string result = EvaluableNodeJSONTranslation::EvaluableNodeToJson(returned_value);
-	enm->FreeNodeTreeIfPossible(returned_value);
+	enm.FreeNodeTreeIfPossible(returned_value);
 	return result;
 }
 

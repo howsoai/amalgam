@@ -614,6 +614,28 @@ protected:
 	//returns true if it is able to interpret the nodes concurrently
 	bool InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node, std::vector<EvaluableNode *> &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes);
 
+	//acquires lock, but does so in a way as to not block other threads that may be waiting on garbage collection
+	//if en_to_preserve is not null, then it will create a stack saver for it if garbage collection is invoked
+	template<typename LockType>
+	inline void LockWithoutBlockingGarbageCollection(LockType &lock, EvaluableNode *en_to_preserve = nullptr)
+	{
+		//if there is lock contention, but one is blocking for garbage collection,
+		// keep checking until it can get the lock
+		if(en_to_preserve)
+		{
+			while(!lock.try_lock())
+			{
+				auto node_stack = CreateInterpreterNodeStackStateSaver(en_to_preserve);
+				CollectGarbage();
+			}
+		}
+		else
+		{
+			while(!lock.try_lock())
+				CollectGarbage();
+		}
+	}
+
 #endif
 
 	//returns false if this or any calling interpreter is currently running on the entity specified or if there is any active concurrency

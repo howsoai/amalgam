@@ -708,17 +708,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 			//if editing a shared variable, need to see if it is in a shared region of the stack,
 			//and if so, reserve the stack and re-retrieve the symbol
 			if(callStackMutex != nullptr && destination_call_stack_index < callStackSharedAccessStartingDepth)
-			{
-				//just in case more than one instruction is trying to write at the same time,
-				// but one is blocking for garbage collection,
-				// keep checking until it can get the lock
-				while(!read_lock.try_lock())
-				{
-					//keep the value in case collect garbage
-					auto node_stack = CreateInterpreterNodeStackStateSaver(required_vars);
-					CollectGarbage();
-				}
-			}
+				LockWithoutBlockingGarbageCollection(read_lock, required_vars);
 		#endif
 
 			//check each of the required variables and put into the stack if appropriate
@@ -735,15 +725,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 						&& !write_lock.owns_lock())
 					{
 						read_lock.unlock();
-
-						//just in case more than one instruction is trying to write at the same time,
-						// but one is blocking for garbage collection,
-						// keep checking until it can get the lock
-						while(!write_lock.try_lock())
-						{
-							auto node_stack = CreateInterpreterNodeStackStateSaver(required_vars);
-							CollectGarbage();
-						}
+						LockWithoutBlockingGarbageCollection(write_lock, required_vars);
 					}
 				#endif
 
@@ -766,15 +748,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 						}
 
 						read_lock.unlock();
-
-						//just in case more than one instruction is trying to write at the same time,
-						// but one is blocking for garbage collection,
-						// keep checking until it can get the lock
-						while(!write_lock.try_lock())
-						{
-							auto node_stack = CreateInterpreterNodeStackStateSaver(required_vars);
-							CollectGarbage();
-						}
+						LockWithoutBlockingGarbageCollection(write_lock, required_vars);
 					}
 				#endif
 
@@ -880,33 +854,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			//and if so, reserve the stack and re-retrieve the symbol
 			if(callStackMutex != nullptr)
 			{
-				//just in case more than one instruction is trying to write at the same time,
-				// but one is blocking for garbage collection,
-				// keep checking until it can get the lock
-				while(!read_lock.try_lock())
-				{
-					//keep the value in case collect garbage
-					node_stack.PushEvaluableNode(variable_value_node);
-					CollectGarbage();
-					node_stack.PopEvaluableNode();
-				}
+				LockWithoutBlockingGarbageCollection(read_lock, variable_value_node);
 
 				value_destination = GetExecutionContextSymbolLocation(variable_sid, destination_call_stack_index);
 
 				if(destination_call_stack_index < callStackSharedAccessStartingDepth)
 				{
 					read_lock.unlock();
-
-					//just in case more than one instruction is trying to write at the same time,
-					// but one is blocking for garbage collection,
-					// keep checking until it can get the lock
-					while(!write_lock.try_lock())
-					{
-						//keep the value in case collect garbage
-						node_stack.PushEvaluableNode(variable_value_node);
-						CollectGarbage();
-						node_stack.PopEvaluableNode();
-					}
+					LockWithoutBlockingGarbageCollection(write_lock, variable_value_node);
 				}
 			}
 		#endif
@@ -960,31 +915,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		//and if so, reserve the stack and re-retrieve the symbol
 		if(callStackMutex != nullptr)
 		{
-			//just in case more than one instruction is trying to write at the same time,
-			// but one is blocking for garbage collection,
-			// keep checking until it can get the lock
-			while(!read_lock.try_lock())
-			{
-				//keep the value in case collect garbage
-				auto node_stack = CreateInterpreterNodeStackStateSaver(new_value);
-				CollectGarbage();
-			}
+			LockWithoutBlockingGarbageCollection(read_lock, new_value);
 
 			value_destination = GetExecutionContextSymbolLocation(variable_sid, destination_call_stack_index);
 
 			if(destination_call_stack_index < callStackSharedAccessStartingDepth)
 			{
 				read_lock.unlock();
-
-				//just in case more than one instruction is trying to write at the same time,
-				// but one is blocking for garbage collection,
-				// keep checking until it can get the lock
-				while(!write_lock.try_lock())
-				{
-					//keep the value in case collect garbage
-					auto node_stack = CreateInterpreterNodeStackStateSaver(new_value);
-					CollectGarbage();
-				}
+				LockWithoutBlockingGarbageCollection(write_lock, new_value);
 			}
 		}
 	#endif
@@ -1019,7 +957,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	else //more than 2, need to make a copy and fill in as appropriate
 	{
 		//TODO 18843: investigate the flow of retrieving the value, make one copy and modify, then set it back
-		//TODO 18843: unify lock GC loops
  
 		//get each address/value pair to replace in result
 		size_t replace_change_index = 1;
@@ -1045,31 +982,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			//and if so, reserve the stack and re-retrieve the symbol
 			if(callStackMutex != nullptr)
 			{
-				//just in case more than one instruction is trying to write at the same time,
-				// but one is blocking for garbage collection,
-				// keep checking until it can get the lock
-				while(!read_lock.try_lock())
-				{
-					node_stack.PushEvaluableNode(address_list_node);
-					CollectGarbage();
-					node_stack.PopEvaluableNode();
-				}
+				LockWithoutBlockingGarbageCollection(read_lock, address_list_node);
 
 				value_destination = GetExecutionContextSymbolLocation(variable_sid, destination_call_stack_index);
 
 				if(destination_call_stack_index < callStackSharedAccessStartingDepth)
 				{
 					read_lock.unlock();
-
-					//just in case more than one instruction is trying to write at the same time,
-					// but one is blocking for garbage collection,
-					// keep checking until it can get the lock
-					while(!write_lock.try_lock())
-					{
-						node_stack.PushEvaluableNode(address_list_node);
-						CollectGarbage();
-						node_stack.PopEvaluableNode();
-					}
+					LockWithoutBlockingGarbageCollection(write_lock, address_list_node);
 				}
 			}
 		#endif
@@ -1126,13 +1046,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 	//accessing everything in the stack, so need exclusive access
 	Concurrency::ReadLock lock(*callStackMutex, std::defer_lock);
 	if(callStackMutex != nullptr)
-	{
-		//just in case more than one instruction is trying to write at the same time,
-		// but one is blocking for garbage collection,
-		// keep checking until it can get the lock
-		while(!lock.try_lock())
-			CollectGarbage();
-	}
+		LockWithoutBlockingGarbageCollection(lock);
 #endif
 
 	//get the value(s)
@@ -1434,13 +1348,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STACK(EvaluableNode *en, b
 	//accessing everything in the stack, so need exclusive access
 	Concurrency::ReadLock lock(*callStackMutex, std::defer_lock);
 	if(callStackMutex != nullptr)
-	{
-		//just in case more than one instruction is trying to write at the same time,
-		// but one is blocking for garbage collection,
-		// keep checking until it can get the lock
-		while(!lock.try_lock())
-			CollectGarbage();
-	}
+		LockWithoutBlockingGarbageCollection(lock);
 #endif
 
 	//can create this node on the stack because will be making a copy

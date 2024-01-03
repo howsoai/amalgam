@@ -200,13 +200,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 	//accessing everything in the stack, so need exclusive access
 	Concurrency::ReadLock lock(*callStackMutex, std::defer_lock);
 	if(callStackMutex != nullptr)
-	{
-		//just in case more than one instruction is trying to write at the same time,
-		// but one is blocking for garbage collection,
-		// keep checking until it can get the lock
-		while(!lock.try_lock())
-			CollectGarbage();
-	}
+		LockWithoutBlockingGarbageCollection(lock);
 #endif
 
 	EvaluableNodeReference value(GetExecutionContextSymbol(sid), false);

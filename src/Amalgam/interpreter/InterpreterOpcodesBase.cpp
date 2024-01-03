@@ -362,7 +362,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PARALLEL(EvaluableNode *en
 								evaluableNodeManager->AllocListNode(interpreterNodeStackNodes),
 								evaluableNodeManager->AllocListNode(constructionStackNodes),
 								&constructionStackIndicesAndUniqueness,
-								concurrency_manager.GetCallStackWriteMutex());
+								concurrency_manager.GetCallStackMutex());
 
 							interpreter.evaluableNodeManager->FreeNodeTreeIfPossible(result);
 							result = EvaluableNodeReference::Null();
@@ -809,22 +809,37 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 			//retrieve the symbol
 			size_t destination_call_stack_index = 0;
+			EvaluableNode **value_destination = nullptr;
 
 		#ifdef MULTITHREAD_SUPPORT
-			Concurrency::SingleLock lock(*callStackWriteMutex, std::defer_lock);
+			Concurrency::ReadLock read_lock(*callStackMutex, std::defer_lock);
+			Concurrency::WriteLock write_lock(*callStackMutex, std::defer_lock);
 
 			//if editing a shared variable, need to see if it is in a shared region of the stack,
 			//and if so, reserve the stack and re-retrieve the symbol
-			if(callStackWriteMutex != nullptr)
+			if(callStackMutex != nullptr)
 			{
-				GetExecutionContextSymbolLocation(variable_sid, destination_call_stack_index);
+				//just in case more than one instruction is trying to write at the same time,
+				// but one is blocking for garbage collection,
+				// keep checking until it can get the lock
+				while(!read_lock.try_lock())
+				{
+					//keep the value in case collect garbage
+					node_stack.PushEvaluableNode(variable_value_node);
+					CollectGarbage();
+					node_stack.PopEvaluableNode();
+				}
+
+				value_destination = GetExecutionContextSymbolLocation(variable_sid, destination_call_stack_index);
 
 				if(destination_call_stack_index < callStackSharedAccessStartingDepth)
 				{
+					read_lock.unlock();
+
 					//just in case more than one instruction is trying to write at the same time,
 					// but one is blocking for garbage collection,
 					// keep checking until it can get the lock
-					while(!lock.try_lock())
+					while(!write_lock.try_lock())
 					{
 						//keep the value in case collect garbage
 						node_stack.PushEvaluableNode(variable_value_node);
@@ -835,7 +850,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			}
 		#endif
 
-			EvaluableNode **value_destination = GetOrCreateExecutionContextSymbolLocation(variable_sid, destination_call_stack_index);
+			//in single threaded, this will just be true
+			//in multithreaded, if variable was not found, then may need to create it
+			if(value_destination == nullptr)
+				value_destination = GetOrCreateExecutionContextSymbolLocation(variable_sid, destination_call_stack_index);
 
 			if(accum)
 			{
@@ -871,22 +889,36 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 		//retrieve the symbol
 		size_t destination_call_stack_index = 0;
+		EvaluableNode **value_destination = nullptr;
 
 	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::SingleLock lock(*callStackWriteMutex, std::defer_lock);
+		Concurrency::ReadLock read_lock(*callStackMutex, std::defer_lock);
+		Concurrency::WriteLock write_lock(*callStackMutex, std::defer_lock);
 
 		//if editing a shared variable, need to see if it is in a shared region of the stack,
 		//and if so, reserve the stack and re-retrieve the symbol
-		if(callStackWriteMutex != nullptr)
+		if(callStackMutex != nullptr)
 		{
-			GetExecutionContextSymbolLocation(variable_sid, destination_call_stack_index);
+			//just in case more than one instruction is trying to write at the same time,
+			// but one is blocking for garbage collection,
+			// keep checking until it can get the lock
+			while(!read_lock.try_lock())
+			{
+				//keep the value in case collect garbage
+				auto node_stack = CreateInterpreterNodeStackStateSaver(new_value);
+				CollectGarbage();
+			}
+
+			value_destination = GetExecutionContextSymbolLocation(variable_sid, destination_call_stack_index);
 
 			if(destination_call_stack_index < callStackSharedAccessStartingDepth)
 			{
+				read_lock.unlock();
+
 				//just in case more than one instruction is trying to write at the same time,
 				// but one is blocking for garbage collection,
 				// keep checking until it can get the lock
-				while(!lock.try_lock())
+				while(!write_lock.try_lock())
 				{
 					//keep the value in case collect garbage
 					auto node_stack = CreateInterpreterNodeStackStateSaver(new_value);
@@ -896,7 +928,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		}
 	#endif
 
-		EvaluableNode **value_destination = GetOrCreateExecutionContextSymbolLocation(variable_sid, destination_call_stack_index);
+		//in single threaded, this will just be true
+		//in multithreaded, if variable was not found, then may need to create it
+		if(value_destination == nullptr)
+			value_destination = GetOrCreateExecutionContextSymbolLocation(variable_sid, destination_call_stack_index);
 
 		if(accum)
 		{
@@ -938,22 +973,36 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 			//retrieve the symbol
 			size_t destination_call_stack_index = 0;
+			EvaluableNode **value_destination = nullptr;
 
 		#ifdef MULTITHREAD_SUPPORT
-			Concurrency::SingleLock lock(*callStackWriteMutex, std::defer_lock);
+			Concurrency::ReadLock read_lock(*callStackMutex, std::defer_lock);
+			Concurrency::WriteLock write_lock(*callStackMutex, std::defer_lock);
 
 			//if editing a shared variable, need to see if it is in a shared region of the stack,
 			//and if so, reserve the stack and re-retrieve the symbol
-			if(callStackWriteMutex != nullptr)
+			if(callStackMutex != nullptr)
 			{
-				GetExecutionContextSymbolLocation(variable_sid, destination_call_stack_index);
+				//just in case more than one instruction is trying to write at the same time,
+				// but one is blocking for garbage collection,
+				// keep checking until it can get the lock
+				while(!read_lock.try_lock())
+				{
+					node_stack.PushEvaluableNode(address_list_node);
+					CollectGarbage();
+					node_stack.PopEvaluableNode();
+				}
+
+				value_destination = GetExecutionContextSymbolLocation(variable_sid, destination_call_stack_index);
 
 				if(destination_call_stack_index < callStackSharedAccessStartingDepth)
 				{
+					read_lock.unlock();
+
 					//just in case more than one instruction is trying to write at the same time,
 					// but one is blocking for garbage collection,
 					// keep checking until it can get the lock
-					while(!lock.try_lock())
+					while(!write_lock.try_lock())
 					{
 						node_stack.PushEvaluableNode(address_list_node);
 						CollectGarbage();
@@ -963,7 +1012,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			}
 		#endif
 
-			EvaluableNode **value_destination = GetOrCreateExecutionContextSymbolLocation(variable_sid, destination_call_stack_index);
+			//in single threaded, this will just be true
+			//in multithreaded, if variable was not found, then may need to create it
+			if(value_destination == nullptr)
+				value_destination = GetOrCreateExecutionContextSymbolLocation(variable_sid, destination_call_stack_index);
 
 			//need to make a copy so that modifications can be dropped in directly
 			// this is essential as some values may be shared by other areas of memory, threads, or entities
@@ -1007,6 +1059,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 		return EvaluableNodeReference::Null();
 
 	auto to_lookup = InterpretNodeForImmediateUse(ocn[0]);
+
+#ifdef MULTITHREAD_SUPPORT
+	//accessing everything in the stack, so need exclusive access
+	Concurrency::ReadLock lock(*callStackMutex, std::defer_lock);
+	if(callStackMutex != nullptr)
+	{
+		//just in case more than one instruction is trying to write at the same time,
+		// but one is blocking for garbage collection,
+		// keep checking until it can get the lock
+		while(!lock.try_lock())
+			CollectGarbage();
+	}
+#endif
 
 	//get the value(s)
 	if(to_lookup == nullptr || IsEvaluableNodeTypeImmediate(to_lookup->GetType()))
@@ -1305,8 +1370,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STACK(EvaluableNode *en, b
 {
 #ifdef MULTITHREAD_SUPPORT
 	//accessing everything in the stack, so need exclusive access
-	Concurrency::SingleLock lock(*callStackWriteMutex, std::defer_lock);
-	if(callStackWriteMutex != nullptr)
+	Concurrency::ReadLock lock(*callStackMutex, std::defer_lock);
+	if(callStackMutex != nullptr)
 	{
 		//just in case more than one instruction is trying to write at the same time,
 		// but one is blocking for garbage collection,

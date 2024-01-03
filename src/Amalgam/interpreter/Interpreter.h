@@ -64,7 +64,7 @@ public:
 		EvaluableNode *call_stack = nullptr, EvaluableNode *interpreter_node_stack = nullptr,
 		EvaluableNode *construction_stack = nullptr,
 		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices = nullptr,
-		Concurrency::SingleMutex *call_stack_write_mutex = nullptr);
+		Concurrency::ReadWriteMutex *call_stack_write_mutex = nullptr);
 #else
 	EvaluableNodeReference ExecuteNode(EvaluableNode *en,
 		EvaluableNode *call_stack = nullptr, EvaluableNode *interpreter_node_stack = nullptr,
@@ -523,7 +523,7 @@ protected:
 							enm->AllocListNode(parentInterpreter->interpreterNodeStackNodes),
 							construction_stack,
 							&csiau,
-							GetCallStackWriteMutex());
+							GetCallStackMutex());
 
 						enm->KeepNodeReference(result);
 
@@ -576,14 +576,14 @@ protected:
 		}
 
 		//returns the relevant write mutex for the call stack
-		constexpr Concurrency::SingleMutex *GetCallStackWriteMutex()
+		constexpr Concurrency::ReadWriteMutex *GetCallStackMutex()
 		{
 			//if there is one currently in use, use it
-			if(parentInterpreter->callStackWriteMutex != nullptr)
-				return parentInterpreter->callStackWriteMutex;
+			if(parentInterpreter->callStackMutex != nullptr)
+				return parentInterpreter->callStackMutex;
 
 			//start a new one
-			return &callStackWriteMutex;
+			return &callStackMutex;
 		}
 
 		//interpreters run concurrently, the size of numTasks
@@ -593,7 +593,7 @@ protected:
 		std::vector<std::future<EvaluableNodeReference>> resultFutures;
 
 		//mutex to allow only one thread to write to a call stack symbol at once
-		Concurrency::SingleMutex callStackWriteMutex;
+		Concurrency::ReadWriteMutex callStackMutex;
 
 	protected:
 		//interpreter that is running all the concurrent interpreters
@@ -972,9 +972,7 @@ protected:
 	size_t callStackSharedAccessStartingDepth;
 
 	//pointer to a mutex for writing to shared variables below callStackSharedAccessStartingDepth
-	//note that reading does not need to be synchronized because the writes are done with regard to pointers,
-	// which are an atomic operation on every major processor in the world, and even Linux core libraries are built on this assumption
-	Concurrency::SingleMutex *callStackWriteMutex;
+	Concurrency::ReadWriteMutex *callStackMutex;
 
 	//buffer to store read locks for deep locking entities
 	Concurrency::ReadLocksBuffer entityReadLockBuffer;

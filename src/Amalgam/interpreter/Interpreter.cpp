@@ -337,7 +337,7 @@ Interpreter::Interpreter(EvaluableNodeManager *enm,
 EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	EvaluableNode *call_stack, EvaluableNode *interpreter_node_stack,
 	EvaluableNode *construction_stack, std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices,
-	Concurrency::SingleMutex *call_stack_write_mutex)
+	Concurrency::ReadWriteMutex *call_stack_write_mutex)
 #else
 EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	EvaluableNode *call_stack, EvaluableNode *interpreter_node_stack,
@@ -351,7 +351,7 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	else
 		callStackSharedAccessStartingDepth = call_stack->GetOrderedChildNodes().size();
 
-	callStackWriteMutex = call_stack_write_mutex;
+	callStackMutex = call_stack_write_mutex;
 #endif
 
 	//use specified or create new callStack
@@ -798,7 +798,7 @@ bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node
 						evaluableNodeManager->AllocListNode(interpreterNodeStackNodes),
 						evaluableNodeManager->AllocListNode(constructionStackNodes),
 						&constructionStackIndicesAndUniqueness,
-						concurrency_manager.GetCallStackWriteMutex());
+						concurrency_manager.GetCallStackMutex());
 
 					evaluableNodeManager->KeepNodeReference(result);
 					interpreter.memoryModificationLock.unlock();

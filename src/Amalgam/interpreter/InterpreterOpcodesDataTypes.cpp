@@ -196,6 +196,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 	if(sid == StringInternPool::NOT_A_STRING_ID)
 		return EvaluableNodeReference::Null();
 
+#ifdef MULTITHREAD_SUPPORT
+	//accessing everything in the stack, so need exclusive access
+	Concurrency::ReadLock lock(*callStackMutex, std::defer_lock);
+	if(callStackMutex != nullptr)
+	{
+		//just in case more than one instruction is trying to write at the same time,
+		// but one is blocking for garbage collection,
+		// keep checking until it can get the lock
+		while(!lock.try_lock())
+			CollectGarbage();
+	}
+#endif
+
 	EvaluableNodeReference value(GetExecutionContextSymbol(sid), false);
 	if(value != nullptr)
 		return value;

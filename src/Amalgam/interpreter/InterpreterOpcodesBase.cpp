@@ -705,15 +705,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 			{
 				if(need_to_interpret && cn != nullptr && !cn->GetIsIdempotent())
 				{
-					//don't need to do anything if the variable already exists
-					if(scope_mcn.find(cn_id) != end(scope_mcn))
-						continue;
-
 				#ifdef MULTITHREAD_SUPPORT
 					Concurrency::WriteLock write_lock(*callStackMutex, std::defer_lock);
 					if(callStackMutex != nullptr && GetCallStackDepth() < callStackUniqueAccessStartingDepth)
 						LockWithoutBlockingGarbageCollection(write_lock, required_vars);
 				#endif
+
+					//don't need to do anything if the variable already exists
+					if(scope_mcn.find(cn_id) != end(scope_mcn))
+						continue;
 
 					PushNewConstructionContext(required_vars, required_vars, EvaluableNodeImmediateValueWithType(cn_id), nullptr);
 					EvaluableNodeReference value = InterpretNode(cn);

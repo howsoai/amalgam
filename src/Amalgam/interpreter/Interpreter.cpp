@@ -347,9 +347,9 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 
 #ifdef MULTITHREAD_SUPPORT
 	if(call_stack == nullptr)
-		callStackSharedAccessStartingDepth = 0;
+		callStackUniqueAccessStartingDepth = 0;
 	else
-		callStackSharedAccessStartingDepth = call_stack->GetOrderedChildNodes().size();
+		callStackUniqueAccessStartingDepth = call_stack->GetOrderedChildNodes().size();
 
 	callStackMutex = call_stack_write_mutex;
 #endif

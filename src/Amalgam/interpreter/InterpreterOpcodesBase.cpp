@@ -674,7 +674,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 	EvaluableNode *scope = GetCurrentCallStackContext();
 	if(scope == nullptr)	//this shouldn't happen, but just in case it does
 		return EvaluableNodeReference::Null();
-	auto &scope_ocn = scope->GetMappedChildNodesReference();
+	auto &scope_mcn = scope->GetMappedChildNodesReference();
 
 	//work on the node that is declaring the variables
 	EvaluableNode *required_vars_node = ocn[0];
@@ -700,34 +700,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 
 		if(required_vars != nullptr && required_vars->IsAssociativeArray())
 		{
-			//TODO 18843: reacquire lock to prevent deadlock of nested declares?
-		#ifdef MULTITHREAD_SUPPORT
-			size_t destination_call_stack_index = GetCallStackDepth();
-			Concurrency::ReadLock read_lock(*callStackMutex, std::defer_lock);
-			Concurrency::WriteLock write_lock(*callStackMutex, std::defer_lock);
-
-			//if editing a shared variable, need to see if it is in a shared region of the stack,
-			//and if so, reserve the stack and re-retrieve the symbol
-			if(callStackMutex != nullptr && destination_call_stack_index < callStackSharedAccessStartingDepth)
-				LockWithoutBlockingGarbageCollection(read_lock, required_vars);
-		#endif
-
 			//check each of the required variables and put into the stack if appropriate
 			for(auto &[cn_id, cn] : required_vars->GetMappedChildNodesReference())
 			{
 				if(need_to_interpret && cn != nullptr && !cn->GetIsIdempotent())
 				{
 					//don't need to do anything if the variable already exists
-					if(scope_ocn.find(cn_id) != end(scope_ocn))
+					if(scope_mcn.find(cn_id) != end(scope_mcn))
 						continue;
 
 				#ifdef MULTITHREAD_SUPPORT
-					if(callStackMutex != nullptr && destination_call_stack_index < callStackSharedAccessStartingDepth
-						&& !write_lock.owns_lock())
-					{
-						read_lock.unlock();
+					Concurrency::WriteLock write_lock(*callStackMutex, std::defer_lock);
+					if(callStackMutex != nullptr && GetCallStackDepth() < callStackUniqueAccessStartingDepth)
 						LockWithoutBlockingGarbageCollection(write_lock, required_vars);
-					}
 				#endif
 
 					PushNewConstructionContext(required_vars, required_vars, EvaluableNodeImmediateValueWithType(cn_id), nullptr);
@@ -739,18 +724,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 				else //just insert if it doesn't exist
 				{
 				#ifdef MULTITHREAD_SUPPORT
-					if(callStackMutex != nullptr && destination_call_stack_index < callStackSharedAccessStartingDepth)
-					{
-						if(!write_lock.owns_lock())
-						{
-							//don't need to do anything if the variable already exists
-							if(scope_ocn.find(cn_id) != end(scope_ocn))
-								continue;
-						}
-
-						read_lock.unlock();
+					Concurrency::WriteLock write_lock(*callStackMutex, std::defer_lock);
+					if(callStackMutex != nullptr && GetCallStackDepth() < callStackUniqueAccessStartingDepth)
 						LockWithoutBlockingGarbageCollection(write_lock, required_vars);
-					}
 				#endif
 
 					auto [inserted, node_ptr] = scope->SetMappedChildNode(cn_id, cn, false);
@@ -859,7 +835,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 				value_destination = GetCallStackSymbolLocation(variable_sid, destination_call_stack_index);
 
-				if(destination_call_stack_index < callStackSharedAccessStartingDepth)
+				if(destination_call_stack_index < callStackUniqueAccessStartingDepth)
 				{
 					read_lock.unlock();
 					LockWithoutBlockingGarbageCollection(write_lock, variable_value_node);
@@ -880,7 +856,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 			#ifdef MULTITHREAD_SUPPORT
 				//if editing a shared variable, then need to make a copy before editing in place to prevent another thread from reading the data structure mid-edit
-				if(destination_call_stack_index < callStackSharedAccessStartingDepth)
+				if(destination_call_stack_index < callStackUniqueAccessStartingDepth)
 					value_destination_node = evaluableNodeManager->DeepAllocCopy(value_destination_node);
 			#endif
 
@@ -920,7 +896,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 			value_destination = GetCallStackSymbolLocation(variable_sid, destination_call_stack_index);
 
-			if(destination_call_stack_index < callStackSharedAccessStartingDepth)
+			if(destination_call_stack_index < callStackUniqueAccessStartingDepth)
 			{
 				read_lock.unlock();
 				LockWithoutBlockingGarbageCollection(write_lock, new_value);
@@ -941,7 +917,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 		#ifdef MULTITHREAD_SUPPORT
 			//if editing a shared variable, then need to make a copy before editing in place to prevent another thread from reading the data structure mid-edit
-			if(destination_call_stack_index < callStackSharedAccessStartingDepth)
+			if(destination_call_stack_index < callStackUniqueAccessStartingDepth)
 				value_destination_node = evaluableNodeManager->DeepAllocCopy(value_destination_node);
 		#endif
 
@@ -987,7 +963,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 				value_destination = GetCallStackSymbolLocation(variable_sid, destination_call_stack_index);
 
-				if(destination_call_stack_index < callStackSharedAccessStartingDepth)
+				if(destination_call_stack_index < callStackUniqueAccessStartingDepth)
 				{
 					read_lock.unlock();
 					LockWithoutBlockingGarbageCollection(write_lock, address_list_node);
@@ -1373,7 +1349,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ARGS(EvaluableNode *en, bo
 	{
 	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::ReadLock lock(*callStackMutex, std::defer_lock);
-		if(callStackMutex != nullptr && GetCallStackDepth() < callStackSharedAccessStartingDepth)
+		if(callStackMutex != nullptr && GetCallStackDepth() < callStackUniqueAccessStartingDepth)
 			LockWithoutBlockingGarbageCollection(lock);
 	#endif
 

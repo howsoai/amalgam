@@ -649,7 +649,7 @@ protected:
 				return false;
 
 		#ifdef MULTITHREAD_SUPPORT
-			if(cur_interpreter->callStackSharedAccessStartingDepth > 0)
+			if(cur_interpreter->callStackUniqueAccessStartingDepth > 0)
 				return false;
 		#endif
 		}
@@ -997,9 +997,9 @@ public:
 protected:
 
 	//the depth of the call stack where multiple threads may modify the same variables
-	size_t callStackSharedAccessStartingDepth;
+	size_t callStackUniqueAccessStartingDepth;
 
-	//pointer to a mutex for writing to shared variables below callStackSharedAccessStartingDepth
+	//pointer to a mutex for writing to shared variables below callStackUniqueAccessStartingDepth
 	Concurrency::ReadWriteMutex *callStackMutex;
 
 	//buffer to store read locks for deep locking entities

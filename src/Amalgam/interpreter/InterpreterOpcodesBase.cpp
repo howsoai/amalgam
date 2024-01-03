@@ -1345,7 +1345,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PREVIOUS_RESULT(EvaluableN
 EvaluableNodeReference Interpreter::InterpretNode_ENT_STACK(EvaluableNode *en, bool immediate_result)
 {
 #ifdef MULTITHREAD_SUPPORT
-	//accessing everything in the stack, so need exclusive access
 	Concurrency::ReadLock lock(*callStackMutex, std::defer_lock);
 	if(callStackMutex != nullptr)
 		LockWithoutBlockingGarbageCollection(lock);
@@ -1370,7 +1369,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ARGS(EvaluableNode *en, bo
 
 	//make sure have a large enough stack
 	if(callStackNodes->size() >= depth + 1)
-		return EvaluableNodeReference( (*callStackNodes)[callStackNodes->size() - (depth + 1)], false);		//0 index is top of stack
+	{
+	#ifdef MULTITHREAD_SUPPORT
+		Concurrency::ReadLock lock(*callStackMutex, std::defer_lock);
+		if(callStackMutex != nullptr && GetExecutionContextDepth() < callStackSharedAccessStartingDepth)
+			LockWithoutBlockingGarbageCollection(lock);
+	#endif
+
+		return EvaluableNodeReference((*callStackNodes)[callStackNodes->size() - (depth + 1)], false);		//0 index is top of stack
+	}
 	else
 		return EvaluableNodeReference::Null();
 }

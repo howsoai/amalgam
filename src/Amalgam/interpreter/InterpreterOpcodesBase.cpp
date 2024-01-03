@@ -983,7 +983,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		for(size_t index = 0; index < num_replacements; index++)
 		{
 			EvaluableNodeReference address(replacements[replacements_start_index + 2 * index], is_address_unique[index]);
-			EvaluableNode *new_value = replacements[replacements_start_index + 2 * index + 1];
+			EvaluableNodeReference new_value(replacements[replacements_start_index + 2 * index + 1], false);
 
 			//find location to store results
 			EvaluableNode **copy_destination = TraverseToDestinationFromTraversalPathList(&value_replacement, address, true);

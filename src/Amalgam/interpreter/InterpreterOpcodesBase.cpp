@@ -700,7 +700,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 
 		if(required_vars != nullptr && required_vars->IsAssociativeArray())
 		{
-			//TODO 18843: put proper locks here -- genericize code from ENT_ASSIGN/ACCUM
+			//TODO 18843: put proper locks here if there are other threads at this stack level -- genericize code from ENT_ASSIGN/ACCUM
 
 			//check each of the required variables and put into the stack if appropriate
 			for(auto &[cn_id, cn] : required_vars->GetMappedChildNodesReference())

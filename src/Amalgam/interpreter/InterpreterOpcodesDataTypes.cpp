@@ -203,7 +203,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 		LockWithoutBlockingGarbageCollection(lock);
 #endif
 
-	EvaluableNodeReference value(GetExecutionContextSymbol(sid), false);
+	EvaluableNodeReference value(GetCallStackSymbol(sid), false);
 	if(value != nullptr)
 		return value;
 

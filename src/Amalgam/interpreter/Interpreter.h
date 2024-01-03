@@ -103,7 +103,7 @@ public:
 
 	//pushes new_context on the stack; new_context should be a unique associative array,
 	// but if not, it will attempt to put an appropriate unique associative array on callStackNodes
-	__forceinline void PushNewExecutionContext(EvaluableNodeReference new_context)
+	__forceinline void PushNewCallStack(EvaluableNodeReference new_context)
 	{
 		//make sure unique assoc
 		if(EvaluableNode::IsAssociativeArray(new_context))
@@ -123,8 +123,8 @@ public:
 		callStackNodes->push_back(new_context);
 	}
 
-	//pops the top execution context off the stack
-	__forceinline void PopExecutionContext()
+	//pops the top context off the stack
+	__forceinline void PopCallStack()
 	{
 		if(callStackNodes->size() >= 1)
 			callStackNodes->pop_back();
@@ -228,22 +228,22 @@ public:
 			entry.unique = false;
 	}
 
-	//Makes sure that args is an active associative array is proper for execution context, meaning initialized assoc and a unique reference.
+	//Makes sure that args is an active associative array is proper for context, meaning initialized assoc and a unique reference.
 	// Will allocate a new node appropriately if it is not
-	//Then wraps the args on a list which will form the execution context stack and returns that
+	//Then wraps the args on a list which will form the call stack and returns that
 	//ensures that args is still a valid EvaluableNodeReference after the call
 	static EvaluableNodeReference ConvertArgsToCallStack(EvaluableNodeReference args, EvaluableNodeManager &enm);
 
 	//finds a pointer to the location of the symbol's pointer to value in the top of the context stack and returns a pointer to the location of the symbol's pointer to value,
 	// nullptr if it does not exist
 	// also sets call_stack_index to the level in the call stack that it was found
-	EvaluableNode **GetExecutionContextSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &call_stack_index);
+	EvaluableNode **GetCallStackSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &call_stack_index);
 
-	//like the other type of GetExecutionContextSymbolLocation, but returns the EvaluableNode pointer instead of a pointer-to-a-pointer
-	__forceinline EvaluableNode *GetExecutionContextSymbol(const StringInternPool::StringID symbol_sid)
+	//like the other type of GetCallStackSymbolLocation, but returns the EvaluableNode pointer instead of a pointer-to-a-pointer
+	__forceinline EvaluableNode *GetCallStackSymbol(const StringInternPool::StringID symbol_sid)
 	{
 		size_t call_stack_index = 0;
-		EvaluableNode **en_ptr = GetExecutionContextSymbolLocation(symbol_sid, call_stack_index);
+		EvaluableNode **en_ptr = GetCallStackSymbolLocation(symbol_sid, call_stack_index);
 		if(en_ptr == nullptr)
 			return nullptr;
 
@@ -252,10 +252,10 @@ public:
 
 	//finds a pointer to the location of the symbol's pointer to value or creates the symbol in the top of the context stack and returns a pointer to the location of the symbol's pointer to value
 	// also sets call_stack_index to the level in the call stack that it was found
-	EvaluableNode **GetOrCreateExecutionContextSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &call_stack_index);
+	EvaluableNode **GetOrCreateCallStackSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &call_stack_index);
 
 	//returns the current call stack index
-	__forceinline size_t GetExecutionContextDepth()
+	__forceinline size_t GetCallStackDepth()
 	{
 		return callStackNodes->size() - 1;
 	}
@@ -298,8 +298,8 @@ public:
 	//where to allocate new nodes
 	EvaluableNodeManager *evaluableNodeManager;
 
-	//returns the current execution context, nullptr if none
-	EvaluableNode *GetCurrentExecutionContext();
+	//returns the current call stack context, nullptr if none
+	EvaluableNode *GetCurrentCallStackContext();
 
 	//returns an EvaluableNodeReference for value, allocating if necessary based on if immediate result is needed
 	template<typename T>
@@ -948,31 +948,31 @@ protected:
 	//ensures that there are no reachable nodes that are deallocated
 	void ValidateEvaluableNodeIntegrity();
 
-	//Current execution step - number of nodes executed
+	//current execution step - number of nodes executed
 	ExecutionCycleCount curExecutionStep;
 
-	//Maximum number of execution steps by this Interpreter and anything called from it.  If 0, then unlimited.
-	//Will terminate execution if the value is reached
+	//maximum number of execution steps by this Interpreter and anything called from it.  If 0, then unlimited.
+	//will terminate execution if the value is reached
 	ExecutionCycleCount maxNumExecutionSteps;
 
-	//Current number of nodes created by this interpreter, to be compared to maxNumExecutionNodes
+	//current number of nodes created by this interpreter, to be compared to maxNumExecutionNodes
 	// should be the sum of curNumExecutionNodesAllocatedToEntities plus any temporary nodes
 	size_t curNumExecutionNodes;
 
 	//number of nodes allocated only to entities
 	size_t curNumExecutionNodesAllocatedToEntities;
 
-	//Maximum number of nodes allowed to be allocated by this Interpreter and anything called from it.  If 0, then unlimited.
-	//Will terminate execution if the value is reached
+	//maximum number of nodes allowed to be allocated by this Interpreter and anything called from it.  If 0, then unlimited.
+	//will terminate execution if the value is reached
 	size_t maxNumExecutionNodes;
 
-	//The current execution context; the call stack
+	//the call stack is comprised of the variable contexts
 	std::vector<EvaluableNode *> *callStackNodes;
 
-	//A stack (list) of the current nodes being executed
+	//a stack (list) of the current nodes being executed
 	std::vector<EvaluableNode *> *interpreterNodeStackNodes;
 
-	//The current construction stack, containing an interleaved array of nodes
+	//the current construction stack, containing an interleaved array of nodes
 	std::vector<EvaluableNode *> *constructionStackNodes;
 
 	//current index for each level of constructionStackNodes;

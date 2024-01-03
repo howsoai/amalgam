@@ -420,7 +420,7 @@ EvaluableNodeReference Interpreter::ConvertArgsToCallStack(EvaluableNodeReferenc
 	return EvaluableNodeReference(call_stack, args.unique);
 }
 
-EvaluableNode **Interpreter::GetExecutionContextSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &call_stack_index)
+EvaluableNode **Interpreter::GetCallStackSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &call_stack_index)
 {
 	//find symbol by walking up the stack; each layer must be an assoc
 	for(call_stack_index = callStackNodes->size(); call_stack_index > 0; call_stack_index--)
@@ -444,7 +444,7 @@ EvaluableNode **Interpreter::GetExecutionContextSymbolLocation(const StringInter
 	return nullptr;
 }
 
-EvaluableNode **Interpreter::GetOrCreateExecutionContextSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &call_stack_index)
+EvaluableNode **Interpreter::GetOrCreateCallStackSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &call_stack_index)
 {
 	//find appropriate context for symbol by walking up the stack
 	for(call_stack_index = callStackNodes->size(); call_stack_index > 0; call_stack_index--)
@@ -520,7 +520,7 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, bool immedi
 	return retval;
 }
 
-EvaluableNode *Interpreter::GetCurrentExecutionContext()
+EvaluableNode *Interpreter::GetCurrentCallStackContext()
 {
 	//this should not happen, but just in case
 	if(callStackNodes->size() < 1)

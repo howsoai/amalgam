@@ -456,18 +456,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, bo
 	if(_label_profiling_enabled && function->GetNumLabels() > 0)
 		PerformanceProfiler::StartOperation(function->GetLabel(0), evaluableNodeManager->GetNumberOfUsedNodes());
 
-	//if have an execution context of variables specified, then use it
+	//if have an call stack context of variables specified, then use it
 	EvaluableNodeReference new_context = EvaluableNodeReference::Null();
 	if(en->GetOrderedChildNodes().size() > 1)
 		new_context = InterpretNodeForImmediateUse(ocn[1]);
 
-	PushNewExecutionContext(new_context);
+	PushNewCallStack(new_context);
 	
 	//call the code
 	auto retval = InterpretNode(function, immediate_result);
 
 	//all finished with new context, but can't free it in case returning something
-	PopExecutionContext();
+	PopCallStack();
 
 	if(_label_profiling_enabled && function->GetNumLabels() > 0)
 		PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
@@ -511,12 +511,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	if(_label_profiling_enabled && function->GetNumLabels() > 0)
 		PerformanceProfiler::StartOperation(function->GetLabel(0), evaluableNodeManager->GetNumberOfUsedNodes());
 
-	//if have an execution context of variables specified, then use it
+	//if have a call stack context of variables specified, then use it
 	EvaluableNodeReference args = EvaluableNodeReference::Null();
 	if(en->GetOrderedChildNodes().size() > 1)
 		args = InterpretNode(ocn[1]);
 
-	//build execution context from parameters
+	//build call stack from parameters
 	EvaluableNodeReference call_stack = ConvertArgsToCallStack(args, *evaluableNodeManager);
 	node_stack.PushEvaluableNode(call_stack);
 
@@ -640,7 +640,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, boo
 
 	//add new context
 	auto new_context = InterpretNodeForImmediateUse(ocn[0]);
-	PushNewExecutionContext(new_context);
+	PushNewCallStack(new_context);
 
 	//run code 
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
@@ -648,7 +648,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, boo
 	{
 		if(!result.IsImmediateValue() && result != nullptr && result->GetType() == ENT_CONCLUDE)
 		{
-			PopExecutionContext();
+			PopCallStack();
 			return RemoveConcludeFromConclusion(result, evaluableNodeManager);
 		}
 
@@ -658,7 +658,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, boo
 	}
 
 	//all finished with new context, but can't free it in case returning something
-	PopExecutionContext();
+	PopCallStack();
 
 	return result;
 }
@@ -671,7 +671,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 		return EvaluableNodeReference::Null();
 
 	//get the current layer of the stack
-	EvaluableNode *scope = GetCurrentExecutionContext();
+	EvaluableNode *scope = GetCurrentCallStackContext();
 	if(scope == nullptr)	//this shouldn't happen, but just in case it does
 		return EvaluableNodeReference::Null();
 	auto &scope_ocn = scope->GetMappedChildNodesReference();
@@ -701,7 +701,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 		if(required_vars != nullptr && required_vars->IsAssociativeArray())
 		{
 		#ifdef MULTITHREAD_SUPPORT
-			size_t destination_call_stack_index = GetExecutionContextDepth();
+			size_t destination_call_stack_index = GetCallStackDepth();
 			Concurrency::ReadLock read_lock(*callStackMutex, std::defer_lock);
 			Concurrency::WriteLock write_lock(*callStackMutex, std::defer_lock);
 
@@ -856,7 +856,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			{
 				LockWithoutBlockingGarbageCollection(read_lock, variable_value_node);
 
-				value_destination = GetExecutionContextSymbolLocation(variable_sid, destination_call_stack_index);
+				value_destination = GetCallStackSymbolLocation(variable_sid, destination_call_stack_index);
 
 				if(destination_call_stack_index < callStackSharedAccessStartingDepth)
 				{
@@ -869,7 +869,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			//in single threaded, this will just be true
 			//in multithreaded, if variable was not found, then may need to create it
 			if(value_destination == nullptr)
-				value_destination = GetOrCreateExecutionContextSymbolLocation(variable_sid, destination_call_stack_index);
+				value_destination = GetOrCreateCallStackSymbolLocation(variable_sid, destination_call_stack_index);
 
 			if(accum)
 			{
@@ -917,7 +917,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		{
 			LockWithoutBlockingGarbageCollection(read_lock, new_value);
 
-			value_destination = GetExecutionContextSymbolLocation(variable_sid, destination_call_stack_index);
+			value_destination = GetCallStackSymbolLocation(variable_sid, destination_call_stack_index);
 
 			if(destination_call_stack_index < callStackSharedAccessStartingDepth)
 			{
@@ -930,7 +930,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		//in single threaded, this will just be true
 		//in multithreaded, if variable was not found, then may need to create it
 		if(value_destination == nullptr)
-			value_destination = GetOrCreateExecutionContextSymbolLocation(variable_sid, destination_call_stack_index);
+			value_destination = GetOrCreateCallStackSymbolLocation(variable_sid, destination_call_stack_index);
 
 		if(accum)
 		{
@@ -984,7 +984,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			{
 				LockWithoutBlockingGarbageCollection(read_lock, address_list_node);
 
-				value_destination = GetExecutionContextSymbolLocation(variable_sid, destination_call_stack_index);
+				value_destination = GetCallStackSymbolLocation(variable_sid, destination_call_stack_index);
 
 				if(destination_call_stack_index < callStackSharedAccessStartingDepth)
 				{
@@ -997,7 +997,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			//in single threaded, this will just be true
 			//in multithreaded, if variable was not found, then may need to create it
 			if(value_destination == nullptr)
-				value_destination = GetOrCreateExecutionContextSymbolLocation(variable_sid, destination_call_stack_index);
+				value_destination = GetOrCreateCallStackSymbolLocation(variable_sid, destination_call_stack_index);
 
 			//need to make a copy so that modifications can be dropped in directly
 			// this is essential as some values may be shared by other areas of memory, threads, or entities
@@ -1054,7 +1054,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 	{
 		StringInternPool::StringID symbol_name_sid = EvaluableNode::ToStringIDIfExists(to_lookup);
 		evaluableNodeManager->FreeNodeTreeIfPossible(to_lookup);
-		return EvaluableNodeReference(GetExecutionContextSymbol(symbol_name_sid), false);
+		return EvaluableNodeReference(GetCallStackSymbol(symbol_name_sid), false);
 	}
 	else if(to_lookup->IsAssociativeArray())
 	{
@@ -1068,7 +1068,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 			EvaluableNodeReference cnr(cn, to_lookup.unique);
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);
 
-			cn = GetExecutionContextSymbol(cn_id);
+			cn = GetCallStackSymbol(cn_id);
 		}
 
 		return EvaluableNodeReference(to_lookup, false);
@@ -1091,7 +1091,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 			EvaluableNodeReference cnr(cn, to_lookup.unique);
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);
 
-			cn = GetExecutionContextSymbol(symbol_name_sid);
+			cn = GetCallStackSymbol(symbol_name_sid);
 		}
 
 		return EvaluableNodeReference(to_lookup, false);
@@ -1372,7 +1372,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ARGS(EvaluableNode *en, bo
 	{
 	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::ReadLock lock(*callStackMutex, std::defer_lock);
-		if(callStackMutex != nullptr && GetExecutionContextDepth() < callStackSharedAccessStartingDepth)
+		if(callStackMutex != nullptr && GetCallStackDepth() < callStackSharedAccessStartingDepth)
 			LockWithoutBlockingGarbageCollection(lock);
 	#endif
 

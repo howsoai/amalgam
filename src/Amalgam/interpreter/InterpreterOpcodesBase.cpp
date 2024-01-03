@@ -928,54 +928,66 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	}
 	else //more than 2, need to make a copy and fill in as appropriate
 	{
-		//TODO 18843: investigate the flow of retrieving the value, make one copy and modify, then set it back
+		//obtain all of the edits to make the edits transactionally at once when all are collected
+		auto node_stack = CreateInterpreterNodeStackStateSaver();
+		auto &replacements = *node_stack.stack;
+		size_t replacements_start_index = node_stack.originalStackSize;
+
+		//keeps track of whether each address is unique so they can be freed if relevant
+		std::vector<bool> is_address_unique;
  
 		//get each address/value pair to replace in result
-		size_t replace_change_index = 1;
-		for(; replace_change_index + 1 < num_params; replace_change_index += 2)
+		for(size_t ocn_index = 1; ocn_index + 1 < num_params; ocn_index += 2)
 		{
 			if(AreExecutionResourcesExhausted())
 				return EvaluableNodeReference::Null();
 
-			auto new_value = InterpretNodeForImmediateUse(ocn[replace_change_index + 1]);
-			auto node_stack = CreateInterpreterNodeStackStateSaver(new_value);
+			auto address = InterpretNodeForImmediateUse(ocn[ocn_index]);
+			node_stack.PushEvaluableNode(address);
+			is_address_unique.push_back(address.unique);
+			auto new_value = InterpretNodeForImmediateUse(ocn[ocn_index + 1]);
+			node_stack.PushEvaluableNode(new_value);
+		}
+		size_t num_replacements = (num_params - 1) / 2;
 
-			EvaluableNodeReference address_list_node = InterpretNodeForImmediateUse(ocn[replace_change_index]);
+		//retrieve the symbol
+		size_t destination_call_stack_index = 0;
+		EvaluableNode **value_destination = nullptr;
 
-			//retrieve the symbol
-			size_t destination_call_stack_index = 0;
-			EvaluableNode **value_destination = nullptr;
-
-		#ifdef MULTITHREAD_SUPPORT
-			Concurrency::ReadLock read_lock(*callStackMutex, std::defer_lock);
-			Concurrency::WriteLock write_lock(*callStackMutex, std::defer_lock);
-
-			//if editing a shared variable, need to see if it is in a shared region of the stack,
-			//and if so, reserve the stack and re-retrieve the symbol
-			if(callStackMutex != nullptr)
+	#ifdef MULTITHREAD_SUPPORT
+		//if editing a shared variable, need to see if it is in a shared region of the stack,
+		//and if so, reserve the stack and reretrieve the symbol
+		Concurrency::ReadLock read_lock(*callStackMutex, std::defer_lock);
+		Concurrency::WriteLock write_lock(*callStackMutex, std::defer_lock);
+		if(callStackMutex != nullptr)
+		{
+			LockWithoutBlockingGarbageCollection(read_lock);
+			value_destination = GetCallStackSymbolLocation(variable_sid, destination_call_stack_index);
+			if(destination_call_stack_index < callStackUniqueAccessStartingDepth)
 			{
-				LockWithoutBlockingGarbageCollection(read_lock, address_list_node);
-				value_destination = GetCallStackSymbolLocation(variable_sid, destination_call_stack_index);
-				if(destination_call_stack_index < callStackUniqueAccessStartingDepth)
-				{
-					read_lock.unlock();
-					LockWithoutBlockingGarbageCollection(write_lock, address_list_node);
-				}
+				read_lock.unlock();
+				LockWithoutBlockingGarbageCollection(write_lock);
 			}
-		#endif
+		}
+	#endif
 
-			//in single threaded, this will just be true
-			//in multithreaded, if variable was not found, then may need to create it
-			if(value_destination == nullptr)
-				value_destination = GetOrCreateCallStackSymbolLocation(variable_sid, destination_call_stack_index);
+		//in single threaded, this will just be true
+		//in multithreaded, if variable was not found, then may need to create it
+		if(value_destination == nullptr)
+			value_destination = GetOrCreateCallStackSymbolLocation(variable_sid, destination_call_stack_index);
 
-			//need to make a copy so that modifications can be dropped in directly
-			// this is essential as some values may be shared by other areas of memory, threads, or entities
-			EvaluableNode *value_replacement = evaluableNodeManager->DeepAllocCopy(*value_destination);
+		//need to make a copy so that modifications can be dropped in directly
+		// this is essential as some values may be shared by other areas of memory, threads, or entities
+		EvaluableNode *value_replacement = evaluableNodeManager->DeepAllocCopy(*value_destination);
+
+		for(size_t index = 0; index < num_replacements; index++)
+		{
+			EvaluableNodeReference address(replacements[replacements_start_index + 2 * index], is_address_unique[index]);
+			EvaluableNode *new_value = replacements[replacements_start_index + 2 * index + 1];
 
 			//find location to store results
-			EvaluableNode **copy_destination = TraverseToDestinationFromTraversalPathList(&value_replacement, address_list_node, true);
-			evaluableNodeManager->FreeNodeTreeIfPossible(address_list_node);
+			EvaluableNode **copy_destination = TraverseToDestinationFromTraversalPathList(&value_replacement, address, true);
+			evaluableNodeManager->FreeNodeTreeIfPossible(address);
 			if(copy_destination == nullptr)
 				continue;
 
@@ -994,9 +1006,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			{
 				*copy_destination = new_value;
 			}
-
-			*value_destination = value_replacement;
 		}
+
+		*value_destination = value_replacement;
 	}
 
 	string_intern_pool.DestroyStringReference(variable_sid);

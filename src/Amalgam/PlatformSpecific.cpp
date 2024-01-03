@@ -321,9 +321,9 @@ bool Platform_ThreadsafeLocaltime(std::time_t time_value, std::tm &localized_tim
 
 void Platform_Sleep(std::chrono::microseconds sleep_time_usec)
 {
-	//std::this_thread lives in the thread header. Instead of including that for all builds, use different
-	// sleep functions when compiling single threaded builds w/o re-entrant locks
-#ifndef NO_REENTRANCY_LOCKS
+	//std::this_thread lives in the thread header. Instead of including that for all builds, use OS
+	// sleep functions when not in multi-threaded builds.
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE) || defined(_OPENMP)
 	std::this_thread::sleep_for(sleep_time_usec);
 #elif defined(OS_WINDOWS)
 	Sleep(std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time_usec).count());

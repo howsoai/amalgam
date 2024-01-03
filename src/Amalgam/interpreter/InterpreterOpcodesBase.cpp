@@ -9,6 +9,7 @@
 #include "EntityManipulation.h"
 #include "EntityQueries.h"
 #include "EntityWriteListener.h"
+#include "EvaluableNodeManagement.h"
 #include "EvaluableNodeTreeFunctions.h"
 #include "PerformanceProfiler.h"
 
@@ -824,17 +825,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			EvaluableNode **value_destination = nullptr;
 
 		#ifdef MULTITHREAD_SUPPORT
+			//if editing a shared variable, need to see if it is in a shared region of the stack,
+			//and if so, reserve the stack and reretrieve the symbol
 			Concurrency::ReadLock read_lock(*callStackMutex, std::defer_lock);
 			Concurrency::WriteLock write_lock(*callStackMutex, std::defer_lock);
-
-			//if editing a shared variable, need to see if it is in a shared region of the stack,
-			//and if so, reserve the stack and re-retrieve the symbol
 			if(callStackMutex != nullptr)
 			{
 				LockWithoutBlockingGarbageCollection(read_lock, variable_value_node);
-
 				value_destination = GetCallStackSymbolLocation(variable_sid, destination_call_stack_index);
-
 				if(destination_call_stack_index < callStackUniqueAccessStartingDepth)
 				{
 					read_lock.unlock();
@@ -885,17 +883,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		EvaluableNode **value_destination = nullptr;
 
 	#ifdef MULTITHREAD_SUPPORT
+		//if editing a shared variable, need to see if it is in a shared region of the stack,
+		//and if so, reserve the stack and reretrieve the symbol
 		Concurrency::ReadLock read_lock(*callStackMutex, std::defer_lock);
 		Concurrency::WriteLock write_lock(*callStackMutex, std::defer_lock);
-
-		//if editing a shared variable, need to see if it is in a shared region of the stack,
-		//and if so, reserve the stack and re-retrieve the symbol
 		if(callStackMutex != nullptr)
 		{
 			LockWithoutBlockingGarbageCollection(read_lock, new_value);
-
 			value_destination = GetCallStackSymbolLocation(variable_sid, destination_call_stack_index);
-
 			if(destination_call_stack_index < callStackUniqueAccessStartingDepth)
 			{
 				read_lock.unlock();
@@ -960,9 +955,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			if(callStackMutex != nullptr)
 			{
 				LockWithoutBlockingGarbageCollection(read_lock, address_list_node);
-
 				value_destination = GetCallStackSymbolLocation(variable_sid, destination_call_stack_index);
-
 				if(destination_call_stack_index < callStackUniqueAccessStartingDepth)
 				{
 					read_lock.unlock();

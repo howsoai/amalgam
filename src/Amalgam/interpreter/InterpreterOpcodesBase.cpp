@@ -700,6 +700,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 
 		if(required_vars != nullptr && required_vars->IsAssociativeArray())
 		{
+			//TODO 18843: reacquire lock to prevent deadlock of nested declares?
 		#ifdef MULTITHREAD_SUPPORT
 			size_t destination_call_stack_index = GetCallStackDepth();
 			Concurrency::ReadLock read_lock(*callStackMutex, std::defer_lock);

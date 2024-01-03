@@ -254,6 +254,12 @@ public:
 	// also sets call_stack_index to the level in the call stack that it was found
 	EvaluableNode **GetOrCreateExecutionContextSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &call_stack_index);
 
+	//returns the current call stack index
+	__forceinline size_t GetExecutionContextDepth()
+	{
+		return callStackNodes->size() - 1;
+	}
+
 	//creates a stack state saver for the interpreterNodeStack, which will be restored back to its previous condition when this object is destructed
 	__forceinline EvaluableNodeStackStateSaver CreateInterpreterNodeStackStateSaver()
 	{

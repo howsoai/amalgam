@@ -700,7 +700,26 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 
 		if(required_vars != nullptr && required_vars->IsAssociativeArray())
 		{
-			//TODO 18843: put proper locks here if there are other threads at this stack level -- genericize code from ENT_ASSIGN/ACCUM
+		#ifdef MULTITHREAD_SUPPORT
+			size_t destination_call_stack_index = GetExecutionContextDepth();
+			Concurrency::ReadLock read_lock(*callStackMutex, std::defer_lock);
+			Concurrency::WriteLock write_lock(*callStackMutex, std::defer_lock);
+
+			//if editing a shared variable, need to see if it is in a shared region of the stack,
+			//and if so, reserve the stack and re-retrieve the symbol
+			if(callStackMutex != nullptr && destination_call_stack_index < callStackSharedAccessStartingDepth)
+			{
+				//just in case more than one instruction is trying to write at the same time,
+				// but one is blocking for garbage collection,
+				// keep checking until it can get the lock
+				while(!read_lock.try_lock())
+				{
+					//keep the value in case collect garbage
+					auto node_stack = CreateInterpreterNodeStackStateSaver(required_vars);
+					CollectGarbage();
+				}
+			}
+		#endif
 
 			//check each of the required variables and put into the stack if appropriate
 			for(auto &[cn_id, cn] : required_vars->GetMappedChildNodesReference())
@@ -711,6 +730,23 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 					if(scope_ocn.find(cn_id) != end(scope_ocn))
 						continue;
 
+				#ifdef MULTITHREAD_SUPPORT
+					if(callStackMutex != nullptr && destination_call_stack_index < callStackSharedAccessStartingDepth
+						&& !write_lock.owns_lock())
+					{
+						read_lock.unlock();
+
+						//just in case more than one instruction is trying to write at the same time,
+						// but one is blocking for garbage collection,
+						// keep checking until it can get the lock
+						while(!write_lock.try_lock())
+						{
+							auto node_stack = CreateInterpreterNodeStackStateSaver(required_vars);
+							CollectGarbage();
+						}
+					}
+				#endif
+
 					PushNewConstructionContext(required_vars, required_vars, EvaluableNodeImmediateValueWithType(cn_id), nullptr);
 					EvaluableNodeReference value = InterpretNode(cn);
 					PopConstructionContext();
@@ -719,6 +755,29 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 				}
 				else //just insert if it doesn't exist
 				{
+				#ifdef MULTITHREAD_SUPPORT
+					if(callStackMutex != nullptr && destination_call_stack_index < callStackSharedAccessStartingDepth)
+					{
+						if(!write_lock.owns_lock())
+						{
+							//don't need to do anything if the variable already exists
+							if(scope_ocn.find(cn_id) != end(scope_ocn))
+								continue;
+						}
+
+						read_lock.unlock();
+
+						//just in case more than one instruction is trying to write at the same time,
+						// but one is blocking for garbage collection,
+						// keep checking until it can get the lock
+						while(!write_lock.try_lock())
+						{
+							auto node_stack = CreateInterpreterNodeStackStateSaver(required_vars);
+							CollectGarbage();
+						}
+					}
+				#endif
+
 					auto [inserted, node_ptr] = scope->SetMappedChildNode(cn_id, cn, false);
 					if(!inserted)
 					{
@@ -960,6 +1019,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	else //more than 2, need to make a copy and fill in as appropriate
 	{
 		//TODO 18843: investigate the flow of retrieving the value, make one copy and modify, then set it back
+		//TODO 18843: unify lock GC loops
  
 		//get each address/value pair to replace in result
 		size_t replace_change_index = 1;

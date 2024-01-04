@@ -837,6 +837,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 				{
 					read_lock.unlock();
 					LockWithoutBlockingGarbageCollection(*callStackMutex, write_lock, variable_value_node);
+					//need to reretrieve value_destination in case data structure has changed
+					value_destination = nullptr;
 				}
 			}
 		#endif
@@ -895,6 +897,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			{
 				read_lock.unlock();
 				LockWithoutBlockingGarbageCollection(*callStackMutex, write_lock, new_value);
+				//need to reretrieve value_destination in case data structure has changed
+				value_destination = nullptr;
 			}
 		}
 	#endif
@@ -967,6 +971,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			{
 				read_lock.unlock();
 				LockWithoutBlockingGarbageCollection(*callStackMutex, write_lock);
+				//need to reretrieve value_destination in case data structure has changed
+				value_destination = nullptr;
 			}
 		}
 	#endif

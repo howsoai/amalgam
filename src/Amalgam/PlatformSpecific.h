@@ -184,18 +184,18 @@ std::string Platform_RunSystemCommand(std::string command, bool &successful_run,
 //returns a path to the home directory for the platform
 std::string Platform_GetHomeDirectory();
 
-//Returns true if resource is readable given whether must_exist is set.  Returns false if not, and sets error string to the reason
+//returns true if resource is readable given whether must_exist is set.  Returns false if not, and sets error string to the reason
 bool Platform_IsResourcePathAccessible(const std::string &resource_path, bool must_exist, std::string &error);
 
 //generates cryptographically secure random data into buffer to specified length
 void Platform_GenerateSecureRandomData(void *buffer, size_t length);
 
-//tells the OS that this process wants high-precision timing
-void Platform_EnsurePreciseTiming();
-
 //performs localtime in a threadsafe manner
 // returns true on success
 bool Platform_ThreadsafeLocaltime(std::time_t time_value, std::tm &localized_time);
+
+//sleeps for given amount time
+void Platform_Sleep(std::chrono::microseconds sleep_time_usec);
 
 //returns true if a debugger is present
 bool Platform_IsDebuggerPresent();

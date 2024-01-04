@@ -337,7 +337,7 @@ Interpreter::Interpreter(EvaluableNodeManager *enm,
 EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	EvaluableNode *call_stack, EvaluableNode *interpreter_node_stack,
 	EvaluableNode *construction_stack, std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices,
-	Concurrency::SingleMutex *call_stack_write_mutex)
+	Concurrency::ReadWriteMutex *call_stack_write_mutex)
 #else
 EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	EvaluableNode *call_stack, EvaluableNode *interpreter_node_stack,
@@ -347,11 +347,11 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 
 #ifdef MULTITHREAD_SUPPORT
 	if(call_stack == nullptr)
-		callStackSharedAccessStartingDepth = 0;
+		callStackUniqueAccessStartingDepth = 0;
 	else
-		callStackSharedAccessStartingDepth = call_stack->GetOrderedChildNodes().size();
+		callStackUniqueAccessStartingDepth = call_stack->GetOrderedChildNodes().size();
 
-	callStackWriteMutex = call_stack_write_mutex;
+	callStackMutex = call_stack_write_mutex;
 #endif
 
 	//use specified or create new callStack
@@ -420,10 +420,21 @@ EvaluableNodeReference Interpreter::ConvertArgsToCallStack(EvaluableNodeReferenc
 	return EvaluableNodeReference(call_stack, args.unique);
 }
 
-EvaluableNode **Interpreter::GetExecutionContextSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &call_stack_index)
+EvaluableNode **Interpreter::GetCallStackSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &call_stack_index
+#ifdef MULTITHREAD_SUPPORT
+	, bool include_unique_access, bool include_shared_access
+#endif
+	)
 {
+#ifdef MULTITHREAD_SUPPORT
+	size_t highest_index = (include_unique_access ? callStackNodes->size() : callStackUniqueAccessStartingDepth);
+	size_t lowest_index = (include_shared_access ? 0 : callStackUniqueAccessStartingDepth);
+#else
+	size_t highest_index = callStackNodes->size();
+	size_t lowest_index = 0;
+#endif
 	//find symbol by walking up the stack; each layer must be an assoc
-	for(call_stack_index = callStackNodes->size(); call_stack_index > 0; call_stack_index--)
+	for(call_stack_index = highest_index; call_stack_index > lowest_index; call_stack_index--)
 	{
 		EvaluableNode *cur_context = (*callStackNodes)[call_stack_index - 1];
 
@@ -444,7 +455,7 @@ EvaluableNode **Interpreter::GetExecutionContextSymbolLocation(const StringInter
 	return nullptr;
 }
 
-EvaluableNode **Interpreter::GetOrCreateExecutionContextSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &call_stack_index)
+EvaluableNode **Interpreter::GetOrCreateCallStackSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &call_stack_index)
 {
 	//find appropriate context for symbol by walking up the stack
 	for(call_stack_index = callStackNodes->size(); call_stack_index > 0; call_stack_index--)
@@ -520,7 +531,7 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, bool immedi
 	return retval;
 }
 
-EvaluableNode *Interpreter::GetCurrentExecutionContext()
+EvaluableNode *Interpreter::GetCurrentCallStackContext()
 {
 	//this should not happen, but just in case
 	if(callStackNodes->size() < 1)
@@ -798,7 +809,7 @@ bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node
 						evaluableNodeManager->AllocListNode(interpreterNodeStackNodes),
 						evaluableNodeManager->AllocListNode(constructionStackNodes),
 						&constructionStackIndicesAndUniqueness,
-						concurrency_manager.GetCallStackWriteMutex());
+						concurrency_manager.GetCallStackMutex());
 
 					evaluableNodeManager->KeepNodeReference(result);
 					interpreter.memoryModificationLock.unlock();

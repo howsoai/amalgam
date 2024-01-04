@@ -196,9 +196,30 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 	if(sid == StringInternPool::NOT_A_STRING_ID)
 		return EvaluableNodeReference::Null();
 
-	EvaluableNodeReference value(GetExecutionContextSymbol(sid), false);
-	if(value != nullptr)
-		return value;
+#ifdef MULTITHREAD_SUPPORT
+	if(callStackMutex != nullptr)
+	{
+		//first check unique
+		size_t call_stack_index = 0;
+		EvaluableNode **value_ptr = GetCallStackSymbolLocation(sid, call_stack_index, true, false);
+		if(value_ptr != nullptr)
+			return EvaluableNodeReference(*value_ptr, false);
+
+		Concurrency::ReadLock lock;
+		LockWithoutBlockingGarbageCollection(*callStackMutex, lock);
+
+		//now check shared
+		value_ptr = GetCallStackSymbolLocation(sid, call_stack_index, false, true);
+		if(value_ptr != nullptr)
+			return EvaluableNodeReference(*value_ptr, false);
+	}
+	else //no multithreading currently happening
+#endif
+	{
+		EvaluableNodeReference value(GetCallStackSymbol(sid), false);
+		if(value != nullptr)
+			return value;
+	}
 
 	//if didn't find it in the stack, try it in the labels
 	EntityReadReference cur_entity_ref(curEntity);

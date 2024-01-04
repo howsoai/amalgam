@@ -494,7 +494,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, bool 
 				bool value_exists = true;
 
 				size_t call_stack_index = 0;
-				EvaluableNode **en_ptr = GetExecutionContextSymbolLocation(sid, call_stack_index);
+				EvaluableNode **en_ptr = GetCallStackSymbolLocation(sid, call_stack_index);
 				if(en_ptr != nullptr)
 				{
 					node = *en_ptr;

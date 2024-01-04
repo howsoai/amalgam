@@ -58,13 +58,19 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" S
     endif()
 
     string(APPEND CMAKE_CXX_FLAGS " -fPIC -fno-strict-aliasing -Wall -Wno-unknown-pragmas -Werror")
-    #string(APPEND CMAKE_CXX_FLAGS " -Wpedantic -Wextra -Wabi") # Additional warnings that are fairly strict, not enabled right now
+    # TODO 1599: Additional warnings that are fairly strict, not enabled right now
+    #string(APPEND CMAKE_CXX_FLAGS " -Wpedantic -Wextra -Wabi")
 
     if(IS_ARM64)
         # See for discussion why set: https://stackoverflow.com/questions/52020305/what-exactly-does-gccs-wpsabi-option-do-what-are-the-implications-of-supressi
         string(APPEND CMAKE_CXX_FLAGS " -Wno-psabi")
+
+        if(IS_ARM64_8A)
+            add_compile_definitions(NO_REENTRANCY_LOCKS)
+        endif()
     endif()
 
+    # TODO 1599: WASM support is experimental, these flags will be cleaned up and auto-generated where possible
     if(IS_WASM)
         string(APPEND CMAKE_CXX_FLAGS " -sMEMORY64=2 -Wno-experimental -DSIMDJSON_NO_PORTABILITY_WARNING")
         string(APPEND CMAKE_EXE_LINKER_FLAGS " -sINVOKE_RUN=0 -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=65536000 -sMEMORY_GROWTH_GEOMETRIC_STEP=0.50 -sMODULARIZE=1 -sEXPORT_NAME=AmalgamRuntime -sENVIRONMENT=worker -sEXPORTED_RUNTIME_METHODS=cwrap,ccall,FS,setValue,getValue -sEXPORTED_FUNCTIONS=_malloc,_free,_LoadEntity,_StoreEntity,_ExecuteEntity,_ExecuteEntityJsonPtr,_DeleteEntity,_GetEntities,_SetRandomSeed,_SetJSONToLabel,_GetJSONPtrFromLabel,_SetSBFDataStoreEnabled,_IsSBFDataStoreEnabled,_GetVersionString,_SetMaxNumThreads,_GetMaxNumThreads --preload-file /wasm/tzdata@/tzdata --preload-file /wasm/etc@/etc")
@@ -78,7 +84,8 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
     endif()
 
     string(APPEND CMAKE_CXX_FLAGS " -fPIC -fno-strict-aliasing -Wall -Wno-unknown-pragmas -Werror")
-    #string(APPEND CMAKE_CXX_FLAGS " -Wpedantic -Wextra -Wabi") # Additional warnings that are fairly strict, not enabled right now
+    # TODO 1599: Additional warnings that are fairly strict, not enabled right now
+    #string(APPEND CMAKE_CXX_FLAGS " -Wpedantic -Wextra -Wabi")
 
 else()
 

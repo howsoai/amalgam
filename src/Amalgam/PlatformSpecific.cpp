@@ -1,6 +1,8 @@
 //project headers:
 #include "PlatformSpecific.h"
 
+#include "Concurrency.h"
+
 //system headers:
 #include <algorithm>
 #include <array>
@@ -13,8 +15,8 @@
 
 #ifdef OS_WINDOWS
 
-	//disable std::wstring_convert deprecation warning: no replacement in C++17 so
-	// will require rework. 
+	// TODO 15993: disable std::wstring_convert deprecation warning: no replacement in C++17 so
+	// will require rework when we move to C++20. 
 	#pragma warning(disable: 4996)
 
 	#define NOMINMAX
@@ -307,26 +309,26 @@ void Platform_GenerateSecureRandomData(void *buffer, size_t length)
 #endif
 }
 
-void Platform_EnsurePreciseTiming()
+//performs localtime in a threadsafe manner
+bool Platform_ThreadsafeLocaltime(std::time_t time_value, std::tm &localized_time)
 {
-	//need to link to extra .libs for this
-#if defined(OS_WINDOWS) && defined(OS_WINDOWS_ACCURATE_SLEEP)
-	static bool time_resolution_initialized = false;
-	if(!time_resolution_initialized)
-	{
-		timeBeginPeriod(1);
-		time_resolution_initialized = true;
-	}
+#ifdef OS_WINDOWS
+	return localtime_s(&localized_time, &time_value) == 0; //MS swaps the values and returns the wrong thing
+#else // POSIX
+	return ::localtime_r(&time_value, &localized_time) != nullptr;
 #endif
 }
 
-//performs localtime in a threadsafe manner
-bool Platform_ThreadsafeLocaltime(std::time_t time_value, std::tm **localized_time)
+void Platform_Sleep(std::chrono::microseconds sleep_time_usec)
 {
-#ifdef OS_WINDOWS
-	return localtime_s(*localized_time, &time_value) == 0; //MS swaps the values and returns the wrong thing
-#else // POSIX
-	return ::localtime_r(&time_value, *localized_time) != nullptr;
+	//std::this_thread lives in the thread header. Instead of including that for all builds, use OS
+	// sleep functions when not in multi-threaded builds.
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE) || defined(_OPENMP)
+	std::this_thread::sleep_for(sleep_time_usec);
+#elif defined(OS_WINDOWS)
+	Sleep(std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time_usec).count());
+#else
+	usleep(sleep_time_usec.count());
 #endif
 }
 

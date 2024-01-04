@@ -197,15 +197,29 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 		return EvaluableNodeReference::Null();
 
 #ifdef MULTITHREAD_SUPPORT
-	//accessing everything in the stack, so need exclusive access
-	Concurrency::ReadLock lock;
 	if(callStackMutex != nullptr)
-		LockWithoutBlockingGarbageCollection(*callStackMutex, lock);
-#endif
+	{
+		//first check unique
+		size_t call_stack_index = 0;
+		EvaluableNode **value_ptr = GetCallStackSymbolLocation(sid, call_stack_index, true, false);
+		if(value_ptr != nullptr)
+			return EvaluableNodeReference(*value_ptr, false);
 
-	EvaluableNodeReference value(GetCallStackSymbol(sid), false);
-	if(value != nullptr)
-		return value;
+		Concurrency::ReadLock lock;
+		LockWithoutBlockingGarbageCollection(*callStackMutex, lock);
+
+		//now check shared
+		value_ptr = GetCallStackSymbolLocation(sid, call_stack_index, false, true);
+		if(value_ptr != nullptr)
+			return EvaluableNodeReference(*value_ptr, false);
+	}
+	else //no multithreading currently happening
+#endif
+	{
+		EvaluableNodeReference value(GetCallStackSymbol(sid), false);
+		if(value != nullptr)
+			return value;
+	}
 
 	//if didn't find it in the stack, try it in the labels
 	EntityReadReference cur_entity_ref(curEntity);

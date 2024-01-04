@@ -826,7 +826,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 		#ifdef MULTITHREAD_SUPPORT
 			//attempt to get location, but only attempt locations unique to this thread
-			value_destination = GetCallStackSymbolLocation(variable_sid, destination_call_stack_index, true);
+			value_destination = GetCallStackSymbolLocation(variable_sid, destination_call_stack_index, true, false);
 			//if editing a shared variable, need to see if it is in a shared region of the stack,
 			// need a write lock to the stack and variable
 			Concurrency::WriteLock write_lock;
@@ -877,7 +877,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 	#ifdef MULTITHREAD_SUPPORT
 		//attempt to get location, but only attempt locations unique to this thread
-		value_destination = GetCallStackSymbolLocation(variable_sid, destination_call_stack_index, true);
+		value_destination = GetCallStackSymbolLocation(variable_sid, destination_call_stack_index, true, false);
 		//if editing a shared variable, need to see if it is in a shared region of the stack,
 		// need a write lock to the stack and variable
 		Concurrency::WriteLock write_lock;
@@ -942,7 +942,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 	#ifdef MULTITHREAD_SUPPORT
 		//attempt to get location, but only attempt locations unique to this thread
-		value_destination = GetCallStackSymbolLocation(variable_sid, destination_call_stack_index, true);
+		value_destination = GetCallStackSymbolLocation(variable_sid, destination_call_stack_index, true, false);
 		//if editing a shared variable, need to see if it is in a shared region of the stack,
 		// need a write lock to the stack and variable
 		Concurrency::WriteLock write_lock;

@@ -423,7 +423,7 @@ EvaluableNodeReference Interpreter::ConvertArgsToCallStack(EvaluableNodeReferenc
 EvaluableNode **Interpreter::GetCallStackSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &call_stack_index
 #ifdef MULTITHREAD_SUPPORT
 	, bool include_unique_access, bool include_shared_access
-#endif,
+#endif
 	)
 {
 #ifdef MULTITHREAD_SUPPORT

@@ -825,22 +825,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			EvaluableNode **value_destination = nullptr;
 
 		#ifdef MULTITHREAD_SUPPORT
+			//attempt to get location, but only attempt locations unique to this thread
+			value_destination = GetCallStackSymbolLocation(variable_sid, destination_call_stack_index, true);
 			//if editing a shared variable, need to see if it is in a shared region of the stack,
-			//and if so, reserve the stack and reretrieve the symbol
-			Concurrency::ReadLock read_lock;
+			// need a write lock to the stack and variable
 			Concurrency::WriteLock write_lock;
-			if(callStackMutex != nullptr)
-			{
-				LockWithoutBlockingGarbageCollection(*callStackMutex, read_lock, variable_value_node);
-				value_destination = GetCallStackSymbolLocation(variable_sid, destination_call_stack_index);
-				if(destination_call_stack_index < callStackUniqueAccessStartingDepth)
-				{
-					read_lock.unlock();
-					LockWithoutBlockingGarbageCollection(*callStackMutex, write_lock, variable_value_node);
-					//need to reretrieve value_destination in case data structure has changed
-					value_destination = nullptr;
-				}
-			}
+			if(callStackMutex != nullptr && value_destination == nullptr)
+				LockWithoutBlockingGarbageCollection(*callStackMutex, write_lock, variable_value_node);
 		#endif
 
 			//in single threaded, this will just be true
@@ -885,22 +876,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		EvaluableNode **value_destination = nullptr;
 
 	#ifdef MULTITHREAD_SUPPORT
+		//attempt to get location, but only attempt locations unique to this thread
+		value_destination = GetCallStackSymbolLocation(variable_sid, destination_call_stack_index, true);
 		//if editing a shared variable, need to see if it is in a shared region of the stack,
-		//and if so, reserve the stack and reretrieve the symbol
-		Concurrency::ReadLock read_lock;
+		// need a write lock to the stack and variable
 		Concurrency::WriteLock write_lock;
-		if(callStackMutex != nullptr)
-		{
-			LockWithoutBlockingGarbageCollection(*callStackMutex, read_lock, new_value);
-			value_destination = GetCallStackSymbolLocation(variable_sid, destination_call_stack_index);
-			if(destination_call_stack_index < callStackUniqueAccessStartingDepth)
-			{
-				read_lock.unlock();
-				LockWithoutBlockingGarbageCollection(*callStackMutex, write_lock, new_value);
-				//need to reretrieve value_destination in case data structure has changed
-				value_destination = nullptr;
-			}
-		}
+		if(callStackMutex != nullptr && value_destination == nullptr)
+			LockWithoutBlockingGarbageCollection(*callStackMutex, write_lock, new_value);
 	#endif
 
 		//in single threaded, this will just be true
@@ -959,22 +941,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		EvaluableNode **value_destination = nullptr;
 
 	#ifdef MULTITHREAD_SUPPORT
+		//attempt to get location, but only attempt locations unique to this thread
+		value_destination = GetCallStackSymbolLocation(variable_sid, destination_call_stack_index, true);
 		//if editing a shared variable, need to see if it is in a shared region of the stack,
-		//and if so, reserve the stack and reretrieve the symbol
-		Concurrency::ReadLock read_lock;
+		// need a write lock to the stack and variable
 		Concurrency::WriteLock write_lock;
-		if(callStackMutex != nullptr)
-		{
-			LockWithoutBlockingGarbageCollection(*callStackMutex, read_lock);
-			value_destination = GetCallStackSymbolLocation(variable_sid, destination_call_stack_index);
-			if(destination_call_stack_index < callStackUniqueAccessStartingDepth)
-			{
-				read_lock.unlock();
-				LockWithoutBlockingGarbageCollection(*callStackMutex, write_lock);
-				//need to reretrieve value_destination in case data structure has changed
-				value_destination = nullptr;
-			}
-		}
+		if(callStackMutex != nullptr && value_destination == nullptr)
+			LockWithoutBlockingGarbageCollection(*callStackMutex, write_lock);
 	#endif
 
 		//in single threaded, this will just be true

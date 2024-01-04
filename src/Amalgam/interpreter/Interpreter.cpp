@@ -420,10 +420,12 @@ EvaluableNodeReference Interpreter::ConvertArgsToCallStack(EvaluableNodeReferenc
 	return EvaluableNodeReference(call_stack, args.unique);
 }
 
-EvaluableNode **Interpreter::GetCallStackSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &call_stack_index)
+EvaluableNode **Interpreter::GetCallStackSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &call_stack_index,
+	bool up_to_call_stack_unique_access_starting_depth)
 {
+	size_t lowest_index = (up_to_call_stack_unique_access_starting_depth ? callStackUniqueAccessStartingDepth : 0);
 	//find symbol by walking up the stack; each layer must be an assoc
-	for(call_stack_index = callStackNodes->size(); call_stack_index > 0; call_stack_index--)
+	for(call_stack_index = callStackNodes->size(); call_stack_index > lowest_index; call_stack_index--)
 	{
 		EvaluableNode *cur_context = (*callStackNodes)[call_stack_index - 1];
 

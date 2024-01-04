@@ -237,7 +237,9 @@ public:
 	//finds a pointer to the location of the symbol's pointer to value in the top of the context stack and returns a pointer to the location of the symbol's pointer to value,
 	// nullptr if it does not exist
 	// also sets call_stack_index to the level in the call stack that it was found
-	EvaluableNode **GetCallStackSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &call_stack_index);
+	//if up_to_call_stack_unique_access_starting_depth is true, then it will stop at callStackUniqueAccessStartingDepth
+	EvaluableNode **GetCallStackSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &call_stack_index,
+		bool up_to_call_stack_unique_access_starting_depth = false);
 
 	//like the other type of GetCallStackSymbolLocation, but returns the EvaluableNode pointer instead of a pointer-to-a-pointer
 	__forceinline EvaluableNode *GetCallStackSymbol(const StringInternPool::StringID symbol_sid)

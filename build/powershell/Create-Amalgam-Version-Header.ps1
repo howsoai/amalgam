@@ -32,6 +32,8 @@ function Create-Amalgam-Version-Header {
     # Write new header:
     $HeaderFileOut = "$PSScriptRoot/../../src/Amalgam/AmalgamVersion.h"
     Set-Content -Path $HeaderFileOut -Value $NewHeaderContents
+
+    Write-Host "Done writing new version header: '$HeaderFileOut'"
 }
 
 Create-Amalgam-Version-Header

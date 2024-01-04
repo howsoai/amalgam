@@ -146,8 +146,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 			sleep_time_usec = std::chrono::microseconds(static_cast<size_t>(1000000.0 * sleep_time_sec));
 		}
 
-		Platform_EnsurePreciseTiming();
-		std::this_thread::sleep_for(sleep_time_usec);
+		Platform_Sleep(sleep_time_usec);
 	}
 	else if(command == "version")
 	{

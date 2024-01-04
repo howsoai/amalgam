@@ -707,9 +707,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 				if(need_to_interpret && cn != nullptr && !cn->GetIsIdempotent())
 				{
 				#ifdef MULTITHREAD_SUPPORT
-					Concurrency::WriteLock write_lock(*callStackMutex, std::defer_lock);
+					Concurrency::WriteLock write_lock;
 					if(callStackMutex != nullptr && GetCallStackDepth() < callStackUniqueAccessStartingDepth)
-						LockWithoutBlockingGarbageCollection(write_lock, required_vars);
+						LockWithoutBlockingGarbageCollection(*callStackMutex, write_lock, required_vars);
 				#endif
 
 					//don't need to do anything if the variable already exists
@@ -725,9 +725,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 				else //just insert if it doesn't exist
 				{
 				#ifdef MULTITHREAD_SUPPORT
-					Concurrency::WriteLock write_lock(*callStackMutex, std::defer_lock);
+					Concurrency::WriteLock write_lock;
 					if(callStackMutex != nullptr && GetCallStackDepth() < callStackUniqueAccessStartingDepth)
-						LockWithoutBlockingGarbageCollection(write_lock, required_vars);
+						LockWithoutBlockingGarbageCollection(*callStackMutex, write_lock, required_vars);
 				#endif
 
 					auto [inserted, node_ptr] = scope->SetMappedChildNode(cn_id, cn, false);
@@ -827,16 +827,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		#ifdef MULTITHREAD_SUPPORT
 			//if editing a shared variable, need to see if it is in a shared region of the stack,
 			//and if so, reserve the stack and reretrieve the symbol
-			Concurrency::ReadLock read_lock(*callStackMutex, std::defer_lock);
-			Concurrency::WriteLock write_lock(*callStackMutex, std::defer_lock);
+			Concurrency::ReadLock read_lock;
+			Concurrency::WriteLock write_lock;
 			if(callStackMutex != nullptr)
 			{
-				LockWithoutBlockingGarbageCollection(read_lock, variable_value_node);
+				LockWithoutBlockingGarbageCollection(*callStackMutex, read_lock, variable_value_node);
 				value_destination = GetCallStackSymbolLocation(variable_sid, destination_call_stack_index);
 				if(destination_call_stack_index < callStackUniqueAccessStartingDepth)
 				{
 					read_lock.unlock();
-					LockWithoutBlockingGarbageCollection(write_lock, variable_value_node);
+					LockWithoutBlockingGarbageCollection(*callStackMutex, write_lock, variable_value_node);
 				}
 			}
 		#endif
@@ -885,16 +885,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	#ifdef MULTITHREAD_SUPPORT
 		//if editing a shared variable, need to see if it is in a shared region of the stack,
 		//and if so, reserve the stack and reretrieve the symbol
-		Concurrency::ReadLock read_lock(*callStackMutex, std::defer_lock);
-		Concurrency::WriteLock write_lock(*callStackMutex, std::defer_lock);
+		Concurrency::ReadLock read_lock;
+		Concurrency::WriteLock write_lock;
 		if(callStackMutex != nullptr)
 		{
-			LockWithoutBlockingGarbageCollection(read_lock, new_value);
+			LockWithoutBlockingGarbageCollection(*callStackMutex, read_lock, new_value);
 			value_destination = GetCallStackSymbolLocation(variable_sid, destination_call_stack_index);
 			if(destination_call_stack_index < callStackUniqueAccessStartingDepth)
 			{
 				read_lock.unlock();
-				LockWithoutBlockingGarbageCollection(write_lock, new_value);
+				LockWithoutBlockingGarbageCollection(*callStackMutex, write_lock, new_value);
 			}
 		}
 	#endif
@@ -957,16 +957,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	#ifdef MULTITHREAD_SUPPORT
 		//if editing a shared variable, need to see if it is in a shared region of the stack,
 		//and if so, reserve the stack and reretrieve the symbol
-		Concurrency::ReadLock read_lock(*callStackMutex, std::defer_lock);
-		Concurrency::WriteLock write_lock(*callStackMutex, std::defer_lock);
+		Concurrency::ReadLock read_lock;
+		Concurrency::WriteLock write_lock;
 		if(callStackMutex != nullptr)
 		{
-			LockWithoutBlockingGarbageCollection(read_lock);
+			LockWithoutBlockingGarbageCollection(*callStackMutex, read_lock);
 			value_destination = GetCallStackSymbolLocation(variable_sid, destination_call_stack_index);
 			if(destination_call_stack_index < callStackUniqueAccessStartingDepth)
 			{
 				read_lock.unlock();
-				LockWithoutBlockingGarbageCollection(write_lock);
+				LockWithoutBlockingGarbageCollection(*callStackMutex, write_lock);
 			}
 		}
 	#endif
@@ -1026,9 +1026,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 
 #ifdef MULTITHREAD_SUPPORT
 	//accessing everything in the stack, so need exclusive access
-	Concurrency::ReadLock lock(*callStackMutex, std::defer_lock);
+	Concurrency::ReadLock lock;
 	if(callStackMutex != nullptr)
-		LockWithoutBlockingGarbageCollection(lock);
+		LockWithoutBlockingGarbageCollection(*callStackMutex, lock);
 #endif
 
 	//get the value(s)
@@ -1327,9 +1327,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PREVIOUS_RESULT(EvaluableN
 EvaluableNodeReference Interpreter::InterpretNode_ENT_STACK(EvaluableNode *en, bool immediate_result)
 {
 #ifdef MULTITHREAD_SUPPORT
-	Concurrency::ReadLock lock(*callStackMutex, std::defer_lock);
+	Concurrency::ReadLock lock;
 	if(callStackMutex != nullptr)
-		LockWithoutBlockingGarbageCollection(lock);
+		LockWithoutBlockingGarbageCollection(*callStackMutex, lock);
 #endif
 
 	//can create this node on the stack because will be making a copy
@@ -1353,9 +1353,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ARGS(EvaluableNode *en, bo
 	if(callStackNodes->size() >= depth + 1)
 	{
 	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::ReadLock lock(*callStackMutex, std::defer_lock);
+		Concurrency::ReadLock lock;
 		if(callStackMutex != nullptr && GetCallStackDepth() < callStackUniqueAccessStartingDepth)
-			LockWithoutBlockingGarbageCollection(lock);
+			LockWithoutBlockingGarbageCollection(*callStackMutex, lock);
 	#endif
 
 		return EvaluableNodeReference((*callStackNodes)[callStackNodes->size() - (depth + 1)], false);		//0 index is top of stack

@@ -198,9 +198,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 
 #ifdef MULTITHREAD_SUPPORT
 	//accessing everything in the stack, so need exclusive access
-	Concurrency::ReadLock lock(*callStackMutex, std::defer_lock);
+	Concurrency::ReadLock lock;
 	if(callStackMutex != nullptr)
-		LockWithoutBlockingGarbageCollection(lock);
+		LockWithoutBlockingGarbageCollection(*callStackMutex, lock);
 #endif
 
 	EvaluableNodeReference value(GetCallStackSymbol(sid), false);

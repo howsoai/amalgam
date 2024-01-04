@@ -685,7 +685,7 @@ public:
 	{
 	#ifdef MULTITHREAD_SUPPORT
 		//this is much more expensive with multithreading, so only do when useful
-		if((executionCyclesSinceLastGarbageCollection & 511) != 0)
+		if((executionCyclesSinceLastGarbageCollection & 16383) != 0)
 			return;
 
 		//be opportunistic and only attempt to reclaim if it can grab a write lock

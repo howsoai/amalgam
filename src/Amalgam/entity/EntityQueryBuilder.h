@@ -133,6 +133,8 @@ namespace EntityQueryBuilder
 
 								if(ocn_size > 0)
 									dist_params.featureParams[i].typeAttributes.maxCyclicDifference = EvaluableNode::ToNumber(ocn[0]);
+								else //can't be cyclic without a range
+									dist_params.featureParams[i].featureType = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC;
 
 								if(ocn_size > 1)
 									dist_params.featureParams[i].computeSurprisal = EvaluableNode::IsTrue(ocn[1]);

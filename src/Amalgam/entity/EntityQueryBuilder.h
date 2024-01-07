@@ -105,6 +105,10 @@ namespace EntityQueryBuilder
 					//get attributes based on feature type
 					switch(dist_params.featureParams[i].featureType)
 					{
+
+					//TODO 18891: add computeSurprisal to nominals
+					//TODO 18891: add tests for computeSurprisal
+					//TODO 18891: update language documentation for computeSurprisal parameter changes
 					case GeneralizedDistance::FDT_NOMINAL_NUMERIC:
 					case GeneralizedDistance::FDT_NOMINAL_STRING:
 					case GeneralizedDistance::FDT_NOMINAL_CODE:
@@ -112,11 +116,36 @@ namespace EntityQueryBuilder
 							dist_params.featureParams[i].typeAttributes.nominalCount = EvaluableNode::ToNumber(en, 1);
 						break;
 
+					case GeneralizedDistance::FDT_CONTINUOUS_NUMERIC:
+					case GeneralizedDistance::FDT_CONTINUOUS_STRING:
+					case GeneralizedDistance::FDT_CONTINUOUS_CODE:
+						if(found && !EvaluableNode::IsNull(en))
+							dist_params.featureParams[i].computeSurprisal = EvaluableNode::IsTrue(en);
+						break;
+
 					case GeneralizedDistance::FDT_CONTINUOUS_NUMERIC_CYCLIC:
 						if(found && !EvaluableNode::IsNull(en))
-							dist_params.featureParams[i].typeAttributes.maxCyclicDifference = EvaluableNode::ToNumber(en);
+						{
+							if(en->EvaluableNode::IsOrderedArray())
+							{
+								auto &ocn = en->GetOrderedChildNodesReference();
+								size_t ocn_size = ocn.size();
+
+								if(ocn_size > 0)
+									dist_params.featureParams[i].typeAttributes.maxCyclicDifference = EvaluableNode::ToNumber(ocn[0]);
+
+								if(ocn_size > 1)
+									dist_params.featureParams[i].computeSurprisal = EvaluableNode::IsTrue(ocn[1]);
+							}
+							else //treat as singular value
+							{
+								dist_params.featureParams[i].typeAttributes.maxCyclicDifference = EvaluableNode::ToNumber(en);
+							}
+						}
 						else //can't be cyclic without a range
+						{
 							dist_params.featureParams[i].featureType = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC;
+						}
 						break;
 
 					default:

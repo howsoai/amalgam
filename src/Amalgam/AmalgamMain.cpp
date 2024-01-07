@@ -86,6 +86,8 @@ Options:
 	return usage.str();
 }
 
+#include "GeneralizedDistance.h"
+
 //main
 PLATFORM_MAIN_CONSOLE
 {

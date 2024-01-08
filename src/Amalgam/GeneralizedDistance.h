@@ -194,17 +194,6 @@ public:
 		return s_two_over_sqrt_pi * deviation * FastExp(-term * term) - diff * std::erfc(term); //2*sigma*(e^(-1*(diff^2)/((2*simga)^2)))/sqrt(pi) - diff*erfc(diff/(2*sigma))
 	}
 
-	//surprisal in nats of each of the different distributions given the appropriate uncertainty
-	//this is equal to the nats of entropy of the distribution plus the entropy of the uncertainty
-	//in the case of Laplace, the Laplace distribution is one nat, and the mean absolute deviation is half of that,
-	//therefore the value is 1.5
-	//these values can be computed via ComputeDeviationPartLaplace(0.0, 1) for each of the corresponding methods
-	//deviations other than 1 can be used, but then the result should be divided by that deviation, yielding the same value
-	static constexpr double s_surprisal_of_laplace = 1.5;
-	static constexpr double s_surprisal_of_laplace_approx = 1.500314205;
-	static constexpr double s_surprisal_of_gaussian = 1.1283791670955126;
-	static constexpr double s_surprisal_of_gaussian_approx = 1.128615528679644;
-
 	//computes the Lukaszyk–Karmowski metric deviation component for the minkowski distance equation given the feature difference and feature deviation
 	//assumes deviation is nonnegative
 	__forceinline double ComputeDeviationPart(const double diff, const double deviation, bool high_accuracy)
@@ -224,17 +213,15 @@ public:
 	}
 
 	//converts a difference with deviation to surprisal, and removes the appropriate assumption of uncertainty
-	//for Laplace, the Laplace distribution has 1 nat worth of information, but additionally, there is a 50/50 chance that the
-	//difference is within the mean absolute error, yielding an overcounting of an additional 1/2 nat.  So the total reduction is 1.5 nats
+	//for Laplace, the Laplace distribution has 1 nat worth of information
+	//for Gaussian, the half-normal distribution has 1/2 * log_2(2 * pi * e * var) - 1 bits of information, times ln(2) to get 0.725791352644727
 	__forceinline double ComputeSurprisalFromDifferenceWithDeviation(const double difference_with_deviation, const double deviation, bool high_accuracy)
 	{
-	#ifdef DISTANCE_USE_LAPLACE_LK_METRIC
-		double base_surprisal = (high_accuracy ? s_surprisal_of_laplace : s_surprisal_of_laplace_approx);
+	#ifdef 
+		return (difference_with_deviation / deviation) - 1.0;
 	#else
-		double base_surprisal = (high_accuracy ? s_surprisal_of_gaussian : s_surprisal_of_gaussian_approx);
+		return (difference_with_deviation / deviation) - 0.725791352644727;
 	#endif
-
-		return (difference_with_deviation / deviation) - base_surprisal;
 	}
 
 	//constrains the difference to the cycle length for cyclic distances

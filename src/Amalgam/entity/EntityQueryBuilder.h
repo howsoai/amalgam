@@ -108,7 +108,6 @@ namespace EntityQueryBuilder
 
 					//TODO 18891: add computeSurprisal to nominals in GeneralizedDistance.h
 					//TODO 18891: add tests for computeSurprisal
-					//TODO 18891: investigate subtracting 1 nat from continuous instead of 1.5
 					case GeneralizedDistance::FDT_NOMINAL_NUMERIC:
 					case GeneralizedDistance::FDT_NOMINAL_STRING:
 					case GeneralizedDistance::FDT_NOMINAL_CODE:

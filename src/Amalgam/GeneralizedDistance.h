@@ -399,7 +399,7 @@ public:
 			return fastPowInverseP.FastPow(d);
 	}
 
-	//computes the exponentiation of d to p given precision being from DistanceTerms
+	//computes the exponentiation of d to p
 	__forceinline double ExponentiateDifferenceTerm(double d, bool high_accuracy)
 	{
 		if(pValue == 1)

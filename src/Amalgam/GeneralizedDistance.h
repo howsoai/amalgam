@@ -531,8 +531,6 @@ public:
 		return ContextuallyExponentiateAndWeightDifferenceTerm(dist_term, index, high_accuracy);
 	}
 
-	//TODO 18891: unify the two methods above into nominal base method and nominal method
-
 	//returns the precomputed distance term for a nominal when two universally symmetric nominals are equal
 	__forceinline double ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(size_t index, bool high_accuracy)
 	{
@@ -704,12 +702,28 @@ public:
 	__forceinline double ComputeDistanceTermMatchOnNull(size_t index, double deviation, bool high_accuracy)
 	{
 		double diff = 0;
-		if(!IsFeatureNominal(index))
-			diff = ComputeDifferenceTermBaseContinuous(deviation, index, high_accuracy);
+		if(IsFeatureNominal(index))
+		{
+			if(featureParams[index].computeSurprisal)
+			{
+				//need to have at least two classes in existence
+				double nominal_count = std::max(featureParams[index].typeAttributes.nominalCount, 2.0);
+				double prob_max_entropy_match = 1 / nominal_count;
+
+				//find probability that the correct class was selected
+				//can't go below base probability of guessing
+				double prob_class_given_match = std::max(1 - deviation, prob_max_entropy_match);
+
+				diff = -std::log(prob_class_given_match);
+			}
+			else
+			{
+				diff = deviation;
+			}
+		}
 		else
 		{
-			diff = deviation;
-			//TODO 18891: handle surprisal nominals, especially in case surprisal; need nominal base method?
+			diff = ComputeDifferenceTermBaseContinuous(deviation, index, high_accuracy);
 		}
 
 		return ContextuallyExponentiateAndWeightDifferenceTerm(diff, index, high_accuracy);

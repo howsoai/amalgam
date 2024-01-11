@@ -160,9 +160,9 @@ public:
 		{
 			double difference = value - interned_values->at(i);
 			if(compute_accurate)
-				feature_params.internDistanceTerms[i].SetValue(ComputeDistanceTermNonNominalNonNullRegular(difference, index, true), true);
+				feature_params.internDistanceTerms[i].SetValue(ComputeDistanceTermContinuousNonNullRegular(difference, index, true), true);
 			if(compute_approximate)
-				feature_params.internDistanceTerms[i].SetValue(ComputeDistanceTermNonNominalNonNullRegular(difference, index, false), false);
+				feature_params.internDistanceTerms[i].SetValue(ComputeDistanceTermContinuousNonNullRegular(difference, index, false), false);
 		}
 	}
 
@@ -562,7 +562,7 @@ public:
 	}
 
 	//computes the inner term for a non-nominal with an exact match of values
-	__forceinline double ComputeDistanceTermNonNominalExactMatch(size_t index, bool high_accuracy)
+	__forceinline double ComputeDistanceTermContinuousExactMatch(size_t index, bool high_accuracy)
 	{
 		if(!DoesFeatureHaveDeviation(index) || featureParams[index].computeSurprisal)
 			return 0.0;
@@ -575,7 +575,7 @@ public:
 	}
 
 	//computes the base of the difference between two values non-nominal (e.g., continuous)
-	__forceinline double ComputeDifferenceTermBaseNonNominal(double diff, size_t index, bool high_accuracy)
+	__forceinline double ComputeDifferenceTermBaseContinuous(double diff, size_t index, bool high_accuracy)
 	{
 		//compute absolute value
 		diff = std::abs(diff);
@@ -596,7 +596,7 @@ public:
 	}
 
 	//computes the base of the difference between two values non-nominal (e.g., continuous) that isn't cyclic
-	__forceinline double ComputeDifferenceTermBaseNonNominalNonCyclic(double diff, size_t index, bool high_accuracy)
+	__forceinline double ComputeDifferenceTermBaseContinuousNonCyclic(double diff, size_t index, bool high_accuracy)
 	{
 		//compute absolute value
 		diff = std::abs(diff);
@@ -614,9 +614,9 @@ public:
 
 	//computes the distance term for a non-nominal (e.g., continuous) for p non-zero and non-infinite with no nulls
 	// diff can be negative
-	__forceinline double ComputeDistanceTermNonNominalNonNullRegular(double diff, size_t index, bool high_accuracy)
+	__forceinline double ComputeDistanceTermContinuousNonNullRegular(double diff, size_t index, bool high_accuracy)
 	{
-		diff = ComputeDifferenceTermBaseNonNominal(diff, index, high_accuracy);
+		diff = ComputeDifferenceTermBaseContinuous(diff, index, high_accuracy);
 
 		//exponentiate and return with weight
 		return ExponentiateDifferenceTerm(diff, high_accuracy) * featureParams[index].weight;
@@ -624,9 +624,9 @@ public:
 
 	//computes the distance term for a non-nominal (e.g., continuous) for p non-zero and non-infinite with max of one null
 	// diff can be negative
-	__forceinline double ComputeDistanceTermNonNominalOneNonNullRegular(double diff, size_t index, bool high_accuracy)
+	__forceinline double ComputeDistanceTermContinuousOneNonNullRegular(double diff, size_t index, bool high_accuracy)
 	{
-		diff = ComputeDifferenceTermBaseNonNominal(diff, index, high_accuracy);
+		diff = ComputeDifferenceTermBaseContinuous(diff, index, high_accuracy);
 
 		//exponentiate and return with weight
 		return ExponentiateDifferenceTerm(diff, high_accuracy) * featureParams[index].weight;
@@ -634,9 +634,9 @@ public:
 
 	//computes the distance term for a non-nominal (e.g., continuous) for p non-zero and non-infinite that isn't cyclic with no nulls
 	// diff can be negative
-	__forceinline double ComputeDistanceTermNonNominalNonCyclicNonNullRegular(double diff, size_t index, bool high_accuracy)
+	__forceinline double ComputeDistanceTermContinuousNonCyclicNonNullRegular(double diff, size_t index, bool high_accuracy)
 	{
-		diff = ComputeDifferenceTermBaseNonNominalNonCyclic(diff, index, high_accuracy);
+		diff = ComputeDifferenceTermBaseContinuousNonCyclic(diff, index, high_accuracy);
 
 		//exponentiate and return with weight
 		return ExponentiateDifferenceTerm(diff, high_accuracy) * featureParams[index].weight;
@@ -644,12 +644,12 @@ public:
 
 	//computes the distance term for a non-nominal (e.g., continuous) for p non-zero and non-infinite that isn't cyclic with max of one null
 	// diff can be negative
-	__forceinline double ComputeDistanceTermNonNominalNonCyclicOneNonNullRegular(double diff, size_t index, bool high_accuracy)
+	__forceinline double ComputeDistanceTermContinuousNonCyclicOneNonNullRegular(double diff, size_t index, bool high_accuracy)
 	{
 		if(FastIsNaN(diff))
 			return ComputeDistanceTermKnownToUnknown(index, high_accuracy);
 
-		diff = ComputeDifferenceTermBaseNonNominalNonCyclic(diff, index, high_accuracy);
+		diff = ComputeDifferenceTermBaseContinuousNonCyclic(diff, index, high_accuracy);
 
 		//exponentiate and return with weight
 		return ExponentiateDifferenceTerm(diff, high_accuracy) * featureParams[index].weight;
@@ -668,7 +668,7 @@ public:
 			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index, high_accuracy)
 			: ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index, high_accuracy);
 
-		diff = ComputeDifferenceTermBaseNonNominal(diff, index, high_accuracy);
+		diff = ComputeDifferenceTermBaseContinuous(diff, index, high_accuracy);
 
 		if(high_accuracy)
 			return std::pow(diff, featureParams[index].weight);
@@ -689,7 +689,7 @@ public:
 			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index, high_accuracy)
 				: ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index, high_accuracy);
 
-		diff = ComputeDifferenceTermBaseNonNominal(diff, index, high_accuracy);
+		diff = ComputeDifferenceTermBaseContinuous(diff, index, high_accuracy);
 
 		return diff * featureParams[index].weight;
 	}
@@ -698,7 +698,7 @@ public:
 	__forceinline double ComputeDistanceTermNonNull(double diff, size_t index, bool high_accuracy)
 	{
 		if(!IsFeatureNominal(index))
-			diff = ComputeDifferenceTermBaseNonNominal(diff, index, high_accuracy);
+			diff = ComputeDifferenceTermBaseContinuous(diff, index, high_accuracy);
 
 		if(pValue == 0.0)
 		{
@@ -727,7 +727,7 @@ public:
 			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index, high_accuracy)
 				: ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index, high_accuracy);
 
-		return ComputeDistanceTermNonNominalNonNullRegular(diff, index, high_accuracy);
+		return ComputeDistanceTermContinuousNonNullRegular(diff, index, high_accuracy);
 	}
 
 	//returns the distance term for the either one or two unknown values

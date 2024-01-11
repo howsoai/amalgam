@@ -105,8 +105,6 @@ namespace EntityQueryBuilder
 					//get attributes based on feature type
 					switch(dist_params.featureParams[i].featureType)
 					{
-
-					//TODO 18891: add computeSurprisal to nominals in GeneralizedDistance.h
 					//TODO 18891: add tests for computeSurprisal
 					case GeneralizedDistance::FDT_NOMINAL_NUMERIC:
 					case GeneralizedDistance::FDT_NOMINAL_STRING:

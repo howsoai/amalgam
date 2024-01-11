@@ -432,7 +432,7 @@ public:
 	//computes the distance term for a nominal when two universally symmetric nominals are equal
 	__forceinline double ComputeDistanceTermNominalUniversallySymmetricExactMatch(size_t index, bool high_accuracy)
 	{
-		if(!DoesFeatureHaveDeviation(index))
+		if(!DoesFeatureHaveDeviation(index) || featureParams[index].computeSurprisal)
 			return 0.0;
 
 		double weight = featureParams[index].weight;
@@ -466,36 +466,63 @@ public:
 		double weight = featureParams[index].weight;
 		if(DoesFeatureHaveDeviation(index))
 		{
-			double deviation = featureParams[index].deviation;
-			double nominal_count = featureParams[index].typeAttributes.nominalCount;
+			double dist_term = 0.0;
+			if(featureParams[index].computeSurprisal)
+			{
+				//need to have at least two classes in existence
+				double nominal_count = std::max(featureParams[index].typeAttributes.nominalCount, 2.0);
+				double prob_max_entropy_match = 1 / nominal_count;
 
-			// n = number of nominal classes
-			// match: deviation ^ p * weight
-			// non match: (deviation + (1 - deviation) / (n - 1)) ^ p * weight
-			//if there is only one nominal class, the smallest delta value it could be is the specified smallest delta, otherwise it's 1.0
-			double mismatch_deviation = 1.0;
-			if(nominal_count > 1)
-				mismatch_deviation = (deviation + (1 - deviation) / (nominal_count - 1));
+				//find probability that the correct class was selected
+				//can't go below base probability of guessing
+				double prob_class_given_match = std::max(1 - featureParams[index].deviation, prob_max_entropy_match);
+
+				//find the probability that any other class besides the correct class was selected
+				//divide the probability among the other classes
+				double prop_class_given_nonmatch = (1 - prob_class_given_match) / (nominal_count - 1);
+
+				double surprisal_class_given_match = -std::log(prob_class_given_match);
+				double surprisal_class_given_nonmatch = -std::log(prop_class_given_nonmatch);
+
+				//the surprisal of the class matching on a different value is the difference between
+				//how surprised it would be given a nonmatch but without the surprisal given a match
+				dist_term = surprisal_class_given_nonmatch - surprisal_class_given_match;
+			}
+			else //just distance
+			{
+				double deviation = featureParams[index].deviation;
+				double nominal_count = featureParams[index].typeAttributes.nominalCount;
+
+				// n = number of nominal classes
+				// match: deviation ^ p * weight
+				// non match: (deviation + (1 - deviation) / (n - 1)) ^ p * weight
+				//if there is only one nominal class, the smallest delta value it could be is the specified smallest delta, otherwise it's 1.0
+				double mismatch_deviation = 1.0;
+				if(nominal_count > 1)
+					dist_term = (deviation + (1 - deviation) / (nominal_count - 1));
+				else
+					dist_term = 1;
+			}
 
 			//infinite pValues are treated the same as 1 for distance terms,
 			//and are the same value regardless of high_accuracy
 			if(pValue == 1 || pValue == std::numeric_limits<double>::infinity()
 					|| pValue == -std::numeric_limits<double>::infinity())
-				return mismatch_deviation * weight;
+				return dist_term * weight;
 
 			if(pValue == 0)
 			{
 				if(high_accuracy)
-					return std::pow(mismatch_deviation, weight);
+					return std::pow(dist_term, weight);
 				else
-					return FastPow(mismatch_deviation, weight);
+					return FastPow(dist_term, weight);
 			}
 			else
 			{
 				if(high_accuracy)
-					return std::pow(mismatch_deviation, pValue) * weight;
+					return std::pow(dist_term, pValue) * weight;
 				else
-					return FastPow(mismatch_deviation, pValue) * weight;
+					return FastPow(dist_term, pValue) * weight;
 			}
 		}
 		else

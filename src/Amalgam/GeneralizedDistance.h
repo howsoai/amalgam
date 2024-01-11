@@ -87,13 +87,13 @@ public:
 		if(compute_accurate)
 		{
 			feature_params.unknownToUnknownDistanceTerm.SetValue(
-					ComputeDistanceTermNonNull(feature_params.unknownToUnknownDistanceTerm.difference, index, true), true);
+					ComputeDistanceTermMatchOnNull(index, feature_params.unknownToUnknownDistanceTerm.difference, true), true);
 		}
 
 		if(compute_approximate)
 		{
 			feature_params.unknownToUnknownDistanceTerm.SetValue(
-				ComputeDistanceTermNonNull(feature_params.unknownToUnknownDistanceTerm.difference, index, false), false);
+				ComputeDistanceTermMatchOnNull(index, feature_params.unknownToUnknownDistanceTerm.difference, false), false);
 		}
 
 		//if knownToUnknownDifference is same as unknownToUnknownDifference, can copy distance term instead of recomputing
@@ -107,13 +107,13 @@ public:
 			if(compute_accurate)
 			{
 				feature_params.knownToUnknownDistanceTerm.SetValue(
-					ComputeDistanceTermNonNull(feature_params.knownToUnknownDistanceTerm.difference, index, true), true);
+					ComputeDistanceTermMatchOnNull(index, feature_params.knownToUnknownDistanceTerm.difference, true), true);
 			}
 
 			if(compute_approximate)
 			{
 				feature_params.knownToUnknownDistanceTerm.SetValue(
-					ComputeDistanceTermNonNull(feature_params.knownToUnknownDistanceTerm.difference, index, false), false);
+					ComputeDistanceTermMatchOnNull(index, feature_params.knownToUnknownDistanceTerm.difference, false), false);
 			}
 		}
 
@@ -136,7 +136,7 @@ public:
 	}
 
 	//for the feature index, computes and stores the distance terms as measured from value to each interned value
-	inline void ComputeAndStoreInternedNumberValuesAndDistanceTerms(size_t index, double value, std::vector<double> *interned_values)
+	inline void ComputeAndStoreInternedNumberValuesAndDistanceTerms(double value, size_t index, std::vector<double> *interned_values)
 	{
 		bool compute_accurate = NeedToPrecomputeAccurate();
 		bool compute_approximate = NeedToPrecomputeApproximate();
@@ -416,7 +416,7 @@ public:
 
 	//exponentiats and weights the difference term contextually based on pValue
 	//note that it has extra logic to account for extreme values like infinity, negative infinity, and 0
-	__forceinline double ContextuallyExponentiateAndWeightDifferenceTerm(size_t index, double dist_term, bool high_accuracy)
+	__forceinline double ContextuallyExponentiateAndWeightDifferenceTerm(double dist_term, size_t index, bool high_accuracy)
 	{
 		if(dist_term == 0.0)
 			return 0.0;
@@ -521,14 +521,14 @@ public:
 	__forceinline double ComputeDistanceTermNominalUniversallySymmetricExactMatch(size_t index, bool high_accuracy)
 	{
 		double dist_term = ComputeDistanceTermNominalBaseExactMatchFromDeviation(index, featureParams[index].deviation, high_accuracy);
-		return ContextuallyExponentiateAndWeightDifferenceTerm(index, dist_term, high_accuracy);
+		return ContextuallyExponentiateAndWeightDifferenceTerm(dist_term, index, high_accuracy);
 	}
 
 	//computes the distance term for a nominal when two universally symmetric nominals are not equal
 	__forceinline double ComputeDistanceTermNominalUniversallySymmetricNonMatch(size_t index, bool high_accuracy)
 	{
 		double dist_term = ComputeDistanceTermNominalBaseNonMatchFromDeviation(index, featureParams[index].deviation, high_accuracy);
-		return ContextuallyExponentiateAndWeightDifferenceTerm(index, dist_term, high_accuracy);
+		return ContextuallyExponentiateAndWeightDifferenceTerm(dist_term, index, high_accuracy);
 	}
 
 	//TODO 18891: unify the two methods above into nominal base method and nominal method
@@ -678,7 +678,7 @@ public:
 
 		diff = ComputeDifferenceTermBaseContinuous(diff, index, high_accuracy);
 
-		return ContextuallyExponentiateAndWeightDifferenceTerm(index, diff, high_accuracy);
+		return ContextuallyExponentiateAndWeightDifferenceTerm(diff, index, high_accuracy);
 	}
 
 	//computes the inner term of the Minkowski norm summation for a single index for p=infinity or -infinity
@@ -696,20 +696,23 @@ public:
 
 		diff = ComputeDifferenceTermBaseContinuous(diff, index, high_accuracy);
 
-		return ContextuallyExponentiateAndWeightDifferenceTerm(index, diff, high_accuracy);
+		return ContextuallyExponentiateAndWeightDifferenceTerm(diff, index, high_accuracy);
 	}
 
-	//computes the inner term of the Minkowski norm summation for a single index regardless of pValue
-	__forceinline double ComputeDistanceTermNonNull(double diff, size_t index, bool high_accuracy)
+	//computes the inner term of the Minkowski norm when a term matches a null value
+	//for a given deviation with regard to the null
+	__forceinline double ComputeDistanceTermMatchOnNull(size_t index, double deviation, bool high_accuracy)
 	{
+		double diff = 0;
 		if(!IsFeatureNominal(index))
-			diff = ComputeDifferenceTermBaseContinuous(diff, index, high_accuracy);
+			diff = ComputeDifferenceTermBaseContinuous(deviation, index, high_accuracy);
 		else
 		{
+			diff = deviation;
 			//TODO 18891: handle surprisal nominals, especially in case surprisal; need nominal base method?
 		}
 
-		return ContextuallyExponentiateAndWeightDifferenceTerm(index, diff, high_accuracy);
+		return ContextuallyExponentiateAndWeightDifferenceTerm(diff, index, high_accuracy);
 	}
 
 	//computes the inner term of the Minkowski norm summation for a single index for p non-zero and non-infinite

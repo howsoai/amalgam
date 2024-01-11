@@ -922,7 +922,7 @@ protected:
 				else
 					effective_feature_type = GeneralizedDistance::EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED;
 
-				dist_params.ComputeAndStoreInternedNumberValuesAndDistanceTerms(query_feature_index, position_value_numeric, &column_data->internedNumberIndexToNumberValue);
+				dist_params.ComputeAndStoreInternedNumberValuesAndDistanceTerms(position_value_numeric, query_feature_index, &column_data->internedNumberIndexToNumberValue);
 			}
 			else
 			{

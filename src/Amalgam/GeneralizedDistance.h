@@ -414,6 +414,34 @@ public:
 			return fastPowP.FastPow(d);
 	}
 
+	//exponentiats and weights the difference term contextually based on pValue
+	//note that it has extra logic to account for extreme values like infinity, negative infinity, and 0
+	__forceinline double ContextuallyExponentiateAndWeightDifferenceTerm(size_t index, double dist_term, bool high_accuracy)
+	{
+		if(dist_term == 0.0)
+			return 0.0;
+
+		double weight = featureParams[index].weight;
+		if(pValue == 0)
+		{
+			if(high_accuracy)
+				return std::pow(dist_term, weight);
+			else
+				return FastPow(dist_term, weight);
+		}
+		else if(pValue == std::numeric_limits<double>::infinity()
+			|| pValue == -std::numeric_limits<double>::infinity())
+		{
+			//infinite pValues are treated the same as 1 for distance terms,
+			//and are the same value regardless of high_accuracy
+			return dist_term * weight;
+		}
+		else
+		{
+			return ExponentiateDifferenceTerm(dist_term, high_accuracy) * weight;
+		}
+	}
+
 	//returns the maximum difference
 	inline double GetMaximumDifference(size_t index)
 	{
@@ -429,36 +457,27 @@ public:
 			return -std::numeric_limits<double>::infinity();
 	}
 
-	//TODO 18891: unify these two into nominal base method and nominal method
-	//computes the distance term for a nominal when two universally symmetric nominals are equal
-	__forceinline double ComputeDistanceTermNominalUniversallySymmetricExactMatch(size_t index, bool high_accuracy)
+	//TODO 18891: finish these
+	__forceinline double ComputeDistanceTermNominalBaseExactMatchFromDeviation(size_t index, double deviation, bool high_accuracy)
 	{
 		if(!DoesFeatureHaveDeviation(index) || featureParams[index].computeSurprisal)
 			return 0.0;
 
-		double weight = featureParams[index].weight;
-		double deviation = featureParams[index].deviation;
+		return deviation;
+	}
 
-		//infinite pValues are treated the same as 1 for distance terms,
-		//and are the same value regardless of high_accuracy
-		if(pValue == 1 || pValue == std::numeric_limits<double>::infinity()
-				|| pValue == -std::numeric_limits<double>::infinity())
-			return deviation * weight;
+	__forceinline double ComputeDistanceTermNominalBaseNonMatchFromDeviation(size_t index, bool high_accuracy)
+	{
+		return 0.0;
+	}
 
-		if(pValue == 0)
-		{
-			if(high_accuracy)
-				return std::pow(deviation, weight);
-			else
-				return FastPow(deviation, weight);
-		}
-		else
-		{
-			if(high_accuracy)
-				return std::pow(deviation, pValue) * weight;
-			else
-				return FastPow(deviation, pValue) * weight;
-		}
+
+	//TODO 18891: unify these two into nominal base method and nominal method
+	//computes the distance term for a nominal when two universally symmetric nominals are equal
+	__forceinline double ComputeDistanceTermNominalUniversallySymmetricExactMatch(size_t index, bool high_accuracy)
+	{
+		double dist_term = ComputeDistanceTermNominalBaseExactMatchFromDeviation(index, featureParams[index].deviation, high_accuracy);
+		return ContextuallyExponentiateAndWeightDifferenceTerm(index, dist_term, high_accuracy);
 	}
 
 	//computes the distance term for a nominal when two universally symmetric nominals are not equal
@@ -505,26 +524,8 @@ public:
 					dist_term = 1;
 			}
 
-			//infinite pValues are treated the same as 1 for distance terms,
-			//and are the same value regardless of high_accuracy
-			if(pValue == 1 || pValue == std::numeric_limits<double>::infinity()
-					|| pValue == -std::numeric_limits<double>::infinity())
-				return dist_term * weight;
-
-			if(pValue == 0)
-			{
-				if(high_accuracy)
-					return std::pow(dist_term, weight);
-				else
-					return FastPow(dist_term, weight);
-			}
-			else
-			{
-				if(high_accuracy)
-					return std::pow(dist_term, pValue) * weight;
-				else
-					return FastPow(dist_term, pValue) * weight;
-			}
+			//TODO: use this below and anywhere else
+			return ContextuallyExponentiateAndWeightDifferenceTerm(index, dist_term, high_accuracy);
 		}
 		else
 		{
@@ -602,7 +603,7 @@ public:
 		return ExponentiateDifferenceTerm(diff, high_accuracy) * featureParams[index].weight;
 	}
 
-	//computes the base of the difference between two values non-nominal (e.g., continuous)
+	//computes the base of the difference between two continuous values
 	__forceinline double ComputeDifferenceTermBaseContinuous(double diff, size_t index, bool high_accuracy)
 	{
 		//compute absolute value

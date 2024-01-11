@@ -429,6 +429,7 @@ public:
 			return -std::numeric_limits<double>::infinity();
 	}
 
+	//TODO 18891: unify these two into nominal base method and nominal method
 	//computes the distance term for a nominal when two universally symmetric nominals are equal
 	__forceinline double ComputeDistanceTermNominalUniversallySymmetricExactMatch(size_t index, bool high_accuracy)
 	{
@@ -726,6 +727,10 @@ public:
 	{
 		if(!IsFeatureNominal(index))
 			diff = ComputeDifferenceTermBaseContinuous(diff, index, high_accuracy);
+		else
+		{
+			//TODO 18891: handle surprisal nominals, especially in case surprisal; need nominal base method?
+		}
 
 		if(pValue == 0.0)
 		{

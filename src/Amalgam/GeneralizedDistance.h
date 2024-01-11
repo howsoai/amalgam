@@ -677,10 +677,7 @@ public:
 
 		diff = ComputeDifferenceTermBaseContinuous(diff, index, high_accuracy);
 
-		if(high_accuracy)
-			return std::pow(diff, featureParams[index].weight);
-		else
-			return FastPow(diff, featureParams[index].weight);
+		return ContextuallyExponentiateAndWeightDifferenceTerm(index, diff, high_accuracy);
 	}
 
 	//computes the inner term of the Minkowski norm summation for a single index for p=infinity or -infinity
@@ -698,7 +695,7 @@ public:
 
 		diff = ComputeDifferenceTermBaseContinuous(diff, index, high_accuracy);
 
-		return diff * featureParams[index].weight;
+		return ContextuallyExponentiateAndWeightDifferenceTerm(index, diff, high_accuracy);
 	}
 
 	//computes the inner term of the Minkowski norm summation for a single index regardless of pValue
@@ -711,18 +708,7 @@ public:
 			//TODO 18891: handle surprisal nominals, especially in case surprisal; need nominal base method?
 		}
 
-		if(pValue == 0.0)
-		{
-			if(high_accuracy)
-				return std::pow(diff, featureParams[index].weight);
-			else
-				return FastPow(diff, featureParams[index].weight);
-		}
-		else if(pValue == std::numeric_limits<double>::infinity()
-				|| pValue == -std::numeric_limits<double>::infinity())
-			return diff * featureParams[index].weight;
-		else
-			return ExponentiateDifferenceTerm(diff, high_accuracy) * featureParams[index].weight;
+		return ContextuallyExponentiateAndWeightDifferenceTerm(index, diff, high_accuracy);
 	}
 
 	//computes the inner term of the Minkowski norm summation for a single index for p non-zero and non-infinite

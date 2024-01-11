@@ -457,7 +457,7 @@ public:
 			return -std::numeric_limits<double>::infinity();
 	}
 
-	//TODO 18891: finish these
+	//computes the base of the difference between two nominal values that exactly match without exponentiation
 	__forceinline double ComputeDistanceTermNominalBaseExactMatchFromDeviation(size_t index, double deviation, bool high_accuracy)
 	{
 		if(!DoesFeatureHaveDeviation(index) || featureParams[index].computeSurprisal)
@@ -466,25 +466,9 @@ public:
 		return deviation;
 	}
 
+	//computes the base of the difference between two nominal values that do not match without exponentiation
 	__forceinline double ComputeDistanceTermNominalBaseNonMatchFromDeviation(size_t index, double deviation, bool high_accuracy)
 	{
-		return 0.0;
-	}
-
-
-	//TODO 18891: unify these two into nominal base method and nominal method
-	//computes the distance term for a nominal when two universally symmetric nominals are equal
-	__forceinline double ComputeDistanceTermNominalUniversallySymmetricExactMatch(size_t index, bool high_accuracy)
-	{
-		double dist_term = ComputeDistanceTermNominalBaseExactMatchFromDeviation(index, featureParams[index].deviation, high_accuracy);
-		return ContextuallyExponentiateAndWeightDifferenceTerm(index, dist_term, high_accuracy);
-	}
-
-	//computes the distance term for a nominal when two universally symmetric nominals are not equal
-	__forceinline double ComputeDistanceTermNominalUniversallySymmetricNonMatch(size_t index, bool high_accuracy)
-	{
-		double dist_term = 0.0;
-		double weight = featureParams[index].weight;
 		if(DoesFeatureHaveDeviation(index))
 		{
 			if(featureParams[index].computeSurprisal)
@@ -495,7 +479,7 @@ public:
 
 				//find probability that the correct class was selected
 				//can't go below base probability of guessing
-				double prob_class_given_match = std::max(1 - featureParams[index].deviation, prob_max_entropy_match);
+				double prob_class_given_match = std::max(1 - deviation, prob_max_entropy_match);
 
 				//find the probability that any other class besides the correct class was selected
 				//divide the probability among the other classes
@@ -506,11 +490,11 @@ public:
 
 				//the surprisal of the class matching on a different value is the difference between
 				//how surprised it would be given a nonmatch but without the surprisal given a match
-				dist_term = surprisal_class_given_nonmatch - surprisal_class_given_match;
+				double dist_term = surprisal_class_given_nonmatch - surprisal_class_given_match;
+				return dist_term;
 			}
 			else //just distance
 			{
-				double deviation = featureParams[index].deviation;
 				double nominal_count = featureParams[index].typeAttributes.nominalCount;
 
 				// n = number of nominal classes
@@ -518,19 +502,36 @@ public:
 				// non match: (deviation + (1 - deviation) / (n - 1)) ^ p * weight
 				//if there is only one nominal class, the smallest delta value it could be is the specified smallest delta, otherwise it's 1.0
 				double mismatch_deviation = 1.0;
+				double dist_term = 0;
 				if(nominal_count > 1)
 					dist_term = (deviation + (1 - deviation) / (nominal_count - 1));
 				else
 					dist_term = 1;
+
+				return dist_term;
 			}
 		}
 		else
 		{
-			dist_term = 1.0;
+			return 1.0;
 		}
+	}
 
+	//computes the distance term for a nominal when two universally symmetric nominals are equal
+	__forceinline double ComputeDistanceTermNominalUniversallySymmetricExactMatch(size_t index, bool high_accuracy)
+	{
+		double dist_term = ComputeDistanceTermNominalBaseExactMatchFromDeviation(index, featureParams[index].deviation, high_accuracy);
 		return ContextuallyExponentiateAndWeightDifferenceTerm(index, dist_term, high_accuracy);
 	}
+
+	//computes the distance term for a nominal when two universally symmetric nominals are not equal
+	__forceinline double ComputeDistanceTermNominalUniversallySymmetricNonMatch(size_t index, bool high_accuracy)
+	{
+		double dist_term = ComputeDistanceTermNominalBaseNonMatchFromDeviation(index, featureParams[index].deviation, high_accuracy);
+		return ContextuallyExponentiateAndWeightDifferenceTerm(index, dist_term, high_accuracy);
+	}
+
+	//TODO 18891: unify the two methods above into nominal base method and nominal method
 
 	//returns the precomputed distance term for a nominal when two universally symmetric nominals are equal
 	__forceinline double ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(size_t index, bool high_accuracy)
@@ -581,7 +582,7 @@ public:
 		return ExponentiateDifferenceTerm(diff, high_accuracy) * featureParams[index].weight;
 	}
 
-	//computes the base of the difference between two continuous values
+	//computes the base of the difference between two continuous values without exponentiation
 	__forceinline double ComputeDifferenceTermBaseContinuous(double diff, size_t index, bool high_accuracy)
 	{
 		//compute absolute value

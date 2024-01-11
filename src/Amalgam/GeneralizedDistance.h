@@ -466,7 +466,7 @@ public:
 		return deviation;
 	}
 
-	__forceinline double ComputeDistanceTermNominalBaseNonMatchFromDeviation(size_t index, bool high_accuracy)
+	__forceinline double ComputeDistanceTermNominalBaseNonMatchFromDeviation(size_t index, double deviation, bool high_accuracy)
 	{
 		return 0.0;
 	}
@@ -483,10 +483,10 @@ public:
 	//computes the distance term for a nominal when two universally symmetric nominals are not equal
 	__forceinline double ComputeDistanceTermNominalUniversallySymmetricNonMatch(size_t index, bool high_accuracy)
 	{
+		double dist_term = 0.0;
 		double weight = featureParams[index].weight;
 		if(DoesFeatureHaveDeviation(index))
 		{
-			double dist_term = 0.0;
 			if(featureParams[index].computeSurprisal)
 			{
 				//need to have at least two classes in existence
@@ -523,35 +523,13 @@ public:
 				else
 					dist_term = 1;
 			}
-
-			//TODO: use this below and anywhere else
-			return ContextuallyExponentiateAndWeightDifferenceTerm(index, dist_term, high_accuracy);
 		}
 		else
 		{
-			if(high_accuracy)
-			{
-				if(pValue != 0.0)
-					return weight;
-				else
-					return 1.0;
-			}
-			else
-			{
-				if(pValue != 0.0)
-				{
-					//special handling for infinities
-					if(pValue == std::numeric_limits<double>::infinity() || pValue == -std::numeric_limits<double>::infinity())
-						return weight;
-					else //since FastPow isn't exact for 1.0, need to compute the value
-						return weight * FastPowNonZeroExp(1.0, pValue);
-				}
-				else //pValue == 0.0
-				{
-					return FastPow(1.0, weight);
-				}
-			}
+			dist_term = 1.0;
 		}
+
+		return ContextuallyExponentiateAndWeightDifferenceTerm(index, dist_term, high_accuracy);
 	}
 
 	//returns the precomputed distance term for a nominal when two universally symmetric nominals are equal

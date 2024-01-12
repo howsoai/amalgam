@@ -3898,7 +3898,6 @@
 
 	;should be:
 	;(list "vert0" "vert1" "vert2" "vert3")
-	;(list 0.049787068367863944 0.049787068367863944 0.01831563888873418 0.006737946999085467)
 	(print "probabilities: "
 	(compute_on_contained_entities "SurprisalTransformContainer" (list
         (query_nearest_generalized_distance
@@ -3908,7 +3907,7 @@
             (null) ; context_weights
             (list "continuous_numeric") ; types
             (null) ; attributes
-            (null) ; context_deviations
+            (list 0.25) ; context_deviations
             1 ; p_parameter
 			"surprisal_to_prob" ; distance transform
 			(null) ; weight
@@ -3922,7 +3921,6 @@
 
   ;should be
   ;(list "vert0" "vert2" "vert3" "vert1")
-  ;(list 0.09709538455906153 0.01831563888873418 0.006737946999085467 0)
   (print "weighted probabilities: "
 	(compute_on_contained_entities "SurprisalTransformContainer" (list
         (query_nearest_generalized_distance
@@ -3932,7 +3930,7 @@
             (null) ; context_weights
             (list "continuous_numeric") ; types
             (null) ; attributes
-            (null) ; context_deviations
+            (list 0.25) ; context_deviations
             1 ; p_parameter
 			"surprisal_to_prob" ; distance transform
 			"weight" ; weight
@@ -3950,12 +3948,12 @@
 
   ;should be approx 2.123
   (print "surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list
-	(compute_entity_distance_contributions 4 (list "x") (list "testvert") (null) (null) (null) (null) 1 "surprisal_to_prob" (null) "fixed_seed" (null) "precise")
+	(compute_entity_distance_contributions 4 (list "x") (list "testvert") (null) (null) (null) (list 0.25) 1 "surprisal_to_prob" (null) "fixed_seed" (null) "precise")
   )))
 
   ;should be approx 2.123
   (print "weighted surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list
-	(compute_entity_distance_contributions 4 (list "x") (list "testvert") (null) (null) (null) (null) 1 "surprisal_to_prob" "weight" "fixed_seed" (null) "precise")
+	(compute_entity_distance_contributions 4 (list "x") (list "testvert") (null) (null) (null) (list 0.25) 1 "surprisal_to_prob" "weight" "fixed_seed" (null) "precise")
   )))
 
  (print "--concurrency tests--\n")

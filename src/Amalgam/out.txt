@@ -1045,7 +1045,7 @@ abcdef
 	4
 	"d"
 )
-(list 2 1 0 "d" 3)
+(list 2 1 "d" 0 3)
 (list
 	1
 	2
@@ -1256,7 +1256,7 @@ current_index: 2
 		interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1705093355.069471
+		start_time 1705095657.955252
 		www 1
 		x 12
 		zz 10
@@ -1299,7 +1299,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1705093355.069471
+	start_time 1705095657.955252
 	www 1
 	x 12
 	zz 10
@@ -1341,7 +1341,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1705093355.069471
+	start_time 1705095657.955252
 	www 1
 	x 12
 	zz 10
@@ -1489,7 +1489,7 @@ infinity test c or d: (list "c" @(get (target 0) 0) "d" @(get (target 0) 0))
 
 (assoc a 29 b 44 c 27)
 
-(list "4" "2" "1")
+(list "7" "2" "1")
 
 --get_rand_seed--
 °³È¼¿\¨KOaVÆT zÿ
@@ -1609,7 +1609,7 @@ e:
   - .inf
 
 25: (assoc a 1)
-current date-time in epoch: 2024-01-12-16.02.35.3096320
+current date-time in epoch: 2024-01-12-16.41.01.0563310
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -2689,16 +2689,18 @@ flatten restore with parallel
 35.26408699824403
 --intersect_entities--
 (associate "b" 4)
-MergeEntityChild2
-(associate "p" 3 "q" 4)
 MergeEntityChild1
 (associate "x" 3 "y" 4)
+MergeEntityChild2
+(associate "p" 3 "q" 4)
 _2280722175
 (associate "E" 3 "F" 4)
 _2169689611
 (associate "e" 3 "f" 4)
 --union_entities--
 (associate "b" 4 "a" 3 "c" 3)
+MergeEntityChild1
+(associate "x" 3 "y" 4 "z" 5)
 MergeEntityChild2
 (associate
 	"p"
@@ -2712,8 +2714,6 @@ MergeEntityChild2
 	"w"
 	7
 )
-MergeEntityChild1
-(associate "x" 3 "y" 4 "z" 5)
 _2280722175
 (associate
 	"E"
@@ -3379,6 +3379,8 @@ _3128546630
 (list "OnlyIn2" "_3631850880" "_1938178219" "DiffEntityChild1")
 --mix_entities--
 (associate "b" 4 "a" 3)
+MergeEntityChild1
+(associate "x" 3 "y" 4 "z" 5)
 MergeEntityChild2
 (associate
 	"p"
@@ -3390,8 +3392,6 @@ MergeEntityChild2
 	"w"
 	7
 )
-MergeEntityChild1
-(associate "x" 3 "y" 4 "z" 5)
 _2280722175
 (associate "E" 3 "F" 4)
 _2169689611
@@ -3450,7 +3450,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1705093355.490095
+1705095661.331475
 (true)
 
 RootTest
@@ -3674,7 +3674,7 @@ hello
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "Kvi®]ï\n0Ñ”-I´»ÿ")
+	(set_entity_rand_seed new_entity "â³'Çb~¸0Ñ”-I´»ÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3684,7 +3684,7 @@ hello
 				)
 			)
 		)
-		"g”ˆR—Œ|9Huá¶&%ÿ"
+		"”KçA[0\\|¦+ôêÿ"
 	)
 	(set_entity_rand_seed
 		(first
@@ -3717,7 +3717,7 @@ hello
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "Kvi®]ï\n0Ñ”-I´»ÿ")
+	(set_entity_rand_seed new_entity "â³'Çb~¸0Ñ”-I´»ÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -4260,11 +4260,11 @@ case conviction:(assoc
 )
 cyclic feature nearest neighbors: (assoc cyclic1 1 cyclic5 0.5)
 cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
-200: 0.05555555555555555 (null
-	##deg 8
-)
 190: 0.045454545454545456 (null
 	##deg 12
+)
+200: 0.05555555555555555 (null
+	##deg 8
 )
 155: 0.1 (null
 	##deg 0
@@ -4590,16 +4590,16 @@ cyclic group kl divergence: 0.05872535496117583
 surprisal transforms
 probabilities: (list
 	(list "vert0" "vert1" "vert2" "vert3")
-	(list 0.049787068367863944 0.049787068367863944 0.01831563888873418 0.006737946999085467)
+	(list 2.7535180455541748e-05 2.7535180455541748e-05 5.043471233780792e-07 9.237449443012879e-09)
 )
 
 weighted probabilities: (list
 	(list "vert0" "vert2" "vert3" "vert1")
-	(list 0.09709538455906153 0.01831563888873418 0.006737946999085467 0)
+	(list 5.506960272483319e-05 5.043471233780792e-07 9.237449443012879e-09 0)
 )
 
-surprisal contribution: (assoc testvert 2.1235610034676564)
-weighted surprisal contribution: (assoc testvert 2.1235610034676564)
+surprisal contribution: (assoc testvert 9.797630298091489)
+weighted surprisal contribution: (assoc testvert 9.797630298091489)
 --concurrency tests--
 hello
 hello
@@ -4666,4 +4666,4 @@ Expecting 1000: 1000
 concurrent entity writes successful: (true)
 
 --total execution time--
-0.9712700843811035
+1.096846103668213

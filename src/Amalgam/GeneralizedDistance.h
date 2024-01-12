@@ -499,7 +499,6 @@ public:
 			// match: deviation ^ p * weight
 			// non match: (deviation + (1 - deviation) / (n - 1)) ^ p * weight
 			//if there is only one nominal class, the smallest delta value it could be is the specified smallest delta, otherwise it's 1.0
-			double mismatch_deviation = 1.0;
 			double dist_term = 0;
 			if(nominal_count > 1)
 				dist_term = (deviation + (1 - deviation) / (nominal_count - 1));

@@ -1015,9 +1015,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 
 	//get value_names if applicable
 	std::vector<StringInternPool::StringID> value_names;
-	if(ocn.size() > 8)
+	if(ocn.size() > 7)
 	{
-		EvaluableNodeReference value_names_node = InterpretNodeForImmediateUse(ocn[8]);
+		EvaluableNodeReference value_names_node = InterpretNodeForImmediateUse(ocn[7]);
 		if(!EvaluableNode::IsNull(value_names_node))
 		{
 			//extract the names for each value into value_names
@@ -1035,8 +1035,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 	}
 
 	dist_params.computeSurprisal = false;
-	if(ocn.size() > 9)
-		dist_params.computeSurprisal = InterpretNodeIntoBoolValue(ocn[9], false);
+	if(ocn.size() > 8)
+		dist_params.computeSurprisal = InterpretNodeIntoBoolValue(ocn[8], false);
 
 	//get the origin and destination
 	std::vector<EvaluableNodeImmediateValue> location;

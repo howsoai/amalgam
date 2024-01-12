@@ -417,6 +417,15 @@
  ;should print 3ish
  (print "35 " (generalized_distance (list 1 1) (list "continuous_code" "nominal_string") (list 0 5) (null) 1 (list (list 1.5 2 3 4 5) "s") (list (list 1 2 3) "s") ) "\n")
 
+ ;surprisal
+ ;should both be 0
+ (print "36 " (generalized_distance (list 1 1) (list "continuous_numeric" "continuous_numeric") (null) (list 0.5 0.5) 1 (list 1 1) (list 1 1) (null) (true) ) "\n" )
+ (print "37 " (generalized_distance (list 1 1) (list "nominal_numeric" "nominal_numeric") (null) (list 0.5 0.5) 1 (list 1 1) (list 1 1) (null) (true) ) "\n" )
+
+ ;surprisal
+ (print "38 " (generalized_distance (list 1 1) (list "continuous_numeric" "continuous_numeric") (null) (list 0.5 0.5) 1 (list 1 1) (list 2 2) (null) (true) ) "\n" )
+ (print "39 " (generalized_distance (list 1 1) (list "nominal_numeric" "nominal_numeric") (list 2 2) (list 0.25 0.25) 1 (list 1 1) (list 2 2) (null) (true) ) "\n" )
+
  (print "--entropy--\n")
  (print (entropy (list 0.5 0.5)) "\n")
  (print (entropy (list 0.5 0.5) (list 0.25 0.75) -1 1) "\n")
@@ -3901,7 +3910,7 @@
             (null) ; attributes
             (null) ; context_deviations
             1 ; p_parameter
-			"surprisal_to_prob" ; dwe = 1 means return computed distance to each case
+			"surprisal_to_prob" ; distance transform
 			(null) ; weight
             (rand)
 			(null)
@@ -3925,7 +3934,7 @@
             (null) ; attributes
             (null) ; context_deviations
             1 ; p_parameter
-			"surprisal_to_prob" ; dwe = 1 means return computed distance to each case
+			"surprisal_to_prob" ; distance transform
 			"weight" ; weight
             (rand)
 			(null)

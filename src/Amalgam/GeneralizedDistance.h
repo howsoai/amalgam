@@ -460,7 +460,7 @@ public:
 	//computes the base of the difference between two nominal values that exactly match without exponentiation
 	__forceinline double ComputeDistanceTermNominalBaseExactMatchFromDeviation(size_t index, double deviation, bool high_accuracy)
 	{
-		if(!DoesFeatureHaveDeviation(index) || featureParams[index].computeSurprisal)
+		if(!DoesFeatureHaveDeviation(index) || computeSurprisal)
 			return 0.0;
 
 		return deviation;
@@ -469,47 +469,44 @@ public:
 	//computes the base of the difference between two nominal values that do not match without exponentiation
 	__forceinline double ComputeDistanceTermNominalBaseNonMatchFromDeviation(size_t index, double deviation, bool high_accuracy)
 	{
-		if(DoesFeatureHaveDeviation(index))
+		if(computeSurprisal)
 		{
-			if(featureParams[index].computeSurprisal)
-			{
-				//need to have at least two classes in existence
-				double nominal_count = std::max(featureParams[index].typeAttributes.nominalCount, 2.0);
-				double prob_max_entropy_match = 1 / nominal_count;
+			//need to have at least two classes in existence
+			double nominal_count = std::max(featureParams[index].typeAttributes.nominalCount, 2.0);
+			double prob_max_entropy_match = 1 / nominal_count;
 
-				//find probability that the correct class was selected
-				//can't go below base probability of guessing
-				double prob_class_given_match = std::max(1 - deviation, prob_max_entropy_match);
+			//find probability that the correct class was selected
+			//can't go below base probability of guessing
+			double prob_class_given_match = std::max(1 - deviation, prob_max_entropy_match);
 
-				//find the probability that any other class besides the correct class was selected
-				//divide the probability among the other classes
-				double prop_class_given_nonmatch = (1 - prob_class_given_match) / (nominal_count - 1);
+			//find the probability that any other class besides the correct class was selected
+			//divide the probability among the other classes
+			double prop_class_given_nonmatch = (1 - prob_class_given_match) / (nominal_count - 1);
 
-				double surprisal_class_given_match = -std::log(prob_class_given_match);
-				double surprisal_class_given_nonmatch = -std::log(prop_class_given_nonmatch);
+			double surprisal_class_given_match = -std::log(prob_class_given_match);
+			double surprisal_class_given_nonmatch = -std::log(prop_class_given_nonmatch);
 
-				//the surprisal of the class matching on a different value is the difference between
-				//how surprised it would be given a nonmatch but without the surprisal given a match
-				double dist_term = surprisal_class_given_nonmatch - surprisal_class_given_match;
-				return dist_term;
-			}
-			else //just distance
-			{
-				double nominal_count = featureParams[index].typeAttributes.nominalCount;
+			//the surprisal of the class matching on a different value is the difference between
+			//how surprised it would be given a nonmatch but without the surprisal given a match
+			double dist_term = surprisal_class_given_nonmatch - surprisal_class_given_match;
+			return dist_term;
+		}
+		else if(DoesFeatureHaveDeviation(index))
+		{
+			double nominal_count = featureParams[index].typeAttributes.nominalCount;
 
-				// n = number of nominal classes
-				// match: deviation ^ p * weight
-				// non match: (deviation + (1 - deviation) / (n - 1)) ^ p * weight
-				//if there is only one nominal class, the smallest delta value it could be is the specified smallest delta, otherwise it's 1.0
-				double mismatch_deviation = 1.0;
-				double dist_term = 0;
-				if(nominal_count > 1)
-					dist_term = (deviation + (1 - deviation) / (nominal_count - 1));
-				else
-					dist_term = 1;
+			// n = number of nominal classes
+			// match: deviation ^ p * weight
+			// non match: (deviation + (1 - deviation) / (n - 1)) ^ p * weight
+			//if there is only one nominal class, the smallest delta value it could be is the specified smallest delta, otherwise it's 1.0
+			double mismatch_deviation = 1.0;
+			double dist_term = 0;
+			if(nominal_count > 1)
+				dist_term = (deviation + (1 - deviation) / (nominal_count - 1));
+			else
+				dist_term = 1;
 
-				return dist_term;
-			}
+			return dist_term;
 		}
 		else
 		{
@@ -570,7 +567,7 @@ public:
 	//computes the inner term for a non-nominal with an exact match of values
 	__forceinline double ComputeDistanceTermContinuousExactMatch(size_t index, bool high_accuracy)
 	{
-		if(!DoesFeatureHaveDeviation(index) || featureParams[index].computeSurprisal)
+		if(!DoesFeatureHaveDeviation(index) || computeSurprisal)
 			return 0.0;
 
 		//apply deviations -- if computeSurprisal, will be caught above and always return 0.0
@@ -594,7 +591,7 @@ public:
 		if(DoesFeatureHaveDeviation(index))
 		{
 			diff += ComputeDeviationPart(diff, featureParams[index].deviation, high_accuracy);
-			if(featureParams[index].computeSurprisal)
+			if(computeSurprisal)
 				diff = ComputeSurprisalFromDifferenceWithDeviation(diff, featureParams[index].deviation, high_accuracy);
 		}
 
@@ -611,7 +608,7 @@ public:
 		if(DoesFeatureHaveDeviation(index))
 		{
 			diff += ComputeDeviationPart(diff, featureParams[index].deviation, high_accuracy);
-			if(featureParams[index].computeSurprisal)
+			if(computeSurprisal)
 				diff = ComputeSurprisalFromDifferenceWithDeviation(diff, featureParams[index].deviation, high_accuracy);
 		}
 
@@ -704,7 +701,7 @@ public:
 		double diff = 0;
 		if(IsFeatureNominal(index))
 		{
-			if(featureParams[index].computeSurprisal)
+			if(computeSurprisal)
 			{
 				//need to have at least two classes in existence
 				double nominal_count = std::max(featureParams[index].typeAttributes.nominalCount, 2.0);
@@ -716,7 +713,7 @@ public:
 
 				diff = -std::log(prob_class_given_match);
 			}
-			else
+			else //nonsurprisal nominals just use the deviation as provided
 			{
 				diff = deviation;
 			}
@@ -900,8 +897,7 @@ public:
 			weight(1.0),
 			internedNumberIndexToNumberValue(nullptr), deviation(0.0),
 			unknownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
-			knownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
-			computeSurprisal(false)
+			knownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN())
 		{
 			typeAttributes.maxCyclicDifference = std::numeric_limits<double>::quiet_NaN();
 		}
@@ -948,10 +944,6 @@ public:
 		//distance term to use if one value is known and the other is unknown
 		//the difference will be NaN if unknown
 		DistanceTermsWithDifference knownToUnknownDistanceTerm;
-
-		//if true, it will perform computations resulting in surprisal before
-		//the exponentiation
-		bool computeSurprisal;
 	};
 
 	std::vector<FeatureParams> featureParams;
@@ -964,6 +956,10 @@ public:
 	double pValue;
 	//computed inverse of pValue
 	double inversePValue;
+
+	//if true, it will perform computations resulting in surprisal before
+	//the exponentiation
+	bool computeSurprisal;
 
 	//if true, then all computations should be performed with high accuracy
 	bool highAccuracy;

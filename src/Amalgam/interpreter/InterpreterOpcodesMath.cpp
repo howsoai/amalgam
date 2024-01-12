@@ -1034,6 +1034,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 		evaluableNodeManager->FreeNodeTreeIfPossible(value_names_node);
 	}
 
+	dist_params.computeSurprisal = false;
+	if(ocn.size() > 9)
+		dist_params.computeSurprisal = InterpretNodeIntoBoolValue(ocn[9], false);
+
 	//get the origin and destination
 	std::vector<EvaluableNodeImmediateValue> location;
 	std::vector<EvaluableNodeImmediateValueType> location_types;

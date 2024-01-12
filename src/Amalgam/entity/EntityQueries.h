@@ -82,9 +82,6 @@ public:
 	//only applicable when transformSuprisalToProb is false
 	double distanceWeightExponent;
 
-	//if true, the values will be transformed from surprisal to probability; if false, will perform a distance transform
-	bool transformSuprisalToProb;
-
 	//if ENT_QUERY_SELECT has a start offset
 	bool hasStartOffset;
 

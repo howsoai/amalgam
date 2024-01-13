@@ -278,6 +278,14 @@ public:
 			return entityRelationships.container;
 	}
 
+	//returns true if the entity has one or more contained entities and has a query cache built
+	bool HasQueryCaches()
+	{
+		if(!hasContainedEntities || !entityRelationships.relationships->queryCaches)
+			return false;
+		return true;
+	}
+
 	//clears any query caches if they exist
 	inline void ClearQueryCaches()
 	{
@@ -285,9 +293,8 @@ public:
 			entityRelationships.relationships->queryCaches.release();
 	}
 
-	//returns a pointer to the query caches for this entity
-	//creates one if it does not have an active cache
-	EntityQueryCaches *GetOrCreateQueryCaches();
+	//creates a cache if it does not exist
+	void CreateQueryCaches();
 
 	//returns a pointer to the query caches for this entity
 	//returns a nullptr if does not have an active cache
@@ -864,20 +871,56 @@ public:
 
 //acts as a reference to an Entity that can be treated as an Entity *
 // but also performs a read-lock on the container if multithreaded, and frees the read lock when goes out of scope
-typedef EntityReferenceWithLock<Concurrency::ReadLock> EntityReadReference;
+//can't be a typedef due to the inability to do forward declarations, so have to include constructors
+class EntityReadReference : public EntityReferenceWithLock<Concurrency::ReadLock>
+{
+public:
+	EntityReadReference() : EntityReferenceWithLock<Concurrency::ReadLock>()
+	{	}
+
+	EntityReadReference(Entity *e) : EntityReferenceWithLock<Concurrency::ReadLock>(e)
+	{	}
+};
 
 //acts as a reference to an Entity that can be treated as an Entity *
 // but also performs a write-lock on the container if multithreaded, and frees the read lock when goes out of scope
-typedef EntityReferenceWithLock<Concurrency::WriteLock> EntityWriteReference;
+//can't be a typedef due to the inability to do forward declarations, so have to include constructors
+class EntityWriteReference : public EntityReferenceWithLock<Concurrency::WriteLock>
+{
+public:
+	EntityWriteReference() : EntityReferenceWithLock<Concurrency::WriteLock>()
+	{	}
+
+	EntityWriteReference(Entity *e) : EntityReferenceWithLock<Concurrency::WriteLock>(e)
+	{	}
+};
 
 #else //not MULTITHREAD_SUPPORT
 
 //acts as a reference to an Entity that can be treated as an Entity *
 // but also performs a read-lock on the container if multithreaded, and frees the read lock when goes out of scope
-typedef EntityReferenceBase EntityReadReference;
+//can't be a typedef due to the inability to do forward declarations, so have to include constructors
+class EntityReadReference : public EntityReferenceBase
+{
+public:
+	EntityReadReference() : EntityReferenceBase()
+	{	}
+
+	EntityReadReference(Entity *e) : EntityReferenceBase(e)
+	{	}
+};
 
 //acts as a reference to an Entity that can be treated as an Entity *
 // but also performs a write-lock on the container if multithreaded, and frees the read lock when goes out of scope
-typedef EntityReferenceBase EntityWriteReference;
+//can't be a typedef due to the inability to do forward declarations, so have to include constructors
+class EntityWriteReference : public EntityReferenceBase
+{
+public:
+	EntityWriteReference() : EntityReferenceBase()
+	{	}
+
+	EntityWriteReference(Entity *e) : EntityReferenceBase(e)
+	{	}
+};
 
 #endif

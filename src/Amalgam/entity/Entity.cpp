@@ -792,14 +792,12 @@ StringInternPool::StringID Entity::GetContainedEntityIdFromIndex(size_t entity_i
 	return contained_entities[entity_index]->GetIdStringId();
 }
 
-EntityQueryCaches *Entity::GetOrCreateQueryCaches()
+void Entity::CreateQueryCaches()
 {
 	EnsureHasContainedEntities();
 
 	if(!entityRelationships.relationships->queryCaches)
 		entityRelationships.relationships->queryCaches = std::make_unique<EntityQueryCaches>(this);
-
-	return entityRelationships.relationships->queryCaches.get();
 }
 
 void Entity::SetRandomState(const std::string &new_state, bool deep_set_seed, std::vector<EntityWriteListener *> *write_listeners)

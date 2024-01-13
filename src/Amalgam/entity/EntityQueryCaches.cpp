@@ -1307,11 +1307,15 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 		//need to lock the entity to prevent multiple caches from being built concurrently and overwritten
 		if(!container->HasQueryCaches())
 		{
+		#ifdef MULTITHREAD_SUPPORT
 			container.lock.unlock();
 			EntityWriteReference write_lock(container);
 			container->CreateQueryCaches();
 			write_lock.lock.unlock();
 			container.lock.lock();
+		#else
+			container->CreateQueryCaches();
+		#endif
 		}
 
 		return GetMatchingEntitiesFromQueryCaches(container, conditions, enm, return_query_value);
@@ -1344,11 +1348,15 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 			//need to lock the entity to prevent multiple caches from being built concurrently and overwritten
 			if(!container->HasQueryCaches())
 			{
+			#ifdef MULTITHREAD_SUPPORT
 				container.lock.unlock();
 				EntityWriteReference write_lock(container);
 				container->CreateQueryCaches();
 				write_lock.lock.unlock();
 				container.lock.lock();
+			#else
+				container->CreateQueryCaches();
+			#endif
 			}
 
 			return GetMatchingEntitiesFromQueryCaches(container, conditions, enm, return_query_value);	

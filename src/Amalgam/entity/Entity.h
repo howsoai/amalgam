@@ -871,7 +871,7 @@ public:
 
 //acts as a reference to an Entity that can be treated as an Entity *
 // but also performs a read-lock on the container if multithreaded, and frees the read lock when goes out of scope
-//can't be a typedef due to the inability to do foreward declarations, so have to include constructors
+//can't be a typedef due to the inability to do forward declarations, so have to include constructors
 class EntityReadReference : public EntityReferenceWithLock<Concurrency::ReadLock>
 {
 public:
@@ -884,7 +884,7 @@ public:
 
 //acts as a reference to an Entity that can be treated as an Entity *
 // but also performs a write-lock on the container if multithreaded, and frees the read lock when goes out of scope
-//can't be a typedef due to the inability to do foreward declarations, so have to include constructors
+//can't be a typedef due to the inability to do forward declarations, so have to include constructors
 class EntityWriteReference : public EntityReferenceWithLock<Concurrency::WriteLock>
 {
 public:
@@ -899,7 +899,7 @@ public:
 
 //acts as a reference to an Entity that can be treated as an Entity *
 // but also performs a read-lock on the container if multithreaded, and frees the read lock when goes out of scope
-//can't be a typedef due to the inability to do foreward declarations, so have to include constructors
+//can't be a typedef due to the inability to do forward declarations, so have to include constructors
 class EntityReadReference : public EntityReferenceBase
 {
 public:
@@ -912,7 +912,7 @@ public:
 
 //acts as a reference to an Entity that can be treated as an Entity *
 // but also performs a write-lock on the container if multithreaded, and frees the read lock when goes out of scope
-//can't be a typedef due to the inability to do foreward declarations, so have to include constructors
+//can't be a typedef due to the inability to do forward declarations, so have to include constructors
 class EntityWriteReference : public EntityReferenceBase
 {
 public:

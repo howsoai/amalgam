@@ -920,7 +920,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 {
 	//get the label existance cache associated with this container
 	// use the first condition as an heuristic for building it if it doesn't exist
-	EntityQueryCaches *entity_caches = container->GetOrCreateQueryCaches();
+	EntityQueryCaches *entity_caches = container->GetQueryCaches();
 
 	//starting collection of matching entities, initialized to all entities with the requested labels
 	// reuse existing buffer
@@ -1299,10 +1299,23 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 }
 
 
-EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(Entity *container, std::vector<EntityQueryCondition> &conditions, EvaluableNodeManager *enm, bool return_query_value)
+EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadReference &container, std::vector<EntityQueryCondition> &conditions, EvaluableNodeManager *enm, bool return_query_value)
 {
 	if(_enable_SBF_datastore && CanUseQueryCaches(conditions))
+	{
+		//if haven't built a cache before, need to build the cache container
+		//need to lock the entity to prevent multiple caches from being built concurrently and overwritten
+		if(!container->HasQueryCaches())
+		{
+			container.lock.unlock();
+			EntityWriteReference write_lock(container);
+			container->CreateQueryCaches();
+			write_lock.lock.unlock();
+			container.lock.lock();
+		}
+
 		return GetMatchingEntitiesFromQueryCaches(container, conditions, enm, return_query_value);
+	}
 
 	if(container == nullptr)
 		return EvaluableNodeReference(enm->AllocNode(ENT_LIST), true);
@@ -1324,10 +1337,21 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(Entity *conta
 		if(conditions[cond_index].queryType == ENT_COMPUTE_ENTITY_CONVICTIONS || conditions[cond_index].queryType == ENT_COMPUTE_ENTITY_KL_DIVERGENCES
 			|| conditions[cond_index].queryType == ENT_COMPUTE_ENTITY_GROUP_KL_DIVERGENCE || conditions[cond_index].queryType == ENT_COMPUTE_ENTITY_DISTANCE_CONTRIBUTIONS)
 		{
-			if(CanUseQueryCaches(conditions))
-				return GetMatchingEntitiesFromQueryCaches(container, conditions, enm, return_query_value);
-			else
+			if(!CanUseQueryCaches(conditions))
 				return EvaluableNodeReference::Null();
+
+			//if haven't built a cache before, need to build the cache container
+			//need to lock the entity to prevent multiple caches from being built concurrently and overwritten
+			if(!container->HasQueryCaches())
+			{
+				container.lock.unlock();
+				EntityWriteReference write_lock(container);
+				container->CreateQueryCaches();
+				write_lock.lock.unlock();
+				container.lock.lock();
+			}
+
+			return GetMatchingEntitiesFromQueryCaches(container, conditions, enm, return_query_value);	
 		}
 
 		query_return_value = conditions[cond_index].GetMatchingEntities(container, matching_entities, first_condition, (return_query_value && last_condition) ? enm : nullptr);

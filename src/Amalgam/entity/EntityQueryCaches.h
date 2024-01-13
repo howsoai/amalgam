@@ -16,6 +16,7 @@
 
 //forward declarations:
 class Entity;
+class EntityReadReference;
 class EntityQueryCondition;
 
 //stores all of the types of caches needed for queries on a particular entity
@@ -123,7 +124,7 @@ public:
 	//searches container for contained entities matching query.
 	// if return_query_value is false, then returns a list of all IDs of matching contained entities
 	// if return_query_value is true, then returns whatever the appropriate structure is for the query type for the final query
-	static EvaluableNodeReference GetEntitiesMatchingQuery(Entity *container, std::vector<EntityQueryCondition> &conditions, EvaluableNodeManager *enm, bool return_query_value);
+	static EvaluableNodeReference GetEntitiesMatchingQuery(EntityReadReference &container, std::vector<EntityQueryCondition> &conditions, EvaluableNodeManager *enm, bool return_query_value);
 
 	//returns the collection of entities (and optionally associated compute values) that satisfy the specified chain of query conditions
 	// uses efficient querying methods with a query database, one database per container

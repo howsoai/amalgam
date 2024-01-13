@@ -16,8 +16,8 @@
 
 //forward declarations:
 class Entity;
-class EntityReadReference;
 class EntityQueryCondition;
+class EntityReadReference;
 
 //stores all of the types of caches needed for queries on a particular entity
 class EntityQueryCaches

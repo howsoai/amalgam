@@ -51,10 +51,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_AND(EvaluableNode *en, boo
 		//free the previous node if applicable
 		evaluableNodeManager->FreeNodeTreeIfPossible(cur);
 
-		cur = InterpretNode(cn);
+		cur = InterpretNode(cn, immediate_result);
 
-		if(!EvaluableNode::IsTrue(cur))
-			return ReuseOrAllocReturn(cur, false, immediate_result);
+		if(cur.IsImmediateValue())
+		{
+			if(!cur.GetValue().GetValueAsBoolean())
+				return AllocReturn(false, immediate_result);
+		}
+		else
+		{
+			if(!EvaluableNode::IsTrue(cur))
+				return ReuseOrAllocReturn(cur, false, immediate_result);
+		}
 	}
 
 	return cur;
@@ -93,10 +101,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OR(EvaluableNode *en, bool
 		//free the previous node if applicable
 		evaluableNodeManager->FreeNodeTreeIfPossible(cur);
 
-		cur = InterpretNode(cn);
+		cur = InterpretNode(cn, immediate_result);
 
-		if(EvaluableNode::IsTrue(cur))
-			return cur;
+		if(cur.IsImmediateValue())
+		{
+			if(cur.GetValue().GetValueAsBoolean())
+				return cur;
+		}
+		else
+		{
+			if(EvaluableNode::IsTrue(cur))
+				return cur;
+		}
 	}
 
 	return ReuseOrAllocReturn(cur, false, immediate_result);
@@ -149,9 +165,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT(EvaluableNode *en, boo
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	auto cur = InterpretNodeForImmediateUse(ocn[0]);
-	bool is_true = EvaluableNode::IsTrue(cur);
-	return ReuseOrAllocReturn(cur, !is_true, immediate_result);
+	auto cur = InterpretNodeForImmediateUse(ocn[0], immediate_result);
+	if(cur.IsImmediateValue())
+	{
+		bool is_true = cur.GetValue().GetValueAsBoolean();
+		return AllocReturn(!is_true, immediate_result);
+	}
+	else
+	{
+		bool is_true = EvaluableNode::IsTrue(cur);
+		return ReuseOrAllocReturn(cur, !is_true, immediate_result);
+	}	
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_EQUAL(EvaluableNode *en, bool immediate_result)

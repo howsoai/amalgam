@@ -390,6 +390,8 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	evaluableNodeManager->KeepNodeReferences(nodes_to_keep);
 	auto retval = InterpretNode(en);
 	evaluableNodeManager->FreeNodeReferences(nodes_to_keep);
+	//TODO 18979: look at doing a batch keep/free, so could keep the return node reference if parameter specifies to do so
+	//TODO 18979: could also use this to reduce locks for accum/set root entity
 
 	//remove these nodes
 	evaluableNodeManager->FreeNode(interpreter_node_stack);

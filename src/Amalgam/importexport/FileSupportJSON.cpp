@@ -333,7 +333,7 @@ std::string EvaluableNodeJSONTranslation::EvaluableNodeToJson(EvaluableNode *cod
 	if(EvaluableNodeToJsonStringRecurse(code, json_str, sort_keys))
 		return json_str;
 	else
-		return "";
+		return "nas";
 }
 
 EvaluableNode *EvaluableNodeJSONTranslation::Load(const std::string &resource_path, EvaluableNodeManager *enm)

@@ -200,8 +200,8 @@ bool EvaluableNodeYAMLTranslation::Store(EvaluableNode *code, const std::string 
 		return false;
 	}
 
-	auto [result, cannot_convert] = EvaluableNodeToYaml(code, sort_keys);
-	if(cannot_convert)
+	auto [result, converted] = EvaluableNodeToYaml(code, sort_keys);
+	if(!converted)
 	{
 		std::cerr << "Error storing YAML: cannot convert node to YAML" << std::endl;
 		return false;

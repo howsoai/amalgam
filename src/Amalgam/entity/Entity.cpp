@@ -845,8 +845,6 @@ std::string Entity::CreateRandomStreamFromStringAndRand(const std::string &seed_
 
 void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier, std::vector<EntityWriteListener *> *write_listeners)
 {
-	EvaluableNode *previous_root = evaluableNodeManager.GetRootNode();
-
 	if(_code == nullptr)
 	{
 		evaluableNodeManager.SetRootNode(evaluableNodeManager.AllocNode(ENT_NULL));

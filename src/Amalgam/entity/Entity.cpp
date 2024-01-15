@@ -845,8 +845,6 @@ std::string Entity::CreateRandomStreamFromStringAndRand(const std::string &seed_
 
 void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier, std::vector<EntityWriteListener *> *write_listeners)
 {
-	EvaluableNode *previous_root = evaluableNodeManager.GetRootNode();
-
 	if(_code == nullptr)
 	{
 		evaluableNodeManager.SetRootNode(evaluableNodeManager.AllocNode(ENT_NULL));
@@ -860,12 +858,6 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, Evalu
 		auto code_copy = evaluableNodeManager.DeepAllocCopy(_code, metadata_modifier);
 		evaluableNodeManager.SetRootNode(code_copy);
 	}
-
-	//keep reference for current root
-	evaluableNodeManager.KeepNodeReference(evaluableNodeManager.GetRootNode());
-
-	//free current root reference
-	evaluableNodeManager.FreeNodeReference(previous_root);
 
 	RebuildLabelIndex();
 
@@ -927,12 +919,7 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 		EvaluableNodeReference(previous_root, false), accum_code, &evaluableNodeManager);
 
 	if(new_root != previous_root)
-	{
-		//keep reference for current root before setting and freeing
-		evaluableNodeManager.KeepNodeReference(new_root);
 		evaluableNodeManager.SetRootNode(new_root);
-		evaluableNodeManager.FreeNodeReference(previous_root);
-	}
 
 	//optimistically create references for the new labels, delete them if find collisions
 	string_intern_pool.CreateStringReferences(new_labels, [](auto l) { return l.first; });

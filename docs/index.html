@@ -340,7 +340,7 @@ function render() {
 	<p>
 	Comments do not affect execution directly, but can be read by code and thus influence execution.  They can also be used to store metadata.  An entity's root node's comment specifies the name and description of the Entity.  The first line of the comment is its name, the remainder of the lines of the comment are the description.
 	<p>
-	In-order evaluation of parameters to commands like "and" and "add" are not guaranteed to always execute in order or to execute all parameters unless otherwise specified.  It is generally good practice for performance to treat them in order to conclude early.
+	In-order evaluation of parameters of most opcodes are not guaranteed to execute in order, or be executed at all if not necessary, unless otherwise specified in the opcode (e.g., seq, declare, let, etc. all execute in order).  It is generally not recommended practice to have side effects (variable or entity writes) in opcodes whose parameters are not guaranteed to be sequential.
 	<p>
 	If the concurrent (parallel) symbol, ||, is specified then the opcode's computations will be executed concurrently if possible.  The concurrent execution will be interpreted with regard to the specific opcode, but any function calls may be executed in any order and possibly concurrently.
 	<p>

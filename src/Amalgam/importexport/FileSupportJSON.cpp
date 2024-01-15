@@ -328,7 +328,7 @@ std::string EvaluableNodeJSONTranslation::EvaluableNodeToJson(EvaluableNode *cod
 	if(!EvaluableNode::CanNodeTreeBeFlattened(code))
 		return "";
 
-	//if successful return the json, otherwise return blank
+	//if successful return the json, otherwise return nas
 	std::string json_str;
 	if(EvaluableNodeToJsonStringRecurse(code, json_str, sort_keys))
 		return json_str;

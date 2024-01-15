@@ -339,6 +339,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 
 	bool use_string = false;
 	std::string string_value = "";
+	bool valid_string_value = true;
 
 	const std::string date_string("date:");
 
@@ -805,8 +806,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 		else if(use_string)
 		{
 			EvaluableNode en_str(ENT_STRING, string_value);
-			auto [result, cannot_convert] = EvaluableNodeJSONTranslation::EvaluableNodeToJson(&en_str);
-			string_value = (cannot_convert ? string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID) : result);
+			std::tie(string_value, valid_string_value) = EvaluableNodeJSONTranslation::EvaluableNodeToJson(&en_str);
 		}
 		else if(use_code)
 		{
@@ -820,8 +820,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 					sort_keys = EvaluableNode::IsTrue(found_sort_keys->second);
 			}
 
-			auto [result, cannot_convert] = EvaluableNodeJSONTranslation::EvaluableNodeToJson(code_value, sort_keys);
-			string_value = (cannot_convert ? string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID) : result);
+			std::tie(string_value, valid_string_value) = EvaluableNodeJSONTranslation::EvaluableNodeToJson(code_value, sort_keys);
 		}
 	}
 	else if(to_type == ENBISI_yaml)
@@ -829,26 +828,22 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 		if(use_number)
 		{
 			EvaluableNode value(number_value);
-			auto [result, cannot_convert] = EvaluableNodeYAMLTranslation::EvaluableNodeToYaml(&value);
-			string_value = (cannot_convert ? string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID) : result);
+			std::tie(string_value, valid_string_value) = EvaluableNodeYAMLTranslation::EvaluableNodeToYaml(&value);
 		}
 		else if(use_uint_number)
 		{
 			EvaluableNode value(static_cast<double>(uint_number_value));
-			auto [result, cannot_convert] = EvaluableNodeYAMLTranslation::EvaluableNodeToYaml(&value);
-			string_value = (cannot_convert ? string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID) : result);
+			std::tie(string_value, valid_string_value) = EvaluableNodeYAMLTranslation::EvaluableNodeToYaml(&value);
 		}
 		else if(use_int_number)
 		{
 			EvaluableNode value(static_cast<double>(int_number_value));
-			auto [result, cannot_convert] = EvaluableNodeYAMLTranslation::EvaluableNodeToYaml(&value);
-			string_value = (cannot_convert ? string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID) : result);
+			std::tie(string_value, valid_string_value) = EvaluableNodeYAMLTranslation::EvaluableNodeToYaml(&value);
 		}
 		else if(use_string)
 		{
 			EvaluableNode en_str(ENT_STRING, string_value);
-			auto [result, cannot_convert] = EvaluableNodeYAMLTranslation::EvaluableNodeToYaml(&en_str);
-			string_value = (cannot_convert ? string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID) : result);
+			std::tie(string_value, valid_string_value) = EvaluableNodeYAMLTranslation::EvaluableNodeToYaml(&en_str);
 		}
 		else if(use_code)
 		{
@@ -862,8 +857,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 					sort_keys = EvaluableNode::IsTrue(found_sort_keys->second);
 			}
 
-			auto [result, cannot_convert] = EvaluableNodeYAMLTranslation::EvaluableNodeToYaml(code_value, sort_keys);
-			string_value = (cannot_convert ? string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID) : result);
+			std::tie(string_value, valid_string_value) = EvaluableNodeYAMLTranslation::EvaluableNodeToYaml(code_value, sort_keys);
 		}
 	}
 	else //need to parse the string
@@ -900,6 +894,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 
 	string_intern_pool.DestroyStringReference(to_type);
 
+	if(!valid_string_value)
+		return ReuseOrAllocReturn(to_params, string_intern_pool.NOT_A_STRING_ID, immediate_result);
 	return ReuseOrAllocOneOfReturn(to_params, code_value, string_value, immediate_result);
 }
 

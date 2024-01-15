@@ -373,9 +373,11 @@ bool EvaluableNodeJSONTranslation::Store(EvaluableNode *code, const std::string 
 	std::ofstream file(resource_path);
 	auto [result, cannot_convert] = EvaluableNodeToJson(code, sort_keys);
 	if(cannot_convert)
-		file << string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID);
-	else
-		file << result;
+	{
+		std::cerr << "Error storing JSON: cannot convert node to JSON" << std::endl;
+		return false;
+	}
+	file << result;
 
 	return true;
 }

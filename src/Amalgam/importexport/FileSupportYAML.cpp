@@ -158,21 +158,21 @@ EvaluableNode *EvaluableNodeYAMLTranslation::YamlToEvaluableNode(EvaluableNodeMa
 	return YamlToEvaluableNodeRecurse(enm, yaml_top_element);
 }
 
-std::string EvaluableNodeYAMLTranslation::EvaluableNodeToYaml(EvaluableNode *code, bool sort_keys)
+std::pair<std::string, bool> EvaluableNodeYAMLTranslation::EvaluableNodeToYaml(EvaluableNode *code, bool sort_keys)
 {
 	if(code == nullptr)
-		return "null";
+		return std::make_pair("null", true);
 
 	//if need cycle check, double-check
 	if(!EvaluableNode::CanNodeTreeBeFlattened(code))
-		return "";
+		return std::make_pair("", true);
 
 	ryml::Tree tree;
 	auto top_node = tree.rootref();
 	if(EvaluableNodeToYamlStringRecurse(code, top_node, sort_keys))
-		return ryml::emitrs_yaml<std::string>(tree);
+		return std::make_pair(ryml::emitrs_yaml<std::string>(tree), true);
 	else
-		return "";
+		return std::make_pair("", false);
 }
 
 EvaluableNode *EvaluableNodeYAMLTranslation::Load(const std::string &resource_path, EvaluableNodeManager *enm)
@@ -201,7 +201,11 @@ bool EvaluableNodeYAMLTranslation::Store(EvaluableNode *code, const std::string 
 	}
 
 	std::ofstream file(resource_path);
-	file << EvaluableNodeToYaml(code, sort_keys);
+	auto [result, cannot_convert] = EvaluableNodeToYaml(code, sort_keys);
+	if(cannot_convert)
+		file << string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID);
+	else
+		file << result;
 
 	return true;
 }

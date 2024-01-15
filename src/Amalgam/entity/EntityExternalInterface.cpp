@@ -526,7 +526,8 @@ std::string EntityExternalInterface::GetJSONFromLabel(std::string &handle, std::
 		return "";
 
 	EvaluableNode *label_val = bundle->entity->GetValueAtLabel(label, nullptr, false);
-	return EvaluableNodeJSONTranslation::EvaluableNodeToJson(label_val);
+	auto [result, cannot_convert] = EvaluableNodeJSONTranslation::EvaluableNodeToJson(label_val);
+	return (cannot_convert ? string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID) : result);
 }
 
 std::string EntityExternalInterface::ExecuteEntityJSON(std::string &handle, std::string &label, std::string_view json)
@@ -552,9 +553,9 @@ std::string EntityExternalInterface::ExecuteEntityJSON(std::string &handle, std:
 	//ConvertArgsToCallStack always adds an outer list that is safe to free
 	enm.FreeNode(call_stack);
 
-	std::string result = EvaluableNodeJSONTranslation::EvaluableNodeToJson(returned_value);
+	auto [result, cannot_convert] = EvaluableNodeJSONTranslation::EvaluableNodeToJson(returned_value);
 	enm.FreeNodeTreeIfPossible(returned_value);
-	return result;
+	return (cannot_convert ? string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID) : result);
 }
 
 bool EntityExternalInterface::EntityListenerBundle::SetEntityValueAtLabel(std::string &label_name, EvaluableNodeReference new_value)

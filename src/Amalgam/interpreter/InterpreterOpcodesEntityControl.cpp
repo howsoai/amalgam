@@ -38,7 +38,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 	// and prevent deadlock if one of the params accessed the entity
 	EntityReadReference target_entity;
 	if(ocn.size() > 0)
-		target_entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
+		target_entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
 	else
 		target_entity = EntityReadReference(curEntity);
 
@@ -129,7 +129,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_ENTITY_ROOT(Evalu
 	// and prevent deadlock if one of the params accessed the entity
 	EntityReadReference target_entity;
 	if(ocn.size() > 0)
-		target_entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
+		target_entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
 	else
 		target_entity = EntityReadReference(curEntity);
 
@@ -163,7 +163,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_AC
 		EntityWriteReference target_entity;
 		if(i + 1 < ocn.size())
 		{
-			target_entity = InterpretNodeIntoRelativeSourceEntityWriteReferenceFromInterpretedEvaluableNodeIDPath(ocn[i]);
+			target_entity = InterpretNodeIntoRelativeSourceEntityWriteReference(ocn[i]);
 
 			//if didn't find an entity, then use current one
 			if(target_entity == nullptr)
@@ -226,7 +226,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_RAND_SEED(Evalu
 		return EvaluableNodeReference::Null();
 
 	//get the id of the entity
-	EntityReadReference entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
+	EntityReadReference entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
 	if(entity == nullptr)
 		return EvaluableNodeReference::Null();
 
@@ -264,7 +264,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED(Evalu
 	//get the entity
 	EntityWriteReference entity;
 	if(num_params > 1)
-		entity = InterpretNodeIntoRelativeSourceEntityWriteReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
+		entity = InterpretNodeIntoRelativeSourceEntityWriteReference(ocn[0]);
 	else
 		entity = EntityWriteReference(curEntity);
 
@@ -286,7 +286,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_ROOT_PERMISSION
 	if(!asset_manager.DoesEntityHaveRootPermission(curEntity))
 		return EvaluableNodeReference::Null();
 
-	EntityReadReference entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
+	EntityReadReference entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
 	return AllocReturn(asset_manager.DoesEntityHaveRootPermission(entity), immediate_result);
 }
 
@@ -393,7 +393,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CLONE_ENTITIES(EvaluableNo
 	for(size_t i = 0; i < ocn.size(); i += 2)
 	{
 		//get the id of the source entity
-		Entity *source_entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[i]);
+		Entity *source_entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[i]);
 		//need a source entity, and can't copy self! (that could cause badness)
 		if(source_entity == nullptr || source_entity == curEntity)
 		{
@@ -748,7 +748,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 	//get the id of the source entity to store.  Don't need to keep the reference because it won't be used once the source entety pointer is looked up
 	//retrieve the entity after other parameters to minimize time in locks
 	// and prevent deadlock if one of the params accessed the entity
-	EntityReadReference source_entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[1]);
+	EntityReadReference source_entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[1]);
 	if(source_entity == nullptr || source_entity == curEntity)
 		return EvaluableNodeReference::Null();
 

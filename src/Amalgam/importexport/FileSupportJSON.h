@@ -12,9 +12,9 @@ namespace EvaluableNodeJSONTranslation
 	//converts JSON string_view to EvaluableNode tree
 	EvaluableNode *JsonToEvaluableNode(EvaluableNodeManager *enm, std::string_view json_str);
 
-	//converts EvaluableNode tree to JSON string
+	//converts EvaluableNode tree to JSON string. Returns false if EN cannot be converted to JSON
 	// if sort_keys is true, it will sort all of the assoc keys
-	std::string EvaluableNodeToJson(EvaluableNode *code, bool sort_keys = false);
+	std::pair<std::string, bool> EvaluableNodeToJson(EvaluableNode *code, bool sort_keys = false);
 
 	//loads json file to EvaluableNode tree
 	EvaluableNode *Load(const std::string &resource_path, EvaluableNodeManager *enm);

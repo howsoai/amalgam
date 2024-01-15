@@ -197,7 +197,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_LABEL(EvaluableNo
 	//get the id of the entity
 	EntityReadReference target_entity;
 	if(ocn.size() > 1)
-		target_entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
+		target_entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
 	else
 		target_entity = EntityReadReference(curEntity);
 
@@ -240,7 +240,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 
 		EntityWriteReference target_entity;
 		if(i + 1 < ocn.size())
-			target_entity = InterpretNodeIntoRelativeSourceEntityWriteReferenceFromInterpretedEvaluableNodeIDPath(ocn[i]);
+			target_entity = InterpretNodeIntoRelativeSourceEntityWriteReference(ocn[i]);
 		else
 			target_entity = EntityWriteReference(curEntity);
 
@@ -324,7 +324,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 	//get the id of the source to check
 	EntityReadReference target_entity;
 	if(ocn.size() > 1)
-		target_entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
+		target_entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
 	else
 		target_entity = EntityReadReference(curEntity);
 
@@ -484,7 +484,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	}
 
 	//get a write lock on the entity
-	EntityReadReference called_entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
+	EntityReadReference called_entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
 	if(called_entity == nullptr)
 		return EvaluableNodeReference::Null();
 

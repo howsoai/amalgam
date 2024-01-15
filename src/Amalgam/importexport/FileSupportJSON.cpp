@@ -319,21 +319,20 @@ EvaluableNode *EvaluableNodeJSONTranslation::JsonToEvaluableNode(EvaluableNodeMa
 	}
 }
 
-std::string EvaluableNodeJSONTranslation::EvaluableNodeToJson(EvaluableNode *code, bool sort_keys)
+std::pair<std::string, bool> EvaluableNodeJSONTranslation::EvaluableNodeToJson(EvaluableNode *code, bool sort_keys)
 {
 	if(code == nullptr)
-		return "null";
+		return std::make_pair("null", true);
 
 	//if need cycle check, double-check
 	if(!EvaluableNode::CanNodeTreeBeFlattened(code))
-		return "";
+		return std::make_pair("", false);
 
-	//if successful return the json, otherwise return blank
 	std::string json_str;
 	if(EvaluableNodeToJsonStringRecurse(code, json_str, sort_keys))
-		return json_str;
+		return std::make_pair(json_str, true);
 	else
-		return "";
+		return std::make_pair("", false);
 }
 
 EvaluableNode *EvaluableNodeJSONTranslation::Load(const std::string &resource_path, EvaluableNodeManager *enm)
@@ -371,8 +370,14 @@ bool EvaluableNodeJSONTranslation::Store(EvaluableNode *code, const std::string 
 		return false;
 	}
 
+	auto [result, converted] = EvaluableNodeToJson(code, sort_keys);
+	if(!converted)
+	{
+		std::cerr << "Error storing JSON: cannot convert node to JSON" << std::endl;
+		return false;
+	}
 	std::ofstream file(resource_path);
-	file << EvaluableNodeToJson(code, sort_keys);
+	file << result;
 
 	return true;
 }

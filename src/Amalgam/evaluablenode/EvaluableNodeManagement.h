@@ -620,60 +620,50 @@ public:
 			FreeAllNodes();
 	}
 
-	//adds the node to nodesCurrentlyReferenced
-	void KeepNodeReference(EvaluableNode *en);
-
-	//like KeepNodeReference but iterates over a collection
-	template<typename EvaluableNodeCollection>
-	inline void KeepNodeReferences(EvaluableNodeCollection &node_collection)
+#ifdef MULTITHREAD_SUPPORT
+	//creates a lock for calling KeepNodeReference and FreeNodeReference
+	inline Concurrency::WriteLock GetNodeReferenceUpdateLock()
 	{
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::WriteLock lock(managerAttributesMutex);
-	#endif
+		return Concurrency::WriteLock(managerAttributesMutex);
+	}
+#endif
 
-		for(auto en : node_collection)
-		{
-			if(en == nullptr)
-				continue;
+	//adds the node to nodesCurrentlyReferenced
+	//if called within multithreading, GetNodeReferenceUpdateLock() needs to be called
+	//to obtain a lock around all calls to this methed
+	inline void KeepNodeReference(EvaluableNode *en)
+	{
+		if(en == nullptr)
+			return;
 
-			//attempt to put in value 1 for the reference
-			auto [inserted_result, inserted] = nodesCurrentlyReferenced.insert(std::make_pair(en, 1));
+		//attempt to put in value 1 for the reference
+		auto [inserted_entry, inserted] = nodesCurrentlyReferenced.insert(std::make_pair(en, 1));
 
-			//if couldn't insert because already referenced, then increment
-			if(!inserted)
-				inserted_result->second++;
-		}
+		//if couldn't insert because already referenced, then increment
+		if(!inserted)
+			inserted_entry->second++;
 	}
 
 	//removes the node from nodesCurrentlyReferenced
-	void FreeNodeReference(EvaluableNode *en);
-
-	//like FreeNodeReference but iterates over a collection
-	template<typename EvaluableNodeCollection>
-	inline void FreeNodeReferences(EvaluableNodeCollection &node_collection)
+	//if called within multithreading, GetNodeReferenceUpdateLock() needs to be called
+	//to obtain a lock around all calls to this methed
+	void FreeNodeReference(EvaluableNode *en)
 	{
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::WriteLock lock(managerAttributesMutex);
-	#endif
+		if(en == nullptr)
+			return;
 
-		for(auto en : node_collection)
-		{
-			if(en == nullptr)
-				continue;
+		//get reference count
+		auto node = nodesCurrentlyReferenced.find(en);
 
-			//get reference count
-			auto node = nodesCurrentlyReferenced.find(en);
+		//don't do anything if not counted
+		if(node == nodesCurrentlyReferenced.end())
+			return;
 
-			//don't do anything if not counted
-			if(node == nodesCurrentlyReferenced.end())
-				continue;
-
-			//if it has sufficient refcount, then just decrement
-			if(node->second > 1)
-				node->second--;
-			else //otherwise remove reference
-				nodesCurrentlyReferenced.erase(node);
-		}
+		//if it has sufficient refcount, then just decrement
+		if(node->second > 1)
+			node->second--;
+		else //otherwise remove reference
+			nodesCurrentlyReferenced.erase(node);
 	}
 
 	//compacts allocated nodes so that the node pool can be used more efficiently
@@ -727,12 +717,15 @@ public:
 
 	//sets the root node, implicitly defined as the first node in memory, to new_root
 	// note that new_root MUST have been allocated by this EvaluableNodeManager
+	//ensures that the new root node is kept and the old is released
 	inline void SetRootNode(EvaluableNode *new_root)
 	{
 	#ifdef MULTITHREAD_SUPPORT
 		//use WriteLock to be safe
 		Concurrency::WriteLock lock(managerAttributesMutex);
 	#endif
+
+		KeepNodeReference(new_root);
 
 		//iteratively search forward; this will be fast for newly created entities but potentially slow for those that are not
 		// however, this should be rarely called on those entities since it's basically clearing them out, so it should not generally be a performance issue
@@ -741,6 +734,9 @@ public:
 		//swap the pointers
 		if(location != end(nodes))
 			std::swap(*begin(nodes), *location);
+
+		//free old root
+		FreeNodeReference(*location);
 	}
 
 	//returns a copy of the nodes referenced; should be used only for debugging

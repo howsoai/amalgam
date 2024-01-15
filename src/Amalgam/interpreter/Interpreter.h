@@ -60,11 +60,12 @@ public:
 #ifdef MULTITHREAD_SUPPORT
 	//if run multithreaded, then for performance reasons, it is optimal to have one of each stack per thread
 	// and call_stack_write_mutex is the mutex needed to lock for writing
+	//if keep_result_node_reference is true, then the result is kept and FreeNodeReference must be invoked by the caller
 	EvaluableNodeReference ExecuteNode(EvaluableNode *en,
 		EvaluableNode *call_stack = nullptr, EvaluableNode *interpreter_node_stack = nullptr,
 		EvaluableNode *construction_stack = nullptr,
 		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices = nullptr,
-		Concurrency::ReadWriteMutex *call_stack_write_mutex = nullptr);
+		Concurrency::ReadWriteMutex *call_stack_write_mutex = nullptr, bool keep_result_node_reference = false);
 #else
 	EvaluableNodeReference ExecuteNode(EvaluableNode *en,
 		EvaluableNode *call_stack = nullptr, EvaluableNode *interpreter_node_stack = nullptr,
@@ -535,9 +536,7 @@ protected:
 							enm->AllocListNode(parentInterpreter->interpreterNodeStackNodes),
 							construction_stack,
 							&csiau,
-							GetCallStackMutex());
-
-						enm->KeepNodeReference(result);
+							GetCallStackMutex(), true);
 
 						interpreter->memoryModificationLock.unlock();
 						return result;
@@ -582,7 +581,11 @@ protected:
 			for(size_t i = 0; i < numTasks; i++)
 				results[i] = resultFutures[i].get();
 
-			parentInterpreter->evaluableNodeManager->FreeNodeReferences(results);
+		#ifdef MULTITHREAD_SUPPORT
+			auto node_keep_lock = parentInterpreter->evaluableNodeManager->GetNodeReferenceUpdateLock();
+		#endif
+			for(auto &r : results)
+				parentInterpreter->evaluableNodeManager->FreeNodeReference(r);
 
 			return results;
 		}

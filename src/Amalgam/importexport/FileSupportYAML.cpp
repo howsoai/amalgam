@@ -165,7 +165,7 @@ std::pair<std::string, bool> EvaluableNodeYAMLTranslation::EvaluableNodeToYaml(E
 
 	//if need cycle check, double-check
 	if(!EvaluableNode::CanNodeTreeBeFlattened(code))
-		return std::make_pair("", true);
+		return std::make_pair("", false);
 
 	ryml::Tree tree;
 	auto top_node = tree.rootref();

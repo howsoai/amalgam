@@ -341,13 +341,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	//get the id of the first source entity
-	//TODO 10975: change this to lock all entities at once
-	EntityReadReference source_entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
-	//need a source entity, and can't copy self! (that could cause badness)
-	if(source_entity == nullptr || source_entity == curEntity)
-		return EvaluableNodeReference::Null();
-
 	//get mutation rate if applicable
 	double mutation_rate = 0.00001;
 	if(ocn.size() > 1)
@@ -390,6 +383,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 			evaluableNodeManager->FreeNodeTreeIfPossible(mutation_weights_node);
 		}
 	}
+
+	//TODO 10975: change this to lock all entities at once
+	//retrieve the entities after other parameters to minimize time in locks
+	// and prevent deadlock if one of the params accessed the entity
+	//get the id of the first source entity
+	EntityReadReference source_entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
+	//need a source entity, and can't copy self! (that could cause badness)
+	if(source_entity == nullptr || source_entity == curEntity)
+		return EvaluableNodeReference::Null();
 
 	//create new entity by mutating
 	Entity *new_entity = EntityManipulation::MutateEntity(this, source_entity, mutation_rate, mtw_exists ? &mutation_type_weights : nullptr, ow_exists ? &opcode_weights : nullptr);
@@ -596,19 +598,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	//TODO 10975: change this to lock all entities at once
-	//get the id of the first source entity
-	Entity *source_entity_1 = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
-	//need a source entity, and can't copy self! (that could cause badness)
-	if(source_entity_1 == nullptr || source_entity_1 == curEntity)
-		return EvaluableNodeReference::Null();
-
-	//get the id of the second source entity
-	Entity *source_entity_2 = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[1]);
-	//need a source entity, and can't copy self! (that could cause badness)
-	if(source_entity_2 == nullptr || source_entity_2 == curEntity)
-		return EvaluableNodeReference::Null();
-
 	double blend2 = 0.5; //default to half
 	if(ocn.size() > 2)
 		blend2 = InterpretNodeIntoNumberValue(ocn[2]);
@@ -635,6 +624,21 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode
 	if(ocn.size() > 6)
 		InterpretNodeIntoDestinationEntity(ocn[6], destination_entity_parent, new_entity_id);
 	if(destination_entity_parent == nullptr)
+		return EvaluableNodeReference::Null();
+
+	//TODO 10975: change this to lock all entities at once
+	//retrieve the entities after other parameters to minimize time in locks
+	// and prevent deadlock if one of the params accessed the entity
+	//get the id of the first source entity
+	Entity* source_entity_1 = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
+	//need a source entity, and can't copy self! (that could cause badness)
+	if(source_entity_1 == nullptr || source_entity_1 == curEntity)
+		return EvaluableNodeReference::Null();
+
+	//get the id of the second source entity
+	Entity* source_entity_2 = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[1]);
+	//need a source entity, and can't copy self! (that could cause badness)
+	if(source_entity_2 == nullptr || source_entity_2 == curEntity)
 		return EvaluableNodeReference::Null();
 
 	//create new entity by merging

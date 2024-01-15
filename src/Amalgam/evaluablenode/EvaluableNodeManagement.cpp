@@ -475,46 +475,6 @@ void EvaluableNodeManager::ModifyLabels(EvaluableNode *n, EvaluableNodeMetadataM
 	}
 }
 
-void EvaluableNodeManager::KeepNodeReference(EvaluableNode *en)
-{
-	if(en == nullptr)
-		return;
-
-#ifdef MULTITHREAD_SUPPORT
-	Concurrency::WriteLock lock(managerAttributesMutex);
-#endif
-
-	//attempt to put in value 1 for the reference
-	auto [inserted_entry, inserted] = nodesCurrentlyReferenced.insert(std::make_pair(en, 1));
-
-	//if couldn't insert because already referenced, then increment
-	if(!inserted)
-		inserted_entry->second++;
-}
-
-void EvaluableNodeManager::FreeNodeReference(EvaluableNode *en)
-{
-	if(en == nullptr)
-		return;
-
-#ifdef MULTITHREAD_SUPPORT
-	Concurrency::WriteLock lock(managerAttributesMutex);
-#endif
-
-	//get reference count
-	auto node = nodesCurrentlyReferenced.find(en);
-
-	//don't do anything if not counted
-	if(node == nodesCurrentlyReferenced.end())
-		return;
-
-	//if it has sufficient refcount, then just decrement
-	if(node->second > 1)
-		node->second--;
-	else //otherwise remove reference
-		nodesCurrentlyReferenced.erase(node);
-}
-
 void EvaluableNodeManager::CompactAllocatedNodes()
 {
 #ifdef MULTITHREAD_SUPPORT

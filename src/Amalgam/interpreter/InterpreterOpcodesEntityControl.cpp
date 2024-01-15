@@ -26,6 +26,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 
 	auto &ocn = en->GetOrderedChildNodes();
 
+	StringInternPool::StringID label_sid = StringInternPool::NOT_A_STRING_ID;
+	if(ocn.size() > 1)
+		label_sid = InterpretNodeIntoStringIDValueIfExists(ocn[1]);
+
+	bool deep_comments = false;
+	if(ocn.size() > 2)
+		deep_comments = InterpretNodeIntoBoolValue(ocn[2]);
+
+	//retrieve the entity after other parameters to minimize time in locks
+	// and prevent deadlock if one of the params accessed the entity
 	EntityReadReference target_entity;
 	if(ocn.size() > 0)
 		target_entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
@@ -34,14 +44,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 
 	if(target_entity == nullptr)
 		return EvaluableNodeReference::Null();
-
-	StringInternPool::StringID label_sid = StringInternPool::NOT_A_STRING_ID;
-	if(ocn.size() > 1)
-		label_sid = InterpretNodeIntoStringIDValueIfExists(ocn[1]);
-
-	bool deep_comments = false;
-	if(ocn.size() > 2)
-		deep_comments = InterpretNodeIntoBoolValue(ocn[2]);
 
 	if(label_sid == StringInternPool::NOT_A_STRING_ID)
 	{
@@ -112,17 +114,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_ENTITY_ROOT(Evalu
 {
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
-
-	//get entity by id parameter if exists
-	EntityReadReference target_entity;
-	auto &ocn = en->GetOrderedChildNodes();
-	if(ocn.size() > 0)
-		target_entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
-	else 
-		target_entity = EntityReadReference(curEntity);
-
-	if(target_entity == nullptr)
-		return EvaluableNodeReference::Null();
+	auto& ocn = en->GetOrderedChildNodes();
 
 	//get second parameter if exists
 	auto label_escape_increment = EvaluableNodeManager::ENMM_LABEL_ESCAPE_INCREMENT;
@@ -132,6 +124,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_ENTITY_ROOT(Evalu
 		if(value)
 			label_escape_increment = EvaluableNodeManager::ENMM_NO_CHANGE;
 	}
+
+	//retrieve the entity after other parameters to minimize time in locks
+	// and prevent deadlock if one of the params accessed the entity
+	EntityReadReference target_entity;
+	if(ocn.size() > 0)
+		target_entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[0]);
+	else
+		target_entity = EntityReadReference(curEntity);
+
+	if(target_entity == nullptr)
+		return EvaluableNodeReference::Null();
+
 
 	return target_entity->GetRoot(evaluableNodeManager, label_escape_increment);
 }
@@ -214,7 +218,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_AC
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_RAND_SEED(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
-
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
 
@@ -708,13 +711,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 	if(resource_name == "")
 		return EvaluableNodeReference::Null();
 
-	//TODO 10975: lock entire entity tree
-	//get the id of the source entity to store.  Don't need to keep the reference because it won't be used once the source entety pointer is looked up
-	EntityReadReference source_entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[1]);
-
-	if(source_entity == nullptr || source_entity == curEntity)
-		return EvaluableNodeReference::Null();
-
 	bool escape_filename = false;
 	if(ocn.size() >= 3)
 		escape_filename = InterpretNodeIntoBoolValue(ocn[2], false);
@@ -747,6 +743,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
+
+	//TODO 10975: lock entire entity tree
+	//get the id of the source entity to store.  Don't need to keep the reference because it won't be used once the source entety pointer is looked up
+	//retrieve the entity after other parameters to minimize time in locks
+	// and prevent deadlock if one of the params accessed the entity
+	EntityReadReference source_entity = InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(ocn[1]);
+	if(source_entity == nullptr || source_entity == curEntity)
+		return EvaluableNodeReference::Null();
 
 	bool stored_successfully = asset_manager.StoreEntityToResourcePath(source_entity, resource_name, file_type,
 		false, true, escape_filename, escape_contained_filenames, sort_keys);

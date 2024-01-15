@@ -326,7 +326,7 @@ std::pair<std::string, bool> EvaluableNodeJSONTranslation::EvaluableNodeToJson(E
 
 	//if need cycle check, double-check
 	if(!EvaluableNode::CanNodeTreeBeFlattened(code))
-		return std::make_pair("", true);
+		return std::make_pair("", false);
 
 	//if successful return the json, otherwise return nas
 	std::string json_str;

@@ -1075,7 +1075,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET(EvaluableNode *en, boo
 	//if just a single index passed to get
 	if(ocn_size == 2)
 	{
-		EvaluableNode **target = InterpretNodeIntoDestinationFromTraversalPathList(&source.GetReference(), ocn[1], false);
+		EvaluableNode **target = InterpretNodeIntoDestination(&source.GetReference(), ocn[1], false);
 
 		node_stack.PopEvaluableNode();
 
@@ -1095,7 +1095,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET(EvaluableNode *en, boo
 
 	for(size_t param_index = 1; param_index < ocn_size; param_index++)
 	{
-		EvaluableNode **target = InterpretNodeIntoDestinationFromTraversalPathList(&source.GetReference(), ocn[param_index], false);
+		EvaluableNode **target = InterpretNodeIntoDestination(&source.GetReference(), ocn[param_index], false);
 		if(target != nullptr)
 			retrieved_list->AppendOrderedChildNode(*target);
 		else
@@ -1131,7 +1131,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_and_REPLACE(EvaluableN
 	{
 		//find replacement location, make sure it's a valid target
 		EvaluableNode *previous_result = result;
-		EvaluableNode **copy_destination = InterpretNodeIntoDestinationFromTraversalPathList(&result.GetReference(), ocn[replace_change_index], true);
+		EvaluableNode **copy_destination = InterpretNodeIntoDestination(&result.GetReference(), ocn[replace_change_index], true);
 		//if the target changed, keep track of the proper reference
 		if(result != previous_result)
 		{

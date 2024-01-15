@@ -337,7 +337,7 @@ Interpreter::Interpreter(EvaluableNodeManager *enm,
 EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	EvaluableNode *call_stack, EvaluableNode *interpreter_node_stack,
 	EvaluableNode *construction_stack, std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices,
-	Concurrency::ReadWriteMutex *call_stack_write_mutex)
+	Concurrency::ReadWriteMutex *call_stack_write_mutex, bool keep_result_node_reference)
 #else
 EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	EvaluableNode *call_stack, EvaluableNode *interpreter_node_stack,
@@ -386,12 +386,35 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	construction_stack->SetNeedCycleCheck(true);
 
 	//keep these references as long as the interpreter is around
-	std::array<EvaluableNode *, 3> nodes_to_keep = { call_stack, interpreter_node_stack, construction_stack };
-	evaluableNodeManager->KeepNodeReferences(nodes_to_keep);
+#ifdef MULTITHREAD_SUPPORT
+	auto node_keep_lock = evaluableNodeManager->GetNodeReferenceUpdateLock();
+	evaluableNodeManager->KeepNodeReference(call_stack);
+	evaluableNodeManager->KeepNodeReference(interpreter_node_stack);
+	evaluableNodeManager->KeepNodeReference(construction_stack);
+	node_keep_lock.unlock();
+#else
+	evaluableNodeManager->KeepNodeReference(call_stack);
+	evaluableNodeManager->KeepNodeReference(interpreter_node_stack);
+	evaluableNodeManager->KeepNodeReference(construction_stack);
+#endif
+
 	auto retval = InterpretNode(en);
-	evaluableNodeManager->FreeNodeReferences(nodes_to_keep);
-	//TODO 18979: look at doing a batch keep/free, so could keep the return node reference if parameter specifies to do so
-	//TODO 18979: could also use this to reduce locks for accum/set root entity
+
+#ifdef MULTITHREAD_SUPPORT
+	node_keep_lock.lock();
+
+	if(keep_result_node_reference)
+		evaluableNodeManager->KeepNodeReference(retval);
+
+	evaluableNodeManager->FreeNodeReference(call_stack);
+	evaluableNodeManager->FreeNodeReference(interpreter_node_stack);
+	evaluableNodeManager->FreeNodeReference(construction_stack);
+	node_keep_lock.unlock();
+#else
+	evaluableNodeManager->FreeNodeReference(call_stack);
+	evaluableNodeManager->FreeNodeReference(interpreter_node_stack);
+	evaluableNodeManager->FreeNodeReference(construction_stack);
+#endif
 
 	//remove these nodes
 	evaluableNodeManager->FreeNode(interpreter_node_stack);
@@ -811,9 +834,8 @@ bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node
 						evaluableNodeManager->AllocListNode(interpreterNodeStackNodes),
 						evaluableNodeManager->AllocListNode(constructionStackNodes),
 						&constructionStackIndicesAndUniqueness,
-						concurrency_manager.GetCallStackMutex());
+						concurrency_manager.GetCallStackMutex(), true);
 
-					evaluableNodeManager->KeepNodeReference(result);
 					interpreter.memoryModificationLock.unlock();
 					return result;
 				}

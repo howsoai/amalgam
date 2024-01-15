@@ -421,7 +421,7 @@ public:
 	//calls InterpretNode on tpl, traverses source based on tpl.
 	// If create_destination_if_necessary is set, then it will expand anything in the source as appropriate
 	//Returns the location of the EvaluableNode * of the destination, nullptr if it does not exist
-	__forceinline EvaluableNode **InterpretNodeIntoDestinationFromTraversalPathList(EvaluableNode **source,
+	__forceinline EvaluableNode **InterpretNodeIntoDestination(EvaluableNode **source,
 		EvaluableNode *tpl, bool create_destination_if_necessary)
 	{
 		EvaluableNodeReference address_list_node = InterpretNodeForImmediateUse(tpl);
@@ -432,7 +432,7 @@ public:
 
 	//Interprets node_id_path_to_interpret and then attempts to find the Entity relative to curEntity. Returns nullptr if cannot find
 	template<typename EntityReferenceType>
-	EntityReferenceType InterpretNodeIntoRelativeSourceEntityReferenceFromInterpretedEvaluableNodeIDPath(EvaluableNode *node_id_path_to_interpret)
+	EntityReferenceType InterpretNodeIntoRelativeSourceEntityReference(EvaluableNode *node_id_path_to_interpret)
 	{
 		if(curEntity == nullptr)
 			return EntityReferenceType(nullptr);
@@ -448,16 +448,16 @@ public:
 		return source_entity;
 	}
 
-	//like InterpretNodeIntoRelativeSourceEntityReferenceFromInterpretedEvaluableNodeIDPath but with a read reference
-	inline EntityReadReference InterpretNodeIntoRelativeSourceEntityReadReferenceFromInterpretedEvaluableNodeIDPath(EvaluableNode *node_id_path_to_interpret)
+	//like InterpretNodeIntoRelativeSourceEntityReference but with a read reference
+	inline EntityReadReference InterpretNodeIntoRelativeSourceEntityReadReference(EvaluableNode *node_id_path_to_interpret)
 	{
-		return InterpretNodeIntoRelativeSourceEntityReferenceFromInterpretedEvaluableNodeIDPath<EntityReadReference>(node_id_path_to_interpret);
+		return InterpretNodeIntoRelativeSourceEntityReference<EntityReadReference>(node_id_path_to_interpret);
 	}
 
-	//like InterpretNodeIntoRelativeSourceEntityReferenceFromInterpretedEvaluableNodeIDPath but with a write reference
-	inline EntityWriteReference InterpretNodeIntoRelativeSourceEntityWriteReferenceFromInterpretedEvaluableNodeIDPath(EvaluableNode *node_id_path_to_interpret)
+	//like InterpretNodeIntoRelativeSourceEntityReference but with a write reference
+	inline EntityWriteReference InterpretNodeIntoRelativeSourceEntityWriteReference(EvaluableNode *node_id_path_to_interpret)
 	{
-		return InterpretNodeIntoRelativeSourceEntityReferenceFromInterpretedEvaluableNodeIDPath<EntityWriteReference>(node_id_path_to_interpret);
+		return InterpretNodeIntoRelativeSourceEntityReference<EntityWriteReference>(node_id_path_to_interpret);
 	}
 
 protected:

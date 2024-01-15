@@ -12,9 +12,9 @@ namespace EvaluableNodeYAMLTranslation
 	//converts YAML string_view to EvaluableNode tree
 	EvaluableNode *YamlToEvaluableNode(EvaluableNodeManager *enm, std::string &yaml_str);
 
-	//converts EvaluableNode tree to YAML string
+	//converts EvaluableNode tree to YAML string. Returns false if EN cannot be converted to YAML
 	// if sort_keys is true, it will sort all of the assoc keys
-	std::string EvaluableNodeToYaml(EvaluableNode *code, bool sort_keys = false);
+	std::pair<std::string, bool> EvaluableNodeToYaml(EvaluableNode *code, bool sort_keys = false);
 
 	//loads yaml file to EvaluableNode tree
 	EvaluableNode *Load(const std::string &resource_path, EvaluableNodeManager *enm);

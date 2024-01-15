@@ -328,7 +328,6 @@ std::pair<std::string, bool> EvaluableNodeJSONTranslation::EvaluableNodeToJson(E
 	if(!EvaluableNode::CanNodeTreeBeFlattened(code))
 		return std::make_pair("", false);
 
-	//if successful return the json, otherwise return nas
 	std::string json_str;
 	if(EvaluableNodeToJsonStringRecurse(code, json_str, sort_keys))
 		return std::make_pair(json_str, true);

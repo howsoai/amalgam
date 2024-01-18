@@ -976,16 +976,13 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 	case ENT_TARGET:
 	{
 		//first parameter is the number of steps to crawl up in the parent tree
-		size_t steps_up = 0;
+		size_t steps_up = 1;
 		if(path->GetOrderedChildNodes().size() > 0)
 			steps_up = static_cast<size_t>(EvaluableNode::ToNumber(path->GetOrderedChildNodes()[0]));
 
-		//at least need to go up one step
-		steps_up++;
-
 		//crawl up parse tree
 		EvaluableNode *result = path;
-		while(steps_up > 0 && result != nullptr)
+		for(size_t i = 0; i < steps_up && result != nullptr; i++)
 		{
 			auto found = parentNodes.find(result);
 			if(found != end(parentNodes))

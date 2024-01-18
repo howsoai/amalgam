@@ -111,7 +111,7 @@ notakeyword
 	last 0.65
 	let 0.95
 	lgamma 0.07
-	list 2.5
+	list 2
 	load 0.01
 	load_entity 0.01
 	load_persistent_entity 0.01
@@ -195,7 +195,7 @@ notakeyword
 	store_entity 0.01
 	string 4
 	substr 0.2
-	symbol 25
+	symbol 10
 	system 0.05
 	system_time 0.01
 	tail 0.65
@@ -1252,7 +1252,7 @@ current_index: 2
 		interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1703862635.320713
+		start_time 1705540501.507736
 		www 1
 		x 12
 		zz 10
@@ -1295,7 +1295,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1703862635.320713
+	start_time 1705540501.507736
 	www 1
 	x 12
 	zz 10
@@ -1337,7 +1337,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1703862635.320713
+	start_time 1705540501.507736
 	www 1
 	x 12
 	zz 10
@@ -1605,7 +1605,7 @@ e:
   - .inf
 
 25: (assoc a 1)
-current date-time in epoch: 2023-12-29-10.10.35.7511530
+current date-time in epoch: 2024-01-17-20.15.01.7597390
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -1881,40 +1881,35 @@ decrypted: hello
 --mutate--
 (list
 	1
-	b
+	-2.781487486378118
 	3
-	(contains_value)
-	(compute_entity_group_kl_divergence)
-	(assoc)
+	10
+	5
+	(call)
 	7
-	8
-	9
-	b
-	(set_value)
+	(query_min)
+	(last)
+	10
+	11
 	12
-	(values)
-	(append)
-	(associate
-		#a "a"
-		(and)
-		"b"
-		2
-	)
+	13
+	14
+	(ceil)
 )
 (list
 	1
 	2
 	3
-	4
+	(+)
 	(associate "alpha" 5 "beta" 6)
 	(associate
 		"nest"
 		(associate
 			"count"
-			(list (+) 8 9)
+			(list (-) 8 9)
 		)
 		"end"
-		(list 10 11 (+))
+		(list 10 11 12)
 	)
 )
 --commonality--
@@ -2329,11 +2324,9 @@ decrypted: hello
 )
 --mix--
 (list
-	1
 	2
-	4
-	3
-	5.5
+	3.5
+	5
 	7.5
 	9.5
 	11.5
@@ -2346,11 +2339,11 @@ decrypted: hello
 	;comment 3
 	;comment 4
 	1
-	3.5
+	4
 	5.5
 	7.5
-	9
-	12
+	9.5
+	11.5
 	13.5
 )
 (list
@@ -2360,12 +2353,12 @@ decrypted: hello
 	(associate "a" 3 "b" 4)
 	(lambda
 		(if
-			false
+			true
 			1
 			(parallel
 				(get_entity_comments)
 				1
-				(lambda (null))
+				(lambda (print))
 			)
 		)
 	)
@@ -2373,7 +2366,6 @@ decrypted: hello
 )
 (list
 	1
-	5
 	2.5
 	(associate "a" 3 "b" 4)
 	(lambda
@@ -2387,37 +2379,20 @@ decrypted: hello
 						(list 2 9)
 					)
 				)
+				1
 			)
 		)
 	)
 )
-(list
-	(true)
-	2
-	3.5
-	5.5
-	7.5
-	9.5
-	11.5
-	13.5
-)
-(list
-	(true)
-	2
-	3
-	5
-	8
-	9
-	11
-	14
-)
+(list 3.5 5.5 7.5 9.5 11.5 13.5)
+(list 5 8 10 12 11 13)
 4
 4
 2.5
 2.5
-abcdexyz
-abcdomxyz
-abcdeoxyz
+abcmxyz
+abcmxyz
+abcdmxyz
 --mix_labels--
 (list
 	1
@@ -2629,39 +2604,56 @@ flatten restore with parallel
 --mutate_entity--
 (list
 	1
-	a
+	2
 	3
 	4
-	(set_type)
-	(call)
+	5
+	a
 	7
 	8
-	b
+	(call)
 	10
 	11
 	12
-	13
-	(contains_index)
-	(associate)
+	(floor)
+	-6.182472379158481
+	(associate (call) 1 (retrieve_from_entity) "a")
 )
 
-8
 (list
-	1
-	(+)
+	(trunc)
+	(list)
 	3
-	(+)
-	(*)
+	4
+	(dot_product)
 	6
+	(null)
+	8
+	9
+	(query_not_exists)
+	11
+	12
+	13
+	(>)
+	2
+)
+
+(list
+	(-)
+	2
+	(+)
+	4
+	5
+	(+)
 	7
 	8
+	9
+	10
 	(+)
-	(*)
-	11
-	(+)
+	12
 	13
-	14
-	(associate)
+	(+)
+	(associate (+) 1 "b" (+))
 )
 
 --commonality_entities--
@@ -3359,24 +3351,24 @@ _3128546630
 (associate "x" 3 "y" 4 "z" 6)
 (list "OnlyIn2" "_3631850880" "_1938178219" "DiffEntityChild1")
 --mix_entities--
-(associate "b" 4 "a" 3)
+(associate "b" 4 "a" 3 "c" 3)
 MergeEntityChild1
 (associate "x" 3 "y" 4 "z" 5)
 MergeEntityChild2
-(associate
-	"p"
-	3
-	"q"
-	4
-	"u"
-	5
-	"w"
-	7
-)
+(associate "p" 3 "q" 4 "u" 5)
 _2280722175
 (associate "E" 3 "F" 4)
 _2169689611
-(associate "e" 3 "f" 4 "g" 5)
+(associate
+	"e"
+	3
+	"f"
+	4
+	"g"
+	5
+	"h"
+	6
+)
 --get_entity_comments--
 Full test
 This is a suite of unit tests.
@@ -3431,7 +3423,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1703862635.954989
+1705540501.997628
 (true)
 
 RootTest
@@ -3655,7 +3647,7 @@ hello
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "Ÿ×O$ \0 0Ñ”-I´»ÿ")
+	(set_entity_rand_seed new_entity "3÷U±\\H0Ñ”-I´»ÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3665,7 +3657,7 @@ hello
 				)
 			)
 		)
-		"ªÏ8ÅqxLïŒÔöŠmÿ"
+		"òÏƒÉÀ…÷A“Àƒ ’¿èÿ"
 	)
 	(set_entity_rand_seed
 		(first
@@ -3698,7 +3690,7 @@ hello
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "Ÿ×O$ \0 0Ñ”-I´»ÿ")
+	(set_entity_rand_seed new_entity "3÷U±\\H0Ñ”-I´»ÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3805,74 +3797,74 @@ store to .json normally
 (list "Child2" "Child7")
 (list "Child1" "Child5")
 (list "Child3" "Child4")
-(list "Child3" "Child5" "Child6" "Child7")
-(list "Child1" "Child2" "Child4" "Child6")
+(list "Child1" "Child3" "Child5" "Child6")
+(list "Child1" "Child5" "Child6" "Child7")
 (list "Child4" "Child6")
 --query_sample--
-(list "Child5")
-(list "Child3" "Child7")
 (list "Child4")
-(list "Child3")
+(list "Child2" "Child3")
+(list "Child1")
+(list "Child1")
 --query_weighted_sample--
-(list "Child2")
+(list "Child1")
 (list "Child2")
 (list
-	"Child5"
 	"Child2"
-	"Child2"
-	"Child4"
-	"Child1"
-	"Child2"
-	"Child1"
-	"Child1"
 	"Child2"
 	"Child1"
 	"Child2"
 	"Child7"
 	"Child2"
+	"Child2"
 	"Child1"
 	"Child1"
 	"Child1"
-	"Child7"
+	"Child2"
+	"Child1"
+	"Child1"
+	"Child1"
+	"Child2"
+	"Child2"
+	"Child1"
 	"Child1"
 	"Child1"
 	"Child1"
 )
 (list
 	"Child2"
-	"Child2"
-	"Child2"
-	"Child3"
-	"Child2"
 	"Child1"
 	"Child1"
-	"Child1"
-	"Child1"
-	"Child1"
-	"Child1"
-	"Child2"
-	"Child1"
-	"Child1"
-	"Child2"
-	"Child1"
-	"Child2"
-	"Child1"
-	"Child1"
-	"Child2"
-)
-(list
-	"Child2"
-	"Child2"
-	"Child2"
-	"Child7"
 	"Child5"
 	"Child2"
 	"Child2"
 	"Child2"
-	"Child6"
+	"Child2"
+	"Child2"
+	"Child1"
+	"Child2"
+	"Child2"
+	"Child1"
+	"Child1"
+	"Child1"
+	"Child2"
+	"Child1"
+	"Child1"
+	"Child1"
 	"Child2"
 )
-(list "Child2" "Child6")
+(list
+	"Child2"
+	"Child2"
+	"Child2"
+	"Child2"
+	"Child2"
+	"Child2"
+	"Child2"
+	"Child2"
+	"Child5"
+	"Child2"
+)
+(list "Child2")
 --query_in_entity_list--
 (list "Child6" "Child7")
 --query_not_in_entity_list--
@@ -3927,7 +3919,7 @@ unweighted query: (assoc
 weighted query: (assoc
 	Child1 1.8
 	Child2 0.45
-	Child3 2
+	Child4 2
 	Child6 0.04
 	Child7 0.2
 )
@@ -3941,7 +3933,7 @@ weighted query list of lists: (list
 	(list -1 2 4 10 100)
 )
 weighted query list of lists with multiple values: (list
-	(list "Child2" "Child6" "Child1" "Child7" "Child4")
+	(list "Child2" "Child6" "Child1" "Child7" "Child3")
 	(list 1 2 4 10 100)
 	(list -1 2 4 10 100)
 	(list -1 1 3 0 100)
@@ -4411,7 +4403,7 @@ a
 (list "hello" "!")
 (assoc a1 1.4142135623730951 a2 2 a3 1.4142135623730951)
 (assoc a1 1.4142135623730951 a3 1.4142135623730951)
-(assoc a1 1.4142135623730951)
+(assoc a3 1.4142135623730951)
 (assoc a1 5.0990195135927845 a2 2 a3 5.0990195135927845)
 (assoc a1 1 a3 1 a4 0)
 --accuracy tests--
@@ -4426,13 +4418,13 @@ distance symmetry tests
 (list
 	(list
 		"B"
-		"D"
 		"F"
-		"I"
-		"A"
 		"C"
-		"J"
+		"A"
+		"D"
+		"I"
 		"E"
+		"H"
 	)
 	(list
 		0
@@ -4448,13 +4440,13 @@ distance symmetry tests
 (list
 	(list
 		"B"
-		"C"
 		"D"
-		"F"
-		"I"
 		"A"
-		"E"
+		"C"
+		"I"
+		"F"
 		"G"
+		"J"
 	)
 	(list
 		0
@@ -4647,4 +4639,4 @@ Expecting 1000: 1000
 concurrent entity writes successful: (true)
 
 --total execution time--
-1.225343942642212
+1.1092939376831055

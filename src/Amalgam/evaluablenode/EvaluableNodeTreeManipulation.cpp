@@ -2019,11 +2019,11 @@ CompactHashMap<EvaluableNodeType, double> EvaluableNodeTreeManipulation::evaluab
 	{ENT_NULL,											0.75},
 
 	//data types
-	{ENT_LIST,											2.5},
+	{ENT_LIST,											2.0},
 	{ENT_ASSOC,											3.0},
 	{ENT_NUMBER,										8.0},
 	{ENT_STRING,										4.0},
-	{ENT_SYMBOL,										25.0},
+	{ENT_SYMBOL,										10.0},
 
 	//node types
 	{ENT_GET_TYPE,										0.25},
@@ -2137,7 +2137,7 @@ CompactHashMap<EvaluableNodeType, double> EvaluableNodeTreeManipulation::evaluab
 	{ENT_QUERY_NEAREST_GENERALIZED_DISTANCE,			0.2},
 
 	{ENT_COMPUTE_ENTITY_CONVICTIONS,					0.2},
-	{ENT_COMPUTE_ENTITY_GROUP_KL_DIVERGENCE,				0.2},
+	{ENT_COMPUTE_ENTITY_GROUP_KL_DIVERGENCE,			0.2},
 	{ENT_COMPUTE_ENTITY_DISTANCE_CONTRIBUTIONS,			0.2},
 	{ENT_COMPUTE_ENTITY_KL_DIVERGENCES,					0.2},
 

@@ -1328,7 +1328,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ARGS(EvaluableNode *en, bo
 	}
 
 	//make sure have a large enough stack
-	if(callStackNodes->size() >= depth + 1)
+	if(callStackNodes->size() > depth)
 	{
 	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::ReadLock lock;

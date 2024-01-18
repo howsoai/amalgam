@@ -497,6 +497,7 @@ public:
 	//force this inline because it occurs in inner loops
 	__forceinline bool RecommendGarbageCollection()
 	{
+		//return true;
 		//makes sure to perform garbage collection between every opcode to find memory reference errors
 	#ifdef PEDANTIC_GARBAGE_COLLECTION
 		return true;
@@ -725,18 +726,19 @@ public:
 		Concurrency::WriteLock lock(managerAttributesMutex);
 	#endif
 
+		//if currently has a root node, free it
+		if(firstUnusedNodeIndex > 0)
+			FreeNodeReference(nodes[0]);
+
 		KeepNodeReference(new_root);
 
 		//iteratively search forward; this will be fast for newly created entities but potentially slow for those that are not
 		// however, this should be rarely called on those entities since it's basically clearing them out, so it should not generally be a performance issue
 		auto location = std::find(begin(nodes), begin(nodes) + firstUnusedNodeIndex, new_root);
 
-		//swap the pointers
+		//put the new root in the proper place
 		if(location != end(nodes))
 			std::swap(*begin(nodes), *location);
-
-		//free old root
-		FreeNodeReference(*location);
 	}
 
 	//returns a copy of the nodes referenced; should be used only for debugging

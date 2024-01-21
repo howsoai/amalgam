@@ -17,7 +17,7 @@ static const uint32_t s_current_major = 1;
 static const uint32_t s_current_minor = 0;
 static const uint32_t s_current_patch = 0;
 
-static bool ReadBigEndianUInt32(std::ifstream &file, uint32_t &val)
+static bool ReadBigEndian(std::ifstream &file, uint32_t &val)
 {
 	uint8_t buffer[4] = { 0 };
 	if(!file.read(reinterpret_cast<char *>(buffer), sizeof(uint32_t)))
@@ -32,7 +32,7 @@ static bool ReadBigEndianUInt32(std::ifstream &file, uint32_t &val)
 	return true;
 }
 
-static bool WriteBigEndianUInt32(std::ofstream &file, const uint32_t &val)
+static bool WriteBigEndian(std::ofstream &file, const uint32_t &val)
 {
 	uint8_t buffer[4] = { 0 };
 	buffer[0] = (val >> 24) & 0xFF;
@@ -46,11 +46,11 @@ static bool WriteBigEndianUInt32(std::ofstream &file, const uint32_t &val)
 
 static bool ReadVersion(std::ifstream &file, uint32_t &major, uint32_t &minor, uint32_t &patch)
 {
-	if(!ReadBigEndianUInt32(file, major))
+	if(!ReadBigEndian(file, major))
 		return false;
-	if(!ReadBigEndianUInt32(file, minor))
+	if(!ReadBigEndian(file, minor))
 		return false;
-	if(!ReadBigEndianUInt32(file, patch))
+	if(!ReadBigEndian(file, patch))
 		return false;
 
 	return true;
@@ -58,16 +58,19 @@ static bool ReadVersion(std::ifstream &file, uint32_t &major, uint32_t &minor, u
 
 static bool WriteVersion(std::ofstream &file)
 {
-	if(!WriteBigEndianUInt32(file, s_current_major))
+	if(!WriteBigEndian(file, s_current_major))
 		return false;
-	if(!WriteBigEndianUInt32(file, s_current_minor))
+	if(!WriteBigEndian(file, s_current_minor))
 		return false;
-	if(!WriteBigEndianUInt32(file, s_current_patch))
+	if(!WriteBigEndian(file, s_current_patch))
 		return false;
 
 	return true;
 }
 
+//TODO:18866 - This should return JSON with a bool and a helpful error message on error.
+//             Need to fiure out best way to struture that JSON here, through entities and
+//             and then unparse to JSON? Or just write the JSON by hand? Probably entities...
 bool FileSupportCAML::IsValidCAMLHeader(const std::string &filepath)
 {
 	std::ifstream f(filepath, std::fstream::binary | std::fstream::in);
@@ -105,7 +108,7 @@ bool FileSupportCAML::ReadHeader(std::ifstream &file, size_t &header_size)
 			(major == s_current_major && minor > s_current_minor) ||
 			(major == s_current_major && minor == s_current_minor && patch > s_current_patch))
 		{
-			return false; //newer version
+			return false; //newer version, not supported
 		}
 	}
 

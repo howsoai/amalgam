@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 
+//TODO:18866 - should this just be a namespace a free functions? Probably...
 class FileSupportCAML
 {
 public:

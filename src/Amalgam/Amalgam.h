@@ -62,6 +62,7 @@ extern "C"
 	AMALGAM_EXPORT wchar_t *ExecuteEntityJsonPtrWide(char *handle, char *label, char *json);
 	AMALGAM_EXPORT char *ExecuteEntityJsonPtr(char *handle, char *label, char *json);
 
+	//TODO:18866 - This should return JSON with a bool and a helpful error message on error
 	AMALGAM_EXPORT bool ValidateCAMLFileHeader(char *filepath);
 
 	AMALGAM_EXPORT wchar_t *GetVersionStringWide();

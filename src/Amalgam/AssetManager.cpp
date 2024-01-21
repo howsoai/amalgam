@@ -1,6 +1,7 @@
 //project headers:
-#include "BinaryPacking.h"
 #include "AssetManager.h"
+
+#include "BinaryPacking.h"
 #include "EvaluableNode.h"
 #include "FilenameEscapeProcessor.h"
 #include "FileSupportCSV.h"
@@ -9,11 +10,11 @@
 #include "PlatformSpecific.h"
 
 //system headers:
-#include <fstream>
-#include <ctime>
-#include <iostream>
-#include <filesystem>
 #include <algorithm>
+#include <ctime>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
 
 AssetManager asset_manager;
 
@@ -74,7 +75,7 @@ EvaluableNodeReference AssetManager::LoadResourcePath(std::string &resource_path
 	else if(file_type == FILE_EXTENSION_COMPRESSED_STRING_LIST)
 	{
 		BinaryData compressed_data;
-		if(!LoadFileToBuffer<BinaryData>(processed_resource_path, compressed_data))
+		if(!LoadFileToBuffer<BinaryData>(processed_resource_path, file_type, compressed_data))
 			return EvaluableNodeReference::Null();
 
 		OffsetIndex cur_offset = 0;
@@ -91,7 +92,7 @@ EvaluableNodeReference AssetManager::LoadResourcePath(std::string &resource_path
 	else if(file_type == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 	{
 		BinaryData compressed_data;
-		if(!LoadFileToBuffer<BinaryData>(processed_resource_path, compressed_data))
+		if(!LoadFileToBuffer<BinaryData>(processed_resource_path, file_type, compressed_data))
 			return EvaluableNodeReference::Null();
 
 		OffsetIndex cur_offset = 0;
@@ -107,7 +108,7 @@ EvaluableNodeReference AssetManager::LoadResourcePath(std::string &resource_path
 	else //just load the file as a string
 	{
 		std::string s;
-		if(LoadFileToBuffer<std::string>(processed_resource_path, s))
+		if(LoadFileToBuffer<std::string>(processed_resource_path, file_type, s))
 			return EvaluableNodeReference(enm->AllocNode(ENT_STRING, s), true);
 		else
 			return EvaluableNodeReference::Null();
@@ -169,7 +170,7 @@ bool AssetManager::StoreResourcePath(EvaluableNode *code, std::string &resource_
 
 		//compress and store
 		BinaryData compressed_data = CompressStrings(string_map);
-		if(StoreFileFromBuffer<BinaryData>(processed_resource_path, compressed_data))
+		if(StoreFileFromBuffer<BinaryData>(processed_resource_path, file_type, compressed_data))
 			return EvaluableNodeReference(enm->AllocNode(ENT_TRUE), true);
 		else
 			return EvaluableNodeReference::Null();
@@ -184,7 +185,7 @@ bool AssetManager::StoreResourcePath(EvaluableNode *code, std::string &resource_
 
 		//compress and store
 		BinaryData compressed_data = CompressStrings(string_map);
-		if(StoreFileFromBuffer<BinaryData>(processed_resource_path, compressed_data))
+		if(StoreFileFromBuffer<BinaryData>(processed_resource_path, file_type, compressed_data))
 			return EvaluableNodeReference(enm->AllocNode(ENT_TRUE), true);
 		else
 			return EvaluableNodeReference::Null();
@@ -192,7 +193,7 @@ bool AssetManager::StoreResourcePath(EvaluableNode *code, std::string &resource_
 	else //binary string
 	{
 		std::string s = EvaluableNode::ToStringPreservingOpcodeType(code);
-		if(StoreFileFromBuffer<std::string>(processed_resource_path, s))
+		if(StoreFileFromBuffer<std::string>(processed_resource_path, file_type, s))
 			return EvaluableNodeReference(enm->AllocNode(ENT_TRUE), true);
 		else
 			return EvaluableNodeReference::Null();

@@ -134,6 +134,8 @@ set(COMMON_SOURCE
     src/Amalgam/FilenameEscapeProcessor.h
     src/Amalgam/GeneralizedDistance.h
     src/Amalgam/HashMaps.h
+    src/Amalgam/importexport/FileSupportCAML.cpp
+    src/Amalgam/importexport/FileSupportCAML.h
     src/Amalgam/importexport/FileSupportCSV.cpp
     src/Amalgam/importexport/FileSupportCSV.h
     src/Amalgam/importexport/FileSupportJSON.cpp

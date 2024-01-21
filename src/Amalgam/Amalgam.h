@@ -37,7 +37,6 @@ extern "C"
 	AMALGAM_EXPORT void   AppendNumberValue(char *handle, char *label, double value);
 	AMALGAM_EXPORT void   SetNumberValue(char *handle, char *label, double value);
 
-	AMALGAM_EXPORT size_t PrepStringValueToTransferBuffer(char *handle, char *label);
 	AMALGAM_EXPORT void   AppendStringValue(char *handle, char *label, char *value);
 	AMALGAM_EXPORT void   SetStringValue(char *handle, char *label, char *value);
 
@@ -62,6 +61,8 @@ extern "C"
 
 	AMALGAM_EXPORT wchar_t *ExecuteEntityJsonPtrWide(char *handle, char *label, char *json);
 	AMALGAM_EXPORT char *ExecuteEntityJsonPtr(char *handle, char *label, char *json);
+
+	AMALGAM_EXPORT bool ValidateCAMLFileHeader(char *filepath);
 
 	AMALGAM_EXPORT wchar_t *GetVersionStringWide();
 	AMALGAM_EXPORT char *GetVersionString();

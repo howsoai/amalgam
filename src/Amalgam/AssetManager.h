@@ -3,6 +3,7 @@
 //project headers:
 #include "Entity.h"
 #include "EvaluableNode.h"
+#include "FileSupportCAML.h"
 #include "HashMaps.h"
 
 //system headers:
@@ -108,16 +109,23 @@ public:
 
 	//loads filename into the buffer specified by b (of type BufferType of elements BufferElementType), returns true if successful, false if not
 	template<typename BufferType>
-	static bool LoadFileToBuffer(const std::string &filename, BufferType &b)
+	static bool LoadFileToBuffer(const std::string &filename, std::string& file_type, BufferType &b)
 	{
 		std::ifstream f(filename, std::fstream::binary | std::fstream::in);
 
 		if(!f.good())
 			return false;
 
+		size_t header_size = 0;
+		if(file_type == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
+		{
+			if(!FileSupportCAML::ReadHeader(f, header_size))
+				return false;
+		}
+
 		f.seekg(0, std::ios::end);
-		b.reserve(f.tellg());
-		f.seekg(0, std::ios::beg);
+		b.reserve((std::streamoff)f.tellg() - header_size);
+		f.seekg(header_size, std::ios::beg);
 
 		b.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
 		return true;
@@ -125,11 +133,17 @@ public:
 
 	//stores buffer b (of type BufferType of elements BufferElementType) into the filename, returns true if successful, false if not
 	template<typename BufferType>
-	static bool StoreFileFromBuffer(const std::string &filename, BufferType &b)
+	static bool StoreFileFromBuffer(const std::string &filename, std::string& file_type, BufferType &b)
 	{
 		std::ofstream f(filename, std::fstream::binary | std::fstream::out);
 		if(!f.good())
 			return false;
+
+		if(file_type == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
+		{
+			if(!FileSupportCAML::WriteHeader(f))
+				return false;
+		}
 
 		f.write(reinterpret_cast<char *>(&b[0]), sizeof(char) * b.size());
 		return true;

@@ -4,6 +4,7 @@
 #include "Concurrency.h"
 #include "EntityExternalInterface.h"
 #include "EntityQueries.h"
+#include "FileSupportCAML.h"
 
 //system headers:
 #include <algorithm>
@@ -199,6 +200,12 @@ extern "C"
 		}
 
 		return return_entities;
+	}
+
+	bool ValidateCAMLFileHeader(char *filepath)
+	{
+		std::string f(filepath);
+		return FileSupportCAML::IsValidCAMLHeader(f);
 	}
 
 	// ************************************

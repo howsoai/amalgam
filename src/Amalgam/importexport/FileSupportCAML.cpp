@@ -4,6 +4,7 @@
 #include "AmalgamVersion.h"
 
 //system headers:
+#include <cstring>
 #include <fstream>
 #include <ostream>
 #include <string>

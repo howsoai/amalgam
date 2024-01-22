@@ -57,12 +57,18 @@ std::string EntityExternalInterface::ValidateEntity(std::string &path)
 		return error_string;
 	}
 
-	bool success = false;
-	std::tie(error_string, success) = FileSupportCAML::Validate(path);
-	if(!success)
+	//validate specific file types
+	std::string dir, file_base, extension;
+	Platform_SeparatePathFileExtension(path, dir, file_base, extension);
+	if(extension == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 	{
-		std::cerr << "Error validating entity: " << error_string << std::endl;
-		return error_string;
+		bool success = false;
+		std::tie(error_string, success) = FileSupportCAML::Validate(path);
+		if(!success)
+		{
+			std::cerr << "Error validating entity: " << error_string << std::endl;
+			return error_string;
+		}
 	}
 
 	return std::string();

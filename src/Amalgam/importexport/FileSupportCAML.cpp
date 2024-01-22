@@ -4,6 +4,7 @@
 #include "AmalgamVersion.h"
 
 //system headers:
+#include <cstdint>
 #include <cstring>
 #include <fstream>
 #include <ostream>
@@ -17,13 +18,13 @@ static const uint32_t s_current_major = 1;
 static const uint32_t s_current_minor = 0;
 static const uint32_t s_current_patch = 0;
 
-static bool ReadBigEndian(std::ifstream &file, uint32_t &val)
+bool ReadBigEndian(std::ifstream &stream, uint32_t &val)
 {
 	uint8_t buffer[4] = { 0 };
-	if(!file.read(reinterpret_cast<char *>(buffer), sizeof(uint32_t)))
+	if(!stream.read(reinterpret_cast<char *>(buffer), sizeof(uint32_t)))
 		return false;
 
-	auto num_bytes_read = file.gcount();
+	auto num_bytes_read = stream.gcount();
 	if(num_bytes_read != sizeof(uint32_t))
 		return false;
 
@@ -32,93 +33,90 @@ static bool ReadBigEndian(std::ifstream &file, uint32_t &val)
 	return true;
 }
 
-static bool WriteBigEndian(std::ofstream &file, const uint32_t &val)
+bool WriteBigEndian(std::ofstream &stream, const uint32_t &val)
 {
 	uint8_t buffer[4] = { 0 };
 	buffer[0] = (val >> 24) & 0xFF;
 	buffer[1] = (val >> 16) & 0xFF;
 	buffer[2] = (val >> 8) & 0xFF;
 	buffer[3] = val & 0xFF;
-	file.write(reinterpret_cast<char *>(buffer), sizeof(buffer));
+	stream.write(reinterpret_cast<char *>(buffer), sizeof(buffer));
 
 	return true;
 }
 
-static bool ReadVersion(std::ifstream &file, uint32_t &major, uint32_t &minor, uint32_t &patch)
+bool ReadVersion(std::ifstream &stream, uint32_t &major, uint32_t &minor, uint32_t &patch)
 {
-	if(!ReadBigEndian(file, major))
+	if(!ReadBigEndian(stream, major))
 		return false;
-	if(!ReadBigEndian(file, minor))
+	if(!ReadBigEndian(stream, minor))
 		return false;
-	if(!ReadBigEndian(file, patch))
-		return false;
-
-	return true;
-}
-
-static bool WriteVersion(std::ofstream &file)
-{
-	if(!WriteBigEndian(file, s_current_major))
-		return false;
-	if(!WriteBigEndian(file, s_current_minor))
-		return false;
-	if(!WriteBigEndian(file, s_current_patch))
+	if(!ReadBigEndian(stream, patch))
 		return false;
 
 	return true;
 }
 
-//TODO:18866 - This should return JSON with a bool and a helpful error message on error.
-//             Need to fiure out best way to struture that JSON here, through entities and
-//             and then unparse to JSON? Or just write the JSON by hand? Probably entities...
-bool FileSupportCAML::IsValidCAMLHeader(const std::string &filepath)
+bool WriteVersion(std::ofstream &stream)
 {
-	std::ifstream f(filepath, std::fstream::binary | std::fstream::in);
+	if(!WriteBigEndian(stream, s_current_major))
+		return false;
+	if(!WriteBigEndian(stream, s_current_minor))
+		return false;
+	if(!WriteBigEndian(stream, s_current_patch))
+		return false;
+
+	return true;
+}
+
+std::pair<std::string, bool> FileSupportCAML::Validate(const std::string &path)
+{
+	std::ifstream f(path, std::fstream::binary | std::fstream::in);
 
 	if(!f.good())
-		return false;
+		return std::make_pair("Cannot open file", false);
 
 	size_t header_size = 0;
 	return ReadHeader(f, header_size);
 }
 
-bool FileSupportCAML::ReadHeader(std::ifstream &file, size_t &header_size)
+std::pair<std::string, bool> FileSupportCAML::ReadHeader(std::ifstream &stream, size_t &header_size)
 {
 	uint8_t magic[4] = { 0 };
-	if(!file.read(reinterpret_cast<char *>(magic), sizeof(magic)))
-		return false;
+	if(!stream.read(reinterpret_cast<char *>(magic), sizeof(magic)))
+		return std::make_pair("Cannot read magic number", false);
 	header_size += sizeof(magic);
 
-	auto num_bytes_read = file.gcount();
+	auto num_bytes_read = stream.gcount();
 	if(num_bytes_read != sizeof(magic))
-		return false;
+		return std::make_pair("Cannot read magic number", false);
 	else if(memcmp(magic, s_magic_number, sizeof(magic)) == 0)
 	{
 		uint32_t major = 0, minor = 0, patch = 0;
-		if(!ReadVersion(file, major, minor, patch))
-			return false;
+		if(!ReadVersion(stream, major, minor, patch))
+			return std::make_pair("Cannot read version", false);
 		header_size += sizeof(major) * 3;
 
 		//validate version
 		std::string dev_build = AMALGAM_VERSION_SUFFIX;
 		if(!dev_build.empty())
-			return true; //dev build
+			return std::make_pair("", true); //dev build
 		else if(
 			(major > s_current_major) ||
 			(major == s_current_major && minor > s_current_minor) ||
 			(major == s_current_major && minor == s_current_minor && patch > s_current_patch))
 		{
-			return false; //newer version, not supported
+			return std::make_pair("Reading newer version not supported", false);
 		}
 	}
 
-	return true;
+	return std::make_pair("", true);
 }
 
-bool FileSupportCAML::WriteHeader(std::ofstream &file)
+bool FileSupportCAML::WriteHeader(std::ofstream &stream)
 {
-	if(!file.write(reinterpret_cast<const char *>(s_magic_number), sizeof(s_magic_number)))
+	if(!stream.write(reinterpret_cast<const char *>(s_magic_number), sizeof(s_magic_number)))
 		return false;
 
-	return WriteVersion(file);
+	return WriteVersion(stream);
 }

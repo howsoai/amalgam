@@ -4,14 +4,8 @@
 #include "Concurrency.h"
 #include "EntityExternalInterface.h"
 #include "EntityQueries.h"
-#include "FileSupportCAML.h"
 
 //system headers:
-#include <algorithm>
-#include <cstdio>
-#include <cstring>
-#include <iostream>
-#include <map>
 #include <string>
 
 //Workaround because GCC doesn't support strcpy_s
@@ -85,6 +79,13 @@ extern "C"
 		std::string plfname(print_log_filename);
 
 		return entint.LoadEntity(h, p, persistent, load_contained_entities, wlfname, plfname);
+	}
+
+	char *ValidateEntity(char *path)
+	{
+		std::string f(path);
+		std::string ret = entint.ValidateEntity(f);
+		return StringToCharPtr(ret);
 	}
 
 	void StoreEntity(char *handle, char *path, bool update_persistence_location, bool store_contained_entities)
@@ -200,12 +201,6 @@ extern "C"
 		}
 
 		return return_entities;
-	}
-
-	bool ValidateCAMLFileHeader(char *filepath)
-	{
-		std::string f(filepath);
-		return FileSupportCAML::IsValidCAMLHeader(f);
 	}
 
 	// ************************************

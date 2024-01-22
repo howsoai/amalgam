@@ -1,7 +1,7 @@
 #pragma once
 
 //system headers:
-#include <string>
+#include <cstdint>
 
 #if defined(_MSC_VER)
 //Microsoft 
@@ -17,6 +17,9 @@ extern "C"
 {
 	//loads the entity specified into handle
 	AMALGAM_EXPORT bool   LoadEntity(char *handle, char *path, bool persistent, bool load_contained_entities, char *write_log_filename, char *print_log_filename);
+
+	//validates the entity specified by path
+	AMALGAM_EXPORT char  *ValidateEntity(char* path);
 
 	//stores the entity specified by handle into path
 	AMALGAM_EXPORT void   StoreEntity(char *handle, char *path, bool update_persistence_location = false, bool store_contained_entities = true);
@@ -54,16 +57,13 @@ extern "C"
 	AMALGAM_EXPORT void   AppendStringList(char *handle, char *label, char **list, size_t len);
 	AMALGAM_EXPORT void   SetStringList(char *handle, char *label, char **list, size_t len);
 
-	AMALGAM_EXPORT void SetJSONToLabel(char *handle, char *label, char *json);
+	AMALGAM_EXPORT void   SetJSONToLabel(char *handle, char *label, char *json);
 	
 	AMALGAM_EXPORT wchar_t *GetJSONPtrFromLabelWide(char *handle, char *label);
 	AMALGAM_EXPORT char *GetJSONPtrFromLabel(char *handle, char *label);
 
 	AMALGAM_EXPORT wchar_t *ExecuteEntityJsonPtrWide(char *handle, char *label, char *json);
 	AMALGAM_EXPORT char *ExecuteEntityJsonPtr(char *handle, char *label, char *json);
-
-	//TODO:18866 - This should return JSON with a bool and a helpful error message on error
-	AMALGAM_EXPORT bool ValidateCAMLFileHeader(char *filepath);
 
 	AMALGAM_EXPORT wchar_t *GetVersionStringWide();
 	AMALGAM_EXPORT char *GetVersionString();

@@ -119,8 +119,12 @@ public:
 		size_t header_size = 0;
 		if(file_type == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 		{
-			if(!FileSupportCAML::ReadHeader(f, header_size))
+			auto [error_string, success] = FileSupportCAML::ReadHeader(f, header_size);
+			if(!success)
+			{
+				std::cerr << "Error loading entity: " << error_string << std::endl;
 				return false;
+			}
 		}
 
 		f.seekg(0, std::ios::end);

@@ -1,20 +1,19 @@
 #pragma once
 
 //system headers:
-#include <iostream>
+#include <fstream>
+#include <ostream>
 #include <string>
+#include <utility>
 
-//TODO:18866 - should this just be a namespace a free functions? Probably...
-class FileSupportCAML
+namespace FileSupportCAML
 {
-public:
+	//validate file
+	std::pair<std::string, bool> Validate(const std::string &path);
 
-	//validate CAML header
-	static bool IsValidCAMLHeader(const std::string &filepath);
+	//read the header from the stream
+	std::pair<std::string, bool> ReadHeader(std::ifstream &stream, size_t &header_size);
 
-	//read the CAML header from the stream
-	static bool ReadHeader(std::ifstream &file, size_t &header_size);
-
-	//write the CAML header to the stream
-	static bool WriteHeader(std::ofstream &file);
+	//write the header to the stream
+	bool WriteHeader(std::ofstream &stream);
 };

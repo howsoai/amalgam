@@ -1,9 +1,18 @@
 //project headers:
 #include "EntityExternalInterface.h"
-#include "EntityQueries.h"
+
+#include "AssetManager.h"
+#include "Entity.h"
 #include "EntityWriteListener.h"
+#include "FileSupportCAML.h"
 #include "FileSupportJSON.h"
 #include "Interpreter.h"
+#include "PlatformSpecific.h"
+
+//system headers:
+#include <iostream>
+#include <ostream>
+#include <vector>
 
 bool EntityExternalInterface::LoadEntity(std::string &handle, std::string &path, bool persistent, bool load_contained_entities,
 	std::string &write_log_filename, std::string &print_log_filename, std::string rand_seed)
@@ -37,6 +46,26 @@ bool EntityExternalInterface::LoadEntity(std::string &handle, std::string &path,
 	AddEntityBundle(handle, new EntityListenerBundle(entity, wl, pl));
 
 	return true;
+}
+
+std::string EntityExternalInterface::ValidateEntity(std::string &path)
+{
+	std::string error_string;
+	if(!Platform_IsResourcePathAccessible(path, true, error_string))
+	{
+		std::cerr << "Error validating entity: " << error_string << std::endl;
+		return error_string;
+	}
+
+	bool success = false;
+	std::tie(error_string, success) = FileSupportCAML::Validate(path);
+	if(!success)
+	{
+		std::cerr << "Error validating entity: " << error_string << std::endl;
+		return error_string;
+	}
+
+	return std::string();
 }
 
 void EntityExternalInterface::StoreEntity(std::string &handle, std::string &path, bool update_persistence_location, bool store_contained_entities)

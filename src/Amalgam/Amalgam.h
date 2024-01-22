@@ -1,6 +1,7 @@
 #pragma once
 
 //system headers:
+#include <cstddef>
 #include <cstdint>
 
 #if defined(_MSC_VER)

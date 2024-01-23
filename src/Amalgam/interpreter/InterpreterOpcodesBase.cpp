@@ -830,7 +830,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			// need a write lock to the stack and variable
 			Concurrency::WriteLock write_lock;
 			if(callStackMutex != nullptr && value_destination == nullptr)
+			{
 				LockWithoutBlockingGarbageCollection(*callStackMutex, write_lock, variable_value_node);
+				if(_opcode_profiling_enabled)
+				{
+					std::string variable_location = asset_manager.GetEvaluableNodeSourceFromComments(en);
+					variable_location += string_intern_pool.GetStringFromID(variable_sid);
+					PerformanceProfiler::AccumulateLockContentionCount(variable_location);
+				}
+			}
 		#endif
 
 			//in single threaded, this will just be true

@@ -792,28 +792,7 @@ void Interpreter::DebugCheckBreakpointsAndUpdateState(EvaluableNode *en, bool be
 
 EvaluableNodeReference Interpreter::InterpretNode_PROFILE(EvaluableNode *en, bool immediate_result)
 {
-	std::string opcode_str;
-
-	//if debugging sources is enabled, then concatenate the opcode to the first line of the comment
-	if(asset_manager.debugSources)
-	{
-		if(en->HasComments())
-		{
-			auto &comment = en->GetCommentsString();
-			auto first_line_end = comment.find('\n');
-			if(first_line_end == std::string::npos)
-				opcode_str = comment;
-			else //copy up until newline
-			{
-				opcode_str = comment.substr(0, first_line_end);
-				if(opcode_str.size() > 0 && opcode_str.back() == '\r')
-					opcode_str.pop_back();
-			}
-
-			opcode_str += ": ";
-		}
-	}
-
+	std::string opcode_str = asset_manager.GetEvaluableNodeSourceFromComments(en);
 	opcode_str += GetStringFromEvaluableNodeType(en->GetType(), true);
 	PerformanceProfiler::StartOperation(opcode_str, evaluableNodeManager->GetNumberOfUsedNodes());
 

@@ -28,6 +28,10 @@ struct StartTimeAndMemUse
 
 FastHashMap<std::string, PerformanceCounters> _profiler_counters;
 
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+FastHashMap<std::string, size_t> _lock_contention_counters;
+#endif
+
 //contains the type and start time of each instruction
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 thread_local
@@ -98,6 +102,18 @@ void PerformanceProfiler::EndOperation(int64_t memory_use = 0)
 		record.second.memUseExclusive += total_operation_memory_exclusive;
 	}
 }
+
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+void PerformanceProfiler::AccumulateLockContentionCount(std::string t)
+{
+	Concurrency::SingleLock lock(performance_profiler_mutex);
+
+	//attempt to insert a first count, if not, increment
+	auto insertion = _lock_contention_counters.emplace(t, 1);
+	if(!insertion.second)
+		insertion.first->second++;
+}
+#endif
 
 void PerformanceProfiler::PrintProfilingInformation(std::string outfile_name, size_t max_print_count)
 {
@@ -201,6 +217,15 @@ void PerformanceProfiler::PrintProfilingInformation(std::string outfile_name, si
 		out_dest << most_total_memory_exclusive[i].first << ": " << mem_delta << std::endl;
 	}
 	out_dest << std::endl;
+
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	out_dest << "------------------------------------------------------" << std::endl;
+	out_dest << "Variable assignments that had the most lock contention: " << std::endl;
+	auto most_lock_contention = PerformanceProfiler::GetVariableAssignmentsByLockContentionCount();
+	for(size_t i = 0; i < max_print_count && i < most_lock_contention.size(); i++)
+		out_dest << most_lock_contention[i].first << ": " << most_lock_contention[i].second << std::endl;
+	out_dest << std::endl;
+#endif
 
 	out_dest << "------------------------------------------------------" << std::endl;
 	size_t total_call_count = GetTotalNumCalls();
@@ -408,6 +433,25 @@ std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByAv
 	//sort high to low
 	std::sort(begin(results), end(results),
 		[](std::pair<std::string, double> a, std::pair<std::string, double> b) -> bool
+		{	return (a.second) > (b.second);	});
+	return results;
+}
+
+std::vector<std::pair<std::string, size_t>> PerformanceProfiler::GetVariableAssignmentsByLockContentionCount()
+{
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	Concurrency::SingleLock lock(performance_profiler_mutex);
+#endif
+
+	//copy to proper data structure
+	std::vector<std::pair<std::string, size_t>> results;
+	results.reserve(_lock_contention_counters.size());
+	for(auto &[s, value] : _lock_contention_counters)
+		results.push_back(std::make_pair(static_cast<std::string>(s), static_cast<size_t>(value)));
+
+	//sort high to low
+	std::sort(begin(results), end(results),
+		[](std::pair<std::string, size_t> a, std::pair<std::string, size_t> b) -> bool
 		{	return (a.second) > (b.second);	});
 	return results;
 }

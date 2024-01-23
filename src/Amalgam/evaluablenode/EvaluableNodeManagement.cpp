@@ -136,6 +136,9 @@ EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(Evaluabl
 		if(num_allocated == num_to_alloc)
 			return retval;
 
+		size_t num_nodes = nodes.size();
+		size_t num_nodes_needed = firstUnusedNodeIndex + (num_to_alloc - num_allocated);
+
 	#ifdef MULTITHREAD_SUPPORT
 
 		//don't have enough nodes, so need to attempt a write lock to allocate more
@@ -145,9 +148,6 @@ EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(Evaluabl
 		//try again after write lock to allocate a node in case another thread has performed the allocation
 		//already have the write lock, so don't need to worry about another thread stealing firstUnusedNodeIndex
 	#endif
-
-		size_t num_nodes = nodes.size();
-		size_t num_nodes_needed = firstUnusedNodeIndex + (num_to_alloc - num_allocated);
 
 		//if don't currently have enough free nodes to meet the needs, then expand the allocation
 		if(num_nodes_needed > num_nodes)
@@ -271,10 +271,14 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 
 	//try again after write lock to allocate a node in case another thread has performed the allocation
 	//already have the write lock, so don't need to worry about another thread stealing firstUnusedNodeIndex
+	//use the cached value for firstUnusedNodeIndex, allocated_index, to check if another thread has performed the allocation
+	//as other threads may have reduced firstUnusedNodeIndex, incurring more unnecessary write locks when a memory expansion is needed
+#else
+	size_t allocated_index = firstUnusedNodeIndex;
 #endif
 
 	size_t num_nodes = nodes.size();
-	if(num_nodes > firstUnusedNodeIndex)
+	if(num_nodes > allocated_index)
 	{
 		if(nodes[firstUnusedNodeIndex] != nullptr)
 		{
@@ -295,7 +299,16 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 	//fill new EvaluableNode slots with nullptr
 	nodes.resize(num_nodes + nodes_to_allocate, nullptr);
 
-	nodes[firstUnusedNodeIndex] = new EvaluableNode();
+	if(nodes[firstUnusedNodeIndex] != nullptr)
+	{
+	#ifdef MULTITHREAD_SUPPORT
+		//before releasing the lock, make sure it has an allocated type, otherwise it could get grabbed by another thread
+		nodes[firstUnusedNodeIndex]->InitializeUnallocated();
+	#endif	
+	}
+	else //allocate if nullptr
+		nodes[firstUnusedNodeIndex] = new EvaluableNode();
+
 	return nodes[firstUnusedNodeIndex++];
 }
 

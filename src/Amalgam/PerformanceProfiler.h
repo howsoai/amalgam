@@ -29,6 +29,11 @@ namespace PerformanceProfiler
 	
 	void EndOperation(int64_t memory_use);
 
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	//accumulates lock contention for string t
+	void AccumulateLockContentionCount(std::string t);
+#endif
+
 	//prints profiling information
 	//if outfile_name is empty string, will print to stdout
 	//if max_print_count is 0, will print a default of 20 for stdout, will print all for a file
@@ -51,4 +56,8 @@ namespace PerformanceProfiler
 
 	std::vector<std::pair<std::string, double>> GetNumCallsByTotalMemoryIncreaseInclusive();
 	std::vector<std::pair<std::string, double>> GetNumCallsByAveMemoryIncreaseInclusive();
+
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	std::vector<std::pair<std::string, size_t>> GetVariableAssignmentsByLockContentionCount();
+#endif
 };

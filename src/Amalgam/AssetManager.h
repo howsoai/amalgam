@@ -135,6 +135,9 @@ public:
 		return true;
 	}
 
+	//returns a string representing en's source, empty string if debugSources is false
+	std::string GetEvaluableNodeSourceFromComments(EvaluableNode *en);
+
 	//default extension to store new entities
 	std::string defaultEntityExtension;
 

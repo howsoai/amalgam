@@ -1585,12 +1585,14 @@ void EvaluableNode::EnsureEvaluableNodeExtended()
 		break;
 	case ENT_ASSOC:
 		ev->value.ConstructMappedChildNodes();	//construct an empty mappedChildNodes to swap out
-		std::swap(ev->value.mappedChildNodes, value.mappedChildNodes);
+		ev->value.mappedChildNodes = std::move(value.mappedChildNodes);
+		value.DestructMappedChildNodes();
 		break;
 	//otherwise it's uninitialized, so treat as ordered
 	default: //all other opcodes
 		ev->value.ConstructOrderedChildNodes();	//construct an empty orderedChildNodes to swap out
-		std::swap(ev->value.orderedChildNodes, value.orderedChildNodes);
+		ev->value.orderedChildNodes = std::move(value.orderedChildNodes);
+		value.DestructOrderedChildNodes();
 		break;
 	}
 

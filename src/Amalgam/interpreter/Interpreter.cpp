@@ -9,7 +9,6 @@
 #include "EvaluableNodeTreeDifference.h"
 #include "EvaluableNodeTreeFunctions.h"
 #include "EvaluableNodeTreeManipulation.h"
-#include "PerformanceProfiler.h"
 #include "StringInternPool.h"
 
 //system headers:

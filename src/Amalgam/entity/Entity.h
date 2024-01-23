@@ -290,7 +290,7 @@ public:
 	inline void ClearQueryCaches()
 	{
 		if(hasContainedEntities)
-			entityRelationships.relationships->queryCaches.release();
+			entityRelationships.relationships->queryCaches.reset();
 	}
 
 	//creates a cache if it does not exist

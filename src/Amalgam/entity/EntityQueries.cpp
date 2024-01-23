@@ -738,7 +738,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		}
 
 		//transform distances as appropriate
-		EntityQueriesStatistics::DistanceTransform<Entity *> distance_transform(transformSuprisalToProb,
+		EntityQueriesStatistics::DistanceTransform<Entity *> distance_transform(distParams.computeSurprisal,
 			distanceWeightExponent, weightLabel != StringInternPool::NOT_A_STRING_ID,
 			[this](Entity *e, double &weight_value) { return e->GetValueAtLabelAsNumber(weightLabel, weight_value); });
 
@@ -775,7 +775,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 			entity_values.push_back(DistanceReferencePair<Entity *>(GetConditionDistanceMeasure(matching_entities[i], high_accuracy), matching_entities[i]));
 
 		//transform distances as appropriate
-		EntityQueriesStatistics::DistanceTransform<Entity *> distance_transform(transformSuprisalToProb,
+		EntityQueriesStatistics::DistanceTransform<Entity *> distance_transform(distParams.computeSurprisal,
 			distanceWeightExponent, weightLabel != StringInternPool::NOT_A_STRING_ID,
 			[this](Entity *e, double &weight_value) { return e->GetValueAtLabelAsNumber(weightLabel, weight_value); });
 

@@ -249,7 +249,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				weight_column = sbfds.GetColumnIndexFromLabelId(cond->weightLabel);
 
 			auto get_weight = sbfds.GetNumberValueFromEntityIndexFunction(weight_column);
-			EntityQueriesStatistics::DistanceTransform<size_t> distance_transform(cond->transformSuprisalToProb,
+			EntityQueriesStatistics::DistanceTransform<size_t> distance_transform(cond->distParams.computeSurprisal,
 				cond->distanceWeightExponent, use_entity_weights, get_weight);
 
 			//if first, need to populate with all entities

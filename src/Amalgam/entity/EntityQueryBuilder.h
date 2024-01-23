@@ -330,15 +330,15 @@ namespace EntityQueryBuilder
 		cur_condition->distParams.pValue = p_value;
 
 		//value transforms for whatever is measured as "distance"
-		cur_condition->transformSuprisalToProb = false;
 		cur_condition->distanceWeightExponent = 1.0;
+		cur_condition->distParams.computeSurprisal = false;
 		if(ocn.size() > DISTANCE_VALUE_TRANSFORM)
 		{
 			EvaluableNode *dwe_param = ocn[DISTANCE_VALUE_TRANSFORM];
 			if(!EvaluableNode::IsNull(dwe_param))
 			{
 				if(dwe_param->GetType() == ENT_STRING && dwe_param->GetStringIDReference() == ENBISI_surprisal_to_prob)
-					cur_condition->transformSuprisalToProb = true;
+					cur_condition->distParams.computeSurprisal = true;
 				else //try to convert to number
 					cur_condition->distanceWeightExponent = EvaluableNode::ToNumber(dwe_param, 1.0);
 			}

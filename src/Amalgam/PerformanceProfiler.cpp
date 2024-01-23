@@ -437,11 +437,10 @@ std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByAv
 	return results;
 }
 
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 std::vector<std::pair<std::string, size_t>> PerformanceProfiler::GetVariableAssignmentsByLockContentionCount()
 {
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 	Concurrency::SingleLock lock(performance_profiler_mutex);
-#endif
 
 	//copy to proper data structure
 	std::vector<std::pair<std::string, size_t>> results;
@@ -455,3 +454,4 @@ std::vector<std::pair<std::string, size_t>> PerformanceProfiler::GetVariableAssi
 		{	return (a.second) > (b.second);	});
 	return results;
 }
+#endif

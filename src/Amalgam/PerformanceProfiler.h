@@ -57,5 +57,7 @@ namespace PerformanceProfiler
 	std::vector<std::pair<std::string, double>> GetNumCallsByTotalMemoryIncreaseInclusive();
 	std::vector<std::pair<std::string, double>> GetNumCallsByAveMemoryIncreaseInclusive();
 
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 	std::vector<std::pair<std::string, size_t>> GetVariableAssignmentsByLockContentionCount();
+#endif
 };

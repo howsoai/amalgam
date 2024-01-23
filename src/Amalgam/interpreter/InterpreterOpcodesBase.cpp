@@ -385,7 +385,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PARALLEL(EvaluableNode *en
 
 	for(auto &cn :ocn)
 	{
-		auto result = InterpretNodeForImmediateUse(cn);
+		//don't need the result, so can ask for an immediate
+		auto result = InterpretNodeForImmediateUse(cn, true);
 		evaluableNodeManager->FreeNodeTreeIfPossible(result);
 	}
 

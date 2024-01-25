@@ -333,7 +333,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SEQUENCE(EvaluableNode *en
 		evaluableNodeManager->FreeNodeTreeIfPossible(result);
 		//request immediate values when not last, since any allocs for returns would be wasted
 		//concludes won't be immediate
-		result = InterpretNode(ocn[i], immediate_result || i < ocn_size - 1);
+		result = InterpretNode(ocn[i], immediate_result || i + 1 < ocn_size);
 	}
 	return result;
 }
@@ -613,7 +613,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, b
 			//concludes won't be immediate
 			//but because previous_result may be used, that can't be immediate, so the last param
 			//cannot be evaulated as immediate
-			new_result = InterpretNode(ocn[i], i < ocn_size - 1);
+			new_result = InterpretNode(ocn[i], i + 1 < ocn_size);
 
 			if(!new_result.IsImmediateValue() && new_result != nullptr && new_result->GetType() == ENT_CONCLUDE)
 			{
@@ -626,7 +626,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, b
 			}
 
 			//don't free the last new_result
-			if(i < ocn_size - 1)
+			if(i + 1 < ocn_size)
 				evaluableNodeManager->FreeNodeTreeIfPossible(new_result);
 		}
 
@@ -666,7 +666,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, boo
 		evaluableNodeManager->FreeNodeTreeIfPossible(result);
 		//request immediate values when not last, since any allocs for returns would be wasted
 		//concludes won't be immediate
-		result = InterpretNode(ocn[i], immediate_result || i < ocn_size - 1);
+		result = InterpretNode(ocn[i], immediate_result || i + 1 < ocn_size);
 	}
 
 	//all finished with new context, but can't free it in case returning something
@@ -770,7 +770,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 		evaluableNodeManager->FreeNodeTreeIfPossible(result);
 		//request immediate values when not last, since any allocs for returns would be wasted
 		//concludes won't be immediate
-		result = InterpretNode(ocn[i], immediate_result || i < ocn_size - 1);
+		result = InterpretNode(ocn[i], immediate_result || i + 1 < ocn_size);
 	}
 
 	return result;

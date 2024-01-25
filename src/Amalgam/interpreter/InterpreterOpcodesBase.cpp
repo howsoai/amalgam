@@ -320,14 +320,20 @@ inline EvaluableNodeReference RemoveConcludeFromConclusion(EvaluableNodeReferenc
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SEQUENCE(EvaluableNode *en, bool immediate_result)
 {
+	auto &ocn = en->GetOrderedChildNodes();
+	size_t ocn_size = ocn.size();
+
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
-	for(auto &cn : en->GetOrderedChildNodes())
+	for(size_t i = 0; i < ocn_size; i++)
 	{
 		if(!result.IsImmediateValue() && result != nullptr && result->GetType() == ENT_CONCLUDE)
 			return RemoveConcludeFromConclusion(result, evaluableNodeManager);
 
+		//free from previous iteration
 		evaluableNodeManager->FreeNodeTreeIfPossible(result);
-		result = InterpretNode(cn, immediate_result);
+		//request immediate values when not last, since any allocs for returns would be wasted
+		//concludes won't be immediate
+		result = InterpretNode(ocn[i], immediate_result || i < ocn_size - 1);
 	}
 	return result;
 }
@@ -572,7 +578,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
-
 	size_t ocn_size = ocn.size();
 	if(ocn_size == 0)
 		return EvaluableNodeReference::Null();
@@ -604,7 +609,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, b
 		EvaluableNodeReference new_result;
 		for(size_t i = 1; i < ocn_size; i++)
 		{
-			new_result = InterpretNode(ocn[i], immediate_result);
+			//request immediate values when not last, since any allocs for returns would be wasted
+			//concludes won't be immediate
+			//but because previous_result may be used, that can't be immediate, so the last param
+			//cannot be evaulated as immediate
+			new_result = InterpretNode(ocn[i], i < ocn_size - 1);
 
 			if(!new_result.IsImmediateValue() && new_result != nullptr && new_result->GetType() == ENT_CONCLUDE)
 			{
@@ -635,8 +644,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, b
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
-
-	if(ocn.size() == 0)
+	size_t ocn_size = ocn.size();
+	if(ocn_size == 0)
 		return EvaluableNodeReference::Null();
 
 	//add new context
@@ -645,7 +654,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, boo
 
 	//run code 
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
-	for(size_t i = 1; i < ocn.size(); i++)
+	for(size_t i = 1; i < ocn_size; i++)
 	{
 		if(!result.IsImmediateValue() && result != nullptr && result->GetType() == ENT_CONCLUDE)
 		{
@@ -655,7 +664,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, boo
 
 		//free from previous iteration
 		evaluableNodeManager->FreeNodeTreeIfPossible(result);
-		result = InterpretNode(ocn[i], immediate_result);
+		//request immediate values when not last, since any allocs for returns would be wasted
+		//concludes won't be immediate
+		result = InterpretNode(ocn[i], immediate_result || i < ocn_size - 1);
 	}
 
 	//all finished with new context, but can't free it in case returning something
@@ -667,8 +678,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, boo
 EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
-
-	if(ocn.size() == 0)
+	size_t ocn_size = ocn.size();
+	if(ocn_size == 0)
 		return EvaluableNodeReference::Null();
 
 	//get the current layer of the stack
@@ -750,13 +761,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
 
 	//run code 
-	for(size_t i = 1; i < ocn.size(); i++)
+	for(size_t i = 1; i < ocn_size; i++)
 	{
 		if(!result.IsImmediateValue() && result != nullptr && result->GetType() == ENT_CONCLUDE)
 			return RemoveConcludeFromConclusion(result, evaluableNodeManager);
 
+		//free from previous iteration
 		evaluableNodeManager->FreeNodeTreeIfPossible(result);
-		result = InterpretNode(ocn[i], immediate_result);
+		//request immediate values when not last, since any allocs for returns would be wasted
+		//concludes won't be immediate
+		result = InterpretNode(ocn[i], immediate_result || i < ocn_size - 1);
 	}
 
 	return result;

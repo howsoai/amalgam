@@ -118,7 +118,7 @@ public:
 	void BuildLabel(size_t column_index, const std::vector<Entity *> &entities);
 
 	//changes column to/from interning as would yield best performance
-	void OptimizeColumn(size_t column_ndex);
+	void OptimizeColumn(size_t column_index);
 
 	//calls OptimizeColumn on all columns
 	inline void OptimizeAllColumns()

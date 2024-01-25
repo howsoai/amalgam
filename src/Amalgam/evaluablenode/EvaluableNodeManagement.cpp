@@ -152,10 +152,10 @@ EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(Evaluabl
 		//if don't currently have enough free nodes to meet the needs, then expand the allocation
 		if(num_nodes_needed > num_nodes)
 		{
-			size_t nodes_to_allocate = static_cast<size_t>(allocExpansionFactor * num_nodes_needed) + 1;
+			size_t new_num_nodes = static_cast<size_t>(allocExpansionFactor * num_nodes_needed) + 1;
 
 			//fill new EvaluableNode slots with nullptr
-			nodes.resize(num_nodes + nodes_to_allocate, nullptr);
+			nodes.resize(new_num_nodes, nullptr);
 		}
 	}
 
@@ -285,7 +285,7 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 		#ifdef MULTITHREAD_SUPPORT
 			//before releasing the lock, make sure it has an allocated type, otherwise it could get grabbed by another thread
 			nodes[firstUnusedNodeIndex]->InitializeUnallocated();
-		#endif	
+		#endif
 		}
 		else //allocate if nullptr
 			nodes[firstUnusedNodeIndex] = new EvaluableNode();
@@ -294,10 +294,10 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 	}
 
 	//ran out, so need another node; push a bunch on the heap so don't need to reallocate as often and slow down garbage collection
-	size_t nodes_to_allocate = static_cast<size_t>(allocExpansionFactor * num_nodes) + 1; //preallocate additional resources, plus current node
+	size_t new_num_nodes = static_cast<size_t>(allocExpansionFactor * num_nodes) + 1; //preallocate additional resources, plus current node
 	
 	//fill new EvaluableNode slots with nullptr
-	nodes.resize(num_nodes + nodes_to_allocate, nullptr);
+	nodes.resize(new_num_nodes, nullptr);
 
 	if(nodes[firstUnusedNodeIndex] != nullptr)
 	{
@@ -335,14 +335,14 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 		auto &cur_node_ptr = nodes[first_unused_node_index_temp];
 
 		//if the node has been found on this iteration and set to the current iteration count, then move on
-		if(cur_node_ptr->GetGarbageCollectionIteration() == cur_gc_collect_iteration)
+		if(cur_node_ptr != nullptr && cur_node_ptr->GetGarbageCollectionIteration() == cur_gc_collect_iteration)
 		{
 			first_unused_node_index_temp++;
 		}
 		else //collect the node
 		{
 			//free any extra memory used, since this node is no longer needed
-			if(cur_node_ptr->GetType() != ENT_DEALLOCATED)
+			if(cur_node_ptr != nullptr && cur_node_ptr->GetType() != ENT_DEALLOCATED)
 				cur_node_ptr->Invalidate();
 
 			//see if out of things to free; if so exit early

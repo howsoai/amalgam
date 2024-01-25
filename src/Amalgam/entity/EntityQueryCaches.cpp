@@ -168,7 +168,7 @@ void EntityQueryCaches::EnsureLabelsAreCached(EntityQueryCondition *cond)
 	lock.unlock();
 	Concurrency::WriteLock write_lock(mutex);
 
-	//now with write_lock, remove any labels that might have already been added by other threads
+	//now with write_lock, remove any labels that have already been added by other threads
 	labels_to_add.erase(std::remove_if(begin(labels_to_add), end(labels_to_add),
 		[this](auto sid) { return DoesHaveLabel(sid); }),
 		end(labels_to_add));

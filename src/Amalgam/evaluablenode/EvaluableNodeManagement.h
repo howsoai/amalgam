@@ -586,7 +586,9 @@ public:
 	//attempts to free the node reference
 	__forceinline void FreeNodeTreeIfPossible(EvaluableNodeReference &enr)
 	{
-		if(enr.unique && !enr.IsImmediateValue())
+		if(enr.IsImmediateValue())
+			enr.FreeImmediateResources();
+		else if(enr.unique)
 			FreeNodeTree(enr);
 	}
 

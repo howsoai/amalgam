@@ -161,7 +161,7 @@ public:
 			int64_t refcount = DecrementRefCount(id);
 
 			//if extra references, just return, but if it is 1, then it will try to clear
-			if(refcount == 1)
+			if(refcount <= 1)
 				ids_need_removal = true;
 		}
 
@@ -188,7 +188,7 @@ public:
 
 			//remove any that are the last reference
 			int64_t refcount = DecrementRefCount(id);
-			if(refcount == 1)
+			if(refcount <= 1)
 				RemoveId(id);
 		}
 

@@ -393,7 +393,7 @@ public:
 	}
 
 	//allow being able to use as a string
-	inline operator const std::string &()
+	inline operator const std::string ()
 	{
 		return string_intern_pool.GetStringFromID(id);
 	}
@@ -466,7 +466,7 @@ public:
 	}
 
 	//allow being able to use as a string
-	inline operator const std::string &()
+	inline operator const std::string ()
 	{
 		return string_intern_pool.GetStringFromID(id);
 	}

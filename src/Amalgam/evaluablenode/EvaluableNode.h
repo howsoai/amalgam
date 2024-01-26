@@ -254,11 +254,6 @@ public:
 		return (n != nullptr && IsEvaluableNodeTypeQuery(n->GetType()));
 	}
 
-	//Returns the value requested from an associative array regardless of whether the associative array has been interpreted
-	// into mappedChildNodes or is still in orderedChildNodes
-	//returns nullptr if not found
-	static EvaluableNode *RetrieveImmediateAssocValue(EvaluableNode *n, const std::string &key);
-
 	//Returns positive if a is less than b,
 	// negative if greater, or 0 if equal or not numerically comparable
 	static int Compare(EvaluableNode *a, EvaluableNode *b);
@@ -477,7 +472,7 @@ public:
 		return StringInternPool::NOT_A_STRING_ID;
 	}
 	void SetStringID(StringInternPool::StringID id);
-	const std::string &GetStringValue();
+	std::string GetStringValue();
 	void SetStringValue(const std::string &v);
 	//gets the string ID and clears the node's string ID, but does not destroy the string reference,
 	// leaving the reference handling up to the caller
@@ -491,7 +486,7 @@ public:
 	std::vector<std::string> GetLabelsStrings();
 	void SetLabelsStringIds(const std::vector<StringInternPool::StringID> &label_string_ids);
 	size_t GetNumLabels();
-	const std::string &GetLabel(size_t label_index);
+	std::string GetLabel(size_t label_index);
 	const StringInternPool::StringID GetLabelStringId(size_t label_index);
 	void RemoveLabel(size_t label_index);
 	void ClearLabels();
@@ -504,7 +499,7 @@ public:
 	//functions for getting and setting node comments by string or by StringID
 	// all Comment functions perform any reference counting management necessary when setting and clearing
 	StringInternPool::StringID GetCommentsStringId();
-	inline const std::string &GetCommentsString()
+	inline std::string GetCommentsString()
 	{
 		return string_intern_pool.GetStringFromID(GetCommentsStringId());
 	}
@@ -1135,7 +1130,7 @@ public:
 			if(nodeValue.stringID == string_intern_pool.NOT_A_STRING_ID)
 				return value_if_null;
 
-			const auto &str = string_intern_pool.GetStringFromID(nodeValue.stringID);
+			auto str = string_intern_pool.GetStringFromID(nodeValue.stringID);
 			auto [value, success] = Platform_StringToNumber(str);
 			if(success)
 				return value;
@@ -1164,7 +1159,7 @@ public:
 			if(nodeValue.stringID == string_intern_pool.NOT_A_STRING_ID)
 				return std::make_pair(false, "");
 
-			const auto &str = string_intern_pool.GetStringFromID(nodeValue.stringID);
+			auto str = string_intern_pool.GetStringFromID(nodeValue.stringID);
 			return std::make_pair(true, str);
 		}
 

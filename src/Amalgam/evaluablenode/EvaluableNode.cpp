@@ -124,43 +124,6 @@ bool EvaluableNode::IsTrue(EvaluableNode *n)
 	return true;
 }
 
-EvaluableNode *EvaluableNode::RetrieveImmediateAssocValue(EvaluableNode *n, const std::string &key)
-{
-	if(!IsAssociativeArray(n))
-		return nullptr;
-
-	StringInternPool::StringID key_sid = string_intern_pool.GetIDFromString(key);
-	if(key_sid == StringInternPool::NOT_A_STRING_ID)
-		return nullptr;
-
-	//first try for mapped
-	if(n->IsAssociativeArray())
-	{
-		auto &mcn = n->GetMappedChildNodesReference();
-		auto result_in_mapped = mcn.find(key_sid);
-		if(result_in_mapped != end(mcn))
-			return result_in_mapped->second;
-		
-		//not found
-		return nullptr;
-	}
-
-	//try for uninterpreted, every other value is a key, so skip values and make sure have room for the last key
-	auto &ocn = n->GetOrderedChildNodes();
-	for(size_t i = 0; i + 1 < ocn.size(); i += 2)
-	{
-		EvaluableNode *key_node = ocn[i];
-		if(key_node == nullptr)
-			continue;
-		if(key_node->GetType() != ENT_STRING)
-			continue;
-		if(key_node->GetStringValue() == key)
-			return ocn[i + 1];
-	}
-
-	return nullptr;
-}
-
 int EvaluableNode::Compare(EvaluableNode *a, EvaluableNode *b)
 {
 	//try numerical comparison first
@@ -221,7 +184,7 @@ double EvaluableNode::ToNumber(EvaluableNode *e, double value_if_null)
 			auto sid = e->GetStringIDReference();
 			if(sid == string_intern_pool.NOT_A_STRING_ID)
 				return value_if_null;
-			const auto &str = string_intern_pool.GetStringFromID(sid);
+			auto str = string_intern_pool.GetStringFromID(sid);
 			auto [value, success] = Platform_StringToNumber(str);
 			if(success)
 				return value;
@@ -730,7 +693,7 @@ void EvaluableNode::SetStringID(StringInternPool::StringID id)
 	}
 }
 
-const std::string &EvaluableNode::GetStringValue()
+std::string EvaluableNode::GetStringValue()
 {
 	if(DoesEvaluableNodeTypeUseStringData(GetType()))
 	{
@@ -905,7 +868,7 @@ size_t EvaluableNode::GetNumLabels()
 	return sids.size();
 }
 
-const std::string &EvaluableNode::GetLabel(size_t label_index)
+std::string EvaluableNode::GetLabel(size_t label_index)
 {
 	if(!HasExtendedValue())
 	{
@@ -1056,7 +1019,7 @@ std::vector<std::string> EvaluableNode::GetCommentsSeparateLines()
 	if(comment_sid <= StringInternPool::EMPTY_STRING_ID)
 		return comment_lines;
 
-	const auto &full_comments = string_intern_pool.GetStringFromID(comment_sid);
+	auto full_comments = string_intern_pool.GetStringFromID(comment_sid);
 
 	//early exit
 	if(full_comments == "")

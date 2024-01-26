@@ -705,7 +705,7 @@ void Parser::AppendAssocKeyValuePair(UnparseData &upd, StringInternPool::StringI
 	else
 		upd.result.push_back(' ');
 
-	const std::string &key_str = string_intern_pool.GetStringFromID(key_sid);
+	auto key_str = string_intern_pool.GetStringFromID(key_sid);
 
 	//surround in quotes only if needed
 	if(key_sid != string_intern_pool.NOT_A_STRING_ID
@@ -805,7 +805,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 			{
 				upd.result.push_back('"');
 
-				auto &s = tree->GetStringValue();
+				auto s = tree->GetStringValue();
 				if(NeedsBackslashify(s))
 					upd.result.append(Backslashify(s));
 				else

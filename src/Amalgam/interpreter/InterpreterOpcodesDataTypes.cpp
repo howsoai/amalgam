@@ -539,7 +539,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 		}
 		else //need to parse the string
 		{
-			const auto &from_type_str = string_intern_pool.GetStringFromID(from_type);
+			auto from_type_str = string_intern_pool.GetStringFromID(from_type);
 
 			//see if it starts with the date string
 			if(from_type_str.compare(0, date_string.size(), date_string) == 0)
@@ -862,7 +862,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 	}
 	else //need to parse the string
 	{
-		const auto &to_type_str = string_intern_pool.GetStringFromID(to_type);
+		auto to_type_str = string_intern_pool.GetStringFromID(to_type);
 
 		//if it starts with the date string
 		if(to_type_str.compare(0, date_string.size(), date_string) == 0)

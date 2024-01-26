@@ -200,7 +200,7 @@ public:
 	void RebuildLabelIndex();
 
 	//Returns the id for this Entity
-	inline const std::string &GetId()
+	inline const std::string GetId()
 	{
 		return string_intern_pool.GetStringFromID(GetIdStringId());
 	}
@@ -387,7 +387,7 @@ public:
 
 	inline static bool IsNamedEntity(StringInternPool::StringID id)
 	{
-		const std::string &id_name = string_intern_pool.GetStringFromID(id);
+		auto id_name = string_intern_pool.GetStringFromID(id);
 		if(id_name == StringInternPool::EMPTY_STRING)
 			return false;
 		return IsNamedEntity(id_name);
@@ -436,7 +436,7 @@ public:
 		if(label_sid == string_intern_pool.NOT_A_STRING_ID)
 			return false;
 
-		const std::string &label_name = string_intern_pool.GetStringFromID(label_sid);
+		auto label_name = string_intern_pool.GetStringFromID(label_sid);
 		return IsLabelValidAndPublic(label_name);
 	}
 
@@ -455,7 +455,7 @@ public:
 	//returns true if the label is only accessible to itself (starts with !)
 	static inline bool IsLabelPrivate(StringInternPool::StringID label_sid)
 	{
-		const std::string &label_name = string_intern_pool.GetStringFromID(label_sid);
+		auto label_name = string_intern_pool.GetStringFromID(label_sid);
 		return IsLabelPrivate(label_name);
 	}
 
@@ -472,7 +472,7 @@ public:
 	//returns true if the label is accessible to contained entities (starts with ^)
 	static inline bool IsLabelAccessibleToContainedEntities(StringInternPool::StringID label_sid)
 	{
-		const std::string &label_name = string_intern_pool.GetStringFromID(label_sid);
+		auto label_name = string_intern_pool.GetStringFromID(label_sid);
 		return IsLabelAccessibleToContainedEntities(label_name);
 	}
 

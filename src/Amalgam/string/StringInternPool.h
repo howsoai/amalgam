@@ -161,7 +161,7 @@ public:
 			int64_t refcount = DecrementRefCount(id);
 
 			//if extra references, just return, but if it is 1, then it will try to clear
-			if(refcount == 1)
+			if(refcount <= 1)
 				ids_need_removal = true;
 		}
 
@@ -188,7 +188,7 @@ public:
 
 			//remove any that are the last reference
 			int64_t refcount = DecrementRefCount(id);
-			if(refcount == 1)
+			if(refcount <= 1)
 				RemoveId(id);
 		}
 
@@ -244,17 +244,17 @@ public:
 	}
 
 	//returns a vector of all the strings still in use.  Intended for debugging.
-	std::vector<std::string> GetNonStaticStringsInUse()
+	std::vector<std::pair<std::string, int64_t>> GetNonStaticStringsInUse()
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		Concurrency::ReadLock lock(sharedMutex);
 	#endif
 
-		std::vector<std::string> in_use;
+		std::vector<std::pair<std::string, int64_t>> in_use;
 		for(size_t id = 0; id < idToStringAndRefCount.size(); id++)
 		{
 			if(!IsStringIDStatic(id) && idToStringAndRefCount[id].second > 0)
-				in_use.push_back(idToStringAndRefCount[id].first);
+				in_use.emplace_back(idToStringAndRefCount[id].first, idToStringAndRefCount[id].second);
 		}
 		return in_use;
 	}

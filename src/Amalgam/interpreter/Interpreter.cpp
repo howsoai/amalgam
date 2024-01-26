@@ -435,7 +435,7 @@ EvaluableNodeReference Interpreter::ConvertArgsToCallStack(EvaluableNodeReferenc
 	}
 	else if(!args.unique)
 	{
-		args.SetReference(enm.AllocNode(args));
+		args.SetReference(enm.AllocNode(args, EvaluableNodeManager::ENMM_REMOVE_ALL));
 	}
 	
 	EvaluableNode *call_stack = enm.AllocNode(ENT_LIST);

@@ -110,7 +110,7 @@ public:
 		if(EvaluableNode::IsAssociativeArray(new_context))
 		{
 			if(!new_context.unique)
-				new_context.SetReference(evaluableNodeManager->AllocNode(new_context));
+				new_context.SetReference(evaluableNodeManager->AllocNode(new_context, EvaluableNodeManager::ENMM_REMOVE_ALL));
 		}
 		else //not assoc, make a new one
 		{

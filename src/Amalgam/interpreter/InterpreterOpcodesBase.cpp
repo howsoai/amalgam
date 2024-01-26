@@ -1036,8 +1036,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 	if(to_lookup == nullptr || IsEvaluableNodeTypeImmediate(to_lookup->GetType()))
 	{
 		StringInternPool::StringID symbol_name_sid = EvaluableNode::ToStringIDIfExists(to_lookup);
+		EvaluableNode* symbol_value = GetCallStackSymbol(symbol_name_sid);
 		evaluableNodeManager->FreeNodeTreeIfPossible(to_lookup);
-		return EvaluableNodeReference(GetCallStackSymbol(symbol_name_sid), false);
+		return EvaluableNodeReference(symbol_value, false);
 	}
 	else if(to_lookup->IsAssociativeArray())
 	{
@@ -1070,11 +1071,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 				continue;
 			}
 
+			EvaluableNode *symbol_value = GetCallStackSymbol(symbol_name_sid);
 			//if there are values passed in, free them to be clobbered
 			EvaluableNodeReference cnr(cn, to_lookup.unique);
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);
 
-			cn = GetCallStackSymbol(symbol_name_sid);
+			cn = symbol_value;
 		}
 
 		return EvaluableNodeReference(to_lookup, false);

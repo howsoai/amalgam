@@ -31,7 +31,9 @@ public:
 	}
 
 	//translates the id to a string, empty string if it does not exist
-	const std::string &GetStringFromID(StringID id);
+	//because a flat hash map is used as the storage container, it is possible that any allocation or deallocation
+	//may invalidate the location, so a copy must be made to return the value
+	const std::string GetStringFromID(StringID id);
 
 	//translates the string to the corresponding ID, 0 is the empty string, maximum value of size_t means it does not exist
 	StringID GetIDFromString(const std::string &str);

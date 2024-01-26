@@ -221,7 +221,7 @@ double EvaluableNode::ToNumber(EvaluableNode *e, double value_if_null)
 			auto sid = e->GetStringIDReference();
 			if(sid == string_intern_pool.NOT_A_STRING_ID)
 				return value_if_null;
-			const auto &str = string_intern_pool.GetStringFromID(sid);
+			auto str = string_intern_pool.GetStringFromID(sid);
 			auto [value, success] = Platform_StringToNumber(str);
 			if(success)
 				return value;
@@ -730,7 +730,7 @@ void EvaluableNode::SetStringID(StringInternPool::StringID id)
 	}
 }
 
-const std::string &EvaluableNode::GetStringValue()
+std::string EvaluableNode::GetStringValue()
 {
 	if(DoesEvaluableNodeTypeUseStringData(GetType()))
 	{
@@ -905,7 +905,7 @@ size_t EvaluableNode::GetNumLabels()
 	return sids.size();
 }
 
-const std::string &EvaluableNode::GetLabel(size_t label_index)
+std::string EvaluableNode::GetLabel(size_t label_index)
 {
 	if(!HasExtendedValue())
 	{
@@ -1056,7 +1056,7 @@ std::vector<std::string> EvaluableNode::GetCommentsSeparateLines()
 	if(comment_sid <= StringInternPool::EMPTY_STRING_ID)
 		return comment_lines;
 
-	const auto &full_comments = string_intern_pool.GetStringFromID(comment_sid);
+	auto full_comments = string_intern_pool.GetStringFromID(comment_sid);
 
 	//early exit
 	if(full_comments == "")

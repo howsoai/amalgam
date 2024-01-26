@@ -78,8 +78,8 @@ inline StringInternPool::StringID MixStringValues(StringInternPool::StringID a, 
 	if(b == StringInternPool::NOT_A_STRING_ID)
 		return string_intern_pool.CreateStringReference(a);
 	
-	const auto &a_str = string_intern_pool.GetStringFromID(a);
-	const auto &b_str = string_intern_pool.GetStringFromID(b);
+	auto a_str = string_intern_pool.GetStringFromID(a);
+	auto b_str = string_intern_pool.GetStringFromID(b);
 	std::string result = EvaluableNodeTreeManipulation::MixStrings(a_str, b_str,
 		random_stream, fraction_a, fraction_b);
 
@@ -1067,7 +1067,7 @@ bool EvaluableNodeTreeManipulation::CollectLabelIndexesFromTree(EvaluableNode *t
 	for(size_t i = 0; i < num_labels; i++)
 	{
 		auto label_sid = tree->GetLabelStringId(i);
-		const std::string &label_name = string_intern_pool.GetStringFromID(label_sid);
+		auto label_name = string_intern_pool.GetStringFromID(label_sid);
 
 		if(label_name.size() == 0)
 			continue;
@@ -1122,7 +1122,7 @@ bool EvaluableNodeTreeManipulation::CollectLabelIndexesFromTreeAndMakeLabelNorma
 	for(size_t i = 0; i < num_labels; i++)
 	{
 		auto label_sid = tree->GetLabelStringId(i);
-		const std::string &label_name = string_intern_pool.GetStringFromID(label_sid);
+		auto label_name = string_intern_pool.GetStringFromID(label_sid);
 
 		if(label_name.size() == 0)
 			continue;

@@ -356,7 +356,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableN
 		if(!AllowUnlimitedExecutionNodes())
 			curNumExecutionNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
 
-		const std::string &new_entity_id_string = string_intern_pool.GetStringFromID(new_entity_id);
+		auto new_entity_id_string = string_intern_pool.GetStringFromID(new_entity_id);
 		new_entity->SetRandomState(destination_entity_parent->CreateRandomStreamFromStringAndRand(new_entity_id_string), false);
 
 		destination_entity_parent->AddContainedEntityViaReference(new_entity, new_entity_id, writeListeners);

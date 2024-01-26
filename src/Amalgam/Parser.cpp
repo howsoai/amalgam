@@ -705,7 +705,7 @@ void Parser::AppendAssocKeyValuePair(UnparseData &upd, StringInternPool::StringI
 	else
 		upd.result.push_back(' ');
 
-	const std::string &key_str = string_intern_pool.GetStringFromID(key_sid);
+	auto key_str = string_intern_pool.GetStringFromID(key_sid);
 
 	//surround in quotes only if needed
 	if(key_sid != string_intern_pool.NOT_A_STRING_ID

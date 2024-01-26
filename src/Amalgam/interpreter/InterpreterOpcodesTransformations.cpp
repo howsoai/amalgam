@@ -793,8 +793,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, b
 	{
 		if(type_node->GetType() == ENT_STRING)
 		{
-			auto &new_type_string = type_node->GetStringValue();
-			new_type = GetEvaluableNodeTypeFromString(new_type_string, true);
+			auto new_type_sid = type_node->GetStringIDReference();
+			new_type = GetEvaluableNodeTypeFromStringId(new_type_sid);
 			evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
 		}
 		else

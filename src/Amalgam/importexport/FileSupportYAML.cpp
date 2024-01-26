@@ -72,7 +72,7 @@ bool EvaluableNodeToYamlStringRecurse(EvaluableNode *en, ryml::NodeRef &built_el
 		{
 			for(auto &[cn_id, cn] : mcn)
 			{
-				const auto &str = string_intern_pool.GetStringFromID(cn_id);
+				auto str = string_intern_pool.GetStringFromID(cn_id);
 				auto new_element = built_element.append_child();
 				new_element << ryml::key(str);
 				if(!EvaluableNodeToYamlStringRecurse(cn, new_element, sort_keys))
@@ -92,7 +92,7 @@ bool EvaluableNodeToYamlStringRecurse(EvaluableNode *en, ryml::NodeRef &built_el
 			{
 				auto k = mcn.find(key_sids[i]);
 
-				const auto &str = string_intern_pool.GetStringFromID(k->first);
+				auto str = string_intern_pool.GetStringFromID(k->first);
 				auto new_element = built_element.append_child();
 				new_element << ryml::key(str);
 

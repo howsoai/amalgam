@@ -141,7 +141,7 @@ bool EvaluableNodeToYamlStringRecurse(EvaluableNode *en, ryml::NodeRef &built_el
 		}
 		else
 		{
-			auto &str_value = en->GetStringValue();
+			auto str_value = en->GetStringValue();
 			built_element << str_value;
 		}
 	}

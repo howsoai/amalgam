@@ -254,11 +254,6 @@ public:
 		return (n != nullptr && IsEvaluableNodeTypeQuery(n->GetType()));
 	}
 
-	//Returns the value requested from an associative array regardless of whether the associative array has been interpreted
-	// into mappedChildNodes or is still in orderedChildNodes
-	//returns nullptr if not found
-	static EvaluableNode *RetrieveImmediateAssocValue(EvaluableNode *n, const std::string &key);
-
 	//Returns positive if a is less than b,
 	// negative if greater, or 0 if equal or not numerically comparable
 	static int Compare(EvaluableNode *a, EvaluableNode *b);

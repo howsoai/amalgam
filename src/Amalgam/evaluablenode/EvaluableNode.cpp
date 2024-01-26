@@ -124,43 +124,6 @@ bool EvaluableNode::IsTrue(EvaluableNode *n)
 	return true;
 }
 
-EvaluableNode *EvaluableNode::RetrieveImmediateAssocValue(EvaluableNode *n, const std::string &key)
-{
-	if(!IsAssociativeArray(n))
-		return nullptr;
-
-	StringInternPool::StringID key_sid = string_intern_pool.GetIDFromString(key);
-	if(key_sid == StringInternPool::NOT_A_STRING_ID)
-		return nullptr;
-
-	//first try for mapped
-	if(n->IsAssociativeArray())
-	{
-		auto &mcn = n->GetMappedChildNodesReference();
-		auto result_in_mapped = mcn.find(key_sid);
-		if(result_in_mapped != end(mcn))
-			return result_in_mapped->second;
-		
-		//not found
-		return nullptr;
-	}
-
-	//try for uninterpreted, every other value is a key, so skip values and make sure have room for the last key
-	auto &ocn = n->GetOrderedChildNodes();
-	for(size_t i = 0; i + 1 < ocn.size(); i += 2)
-	{
-		EvaluableNode *key_node = ocn[i];
-		if(key_node == nullptr)
-			continue;
-		if(key_node->GetType() != ENT_STRING)
-			continue;
-		if(key_node->GetStringValue() == key)
-			return ocn[i + 1];
-	}
-
-	return nullptr;
-}
-
 int EvaluableNode::Compare(EvaluableNode *a, EvaluableNode *b)
 {
 	//try numerical comparison first

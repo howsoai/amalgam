@@ -805,7 +805,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 			{
 				upd.result.push_back('"');
 
-				auto &s = tree->GetStringValue();
+				auto s = tree->GetStringValue();
 				if(NeedsBackslashify(s))
 					upd.result.append(Backslashify(s));
 				else

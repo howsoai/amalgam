@@ -46,6 +46,13 @@ public:
 		return thread_ids;
 	}
 
+	//returns true if there are threads currently idle
+	inline bool AreThreadsAvailable()
+	{
+		std::unique_lock<std::mutex> lock(taskQueueMutex);
+		return (taskQueue.size() + numActiveThreads < threads.size());
+	}
+
 	//destroys all the threads and waits to join them
 	~ThreadPool();
 

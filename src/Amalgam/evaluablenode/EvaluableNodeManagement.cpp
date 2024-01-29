@@ -332,7 +332,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 		//nodes can't be nullptr below firstUnusedNodeIndex
 		auto &cur_node_ptr = nodes[first_unused_node_index_temp];
 
-		//if the node has been found on this iteration and set to the current iteration count, then move on
+		//if the node has been found on this iteration, then clear it as counted so it's clean for next garbage collection
 		if(cur_node_ptr != nullptr && cur_node_ptr->GetKnownToBeInUse())
 		{
 			cur_node_ptr->SetKnownToBeInUse(false);
@@ -735,7 +735,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(bool set_in_use)
 #ifdef MULTITHREAD_SUPPORT
 	size_t reference_count = nodesCurrentlyReferenced.size();
 	//heuristic to ensure there's enough to do to warrant the overhead of using multiple threads
-	if(reference_count > 1 && firstUnusedNodeIndex / reference_count >= 2000)
+	if(reference_count > 1 && (firstUnusedNodeIndex / reference_count) >= 2000)
 	{
 		auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
 		if(enqueue_task_lock.AreThreadsAvailable())

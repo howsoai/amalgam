@@ -99,16 +99,9 @@ EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(Evaluabl
 				if(allocated_index < nodes.size())
 				{
 					if(nodes[allocated_index] != nullptr)
-					{
-					#ifdef MULTITHREAD_SUPPORT
-						//before releasing the lock, make sure it has an allocated type, otherwise it could get grabbed by another thread
 						nodes[allocated_index]->InitializeType(cur_type);
-					#endif
-					}
-					else //allocate if nullptr
-					{
+					else
 						nodes[allocated_index] = new EvaluableNode(cur_type);
-					}
 
 					//if first node, populate the parent node
 					if(num_allocated == 0)

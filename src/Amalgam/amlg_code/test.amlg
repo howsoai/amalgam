@@ -1,4 +1,1 @@
-(seq
- (print "17 " (generalized_distance (null) (list "nominal_numeric") (list 1) (null) 1 (list 1 2 3) (list 10 2 4) ) "\n")
-
-)
+(print)

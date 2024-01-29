@@ -103,6 +103,13 @@ public:
 	constexpr void InitializeUnallocated()
 	{
 		type = ENT_UNINITIALIZED;
+
+		allocatedBy = ENT_UNINITIALIZED;
+		allocatedAt = string_intern_pool.EMPTY_STRING_ID;
+		allocationSpot = 0;
+		allocatedIndex = 0;
+		sizeAtAllocation = 0;
+		allocationManager = nullptr;
 	}
 
 	inline void InitializeType(EvaluableNodeType _type)
@@ -908,7 +915,14 @@ protected:
 
 	//Executable/data type of the node
 	EvaluableNodeType type;
-
+public:
+	EvaluableNodeType allocatedBy;
+	StringInternPool::StringID allocatedAt;
+	size_t allocatedIndex;
+	size_t sizeAtAllocation;
+	int allocationSpot;
+	EvaluableNodeManager *allocationManager;
+protected:
 	//make sure this only takes up one byte
 #pragma pack(push, 1)
 	union EvaluableNodeAttributesType

@@ -1928,20 +1928,20 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT_A_BUILT_IN_TYPE(Evalua
 void Interpreter::ValidateEvaluableNodeIntegrity()
 {
 	for(EvaluableNode *en : *callStackNodes)
-		evaluableNodeManager->ValidateEvaluableNodeTreeMemoryIntegrity(en);
+		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
 
 	for(EvaluableNode *en : *interpreterNodeStackNodes)
-		evaluableNodeManager->ValidateEvaluableNodeTreeMemoryIntegrity(en);
+		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
 
 	for(EvaluableNode *en : *constructionStackNodes)
-		evaluableNodeManager->ValidateEvaluableNodeTreeMemoryIntegrity(en);
+		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
 
 	if(curEntity != nullptr)
-		evaluableNodeManager->ValidateEvaluableNodeTreeMemoryIntegrity(curEntity->GetRoot());
+		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(curEntity->GetRoot());
 
 	auto &nodes_referenced = evaluableNodeManager->GetNodesReferenced();
 	for(auto &[en, _] : nodes_referenced)
-		evaluableNodeManager->ValidateEvaluableNodeTreeMemoryIntegrity(en);
+		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
 
 	if(callingInterpreter != nullptr)
 		callingInterpreter->ValidateEvaluableNodeIntegrity();

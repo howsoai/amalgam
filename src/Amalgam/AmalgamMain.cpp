@@ -20,8 +20,6 @@
 #include <fstream>
 #include <string>
 
-Entity *boss_entity = nullptr;
-
 //function prototypes:
 int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::string &random_seed);
 
@@ -235,8 +233,6 @@ PLATFORM_MAIN_CONSOLE
 		Entity *entity = asset_manager.LoadEntityFromResourcePath(amlg_file_to_run, file_type, false, true, false, true, random_seed);
 		if(entity == nullptr)
 			return 0;
-
-		boss_entity = entity;
 
 		asset_manager.SetRootPermission(entity, true);
 

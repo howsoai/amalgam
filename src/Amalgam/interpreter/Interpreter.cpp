@@ -504,9 +504,6 @@ EvaluableNode **Interpreter::GetOrCreateCallStackSymbolLocation(const StringInte
 	return context_to_use->GetOrCreateMappedChildNode(symbol_sid);
 }
 
-thread_local EvaluableNodeType cur_opcode = ENT_UNINITIALIZED;
-thread_local StringInternPool::StringID cur_opcode_source = string_intern_pool.NOT_A_STRING_ID;
-
 EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, bool immediate_result)
 {
 	if(EvaluableNode::IsNull(en))
@@ -547,15 +544,7 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, bool immedi
 	EvaluableNodeType ent = en->GetType();
 	auto oc = _opcodes[ent];
 
-EvaluableNodeType prev_cur_opcode = cur_opcode;
-StringInternPool::StringID prev_cur_opcode_source = cur_opcode_source;
-cur_opcode = ent;
-cur_opcode_source = en->GetCommentsStringId();
-
 	EvaluableNodeReference retval = (this->*oc)(en, immediate_result);
-
-cur_opcode = prev_cur_opcode;
-cur_opcode_source = prev_cur_opcode_source;
 
 	//for deep debugging only
 	//ValidateEvaluableNodeIntegrity();

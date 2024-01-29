@@ -4,8 +4,6 @@
 #include "Concurrency.h"
 #include "EvaluableNode.h"
 
-class Entity;
-
 typedef int64_t ExecutionCycleCount;
 typedef int32_t ExecutionCycleCountCompactDelta;
 
@@ -788,7 +786,7 @@ public:
 	//makes sure that the evaluable node and everything referenced by it has not been deallocated
 	//asserts an error if it finds any
 	//intended for debugging only
-	void ValidateEvaluableNodeTreeMemoryIntegrity(EvaluableNode *en);
+	static void ValidateEvaluableNodeTreeMemoryIntegrity(EvaluableNode *en);
 
 	//total number of execution cycles since one of the FreeAllNodes* functions was called
 #ifdef MULTITHREAD_SUPPORT
@@ -857,9 +855,7 @@ protected:
 	static void ClearAllReferencedNodesInUseRecurseConcurrent(EvaluableNode* tree);
 #endif
 
-	std::pair<Entity *, size_t> FindFromEntity(Entity *entity, EvaluableNode *en);
-
-	void ValidateEvaluableNodeTreeMemoryIntegrityRecurse(EvaluableNode *en, EvaluableNode::ReferenceSetType &checked);
+	static void ValidateEvaluableNodeTreeMemoryIntegrityRecurse(EvaluableNode *en, EvaluableNode::ReferenceSetType &checked);
 
 #ifdef MULTITHREAD_SUPPORT
 public:

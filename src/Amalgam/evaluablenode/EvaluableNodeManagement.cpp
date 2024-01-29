@@ -8,9 +8,6 @@
 #include <vector>
 #include <utility>
 
-extern thread_local EvaluableNodeType cur_opcode;
-extern thread_local StringInternPool::StringID cur_opcode_source;
-
 #ifdef MULTITHREAD_SUPPORT
 Concurrency::ReadWriteMutex EvaluableNodeManager::memoryModificationMutex;
 #endif
@@ -90,10 +87,10 @@ EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(Evaluabl
 	while(num_allocated < num_to_alloc)
 	{
 		{
-#ifdef MULTITHREAD_SUPPORT
+		#ifdef MULTITHREAD_SUPPORT
 			//attempt to allocate as many as possible using an atomic without write locking
 			Concurrency::ReadLock lock(managerAttributesMutex);
-#endif
+		#endif
 
 			for(; num_allocated < num_to_alloc; num_allocated++)
 			{
@@ -103,21 +100,15 @@ EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(Evaluabl
 				{
 					if(nodes[allocated_index] != nullptr)
 					{
+					#ifdef MULTITHREAD_SUPPORT
 						//before releasing the lock, make sure it has an allocated type, otherwise it could get grabbed by another thread
 						nodes[allocated_index]->InitializeType(cur_type);
-						nodes[allocated_index]->allocationSpot = 1;
+					#endif
 					}
 					else //allocate if nullptr
 					{
-						reinterpret_cast<std::atomic<EvaluableNode *> &>(nodes[allocated_index]) = new EvaluableNode(cur_type);
-						nodes[allocated_index]->allocationSpot = 2;
+						nodes[allocated_index] = new EvaluableNode(cur_type);
 					}
-
-					nodes[allocated_index]->allocatedBy = cur_opcode;
-					nodes[allocated_index]->allocatedAt = cur_opcode_source;
-					nodes[allocated_index]->allocationManager = this;
-					nodes[allocated_index]->allocatedIndex = allocated_index;
-					nodes[allocated_index]->sizeAtAllocation = nodes.size();
 
 					//if first node, populate the parent node
 					if(num_allocated == 0)
@@ -267,23 +258,12 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 		allocated_index = firstUnusedNodeIndex++;
 		if(allocated_index < nodes.size())
 		{
+			//before releasing the lock, make sure the EvaluableNode is initialized, otherwise it could get grabbed by another thread
 			if(nodes[allocated_index] != nullptr)
-			{
-				//before releasing the lock, make sure it has an allocated type, otherwise it could get grabbed by another thread
 				nodes[allocated_index]->InitializeUnallocated();
-				nodes[allocated_index]->allocationSpot = 3;
-			}
 			else //allocate if nullptr
-			{
-				reinterpret_cast<std::atomic<EvaluableNode *> &>(nodes[allocated_index]) = new EvaluableNode();
-				nodes[allocated_index]->allocationSpot = 4;
-			}
+				nodes[allocated_index] = new EvaluableNode();
 
-			nodes[allocated_index]->allocatedBy = cur_opcode;
-			nodes[allocated_index]->allocatedAt = cur_opcode_source;
-			nodes[allocated_index]->allocationManager = this;
-			nodes[allocated_index]->allocatedIndex = allocated_index;
-			nodes[allocated_index]->sizeAtAllocation = nodes.size();
 			return nodes[allocated_index];
 		}
 		//the node wasn't valid; put it back and do a write lock to allocate more
@@ -306,22 +286,15 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 		if(nodes[firstUnusedNodeIndex] != nullptr)
 		{
 		#ifdef MULTITHREAD_SUPPORT
-			//before releasing the lock, make sure it has an allocated type, otherwise it could get grabbed by another thread
+			//before releasing the lock, make sure the EvaluableNode is initialized, otherwise it could get grabbed by another thread
 			nodes[firstUnusedNodeIndex]->InitializeUnallocated();
-			nodes[firstUnusedNodeIndex]->allocationSpot = 5;
 		#endif
 		}
 		else //allocate if nullptr
 		{
-			reinterpret_cast<std::atomic<EvaluableNode *> &>(nodes[firstUnusedNodeIndex]) = new EvaluableNode();
-			nodes[firstUnusedNodeIndex]->allocationSpot = 6;
+			nodes[firstUnusedNodeIndex] = new EvaluableNode();
 		}
 
-		nodes[firstUnusedNodeIndex]->allocatedBy = cur_opcode;
-		nodes[firstUnusedNodeIndex]->allocatedAt = cur_opcode_source;
-		nodes[firstUnusedNodeIndex]->allocationManager = this;
-		nodes[firstUnusedNodeIndex]->allocatedIndex = firstUnusedNodeIndex;
-		nodes[firstUnusedNodeIndex]->sizeAtAllocation = nodes.size();
 		return nodes[firstUnusedNodeIndex++];
 	}
 
@@ -334,22 +307,15 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 	if(nodes[firstUnusedNodeIndex] != nullptr)
 	{
 	#ifdef MULTITHREAD_SUPPORT
-		//before releasing the lock, make sure it has an allocated type, otherwise it could get grabbed by another thread
+		//before releasing the lock, make sure the EvaluableNode is initialized, otherwise it could get grabbed by another thread
 		nodes[firstUnusedNodeIndex]->InitializeUnallocated();
-		nodes[firstUnusedNodeIndex]->allocationSpot = 7;
 	#endif	
 	}
 	else //allocate if nullptr
 	{
-		reinterpret_cast<std::atomic<EvaluableNode *> &>(nodes[firstUnusedNodeIndex]) = new EvaluableNode();
-		nodes[firstUnusedNodeIndex]->allocationSpot = 8;
+		nodes[firstUnusedNodeIndex] = new EvaluableNode();
 	}
 
-	nodes[firstUnusedNodeIndex]->allocatedBy = cur_opcode;
-	nodes[firstUnusedNodeIndex]->allocatedAt = cur_opcode_source;
-	nodes[firstUnusedNodeIndex]->allocationManager = this;
-	nodes[firstUnusedNodeIndex]->allocatedIndex = firstUnusedNodeIndex;
-	nodes[firstUnusedNodeIndex]->sizeAtAllocation = nodes.size();
 	return nodes[firstUnusedNodeIndex++];
 }
 
@@ -376,6 +342,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 		//if the node has been found on this iteration and set to the current iteration count, then move on
 		if(cur_node_ptr != nullptr && cur_node_ptr->GetKnownToBeInUse())
 		{
+			cur_node_ptr->SetKnownToBeInUse(false);
 			first_unused_node_index_temp++;
 		}
 		else //collect the node
@@ -393,34 +360,8 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 		}
 	}
 
-	//clear all marks from garbage collection
-	for(size_t i = 0; i < first_unused_node_index_temp; i++)
-		nodes[i]->SetKnownToBeInUse(false);
-
-	for(size_t i = first_unused_node_index_temp; i < nodes.size(); i++)
-	{
-		if(nodes[i] == nullptr)
-			continue;
-
-		auto t = nodes[i]->GetType();
-		if(t == ENT_DEALLOCATED || t == ENT_UNINITIALIZED)
-			continue;
-
-		std::cout << "*****?";
-		int m = 3;
-		std::cin >> m;
-	}
-
-	for(auto &[t, _] : nodesCurrentlyReferenced)
-		ValidateEvaluableNodeTreeMemoryIntegrity(t);
-
 	//assign back to the atomic variable
 	firstUnusedNodeIndex = first_unused_node_index_temp;
-
-	if(nodes[firstUnusedNodeIndex] != nullptr && nodes[firstUnusedNodeIndex]->GetType() != ENT_DEALLOCATED)
-	{
-		assert(false);
-	}
 
 	//update details since last garbage collection
 	executionCyclesSinceLastGarbageCollection = 0;
@@ -801,7 +742,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(bool set_in_use)
 #ifdef MULTITHREAD_SUPPORT
 	size_t reference_count = nodesCurrentlyReferenced.size();
 	//heuristic to ensure there's enough to do to warrant the overhead of using multiple threads
-	if(false)//reference_count > 1 && firstUnusedNodeIndex / reference_count >= 2000)
+	if(reference_count > 1 && firstUnusedNodeIndex / reference_count >= 2000)
 	{
 		auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
 		if(enqueue_task_lock.AreThreadsAvailable())
@@ -813,12 +754,13 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(bool set_in_use)
 			//this is a time critical method
 			if(set_in_use)
 			{
-				for(auto &[t, _] : nodesCurrentlyReferenced)
+				for(auto &[enr, _] : nodesCurrentlyReferenced)
 				{
-					if(t == nullptr)
+					if(enr == nullptr)
 						continue;
 
-					EvaluableNode *en = t;
+					//some compilers are pedantic about the types passed into the lambda, so make a copy
+					EvaluableNode *en = enr;
 					nodes_completed.emplace_back(
 						Concurrency::threadPool.EnqueueBatchTask(
 							[en]
@@ -829,12 +771,13 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(bool set_in_use)
 			}
 			else
 			{
-				for(auto& [t, _] : nodesCurrentlyReferenced)
+				for(auto& [enr, _] : nodesCurrentlyReferenced)
 				{
-					if(t == nullptr)
+					if(enr == nullptr)
 						continue;
 
-					EvaluableNode *en = t;
+					//some compilers are pedantic about the types passed into the lambda, so make a copy
+					EvaluableNode *en = enr;
 					nodes_completed.emplace_back(
 						Concurrency::threadPool.EnqueueBatchTask(
 							[en]
@@ -1000,37 +943,6 @@ void EvaluableNodeManager::ClearAllReferencedNodesInUseRecurseConcurrent(Evaluab
 }
 #endif
 
-#include "Entity.h"
-extern Entity *boss_entity;
-
-std::pair<Entity *, size_t> EvaluableNodeManager::FindFromEntity(Entity *entity, EvaluableNode *en)
-{
-	EvaluableNodeManager *enm = &entity->evaluableNodeManager;
-
-	size_t i = 0;
-	for(; i < enm->nodes.size(); i++)
-	{
-		if(enm->nodes[i] == en)
-			break;
-	}
-	if(i < enm->nodes.size())
-	{
-		return std::make_pair(entity, i);
-	}
-
-	if(entity->HasContainedEntities())
-	{
-		for(Entity *e : entity->GetContainedEntities())
-		{
-			auto [found_entity, found_location] = FindFromEntity(e, en);
-			if(found_entity != nullptr)
-				return std::make_pair(found_entity, found_location);
-		}
-	}
-
-	return std::make_pair(nullptr, -1);
-}
-
 void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrityRecurse(EvaluableNode *en, EvaluableNode::ReferenceSetType &checked)
 {
 	auto [_, inserted] = checked.insert(en);
@@ -1039,27 +951,6 @@ void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrityRecurse(Evalu
 
 	if(en->GetType() == ENT_DEALLOCATED)
 		assert(false);
-
-	if(en->GetKnownToBeInUse())
-	{
-		size_t i = 0;
-		for(; i < nodes.size(); i++)
-		{
-			if(nodes[i] == en)
-				break;
-		}
-		if(i < nodes.size())
-		{
-			std::cout << "****** in use at " << i << "\n";
-		}
-		else
-		{
-			auto [found_entity, found_location] = FindFromEntity(boss_entity, en);
-			std::cout << "****** in use, found at " << found_entity << " at " << found_location << "n";
-		}
-		int m = 3;
-		std::cin >> m;
-	}
 
 	if(en->IsAssociativeArray())
 	{

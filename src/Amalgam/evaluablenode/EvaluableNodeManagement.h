@@ -835,27 +835,25 @@ protected:
 	//assumes tree is not nullptr
 	static void NonCycleModifyLabelsForNodeTree(EvaluableNode *tree, EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE);
 
-	//sets all referenced nodes' garbage collection iteration to gc_collect_iteration
-	inline void SetAllReferencedNodesGCCollectIteration(uint8_t gc_collect_iteration)
-	{
-		//check for null or insertion before calling recursion to minimize number of branches (slight performance improvement)
-		for(auto &[t, _] : nodesCurrentlyReferenced)
-		{
-			if(t == nullptr || t->GetGarbageCollectionIteration() == gc_collect_iteration)
-				continue;
-
-			SetAllReferencedNodesGCCollectIterationRecurse(t, gc_collect_iteration);
-		}
-	}
+	//sets all referenced nodes that are in use as such
+	// if set_in_use is true, then it will set the value, if false, it will clear the value
+	void MarkAllReferencedNodesInUse(bool set_in_use);
 
 	//computes whether the code is cycle free and idempotent and updates all nodes appropriately
 	// returns flags for whether cycle free and idempotent
 	// requires tree not be nullptr
 	static std::pair<bool, bool> UpdateFlagsForNodeTreeRecurse(EvaluableNode *tree, EvaluableNode::ReferenceSetType &checked);
 
-	//inserts all nodes referenced by tree into the set references
+	//sets or clears all referenced nodes' in use flags
+	//if set_in_use is true, then it will set the value, if false, it will clear the value
 	//note that tree cannot be nullptr and it should already be inserted into the references prior to calling
-	static void SetAllReferencedNodesGCCollectIterationRecurse(EvaluableNode *tree, uint8_t gc_collect_iteration);
+	static void MarkAllReferencedNodesInUseRecurse(EvaluableNode *tree, bool set_in_use);
+
+#ifdef MULTITHREAD_SUPPORT
+	static void SetAllReferencedNodesInUseRecurseConcurrent(EvaluableNode* tree);
+
+	static void ClearAllReferencedNodesInUseRecurseConcurrent(EvaluableNode* tree);
+#endif
 
 	static void ValidateEvaluableNodeTreeMemoryIntegrityRecurse(EvaluableNode *en, EvaluableNode::ReferenceSetType &checked);
 

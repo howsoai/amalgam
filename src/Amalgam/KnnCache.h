@@ -44,7 +44,8 @@ public:
 	#ifdef MULTITHREAD_SUPPORT
 		if(run_concurrently && relevantIndices->size() > 1)
 		{
-			if(Concurrency::threadPool.AreThreadsAvailable())
+			auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
+			if(enqueue_task_lock.AreThreadsAvailable())
 			{
 				std::vector<std::future<void>> indices_completed;
 				indices_completed.reserve(relevantIndices->size());
@@ -55,7 +56,7 @@ public:
 					if(top_k > cachedNeighbors[index].size())
 					{
 						indices_completed.emplace_back(
-							Concurrency::threadPool.EnqueueSingleTask(
+							Concurrency::threadPool.EnqueueBatchTask(
 								[this, index, top_k]
 								{
 									// could have knn cache constructor take in dist params and just get top_k from there, so don't need to pass it in everywhere
@@ -67,6 +68,7 @@ public:
 					}
 				}
 
+				enqueue_task_lock.Unlock();
 				Concurrency::threadPool.CountCurrentThreadAsPaused();
 
 				for(auto &future : indices_completed)

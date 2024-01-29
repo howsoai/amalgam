@@ -619,7 +619,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, b
 #ifdef MULTITHREAD_SUPPORT
 	if(en->GetConcurrency() && num_nodes > 1)
 	{
-		if(Concurrency::threadPool.AreThreadsAvailable())
+		auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
+		if(enqueue_task_lock.AreThreadsAvailable())
 		{
 			node_stack.PushEvaluableNode(result);
 
@@ -628,6 +629,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, b
 			for(size_t node_index = 0; node_index < num_nodes; node_index++)
 				concurrency_manager.PushTaskToResultFuturesWithConstructionStack(function,
 					nullptr, result, EvaluableNodeImmediateValueWithType(node_index * range_step_size + range_start), nullptr);
+
+			enqueue_task_lock.Unlock();
 
 			concurrency_manager.EndConcurrency();
 

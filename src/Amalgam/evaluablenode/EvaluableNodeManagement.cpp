@@ -317,10 +317,8 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 	if(nodes.size() == 0)
 		return;
 
-	uint8_t cur_gc_collect_iteration = 1;
-
 	//set to contain everything that is referenced
-	SetAllReferencedNodesGCCollectIteration(cur_gc_collect_iteration);
+	MarkAllReferencedNodesInUse(true);
 
 	//start with a clean slate, and swap everything in use into the in-use region
 	size_t lowest_known_unused_index = firstUnusedNodeIndex;	//will store any unused nodes up here; start at what was previously known to be the max, as those above don't need to be rechecked
@@ -335,7 +333,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 		auto &cur_node_ptr = nodes[first_unused_node_index_temp];
 
 		//if the node has been found on this iteration and set to the current iteration count, then move on
-		if(cur_node_ptr != nullptr && cur_node_ptr->GetGarbageCollectionIteration() == cur_gc_collect_iteration)
+		if(cur_node_ptr != nullptr && cur_node_ptr->GetKnownToBeInUse())
 		{
 			first_unused_node_index_temp++;
 		}
@@ -360,7 +358,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 	//reset garbage collection iteration as it has been counted as referenced
 	//set to contain everything that is referenced, which could be borrowed nodes from outside of the entity
 	// which is why it can't just iterate over nodes
-	SetAllReferencedNodesGCCollectIteration(0);
+	MarkAllReferencedNodesInUse(false);
 
 	//update details since last garbage collection
 	executionCyclesSinceLastGarbageCollection = 0;
@@ -736,6 +734,71 @@ void EvaluableNodeManager::NonCycleModifyLabelsForNodeTree(EvaluableNode *tree, 
 	}
 }
 
+void EvaluableNodeManager::MarkAllReferencedNodesInUse(bool set_in_use)
+{
+#ifdef MULTITHREAD_SUPPORT
+	size_t reference_count = nodesCurrentlyReferenced.size();
+	//heuristic to ensure there's enough to do to warrant the overhead of using multiple threads
+	if(reference_count > 1 && firstUnusedNodeIndex / reference_count >= 600)
+	{
+		auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
+		if(enqueue_task_lock.AreThreadsAvailable())
+		{
+			std::vector<std::future<void>> nodes_completed;
+			nodes_completed.reserve(reference_count);
+
+			if(set_in_use)
+			{
+				for(auto& [t, _] : nodesCurrentlyReferenced)
+				{
+					if(t == nullptr)
+						continue;
+
+					nodes_completed.emplace_back(
+						Concurrency::threadPool.EnqueueBatchTask(
+							[this, t]
+							{	SetAllReferencedNodesInUseRecurseConcurrent(t);	}
+						)
+					);
+				}
+			}
+			else
+			{
+				for(auto& [t, _] : nodesCurrentlyReferenced)
+				{
+					if(t == nullptr)
+						continue;
+
+					nodes_completed.emplace_back(
+						Concurrency::threadPool.EnqueueBatchTask(
+							[this, t]
+							{	ClearAllReferencedNodesInUseRecurseConcurrent(t);	}
+						)
+					);
+				}
+			}
+
+			enqueue_task_lock.Unlock();
+			Concurrency::threadPool.CountCurrentThreadAsPaused();
+
+			for(auto& future : nodes_completed)
+				future.wait();
+
+			Concurrency::threadPool.CountCurrentThreadAsResumed();
+			return;
+		}
+	}
+#endif
+	//check for null or insertion before calling recursion to minimize number of branches (slight performance improvement)
+	for(auto& [t, _] : nodesCurrentlyReferenced)
+	{
+		if(t == nullptr || t->GetKnownToBeInUse() == set_in_use)
+			continue;
+
+		MarkAllReferencedNodesInUseRecurse(t, set_in_use);
+	}
+}
+
 std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(EvaluableNode *tree, EvaluableNode::ReferenceSetType &checked)
 {
 	//attempt to insert; if new, mark as not needing a cycle check yet
@@ -802,28 +865,76 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 	}
 }
 
-void EvaluableNodeManager::SetAllReferencedNodesGCCollectIterationRecurse(EvaluableNode *tree, uint8_t gc_collect_iteration)
+void EvaluableNodeManager::MarkAllReferencedNodesInUseRecurse(EvaluableNode *tree, bool set_in_use)
 {
 	//if entering this function, then the node hasn't been marked yet
-	tree->SetGarbageCollectionIteration(gc_collect_iteration);
+	tree->SetKnownToBeInUse(set_in_use);
 
 	if(tree->IsAssociativeArray())
 	{
 		for(auto &[_, e] : tree->GetMappedChildNodesReference())
 		{
-			if(e != nullptr && e->GetGarbageCollectionIteration() != gc_collect_iteration)
-				SetAllReferencedNodesGCCollectIterationRecurse(e, gc_collect_iteration);
+			if(e != nullptr && e->GetKnownToBeInUse() != set_in_use)
+				MarkAllReferencedNodesInUseRecurse(e, set_in_use);
 		}
 	}
 	else if(!tree->IsImmediate())
 	{
 		for(auto &e : tree->GetOrderedChildNodesReference())
 		{
-			if(e != nullptr && e->GetGarbageCollectionIteration() != gc_collect_iteration)
-				SetAllReferencedNodesGCCollectIterationRecurse(e, gc_collect_iteration);
+			if(e != nullptr && e->GetKnownToBeInUse() != set_in_use)
+				MarkAllReferencedNodesInUseRecurse(e, set_in_use);
 		}
 	}	
 }
+
+#ifdef MULTITHREAD_SUPPORT
+void EvaluableNodeManager::SetAllReferencedNodesInUseRecurseConcurrent(EvaluableNode* tree)
+{
+	//if entering this function, then the node hasn't been marked yet
+	tree->SetKnownToBeInUseAtomic(true);
+
+	if(tree->IsAssociativeArray())
+	{
+		for(auto& [_, e] : tree->GetMappedChildNodesReference())
+		{
+			if(e != nullptr && !e->GetKnownToBeInUseAtomic())
+				SetAllReferencedNodesInUseRecurseConcurrent(e);
+		}
+	}
+	else if(!tree->IsImmediate())
+	{
+		for(auto& e : tree->GetOrderedChildNodesReference())
+		{
+			if(e != nullptr && !e->GetKnownToBeInUseAtomic())
+				SetAllReferencedNodesInUseRecurseConcurrent(e);
+		}
+	}
+}
+
+void EvaluableNodeManager::ClearAllReferencedNodesInUseRecurseConcurrent(EvaluableNode* tree)
+{
+	//if entering this function, then the node hasn't been marked yet
+	tree->SetKnownToBeInUseAtomic(false);
+
+	if(tree->IsAssociativeArray())
+	{
+		for(auto& [_, e] : tree->GetMappedChildNodesReference())
+		{
+			if(e != nullptr && e->GetKnownToBeInUseAtomic())
+				ClearAllReferencedNodesInUseRecurseConcurrent(e);
+		}
+	}
+	else if(!tree->IsImmediate())
+	{
+		for(auto& e : tree->GetOrderedChildNodesReference())
+		{
+			if(e != nullptr && e->GetKnownToBeInUseAtomic())
+				ClearAllReferencedNodesInUseRecurseConcurrent(e);
+		}
+	}
+}
+#endif
 
 void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrityRecurse(EvaluableNode *en, EvaluableNode::ReferenceSetType &checked)
 {

@@ -781,12 +781,10 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(bool set_in_use)
 			}
 
 			enqueue_task_lock.Unlock();
-			Concurrency::threadPool.CountCurrentThreadAsPaused();
 
 			for(auto& future : nodes_completed)
 				future.wait();
 
-			Concurrency::threadPool.CountCurrentThreadAsResumed();
 			return;
 		}
 	}

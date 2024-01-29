@@ -87,13 +87,13 @@ public:
 		if(compute_accurate)
 		{
 			feature_params.unknownToUnknownDistanceTerm.SetValue(
-					ComputeDistanceTermNonNull(feature_params.unknownToUnknownDistanceTerm.difference, index, true), true);
+					ComputeDistanceTermMatchOnNull(index, feature_params.unknownToUnknownDistanceTerm.difference, true), true);
 		}
 
 		if(compute_approximate)
 		{
 			feature_params.unknownToUnknownDistanceTerm.SetValue(
-				ComputeDistanceTermNonNull(feature_params.unknownToUnknownDistanceTerm.difference, index, false), false);
+				ComputeDistanceTermMatchOnNull(index, feature_params.unknownToUnknownDistanceTerm.difference, false), false);
 		}
 
 		//if knownToUnknownDifference is same as unknownToUnknownDifference, can copy distance term instead of recomputing
@@ -107,13 +107,13 @@ public:
 			if(compute_accurate)
 			{
 				feature_params.knownToUnknownDistanceTerm.SetValue(
-					ComputeDistanceTermNonNull(feature_params.knownToUnknownDistanceTerm.difference, index, true), true);
+					ComputeDistanceTermMatchOnNull(index, feature_params.knownToUnknownDistanceTerm.difference, true), true);
 			}
 
 			if(compute_approximate)
 			{
 				feature_params.knownToUnknownDistanceTerm.SetValue(
-					ComputeDistanceTermNonNull(feature_params.knownToUnknownDistanceTerm.difference, index, false), false);
+					ComputeDistanceTermMatchOnNull(index, feature_params.knownToUnknownDistanceTerm.difference, false), false);
 			}
 		}
 
@@ -136,7 +136,7 @@ public:
 	}
 
 	//for the feature index, computes and stores the distance terms as measured from value to each interned value
-	inline void ComputeAndStoreInternedNumberValuesAndDistanceTerms(size_t index, double value, std::vector<double> *interned_values)
+	inline void ComputeAndStoreInternedNumberValuesAndDistanceTerms(double value, size_t index, std::vector<double> *interned_values)
 	{
 		bool compute_accurate = NeedToPrecomputeAccurate();
 		bool compute_approximate = NeedToPrecomputeApproximate();
@@ -160,9 +160,9 @@ public:
 		{
 			double difference = value - interned_values->at(i);
 			if(compute_accurate)
-				feature_params.internDistanceTerms[i].SetValue(ComputeDistanceTermNonNominalNonNullRegular(difference, index, true), true);
+				feature_params.internDistanceTerms[i].SetValue(ComputeDistanceTermContinuousNonNullRegular(difference, index, true), true);
 			if(compute_approximate)
-				feature_params.internDistanceTerms[i].SetValue(ComputeDistanceTermNonNominalNonNullRegular(difference, index, false), false);
+				feature_params.internDistanceTerms[i].SetValue(ComputeDistanceTermContinuousNonNullRegular(difference, index, false), false);
 		}
 	}
 
@@ -194,6 +194,17 @@ public:
 		return s_two_over_sqrt_pi * deviation * FastExp(-term * term) - diff * std::erfc(term); //2*sigma*(e^(-1*(diff^2)/((2*simga)^2)))/sqrt(pi) - diff*erfc(diff/(2*sigma))
 	}
 
+	//surprisal in nats of each of the different distributions given the appropriate uncertainty
+	//this is equal to the nats of entropy of the distribution plus the entropy of the uncertainty
+	//in the case of Laplace, the Laplace distribution is one nat, and the mean absolute deviation is half of that,
+	//therefore the value is 1.5
+	//these values can be computed via ComputeDeviationPartLaplace(0.0, 1) for each of the corresponding methods
+	//deviations other than 1 can be used, but then the result should be divided by that deviation, yielding the same value
+	static constexpr double s_surprisal_of_laplace = 1.5;
+	static constexpr double s_surprisal_of_laplace_approx = 1.500314205;
+	static constexpr double s_surprisal_of_gaussian = 1.1283791670955126;
+	static constexpr double s_surprisal_of_gaussian_approx = 1.128615528679644;
+
 	//computes the Lukaszyk–Karmowski metric deviation component for the minkowski distance equation given the feature difference and feature deviation
 	//assumes deviation is nonnegative
 	__forceinline double ComputeDeviationPart(const double diff, const double deviation, bool high_accuracy)
@@ -210,6 +221,20 @@ public:
 		#else
 			return ComputeDeviationPartGaussianApprox(diff, deviation);
 		#endif
+	}
+
+	//converts a difference with deviation to surprisal, and removes the appropriate assumption of uncertainty
+	//for Laplace, the Laplace distribution has 1 nat worth of information, but additionally, there is a 50/50 chance that the
+	//difference is within the mean absolute error, yielding an overcounting of an additional 1/2 nat.  So the total reduction is 1.5 nats
+	__forceinline double ComputeSurprisalFromDifferenceWithDeviation(const double difference_with_deviation, const double deviation, bool high_accuracy)
+	{
+	#ifdef DISTANCE_USE_LAPLACE_LK_METRIC
+		double base_surprisal = (high_accuracy ? s_surprisal_of_laplace : s_surprisal_of_laplace_approx);
+	#else
+		double base_surprisal = (high_accuracy ? s_surprisal_of_gaussian : s_surprisal_of_gaussian_approx);
+	#endif
+
+		return (difference_with_deviation / deviation) - base_surprisal;
 	}
 
 	//constrains the difference to the cycle length for cyclic distances
@@ -374,7 +399,7 @@ public:
 			return fastPowInverseP.FastPow(d);
 	}
 
-	//computes the exponentiation of d to p given precision being from DistanceTerms
+	//computes the exponentiation of d to p
 	__forceinline double ExponentiateDifferenceTerm(double d, bool high_accuracy)
 	{
 		if(pValue == 1)
@@ -387,6 +412,34 @@ public:
 			return std::pow(d, pValue);
 		else
 			return fastPowP.FastPow(d);
+	}
+
+	//exponentiats and weights the difference term contextually based on pValue
+	//note that it has extra logic to account for extreme values like infinity, negative infinity, and 0
+	__forceinline double ContextuallyExponentiateAndWeightDifferenceTerm(double dist_term, size_t index, bool high_accuracy)
+	{
+		if(dist_term == 0.0)
+			return 0.0;
+
+		double weight = featureParams[index].weight;
+		if(pValue == 0)
+		{
+			if(high_accuracy)
+				return std::pow(dist_term, weight);
+			else
+				return FastPow(dist_term, weight);
+		}
+		else if(pValue == std::numeric_limits<double>::infinity()
+			|| pValue == -std::numeric_limits<double>::infinity())
+		{
+			//infinite pValues are treated the same as 1 for distance terms,
+			//and are the same value regardless of high_accuracy
+			return dist_term * weight;
+		}
+		else
+		{
+			return ExponentiateDifferenceTerm(dist_term, high_accuracy) * weight;
+		}
 	}
 
 	//returns the maximum difference
@@ -404,100 +457,74 @@ public:
 			return -std::numeric_limits<double>::infinity();
 	}
 
-	//computes the distance term for a nominal when two universally symmetric nominals are equal
-	__forceinline double ComputeDistanceTermNominalUniversallySymmetricExactMatch(size_t index, bool high_accuracy)
+	//computes the base of the difference between two nominal values that exactly match without exponentiation
+	__forceinline double ComputeDistanceTermNominalBaseExactMatchFromDeviation(size_t index, double deviation, bool high_accuracy)
 	{
-		if(!DoesFeatureHaveDeviation(index))
+		if(!DoesFeatureHaveDeviation(index) || computeSurprisal)
 			return 0.0;
 
-		double weight = featureParams[index].weight;
-		double deviation = featureParams[index].deviation;
-
-		//infinite pValues are treated the same as 1 for distance terms,
-		//and are the same value regardless of high_accuracy
-		if(pValue == 1 || pValue == std::numeric_limits<double>::infinity()
-				|| pValue == -std::numeric_limits<double>::infinity())
-			return deviation * weight;
-
-		if(pValue == 0)
-		{
-			if(high_accuracy)
-				return std::pow(deviation, weight);
-			else
-				return FastPow(deviation, weight);
-		}
-		else
-		{
-			if(high_accuracy)
-				return std::pow(deviation, pValue) * weight;
-			else
-				return FastPow(deviation, pValue) * weight;
-		}
+		return deviation;
 	}
 
-	//computes the distance term for a nominal when two universally symmetric nominals are not equal
-	__forceinline double ComputeDistanceTermNominalUniversallySymmetricNonMatch(size_t index, bool high_accuracy)
+	//computes the base of the difference between two nominal values that do not match without exponentiation
+	__forceinline double ComputeDistanceTermNominalBaseNonMatchFromDeviation(size_t index, double deviation, bool high_accuracy)
 	{
-		double weight = featureParams[index].weight;
-		if(DoesFeatureHaveDeviation(index))
+		if(computeSurprisal)
 		{
-			double deviation = featureParams[index].deviation;
+			//need to have at least two classes in existence
+			double nominal_count = std::max(featureParams[index].typeAttributes.nominalCount, 2.0);
+			double prob_max_entropy_match = 1 / nominal_count;
+
+			//find probability that the correct class was selected
+			//can't go below base probability of guessing
+			double prob_class_given_match = std::max(1 - deviation, prob_max_entropy_match);
+
+			//find the probability that any other class besides the correct class was selected
+			//divide the probability among the other classes
+			double prop_class_given_nonmatch = (1 - prob_class_given_match) / (nominal_count - 1);
+
+			double surprisal_class_given_match = -std::log(prob_class_given_match);
+			double surprisal_class_given_nonmatch = -std::log(prop_class_given_nonmatch);
+
+			//the surprisal of the class matching on a different value is the difference between
+			//how surprised it would be given a nonmatch but without the surprisal given a match
+			double dist_term = surprisal_class_given_nonmatch - surprisal_class_given_match;
+			return dist_term;
+		}
+		else if(DoesFeatureHaveDeviation(index))
+		{
 			double nominal_count = featureParams[index].typeAttributes.nominalCount;
 
 			// n = number of nominal classes
 			// match: deviation ^ p * weight
 			// non match: (deviation + (1 - deviation) / (n - 1)) ^ p * weight
 			//if there is only one nominal class, the smallest delta value it could be is the specified smallest delta, otherwise it's 1.0
-			double mismatch_deviation = 1.0;
+			double dist_term = 0;
 			if(nominal_count > 1)
-				mismatch_deviation = (deviation + (1 - deviation) / (nominal_count - 1));
-
-			//infinite pValues are treated the same as 1 for distance terms,
-			//and are the same value regardless of high_accuracy
-			if(pValue == 1 || pValue == std::numeric_limits<double>::infinity()
-					|| pValue == -std::numeric_limits<double>::infinity())
-				return mismatch_deviation * weight;
-
-			if(pValue == 0)
-			{
-				if(high_accuracy)
-					return std::pow(mismatch_deviation, weight);
-				else
-					return FastPow(mismatch_deviation, weight);
-			}
+				dist_term = (deviation + (1 - deviation) / (nominal_count - 1));
 			else
-			{
-				if(high_accuracy)
-					return std::pow(mismatch_deviation, pValue) * weight;
-				else
-					return FastPow(mismatch_deviation, pValue) * weight;
-			}
+				dist_term = 1;
+
+			return dist_term;
 		}
 		else
 		{
-			if(high_accuracy)
-			{
-				if(pValue != 0.0)
-					return weight;
-				else
-					return 1.0;
-			}
-			else
-			{
-				if(pValue != 0.0)
-				{
-					//special handling for infinities
-					if(pValue == std::numeric_limits<double>::infinity() || pValue == -std::numeric_limits<double>::infinity())
-						return weight;
-					else //since FastPow isn't exact for 1.0, need to compute the value
-						return weight * FastPowNonZeroExp(1.0, pValue);
-				}
-				else //pValue == 0.0
-				{
-					return FastPow(1.0, weight);
-				}
-			}
+			return 1.0;
 		}
+	}
+
+	//computes the distance term for a nominal when two universally symmetric nominals are equal
+	__forceinline double ComputeDistanceTermNominalUniversallySymmetricExactMatch(size_t index, bool high_accuracy)
+	{
+		double dist_term = ComputeDistanceTermNominalBaseExactMatchFromDeviation(index, featureParams[index].deviation, high_accuracy);
+		return ContextuallyExponentiateAndWeightDifferenceTerm(dist_term, index, high_accuracy);
+	}
+
+	//computes the distance term for a nominal when two universally symmetric nominals are not equal
+	__forceinline double ComputeDistanceTermNominalUniversallySymmetricNonMatch(size_t index, bool high_accuracy)
+	{
+		double dist_term = ComputeDistanceTermNominalBaseNonMatchFromDeviation(index, featureParams[index].deviation, high_accuracy);
+		return ContextuallyExponentiateAndWeightDifferenceTerm(dist_term, index, high_accuracy);
 	}
 
 	//returns the precomputed distance term for a nominal when two universally symmetric nominals are equal
@@ -537,20 +564,20 @@ public:
 	}
 
 	//computes the inner term for a non-nominal with an exact match of values
-	__forceinline double ComputeDistanceTermNonNominalExactMatch(size_t index, bool high_accuracy)
+	__forceinline double ComputeDistanceTermContinuousExactMatch(size_t index, bool high_accuracy)
 	{
-		if(!DoesFeatureHaveDeviation(index))
+		if(!DoesFeatureHaveDeviation(index) || computeSurprisal)
 			return 0.0;
 
-		//apply deviations
+		//apply deviations -- if computeSurprisal, will be caught above and always return 0.0
 		double diff = ComputeDeviationPart(0.0, featureParams[index].deviation, high_accuracy);
 
 		//exponentiate and return with weight
 		return ExponentiateDifferenceTerm(diff, high_accuracy) * featureParams[index].weight;
 	}
 
-	//computes the base of the difference between two values non-nominal (e.g., continuous)
-	__forceinline double ComputeDifferenceTermBaseNonNominal(double diff, size_t index, bool high_accuracy)
+	//computes the base of the difference between two continuous values without exponentiation
+	__forceinline double ComputeDifferenceTermBaseContinuous(double diff, size_t index, bool high_accuracy)
 	{
 		//compute absolute value
 		diff = std::abs(diff);
@@ -561,29 +588,37 @@ public:
 
 		//apply deviations
 		if(DoesFeatureHaveDeviation(index))
+		{
 			diff += ComputeDeviationPart(diff, featureParams[index].deviation, high_accuracy);
+			if(computeSurprisal)
+				diff = ComputeSurprisalFromDifferenceWithDeviation(diff, featureParams[index].deviation, high_accuracy);
+		}
 
 		return diff;
 	}
 
 	//computes the base of the difference between two values non-nominal (e.g., continuous) that isn't cyclic
-	__forceinline double ComputeDifferenceTermBaseNonNominalNonCyclic(double diff, size_t index, bool high_accuracy)
+	__forceinline double ComputeDifferenceTermBaseContinuousNonCyclic(double diff, size_t index, bool high_accuracy)
 	{
 		//compute absolute value
 		diff = std::abs(diff);
 
 		//apply deviations
 		if(DoesFeatureHaveDeviation(index))
+		{
 			diff += ComputeDeviationPart(diff, featureParams[index].deviation, high_accuracy);
+			if(computeSurprisal)
+				diff = ComputeSurprisalFromDifferenceWithDeviation(diff, featureParams[index].deviation, high_accuracy);
+		}
 
 		return diff;
 	}
 
 	//computes the distance term for a non-nominal (e.g., continuous) for p non-zero and non-infinite with no nulls
 	// diff can be negative
-	__forceinline double ComputeDistanceTermNonNominalNonNullRegular(double diff, size_t index, bool high_accuracy)
+	__forceinline double ComputeDistanceTermContinuousNonNullRegular(double diff, size_t index, bool high_accuracy)
 	{
-		diff = ComputeDifferenceTermBaseNonNominal(diff, index, high_accuracy);
+		diff = ComputeDifferenceTermBaseContinuous(diff, index, high_accuracy);
 
 		//exponentiate and return with weight
 		return ExponentiateDifferenceTerm(diff, high_accuracy) * featureParams[index].weight;
@@ -591,9 +626,9 @@ public:
 
 	//computes the distance term for a non-nominal (e.g., continuous) for p non-zero and non-infinite with max of one null
 	// diff can be negative
-	__forceinline double ComputeDistanceTermNonNominalOneNonNullRegular(double diff, size_t index, bool high_accuracy)
+	__forceinline double ComputeDistanceTermContinuousOneNonNullRegular(double diff, size_t index, bool high_accuracy)
 	{
-		diff = ComputeDifferenceTermBaseNonNominal(diff, index, high_accuracy);
+		diff = ComputeDifferenceTermBaseContinuous(diff, index, high_accuracy);
 
 		//exponentiate and return with weight
 		return ExponentiateDifferenceTerm(diff, high_accuracy) * featureParams[index].weight;
@@ -601,9 +636,9 @@ public:
 
 	//computes the distance term for a non-nominal (e.g., continuous) for p non-zero and non-infinite that isn't cyclic with no nulls
 	// diff can be negative
-	__forceinline double ComputeDistanceTermNonNominalNonCyclicNonNullRegular(double diff, size_t index, bool high_accuracy)
+	__forceinline double ComputeDistanceTermContinuousNonCyclicNonNullRegular(double diff, size_t index, bool high_accuracy)
 	{
-		diff = ComputeDifferenceTermBaseNonNominalNonCyclic(diff, index, high_accuracy);
+		diff = ComputeDifferenceTermBaseContinuousNonCyclic(diff, index, high_accuracy);
 
 		//exponentiate and return with weight
 		return ExponentiateDifferenceTerm(diff, high_accuracy) * featureParams[index].weight;
@@ -611,12 +646,12 @@ public:
 
 	//computes the distance term for a non-nominal (e.g., continuous) for p non-zero and non-infinite that isn't cyclic with max of one null
 	// diff can be negative
-	__forceinline double ComputeDistanceTermNonNominalNonCyclicOneNonNullRegular(double diff, size_t index, bool high_accuracy)
+	__forceinline double ComputeDistanceTermContinuousNonCyclicOneNonNullRegular(double diff, size_t index, bool high_accuracy)
 	{
 		if(FastIsNaN(diff))
 			return ComputeDistanceTermKnownToUnknown(index, high_accuracy);
 
-		diff = ComputeDifferenceTermBaseNonNominalNonCyclic(diff, index, high_accuracy);
+		diff = ComputeDifferenceTermBaseContinuousNonCyclic(diff, index, high_accuracy);
 
 		//exponentiate and return with weight
 		return ExponentiateDifferenceTerm(diff, high_accuracy) * featureParams[index].weight;
@@ -635,12 +670,9 @@ public:
 			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index, high_accuracy)
 			: ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index, high_accuracy);
 
-		diff = ComputeDifferenceTermBaseNonNominal(diff, index, high_accuracy);
+		diff = ComputeDifferenceTermBaseContinuous(diff, index, high_accuracy);
 
-		if(high_accuracy)
-			return std::pow(diff, featureParams[index].weight);
-		else
-			return FastPow(diff, featureParams[index].weight);
+		return ContextuallyExponentiateAndWeightDifferenceTerm(diff, index, high_accuracy);
 	}
 
 	//computes the inner term of the Minkowski norm summation for a single index for p=infinity or -infinity
@@ -656,29 +688,41 @@ public:
 			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index, high_accuracy)
 				: ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index, high_accuracy);
 
-		diff = ComputeDifferenceTermBaseNonNominal(diff, index, high_accuracy);
+		diff = ComputeDifferenceTermBaseContinuous(diff, index, high_accuracy);
 
-		return diff * featureParams[index].weight;
+		return ContextuallyExponentiateAndWeightDifferenceTerm(diff, index, high_accuracy);
 	}
 
-	//computes the inner term of the Minkowski norm summation for a single index regardless of pValue
-	__forceinline double ComputeDistanceTermNonNull(double diff, size_t index, bool high_accuracy)
+	//computes the inner term of the Minkowski norm when a term matches a null value
+	//for a given deviation with regard to the null
+	__forceinline double ComputeDistanceTermMatchOnNull(size_t index, double deviation, bool high_accuracy)
 	{
-		if(!IsFeatureNominal(index))
-			diff = ComputeDifferenceTermBaseNonNominal(diff, index, high_accuracy);
-
-		if(pValue == 0.0)
+		double diff = 0;
+		if(IsFeatureNominal(index))
 		{
-			if(high_accuracy)
-				return std::pow(diff, featureParams[index].weight);
-			else
-				return FastPow(diff, featureParams[index].weight);
+			if(computeSurprisal)
+			{
+				//need to have at least two classes in existence
+				double nominal_count = std::max(featureParams[index].typeAttributes.nominalCount, 2.0);
+				double prob_max_entropy_match = 1 / nominal_count;
+
+				//find probability that the correct class was selected
+				//can't go below base probability of guessing
+				double prob_class_given_match = std::max(1 - deviation, prob_max_entropy_match);
+
+				diff = -std::log(prob_class_given_match);
+			}
+			else //nonsurprisal nominals just use the deviation as provided
+			{
+				diff = deviation;
+			}
 		}
-		else if(pValue == std::numeric_limits<double>::infinity()
-				|| pValue == -std::numeric_limits<double>::infinity())
-			return diff * featureParams[index].weight;
 		else
-			return ExponentiateDifferenceTerm(diff, high_accuracy) * featureParams[index].weight;
+		{
+			diff = ComputeDifferenceTermBaseContinuous(deviation, index, high_accuracy);
+		}
+
+		return ContextuallyExponentiateAndWeightDifferenceTerm(diff, index, high_accuracy);
 	}
 
 	//computes the inner term of the Minkowski norm summation for a single index for p non-zero and non-infinite
@@ -694,7 +738,7 @@ public:
 			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index, high_accuracy)
 				: ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index, high_accuracy);
 
-		return ComputeDistanceTermNonNominalNonNullRegular(diff, index, high_accuracy);
+		return ComputeDistanceTermContinuousNonNullRegular(diff, index, high_accuracy);
 	}
 
 	//returns the distance term for the either one or two unknown values
@@ -751,8 +795,8 @@ public:
 		{
 			if(a_type == ENIVT_STRING_ID && b_type == ENIVT_STRING_ID)
 			{
-				auto &a_str = string_intern_pool.GetStringFromID(a.stringID);
-				auto &b_str = string_intern_pool.GetStringFromID(b.stringID);
+				auto a_str = string_intern_pool.GetStringFromID(a.stringID);
+				auto b_str = string_intern_pool.GetStringFromID(b.stringID);
 				return static_cast<double>(EvaluableNodeTreeManipulation::EditDistance(a_str, b_str));
 			}
 
@@ -911,6 +955,10 @@ public:
 	double pValue;
 	//computed inverse of pValue
 	double inversePValue;
+
+	//if true, it will perform computations resulting in surprisal before
+	//the exponentiation
+	bool computeSurprisal;
 
 	//if true, then all computations should be performed with high accuracy
 	bool highAccuracy;

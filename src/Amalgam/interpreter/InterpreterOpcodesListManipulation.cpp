@@ -536,7 +536,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SIZE(EvaluableNode *en, bo
 	{
 		if(cur->GetType() == ENT_STRING)
 		{
-			const auto &s = cur->GetStringValue();
+			auto s = cur->GetStringValue();
 			size = StringManipulation::GetNumUTF8Characters(s);
 		}
 		else

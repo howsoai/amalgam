@@ -3,7 +3,7 @@
 
 StringInternPool string_intern_pool;
 
-const std::string &StringInternPool::GetStringFromID(StringInternPool::StringID id)
+const std::string StringInternPool::GetStringFromID(StringInternPool::StringID id)
 {
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 	Concurrency::ReadLock lock(sharedMutex);

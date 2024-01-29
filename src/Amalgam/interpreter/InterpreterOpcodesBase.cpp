@@ -320,14 +320,20 @@ inline EvaluableNodeReference RemoveConcludeFromConclusion(EvaluableNodeReferenc
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SEQUENCE(EvaluableNode *en, bool immediate_result)
 {
+	auto &ocn = en->GetOrderedChildNodes();
+	size_t ocn_size = ocn.size();
+
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
-	for(auto &cn : en->GetOrderedChildNodes())
+	for(size_t i = 0; i < ocn_size; i++)
 	{
 		if(!result.IsImmediateValue() && result != nullptr && result->GetType() == ENT_CONCLUDE)
 			return RemoveConcludeFromConclusion(result, evaluableNodeManager);
 
+		//free from previous iteration
 		evaluableNodeManager->FreeNodeTreeIfPossible(result);
-		result = InterpretNode(cn, immediate_result);
+		//request immediate values when not last, since any allocs for returns would be wasted
+		//concludes won't be immediate
+		result = InterpretNode(ocn[i], immediate_result || i + 1 < ocn_size);
 	}
 	return result;
 }
@@ -385,7 +391,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PARALLEL(EvaluableNode *en
 
 	for(auto &cn :ocn)
 	{
-		auto result = InterpretNodeForImmediateUse(cn);
+		//don't need the result, so can ask for an immediate
+		auto result = InterpretNodeForImmediateUse(cn, true);
 		evaluableNodeManager->FreeNodeTreeIfPossible(result);
 	}
 
@@ -571,7 +578,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
-
 	size_t ocn_size = ocn.size();
 	if(ocn_size == 0)
 		return EvaluableNodeReference::Null();
@@ -603,7 +609,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, b
 		EvaluableNodeReference new_result;
 		for(size_t i = 1; i < ocn_size; i++)
 		{
-			new_result = InterpretNode(ocn[i], immediate_result);
+			//request immediate values when not last, since any allocs for returns would be wasted
+			//concludes won't be immediate
+			//but because previous_result may be used, that can't be immediate, so the last param
+			//cannot be evaulated as immediate
+			new_result = InterpretNode(ocn[i], i + 1 < ocn_size);
 
 			if(!new_result.IsImmediateValue() && new_result != nullptr && new_result->GetType() == ENT_CONCLUDE)
 			{
@@ -616,7 +626,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, b
 			}
 
 			//don't free the last new_result
-			if(i < ocn_size - 1)
+			if(i + 1 < ocn_size)
 				evaluableNodeManager->FreeNodeTreeIfPossible(new_result);
 		}
 
@@ -634,8 +644,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, b
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
-
-	if(ocn.size() == 0)
+	size_t ocn_size = ocn.size();
+	if(ocn_size == 0)
 		return EvaluableNodeReference::Null();
 
 	//add new context
@@ -644,7 +654,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, boo
 
 	//run code 
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
-	for(size_t i = 1; i < ocn.size(); i++)
+	for(size_t i = 1; i < ocn_size; i++)
 	{
 		if(!result.IsImmediateValue() && result != nullptr && result->GetType() == ENT_CONCLUDE)
 		{
@@ -654,7 +664,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, boo
 
 		//free from previous iteration
 		evaluableNodeManager->FreeNodeTreeIfPossible(result);
-		result = InterpretNode(ocn[i], immediate_result);
+		//request immediate values when not last, since any allocs for returns would be wasted
+		//concludes won't be immediate
+		result = InterpretNode(ocn[i], immediate_result || i + 1 < ocn_size);
 	}
 
 	//all finished with new context, but can't free it in case returning something
@@ -666,8 +678,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, boo
 EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
-
-	if(ocn.size() == 0)
+	size_t ocn_size = ocn.size();
+	if(ocn_size == 0)
 		return EvaluableNodeReference::Null();
 
 	//get the current layer of the stack
@@ -749,13 +761,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
 
 	//run code 
-	for(size_t i = 1; i < ocn.size(); i++)
+	for(size_t i = 1; i < ocn_size; i++)
 	{
 		if(!result.IsImmediateValue() && result != nullptr && result->GetType() == ENT_CONCLUDE)
 			return RemoveConcludeFromConclusion(result, evaluableNodeManager);
 
+		//free from previous iteration
 		evaluableNodeManager->FreeNodeTreeIfPossible(result);
-		result = InterpretNode(ocn[i], immediate_result);
+		//request immediate values when not last, since any allocs for returns would be wasted
+		//concludes won't be immediate
+		result = InterpretNode(ocn[i], immediate_result || i + 1 < ocn_size);
 	}
 
 	return result;
@@ -830,7 +845,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			// need a write lock to the stack and variable
 			Concurrency::WriteLock write_lock;
 			if(callStackMutex != nullptr && value_destination == nullptr)
+			{
 				LockWithoutBlockingGarbageCollection(*callStackMutex, write_lock, variable_value_node);
+				if(_opcode_profiling_enabled)
+				{
+					std::string variable_location = asset_manager.GetEvaluableNodeSourceFromComments(en);
+					variable_location += string_intern_pool.GetStringFromID(variable_sid);
+					PerformanceProfiler::AccumulateLockContentionCount(variable_location);
+				}
+			}
 		#endif
 
 			//in single threaded, this will just be true
@@ -1013,8 +1036,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 	if(to_lookup == nullptr || IsEvaluableNodeTypeImmediate(to_lookup->GetType()))
 	{
 		StringInternPool::StringID symbol_name_sid = EvaluableNode::ToStringIDIfExists(to_lookup);
+		EvaluableNode* symbol_value = GetCallStackSymbol(symbol_name_sid);
 		evaluableNodeManager->FreeNodeTreeIfPossible(to_lookup);
-		return EvaluableNodeReference(GetCallStackSymbol(symbol_name_sid), false);
+		return EvaluableNodeReference(symbol_value, false);
 	}
 	else if(to_lookup->IsAssociativeArray())
 	{
@@ -1047,11 +1071,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 				continue;
 			}
 
+			EvaluableNode *symbol_value = GetCallStackSymbol(symbol_name_sid);
 			//if there are values passed in, free them to be clobbered
 			EvaluableNodeReference cnr(cn, to_lookup.unique);
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);
 
-			cn = GetCallStackSymbol(symbol_name_sid);
+			cn = symbol_value;
 		}
 
 		return EvaluableNodeReference(to_lookup, false);

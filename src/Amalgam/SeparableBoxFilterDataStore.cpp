@@ -1011,13 +1011,13 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 			auto value_found = column->stringIdValueToIndices.find(value.stringID);
 			if(value_found != end(column->stringIdValueToIndices))
 			{
-				double term = dist_params.ComputeDistanceTermNonNominalExactMatch(query_feature_index, high_accuracy);
+				double term = dist_params.ComputeDistanceTermContinuousExactMatch(query_feature_index, high_accuracy);
 				AccumulatePartialSums(*(value_found->second), query_feature_index, term);
 			}
 		}
 
 		//the next closest string will have an edit distance of 1
-		return dist_params.ComputeDistanceTermNonNominalNonCyclicNonNullRegular(1.0, query_feature_index, high_accuracy);
+		return dist_params.ComputeDistanceTermContinuousNonCyclicNonNullRegular(1.0, query_feature_index, high_accuracy);
 	}
 	else if(effective_feature_type == GeneralizedDistance::EFDT_CONTINUOUS_CODE)
 	{
@@ -1035,7 +1035,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 		}
 
 		//next most similar code must be at least a distance of 1 edit away
-		return dist_params.ComputeDistanceTermNonNominalNonCyclicNonNullRegular(1.0, query_feature_index, high_accuracy);
+		return dist_params.ComputeDistanceTermContinuousNonCyclicNonNullRegular(1.0, query_feature_index, high_accuracy);
 	}
 	//else feature_type == FDT_CONTINUOUS_NUMERIC or FDT_CONTINUOUS_UNIVERSALLY_NUMERIC
 
@@ -1052,9 +1052,9 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 
 	double term = 0.0;
 	if(exact_index_found)
-		term = dist_params.ComputeDistanceTermNonNominalExactMatch(query_feature_index, high_accuracy);
+		term = dist_params.ComputeDistanceTermContinuousExactMatch(query_feature_index, high_accuracy);
 	else
-		term = dist_params.ComputeDistanceTermNonNominalNonNullRegular(
+		term = dist_params.ComputeDistanceTermContinuousNonNullRegular(
 			value.number - column->sortedNumberValueEntries[value_index]->value.number, query_feature_index, high_accuracy);
 
 	size_t num_entities_computed = AccumulatePartialSums(column->sortedNumberValueEntries[value_index]->indicesWithValue, query_feature_index, term);
@@ -1203,7 +1203,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 				break;
 		}
 
-		term = dist_params.ComputeDistanceTermNonNominalNonNullRegular(next_closest_diff, query_feature_index, high_accuracy);
+		term = dist_params.ComputeDistanceTermContinuousNonNullRegular(next_closest_diff, query_feature_index, high_accuracy);
 		num_entities_computed += AccumulatePartialSums(
 			column->sortedNumberValueEntries[next_closest_index]->indicesWithValue, query_feature_index, term);
 

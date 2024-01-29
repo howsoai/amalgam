@@ -793,8 +793,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, b
 	{
 		if(type_node->GetType() == ENT_STRING)
 		{
-			auto &new_type_string = type_node->GetStringValue();
-			new_type = GetEvaluableNodeTypeFromString(new_type_string, true);
+			auto new_type_sid = type_node->GetStringIDReference();
+			new_type = GetEvaluableNodeTypeFromStringId(new_type_sid);
 			evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
 		}
 		else
@@ -1097,7 +1097,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 	else if(container->GetType() == ENT_STRING && !EvaluableNode::IsEmptyNode(value))
 	{
 		//compute regular expression
-		const std::string &s = container->GetStringValue();
+		std::string s = container->GetStringValue();
 
 		std::string value_as_str = EvaluableNode::ToStringPreservingOpcodeType(value);
 

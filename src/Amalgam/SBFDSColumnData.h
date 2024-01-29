@@ -704,7 +704,7 @@ public:
 			// and adding all the new ones
 			if(value_type == ENIVT_STRING_ID)
 			{
-				auto &s = string_intern_pool.GetStringFromID(value.stringID);
+				auto s = string_intern_pool.GetStringFromID(value.stringID);
 				return static_cast<double>(longestStringLength + StringManipulation::GetNumUTF8Characters(s));
 			}
 			else if(value_type == ENIVT_NULL)
@@ -1137,7 +1137,7 @@ protected:
 	//updates longestStringLength and indexWithLongestString based on parameters
 	inline void UpdateLongestString(StringInternPool::StringID sid, size_t index)
 	{
-		auto &str = string_intern_pool.GetStringFromID(sid);
+		auto str = string_intern_pool.GetStringFromID(sid);
 		size_t str_size = StringManipulation::GetUTF8CharacterLength(str);
 		if(str_size > longestStringLength)
 		{

@@ -110,7 +110,7 @@ public:
 		if(EvaluableNode::IsAssociativeArray(new_context))
 		{
 			if(!new_context.unique)
-				new_context.SetReference(evaluableNodeManager->AllocNode(new_context));
+				new_context.SetReference(evaluableNodeManager->AllocNode(new_context, EvaluableNodeManager::ENMM_REMOVE_ALL));
 		}
 		else //not assoc, make a new one
 		{
@@ -548,8 +548,6 @@ protected:
 		//ends concurrency from all interpreters and waits for them to finish
 		inline void EndConcurrency()
 		{
-			Concurrency::threadPool.CountCurrentThreadAsPaused();
-
 			//make sure all futures return before moving on
 			for(auto &future : resultFutures)
 				future.wait();
@@ -559,8 +557,6 @@ protected:
 				for(auto &i : interpreters)
 					parentInterpreter->curExecutionStep += i->curExecutionStep;
 			}
-
-			Concurrency::threadPool.CountCurrentThreadAsResumed();
 
 			//merged back to one task (this method will attempt to account for other concurrency)
 			EvaluableNodeManager::UpdateMinCycleCountBetweenGarbageCollectsBasedOnThreads(1);

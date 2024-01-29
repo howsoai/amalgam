@@ -426,6 +426,31 @@ void AssetManager::SetRootPermission(Entity *entity, bool permission)
 		rootEntities.erase(entity);
 }
 
+std::string AssetManager::GetEvaluableNodeSourceFromComments(EvaluableNode *en)
+{
+	std::string source;
+	if(asset_manager.debugSources)
+	{
+		if(en->HasComments())
+		{
+			auto comment = en->GetCommentsString();
+			auto first_line_end = comment.find('\n');
+			if(first_line_end == std::string::npos)
+				source = comment;
+			else //copy up until newline
+			{
+				source = comment.substr(0, first_line_end);
+				if(source.size() > 0 && source.back() == '\r')
+					source.pop_back();
+			}
+
+			source += ": ";
+		}
+	}
+
+	return source;
+}
+
 void AssetManager::DestroyPersistentEntity(Entity *entity)
 {
 	Entity *cur = entity;

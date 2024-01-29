@@ -6,8 +6,8 @@ ThreadPool::ThreadPool(size_t max_num_threads)
 	shutdownThreads = false;
 	ChangeThreadPoolSize(max_num_threads);
 
-	//there must be one active thread
-	numActiveThreads = 1;
+	//no active threads in the pool to start
+	numActiveThreads = 0;
 	
 	mainThreadId = std::this_thread::get_id();
 }

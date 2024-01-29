@@ -9,7 +9,6 @@
 #include "EvaluableNodeTreeDifference.h"
 #include "EvaluableNodeTreeFunctions.h"
 #include "EvaluableNodeTreeManipulation.h"
-#include "PerformanceProfiler.h"
 #include "StringInternPool.h"
 
 //system headers:
@@ -436,7 +435,7 @@ EvaluableNodeReference Interpreter::ConvertArgsToCallStack(EvaluableNodeReferenc
 	}
 	else if(!args.unique)
 	{
-		args.SetReference(enm.AllocNode(args));
+		args.SetReference(enm.AllocNode(args, EvaluableNodeManager::ENMM_REMOVE_ALL));
 	}
 	
 	EvaluableNode *call_stack = enm.AllocNode(ENT_LIST);
@@ -579,7 +578,6 @@ std::pair<bool, std::string> Interpreter::InterpretNodeIntoStringValue(Evaluable
 
 	auto [valid, str] = result_value.GetValueAsString();
 	evaluableNodeManager->FreeNodeTreeIfPossible(result);
-	result.FreeImmediateResources();
 
 	return std::make_pair(valid, str);
 }
@@ -594,10 +592,8 @@ StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueIfExists(E
 	auto &result_value = result.GetValue();
 
 	auto sid = result_value.GetValueAsStringIDIfExists();
-	evaluableNodeManager->FreeNodeTreeIfPossible(result);
 	//ID already exists outside of this, so not expecting to keep this reference
-	result.FreeImmediateResources();
-
+	evaluableNodeManager->FreeNodeTreeIfPossible(result);
 	return sid;
 }
 
@@ -679,7 +675,6 @@ double Interpreter::InterpretNodeIntoNumberValue(EvaluableNode *n)
 
 	double value = result_value.GetValueAsNumber();
 	evaluableNodeManager->FreeNodeTreeIfPossible(result);
-	result.FreeImmediateResources();
 
 	return value;
 }
@@ -713,7 +708,6 @@ bool Interpreter::InterpretNodeIntoBoolValue(EvaluableNode *n, bool value_if_nul
 
 	bool value = result_value.GetValueAsBoolean();
 	evaluableNodeManager->FreeNodeTreeIfPossible(result);
-	result.FreeImmediateResources();
 
 	return value;
 }

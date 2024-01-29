@@ -80,7 +80,7 @@ public:
 	{
 		double max_diff = columnData[absolute_feature_index]->GetMaxDifferenceTermFromValue(
 									dist_params.featureParams[query_feature_index], value_type, value);
-		return dist_params.ComputeDistanceTermNonNominalNonNullRegular(max_diff, query_feature_index, high_accuracy);
+		return dist_params.ComputeDistanceTermContinuousNonNullRegular(max_diff, query_feature_index, high_accuracy);
 	}
 
 	//gets the matrix cell index for the specified index
@@ -118,7 +118,7 @@ public:
 	void BuildLabel(size_t column_index, const std::vector<Entity *> &entities);
 
 	//changes column to/from interning as would yield best performance
-	void OptimizeColumn(size_t column_ndex);
+	void OptimizeColumn(size_t column_index);
 
 	//calls OptimizeColumn on all columns
 	inline void OptimizeAllColumns()
@@ -158,12 +158,9 @@ public:
 				}
 
 				enqueue_task_lock.Unlock();
-				Concurrency::threadPool.CountCurrentThreadAsPaused();
 
 				for(auto &future : columns_completed)
 					future.wait();
-
-				Concurrency::threadPool.CountCurrentThreadAsResumed();
 
 				return;
 			}
@@ -737,7 +734,7 @@ protected:
 		case GeneralizedDistance::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC:
 		{
 			const size_t column_index = target_label_indices[query_feature_index];
-			return dist_params.ComputeDistanceTermNonNominalNonCyclicOneNonNullRegular(
+			return dist_params.ComputeDistanceTermContinuousNonCyclicOneNonNullRegular(
 				target_values[query_feature_index].number - GetValue(entity_index, column_index).number,
 				query_feature_index, high_accuracy);
 		}
@@ -754,7 +751,7 @@ protected:
 			const size_t column_index = target_label_indices[query_feature_index];
 			auto &column_data = columnData[column_index];
 			if(column_data->numberIndices.contains(entity_index))
-				return dist_params.ComputeDistanceTermNonNominalNonCyclicOneNonNullRegular(
+				return dist_params.ComputeDistanceTermContinuousNonCyclicOneNonNullRegular(
 					target_values[query_feature_index].number - GetValue(entity_index, column_index).number,
 					query_feature_index, high_accuracy);
 			else
@@ -766,7 +763,7 @@ protected:
 			const size_t column_index = target_label_indices[query_feature_index];
 			auto &column_data = columnData[column_index];
 			if(column_data->numberIndices.contains(entity_index))
-				return dist_params.ComputeDistanceTermNonNominalOneNonNullRegular(
+				return dist_params.ComputeDistanceTermContinuousOneNonNullRegular(
 					target_values[query_feature_index].number - GetValue(entity_index, column_index).number,
 					query_feature_index, high_accuracy);
 			else
@@ -922,7 +919,7 @@ protected:
 				else
 					effective_feature_type = GeneralizedDistance::EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED;
 
-				dist_params.ComputeAndStoreInternedNumberValuesAndDistanceTerms(query_feature_index, position_value_numeric, &column_data->internedNumberIndexToNumberValue);
+				dist_params.ComputeAndStoreInternedNumberValuesAndDistanceTerms(position_value_numeric, query_feature_index, &column_data->internedNumberIndexToNumberValue);
 			}
 			else
 			{

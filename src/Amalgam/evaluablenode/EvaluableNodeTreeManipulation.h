@@ -345,7 +345,7 @@ public:
 	}
 
 	//returns the commonality between two strings that are different
-	static constexpr double CommonalityBetweenStrings(StringInternPool::StringID sid1, StringInternPool::StringID sid2)
+	static inline double CommonalityBetweenStrings(StringInternPool::StringID sid1, StringInternPool::StringID sid2)
 	{
 		if(sid1 == sid2)
 			return 1.0;
@@ -354,8 +354,8 @@ public:
 		if(sid1 == string_intern_pool.NOT_A_STRING_ID || sid2 == string_intern_pool.NOT_A_STRING_ID)
 			return 0.125;
 
-		const auto &s1 = string_intern_pool.GetStringFromID(sid1);
-		const auto &s2 = string_intern_pool.GetStringFromID(sid2);
+		auto s1 = string_intern_pool.GetStringFromID(sid1);
+		auto s2 = string_intern_pool.GetStringFromID(sid2);
 
 		size_t s1_len = 0;
 		size_t s2_len = 0;

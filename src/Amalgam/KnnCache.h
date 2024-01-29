@@ -69,12 +69,9 @@ public:
 				}
 
 				enqueue_task_lock.Unlock();
-				Concurrency::threadPool.CountCurrentThreadAsPaused();
 
 				for(auto &future : indices_completed)
 					future.wait();
-
-				Concurrency::threadPool.CountCurrentThreadAsResumed();
 
 				return;
 			}

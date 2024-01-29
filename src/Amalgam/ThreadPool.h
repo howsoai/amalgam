@@ -46,6 +46,13 @@ public:
 		return thread_ids;
 	}
 
+	//returns true if there are threads currently idle
+	inline bool AreThreadsAvailable()
+	{
+		std::unique_lock<std::mutex> lock(taskQueueMutex);
+		return (taskQueue.size() + numActiveThreads < threads.size());
+	}
+
 	//destroys all the threads and waits to join them
 	~ThreadPool();
 
@@ -187,20 +194,6 @@ public:
 		);
 
 		return result;
-	}
-
-	//if a thread will be sitting waiting for other threads to complete, it can mark itself as inactive
-	// but it should call ResumeCurrentThread once ready again
-	inline void CountCurrentThreadAsPaused()
-	{
-		numActiveThreads--;
-	}
-
-	//if a thread will be sitting waiting for other threads to complete, it can mark itself as inactive via PauseCurrentThread
-	// and should call ResumeCurrentThread once ready again
-	inline void CountCurrentThreadAsResumed()
-	{
-		numActiveThreads++;
 	}
 
 private:

@@ -335,11 +335,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 	if(to_lookup == nullptr || IsEvaluableNodeTypeImmediate(to_lookup->GetType()))
 	{
 		StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(to_lookup);
-		evaluableNodeManager->FreeNodeTreeIfPossible(to_lookup);
 
 		ExecutionCycleCount num_steps_executed = 0;
 		EvaluableNodeReference value = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager, direct, target_entity == curEntity);
 		curExecutionStep += num_steps_executed;
+
+		evaluableNodeManager->FreeNodeTreeIfPossible(to_lookup);
 
 		return value;
 	}

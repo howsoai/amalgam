@@ -168,7 +168,7 @@ void EntityQueryCaches::EnsureLabelsAreCached(EntityQueryCondition *cond)
 	lock.unlock();
 	Concurrency::WriteLock write_lock(mutex);
 
-	//now with write_lock, remove any labels that might have already been added by other threads
+	//now with write_lock, remove any labels that have already been added by other threads
 	labels_to_add.erase(std::remove_if(begin(labels_to_add), end(labels_to_add),
 		[this](auto sid) { return DoesHaveLabel(sid); }),
 		end(labels_to_add));
@@ -249,7 +249,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				weight_column = sbfds.GetColumnIndexFromLabelId(cond->weightLabel);
 
 			auto get_weight = sbfds.GetNumberValueFromEntityIndexFunction(weight_column);
-			EntityQueriesStatistics::DistanceTransform<size_t> distance_transform(cond->transformSuprisalToProb,
+			EntityQueriesStatistics::DistanceTransform<size_t> distance_transform(cond->distParams.computeSurprisal,
 				cond->distanceWeightExponent, use_entity_weights, get_weight);
 
 			//if first, need to populate with all entities

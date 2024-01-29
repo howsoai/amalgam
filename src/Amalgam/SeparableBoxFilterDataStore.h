@@ -144,7 +144,8 @@ public:
 		//if big enough (enough entities and/or enough columns), try to use multithreading
 		if(num_columns_added > 1 && (numEntities > 10000 || (numEntities > 200 && num_columns_added > 10)))
 		{
-			if(Concurrency::threadPool.AreThreadsAvailable())
+			auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
+			if(enqueue_task_lock.AreThreadsAvailable())
 			{
 				std::vector<std::future<void>> columns_completed;
 				columns_completed.reserve(num_columns);
@@ -152,16 +153,14 @@ public:
 				for(size_t i = num_previous_columns; i < num_columns; i++)
 				{
 					columns_completed.emplace_back(
-						Concurrency::threadPool.EnqueueSingleTask([this, &entities, i]() { BuildLabel(i, entities); })
+						Concurrency::threadPool.EnqueueBatchTask([this, &entities, i]() { BuildLabel(i, entities); })
 					);
 				}
 
-				Concurrency::threadPool.CountCurrentThreadAsPaused();
+				enqueue_task_lock.Unlock();
 
 				for(auto &future : columns_completed)
 					future.wait();
-
-				Concurrency::threadPool.CountCurrentThreadAsResumed();
 
 				return;
 			}

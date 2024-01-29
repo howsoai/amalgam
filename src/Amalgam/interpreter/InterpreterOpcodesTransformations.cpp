@@ -87,7 +87,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 			size_t num_nodes = list_ocn.size();
 			if(en->GetConcurrency() && num_nodes > 1)
 			{
-				if(Concurrency::threadPool.AreThreadsAvailable())
+				auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
+				if(enqueue_task_lock.AreThreadsAvailable())
 				{
 					node_stack.PushEvaluableNode(list);
 					node_stack.PushEvaluableNode(result);
@@ -97,6 +98,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 					for(size_t node_index = 0; node_index < num_nodes; node_index++)
 						concurrency_manager.PushTaskToResultFuturesWithConstructionStack(function,
 							list, result, EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)), list_ocn[node_index]);
+
+					enqueue_task_lock.Unlock();
 
 					concurrency_manager.EndConcurrency();
 
@@ -139,7 +142,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 			size_t num_nodes = result_mcn.size();
 			if(en->GetConcurrency() && num_nodes > 1)
 			{
-				if(Concurrency::threadPool.AreThreadsAvailable())
+				auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
+				if(enqueue_task_lock.AreThreadsAvailable())
 				{
 					node_stack.PushEvaluableNode(list);
 					node_stack.PushEvaluableNode(result);
@@ -149,6 +153,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 					for(auto &[node_id, node] : result_mcn)
 						concurrency_manager.PushTaskToResultFuturesWithConstructionStack(function,
 							list, result, EvaluableNodeImmediateValueWithType(node_id), node);
+
+					enqueue_task_lock.Unlock();
 
 					concurrency_manager.EndConcurrency();
 
@@ -446,7 +452,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		size_t num_nodes = list_ocn.size();
 		if(en->GetConcurrency() && num_nodes > 1)
 		{
-			if(Concurrency::threadPool.AreThreadsAvailable())
+			auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
+			if(enqueue_task_lock.AreThreadsAvailable())
 			{
 				node_stack.PushEvaluableNode(list);
 				node_stack.PushEvaluableNode(result_list);
@@ -456,6 +463,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 				for(size_t node_index = 0; node_index < num_nodes; node_index++)
 					concurrency_manager.PushTaskToResultFuturesWithConstructionStack(function,
 						list, result_list, EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)), list_ocn[node_index]);
+
+				enqueue_task_lock.Unlock();
 
 				concurrency_manager.EndConcurrency();
 
@@ -519,7 +528,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		size_t num_nodes = list_mcn.size();
 		if(en->GetConcurrency() && num_nodes > 1)
 		{
-			if(Concurrency::threadPool.AreThreadsAvailable())
+			auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
+			if(enqueue_task_lock.AreThreadsAvailable())
 			{
 				node_stack.PushEvaluableNode(list);
 				node_stack.PushEvaluableNode(result_list);
@@ -530,6 +540,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 				for(auto &[node_id, node] : list_mcn)
 					concurrency_manager.PushTaskToResultFuturesWithConstructionStack(function,
 						list, result_list, EvaluableNodeImmediateValueWithType(node_id), node);
+
+				enqueue_task_lock.Unlock();
 
 				concurrency_manager.EndConcurrency();
 
@@ -1415,7 +1427,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 	#ifdef MULTITHREAD_SUPPORT
 		if(en->GetConcurrency() && num_nodes > 1)
 		{
-			if(Concurrency::threadPool.AreThreadsAvailable())
+			auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
+			if(enqueue_task_lock.AreThreadsAvailable())
 			{
 				auto node_stack = CreateInterpreterNodeStackStateSaver(new_assoc);
 
@@ -1432,6 +1445,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 				for(size_t node_index = 0; node_index + 1 < num_nodes; node_index += 2)
 					concurrency_manager.PushTaskToResultFuturesWithConstructionStack(ocn[node_index + 1], en, new_assoc,
 						EvaluableNodeImmediateValueWithType(keys[node_index / 2]), nullptr);
+				
+				enqueue_task_lock.Unlock();
 
 				concurrency_manager.EndConcurrency();
 

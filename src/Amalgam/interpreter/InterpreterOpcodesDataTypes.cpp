@@ -58,7 +58,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST(EvaluableNode *en, bo
 	#ifdef MULTITHREAD_SUPPORT
 		if(en->GetConcurrency() && num_nodes > 1)
 		{
-			if(Concurrency::threadPool.AreThreadsAvailable())
+			auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
+			if(enqueue_task_lock.AreThreadsAvailable())
 			{
 				auto node_stack = CreateInterpreterNodeStackStateSaver(new_list);
 
@@ -68,6 +69,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST(EvaluableNode *en, bo
 				for(size_t node_index = 0; node_index < num_nodes; node_index++)
 					concurrency_manager.PushTaskToResultFuturesWithConstructionStack(ocn[node_index], en, new_list,
 						EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)), nullptr);
+
+				enqueue_task_lock.Unlock();
 
 				concurrency_manager.EndConcurrency();
 
@@ -124,7 +127,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, b
 	#ifdef MULTITHREAD_SUPPORT
 		if(en->GetConcurrency() && num_nodes > 1)
 		{
-			if(Concurrency::threadPool.AreThreadsAvailable())
+			auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
+			if(enqueue_task_lock.AreThreadsAvailable())
 			{
 				auto node_stack = CreateInterpreterNodeStackStateSaver(new_assoc);
 				ConcurrencyManager concurrency_manager(this, num_nodes);
@@ -133,6 +137,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, b
 				for(auto &[cn_id, cn] : new_mcn)
 					concurrency_manager.PushTaskToResultFuturesWithConstructionStack(cn, en, new_assoc, EvaluableNodeImmediateValueWithType(cn_id), nullptr);
 
+				enqueue_task_lock.Unlock();
 				concurrency_manager.EndConcurrency();
 
 				//add results to assoc

@@ -196,20 +196,6 @@ public:
 		return result;
 	}
 
-	//if a thread will be sitting waiting for other threads to complete, it can mark itself as inactive
-	// but it should call ResumeCurrentThread once ready again
-	inline void CountCurrentThreadAsPaused()
-	{
-		numActiveThreads--;
-	}
-
-	//if a thread will be sitting waiting for other threads to complete, it can mark itself as inactive via PauseCurrentThread
-	// and should call ResumeCurrentThread once ready again
-	inline void CountCurrentThreadAsResumed()
-	{
-		numActiveThreads++;
-	}
-
 private:
 	//waits for all threads to complete, then shuts them down
 	void ShutdownAllThreads();

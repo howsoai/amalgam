@@ -573,18 +573,54 @@ public:
 		}
 	}
 
-	//returns the last garbage collection iteration of this node, 0 if it has not been set before
-	constexpr uint8_t GetGarbageCollectionIteration()
+	//returns whether this node has been marked as known to be currently in use
+	constexpr bool GetKnownToBeInUse()
 	{
-		return attributes.individualAttribs.garbageCollectionIteration;
+		return attributes.individualAttribs.knownToBeInUse;
 	}
 
-	//sets the garbage collection iteration of this node, which defaults to 0
-	// values 1, 2, 3 are valid values
-	constexpr void SetGarbageCollectionIteration(uint8_t gc_collect_iteration)
+	//sets whether this node is currently known to be in use
+	constexpr void SetKnownToBeInUse(bool in_use)
 	{
-		attributes.individualAttribs.garbageCollectionIteration = gc_collect_iteration;
+		attributes.individualAttribs.knownToBeInUse = in_use;
 	}
+
+#ifdef MULTITHREAD_SUPPORT
+	//returns whether this node has been marked as known to be currently in use
+	__forceinline bool GetKnownToBeInUseAtomic()
+	{
+		EvaluableNodeAttributesType attrib_with_known_true;
+		attrib_with_known_true.allAttributes = 0;
+		attrib_with_known_true.individualAttribs.knownToBeInUse = true;
+
+		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
+		uint8_t all_attributes = reinterpret_cast<std::atomic<uint8_t>&>(attributes.allAttributes);
+		return (all_attributes & attrib_with_known_true.allAttributes);
+	}
+
+	//sets whether this node is currently known to be in use
+	__forceinline void SetKnownToBeInUseAtomic(bool in_use)
+	{
+		if(in_use)
+		{
+			EvaluableNodeAttributesType attrib_with_known_true;
+			attrib_with_known_true.allAttributes = 0;
+			attrib_with_known_true.individualAttribs.knownToBeInUse = true;
+
+			//TODO 15993: once C++20 is widely supported, change type to atomic_ref
+			reinterpret_cast<std::atomic<uint8_t>&>(attributes.allAttributes).fetch_or(attrib_with_known_true.allAttributes);
+		}
+		else
+		{
+			EvaluableNodeAttributesType attrib_with_known_false;
+			attrib_with_known_false.allAttributes = 0xFF;
+			attrib_with_known_false.individualAttribs.knownToBeInUse = false;
+
+			//TODO 15993: once C++20 is widely supported, change type to atomic_ref
+			reinterpret_cast<std::atomic<uint8_t>&>(attributes.allAttributes).fetch_and(attrib_with_known_false.allAttributes);
+		}
+	}
+#endif
 
 	//returns the number of child nodes regardless of mapped or ordered
 	size_t GetNumChildNodes();
@@ -889,9 +925,8 @@ protected:
 			bool isIdempotent : 1;
 			//if true, then the node is marked for concurrency
 			bool concurrent : 1;
-			//the iteration used for garbage collection; an EvaluableNode should be initialized to 0,
-			// and values 1-3 are reserved for garbage collection cycles
-			uint8_t garbageCollectionIteration : 2;
+			//if true, then known to be in use with regard to garbage collection
+			bool knownToBeInUse : 1;
 		} individualAttribs;
 	};
 #pragma pack(pop)

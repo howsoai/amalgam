@@ -345,7 +345,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PARALLEL(EvaluableNode *en
 #ifdef MULTITHREAD_SUPPORT
 	if(en->GetConcurrency() && ocn.size() > 1)
 	{
-		if(Concurrency::threadPool.AreThreadsAvailable())
+		auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
+		if(enqueue_task_lock.AreThreadsAvailable())
 		{
 			size_t num_elements = ocn.size();
 
@@ -358,7 +359,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PARALLEL(EvaluableNode *en
 				EvaluableNode *node_to_execute = ocn[element_index];
 
 				concurrency_manager.resultFutures.emplace_back(
-					Concurrency::threadPool.EnqueueSingleTask(
+					Concurrency::threadPool.EnqueueBatchTask(
 						[this, &interpreter, node_to_execute, &concurrency_manager]
 						{
 							interpreter.memoryModificationLock = Concurrency::ReadLock(interpreter.evaluableNodeManager->memoryModificationMutex);
@@ -378,6 +379,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PARALLEL(EvaluableNode *en
 					)
 				);
 			}
+
+			enqueue_task_lock.Unlock();
 
 			concurrency_manager.EndConcurrency();
 

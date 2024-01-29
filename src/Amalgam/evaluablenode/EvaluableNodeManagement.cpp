@@ -739,7 +739,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(bool set_in_use)
 #ifdef MULTITHREAD_SUPPORT
 	size_t reference_count = nodesCurrentlyReferenced.size();
 	//heuristic to ensure there's enough to do to warrant the overhead of using multiple threads
-	if(reference_count > 1 && firstUnusedNodeIndex / reference_count >= 600)
+	if(reference_count > 1 && firstUnusedNodeIndex / reference_count >= 2000)
 	{
 		auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
 		if(enqueue_task_lock.AreThreadsAvailable())
@@ -747,6 +747,8 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(bool set_in_use)
 			std::vector<std::future<void>> nodes_completed;
 			nodes_completed.reserve(reference_count);
 
+			//expand out the loops for each set or clear because
+			//this is a time critical method
 			if(set_in_use)
 			{
 				for(auto& [t, _] : nodesCurrentlyReferenced)

@@ -17,6 +17,12 @@ class ThreadPool
 public:
 	ThreadPool(size_t max_num_threads = 0);
 
+	//destroys all the threads and waits to join them
+	~ThreadPool()
+	{
+		ShutdownAllThreads();
+	}
+
 	//will change the number of threads in the pool to the number specified
 	void ChangeThreadPoolSize(size_t new_max_num_threads);
 
@@ -29,8 +35,7 @@ public:
 	//returns the current maximum number of threads that are available
 	inline size_t GetCurrentMaxNumThreads()
 	{
-		std::unique_lock<std::mutex> lock(threadsMutex);
-		return threads.size();
+		return maxNumActiveThreads;
 	}
 
 	//returns a vector of the thread ids for the thread pool
@@ -49,12 +54,9 @@ public:
 	//returns true if there are threads currently idle
 	inline bool AreThreadsAvailable()
 	{
-		std::unique_lock<std::mutex> lock(taskQueueMutex);
-		return (taskQueue.size() + numActiveThreads < threads.size());
+		std::unique_lock<std::mutex> lock(threadsMutex);
+		return (taskQueue.size() + numActiveThreads < maxNumActiveThreads);
 	}
-
-	//destroys all the threads and waits to join them
-	~ThreadPool();
 
 	//enqueues a task into the thread pool comprised of a function and arguments, automatically inferring the function type
 	template<class FunctionType, class ...ArgsType>
@@ -156,13 +158,13 @@ public:
 	// when attempting to enqueue tasks which are subtasks of other tasks
 	BatchTaskEnqueueLockAndLayer BeginEnqueueBatchTask(bool fail_unless_task_queue_availability = true)
 	{
-		BatchTaskEnqueueLockAndLayer btel(&waitForTask, taskQueueMutex);
+		BatchTaskEnqueueLockAndLayer btel(&waitForTask, threadsMutex);
 
 		if(fail_unless_task_queue_availability)
 		{
 			//need to make sure there's at least one extra thread available to make sure that this batch of tasks can be run
 			// in case there are any interdependencies, in order to prevent deadlock
-			if(taskQueue.size() + numActiveThreads >= threads.size())
+			if(taskQueue.size() + numActiveThreads >= maxNumActiveThreads)
 				btel.MarkAsNoThreadsAvailable();
 		}
 
@@ -196,7 +198,11 @@ public:
 		return result;
 	}
 
-private:
+protected:
+	//adds a new thread to threads
+	// threadsMutex must be locked prior to calling
+	void AddNewThread();
+
 	//waits for all threads to complete, then shuts them down
 	void ShutdownAllThreads();
 
@@ -211,11 +217,19 @@ private:
 	bool shutdownThreads;
 
 	//tasks for the threadpool to complete
-	std::mutex taskQueueMutex;
 	std::queue<std::function<void()>> taskQueue;
+
+	//the number of threads that can be active at any time
+	//the total number of threads is
+	//numActiveThreads + numReserveThreads + number of idle threads
+	size_t maxNumActiveThreads;
 
 	//number of threads running
 	std::atomic<size_t> numActiveThreads;
+
+	//number of threads that are currently in reserve
+	//that can be activated to replace an existing thread that is blocked
+	std::atomic<size_t> numReserveThreads;
 
 	//id of the main thread
 	std::thread::id mainThreadId;

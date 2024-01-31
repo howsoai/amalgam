@@ -25,7 +25,7 @@ LoadEntityStatus EntityExternalInterface::LoadEntity(std::string &handle, std::s
 		rand_seed = std::to_string(t);
 	}
 
-	LoadEntityStatus status;
+	LoadEntityStatus status = LOADENTITYSTATUS_DEFAULT;
 	std::string file_type = "";
 	Entity *entity = asset_manager.LoadEntityFromResourcePath(path, file_type, persistent, load_contained_entities, false, true, rand_seed, status);
 	asset_manager.SetRootPermission(entity, true);

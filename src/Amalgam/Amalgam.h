@@ -23,6 +23,7 @@ extern "C"
 		const char *message;
 		const char *version;
 	} LoadEntityStatus;
+	#define LOADENTITYSTATUS_DEFAULT { true, "", "" }
 
 	//loads the entity specified into handle
 	AMALGAM_EXPORT LoadEntityStatus LoadEntity(char *handle, char *path, bool persistent, bool load_contained_entities, char *write_log_filename, char *print_log_filename);

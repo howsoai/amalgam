@@ -423,9 +423,12 @@ void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_labels, bool copy
 
 void EvaluableNode::CopyValueFrom(EvaluableNode *n)
 {
+	//don't do anything if copying from itself (note that some flat hash map structures don't copy well onto themselves)
+	if(n == this)
+		return;
+
 	if(n == nullptr)
 	{
-
 		ClearOrderedChildNodes();
 		ClearMappedChildNodes();
 		//doesn't need an EvaluableNodeManager because not converting child nodes from one type to another
@@ -466,6 +469,10 @@ void EvaluableNode::CopyValueFrom(EvaluableNode *n)
 
 void EvaluableNode::CopyMetadataFrom(EvaluableNode *n)
 {
+	//don't do anything if copying from itself
+	if(n == this)
+		return;
+
 	//copy labels (different ways based on type)
 	if(HasCompactSingleLabelStorage() && n->HasCompactSingleLabelStorage())
 	{

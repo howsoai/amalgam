@@ -2077,9 +2077,6 @@
  (store "amlg_code/text_store_test.txt" "This is text!")
  (print "[" (load "amlg_code/text_store_test.txt") "]\n")
 
- (store "amlg_code/cstl_store_test.cstl" (list "String 1." "String 2." "String 3."))
- (print (load "amlg_code/cstl_store_test.cstl") "\n")
-
  (store "amlg_code/caml_store_test.caml" (lambda (seq (print "hello"))) )
  (print (load "amlg_code/caml_store_test.caml") "\n")
 

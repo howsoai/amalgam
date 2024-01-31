@@ -19,7 +19,8 @@ int main(int argc, char* argv[])
 	char* file = (argc > 1) ? argv[1] : (char*)"test.amlg";
 	char write_log[] = "";
 	char print_log[] = "";
-	if(LoadEntity(handle, file, false, true, write_log, print_log))
+	auto status = LoadEntity(handle, file, false, true, write_log, print_log);
+	if(status.success)
 	{
 		char label[] = "test";
 		ExecuteEntity(handle, label);

@@ -71,14 +71,14 @@ extern "C"
 	// api methods
 	// ************************************
 
-	bool LoadEntity(char *handle, char *path, bool persistent, bool load_contained_entities, char *write_log_filename, char *print_log_filename)
+	LoadEntityStatus LoadEntity(char *handle, char *path, bool persistent, bool load_contained_entities, char *write_log_filename, char *print_log_filename)
 	{
 		std::string h(handle);
 		std::string p(path);
 		std::string wlfname(write_log_filename);
 		std::string plfname(print_log_filename);
 
-		return entint.LoadEntity(h, p, persistent, load_contained_entities, wlfname, plfname);
+		return entint.LoadEntity(h, p, persistent, load_contained_entities, wlfname, plfname);;
 	}
 
 	char *ValidateEntity(char *path)

@@ -16,8 +16,16 @@
 
 extern "C"
 {
+	//status from LoadEntity
+	typedef struct
+	{
+		bool success;
+		const char* message;
+		const char* version;
+	} LoadEntityStatus;
+
 	//loads the entity specified into handle
-	AMALGAM_EXPORT bool   LoadEntity(char *handle, char *path, bool persistent, bool load_contained_entities, char *write_log_filename, char *print_log_filename);
+	AMALGAM_EXPORT LoadEntityStatus LoadEntity(char *handle, char *path, bool persistent, bool load_contained_entities, char *write_log_filename, char *print_log_filename);
 
 	//validates the entity specified by path
 	AMALGAM_EXPORT char  *ValidateEntity(char* path);

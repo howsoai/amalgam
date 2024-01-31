@@ -1,6 +1,7 @@
 //project headers:
 #include "EntityExternalInterface.h"
 
+#include "AmalgamVersion.h"
 #include "AssetManager.h"
 #include "Entity.h"
 #include "EntityWriteListener.h"
@@ -14,7 +15,7 @@
 #include <ostream>
 #include <vector>
 
-bool EntityExternalInterface::LoadEntity(std::string &handle, std::string &path, bool persistent, bool load_contained_entities,
+LoadEntityStatus EntityExternalInterface::LoadEntity(std::string &handle, std::string &path, bool persistent, bool load_contained_entities,
 	std::string &write_log_filename, std::string &print_log_filename, std::string rand_seed)
 {
 	if(rand_seed == "")
@@ -24,12 +25,15 @@ bool EntityExternalInterface::LoadEntity(std::string &handle, std::string &path,
 		rand_seed = std::to_string(t);
 	}
 
+	LoadEntityStatus status;
 	std::string file_type = "";
-	Entity *entity = asset_manager.LoadEntityFromResourcePath(path, file_type, persistent, load_contained_entities, false, true, rand_seed);
+	Entity *entity = asset_manager.LoadEntityFromResourcePath(path, file_type, persistent, load_contained_entities, false, true, rand_seed, status);
 	asset_manager.SetRootPermission(entity, true);
 
-	if(entity == nullptr)
-		return false;
+	if(entity == nullptr || !status.success)
+	{
+		return status;
+	}
 
 	PrintListener *pl = nullptr;
 	std::vector<EntityWriteListener *> wl;
@@ -45,7 +49,7 @@ bool EntityExternalInterface::LoadEntity(std::string &handle, std::string &path,
 
 	AddEntityBundle(handle, new EntityListenerBundle(entity, wl, pl));
 
-	return true;
+	return status;
 }
 
 std::string EntityExternalInterface::ValidateEntity(std::string &path)

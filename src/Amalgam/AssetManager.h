@@ -1,6 +1,7 @@
 #pragma once
 
 //project headers:
+#include "Amalgam.h"
 #include "Entity.h"
 #include "EvaluableNode.h"
 #include "FileSupportCAML.h"
@@ -15,7 +16,6 @@ const std::string FILE_EXTENSION_AMALGAM("amlg");
 const std::string FILE_EXTENSION_JSON("json");
 const std::string FILE_EXTENSION_YAML("yaml");
 const std::string FILE_EXTENSION_CSV("csv");
-const std::string FILE_EXTENSION_COMPRESSED_STRING_LIST("cstl");
 const std::string FILE_EXTENSION_COMPRESSED_AMALGAM_CODE("caml");
 
 class AssetManager;
@@ -32,7 +32,7 @@ public:
 	// sets resource_base_path to the resource path without the extension
 	//if file_type is not an empty string, it will use the specified file_type instead of the filename's extension
 	EvaluableNodeReference LoadResourcePath(std::string &resource_path, std::string &resource_base_path,
-		std::string &file_type, EvaluableNodeManager *enm, bool escape_filename);
+		std::string &file_type, EvaluableNodeManager *enm, bool escape_filename, LoadEntityStatus &status);
 
 	//Stores the code to the corresponding resource path
 	// sets resource_base_path to the resource path without the extension, and extension accordingly
@@ -45,7 +45,7 @@ public:
 	// if persistent is true, then it will keep the resource updated based on any calls to UpdateEntity
 	//if the resource does not have a metadata file, will use default_random_seed as its seed
 	Entity *LoadEntityFromResourcePath(std::string &resource_path, std::string &file_type, bool persistent, bool load_contained_entities,
-		bool escape_filename, bool escape_contained_filenames, std::string default_random_seed);
+		bool escape_filename, bool escape_contained_filenames, std::string default_random_seed, LoadEntityStatus &status);
 
 	//Stores an entity, including contained entites, etc. from the resource path specified
 	//if file_type is not an empty string, it will use the specified file_type instead of the filename's extension

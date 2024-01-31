@@ -1,6 +1,7 @@
 #pragma once
 
-//project headers: 
+//project headers:
+#include "Amalgam.h"
 #include "AssetManager.h"
 #include "Entity.h"
 #include "EntityWriteListener.h"
@@ -23,7 +24,7 @@
 class EntityExternalInterface
 {
 public:
-	bool LoadEntity(std::string &handle, std::string &path, bool persistent, bool load_contained_entities,
+	LoadEntityStatus LoadEntity(std::string &handle, std::string &path, bool persistent, bool load_contained_entities,
 		std::string &write_log_filename, std::string &print_log_filename, std::string rand_seed = std::string(""));
 	void StoreEntity(std::string &handle, std::string &path, bool update_persistence_location, bool store_contained_entities);
 	std::string ValidateEntity(std::string &path);

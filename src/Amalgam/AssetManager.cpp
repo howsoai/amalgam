@@ -1,6 +1,7 @@
 //project headers:
 #include "AssetManager.h"
 
+#include "Amalgam.h"
 #include "BinaryPacking.h"
 #include "EvaluableNode.h"
 #include "FilenameEscapeProcessor.h"
@@ -19,7 +20,7 @@
 AssetManager asset_manager;
 
 EvaluableNodeReference AssetManager::LoadResourcePath(std::string &resource_path,
-	std::string &resource_base_path, std::string &file_type, EvaluableNodeManager *enm, bool escape_filename)
+	std::string &resource_base_path, std::string &file_type, EvaluableNodeManager *enm, bool escape_filename, LoadEntityStatus &status)
 {
 	//get file path based on the file loaded
 	std::string path, file_base, extension;
@@ -72,23 +73,6 @@ EvaluableNodeReference AssetManager::LoadResourcePath(std::string &resource_path
 		return EvaluableNodeReference(EvaluableNodeYAMLTranslation::Load(processed_resource_path, enm), true);
 	else if(file_type == FILE_EXTENSION_CSV)
 		return EvaluableNodeReference(FileSupportCSV::Load(processed_resource_path, enm), true);
-	else if(file_type == FILE_EXTENSION_COMPRESSED_STRING_LIST)
-	{
-		BinaryData compressed_data;
-		if(!LoadFileToBuffer<BinaryData>(processed_resource_path, file_type, compressed_data))
-			return EvaluableNodeReference::Null();
-
-		OffsetIndex cur_offset = 0;
-		auto strings = DecompressStrings(compressed_data, cur_offset);
-
-		//transform the decompressed strings into a list of strings
-		EvaluableNode *list_of_strings = enm->AllocListNodeWithOrderedChildNodes(ENT_STRING, strings.size());
-		auto &list_ocn = list_of_strings->GetOrderedChildNodes();
-		for(size_t i = 0; i < strings.size(); i++)
-			list_ocn[i]->SetStringValue(strings[i]);
-
-		return EvaluableNodeReference(list_of_strings, true);
-	}
 	else if(file_type == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 	{
 		BinaryData compressed_data;
@@ -157,24 +141,6 @@ bool AssetManager::StoreResourcePath(EvaluableNode *code, std::string &resource_
 		return EvaluableNodeYAMLTranslation::Store(code, processed_resource_path, enm, sort_keys);
 	else if(file_type == FILE_EXTENSION_CSV)
 		return FileSupportCSV::Store(code, processed_resource_path, enm);
-	else if(file_type == FILE_EXTENSION_COMPRESSED_STRING_LIST)
-	{
-		//translate list of strings into a map required for compression
-		size_t cur_index = 0;
-		CompactHashMap<std::string, size_t> string_map;
-		if(code != nullptr)
-		{
-			for(auto &cn : code->GetOrderedChildNodes())
-				string_map[EvaluableNode::ToStringPreservingOpcodeType(cn)] = cur_index++;
-		}
-
-		//compress and store
-		BinaryData compressed_data = CompressStrings(string_map);
-		if(StoreFileFromBuffer<BinaryData>(processed_resource_path, file_type, compressed_data))
-			return EvaluableNodeReference(enm->AllocNode(ENT_TRUE), true);
-		else
-			return EvaluableNodeReference::Null();
-	}
 	else if(file_type == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 	{
 		std::string code_string = Parser::Unparse(code, enm, false, true, sort_keys);
@@ -203,13 +169,14 @@ bool AssetManager::StoreResourcePath(EvaluableNode *code, std::string &resource_
 }
 
 Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std::string &file_type,
-	bool persistent, bool load_contained_entities, bool escape_filename, bool escape_contained_filenames, std::string default_random_seed)
+	bool persistent, bool load_contained_entities, bool escape_filename, bool escape_contained_filenames,
+	std::string default_random_seed, LoadEntityStatus &status)
 {
 	std::string resource_base_path;
 	Entity *new_entity = new Entity();
 
-	EvaluableNodeReference code = LoadResourcePath(resource_path, resource_base_path, file_type, &new_entity->evaluableNodeManager, escape_filename);
-	if(code == nullptr)
+	EvaluableNodeReference code = LoadResourcePath(resource_path, resource_base_path, file_type, &new_entity->evaluableNodeManager, escape_filename, status);
+	if(code == nullptr || !status.success)
 	{
 		delete new_entity;
 		return nullptr;
@@ -220,7 +187,7 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 	std::string metadata_filename = resource_base_path + "." + FILE_EXTENSION_AMLG_METADATA;
 	std::string metadata_base_path;
 	std::string metadata_extension;
-	EvaluableNode *metadata = LoadResourcePath(metadata_filename, metadata_base_path, metadata_extension, &new_entity->evaluableNodeManager, escape_filename);
+	EvaluableNode *metadata = LoadResourcePath(metadata_filename, metadata_base_path, metadata_extension, &new_entity->evaluableNodeManager, escape_filename, status);
 	if(metadata != nullptr)
 	{
 		if(EvaluableNode::IsAssociativeArray(metadata))
@@ -264,7 +231,7 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 			std::string default_seed = new_entity->CreateRandomStreamFromStringAndRand(entity_name);
 			std::string contained_resource_path = resource_base_path + ce_file_base + "." + ce_extension;
 			Entity *contained_entity = LoadEntityFromResourcePath(contained_resource_path, file_type,
-				false, true, false, escape_contained_filenames, default_seed);
+				false, true, false, escape_contained_filenames, default_seed, status);
 
 			new_entity->AddContainedEntity(contained_entity, entity_name);
 		}

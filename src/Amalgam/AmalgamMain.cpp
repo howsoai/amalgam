@@ -229,9 +229,10 @@ PLATFORM_MAIN_CONSOLE
 	else
 	{
 		//run the standard amlg command line interface
+		LoadEntityStatus status;
 		std::string file_type = "";
-		Entity *entity = asset_manager.LoadEntityFromResourcePath(amlg_file_to_run, file_type, false, true, false, true, random_seed);
-		if(entity == nullptr)
+		Entity *entity = asset_manager.LoadEntityFromResourcePath(amlg_file_to_run, file_type, false, true, false, true, random_seed, status);
+		if(entity == nullptr || !status.success)
 			return 0;
 
 		asset_manager.SetRootPermission(entity, true);

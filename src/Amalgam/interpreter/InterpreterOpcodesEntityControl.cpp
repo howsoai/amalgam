@@ -1,6 +1,7 @@
 //project headers:
 #include "Interpreter.h"
 
+#include "Amalgam.h"
 #include "AmalgamVersion.h"
 #include "AssetManager.h"
 #include "EntityManipulation.h"
@@ -571,8 +572,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, bo
 			file_type = file_type_temp;
 	}
 
+	LoadEntityStatus status;
 	std::string resource_base_path;
-	return asset_manager.LoadResourcePath(resource_name, resource_base_path, file_type, evaluableNodeManager, escape_filename);
+	return asset_manager.LoadResourcePath(resource_name, resource_base_path, file_type, evaluableNodeManager, escape_filename, status);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSISTENT_ENTITY(EvaluableNode *en, bool immediate_result)
@@ -618,9 +620,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSI
 			file_type = file_type_temp;
 	}
 
+	LoadEntityStatus status;
 	std::string random_seed = destination_entity_parent->CreateRandomStreamFromStringAndRand(resource_name);
 	Entity *loaded_entity = asset_manager.LoadEntityFromResourcePath(resource_name, file_type,
-		persistent, true, escape_filename, escape_contained_filenames, random_seed);
+		persistent, true, escape_filename, escape_contained_filenames, random_seed, status);
 
 	//handle errors
 	if(loaded_entity == nullptr)

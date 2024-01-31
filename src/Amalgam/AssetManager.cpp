@@ -176,7 +176,7 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 	Entity *new_entity = new Entity();
 
 	EvaluableNodeReference code = LoadResourcePath(resource_path, resource_base_path, file_type, &new_entity->evaluableNodeManager, escape_filename, status);
-	if(code == nullptr || !status.success)
+	if(code == nullptr || !status.loaded)
 	{
 		delete new_entity;
 		return nullptr;

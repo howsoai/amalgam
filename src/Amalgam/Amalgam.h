@@ -19,9 +19,9 @@ extern "C"
 	//status from LoadEntity
 	typedef struct
 	{
-		bool success;
-		const char* message;
-		const char* version;
+		bool loaded;
+		const char *message;
+		const char *version;
 	} LoadEntityStatus;
 
 	//loads the entity specified into handle

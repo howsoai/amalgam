@@ -30,7 +30,7 @@ LoadEntityStatus EntityExternalInterface::LoadEntity(std::string &handle, std::s
 	Entity *entity = asset_manager.LoadEntityFromResourcePath(path, file_type, persistent, load_contained_entities, false, true, rand_seed, status);
 	asset_manager.SetRootPermission(entity, true);
 
-	if(entity == nullptr || !status.success)
+	if(entity == nullptr || !status.loaded)
 	{
 		return status;
 	}

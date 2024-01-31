@@ -78,7 +78,7 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 
 				std::string new_rand_seed = random_stream.CreateOtherStreamStateViaString("trace");
 				auto status = entint.LoadEntity(handle, data, persistent == "true", load_contained == "true", transaction_listener_path, print_listener_path, new_rand_seed);
-				response = status.success ? SUCCESS_RESPONSE : FAILURE_RESPONSE;
+				response = status.loaded ? SUCCESS_RESPONSE : FAILURE_RESPONSE;
 			}
 			else
 			{

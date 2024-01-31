@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
 	char write_log[] = "";
 	char print_log[] = "";
 	auto status = LoadEntity(handle, file, false, true, write_log, print_log);
-	if(status.success)
+	if(status.loaded)
 	{
 		char label[] = "test";
 		ExecuteEntity(handle, label);

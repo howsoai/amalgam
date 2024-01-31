@@ -232,7 +232,7 @@ PLATFORM_MAIN_CONSOLE
 		LoadEntityStatus status;
 		std::string file_type = "";
 		Entity *entity = asset_manager.LoadEntityFromResourcePath(amlg_file_to_run, file_type, false, true, false, true, random_seed, status);
-		if(entity == nullptr || !status.success)
+		if(entity == nullptr || !status.loaded)
 			return 0;
 
 		asset_manager.SetRootPermission(entity, true);

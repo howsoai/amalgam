@@ -265,7 +265,7 @@ bool AssetManager::StoreEntityToResourcePath(Entity *entity, std::string &resour
 	if(store_contained_entities && entity->GetContainedEntities().size() > 0)
 	{
 		//create directory in case it doesn't exist
-		std::filesystem::create_directory(resource_base_path);
+		std::filesystem::create_directories(resource_base_path);
 
 		//store any contained entities
 		resource_base_path.append("/");

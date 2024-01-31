@@ -1,5 +1,5 @@
 --Amalgam Version--
-0.0.0
+47.1.4-alpha+local.dev
 --system_time--
 --label--
 hello world: 12 and 2
@@ -1012,7 +1012,7 @@ abcdef
 	"2020-06-08 lunes 11.33.48"
 )
 --indices--
-(list "b" "a" "4" "c")
+(list "b" "4" "a" "c")
 (list
 	0
 	1
@@ -1024,7 +1024,7 @@ abcdef
 	7
 )
 --values--
-(list 2 1 "d" 3)
+(list 2 "d" 1 3)
 (list
 	"a"
 	1
@@ -1045,7 +1045,7 @@ abcdef
 	4
 	"d"
 )
-(list 2 1 "d" 0 3)
+(list 2 "d" 1 0 3)
 (list
 	1
 	2
@@ -1240,7 +1240,7 @@ current_index: 2
 				8
 			)
 		accum_string "abcdef"
-		argv (list "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg")
+		argv (list "C:\\Users\\CalebWherry\\projects\\repos\\howso\\github\\amalgam\\src\\Amalgam\\amlg_code\\full_test.amlg")
 		bar (declare
 				(assoc x 6)
 				(+ x 2)
@@ -1253,10 +1253,10 @@ current_index: 2
 				A (assoc B 2)
 				B 2
 			)
-		interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+		interpreter "C:\\Users\\CalebWherry\\projects\\repos\\howso\\github\\amalgam\\out\\build\\amd64-windows-vs\\release\\amalgam-mt.exe"
 		raaa 2
 		rwww 1
-		start_time 1706237472.540396
+		start_time 1706741674.726239
 		www 1
 		x 12
 		zz 10
@@ -1283,7 +1283,7 @@ current_index: 2
 			8
 		)
 	accum_string "abcdef"
-	argv (list "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg")
+	argv (list "C:\\Users\\CalebWherry\\projects\\repos\\howso\\github\\amalgam\\src\\Amalgam\\amlg_code\\full_test.amlg")
 	bar (declare
 			(assoc x 6)
 			(+ x 2)
@@ -1296,10 +1296,10 @@ current_index: 2
 			A (assoc B 2)
 			B 2
 		)
-	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+	interpreter "C:\\Users\\CalebWherry\\projects\\repos\\howso\\github\\amalgam\\out\\build\\amd64-windows-vs\\release\\amalgam-mt.exe"
 	raaa 2
 	rwww 1
-	start_time 1706237472.540396
+	start_time 1706741674.726239
 	www 1
 	x 12
 	zz 10
@@ -1325,7 +1325,7 @@ current_index: 2
 			8
 		)
 	accum_string "abcdef"
-	argv (list "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg")
+	argv (list "C:\\Users\\CalebWherry\\projects\\repos\\howso\\github\\amalgam\\src\\Amalgam\\amlg_code\\full_test.amlg")
 	bar (declare
 			(assoc x 6)
 			(+ x 2)
@@ -1338,10 +1338,10 @@ current_index: 2
 			A (assoc B 2)
 			B 2
 		)
-	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+	interpreter "C:\\Users\\CalebWherry\\projects\\repos\\howso\\github\\amalgam\\out\\build\\amd64-windows-vs\\release\\amalgam-mt.exe"
 	raaa 2
 	rwww 1
-	start_time 1706237472.540396
+	start_time 1706741674.726239
 	www 1
 	x 12
 	zz 10
@@ -1489,10 +1489,10 @@ infinity test c or d: (list "c" @(get (target 0) 0) "d" @(get (target 0) 0))
 
 (assoc a 29 b 44 c 27)
 
-(list "7" "2" "1")
+(list "1" "2" "6")
 
 --get_rand_seed--
-  È¼ \ KOaV T z 
+°³È¼¿\¨KOaVÆT zÿ
 --set_rand_seed--
 0.25443726063281735
 0.1603572451200187
@@ -1609,7 +1609,7 @@ e:
   - .inf
 
 25: (assoc a 1)
-current date-time in epoch: 2024-01-25-21.51.12.5883020
+current date-time in epoch: 2024-01-31-17.54.34.8031830
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -1744,27 +1744,27 @@ comment too
 	"e"
 	"f"
 	"g"
-	" "
-	" "
-	" "
-	" "
-	" "
-	" "
-	" "
-	" "
+	"ï"
+	"¬"
+	"—"
+	"ê"
+	"­"
+	"–"
+	"Ï"
+	"¡"
 )
 (list
 	"ab"
 	"cd"
 	"ef"
-	"g "
-	"  "
-	" "
-	"  "
-	" "
+	"gï"
+	"¬—"
+	"ê­"
+	"–Ï"
+	"¡"
 )
-(list "abc" "def" "g " "  " " Ï¡")
-(list "abcd" "efg " "   " " Ï¡")
+(list "abc" "def" "gï¬" "—ê­" "–Ï¡")
+(list "abcd" "efgï" "¬—ê­" "–Ï¡")
 --split--
 (list "hello world")
 (list "hello" "world")
@@ -1818,11 +1818,11 @@ h[e]ll[o] w[o]rld
 h[e]ll[o] world
 abcdefgï¬—ê­–Ï¡
 bcdefgï¬—ê­–Ï¡
-bcdefgï¬— 
+bcdefgï¬—ê­
 bcdefgï¬—ê­–Ï¡
 bcdefgï¬—ê­–
 gï¬—ê­–
-   
+­–Ï
 axdefgï¬—ê­–Ï¡
 --concat--
 hello world
@@ -2435,7 +2435,7 @@ abcdmxyz
 45
 --flatten_entity--
 0.4476445420518951
-i  A ;@V  OV- 
+iûÛA;@Vëó¬OV-ÿ
 0.9810549023242581
 0.9810549023242581
 0.5142400294051881
@@ -2453,7 +2453,7 @@ flatten restore with seeds test
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "  Â£= mV  OV- ")
+	(set_entity_rand_seed new_entity "»¶Â£=ô€mVëó¬OV-ÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -2465,7 +2465,7 @@ flatten restore with seeds test
 				)
 			)
 		)
-		" aE&K\"   (X& \0 "
+		"‡aE&K\"Øà¸Õ(X&€\0ÿ"
 	)
 	new_entity
 )
@@ -2481,7 +2481,7 @@ flatten restore with seeds test
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity " M:  p VV  OV- ")
+	(set_entity_rand_seed new_entity "M:ù÷püVVëó¬OV-ÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -2493,7 +2493,7 @@ flatten restore with seeds test
 				)
 			)
 		)
-		" aE&K\"   (X& \0 "
+		"‡aE&K\"Øà¸Õ(X&€\0ÿ"
 	)
 	new_entity
 )
@@ -2536,7 +2536,7 @@ flatten restore without seeds test
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "    R}  ] Ù’Í« ")
+	(set_entity_rand_seed new_entity "¤›·ºR}ÒĞ]’Ù’Í«ÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -2548,8 +2548,7 @@ flatten restore without seeds test
 				)
 			)
 		)
-		"Q v  &r S   
-Ë™ "
+		"Qô´v¬ú&rìSˆ¸Ë™ÿ"
 	)
 	new_entity
 )
@@ -2570,7 +2569,7 @@ flatten restore with parallel
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "  Â£= mV  OV- ")
+	(set_entity_rand_seed new_entity "»¶Â£=ô€mVëó¬OV-ÿ")
 	||(parallel
 		(set_entity_rand_seed
 			(first
@@ -2583,7 +2582,7 @@ flatten restore with parallel
 					)
 				)
 			)
-			" aE&K\"   (X& \0 "
+			"‡aE&K\"Øà¸Õ(X&€\0ÿ"
 		)
 	)
 	||(parallel)
@@ -2601,7 +2600,7 @@ flatten restore with parallel
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity " M:  p VV  OV- ")
+	(set_entity_rand_seed new_entity "M:ù÷püVVëó¬OV-ÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -2613,7 +2612,7 @@ flatten restore with parallel
 				)
 			)
 		)
-		" aE&K\"   (X& \0 "
+		"‡aE&K\"Øà¸Õ(X&€\0ÿ"
 	)
 	new_entity
 )
@@ -2686,10 +2685,10 @@ MergeEntityChild1
 (associate "x" 3 "y" 4)
 MergeEntityChild2
 (associate "p" 3 "q" 4)
-_2280722175
-(associate "E" 3 "F" 4)
 _2169689611
 (associate "e" 3 "f" 4)
+_2280722175
+(associate "E" 3 "F" 4)
 --union_entities--
 (associate "b" 4 "a" 3 "c" 3)
 MergeEntityChild1
@@ -2707,17 +2706,6 @@ MergeEntityChild2
 	"w"
 	7
 )
-_2280722175
-(associate
-	"E"
-	3
-	"F"
-	4
-	"G"
-	5
-	"H"
-	6
-)
 _2169689611
 (associate
 	"e"
@@ -2729,11 +2717,7 @@ _2169689611
 	"h"
 	6
 )
-(parallel
-	##p
-	(list "_3990396532" "_3330773578" "_3990396532" "_3330773578")
-)
-_3990396532
+_2280722175
 (associate
 	"E"
 	3
@@ -2744,6 +2728,10 @@ _3990396532
 	"H"
 	6
 )
+(parallel
+	##p
+	(list "_3990396532" "_3330773578" "_3990396532" "_3330773578")
+)
 _3330773578
 (associate
 	"e"
@@ -2753,6 +2741,17 @@ _3330773578
 	"g"
 	5
 	"h"
+	6
+)
+_3990396532
+(associate
+	"E"
+	3
+	"F"
+	4
+	"G"
+	5
+	"H"
 	6
 )
 --difference_entities--
@@ -3376,17 +3375,17 @@ MergeEntityChild1
 (associate "x" 3 "y" 4 "z" 5)
 MergeEntityChild2
 (associate "p" 3 "q" 4 "u" 5)
-_2280722175
-(associate "E" 3 "F" 4)
 _2169689611
+(associate "e" 3 "f" 4)
+_2280722175
 (associate
-	"e"
+	"E"
 	3
-	"f"
+	"F"
 	4
-	"g"
+	"G"
 	5
-	"h"
+	"H"
 	6
 )
 --get_entity_comments--
@@ -3431,7 +3430,7 @@ this is a fully described entity
 )
 --get_entity_rand_seed--
 0.8630628998576303
-T FJ Kx s   { 
+T°FJKx–sŒ­ {ÿ
 --set_entity_rand_seed--
 0.24310795234706906
 0.24310795234706906
@@ -3443,7 +3442,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1706237472.781054
+1706741674.951646
 (true)
 
 RootTest
@@ -3619,7 +3618,7 @@ hello
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "Å”K@    \\  F * ")
+	(set_entity_rand_seed new_entity "Å”K@­æ›íû\\üŞFË*ÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3633,7 +3632,7 @@ hello
 				)
 			)
 		)
-		" B !\\  , T* & "
+		"ƒBµ!\\áï,ÏT*İ&ÿ"
 	)
 	(set_entity_rand_seed
 		(first
@@ -3648,7 +3647,7 @@ hello
 				)
 			)
 		)
-		" !   |  . V  q "
+		"ğ!€…š|ØÓ.âV±Úqÿ"
 	)
 	new_entity
 )
@@ -3667,7 +3666,7 @@ hello
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity " ^\n brj 0Ñ”-I   ")
+	(set_entity_rand_seed new_entity "@©,3Š‰!›GMÍ0hóŠÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3677,7 +3676,7 @@ hello
 				)
 			)
 		)
-		"5È³\0 Nb h  e  "
+		"MıõŠéòõk±†,ÙŠÛÿ"
 	)
 	(set_entity_rand_seed
 		(first
@@ -3692,7 +3691,7 @@ hello
 				)
 			)
 		)
-		"d  o3 @ ^Â°\n t  "
+		"Ÿx<Ø^®™·í.·ôV0µÿ"
 	)
 	new_entity
 )
@@ -3710,7 +3709,7 @@ hello
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity " ^\n brj 0Ñ”-I   ")
+	(set_entity_rand_seed new_entity "@©,3Š‰!›GMÍ0hóŠÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3724,7 +3723,7 @@ hello
 				)
 			)
 		)
-		"d  o3 @ ^Â°\n t  "
+		"Ÿx<Ø^®™·í.·ôV0µÿ"
 	)
 	new_entity
 )
@@ -3762,7 +3761,6 @@ loaded from file:
 retrieved: 1
 --store other file formats---
 [This is text!]
-
 (seq
 	(print "hello")
 )
@@ -4252,14 +4250,14 @@ case conviction:(assoc
 )
 cyclic feature nearest neighbors: (assoc cyclic1 1 cyclic5 0.5)
 cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
-190: 0.045454545454545456 (null
-	##deg 12
+155: 0.1 (null
+	##deg 0
 )
 200: 0.05555555555555555 (null
 	##deg 8
 )
-155: 0.1 (null
-	##deg 0
+190: 0.045454545454545456 (null
+	##deg 12
 )
 --contains_label--
 (true)
@@ -4657,5 +4655,6 @@ Expecting 1000: 1000
 --concurrent entity writes--
 concurrent entity writes successful: (true)
 
+--clean-up test files--
 --total execution time--
-1.728956937789917
+1.8731050491333008

@@ -461,12 +461,10 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 
 		if(EvaluableNode::IsAssociativeArray(variable_value_node))
 		{
-			new_list->SetMappedChildNodes(value_destination_node->GetMappedChildNodes(), true);
 			new_list->AppendMappedChildNodes(variable_value_node->GetMappedChildNodes());
 		}
 		else if(variable_value_node != nullptr) //treat ordered pairs as new entries as long as not nullptr
 		{
-			new_list->SetMappedChildNodes(value_destination_node->GetMappedChildNodes(), true);
 			//iterate as long as pairs exist
 			auto &vvn_ocn = variable_value_node->GetOrderedChildNodes();
 			for(size_t i = 0; i + 1 < vvn_ocn.size(); i += 2)

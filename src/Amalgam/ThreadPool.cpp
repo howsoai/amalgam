@@ -5,7 +5,7 @@ ThreadPool::ThreadPool(size_t max_num_active_threads)
 {
 	shutdownThreads = false;
 
-	maxNumActiveThreads = max_num_active_threads;
+	maxNumActiveThreads = 1;
 	numActiveThreads = 1;
 	numReservedThreads = 0;
 	numThreadsToTransitionToReserved = 0;
@@ -17,16 +17,19 @@ ThreadPool::ThreadPool(size_t max_num_active_threads)
 
 void ThreadPool::SetMaxNumActiveThreads(size_t new_max_num_active_threads)
 {
-	std::unique_lock<std::mutex> threads_lock(threadsMutex);
+	std::unique_lock<std::mutex> lock(threadsMutex);
 
 	//don't need to change anything
-	if(new_max_num_active_threads == maxNumActiveThreads)
+	if(new_max_num_active_threads == maxNumActiveThreads || new_max_num_active_threads < 1)
 		return;
 
 	//if reducing thread count, clean up all jobs and clear out all threads
 	if(new_max_num_active_threads < maxNumActiveThreads)
 	{
+		lock.unlock();
 		ShutdownAllThreads();
+		lock.lock();
+
 		threads.clear();
 
 		//no longer shutting down, allow to build up threads
@@ -47,26 +50,34 @@ void ThreadPool::SetMaxNumActiveThreads(size_t new_max_num_active_threads)
 
 	//notify all just in case a new task was added as the threads were being created
 	// but unlock to allow threads to proceed
-	threads_lock.unlock();
+	lock.unlock();
 	waitForTask.notify_all();
 }
 
 void ThreadPool::ChangeCurrentThreadStateFromActiveToWaiting()
 {
-	std::unique_lock<std::mutex> lock(threadsMutex);
-	numActiveThreads--;
+	{
+		std::unique_lock<std::mutex> lock(threadsMutex);
+		numActiveThreads--;
 
-	if(numReservedThreads > 0)
-		numThreadsToTransitionToReserved--;
-	else
-		AddNewThread();
+		if(numReservedThreads > 0)
+			numThreadsToTransitionToReserved--;
+		else
+			AddNewThread();
+	}
+
+	waitForTask.notify_one();
 }
 
 void ThreadPool::ChangeCurrentThreadStateFromWaitingToActive()
 {
-	std::unique_lock<std::mutex> lock(threadsMutex);
-	numActiveThreads++;
-	numThreadsToTransitionToReserved++;
+	{
+		std::unique_lock<std::mutex> lock(threadsMutex);
+		numActiveThreads++;
+		numThreadsToTransitionToReserved++;
+	}
+
+	waitForTask.notify_one();
 }
 
 void ThreadPool::AddNewThread()

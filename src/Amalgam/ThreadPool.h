@@ -38,7 +38,7 @@ public:
 	inline void SetMaxNumActiveThreads(size_t max_num_active_threads);
 
 	//returns the current maximum number of threads that are available
-	inline size_t GetMaxNumActiveThreads()
+	constexpr size_t GetMaxNumActiveThreads()
 	{
 		return maxNumActiveThreads;
 	}
@@ -99,7 +99,7 @@ public:
 
 		//put the task on the queue
 		{
-			std::unique_lock<std::mutex> lock(taskQueueMutex);
+			std::unique_lock<std::mutex> lock(threadsMutex);
 			taskQueue.emplace(
 					[task]()
 					{

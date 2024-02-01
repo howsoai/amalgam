@@ -68,7 +68,8 @@ public:
 		std::unique_lock<std::mutex> lock(threadsMutex);
 		//need to make sure there's at least one extra thread available to make sure that this batch of tasks can be run
 		// in case there are any interdependencies, in order to prevent deadlock
-		return numActiveThreads + 1 <= maxNumActiveThreads;
+		//need to take into account upcoming tasks, as they may consume threads
+		return (numActiveThreads + 1 + taskQueue.size() <= maxNumActiveThreads);
 	}
 
 	//changes the current thread state from active to waiting
@@ -187,7 +188,8 @@ public:
 		{
 			//need to make sure there's at least one extra thread available to make sure that this batch of tasks can be run
 			// in case there are any interdependencies, in order to prevent deadlock
-			if(!(numActiveThreads + 1 <= maxNumActiveThreads))
+			//need to take into account upcoming tasks, as they may consume threads
+			if(!(numActiveThreads + 1 + taskQueue.size() <= maxNumActiveThreads))
 				btel.MarkAsNoThreadsAvailable();
 		}
 
@@ -233,8 +235,11 @@ protected:
 	std::mutex threadsMutex;
 	std::vector<std::thread> threads;
 
-	//lock to notify threads when to start work
+	//condition to notify threads when to start work
 	std::condition_variable waitForTask;
+
+	//condition to notify threads when to move from reserved to active
+	std::condition_variable waitForActivate;
 
 	//if true, then all threads should end work so they can be joined
 	bool shutdownThreads;

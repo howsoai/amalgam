@@ -180,12 +180,16 @@ void EvaluableNodeManager::CollectGarbage()
 
 	//keep trying to acquire write lock to see if this thread wins the race to collect garbage
 	Concurrency::WriteLock write_lock(memoryModificationMutex, std::defer_lock);
+
+	Concurrency::threadPool.ChangeCurrentThreadStateFromActiveToWaiting();	
 	do
 	{
 		if(!RecommendGarbageCollection())
 		{
 			if(memory_modification_lock != nullptr)
 				memory_modification_lock->lock();
+
+			Concurrency::threadPool.ChangeCurrentThreadStateFromWaitingToActive();
 
 			if(PerformanceProfiler::IsProfilingEnabled())
 				PerformanceProfiler::EndOperation(GetNumberOfUsedNodes());
@@ -201,6 +205,8 @@ void EvaluableNodeManager::CollectGarbage()
 		write_lock.unlock();
 		if(memory_modification_lock != nullptr)
 			memory_modification_lock->lock();
+
+		Concurrency::threadPool.ChangeCurrentThreadStateFromWaitingToActive();
 
 		if(PerformanceProfiler::IsProfilingEnabled())
 			PerformanceProfiler::EndOperation(GetNumberOfUsedNodes());
@@ -218,6 +224,8 @@ void EvaluableNodeManager::CollectGarbage()
 	if(memory_modification_lock != nullptr)
 		memory_modification_lock->lock();
 #endif
+
+	Concurrency::threadPool.ChangeCurrentThreadStateFromWaitingToActive();
 
 	if(PerformanceProfiler::IsProfilingEnabled())
 		PerformanceProfiler::EndOperation(GetNumberOfUsedNodes());

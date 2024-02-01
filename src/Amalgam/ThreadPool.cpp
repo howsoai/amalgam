@@ -66,7 +66,8 @@ void ThreadPool::ChangeCurrentThreadStateFromActiveToWaiting()
 			AddNewThread();
 	}
 
-	waitForTask.notify_one();
+	//activate another thread to take this one's place
+	waitForActivate.notify_one();
 }
 
 void ThreadPool::ChangeCurrentThreadStateFromWaitingToActive()
@@ -77,6 +78,7 @@ void ThreadPool::ChangeCurrentThreadStateFromWaitingToActive()
 		numThreadsToTransitionToReserved++;
 	}
 
+	//get another thread to transition to reserved
 	waitForTask.notify_one();
 }
 
@@ -107,7 +109,7 @@ void ThreadPool::AddNewThread()
 					numThreadsToTransitionToReserved--;
 
 					//wait until either shutting down or a thread is requested to come out of reserved
-					waitForTask.wait(lock,
+					waitForActivate.wait(lock,
 						[this] { return shutdownThreads || numThreadsToTransitionToReserved < 0; });
 
 					//only can make it here if shutting down (otherwise taskQueue has something in it)
@@ -162,6 +164,7 @@ void ThreadPool::ShutdownAllThreads()
 
 	//join all threads
 	waitForTask.notify_all();
+	waitForActivate.notify_all();
 	for(std::thread &worker : threads)
 		worker.join();
 }

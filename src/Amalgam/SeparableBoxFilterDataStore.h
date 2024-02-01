@@ -159,8 +159,10 @@ public:
 
 				enqueue_task_lock.Unlock();
 
+				Concurrency::threadPool.ChangeCurrentThreadStateFromActiveToWaiting();
 				for(auto &future : columns_completed)
 					future.wait();
+				Concurrency::threadPool.ChangeCurrentThreadStateFromWaitingToActive();
 
 				return;
 			}

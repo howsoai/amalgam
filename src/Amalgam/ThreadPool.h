@@ -11,11 +11,22 @@
 #include <thread>
 #include <vector>
 
-//Creates a flexible thread pool for generic tasks
+//Creates a flexible thread pool for generic tasks aimed at making sure a specified
+// number of CPU cores worth of compute can be active at any one time.  Because threads
+// are sometimes in idle states waiting on other threads to complete, the total number
+// of threads in the thread pool may exceed the number of allowed active threads
+//
+//threads have four states:
+// available -- the thread is ready and waiting for a task
+// active -- the thread is currently executing a task
+// waiting -- the thread is idle, waiting for other threads to finish tasks
+//             this allows another thread to be created or move from reserve to available
+// reserved -- the thread is idle, but cannot accept a task because the number of active
+//             plus the number of available threads is equal to maxNumActiveThreads
 class ThreadPool
 {
 public:
-	ThreadPool(size_t max_num_threads = 0);
+	ThreadPool(size_t max_num_active_threads = 0);
 
 	//destroys all the threads and waits to join them
 	~ThreadPool()
@@ -23,19 +34,19 @@ public:
 		ShutdownAllThreads();
 	}
 
-	//will change the number of threads in the pool to the number specified
-	void ChangeThreadPoolSize(size_t new_max_num_threads);
+	//changes the maximum number of active threads
+	inline void SetMaxNumActiveThreads(size_t max_num_active_threads);
+
+	//returns the current maximum number of threads that are available
+	inline size_t GetMaxNumActiveThreads()
+	{
+		return maxNumActiveThreads;
+	}
 
 	//returns the number of threads that are performing tasks
 	inline size_t GetNumActiveThreads()
 	{
 		return numActiveThreads;
-	}
-
-	//returns the current maximum number of threads that are available
-	inline size_t GetCurrentMaxNumThreads()
-	{
-		return maxNumActiveThreads;
 	}
 
 	//returns a vector of the thread ids for the thread pool
@@ -55,8 +66,20 @@ public:
 	inline bool AreThreadsAvailable()
 	{
 		std::unique_lock<std::mutex> lock(threadsMutex);
-		return (taskQueue.size() + numActiveThreads < maxNumActiveThreads);
+		//need to make sure there's at least one extra thread available to make sure that this batch of tasks can be run
+		// in case there are any interdependencies, in order to prevent deadlock
+		return numActiveThreads + 1 <= maxNumActiveThreads;
 	}
+
+	//changes the current thread state from active to waiting
+	//the thread must currently be active
+	//this is intended to be called before waiting for other threads to complete their tasks
+	void ChangeCurrentThreadStateFromActiveToWaiting();
+
+	//changes the current thread state from waiting to active
+	//the thread must currently be waiting, as called by ChangeCurrentThreadStateFromActiveToWaiting
+	//this is intended to be called after other threads, which were being waited on, have completed their tasks
+	void ChangeCurrentThreadStateFromWaitingToActive();
 
 	//enqueues a task into the thread pool comprised of a function and arguments, automatically inferring the function type
 	template<class FunctionType, class ...ArgsType>
@@ -164,7 +187,7 @@ public:
 		{
 			//need to make sure there's at least one extra thread available to make sure that this batch of tasks can be run
 			// in case there are any interdependencies, in order to prevent deadlock
-			if(taskQueue.size() + numActiveThreads >= maxNumActiveThreads)
+			if(!(numActiveThreads + 1 <= maxNumActiveThreads))
 				btel.MarkAsNoThreadsAvailable();
 		}
 
@@ -221,15 +244,22 @@ protected:
 
 	//the number of threads that can be active at any time
 	//the total number of threads is
-	//numActiveThreads + numReserveThreads + number of idle threads
+	//numActiveThreads + numReservedThreads + number of idle threads
 	size_t maxNumActiveThreads;
 
 	//number of threads running
+	//atomic so that it can be read dynamically without a lock
 	std::atomic<size_t> numActiveThreads;
 
 	//number of threads that are currently in reserve
 	//that can be activated to replace an existing thread that is blocked
-	std::atomic<size_t> numReserveThreads;
+	size_t numReservedThreads;
+
+	//number of threads that need to be switched to reserve state
+	//if positive, as threads become available they can decrement the value
+	//transition to reserved.  if negative, then reserved threads can increment
+	//the value to become available
+	int64_t numThreadsToTransitionToReserved;
 
 	//id of the main thread
 	std::thread::id mainThreadId;

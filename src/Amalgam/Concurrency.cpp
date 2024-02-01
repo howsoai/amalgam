@@ -22,9 +22,6 @@ size_t Concurrency::GetMaxNumThreads()
 
 void Concurrency::SetMaxNumThreads(size_t max_num_threads)
 {
-	if(max_num_threads < 1)
-		max_num_threads = 1;
-
 	if(max_num_threads > 0)
 		_max_num_threads = max_num_threads;
 	else
@@ -44,7 +41,7 @@ void Concurrency::SetMaxNumThreads(size_t max_num_threads)
 #endif
 
 #ifdef MULTITHREAD_SUPPORT
-	threadPool.ChangeThreadPoolSize(_max_num_threads);
+	threadPool.SetMaxNumActiveThreads(_max_num_threads);
 #endif
 
 }

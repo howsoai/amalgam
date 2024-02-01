@@ -1,30 +1,30 @@
 //project headers:
 #include "ThreadPool.h"
 
-ThreadPool::ThreadPool(size_t max_num_threads)
+ThreadPool::ThreadPool(size_t max_num_active_threads)
 {
 	shutdownThreads = false;
 
-	maxNumActiveThreads = 1;
+	maxNumActiveThreads = max_num_active_threads;
 	numActiveThreads = 1;
-	numReserveThreads = 0;
+	numReservedThreads = 0;
+	numThreadsToTransitionToReserved = 0;
 
-	ChangeThreadPoolSize(max_num_threads);
-
+	SetMaxNumActiveThreads(max_num_active_threads);
 
 	mainThreadId = std::this_thread::get_id();
 }
 
-void ThreadPool::ChangeThreadPoolSize(size_t new_max_num_threads)
+void ThreadPool::SetMaxNumActiveThreads(size_t new_max_num_active_threads)
 {
 	std::unique_lock<std::mutex> threads_lock(threadsMutex);
 
 	//don't need to change anything
-	if(new_max_num_threads == maxNumActiveThreads)
+	if(new_max_num_active_threads == maxNumActiveThreads)
 		return;
 
 	//if reducing thread count, clean up all jobs and clear out all threads
-	if(new_max_num_threads < threads.size())
+	if(new_max_num_active_threads < maxNumActiveThreads)
 	{
 		ShutdownAllThreads();
 		threads.clear();
@@ -35,19 +35,38 @@ void ThreadPool::ChangeThreadPoolSize(size_t new_max_num_threads)
 		//reset other stats
 		maxNumActiveThreads = 1;
 		numActiveThreads = 1;
-		numReserveThreads = 0;
+		numReservedThreads = 0;
 	}
 
-	size_t num_new_threads = new_max_num_threads - threads.size();
-
 	//place an empty idle task for each thread waiting for work
-	for(size_t i = 0; i < num_new_threads; i++)
+	//but current thread counts as one
+	for(size_t i = threads.size(); i < new_max_num_active_threads - 1; i++)
 		AddNewThread();
+
+	maxNumActiveThreads = new_max_num_active_threads;
 
 	//notify all just in case a new task was added as the threads were being created
 	// but unlock to allow threads to proceed
 	threads_lock.unlock();
 	waitForTask.notify_all();
+}
+
+void ThreadPool::ChangeCurrentThreadStateFromActiveToWaiting()
+{
+	std::unique_lock<std::mutex> lock(threadsMutex);
+	numActiveThreads--;
+
+	if(numReservedThreads > 0)
+		numThreadsToTransitionToReserved--;
+	else
+		AddNewThread();
+}
+
+void ThreadPool::ChangeCurrentThreadStateFromWaitingToActive()
+{
+	std::unique_lock<std::mutex> lock(threadsMutex);
+	numActiveThreads++;
+	numThreadsToTransitionToReserved++;
 }
 
 void ThreadPool::AddNewThread()
@@ -60,16 +79,38 @@ void ThreadPool::AddNewThread()
 			//so the number of threads doesn't change when switching between a completed task and a new one
 			numActiveThreads++;
 
+			std::unique_lock<std::mutex> lock(threadsMutex, std::defer_lock);
+
 			//infinite loop waiting for work
 			for(;;)
 			{
 				//container for the task
 				std::function<void()> task;
 
-				//fetch from queue
-				{
-					std::unique_lock<std::mutex> lock(threadsMutex);
+				lock.lock();
 
+				if(numThreadsToTransitionToReserved > 0)
+				{
+					//go into reserved
+					numActiveThreads--;
+					numThreadsToTransitionToReserved--;
+
+					//wait until either shutting down or a thread is requested to come out of reserved
+					waitForTask.wait(lock,
+						[this] { return shutdownThreads || numThreadsToTransitionToReserved < 0; });
+
+					//only can make it here if shutting down (otherwise taskQueue has something in it)
+					if(shutdownThreads)
+						return;
+
+					//coming out of reserved, go active unless no task
+					numActiveThreads++;
+					numThreadsToTransitionToReserved++;
+
+					lock.unlock();
+				}
+				else //fetching task
+				{
 					//if no more work, wait until shutdown or more work
 					if(taskQueue.empty())
 					{
@@ -91,9 +132,10 @@ void ThreadPool::AddNewThread()
 					// (won't increment shared_ptr counter)
 					task = std::move(taskQueue.front());
 					taskQueue.pop();
-				}
 
-				task();
+					lock.unlock();
+					task();
+				}
 			}
 		}
 	);

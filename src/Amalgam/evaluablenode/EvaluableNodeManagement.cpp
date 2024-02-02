@@ -223,9 +223,9 @@ void EvaluableNodeManager::CollectGarbage()
 	write_lock.unlock();
 	if(memory_modification_lock != nullptr)
 		memory_modification_lock->lock();
-#endif
 
 	Concurrency::threadPool.ChangeCurrentThreadStateFromWaitingToActive();
+#endif
 
 	if(PerformanceProfiler::IsProfilingEnabled())
 		PerformanceProfiler::EndOperation(GetNumberOfUsedNodes());

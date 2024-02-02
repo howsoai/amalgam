@@ -58,12 +58,13 @@ void ThreadPool::ChangeCurrentThreadStateFromActiveToWaiting()
 {
 	{
 		std::unique_lock<std::mutex> lock(threadsMutex);
-		numActiveThreads--;
 
-		if(numReservedThreads > 0)
-			numThreadsToTransitionToReserved--;
-		else
+		//only add a new thread if no reserved and at capacity
+		if(numReservedThreads == 0 && numActiveThreads + 1 == maxNumActiveThreads)
 			AddNewThread();
+
+		numActiveThreads--;
+		numThreadsToTransitionToReserved--;
 	}
 
 	//activate another thread to take this one's place

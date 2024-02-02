@@ -549,7 +549,6 @@ protected:
 		inline void EndConcurrency()
 		{
 			Concurrency::threadPool.ChangeCurrentThreadStateFromActiveToWaiting();
-			//make sure all futures return before moving on
 			for(auto &future : resultFutures)
 				future.wait();
 			Concurrency::threadPool.ChangeCurrentThreadStateFromWaitingToActive();

@@ -791,10 +791,8 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(bool set_in_use)
 			enqueue_task_lock.Unlock();
 
 			Concurrency::threadPool.ChangeCurrentThreadStateFromActiveToWaiting();
-
 			for(auto& future : nodes_completed)
 				future.wait();
-
 			Concurrency::threadPool.ChangeCurrentThreadStateFromWaitingToActive();
 
 			return;

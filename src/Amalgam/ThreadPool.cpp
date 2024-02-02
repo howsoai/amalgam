@@ -1,5 +1,7 @@
 //project headers:
 #include "ThreadPool.h"
+
+//system headers:
 #include <iostream>
 
 ThreadPool::ThreadPool(int32_t max_num_active_threads)
@@ -85,7 +87,7 @@ void ThreadPool::AddNewThread()
 					if(shutdownThreads)
 						return;
 
-					//coming out of reserved, go active unless no task
+					//coming out of reserved
 					numActiveThreads++;
 					numThreadsToTransitionToReserved++;
 					numReservedThreads--;

@@ -80,7 +80,8 @@ public:
 		{
 			std::unique_lock<std::mutex> lock(threadsMutex);
 
-			//only add a new thread if no reserved and at capacity
+			//only add a new thread if there are insufficient reserved threads
+			//to support maxNumActiveThreads
 			if(numReservedThreads == 0 && (numActiveThreads - numThreadsToTransitionToReserved) + 1 == maxNumActiveThreads)
 				AddNewThread();
 			else
@@ -278,7 +279,6 @@ protected:
 	int32_t maxNumActiveThreads;
 
 	//number of threads running
-	//atomic so that it can be read dynamically without a lock
 	int32_t numActiveThreads;
 
 	//number of threads that are currently in reserve

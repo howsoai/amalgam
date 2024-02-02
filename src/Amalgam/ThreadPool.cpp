@@ -79,7 +79,7 @@ void ThreadPool::AddNewThread()
 
 					//wait until either shutting down or a thread is requested to come out of reserved
 					waitForActivate.wait(lock,
-						[this] { return shutdownThreads || numThreadsToTransitionToReserved < 0; });
+						[this] { return numThreadsToTransitionToReserved < 0 || shutdownThreads; });
 
 					//only can make it here if shutting down (otherwise taskQueue has something in it)
 					if(shutdownThreads)
@@ -89,10 +89,6 @@ void ThreadPool::AddNewThread()
 					numActiveThreads++;
 					numThreadsToTransitionToReserved++;
 					numReservedThreads--;
-
-					//cycle the lock to give other threads a chance and not starve the CPU
-					lock.unlock();
-					lock.lock();
 				}
 				else //fetching task
 				{
@@ -103,7 +99,7 @@ void ThreadPool::AddNewThread()
 
 						//wait until either shutting down or more work has been added
 						waitForTask.wait(lock,
-							[this] { return shutdownThreads || !taskQueue.empty() || numThreadsToTransitionToReserved > 0; });
+							[this] { return !taskQueue.empty() || numThreadsToTransitionToReserved > 0 || shutdownThreads; });
 
 						//only can make it here if shutting down (otherwise taskQueue has something in it)
 						if(shutdownThreads)

@@ -2,7 +2,7 @@
 #include "ThreadPool.h"
 #include <iostream>
 
-ThreadPool::ThreadPool(int64_t max_num_active_threads)
+ThreadPool::ThreadPool(int32_t max_num_active_threads)
 {
 	shutdownThreads = false;
 
@@ -16,7 +16,7 @@ ThreadPool::ThreadPool(int64_t max_num_active_threads)
 	mainThreadId = std::this_thread::get_id();
 }
 
-void ThreadPool::SetMaxNumActiveThreads(int64_t new_max_num_active_threads)
+void ThreadPool::SetMaxNumActiveThreads(int32_t new_max_num_active_threads)
 {
 	std::unique_lock<std::mutex> lock(threadsMutex);
 
@@ -44,7 +44,7 @@ void ThreadPool::SetMaxNumActiveThreads(int64_t new_max_num_active_threads)
 
 	//place an empty idle task for each thread waiting for work
 	//but current thread counts as one
-	for(int64_t i = static_cast<int64_t>(threads.size()); i < new_max_num_active_threads - 1; i++)
+	for(int32_t i = static_cast<int32_t>(threads.size()); i < new_max_num_active_threads - 1; i++)
 		AddNewThread();
 
 	maxNumActiveThreads = new_max_num_active_threads;
@@ -53,36 +53,6 @@ void ThreadPool::SetMaxNumActiveThreads(int64_t new_max_num_active_threads)
 	// but unlock to allow threads to proceed
 	lock.unlock();
 	waitForTask.notify_all();
-}
-
-void ThreadPool::ChangeCurrentThreadStateFromActiveToWaiting()
-{
-	{
-		std::unique_lock<std::mutex> lock(threadsMutex);
-
-		//only add a new thread if no reserved and at capacity
-		if(numReservedThreads == 0 && (numActiveThreads - numThreadsToTransitionToReserved) + 1 == maxNumActiveThreads)
-			AddNewThread();
-		else
-			numThreadsToTransitionToReserved--;
-
-		numActiveThreads--;
-	}
-
-	//activate another thread to take this one's place
-	waitForActivate.notify_one();
-}
-
-void ThreadPool::ChangeCurrentThreadStateFromWaitingToActive()
-{
-	{
-		std::unique_lock<std::mutex> lock(threadsMutex);
-		numActiveThreads++;
-		numThreadsToTransitionToReserved++;
-	}
-
-	//get another thread to transition to reserved
-	waitForTask.notify_one();
 }
 
 void ThreadPool::AddNewThread()

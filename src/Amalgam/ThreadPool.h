@@ -26,7 +26,7 @@
 class ThreadPool
 {
 public:
-	ThreadPool(int64_t max_num_active_threads = 0);
+	ThreadPool(int32_t max_num_active_threads = 0);
 
 	//destroys all the threads and waits to join them
 	~ThreadPool()
@@ -35,16 +35,16 @@ public:
 	}
 
 	//changes the maximum number of active threads
-	inline void SetMaxNumActiveThreads(int64_t max_num_active_threads);
+	inline void SetMaxNumActiveThreads(int32_t max_num_active_threads);
 
 	//returns the current maximum number of threads that are available
-	constexpr size_t GetMaxNumActiveThreads()
+	constexpr int32_t GetMaxNumActiveThreads()
 	{
 		return maxNumActiveThreads;
 	}
 
 	//returns the number of threads that are performing tasks
-	inline size_t GetNumActiveThreads()
+	constexpr int32_t GetNumActiveThreads()
 	{
 		return numActiveThreads;
 	}
@@ -69,18 +69,44 @@ public:
 		//need to make sure there's at least one extra thread available to make sure that this batch of tasks can be run
 		// in case there are any interdependencies, in order to prevent deadlock
 		//need to take into account upcoming tasks, as they may consume threads
-		return ((numActiveThreads - numThreadsToTransitionToReserved) + 1 + static_cast<int64_t>(taskQueue.size()) <= maxNumActiveThreads);
+		return ((numActiveThreads - numThreadsToTransitionToReserved) + 1 + static_cast<int32_t>(taskQueue.size()) <= maxNumActiveThreads);
 	}
 
 	//changes the current thread state from active to waiting
 	//the thread must currently be active
 	//this is intended to be called before waiting for other threads to complete their tasks
-	void ChangeCurrentThreadStateFromActiveToWaiting();
+	inline void ChangeCurrentThreadStateFromActiveToWaiting()
+	{
+		{
+			std::unique_lock<std::mutex> lock(threadsMutex);
+
+			//only add a new thread if no reserved and at capacity
+			if(numReservedThreads == 0 && (numActiveThreads - numThreadsToTransitionToReserved) + 1 == maxNumActiveThreads)
+				AddNewThread();
+			else
+				numThreadsToTransitionToReserved--;
+
+			numActiveThreads--;
+		}
+
+		//activate another thread to take this one's place
+		waitForActivate.notify_one();
+	}
 
 	//changes the current thread state from waiting to active
 	//the thread must currently be waiting, as called by ChangeCurrentThreadStateFromActiveToWaiting
 	//this is intended to be called after other threads, which were being waited on, have completed their tasks
-	void ChangeCurrentThreadStateFromWaitingToActive();
+	inline void ChangeCurrentThreadStateFromWaitingToActive()
+	{
+		{
+			std::unique_lock<std::mutex> lock(threadsMutex);
+			numActiveThreads++;
+			numThreadsToTransitionToReserved++;
+		}
+
+		//get another thread to transition to reserved
+		waitForTask.notify_one();
+	}
 
 	//enqueues a task into the thread pool comprised of a function and arguments, automatically inferring the function type
 	template<class FunctionType, class ...ArgsType>
@@ -189,7 +215,7 @@ public:
 			//need to make sure there's at least one extra thread available to make sure that this batch of tasks can be run
 			// in case there are any interdependencies, in order to prevent deadlock
 			//need to take into account upcoming tasks, as they may consume threads
-			if(!((numActiveThreads - numThreadsToTransitionToReserved) + 1 + static_cast<int64_t>(taskQueue.size()) <= maxNumActiveThreads))
+			if(!((numActiveThreads - numThreadsToTransitionToReserved) + 1 + static_cast<int32_t>(taskQueue.size()) <= maxNumActiveThreads))
 				btel.MarkAsNoThreadsAvailable();
 		}
 
@@ -231,8 +257,10 @@ protected:
 	//waits for all threads to complete, then shuts them down
 	void ShutdownAllThreads();
 
-	//the thread pool
+	//mutex for the thread pool
 	std::mutex threadsMutex;
+
+	//the thread pool
 	std::vector<std::thread> threads;
 
 	//condition to notify threads when to start work
@@ -241,30 +269,30 @@ protected:
 	//condition to notify threads when to move from reserved to active
 	std::condition_variable waitForActivate;
 
-	//if true, then all threads should end work so they can be joined
-	bool shutdownThreads;
-
 	//tasks for the threadpool to complete
 	std::queue<std::function<void()>> taskQueue;
 
 	//the number of threads that can be active at any time
 	//the total number of threads is
 	//numActiveThreads + numReservedThreads + number of idle threads
-	int64_t maxNumActiveThreads;
+	int32_t maxNumActiveThreads;
 
 	//number of threads running
 	//atomic so that it can be read dynamically without a lock
-	std::atomic<int64_t> numActiveThreads;
+	int32_t numActiveThreads;
 
 	//number of threads that are currently in reserve
 	//that can be activated to replace an existing thread that is blocked
-	int64_t numReservedThreads;
+	int32_t numReservedThreads;
 
 	//number of threads that need to be switched to reserve state
 	//if positive, as threads become available they can decrement the value
 	//transition to reserved.  if negative, then reserved threads can increment
 	//the value to become available
-	int64_t numThreadsToTransitionToReserved;
+	int32_t numThreadsToTransitionToReserved;
+
+	//if true, then all threads should end work so they can be joined
+	bool shutdownThreads;
 
 	//id of the main thread
 	std::thread::id mainThreadId;

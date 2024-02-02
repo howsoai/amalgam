@@ -62,9 +62,10 @@ void ThreadPool::ChangeCurrentThreadStateFromActiveToWaiting()
 		//only add a new thread if no reserved and at capacity
 		if(numReservedThreads == 0 && numActiveThreads + 1 == maxNumActiveThreads)
 			AddNewThread();
+		else
+			numThreadsToTransitionToReserved--;
 
 		numActiveThreads--;
-		numThreadsToTransitionToReserved--;
 	}
 
 	//activate another thread to take this one's place

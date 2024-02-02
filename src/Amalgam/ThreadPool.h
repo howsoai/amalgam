@@ -35,7 +35,7 @@ public:
 	}
 
 	//changes the maximum number of active threads
-	inline void SetMaxNumActiveThreads(int32_t max_num_active_threads);
+	void SetMaxNumActiveThreads(int32_t max_num_active_threads);
 
 	//returns the current maximum number of threads that are available
 	constexpr int32_t GetMaxNumActiveThreads()

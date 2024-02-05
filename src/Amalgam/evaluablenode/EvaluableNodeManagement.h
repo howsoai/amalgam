@@ -864,9 +864,9 @@ public:
 	static inline void UpdateMinCycleCountBetweenGarbageCollectsBasedOnThreads(size_t num_tasks)
 	{
 		//can't go above the max number of threads
-		num_tasks = std::min(num_tasks, Concurrency::threadPool.GetCurrentMaxNumThreads());
+		num_tasks = std::min(num_tasks, static_cast<size_t>(Concurrency::threadPool.GetMaxNumActiveThreads()));
 		//don't want to go below the number of threads being used by other things
-		num_tasks = std::max(num_tasks, Concurrency::threadPool.GetNumActiveThreads());
+		num_tasks = std::max(num_tasks, static_cast<size_t>(Concurrency::threadPool.GetNumActiveThreads()));
 
 		minCycleCountBetweenGarbageCollects = minCycleCountBetweenGarbageCollectsPerThread
 			* static_cast<ExecutionCycleCountCompactDelta>(num_tasks);

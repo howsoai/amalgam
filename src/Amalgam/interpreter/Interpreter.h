@@ -548,9 +548,10 @@ protected:
 		//ends concurrency from all interpreters and waits for them to finish
 		inline void EndConcurrency()
 		{
-			//make sure all futures return before moving on
+			Concurrency::threadPool.ChangeCurrentThreadStateFromActiveToWaiting();
 			for(auto &future : resultFutures)
 				future.wait();
+			Concurrency::threadPool.ChangeCurrentThreadStateFromWaitingToActive();
 
 			if(!parentInterpreter->AllowUnlimitedExecutionSteps())
 			{

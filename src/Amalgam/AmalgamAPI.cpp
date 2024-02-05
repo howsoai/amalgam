@@ -78,7 +78,7 @@ extern "C"
 		std::string wlfname(write_log_filename);
 		std::string plfname(print_log_filename);
 
-		return entint.LoadEntity(h, p, persistent, load_contained_entities, wlfname, plfname);;
+		return entint.LoadEntity(h, p, persistent, load_contained_entities, wlfname, plfname);
 	}
 
 	void StoreEntity(char *handle, char *path, bool update_persistence_location, bool store_contained_entities)

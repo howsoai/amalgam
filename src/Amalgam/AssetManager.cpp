@@ -2,6 +2,7 @@
 #include "AssetManager.h"
 
 #include "Amalgam.h"
+#include "AmalgamVersion.h"
 #include "BinaryPacking.h"
 #include "EvaluableNode.h"
 #include "FilenameEscapeProcessor.h"
@@ -195,6 +196,18 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 			EvaluableNode **seed = metadata->GetMappedChildNode(ENBISI_rand_seed);
 			if(seed != nullptr)
 				default_random_seed = EvaluableNode::ToStringPreservingOpcodeType(*seed);
+
+			EvaluableNode **version = metadata->GetMappedChildNode(ENBISI_version);
+			if(version != nullptr)
+			{
+				auto version_str = EvaluableNode::ToStringPreservingOpcodeType(*version);
+				auto [error_message, success] = AssetManager::ValidateVersionAgainstAmalgam(version_str);
+				if(!success)
+				{
+					status = { false, error_message.c_str(), version_str.c_str() };
+					return nullptr;
+				}
+			}
 		}
 	}
 
@@ -253,7 +266,9 @@ bool AssetManager::StoreEntityToResourcePath(Entity *entity, std::string &resour
 	std::string metadata_filename = resource_base_path + "." + FILE_EXTENSION_AMLG_METADATA;
 	EvaluableNode en_assoc(ENT_ASSOC);
 	EvaluableNode en_rand_seed(ENT_STRING, entity->GetRandomState());
+	EvaluableNode en_version(ENT_STRING, AMALGAM_VERSION_STRING);
 	en_assoc.SetMappedChildNode(ENBISI_rand_seed, &en_rand_seed);
+	en_assoc.SetMappedChildNode(ENBISI_version, &en_version);
 
 	std::string metadata_base_path;
 	std::string metadata_extension;
@@ -390,6 +405,34 @@ void AssetManager::SetRootPermission(Entity *entity, bool permission)
 		rootEntities.insert(entity);
 	else
 		rootEntities.erase(entity);
+}
+
+std::pair<std::string, bool> AssetManager::ValidateVersionAgainstAmalgam(std::string &version)
+{
+	auto version_split = StringManipulation::Split(version, '.');
+	if(version_split.size() != 3)
+		return std::make_pair("Invalid version number", false);
+
+	uint32_t major = atoi(version_split[0].c_str());
+	uint32_t minor = atoi(version_split[1].c_str());
+	uint32_t patch = atoi(version_split[2].c_str());
+	if(
+		(major > AMALGAM_VERSION_MAJOR) ||
+		(major == AMALGAM_VERSION_MAJOR && minor > AMALGAM_VERSION_MINOR) ||
+		(major == AMALGAM_VERSION_MAJOR && minor == AMALGAM_VERSION_MINOR && patch > AMALGAM_VERSION_PATCH))
+	{
+		std::string err_msg = "Reading newer version not supported";
+		std::cerr << err_msg << ", version=" << version << std::endl;
+		return std::make_pair(err_msg, false);
+	}
+	else if(AMALGAM_VERSION_MAJOR > major)
+	{
+		std::string err_msg = "Newer Amalgam cannot read older versions";
+		std::cerr << err_msg << ", version=" << version << std::endl;
+		return std::make_pair(err_msg, false);
+	}
+
+	return std::make_pair("", true);
 }
 
 std::string AssetManager::GetEvaluableNodeSourceFromComments(EvaluableNode *en)

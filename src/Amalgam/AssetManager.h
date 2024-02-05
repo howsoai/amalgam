@@ -119,12 +119,9 @@ public:
 		size_t header_size = 0;
 		if(file_type == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 		{
-			auto [error_string, success] = FileSupportCAML::ReadHeader(f, header_size);
+			auto [error_string, version, success] = FileSupportCAML::ReadHeader(f, header_size);
 			if(!success)
-			{
-				std::cerr << "Error loading entity: " << error_string << std::endl;
 				return false;
-			}
 		}
 
 		f.seekg(0, std::ios::end);
@@ -152,6 +149,9 @@ public:
 		f.write(reinterpret_cast<char *>(&b[0]), sizeof(char) * b.size());
 		return true;
 	}
+
+	//validates given asset version against Amalgam version
+	static std::pair<std::string, bool> AssetManager::ValidateVersionAgainstAmalgam(std::string& version);
 
 	//returns a string representing en's source, empty string if debugSources is false
 	std::string GetEvaluableNodeSourceFromComments(EvaluableNode *en);

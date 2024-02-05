@@ -2,11 +2,13 @@
 #include "FileSupportCAML.h"
 
 #include "AmalgamVersion.h"
+#include "AssetManager.h"
 
 //system headers:
 #include <cstdint>
 #include <cstring>
 #include <fstream>
+#include <iostream>
 #include <ostream>
 #include <string>
 
@@ -64,37 +66,31 @@ bool WriteVersion(std::ofstream &stream)
 	return true;
 }
 
-std::pair<std::string, bool> FileSupportCAML::ReadHeader(std::ifstream &stream, size_t &header_size)
+std::tuple<std::string, std::string, bool> FileSupportCAML::ReadHeader(std::ifstream &stream, size_t &header_size)
 {
 	uint8_t magic[4] = { 0 };
 	if(!stream.read(reinterpret_cast<char *>(magic), sizeof(magic)))
-		return std::make_pair("Cannot read magic number", false);
+		return std::make_tuple("Cannot read magic number", "", false);
 	header_size += sizeof(magic);
 
 	auto num_bytes_read = stream.gcount();
 	if(num_bytes_read != sizeof(magic))
-		return std::make_pair("Cannot read magic number", false);
+		return std::make_tuple("Cannot read magic number", "", false);
 	else if(memcmp(magic, s_magic_number, sizeof(magic)) == 0)
 	{
 		uint32_t major = 0, minor = 0, patch = 0;
 		if(!ReadVersion(stream, major, minor, patch))
-			return std::make_pair("Cannot read version", false);
+			return std::make_tuple("Cannot read version", "", false);
 		header_size += sizeof(major) * 3;
-		std::string semver = std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(patch);
+		std::string version = std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(patch);
 
 		//validate version
-		if(
-			(major > AMALGAM_VERSION_MAJOR) ||
-			(major == AMALGAM_VERSION_MAJOR && minor > AMALGAM_VERSION_MINOR) ||
-			(major == AMALGAM_VERSION_MAJOR && minor == AMALGAM_VERSION_MINOR && patch > AMALGAM_VERSION_PATCH))
-		{
-			return std::make_pair("Reading newer version not supported: version=" + semver, false);
-		}
-		else if(AMALGAM_VERSION_MAJOR > major)
-			return std::make_pair("Newer Amalgam cannot read older versions: version=" + semver, false);
+		auto [error_message, success] = AssetManager::ValidateVersionAgainstAmalgam(version);
+		if(!success)
+			return std::make_tuple(error_message, version, false);
 	}
 
-	return std::make_pair("", true);
+	return std::make_tuple("", "", true);
 }
 
 bool FileSupportCAML::WriteHeader(std::ofstream &stream)

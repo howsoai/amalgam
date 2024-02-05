@@ -8,6 +8,8 @@
 
 //system headers:
 #include <algorithm>
+#include <sstream>
+#include <string>
 
 std::string StringManipulation::NumberToString(double value)
 {
@@ -67,6 +69,18 @@ std::string StringManipulation::RemoveFirstWord(std::string &str)
 		str = str.substr(spacepos + 1);
 	}
 	return first_token;
+}
+
+std::vector<std::string> StringManipulation::Split(std::string &s, char delim)
+{
+	std::vector<std::string> ret;
+	std::stringstream ss { s };
+	std::string item;
+
+	while(std::getline(ss, item, delim))
+		ret.push_back (item);
+
+	return ret;
 }
 
 std::string StringManipulation::BinaryStringToBase16(std::string &binary_string)

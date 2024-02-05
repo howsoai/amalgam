@@ -197,6 +197,7 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 			if(seed != nullptr)
 				default_random_seed = EvaluableNode::ToStringPreservingOpcodeType(*seed);
 
+			// TODO: string leak here
 			EvaluableNode **version = metadata->GetMappedChildNode(ENBISI_version);
 			if(version != nullptr)
 			{

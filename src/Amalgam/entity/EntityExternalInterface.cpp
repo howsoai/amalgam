@@ -52,32 +52,6 @@ LoadEntityStatus EntityExternalInterface::LoadEntity(std::string &handle, std::s
 	return status;
 }
 
-std::string EntityExternalInterface::ValidateEntity(std::string &path)
-{
-	std::string error_string;
-	if(!Platform_IsResourcePathAccessible(path, true, error_string))
-	{
-		std::cerr << "Error validating entity: " << error_string << std::endl;
-		return error_string;
-	}
-
-	//validate specific file types
-	std::string dir, file_base, extension;
-	Platform_SeparatePathFileExtension(path, dir, file_base, extension);
-	if(extension == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
-	{
-		bool success = false;
-		std::tie(error_string, success) = FileSupportCAML::Validate(path);
-		if(!success)
-		{
-			std::cerr << "Error validating entity: " << error_string << std::endl;
-			return error_string;
-		}
-	}
-
-	return std::string();
-}
-
 void EntityExternalInterface::StoreEntity(std::string &handle, std::string &path, bool update_persistence_location, bool store_contained_entities)
 {
 	auto bundle = FindEntityBundle(handle);

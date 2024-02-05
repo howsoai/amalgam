@@ -13,11 +13,6 @@
 //magic number written at beginning of CAML file
 static const uint8_t s_magic_number[] = { 'c', 'a', 'm', 'l' };
 
-//current CAML version
-static const uint32_t s_current_major = 1;
-static const uint32_t s_current_minor = 0;
-static const uint32_t s_current_patch = 0;
-
 bool ReadBigEndian(std::ifstream &stream, uint32_t &val)
 {
 	uint8_t buffer[4] = { 0 };
@@ -59,25 +54,14 @@ bool ReadVersion(std::ifstream &stream, uint32_t &major, uint32_t &minor, uint32
 
 bool WriteVersion(std::ofstream &stream)
 {
-	if(!WriteBigEndian(stream, s_current_major))
+	if(!WriteBigEndian(stream, AMALGAM_VERSION_MAJOR))
 		return false;
-	if(!WriteBigEndian(stream, s_current_minor))
+	if(!WriteBigEndian(stream, AMALGAM_VERSION_MINOR))
 		return false;
-	if(!WriteBigEndian(stream, s_current_patch))
+	if(!WriteBigEndian(stream, AMALGAM_VERSION_PATCH))
 		return false;
 
 	return true;
-}
-
-std::pair<std::string, bool> FileSupportCAML::Validate(const std::string &path)
-{
-	std::ifstream f(path, std::fstream::binary | std::fstream::in);
-
-	if(!f.good())
-		return std::make_pair("Cannot open file", false);
-
-	size_t header_size = 0;
-	return ReadHeader(f, header_size);
 }
 
 std::pair<std::string, bool> FileSupportCAML::ReadHeader(std::ifstream &stream, size_t &header_size)
@@ -100,14 +84,16 @@ std::pair<std::string, bool> FileSupportCAML::ReadHeader(std::ifstream &stream, 
 		//validate version
 		std::string dev_build = AMALGAM_VERSION_SUFFIX;
 		if(!dev_build.empty())
-			return std::make_pair("", true); //dev build
+			return std::make_pair("", true); //dev builds can read any version
 		else if(
-			(major > s_current_major) ||
-			(major == s_current_major && minor > s_current_minor) ||
-			(major == s_current_major && minor == s_current_minor && patch > s_current_patch))
+			(major > AMALGAM_VERSION_MAJOR) ||
+			(major == AMALGAM_VERSION_MAJOR && minor > AMALGAM_VERSION_MINOR) ||
+			(major == AMALGAM_VERSION_MAJOR && minor == AMALGAM_VERSION_MINOR && patch > AMALGAM_VERSION_PATCH))
 		{
 			return std::make_pair("Reading newer version not supported", false);
 		}
+		else if(AMALGAM_VERSION_MAJOR > major)
+			return std::make_pair("Newer Amalgam cannot read older versions", false);
 	}
 
 	return std::make_pair("", true);

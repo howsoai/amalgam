@@ -8,9 +8,6 @@
 
 namespace FileSupportCAML
 {
-	//validate file
-	std::pair<std::string, bool> Validate(const std::string &path);
-
 	//read the header from the stream
 	std::pair<std::string, bool> ReadHeader(std::ifstream &stream, size_t &header_size);
 

@@ -226,7 +226,6 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 			else
 				entity_name = ce_file_base;
 
-
 			//don't escape filename again because it's already escaped in this loop
 			std::string default_seed = new_entity->CreateRandomStreamFromStringAndRand(entity_name);
 			std::string contained_resource_path = resource_base_path + ce_file_base + "." + ce_extension;

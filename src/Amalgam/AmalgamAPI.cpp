@@ -81,13 +81,6 @@ extern "C"
 		return entint.LoadEntity(h, p, persistent, load_contained_entities, wlfname, plfname);;
 	}
 
-	char *ValidateEntity(char *path)
-	{
-		std::string f(path);
-		std::string ret = entint.ValidateEntity(f);
-		return StringToCharPtr(ret);
-	}
-
 	void StoreEntity(char *handle, char *path, bool update_persistence_location, bool store_contained_entities)
 	{
 		std::string h(handle);

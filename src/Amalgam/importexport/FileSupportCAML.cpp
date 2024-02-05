@@ -70,17 +70,17 @@ std::tuple<std::string, std::string, bool> FileSupportCAML::ReadHeader(std::ifst
 {
 	uint8_t magic[4] = { 0 };
 	if(!stream.read(reinterpret_cast<char *>(magic), sizeof(magic)))
-		return std::make_tuple("Cannot read magic number", "", false);
+		return std::make_tuple("Cannot read CAML header", "", false);
 	header_size += sizeof(magic);
 
 	auto num_bytes_read = stream.gcount();
 	if(num_bytes_read != sizeof(magic))
-		return std::make_tuple("Cannot read magic number", "", false);
+		return std::make_tuple("Cannot read CAML header", "", false);
 	else if(memcmp(magic, s_magic_number, sizeof(magic)) == 0)
 	{
 		uint32_t major = 0, minor = 0, patch = 0;
 		if(!ReadVersion(stream, major, minor, patch))
-			return std::make_tuple("Cannot read version", "", false);
+			return std::make_tuple("Cannot read CAML version", "", false);
 		header_size += sizeof(major) * 3;
 		std::string version = std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(patch);
 

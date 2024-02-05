@@ -31,9 +31,7 @@ LoadEntityStatus EntityExternalInterface::LoadEntity(std::string &handle, std::s
 	asset_manager.SetRootPermission(entity, true);
 
 	if(entity == nullptr || !status.loaded)
-	{
 		return status;
-	}
 
 	PrintListener *pl = nullptr;
 	std::vector<EntityWriteListener *> wl;

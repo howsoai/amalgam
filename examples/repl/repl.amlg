@@ -1,19 +1,7 @@
 (while (true)
 	(system "printline" "> ")
-	;(print (call (parse (system "readline"))) "\n")
 	(let
 		(assoc input (system "readline") )
-		(if
-			(= "(" (first (explode input)) )
-			(print (call (parse input)) "\n")
-
-			;else
-			(print
-				(call
-					(parse (concat "(" input ")"))
-				)
-				"\n"
-			)
-		)
+		(print (call (parse input)) "\n")
 	)
 )

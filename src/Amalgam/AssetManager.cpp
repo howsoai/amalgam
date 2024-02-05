@@ -197,19 +197,23 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 			if(seed != nullptr)
 				default_random_seed = EvaluableNode::ToStringPreservingOpcodeType(*seed);
 
-			// TODO: string leak here
 			EvaluableNode **version = metadata->GetMappedChildNode(ENBISI_version);
 			if(version != nullptr)
 			{
-				auto version_str = EvaluableNode::ToStringPreservingOpcodeType(*version);
-				auto [error_message, success] = AssetManager::ValidateVersionAgainstAmalgam(version_str);
-				if(!success)
+				auto [tostr_success, version_str] = EvaluableNode::ToString(*version);
+				if(tostr_success)
 				{
-					status = { false, error_message.c_str(), version_str.c_str() };
-					return nullptr;
+					auto [error_message, success] = AssetManager::ValidateVersionAgainstAmalgam(version_str);
+					if(!success)
+					{
+						status = { false, error_message.c_str(), version_str.c_str() };
+						return nullptr;
+					}
 				}
 			}
 		}
+
+		new_entity->evaluableNodeManager.FreeNodeTree(metadata);
 	}
 
 	new_entity->SetRandomState(default_random_seed, true);

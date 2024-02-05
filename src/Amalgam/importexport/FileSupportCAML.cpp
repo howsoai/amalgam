@@ -80,20 +80,18 @@ std::pair<std::string, bool> FileSupportCAML::ReadHeader(std::ifstream &stream, 
 		if(!ReadVersion(stream, major, minor, patch))
 			return std::make_pair("Cannot read version", false);
 		header_size += sizeof(major) * 3;
+		std::string semver = std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(patch);
 
 		//validate version
-		std::string dev_build = AMALGAM_VERSION_SUFFIX;
-		if(!dev_build.empty())
-			return std::make_pair("", true); //dev builds can read any version
-		else if(
+		if(
 			(major > AMALGAM_VERSION_MAJOR) ||
 			(major == AMALGAM_VERSION_MAJOR && minor > AMALGAM_VERSION_MINOR) ||
 			(major == AMALGAM_VERSION_MAJOR && minor == AMALGAM_VERSION_MINOR && patch > AMALGAM_VERSION_PATCH))
 		{
-			return std::make_pair("Reading newer version not supported", false);
+			return std::make_pair("Reading newer version not supported: version=" + semver, false);
 		}
 		else if(AMALGAM_VERSION_MAJOR > major)
-			return std::make_pair("Newer Amalgam cannot read older versions", false);
+			return std::make_pair("Newer Amalgam cannot read older versions: version=" + semver, false);
 	}
 
 	return std::make_pair("", true);

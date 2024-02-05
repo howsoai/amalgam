@@ -574,7 +574,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, bo
 
 	LoadEntityStatus status = LOADENTITYSTATUS_DEFAULT;
 	std::string resource_base_path;
-	return asset_manager.LoadResourcePath(resource_name, resource_base_path, file_type, evaluableNodeManager, escape_filename, status);
+	auto entity_ref = asset_manager.LoadResourcePath(resource_name, resource_base_path, file_type, evaluableNodeManager, escape_filename, status);
+	if(!status.loaded)
+	{
+		std::cerr << status.message << ", version=" << status.version << std::endl;
+	}
+
+	return entity_ref;
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSISTENT_ENTITY(EvaluableNode *en, bool immediate_result)

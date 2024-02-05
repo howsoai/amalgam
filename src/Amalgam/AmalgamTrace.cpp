@@ -1,13 +1,7 @@
 //project headers:
-#include "Amalgam.h"
 #include "AmalgamVersion.h"
 #include "AssetManager.h"
-#include "Entity.h"
 #include "EntityExternalInterface.h"
-#include "EntityQueries.h"
-#include "EvaluableNode.h"
-#include "Parser.h"
-#include "PerformanceProfiler.h"
 #include "PlatformSpecific.h"
 #include "RandomStream.h"
 

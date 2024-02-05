@@ -151,7 +151,7 @@ public:
 	}
 
 	//validates given asset version against Amalgam version
-	static std::pair<std::string, bool> AssetManager::ValidateVersionAgainstAmalgam(std::string& version);
+	static std::pair<std::string, bool> ValidateVersionAgainstAmalgam(std::string& version);
 
 	//returns a string representing en's source, empty string if debugSources is false
 	std::string GetEvaluableNodeSourceFromComments(EvaluableNode *en);

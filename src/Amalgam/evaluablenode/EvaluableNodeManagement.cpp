@@ -213,6 +213,8 @@ void EvaluableNodeManager::CollectGarbage()
 
 		return;
 	}
+
+	Concurrency::threadPool.ChangeCurrentThreadStateFromWaitingToActive();
 #endif
 
 	//perform garbage collection
@@ -223,8 +225,6 @@ void EvaluableNodeManager::CollectGarbage()
 	write_lock.unlock();
 	if(memory_modification_lock != nullptr)
 		memory_modification_lock->lock();
-
-	Concurrency::threadPool.ChangeCurrentThreadStateFromWaitingToActive();
 #endif
 
 	if(PerformanceProfiler::IsProfilingEnabled())

@@ -517,8 +517,6 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, bool immedi
 			return EvaluableNodeReference::Null();
 	}
 
-	evaluableNodeManager->executionCyclesSinceLastGarbageCollection++;
-
 	//reference this node before we collect garbage
 	//CreateInterpreterNodeStackStateSaver is a bit expensive for this frequently called function
 	//especially because only one node is kept

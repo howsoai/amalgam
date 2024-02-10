@@ -265,8 +265,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 			if(!AllowUnlimitedExecutionNodes())
 				curNumExecutionNodesAllocatedToEntities += num_new_nodes_allocated;
 
-			target_entity->evaluableNodeManager.AdvanceGarbageCollectionTrigger();
-
 			//collect garbage, but not on current entity, save that for between instructions
 			if(target_entity != curEntity)
 			{

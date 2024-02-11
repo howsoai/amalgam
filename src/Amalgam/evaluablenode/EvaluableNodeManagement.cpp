@@ -155,10 +155,16 @@ EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(Evaluabl
 
 void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t previous_num_nodes)
 {
-	size_t max_from_previous = static_cast<size_t>(0.9375 * previous_num_nodes + 1);
-	size_t max_from_current = static_cast<size_t>(3 * GetNumberOfUsedNodes());
-	numNodesToRunGarbageCollection = std::max(max_from_previous, max_from_current);
-	numNodesToRunGarbageCollection = std::max<size_t>(100, numNodesToRunGarbageCollection);
+	//scale down the number of nodes previously allocated, because there is always a chance that
+	//a large allocation goes beyond that size and so the memory keeps growing
+	//by using a fraction less than 1, it reduces the chances of a slow memory increase
+	size_t max_from_previous = static_cast<size_t>(0.96875 * previous_num_nodes);
+
+	//assume at least a factor larger than the base memory usage for the entity
+	//add 1 for good measure and to make sure the smallest size isn't zero
+	size_t max_from_current = static_cast<size_t>(3 * (1 + GetNumberOfUsedNodes()));
+
+	numNodesToRunGarbageCollection = std::max<size_t>(max_from_previous, max_from_current);
 }
 
 #ifdef MULTITHREAD_SUPPORT

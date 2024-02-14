@@ -659,7 +659,10 @@ public:
 	inline void ReclaimFreedNodesAtEnd()
 	{
 	#ifdef MULTITHREAD_SUPPORT
-		//this is much more expensive with multithreading, so only do when useful
+		//this is much more expensive with multithreading, so do less often
+		//use the lower bits of firstUnusedNodeIndex being zero as a fast pseudorandom process
+		//given that many opcodes allocate varied number of nodes,
+		//it isn't too likely to get stuck around one of these values
 		if((firstUnusedNodeIndex & 16383) != 0)
 			return;
 
@@ -670,7 +673,8 @@ public:
 	#endif
 
 		//if any group of nodes on the top are ready to be cleaned up cheaply, do so
-		while(firstUnusedNodeIndex > 0 && nodes[firstUnusedNodeIndex - 1] != nullptr && nodes[firstUnusedNodeIndex - 1]->GetType() == ENT_DEALLOCATED)
+		while(firstUnusedNodeIndex > 0 && nodes[firstUnusedNodeIndex - 1] != nullptr
+				&& nodes[firstUnusedNodeIndex - 1]->GetType() == ENT_DEALLOCATED)
 			firstUnusedNodeIndex--;
 	}
 

@@ -203,8 +203,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_AC
 			}
 		}
 
-		target_entity->evaluableNodeManager.AdvanceGarbageCollectionTrigger();
-
 	#ifdef MULTITHREAD_SUPPORT
 		target_entity->CollectGarbage(&memoryModificationLock);
 	#else
@@ -348,16 +346,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableN
 			continue;
 		}
 
+		auto new_entity_id_string = string_intern_pool.GetStringFromID(new_entity_id);
+		std::string rand_state = destination_entity_parent->CreateRandomStreamFromStringAndRand(new_entity_id_string);
+
 		//create new entity
-		Entity *new_entity = new Entity();
-		new_entity->SetRoot(root, false, EvaluableNodeManager::ENMM_LABEL_ESCAPE_DECREMENT);
+		Entity *new_entity = new Entity(root, rand_state, EvaluableNodeManager::ENMM_LABEL_ESCAPE_DECREMENT);
 
 		//accumulate usage
 		if(!AllowUnlimitedExecutionNodes())
 			curNumExecutionNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
-
-		auto new_entity_id_string = string_intern_pool.GetStringFromID(new_entity_id);
-		new_entity->SetRandomState(destination_entity_parent->CreateRandomStreamFromStringAndRand(new_entity_id_string), false);
 
 		destination_entity_parent->AddContainedEntityViaReference(new_entity, new_entity_id, writeListeners);
 

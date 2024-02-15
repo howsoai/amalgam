@@ -501,8 +501,6 @@ protected:
 					parentInterpreter->writeListeners, parentInterpreter->printListener, parentInterpreter->curEntity));
 			}
 
-			EvaluableNodeManager::UpdateMinCycleCountBetweenGarbageCollectsBasedOnThreads(num_tasks);
-
 			//begins concurrency over all interpreters
 			parentInterpreter->memoryModificationLock.unlock();
 		}
@@ -558,9 +556,6 @@ protected:
 				for(auto &i : interpreters)
 					parentInterpreter->curExecutionStep += i->curExecutionStep;
 			}
-
-			//merged back to one task (this method will attempt to account for other concurrency)
-			EvaluableNodeManager::UpdateMinCycleCountBetweenGarbageCollectsBasedOnThreads(1);
 
 			parentInterpreter->memoryModificationLock.lock();
 		}

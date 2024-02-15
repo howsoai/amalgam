@@ -59,88 +59,157 @@ public:
 		EFDT_CONTINUOUS_CODE,
 	};
 
-	//dynamically precompute and cache nominal deltas and defaults everytime the pValue is set
-	inline void SetAndConstrainParams()
+	//stores the computed exact and approximate distance terms
+	// which can be referenced by getting the value at the corresponding offset
+	//the values default to 0.0 on initialization
+	class DistanceTerms
 	{
-		inversePValue = 1.0 / pValue;
+	public:
+		//offset for each precision level
+		static constexpr int APPROX = 0;
+		static constexpr int EXACT = 1;
 
-		ComputeAndStoreUniversallySymmetricNominalDistanceTerms();
-
-		bool compute_approximate = NeedToPrecomputeApproximate();
-		if(compute_approximate)
+		__forceinline DistanceTerms(double initial_value = 0.0)
 		{
-			fastPowP = RepeatedFastPow(pValue);
-			fastPowInverseP = RepeatedFastPow(inversePValue);
+			distanceTerm = { initial_value, initial_value };
 		}
-	}
 
-	//computes and sets unknownToUnknownDistanceTerm and knownToUnknownDistanceTerm based on
-	// unknownToUnknownDifference and knownToUnknownDifference respectively
-	//if target_value_is_null_equivalent is true, it will update any precomputed values as necessary
-	inline void ComputeAndStoreUncertaintyDistanceTerms(size_t index, bool target_value_is_null_equivalent = false)
+		constexpr double GetValue(bool high_accuracy)
+		{
+			return distanceTerm[high_accuracy ? EXACT : APPROX];
+		}
+
+		constexpr double GetValue(int offset)
+		{
+			return distanceTerm[offset];
+		}
+
+		__forceinline void SetValue(double value, int offset)
+		{
+			distanceTerm[offset] = value;
+		}
+
+		__forceinline void SetValue(double value, bool high_accuracy)
+		{
+			distanceTerm[high_accuracy ? EXACT : APPROX] = value;
+		}
+
+		std::array<double, 2> distanceTerm;
+	};
+
+	//stores the computed exact and approximate distance terms, as well as the difference
+	//the values default to 0.0 on initialization
+	class DistanceTermsWithDifference
+		: public DistanceTerms
 	{
-		bool compute_accurate = NeedToPrecomputeAccurate();
-		bool compute_approximate = NeedToPrecomputeApproximate();
-		auto &feature_params = featureParams[index];
-
-		//compute unknownToUnknownDistanceTerm
-		if(compute_accurate)
+	public:
+		__forceinline DistanceTermsWithDifference(double initial_value = 0.0)
+			: DistanceTerms(initial_value)
 		{
-			feature_params.unknownToUnknownDistanceTerm.SetValue(
-					ComputeDistanceTermMatchOnNull(index, feature_params.unknownToUnknownDistanceTerm.difference, true), true);
+			difference = initial_value;
 		}
 
-		if(compute_approximate)
+		double difference;
+	};
+
+	class FeatureParams
+	{
+	public:
+		inline FeatureParams()
+			: featureType(FDT_CONTINUOUS_NUMERIC),
+			effectiveFeatureType(EFDT_CONTINUOUS_NUMERIC),
+			weight(1.0), deviation(0.0),
+			unknownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
+			knownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN())
 		{
-			feature_params.unknownToUnknownDistanceTerm.SetValue(
-				ComputeDistanceTermMatchOnNull(index, feature_params.unknownToUnknownDistanceTerm.difference, false), false);
+			typeAttributes.maxCyclicDifference = std::numeric_limits<double>::quiet_NaN();
 		}
 
-		//if knownToUnknownDifference is same as unknownToUnknownDifference, can copy distance term instead of recomputing
-		if(feature_params.knownToUnknownDistanceTerm.difference == feature_params.unknownToUnknownDistanceTerm.difference)
+		//the type of comparison for each feature
+		// this type is 32-bit aligned to make sure the whole structure is aligned
+		FeatureDifferenceType featureType;
+
+		//the effective comparison for the feature type, specialized for performance
+		// this type is 32-bit aligned to make sure the whole structure is aligned
+		EffectiveFeatureDifferenceType effectiveFeatureType;
+
+		//weight of the feature
+		double weight;
+
+		//distance terms for nominals
+		DistanceTerms nominalMatchDistanceTerm;
+		DistanceTerms nominalNonMatchDistanceTerm;
+
+		//type attributes dependent on featureType
+		union
 		{
-			feature_params.knownToUnknownDistanceTerm = feature_params.unknownToUnknownDistanceTerm;
-		}
-		else
+			//number of relevant nominal values
+			double nominalCount;
+
+			//maximum difference value of the feature for cyclic features (NaN if unknown)
+			double maxCyclicDifference;
+
+		} typeAttributes;
+
+		//uncertainty of each value
+		double deviation;
+
+		//distance term to use if both values being compared are unknown
+		//the difference will be NaN if unknown
+		DistanceTermsWithDifference unknownToUnknownDistanceTerm;
+
+		//distance term to use if one value is known and the other is unknown
+		//the difference will be NaN if unknown
+		DistanceTermsWithDifference knownToUnknownDistanceTerm;
+	};
+
+	class DistParams
+	{
+	public:
+
+		//initializes and precomputes relevant data including featureParams
+		bool InitializeParametersAndFeatureParams(double p_value, bool compute_surprisal,
+			bool compute_approximate)
 		{
-			//compute knownToUnknownDistanceTerm
-			if(compute_accurate)
-			{
-				feature_params.knownToUnknownDistanceTerm.SetValue(
-					ComputeDistanceTermMatchOnNull(index, feature_params.knownToUnknownDistanceTerm.difference, true), true);
-			}
+			pValue = p_value;
+			inversePValue = 1.0 / pValue;
+
+			computeSurprisal = compute_surprisal;
 
 			if(compute_approximate)
 			{
-				feature_params.knownToUnknownDistanceTerm.SetValue(
-					ComputeDistanceTermMatchOnNull(index, feature_params.knownToUnknownDistanceTerm.difference, false), false);
+				fastPowP = RepeatedFastPow(pValue);
+				fastPowInverseP = RepeatedFastPow(inversePValue);
 			}
+
 		}
 
-		if(HasNumberInternValues(index))
-		{
-			auto &interned_dist_terms = feature_params.internDistanceTerms;
+		std::vector<FeatureParams> featureParams;
 
-			if(target_value_is_null_equivalent)
-			{
-				interned_dist_terms[0] = feature_params.unknownToUnknownDistanceTerm;
-				auto k_to_unk = feature_params.knownToUnknownDistanceTerm;
-				for(size_t i = 1; i < interned_dist_terms.size(); i++)
-					interned_dist_terms[i] = k_to_unk;
-			}
-			else //just set the unknown value
-			{
-				interned_dist_terms[0] = feature_params.knownToUnknownDistanceTerm;
-			}			
-		}
-	}
+		//precached ways to compute FastPow
+		RepeatedFastPow fastPowP;
+		RepeatedFastPow fastPowInverseP;
+
+		//parameter of the Lebesgue space and Minkowski distance parameter
+		double pValue;
+		//computed inverse of pValue
+		double inversePValue;
+
+		//if true, it will perform computations resulting in surprisal before
+		//the exponentiation
+		bool computeSurprisal;
+	};
+
+	inline GeneralizedDistance()
+		: internedNumberIndexToNumberValue(nullptr)
+	{	}
 
 	//for the feature index, computes and stores the distance terms as measured from value to each interned value
-	inline void ComputeAndStoreInternedNumberValuesAndDistanceTerms(double value, size_t index, std::vector<double> *interned_values)
+	inline void ComputeAndStoreInternedNumberValuesAndDistanceTerms(DistParams &dist_params, double value, size_t index, std::vector<double> *interned_values)
 	{
 		bool compute_accurate = NeedToPrecomputeAccurate();
 		bool compute_approximate = NeedToPrecomputeApproximate();
-		auto &feature_params = featureParams[index];
+		auto &feature_params = dist_params.featureParams[index];
 		feature_params.internedNumberIndexToNumberValue = interned_values;
 
 		if(interned_values == nullptr)
@@ -259,59 +328,6 @@ protected:
 	{
 		return (highAccuracy || recomputeAccurateDistances);
 	}
-
-	//stores the computed exact and approximate distance terms
-	// which can be referenced by getting the value at the corresponding offset
-	//the values default to 0.0 on initialization
-	class DistanceTerms
-	{
-	public:
-		//offset for each precision level
-		static constexpr int APPROX = 0;
-		static constexpr int EXACT = 1;
-
-		__forceinline DistanceTerms(double initial_value = 0.0)
-		{
-			distanceTerm = { initial_value, initial_value };
-		}
-
-		constexpr double GetValue(bool high_accuracy)
-		{
-			return distanceTerm[high_accuracy ? EXACT : APPROX];
-		}
-
-		constexpr double GetValue(int offset)
-		{
-			return distanceTerm[offset];
-		}
-
-		__forceinline void SetValue(double value, int offset)
-		{
-			distanceTerm[offset] = value;
-		}
-
-		__forceinline void SetValue(double value, bool high_accuracy)
-		{
-			distanceTerm[high_accuracy ? EXACT : APPROX] = value;
-		}
-
-		std::array<double, 2> distanceTerm;
-	};
-
-	//stores the computed exact and approximate distance terms, as well as the difference
-	//the values default to 0.0 on initialization
-	class DistanceTermsWithDifference
-		: public DistanceTerms
-	{
-	public:
-		__forceinline DistanceTermsWithDifference(double initial_value = 0.0)
-			: DistanceTerms(initial_value)
-		{
-			difference = initial_value;
-		}
-
-		double difference;
-	};
 
 	//update cached nominal deltas based on highAccuracy and recomputeAccurateDistances, caching what is needed given those flags
 	inline void ComputeAndStoreUniversallySymmetricNominalDistanceTerms()
@@ -887,78 +903,11 @@ public:
 		}
 	}
 
-	class FeatureParams
-	{
-	public:
-		inline FeatureParams()
-			: featureType(FDT_CONTINUOUS_NUMERIC),
-			effectiveFeatureType(EFDT_CONTINUOUS_NUMERIC),
-			weight(1.0),
-			internedNumberIndexToNumberValue(nullptr), deviation(0.0),
-			unknownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
-			knownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN())
-		{
-			typeAttributes.maxCyclicDifference = std::numeric_limits<double>::quiet_NaN();
-		}
+	//for each feature, pointer to a lookup table of indices to values if the feature is an interned number
+	std::vector<std::vector<double>> *internedNumberIndexToNumberValue;
 
-		//the type of comparison for each feature
-		// this type is 32-bit aligned to make sure the whole structure is aligned
-		FeatureDifferenceType featureType;
-
-		//the effective comparison for the feature type, specialized for performance
-		// this type is 32-bit aligned to make sure the whole structure is aligned
-		EffectiveFeatureDifferenceType effectiveFeatureType;
-
-		//weight of the feature
-		double weight;
-
-		//distance terms for nominals
-		DistanceTerms nominalMatchDistanceTerm;
-		DistanceTerms nominalNonMatchDistanceTerm;
-
-		//pointer to a lookup table of indices to values if the feature is an interned number
-		std::vector<double> *internedNumberIndexToNumberValue;
-
-		//precomputed distance terms for each interned value looked up by intern index
-		std::vector<DistanceTerms> internDistanceTerms;
-
-		//type attributes dependent on featureType
-		union
-		{
-			//number of relevant nominal values
-			double nominalCount;
-
-			//maximum difference value of the feature for cyclic features (NaN if unknown)
-			double maxCyclicDifference;
-
-		} typeAttributes;
-		
-		//uncertainty of each value
-		double deviation;
-
-		//distance term to use if both values being compared are unknown
-		//the difference will be NaN if unknown
-		DistanceTermsWithDifference unknownToUnknownDistanceTerm;
-
-		//distance term to use if one value is known and the other is unknown
-		//the difference will be NaN if unknown
-		DistanceTermsWithDifference knownToUnknownDistanceTerm;
-	};
-
-	std::vector<FeatureParams> featureParams;
-
-	//precached ways to compute FastPow
-	RepeatedFastPow fastPowP;
-	RepeatedFastPow fastPowInverseP;
-
-	//parameter of the Lebesgue space and Minkowski distance parameter
-	double pValue;
-	//computed inverse of pValue
-	double inversePValue;
-
-	//if true, it will perform computations resulting in surprisal before
-	//the exponentiation
-	bool computeSurprisal;
+	//for each feature, precomputed distance terms for each interned value looked up by intern index
+	std::vector<std::vector<DistanceTerms>> internDistanceTerms;
 
 	//if true, then all computations should be performed with high accuracy
 	bool highAccuracy;

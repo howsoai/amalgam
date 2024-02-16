@@ -41,7 +41,7 @@ void Concurrency::SetMaxNumThreads(size_t max_num_threads)
 #endif
 
 #ifdef MULTITHREAD_SUPPORT
-	threadPool.ChangeThreadPoolSize(_max_num_threads);
+	threadPool.SetMaxNumActiveThreads(static_cast<int32_t>(_max_num_threads));
 #endif
 
 }

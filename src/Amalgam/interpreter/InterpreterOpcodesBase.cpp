@@ -555,16 +555,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 
 #ifdef MULTITHREAD_SUPPORT
 	//everything at this point is referenced on stacks; allow the sandbox to trigger a garbage collect without this interpreter blocking
-	memoryModificationLock.unlock();
-	sandbox.memoryModificationLock = Concurrency::ReadLock(evaluableNodeManager->memoryModificationMutex);
+	std::swap(memoryModificationLock, sandbox.memoryModificationLock);
 #endif
 
 	auto result = sandbox.ExecuteNode(function, call_stack);
 
 #ifdef MULTITHREAD_SUPPORT
 	//hand lock back to this interpreter
-	memoryModificationLock.lock();
-	sandbox.memoryModificationLock.unlock();
+	std::swap(memoryModificationLock, sandbox.memoryModificationLock);
 #endif
 
 	curExecutionStep += sandbox.curExecutionStep;

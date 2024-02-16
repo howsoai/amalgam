@@ -13,13 +13,6 @@ Concurrency::ReadWriteMutex EvaluableNodeManager::memoryModificationMutex;
 #endif
 
 const double EvaluableNodeManager::allocExpansionFactor = 1.5;
-#ifdef MULTITHREAD_SUPPORT
-const ExecutionCycleCountCompactDelta EvaluableNodeManager::minCycleCountBetweenGarbageCollectsPerThread = 150000;
-#else
-//make the next value constant if no threads
-const
-#endif
-ExecutionCycleCountCompactDelta EvaluableNodeManager::minCycleCountBetweenGarbageCollects = 150000;
 
 EvaluableNodeManager::~EvaluableNodeManager()
 {
@@ -160,6 +153,20 @@ EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(Evaluabl
 	return retval;
 }
 
+void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t previous_num_nodes)
+{
+	//scale down the number of nodes previously allocated, because there is always a chance that
+	//a large allocation goes beyond that size and so the memory keeps growing
+	//by using a fraction less than 1, it reduces the chances of a slow memory increase
+	size_t max_from_previous = static_cast<size_t>(0.96875 * previous_num_nodes);
+
+	//assume at least a factor larger than the base memory usage for the entity
+	//add 1 for good measure and to make sure the smallest size isn't zero
+	size_t max_from_current = static_cast<size_t>(3 * (1 + GetNumberOfUsedNodes()));
+
+	numNodesToRunGarbageCollection = std::max<size_t>(max_from_previous, max_from_current);
+}
+
 #ifdef MULTITHREAD_SUPPORT
 void EvaluableNodeManager::CollectGarbage(Concurrency::ReadLock *memory_modification_lock)
 #else
@@ -180,6 +187,7 @@ void EvaluableNodeManager::CollectGarbage()
 
 	//keep trying to acquire write lock to see if this thread wins the race to collect garbage
 	Concurrency::WriteLock write_lock(memoryModificationMutex, std::defer_lock);
+
 	do
 	{
 		if(!RecommendGarbageCollection())
@@ -225,6 +233,7 @@ void EvaluableNodeManager::CollectGarbage()
 
 void EvaluableNodeManager::FreeAllNodes()
 {
+	size_t original_num_nodes = firstUnusedNodeIndex;
 	//get rid of any extra memory
 	for(size_t i = 0; i < firstUnusedNodeIndex; i++)
 		nodes[i]->Invalidate();
@@ -235,8 +244,7 @@ void EvaluableNodeManager::FreeAllNodes()
 
 	firstUnusedNodeIndex = 0;
 	
-	//update details since last garbage collection
-	executionCyclesSinceLastGarbageCollection = 0;
+	UpdateGarbageCollectionTrigger(original_num_nodes);
 }
 
 EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
@@ -317,6 +325,8 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 	if(nodes.size() == 0)
 		return;
 
+	size_t original_num_nodes = firstUnusedNodeIndex;
+
 	//set to contain everything that is referenced
 	MarkAllReferencedNodesInUse(true);
 
@@ -356,8 +366,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 	//assign back to the atomic variable
 	firstUnusedNodeIndex = first_unused_node_index_temp;
 
-	//update details since last garbage collection
-	executionCyclesSinceLastGarbageCollection = 0;
+	UpdateGarbageCollectionTrigger(original_num_nodes);
 }
 
 void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree)
@@ -782,8 +791,10 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(bool set_in_use)
 
 			enqueue_task_lock.Unlock();
 
+			Concurrency::threadPool.ChangeCurrentThreadStateFromActiveToWaiting();
 			for(auto& future : nodes_completed)
 				future.wait();
+			Concurrency::threadPool.ChangeCurrentThreadStateFromWaitingToActive();
 
 			return;
 		}

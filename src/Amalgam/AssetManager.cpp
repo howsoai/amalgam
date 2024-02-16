@@ -431,7 +431,8 @@ void AssetManager::SetRootPermission(Entity *entity, bool permission)
 
 std::pair<std::string, bool> AssetManager::ValidateVersionAgainstAmalgam(std::string &version)
 {
-	auto version_split = StringManipulation::Split(version, '.');
+	auto semver = StringManipulation::Split(version, '-'); //split on postfix
+	auto version_split = StringManipulation::Split(semver[0], '.'); //ignore postfix
 	if(version_split.size() != 3)
 		return std::make_pair("Invalid version number", false);
 

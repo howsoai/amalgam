@@ -111,7 +111,7 @@ public:
 	}
 
 	//loads filename into the buffer specified by b (of type BufferType of elements BufferElementType)
-	//if successful, returns empty strings and true
+	//if successful, returns no error message, file version (if available), and true
 	//if failure, returns error message, file version (if available) and false
 	template<typename BufferType>
 	static std::tuple<std::string, std::string, bool> LoadFileToBuffer(const std::string &filename, std::string &file_type, BufferType &b)
@@ -122,11 +122,14 @@ public:
 			return std::make_tuple("Cannot open file", "", false);
 
 		size_t header_size = 0;
+		std::string file_version;
 		if(file_type == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 		{
 			auto [error_string, version, success] = FileSupportCAML::ReadHeader(f, header_size);
 			if(!success)
 				return std::make_tuple(error_string, version, false);
+			else
+				file_version = version;
 		}
 
 		f.seekg(0, std::ios::end);
@@ -134,7 +137,7 @@ public:
 		f.seekg(header_size, std::ios::beg);
 
 		b.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
-		return std::make_tuple("", "", true);
+		return std::make_tuple("", file_version, true);
 	}
 
 	//stores buffer b (of type BufferType of elements BufferElementType) into the filename, returns true if successful, false if not

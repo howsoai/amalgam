@@ -1,8 +1,6 @@
 #pragma once
 
 //project headers:
-#include "Amalgam.h"
-#include "AssetManager.h"
 #include "Entity.h"
 #include "EntityWriteListener.h"
 #include "HashMaps.h"
@@ -11,19 +9,6 @@
 //system headers:
 #include <string>
 #include <vector>
-
-//status from LoadEntity
-class LoadEntityStatus
-{
-public:
-	LoadEntityStatus();
-	LoadEntityStatus(bool loaded, std::string message = std::string(), std::string version = std::string());
-	void SetStatus(bool loaded_in, std::string message_in = std::string(), std::string version_in = std::string());
-
-	bool loaded;
-	std::string message;
-	std::string version;
-};
 
 /*
  * This class constitutes the C++ backing for the C API, and is fully functional as a C++ API.
@@ -37,6 +22,20 @@ public:
 class EntityExternalInterface
 {
 public:
+
+	//status from LoadEntity
+	class LoadEntityStatus
+	{
+	public:
+		LoadEntityStatus();
+		LoadEntityStatus(bool loaded, std::string message = std::string(), std::string version = std::string());
+		void SetStatus(bool loaded_in, std::string message_in = std::string(), std::string version_in = std::string());
+
+		bool loaded;
+		std::string message;
+		std::string version;
+	};
+
 	LoadEntityStatus LoadEntity(std::string &handle, std::string &path, bool persistent, bool load_contained_entities,
 		std::string &write_log_filename, std::string &print_log_filename, std::string rand_seed = std::string(""));
 	void StoreEntity(std::string &handle, std::string &path, bool update_persistence_location, bool store_contained_entities);
@@ -88,19 +87,7 @@ protected:
 			printListener = pl;
 		}
 
-		~EntityListenerBundle()
-		{
-			if(entity != nullptr)
-			{
-				asset_manager.DestroyEntity(entity);
-				delete entity;
-			}
-
-			if(printListener != nullptr)
-				delete printListener;
-			if(writeListeners.size() > 0 && writeListeners[0] != nullptr)
-				delete writeListeners[0];
-		}
+		~EntityListenerBundle();
 
 		//Wraps around Entity::SetValueAtLabel but accepts a string for label name
 		bool SetEntityValueAtLabel(std::string &label_name, EvaluableNodeReference new_value);

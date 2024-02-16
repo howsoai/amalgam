@@ -2,7 +2,6 @@
 #include "FileSupportJSON.h"
 
 #include "EntityExternalInterface.h"
-#include "EvaluableNodeTreeFunctions.h"
 #include "FastMath.h"
 #include "PlatformSpecific.h"
 #include "StringManipulation.h"
@@ -11,7 +10,6 @@
 #include "simdjson/simdjson.h"
 
 //system headers:
-#include <fstream>
 #include <iostream>
 #include <vector>
 
@@ -336,7 +334,7 @@ std::pair<std::string, bool> EvaluableNodeJSONTranslation::EvaluableNodeToJson(E
 		return std::make_pair("", false);
 }
 
-EvaluableNode *EvaluableNodeJSONTranslation::Load(const std::string &resource_path, EvaluableNodeManager *enm, LoadEntityStatus &status)
+EvaluableNode *EvaluableNodeJSONTranslation::Load(const std::string &resource_path, EvaluableNodeManager *enm, EntityExternalInterface::LoadEntityStatus &status)
 {
 	std::string error_string;
 	if(!Platform_IsResourcePathAccessible(resource_path, true, error_string))

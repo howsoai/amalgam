@@ -1,11 +1,7 @@
 //project headers:
 #include "FileSupportYAML.h"
 
-#include "EntityExternalInterface.h"
-#include "EvaluableNodeTreeFunctions.h"
-#include "FastMath.h"
 #include "PlatformSpecific.h"
-#include "StringManipulation.h"
 
 //3rd party headers:
 #define RYML_SINGLE_HDR_DEFINE_NOW
@@ -176,7 +172,7 @@ std::pair<std::string, bool> EvaluableNodeYAMLTranslation::EvaluableNodeToYaml(E
 		return std::make_pair("", false);
 }
 
-EvaluableNode *EvaluableNodeYAMLTranslation::Load(const std::string &resource_path, EvaluableNodeManager *enm, LoadEntityStatus &status)
+EvaluableNode *EvaluableNodeYAMLTranslation::Load(const std::string &resource_path, EvaluableNodeManager *enm, EntityExternalInterface::LoadEntityStatus &status)
 {
 	auto [data, data_success] = Platform_OpenFileAsString(resource_path);
 	if(!data_success)

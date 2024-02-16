@@ -1,8 +1,6 @@
 //project headers:
 #include "EntityExternalInterface.h"
 
-#include "Amalgam.h"
-#include "AmalgamVersion.h"
 #include "AssetManager.h"
 #include "Entity.h"
 #include "EntityWriteListener.h"
@@ -17,24 +15,24 @@
 #include <string>
 #include <vector>
 
-LoadEntityStatus::LoadEntityStatus()
+EntityExternalInterface::LoadEntityStatus::LoadEntityStatus()
 {
 	SetStatus(true);
 }
 
-LoadEntityStatus::LoadEntityStatus(bool loaded, std::string message, std::string version)
+EntityExternalInterface::LoadEntityStatus::LoadEntityStatus(bool loaded, std::string message, std::string version)
 {
 	SetStatus(loaded, message, version);
 }
 
-void LoadEntityStatus::SetStatus(bool loaded_in, std::string message_in, std::string version_in)
+void EntityExternalInterface::LoadEntityStatus::SetStatus(bool loaded_in, std::string message_in, std::string version_in)
 {
 	loaded = loaded_in;
 	message = std::move(message_in);
 	version = std::move(version_in);
 }
 
-LoadEntityStatus EntityExternalInterface::LoadEntity(std::string &handle, std::string &path, bool persistent, bool load_contained_entities,
+EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(std::string &handle, std::string &path, bool persistent, bool load_contained_entities,
 	std::string &write_log_filename, std::string &print_log_filename, std::string rand_seed)
 {
 	LoadEntityStatus status;
@@ -603,4 +601,18 @@ bool EntityExternalInterface::EntityListenerBundle::SetEntityValueAtLabel(std::s
 	entity->evaluableNodeManager.FreeNodeTreeIfPossible(new_value);
 
 	return success;
+}
+
+EntityExternalInterface::EntityListenerBundle::~EntityListenerBundle()
+{
+	if(entity != nullptr)
+	{
+		asset_manager.DestroyEntity(entity);
+		delete entity;
+	}
+
+	if(printListener != nullptr)
+		delete printListener;
+	if(writeListeners.size() > 0 && writeListeners[0] != nullptr)
+		delete writeListeners[0];
 }

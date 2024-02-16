@@ -67,9 +67,9 @@ extern "C"
 		return wct;
 	}
 
-	LoadEntityStatus_s ConvertLoadStatusToCStatus(LoadEntityStatus &status)
+	LoadEntityStatus ConvertLoadStatusToCStatus(EntityExternalInterface::LoadEntityStatus &status)
 	{
-		LoadEntityStatus_s c_status = {
+		LoadEntityStatus c_status = {
 			status.loaded,
 			StringToCharPtr(status.message),
 			StringToCharPtr(status.version)
@@ -81,7 +81,7 @@ extern "C"
 	// api methods
 	// ************************************
 
-	LoadEntityStatus_s LoadEntity(char *handle, char *path, bool persistent, bool load_contained_entities, char *write_log_filename, char *print_log_filename)
+	LoadEntityStatus LoadEntity(char *handle, char *path, bool persistent, bool load_contained_entities, char *write_log_filename, char *print_log_filename)
 	{
 		std::string h(handle);
 		std::string p(path);

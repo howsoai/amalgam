@@ -17,7 +17,7 @@
 extern "C"
 {
 	//status from LoadEntity
-	struct LoadEntityStatus_s
+	struct LoadEntityStatus
 	{
 		bool loaded;
 		char *message;
@@ -25,7 +25,7 @@ extern "C"
 	};
 
 	//loads the entity specified into handle
-	AMALGAM_EXPORT LoadEntityStatus_s LoadEntity(char *handle, char *path, bool persistent, bool load_contained_entities, char *write_log_filename, char *print_log_filename);
+	AMALGAM_EXPORT LoadEntityStatus LoadEntity(char *handle, char *path, bool persistent, bool load_contained_entities, char *write_log_filename, char *print_log_filename);
 
 	//stores the entity specified by handle into path
 	AMALGAM_EXPORT void   StoreEntity(char *handle, char *path, bool update_persistence_location = false, bool store_contained_entities = true);

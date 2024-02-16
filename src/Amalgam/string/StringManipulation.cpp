@@ -78,7 +78,7 @@ std::vector<std::string> StringManipulation::Split(std::string &s, char delim)
 	std::string item;
 
 	while(std::getline(ss, item, delim))
-		ret.push_back (item);
+		ret.push_back(item);
 
 	return ret;
 }

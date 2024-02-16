@@ -1,16 +1,19 @@
 //project headers:
 #include "FileSupportCSV.h"
 
+#include "EntityExternalInterface.h"
+
 //system headers:
 #include <cstdlib>
 #include <iostream>
 #include <string>
 
-EvaluableNode *FileSupportCSV::Load(const std::string &resource_path, EvaluableNodeManager *enm)
+EvaluableNode *FileSupportCSV::Load(const std::string &resource_path, EvaluableNodeManager *enm, LoadEntityStatus &status)
 {
 	auto [data, data_success] = Platform_OpenFileAsString(resource_path);
 	if(!data_success)
 	{
+		status.SetStatus(false, data);
 		std::cerr << data << std::endl;
 		return EvaluableNodeReference::Null();
 	}

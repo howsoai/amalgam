@@ -624,11 +624,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSI
 		persistent, true, escape_filename, escape_contained_filenames, random_seed, status);
 
 	//handle errors
-	if(loaded_entity == nullptr)
+	if(!status.loaded)
 		return EvaluableNodeReference::Null();
 	if(new_entity_id == StringInternPool::NOT_A_STRING_ID)
 	{
-		delete loaded_entity;
+		if(loaded_entity != nullptr)
+			delete loaded_entity;
 		return EvaluableNodeReference::Null();
 	}
 

@@ -112,27 +112,27 @@ public:
 
 	//loads filename into the buffer specified by b (of type BufferType of elements BufferElementType), returns true if successful, false if not
 	template<typename BufferType>
-	static bool LoadFileToBuffer(const std::string &filename, std::string &file_type, BufferType &b)
+	static LoadEntityStatus LoadFileToBuffer(const std::string &filename, std::string &file_type, BufferType &b)
 	{
 		std::ifstream f(filename, std::fstream::binary | std::fstream::in);
 
 		if(!f.good())
-			return false;
+			return LoadEntityStatus(false, "Cannot open file");
 
 		size_t header_size = 0;
 		if(file_type == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 		{
 			auto [error_string, version, success] = FileSupportCAML::ReadHeader(f, header_size);
 			if(!success)
-				return false;
+				return LoadEntityStatus(false, error_string, version);
 		}
 
 		f.seekg(0, std::ios::end);
-		b.reserve((std::streamoff)f.tellg() - header_size);
+		b.reserve(static_cast<std::streamoff>(f.tellg()) - header_size);
 		f.seekg(header_size, std::ios::beg);
 
 		b.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
-		return true;
+		return LoadEntityStatus(true);
 	}
 
 	//stores buffer b (of type BufferType of elements BufferElementType) into the filename, returns true if successful, false if not
@@ -154,6 +154,8 @@ public:
 	}
 
 	//validates given asset version against Amalgam version
+	//if successful: returns empty string and true
+	//if failure: returns error message and false
 	static std::pair<std::string, bool> ValidateVersionAgainstAmalgam(std::string &version);
 
 	//returns a string representing en's source, empty string if debugSources is false

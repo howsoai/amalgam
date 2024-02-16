@@ -7,6 +7,9 @@
 //system headers:
 #include <string_view>
 
+//forward declarations:
+class LoadEntityStatus;
+
 namespace EvaluableNodeJSONTranslation
 {
 	//converts JSON string_view to EvaluableNode tree
@@ -17,7 +20,7 @@ namespace EvaluableNodeJSONTranslation
 	std::pair<std::string, bool> EvaluableNodeToJson(EvaluableNode *code, bool sort_keys = false);
 
 	//loads json file to EvaluableNode tree
-	EvaluableNode *Load(const std::string &resource_path, EvaluableNodeManager *enm);
+	EvaluableNode *Load(const std::string &resource_path, EvaluableNodeManager *enm, LoadEntityStatus &status);
 	
 	//stores EvaluableNode tree to json file
 	bool Store(EvaluableNode *code, const std::string &resource_path, EvaluableNodeManager *enm, bool sort_keys);

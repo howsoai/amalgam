@@ -51,6 +51,7 @@ EvaluableNodeReference AssetManager::LoadResourcePath(std::string &resource_path
 		auto [code, code_success] = Platform_OpenFileAsString(processed_resource_path);
 		if(!code_success)
 		{
+			status.SetStatus(false, code);
 			if(file_type == FILE_EXTENSION_AMALGAM)
 				std::cerr << code << std::endl;
 			return EvaluableNodeReference::Null();
@@ -70,15 +71,16 @@ EvaluableNodeReference AssetManager::LoadResourcePath(std::string &resource_path
 			return Parser::Parse(code, enm, &resource_path);
 	}
 	else if(file_type == FILE_EXTENSION_JSON)
-		return EvaluableNodeReference(EvaluableNodeJSONTranslation::Load(processed_resource_path, enm), true);
+		return EvaluableNodeReference(EvaluableNodeJSONTranslation::Load(processed_resource_path, enm, status), true);
 	else if(file_type == FILE_EXTENSION_YAML)
-		return EvaluableNodeReference(EvaluableNodeYAMLTranslation::Load(processed_resource_path, enm), true);
+		return EvaluableNodeReference(EvaluableNodeYAMLTranslation::Load(processed_resource_path, enm, status), true);
 	else if(file_type == FILE_EXTENSION_CSV)
-		return EvaluableNodeReference(FileSupportCSV::Load(processed_resource_path, enm), true);
+		return EvaluableNodeReference(FileSupportCSV::Load(processed_resource_path, enm, status), true);
 	else if(file_type == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 	{
 		BinaryData compressed_data;
-		if(!LoadFileToBuffer<BinaryData>(processed_resource_path, file_type, compressed_data))
+		status = LoadFileToBuffer<BinaryData>(processed_resource_path, file_type, compressed_data);
+		if(!status.loaded)
 			return EvaluableNodeReference::Null();
 
 		OffsetIndex cur_offset = 0;
@@ -94,7 +96,8 @@ EvaluableNodeReference AssetManager::LoadResourcePath(std::string &resource_path
 	else //just load the file as a string
 	{
 		std::string s;
-		if(LoadFileToBuffer<std::string>(processed_resource_path, file_type, s))
+		status = LoadFileToBuffer<std::string>(processed_resource_path, file_type, s);
+		if(status.loaded)
 			return EvaluableNodeReference(enm->AllocNode(ENT_STRING, s), true);
 		else
 			return EvaluableNodeReference::Null();
@@ -178,7 +181,7 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 	Entity *new_entity = new Entity();
 
 	EvaluableNodeReference code = LoadResourcePath(resource_path, resource_base_path, file_type, &new_entity->evaluableNodeManager, escape_filename, status);
-	if(code == nullptr || !status.loaded)
+	if(!status.loaded)
 	{
 		delete new_entity;
 		return nullptr;
@@ -189,8 +192,9 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 	std::string metadata_filename = resource_base_path + "." + FILE_EXTENSION_AMLG_METADATA;
 	std::string metadata_base_path;
 	std::string metadata_extension;
-	EvaluableNode *metadata = LoadResourcePath(metadata_filename, metadata_base_path, metadata_extension, &new_entity->evaluableNodeManager, escape_filename, status);
-	if(metadata != nullptr)
+	LoadEntityStatus metadata_status;
+	EvaluableNode *metadata = LoadResourcePath(metadata_filename, metadata_base_path, metadata_extension, &new_entity->evaluableNodeManager, escape_filename, metadata_status);
+	if(metadata_status.loaded)
 	{
 		if(EvaluableNode::IsAssociativeArray(metadata))
 		{
@@ -207,7 +211,8 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 					auto [error_message, success] = AssetManager::ValidateVersionAgainstAmalgam(version_str);
 					if(!success)
 					{
-						status.Set(false, error_message, version_str);
+						status.SetStatus(false, error_message, version_str);
+						delete new_entity;
 						return nullptr;
 					}
 				}
@@ -250,6 +255,11 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 			std::string contained_resource_path = resource_base_path + ce_file_base + "." + ce_extension;
 			Entity *contained_entity = LoadEntityFromResourcePath(contained_resource_path, file_type,
 				false, true, false, escape_contained_filenames, default_seed, status);
+			if(!status.loaded)
+			{
+				delete new_entity;
+				return nullptr;
+			}
 
 			new_entity->AddContainedEntity(contained_entity, entity_name);
 		}

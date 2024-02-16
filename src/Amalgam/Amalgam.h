@@ -17,12 +17,12 @@
 extern "C"
 {
 	//status from LoadEntity
-	typedef struct
+	struct LoadEntityStatus_s
 	{
 		bool loaded;
 		char *message;
 		char *version;
-	} LoadEntityStatus_s;
+	};
 
 	//loads the entity specified into handle
 	AMALGAM_EXPORT LoadEntityStatus_s LoadEntity(char *handle, char *path, bool persistent, bool load_contained_entities, char *write_log_filename, char *print_log_filename);

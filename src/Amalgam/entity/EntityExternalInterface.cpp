@@ -19,10 +19,15 @@
 
 LoadEntityStatus::LoadEntityStatus()
 {
-	Set(true);
+	SetStatus(true);
 }
 
-void LoadEntityStatus::Set(bool loaded_in, std::string message_in, std::string version_in)
+LoadEntityStatus::LoadEntityStatus(bool loaded, std::string message, std::string version)
+{
+	SetStatus(loaded, message, version);
+}
+
+void LoadEntityStatus::SetStatus(bool loaded_in, std::string message_in, std::string version_in)
 {
 	loaded = loaded_in;
 	message = std::move(message_in);
@@ -32,6 +37,8 @@ void LoadEntityStatus::Set(bool loaded_in, std::string message_in, std::string v
 LoadEntityStatus EntityExternalInterface::LoadEntity(std::string &handle, std::string &path, bool persistent, bool load_contained_entities,
 	std::string &write_log_filename, std::string &print_log_filename, std::string rand_seed)
 {
+	LoadEntityStatus status;
+
 	if(rand_seed == "")
 	{
 		typedef std::chrono::steady_clock clk;
@@ -39,13 +46,12 @@ LoadEntityStatus EntityExternalInterface::LoadEntity(std::string &handle, std::s
 		rand_seed = std::to_string(t);
 	}
 
-	LoadEntityStatus status;
 	std::string file_type = "";
 	Entity *entity = asset_manager.LoadEntityFromResourcePath(path, file_type, persistent, load_contained_entities, false, true, rand_seed, status);
-	asset_manager.SetRootPermission(entity, true);
-
-	if(entity == nullptr || !status.loaded)
+	if(!status.loaded)
 		return status;
+
+	asset_manager.SetRootPermission(entity, true);
 
 	PrintListener *pl = nullptr;
 	std::vector<EntityWriteListener *> wl;

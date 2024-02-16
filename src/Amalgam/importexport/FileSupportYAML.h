@@ -7,6 +7,9 @@
 //system headers:
 #include <string_view>
 
+//forward declarations:
+class LoadEntityStatus;
+
 namespace EvaluableNodeYAMLTranslation
 {
 	//converts YAML string_view to EvaluableNode tree
@@ -17,7 +20,7 @@ namespace EvaluableNodeYAMLTranslation
 	std::pair<std::string, bool> EvaluableNodeToYaml(EvaluableNode *code, bool sort_keys = false);
 
 	//loads yaml file to EvaluableNode tree
-	EvaluableNode *Load(const std::string &resource_path, EvaluableNodeManager *enm);
+	EvaluableNode *Load(const std::string &resource_path, EvaluableNodeManager *enm, LoadEntityStatus &status);
 	
 	//stores EvaluableNode tree to yaml file
 	bool Store(EvaluableNode *code, const std::string &resource_path, EvaluableNodeManager *enm, bool sort_keys);

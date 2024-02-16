@@ -4,6 +4,7 @@
 #include "Amalgam.h"
 #include "AmalgamVersion.h"
 #include "BinaryPacking.h"
+#include "EntityExternalInterface.h"
 #include "EvaluableNode.h"
 #include "FilenameEscapeProcessor.h"
 #include "FileSupportCSV.h"
@@ -206,7 +207,7 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 					auto [error_message, success] = AssetManager::ValidateVersionAgainstAmalgam(version_str);
 					if(!success)
 					{
-						status = { false, error_message.c_str(), version_str.c_str() };
+						status.Set(false, error_message, version_str);
 						return nullptr;
 					}
 				}

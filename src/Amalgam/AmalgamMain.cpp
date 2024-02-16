@@ -4,6 +4,7 @@
 #include "AssetManager.h"
 #include "Concurrency.h"
 #include "Entity.h"
+#include "EntityExternalInterface.h"
 #include "EntityQueries.h"
 #include "EntityWriteListener.h"
 #include "EvaluableNode.h"
@@ -228,7 +229,7 @@ PLATFORM_MAIN_CONSOLE
 	else
 	{
 		//run the standard amlg command line interface
-		LoadEntityStatus status = LOADENTITYSTATUS_DEFAULT;
+		LoadEntityStatus status;
 		std::string file_type = "";
 		Entity *entity = asset_manager.LoadEntityFromResourcePath(amlg_file_to_run, file_type, false, true, false, true, random_seed, status);
 		if(entity == nullptr || !status.loaded)

@@ -1,6 +1,7 @@
 //project headers:
 #include "EntityExternalInterface.h"
 
+#include "Amalgam.h"
 #include "AmalgamVersion.h"
 #include "AssetManager.h"
 #include "Entity.h"
@@ -13,7 +14,20 @@
 //system headers:
 #include <iostream>
 #include <ostream>
+#include <string>
 #include <vector>
+
+LoadEntityStatus::LoadEntityStatus()
+{
+	Set(true);
+}
+
+void LoadEntityStatus::Set(bool loaded_in, std::string &message_in, std::string &version_in)
+{
+	loaded = loaded;
+	message = message_in;
+	version = version_in;
+}
 
 LoadEntityStatus EntityExternalInterface::LoadEntity(std::string &handle, std::string &path, bool persistent, bool load_contained_entities,
 	std::string &write_log_filename, std::string &print_log_filename, std::string rand_seed)
@@ -25,7 +39,7 @@ LoadEntityStatus EntityExternalInterface::LoadEntity(std::string &handle, std::s
 		rand_seed = std::to_string(t);
 	}
 
-	LoadEntityStatus status = LOADENTITYSTATUS_DEFAULT;
+	LoadEntityStatus status;
 	std::string file_type = "";
 	Entity *entity = asset_manager.LoadEntityFromResourcePath(path, file_type, persistent, load_contained_entities, false, true, rand_seed, status);
 	asset_manager.SetRootPermission(entity, true);

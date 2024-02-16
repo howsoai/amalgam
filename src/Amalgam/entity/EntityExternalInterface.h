@@ -12,6 +12,18 @@
 #include <string>
 #include <vector>
 
+//status from LoadEntity
+class LoadEntityStatus
+{
+public:
+	LoadEntityStatus();
+	void Set(bool loaded_in, std::string &message_in = std::string(), std::string &version_in = std::string());
+
+	bool loaded;
+	std::string message;
+	std::string version;
+};
+
 /*
  * This class constitutes the C++ backing for the C API, and is fully functional as a C++ API.
  * 

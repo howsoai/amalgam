@@ -18,7 +18,10 @@ const std::string FILE_EXTENSION_YAML("yaml");
 const std::string FILE_EXTENSION_CSV("csv");
 const std::string FILE_EXTENSION_COMPRESSED_AMALGAM_CODE("caml");
 
+//forward declarations:
 class AssetManager;
+class LoadEntityStatus;
+
 extern AssetManager asset_manager;
 
 class AssetManager

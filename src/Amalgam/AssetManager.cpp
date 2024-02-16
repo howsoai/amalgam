@@ -79,9 +79,12 @@ EvaluableNodeReference AssetManager::LoadResourcePath(std::string &resource_path
 	else if(file_type == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 	{
 		BinaryData compressed_data;
-		status = LoadFileToBuffer<BinaryData>(processed_resource_path, file_type, compressed_data);
-		if(!status.loaded)
+		auto [error_mesg, version, success] = LoadFileToBuffer<BinaryData>(processed_resource_path, file_type, compressed_data);
+		if(!success)
+		{
+			status.SetStatus(false, error_mesg, version);
 			return EvaluableNodeReference::Null();
+		}
 
 		OffsetIndex cur_offset = 0;
 		auto strings = DecompressStrings(compressed_data, cur_offset);
@@ -96,11 +99,14 @@ EvaluableNodeReference AssetManager::LoadResourcePath(std::string &resource_path
 	else //just load the file as a string
 	{
 		std::string s;
-		status = LoadFileToBuffer<std::string>(processed_resource_path, file_type, s);
-		if(status.loaded)
+		auto [error_mesg, version, success] = LoadFileToBuffer<std::string>(processed_resource_path, file_type, s);
+		if(success)
 			return EvaluableNodeReference(enm->AllocNode(ENT_STRING, s), true);
 		else
+		{
+			status.SetStatus(false, error_mesg, version);
 			return EvaluableNodeReference::Null();
+		}
 	}
 }
 

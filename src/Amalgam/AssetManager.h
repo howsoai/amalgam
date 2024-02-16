@@ -110,21 +110,23 @@ public:
 		return rootEntities.find(entity) != end(rootEntities);
 	}
 
-	//loads filename into the buffer specified by b (of type BufferType of elements BufferElementType), returns true if successful, false if not
+	//loads filename into the buffer specified by b (of type BufferType of elements BufferElementType)
+	//if successful, returns empty strings and true
+	//if failure, returns error message, file version (if available) and false
 	template<typename BufferType>
-	static LoadEntityStatus LoadFileToBuffer(const std::string &filename, std::string &file_type, BufferType &b)
+	static std::tuple<std::string, std::string, bool> LoadFileToBuffer(const std::string &filename, std::string &file_type, BufferType &b)
 	{
 		std::ifstream f(filename, std::fstream::binary | std::fstream::in);
 
 		if(!f.good())
-			return LoadEntityStatus(false, "Cannot open file");
+			return std::make_tuple("Cannot open file", "", false);
 
 		size_t header_size = 0;
 		if(file_type == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 		{
 			auto [error_string, version, success] = FileSupportCAML::ReadHeader(f, header_size);
 			if(!success)
-				return LoadEntityStatus(false, error_string, version);
+				return std::make_tuple(error_string, version, false);
 		}
 
 		f.seekg(0, std::ios::end);
@@ -132,7 +134,7 @@ public:
 		f.seekg(header_size, std::ios::beg);
 
 		b.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
-		return LoadEntityStatus(true);
+		return std::make_tuple("", "", true);
 	}
 
 	//stores buffer b (of type BufferType of elements BufferElementType) into the filename, returns true if successful, false if not

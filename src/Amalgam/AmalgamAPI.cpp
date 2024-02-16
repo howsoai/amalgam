@@ -87,8 +87,8 @@ extern "C"
 		std::string p(path);
 		std::string wlfname(write_log_filename);
 		std::string plfname(print_log_filename);
-
-		return ConvertLoadStatusToCStatus(entint.LoadEntity(h, p, persistent, load_contained_entities, wlfname, plfname));
+		auto status = entint.LoadEntity(h, p, persistent, load_contained_entities, wlfname, plfname);
+		return ConvertLoadStatusToCStatus(status);
 	}
 
 	void StoreEntity(char *handle, char *path, bool update_persistence_location, bool store_contained_entities)

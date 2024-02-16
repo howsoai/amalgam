@@ -501,8 +501,6 @@ protected:
 					parentInterpreter->writeListeners, parentInterpreter->printListener, parentInterpreter->curEntity));
 			}
 
-			EvaluableNodeManager::UpdateMinCycleCountBetweenGarbageCollectsBasedOnThreads(num_tasks);
-
 			//begins concurrency over all interpreters
 			parentInterpreter->memoryModificationLock.unlock();
 		}
@@ -548,18 +546,16 @@ protected:
 		//ends concurrency from all interpreters and waits for them to finish
 		inline void EndConcurrency()
 		{
-			//make sure all futures return before moving on
+			Concurrency::threadPool.ChangeCurrentThreadStateFromActiveToWaiting();
 			for(auto &future : resultFutures)
 				future.wait();
+			Concurrency::threadPool.ChangeCurrentThreadStateFromWaitingToActive();
 
 			if(!parentInterpreter->AllowUnlimitedExecutionSteps())
 			{
 				for(auto &i : interpreters)
 					parentInterpreter->curExecutionStep += i->curExecutionStep;
 			}
-
-			//merged back to one task (this method will attempt to account for other concurrency)
-			EvaluableNodeManager::UpdateMinCycleCountBetweenGarbageCollectsBasedOnThreads(1);
 
 			parentInterpreter->memoryModificationLock.lock();
 		}

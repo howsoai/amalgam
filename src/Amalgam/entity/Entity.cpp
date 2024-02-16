@@ -19,22 +19,22 @@ Entity::Entity()
 	idStringId = StringInternPool::NOT_A_STRING_ID;
 }
 
-Entity::Entity(Entity *_container, std::string &code_string, const std::string &rand_state, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier)
+Entity::Entity(std::string &code_string, const std::string &rand_state, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier)
 	: randomStream(rand_state)
 {
 	hasContainedEntities = false;
-	entityRelationships.container = _container;
+	entityRelationships.container = nullptr;
 
 	SetRoot(code_string, metadata_modifier);
 
 	idStringId = StringInternPool::NOT_A_STRING_ID;
 }
 
-Entity::Entity(Entity *_container, EvaluableNode *_root, const std::string &rand_state, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier)
+Entity::Entity(EvaluableNode *_root, const std::string &rand_state, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier)
 	: randomStream(rand_state)
 {
 	hasContainedEntities = false;
-	entityRelationships.container = _container;
+	entityRelationships.container = nullptr;
 
 	//since this is the constructor, can't have had this entity's EntityNodeManager
 	SetRoot(_root, false, metadata_modifier);
@@ -845,6 +845,9 @@ std::string Entity::CreateRandomStreamFromStringAndRand(const std::string &seed_
 
 void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier, std::vector<EntityWriteListener *> *write_listeners)
 {
+	EvaluableNode *cur_root = GetRoot();
+	bool entity_previously_empty = (cur_root == nullptr || cur_root->GetNumChildNodes() == 0);
+
 	if(_code == nullptr)
 	{
 		evaluableNodeManager.SetRootNode(evaluableNodeManager.AllocNode(ENT_NULL));
@@ -858,6 +861,9 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, Evalu
 		auto code_copy = evaluableNodeManager.DeepAllocCopy(_code, metadata_modifier);
 		evaluableNodeManager.SetRootNode(code_copy);
 	}
+
+	if(entity_previously_empty)
+		evaluableNodeManager.UpdateGarbageCollectionTrigger();
 
 	RebuildLabelIndex();
 

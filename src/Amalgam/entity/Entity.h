@@ -41,9 +41,9 @@ public:
 
 	//create Entity from existing code, rand_state is the current state of the random number generator,
 	// modifying labels as specified
-	Entity(Entity *_container, std::string &code_string, const std::string &rand_state,
+	Entity(std::string &code_string, const std::string &rand_state,
 		EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE);
-	Entity(Entity *_container, EvaluableNode *_root, const std::string &rand_state,
+	Entity(EvaluableNode *_root, const std::string &rand_state,
 		EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE);
 
 	//Creates a new Entity as a copy of the Entity passed in; everything is identical except for the time created and id

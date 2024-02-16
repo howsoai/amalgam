@@ -131,7 +131,7 @@ public:
 			else //just set the unknown value
 			{
 				interned_dist_terms[0] = feature_params.knownToUnknownDistanceTerm;
-			}			
+			}
 		}
 	}
 

@@ -22,11 +22,11 @@ LoadEntityStatus::LoadEntityStatus()
 	Set(true);
 }
 
-void LoadEntityStatus::Set(bool loaded_in, std::string &message_in, std::string &version_in)
+void LoadEntityStatus::Set(bool loaded_in, std::string message_in, std::string version_in)
 {
 	loaded = loaded;
-	message = message_in;
-	version = version_in;
+	message = std::move(message_in);
+	version = std::move(version_in);
 }
 
 LoadEntityStatus EntityExternalInterface::LoadEntity(std::string &handle, std::string &path, bool persistent, bool load_contained_entities,

@@ -17,7 +17,7 @@ class LoadEntityStatus
 {
 public:
 	LoadEntityStatus();
-	void Set(bool loaded_in, std::string &message_in = std::string(), std::string &version_in = std::string());
+	void Set(bool loaded_in, std::string message_in = std::string(), std::string version_in = std::string());
 
 	bool loaded;
 	std::string message;

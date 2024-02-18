@@ -9,7 +9,7 @@
 #include <limits>
 #include <vector>
 
-//TODO 18116: decide if GeneralizedDistance/Parameters names are appropriate
+//TODO 18116: decide if GeneralizedDistance/Parameters names are appropriate -- consider GeneralizedDistance (and move many methods into it) and GeneralizedDistanceWithCaches (as the extension with pointer)
 //TODO 18116: implement GeneralizedDistance/Parameters everywhere
 //TODO 18116: contextualize whether something is in a high accuracy area or not -- need indirection in GeneralizedDistance, say, intermediate calculation flag (e.g., is it recomputing at the end)
 //TODO 18116: attempt to templatize distance methods around accuracy to remove branches

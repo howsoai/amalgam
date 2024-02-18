@@ -79,7 +79,7 @@ public:
 		size_t query_feature_index, size_t absolute_feature_index, bool high_accuracy)
 	{
 		double max_diff = columnData[absolute_feature_index]->GetMaxDifferenceTermFromValue(
-									dist_params.featureParams[query_feature_index], value_type, value);
+									dist_params.distParams->featureParams[query_feature_index], value_type, value);
 		return dist_params.ComputeDistanceTermContinuousNonNullRegular(max_diff, query_feature_index, high_accuracy);
 	}
 

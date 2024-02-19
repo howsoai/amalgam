@@ -80,12 +80,28 @@ public:
 		{
 			std::unique_lock<std::mutex> lock(threadsMutex);
 
-			//only add a new thread if there are insufficient reserved threads
-			//to support maxNumActiveThreads
-			if(numReservedThreads == 0 && (numActiveThreads - numThreadsToTransitionToReserved) + 1 == maxNumActiveThreads)
-				AddNewThread();
-			else
-				numThreadsToTransitionToReserved--;
+			size_t task_queue_size = taskQueue.size();
+			int32_t num_threads_needed = maxNumActiveThreads;
+			//if less than the number of active threads, then small enough to safely cast to the smaller type
+			if(task_queue_size < static_cast<size_t>(maxNumActiveThreads))
+				num_threads_needed = static_cast<int32_t>(task_queue_size);
+
+			//compute and compare the current threadpool size to that which is needed
+			int32_t cur_threadpool_size = static_cast<int32_t>(threads.size());
+			int32_t needed_threadpool_size = (numReservedThreads + numThreadsToTransitionToReserved) + num_threads_needed;
+			if(cur_threadpool_size < needed_threadpool_size)
+			{
+				//if there are reserved threads, use them, otherwise create a new thread
+				if(numReservedThreads > 0)
+				{
+					numThreadsToTransitionToReserved--;
+				}
+				else
+				{
+					for(; cur_threadpool_size < needed_threadpool_size; cur_threadpool_size++)
+						AddNewThread();
+				}
+			}
 
 			numActiveThreads--;
 		}
@@ -102,7 +118,11 @@ public:
 		{
 			std::unique_lock<std::mutex> lock(threadsMutex);
 			numActiveThreads++;
-			numThreadsToTransitionToReserved++;
+
+			//if there are currently more active threads than allowed,
+			//transition another active one to reserved
+			if(numActiveThreads > maxNumActiveThreads)
+				numThreadsToTransitionToReserved++;
 		}
 
 		//get another thread to transition to reserved

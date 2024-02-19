@@ -189,7 +189,7 @@ void EvaluableNodeManager::CollectGarbage()
 	//keep trying to acquire write lock to see if this thread wins the race to collect garbage
 	Concurrency::WriteLock write_lock(memoryModificationMutex, std::defer_lock);
 
-	do
+	while(!write_lock.try_lock())
 	{
 		if(!RecommendGarbageCollection())
 		{
@@ -201,8 +201,7 @@ void EvaluableNodeManager::CollectGarbage()
 
 			return;
 		}
-
-	} while(!write_lock.try_lock());
+	}
 		
 	//double-check still needs collection, and not that another thread collected it
 	if(!RecommendGarbageCollection())

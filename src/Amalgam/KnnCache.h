@@ -20,7 +20,7 @@ public:
 	//clears all buffers and resizes and resets them based on the datastore of entities and the particular
 	// relevant_indices to use from the datastore
 	void ResetCache(SeparableBoxFilterDataStore &datastore, BitArrayIntegerSet &relevant_indices,
-		GeneralizedDistance &dist_params, std::vector<StringInternPool::StringID> &position_label_ids, StringInternPool::StringID radius_label)
+		RepeatedGeneralizedDistanceEvaluator &dist_params, std::vector<StringInternPool::StringID> &position_label_ids, StringInternPool::StringID radius_label)
 	{
 		sbfDataStore = &datastore;
 		relevantIndices = &relevant_indices;
@@ -168,7 +168,7 @@ private:
 	SeparableBoxFilterDataStore *sbfDataStore;
 
 	//distance parameters for the search
-	GeneralizedDistance *distParams;
+	RepeatedGeneralizedDistanceEvaluator *distParams;
 
 	//position labels
 	std::vector<StringInternPool::StringID> *positionLabelIds;

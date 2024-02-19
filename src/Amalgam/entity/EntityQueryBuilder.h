@@ -40,7 +40,7 @@ namespace EntityQueryBuilder
 	}
 
 	//populates deviation data for feature_params from deviation_node
-	inline void PopulateFeatureDeviationData(GeneralizedDistance::FeatureParams &feature_params, EvaluableNode *deviation_node)
+	inline void PopulateFeatureDeviationData(RepeatedGeneralizedDistanceEvaluator::FeatureParams &feature_params, EvaluableNode *deviation_node)
 	{
 		if(deviation_node == nullptr)
 		{
@@ -53,7 +53,7 @@ namespace EntityQueryBuilder
 
 	//populates the features of dist_params based on either num_elements or element_names for each of the
 	// four different attribute parameters based on its type (using num_elements if list or immediate, element_names if assoc)
-	inline void PopulateDistanceFeatureParameters(GeneralizedDistance &dist_params,
+	inline void PopulateDistanceFeatureParameters(GeneralizedDistanceEvaluator &dist_params,
 		size_t num_elements, std::vector<StringInternPool::StringID> &element_names,
 		EvaluableNode *weights_node, EvaluableNode *distance_types_node, EvaluableNode *attributes_node, EvaluableNode *deviations_node)
 	{
@@ -76,21 +76,21 @@ namespace EntityQueryBuilder
 			[&dist_params](size_t i, bool found, EvaluableNode *en) {
 				if(i < dist_params.featureParams.size())
 				{
-					auto feature_type = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC;
+					auto feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC;
 					if(found)
 					{
 						StringInternPool::StringID feature_type_id = EvaluableNode::ToStringIDIfExists(en);
 						switch(feature_type_id)
 						{
-						case ENBISI_nominal_numeric:			feature_type = GeneralizedDistance::FDT_NOMINAL_NUMERIC;			break;
-						case ENBISI_nominal_string:				feature_type = GeneralizedDistance::FDT_NOMINAL_STRING;				break;
-						case ENBISI_nominal_code:				feature_type = GeneralizedDistance::FDT_NOMINAL_CODE;				break;
-						case ENBISI_continuous_numeric:			feature_type = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC;			break;
-						case ENBISI_continuous_numeric_cyclic:	feature_type = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC_CYCLIC;	break;
-						case ENBISI_continuous_string:			feature_type = GeneralizedDistance::FDT_CONTINUOUS_STRING;			break;
-						case ENBISI_continuous_code:			feature_type = GeneralizedDistance::FDT_CONTINUOUS_CODE;			break;
+						case ENBISI_nominal_numeric:			feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC;			break;
+						case ENBISI_nominal_string:				feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING;				break;
+						case ENBISI_nominal_code:				feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE;				break;
+						case ENBISI_continuous_numeric:			feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC;			break;
+						case ENBISI_continuous_numeric_cyclic:	feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC;	break;
+						case ENBISI_continuous_string:			feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING;			break;
+						case ENBISI_continuous_code:			feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE;			break;
 
-						default:								feature_type = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC;			break;
+						default:								feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC;			break;
 						}
 					}
 					dist_params.featureParams[i].featureType = feature_type;
@@ -105,18 +105,18 @@ namespace EntityQueryBuilder
 					//get attributes based on feature type
 					switch(dist_params.featureParams[i].featureType)
 					{
-					case GeneralizedDistance::FDT_NOMINAL_NUMERIC:
-					case GeneralizedDistance::FDT_NOMINAL_STRING:
-					case GeneralizedDistance::FDT_NOMINAL_CODE:
+					case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC:
+					case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
+					case GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE:
 						if(found && !EvaluableNode::IsNull(en))
 							dist_params.featureParams[i].typeAttributes.nominalCount = EvaluableNode::ToNumber(en, 1);
 						break;
 
-					case GeneralizedDistance::FDT_CONTINUOUS_NUMERIC_CYCLIC:
+					case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC:
 						if(found && !EvaluableNode::IsNull(en))
 							dist_params.featureParams[i].typeAttributes.maxCyclicDifference = EvaluableNode::ToNumber(en);
 						else //can't be cyclic without a range
-							dist_params.featureParams[i].featureType = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC;
+							dist_params.featureParams[i].featureType = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC;
 						break;
 
 					default:
@@ -137,9 +137,9 @@ namespace EntityQueryBuilder
 					//get deviations based on feature type
 					switch(dist_params.featureParams[i].featureType)
 					{
-					case GeneralizedDistance::FDT_NOMINAL_NUMERIC:
-					case GeneralizedDistance::FDT_NOMINAL_STRING:
-					case GeneralizedDistance::FDT_NOMINAL_CODE:
+					case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC:
+					case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
+					case GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE:
 						if(found && !EvaluableNode::IsNull(en))
 						{
 							if(en->EvaluableNode::IsOrderedArray())

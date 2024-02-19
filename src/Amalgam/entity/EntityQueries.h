@@ -58,7 +58,7 @@ public:
 	//the labels corresponding to positionLabels when appropriate
 	std::vector<EvaluableNodeImmediateValue> valueToCompare;
 
-	GeneralizedDistance distParams;
+	RepeatedGeneralizedDistanceEvaluator distParams;
 
 	//a single standalone label in the query
 	StringInternPool::StringID singleLabel;

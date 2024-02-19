@@ -995,7 +995,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 	if(!EvaluableNode::IsNull(deviations_node))
 		node_stack.PushEvaluableNode(deviations_node);
 
-	GeneralizedDistance dist_params;
+	RepeatedGeneralizedDistanceEvaluator dist_params;
 
 	dist_params.pValue = InterpretNodeIntoNumberValue(ocn[4]);
 

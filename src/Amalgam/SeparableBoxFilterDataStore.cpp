@@ -281,7 +281,7 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 // and sets distances_out to the found entities.  Infinity is allowed to compute all distances.
 //if enabled_indices is not nullptr, it will only find distances to those entities, and it will modify enabled_indices in-place
 // removing entities that do not have the corresponding labels
-void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance &dist_params, std::vector<size_t> &position_label_ids,
+void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(RepeatedGeneralizedDistanceEvaluator &dist_params, std::vector<size_t> &position_label_ids,
 	std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types,
 	double max_dist, StringInternPool::StringID radius_label,
 	BitArrayIntegerSet &enabled_indices, std::vector<DistanceReferencePair<size_t>> &distances_out)
@@ -451,7 +451,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 	}
 }
 
-void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(GeneralizedDistance *dist_params_ref,
+void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(RepeatedGeneralizedDistanceEvaluator *dist_params_ref,
 	std::vector<size_t> &position_label_ids, bool constant_dist_params, size_t search_index,
 	size_t top_k, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
 	bool expand_to_first_nonzero_distance, std::vector<DistanceReferencePair<size_t>> &distances_out, size_t ignore_index, RandomStream rand_stream)
@@ -459,7 +459,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 	if(top_k == 0 || GetNumInsertedEntities() == 0)
 		return;
 
-	GeneralizedDistance *dist_params = dist_params_ref;
+	RepeatedGeneralizedDistanceEvaluator *dist_params = dist_params_ref;
 	if(constant_dist_params)
 	{
 		dist_params = &parametersAndBuffers.distParams;
@@ -657,7 +657,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 	}
 }
 
-void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistance &dist_params,
+void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanceEvaluator &dist_params,
 	std::vector<size_t> &position_label_ids, std::vector<EvaluableNodeImmediateValue> &position_values,
 	std::vector<EvaluableNodeImmediateValueType> &position_value_types,
 	size_t top_k, StringInternPool::StringID radius_label, size_t ignore_entity_index,
@@ -921,7 +921,7 @@ size_t SeparableBoxFilterDataStore::AddLabelsAsEmptyColumns(std::vector<size_t> 
 	return num_inserted_columns;
 }
 
-double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(GeneralizedDistance &dist_params,
+double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(RepeatedGeneralizedDistanceEvaluator &dist_params,
 	EvaluableNodeImmediateValue value, EvaluableNodeImmediateValueType value_type,
 	size_t num_entities_to_populate, bool expand_search_if_optimal, bool high_accuracy,
 	size_t query_feature_index, size_t absolute_feature_index, BitArrayIntegerSet &enabled_indices)
@@ -942,7 +942,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 		//if the known-unknown term is less than unknown_unknown (this should be rare if nulls have semantic meaning)
 		//then need to populate the rest of the cases
 		double known_unknown_term = dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
-		if(effective_feature_type == GeneralizedDistance::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED || known_unknown_term < unknown_unknown_term)
+		if(effective_feature_type == GeneralizedDistanceEvaluator::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED || known_unknown_term < unknown_unknown_term)
 		{
 			BitArrayIntegerSet &known_unknown_indices = parametersAndBuffers.potentialMatchesSet;
 			known_unknown_indices = enabled_indices;
@@ -964,7 +964,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 	}
 
 	//if nominal, only need to compute the exact match
-	if(effective_feature_type == GeneralizedDistance::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED)
+	if(effective_feature_type == GeneralizedDistanceEvaluator::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED)
 	{
 		if(value_type == ENIVT_NUMBER)
 		{
@@ -1004,7 +1004,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 		//return next smallest nominal distance term
 		return dist_params.ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(query_feature_index, high_accuracy);
 	}
-	else if(effective_feature_type == GeneralizedDistance::EFDT_CONTINUOUS_STRING)
+	else if(effective_feature_type == GeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING)
 	{
 		if(value_type == ENIVT_STRING_ID)
 		{
@@ -1019,7 +1019,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 		//the next closest string will have an edit distance of 1
 		return dist_params.ComputeDistanceTermContinuousNonCyclicNonNullRegular(1.0, query_feature_index, high_accuracy);
 	}
-	else if(effective_feature_type == GeneralizedDistance::EFDT_CONTINUOUS_CODE)
+	else if(effective_feature_type == GeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE)
 	{
 		//compute partial sums for all code of matching size
 		size_t code_size = 1;
@@ -1109,7 +1109,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 			if(next_index != value_index)
 			{
 				next_lower_index = next_index;
-				lower_diff = GeneralizedDistance::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueEntries[next_lower_index]->value.number), cycle_length);
+				lower_diff = RepeatedGeneralizedDistanceEvaluator::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueEntries[next_lower_index]->value.number), cycle_length);
 				compute_lower = true;
 			}
 		}
@@ -1142,7 +1142,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 				if((!compute_lower || next_index != next_lower_index))
 				{
 					next_upper_index = next_index;
-					upper_diff = GeneralizedDistance::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueEntries[next_upper_index]->value.number), cycle_length);
+					upper_diff = RepeatedGeneralizedDistanceEvaluator::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueEntries[next_upper_index]->value.number), cycle_length);
 					compute_upper = true;
 				}
 				else //upper and lower have overlapped, want to exit the loop
@@ -1225,7 +1225,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(G
 	return largest_term;
 }
 
-void SeparableBoxFilterDataStore::PopulateInitialPartialSums(GeneralizedDistance &dist_params,
+void SeparableBoxFilterDataStore::PopulateInitialPartialSums(RepeatedGeneralizedDistanceEvaluator &dist_params,
 	size_t top_k, size_t radius_column_index, size_t num_enabled_features, bool high_accuracy,
 	BitArrayIntegerSet &enabled_indices, std::vector<double> &min_unpopulated_distances, std::vector<double> &min_distance_by_unpopulated_count)
 {;
@@ -1247,7 +1247,7 @@ void SeparableBoxFilterDataStore::PopulateInitialPartialSums(GeneralizedDistance
 	size_t num_entities_to_populate = top_k;
 	//populate sqrt(2)^p * top_k, which will yield 2 for p=2, 1 for p=0, and about 1.2 for p=0.5
 	if(num_enabled_features > 1)
-		num_entities_to_populate = static_cast<size_t>(std::lround(FastPow(GeneralizedDistance::s_sqrt_2, dist_params.pValue) * top_k)) + 1;
+		num_entities_to_populate = static_cast<size_t>(std::lround(FastPow(RepeatedGeneralizedDistanceEvaluator::s_sqrt_2, dist_params.pValue) * top_k)) + 1;
 
 	min_unpopulated_distances.resize(num_enabled_features);
 	for(size_t i = 0; i < num_enabled_features; i++)

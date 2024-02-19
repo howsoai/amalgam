@@ -680,26 +680,26 @@ public:
 
 	//returns the maximum difference between value and any other value for this column
 	//if empty, will return infinity
-	inline double GetMaxDifferenceTermFromValue(GeneralizedDistanceParameters::FeatureParams &feature_params, EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue &value)
+	inline double GetMaxDifferenceTermFromValue(GeneralizedDistanceEvaluator::FeatureParams &feature_params, EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue &value)
 	{
 		switch(feature_params.featureType)
 		{
-		case GeneralizedDistanceParameters::FDT_NOMINAL_NUMERIC:
-		case GeneralizedDistanceParameters::FDT_NOMINAL_STRING:
-		case GeneralizedDistanceParameters::FDT_NOMINAL_CODE:
+		case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC:
+		case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
+		case GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE:
 			return 1.0;
 
-		case GeneralizedDistanceParameters::FDT_CONTINUOUS_NUMERIC:
+		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC:
 			if(sortedNumberValueEntries.size() <= 1)
 				return 0.0;
 
 			return sortedNumberValueEntries.back()->value.number - sortedNumberValueEntries[0]->value.number;
 
-		case GeneralizedDistanceParameters::FDT_CONTINUOUS_NUMERIC_CYCLIC:
+		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC:
 			//maximum is the other side of the cycle
 			return feature_params.typeAttributes.maxCyclicDifference / 2;
 
-		case GeneralizedDistanceParameters::FDT_CONTINUOUS_STRING:
+		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING:
 			//the max difference is the worst case edit distance, of removing all the characters
 			// and adding all the new ones
 			if(value_type == ENIVT_STRING_ID)
@@ -717,7 +717,7 @@ public:
 				return static_cast<double>(longestStringLength + 1);
 			}
 
-		case GeneralizedDistanceParameters::FDT_CONTINUOUS_CODE:
+		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE:
 			if(value_type == ENIVT_CODE)
 				return static_cast<double>(largestCodeSize + EvaluableNode::GetDeepSize(value.code));
 			else if(value_type == ENIVT_NULL)

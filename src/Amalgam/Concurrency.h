@@ -82,6 +82,7 @@ namespace Concurrency
 
 #ifdef MULTITHREAD_SUPPORT
 	extern ThreadPool threadPool;
+	extern ThreadPool urgentThreadPool;
 #endif
 };
 #endif

@@ -522,8 +522,7 @@ void EvaluableNodeManager::CompactAllocatedNodes()
 				break;
 
 			//put the node up at the edge of unused memory, grab the next lowest node and pull it down to increase density
-			std::swap(nodes[firstUnusedNodeIndex], nodes[lowest_known_unused_index - 1]);
-			lowest_known_unused_index--;
+			std::swap(nodes[firstUnusedNodeIndex], nodes[--lowest_known_unused_index]);
 		}
 	}
 }

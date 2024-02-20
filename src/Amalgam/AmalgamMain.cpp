@@ -173,10 +173,10 @@ PLATFORM_MAIN_CONSOLE
 			run_tracefile = true;
 			tracefile = args[++i];
 		}
-#if defined(MULTITHREAD_SUPPORT) || defined(_OPENMP)
+	#if defined(MULTITHREAD_SUPPORT) || defined(_OPENMP)
 		else if(args[i] == "--numthreads")
 			num_threads = static_cast<size_t>(std::max(std::atoi(args[++i].data()), 0));
-#endif
+	#endif
 		else if(amlg_file_to_run == "")
 		{
 			//if relative path, prepend current working dir to make absolute path

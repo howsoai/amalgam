@@ -325,6 +325,11 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 	if(nodes.size() == 0)
 		return;
 
+	//if any group of nodes on the top are ready to be cleaned up cheaply, do so first
+	while(firstUnusedNodeIndex > 0 && nodes[firstUnusedNodeIndex - 1] != nullptr
+			&& nodes[firstUnusedNodeIndex - 1]->GetType() == ENT_DEALLOCATED)
+		firstUnusedNodeIndex--;
+
 	size_t original_num_nodes = firstUnusedNodeIndex;
 
 	//start with a clean slate, and swap everything in use into the in-use region
@@ -352,14 +357,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 		{
 			//free any extra memory used, since this node is no longer needed
 			if(cur_node_ptr != nullptr && cur_node_ptr->GetType() != ENT_DEALLOCATED)
-			{
-			#ifdef MULTITHREAD_SUPPORT
-				//TODO 19185: attempt to multithread this
 				cur_node_ptr->Invalidate();
-			#else
-				cur_node_ptr->Invalidate();
-			#endif
-			}
 
 			//see if out of things to free; if so exit early
 			if(lowest_known_unused_index == 0)

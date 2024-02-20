@@ -613,7 +613,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, b
 
 		//need to interpret node here in case function is actually a null
 		// null is a special non-function for weave
-		function = InterpretNode(ocn[0]);
+		function = InterpretNodeForImmediateUse(ocn[0]);
 		node_stack.PushEvaluableNode(function);
 	}
 
@@ -643,7 +643,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, b
 	EvaluableNodeReference woven_list(evaluableNodeManager->AllocNode(ENT_LIST), true);
 
 	//just lists, interleave
-	if(function == nullptr)
+	if(EvaluableNode::IsNull(function))
 	{
 		woven_list->ReserveOrderedChildNodes(total_num_elements);
 
@@ -693,7 +693,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, b
 
 		PopConstructionContext();
 
-		if(values_to_weave == nullptr)
+		if(EvaluableNode::IsNull(values_to_weave))
 		{
 			woven_list->AppendOrderedChildNode(nullptr);
 			continue;

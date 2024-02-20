@@ -609,7 +609,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, b
 	}
 
 	//if a function is specified, then set up appropriate data structures to call the function and move the indices for the index and value parameters
-	EvaluableNodeReference function = InterpretNode(ocn[0]);
+	EvaluableNodeReference function = InterpretNodeForImmediateUse(ocn[0]);
 	auto node_stack = CreateInterpreterNodeStackStateSaver(function);
 
 	EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_LIST), true);

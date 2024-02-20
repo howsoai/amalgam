@@ -131,7 +131,7 @@ public:
 
 	//enqueues a task into the thread pool comprised of a function and arguments, automatically inferring the function type
 	template<class FunctionType, class ...ArgsType>
-	std::future<typename std::invoke_result<FunctionType, ArgsType ...>::type> EnqueueSingleTask(FunctionType &&function, ArgsType &&...args)
+	std::future<typename std::invoke_result<FunctionType, ArgsType ...>::type> EnqueueTask(FunctionType &&function, ArgsType &&...args)
 	{
 		using return_type = typename std::invoke_result<FunctionType, ArgsType ...>::type;
 
@@ -160,7 +160,7 @@ public:
 		return result;
 	}
 
-	//Contains a lock for the task queue for calling EnqueueBatchTask repeatedly while maintaining the lock and layer count
+	//Contains a lock for the task queue for calling BatchEnqueueTask repeatedly while maintaining the lock and layer count
 	struct BatchTaskEnqueueLockAndLayer
 	{
 		inline BatchTaskEnqueueLockAndLayer(std::condition_variable *wait_for_task, std::mutex &task_queue_mutex)
@@ -245,7 +245,7 @@ public:
 
 	//enqueues a task into the thread pool comprised of a function and arguments, automatically inferring the function type
 	template<class FunctionType, class ...ArgsType>
-	std::future<typename std::invoke_result<FunctionType, ArgsType ...>::type> EnqueueBatchTask(FunctionType &&function, ArgsType &&...args)
+	std::future<typename std::invoke_result<FunctionType, ArgsType ...>::type> BatchEnqueueTask(FunctionType &&function, ArgsType &&...args)
 	{
 		using return_type = typename std::invoke_result<FunctionType, ArgsType ...>::type;
 

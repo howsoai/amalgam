@@ -342,6 +342,70 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 
 	//create a temporary variable for multithreading as to not use the atomic variable to slow things down
 	size_t first_unused_node_index_temp = 0;
+
+#ifdef MULTITHREAD_SUPPORT
+	if(lowest_known_unused_index > 4000)
+	{
+		//used to climb up the indices, swapping out
+		std::atomic<size_t> highest_possibly_unused_node = lowest_known_unused_index;
+		size_t highest_possibly_unfreed_node = lowest_known_unused_index;
+		std::atomic<bool> all_nodes_finished = false;
+
+		auto completed_node_cleanup = Concurrency::urgentThreadPool.EnqueueTask(
+			[this, &highest_possibly_unused_node, &highest_possibly_unfreed_node, &all_nodes_finished]
+			{
+				while(true)
+				{
+					while(highest_possibly_unfreed_node > highest_possibly_unused_node)
+					{
+						auto &cur_node_ptr = nodes[highest_possibly_unfreed_node - 1];
+						if(cur_node_ptr != nullptr && cur_node_ptr->GetType() != ENT_DEALLOCATED)
+							cur_node_ptr->Invalidate();
+						--highest_possibly_unfreed_node;
+					}
+
+					if(all_nodes_finished)
+						return;
+				}
+			}
+		);
+
+		while(first_unused_node_index_temp < highest_possibly_unused_node)
+		{
+			//nodes can't be nullptr below firstUnusedNodeIndex
+			auto &cur_node_ptr = nodes[first_unused_node_index_temp];
+
+			//if the node has been found on this iteration, then clear it as counted so it's clean for next garbage collection
+			if(cur_node_ptr != nullptr && cur_node_ptr->GetKnownToBeInUse())
+			{
+				cur_node_ptr->SetKnownToBeInUse(false);
+				first_unused_node_index_temp++;
+			}
+			else //collect the node
+			{
+				//see if out of things to free; if so exit early
+				if(highest_possibly_unused_node == 0)
+					break;
+
+				//put the node up at the top where unused memory resides and reduce lowest_known_unused_index
+				std::swap(cur_node_ptr, nodes[highest_possibly_unused_node - 1]);
+
+				--highest_possibly_unused_node;
+			}
+		}
+
+		all_nodes_finished = true;
+
+		completed_node_cleanup.wait();
+
+		//assign back to the atomic variable, but need to cast it
+		// so the compiler knows it's ok to not do an atomic assignment
+		firstUnusedNodeIndex = static_cast<size_t>(first_unused_node_index_temp);
+
+		UpdateGarbageCollectionTrigger(original_num_nodes);
+		return;
+	}
+#else
 	while(first_unused_node_index_temp < lowest_known_unused_index)
 	{
 		//nodes can't be nullptr below firstUnusedNodeIndex
@@ -370,6 +434,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 
 	//assign back to the atomic variable
 	firstUnusedNodeIndex = first_unused_node_index_temp;
+#endif
 
 	UpdateGarbageCollectionTrigger(original_num_nodes);
 }

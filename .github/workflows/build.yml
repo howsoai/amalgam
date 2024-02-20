@@ -38,7 +38,7 @@ jobs:
       contents: write
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set build preset
       run: |
@@ -62,7 +62,7 @@ jobs:
       run: cmake --build --preset $PRESET --target package
 
     - name: Upload Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: amalgam-${{ inputs.version }}-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}
         path: ./out/package/amalgam-*.tar.gz
@@ -83,7 +83,7 @@ jobs:
       contents: write
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set build preset
       run: |
@@ -121,7 +121,7 @@ jobs:
       run: cmake --build --preset $PRESET --target package
 
     - name: Upload Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: amalgam-${{ inputs.version }}-darwin-${{ matrix.preset.arch }}
         path: ./out/package/amalgam-*.tar.gz
@@ -139,7 +139,7 @@ jobs:
       contents: write
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set build preset
       run: |
@@ -173,7 +173,7 @@ jobs:
       run: cmake --build --preset $PRESET --target package
 
     - name: Upload Artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: amalgam-${{ inputs.version }}-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}
         path: ./out/package/amalgam-*.tar.gz
@@ -184,7 +184,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Download Artifact
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: amalgam-${{ inputs.version }}-linux-amd64
 
@@ -206,7 +206,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Download Artifact
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: amalgam-${{ inputs.version }}-linux-arm64
 
@@ -233,7 +233,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Download Artifact
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: amalgam-${{ inputs.version }}-linux-arm64_8a
 
@@ -262,7 +262,7 @@ jobs:
     runs-on: macos-latest
     steps:
     - name: Download Artifact
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: amalgam-${{ inputs.version }}-darwin-amd64
 
@@ -285,7 +285,7 @@ jobs:
     runs-on: macos-latest-large
     steps:
     - name: Download Artifact
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: amalgam-${{ inputs.version }}-darwin-amd64
 
@@ -311,7 +311,7 @@ jobs:
     runs-on: macos-latest-xlarge
     steps:
     - name: Download Artifact
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: amalgam-${{ inputs.version }}-darwin-amd64
 
@@ -334,7 +334,7 @@ jobs:
     runs-on: macos-latest-xlarge
     steps:
     - name: Download Artifact
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: amalgam-${{ inputs.version }}-darwin-arm64
 
@@ -356,7 +356,7 @@ jobs:
     runs-on: windows-latest
     steps:
     - name: Download Artifact
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: amalgam-${{ inputs.version }}-windows-amd64
 
@@ -378,10 +378,10 @@ jobs:
     runs-on: ubuntu-latest
     container: node:18-bullseye-slim
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Download Artifact
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: amalgam-${{ inputs.version }}-linux-wasm64
 
@@ -412,7 +412,7 @@ jobs:
     steps:
 
     - name: Download Artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
 
     - name: Create Release
       uses: ncipollo/release-action@v1

@@ -359,7 +359,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PARALLEL(EvaluableNode *en
 				EvaluableNode *node_to_execute = ocn[element_index];
 
 				concurrency_manager.resultFutures.emplace_back(
-					Concurrency::threadPool.EnqueueBatchTask(
+					Concurrency::threadPool.BatchEnqueueTask(
 						[this, &interpreter, node_to_execute, &concurrency_manager]
 						{
 							interpreter.memoryModificationLock = Concurrency::ReadLock(interpreter.evaluableNodeManager->memoryModificationMutex);

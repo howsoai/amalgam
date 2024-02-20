@@ -764,7 +764,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(bool set_in_use, size_t e
 				//some compilers are pedantic about the types passed into the lambda, so make a copy
 				EvaluableNode *en = enr;
 				nodesCompleted.emplace_back(
-					Concurrency::urgentThreadPool.EnqueueSingleTask(
+					Concurrency::urgentThreadPool.EnqueueTask(
 						[en]
 						{	SetAllReferencedNodesInUseRecurseConcurrent(en);	}
 					)
@@ -781,7 +781,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(bool set_in_use, size_t e
 				//some compilers are pedantic about the types passed into the lambda, so make a copy
 				EvaluableNode *en = enr;
 				nodesCompleted.emplace_back(
-					Concurrency::urgentThreadPool.EnqueueSingleTask(
+					Concurrency::urgentThreadPool.EnqueueTask(
 						[en]
 						{	ClearAllReferencedNodesInUseRecurseConcurrent(en);	}
 					)

@@ -159,13 +159,16 @@ void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t previous_num_no
 	//scale down the number of nodes previously allocated, because there is always a chance that
 	//a large allocation goes beyond that size and so the memory keeps growing
 	//by using a fraction less than 1, it reduces the chances of a slow memory increase
-	size_t max_from_previous = static_cast<size_t>(0.96875 * previous_num_nodes);
+	size_t max_from_previous = static_cast<size_t>(0.99609375 * previous_num_nodes);
+
+	//at least use what's already been allocated
+	size_t max_from_allocation = static_cast<size_t>(nodes.size() / allocExpansionFactor);
 
 	//assume at least a factor larger than the base memory usage for the entity
 	//add 1 for good measure and to make sure the smallest size isn't zero
-	size_t max_from_current = static_cast<size_t>(3 * (1 + GetNumberOfUsedNodes()));
+	size_t max_from_current = static_cast<size_t>(3.5 * (1 + GetNumberOfUsedNodes()));
 
-	numNodesToRunGarbageCollection = std::max<size_t>(max_from_previous, max_from_current);
+	numNodesToRunGarbageCollection = std::max(max_from_allocation, std::max<size_t>(max_from_previous, max_from_current));
 }
 
 #ifdef MULTITHREAD_SUPPORT
@@ -356,7 +359,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 		auto completed_node_cleanup = Concurrency::urgentThreadPool.EnqueueTask(
 			[this, &highest_possibly_unused_node, &highest_possibly_unfreed_node, &all_nodes_finished]
 			{
-				while(true)
+				do
 				{
 					while(highest_possibly_unfreed_node > highest_possibly_unused_node)
 					{
@@ -365,10 +368,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 							cur_node_ptr->Invalidate();
 						--highest_possibly_unfreed_node;
 					}
-
-					if(all_nodes_finished)
-						return;
-				}
+				} while(!all_nodes_finished);
 			}
 		);
 
@@ -401,9 +401,8 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 
 		completed_node_cleanup.wait();
 
-		//assign back to the atomic variable, but need to cast it
-		// so the compiler knows it's ok to not do an atomic assignment
-		firstUnusedNodeIndex = static_cast<size_t>(first_unused_node_index_temp);
+		//assign back to the atomic variable
+		firstUnusedNodeIndex = first_unused_node_index_temp;
 
 		UpdateGarbageCollectionTrigger(original_num_nodes);
 		return;

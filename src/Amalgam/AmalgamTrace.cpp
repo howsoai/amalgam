@@ -39,8 +39,8 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 	std::string label;
 	std::string command;
 	std::string data;
-	std::string load_contained;
 	std::string persistent;
+	std::string use_contained;
 	std::string print_listener_path;
 	std::string transaction_listener_path;
 	std::string response;
@@ -56,15 +56,13 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 		// perform specified operation
 		if(command == "LOAD_ENTITY")
 		{
-			// used in LOAD_ENTITY to account for filenames with spaces.
 			std::vector<std::string> command_tokens = Platform_SplitArgString(input);
-
 			if(command_tokens.size() >= 4)
 			{
 				handle = command_tokens[0];
 				data = command_tokens[1];  // path to amlg file
 				persistent = command_tokens[2];
-				load_contained = command_tokens[3];
+				use_contained = command_tokens[3];
 
 				if(command_tokens.size() >= 5)
 					print_listener_path = command_tokens[4];
@@ -77,14 +75,40 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 					transaction_listener_path = "";
 
 				std::string new_rand_seed = random_stream.CreateOtherStreamStateViaString("trace");
-				bool result = entint.LoadEntity(handle, data, persistent == "true", load_contained == "true", transaction_listener_path, print_listener_path, new_rand_seed);
+				bool result = entint.LoadEntity(handle, data, persistent == "true", use_contained == "true", transaction_listener_path, print_listener_path, new_rand_seed);
 				response = result ? SUCCESS_RESPONSE : FAILURE_RESPONSE;
 			}
 			else
 			{
-				//Insufficient arguments for LOAD_ENTITY
+				//Insufficient arguments
 				response = FAILURE_RESPONSE;
 			}
+		}
+		else if(command == "STORE_ENTITY")
+		{
+			std::vector<std::string> command_tokens = Platform_SplitArgString(input);
+			if(command_tokens.size() >= 4)
+			{
+				handle = command_tokens[0];
+				data = command_tokens[1];  // path to amlg file
+				persistent = command_tokens[2];
+				use_contained = command_tokens[3];
+
+				entint.StoreEntity(handle, data, persistent == "true", use_contained == "true");
+				response = SUCCESS_RESPONSE;
+			}
+			else
+			{
+				//Insufficient arguments
+				response = FAILURE_RESPONSE;
+			}
+		}
+		else if(command == "DELETE_ENTITY")
+		{
+			handle = StringManipulation::RemoveFirstWord(input);
+
+			entint.DeleteEntity(handle);
+			response = SUCCESS_RESPONSE;
 		}
 		else if(command == "SET_JSON_TO_LABEL")
 		{

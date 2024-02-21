@@ -405,7 +405,8 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 		UpdateGarbageCollectionTrigger(original_num_nodes);
 		return;
 	}
-#else
+#endif
+
 	while(first_unused_node_index_temp < lowest_known_unused_index)
 	{
 		//nodes can't be nullptr below firstUnusedNodeIndex
@@ -434,7 +435,6 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 
 	//assign back to the atomic variable
 	firstUnusedNodeIndex = first_unused_node_index_temp;
-#endif
 
 	UpdateGarbageCollectionTrigger(original_num_nodes);
 }

@@ -346,11 +346,13 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 #ifdef MULTITHREAD_SUPPORT
 	if(lowest_known_unused_index > 4000)
 	{
-		//used to climb up the indices, swapping out
+		//used to climb up the indices, swapping out unused nodes above this as moves downward
 		std::atomic<size_t> highest_possibly_unused_node = lowest_known_unused_index;
+		//used by the independent freeing thread to climb down from highest_possibly_unused_node
 		size_t highest_possibly_unfreed_node = lowest_known_unused_index;
 		std::atomic<bool> all_nodes_finished = false;
 
+		//free nodes in a separate thread
 		auto completed_node_cleanup = Concurrency::urgentThreadPool.EnqueueTask(
 			[this, &highest_possibly_unused_node, &highest_possibly_unfreed_node, &all_nodes_finished]
 			{
@@ -370,6 +372,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 			}
 		);
 
+		//organize nodes above highest_possibly_unused_node that are unused
 		while(first_unused_node_index_temp < highest_possibly_unused_node)
 		{
 			//nodes can't be nullptr below firstUnusedNodeIndex

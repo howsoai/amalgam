@@ -935,11 +935,12 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 	if(tree1_mapped_nodes_size > 0 && tree2_mapped_nodes_size > 0)
 	{
 		//use keys from first node
-		for(auto &[node_id, node] : tree1->GetMappedChildNodes())
+		auto &tree_2_mcn = tree2->GetMappedChildNodesReference();
+		for(auto &[node_id, node] : tree1->GetMappedChildNodesReference())
 		{
 			//skip unless both trees have the key
-			auto other_node = tree2->GetMappedChildNodes().find(node_id);
-			if(other_node == end(tree2->GetMappedChildNodes()))
+			auto other_node = tree_2_mcn.find(node_id);
+			if(other_node == end(tree_2_mcn))
 				continue;
 
 			commonality += NumberOfSharedNodes(node, other_node->second, memoized, checked);
@@ -960,7 +961,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 		}
 		else if(tree1_mapped_nodes_size > 0)
 		{
-			for(auto &[node_id, node] : tree1->GetMappedChildNodes())
+			for(auto &[node_id, node] : tree1->GetMappedChildNodesReference())
 			{
 				auto sub_match = NumberOfSharedNodes(tree2, node, memoized, checked);
 				if(sub_match > commonality)
@@ -979,7 +980,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 		}
 		else if(tree2_mapped_nodes_size > 0)
 		{
-			for(auto &[node_id, node] : tree2->GetMappedChildNodes())
+			for(auto &[node_id, node] : tree2->GetMappedChildNodesReference())
 			{
 				auto sub_match = NumberOfSharedNodes(tree1, node, memoized, checked);
 				if(sub_match > commonality)
@@ -1043,7 +1044,7 @@ bool EvaluableNodeTreeManipulation::DoesTreeContainLabels(EvaluableNode *en, Eva
 			return true;
 	}
 
-	for(auto &[_, cn] : en->GetMappedChildNodes())
+	for(auto &[_2, cn] : en->GetMappedChildNodes())
 	{
 		if(cn == nullptr)
 			continue;
@@ -1526,7 +1527,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 
 	StringInternPool::StringID mutation_type = mp.randMutationType->WeightedDiscreteRand(mp.interpreter->randomStream);
 	//only mark for likely deletion if null has no parameters
-	if(n->GetType() == ENT_NULL && n->GetOrderedChildNodes().size() == 0 && n->GetMappedChildNodes().size() && mp.interpreter->randomStream.Rand() < 0.5)
+	if(n->GetType() == ENT_NULL && n->GetNumChildNodes() == 0 && mp.interpreter->randomStream.Rand() < 0.5)
 		mutation_type = ENBISI_delete;
 
 	//if immediate, can't perform most of the mutations, just mutate it
@@ -1550,10 +1551,10 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			}
 			else if(n->GetMappedChildNodes().size() > 0)
 			{
-				size_t num_children = n->GetMappedChildNodes().size();
-				double replace_with = mp.interpreter->randomStream.Rand() * num_children;
+				auto &mcn = n->GetMappedChildNodesReference();
+				double replace_with = mp.interpreter->randomStream.Rand() * mcn.size();
 				//iterate over child nodes until find the right index
-				for(auto &[_, cn] : n->GetMappedChildNodes())
+				for(auto &[_, cn] : mcn)
 				{
 					if(replace_with < 1.0)
 					{
@@ -1638,12 +1639,13 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			}
 			else if(n->GetMappedChildNodes().size() > 0)
 			{
-				auto num_children = n->GetMappedChildNodesReference().size();
+				auto &mcn = n->GetMappedChildNodes();
+				auto num_children = mcn.size();
 				size_t source_index = mp.interpreter->randomStream.RandSize(num_children);
 				EvaluableNode *source_node = nullptr;
 				size_t destination_index = mp.interpreter->randomStream.RandSize(num_children + 1);
 				//iterate over child nodes until find the right index
-				for(auto &[_, cn] : n->GetMappedChildNodes())
+				for(auto &[_, cn] : mcn)
 				{
 					if(source_index < 1)
 					{
@@ -1653,7 +1655,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 					source_index--;
 				}
 			
-				for(auto &[_, cn] : n->GetMappedChildNodes())
+				for(auto &[_, cn] : mcn)
 				{
 					if(destination_index < 1)
 					{

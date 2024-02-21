@@ -593,7 +593,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 		if(DoesEvaluableNodeTypeUseAssocData(cur_type) && enm != nullptr)
 		{
 			std::vector<EvaluableNode *> new_ordered;
-			auto &mcn = GetMappedChildNodes();
+			auto &mcn = GetMappedChildNodesReference();
 			new_ordered.reserve(2 * mcn.size());
 			for(auto &[cn_id, cn] : mcn)
 			{
@@ -1477,7 +1477,7 @@ void EvaluableNode::ClearMappedChildNodes()
 	if(!IsAssociativeArray())
 		return;
 
-	auto &map = GetMappedChildNodes();
+	auto &map = GetMappedChildNodesReference();
 	string_intern_pool.DestroyStringReferences(map, [](auto n) { return n.first; });
 	map.clear();
 

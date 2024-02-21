@@ -1022,7 +1022,7 @@ void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrityRecurse(Evalu
 
 	if(en->IsAssociativeArray())
 	{
-		for(auto &[cn_id, cn] : en->GetMappedChildNodes())
+		for(auto &[cn_id, cn] : en->GetMappedChildNodesReference())
 		{
 			if(cn == nullptr)
 				continue;

@@ -144,28 +144,22 @@ public:
 		//if big enough (enough entities and/or enough columns), try to use multithreading
 		if(num_columns_added > 1 && (numEntities > 10000 || (numEntities > 200 && num_columns_added > 10)))
 		{
-			auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
-			if(enqueue_task_lock.AreThreadsAvailable())
+			std::vector<std::future<void>> columns_completed;
+			columns_completed.reserve(num_columns);
+
+			for(size_t i = num_previous_columns; i < num_columns; i++)
 			{
-				std::vector<std::future<void>> columns_completed;
-				columns_completed.reserve(num_columns);
-
-				for(size_t i = num_previous_columns; i < num_columns; i++)
-				{
-					columns_completed.emplace_back(
-						Concurrency::threadPool.EnqueueBatchTask([this, &entities, i]() { BuildLabel(i, entities); })
-					);
-				}
-
-				enqueue_task_lock.Unlock();
-
-				Concurrency::threadPool.ChangeCurrentThreadStateFromActiveToWaiting();
-				for(auto &future : columns_completed)
-					future.wait();
-				Concurrency::threadPool.ChangeCurrentThreadStateFromWaitingToActive();
-
-				return;
+				columns_completed.emplace_back(
+					Concurrency::urgentThreadPool.EnqueueTask([this, &entities, i]() { BuildLabel(i, entities); })
+				);
 			}
+
+			Concurrency::urgentThreadPool.ChangeCurrentThreadStateFromActiveToWaiting();
+			for(auto &future : columns_completed)
+				future.wait();
+			Concurrency::urgentThreadPool.ChangeCurrentThreadStateFromWaitingToActive();
+
+			return;
 		}
 		//not running concurrently
 	#endif

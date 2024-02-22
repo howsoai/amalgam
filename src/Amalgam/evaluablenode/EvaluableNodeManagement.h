@@ -663,7 +663,7 @@ public:
 		//use the lower bits of firstUnusedNodeIndex being zero as a fast pseudorandom process
 		//given that many opcodes allocate varied number of nodes,
 		//it isn't too likely to get stuck around one of these values
-		if((firstUnusedNodeIndex & 16383) != 0)
+		if((firstUnusedNodeIndex & 511) != 0)
 			return;
 
 		//be opportunistic and only attempt to reclaim if it can grab a write lock
@@ -820,7 +820,7 @@ protected:
 
 	//sets all referenced nodes that are in use as such
 	// if set_in_use is true, then it will set the value, if false, it will clear the value
-	void MarkAllReferencedNodesInUse(bool set_in_use);
+	void MarkAllReferencedNodesInUse(bool set_in_use, size_t estimated_nodes_in_use);
 
 	//computes whether the code is cycle free and idempotent and updates all nodes appropriately
 	// returns flags for whether cycle free and idempotent
@@ -855,6 +855,9 @@ public:
 	//note that this is a global lock because nodes may be mixed among more than one
 	// EvaluableNodeManager and so garbage collection should not happening while memory is being modified
 	static Concurrency::ReadWriteMutex memoryModificationMutex;
+
+	//used to buffer multithreaded garbage collection tasks
+	thread_local static std::vector<std::future<void>> nodesCompleted;
 
 protected:
 #endif

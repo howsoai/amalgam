@@ -43,6 +43,11 @@ extern "C"
 	// helper functions (not in API)
 	// ************************************
 
+	// WARNING: when using StringToCharPtr & StringToWCharPtr, ownership
+	//          of the memory is returned to caller. When sending strings
+	//          across the library boundary, the callers must free the
+	//          memory using 'DeleteString', otherwise a leak occurs.
+
 	char* StringToCharPtr(std::string& value)
 	{
 		char* out = new char[value.length() + 1];
@@ -169,10 +174,10 @@ extern "C"
 		entint.ExecuteEntity(h, l);
 	}
 
-	void DeleteEntity(char *handle)
+	void DestroyEntity(char *handle)
 	{
 		std::string h(handle);
-		entint.DeleteEntity(h);
+		entint.DestroyEntity(h);
 	}
 
 	bool SetRandomSeed(char *handle, char *rand_seed)
@@ -403,6 +408,11 @@ extern "C"
 			ct[i] = StringToCharPtr(str_list[i]);
 
 		return ct;
+	}
+
+	void DeleteString(char *p)
+	{
+		delete[] p;
 	}
 
 	// ************************************

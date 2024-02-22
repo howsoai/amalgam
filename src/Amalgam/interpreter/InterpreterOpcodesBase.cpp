@@ -359,7 +359,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PARALLEL(EvaluableNode *en
 				EvaluableNode *node_to_execute = ocn[element_index];
 
 				concurrency_manager.resultFutures.emplace_back(
-					Concurrency::threadPool.EnqueueBatchTask(
+					Concurrency::threadPool.BatchEnqueueTask(
 						[this, &interpreter, node_to_execute, &concurrency_manager]
 						{
 							interpreter.memoryModificationLock = Concurrency::ReadLock(interpreter.evaluableNodeManager->memoryModificationMutex);
@@ -1771,7 +1771,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEIGHTED_RAND(EvaluableNod
 		else if(param->GetMappedChildNodes().size() > 0)
 		{
 			//clamp to the maximum number that can possibly be generated
-			number_to_generate = std::min(number_to_generate, param->GetMappedChildNodes().size());
+			number_to_generate = std::min(number_to_generate, param->GetMappedChildNodesReference().size());
 
 			//want to generate multiple values, so return a list
 			EvaluableNodeReference retval(
@@ -1780,7 +1780,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEIGHTED_RAND(EvaluableNod
 			auto &retval_ocn = retval->GetOrderedChildNodes();
 
 			//make a copy of all of the probabilities so they can be removed one at a time
-			EvaluableNode::AssocType assoc(param->GetMappedChildNodes());
+			EvaluableNode::AssocType assoc(param->GetMappedChildNodesReference());
 
 			for(size_t i = 0; i < number_to_generate; i++)
 			{

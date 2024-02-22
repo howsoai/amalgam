@@ -56,7 +56,7 @@ public:
 					if(top_k > cachedNeighbors[index].size())
 					{
 						indices_completed.emplace_back(
-							Concurrency::threadPool.EnqueueBatchTask(
+							Concurrency::threadPool.BatchEnqueueTask(
 								[this, index, top_k]
 								{
 									// could have knn cache constructor take in dist params and just get top_k from there, so don't need to pass it in everywhere

@@ -10,6 +10,7 @@
 
 #ifdef MULTITHREAD_SUPPORT
 Concurrency::ReadWriteMutex EvaluableNodeManager::memoryModificationMutex;
+thread_local std::vector<std::future<void>> EvaluableNodeManager::nodesCompleted;
 #endif
 
 const double EvaluableNodeManager::allocExpansionFactor = 1.5;
@@ -158,13 +159,16 @@ void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t previous_num_no
 	//scale down the number of nodes previously allocated, because there is always a chance that
 	//a large allocation goes beyond that size and so the memory keeps growing
 	//by using a fraction less than 1, it reduces the chances of a slow memory increase
-	size_t max_from_previous = static_cast<size_t>(0.96875 * previous_num_nodes);
+	size_t max_from_previous = static_cast<size_t>(0.99609375 * previous_num_nodes);
+
+	//at least use what's already been allocated
+	size_t max_from_allocation = static_cast<size_t>(nodes.size() / allocExpansionFactor);
 
 	//assume at least a factor larger than the base memory usage for the entity
 	//add 1 for good measure and to make sure the smallest size isn't zero
 	size_t max_from_current = static_cast<size_t>(3 * (1 + GetNumberOfUsedNodes()));
 
-	numNodesToRunGarbageCollection = std::max<size_t>(max_from_previous, max_from_current);
+	numNodesToRunGarbageCollection = std::max(max_from_allocation, std::max<size_t>(max_from_previous, max_from_current));
 }
 
 #ifdef MULTITHREAD_SUPPORT
@@ -188,7 +192,7 @@ void EvaluableNodeManager::CollectGarbage()
 	//keep trying to acquire write lock to see if this thread wins the race to collect garbage
 	Concurrency::WriteLock write_lock(memoryModificationMutex, std::defer_lock);
 
-	do
+	while(!write_lock.try_lock())
 	{
 		if(!RecommendGarbageCollection())
 		{
@@ -200,8 +204,7 @@ void EvaluableNodeManager::CollectGarbage()
 
 			return;
 		}
-
-	} while(!write_lock.try_lock());
+	}
 		
 	//double-check still needs collection, and not that another thread collected it
 	if(!RecommendGarbageCollection())
@@ -325,18 +328,86 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 	if(nodes.size() == 0)
 		return;
 
+	//if any group of nodes on the top are ready to be cleaned up cheaply, do so first
+	while(firstUnusedNodeIndex > 0 && nodes[firstUnusedNodeIndex - 1] != nullptr
+			&& nodes[firstUnusedNodeIndex - 1]->GetType() == ENT_DEALLOCATED)
+		firstUnusedNodeIndex--;
+
 	size_t original_num_nodes = firstUnusedNodeIndex;
 
-	//set to contain everything that is referenced
-	MarkAllReferencedNodesInUse(true);
-
-	//start with a clean slate, and swap everything in use into the in-use region
-	size_t lowest_known_unused_index = firstUnusedNodeIndex;	//will store any unused nodes up here; start at what was previously known to be the max, as those above don't need to be rechecked
 	//clear firstUnusedNodeIndex to signal to other threads that they won't need to do garbage collection
 	firstUnusedNodeIndex = 0;
 
+	//set to contain everything that is referenced
+	MarkAllReferencedNodesInUse(true, original_num_nodes);
+
 	//create a temporary variable for multithreading as to not use the atomic variable to slow things down
 	size_t first_unused_node_index_temp = 0;
+
+#ifdef MULTITHREAD_SUPPORT
+	if(original_num_nodes > 6000)
+	{
+		//used to climb up the indices, swapping out unused nodes above this as moves downward
+		std::atomic<size_t> lowest_known_unused_index = original_num_nodes;
+		//used by the independent freeing thread to climb down from lowest_known_unused_index
+		size_t highest_possibly_unfreed_node = original_num_nodes;
+		std::atomic<bool> all_nodes_finished = false;
+
+		//free nodes in a separate thread
+		auto completed_node_cleanup = Concurrency::urgentThreadPool.EnqueueTask(
+			[this, &lowest_known_unused_index, &highest_possibly_unfreed_node, &all_nodes_finished]
+			{
+				do
+				{
+					while(highest_possibly_unfreed_node > lowest_known_unused_index)
+					{
+						auto &cur_node_ptr = nodes[highest_possibly_unfreed_node - 1];
+						if(cur_node_ptr != nullptr && cur_node_ptr->GetType() != ENT_DEALLOCATED)
+							cur_node_ptr->Invalidate();
+						--highest_possibly_unfreed_node;
+					}
+				} while(!all_nodes_finished);
+			}
+		);
+
+		//organize nodes above lowest_known_unused_index that are unused
+		while(first_unused_node_index_temp < lowest_known_unused_index)
+		{
+			//nodes can't be nullptr below firstUnusedNodeIndex
+			auto &cur_node_ptr = nodes[first_unused_node_index_temp];
+
+			//if the node has been found on this iteration, then clear it as counted so it's clean for next garbage collection
+			if(cur_node_ptr != nullptr && cur_node_ptr->GetKnownToBeInUse())
+			{
+				cur_node_ptr->SetKnownToBeInUse(false);
+				first_unused_node_index_temp++;
+			}
+			else //collect the node
+			{
+				//see if out of things to free; if so exit early
+				if(lowest_known_unused_index == 0)
+					break;
+
+				//put the node up at the top where unused memory resides
+				// and reduce lowest_known_unused_index after the swap occurs so the other thread doesn't get misaligned
+				std::swap(cur_node_ptr, nodes[lowest_known_unused_index - 1]);
+				--lowest_known_unused_index;
+			}
+		}
+
+		all_nodes_finished = true;
+
+		completed_node_cleanup.wait();
+
+		//assign back to the atomic variable
+		firstUnusedNodeIndex = first_unused_node_index_temp;
+
+		UpdateGarbageCollectionTrigger(original_num_nodes);
+		return;
+	}
+#endif
+
+	size_t lowest_known_unused_index = original_num_nodes;
 	while(first_unused_node_index_temp < lowest_known_unused_index)
 	{
 		//nodes can't be nullptr below firstUnusedNodeIndex
@@ -517,8 +588,7 @@ void EvaluableNodeManager::CompactAllocatedNodes()
 				break;
 
 			//put the node up at the edge of unused memory, grab the next lowest node and pull it down to increase density
-			std::swap(nodes[firstUnusedNodeIndex], nodes[lowest_known_unused_index - 1]);
-			lowest_known_unused_index--;
+			std::swap(nodes[firstUnusedNodeIndex], nodes[--lowest_known_unused_index]);
 		}
 	}
 }
@@ -739,65 +809,58 @@ void EvaluableNodeManager::NonCycleModifyLabelsForNodeTree(EvaluableNode *tree, 
 	}
 }
 
-void EvaluableNodeManager::MarkAllReferencedNodesInUse(bool set_in_use)
+void EvaluableNodeManager::MarkAllReferencedNodesInUse(bool set_in_use, size_t estimated_nodes_in_use)
 {
 #ifdef MULTITHREAD_SUPPORT
 	size_t reference_count = nodesCurrentlyReferenced.size();
 	//heuristic to ensure there's enough to do to warrant the overhead of using multiple threads
-	if(reference_count > 1 && (firstUnusedNodeIndex / reference_count) >= 2000)
+	if(reference_count > 1 && (estimated_nodes_in_use / reference_count) >= 3000)
 	{
-		auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
-		if(enqueue_task_lock.AreThreadsAvailable())
+		nodesCompleted.clear();
+
+		//expand out the loops for each set or clear because
+		//this is a time critical method
+		if(set_in_use)
 		{
-			std::vector<std::future<void>> nodes_completed;
-			nodes_completed.reserve(reference_count);
-
-			//expand out the loops for each set or clear because
-			//this is a time critical method
-			if(set_in_use)
+			for(auto &[enr, _] : nodesCurrentlyReferenced)
 			{
-				for(auto &[enr, _] : nodesCurrentlyReferenced)
-				{
-					if(enr == nullptr)
-						continue;
+				if(enr == nullptr)
+					continue;
 
-					//some compilers are pedantic about the types passed into the lambda, so make a copy
-					EvaluableNode *en = enr;
-					nodes_completed.emplace_back(
-						Concurrency::threadPool.EnqueueBatchTask(
-							[en]
-							{	SetAllReferencedNodesInUseRecurseConcurrent(en);	}
-						)
-					);
-				}
+				//some compilers are pedantic about the types passed into the lambda, so make a copy
+				EvaluableNode *en = enr;
+				nodesCompleted.emplace_back(
+					Concurrency::urgentThreadPool.EnqueueTask(
+						[en]
+						{	SetAllReferencedNodesInUseRecurseConcurrent(en);	}
+					)
+				);
 			}
-			else
-			{
-				for(auto& [enr, _] : nodesCurrentlyReferenced)
-				{
-					if(enr == nullptr)
-						continue;
-
-					//some compilers are pedantic about the types passed into the lambda, so make a copy
-					EvaluableNode *en = enr;
-					nodes_completed.emplace_back(
-						Concurrency::threadPool.EnqueueBatchTask(
-							[en]
-							{	ClearAllReferencedNodesInUseRecurseConcurrent(en);	}
-						)
-					);
-				}
-			}
-
-			enqueue_task_lock.Unlock();
-
-			Concurrency::threadPool.ChangeCurrentThreadStateFromActiveToWaiting();
-			for(auto& future : nodes_completed)
-				future.wait();
-			Concurrency::threadPool.ChangeCurrentThreadStateFromWaitingToActive();
-
-			return;
 		}
+		else
+		{
+			for(auto& [enr, _] : nodesCurrentlyReferenced)
+			{
+				if(enr == nullptr)
+					continue;
+
+				//some compilers are pedantic about the types passed into the lambda, so make a copy
+				EvaluableNode *en = enr;
+				nodesCompleted.emplace_back(
+					Concurrency::urgentThreadPool.EnqueueTask(
+						[en]
+						{	ClearAllReferencedNodesInUseRecurseConcurrent(en);	}
+					)
+				);
+			}
+		}
+
+		Concurrency::urgentThreadPool.ChangeCurrentThreadStateFromActiveToWaiting();
+		for(auto& future : nodesCompleted)
+			future.wait();
+		Concurrency::urgentThreadPool.ChangeCurrentThreadStateFromWaitingToActive();
+
+		return;
 	}
 #endif
 	//check for null or insertion before calling recursion to minimize number of branches (slight performance improvement)
@@ -958,7 +1021,7 @@ void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrityRecurse(Evalu
 
 	if(en->IsAssociativeArray())
 	{
-		for(auto &[cn_id, cn] : en->GetMappedChildNodes())
+		for(auto &[cn_id, cn] : en->GetMappedChildNodesReference())
 		{
 			if(cn == nullptr)
 				continue;

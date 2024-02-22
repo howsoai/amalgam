@@ -613,7 +613,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, b
 
 		//need to interpret node here in case function is actually a null
 		// null is a special non-function for weave
-		function = InterpretNode(ocn[0]);
+		function = InterpretNodeForImmediateUse(ocn[0]);
 		node_stack.PushEvaluableNode(function);
 	}
 
@@ -643,7 +643,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, b
 	EvaluableNodeReference woven_list(evaluableNodeManager->AllocNode(ENT_LIST), true);
 
 	//just lists, interleave
-	if(function == nullptr)
+	if(EvaluableNode::IsNull(function))
 	{
 		woven_list->ReserveOrderedChildNodes(total_num_elements);
 
@@ -693,7 +693,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, b
 
 		PopConstructionContext();
 
-		if(values_to_weave == nullptr)
+		if(EvaluableNode::IsNull(values_to_weave))
 		{
 			woven_list->AppendOrderedChildNode(nullptr);
 			continue;
@@ -1150,8 +1150,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 	EvaluableNodeReference removed_node = EvaluableNodeReference(nullptr, container.unique && !container->GetNeedCycleCheck());
 
 	//if not a list, then just remove individual element
-	auto &indices_ocn = indices->GetOrderedChildNodes();
-	if(indices_ocn.size() == 0)
+	if(!indices->IsOrderedArray())
 	{
 		if(container->IsAssociativeArray())
 		{
@@ -1182,6 +1181,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 	}
 	else //remove all of the child nodes of the index
 	{
+		auto &indices_ocn = indices->GetOrderedChildNodesReference();
+
 		if(container->IsAssociativeArray())
 		{
 			for(auto &cn : indices_ocn)

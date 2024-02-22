@@ -314,7 +314,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 
 	//get lookup reference
 	size_t lookup_param_index = (ocn.size() > 1 ? 1 : 0);
-	auto to_lookup = InterpretNode(ocn[lookup_param_index]);
+	auto to_lookup = InterpretNodeForImmediateUse(ocn[lookup_param_index]);
 	auto node_stack = CreateInterpreterNodeStackStateSaver(to_lookup);
 
 	bool direct = (en->GetType() == ENT_DIRECT_RETRIEVE_FROM_ENTITY);

@@ -4,6 +4,7 @@
 
 #if defined(MULTITHREAD_SUPPORT)
 ThreadPool Concurrency::threadPool;
+ThreadPool Concurrency::urgentThreadPool;
 
 size_t _max_num_threads = std::thread::hardware_concurrency();
 #endif
@@ -42,6 +43,7 @@ void Concurrency::SetMaxNumThreads(size_t max_num_threads)
 
 #ifdef MULTITHREAD_SUPPORT
 	threadPool.SetMaxNumActiveThreads(static_cast<int32_t>(_max_num_threads));
+	urgentThreadPool.SetMaxNumActiveThreads(static_cast<int32_t>(_max_num_threads));
 #endif
 
 }

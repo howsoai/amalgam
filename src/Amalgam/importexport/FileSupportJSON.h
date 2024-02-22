@@ -1,6 +1,7 @@
 #pragma once
 
 //project headers:
+#include "EntityExternalInterface.h"
 #include "EvaluableNode.h"
 #include "EvaluableNodeManagement.h"
 
@@ -17,7 +18,7 @@ namespace EvaluableNodeJSONTranslation
 	std::pair<std::string, bool> EvaluableNodeToJson(EvaluableNode *code, bool sort_keys = false);
 
 	//loads json file to EvaluableNode tree
-	EvaluableNode *Load(const std::string &resource_path, EvaluableNodeManager *enm);
+	EvaluableNode *Load(const std::string &resource_path, EvaluableNodeManager *enm, EntityExternalInterface::LoadEntityStatus &status);
 	
 	//stores EvaluableNode tree to json file
 	bool Store(EvaluableNode *code, const std::string &resource_path, EvaluableNodeManager *enm, bool sort_keys);

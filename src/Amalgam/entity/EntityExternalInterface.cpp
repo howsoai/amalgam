@@ -1,13 +1,39 @@
 //project headers:
 #include "EntityExternalInterface.h"
-#include "EntityQueries.h"
+
+#include "AssetManager.h"
+#include "Entity.h"
 #include "EntityWriteListener.h"
+#include "FileSupportCAML.h"
 #include "FileSupportJSON.h"
 #include "Interpreter.h"
 
-bool EntityExternalInterface::LoadEntity(std::string &handle, std::string &path, bool persistent, bool load_contained_entities,
+//system headers:
+#include <string>
+#include <vector>
+
+EntityExternalInterface::LoadEntityStatus::LoadEntityStatus()
+{
+	SetStatus(true);
+}
+
+EntityExternalInterface::LoadEntityStatus::LoadEntityStatus(bool loaded, std::string message, std::string version)
+{
+	SetStatus(loaded, message, version);
+}
+
+void EntityExternalInterface::LoadEntityStatus::SetStatus(bool loaded_in, std::string message_in, std::string version_in)
+{
+	loaded = loaded_in;
+	message = std::move(message_in);
+	version = std::move(version_in);
+}
+
+EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(std::string &handle, std::string &path, bool persistent, bool load_contained_entities,
 	std::string &write_log_filename, std::string &print_log_filename, std::string rand_seed)
 {
+	LoadEntityStatus status;
+
 	if(rand_seed == "")
 	{
 		typedef std::chrono::steady_clock clk;
@@ -16,11 +42,11 @@ bool EntityExternalInterface::LoadEntity(std::string &handle, std::string &path,
 	}
 
 	std::string file_type = "";
-	Entity *entity = asset_manager.LoadEntityFromResourcePath(path, file_type, persistent, load_contained_entities, false, true, rand_seed);
-	asset_manager.SetRootPermission(entity, true);
+	Entity *entity = asset_manager.LoadEntityFromResourcePath(path, file_type, persistent, load_contained_entities, false, true, rand_seed, status);
+	if(!status.loaded)
+		return status;
 
-	if(entity == nullptr)
-		return false;
+	asset_manager.SetRootPermission(entity, true);
 
 	PrintListener *pl = nullptr;
 	std::vector<EntityWriteListener *> wl;
@@ -36,7 +62,22 @@ bool EntityExternalInterface::LoadEntity(std::string &handle, std::string &path,
 
 	AddEntityBundle(handle, new EntityListenerBundle(entity, wl, pl));
 
-	return true;
+	return status;
+}
+
+EntityExternalInterface::LoadEntityStatus EntityExternalInterface::VerifyEntity(std::string &path)
+{
+	std::ifstream f(path, std::fstream::binary | std::fstream::in);
+
+	if(!f.good())
+		return EntityExternalInterface::LoadEntityStatus(false, "Cannot open file", "");
+
+	size_t header_size = 0;
+	auto [error_string, version, success] = FileSupportCAML::ReadHeader(f, header_size);
+	if(!success)
+		return EntityExternalInterface::LoadEntityStatus(false, error_string, version);
+
+	return EntityExternalInterface::LoadEntityStatus(false, "", version);
 }
 
 void EntityExternalInterface::StoreEntity(std::string &handle, std::string &path, bool update_persistence_location, bool store_contained_entities)
@@ -572,4 +613,18 @@ bool EntityExternalInterface::EntityListenerBundle::SetEntityValueAtLabel(std::s
 	entity->evaluableNodeManager.FreeNodeTreeIfPossible(new_value);
 
 	return success;
+}
+
+EntityExternalInterface::EntityListenerBundle::~EntityListenerBundle()
+{
+	if(entity != nullptr)
+	{
+		asset_manager.DestroyEntity(entity);
+		delete entity;
+	}
+
+	if(printListener != nullptr)
+		delete printListener;
+	if(writeListeners.size() > 0 && writeListeners[0] != nullptr)
+		delete writeListeners[0];
 }

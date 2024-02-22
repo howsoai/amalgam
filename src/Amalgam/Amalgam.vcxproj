@@ -569,6 +569,7 @@
     <ClCompile Include="evaluablenode\EvaluableNodeTreeDifference.cpp" />
     <ClCompile Include="evaluablenode\EvaluableNodeTreeFunctions.cpp" />
     <ClCompile Include="evaluablenode\EvaluableNodeTreeManipulation.cpp" />
+    <ClCompile Include="importexport\FileSupportCAML.cpp" />
     <ClCompile Include="importexport\FileSupportCSV.cpp" />
     <ClCompile Include="importexport\FileSupportJSON.cpp" />
     <ClCompile Include="importexport\FileSupportYAML.cpp" />
@@ -634,6 +635,7 @@
     <ClInclude Include="FilenameEscapeProcessor.h" />
     <ClInclude Include="GeneralizedDistance.h" />
     <ClInclude Include="HashMaps.h" />
+    <ClInclude Include="importexport\FileSupportCAML.h" />
     <ClInclude Include="importexport\FileSupportCSV.h" />
     <ClInclude Include="importexport\FileSupportJSON.h" />
     <ClInclude Include="importexport\FileSupportYAML.h" />

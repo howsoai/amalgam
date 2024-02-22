@@ -6,11 +6,6 @@
 #include "EntityQueries.h"
 
 //system headers:
-#include <algorithm>
-#include <cstdio>
-#include <cstring>
-#include <iostream>
-#include <map>
 #include <string>
 
 //Workaround because GCC doesn't support strcpy_s
@@ -77,18 +72,34 @@ extern "C"
 		return wct;
 	}
 
+	LoadEntityStatus ConvertLoadStatusToCStatus(EntityExternalInterface::LoadEntityStatus &status)
+	{
+		return {
+			status.loaded,
+			StringToCharPtr(status.message),
+			StringToCharPtr(status.version)
+		};
+	}
+
 	// ************************************
 	// api methods
 	// ************************************
 
-	bool LoadEntity(char *handle, char *path, bool persistent, bool load_contained_entities, char *write_log_filename, char *print_log_filename)
+	LoadEntityStatus LoadEntity(char *handle, char *path, bool persistent, bool load_contained_entities, char *write_log_filename, char *print_log_filename)
 	{
 		std::string h(handle);
 		std::string p(path);
 		std::string wlfname(write_log_filename);
 		std::string plfname(print_log_filename);
+		auto status = entint.LoadEntity(h, p, persistent, load_contained_entities, wlfname, plfname);
+		return ConvertLoadStatusToCStatus(status);
+	}
 
-		return entint.LoadEntity(h, p, persistent, load_contained_entities, wlfname, plfname);
+	LoadEntityStatus VerifyEntity(char *path)
+	{
+		std::string p(path);
+		auto status = entint.VerifyEntity(p);
+		return ConvertLoadStatusToCStatus(status);
 	}
 
 	void StoreEntity(char *handle, char *path, bool update_persistence_location, bool store_contained_entities)

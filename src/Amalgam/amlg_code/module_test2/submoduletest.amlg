@@ -1,5 +1,0 @@
-(parallel
-	#a 7
-	#hello
-	(print "sub hello\n")
-)

@@ -24,8 +24,8 @@ extern "C"
 	//executes label on handle
 	AMALGAM_EXPORT void   ExecuteEntity(char *handle, char *label);
 
-	//deletes the entity specified by handle
-	AMALGAM_EXPORT void   DeleteEntity(char *handle);
+	//destroys the entity specified by handle
+	AMALGAM_EXPORT void   DestroyEntity(char *handle);
 
 	//sets the random seed for the entity specified by handle
 	AMALGAM_EXPORT bool   SetRandomSeed(char *handle, char *rand_seed);

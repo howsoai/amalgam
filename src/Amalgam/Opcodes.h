@@ -522,6 +522,7 @@ enum EvaluableNodeBuiltInStringId
 
 	//config file parameters
 	ENBISI_rand_seed,
+	ENBISI_version,
 
 	//substr parameters
 	ENBISI_all,

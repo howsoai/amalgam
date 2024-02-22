@@ -1,7 +1,7 @@
 //project headers:
 #include "FileSupportJSON.h"
 
-#include "EvaluableNodeTreeFunctions.h"
+#include "EntityExternalInterface.h"
 #include "FastMath.h"
 #include "PlatformSpecific.h"
 #include "StringManipulation.h"
@@ -10,7 +10,6 @@
 #include "simdjson/simdjson.h"
 
 //system headers:
-#include <fstream>
 #include <iostream>
 #include <vector>
 
@@ -335,12 +334,14 @@ std::pair<std::string, bool> EvaluableNodeJSONTranslation::EvaluableNodeToJson(E
 		return std::make_pair("", false);
 }
 
-EvaluableNode *EvaluableNodeJSONTranslation::Load(const std::string &resource_path, EvaluableNodeManager *enm)
+EvaluableNode *EvaluableNodeJSONTranslation::Load(const std::string &resource_path, EvaluableNodeManager *enm, EntityExternalInterface::LoadEntityStatus &status)
 {
 	std::string error_string;
 	if(!Platform_IsResourcePathAccessible(resource_path, true, error_string))
 	{
-		std::cerr << "Error loading JSON: " << error_string << std::endl;
+		std::string err = "Error loading JSON: " + error_string;
+		status.SetStatus(false, err);
+		std::cerr << err << std::endl;
 		return nullptr;
 	}
 
@@ -355,7 +356,9 @@ EvaluableNode *EvaluableNodeJSONTranslation::Load(const std::string &resource_pa
 	{
 		//get rid of unused variable warning
 		(void)e;
-		std::cerr << "Error loading JSON, malformatted file " << resource_path << std::endl;
+		std::string err = "Error loading JSON, malformatted file " + resource_path;
+		status.SetStatus(false, err);
+		std::cerr << err << std::endl;
 		return nullptr;
 	}
 }

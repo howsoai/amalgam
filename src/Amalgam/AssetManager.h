@@ -2,22 +2,24 @@
 
 //project headers:
 #include "Entity.h"
+#include "EntityExternalInterface.h"
 #include "EvaluableNode.h"
+#include "FileSupportCAML.h"
 #include "HashMaps.h"
 
 //system headers:
 #include <string>
-#include <vector>
 
 const std::string FILE_EXTENSION_AMLG_METADATA("mdam");
 const std::string FILE_EXTENSION_AMALGAM("amlg");
 const std::string FILE_EXTENSION_JSON("json");
 const std::string FILE_EXTENSION_YAML("yaml");
 const std::string FILE_EXTENSION_CSV("csv");
-const std::string FILE_EXTENSION_COMPRESSED_STRING_LIST("cstl");
 const std::string FILE_EXTENSION_COMPRESSED_AMALGAM_CODE("caml");
 
+//forward declarations:
 class AssetManager;
+
 extern AssetManager asset_manager;
 
 class AssetManager
@@ -31,7 +33,7 @@ public:
 	// sets resource_base_path to the resource path without the extension
 	//if file_type is not an empty string, it will use the specified file_type instead of the filename's extension
 	EvaluableNodeReference LoadResourcePath(std::string &resource_path, std::string &resource_base_path,
-		std::string &file_type, EvaluableNodeManager *enm, bool escape_filename);
+		std::string &file_type, EvaluableNodeManager *enm, bool escape_filename, EntityExternalInterface::LoadEntityStatus &status);
 
 	//Stores the code to the corresponding resource path
 	// sets resource_base_path to the resource path without the extension, and extension accordingly
@@ -44,7 +46,7 @@ public:
 	// if persistent is true, then it will keep the resource updated based on any calls to UpdateEntity
 	//if the resource does not have a metadata file, will use default_random_seed as its seed
 	Entity *LoadEntityFromResourcePath(std::string &resource_path, std::string &file_type, bool persistent, bool load_contained_entities,
-		bool escape_filename, bool escape_contained_filenames, std::string default_random_seed);
+		bool escape_filename, bool escape_contained_filenames, std::string default_random_seed, EntityExternalInterface::LoadEntityStatus &status);
 
 	//Stores an entity, including contained entites, etc. from the resource path specified
 	//if file_type is not an empty string, it will use the specified file_type instead of the filename's extension
@@ -106,34 +108,58 @@ public:
 		return rootEntities.find(entity) != end(rootEntities);
 	}
 
-	//loads filename into the buffer specified by b (of type BufferType of elements BufferElementType), returns true if successful, false if not
+	//loads filename into the buffer specified by b (of type BufferType of elements BufferElementType)
+	//if successful, returns no error message, file version (if available), and true
+	//if failure, returns error message, file version (if available) and false
 	template<typename BufferType>
-	static bool LoadFileToBuffer(const std::string &filename, BufferType &b)
+	static std::tuple<std::string, std::string, bool> LoadFileToBuffer(const std::string &filename, std::string &file_type, BufferType &b)
 	{
 		std::ifstream f(filename, std::fstream::binary | std::fstream::in);
 
 		if(!f.good())
-			return false;
+			return std::make_tuple("Cannot open file", "", false);
+
+		size_t header_size = 0;
+		std::string file_version;
+		if(file_type == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
+		{
+			auto [error_string, version, success] = FileSupportCAML::ReadHeader(f, header_size);
+			if(!success)
+				return std::make_tuple(error_string, version, false);
+			else
+				file_version = version;
+		}
 
 		f.seekg(0, std::ios::end);
-		b.reserve(f.tellg());
-		f.seekg(0, std::ios::beg);
+		b.reserve(static_cast<std::streamoff>(f.tellg()) - header_size);
+		f.seekg(header_size, std::ios::beg);
 
 		b.assign(std::istreambuf_iterator<char>(f), std::istreambuf_iterator<char>());
-		return true;
+		return std::make_tuple("", file_version, true);
 	}
 
 	//stores buffer b (of type BufferType of elements BufferElementType) into the filename, returns true if successful, false if not
 	template<typename BufferType>
-	static bool StoreFileFromBuffer(const std::string &filename, BufferType &b)
+	static bool StoreFileFromBuffer(const std::string &filename, std::string &file_type, BufferType &b)
 	{
 		std::ofstream f(filename, std::fstream::binary | std::fstream::out);
 		if(!f.good())
 			return false;
 
+		if(file_type == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
+		{
+			if(!FileSupportCAML::WriteHeader(f))
+				return false;
+		}
+
 		f.write(reinterpret_cast<char *>(&b[0]), sizeof(char) * b.size());
 		return true;
 	}
+
+	//validates given asset version against Amalgam version
+	//if successful: returns empty string and true
+	//if failure: returns error message and false
+	static std::pair<std::string, bool> ValidateVersionAgainstAmalgam(std::string &version);
 
 	//returns a string representing en's source, empty string if debugSources is false
 	std::string GetEvaluableNodeSourceFromComments(EvaluableNode *en);

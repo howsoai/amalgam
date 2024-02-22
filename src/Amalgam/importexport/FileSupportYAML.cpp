@@ -1,10 +1,7 @@
 //project headers:
 #include "FileSupportYAML.h"
 
-#include "EvaluableNodeTreeFunctions.h"
-#include "FastMath.h"
 #include "PlatformSpecific.h"
-#include "StringManipulation.h"
 
 //3rd party headers:
 #define RYML_SINGLE_HDR_DEFINE_NOW
@@ -175,11 +172,12 @@ std::pair<std::string, bool> EvaluableNodeYAMLTranslation::EvaluableNodeToYaml(E
 		return std::make_pair("", false);
 }
 
-EvaluableNode *EvaluableNodeYAMLTranslation::Load(const std::string &resource_path, EvaluableNodeManager *enm)
+EvaluableNode *EvaluableNodeYAMLTranslation::Load(const std::string &resource_path, EvaluableNodeManager *enm, EntityExternalInterface::LoadEntityStatus &status)
 {
 	auto [data, data_success] = Platform_OpenFileAsString(resource_path);
 	if(!data_success)
 	{
+		status.SetStatus(false, data);
 		std::cerr << data << std::endl;
 		return EvaluableNodeReference::Null();
 	}
@@ -188,7 +186,11 @@ EvaluableNode *EvaluableNodeYAMLTranslation::Load(const std::string &resource_pa
 
 	ryml::ConstNodeRef yaml_top_element = tree.rootref();
 
-	return YamlToEvaluableNodeRecurse(enm, yaml_top_element);
+	auto en = YamlToEvaluableNodeRecurse(enm, yaml_top_element);
+	if(en == nullptr)
+		status.SetStatus(false, "Cannot convert YAML to Amalgam node");
+
+	return en;
 }
 
 bool EvaluableNodeYAMLTranslation::Store(EvaluableNode *code, const std::string &resource_path, EvaluableNodeManager *enm, bool sort_keys)

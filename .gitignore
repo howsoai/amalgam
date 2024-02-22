@@ -14,7 +14,8 @@ src/Amalgam/AmalgamVersion.h
 .envrc
 .env
 
-## Amalgam metadata files
+## Amalgam binary files
+*.caml
 *.mdam
 
 ## Build results

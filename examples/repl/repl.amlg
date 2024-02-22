@@ -1,0 +1,7 @@
+(while (true)
+	(system "printline" "> ")
+	(let
+		(assoc input (system "readline") )
+		(print (call (parse input)) "\n")
+	)
+)

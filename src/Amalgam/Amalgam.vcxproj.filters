@@ -42,6 +42,9 @@
     <ClCompile Include="importexport\FileSupportCSV.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="importexport\FileSupportCAML.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="rand\RandomStream.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -189,6 +192,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="importexport\FileSupportCSV.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="importexport\FileSupportCAML.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="AmalgamVersion.h">

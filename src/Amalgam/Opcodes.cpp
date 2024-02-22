@@ -303,6 +303,7 @@ void StringInternPool::InitializeStaticStrings()
 
 	//config file parameters
 	EmplaceStaticString(ENBISI_rand_seed, "rand_seed");
+	EmplaceStaticString(ENBISI_version, "version");
 
 	//substr parameters
 	EmplaceStaticString(ENBISI_all, "all");

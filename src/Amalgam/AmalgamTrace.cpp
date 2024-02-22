@@ -1,13 +1,7 @@
 //project headers:
-#include "Amalgam.h"
 #include "AmalgamVersion.h"
 #include "AssetManager.h"
-#include "Entity.h"
 #include "EntityExternalInterface.h"
-#include "EntityQueries.h"
-#include "EvaluableNode.h"
-#include "Parser.h"
-#include "PerformanceProfiler.h"
 #include "PlatformSpecific.h"
 #include "RandomStream.h"
 
@@ -75,8 +69,8 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 					transaction_listener_path = "";
 
 				std::string new_rand_seed = random_stream.CreateOtherStreamStateViaString("trace");
-				bool result = entint.LoadEntity(handle, data, persistent == "true", use_contained == "true", transaction_listener_path, print_listener_path, new_rand_seed);
-				response = result ? SUCCESS_RESPONSE : FAILURE_RESPONSE;
+				auto status = entint.LoadEntity(handle, data, persistent == "true", use_contained == "true", transaction_listener_path, print_listener_path, new_rand_seed);
+				response = status.loaded ? SUCCESS_RESPONSE : FAILURE_RESPONSE;
 			}
 			else
 			{

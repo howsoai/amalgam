@@ -6,11 +6,12 @@
 #include <iostream>
 #include <string>
 
-EvaluableNode *FileSupportCSV::Load(const std::string &resource_path, EvaluableNodeManager *enm)
+EvaluableNode *FileSupportCSV::Load(const std::string &resource_path, EvaluableNodeManager *enm, EntityExternalInterface::LoadEntityStatus &status)
 {
 	auto [data, data_success] = Platform_OpenFileAsString(resource_path);
 	if(!data_success)
 	{
+		status.SetStatus(false, data);
 		std::cerr << data << std::endl;
 		return EvaluableNodeReference::Null();
 	}

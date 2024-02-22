@@ -1,4 +1,4 @@
-#!./amalgam-mt
+#!amalgam-mt
 (seq
 	(declare (assoc
 		file_a (get argv 1)

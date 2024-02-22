@@ -15,6 +15,8 @@ namespace StringManipulation
 	//removes the first word from str and return the removed word
 	std::string RemoveFirstWord(std::string &str);
 
+	std::vector<std::string> Split(std::string &s, char delim);
+
 	//returns true if the character in the string s starting at position is whitespace
 	inline bool IsUtf8Whitespace(std::string &s, size_t position)
 	{

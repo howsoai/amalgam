@@ -1,7 +1,8 @@
 #pragma once
 
 //system headers:
-#include <string>
+#include <cstddef>
+#include <cstdint>
 
 #if defined(_MSC_VER)
 //Microsoft 
@@ -15,8 +16,19 @@
 
 extern "C"
 {
+	//status from LoadEntity
+	struct LoadEntityStatus
+	{
+		bool loaded;
+		char *message;
+		char *version;
+	};
+
 	//loads the entity specified into handle
-	AMALGAM_EXPORT bool   LoadEntity(char *handle, char *path, bool persistent, bool load_contained_entities, char *write_log_filename, char *print_log_filename);
+	AMALGAM_EXPORT LoadEntityStatus LoadEntity(char *handle, char *path, bool persistent, bool load_contained_entities, char *write_log_filename, char *print_log_filename);
+
+	//verifies the entity specified by path. Uses LoadEntityStatus to return any errors and version
+	AMALGAM_EXPORT LoadEntityStatus VerifyEntity(char *path);
 
 	//stores the entity specified by handle into path
 	AMALGAM_EXPORT void   StoreEntity(char *handle, char *path, bool update_persistence_location = false, bool store_contained_entities = true);
@@ -37,7 +49,6 @@ extern "C"
 	AMALGAM_EXPORT void   AppendNumberValue(char *handle, char *label, double value);
 	AMALGAM_EXPORT void   SetNumberValue(char *handle, char *label, double value);
 
-	AMALGAM_EXPORT size_t PrepStringValueToTransferBuffer(char *handle, char *label);
 	AMALGAM_EXPORT void   AppendStringValue(char *handle, char *label, char *value);
 	AMALGAM_EXPORT void   SetStringValue(char *handle, char *label, char *value);
 
@@ -55,7 +66,7 @@ extern "C"
 	AMALGAM_EXPORT void   AppendStringList(char *handle, char *label, char **list, size_t len);
 	AMALGAM_EXPORT void   SetStringList(char *handle, char *label, char **list, size_t len);
 
-	AMALGAM_EXPORT void SetJSONToLabel(char *handle, char *label, char *json);
+	AMALGAM_EXPORT void   SetJSONToLabel(char *handle, char *label, char *json);
 	
 	AMALGAM_EXPORT wchar_t *GetJSONPtrFromLabelWide(char *handle, char *label);
 	AMALGAM_EXPORT char *GetJSONPtrFromLabel(char *handle, char *label);

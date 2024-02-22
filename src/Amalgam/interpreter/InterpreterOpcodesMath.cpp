@@ -901,8 +901,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DOT_PRODUCT(EvaluableNode 
 			elements2->ConvertOrderedListToNumberedAssoc();
 		}
 
-		auto &mcn1 = elements1->GetMappedChildNodes();
-		auto &mcn2 = elements2->GetMappedChildNodes();
+		auto &mcn1 = elements1->GetMappedChildNodesReference();
+		auto &mcn2 = elements2->GetMappedChildNodesReference();
 
 		for(auto &[node1_id, node1] : mcn1)
 		{
@@ -1160,7 +1160,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 		
 		if(EvaluableNode::IsAssociativeArray(q_node))
 		{
-			q_num_elements = q_node->GetMappedChildNodes().size();
+			q_num_elements = q_node->GetMappedChildNodesReference().size();
 
 			q_values = &q_copied_values;
 
@@ -1169,10 +1169,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 			if(p_is_assoc)
 			{
 				q_copied_values.reserve(p_num_elements);
-				for(auto &[pce_id, _] : p_node->GetMappedChildNodes())
+				for(auto &[pce_id, _] : p_node->GetMappedChildNodesReference())
 				{
-					auto q_i = q_node->GetMappedChildNodes().find(pce_id);
-					if(q_i == end(q_node->GetMappedChildNodes()))
+					auto q_i = q_node->GetMappedChildNodesReference().find(pce_id);
+					if(q_i == end(q_node->GetMappedChildNodesReference()))
 						continue;
 					q_copied_values.push_back(q_i->second);
 				}
@@ -1180,7 +1180,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 			else if(p_is_constant)
 			{
 				q_copied_values.reserve(q_num_elements);
-				for(auto &[_, ce] : q_node->GetMappedChildNodes())
+				for(auto &[_, ce] : q_node->GetMappedChildNodesReference())
 					q_copied_values.push_back(ce);
 			}
 			else //p must be a list

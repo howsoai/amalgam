@@ -166,7 +166,7 @@ void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t previous_num_no
 
 	//assume at least a factor larger than the base memory usage for the entity
 	//add 1 for good measure and to make sure the smallest size isn't zero
-	size_t max_from_current = static_cast<size_t>(3.5 * (1 + GetNumberOfUsedNodes()));
+	size_t max_from_current = static_cast<size_t>(3 * (1 + GetNumberOfUsedNodes()));
 
 	numNodesToRunGarbageCollection = std::max(max_from_allocation, std::max<size_t>(max_from_previous, max_from_current));
 }
@@ -335,8 +335,6 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 
 	size_t original_num_nodes = firstUnusedNodeIndex;
 
-	//start with a clean slate, and swap everything in use into the in-use region
-	size_t lowest_known_unused_index = firstUnusedNodeIndex;	//will store any unused nodes up here; start at what was previously known to be the max, as those above don't need to be rechecked
 	//clear firstUnusedNodeIndex to signal to other threads that they won't need to do garbage collection
 	firstUnusedNodeIndex = 0;
 
@@ -347,21 +345,21 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 	size_t first_unused_node_index_temp = 0;
 
 #ifdef MULTITHREAD_SUPPORT
-	if(lowest_known_unused_index > 4000)
+	if(original_num_nodes > 6000)
 	{
 		//used to climb up the indices, swapping out unused nodes above this as moves downward
-		std::atomic<size_t> highest_possibly_unused_node = lowest_known_unused_index;
-		//used by the independent freeing thread to climb down from highest_possibly_unused_node
-		size_t highest_possibly_unfreed_node = lowest_known_unused_index;
+		std::atomic<size_t> lowest_known_unused_index = original_num_nodes;
+		//used by the independent freeing thread to climb down from lowest_known_unused_index
+		size_t highest_possibly_unfreed_node = original_num_nodes;
 		std::atomic<bool> all_nodes_finished = false;
 
 		//free nodes in a separate thread
 		auto completed_node_cleanup = Concurrency::urgentThreadPool.EnqueueTask(
-			[this, &highest_possibly_unused_node, &highest_possibly_unfreed_node, &all_nodes_finished]
+			[this, &lowest_known_unused_index, &highest_possibly_unfreed_node, &all_nodes_finished]
 			{
 				do
 				{
-					while(highest_possibly_unfreed_node > highest_possibly_unused_node)
+					while(highest_possibly_unfreed_node > lowest_known_unused_index)
 					{
 						auto &cur_node_ptr = nodes[highest_possibly_unfreed_node - 1];
 						if(cur_node_ptr != nullptr && cur_node_ptr->GetType() != ENT_DEALLOCATED)
@@ -372,8 +370,8 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 			}
 		);
 
-		//organize nodes above highest_possibly_unused_node that are unused
-		while(first_unused_node_index_temp < highest_possibly_unused_node)
+		//organize nodes above lowest_known_unused_index that are unused
+		while(first_unused_node_index_temp < lowest_known_unused_index)
 		{
 			//nodes can't be nullptr below firstUnusedNodeIndex
 			auto &cur_node_ptr = nodes[first_unused_node_index_temp];
@@ -387,13 +385,13 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 			else //collect the node
 			{
 				//see if out of things to free; if so exit early
-				if(highest_possibly_unused_node == 0)
+				if(lowest_known_unused_index == 0)
 					break;
 
-				//put the node up at the top where unused memory resides and reduce lowest_known_unused_index
-				std::swap(cur_node_ptr, nodes[highest_possibly_unused_node - 1]);
-
-				--highest_possibly_unused_node;
+				//put the node up at the top where unused memory resides
+				// and reduce lowest_known_unused_index after the swap occurs so the other thread doesn't get misaligned
+				std::swap(cur_node_ptr, nodes[lowest_known_unused_index - 1]);
+				--lowest_known_unused_index;
 			}
 		}
 
@@ -409,6 +407,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 	}
 #endif
 
+	size_t lowest_known_unused_index = original_num_nodes;
 	while(first_unused_node_index_temp < lowest_known_unused_index)
 	{
 		//nodes can't be nullptr below firstUnusedNodeIndex

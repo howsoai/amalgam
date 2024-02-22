@@ -7,11 +7,8 @@
 #include "FileSupportCAML.h"
 #include "FileSupportJSON.h"
 #include "Interpreter.h"
-#include "PlatformSpecific.h"
 
 //system headers:
-#include <iostream>
-#include <ostream>
 #include <string>
 #include <vector>
 
@@ -66,6 +63,21 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(st
 	AddEntityBundle(handle, new EntityListenerBundle(entity, wl, pl));
 
 	return status;
+}
+
+EntityExternalInterface::LoadEntityStatus EntityExternalInterface::VerifyEntity(std::string &path)
+{
+	std::ifstream f(path, std::fstream::binary | std::fstream::in);
+
+	if(!f.good())
+		return EntityExternalInterface::LoadEntityStatus(false, "Cannot open file", "");
+
+	size_t header_size = 0;
+	auto [error_string, version, success] = FileSupportCAML::ReadHeader(f, header_size);
+	if(!success)
+		return EntityExternalInterface::LoadEntityStatus(false, error_string, version);
+
+	return EntityExternalInterface::LoadEntityStatus(false, "", version);
 }
 
 void EntityExternalInterface::StoreEntity(std::string &handle, std::string &path, bool update_persistence_location, bool store_contained_entities)

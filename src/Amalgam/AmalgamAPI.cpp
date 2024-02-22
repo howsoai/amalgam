@@ -95,6 +95,13 @@ extern "C"
 		return ConvertLoadStatusToCStatus(status);
 	}
 
+	LoadEntityStatus VerifyEntity(char *path)
+	{
+		std::string p(path);
+		auto status = entint.VerifyEntity(p);
+		return ConvertLoadStatusToCStatus(status);
+	}
+
 	void StoreEntity(char *handle, char *path, bool update_persistence_location, bool store_contained_entities)
 	{
 		std::string h(handle);

@@ -27,6 +27,9 @@ extern "C"
 	//loads the entity specified into handle
 	AMALGAM_EXPORT LoadEntityStatus LoadEntity(char *handle, char *path, bool persistent, bool load_contained_entities, char *write_log_filename, char *print_log_filename);
 
+	//verifies the entity specified by path. Uses LoadEntityStatus to return any errors and version
+	AMALGAM_EXPORT LoadEntityStatus VerifyEntity(char *path);
+
 	//stores the entity specified by handle into path
 	AMALGAM_EXPORT void   StoreEntity(char *handle, char *path, bool update_persistence_location = false, bool store_contained_entities = true);
 

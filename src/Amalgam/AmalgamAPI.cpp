@@ -74,12 +74,11 @@ extern "C"
 
 	LoadEntityStatus ConvertLoadStatusToCStatus(EntityExternalInterface::LoadEntityStatus &status)
 	{
-		LoadEntityStatus c_status = {
+		return {
 			status.loaded,
 			StringToCharPtr(status.message),
 			StringToCharPtr(status.version)
 		};
-		return c_status;
 	}
 
 	// ************************************

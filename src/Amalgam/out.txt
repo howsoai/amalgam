@@ -1492,7 +1492,7 @@ infinity test c or d: (list "c" @(get (target 0) 0) "d" @(get (target 0) 0))
 (list "1" "2" "6")
 
 --get_rand_seed--
-°³È¼¿\¨KOaVÆT zÿ
+ï¿½ï¿½È¼ï¿½\ï¿½KOaVï¿½T zï¿½
 --set_rand_seed--
 0.25443726063281735
 0.1603572451200187
@@ -1744,27 +1744,27 @@ comment too
 	"e"
 	"f"
 	"g"
-	"ï"
-	"¬"
-	"—"
-	"ê"
-	"­"
-	"–"
-	"Ï"
-	"¡"
+	"ï¿½"
+	"ï¿½"
+	"ï¿½"
+	"ï¿½"
+	"ï¿½"
+	"ï¿½"
+	"ï¿½"
+	"ï¿½"
 )
 (list
 	"ab"
 	"cd"
 	"ef"
-	"gï"
-	"¬—"
-	"ê­"
-	"–Ï"
-	"¡"
+	"gï¿½"
+	"ï¿½ï¿½"
+	"ï¿½"
+	"ï¿½ï¿½"
+	"ï¿½"
 )
-(list "abc" "def" "gï¬" "—ê­" "–Ï¡")
-(list "abcd" "efgï" "¬—ê­" "–Ï¡")
+(list "abc" "def" "gï¿½" "ï¿½ï¿½" "ï¿½Ï¡")
+(list "abcd" "efgï¿½" "ï¿½ï¿½ï¿½" "ï¿½Ï¡")
 --split--
 (list "hello world")
 (list "hello" "world")
@@ -1818,11 +1818,11 @@ h[e]ll[o] w[o]rld
 h[e]ll[o] world
 abcdefgï¬—ê­–Ï¡
 bcdefgï¬—ê­–Ï¡
-bcdefgï¬—ê­
+bcdefgï¬—ï¿½
 bcdefgï¬—ê­–Ï¡
 bcdefgï¬—ê­–
 gï¬—ê­–
-­–Ï
+ï¿½ï¿½ï¿½
 axdefgï¬—ê­–Ï¡
 --concat--
 hello world
@@ -1969,7 +1969,7 @@ decrypted: hello
 )
 (replace 4 2 6 1 7)
 (list
-	
+
 	;comment 2
 	;comment 3
 	1
@@ -2006,13 +2006,13 @@ decrypted: hello
 (list 3 4 2)
 (list 3 2 4 3)
 (list
-	
+
 	;comment 1
 	;comment 2
 	;comment 3
 	;comment 4
 	1
-	
+
 	;comment x
 	2
 	4
@@ -2352,7 +2352,7 @@ decrypted: hello
 	13.5
 )
 (list
-	
+
 	;comment 1
 	;comment 2
 	;comment 3
@@ -2435,7 +2435,7 @@ abcdmxyz
 45
 --flatten_entity--
 0.4476445420518951
-iûÛA;@Vëó¬OV-ÿ
+iï¿½ï¿½Aï¿½;@Vï¿½ï¿½OV-ï¿½
 0.9810549023242581
 0.9810549023242581
 0.5142400294051881
@@ -2453,7 +2453,7 @@ flatten restore with seeds test
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "»¶Â£=ô€mVëó¬OV-ÿ")
+	(set_entity_rand_seed new_entity "ï¿½ï¿½Â£=ï¿½mVï¿½ï¿½OV-ï¿½")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -2465,7 +2465,7 @@ flatten restore with seeds test
 				)
 			)
 		)
-		"‡aE&K\"Øà¸Õ(X&€\0ÿ"
+		"ï¿½aE&K\"ï¿½ï¿½ï¿½(X&ï¿½\0ï¿½"
 	)
 	new_entity
 )
@@ -2481,7 +2481,7 @@ flatten restore with seeds test
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "M:ù÷püVVëó¬OV-ÿ")
+	(set_entity_rand_seed new_entity "ï¿½M:ï¿½ï¿½pï¿½VVï¿½ï¿½OV-ï¿½")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -2493,7 +2493,7 @@ flatten restore with seeds test
 				)
 			)
 		)
-		"‡aE&K\"Øà¸Õ(X&€\0ÿ"
+		"ï¿½aE&K\"ï¿½ï¿½ï¿½(X&ï¿½\0ï¿½"
 	)
 	new_entity
 )
@@ -2536,7 +2536,7 @@ flatten restore without seeds test
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "¤›·ºR}ÒĞ]’Ù’Í«ÿ")
+	(set_entity_rand_seed new_entity "ï¿½ï¿½ï¿½ï¿½R}ï¿½ï¿½]ï¿½Ù’Í«ï¿½")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -2548,7 +2548,7 @@ flatten restore without seeds test
 				)
 			)
 		)
-		"Qô´v¬ú&rìSˆ¸Ë™ÿ"
+		"Qï¿½ï¿½vï¿½ï¿½&rï¿½Sï¿½ï¿½ï¿½Ë™ï¿½"
 	)
 	new_entity
 )
@@ -2569,7 +2569,7 @@ flatten restore with parallel
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "»¶Â£=ô€mVëó¬OV-ÿ")
+	(set_entity_rand_seed new_entity "ï¿½ï¿½Â£=ï¿½mVï¿½ï¿½OV-ï¿½")
 	||(parallel
 		(set_entity_rand_seed
 			(first
@@ -2582,7 +2582,7 @@ flatten restore with parallel
 					)
 				)
 			)
-			"‡aE&K\"Øà¸Õ(X&€\0ÿ"
+			"ï¿½aE&K\"ï¿½ï¿½ï¿½(X&ï¿½\0ï¿½"
 		)
 	)
 	||(parallel)
@@ -2600,7 +2600,7 @@ flatten restore with parallel
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "M:ù÷püVVëó¬OV-ÿ")
+	(set_entity_rand_seed new_entity "ï¿½M:ï¿½ï¿½pï¿½VVï¿½ï¿½OV-ï¿½")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -2612,7 +2612,7 @@ flatten restore with parallel
 				)
 			)
 		)
-		"‡aE&K\"Øà¸Õ(X&€\0ÿ"
+		"ï¿½aE&K\"ï¿½ï¿½ï¿½(X&ï¿½\0ï¿½"
 	)
 	new_entity
 )
@@ -3430,7 +3430,7 @@ this is a fully described entity
 )
 --get_entity_rand_seed--
 0.8630628998576303
-T°FJKx–sŒ­ {ÿ
+Tï¿½FJï¿½Kxï¿½sï¿½ï¿½ {ï¿½
 --set_entity_rand_seed--
 0.24310795234706906
 0.24310795234706906
@@ -3618,7 +3618,7 @@ hello
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "Å”K@­æ›íû\\üŞFË*ÿ")
+	(set_entity_rand_seed new_entity "Å”K@ï¿½ï¿½ï¿½ï¿½\\ï¿½ï¿½Fï¿½*ï¿½")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3632,7 +3632,7 @@ hello
 				)
 			)
 		)
-		"ƒBµ!\\áï,ÏT*İ&ÿ"
+		"ï¿½Bï¿½!\\ï¿½ï¿½,ï¿½T*ï¿½&ï¿½"
 	)
 	(set_entity_rand_seed
 		(first
@@ -3647,7 +3647,7 @@ hello
 				)
 			)
 		)
-		"ğ!€…š|ØÓ.âV±Úqÿ"
+		"ï¿½!ï¿½ï¿½ï¿½|ï¿½ï¿½.ï¿½Vï¿½ï¿½qï¿½"
 	)
 	new_entity
 )
@@ -3666,7 +3666,7 @@ hello
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "@©,3Š‰!›GMÍ0hóŠÿ")
+	(set_entity_rand_seed new_entity "@ï¿½,3ï¿½ï¿½!ï¿½GMï¿½0hï¿½ï¿½")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3676,7 +3676,7 @@ hello
 				)
 			)
 		)
-		"MıõŠéòõk±†,ÙŠÛÿ"
+		"Mï¿½ï¿½ï¿½ï¿½ï¿½ï¿½kï¿½ï¿½,ÙŠï¿½ï¿½"
 	)
 	(set_entity_rand_seed
 		(first
@@ -3691,7 +3691,7 @@ hello
 				)
 			)
 		)
-		"Ÿx<Ø^®™·í.·ôV0µÿ"
+		"ï¿½x<ï¿½^ï¿½ï¿½ï¿½ï¿½.ï¿½ï¿½V0ï¿½ï¿½"
 	)
 	new_entity
 )
@@ -3709,7 +3709,7 @@ hello
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "@©,3Š‰!›GMÍ0hóŠÿ")
+	(set_entity_rand_seed new_entity "@ï¿½,3ï¿½ï¿½!ï¿½GMï¿½0hï¿½ï¿½")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3723,7 +3723,7 @@ hello
 				)
 			)
 		)
-		"Ÿx<Ø^®™·í.·ôV0µÿ"
+		"ï¿½x<ï¿½^ï¿½ï¿½ï¿½ï¿½.ï¿½ï¿½V0ï¿½ï¿½"
 	)
 	new_entity
 )

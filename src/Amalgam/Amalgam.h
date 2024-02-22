@@ -81,4 +81,7 @@ extern "C"
 	AMALGAM_EXPORT bool IsSBFDataStoreEnabled();
 	AMALGAM_EXPORT size_t GetMaxNumThreads();
 	AMALGAM_EXPORT void SetMaxNumThreads(size_t max_num_threads);
+
+	//for APIs that pass strings back, that memory needs to be cleaned up by the caller
+	AMALGAM_EXPORT void DeleteString(char *p);
 }

@@ -1150,8 +1150,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 	EvaluableNodeReference removed_node = EvaluableNodeReference(nullptr, container.unique && !container->GetNeedCycleCheck());
 
 	//if not a list, then just remove individual element
-	auto &indices_ocn = indices->GetOrderedChildNodes();
-	if(indices_ocn.size() == 0)
+	if(!indices->IsOrderedArray())
 	{
 		if(container->IsAssociativeArray())
 		{
@@ -1182,6 +1181,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 	}
 	else //remove all of the child nodes of the index
 	{
+		auto &indices_ocn = indices->GetOrderedChildNodes();
+
 		if(container->IsAssociativeArray())
 		{
 			for(auto &cn : indices_ocn)

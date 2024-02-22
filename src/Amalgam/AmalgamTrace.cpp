@@ -103,11 +103,11 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 				response = FAILURE_RESPONSE;
 			}
 		}
-		else if(command == "DELETE_ENTITY")
+		else if(command == "DESTROY_ENTITY")
 		{
 			handle = StringManipulation::RemoveFirstWord(input);
 
-			entint.DeleteEntity(handle);
+			entint.DestroyEntity(handle);
 			response = SUCCESS_RESPONSE;
 		}
 		else if(command == "SET_JSON_TO_LABEL")

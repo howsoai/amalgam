@@ -24,7 +24,7 @@ int main(int argc, char* argv[])
 	{
 		char label[] = "test";
 		ExecuteEntity(handle, label);
-		DeleteEntity(handle);
+		DestroyEntity(handle);
 		return 0;
 	}
 

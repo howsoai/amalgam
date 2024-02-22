@@ -376,9 +376,10 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		{
 			if(EvaluableNode::IsAssociativeArray(variable_value_node))
 			{
+				auto &vvn_mcn = variable_value_node->GetMappedChildNodes();
 				value_destination_node->ReserveMappedChildNodes(value_destination_node->GetMappedChildNodesReference().size()
-																+ variable_value_node->GetMappedChildNodes().size());
-				value_destination_node->AppendMappedChildNodes(variable_value_node->GetMappedChildNodes());
+																+ vvn_mcn.size());
+				value_destination_node->AppendMappedChildNodes(vvn_mcn);
 			}
 			else if(variable_value_node != nullptr) //treat ordered pairs as new entries as long as not nullptr
 			{
@@ -461,7 +462,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 
 		if(EvaluableNode::IsAssociativeArray(variable_value_node))
 		{
-			new_list->AppendMappedChildNodes(variable_value_node->GetMappedChildNodes());
+			new_list->AppendMappedChildNodes(variable_value_node->GetMappedChildNodesReference());
 		}
 		else if(variable_value_node != nullptr) //treat ordered pairs as new entries as long as not nullptr
 		{
@@ -496,9 +497,10 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		EvaluableNode *new_list = enm->AllocNode(value_destination_node);
 		if(EvaluableNode::IsAssociativeArray(variable_value_node))
 		{
+			auto &vvn_mcn = variable_value_node->GetMappedChildNodesReference();
 			//expand out into pairs
-			new_list->ReserveOrderedChildNodes(value_destination_node->GetOrderedChildNodes().size() + 2 * variable_value_node->GetMappedChildNodes().size());
-			for(auto &[cn_id, cn] : variable_value_node->GetMappedChildNodes())
+			new_list->ReserveOrderedChildNodes(value_destination_node->GetOrderedChildNodes().size() + 2 * vvn_mcn.size());
+			for(auto &[cn_id, cn] : vvn_mcn)
 			{
 				new_list->AppendOrderedChildNode(enm->AllocNode(ENT_STRING, cn_id));
 				new_list->AppendOrderedChildNode(cn);

@@ -185,10 +185,10 @@ extern "C"
 		entint.ExecuteEntity(h, l);
 	}
 
-	void DeleteEntity(char *handle)
+	void DestroyEntity(char *handle)
 	{
 		std::string h(handle);
-		entint.DeleteEntity(h);
+		entint.DestroyEntity(h);
 	}
 
 	bool SetRandomSeed(char *handle, char *rand_seed)

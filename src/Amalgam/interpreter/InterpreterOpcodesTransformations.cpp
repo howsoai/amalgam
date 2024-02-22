@@ -1181,7 +1181,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 	}
 	else //remove all of the child nodes of the index
 	{
-		auto &indices_ocn = indices->GetOrderedChildNodes();
+		auto &indices_ocn = indices->GetOrderedChildNodesReference();
 
 		if(container->IsAssociativeArray())
 		{

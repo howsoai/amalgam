@@ -259,7 +259,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, bo
 	}
 	else if(list->IsAssociativeArray())
 	{
-		auto &list_mcn = list->GetMappedChildNodes();
+		auto &list_mcn = list->GetMappedChildNodesReference();
 		if(list_mcn.size() > 0)
 		{
 			//just take the first, because it's more efficient and the order does not matter for maps

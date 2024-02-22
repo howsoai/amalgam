@@ -110,7 +110,7 @@ void EntityExternalInterface::ExecuteEntity(std::string &handle, std::string &la
 		label);
 }
 
-void EntityExternalInterface::DeleteEntity(std::string &handle)
+void EntityExternalInterface::DestroyEntity(std::string &handle)
 {
 	EraseEntityBundle(handle);
 }

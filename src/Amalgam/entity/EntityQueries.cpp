@@ -695,7 +695,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 	{
 		size_t num_to_keep = std::min(static_cast<size_t>(maxToRetrieve), matching_entities.size());
 
-		distEvaluator.SetAndConstrainParams();
+		distEvaluator.InitializeParametersAndFeatureParams();
 
 		//get values for each entity
 		StochasticTieBreakingPriorityQueue<DistanceReferencePair<Entity *>> nearest_entities(randomStream.CreateOtherStreamViaRand());
@@ -750,7 +750,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 
 	case ENT_QUERY_WITHIN_GENERALIZED_DISTANCE:
 	{
-		distEvaluator.SetAndConstrainParams();
+		distEvaluator.InitializeParametersAndFeatureParams();
 		//find those that match
 		for(size_t i = 0; i < matching_entities.size(); i++)
 		{

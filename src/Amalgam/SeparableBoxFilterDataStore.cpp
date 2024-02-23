@@ -1109,7 +1109,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			if(next_index != value_index)
 			{
 				next_lower_index = next_index;
-				lower_diff = RepeatedGeneralizedDistanceEvaluator::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueEntries[next_lower_index]->value.number), cycle_length);
+				lower_diff = GeneralizedDistanceEvaluator::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueEntries[next_lower_index]->value.number), cycle_length);
 				compute_lower = true;
 			}
 		}
@@ -1142,7 +1142,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 				if((!compute_lower || next_index != next_lower_index))
 				{
 					next_upper_index = next_index;
-					upper_diff = RepeatedGeneralizedDistanceEvaluator::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueEntries[next_upper_index]->value.number), cycle_length);
+					upper_diff = GeneralizedDistanceEvaluator::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueEntries[next_upper_index]->value.number), cycle_length);
 					compute_upper = true;
 				}
 				else //upper and lower have overlapped, want to exit the loop
@@ -1247,7 +1247,7 @@ void SeparableBoxFilterDataStore::PopulateInitialPartialSums(RepeatedGeneralized
 	size_t num_entities_to_populate = top_k;
 	//populate sqrt(2)^p * top_k, which will yield 2 for p=2, 1 for p=0, and about 1.2 for p=0.5
 	if(num_enabled_features > 1)
-		num_entities_to_populate = static_cast<size_t>(std::lround(FastPow(RepeatedGeneralizedDistanceEvaluator::s_sqrt_2, dist_params.pValue) * top_k)) + 1;
+		num_entities_to_populate = static_cast<size_t>(std::lround(FastPow(GeneralizedDistanceEvaluator::s_sqrt_2, dist_params.pValue) * top_k)) + 1;
 
 	min_unpopulated_distances.resize(num_enabled_features);
 	for(size_t i = 0; i < num_enabled_features; i++)

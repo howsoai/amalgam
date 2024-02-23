@@ -688,7 +688,7 @@ protected:
 		double dist_accum = 0.0;
 		for(size_t i = 0; i < target_values.size(); i++)
 		{
-			if(dist_params.IsFeatureEnabled(i))
+			if(r_dist_eval.distEvaluator->IsFeatureEnabled(i))
 			{
 				size_t column_index = target_column_indices[i];
 				auto &column_data = columnData[column_index];
@@ -702,7 +702,7 @@ protected:
 			}
 		}
 
-		double dist = dist_params.InverseExponentiateDistance(dist_accum, high_accuracy);
+		double dist = r_dist_eval.distEvaluator->InverseExponentiateDistance(dist_accum, high_accuracy);
 
 		if(radius_column_index < columnData.size())
 		{
@@ -722,15 +722,15 @@ protected:
 		std::vector<EvaluableNodeImmediateValue> &target_values, std::vector<EvaluableNodeImmediateValueType> &target_value_types,
 		size_t entity_index, size_t query_feature_index, bool high_accuracy)
 	{
-		switch(dist_params.featureParams[query_feature_index].effectiveFeatureType)
+		switch(r_dist_eval.distEvaluator->featureParams[query_feature_index].effectiveFeatureType)
 		{
 		case GeneralizedDistanceEvaluator::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED:
-			return dist_params.ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(query_feature_index, high_accuracy);
+			return r_dist_eval.distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(query_feature_index, high_accuracy);
 
 		case GeneralizedDistanceEvaluator::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC:
 		{
 			const size_t column_index = target_label_indices[query_feature_index];
-			return dist_params.ComputeDistanceTermContinuousNonCyclicOneNonNullRegular(
+			return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicOneNonNullRegular(
 				target_values[query_feature_index].number - GetValue(entity_index, column_index).number,
 				query_feature_index, high_accuracy);
 		}
@@ -747,11 +747,11 @@ protected:
 			const size_t column_index = target_label_indices[query_feature_index];
 			auto &column_data = columnData[column_index];
 			if(column_data->numberIndices.contains(entity_index))
-				return dist_params.ComputeDistanceTermContinuousNonCyclicOneNonNullRegular(
+				return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicOneNonNullRegular(
 					target_values[query_feature_index].number - GetValue(entity_index, column_index).number,
 					query_feature_index, high_accuracy);
 			else
-				return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
+				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
 		}
 
 		case GeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_CYCLIC:
@@ -759,11 +759,11 @@ protected:
 			const size_t column_index = target_label_indices[query_feature_index];
 			auto &column_data = columnData[column_index];
 			if(column_data->numberIndices.contains(entity_index))
-				return dist_params.ComputeDistanceTermContinuousOneNonNullRegular(
+				return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousOneNonNullRegular(
 					target_values[query_feature_index].number - GetValue(entity_index, column_index).number,
 					query_feature_index, high_accuracy);
 			else
-				return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
+				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
 		}
 
 		case GeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED:
@@ -784,7 +784,7 @@ protected:
 			auto other_value_type = column_data->GetIndexValueType(entity_index);
 			auto other_value = column_data->GetResolvedValue(other_value_type, GetValue(entity_index, column_index));
 
-			return dist_params.ComputeDistanceTermRegular(
+			return r_dist_eval.distEvaluator->ComputeDistanceTermRegular(
 				target_values[query_feature_index], other_value, target_value_types[query_feature_index], other_value_type,
 				query_feature_index, high_accuracy);
 		}
@@ -808,7 +808,7 @@ protected:
 				continue;
 
 			size_t query_feature_index = *it;
-			distance += ComputeDistanceTermNonMatch(dist_params, target_label_indices, target_values, target_value_types,
+			distance += ComputeDistanceTermNonMatch(r_dist_eval, target_label_indices, target_values, target_value_types,
 				entity_index, query_feature_index, high_accuracy);
 		}
 
@@ -850,7 +850,7 @@ protected:
 			distance -= min_unpopulated_distances[--num_uncalculated_features];
 
 			const size_t query_feature_index = *it;
-			distance += ComputeDistanceTermNonMatch(dist_params, target_label_indices, target_values, target_value_types,
+			distance += ComputeDistanceTermNonMatch(r_dist_eval, target_label_indices, target_values, target_value_types,
 				entity_index, query_feature_index, high_accuracy);
 
 			//break out of the loop before the iterator is incremented to save a few cycles
@@ -865,7 +865,7 @@ protected:
 	}
 
 	//populates the next target attribute in each vector based on column_index, position data
-	//if there is a specialization of the feature type, it will update it and update dist_params accordingly
+	//if there is a specialization of the feature type, it will update it and update r_dist_eval accordingly
 	__forceinline void PopulateNextTargetAttributes(RepeatedGeneralizedDistanceEvaluator &r_dist_eval, size_t query_feature_index,
 		std::vector<size_t> &target_column_indices, std::vector<EvaluableNodeImmediateValue> &target_values,
 		std::vector<EvaluableNodeImmediateValueType> &target_value_types, size_t column_index,
@@ -873,8 +873,8 @@ protected:
 	{
 		target_column_indices.push_back(column_index);
 
-		auto &feature_type = dist_params.featureParams[query_feature_index].featureType;
-		auto &effective_feature_type = dist_params.featureParams[query_feature_index].effectiveFeatureType;
+		auto &feature_type = r_dist_eval.distEvaluator->featureParams[query_feature_index].featureType;
+		auto &effective_feature_type = r_dist_eval.distEvaluator->featureParams[query_feature_index].effectiveFeatureType;
 
 		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC
 			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
@@ -950,9 +950,9 @@ protected:
 			if(column == end(labelIdToColumnIndex))
 				continue;
 
-			if(dist_params.IsFeatureEnabled(i))
+			if(r_dist_eval.distEvaluator->IsFeatureEnabled(i))
 			{
-				PopulateNextTargetAttributes(dist_params, i,
+				PopulateNextTargetAttributes(r_dist_eval, i,
 					target_column_indices, target_values, target_value_types,
 					column->second, position_values[i], position_value_types[i]);
 			}
@@ -963,13 +963,14 @@ protected:
 	// returns the smallest of the maximum feature gaps among the features
 	inline void PopulateUnknownFeatureValueTerms(RepeatedGeneralizedDistanceEvaluator &r_dist_eval)
 	{
+		//TODO 18116: move the universal parts of this out of computing nearest neighbors; break into two methods
 		auto &target_column_indices = parametersAndBuffers.targetColumnIndices;
 		auto &target_values = parametersAndBuffers.targetValues;
 		auto &target_value_types = parametersAndBuffers.targetValueTypes;
 
 		for(size_t i = 0; i < target_column_indices.size(); i++)
 		{
-			auto &feature_params = dist_params.featureParams[i];
+			auto &feature_params = r_dist_eval.distEvaluator->featureParams[i];
 			size_t column_index = target_column_indices[i];
 
 			//if either known or unknown to unknown is missing, need to compute difference

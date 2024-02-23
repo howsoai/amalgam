@@ -284,7 +284,9 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 			if(matching_entities.size() == 0)
 				return;
 
+			//TODO 18116: populate unknown distances
 			cond->distEvaluator.SetAndConstrainParams();
+			cond->distEvaluator.InitializeParametersAndFeatureParams();
 
 			if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || cond->queryType == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)
 			{

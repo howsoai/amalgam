@@ -164,19 +164,18 @@ public:
 	};
 
 	//initializes and precomputes relevant data including featureParams
-	bool InitializeParametersAndFeatureParams(double p_value, bool compute_surprisal,
-		bool compute_approximate)
+	//this should be called after all relevant attributes have been populated
+	inline bool InitializeParametersAndFeatureParams()
 	{
-		pValue = p_value;
 		inversePValue = 1.0 / pValue;
 
-		computeSurprisal = compute_surprisal;
-
-		if(compute_approximate)
+		if(NeedToPrecomputeApproximate())
 		{
 			fastPowP = RepeatedFastPow(pValue);
 			fastPowInverseP = RepeatedFastPow(inversePValue);
 		}
+
+		ComputeAndStoreCommonDistanceTerms();
 	}
 
 	// 2/sqrt(pi) = 2.0 / std::sqrt(3.141592653589793238462643383279502884L);
@@ -762,6 +761,88 @@ public:
 		}
 	}
 
+	constexpr bool NeedToPrecomputeApproximate()
+	{
+		return (!highAccuracyDistances || recomputeAccurateDistances);
+	}
+
+	constexpr bool NeedToPrecomputeAccurate()
+	{
+		return (highAccuracyDistances || recomputeAccurateDistances);
+	}
+
+protected:
+
+	//computes and caches symmetric nominal and uncertainty distance terms
+	inline void ComputeAndStoreCommonDistanceTerms()
+	{
+		bool compute_accurate = NeedToPrecomputeAccurate();
+		bool compute_approximate = NeedToPrecomputeApproximate();
+
+		for(size_t i = 0; i < featureParams.size(); i++)
+		{
+			auto &feature_params = featureParams[i];
+			if(IsFeatureNominal(i))
+			{
+				//ensure if a feature has deviations they're not too small to underflow
+				if(DoesFeatureHaveDeviation(i))
+				{
+					constexpr double smallest_delta = 1e-100;
+					if(feature_params.typeAttributes.nominalCount == 1 && feature_params.deviation < smallest_delta)
+						feature_params.deviation = smallest_delta;
+				}
+
+				if(compute_accurate)
+				{
+					feature_params.nominalMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, true), true);
+					feature_params.nominalNonMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, true), true);
+				}
+
+				if(compute_approximate)
+				{
+					feature_params.nominalMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, false), false);
+					feature_params.nominalNonMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, false), false);
+				}
+			}
+
+			//compute unknownToUnknownDistanceTerm
+			if(compute_accurate)
+			{
+				feature_params.unknownToUnknownDistanceTerm.SetValue(
+					ComputeDistanceTermMatchOnNull(i, feature_params.unknownToUnknownDistanceTerm.difference, true), true);
+			}
+
+			if(compute_approximate)
+			{
+				feature_params.unknownToUnknownDistanceTerm.SetValue(
+					ComputeDistanceTermMatchOnNull(i, feature_params.unknownToUnknownDistanceTerm.difference, false), false);
+			}
+
+			//if knownToUnknownDifference is same as unknownToUnknownDifference, can copy distance term instead of recomputing
+			if(feature_params.knownToUnknownDistanceTerm.difference == feature_params.unknownToUnknownDistanceTerm.difference)
+			{
+				feature_params.knownToUnknownDistanceTerm = feature_params.unknownToUnknownDistanceTerm;
+			}
+			else
+			{
+				//compute knownToUnknownDistanceTerm
+				if(compute_accurate)
+				{
+					feature_params.knownToUnknownDistanceTerm.SetValue(
+						ComputeDistanceTermMatchOnNull(i, feature_params.knownToUnknownDistanceTerm.difference, true), true);
+				}
+
+				if(compute_approximate)
+				{
+					feature_params.knownToUnknownDistanceTerm.SetValue(
+						ComputeDistanceTermMatchOnNull(i, feature_params.knownToUnknownDistanceTerm.difference, false), false);
+				}
+			}
+		}
+	}
+
+public:
+
 	std::vector<FeatureParams> featureParams;
 
 	//precached ways to compute FastPow
@@ -776,6 +857,12 @@ public:
 	//if true, it will perform computations resulting in surprisal before
 	//the exponentiation
 	bool computeSurprisal;
+
+	//if true, then all computations should be performed with high accuracy
+	bool highAccuracyDistances;
+	//if true, then estimates should be computed with low accuracy, but final results with high accuracy
+	// if false, will reuse accuracy from estimates
+	bool recomputeAccurateDistances;
 };
 
 //base data struct for holding distance parameters and metadata
@@ -791,8 +878,8 @@ public:
 	//for the feature index, computes and stores the distance terms as measured from value to each interned value
 	inline void ComputeAndStoreInternedNumberValuesAndDistanceTerms(double value, size_t index, std::vector<double> *interned_values)
 	{
-		bool compute_accurate = NeedToPrecomputeAccurate();
-		bool compute_approximate = NeedToPrecomputeApproximate();
+		bool compute_accurate = distEvaluator->NeedToPrecomputeAccurate();
+		bool compute_approximate = distEvaluator->NeedToPrecomputeApproximate();
 		auto &feature_params = distEvaluator->featureParams[index];
 
 		//make sure there's room for the interned index
@@ -825,53 +912,6 @@ public:
 		}
 	}
 
-protected:
-
-	constexpr bool NeedToPrecomputeApproximate()
-	{
-		return (!highAccuracyDistances || recomputeAccurateDistances);
-	}
-
-	constexpr bool NeedToPrecomputeAccurate()
-	{
-		return (highAccuracyDistances || recomputeAccurateDistances);
-	}
-
-	//update cached nominal deltas based on highAccuracyDistances and recomputeAccurateDistances, caching what is needed given those flags
-	inline void ComputeAndStoreUniversallySymmetricNominalDistanceTerms()
-	{
-		bool compute_accurate = NeedToPrecomputeAccurate();
-		bool compute_approximate = NeedToPrecomputeApproximate();
-
-		for(size_t i = 0; i < distEvaluator->featureParams.size(); i++)
-		{
-			if(distEvaluator->IsFeatureNominal(i))
-			{
-				auto &feat_params = distEvaluator->featureParams[i];
-
-				//ensure if a feature has deviations they're not too small to underflow
-				if(distEvaluator->DoesFeatureHaveDeviation(i))
-				{
-					constexpr double smallest_delta = 1e-100;
-					if(feat_params.typeAttributes.nominalCount == 1 && feat_params.deviation < smallest_delta)
-						feat_params.deviation = smallest_delta;
-				}
-
-				if(compute_accurate)
-				{
-					feat_params.nominalMatchDistanceTerm.SetValue(distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, true), true);
-					feat_params.nominalNonMatchDistanceTerm.SetValue(distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, true), true);
-				}
-
-				if(compute_approximate)
-				{
-					feat_params.nominalMatchDistanceTerm.SetValue(distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, false), false);
-					feat_params.nominalNonMatchDistanceTerm.SetValue(distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, false), false);
-				}
-			}
-		}
-	}
-
 public:
 
 	//returns true if the feature at index has interned number values
@@ -891,16 +931,11 @@ public:
 
 	struct FeatureInternedValues
 	{
+		//TODO 18116: need to move effectiveFeatureType here
 		std::vector<double> *internedNumberIndexToNumberValue;
 		std::vector<GeneralizedDistanceEvaluator::DistanceTerms> internedDistanceTerms;
 	};
 
 	//for each feature, precomputed distance terms for each interned value looked up by intern index
 	std::vector<FeatureInternedValues> featureInternedValues;
-
-	//if true, then all computations should be performed with high accuracy
-	bool highAccuracyDistances;
-	//if true, then estimates should be computed with low accuracy, but final results with high accuracy
-	// if false, will reuse accuracy from estimates
-	bool recomputeAccurateDistances;
 };

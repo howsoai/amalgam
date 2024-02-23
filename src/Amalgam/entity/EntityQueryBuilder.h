@@ -318,17 +318,16 @@ namespace EntityQueryBuilder
 			weights_node, distance_types_node, attributes_node, deviations_node);
 
 		//set minkowski parameter; default to 2.0 for Euclidian distance
-		double p_value = 2.0;
+		cur_condition->distEvaluator.pValue = 2.0;
 		if(ocn.size() > MINKOWSKI_PARAMETER)
 		{
-			p_value = EvaluableNode::ToNumber(ocn[MINKOWSKI_PARAMETER]);
+			cur_condition->distEvaluator.pValue = EvaluableNode::ToNumber(ocn[MINKOWSKI_PARAMETER]);
 
 			//make sure valid value, if not, fall back to 2
-			if(FastIsNaN(p_value) || p_value < 0)
-				p_value = 2;
+			if(FastIsNaN(cur_condition->distEvaluator.pValue) || cur_condition->distEvaluator.pValue < 0)
+				cur_condition->distEvaluator.pValue = 2;
 		}
-		cur_condition->distEvaluator.pValue = p_value;
-
+		
 		//value transforms for whatever is measured as "distance"
 		cur_condition->distanceWeightExponent = 1.0;
 		cur_condition->distEvaluator.computeSurprisal = false;
@@ -362,20 +361,20 @@ namespace EntityQueryBuilder
 			cur_condition->singleLabel = StringInternPool::NOT_A_STRING_ID;
 
 		//set numerical precision
-		cur_condition->highAccuracyDistances = false;
-		cur_condition->recomputeAccurateDistances = true;
+		cur_condition->distEvaluator.highAccuracyDistances = false;
+		cur_condition->distEvaluator.recomputeAccurateDistances = true;
 		if(ocn.size() > NUMERICAL_PRECISION)
 		{
 			StringInternPool::StringID np_sid = EvaluableNode::ToStringIDIfExists(ocn[NUMERICAL_PRECISION]);
 			if(np_sid == ENBISI_precise)
 			{
-				cur_condition->highAccuracyDistances = true;
-				cur_condition->recomputeAccurateDistances = false;
+				cur_condition->distEvaluator.highAccuracyDistances = true;
+				cur_condition->distEvaluator.recomputeAccurateDistances = false;
 			}
 			else if(np_sid == ENBISI_fast)
 			{
-				cur_condition->highAccuracyDistances = false;
-				cur_condition->recomputeAccurateDistances = false;
+				cur_condition->distEvaluator.highAccuracyDistances = false;
+				cur_condition->distEvaluator.recomputeAccurateDistances = false;
 			}
 			//don't need to do anything for np_sid == ENBISI_recompute_precise because it's default
 		}

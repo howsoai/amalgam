@@ -40,7 +40,7 @@ namespace EntityQueryBuilder
 	}
 
 	//populates deviation data for feature_params from deviation_node
-	inline void PopulateFeatureDeviationData(RepeatedGeneralizedDistanceEvaluator::FeatureParams &feature_params, EvaluableNode *deviation_node)
+	inline void PopulateFeatureDeviationData(GeneralizedDistanceEvaluator::FeatureParams &feature_params, EvaluableNode *deviation_node)
 	{
 		if(deviation_node == nullptr)
 		{
@@ -296,7 +296,7 @@ namespace EntityQueryBuilder
 		//else don't bother parsing this, it instead contains the cases to compute case conviction for
 
 		size_t num_elements = cur_condition->positionLabels.size();
-		auto &dist_params = cur_condition->distParams;
+		auto &dist_params = cur_condition->distEvaluator;
 
 		EvaluableNode *weights_node = nullptr;
 		if(ocn.size() > WEIGHTS)
@@ -327,18 +327,18 @@ namespace EntityQueryBuilder
 			if(FastIsNaN(p_value) || p_value < 0)
 				p_value = 2;
 		}
-		cur_condition->distParams.pValue = p_value;
+		cur_condition->distEvaluator.pValue = p_value;
 
 		//value transforms for whatever is measured as "distance"
 		cur_condition->distanceWeightExponent = 1.0;
-		cur_condition->distParams.computeSurprisal = false;
+		cur_condition->distEvaluator.computeSurprisal = false;
 		if(ocn.size() > DISTANCE_VALUE_TRANSFORM)
 		{
 			EvaluableNode *dwe_param = ocn[DISTANCE_VALUE_TRANSFORM];
 			if(!EvaluableNode::IsNull(dwe_param))
 			{
 				if(dwe_param->GetType() == ENT_STRING && dwe_param->GetStringIDReference() == ENBISI_surprisal_to_prob)
-					cur_condition->distParams.computeSurprisal = true;
+					cur_condition->distEvaluator.computeSurprisal = true;
 				else //try to convert to number
 					cur_condition->distanceWeightExponent = EvaluableNode::ToNumber(dwe_param, 1.0);
 			}
@@ -362,20 +362,20 @@ namespace EntityQueryBuilder
 			cur_condition->singleLabel = StringInternPool::NOT_A_STRING_ID;
 
 		//set numerical precision
-		cur_condition->distParams.highAccuracy = false;
-		cur_condition->distParams.recomputeAccurateDistances = true;
+		cur_condition->highAccuracyDistances = false;
+		cur_condition->recomputeAccurateDistances = true;
 		if(ocn.size() > NUMERICAL_PRECISION)
 		{
 			StringInternPool::StringID np_sid = EvaluableNode::ToStringIDIfExists(ocn[NUMERICAL_PRECISION]);
 			if(np_sid == ENBISI_precise)
 			{
-				cur_condition->distParams.highAccuracy = true;
-				cur_condition->distParams.recomputeAccurateDistances = false;
+				cur_condition->highAccuracyDistances = true;
+				cur_condition->recomputeAccurateDistances = false;
 			}
 			else if(np_sid == ENBISI_fast)
 			{
-				cur_condition->distParams.highAccuracy = false;
-				cur_condition->distParams.recomputeAccurateDistances = false;
+				cur_condition->highAccuracyDistances = false;
+				cur_condition->recomputeAccurateDistances = false;
 			}
 			//don't need to do anything for np_sid == ENBISI_recompute_precise because it's default
 		}
@@ -779,9 +779,9 @@ namespace EntityQueryBuilder
 			{
 				cur_condition->singleLabel = label_sid;
 
-				cur_condition->distParams.pValue = 1;
+				cur_condition->distEvaluator.pValue = 1;
 				if(ocn.size() >= 2)
-					cur_condition->distParams.pValue = EvaluableNode::ToNumber(ocn[1]);
+					cur_condition->distEvaluator.pValue = EvaluableNode::ToNumber(ocn[1]);
 
 				cur_condition->weightLabel = StringInternPool::NOT_A_STRING_ID;
 				if(ocn.size() >= 3)

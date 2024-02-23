@@ -829,15 +829,15 @@ protected:
 
 	constexpr bool NeedToPrecomputeApproximate()
 	{
-		return (!highAccuracy || recomputeAccurateDistances);
+		return (!highAccuracyDistances || recomputeAccurateDistances);
 	}
 
 	constexpr bool NeedToPrecomputeAccurate()
 	{
-		return (highAccuracy || recomputeAccurateDistances);
+		return (highAccuracyDistances || recomputeAccurateDistances);
 	}
 
-	//update cached nominal deltas based on highAccuracy and recomputeAccurateDistances, caching what is needed given those flags
+	//update cached nominal deltas based on highAccuracyDistances and recomputeAccurateDistances, caching what is needed given those flags
 	inline void ComputeAndStoreUniversallySymmetricNominalDistanceTerms()
 	{
 		bool compute_accurate = NeedToPrecomputeAccurate();
@@ -899,7 +899,7 @@ public:
 	std::vector<FeatureInternedValues> featureInternedValues;
 
 	//if true, then all computations should be performed with high accuracy
-	bool highAccuracy;
+	bool highAccuracyDistances;
 	//if true, then estimates should be computed with low accuracy, but final results with high accuracy
 	// if false, will reuse accuracy from estimates
 	bool recomputeAccurateDistances;

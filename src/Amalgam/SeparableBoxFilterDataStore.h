@@ -74,13 +74,13 @@ public:
 	//Gets the maximum possible distance term from value assuming the feature is continuous
 	// absolute_feature_index is the offset to access the feature relative to the entire data store
 	// query_feature_index is relative to dist_params
-	inline double GetMaxDistanceTermFromContinuousValue(RepeatedGeneralizedDistanceEvaluator &dist_params,
+	inline double GetMaxDistanceTermFromContinuousValue(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		EvaluableNodeImmediateValue &value, EvaluableNodeImmediateValueType value_type,
 		size_t query_feature_index, size_t absolute_feature_index, bool high_accuracy)
 	{
 		double max_diff = columnData[absolute_feature_index]->GetMaxDifferenceTermFromValue(
-									dist_params.distTermEvaluator->featureParams[query_feature_index], value_type, value);
-		return dist_params.ComputeDistanceTermContinuousNonNullRegular(max_diff, query_feature_index, high_accuracy);
+			r_dist_eval.distEvaluator->featureParams[query_feature_index], value_type, value);
+		return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonNullRegular(max_diff, query_feature_index, high_accuracy);
 	}
 
 	//gets the matrix cell index for the specified index
@@ -489,7 +489,7 @@ public:
 	//populates distances_out with all entities and their distances that have a distance to target less than max_dist
 	//if enabled_indices is not nullptr, intersects with the enabled_indices set.
 	//assumes that enabled_indices only contains indices that have valid values for all the features
-	void FindEntitiesWithinDistance(RepeatedGeneralizedDistanceEvaluator &dist_params, std::vector<size_t> &position_label_ids,
+	void FindEntitiesWithinDistance(GeneralizedDistanceEvaluator &r_dist_eval, std::vector<size_t> &position_label_ids,
 		std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types,
 		double max_dist, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
 		std::vector<DistanceReferencePair<size_t>> &distances_out);
@@ -499,7 +499,7 @@ public:
 	// if const_dist_params is true, then it will make a copy before making any modifications
 	//will not modify enabled_indices, but instead will make a copy for any modifications
 	//assumes that enabled_indices only contains indices that have valid values for all the features
-	void FindEntitiesNearestToIndexedEntity(RepeatedGeneralizedDistanceEvaluator *dist_params_ref, std::vector<size_t> &position_label_ids,
+	void FindEntitiesNearestToIndexedEntity(GeneralizedDistanceEvaluator *dist_params_ref, std::vector<size_t> &position_label_ids,
 		bool constant_dist_params, size_t search_index, size_t top_k, StringInternPool::StringID radius_label,
 		BitArrayIntegerSet &enabled_indices, bool expand_to_first_nonzero_distance,
 		std::vector<DistanceReferencePair<size_t>> &distances_out,
@@ -508,7 +508,7 @@ public:
 	//Finds the nearest neighbors
 	//enabled_indices is the set of entities to find from, and will be modified
 	//assumes that enabled_indices only contains indices that have valid values for all the features
-	void FindNearestEntities(RepeatedGeneralizedDistanceEvaluator &dist_params, std::vector<size_t> &position_label_ids,
+	void FindNearestEntities(GeneralizedDistanceEvaluator &r_dist_eval, std::vector<size_t> &position_label_ids,
 		std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types,
 		size_t top_k, StringInternPool::StringID radius_label, size_t ignore_entity_index, BitArrayIntegerSet &enabled_indices,
 		std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream = RandomStream());
@@ -536,7 +536,7 @@ protected:
 
 	//computes each partial sum and adds the term to the partial sums associated for each id in entity_indices for query_feature_index
 	//returns the number of entities indices accumulated
-	size_t ComputeAndAccumulatePartialSums(RepeatedGeneralizedDistanceEvaluator &dist_params,
+	size_t ComputeAndAccumulatePartialSums(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		EvaluableNodeImmediateValue value, EvaluableNodeImmediateValueType value_type,
 		SortedIntegerSet &entity_indices, size_t query_feature_index, size_t absolute_feature_index, bool high_accuracy)
 	{
@@ -660,7 +660,7 @@ protected:
 	// absolute_feature_index is the offset to access the feature relative to the entire data store
 	// query_feature_index is the offset to access the feature relative to the particular query data parameters
 	//returns the smallest partial sum for any value not yet computed
-	double PopulatePartialSumsWithSimilarFeatureValue(RepeatedGeneralizedDistanceEvaluator &dist_params,
+	double PopulatePartialSumsWithSimilarFeatureValue(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		EvaluableNodeImmediateValue value, EvaluableNodeImmediateValueType value_type,
 		size_t num_entities_to_populate, bool expand_search_if_optimal, bool high_accuracy,
 		size_t query_feature_index, size_t absolute_feature_index, BitArrayIntegerSet &enabled_indices);
@@ -671,7 +671,7 @@ protected:
 	// if radius_column_index is specified, it will populate the initial partial sums with them
 	// will compute and populate min_unpopulated_distances and min_distance_by_unpopulated_count, where the former is the next smallest uncomputed feature distance indexed by the number of features not computed
 	// and min_distance_by_unpopulated_count is the total distance of all uncomputed features where the index is the number of uncomputed features
-	void PopulateInitialPartialSums(RepeatedGeneralizedDistanceEvaluator &dist_params, size_t top_k, size_t radius_column_index,
+	void PopulateInitialPartialSums(RepeatedGeneralizedDistanceEvaluator &r_dist_eval, size_t top_k, size_t radius_column_index,
 		size_t num_enabled_features, bool high_accuracy, BitArrayIntegerSet &enabled_indices,
 		std::vector<double> &min_unpopulated_distances, std::vector<double> &min_distance_by_unpopulated_count);
 
@@ -679,7 +679,7 @@ protected:
 		BitArrayIntegerSet &enabled_indices, PartialSumCollection &partial_sums, size_t top_k);
 
 	//returns the distance between two nodes while respecting the feature mask
-	inline double GetDistanceBetween(RepeatedGeneralizedDistanceEvaluator &dist_params,
+	inline double GetDistanceBetween(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		std::vector<EvaluableNodeImmediateValue> &target_values, std::vector<EvaluableNodeImmediateValueType> &target_value_types,
 		std::vector<size_t> &target_column_indices, size_t radius_column_index, size_t other_index, bool high_accuracy)
 	{
@@ -718,7 +718,7 @@ protected:
 	//computes the distance term for the entity, query_feature_index, and feature_type,
 	// where the value does not match any in the SBFDS
 	//assumes that null values have already been taken care of for nominals
-	__forceinline double ComputeDistanceTermNonMatch(RepeatedGeneralizedDistanceEvaluator &dist_params, std::vector<size_t> &target_label_indices,
+	__forceinline double ComputeDistanceTermNonMatch(RepeatedGeneralizedDistanceEvaluator &r_dist_eval, std::vector<size_t> &target_label_indices,
 		std::vector<EvaluableNodeImmediateValue> &target_values, std::vector<EvaluableNodeImmediateValueType> &target_value_types,
 		size_t entity_index, size_t query_feature_index, bool high_accuracy)
 	{
@@ -795,7 +795,7 @@ protected:
 	// this function iterates over the partial sums indices, replacing each uncomputed feature with the actual distance for that feature
 	//returns the distance
 	//assumes that all features that are exact matches have already been computed
-	__forceinline double ResolveDistanceToNonMatchTargetValues(RepeatedGeneralizedDistanceEvaluator &dist_params, std::vector<size_t> &target_label_indices,
+	__forceinline double ResolveDistanceToNonMatchTargetValues(RepeatedGeneralizedDistanceEvaluator &r_dist_eval, std::vector<size_t> &target_label_indices,
 		std::vector<EvaluableNodeImmediateValue> &target_values, std::vector<EvaluableNodeImmediateValueType> &target_value_types,
 		PartialSumCollection &partial_sums, size_t entity_index, size_t num_target_labels, bool high_accuracy)
 	{
@@ -821,7 +821,7 @@ protected:
 	// if reject_distance is infinite, then it will just complete the distance terms
 	//returns a pair of a boolean and the distance.  if the boolean is true, then the distance is less than or equal to the reject distance
 	//assumes that all features that are exact matches have already been computed
-	__forceinline std::pair<bool, double> ResolveDistanceToNonMatchTargetValues(RepeatedGeneralizedDistanceEvaluator &dist_params, std::vector<size_t> &target_label_indices,
+	__forceinline std::pair<bool, double> ResolveDistanceToNonMatchTargetValues(RepeatedGeneralizedDistanceEvaluator &r_dist_eval, std::vector<size_t> &target_label_indices,
 		std::vector<EvaluableNodeImmediateValue> &target_values, std::vector<EvaluableNodeImmediateValueType> &target_value_types,
 		PartialSumCollection &partial_sums, size_t entity_index, std::vector<double> &min_distance_by_unpopulated_count, size_t num_features,
 		double reject_distance, std::vector<double> &min_unpopulated_distances, bool high_accuracy)
@@ -866,7 +866,7 @@ protected:
 
 	//populates the next target attribute in each vector based on column_index, position data
 	//if there is a specialization of the feature type, it will update it and update dist_params accordingly
-	__forceinline void PopulateNextTargetAttributes(RepeatedGeneralizedDistanceEvaluator &dist_params, size_t query_feature_index,
+	__forceinline void PopulateNextTargetAttributes(RepeatedGeneralizedDistanceEvaluator &r_dist_eval, size_t query_feature_index,
 		std::vector<size_t> &target_column_indices, std::vector<EvaluableNodeImmediateValue> &target_values,
 		std::vector<EvaluableNodeImmediateValueType> &target_value_types, size_t column_index,
 		EvaluableNodeImmediateValue &position_value, EvaluableNodeImmediateValueType position_value_type)
@@ -930,7 +930,7 @@ protected:
 	}
 
 	//populates targetValues and targetColumnIndices given the selected target values for each value in corresponding position* parameters
-	inline void PopulateTargetValuesAndLabelIndices(RepeatedGeneralizedDistanceEvaluator &dist_params,
+	inline void PopulateTargetValuesAndLabelIndices(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		std::vector<size_t> &position_label_ids, std::vector<EvaluableNodeImmediateValue> &position_values,
 		std::vector<EvaluableNodeImmediateValueType> &position_value_types)
 	{
@@ -961,7 +961,7 @@ protected:
 
 	//recomputes feature gaps and computes parametersAndBuffers.maxFeatureGaps
 	// returns the smallest of the maximum feature gaps among the features
-	inline void PopulateUnknownFeatureValueTerms(RepeatedGeneralizedDistanceEvaluator &dist_params)
+	inline void PopulateUnknownFeatureValueTerms(RepeatedGeneralizedDistanceEvaluator &r_dist_eval)
 	{
 		auto &target_column_indices = parametersAndBuffers.targetColumnIndices;
 		auto &target_values = parametersAndBuffers.targetValues;
@@ -994,7 +994,7 @@ protected:
 
 	//returns all elements in the database that yield valid distances along with their sorted distances to the values for entity
 	// at target_index, optionally limits results count to k
-	inline void FindAllValidElementDistances(RepeatedGeneralizedDistanceEvaluator &dist_params, std::vector<size_t> &target_column_indices,
+	inline void FindAllValidElementDistances(RepeatedGeneralizedDistanceEvaluator &r_dist_eval, std::vector<size_t> &target_column_indices,
 		std::vector<EvaluableNodeImmediateValue> &target_values, std::vector<EvaluableNodeImmediateValueType> &target_value_types,
 		size_t radius_column_index, BitArrayIntegerSet &valid_indices,
 		std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream)
@@ -1003,7 +1003,7 @@ protected:
 		sorted_results.clear();
 		sorted_results.SetStream(rand_stream);
 
-		bool high_accuracy = (dist_params.highAccuracy || dist_params.recomputeAccurateDistances);
+		bool high_accuracy = (dist_params.highAccuracyDistances || dist_params.recomputeAccurateDistances);
 
 		for(auto index : valid_indices)
 		{

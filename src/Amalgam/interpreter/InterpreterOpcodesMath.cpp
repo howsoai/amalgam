@@ -1063,7 +1063,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 	evaluableNodeManager->FreeNodeTreeIfPossible(attributes_node);
 	evaluableNodeManager->FreeNodeTreeIfPossible(deviations_node);
 
-	dist_params.highAccuracy = true;
+	dist_params.highAccuracyDistances = true;
 	dist_params.recomputeAccurateDistances = false;
 	dist_params.SetAndConstrainParams();
 

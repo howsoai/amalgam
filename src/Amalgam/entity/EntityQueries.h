@@ -58,7 +58,13 @@ public:
 	//the labels corresponding to positionLabels when appropriate
 	std::vector<EvaluableNodeImmediateValue> valueToCompare;
 
-	RepeatedGeneralizedDistanceEvaluator distParams;
+	GeneralizedDistanceEvaluator distEvaluator;
+
+	//if true, then all computations should be performed with high accuracy
+	bool highAccuracyDistances;
+	//if true, then estimates should be computed with low accuracy, but final results with high accuracy
+	// if false, will reuse accuracy from estimates
+	bool recomputeAccurateDistances;
 
 	//a single standalone label in the query
 	StringInternPool::StringID singleLabel;

@@ -26,7 +26,7 @@ bool EntityQueryCaches::DoesCachedConditionMatch(EntityQueryCondition *cond, boo
 		|| qt == ENT_COMPUTE_ENTITY_GROUP_KL_DIVERGENCE || qt == ENT_COMPUTE_ENTITY_DISTANCE_CONTRIBUTIONS || qt == ENT_COMPUTE_ENTITY_KL_DIVERGENCES)
 	{
 		//TODO 4948: sbfds does not fully support p0 acceleration; it requires templating and calling logs of differences, then performing an inverse transform at the end
-		if(cond->distParams.pValue == 0)
+		if(cond->distEvaluator.pValue == 0)
 			return false;
 
 		return true;
@@ -249,7 +249,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				weight_column = sbfds.GetColumnIndexFromLabelId(cond->weightLabel);
 
 			auto get_weight = sbfds.GetNumberValueFromEntityIndexFunction(weight_column);
-			EntityQueriesStatistics::DistanceTransform<size_t> distance_transform(cond->distParams.computeSurprisal,
+			EntityQueriesStatistics::DistanceTransform<size_t> distance_transform(cond->distEvaluator.computeSurprisal,
 				cond->distanceWeightExponent, use_entity_weights, get_weight);
 
 			//if first, need to populate with all entities
@@ -264,10 +264,10 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 			for(size_t i = 0; i < cond->positionLabels.size(); i++)
 			{
 				sbfds.IntersectEntitiesWithFeature(cond->positionLabels[i], matching_entities, true);
-				if(!cond->distParams.IsFeatureEnabled(i))
+				if(!cond->distEvaluator.IsFeatureEnabled(i))
 				{
 					cond->positionLabels.erase(cond->positionLabels.begin() + i);
-					cond->distParams.featureParams.erase(begin(cond->distParams.featureParams) + i);
+					cond->distEvaluator.featureParams.erase(begin(cond->distEvaluator.featureParams) + i);
 
 					if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || cond->queryType == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)
 					{
@@ -284,7 +284,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 			if(matching_entities.size() == 0)
 				return;
 
-			cond->distParams.SetAndConstrainParams();
+			cond->distEvaluator.SetAndConstrainParams();
 
 			if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || cond->queryType == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)
 			{
@@ -316,13 +316,13 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				}
 				else if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE)
 				{
-					sbfds.FindNearestEntities(cond->distParams, cond->positionLabels, cond->valueToCompare, cond->valueTypes,
+					sbfds.FindNearestEntities(cond->distEvaluator, cond->positionLabels, cond->valueToCompare, cond->valueTypes,
 						static_cast<size_t>(cond->maxToRetrieve), cond->singleLabel, cond->exclusionLabel, matching_entities,
 						compute_results, cond->randomStream.CreateOtherStreamViaRand());
 				}
 				else //ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
 				{
-					sbfds.FindEntitiesWithinDistance(cond->distParams, cond->positionLabels, cond->valueToCompare, cond->valueTypes,
+					sbfds.FindEntitiesWithinDistance(cond->distEvaluator, cond->positionLabels, cond->valueToCompare, cond->valueTypes,
 						cond->maxDistance, cond->singleLabel, matching_entities, compute_results);
 				}
 
@@ -381,7 +381,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				ConvictionProcessor<KnnNonZeroDistanceQuerySBFCache, size_t, BitArrayIntegerSet> conviction_processor(buffers.convictionBuffers,
 					buffers.knnCache, distance_transform, static_cast<size_t>(cond->maxToRetrieve), cond->singleLabel);
 			#endif
-				buffers.knnCache.ResetCache(sbfds, matching_entities, cond->distParams, cond->positionLabels, cond->singleLabel);
+				buffers.knnCache.ResetCache(sbfds, matching_entities, cond->distEvaluator, cond->positionLabels, cond->singleLabel);
 
 				auto &results_buffer = buffers.doubleVector;
 				results_buffer.clear();
@@ -633,7 +633,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 
 				case ENT_QUERY_GENERALIZED_MEAN:
 					result = EntityQueriesStatistics::GeneralizedMean(entities.begin(), entities.end(), get_value,
-						has_weight, get_weight, cond->distParams.pValue, cond->center, cond->calculateMoment, cond->absoluteValue);
+						has_weight, get_weight, cond->distEvaluator.pValue, cond->center, cond->calculateMoment, cond->absoluteValue);
 					break;
 
 				case ENT_QUERY_MIN_DIFFERENCE:
@@ -672,7 +672,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 
 				case ENT_QUERY_GENERALIZED_MEAN:
 					result = EntityQueriesStatistics::GeneralizedMean(matching_entities.begin(), matching_entities.end(), get_value,
-						has_weight, get_weight, cond->distParams.pValue, cond->center, cond->calculateMoment, cond->absoluteValue);
+						has_weight, get_weight, cond->distEvaluator.pValue, cond->center, cond->calculateMoment, cond->absoluteValue);
 					break;
 
 				case ENT_QUERY_MIN_DIFFERENCE:

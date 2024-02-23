@@ -281,7 +281,7 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 // and sets distances_out to the found entities.  Infinity is allowed to compute all distances.
 //if enabled_indices is not nullptr, it will only find distances to those entities, and it will modify enabled_indices in-place
 // removing entities that do not have the corresponding labels
-void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(RepeatedGeneralizedDistanceEvaluator &dist_params, std::vector<size_t> &position_label_ids,
+void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistanceEvaluator &r_dist_eval, std::vector<size_t> &position_label_ids,
 	std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types,
 	double max_dist, StringInternPool::StringID radius_label,
 	BitArrayIntegerSet &enabled_indices, std::vector<DistanceReferencePair<size_t>> &distances_out)
@@ -299,7 +299,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(RepeatedGeneralized
 
 	PopulateUnknownFeatureValueTerms(dist_params);
 
-	bool high_accuracy = dist_params.highAccuracy;
+	bool high_accuracy = dist_params.highAccuracyDistances;
 	double max_dist_exponentiated = dist_params.ExponentiateDifferenceTerm(max_dist, high_accuracy);
 	
 	//initialize all distances to 0
@@ -433,13 +433,13 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(RepeatedGeneralized
 	distances_out.reserve(enabled_indices.size());
 	//need to recompute distances in several circumstances, including if radius is computed,
 	// as the intermediate result may be negative and yield an incorrect result otherwise
-	bool need_recompute_distances = ((dist_params.recomputeAccurateDistances && !dist_params.highAccuracy)
+	bool need_recompute_distances = ((dist_params.recomputeAccurateDistances && !dist_params.highAccuracyDistances)
 		|| radius_column_index < columnData.size());
-	high_accuracy = (dist_params.recomputeAccurateDistances || dist_params.highAccuracy);
+	high_accuracy = (dist_params.recomputeAccurateDistances || dist_params.highAccuracyDistances);
 
 	if(!need_recompute_distances)
 	{
-		high_accuracy = (dist_params.recomputeAccurateDistances || dist_params.highAccuracy);
+		high_accuracy = (dist_params.recomputeAccurateDistances || dist_params.highAccuracyDistances);
 		for(auto index : enabled_indices)
 			distances_out.emplace_back(dist_params.InverseExponentiateDistance(distances[index], high_accuracy), index);
 	}
@@ -451,7 +451,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(RepeatedGeneralized
 	}
 }
 
-void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(RepeatedGeneralizedDistanceEvaluator *dist_params_ref,
+void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(GeneralizedDistanceEvaluator *dist_params_ref,
 	std::vector<size_t> &position_label_ids, bool constant_dist_params, size_t search_index,
 	size_t top_k, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
 	bool expand_to_first_nonzero_distance, std::vector<DistanceReferencePair<size_t>> &distances_out, size_t ignore_index, RandomStream rand_stream)
@@ -462,7 +462,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(RepeatedGen
 	RepeatedGeneralizedDistanceEvaluator *dist_params = dist_params_ref;
 	if(constant_dist_params)
 	{
-		dist_params = &parametersAndBuffers.distParams;
+		dist_params = &parametersAndBuffers.distEvaluator;
 		*dist_params = *dist_params_ref;
 	}
 		
@@ -502,7 +502,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(RepeatedGen
 	PopulateUnknownFeatureValueTerms(*dist_params);
 
 	size_t num_enabled_features = target_values.size();
-	bool high_accuracy = dist_params->highAccuracy;
+	bool high_accuracy = dist_params->highAccuracyDistances;
 
 	//make a copy of the entities so that the list can be modified
 	BitArrayIntegerSet &possible_knn_indices = parametersAndBuffers.nullAccumSet;
@@ -638,9 +638,9 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(RepeatedGen
 	distances_out.resize(sorted_results.Size());
 	//need to recompute distances in several circumstances, including if radius is computed,
 	// as the intermediate result may be negative and yield an incorrect result otherwise
-	bool need_recompute_distances = ((dist_params->recomputeAccurateDistances && !dist_params->highAccuracy)
+	bool need_recompute_distances = ((dist_params->recomputeAccurateDistances && !dist_params->highAccuracyDistances)
 		|| radius_column_index < columnData.size());
-	high_accuracy = (dist_params->recomputeAccurateDistances || dist_params->highAccuracy);
+	high_accuracy = (dist_params->recomputeAccurateDistances || dist_params->highAccuracyDistances);
 
 	while(sorted_results.Size() > 0)
 	{
@@ -657,7 +657,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(RepeatedGen
 	}
 }
 
-void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanceEvaluator &dist_params,
+void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluator &r_dist_eval,
 	std::vector<size_t> &position_label_ids, std::vector<EvaluableNodeImmediateValue> &position_values,
 	std::vector<EvaluableNodeImmediateValueType> &position_value_types,
 	size_t top_k, StringInternPool::StringID radius_label, size_t ignore_entity_index,
@@ -689,7 +689,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 
 	//one past the maximum entity index to be considered
 	size_t end_index = enabled_indices.GetEndInteger();
-	bool high_accuracy = dist_params.highAccuracy;
+	bool high_accuracy = dist_params.highAccuracyDistances;
 
 	//reuse the appropriate partial_sums_buffer buffer
 	auto &partial_sums = parametersAndBuffers.partialSums;
@@ -847,9 +847,9 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 	previous_nn_cache.resize(num_results);
 	//need to recompute distances in several circumstances, including if radius is computed,
 	// as the intermediate result may be negative and yield an incorrect result otherwise
-	bool need_recompute_distances = ((dist_params.recomputeAccurateDistances && !dist_params.highAccuracy)
+	bool need_recompute_distances = ((dist_params.recomputeAccurateDistances && !dist_params.highAccuracyDistances)
 			|| radius_column_index < columnData.size());
-	high_accuracy = (dist_params.recomputeAccurateDistances || dist_params.highAccuracy);
+	high_accuracy = (dist_params.recomputeAccurateDistances || dist_params.highAccuracyDistances);
 
 	while(sorted_results.Size() > 0)
 	{
@@ -921,7 +921,7 @@ size_t SeparableBoxFilterDataStore::AddLabelsAsEmptyColumns(std::vector<size_t> 
 	return num_inserted_columns;
 }
 
-double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(RepeatedGeneralizedDistanceEvaluator &dist_params,
+double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 	EvaluableNodeImmediateValue value, EvaluableNodeImmediateValueType value_type,
 	size_t num_entities_to_populate, bool expand_search_if_optimal, bool high_accuracy,
 	size_t query_feature_index, size_t absolute_feature_index, BitArrayIntegerSet &enabled_indices)
@@ -1225,7 +1225,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	return largest_term;
 }
 
-void SeparableBoxFilterDataStore::PopulateInitialPartialSums(RepeatedGeneralizedDistanceEvaluator &dist_params,
+void SeparableBoxFilterDataStore::PopulateInitialPartialSums(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 	size_t top_k, size_t radius_column_index, size_t num_enabled_features, bool high_accuracy,
 	BitArrayIntegerSet &enabled_indices, std::vector<double> &min_unpopulated_distances, std::vector<double> &min_distance_by_unpopulated_count)
 {;

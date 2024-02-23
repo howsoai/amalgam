@@ -9,7 +9,7 @@
 #include <limits>
 #include <vector>
 
-//TODO 18116: contextualize whether something is in a high accuracy area or not -- need indirection in GeneralizedDistanceEvaluator, say, intermediate calculation flag (e.g., is it recomputing at the end)
+//TODO 18116: update all places that use these classes
 //TODO 18116: attempt to templatize distance methods around accuracy to remove branches
 
 //If defined, will use the Laplace LK metric (default).  Otherwise will use Gaussian.
@@ -784,16 +784,16 @@ class RepeatedGeneralizedDistanceEvaluator
 {
 public:
 
-	inline RepeatedGeneralizedDistanceEvaluator(GeneralizedDistanceEvaluator *dist_params)
-		: distTermEvaluator(dist_params)
+	inline RepeatedGeneralizedDistanceEvaluator(GeneralizedDistanceEvaluator *dist_evaluator)
+		: distEvaluator(dist_evaluator)
 	{	}
 
 	//for the feature index, computes and stores the distance terms as measured from value to each interned value
-	inline void ComputeAndStoreInternedNumberValuesAndDistanceTerms(GeneralizedDistanceEvaluator &dist_params, double value, size_t index, std::vector<double> *interned_values)
+	inline void ComputeAndStoreInternedNumberValuesAndDistanceTerms(double value, size_t index, std::vector<double> *interned_values)
 	{
 		bool compute_accurate = NeedToPrecomputeAccurate();
 		bool compute_approximate = NeedToPrecomputeApproximate();
-		auto &feature_params = dist_params.featureParams[index];
+		auto &feature_params = distEvaluator->featureParams[index];
 
 		//make sure there's room for the interned index
 		if(featureInternedValues.size() <= index)
@@ -811,17 +811,17 @@ public:
 		feature_interns.internedDistanceTerms.resize(interned_values->size());
 		//first entry is known-unknown distance
 		if(compute_accurate)
-			feature_interns.internedDistanceTerms[0].SetValue(ComputeDistanceTermKnownToUnknown(index, true), true);
+			feature_interns.internedDistanceTerms[0].SetValue(distEvaluator->ComputeDistanceTermKnownToUnknown(index, true), true);
 		if(compute_approximate)
-			feature_interns.internedDistanceTerms[0].SetValue(ComputeDistanceTermKnownToUnknown(index, false), false);
+			feature_interns.internedDistanceTerms[0].SetValue(distEvaluator->ComputeDistanceTermKnownToUnknown(index, false), false);
 
 		for(size_t i = 1; i < feature_interns.internedDistanceTerms.size(); i++)
 		{
 			double difference = value - interned_values->at(i);
 			if(compute_accurate)
-				feature_interns.internedDistanceTerms[i].SetValue(ComputeDistanceTermContinuousNonNullRegular(difference, index, true), true);
+				feature_interns.internedDistanceTerms[i].SetValue(distEvaluator->ComputeDistanceTermContinuousNonNullRegular(difference, index, true), true);
 			if(compute_approximate)
-				feature_interns.internedDistanceTerms[i].SetValue(ComputeDistanceTermContinuousNonNullRegular(difference, index, false), false);
+				feature_interns.internedDistanceTerms[i].SetValue(distEvaluator->ComputeDistanceTermContinuousNonNullRegular(difference, index, false), false);
 		}
 	}
 
@@ -843,14 +843,14 @@ protected:
 		bool compute_accurate = NeedToPrecomputeAccurate();
 		bool compute_approximate = NeedToPrecomputeApproximate();
 
-		for(size_t i = 0; i < distTermEvaluator->featureParams.size(); i++)
+		for(size_t i = 0; i < distEvaluator->featureParams.size(); i++)
 		{
-			if(IsFeatureNominal(i))
+			if(distEvaluator->IsFeatureNominal(i))
 			{
-				auto &feat_params = distTermEvaluator->featureParams[i];
+				auto &feat_params = distEvaluator->featureParams[i];
 
 				//ensure if a feature has deviations they're not too small to underflow
-				if(DoesFeatureHaveDeviation(i))
+				if(distEvaluator->DoesFeatureHaveDeviation(i))
 				{
 					constexpr double smallest_delta = 1e-100;
 					if(feat_params.typeAttributes.nominalCount == 1 && feat_params.deviation < smallest_delta)
@@ -859,14 +859,14 @@ protected:
 
 				if(compute_accurate)
 				{
-					feat_params.nominalMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, true), true);
-					feat_params.nominalNonMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, true), true);
+					feat_params.nominalMatchDistanceTerm.SetValue(distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, true), true);
+					feat_params.nominalNonMatchDistanceTerm.SetValue(distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, true), true);
 				}
 
 				if(compute_approximate)
 				{
-					feat_params.nominalMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, false), false);
-					feat_params.nominalNonMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, false), false);
+					feat_params.nominalMatchDistanceTerm.SetValue(distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, false), false);
+					feat_params.nominalNonMatchDistanceTerm.SetValue(distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, false), false);
 				}
 			}
 		}
@@ -887,7 +887,7 @@ public:
 	}
 
 	//pointer to a valid, populated GeneralizedDistanceEvaluator
-	GeneralizedDistanceEvaluator *distTermEvaluator;
+	GeneralizedDistanceEvaluator *distEvaluator;
 
 	struct FeatureInternedValues
 	{

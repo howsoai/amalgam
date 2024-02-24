@@ -38,27 +38,6 @@ public:
 		FDT_CONTINUOUS_CODE,
 	};
 
-	enum EffectiveFeatureDifferenceType : uint32_t
-	{
-		//nominal values, but every nominal relationship is the same and symmetric:
-		//A is as different as B as B is as different as C
-		EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED,
-		//everything is precomputed from interned values that are looked up
-		EFDT_VALUES_UNIVERSALLY_PRECOMPUTED,
-		//continuous without cycles, but everything is always numeric
-		EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC,
-		//continuous without cycles, may contain nonnumeric data
-		EFDT_CONTINUOUS_NUMERIC,
-		//like FDT_CONTINUOUS_NUMERIC, but has cycles
-		EFDT_CONTINUOUS_NUMERIC_CYCLIC,
-		//continuous precomputed (cyclic or not), may contain nonnumeric data
-		EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED,
-		//edit distance between strings
-		EFDT_CONTINUOUS_STRING,
-		//continuous measures of the number of nodes different between two sets of code
-		EFDT_CONTINUOUS_CODE,
-	};
-
 	//stores the computed exact and approximate distance terms
 	// which can be referenced by getting the value at the corresponding offset
 	//the values default to 0.0 on initialization
@@ -117,7 +96,6 @@ public:
 	public:
 		inline FeatureParams()
 			: featureType(FDT_CONTINUOUS_NUMERIC),
-			effectiveFeatureType(EFDT_CONTINUOUS_NUMERIC),
 			weight(1.0), deviation(0.0),
 			unknownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
 			knownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN())
@@ -128,10 +106,6 @@ public:
 		//the type of comparison for each feature
 		// this type is 32-bit aligned to make sure the whole structure is aligned
 		FeatureDifferenceType featureType;
-
-		//the effective comparison for the feature type, specialized for performance
-		// this type is 32-bit aligned to make sure the whole structure is aligned
-		EffectiveFeatureDifferenceType effectiveFeatureType;
 
 		//weight of the feature
 		double weight;
@@ -871,6 +845,29 @@ class RepeatedGeneralizedDistanceEvaluator
 {
 public:
 
+	//an extension of values of GeneralizedDistanceEvaluator::FeatureDifferenceType
+	//with differentiation on how the values can be computed
+	enum EffectiveFeatureDifferenceType : uint32_t
+	{
+		//nominal values, but every nominal relationship is the same and symmetric:
+		//A is as different as B as B is as different as C
+		EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED,
+		//everything is precomputed from interned values that are looked up
+		EFDT_VALUES_UNIVERSALLY_PRECOMPUTED,
+		//continuous without cycles, but everything is always numeric
+		EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC,
+		//continuous without cycles, may contain nonnumeric data
+		EFDT_CONTINUOUS_NUMERIC,
+		//like FDT_CONTINUOUS_NUMERIC, but has cycles
+		EFDT_CONTINUOUS_NUMERIC_CYCLIC,
+		//continuous precomputed (cyclic or not), may contain nonnumeric data
+		EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED,
+		//edit distance between strings
+		EFDT_CONTINUOUS_STRING,
+		//continuous measures of the number of nodes different between two sets of code
+		EFDT_CONTINUOUS_CODE,
+	};
+
 	inline RepeatedGeneralizedDistanceEvaluator(GeneralizedDistanceEvaluator *dist_evaluator)
 		: distEvaluator(dist_evaluator)
 	{	}
@@ -883,10 +880,10 @@ public:
 		auto &feature_params = distEvaluator->featureParams[index];
 
 		//make sure there's room for the interned index
-		if(featureInternedValues.size() <= index)
-			featureInternedValues.resize(index + 1);
+		if(featureData.size() <= index)
+			featureData.resize(index + 1);
 
-		auto &feature_interns = featureInternedValues[index];
+		auto &feature_interns = featureData[index];
 		feature_interns.internedNumberIndexToNumberValue = interned_values;
 
 		if(interned_values == nullptr)
@@ -917,25 +914,46 @@ public:
 	//returns true if the feature at index has interned number values
 	__forceinline bool HasNumberInternValues(size_t index)
 	{
-		return featureInternedValues[index].internedNumberIndexToNumberValue != nullptr;
+		return featureData[index].internedNumberIndexToNumberValue != nullptr;
 	}
 
 	//returns the precomputed distance term for the interned number with intern_value_index
 	__forceinline double ComputeDistanceTermNumberInternedPrecomputed(size_t intern_value_index, size_t index, bool high_accuracy)
 	{
-		return featureInternedValues[index].internedDistanceTerms[intern_value_index].GetValue(high_accuracy);
+		return featureData[index].internedDistanceTerms[intern_value_index].GetValue(high_accuracy);
 	}
 
 	//pointer to a valid, populated GeneralizedDistanceEvaluator
 	GeneralizedDistanceEvaluator *distEvaluator;
 
-	struct FeatureInternedValues
+	class FeatureData
 	{
-		//TODO 18116: need to move effectiveFeatureType here
+	public:
+
+		FeatureData()
+			: effectiveFeatureType(EFDT_CONTINUOUS_NUMERIC),
+			featureIndex(std::numeric_limits<size_t>::max()),
+			internedNumberIndexToNumberValue(nullptr)
+		{	}
+
+		//the effective comparison for the feature type, specialized for performance
+		// this type is 32-bit aligned to make sure the whole structure is aligned
+		EffectiveFeatureDifferenceType effectiveFeatureType;
+
+		//index of the feature in distEvaluator
+		size_t featureIndexDistanceEval;
+
+		//index of the in an external location
+		size_t featureIndexAbsolute;
+
+		//target that the distance will be computed to
+		EvaluableNodeImmediateValueType targetValueType;
+		EvaluableNodeImmediateValue targetValue;
+
 		std::vector<double> *internedNumberIndexToNumberValue;
 		std::vector<GeneralizedDistanceEvaluator::DistanceTerms> internedDistanceTerms;
 	};
 
 	//for each feature, precomputed distance terms for each interned value looked up by intern index
-	std::vector<FeatureInternedValues> featureInternedValues;
+	std::vector<FeatureData> featureData;
 };

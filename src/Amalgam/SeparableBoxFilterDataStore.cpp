@@ -281,7 +281,7 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 // and sets distances_out to the found entities.  Infinity is allowed to compute all distances.
 //if enabled_indices is not nullptr, it will only find distances to those entities, and it will modify enabled_indices in-place
 // removing entities that do not have the corresponding labels
-void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistanceEvaluator &r_dist_eval, std::vector<size_t> &position_label_ids,
+void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistanceEvaluator &dist_eval, std::vector<size_t> &position_label_ids,
 	std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types,
 	double max_dist, StringInternPool::StringID radius_label,
 	BitArrayIntegerSet &enabled_indices, std::vector<DistanceReferencePair<size_t>> &distances_out)
@@ -290,7 +290,6 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 		return;
 
 	//look up these data structures upfront for performance
-	auto &target_column_indices = parametersAndBuffers.targetColumnIndices;
 	auto &target_values = parametersAndBuffers.targetValues;
 	auto &target_value_types = parametersAndBuffers.targetValueTypes;
 	PopulateTargetValuesAndLabelIndices(dist_params, position_label_ids, position_values, position_value_types);
@@ -451,7 +450,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 	}
 }
 
-void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(GeneralizedDistanceEvaluator *dist_params_ref,
+void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(GeneralizedDistanceEvaluator &dist_eval,
 	std::vector<size_t> &position_label_ids, bool constant_dist_params, size_t search_index,
 	size_t top_k, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
 	bool expand_to_first_nonzero_distance, std::vector<DistanceReferencePair<size_t>> &distances_out, size_t ignore_index, RandomStream rand_stream)
@@ -467,9 +466,6 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 	}
 		
 	//build target
-	auto &target_column_indices = parametersAndBuffers.targetColumnIndices;
-	target_column_indices.clear();
-
 	auto &target_values = parametersAndBuffers.targetValues;
 	target_values.clear();
 
@@ -494,7 +490,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 			value_type = column_data->GetResolvedValueType(value_type);
 
 			PopulateNextTargetAttributes(*dist_params, i,
-				target_column_indices, target_values, target_value_types,
+				target_values, target_value_types,
 				column_index, value, value_type);
 		}
 	}
@@ -657,7 +653,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 	}
 }
 
-void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluator &r_dist_eval,
+void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluator &dist_eval,
 	std::vector<size_t> &position_label_ids, std::vector<EvaluableNodeImmediateValue> &position_values,
 	std::vector<EvaluableNodeImmediateValueType> &position_value_types,
 	size_t top_k, StringInternPool::StringID radius_label, size_t ignore_entity_index,
@@ -942,7 +938,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		//if the known-unknown term is less than unknown_unknown (this should be rare if nulls have semantic meaning)
 		//then need to populate the rest of the cases
 		double known_unknown_term = dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
-		if(effective_feature_type == GeneralizedDistanceEvaluator::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED || known_unknown_term < unknown_unknown_term)
+		if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED || known_unknown_term < unknown_unknown_term)
 		{
 			BitArrayIntegerSet &known_unknown_indices = parametersAndBuffers.potentialMatchesSet;
 			known_unknown_indices = enabled_indices;
@@ -964,7 +960,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	}
 
 	//if nominal, only need to compute the exact match
-	if(effective_feature_type == GeneralizedDistanceEvaluator::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED)
+	if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED)
 	{
 		if(value_type == ENIVT_NUMBER)
 		{
@@ -1004,7 +1000,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		//return next smallest nominal distance term
 		return dist_params.ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(query_feature_index, high_accuracy);
 	}
-	else if(effective_feature_type == GeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING)
+	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING)
 	{
 		if(value_type == ENIVT_STRING_ID)
 		{
@@ -1019,7 +1015,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		//the next closest string will have an edit distance of 1
 		return dist_params.ComputeDistanceTermContinuousNonCyclicNonNullRegular(1.0, query_feature_index, high_accuracy);
 	}
-	else if(effective_feature_type == GeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE)
+	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE)
 	{
 		//compute partial sums for all code of matching size
 		size_t code_size = 1;
@@ -1041,7 +1037,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 	//if not a number or no numbers available, then no size
 	if(value_type != ENIVT_NUMBER || column->sortedNumberValueEntries.size() == 0)
-		return GetMaxDistanceTermFromContinuousValue(dist_params, value, value_type, query_feature_index, absolute_feature_index, high_accuracy);
+		return GetMaxDistanceTermForContinuousFeature(dist_params, value, value_type, query_feature_index, absolute_feature_index, high_accuracy);
 
 	bool cyclic_feature = dist_params.IsFeatureCyclic(query_feature_index);
 	double cycle_length = std::numeric_limits<double>::infinity();

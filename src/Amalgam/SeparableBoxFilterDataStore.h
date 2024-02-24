@@ -40,9 +40,7 @@ public:
 	struct SBFDSParametersAndBuffers
 	{
 		//buffers for finding nearest cases
-		std::vector<EvaluableNodeImmediateValue> targetValues;
-		std::vector<EvaluableNodeImmediateValueType> targetValueTypes;
-		std::vector<size_t> targetColumnIndices;
+		RepeatedGeneralizedDistanceEvaluator rDistEvaluator;
 		PartialSumCollection partialSums;
 		std::vector<double> minUnpopulatedDistances;
 		std::vector<double> minDistanceByUnpopulatedCount;
@@ -74,13 +72,13 @@ public:
 	//Gets the maximum possible distance term from value assuming the feature is continuous
 	// absolute_feature_index is the offset to access the feature relative to the entire data store
 	// query_feature_index is relative to dist_params
-	inline double GetMaxDistanceTermFromContinuousValue(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
-		EvaluableNodeImmediateValue &value, EvaluableNodeImmediateValueType value_type,
+	inline double GetMaxDistanceTermForContinuousFeature(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		size_t query_feature_index, size_t absolute_feature_index, bool high_accuracy)
 	{
-		double max_diff = columnData[absolute_feature_index]->GetMaxDifferenceTermFromValue(
-			r_dist_eval.distEvaluator->featureParams[query_feature_index], value_type, value);
-		return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonNullRegular(max_diff, query_feature_index, high_accuracy);
+		double max_diff = columnData[absolute_feature_index]->GetMaxDifferenceTerm(
+														r_dist_eval.distEvaluator->featureParams[query_feature_index]);
+		return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonNullRegular(
+														max_diff, query_feature_index, high_accuracy);
 	}
 
 	//gets the matrix cell index for the specified index
@@ -722,12 +720,12 @@ protected:
 		std::vector<EvaluableNodeImmediateValue> &target_values, std::vector<EvaluableNodeImmediateValueType> &target_value_types,
 		size_t entity_index, size_t query_feature_index, bool high_accuracy)
 	{
-		switch(r_dist_eval.distEvaluator->featureParams[query_feature_index].effectiveFeatureType)
+		switch(r_dist_eval.featureData[query_feature_index].effectiveFeatureType)
 		{
-		case GeneralizedDistanceEvaluator::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED:
+		case RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED:
 			return r_dist_eval.distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(query_feature_index, high_accuracy);
 
-		case GeneralizedDistanceEvaluator::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC:
+		case RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC:
 		{
 			const size_t column_index = target_label_indices[query_feature_index];
 			return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicOneNonNullRegular(
@@ -735,14 +733,14 @@ protected:
 				query_feature_index, high_accuracy);
 		}
 
-		case GeneralizedDistanceEvaluator::EFDT_VALUES_UNIVERSALLY_PRECOMPUTED:
+		case RepeatedGeneralizedDistanceEvaluator::EFDT_VALUES_UNIVERSALLY_PRECOMPUTED:
 		{
 			const size_t column_index = target_label_indices[query_feature_index];
 			return dist_params.ComputeDistanceTermNumberInternedPrecomputed(
 				GetValue(entity_index, column_index).indirectionIndex, query_feature_index, high_accuracy);
 		}
 
-		case GeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC:
+		case RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC:
 		{
 			const size_t column_index = target_label_indices[query_feature_index];
 			auto &column_data = columnData[column_index];
@@ -754,7 +752,7 @@ protected:
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
 		}
 
-		case GeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_CYCLIC:
+		case RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_CYCLIC:
 		{
 			const size_t column_index = target_label_indices[query_feature_index];
 			auto &column_data = columnData[column_index];
@@ -766,7 +764,7 @@ protected:
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
 		}
 
-		case GeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED:
+		case RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED:
 		{
 			const size_t column_index = target_label_indices[query_feature_index];
 			auto &column_data = columnData[column_index];
@@ -777,7 +775,7 @@ protected:
 				return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
 		}
 
-		default: //GeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING or GeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE
+		default: //RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING or RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE
 		{
 			const size_t column_index = target_label_indices[query_feature_index];
 			auto &column_data = columnData[column_index];
@@ -867,14 +865,14 @@ protected:
 	//populates the next target attribute in each vector based on column_index, position data
 	//if there is a specialization of the feature type, it will update it and update r_dist_eval accordingly
 	__forceinline void PopulateNextTargetAttributes(RepeatedGeneralizedDistanceEvaluator &r_dist_eval, size_t query_feature_index,
-		std::vector<size_t> &target_column_indices, std::vector<EvaluableNodeImmediateValue> &target_values,
-		std::vector<EvaluableNodeImmediateValueType> &target_value_types, size_t column_index,
+		std::vector<EvaluableNodeImmediateValue> &target_values, std::vector<EvaluableNodeImmediateValueType> &target_value_types,
+		size_t column_index,
 		EvaluableNodeImmediateValue &position_value, EvaluableNodeImmediateValueType position_value_type)
 	{
 		target_column_indices.push_back(column_index);
 
 		auto &feature_type = r_dist_eval.distEvaluator->featureParams[query_feature_index].featureType;
-		auto &effective_feature_type = r_dist_eval.distEvaluator->featureParams[query_feature_index].effectiveFeatureType;
+		auto &effective_feature_type = r_dist_eval.featureData[query_feature_index].effectiveFeatureType;
 
 		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC
 			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
@@ -888,11 +886,11 @@ protected:
 			if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC
 					|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
 					|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
-				effective_feature_type = GeneralizedDistanceEvaluator::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED;
+				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED;
 			else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING)
-				effective_feature_type = GeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING;
+				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING;
 			else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
-				effective_feature_type = GeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE;
+				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE;
 		}
 		else // feature_type is some form of continuous numeric
 		{
@@ -911,23 +909,25 @@ protected:
 			if(column_data->numberValuesInterned)
 			{
 				if(all_values_numeric)
-					effective_feature_type = GeneralizedDistanceEvaluator::EFDT_VALUES_UNIVERSALLY_PRECOMPUTED;
+					effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_VALUES_UNIVERSALLY_PRECOMPUTED;
 				else
-					effective_feature_type = GeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED;
+					effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED;
 
 				dist_params.ComputeAndStoreInternedNumberValuesAndDistanceTerms(position_value_numeric, query_feature_index, &column_data->internedNumberIndexToNumberValue);
 			}
 			else
 			{
 				if(all_values_numeric && feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC)
-					effective_feature_type = GeneralizedDistanceEvaluator::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC;
+					effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC;
 				else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC)
-					effective_feature_type = GeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_CYCLIC;
+					effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_CYCLIC;
 				else
-					effective_feature_type = GeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC;
+					effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC;
 			}
 		}
 	}
+
+public:
 
 	//populates targetValues and targetColumnIndices given the selected target values for each value in corresponding position* parameters
 	inline void PopulateTargetValuesAndLabelIndices(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
@@ -941,9 +941,6 @@ protected:
 		auto &target_value_types = parametersAndBuffers.targetValueTypes;
 		target_value_types.clear();
 
-		auto &target_column_indices = parametersAndBuffers.targetColumnIndices;
-		target_column_indices.clear();
-
 		for(size_t i = 0; i < position_label_ids.size(); i++)
 		{
 			auto column = labelIdToColumnIndex.find(position_label_ids[i]);
@@ -953,7 +950,7 @@ protected:
 			if(r_dist_eval.distEvaluator->IsFeatureEnabled(i))
 			{
 				PopulateNextTargetAttributes(r_dist_eval, i,
-					target_column_indices, target_values, target_value_types,
+					target_values, target_value_types,
 					column->second, position_values[i], position_value_types[i]);
 			}
 		}
@@ -961,16 +958,14 @@ protected:
 
 	//recomputes feature gaps and computes parametersAndBuffers.maxFeatureGaps
 	// returns the smallest of the maximum feature gaps among the features
-	inline void PopulateUnknownFeatureValueTerms(RepeatedGeneralizedDistanceEvaluator &r_dist_eval)
+	inline void PopulateUnknownFeatureValueDifferences(GeneralizedDistanceEvaluator &dist_eval)
 	{
-		//TODO 18116: move the universal parts of this out of computing nearest neighbors; break into two methods
+		//TODO 18116: need to prepopulate targets before calling this
 		auto &target_column_indices = parametersAndBuffers.targetColumnIndices;
-		auto &target_values = parametersAndBuffers.targetValues;
-		auto &target_value_types = parametersAndBuffers.targetValueTypes;
-
+		
 		for(size_t i = 0; i < target_column_indices.size(); i++)
 		{
-			auto &feature_params = r_dist_eval.distEvaluator->featureParams[i];
+			auto &feature_params = dist_eval.featureParams[i];
 			size_t column_index = target_column_indices[i];
 
 			//if either known or unknown to unknown is missing, need to compute difference
@@ -979,15 +974,28 @@ protected:
 			if(FastIsNaN(feature_params.knownToUnknownDistanceTerm.difference)
 				|| FastIsNaN(feature_params.unknownToUnknownDistanceTerm.difference))
 			{
-				unknown_distance_term = columnData[column_index]->GetMaxDifferenceTermFromValue(
-					feature_params, target_value_types[i], target_values[i]);
+				unknown_distance_term = columnData[column_index]->GetMaxDifferenceTerm(
+					feature_params);
 
 				if(FastIsNaN(feature_params.knownToUnknownDistanceTerm.difference))
 					feature_params.knownToUnknownDistanceTerm.difference = unknown_distance_term;
 				if(FastIsNaN(feature_params.unknownToUnknownDistanceTerm.difference))
 					feature_params.unknownToUnknownDistanceTerm.difference = unknown_distance_term;
 			}
+		}
+	}
 
+	//recomputes feature gaps and computes parametersAndBuffers.maxFeatureGaps
+	// returns the smallest of the maximum feature gaps among the features
+	inline void PopulateUnknownFeatureValueTerms(RepeatedGeneralizedDistanceEvaluator &r_dist_eval)
+	{
+		//TODO 18116: finish this to update based on value
+		auto &target_values = parametersAndBuffers.targetValues;
+		auto &target_value_types = parametersAndBuffers.targetValueTypes;
+
+		for(size_t i = 0; i < target_column_indices.size(); i++)
+		{
+			
 			dist_params.ComputeAndStoreUncertaintyDistanceTerms(i,
 				EvaluableNodeImmediateValue::IsNullEquivalent(target_value_types[i], target_values[i]));
 		}
@@ -1004,7 +1012,7 @@ protected:
 		sorted_results.clear();
 		sorted_results.SetStream(rand_stream);
 
-		bool high_accuracy = (dist_params.highAccuracyDistances || dist_params.recomputeAccurateDistances);
+		bool high_accuracy = (r_dist_eval.distEvaluator->highAccuracyDistances || r_dist_eval.distEvaluator->recomputeAccurateDistances);
 
 		for(auto index : valid_indices)
 		{

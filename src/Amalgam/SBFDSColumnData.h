@@ -680,7 +680,7 @@ public:
 
 	//returns the maximum difference between value and any other value for this column
 	//if empty, will return infinity
-	inline double GetMaxDifferenceTermFromValue(GeneralizedDistanceEvaluator::FeatureParams &feature_params, EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue &value)
+	inline double GetMaxDifferenceTerm(GeneralizedDistanceEvaluator::FeatureParams &feature_params)
 	{
 		switch(feature_params.featureType)
 		{
@@ -701,30 +701,13 @@ public:
 
 		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING:
 			//the max difference is the worst case edit distance, of removing all the characters
-			// and adding all the new ones
-			if(value_type == ENIVT_STRING_ID)
-			{
-				auto s = string_intern_pool.GetStringFromID(value.stringID);
-				return static_cast<double>(longestStringLength + StringManipulation::GetNumUTF8Characters(s));
-			}
-			else if(value_type == ENIVT_NULL)
-			{
-				//if null, then could potentially have to remove a string, then add a new one, so counts as double
-				return static_cast<double>(longestStringLength * 2);
-			}
-			else //not a string, so just count distance of adding the string plus one to remove the non-string value
-			{
-				return static_cast<double>(longestStringLength + 1);
-			}
+			// and then adding back in another of equal size but different
+			return static_cast<double>(longestStringLength * 2);
 
 		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE:
-			if(value_type == ENIVT_CODE)
-				return static_cast<double>(largestCodeSize + EvaluableNode::GetDeepSize(value.code));
-			else if(value_type == ENIVT_NULL)
-				//if null, then could potentially have to remove a the code, then add a all new, so counts as double
-				return static_cast<double>(largestCodeSize * 2);
-			else //all other immediate types have a size of 1
-				return static_cast<double>(largestCodeSize + 1);
+			//the max difference is the worst case edit distance, of removing all the characters
+			// and then adding back in another of equal size but different
+			return static_cast<double>(largestCodeSize * 2);
 
 		default:
 			return std::numeric_limits<double>::infinity();

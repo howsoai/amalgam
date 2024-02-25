@@ -444,7 +444,7 @@ namespace EntityQueryBuilder
 
 		if(any_unused_feature)
 		{
-			auto &exist_condition_iter = conditions.emplace(end(conditions) - 1);
+			auto exist_condition_iter = conditions.emplace(end(conditions) - 1);
 			EntityQueryCondition *exist_condition = &(*exist_condition_iter);
 			//update pointer since it changed
 			cur_condition = &(conditions.back());

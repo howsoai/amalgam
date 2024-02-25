@@ -254,7 +254,8 @@ namespace EntityQueryBuilder
 		}
 
 		//select based on type for position or entities
-		if(DoesDistanceQueryUseEntitiesInsteadOfPosition(condition_type))
+		bool use_entities_instead_of_position = DoesDistanceQueryUseEntitiesInsteadOfPosition(condition_type);
+		if(use_entities_instead_of_position)
 		{
 			EvaluableNode *entities = ocn[POSITION];
 			if(EvaluableNode::IsOrderedArray(entities))
@@ -467,7 +468,7 @@ namespace EntityQueryBuilder
 					cur_condition->distParams.featureParams.erase(begin(cur_condition->distParams.featureParams) + i);
 					cur_condition->positionLabels.erase(begin(cur_condition->positionLabels) + i);
 
-					if(!DoesDistanceQueryUseEntitiesInsteadOfPosition(cur_condition->queryType))
+					if(!use_entities_instead_of_position)
 					{
 						cur_condition->valueToCompare.erase(begin(cur_condition->valueToCompare) + i);
 						cur_condition->valueTypes.erase(begin(cur_condition->valueTypes) + i);

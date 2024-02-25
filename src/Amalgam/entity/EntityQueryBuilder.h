@@ -433,9 +433,9 @@ namespace EntityQueryBuilder
 		//check for any unused features -- that is, zero weight.  if there are any,
 		//then insert an existance query for them and remove from the distance query
 		bool any_unused_feature = false;
-		for(size_t i = 0; i < cur_condition->distParams.featureParams.size(); i++)
+		for(size_t i = 0; i < cur_condition->distEvaluator.featureParams.size(); i++)
 		{
-			if(!cur_condition->distParams.IsFeatureEnabled(i))
+			if(!cur_condition->distEvaluator.IsFeatureEnabled(i))
 			{
 				any_unused_feature = true;
 				break;
@@ -453,7 +453,7 @@ namespace EntityQueryBuilder
 
 			for(size_t i = 0; i < cur_condition->positionLabels.size();)
 			{
-				if(cur_condition->distParams.IsFeatureEnabled(i))
+				if(cur_condition->distEvaluator.IsFeatureEnabled(i))
 				{
 					i++;
 				}
@@ -464,7 +464,7 @@ namespace EntityQueryBuilder
 					exist_condition->existLabels.push_back(label_sid);
 
 					//remove label
-					cur_condition->distParams.featureParams.erase(begin(cur_condition->distParams.featureParams) + i);
+					cur_condition->distEvaluator.featureParams.erase(begin(cur_condition->distEvaluator.featureParams) + i);
 					cur_condition->positionLabels.erase(begin(cur_condition->positionLabels) + i);
 
 					if(!use_entities_instead_of_position)

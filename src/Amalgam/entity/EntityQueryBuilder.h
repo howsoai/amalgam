@@ -429,6 +429,52 @@ namespace EntityQueryBuilder
 				}
 			}
 		}
+
+		//check for any unused features -- that is, zero weight.  if there are any,
+		//then insert an existance query for them and remove from the distance query
+		bool any_unused_feature = false;
+		for(size_t i = 0; i < cur_condition->distParams.featureParams.size(); i++)
+		{
+			if(!cur_condition->distParams.IsFeatureEnabled(i))
+			{
+				any_unused_feature = true;
+				break;
+			}
+		}
+
+		if(any_unused_feature)
+		{
+			auto &exist_condition_iter = conditions.emplace(end(conditions) - 1);
+			EntityQueryCondition *exist_condition = &(*exist_condition_iter);
+			//update pointer since it changed
+			cur_condition = &(conditions.back());
+
+			exist_condition->queryType = ENT_QUERY_EXISTS;
+
+			for(size_t i = 0; i < cur_condition->positionLabels.size();)
+			{
+				if(cur_condition->distParams.IsFeatureEnabled(i))
+				{
+					i++;
+				}
+				else
+				{
+					//add label to the exist_condition
+					auto label_sid = cur_condition->positionLabels[i];
+					exist_condition->existLabels.push_back(label_sid);
+
+					//remove label
+					cur_condition->distParams.featureParams.erase(begin(cur_condition->distParams.featureParams) + i);
+					cur_condition->positionLabels.erase(begin(cur_condition->positionLabels) + i);
+
+					if(!DoesDistanceQueryUseEntitiesInsteadOfPosition(cur_condition->queryType))
+					{
+						cur_condition->valueToCompare.erase(begin(cur_condition->valueToCompare) + i);
+						cur_condition->valueTypes.erase(begin(cur_condition->valueTypes) + i);
+					}
+				}
+			}
+		}
 	}
 
 	//builds a query condition from cn

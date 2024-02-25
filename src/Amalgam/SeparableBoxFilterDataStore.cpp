@@ -478,21 +478,18 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 		auto found = labelIdToColumnIndex.find(position_label_ids[i]);
 		if(found == end(labelIdToColumnIndex))
 			continue;
+		
+		size_t column_index = found->second;
+		auto &column_data = columnData[column_index];
 
-		if(dist_params->IsFeatureEnabled(i))
-		{
-			size_t column_index = found->second;
-			auto &column_data = columnData[column_index];
+		auto value_type = column_data->GetIndexValueType(search_index);
+		//overwrite value in case of value interning
+		auto value = column_data->GetResolvedValue(value_type, matrix[matrix_index_base + column_index]);
+		value_type = column_data->GetResolvedValueType(value_type);
 
-			auto value_type = column_data->GetIndexValueType(search_index);
-			//overwrite value in case of value interning
-			auto value = column_data->GetResolvedValue(value_type, matrix[matrix_index_base + column_index]);
-			value_type = column_data->GetResolvedValueType(value_type);
-
-			PopulateNextTargetAttributes(*dist_params, i,
-				target_values, target_value_types,
-				column_index, value, value_type);
-		}
+		PopulateNextTargetAttributes(*dist_params, i,
+			target_values, target_value_types,
+			column_index, value, value_type);
 	}
 
 	PopulateUnknownFeatureValueTerms(*dist_params);

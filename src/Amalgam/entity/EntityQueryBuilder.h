@@ -254,8 +254,7 @@ namespace EntityQueryBuilder
 		}
 
 		//select based on type for position or entities
-		bool use_entities_instead_of_position = DoesDistanceQueryUseEntitiesInsteadOfPosition(condition_type);
-		if(use_entities_instead_of_position)
+		if(DoesDistanceQueryUseEntitiesInsteadOfPosition(condition_type))
 		{
 			EvaluableNode *entities = ocn[POSITION];
 			if(EvaluableNode::IsOrderedArray(entities))
@@ -425,52 +424,6 @@ namespace EntityQueryBuilder
 							for(auto label_node : list_param->GetOrderedChildNodes())
 								cur_condition->additionalSortedListLabels.push_back(EvaluableNode::ToStringIDIfExists(label_node));
 						}
-					}
-				}
-			}
-		}
-
-		//check for any unused features -- that is, zero weight.  if there are any,
-		//then insert an existance query for them and remove from the distance query
-		bool any_unused_feature = false;
-		for(size_t i = 0; i < cur_condition->distEvaluator.featureParams.size(); i++)
-		{
-			if(!cur_condition->distEvaluator.IsFeatureEnabled(i))
-			{
-				any_unused_feature = true;
-				break;
-			}
-		}
-
-		if(any_unused_feature)
-		{
-			auto exist_condition_iter = conditions.emplace(end(conditions) - 1);
-			EntityQueryCondition *exist_condition = &(*exist_condition_iter);
-			//update pointer since it changed
-			cur_condition = &(conditions.back());
-
-			exist_condition->queryType = ENT_QUERY_EXISTS;
-
-			for(size_t i = 0; i < cur_condition->positionLabels.size();)
-			{
-				if(cur_condition->distEvaluator.IsFeatureEnabled(i))
-				{
-					i++;
-				}
-				else
-				{
-					//add label to the exist_condition
-					auto label_sid = cur_condition->positionLabels[i];
-					exist_condition->existLabels.push_back(label_sid);
-
-					//remove label
-					cur_condition->distEvaluator.featureParams.erase(begin(cur_condition->distEvaluator.featureParams) + i);
-					cur_condition->positionLabels.erase(begin(cur_condition->positionLabels) + i);
-
-					if(!use_entities_instead_of_position)
-					{
-						cur_condition->valueToCompare.erase(begin(cur_condition->valueToCompare) + i);
-						cur_condition->valueTypes.erase(begin(cur_condition->valueTypes) + i);
 					}
 				}
 			}

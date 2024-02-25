@@ -686,18 +686,15 @@ protected:
 		double dist_accum = 0.0;
 		for(size_t i = 0; i < target_values.size(); i++)
 		{
-			if(r_dist_eval.distEvaluator->IsFeatureEnabled(i))
-			{
-				size_t column_index = target_column_indices[i];
-				auto &column_data = columnData[column_index];
+			size_t column_index = target_column_indices[i];
+			auto &column_data = columnData[column_index];
 
-				auto other_value_type = column_data->GetIndexValueType(other_index);
-				auto other_value = column_data->GetResolvedValue(other_value_type, matrix[matrix_base_position + column_index]);
-				other_value_type = column_data->GetResolvedValueType(other_value_type);
+			auto other_value_type = column_data->GetIndexValueType(other_index);
+			auto other_value = column_data->GetResolvedValue(other_value_type, matrix[matrix_base_position + column_index]);
+			other_value_type = column_data->GetResolvedValueType(other_value_type);
 
-				dist_accum += dist_params.ComputeDistanceTermRegular(
-					target_values[i], other_value, target_value_types[i], other_value_type, i, high_accuracy);
-			}
+			dist_accum += dist_params.ComputeDistanceTermRegular(
+				target_values[i], other_value, target_value_types[i], other_value_type, i, high_accuracy);
 		}
 
 		double dist = r_dist_eval.distEvaluator->InverseExponentiateDistance(dist_accum, high_accuracy);
@@ -946,13 +943,10 @@ public:
 			auto column = labelIdToColumnIndex.find(position_label_ids[i]);
 			if(column == end(labelIdToColumnIndex))
 				continue;
-
-			if(r_dist_eval.distEvaluator->IsFeatureEnabled(i))
-			{
-				PopulateNextTargetAttributes(r_dist_eval, i,
-					target_values, target_value_types,
-					column->second, position_values[i], position_value_types[i]);
-			}
+			
+			PopulateNextTargetAttributes(r_dist_eval, i,
+				target_values, target_value_types,
+				column->second, position_values[i], position_value_types[i]);
 		}
 	}
 

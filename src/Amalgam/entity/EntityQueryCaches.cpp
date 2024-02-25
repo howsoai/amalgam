@@ -259,12 +259,12 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				matching_entities.SetAllIds(sbfds.GetNumInsertedEntities());
 			}
 
-			//only select cases that have all of the correct features
-			//but remove features that have 0 weight for better performance
+			//only keep entities that have all the correct features,
+			//but remove 0 weighted features for better performance
 			for(size_t i = 0; i < cond->positionLabels.size(); i++)
 			{
 				sbfds.IntersectEntitiesWithFeature(cond->positionLabels[i], matching_entities, true);
-				if(!cond->distEvaluator.IsFeatureEnabled(i))
+				if(!cond->distEvaluator.featureParams[i].weight == 0.0)
 				{
 					cond->positionLabels.erase(cond->positionLabels.begin() + i);
 					cond->distEvaluator.featureParams.erase(begin(cond->distEvaluator.featureParams) + i);
@@ -284,7 +284,6 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 			if(matching_entities.size() == 0)
 				return;
 
-			//TODO 18116: populate position -- remove any 0 weighted values?
 			sbfds.PopulateUnknownFeatureValueDifferences(cond->distEvaluator);
 			cond->distEvaluator.InitializeParametersAndFeatureParams();
 

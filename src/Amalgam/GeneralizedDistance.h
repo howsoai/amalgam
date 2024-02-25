@@ -212,12 +212,6 @@ public:
 		return std::min(difference, cycle_length - difference);
 	}
 
-	//returns true if the feature has a nonzero weight
-	__forceinline bool IsFeatureEnabled(size_t feature_index)
-	{
-		return (featureParams[feature_index].weight > 0.0);
-	}
-
 	//returns true if the feature is nominal
 	__forceinline bool IsFeatureNominal(size_t feature_index)
 	{
@@ -940,11 +934,8 @@ public:
 		// this type is 32-bit aligned to make sure the whole structure is aligned
 		EffectiveFeatureDifferenceType effectiveFeatureType;
 
-		//index of the feature in distEvaluator
-		size_t featureIndexDistanceEval;
-
 		//index of the in an external location
-		size_t featureIndexAbsolute;
+		size_t featureIndex;
 
 		//target that the distance will be computed to
 		EvaluableNodeImmediateValueType targetValueType;

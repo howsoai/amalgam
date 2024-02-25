@@ -1,5 +1,5 @@
 --Amalgam Version--
-47.1.4-alpha+local.dev
+0.0.0
 --system_time--
 --label--
 hello world: 12 and 2
@@ -1240,7 +1240,7 @@ current_index: 2
 				8
 			)
 		accum_string "abcdef"
-		argv (list "C:\\Users\\CalebWherry\\projects\\repos\\howso\\github\\amalgam\\src\\Amalgam\\amlg_code\\full_test.amlg")
+		argv (list "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg")
 		bar (declare
 				(assoc x 6)
 				(+ x 2)
@@ -1253,10 +1253,10 @@ current_index: 2
 				A (assoc B 2)
 				B 2
 			)
-		interpreter "C:\\Users\\CalebWherry\\projects\\repos\\howso\\github\\amalgam\\out\\build\\amd64-windows-vs\\release\\amalgam-mt.exe"
+		interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1706741674.726239
+		start_time 1708820330.45443
 		www 1
 		x 12
 		zz 10
@@ -1283,7 +1283,7 @@ current_index: 2
 			8
 		)
 	accum_string "abcdef"
-	argv (list "C:\\Users\\CalebWherry\\projects\\repos\\howso\\github\\amalgam\\src\\Amalgam\\amlg_code\\full_test.amlg")
+	argv (list "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg")
 	bar (declare
 			(assoc x 6)
 			(+ x 2)
@@ -1296,10 +1296,10 @@ current_index: 2
 			A (assoc B 2)
 			B 2
 		)
-	interpreter "C:\\Users\\CalebWherry\\projects\\repos\\howso\\github\\amalgam\\out\\build\\amd64-windows-vs\\release\\amalgam-mt.exe"
+	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1706741674.726239
+	start_time 1708820330.45443
 	www 1
 	x 12
 	zz 10
@@ -1325,7 +1325,7 @@ current_index: 2
 			8
 		)
 	accum_string "abcdef"
-	argv (list "C:\\Users\\CalebWherry\\projects\\repos\\howso\\github\\amalgam\\src\\Amalgam\\amlg_code\\full_test.amlg")
+	argv (list "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg")
 	bar (declare
 			(assoc x 6)
 			(+ x 2)
@@ -1338,10 +1338,10 @@ current_index: 2
 			A (assoc B 2)
 			B 2
 		)
-	interpreter "C:\\Users\\CalebWherry\\projects\\repos\\howso\\github\\amalgam\\out\\build\\amd64-windows-vs\\release\\amalgam-mt.exe"
+	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1706741674.726239
+	start_time 1708820330.45443
 	www 1
 	x 12
 	zz 10
@@ -1492,7 +1492,7 @@ infinity test c or d: (list "c" @(get (target 0) 0) "d" @(get (target 0) 0))
 (list "1" "2" "6")
 
 --get_rand_seed--
-ï¿½ï¿½È¼ï¿½\ï¿½KOaVï¿½T zï¿½
+°³È¼¿\¨KOaVÆT zÿ
 --set_rand_seed--
 0.25443726063281735
 0.1603572451200187
@@ -1609,7 +1609,7 @@ e:
   - .inf
 
 25: (assoc a 1)
-current date-time in epoch: 2024-01-31-17.54.34.8031830
+current date-time in epoch: 2024-02-24-19.18.50.5351450
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -1744,27 +1744,27 @@ comment too
 	"e"
 	"f"
 	"g"
-	"ï¿½"
-	"ï¿½"
-	"ï¿½"
-	"ï¿½"
-	"ï¿½"
-	"ï¿½"
-	"ï¿½"
-	"ï¿½"
+	"ï"
+	"¬"
+	"—"
+	"ê"
+	"­"
+	"–"
+	"Ï"
+	"¡"
 )
 (list
 	"ab"
 	"cd"
 	"ef"
-	"gï¿½"
-	"ï¿½ï¿½"
-	"ï¿½"
-	"ï¿½ï¿½"
-	"ï¿½"
+	"gï"
+	"¬—"
+	"ê­"
+	"–Ï"
+	"¡"
 )
-(list "abc" "def" "gï¿½" "ï¿½ï¿½" "ï¿½Ï¡")
-(list "abcd" "efgï¿½" "ï¿½ï¿½ï¿½" "ï¿½Ï¡")
+(list "abc" "def" "gï¬" "—ê­" "–Ï¡")
+(list "abcd" "efgï" "¬—ê­" "–Ï¡")
 --split--
 (list "hello world")
 (list "hello" "world")
@@ -1818,11 +1818,11 @@ h[e]ll[o] w[o]rld
 h[e]ll[o] world
 abcdefgï¬—ê­–Ï¡
 bcdefgï¬—ê­–Ï¡
-bcdefgï¬—ï¿½
+bcdefgï¬—ê­
 bcdefgï¬—ê­–Ï¡
 bcdefgï¬—ê­–
 gï¬—ê­–
-ï¿½ï¿½ï¿½
+­–Ï
 axdefgï¬—ê­–Ï¡
 --concat--
 hello world
@@ -1898,7 +1898,7 @@ decrypted: hello
 	12
 	13
 	14
-	(ceil)
+	(associate)
 )
 (list
 	1
@@ -1969,7 +1969,7 @@ decrypted: hello
 )
 (replace 4 2 6 1 7)
 (list
-
+	
 	;comment 2
 	;comment 3
 	1
@@ -2006,13 +2006,13 @@ decrypted: hello
 (list 3 4 2)
 (list 3 2 4 3)
 (list
-
+	
 	;comment 1
 	;comment 2
 	;comment 3
 	;comment 4
 	1
-
+	
 	;comment x
 	2
 	4
@@ -2352,7 +2352,7 @@ decrypted: hello
 	13.5
 )
 (list
-
+	
 	;comment 1
 	;comment 2
 	;comment 3
@@ -2435,7 +2435,7 @@ abcdmxyz
 45
 --flatten_entity--
 0.4476445420518951
-iï¿½ï¿½Aï¿½;@Vï¿½ï¿½OV-ï¿½
+iûÛA;@Vëó¬OV-ÿ
 0.9810549023242581
 0.9810549023242581
 0.5142400294051881
@@ -2453,7 +2453,7 @@ flatten restore with seeds test
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "ï¿½ï¿½Â£=ï¿½mVï¿½ï¿½OV-ï¿½")
+	(set_entity_rand_seed new_entity "»¶Â£=ô€mVëó¬OV-ÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -2465,7 +2465,7 @@ flatten restore with seeds test
 				)
 			)
 		)
-		"ï¿½aE&K\"ï¿½ï¿½ï¿½(X&ï¿½\0ï¿½"
+		"‡aE&K\"Øà¸Õ(X&€\0ÿ"
 	)
 	new_entity
 )
@@ -2481,7 +2481,7 @@ flatten restore with seeds test
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "ï¿½M:ï¿½ï¿½pï¿½VVï¿½ï¿½OV-ï¿½")
+	(set_entity_rand_seed new_entity "M:ù÷püVVëó¬OV-ÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -2493,7 +2493,7 @@ flatten restore with seeds test
 				)
 			)
 		)
-		"ï¿½aE&K\"ï¿½ï¿½ï¿½(X&ï¿½\0ï¿½"
+		"‡aE&K\"Øà¸Õ(X&€\0ÿ"
 	)
 	new_entity
 )
@@ -2536,7 +2536,7 @@ flatten restore without seeds test
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "ï¿½ï¿½ï¿½ï¿½R}ï¿½ï¿½]ï¿½Ù’Í«ï¿½")
+	(set_entity_rand_seed new_entity "¤›·ºR}ÒĞ]’Ù’Í«ÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -2548,7 +2548,7 @@ flatten restore without seeds test
 				)
 			)
 		)
-		"Qï¿½ï¿½vï¿½ï¿½&rï¿½Sï¿½ï¿½ï¿½Ë™ï¿½"
+		"Qô´v¬ú&rìSˆ¸Ë™ÿ"
 	)
 	new_entity
 )
@@ -2569,7 +2569,7 @@ flatten restore with parallel
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "ï¿½ï¿½Â£=ï¿½mVï¿½ï¿½OV-ï¿½")
+	(set_entity_rand_seed new_entity "»¶Â£=ô€mVëó¬OV-ÿ")
 	||(parallel
 		(set_entity_rand_seed
 			(first
@@ -2582,7 +2582,7 @@ flatten restore with parallel
 					)
 				)
 			)
-			"ï¿½aE&K\"ï¿½ï¿½ï¿½(X&ï¿½\0ï¿½"
+			"‡aE&K\"Øà¸Õ(X&€\0ÿ"
 		)
 	)
 	||(parallel)
@@ -2600,7 +2600,7 @@ flatten restore with parallel
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "ï¿½M:ï¿½ï¿½pï¿½VVï¿½ï¿½OV-ï¿½")
+	(set_entity_rand_seed new_entity "M:ù÷püVVëó¬OV-ÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -2612,7 +2612,7 @@ flatten restore with parallel
 				)
 			)
 		)
-		"ï¿½aE&K\"ï¿½ï¿½ï¿½(X&ï¿½\0ï¿½"
+		"‡aE&K\"Øà¸Õ(X&€\0ÿ"
 	)
 	new_entity
 )
@@ -2636,7 +2636,7 @@ flatten restore with parallel
 	12
 	(floor)
 	-6.182472379158481
-	(associate (call) 1 (retrieve_from_entity) "a")
+	(associate (first) b "b" 2 (set))
 )
 
 (list
@@ -2654,25 +2654,25 @@ flatten restore with parallel
 	12
 	13
 	(>)
-	2
+	(associate "a" 1 "b")
 )
 
 (list
-	(-)
+	(+)
 	2
+	3
 	(+)
-	4
 	5
-	(+)
+	6
 	7
 	8
-	9
-	10
 	(+)
-	12
+	10
+	11
+	(+)
 	13
 	(+)
-	(associate (+) 1 "b" (+))
+	(associate "a" (+) "b" 2)
 )
 
 --commonality_entities--
@@ -3370,24 +3370,24 @@ _3128546630
 (associate "x" 3 "y" 4 "z" 6)
 (list "OnlyIn2" "_3631850880" "_1938178219" "DiffEntityChild1")
 --mix_entities--
-(associate "b" 4 "a" 3 "c" 3)
+(associate "b" 4 "c" 3)
 MergeEntityChild1
 (associate "x" 3 "y" 4 "z" 5)
 MergeEntityChild2
-(associate "p" 3 "q" 4 "u" 5)
+(associate "p" 3 "q" 4 "w" 7)
 _2169689611
-(associate "e" 3 "f" 4)
-_2280722175
 (associate
-	"E"
+	"e"
 	3
-	"F"
+	"f"
 	4
-	"G"
+	"g"
 	5
-	"H"
+	"h"
 	6
 )
+_2280722175
+(associate "E" 3 "F" 4 "G" 5)
 --get_entity_comments--
 Full test
 This is a suite of unit tests.
@@ -3430,7 +3430,7 @@ this is a fully described entity
 )
 --get_entity_rand_seed--
 0.8630628998576303
-Tï¿½FJï¿½Kxï¿½sï¿½ï¿½ {ï¿½
+T°FJKx–sŒ­ {ÿ
 --set_entity_rand_seed--
 0.24310795234706906
 0.24310795234706906
@@ -3442,7 +3442,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1706741674.951646
+1708820330.87055
 (true)
 
 RootTest
@@ -3618,7 +3618,7 @@ hello
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "Å”K@ï¿½ï¿½ï¿½ï¿½\\ï¿½ï¿½Fï¿½*ï¿½")
+	(set_entity_rand_seed new_entity "Å”K@­æ›íû\\üŞFË*ÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3632,7 +3632,7 @@ hello
 				)
 			)
 		)
-		"ï¿½Bï¿½!\\ï¿½ï¿½,ï¿½T*ï¿½&ï¿½"
+		"ƒBµ!\\áï,ÏT*İ&ÿ"
 	)
 	(set_entity_rand_seed
 		(first
@@ -3647,7 +3647,7 @@ hello
 				)
 			)
 		)
-		"ï¿½!ï¿½ï¿½ï¿½|ï¿½ï¿½.ï¿½Vï¿½ï¿½qï¿½"
+		"ğ!€…š|ØÓ.âV±Úqÿ"
 	)
 	new_entity
 )
@@ -3666,7 +3666,7 @@ hello
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "@ï¿½,3ï¿½ï¿½!ï¿½GMï¿½0hï¿½ï¿½")
+	(set_entity_rand_seed new_entity "]Ì%ÉrÜ0Ñ”-I´»ÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3676,7 +3676,7 @@ hello
 				)
 			)
 		)
-		"Mï¿½ï¿½ï¿½ï¿½ï¿½ï¿½kï¿½ï¿½,ÙŠï¿½ï¿½"
+		"nÓ|åg„³ª…\"WĞ…Ù„jÿ"
 	)
 	(set_entity_rand_seed
 		(first
@@ -3691,7 +3691,7 @@ hello
 				)
 			)
 		)
-		"ï¿½x<ï¿½^ï¿½ï¿½ï¿½ï¿½.ï¿½ï¿½V0ï¿½ï¿½"
+		"d¯‘o3¦@õ^Â°\nÆtÛÿ"
 	)
 	new_entity
 )
@@ -3709,7 +3709,7 @@ hello
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "@ï¿½,3ï¿½ï¿½!ï¿½GMï¿½0hï¿½ï¿½")
+	(set_entity_rand_seed new_entity "]Ì%ÉrÜ0Ñ”-I´»ÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3723,7 +3723,7 @@ hello
 				)
 			)
 		)
-		"ï¿½x<ï¿½^ï¿½ï¿½ï¿½ï¿½.ï¿½ï¿½V0ï¿½ï¿½"
+		"d¯‘o3¦@õ^Â°\nÆtÛÿ"
 	)
 	new_entity
 )
@@ -3814,74 +3814,74 @@ store to .json normally
 (list "Child2" "Child7")
 (list "Child1" "Child5")
 (list "Child3" "Child4")
-(list "Child1" "Child3" "Child5" "Child6")
 (list "Child1" "Child5" "Child6" "Child7")
+(list "Child1" "Child2" "Child5" "Child6")
 (list "Child4" "Child6")
 --query_sample--
 (list "Child4")
-(list "Child2" "Child3")
-(list "Child1")
+(list "Child4" "Child7")
+(list "Child7")
 (list "Child1")
 --query_weighted_sample--
-(list "Child1")
+(list "Child2")
 (list "Child2")
 (list
+	"Child1"
+	"Child1"
+	"Child2"
+	"Child1"
+	"Child2"
+	"Child1"
+	"Child1"
+	"Child1"
+	"Child2"
+	"Child5"
+	"Child4"
 	"Child2"
 	"Child2"
 	"Child1"
+	"Child1"
+	"Child2"
+	"Child4"
+	"Child1"
+	"Child2"
+	"Child1"
+)
+(list
 	"Child2"
 	"Child7"
 	"Child2"
+	"Child7"
 	"Child2"
 	"Child1"
 	"Child1"
+	"Child7"
 	"Child1"
 	"Child2"
-	"Child1"
-	"Child1"
+	"Child7"
 	"Child1"
 	"Child2"
 	"Child2"
 	"Child1"
-	"Child1"
-	"Child1"
+	"Child2"
+	"Child2"
+	"Child2"
+	"Child6"
 	"Child1"
 )
 (list
-	"Child2"
-	"Child1"
-	"Child1"
 	"Child5"
-	"Child2"
-	"Child2"
-	"Child2"
-	"Child2"
-	"Child2"
-	"Child1"
-	"Child2"
-	"Child2"
-	"Child1"
-	"Child1"
-	"Child1"
-	"Child2"
-	"Child1"
-	"Child1"
-	"Child1"
-	"Child2"
-)
-(list
-	"Child2"
-	"Child2"
-	"Child2"
-	"Child2"
 	"Child2"
 	"Child2"
 	"Child2"
 	"Child2"
 	"Child5"
 	"Child2"
+	"Child2"
+	"Child2"
+	"Child2"
 )
-(list "Child2")
+(list "Child2" "Child6")
 --query_in_entity_list--
 (list "Child6" "Child7")
 --query_not_in_entity_list--
@@ -3929,28 +3929,28 @@ cascading query_not_in_entity_list: (list "Child6" "Child7")
 unweighted query: (assoc
 	Child1 4
 	Child2 1
-	Child4 100
+	Child3 100
 	Child6 2
 	Child7 10
 )
 weighted query: (assoc
 	Child1 1.8
 	Child2 0.45
-	Child4 2
+	Child3 2
 	Child6 0.04
 	Child7 0.2
 )
 weighted query list of lists: (list
-	(list "Child6" "Child7" "Child2" "Child1" "Child3")
+	(list "Child6" "Child7" "Child2" "Child1" "Child4")
 	(list 0.04 0.2 0.45 1.8 2)
 )
 weighted query list of lists: (list
-	(list "Child2" "Child6" "Child1" "Child7" "Child3")
+	(list "Child2" "Child6" "Child1" "Child7" "Child4")
 	(list 1 2 4 10 100)
 	(list -1 2 4 10 100)
 )
 weighted query list of lists with multiple values: (list
-	(list "Child2" "Child6" "Child1" "Child7" "Child3")
+	(list "Child2" "Child6" "Child1" "Child7" "Child4")
 	(list 1 2 4 10 100)
 	(list -1 2 4 10 100)
 	(list -1 1 3 0 100)
@@ -4420,7 +4420,7 @@ a
 (list "hello" "!")
 (assoc a1 1.4142135623730951 a2 2 a3 1.4142135623730951)
 (assoc a1 1.4142135623730951 a3 1.4142135623730951)
-(assoc a3 1.4142135623730951)
+(assoc a1 1.4142135623730951)
 (assoc a1 5.0990195135927845 a2 2 a3 5.0990195135927845)
 (assoc a1 1 a3 1 a4 0)
 --accuracy tests--
@@ -4435,13 +4435,13 @@ distance symmetry tests
 (list
 	(list
 		"B"
-		"F"
-		"C"
-		"A"
 		"D"
+		"A"
+		"C"
 		"I"
-		"E"
-		"H"
+		"F"
+		"G"
+		"J"
 	)
 	(list
 		0
@@ -4457,13 +4457,13 @@ distance symmetry tests
 (list
 	(list
 		"B"
-		"D"
-		"A"
-		"C"
-		"I"
 		"F"
-		"G"
+		"A"
+		"I"
+		"C"
+		"D"
 		"J"
+		"E"
 	)
 	(list
 		0
@@ -4657,4 +4657,4 @@ concurrent entity writes successful: (true)
 
 --clean-up test files--
 --total execution time--
-1.8731050491333008
+1.9634428024291992

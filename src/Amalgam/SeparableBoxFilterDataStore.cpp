@@ -1231,7 +1231,7 @@ void SeparableBoxFilterDataStore::PopulateInitialPartialSums(RepeatedGeneralized
 			//transform the radius to a negative value with an inverse exponent
 			//note that this will correctly order the cases by distance (monotonic),
 			// but will yield incorrect distance values with the radius, so the distances will need to be recomputed
-			double value = -dist_params.ExponentiateDifferenceTerm(number_value_entry->value.number, high_accuracy);
+			double value = -r_dist_eval.distEvaluator->ExponentiateDifferenceTerm(number_value_entry->value.number, high_accuracy);
 			for(auto entity_index : number_value_entry->indicesWithValue)
 				partial_sums.SetSum(entity_index, value);
 		}
@@ -1240,7 +1240,7 @@ void SeparableBoxFilterDataStore::PopulateInitialPartialSums(RepeatedGeneralized
 	size_t num_entities_to_populate = top_k;
 	//populate sqrt(2)^p * top_k, which will yield 2 for p=2, 1 for p=0, and about 1.2 for p=0.5
 	if(num_enabled_features > 1)
-		num_entities_to_populate = static_cast<size_t>(std::lround(FastPow(GeneralizedDistanceEvaluator::s_sqrt_2, dist_params.pValue) * top_k)) + 1;
+		num_entities_to_populate = static_cast<size_t>(std::lround(FastPow(GeneralizedDistanceEvaluator::s_sqrt_2, r_dist_eval.distEvaluator->pValue) * top_k)) + 1;
 
 	min_unpopulated_distances.resize(num_enabled_features);
 	for(size_t i = 0; i < num_enabled_features; i++)

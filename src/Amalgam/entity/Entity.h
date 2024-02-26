@@ -2,7 +2,6 @@
 
 //project headers:
 #include "Concurrency.h"
-#include "EntityQueryCaches.h"
 #include "HashMaps.h"
 #include "Parser.h"
 #include "RandomStream.h"

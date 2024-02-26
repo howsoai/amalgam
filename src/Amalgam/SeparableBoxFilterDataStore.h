@@ -46,9 +46,6 @@ public:
 		std::vector<double> minDistanceByUnpopulatedCount;
 		std::vector<double> entityDistances;
 
-		//when a local copy of distance params is needed
-		RepeatedGeneralizedDistanceEvaluator distParams;
-
 		//used when finding a nearest entity to another nearest entity
 		BitArrayIntegerSet potentialMatchesSet;
 
@@ -494,11 +491,10 @@ public:
 
 	//Finds the top_k nearest neighbors results to the entity at search_index.
 	// if expand_to_first_nonzero_distance is set, then it will expand top_k until it it finds the first nonzero distance or until it includes all enabled indices 
-	// if const_dist_params is true, then it will make a copy before making any modifications
 	//will not modify enabled_indices, but instead will make a copy for any modifications
 	//assumes that enabled_indices only contains indices that have valid values for all the features
-	void FindEntitiesNearestToIndexedEntity(GeneralizedDistanceEvaluator *dist_params_ref, std::vector<size_t> &position_label_ids,
-		bool constant_dist_params, size_t search_index, size_t top_k, StringInternPool::StringID radius_label,
+	void FindEntitiesNearestToIndexedEntity(GeneralizedDistanceEvaluator &dist_eval, std::vector<size_t> &position_label_ids,
+		size_t search_index, size_t top_k, StringInternPool::StringID radius_label,
 		BitArrayIntegerSet &enabled_indices, bool expand_to_first_nonzero_distance,
 		std::vector<DistanceReferencePair<size_t>> &distances_out,
 		size_t ignore_index = std::numeric_limits<size_t>::max(), RandomStream rand_stream = RandomStream());
@@ -506,7 +502,7 @@ public:
 	//Finds the nearest neighbors
 	//enabled_indices is the set of entities to find from, and will be modified
 	//assumes that enabled_indices only contains indices that have valid values for all the features
-	void FindNearestEntities(GeneralizedDistanceEvaluator &r_dist_eval, std::vector<size_t> &position_label_ids,
+	void FindNearestEntities(GeneralizedDistanceEvaluator &dist_eval, std::vector<size_t> &position_label_ids,
 		std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types,
 		size_t top_k, StringInternPool::StringID radius_label, size_t ignore_entity_index, BitArrayIntegerSet &enabled_indices,
 		std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream = RandomStream());
@@ -924,7 +920,7 @@ public:
 
 		for(auto index : valid_indices)
 		{
-			double distance = GetDistanceBetween(dist_params,
+			double distance = GetDistanceBetween(r_dist_eval,
 				target_values, target_value_types, target_column_indices, radius_column_index, index, high_accuracy);
 			distances_out.emplace_back(distance, index);
 		}

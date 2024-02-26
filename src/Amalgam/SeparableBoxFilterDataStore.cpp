@@ -289,6 +289,9 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 	if(GetNumInsertedEntities() == 0 || dist_eval.featureParams.size() == 0)
 		return;
 
+	auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
+	r_dist_eval.distEvaluator = &dist_eval;
+
 	//look up these data structures upfront for performance
 	PopulateTargetValuesAndLabelIndices(dist_params, position_label_ids, position_values, position_value_types);
 	if(target_values.size() == 0)
@@ -449,19 +452,15 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 }
 
 void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(GeneralizedDistanceEvaluator &dist_eval,
-	std::vector<size_t> &position_label_ids, bool constant_dist_params, size_t search_index,
+	std::vector<size_t> &position_label_ids, size_t search_index,
 	size_t top_k, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
 	bool expand_to_first_nonzero_distance, std::vector<DistanceReferencePair<size_t>> &distances_out, size_t ignore_index, RandomStream rand_stream)
 {
 	if(top_k == 0 || GetNumInsertedEntities() == 0 || dist_eval.featureParams.size() == 0)
 		return;
 
-	RepeatedGeneralizedDistanceEvaluator *dist_params = dist_params_ref;
-	if(constant_dist_params)
-	{
-		dist_params = &parametersAndBuffers.distEvaluator;
-		*dist_params = *dist_params_ref;
-	}
+	auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
+	r_dist_eval.distEvaluator = &dist_eval;
 
 	//build target
 	const size_t matrix_index_base = search_index * columnData.size();
@@ -479,9 +478,8 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 		auto value = column_data->GetResolvedValue(value_type, matrix[matrix_index_base + column_index]);
 		value_type = column_data->GetResolvedValueType(value_type);
 
-		PopulateNextTargetAttributes(*dist_params, i,
-			target_values, target_value_types,
-			column_index, value, value_type);
+		//TODO 18116: need to break this method back apart into a loop?
+		PopulateTargetValuesAndLabelIndices(r_dist_eval, i, target_values, target_value_types);
 	}
 
 	PopulateUnknownFeatureValueTerms(*dist_params);
@@ -651,8 +649,11 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 	if(top_k == 0 || GetNumInsertedEntities() == 0 || dist_eval.featureParams.size() == 0)
 		return;
 
+	auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
+	r_dist_eval.distEvaluator = &dist_eval;
+
 	//look up these data structures upfront for performance
-	PopulateTargetValuesAndLabelIndices(dist_params, position_label_ids, position_values, position_value_types);
+	PopulateTargetValuesAndLabelIndices(r_dist_eval, position_label_ids, position_values, position_value_types);
 
 	size_t num_enabled_features = target_values.size();
 	if(num_enabled_features == 0)
@@ -1351,9 +1352,10 @@ void SeparableBoxFilterDataStore::PopulateTargetValuesAndLabelIndices(RepeatedGe
 		if(column == end(labelIdToColumnIndex))
 			continue;
 
-		auto &feature_type = r_dist_eval.distEvaluator->featureParams[query_feature_index].featureType;
-		auto &effective_feature_type = r_dist_eval.featureData[query_feature_index].effectiveFeatureType;
+		auto &feature_params = r_dist_eval.distEvaluator->featureParams[query_feature_index];
+		auto &feature_type = feature_params.featureType;
 		auto &feature_data = r_dist_eval.featureData[query_feature_index];
+		auto &effective_feature_type = r_dist_eval.featureData[query_feature_index].effectiveFeatureType;
 
 		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC
 			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
@@ -1383,7 +1385,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValuesAndLabelIndices(RepeatedGe
 			feature_data.targetValueType = ENIVT_NUMBER;
 
 			//set up effective_feature_type
-			auto &column_data = columnData[feature_data.featureIndex];
+			auto &column_data = columnData[feature_params.featureIndex];
 
 			//determine if all values are numeric
 			size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();

@@ -60,7 +60,7 @@ public:
 								[this, index, top_k]
 								{
 									// could have knn cache constructor take in dist params and just get top_k from there, so don't need to pass it in everywhere
-									sbfDataStore->FindEntitiesNearestToIndexedEntity(distEvaluator, *positionLabelIds, true, index,
+									sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator, *positionLabelIds, index,
 										top_k, radiusLabelId, *relevantIndices, true, cachedNeighbors[index]);
 								}
 							)
@@ -87,8 +87,8 @@ public:
 			if(top_k > cachedNeighbors[index].size())
 			{
 				cachedNeighbors[index].clear();
-				sbfDataStore->FindEntitiesNearestToIndexedEntity(distEvaluator,
-					*positionLabelIds, false, index, top_k, radiusLabelId, *relevantIndices, true, cachedNeighbors[index]);
+				sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator,
+					*positionLabelIds, index, top_k, radiusLabelId, *relevantIndices, true, cachedNeighbors[index]);
 			}
 		}
 	}
@@ -124,8 +124,8 @@ public:
 
 		//there were not enough results for this search, just do a new search
 		out.clear();
-		sbfDataStore->FindEntitiesNearestToIndexedEntity(distEvaluator,
-			*positionLabelIds, false, index, top_k, radiusLabelId, *relevantIndices, true, out, additional_holdout_index);
+		sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator,
+			*positionLabelIds, index, top_k, radiusLabelId, *relevantIndices, true, out, additional_holdout_index);
 	}
 
 	//like the other GetKnn, but only considers from_indices
@@ -144,8 +144,8 @@ public:
 
 		//there were not enough results for this search, just do a new search
 		out.clear();
-		sbfDataStore->FindEntitiesNearestToIndexedEntity(distEvaluator,
-			*positionLabelIds, false, index, top_k, radiusLabelId, from_indices, true, out);
+		sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator,
+			*positionLabelIds, index, top_k, radiusLabelId, from_indices, true, out);
 	}
 
 	//returns a pointer to the relevant indices of the cache

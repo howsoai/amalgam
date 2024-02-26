@@ -1,5 +1,5 @@
 --Amalgam Version--
-0.0.0
+48.0.2-alpha+local.dev
 --system_time--
 --label--
 hello world: 12 and 2
@@ -96,7 +96,7 @@ notakeyword
 	get_digits 0.1
 	get_entity_comments 0.01
 	get_entity_rand_seed 0.01
-	get_entity_root_permission 0.01
+	get_entity_system_permissions 0.01
 	get_labels 0.1
 	get_rand_seed 0.02
 	get_type 0.25
@@ -179,7 +179,7 @@ notakeyword
 	set_concurrency 0.01
 	set_digits 0.1
 	set_entity_rand_seed 0.01
-	set_entity_root_permission 0.01
+	set_entity_system_permissions 0.01
 	set_labels 0.1
 	set_rand_seed 0.02
 	set_type 0.35
@@ -1240,7 +1240,7 @@ current_index: 2
 				8
 			)
 		accum_string "abcdef"
-		argv (list "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg")
+		argv (list "C:\\Users\\CalebWherry\\projects\\repos\\howso\\github\\amalgam\\src\\Amalgam\\amlg_code\\full_test.amlg")
 		bar (declare
 				(assoc x 6)
 				(+ x 2)
@@ -1253,10 +1253,10 @@ current_index: 2
 				A (assoc B 2)
 				B 2
 			)
-		interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+		interpreter "C:\\Users\\CalebWherry\\projects\\repos\\howso\\github\\amalgam\\out\\build\\amd64-windows-vs\\release\\amalgam-mt.exe"
 		raaa 2
 		rwww 1
-		start_time 1708820330.45443
+		start_time 1708983009.477922
 		www 1
 		x 12
 		zz 10
@@ -1283,7 +1283,7 @@ current_index: 2
 			8
 		)
 	accum_string "abcdef"
-	argv (list "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg")
+	argv (list "C:\\Users\\CalebWherry\\projects\\repos\\howso\\github\\amalgam\\src\\Amalgam\\amlg_code\\full_test.amlg")
 	bar (declare
 			(assoc x 6)
 			(+ x 2)
@@ -1296,10 +1296,10 @@ current_index: 2
 			A (assoc B 2)
 			B 2
 		)
-	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+	interpreter "C:\\Users\\CalebWherry\\projects\\repos\\howso\\github\\amalgam\\out\\build\\amd64-windows-vs\\release\\amalgam-mt.exe"
 	raaa 2
 	rwww 1
-	start_time 1708820330.45443
+	start_time 1708983009.477922
 	www 1
 	x 12
 	zz 10
@@ -1325,7 +1325,7 @@ current_index: 2
 			8
 		)
 	accum_string "abcdef"
-	argv (list "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg")
+	argv (list "C:\\Users\\CalebWherry\\projects\\repos\\howso\\github\\amalgam\\src\\Amalgam\\amlg_code\\full_test.amlg")
 	bar (declare
 			(assoc x 6)
 			(+ x 2)
@@ -1338,10 +1338,10 @@ current_index: 2
 			A (assoc B 2)
 			B 2
 		)
-	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+	interpreter "C:\\Users\\CalebWherry\\projects\\repos\\howso\\github\\amalgam\\out\\build\\amd64-windows-vs\\release\\amalgam-mt.exe"
 	raaa 2
 	rwww 1
-	start_time 1708820330.45443
+	start_time 1708983009.477922
 	www 1
 	x 12
 	zz 10
@@ -1609,7 +1609,7 @@ e:
   - .inf
 
 25: (assoc a 1)
-current date-time in epoch: 2024-02-24-19.18.50.5351450
+current date-time in epoch: 2024-02-26-16.30.09.5421850
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -3437,12 +3437,12 @@ T∞FJÅKxñså≠ {ˇ
 deep sets
 0.4287046636426344
 0.4287046636426344
---get_entity_root_permission--
+--get_entity_system_permissions--
 (false)
 
---set_entity_root_permission--
+--set_entity_system_permissions--
 RootTest
-1708820330.87055
+1708983009.718977
 (true)
 
 RootTest
@@ -3666,7 +3666,7 @@ hello
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "]Ã%…r‹0—î-I¥ªˇ")
+	(set_entity_rand_seed new_entity "@©,3äâ!õGMÕ0hÛäˇ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3676,7 +3676,7 @@ hello
 				)
 			)
 		)
-		"n”|ÂgÑ≥™Ö\"W–ÖŸÑjˇ"
+		"M˝ıäÈÚık±Ü,Ÿä€ˇ"
 	)
 	(set_entity_rand_seed
 		(first
@@ -3691,7 +3691,7 @@ hello
 				)
 			)
 		)
-		"dØëo3¶@ı^¬∞\n∆t€ˇ"
+		"üx<ÿ^Æô∑Ì.∑ÙV0µˇ"
 	)
 	new_entity
 )
@@ -3709,7 +3709,7 @@ hello
 				)
 			)
 	)
-	(set_entity_rand_seed new_entity "]Ã%…r‹0—î-I¥ªˇ")
+	(set_entity_rand_seed new_entity "@©,3äâ!õGMÕ0hÛäˇ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3723,7 +3723,7 @@ hello
 				)
 			)
 		)
-		"dØëo3¶@ı^¬∞\n∆t€ˇ"
+		"üx<ÿ^Æô∑Ì.∑ÙV0µˇ"
 	)
 	new_entity
 )
@@ -4657,4 +4657,4 @@ concurrent entity writes successful: (true)
 
 --clean-up test files--
 --total execution time--
-1.9634428024291992
+1.7574899196624756

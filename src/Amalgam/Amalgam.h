@@ -16,6 +16,16 @@
 
 extern "C"
 {
+	//Entity system permissions
+	enum EntitySystemPermissions : uint32_t
+	{
+		NONE		= 0,
+		SYSTEM_CMD	= 1 << 0,
+		FILE_IO		= 1 << 1,
+		DISPLAY_IO	= 1 << 2,
+		INVALID		= 1 << 3 // max value, always last (1+prev), used for validation
+	};
+
 	//status from LoadEntity
 	struct LoadEntityStatus
 	{
@@ -25,13 +35,37 @@ extern "C"
 	};
 
 	//loads the entity specified into handle
-	AMALGAM_EXPORT LoadEntityStatus LoadEntity(char *handle, char *path, bool persistent, bool load_contained_entities, char *write_log_filename, char *print_log_filename);
+	AMALGAM_EXPORT LoadEntityStatus LoadEntity(
+		char *handle,
+		char *path,
+		bool persistent,
+		bool load_contained_entities,
+		bool evaluate_entities,
+		char *write_log_filename,
+		char *print_log_filename,
+		EntitySystemPermissions perms = EntitySystemPermissions::NONE
+	);
 
 	//verifies the entity specified by path. Uses LoadEntityStatus to return any errors and version
-	AMALGAM_EXPORT LoadEntityStatus VerifyEntity(char *path);
+	AMALGAM_EXPORT LoadEntityStatus VerifyEntity(
+		char *path
+	);
+
+	//sets the system permissions for the entity specified by handle
+	AMALGAM_EXPORT void SetEntitySystemPermissions(
+		char *handle,
+		EntitySystemPermissions perms = EntitySystemPermissions::NONE
+	);
 
 	//stores the entity specified by handle into path
-	AMALGAM_EXPORT void   StoreEntity(char *handle, char *path, bool update_persistence_location = false, bool store_contained_entities = true);
+	AMALGAM_EXPORT void StoreEntity(
+		char *handle,
+		char *path,
+		bool update_persistence_location = false,
+		bool store_contained_entities = true,
+		bool flatten_entites = true,
+		EntitySystemPermissions perms = EntitySystemPermissions::NONE
+	);
 
 	//executes label on handle
 	AMALGAM_EXPORT void   ExecuteEntity(char *handle, char *label);

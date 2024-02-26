@@ -223,8 +223,8 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(GetStringIdFromNodeTypeFromString(ENT_ACCUM_ENTITY_ROOTS), "accum_entity_roots");
 	EmplaceStaticString(GetStringIdFromNodeTypeFromString(ENT_GET_ENTITY_RAND_SEED), "get_entity_rand_seed");
 	EmplaceStaticString(GetStringIdFromNodeTypeFromString(ENT_SET_ENTITY_RAND_SEED), "set_entity_rand_seed");
-	EmplaceStaticString(GetStringIdFromNodeTypeFromString(ENT_GET_ENTITY_ROOT_PERMISSION), "get_entity_root_permission");
-	EmplaceStaticString(GetStringIdFromNodeTypeFromString(ENT_SET_ENTITY_ROOT_PERMISSION), "set_entity_root_permission");
+	EmplaceStaticString(GetStringIdFromNodeTypeFromString(ENT_GET_ENTITY_SYSTEM_PERMISSIONS), "get_entity_system_permissions");
+	EmplaceStaticString(GetStringIdFromNodeTypeFromString(ENT_SET_ENTITY_SYSTEM_PERMISSIONS), "set_entity_system_permissions");
 
 	//entity base actions
 	EmplaceStaticString(GetStringIdFromNodeTypeFromString(ENT_CREATE_ENTITIES), "create_entities");

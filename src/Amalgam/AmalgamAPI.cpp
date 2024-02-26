@@ -85,7 +85,7 @@ extern "C"
 	// api methods
 	// ************************************
 
-	LoadEntityStatus LoadEntity(char *handle, char *path, bool persistent, bool load_contained_entities, char *write_log_filename, char *print_log_filename)
+	LoadEntityStatus LoadEntity(char *handle, char *path, bool persistent, bool load_contained_entities, bool evaluate_entities, char *write_log_filename, char *print_log_filename, EntitySystemPermissions perms)
 	{
 		std::string h(handle);
 		std::string p(path);
@@ -102,7 +102,12 @@ extern "C"
 		return ConvertLoadStatusToCStatus(status);
 	}
 
-	void StoreEntity(char *handle, char *path, bool update_persistence_location, bool store_contained_entities)
+	void SetEntitySystemPermissions(char *handle, EntitySystemPermissions perms)
+	{
+		//todo
+	}
+
+	void StoreEntity(char *handle, char *path, bool update_persistence_location, bool store_contained_entities, bool flatten_entites,EntitySystemPermissions perms)
 	{
 		std::string h(handle);
 		std::string p(path);

@@ -913,8 +913,8 @@ protected:
 	EvaluableNodeReference InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_ACCUM_ENTITY_ROOTS(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_GET_ENTITY_RAND_SEED(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_SET_ENTITY_RAND_SEED(EvaluableNode *en, bool immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_GET_ENTITY_ROOT_PERMISSION(EvaluableNode *en, bool immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_SET_ENTITY_ROOT_PERMISSION(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_GET_ENTITY_SYSTEM_PERMISSIONS(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_SET_ENTITY_SYSTEM_PERMISSIONS(EvaluableNode *en, bool immediate_result);
 
 	//entity base actions
 	EvaluableNodeReference InterpretNode_ENT_CREATE_ENTITIES(EvaluableNode *en, bool immediate_result);

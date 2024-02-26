@@ -96,7 +96,7 @@ public:
 	public:
 		inline FeatureParams()
 			: featureType(FDT_CONTINUOUS_NUMERIC),
-			weight(1.0), deviation(0.0),
+			featureIndex(std::numeric_limits<size_t>::max()), weight(1.0), deviation(0.0),
 			unknownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
 			knownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN())
 		{
@@ -106,6 +106,9 @@ public:
 		//the type of comparison for each feature
 		// this type is 32-bit aligned to make sure the whole structure is aligned
 		FeatureDifferenceType featureType;
+
+		//index of the in an external location
+		size_t featureIndex;
 
 		//weight of the feature
 		double weight;
@@ -926,16 +929,12 @@ public:
 
 		FeatureData()
 			: effectiveFeatureType(EFDT_CONTINUOUS_NUMERIC),
-			featureIndex(std::numeric_limits<size_t>::max()),
 			internedNumberIndexToNumberValue(nullptr)
 		{	}
 
 		//the effective comparison for the feature type, specialized for performance
 		// this type is 32-bit aligned to make sure the whole structure is aligned
 		EffectiveFeatureDifferenceType effectiveFeatureType;
-
-		//index of the in an external location
-		size_t featureIndex;
 
 		//target that the distance will be computed to
 		EvaluableNodeImmediateValueType targetValueType;

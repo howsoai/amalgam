@@ -868,13 +868,17 @@ public:
 
 	//recomputes feature gaps and computes parametersAndBuffers.maxFeatureGaps
 	// returns the smallest of the maximum feature gaps among the features
-	inline void PopulateUnknownFeatureValueDifferences(GeneralizedDistanceEvaluator &dist_eval)
+	inline void PopulateColumnIndicesAndUnknownFeatureValueDifferences(
+		GeneralizedDistanceEvaluator &dist_eval, std::vector<size_t> &position_label_ids)
 	{
-		//TODO 18116: need to prepopulate targets before calling this
-		for(size_t i = 0; i < dist_eval.featureParams.size(); i++)
+		for(size_t query_feature_index = 0; query_feature_index < position_label_ids.size(); query_feature_index++)
 		{
-			auto &feature_params = dist_eval.featureParams[i];
-			size_t column_index = target_column_indices[i];
+			auto column = labelIdToColumnIndex.find(position_label_ids[query_feature_index]);
+			if(column == end(labelIdToColumnIndex))
+				continue;
+
+			auto &feature_params = dist_eval.featureParams[query_feature_index];
+			feature_params.featureIndex = column->second;
 
 			//if either known or unknown to unknown is missing, need to compute difference
 			// and store it where it is needed
@@ -882,7 +886,7 @@ public:
 			if(FastIsNaN(feature_params.knownToUnknownDistanceTerm.difference)
 				|| FastIsNaN(feature_params.unknownToUnknownDistanceTerm.difference))
 			{
-				unknown_distance_term = columnData[column_index]->GetMaxDifferenceTerm(
+				unknown_distance_term = columnData[feature_params.featureIndex]->GetMaxDifferenceTerm(
 					feature_params);
 
 				if(FastIsNaN(feature_params.knownToUnknownDistanceTerm.difference))

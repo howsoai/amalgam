@@ -859,88 +859,12 @@ protected:
 		return std::make_pair(true, distance);
 	}
 
-	//populates the next target attribute in each vector based on column_index, position data
-	//if there is a specialization of the feature type, it will update it and update r_dist_eval accordingly
-	__forceinline void PopulateNextTargetAttributes(RepeatedGeneralizedDistanceEvaluator &r_dist_eval, size_t query_feature_index,
-		size_t column_index, EvaluableNodeImmediateValue &position_value, EvaluableNodeImmediateValueType position_value_type)
-	{
-		auto &feature_type = r_dist_eval.distEvaluator->featureParams[query_feature_index].featureType;
-
-		auto &feature_data = r_dist_eval.featureData[query_feature_index];
-		auto &effective_feature_type = r_dist_eval.featureData[query_feature_index].effectiveFeatureType;
-
-		feature_data.featureIndex = column_index;
-
-		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC
-			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
-			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE
-			|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING
-			|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
-		{
-			feature_data.targetValue = position_value;
-			feature_data.targetValueType = position_value_type;
-
-			if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC
-					|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
-					|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
-				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED;
-			else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING)
-				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING;
-			else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
-				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE;
-		}
-		else // feature_type is some form of continuous numeric
-		{
-			//looking for continuous; if not a number, so just put as nan
-			double position_value_numeric = (position_value_type == ENIVT_NUMBER ? position_value.number : std::numeric_limits<double>::quiet_NaN());
-
-			feature_data.targetValue = position_value_numeric;
-			feature_data.targetValueType = ENIVT_NUMBER;
-
-			//set up effective_feature_type
-			auto &column_data = columnData[column_index];
-
-			//determine if all values are numeric
-			size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
-			bool all_values_numeric = (GetNumInsertedEntities() == num_values_stored_as_numbers);
-
-			if(column_data->numberValuesInterned)
-			{
-				if(all_values_numeric)
-					effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_VALUES_UNIVERSALLY_PRECOMPUTED;
-				else
-					effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED;
-
-				r_dist_eval.ComputeAndStoreInternedNumberValuesAndDistanceTerms(position_value_numeric, query_feature_index, &column_data->internedNumberIndexToNumberValue);
-			}
-			else
-			{
-				if(all_values_numeric && feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC)
-					effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC;
-				else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC)
-					effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_CYCLIC;
-				else
-					effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC;
-			}
-		}
-	}
-
 public:
 
 	//populates targetValues and targetColumnIndices given the selected target values for each value in corresponding position* parameters
-	inline void PopulateTargetValuesAndLabelIndices(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+	void PopulateTargetValuesAndLabelIndices(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		std::vector<size_t> &position_label_ids, std::vector<EvaluableNodeImmediateValue> &position_values,
-		std::vector<EvaluableNodeImmediateValueType> &position_value_types)
-	{
-		for(size_t i = 0; i < position_label_ids.size(); i++)
-		{
-			auto column = labelIdToColumnIndex.find(position_label_ids[i]);
-			if(column == end(labelIdToColumnIndex))
-				continue;
-			
-			PopulateNextTargetAttributes(r_dist_eval, i, column->second, position_values[i], position_value_types[i]);
-		}
-	}
+		std::vector<EvaluableNodeImmediateValueType> &position_value_types);
 
 	//recomputes feature gaps and computes parametersAndBuffers.maxFeatureGaps
 	// returns the smallest of the maximum feature gaps among the features

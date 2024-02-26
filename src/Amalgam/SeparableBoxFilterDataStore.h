@@ -554,7 +554,7 @@ protected:
 			other_value_type = column_data->GetResolvedValueType(other_value_type);
 
 			//compute term
-			double term = dist_params.ComputeDistanceTermRegular(value, other_value, value_type, other_value_type, query_feature_index, high_accuracy);
+			double term = r_dist_eval.distEvaluator->ComputeDistanceTermRegular(value, other_value, value_type, other_value_type, query_feature_index, high_accuracy);
 
 			//accumulate
 			partial_sums.Accum(entity_index, accum_location, term);
@@ -693,7 +693,7 @@ protected:
 			auto other_value = column_data->GetResolvedValue(other_value_type, matrix[matrix_base_position + column_index]);
 			other_value_type = column_data->GetResolvedValueType(other_value_type);
 
-			dist_accum += dist_params.ComputeDistanceTermRegular(
+			dist_accum += r_dist_eval.distEvaluator->ComputeDistanceTermRegular(
 				target_values[i], other_value, target_value_types[i], other_value_type, i, high_accuracy);
 		}
 
@@ -733,7 +733,7 @@ protected:
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_VALUES_UNIVERSALLY_PRECOMPUTED:
 		{
 			const size_t column_index = target_label_indices[query_feature_index];
-			return dist_params.ComputeDistanceTermNumberInternedPrecomputed(
+			return r_dist_eval.ComputeDistanceTermNumberInternedPrecomputed(
 				GetValue(entity_index, column_index).indirectionIndex, query_feature_index, high_accuracy);
 		}
 
@@ -766,10 +766,10 @@ protected:
 			const size_t column_index = target_label_indices[query_feature_index];
 			auto &column_data = columnData[column_index];
 			if(column_data->numberIndices.contains(entity_index))
-				return dist_params.ComputeDistanceTermNumberInternedPrecomputed(
+				return r_dist_eval.ComputeDistanceTermNumberInternedPrecomputed(
 					GetValue(entity_index, column_index).indirectionIndex, query_feature_index, high_accuracy);
 			else
-				return dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
+				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
 		}
 
 		default: //RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING or RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE
@@ -911,7 +911,7 @@ protected:
 				else
 					effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED;
 
-				dist_params.ComputeAndStoreInternedNumberValuesAndDistanceTerms(position_value_numeric, query_feature_index, &column_data->internedNumberIndexToNumberValue);
+				r_dist_eval.ComputeAndStoreInternedNumberValuesAndDistanceTerms(position_value_numeric, query_feature_index, &column_data->internedNumberIndexToNumberValue);
 			}
 			else
 			{
@@ -947,9 +947,7 @@ public:
 	inline void PopulateUnknownFeatureValueDifferences(GeneralizedDistanceEvaluator &dist_eval)
 	{
 		//TODO 18116: need to prepopulate targets before calling this
-		auto &target_column_indices = parametersAndBuffers.targetColumnIndices;
-		
-		for(size_t i = 0; i < target_column_indices.size(); i++)
+		for(size_t i = 0; i < dist_eval.featureParams.size(); i++)
 		{
 			auto &feature_params = dist_eval.featureParams[i];
 			size_t column_index = target_column_indices[i];
@@ -973,16 +971,12 @@ public:
 
 	//recomputes feature gaps and computes parametersAndBuffers.maxFeatureGaps
 	// returns the smallest of the maximum feature gaps among the features
-	inline void PopulateUnknownFeatureValueTerms(RepeatedGeneralizedDistanceEvaluator &r_dist_eval)
+	inline void PopulateUnknownFeatureValueTerms(GeneralizedDistanceEvaluator &dist_eval)
 	{
 		//TODO 18116: finish this to update based on value
-		auto &target_values = parametersAndBuffers.targetValues;
-		auto &target_value_types = parametersAndBuffers.targetValueTypes;
-
-		for(size_t i = 0; i < target_column_indices.size(); i++)
+		for(size_t i = 0; i < dist_eval.featureParams.size(); i++)
 		{
-			
-			dist_params.ComputeAndStoreUncertaintyDistanceTerms(i,
+			dist_eval.ComputeAndStoreUncertaintyDistanceTerms(i,
 				EvaluableNodeImmediateValue::IsNullEquivalent(target_value_types[i], target_values[i]));
 		}
 	}

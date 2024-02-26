@@ -2,7 +2,6 @@
 #include "Entity.h"
 #include "AssetManager.h"
 #include "EntityQueries.h"
-#include "EntityQueryCaches.h"
 #include "EntityWriteListener.h"
 #include "EvaluableNodeTreeManipulation.h"
 #include "EvaluableNodeTreeFunctions.h"

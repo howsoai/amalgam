@@ -286,12 +286,10 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 	double max_dist, StringInternPool::StringID radius_label,
 	BitArrayIntegerSet &enabled_indices, std::vector<DistanceReferencePair<size_t>> &distances_out)
 {
-	if(GetNumInsertedEntities() == 0)
+	if(GetNumInsertedEntities() == 0 || dist_eval.featureParams.size() == 0)
 		return;
 
 	//look up these data structures upfront for performance
-	auto &target_values = parametersAndBuffers.targetValues;
-	auto &target_value_types = parametersAndBuffers.targetValueTypes;
 	PopulateTargetValuesAndLabelIndices(dist_params, position_label_ids, position_values, position_value_types);
 	if(target_values.size() == 0)
 		return;
@@ -455,7 +453,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 	size_t top_k, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
 	bool expand_to_first_nonzero_distance, std::vector<DistanceReferencePair<size_t>> &distances_out, size_t ignore_index, RandomStream rand_stream)
 {
-	if(top_k == 0 || GetNumInsertedEntities() == 0)
+	if(top_k == 0 || GetNumInsertedEntities() == 0 || dist_eval.featureParams.size() == 0)
 		return;
 
 	RepeatedGeneralizedDistanceEvaluator *dist_params = dist_params_ref;
@@ -464,14 +462,8 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 		dist_params = &parametersAndBuffers.distEvaluator;
 		*dist_params = *dist_params_ref;
 	}
-		
+
 	//build target
-	auto &target_values = parametersAndBuffers.targetValues;
-	target_values.clear();
-
-	auto &target_value_types = parametersAndBuffers.targetValueTypes;
-	target_value_types.clear();
-
 	const size_t matrix_index_base = search_index * columnData.size();
 	for(size_t i = 0; i < position_label_ids.size(); i++)
 	{
@@ -656,13 +648,10 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 	size_t top_k, StringInternPool::StringID radius_label, size_t ignore_entity_index,
 	BitArrayIntegerSet &enabled_indices, std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream)
 {
-	if(top_k == 0 || GetNumInsertedEntities() == 0)
+	if(top_k == 0 || GetNumInsertedEntities() == 0 || dist_eval.featureParams.size() == 0)
 		return;
 
 	//look up these data structures upfront for performance
-	auto &target_column_indices = parametersAndBuffers.targetColumnIndices;
-	auto &target_values = parametersAndBuffers.targetValues;
-	auto &target_value_types = parametersAndBuffers.targetValueTypes;
 	PopulateTargetValuesAndLabelIndices(dist_params, position_label_ids, position_values, position_value_types);
 
 	size_t num_enabled_features = target_values.size();

@@ -651,13 +651,11 @@ protected:
 	//accumulates partial sums
 	//searches until num_entities_to_populate are popluated or other heuristics have been reached
 	//will only consider indices in enabled_indiced
-	// absolute_feature_index is the offset to access the feature relative to the entire data store
 	// query_feature_index is the offset to access the feature relative to the particular query data parameters
 	//returns the smallest partial sum for any value not yet computed
 	double PopulatePartialSumsWithSimilarFeatureValue(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
-		EvaluableNodeImmediateValue value, EvaluableNodeImmediateValueType value_type,
 		size_t num_entities_to_populate, bool expand_search_if_optimal, bool high_accuracy,
-		size_t query_feature_index, size_t absolute_feature_index, BitArrayIntegerSet &enabled_indices);
+		size_t query_feature_index, BitArrayIntegerSet &enabled_indices);
 
 	//computes a heuristically derived set of partial sums across all the enabled features from parametersAndBuffers.targetValues[i] and parametersAndBuffers.targetColumnIndices[i]
 	// if enabled_indices is not nullptr, then will only use elements in that list
@@ -666,7 +664,7 @@ protected:
 	// will compute and populate min_unpopulated_distances and min_distance_by_unpopulated_count, where the former is the next smallest uncomputed feature distance indexed by the number of features not computed
 	// and min_distance_by_unpopulated_count is the total distance of all uncomputed features where the index is the number of uncomputed features
 	void PopulateInitialPartialSums(RepeatedGeneralizedDistanceEvaluator &r_dist_eval, size_t top_k, size_t radius_column_index,
-		size_t num_enabled_features, bool high_accuracy, BitArrayIntegerSet &enabled_indices,
+		bool high_accuracy, BitArrayIntegerSet &enabled_indices,
 		std::vector<double> &min_unpopulated_distances, std::vector<double> &min_distance_by_unpopulated_count);
 
 	void PopulatePotentialGoodMatches(FlexiblePriorityQueue<CountDistanceReferencePair<size_t>> &potential_good_matches,
@@ -815,8 +813,7 @@ protected:
 	// if reject_distance is infinite, then it will just complete the distance terms
 	//returns a pair of a boolean and the distance.  if the boolean is true, then the distance is less than or equal to the reject distance
 	//assumes that all features that are exact matches have already been computed
-	__forceinline std::pair<bool, double> ResolveDistanceToNonMatchTargetValues(RepeatedGeneralizedDistanceEvaluator &r_dist_eval, std::vector<size_t> &target_label_indices,
-		std::vector<EvaluableNodeImmediateValue> &target_values, std::vector<EvaluableNodeImmediateValueType> &target_value_types,
+	__forceinline std::pair<bool, double> ResolveDistanceToNonMatchTargetValues(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		PartialSumCollection &partial_sums, size_t entity_index, std::vector<double> &min_distance_by_unpopulated_count, size_t num_features,
 		double reject_distance, std::vector<double> &min_unpopulated_distances, bool high_accuracy)
 	{

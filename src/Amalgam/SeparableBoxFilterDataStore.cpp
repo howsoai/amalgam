@@ -328,19 +328,19 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 	}
 
 	//for each desired feature, compute and add distance terms of possible window query candidate entities
-	for(size_t query_feature_index = 0; query_feature_index < target_column_indices.size(); query_feature_index++)
+	for(size_t query_feature_index = 0; query_feature_index < dist_eval.featureAttribs.size(); query_feature_index++)
 	{
-		size_t absolute_feature_index = target_column_indices[query_feature_index];
-		auto target_value = target_values[query_feature_index];
-		auto target_value_type = target_value_types[query_feature_index];
+		size_t absolute_feature_index = dist_eval.featureAttribs[query_feature_index].featureIndex;
+		auto target_value = r_dist_eval.featureData[query_feature_index].targetValue;
+		auto target_value_type = r_dist_eval.featureData[query_feature_index].targetValueType;
 
 		auto &column_data = columnData[absolute_feature_index];
 
 		if(target_value_type == ENIVT_NULL || (target_value_type == ENIVT_NUMBER && FastIsNaN(target_value.number)) )
 		{
 			//add the appropriate unknown distance to each element
-			double unknown_unknown_term = dist_params.ComputeDistanceTermUnknownToUnknown(query_feature_index, high_accuracy);
-			double known_unknown_term = dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
+			double unknown_unknown_term = dist_eval.ComputeDistanceTermUnknownToUnknown(query_feature_index, high_accuracy);
+			double known_unknown_term = dist_eval.ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
 
 			auto &null_indices = column_data->nullIndices;
 			auto &nan_indices = column_data->nanIndices;
@@ -370,7 +370,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 				for(auto &value_entry : column_data->sortedNumberValueEntries)
 				{
 					//get distance term that is applicable to each entity in this bucket
-					double distance_term = dist_params.ComputeDistanceTermRegular(
+					double distance_term = dist_eval.ComputeDistanceTermRegular(
 						target_value.number, value_entry->value.number, ENIVT_NUMBER, ENIVT_NUMBER, query_feature_index, high_accuracy);
 
 					//for each bucket, add term to their sums
@@ -475,7 +475,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 		PopulateTargetValueAndLabelIndex(r_dist_eval, i, value, value_type);
 	}
 
-	size_t num_enabled_features = target_values.size();
+	size_t num_enabled_features = dist_eval.featureAttribs.size();
 	bool high_accuracy = dist_eval.highAccuracyDistances;
 
 	//make a copy of the entities so that the list can be modified
@@ -650,6 +650,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 
 	//one past the maximum entity index to be considered
 	size_t end_index = enabled_indices.GetEndInteger();
+	size_t num_enabled_features = dist_eval.featureAttribs.size();
 	bool high_accuracy = dist_eval.highAccuracyDistances;
 
 	//reuse the appropriate partial_sums_buffer buffer

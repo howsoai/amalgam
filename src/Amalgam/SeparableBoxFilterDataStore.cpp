@@ -999,7 +999,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 	//if not a number or no numbers available, then no size
 	if(value_type != ENIVT_NUMBER || column->sortedNumberValueEntries.size() == 0)
-		return GetMaxDistanceTermForContinuousFeature(r_dist_eval, value, value_type, query_feature_index, absolute_feature_index, high_accuracy);
+		return GetMaxDistanceTermForContinuousFeature(r_dist_eval, query_feature_index, absolute_feature_index, high_accuracy);
 
 	bool cyclic_feature = r_dist_eval.distEvaluator->IsFeatureCyclic(query_feature_index);
 	double cycle_length = std::numeric_limits<double>::infinity();

@@ -711,8 +711,7 @@ protected:
 	//computes the distance term for the entity, query_feature_index, and feature_type,
 	// where the value does not match any in the SBFDS
 	//assumes that null values have already been taken care of for nominals
-	__forceinline double ComputeDistanceTermNonMatch(RepeatedGeneralizedDistanceEvaluator &r_dist_eval, std::vector<size_t> &target_label_indices,
-		std::vector<EvaluableNodeImmediateValue> &target_values, std::vector<EvaluableNodeImmediateValueType> &target_value_types,
+	__forceinline double ComputeDistanceTermNonMatch(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		size_t entity_index, size_t query_feature_index, bool high_accuracy)
 	{
 		switch(r_dist_eval.featureData[query_feature_index].effectiveFeatureType)
@@ -722,26 +721,28 @@ protected:
 
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC:
 		{
-			const size_t column_index = target_label_indices[query_feature_index];
+			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
+			auto &feature_data = r_dist_eval.featureData[query_feature_index];
 			return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicOneNonNullRegular(
-				target_values[query_feature_index].number - GetValue(entity_index, column_index).number,
+				feature_data.targetValue.number - GetValue(entity_index, feature_attribs.featureIndex).number,
 				query_feature_index, high_accuracy);
 		}
 
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_VALUES_UNIVERSALLY_PRECOMPUTED:
 		{
-			const size_t column_index = target_label_indices[query_feature_index];
+			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 			return r_dist_eval.ComputeDistanceTermNumberInternedPrecomputed(
-				GetValue(entity_index, column_index).indirectionIndex, query_feature_index, high_accuracy);
+				GetValue(entity_index, feature_attribs.featureIndex).indirectionIndex, query_feature_index, high_accuracy);
 		}
 
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC:
 		{
-			const size_t column_index = target_label_indices[query_feature_index];
-			auto &column_data = columnData[column_index];
+			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
+			auto &feature_data = r_dist_eval.featureData[query_feature_index];
+			auto &column_data = columnData[feature_attribs.featureIndex];
 			if(column_data->numberIndices.contains(entity_index))
 				return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicOneNonNullRegular(
-					target_values[query_feature_index].number - GetValue(entity_index, column_index).number,
+					feature_data.targetValue.number - GetValue(entity_index, feature_attribs.featureIndex).number,
 					query_feature_index, high_accuracy);
 			else
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
@@ -749,11 +750,12 @@ protected:
 
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_CYCLIC:
 		{
-			const size_t column_index = target_label_indices[query_feature_index];
-			auto &column_data = columnData[column_index];
+			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
+			auto &feature_data = r_dist_eval.featureData[query_feature_index];
+			auto &column_data = columnData[feature_attribs.featureIndex];
 			if(column_data->numberIndices.contains(entity_index))
 				return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousOneNonNullRegular(
-					target_values[query_feature_index].number - GetValue(entity_index, column_index).number,
+					feature_data.targetValue.number - GetValue(entity_index, feature_attribs.featureIndex).number,
 					query_feature_index, high_accuracy);
 			else
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
@@ -761,24 +763,25 @@ protected:
 
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED:
 		{
-			const size_t column_index = target_label_indices[query_feature_index];
-			auto &column_data = columnData[column_index];
+			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
+			auto &column_data = columnData[feature_attribs.featureIndex];
 			if(column_data->numberIndices.contains(entity_index))
 				return r_dist_eval.ComputeDistanceTermNumberInternedPrecomputed(
-					GetValue(entity_index, column_index).indirectionIndex, query_feature_index, high_accuracy);
+					GetValue(entity_index, feature_attribs.featureIndex).indirectionIndex, query_feature_index, high_accuracy);
 			else
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
 		}
 
 		default: //RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING or RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE
 		{
-			const size_t column_index = target_label_indices[query_feature_index];
-			auto &column_data = columnData[column_index];
+			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
+			auto &feature_data = r_dist_eval.featureData[query_feature_index];
+			auto &column_data = columnData[feature_attribs.featureIndex];
 			auto other_value_type = column_data->GetIndexValueType(entity_index);
-			auto other_value = column_data->GetResolvedValue(other_value_type, GetValue(entity_index, column_index));
+			auto other_value = column_data->GetResolvedValue(other_value_type, GetValue(entity_index, feature_attribs.featureIndex));
 
 			return r_dist_eval.distEvaluator->ComputeDistanceTermRegular(
-				target_values[query_feature_index], other_value, target_value_types[query_feature_index], other_value_type,
+				feature_data.targetValue, other_value, feature_data.targetValueType, other_value_type,
 				query_feature_index, high_accuracy);
 		}
 		}
@@ -788,8 +791,7 @@ protected:
 	// this function iterates over the partial sums indices, replacing each uncomputed feature with the actual distance for that feature
 	//returns the distance
 	//assumes that all features that are exact matches have already been computed
-	__forceinline double ResolveDistanceToNonMatchTargetValues(RepeatedGeneralizedDistanceEvaluator &r_dist_eval, std::vector<size_t> &target_label_indices,
-		std::vector<EvaluableNodeImmediateValue> &target_values, std::vector<EvaluableNodeImmediateValueType> &target_value_types,
+	__forceinline double ResolveDistanceToNonMatchTargetValues(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		PartialSumCollection &partial_sums, size_t entity_index, size_t num_target_labels, bool high_accuracy)
 	{
 		//calculate full non-exponentiated Minkowski distance to the target
@@ -801,8 +803,7 @@ protected:
 				continue;
 
 			size_t query_feature_index = *it;
-			distance += ComputeDistanceTermNonMatch(r_dist_eval, target_label_indices, target_values, target_value_types,
-				entity_index, query_feature_index, high_accuracy);
+			distance += ComputeDistanceTermNonMatch(r_dist_eval, entity_index, query_feature_index, high_accuracy);
 		}
 
 		return distance;
@@ -843,8 +844,7 @@ protected:
 			distance -= min_unpopulated_distances[--num_uncalculated_features];
 
 			const size_t query_feature_index = *it;
-			distance += ComputeDistanceTermNonMatch(r_dist_eval, target_label_indices, target_values, target_value_types,
-				entity_index, query_feature_index, high_accuracy);
+			distance += ComputeDistanceTermNonMatch(r_dist_eval, entity_index, query_feature_index, high_accuracy);
 
 			//break out of the loop before the iterator is incremented to save a few cycles
 			//do this via logic to minimize the number of branches

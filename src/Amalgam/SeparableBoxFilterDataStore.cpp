@@ -295,8 +295,8 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 	//look up these data structures upfront for performance
 	PopulateTargetValuesAndLabelIndices(r_dist_eval, position_label_ids, position_values, position_value_types);
 	
-	bool high_accuracy = dist_params.highAccuracyDistances;
-	double max_dist_exponentiated = dist_params.ExponentiateDifferenceTerm(max_dist, high_accuracy);
+	bool high_accuracy = dist_eval.highAccuracyDistances;
+	double max_dist_exponentiated = dist_eval.ExponentiateDifferenceTerm(max_dist, high_accuracy);
 	
 	//initialize all distances to 0
 	auto &distances = parametersAndBuffers.entityDistances;
@@ -321,7 +321,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 			if(radius == 0)
 				distances[entity_index] = -max_dist_exponentiated;
 			else
-				distances[entity_index] = -dist_params.ExponentiateDifferenceTerm(max_dist + radius, high_accuracy);
+				distances[entity_index] = -dist_eval.ExponentiateDifferenceTerm(max_dist + radius, high_accuracy);
 		}
 
 		max_dist_exponentiated = 0.0;
@@ -388,7 +388,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 				}
 
 				//populate all non-number distances
-				double unknown_dist = dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
+				double unknown_dist = dist_eval.ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
 				for(auto entity_index : enabled_indices)
 				{
 					//skip over number values
@@ -416,7 +416,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 			auto value = column_data->GetResolvedValue(value_type, GetValue(entity_index, absolute_feature_index));
 			value_type = column_data->GetResolvedValueType(value_type);
 			
-			distances[entity_index] += dist_params.ComputeDistanceTermRegular(
+			distances[entity_index] += dist_eval.ComputeDistanceTermRegular(
 											target_value, value, target_value_type, value_type, query_feature_index, high_accuracy);
 
 			//remove entity if its distance is already greater than the max_dist
@@ -429,20 +429,19 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 	distances_out.reserve(enabled_indices.size());
 	//need to recompute distances in several circumstances, including if radius is computed,
 	// as the intermediate result may be negative and yield an incorrect result otherwise
-	bool need_recompute_distances = ((dist_params.recomputeAccurateDistances && !dist_params.highAccuracyDistances)
+	bool need_recompute_distances = ((dist_eval.recomputeAccurateDistances && !dist_eval.highAccuracyDistances)
 		|| radius_column_index < columnData.size());
-	high_accuracy = (dist_params.recomputeAccurateDistances || dist_params.highAccuracyDistances);
+	high_accuracy = (dist_eval.recomputeAccurateDistances || dist_eval.highAccuracyDistances);
 
 	if(!need_recompute_distances)
 	{
-		high_accuracy = (dist_params.recomputeAccurateDistances || dist_params.highAccuracyDistances);
 		for(auto index : enabled_indices)
-			distances_out.emplace_back(dist_params.InverseExponentiateDistance(distances[index], high_accuracy), index);
+			distances_out.emplace_back(dist_eval.InverseExponentiateDistance(distances[index], high_accuracy), index);
 	}
 	else
 	{
 		for(auto index : enabled_indices)
-			distances_out.emplace_back(GetDistanceBetween(dist_params, radius_column_index, index, true), index);
+			distances_out.emplace_back(GetDistanceBetween(r_dist_eval, radius_column_index, index, true), index);
 	}
 }
 
@@ -477,7 +476,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 	}
 
 	size_t num_enabled_features = target_values.size();
-	bool high_accuracy = dist_params->highAccuracyDistances;
+	bool high_accuracy = dist_eval.highAccuracyDistances;
 
 	//make a copy of the entities so that the list can be modified
 	BitArrayIntegerSet &possible_knn_indices = parametersAndBuffers.nullAccumSet;
@@ -503,7 +502,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 	// and populate the vectors of smallest possible distances that haven't been computed yet
 	auto &min_unpopulated_distances = parametersAndBuffers.minUnpopulatedDistances;
 	auto &min_distance_by_unpopulated_count = parametersAndBuffers.minDistanceByUnpopulatedCount;
-	PopulateInitialPartialSums(*dist_params, top_k, radius_column_index, num_enabled_features, high_accuracy,
+	PopulateInitialPartialSums(r_dist_eval, top_k, radius_column_index, num_enabled_features, high_accuracy,
 		possible_knn_indices, min_unpopulated_distances, min_distance_by_unpopulated_count);
 	
 	auto &potential_good_matches = parametersAndBuffers.potentialGoodMatches;
@@ -521,8 +520,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 		size_t entity_index = potential_good_matches.top().reference;
 
 		//insert random selection into results heap
-		double distance = ResolveDistanceToNonMatchTargetValues(*dist_params,
-			target_column_indices, target_values, target_value_types,
+		double distance = ResolveDistanceToNonMatchTargetValues(r_dist_eval,
 			partial_sums, entity_index, num_enabled_features, high_accuracy);
 		sorted_results.Push(DistanceReferencePair(distance, entity_index));
 
@@ -539,8 +537,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 		//get a random index that is still potentially in the knn (neither rejected nor already in the results)
 		size_t random_index = possible_knn_indices.GetRandomElement(rand_stream);
 
-		double distance = ResolveDistanceToNonMatchTargetValues(*dist_params,
-			target_column_indices, target_values, target_value_types,
+		double distance = ResolveDistanceToNonMatchTargetValues(r_dist_eval,
 			partial_sums, random_index, num_enabled_features, high_accuracy);
 		sorted_results.Push(DistanceReferencePair(distance, random_index));
 
@@ -564,8 +561,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 		//if still accepting new candidates because found only zero distances
 		if(worst_candidate_distance == std::numeric_limits<double>::infinity())
 		{
-			double distance = ResolveDistanceToNonMatchTargetValues(*dist_params,
-				target_column_indices, target_values, target_value_types,
+			double distance = ResolveDistanceToNonMatchTargetValues(r_dist_eval,
 				partial_sums, entity_index, num_enabled_features, high_accuracy);
 			sorted_results.Push(DistanceReferencePair(distance, entity_index));
 
@@ -582,8 +578,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 		}
 
 		//already have enough elements, but see if this one is good enough
-		auto [accept, distance] = ResolveDistanceToNonMatchTargetValues(*dist_params,
-			target_column_indices, target_values, target_value_types,
+		auto [accept, distance] = ResolveDistanceToNonMatchTargetValues(r_dist_eval,
 			partial_sums, entity_index, min_distance_by_unpopulated_count, num_enabled_features,
 			worst_candidate_distance, min_unpopulated_distances, high_accuracy);
 
@@ -612,18 +607,18 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 	distances_out.resize(sorted_results.Size());
 	//need to recompute distances in several circumstances, including if radius is computed,
 	// as the intermediate result may be negative and yield an incorrect result otherwise
-	bool need_recompute_distances = ((dist_params->recomputeAccurateDistances && !dist_params->highAccuracyDistances)
+	bool need_recompute_distances = ((dist_eval.recomputeAccurateDistances && !dist_eval.highAccuracyDistances)
 		|| radius_column_index < columnData.size());
-	high_accuracy = (dist_params->recomputeAccurateDistances || dist_params->highAccuracyDistances);
+	high_accuracy = (dist_eval.recomputeAccurateDistances || dist_eval.highAccuracyDistances);
 
 	while(sorted_results.Size() > 0)
 	{
 		auto &drp = sorted_results.Top();
 		double distance;
 		if(!need_recompute_distances)
-			distance = dist_params->InverseExponentiateDistance(drp.distance, high_accuracy);
+			distance = dist_eval.InverseExponentiateDistance(drp.distance, high_accuracy);
 		else
-			distance = GetDistanceBetween(*dist_params, radius_column_index, drp.reference, true);
+			distance = GetDistanceBetween(r_dist_eval, radius_column_index, drp.reference, true);
 
 		distances_out[sorted_results.Size() - 1] = DistanceReferencePair(distance, drp.reference);
 		sorted_results.Pop();
@@ -655,7 +650,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 
 	//one past the maximum entity index to be considered
 	size_t end_index = enabled_indices.GetEndInteger();
-	bool high_accuracy = dist_params.highAccuracyDistances;
+	bool high_accuracy = dist_eval.highAccuracyDistances;
 
 	//reuse the appropriate partial_sums_buffer buffer
 	auto &partial_sums = parametersAndBuffers.partialSums;
@@ -665,7 +660,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 	// and populate the vectors of smallest possible distances that haven't been computed yet
 	auto &min_unpopulated_distances = parametersAndBuffers.minUnpopulatedDistances;
 	auto &min_distance_by_unpopulated_count = parametersAndBuffers.minDistanceByUnpopulatedCount;
-	PopulateInitialPartialSums(dist_params, top_k, radius_column_index, num_enabled_features, high_accuracy,
+	PopulateInitialPartialSums(r_dist_eval, top_k, radius_column_index, num_enabled_features, high_accuracy,
 		enabled_indices, min_unpopulated_distances, min_distance_by_unpopulated_count);
 
 	auto &potential_good_matches = parametersAndBuffers.potentialGoodMatches;
@@ -686,8 +681,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 		//skip this entity in the next loops
 		enabled_indices.erase(good_match_index);
 
-		double distance = ResolveDistanceToNonMatchTargetValues(dist_params,
-			target_column_indices, target_values, target_value_types,
+		double distance = ResolveDistanceToNonMatchTargetValues(r_dist_eval,
 			partial_sums, good_match_index, num_enabled_features, high_accuracy);
 		sorted_results.Push(DistanceReferencePair(distance, good_match_index));
 	}
@@ -702,8 +696,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 		//skip this entity in the next loops
 		enabled_indices.erase(random_index);
 				
-		double distance = ResolveDistanceToNonMatchTargetValues(dist_params,
-			target_column_indices, target_values, target_value_types,
+		double distance = ResolveDistanceToNonMatchTargetValues(r_dist_eval,
 			partial_sums, random_index, num_enabled_features, high_accuracy);
 		sorted_results.Push(DistanceReferencePair(distance, random_index));
 	}
@@ -723,8 +716,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 				if(!enabled_indices.EraseAndRetrieve(entity_index))
 					continue;
 
-				auto [accept, distance] = ResolveDistanceToNonMatchTargetValues(dist_params,
-					target_column_indices, target_values, target_value_types, partial_sums,
+				auto [accept, distance] = ResolveDistanceToNonMatchTargetValues(r_dist_eval,
 					entity_index, min_distance_by_unpopulated_count, num_enabled_features,
 					worst_candidate_distance, min_unpopulated_distances, high_accuracy);
 
@@ -742,7 +734,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 			if(target_value_types[i] == ENIVT_NULL || (target_value_types[i] == ENIVT_NUMBER && FastIsNaN(target_values[i].number)))
 				continue;
 			
-			if(dist_params.ComputeDistanceTermKnownToUnknown(i, high_accuracy) > worst_candidate_distance)
+			if(dist_eval.ComputeDistanceTermKnownToUnknown(i, high_accuracy) > worst_candidate_distance)
 			{
 				auto &column = columnData[target_column_indices[i]];
 				auto &null_indices = column->nullIndices;
@@ -813,18 +805,18 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 	previous_nn_cache.resize(num_results);
 	//need to recompute distances in several circumstances, including if radius is computed,
 	// as the intermediate result may be negative and yield an incorrect result otherwise
-	bool need_recompute_distances = ((dist_params.recomputeAccurateDistances && !dist_params.highAccuracyDistances)
+	bool need_recompute_distances = ((dist_eval.recomputeAccurateDistances && !dist_eval.highAccuracyDistances)
 			|| radius_column_index < columnData.size());
-	high_accuracy = (dist_params.recomputeAccurateDistances || dist_params.highAccuracyDistances);
+	high_accuracy = (dist_eval.recomputeAccurateDistances || dist_eval.highAccuracyDistances);
 
 	while(sorted_results.Size() > 0)
 	{
 		auto &drp = sorted_results.Top();
 		double distance;
 		if(!need_recompute_distances)
-			distance = dist_params.InverseExponentiateDistance(drp.distance, high_accuracy);
+			distance = dist_eval.InverseExponentiateDistance(drp.distance, high_accuracy);
 		else
-			distance = GetDistanceBetween(dist_params, radius_column_index, drp.reference, high_accuracy);
+			distance = GetDistanceBetween(r_dist_eval, radius_column_index, drp.reference, high_accuracy);
 
 		size_t output_index = sorted_results.Size() - 1;
 		distances_out[output_index] = DistanceReferencePair(distance, drp.reference);
@@ -898,7 +890,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	//need to accumulate values for nulls if the value is a null
 	if(value_is_null)
 	{
-		double unknown_unknown_term = dist_params.ComputeDistanceTermUnknownToUnknown(query_feature_index, high_accuracy);
+		double unknown_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermUnknownToUnknown(query_feature_index, high_accuracy);
 		AccumulatePartialSums(column->nullIndices, query_feature_index, unknown_unknown_term);
 		AccumulatePartialSums(column->nanIndices, query_feature_index, unknown_unknown_term);
 
@@ -906,7 +898,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		// if a data set is mostly nulls, it'll be slower, but this is acceptable as a more rare situation
 		//if the known-unknown term is less than unknown_unknown (this should be rare if nulls have semantic meaning)
 		//then need to populate the rest of the cases
-		double known_unknown_term = dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
+		double known_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
 		if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED || known_unknown_term < unknown_unknown_term)
 		{
 			BitArrayIntegerSet &known_unknown_indices = parametersAndBuffers.potentialMatchesSet;
@@ -921,9 +913,9 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 	//need to accumulate nulls if they're closer than an exact match
 	//but if made it here, then the value itself isn't null
-	if(dist_params.IsKnownToUnknownDistanceLessThanOrEqualToExactMatch(query_feature_index))
+	if(r_dist_eval.distEvaluator->IsKnownToUnknownDistanceLessThanOrEqualToExactMatch(query_feature_index))
 	{
-		double known_unknown_term = dist_params.ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
+		double known_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
 		AccumulatePartialSums(column->nullIndices, query_feature_index, known_unknown_term);
 		AccumulatePartialSums(column->nanIndices, query_feature_index, known_unknown_term);
 	}
@@ -936,7 +928,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			auto [value_index, exact_index_found] = column->FindExactIndexForValue(value.number);
 			if(exact_index_found)
 			{
-				double term = dist_params.ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(query_feature_index, high_accuracy);
+				double term = r_dist_eval.distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(query_feature_index, high_accuracy);
 				AccumulatePartialSums(column->sortedNumberValueEntries[value_index]->indicesWithValue, query_feature_index, term);
 			}
 		}
@@ -945,7 +937,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			auto value_found = column->stringIdValueToIndices.find(value.stringID);
 			if(value_found != end(column->stringIdValueToIndices))
 			{
-				double term = dist_params.ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(query_feature_index, high_accuracy);
+				double term = r_dist_eval.distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(query_feature_index, high_accuracy);
 				AccumulatePartialSums(*(value_found->second), query_feature_index, term);
 			}
 		}
@@ -960,14 +952,14 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			if(value_found != end(column->valueCodeSizeToIndices))
 			{
 				auto &entity_indices = *(value_found->second);
-				ComputeAndAccumulatePartialSums(dist_params, value, value_type,
+				ComputeAndAccumulatePartialSums(r_dist_eval, value, value_type,
 					entity_indices, query_feature_index, absolute_feature_index, high_accuracy);
 			}
 		}
 		//else value_type == ENIVT_NULL
 
 		//return next smallest nominal distance term
-		return dist_params.ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(query_feature_index, high_accuracy);
+		return r_dist_eval.distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(query_feature_index, high_accuracy);
 	}
 	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING)
 	{
@@ -976,13 +968,13 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			auto value_found = column->stringIdValueToIndices.find(value.stringID);
 			if(value_found != end(column->stringIdValueToIndices))
 			{
-				double term = dist_params.ComputeDistanceTermContinuousExactMatch(query_feature_index, high_accuracy);
+				double term = r_dist_eval.distEvaluator->ComputeDistanceTermContinuousExactMatch(query_feature_index, high_accuracy);
 				AccumulatePartialSums(*(value_found->second), query_feature_index, term);
 			}
 		}
 
 		//the next closest string will have an edit distance of 1
-		return dist_params.ComputeDistanceTermContinuousNonCyclicNonNullRegular(1.0, query_feature_index, high_accuracy);
+		return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicNonNullRegular(1.0, query_feature_index, high_accuracy);
 	}
 	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE)
 	{
@@ -995,31 +987,31 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		if(value_found != end(column->valueCodeSizeToIndices))
 		{
 			auto &entity_indices = *(value_found->second);
-			ComputeAndAccumulatePartialSums(dist_params, value, value_type,
+			ComputeAndAccumulatePartialSums(r_dist_eval, value, value_type,
 				entity_indices, query_feature_index, absolute_feature_index, high_accuracy);
 		}
 
 		//next most similar code must be at least a distance of 1 edit away
-		return dist_params.ComputeDistanceTermContinuousNonCyclicNonNullRegular(1.0, query_feature_index, high_accuracy);
+		return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicNonNullRegular(1.0, query_feature_index, high_accuracy);
 	}
 	//else feature_type == FDT_CONTINUOUS_NUMERIC or FDT_CONTINUOUS_UNIVERSALLY_NUMERIC
 
 	//if not a number or no numbers available, then no size
 	if(value_type != ENIVT_NUMBER || column->sortedNumberValueEntries.size() == 0)
-		return GetMaxDistanceTermForContinuousFeature(dist_params, value, value_type, query_feature_index, absolute_feature_index, high_accuracy);
+		return GetMaxDistanceTermForContinuousFeature(r_dist_eval, value, value_type, query_feature_index, absolute_feature_index, high_accuracy);
 
-	bool cyclic_feature = dist_params.IsFeatureCyclic(query_feature_index);
+	bool cyclic_feature = r_dist_eval.distEvaluator->IsFeatureCyclic(query_feature_index);
 	double cycle_length = std::numeric_limits<double>::infinity();
 	if(cyclic_feature)
-		cycle_length = dist_params.featureAttribs[query_feature_index].typeAttributes.maxCyclicDifference;
+		cycle_length = r_dist_eval.distEvaluator->featureAttribs[query_feature_index].typeAttributes.maxCyclicDifference;
 
 	auto [value_index, exact_index_found] = column->FindClosestValueIndexForValue(value.number, cycle_length);
 
 	double term = 0.0;
 	if(exact_index_found)
-		term = dist_params.ComputeDistanceTermContinuousExactMatch(query_feature_index, high_accuracy);
+		term = r_dist_eval.distEvaluator->ComputeDistanceTermContinuousExactMatch(query_feature_index, high_accuracy);
 	else
-		term = dist_params.ComputeDistanceTermContinuousNonNullRegular(
+		term = r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonNullRegular(
 			value.number - column->sortedNumberValueEntries[value_index]->value.number, query_feature_index, high_accuracy);
 
 	size_t num_entities_computed = AccumulatePartialSums(column->sortedNumberValueEntries[value_index]->indicesWithValue, query_feature_index, term);
@@ -1160,15 +1152,15 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 			//going out n deviations is likely to only miss 0.5^n of the likely values of nearest neighbors
 			// so 0.5^5 should catch ~97% of the values
-			if(dist_params.DoesFeatureHaveDeviation(query_feature_index)
-				&& next_closest_diff < 5 * dist_params.featureAttribs[query_feature_index].deviation)
+			if(r_dist_eval.distEvaluator->DoesFeatureHaveDeviation(query_feature_index)
+				&& next_closest_diff < 5 * r_dist_eval.distEvaluator->featureAttribs[query_feature_index].deviation)
 				should_continue = true;
 
 			if(!should_continue)
 				break;
 		}
 
-		term = dist_params.ComputeDistanceTermContinuousNonNullRegular(next_closest_diff, query_feature_index, high_accuracy);
+		term = r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonNullRegular(next_closest_diff, query_feature_index, high_accuracy);
 		num_entities_computed += AccumulatePartialSums(
 			column->sortedNumberValueEntries[next_closest_index]->indicesWithValue, query_feature_index, term);
 
@@ -1217,7 +1209,7 @@ void SeparableBoxFilterDataStore::PopulateInitialPartialSums(RepeatedGeneralized
 	min_unpopulated_distances.resize(num_enabled_features);
 	for(size_t i = 0; i < num_enabled_features; i++)
 	{
-		double next_closest_distance = PopulatePartialSumsWithSimilarFeatureValue(dist_params,
+		double next_closest_distance = PopulatePartialSumsWithSimilarFeatureValue(r_dist_eval,
 			parametersAndBuffers.targetValues[i], parametersAndBuffers.targetValueTypes[i],
 			num_entities_to_populate,
 			//expand search if using more than one dimension

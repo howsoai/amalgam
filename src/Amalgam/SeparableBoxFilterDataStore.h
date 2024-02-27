@@ -68,7 +68,7 @@ public:
 
 	//Gets the maximum possible distance term from value assuming the feature is continuous
 	// absolute_feature_index is the offset to access the feature relative to the entire data store
-	// query_feature_index is relative to dist_params
+	// query_feature_index is relative to feature attributes and data in r_dist_eval
 	inline double GetMaxDistanceTermForContinuousFeature(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		size_t query_feature_index, size_t absolute_feature_index, bool high_accuracy)
 	{
@@ -887,22 +887,22 @@ public:
 			if(column == end(labelIdToColumnIndex))
 				continue;
 
-			auto &feature_params = dist_eval.featureParams[query_feature_index];
-			feature_params.featureIndex = column->second;
+			auto &feature_attribs = dist_eval.featureParams[query_feature_index];
+			feature_attribs.featureIndex = column->second;
 
 			//if either known or unknown to unknown is missing, need to compute difference
 			// and store it where it is needed
 			double unknown_distance_term = 0.0;
-			if(FastIsNaN(feature_params.knownToUnknownDistanceTerm.difference)
-				|| FastIsNaN(feature_params.unknownToUnknownDistanceTerm.difference))
+			if(FastIsNaN(feature_attribs.knownToUnknownDistanceTerm.difference)
+				|| FastIsNaN(feature_attribs.unknownToUnknownDistanceTerm.difference))
 			{
-				unknown_distance_term = columnData[feature_params.featureIndex]->GetMaxDifferenceTerm(
-					feature_params);
+				unknown_distance_term = columnData[feature_attribs.featureIndex]->GetMaxDifferenceTerm(
+					feature_attribs);
 
-				if(FastIsNaN(feature_params.knownToUnknownDistanceTerm.difference))
-					feature_params.knownToUnknownDistanceTerm.difference = unknown_distance_term;
-				if(FastIsNaN(feature_params.unknownToUnknownDistanceTerm.difference))
-					feature_params.unknownToUnknownDistanceTerm.difference = unknown_distance_term;
+				if(FastIsNaN(feature_attribs.knownToUnknownDistanceTerm.difference))
+					feature_attribs.knownToUnknownDistanceTerm.difference = unknown_distance_term;
+				if(FastIsNaN(feature_attribs.unknownToUnknownDistanceTerm.difference))
+					feature_attribs.unknownToUnknownDistanceTerm.difference = unknown_distance_term;
 			}
 		}
 	}

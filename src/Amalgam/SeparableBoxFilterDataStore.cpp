@@ -1345,8 +1345,8 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 	size_t query_feature_index, EvaluableNodeImmediateValue position_value,
 	EvaluableNodeImmediateValueType position_value_type)
 {
-	auto &feature_params = r_dist_eval.distEvaluator->featureParams[query_feature_index];
-	auto &feature_type = feature_params.featureType;
+	auto &feature_attribs = r_dist_eval.distEvaluator->featureParams[query_feature_index];
+	auto &feature_type = feature_attribs.featureType;
 	auto &feature_data = r_dist_eval.featureData[query_feature_index];
 	auto &effective_feature_type = r_dist_eval.featureData[query_feature_index].effectiveFeatureType;
 
@@ -1378,7 +1378,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 		feature_data.targetValueType = ENIVT_NUMBER;
 
 		//set up effective_feature_type
-		auto &column_data = columnData[feature_params.featureIndex];
+		auto &column_data = columnData[feature_attribs.featureIndex];
 
 		//determine if all values are numeric
 		size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();

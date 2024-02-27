@@ -680,9 +680,9 @@ public:
 
 	//returns the maximum difference between value and any other value for this column
 	//if empty, will return infinity
-	inline double GetMaxDifferenceTerm(GeneralizedDistanceEvaluator::FeatureParams &feature_params)
+	inline double GetMaxDifferenceTerm(GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs)
 	{
-		switch(feature_params.featureType)
+		switch(feature_attribs.featureType)
 		{
 		case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC:
 		case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
@@ -697,7 +697,7 @@ public:
 
 		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC:
 			//maximum is the other side of the cycle
-			return feature_params.typeAttributes.maxCyclicDifference / 2;
+			return feature_attribs.typeAttributes.maxCyclicDifference / 2;
 
 		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING:
 			//the max difference is the worst case edit distance, of removing all the characters

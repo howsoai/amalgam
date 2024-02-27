@@ -91,10 +91,10 @@ public:
 		double difference;
 	};
 
-	class FeatureParams
+	class FeatureAttributes
 	{
 	public:
-		inline FeatureParams()
+		inline FeatureAttributes()
 			: featureType(FDT_CONTINUOUS_NUMERIC),
 			featureIndex(std::numeric_limits<size_t>::max()), weight(1.0), deviation(0.0),
 			unknownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
@@ -237,8 +237,8 @@ public:
 	// based on the difference versus deviation
 	__forceinline bool IsKnownToUnknownDistanceLessThanOrEqualToExactMatch(size_t feature_index)
 	{
-		auto &feature_params = featureParams[feature_index];
-		return (feature_params.knownToUnknownDistanceTerm.difference <= feature_params.deviation);
+		auto &feature_attribs = featureParams[feature_index];
+		return (feature_attribs.knownToUnknownDistanceTerm.difference <= feature_attribs.deviation);
 	}
 
 	//computes the exponentiation of d to 1/p
@@ -752,61 +752,61 @@ protected:
 
 		for(size_t i = 0; i < featureParams.size(); i++)
 		{
-			auto &feature_params = featureParams[i];
+			auto &feature_attribs = featureParams[i];
 			if(IsFeatureNominal(i))
 			{
 				//ensure if a feature has deviations they're not too small to underflow
 				if(DoesFeatureHaveDeviation(i))
 				{
 					constexpr double smallest_delta = 1e-100;
-					if(feature_params.typeAttributes.nominalCount == 1 && feature_params.deviation < smallest_delta)
-						feature_params.deviation = smallest_delta;
+					if(feature_attribs.typeAttributes.nominalCount == 1 && feature_attribs.deviation < smallest_delta)
+						feature_attribs.deviation = smallest_delta;
 				}
 
 				if(compute_accurate)
 				{
-					feature_params.nominalMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, true), true);
-					feature_params.nominalNonMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, true), true);
+					feature_attribs.nominalMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, true), true);
+					feature_attribs.nominalNonMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, true), true);
 				}
 
 				if(compute_approximate)
 				{
-					feature_params.nominalMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, false), false);
-					feature_params.nominalNonMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, false), false);
+					feature_attribs.nominalMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, false), false);
+					feature_attribs.nominalNonMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, false), false);
 				}
 			}
 
 			//compute unknownToUnknownDistanceTerm
 			if(compute_accurate)
 			{
-				feature_params.unknownToUnknownDistanceTerm.SetValue(
-					ComputeDistanceTermMatchOnNull(i, feature_params.unknownToUnknownDistanceTerm.difference, true), true);
+				feature_attribs.unknownToUnknownDistanceTerm.SetValue(
+					ComputeDistanceTermMatchOnNull(i, feature_attribs.unknownToUnknownDistanceTerm.difference, true), true);
 			}
 
 			if(compute_approximate)
 			{
-				feature_params.unknownToUnknownDistanceTerm.SetValue(
-					ComputeDistanceTermMatchOnNull(i, feature_params.unknownToUnknownDistanceTerm.difference, false), false);
+				feature_attribs.unknownToUnknownDistanceTerm.SetValue(
+					ComputeDistanceTermMatchOnNull(i, feature_attribs.unknownToUnknownDistanceTerm.difference, false), false);
 			}
 
 			//if knownToUnknownDifference is same as unknownToUnknownDifference, can copy distance term instead of recomputing
-			if(feature_params.knownToUnknownDistanceTerm.difference == feature_params.unknownToUnknownDistanceTerm.difference)
+			if(feature_attribs.knownToUnknownDistanceTerm.difference == feature_attribs.unknownToUnknownDistanceTerm.difference)
 			{
-				feature_params.knownToUnknownDistanceTerm = feature_params.unknownToUnknownDistanceTerm;
+				feature_attribs.knownToUnknownDistanceTerm = feature_attribs.unknownToUnknownDistanceTerm;
 			}
 			else
 			{
 				//compute knownToUnknownDistanceTerm
 				if(compute_accurate)
 				{
-					feature_params.knownToUnknownDistanceTerm.SetValue(
-						ComputeDistanceTermMatchOnNull(i, feature_params.knownToUnknownDistanceTerm.difference, true), true);
+					feature_attribs.knownToUnknownDistanceTerm.SetValue(
+						ComputeDistanceTermMatchOnNull(i, feature_attribs.knownToUnknownDistanceTerm.difference, true), true);
 				}
 
 				if(compute_approximate)
 				{
-					feature_params.knownToUnknownDistanceTerm.SetValue(
-						ComputeDistanceTermMatchOnNull(i, feature_params.knownToUnknownDistanceTerm.difference, false), false);
+					feature_attribs.knownToUnknownDistanceTerm.SetValue(
+						ComputeDistanceTermMatchOnNull(i, feature_attribs.knownToUnknownDistanceTerm.difference, false), false);
 				}
 			}
 		}
@@ -814,7 +814,7 @@ protected:
 
 public:
 
-	std::vector<FeatureParams> featureParams;
+	std::vector<FeatureAttributes> featureParams;
 
 	//precached ways to compute FastPow
 	RepeatedFastPow fastPowP;
@@ -874,7 +874,7 @@ public:
 	{
 		bool compute_accurate = distEvaluator->NeedToPrecomputeAccurate();
 		bool compute_approximate = distEvaluator->NeedToPrecomputeApproximate();
-		auto &feature_params = distEvaluator->featureParams[index];
+		auto &feature_attribs = distEvaluator->featureParams[index];
 
 		//make sure there's room for the interned index
 		if(featureData.size() <= index)

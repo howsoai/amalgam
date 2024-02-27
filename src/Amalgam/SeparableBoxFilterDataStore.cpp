@@ -294,9 +294,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 
 	//look up these data structures upfront for performance
 	PopulateTargetValuesAndLabelIndices(dist_params, position_label_ids, position_values, position_value_types);
-	if(target_values.size() == 0)
-		return;
-
+	
 	PopulateUnknownFeatureValueTerms(dist_params);
 
 	bool high_accuracy = dist_params.highAccuracyDistances;
@@ -653,10 +651,6 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 
 	//look up these data structures upfront for performance
 	PopulateTargetValuesAndLabelIndices(r_dist_eval, position_label_ids, position_values, position_value_types);
-
-	size_t num_enabled_features = target_values.size();
-	if(num_enabled_features == 0)
-		return;
 
 	PopulateUnknownFeatureValueTerms(dist_params);
 

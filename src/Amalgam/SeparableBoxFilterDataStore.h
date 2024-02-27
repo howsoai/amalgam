@@ -866,7 +866,9 @@ public:
 		std::vector<size_t> &position_label_ids, std::vector<EvaluableNodeImmediateValue> &position_values,
 		std::vector<EvaluableNodeImmediateValueType> &position_value_types)
 	{
-		for(size_t query_feature_index = 0; query_feature_index < position_label_ids.size(); query_feature_index++)
+		size_t num_features = position_values.size();
+		r_dist_eval.featureData.resize(num_features);
+		for(size_t query_feature_index = 0; query_feature_index < num_features; query_feature_index++)
 		{
 			auto column = labelIdToColumnIndex.find(position_label_ids[query_feature_index]);
 			if(column != end(labelIdToColumnIndex))

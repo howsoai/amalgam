@@ -142,7 +142,7 @@ public:
 
 	//initializes and precomputes relevant data including featureAttribs
 	//this should be called after all relevant attributes have been populated
-	inline bool InitializeParametersAndFeatureParams()
+	inline void InitializeParametersAndFeatureParams()
 	{
 		inversePValue = 1.0 / pValue;
 
@@ -864,6 +864,10 @@ public:
 		//continuous measures of the number of nodes different between two sets of code
 		EFDT_CONTINUOUS_CODE,
 	};
+
+	RepeatedGeneralizedDistanceEvaluator()
+		: distEvaluator(nullptr)
+	{	}
 
 	inline RepeatedGeneralizedDistanceEvaluator(GeneralizedDistanceEvaluator *dist_evaluator)
 		: distEvaluator(dist_evaluator)

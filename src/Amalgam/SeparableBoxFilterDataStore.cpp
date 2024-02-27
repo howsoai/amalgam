@@ -456,9 +456,12 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 	auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
 	r_dist_eval.distEvaluator = &dist_eval;
 
+	size_t num_enabled_features = dist_eval.featureAttribs.size();
+
 	//build target
 	const size_t matrix_index_base = search_index * columnData.size();
-	for(size_t i = 0; i < position_label_ids.size(); i++)
+	r_dist_eval.featureData.resize(num_enabled_features);
+	for(size_t i = 0; i < num_enabled_features; i++)
 	{
 		auto found = labelIdToColumnIndex.find(position_label_ids[i]);
 		if(found == end(labelIdToColumnIndex))
@@ -475,7 +478,6 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 		PopulateTargetValueAndLabelIndex(r_dist_eval, i, value, value_type);
 	}
 
-	size_t num_enabled_features = dist_eval.featureAttribs.size();
 	bool high_accuracy = dist_eval.highAccuracyDistances;
 
 	//make a copy of the entities so that the list can be modified

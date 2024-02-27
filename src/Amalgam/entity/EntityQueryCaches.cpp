@@ -264,10 +264,10 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 			for(size_t i = 0; i < cond->positionLabels.size(); i++)
 			{
 				sbfds.IntersectEntitiesWithFeature(cond->positionLabels[i], matching_entities, true);
-				if(!cond->distEvaluator.featureParams[i].weight == 0.0)
+				if(!cond->distEvaluator.featureAttribs[i].weight == 0.0)
 				{
 					cond->positionLabels.erase(cond->positionLabels.begin() + i);
-					cond->distEvaluator.featureParams.erase(begin(cond->distEvaluator.featureParams) + i);
+					cond->distEvaluator.featureAttribs.erase(begin(cond->distEvaluator.featureAttribs) + i);
 
 					if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || cond->queryType == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)
 					{

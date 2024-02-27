@@ -73,7 +73,7 @@ public:
 		size_t query_feature_index, size_t absolute_feature_index, bool high_accuracy)
 	{
 		double max_diff = columnData[absolute_feature_index]->GetMaxDifferenceTerm(
-														r_dist_eval.distEvaluator->featureParams[query_feature_index]);
+														r_dist_eval.distEvaluator->featureAttribs[query_feature_index]);
 		return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonNullRegular(
 														max_diff, query_feature_index, high_accuracy);
 	}
@@ -674,15 +674,17 @@ protected:
 
 	//returns the distance between two nodes while respecting the feature mask
 	inline double GetDistanceBetween(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
-		std::vector<EvaluableNodeImmediateValue> &target_values, std::vector<EvaluableNodeImmediateValueType> &target_value_types,
-		std::vector<size_t> &target_column_indices, size_t radius_column_index, size_t other_index, bool high_accuracy)
+		size_t radius_column_index, size_t other_index, bool high_accuracy)
 	{
 		const size_t matrix_base_position = other_index * columnData.size();
 
 		double dist_accum = 0.0;
-		for(size_t i = 0; i < target_values.size(); i++)
+		for(size_t i = 0; i < r_dist_eval.featureData.size(); i++)
 		{
-			size_t column_index = target_column_indices[i];
+			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[i];
+			auto &feature_data = r_dist_eval.featureData[i];
+
+			size_t column_index = feature_attribs.featureIndex;
 			auto &column_data = columnData[column_index];
 
 			auto other_value_type = column_data->GetIndexValueType(other_index);
@@ -690,7 +692,7 @@ protected:
 			other_value_type = column_data->GetResolvedValueType(other_value_type);
 
 			dist_accum += r_dist_eval.distEvaluator->ComputeDistanceTermRegular(
-				target_values[i], other_value, target_value_types[i], other_value_type, i, high_accuracy);
+				feature_data.targetValue, other_value, feature_data.targetValueType, other_value_type, i, high_accuracy);
 		}
 
 		double dist = r_dist_eval.distEvaluator->InverseExponentiateDistance(dist_accum, high_accuracy);
@@ -886,7 +888,7 @@ public:
 			if(column == end(labelIdToColumnIndex))
 				continue;
 
-			auto &feature_attribs = dist_eval.featureParams[query_feature_index];
+			auto &feature_attribs = dist_eval.featureAttribs[query_feature_index];
 			feature_attribs.featureIndex = column->second;
 
 			//if either known or unknown to unknown is missing, need to compute difference
@@ -908,8 +910,7 @@ public:
 
 	//returns all elements in the database that yield valid distances along with their sorted distances to the values for entity
 	// at target_index, optionally limits results count to k
-	inline void FindAllValidElementDistances(RepeatedGeneralizedDistanceEvaluator &r_dist_eval, std::vector<size_t> &target_column_indices,
-		std::vector<EvaluableNodeImmediateValue> &target_values, std::vector<EvaluableNodeImmediateValueType> &target_value_types,
+	inline void FindAllValidElementDistances(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		size_t radius_column_index, BitArrayIntegerSet &valid_indices,
 		std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream)
 	{
@@ -921,8 +922,7 @@ public:
 
 		for(auto index : valid_indices)
 		{
-			double distance = GetDistanceBetween(r_dist_eval,
-				target_values, target_value_types, target_column_indices, radius_column_index, index, high_accuracy);
+			double distance = GetDistanceBetween(r_dist_eval, radius_column_index, index, high_accuracy);
 			distances_out.emplace_back(distance, index);
 		}
 

@@ -1065,7 +1065,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 	//convert unknown differences into unknown distance terms
 	for(size_t i = 0; i < num_elements; i++)
 	{
-		auto &feature_attribs = dist_eval.featureParams[i];
+		auto &feature_attribs = dist_eval.featureAttribs[i];
 
 		//if one is nan and the other is not, the use the non-nan one for both
 		if(FastIsNaN(feature_attribs.unknownToUnknownDistanceTerm.difference))

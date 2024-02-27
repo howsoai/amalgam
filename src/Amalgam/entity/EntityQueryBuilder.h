@@ -57,24 +57,24 @@ namespace EntityQueryBuilder
 		size_t num_elements, std::vector<StringInternPool::StringID> &element_names,
 		EvaluableNode *weights_node, EvaluableNode *distance_types_node, EvaluableNode *attributes_node, EvaluableNode *deviations_node)
 	{
-		dist_eval.featureParams.resize(num_elements);
+		dist_eval.featureAttribs.resize(num_elements);
 
 		//get weights
 		EvaluableNode::ConvertChildNodesAndStoreValue(weights_node, element_names, num_elements,
 			[&dist_eval](size_t i, bool found, EvaluableNode *en) {
-				if(i < dist_eval.featureParams.size())
+				if(i < dist_eval.featureAttribs.size())
 				{
 					if(found)
-						dist_eval.featureParams[i].weight = EvaluableNode::ToNumber(en);
+						dist_eval.featureAttribs[i].weight = EvaluableNode::ToNumber(en);
 					else
-						dist_eval.featureParams[i].weight = 1.0;
+						dist_eval.featureAttribs[i].weight = 1.0;
 				}
 			});
 
 		//get type
 		EvaluableNode::ConvertChildNodesAndStoreValue(distance_types_node, element_names, num_elements,
 			[&dist_eval](size_t i, bool found, EvaluableNode *en) {
-				if(i < dist_eval.featureParams.size())
+				if(i < dist_eval.featureAttribs.size())
 				{
 					auto feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC;
 					if(found)
@@ -93,30 +93,30 @@ namespace EntityQueryBuilder
 						default:								feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC;			break;
 						}
 					}
-					dist_eval.featureParams[i].featureType = feature_type;
+					dist_eval.featureAttribs[i].featureType = feature_type;
 				}
 			});
 
 		//get attributes
 		EvaluableNode::ConvertChildNodesAndStoreValue(attributes_node, element_names, num_elements,
 			[&dist_eval](size_t i, bool found, EvaluableNode *en) {
-				if(i < dist_eval.featureParams.size())
+				if(i < dist_eval.featureAttribs.size())
 				{
 					//get attributes based on feature type
-					switch(dist_eval.featureParams[i].featureType)
+					switch(dist_eval.featureAttribs[i].featureType)
 					{
 					case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC:
 					case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
 					case GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE:
 						if(found && !EvaluableNode::IsNull(en))
-							dist_eval.featureParams[i].typeAttributes.nominalCount = EvaluableNode::ToNumber(en, 1);
+							dist_eval.featureAttribs[i].typeAttributes.nominalCount = EvaluableNode::ToNumber(en, 1);
 						break;
 
 					case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC:
 						if(found && !EvaluableNode::IsNull(en))
-							dist_eval.featureParams[i].typeAttributes.maxCyclicDifference = EvaluableNode::ToNumber(en);
+							dist_eval.featureAttribs[i].typeAttributes.maxCyclicDifference = EvaluableNode::ToNumber(en);
 						else //can't be cyclic without a range
-							dist_eval.featureParams[i].featureType = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC;
+							dist_eval.featureAttribs[i].featureType = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC;
 						break;
 
 					default:
@@ -128,14 +128,14 @@ namespace EntityQueryBuilder
 		//get deviations
 		EvaluableNode::ConvertChildNodesAndStoreValue(deviations_node, element_names, num_elements,
 			[&dist_eval](size_t i, bool found, EvaluableNode *en) {
-				if(i < dist_eval.featureParams.size())
+				if(i < dist_eval.featureAttribs.size())
 				{
-					dist_eval.featureParams[i].deviation = 0.0;
-					dist_eval.featureParams[i].unknownToUnknownDistanceTerm.difference = std::numeric_limits<double>::quiet_NaN();
-					dist_eval.featureParams[i].knownToUnknownDistanceTerm.difference = std::numeric_limits<double>::quiet_NaN();
+					dist_eval.featureAttribs[i].deviation = 0.0;
+					dist_eval.featureAttribs[i].unknownToUnknownDistanceTerm.difference = std::numeric_limits<double>::quiet_NaN();
+					dist_eval.featureAttribs[i].knownToUnknownDistanceTerm.difference = std::numeric_limits<double>::quiet_NaN();
 
 					//get deviations based on feature type
-					switch(dist_eval.featureParams[i].featureType)
+					switch(dist_eval.featureAttribs[i].featureType)
 					{
 					case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC:
 					case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
@@ -148,17 +148,17 @@ namespace EntityQueryBuilder
 								size_t ocn_size = ocn.size();
 
 								if(ocn_size > 0)
-									PopulateFeatureDeviationData(dist_eval.featureParams[i], ocn[0]);
+									PopulateFeatureDeviationData(dist_eval.featureAttribs[i], ocn[0]);
 
 								if(ocn_size > 1)
-									dist_eval.featureParams[i].knownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[1]);
+									dist_eval.featureAttribs[i].knownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[1]);
 
 								if(ocn_size > 2)
-									dist_eval.featureParams[i].unknownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[2]);
+									dist_eval.featureAttribs[i].unknownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[2]);
 							}
 							else //treat as singular value
 							{
-								PopulateFeatureDeviationData(dist_eval.featureParams[i], en);
+								PopulateFeatureDeviationData(dist_eval.featureAttribs[i], en);
 							}
 						}
 						break;
@@ -171,15 +171,15 @@ namespace EntityQueryBuilder
 								auto &ocn = en->GetOrderedChildNodesReference();
 								size_t ocn_size = ocn.size();
 								if(ocn_size > 0)
-									dist_eval.featureParams[i].deviation = EvaluableNode::ToNumber(ocn[0]);
+									dist_eval.featureAttribs[i].deviation = EvaluableNode::ToNumber(ocn[0]);
 								if(ocn_size > 1)
-									dist_eval.featureParams[i].knownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[1]);
+									dist_eval.featureAttribs[i].knownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[1]);
 								if(ocn_size > 2)
-									dist_eval.featureParams[i].unknownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[2]);
+									dist_eval.featureAttribs[i].unknownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[2]);
 							}
 							else //treat as singular value
 							{
-								dist_eval.featureParams[i].deviation = EvaluableNode::ToNumber(en);
+								dist_eval.featureAttribs[i].deviation = EvaluableNode::ToNumber(en);
 							}
 						}
 						break;

@@ -286,7 +286,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 	double max_dist, StringInternPool::StringID radius_label,
 	BitArrayIntegerSet &enabled_indices, std::vector<DistanceReferencePair<size_t>> &distances_out)
 {
-	if(GetNumInsertedEntities() == 0 || dist_eval.featureParams.size() == 0)
+	if(GetNumInsertedEntities() == 0 || dist_eval.featureAttribs.size() == 0)
 		return;
 
 	auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
@@ -442,8 +442,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 	else
 	{
 		for(auto index : enabled_indices)
-			distances_out.emplace_back(GetDistanceBetween(dist_params,
-				target_values, target_value_types, target_column_indices, radius_column_index, index, true), index);
+			distances_out.emplace_back(GetDistanceBetween(dist_params, radius_column_index, index, true), index);
 	}
 }
 
@@ -452,7 +451,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 	size_t top_k, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
 	bool expand_to_first_nonzero_distance, std::vector<DistanceReferencePair<size_t>> &distances_out, size_t ignore_index, RandomStream rand_stream)
 {
-	if(top_k == 0 || GetNumInsertedEntities() == 0 || dist_eval.featureParams.size() == 0)
+	if(top_k == 0 || GetNumInsertedEntities() == 0 || dist_eval.featureAttribs.size() == 0)
 		return;
 
 	auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
@@ -492,8 +491,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 
 	//if num enabled indices < top_k, return sorted distances
 	if(GetNumInsertedEntities() <= top_k || possible_knn_indices.size() <= top_k)
-		return FindAllValidElementDistances(*dist_params,
-			target_column_indices, target_values, target_value_types, radius_column_index, possible_knn_indices, distances_out, rand_stream);
+		return FindAllValidElementDistances(r_dist_eval, radius_column_index, possible_knn_indices, distances_out, rand_stream);
 	
 	size_t end_index = possible_knn_indices.GetEndInteger();
 
@@ -625,8 +623,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 		if(!need_recompute_distances)
 			distance = dist_params->InverseExponentiateDistance(drp.distance, high_accuracy);
 		else
-			distance = GetDistanceBetween(*dist_params,
-				target_values, target_value_types, target_column_indices, radius_column_index, drp.reference, true);
+			distance = GetDistanceBetween(*dist_params, radius_column_index, drp.reference, true);
 
 		distances_out[sorted_results.Size() - 1] = DistanceReferencePair(distance, drp.reference);
 		sorted_results.Pop();
@@ -639,7 +636,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 	size_t top_k, StringInternPool::StringID radius_label, size_t ignore_entity_index,
 	BitArrayIntegerSet &enabled_indices, std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream)
 {
-	if(top_k == 0 || GetNumInsertedEntities() == 0 || dist_eval.featureParams.size() == 0)
+	if(top_k == 0 || GetNumInsertedEntities() == 0 || dist_eval.featureAttribs.size() == 0)
 		return;
 
 	auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
@@ -654,8 +651,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 
 	//if num enabled indices < top_k, return sorted distances
 	if(enabled_indices.size() <= top_k)
-		return FindAllValidElementDistances(dist_params,
-			target_column_indices, target_values, target_value_types, radius_column_index, enabled_indices, distances_out, rand_stream);
+		return FindAllValidElementDistances(r_dist_eval, radius_column_index, enabled_indices, distances_out, rand_stream);
 
 	//one past the maximum entity index to be considered
 	size_t end_index = enabled_indices.GetEndInteger();
@@ -828,8 +824,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 		if(!need_recompute_distances)
 			distance = dist_params.InverseExponentiateDistance(drp.distance, high_accuracy);
 		else
-			distance = GetDistanceBetween(dist_params,
-				target_values, target_value_types, target_column_indices, radius_column_index, drp.reference, high_accuracy);
+			distance = GetDistanceBetween(dist_params, radius_column_index, drp.reference, high_accuracy);
 
 		size_t output_index = sorted_results.Size() - 1;
 		distances_out[output_index] = DistanceReferencePair(distance, drp.reference);
@@ -1016,7 +1011,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	bool cyclic_feature = dist_params.IsFeatureCyclic(query_feature_index);
 	double cycle_length = std::numeric_limits<double>::infinity();
 	if(cyclic_feature)
-		cycle_length = dist_params.featureParams[query_feature_index].typeAttributes.maxCyclicDifference;
+		cycle_length = dist_params.featureAttribs[query_feature_index].typeAttributes.maxCyclicDifference;
 
 	auto [value_index, exact_index_found] = column->FindClosestValueIndexForValue(value.number, cycle_length);
 
@@ -1166,7 +1161,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			//going out n deviations is likely to only miss 0.5^n of the likely values of nearest neighbors
 			// so 0.5^5 should catch ~97% of the values
 			if(dist_params.DoesFeatureHaveDeviation(query_feature_index)
-				&& next_closest_diff < 5 * dist_params.featureParams[query_feature_index].deviation)
+				&& next_closest_diff < 5 * dist_params.featureAttribs[query_feature_index].deviation)
 				should_continue = true;
 
 			if(!should_continue)
@@ -1333,7 +1328,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 	size_t query_feature_index, EvaluableNodeImmediateValue position_value,
 	EvaluableNodeImmediateValueType position_value_type)
 {
-	auto &feature_attribs = r_dist_eval.distEvaluator->featureParams[query_feature_index];
+	auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 	auto &feature_type = feature_attribs.featureType;
 	auto &feature_data = r_dist_eval.featureData[query_feature_index];
 	auto &effective_feature_type = r_dist_eval.featureData[query_feature_index].effectiveFeatureType;

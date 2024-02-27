@@ -876,8 +876,7 @@ public:
 		}
 	}
 
-	//recomputes feature gaps and computes parametersAndBuffers.maxFeatureGaps
-	// returns the smallest of the maximum feature gaps among the features
+	//recomputes column indices for each feature as well as filling in unknowns
 	inline void PopulateColumnIndicesAndUnknownFeatureValueDifferences(
 		GeneralizedDistanceEvaluator &dist_eval, std::vector<size_t> &position_label_ids)
 	{
@@ -904,18 +903,6 @@ public:
 				if(FastIsNaN(feature_attribs.unknownToUnknownDistanceTerm.difference))
 					feature_attribs.unknownToUnknownDistanceTerm.difference = unknown_distance_term;
 			}
-		}
-	}
-
-	//recomputes feature gaps and computes parametersAndBuffers.maxFeatureGaps
-	// returns the smallest of the maximum feature gaps among the features
-	inline void PopulateUnknownFeatureValueTerms(GeneralizedDistanceEvaluator &dist_eval)
-	{
-		//TODO 18116: finish this to update based on value
-		for(size_t i = 0; i < dist_eval.featureParams.size(); i++)
-		{
-			dist_eval.ComputeAndStoreUncertaintyDistanceTerms(i,
-				EvaluableNodeImmediateValue::IsNullEquivalent(target_value_types[i], target_values[i]));
 		}
 	}
 

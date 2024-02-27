@@ -293,9 +293,9 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 	r_dist_eval.distEvaluator = &dist_eval;
 
 	//look up these data structures upfront for performance
-	PopulateTargetValuesAndLabelIndices(dist_params, position_label_ids, position_values, position_value_types);
+	PopulateTargetValuesAndLabelIndices(r_dist_eval, position_label_ids, position_values, position_value_types);
 	
-	PopulateUnknownFeatureValueTerms(dist_params);
+	PopulateUnknownFeatureValueTerms(r_dist_eval);
 
 	bool high_accuracy = dist_params.highAccuracyDistances;
 	double max_dist_exponentiated = dist_params.ExponentiateDifferenceTerm(max_dist, high_accuracy);
@@ -652,7 +652,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 	//look up these data structures upfront for performance
 	PopulateTargetValuesAndLabelIndices(r_dist_eval, position_label_ids, position_values, position_value_types);
 
-	PopulateUnknownFeatureValueTerms(dist_params);
+	PopulateUnknownFeatureValueTerms(r_dist_eval);
 
 	enabled_indices.erase(ignore_entity_index);
 

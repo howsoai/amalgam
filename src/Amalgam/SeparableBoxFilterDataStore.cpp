@@ -478,8 +478,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 		auto value = column_data->GetResolvedValue(value_type, matrix[matrix_index_base + column_index]);
 		value_type = column_data->GetResolvedValueType(value_type);
 
-		//TODO 18116: need to break this method back apart into a loop?
-		PopulateTargetValuesAndLabelIndices(r_dist_eval, i, target_values, target_value_types);
+		PopulateTargetValueAndLabelIndex(r_dist_eval, i, value, value_type);
 	}
 
 	PopulateUnknownFeatureValueTerms(*dist_params);
@@ -910,7 +909,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	size_t query_feature_index, size_t absolute_feature_index, BitArrayIntegerSet &enabled_indices)
 {
 	auto &column = columnData[absolute_feature_index];
-	auto effective_feature_type = dist_params.featureParams[query_feature_index].effectiveFeatureType;
+	auto effective_feature_type = r_dist_eval.featureData[query_feature_index].effectiveFeatureType;
 
 	bool value_is_null = EvaluableNodeImmediateValue::IsNullEquivalent(value_type, value);
 	//need to accumulate values for nulls if the value is a null
@@ -1342,73 +1341,66 @@ void SeparableBoxFilterDataStore::PopulatePotentialGoodMatches(FlexiblePriorityQ
 	}
 }
 
-void SeparableBoxFilterDataStore::PopulateTargetValuesAndLabelIndices(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
-	std::vector<size_t> &position_label_ids, std::vector<EvaluableNodeImmediateValue> &position_values,
-	std::vector<EvaluableNodeImmediateValueType> &position_value_types)
+void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+	size_t query_feature_index, EvaluableNodeImmediateValue position_value,
+	EvaluableNodeImmediateValueType position_value_type)
 {
-	for(size_t query_feature_index = 0; query_feature_index < position_label_ids.size(); query_feature_index++)
-	{
-		auto column = labelIdToColumnIndex.find(position_label_ids[query_feature_index]);
-		if(column == end(labelIdToColumnIndex))
-			continue;
+	auto &feature_params = r_dist_eval.distEvaluator->featureParams[query_feature_index];
+	auto &feature_type = feature_params.featureType;
+	auto &feature_data = r_dist_eval.featureData[query_feature_index];
+	auto &effective_feature_type = r_dist_eval.featureData[query_feature_index].effectiveFeatureType;
 
-		auto &feature_params = r_dist_eval.distEvaluator->featureParams[query_feature_index];
-		auto &feature_type = feature_params.featureType;
-		auto &feature_data = r_dist_eval.featureData[query_feature_index];
-		auto &effective_feature_type = r_dist_eval.featureData[query_feature_index].effectiveFeatureType;
+	if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC
+		|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
+		|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE
+		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING
+		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
+	{
+		feature_data.targetValue = position_value;
+		feature_data.targetValueType = position_value_type;
 
 		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC
 			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
-			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE
-			|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING
-			|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
+			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
+			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED;
+		else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING)
+			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING;
+		else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
+			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE;
+	}
+	else // feature_type is some form of continuous numeric
+	{
+		//looking for continuous; if not a number, so just put as nan
+		double position_value_numeric = (position_value_type == ENIVT_NUMBER
+			? position_value.number : std::numeric_limits<double>::quiet_NaN());
+
+		feature_data.targetValue = position_value_numeric;
+		feature_data.targetValueType = ENIVT_NUMBER;
+
+		//set up effective_feature_type
+		auto &column_data = columnData[feature_params.featureIndex];
+
+		//determine if all values are numeric
+		size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
+		bool all_values_numeric = (GetNumInsertedEntities() == num_values_stored_as_numbers);
+
+		if(column_data->numberValuesInterned)
 		{
-			feature_data.targetValue = position_values[query_feature_index];
-			feature_data.targetValueType = position_value_types[query_feature_index];
-
-			if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC
-				|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
-				|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
-				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED;
-			else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING)
-				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING;
-			else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
-				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE;
-		}
-		else // feature_type is some form of continuous numeric
-		{
-			//looking for continuous; if not a number, so just put as nan
-			double position_value_numeric = (position_value_types[query_feature_index] == ENIVT_NUMBER
-				? position_values[query_feature_index].number : std::numeric_limits<double>::quiet_NaN());
-
-			feature_data.targetValue = position_value_numeric;
-			feature_data.targetValueType = ENIVT_NUMBER;
-
-			//set up effective_feature_type
-			auto &column_data = columnData[feature_params.featureIndex];
-
-			//determine if all values are numeric
-			size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
-			bool all_values_numeric = (GetNumInsertedEntities() == num_values_stored_as_numbers);
-
-			if(column_data->numberValuesInterned)
-			{
-				if(all_values_numeric)
-					effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_VALUES_UNIVERSALLY_PRECOMPUTED;
-				else
-					effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED;
-
-				r_dist_eval.ComputeAndStoreInternedNumberValuesAndDistanceTerms(position_value_numeric, query_feature_index, &column_data->internedNumberIndexToNumberValue);
-			}
+			if(all_values_numeric)
+				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_VALUES_UNIVERSALLY_PRECOMPUTED;
 			else
-			{
-				if(all_values_numeric && feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC)
-					effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC;
-				else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC)
-					effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_CYCLIC;
-				else
-					effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC;
-			}
+				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED;
+
+			r_dist_eval.ComputeAndStoreInternedNumberValuesAndDistanceTerms(position_value_numeric, query_feature_index, &column_data->internedNumberIndexToNumberValue);
+		}
+		else
+		{
+			if(all_values_numeric && feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC)
+				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC;
+			else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC)
+				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_CYCLIC;
+			else
+				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC;
 		}
 	}
 }

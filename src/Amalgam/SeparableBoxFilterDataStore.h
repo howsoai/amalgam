@@ -857,10 +857,24 @@ protected:
 
 public:
 
-	//populates targetValues and targetColumnIndices given the selected target values for each value in corresponding position* parameters
+	//populates specified target value given the selected target values for each value in corresponding position* parameters
+	void PopulateTargetValueAndLabelIndex(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+		size_t query_feature_index, EvaluableNodeImmediateValue position_value,
+		EvaluableNodeImmediateValueType position_value_type);
+
+	//populates all target values given the selected target values for each value in corresponding position* parameters
 	void PopulateTargetValuesAndLabelIndices(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		std::vector<size_t> &position_label_ids, std::vector<EvaluableNodeImmediateValue> &position_values,
-		std::vector<EvaluableNodeImmediateValueType> &position_value_types);
+		std::vector<EvaluableNodeImmediateValueType> &position_value_types)
+	{
+		for(size_t query_feature_index = 0; query_feature_index < position_label_ids.size(); query_feature_index++)
+		{
+			auto column = labelIdToColumnIndex.find(position_label_ids[query_feature_index]);
+			if(column != end(labelIdToColumnIndex))
+				PopulateTargetValueAndLabelIndex(r_dist_eval, query_feature_index,
+					position_values[query_feature_index], position_value_types[query_feature_index]);
+		}
+	}
 
 	//recomputes feature gaps and computes parametersAndBuffers.maxFeatureGaps
 	// returns the smallest of the maximum feature gaps among the features

@@ -894,19 +894,29 @@ public:
 		}
 
 		feature_interns.internedDistanceTerms.resize(interned_values->size());
-		//first entry is known-unknown distance
-		if(compute_accurate)
-			feature_interns.internedDistanceTerms[0].SetValue(distEvaluator->ComputeDistanceTermKnownToUnknown(index, true), true);
-		if(compute_approximate)
-			feature_interns.internedDistanceTerms[0].SetValue(distEvaluator->ComputeDistanceTermKnownToUnknown(index, false), false);
 
-		for(size_t i = 1; i < feature_interns.internedDistanceTerms.size(); i++)
+		if(FastIsNaN(value))
 		{
-			double difference = value - interned_values->at(i);
-			if(compute_accurate)
-				feature_interns.internedDistanceTerms[i].SetValue(distEvaluator->ComputeDistanceTermContinuousNonNullRegular(difference, index, true), true);
-			if(compute_approximate)
-				feature_interns.internedDistanceTerms[i].SetValue(distEvaluator->ComputeDistanceTermContinuousNonNullRegular(difference, index, false), false);
+			//first entry is unknown-unknown distance
+			feature_interns.internedDistanceTerms[0] = distEvaluator->featureAttribs[index].unknownToUnknownDistanceTerm;
+			
+			auto k_to_unk = distEvaluator->featureAttribs[index].knownToUnknownDistanceTerm;
+			for(size_t i = 1; i < feature_interns.internedDistanceTerms.size(); i++)
+				feature_interns.internedDistanceTerms[i] = k_to_unk;
+		}
+		else
+		{
+			//first entry is known-unknown distance
+			feature_interns.internedDistanceTerms[0] = distEvaluator->featureAttribs[index].knownToUnknownDistanceTerm;
+
+			for(size_t i = 1; i < feature_interns.internedDistanceTerms.size(); i++)
+			{
+				double difference = value - interned_values->at(i);
+				if(compute_accurate)
+					feature_interns.internedDistanceTerms[i].SetValue(distEvaluator->ComputeDistanceTermContinuousNonNullRegular(difference, index, true), true);
+				if(compute_approximate)
+					feature_interns.internedDistanceTerms[i].SetValue(distEvaluator->ComputeDistanceTermContinuousNonNullRegular(difference, index, false), false);
+			}
 		}
 	}
 

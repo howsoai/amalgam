@@ -9,9 +9,6 @@
 #include <limits>
 #include <vector>
 
-//TODO 18116: update all places that use these classes
-//TODO 18116: attempt to templatize distance methods around accuracy to remove branches
-
 //If defined, will use the Laplace LK metric (default).  Otherwise will use Gaussian.
 #define DISTANCE_USE_LAPLACE_LK_METRIC true
 

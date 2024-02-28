@@ -1332,6 +1332,9 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 	auto &feature_data = r_dist_eval.featureData[query_feature_index];
 	auto &effective_feature_type = r_dist_eval.featureData[query_feature_index].effectiveFeatureType;
 
+	feature_data.internedNumberIndexToNumberValue = nullptr;
+	feature_data.internedDistanceTerms.clear();
+
 	if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE

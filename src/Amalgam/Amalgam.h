@@ -17,13 +17,15 @@
 extern "C"
 {
 	//Entity system permissions
-	enum EntitySystemPermissions : uint32_t
+	enum EntitySystemPermissions : uint64_t
 	{
-		NONE		= 0,
-		SYSTEM_CMD	= 1 << 0,
-		FILE_IO		= 1 << 1,
-		DISPLAY_IO	= 1 << 2,
-		INVALID		= 1 << 3 // max value, always last (1+prev), used for validation
+		NONE				= 0,
+		SYSTEM_CMD			= 1 << 0,
+		FILE_IO_READ		= 1 << 1,
+		FILE_IO_WRITE		= 1 << 2,
+		DISPLAY_IO_READ		= 1 << 3,
+		DISPLAY_IO_WRITE	= 1 << 4,
+		INVALID				= 1 << 5 // max value, always last (1+prev), used for validation
 	};
 
 	//status from LoadEntity

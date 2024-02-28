@@ -264,7 +264,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 			for(size_t i = 0; i < cond->positionLabels.size(); i++)
 			{
 				sbfds.IntersectEntitiesWithFeature(cond->positionLabels[i], matching_entities, true);
-				if(!cond->distEvaluator.featureAttribs[i].weight == 0.0)
+				if(cond->distEvaluator.featureAttribs[i].weight == 0.0)
 				{
 					cond->positionLabels.erase(cond->positionLabels.begin() + i);
 					cond->distEvaluator.featureAttribs.erase(begin(cond->distEvaluator.featureAttribs) + i);

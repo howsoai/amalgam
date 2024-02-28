@@ -83,14 +83,14 @@ namespace EntityQueryBuilder
 						switch(feature_type_id)
 						{
 						case ENBISI_nominal_numeric:			feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC;			break;
-						case ENBISI_nominal_string:				feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING;				break;
+						case ENBISI_nominal_string:				feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING;			break;
 						case ENBISI_nominal_code:				feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE;				break;
-						case ENBISI_continuous_numeric:			feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC;			break;
+						case ENBISI_continuous_numeric:			feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC;		break;
 						case ENBISI_continuous_numeric_cyclic:	feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC;	break;
 						case ENBISI_continuous_string:			feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING;			break;
 						case ENBISI_continuous_code:			feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE;			break;
 
-						default:								feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC;			break;
+						default:								feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC;		break;
 						}
 					}
 					dist_eval.featureAttribs[i].featureType = feature_type;

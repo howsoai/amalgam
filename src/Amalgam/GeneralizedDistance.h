@@ -253,7 +253,7 @@ public:
 		if(high_accuracy)
 			return std::pow(d, inversePValue);
 		else
-			return fastPowInverseP.FastPow(d);
+			return fastPowInverseP.FastPowNonZeroExpNonnegativeBase(d);
 	}
 
 	//computes the exponentiation of d to p
@@ -268,7 +268,7 @@ public:
 		if(high_accuracy)
 			return std::pow(d, pValue);
 		else
-			return fastPowP.FastPow(d);
+			return fastPowP.FastPowNonZeroExpNonnegativeBase(d);
 	}
 
 	//exponentiats and weights the difference term contextually based on pValue

@@ -156,6 +156,15 @@ public:
 		return FastPowNonZeroExpNonzeroBase(base);
 	}
 
+	//FastPow but when the exponent is known to be nonzero and the base is nonnegative
+	inline double FastPowNonZeroExpNonnegativeBase(double base)
+	{
+		if(base == 0.0)
+			return 0.0;
+
+		return FastPowNonZeroExpNonzeroBase(base);
+	}
+
 protected:
 
 	inline double FastPowNonZeroExpNonzeroBase(double base)

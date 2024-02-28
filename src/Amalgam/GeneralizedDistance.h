@@ -875,7 +875,6 @@ public:
 	{
 		bool compute_accurate = distEvaluator->NeedToPrecomputeAccurate();
 		bool compute_approximate = distEvaluator->NeedToPrecomputeApproximate();
-		auto &feature_attribs = distEvaluator->featureAttribs[index];
 
 		//make sure there's room for the interned index
 		if(featureData.size() <= index)
@@ -892,19 +891,20 @@ public:
 
 		feature_interns.internedDistanceTerms.resize(interned_values->size());
 
+		auto &feature_attribs = distEvaluator->featureAttribs[index];
 		if(FastIsNaN(value))
 		{
 			//first entry is unknown-unknown distance
-			feature_interns.internedDistanceTerms[0] = distEvaluator->featureAttribs[index].unknownToUnknownDistanceTerm;
+			feature_interns.internedDistanceTerms[0] = feature_attribs.unknownToUnknownDistanceTerm;
 			
-			auto k_to_unk = distEvaluator->featureAttribs[index].knownToUnknownDistanceTerm;
+			auto k_to_unk = feature_attribs.knownToUnknownDistanceTerm;
 			for(size_t i = 1; i < feature_interns.internedDistanceTerms.size(); i++)
 				feature_interns.internedDistanceTerms[i] = k_to_unk;
 		}
 		else
 		{
 			//first entry is known-unknown distance
-			feature_interns.internedDistanceTerms[0] = distEvaluator->featureAttribs[index].knownToUnknownDistanceTerm;
+			feature_interns.internedDistanceTerms[0] = feature_attribs.knownToUnknownDistanceTerm;
 
 			for(size_t i = 1; i < feature_interns.internedDistanceTerms.size(); i++)
 			{

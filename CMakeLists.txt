@@ -291,3 +291,4 @@ endif()
 
 include(create_tests)
 include(create_package)
+include(install_docs)

@@ -114,3 +114,6 @@ configure_file(
     NEWLINE_STYLE ${NEWLINE_STYLE}
     @ONLY
 )
+
+# Write version.json:
+file(WRITE "${CMAKE_BINARY_DIR}/version.json" "{\n  \"version\": \"${AMALGAM_VERSION_FULL}\"\n}")

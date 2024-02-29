@@ -361,10 +361,9 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 				{
 					while(highest_possibly_unfreed_node > lowest_known_unused_index)
 					{
-						auto &cur_node_ptr = nodes[highest_possibly_unfreed_node - 1];
+						auto &cur_node_ptr = nodes[--highest_possibly_unfreed_node];
 						if(cur_node_ptr != nullptr && cur_node_ptr->GetType() != ENT_DEALLOCATED)
 							cur_node_ptr->Invalidate();
-						--highest_possibly_unfreed_node;
 					}
 				} while(!all_nodes_finished);
 			}
@@ -814,7 +813,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(bool set_in_use, size_t e
 #ifdef MULTITHREAD_SUPPORT
 	size_t reference_count = nodesCurrentlyReferenced.size();
 	//heuristic to ensure there's enough to do to warrant the overhead of using multiple threads
-	if(reference_count > 1 && (estimated_nodes_in_use / reference_count) >= 3000)
+	if(reference_count > 1 && (estimated_nodes_in_use / reference_count) >= 1000)
 	{
 		nodesCompleted.clear();
 

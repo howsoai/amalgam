@@ -1029,32 +1029,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP_LABELS(EvaluableNode *
 
 		StringInternPool::StringID label_sid = EvaluableNode::ToStringIDWithReference(label_list_ocn[i]);
 
-		EvaluableNode *cur_value = retval_ocn[i];
-		if(!source.unique || cur_value == nullptr)
-		{
-			//make a copy of the node to set the label on
-			if(cur_value == nullptr)
-			{
-				cur_value = evaluableNodeManager->AllocNode(ENT_NULL);
-			}
-			else
-			{
-				cur_value = evaluableNodeManager->AllocNode(cur_value);
+		if(retval_ocn[i] == nullptr)
+			retval_ocn[i] = evaluableNodeManager->AllocNode(ENT_NULL);
+		else if(!source.unique)
+			retval_ocn[i] = evaluableNodeManager->AllocNode(retval_ocn[i]);
 
-				//if the node has child nodes, then can't guarantee uniqueness
-				if(cur_value->GetNumChildNodes() > 0)
-					retval.unique = false;
-			}
-
-			retval_ocn[i] = cur_value;
-		}
-
-		//if cur_value has appeared before as a child node, then it will have at least one other label
-		//if it has a label, it could have been a previous child node, therefore can't guarantee uniqueness
-		if(cur_value->GetNumLabels() > 0)
-			retval.unique = false;
-
-		cur_value->AppendLabelStringId(label_sid, true);
+		retval_ocn[i]->AppendLabelStringId(label_sid, true);
 	}
 
 	evaluableNodeManager->FreeNodeTreeIfPossible(label_list);

@@ -1,6 +1,9 @@
 # top-most EditorConfig file
 root = true
 
+[*]
+guidelines = 120 # https://marketplace.visualstudio.com/items?itemName=PaulHarrington.EditorGuidelinesPreview
+
 [*.{cpp,h,hpp,c,amlg}]
 indent_style = tab
 indent_size = 4

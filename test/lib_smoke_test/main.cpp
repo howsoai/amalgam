@@ -11,20 +11,28 @@
 
 int main(int argc, char* argv[])
 {
-	// Print version:
-	std::cout << std::string(GetVersionString()) << std::endl;
+	// Print info and clean-up memory:
+	auto version = GetVersionString();
+	auto type = GetConcurrencyTypeString();
+	std::cout << "version='" << std::string(version) << "', type='" << std::string(type) << std::endl;
+	DeleteString(version);
+	DeleteString(type);
 
 	// Load+execute+delete entity:
-	char handle[] = "1";
+	char handle[] = "tes";
 	char* file = (argc > 1) ? argv[1] : (char*)"test.amlg";
-	char write_log[] = "";
-	char print_log[] = "";
-	auto status = LoadEntity(handle, file, false, true, write_log, print_log);
+	auto status = LoadEntity(handle, file);
+
+	// Clean-up status strings:
+	DeleteString(status.message);
+	DeleteString(status.version);
+
+	// Process if loaded:
 	if(status.loaded)
 	{
-		char label[] = "test";
-		ExecuteEntity(handle, label);
+		ExecuteEntity(handle, "test");
 		DestroyEntity(handle);
+
 		return 0;
 	}
 

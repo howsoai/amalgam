@@ -85,13 +85,15 @@ extern "C"
 	// api methods
 	// ************************************
 
-	LoadEntityStatus LoadEntity(char *handle, char *path, bool persistent, bool load_contained_entities, char *write_log_filename, char *print_log_filename)
+	LoadEntityStatus LoadEntity(char *handle, char *path,
+		bool persistent, bool load_contained_entities, bool evaluate_entities,
+		char *write_log_filename, char *print_log_filename)
 	{
 		std::string h(handle);
 		std::string p(path);
 		std::string wlfname(write_log_filename);
 		std::string plfname(print_log_filename);
-		auto status = entint.LoadEntity(h, p, persistent, load_contained_entities, wlfname, plfname);
+		auto status = entint.LoadEntity(h, p, persistent, load_contained_entities, evaluate_entities, wlfname, plfname);
 		return ConvertLoadStatusToCStatus(status);
 	}
 
@@ -102,12 +104,13 @@ extern "C"
 		return ConvertLoadStatusToCStatus(status);
 	}
 
-	void StoreEntity(char *handle, char *path, bool update_persistence_location, bool store_contained_entities)
+	void StoreEntity(char *handle, char *path,
+		bool update_persistence_location, bool store_contained_entities, bool flatten_entities)
 	{
 		std::string h(handle);
 		std::string p(path);
 
-		entint.StoreEntity(h, p, update_persistence_location, store_contained_entities);
+		entint.StoreEntity(h, p, update_persistence_location, store_contained_entities, flatten_entities);
 	}
 
 	void SetJSONToLabel(char *handle, char *label, char *json)

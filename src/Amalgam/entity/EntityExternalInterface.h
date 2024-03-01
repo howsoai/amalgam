@@ -36,10 +36,13 @@ public:
 		std::string version;
 	};
 
-	LoadEntityStatus LoadEntity(std::string &handle, std::string &path, bool persistent, bool load_contained_entities,
-		std::string &write_log_filename, std::string &print_log_filename, std::string rand_seed = std::string(""));
+	LoadEntityStatus LoadEntity(std::string &handle, std::string &path,
+		bool persistent = false, bool load_contained_entities = true, bool evaluate_entities = true,
+		std::string &write_log_filename = std::string(""), std::string &print_log_filename = std::string(""),
+		std::string rand_seed = std::string(""));
 	LoadEntityStatus VerifyEntity(std::string &path);
-	void StoreEntity(std::string &handle, std::string &path, bool update_persistence_location, bool store_contained_entities);
+	void StoreEntity(std::string &handle, std::string &path,
+		bool update_persistence_location = false, bool store_contained_entities = true, bool flatten_entities = true);
 	void ExecuteEntity(std::string &handle, std::string &label);
 	void DestroyEntity(std::string &handle);
 	bool SetRandomSeed(std::string &handle, std::string &rand_seed);

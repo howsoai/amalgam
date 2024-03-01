@@ -29,7 +29,8 @@ void EntityExternalInterface::LoadEntityStatus::SetStatus(bool loaded_in, std::s
 	version = std::move(version_in);
 }
 
-EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(std::string &handle, std::string &path, bool persistent, bool load_contained_entities,
+EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(std::string &handle, std::string &path,
+	bool persistent, bool load_contained_entities, bool evaluate_entities,
 	std::string &write_log_filename, std::string &print_log_filename, std::string rand_seed)
 {
 	LoadEntityStatus status;
@@ -80,7 +81,8 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::VerifyEntity(
 	return EntityExternalInterface::LoadEntityStatus(false, "", version);
 }
 
-void EntityExternalInterface::StoreEntity(std::string &handle, std::string &path, bool update_persistence_location, bool store_contained_entities)
+void EntityExternalInterface::StoreEntity(std::string &handle, std::string &path,
+	bool update_persistence_location, bool store_contained_entities, bool flatten_entities)
 {
 	auto bundle = FindEntityBundle(handle);
 	if(bundle == nullptr)

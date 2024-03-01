@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
 	DeleteString(type);
 
 	// Load+execute+delete entity:
-	char handle[] = "tes";
+	char handle[] = "test";
 	char* file = (argc > 1) ? argv[1] : (char*)"test.amlg";
 	auto status = LoadEntity(handle, file);
 
@@ -30,7 +30,8 @@ int main(int argc, char* argv[])
 	// Process if loaded:
 	if(status.loaded)
 	{
-		ExecuteEntity(handle, "test");
+		char label[] = "test";
+		ExecuteEntity(handle, label);
 		DestroyEntity(handle);
 
 		return 0;

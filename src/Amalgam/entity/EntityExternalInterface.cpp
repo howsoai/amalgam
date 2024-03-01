@@ -31,7 +31,7 @@ void EntityExternalInterface::LoadEntityStatus::SetStatus(bool loaded_in, std::s
 
 EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(std::string &handle, std::string &path,
 	bool persistent, bool load_contained_entities, bool evaluate_entities,
-	std::string &write_log_filename, std::string &print_log_filename, std::string rand_seed)
+	std::string write_log_filename, std::string print_log_filename, std::string rand_seed)
 {
 	LoadEntityStatus status;
 

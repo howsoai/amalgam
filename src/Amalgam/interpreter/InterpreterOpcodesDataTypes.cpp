@@ -1016,16 +1016,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP_LABELS(EvaluableNode *
 
 	auto &label_list_ocn = label_list->GetOrderedChildNodesReference();
 
-	//copy over labels, but keep track if all are unique
+	//copy over labels to each child node, allocating a new child node if needed
 	auto &retval_ocn = retval->GetOrderedChildNodesReference();
 	for(size_t i = 0; i < retval_ocn.size(); i++)
 	{
-		//no more labels to add, so just reuse the existing nodes
+		//no more labels to add, so just leave the existing nodes
 		if(i >= label_list_ocn.size())
-		{
-			retval.unique = false;
 			break;
-		}
 
 		StringInternPool::StringID label_sid = EvaluableNode::ToStringIDWithReference(label_list_ocn[i]);
 
@@ -1038,10 +1035,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP_LABELS(EvaluableNode *
 	}
 
 	evaluableNodeManager->FreeNodeTreeIfPossible(label_list);
-
-	//if all child nodes are unique, then it doesn't need a cycle check
-	if(retval.unique)
-		retval->SetNeedCycleCheck(false);
 
 	return retval;
 }

@@ -30,7 +30,7 @@ extern "C"
 		char *path,
 		bool persistent = false,
 		bool load_contained_entities = true,
-		bool evaluate_entities = true,
+		bool evaluate_entities = false,
 		char *write_log_filename = nullptr,
 		char *print_log_filename = nullptr
 	);
@@ -44,7 +44,7 @@ extern "C"
 		char *path,
 		bool update_persistence_location = false,
 		bool store_contained_entities = true,
-		bool flatten_entities = true
+		bool flatten_entities = false
 	);
 
 	//executes label on handle

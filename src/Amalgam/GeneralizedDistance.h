@@ -93,7 +93,7 @@ public:
 	public:
 		inline FeatureAttributes()
 			: featureType(FDT_CONTINUOUS_NUMERIC),
-			featureIndex(std::numeric_limits<size_t>::max()), weight(1.0), deviation(0.0),
+			featureIndex(std::numeric_limits<size_t>::max()), weight(1.0), deviation(0.0), deviationReciprocal(0.0),
 			unknownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
 			knownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN())
 		{
@@ -127,6 +127,8 @@ public:
 
 		//uncertainty of each value
 		double deviation;
+		//cached reciprocal for speed
+		double deviationReciprocal;
 
 		//distance term to use if both values being compared are unknown
 		//the difference will be NaN if unknown
@@ -170,35 +172,53 @@ public:
 	static constexpr double s_surprisal_of_gaussian_approx = 1.128615528679644;
 
 	//computes the Lukaszyk–Karmowski metric deviation component for the minkowski distance equation given the feature difference and feature deviation
-	//assumes deviation is nonnegative
-	__forceinline double ComputeDeviationPart(const double diff, const double deviation, bool high_accuracy)
+	// and adds the deviation to diff. assumes deviation is nonnegative
+	//if surprisal_transform is true, then it will transform the result into surprisal space and remove the appropriate assumption of uncertainty
+	// for Laplace, the Laplace distribution has 1 nat worth of information, but additionally, there is a 50/50 chance that the
+	// difference is within the mean absolute error, yielding an overcounting of an additional 1/2 nat.  So the total reduction is 1.5 nats
+	__forceinline double ComputeDifferenceWithDeviation(double diff, size_t feature_index, bool surprisal_transform, bool high_accuracy)
 	{
+		auto &feature_attribs = featureAttribs[feature_index];
+		double deviation = feature_attribs.deviation;
 	#ifdef DISTANCE_USE_LAPLACE_LK_METRIC
 		if(high_accuracy)
-			return std::exp(-diff / deviation) * (3 * deviation + diff) / 2;
-		else
-			return FastExp(-diff / deviation) * (3 * deviation + diff) / 2;
+		{
+			diff += std::exp(-diff / deviation) * (3 * deviation + diff) * 0.5;
+			if(!surprisal_transform)
+				return diff;
+			else
+				return (diff / deviation) - s_surprisal_of_laplace;
+		}
+		else //!high_accuracy
+		{
+			//multiplying by the reciprocal is lower accuracy due to rounding differences but faster
+			double deviation_reciprocal = feature_attribs.deviationReciprocal;
+			diff += FastExp(-diff * deviation_reciprocal) * (3 * deviation + diff) * 0.5;
+			if(!surprisal_transform)
+				return diff;
+			else
+				return (diff * deviation_reciprocal) - s_surprisal_of_laplace_approx;
+		}
 	#else
 		const double term = diff / (2.0 * deviation); //diff / (2*sigma)
 		if(high_accuracy)
-			return s_two_over_sqrt_pi * deviation * std::exp(-term * term) - diff * std::erfc(term); //2*sigma*(e^(-1*(diff^2)/((2*simga)^2)))/sqrt(pi) - diff*erfc(diff/(2*sigma))
-		else
-			return s_two_over_sqrt_pi * deviation * FastExp(-term * term) - diff * std::erfc(term); //2*sigma*(e^(-1*(diff^2)/((2*simga)^2)))/sqrt(pi) - diff*erfc(diff/(2*sigma))
+		{
+			diff += s_two_over_sqrt_pi * deviation * std::exp(-term * term) - diff * std::erfc(term); //2*sigma*(e^(-1*(diff^2)/((2*simga)^2)))/sqrt(pi) - diff*erfc(diff/(2*sigma))
+			if(!surprisal_transform)
+				return diff;
+			else
+				return (diff / deviation) - s_surprisal_of_gaussian;
+		}
+		else //!high_accuracy
+		{
+			diff += s_two_over_sqrt_pi * deviation * FastExp(-term * term) - diff * std::erfc(term); //2*sigma*(e^(-1*(diff^2)/((2*simga)^2)))/sqrt(pi) - diff*erfc(diff/(2*sigma))
+			if(!surprisal_transform)
+				return diff;
+			else
+				//multiplying by the reciprocal is lower accuracy due to rounding differences but faster
+				return (diff * feature_attribs.deviationReciprocal) - s_surprisal_of_gaussian_approx;
+		}
 	#endif
-	}
-
-	//converts a difference with deviation to surprisal, and removes the appropriate assumption of uncertainty
-	//for Laplace, the Laplace distribution has 1 nat worth of information, but additionally, there is a 50/50 chance that the
-	//difference is within the mean absolute error, yielding an overcounting of an additional 1/2 nat.  So the total reduction is 1.5 nats
-	__forceinline double ComputeSurprisalFromDifferenceWithDeviation(const double difference_with_deviation, const double deviation, bool high_accuracy)
-	{
-	#ifdef DISTANCE_USE_LAPLACE_LK_METRIC
-		double base_surprisal = (high_accuracy ? s_surprisal_of_laplace : s_surprisal_of_laplace_approx);
-	#else
-		double base_surprisal = (high_accuracy ? s_surprisal_of_gaussian : s_surprisal_of_gaussian_approx);
-	#endif
-
-		return (difference_with_deviation / deviation) - base_surprisal;
 	}
 
 	//constrains the difference to the cycle length for cyclic distances
@@ -412,8 +432,8 @@ public:
 			return 0.0;
 
 		//apply deviations -- if computeSurprisal, will be caught above and always return 0.0
-		double diff = ComputeDeviationPart(0.0, featureAttribs[index].deviation, high_accuracy);
-
+		double diff = ComputeDifferenceWithDeviation(0.0, index, false, high_accuracy);
+		
 		//exponentiate and return with weight
 		return ExponentiateDifferenceTerm(diff, high_accuracy) * featureAttribs[index].weight;
 	}
@@ -430,13 +450,9 @@ public:
 
 		//apply deviations
 		if(DoesFeatureHaveDeviation(index))
-		{
-			diff += ComputeDeviationPart(diff, featureAttribs[index].deviation, high_accuracy);
-			if(computeSurprisal)
-				diff = ComputeSurprisalFromDifferenceWithDeviation(diff, featureAttribs[index].deviation, high_accuracy);
-		}
-
-		return diff;
+			return ComputeDifferenceWithDeviation(diff, index, computeSurprisal, high_accuracy);
+		else
+			return diff;
 	}
 
 	//computes the base of the difference between two values non-nominal (e.g., continuous) that isn't cyclic
@@ -447,13 +463,9 @@ public:
 
 		//apply deviations
 		if(DoesFeatureHaveDeviation(index))
-		{
-			diff += ComputeDeviationPart(diff, featureAttribs[index].deviation, high_accuracy);
-			if(computeSurprisal)
-				diff = ComputeSurprisalFromDifferenceWithDeviation(diff, featureAttribs[index].deviation, high_accuracy);
-		}
-
-		return diff;
+			return ComputeDifferenceWithDeviation(diff, index, computeSurprisal, high_accuracy);
+		else
+			return diff;
 	}
 
 	//computes the distance term for a non-nominal (e.g., continuous) for p non-zero and non-infinite with no nulls
@@ -772,6 +784,9 @@ protected:
 					feature_attribs.nominalNonMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, false), false);
 				}
 			}
+
+			if(DoesFeatureHaveDeviation(i))
+				feature_attribs.deviationReciprocal = 1.0 / feature_attribs.deviation;
 
 			//compute unknownToUnknownDistanceTerm
 			if(compute_accurate)

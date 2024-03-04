@@ -73,7 +73,7 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" S
     # TODO 1599: WASM support is experimental, these flags will be cleaned up and auto-generated where possible
     if(IS_WASM)
         string(APPEND CMAKE_CXX_FLAGS " -sMEMORY64=2 -Wno-experimental -DSIMDJSON_NO_PORTABILITY_WARNING")
-        string(APPEND CMAKE_EXE_LINKER_FLAGS " -sINVOKE_RUN=0 -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=65536000 -sMEMORY_GROWTH_GEOMETRIC_STEP=0.50 -sMODULARIZE=1 -sEXPORT_NAME=AmalgamRuntime -sENVIRONMENT=worker -sEXPORTED_RUNTIME_METHODS=cwrap,ccall,FS,setValue,getValue -sEXPORTED_FUNCTIONS=_malloc,_free,_LoadEntity,_StoreEntity,_ExecuteEntity,_ExecuteEntityJsonPtr,_DestroyEntity,_GetEntities,_SetRandomSeed,_SetJSONToLabel,_GetJSONPtrFromLabel,_SetSBFDataStoreEnabled,_IsSBFDataStoreEnabled,_GetVersionString,_SetMaxNumThreads,_GetMaxNumThreads,_GetConcurrencyTypeString,_DeleteString --preload-file /wasm/tzdata@/tzdata --preload-file /wasm/etc@/etc")
+        string(APPEND CMAKE_EXE_LINKER_FLAGS " -sINVOKE_RUN=0 -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=65536000 -sMEMORY_GROWTH_GEOMETRIC_STEP=0.50 -sMODULARIZE=1 -sEXPORT_NAME=AmalgamRuntime -sENVIRONMENT=worker -sEXPORTED_RUNTIME_METHODS=cwrap,ccall,FS,setValue,getValue,UTF8ToString -sEXPORTED_FUNCTIONS=_malloc,_free,_LoadEntity,_StoreEntity,_ExecuteEntity,_ExecuteEntityJsonPtr,_DestroyEntity,_GetEntities,_SetRandomSeed,_SetJSONToLabel,_GetJSONPtrFromLabel,_SetSBFDataStoreEnabled,_IsSBFDataStoreEnabled,_GetVersionString,_SetMaxNumThreads,_GetMaxNumThreads,_GetConcurrencyTypeString,_DeleteString --preload-file /wasm/tzdata@/tzdata --preload-file /wasm/etc@/etc")
     endif()
 
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")

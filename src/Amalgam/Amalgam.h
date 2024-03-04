@@ -28,7 +28,7 @@ extern "C"
 	AMALGAM_EXPORT LoadEntityStatus LoadEntity(char *handle, char *path, bool persistent, bool load_contained_entities, char *write_log_filename, char *print_log_filename);
 
 	//loads the entity specified into handle
-	//TODO 19512: legacy method to support wrappers that can't call LoadEntity returning a LoadEntityStatus yet
+	//TODO 19512: deprecated - legacy method to support wrappers that can't call LoadEntity returning a LoadEntityStatus yet
 	AMALGAM_EXPORT bool LoadEntityLegacy(char *handle, char *path, bool persistent, bool load_contained_entities, char *write_log_filename, char *print_log_filename);
 
 	//verifies the entity specified by path. Uses LoadEntityStatus to return any errors and version

@@ -1563,8 +1563,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, boo
 		if(index == nullptr)
 			continue;
 
-		//create the reference to handoff below
-		StringInternPool::StringID index_sid = EvaluableNode::ToStringIDWithReference(index);
+		//obtain the index, reusing the sid reference if possible
+		StringInternPool::StringID index_sid = string_intern_pool.EMPTY_STRING_ID;
+		if(index_list.unique)
+			index_sid = EvaluableNode::ToStringIDTakingReferenceAndClearing(index);
+		else
+			index_sid = EvaluableNode::ToStringIDWithReference(index);
 
 		//get value
 		EvaluableNode *value = nullptr;
@@ -1609,12 +1613,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, boo
 		}
 	}
 
+	//the index list has been converted to strings, so therefore can be freed
+	evaluableNodeManager->FreeNodeTreeIfPossible(index_list);
+
 	if(function != nullptr)
 	{
-		//the index list has been converted to strings, so therefore can be freed
-		evaluableNodeManager->FreeNodeTreeIfPossible(index_list);
-		//the values have likely been copied, so only the top node can be freed
-		evaluableNodeManager->FreeNodeIfPossible(value_list);
+		//the values have likely been copied, so only the top node can be freed as long as it doesn't point back to itself
+		if(!value_list.GetNeedCycleCheck())
+			evaluableNodeManager->FreeNodeIfPossible(value_list);
 	}
 
 	return result;

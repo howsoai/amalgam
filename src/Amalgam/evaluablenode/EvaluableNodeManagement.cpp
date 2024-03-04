@@ -339,7 +339,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 	firstUnusedNodeIndex = 0;
 
 	//set to contain everything that is referenced
-	MarkAllReferencedNodesInUse(true, original_num_nodes);
+	MarkAllReferencedNodesInUse(original_num_nodes);
 
 	//create a temporary variable for multithreading as to not use the atomic variable to slow things down
 	size_t first_unused_node_index_temp = 0;
@@ -361,10 +361,9 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 				{
 					while(highest_possibly_unfreed_node > lowest_known_unused_index)
 					{
-						auto &cur_node_ptr = nodes[highest_possibly_unfreed_node - 1];
+						auto &cur_node_ptr = nodes[--highest_possibly_unfreed_node];
 						if(cur_node_ptr != nullptr && cur_node_ptr->GetType() != ENT_DEALLOCATED)
 							cur_node_ptr->Invalidate();
-						--highest_possibly_unfreed_node;
 					}
 				} while(!all_nodes_finished);
 			}
@@ -809,47 +808,26 @@ void EvaluableNodeManager::NonCycleModifyLabelsForNodeTree(EvaluableNode *tree, 
 	}
 }
 
-void EvaluableNodeManager::MarkAllReferencedNodesInUse(bool set_in_use, size_t estimated_nodes_in_use)
+void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in_use)
 {
 #ifdef MULTITHREAD_SUPPORT
 	size_t reference_count = nodesCurrentlyReferenced.size();
 	//heuristic to ensure there's enough to do to warrant the overhead of using multiple threads
-	if(reference_count > 1 && (estimated_nodes_in_use / reference_count) >= 3000)
+	if(reference_count > 1 && (estimated_nodes_in_use / reference_count) >= 1000)
 	{
 		nodesCompleted.clear();
 
-		//expand out the loops for each set or clear because
-		//this is a time critical method
-		if(set_in_use)
+		for(auto &[enr, _] : nodesCurrentlyReferenced)
 		{
-			for(auto &[enr, _] : nodesCurrentlyReferenced)
-			{
-				if(enr == nullptr)
-					continue;
+			//some compilers are pedantic about the types passed into the lambda, so make a copy
+			EvaluableNode *en = enr;
 
-				//some compilers are pedantic about the types passed into the lambda, so make a copy
-				EvaluableNode *en = enr;
+			if(en != nullptr)
+			{
 				nodesCompleted.emplace_back(
 					Concurrency::urgentThreadPool.EnqueueTask(
 						[en]
-						{	SetAllReferencedNodesInUseRecurseConcurrent(en);	}
-					)
-				);
-			}
-		}
-		else
-		{
-			for(auto& [enr, _] : nodesCurrentlyReferenced)
-			{
-				if(enr == nullptr)
-					continue;
-
-				//some compilers are pedantic about the types passed into the lambda, so make a copy
-				EvaluableNode *en = enr;
-				nodesCompleted.emplace_back(
-					Concurrency::urgentThreadPool.EnqueueTask(
-						[en]
-						{	ClearAllReferencedNodesInUseRecurseConcurrent(en);	}
+						{	MarkAllReferencedNodesInUseRecurseConcurrent(en);	}
 					)
 				);
 			}
@@ -863,13 +841,14 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(bool set_in_use, size_t e
 		return;
 	}
 #endif
+
 	//check for null or insertion before calling recursion to minimize number of branches (slight performance improvement)
 	for(auto& [t, _] : nodesCurrentlyReferenced)
 	{
-		if(t == nullptr || t->GetKnownToBeInUse() == set_in_use)
+		if(t == nullptr || t->GetKnownToBeInUse())
 			continue;
 
-		MarkAllReferencedNodesInUseRecurse(t, set_in_use);
+		MarkAllReferencedNodesInUseRecurse(t);
 	}
 }
 
@@ -939,31 +918,31 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 	}
 }
 
-void EvaluableNodeManager::MarkAllReferencedNodesInUseRecurse(EvaluableNode *tree, bool set_in_use)
+void EvaluableNodeManager::MarkAllReferencedNodesInUseRecurse(EvaluableNode *tree)
 {
 	//if entering this function, then the node hasn't been marked yet
-	tree->SetKnownToBeInUse(set_in_use);
+	tree->SetKnownToBeInUse(true);
 
 	if(tree->IsAssociativeArray())
 	{
 		for(auto &[_, e] : tree->GetMappedChildNodesReference())
 		{
-			if(e != nullptr && e->GetKnownToBeInUse() != set_in_use)
-				MarkAllReferencedNodesInUseRecurse(e, set_in_use);
+			if(e != nullptr && !e->GetKnownToBeInUse())
+				MarkAllReferencedNodesInUseRecurse(e);
 		}
 	}
 	else if(!tree->IsImmediate())
 	{
 		for(auto &e : tree->GetOrderedChildNodesReference())
 		{
-			if(e != nullptr && e->GetKnownToBeInUse() != set_in_use)
-				MarkAllReferencedNodesInUseRecurse(e, set_in_use);
+			if(e != nullptr && !e->GetKnownToBeInUse())
+				MarkAllReferencedNodesInUseRecurse(e);
 		}
 	}	
 }
 
 #ifdef MULTITHREAD_SUPPORT
-void EvaluableNodeManager::SetAllReferencedNodesInUseRecurseConcurrent(EvaluableNode* tree)
+void EvaluableNodeManager::MarkAllReferencedNodesInUseRecurseConcurrent(EvaluableNode* tree)
 {
 	//if entering this function, then the node hasn't been marked yet
 	tree->SetKnownToBeInUseAtomic(true);
@@ -973,7 +952,7 @@ void EvaluableNodeManager::SetAllReferencedNodesInUseRecurseConcurrent(Evaluable
 		for(auto& [_, e] : tree->GetMappedChildNodesReference())
 		{
 			if(e != nullptr && !e->GetKnownToBeInUseAtomic())
-				SetAllReferencedNodesInUseRecurseConcurrent(e);
+				MarkAllReferencedNodesInUseRecurseConcurrent(e);
 		}
 	}
 	else if(!tree->IsImmediate())
@@ -981,30 +960,7 @@ void EvaluableNodeManager::SetAllReferencedNodesInUseRecurseConcurrent(Evaluable
 		for(auto& e : tree->GetOrderedChildNodesReference())
 		{
 			if(e != nullptr && !e->GetKnownToBeInUseAtomic())
-				SetAllReferencedNodesInUseRecurseConcurrent(e);
-		}
-	}
-}
-
-void EvaluableNodeManager::ClearAllReferencedNodesInUseRecurseConcurrent(EvaluableNode* tree)
-{
-	//if entering this function, then the node hasn't been marked yet
-	tree->SetKnownToBeInUseAtomic(false);
-
-	if(tree->IsAssociativeArray())
-	{
-		for(auto& [_, e] : tree->GetMappedChildNodesReference())
-		{
-			if(e != nullptr && e->GetKnownToBeInUseAtomic())
-				ClearAllReferencedNodesInUseRecurseConcurrent(e);
-		}
-	}
-	else if(!tree->IsImmediate())
-	{
-		for(auto& e : tree->GetOrderedChildNodesReference())
-		{
-			if(e != nullptr && e->GetKnownToBeInUseAtomic())
-				ClearAllReferencedNodesInUseRecurseConcurrent(e);
+				MarkAllReferencedNodesInUseRecurseConcurrent(e);
 		}
 	}
 }

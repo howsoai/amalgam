@@ -1112,7 +1112,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET(EvaluableNode *en, boo
 	}
 	
 	//else, return a list for everything retrieved via get
-	EvaluableNodeReference retrieved_list(evaluableNodeManager->AllocNode(ENT_LIST), false);
+	EvaluableNodeReference retrieved_list(evaluableNodeManager->AllocNode(ENT_LIST), source.unique);
 	retrieved_list->ReserveOrderedChildNodes(ocn_size - 1);
 	node_stack.PushEvaluableNode(retrieved_list);
 
@@ -1216,16 +1216,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_and_REPLACE(EvaluableN
 				node_stack.PushEvaluableNode(result);
 			}
 
-			//can't guarantee anything with replace
-			result.unique = false;
-			result.SetNeedCycleCheck(true);
+			result.UpdatePropertiesBasedOnAttachedNode(new_value);
 		}
 	}
 
-	//if not everything coming in was unique, then one of them could have been a duplicate
-	//therefore, if any part isn't unique then it cannot be guaranteed to be cycle free (even though it may be)
-	if(!result.unique)
-		result.SetNeedCycleCheck(true);
 	return result;
 }
 

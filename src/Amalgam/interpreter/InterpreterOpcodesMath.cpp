@@ -995,9 +995,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 	if(!EvaluableNode::IsNull(deviations_node))
 		node_stack.PushEvaluableNode(deviations_node);
 
-	GeneralizedDistance dist_params;
-
-	dist_params.pValue = InterpretNodeIntoNumberValue(ocn[4]);
+	GeneralizedDistanceEvaluator dist_eval;
+	dist_eval.pValue = InterpretNodeIntoNumberValue(ocn[4]);
 
 	//get location
 	auto location_node = InterpretNodeForImmediateUse(ocn[5]);
@@ -1034,9 +1033,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 		evaluableNodeManager->FreeNodeTreeIfPossible(value_names_node);
 	}
 
-	dist_params.computeSurprisal = false;
+	dist_eval.computeSurprisal = false;
 	if(ocn.size() > 8)
-		dist_params.computeSurprisal = InterpretNodeIntoBoolValue(ocn[8], false);
+		dist_eval.computeSurprisal = InterpretNodeIntoBoolValue(ocn[8], false);
 
 	//get the origin and destination
 	std::vector<EvaluableNodeImmediateValue> location;
@@ -1054,7 +1053,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 	origin.resize(num_elements, 0.0);
 	origin_types.resize(num_elements, ENIVT_NUMBER);
 
-	EntityQueryBuilder::PopulateDistanceFeatureParameters(dist_params, num_elements, value_names,
+	EntityQueryBuilder::PopulateDistanceFeatureParameters(dist_eval, num_elements, value_names,
 		weights_node, distance_types_node, attributes_node, deviations_node);
 
 	//done with all values
@@ -1063,31 +1062,29 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 	evaluableNodeManager->FreeNodeTreeIfPossible(attributes_node);
 	evaluableNodeManager->FreeNodeTreeIfPossible(deviations_node);
 
-	dist_params.highAccuracy = true;
-	dist_params.recomputeAccurateDistances = false;
-	dist_params.SetAndConstrainParams();
-
 	//convert unknown differences into unknown distance terms
 	for(size_t i = 0; i < num_elements; i++)
 	{
-		auto &feature_params = dist_params.featureParams[i];
+		auto &feature_attribs = dist_eval.featureAttribs[i];
 
 		//if one is nan and the other is not, the use the non-nan one for both
-		if(FastIsNaN(feature_params.unknownToUnknownDistanceTerm.difference))
+		if(FastIsNaN(feature_attribs.unknownToUnknownDistanceTerm.difference))
 		{
-			if(!FastIsNaN(feature_params.knownToUnknownDistanceTerm.difference))
-				feature_params.unknownToUnknownDistanceTerm.difference = feature_params.knownToUnknownDistanceTerm.difference;
+			if(!FastIsNaN(feature_attribs.knownToUnknownDistanceTerm.difference))
+				feature_attribs.unknownToUnknownDistanceTerm.difference = feature_attribs.knownToUnknownDistanceTerm.difference;
 			else
-				feature_params.unknownToUnknownDistanceTerm.difference = dist_params.GetMaximumDifference(i);
+				feature_attribs.unknownToUnknownDistanceTerm.difference = dist_eval.GetMaximumDifference(i);
 		}
 
-		if(FastIsNaN(feature_params.knownToUnknownDistanceTerm.difference))
-			feature_params.knownToUnknownDistanceTerm.difference = feature_params.unknownToUnknownDistanceTerm.difference;
-
-		dist_params.ComputeAndStoreUncertaintyDistanceTerms(i);
+		if(FastIsNaN(feature_attribs.knownToUnknownDistanceTerm.difference))
+			feature_attribs.knownToUnknownDistanceTerm.difference = feature_attribs.unknownToUnknownDistanceTerm.difference;
 	}
+
+	dist_eval.highAccuracyDistances = true;
+	dist_eval.recomputeAccurateDistances = false;
+	dist_eval.InitializeParametersAndFeatureParams();
 	
-	double value = dist_params.ComputeMinkowskiDistance(location, location_types, origin, origin_types, true);
+	double value = dist_eval.ComputeMinkowskiDistance(location, location_types, origin, origin_types, true);
 	return ReuseOrAllocOneOfReturn(location_node, origin_node, value, immediate_result);
 }
 

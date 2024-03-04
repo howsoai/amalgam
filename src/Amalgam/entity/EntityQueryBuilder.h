@@ -39,84 +39,84 @@ namespace EntityQueryBuilder
 			|| type == ENT_COMPUTE_ENTITY_KL_DIVERGENCES);
 	}
 
-	//populates deviation data for feature_params from deviation_node
-	inline void PopulateFeatureDeviationData(GeneralizedDistance::FeatureParams &feature_params, EvaluableNode *deviation_node)
+	//populates deviation data for feature_attribs from deviation_node
+	inline void PopulateFeatureDeviationData(GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs, EvaluableNode *deviation_node)
 	{
 		if(deviation_node == nullptr)
 		{
-			feature_params.deviation = 0.0;
+			feature_attribs.deviation = 0.0;
 			return;
 		}
 
-		feature_params.deviation = EvaluableNode::ToNumber(deviation_node, 0.0);
+		feature_attribs.deviation = EvaluableNode::ToNumber(deviation_node, 0.0);
 	}
 
-	//populates the features of dist_params based on either num_elements or element_names for each of the
+	//populates the features of dist_eval based on either num_elements or element_names for each of the
 	// four different attribute parameters based on its type (using num_elements if list or immediate, element_names if assoc)
-	inline void PopulateDistanceFeatureParameters(GeneralizedDistance &dist_params,
+	inline void PopulateDistanceFeatureParameters(GeneralizedDistanceEvaluator &dist_eval,
 		size_t num_elements, std::vector<StringInternPool::StringID> &element_names,
 		EvaluableNode *weights_node, EvaluableNode *distance_types_node, EvaluableNode *attributes_node, EvaluableNode *deviations_node)
 	{
-		dist_params.featureParams.resize(num_elements);
+		dist_eval.featureAttribs.resize(num_elements);
 
 		//get weights
 		EvaluableNode::ConvertChildNodesAndStoreValue(weights_node, element_names, num_elements,
-			[&dist_params](size_t i, bool found, EvaluableNode *en) {
-				if(i < dist_params.featureParams.size())
+			[&dist_eval](size_t i, bool found, EvaluableNode *en) {
+				if(i < dist_eval.featureAttribs.size())
 				{
 					if(found)
-						dist_params.featureParams[i].weight = EvaluableNode::ToNumber(en);
+						dist_eval.featureAttribs[i].weight = EvaluableNode::ToNumber(en);
 					else
-						dist_params.featureParams[i].weight = 1.0;
+						dist_eval.featureAttribs[i].weight = 1.0;
 				}
 			});
 
 		//get type
 		EvaluableNode::ConvertChildNodesAndStoreValue(distance_types_node, element_names, num_elements,
-			[&dist_params](size_t i, bool found, EvaluableNode *en) {
-				if(i < dist_params.featureParams.size())
+			[&dist_eval](size_t i, bool found, EvaluableNode *en) {
+				if(i < dist_eval.featureAttribs.size())
 				{
-					auto feature_type = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC;
+					auto feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC;
 					if(found)
 					{
 						StringInternPool::StringID feature_type_id = EvaluableNode::ToStringIDIfExists(en);
 						switch(feature_type_id)
 						{
-						case ENBISI_nominal_numeric:			feature_type = GeneralizedDistance::FDT_NOMINAL_NUMERIC;			break;
-						case ENBISI_nominal_string:				feature_type = GeneralizedDistance::FDT_NOMINAL_STRING;				break;
-						case ENBISI_nominal_code:				feature_type = GeneralizedDistance::FDT_NOMINAL_CODE;				break;
-						case ENBISI_continuous_numeric:			feature_type = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC;			break;
-						case ENBISI_continuous_numeric_cyclic:	feature_type = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC_CYCLIC;	break;
-						case ENBISI_continuous_string:			feature_type = GeneralizedDistance::FDT_CONTINUOUS_STRING;			break;
-						case ENBISI_continuous_code:			feature_type = GeneralizedDistance::FDT_CONTINUOUS_CODE;			break;
+						case ENBISI_nominal_numeric:			feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC;			break;
+						case ENBISI_nominal_string:				feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING;			break;
+						case ENBISI_nominal_code:				feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE;				break;
+						case ENBISI_continuous_numeric:			feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC;		break;
+						case ENBISI_continuous_numeric_cyclic:	feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC;	break;
+						case ENBISI_continuous_string:			feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING;			break;
+						case ENBISI_continuous_code:			feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE;			break;
 
-						default:								feature_type = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC;			break;
+						default:								feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC;		break;
 						}
 					}
-					dist_params.featureParams[i].featureType = feature_type;
+					dist_eval.featureAttribs[i].featureType = feature_type;
 				}
 			});
 
 		//get attributes
 		EvaluableNode::ConvertChildNodesAndStoreValue(attributes_node, element_names, num_elements,
-			[&dist_params](size_t i, bool found, EvaluableNode *en) {
-				if(i < dist_params.featureParams.size())
+			[&dist_eval](size_t i, bool found, EvaluableNode *en) {
+				if(i < dist_eval.featureAttribs.size())
 				{
 					//get attributes based on feature type
-					switch(dist_params.featureParams[i].featureType)
+					switch(dist_eval.featureAttribs[i].featureType)
 					{
-					case GeneralizedDistance::FDT_NOMINAL_NUMERIC:
-					case GeneralizedDistance::FDT_NOMINAL_STRING:
-					case GeneralizedDistance::FDT_NOMINAL_CODE:
+					case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC:
+					case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
+					case GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE:
 						if(found && !EvaluableNode::IsNull(en))
-							dist_params.featureParams[i].typeAttributes.nominalCount = EvaluableNode::ToNumber(en, 1);
+							dist_eval.featureAttribs[i].typeAttributes.nominalCount = EvaluableNode::ToNumber(en, 1);
 						break;
 
-					case GeneralizedDistance::FDT_CONTINUOUS_NUMERIC_CYCLIC:
+					case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC:
 						if(found && !EvaluableNode::IsNull(en))
-							dist_params.featureParams[i].typeAttributes.maxCyclicDifference = EvaluableNode::ToNumber(en);
+							dist_eval.featureAttribs[i].typeAttributes.maxCyclicDifference = EvaluableNode::ToNumber(en);
 						else //can't be cyclic without a range
-							dist_params.featureParams[i].featureType = GeneralizedDistance::FDT_CONTINUOUS_NUMERIC;
+							dist_eval.featureAttribs[i].featureType = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC;
 						break;
 
 					default:
@@ -127,19 +127,19 @@ namespace EntityQueryBuilder
 
 		//get deviations
 		EvaluableNode::ConvertChildNodesAndStoreValue(deviations_node, element_names, num_elements,
-			[&dist_params](size_t i, bool found, EvaluableNode *en) {
-				if(i < dist_params.featureParams.size())
+			[&dist_eval](size_t i, bool found, EvaluableNode *en) {
+				if(i < dist_eval.featureAttribs.size())
 				{
-					dist_params.featureParams[i].deviation = 0.0;
-					dist_params.featureParams[i].unknownToUnknownDistanceTerm.difference = std::numeric_limits<double>::quiet_NaN();
-					dist_params.featureParams[i].knownToUnknownDistanceTerm.difference = std::numeric_limits<double>::quiet_NaN();
+					dist_eval.featureAttribs[i].deviation = 0.0;
+					dist_eval.featureAttribs[i].unknownToUnknownDistanceTerm.difference = std::numeric_limits<double>::quiet_NaN();
+					dist_eval.featureAttribs[i].knownToUnknownDistanceTerm.difference = std::numeric_limits<double>::quiet_NaN();
 
 					//get deviations based on feature type
-					switch(dist_params.featureParams[i].featureType)
+					switch(dist_eval.featureAttribs[i].featureType)
 					{
-					case GeneralizedDistance::FDT_NOMINAL_NUMERIC:
-					case GeneralizedDistance::FDT_NOMINAL_STRING:
-					case GeneralizedDistance::FDT_NOMINAL_CODE:
+					case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC:
+					case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
+					case GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE:
 						if(found && !EvaluableNode::IsNull(en))
 						{
 							if(en->EvaluableNode::IsOrderedArray())
@@ -148,17 +148,17 @@ namespace EntityQueryBuilder
 								size_t ocn_size = ocn.size();
 
 								if(ocn_size > 0)
-									PopulateFeatureDeviationData(dist_params.featureParams[i], ocn[0]);
+									PopulateFeatureDeviationData(dist_eval.featureAttribs[i], ocn[0]);
 
 								if(ocn_size > 1)
-									dist_params.featureParams[i].knownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[1]);
+									dist_eval.featureAttribs[i].knownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[1]);
 
 								if(ocn_size > 2)
-									dist_params.featureParams[i].unknownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[2]);
+									dist_eval.featureAttribs[i].unknownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[2]);
 							}
 							else //treat as singular value
 							{
-								PopulateFeatureDeviationData(dist_params.featureParams[i], en);
+								PopulateFeatureDeviationData(dist_eval.featureAttribs[i], en);
 							}
 						}
 						break;
@@ -171,15 +171,15 @@ namespace EntityQueryBuilder
 								auto &ocn = en->GetOrderedChildNodesReference();
 								size_t ocn_size = ocn.size();
 								if(ocn_size > 0)
-									dist_params.featureParams[i].deviation = EvaluableNode::ToNumber(ocn[0]);
+									dist_eval.featureAttribs[i].deviation = EvaluableNode::ToNumber(ocn[0]);
 								if(ocn_size > 1)
-									dist_params.featureParams[i].knownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[1]);
+									dist_eval.featureAttribs[i].knownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[1]);
 								if(ocn_size > 2)
-									dist_params.featureParams[i].unknownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[2]);
+									dist_eval.featureAttribs[i].unknownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[2]);
 							}
 							else //treat as singular value
 							{
-								dist_params.featureParams[i].deviation = EvaluableNode::ToNumber(en);
+								dist_eval.featureAttribs[i].deviation = EvaluableNode::ToNumber(en);
 							}
 						}
 						break;
@@ -254,8 +254,7 @@ namespace EntityQueryBuilder
 		}
 
 		//select based on type for position or entities
-		bool use_entities_instead_of_position = DoesDistanceQueryUseEntitiesInsteadOfPosition(condition_type);
-		if(use_entities_instead_of_position)
+		if(DoesDistanceQueryUseEntitiesInsteadOfPosition(condition_type))
 		{
 			EvaluableNode *entities = ocn[POSITION];
 			if(EvaluableNode::IsOrderedArray(entities))
@@ -297,7 +296,6 @@ namespace EntityQueryBuilder
 		//else don't bother parsing this, it instead contains the cases to compute case conviction for
 
 		size_t num_elements = cur_condition->positionLabels.size();
-		auto &dist_params = cur_condition->distParams;
 
 		EvaluableNode *weights_node = nullptr;
 		if(ocn.size() > WEIGHTS)
@@ -315,31 +313,30 @@ namespace EntityQueryBuilder
 		if(ocn.size() > DEVIATIONS)
 			deviations_node = ocn[DEVIATIONS];
 
-		PopulateDistanceFeatureParameters(dist_params, num_elements, cur_condition->positionLabels,
+		PopulateDistanceFeatureParameters(cur_condition->distEvaluator, num_elements, cur_condition->positionLabels,
 			weights_node, distance_types_node, attributes_node, deviations_node);
 
 		//set minkowski parameter; default to 2.0 for Euclidian distance
-		double p_value = 2.0;
+		cur_condition->distEvaluator.pValue = 2.0;
 		if(ocn.size() > MINKOWSKI_PARAMETER)
 		{
-			p_value = EvaluableNode::ToNumber(ocn[MINKOWSKI_PARAMETER]);
+			cur_condition->distEvaluator.pValue = EvaluableNode::ToNumber(ocn[MINKOWSKI_PARAMETER]);
 
 			//make sure valid value, if not, fall back to 2
-			if(FastIsNaN(p_value) || p_value < 0)
-				p_value = 2;
+			if(FastIsNaN(cur_condition->distEvaluator.pValue) || cur_condition->distEvaluator.pValue < 0)
+				cur_condition->distEvaluator.pValue = 2;
 		}
-		cur_condition->distParams.pValue = p_value;
-
+		
 		//value transforms for whatever is measured as "distance"
 		cur_condition->distanceWeightExponent = 1.0;
-		cur_condition->distParams.computeSurprisal = false;
+		cur_condition->distEvaluator.computeSurprisal = false;
 		if(ocn.size() > DISTANCE_VALUE_TRANSFORM)
 		{
 			EvaluableNode *dwe_param = ocn[DISTANCE_VALUE_TRANSFORM];
 			if(!EvaluableNode::IsNull(dwe_param))
 			{
 				if(dwe_param->GetType() == ENT_STRING && dwe_param->GetStringIDReference() == ENBISI_surprisal_to_prob)
-					cur_condition->distParams.computeSurprisal = true;
+					cur_condition->distEvaluator.computeSurprisal = true;
 				else //try to convert to number
 					cur_condition->distanceWeightExponent = EvaluableNode::ToNumber(dwe_param, 1.0);
 			}
@@ -363,20 +360,20 @@ namespace EntityQueryBuilder
 			cur_condition->singleLabel = StringInternPool::NOT_A_STRING_ID;
 
 		//set numerical precision
-		cur_condition->distParams.highAccuracy = false;
-		cur_condition->distParams.recomputeAccurateDistances = true;
+		cur_condition->distEvaluator.highAccuracyDistances = false;
+		cur_condition->distEvaluator.recomputeAccurateDistances = true;
 		if(ocn.size() > NUMERICAL_PRECISION)
 		{
 			StringInternPool::StringID np_sid = EvaluableNode::ToStringIDIfExists(ocn[NUMERICAL_PRECISION]);
 			if(np_sid == ENBISI_precise)
 			{
-				cur_condition->distParams.highAccuracy = true;
-				cur_condition->distParams.recomputeAccurateDistances = false;
+				cur_condition->distEvaluator.highAccuracyDistances = true;
+				cur_condition->distEvaluator.recomputeAccurateDistances = false;
 			}
 			else if(np_sid == ENBISI_fast)
 			{
-				cur_condition->distParams.highAccuracy = false;
-				cur_condition->distParams.recomputeAccurateDistances = false;
+				cur_condition->distEvaluator.highAccuracyDistances = false;
+				cur_condition->distEvaluator.recomputeAccurateDistances = false;
 			}
 			//don't need to do anything for np_sid == ENBISI_recompute_precise because it's default
 		}
@@ -426,52 +423,6 @@ namespace EntityQueryBuilder
 							for(auto label_node : list_param->GetOrderedChildNodes())
 								cur_condition->additionalSortedListLabels.push_back(EvaluableNode::ToStringIDIfExists(label_node));
 						}
-					}
-				}
-			}
-		}
-
-		//check for any unused features -- that is, zero weight.  if there are any,
-		//then insert an existance query for them and remove from the distance query
-		bool any_unused_feature = false;
-		for(size_t i = 0; i < cur_condition->distParams.featureParams.size(); i++)
-		{
-			if(!cur_condition->distParams.IsFeatureEnabled(i))
-			{
-				any_unused_feature = true;
-				break;
-			}
-		}
-
-		if(any_unused_feature)
-		{
-			auto exist_condition_iter = conditions.emplace(end(conditions) - 1);
-			EntityQueryCondition *exist_condition = &(*exist_condition_iter);
-			//update pointer since it changed
-			cur_condition = &(conditions.back());
-
-			exist_condition->queryType = ENT_QUERY_EXISTS;
-
-			for(size_t i = 0; i < cur_condition->positionLabels.size();)
-			{
-				if(cur_condition->distParams.IsFeatureEnabled(i))
-				{
-					i++;
-				}
-				else
-				{
-					//add label to the exist_condition
-					auto label_sid = cur_condition->positionLabels[i];
-					exist_condition->existLabels.push_back(label_sid);
-
-					//remove label
-					cur_condition->distParams.featureParams.erase(begin(cur_condition->distParams.featureParams) + i);
-					cur_condition->positionLabels.erase(begin(cur_condition->positionLabels) + i);
-
-					if(!use_entities_instead_of_position)
-					{
-						cur_condition->valueToCompare.erase(begin(cur_condition->valueToCompare) + i);
-						cur_condition->valueTypes.erase(begin(cur_condition->valueTypes) + i);
 					}
 				}
 			}
@@ -826,9 +777,9 @@ namespace EntityQueryBuilder
 			{
 				cur_condition->singleLabel = label_sid;
 
-				cur_condition->distParams.pValue = 1;
+				cur_condition->distEvaluator.pValue = 1;
 				if(ocn.size() >= 2)
-					cur_condition->distParams.pValue = EvaluableNode::ToNumber(ocn[1]);
+					cur_condition->distEvaluator.pValue = EvaluableNode::ToNumber(ocn[1]);
 
 				cur_condition->weightLabel = StringInternPool::NOT_A_STRING_ID;
 				if(ocn.size() >= 3)

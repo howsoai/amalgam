@@ -68,7 +68,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 	//result contains the copied result which may incur replacements
 	EvaluableNode *result = EvaluableNodeTreeManipulation::MutateTree(this, evaluableNodeManager, to_mutate, mutation_rate, mtw_exists ? &mutation_type_weights : nullptr, ow_exists ? &opcode_weights : nullptr);
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
-	return EvaluableNodeReference(result, false);
+	return EvaluableNodeReference(result, true);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY(EvaluableNode *en, bool immediate_result)

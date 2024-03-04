@@ -819,8 +819,7 @@ protected:
 	static void NonCycleModifyLabelsForNodeTree(EvaluableNode *tree, EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE);
 
 	//sets all referenced nodes that are in use as such
-	// if set_in_use is true, then it will set the value, if false, it will clear the value
-	void MarkAllReferencedNodesInUse(bool set_in_use, size_t estimated_nodes_in_use);
+	void MarkAllReferencedNodesInUse(size_t estimated_nodes_in_use);
 
 	//computes whether the code is cycle free and idempotent and updates all nodes appropriately
 	// returns flags for whether cycle free and idempotent
@@ -830,12 +829,10 @@ protected:
 	//sets or clears all referenced nodes' in use flags
 	//if set_in_use is true, then it will set the value, if false, it will clear the value
 	//note that tree cannot be nullptr and it should already be inserted into the references prior to calling
-	static void MarkAllReferencedNodesInUseRecurse(EvaluableNode *tree, bool set_in_use);
+	static void MarkAllReferencedNodesInUseRecurse(EvaluableNode *tree);
 
 #ifdef MULTITHREAD_SUPPORT
-	static void SetAllReferencedNodesInUseRecurseConcurrent(EvaluableNode* tree);
-
-	static void ClearAllReferencedNodesInUseRecurseConcurrent(EvaluableNode* tree);
+	static void MarkAllReferencedNodesInUseRecurseConcurrent(EvaluableNode* tree);
 #endif
 
 	static void ValidateEvaluableNodeTreeMemoryIntegrityRecurse(EvaluableNode *en, EvaluableNode::ReferenceSetType &checked);

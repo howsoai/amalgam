@@ -680,51 +680,34 @@ public:
 
 	//returns the maximum difference between value and any other value for this column
 	//if empty, will return infinity
-	inline double GetMaxDifferenceTermFromValue(GeneralizedDistance::FeatureParams &feature_params, EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue &value)
+	inline double GetMaxDifferenceTerm(GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs)
 	{
-		switch(feature_params.featureType)
+		switch(feature_attribs.featureType)
 		{
-		case GeneralizedDistance::FDT_NOMINAL_NUMERIC:
-		case GeneralizedDistance::FDT_NOMINAL_STRING:
-		case GeneralizedDistance::FDT_NOMINAL_CODE:
+		case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC:
+		case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
+		case GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE:
 			return 1.0;
 
-		case GeneralizedDistance::FDT_CONTINUOUS_NUMERIC:
+		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC:
 			if(sortedNumberValueEntries.size() <= 1)
 				return 0.0;
 
 			return sortedNumberValueEntries.back()->value.number - sortedNumberValueEntries[0]->value.number;
 
-		case GeneralizedDistance::FDT_CONTINUOUS_NUMERIC_CYCLIC:
+		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC:
 			//maximum is the other side of the cycle
-			return feature_params.typeAttributes.maxCyclicDifference / 2;
+			return feature_attribs.typeAttributes.maxCyclicDifference / 2;
 
-		case GeneralizedDistance::FDT_CONTINUOUS_STRING:
+		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING:
 			//the max difference is the worst case edit distance, of removing all the characters
-			// and adding all the new ones
-			if(value_type == ENIVT_STRING_ID)
-			{
-				auto s = string_intern_pool.GetStringFromID(value.stringID);
-				return static_cast<double>(longestStringLength + StringManipulation::GetNumUTF8Characters(s));
-			}
-			else if(value_type == ENIVT_NULL)
-			{
-				//if null, then could potentially have to remove a string, then add a new one, so counts as double
-				return static_cast<double>(longestStringLength * 2);
-			}
-			else //not a string, so just count distance of adding the string plus one to remove the non-string value
-			{
-				return static_cast<double>(longestStringLength + 1);
-			}
+			// and then adding back in another of equal size but different
+			return static_cast<double>(longestStringLength * 2);
 
-		case GeneralizedDistance::FDT_CONTINUOUS_CODE:
-			if(value_type == ENIVT_CODE)
-				return static_cast<double>(largestCodeSize + EvaluableNode::GetDeepSize(value.code));
-			else if(value_type == ENIVT_NULL)
-				//if null, then could potentially have to remove a the code, then add a all new, so counts as double
-				return static_cast<double>(largestCodeSize * 2);
-			else //all other immediate types have a size of 1
-				return static_cast<double>(largestCodeSize + 1);
+		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE:
+			//the max difference is the worst case edit distance, of removing all the characters
+			// and then adding back in another of equal size but different
+			return static_cast<double>(largestCodeSize * 2);
 
 		default:
 			return std::numeric_limits<double>::infinity();

@@ -95,6 +95,11 @@ extern "C"
 		return ConvertLoadStatusToCStatus(status);
 	}
 
+	bool LoadEntityLegacy(char *handle, char *path, bool persistent, bool load_contained_entities, char *write_log_filename, char *print_log_filename)
+	{
+		return LoadEntity(handle, path, persistent, load_contained_entities, write_log_filename, print_log_filename).loaded;
+	}
+
 	LoadEntityStatus VerifyEntity(char *path)
 	{
 		std::string p(path);

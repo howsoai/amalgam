@@ -98,12 +98,11 @@ extern "C"
 	bool LoadEntityLegacy(char *handle, char *path, bool persistent, bool load_contained_entities, char *write_log_filename, char *print_log_filename)
 	{
 		auto status = LoadEntity(handle, path, persistent, load_contained_entities, write_log_filename, print_log_filename);
-		auto loaded = status.loaded;
 
 		delete[] status.message;
 		delete[] status.version;
 
-		return loaded;
+		return status.loaded;
 	}
 
 	LoadEntityStatus VerifyEntity(char *path)

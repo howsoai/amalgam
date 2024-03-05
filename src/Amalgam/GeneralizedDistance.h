@@ -130,6 +130,22 @@ public:
 		//cached reciprocal for speed
 		double deviationReciprocal;
 
+		//contains the deviations for a given nominal value for each other nominal value
+		template<typename NominalValueType>
+		class NominalDeviationData
+		{
+		public:
+			FastHashMap<NominalValueType, DistanceTermsWithDifference> deviations;
+			DistanceTermsWithDifference defaultDeviation;
+			DistanceTermsWithDifference unknownDeviation;
+		};
+
+		//sparse deviation matrix if the nominal is a string
+		FastHashMap<StringInternPool::StringID, NominalDeviationData<StringInternPool::StringID>> nominalStringSparseDeviationMatrix;
+
+		//sparse deviation matrix if the nominal is a number
+		FastHashMap<double, NominalDeviationData<double>> nominalNumberSparseDeviationMatrix;
+
 		//distance term to use if both values being compared are unknown
 		//the difference will be NaN if unknown
 		DistanceTermsWithDifference unknownToUnknownDistanceTerm;
@@ -286,6 +302,27 @@ public:
 			return std::pow(d, pValue);
 		else
 			return fastPowP.FastPowNonZeroExpNonnegativeBase(d);
+	}
+
+	//returns the distance term given that it is nominal
+	__forceinline double ComputeDistanceTermNominal(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
+		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)
+	{
+		double diff = ComputeDifference(a, b, a_type, b_type, featureAttribs[index].featureType);
+		if(FastIsNaN(diff))
+			return LookupNullDistanceTerm(a, b, a_type, b_type, index, high_accuracy);
+
+		// TODO effective featureType vs effectiveFeatureType, was effective
+		if(featureAttribs[index].effectiveFeatureType == RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED)
+			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index, high_accuracy)
+					: ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index, high_accuracy);
+		
+		//TODO 17631: implement other paths depending on what is populated
+			
+		if(diff == 0.0)
+			return ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
+		else
+			return ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
 	}
 
 	//exponentiats and weights the difference term contextually based on pValue
@@ -515,14 +552,13 @@ public:
 	__forceinline double ComputeDistanceTermP0(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
 		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)
 	{
+		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
+		if(IsFeatureNominal(index))
+			return ComputeDistanceTermNominal(a, b, a_type, b_type, index, high_accuracy);
+
 		double diff = ComputeDifference(a, b, a_type, b_type, featureAttribs[index].featureType);
 		if(FastIsNaN(diff))
 			return LookupNullDistanceTerm(a, b, a_type, b_type, index, high_accuracy);
-
-		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
-		if(IsFeatureNominal(index))
-			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index, high_accuracy)
-			: ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index, high_accuracy);
 
 		diff = ComputeDifferenceTermBaseContinuous(diff, index, high_accuracy);
 
@@ -533,14 +569,13 @@ public:
 	__forceinline double ComputeDistanceTermPInf(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
 		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)
 	{
+		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
+		if(IsFeatureNominal(index))
+			return ComputeDistanceTermNominal(a, b, a_type, b_type, index, high_accuracy);
+
 		double diff = ComputeDifference(a, b, a_type, b_type, featureAttribs[index].featureType);
 		if(FastIsNaN(diff))
 			return LookupNullDistanceTerm(a, b, a_type, b_type, index, high_accuracy);
-
-		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
-		if(IsFeatureNominal(index))
-			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index, high_accuracy)
-			: ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index, high_accuracy);
 
 		diff = ComputeDifferenceTermBaseContinuous(diff, index, high_accuracy);
 
@@ -583,14 +618,13 @@ public:
 	__forceinline double ComputeDistanceTermRegular(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
 		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)
 	{
+		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
+		if(IsFeatureNominal(index))
+			return ComputeDistanceTermNominal(a, b, a_type, b_type, index, high_accuracy);
+
 		double diff = ComputeDifference(a, b, a_type, b_type, featureAttribs[index].featureType);
 		if(FastIsNaN(diff))
 			return LookupNullDistanceTerm(a, b, a_type, b_type, index, high_accuracy);
-
-		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
-		if(IsFeatureNominal(index))
-			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index, high_accuracy)
-			: ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index, high_accuracy);
 
 		return ComputeDistanceTermContinuousNonNullRegular(diff, index, high_accuracy);
 	}
@@ -756,6 +790,7 @@ protected:
 	//computes and caches symmetric nominal and uncertainty distance terms
 	inline void ComputeAndStoreCommonDistanceTerms()
 	{
+		//TODO 17631: change this to either only apply to appropriate nominals OR change it be called explicitly and called by SBFDS
 		bool compute_accurate = NeedToPrecomputeAccurate();
 		bool compute_approximate = NeedToPrecomputeApproximate();
 
@@ -871,6 +906,10 @@ public:
 		EFDT_CONTINUOUS_NUMERIC_CYCLIC,
 		//continuous precomputed (cyclic or not), may contain nonnumeric data
 		EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED,
+		//nominal compared to a string value where nominals may not be symmetric
+		EFDT_NOMINAL_STRING,
+		//nominal compared to a number value where nominals may not be symmetric
+		EFDT_NOMINAL_NUMBER,
 		//edit distance between strings
 		EFDT_CONTINUOUS_STRING,
 		//continuous measures of the number of nodes different between two sets of code

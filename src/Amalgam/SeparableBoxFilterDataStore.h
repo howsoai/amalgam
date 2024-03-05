@@ -768,7 +768,9 @@ protected:
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
 		}
 
-		default: //RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING or RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE
+		default:
+			//RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_STRING or RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMBER
+			// or RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING or RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 			auto &column_data = columnData[feature_attribs.featureIndex];

@@ -42,12 +42,19 @@ namespace EntityQueryBuilder
 	//populates deviation data for feature_attribs from deviation_node
 	inline void PopulateFeatureDeviationData(GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs, EvaluableNode *deviation_node)
 	{
+		feature_attribs.nominalNumberSparseDeviationMatrix.clear();
+		feature_attribs.nominalStringSparseDeviationMatrix.clear();
+
 		if(deviation_node == nullptr)
 		{
 			feature_attribs.deviation = 0.0;
 			return;
 		}
 
+		//TODO 17631: figure out how to handle strings vs numbers and store into appropriate sparse deviation matrix
+		//TODO 17631: update language.js
+		//TODO 17631: add sparse deviation matrix to unit tests
+		//TODO 17631: populate nominalSparseDeviationMatrix here as appropriate
 		feature_attribs.deviation = EvaluableNode::ToNumber(deviation_node, 0.0);
 	}
 

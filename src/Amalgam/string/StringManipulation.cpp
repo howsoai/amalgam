@@ -54,7 +54,7 @@ std::string StringManipulation::NumberToString(size_t value)
 	return std::string(&buffer[0]);
 }
 
-std::string StringManipulation::RemoveFirstWord(std::string &str)
+std::string StringManipulation::RemoveFirstWord(std::string &str, bool strip_word, char char_to_strip)
 {
 	std::string first_token;
 	size_t spacepos = str.find(' ');
@@ -68,6 +68,16 @@ std::string StringManipulation::RemoveFirstWord(std::string &str)
 		first_token = str.substr(0, spacepos);
 		str = str.substr(spacepos + 1);
 	}
+
+	if(strip_word && !first_token.empty())
+	{
+		if(first_token.back() == char_to_strip)
+			first_token.erase(first_token.size() - 1);
+
+		if(!first_token.empty() && first_token.front() == char_to_strip)
+			first_token.erase(0, 1);
+	}
+
 	return first_token;
 }
 

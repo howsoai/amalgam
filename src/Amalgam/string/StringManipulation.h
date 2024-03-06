@@ -13,9 +13,11 @@ namespace StringManipulation
 	std::string NumberToString(size_t value);
 
 	//removes the first word from str and return the removed word
-	std::string RemoveFirstWord(std::string &str);
+	//if strip_word true, remove char_to_strip from beginning and end of returned word
+	std::string RemoveFirstWord(std::string &str, bool strip_word = true, char char_to_strip = '\"');
 
-	std::vector<std::string> Split(std::string &s, char delim);
+	//splits a string by given delimiter
+	std::vector<std::string> Split(std::string &s, char delim = ' ');
 
 	//returns true if the character in the string s starting at position is whitespace
 	inline bool IsUtf8Whitespace(std::string &s, size_t position)

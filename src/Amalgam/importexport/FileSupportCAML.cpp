@@ -89,6 +89,10 @@ std::tuple<std::string, std::string, bool> FileSupportCAML::ReadHeader(std::ifst
 		if(!success)
 			return std::make_tuple(error_message, version, false);
 	}
+	else
+	{
+		return std::make_tuple("CAML does not contain a valid header", "", false);
+	}
 
 	return std::make_tuple("", "", true);
 }

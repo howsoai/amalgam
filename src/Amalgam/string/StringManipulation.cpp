@@ -59,7 +59,8 @@ std::string StringManipulation::RemoveFirstWord(std::string &str, bool strip_wor
 	std::string first_token;
 
 	// if str is wrapped in char_to_strip's, remove chars between char_to_strip's (typically double quotes)
-	if(strip_word && (str[0] == char_to_strip)) {
+	if(strip_word && (str[0] == char_to_strip))
+	{
 		size_t end_char_to_strip_idx;
 		end_char_to_strip_idx = str.find(char_to_strip, 1);
 		// the ending char_to_strip must not be escaped

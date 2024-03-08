@@ -1,4 +1,4 @@
-//project headers: 
+//project headers:
 #include "StringManipulation.h"
 
 #include "FastMath.h"
@@ -57,6 +57,31 @@ std::string StringManipulation::NumberToString(size_t value)
 std::string StringManipulation::RemoveFirstWord(std::string &str, bool strip_word, char char_to_strip)
 {
 	std::string first_token;
+
+	// if str is wrapped in char_to_strip, remove chars between char_to_strips (typically double quotes)
+	if(strip_word && (str[0] == char_to_strip)) {
+		size_t end_char_to_strip_idx;
+
+		end_char_to_strip_idx = str.find(char_to_strip, 1);
+		// end_char_to_strip must not be escaped
+		while(str[end_char_to_strip_idx-1] == '\\') {
+			str.erase(end_char_to_strip_idx-1, 1); //remove the escape chars
+			end_char_to_strip_idx = str.find(char_to_strip, end_char_to_strip_idx+1);
+		}
+
+		// chars between first and last char_to_strips make up the token
+		first_token = str.substr(1, end_char_to_strip_idx-1);
+
+		// make sure remaining substring doesn't have preceding spaces
+		str = str.substr(end_char_to_strip_idx+1);
+		while(str[0] == ' ') {
+			str = str.substr(1); //theres probably a much better method than this
+		}
+
+		return first_token;
+	}
+
+	// otherwise, split based on whitespace
 	size_t spacepos = str.find(' ');
 	if(spacepos == std::string::npos)
 	{
@@ -68,16 +93,6 @@ std::string StringManipulation::RemoveFirstWord(std::string &str, bool strip_wor
 		first_token = str.substr(0, spacepos);
 		str = str.substr(spacepos + 1);
 	}
-
-	if(strip_word && !first_token.empty())
-	{
-		if(first_token.back() == char_to_strip)
-			first_token.erase(first_token.size() - 1);
-
-		if(!first_token.empty() && first_token.front() == char_to_strip)
-			first_token.erase(0, 1);
-	}
-
 	return first_token;
 }
 

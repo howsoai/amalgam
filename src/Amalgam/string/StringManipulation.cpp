@@ -64,15 +64,15 @@ std::string StringManipulation::RemoveFirstWord(std::string &str, bool strip_wor
 		size_t end_char_to_strip_idx;
 		end_char_to_strip_idx = str.find(char_to_strip, 1);
 		// the ending char_to_strip must not be escaped
-		while(str[end_char_to_strip_idx-1] == '\\') {
-			str.erase(end_char_to_strip_idx-1, 1); //remove the escape chars
-			end_char_to_strip_idx = str.find(char_to_strip, end_char_to_strip_idx+1);
+		while(str[end_char_to_strip_idx - 1] == '\\') {
+			str.erase(end_char_to_strip_idx - 1, 1); //remove the escape chars
+			end_char_to_strip_idx = str.find(char_to_strip, end_char_to_strip_idx + 1);
 		}
 
 		// chars between first and last char_to_strips make up the token
-		first_token = str.substr(1, end_char_to_strip_idx-1);
+		first_token = str.substr(1, end_char_to_strip_idx - 1);
 		// ensure remaining substring doesn't contain preceding spaces
-		str = str.substr(end_char_to_strip_idx+1);
+		str = str.substr(end_char_to_strip_idx + 1);
 		while(str[0] == ' ') {
 			str = str.substr(1); // What's the best way to do this better?
 		}

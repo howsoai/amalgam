@@ -67,6 +67,14 @@ std::string StringManipulation::RemoveFirstWord(std::string &str, bool strip_wor
 	{
 		size_t end_char_to_strip_idx;
 		end_char_to_strip_idx = str.find(char_to_strip, 1);
+		//if no end char_to_strip return rest of str past initial char_to_strp
+		if(end_char_to_strip_idx == std::string::npos)
+		{
+			first_token = str.substr(1);
+			str = "";
+			return first_token;
+		}
+
 		//the ending char_to_strip must not be escaped
 		if(end_char_to_strip_idx != 0)
 		{

@@ -194,14 +194,14 @@ public:
 	//assumes there is at least one construction stack entry
 	__forceinline void SetTopCurrentValueInConstructionStack(EvaluableNode *value)
 	{
-		constructionStackNodes->at(constructionStackNodes->size() + constructionStackOffsetCurrentValue) = value;
+		(*constructionStackNodes)[constructionStackNodes->size() + constructionStackOffsetCurrentValue] = value;
 	}
 
 	//sets the previous_result node for the top reference on the construction stack
 	//assumes there is at least one construction stack entry
 	__forceinline void SetTopPreviousResultInConstructionStack(EvaluableNodeReference previous_result)
 	{
-		constructionStackNodes->at(constructionStackNodes->size() + constructionStackOffsetPreviousResult) = previous_result;
+		(*constructionStackNodes)[constructionStackNodes->size() + constructionStackOffsetPreviousResult] = previous_result;
 		constructionStackIndicesAndUniqueness.back().unique = previous_result.unique;
 	}
 
@@ -215,7 +215,7 @@ public:
 		//clear previous result
 		size_t prev_result_offset = constructionStackNodes->size()
 						- (constructionStackOffsetStride * depth) + constructionStackOffsetPreviousResult;
-		auto &previous_result_loc = constructionStackNodes->at(prev_result_offset);
+		auto &previous_result_loc = (*constructionStackNodes)[prev_result_offset];
 		EvaluableNode *previous_result = nullptr;
 		std::swap(previous_result, previous_result_loc);
 

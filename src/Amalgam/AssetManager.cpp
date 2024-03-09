@@ -440,7 +440,8 @@ std::pair<std::string, bool> AssetManager::ValidateVersionAgainstAmalgam(std::st
 	uint32_t minor = atoi(version_split[1].c_str());
 	uint32_t patch = atoi(version_split[2].c_str());
 	auto dev_build = std::string(AMALGAM_VERSION_SUFFIX);
-	if(!dev_build.empty())
+	if(!dev_build.empty()
+			|| (AMALGAM_VERSION_MAJOR == 0 && AMALGAM_VERSION_MINOR == 0 && AMALGAM_VERSION_PATCH == 0))
 		; // dev builds don't check versions
 	else if(
 		(major > AMALGAM_VERSION_MAJOR) ||

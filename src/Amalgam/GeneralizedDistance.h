@@ -923,7 +923,7 @@ public:
 
 			for(size_t i = 1; i < feature_interns.internedDistanceTerms.size(); i++)
 			{
-				double difference = value - interned_values->at(i);
+				double difference = value - (*interned_values)[i];
 				if(compute_accurate)
 					feature_interns.internedDistanceTerms[i].SetValue(distEvaluator->ComputeDistanceTermContinuousNonNullRegular(difference, index, true), true);
 				if(compute_approximate)

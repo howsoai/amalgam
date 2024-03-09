@@ -232,7 +232,7 @@ void Parser::SkipWhitespaceAndAccumulateAttributes(EvaluableNode *target)
 			continue;
 		}
 
-		auto cur_char = code->at(pos);
+		auto cur_char = (*code)[pos];
 
 		//if it's a label, grab the label
 		if(cur_char == '#')
@@ -254,7 +254,7 @@ void Parser::SkipWhitespaceAndAccumulateAttributes(EvaluableNode *target)
 			size_t start_pos = pos;
 			while(pos < code->size())
 			{
-				cur_char = code->at(pos);
+				cur_char = (*code)[pos];
 				if(cur_char != '\r' && cur_char != '\n')
 					pos++;
 				else
@@ -272,7 +272,7 @@ void Parser::SkipWhitespaceAndAccumulateAttributes(EvaluableNode *target)
 		}
 
 		//if it's a concurrent marker, set the property
-		if(cur_char == '|' && pos + 1 < code->size() && code->at(pos + 1) == '|')
+		if(cur_char == '|' && pos + 1 < code->size() && (*code)[pos + 1] == '|')
 		{
 			pos += 2;	//skip ||
 			target->SetConcurrency(true);
@@ -317,7 +317,7 @@ std::string Parser::ParseString()
 	std::string s;
 	while(pos < code->size())
 	{
-		auto cur_char = code->at(pos);
+		auto cur_char = (*code)[pos];
 
 		if(cur_char == '"')
 			break;
@@ -332,7 +332,7 @@ std::string Parser::ParseString()
 			pos++;
 			if(pos < code->size())
 			{
-				cur_char = code->at(pos);
+				cur_char = (*code)[pos];
 				switch(cur_char)
 				{
 				case '0':
@@ -368,14 +368,14 @@ void Parser::SkipToEndOfIdentifier(bool allow_leading_label_marks)
 	//eat any label marks
 	if(allow_leading_label_marks)
 	{
-		while(pos < code->size() && code->at(pos) == '#')
+		while(pos < code->size() && (*code)[pos] == '#')
 			pos++;
 	}
 
 	//eat all characters until one that indicates end of identifier
 	while(pos < code->size())
 	{
-		auto cur_char = code->at(pos);
+		auto cur_char = (*code)[pos];
 		if(cur_char == '\t' || cur_char == '\n' || cur_char == '\v' || cur_char == '\f'
 				|| cur_char == '\r' || cur_char == ' '
 				|| cur_char == '#'
@@ -393,7 +393,7 @@ std::string Parser::GetNextIdentifier(bool allow_leading_label_marks)
 		return std::string();
 
 	//if quoted string, then go until the next end quote
-	if(code->at(pos) == '"')
+	if((*code)[pos] == '"')
 		return ParseString();
 	else
 	{
@@ -415,7 +415,7 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *new_token)
 		return nullptr;
 	}
 
-	auto cur_char = code->at(pos);
+	auto cur_char = (*code)[pos];
 
 	if(cur_char == '(') //identifier as command
 	{
@@ -444,7 +444,7 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *new_token)
 		FreeNode(new_token);
 		return nullptr;
 	}
-	else if(std::isdigit(static_cast<unsigned char>(cur_char)) || cur_char == '-' || cur_char == '.')
+	else if(StringManipulation::IsUtf8ArabicNumerals(cur_char) || cur_char == '-' || cur_char == '.')
 	{
 		size_t start_pos = pos;
 		SkipToEndOfIdentifier();

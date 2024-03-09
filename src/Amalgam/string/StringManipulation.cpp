@@ -232,11 +232,12 @@ int StringManipulation::CompareNumberInStringRightJustified(const std::string &a
 		else
 			b_value = '\0';
 
-		if(!std::isdigit(a_value) && !std::isdigit(b_value))
+		if(!StringManipulation::IsUtf8ArabicNumerals(a_value)
+				&& !StringManipulation::IsUtf8ArabicNumerals(b_value))
 			return compare_val_if_same_length;
-		if(!std::isdigit(a_value))
+		if(!StringManipulation::IsUtf8ArabicNumerals(a_value))
 			return -1;
-		if(!std::isdigit(b_value))
+		if(!StringManipulation::IsUtf8ArabicNumerals(b_value))
 			return +1;
 
 		//see if found first nonmatching digit
@@ -278,13 +279,14 @@ int StringManipulation::CompareNumberInStringLeftJustified(const std::string &a,
 			b_value = '\0';
 
 		//if out of digits, then they're equal
-		if(!std::isdigit(a_value) && !std::isdigit(b_value))
+		if(!StringManipulation::IsUtf8ArabicNumerals(a_value)
+				&& !StringManipulation::IsUtf8ArabicNumerals(b_value))
 			return 0;
 
 		//if one ran out of digits, then it's less
-		if(!std::isdigit(a_value))
+		if(!StringManipulation::IsUtf8ArabicNumerals(a_value))
 			return -1;
-		if(!std::isdigit(b_value))
+		if(!StringManipulation::IsUtf8ArabicNumerals(b_value))
 			return +1;
 
 		//compare values
@@ -328,7 +330,8 @@ int StringManipulation::StringNaturalCompare(const std::string &a, const std::st
 			b_value = '\0';
 
 		//check for group of digits
-		if(std::isdigit(a_value) && std::isdigit(static_cast<unsigned char>(b_value)))
+		if(StringManipulation::IsUtf8ArabicNumerals(a_value)
+			&& StringManipulation::IsUtf8ArabicNumerals(static_cast<unsigned char>(b_value)))
 		{
 			int result;
 			//if starts with leading zeros, then do a comparison from the left, otherwise from the right

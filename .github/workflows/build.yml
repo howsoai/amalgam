@@ -103,7 +103,7 @@ jobs:
         if [ "${{ matrix.preset.arch }}" = "arm64" ]; then
           brew unlink python@3.11
           brew unlink python@3.12
-          brew link --force python@3.12
+          brew link --force --overwrite python@3.12
 
           brew uninstall --ignore-dependencies libomp
           brew cleanup -s

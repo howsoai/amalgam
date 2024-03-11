@@ -99,6 +99,7 @@ jobs:
       run: |
         echo "Python version: $(python --version)"
         echo "Brew version: $(brew --version)"
+        echo "Brew python installs: $(brew list | grep python)"
         if [ "${{ matrix.preset.arch }}" = "arm64" ]; then
           brew uninstall --ignore-dependencies libomp
           brew cleanup -s

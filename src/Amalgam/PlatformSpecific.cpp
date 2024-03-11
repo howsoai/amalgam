@@ -74,7 +74,7 @@ std::vector<std::string> Platform_SplitArgString(const std::string &arg_string)
 			{
 				if(arg_string[cur_pos] == '"')
 				{
-					if (arg_string[cur_pos - 1] == '\\')
+					if (cur_pos > 0 && arg_string[cur_pos - 1] == '\\')
 					{
 						//if quotation is backslashed, remove the backslash
 						cur_arg.pop_back();

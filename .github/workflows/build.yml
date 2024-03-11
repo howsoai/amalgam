@@ -97,6 +97,8 @@ jobs:
 
     - name: Install build dependencies
       run: |
+        echo "Python version: $(python --version)"
+        echo "Brew version: $(brew --version)"
         if [ "${{ matrix.preset.arch }}" = "arm64" ]; then
           brew uninstall --ignore-dependencies libomp
           brew cleanup -s

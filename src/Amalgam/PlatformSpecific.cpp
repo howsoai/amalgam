@@ -16,7 +16,7 @@
 #ifdef OS_WINDOWS
 
 	// TODO 15993: disable std::wstring_convert deprecation warning: no replacement in C++17 so
-	// will require rework when we move to C++20. 
+	// will require rework when we move to C++20.
 	#pragma warning(disable: 4996)
 
 	#define NOMINMAX
@@ -74,8 +74,16 @@ std::vector<std::string> Platform_SplitArgString(const std::string &arg_string)
 			{
 				if(arg_string[cur_pos] == '"')
 				{
-					cur_pos++;
-					break;
+					if (arg_string[cur_pos - 1] == '\\')
+					{
+						//if quotation is backslashed, remove the backslash
+						cur_arg.pop_back();
+					}
+					else
+					{
+						cur_pos++;
+						break;
+					}
 				}
 
 				cur_arg.push_back(arg_string[cur_pos++]);
@@ -128,7 +136,7 @@ void Platform_SeparatePathFileExtension(const std::string &combined, std::string
 		first_slash++;  //keep the slash in the path
 		path = combined.substr(0, first_slash);
 	}
-	
+
 	//get extension
 	std::string filename = combined.substr(first_slash, combined.size() - first_slash);
 	size_t extension_position = filename.rfind('.');

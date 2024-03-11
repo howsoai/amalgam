@@ -88,11 +88,18 @@ std::string StringManipulation::RemoveFirstWord(std::string &str, bool strip_wor
 		//chars between first and last char_to_strips make up the token
 		first_token = str.substr(1, end_char_to_strip_idx - 1);
 
-		//update str and remove preceding whitespace
+		//update str and remove preceding spaces
 		str = str.substr(end_char_to_strip_idx + 1);
-		while(str.size() > 0 && str[0] == ' ') {
-			str = str.substr(1); //Is there a faster way than this?
+		if(str.size() > 0 && str[0] == ' ')
+		{
+			size_t cur_pos = 1;
+			while(cur_pos < str.size() && str[cur_pos] == ' ')
+			{
+				cur_pos++;
+			}
+			str = str.substr(cur_pos);
 		}
+
 		return first_token;
 	}
 

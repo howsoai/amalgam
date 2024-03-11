@@ -90,31 +90,34 @@ std::string StringManipulation::RemoveFirstWord(std::string &str, bool strip_wor
 
 		//update str and remove preceding spaces
 		str = str.substr(end_char_to_strip_idx + 1);
-		if(str.size() > 0 && str[0] == ' ')
-		{
-			size_t cur_pos = 1;
-			while(cur_pos < str.size() && str[cur_pos] == ' ')
-			{
-				cur_pos++;
-			}
-			str = str.substr(cur_pos);
-		}
-
-		return first_token;
-	}
-
-	//otherwise, split based on whitespace
-	size_t spacepos = str.find(' ');
-	if(spacepos == std::string::npos)
-	{
-		first_token = str;
-		str = "";
 	}
 	else
 	{
-		first_token = str.substr(0, spacepos);
-		str = str.substr(spacepos + 1);
+		//otherwise, split based on whitespace
+		size_t spacepos = str.find(' ');
+		if(spacepos == std::string::npos)
+		{
+			first_token = str;
+			str = "";
+		}
+		else
+		{
+			first_token = str.substr(0, spacepos);
+			str = str.substr(spacepos + 1);
+		}
 	}
+
+	//remove preceding spaces in str
+	if(str.size() > 0 && str[0] == ' ')
+	{
+		size_t cur_pos = 1;
+		while(cur_pos < str.size() && str[cur_pos] == ' ')
+		{
+			cur_pos++;
+		}
+		str = str.substr(cur_pos);
+	}
+
 	return first_token;
 }
 

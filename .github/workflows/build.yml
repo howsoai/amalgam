@@ -109,7 +109,7 @@ jobs:
           brew cleanup -s
           rm -rf `brew --cache`
           brew fetch --force --bottle-tag=arm64_monterey libomp
-          brew install `brew --cache --bottle-tag=arm64_monterey libomp`
+          brew install `brew --cache --bottle-tag=arm64_monterey libomp` || brew link --overwrite python@3.12
         else
           brew install libomp
         fi

@@ -101,6 +101,10 @@ jobs:
         echo "Brew version: $(brew --version)"
         echo "Brew python installs: $(brew list | grep python)"
         if [ "${{ matrix.preset.arch }}" = "arm64" ]; then
+          brew unlink python@3.11
+          brew unlink python@3.12
+          brew link --force python@3.12
+
           brew uninstall --ignore-dependencies libomp
           brew cleanup -s
           rm -rf `brew --cache`

@@ -50,7 +50,7 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 		// perform specified operation
 		if(command == "LOAD_ENTITY")
 		{
-			std::vector<std::string> command_tokens = Platform_SplitArgString(input);
+			std::vector<std::string> command_tokens = StringManipulation::SplitArgString(input);
 			if(command_tokens.size() >= 4)
 			{
 				handle = command_tokens[0];
@@ -80,7 +80,7 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 		}
 		else if(command == "STORE_ENTITY")
 		{
-			std::vector<std::string> command_tokens = Platform_SplitArgString(input);
+			std::vector<std::string> command_tokens = StringManipulation::SplitArgString(input);
 			if(command_tokens.size() >= 4)
 			{
 				handle = command_tokens[0];

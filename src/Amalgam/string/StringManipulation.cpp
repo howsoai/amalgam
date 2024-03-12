@@ -54,71 +54,85 @@ std::string StringManipulation::NumberToString(size_t value)
 	return std::string(&buffer[0]);
 }
 
-std::string StringManipulation::RemoveFirstWord(std::string &str, bool strip_word, char char_to_strip)
+std::string StringManipulation::RemoveFirstWord(std::string &str)
 {
-	std::string first_token;
+	std::vector<std::string> arg;
 
-	if(str.empty())
-		return first_token;
+	arg = StringManipulation::SplitArgString(str, true);
 
-
-	//if str is wrapped in char_to_strip's, remove chars between char_to_strip's (typically double quotes)
-	if(strip_word && (str[0] == char_to_strip))
+	if(arg.empty())
 	{
-		size_t end_char_to_strip_idx;
-		end_char_to_strip_idx = str.find(char_to_strip, 1);
-		//if no end char_to_strip return rest of str past initial char_to_strp
-		if(end_char_to_strip_idx == std::string::npos)
-		{
-			first_token = str.substr(1);
-			str = "";
-			return first_token;
-		}
-
-		//the ending char_to_strip must not be escaped
-		if(end_char_to_strip_idx != 0)
-		{
-			while(str[end_char_to_strip_idx - 1] == '\\')
-			{
-				str.erase(end_char_to_strip_idx - 1, 1); //remove the escape chars
-				end_char_to_strip_idx = str.find(char_to_strip, end_char_to_strip_idx + 1);
-			}
-		}
-
-		//chars between first and last char_to_strips make up the token
-		first_token = str.substr(1, end_char_to_strip_idx - 1);
-
-		//update str and remove preceding spaces
-		str = str.substr(end_char_to_strip_idx + 1);
+		return "";
 	}
 	else
 	{
-		//otherwise, split based on whitespace
-		size_t spacepos = str.find(' ');
-		if(spacepos == std::string::npos)
-		{
-			first_token = str;
-			str = "";
-		}
-		else
-		{
-			first_token = str.substr(0, spacepos);
-			str = str.substr(spacepos + 1);
-		}
+		return arg[0];
 	}
+}
 
-	//remove preceding spaces in str
-	if(!str.empty() && str[0] == ' ')
+std::vector<std::string> StringManipulation::SplitArgString(std::string &arg_string, bool non_greedy)
+{
+	std::vector<std::string> args;
+
+	size_t cur_pos = 0;
+	while(cur_pos < arg_string.size())
 	{
-		size_t cur_pos = 1;
-		while(cur_pos < str.size() && str[cur_pos] == ' ')
+		//skip over any leading spaces
+		if(std::isspace(static_cast<unsigned char>(arg_string[cur_pos])))
 		{
 			cur_pos++;
+			continue;
 		}
-		str = str.substr(cur_pos);
+
+		std::string cur_arg;
+
+		//quotation, so go to the end of quotation
+		if(arg_string[cur_pos] == '"')
+		{
+			cur_pos++;
+			while(cur_pos < arg_string.size())
+			{
+				if(arg_string[cur_pos] == '"')
+				{
+					if (cur_pos > 0 && arg_string[cur_pos - 1] == '\\')
+					{
+						//if quotation is backslashed, remove the backslash
+						cur_arg.pop_back();
+					}
+					else
+					{
+						cur_pos++;
+						break;
+					}
+				}
+
+				cur_arg.push_back(arg_string[cur_pos++]);
+			}
+		}
+		else //not quotation, go until next whitespace
+		{
+			while(cur_pos < arg_string.size())
+			{
+				if(std::isspace(static_cast<unsigned char>(arg_string[cur_pos])))
+				{
+					cur_pos++;
+					break;
+				}
+
+				cur_arg.push_back(arg_string[cur_pos++]);
+			}
+		}
+
+		args.push_back(cur_arg);
+
+		if(non_greedy)
+		{
+			arg_string = arg_string.substr(cur_pos);
+			return args;
+		}
 	}
 
-	return first_token;
+	return args;
 }
 
 std::vector<std::string> StringManipulation::Split(std::string &s, char delim)

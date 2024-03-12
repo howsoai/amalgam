@@ -14,10 +14,15 @@ namespace StringManipulation
 
 	//removes the first word from str and return the removed word
 	//if strip_word true, remove char_to_strip from beginning and end of returned word
-	std::string RemoveFirstWord(std::string &str, bool strip_word = true, char char_to_strip = '\"');
+	std::string RemoveFirstWord(std::string &str);
 
 	//splits a string by given delimiter
 	std::vector<std::string> Split(std::string &s, char delim = ' ');
+
+	//separates the argument string in a cross-platform manner and returns an appropriate vector of strings
+	//if non_greedy is true, the returned vector only contains a single string, and arg_string is modified
+	//to only contain the portion of the string after the removed section
+	std::vector<std::string> SplitArgString(std::string &arg_string, bool non_greedy = false);
 
 	//returns true if the character in the string s starting at position is whitespace
 	inline bool IsUtf8Whitespace(std::string &s, size_t position)
@@ -366,7 +371,7 @@ namespace StringManipulation
 			return 10 + c - 'a';
 		if(c >= 'A' && c <= 'F')
 			return 10 + c - 'A';
-	
+
 		return 0;
 	}
 

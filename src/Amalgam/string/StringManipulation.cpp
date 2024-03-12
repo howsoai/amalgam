@@ -58,7 +58,7 @@ std::string StringManipulation::RemoveFirstWord(std::string &str, bool strip_wor
 {
 	std::string first_token;
 
-	if(str.size() == 0)
+	if(str.empty())
 		return first_token;
 
 
@@ -108,7 +108,7 @@ std::string StringManipulation::RemoveFirstWord(std::string &str, bool strip_wor
 	}
 
 	//remove preceding spaces in str
-	if(str.size() > 0 && str[0] == ' ')
+	if(!str.empty() && str[0] == ' ')
 	{
 		size_t cur_pos = 1;
 		while(cur_pos < str.size() && str[cur_pos] == ' ')

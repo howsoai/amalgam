@@ -650,6 +650,8 @@ EvaluableNodeReference EntityManipulation::FlattenEntity(Interpreter *interprete
 {
 	EvaluableNodeManager *enm = interpreter->evaluableNodeManager;
 
+	//TODO 19641: add code and tests to handle null root, and update documentation
+
 	//////////
 	//build code to look like:
 	// (let (assoc new_entity  (first (create_entities

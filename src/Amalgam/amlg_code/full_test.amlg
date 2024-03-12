@@ -1915,7 +1915,8 @@
  (print "--retrieve_entity_root--\n")
  (create_entities "SetGetCodeTest" (lambda (list 1 2 ##three 3)))
  (print (retrieve_entity_root "SetGetCodeTest"))
- (print (retrieve_entity_root "SetGetCodeTest" 1))
+ (print (retrieve_entity_root "SetGetCodeTest" (true)))
+ (print (retrieve_entity_root (list (null) (null) "SetGetCodeTest" (null))  ))
 
  (print "--assign_entity_roots--\n")
  (assign_entity_roots "SetGetCodeTest" (list 4 5 6))

@@ -12,10 +12,17 @@ namespace StringManipulation
 	std::string NumberToString(double value);
 	std::string NumberToString(size_t value);
 
-	//removes the first word from str and return the removed word
-	std::string RemoveFirstWord(std::string &str);
+	//removes the first token from str and return the removed token
+	std::string RemoveFirstToken(std::string &str);
 
-	std::vector<std::string> Split(std::string &s, char delim);
+	//splits a string by given delimiter
+	std::vector<std::string> Split(std::string &s, char delim = ' ');
+
+	//separates the argument string and returns an appropriate vector of strings
+	//if greedy is true, the returned vector contains the full list of arguments and arg_string is unmodified
+	//if greedy is false, the returned vector only contains a single string, and arg_string is modified
+	//to only contain the portion of the string after the removed section
+	std::vector<std::string> SplitArgString(std::string &arg_string, bool greedy = true);
 
 	//returns true if the character in the string s starting at position is whitespace
 	inline bool IsUtf8Whitespace(std::string &s, size_t position)
@@ -364,7 +371,7 @@ namespace StringManipulation
 			return 10 + c - 'a';
 		if(c >= 'A' && c <= 'F')
 			return 10 + c - 'A';
-	
+
 		return 0;
 	}
 

@@ -1,5 +1,8 @@
 #pragma once
 
+//project headers:
+#include "StringManipulation.h"
+
 //system headers:
 #include <charconv>
 #include <chrono>
@@ -18,15 +21,15 @@
 
 #ifdef _WIN32
 	#define OS_WINDOWS
-	
+
 	#define NOMINMAX
 	#include <Windows.h>
-	
+
 	#define PLATFORM_MAIN_NO_CONSOLE int APIENTRY WinMain(HINSTANCE hCurrentInst, HINSTANCE hPreviousInst, LPSTR lpszCmdLine, int nCmdShow)
 
 	#define PLATFORM_ARGS_NO_CONSOLE			\
 		std::string arg_string(lpszCmdLine);	\
-		auto args = Platform_SplitArgString(arg_string);
+		auto args = StringManipulation::SplitArgString(arg_string);
 
 #else
 	#ifdef __linux__
@@ -41,7 +44,7 @@
 
 	//include signal to raise exception in linux
 	#include <signal.h>
-	
+
 #endif
 
 //defines __popcnt64 if it doesn't exist
@@ -165,9 +168,6 @@ inline std::pair<double, bool> Platform_StringToNumber(const std::string& s)
 #endif
 }
 
-//separates the argument string in a cross-platform manner and returns an appropriate vector of strings
-std::vector<std::string> Platform_SplitArgString(const std::string &arg_string);
-
 //Takes a string containing a combined path/filename.extension, and breaks it into each of: path, base_filename, and extension
 void Platform_SeparatePathFileExtension(const std::string &combined, std::string &path, std::string &base_filename, std::string &extension);
 
@@ -246,7 +246,7 @@ inline void Platform_Assert(bool expr, size_t line)
 #ifdef OS_MAC
 // warnings thrown on OS_MAC
 #pragma GCC diagnostic pop
-#endif 
+#endif
 
 inline void Platform_Assert(bool expr)
 {

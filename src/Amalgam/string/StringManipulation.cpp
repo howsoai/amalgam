@@ -1,4 +1,4 @@
-//project headers: 
+//project headers:
 #include "StringManipulation.h"
 
 #include "FastMath.h"
@@ -54,21 +54,75 @@ std::string StringManipulation::NumberToString(size_t value)
 	return std::string(&buffer[0]);
 }
 
-std::string StringManipulation::RemoveFirstWord(std::string &str)
+std::string StringManipulation::RemoveFirstToken(std::string &str)
 {
-	std::string first_token;
-	size_t spacepos = str.find(' ');
-	if(spacepos == std::string::npos)
+	std::vector<std::string> arg;
+	arg = StringManipulation::SplitArgString(str, false);
+
+	return (arg.empty() ? "" : arg[0]);
+}
+
+std::vector<std::string> StringManipulation::SplitArgString(std::string &arg_string, bool greedy)
+{
+	std::vector<std::string> args;
+
+	size_t cur_pos = 0;
+	while(cur_pos < arg_string.size())
 	{
-		first_token = str;
-		str = "";
+		//skip over any leading spaces
+		if(std::isspace(static_cast<unsigned char>(arg_string[cur_pos])))
+		{
+			cur_pos++;
+			continue;
+		}
+		std::string cur_arg;
+
+		//quotation, so go to the end of quotation
+		if(arg_string[cur_pos] == '"')
+		{
+			cur_pos++;
+			while(cur_pos < arg_string.size())
+			{
+				if(arg_string[cur_pos] == '"')
+				{
+					if (cur_pos > 0 && arg_string[cur_pos - 1] == '\\')
+					{
+						//if quotation is backslashed, remove the backslash
+						cur_arg.pop_back();
+					}
+					else
+					{
+						cur_pos++;
+						break;
+					}
+				}
+
+				cur_arg.push_back(arg_string[cur_pos++]);
+			}
+		}
+		else //not quotation, go until next whitespace
+		{
+			while(cur_pos < arg_string.size())
+			{
+				if(std::isspace(static_cast<unsigned char>(arg_string[cur_pos])))
+				{
+					cur_pos++;
+					break;
+				}
+
+				cur_arg.push_back(arg_string[cur_pos++]);
+			}
+		}
+		args.push_back(cur_arg);
+
+		if(!greedy)
+		{
+			arg_string = arg_string.substr(cur_pos);
+			return args;
+		}
 	}
-	else
-	{
-		first_token = str.substr(0, spacepos);
-		str = str.substr(spacepos + 1);
-	}
-	return first_token;
+
+	return args;
 }
 
 std::vector<std::string> StringManipulation::Split(std::string &s, char delim)

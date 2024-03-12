@@ -54,22 +54,15 @@ std::string StringManipulation::NumberToString(size_t value)
 	return std::string(&buffer[0]);
 }
 
-std::string StringManipulation::RemoveFirstWord(std::string &str)
+std::string StringManipulation::RemoveFirstToken(std::string &str)
 {
 	std::vector<std::string> arg;
-	arg = StringManipulation::SplitArgString(str, true);
+	arg = StringManipulation::SplitArgString(str, false);
 
-	if(arg.empty())
-	{
-		return "";
-	}
-	else
-	{
-		return arg[0];
-	}
+	return (arg.empty() ? "" : arg[0]);
 }
 
-std::vector<std::string> StringManipulation::SplitArgString(std::string &arg_string, bool non_greedy)
+std::vector<std::string> StringManipulation::SplitArgString(std::string &arg_string, bool greedy)
 {
 	std::vector<std::string> args;
 
@@ -122,7 +115,7 @@ std::vector<std::string> StringManipulation::SplitArgString(std::string &arg_str
 		}
 		args.push_back(cur_arg);
 
-		if(non_greedy)
+		if(!greedy)
 		{
 			arg_string = arg_string.substr(cur_pos);
 			return args;

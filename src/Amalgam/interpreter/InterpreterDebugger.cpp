@@ -240,7 +240,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, bool 
 
 		std::string input;
 		std::getline(std::cin, input);
-		std::string command = StringManipulation::RemoveFirstWord(input);
+		std::string command = StringManipulation::RemoveFirstToken(input);
 
 		if(command == "help")
 		{

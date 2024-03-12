@@ -13,16 +13,15 @@ namespace StringManipulation
 	std::string NumberToString(size_t value);
 
 	//removes the first word from str and return the removed word
-	//if strip_word true, remove char_to_strip from beginning and end of returned word
-	std::string RemoveFirstWord(std::string &str);
+	std::string RemoveFirstToken(std::string &str);
 
 	//splits a string by given delimiter
 	std::vector<std::string> Split(std::string &s, char delim = ' ');
 
-	//separates the argument string in a cross-platform manner and returns an appropriate vector of strings
+	//separates the argument string and returns an appropriate vector of strings
 	//if non_greedy is true, the returned vector only contains a single string, and arg_string is modified
 	//to only contain the portion of the string after the removed section
-	std::vector<std::string> SplitArgString(std::string &arg_string, bool non_greedy = false);
+	std::vector<std::string> SplitArgString(std::string &arg_string, bool greedy = true);
 
 	//returns true if the character in the string s starting at position is whitespace
 	inline bool IsUtf8Whitespace(std::string &s, size_t position)

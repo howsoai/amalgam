@@ -57,7 +57,6 @@ std::string StringManipulation::NumberToString(size_t value)
 std::string StringManipulation::RemoveFirstWord(std::string &str)
 {
 	std::vector<std::string> arg;
-
 	arg = StringManipulation::SplitArgString(str, true);
 
 	if(arg.empty())
@@ -83,7 +82,6 @@ std::vector<std::string> StringManipulation::SplitArgString(std::string &arg_str
 			cur_pos++;
 			continue;
 		}
-
 		std::string cur_arg;
 
 		//quotation, so go to the end of quotation
@@ -122,7 +120,6 @@ std::vector<std::string> StringManipulation::SplitArgString(std::string &arg_str
 				cur_arg.push_back(arg_string[cur_pos++]);
 			}
 		}
-
 		args.push_back(cur_arg);
 
 		if(non_greedy)

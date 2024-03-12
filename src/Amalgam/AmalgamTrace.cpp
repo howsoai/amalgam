@@ -45,12 +45,13 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 		// read external input
 		getline(*in_stream, input, '\n');
 
-		command = StringManipulation::RemoveFirstWord(input);
+		command = StringManipulation::RemoveFirstToken(input);
+		response = "-";
 
 		// perform specified operation
 		if(command == "LOAD_ENTITY")
 		{
-			std::vector<std::string> command_tokens = Platform_SplitArgString(input);
+			std::vector<std::string> command_tokens = StringManipulation::SplitArgString(input);
 			if(command_tokens.size() >= 4)
 			{
 				handle = command_tokens[0];
@@ -80,7 +81,7 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 		}
 		else if(command == "STORE_ENTITY")
 		{
-			std::vector<std::string> command_tokens = Platform_SplitArgString(input);
+			std::vector<std::string> command_tokens = StringManipulation::SplitArgString(input);
 			if(command_tokens.size() >= 4)
 			{
 				handle = command_tokens[0];
@@ -99,35 +100,35 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 		}
 		else if(command == "DESTROY_ENTITY")
 		{
-			handle = StringManipulation::RemoveFirstWord(input);
+			handle = StringManipulation::RemoveFirstToken(input);
 
 			entint.DestroyEntity(handle);
 			response = SUCCESS_RESPONSE;
 		}
 		else if(command == "SET_JSON_TO_LABEL")
 		{
-			handle = StringManipulation::RemoveFirstWord(input);
-			label = StringManipulation::RemoveFirstWord(input);
+			handle = StringManipulation::RemoveFirstToken(input);
+			label = StringManipulation::RemoveFirstToken(input);
 			data = input;  // json data
 			bool result = entint.SetJSONToLabel(handle, label, data);
 			response = result ? SUCCESS_RESPONSE : FAILURE_RESPONSE;
 		}
 		else if(command == "GET_JSON_FROM_LABEL")
 		{
-			handle = StringManipulation::RemoveFirstWord(input);
-			label = StringManipulation::RemoveFirstWord(input);
+			handle = StringManipulation::RemoveFirstToken(input);
+			label = StringManipulation::RemoveFirstToken(input);
 			response = entint.GetJSONFromLabel(handle, label);
 		}
 		else if(command == "EXECUTE_ENTITY_JSON")
 		{
-			handle = StringManipulation::RemoveFirstWord(input);
-			label = StringManipulation::RemoveFirstWord(input);
+			handle = StringManipulation::RemoveFirstToken(input);
+			label = StringManipulation::RemoveFirstToken(input);
 			data = input;  // json data
 			response = entint.ExecuteEntityJSON(handle, label, data);
 		}
 		else if(command == "SET_RANDOM_SEED")
 		{
-			handle = StringManipulation::RemoveFirstWord(input);
+			handle = StringManipulation::RemoveFirstToken(input);
 			data = input;
 			bool result = entint.SetRandomSeed(handle, data);
 			response = result ? SUCCESS_RESPONSE : FAILURE_RESPONSE;

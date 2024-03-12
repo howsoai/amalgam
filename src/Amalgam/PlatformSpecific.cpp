@@ -16,7 +16,7 @@
 #ifdef OS_WINDOWS
 
 	// TODO 15993: disable std::wstring_convert deprecation warning: no replacement in C++17 so
-	// will require rework when we move to C++20. 
+	// will require rework when we move to C++20.
 	#pragma warning(disable: 4996)
 
 	#define NOMINMAX
@@ -50,57 +50,6 @@
 	#include <unistd.h>
 #endif
 
-std::vector<std::string> Platform_SplitArgString(const std::string &arg_string)
-{
-	std::vector<std::string> args;
-
-	size_t cur_pos = 0;
-	while(cur_pos < arg_string.size())
-	{
-		//skip over any leading spaces
-		if(std::isspace(static_cast<unsigned char>(arg_string[cur_pos])))
-		{
-			cur_pos++;
-			continue;
-		}
-
-		std::string cur_arg;
-
-		//quotation, so go to the end of quotation
-		if(arg_string[cur_pos] == '"')
-		{
-			cur_pos++;
-			while(cur_pos < arg_string.size())
-			{
-				if(arg_string[cur_pos] == '"')
-				{
-					cur_pos++;
-					break;
-				}
-
-				cur_arg.push_back(arg_string[cur_pos++]);
-			}
-		}
-		else //not quotation, go until next whitespace
-		{
-			while(cur_pos < arg_string.size())
-			{
-				if(std::isspace(static_cast<unsigned char>(arg_string[cur_pos])))
-				{
-					cur_pos++;
-					break;
-				}
-
-				cur_arg.push_back(arg_string[cur_pos++]);
-			}
-		}
-
-		args.push_back(cur_arg);
-	}
-
-	return args;
-}
-
 void Platform_SeparatePathFileExtension(const std::string &combined, std::string &path, std::string &base_filename, std::string &extension)
 {
 	if(combined.size() == 0)
@@ -128,7 +77,7 @@ void Platform_SeparatePathFileExtension(const std::string &combined, std::string
 		first_slash++;  //keep the slash in the path
 		path = combined.substr(0, first_slash);
 	}
-	
+
 	//get extension
 	std::string filename = combined.substr(first_slash, combined.size() - first_slash);
 	size_t extension_position = filename.rfind('.');

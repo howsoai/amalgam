@@ -46,6 +46,7 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 		getline(*in_stream, input, '\n');
 
 		command = StringManipulation::RemoveFirstToken(input);
+		response = "-";
 
 		// perform specified operation
 		if(command == "LOAD_ENTITY")

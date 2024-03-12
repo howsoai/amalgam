@@ -1242,7 +1242,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET(EvaluableNode *en, 
 		return EvaluableNodeReference::Null();
 
 	size_t offset = constructionStackNodes->size() - (constructionStackOffsetStride * depth) + constructionStackOffsetTarget;
-	return EvaluableNodeReference(constructionStackNodes->at(offset), false);
+	return EvaluableNodeReference( (*constructionStackNodes)[offset], false);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_INDEX(EvaluableNode *en, bool immediate_result)
@@ -1295,7 +1295,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_VALUE(EvaluableNod
 		return EvaluableNodeReference::Null();
 
 	size_t offset = constructionStackNodes->size() - (constructionStackOffsetStride * depth) + constructionStackOffsetCurrentValue;
-	return EvaluableNodeReference(constructionStackNodes->at(offset), false);
+	return EvaluableNodeReference( (*constructionStackNodes)[offset], false);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_PREVIOUS_RESULT(EvaluableNode *en, bool immediate_result)

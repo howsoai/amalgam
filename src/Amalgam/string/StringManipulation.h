@@ -81,6 +81,12 @@ namespace StringManipulation
 		return false;
 	}
 
+	//returns true if c is a numeric digit
+	inline bool IsUtf8ArabicNumerals(uint8_t c)
+	{
+		return (c >= '0' && c <= '9');
+	}
+
 	//returns true if the character in the string s starting at position is a newline
 	inline bool IsUtf8Newline(std::string &s, size_t position)
 	{

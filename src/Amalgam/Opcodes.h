@@ -530,6 +530,7 @@ enum EvaluableNodeBuiltInStringId
 
 	//dynamically generated function parameters
 	ENBISI__,
+	ENBISI_create_new_entity,
 	ENBISI_new_entity,
 
 	//entity access parameters

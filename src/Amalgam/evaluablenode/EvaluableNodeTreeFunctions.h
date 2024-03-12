@@ -68,10 +68,18 @@ EntityReferenceType TraverseToExistingEntityReferenceViaEvaluableNodeIDPath(Enti
 
 	if(non_null_size == 0)
 	{
+		//if empty list, return the container itself
+		if(id_path->GetType() == ENT_LIST)
+			return EntityReferenceType(container);
+
 		//if the string doesn't exist, then there can't be an entity with that name
 		StringInternPool::StringID sid = EvaluableNode::ToStringIDIfExists(id_path);
 		return EntityReferenceType(container->GetContainedEntity(sid));
 	}
+
+	//if traversing, then it needs to be a list, otherwise not a valid entity
+	if(id_path->GetType() != ENT_LIST)
+		return EntityReferenceType(nullptr);
 
 	//always keep one to two locks active at once to walk down the entity containers
 	EntityReadReference cur_traversing_entity(container);

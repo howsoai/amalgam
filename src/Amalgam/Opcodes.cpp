@@ -311,6 +311,7 @@ void StringInternPool::InitializeStaticStrings()
 
 	//dynamically generated function parameters
 	EmplaceStaticString(ENBISI__, "_");
+	EmplaceStaticString(ENBISI_create_new_entity, "create_new_entity");
 	EmplaceStaticString(ENBISI_new_entity, "new_entity");
 
 	//entity access parameters

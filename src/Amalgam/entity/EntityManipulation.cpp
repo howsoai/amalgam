@@ -222,13 +222,15 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 
 	EvaluableNodeManager *enm = interpreter->evaluableNodeManager;
 
+	//TODO 19641: test, update tests and documentation
+
 	//////////
 	//build code to look like:
-	// (declare (assoc _ (null)) 
-	//  (let (assoc new_entity  (create_entity
+	// (declare (assoc _ (null) new_entity (null)) 
+	//  (assign "new_entity"  (first (create_entities new_entity
 	//                         (call (lambda *entity difference code*)
 	//                           (assoc _ (get_entity_code _) )
-	//                    ) )
+	//                    ) ) )
 	//
 	//   [for each contained entity specified by the list representing the relative location to _ and new_entity]
 	//
@@ -236,9 +238,9 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 	//
 	//    [if must be merged]
 	//    (create_entity
-	//         (append _ *relative id*)
+	//         (append new_entity *relative id*)
 	//         (call *entity difference code*
-	//           (assoc _ (get_entity_code (append new_entity *relative id*) ) )
+	//           (assoc _ (get_entity_code (append _ *relative id*) ) )
 	//    )
 	//
 	//    [if must be created]
@@ -251,14 +253,15 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 	//  )
 	// )
 
-	//create: (declare (assoc _ null) )
+	//create: (declare (assoc new_entity (null) create_new_entity (null)) )
 	EvaluableNode *difference_function = enm->AllocNode(ENT_DECLARE);
 
 	auto node_stack = interpreter->CreateInterpreterNodeStackStateSaver(difference_function);
 
 	EvaluableNode *df_assoc = enm->AllocNode(ENT_ASSOC);
 	difference_function->AppendOrderedChildNode(df_assoc);
-	df_assoc->SetMappedChildNode(ENBISI__, enm->AllocNode(ENT_NULL));
+	df_assoc->SetMappedChildNode(ENBISI__, nullptr);
+	df_assoc->SetMappedChildNode(ENBISI_new_entity, nullptr);
 
 	//find entities that match up, and if no difference, then can shortcut the function
 	std::vector<Entity *> top_entities_identical;
@@ -273,21 +276,18 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 	}
 
 	//create the following:
-	// (declare (assoc _ (null)) 
-	//   (let (assoc new_entity (first (create_entities)) ) )
-	//  )
-	EvaluableNode *let_new_entity = enm->AllocNode(ENT_LET);
-	difference_function->AppendOrderedChildNode(let_new_entity);
-	EvaluableNode *let_assoc = enm->AllocNode(ENT_ASSOC);
-	let_new_entity->AppendOrderedChildNode(let_assoc);
+	//  (assign "new_entity" (first (create_entities new_entity
+	EvaluableNode *assign_new_entity = enm->AllocNode(ENT_ASSIGN);
+	difference_function->AppendOrderedChildNode(assign_new_entity);
+	assign_new_entity->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI_new_entity));
 	EvaluableNode *create_root_entity = enm->AllocNode(ENT_CREATE_ENTITIES);
+	create_root_entity->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI_new_entity));
 	EvaluableNode *first_of_create_entity = enm->AllocNode(ENT_FIRST);
 	first_of_create_entity->AppendOrderedChildNode(create_root_entity);
-	let_assoc->SetMappedChildNode(ENBISI_new_entity, first_of_create_entity);
+	assign_new_entity->AppendOrderedChildNode(first_of_create_entity);
 
 	//apply difference in code from source to build:
-	// (declare (assoc _ (null)) 
-	//  (let (assoc new_entity (first (create_entities
+	//  (assign "new_entity"  (first (create_entities new_entity
 	//                         (call (lambda *entity difference code*)
 	//                           (assoc _ (get_entity_code _) )
 	//                    ) ) )
@@ -313,22 +313,22 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 	{
 		//create the following code:
 		//    (create_entities
-		//         (append _ *relative id*)
+		//         (append new_entity *relative id*)
 		//         (call *entity difference code*
-		//           (assoc _ (get_entity_code (append new_entity *relative id*)) )
+		//           (assoc _ (get_entity_code (append _ *relative id*)) )
 		//    )
 		EvaluableNode *src_id_list = GetTraversalIDPathFromAToB(enm, entity2, entity_to_create);
 		EvaluableNode *src_append = enm->AllocNode(ENT_APPEND);
-		src_append->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI__));
+		src_append->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI_new_entity));
 		src_append->AppendOrderedChildNode(src_id_list);
 
 		EvaluableNode *dest_id_list = enm->DeepAllocCopy(src_id_list);
 		EvaluableNode *dest_append = enm->AllocNode(ENT_APPEND);
-		dest_append->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI_new_entity));
+		dest_append->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI__));
 		dest_append->AppendOrderedChildNode(dest_id_list);
 
 		EvaluableNode *create_entity = enm->AllocNode(ENT_CREATE_ENTITIES);
-		let_new_entity->AppendOrderedChildNode(create_entity);
+		difference_function->AppendOrderedChildNode(create_entity);
 		create_entity->AppendOrderedChildNode(dest_append);
 
 		//if identical to merged, then just copy
@@ -381,7 +381,7 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 		//      (append new_entity *relative id*)
 		//    )
 		EvaluableNode *clone_entity = enm->AllocNode(ENT_CLONE_ENTITIES);
-		let_new_entity->AppendOrderedChildNode(clone_entity);
+		difference_function->AppendOrderedChildNode(clone_entity);
 
 		EvaluableNode *src_id_list = GetTraversalIDPathFromAToB(enm, entity2, entity_to_clone);
 		EvaluableNode *src_append = enm->AllocNode(ENT_APPEND);
@@ -398,7 +398,7 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 	}
 
 	//add new_entity to return value of let statement to return the newly created id
-	let_new_entity->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI_new_entity));
+	difference_function->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI_new_entity));
 
 	delete root_merged;
 
@@ -650,16 +650,19 @@ EvaluableNodeReference EntityManipulation::FlattenEntity(Interpreter *interprete
 {
 	EvaluableNodeManager *enm = interpreter->evaluableNodeManager;
 
-	//TODO 19641: add code and tests to handle null root, and update documentation
+	//TODO 19641: update code and tests to handle create_new_entity, and update documentation
 
 	//////////
 	//build code to look like:
-	// (let (assoc new_entity  (first (create_entities
-	//                            (lambda *entity code*) )
-	//                   ) ) )
-	//
-	// (declare (assoc _ (null) create_new_entity (true) .... separate parameter to overwrite current entity, ENBISI_create_new_entity
-	//
+	// (declare (assoc new_entity (null) create_new_entity (true))
+	//   (let (assoc _ (lambda *entity code*))
+	//     (if create_new_entity
+	//       (assign "new_entity" (first
+	//         (create_entities new_entity _)
+	//       ))
+	//       (assign_entity_roots new_entity _)
+	//     )
+	//   )
 	//
 	//   [if include_rand_seeds]
 	//   (set_entity_rand_seed
@@ -687,16 +690,31 @@ EvaluableNodeReference EntityManipulation::FlattenEntity(Interpreter *interprete
 	bool cycle_free = true;
 	auto contained_entities = entity->GetAllDeeplyContainedEntitiesGrouped();
 
-	EvaluableNode *let_new_entity = enm->AllocNode(ENT_LET);
+	// (declare (assoc new_entity (null) create_new_entity (true))
+	EvaluableNode *declare_flatten = enm->AllocNode(ENT_DECLARE);
 	//preallocate the assoc, set_entity_rand_seed, create and set_entity_rand_seed for each contained entity, then the return new_entity
-	let_new_entity->ReserveOrderedChildNodes(3 + 2 * contained_entities.size());
+	declare_flatten->ReserveOrderedChildNodes(3 + 2 * contained_entities.size());
 
-	EvaluableNode *let_assoc = enm->AllocNode(ENT_ASSOC);
-	let_new_entity->AppendOrderedChildNode(let_assoc);
+	EvaluableNode *flatten_params = enm->AllocNode(ENT_ASSOC);
+	declare_flatten->AppendOrderedChildNode(flatten_params);
+	flatten_params->SetMappedChildNode(ENBISI_new_entity, nullptr);
+	flatten_params->SetMappedChildNode(ENBISI_create_new_entity, nullptr);
+
+	//   (if create_new_entity
+	EvaluableNode *if_create_new = enm->AllocNode(ENT_IF);
+	if_create_new->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI_create_new_entity));
+
+	//     (assign "new_entity" (first
+	//       (create_entities new_entity (lambda *entity code*))
+	//     ))
+	EvaluableNode *assign_new_entity_from_create = enm->AllocNode(ENT_ASSIGN);
+	if_create_new->AppendOrderedChildNode(assign_new_entity_from_create);
+	assign_new_entity_from_create->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI_new_entity));
 	EvaluableNode *create_root_entity = enm->AllocNode(ENT_CREATE_ENTITIES);
-	EvaluableNode *first_of_create = enm->AllocNode(ENT_FIRST);
-	first_of_create->AppendOrderedChildNode(create_root_entity);
-	let_assoc->SetMappedChildNode(ENBISI_new_entity, first_of_create);
+	create_root_entity->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI_new_entity));
+	EvaluableNode *first_of_create_entity = enm->AllocNode(ENT_FIRST);
+	first_of_create_entity->AppendOrderedChildNode(create_root_entity);
+	assign_new_entity_from_create->AppendOrderedChildNode(first_of_create_entity);
 
 	EvaluableNode *lambda_for_create_root = enm->AllocNode(ENT_LAMBDA);
 	create_root_entity->AppendOrderedChildNode(lambda_for_create_root);
@@ -705,6 +723,12 @@ EvaluableNodeReference EntityManipulation::FlattenEntity(Interpreter *interprete
 	lambda_for_create_root->AppendOrderedChildNode(root_copy);
 	if(root_copy.GetNeedCycleCheck())
 		cycle_free = false;
+
+	//     (assign_entity_roots new_entity (lambda *entity code*))
+	EvaluableNode *assign_new_entity_into_current = enm->AllocNode(ENT_ASSIGN_ENTITY_ROOTS);
+	if_create_new->AppendOrderedChildNode(assign_new_entity_into_current);
+
+
 
 	if(include_rand_seeds)
 	{

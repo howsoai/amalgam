@@ -1835,15 +1835,16 @@
 
  (let (assoc new_entity
             (call (difference_entities (list "DiffContainer" "DiffEntity1") (list "DiffContainer" "DiffEntity2") )
-				(assoc _ (list "DiffContainer" "DiffEntity1") )))
+				(assoc _ (list "DiffContainer" "DiffEntity1") new_entity "DiffContainerReconstructed")))
 	(print new_entity "\n")
     (print (retrieve_entity_root new_entity))
 	(print (retrieve_entity_root (list new_entity "DiffEntityChild1")))
 	(print (contained_entities new_entity))
+	(print (difference_entities (list "DiffContainer" "DiffEntity2") new_entity ))
  )
 
  (print "--mix_entities--\n")
-  (mix_entities "MergeEntity1" "MergeEntity2" 0.5 0.5 0.5 0.2 "MixedEntities")
+ (mix_entities "MergeEntity1" "MergeEntity2" 0.5 0.5 0.5 0.2 "MixedEntities")
  (print (retrieve_entity_root "MixedEntities"))
  (map
    (lambda (seq

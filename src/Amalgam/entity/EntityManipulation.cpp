@@ -175,9 +175,13 @@ Entity *EntityManipulation::UnionEntities(Interpreter *interpreter, Entity *enti
 	return mm.MergeValues(entity1, entity2);
 }
 
-//returns true if root_entity can be deep copied because all contained entities (recursively) are identical to those matched in entities_included
-// regardless, it will accumulate contained entities examined into top_entities_identical if can be deep copied and different_entities otherwise
-bool IsEntityIdenticalToComparedEntity(Entity *root_entity, CompactHashMap<Entity *, std::pair<Entity *, bool>> &entities_included, std::vector<Entity *> &top_entities_identical, std::vector<Entity *> &different_entities)
+//returns true if root_entity can be deep copied because all contained entities (recursively)
+// are identical to those matched in entities_included
+// regardless, it will accumulate contained entities examined into top_entities_identical if they
+// can be deep copied and different_entities otherwise
+bool IsEntityIdenticalToComparedEntity(Entity *root_entity,
+	CompactHashMap<Entity *, std::pair<Entity *, bool>> &entities_included,
+	std::vector<Entity *> &top_entities_identical, std::vector<Entity *> &different_entities)
 {
 	if(root_entity == nullptr)
 		return true;
@@ -221,8 +225,6 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 	auto &entity2_to_merged_entity = mm.GetMergedEntitiesIncludedFromB();
 
 	EvaluableNodeManager *enm = interpreter->evaluableNodeManager;
-
-	//TODO 18697: test, update tests and documentation
 
 	//////////
 	//build code to look like:
@@ -650,8 +652,6 @@ Entity *EntityManipulation::MutateEntity(Interpreter *interpreter, Entity *entit
 EvaluableNodeReference EntityManipulation::FlattenEntity(Interpreter *interpreter, Entity *entity, bool include_rand_seeds, bool parallel_create)
 {
 	EvaluableNodeManager *enm = interpreter->evaluableNodeManager;
-
-	//TODO 18697: test, update tests and documentation
 
 	//////////
 	//build code to look like:

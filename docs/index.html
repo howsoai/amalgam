@@ -319,8 +319,8 @@ function render() {
 	Comparisons and sorting on any strings are done in "natural order", meaning that 1x comes before 10, and m20x comes after m2a
 	<p>
 	IDs that only consist of integers, that is, 0-9, are considered as automatically generated IDs.  For entity mixing, entities with IDs are compared against each other and automatically merged.  In general, these IDs should not be stored by the container, but rather iterated over.<p>
-	IDs that have non-integer characters are considered named Entities.  Since named entities are considered as explicitly referenced by the container, they will only be merged against other entities with the same name.
-
+	IDs that have non-integer characters are considered named Entities.  Since named entities are considered as explicitly referenced by the container, they will only be merged against other entities with the same name.<p>
+	For opcodes that use IDs, if no id specified or the id is null, then the current entity is used.  If the id is an immediate value, it accesses a contained entity by that name.  If the id is a list, then it starts from the current entity and traverses each contained entity by name, ignoring nulls in the list. 
 	<hr>
 	
 	<a name="syntax"></a>

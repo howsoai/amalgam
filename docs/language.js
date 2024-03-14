@@ -1237,7 +1237,7 @@ var data = [
 		"output" : "*",
 		"permissions" : "e",
 		"new value" : "new",
-		"description" : "Evaluates to the entity's code, looking up the entity by the id. If no id specified or the id is null, then uses the current entity, otherwise accesses a contained entity. If suppress_label_escapes is false or omitted, will disable any labels obtained by inserting an extra # at the beginning of each.",
+		"description" : "Evaluates to the entity's code, looking up the entity by the id. If suppress_label_escapes is false or omitted, will disable any labels obtained by inserting an extra # at the beginning of each.",
 		"example" : "(print (retrieve_entity_root))\n(print (retrieve_entity_root 1))"
 	},
 

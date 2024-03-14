@@ -224,7 +224,7 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 
 	//////////
 	//build code to look like:
-	// (declare (assoc _ null) 
+	// (declare (assoc _ (null)) 
 	//  (let (assoc new_entity  (create_entity
 	//                         (call (lambda *entity difference code*)
 	//                           (assoc _ (get_entity_code _) )
@@ -273,7 +273,7 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 	}
 
 	//create the following:
-	// (declare (assoc _ null) 
+	// (declare (assoc _ (null)) 
 	//   (let (assoc new_entity (first (create_entities)) ) )
 	//  )
 	EvaluableNode *let_new_entity = enm->AllocNode(ENT_LET);
@@ -286,7 +286,7 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 	let_assoc->SetMappedChildNode(ENBISI_new_entity, first_of_create_entity);
 
 	//apply difference in code from source to build:
-	// (declare (assoc _ null) 
+	// (declare (assoc _ (null)) 
 	//  (let (assoc new_entity (first (create_entities
 	//                         (call (lambda *entity difference code*)
 	//                           (assoc _ (get_entity_code _) )
@@ -650,11 +650,17 @@ EvaluableNodeReference EntityManipulation::FlattenEntity(Interpreter *interprete
 {
 	EvaluableNodeManager *enm = interpreter->evaluableNodeManager;
 
+	//TODO 19641: add code and tests to handle null root, and update documentation
+
 	//////////
 	//build code to look like:
 	// (let (assoc new_entity  (first (create_entities
 	//                            (lambda *entity code*) )
 	//                   ) ) )
+	//
+	// (declare (assoc _ (null) create_new_entity (true) .... separate parameter to overwrite current entity, ENBISI_create_new_entity
+	//
+	//
 	//   [if include_rand_seeds]
 	//   (set_entity_rand_seed
 	//          new_entity

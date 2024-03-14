@@ -58,35 +58,54 @@ EntityReferenceType TraverseToExistingEntityReferenceViaEvaluableNodeIDPath(Enti
 
 	auto &ocn = id_path->GetOrderedChildNodes();
 
-	//always keep one to two locks active at once to walk down the entity containers
-	EntityReadReference relative_entity_read(container);
-
-	if(ocn.size() == 0)
+	//size of the entity list excluding trailing nulls
+	size_t non_null_size = ocn.size();
+	for(; non_null_size > 0; non_null_size--)
 	{
+		if(!EvaluableNode::IsNull(ocn[non_null_size - 1]))
+			break;
+	}
+
+	if(non_null_size == 0)
+	{
+		//if empty list, return the container itself
+		if(id_path->GetType() == ENT_LIST)
+			return EntityReferenceType(container);
+
 		//if the string doesn't exist, then there can't be an entity with that name
 		StringInternPool::StringID sid = EvaluableNode::ToStringIDIfExists(id_path);
 		return EntityReferenceType(container->GetContainedEntity(sid));
 	}
 
-	size_t last_ce = ocn.size();
-	for(size_t i = 0; i < last_ce; i++)
+	//if traversing, then it needs to be a list, otherwise not a valid entity
+	if(id_path->GetType() != ENT_LIST)
+		return EntityReferenceType(nullptr);
+
+	//always keep one to two locks active at once to walk down the entity containers
+	EntityReadReference cur_traversing_entity(container);
+
+	for(size_t i = 0; i < non_null_size; i++)
 	{
 		EvaluableNode *cn = ocn[i];
+
+		//null means current entity wherever it is in the traversal
+		if(EvaluableNode::IsNull(cn))
+			continue;
+
 		//if the string doesn't exist, then there can't be an entity with that name
 		StringInternPool::StringID sid = EvaluableNode::ToStringIDIfExists(cn);
-		if(i + 1 == last_ce)
-		{
-			//last reference, use destination type
-			return EntityReferenceType(relative_entity_read->GetContainedEntity(sid));
-		}
-		else
-		{
-			//assignment should keep both read locks simultaneously
-			relative_entity_read = relative_entity_read->GetContainedEntity(sid);
-			//if doesn't exist, exit gracefully
-			if(relative_entity_read == nullptr)
-				return EntityReferenceType(nullptr);
-		}
+		Entity *relative_entity = cur_traversing_entity->GetContainedEntity(sid);
+
+		//if entity doesn't exist, exit gracefully
+		if(relative_entity == nullptr)
+			return EntityReferenceType(nullptr);
+
+		//if last reference, use destination type
+		if(i + 1 == non_null_size)
+			return EntityReferenceType(relative_entity);
+
+		//create new read lock and overwrite existing to walk down the list
+		cur_traversing_entity = EntityReadReference(relative_entity);
 	}
 
 	//shouldn't make it here

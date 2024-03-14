@@ -271,6 +271,7 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 		EvaluableNode *clone_entity = enm->AllocNode(ENT_CLONE_ENTITIES);
 		difference_function->AppendOrderedChildNode(clone_entity);
 		clone_entity->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI__));
+		clone_entity->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI_new_entity));
 		delete root_merged;
 		return EvaluableNodeReference(difference_function, true);
 	}
@@ -279,7 +280,7 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 	//  (assign "new_entity" (first (create_entities new_entity
 	EvaluableNode *assign_new_entity = enm->AllocNode(ENT_ASSIGN);
 	difference_function->AppendOrderedChildNode(assign_new_entity);
-	assign_new_entity->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI_new_entity));
+	assign_new_entity->AppendOrderedChildNode(enm->AllocNode(ENT_STRING, ENBISI_new_entity));
 	EvaluableNode *create_root_entity = enm->AllocNode(ENT_CREATE_ENTITIES);
 	create_root_entity->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI_new_entity));
 	EvaluableNode *first_of_create_entity = enm->AllocNode(ENT_FIRST);
@@ -698,7 +699,7 @@ EvaluableNodeReference EntityManipulation::FlattenEntity(Interpreter *interprete
 	EvaluableNode *flatten_params = enm->AllocNode(ENT_ASSOC);
 	declare_flatten->AppendOrderedChildNode(flatten_params);
 	flatten_params->SetMappedChildNode(ENBISI_new_entity, nullptr);
-	flatten_params->SetMappedChildNode(ENBISI_create_new_entity, nullptr);
+	flatten_params->SetMappedChildNode(ENBISI_create_new_entity, enm->AllocNode(ENT_TRUE));
 
 	//   (let (assoc _ (lambda *entity code*))
 	EvaluableNode *let_entity_code = enm->AllocNode(ENT_LET);
@@ -724,7 +725,7 @@ EvaluableNodeReference EntityManipulation::FlattenEntity(Interpreter *interprete
 	//     ))
 	EvaluableNode *assign_new_entity_from_create = enm->AllocNode(ENT_ASSIGN);
 	if_create_new->AppendOrderedChildNode(assign_new_entity_from_create);
-	assign_new_entity_from_create->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI_new_entity));
+	assign_new_entity_from_create->AppendOrderedChildNode(enm->AllocNode(ENT_STRING, ENBISI_new_entity));
 	EvaluableNode *create_root_entity = enm->AllocNode(ENT_CREATE_ENTITIES);
 	create_root_entity->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI_new_entity));
 	create_root_entity->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI__));

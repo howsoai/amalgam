@@ -107,7 +107,7 @@ Entity *EntityManipulation::EntitiesMixMethod::MergeValues(Entity *a, Entity *b,
 		{
 			if(KeepNonMergeableValue())
 			{
-				if(KeepNonMergeableAInsteadOfB())
+				if(KeepNonMergeableAInsteadOfB() || b == nullptr)
 					return new Entity(a);
 				else
 					return new Entity(b);

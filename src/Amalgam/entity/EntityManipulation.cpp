@@ -649,10 +649,8 @@ Entity *EntityManipulation::MutateEntity(Interpreter *interpreter, Entity *entit
 	return new_entity;
 }
 
-EvaluableNodeReference EntityManipulation::FlattenEntity(Interpreter *interpreter, Entity *entity, bool include_rand_seeds, bool parallel_create)
+EvaluableNodeReference EntityManipulation::FlattenEntity(EvaluableNodeManager *enm, Entity *entity, bool include_rand_seeds, bool parallel_create)
 {
-	EvaluableNodeManager *enm = interpreter->evaluableNodeManager;
-
 	//////////
 	//build code to look like:
 	// (declare (assoc new_entity (null) create_new_entity (true))

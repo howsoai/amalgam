@@ -327,7 +327,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FLATTEN_ENTITY(EvaluableNo
 	if(source_entity == nullptr)
 		return EvaluableNodeReference::Null();
 	
-	return EntityManipulation::FlattenEntity(this, source_entity, include_rand_seeds, parallel_create);
+	return EntityManipulation::FlattenEntity(evaluableNodeManager, source_entity, include_rand_seeds, parallel_create);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNode *en, bool immediate_result)

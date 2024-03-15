@@ -732,6 +732,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 	{
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[5]);
 
+		//TODO 19678: add parameters for flatten_entity: include_rand_seeds, parallel_create
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
 			auto &mcn = params->GetMappedChildNodesReference();

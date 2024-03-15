@@ -10,6 +10,7 @@
 #include "FileSupportCSV.h"
 #include "FileSupportJSON.h"
 #include "FileSupportYAML.h"
+#include "EntityManipulation.h"
 #include "PlatformSpecific.h"
 
 //system headers:
@@ -192,6 +193,15 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 		delete new_entity;
 		return nullptr;
 	}
+
+	if(file_type == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
+	{
+		//TODO 19678: call new_entity->Execute()		
+
+		new_entity->evaluableNodeManager.FreeNodeTreeIfPossible(code);
+		return new_entity;
+	}
+
 	new_entity->SetRoot(code, true);
 
 	//load any metadata like random seed
@@ -281,6 +291,20 @@ bool AssetManager::StoreEntityToResourcePath(Entity *entity, std::string &resour
 		return false;
 
 	std::string resource_base_path;
+
+	if(file_type == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
+	{
+		//TODO 19678: add parameters for include_rand_seeds, parallel_create
+		EvaluableNodeReference flattened_entity = EntityManipulation::FlattenEntity(&entity->evaluableNodeManager, entity,
+			include_rand_seeds, parallel_create);
+
+		bool all_stored_successfully = AssetManager::StoreResourcePath(flattened_entity,
+			resource_path, resource_base_path, file_type, &entity->evaluableNodeManager, escape_filename, sort_keys);
+
+		entity->evaluableNodeManager.FreeNodeTreeIfPossible(flattened_entity);
+		return all_stored_successfully;
+	}
+
 	bool all_stored_successfully = AssetManager::StoreResourcePath(entity->GetRoot(),
 		resource_path, resource_base_path, file_type, &entity->evaluableNodeManager, escape_filename, sort_keys);
 

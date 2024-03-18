@@ -763,7 +763,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 		return EvaluableNodeReference::Null();
 
 	bool stored_successfully = asset_manager.StoreEntityToResourcePath(source_entity, resource_name, file_type,
-		false, true, escape_filename, escape_contained_filenames, sort_keys);
+		false, true, escape_filename, escape_contained_filenames, sort_keys, include_rand_seeds, parallel_create);
 
 	return AllocReturn(stored_successfully, immediate_result);
 }

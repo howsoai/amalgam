@@ -39,6 +39,16 @@ public:
 	// sets resource_base_path to the resource path without the extension, and extension accordingly
 	//if file_type is not an empty string, it will use the specified file_type instead of the filename's extension
 	static bool StoreResourcePath(EvaluableNode *code, std::string &resource_path, std::string &resource_base_path,
+		std::string &file_type, EvaluableNodeManager *enm, bool escape_filename, bool sort_keys)
+	{
+		std::string complete_resource_path;
+		PreprocessFileNameAndType(resource_path, file_type, escape_filename, resource_base_path, complete_resource_path);
+
+		return StoreResourcePathFromProcessedResourcePaths(code, complete_resource_path,
+			file_type, enm, escape_filename, sort_keys);
+	}
+
+	static bool StoreResourcePathFromProcessedResourcePaths(EvaluableNode *code, std::string &complete_resource_path,
 		std::string &file_type, EvaluableNodeManager *enm, bool escape_filename, bool sort_keys);
 
 	//Loads an entity, including contained entites, etc. from the resource path specified
@@ -181,6 +191,13 @@ private:
 
 	//recursively removes root permissions
 	void RemoveRootPermissions(Entity *entity);
+
+	//using resource_path as the semantically intended path, populates resource_base_path and complete_resource_path,
+	// and populates file_type if it is unspecified (empty string)
+	//escapes the resource path if escape_resource_path is true
+	static void PreprocessFileNameAndType(std::string &resource_path,
+		std::string &file_type, bool escape_resource_path,
+		std::string &resource_base_path, std::string &complete_resource_path);
 
 	//entities that need changes stored, and the resource paths to store them
 	CompactHashMap<Entity *, std::string> persistentEntities;

@@ -2117,7 +2117,7 @@
  (assign_to_entities "ModuleTest" (assoc a 1))
  (store_entity "amlg_code/test_output/module_test2.amlg" "ModuleTest")
 
- (store_entity "amlg_code/test_output/module_testc.caml" "ModuleTest")
+ (store_entity "amlg_code/test_output/module_test_c.caml" "ModuleTest")
  (load_entity "amlg_code/test_output/module_test_c.caml" "ModuleTestDecompressed")
  (print "Compression difference: [" (difference_entities "ModuleTest" "ModuleTestDecompressed") "]\n")
 
@@ -4024,7 +4024,7 @@
  (if (!= (system "os") "Windows")
 	(assign (assoc rmdir "rm -r " rmfile "rm " slash "/"))
  )
- (system "system" (concat rmdir "amlg_code" slash "test_output"))
+; (system "system" (concat rmdir "amlg_code" slash "test_output"))
  (system "system" (concat rmdir "amlg_code" slash "persistent_tree_test_root"))
  (system "system" (concat rmfile "amlg_code" slash "persist_module_test" slash "psm.mdam"))
  (system "system" (concat rmfile "amlg_code" slash "persist_module_test.mdam"))

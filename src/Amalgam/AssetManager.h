@@ -51,10 +51,11 @@ public:
 	//Stores an entity, including contained entites, etc. from the resource path specified
 	//if file_type is not an empty string, it will use the specified file_type instead of the filename's extension
 	// if persistent is true, then it will keep the resource updated based on any calls to UpdateEntity (will not make not persistent if was previously loaded as persistent)
-	// returns true if successful
+	//returns true if successful
 	bool StoreEntityToResourcePath(Entity *entity, std::string &resource_path, std::string &file_type,
 		bool update_persistence_location, bool store_contained_entities,
-		bool escape_filename, bool escape_contained_filenames, bool sort_keys);
+		bool escape_filename, bool escape_contained_filenames, bool sort_keys,
+		bool include_rand_seeds = true, bool parallel_create = false);
 
 	//Indicates that the entity has been written to or updated, and so if the asset is persistent, the persistent copy should be updated
 	void UpdateEntity(Entity *entity);

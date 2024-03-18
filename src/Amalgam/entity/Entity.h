@@ -60,34 +60,34 @@ public:
 	// If entity_read_lock is specified, then it will unlock prior to execution after locked_memory_modification_lock is locked
 	// potentially writing anything out to destination_temp_enm
 	EvaluableNodeReference Execute(ExecutionCycleCount max_num_steps, ExecutionCycleCount &num_steps_executed, size_t max_num_nodes, size_t &num_nodes_allocated,
-		std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
+		StringInternPool::StringID label_sid = StringInternPool::NOT_A_STRING_ID,
+		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
 		EvaluableNode *call_stack = nullptr, bool on_self = false,
 	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::ReadLock *locked_memory_modification_lock = nullptr,
 		Concurrency::ReadLock *entity_read_lock = nullptr,
 	#endif
-		StringInternPool::StringID label_sid = StringInternPool::NOT_A_STRING_ID,
 		Interpreter *calling_interpreter = nullptr);
 
 	//same as Execute but accepts a string for label name
 	inline EvaluableNodeReference Execute(ExecutionCycleCount max_num_steps, ExecutionCycleCount &num_steps_executed,
 		size_t max_num_nodes, size_t &num_nodes_allocated,
-		std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
-		EvaluableNode *call_stack, bool on_self,
+		std::string &label_name,
+		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
+		EvaluableNode *call_stack = nullptr, bool on_self = false,
 	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::ReadLock *locked_memory_modification_lock,
-		Concurrency::ReadLock *entity_read_lock,
+		Concurrency::ReadLock *locked_memory_modification_lock = nullptr,
+		Concurrency::ReadLock *entity_read_lock = nullptr,
 	#endif
-		const std::string &label_name,
 		Interpreter *calling_interpreter = nullptr)
 	{
 		StringInternPool::StringID label_sid = string_intern_pool.GetIDFromString(label_name);
-		return Execute(max_num_steps, num_steps_executed, max_num_nodes, num_nodes_allocated, write_listeners, print_listener,
-			call_stack, on_self,
+		return Execute(max_num_steps, num_steps_executed, max_num_nodes, num_nodes_allocated,
+			label_sid, write_listeners, print_listener, call_stack, on_self,
 		#ifdef MULTITHREAD_SUPPORT
 			locked_memory_modification_lock, entity_read_lock,
 		#endif
-			label_sid, calling_interpreter);
+			calling_interpreter);
 	}
 
 	//returns true if the entity or any of its contained entities are currently being executed, either because of multiple threads executing on it

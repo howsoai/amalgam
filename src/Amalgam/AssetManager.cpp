@@ -114,6 +114,7 @@ EvaluableNodeReference AssetManager::LoadResourcePath(std::string &resource_path
 bool AssetManager::StoreResourcePath(EvaluableNode *code, std::string &resource_path,
 	std::string &resource_base_path, std::string &file_type, EvaluableNodeManager *enm, bool escape_filename, bool sort_keys)
 {
+	//TODO 19678: make sure StoreEntityToResourcePath has this same logic
 	//get file path based on the file being stored
 	std::string path, file_base, extension;
 	Platform_SeparatePathFileExtension(resource_path, path, file_base, extension);
@@ -196,9 +197,10 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 
 	if(file_type == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 	{
-		//TODO 19678: call new_entity->Execute()		
-
-		new_entity->evaluableNodeManager.FreeNodeTreeIfPossible(code);
+		new_entity->SetRoot(code, true);
+		ExecutionCycleCount max_num_steps = 0, num_steps_executed = 0;
+		size_t max_num_nodes = 0, num_nodes_allocated = 0;
+		new_entity->Execute(max_num_steps, num_steps_executed, max_num_nodes, num_nodes_allocated);
 		return new_entity;
 	}
 
@@ -285,7 +287,8 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 }
 
 bool AssetManager::StoreEntityToResourcePath(Entity *entity, std::string &resource_path, std::string &file_type,
-	bool update_persistence_location, bool store_contained_entities, bool escape_filename, bool escape_contained_filenames, bool sort_keys)
+	bool update_persistence_location, bool store_contained_entities, bool escape_filename, bool escape_contained_filenames,
+	bool sort_keys, bool include_rand_seeds, bool parallel_create)
 {
 	if(entity == nullptr)
 		return false;
@@ -294,7 +297,6 @@ bool AssetManager::StoreEntityToResourcePath(Entity *entity, std::string &resour
 
 	if(file_type == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 	{
-		//TODO 19678: add parameters for include_rand_seeds, parallel_create
 		EvaluableNodeReference flattened_entity = EntityManipulation::FlattenEntity(&entity->evaluableNodeManager, entity,
 			include_rand_seeds, parallel_create);
 
@@ -341,7 +343,8 @@ bool AssetManager::StoreEntityToResourcePath(Entity *entity, std::string &resour
 				new_resource_path = resource_base_path + contained_entity->GetId() + "." + file_type;
 
 			//don't escape filename again because it's already escaped in this loop
-			StoreEntityToResourcePath(contained_entity, new_resource_path, file_type, false, true, false, escape_contained_filenames, sort_keys);
+			StoreEntityToResourcePath(contained_entity, new_resource_path, file_type, false, true, false,
+				escape_contained_filenames, sort_keys, include_rand_seeds, parallel_create);
 		}
 	}
 

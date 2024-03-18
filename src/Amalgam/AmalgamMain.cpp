@@ -272,7 +272,7 @@ PLATFORM_MAIN_CONSOLE
 		args_node->SetMappedChildNode("interpreter", interpreter_node);
 
 		//execute the entity
-		entity->Execute(0, num_steps_executed, 0, num_nodes_allocated, &write_listeners, print_listener, call_stack);
+		entity->Execute(0, num_steps_executed, 0, num_nodes_allocated, StringInternPool::NOT_A_STRING_ID, &write_listeners, print_listener, call_stack);
 
 		//clean up the nodes created here
 		entity->evaluableNodeManager.FreeNodeTree(call_stack);

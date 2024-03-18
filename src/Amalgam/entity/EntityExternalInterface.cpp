@@ -102,12 +102,12 @@ void EntityExternalInterface::ExecuteEntity(std::string &handle, std::string &la
 
 	ExecutionCycleCount max_num_steps = 0, num_steps_executed = 0;
 	size_t max_num_nodes = 0, num_nodes_allocated = 0;
-	bundle->entity->Execute(max_num_steps, num_steps_executed, max_num_nodes, num_nodes_allocated, &bundle->writeListeners, bundle->printListener,
-		nullptr, false,
+	bundle->entity->Execute(max_num_steps, num_steps_executed, max_num_nodes, num_nodes_allocated,
+		label, &bundle->writeListeners, bundle->printListener, nullptr, false
 	#ifdef MULTITHREAD_SUPPORT
-		nullptr, nullptr,
+		, nullptr, nullptr
 	#endif
-		label);
+		);
 }
 
 void EntityExternalInterface::DestroyEntity(std::string &handle)
@@ -585,11 +585,11 @@ std::string EntityExternalInterface::ExecuteEntityJSON(std::string &handle, std:
 	ExecutionCycleCount max_num_steps = 0, num_steps_executed = 0;
 	size_t max_num_nodes = 0, num_nodes_allocated = 0;
 	EvaluableNodeReference returned_value = bundle->entity->Execute(max_num_steps, num_steps_executed, max_num_nodes,
-		num_nodes_allocated, &bundle->writeListeners, bundle->printListener, call_stack, false,
+		num_nodes_allocated, label, &bundle->writeListeners, bundle->printListener, call_stack, false
 	#ifdef MULTITHREAD_SUPPORT
-		nullptr, nullptr,
+		, nullptr, nullptr
 	#endif
-		label);
+		);
 
 	//ConvertArgsToCallStack always adds an outer list that is safe to free
 	enm.FreeNode(call_stack);

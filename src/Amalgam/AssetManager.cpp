@@ -10,7 +10,9 @@
 #include "FileSupportCSV.h"
 #include "FileSupportJSON.h"
 #include "FileSupportYAML.h"
+#include "Entity.h"
 #include "EntityManipulation.h"
+#include "Interpreter.h"
 #include "PlatformSpecific.h"
 
 //system headers:
@@ -177,9 +179,14 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 	if(file_type == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 	{
 		new_entity->SetRoot(code, true);
+
+		EvaluableNodeReference args = EvaluableNodeReference(new_entity->evaluableNodeManager.AllocNode(ENT_ASSOC), true);
+		args->SetMappedChildNode(ENBISI_create_new_entity, new_entity->evaluableNodeManager.AllocNode(ENT_FALSE));
+		auto call_stack = Interpreter::ConvertArgsToCallStack(args, new_entity->evaluableNodeManager);
+
 		ExecutionCycleCount max_num_steps = 0, num_steps_executed = 0;
 		size_t max_num_nodes = 0, num_nodes_allocated = 0;
-		new_entity->Execute(max_num_steps, num_steps_executed, max_num_nodes, num_nodes_allocated);
+		new_entity->Execute(max_num_steps, num_steps_executed, max_num_nodes, num_nodes_allocated, StringInternPool::NOT_A_STRING_ID, call_stack);
 		return new_entity;
 	}
 

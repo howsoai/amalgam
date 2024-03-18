@@ -36,14 +36,14 @@ private:
 std::vector<EvaluableNode *> CustomEvaluableNodeOrderedChildNodesSort(std::vector<EvaluableNode *> &list, CustomEvaluableNodeComparator &cenc);
 
 //Starts at the container specified and traverses the id path specified, finding the relative Entity from container
-// if id_path is nullptr, then it will set relative_entity to the container itself, leaving relative_entity_parent to nullptr
-// if id_path is invalid or container is nullptr, then it will set both relative_entity and relative_entity_parent to nullptr
+// if id_path is nullptr, then it will set relative_entity to the container itself, leaving relative_entity_container to nullptr
+// if id_path is invalid or container is nullptr, then it will set both relative_entity and relative_entity_container to nullptr
 // if id_path is any form of a list, then it will treat the ids as a sequence of subcontainers
 // otherwise the id_path is transformed to a string and used as an id
-//sets relative_entity_parent to the base entity found, sets id to the value of the id relative to the base, and relative_entity to the entity being pointed to
-// if the path exists (as in a destination of where to put an entity) but the target entity does not, then relative_entity_parent may be a valid reference and relative_entity may be nullptr
+//sets relative_entity_container to the base entity found, sets id to the value of the id relative to the base, and relative_entity to the entity being pointed to
+// if the path exists (as in a destination of where to put an entity) but the target entity does not, then relative_entity_container may be a valid reference and relative_entity may be nullptr
 //Note that id is allocated in the string_intern_pool, and the caller is responsible for freeing the allocation
-void TraverseToEntityViaEvaluableNodeIDPath(Entity *container, EvaluableNode *id_path, Entity *&relative_entity_parent, StringInternRef &id, Entity *&relative_entity);
+void TraverseToEntityViaEvaluableNodeIDPath(Entity *container, EvaluableNode *id_path, Entity *&relative_entity_container, StringInternRef &id, Entity *&relative_entity);
 
 //Starts at the container specified and traverses the id path specified, finding the relative Entity from container
 // if id_path does not exist or is invalid then returns nullptr
@@ -82,7 +82,7 @@ EntityReferenceType TraverseToExistingEntityReferenceViaEvaluableNodeIDPath(Enti
 		return EntityReferenceType(nullptr);
 
 	//always keep one to two locks active at once to walk down the entity containers
-	EntityReadReference cur_traversing_entity(container);
+	EntityReadReference relative_entity_container(container);
 
 	for(size_t i = 0; i < non_null_size; i++)
 	{
@@ -94,7 +94,7 @@ EntityReferenceType TraverseToExistingEntityReferenceViaEvaluableNodeIDPath(Enti
 
 		//if the string doesn't exist, then there can't be an entity with that name
 		StringInternPool::StringID sid = EvaluableNode::ToStringIDIfExists(cn);
-		Entity *relative_entity = cur_traversing_entity->GetContainedEntity(sid);
+		Entity *relative_entity = relative_entity_container->GetContainedEntity(sid);
 
 		//if entity doesn't exist, exit gracefully
 		if(relative_entity == nullptr)
@@ -105,16 +105,12 @@ EntityReferenceType TraverseToExistingEntityReferenceViaEvaluableNodeIDPath(Enti
 			return EntityReferenceType(relative_entity);
 
 		//create new read lock and overwrite existing to walk down the list
-		cur_traversing_entity = EntityReadReference(relative_entity);
+		relative_entity_container = EntityReadReference(relative_entity);
 	}
 
 	//shouldn't make it here
 	return EntityReferenceType(nullptr);
 }
-
-//Like TraverseToEntityViaEvaluableNodeIDPath, except ensures that the final destination does not exist (or if it does, it will place it within the entity specified
-//Note that destination_id is allocated in the string_intern_pool, and the caller is responsible for freeing the allocation
-void TraverseEntityToNewDestinationViaEvaluableNodeIDPath(Entity *container, EvaluableNode *id_path, Entity *&destination_entity_parent, StringInternRef &destination_id);
 
 //constructs an ID or list of IDs that will traverse frome a to b, assuming that b is contained somewhere within a
 EvaluableNode *GetTraversalIDPathFromAToB(EvaluableNodeManager *enm, Entity *a, Entity *b);

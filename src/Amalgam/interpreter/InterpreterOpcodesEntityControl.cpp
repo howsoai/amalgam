@@ -728,6 +728,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 	}
 
 	bool sort_keys = false;
+	bool include_rand_seeds = true;
+	bool parallel_create = false;
 	if(ocn.size() >= 6)
 	{
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[5]);
@@ -739,6 +741,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 			auto found_sort_keys = mcn.find(ENBISI_sort_keys);
 			if(found_sort_keys != end(mcn))
 				sort_keys = EvaluableNode::IsTrue(found_sort_keys->second);
+
+			auto found_include_rand_seeds = mcn.find(ENBISI_include_rand_seeds);
+			if(found_include_rand_seeds != end(mcn))
+				include_rand_seeds = EvaluableNode::IsTrue(found_include_rand_seeds->second);
+
+			auto found_parallel_create = mcn.find(ENBISI_parallel_create);
+			if(found_parallel_create != end(mcn))
+				parallel_create = EvaluableNode::IsTrue(found_parallel_create->second);
 		}
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
@@ -753,7 +763,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 		return EvaluableNodeReference::Null();
 
 	bool stored_successfully = asset_manager.StoreEntityToResourcePath(source_entity, resource_name, file_type,
-		false, true, escape_filename, escape_contained_filenames, sort_keys);
+		false, true, escape_filename, escape_contained_filenames, sort_keys, include_rand_seeds, parallel_create);
 
 	return AllocReturn(stored_successfully, immediate_result);
 }

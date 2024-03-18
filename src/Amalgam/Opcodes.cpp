@@ -305,6 +305,10 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_rand_seed, "rand_seed");
 	EmplaceStaticString(ENBISI_version, "version");
 
+	//file storage options
+	EmplaceStaticString(ENBISI_include_rand_seeds, "include_rand_seeds");
+	EmplaceStaticString(ENBISI_parallel_create, "parallel_create");
+
 	//substr parameters
 	EmplaceStaticString(ENBISI_all, "all");
 	EmplaceStaticString(ENBISI_submatches, "submatches");

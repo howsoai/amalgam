@@ -2117,7 +2117,7 @@
  (assign_to_entities "ModuleTest" (assoc a 1))
  (store_entity "amlg_code/test_output/module_test2.amlg" "ModuleTest")
 
- (store_entity "amlg_code/test_output/module_testc.caml" "ModuleTest")
+ (store_entity "amlg_code/test_output/module_test_c.caml" "ModuleTest")
  (load_entity "amlg_code/test_output/module_test_c.caml" "ModuleTestDecompressed")
  (print "Compression difference: [" (difference_entities "ModuleTest" "ModuleTestDecompressed") "]\n")
 

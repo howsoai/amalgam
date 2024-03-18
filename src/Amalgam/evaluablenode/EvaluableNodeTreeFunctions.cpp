@@ -22,8 +22,10 @@ bool CustomEvaluableNodeComparator::operator()(EvaluableNode *a, EvaluableNode *
 	return retval;
 }
 
-//performs a top-down stable merge on the sub-lists from start_index to middle_index and middle_index to _end_index from source into destination using cenc
-void CustomEvaluableNodeOrderedChildNodesTopDownMerge(std::vector<EvaluableNode *> &source, size_t start_index, size_t middle_index, size_t end_index, std::vector<EvaluableNode *> &destination, CustomEvaluableNodeComparator &cenc)
+//performs a top-down stable merge on the sub-lists from start_index to middle_index and middle_index to _end_index
+//  from source into destination using cenc
+void CustomEvaluableNodeOrderedChildNodesTopDownMerge(std::vector<EvaluableNode *> &source,
+	size_t start_index, size_t middle_index, size_t end_index, std::vector<EvaluableNode *> &destination, CustomEvaluableNodeComparator &cenc)
 {
 	size_t left_pos = start_index;
 	size_t right_pos = middle_index;
@@ -45,8 +47,10 @@ void CustomEvaluableNodeOrderedChildNodesTopDownMerge(std::vector<EvaluableNode 
 	}
 }
 
-//performs a stable merge sort of source (which *will* be modified and is not constant) from start_index to end_index into destination; uses cenc for comparison
-void CustomEvaluableNodeOrderedChildNodesSort(std::vector<EvaluableNode *> &source, size_t start_index, size_t end_index, std::vector<EvaluableNode *> &destination, CustomEvaluableNodeComparator &cenc)
+//performs a stable merge sort of source (which *will* be modified and is not constant)
+// from start_index to end_index into destination; uses cenc for comparison
+void CustomEvaluableNodeOrderedChildNodesSort(std::vector<EvaluableNode *> &source,
+	size_t start_index, size_t end_index, std::vector<EvaluableNode *> &destination, CustomEvaluableNodeComparator &cenc)
 {
 	//if one element, then sorted
 	if(start_index + 1 >= end_index)
@@ -73,65 +77,81 @@ std::vector<EvaluableNode *> CustomEvaluableNodeOrderedChildNodesSort(std::vecto
 	return list_copy_2;
 }
 
-void TraverseToEntityViaEvaluableNodeIDPath(Entity *container, EvaluableNode *id_path, Entity *&relative_entity_parent, StringInternRef &id, Entity *&relative_entity)
+void TraverseToEntityViaEvaluableNodeIDPath(Entity *container, EvaluableNode *id_path,
+	Entity *&relative_entity_container, StringInternRef &id, Entity *&relative_entity)
 {
-	//TODO 10975: make this use locks as appropriate
-	relative_entity_parent = nullptr;
+	//TODO 10975: change this into a multilock method to retrieve 2-3 entities
+	//TODO 10975: templatize like TraverseToExistingEntityReferenceViaEvaluableNodeIDPath?
+	relative_entity_container = nullptr;
 	id = StringInternPool::NOT_A_STRING_ID;
-	relative_entity = nullptr;
 
 	if(container == nullptr)
+	{
+		relative_entity = nullptr;
 		return;
+	}
+
+	relative_entity = container;
 
 	if(EvaluableNode::IsEmptyNode(id_path))
-	{
-		relative_entity = container;
 		return;
+
+	auto &ocn = id_path->GetOrderedChildNodes();
+
+	//size of the entity list excluding trailing nulls
+	size_t non_null_size = ocn.size();
+	for(; non_null_size > 0; non_null_size--)
+	{
+		if(!EvaluableNode::IsNull(ocn[non_null_size - 1]))
+			break;
 	}
 
-	if(id_path->GetOrderedChildNodes().size() == 0)
+	if(non_null_size == 0)
 	{
-		id.SetIDWithReferenceHandoff(EvaluableNode::ToStringIDWithReference(id_path));
-		relative_entity = container->GetContainedEntity(id);
-		relative_entity_parent = container;
-		return;
-	}
-	
-	relative_entity_parent = container;
-	relative_entity = container;
-	for(auto &cn : id_path->GetOrderedChildNodes())
-	{
-		relative_entity_parent = relative_entity;
-		//if id_path is going past the end of what exists, then it is invalid
-		if(relative_entity_parent == nullptr)
-		{
-			relative_entity = nullptr;
+		//if empty list, return the container itself
+		if(id_path->GetType() == ENT_LIST)
 			return;
-		}
 
-		id.SetIDWithReferenceHandoff(EvaluableNode::ToStringIDWithReference(cn));
-		relative_entity = relative_entity_parent->GetContainedEntity(id);
+		//if the string doesn't exist, then there can't be an entity with that name
+		id.SetIDWithReferenceHandoff(EvaluableNode::ToStringIDWithReference(id_path));
+
+		relative_entity = container->GetContainedEntity(id);
+		relative_entity_container = container;
+		return;
 	}
-}
 
-void TraverseEntityToNewDestinationViaEvaluableNodeIDPath(Entity *container, EvaluableNode *id_path, Entity *&destination_entity_parent, StringInternRef &destination_id)
-{
-	//TODO 10975: make this use locks as appropriate
-	Entity *destination_entity = nullptr;
-	TraverseToEntityViaEvaluableNodeIDPath(container, id_path, destination_entity_parent, destination_id, destination_entity);
-
-	//if it already exists, then place inside it
-	if(destination_entity != nullptr)
+	//if traversing, then it needs to be a list, otherwise not a valid entity
+	if(id_path->GetType() != ENT_LIST)
 	{
-		destination_entity_parent = destination_entity;
-		destination_entity = nullptr;
-
-		destination_id = StringInternRef::EmptyString();
+		relative_entity = nullptr;
+		return;
 	}
 
-	//if couldn't get the parent, just use the original container
-	if(destination_entity_parent == nullptr && destination_id == StringInternPool::NOT_A_STRING_ID)
-		destination_entity_parent = container;
+	relative_entity_container = container;
+
+	for(size_t i = 0; i < non_null_size; i++)
+	{
+		EvaluableNode *cn = ocn[i];
+
+		//null means current entity wherever it is in the traversal
+		if(EvaluableNode::IsNull(cn))
+			continue;
+
+		//if the string doesn't exist, then there can't be an entity with that name
+		id.SetIDWithReferenceHandoff(EvaluableNode::ToStringIDWithReference(cn));
+		relative_entity = relative_entity_container->GetContainedEntity(id);
+
+		//if entity doesn't exist, exit gracefully
+		if(relative_entity == nullptr)
+			return;
+
+		//if last reference, use destination type
+		if(i + 1 == non_null_size)
+			return;
+
+		//create new read lock and overwrite existing to walk down the list
+		relative_entity_container = relative_entity;
+	}
 }
 
 EvaluableNode *GetTraversalIDPathFromAToB(EvaluableNodeManager *enm, Entity *a, Entity *b)
@@ -220,7 +240,8 @@ EvaluableNode *GetTraversalPathListFromAToB(EvaluableNodeManager *enm, Evaluable
 	return path_list;
 }
 
-EvaluableNode **GetRelativeEvaluableNodeFromTraversalPathList(EvaluableNode **source, EvaluableNode **index_path_nodes, size_t num_index_path_nodes, EvaluableNodeManager *enm, size_t max_num_nodes)
+EvaluableNode **GetRelativeEvaluableNodeFromTraversalPathList(EvaluableNode **source, EvaluableNode **index_path_nodes,
+	size_t num_index_path_nodes, EvaluableNodeManager *enm, size_t max_num_nodes)
 {
 	//walk through address list to find target
 	EvaluableNode **destination = source;
@@ -349,7 +370,8 @@ EvaluableNode **GetRelativeEvaluableNodeFromTraversalPathList(EvaluableNode **so
 	return destination;
 }
 
-EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeReference value_destination_node, EvaluableNodeReference variable_value_node, EvaluableNodeManager *enm)
+EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeReference value_destination_node,
+	EvaluableNodeReference variable_value_node, EvaluableNodeManager *enm)
 {
 	//if the destination is empty, then just use the value specified
 	if(value_destination_node == nullptr)

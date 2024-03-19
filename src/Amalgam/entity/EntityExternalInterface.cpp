@@ -80,6 +80,36 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::VerifyEntity(
 	return EntityExternalInterface::LoadEntityStatus(false, "", version);
 }
 
+bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &cloned_handle, std::string &path, bool persistent,
+	std::string &write_log_filename, std::string &print_log_filename)
+{
+	auto bundle = FindEntityBundle(handle);
+	if(bundle == nullptr)
+		return false;
+
+	if(bundle->entity == nullptr)
+		return false;
+
+	Entity *entity = new Entity(bundle->entity);
+	asset_manager.SetRootPermission(entity, true);
+
+	PrintListener *pl = nullptr;
+	std::vector<EntityWriteListener *> wl;
+
+	if(print_log_filename != "")
+		pl = new PrintListener(print_log_filename);
+
+	if(write_log_filename != "")
+	{
+		EntityWriteListener *write_log = new EntityWriteListener(entity, false, write_log_filename);
+		wl.push_back(write_log);
+	}
+
+	AddEntityBundle(cloned_handle, new EntityListenerBundle(entity, wl, pl));
+
+	return true;
+}
+
 void EntityExternalInterface::StoreEntity(std::string &handle, std::string &path, bool update_persistence_location, bool store_contained_entities)
 {
 	auto bundle = FindEntityBundle(handle);

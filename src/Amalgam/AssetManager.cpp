@@ -314,12 +314,11 @@ bool AssetManager::StoreEntityToResourcePath(Entity *entity, std::string &resour
 	if(store_contained_entities && entity->GetContainedEntities().size() > 0)
 	{
 		std::error_code ec;
-		std::error_condition ok;
 		//create directory in case it doesn't exist
 		bool created_successfully = std::filesystem::create_directories(resource_base_path, ec);
 
 		//return that the directory could not be created
-		if(!created_successfully || ec != ok)
+		if(!created_successfully || ec)
 			return false;
 
 		//store any contained entities

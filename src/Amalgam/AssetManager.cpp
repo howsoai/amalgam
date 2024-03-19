@@ -115,7 +115,7 @@ EvaluableNodeReference AssetManager::LoadResourcePath(std::string &resource_path
 
 bool AssetManager::StoreResourcePathFromProcessedResourcePaths(EvaluableNode *code, std::string &complete_resource_path,
 	std::string &file_type, EvaluableNodeManager *enm, bool escape_filename, bool sort_keys)
-{	
+{
 	//store the entity based on file_type
 	if(file_type == FILE_EXTENSION_AMALGAM || file_type == FILE_EXTENSION_AMLG_METADATA)
 	{
@@ -313,8 +313,14 @@ bool AssetManager::StoreEntityToResourcePath(Entity *entity, std::string &resour
 	//store contained entities
 	if(store_contained_entities && entity->GetContainedEntities().size() > 0)
 	{
+		std::error_code ec;
+		std::error_condition ok;
 		//create directory in case it doesn't exist
-		std::filesystem::create_directories(resource_base_path);
+		bool created_successfully = std::filesystem::create_directories(resource_base_path, ec);
+
+		//return that the directory could not be created
+		if(!created_successfully || ec != ok)
+			return false;
 
 		//store any contained entities
 		resource_base_path.append("/");
@@ -330,8 +336,10 @@ bool AssetManager::StoreEntityToResourcePath(Entity *entity, std::string &resour
 				new_resource_path = resource_base_path + contained_entity->GetId() + "." + file_type;
 
 			//don't escape filename again because it's already escaped in this loop
-			StoreEntityToResourcePath(contained_entity, new_resource_path, file_type, false, true, false,
+			bool stored_successfully = StoreEntityToResourcePath(contained_entity, new_resource_path, file_type, false, true, false,
 				escape_contained_filenames, sort_keys, include_rand_seeds, parallel_create);
+			if(!stored_successfully)
+				return false;
 		}
 	}
 

@@ -107,8 +107,7 @@ bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &clon
 	AddEntityBundle(cloned_handle, new EntityListenerBundle(entity, wl, pl));
 
 	if(persistent)
-		asset_manager.SetEntityPersistentPath(entity, path);
-	asset_manager.SetRootPermission(entity, true);
+		StoreEntity(cloned_handle, path, true, true);
 
 	return true;
 }

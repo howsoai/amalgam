@@ -107,6 +107,18 @@ public:
 	inline bool IsEntityDirectlyPersistent(Entity *entity)
 	{	return persistentEntities.find(entity) != end(persistentEntities);	}
 
+	//sets the entity's persistent path
+	inline void SetEntityPersistentPath(Entity *entity, std::string &resource_path)
+	{
+	#ifdef MULTITHREAD_INTERFACE
+		Concurrency::WriteLock lock(persistentEntitiesMutex);
+	#endif
+		if(resource_path == "")
+			persistentEntities.erase(entity);
+		else
+			persistentEntities[entity] = resource_path;
+	}
+
 	inline bool DoesEntityHaveRootPermission(Entity *entity)
 	{
 		if(entity == nullptr)

@@ -91,7 +91,6 @@ bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &clon
 		return false;
 
 	Entity *entity = new Entity(bundle->entity);
-	asset_manager.SetRootPermission(entity, true);
 
 	PrintListener *pl = nullptr;
 	std::vector<EntityWriteListener *> wl;
@@ -106,6 +105,10 @@ bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &clon
 	}
 
 	AddEntityBundle(cloned_handle, new EntityListenerBundle(entity, wl, pl));
+
+	if(persistent)
+		asset_manager.SetEntityPersistentPath(entity, path);
+	asset_manager.SetRootPermission(entity, true);
 
 	return true;
 }

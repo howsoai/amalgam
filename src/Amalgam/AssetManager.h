@@ -69,7 +69,7 @@ public:
 
 	//Indicates that the entity has been written to or updated, and so if the asset is persistent, the persistent copy should be updated
 	void UpdateEntity(Entity *entity);
-	void CreateEntity(Entity *entity);
+	bool CreateEntity(Entity *entity);
 	inline void DestroyEntity(Entity *entity)
 	{
 	#ifdef MULTITHREAD_INTERFACE
@@ -77,7 +77,7 @@ public:
 	#endif
 
 		RemoveRootPermissions(entity);
-		
+
 		if(persistentEntities.size() > 0)
 			DestroyPersistentEntity(entity);
 	}

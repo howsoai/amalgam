@@ -481,7 +481,7 @@ EvaluableNodeReference Entity::Execute(ExecutionCycleCount max_num_steps, Execut
 #ifdef MULTITHREAD_SUPPORT
 	interpreter.memoryModificationLock.unlock();
 #endif
-		
+
 	return retval;
 }
 
@@ -529,10 +529,10 @@ size_t Entity::GetDeepSizeInNodes()
 size_t Entity::GetEstimatedReservedDeepSizeInBytes()
 {
 	size_t total_size = evaluableNodeManager.GetEstimatedTotalReservedSizeInBytes();
-	
+
 	for(auto entity : GetContainedEntities())
 		total_size += entity->GetEstimatedReservedDeepSizeInBytes();
-	
+
 	return total_size;
 }
 
@@ -572,7 +572,7 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, StringInternPoo
 	size_t t_index = contained_entities.size();
 
 	StringInternPool::StringID previous_t_sid = t->idStringId;
-	
+
 	//autoassign an ID if not specified
 	if(id_sid == StringInternPool::NOT_A_STRING_ID)
 	{
@@ -583,7 +583,7 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, StringInternPoo
 			new_id = "_" + EvaluableNode::NumberToString(static_cast<size_t>(randomStream.RandUInt32()));
 
 			t->idStringId = string_intern_pool.CreateStringReference(new_id);
-			
+
 			//if not currently in use, then use it and stop searching
 			if(id_to_index_lookup.insert(std::make_pair(t->idStringId, t_index)).second == true)
 				break;
@@ -617,7 +617,9 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, StringInternPoo
 	{
 		for(auto &wl : *write_listeners)
 			wl->LogCreateEntity(t);
-		asset_manager.CreateEntity(t);
+		bool created_successfully = asset_manager.CreateEntity(t);
+		if(!created_successfully)
+			return StringInternPool::NOT_A_STRING_ID;
 	}
 
 	return t->idStringId;
@@ -684,7 +686,9 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, std::string id_
 	{
 		for(auto &wl : *write_listeners)
 			wl->LogCreateEntity(t);
-		asset_manager.CreateEntity(t);
+		bool created_successfully = asset_manager.CreateEntity(t);
+		if(!created_successfully)
+			return StringInternPool::NOT_A_STRING_ID;
 	}
 
 	return t->idStringId;
@@ -707,7 +711,7 @@ void Entity::RemoveContainedEntity(StringInternPool::StringID id, std::vector<En
 	size_t index_to_remove = id_to_index_it_to_remove->second;
 	size_t index_to_replace = contained_entities.size() - 1;
 	Entity *entity_to_remove = contained_entities[index_to_remove];
-		
+
 	//record the entity as being deleted
 	if(write_listeners != nullptr)
 	{
@@ -852,7 +856,7 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, Evalu
 		evaluableNodeManager.SetRootNode(evaluableNodeManager.AllocNode(ENT_NULL));
 	}
 	else if(allocated_with_entity_enm && metadata_modifier == EvaluableNodeManager::ENMM_NO_CHANGE)
-	{		
+	{
 		evaluableNodeManager.SetRootNode(_code);
 	}
 	else

@@ -391,17 +391,17 @@ void AssetManager::UpdateEntity(Entity *entity)
 	}
 }
 
-void AssetManager::CreateEntity(Entity *entity)
+bool AssetManager::CreateEntity(Entity *entity)
 {
 	if(entity == nullptr)
-		return;
+		return false;
 
 #ifdef MULTITHREAD_INTERFACE
 	Concurrency::ReadLock lock(persistentEntitiesMutex);
 #endif
 	//early out if no persistent entities
 	if(persistentEntities.size() == 0)
-		return;
+		return false;
 
 	Entity *cur = entity->GetContainer();
 	std::string slice_path;
@@ -410,6 +410,7 @@ void AssetManager::CreateEntity(Entity *entity)
 	std::string traversal_path = "";
 	std::string escaped_entity_id = FilenameEscapeProcessor::SafeEscapeFilename(entity->GetId());
 	std::string id_suffix = "/" + escaped_entity_id + "." + defaultEntityExtension;
+	std::error_code ec;
 	while(cur != nullptr)
 	{
 		const auto &pe = persistentEntities.find(cur);
@@ -418,7 +419,10 @@ void AssetManager::CreateEntity(Entity *entity)
 			Platform_SeparatePathFileExtension(pe->second, slice_path, filename, extension);
 			//create contained entity directory in case it doesn't currently exist
 			std::string new_path = slice_path + filename + traversal_path;
-			std::filesystem::create_directory(new_path);
+			bool created_successfully = std::filesystem::create_directory(new_path, ec);
+
+			if(ec || !created_successfully)
+				return false;
 
 			new_path += id_suffix;
 			StoreEntityToResourcePath(entity, new_path, extension, false, true, false, true, false);
@@ -433,6 +437,7 @@ void AssetManager::CreateEntity(Entity *entity)
 		traversal_path = "/" + escaped_entity_id + traversal_path;
 		cur = cur_container;
 	}
+	return true;
 }
 
 void AssetManager::SetRootPermission(Entity *entity, bool permission)

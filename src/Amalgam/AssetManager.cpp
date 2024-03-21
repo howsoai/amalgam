@@ -391,17 +391,17 @@ void AssetManager::UpdateEntity(Entity *entity)
 	}
 }
 
-bool AssetManager::CreateEntity(Entity *entity)
+void AssetManager::CreateEntity(Entity *entity)
 {
 	if(entity == nullptr)
-		return false;
+		return;
 
 #ifdef MULTITHREAD_INTERFACE
 	Concurrency::ReadLock lock(persistentEntitiesMutex);
 #endif
 	//early out if no persistent entities
 	if(persistentEntities.size() == 0)
-		return false;
+		return;
 
 	Entity *cur = entity->GetContainer();
 	std::string slice_path;
@@ -422,7 +422,10 @@ bool AssetManager::CreateEntity(Entity *entity)
 			bool created_successfully = std::filesystem::create_directory(new_path, ec);
 
 			if(ec || !created_successfully)
-				return false;
+			{
+				std::cerr << "Could not create directory: " << new_path << std::endl;
+				continue;
+			}
 
 			new_path += id_suffix;
 			StoreEntityToResourcePath(entity, new_path, extension, false, true, false, true, false);
@@ -437,7 +440,6 @@ bool AssetManager::CreateEntity(Entity *entity)
 		traversal_path = "/" + escaped_entity_id + traversal_path;
 		cur = cur_container;
 	}
-	return true;
 }
 
 void AssetManager::SetRootPermission(Entity *entity, bool permission)

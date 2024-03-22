@@ -77,7 +77,7 @@ public:
 	#endif
 
 		RemoveRootPermissions(entity);
-		
+
 		if(persistentEntities.size() > 0)
 			DestroyPersistentEntity(entity);
 	}

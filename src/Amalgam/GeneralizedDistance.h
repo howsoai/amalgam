@@ -135,9 +135,9 @@ public:
 		class NominalDeviationData
 		{
 		public:
+			//deviations for each value; unknown should be stored as special nonvalue (e.g., NaN, NaS)
 			FastHashMap<NominalValueType, DistanceTermsWithDifference> deviations;
 			DistanceTermsWithDifference defaultDeviation;
-			DistanceTermsWithDifference unknownDeviation;
 		};
 
 		//sparse deviation matrix if the nominal is a string

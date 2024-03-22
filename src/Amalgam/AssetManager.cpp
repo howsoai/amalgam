@@ -421,14 +421,18 @@ void AssetManager::CreateEntity(Entity *entity)
 			std::error_code ec;
 			bool created_successfully = std::filesystem::create_directory(new_path, ec);
 
-			if(ec || !created_successfully)
+			if(!ec && created_successfully)
+			{
+				// std::cerr << "Could not create directory: " << new_path << std::endl;
+				// continue;
+				new_path += id_suffix;
+				StoreEntityToResourcePath(entity, new_path, extension, false, true, false, true, false);
+			}
+			else
 			{
 				std::cerr << "Could not create directory: " << new_path << std::endl;
-				continue;
 			}
 
-			new_path += id_suffix;
-			StoreEntityToResourcePath(entity, new_path, extension, false, true, false, true, false);
 		}
 
 		//don't need to continue and allocate extra traversal path if already at outermost entity

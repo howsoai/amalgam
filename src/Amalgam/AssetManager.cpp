@@ -418,10 +418,19 @@ void AssetManager::CreateEntity(Entity *entity)
 			Platform_SeparatePathFileExtension(pe->second, slice_path, filename, extension);
 			//create contained entity directory in case it doesn't currently exist
 			std::string new_path = slice_path + filename + traversal_path;
-			std::filesystem::create_directory(new_path);
+			std::error_code ec;
+			bool created_successfully = std::filesystem::create_directory(new_path, ec);
 
-			new_path += id_suffix;
-			StoreEntityToResourcePath(entity, new_path, extension, false, true, false, true, false);
+			if(!ec && created_successfully)
+			{
+				new_path += id_suffix;
+				StoreEntityToResourcePath(entity, new_path, extension, false, true, false, true, false);
+			}
+			else
+			{
+				std::cerr << "Could not create directory: " << new_path << std::endl;
+			}
+
 		}
 
 		//don't need to continue and allocate extra traversal path if already at outermost entity

@@ -34,7 +34,7 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(st
 {
 	LoadEntityStatus status;
 
-	if(rand_seed == "")
+	if(rand_seed.empty())
 	{
 		typedef std::chrono::steady_clock clk;
 		auto t = std::chrono::duration_cast<std::chrono::milliseconds>(clk::now().time_since_epoch()).count();
@@ -51,10 +51,10 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(st
 	PrintListener *pl = nullptr;
 	std::vector<EntityWriteListener *> wl;
 
-	if(print_log_filename != "")
+	if(!print_log_filename.empty())
 		pl = new PrintListener(print_log_filename);
 
-	if(write_log_filename != "")
+	if(!write_log_filename.empty())
 	{
 		EntityWriteListener *write_log = new EntityWriteListener(entity, false, write_log_filename);
 		wl.push_back(write_log);
@@ -95,10 +95,10 @@ bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &clon
 	PrintListener *pl = nullptr;
 	std::vector<EntityWriteListener *> wl;
 
-	if(print_log_filename != "")
+	if(!print_log_filename.empty())
 		pl = new PrintListener(print_log_filename);
 
-	if(write_log_filename != "")
+	if(!write_log_filename.empty())
 	{
 		EntityWriteListener *write_log = new EntityWriteListener(entity, false, write_log_filename);
 		wl.push_back(write_log);

@@ -410,7 +410,6 @@ void AssetManager::CreateEntity(Entity *entity)
 	std::string traversal_path = "";
 	std::string escaped_entity_id = FilenameEscapeProcessor::SafeEscapeFilename(entity->GetId());
 	std::string id_suffix = "/" + escaped_entity_id + "." + defaultEntityExtension;
-	std::error_code ec;
 	while(cur != nullptr)
 	{
 		const auto &pe = persistentEntities.find(cur);
@@ -419,6 +418,7 @@ void AssetManager::CreateEntity(Entity *entity)
 			Platform_SeparatePathFileExtension(pe->second, slice_path, filename, extension);
 			//create contained entity directory in case it doesn't currently exist
 			std::string new_path = slice_path + filename + traversal_path;
+			std::error_code ec;
 			bool created_successfully = std::filesystem::create_directory(new_path, ec);
 
 			if(ec || !created_successfully)

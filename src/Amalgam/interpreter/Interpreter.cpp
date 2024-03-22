@@ -710,12 +710,29 @@ bool Interpreter::InterpretNodeIntoBoolValue(EvaluableNode *n, bool value_if_nul
 	return value;
 }
 
-void Interpreter::InterpretNodeIntoDestinationEntity(EvaluableNode *n, Entity *&destination_entity_parent, StringInternRef &new_entity_id)
+void Interpreter::InterpretNodeIntoDestinationEntity(EvaluableNode *n, Entity *&destination_entity_parent, StringInternRef &destination_entity_id)
 {
-	//TODO 10975: update this to lock
-	EvaluableNodeReference new_entity_id_node = InterpretNodeForImmediateUse(n);
-	TraverseEntityToNewDestinationViaEvaluableNodeIDPath(curEntity, new_entity_id_node, destination_entity_parent, new_entity_id);
-	evaluableNodeManager->FreeNodeTreeIfPossible(new_entity_id_node);
+	EvaluableNodeReference destination_entity_id_path = InterpretNodeForImmediateUse(n);
+
+	//TODO 10975: make this use locks as appropriate
+	Entity *container = curEntity;
+	Entity *destination_entity = nullptr;
+	TraverseToEntityViaEvaluableNodeIDPath(container, destination_entity_id_path, destination_entity_parent, destination_entity_id, destination_entity);
+
+	//if it already exists, then place inside it
+	if(destination_entity != nullptr)
+	{
+		destination_entity_parent = destination_entity;
+		destination_entity = nullptr;
+
+		destination_entity_id = StringInternRef::EmptyString();
+	}
+
+	//if couldn't get the parent, just use the original container
+	if(destination_entity_parent == nullptr && destination_entity_id == StringInternPool::NOT_A_STRING_ID)
+		destination_entity_parent = container;
+
+	evaluableNodeManager->FreeNodeTreeIfPossible(destination_entity_id_path);
 }
 
 EvaluableNode **Interpreter::TraverseToDestinationFromTraversalPathList(EvaluableNode **source, EvaluableNodeReference &tpl, bool create_destination_if_necessary)

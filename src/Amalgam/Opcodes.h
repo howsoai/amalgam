@@ -524,12 +524,17 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_rand_seed,
 	ENBISI_version,
 
+	//file storage options
+	ENBISI_include_rand_seeds,
+	ENBISI_parallel_create,
+
 	//substr parameters
 	ENBISI_all,
 	ENBISI_submatches,
 
 	//dynamically generated function parameters
 	ENBISI__,
+	ENBISI_create_new_entity,
 	ENBISI_new_entity,
 
 	//entity access parameters

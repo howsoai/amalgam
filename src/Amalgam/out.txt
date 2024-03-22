@@ -233,11 +233,11 @@ notakeyword
 (print "hello")
 (list .nan .nan .infinity -.infinity)
 
-(assoc b 2 a 1 c (list "alpha" "beta" "gamma"))
+(assoc c (list "alpha" "beta" "gamma") b 2 a 1)
 (assoc
+	c (list "alpha" "beta" "gamma")
 	b 2
 	a 1
-	c (list "alpha" "beta" "gamma")
 )
 
 --if--
@@ -607,17 +607,17 @@ a
 (list)
 (assoc
 	a 1
-	c 3
+	b 2
 	d 4
 	e 5
 	f 6
 )
-(assoc c 3 d 4)
+(assoc a 1 e 5)
 (assoc
 	a 1
-	c 3
-	d 4
+	b 2
 	e 5
+	f 6
 )
 (assoc
 	a 1
@@ -656,17 +656,17 @@ c
 (list)
 (assoc
 	a 1
-	c 3
+	b 2
 	d 4
 	e 5
 	f 6
 )
-(assoc c 3 d 4)
+(assoc a 1 e 5)
 (assoc
 	a 1
-	c 3
-	d 4
+	b 2
 	e 5
+	f 6
 )
 (assoc
 	a 1
@@ -1012,7 +1012,7 @@ abcdef
 	"2020-06-08 lunes 11.33.48"
 )
 --indices--
-(list "b" "4" "a" "c")
+(list "c" "b" "a" "4")
 (list
 	0
 	1
@@ -1024,7 +1024,7 @@ abcdef
 	7
 )
 --values--
-(list 2 "d" 1 3)
+(list 3 2 1 "d")
 (list
 	"a"
 	1
@@ -1045,7 +1045,7 @@ abcdef
 	4
 	"d"
 )
-(list 2 "d" 1 0 3)
+(list 3 2 1 "d" 0)
 (list
 	1
 	2
@@ -1256,7 +1256,7 @@ current_index: 2
 		interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1709142771.949068
+		start_time 1710792960.740306
 		www 1
 		x 12
 		zz 10
@@ -1299,7 +1299,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1709142771.949068
+	start_time 1710792960.740306
 	www 1
 	x 12
 	zz 10
@@ -1341,7 +1341,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1709142771.949068
+	start_time 1710792960.740306
 	www 1
 	x 12
 	zz 10
@@ -1481,15 +1481,15 @@ b
 
 (list "a" @(get (target 0) 0) "b" @(get (target 0) 2))
 
-infinity test c or d: (list "c" "c" "c" "d")
+infinity test c or d: (list "d" "d" "d" "c")
 
 infinity test c or d: (list "c" @(get (target 0) 0) "d" @(get (target 0) 0))
 
-(assoc a 30 b 46 c 24)
+(assoc a 24 b 51 c 25)
 
 (assoc a 29 b 44 c 27)
 
-(list "1" "2" "6")
+(list "10" "3" "1")
 
 --get_rand_seed--
 ∞≥»ºø\®KOaV∆T zˇ
@@ -1586,17 +1586,17 @@ string
 	(assoc a 3 b 4)
 	(assoc c "c")
 )
-21: [{"b":4,"a":3},{"d":null,"c":"c"}]
+21: [{"b":4,"a":3},{"c":"c","d":null}]
 22: [{"a":3,"b":4},{"c":"c","d":null}]
-23: b: 2
+23: c: 3
+d: 4
+b: 2
 a: 1
 e:
   - a
   - b
   - .nan
   - .inf
-d: 4
-c: 3
 
 24: a: 1
 b: 2
@@ -1609,7 +1609,7 @@ e:
   - .inf
 
 25: (assoc a 1)
-current date-time in epoch: 2024-02-28-12.52.52.2151280
+current date-time in epoch: 2024-03-18-16.16.01.1029210
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -1659,7 +1659,7 @@ domingo, jun. 07, 2020
 		)
 )
 (assoc
-	labelA #labelA #labelQ
+	labelA #labelQ #labelA
 		(lambda
 			#labelB (true)
 		)
@@ -1676,7 +1676,7 @@ domingo, jun. 07, 2020
 		)
 )
 (assoc
-	labelA #labelA #labelQ
+	labelA #labelQ #labelA
 		(lambda
 			#labelB (true)
 		)
@@ -1898,20 +1898,17 @@ decrypted: hello
 	12
 	13
 	14
-	(associate)
+	"b"
 )
 (list
 	1
 	2
 	3
-	(+)
-	(associate "alpha" 5 "beta" 6)
+	(-)
+	(associate "alpha" (*) (*) 6)
 	(associate
 		"nest"
-		(associate
-			"count"
-			(list (-) 8 9)
-		)
+		(associate "count" (list))
 		"end"
 		(list 10 11 12)
 	)
@@ -2074,10 +2071,19 @@ decrypted: hello
 		(lambda
 			(assoc
 				a 2
-				c 4
+				c (get
+						(current_value 1)
+						"c"
+					)
 				d 6
-				e 10
-				f 12
+				e (get
+						(current_value 1)
+						"e"
+					)
+				f (get
+						(current_value 1)
+						"f"
+					)
 				g 14
 				q 8
 			)
@@ -2122,10 +2128,19 @@ decrypted: hello
 		(lambda
 			(assoc
 				a 2
-				c 4
+				c (get
+						(current_value 1)
+						"c"
+					)
 				d 6
-				e 10
-				f 12
+				e (get
+						(current_value 1)
+						"e"
+					)
+				f (get
+						(current_value 1)
+						"f"
+					)
 				g 14
 				q 8
 			)
@@ -2140,7 +2155,10 @@ decrypted: hello
 		(lambda
 			(assoc
 				a 2
-				g (list 1 4)
+				g (get
+						(current_value 1)
+						"g"
+					)
 			)
 		)
 		(list "g")
@@ -2150,22 +2168,7 @@ decrypted: hello
 					(current_value 1)
 					0
 				)
-				@(get
-					(get
-						(get
-							(get
-								(get
-									(target 3)
-									1
-								)
-								2
-							)
-							0
-						)
-						"g"
-					)
-					1
-				)
+				4
 			)
 		)
 	)
@@ -2342,8 +2345,14 @@ decrypted: hello
 	)
 )
 --mix--
+(list 2 3.5 8 9.5 11.5 13.5)
 (list
-	2
+	
+	;comment 1
+	;comment 2
+	;comment 3
+	;comment 4
+	1
 	3.5
 	5
 	7.5
@@ -2352,22 +2361,7 @@ decrypted: hello
 	13.5
 )
 (list
-	
-	;comment 1
-	;comment 2
-	;comment 3
-	;comment 4
 	1
-	4
-	5.5
-	7.5
-	9.5
-	11.5
-	13.5
-)
-(list
-	1
-	5
 	2.5
 	(associate "a" 3 "b" 4)
 	(lambda
@@ -2377,7 +2371,7 @@ decrypted: hello
 			(parallel
 				(get_entity_comments)
 				1
-				(lambda (print))
+				(lambda (null))
 			)
 		)
 	)
@@ -2385,8 +2379,9 @@ decrypted: hello
 )
 (list
 	1
+	5
 	2.5
-	(associate "a" 3 "b" 4)
+	(assoc b 4)
 	(lambda
 		(if
 			true
@@ -2402,16 +2397,17 @@ decrypted: hello
 			)
 		)
 	)
+	(list 5 6)
 )
 (list 3.5 5.5 7.5 9.5 11.5 13.5)
-(list 5 8 10 12 11 13)
-4
+(list 2 4 7)
+1
 4
 2.5
 2.5
+abcdoxyz
 abcmxyz
 abcmxyz
-abcdmxyz
 --mix_labels--
 (list
 	1
@@ -2441,17 +2437,26 @@ abcdmxyz
 0.5142400294051881
 0.5142400294051881
 flatten restore with seeds test
-(let
-	(assoc
-		new_entity (first
-				(create_entities
-					(lambda
-						(parallel
-							##a (rand)
-						)
+(declare
+	(assoc create_new_entity (true) new_entity (null))
+	(let
+		(assoc
+			_ (lambda
+					(parallel
+						##a (rand)
 					)
 				)
+		)
+		(if
+			create_new_entity
+			(assign
+				"new_entity"
+				(first
+					(create_entities new_entity _)
+				)
 			)
+			(assign_entity_roots new_entity _)
+		)
 	)
 	(set_entity_rand_seed new_entity "ª∂¬£=ÙÄmVÎÛ¨OV-ˇ")
 	(set_entity_rand_seed
@@ -2469,17 +2474,26 @@ flatten restore with seeds test
 	)
 	new_entity
 )
-(let
-	(assoc
-		new_entity (first
-				(create_entities
-					(lambda
-						(parallel
-							##a (rand)
-						)
+(declare
+	(assoc create_new_entity (true) new_entity (null))
+	(let
+		(assoc
+			_ (lambda
+					(parallel
+						##a (rand)
 					)
 				)
+		)
+		(if
+			create_new_entity
+			(assign
+				"new_entity"
+				(first
+					(create_entities new_entity _)
+				)
 			)
+			(assign_entity_roots new_entity _)
+		)
 	)
 	(set_entity_rand_seed new_entity "çM:˘˜p¸VVÎÛ¨OV-ˇ")
 	(set_entity_rand_seed
@@ -2498,21 +2512,30 @@ flatten restore with seeds test
 	new_entity
 )
 (declare
-	(assoc _ (null))
-	(clone_entities _)
+	(assoc _ (null) new_entity (null))
+	(clone_entities _ new_entity)
 )
 flatten restore without seeds test
-(let
-	(assoc
-		new_entity (first
-				(create_entities
-					(lambda
-						(parallel
-							##a (rand)
-						)
+(declare
+	(assoc create_new_entity (true) new_entity (null))
+	(let
+		(assoc
+			_ (lambda
+					(parallel
+						##a (rand)
 					)
 				)
+		)
+		(if
+			create_new_entity
+			(assign
+				"new_entity"
+				(first
+					(create_entities new_entity _)
+				)
 			)
+			(assign_entity_roots new_entity _)
+		)
 	)
 	(create_entities
 		(append new_entity "DeepRand")
@@ -2524,17 +2547,26 @@ flatten restore without seeds test
 	)
 	new_entity
 )
-(let
-	(assoc
-		new_entity (first
-				(create_entities
-					(lambda
-						(parallel
-							##a (rand)
-						)
+(declare
+	(assoc create_new_entity (true) new_entity (null))
+	(let
+		(assoc
+			_ (lambda
+					(parallel
+						##a (rand)
 					)
 				)
+		)
+		(if
+			create_new_entity
+			(assign
+				"new_entity"
+				(first
+					(create_entities new_entity _)
+				)
 			)
+			(assign_entity_roots new_entity _)
+		)
 	)
 	(set_entity_rand_seed new_entity "§õ∑∫R}“–]íŸíÕ´ˇ")
 	(set_entity_rand_seed
@@ -2553,21 +2585,30 @@ flatten restore without seeds test
 	new_entity
 )
 (declare
-	(assoc _ (null))
-	(clone_entities _)
+	(assoc _ (null) new_entity (null))
+	(clone_entities _ new_entity)
 )
 flatten restore with parallel
-(let
-	(assoc
-		new_entity (first
-				(create_entities
-					(lambda
-						(parallel
-							##a (rand)
-						)
+(declare
+	(assoc create_new_entity (true) new_entity (null))
+	(let
+		(assoc
+			_ (lambda
+					(parallel
+						##a (rand)
 					)
 				)
+		)
+		(if
+			create_new_entity
+			(assign
+				"new_entity"
+				(first
+					(create_entities new_entity _)
+				)
 			)
+			(assign_entity_roots new_entity _)
+		)
 	)
 	(set_entity_rand_seed new_entity "ª∂¬£=ÙÄmVÎÛ¨OV-ˇ")
 	||(parallel
@@ -2588,17 +2629,26 @@ flatten restore with parallel
 	||(parallel)
 	new_entity
 )
-(let
-	(assoc
-		new_entity (first
-				(create_entities
-					(lambda
-						(parallel
-							##a (rand)
-						)
+(declare
+	(assoc create_new_entity (true) new_entity (null))
+	(let
+		(assoc
+			_ (lambda
+					(parallel
+						##a (rand)
 					)
 				)
+		)
+		(if
+			create_new_entity
+			(assign
+				"new_entity"
+				(first
+					(create_entities new_entity _)
+				)
 			)
+			(assign_entity_roots new_entity _)
+		)
 	)
 	(set_entity_rand_seed new_entity "çM:˘˜p¸VVÎÛ¨OV-ˇ")
 	(set_entity_rand_seed
@@ -2617,26 +2667,26 @@ flatten restore with parallel
 	new_entity
 )
 (declare
-	(assoc _ (null))
-	(clone_entities _)
+	(assoc _ (null) new_entity (null))
+	(clone_entities _ new_entity)
 )
 --mutate_entity--
 (list
 	1
 	2
-	3
+	8
 	4
 	5
 	a
 	7
-	8
+	3
 	(call)
 	10
 	11
 	12
 	(floor)
 	-6.182472379158481
-	(associate (first) b "b" 2 (set))
+	(associate (call) 1 (retrieve_from_entity) "a")
 )
 
 (list
@@ -2654,25 +2704,25 @@ flatten restore with parallel
 	12
 	13
 	(>)
-	(associate "a" 1 "b")
+	(associate "a" 1)
 )
 
 (list
+	1
 	(+)
-	2
 	3
+	4
 	(+)
-	5
 	6
 	7
 	8
+	9
 	(+)
-	10
 	11
+	12
 	(+)
-	13
-	(+)
-	(associate "a" (+) "b" 2)
+	14
+	(associate "a" (+))
 )
 
 --commonality_entities--
@@ -2685,10 +2735,10 @@ MergeEntityChild1
 (associate "x" 3 "y" 4)
 MergeEntityChild2
 (associate "p" 3 "q" 4)
-_2169689611
-(associate "e" 3 "f" 4)
 _2280722175
 (associate "E" 3 "F" 4)
+_2169689611
+(associate "e" 3 "f" 4)
 --union_entities--
 (associate "b" 4 "a" 3 "c" 3)
 MergeEntityChild1
@@ -2706,17 +2756,6 @@ MergeEntityChild2
 	"w"
 	7
 )
-_2169689611
-(associate
-	"e"
-	3
-	"f"
-	4
-	"g"
-	5
-	"h"
-	6
-)
 _2280722175
 (associate
 	"E"
@@ -2728,11 +2767,7 @@ _2280722175
 	"H"
 	6
 )
-(parallel
-	##p
-	(list "_3990396532" "_3330773578" "_3990396532" "_3330773578")
-)
-_3330773578
+_2169689611
 (associate
 	"e"
 	3
@@ -2742,6 +2777,10 @@ _3330773578
 	5
 	"h"
 	6
+)
+(parallel
+	##p
+	(list "_3990396532" "_3330773578" "_3990396532" "_3330773578")
 )
 _3990396532
 (associate
@@ -2754,627 +2793,548 @@ _3990396532
 	"H"
 	6
 )
+_3330773578
+(associate
+	"e"
+	3
+	"f"
+	4
+	"g"
+	5
+	"h"
+	6
+)
 --difference_entities--
 (declare
-	(assoc _ (null))
-	(clone_entities _)
+	(assoc _ (null) new_entity (null))
+	(clone_entities _ new_entity)
 )
 (declare
-	(assoc _ (null))
-	(let
-		(assoc
-			new_entity (first
-					(create_entities
-						(call
-							(lambda
-								(declare
-									(assoc _ (null))
-									(replace
-										_
-										(list)
-										(lambda
-											(set_type
-												(list
-													"c"
-													3
-													(get
-														(current_value
-															1
-														)
-														2
-													)
-													(get
-														(current_value
-															1
-														)
-														3
-													)
-												)
-												"associate"
+	(assoc _ (null) new_entity (null))
+	(assign
+		"new_entity"
+		(first
+			(create_entities
+				new_entity
+				(call
+					(lambda
+						(declare
+							(assoc _ (null))
+							(replace
+								_
+								(list)
+								(lambda
+									(set_type
+										(list
+											"c"
+											3
+											(get
+												(current_value 1)
+												2
+											)
+											(get
+												(current_value 1)
+												3
 											)
 										)
+										"associate"
 									)
-								)
-							)
-							(assoc
-								_ (retrieve_entity_root _)
-							)
-						)
-					)
-				)
-		)
-		(create_entities
-			(append new_entity "MergeEntityChild1")
-			(call
-				(lambda
-					(declare
-						(assoc _ (null))
-						(replace
-							_
-							(list)
-							(lambda
-								(set_type
-									(list
-										(get
-											(current_value 1)
-											0
-										)
-										(get
-											(current_value 1)
-											1
-										)
-										(get
-											(current_value 1)
-											2
-										)
-										(get
-											(current_value 1)
-											3
-										)
-										"z"
-										5
-									)
-									"associate"
 								)
 							)
 						)
 					)
-				)
-				(assoc
-					_ (retrieve_entity_root
-							(append _ "MergeEntityChild1")
-						)
+					(assoc
+						_ (retrieve_entity_root _)
+					)
 				)
 			)
 		)
-		(create_entities
-			(append new_entity "MergeEntityChild2")
-			(call
-				(lambda
-					(declare
-						(assoc _ (null))
-						(replace
-							_
-							(list)
-							(lambda
-								(set_type
-									(list
-										(get
-											(current_value 1)
-											0
-										)
-										(get
-											(current_value 1)
-											1
-										)
-										(get
-											(current_value 1)
-											2
-										)
-										(get
-											(current_value 1)
-											3
-										)
-										"u"
-										5
-										"v"
-										6
-										"w"
-										7
-									)
-									"associate"
-								)
-							)
-						)
-					)
-				)
-				(assoc
-					_ (retrieve_entity_root
-							(append _ "MergeEntityChild2")
-						)
-				)
-			)
-		)
-		(create_entities
-			(append new_entity "_523256902")
-			(call
-				(lambda
-					(declare
-						(assoc _ (null))
-						(replace
-							_
-							(list)
-							(lambda
-								(set_type
-									(list
-										(get
-											(current_value 1)
-											0
-										)
-										(get
-											(current_value 1)
-											1
-										)
-										(get
-											(current_value 1)
-											2
-										)
-										(get
-											(current_value 1)
-											3
-										)
-										"G"
-										5
-										"H"
-										6
-									)
-									"associate"
-								)
-							)
-						)
-					)
-				)
-				(assoc
-					_ (retrieve_entity_root
-							(append _ "_523256902")
-						)
-				)
-			)
-		)
-		(create_entities
-			(append new_entity "_3895405527")
-			(call
-				(lambda
-					(declare
-						(assoc _ (null))
-						(replace
-							_
-							(list)
-							(lambda
-								(set_type
-									(list
-										(get
-											(current_value 1)
-											0
-										)
-										(get
-											(current_value 1)
-											1
-										)
-										(get
-											(current_value 1)
-											2
-										)
-										(get
-											(current_value 1)
-											3
-										)
-									)
-									"associate"
-								)
-							)
-						)
-					)
-				)
-				(assoc
-					_ (retrieve_entity_root
-							(append _ "_3895405527")
-						)
-				)
-			)
-		)
-		new_entity
 	)
+	(create_entities
+		(append _ "MergeEntityChild1")
+		(call
+			(lambda
+				(declare
+					(assoc _ (null))
+					(replace
+						_
+						(list)
+						(lambda
+							(set_type
+								(list
+									(get
+										(current_value 1)
+										0
+									)
+									(get
+										(current_value 1)
+										1
+									)
+									(get
+										(current_value 1)
+										2
+									)
+									(get
+										(current_value 1)
+										3
+									)
+									"z"
+									5
+								)
+								"associate"
+							)
+						)
+					)
+				)
+			)
+			(assoc
+				_ (retrieve_entity_root
+						(append new_entity "MergeEntityChild1")
+					)
+			)
+		)
+	)
+	(create_entities
+		(append _ "MergeEntityChild2")
+		(call
+			(lambda
+				(declare
+					(assoc _ (null))
+					(replace
+						_
+						(list)
+						(lambda
+							(set_type
+								(list
+									(get
+										(current_value 1)
+										0
+									)
+									(get
+										(current_value 1)
+										1
+									)
+									(get
+										(current_value 1)
+										2
+									)
+									(get
+										(current_value 1)
+										3
+									)
+									"u"
+									5
+									"v"
+									6
+									"w"
+									7
+								)
+								"associate"
+							)
+						)
+					)
+				)
+			)
+			(assoc
+				_ (retrieve_entity_root
+						(append new_entity "MergeEntityChild2")
+					)
+			)
+		)
+	)
+	(create_entities
+		(append _ "_523256902")
+		(call
+			(lambda
+				(declare
+					(assoc _ (null))
+					(replace
+						_
+						(list)
+						(lambda
+							(set_type
+								(list
+									(get
+										(current_value 1)
+										0
+									)
+									(get
+										(current_value 1)
+										1
+									)
+									(get
+										(current_value 1)
+										2
+									)
+									(get
+										(current_value 1)
+										3
+									)
+									"G"
+									5
+									"H"
+									6
+								)
+								"associate"
+							)
+						)
+					)
+				)
+			)
+			(assoc
+				_ (retrieve_entity_root
+						(append new_entity "_523256902")
+					)
+			)
+		)
+	)
+	(create_entities
+		(append _ "_3895405527")
+		(call
+			(lambda
+				(declare
+					(assoc _ (null))
+					(replace
+						_
+						(list)
+						(lambda
+							(set_type
+								(list
+									(get
+										(current_value 1)
+										0
+									)
+									(get
+										(current_value 1)
+										1
+									)
+									(get
+										(current_value 1)
+										2
+									)
+									(get
+										(current_value 1)
+										3
+									)
+								)
+								"associate"
+							)
+						)
+					)
+				)
+			)
+			(assoc
+				_ (retrieve_entity_root
+						(append new_entity "_3895405527")
+					)
+			)
+		)
+	)
+	new_entity
 )
 _432807187
 (list "DiffEntityChild1" "OnlyIn2" "_350925375" "_2742810479")
 (declare
-	(assoc _ (null))
-	(let
-		(assoc
-			new_entity (first
-					(create_entities
-						(call
-							(lambda
-								(declare
-									(assoc _ (null))
-									(replace
-										_
-										(list)
-										(lambda
-											(set_type
-												(list
-													"c"
-													3
-													(get
-														(current_value
-															1
-														)
-														2
-													)
-													(get
-														(current_value
-															1
-														)
-														3
-													)
-												)
-												"associate"
-											)
-										)
-									)
-								)
-							)
-							(assoc
-								_ (retrieve_entity_root _)
-							)
-						)
-					)
-				)
-		)
-		(create_entities
-			(append new_entity "DiffEntityChild1")
-			(call
-				(lambda
-					(declare
-						(assoc _ (null))
-						(replace
-							_
-							(list)
-							(lambda
-								(set_type
-									(list
-										(get
-											(current_value 1)
-											0
-										)
-										(get
-											(current_value 1)
-											1
-										)
-										(get
-											(current_value 1)
-											2
-										)
-										(get
-											(current_value 1)
-											3
-										)
-										(get
-											(current_value 1)
-											4
-										)
-										5
-									)
-									"associate"
-								)
-							)
-						)
-					)
-				)
-				(assoc
-					_ (retrieve_entity_root
-							(append _ "DiffEntityChild1")
-						)
-				)
-			)
-		)
-		(create_entities
-			(append new_entity "OnlyIn2")
-			(call
-				(lambda
-					(declare
-						(assoc _ (null))
-						(replace
-							_
-							(list)
-							(lambda)
-							(associate "o" 6)
-						)
-					)
-				)
-				(assoc
-					_ (retrieve_entity_root
-							(append _ "OnlyIn2")
-						)
-				)
-			)
-		)
-		(create_entities
-			(append new_entity "_350925375")
-			(call
-				(lambda
-					(declare
-						(assoc _ (null))
-						(replace
-							_
-							(list)
-							(lambda
-								(set_type
-									(list
-										(get
-											(current_value 1)
-											0
-										)
-										(get
-											(current_value 1)
-											1
-										)
-										(get
-											(current_value 1)
-											2
-										)
-										(get
-											(current_value 1)
-											3
-										)
-										"G"
-										5
-										"H"
-										6
-									)
-									"associate"
-								)
-							)
-						)
-					)
-				)
-				(assoc
-					_ (retrieve_entity_root
-							(append _ "_350925375")
-						)
-				)
-			)
-		)
-		(create_entities
-			(append new_entity "_2742810479")
-			(call
-				(lambda
-					(declare
-						(assoc _ (null))
-						(replace
-							_
-							(list)
-							(lambda
-								(set_type
-									(list
-										(get
-											(current_value 1)
-											0
-										)
-										(get
-											(current_value 1)
-											1
-										)
-										(get
-											(current_value 1)
-											2
-										)
-										(get
-											(current_value 1)
-											3
-										)
-									)
-									"associate"
-								)
-							)
-						)
-					)
-				)
-				(assoc
-					_ (retrieve_entity_root
-							(append _ "_2742810479")
-						)
-				)
-			)
-		)
-		(clone_entities
-			(append
-				_
-				(list "DiffEntityChild1" "DiffEntityChild2")
-			)
-			(append
+	(assoc _ (null) new_entity (null))
+	(assign
+		"new_entity"
+		(first
+			(create_entities
 				new_entity
-				(list "DiffEntityChild1" "DiffEntityChild2")
+				(call
+					(lambda
+						(declare
+							(assoc _ (null))
+							(replace
+								_
+								(list)
+								(lambda
+									(assoc
+										b (get
+												(current_value 1)
+												"b"
+											)
+										c 3
+									)
+								)
+							)
+						)
+					)
+					(assoc
+						_ (retrieve_entity_root _)
+					)
+				)
 			)
 		)
-		new_entity
 	)
+	(create_entities
+		(append _ "DiffEntityChild1")
+		(call
+			(lambda
+				(declare
+					(assoc _ (null))
+					(replace
+						_
+						(list)
+						(lambda
+							(assoc
+								x (get
+										(current_value 1)
+										"x"
+									)
+								y (get
+										(current_value 1)
+										"y"
+									)
+								z 5
+							)
+						)
+					)
+				)
+			)
+			(assoc
+				_ (retrieve_entity_root
+						(append new_entity "DiffEntityChild1")
+					)
+			)
+		)
+	)
+	(create_entities
+		(append _ "OnlyIn2")
+		(call
+			(lambda
+				(declare
+					(assoc _ (null))
+					(replace
+						_
+						(list)
+						(lambda)
+						(assoc o 6)
+					)
+				)
+			)
+			(assoc
+				_ (retrieve_entity_root
+						(append new_entity "OnlyIn2")
+					)
+			)
+		)
+	)
+	(create_entities
+		(append _ "_350925375")
+		(call
+			(lambda
+				(declare
+					(assoc _ (null))
+					(replace
+						_
+						(list)
+						(lambda
+							(assoc
+								E (get
+										(current_value 1)
+										"E"
+									)
+								F (get
+										(current_value 1)
+										"F"
+									)
+								G 5
+								H 6
+							)
+						)
+					)
+				)
+			)
+			(assoc
+				_ (retrieve_entity_root
+						(append new_entity "_350925375")
+					)
+			)
+		)
+	)
+	(create_entities
+		(append _ "_2742810479")
+		(call
+			(lambda
+				(declare
+					(assoc _ (null))
+					(replace
+						_
+						(list)
+						(lambda
+							(assoc
+								e (get
+										(current_value 1)
+										"e"
+									)
+								f (get
+										(current_value 1)
+										"f"
+									)
+							)
+						)
+					)
+				)
+			)
+			(assoc
+				_ (retrieve_entity_root
+						(append new_entity "_2742810479")
+					)
+			)
+		)
+	)
+	(clone_entities
+		(append
+			_
+			(list "DiffEntityChild1" "DiffEntityChild2")
+		)
+		(append
+			new_entity
+			(list "DiffEntityChild1" "DiffEntityChild2")
+		)
+	)
+	new_entity
 )
 _41032496
-(associate "c" 3 "b" 4)
-(associate "x" 3 "y" 4 "z" 5)
-(list "DiffEntityChild1" "OnlyIn2" "_350925375" "_2742810479")
-(declare
-	(assoc _ (null))
-	(let
-		(assoc
-			new_entity (first
-					(create_entities
-						(call
-							(lambda
-								(declare
-									(assoc _ (null))
-									(replace
-										_
-										(list)
-										(lambda
-											(set_type
-												(list
-													"c"
-													3
-													(get
-														(current_value
-															1
-														)
-														2
-													)
-													(get
-														(current_value
-															1
-														)
-														3
-													)
-												)
-												"associate"
-											)
-										)
-									)
-								)
-							)
-							(assoc
-								_ (retrieve_entity_root _)
-							)
-						)
-					)
-				)
-		)
-		(create_entities
-			(append new_entity "OnlyIn2")
-			(call
-				(lambda
-					(declare
-						(assoc _ (null))
-						(replace
-							_
-							(list)
-							(lambda)
-							(associate "o" 6)
-						)
-					)
-				)
-				(assoc
-					_ (retrieve_entity_root
-							(append _ "OnlyIn2")
-						)
-				)
-			)
-		)
-		(create_entities
-			(append new_entity "_3631850880")
-			(call
-				(lambda
-					(declare
-						(assoc _ (null))
-						(replace
-							_
-							(list)
-							(lambda
-								(set_type
-									(list
-										(get
-											(current_value 1)
-											0
-										)
-										(get
-											(current_value 1)
-											1
-										)
-										(get
-											(current_value 1)
-											2
-										)
-										(get
-											(current_value 1)
-											3
-										)
-										"G"
-										5
-										"H"
-										6
-									)
-									"associate"
-								)
-							)
-						)
-					)
-				)
-				(assoc
-					_ (retrieve_entity_root
-							(append _ "_3631850880")
-						)
-				)
-			)
-		)
-		(create_entities
-			(append new_entity "_1938178219")
-			(call
-				(lambda
-					(declare
-						(assoc _ (null))
-						(replace
-							_
-							(list)
-							(lambda
-								(set_type
-									(list
-										(get
-											(current_value 1)
-											0
-										)
-										(get
-											(current_value 1)
-											1
-										)
-										(get
-											(current_value 1)
-											2
-										)
-										(get
-											(current_value 1)
-											3
-										)
-									)
-									"associate"
-								)
-							)
-						)
-					)
-				)
-				(assoc
-					_ (retrieve_entity_root
-							(append _ "_1938178219")
-						)
-				)
-			)
-		)
-		(clone_entities
-			(append _ "DiffEntityChild1")
-			(append new_entity "DiffEntityChild1")
-		)
-		new_entity
-	)
+(assoc b 4 c 3)
+(assoc
+	p 3
+	q 4
+	u 5
+	v 6
+	w 7
 )
-_3128546630
-(associate "c" 3 "b" 4)
-(associate "x" 3 "y" 4 "z" 6)
-(list "OnlyIn2" "_3631850880" "_1938178219" "DiffEntityChild1")
+(list "DiffEntityChild1")
+(declare
+	(assoc _ (null) new_entity (null))
+	(assign
+		"new_entity"
+		(first
+			(create_entities
+				new_entity
+				(call
+					(lambda
+						(declare
+							(assoc _ (null))
+							(replace
+								_
+								(list)
+								(lambda
+									(assoc
+										b (get
+												(current_value 1)
+												"b"
+											)
+										c 3
+									)
+								)
+							)
+						)
+					)
+					(assoc
+						_ (retrieve_entity_root _)
+					)
+				)
+			)
+		)
+	)
+	(create_entities
+		(append _ "OnlyIn2")
+		(call
+			(lambda
+				(declare
+					(assoc _ (null))
+					(replace
+						_
+						(list)
+						(lambda)
+						(assoc o 6)
+					)
+				)
+			)
+			(assoc
+				_ (retrieve_entity_root
+						(append new_entity "OnlyIn2")
+					)
+			)
+		)
+	)
+	(create_entities
+		(append _ "_3631850880")
+		(call
+			(lambda
+				(declare
+					(assoc _ (null))
+					(replace
+						_
+						(list)
+						(lambda
+							(assoc
+								E 3
+								F 4
+								G 5
+								H 6
+							)
+						)
+					)
+				)
+			)
+			(assoc
+				_ (retrieve_entity_root
+						(append new_entity "_3631850880")
+					)
+			)
+		)
+	)
+	(create_entities
+		(append _ "_1938178219")
+		(call
+			(lambda
+				(declare
+					(assoc _ (null))
+					(replace
+						_
+						(list)
+						(lambda
+							(assoc e 3 f 4)
+						)
+					)
+				)
+			)
+			(assoc
+				_ (retrieve_entity_root
+						(append new_entity "_1938178219")
+					)
+			)
+		)
+	)
+	(clone_entities
+		(append _ "DiffEntityChild1")
+		(append new_entity "DiffEntityChild1")
+	)
+	new_entity
+)
+DiffContainerReconstructed
+(assoc b 4 c 3)
+(assoc x 3 y 4 z 6)
+(list "DiffEntityChild1")
+(declare
+	(assoc _ (null) new_entity (null))
+	(clone_entities _ new_entity)
+)
 --mix_entities--
-(associate "b" 4 "c" 3)
-MergeEntityChild1
-(associate "x" 3 "y" 4 "z" 5)
+(associate "b" 4 "a" 3)
+_3895405527
+(null)
+_523256902
+(associate "E" 3)
 MergeEntityChild2
-(associate "p" 3 "q" 4 "w" 7)
+(associate "p" 3 "q" 4)
+MergeEntityChild1
+(associate "x" 3 "y" 4)
+_2280722175
+(associate "E" 3 "F" 4)
 _2169689611
 (associate
 	"e"
@@ -3386,8 +3346,6 @@ _2169689611
 	"h"
 	6
 )
-_2280722175
-(associate "E" 3 "F" 4 "G" 5)
 --get_entity_comments--
 Full test
 This is a suite of unit tests.
@@ -3417,6 +3375,11 @@ this is a fully described entity
 	2
 	#three 3
 )
+(list
+	1
+	2
+	##three 3
+)
 --assign_entity_roots--
 (list 4 5 6)
 --accum_entity_roots--
@@ -3429,20 +3392,20 @@ this is a fully described entity
 	#c 3
 )
 --get_entity_rand_seed--
-0.8630628998576303
-T∞FJÅKxñså≠ {ˇ
+0.6978056338458357
+a‚ˇdxÄ)5ÆiDˇ
 --set_entity_rand_seed--
-0.24310795234706906
-0.24310795234706906
+0.8506294869298243
+0.8506294869298243
 deep sets
-0.4287046636426344
-0.4287046636426344
+0.36941268950482764
+0.36941268950482764
 --get_entity_root_permission--
 (false)
 
 --set_entity_root_permission--
 RootTest
-1709142772.358083
+1710792961.309983
 (true)
 
 RootTest
@@ -3489,7 +3452,7 @@ RootTest
 	"DiffEntity2"
 	"_41032496"
 	"DiffContainer"
-	"_3128546630"
+	"DiffContainerReconstructed"
 	"MixedEntities"
 	"descriptive_entity"
 	"SetGetCodeTest"
@@ -3527,7 +3490,7 @@ RootTest
 	"DiffEntity2"
 	"_41032496"
 	"DiffContainer"
-	"_3128546630"
+	"DiffContainerReconstructed"
 	"MixedEntities"
 	"descriptive_entity"
 	"SetGetCodeTest"
@@ -3564,7 +3527,7 @@ RootTest
 	"DiffEntity2"
 	"_41032496"
 	"DiffContainer"
-	"_3128546630"
+	"DiffContainerReconstructed"
 	"MixedEntities"
 	"descriptive_entity"
 	"SetGetCodeTest"
@@ -3601,24 +3564,33 @@ load from .yaml:
 --load_entity--
 load from .amlg:
 hello
-(let
-	(assoc
-		new_entity (first
-				(create_entities
-					(lambda
-						(assoc
-							a ##a 1
-							b ##b (true)
-							c ##c 0.1
-							d ##d 100000000
-							hello ##hello
-								(print "hello\n")
-						)
+(declare
+	(assoc create_new_entity (true) new_entity (null))
+	(let
+		(assoc
+			_ (lambda
+					(assoc
+						a ##a 1
+						b ##b (true)
+						c ##c 0.1
+						d ##d 100000000
+						hello ##hello
+							(print "hello\n")
 					)
 				)
+		)
+		(if
+			create_new_entity
+			(assign
+				"new_entity"
+				(first
+					(create_entities new_entity _)
+				)
 			)
+			(assign_entity_roots new_entity _)
+		)
 	)
-	(set_entity_rand_seed new_entity "≈îK@≠ÊõÌ˚\\¸ﬁFÀ*ˇ")
+	(set_entity_rand_seed new_entity "˛¢Xø~wb¢Ù3Ê©Ç∫ˇ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3632,7 +3604,7 @@ hello
 				)
 			)
 		)
-		"ÉBµ!\\·Ô,œT*›&ˇ"
+		"DA3¨Ì0üW^vΩhaÕ&ˇ"
 	)
 	(set_entity_rand_seed
 		(first
@@ -3647,26 +3619,35 @@ hello
 				)
 			)
 		)
-		"!ÄÖö|ÿ”.‚V±⁄qˇ"
+		"= ›˚∆\0FÜyf◊@)ã¨ˇ"
 	)
 	new_entity
 )
 --load_persistent_entity--
-(let
-	(assoc
-		new_entity (first
-				(create_entities
-					(lambda
-						(parallel
-							##a 8
-							##hello
-							(print "hello\n")
-						)
+(declare
+	(assoc create_new_entity (true) new_entity (null))
+	(let
+		(assoc
+			_ (lambda
+					(parallel
+						##a 8
+						##hello
+						(print "hello\n")
 					)
 				)
+		)
+		(if
+			create_new_entity
+			(assign
+				"new_entity"
+				(first
+					(create_entities new_entity _)
+				)
 			)
+			(assign_entity_roots new_entity _)
+		)
 	)
-	(set_entity_rand_seed new_entity "@©,3äâ!õGMÕ0hÛäˇ")
+	(set_entity_rand_seed new_entity "1a2ÿ.≤≥W´w∏àÊùˇ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3676,7 +3657,7 @@ hello
 				)
 			)
 		)
-		"M˝ıäÈÚık±Ü,Ÿä€ˇ"
+		"à-ÏO[øÎ3yCì≈íå—ˇ"
 	)
 	(set_entity_rand_seed
 		(first
@@ -3691,25 +3672,34 @@ hello
 				)
 			)
 		)
-		"üx<ÿ^Æô∑Ì.∑ÙV0µˇ"
+		"&Ã$‹¥@nœ>É\"êÎFNˇ"
 	)
 	new_entity
 )
-(let
-	(assoc
-		new_entity (first
-				(create_entities
-					(lambda
-						(parallel
-							##a 1
-							##hello
-							(print "hello\n")
-						)
+(declare
+	(assoc create_new_entity (true) new_entity (null))
+	(let
+		(assoc
+			_ (lambda
+					(parallel
+						##a 1
+						##hello
+						(print "hello\n")
 					)
 				)
+		)
+		(if
+			create_new_entity
+			(assign
+				"new_entity"
+				(first
+					(create_entities new_entity _)
+				)
 			)
+			(assign_entity_roots new_entity _)
+		)
 	)
-	(set_entity_rand_seed new_entity "@©,3äâ!õGMÕ0hÛäˇ")
+	(set_entity_rand_seed new_entity "1a2ÿ.≤≥W´w∏àÊùˇ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3723,7 +3713,7 @@ hello
 				)
 			)
 		)
-		"üx<ÿ^Æô∑Ì.∑ÙV0µˇ"
+		"&Ã$‹¥@nœ>É\"êÎFNˇ"
 	)
 	new_entity
 )
@@ -3781,7 +3771,11 @@ contained entity in quackers2 loaded back from file: (list "buklulu is good.amlg
 store to .amlg:
 2
 2
-Compression difference: [(null)]
+Compression difference: [(declare
+	(assoc _ (null) new_entity (null))
+	(clone_entities _ new_entity)
+)
+]
 store to .json in amlg format
 (list
 	(assoc a 3 b 4)
@@ -3814,74 +3808,74 @@ store to .json normally
 (list "Child2" "Child7")
 (list "Child1" "Child5")
 (list "Child3" "Child4")
-(list "Child1" "Child5" "Child6" "Child7")
-(list "Child1" "Child2" "Child5" "Child6")
+(list "Child2" "Child5" "Child6" "Child7")
+(list "Child1" "Child4" "Child6" "Child7")
 (list "Child4" "Child6")
 --query_sample--
-(list "Child4")
-(list "Child4" "Child7")
 (list "Child7")
-(list "Child1")
+(list "Child3" "Child3")
+(list "Child2")
+(list "Child2")
 --query_weighted_sample--
 (list "Child2")
-(list "Child2")
+(list "Child1")
 (list
 	"Child1"
-	"Child1"
+	"Child2"
+	"Child2"
 	"Child2"
 	"Child1"
-	"Child2"
 	"Child1"
 	"Child1"
-	"Child1"
-	"Child2"
-	"Child5"
 	"Child4"
 	"Child2"
-	"Child2"
-	"Child1"
 	"Child1"
 	"Child2"
-	"Child4"
+	"Child2"
+	"Child2"
+	"Child1"
+	"Child2"
+	"Child7"
+	"Child1"
 	"Child1"
 	"Child2"
 	"Child1"
 )
 (list
 	"Child2"
-	"Child7"
-	"Child2"
-	"Child7"
-	"Child2"
 	"Child1"
-	"Child1"
-	"Child7"
 	"Child1"
 	"Child2"
-	"Child7"
-	"Child1"
+	"Child6"
+	"Child2"
 	"Child2"
 	"Child2"
 	"Child1"
 	"Child2"
+	"Child2"
+	"Child2"
+	"Child1"
+	"Child1"
+	"Child1"
+	"Child2"
+	"Child1"
+	"Child2"
+	"Child2"
+	"Child2"
+)
+(list
 	"Child2"
 	"Child2"
 	"Child6"
-	"Child1"
-)
-(list
-	"Child5"
 	"Child2"
 	"Child2"
 	"Child2"
-	"Child2"
-	"Child5"
 	"Child2"
 	"Child2"
 	"Child2"
 	"Child2"
 )
-(list "Child2" "Child6")
+(list "Child2" "Child7")
 --query_in_entity_list--
 (list "Child6" "Child7")
 --query_not_in_entity_list--
@@ -3929,19 +3923,19 @@ cascading query_not_in_entity_list: (list "Child6" "Child7")
 unweighted query: (assoc
 	Child1 4
 	Child2 1
-	Child3 100
+	Child4 100
 	Child6 2
 	Child7 10
 )
 weighted query: (assoc
 	Child1 1.8
 	Child2 0.45
-	Child3 2
+	Child4 2
 	Child6 0.04
 	Child7 0.2
 )
 weighted query list of lists: (list
-	(list "Child6" "Child7" "Child2" "Child1" "Child4")
+	(list "Child6" "Child7" "Child2" "Child1" "Child3")
 	(list 0.04 0.2 0.45 1.8 2)
 )
 weighted query list of lists: (list
@@ -3950,21 +3944,21 @@ weighted query list of lists: (list
 	(list -1 2 4 10 100)
 )
 weighted query list of lists with multiple values: (list
-	(list "Child2" "Child6" "Child1" "Child7" "Child4")
+	(list "Child2" "Child6" "Child1" "Child7" "Child3")
 	(list 1 2 4 10 100)
 	(list -1 2 4 10 100)
 	(list -1 1 3 0 100)
 )
 (list
 	(list
-		"_290180734"
-		"_2132214562"
-		"_618957962"
-		"_2562810924"
-		"_1879706689"
-		"_3384474322"
-		"_2598595616"
-		"_2997245921"
+		"_1371376095"
+		"_1101377041"
+		"_606989353"
+		"_4009090403"
+		"_1973297757"
+		"_409114841"
+		"_3662943447"
+		"_2137119039"
 	)
 	(list
 		8.333333333333327
@@ -4250,14 +4244,14 @@ case conviction:(assoc
 )
 cyclic feature nearest neighbors: (assoc cyclic1 1 cyclic5 0.5)
 cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
-155: 0.1 (null
-	##deg 0
-)
 200: 0.05555555555555555 (null
 	##deg 8
 )
 190: 0.045454545454545456 (null
 	##deg 12
+)
+155: 0.1 (null
+	##deg 0
 )
 --contains_label--
 (true)
@@ -4420,7 +4414,7 @@ a
 (list "hello" "!")
 (assoc a1 1.4142135623730951 a2 2 a3 1.4142135623730951)
 (assoc a1 1.4142135623730951 a3 1.4142135623730951)
-(assoc a1 1.4142135623730951)
+(assoc a3 1.4142135623730951)
 (assoc a1 5.0990195135927845 a2 2 a3 5.0990195135927845)
 (assoc a1 1 a3 1 a4 0)
 --accuracy tests--
@@ -4435,13 +4429,13 @@ distance symmetry tests
 (list
 	(list
 		"B"
+		"F"
+		"I"
+		"C"
 		"D"
 		"A"
-		"C"
-		"I"
-		"F"
 		"G"
-		"J"
+		"H"
 	)
 	(list
 		0
@@ -4457,12 +4451,12 @@ distance symmetry tests
 (list
 	(list
 		"B"
-		"F"
-		"A"
 		"I"
 		"C"
+		"A"
 		"D"
-		"J"
+		"F"
+		"H"
 		"E"
 	)
 	(list
@@ -4657,4 +4651,4 @@ concurrent entity writes successful: (true)
 
 --clean-up test files--
 --total execution time--
-1.179020881652832
+1.576003074645996

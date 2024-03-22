@@ -1,4 +1,4 @@
 (seq
- (print "17 " (generalized_distance (null) (list "nominal_numeric") (list 1) (null) 1 (list 1 2 3) (list 10 2 4) ) "\n")
-
+ (create_entities "MergeEntity1" (lambda (associate "a" 3 "b" 4)) )
+ (print (retrieve_entity_root (list)  ))
 )

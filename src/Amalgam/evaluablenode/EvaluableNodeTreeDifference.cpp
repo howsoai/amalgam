@@ -185,17 +185,16 @@ EvaluableNode *EvaluableNodeTreeDifference::DifferenceTrees(EvaluableNodeManager
 		for(auto &[cn_id, cn] : tree2_node->GetMappedChildNodes())
 		{
 			auto merged = tree2_to_merged_node.find(cn);
-			replacement->AppendOrderedChildNode(enm->AllocNode(ENT_STRING, cn_id));
 			if(merged == end(tree2_to_merged_node))
 			{
 				//use whatever was given for tree2
-				replacement->AppendOrderedChildNode(cn);
+				replacement->SetMappedChildNode(cn_id, cn, true);
 			}
 			else
 			{
 				//build (get (current_value 1) ...)
 				EvaluableNode *retrieval = enm->AllocNode(ENT_GET);
-				replacement->AppendOrderedChildNode(retrieval);
+				replacement->SetMappedChildNode(cn_id, retrieval, true);
 				EvaluableNode *target = enm->AllocNode(ENT_CURRENT_VALUE);
 				target->AppendOrderedChildNode(enm->AllocNode(1.0));
 				retrieval->AppendOrderedChildNode(target);

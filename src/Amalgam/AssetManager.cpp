@@ -423,8 +423,6 @@ void AssetManager::CreateEntity(Entity *entity)
 
 			if(!ec && created_successfully)
 			{
-				// std::cerr << "Could not create directory: " << new_path << std::endl;
-				// continue;
 				new_path += id_suffix;
 				StoreEntityToResourcePath(entity, new_path, extension, false, true, false, true, false);
 			}

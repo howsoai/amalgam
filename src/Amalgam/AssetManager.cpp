@@ -338,7 +338,10 @@ bool AssetManager::StoreEntityToResourcePath(Entity *entity, std::string &resour
 	}
 
 	if(update_persistence_location)
-		SetEntityPersistentPath(entity, resource_base_path + "." + file_type); //use escaped string
+	{
+		std::string new_persist_path = resource_base_path + "." + file_type;
+		SetEntityPersistentPath(entity, new_persist_path);
+	}
 
 	return all_stored_successfully;
 }

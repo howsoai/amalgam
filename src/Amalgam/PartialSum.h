@@ -5,6 +5,8 @@
 //system headers:
 #include <vector>
 
+//TODO 19769: performance tests do not look promising for these changes, so revert once bug is fixed
+
 //Class to store, accumulate, and merge/complete summations efficiently
 class PartialSumCollection
 {

@@ -9,16 +9,21 @@
 class PartialSumCollection
 {
 public:
-	//union of the two types of data stored to reduce need for reinterpret_cast
+	//union of the types of data stored to reduce need for reinterpret_cast
 	union SumOrMaskBucket
 	{
+		//bitmask of terms completed
 		uint64_t mask;
+
+		//total number of terms completed
+		uint64_t numTermsCompleted;
+
 		double sum;
 	};
 
 	PartialSumCollection()
 	{
-		numDimensions = 0;
+		numTerms = 0;
 		numInstances = 0;
 		numMaskBuckets = 1;
 	}
@@ -81,7 +86,7 @@ public:
 	{
 		for(auto &v : buffer)
 			v.mask = 0;
-		numDimensions = 0;
+		numTerms = 0;
 		numInstances = 0;
 		numMaskBuckets = 1;
 	}
@@ -89,12 +94,12 @@ public:
 	//resizes the buffer to accomodate the dimensions and instances specified and clears all data
 	void ResizeAndClear(size_t num_dimensions, size_t num_instances)
 	{
-		numDimensions = num_dimensions;
+		numTerms = num_dimensions;
 		numInstances = num_instances;
 		//need a SumOrFeatureMask for each of up to 64 dimensions
 		numMaskBuckets = ((num_dimensions + 63) / 64);
 
-		bucketStride = numMaskBuckets + 1;
+		bucketStride = numMaskBuckets + 2;
 
 		//need one value for the sum and enough values to hold a bit per dimension
 		//round up number of dimensions used 
@@ -112,7 +117,7 @@ public:
 	//finds the bucket that contains the index
 	static __forceinline size_t GetBucketForIndex(size_t index)
 	{
-		return index / 64 + 1;
+		return index / 64 + 2;
 	}
 
 	//returns the bucket and bit for the specified dimension
@@ -127,6 +132,7 @@ public:
 	{
 		size_t bucket_offset = bucketStride * partial_sum_index;
 		buffer[bucket_offset].sum += value;
+		buffer[bucket_offset + 1].numTermsCompleted++;
 
 		buffer[bucket_offset + accum_location.first].mask |= accum_location.second;
 	}
@@ -137,6 +143,7 @@ public:
 	__forceinline void AccumZero(size_t partial_sum_index, const std::pair<size_t, size_t> accum_location)
 	{
 		size_t bucket_offset = bucketStride * partial_sum_index;
+		buffer[bucket_offset + 1].numTermsCompleted++;
 
 		buffer[bucket_offset + accum_location.first].mask |= accum_location.second;
 	}
@@ -144,13 +151,8 @@ public:
 	//gets the number of populated buckets of the sum of index partial_sum_index
 	__forceinline size_t GetNumFilled(size_t partial_sum_index)
 	{
-		size_t start_offset = bucketStride * partial_sum_index + 1;
-		size_t end_offset = start_offset + numMaskBuckets;
-
-		size_t num_set = 0;
-		for(size_t offset = start_offset; offset < end_offset; offset++)
-			num_set += __popcnt64(buffer[offset].mask);
-		return num_set;
+		size_t offset = bucketStride * partial_sum_index;
+		return buffer[offset + 1].numTermsCompleted;
 	}
 
 	//gets the sum for the specified partial_sum_index
@@ -161,19 +163,12 @@ public:
 	}
 
 	//performs both GetNumFilled and GetSum in one call
-	__forceinline std::pair<size_t, double> GetNumFilledAndSum(size_t partial_sum_index)
+	__forceinline std::pair<double, size_t> GetSumAndNumFilled(size_t partial_sum_index)
 	{
 		size_t bucket_offset = bucketStride * partial_sum_index;
 		double sum = buffer[bucket_offset].sum;
-
-		size_t start_offset = bucket_offset + 1;
-		size_t end_offset = start_offset + numMaskBuckets;
-
-		size_t num_filled = 0;
-		for(size_t offset = start_offset; offset < end_offset; offset++)
-			num_filled += __popcnt64(buffer[offset].mask);
-
-		return std::make_pair(num_filled, sum);
+		size_t num_filled = buffer[bucket_offset + 1].numTermsCompleted;
+		return std::make_pair(sum, num_filled);
 	}
 
 	//sets the sum to the specified value
@@ -186,15 +181,15 @@ public:
 	//returns an iterator for partial_sum_index
 	__forceinline Iterator BeginPartialSumIndex(size_t partial_sum_index)
 	{
-		size_t offset = bucketStride * partial_sum_index + 1;
+		size_t offset = bucketStride * partial_sum_index + 2;
 		return Iterator(0, 0, &buffer[offset]);
 	}
 
-	//returns true if the term of the sum at partial_sum_index and dimension_index has been accumulated yet, else false
-	__forceinline bool IsIndexComputed(size_t partial_sum_index, size_t dimension_index)
+	//returns true if the term of the sum at partial_sum_index and term_index has been accumulated yet, else false
+	__forceinline bool IsIndexComputed(size_t partial_sum_index, size_t term_index)
 	{
-		size_t bucket = GetBucketForIndex(dimension_index);
-		size_t mask = GetBucketBitForIndex(dimension_index);
+		size_t bucket = GetBucketForIndex(term_index);
+		size_t mask = GetBucketBitForIndex(term_index);
 		size_t offset = bucketStride * partial_sum_index + bucket;
 
 		return buffer[offset].mask & mask;
@@ -204,19 +199,21 @@ public:
 	//data storage
 
 	//partial sum data
-	//stored interleaved as (sum, dimensionMask[numDimensions])[numInstances]
+	//stored interleaved as (sum, numTermsCompleted, mask[numTerms])[numInstances]
 	std::vector<SumOrMaskBucket> buffer;
 
 	//number of dimensions
-	size_t numDimensions;
+	size_t numTerms;
+
+	//number of instances that need partial sums
 	size_t numInstances;
 
-	//a cached value computed based on numDimensions
+	//a cached value computed based on numTerms
 	// representing the length of each partial sum data block, excluding the sum
-	// making the stride length numBuckets + 1
+	// making the stride length numBuckets + 2
 	size_t numMaskBuckets;
 
-	//equal to numMaskBuckets + 1, accounting for the sum
+	//equal to numMaskBuckets + 2, accounting for the sum
 	// cached purely for performance reasons
 	size_t bucketStride;
 };

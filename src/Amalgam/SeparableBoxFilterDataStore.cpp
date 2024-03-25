@@ -1250,7 +1250,7 @@ void SeparableBoxFilterDataStore::PopulatePotentialGoodMatches(FlexiblePriorityQ
 
 		indices_considered++;
 
-		auto [cur_sum, num_calculated_feature_deltas] = partial_sums.GetSumAndNumFilled(entity_index);
+		auto [num_calculated_feature_deltas, cur_sum] = partial_sums.GetNumFilledAndSum(entity_index);
 		if(num_calculated_feature_deltas == 0)
 			continue;
 
@@ -1294,7 +1294,7 @@ void SeparableBoxFilterDataStore::PopulatePotentialGoodMatches(FlexiblePriorityQ
 
 		indices_considered++;
 
-		auto [cur_sum, num_calculated_feature_deltas] = partial_sums.GetSumAndNumFilled(entity_index);
+		auto [num_calculated_feature_deltas, cur_sum] = partial_sums.GetNumFilledAndSum(entity_index);
 		//skip if not good enough
 		if(num_calculated_feature_deltas < good_match_threshold_count)
 			continue;

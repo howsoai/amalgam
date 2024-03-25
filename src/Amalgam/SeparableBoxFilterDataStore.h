@@ -818,7 +818,7 @@ protected:
 		PartialSumCollection &partial_sums, size_t entity_index, std::vector<double> &min_distance_by_unpopulated_count, size_t num_features,
 		double reject_distance, std::vector<double> &min_unpopulated_distances, bool high_accuracy)
 	{
-		auto [distance, num_calculated_features] = partial_sums.GetSumAndNumFilled(entity_index);
+		auto [num_calculated_features, distance] = partial_sums.GetNumFilledAndSum(entity_index);
 
 		//complete known sums with worst and best possibilities
 		//calculate the number of features for which the minkowski distance term has not yet been calculated 

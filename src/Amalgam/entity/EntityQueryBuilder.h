@@ -40,7 +40,7 @@ namespace EntityQueryBuilder
 	}
 
 	//populates deviation data for feature_attribs from deviation_node
-	inline void PopulateFeatureDeviationData(GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs, EvaluableNode *deviation_node)
+	inline void PopulateFeatureDeviationNominalValuesData(GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs, EvaluableNode *deviation_node)
 	{
 		feature_attribs.nominalNumberSparseDeviationMatrix.clear();
 		feature_attribs.nominalStringSparseDeviationMatrix.clear();
@@ -55,7 +55,37 @@ namespace EntityQueryBuilder
 		//TODO 17631: update language.js
 		//TODO 17631: add sparse deviation matrix to unit tests
 		//TODO 17631: populate nominalSparseDeviationMatrix here as appropriate
-		feature_attribs.deviation = EvaluableNode::ToNumber(deviation_node, 0.0);
+
+		if(deviation_node->GetType() == ENT_ASSOC)
+		{
+			if(feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC)
+			{
+				for(auto &cn : deviation_node->GetMappedChildNodes())
+				{
+					//TODO 17631: move Platform_StringToNumber to StringManipulation.h?
+					double number_value = Platform_StringToNumber(string_intern_pool.GetStringFromID(cn.first));
+					feature_attribs.nominalNumberSparseDeviationMatrix.emplace(number_value,
+						std::make_unique<GeneralizedDistanceEvaluator::FeatureAttributes::NominalDeviationData<double>>());
+
+					//TODO 17631: insert for each value, as well as handle list -- make and call templated method
+				}
+			}
+			else if(feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
+				|| feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
+			{
+				for(auto &cn : deviation_node->GetMappedChildNodes())
+				{
+					feature_attribs.nominalStringSparseDeviationMatrix.emplace(cn.first,
+						std::make_unique<GeneralizedDistanceEvaluator::FeatureAttributes::NominalDeviationData<double>>());
+
+					//TODO 17631: insert for each value, as well as handle list -- make and call templated method
+				}
+			}
+		}
+		else
+		{
+			feature_attribs.deviation = EvaluableNode::ToNumber(deviation_node, 0.0);
+		}
 	}
 
 	//populates the features of dist_eval based on either num_elements or element_names for each of the
@@ -155,7 +185,7 @@ namespace EntityQueryBuilder
 								size_t ocn_size = ocn.size();
 
 								if(ocn_size > 0)
-									PopulateFeatureDeviationData(dist_eval.featureAttribs[i], ocn[0]);
+									PopulateFeatureDeviationNominalValuesData(dist_eval.featureAttribs[i], ocn[0]);
 
 								if(ocn_size > 1)
 									dist_eval.featureAttribs[i].knownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[1]);
@@ -165,7 +195,7 @@ namespace EntityQueryBuilder
 							}
 							else //treat as singular value
 							{
-								PopulateFeatureDeviationData(dist_eval.featureAttribs[i], en);
+								PopulateFeatureDeviationNominalValuesData(dist_eval.featureAttribs[i], en);
 							}
 						}
 						break;

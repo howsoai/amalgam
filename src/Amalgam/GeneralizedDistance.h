@@ -135,16 +135,21 @@ public:
 		class NominalDeviationData
 		{
 		public:
+			inline NominalDeviationData()
+				defaultDeviation(0.0), toUnknownDeviation(0.0)
+			{	}
+
 			//deviations for each value; unknown should be stored as special nonvalue (e.g., NaN, NaS)
-			FastHashMap<NominalValueType, DistanceTermsWithDifference> deviations;
-			DistanceTermsWithDifference defaultDeviation;
+			FastHashMap<NominalValueType, double> deviations;
+			double defaultDeviation;
+			double toUnknownDeviation;
 		};
 
 		//sparse deviation matrix if the nominal is a string
-		FastHashMap<StringInternPool::StringID, NominalDeviationData<StringInternPool::StringID>> nominalStringSparseDeviationMatrix;
+		FastHashMap<StringInternPool::StringID, std::unique_ptr<NominalDeviationData<StringInternPool::StringID>>> nominalStringSparseDeviationMatrix;
 
 		//sparse deviation matrix if the nominal is a number
-		FastHashMap<double, NominalDeviationData<double>> nominalNumberSparseDeviationMatrix;
+		FastHashMap<double, std::unique_ptr<NominalDeviationData<double>>> nominalNumberSparseDeviationMatrix;
 
 		//distance term to use if both values being compared are unknown
 		//the difference will be NaN if unknown

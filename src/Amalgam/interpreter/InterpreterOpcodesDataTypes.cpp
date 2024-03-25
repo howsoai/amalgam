@@ -1766,7 +1766,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENCRYPT(EvaluableNode *en,
 	std::string cyphertext = "";
 
 	//if no second key, then use symmetric key encryption
-	if(key_2 == "")
+	if(key_2.empty())
 		cyphertext = EncryptMessage(plaintext, key_1, nonce);
 	else //use public key encryption
 		cyphertext = EncryptMessage(plaintext, key_1, key_2, nonce);
@@ -1794,7 +1794,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECRYPT(EvaluableNode *en,
 	std::string plaintext = "";
 
 	//if no second key, then use symmetric key encryption
-	if(key_2 == "")
+	if(key_2.empty())
 		plaintext = DecryptMessage(cyphertext, key_1, nonce);
 	else //use public key encryption
 		plaintext = DecryptMessage(cyphertext, key_1, key_2, nonce);

@@ -1096,8 +1096,8 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			size_t next_index;
 			if(upper_value_index + 1 < num_unique_number_values)
 				next_index = upper_value_index + 1;
-			else //0th index is unknown, start at 1st
-				next_index = 1;
+			else
+				next_index = 0;
 
 			//done if wrapped completely around
 			if(next_index == value_index)

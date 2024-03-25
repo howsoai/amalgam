@@ -11,7 +11,7 @@ EntityWriteListener::EntityWriteListener(Entity *listening_entity, bool retain_w
 	else
 		storedWrites = nullptr;
 	
-	if(filename != "")
+	if(!filename.empty())
 	{
 		logFile.open(filename, std::ios::binary);
 		logFile << "(" << GetStringFromEvaluableNodeType(ENT_SEQUENCE) << "\r\n";

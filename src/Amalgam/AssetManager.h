@@ -113,7 +113,7 @@ public:
 	#ifdef MULTITHREAD_INTERFACE
 		Concurrency::WriteLock lock(persistentEntitiesMutex);
 	#endif
-		if(resource_path == "")
+		if(resource_path.empty())
 			persistentEntities.erase(entity);
 		else
 			persistentEntities[entity] = resource_path;

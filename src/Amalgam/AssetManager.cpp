@@ -45,7 +45,7 @@ EvaluableNodeReference AssetManager::LoadResourcePath(std::string &resource_path
 		processed_resource_path = resource_path;
 	}
 
-	if(file_type == "")
+	if(file_type.empty())
 		file_type = extension;
 
 	//load this entity based on file_type
@@ -579,6 +579,6 @@ void AssetManager::PreprocessFileNameAndType(std::string &resource_path,
 		complete_resource_path = resource_path;
 	}
 
-	if(file_type == "")
+	if(file_type.empty())
 		file_type = extension;
 }

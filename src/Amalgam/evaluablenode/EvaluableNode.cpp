@@ -1029,7 +1029,7 @@ std::vector<std::string> EvaluableNode::GetCommentsSeparateLines()
 	auto full_comments = string_intern_pool.GetStringFromID(comment_sid);
 
 	//early exit
-	if(full_comments == "")
+	if(full_comments.empty())
 		return comment_lines;
 	
 	size_t cur = 0;
@@ -1074,7 +1074,7 @@ void EvaluableNode::SetCommentsStringId(StringInternPool::StringID comments_stri
 
 void EvaluableNode::SetComments(const std::string &comments)
 {
-	if(comments == "")
+	if(comments.empty())
 	{
 		ClearComments();
 		return;

@@ -39,8 +39,14 @@ public:
 	LoadEntityStatus LoadEntity(std::string &handle, std::string &path, bool persistent, bool load_contained_entities,
 		std::string &write_log_filename, std::string &print_log_filename, std::string rand_seed = std::string(""));
 	LoadEntityStatus VerifyEntity(std::string &path);
+
+	bool CloneEntity(std::string &handle, std::string &cloned_handle, std::string &path, bool persistent,
+		std::string &write_log_filename, std::string &print_log_filename);
+
 	void StoreEntity(std::string &handle, std::string &path, bool update_persistence_location, bool store_contained_entities);
+
 	void ExecuteEntity(std::string &handle, std::string &label);
+
 	void DestroyEntity(std::string &handle);
 	bool SetRandomSeed(std::string &handle, std::string &rand_seed);
 	std::vector<std::string> GetEntities();

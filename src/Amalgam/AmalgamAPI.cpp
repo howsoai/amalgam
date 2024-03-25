@@ -112,6 +112,16 @@ extern "C"
 		return ConvertLoadStatusToCStatus(status);
 	}
 
+	bool CloneEntity(char *handle, char *clone_handle, char *path, bool persistent, char *write_log_filename, char *print_log_filename)
+	{
+		std::string h(handle);
+		std::string ch(clone_handle);
+		std::string p(path);
+		std::string wlfname(write_log_filename);
+		std::string plfname(print_log_filename);
+		return entint.CloneEntity(h, ch, p, persistent, wlfname, plfname);
+	}
+
 	void StoreEntity(char *handle, char *path, bool update_persistence_location, bool store_contained_entities)
 	{
 		std::string h(handle);

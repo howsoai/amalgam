@@ -34,6 +34,10 @@ extern "C"
 	//verifies the entity specified by path. Uses LoadEntityStatus to return any errors and version
 	AMALGAM_EXPORT LoadEntityStatus VerifyEntity(char *path);
 
+	//clones the entity in handle to clone_handle
+	//if persistent, then path represents the location it will be persisted to
+	AMALGAM_EXPORT bool CloneEntity(char *handle, char *clone_handle, char *path, bool persistent, char *write_log_filename, char *print_log_filename);
+
 	//stores the entity specified by handle into path
 	AMALGAM_EXPORT void   StoreEntity(char *handle, char *path, bool update_persistence_location = false, bool store_contained_entities = true);
 

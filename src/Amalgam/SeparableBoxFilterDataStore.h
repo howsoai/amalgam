@@ -564,6 +564,7 @@ protected:
 	inline size_t AccumulatePartialSums(SortedIntegerSet &entity_indices, size_t query_feature_index, double term)
 	{
 		size_t num_entity_indices = entity_indices.size();
+		size_t max_index = num_entity_indices;
 
 		auto &partial_sums = parametersAndBuffers.partialSums;
 		const auto accum_location = partial_sums.GetAccumLocation(query_feature_index);
@@ -576,13 +577,16 @@ protected:
 		//however, indices beyond the range of partial_sums will cause an issue
 		//therefore, only trim back the end if needed, and trim back to the largest possible element id (max_element - 1)
 		if(entity_indices.GetEndInteger() >= max_element)
-			num_entity_indices = entity_indices.GetFirstIntegerVectorLocationGreaterThan(max_element - 1);
+		{
+			max_index = entity_indices.GetFirstIntegerVectorLocationGreaterThan(max_element - 1);
+			num_entity_indices = max_index - 1;
+		}
 
 		//for each found element, accumulate associated partial sums, or if zero, just mark that it's accumulated
 		if(term != 0.0)
 		{
-			#pragma omp parallel for schedule(static) if(num_entity_indices > 300)
-			for(int64_t i = 0; i < static_cast<int64_t>(num_entity_indices); i++)
+			#pragma omp parallel for schedule(static) if(max_index > 300)
+			for(int64_t i = 0; i < static_cast<int64_t>(max_index); i++)
 			{
 				const auto entity_index = entity_indices_vector[i];
 				partial_sums.Accum(entity_index, accum_location, term);
@@ -590,8 +594,8 @@ protected:
 		}
 		else //term == 0.0
 		{
-			#pragma omp parallel for schedule(static) if(num_entity_indices > 300)
-			for(int64_t i = 0; i < static_cast<int64_t>(num_entity_indices); i++)
+			#pragma omp parallel for schedule(static) if(max_index > 300)
+			for(int64_t i = 0; i < static_cast<int64_t>(max_index); i++)
 			{
 				const auto entity_index = entity_indices_vector[i];
 				partial_sums.AccumZero(entity_index, accum_location);

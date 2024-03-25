@@ -34,7 +34,7 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(st
 {
 	LoadEntityStatus status;
 
-	if(rand_seed == "")
+	if(rand_seed.empty())
 	{
 		typedef std::chrono::steady_clock clk;
 		auto t = std::chrono::duration_cast<std::chrono::milliseconds>(clk::now().time_since_epoch()).count();
@@ -51,10 +51,10 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(st
 	PrintListener *pl = nullptr;
 	std::vector<EntityWriteListener *> wl;
 
-	if(print_log_filename != "")
+	if(!print_log_filename.empty())
 		pl = new PrintListener(print_log_filename);
 
-	if(write_log_filename != "")
+	if(!write_log_filename.empty())
 	{
 		EntityWriteListener *write_log = new EntityWriteListener(entity, false, write_log_filename);
 		wl.push_back(write_log);
@@ -78,6 +78,38 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::VerifyEntity(
 		return EntityExternalInterface::LoadEntityStatus(false, error_string, version);
 
 	return EntityExternalInterface::LoadEntityStatus(false, "", version);
+}
+
+bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &cloned_handle, std::string &path, bool persistent,
+	std::string &write_log_filename, std::string &print_log_filename)
+{
+	auto bundle = FindEntityBundle(handle);
+	if(bundle == nullptr)
+		return false;
+
+	if(bundle->entity == nullptr)
+		return false;
+
+	Entity *entity = new Entity(bundle->entity);
+
+	PrintListener *pl = nullptr;
+	std::vector<EntityWriteListener *> wl;
+
+	if(!print_log_filename.empty())
+		pl = new PrintListener(print_log_filename);
+
+	if(!write_log_filename.empty())
+	{
+		EntityWriteListener *write_log = new EntityWriteListener(entity, false, write_log_filename);
+		wl.push_back(write_log);
+	}
+
+	AddEntityBundle(cloned_handle, new EntityListenerBundle(entity, wl, pl));
+
+	if(persistent)
+		StoreEntity(cloned_handle, path, true, true);
+
+	return true;
 }
 
 void EntityExternalInterface::StoreEntity(std::string &handle, std::string &path, bool update_persistence_location, bool store_contained_entities)

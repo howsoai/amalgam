@@ -639,7 +639,7 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, std::string id_
 	StringInternPool::StringID previous_t_sid = t->idStringId;
 
 	//autoassign an ID if not specified
-	if(id_string == "")
+	if(id_string.empty())
 	{
 		for(;;)
 		{

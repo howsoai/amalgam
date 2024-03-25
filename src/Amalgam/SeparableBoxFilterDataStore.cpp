@@ -1077,13 +1077,13 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			else
 				next_index = num_unique_number_values - 1;
 
-			//make sure didn't wrap all the way around for cyclic features
-			if(next_index != value_index)
-			{
-				next_lower_index = next_index;
-				lower_diff = GeneralizedDistanceEvaluator::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueEntries[next_lower_index]->value.number), cycle_length);
-				compute_lower = true;
-			}
+			//done if wrapped completely around
+			if(next_index == value_index)
+				break;
+
+			next_lower_index = next_index;
+			lower_diff = GeneralizedDistanceEvaluator::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueEntries[next_lower_index]->value.number), cycle_length);
+			compute_lower = true;
 		}
 
 		//see if can compute one bucket upper
@@ -1104,22 +1104,16 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			size_t next_index;
 			if(upper_value_index + 1 < num_unique_number_values)
 				next_index = upper_value_index + 1;
-			else //0th index is unknown, start at 1st
-				next_index = 1;
+			else
+				next_index = 0;
 
-			//make sure didn't wrap all the way around for cyclic features
-			//either from the value itself or overlapping with the next_lower_index
-			if(next_index != value_index)
-			{
-				if((!compute_lower || next_index != next_lower_index))
-				{
-					next_upper_index = next_index;
-					upper_diff = GeneralizedDistanceEvaluator::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueEntries[next_upper_index]->value.number), cycle_length);
-					compute_upper = true;
-				}
-				else //upper and lower have overlapped, want to exit the loop
-					next_upper_index = next_lower_index;
-			}
+			//done if wrapped completely around
+			if(next_index == value_index)
+				break;
+
+			next_upper_index = next_index;
+			upper_diff = GeneralizedDistanceEvaluator::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueEntries[next_upper_index]->value.number), cycle_length);
+			compute_upper = true;
 		}
 
 		//determine the next closest point and its difference
@@ -1188,8 +1182,9 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		if(term > largest_term)
 			largest_term = term;
 
-		//if cyclic and have wrapped around, then exit
-		if(lower_value_index >= upper_value_index)
+		//if cyclic and have wrapped around or computed every value, then exit
+		if(lower_value_index >= upper_value_index
+				|| (lower_value_index == 0 && upper_value_index == num_unique_number_values - 1))
 			break;
 	}
 
@@ -1283,7 +1278,7 @@ void SeparableBoxFilterDataStore::PopulatePotentialGoodMatches(FlexiblePriorityQ
 
 	//find a good number of features based on the discrete logarithm of the number of features
 	size_t good_number_of_features = 0;
-	size_t num_features = partial_sums.numDimensions;
+	size_t num_features = partial_sums.numTerms;
 	while(num_features >>= 1)
 		good_number_of_features++;
 

@@ -1256,7 +1256,7 @@ current_index: 2
 		interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1710792960.740306
+		start_time 1711389109.212087
 		www 1
 		x 12
 		zz 10
@@ -1299,7 +1299,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1710792960.740306
+	start_time 1711389109.212087
 	www 1
 	x 12
 	zz 10
@@ -1341,7 +1341,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1710792960.740306
+	start_time 1711389109.212087
 	www 1
 	x 12
 	zz 10
@@ -1609,7 +1609,7 @@ e:
   - .inf
 
 25: (assoc a 1)
-current date-time in epoch: 2024-03-18-16.16.01.1029210
+current date-time in epoch: 2024-03-25-13.51.49.6960750
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -3405,7 +3405,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1710792961.309983
+1711389109.878964
 (true)
 
 RootTest
@@ -3647,18 +3647,7 @@ hello
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "1a2Ø.²³W«w¸ˆæÿ")
-	(set_entity_rand_seed
-		(first
-			(create_entities
-				(append new_entity "NewModule")
-				(lambda
-					(associate "a" 1 "b" 2)
-				)
-			)
-		)
-		"ˆ-ìO[¿ë3yC“Å’ŒÑÿ"
-	)
+	(set_entity_rand_seed new_entity ">ÄóT›!v.W«w¸ˆæÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -4561,16 +4550,16 @@ cyclic KL: (assoc
 	vert1 0.0020695242435298626
 	vert2 0.0020695242435298626
 	vert3 0.03622271709266012
-	vert4 0.05872535496117577
+	vert4 0.06081391029364311
 )
 cyclic conviction: (assoc
-	vert0 0.5072524658798658
-	vert1 15.809039161461927
-	vert2 15.809039161461927
-	vert3 0.9032229616532002
-	vert4 0.5571220443569613
+	vert0 0.5137287240708814
+	vert1 16.01087833672136
+	vert2 16.01087833672136
+	vert3 0.9147547047144656
+	vert4 0.5448572656824459
 )
-cyclic group kl divergence: 0.05872535496117583
+cyclic group kl divergence: 0.06081391029364306
 surprisal transforms
 probabilities: (list
 	(list "vert0" "vert1" "vert2" "vert3")
@@ -4651,4 +4640,4 @@ concurrent entity writes successful: (true)
 
 --clean-up test files--
 --total execution time--
-1.576003074645996
+1.4943439960479736

@@ -77,7 +77,7 @@ public:
 	#endif
 
 		RemoveRootPermissions(entity);
-		
+
 		if(persistentEntities.size() > 0)
 			DestroyPersistentEntity(entity);
 	}
@@ -106,6 +106,18 @@ public:
 	// Checks if this entity specifically has been loaded as persistent
 	inline bool IsEntityDirectlyPersistent(Entity *entity)
 	{	return persistentEntities.find(entity) != end(persistentEntities);	}
+
+	//sets the entity's persistent path
+	inline void SetEntityPersistentPath(Entity *entity, std::string &resource_path)
+	{
+	#ifdef MULTITHREAD_INTERFACE
+		Concurrency::WriteLock lock(persistentEntitiesMutex);
+	#endif
+		if(resource_path.empty())
+			persistentEntities.erase(entity);
+		else
+			persistentEntities[entity] = resource_path;
+	}
 
 	inline bool DoesEntityHaveRootPermission(Entity *entity)
 	{

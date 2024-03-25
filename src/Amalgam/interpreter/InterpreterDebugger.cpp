@@ -129,7 +129,7 @@ std::pair<std::string, std::string> StringifyNode(EvaluableNode *en, EvaluableNo
 void PrintStackNode(EvaluableNode *en, EvaluableNodeManager *enm, size_t max_num_chars = 100)
 {
 	auto [comment_str, node_str] = StringifyNode(en, enm);
-	if(!asset_manager.debugSources || comment_str == "")
+	if(!asset_manager.debugSources || comment_str.empty())
 	{
 		std::cout << "  opcode: " << node_str << std::endl;
 	}
@@ -226,7 +226,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, bool 
 		#endif
 
 			auto [comment_str, node_str] = StringifyNode(en, evaluableNodeManager);
-			if(comment_str == "")
+			if(comment_str.empty())
 			{
 				std::cout << "Current opcode: " << node_str << std::endl;
 			}
@@ -311,7 +311,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, bool 
 			else if(command == "ul")
 			{
 				//go back to prompt if not a string
-				if(input == "")
+				if(input.empty())
 					continue;
 
 				_interpreter_debug_data.runUntilLabel = input;
@@ -349,7 +349,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, bool 
 		}
 		else if(command == "bl")
 		{
-			if(input != "")
+			if(!input.empty())
 			{
 				auto found = std::find(begin(_interpreter_debug_data.breakLabels),
 					end(_interpreter_debug_data.breakLabels), input);
@@ -445,7 +445,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, bool 
 
 			Entity *entity = curEntity;
 
-			if(input != "")
+			if(!input.empty())
 				entity = curEntity->GetContainedEntity(string_intern_pool.GetIDFromString(input));
 
 			if(entity == nullptr)
@@ -751,7 +751,7 @@ void Interpreter::DebugCheckBreakpointsAndUpdateState(EvaluableNode *en, bool be
 		}
 
 		//if breaking on a label
-		if(_interpreter_debug_data.runUntilLabel != "" || _interpreter_debug_data.breakLabels.size() > 0)
+		if(!_interpreter_debug_data.runUntilLabel.empty() || _interpreter_debug_data.breakLabels.size() > 0)
 		{
 			size_t num_labels = 0;
 			if(en != nullptr)

@@ -562,7 +562,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 		return EvaluableNodeReference::Null();
 
 	std::string orig_container_label_name = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
-	if(orig_container_label_name == "")
+	if(orig_container_label_name.empty())
 		return EvaluableNodeReference::Null();
 
 	std::string container_label_name;

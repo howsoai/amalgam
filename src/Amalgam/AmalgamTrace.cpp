@@ -31,6 +31,7 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 	std::string input;
 	std::string handle;
 	std::string label;
+	std::string clone_handle;
 	std::string command;
 	std::string data;
 	std::string persistent;
@@ -72,6 +73,39 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 				std::string new_rand_seed = random_stream.CreateOtherStreamStateViaString("trace");
 				auto status = entint.LoadEntity(handle, data, persistent == "true", use_contained == "true", transaction_listener_path, print_listener_path, new_rand_seed);
 				response = status.loaded ? SUCCESS_RESPONSE : FAILURE_RESPONSE;
+			}
+			else
+			{
+				//Insufficient arguments
+				response = FAILURE_RESPONSE;
+			}
+		}
+		if(command == "CLONE_ENTITY")
+		{
+			std::vector<std::string> command_tokens = StringManipulation::SplitArgString(input);
+			if(command_tokens.size() >= 2)
+			{
+				handle = command_tokens[0];
+				clone_handle = command_tokens[1];
+
+				if(command_tokens.size() >= 3)
+					data = command_tokens[2];  // path to amlg file
+
+				if(command_tokens.size() >= 4)
+					persistent = command_tokens[3];
+
+				if(command_tokens.size() >= 5)
+					print_listener_path = command_tokens[4];
+				else
+					print_listener_path = "";
+
+				if(command_tokens.size() >= 6)
+					transaction_listener_path = command_tokens[5];
+				else
+					transaction_listener_path = "";
+
+				bool result = entint.CloneEntity(handle, clone_handle, data, persistent == "true", transaction_listener_path, print_listener_path);
+				response = result ? SUCCESS_RESPONSE : FAILURE_RESPONSE;
 			}
 			else
 			{

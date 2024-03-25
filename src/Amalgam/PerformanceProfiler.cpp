@@ -118,7 +118,7 @@ void PerformanceProfiler::AccumulateLockContentionCount(std::string t)
 void PerformanceProfiler::PrintProfilingInformation(std::string outfile_name, size_t max_print_count)
 {
 	std::ofstream outfile;
-	if(outfile_name != "")
+	if(!outfile_name.empty())
 		outfile.open(outfile_name);
 
 	std::ostream &out_dest = (outfile.is_open() ? outfile : std::cout);

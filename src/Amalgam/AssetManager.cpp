@@ -45,7 +45,7 @@ EvaluableNodeReference AssetManager::LoadResourcePath(std::string &resource_path
 		processed_resource_path = resource_path;
 	}
 
-	if(file_type == "")
+	if(file_type.empty())
 		file_type = extension;
 
 	//load this entity based on file_type
@@ -229,12 +229,7 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 	new_entity->SetRandomState(default_random_seed, true);
 
 	if(persistent)
-	{
-	#ifdef MULTITHREAD_INTERFACE
-		Concurrency::WriteLock lock(persistentEntitiesMutex);
-	#endif
-		persistentEntities[new_entity] = resource_path;
-	}
+		SetEntityPersistentPath(new_entity, resource_path);
 
 	//load contained entities
 	if(load_contained_entities)
@@ -344,10 +339,8 @@ bool AssetManager::StoreEntityToResourcePath(Entity *entity, std::string &resour
 
 	if(update_persistence_location)
 	{
-	#ifdef MULTITHREAD_INTERFACE
-		Concurrency::WriteLock lock(persistentEntitiesMutex);
-	#endif
-		persistentEntities[entity] = resource_base_path + "." + file_type; //use escaped string
+		std::string new_persist_path = resource_base_path + "." + file_type;
+		SetEntityPersistentPath(entity, new_persist_path);
 	}
 
 	return all_stored_successfully;
@@ -586,6 +579,6 @@ void AssetManager::PreprocessFileNameAndType(std::string &resource_path,
 		complete_resource_path = resource_path;
 	}
 
-	if(file_type == "")
+	if(file_type.empty())
 		file_type = extension;
 }

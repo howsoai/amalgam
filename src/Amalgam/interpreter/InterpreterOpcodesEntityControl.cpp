@@ -553,7 +553,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, bo
 		return EvaluableNodeReference::Null();
 
 	std::string resource_name = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
-	if(resource_name == "")
+	if(resource_name.empty())
 		return EvaluableNodeReference::Null();
 
 	bool escape_filename = false;
@@ -584,7 +584,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSI
 		return EvaluableNodeReference::Null();
 
 	std::string resource_name = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
-	if(resource_name == "")
+	if(resource_name.empty())
 		return EvaluableNodeReference::Null();
 
 	//get destination if applicable
@@ -655,7 +655,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, b
 		return EvaluableNodeReference::Null();
 
 	std::string resource_name = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
-	if(resource_name == "")
+	if(resource_name.empty())
 		return EvaluableNodeReference::Null();
 
 	auto to_store = InterpretNodeForImmediateUse(ocn[1]);
@@ -708,7 +708,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 		return EvaluableNodeReference::Null();
 
 	std::string resource_name = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
-	if(resource_name == "")
+	if(resource_name.empty())
 		return EvaluableNodeReference::Null();
 
 	bool escape_filename = false;

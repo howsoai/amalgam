@@ -3,7 +3,7 @@
 
 PrintListener::PrintListener(const std::string &filename, bool mirror_to_stdio)
 {
-	if(filename != "")
+	if(!filename.empty())
 		logFile.open(filename, std::ios::binary);
 
 	mirrorToStdio = mirror_to_stdio;

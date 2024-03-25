@@ -9,7 +9,7 @@
 class PartialSumCollection
 {
 public:
-	//union of the two types of data stored to reduce need for reinterpret_cast
+	//union of the types of data stored to reduce need for reinterpret_cast
 	union SumOrMaskBucket
 	{
 		uint64_t mask;
@@ -18,7 +18,7 @@ public:
 
 	PartialSumCollection()
 	{
-		numDimensions = 0;
+		numTerms = 0;
 		numInstances = 0;
 		numMaskBuckets = 1;
 	}
@@ -81,7 +81,7 @@ public:
 	{
 		for(auto &v : buffer)
 			v.mask = 0;
-		numDimensions = 0;
+		numTerms = 0;
 		numInstances = 0;
 		numMaskBuckets = 1;
 	}
@@ -89,7 +89,7 @@ public:
 	//resizes the buffer to accomodate the dimensions and instances specified and clears all data
 	void ResizeAndClear(size_t num_dimensions, size_t num_instances)
 	{
-		numDimensions = num_dimensions;
+		numTerms = num_dimensions;
 		numInstances = num_instances;
 		//need a SumOrFeatureMask for each of up to 64 dimensions
 		numMaskBuckets = ((num_dimensions + 63) / 64);
@@ -190,11 +190,11 @@ public:
 		return Iterator(0, 0, &buffer[offset]);
 	}
 
-	//returns true if the term of the sum at partial_sum_index and dimension_index has been accumulated yet, else false
-	__forceinline bool IsIndexComputed(size_t partial_sum_index, size_t dimension_index)
+	//returns true if the term of the sum at partial_sum_index and term_index has been accumulated yet, else false
+	__forceinline bool IsIndexComputed(size_t partial_sum_index, size_t term_index)
 	{
-		size_t bucket = GetBucketForIndex(dimension_index);
-		size_t mask = GetBucketBitForIndex(dimension_index);
+		size_t bucket = GetBucketForIndex(term_index);
+		size_t mask = GetBucketBitForIndex(term_index);
 		size_t offset = bucketStride * partial_sum_index + bucket;
 
 		return buffer[offset].mask & mask;
@@ -204,14 +204,16 @@ public:
 	//data storage
 
 	//partial sum data
-	//stored interleaved as (sum, dimensionMask[numDimensions])[numInstances]
+	//stored interleaved as (sum, numTermsCompleted, mask[numTerms])[numInstances]
 	std::vector<SumOrMaskBucket> buffer;
 
 	//number of dimensions
-	size_t numDimensions;
+	size_t numTerms;
+
+	//number of instances that need partial sums
 	size_t numInstances;
 
-	//a cached value computed based on numDimensions
+	//a cached value computed based on numTerms
 	// representing the length of each partial sum data block, excluding the sum
 	// making the stride length numBuckets + 1
 	size_t numMaskBuckets;

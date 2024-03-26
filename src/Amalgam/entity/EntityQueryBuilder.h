@@ -3,6 +3,7 @@
 //project headers:
 #include "EntityQueries.h"
 #include "EvaluableNode.h"
+#include "PlatformSpecific.h"
 #include "StringInternPool.h"
 
 //Constructs a query engine query condition from Amalgam evaluable nodes
@@ -63,8 +64,8 @@ namespace EntityQueryBuilder
 				for(auto &cn : deviation_node->GetMappedChildNodes())
 				{
 					//TODO 17631: move Platform_StringToNumber to StringManipulation.h?
-					double number_value = Platform_StringToNumber(string_intern_pool.GetStringFromID(cn.first));
-					feature_attribs.nominalNumberSparseDeviationMatrix.emplace(number_value,
+					auto [value, success] = Platform_StringToNumber(string_intern_pool.GetStringFromID(cn.first));
+					feature_attribs.nominalNumberSparseDeviationMatrix.emplace(value,
 						std::make_unique<GeneralizedDistanceEvaluator::FeatureAttributes::NominalDeviationData<double>>());
 
 					//TODO 17631: insert for each value, as well as handle list -- make and call templated method

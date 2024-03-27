@@ -142,16 +142,25 @@ public:
 			{	}
 
 			//deviations for each value; unknown should be stored as special nonvalue (e.g., NaN, NaS)
-			FastHashMap<NominalValueType, double> deviations;
+			//store as a vector of pairs instead of a map because either only one value will be looked up once,
+			//in which case there's no advantage to having a map, or many distance term values will be looked up
+			//repeatedly, which is handled by a RepeatedGeneralizedDistanceEvaluator, which uses a map
+			std::vector<std::pair<NominalValueType, double>> deviations;
 			double defaultDeviation;
 			double toUnknownDeviation;
 		};
 
 		//sparse deviation matrix if the nominal is a string
-		FastHashMap<StringInternPool::StringID, std::unique_ptr<NominalDeviationData<StringInternPool::StringID>>> nominalStringSparseDeviationMatrix;
+		//store as a vector of pairs instead of a map because either only one value will be looked up once,
+		//in which case there's no advantage to having a map, or many distance term values will be looked up
+		//repeatedly, which is handled by a RepeatedGeneralizedDistanceEvaluator, which uses a map
+		std::vector<std::pair<StringInternPool::StringID, NominalDeviationData<StringInternPool::StringID>>> nominalStringSparseDeviationMatrix;
 
 		//sparse deviation matrix if the nominal is a number
-		FastHashMap<double, std::unique_ptr<NominalDeviationData<double>>> nominalNumberSparseDeviationMatrix;
+		//store as a vector of pairs instead of a map because either only one value will be looked up once,
+		//in which case there's no advantage to having a map, or many distance term values will be looked up
+		//repeatedly, which is handled by a RepeatedGeneralizedDistanceEvaluator, which uses a map
+		std::vector<std::pair<double, NominalDeviationData<double>>> nominalNumberSparseDeviationMatrix;
 
 		//distance term to use if both values being compared are unknown
 		//the difference will be NaN if unknown
@@ -1007,8 +1016,6 @@ public:
 			internedNumberIndexToNumberValue(nullptr)
 		{	}
 
-		//TODO 17631: add data to store distance terms for nominal sparse deviation matrix for a value, and genericize ComputeAndStoreInternedNumberValuesAndDistanceTerms to precompute them
-
 		//the effective comparison for the feature type, specialized for performance
 		// this type is 32-bit aligned to make sure the whole structure is aligned
 		EffectiveFeatureDifferenceType effectiveFeatureType;
@@ -1019,6 +1026,11 @@ public:
 
 		std::vector<double> *internedNumberIndexToNumberValue;
 		std::vector<GeneralizedDistanceEvaluator::DistanceTerms> internedDistanceTerms;
+
+		//TODO 17631: genericize ComputeAndStoreInternedNumberValuesAndDistanceTerms to precompute these when appropriate
+		//used to store distance terms for the respective targetValue for the sparse deviation matrix
+		FastHashMap<StringInternPool::StringID, double> nominalStringDistanceTerms;
+		FastHashMap<double, double> nominalNumberDistanceTerms;
 	};
 
 	//for each feature, precomputed distance terms for each interned value looked up by intern index

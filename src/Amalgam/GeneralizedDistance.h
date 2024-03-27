@@ -19,6 +19,8 @@ public:
 	// align at 32-bits in order to play nice with data alignment where it is used
 	enum FeatureDifferenceType : uint32_t
 	{
+		//nominal, entirely based on equal or not
+		FDT_NOMINAL_UNIVERSAL_SYMMETRIC,
 		//nominal based on numeric equivalence
 		FDT_NOMINAL_NUMERIC,
 		//nominal based on string equivalence
@@ -111,8 +113,8 @@ public:
 		double weight;
 
 		//distance terms for nominals
-		DistanceTerms nominalMatchDistanceTerm;
-		DistanceTerms nominalNonMatchDistanceTerm;
+		DistanceTerms nominalUniversalSymmetricMatchDistanceTerm;
+		DistanceTerms nominalUniversalSymmetricNonMatchDistanceTerm;
 
 		//type attributes dependent on featureType
 		union
@@ -317,12 +319,19 @@ public:
 		if(FastIsNaN(diff))
 			return LookupNullDistanceTerm(a, b, a_type, b_type, index, high_accuracy);
 
-		// TODO effective featureType vs effectiveFeatureType, was effective
-		if(featureAttribs[index].effectiveFeatureType == RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED)
+		auto &feature_attribs = featureAttribs[index];
+		if(feature_attribs.featureType == FeatureDifferenceType::FDT_NOMINAL_UNIVERSAL_SYMMETRIC)
 			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index, high_accuracy)
 					: ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index, high_accuracy);
-		
-		//TODO 17631: implement other paths depending on what is populated
+
+		if(feature_attribs.nominalNumberSparseDeviationMatrix.size() > 0)
+		{
+			//TODO 17631: implement this -- if found, return value
+		}
+		else if(feature_attribs.nominalStringSparseDeviationMatrix.size() > 0)
+		{
+			//TODO 17631: implement this -- if found, return value
+		}
 			
 		if(diff == 0.0)
 			return ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
@@ -446,13 +455,13 @@ public:
 	//returns the precomputed distance term for a nominal when two universally symmetric nominals are equal
 	__forceinline double ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(size_t index, bool high_accuracy)
 	{
-		return featureAttribs[index].nominalMatchDistanceTerm.GetValue(high_accuracy);
+		return featureAttribs[index].nominalUniversalSymmetricMatchDistanceTerm.GetValue(high_accuracy);
 	}
 
 	//returns the precomputed distance term for a nominal when two universally symmetric nominals are not equal
 	__forceinline double ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(size_t index, bool high_accuracy)
 	{
-		return featureAttribs[index].nominalNonMatchDistanceTerm.GetValue(high_accuracy);
+		return featureAttribs[index].nominalUniversalSymmetricNonMatchDistanceTerm.GetValue(high_accuracy);
 	}
 
 	//computes the distance term for an unknown-unknown
@@ -795,7 +804,6 @@ protected:
 	//computes and caches symmetric nominal and uncertainty distance terms
 	inline void ComputeAndStoreCommonDistanceTerms()
 	{
-		//TODO 17631: change this to either only apply to appropriate nominals OR change it be called explicitly and called by SBFDS
 		bool compute_accurate = NeedToPrecomputeAccurate();
 		bool compute_approximate = NeedToPrecomputeApproximate();
 
@@ -812,16 +820,21 @@ protected:
 						feature_attribs.deviation = smallest_delta;
 				}
 
+				//if no extra deviations, then change type to universal symmetric
+				if(feature_attribs.nominalNumberSparseDeviationMatrix.size() == 0
+						&& feature_attribs.nominalStringSparseDeviationMatrix.size() == 0)
+					feature_attribs.featureType = FeatureDifferenceType::FDT_NOMINAL_UNIVERSAL_SYMMETRIC;
+
 				if(compute_accurate)
 				{
-					feature_attribs.nominalMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, true), true);
-					feature_attribs.nominalNonMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, true), true);
+					feature_attribs.nominalUniversalSymmetricMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, true), true);
+					feature_attribs.nominalUniversalSymmetricNonMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, true), true);
 				}
 
 				if(compute_approximate)
 				{
-					feature_attribs.nominalMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, false), false);
-					feature_attribs.nominalNonMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, false), false);
+					feature_attribs.nominalUniversalSymmetricMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, false), false);
+					feature_attribs.nominalUniversalSymmetricNonMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, false), false);
 				}
 			}
 
@@ -900,7 +913,7 @@ public:
 	{
 		//nominal values, but every nominal relationship is the same and symmetric:
 		//A is as different as B as B is as different as C
-		EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED,
+		EFDT_NOMINAL_UNIVERSAL_SYMMETRIC_PRECOMPUTED,
 		//everything is precomputed from interned values that are looked up
 		EFDT_VALUES_UNIVERSALLY_PRECOMPUTED,
 		//continuous without cycles, but everything is always numeric
@@ -914,7 +927,7 @@ public:
 		//nominal compared to a string value where nominals may not be symmetric
 		EFDT_NOMINAL_STRING,
 		//nominal compared to a number value where nominals may not be symmetric
-		EFDT_NOMINAL_NUMBER,
+		EFDT_NOMINAL_NUMERIC,
 		//edit distance between strings
 		EFDT_CONTINUOUS_STRING,
 		//continuous measures of the number of nodes different between two sets of code
@@ -1001,6 +1014,8 @@ public:
 			: effectiveFeatureType(EFDT_CONTINUOUS_NUMERIC),
 			internedNumberIndexToNumberValue(nullptr)
 		{	}
+
+		//TODO 17631: add data to store distance terms for nominal sparse deviation matrix for a value, and genericize ComputeAndStoreInternedNumberValuesAndDistanceTerms to precompute them
 
 		//the effective comparison for the feature type, specialized for performance
 		// this type is 32-bit aligned to make sure the whole structure is aligned

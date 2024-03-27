@@ -719,7 +719,7 @@ protected:
 		auto &feature_data = r_dist_eval.featureData[query_feature_index];
 		switch(feature_data.effectiveFeatureType)
 		{
-		case RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED:
+		case RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_UNIVERSAL_SYMMETRIC_PRECOMPUTED:
 			return r_dist_eval.distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(query_feature_index, high_accuracy);
 
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC:
@@ -773,7 +773,7 @@ protected:
 		}
 
 		default:
-			//RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_STRING or RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMBER
+			//RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_STRING or RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMERIC
 			// or RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING or RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];

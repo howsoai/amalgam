@@ -935,7 +935,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			auto [value_index, exact_index_found] = column->FindExactIndexForValue(value.number);
 			if(exact_index_found)
 			{
-				double term = r_dist_eval.distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(query_feature_index, high_accuracy);
+				double term = r_dist_eval.distEvaluator->featureAttribs[query_feature_index].nominalUniversalSymmetricMatchDistanceTerm.GetValue(high_accuracy);
 				AccumulatePartialSums(column->sortedNumberValueEntries[value_index]->indicesWithValue, query_feature_index, term);
 			}
 		}
@@ -944,7 +944,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			auto value_found = column->stringIdValueToIndices.find(value.stringID);
 			if(value_found != end(column->stringIdValueToIndices))
 			{
-				double term = r_dist_eval.distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(query_feature_index, high_accuracy);
+				double term = r_dist_eval.distEvaluator->featureAttribs[query_feature_index].nominalUniversalSymmetricMatchDistanceTerm.GetValue(high_accuracy);
 				AccumulatePartialSums(*(value_found->second), query_feature_index, term);
 			}
 		}
@@ -966,7 +966,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		//else value_type == ENIVT_NULL
 
 		//return next smallest nominal distance term
-		return r_dist_eval.distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(query_feature_index, high_accuracy);
+		return r_dist_eval.distEvaluator->featureAttribs[query_feature_index].nominalUniversalSymmetricNonMatchDistanceTerm.GetValue(high_accuracy);
 	}
 	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING)
 	{

@@ -321,8 +321,8 @@ public:
 
 		auto &feature_attribs = featureAttribs[index];
 		if(feature_attribs.featureType == FeatureDifferenceType::FDT_NOMINAL_UNIVERSAL_SYMMETRIC)
-			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index, high_accuracy)
-					: ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index, high_accuracy);
+			return (diff == 0.0) ? feature_attribs.nominalUniversalSymmetricMatchDistanceTerm.GetValue(high_accuracy)
+					: feature_attribs.nominalUniversalSymmetricNonMatchDistanceTerm.GetValue(high_accuracy);
 
 		if(feature_attribs.nominalNumberSparseDeviationMatrix.size() > 0)
 		{
@@ -454,18 +454,6 @@ public:
 	{
 		double dist_term = ComputeDistanceTermNominalBaseNonMatchFromDeviation(index, featureAttribs[index].deviation, high_accuracy);
 		return ContextuallyExponentiateAndWeightDifferenceTerm(dist_term, index, high_accuracy);
-	}
-
-	//returns the precomputed distance term for a nominal when two universally symmetric nominals are equal
-	__forceinline double ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(size_t index, bool high_accuracy)
-	{
-		return featureAttribs[index].nominalUniversalSymmetricMatchDistanceTerm.GetValue(high_accuracy);
-	}
-
-	//returns the precomputed distance term for a nominal when two universally symmetric nominals are not equal
-	__forceinline double ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(size_t index, bool high_accuracy)
-	{
-		return featureAttribs[index].nominalUniversalSymmetricNonMatchDistanceTerm.GetValue(high_accuracy);
 	}
 
 	//computes the distance term for an unknown-unknown

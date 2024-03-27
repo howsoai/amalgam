@@ -85,7 +85,7 @@ namespace EntityQueryBuilder
 		//if it's an assoc, just populate, otherwise parse list with assoc in it
 		if(vdn_type == ENT_ASSOC)
 		{
-			PopulateFeatureDeviationNominalValueAssocData(ndd, value_deviation_node);
+			PopulateFeatureDeviationNominalValueAssocData<NominalValueType>(ndd, value_deviation_node);
 		}
 		else if(vdn_type == ENT_LIST)
 		{
@@ -95,7 +95,7 @@ namespace EntityQueryBuilder
 			if(ocn_size > 0
 					&& !EvaluableNode::IsEmptyNode(ocn[0])
 					&& ocn[0]->GetType() == ENT_ASSOC)
-				PopulateFeatureDeviationNominalValueAssocData(ndd, ocn[0]);
+				PopulateFeatureDeviationNominalValueAssocData<NominalValueType>(ndd, ocn[0]);
 
 			if(ocn_size > 1)
 				ndd.defaultDeviation = EvaluableNode::ToNumber(ocn[1]);
@@ -138,7 +138,8 @@ namespace EntityQueryBuilder
 					auto inserted = feature_attribs.nominalNumberSparseDeviationMatrix.emplace(value,
 						std::make_unique<GeneralizedDistanceEvaluator::FeatureAttributes::NominalDeviationData<double>>());
 
-					PopulateFeatureDeviationNominalValueData<double>(*inserted.first->second.get(), cn.second);
+					auto &ndd = *inserted.first->second.get();
+					PopulateFeatureDeviationNominalValueData<double>(ndd, cn.second);
 				}
 			}
 			else if(feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
@@ -149,7 +150,8 @@ namespace EntityQueryBuilder
 					auto inserted = feature_attribs.nominalStringSparseDeviationMatrix.emplace(cn.first,
 						std::make_unique<GeneralizedDistanceEvaluator::FeatureAttributes::NominalDeviationData<StringInternPool::StringID>>());
 
-					PopulateFeatureDeviationNominalValueData<StringInternPool::StringID>(*inserted.first->second.get(), cn.second);
+					auto &ndd = *inserted.first->second.get();
+					PopulateFeatureDeviationNominalValueData<StringInternPool::StringID>(ndd, cn.second);
 				}
 			}
 		}

@@ -6,6 +6,9 @@
 #include "PlatformSpecific.h"
 #include "StringInternPool.h"
 
+//system headers:
+#include <type_traits>
+
 //Constructs a query engine query condition from Amalgam evaluable nodes
 namespace EntityQueryBuilder
 {
@@ -40,6 +43,66 @@ namespace EntityQueryBuilder
 			|| type == ENT_COMPUTE_ENTITY_KL_DIVERGENCES);
 	}
 
+	//populates deviation data for a given nominal value
+	//assumes that value_deviation_assoc is a valid pointer to an assoc
+	template<typename NominalValueType>
+	inline void PopulateFeatureDeviationNominalValueAssocData(
+		GeneralizedDistanceEvaluator::FeatureAttributes::NominalDeviationData<NominalValueType> &ndd,
+		EvaluableNode *value_deviation_assoc)
+	{
+		for(auto &cn : value_deviation_assoc->GetMappedChildNodesReference())
+		{
+			if(std::is_same<NominalValueType, double>::value)
+			{
+				double value = std::numeric_limits<double>::quiet_NaN();
+				if(cn.first != string_intern_pool.EMPTY_STRING_ID)
+				{
+					auto [number_value, success] = Platform_StringToNumber(string_intern_pool.GetStringFromID(cn.first));
+					if(success)
+						value = number_value;
+				}
+
+				ndd.deviations.emplace(value, EvaluableNode::ToNumber(cn.second));
+			}
+			else
+			{
+				ndd.deviations.emplace(cn.first, EvaluableNode::ToNumber(cn.second));
+			}
+		}
+	}
+
+	//populates deviation data for a given nominal value
+	template<typename NominalValueType>
+	inline void PopulateFeatureDeviationNominalValueData(
+		GeneralizedDistanceEvaluator::FeatureAttributes::NominalDeviationData<NominalValueType> &ndd,
+		EvaluableNode *value_deviation_node)
+	{
+		if(EvaluableNode::IsEmptyNode(value_deviation_node))
+			return;
+
+		//if it's an assoc, just populate, otherwise parse list with assoc in it
+		if(value_deviation_node->GetType() == ENT_ASSOC)
+		{
+			PopulateFeatureDeviationNominalValueAssocData(ndd, value_deviation_node);
+		}
+		else
+		{
+			auto &ocn = value_deviation_node->GetOrderedChildNodesReference();
+			size_t ocn_size = ocn.size();
+
+			if(ocn_size > 0
+					&& !EvaluableNode::IsEmptyNode(ocn[0])
+					&& ocn[0]->GetType() == ENT_ASSOC)
+				PopulateFeatureDeviationNominalValueAssocData(ndd, ocn[0]);
+
+			if(ocn_size > 1)
+				ndd.defaultDeviation = EvaluableNode::ToNumber(ocn[1]);
+
+			if(ocn_size > 2)
+				ndd.toUnknownDeviation = EvaluableNode::ToNumber(ocn[2]);
+		}
+	}
+
 	//populates deviation data for feature_attribs from deviation_node
 	inline void PopulateFeatureDeviationNominalValuesData(GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs, EvaluableNode *deviation_node)
 	{
@@ -52,23 +115,24 @@ namespace EntityQueryBuilder
 			return;
 		}
 
-		//TODO 17631: figure out how to handle strings vs numbers and store into appropriate sparse deviation matrix
-		//TODO 17631: update language.js
-		//TODO 17631: add sparse deviation matrix to unit tests
-		//TODO 17631: populate nominalSparseDeviationMatrix here as appropriate
-
 		if(deviation_node->GetType() == ENT_ASSOC)
 		{
 			if(feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC)
 			{
 				for(auto &cn : deviation_node->GetMappedChildNodes())
 				{
-					//TODO 17631: move Platform_StringToNumber to StringManipulation.h?
-					auto [value, success] = Platform_StringToNumber(string_intern_pool.GetStringFromID(cn.first));
-					feature_attribs.nominalNumberSparseDeviationMatrix.emplace(value,
+					double value = std::numeric_limits<double>::quiet_NaN();
+					if(cn.first != string_intern_pool.EMPTY_STRING_ID)
+					{
+						auto [number_value, success] = Platform_StringToNumber(string_intern_pool.GetStringFromID(cn.first));
+						if(success)
+							value = number_value;
+					}
+					
+					auto inserted = feature_attribs.nominalNumberSparseDeviationMatrix.emplace(value,
 						std::make_unique<GeneralizedDistanceEvaluator::FeatureAttributes::NominalDeviationData<double>>());
 
-					//TODO 17631: insert for each value, as well as handle list -- make and call templated method
+					PopulateFeatureDeviationNominalValueData<double>(*inserted.first->second.get(), cn.second);
 				}
 			}
 			else if(feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
@@ -76,10 +140,10 @@ namespace EntityQueryBuilder
 			{
 				for(auto &cn : deviation_node->GetMappedChildNodes())
 				{
-					feature_attribs.nominalStringSparseDeviationMatrix.emplace(cn.first,
-						std::make_unique<GeneralizedDistanceEvaluator::FeatureAttributes::NominalDeviationData<double>>());
+					auto inserted = feature_attribs.nominalStringSparseDeviationMatrix.emplace(cn.first,
+						std::make_unique<GeneralizedDistanceEvaluator::FeatureAttributes::NominalDeviationData<StringInternPool::StringID>>());
 
-					//TODO 17631: insert for each value, as well as handle list -- make and call templated method
+					PopulateFeatureDeviationNominalValueData<StringInternPool::StringID>(*inserted.first->second.get(), cn.second);
 				}
 			}
 		}

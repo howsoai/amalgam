@@ -426,6 +426,8 @@
  (print "38 " (generalized_distance (list 1 1) (list "continuous_numeric" "continuous_numeric") (null) (list 0.5 0.5) 1 (list 1 1) (list 2 2) (null) (true) ) "\n" )
  (print "39 " (generalized_distance (list 1 1) (list "nominal_numeric" "nominal_numeric") (list 2 2) (list 0.25 0.25) 1 (list 1 1) (list 2 2) (null) (true) ) "\n" )
 
+ ;TODO 17631: add unit tests for sparse deviation matrices
+
  (print "--entropy--\n")
  (print (entropy (list 0.5 0.5)) "\n")
  (print (entropy (list 0.5 0.5) (list 0.25 0.75) -1 1) "\n")
@@ -2782,6 +2784,7 @@
  	(query_within_generalized_distance 60 (list "x" "y") (list 0.0 0.0) (null) (null) (null) (null) 0.5 1 (null) "random seed 1234" "radius")
  )))
 
+ ;TODO 17631: add unit tests for sparse deviation matrices
  (print "--query_nearest_generalized_distance--\n")
  (print (contained_entities "TestContainerExec" (list
  	(query_nearest_generalized_distance 2 (list "x" "y") (list 0.0 0.0) (null) (null) (null) (null) 0.5 1 (null) "random seed 1234" "radius")

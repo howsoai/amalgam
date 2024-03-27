@@ -136,7 +136,7 @@ public:
 		{
 		public:
 			inline NominalDeviationData()
-				: defaultDeviation(0.0), toUnknownDeviation(0.0)
+				: defaultDeviation(0.0), toUnknownDeviation(std::numeric_limits<double>::quiet_NaN())
 			{	}
 
 			//deviations for each value; unknown should be stored as special nonvalue (e.g., NaN, NaS)

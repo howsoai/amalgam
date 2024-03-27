@@ -80,12 +80,14 @@ namespace EntityQueryBuilder
 		if(EvaluableNode::IsEmptyNode(value_deviation_node))
 			return;
 
+		auto vdn_type = value_deviation_node->GetType();
+
 		//if it's an assoc, just populate, otherwise parse list with assoc in it
-		if(value_deviation_node->GetType() == ENT_ASSOC)
+		if(vdn_type == ENT_ASSOC)
 		{
 			PopulateFeatureDeviationNominalValueAssocData(ndd, value_deviation_node);
 		}
-		else
+		else if(vdn_type == ENT_LIST)
 		{
 			auto &ocn = value_deviation_node->GetOrderedChildNodesReference();
 			size_t ocn_size = ocn.size();
@@ -100,6 +102,10 @@ namespace EntityQueryBuilder
 
 			if(ocn_size > 2)
 				ndd.toUnknownDeviation = EvaluableNode::ToNumber(ocn[2]);
+		}
+		else if(vdn_type == ENT_NUMBER)
+		{
+			ndd.defaultDeviation = EvaluableNode::ToNumber(value_deviation_node);
 		}
 	}
 

@@ -391,6 +391,10 @@ public:
 		return deviation;
 	}
 
+	//TODO 17631: genericize this for use in ComputeDistanceTermNominal -- may need to take in two deviations,
+	// exact match deviation and nonmatch deviation?  Or just change the calls to pass in 1-deviation?
+	//make sure lines up with ComputeDistanceTermNominalBaseExactMatchFromDeviation for exact match, and maybe remove ComputeDistanceTermNominalBaseExactMatchFromDeviation
+
 	//computes the base of the difference between two nominal values that do not match without exponentiation
 	__forceinline double ComputeDistanceTermNominalBaseNonMatchFromDeviation(size_t index, double deviation, bool high_accuracy)
 	{

@@ -678,7 +678,7 @@ public:
 		if(a_type == ENIVT_NULL || b_type == ENIVT_NULL)
 			return std::numeric_limits<double>::quiet_NaN();
 
-		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC
+		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_UNIVERSAL_SYMMETRIC || feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC
 			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING || feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
 		{
 			if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)

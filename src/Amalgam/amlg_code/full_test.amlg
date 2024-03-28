@@ -870,6 +870,9 @@
 	(current_index)
  )
 
+ (print "--opcode_stack--\n")
+ (print (size (opcode_stack)) "\n")
+
  (print "--stack--\n")
  (print (stack))
 

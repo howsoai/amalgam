@@ -663,11 +663,18 @@ var data = [
 		"description" : "Like target, but evaluates to the resulting node of the previous iteration for applicable opcodes.",
 		"example" : "(while (< (target_index) 3) (print (previous_result)) (target_index))"
 	},
+	
+	{
+		"parameter" : "opcode_stack",
+		"output" : "list of *",
+		"description" : "Evaluates to the list of opcodes that include the call stack.",
+		"example" : "(print (opcode_stack))"
+	},
 
 	{
 		"parameter" : "stack",
-		"output" : "*",
-		"description" : "Evaluates to the current execution context, also known as the scope stack.",
+		"output" : "list of assoc",
+		"description" : "Evaluates to the current execution context, also known as the scope stack, containing all of the variables for each layer of the stack.",
 		"example" : "(print (stack))"
 	},
 

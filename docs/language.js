@@ -668,7 +668,7 @@ var data = [
 		"parameter" : "opcode_stack",
 		"output" : "list of *",
 		"description" : "Evaluates to the list of opcodes that include the call stack.",
-		"example" : "(print (stack))"
+		"example" : "(print (opcode_stack))"
 	},
 
 	{

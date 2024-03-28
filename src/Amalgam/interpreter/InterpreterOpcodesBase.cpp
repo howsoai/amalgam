@@ -1319,6 +1319,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PREVIOUS_RESULT(EvaluableN
 	return GetAndClearPreviousResultInConstructionStack(depth);
 }
 
+EvaluableNodeReference Interpreter::InterpretNode_ENT_OPCODE_STACK(EvaluableNode *en, bool immediate_result)
+{
+	//can create this node on the stack because will be making a copy
+	EvaluableNode stack_top_holder(ENT_LIST);
+	stack_top_holder.SetNeedCycleCheck(true);
+	stack_top_holder.SetOrderedChildNodes(*interpreterNodeStackNodes);
+	return evaluableNodeManager->DeepAllocCopy(&stack_top_holder);
+}
+
 EvaluableNodeReference Interpreter::InterpretNode_ENT_STACK(EvaluableNode *en, bool immediate_result)
 {
 #ifdef MULTITHREAD_SUPPORT

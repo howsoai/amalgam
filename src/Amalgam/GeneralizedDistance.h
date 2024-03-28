@@ -324,6 +324,7 @@ public:
 	__forceinline double ComputeDistanceTermNominal(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
 		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)
 	{
+		//TODO 17631: need to redo this logic as different values may have different deviations against nulls
 		double diff = ComputeDifference(a, b, a_type, b_type, featureAttribs[index].featureType);
 		if(FastIsNaN(diff))
 			return LookupNullDistanceTerm(a, b, a_type, b_type, index, high_accuracy);
@@ -333,13 +334,40 @@ public:
 			return (diff == 0.0) ? feature_attribs.nominalUniversalSymmetricMatchDistanceTerm.GetValue(high_accuracy)
 					: feature_attribs.nominalUniversalSymmetricNonMatchDistanceTerm.GetValue(high_accuracy);
 
-		if(feature_attribs.nominalNumberSparseDeviationMatrix.size() > 0)
+		if(a_type == b_type)
 		{
-			//TODO 17631: implement this -- if found, return value
-		}
-		else if(feature_attribs.nominalStringSparseDeviationMatrix.size() > 0)
-		{
-			//TODO 17631: implement this -- if found, return value
+			//TODO 17631: redo this logic and above to handle nulls -- maybe make a templated version of this for below
+			if(a_type == ENIVT_NUMBER && feature_attribs.nominalNumberSparseDeviationMatrix.size() > 0)
+			{
+				double a_value = a.number;
+				auto outer_it = std::find_if(begin(feature_attribs.nominalNumberSparseDeviationMatrix),
+					end(feature_attribs.nominalNumberSparseDeviationMatrix),
+					[a_value](auto i)
+					{	return (i.first == a_value);	}
+					);
+
+				if(outer_it != std::end(feature_attribs.nominalNumberSparseDeviationMatrix))
+				{
+					auto &ndd = outer_it->second;
+					double b_value = b.number;
+					auto inner_it = std::find_if(begin(ndd.deviations), end(ndd.deviations),
+						[b_value](auto i)
+						{	return (i.first == b_value);	}
+					);
+
+					double deviation = 0.0;
+					if(inner_it == end(ndd.deviations))
+						deviation = ndd.defaultDeviation;
+					else
+						deviation = inner_it->second;
+
+					//TODO 17631: compute the distance term from deviation
+				}
+			}
+			else if(a_type == ENIVT_STRING_ID && feature_attribs.nominalStringSparseDeviationMatrix.size() > 0)
+			{
+				//TODO 17631: implement this -- if found, return value
+			}
 		}
 			
 		if(diff == 0.0)
@@ -989,8 +1017,6 @@ public:
 			}
 		}
 	}
-
-public:
 
 	//returns true if the feature at index has interned number values
 	__forceinline bool HasNumberInternValues(size_t index)

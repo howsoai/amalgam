@@ -693,6 +693,8 @@ protected:
 			auto other_value = column_data->GetResolvedValue(other_value_type, matrix[matrix_base_position + column_index]);
 			other_value_type = column_data->GetResolvedValueType(other_value_type);
 
+			//TODO 17631: replace this call with a new version from r_dist_eval that can compute sparse nominals quickly
+			//TODO 17631: find any other place where ComputeDistanceTermRegular is used and should be replaced by this new method
 			dist_accum += r_dist_eval.distEvaluator->ComputeDistanceTermRegular(
 				feature_data.targetValue, other_value, feature_data.targetValueType, other_value_type, i, high_accuracy);
 		}

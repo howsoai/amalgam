@@ -1338,7 +1338,8 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 	feature_data.internedNumberIndexToNumberValue = nullptr;
 	feature_data.internedDistanceTerms.clear();
 
-	if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC
+	if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_UNIVERSAL_SYMMETRIC
+		|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING
@@ -1360,7 +1361,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 		else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE;
 	}
-	else // feature_type is not nominal and numeric
+	else // feature_type is some form of continuous numeric
 	{
 		//looking for continuous; if not a number, so just put as nan
 		double position_value_numeric = (position_value_type == ENIVT_NUMBER

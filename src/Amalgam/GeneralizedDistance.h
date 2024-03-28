@@ -324,15 +324,23 @@ public:
 	__forceinline double ComputeDistanceTermNominal(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
 		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)
 	{
-		//TODO 17631: redo this logic as different values may have different deviations against nulls
-		double diff = ComputeDifference(a, b, a_type, b_type, featureAttribs[index].featureType);
-		if(FastIsNaN(diff))
-			return LookupNullDistanceTerm(a, b, a_type, b_type, index, high_accuracy);
+		bool a_is_null = EvaluableNodeImmediateValue::IsNullEquivalent(a_type, a);
+		bool b_is_null = EvaluableNodeImmediateValue::IsNullEquivalent(b_type, b);
+		if(a_is_null && b_is_null)
+			return ComputeDistanceTermUnknownToUnknown(index, high_accuracy);
+
+		bool are_equal = EvaluableNodeImmediateValue::AreEqual(a_type, a, b_type, b);
 
 		auto &feature_attribs = featureAttribs[index];
 		if(feature_attribs.featureType == FeatureDifferenceType::FDT_NOMINAL_UNIVERSAL_SYMMETRIC)
-			return (diff == 0.0) ? feature_attribs.nominalUniversalSymmetricMatchDistanceTerm.GetValue(high_accuracy)
-					: feature_attribs.nominalUniversalSymmetricNonMatchDistanceTerm.GetValue(high_accuracy);
+		{
+			//if both were null, that was caught above, so one must be known
+			if(a_is_null || b_is_null)
+				return ComputeDistanceTermKnownToUnknown(index, high_accuracy);
+			
+			return are_equal ? feature_attribs.nominalUniversalSymmetricMatchDistanceTerm.GetValue(high_accuracy)
+				: feature_attribs.nominalUniversalSymmetricNonMatchDistanceTerm.GetValue(high_accuracy);
+		}
 
 		if(a_type == b_type)
 		{
@@ -369,8 +377,13 @@ public:
 				//TODO 17631: implement this -- if found, return value
 			}
 		}
-			
-		if(diff == 0.0)
+
+		//if both were null, that was caught above, so one must be known
+		if(a_is_null || b_is_null)
+			return ComputeDistanceTermKnownToUnknown(index, high_accuracy);
+
+		//need to compute because didn't match any above
+		if(are_equal)
 			return ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
 		else
 			return ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
@@ -676,8 +689,8 @@ public:
 	__forceinline double LookupNullDistanceTerm(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
 		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)
 	{
-		bool a_unknown = (a_type == ENIVT_NULL || (a_type == ENIVT_NUMBER && FastIsNaN(a.number)));
-		bool b_unknown = (b_type == ENIVT_NULL || (b_type == ENIVT_NUMBER && FastIsNaN(b.number)));
+		bool a_unknown = EvaluableNodeImmediateValue::IsNullEquivalent(a_type, a);
+		bool b_unknown = EvaluableNodeImmediateValue::IsNullEquivalent(b_type, b);
 		if(a_unknown && b_unknown)
 			return ComputeDistanceTermUnknownToUnknown(index, high_accuracy);
 		if(a_unknown || b_unknown)

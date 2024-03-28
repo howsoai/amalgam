@@ -531,7 +531,6 @@ protected:
 	//computes each partial sum and adds the term to the partial sums associated for each id in entity_indices for query_feature_index
 	//returns the number of entities indices accumulated
 	size_t ComputeAndAccumulatePartialSums(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
-		EvaluableNodeImmediateValue value, EvaluableNodeImmediateValueType value_type,
 		SortedIntegerSet &entity_indices, size_t query_feature_index, size_t absolute_feature_index, bool high_accuracy)
 	{
 		size_t num_entity_indices = entity_indices.size();
@@ -550,7 +549,7 @@ protected:
 			other_value_type = column_data->GetResolvedValueType(other_value_type);
 
 			//compute term
-			double term = r_dist_eval.distEvaluator->ComputeDistanceTermRegular(value, other_value, value_type, other_value_type, query_feature_index, high_accuracy);
+			double term = r_dist_eval.ComputeDistanceTerm(other_value, other_value_type, query_feature_index, high_accuracy);
 
 			//accumulate
 			partial_sums.Accum(entity_index, accum_location, term);
@@ -684,7 +683,6 @@ protected:
 		for(size_t i = 0; i < r_dist_eval.featureData.size(); i++)
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[i];
-			auto &feature_data = r_dist_eval.featureData[i];
 
 			size_t column_index = feature_attribs.featureIndex;
 			auto &column_data = columnData[column_index];
@@ -693,10 +691,7 @@ protected:
 			auto other_value = column_data->GetResolvedValue(other_value_type, matrix[matrix_base_position + column_index]);
 			other_value_type = column_data->GetResolvedValueType(other_value_type);
 
-			//TODO 17631: replace this call with a new version from r_dist_eval that can compute sparse nominals quickly
-			//TODO 17631: find any other place where ComputeDistanceTermRegular is used and should be replaced by this new method
-			dist_accum += r_dist_eval.distEvaluator->ComputeDistanceTermRegular(
-				feature_data.targetValue, other_value, feature_data.targetValueType, other_value_type, i, high_accuracy);
+			dist_accum += r_dist_eval.ComputeDistanceTerm(other_value, other_value_type, i, high_accuracy);
 		}
 
 		double dist = r_dist_eval.distEvaluator->InverseExponentiateDistance(dist_accum, high_accuracy);
@@ -772,11 +767,13 @@ protected:
 
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_STRING:
 		{
+			auto &column_data = columnData[feature_attribs.featureIndex];
 			//TODO 17631: implement this by calling method in r_dist_eval
 		}
 
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMERIC:
 		{
+			auto &column_data = columnData[feature_attribs.featureIndex];
 			//TODO 17631: implement this by calling method in r_dist_eval
 		}
 
@@ -787,9 +784,7 @@ protected:
 			auto other_value_type = column_data->GetIndexValueType(entity_index);
 			auto other_value = column_data->GetResolvedValue(other_value_type, GetValue(entity_index, feature_attribs.featureIndex));
 
-			return r_dist_eval.distEvaluator->ComputeDistanceTermRegular(
-				feature_data.targetValue, other_value, feature_data.targetValueType, other_value_type,
-				query_feature_index, high_accuracy);
+			return r_dist_eval.ComputeDistanceTerm(other_value, other_value_type, query_feature_index, high_accuracy);
 		}
 		}
 	}

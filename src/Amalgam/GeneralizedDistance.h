@@ -1030,6 +1030,28 @@ public:
 		return featureData[index].internedDistanceTerms[intern_value_index].GetValue(high_accuracy);
 	}
 
+	//computes the inner term of the Minkowski norm summation
+	__forceinline double ComputeDistanceTerm(EvaluableNodeImmediateValue other_value,
+		EvaluableNodeImmediateValueType other_type, size_t index, bool high_accuracy)
+	{
+		//TODO 17631: improve the logic and efficiency
+		auto &feature_data = featureData[index];
+
+		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
+		if(distEvaluator->IsFeatureNominal(index))
+			return distEvaluator->ComputeDistanceTermNominal(feature_data.targetValue, other_value,
+				feature_data.targetValueType, other_type, index, high_accuracy);
+
+		double diff = distEvaluator->ComputeDifference(feature_data.targetValue, other_value,
+			feature_data.targetValueType, other_type, distEvaluator->featureAttribs[index].featureType);
+
+		if(FastIsNaN(diff))
+			return distEvaluator->LookupNullDistanceTerm(feature_data.targetValue, other_value,
+				feature_data.targetValueType, other_type, index, high_accuracy);
+
+		return distEvaluator->ComputeDistanceTermContinuousNonNullRegular(diff, index, high_accuracy);
+	}
+
 	//pointer to a valid, populated GeneralizedDistanceEvaluator
 	GeneralizedDistanceEvaluator *distEvaluator;
 

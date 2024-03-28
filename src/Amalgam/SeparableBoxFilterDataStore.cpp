@@ -370,8 +370,8 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 				for(auto &value_entry : column_data->sortedNumberValueEntries)
 				{
 					//get distance term that is applicable to each entity in this bucket
-					double distance_term = dist_eval.ComputeDistanceTermRegular(
-						target_value.number, value_entry->value.number, ENIVT_NUMBER, ENIVT_NUMBER, query_feature_index, high_accuracy);
+					double distance_term = r_dist_eval.ComputeDistanceTerm(
+						value_entry->value.number, ENIVT_NUMBER, query_feature_index, high_accuracy);
 
 					//for each bucket, add term to their sums
 					for(auto entity_index : value_entry->indicesWithValue)
@@ -416,8 +416,8 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 			auto value = column_data->GetResolvedValue(value_type, GetValue(entity_index, absolute_feature_index));
 			value_type = column_data->GetResolvedValueType(value_type);
 			
-			distances[entity_index] += dist_eval.ComputeDistanceTermRegular(
-											target_value, value, target_value_type, value_type, query_feature_index, high_accuracy);
+			distances[entity_index] += r_dist_eval.ComputeDistanceTerm(
+											value, value_type, query_feature_index, high_accuracy);
 
 			//remove entity if its distance is already greater than the max_dist
 			if(!(distances[entity_index] <= max_dist_exponentiated)) //false for NaN indices as well so they will be removed
@@ -959,8 +959,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			if(value_found != end(column->valueCodeSizeToIndices))
 			{
 				auto &entity_indices = *(value_found->second);
-				ComputeAndAccumulatePartialSums(r_dist_eval, value, value_type,
-					entity_indices, query_feature_index, absolute_feature_index, high_accuracy);
+				ComputeAndAccumulatePartialSums(r_dist_eval, entity_indices, query_feature_index, absolute_feature_index, high_accuracy);
 			}
 		}
 		//else value_type == ENIVT_NULL
@@ -994,8 +993,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		if(value_found != end(column->valueCodeSizeToIndices))
 		{
 			auto &entity_indices = *(value_found->second);
-			ComputeAndAccumulatePartialSums(r_dist_eval, value, value_type,
-				entity_indices, query_feature_index, absolute_feature_index, high_accuracy);
+			ComputeAndAccumulatePartialSums(r_dist_eval, entity_indices, query_feature_index, absolute_feature_index, high_accuracy);
 		}
 
 		//next most similar code must be at least a distance of 1 edit away

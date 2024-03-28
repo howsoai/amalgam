@@ -49,6 +49,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(GetStringIdFromNodeTypeFromString(ENT_CURRENT_INDEX), "current_index");
 	EmplaceStaticString(GetStringIdFromNodeTypeFromString(ENT_CURRENT_VALUE), "current_value");
 	EmplaceStaticString(GetStringIdFromNodeTypeFromString(ENT_PREVIOUS_RESULT), "previous_result");
+	EmplaceStaticString(GetStringIdFromNodeTypeFromString(ENT_OPCODE_STACK), "opcode_stack");
 	EmplaceStaticString(GetStringIdFromNodeTypeFromString(ENT_STACK), "stack");
 	EmplaceStaticString(GetStringIdFromNodeTypeFromString(ENT_ARGS), "args");
 

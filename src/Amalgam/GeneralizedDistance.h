@@ -133,13 +133,24 @@ public:
 		double deviationReciprocal;
 
 		//contains the deviations for a given nominal value for each other nominal value
-		template<typename NominalValueType>
+		template<typename NominalValueType, typename EqualComparison = std::equal_to<NominalValueType>>
 		class NominalDeviationData
 		{
 		public:
 			inline NominalDeviationData()
-				: defaultDeviation(0.0), toUnknownDeviation(std::numeric_limits<double>::quiet_NaN())
+				: defaultDeviation(0.0)
 			{	}
+
+			//TODO 17631: change this to either remove the template and put in a constexpr for numeric, or pass template for numeric comparison down
+
+			//returns an iterator to deviations that matches the key
+			inline auto FindDeviationIterator(NominalValueType key)
+			{
+				return std::find_if(begin(deviations), end(deviations),
+					[key](auto i)
+					{	return EqualComparison{}(i.first, key);	}
+				);
+			}
 
 			//deviations for each value; unknown should be stored as special nonvalue (e.g., NaN, NaS)
 			//store as a vector of pairs instead of a map because either only one value will be looked up once,
@@ -147,7 +158,6 @@ public:
 			//repeatedly, which is handled by a RepeatedGeneralizedDistanceEvaluator, which uses a map
 			std::vector<std::pair<NominalValueType, double>> deviations;
 			double defaultDeviation;
-			double toUnknownDeviation;
 		};
 
 		//sparse deviation matrix if the nominal is a string
@@ -358,10 +368,7 @@ public:
 				{
 					auto &ndd = outer_it->second;
 					double b_value = b.number;
-					auto inner_it = std::find_if(begin(ndd.deviations), end(ndd.deviations),
-						[b_value](auto i)
-						{	return (i.first == b_value);	}
-					);
+					auto inner_it = ndd.FindDeviationIterator(b_value);
 
 					double deviation = 0.0;
 					if(inner_it == end(ndd.deviations))

@@ -104,9 +104,6 @@ namespace EntityQueryBuilder
 
 			if(ocn_size > 1)
 				ndd.defaultDeviation = EvaluableNode::ToNumber(ocn[1]);
-
-			if(ocn_size > 2)
-				ndd.toUnknownDeviation = EvaluableNode::ToNumber(ocn[2]);
 		}
 		else if(vdn_type == ENT_NUMBER)
 		{

@@ -249,8 +249,8 @@ namespace EntityQueryBuilder
 				if(i < dist_eval.featureAttribs.size())
 				{
 					dist_eval.featureAttribs[i].deviation = 0.0;
-					dist_eval.featureAttribs[i].unknownToUnknownDistanceTerm.difference = std::numeric_limits<double>::quiet_NaN();
-					dist_eval.featureAttribs[i].knownToUnknownDistanceTerm.difference = std::numeric_limits<double>::quiet_NaN();
+					dist_eval.featureAttribs[i].unknownToUnknownDistanceTerm.deviation = std::numeric_limits<double>::quiet_NaN();
+					dist_eval.featureAttribs[i].knownToUnknownDistanceTerm.deviation = std::numeric_limits<double>::quiet_NaN();
 
 					//get deviations based on feature type
 					switch(dist_eval.featureAttribs[i].featureType)
@@ -269,10 +269,10 @@ namespace EntityQueryBuilder
 									PopulateFeatureDeviationNominalValuesData(dist_eval.featureAttribs[i], ocn[0]);
 
 								if(ocn_size > 1)
-									dist_eval.featureAttribs[i].knownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[1]);
+									dist_eval.featureAttribs[i].knownToUnknownDistanceTerm.deviation = EvaluableNode::ToNumber(ocn[1]);
 
 								if(ocn_size > 2)
-									dist_eval.featureAttribs[i].unknownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[2]);
+									dist_eval.featureAttribs[i].unknownToUnknownDistanceTerm.deviation = EvaluableNode::ToNumber(ocn[2]);
 							}
 							else //treat as singular value
 							{
@@ -291,9 +291,9 @@ namespace EntityQueryBuilder
 								if(ocn_size > 0)
 									dist_eval.featureAttribs[i].deviation = EvaluableNode::ToNumber(ocn[0]);
 								if(ocn_size > 1)
-									dist_eval.featureAttribs[i].knownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[1]);
+									dist_eval.featureAttribs[i].knownToUnknownDistanceTerm.deviation = EvaluableNode::ToNumber(ocn[1]);
 								if(ocn_size > 2)
-									dist_eval.featureAttribs[i].unknownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[2]);
+									dist_eval.featureAttribs[i].unknownToUnknownDistanceTerm.deviation = EvaluableNode::ToNumber(ocn[2]);
 							}
 							else //treat as singular value
 							{

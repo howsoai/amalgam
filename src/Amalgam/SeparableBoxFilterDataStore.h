@@ -897,16 +897,16 @@ public:
 			//if either known or unknown to unknown is missing, need to compute difference
 			// and store it where it is needed
 			double unknown_distance_term = 0.0;
-			if(FastIsNaN(feature_attribs.knownToUnknownDistanceTerm.difference)
-				|| FastIsNaN(feature_attribs.unknownToUnknownDistanceTerm.difference))
+			if(FastIsNaN(feature_attribs.knownToUnknownDistanceTerm.deviation)
+				|| FastIsNaN(feature_attribs.unknownToUnknownDistanceTerm.deviation))
 			{
 				unknown_distance_term = columnData[feature_attribs.featureIndex]->GetMaxDifferenceTerm(
 					feature_attribs);
 
-				if(FastIsNaN(feature_attribs.knownToUnknownDistanceTerm.difference))
-					feature_attribs.knownToUnknownDistanceTerm.difference = unknown_distance_term;
-				if(FastIsNaN(feature_attribs.unknownToUnknownDistanceTerm.difference))
-					feature_attribs.unknownToUnknownDistanceTerm.difference = unknown_distance_term;
+				if(FastIsNaN(feature_attribs.knownToUnknownDistanceTerm.deviation))
+					feature_attribs.knownToUnknownDistanceTerm.deviation = unknown_distance_term;
+				if(FastIsNaN(feature_attribs.unknownToUnknownDistanceTerm.deviation))
+					feature_attribs.unknownToUnknownDistanceTerm.deviation = unknown_distance_term;
 			}
 		}
 	}

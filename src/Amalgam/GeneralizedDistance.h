@@ -75,19 +75,19 @@ public:
 		std::array<double, 2> distanceTerm;
 	};
 
-	//stores the computed exact and approximate distance terms, as well as the difference
+	//stores the computed exact and approximate distance terms, as well as the deviation
 	//the values default to 0.0 on initialization
-	class DistanceTermsWithDifference
+	class DistanceTermsWithDeviation
 		: public DistanceTerms
 	{
 	public:
-		__forceinline DistanceTermsWithDifference(double initial_value = 0.0)
+		__forceinline DistanceTermsWithDeviation(double initial_value = 0.0)
 			: DistanceTerms(initial_value)
 		{
-			difference = initial_value;
+			deviation = initial_value;
 		}
 
-		double difference;
+		double deviation;
 	};
 
 	class FeatureAttributes
@@ -200,11 +200,11 @@ public:
 
 		//distance term to use if both values being compared are unknown
 		//the difference will be NaN if unknown
-		DistanceTermsWithDifference unknownToUnknownDistanceTerm;
+		DistanceTermsWithDeviation unknownToUnknownDistanceTerm;
 
 		//distance term to use if one value is known and the other is unknown
 		//the difference will be NaN if unknown
-		DistanceTermsWithDifference knownToUnknownDistanceTerm;
+		DistanceTermsWithDeviation knownToUnknownDistanceTerm;
 	};
 
 	//initializes and precomputes relevant data including featureAttribs
@@ -323,7 +323,7 @@ public:
 	__forceinline bool IsKnownToUnknownDistanceLessThanOrEqualToExactMatch(size_t feature_index)
 	{
 		auto &feature_attribs = featureAttribs[feature_index];
-		return (feature_attribs.knownToUnknownDistanceTerm.difference <= feature_attribs.deviation);
+		return (feature_attribs.knownToUnknownDistanceTerm.deviation <= feature_attribs.deviation);
 	}
 
 	//computes the exponentiation of d to 1/p
@@ -380,31 +380,51 @@ public:
 
 		if(a_type == ENIVT_NUMBER && feature_attribs.nominalNumberSparseDeviationMatrix.deviationValues.size() > 0)
 		{
-			//TODO 17631: redo this logic to handle nulls -- maybe make a templated version of this for below
-			double a_value = a.number;
-			auto outer_it = std::find_if(begin(feature_attribs.nominalNumberSparseDeviationMatrix.deviationValues),
-				end(feature_attribs.nominalNumberSparseDeviationMatrix.deviationValues),
-				[a_value](auto i)
-				{	return (i.first == a_value);	}
-				);
-
+			auto outer_it = feature_attribs.nominalNumberSparseDeviationMatrix.FindDeviationValuesIterator(a.number);
+			double deviation = 0.0;
 			if(outer_it != std::end(feature_attribs.nominalNumberSparseDeviationMatrix.deviationValues))
 			{
 				auto &ndd = outer_it->second;
 				auto inner_it = ndd.FindDeviationIterator(b.number);
 
-				double deviation = 0.0;
 				if(inner_it == end(ndd.deviations))
 					deviation = ndd.defaultDeviation;
 				else
 					deviation = inner_it->second;
-
-				//TODO 17631: compute the distance term from deviation
 			}
+			else //not found, so fall back to the appropriate default
+			{
+				if(!b_is_null)
+					deviation = outer_it->second.defaultDeviation;
+				else
+					deviation = feature_attribs.knownToUnknownDistanceTerm.deviation;
+			}
+
+			//TODO 17631: compute the distance term from deviation
 		}
 		else if(a_type == ENIVT_STRING_ID && feature_attribs.nominalStringSparseDeviationMatrix.deviationValues.size() > 0)
 		{
-			//TODO 17631: implement this -- if found, return value
+			auto outer_it = feature_attribs.nominalStringSparseDeviationMatrix.FindDeviationValuesIterator(a.stringID);
+			double deviation = 0.0;
+			if(outer_it != std::end(feature_attribs.nominalStringSparseDeviationMatrix.deviationValues))
+			{
+				auto &ndd = outer_it->second;
+				auto inner_it = ndd.FindDeviationIterator(b.stringID);
+
+				if(inner_it == end(ndd.deviations))
+					deviation = ndd.defaultDeviation;
+				else
+					deviation = inner_it->second;
+			}
+			else //not found, so fall back to the appropriate default
+			{
+				if(!b_is_null)
+					deviation = outer_it->second.defaultDeviation;
+				else
+					deviation = feature_attribs.knownToUnknownDistanceTerm.deviation;
+			}
+
+			//TODO 17631: compute the distance term from deviation
 		}
 
 		//if both were null, that was caught above, so one must be known
@@ -916,17 +936,17 @@ protected:
 			if(compute_accurate)
 			{
 				feature_attribs.unknownToUnknownDistanceTerm.SetValue(
-					ComputeDistanceTermMatchOnNull(i, feature_attribs.unknownToUnknownDistanceTerm.difference, true), true);
+					ComputeDistanceTermMatchOnNull(i, feature_attribs.unknownToUnknownDistanceTerm.deviation, true), true);
 			}
 
 			if(compute_approximate)
 			{
 				feature_attribs.unknownToUnknownDistanceTerm.SetValue(
-					ComputeDistanceTermMatchOnNull(i, feature_attribs.unknownToUnknownDistanceTerm.difference, false), false);
+					ComputeDistanceTermMatchOnNull(i, feature_attribs.unknownToUnknownDistanceTerm.deviation, false), false);
 			}
 
 			//if knownToUnknownDifference is same as unknownToUnknownDifference, can copy distance term instead of recomputing
-			if(feature_attribs.knownToUnknownDistanceTerm.difference == feature_attribs.unknownToUnknownDistanceTerm.difference)
+			if(feature_attribs.knownToUnknownDistanceTerm.deviation == feature_attribs.unknownToUnknownDistanceTerm.deviation)
 			{
 				feature_attribs.knownToUnknownDistanceTerm = feature_attribs.unknownToUnknownDistanceTerm;
 			}
@@ -936,13 +956,13 @@ protected:
 				if(compute_accurate)
 				{
 					feature_attribs.knownToUnknownDistanceTerm.SetValue(
-						ComputeDistanceTermMatchOnNull(i, feature_attribs.knownToUnknownDistanceTerm.difference, true), true);
+						ComputeDistanceTermMatchOnNull(i, feature_attribs.knownToUnknownDistanceTerm.deviation, true), true);
 				}
 
 				if(compute_approximate)
 				{
 					feature_attribs.knownToUnknownDistanceTerm.SetValue(
-						ComputeDistanceTermMatchOnNull(i, feature_attribs.knownToUnknownDistanceTerm.difference, false), false);
+						ComputeDistanceTermMatchOnNull(i, feature_attribs.knownToUnknownDistanceTerm.deviation, false), false);
 				}
 			}
 		}

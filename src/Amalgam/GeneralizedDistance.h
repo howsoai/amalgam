@@ -378,10 +378,10 @@ public:
 				: feature_attribs.nominalUniversalSymmetricNonMatchDistanceTerm.GetValue(high_accuracy);
 		}
 
+		double deviation = std::numeric_limits<double>::quiet_NaN();
 		if(a_type == ENIVT_NUMBER && feature_attribs.nominalNumberSparseDeviationMatrix.deviationValues.size() > 0)
 		{
 			auto outer_it = feature_attribs.nominalNumberSparseDeviationMatrix.FindDeviationValuesIterator(a.number);
-			double deviation = 0.0;
 			if(outer_it != std::end(feature_attribs.nominalNumberSparseDeviationMatrix.deviationValues))
 			{
 				auto &ndd = outer_it->second;
@@ -399,13 +399,10 @@ public:
 				else
 					deviation = feature_attribs.knownToUnknownDistanceTerm.deviation;
 			}
-
-			//TODO 17631: compute the distance term from deviation
 		}
 		else if(a_type == ENIVT_STRING_ID && feature_attribs.nominalStringSparseDeviationMatrix.deviationValues.size() > 0)
 		{
 			auto outer_it = feature_attribs.nominalStringSparseDeviationMatrix.FindDeviationValuesIterator(a.stringID);
-			double deviation = 0.0;
 			if(outer_it != std::end(feature_attribs.nominalStringSparseDeviationMatrix.deviationValues))
 			{
 				auto &ndd = outer_it->second;
@@ -423,7 +420,10 @@ public:
 				else
 					deviation = feature_attribs.knownToUnknownDistanceTerm.deviation;
 			}
+		}
 
+		if(!FastIsNaN(deviation))
+		{
 			//TODO 17631: compute the distance term from deviation
 		}
 

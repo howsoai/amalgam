@@ -45,17 +45,16 @@ namespace EntityQueryBuilder
 
 	//populates deviation data for a given nominal value
 	//assumes that value_deviation_assoc is a valid pointer to an assoc
-	template<typename NominalValueType>
+	template<typename NominalDeviationValuesType>
 	inline void PopulateFeatureDeviationNominalValueAssocData(
-		GeneralizedDistanceEvaluator::FeatureAttributes::NominalDeviationData<NominalValueType> &ndd,
-		EvaluableNode *value_deviation_assoc)
+		NominalDeviationValuesType &ndd, EvaluableNode *value_deviation_assoc)
 	{
 		auto &mcn = value_deviation_assoc->GetMappedChildNodesReference();
 		ndd.deviations.resize(mcn.size());
 		size_t cur_index = 0;
 		for(auto &cn : mcn)
 		{
-			if constexpr(std::is_same<NominalValueType, double>::value)
+			if constexpr(std::is_same<NominalDeviationValuesType::value_type, double>::value)
 			{
 				double value = std::numeric_limits<double>::quiet_NaN();
 				if(cn.first != string_intern_pool.EMPTY_STRING_ID)
@@ -77,10 +76,9 @@ namespace EntityQueryBuilder
 	}
 
 	//populates deviation data for a given nominal value
-	template<typename NominalValueType>
+	template<typename NominalDeviationValuesType>
 	inline void PopulateFeatureDeviationNominalValueData(
-		GeneralizedDistanceEvaluator::FeatureAttributes::NominalDeviationData<NominalValueType> &ndd,
-		EvaluableNode *value_deviation_node)
+		NominalDeviationValuesType &ndd, EvaluableNode *value_deviation_node)
 	{
 		if(EvaluableNode::IsEmptyNode(value_deviation_node))
 			return;
@@ -90,7 +88,7 @@ namespace EntityQueryBuilder
 		//if it's an assoc, just populate, otherwise parse list with assoc in it
 		if(vdn_type == ENT_ASSOC)
 		{
-			PopulateFeatureDeviationNominalValueAssocData<NominalValueType>(ndd, value_deviation_node);
+			PopulateFeatureDeviationNominalValueAssocData<NominalDeviationValuesType>(ndd, value_deviation_node);
 		}
 		else if(vdn_type == ENT_LIST)
 		{
@@ -100,7 +98,7 @@ namespace EntityQueryBuilder
 			if(ocn_size > 0
 					&& !EvaluableNode::IsEmptyNode(ocn[0])
 					&& ocn[0]->GetType() == ENT_ASSOC)
-				PopulateFeatureDeviationNominalValueAssocData<NominalValueType>(ndd, ocn[0]);
+				PopulateFeatureDeviationNominalValueAssocData(ndd, ocn[0]);
 
 			if(ocn_size > 1)
 				ndd.defaultDeviation = EvaluableNode::ToNumber(ocn[1]);
@@ -114,8 +112,10 @@ namespace EntityQueryBuilder
 	//populates deviation data for feature_attribs from deviation_node
 	inline void PopulateFeatureDeviationNominalValuesData(GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs, EvaluableNode *deviation_node)
 	{
-		feature_attribs.nominalNumberSparseDeviationMatrix.clear();
-		feature_attribs.nominalStringSparseDeviationMatrix.clear();
+		auto &number_sdm = feature_attribs.nominalNumberSparseDeviationMatrix;
+		auto &string_sdm = feature_attribs.nominalStringSparseDeviationMatrix;
+		number_sdm.deviationValues.clear();
+		string_sdm.deviationValues.clear();
 
 		if(deviation_node == nullptr)
 		{
@@ -129,7 +129,7 @@ namespace EntityQueryBuilder
 			size_t cur_index = 0;
 			if(feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC)
 			{
-				feature_attribs.nominalNumberSparseDeviationMatrix.resize(mcn.size());
+				number_sdm.deviationValues.resize(mcn.size());
 				for(auto &cn : mcn)
 				{
 					double value = std::numeric_limits<double>::quiet_NaN();
@@ -140,10 +140,10 @@ namespace EntityQueryBuilder
 							value = number_value;
 					}
 					
-					feature_attribs.nominalNumberSparseDeviationMatrix[cur_index].first = value;
+					number_sdm.deviationValues[cur_index].first = value;
 
-					auto &ndd = feature_attribs.nominalNumberSparseDeviationMatrix[cur_index].second;
-					PopulateFeatureDeviationNominalValueData<double>(ndd, cn.second);
+					auto &ndd = number_sdm.deviationValues[cur_index].second;
+					PopulateFeatureDeviationNominalValueData(ndd, cn.second);
 
 					cur_index++;
 				}
@@ -151,13 +151,13 @@ namespace EntityQueryBuilder
 			else if(feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
 				|| feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
 			{
-				feature_attribs.nominalStringSparseDeviationMatrix.resize(mcn.size());
+				string_sdm.deviationValues.resize(mcn.size());
 				for(auto &cn : deviation_node->GetMappedChildNodes())
 				{
-					feature_attribs.nominalStringSparseDeviationMatrix[cur_index].first = cn.first;
+					string_sdm.deviationValues[cur_index].first = cn.first;
 
-					auto &ndd = feature_attribs.nominalStringSparseDeviationMatrix[cur_index].second;
-					PopulateFeatureDeviationNominalValueData<StringInternPool::StringID>(ndd, cn.second);
+					auto &ndd = string_sdm.deviationValues[cur_index].second;
+					PopulateFeatureDeviationNominalValueData(ndd, cn.second);
 
 					cur_index++;
 				}

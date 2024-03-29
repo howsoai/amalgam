@@ -134,16 +134,16 @@ public:
 
 		//contains the deviations for a given nominal value for each other nominal value
 		template<typename NominalValueType, typename EqualComparison = std::equal_to<NominalValueType>>
-		class NominalDeviationData
+		class SparseNominalDeviationValues
 		{
 		public:
-			inline NominalDeviationData()
+			inline SparseNominalDeviationValues()
 				: defaultDeviation(0.0)
 			{	}
 
-			//TODO 17631: change this to either remove the template and put in a constexpr for numeric, or pass template for numeric comparison down
+			using value_type = NominalValueType;
 
-			//returns an iterator to deviations that matches the key
+			//returns an iterator to deviations that matches the nominal key
 			inline auto FindDeviationIterator(NominalValueType key)
 			{
 				return std::find_if(begin(deviations), end(deviations),
@@ -160,17 +160,43 @@ public:
 			double defaultDeviation;
 		};
 
+		//contains the deviations for a given nominal value for each other nominal value
+		template<typename NominalValueType, typename EqualComparison = std::equal_to<NominalValueType>>
+		class SparseNominalDeviationMatrix
+		{
+		public:
+			inline SparseNominalDeviationMatrix()
+			{	}
+
+			using value_type = NominalValueType;
+
+			//returns an iterator to deviation values that matches the nominal key
+			inline auto FindDeviationValuesIterator(NominalValueType key)
+			{
+				return std::find_if(begin(deviationValues), end(deviationValues),
+					[key](auto i)
+					{	return EqualComparison{}(i.first, key);	}
+				);
+			}
+
+			//deviation values for each value; unknown should be stored as special nonvalue (e.g., NaN, NaS)
+			//store as a vector of pairs instead of a map because either only one value will be looked up once,
+			//in which case there's no advantage to having a map, or many distance term values will be looked up
+			//repeatedly, which is handled by a RepeatedGeneralizedDistanceEvaluator, which uses a map
+			std::vector<std::pair<NominalValueType, SparseNominalDeviationValues<NominalValueType, EqualComparison>>> deviationValues;
+		};
+
 		//sparse deviation matrix if the nominal is a string
 		//store as a vector of pairs instead of a map because either only one value will be looked up once,
 		//in which case there's no advantage to having a map, or many distance term values will be looked up
 		//repeatedly, which is handled by a RepeatedGeneralizedDistanceEvaluator, which uses a map
-		std::vector<std::pair<StringInternPool::StringID, NominalDeviationData<StringInternPool::StringID>>> nominalStringSparseDeviationMatrix;
+		SparseNominalDeviationMatrix<StringInternPool::StringID> nominalStringSparseDeviationMatrix;
 
 		//sparse deviation matrix if the nominal is a number
 		//store as a vector of pairs instead of a map because either only one value will be looked up once,
 		//in which case there's no advantage to having a map, or many distance term values will be looked up
 		//repeatedly, which is handled by a RepeatedGeneralizedDistanceEvaluator, which uses a map
-		std::vector<std::pair<double, NominalDeviationData<double>>> nominalNumberSparseDeviationMatrix;
+		SparseNominalDeviationMatrix<double, DoubleNanHashComparator> nominalNumberSparseDeviationMatrix;
 
 		//distance term to use if both values being compared are unknown
 		//the difference will be NaN if unknown
@@ -352,37 +378,33 @@ public:
 				: feature_attribs.nominalUniversalSymmetricNonMatchDistanceTerm.GetValue(high_accuracy);
 		}
 
-		if(a_type == b_type)
+		if(a_type == ENIVT_NUMBER && feature_attribs.nominalNumberSparseDeviationMatrix.deviationValues.size() > 0)
 		{
-			//TODO 17631: redo this logic and above to handle nulls -- maybe make a templated version of this for below
-			if(a_type == ENIVT_NUMBER && feature_attribs.nominalNumberSparseDeviationMatrix.size() > 0)
+			//TODO 17631: redo this logic to handle nulls -- maybe make a templated version of this for below
+			double a_value = a.number;
+			auto outer_it = std::find_if(begin(feature_attribs.nominalNumberSparseDeviationMatrix.deviationValues),
+				end(feature_attribs.nominalNumberSparseDeviationMatrix.deviationValues),
+				[a_value](auto i)
+				{	return (i.first == a_value);	}
+				);
+
+			if(outer_it != std::end(feature_attribs.nominalNumberSparseDeviationMatrix.deviationValues))
 			{
-				double a_value = a.number;
-				auto outer_it = std::find_if(begin(feature_attribs.nominalNumberSparseDeviationMatrix),
-					end(feature_attribs.nominalNumberSparseDeviationMatrix),
-					[a_value](auto i)
-					{	return (i.first == a_value);	}
-					);
+				auto &ndd = outer_it->second;
+				auto inner_it = ndd.FindDeviationIterator(b.number);
 
-				if(outer_it != std::end(feature_attribs.nominalNumberSparseDeviationMatrix))
-				{
-					auto &ndd = outer_it->second;
-					double b_value = b.number;
-					auto inner_it = ndd.FindDeviationIterator(b_value);
+				double deviation = 0.0;
+				if(inner_it == end(ndd.deviations))
+					deviation = ndd.defaultDeviation;
+				else
+					deviation = inner_it->second;
 
-					double deviation = 0.0;
-					if(inner_it == end(ndd.deviations))
-						deviation = ndd.defaultDeviation;
-					else
-						deviation = inner_it->second;
-
-					//TODO 17631: compute the distance term from deviation
-				}
+				//TODO 17631: compute the distance term from deviation
 			}
-			else if(a_type == ENIVT_STRING_ID && feature_attribs.nominalStringSparseDeviationMatrix.size() > 0)
-			{
-				//TODO 17631: implement this -- if found, return value
-			}
+		}
+		else if(a_type == ENIVT_STRING_ID && feature_attribs.nominalStringSparseDeviationMatrix.deviationValues.size() > 0)
+		{
+			//TODO 17631: implement this -- if found, return value
 		}
 
 		//if both were null, that was caught above, so one must be known
@@ -870,8 +892,8 @@ protected:
 				}
 
 				//if no extra deviations, then change type to universal symmetric
-				if(feature_attribs.nominalNumberSparseDeviationMatrix.size() == 0
-						&& feature_attribs.nominalStringSparseDeviationMatrix.size() == 0)
+				if(feature_attribs.nominalNumberSparseDeviationMatrix.deviationValues.size() == 0
+						&& feature_attribs.nominalStringSparseDeviationMatrix.deviationValues.size() == 0)
 					feature_attribs.featureType = FeatureDifferenceType::FDT_NOMINAL_UNIVERSAL_SYMMETRIC;
 
 				if(compute_accurate)

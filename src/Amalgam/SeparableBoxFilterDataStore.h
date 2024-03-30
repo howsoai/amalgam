@@ -768,17 +768,30 @@ protected:
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_STRING:
 		{
 			auto &column_data = columnData[feature_attribs.featureIndex];
-			//TODO 17631: implement this by calling method in r_dist_eval
+			if(column_data->stringIdIndices.contains(entity_index))
+				return r_dist_eval.ComputeDistanceTermNominalString(
+					GetValue(entity_index, feature_attribs.featureIndex).stringID,
+					query_feature_index, true, high_accuracy);
+			else
+				return r_dist_eval.ComputeDistanceTermNominalString(string_intern_pool.EMPTY_STRING_ID,
+					query_feature_index, false, high_accuracy);
 		}
 
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMERIC:
 		{
 			auto &column_data = columnData[feature_attribs.featureIndex];
-			//TODO 17631: implement this by calling method in r_dist_eval
+			if(column_data->numberIndices.contains(entity_index))
+				return r_dist_eval.ComputeDistanceTermNominalNumeric(
+					GetValue(entity_index, feature_attribs.featureIndex).number,
+					query_feature_index, true, high_accuracy);
+			else
+				return r_dist_eval.ComputeDistanceTermNominalNumeric(0.0,
+					query_feature_index, false, high_accuracy);
 		}
 
 		default:
-			//RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING or RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE
+			//RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING
+			//or RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE
 		{
 			auto &column_data = columnData[feature_attribs.featureIndex];
 			auto other_value_type = column_data->GetIndexValueType(entity_index);

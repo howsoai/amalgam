@@ -1092,6 +1092,26 @@ public:
 		return featureData[index].internedDistanceTerms[intern_value_index].GetValue(high_accuracy);
 	}
 
+	//returns the inner term of the Minkowski norm summation given that the feature is nominal
+	//and the data type being compared from is numeric
+	//if types_match is false, then the value is ignored
+	__forceinline double ComputeDistanceTermNominalNumeric(double value,
+		size_t index, bool types_match, bool high_accuracy)
+	{
+		//TODO 17631: implement this
+		return 0.0;
+	}
+
+	//returns the inner term of the Minkowski norm summation given that the feature is nominal
+	//and the data type being compared from is string
+	//if types_match is false, then the value is ignored
+	__forceinline double ComputeDistanceTermNominalString(StringInternPool::StringID value,
+		size_t index, bool types_match, bool high_accuracy)
+	{
+		//TODO 17631: implement this
+		return 0.0;
+	}
+
 	//computes the inner term of the Minkowski norm summation
 	__forceinline double ComputeDistanceTerm(EvaluableNodeImmediateValue other_value,
 		EvaluableNodeImmediateValueType other_type, size_t index, bool high_accuracy)

@@ -391,8 +391,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CLONE_ENTITIES(EvaluableNo
 	{
 		//get the id of the source entity
 		Entity *source_entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[i]);
-		//need a source entity, and can't copy self! (that could cause badness)
-		if(source_entity == nullptr || source_entity == curEntity)
+		if(source_entity == nullptr)
 		{
 			new_entity_ids_list->AppendOrderedChildNode(nullptr);
 			continue;

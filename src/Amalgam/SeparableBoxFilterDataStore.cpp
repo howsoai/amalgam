@@ -954,11 +954,13 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 	//need to accumulate nulls if they're closer than an exact match
 	//but if made it here, then the value itself isn't null
+	bool accumulated_known_to_unknown = false;
 	if(r_dist_eval.distEvaluator->IsKnownToUnknownDistanceLessThanOrEqualToExactMatch(query_feature_index))
 	{
 		double known_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
 		AccumulatePartialSums(column->nullIndices, query_feature_index, known_unknown_term);
 		AccumulatePartialSums(column->nanIndices, query_feature_index, known_unknown_term);
+		accumulated_known_to_unknown = true;
 	}
 
 	//if nominal, only need to compute the exact match
@@ -996,10 +998,25 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 				ComputeAndAccumulatePartialSums(r_dist_eval, entity_indices, query_feature_index, absolute_feature_index, high_accuracy);
 			}
 		}
-		//else value_type == ENIVT_NULL
+		//else value_type == ENIVT_NULL and already covered above
+
+		//if known to unknown is less than a symmetric nominal nonmatch, then need to accumulate those too
+		double nonmatch_dist_term = feature_attribs.nominalSymmetricNonMatchDistanceTerm.GetValue(high_accuracy);
+		double known_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
+		if(!accumulated_known_to_unknown && known_unknown_term < nonmatch_dist_term)
+		{
+			BitArrayIntegerSet &known_unknown_indices = parametersAndBuffers.potentialMatchesSet;
+			known_unknown_indices = enabled_indices;
+			column->nullIndices.EraseTo(known_unknown_indices);
+			column->nanIndices.EraseTo(known_unknown_indices);
+			//find nas values
+			auto nas_iter = column->stringIdValueToIndices.find(string_intern_pool.NOT_A_STRING_ID);
+			if(nas_iter != end(column->stringIdValueToIndices))
+				known_unknown_indices.erase(*nas_iter->second);
+			AccumulatePartialSums(known_unknown_indices, query_feature_index, known_unknown_term);
+		}
 
 		//return the value that the remainder of the entities have
-		double nonmatch_dist_term = feature_attribs.nominalSymmetricNonMatchDistanceTerm.GetValue(high_accuracy);
 		feature_data.SetPrecomputedRemainingIdenticalDistanceTerm(nonmatch_dist_term);
 		return nonmatch_dist_term;
 	}

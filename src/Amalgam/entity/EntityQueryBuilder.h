@@ -43,6 +43,7 @@ namespace EntityQueryBuilder
 			|| type == ENT_COMPUTE_ENTITY_KL_DIVERGENCES);
 	}
 
+	//TODO 17631: expand this method
 	//populates deviation data for feature_attribs from deviation_node
 	inline void PopulateFeatureDeviationNominalValuesData(GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs, EvaluableNode *deviation_node)
 	{

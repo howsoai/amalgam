@@ -54,7 +54,7 @@ namespace EntityQueryBuilder
 		size_t cur_index = 0;
 		for(auto &cn : mcn)
 		{
-			if constexpr(std::is_same<NominalDeviationValuesType::value_type, double>::value)
+			if constexpr(std::is_same<typename NominalDeviationValuesType::value_type, double>::value)
 			{
 				double value = std::numeric_limits<double>::quiet_NaN();
 				if(cn.first != string_intern_pool.EMPTY_STRING_ID)

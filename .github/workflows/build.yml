@@ -166,7 +166,18 @@ jobs:
       run: ./build/powershell/Download-Tzdata.ps1
 
     - name: Install build dependencies
-      run: choco upgrade ninja
+      run: |
+        max_retries=2
+        count=0
+        until choco upgrade ninja; do
+          ((count++))
+          echo "Failed to install Ninja (attempt $count of $max_retries)"
+          if [ "$count" -ge "$max_retries" ]; then
+            echo "Reached maximum number of retries"
+            exit 1
+          fi
+          sleep 5
+        done
 
     - name: CMake Configure
       run: AMALGAM_BUILD_VERSION=${{ inputs.version }} cmake --preset $PRESET

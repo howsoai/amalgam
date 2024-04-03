@@ -923,6 +923,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 					AccumulatePartialSums(*nas_iter->second, query_feature_index, unknown_unknown_term);
 
 				//return the larger value that the remainder of the entities have
+				feature_data.SetPrecomputedRemainingIdenticalDistanceTerm(known_unknown_term);
 				return known_unknown_term;
 			}
 			else //known_unknown_term < unknown_unknown_term
@@ -936,6 +937,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 				AccumulatePartialSums(known_unknown_indices, query_feature_index, known_unknown_term);
 
 				//return the larger value that the remainder of the entities have
+				feature_data.SetPrecomputedRemainingIdenticalDistanceTerm(unknown_unknown_term);
 				return unknown_unknown_term;
 			}
 
@@ -960,9 +962,9 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	}
 
 	//if nominal, only need to compute the exact match
-	if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_REMAINING_IDENTICAL_PRECOMPUTED)
+	if(r_dist_eval.distEvaluator->IsFeatureNominal(query_feature_index)
+		&& r_dist_eval.distEvaluator->IsFeatureSymmetricNominal(query_feature_index))
 	{
-		//TODO 19845: remove this and move it below to the different types of nominals, call check IsFeatureSymmetricNominal here and elsewhere, call SetPrecomputedRemainingIdenticalDistanceTerm and pass in feature_attribs.nominalSymmetricNonMatchDistanceTerm.GetValue(high_accuracy)
 		if(value_type == ENIVT_NUMBER)
 		{
 			auto [value_index, exact_index_found] = column->FindExactIndexForValue(value.number);
@@ -997,8 +999,10 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		}
 		//else value_type == ENIVT_NULL
 
-		//return next smallest nominal distance term
-		return feature_attribs.nominalSymmetricNonMatchDistanceTerm.GetValue(high_accuracy);
+		//return the value that the remainder of the entities have
+		double nonmatch_dist_term = feature_attribs.nominalSymmetricNonMatchDistanceTerm.GetValue(high_accuracy);
+		feature_data.SetPrecomputedRemainingIdenticalDistanceTerm(nonmatch_dist_term);
+		return nonmatch_dist_term;
 	}
 	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING)
 	{

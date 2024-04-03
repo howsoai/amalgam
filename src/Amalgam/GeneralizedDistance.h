@@ -1105,6 +1105,17 @@ public:
 		return featureData[index].internedDistanceTerms[intern_value_index].GetValue(high_accuracy);
 	}
 
+	//returns true if the nominal feature has a specific distance term when compared with unknown values
+	__forceinline bool HasNominalSpecificKnownToUnknownDistanceTerm(size_t index)
+	{
+		auto &feature_data = featureData[index];
+		return
+			(	feature_data.nominalNumberDistanceTerms.find(std::numeric_limits<double>::quiet_NaN())
+					!= end(feature_data.nominalNumberDistanceTerms)
+				|| feature_data.nominalStringDistanceTerms.find(string_intern_pool.NOT_A_STRING_ID)
+					!= end(feature_data.nominalStringDistanceTerms) );
+	}
+
 	//returns the inner term of the Minkowski norm summation given that the feature is nominal
 	//and the data type being compared from is numeric
 	//if types_match is false, then the value is ignored

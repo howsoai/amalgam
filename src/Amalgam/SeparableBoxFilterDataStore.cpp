@@ -902,11 +902,12 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		double unknown_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermUnknownToUnknown(query_feature_index, high_accuracy);
 		double known_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
 
-		//if it's either a symmetric nominal or continuous, then there are only two values,
-		//unknown to known or known
-		//TODO 17631: add check for nonsymmetric nominal that doesn't have any specific entry for null
+		//if it's either a symmetric nominal or continuous, or if sparse deviation matrix but no null value,
+		// then there are only two values, unknown to known or known
 		if(r_dist_eval.distEvaluator->IsFeatureSymmetricNominal(query_feature_index)
-			|| r_dist_eval.distEvaluator->IsFeatureContinuous(query_feature_index))
+			|| r_dist_eval.distEvaluator->IsFeatureContinuous(query_feature_index)
+			|| (r_dist_eval.distEvaluator->IsFeatureNominal(query_feature_index) &&
+				!r_dist_eval.HasNominalSpecificKnownToUnknownDistanceTerm(query_feature_index)))
 		{
 			//if all cases are equidistant, then don't compute anything
 			if(unknown_unknown_term == known_unknown_term)
@@ -947,7 +948,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			AccumulatePartialSums(column->nullIndices, query_feature_index, unknown_unknown_term);
 			AccumulatePartialSums(column->nanIndices, query_feature_index, unknown_unknown_term);
 
-			//TODO 17631: get next smallest value, which might not be these two
+			//TODO 17631: accumulate distance terms smaller than these, which might not be these two, return the next largest
 			return std::min(known_unknown_term, unknown_unknown_term);
 		}
 	}

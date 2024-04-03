@@ -176,7 +176,6 @@ jobs:
             echo "Reached maximum number of retries"
             exit 1
           fi
-          sleep 5
         done
 
     - name: CMake Configure

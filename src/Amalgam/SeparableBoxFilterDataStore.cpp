@@ -898,6 +898,10 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	if(value_is_null)
 	{
 		double unknown_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermUnknownToUnknown(query_feature_index, high_accuracy);
+		double known_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
+
+		//TODO 19845: check IsFeatureSymmetricNominal here and elsewhere, call new method to set to EFDT_REMAINING_IDENTICAL_PRECOMPUTED when implemented
+		//TODO 19845: update this logic
 		AccumulatePartialSums(column->nullIndices, query_feature_index, unknown_unknown_term);
 		AccumulatePartialSums(column->nanIndices, query_feature_index, unknown_unknown_term);
 
@@ -905,8 +909,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		// if a data set is mostly nulls, it'll be slower, but this is acceptable as a more rare situation
 		//if the known-unknown term is less than unknown_unknown (this should be rare if nulls have semantic meaning)
 		//then need to populate the rest of the cases
-		double known_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
-		if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_UNIVERSAL_SYMMETRIC_PRECOMPUTED || known_unknown_term < unknown_unknown_term)
+		if(known_unknown_term < unknown_unknown_term)
 		{
 			BitArrayIntegerSet &known_unknown_indices = parametersAndBuffers.potentialMatchesSet;
 			known_unknown_indices = enabled_indices;
@@ -928,14 +931,15 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	}
 
 	//if nominal, only need to compute the exact match
-	if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_UNIVERSAL_SYMMETRIC_PRECOMPUTED)
+	if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_REMAINING_IDENTICAL_PRECOMPUTED)
 	{
+		//TODO 19845: remove this and move it below to the different types of nominals, call check IsFeatureSymmetricNominal here and elsewhere, call new method to set to EFDT_REMAINING_IDENTICAL_PRECOMPUTED when implemented
 		if(value_type == ENIVT_NUMBER)
 		{
 			auto [value_index, exact_index_found] = column->FindExactIndexForValue(value.number);
 			if(exact_index_found)
 			{
-				double term = r_dist_eval.distEvaluator->featureAttribs[query_feature_index].nominalUniversalSymmetricMatchDistanceTerm.GetValue(high_accuracy);
+				double term = r_dist_eval.distEvaluator->featureAttribs[query_feature_index].nominalSymmetricMatchDistanceTerm.GetValue(high_accuracy);
 				AccumulatePartialSums(column->sortedNumberValueEntries[value_index]->indicesWithValue, query_feature_index, term);
 			}
 		}
@@ -944,7 +948,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			auto value_found = column->stringIdValueToIndices.find(value.stringID);
 			if(value_found != end(column->stringIdValueToIndices))
 			{
-				double term = r_dist_eval.distEvaluator->featureAttribs[query_feature_index].nominalUniversalSymmetricMatchDistanceTerm.GetValue(high_accuracy);
+				double term = r_dist_eval.distEvaluator->featureAttribs[query_feature_index].nominalSymmetricMatchDistanceTerm.GetValue(high_accuracy);
 				AccumulatePartialSums(*(value_found->second), query_feature_index, term);
 			}
 		}
@@ -965,7 +969,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		//else value_type == ENIVT_NULL
 
 		//return next smallest nominal distance term
-		return r_dist_eval.distEvaluator->featureAttribs[query_feature_index].nominalUniversalSymmetricNonMatchDistanceTerm.GetValue(high_accuracy);
+		return r_dist_eval.distEvaluator->featureAttribs[query_feature_index].nominalSymmetricNonMatchDistanceTerm.GetValue(high_accuracy);
 	}
 	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING)
 	{
@@ -1004,6 +1008,10 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		//TODO 17631: finish this; need to account for all values that are smaller than the current
 	}
 	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMERIC)
+	{
+		//TODO 17631: finish this; need to account for all values that are smaller than the current
+	}
+	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_CODE)
 	{
 		//TODO 17631: finish this; need to account for all values that are smaller than the current
 	}
@@ -1336,8 +1344,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 	feature_data.internedNumberIndexToNumberValue = nullptr;
 	feature_data.internedDistanceTerms.clear();
 
-	if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_UNIVERSAL_SYMMETRIC
-		|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC
+	if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING
@@ -1346,14 +1353,12 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 		feature_data.targetValue = position_value;
 		feature_data.targetValueType = position_value_type;
 
-		//nominal code can only be symmetric
-		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_UNIVERSAL_SYMMETRIC
-				|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
-			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_UNIVERSAL_SYMMETRIC_PRECOMPUTED;
-		else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC)
+		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC)
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMERIC;
 		else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING)
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_STRING;
+		else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
+			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_CODE;
 		else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING)
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING;
 		else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
@@ -1378,7 +1383,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 		if(column_data->numberValuesInterned)
 		{
 			if(all_values_numeric)
-				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_VALUES_UNIVERSALLY_PRECOMPUTED;
+				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NUMERIC_PRECOMPUTED;
 			else
 				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED;
 

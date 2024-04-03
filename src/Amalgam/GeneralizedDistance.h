@@ -19,8 +19,6 @@ public:
 	// align at 32-bits in order to play nice with data alignment where it is used
 	enum FeatureDifferenceType : uint32_t
 	{
-		//nominal, entirely based on equal or not
-		FDT_NOMINAL_UNIVERSAL_SYMMETRIC,
 		//nominal based on numeric equivalence
 		FDT_NOMINAL_NUMERIC,
 		//nominal based on string equivalence
@@ -113,8 +111,8 @@ public:
 		double weight;
 
 		//distance terms for nominals
-		DistanceTerms nominalUniversalSymmetricMatchDistanceTerm;
-		DistanceTerms nominalUniversalSymmetricNonMatchDistanceTerm;
+		DistanceTerms nominalSymmetricMatchDistanceTerm;
+		DistanceTerms nominalSymmetricNonMatchDistanceTerm;
 
 		//type attributes dependent on featureType
 		union
@@ -318,6 +316,14 @@ public:
 		return (featureAttribs[feature_index].deviation > 0);
 	}
 
+	//returns true if the feature is a nominal that only has one difference value for match and one for nonmatch
+	__forceinline bool IsFeatureSymmetricNominal(size_t feature_index)
+	{
+		auto &feature_attribs = featureAttribs[feature_index];
+		return (feature_attribs.nominalNumberSparseDeviationMatrix.deviationValues.size() == 0
+			&& feature_attribs.nominalStringSparseDeviationMatrix.deviationValues.size() == 0);
+	}
+
 	//returns true if a known to unknown distance term would be less than or same as an exact match
 	// based on the difference versus deviation
 	__forceinline bool IsKnownToUnknownDistanceLessThanOrEqualToExactMatch(size_t feature_index)
@@ -368,14 +374,14 @@ public:
 		bool are_equal = EvaluableNodeImmediateValue::AreEqual(a_type, a, b_type, b);
 
 		auto &feature_attribs = featureAttribs[index];
-		if(feature_attribs.featureType == FeatureDifferenceType::FDT_NOMINAL_UNIVERSAL_SYMMETRIC)
+		if(IsFeatureSymmetricNominal(index))
 		{
 			//if both were null, that was caught above, so one must be known
 			if(a_is_null || b_is_null)
 				return ComputeDistanceTermKnownToUnknown(index, high_accuracy);
 			
-			return are_equal ? feature_attribs.nominalUniversalSymmetricMatchDistanceTerm.GetValue(high_accuracy)
-				: feature_attribs.nominalUniversalSymmetricNonMatchDistanceTerm.GetValue(high_accuracy);
+			return are_equal ? feature_attribs.nominalSymmetricMatchDistanceTerm.GetValue(high_accuracy)
+				: feature_attribs.nominalSymmetricNonMatchDistanceTerm.GetValue(high_accuracy);
 		}
 
 		double deviation = std::numeric_limits<double>::quiet_NaN();
@@ -768,8 +774,9 @@ public:
 		if(a_type == ENIVT_NULL || b_type == ENIVT_NULL)
 			return std::numeric_limits<double>::quiet_NaN();
 
-		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_UNIVERSAL_SYMMETRIC || feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC
-			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING || feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
+		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC
+			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
+			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
 		{
 			if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)
 				return (a.number == b.number ? 0.0 : 1.0);
@@ -911,21 +918,16 @@ protected:
 						feature_attribs.deviation = smallest_delta;
 				}
 
-				//if no extra deviations, then change type to universal symmetric
-				if(feature_attribs.nominalNumberSparseDeviationMatrix.deviationValues.size() == 0
-						&& feature_attribs.nominalStringSparseDeviationMatrix.deviationValues.size() == 0)
-					feature_attribs.featureType = FeatureDifferenceType::FDT_NOMINAL_UNIVERSAL_SYMMETRIC;
-
 				if(compute_accurate)
 				{
-					feature_attribs.nominalUniversalSymmetricMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, true), true);
-					feature_attribs.nominalUniversalSymmetricNonMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, true), true);
+					feature_attribs.nominalSymmetricMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, true), true);
+					feature_attribs.nominalSymmetricNonMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, true), true);
 				}
 
 				if(compute_approximate)
 				{
-					feature_attribs.nominalUniversalSymmetricMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, false), false);
-					feature_attribs.nominalUniversalSymmetricNonMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, false), false);
+					feature_attribs.nominalSymmetricMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, false), false);
+					feature_attribs.nominalSymmetricNonMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, false), false);
 				}
 			}
 
@@ -1002,11 +1004,11 @@ public:
 	//with differentiation on how the values can be computed
 	enum EffectiveFeatureDifferenceType : uint32_t
 	{
-		//nominal values, but every nominal relationship is the same and symmetric:
-		//A is as different as B as B is as different as C
-		EFDT_NOMINAL_UNIVERSAL_SYMMETRIC_PRECOMPUTED,
+		//everything that isn't initially populated shares the same value
+		//represented by precomputedRemainingIdenticalDistanceTerm
+		EFDT_REMAINING_IDENTICAL_PRECOMPUTED,
 		//everything is precomputed from interned values that are looked up
-		EFDT_VALUES_UNIVERSALLY_PRECOMPUTED,
+		EFDT_NUMERIC_PRECOMPUTED,
 		//continuous without cycles, but everything is always numeric
 		EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC,
 		//continuous without cycles, may contain nonnumeric data
@@ -1019,6 +1021,8 @@ public:
 		EFDT_NOMINAL_STRING,
 		//nominal compared to a number value where nominals may not be symmetric
 		EFDT_NOMINAL_NUMERIC,
+		//nominal based on code equivalence
+		EFDT_NOMINAL_CODE,
 		//edit distance between strings
 		EFDT_CONTINUOUS_STRING,
 		//continuous measures of the number of nodes different between two sets of code
@@ -1153,6 +1157,10 @@ public:
 		//target that the distance will be computed to
 		EvaluableNodeImmediateValueType targetValueType;
 		EvaluableNodeImmediateValue targetValue;
+
+		//TODO 19845: make method to set the type and set this value, call PopulatePartialSumsWithSimilarFeatureValue, change what is accessed in inner loop, especially feature_attribs.nominalSymmetricNonMatchDistanceTerm.GetValue(high_accuracy);
+		//the distance term for EFDT_REMAINING_IDENTICAL_PRECOMPUTED
+		double precomputedRemainingIdenticalDistanceTerm;
 
 		std::vector<double> *internedNumberIndexToNumberValue;
 		std::vector<GeneralizedDistanceEvaluator::DistanceTerms> internedDistanceTerms;

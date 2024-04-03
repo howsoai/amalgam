@@ -684,7 +684,6 @@ public:
 	{
 		switch(feature_attribs.featureType)
 		{
-		case GeneralizedDistanceEvaluator::FDT_NOMINAL_UNIVERSAL_SYMMETRIC:
 		case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC:
 		case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
 		case GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE:

@@ -1150,6 +1150,14 @@ public:
 			internedNumberIndexToNumberValue(nullptr)
 		{	}
 
+		//sets the value for a precomputed distance term that will apply to the rest of the distance
+		//evaluations and changes the feature type appropriately
+		inline void SetPrecomputedRemainingIdenticalDistanceTerm(double dist_term)
+		{
+			effectiveFeatureType = EFDT_REMAINING_IDENTICAL_PRECOMPUTED;
+			precomputedRemainingIdenticalDistanceTerm = dist_term;
+		}
+
 		//the effective comparison for the feature type, specialized for performance
 		// this type is 32-bit aligned to make sure the whole structure is aligned
 		EffectiveFeatureDifferenceType effectiveFeatureType;
@@ -1158,7 +1166,6 @@ public:
 		EvaluableNodeImmediateValueType targetValueType;
 		EvaluableNodeImmediateValue targetValue;
 
-		//TODO 19845: make method to set the type and set this value, call PopulatePartialSumsWithSimilarFeatureValue, change what is accessed in inner loop, especially feature_attribs.nominalSymmetricNonMatchDistanceTerm.GetValue(high_accuracy);
 		//the distance term for EFDT_REMAINING_IDENTICAL_PRECOMPUTED
 		double precomputedRemainingIdenticalDistanceTerm;
 

@@ -933,7 +933,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	//if nominal, only need to compute the exact match
 	if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_REMAINING_IDENTICAL_PRECOMPUTED)
 	{
-		//TODO 19845: remove this and move it below to the different types of nominals, call check IsFeatureSymmetricNominal here and elsewhere, call new method to set to EFDT_REMAINING_IDENTICAL_PRECOMPUTED when implemented
+		//TODO 19845: remove this and move it below to the different types of nominals, call check IsFeatureSymmetricNominal here and elsewhere, call SetPrecomputedRemainingIdenticalDistanceTerm and pass in feature_attribs.nominalSymmetricNonMatchDistanceTerm.GetValue(high_accuracy)
 		if(value_type == ENIVT_NUMBER)
 		{
 			auto [value_index, exact_index_found] = column->FindExactIndexForValue(value.number);

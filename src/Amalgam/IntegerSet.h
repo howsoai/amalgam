@@ -427,12 +427,20 @@ public:
 		size_t end_index = std::min(up_to_index, end_integer);
 
 		//if dense, loop over, assuming likely to hit
-		if(num_indices / num_buckets > 32)
+		//writing out this code yields notably better performance than
+		//using ContainsWithoutMaximumIndexCheck and attempting to let the compiler optimize
+		if(num_indices / num_buckets > 8)
 		{
-			for(size_t index = 0; index < end_index; index++)
+			for(size_t bucket = 0, index = 0;
+				bucket < num_buckets; bucket++, index++)
 			{
-				if(ContainsWithoutMaximumIndexCheck(index))
-					func(index);
+				uint64_t bucket_bits = bitBucket[bucket];
+				for(size_t bit = 0; bit < 64; bit++)
+				{
+					uint64_t mask = (1ULL << bit);
+					if(bucket_bits & mask)
+						func(index);
+				}
 			}
 		}
 		else //use the iterator, which is more efficient when sparse

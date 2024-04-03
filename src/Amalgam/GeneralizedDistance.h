@@ -73,19 +73,19 @@ public:
 		std::array<double, 2> distanceTerm;
 	};
 
-	//stores the computed exact and approximate distance terms, as well as the difference
+	//stores the computed exact and approximate distance terms, as well as the deviation
 	//the values default to 0.0 on initialization
-	class DistanceTermsWithDifference
+	class DistanceTermsWithDeviation
 		: public DistanceTerms
 	{
 	public:
-		__forceinline DistanceTermsWithDifference(double initial_value = 0.0)
+		__forceinline DistanceTermsWithDeviation(double initial_value = 0.0)
 			: DistanceTerms(initial_value)
 		{
-			difference = initial_value;
+			deviation = initial_value;
 		}
 
-		double difference;
+		double deviation;
 	};
 
 	class FeatureAttributes
@@ -111,8 +111,8 @@ public:
 		double weight;
 
 		//distance terms for nominals
-		DistanceTerms nominalMatchDistanceTerm;
-		DistanceTerms nominalNonMatchDistanceTerm;
+		DistanceTerms nominalSymmetricMatchDistanceTerm;
+		DistanceTerms nominalSymmetricNonMatchDistanceTerm;
 
 		//type attributes dependent on featureType
 		union
@@ -130,13 +130,79 @@ public:
 		//cached reciprocal for speed
 		double deviationReciprocal;
 
+		//contains the deviations for a given nominal value for each other nominal value
+		template<typename NominalValueType, typename EqualComparison = std::equal_to<NominalValueType>>
+		class SparseNominalDeviationValues
+		{
+		public:
+			inline SparseNominalDeviationValues()
+				: defaultDeviation(0.0)
+			{	}
+
+			using value_type = NominalValueType;
+
+			//returns an iterator to deviations that matches the nominal key
+			inline auto FindDeviationIterator(NominalValueType key)
+			{
+				return std::find_if(begin(deviations), end(deviations),
+					[key](auto i)
+					{	return EqualComparison{}(i.first, key);	}
+				);
+			}
+
+			//deviations for each value; unknown should be stored as special nonvalue (e.g., NaN, NaS)
+			//store as a vector of pairs instead of a map because either only one value will be looked up once,
+			//in which case there's no advantage to having a map, or many distance term values will be looked up
+			//repeatedly, which is handled by a RepeatedGeneralizedDistanceEvaluator, which uses a map
+			std::vector<std::pair<NominalValueType, double>> deviations;
+			double defaultDeviation;
+		};
+
+		//contains the deviations for a given nominal value for each other nominal value
+		template<typename NominalValueType, typename EqualComparison = std::equal_to<NominalValueType>>
+		class SparseNominalDeviationMatrix
+		{
+		public:
+			inline SparseNominalDeviationMatrix()
+			{	}
+
+			using value_type = NominalValueType;
+
+			//returns an iterator to deviation values that matches the nominal key
+			inline auto FindDeviationValuesIterator(NominalValueType key)
+			{
+				return std::find_if(begin(deviationValues), end(deviationValues),
+					[key](auto i)
+					{	return EqualComparison{}(i.first, key);	}
+				);
+			}
+
+			//deviation values for each value; unknown should be stored as special nonvalue (e.g., NaN, NaS)
+			//store as a vector of pairs instead of a map because either only one value will be looked up once,
+			//in which case there's no advantage to having a map, or many distance term values will be looked up
+			//repeatedly, which is handled by a RepeatedGeneralizedDistanceEvaluator, which uses a map
+			std::vector<std::pair<NominalValueType, SparseNominalDeviationValues<NominalValueType, EqualComparison>>> deviationValues;
+		};
+
+		//sparse deviation matrix if the nominal is a string
+		//store as a vector of pairs instead of a map because either only one value will be looked up once,
+		//in which case there's no advantage to having a map, or many distance term values will be looked up
+		//repeatedly, which is handled by a RepeatedGeneralizedDistanceEvaluator, which uses a map
+		SparseNominalDeviationMatrix<StringInternPool::StringID> nominalStringSparseDeviationMatrix;
+
+		//sparse deviation matrix if the nominal is a number
+		//store as a vector of pairs instead of a map because either only one value will be looked up once,
+		//in which case there's no advantage to having a map, or many distance term values will be looked up
+		//repeatedly, which is handled by a RepeatedGeneralizedDistanceEvaluator, which uses a map
+		SparseNominalDeviationMatrix<double, DoubleNanHashComparator> nominalNumberSparseDeviationMatrix;
+
 		//distance term to use if both values being compared are unknown
 		//the difference will be NaN if unknown
-		DistanceTermsWithDifference unknownToUnknownDistanceTerm;
+		DistanceTermsWithDeviation unknownToUnknownDistanceTerm;
 
 		//distance term to use if one value is known and the other is unknown
 		//the difference will be NaN if unknown
-		DistanceTermsWithDifference knownToUnknownDistanceTerm;
+		DistanceTermsWithDeviation knownToUnknownDistanceTerm;
 	};
 
 	//initializes and precomputes relevant data including featureAttribs
@@ -238,6 +304,12 @@ public:
 		return (featureAttribs[feature_index].featureType <= GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE);
 	}
 
+	//returns true if the feature is nominal
+	__forceinline bool IsFeatureContinuous(size_t feature_index)
+	{
+		return (featureAttribs[feature_index].featureType >= GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC);
+	}
+
 	//returns true if the feature is cyclic
 	__forceinline bool IsFeatureCyclic(size_t feature_index)
 	{
@@ -250,12 +322,23 @@ public:
 		return (featureAttribs[feature_index].deviation > 0);
 	}
 
+	//returns true if the feature is a nominal that only has one difference value for match and one for nonmatch
+	__forceinline bool IsFeatureSymmetricNominal(size_t feature_index)
+	{
+		if(!IsFeatureNominal(feature_index))
+			return false;
+
+		auto &feature_attribs = featureAttribs[feature_index];
+		return (feature_attribs.nominalNumberSparseDeviationMatrix.deviationValues.size() == 0
+			&& feature_attribs.nominalStringSparseDeviationMatrix.deviationValues.size() == 0);
+	}
+
 	//returns true if a known to unknown distance term would be less than or same as an exact match
 	// based on the difference versus deviation
 	__forceinline bool IsKnownToUnknownDistanceLessThanOrEqualToExactMatch(size_t feature_index)
 	{
 		auto &feature_attribs = featureAttribs[feature_index];
-		return (feature_attribs.knownToUnknownDistanceTerm.difference <= feature_attribs.deviation);
+		return (feature_attribs.knownToUnknownDistanceTerm.deviation <= feature_attribs.deviation);
 	}
 
 	//computes the exponentiation of d to 1/p
@@ -286,6 +369,88 @@ public:
 			return std::pow(d, pValue);
 		else
 			return fastPowP.FastPowNonZeroExpNonnegativeBase(d);
+	}
+
+	//returns the distance term given that it is nominal
+	__forceinline double ComputeDistanceTermNominal(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
+		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)
+	{
+		bool a_is_null = EvaluableNodeImmediateValue::IsNullEquivalent(a_type, a);
+		bool b_is_null = EvaluableNodeImmediateValue::IsNullEquivalent(b_type, b);
+		if(a_is_null && b_is_null)
+			return ComputeDistanceTermUnknownToUnknown(index, high_accuracy);
+
+		bool are_equal = EvaluableNodeImmediateValue::AreEqual(a_type, a, b_type, b);
+
+		auto &feature_attribs = featureAttribs[index];
+		if(IsFeatureSymmetricNominal(index))
+		{
+			//if both were null, that was caught above, so one must be known
+			if(a_is_null || b_is_null)
+				return ComputeDistanceTermKnownToUnknown(index, high_accuracy);
+			
+			return are_equal ? feature_attribs.nominalSymmetricMatchDistanceTerm.GetValue(high_accuracy)
+				: feature_attribs.nominalSymmetricNonMatchDistanceTerm.GetValue(high_accuracy);
+		}
+
+		double deviation = std::numeric_limits<double>::quiet_NaN();
+		if(a_type == ENIVT_NUMBER && feature_attribs.nominalNumberSparseDeviationMatrix.deviationValues.size() > 0)
+		{
+			auto outer_it = feature_attribs.nominalNumberSparseDeviationMatrix.FindDeviationValuesIterator(a.number);
+			if(outer_it != std::end(feature_attribs.nominalNumberSparseDeviationMatrix.deviationValues))
+			{
+				auto &ndd = outer_it->second;
+				auto inner_it = ndd.FindDeviationIterator(b.number);
+
+				if(inner_it == end(ndd.deviations))
+					deviation = ndd.defaultDeviation;
+				else
+					deviation = inner_it->second;
+			}
+			else //not found, so fall back to the appropriate default
+			{
+				if(!b_is_null)
+					deviation = outer_it->second.defaultDeviation;
+				else
+					deviation = feature_attribs.knownToUnknownDistanceTerm.deviation;
+			}
+		}
+		else if(a_type == ENIVT_STRING_ID && feature_attribs.nominalStringSparseDeviationMatrix.deviationValues.size() > 0)
+		{
+			auto outer_it = feature_attribs.nominalStringSparseDeviationMatrix.FindDeviationValuesIterator(a.stringID);
+			if(outer_it != std::end(feature_attribs.nominalStringSparseDeviationMatrix.deviationValues))
+			{
+				auto &ndd = outer_it->second;
+				auto inner_it = ndd.FindDeviationIterator(b.stringID);
+
+				if(inner_it == end(ndd.deviations))
+					deviation = ndd.defaultDeviation;
+				else
+					deviation = inner_it->second;
+			}
+			else //not found, so fall back to the appropriate default
+			{
+				if(!b_is_null)
+					deviation = outer_it->second.defaultDeviation;
+				else
+					deviation = feature_attribs.knownToUnknownDistanceTerm.deviation;
+			}
+		}
+
+		if(!FastIsNaN(deviation))
+		{
+			//TODO 17631: compute the distance term from deviation
+		}
+
+		//if both were null, that was caught above, so one must be known
+		if(a_is_null || b_is_null)
+			return ComputeDistanceTermKnownToUnknown(index, high_accuracy);
+
+		//need to compute because didn't match any above
+		if(are_equal)
+			return ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
+		else
+			return ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
 	}
 
 	//exponentiats and weights the difference term contextually based on pValue
@@ -339,6 +504,10 @@ public:
 
 		return deviation;
 	}
+
+	//TODO 17631: genericize this for use in ComputeDistanceTermNominal -- may need to take in two deviations,
+	// exact match deviation and nonmatch deviation?  Or just change the calls to pass in 1-deviation?
+	//make sure lines up with ComputeDistanceTermNominalBaseExactMatchFromDeviation for exact match, and maybe remove ComputeDistanceTermNominalBaseExactMatchFromDeviation
 
 	//computes the base of the difference between two nominal values that do not match without exponentiation
 	__forceinline double ComputeDistanceTermNominalBaseNonMatchFromDeviation(size_t index, double deviation, bool high_accuracy)
@@ -399,18 +568,6 @@ public:
 	{
 		double dist_term = ComputeDistanceTermNominalBaseNonMatchFromDeviation(index, featureAttribs[index].deviation, high_accuracy);
 		return ContextuallyExponentiateAndWeightDifferenceTerm(dist_term, index, high_accuracy);
-	}
-
-	//returns the precomputed distance term for a nominal when two universally symmetric nominals are equal
-	__forceinline double ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(size_t index, bool high_accuracy)
-	{
-		return featureAttribs[index].nominalMatchDistanceTerm.GetValue(high_accuracy);
-	}
-
-	//returns the precomputed distance term for a nominal when two universally symmetric nominals are not equal
-	__forceinline double ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(size_t index, bool high_accuracy)
-	{
-		return featureAttribs[index].nominalNonMatchDistanceTerm.GetValue(high_accuracy);
 	}
 
 	//computes the distance term for an unknown-unknown
@@ -515,14 +672,13 @@ public:
 	__forceinline double ComputeDistanceTermP0(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
 		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)
 	{
+		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
+		if(IsFeatureNominal(index))
+			return ComputeDistanceTermNominal(a, b, a_type, b_type, index, high_accuracy);
+
 		double diff = ComputeDifference(a, b, a_type, b_type, featureAttribs[index].featureType);
 		if(FastIsNaN(diff))
 			return LookupNullDistanceTerm(a, b, a_type, b_type, index, high_accuracy);
-
-		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
-		if(IsFeatureNominal(index))
-			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index, high_accuracy)
-			: ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index, high_accuracy);
 
 		diff = ComputeDifferenceTermBaseContinuous(diff, index, high_accuracy);
 
@@ -533,14 +689,13 @@ public:
 	__forceinline double ComputeDistanceTermPInf(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
 		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)
 	{
+		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
+		if(IsFeatureNominal(index))
+			return ComputeDistanceTermNominal(a, b, a_type, b_type, index, high_accuracy);
+
 		double diff = ComputeDifference(a, b, a_type, b_type, featureAttribs[index].featureType);
 		if(FastIsNaN(diff))
 			return LookupNullDistanceTerm(a, b, a_type, b_type, index, high_accuracy);
-
-		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
-		if(IsFeatureNominal(index))
-			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index, high_accuracy)
-			: ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index, high_accuracy);
 
 		diff = ComputeDifferenceTermBaseContinuous(diff, index, high_accuracy);
 
@@ -583,14 +738,13 @@ public:
 	__forceinline double ComputeDistanceTermRegular(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
 		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)
 	{
+		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
+		if(IsFeatureNominal(index))
+			return ComputeDistanceTermNominal(a, b, a_type, b_type, index, high_accuracy);
+
 		double diff = ComputeDifference(a, b, a_type, b_type, featureAttribs[index].featureType);
 		if(FastIsNaN(diff))
 			return LookupNullDistanceTerm(a, b, a_type, b_type, index, high_accuracy);
-
-		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
-		if(IsFeatureNominal(index))
-			return (diff == 0.0) ? ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(index, high_accuracy)
-			: ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(index, high_accuracy);
 
 		return ComputeDistanceTermContinuousNonNullRegular(diff, index, high_accuracy);
 	}
@@ -599,8 +753,8 @@ public:
 	__forceinline double LookupNullDistanceTerm(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
 		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)
 	{
-		bool a_unknown = (a_type == ENIVT_NULL || (a_type == ENIVT_NUMBER && FastIsNaN(a.number)));
-		bool b_unknown = (b_type == ENIVT_NULL || (b_type == ENIVT_NUMBER && FastIsNaN(b.number)));
+		bool a_unknown = EvaluableNodeImmediateValue::IsNullEquivalent(a_type, a);
+		bool b_unknown = EvaluableNodeImmediateValue::IsNullEquivalent(b_type, b);
 		if(a_unknown && b_unknown)
 			return ComputeDistanceTermUnknownToUnknown(index, high_accuracy);
 		if(a_unknown || b_unknown)
@@ -630,7 +784,8 @@ public:
 			return std::numeric_limits<double>::quiet_NaN();
 
 		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC
-			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING || feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
+			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
+			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
 		{
 			if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)
 				return (a.number == b.number ? 0.0 : 1.0);
@@ -774,14 +929,14 @@ protected:
 
 				if(compute_accurate)
 				{
-					feature_attribs.nominalMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, true), true);
-					feature_attribs.nominalNonMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, true), true);
+					feature_attribs.nominalSymmetricMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, true), true);
+					feature_attribs.nominalSymmetricNonMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, true), true);
 				}
 
 				if(compute_approximate)
 				{
-					feature_attribs.nominalMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, false), false);
-					feature_attribs.nominalNonMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, false), false);
+					feature_attribs.nominalSymmetricMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricExactMatch(i, false), false);
+					feature_attribs.nominalSymmetricNonMatchDistanceTerm.SetValue(ComputeDistanceTermNominalUniversallySymmetricNonMatch(i, false), false);
 				}
 			}
 
@@ -792,17 +947,17 @@ protected:
 			if(compute_accurate)
 			{
 				feature_attribs.unknownToUnknownDistanceTerm.SetValue(
-					ComputeDistanceTermMatchOnNull(i, feature_attribs.unknownToUnknownDistanceTerm.difference, true), true);
+					ComputeDistanceTermMatchOnNull(i, feature_attribs.unknownToUnknownDistanceTerm.deviation, true), true);
 			}
 
 			if(compute_approximate)
 			{
 				feature_attribs.unknownToUnknownDistanceTerm.SetValue(
-					ComputeDistanceTermMatchOnNull(i, feature_attribs.unknownToUnknownDistanceTerm.difference, false), false);
+					ComputeDistanceTermMatchOnNull(i, feature_attribs.unknownToUnknownDistanceTerm.deviation, false), false);
 			}
 
 			//if knownToUnknownDifference is same as unknownToUnknownDifference, can copy distance term instead of recomputing
-			if(feature_attribs.knownToUnknownDistanceTerm.difference == feature_attribs.unknownToUnknownDistanceTerm.difference)
+			if(feature_attribs.knownToUnknownDistanceTerm.deviation == feature_attribs.unknownToUnknownDistanceTerm.deviation)
 			{
 				feature_attribs.knownToUnknownDistanceTerm = feature_attribs.unknownToUnknownDistanceTerm;
 			}
@@ -812,13 +967,13 @@ protected:
 				if(compute_accurate)
 				{
 					feature_attribs.knownToUnknownDistanceTerm.SetValue(
-						ComputeDistanceTermMatchOnNull(i, feature_attribs.knownToUnknownDistanceTerm.difference, true), true);
+						ComputeDistanceTermMatchOnNull(i, feature_attribs.knownToUnknownDistanceTerm.deviation, true), true);
 				}
 
 				if(compute_approximate)
 				{
 					feature_attribs.knownToUnknownDistanceTerm.SetValue(
-						ComputeDistanceTermMatchOnNull(i, feature_attribs.knownToUnknownDistanceTerm.difference, false), false);
+						ComputeDistanceTermMatchOnNull(i, feature_attribs.knownToUnknownDistanceTerm.deviation, false), false);
 				}
 			}
 		}
@@ -858,11 +1013,11 @@ public:
 	//with differentiation on how the values can be computed
 	enum EffectiveFeatureDifferenceType : uint32_t
 	{
-		//nominal values, but every nominal relationship is the same and symmetric:
-		//A is as different as B as B is as different as C
-		EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED,
+		//everything that isn't initially populated shares the same value
+		//represented by precomputedRemainingIdenticalDistanceTerm
+		EFDT_REMAINING_IDENTICAL_PRECOMPUTED,
 		//everything is precomputed from interned values that are looked up
-		EFDT_VALUES_UNIVERSALLY_PRECOMPUTED,
+		EFDT_NUMERIC_PRECOMPUTED,
 		//continuous without cycles, but everything is always numeric
 		EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC,
 		//continuous without cycles, may contain nonnumeric data
@@ -871,6 +1026,12 @@ public:
 		EFDT_CONTINUOUS_NUMERIC_CYCLIC,
 		//continuous precomputed (cyclic or not), may contain nonnumeric data
 		EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED,
+		//nominal compared to a string value where nominals may not be symmetric
+		EFDT_NOMINAL_STRING,
+		//nominal compared to a number value where nominals may not be symmetric
+		EFDT_NOMINAL_NUMERIC,
+		//nominal based on code equivalence
+		EFDT_NOMINAL_CODE,
 		//edit distance between strings
 		EFDT_CONTINUOUS_STRING,
 		//continuous measures of the number of nodes different between two sets of code
@@ -932,8 +1093,6 @@ public:
 		}
 	}
 
-public:
-
 	//returns true if the feature at index has interned number values
 	__forceinline bool HasNumberInternValues(size_t index)
 	{
@@ -944,6 +1103,59 @@ public:
 	__forceinline double ComputeDistanceTermNumberInternedPrecomputed(size_t intern_value_index, size_t index, bool high_accuracy)
 	{
 		return featureData[index].internedDistanceTerms[intern_value_index].GetValue(high_accuracy);
+	}
+
+	//returns true if the nominal feature has a specific distance term when compared with unknown values
+	__forceinline bool HasNominalSpecificKnownToUnknownDistanceTerm(size_t index)
+	{
+		auto &feature_data = featureData[index];
+		return
+			(	feature_data.nominalNumberDistanceTerms.find(std::numeric_limits<double>::quiet_NaN())
+					!= end(feature_data.nominalNumberDistanceTerms)
+				|| feature_data.nominalStringDistanceTerms.find(string_intern_pool.NOT_A_STRING_ID)
+					!= end(feature_data.nominalStringDistanceTerms) );
+	}
+
+	//returns the inner term of the Minkowski norm summation given that the feature is nominal
+	//and the data type being compared from is numeric
+	//if types_match is false, then the value is ignored
+	__forceinline double ComputeDistanceTermNominalNumeric(double value,
+		size_t index, bool types_match, bool high_accuracy)
+	{
+		//TODO 17631: implement this
+		return 0.0;
+	}
+
+	//returns the inner term of the Minkowski norm summation given that the feature is nominal
+	//and the data type being compared from is string
+	//if types_match is false, then the value is ignored
+	__forceinline double ComputeDistanceTermNominalString(StringInternPool::StringID value,
+		size_t index, bool types_match, bool high_accuracy)
+	{
+		//TODO 17631: implement this
+		return 0.0;
+	}
+
+	//computes the inner term of the Minkowski norm summation
+	__forceinline double ComputeDistanceTerm(EvaluableNodeImmediateValue other_value,
+		EvaluableNodeImmediateValueType other_type, size_t index, bool high_accuracy)
+	{
+		//TODO 17631: improve the logic and efficiency
+		auto &feature_data = featureData[index];
+
+		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
+		if(distEvaluator->IsFeatureNominal(index))
+			return distEvaluator->ComputeDistanceTermNominal(feature_data.targetValue, other_value,
+				feature_data.targetValueType, other_type, index, high_accuracy);
+
+		double diff = distEvaluator->ComputeDifference(feature_data.targetValue, other_value,
+			feature_data.targetValueType, other_type, distEvaluator->featureAttribs[index].featureType);
+
+		if(FastIsNaN(diff))
+			return distEvaluator->LookupNullDistanceTerm(feature_data.targetValue, other_value,
+				feature_data.targetValueType, other_type, index, high_accuracy);
+
+		return distEvaluator->ComputeDistanceTermContinuousNonNullRegular(diff, index, high_accuracy);
 	}
 
 	//pointer to a valid, populated GeneralizedDistanceEvaluator
@@ -958,6 +1170,14 @@ public:
 			internedNumberIndexToNumberValue(nullptr)
 		{	}
 
+		//sets the value for a precomputed distance term that will apply to the rest of the distance
+		//evaluations and changes the feature type appropriately
+		inline void SetPrecomputedRemainingIdenticalDistanceTerm(double dist_term)
+		{
+			effectiveFeatureType = EFDT_REMAINING_IDENTICAL_PRECOMPUTED;
+			precomputedRemainingIdenticalDistanceTerm = dist_term;
+		}
+
 		//the effective comparison for the feature type, specialized for performance
 		// this type is 32-bit aligned to make sure the whole structure is aligned
 		EffectiveFeatureDifferenceType effectiveFeatureType;
@@ -966,8 +1186,16 @@ public:
 		EvaluableNodeImmediateValueType targetValueType;
 		EvaluableNodeImmediateValue targetValue;
 
+		//the distance term for EFDT_REMAINING_IDENTICAL_PRECOMPUTED
+		double precomputedRemainingIdenticalDistanceTerm;
+
 		std::vector<double> *internedNumberIndexToNumberValue;
 		std::vector<GeneralizedDistanceEvaluator::DistanceTerms> internedDistanceTerms;
+
+		//TODO 17631: genericize ComputeAndStoreInternedNumberValuesAndDistanceTerms to precompute these when appropriate
+		//used to store distance terms for the respective targetValue for the sparse deviation matrix
+		FastHashMap<StringInternPool::StringID, double> nominalStringDistanceTerms;
+		FastHashMap<double, double> nominalNumberDistanceTerms;
 	};
 
 	//for each feature, precomputed distance terms for each interned value looked up by intern index

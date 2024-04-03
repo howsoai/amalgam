@@ -370,8 +370,8 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 				for(auto &value_entry : column_data->sortedNumberValueEntries)
 				{
 					//get distance term that is applicable to each entity in this bucket
-					double distance_term = dist_eval.ComputeDistanceTermRegular(
-						target_value.number, value_entry->value.number, ENIVT_NUMBER, ENIVT_NUMBER, query_feature_index, high_accuracy);
+					double distance_term = r_dist_eval.ComputeDistanceTerm(
+						value_entry->value.number, ENIVT_NUMBER, query_feature_index, high_accuracy);
 
 					//for each bucket, add term to their sums
 					for(auto entity_index : value_entry->indicesWithValue)
@@ -416,8 +416,8 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 			auto value = column_data->GetResolvedValue(value_type, GetValue(entity_index, absolute_feature_index));
 			value_type = column_data->GetResolvedValueType(value_type);
 			
-			distances[entity_index] += dist_eval.ComputeDistanceTermRegular(
-											target_value, value, target_value_type, value_type, query_feature_index, high_accuracy);
+			distances[entity_index] += r_dist_eval.ComputeDistanceTerm(
+											value, value_type, query_feature_index, high_accuracy);
 
 			//remove entity if its distance is already greater than the max_dist
 			if(!(distances[entity_index] <= max_dist_exponentiated)) //false for NaN indices as well so they will be removed
@@ -887,55 +887,92 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	size_t num_entities_to_populate, bool expand_search_if_optimal, bool high_accuracy,
 	size_t query_feature_index, BitArrayIntegerSet &enabled_indices)
 {
-	size_t absolute_feature_index = r_dist_eval.distEvaluator->featureAttribs[query_feature_index].featureIndex;
+	auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
+	auto &feature_data = r_dist_eval.featureData[query_feature_index];
+	size_t absolute_feature_index = feature_attribs.featureIndex;
 	auto &column = columnData[absolute_feature_index];
-	auto effective_feature_type = r_dist_eval.featureData[query_feature_index].effectiveFeatureType;
-	EvaluableNodeImmediateValue value = r_dist_eval.featureData[query_feature_index].targetValue;
-	EvaluableNodeImmediateValueType value_type = r_dist_eval.featureData[query_feature_index].targetValueType;
+	auto effective_feature_type = feature_data.effectiveFeatureType;
+	EvaluableNodeImmediateValue value = feature_data.targetValue;
+	EvaluableNodeImmediateValueType value_type = feature_data.targetValueType;
 
 	bool value_is_null = EvaluableNodeImmediateValue::IsNullEquivalent(value_type, value);
 	//need to accumulate values for nulls if the value is a null
 	if(value_is_null)
 	{
 		double unknown_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermUnknownToUnknown(query_feature_index, high_accuracy);
-		AccumulatePartialSums(column->nullIndices, query_feature_index, unknown_unknown_term);
-		AccumulatePartialSums(column->nanIndices, query_feature_index, unknown_unknown_term);
-
-		//if nominal, need to compute null matches to keep the inner loops fast
-		// if a data set is mostly nulls, it'll be slower, but this is acceptable as a more rare situation
-		//if the known-unknown term is less than unknown_unknown (this should be rare if nulls have semantic meaning)
-		//then need to populate the rest of the cases
 		double known_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
-		if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED || known_unknown_term < unknown_unknown_term)
-		{
-			BitArrayIntegerSet &known_unknown_indices = parametersAndBuffers.potentialMatchesSet;
-			known_unknown_indices = enabled_indices;
-			column->nullIndices.EraseTo(known_unknown_indices);
-			column->nanIndices.EraseTo(known_unknown_indices);
-			AccumulatePartialSums(known_unknown_indices, query_feature_index, known_unknown_term);
-		}
 
-		return known_unknown_term;
+		//if it's either a symmetric nominal or continuous, or if sparse deviation matrix but no null value,
+		// then there are only two values, unknown to known or known
+		if(r_dist_eval.distEvaluator->IsFeatureSymmetricNominal(query_feature_index)
+			|| r_dist_eval.distEvaluator->IsFeatureContinuous(query_feature_index)
+			|| (r_dist_eval.distEvaluator->IsFeatureNominal(query_feature_index) &&
+				!r_dist_eval.HasNominalSpecificKnownToUnknownDistanceTerm(query_feature_index)))
+		{
+			//if all cases are equidistant, then don't compute anything
+			if(unknown_unknown_term == known_unknown_term)
+				return unknown_unknown_term;
+
+			//find nas values -- common to both branches below
+			auto nas_iter = column->stringIdValueToIndices.find(string_intern_pool.NOT_A_STRING_ID);
+
+			if(unknown_unknown_term < known_unknown_term)
+			{
+				AccumulatePartialSums(column->nullIndices, query_feature_index, unknown_unknown_term);
+				AccumulatePartialSums(column->nanIndices, query_feature_index, unknown_unknown_term);
+				if(nas_iter != end(column->stringIdValueToIndices))
+					AccumulatePartialSums(*nas_iter->second, query_feature_index, unknown_unknown_term);
+
+				//return the larger value that the remainder of the entities have
+				feature_data.SetPrecomputedRemainingIdenticalDistanceTerm(known_unknown_term);
+				return known_unknown_term;
+			}
+			else //known_unknown_term < unknown_unknown_term
+			{
+				BitArrayIntegerSet &known_unknown_indices = parametersAndBuffers.potentialMatchesSet;
+				known_unknown_indices = enabled_indices;
+				column->nullIndices.EraseTo(known_unknown_indices);
+				column->nanIndices.EraseTo(known_unknown_indices);
+				if(nas_iter != end(column->stringIdValueToIndices))
+					known_unknown_indices.erase(*nas_iter->second);
+				AccumulatePartialSums(known_unknown_indices, query_feature_index, known_unknown_term);
+
+				//return the larger value that the remainder of the entities have
+				feature_data.SetPrecomputedRemainingIdenticalDistanceTerm(unknown_unknown_term);
+				return unknown_unknown_term;
+			}
+
+		}
+		else //nonsymmetric nominal -- need to compute
+		{
+			AccumulatePartialSums(column->nullIndices, query_feature_index, unknown_unknown_term);
+			AccumulatePartialSums(column->nanIndices, query_feature_index, unknown_unknown_term);
+
+			//TODO 17631: accumulate distance terms smaller than these, which might not be these two, return the next largest
+			return std::min(known_unknown_term, unknown_unknown_term);
+		}
 	}
 
 	//need to accumulate nulls if they're closer than an exact match
 	//but if made it here, then the value itself isn't null
+	bool accumulated_known_to_unknown = false;
 	if(r_dist_eval.distEvaluator->IsKnownToUnknownDistanceLessThanOrEqualToExactMatch(query_feature_index))
 	{
 		double known_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
 		AccumulatePartialSums(column->nullIndices, query_feature_index, known_unknown_term);
 		AccumulatePartialSums(column->nanIndices, query_feature_index, known_unknown_term);
+		accumulated_known_to_unknown = true;
 	}
 
 	//if nominal, only need to compute the exact match
-	if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED)
+	if(r_dist_eval.distEvaluator->IsFeatureSymmetricNominal(query_feature_index))
 	{
 		if(value_type == ENIVT_NUMBER)
 		{
 			auto [value_index, exact_index_found] = column->FindExactIndexForValue(value.number);
 			if(exact_index_found)
 			{
-				double term = r_dist_eval.distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(query_feature_index, high_accuracy);
+				double term = feature_attribs.nominalSymmetricMatchDistanceTerm.GetValue(high_accuracy);
 				AccumulatePartialSums(column->sortedNumberValueEntries[value_index]->indicesWithValue, query_feature_index, term);
 			}
 		}
@@ -944,7 +981,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			auto value_found = column->stringIdValueToIndices.find(value.stringID);
 			if(value_found != end(column->stringIdValueToIndices))
 			{
-				double term = r_dist_eval.distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatchPrecomputed(query_feature_index, high_accuracy);
+				double term = feature_attribs.nominalSymmetricMatchDistanceTerm.GetValue(high_accuracy);
 				AccumulatePartialSums(*(value_found->second), query_feature_index, term);
 			}
 		}
@@ -959,14 +996,30 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			if(value_found != end(column->valueCodeSizeToIndices))
 			{
 				auto &entity_indices = *(value_found->second);
-				ComputeAndAccumulatePartialSums(r_dist_eval, value, value_type,
-					entity_indices, query_feature_index, absolute_feature_index, high_accuracy);
+				ComputeAndAccumulatePartialSums(r_dist_eval, entity_indices, query_feature_index, absolute_feature_index, high_accuracy);
 			}
 		}
-		//else value_type == ENIVT_NULL
+		//else value_type == ENIVT_NULL and already covered above
 
-		//return next smallest nominal distance term
-		return r_dist_eval.distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(query_feature_index, high_accuracy);
+		//if known to unknown is less than a symmetric nominal nonmatch, then need to accumulate those too
+		double nonmatch_dist_term = feature_attribs.nominalSymmetricNonMatchDistanceTerm.GetValue(high_accuracy);
+		double known_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
+		if(!accumulated_known_to_unknown && known_unknown_term < nonmatch_dist_term)
+		{
+			BitArrayIntegerSet &known_unknown_indices = parametersAndBuffers.potentialMatchesSet;
+			known_unknown_indices = enabled_indices;
+			column->nullIndices.EraseTo(known_unknown_indices);
+			column->nanIndices.EraseTo(known_unknown_indices);
+			//find nas values
+			auto nas_iter = column->stringIdValueToIndices.find(string_intern_pool.NOT_A_STRING_ID);
+			if(nas_iter != end(column->stringIdValueToIndices))
+				known_unknown_indices.erase(*nas_iter->second);
+			AccumulatePartialSums(known_unknown_indices, query_feature_index, known_unknown_term);
+		}
+
+		//return the value that the remainder of the entities have
+		feature_data.SetPrecomputedRemainingIdenticalDistanceTerm(nonmatch_dist_term);
+		return nonmatch_dist_term;
 	}
 	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING)
 	{
@@ -994,12 +1047,23 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		if(value_found != end(column->valueCodeSizeToIndices))
 		{
 			auto &entity_indices = *(value_found->second);
-			ComputeAndAccumulatePartialSums(r_dist_eval, value, value_type,
-				entity_indices, query_feature_index, absolute_feature_index, high_accuracy);
+			ComputeAndAccumulatePartialSums(r_dist_eval, entity_indices, query_feature_index, absolute_feature_index, high_accuracy);
 		}
 
 		//next most similar code must be at least a distance of 1 edit away
 		return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicNonNullRegular(1.0, query_feature_index, high_accuracy);
+	}
+	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_STRING)
+	{
+		//TODO 17631: finish this; need to account for all values that are smaller than the current
+	}
+	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMERIC)
+	{
+		//TODO 17631: finish this; need to account for all values that are smaller than the current
+	}
+	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_CODE)
+	{
+		//TODO 17631: finish this; need to account for all values that are smaller than the current
 	}
 	//else feature_type == FDT_CONTINUOUS_NUMERIC or FDT_CONTINUOUS_UNIVERSALLY_NUMERIC
 
@@ -1010,7 +1074,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	bool cyclic_feature = r_dist_eval.distEvaluator->IsFeatureCyclic(query_feature_index);
 	double cycle_length = std::numeric_limits<double>::infinity();
 	if(cyclic_feature)
-		cycle_length = r_dist_eval.distEvaluator->featureAttribs[query_feature_index].typeAttributes.maxCyclicDifference;
+		cycle_length = feature_attribs.typeAttributes.maxCyclicDifference;
 
 	auto [value_index, exact_index_found] = column->FindClosestValueIndexForValue(value.number, cycle_length);
 
@@ -1154,7 +1218,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			//going out n deviations is likely to only miss 0.5^n of the likely values of nearest neighbors
 			// so 0.5^5 should catch ~97% of the values
 			if(r_dist_eval.distEvaluator->DoesFeatureHaveDeviation(query_feature_index)
-				&& next_closest_diff < 5 * r_dist_eval.distEvaluator->featureAttribs[query_feature_index].deviation)
+				&& next_closest_diff < 5 * feature_attribs.deviation)
 				should_continue = true;
 
 			if(!should_continue)
@@ -1339,10 +1403,12 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 		feature_data.targetValue = position_value;
 		feature_data.targetValueType = position_value_type;
 
-		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC
-			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
-			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
-			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED;
+		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC)
+			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMERIC;
+		else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING)
+			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_STRING;
+		else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
+			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_CODE;
 		else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING)
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING;
 		else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
@@ -1367,7 +1433,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 		if(column_data->numberValuesInterned)
 		{
 			if(all_values_numeric)
-				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_VALUES_UNIVERSALLY_PRECOMPUTED;
+				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NUMERIC_PRECOMPUTED;
 			else
 				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED;
 

@@ -531,7 +531,6 @@ protected:
 	//computes each partial sum and adds the term to the partial sums associated for each id in entity_indices for query_feature_index
 	//returns the number of entities indices accumulated
 	size_t ComputeAndAccumulatePartialSums(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
-		EvaluableNodeImmediateValue value, EvaluableNodeImmediateValueType value_type,
 		SortedIntegerSet &entity_indices, size_t query_feature_index, size_t absolute_feature_index, bool high_accuracy)
 	{
 		size_t num_entity_indices = entity_indices.size();
@@ -550,7 +549,7 @@ protected:
 			other_value_type = column_data->GetResolvedValueType(other_value_type);
 
 			//compute term
-			double term = r_dist_eval.distEvaluator->ComputeDistanceTermRegular(value, other_value, value_type, other_value_type, query_feature_index, high_accuracy);
+			double term = r_dist_eval.ComputeDistanceTerm(other_value, other_value_type, query_feature_index, high_accuracy);
 
 			//accumulate
 			partial_sums.Accum(entity_index, accum_location, term);
@@ -684,7 +683,6 @@ protected:
 		for(size_t i = 0; i < r_dist_eval.featureData.size(); i++)
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[i];
-			auto &feature_data = r_dist_eval.featureData[i];
 
 			size_t column_index = feature_attribs.featureIndex;
 			auto &column_data = columnData[column_index];
@@ -693,8 +691,7 @@ protected:
 			auto other_value = column_data->GetResolvedValue(other_value_type, matrix[matrix_base_position + column_index]);
 			other_value_type = column_data->GetResolvedValueType(other_value_type);
 
-			dist_accum += r_dist_eval.distEvaluator->ComputeDistanceTermRegular(
-				feature_data.targetValue, other_value, feature_data.targetValueType, other_value_type, i, high_accuracy);
+			dist_accum += r_dist_eval.ComputeDistanceTerm(other_value, other_value_type, i, high_accuracy);
 		}
 
 		double dist = r_dist_eval.distEvaluator->InverseExponentiateDistance(dist_accum, high_accuracy);
@@ -719,8 +716,8 @@ protected:
 		auto &feature_data = r_dist_eval.featureData[query_feature_index];
 		switch(feature_data.effectiveFeatureType)
 		{
-		case RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_UNIVERSALLY_SYMMETRIC_PRECOMPUTED:
-			return r_dist_eval.distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatchPrecomputed(query_feature_index, high_accuracy);
+		case RepeatedGeneralizedDistanceEvaluator::EFDT_REMAINING_IDENTICAL_PRECOMPUTED:
+			return feature_data.precomputedRemainingIdenticalDistanceTerm;
 
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC:
 		{
@@ -730,7 +727,7 @@ protected:
 				query_feature_index, high_accuracy);
 		}
 
-		case RepeatedGeneralizedDistanceEvaluator::EFDT_VALUES_UNIVERSALLY_PRECOMPUTED:
+		case RepeatedGeneralizedDistanceEvaluator::EFDT_NUMERIC_PRECOMPUTED:
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 			return r_dist_eval.ComputeDistanceTermNumberInternedPrecomputed(
@@ -772,16 +769,42 @@ protected:
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
 		}
 
-		default: //RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING or RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE
+		case RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_STRING:
+		{
+			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
+			auto &column_data = columnData[feature_attribs.featureIndex];
+			if(column_data->stringIdIndices.contains(entity_index))
+				return r_dist_eval.ComputeDistanceTermNominalString(
+					GetValue(entity_index, feature_attribs.featureIndex).stringID,
+					query_feature_index, true, high_accuracy);
+			else
+				return r_dist_eval.ComputeDistanceTermNominalString(string_intern_pool.EMPTY_STRING_ID,
+					query_feature_index, false, high_accuracy);
+		}
+
+		case RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMERIC:
+		{
+			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
+			auto &column_data = columnData[feature_attribs.featureIndex];
+			if(column_data->numberIndices.contains(entity_index))
+				return r_dist_eval.ComputeDistanceTermNominalNumeric(
+					GetValue(entity_index, feature_attribs.featureIndex).number,
+					query_feature_index, true, high_accuracy);
+			else
+				return r_dist_eval.ComputeDistanceTermNominalNumeric(0.0,
+					query_feature_index, false, high_accuracy);
+		}
+
+		default:
+			//RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING
+			//or RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 			auto &column_data = columnData[feature_attribs.featureIndex];
 			auto other_value_type = column_data->GetIndexValueType(entity_index);
 			auto other_value = column_data->GetResolvedValue(other_value_type, GetValue(entity_index, feature_attribs.featureIndex));
 
-			return r_dist_eval.distEvaluator->ComputeDistanceTermRegular(
-				feature_data.targetValue, other_value, feature_data.targetValueType, other_value_type,
-				query_feature_index, high_accuracy);
+			return r_dist_eval.ComputeDistanceTerm(other_value, other_value_type, query_feature_index, high_accuracy);
 		}
 		}
 	}
@@ -894,16 +917,16 @@ public:
 			//if either known or unknown to unknown is missing, need to compute difference
 			// and store it where it is needed
 			double unknown_distance_term = 0.0;
-			if(FastIsNaN(feature_attribs.knownToUnknownDistanceTerm.difference)
-				|| FastIsNaN(feature_attribs.unknownToUnknownDistanceTerm.difference))
+			if(FastIsNaN(feature_attribs.knownToUnknownDistanceTerm.deviation)
+				|| FastIsNaN(feature_attribs.unknownToUnknownDistanceTerm.deviation))
 			{
 				unknown_distance_term = columnData[feature_attribs.featureIndex]->GetMaxDifferenceTerm(
 					feature_attribs);
 
-				if(FastIsNaN(feature_attribs.knownToUnknownDistanceTerm.difference))
-					feature_attribs.knownToUnknownDistanceTerm.difference = unknown_distance_term;
-				if(FastIsNaN(feature_attribs.unknownToUnknownDistanceTerm.difference))
-					feature_attribs.unknownToUnknownDistanceTerm.difference = unknown_distance_term;
+				if(FastIsNaN(feature_attribs.knownToUnknownDistanceTerm.deviation))
+					feature_attribs.knownToUnknownDistanceTerm.deviation = unknown_distance_term;
+				if(FastIsNaN(feature_attribs.unknownToUnknownDistanceTerm.deviation))
+					feature_attribs.unknownToUnknownDistanceTerm.deviation = unknown_distance_term;
 			}
 		}
 	}

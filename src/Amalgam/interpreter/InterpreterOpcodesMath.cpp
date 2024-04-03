@@ -1068,16 +1068,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 		auto &feature_attribs = dist_eval.featureAttribs[i];
 
 		//if one is nan and the other is not, the use the non-nan one for both
-		if(FastIsNaN(feature_attribs.unknownToUnknownDistanceTerm.difference))
+		if(FastIsNaN(feature_attribs.unknownToUnknownDistanceTerm.deviation))
 		{
-			if(!FastIsNaN(feature_attribs.knownToUnknownDistanceTerm.difference))
-				feature_attribs.unknownToUnknownDistanceTerm.difference = feature_attribs.knownToUnknownDistanceTerm.difference;
+			if(!FastIsNaN(feature_attribs.knownToUnknownDistanceTerm.deviation))
+				feature_attribs.unknownToUnknownDistanceTerm.deviation = feature_attribs.knownToUnknownDistanceTerm.deviation;
 			else
-				feature_attribs.unknownToUnknownDistanceTerm.difference = dist_eval.GetMaximumDifference(i);
+				feature_attribs.unknownToUnknownDistanceTerm.deviation = dist_eval.GetMaximumDifference(i);
 		}
 
-		if(FastIsNaN(feature_attribs.knownToUnknownDistanceTerm.difference))
-			feature_attribs.knownToUnknownDistanceTerm.difference = feature_attribs.unknownToUnknownDistanceTerm.difference;
+		if(FastIsNaN(feature_attribs.knownToUnknownDistanceTerm.deviation))
+			feature_attribs.knownToUnknownDistanceTerm.deviation = feature_attribs.unknownToUnknownDistanceTerm.deviation;
 	}
 
 	dist_eval.highAccuracyDistances = true;

@@ -3,7 +3,11 @@
 //project headers:
 #include "EntityQueries.h"
 #include "EvaluableNode.h"
+#include "PlatformSpecific.h"
 #include "StringInternPool.h"
+
+//system headers:
+#include <type_traits>
 
 //Constructs a query engine query condition from Amalgam evaluable nodes
 namespace EntityQueryBuilder
@@ -39,8 +43,9 @@ namespace EntityQueryBuilder
 			|| type == ENT_COMPUTE_ENTITY_KL_DIVERGENCES);
 	}
 
+	//TODO 17631: expand this method
 	//populates deviation data for feature_attribs from deviation_node
-	inline void PopulateFeatureDeviationData(GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs, EvaluableNode *deviation_node)
+	inline void PopulateFeatureDeviationNominalValuesData(GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs, EvaluableNode *deviation_node)
 	{
 		if(deviation_node == nullptr)
 		{
@@ -131,8 +136,8 @@ namespace EntityQueryBuilder
 				if(i < dist_eval.featureAttribs.size())
 				{
 					dist_eval.featureAttribs[i].deviation = 0.0;
-					dist_eval.featureAttribs[i].unknownToUnknownDistanceTerm.difference = std::numeric_limits<double>::quiet_NaN();
-					dist_eval.featureAttribs[i].knownToUnknownDistanceTerm.difference = std::numeric_limits<double>::quiet_NaN();
+					dist_eval.featureAttribs[i].unknownToUnknownDistanceTerm.deviation = std::numeric_limits<double>::quiet_NaN();
+					dist_eval.featureAttribs[i].knownToUnknownDistanceTerm.deviation = std::numeric_limits<double>::quiet_NaN();
 
 					//get deviations based on feature type
 					switch(dist_eval.featureAttribs[i].featureType)
@@ -148,17 +153,17 @@ namespace EntityQueryBuilder
 								size_t ocn_size = ocn.size();
 
 								if(ocn_size > 0)
-									PopulateFeatureDeviationData(dist_eval.featureAttribs[i], ocn[0]);
+									PopulateFeatureDeviationNominalValuesData(dist_eval.featureAttribs[i], ocn[0]);
 
 								if(ocn_size > 1)
-									dist_eval.featureAttribs[i].knownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[1]);
+									dist_eval.featureAttribs[i].knownToUnknownDistanceTerm.deviation = EvaluableNode::ToNumber(ocn[1]);
 
 								if(ocn_size > 2)
-									dist_eval.featureAttribs[i].unknownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[2]);
+									dist_eval.featureAttribs[i].unknownToUnknownDistanceTerm.deviation = EvaluableNode::ToNumber(ocn[2]);
 							}
 							else //treat as singular value
 							{
-								PopulateFeatureDeviationData(dist_eval.featureAttribs[i], en);
+								PopulateFeatureDeviationNominalValuesData(dist_eval.featureAttribs[i], en);
 							}
 						}
 						break;
@@ -173,9 +178,9 @@ namespace EntityQueryBuilder
 								if(ocn_size > 0)
 									dist_eval.featureAttribs[i].deviation = EvaluableNode::ToNumber(ocn[0]);
 								if(ocn_size > 1)
-									dist_eval.featureAttribs[i].knownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[1]);
+									dist_eval.featureAttribs[i].knownToUnknownDistanceTerm.deviation = EvaluableNode::ToNumber(ocn[1]);
 								if(ocn_size > 2)
-									dist_eval.featureAttribs[i].unknownToUnknownDistanceTerm.difference = EvaluableNode::ToNumber(ocn[2]);
+									dist_eval.featureAttribs[i].unknownToUnknownDistanceTerm.deviation = EvaluableNode::ToNumber(ocn[2]);
 							}
 							else //treat as singular value
 							{

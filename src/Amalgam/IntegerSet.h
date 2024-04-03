@@ -429,7 +429,7 @@ public:
 		//if dense, loop over, assuming likely to hit
 		//writing out this code yields notably better performance than
 		//using ContainsWithoutMaximumIndexCheck and attempting to let the compiler optimize
-		if(num_indices / num_buckets > 8)
+		if(num_indices / num_buckets > 20)
 		{
 			for(size_t bucket = 0, index = 0;
 				bucket < num_buckets; bucket++, index++)

@@ -325,6 +325,9 @@ public:
 	//returns true if the feature is a nominal that only has one difference value for match and one for nonmatch
 	__forceinline bool IsFeatureSymmetricNominal(size_t feature_index)
 	{
+		if(!IsFeatureNominal(feature_index))
+			return false;
+
 		auto &feature_attribs = featureAttribs[feature_index];
 		return (feature_attribs.nominalNumberSparseDeviationMatrix.deviationValues.size() == 0
 			&& feature_attribs.nominalStringSparseDeviationMatrix.deviationValues.size() == 0);

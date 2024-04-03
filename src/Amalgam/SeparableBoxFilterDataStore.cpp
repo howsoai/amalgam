@@ -962,8 +962,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	}
 
 	//if nominal, only need to compute the exact match
-	if(r_dist_eval.distEvaluator->IsFeatureNominal(query_feature_index)
-		&& r_dist_eval.distEvaluator->IsFeatureSymmetricNominal(query_feature_index))
+	if(r_dist_eval.distEvaluator->IsFeatureSymmetricNominal(query_feature_index))
 	{
 		if(value_type == ENIVT_NUMBER)
 		{

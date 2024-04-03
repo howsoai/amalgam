@@ -304,6 +304,12 @@ public:
 		return (featureAttribs[feature_index].featureType <= GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE);
 	}
 
+	//returns true if the feature is nominal
+	__forceinline bool IsFeatureContinuous(size_t feature_index)
+	{
+		return (featureAttribs[feature_index].featureType >= GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC);
+	}
+
 	//returns true if the feature is cyclic
 	__forceinline bool IsFeatureCyclic(size_t feature_index)
 	{

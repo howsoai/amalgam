@@ -1,4 +1,3 @@
-(seq
- (create_entities "MergeEntity1" (lambda (associate "a" 3 "b" 4)) )
- (print (retrieve_entity_root (list)  ))
+(seeq
+ (a)
 )

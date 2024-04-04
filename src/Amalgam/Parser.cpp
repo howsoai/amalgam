@@ -14,6 +14,7 @@ Parser::Parser()
 	pos = 0;
 	lineNumber = 0;
 	lineStartPos = 0;
+	numOpenParenthesis = 0;
 }
 
 std::string Parser::Backslashify(const std::string &s)
@@ -56,7 +57,8 @@ std::string Parser::Backslashify(const std::string &s)
 	return b;
 }
 
-EvaluableNodeReference Parser::Parse(std::string &code_string, EvaluableNodeManager *enm, std::string *original_source)
+EvaluableNodeReference Parser::Parse(std::string &code_string, EvaluableNodeManager *enm,
+	std::string *original_source, bool debug_sources)
 {
 	Parser pt;
 	pt.code = &code_string;
@@ -80,7 +82,17 @@ EvaluableNodeReference Parser::Parse(std::string &code_string, EvaluableNodeMana
 		}
 	}
 
+	pt.debugSources = debug_sources;
+
 	EvaluableNode *parse_tree = pt.ParseNextBlock();
+
+	if(!pt.originalSource.empty())
+	{
+		if(pt.numOpenParenthesis > 0)
+			std::cerr << "Warning: " << pt.numOpenParenthesis << " missing parenthesis in " << pt.originalSource << std::endl;
+		else if(pt.numOpenParenthesis < 0)
+			std::cerr << "Warning: " << -pt.numOpenParenthesis << " extra parenthesis in " << pt.originalSource << std::endl;
+	}
 
 	pt.PreevaluateNodes();
 	EvaluableNodeManager::UpdateFlagsForNodeTree(parse_tree);
@@ -291,7 +303,7 @@ void Parser::SkipWhitespaceAndAccumulateAttributes(EvaluableNode *target)
 	}
 
 	//if labeling source, prepend as comment
-	if(originalSource.size() > 0)
+	if(debugSources)
 	{
 		std::string new_comment = sourceCommentPrefix;
 		new_comment += std::to_string(lineNumber);
@@ -420,6 +432,7 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *new_token)
 	if(cur_char == '(') //identifier as command
 	{
 		pos++;
+		numOpenParenthesis++;
 		SkipWhitespaceAndAccumulateAttributes(new_token);
 		if(pos >= code->size())
 		{
@@ -433,7 +446,10 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *new_token)
 		if(IsEvaluableNodeTypeValid(new_token->GetType()))
 			return new_token;
 
-		//unspecified command, store the identifier in the string
+		//invalid opcode, warn if possible and store the identifier as a string
+		if(!originalSource.empty())
+			std::cerr << "Warning: " << " Invalid opcode at line " << lineNumber << " of " << originalSource << std::endl;
+
 		new_token->SetType(ENT_STRING, evaluableNodeManager, false);
 		new_token->SetStringValue(token);
 		return new_token;
@@ -441,6 +457,7 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *new_token)
 	else if(cur_char == ')')
 	{
 		pos++; //skip closing parenthesis
+		numOpenParenthesis--;
 		FreeNode(new_token);
 		return nullptr;
 	}
@@ -575,7 +592,11 @@ EvaluableNode *Parser::ParseNextBlock()
 
 			//if specifying something unusual, then assume it's just a null
 			if(n->GetType() == ENT_NOT_A_BUILT_IN_TYPE)
+			{
 				n->SetType(ENT_NULL, evaluableNodeManager);
+				if(!originalSource.empty())
+					std::cerr << "Warning: "  << " Invalid opcode at line " << lineNumber << " of " << originalSource << std::endl;
+			}
 		}
 
 	}

@@ -1251,7 +1251,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 void SeparableBoxFilterDataStore::PopulateInitialPartialSums(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 	size_t top_k, size_t radius_column_index, bool high_accuracy,
 	BitArrayIntegerSet &enabled_indices, std::vector<double> &min_unpopulated_distances, std::vector<double> &min_distance_by_unpopulated_count)
-{;
+{
 	if(radius_column_index < columnData.size())
 	{
 		auto &partial_sums = parametersAndBuffers.partialSums;

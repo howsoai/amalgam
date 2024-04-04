@@ -429,7 +429,7 @@ public:
 		//if dense, loop over, assuming likely to hit
 		//writing out this code yields notably better performance than
 		//using ContainsWithoutMaximumIndexCheck and attempting to let the compiler optimize
-		if(num_indices / num_buckets > 20)
+		if(num_indices / num_buckets > 32)
 		{
 			for(size_t bucket = 0, index = 0;
 				bucket < num_buckets; bucket++, index++)
@@ -483,7 +483,7 @@ public:
 	//sets bucket and bit to the values pointing to the next id in the hash
 	// assumes that bucket and bit point to a valid index
 	//if there are no more ids, then it will return bit 0 of the lowest bucket that is not populated
-	void FindNext(size_t &bucket, size_t &bit)
+	inline void FindNext(size_t &bucket, size_t &bit)
 	{
 		bit++;
 

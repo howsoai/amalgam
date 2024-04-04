@@ -84,8 +84,10 @@ public:
 	}
 
 	//Parses the code string and returns a tree of EvaluableNodeReference that represents the code
-	//if original_source a valid string, will prepend each node with a comment indicating original source
-	static EvaluableNodeReference Parse(std::string &code_string, EvaluableNodeManager *enm, std::string *original_source = nullptr);
+	//if original_source is a valid string, it will emit any warnings to stderr
+	//if debug_sources is true, it will prepend each node with a comment indicating original source
+	static EvaluableNodeReference Parse(std::string &code_string, EvaluableNodeManager *enm,
+		std::string *original_source = nullptr, bool debug_sources = false);
 
 	//Returns a string that represents the tree
 	// if expanded_whitespace, will emit additional whitespace to make it easier to read
@@ -187,8 +189,14 @@ protected:
 	//Position at the start of the current line
 	size_t lineStartPos;
 
+	//number of currently open parenthesis
+	int64_t numOpenParenthesis;
+
 	//Original source (e.g., file if applicable)
 	std::string originalSource;
+
+	//if true, will prepend debug sources to node comments
+	bool debugSources;
 
 	//contains a list of nodes that need to be preevaluated on parsing
 	std::vector<EvaluableNode *> preevaluationNodes;

@@ -80,7 +80,7 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 				response = FAILURE_RESPONSE;
 			}
 		}
-		if(command == "CLONE_ENTITY")
+		else if(command == "CLONE_ENTITY")
 		{
 			std::vector<std::string> command_tokens = StringManipulation::SplitArgString(input);
 			if(command_tokens.size() >= 2)

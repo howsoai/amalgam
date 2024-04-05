@@ -426,9 +426,9 @@ public:
 		size_t num_indices = size();
 		size_t end_index = std::min(up_to_index, end_integer);
 
-		//if dense, loop over, assuming likely to hit
-		//writing out this code yields notably better performance than
-		//using ContainsWithoutMaximumIndexCheck and attempting to let the compiler optimize
+		//there are three loops optimized for different densities, high, medium high, and sparse
+		//the heuristics have been tuned by performance testing across a couple of CPU architectures
+		//and different data sets
 		size_t indices_per_bucket = num_indices / num_buckets;
 		if(indices_per_bucket >= 48)
 		{

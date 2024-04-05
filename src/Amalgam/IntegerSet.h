@@ -429,7 +429,8 @@ public:
 		//if dense, loop over, assuming likely to hit
 		//writing out this code yields notably better performance than
 		//using ContainsWithoutMaximumIndexCheck and attempting to let the compiler optimize
-		if(num_indices / num_buckets > 32)
+		size_t indices_per_bucket = num_indices / num_buckets;
+		if(indices_per_bucket >= 48)
 		{
 			for(size_t bucket = 0, index = 0;
 				bucket < num_buckets; bucket++, index++)
@@ -441,6 +442,14 @@ public:
 					if(bucket_bits & mask)
 						func(index);
 				}
+			}
+		}
+		else if(indices_per_bucket >= 32)
+		{
+			for(size_t index = 0; index < end_index; index++)
+			{
+				if(ContainsWithoutMaximumIndexCheck(index))
+					func(index);
 			}
 		}
 		else //use the iterator, which is more efficient when sparse

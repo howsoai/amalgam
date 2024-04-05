@@ -426,10 +426,11 @@ public:
 		size_t num_indices = size();
 		size_t end_index = std::min(up_to_index, end_integer);
 
-		//if dense, loop over, assuming likely to hit
-		//writing out this code yields notably better performance than
-		//using ContainsWithoutMaximumIndexCheck and attempting to let the compiler optimize
-		if(num_indices / num_buckets > 20)
+		//there are three loops optimized for different densities, high, medium high, and sparse
+		//the heuristics have been tuned by performance testing across a couple of CPU architectures
+		//and different data sets
+		size_t indices_per_bucket = num_indices / num_buckets;
+		if(indices_per_bucket >= 48)
 		{
 			for(size_t bucket = 0, index = 0;
 				bucket < num_buckets; bucket++, index++)
@@ -441,6 +442,14 @@ public:
 					if(bucket_bits & mask)
 						func(index);
 				}
+			}
+		}
+		else if(indices_per_bucket >= 32)
+		{
+			for(size_t index = 0; index < end_index; index++)
+			{
+				if(ContainsWithoutMaximumIndexCheck(index))
+					func(index);
 			}
 		}
 		else //use the iterator, which is more efficient when sparse
@@ -483,7 +492,7 @@ public:
 	//sets bucket and bit to the values pointing to the next id in the hash
 	// assumes that bucket and bit point to a valid index
 	//if there are no more ids, then it will return bit 0 of the lowest bucket that is not populated
-	void FindNext(size_t &bucket, size_t &bit)
+	inline void FindNext(size_t &bucket, size_t &bit)
 	{
 		bit++;
 

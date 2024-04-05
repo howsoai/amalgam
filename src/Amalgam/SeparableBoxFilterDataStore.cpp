@@ -947,6 +947,9 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		{
 			AccumulatePartialSums(column->nullIndices, query_feature_index, unknown_unknown_term);
 			AccumulatePartialSums(column->nanIndices, query_feature_index, unknown_unknown_term);
+			auto nas_iter = column->stringIdValueToIndices.find(string_intern_pool.NOT_A_STRING_ID);
+			if(nas_iter != end(column->stringIdValueToIndices))
+				AccumulatePartialSums(*nas_iter->second, query_feature_index, unknown_unknown_term);
 
 			//TODO 17631: accumulate distance terms smaller than these, which might not be these two, return the next largest
 			return std::min(known_unknown_term, unknown_unknown_term);
@@ -961,6 +964,9 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		double known_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
 		AccumulatePartialSums(column->nullIndices, query_feature_index, known_unknown_term);
 		AccumulatePartialSums(column->nanIndices, query_feature_index, known_unknown_term);
+		auto nas_iter = column->stringIdValueToIndices.find(string_intern_pool.NOT_A_STRING_ID);
+		if(nas_iter != end(column->stringIdValueToIndices))
+			AccumulatePartialSums(*nas_iter->second, query_feature_index, known_unknown_term);
 		accumulated_known_to_unknown = true;
 	}
 
@@ -1002,22 +1008,18 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		//else value_type == ENIVT_NULL and already covered above
 
 		//if known to unknown is less than a symmetric nominal nonmatch, then need to accumulate those too
-		double nonmatch_dist_term = feature_attribs.nominalSymmetricNonMatchDistanceTerm.GetValue(high_accuracy);
-		double known_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
-		if(!accumulated_known_to_unknown && known_unknown_term < nonmatch_dist_term)
+		if(!accumulated_known_to_unknown)
 		{
-			BitArrayIntegerSet &known_unknown_indices = parametersAndBuffers.potentialMatchesSet;
-			known_unknown_indices = enabled_indices;
-			column->nullIndices.EraseTo(known_unknown_indices);
-			column->nanIndices.EraseTo(known_unknown_indices);
-			//find nas values
+			double known_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
+			AccumulatePartialSums(column->nullIndices, query_feature_index, known_unknown_term);
+			AccumulatePartialSums(column->nanIndices, query_feature_index, known_unknown_term);
 			auto nas_iter = column->stringIdValueToIndices.find(string_intern_pool.NOT_A_STRING_ID);
 			if(nas_iter != end(column->stringIdValueToIndices))
-				known_unknown_indices.erase(*nas_iter->second);
-			AccumulatePartialSums(known_unknown_indices, query_feature_index, known_unknown_term);
+				AccumulatePartialSums(*nas_iter->second, query_feature_index, known_unknown_term);
 		}
 
 		//return the value that the remainder of the entities have
+		double nonmatch_dist_term = feature_attribs.nominalSymmetricNonMatchDistanceTerm.GetValue(high_accuracy);
 		feature_data.SetPrecomputedRemainingIdenticalDistanceTerm(nonmatch_dist_term);
 		return nonmatch_dist_term;
 	}

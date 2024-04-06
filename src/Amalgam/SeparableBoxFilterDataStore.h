@@ -775,11 +775,11 @@ protected:
 			auto &column_data = columnData[feature_attribs.featureIndex];
 			if(column_data->stringIdIndices.contains(entity_index))
 				return r_dist_eval.ComputeDistanceTermNominalString(
-					GetValue(entity_index, feature_attribs.featureIndex).stringID,
-					query_feature_index, true, high_accuracy);
+					GetValue(entity_index, feature_attribs.featureIndex).stringID, true,
+					query_feature_index, high_accuracy);
 			else
-				return r_dist_eval.ComputeDistanceTermNominalString(string_intern_pool.EMPTY_STRING_ID,
-					query_feature_index, false, high_accuracy);
+				return r_dist_eval.ComputeDistanceTermNominalString(string_intern_pool.EMPTY_STRING_ID, false,
+					query_feature_index, high_accuracy);
 		}
 
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMERIC:
@@ -788,11 +788,11 @@ protected:
 			auto &column_data = columnData[feature_attribs.featureIndex];
 			if(column_data->numberIndices.contains(entity_index))
 				return r_dist_eval.ComputeDistanceTermNominalNumeric(
-					GetValue(entity_index, feature_attribs.featureIndex).number,
-					query_feature_index, true, high_accuracy);
+					GetValue(entity_index, feature_attribs.featureIndex).number, true,
+					query_feature_index, high_accuracy);
 			else
-				return r_dist_eval.ComputeDistanceTermNominalNumeric(0.0,
-					query_feature_index, false, high_accuracy);
+				return r_dist_eval.ComputeDistanceTermNominalNumeric(0.0, false,
+					query_feature_index, high_accuracy);
 		}
 
 		default:

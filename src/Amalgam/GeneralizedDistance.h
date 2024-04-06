@@ -1187,22 +1187,38 @@ public:
 
 	//returns the inner term of the Minkowski norm summation given that the feature is nominal
 	//and the data type being compared from is numeric
-	//if types_match is false, then the value is ignored
-	__forceinline double ComputeDistanceTermNominalNumeric(double value,
-		size_t index, bool types_match, bool high_accuracy)
+	//if value_type_numeric is false, then the value is ignored
+	__forceinline double ComputeDistanceTermNominalNumeric(double value, bool value_type_numeric,
+		size_t index, bool high_accuracy)
 	{
-		//TODO 17631: implement this
-		return 0.0;
+		auto &feature_data = featureData[index];
+		if(feature_data.nominalNumberDistanceTerms.size() > 0)
+		{
+			//TODO 17631: implement this
+		}
+
+		if(value_type_numeric && value == feature_data.targetValue.number)
+			return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
+		else
+			return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
 	}
 
 	//returns the inner term of the Minkowski norm summation given that the feature is nominal
 	//and the data type being compared from is string
-	//if types_match is false, then the value is ignored
+	//if value_type_string is false, then the value is ignored
 	__forceinline double ComputeDistanceTermNominalString(StringInternPool::StringID value,
-		size_t index, bool types_match, bool high_accuracy)
+		size_t index, bool value_type_string, bool high_accuracy)
 	{
-		//TODO 17631: implement this
-		return 0.0;
+		auto &feature_data = featureData[index];
+		if(feature_data.nominalStringDistanceTerms.size() > 0)
+		{
+			//TODO 17631: implement this
+		}
+
+		if(value_type_string && value == feature_data.targetValue.stringID)
+			return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
+		else
+			return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
 	}
 
 	//returns the distance term given that it is nominal

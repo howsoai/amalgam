@@ -1236,6 +1236,41 @@ public:
 		return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
 	}
 
+	//for all nominal distance term values that equal dist_term for the given high_accuracy,
+	//it will call func passing in the numeric value
+	template<typename Func>
+	__forceinline void IterateOverNominalValuesWithLessOrEqualDistanceTermsNumeric(double dist_term, size_t index, bool high_accuracy,
+		Func func)
+	{
+		auto &feature_data = featureData[index];
+		for(auto &entry : feature_data.nominalNumberDistanceTerms)
+		{
+			if(entry.second <= dist_term)
+				func(entry.first);
+		}
+	}
+
+	//for all nominal distance term values that equal dist_term for the given high_accuracy,
+	//it will call func passing in the string id value
+	template<typename Func>
+	__forceinline void IterateOverNominalValuesWithLessOrEqualDistanceTermsString(double dist_term, size_t index, bool high_accuracy,
+		Func func)
+	{
+		auto &feature_data = featureData[index];
+		for(auto &entry : feature_data.nominalStringDistanceTerms)
+		{
+			if(entry.second <= dist_term)
+				func(entry.first);
+		}
+	}
+
+	//returns the smallest distance term larger than dist_term
+	__forceinline double ComputeDistanceTermNominalNextSmallest(double dist_term, size_t index, bool high_accuracy)
+	{
+		//TODO 17631: implement this, placeholder for now
+		return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
+	}
+
 	//computes the inner term of the Minkowski norm summation
 	__forceinline double ComputeDistanceTerm(EvaluableNodeImmediateValue other_value,
 		EvaluableNodeImmediateValueType other_type, size_t index, bool high_accuracy)
@@ -1293,6 +1328,7 @@ public:
 		std::vector<GeneralizedDistanceEvaluator::DistanceTerms> internedDistanceTerms;
 
 		//TODO 17631: genericize ComputeAndStoreInternedNumberValuesAndDistanceTerms to precompute these when appropriate
+		//TODO 17631: figure out how to handle approx vs exact -- should these store only what is being used for repeated calls?
 		//used to store distance terms for the respective targetValue for the sparse deviation matrix
 		FastHashMap<StringInternPool::StringID, double> nominalStringDistanceTerms;
 		FastHashMap<double, double> nominalNumberDistanceTerms;

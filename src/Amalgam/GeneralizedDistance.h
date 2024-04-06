@@ -1205,6 +1205,37 @@ public:
 		return 0.0;
 	}
 
+	//returns the distance term given that it is nominal
+	__forceinline double ComputeDistanceTermNominal(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
+		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)
+	{
+		//TODO 17631: make this more efficient, placeholder for now
+		return distEvaluator->ComputeDistanceTermNominal(a, b, a_type, b_type, index, high_accuracy);
+	}
+
+	//returns the smallest nonmatching distance term for the nominal given other_value
+	__forceinline double ComputeDistanceTermNominalSmallestNonmatch(double other_value,
+		size_t index, bool high_accuracy)
+	{
+		//TODO 17631: implement this, placeholder for now
+		return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
+	}
+
+	//returns the smallest nonmatching distance term for the nominal given other_value
+	__forceinline double ComputeDistanceTermNominalSmallestNonmatch(StringInternPool::StringID other_value,
+		size_t index, bool high_accuracy)
+	{
+		//TODO 17631: implement this, placeholder for now
+		return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
+	}
+
+	//returns the smallest nonmatching distance term regardless of value
+	__forceinline double ComputeDistanceTermNominalSmallestNonmatch(size_t index, bool high_accuracy)
+	{
+		//TODO 17631: implement this, placeholder for now
+		return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
+	}
+
 	//computes the inner term of the Minkowski norm summation
 	__forceinline double ComputeDistanceTerm(EvaluableNodeImmediateValue other_value,
 		EvaluableNodeImmediateValueType other_type, size_t index, bool high_accuracy)

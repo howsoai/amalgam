@@ -956,10 +956,14 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		}
 	}
 
-	//need to accumulate nulls if they're closer than an exact match
-	//but if made it here, then the value itself isn't null
+	bool is_feature_symmetric_nominal = r_dist_eval.distEvaluator->IsFeatureSymmetricNominal(query_feature_index);
+
+	//if made it here, then the value itself is not a null, so only need to consider unknown to known distances
+	//need to accumulate nulls if it's a symmetric nominal feature, because then there's only one value left,
+	//or if the nulls are closer than an exact match
 	bool accumulated_known_to_unknown = false;
-	if(r_dist_eval.distEvaluator->IsKnownToUnknownDistanceLessThanOrEqualToExactMatch(query_feature_index))
+	if(is_feature_symmetric_nominal
+		|| r_dist_eval.distEvaluator->IsKnownToUnknownDistanceLessThanOrEqualToExactMatch(query_feature_index))
 	{
 		double known_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
 		AccumulatePartialSums(column->nullIndices, query_feature_index, known_unknown_term);
@@ -971,7 +975,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	}
 
 	//if nominal, only need to compute the exact match
-	if(r_dist_eval.distEvaluator->IsFeatureSymmetricNominal(query_feature_index))
+	if(is_feature_symmetric_nominal)
 	{
 		if(value_type == ENIVT_NUMBER)
 		{
@@ -1007,21 +1011,38 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		}
 		//else value_type == ENIVT_NULL and already covered above
 
-		//if known to unknown is less than a symmetric nominal nonmatch, then need to accumulate those too
-		if(!accumulated_known_to_unknown)
-		{
-			double known_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
-			AccumulatePartialSums(column->nullIndices, query_feature_index, known_unknown_term);
-			AccumulatePartialSums(column->nanIndices, query_feature_index, known_unknown_term);
-			auto nas_iter = column->stringIdValueToIndices.find(string_intern_pool.NOT_A_STRING_ID);
-			if(nas_iter != end(column->stringIdValueToIndices))
-				AccumulatePartialSums(*nas_iter->second, query_feature_index, known_unknown_term);
-		}
-
 		//return the value that the remainder of the entities have
 		double nonmatch_dist_term = feature_attribs.nominalSymmetricNonMatchDistanceTerm.GetValue(high_accuracy);
 		feature_data.SetPrecomputedRemainingIdenticalDistanceTerm(nonmatch_dist_term);
 		return nonmatch_dist_term;
+	}
+	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_STRING)
+	{
+		//TODO 17631: finish this; need to account for all values that are smaller than the current
+	}
+	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMERIC)
+	{
+		//TODO 17631: finish this; need to account for all values that are smaller than the current
+	}
+	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_CODE
+		|| effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE)
+	{
+		//compute partial sums for all code of matching size
+		size_t code_size = 1;
+		if(value_type == ENIVT_CODE)
+			code_size = EvaluableNode::GetDeepSize(value.code);
+
+		auto value_found = column->valueCodeSizeToIndices.find(code_size);
+		if(value_found != end(column->valueCodeSizeToIndices))
+		{
+			auto &entity_indices = *(value_found->second);
+			ComputeAndAccumulatePartialSums(r_dist_eval, entity_indices, query_feature_index, absolute_feature_index, high_accuracy);
+		}
+
+		if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_CODE)
+			return r_dist_eval.ComputeDistanceTermNominalSmallestNonmatch(query_feature_index, high_accuracy);
+		else //RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE, next most similar code must be at least a distance of 1 edit away
+			return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicNonNullRegular(1.0, query_feature_index, high_accuracy);
 	}
 	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING)
 	{
@@ -1037,35 +1058,6 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 		//the next closest string will have an edit distance of 1
 		return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicNonNullRegular(1.0, query_feature_index, high_accuracy);
-	}
-	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE)
-	{
-		//compute partial sums for all code of matching size
-		size_t code_size = 1;
-		if(value_type == ENIVT_CODE)
-			code_size = EvaluableNode::GetDeepSize(value.code);
-
-		auto value_found = column->valueCodeSizeToIndices.find(code_size);
-		if(value_found != end(column->valueCodeSizeToIndices))
-		{
-			auto &entity_indices = *(value_found->second);
-			ComputeAndAccumulatePartialSums(r_dist_eval, entity_indices, query_feature_index, absolute_feature_index, high_accuracy);
-		}
-
-		//next most similar code must be at least a distance of 1 edit away
-		return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicNonNullRegular(1.0, query_feature_index, high_accuracy);
-	}
-	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_STRING)
-	{
-		//TODO 17631: finish this; need to account for all values that are smaller than the current
-	}
-	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMERIC)
-	{
-		//TODO 17631: finish this; need to account for all values that are smaller than the current
-	}
-	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_CODE)
-	{
-		//TODO 17631: finish this; need to account for all values that are smaller than the current
 	}
 	//else feature_type == FDT_CONTINUOUS_NUMERIC or FDT_CONTINUOUS_UNIVERSALLY_NUMERIC
 

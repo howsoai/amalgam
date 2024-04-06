@@ -1013,9 +1013,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			auto [value_index, exact_index_found] = column->FindExactIndexForValue(value.number);
 			if(exact_index_found)
 			{
-				//TODO 17631: debug why this fails on ut_h_conviction.amlg, then make method for column to generciize this find and accumulate logic
-				//double term = r_dist_eval.ComputeDistanceTermNominalNumeric(value.number, true, query_feature_index, high_accuracy);
-				double term = feature_attribs.nominalSymmetricMatchDistanceTerm.GetValue(high_accuracy);
+				double term = r_dist_eval.ComputeDistanceTermNominalNumeric(value.number, true, query_feature_index, high_accuracy);
 				AccumulatePartialSums(column->sortedNumberValueEntries[value_index]->indicesWithValue, query_feature_index, term);
 			}
 		}
@@ -1024,9 +1022,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			auto value_found = column->stringIdValueToIndices.find(value.stringID);
 			if(value_found != end(column->stringIdValueToIndices))
 			{
-				//TODO 17631: debug why this fails on ut_h_conviction.amlg, then make method for column to generciize this find and accumulate logic
-				//double term = r_dist_eval.ComputeDistanceTermNominalString(value.stringID, true, query_feature_index, high_accuracy);
-				double term = feature_attribs.nominalSymmetricMatchDistanceTerm.GetValue(high_accuracy);
+				double term = r_dist_eval.ComputeDistanceTermNominalString(value.stringID, true, query_feature_index, high_accuracy);
 				AccumulatePartialSums(*(value_found->second), query_feature_index, term);
 			}
 		}

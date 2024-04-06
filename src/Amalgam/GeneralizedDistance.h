@@ -1206,8 +1206,8 @@ public:
 	//returns the inner term of the Minkowski norm summation given that the feature is nominal
 	//and the data type being compared from is string
 	//if value_type_string is false, then the value is ignored
-	__forceinline double ComputeDistanceTermNominalString(StringInternPool::StringID value,
-		size_t index, bool value_type_string, bool high_accuracy)
+	__forceinline double ComputeDistanceTermNominalString(StringInternPool::StringID value, bool value_type_string,
+		size_t index, bool high_accuracy)
 	{
 		auto &feature_data = featureData[index];
 		if(feature_data.nominalStringDistanceTerms.size() > 0)

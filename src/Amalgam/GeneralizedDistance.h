@@ -496,8 +496,9 @@ public:
 			return -std::numeric_limits<double>::infinity();
 	}
 
+	//TODO 17631: remove this?
 	//computes the base of the difference between two nominal values that exactly match without exponentiation
-	__forceinline double ComputeDistanceTermNominalBaseExactMatchFromDeviation(size_t index, double deviation, bool high_accuracy)
+	__forceinline double ComputeDistanceTermBaseNominalExactMatchFromDeviation(size_t index, double deviation, bool high_accuracy)
 	{
 		if(!DoesFeatureHaveDeviation(index) || computeSurprisal)
 			return 0.0;
@@ -507,10 +508,10 @@ public:
 
 	//TODO 17631: genericize this for use in ComputeDistanceTermNominal -- may need to take in two deviations,
 	// exact match deviation and nonmatch deviation?  Or just change the calls to pass in 1-deviation?
-	//make sure lines up with ComputeDistanceTermNominalBaseExactMatchFromDeviation for exact match, and maybe remove ComputeDistanceTermNominalBaseExactMatchFromDeviation
+	//make sure lines up with ComputeDistanceTermBaseNominalExactMatchFromDeviation for exact match, and maybe remove ComputeDistanceTermBaseNominalExactMatchFromDeviation
 
 	//computes the base of the difference between two nominal values that do not match without exponentiation
-	__forceinline double ComputeDistanceTermNominalBaseNonMatchFromDeviation(size_t index, double deviation, bool high_accuracy)
+	__forceinline double ComputeDistanceTermBaseNominalNonMatchFromDeviation(size_t index, double deviation, bool high_accuracy)
 	{
 		if(computeSurprisal)
 		{
@@ -524,10 +525,10 @@ public:
 
 			//find the probability that any other class besides the correct class was selected
 			//divide the probability among the other classes
-			double prop_class_given_nonmatch = (1 - prob_class_given_match) / (nominal_count - 1);
+			double prob_class_given_nonmatch = (1 - prob_class_given_match) / (nominal_count - 1);
 
 			double surprisal_class_given_match = -std::log(prob_class_given_match);
-			double surprisal_class_given_nonmatch = -std::log(prop_class_given_nonmatch);
+			double surprisal_class_given_nonmatch = -std::log(prob_class_given_nonmatch);
 
 			//the surprisal of the class matching on a different value is the difference between
 			//how surprised it would be given a nonmatch but without the surprisal given a match
@@ -556,17 +557,85 @@ public:
 		}
 	}
 
+	//TODO 17631: finish this and integrate it
+	//returns the base of the distance term for nominal comparisons for a match
+	//given the probablility of the class being observed given that it is a match
+	__forceinline double ComputeDistanceTermBaseNominalMatchFromMatchProbabilities(size_t index,
+		double prob_class_given_match, bool high_accuracy)
+	{
+		if(!DoesFeatureHaveDeviation(index) || computeSurprisal)
+			return 0.0;
+
+		return 1 - prob_class_given_match;
+	}
+
+	//TODO 17631: finish this and integrate it
+	// for a given prob_class_given_match, which is the probability that the classes compared should have been a match,
+	// and prob_class_given_nonmatch, the probability that the particular comparison class does not match
+	__forceinline double ComputeDistanceTermBaseNominalNonmatchFromMatchProbabilities(size_t index,
+		double prob_class_given_match, double prob_class_given_nonmatch, bool high_accuracy)
+	{
+		if(computeSurprisal)
+		{
+			double surprisal_class_given_match = -std::log(prob_class_given_match);
+			double surprisal_class_given_nonmatch = -std::log(prob_class_given_nonmatch);
+
+			//the surprisal of the class matching on a different value is the difference between
+			//how surprised it would be given a nonmatch but without the surprisal given a match
+			double dist_term = surprisal_class_given_nonmatch - surprisal_class_given_match;
+
+			//ensure it doesn't go below zero in case of numerical precision issues
+			return std::max(dist_term, 0.0);
+		}
+		else if(DoesFeatureHaveDeviation(index))
+		{
+			//add together uncertainties from a nonmatch,
+			// plus a nonmatch of a nonmatch to get a match
+			double dist_term = (1 - prob_class_given_match) + (1 - prob_class_given_nonmatch);
+			return dist_term;
+		}
+		else
+		{
+			return 1.0;
+		}
+	}
+
+	//TODO 17631: finish this and integrate it
+	//for inputs to this method, if not using SDM, b_deviation = (1 - a_deviation) / (nominal_count - 1)
+	__forceinline double ComputeDistanceTermNominalBaseFromDeviations(size_t index, bool match,
+		double match_deviation, double nonmatch_deviation, bool high_accuracy)
+	{
+		//need to have at least two classes in existence
+		double nominal_count = std::max(featureAttribs[index].typeAttributes.nominalCount, 2.0);
+		double prob_max_entropy_match = 1 / nominal_count;
+
+		//find probability that the correct class was selected
+		//can't go below base probability of guessing
+		double prob_class_given_match = std::max(1 - match_deviation, prob_max_entropy_match);
+
+		//find the probability that any other class besides the correct class was selected,
+		//but cannot exceed the probability of a match
+		double prob_class_given_nonmatch = std::min(1 - nonmatch_deviation, prob_class_given_match);
+
+		if(match)
+			return ComputeDistanceTermBaseNominalMatchFromMatchProbabilities(index,
+				prob_class_given_match, high_accuracy);
+		else
+			return ComputeDistanceTermBaseNominalNonmatchFromMatchProbabilities(index,
+				prob_class_given_match, prob_class_given_nonmatch, high_accuracy);
+	}
+
 	//computes the distance term for a nominal when two universally symmetric nominals are equal
 	__forceinline double ComputeDistanceTermNominalUniversallySymmetricExactMatch(size_t index, bool high_accuracy)
 	{
-		double dist_term = ComputeDistanceTermNominalBaseExactMatchFromDeviation(index, featureAttribs[index].deviation, high_accuracy);
+		double dist_term = ComputeDistanceTermBaseNominalExactMatchFromDeviation(index, featureAttribs[index].deviation, high_accuracy);
 		return ContextuallyExponentiateAndWeightDifferenceTerm(dist_term, index, high_accuracy);
 	}
 
 	//computes the distance term for a nominal when two universally symmetric nominals are not equal
 	__forceinline double ComputeDistanceTermNominalUniversallySymmetricNonMatch(size_t index, bool high_accuracy)
 	{
-		double dist_term = ComputeDistanceTermNominalBaseNonMatchFromDeviation(index, featureAttribs[index].deviation, high_accuracy);
+		double dist_term = ComputeDistanceTermBaseNominalNonMatchFromDeviation(index, featureAttribs[index].deviation, high_accuracy);
 		return ContextuallyExponentiateAndWeightDifferenceTerm(dist_term, index, high_accuracy);
 	}
 

@@ -964,23 +964,13 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTermsNumeric(unknown_unknown_term, query_feature_index, high_accuracy,
 				[this, &r_dist_eval, &feature_attribs, &column, query_feature_index, high_accuracy](double number_value)
 				{
-					auto [value_index, exact_index_found] = column->FindExactIndexForValue(number_value);
-					if(exact_index_found)
-					{
-						double term = r_dist_eval.ComputeDistanceTermNominalNumeric(number_value, true, query_feature_index, high_accuracy);
-						AccumulatePartialSums(column->sortedNumberValueEntries[value_index]->indicesWithValue, query_feature_index, term);
-					}
+					AccumulatePartialSumsForNominalNumberValueIfExists(r_dist_eval, number_value, query_feature_index, *column, high_accuracy);
 				});
 
 			r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTermsString(unknown_unknown_term, query_feature_index, high_accuracy,
 				[this, &r_dist_eval, &feature_attribs, &column, query_feature_index, high_accuracy](StringInternPool::StringID sid)
 				{
-					auto value_found = column->stringIdValueToIndices.find(sid);
-					if(value_found != end(column->stringIdValueToIndices))
-					{
-						double term = r_dist_eval.ComputeDistanceTermNominalString(sid, true, query_feature_index, high_accuracy);
-						AccumulatePartialSums(*(value_found->second), query_feature_index, term);
-					}
+					AccumulatePartialSumsForNominalStringIdValueIfExists(r_dist_eval, sid, query_feature_index, *column, high_accuracy);
 				});
 
 			return r_dist_eval.ComputeDistanceTermNominalNextSmallest(unknown_unknown_term, query_feature_index, high_accuracy);;
@@ -1010,21 +1000,11 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	{
 		if(value_type == ENIVT_NUMBER)
 		{
-			auto [value_index, exact_index_found] = column->FindExactIndexForValue(value.number);
-			if(exact_index_found)
-			{
-				double term = r_dist_eval.ComputeDistanceTermNominalNumeric(value.number, true, query_feature_index, high_accuracy);
-				AccumulatePartialSums(column->sortedNumberValueEntries[value_index]->indicesWithValue, query_feature_index, term);
-			}
+			AccumulatePartialSumsForNominalNumberValueIfExists(r_dist_eval, value.number, query_feature_index, *column, high_accuracy);
 		}
 		else if(value_type == ENIVT_STRING_ID)
 		{
-			auto value_found = column->stringIdValueToIndices.find(value.stringID);
-			if(value_found != end(column->stringIdValueToIndices))
-			{
-				double term = r_dist_eval.ComputeDistanceTermNominalString(value.stringID, true, query_feature_index, high_accuracy);
-				AccumulatePartialSums(*(value_found->second), query_feature_index, term);
-			}
+			AccumulatePartialSumsForNominalStringIdValueIfExists(r_dist_eval, value.stringID, query_feature_index, *column, high_accuracy);
 		}
 		else if(value_type == ENIVT_CODE)
 		{
@@ -1053,14 +1033,8 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		//0, then need to accumulate those later
 		double accumulated_term = 0.0;
 		if(value_type == ENIVT_STRING_ID)
-		{
-			auto value_found = column->stringIdValueToIndices.find(value.stringID);
-			if(value_found != end(column->stringIdValueToIndices))
-			{
-				accumulated_term = r_dist_eval.ComputeDistanceTermNominalString(value.stringID, true, query_feature_index, high_accuracy);
-				AccumulatePartialSums(*(value_found->second), query_feature_index, accumulated_term);
-			}
-		}
+			accumulated_term = AccumulatePartialSumsForNominalStringIdValueIfExists(
+				r_dist_eval, value.stringID, query_feature_index, *column, high_accuracy);
 
 		double nonmatch_dist_term = r_dist_eval.ComputeDistanceTermNominalSmallestNonmatch(query_feature_index, high_accuracy);
 		//if the next closest match is larger, no need to compute any more values
@@ -1073,14 +1047,8 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			{
 				//don't want to double-accumulate the found value
 				if(sid != value.stringID)
-				{
-					auto value_found = column->stringIdValueToIndices.find(value.stringID);
-					if(value_found != end(column->stringIdValueToIndices))
-					{
-						double term = r_dist_eval.ComputeDistanceTermNominalString(value.stringID, true, query_feature_index, high_accuracy); 
-						AccumulatePartialSums(*(value_found->second), query_feature_index, term);
-					}
-				}
+					AccumulatePartialSumsForNominalStringIdValueIfExists(
+						r_dist_eval, value.stringID, query_feature_index, *column, high_accuracy);
 			});
 
 		return r_dist_eval.ComputeDistanceTermNominalNextSmallest(nonmatch_dist_term, query_feature_index, high_accuracy);
@@ -1091,14 +1059,8 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		//0, then need to accumulate those later
 		double accumulated_term = 0.0;
 		if(value_type == ENIVT_NUMBER)
-		{
-			auto [value_index, exact_index_found] = column->FindExactIndexForValue(value.number);
-			if(exact_index_found)
-			{
-				accumulated_term = r_dist_eval.ComputeDistanceTermNominalNumeric(value.number, true, query_feature_index, high_accuracy);
-				AccumulatePartialSums(column->sortedNumberValueEntries[value_index]->indicesWithValue, query_feature_index, accumulated_term);
-			}
-		}
+			accumulated_term = AccumulatePartialSumsForNominalNumberValueIfExists(
+				r_dist_eval, value.number, query_feature_index, *column, high_accuracy);
 
 		double nonmatch_dist_term = r_dist_eval.ComputeDistanceTermNominalSmallestNonmatch(query_feature_index, high_accuracy);
 		//if the next closest match is larger, no need to compute any more values
@@ -1111,14 +1073,8 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			{
 				//don't want to double-accumulate the found value
 				if(!EqualIncludingNaN(number_value, value.number))
-				{
-					auto [value_index, exact_index_found] = column->FindExactIndexForValue(number_value);
-					if(exact_index_found)
-					{
-						double term = r_dist_eval.ComputeDistanceTermNominalNumeric(value.number, true, query_feature_index, high_accuracy);
-						AccumulatePartialSums(column->sortedNumberValueEntries[value_index]->indicesWithValue, query_feature_index, term);
-					}
-				}
+					AccumulatePartialSumsForNominalNumberValueIfExists(
+						r_dist_eval, value.number, query_feature_index, *column, high_accuracy);
 			});
 
 		return r_dist_eval.ComputeDistanceTermNominalNextSmallest(nonmatch_dist_term, query_feature_index, high_accuracy);

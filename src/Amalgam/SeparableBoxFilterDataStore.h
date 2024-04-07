@@ -650,6 +650,38 @@ protected:
 			return AccumulatePartialSums(entity_indices.GetBaisContainer(), query_feature_index, term);
 	}
 
+	//accumulates the partial sums for the specified value
+	// returns the distance term evaluated, or 0.0 if value was not found
+	inline double AccumulatePartialSumsForNominalNumberValueIfExists(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+		double value, size_t query_feature_index, SBFDSColumnData &column, bool high_accuracy)
+	{
+		auto [value_index, exact_index_found] = column.FindExactIndexForValue(value);
+		if(exact_index_found)
+		{
+			double term = r_dist_eval.ComputeDistanceTermNominalNumeric(value, true, query_feature_index, high_accuracy);
+			AccumulatePartialSums(column.sortedNumberValueEntries[value_index]->indicesWithValue, query_feature_index, term);
+			return term;
+		}
+
+		return 0.0;
+	}
+
+	//accumulates the partial sums for the specified value
+	// returns the distance term evaluated, or 0.0 if value was not found
+	inline double AccumulatePartialSumsForNominalStringIdValueIfExists(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+		StringInternPool::StringID value, size_t query_feature_index, SBFDSColumnData &column, bool high_accuracy)
+	{
+		auto value_found = column.stringIdValueToIndices.find(value);
+		if(value_found != end(column.stringIdValueToIndices))
+		{
+			double term = r_dist_eval.ComputeDistanceTermNominalString(value, true, query_feature_index, high_accuracy);
+			AccumulatePartialSums(*(value_found->second), query_feature_index, term);
+			return term;
+		}
+
+		return 0.0;
+	}
+
 	//search a projection width in terms of bucket count or number of collected entities
 	//accumulates partial sums
 	//searches until num_entities_to_populate are popluated or other heuristics have been reached

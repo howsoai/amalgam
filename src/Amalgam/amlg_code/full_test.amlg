@@ -2187,7 +2187,7 @@
  (create_entities (list "TestContainerExec" "Child5")
 	(lambda (parallel
 	##p 3
-	##q (+ x (call_container "a"))
+	##q (+ x (call_container "^a"))
 	##bar "crunchy"
 	##weight 0.02
 	##weight_eq 1

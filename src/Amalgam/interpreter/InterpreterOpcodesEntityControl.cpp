@@ -57,8 +57,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 			[this, &retval]
 			(StringInternPool::StringID label_sid, EvaluableNode *node)
 			{
-				//don't include those that are only inwardly facing
-				if(!Entity::IsLabelAccessibleToContainedEntities(label_sid))
+				//only include publicly facing labels
+				if(Entity::IsLabelValidAndPublic(label_sid))
 					retval->SetMappedChildNode(label_sid, evaluableNodeManager->AllocNode(ENT_STRING, EvaluableNode::GetCommentsStringId(node)));
 			}
 		);

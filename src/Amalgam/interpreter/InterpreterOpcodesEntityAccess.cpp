@@ -420,7 +420,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		entity_label_sid = InterpretNodeIntoStringIDValueWithReference(ocn[1]);
 
 	if(_label_profiling_enabled)
-		PerformanceProfiler::StartOperation(string_intern_pool.GetStringFromID(entity_label_sid), evaluableNodeManager->GetNumberOfUsedNodes());
+		PerformanceProfiler::StartOperation(string_intern_pool.GetStringFromID(entity_label_sid),
+			evaluableNodeManager->GetNumberOfUsedNodes());
 
 	//number of execution steps
 	//evaluate before context so don't need to keep/remove reference for context
@@ -561,16 +562,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	std::string orig_container_label_name = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
-	if(orig_container_label_name.empty())
+	auto container_label_sid = InterpretNodeIntoStringIDValueIfExists(ocn[0]);
+	if(container_label_sid == string_intern_pool.NOT_A_STRING_ID
+			|| !Entity::IsLabelAccessibleToContainedEntities(container_label_sid))
 		return EvaluableNodeReference::Null();
 
-	std::string container_label_name;
-	container_label_name.reserve(orig_container_label_name.size() + 2);
-	container_label_name = '^' + orig_container_label_name;
-
 	if(_label_profiling_enabled)
-		PerformanceProfiler::StartOperation(container_label_name, evaluableNodeManager->GetNumberOfUsedNodes());
+		PerformanceProfiler::StartOperation(string_intern_pool.GetStringFromID(container_label_sid),
+			evaluableNodeManager->GetNumberOfUsedNodes());
 
 	//number of execution steps
 	//evaluate before context so don't need to keep/remove reference for context
@@ -639,7 +638,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	ExecutionCycleCount num_steps_executed = 0;
 	size_t num_nodes_allocated = 0;
 	EvaluableNodeReference retval = container->Execute(num_steps_allowed, num_steps_executed, num_nodes_allowed, num_nodes_allocated,
-		container_label_name, call_stack, false, writeListeners, printListener,
+		container_label_sid, call_stack, false, writeListeners, printListener,
 	#ifdef MULTITHREAD_SUPPORT
 		&memoryModificationLock, &container.lock,
 	#endif

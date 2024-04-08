@@ -536,6 +536,8 @@ void EvaluableNodeManager::ModifyLabels(EvaluableNode *n, EvaluableNodeMetadataM
 
 			n->AppendLabel(label_string);
 		}
+
+		return;
 	}
 
 	//remove all labels and turn into strings

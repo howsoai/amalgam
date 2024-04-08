@@ -1222,11 +1222,13 @@ public:
 	}
 
 	//returns the distance term given that it is nominal
-	__forceinline double ComputeDistanceTermNominal(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
-		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)
+	__forceinline double ComputeDistanceTermNominal(EvaluableNodeImmediateValue other_value,
+		EvaluableNodeImmediateValueType other_type, size_t index, bool high_accuracy)
 	{
 		//TODO 17631: make this more efficient, placeholder for now
-		return distEvaluator->ComputeDistanceTermNominal(a, b, a_type, b_type, index, high_accuracy);
+		auto &feature_data = featureData[index];
+		return distEvaluator->ComputeDistanceTermNominal(feature_data.targetValue, other_value,
+			feature_data.targetValueType, other_type, index, high_accuracy);
 	}
 
 	//returns the smallest nonmatching distance term for the nominal given other_value
@@ -1291,14 +1293,13 @@ public:
 	__forceinline double ComputeDistanceTerm(EvaluableNodeImmediateValue other_value,
 		EvaluableNodeImmediateValueType other_type, size_t index, bool high_accuracy)
 	{
-		//TODO 17631: improve the logic and efficiency
 		auto &feature_data = featureData[index];
 
 		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
 		if(distEvaluator->IsFeatureNominal(index))
-			return distEvaluator->ComputeDistanceTermNominal(feature_data.targetValue, other_value,
-				feature_data.targetValueType, other_type, index, high_accuracy);
+			return ComputeDistanceTermNominal(other_value, other_type, index, high_accuracy);
 
+		//TODO 17631: improve the logic and efficiency here down
 		double diff = distEvaluator->ComputeDifference(feature_data.targetValue, other_value,
 			feature_data.targetValueType, other_type, distEvaluator->featureAttribs[index].featureType);
 

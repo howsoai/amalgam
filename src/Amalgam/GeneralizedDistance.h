@@ -259,7 +259,7 @@ public:
 		{
 			//multiplying by the reciprocal is lower accuracy due to rounding differences but faster
 			double deviation_reciprocal = feature_attribs.deviationReciprocal;
-			diff += FastExp(-diff * deviation_reciprocal) * (3 * deviation + diff) * 0.5;
+			diff += std::expf(static_cast<float>(-diff * deviation_reciprocal)) * (3 * deviation + diff) * 0.5;
 			if(!surprisal_transform)
 				return diff;
 			else
@@ -269,7 +269,8 @@ public:
 		const double term = diff / (2.0 * deviation); //diff / (2*sigma)
 		if(high_accuracy)
 		{
-			diff += s_two_over_sqrt_pi * deviation * std::exp(-term * term) - diff * std::erfc(term); //2*sigma*(e^(-1*(diff^2)/((2*simga)^2)))/sqrt(pi) - diff*erfc(diff/(2*sigma))
+			//2*sigma*(e^(-1*(diff^2)/((2*simga)^2)))/sqrt(pi) - diff*erfc(diff/(2*sigma))
+			diff += s_two_over_sqrt_pi * deviation * std::exp(-term * term) - diff * std::erfc(term);
 			if(!surprisal_transform)
 				return diff;
 			else
@@ -277,7 +278,8 @@ public:
 		}
 		else //!high_accuracy
 		{
-			diff += s_two_over_sqrt_pi * deviation * FastExp(-term * term) - diff * std::erfc(term); //2*sigma*(e^(-1*(diff^2)/((2*simga)^2)))/sqrt(pi) - diff*erfc(diff/(2*sigma))
+			//2*sigma*(e^(-1*(diff^2)/((2*simga)^2)))/sqrt(pi) - diff*erfc(diff/(2*sigma))
+			diff += s_two_over_sqrt_pi * deviation * std::expf(static_cast<float>(-term * term)) - diff * std::erfc(term);
 			if(!surprisal_transform)
 				return diff;
 			else

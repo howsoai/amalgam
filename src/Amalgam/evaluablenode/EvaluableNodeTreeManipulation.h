@@ -55,7 +55,7 @@ inline double NumberCommonality(double difference, double a, double b)
 {
 	double max_abs = std::max(std::fabs(a), std::fabs(b));
 	//since this is called frequently in comparing and merging, and perfect accuracy isn't required, just use fast version
-	double difference_commonality = FastExp(-difference / max_abs);
+	double difference_commonality = std::expf(static_cast<float>(-difference / max_abs));
 	return difference_commonality;
 }
 

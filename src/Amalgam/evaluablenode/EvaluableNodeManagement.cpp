@@ -328,15 +328,14 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 	if(nodes.size() == 0)
 		return;
 
-	//if any group of nodes on the top are ready to be cleaned up cheaply, do so first
-	while(firstUnusedNodeIndex > 0 && nodes[firstUnusedNodeIndex - 1] != nullptr
-			&& nodes[firstUnusedNodeIndex - 1]->GetType() == ENT_DEALLOCATED)
-		firstUnusedNodeIndex--;
-
 	size_t original_num_nodes = firstUnusedNodeIndex;
-
 	//clear firstUnusedNodeIndex to signal to other threads that they won't need to do garbage collection
 	firstUnusedNodeIndex = 0;
+
+	//if any group of nodes on the top are ready to be cleaned up cheaply, do so first
+	while(original_num_nodes > 0 && nodes[original_num_nodes - 1] != nullptr
+			&& nodes[original_num_nodes - 1]->GetType() == ENT_DEALLOCATED)
+		original_num_nodes--;
 
 	//set to contain everything that is referenced
 	MarkAllReferencedNodesInUse(original_num_nodes);

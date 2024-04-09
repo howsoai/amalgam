@@ -147,12 +147,12 @@ public:
 		if(references_container.size() == 0)
 			return;
 
-		//only need a ReadLock because the count is atomic
-		Concurrency::ReadLock lock(sharedMutex);
-
 		//as it goes through, if any id needs removal, will set this to true so that
 		// removal can be done after refernce count decreases are done
 		bool ids_need_removal = false;
+
+		//only need a ReadLock because the count is atomic
+		Concurrency::ReadLock lock(sharedMutex);
 
 		for(auto r : references_container)
 		{
@@ -201,9 +201,21 @@ public:
 	inline void DestroyStringReferences(StringID sid_1, StringID sid_2)
 	{
 		//skip overhead if possible
-		if(IsStringIDStatic(sid_1) && IsStringIDStatic(sid_2))
-			return;
+		bool sid_1_static = IsStringIDStatic(sid_1);
+		bool sid_2_static = IsStringIDStatic(sid_2);
+		if(sid_1_static || sid_2_static)
+		{
+			//if both are static, exit
+			if(sid_1_static && sid_2_static)
+				return;
 
+			//one is static, destroy the other
+			if(sid_1_static)
+				DestroyStringReference(sid_2_static);
+			else
+				DestroyStringReference(sid_1_static);
+		}
+		
 		std::array<StringInternPool::StringID, 2> string_ids = { sid_1, sid_2 };
 		DestroyStringReferences(string_ids);
 	}

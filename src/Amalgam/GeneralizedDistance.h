@@ -258,6 +258,9 @@ public:
 		else //!high_accuracy
 		{
 			//multiplying by the reciprocal is lower accuracy due to rounding differences but faster
+			//cast to float before taking the exponent since it's faster than a double, and because if the
+			//difference divided by the deviation exceeds the single precision floating point range,
+			//it will just set the term to zero, which is appropriate
 			double deviation_reciprocal = feature_attribs.deviationReciprocal;
 			diff += std::exp(static_cast<float>(-diff * deviation_reciprocal)) * (3 * deviation + diff) * 0.5;
 			if(!surprisal_transform)
@@ -278,6 +281,10 @@ public:
 		}
 		else //!high_accuracy
 		{
+			//multiplying by the reciprocal is lower accuracy due to rounding differences but faster
+			//cast to float before taking the exponent since it's faster than a double, and because if the
+			//difference divided by the deviation exceeds the single precision floating point range,
+			//it will just set the term to zero, which is appropriate
 			//2*sigma*(e^(-1*(diff^2)/((2*simga)^2)))/sqrt(pi) - diff*erfc(diff/(2*sigma))
 			diff += s_two_over_sqrt_pi * deviation * std::exp(static_cast<float>(-term * term)) - diff * std::erfc(term);
 			if(!surprisal_transform)

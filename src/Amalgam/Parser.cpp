@@ -449,7 +449,7 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *new_token)
 
 		//invalid opcode, warn if possible and store the identifier as a string
 		if(!originalSource.empty())
-			std::cerr << "Warning: " << " Invalid opcode at line " << lineNumber << " of " << originalSource << std::endl;
+			std::cerr << "Warning: " << " Invalid opcode at line " << lineNumber + 1 << " of " << originalSource << std::endl;
 
 		new_token->SetType(ENT_STRING, evaluableNodeManager, false);
 		new_token->SetStringValue(token);
@@ -596,7 +596,7 @@ EvaluableNode *Parser::ParseNextBlock()
 			{
 				n->SetType(ENT_NULL, evaluableNodeManager);
 				if(!originalSource.empty())
-					std::cerr << "Warning: "  << " Invalid opcode at line " << lineNumber << " of " << originalSource << std::endl;
+					std::cerr << "Warning: "  << " Invalid opcode at line " << lineNumber + 1 << " of " << originalSource << std::endl;
 			}
 		}
 

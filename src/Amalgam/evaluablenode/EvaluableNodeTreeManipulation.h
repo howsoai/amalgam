@@ -54,8 +54,11 @@ typedef FastHashMap<std::pair<EvaluableNode *, EvaluableNode *>, MergeMetricResu
 inline double NumberCommonality(double difference, double a, double b)
 {
 	double max_abs = std::max(std::fabs(a), std::fabs(b));
-	//since this is called frequently in comparing and merging, and perfect accuracy isn't required, just use fast version
-	double difference_commonality = FastExp(-difference / max_abs);
+	//since this is called frequently in comparing and merging, and perfect accuracy isn't required,
+	//cast to float before taking the exponent since it's faster than a double, and because if the
+	//difference divided by the range exceeds the single precision floating point range,
+	//it will just set the term to zero, which is appropriate
+	double difference_commonality = std::exp(static_cast<float>(-difference / max_abs));
 	return difference_commonality;
 }
 

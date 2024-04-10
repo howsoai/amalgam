@@ -303,16 +303,17 @@ void Parser::SkipWhitespaceAndAccumulateAttributes(EvaluableNode *target)
 	}
 
 	//if labeling source, prepend as comment
+	//add 1 to line and column to make them 1-based instead of 0 based
 	if(debugSources)
 	{
 		std::string new_comment = sourceCommentPrefix;
-		new_comment += std::to_string(lineNumber);
+		new_comment += std::to_string(lineNumber + 1);
 		new_comment += ' ';
 
 		std::string_view line_to_opcode(&(*code)[lineStartPos], pos - lineStartPos);
 		size_t column_number = StringManipulation::GetNumUTF8Characters(line_to_opcode);
 
-		new_comment += std::to_string(column_number);
+		new_comment += std::to_string(column_number + 1);
 		new_comment += ' ';
 		new_comment += originalSource;
 		new_comment += "\r\n";

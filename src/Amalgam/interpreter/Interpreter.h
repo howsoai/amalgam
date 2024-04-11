@@ -92,14 +92,12 @@ public:
 	//collects garbage on evaluableNodeManager
 	__forceinline void CollectGarbage()
 	{
-		if(!evaluableNodeManager->RecommendGarbageCollection())
-			return;
-
-	#ifdef MULTITHREAD_SUPPORT
-		evaluableNodeManager->CollectGarbage(&memoryModificationLock);
-	#else
-		evaluableNodeManager->CollectGarbage();
-	#endif
+		if(evaluableNodeManager->RecommendGarbageCollection())
+			evaluableNodeManager->CollectGarbage(
+		#ifdef MULTITHREAD_SUPPORT
+				&memoryModificationLock
+		#endif
+			);
 	}
 
 	//pushes new_context on the stack; new_context should be a unique associative array,

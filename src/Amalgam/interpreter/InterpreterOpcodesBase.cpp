@@ -722,10 +722,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 				#endif
 
 					//don't need to do anything if the variable already exists
+					//but can't insert the variable here because it will mask definitions further up the stack that
+					//may be used in the declare
 					if(scope_mcn.find(cn_id) != end(scope_mcn))
-						continue;
+					{
+						//if it can't insert the new variable because it already exists,
+						// then try to free the default / new value that was attempted to be assigned
+						if(required_vars.unique && !required_vars.GetNeedCycleCheck())
+							evaluableNodeManager->FreeNodeTree(cn);
 
-					PushNewConstructionContext(required_vars, required_vars, EvaluableNodeImmediateValueWithType(cn_id), nullptr);
+						continue;
+					}
+
+					PushNewConstructionContext(required_vars, nullptr, EvaluableNodeImmediateValueWithType(cn_id), nullptr);
 					EvaluableNodeReference value = InterpretNode(cn);
 					PopConstructionContext();
 

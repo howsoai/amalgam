@@ -5,7 +5,7 @@
 #include <cstdint>
 
 #if defined(_MSC_VER)
-//Microsoft 
+//Microsoft
 #define AMALGAM_EXPORT __declspec(dllexport)
 #elif defined(__GNUC__)
 //GCC
@@ -25,7 +25,8 @@ extern "C"
 	};
 
 	//loads the entity specified into handle
-	AMALGAM_EXPORT LoadEntityStatus LoadEntity(char *handle, char *path, bool persistent, bool load_contained_entities, char *write_log_filename, char *print_log_filename);
+	AMALGAM_EXPORT LoadEntityStatus LoadEntity(char *handle, char *path, bool persistent, bool load_contained_entities,
+		bool escape_filename, bool escape_contained_filenames, char *write_log_filename, char *print_log_filename);
 
 	//loads the entity specified into handle
 	//TODO 19512: deprecated - legacy method to support wrappers that can't call LoadEntity returning a LoadEntityStatus yet
@@ -75,7 +76,7 @@ extern "C"
 	AMALGAM_EXPORT void   SetStringList(char *handle, char *label, char **list, size_t len);
 
 	AMALGAM_EXPORT void   SetJSONToLabel(char *handle, char *label, char *json);
-	
+
 	AMALGAM_EXPORT wchar_t *GetJSONPtrFromLabelWide(char *handle, char *label);
 	AMALGAM_EXPORT char *GetJSONPtrFromLabel(char *handle, char *label);
 

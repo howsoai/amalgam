@@ -12,7 +12,7 @@
 
 /*
  * This class constitutes the C++ backing for the C API, and is fully functional as a C++ API.
- * 
+ *
  * Amalgam functions through the use of "Entities" which will have a predetermined set of "labels".
  * Loading an .amlg file with the LoadEntity command will assign the entity to a given handle.
  * The majority of the methods provided here allow manipulation of data associated with a label within an entity.
@@ -37,7 +37,8 @@ public:
 	};
 
 	LoadEntityStatus LoadEntity(std::string &handle, std::string &path, bool persistent, bool load_contained_entities,
-		std::string &write_log_filename, std::string &print_log_filename, std::string rand_seed = std::string(""));
+		bool escape_filename, bool escape_contained_filenames, std::string &write_log_filename, std::string &print_log_filename,
+		std::string rand_seed = std::string(""));
 	LoadEntityStatus VerifyEntity(std::string &path);
 
 	bool CloneEntity(std::string &handle, std::string &cloned_handle, std::string &path, bool persistent,
@@ -66,7 +67,7 @@ public:
 	void GetNumberList(EvaluableNode *label_val, double *out_arr, size_t len);
 	void SetNumberList(std::string &handle, std::string &label, double *arr, size_t len);
 	void AppendNumberList(std::string &handle, std::string &label, double *arr, size_t len);
-	
+
 	size_t GetNumberMatrixWidth(std::string &handle, std::string &label);
 	size_t GetNumberMatrixHeight(std::string &handle, std::string &label);
 	void GetNumberMatrix(std::string &handle, std::string &label, double *out_arr, size_t w, size_t h);
@@ -216,7 +217,7 @@ protected:
 		const auto &[bundle_handle, bundle_inserted] = handleToBundle.emplace(handle, bundle);
 		if(!bundle_inserted)
 		{
-			//erase the previous			
+			//erase the previous
 			if(bundle_handle->second != nullptr)
 				delete bundle_handle->second;
 
@@ -244,7 +245,7 @@ protected:
 #ifdef MULTITHREAD_INTERFACE
 	Concurrency::ReadWriteMutex mutex;
 #endif
-	
+
 	//map between entity name and the bundle of the entity and its listeners, etc.
 	FastHashMap<std::string, EntityListenerBundle *> handleToBundle;
 };

@@ -36,6 +36,8 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 	std::string data;
 	std::string persistent;
 	std::string use_contained;
+	std::string escape_filename;
+	std::string escape_contained_filenames;
 	std::string print_listener_path;
 	std::string transaction_listener_path;
 	std::string response;
@@ -53,25 +55,28 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 		if(command == "LOAD_ENTITY")
 		{
 			std::vector<std::string> command_tokens = StringManipulation::SplitArgString(input);
-			if(command_tokens.size() >= 4)
+			if(command_tokens.size() >= 6)
 			{
 				handle = command_tokens[0];
 				data = command_tokens[1];  // path to amlg file
 				persistent = command_tokens[2];
 				use_contained = command_tokens[3];
+				escape_filename = command_tokens[4];
+				escape_contained_filenames = command_tokens[5];
 
-				if(command_tokens.size() >= 5)
-					print_listener_path = command_tokens[4];
+				if(command_tokens.size() >= 7)
+					print_listener_path = command_tokens[6];
 				else
 					print_listener_path = "";
 
-				if(command_tokens.size() >= 6)
-					transaction_listener_path = command_tokens[5];
+				if(command_tokens.size() >= 8)
+					transaction_listener_path = command_tokens[7];
 				else
 					transaction_listener_path = "";
 
 				std::string new_rand_seed = random_stream.CreateOtherStreamStateViaString("trace");
-				auto status = entint.LoadEntity(handle, data, persistent == "true", use_contained == "true", transaction_listener_path, print_listener_path, new_rand_seed);
+				auto status = entint.LoadEntity(handle, data, persistent == "true", use_contained == "true",
+					escape_filename == "true", escape_contained_filenames == "true", transaction_listener_path, print_listener_path, new_rand_seed);
 				response = status.loaded ? SUCCESS_RESPONSE : FAILURE_RESPONSE;
 			}
 			else

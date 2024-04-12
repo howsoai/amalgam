@@ -1,4 +1,4 @@
-//project headers: 
+//project headers:
 #include "Amalgam.h"
 #include "AmalgamVersion.h"
 #include "Concurrency.h"
@@ -85,19 +85,20 @@ extern "C"
 	// api methods
 	// ************************************
 
-	LoadEntityStatus LoadEntity(char *handle, char *path, bool persistent, bool load_contained_entities, char *write_log_filename, char *print_log_filename)
+	LoadEntityStatus LoadEntity(char *handle, char *path, bool persistent, bool load_contained_entities,
+		bool escape_filename, bool escape_contained_filenames, char *write_log_filename, char *print_log_filename)
 	{
 		std::string h(handle);
 		std::string p(path);
 		std::string wlfname(write_log_filename);
 		std::string plfname(print_log_filename);
-		auto status = entint.LoadEntity(h, p, persistent, load_contained_entities, wlfname, plfname);
+		auto status = entint.LoadEntity(h, p, persistent, load_contained_entities, escape_filename, escape_contained_filenames, wlfname, plfname);
 		return ConvertLoadStatusToCStatus(status);
 	}
 
 	bool LoadEntityLegacy(char *handle, char *path, bool persistent, bool load_contained_entities, char *write_log_filename, char *print_log_filename)
 	{
-		auto status = LoadEntity(handle, path, persistent, load_contained_entities, write_log_filename, print_log_filename);
+		auto status = LoadEntity(handle, path, persistent, load_contained_entities, true, false, write_log_filename, print_log_filename);
 
 		delete[] status.message;
 		delete[] status.version;
@@ -179,7 +180,7 @@ extern "C"
 		return StringToCharPtr(ct);
 	}
 
-	wchar_t *ExecuteEntityJsonPtrWide(char *handle, char *label, char *json) 
+	wchar_t *ExecuteEntityJsonPtrWide(char *handle, char *label, char *json)
 	{
 		std::string h(handle);
 		std::string l(label);
@@ -310,7 +311,7 @@ extern "C"
 		entint.SetNumberMatrix(h, l, list, rows, columns);
 	}
 
-	size_t GetNumberListLength(char *handle, char *label) 
+	size_t GetNumberListLength(char *handle, char *label)
 	{
 		std::string h(handle);
 		std::string l(label);
@@ -318,7 +319,7 @@ extern "C"
 		return entint.GetNumberListLength(h, l);
 	}
 
-	size_t GetNumberMatrixWidth(char *handle, char *label) 
+	size_t GetNumberMatrixWidth(char *handle, char *label)
 	{
 		std::string h(handle);
 		std::string l(label);
@@ -326,7 +327,7 @@ extern "C"
 		return entint.GetNumberMatrixWidth(h, l);
 	}
 
-	size_t GetNumberMatrixHeight(char *handle, char *label) 
+	size_t GetNumberMatrixHeight(char *handle, char *label)
 	{
 		std::string h(handle);
 		std::string l(label);
@@ -334,7 +335,7 @@ extern "C"
 		return entint.GetNumberMatrixHeight(h, l);
 	}
 
-	double *GetNumberListPtr(char *handle, char *label) 
+	double *GetNumberListPtr(char *handle, char *label)
 	{
 		std::string h(handle);
 		std::string l(label);
@@ -347,7 +348,7 @@ extern "C"
 		return ret;
 	}
 
-	double *GetNumberMatrixPtr(char *handle, char *label) 
+	double *GetNumberMatrixPtr(char *handle, char *label)
 	{
 		std::string h(handle);
 		std::string l(label);
@@ -391,7 +392,7 @@ extern "C"
 		entint.SetStringList(h, l, list, len);
 	}
 
-	size_t GetStringListLength(char *handle, char *label) 
+	size_t GetStringListLength(char *handle, char *label)
 	{
 		std::string h(handle);
 		std::string l(label);

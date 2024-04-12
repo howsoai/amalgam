@@ -131,7 +131,7 @@ public:
 
 	//enqueues a task into the thread pool comprised of a function and arguments, automatically inferring the function type
 	template<class FunctionType, class ...ArgsType>
-	std::future<typename std::invoke_result<FunctionType, ArgsType ...>::type> EnqueueTask(FunctionType &&function, ArgsType &&...args)
+	inline std::future<typename std::invoke_result<FunctionType, ArgsType ...>::type> EnqueueTask(FunctionType &&function, ArgsType &&...args)
 	{
 		using return_type = typename std::invoke_result<FunctionType, ArgsType ...>::type;
 
@@ -227,7 +227,7 @@ public:
 	//if fail_unless_task_queue_availability is true and there are backlogged tasks,
 	// then it will not begin the task batch and return false; this is useful for preventing deadlock
 	// when attempting to enqueue tasks which are subtasks of other tasks
-	BatchTaskEnqueueLockAndLayer BeginEnqueueBatchTask(bool fail_unless_task_queue_availability = true)
+	inline BatchTaskEnqueueLockAndLayer BeginEnqueueBatchTask(bool fail_unless_task_queue_availability = true)
 	{
 		BatchTaskEnqueueLockAndLayer btel(&waitForTask, threadsMutex);
 
@@ -245,7 +245,7 @@ public:
 
 	//enqueues a task into the thread pool comprised of a function and arguments, automatically inferring the function type
 	template<class FunctionType, class ...ArgsType>
-	std::future<typename std::invoke_result<FunctionType, ArgsType ...>::type> BatchEnqueueTask(FunctionType &&function, ArgsType &&...args)
+	inline std::future<typename std::invoke_result<FunctionType, ArgsType ...>::type> BatchEnqueueTask(FunctionType &&function, ArgsType &&...args)
 	{
 		using return_type = typename std::invoke_result<FunctionType, ArgsType ...>::type;
 

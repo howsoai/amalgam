@@ -74,15 +74,18 @@ std::tuple<std::string, std::string, bool> FileSupportCAML::ReadHeader(std::ifst
 	header_size += sizeof(magic);
 
 	auto num_bytes_read = stream.gcount();
+	std::string version;
 	if(num_bytes_read != sizeof(magic))
+	{
 		return std::make_tuple("Cannot read CAML header", "", false);
-	else if(memcmp(magic, s_magic_number, sizeof(magic)) == 0)
+	}
+	else if(std::memcmp(&magic[0], &s_magic_number[0], sizeof(magic)) == 0)
 	{
 		uint32_t major = 0, minor = 0, patch = 0;
 		if(!ReadVersion(stream, major, minor, patch))
 			return std::make_tuple("Cannot read CAML version", "", false);
 		header_size += sizeof(major) * 3;
-		std::string version = std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(patch);
+		version = std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(patch);
 
 		//validate version
 		auto [error_message, success] = AssetManager::ValidateVersionAgainstAmalgam(version);
@@ -94,7 +97,7 @@ std::tuple<std::string, std::string, bool> FileSupportCAML::ReadHeader(std::ifst
 		return std::make_tuple("CAML does not contain a valid header", "", false);
 	}
 
-	return std::make_tuple("", "", true);
+	return std::make_tuple("", version, true);
 }
 
 bool FileSupportCAML::WriteHeader(std::ofstream &stream)

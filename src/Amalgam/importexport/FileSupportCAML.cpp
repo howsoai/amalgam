@@ -79,7 +79,11 @@ std::tuple<std::string, std::string, bool> FileSupportCAML::ReadHeader(std::ifst
 	{
 		return std::make_tuple("Cannot read CAML header", version, false);
 	}
-	else if(std::memcmp(&magic[0], &s_magic_number[0], sizeof(magic)) == 0)
+	else if(std::memcmp(&magic[0], &s_magic_number[0], sizeof(magic)) != 0)
+	{
+		return std::make_tuple("CAML does not contain a valid header", version, false);
+	}
+	else
 	{
 		uint32_t major = 0, minor = 0, patch = 0;
 		if(!ReadVersion(stream, major, minor, patch))
@@ -92,10 +96,7 @@ std::tuple<std::string, std::string, bool> FileSupportCAML::ReadHeader(std::ifst
 		if(!success)
 			return std::make_tuple(error_message, version, false);
 	}
-	else
-	{
-		return std::make_tuple("CAML does not contain a valid header", version, false);
-	}
+	
 
 	return std::make_tuple("", version, true);
 }

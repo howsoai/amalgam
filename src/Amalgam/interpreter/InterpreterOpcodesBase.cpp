@@ -710,35 +710,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 
 		if(required_vars != nullptr && required_vars->IsAssociativeArray())
 		{
-			//check each of the required variables and put into the stack if appropriate
-			for(auto &[cn_id, cn] : required_vars->GetMappedChildNodesReference())
+		#ifdef MULTITHREAD_SUPPORT
+			Concurrency::WriteLock write_lock;
+			bool need_write_lock = (callStackMutex != nullptr && GetCallStackDepth() < callStackUniqueAccessStartingDepth);
+			if(need_write_lock)
+				LockWithoutBlockingGarbageCollection(*callStackMutex, write_lock, required_vars);
+		#endif
+
+			if(!need_to_interpret)
 			{
-				if(need_to_interpret && cn != nullptr && !cn->GetIsIdempotent())
+				//check each of the required variables and put into the stack if appropriate
+				for(auto &[cn_id, cn] : required_vars->GetMappedChildNodesReference())
 				{
-				#ifdef MULTITHREAD_SUPPORT
-					Concurrency::WriteLock write_lock;
-					if(callStackMutex != nullptr && GetCallStackDepth() < callStackUniqueAccessStartingDepth)
-						LockWithoutBlockingGarbageCollection(*callStackMutex, write_lock, required_vars);
-				#endif
-
-					//don't need to do anything if the variable already exists
-					if(scope_mcn.find(cn_id) != end(scope_mcn))
-						continue;
-
-					PushNewConstructionContext(required_vars, required_vars, EvaluableNodeImmediateValueWithType(cn_id), nullptr);
-					EvaluableNodeReference value = InterpretNode(cn);
-					PopConstructionContext();
-
-					scope->SetMappedChildNode(cn_id, value, false);
-				}
-				else //just insert if it doesn't exist
-				{
-				#ifdef MULTITHREAD_SUPPORT
-					Concurrency::WriteLock write_lock;
-					if(callStackMutex != nullptr && GetCallStackDepth() < callStackUniqueAccessStartingDepth)
-						LockWithoutBlockingGarbageCollection(*callStackMutex, write_lock, required_vars);
-				#endif
-
 					auto [inserted, node_ptr] = scope->SetMappedChildNode(cn_id, cn, false);
 					if(!inserted)
 					{
@@ -748,6 +731,53 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 							evaluableNodeManager->FreeNodeTree(cn);
 					}
 				}
+			}
+			else //need_to_interpret
+			{
+				PushNewConstructionContext(required_vars, nullptr,
+					EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
+
+				//check each of the required variables and put into the stack if appropriate
+				for(auto &[cn_id, cn] : required_vars->GetMappedChildNodesReference())
+				{
+					if(cn == nullptr || cn->GetIsIdempotent())
+					{
+						auto [inserted, node_ptr] = scope->SetMappedChildNode(cn_id, cn, false);
+						if(!inserted)
+						{
+							//if it can't insert the new variable because it already exists,
+							// then try to free the default / new value that was attempted to be assigned
+							if(required_vars.unique && !required_vars.GetNeedCycleCheck())
+								evaluableNodeManager->FreeNodeTree(cn);
+						}
+					}
+					else //need to interpret
+					{
+						//don't need to do anything if the variable already exists
+						//but can't insert the variable here because it will mask definitions further up the stack that
+						//may be used in the declare
+						if(scope_mcn.find(cn_id) != end(scope_mcn))
+							continue;
+
+					#ifdef MULTITHREAD_SUPPORT
+						//unlock before interpreting
+						if(need_write_lock)
+							write_lock.unlock();
+					#endif
+
+						SetTopCurrentIndexInConstructionStack(cn_id);
+						EvaluableNodeReference value = InterpretNode(cn);
+						
+					#ifdef MULTITHREAD_SUPPORT
+						//relock if needed before assigning the value
+						if(need_write_lock)
+							LockWithoutBlockingGarbageCollection(*callStackMutex, write_lock, required_vars);
+					#endif
+
+						scope->SetMappedChildNode(cn_id, value, false);
+					}
+				}
+				PopConstructionContext();
 			}
 
 			//free the vars / assoc node

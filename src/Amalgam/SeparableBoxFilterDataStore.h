@@ -142,12 +142,14 @@ public:
 			std::vector<std::future<void>> columns_completed;
 			columns_completed.reserve(num_columns);
 
+			auto enqueue_task_lock = Concurrency::urgentThreadPool.BeginEnqueueBatchTask(false);
 			for(size_t i = num_previous_columns; i < num_columns; i++)
 			{
 				columns_completed.emplace_back(
-					Concurrency::urgentThreadPool.EnqueueTask([this, &entities, i]() { BuildLabel(i, entities); })
+					Concurrency::urgentThreadPool.BatchEnqueueTask([this, &entities, i]() { BuildLabel(i, entities); })
 				);
 			}
+			enqueue_task_lock.Unlock();
 
 			Concurrency::urgentThreadPool.ChangeCurrentThreadStateFromActiveToWaiting();
 			for(auto &future : columns_completed)

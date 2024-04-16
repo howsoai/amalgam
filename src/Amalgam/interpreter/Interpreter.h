@@ -92,14 +92,12 @@ public:
 	//collects garbage on evaluableNodeManager
 	__forceinline void CollectGarbage()
 	{
-		if(!evaluableNodeManager->RecommendGarbageCollection())
-			return;
-
-	#ifdef MULTITHREAD_SUPPORT
-		evaluableNodeManager->CollectGarbage(&memoryModificationLock);
-	#else
-		evaluableNodeManager->CollectGarbage();
-	#endif
+		if(evaluableNodeManager->RecommendGarbageCollection())
+			evaluableNodeManager->CollectGarbage(
+		#ifdef MULTITHREAD_SUPPORT
+				&memoryModificationLock
+		#endif
+			);
 	}
 
 	//pushes new_context on the stack; new_context should be a unique associative array,
@@ -1007,11 +1005,12 @@ protected:
 	Concurrency::ReadWriteMutex *callStackMutex;
 
 	//buffer to store read locks for deep locking entities
-	Concurrency::ReadLocksBuffer entityReadLockBuffer;
+	//one per thread to save memory on Interpreter objects
+	thread_local static Concurrency::ReadLocksBuffer entityReadLockBuffer;
 
 	//buffer to store write locks for deep locking entities
-	Concurrency::WriteLocksBuffer entityWriteLockBuffer;
-
+	//one per thread to save memory on Interpreter objects
+	thread_local static Concurrency::WriteLocksBuffer entityWriteLockBuffer;
 #endif
 
 	//opcode function pointers

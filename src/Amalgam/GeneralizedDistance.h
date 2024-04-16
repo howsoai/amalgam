@@ -526,6 +526,7 @@ public:
 		{
 			//need to have at least two classes in existence
 			double nominal_count = std::max(featureAttribs[index].typeAttributes.nominalCount, 2.0);
+			//TODO 17631: change to be weighted average: prob of nominal * deviation of random guessing
 			double prob_max_entropy_match = 1 / nominal_count;
 
 			//find probability that the correct class was selected
@@ -616,6 +617,7 @@ public:
 	{
 		//need to have at least two classes in existence
 		double nominal_count = std::max(featureAttribs[index].typeAttributes.nominalCount, 2.0);
+		//TODO 17631: change to be weighted average: prob of nominal * deviation of random guessing
 		double prob_max_entropy_match = 1 / nominal_count;
 
 		//find probability that the correct class was selected
@@ -791,6 +793,7 @@ public:
 			{
 				//need to have at least two classes in existence
 				double nominal_count = std::max(featureAttribs[index].typeAttributes.nominalCount, 2.0);
+				//TODO 17631: change to be weighted average: prob of nominal * deviation of random guessing
 				double prob_max_entropy_match = 1 / nominal_count;
 
 				//find probability that the correct class was selected

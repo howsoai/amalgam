@@ -237,8 +237,10 @@ protected:
 		if(bundle_handle == end(handleToBundle) || bundle_handle->second == nullptr)
 			return;
 
-		handleToBundle.erase(handle);
+		//because handleToBundle is a flat hashmap, erasure will invalidate the iterator
+		//so delete first
 		delete bundle_handle->second;
+		handleToBundle.erase(handle);
 	}
 
 	//for concurrent reading and writing the interface management data below

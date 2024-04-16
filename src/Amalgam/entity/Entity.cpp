@@ -354,6 +354,14 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 	bool any_successful_assignment = false;
 	bool all_successful_assignments = true;
 	auto &new_label_values_mcn = new_label_values->GetMappedChildNodesReference();
+
+	//write changes to write listeners first, as code below may invalidate portions of new_label_values
+	if(write_listeners != nullptr)
+	{
+		for(auto &wl : *write_listeners)
+			wl->LogWriteValuesToEntity(this, new_label_values, direct_set);
+	}
+
 	for(auto &[assignment_id, assignment] : new_label_values_mcn)
 	{
 		StringInternPool::StringID variable_sid = assignment_id;
@@ -393,11 +401,6 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 		}
 
 		asset_manager.UpdateEntity(this);
-		if(write_listeners != nullptr)
-		{
-			for(auto &wl : *write_listeners)
-				wl->LogWriteValuesToEntity(this, new_label_values, direct_set);
-		}
 
 		if(num_new_nodes_allocated != nullptr)
 		{

@@ -418,6 +418,21 @@ jobs:
         npm install
         npm run test
 
+  generate-changelog:
+    if: inputs.build-type == 'release'
+    secrets: inherit
+    needs:
+      - smoke-test-linux-amd64
+      - smoke-test-linux-arm64
+      - smoke-test-linux-arm64_8a
+      - smoke-test-macos-amd64
+      - smoke-test-macos-amd64-large
+      - smoke-test-macos-amd64-on-arm64
+      - smoke-test-macos-arm64
+      - smoke-test-windows-amd64
+      - smoke-test-wasm64
+    uses: "howsoai/.github/.github/workflows/release-notes.yml@main"
+
   release:
     if: inputs.build-type == 'release'
     needs:
@@ -430,6 +445,7 @@ jobs:
       - smoke-test-macos-arm64
       - smoke-test-windows-amd64
       - smoke-test-wasm64
+      - generate-changelog
     runs-on: ubuntu-latest
     steps:
 
@@ -443,7 +459,7 @@ jobs:
         commit: ${{ github.sha }}
         name: "Amalgam ${{ inputs.version }}"
         artifactErrorsFailBuild: true
-        generateReleaseNotes: true
+        body: ${{ needs.generate-changelog.outputs.changelog }}
         makeLatest: legacy
         artifacts: amalgam-*/amalgam-*.tar.gz
         artifactContentType: application/gzip

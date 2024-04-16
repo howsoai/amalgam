@@ -822,9 +822,11 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 		{
 			//some compilers are pedantic about the types passed into the lambda, so make a copy
 			EvaluableNode *en = enr;
-
-			if(en != nullptr)
+			//only enqueue a task if the top node isn't known to be in use
+			if(en != nullptr && !en->GetKnownToBeInUseAtomic())
 			{
+				//don't enqueue in batch, as threads racing ahead of others will reduce memory
+				//contention
 				nodesCompleted.emplace_back(
 					Concurrency::urgentThreadPool.EnqueueTask(
 						[en]

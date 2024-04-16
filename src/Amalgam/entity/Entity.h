@@ -413,18 +413,14 @@ public:
 	//if multithreaded, then memory_modification_lock is the lock used for memoryModificationMutex
 	__forceinline void CollectGarbage(Concurrency::ReadLock *memory_modification_lock)
 	{
-		if(!evaluableNodeManager.RecommendGarbageCollection())
-			return;
-
-		evaluableNodeManager.CollectGarbage(memory_modification_lock);
+		if(evaluableNodeManager.RecommendGarbageCollection())
+			evaluableNodeManager.CollectGarbage(memory_modification_lock);
 	}
 #else
 	__forceinline void CollectGarbage()
 	{
-		if(!evaluableNodeManager.RecommendGarbageCollection())
-			return;
-
-		evaluableNodeManager.CollectGarbage();
+		if(evaluableNodeManager.RecommendGarbageCollection())
+			evaluableNodeManager.CollectGarbage();
 	}
 #endif
 

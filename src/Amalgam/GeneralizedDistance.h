@@ -100,6 +100,40 @@ public:
 			typeAttributes.maxCyclicDifference = std::numeric_limits<double>::quiet_NaN();
 		}
 
+		//returns true if the feature is nominal
+		__forceinline bool IsFeatureNominal()
+		{
+			return (featureType <= GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE);
+		}
+
+		//returns true if the feature is nominal
+		__forceinline bool IsFeatureContinuous()
+		{
+			return (featureType >= GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC);
+		}
+
+		//returns true if the feature is cyclic
+		__forceinline bool IsFeatureCyclic()
+		{
+			return (featureType == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC);
+		}
+
+		//returns true if the feature has a deviation
+		__forceinline bool DoesFeatureHaveDeviation()
+		{
+			return (deviation > 0);
+		}
+
+		//returns true if the feature is a nominal that only has one difference value for match and one for nonmatch
+		__forceinline bool IsFeatureSymmetricNominal()
+		{
+			if(!IsFeatureNominal())
+				return false;
+
+			return (nominalNumberSparseDeviationMatrix.deviationValues.size() == 0
+				&& nominalStringSparseDeviationMatrix.deviationValues.size() == 0);
+		}
+
 		//the type of comparison for each feature
 		// this type is 32-bit aligned to make sure the whole structure is aligned
 		FeatureDifferenceType featureType;
@@ -310,36 +344,31 @@ public:
 	//returns true if the feature is nominal
 	__forceinline bool IsFeatureNominal(size_t feature_index)
 	{
-		return (featureAttribs[feature_index].featureType <= GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE);
+		return featureAttribs[feature_index].IsFeatureNominal();
 	}
 
 	//returns true if the feature is nominal
 	__forceinline bool IsFeatureContinuous(size_t feature_index)
 	{
-		return (featureAttribs[feature_index].featureType >= GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC);
+		return featureAttribs[feature_index].IsFeatureContinuous();
 	}
 
 	//returns true if the feature is cyclic
 	__forceinline bool IsFeatureCyclic(size_t feature_index)
 	{
-		return (featureAttribs[feature_index].featureType == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC);
+		return featureAttribs[feature_index].IsFeatureCyclic();
 	}
 
 	//returns true if the feature has a deviation
 	__forceinline bool DoesFeatureHaveDeviation(size_t feature_index)
 	{
-		return (featureAttribs[feature_index].deviation > 0);
+		return featureAttribs[feature_index].DoesFeatureHaveDeviation();
 	}
 
 	//returns true if the feature is a nominal that only has one difference value for match and one for nonmatch
 	__forceinline bool IsFeatureSymmetricNominal(size_t feature_index)
 	{
-		if(!IsFeatureNominal(feature_index))
-			return false;
-
-		auto &feature_attribs = featureAttribs[feature_index];
-		return (feature_attribs.nominalNumberSparseDeviationMatrix.deviationValues.size() == 0
-			&& feature_attribs.nominalStringSparseDeviationMatrix.deviationValues.size() == 0);
+		return featureAttribs[feature_index].IsFeatureSymmetricNominal();
 	}
 
 	//returns true if a known to unknown distance term would be less than or same as an exact match
@@ -998,7 +1027,7 @@ protected:
 		for(size_t i = 0; i < featureAttribs.size(); i++)
 		{
 			auto &feature_attribs = featureAttribs[i];
-			if(IsFeatureNominal(i))
+			if(feature_attribs.IsFeatureNominal())
 			{
 				//ensure if a feature has deviations they're not too small to underflow
 				if(DoesFeatureHaveDeviation(i))
@@ -1126,6 +1155,12 @@ public:
 	inline RepeatedGeneralizedDistanceEvaluator(GeneralizedDistanceEvaluator *dist_evaluator)
 		: distEvaluator(dist_evaluator)
 	{	}
+
+	//for the feature index, computes and stores the distance terms for nominal values
+	inline void ComputeAndStoreNominalDistanceTerms(size_t index)
+	{
+		//TODO 17631: implement this
+	}
 
 	//for the feature index, computes and stores the distance terms as measured from value to each interned value
 	inline void ComputeAndStoreInternedNumberValuesAndDistanceTerms(double value, size_t index, std::vector<double> *interned_values)
@@ -1361,6 +1396,9 @@ public:
 		//used to store distance terms for the respective targetValue for the sparse deviation matrix
 		FastHashMap<StringInternPool::StringID, double> nominalStringDistanceTerms;
 		FastHashMap<double, double> nominalNumberDistanceTerms;
+
+		//if true, then nominalStringDistanceTerms and nominalNumberDistanceTerms are high accuracy, otherwise approximate
+		bool precomputedNominalDistanceTermsHighAccuracy;
 	};
 
 	//for each feature, precomputed distance terms for each interned value looked up by intern index

@@ -903,9 +903,9 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 		//if it's either a symmetric nominal or continuous, or if sparse deviation matrix but no null value,
 		// then there are only two values, unknown to known or known
-		if(r_dist_eval.distEvaluator->IsFeatureSymmetricNominal(query_feature_index)
-			|| r_dist_eval.distEvaluator->IsFeatureContinuous(query_feature_index)
-			|| (r_dist_eval.distEvaluator->IsFeatureNominal(query_feature_index) &&
+		if(feature_attribs.IsFeatureSymmetricNominal()
+			|| feature_attribs.IsFeatureContinuous()
+			|| (feature_attribs.IsFeatureNominal() &&
 				!r_dist_eval.HasNominalSpecificKnownToUnknownDistanceTerm(query_feature_index)))
 		{
 			double known_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
@@ -1449,9 +1449,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 	feature_data.internedNumberIndexToNumberValue = nullptr;
 	feature_data.internedDistanceTerms.clear();
 
-	if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC
-		|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
-		|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE
+	if(feature_attribs.IsFeatureNominal()
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
 	{
@@ -1468,6 +1466,9 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING;
 		else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE;
+
+		if(feature_attribs.IsFeatureNominal())
+			r_dist_eval.ComputeAndStoreNominalDistanceTerms(query_feature_index);
 	}
 	else // feature_type is some form of continuous numeric
 	{

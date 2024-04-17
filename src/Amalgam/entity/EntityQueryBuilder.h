@@ -50,11 +50,10 @@ namespace EntityQueryBuilder
 		NominalDeviationValuesType &ndd, EvaluableNode *value_deviation_assoc)
 	{
 		auto &mcn = value_deviation_assoc->GetMappedChildNodesReference();
-		ndd.deviations.resize(mcn.size());
-		size_t cur_index = 0;
+		ndd.reserve(mcn.size());
 		for(auto &cn : mcn)
 		{
-			if constexpr(std::is_same<typename NominalDeviationValuesType::value_type, double>::value)
+			if constexpr(std::is_same<typename NominalDeviationValuesType::key_type, double>::value)
 			{
 				double value = std::numeric_limits<double>::quiet_NaN();
 				if(cn.first != string_intern_pool.EMPTY_STRING_ID)
@@ -64,15 +63,13 @@ namespace EntityQueryBuilder
 						value = number_value;
 				}
 
-				ndd.deviations[cur_index] = std::make_pair(value, EvaluableNode::ToNumber(cn.second));
+				ndd.emplace(value, EvaluableNode::ToNumber(cn.second));
 			}
 			else
 			{
-				ndd.deviations[cur_index] = std::make_pair(cn.first, EvaluableNode::ToNumber(cn.second));
+				ndd.emplace(cn.first, EvaluableNode::ToNumber(cn.second));
 			}
 		}
-
-		cur_index++;
 	}
 
 	//populates deviation data for a given nominal value
@@ -98,7 +95,7 @@ namespace EntityQueryBuilder
 			if(ocn_size > 0
 					&& !EvaluableNode::IsEmptyNode(ocn[0])
 					&& ocn[0]->GetType() == ENT_ASSOC)
-				PopulateFeatureDeviationNominalValueAssocData(ndd, ocn[0]);
+				PopulateFeatureDeviationNominalValueAssocData<NominalDeviationValuesType>(ndd, ocn[0]);
 
 			if(ocn_size > 1)
 				ndd.defaultDeviation = EvaluableNode::ToNumber(ocn[1]);

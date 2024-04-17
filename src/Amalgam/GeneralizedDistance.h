@@ -165,30 +165,15 @@ public:
 		double deviationReciprocal;
 
 		//contains the deviations for a given nominal value for each other nominal value
+		//if the nominal value is not found, then the attribute defaultDeviation should be used
 		template<typename NominalValueType, typename EqualComparison = std::equal_to<NominalValueType>>
-		class SparseNominalDeviationValues
+		class SparseNominalDeviationValues : public SmallMap<NominalValueType, double, EqualComparison>
 		{
 		public:
 			inline SparseNominalDeviationValues()
 				: defaultDeviation(0.0)
 			{	}
 
-			using value_type = NominalValueType;
-
-			//returns an iterator to deviations that matches the nominal key
-			inline auto FindDeviationIterator(NominalValueType key)
-			{
-				return std::find_if(begin(deviations), end(deviations),
-					[key](auto i)
-					{	return EqualComparison{}(i.first, key);	}
-				);
-			}
-
-			//deviations for each value; unknown should be stored as special nonvalue (e.g., NaN, NaS)
-			//store as a vector of pairs instead of a map because either only one value will be looked up once,
-			//in which case there's no advantage to having a map, or many distance term values will be looked up
-			//repeatedly, which is handled by a RepeatedGeneralizedDistanceEvaluator, which uses a map
-			std::vector<std::pair<NominalValueType, double>> deviations;
 			double defaultDeviation;
 		};
 
@@ -412,9 +397,9 @@ public:
 			if(outer_it != std::end(feature_attribs.nominalNumberSparseDeviationMatrix))
 			{
 				auto &ndd = outer_it->second;
-				auto inner_it = ndd.FindDeviationIterator(b.number);
+				auto inner_it = ndd.find(b.number);
 
-				if(inner_it == end(ndd.deviations))
+				if(inner_it == end(ndd))
 					deviation = ndd.defaultDeviation;
 				else
 					deviation = inner_it->second;
@@ -433,9 +418,9 @@ public:
 			if(outer_it != std::end(feature_attribs.nominalStringSparseDeviationMatrix))
 			{
 				auto &ndd = outer_it->second;
-				auto inner_it = ndd.FindDeviationIterator(b.stringID);
+				auto inner_it = ndd.find(b.stringID);
 
-				if(inner_it == end(ndd.deviations))
+				if(inner_it == end(ndd))
 					deviation = ndd.defaultDeviation;
 				else
 					deviation = inner_it->second;
@@ -1155,7 +1140,7 @@ public:
 			if(deviations_for_value != end(sdm))
 			{
 				auto &deviations = deviations_for_value->second;
-				for(auto &[value, deviation] : deviations.deviations)
+				for(auto &[value, deviation] : deviations)
 				{
 					//TODO 17631: finish this
 					// double dist_term = distEvaluator->ComputeDistanceTermNominalBaseFromDeviations(index, value == sid, )
@@ -1174,7 +1159,7 @@ public:
 			if(deviations_for_value != end(sdm))
 			{
 				auto &deviations = deviations_for_value->second;
-				for(auto &[value, deviation] : deviations.deviations)
+				for(auto &[value, deviation] : deviations)
 				{
 					//TODO 17631: finish this
 					// double dist_term = distEvaluator->ComputeDistanceTermNominalBaseFromDeviations(index, value == sid, )

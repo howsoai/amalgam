@@ -1197,11 +1197,7 @@ public:
 
 		auto &feature_attribs = distEvaluator->featureAttribs[index];
 
-		//TODO 17631: change targetValue to EvaluableNodeImmediateValueWithType
-		double value = feature_data.targetValue.number;
-		if(feature_data.targetValueType != ENIVT_NUMBER)
-			value = std::numeric_limits<double>::quiet_NaN();
-
+		double value = feature_data.targetValue.GetValueAsNumber();
 		if(FastIsNaN(value))
 		{
 			//first entry is unknown-unknown distance
@@ -1262,7 +1258,7 @@ public:
 			//TODO 17631: implement this
 		}
 
-		if(value_type_numeric && value == feature_data.targetValue.number)
+		if(value_type_numeric && value == feature_data.targetValue.GetValueAsNumber())
 			return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
 		else
 			return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
@@ -1280,7 +1276,7 @@ public:
 			//TODO 17631: implement this
 		}
 
-		if(value_type_string && value == feature_data.targetValue.stringID)
+		if(value_type_string && value == feature_data.targetValue.GetValueAsStringIDIfExists())
 			return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
 		else
 			return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
@@ -1292,8 +1288,8 @@ public:
 	{
 		//TODO 17631: make this more efficient, placeholder for now
 		auto &feature_data = featureData[index];
-		return distEvaluator->ComputeDistanceTermNominal(feature_data.targetValue, other_value,
-			feature_data.targetValueType, other_type, index, high_accuracy);
+		return distEvaluator->ComputeDistanceTermNominal(feature_data.targetValue.nodeValue, other_value,
+			feature_data.targetValue.nodeType, other_type, index, high_accuracy);
 	}
 
 	//returns the smallest nonmatching distance term for the nominal given other_value
@@ -1365,12 +1361,12 @@ public:
 			return ComputeDistanceTermNominal(other_value, other_type, index, high_accuracy);
 
 		//TODO 17631: improve the logic and efficiency here down
-		double diff = distEvaluator->ComputeDifference(feature_data.targetValue, other_value,
-			feature_data.targetValueType, other_type, distEvaluator->featureAttribs[index].featureType);
+		double diff = distEvaluator->ComputeDifference(feature_data.targetValue.nodeValue, other_value,
+			feature_data.targetValue.nodeType, other_type, distEvaluator->featureAttribs[index].featureType);
 
 		if(FastIsNaN(diff))
-			return distEvaluator->LookupNullDistanceTerm(feature_data.targetValue, other_value,
-				feature_data.targetValueType, other_type, index, high_accuracy);
+			return distEvaluator->LookupNullDistanceTerm(feature_data.targetValue.nodeValue, other_value,
+				feature_data.targetValue.nodeType, other_type, index, high_accuracy);
 
 		return distEvaluator->ComputeDistanceTermContinuousNonNullRegular(diff, index, high_accuracy);
 	}
@@ -1400,8 +1396,7 @@ public:
 		EffectiveFeatureDifferenceType effectiveFeatureType;
 
 		//target that the distance will be computed to
-		EvaluableNodeImmediateValueType targetValueType;
-		EvaluableNodeImmediateValue targetValue;
+		EvaluableNodeImmediateValueWithType targetValue;
 
 		//the distance term for EFDT_REMAINING_IDENTICAL_PRECOMPUTED
 		double precomputedRemainingIdenticalDistanceTerm;

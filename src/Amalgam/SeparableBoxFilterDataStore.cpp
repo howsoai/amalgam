@@ -331,12 +331,10 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 	for(size_t query_feature_index = 0; query_feature_index < dist_eval.featureAttribs.size(); query_feature_index++)
 	{
 		size_t absolute_feature_index = dist_eval.featureAttribs[query_feature_index].featureIndex;
-		auto target_value = r_dist_eval.featureData[query_feature_index].targetValue;
-		auto target_value_type = r_dist_eval.featureData[query_feature_index].targetValueType;
-
 		auto &column_data = columnData[absolute_feature_index];
+		auto &target_value = r_dist_eval.featureData[query_feature_index].targetValue;
 
-		if(target_value_type == ENIVT_NULL || (target_value_type == ENIVT_NUMBER && FastIsNaN(target_value.number)) )
+		if(target_value.IsNullEquivalent())
 		{
 			//add the appropriate unknown distance to each element
 			double unknown_unknown_term = dist_eval.ComputeDistanceTermUnknownToUnknown(query_feature_index, high_accuracy);
@@ -359,7 +357,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 			continue;
 		}
 
-		if(target_value_type == ENIVT_NUMBER)
+		if(target_value.nodeType == ENIVT_NUMBER)
 		{
 			//below we branch to optimize the number of distance terms that need to be computed to solve minimum distance problem
 			//if there are fewer enabled_indices than the number of unique values for this feature, plus one for unknown values
@@ -735,8 +733,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 			//if the target_value is a null/nan, unknown-unknown differences have already been accounted for
 			//since they are partial matches
 			auto &feature_data = r_dist_eval.featureData[i];
-			if(feature_data.targetValueType == ENIVT_NULL
-					|| (feature_data.targetValueType == ENIVT_NUMBER && FastIsNaN(feature_data.targetValue.number)))
+			if(feature_data.targetValue.IsNullEquivalent())
 				continue;
 			
 			if(dist_eval.ComputeDistanceTermKnownToUnknown(i, high_accuracy) > worst_candidate_distance)
@@ -892,12 +889,10 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	size_t absolute_feature_index = feature_attribs.featureIndex;
 	auto &column = columnData[absolute_feature_index];
 	auto effective_feature_type = feature_data.effectiveFeatureType;
-	EvaluableNodeImmediateValue value = feature_data.targetValue;
-	EvaluableNodeImmediateValueType value_type = feature_data.targetValueType;
+	auto &value = feature_data.targetValue;
 
-	bool value_is_null = EvaluableNodeImmediateValue::IsNullEquivalent(value_type, value);
 	//need to accumulate values for nulls if the value is a null
-	if(value_is_null)
+	if(value.IsNullEquivalent())
 	{
 		double unknown_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermUnknownToUnknown(query_feature_index, high_accuracy);
 
@@ -998,20 +993,18 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	//if nominal, only need to compute the exact match
 	if(is_feature_symmetric_nominal)
 	{
-		if(value_type == ENIVT_NUMBER)
+		if(value.nodeType == ENIVT_NUMBER)
 		{
-			AccumulatePartialSumsForNominalNumberValueIfExists(r_dist_eval, value.number, query_feature_index, *column, high_accuracy);
+			AccumulatePartialSumsForNominalNumberValueIfExists(r_dist_eval, value.nodeValue.number, query_feature_index, *column, high_accuracy);
 		}
-		else if(value_type == ENIVT_STRING_ID)
+		else if(value.nodeType == ENIVT_STRING_ID)
 		{
-			AccumulatePartialSumsForNominalStringIdValueIfExists(r_dist_eval, value.stringID, query_feature_index, *column, high_accuracy);
+			AccumulatePartialSumsForNominalStringIdValueIfExists(r_dist_eval, value.nodeValue.stringID, query_feature_index, *column, high_accuracy);
 		}
-		else if(value_type == ENIVT_CODE)
+		else if(value.nodeType == ENIVT_CODE)
 		{
 			//compute partial sums for all code of matching size
-			size_t code_size = 1;
-			if(value_type == ENIVT_CODE)
-				code_size = EvaluableNode::GetDeepSize(value.code);
+			size_t code_size = EvaluableNode::GetDeepSize(value.nodeValue.code);
 
 			auto value_found = column->valueCodeSizeToIndices.find(code_size);
 			if(value_found != end(column->valueCodeSizeToIndices))
@@ -1032,9 +1025,9 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		//initialize to zero, because if don't find an exact match, but there are distance terms of
 		//0, then need to accumulate those later
 		double accumulated_term = 0.0;
-		if(value_type == ENIVT_STRING_ID)
+		if(value.nodeType == ENIVT_STRING_ID)
 			accumulated_term = AccumulatePartialSumsForNominalStringIdValueIfExists(
-				r_dist_eval, value.stringID, query_feature_index, *column, high_accuracy);
+				r_dist_eval, value.nodeValue.stringID, query_feature_index, *column, high_accuracy);
 
 		double nonmatch_dist_term = r_dist_eval.ComputeDistanceTermNominalSmallestNonmatch(query_feature_index, high_accuracy);
 		//if the next closest match is larger, no need to compute any more values
@@ -1046,9 +1039,9 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			[this, &value, &r_dist_eval, &feature_attribs, &column, query_feature_index, high_accuracy](StringInternPool::StringID sid)
 			{
 				//don't want to double-accumulate the found value
-				if(sid != value.stringID)
+				if(sid != value.nodeValue.stringID)
 					AccumulatePartialSumsForNominalStringIdValueIfExists(
-						r_dist_eval, value.stringID, query_feature_index, *column, high_accuracy);
+						r_dist_eval, value.nodeValue.stringID, query_feature_index, *column, high_accuracy);
 			});
 
 		return r_dist_eval.ComputeDistanceTermNominalNextSmallest(nonmatch_dist_term, query_feature_index, high_accuracy);
@@ -1058,9 +1051,9 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		//initialize to zero, because if don't find an exact match, but there are distance terms of
 		//0, then need to accumulate those later
 		double accumulated_term = 0.0;
-		if(value_type == ENIVT_NUMBER)
+		if(value.nodeType == ENIVT_NUMBER)
 			accumulated_term = AccumulatePartialSumsForNominalNumberValueIfExists(
-				r_dist_eval, value.number, query_feature_index, *column, high_accuracy);
+				r_dist_eval, value.nodeValue.number, query_feature_index, *column, high_accuracy);
 
 		double nonmatch_dist_term = r_dist_eval.ComputeDistanceTermNominalSmallestNonmatch(query_feature_index, high_accuracy);
 		//if the next closest match is larger, no need to compute any more values
@@ -1072,9 +1065,9 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			[this, &value, &r_dist_eval, &feature_attribs, &column, query_feature_index, high_accuracy](double number_value)
 			{
 				//don't want to double-accumulate the found value
-				if(!EqualIncludingNaN(number_value, value.number))
+				if(!EqualIncludingNaN(number_value, value.nodeValue.number))
 					AccumulatePartialSumsForNominalNumberValueIfExists(
-						r_dist_eval, value.number, query_feature_index, *column, high_accuracy);
+						r_dist_eval, value.nodeValue.number, query_feature_index, *column, high_accuracy);
 			});
 
 		return r_dist_eval.ComputeDistanceTermNominalNextSmallest(nonmatch_dist_term, query_feature_index, high_accuracy);
@@ -1084,8 +1077,8 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	{
 		//compute partial sums for all code of matching size
 		size_t code_size = 1;
-		if(value_type == ENIVT_CODE)
-			code_size = EvaluableNode::GetDeepSize(value.code);
+		if(value.nodeType == ENIVT_CODE)
+			code_size = EvaluableNode::GetDeepSize(value.nodeValue.code);
 
 		auto value_found = column->valueCodeSizeToIndices.find(code_size);
 		if(value_found != end(column->valueCodeSizeToIndices))
@@ -1107,9 +1100,9 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	}
 	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING)
 	{
-		if(value_type == ENIVT_STRING_ID)
+		if(value.nodeType == ENIVT_STRING_ID)
 		{
-			auto value_found = column->stringIdValueToIndices.find(value.stringID);
+			auto value_found = column->stringIdValueToIndices.find(value.nodeValue.stringID);
 			if(value_found != end(column->stringIdValueToIndices))
 			{
 				double term = r_dist_eval.distEvaluator->ComputeDistanceTermContinuousExactMatch(query_feature_index, high_accuracy);
@@ -1123,7 +1116,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	//else feature_type == FDT_CONTINUOUS_NUMERIC or FDT_CONTINUOUS_UNIVERSALLY_NUMERIC
 
 	//if not a number or no numbers available, then no size
-	if(value_type != ENIVT_NUMBER || column->sortedNumberValueEntries.size() == 0)
+	if(value.nodeType != ENIVT_NUMBER || column->sortedNumberValueEntries.size() == 0)
 		return GetMaxDistanceTermForContinuousFeature(r_dist_eval, query_feature_index, absolute_feature_index, high_accuracy);
 
 	bool cyclic_feature = r_dist_eval.distEvaluator->IsFeatureCyclic(query_feature_index);
@@ -1131,14 +1124,14 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	if(cyclic_feature)
 		cycle_length = feature_attribs.typeAttributes.maxCyclicDifference;
 
-	auto [value_index, exact_index_found] = column->FindClosestValueIndexForValue(value.number, cycle_length);
+	auto [value_index, exact_index_found] = column->FindClosestValueIndexForValue(value.nodeValue.number, cycle_length);
 
 	double term = 0.0;
 	if(exact_index_found)
 		term = r_dist_eval.distEvaluator->ComputeDistanceTermContinuousExactMatch(query_feature_index, high_accuracy);
 	else
 		term = r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonNullRegular(
-			value.number - column->sortedNumberValueEntries[value_index]->value.number, query_feature_index, high_accuracy);
+			value.nodeValue.number - column->sortedNumberValueEntries[value_index]->value.number, query_feature_index, high_accuracy);
 
 	size_t num_entities_computed = AccumulatePartialSums(column->sortedNumberValueEntries[value_index]->indicesWithValue, query_feature_index, term);
 
@@ -1176,7 +1169,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			if(lower_value_index > 0)
 			{
 				next_lower_index = lower_value_index - 1;
-				lower_diff = std::abs(value.number - column->sortedNumberValueEntries[next_lower_index]->value.number);
+				lower_diff = std::abs(value.nodeValue.number - column->sortedNumberValueEntries[next_lower_index]->value.number);
 				compute_lower = true;
 			}
 		}
@@ -1193,7 +1186,9 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 				break;
 
 			next_lower_index = next_index;
-			lower_diff = GeneralizedDistanceEvaluator::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueEntries[next_lower_index]->value.number), cycle_length);
+			lower_diff = GeneralizedDistanceEvaluator::ConstrainDifferenceToCyclicDifference(
+				std::abs(value.nodeValue.number - column->sortedNumberValueEntries[next_lower_index]->value.number),
+				cycle_length);
 			compute_lower = true;
 		}
 
@@ -1206,7 +1201,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			if(upper_value_index + 1 < num_unique_number_values)
 			{
 				next_upper_index = upper_value_index + 1;
-				upper_diff = std::abs(value.number - column->sortedNumberValueEntries[next_upper_index]->value.number);
+				upper_diff = std::abs(value.nodeValue.number - column->sortedNumberValueEntries[next_upper_index]->value.number);
 				compute_upper = true;
 			}
 		}
@@ -1223,7 +1218,8 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 				break;
 
 			next_upper_index = next_index;
-			upper_diff = GeneralizedDistanceEvaluator::ConstrainDifferenceToCyclicDifference(std::abs(value.number - column->sortedNumberValueEntries[next_upper_index]->value.number), cycle_length);
+			upper_diff = GeneralizedDistanceEvaluator::ConstrainDifferenceToCyclicDifference(
+				std::abs(value.nodeValue.number - column->sortedNumberValueEntries[next_upper_index]->value.number), cycle_length);
 			compute_upper = true;
 		}
 
@@ -1453,8 +1449,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
 	{
-		feature_data.targetValue = position_value;
-		feature_data.targetValueType = position_value_type;
+		feature_data.targetValue = EvaluableNodeImmediateValueWithType(position_value, position_value_type);
 
 		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC)
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMERIC;
@@ -1476,8 +1471,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 		double position_value_numeric = (position_value_type == ENIVT_NUMBER
 			? position_value.number : std::numeric_limits<double>::quiet_NaN());
 
-		feature_data.targetValue = position_value_numeric;
-		feature_data.targetValueType = ENIVT_NUMBER;
+		feature_data.targetValue = EvaluableNodeImmediateValueWithType(position_value_numeric);
 
 		//set up effective_feature_type
 		auto &column_data = columnData[feature_attribs.featureIndex];

@@ -757,7 +757,7 @@ protected:
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 			return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicOneNonNullRegular(
-				feature_data.targetValue.number - GetValue(entity_index, feature_attribs.featureIndex).number,
+				feature_data.targetValue.nodeValue.number - GetValue(entity_index, feature_attribs.featureIndex).number,
 				query_feature_index, high_accuracy);
 		}
 
@@ -774,7 +774,7 @@ protected:
 			auto &column_data = columnData[feature_attribs.featureIndex];
 			if(column_data->numberIndices.contains(entity_index))
 				return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicOneNonNullRegular(
-					feature_data.targetValue.number - GetValue(entity_index, feature_attribs.featureIndex).number,
+					feature_data.targetValue.nodeValue.number - GetValue(entity_index, feature_attribs.featureIndex).number,
 					query_feature_index, high_accuracy);
 			else
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
@@ -786,7 +786,7 @@ protected:
 			auto &column_data = columnData[feature_attribs.featureIndex];
 			if(column_data->numberIndices.contains(entity_index))
 				return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousOneNonNullRegular(
-					feature_data.targetValue.number - GetValue(entity_index, feature_attribs.featureIndex).number,
+					feature_data.targetValue.nodeValue.number - GetValue(entity_index, feature_attribs.featureIndex).number,
 					query_feature_index, high_accuracy);
 			else
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);

@@ -1165,13 +1165,51 @@ public:
 		if(featureData.size() <= index)
 			featureData.resize(index + 1);
 
+		auto &feature_attributes = distEvaluator->featureAttribs[index];
 		auto &feature_data = featureData[index];
 
 		//since most of the computations will be using approximate if it is needed,
 		//only set to high accuracy if not using approximate
 		feature_data.precomputedNominalDistanceTermsHighAccuracy = (!compute_approximate);
 
-		//TODO 17631: implement this using ComputeDistanceTermNominal
+		if(feature_data.targetValue.nodeType == ENIVT_NUMBER)
+		{
+			auto &sdm = feature_attributes.nominalNumberSparseDeviationMatrix;
+			auto target_value = feature_data.targetValue.nodeValue.number;
+
+			auto deviations_for_value = sdm.FindDeviationValuesIterator(target_value);
+			if(deviations_for_value != end(sdm.deviationValues))
+			{
+				auto &deviations = deviations_for_value->second;
+				for(auto &[value, deviation] : deviations.deviations)
+				{
+					//TODO 17631: finish this
+					// double dist_term = distEvaluator->ComputeDistanceTermNominalBaseFromDeviations(index, value == sid, )
+					// feature_data.nominalNumberDistanceTerms.emplace()
+				}
+
+				//TODO: deviations.defaultDeviation
+			}
+		}
+		else if(feature_data.targetValue.nodeType == ENIVT_STRING_ID)
+		{
+			auto &sdm = feature_attributes.nominalStringSparseDeviationMatrix;
+			auto target_sid = feature_data.targetValue.nodeValue.stringID;
+
+			auto deviations_for_value = sdm.FindDeviationValuesIterator(target_sid);
+			if(deviations_for_value != end(sdm.deviationValues))
+			{
+				auto &deviations = deviations_for_value->second;
+				for(auto &[value, deviation] : deviations.deviations)
+				{
+					//TODO 17631: finish this
+					// double dist_term = distEvaluator->ComputeDistanceTermNominalBaseFromDeviations(index, value == sid, )
+					// feature_data.nominalNumberDistanceTerms.emplace()
+				}
+
+				//TODO: deviations.defaultDeviation
+			}
+		}
 	}
 
 	//for the feature index, computes and stores the distance terms as measured from value to each interned value

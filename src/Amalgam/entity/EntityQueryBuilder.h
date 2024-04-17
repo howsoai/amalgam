@@ -114,8 +114,8 @@ namespace EntityQueryBuilder
 	{
 		auto &number_sdm = feature_attribs.nominalNumberSparseDeviationMatrix;
 		auto &string_sdm = feature_attribs.nominalStringSparseDeviationMatrix;
-		number_sdm.deviationValues.clear();
-		string_sdm.deviationValues.clear();
+		number_sdm.clear();
+		string_sdm.clear();
 
 		if(deviation_node == nullptr)
 		{
@@ -126,10 +126,9 @@ namespace EntityQueryBuilder
 		if(deviation_node->GetType() == ENT_ASSOC)
 		{
 			auto &mcn = deviation_node->GetMappedChildNodesReference();
-			size_t cur_index = 0;
 			if(feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC)
 			{
-				number_sdm.deviationValues.resize(mcn.size());
+				number_sdm.reserve(mcn.size());
 				for(auto &cn : mcn)
 				{
 					double value = std::numeric_limits<double>::quiet_NaN();
@@ -139,27 +138,21 @@ namespace EntityQueryBuilder
 						if(success)
 							value = number_value;
 					}
-					
-					number_sdm.deviationValues[cur_index].first = value;
 
-					auto &ndd = number_sdm.deviationValues[cur_index].second;
+					auto &new_entry = number_sdm.emplace(value);
+					auto &ndd = new_entry.second;
 					PopulateFeatureDeviationNominalValueData(ndd, cn.second);
-
-					cur_index++;
 				}
 			}
 			else if(feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
 				|| feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
 			{
-				string_sdm.deviationValues.resize(mcn.size());
+				string_sdm.reserve(mcn.size());
 				for(auto &cn : deviation_node->GetMappedChildNodes())
 				{
-					string_sdm.deviationValues[cur_index].first = cn.first;
-
-					auto &ndd = string_sdm.deviationValues[cur_index].second;
+					auto &new_entry = string_sdm.emplace(cn.first);
+					auto &ndd = new_entry.second;
 					PopulateFeatureDeviationNominalValueData(ndd, cn.second);
-
-					cur_index++;
 				}
 			}
 		}

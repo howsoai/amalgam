@@ -130,8 +130,8 @@ public:
 			if(!IsFeatureNominal())
 				return false;
 
-			return (nominalNumberSparseDeviationMatrix.deviationValues.size() == 0
-				&& nominalStringSparseDeviationMatrix.deviationValues.size() == 0);
+			return (nominalNumberSparseDeviationMatrix.size() == 0
+				&& nominalStringSparseDeviationMatrix.size() == 0);
 		}
 
 		//the type of comparison for each feature
@@ -192,43 +192,17 @@ public:
 			double defaultDeviation;
 		};
 
-		//contains the deviations for a given nominal value for each other nominal value
-		template<typename NominalValueType, typename EqualComparison = std::equal_to<NominalValueType>>
-		class SparseNominalDeviationMatrix
-		{
-		public:
-			inline SparseNominalDeviationMatrix()
-			{	}
-
-			using value_type = NominalValueType;
-
-			//returns an iterator to deviation values that matches the nominal key
-			inline auto FindDeviationValuesIterator(NominalValueType key)
-			{
-				return std::find_if(begin(deviationValues), end(deviationValues),
-					[key](auto i)
-					{	return EqualComparison{}(i.first, key);	}
-				);
-			}
-
-			//deviation values for each value; unknown should be stored as special nonvalue (e.g., NaN, NaS)
-			//store as a vector of pairs instead of a map because either only one value will be looked up once,
-			//in which case there's no advantage to having a map, or many distance term values will be looked up
-			//repeatedly, which is handled by a RepeatedGeneralizedDistanceEvaluator, which uses a map
-			std::vector<std::pair<NominalValueType, SparseNominalDeviationValues<NominalValueType, EqualComparison>>> deviationValues;
-		};
-
 		//sparse deviation matrix if the nominal is a string
 		//store as a vector of pairs instead of a map because either only one value will be looked up once,
 		//in which case there's no advantage to having a map, or many distance term values will be looked up
 		//repeatedly, which is handled by a RepeatedGeneralizedDistanceEvaluator, which uses a map
-		SparseNominalDeviationMatrix<StringInternPool::StringID> nominalStringSparseDeviationMatrix;
+		SmallMap<StringInternPool::StringID, SparseNominalDeviationValues<StringInternPool::StringID>> nominalStringSparseDeviationMatrix;
 
 		//sparse deviation matrix if the nominal is a number
 		//store as a vector of pairs instead of a map because either only one value will be looked up once,
 		//in which case there's no advantage to having a map, or many distance term values will be looked up
 		//repeatedly, which is handled by a RepeatedGeneralizedDistanceEvaluator, which uses a map
-		SparseNominalDeviationMatrix<double, DoubleNanHashComparator> nominalNumberSparseDeviationMatrix;
+		SmallMap<double, SparseNominalDeviationValues<double, DoubleNanHashComparator>, DoubleNanHashComparator> nominalNumberSparseDeviationMatrix;
 
 		//distance term to use if both values being compared are unknown
 		//the difference will be NaN if unknown
@@ -432,10 +406,10 @@ public:
 		}
 
 		double deviation = std::numeric_limits<double>::quiet_NaN();
-		if(a_type == ENIVT_NUMBER && feature_attribs.nominalNumberSparseDeviationMatrix.deviationValues.size() > 0)
+		if(a_type == ENIVT_NUMBER && feature_attribs.nominalNumberSparseDeviationMatrix.size() > 0)
 		{
-			auto outer_it = feature_attribs.nominalNumberSparseDeviationMatrix.FindDeviationValuesIterator(a.number);
-			if(outer_it != std::end(feature_attribs.nominalNumberSparseDeviationMatrix.deviationValues))
+			auto outer_it = feature_attribs.nominalNumberSparseDeviationMatrix.find(a.number);
+			if(outer_it != std::end(feature_attribs.nominalNumberSparseDeviationMatrix))
 			{
 				auto &ndd = outer_it->second;
 				auto inner_it = ndd.FindDeviationIterator(b.number);
@@ -453,10 +427,10 @@ public:
 					deviation = feature_attribs.knownToUnknownDistanceTerm.deviation;
 			}
 		}
-		else if(a_type == ENIVT_STRING_ID && feature_attribs.nominalStringSparseDeviationMatrix.deviationValues.size() > 0)
+		else if(a_type == ENIVT_STRING_ID && feature_attribs.nominalStringSparseDeviationMatrix.size() > 0)
 		{
-			auto outer_it = feature_attribs.nominalStringSparseDeviationMatrix.FindDeviationValuesIterator(a.stringID);
-			if(outer_it != std::end(feature_attribs.nominalStringSparseDeviationMatrix.deviationValues))
+			auto outer_it = feature_attribs.nominalStringSparseDeviationMatrix.find(a.stringID);
+			if(outer_it != std::end(feature_attribs.nominalStringSparseDeviationMatrix))
 			{
 				auto &ndd = outer_it->second;
 				auto inner_it = ndd.FindDeviationIterator(b.stringID);
@@ -1177,8 +1151,8 @@ public:
 			auto &sdm = feature_attributes.nominalNumberSparseDeviationMatrix;
 			auto target_value = feature_data.targetValue.nodeValue.number;
 
-			auto deviations_for_value = sdm.FindDeviationValuesIterator(target_value);
-			if(deviations_for_value != end(sdm.deviationValues))
+			auto deviations_for_value = sdm.find(target_value);
+			if(deviations_for_value != end(sdm))
 			{
 				auto &deviations = deviations_for_value->second;
 				for(auto &[value, deviation] : deviations.deviations)
@@ -1196,8 +1170,8 @@ public:
 			auto &sdm = feature_attributes.nominalStringSparseDeviationMatrix;
 			auto target_sid = feature_data.targetValue.nodeValue.stringID;
 
-			auto deviations_for_value = sdm.FindDeviationValuesIterator(target_sid);
-			if(deviations_for_value != end(sdm.deviationValues))
+			auto deviations_for_value = sdm.find(target_sid);
+			if(deviations_for_value != end(sdm))
 			{
 				auto &deviations = deviations_for_value->second;
 				for(auto &[value, deviation] : deviations.deviations)

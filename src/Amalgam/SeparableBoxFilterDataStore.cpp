@@ -1493,7 +1493,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 			else
 				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED;
 
-			r_dist_eval.ComputeAndStoreInternedNumberValuesAndDistanceTerms(position_value_numeric, query_feature_index, &column_data->internedNumberIndexToNumberValue);
+			r_dist_eval.ComputeAndStoreInternedNumberValuesAndDistanceTerms(query_feature_index, &column_data->internedNumberIndexToNumberValue);
 		}
 		else
 		{

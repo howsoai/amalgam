@@ -1159,11 +1159,23 @@ public:
 	//for the feature index, computes and stores the distance terms for nominal values
 	inline void ComputeAndStoreNominalDistanceTerms(size_t index)
 	{
-		//TODO 17631: implement this
+		bool compute_approximate = distEvaluator->NeedToPrecomputeApproximate();
+
+		//make sure there's room for the interned index
+		if(featureData.size() <= index)
+			featureData.resize(index + 1);
+
+		auto &feature_data = featureData[index];
+
+		//since most of the computations will be using approximate if it is needed,
+		//only set to high accuracy if not using approximate
+		feature_data.precomputedNominalDistanceTermsHighAccuracy = (!compute_approximate);
+
+		//TODO 17631: implement this using ComputeDistanceTermNominal
 	}
 
 	//for the feature index, computes and stores the distance terms as measured from value to each interned value
-	inline void ComputeAndStoreInternedNumberValuesAndDistanceTerms(double value, size_t index, std::vector<double> *interned_values)
+	inline void ComputeAndStoreInternedNumberValuesAndDistanceTerms(size_t index, std::vector<double> *interned_values)
 	{
 		bool compute_accurate = distEvaluator->NeedToPrecomputeAccurate();
 		bool compute_approximate = distEvaluator->NeedToPrecomputeApproximate();
@@ -1172,39 +1184,45 @@ public:
 		if(featureData.size() <= index)
 			featureData.resize(index + 1);
 
-		auto &feature_interns = featureData[index];
-		feature_interns.internedNumberIndexToNumberValue = interned_values;
+		auto &feature_data = featureData[index];
+		feature_data.internedNumberIndexToNumberValue = interned_values;
 
 		if(interned_values == nullptr)
 		{
-			feature_interns.internedDistanceTerms.clear();
+			feature_data.internedDistanceTerms.clear();
 			return;
 		}
 
-		feature_interns.internedDistanceTerms.resize(interned_values->size());
+		feature_data.internedDistanceTerms.resize(interned_values->size());
 
 		auto &feature_attribs = distEvaluator->featureAttribs[index];
+
+		//TODO 17631: change targetValue to EvaluableNodeImmediateValueWithType
+		double value = feature_data.targetValue.number;
+		if(feature_data.targetValueType != ENIVT_NUMBER)
+			value = std::numeric_limits<double>::quiet_NaN();
+
 		if(FastIsNaN(value))
 		{
 			//first entry is unknown-unknown distance
-			feature_interns.internedDistanceTerms[0] = feature_attribs.unknownToUnknownDistanceTerm;
+			feature_data.internedDistanceTerms[0] = feature_attribs.unknownToUnknownDistanceTerm;
 			
 			auto k_to_unk = feature_attribs.knownToUnknownDistanceTerm;
-			for(size_t i = 1; i < feature_interns.internedDistanceTerms.size(); i++)
-				feature_interns.internedDistanceTerms[i] = k_to_unk;
+			for(size_t i = 1; i < feature_data.internedDistanceTerms.size(); i++)
+				feature_data.internedDistanceTerms[i] = k_to_unk;
 		}
 		else
 		{
 			//first entry is known-unknown distance
-			feature_interns.internedDistanceTerms[0] = feature_attribs.knownToUnknownDistanceTerm;
+			feature_data.internedDistanceTerms[0] = feature_attribs.knownToUnknownDistanceTerm;
 
-			for(size_t i = 1; i < feature_interns.internedDistanceTerms.size(); i++)
+			for(size_t i = 1; i < feature_data.internedDistanceTerms.size(); i++)
 			{
 				double difference = value - (*interned_values)[i];
 				if(compute_accurate)
-					feature_interns.internedDistanceTerms[i].SetValue(distEvaluator->ComputeDistanceTermContinuousNonNullRegular(difference, index, true), true);
+					feature_data.internedDistanceTerms[i].SetValue(distEvaluator->ComputeDistanceTermContinuousNonNullRegular(difference, index, true), true);
 				if(compute_approximate)
-					feature_interns.internedDistanceTerms[i].SetValue(distEvaluator->ComputeDistanceTermContinuousNonNullRegular(difference, index, false), false);
+					feature_data.internedDistanceTerms[i].SetValue(distEvaluator->ComputeDistanceTermContinuousNonNullRegular(difference, index, false), false);
 			}
 		}
 	}
@@ -1391,8 +1409,6 @@ public:
 		std::vector<double> *internedNumberIndexToNumberValue;
 		std::vector<GeneralizedDistanceEvaluator::DistanceTerms> internedDistanceTerms;
 
-		//TODO 17631: genericize ComputeAndStoreInternedNumberValuesAndDistanceTerms to precompute these when appropriate
-		//TODO 17631: figure out how to handle approx vs exact -- should these store only what is being used for repeated calls?
 		//used to store distance terms for the respective targetValue for the sparse deviation matrix
 		FastHashMap<StringInternPool::StringID, double> nominalStringDistanceTerms;
 		FastHashMap<double, double> nominalNumberDistanceTerms;

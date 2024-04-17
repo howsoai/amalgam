@@ -303,16 +303,17 @@ void Parser::SkipWhitespaceAndAccumulateAttributes(EvaluableNode *target)
 	}
 
 	//if labeling source, prepend as comment
+	//add 1 to line and column to make them 1-based instead of 0 based
 	if(debugSources)
 	{
 		std::string new_comment = sourceCommentPrefix;
-		new_comment += std::to_string(lineNumber);
+		new_comment += std::to_string(lineNumber + 1);
 		new_comment += ' ';
 
 		std::string_view line_to_opcode(&(*code)[lineStartPos], pos - lineStartPos);
 		size_t column_number = StringManipulation::GetNumUTF8Characters(line_to_opcode);
 
-		new_comment += std::to_string(column_number);
+		new_comment += std::to_string(column_number + 1);
 		new_comment += ' ';
 		new_comment += originalSource;
 		new_comment += "\r\n";
@@ -448,7 +449,7 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *new_token)
 
 		//invalid opcode, warn if possible and store the identifier as a string
 		if(!originalSource.empty())
-			std::cerr << "Warning: " << " Invalid opcode at line " << lineNumber << " of " << originalSource << std::endl;
+			std::cerr << "Warning: " << " Invalid opcode at line " << lineNumber + 1 << " of " << originalSource << std::endl;
 
 		new_token->SetType(ENT_STRING, evaluableNodeManager, false);
 		new_token->SetStringValue(token);
@@ -595,7 +596,7 @@ EvaluableNode *Parser::ParseNextBlock()
 			{
 				n->SetType(ENT_NULL, evaluableNodeManager);
 				if(!originalSource.empty())
-					std::cerr << "Warning: "  << " Invalid opcode at line " << lineNumber << " of " << originalSource << std::endl;
+					std::cerr << "Warning: "  << " Invalid opcode at line " << lineNumber + 1 << " of " << originalSource << std::endl;
 			}
 		}
 

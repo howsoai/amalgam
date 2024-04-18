@@ -44,3 +44,38 @@ template<typename K, typename V, typename H = std::hash<K>, typename E = std::eq
 using CompactHashMap = ska::bytell_hash_map<K, V, H, E, A>;
 
 #endif
+
+//implements a map via a vector, where entries are looked up sequentially for brute force
+//useful for very small hash maps (generally less than 30-40 entries) and for hash maps
+//where entries are only found once
+//note that, like other fast maps, iterators may be invalidated when the map is altered
+template<typename K, typename V, typename E = std::equal_to<K>>
+class SmallMap : public std::vector<std::pair<K, V>>
+{
+public:
+
+	using key_type = K;
+	using mapped_type = V;
+	using value_type = std::pair<K, V>;
+
+	//returns an iterator to deviation values that matches the nominal key
+	inline auto find(K key)
+	{
+		return std::find_if(
+			std::begin(*this),
+			std::end(*this),
+			[key](auto i)
+			{	return E{}(i.first, key);	}
+		);
+	}
+
+	//implement the map version of emplace, but allow for use of default constructor for the value
+	template <class... Args>
+	inline auto emplace(K key, Args&&... args)
+	{
+		if constexpr(sizeof...(Args) == 0)
+			return this->emplace_back(key, V{});
+		else
+			return this->emplace_back(key, std::forward<Args>(args)...);
+	}
+};

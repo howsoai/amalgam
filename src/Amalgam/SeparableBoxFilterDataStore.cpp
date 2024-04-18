@@ -957,13 +957,13 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 			//if there are terms smaller than unknown_unknown_term, then need to compute any other nominal values
 			r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTermsNumeric(unknown_unknown_term, query_feature_index, high_accuracy,
-				[this, &r_dist_eval, &feature_attribs, &column, query_feature_index, high_accuracy](double number_value)
+				[this, &r_dist_eval, &column, query_feature_index, high_accuracy](double number_value)
 				{
 					AccumulatePartialSumsForNominalNumberValueIfExists(r_dist_eval, number_value, query_feature_index, *column, high_accuracy);
 				});
 
 			r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTermsString(unknown_unknown_term, query_feature_index, high_accuracy,
-				[this, &r_dist_eval, &feature_attribs, &column, query_feature_index, high_accuracy](StringInternPool::StringID sid)
+				[this, &r_dist_eval, &column, query_feature_index, high_accuracy](StringInternPool::StringID sid)
 				{
 					AccumulatePartialSumsForNominalStringIdValueIfExists(r_dist_eval, sid, query_feature_index, *column, high_accuracy);
 				});
@@ -1034,7 +1034,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 		//need to iterate over everything with the same distance term
 		r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTermsString(accumulated_term, query_feature_index, high_accuracy,
-			[this, &value, &r_dist_eval, &feature_attribs, &column, query_feature_index, high_accuracy](StringInternPool::StringID sid)
+			[this, &value, &r_dist_eval, &column, query_feature_index, high_accuracy](StringInternPool::StringID sid)
 			{
 				//don't want to double-accumulate the found value
 				if(sid != value.nodeValue.stringID)
@@ -1060,7 +1060,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 		//need to iterate over everything with the same distance term
 		r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTermsNumeric(accumulated_term, query_feature_index, high_accuracy,
-			[this, &value, &r_dist_eval, &feature_attribs, &column, query_feature_index, high_accuracy](double number_value)
+			[this, &value, &r_dist_eval, &column, query_feature_index, high_accuracy](double number_value)
 			{
 				//don't want to double-accumulate the found value
 				if(!EqualIncludingNaN(number_value, value.nodeValue.number))

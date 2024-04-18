@@ -977,7 +977,6 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	//if made it here, then the value itself is not a null, so only need to consider unknown to known distances
 	//need to accumulate nulls if it's a symmetric nominal feature, because then there's only one value left,
 	//or if the nulls are closer than an exact match
-	bool accumulated_known_to_unknown = false;
 	if(is_feature_symmetric_nominal
 		|| r_dist_eval.distEvaluator->IsKnownToUnknownDistanceLessThanOrEqualToExactMatch(query_feature_index))
 	{
@@ -987,7 +986,6 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		auto nas_iter = column->stringIdValueToIndices.find(string_intern_pool.NOT_A_STRING_ID);
 		if(nas_iter != end(column->stringIdValueToIndices))
 			AccumulatePartialSums(*nas_iter->second, query_feature_index, known_unknown_term);
-		accumulated_known_to_unknown = true;
 	}
 
 	//if nominal, only need to compute the exact match

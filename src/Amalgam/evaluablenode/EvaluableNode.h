@@ -1064,7 +1064,7 @@ public:
 
 	constexpr EvaluableNodeImmediateValueWithType(EvaluableNodeImmediateValue node_value,
 		EvaluableNodeImmediateValueType node_type)
-		: nodeValue(node_value), nodeType(node_type)
+		: nodeType(node_type), nodeValue(node_value)
 	{	}
 
 	__forceinline EvaluableNodeImmediateValueWithType(bool value)

@@ -304,10 +304,10 @@ bool AssetManager::StoreEntityToResourcePath(Entity *entity, std::string &resour
 	{
 		std::error_code ec;
 		//create directory in case it doesn't exist
-		bool created_successfully = std::filesystem::create_directories(resource_base_path, ec);
+		std::filesystem::create_directories(resource_base_path, ec);
 
 		//return that the directory could not be created
-		if(!created_successfully || ec)
+		if(ec)
 			return false;
 
 		//store any contained entities
@@ -406,9 +406,9 @@ void AssetManager::CreateEntity(Entity *entity)
 			//create contained entity directory in case it doesn't currently exist
 			std::string new_path = slice_path + filename + traversal_path;
 			std::error_code ec;
-			bool created_successfully = std::filesystem::create_directory(new_path, ec);
+			std::filesystem::create_directory(new_path, ec);
 
-			if(!ec && created_successfully)
+			if(!ec)
 			{
 				new_path += id_suffix;
 				StoreEntityToResourcePath(entity, new_path, extension, false, true, false, true, false);

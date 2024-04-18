@@ -1143,8 +1143,8 @@ public:
 				for(auto &[value, deviation] : deviations)
 				{
 					//TODO 17631: finish this
-					// double dist_term = distEvaluator->ComputeDistanceTermNominalBaseFromDeviations(index, value == sid, )
-					// feature_data.nominalNumberDistanceTerms.emplace()
+					double dist_term = deviation;// = distEvaluator->ComputeDistanceTermNominalBaseFromDeviations(index, value == sid, )
+					feature_data.nominalNumberDistanceTerms.emplace(value, dist_term);
 				}
 
 				//TODO: deviations.defaultDeviation
@@ -1162,8 +1162,8 @@ public:
 				for(auto &[value, deviation] : deviations)
 				{
 					//TODO 17631: finish this
-					// double dist_term = distEvaluator->ComputeDistanceTermNominalBaseFromDeviations(index, value == sid, )
-					// feature_data.nominalNumberDistanceTerms.emplace()
+					double dist_term = deviation;// distEvaluator->ComputeDistanceTermNominalBaseFromDeviations(index, value == sid, )
+					feature_data.nominalStringDistanceTerms.emplace(value, dist_term);
 				}
 
 				//TODO: deviations.defaultDeviation

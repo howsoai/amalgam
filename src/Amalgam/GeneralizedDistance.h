@@ -100,6 +100,40 @@ public:
 			typeAttributes.maxCyclicDifference = std::numeric_limits<double>::quiet_NaN();
 		}
 
+		//returns true if the feature is nominal
+		__forceinline bool IsFeatureNominal()
+		{
+			return (featureType <= GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE);
+		}
+
+		//returns true if the feature is nominal
+		__forceinline bool IsFeatureContinuous()
+		{
+			return (featureType >= GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC);
+		}
+
+		//returns true if the feature is cyclic
+		__forceinline bool IsFeatureCyclic()
+		{
+			return (featureType == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC);
+		}
+
+		//returns true if the feature has a deviation
+		__forceinline bool DoesFeatureHaveDeviation()
+		{
+			return (deviation > 0);
+		}
+
+		//returns true if the feature is a nominal that only has one difference value for match and one for nonmatch
+		__forceinline bool IsFeatureSymmetricNominal()
+		{
+			if(!IsFeatureNominal())
+				return false;
+
+			return (nominalNumberSparseDeviationMatrix.size() == 0
+				&& nominalStringSparseDeviationMatrix.size() == 0);
+		}
+
 		//the type of comparison for each feature
 		// this type is 32-bit aligned to make sure the whole structure is aligned
 		FeatureDifferenceType featureType;
@@ -131,70 +165,29 @@ public:
 		double deviationReciprocal;
 
 		//contains the deviations for a given nominal value for each other nominal value
+		//if the nominal value is not found, then the attribute defaultDeviation should be used
 		template<typename NominalValueType, typename EqualComparison = std::equal_to<NominalValueType>>
-		class SparseNominalDeviationValues
+		class SparseNominalDeviationValues : public SmallMap<NominalValueType, double, EqualComparison>
 		{
 		public:
 			inline SparseNominalDeviationValues()
 				: defaultDeviation(0.0)
 			{	}
 
-			using value_type = NominalValueType;
-
-			//returns an iterator to deviations that matches the nominal key
-			inline auto FindDeviationIterator(NominalValueType key)
-			{
-				return std::find_if(begin(deviations), end(deviations),
-					[key](auto i)
-					{	return EqualComparison{}(i.first, key);	}
-				);
-			}
-
-			//deviations for each value; unknown should be stored as special nonvalue (e.g., NaN, NaS)
-			//store as a vector of pairs instead of a map because either only one value will be looked up once,
-			//in which case there's no advantage to having a map, or many distance term values will be looked up
-			//repeatedly, which is handled by a RepeatedGeneralizedDistanceEvaluator, which uses a map
-			std::vector<std::pair<NominalValueType, double>> deviations;
 			double defaultDeviation;
-		};
-
-		//contains the deviations for a given nominal value for each other nominal value
-		template<typename NominalValueType, typename EqualComparison = std::equal_to<NominalValueType>>
-		class SparseNominalDeviationMatrix
-		{
-		public:
-			inline SparseNominalDeviationMatrix()
-			{	}
-
-			using value_type = NominalValueType;
-
-			//returns an iterator to deviation values that matches the nominal key
-			inline auto FindDeviationValuesIterator(NominalValueType key)
-			{
-				return std::find_if(begin(deviationValues), end(deviationValues),
-					[key](auto i)
-					{	return EqualComparison{}(i.first, key);	}
-				);
-			}
-
-			//deviation values for each value; unknown should be stored as special nonvalue (e.g., NaN, NaS)
-			//store as a vector of pairs instead of a map because either only one value will be looked up once,
-			//in which case there's no advantage to having a map, or many distance term values will be looked up
-			//repeatedly, which is handled by a RepeatedGeneralizedDistanceEvaluator, which uses a map
-			std::vector<std::pair<NominalValueType, SparseNominalDeviationValues<NominalValueType, EqualComparison>>> deviationValues;
 		};
 
 		//sparse deviation matrix if the nominal is a string
 		//store as a vector of pairs instead of a map because either only one value will be looked up once,
 		//in which case there's no advantage to having a map, or many distance term values will be looked up
 		//repeatedly, which is handled by a RepeatedGeneralizedDistanceEvaluator, which uses a map
-		SparseNominalDeviationMatrix<StringInternPool::StringID> nominalStringSparseDeviationMatrix;
+		SmallMap<StringInternPool::StringID, SparseNominalDeviationValues<StringInternPool::StringID>> nominalStringSparseDeviationMatrix;
 
 		//sparse deviation matrix if the nominal is a number
 		//store as a vector of pairs instead of a map because either only one value will be looked up once,
 		//in which case there's no advantage to having a map, or many distance term values will be looked up
 		//repeatedly, which is handled by a RepeatedGeneralizedDistanceEvaluator, which uses a map
-		SparseNominalDeviationMatrix<double, DoubleNanHashComparator> nominalNumberSparseDeviationMatrix;
+		SmallMap<double, SparseNominalDeviationValues<double, DoubleNanHashComparator>, DoubleNanHashComparator> nominalNumberSparseDeviationMatrix;
 
 		//distance term to use if both values being compared are unknown
 		//the difference will be NaN if unknown
@@ -310,36 +303,31 @@ public:
 	//returns true if the feature is nominal
 	__forceinline bool IsFeatureNominal(size_t feature_index)
 	{
-		return (featureAttribs[feature_index].featureType <= GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE);
+		return featureAttribs[feature_index].IsFeatureNominal();
 	}
 
 	//returns true if the feature is nominal
 	__forceinline bool IsFeatureContinuous(size_t feature_index)
 	{
-		return (featureAttribs[feature_index].featureType >= GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC);
+		return featureAttribs[feature_index].IsFeatureContinuous();
 	}
 
 	//returns true if the feature is cyclic
 	__forceinline bool IsFeatureCyclic(size_t feature_index)
 	{
-		return (featureAttribs[feature_index].featureType == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC);
+		return featureAttribs[feature_index].IsFeatureCyclic();
 	}
 
 	//returns true if the feature has a deviation
 	__forceinline bool DoesFeatureHaveDeviation(size_t feature_index)
 	{
-		return (featureAttribs[feature_index].deviation > 0);
+		return featureAttribs[feature_index].DoesFeatureHaveDeviation();
 	}
 
 	//returns true if the feature is a nominal that only has one difference value for match and one for nonmatch
 	__forceinline bool IsFeatureSymmetricNominal(size_t feature_index)
 	{
-		if(!IsFeatureNominal(feature_index))
-			return false;
-
-		auto &feature_attribs = featureAttribs[feature_index];
-		return (feature_attribs.nominalNumberSparseDeviationMatrix.deviationValues.size() == 0
-			&& feature_attribs.nominalStringSparseDeviationMatrix.deviationValues.size() == 0);
+		return featureAttribs[feature_index].IsFeatureSymmetricNominal();
 	}
 
 	//returns true if a known to unknown distance term would be less than or same as an exact match
@@ -403,15 +391,15 @@ public:
 		}
 
 		double deviation = std::numeric_limits<double>::quiet_NaN();
-		if(a_type == ENIVT_NUMBER && feature_attribs.nominalNumberSparseDeviationMatrix.deviationValues.size() > 0)
+		if(a_type == ENIVT_NUMBER && feature_attribs.nominalNumberSparseDeviationMatrix.size() > 0)
 		{
-			auto outer_it = feature_attribs.nominalNumberSparseDeviationMatrix.FindDeviationValuesIterator(a.number);
-			if(outer_it != std::end(feature_attribs.nominalNumberSparseDeviationMatrix.deviationValues))
+			auto outer_it = feature_attribs.nominalNumberSparseDeviationMatrix.find(a.number);
+			if(outer_it != std::end(feature_attribs.nominalNumberSparseDeviationMatrix))
 			{
 				auto &ndd = outer_it->second;
-				auto inner_it = ndd.FindDeviationIterator(b.number);
+				auto inner_it = ndd.find(b.number);
 
-				if(inner_it == end(ndd.deviations))
+				if(inner_it == end(ndd))
 					deviation = ndd.defaultDeviation;
 				else
 					deviation = inner_it->second;
@@ -424,15 +412,15 @@ public:
 					deviation = feature_attribs.knownToUnknownDistanceTerm.deviation;
 			}
 		}
-		else if(a_type == ENIVT_STRING_ID && feature_attribs.nominalStringSparseDeviationMatrix.deviationValues.size() > 0)
+		else if(a_type == ENIVT_STRING_ID && feature_attribs.nominalStringSparseDeviationMatrix.size() > 0)
 		{
-			auto outer_it = feature_attribs.nominalStringSparseDeviationMatrix.FindDeviationValuesIterator(a.stringID);
-			if(outer_it != std::end(feature_attribs.nominalStringSparseDeviationMatrix.deviationValues))
+			auto outer_it = feature_attribs.nominalStringSparseDeviationMatrix.find(a.stringID);
+			if(outer_it != std::end(feature_attribs.nominalStringSparseDeviationMatrix))
 			{
 				auto &ndd = outer_it->second;
-				auto inner_it = ndd.FindDeviationIterator(b.stringID);
+				auto inner_it = ndd.find(b.stringID);
 
-				if(inner_it == end(ndd.deviations))
+				if(inner_it == end(ndd))
 					deviation = ndd.defaultDeviation;
 				else
 					deviation = inner_it->second;
@@ -505,8 +493,9 @@ public:
 			return -std::numeric_limits<double>::infinity();
 	}
 
+	//TODO 17631: remove this?
 	//computes the base of the difference between two nominal values that exactly match without exponentiation
-	__forceinline double ComputeDistanceTermNominalBaseExactMatchFromDeviation(size_t index, double deviation, bool high_accuracy)
+	__forceinline double ComputeDistanceTermBaseNominalExactMatchFromDeviation(size_t index, double deviation, bool high_accuracy)
 	{
 		if(!DoesFeatureHaveDeviation(index) || computeSurprisal)
 			return 0.0;
@@ -516,15 +505,16 @@ public:
 
 	//TODO 17631: genericize this for use in ComputeDistanceTermNominal -- may need to take in two deviations,
 	// exact match deviation and nonmatch deviation?  Or just change the calls to pass in 1-deviation?
-	//make sure lines up with ComputeDistanceTermNominalBaseExactMatchFromDeviation for exact match, and maybe remove ComputeDistanceTermNominalBaseExactMatchFromDeviation
+	//make sure lines up with ComputeDistanceTermBaseNominalExactMatchFromDeviation for exact match, and maybe remove ComputeDistanceTermBaseNominalExactMatchFromDeviation
 
 	//computes the base of the difference between two nominal values that do not match without exponentiation
-	__forceinline double ComputeDistanceTermNominalBaseNonMatchFromDeviation(size_t index, double deviation, bool high_accuracy)
+	__forceinline double ComputeDistanceTermBaseNominalNonMatchFromDeviation(size_t index, double deviation, bool high_accuracy)
 	{
 		if(computeSurprisal)
 		{
 			//need to have at least two classes in existence
 			double nominal_count = std::max(featureAttribs[index].typeAttributes.nominalCount, 2.0);
+			//TODO 17631: change to be weighted average: prob of nominal * deviation of random guessing
 			double prob_max_entropy_match = 1 / nominal_count;
 
 			//find probability that the correct class was selected
@@ -533,10 +523,10 @@ public:
 
 			//find the probability that any other class besides the correct class was selected
 			//divide the probability among the other classes
-			double prop_class_given_nonmatch = (1 - prob_class_given_match) / (nominal_count - 1);
+			double prob_class_given_nonmatch = (1 - prob_class_given_match) / (nominal_count - 1);
 
 			double surprisal_class_given_match = -std::log(prob_class_given_match);
-			double surprisal_class_given_nonmatch = -std::log(prop_class_given_nonmatch);
+			double surprisal_class_given_nonmatch = -std::log(prob_class_given_nonmatch);
 
 			//the surprisal of the class matching on a different value is the difference between
 			//how surprised it would be given a nonmatch but without the surprisal given a match
@@ -565,17 +555,86 @@ public:
 		}
 	}
 
+	//TODO 17631: finish this and integrate it
+	//returns the base of the distance term for nominal comparisons for a match
+	//given the probablility of the class being observed given that it is a match
+	__forceinline double ComputeDistanceTermBaseNominalMatchFromMatchProbabilities(size_t index,
+		double prob_class_given_match, bool high_accuracy)
+	{
+		if(!DoesFeatureHaveDeviation(index) || computeSurprisal)
+			return 0.0;
+
+		return 1 - prob_class_given_match;
+	}
+
+	//TODO 17631: finish this and integrate it
+	// for a given prob_class_given_match, which is the probability that the classes compared should have been a match,
+	// and prob_class_given_nonmatch, the probability that the particular comparison class does not match
+	__forceinline double ComputeDistanceTermBaseNominalNonmatchFromMatchProbabilities(size_t index,
+		double prob_class_given_match, double prob_class_given_nonmatch, bool high_accuracy)
+	{
+		if(computeSurprisal)
+		{
+			double surprisal_class_given_match = -std::log(prob_class_given_match);
+			double surprisal_class_given_nonmatch = -std::log(prob_class_given_nonmatch);
+
+			//the surprisal of the class matching on a different value is the difference between
+			//how surprised it would be given a nonmatch but without the surprisal given a match
+			double dist_term = surprisal_class_given_nonmatch - surprisal_class_given_match;
+
+			//ensure it doesn't go below zero in case of numerical precision issues
+			return std::max(dist_term, 0.0);
+		}
+		else if(DoesFeatureHaveDeviation(index))
+		{
+			//add together uncertainties from a nonmatch,
+			// plus a nonmatch of a nonmatch to get a match
+			double dist_term = (1 - prob_class_given_match) + (1 - prob_class_given_nonmatch);
+			return dist_term;
+		}
+		else
+		{
+			return 1.0;
+		}
+	}
+
+	//TODO 17631: finish this and integrate it
+	//for inputs to this method, if not using SDM, b_deviation = (1 - a_deviation) / (nominal_count - 1)
+	__forceinline double ComputeDistanceTermNominalBaseFromDeviations(size_t index, bool match,
+		double match_deviation, double nonmatch_deviation, bool high_accuracy)
+	{
+		//need to have at least two classes in existence
+		double nominal_count = std::max(featureAttribs[index].typeAttributes.nominalCount, 2.0);
+		//TODO 17631: change to be weighted average: prob of nominal * deviation of random guessing
+		double prob_max_entropy_match = 1 / nominal_count;
+
+		//find probability that the correct class was selected
+		//can't go below base probability of guessing
+		double prob_class_given_match = std::max(1 - match_deviation, prob_max_entropy_match);
+
+		//find the probability that any other class besides the correct class was selected,
+		//but cannot exceed the probability of a match
+		double prob_class_given_nonmatch = std::min(1 - nonmatch_deviation, prob_class_given_match);
+
+		if(match)
+			return ComputeDistanceTermBaseNominalMatchFromMatchProbabilities(index,
+				prob_class_given_match, high_accuracy);
+		else
+			return ComputeDistanceTermBaseNominalNonmatchFromMatchProbabilities(index,
+				prob_class_given_match, prob_class_given_nonmatch, high_accuracy);
+	}
+
 	//computes the distance term for a nominal when two universally symmetric nominals are equal
 	__forceinline double ComputeDistanceTermNominalUniversallySymmetricExactMatch(size_t index, bool high_accuracy)
 	{
-		double dist_term = ComputeDistanceTermNominalBaseExactMatchFromDeviation(index, featureAttribs[index].deviation, high_accuracy);
+		double dist_term = ComputeDistanceTermBaseNominalExactMatchFromDeviation(index, featureAttribs[index].deviation, high_accuracy);
 		return ContextuallyExponentiateAndWeightDifferenceTerm(dist_term, index, high_accuracy);
 	}
 
 	//computes the distance term for a nominal when two universally symmetric nominals are not equal
 	__forceinline double ComputeDistanceTermNominalUniversallySymmetricNonMatch(size_t index, bool high_accuracy)
 	{
-		double dist_term = ComputeDistanceTermNominalBaseNonMatchFromDeviation(index, featureAttribs[index].deviation, high_accuracy);
+		double dist_term = ComputeDistanceTermBaseNominalNonMatchFromDeviation(index, featureAttribs[index].deviation, high_accuracy);
 		return ContextuallyExponentiateAndWeightDifferenceTerm(dist_term, index, high_accuracy);
 	}
 
@@ -722,6 +781,7 @@ public:
 			{
 				//need to have at least two classes in existence
 				double nominal_count = std::max(featureAttribs[index].typeAttributes.nominalCount, 2.0);
+				//TODO 17631: change to be weighted average: prob of nominal * deviation of random guessing
 				double prob_max_entropy_match = 1 / nominal_count;
 
 				//find probability that the correct class was selected
@@ -926,7 +986,7 @@ protected:
 		for(size_t i = 0; i < featureAttribs.size(); i++)
 		{
 			auto &feature_attribs = featureAttribs[i];
-			if(IsFeatureNominal(i))
+			if(feature_attribs.IsFeatureNominal())
 			{
 				//ensure if a feature has deviations they're not too small to underflow
 				if(DoesFeatureHaveDeviation(i))
@@ -1055,8 +1115,64 @@ public:
 		: distEvaluator(dist_evaluator)
 	{	}
 
+	//for the feature index, computes and stores the distance terms for nominal values
+	inline void ComputeAndStoreNominalDistanceTerms(size_t index)
+	{
+		bool compute_approximate = distEvaluator->NeedToPrecomputeApproximate();
+
+		//make sure there's room for the interned index
+		if(featureData.size() <= index)
+			featureData.resize(index + 1);
+
+		auto &feature_attributes = distEvaluator->featureAttribs[index];
+		auto &feature_data = featureData[index];
+
+		//since most of the computations will be using approximate if it is needed,
+		//only set to high accuracy if not using approximate
+		feature_data.precomputedNominalDistanceTermsHighAccuracy = (!compute_approximate);
+
+		if(feature_data.targetValue.nodeType == ENIVT_NUMBER)
+		{
+			auto &sdm = feature_attributes.nominalNumberSparseDeviationMatrix;
+			auto target_value = feature_data.targetValue.nodeValue.number;
+
+			auto deviations_for_value = sdm.find(target_value);
+			if(deviations_for_value != end(sdm))
+			{
+				auto &deviations = deviations_for_value->second;
+				for(auto &[value, deviation] : deviations)
+				{
+					//TODO 17631: finish this
+					// double dist_term = distEvaluator->ComputeDistanceTermNominalBaseFromDeviations(index, value == sid, )
+					// feature_data.nominalNumberDistanceTerms.emplace()
+				}
+
+				//TODO: deviations.defaultDeviation
+			}
+		}
+		else if(feature_data.targetValue.nodeType == ENIVT_STRING_ID)
+		{
+			auto &sdm = feature_attributes.nominalStringSparseDeviationMatrix;
+			auto target_sid = feature_data.targetValue.nodeValue.stringID;
+
+			auto deviations_for_value = sdm.find(target_sid);
+			if(deviations_for_value != end(sdm))
+			{
+				auto &deviations = deviations_for_value->second;
+				for(auto &[value, deviation] : deviations)
+				{
+					//TODO 17631: finish this
+					// double dist_term = distEvaluator->ComputeDistanceTermNominalBaseFromDeviations(index, value == sid, )
+					// feature_data.nominalNumberDistanceTerms.emplace()
+				}
+
+				//TODO: deviations.defaultDeviation
+			}
+		}
+	}
+
 	//for the feature index, computes and stores the distance terms as measured from value to each interned value
-	inline void ComputeAndStoreInternedNumberValuesAndDistanceTerms(double value, size_t index, std::vector<double> *interned_values)
+	inline void ComputeAndStoreInternedNumberValuesAndDistanceTerms(size_t index, std::vector<double> *interned_values)
 	{
 		bool compute_accurate = distEvaluator->NeedToPrecomputeAccurate();
 		bool compute_approximate = distEvaluator->NeedToPrecomputeApproximate();
@@ -1065,39 +1181,41 @@ public:
 		if(featureData.size() <= index)
 			featureData.resize(index + 1);
 
-		auto &feature_interns = featureData[index];
-		feature_interns.internedNumberIndexToNumberValue = interned_values;
+		auto &feature_data = featureData[index];
+		feature_data.internedNumberIndexToNumberValue = interned_values;
 
 		if(interned_values == nullptr)
 		{
-			feature_interns.internedDistanceTerms.clear();
+			feature_data.internedDistanceTerms.clear();
 			return;
 		}
 
-		feature_interns.internedDistanceTerms.resize(interned_values->size());
+		feature_data.internedDistanceTerms.resize(interned_values->size());
 
 		auto &feature_attribs = distEvaluator->featureAttribs[index];
+
+		double value = feature_data.targetValue.GetValueAsNumber();
 		if(FastIsNaN(value))
 		{
 			//first entry is unknown-unknown distance
-			feature_interns.internedDistanceTerms[0] = feature_attribs.unknownToUnknownDistanceTerm;
+			feature_data.internedDistanceTerms[0] = feature_attribs.unknownToUnknownDistanceTerm;
 			
 			auto k_to_unk = feature_attribs.knownToUnknownDistanceTerm;
-			for(size_t i = 1; i < feature_interns.internedDistanceTerms.size(); i++)
-				feature_interns.internedDistanceTerms[i] = k_to_unk;
+			for(size_t i = 1; i < feature_data.internedDistanceTerms.size(); i++)
+				feature_data.internedDistanceTerms[i] = k_to_unk;
 		}
 		else
 		{
 			//first entry is known-unknown distance
-			feature_interns.internedDistanceTerms[0] = feature_attribs.knownToUnknownDistanceTerm;
+			feature_data.internedDistanceTerms[0] = feature_attribs.knownToUnknownDistanceTerm;
 
-			for(size_t i = 1; i < feature_interns.internedDistanceTerms.size(); i++)
+			for(size_t i = 1; i < feature_data.internedDistanceTerms.size(); i++)
 			{
 				double difference = value - (*interned_values)[i];
 				if(compute_accurate)
-					feature_interns.internedDistanceTerms[i].SetValue(distEvaluator->ComputeDistanceTermContinuousNonNullRegular(difference, index, true), true);
+					feature_data.internedDistanceTerms[i].SetValue(distEvaluator->ComputeDistanceTermContinuousNonNullRegular(difference, index, true), true);
 				if(compute_approximate)
-					feature_interns.internedDistanceTerms[i].SetValue(distEvaluator->ComputeDistanceTermContinuousNonNullRegular(difference, index, false), false);
+					feature_data.internedDistanceTerms[i].SetValue(distEvaluator->ComputeDistanceTermContinuousNonNullRegular(difference, index, false), false);
 			}
 		}
 	}
@@ -1127,42 +1245,125 @@ public:
 
 	//returns the inner term of the Minkowski norm summation given that the feature is nominal
 	//and the data type being compared from is numeric
-	//if types_match is false, then the value is ignored
-	__forceinline double ComputeDistanceTermNominalNumeric(double value,
-		size_t index, bool types_match, bool high_accuracy)
+	//if value_type_numeric is false, then the value is ignored
+	__forceinline double ComputeDistanceTermNominalNumeric(double value, bool value_type_numeric,
+		size_t index, bool high_accuracy)
 	{
-		//TODO 17631: implement this
-		return 0.0;
+		auto &feature_data = featureData[index];
+		if(feature_data.nominalNumberDistanceTerms.size() > 0)
+		{
+			//TODO 17631: implement this
+		}
+
+		if(value_type_numeric && value == feature_data.targetValue.GetValueAsNumber())
+			return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
+		else
+			return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
 	}
 
 	//returns the inner term of the Minkowski norm summation given that the feature is nominal
 	//and the data type being compared from is string
-	//if types_match is false, then the value is ignored
-	__forceinline double ComputeDistanceTermNominalString(StringInternPool::StringID value,
-		size_t index, bool types_match, bool high_accuracy)
+	//if value_type_string is false, then the value is ignored
+	__forceinline double ComputeDistanceTermNominalString(StringInternPool::StringID value, bool value_type_string,
+		size_t index, bool high_accuracy)
 	{
-		//TODO 17631: implement this
-		return 0.0;
+		auto &feature_data = featureData[index];
+		if(feature_data.nominalStringDistanceTerms.size() > 0)
+		{
+			//TODO 17631: implement this
+		}
+
+		if(value_type_string && value == feature_data.targetValue.GetValueAsStringIDIfExists())
+			return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
+		else
+			return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
+	}
+
+	//returns the distance term given that it is nominal
+	__forceinline double ComputeDistanceTermNominal(EvaluableNodeImmediateValue other_value,
+		EvaluableNodeImmediateValueType other_type, size_t index, bool high_accuracy)
+	{
+		//TODO 17631: make this more efficient, placeholder for now
+		auto &feature_data = featureData[index];
+		return distEvaluator->ComputeDistanceTermNominal(feature_data.targetValue.nodeValue, other_value,
+			feature_data.targetValue.nodeType, other_type, index, high_accuracy);
+	}
+
+	//returns the smallest nonmatching distance term for the nominal given other_value
+	__forceinline double ComputeDistanceTermNominalSmallestNonmatch(double other_value,
+		size_t index, bool high_accuracy)
+	{
+		//TODO 17631: implement this, placeholder for now
+		return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
+	}
+
+	//returns the smallest nonmatching distance term for the nominal given other_value
+	__forceinline double ComputeDistanceTermNominalSmallestNonmatch(StringInternPool::StringID other_value,
+		size_t index, bool high_accuracy)
+	{
+		//TODO 17631: implement this, placeholder for now
+		return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
+	}
+
+	//returns the smallest nonmatching distance term regardless of value
+	__forceinline double ComputeDistanceTermNominalSmallestNonmatch(size_t index, bool high_accuracy)
+	{
+		//TODO 17631: implement this, placeholder for now
+		return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
+	}
+
+	//for all nominal distance term values that equal dist_term for the given high_accuracy,
+	//it will call func passing in the numeric value
+	template<typename Func>
+	__forceinline void IterateOverNominalValuesWithLessOrEqualDistanceTermsNumeric(double dist_term, size_t index, bool high_accuracy,
+		Func func)
+	{
+		auto &feature_data = featureData[index];
+		for(auto &entry : feature_data.nominalNumberDistanceTerms)
+		{
+			if(entry.second <= dist_term)
+				func(entry.first);
+		}
+	}
+
+	//for all nominal distance term values that equal dist_term for the given high_accuracy,
+	//it will call func passing in the string id value
+	template<typename Func>
+	__forceinline void IterateOverNominalValuesWithLessOrEqualDistanceTermsString(double dist_term, size_t index, bool high_accuracy,
+		Func func)
+	{
+		auto &feature_data = featureData[index];
+		for(auto &entry : feature_data.nominalStringDistanceTerms)
+		{
+			if(entry.second <= dist_term)
+				func(entry.first);
+		}
+	}
+
+	//returns the smallest distance term larger than dist_term
+	__forceinline double ComputeDistanceTermNominalNextSmallest(double dist_term, size_t index, bool high_accuracy)
+	{
+		//TODO 17631: implement this, placeholder for now
+		return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
 	}
 
 	//computes the inner term of the Minkowski norm summation
 	__forceinline double ComputeDistanceTerm(EvaluableNodeImmediateValue other_value,
 		EvaluableNodeImmediateValueType other_type, size_t index, bool high_accuracy)
 	{
-		//TODO 17631: improve the logic and efficiency
 		auto &feature_data = featureData[index];
 
 		//if nominal, don't need to compute absolute value of diff because just need to compare to 0
 		if(distEvaluator->IsFeatureNominal(index))
-			return distEvaluator->ComputeDistanceTermNominal(feature_data.targetValue, other_value,
-				feature_data.targetValueType, other_type, index, high_accuracy);
+			return ComputeDistanceTermNominal(other_value, other_type, index, high_accuracy);
 
-		double diff = distEvaluator->ComputeDifference(feature_data.targetValue, other_value,
-			feature_data.targetValueType, other_type, distEvaluator->featureAttribs[index].featureType);
+		//TODO 17631: improve the logic and efficiency here down
+		double diff = distEvaluator->ComputeDifference(feature_data.targetValue.nodeValue, other_value,
+			feature_data.targetValue.nodeType, other_type, distEvaluator->featureAttribs[index].featureType);
 
 		if(FastIsNaN(diff))
-			return distEvaluator->LookupNullDistanceTerm(feature_data.targetValue, other_value,
-				feature_data.targetValueType, other_type, index, high_accuracy);
+			return distEvaluator->LookupNullDistanceTerm(feature_data.targetValue.nodeValue, other_value,
+				feature_data.targetValue.nodeType, other_type, index, high_accuracy);
 
 		return distEvaluator->ComputeDistanceTermContinuousNonNullRegular(diff, index, high_accuracy);
 	}
@@ -1192,8 +1393,7 @@ public:
 		EffectiveFeatureDifferenceType effectiveFeatureType;
 
 		//target that the distance will be computed to
-		EvaluableNodeImmediateValueType targetValueType;
-		EvaluableNodeImmediateValue targetValue;
+		EvaluableNodeImmediateValueWithType targetValue;
 
 		//the distance term for EFDT_REMAINING_IDENTICAL_PRECOMPUTED
 		double precomputedRemainingIdenticalDistanceTerm;
@@ -1201,10 +1401,12 @@ public:
 		std::vector<double> *internedNumberIndexToNumberValue;
 		std::vector<GeneralizedDistanceEvaluator::DistanceTerms> internedDistanceTerms;
 
-		//TODO 17631: genericize ComputeAndStoreInternedNumberValuesAndDistanceTerms to precompute these when appropriate
 		//used to store distance terms for the respective targetValue for the sparse deviation matrix
 		FastHashMap<StringInternPool::StringID, double> nominalStringDistanceTerms;
 		FastHashMap<double, double> nominalNumberDistanceTerms;
+
+		//if true, then nominalStringDistanceTerms and nominalNumberDistanceTerms are high accuracy, otherwise approximate
+		bool precomputedNominalDistanceTermsHighAccuracy;
 	};
 
 	//for each feature, precomputed distance terms for each interned value looked up by intern index

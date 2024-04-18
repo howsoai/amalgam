@@ -652,6 +652,38 @@ protected:
 			return AccumulatePartialSums(entity_indices.GetBaisContainer(), query_feature_index, term);
 	}
 
+	//accumulates the partial sums for the specified value
+	// returns the distance term evaluated, or 0.0 if value was not found
+	inline double AccumulatePartialSumsForNominalNumberValueIfExists(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+		double value, size_t query_feature_index, SBFDSColumnData &column, bool high_accuracy)
+	{
+		auto [value_index, exact_index_found] = column.FindExactIndexForValue(value);
+		if(exact_index_found)
+		{
+			double term = r_dist_eval.ComputeDistanceTermNominalNumeric(value, true, query_feature_index, high_accuracy);
+			AccumulatePartialSums(column.sortedNumberValueEntries[value_index]->indicesWithValue, query_feature_index, term);
+			return term;
+		}
+
+		return 0.0;
+	}
+
+	//accumulates the partial sums for the specified value
+	// returns the distance term evaluated, or 0.0 if value was not found
+	inline double AccumulatePartialSumsForNominalStringIdValueIfExists(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+		StringInternPool::StringID value, size_t query_feature_index, SBFDSColumnData &column, bool high_accuracy)
+	{
+		auto value_found = column.stringIdValueToIndices.find(value);
+		if(value_found != end(column.stringIdValueToIndices))
+		{
+			double term = r_dist_eval.ComputeDistanceTermNominalString(value, true, query_feature_index, high_accuracy);
+			AccumulatePartialSums(*(value_found->second), query_feature_index, term);
+			return term;
+		}
+
+		return 0.0;
+	}
+
 	//search a projection width in terms of bucket count or number of collected entities
 	//accumulates partial sums
 	//searches until num_entities_to_populate are popluated or other heuristics have been reached
@@ -725,7 +757,7 @@ protected:
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 			return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicOneNonNullRegular(
-				feature_data.targetValue.number - GetValue(entity_index, feature_attribs.featureIndex).number,
+				feature_data.targetValue.nodeValue.number - GetValue(entity_index, feature_attribs.featureIndex).number,
 				query_feature_index, high_accuracy);
 		}
 
@@ -742,7 +774,7 @@ protected:
 			auto &column_data = columnData[feature_attribs.featureIndex];
 			if(column_data->numberIndices.contains(entity_index))
 				return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicOneNonNullRegular(
-					feature_data.targetValue.number - GetValue(entity_index, feature_attribs.featureIndex).number,
+					feature_data.targetValue.nodeValue.number - GetValue(entity_index, feature_attribs.featureIndex).number,
 					query_feature_index, high_accuracy);
 			else
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
@@ -754,7 +786,7 @@ protected:
 			auto &column_data = columnData[feature_attribs.featureIndex];
 			if(column_data->numberIndices.contains(entity_index))
 				return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousOneNonNullRegular(
-					feature_data.targetValue.number - GetValue(entity_index, feature_attribs.featureIndex).number,
+					feature_data.targetValue.nodeValue.number - GetValue(entity_index, feature_attribs.featureIndex).number,
 					query_feature_index, high_accuracy);
 			else
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
@@ -777,11 +809,11 @@ protected:
 			auto &column_data = columnData[feature_attribs.featureIndex];
 			if(column_data->stringIdIndices.contains(entity_index))
 				return r_dist_eval.ComputeDistanceTermNominalString(
-					GetValue(entity_index, feature_attribs.featureIndex).stringID,
-					query_feature_index, true, high_accuracy);
+					GetValue(entity_index, feature_attribs.featureIndex).stringID, true,
+					query_feature_index, high_accuracy);
 			else
-				return r_dist_eval.ComputeDistanceTermNominalString(string_intern_pool.EMPTY_STRING_ID,
-					query_feature_index, false, high_accuracy);
+				return r_dist_eval.ComputeDistanceTermNominalString(string_intern_pool.EMPTY_STRING_ID, false,
+					query_feature_index, high_accuracy);
 		}
 
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMERIC:
@@ -790,11 +822,11 @@ protected:
 			auto &column_data = columnData[feature_attribs.featureIndex];
 			if(column_data->numberIndices.contains(entity_index))
 				return r_dist_eval.ComputeDistanceTermNominalNumeric(
-					GetValue(entity_index, feature_attribs.featureIndex).number,
-					query_feature_index, true, high_accuracy);
+					GetValue(entity_index, feature_attribs.featureIndex).number, true,
+					query_feature_index, high_accuracy);
 			else
-				return r_dist_eval.ComputeDistanceTermNominalNumeric(0.0,
-					query_feature_index, false, high_accuracy);
+				return r_dist_eval.ComputeDistanceTermNominalNumeric(0.0, false,
+					query_feature_index, high_accuracy);
 		}
 
 		default:

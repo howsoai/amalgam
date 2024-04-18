@@ -1062,6 +1062,11 @@ public:
 		: nodeType(ENIVT_NULL)
 	{	}
 
+	constexpr EvaluableNodeImmediateValueWithType(EvaluableNodeImmediateValue node_value,
+		EvaluableNodeImmediateValueType node_type)
+		: nodeType(node_type), nodeValue(node_value)
+	{	}
+
 	__forceinline EvaluableNodeImmediateValueWithType(bool value)
 	{
 		nodeType = ENIVT_NUMBER;
@@ -1252,6 +1257,12 @@ public:
 	static inline bool AreEqual(EvaluableNodeImmediateValueWithType &a, EvaluableNodeImmediateValueWithType &b)
 	{
 		return EvaluableNodeImmediateValue::AreEqual(a.nodeType, a.nodeValue, b.nodeType, b.nodeValue);
+	}
+
+	//returns true if it is a null or null equivalent
+	constexpr bool IsNullEquivalent()
+	{
+		return EvaluableNodeImmediateValue::IsNullEquivalent(nodeType, nodeValue);
 	}
 
 	EvaluableNodeImmediateValueType nodeType;

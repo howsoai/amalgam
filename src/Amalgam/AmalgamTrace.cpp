@@ -65,14 +65,14 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 				escape_contained_filenames = command_tokens[5];
 
 				if(command_tokens.size() >= 7)
-					print_listener_path = command_tokens[6];
-				else
-					print_listener_path = "";
-
-				if(command_tokens.size() >= 8)
-					transaction_listener_path = command_tokens[7];
+					transaction_listener_path = command_tokens[6];
 				else
 					transaction_listener_path = "";
+
+				if(command_tokens.size() >= 8)
+					print_listener_path = command_tokens[7];
+				else
+					print_listener_path = "";
 
 				std::string new_rand_seed = random_stream.CreateOtherStreamStateViaString("trace");
 				auto status = entint.LoadEntity(handle, data, persistent == "true", use_contained == "true",
@@ -100,14 +100,14 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 					persistent = command_tokens[3];
 
 				if(command_tokens.size() >= 5)
-					print_listener_path = command_tokens[4];
-				else
-					print_listener_path = "";
-
-				if(command_tokens.size() >= 6)
-					transaction_listener_path = command_tokens[5];
+					transaction_listener_path = command_tokens[4];
 				else
 					transaction_listener_path = "";
+
+				if(command_tokens.size() >= 6)
+					print_listener_path = command_tokens[5];
+				else
+					print_listener_path = "";
 
 				bool result = entint.CloneEntity(handle, clone_handle, data, persistent == "true", transaction_listener_path, print_listener_path);
 				response = result ? SUCCESS_RESPONSE : FAILURE_RESPONSE;

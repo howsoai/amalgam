@@ -36,6 +36,8 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 	std::string data;
 	std::string persistent;
 	std::string use_contained;
+	std::string escape_filename;
+	std::string escape_contained_filenames;
 	std::string print_listener_path;
 	std::string transaction_listener_path;
 	std::string response;
@@ -61,17 +63,28 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 				use_contained = command_tokens[3];
 
 				if(command_tokens.size() >= 5)
-					print_listener_path = command_tokens[4];
+					escape_filename = command_tokens[4];
 				else
-					print_listener_path = "";
+					escape_filename = "false";
 
 				if(command_tokens.size() >= 6)
-					transaction_listener_path = command_tokens[5];
+					escape_contained_filenames = command_tokens[5];
+				else
+					escape_contained_filenames = "true";
+
+				if(command_tokens.size() >= 7)
+					transaction_listener_path = command_tokens[6];
 				else
 					transaction_listener_path = "";
 
+				if(command_tokens.size() >= 8)
+					print_listener_path = command_tokens[7];
+				else
+					print_listener_path = "";
+
 				std::string new_rand_seed = random_stream.CreateOtherStreamStateViaString("trace");
-				auto status = entint.LoadEntity(handle, data, persistent == "true", use_contained == "true", transaction_listener_path, print_listener_path, new_rand_seed);
+				auto status = entint.LoadEntity(handle, data, persistent == "true", use_contained == "true",
+					escape_filename == "true", escape_contained_filenames == "true", transaction_listener_path, print_listener_path, new_rand_seed);
 				response = status.loaded ? SUCCESS_RESPONSE : FAILURE_RESPONSE;
 			}
 			else
@@ -95,14 +108,14 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 					persistent = command_tokens[3];
 
 				if(command_tokens.size() >= 5)
-					print_listener_path = command_tokens[4];
-				else
-					print_listener_path = "";
-
-				if(command_tokens.size() >= 6)
-					transaction_listener_path = command_tokens[5];
+					transaction_listener_path = command_tokens[4];
 				else
 					transaction_listener_path = "";
+
+				if(command_tokens.size() >= 6)
+					print_listener_path = command_tokens[5];
+				else
+					print_listener_path = "";
 
 				bool result = entint.CloneEntity(handle, clone_handle, data, persistent == "true", transaction_listener_path, print_listener_path);
 				response = result ? SUCCESS_RESPONSE : FAILURE_RESPONSE;

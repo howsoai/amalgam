@@ -61,8 +61,16 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 				data = command_tokens[1];  // path to amlg file
 				persistent = command_tokens[2];
 				use_contained = command_tokens[3];
-				escape_filename = command_tokens[4];
-				escape_contained_filenames = command_tokens[5];
+
+				if(command_tokens.size() >= 5)
+					escape_filename = command_tokens[4];
+				else
+					escape_filename = "false";
+
+				if(command_tokens.size() >= 6)
+					escape_contained_filenames = command_tokens[5];
+				else
+					escape_contained_filenames = "false";
 
 				if(command_tokens.size() >= 7)
 					transaction_listener_path = command_tokens[6];

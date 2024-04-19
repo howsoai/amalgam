@@ -55,7 +55,7 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 		if(command == "LOAD_ENTITY")
 		{
 			std::vector<std::string> command_tokens = StringManipulation::SplitArgString(input);
-			if(command_tokens.size() >= 6)
+			if(command_tokens.size() >= 4)
 			{
 				handle = command_tokens[0];
 				data = command_tokens[1];  // path to amlg file

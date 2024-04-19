@@ -514,7 +514,7 @@ public:
 		{
 			//need to have at least two classes in existence
 			double nominal_count = std::max(featureAttribs[index].typeAttributes.nominalCount, 2.0);
-			//TODO 17631: change to be weighted average: prob of nominal * deviation of random guessing
+			//TODO 17631: populate and use nominalMaxEntropyDeviation (which needs to be populated) instead: prob of nominal * deviation of random guessing
 			double prob_max_entropy_match = 1 / nominal_count;
 
 			//find probability that the correct class was selected
@@ -605,7 +605,7 @@ public:
 	{
 		//need to have at least two classes in existence
 		double nominal_count = std::max(featureAttribs[index].typeAttributes.nominalCount, 2.0);
-		//TODO 17631: change to be weighted average: prob of nominal * deviation of random guessing
+		//TODO 17631: populate and use nominalMaxEntropyDeviation (which needs to be populated) instead: prob of nominal * deviation of random guessing
 		double prob_max_entropy_match = 1 / nominal_count;
 
 		//find probability that the correct class was selected
@@ -1400,6 +1400,10 @@ public:
 
 		std::vector<double> *internedNumberIndexToNumberValue;
 		std::vector<GeneralizedDistanceEvaluator::DistanceTerms> internedDistanceTerms;
+
+		//the deviation represented by attempting to predict a nominal value by randomly
+		//selecting from the distribution of existing values
+		double nominalMaxEntropyDeviation;
 
 		//used to store distance terms for the respective targetValue for the sparse deviation matrix
 		FastHashMap<StringInternPool::StringID, double> nominalStringDistanceTerms;

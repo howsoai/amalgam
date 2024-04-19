@@ -957,13 +957,13 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 			//if there are terms smaller than unknown_unknown_term, then need to compute any other nominal values
 			r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTermsNumeric(unknown_unknown_term, query_feature_index, high_accuracy,
-				[this, &r_dist_eval, &feature_attribs, &column, query_feature_index, high_accuracy](double number_value)
+				[this, &r_dist_eval, &column, query_feature_index, high_accuracy](double number_value)
 				{
 					AccumulatePartialSumsForNominalNumberValueIfExists(r_dist_eval, number_value, query_feature_index, *column, high_accuracy);
 				});
 
 			r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTermsString(unknown_unknown_term, query_feature_index, high_accuracy,
-				[this, &r_dist_eval, &feature_attribs, &column, query_feature_index, high_accuracy](StringInternPool::StringID sid)
+				[this, &r_dist_eval, &column, query_feature_index, high_accuracy](StringInternPool::StringID sid)
 				{
 					AccumulatePartialSumsForNominalStringIdValueIfExists(r_dist_eval, sid, query_feature_index, *column, high_accuracy);
 				});
@@ -977,7 +977,6 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	//if made it here, then the value itself is not a null, so only need to consider unknown to known distances
 	//need to accumulate nulls if it's a symmetric nominal feature, because then there's only one value left,
 	//or if the nulls are closer than an exact match
-	bool accumulated_known_to_unknown = false;
 	if(is_feature_symmetric_nominal
 		|| r_dist_eval.distEvaluator->IsKnownToUnknownDistanceLessThanOrEqualToExactMatch(query_feature_index))
 	{
@@ -987,7 +986,6 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		auto nas_iter = column->stringIdValueToIndices.find(string_intern_pool.NOT_A_STRING_ID);
 		if(nas_iter != end(column->stringIdValueToIndices))
 			AccumulatePartialSums(*nas_iter->second, query_feature_index, known_unknown_term);
-		accumulated_known_to_unknown = true;
 	}
 
 	//if nominal, only need to compute the exact match
@@ -1036,7 +1034,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 		//need to iterate over everything with the same distance term
 		r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTermsString(accumulated_term, query_feature_index, high_accuracy,
-			[this, &value, &r_dist_eval, &feature_attribs, &column, query_feature_index, high_accuracy](StringInternPool::StringID sid)
+			[this, &value, &r_dist_eval, &column, query_feature_index, high_accuracy](StringInternPool::StringID sid)
 			{
 				//don't want to double-accumulate the found value
 				if(sid != value.nodeValue.stringID)
@@ -1062,7 +1060,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 		//need to iterate over everything with the same distance term
 		r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTermsNumeric(accumulated_term, query_feature_index, high_accuracy,
-			[this, &value, &r_dist_eval, &feature_attribs, &column, query_feature_index, high_accuracy](double number_value)
+			[this, &value, &r_dist_eval, &column, query_feature_index, high_accuracy](double number_value)
 			{
 				//don't want to double-accumulate the found value
 				if(!EqualIncludingNaN(number_value, value.nodeValue.number))

@@ -30,7 +30,7 @@ void EntityExternalInterface::LoadEntityStatus::SetStatus(bool loaded_in, std::s
 }
 
 EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(std::string &handle, std::string &path, bool persistent, bool load_contained_entities,
-	std::string &write_log_filename, std::string &print_log_filename, std::string rand_seed)
+	bool escape_filename, bool escape_contained_filenames, std::string &write_log_filename, std::string &print_log_filename, std::string rand_seed)
 {
 	LoadEntityStatus status;
 
@@ -42,7 +42,7 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(st
 	}
 
 	std::string file_type = "";
-	Entity *entity = asset_manager.LoadEntityFromResourcePath(path, file_type, persistent, load_contained_entities, false, true, rand_seed, status);
+	Entity *entity = asset_manager.LoadEntityFromResourcePath(path, file_type, persistent, load_contained_entities, escape_filename, escape_contained_filenames, rand_seed, status);
 	if(!status.loaded)
 		return status;
 

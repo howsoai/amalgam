@@ -5,7 +5,7 @@
 enable_testing()
 
 # CTest args:
-set(CMAKE_CTEST_ARGUMENTS "-j" "--schedule-random" "--output-on-failure" "--output-log" "${CMAKE_SOURCE_DIR}/out/test/all_tests.log")
+set(CMAKE_CTEST_ARGUMENTS "-j" "--schedule-random" "--output-on-failure" "--extra-verbose" "--output-log" "${CMAKE_SOURCE_DIR}/out/test/all_tests.log")
 
 # Not all tests can be run on all platforms:
 if(IS_MACOS)

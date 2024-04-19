@@ -65,12 +65,12 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 				if(command_tokens.size() >= 5)
 					escape_filename = command_tokens[4];
 				else
-					escape_filename = "false";
+					escape_filename = "true";
 
 				if(command_tokens.size() >= 6)
 					escape_contained_filenames = command_tokens[5];
 				else
-					escape_contained_filenames = "false";
+					escape_contained_filenames = "true";
 
 				if(command_tokens.size() >= 7)
 					transaction_listener_path = command_tokens[6];

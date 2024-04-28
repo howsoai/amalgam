@@ -536,16 +536,11 @@ public:
 		else if(DoesFeatureHaveDeviation(index))
 		{
 			double nominal_count = featureAttribs[index].typeAttributes.nominalCount;
-
-			// n = number of nominal classes
-			// match: deviation ^ p * weight
-			// non match: (deviation + (1 - deviation) / (n - 1)) ^ p * weight
-			//if there is only one nominal class, the smallest delta value it could be is the specified smallest delta, otherwise it's 1.0
-			double dist_term = 0;
+			double dist_term = 1;
+			//the probability of each other term is spread across all of the different nominal classes,
+			//so take the remaining probability for all other classes besides the one nonmatch chosen
 			if(nominal_count > 1)
-				dist_term = (deviation + (1 - deviation) / (nominal_count - 1));
-			else
-				dist_term = 1;
+				dist_term = 1.0 - (deviation / (nominal_count - 1));
 
 			return dist_term;
 		}

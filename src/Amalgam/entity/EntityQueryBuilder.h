@@ -217,7 +217,7 @@ namespace EntityQueryBuilder
 					case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
 					case GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE:
 						if(found && !EvaluableNode::IsNull(en))
-							dist_eval.featureAttribs[i].typeAttributes.nominalCount = EvaluableNode::ToNumber(en, 1);
+							dist_eval.featureAttribs[i].typeAttributes.nominalCount = EvaluableNode::ToNumber(en);
 						break;
 
 					case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC:

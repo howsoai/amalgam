@@ -409,15 +409,9 @@ public:
 	}
 
 	//returns the number of unique values for a column for the given value_type
-	size_t GetNumUniqueValuesForColumn(size_t column_index, EvaluableNodeImmediateValueType value_type)
+	inline size_t GetNumUniqueValuesForColumn(size_t column_index, EvaluableNodeImmediateValueType value_type)
 	{
-		auto &column_data = columnData[column_index];
-		if(value_type == ENIVT_NUMBER)
-			return column_data->numberIndices.size();
-		else if(value_type == ENIVT_STRING_ID)
-			return column_data->stringIdIndices.size();
-		else //return everything else
-			return GetNumInsertedEntities() - column_data->invalidIndices.size();
+		return columnData[column_index]->GetNumUniqueValues(value_type);
 	}
 
 	//returns a function that will take in an entity index iterator and reference to a double to store the value and return true if the value is found
@@ -935,8 +929,8 @@ public:
 		}
 	}
 
-	//recomputes column indices for each feature as well as filling in unknowns
-	inline void PopulateColumnIndicesAndUnknownFeatureValueDifferences(
+	//sets values in dist_eval corresponding to the columns specified by position_label_ids
+	inline void PopulateGeneralizedDistanceEvaluatorFromColumnData(
 		GeneralizedDistanceEvaluator &dist_eval, std::vector<size_t> &position_label_ids)
 	{
 		for(size_t query_feature_index = 0; query_feature_index < position_label_ids.size(); query_feature_index++)
@@ -944,9 +938,13 @@ public:
 			auto column = labelIdToColumnIndex.find(position_label_ids[query_feature_index]);
 			if(column == end(labelIdToColumnIndex))
 				continue;
+			auto &column_data = columnData[query_feature_index];
 
 			auto &feature_attribs = dist_eval.featureAttribs[query_feature_index];
 			feature_attribs.featureIndex = column->second;
+
+			if(feature_attribs.IsFeatureNominal() && FastIsNaN(feature_attribs.typeAttributes.nominalCount))
+				feature_attribs.typeAttributes.nominalCount = static_cast<double>(column_data->GetNumUniqueValues());
 
 			//if either known or unknown to unknown is missing, need to compute difference
 			// and store it where it is needed
@@ -954,8 +952,7 @@ public:
 			if(FastIsNaN(feature_attribs.knownToUnknownDistanceTerm.deviation)
 				|| FastIsNaN(feature_attribs.unknownToUnknownDistanceTerm.deviation))
 			{
-				unknown_distance_term = columnData[feature_attribs.featureIndex]->GetMaxDifferenceTerm(
-					feature_attribs);
+				unknown_distance_term = column_data->GetMaxDifferenceTerm(feature_attribs);
 
 				if(FastIsNaN(feature_attribs.knownToUnknownDistanceTerm.deviation))
 					feature_attribs.knownToUnknownDistanceTerm.deviation = unknown_distance_term;

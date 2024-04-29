@@ -136,7 +136,7 @@ namespace EntityQueryBuilder
 							value = number_value;
 					}
 
-					auto &new_entry = number_sdm.emplace(value);
+					auto new_entry = number_sdm.emplace(value);
 					auto &ndd = new_entry.second;
 					PopulateFeatureDeviationNominalValueData(ndd, cn.second);
 				}
@@ -147,7 +147,7 @@ namespace EntityQueryBuilder
 				string_sdm.reserve(mcn.size());
 				for(auto &cn : deviation_node->GetMappedChildNodes())
 				{
-					auto &new_entry = string_sdm.emplace(cn.first);
+					auto new_entry = string_sdm.emplace(cn.first);
 					auto &ndd = new_entry.second;
 					PopulateFeatureDeviationNominalValueData(ndd, cn.second);
 				}

@@ -761,13 +761,15 @@ EvaluableNodeReference EntityManipulation::FlattenEntity(EvaluableNodeManager *e
 		cur_entity_creation_list = parallel_create_node;
 	}
 
-	for(auto &cur_entity : contained_entities)
+	size_t start_index_of_next_group = 0;
+	size_t cur_group_size = 0;
+	Entity *container = entity;
+	for(size_t i = 0; i < contained_entities.size(); i++)
 	{
-		//end of a group of entities
-		if(cur_entity == nullptr)
+		auto cur_entity = contained_entities[i];
+		if(parallel_create)
 		{
-			//if parallel create, then push new entity group
-			if(parallel_create)
+			if(i == start_index_of_next_group)
 			{
 				//insert another parallel for the this group of entities
 				EvaluableNode *parallel_create_node = enm->AllocNode(ENT_PARALLEL);
@@ -775,10 +777,10 @@ EvaluableNodeReference EntityManipulation::FlattenEntity(EvaluableNodeManager *e
 
 				declare_flatten->AppendOrderedChildNode(parallel_create_node);
 				cur_entity_creation_list = parallel_create_node;
-			}
 
-			//was not an entity, so move on to next
-			continue;
+				size_t num_contained = cur_entity->GetNumContainedEntities();
+				start_index_of_next_group = i + num_contained;
+			}
 		}
 
 		//   (create_entities

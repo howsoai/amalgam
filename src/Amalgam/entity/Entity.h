@@ -343,11 +343,11 @@ public:
 	//returns a list of all entities contained, all entities they contain, etc.
 	//the returned vector will include a nullptr after each group of entities that are all contained
 	// by the same entity
-	//TODO 10975: update this for read locks as appropriate
+	//TODO 15698: update this for read locks as appropriate
 	inline std::vector<Entity *> GetAllDeeplyContainedEntitiesGrouped()
 	{
 		std::vector<Entity *> entities;
-		GetAllDeeplyContainedEntitiesGroupedRecurse(entities);
+		GetAllDeeplyContainedEntitiesGroupedRecurse	(entities);
 		return entities;
 	}
 
@@ -791,6 +791,14 @@ protected:
 #ifdef MULTITHREAD_SUPPORT
 	//mutex for operations that may edit or modify the entity's properties and attributes
 	Concurrency::ReadWriteMutex mutex;
+
+	//buffer to store read locks for deep locking entities
+	//one per thread to save memory on Interpreter objects
+	thread_local static Concurrency::ReadLocksBuffer entityReadLockBuffer;
+
+	//buffer to store write locks for deep locking entities
+	//one per thread to save memory on Interpreter objects
+	thread_local static Concurrency::WriteLocksBuffer entityWriteLockBuffer;
 #endif
 
 	//if true, then the entity has contained entities and will use the relationships reference of entityRelationships

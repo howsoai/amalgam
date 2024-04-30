@@ -1004,13 +1004,6 @@ protected:
 	//pointer to a mutex for writing to shared variables below callStackUniqueAccessStartingDepth
 	Concurrency::ReadWriteMutex *callStackMutex;
 
-	//buffer to store read locks for deep locking entities
-	//one per thread to save memory on Interpreter objects
-	thread_local static Concurrency::ReadLocksBuffer entityReadLockBuffer;
-
-	//buffer to store write locks for deep locking entities
-	//one per thread to save memory on Interpreter objects
-	thread_local static Concurrency::WriteLocksBuffer entityWriteLockBuffer;
 #endif
 
 	//opcode function pointers

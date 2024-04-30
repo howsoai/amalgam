@@ -7,6 +7,11 @@
 #include "EvaluableNodeTreeFunctions.h"
 #include "Interpreter.h"
 
+#if defined(MULTITHREAD_SUPPORT)
+thread_local Concurrency::ReadLocksBuffer Entity::entityReadLockBuffer;
+thread_local Concurrency::WriteLocksBuffer Entity::entityWriteLockBuffer;
+#endif
+
 std::vector<Entity *> Entity::emptyContainedEntities;
 
 Entity::Entity()
@@ -990,9 +995,6 @@ void Entity::GetAllDeeplyContainedEntitiesGroupedRecurse(std::vector<Entity *> &
 
 	auto &contained_entities = GetContainedEntities();
 	entities.insert(end(entities), begin(contained_entities), end(contained_entities));
-
-	//insert a nullptr at the end to indicate this group is complete
-	entities.emplace_back(nullptr);
 
 	for(auto &ce : contained_entities)
 		ce->GetAllDeeplyContainedEntitiesGroupedRecurse(entities);

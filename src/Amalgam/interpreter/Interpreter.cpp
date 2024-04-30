@@ -25,12 +25,6 @@ thread_local
 #endif
 	std::vector<EntityQueryCondition> Interpreter::conditionsBuffer;
 
-#if defined(MULTITHREAD_SUPPORT)
-thread_local Concurrency::ReadLocksBuffer Interpreter::entityReadLockBuffer;
-thread_local Concurrency::WriteLocksBuffer Interpreter::entityWriteLockBuffer;
-#endif
-
-
 std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter::_opcodes = {
 	
 	//built-in / system specific

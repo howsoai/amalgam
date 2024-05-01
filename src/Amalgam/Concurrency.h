@@ -50,12 +50,6 @@ namespace Concurrency
 	//standard write lock on a read-write shared mutex
 	typedef std::unique_lock<ReadWriteMutex> WriteLock;
 
-	//vector of standard read locks
-	typedef std::vector<ReadLock> ReadLocksBuffer;
-
-	//vector of standard write locks
-	typedef std::vector<WriteLock> WriteLocksBuffer;
-
 	//Object to perform scope-based unlocking of a vector of locks of LockType for an existing buffer
 	template<typename LockBufferType>
 	class MultipleLockBufferObject

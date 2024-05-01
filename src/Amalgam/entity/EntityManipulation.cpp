@@ -751,15 +751,6 @@ EvaluableNodeReference EntityManipulation::FlattenEntity(EvaluableNodeManager *e
 
 	//where to create new entities into
 	EvaluableNode *cur_entity_creation_list = declare_flatten;
-	if(parallel_create)
-	{
-		//insert another parallel for the first group of entities
-		EvaluableNode *parallel_create_node = enm->AllocNode(ENT_PARALLEL);
-		parallel_create_node->SetConcurrency(true);
-
-		cur_entity_creation_list->AppendOrderedChildNode(parallel_create_node);
-		cur_entity_creation_list = parallel_create_node;
-	}
 
 	size_t start_index_of_next_group = 0;
 	size_t cur_group_size = 0;
@@ -767,20 +758,17 @@ EvaluableNodeReference EntityManipulation::FlattenEntity(EvaluableNodeManager *e
 	for(size_t i = 0; i < contained_entities.size(); i++)
 	{
 		auto cur_entity = contained_entities[i];
-		if(parallel_create)
+		if(parallel_create && i == start_index_of_next_group)
 		{
-			if(i == start_index_of_next_group)
-			{
-				//insert another parallel for the this group of entities
-				EvaluableNode *parallel_create_node = enm->AllocNode(ENT_PARALLEL);
-				parallel_create_node->SetConcurrency(true);
+			//insert another parallel for the this group of entities
+			EvaluableNode *parallel_create_node = enm->AllocNode(ENT_PARALLEL);
+			parallel_create_node->SetConcurrency(true);
 
-				declare_flatten->AppendOrderedChildNode(parallel_create_node);
-				cur_entity_creation_list = parallel_create_node;
+			declare_flatten->AppendOrderedChildNode(parallel_create_node);
+			cur_entity_creation_list = parallel_create_node;
 
-				size_t num_contained = cur_entity->GetNumContainedEntities();
-				start_index_of_next_group = i + num_contained;
-			}
+			size_t num_contained = cur_entity->GetNumContainedEntities();
+			start_index_of_next_group = i + num_contained;
 		}
 
 		//   (create_entities

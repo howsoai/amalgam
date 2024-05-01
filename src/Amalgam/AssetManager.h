@@ -55,22 +55,22 @@ public:
 	//if file_type is not an empty string, it will use the specified file_type instead of the filename's extension
 	// if persistent is true, then it will keep the resource updated based on any calls to UpdateEntity
 	//if the resource does not have a metadata file, will use default_random_seed as its seed
-	EntityWriteReference LoadEntityFromResourcePath(std::string &resource_path, std::string &file_type, bool persistent, bool load_contained_entities,
+	Entity *LoadEntityFromResourcePath(std::string &resource_path, std::string &file_type, bool persistent, bool load_contained_entities,
 		bool escape_filename, bool escape_contained_filenames, std::string default_random_seed, EntityExternalInterface::LoadEntityStatus &status);
 
 	//Stores an entity, including contained entites, etc. from the resource path specified
 	//if file_type is not an empty string, it will use the specified file_type instead of the filename's extension
 	// if persistent is true, then it will keep the resource updated based on any calls to UpdateEntity (will not make not persistent if was previously loaded as persistent)
 	//returns true if successful
-	bool StoreEntityToResourcePath(EntityReference &entity, std::string &resource_path, std::string &file_type,
+	bool StoreEntityToResourcePath(Entity *entity, std::string &resource_path, std::string &file_type,
 		bool update_persistence_location, bool store_contained_entities,
 		bool escape_filename, bool escape_contained_filenames, bool sort_keys,
 		bool include_rand_seeds = true, bool parallel_create = false);
 
 	//Indicates that the entity has been written to or updated, and so if the asset is persistent, the persistent copy should be updated
-	void UpdateEntity(EntityReference &entity);
-	void CreateEntity(EntityReference &entity);
-	inline void DestroyEntity(EntityReference &entity)
+	void UpdateEntity(Entity *entity);
+	void CreateEntity(Entity *entity);
+	inline void DestroyEntity(Entity *entity)
 	{
 	#ifdef MULTITHREAD_INTERFACE
 		Concurrency::WriteLock lock(persistentEntitiesMutex);

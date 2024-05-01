@@ -156,12 +156,12 @@ bool AssetManager::StoreResourcePathFromProcessedResourcePaths(EvaluableNode *co
 	return false;
 }
 
-EntityWriteReference AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std::string &file_type,
+Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std::string &file_type,
 	bool persistent, bool load_contained_entities, bool escape_filename, bool escape_contained_filenames,
 	std::string default_random_seed, EntityExternalInterface::LoadEntityStatus &status)
 {
 	std::string resource_base_path;
-	EntityWriteReference new_entity(new Entity());
+	Entity *new_entity = new Entity();
 
 	EvaluableNodeReference code = LoadResourcePath(resource_path, resource_base_path, file_type, &new_entity->evaluableNodeManager, escape_filename, status);
 	if(!status.loaded)
@@ -210,12 +210,8 @@ EntityWriteReference AssetManager::LoadEntityFromResourcePath(std::string &resou
 					if(!success)
 					{
 						status.SetStatus(false, error_message, version_str);
-
-						//couldn't create entity so delete
-						Entity *new_entity_ptr = new_entity;
-						new_entity = EntityWriteReference();
-						delete new_entity_ptr;
-						return new_entity;
+						delete new_entity;
+						return nullptr;
 					}
 				}
 			}
@@ -265,7 +261,7 @@ EntityWriteReference AssetManager::LoadEntityFromResourcePath(std::string &resou
 	return new_entity;
 }
 
-bool AssetManager::StoreEntityToResourcePath(EntityReference &entity, std::string &resource_path, std::string &file_type,
+bool AssetManager::StoreEntityToResourcePath(Entity *entity, std::string &resource_path, std::string &file_type,
 	bool update_persistence_location, bool store_contained_entities, bool escape_filename, bool escape_contained_filenames,
 	bool sort_keys, bool include_rand_seeds, bool parallel_create)
 {
@@ -318,7 +314,6 @@ bool AssetManager::StoreEntityToResourcePath(EntityReference &entity, std::strin
 		resource_base_path.append("/");
 		for(auto contained_entity : entity->GetContainedEntities())
 		{
-			EntityReadReference contained_entity_reference(contained_entity);
 			std::string new_resource_path;
 			if(escape_contained_filenames)
 			{
@@ -329,7 +324,7 @@ bool AssetManager::StoreEntityToResourcePath(EntityReference &entity, std::strin
 				new_resource_path = resource_base_path + contained_entity->GetId() + "." + file_type;
 
 			//don't escape filename again because it's already escaped in this loop
-			bool stored_successfully = StoreEntityToResourcePath(contained_entity_reference, new_resource_path, file_type, false, true, false,
+			bool stored_successfully = StoreEntityToResourcePath(contained_entity, new_resource_path, file_type, false, true, false,
 				escape_contained_filenames, sort_keys, include_rand_seeds, parallel_create);
 			if(!stored_successfully)
 				return false;
@@ -345,7 +340,7 @@ bool AssetManager::StoreEntityToResourcePath(EntityReference &entity, std::strin
 	return all_stored_successfully;
 }
 
-void AssetManager::UpdateEntity(EntityReference &entity)
+void AssetManager::UpdateEntity(Entity *entity)
 {
 #ifdef MULTITHREAD_INTERFACE
 	Concurrency::ReadLock lock(persistentEntitiesMutex);
@@ -383,7 +378,7 @@ void AssetManager::UpdateEntity(EntityReference &entity)
 	}
 }
 
-void AssetManager::CreateEntity(EntityReference &entity)
+void AssetManager::CreateEntity(Entity *entity)
 {
 	if(entity == nullptr)
 		return;

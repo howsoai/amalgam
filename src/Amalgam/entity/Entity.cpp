@@ -962,7 +962,7 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 			auto [new_label_index, collision_free] = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTreeAndNormalize(
 				evaluableNodeManager.GetRootNode());
 
-			std::swap(labelIndex, new_labels);
+			std::swap(labelIndex, new_label_index);
 		}
 
 		if(container_caches != nullptr)

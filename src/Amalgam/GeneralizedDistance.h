@@ -514,16 +514,13 @@ public:
 		{
 			//need to have at least two classes in existence
 			double nominal_count = std::max(featureAttribs[index].typeAttributes.nominalCount, 2.0);
-			//TODO 17631: change to be weighted average: prob of nominal * deviation of random guessing
-			double prob_max_entropy_match = 1 / nominal_count;
 
 			//find probability that the correct class was selected
-			//can't go below base probability of guessing
-			double prob_class_given_match = std::max(1 - deviation, prob_max_entropy_match);
+			double prob_class_given_match = 1 - deviation;
 
 			//find the probability that any other class besides the correct class was selected
 			//divide the probability among the other classes
-			double prob_class_given_nonmatch = (1 - prob_class_given_match) / (nominal_count - 1);
+			double prob_class_given_nonmatch = deviation / (nominal_count - 1);
 
 			double surprisal_class_given_match = -std::log(prob_class_given_match);
 			double surprisal_class_given_nonmatch = -std::log(prob_class_given_nonmatch);
@@ -536,16 +533,11 @@ public:
 		else if(DoesFeatureHaveDeviation(index))
 		{
 			double nominal_count = featureAttribs[index].typeAttributes.nominalCount;
-
-			// n = number of nominal classes
-			// match: deviation ^ p * weight
-			// non match: (deviation + (1 - deviation) / (n - 1)) ^ p * weight
-			//if there is only one nominal class, the smallest delta value it could be is the specified smallest delta, otherwise it's 1.0
-			double dist_term = 0;
+			double dist_term = 1;
+			//the probability of each other term is spread across all of the different nominal classes,
+			//so take the remaining probability for all other classes besides the one nonmatch chosen
 			if(nominal_count > 1)
-				dist_term = (deviation + (1 - deviation) / (nominal_count - 1));
-			else
-				dist_term = 1;
+				dist_term = 1.0 - (deviation / (nominal_count - 1));
 
 			return dist_term;
 		}
@@ -605,16 +597,13 @@ public:
 	{
 		//need to have at least two classes in existence
 		double nominal_count = std::max(featureAttribs[index].typeAttributes.nominalCount, 2.0);
-		//TODO 17631: change to be weighted average: prob of nominal * deviation of random guessing
-		double prob_max_entropy_match = 1 / nominal_count;
-
+		
 		//find probability that the correct class was selected
-		//can't go below base probability of guessing
-		double prob_class_given_match = std::max(1 - match_deviation, prob_max_entropy_match);
+		double prob_class_given_match = 1 - match_deviation;
 
 		//find the probability that any other class besides the correct class was selected,
 		//but cannot exceed the probability of a match
-		double prob_class_given_nonmatch = std::min(1 - nonmatch_deviation, prob_class_given_match);
+		double prob_class_given_nonmatch = match_deviation / (nominal_count - 1);
 
 		if(match)
 			return ComputeDistanceTermBaseNominalMatchFromMatchProbabilities(index,
@@ -779,15 +768,8 @@ public:
 		{
 			if(computeSurprisal)
 			{
-				//need to have at least two classes in existence
-				double nominal_count = std::max(featureAttribs[index].typeAttributes.nominalCount, 2.0);
-				//TODO 17631: change to be weighted average: prob of nominal * deviation of random guessing
-				double prob_max_entropy_match = 1 / nominal_count;
-
 				//find probability that the correct class was selected
-				//can't go below base probability of guessing
-				double prob_class_given_match = std::max(1 - deviation, prob_max_entropy_match);
-
+				double prob_class_given_match = 1 - deviation;
 				diff = -std::log(prob_class_given_match);
 			}
 			else //nonsurprisal nominals just use the deviation as provided

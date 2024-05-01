@@ -938,10 +938,10 @@ public:
 			auto column = labelIdToColumnIndex.find(position_label_ids[query_feature_index]);
 			if(column == end(labelIdToColumnIndex))
 				continue;
-			auto &column_data = columnData[query_feature_index];
 
 			auto &feature_attribs = dist_eval.featureAttribs[query_feature_index];
 			feature_attribs.featureIndex = column->second;
+			auto &column_data = columnData[feature_attribs.featureIndex];
 
 			if(feature_attribs.IsFeatureNominal() && FastIsNaN(feature_attribs.typeAttributes.nominalCount))
 				feature_attribs.typeAttributes.nominalCount = static_cast<double>(column_data->GetNumUniqueValues());

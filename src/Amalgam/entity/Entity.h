@@ -468,17 +468,49 @@ public:
 		return true;
 	}
 
+	//stores a buffer reference of entity references and cleans up the references when it goes out of scope
+	template <typename EntityReferenceType>
+	class EntityReferenceBufferReference
+	{
+	public:
+		inline EntityReferenceBufferReference(std::vector<EntityReferenceType> &buffer)
+			: bufferReference(&buffer)
+		{ }
+
+		inline ~EntityReferenceBufferReference()
+		{
+			bufferReference->clear();
+		}
+
+		constexpr operator std::vector<EntityReferenceType> *()
+		{
+			return bufferReference;
+		}
+
+		constexpr std::vector<EntityReferenceType> *operator->()
+		{
+			return bufferReference;
+		}
+
+		constexpr std::vector<EntityReferenceType> &operator*()
+		{
+			return *bufferReference;
+		}
+
+	protected:
+		std::vector<EntityReferenceType> *bufferReference;
+	};
+
 	//returns a list of all entities contained, all entities they contain, etc. grouped by all
 	//entities at the same level of depth
 	//returns the thread_local static variable entityReadReferenceBuffer, so results will be invalidated
 	//by subsequent calls
 	//TODO 15698: update this for read locks as appropriate
-	//TODO 15698: come up with a way for this to clean up when it's done -- return a class that just clears the buffer
-	inline std::vector<EntityReadReference> &GetAllDeeplyContainedEntityReadReferencesGroupedByDepth()
+	inline EntityReferenceBufferReference<EntityReadReference> GetAllDeeplyContainedEntityReadReferencesGroupedByDepth()
 	{
-		entityReadReferenceBuffer.clear();
+		EntityReferenceBufferReference erbr(entityReadReferenceBuffer);
 		GetAllDeeplyContainedEntityReadReferencesGroupedByDepthRecurse();
-		return entityReadReferenceBuffer;
+		return erbr;
 	}
 
 	//gets the current state of the random stream in string form

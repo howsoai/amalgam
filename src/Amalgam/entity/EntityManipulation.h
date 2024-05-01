@@ -129,7 +129,7 @@ public:
 	//flattens entity using enm to allocate code that can recreate it
 	// if include_rand_seeds is true, it will emit code that includes them; otherwise it won't
 	// if parallel_create is true, it will emit slightly more complex code that creates entities in parallel
-	static EvaluableNodeReference FlattenEntity(EvaluableNodeManager *enm, Entity *entity, bool include_rand_seeds, bool parallel_create);
+	static EvaluableNodeReference FlattenEntity(EvaluableNodeManager *enm, EntityReference &entity, bool include_rand_seeds, bool parallel_create);
 
 	static void SortEntitiesByID(std::vector<Entity *> &entities);
 

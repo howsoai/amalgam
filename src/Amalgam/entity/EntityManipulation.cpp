@@ -649,7 +649,7 @@ Entity *EntityManipulation::MutateEntity(Interpreter *interpreter, Entity *entit
 	return new_entity;
 }
 
-EvaluableNodeReference EntityManipulation::FlattenEntity(EvaluableNodeManager *enm, Entity *entity, bool include_rand_seeds, bool parallel_create)
+EvaluableNodeReference EntityManipulation::FlattenEntity(EvaluableNodeManager *enm, EntityReference &entity, bool include_rand_seeds, bool parallel_create)
 {
 	//////////
 	//build code to look like:

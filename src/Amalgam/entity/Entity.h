@@ -27,14 +27,14 @@ class PrintListener;
 //base class for accessing an entity via a reference
 // includes everything that can be accessed via a read operation
 // note that this class should not be used directly, which is why it does not yield access to edit entity other than nullptr
-class EntityReferenceBase
+class EntityReference
 {
 public:
-	constexpr EntityReferenceBase()
+	constexpr EntityReference()
 		: entity(nullptr)
 	{	}
 
-	constexpr EntityReferenceBase(Entity *e)
+	constexpr EntityReference(Entity *e)
 		: entity(e)
 	{	}
 
@@ -45,13 +45,13 @@ public:
 	}
 
 	//allow to check for equality of pointers
-	constexpr bool operator ==(EntityReferenceBase &other)
+	constexpr bool operator ==(EntityReference &other)
 	{
 		return entity == other.entity;
 	}
 
 	//allow to check for inequality of pointers
-	constexpr bool operator !=(EntityReferenceBase &other)
+	constexpr bool operator !=(EntityReference &other)
 	{
 		return entity != other.entity;
 	}
@@ -62,21 +62,27 @@ public:
 		return entity;
 	}
 
+	//allow to use as an Entity *
+	constexpr Entity *operator*()
+	{
+		return entity;
+	}
+
 protected:
 	Entity *entity;
 };
 
 #ifdef MULTITHREAD_SUPPORT
 
-//encapsulates EntityReferenceBase with a lock type
+//encapsulates EntityReference with a lock type
 template<typename LockType>
-class EntityReferenceWithLock : public EntityReferenceBase
+class EntityReferenceWithLock : public EntityReference
 {
 public:
-	EntityReferenceWithLock() : EntityReferenceBase()
+	EntityReferenceWithLock() : EntityReference()
 	{	}
 
-	EntityReferenceWithLock(Entity *e) : EntityReferenceBase(e)
+	EntityReferenceWithLock(Entity *e) : EntityReference(e)
 	{
 		if(e != nullptr)
 			lock = e->CreateEntityLock<LockType>();
@@ -118,26 +124,26 @@ public:
 //acts as a reference to an Entity that can be treated as an Entity *
 // but also performs a read-lock on the container if multithreaded, and frees the read lock when goes out of scope
 //can't be a typedef due to the inability to do forward declarations, so have to include constructors
-class EntityReadReference : public EntityReferenceBase
+class EntityReadReference : public EntityReference
 {
 public:
-	EntityReadReference() : EntityReferenceBase()
+	EntityReadReference() : EntityReference()
 	{	}
 
-	EntityReadReference(Entity *e) : EntityReferenceBase(e)
+	EntityReadReference(Entity *e) : EntityReference(e)
 	{	}
 };
 
 //acts as a reference to an Entity that can be treated as an Entity *
 // but also performs a write-lock on the container if multithreaded, and frees the read lock when goes out of scope
 //can't be a typedef due to the inability to do forward declarations, so have to include constructors
-class EntityWriteReference : public EntityReferenceBase
+class EntityWriteReference : public EntityReference
 {
 public:
-	EntityWriteReference() : EntityReferenceBase()
+	EntityWriteReference() : EntityReference()
 	{	}
 
-	EntityWriteReference(Entity *e) : EntityReferenceBase(e)
+	EntityWriteReference(Entity *e) : EntityReference(e)
 	{	}
 };
 
@@ -467,6 +473,7 @@ public:
 	//returns the thread_local static variable entityReadReferenceBuffer, so results will be invalidated
 	//by subsequent calls
 	//TODO 15698: update this for read locks as appropriate
+	//TODO 15698: come up with a way for this to clean up when it's done -- return a class that just clears the buffer
 	inline std::vector<EntityReadReference> &GetAllDeeplyContainedEntityReadReferencesGroupedByDepth()
 	{
 		entityReadReferenceBuffer.clear();

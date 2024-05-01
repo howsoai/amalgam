@@ -321,7 +321,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FLATTEN_ENTITY(EvaluableNo
 	if(ocn.size() > 2)
 		parallel_create = InterpretNodeIntoBoolValue(ocn[2]);
 
-	//TODO 10975: lock entire entity tree
 	//get the id of the first source entity
 	EntityReadReference source_entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
 	if(source_entity == nullptr)

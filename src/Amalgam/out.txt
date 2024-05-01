@@ -1259,7 +1259,7 @@ current_index: 2
 		interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1712874365.933566
+		start_time 1714575485.109338
 		www 1
 		x 12
 		zz 10
@@ -1302,7 +1302,7 @@ current_index: 2
 	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1712874365.933566
+	start_time 1714575485.109338
 	www 1
 	x 12
 	zz 10
@@ -1344,7 +1344,7 @@ current_index: 2
 	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1712874365.933566
+	start_time 1714575485.109338
 	www 1
 	x 12
 	zz 10
@@ -1612,7 +1612,7 @@ e:
   - .inf
 
 25: (assoc a 1)
-current date-time in epoch: 2024-04-11-18.26.05.9866920
+current date-time in epoch: 2024-05-01-10.58.05.1487100
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -3430,7 +3430,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1712874366.252566
+1714575485.261987
 (true)
 
 RootTest
@@ -3672,7 +3672,18 @@ hello
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity ">ÄóT›!v.W«w¸ˆæÿ")
+	(set_entity_rand_seed new_entity "1a2Ø.²³W«w¸ˆæÿ")
+	(set_entity_rand_seed
+		(first
+			(create_entities
+				(append new_entity "NewModule")
+				(lambda
+					(associate "a" 1 "b" 2)
+				)
+			)
+		)
+		"ˆ-ìO[¿ë3yC“Å’ŒÑÿ"
+	)
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -4665,4 +4676,4 @@ concurrent entity writes successful: (true)
 
 --clean-up test files--
 --total execution time--
-1.846472978591919
+2.024893045425415

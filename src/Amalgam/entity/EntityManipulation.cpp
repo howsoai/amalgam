@@ -687,7 +687,7 @@ EvaluableNodeReference EntityManipulation::FlattenEntity(EvaluableNodeManager *e
 	// )
 
 	bool cycle_free = true;
-	auto contained_entities = entity->GetAllDeeplyContainedEntitiesGrouped();
+	auto &contained_entities = entity->GetAllDeeplyContainedEntityReadReferencesGroupedByDepth();
 
 	// (declare (assoc new_entity (null) create_new_entity (true))
 	EvaluableNode *declare_flatten = enm->AllocNode(ENT_DECLARE);
@@ -757,7 +757,7 @@ EvaluableNodeReference EntityManipulation::FlattenEntity(EvaluableNodeManager *e
 	Entity *container = entity;
 	for(size_t i = 0; i < contained_entities.size(); i++)
 	{
-		auto cur_entity = contained_entities[i];
+		auto &cur_entity = contained_entities[i];
 		if(parallel_create && i == start_index_of_next_group)
 		{
 			//insert another parallel for the this group of entities
@@ -815,6 +815,8 @@ EvaluableNodeReference EntityManipulation::FlattenEntity(EvaluableNodeManager *e
 	//if anything isn't cycle free, then need to recompute everything
 	if(!cycle_free)
 		EvaluableNodeManager::UpdateFlagsForNodeTree(declare_flatten);
+
+	contained_entities.clear();
 
 	return EvaluableNodeReference(declare_flatten, true);
 }

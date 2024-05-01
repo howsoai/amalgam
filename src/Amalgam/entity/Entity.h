@@ -462,15 +462,16 @@ public:
 		return true;
 	}
 
-	//returns a list of all entities contained, all entities they contain, etc.
-	//the returned vector will include a nullptr after each group of entities that are all contained
-	// by the same entity
+	//returns a list of all entities contained, all entities they contain, etc. grouped by all
+	//entities at the same level of depth
+	//returns the thread_local static variable entityReadReferenceBuffer, so results will be invalidated
+	//by subsequent calls
 	//TODO 15698: update this for read locks as appropriate
-	inline std::vector<Entity *> GetAllDeeplyContainedEntitiesGrouped()
+	inline std::vector<EntityReadReference> &GetAllDeeplyContainedEntityReadReferencesGroupedByDepth()
 	{
-		std::vector<Entity *> entities;
-		GetAllDeeplyContainedEntitiesGroupedRecurse(entities);
-		return entities;
+		entityReadReferenceBuffer.clear();
+		GetAllDeeplyContainedEntityReadReferencesGroupedByDepthRecurse();
+		return entityReadReferenceBuffer;
 	}
 
 	//gets the current state of the random stream in string form
@@ -847,8 +848,8 @@ public:
 
 protected:
 
-	//helper function for GetAllDeeplyContainedEntitiesGrouped
-	void GetAllDeeplyContainedEntitiesGroupedRecurse(std::vector<Entity *> &entities);
+	//helper function for GetAllDeeplyContainedEntityReadReferencesGroupedByDepth
+	void GetAllDeeplyContainedEntityReadReferencesGroupedByDepthRecurse();
 
 	//ensures the data structures will exist for containing entities if they don't already
 	inline void EnsureHasContainedEntities()

@@ -993,14 +993,15 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 	}
 }
 
-void Entity::GetAllDeeplyContainedEntitiesGroupedRecurse(std::vector<Entity *> &entities)
+void Entity::GetAllDeeplyContainedEntityReadReferencesGroupedByDepthRecurse()
 {
 	if(!hasContainedEntities)
 		return;
 
 	auto &contained_entities = GetContainedEntities();
-	entities.insert(end(entities), begin(contained_entities), end(contained_entities));
+	for(Entity *e : contained_entities)
+		entityReadReferenceBuffer.emplace_back(e);
 
 	for(auto &ce : contained_entities)
-		ce->GetAllDeeplyContainedEntitiesGroupedRecurse(entities);
+		ce->GetAllDeeplyContainedEntityReadReferencesGroupedByDepthRecurse();
 }

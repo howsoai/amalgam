@@ -1259,7 +1259,7 @@ current_index: 2
 		interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1714575485.109338
+		start_time 1714591759.00049
 		www 1
 		x 12
 		zz 10
@@ -1302,7 +1302,7 @@ current_index: 2
 	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1714575485.109338
+	start_time 1714591759.00049
 	www 1
 	x 12
 	zz 10
@@ -1344,7 +1344,7 @@ current_index: 2
 	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1714575485.109338
+	start_time 1714591759.00049
 	www 1
 	x 12
 	zz 10
@@ -1612,7 +1612,7 @@ e:
   - .inf
 
 25: (assoc a 1)
-current date-time in epoch: 2024-05-01-10.58.05.1487100
+current date-time in epoch: 2024-05-01-15.29.19.0478620
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -3430,7 +3430,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1714575485.261987
+1714591759.338789
 (true)
 
 RootTest
@@ -4443,13 +4443,13 @@ a
 (assoc a1 5.0990195135927845 a2 2 a3 5.0990195135927845)
 (assoc a1 1 a3 1 a4 0)
 --accuracy tests--
-256.5114465493462
-expected: 256.5114466
-8.037178667714414
-expected: 8.037178684
-3.621729247632793e-35
-expected: 0.14362593
-(assoc point1 256.5114465493462 point2 273.1247383899543 point3 256.5114465493462)
+515.6547015746778
+expected: 515.6547015746778
+16.936168566704314
+expected: 16.936168566704314
+1.501901120883626e-25
+expected: 1.501901120883626e-25
+(assoc point1 515.6547015746778 point2 545.8279373833903 point3 515.6547015746778)
 distance symmetry tests
 (list
 	(list
@@ -4676,4 +4676,4 @@ concurrent entity writes successful: (true)
 
 --clean-up test files--
 --total execution time--
-2.024893045425415
+1.975032091140747

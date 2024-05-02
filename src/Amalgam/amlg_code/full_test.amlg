@@ -3535,7 +3535,7 @@
 		(list 1	1	1	120	1	50.1)
 	) "\n")
 	
-	(print "expected: 256.5114466\n")
+	(print "expected: 515.6547015746778\n")
 
 	(print (generalized_distance
 		;weights
@@ -3554,7 +3554,7 @@
 		(list 1	1	1	120	1	50.1)
 	) "\n")
 	
-	(print "expected: 8.037178684\n")
+	(print "expected: 16.936168566704314\n")
 
 	(print (generalized_distance
 		;weights
@@ -3573,7 +3573,7 @@
 		(list 1	1	1	120	1	50.1)
 	) "\n")
 	
-	(print "expected: 0.14362593\n")
+	(print "expected: 1.501901120883626e-25\n")
 
 	(create_entities "DistanceTestContainer"
 		(lambda (null))

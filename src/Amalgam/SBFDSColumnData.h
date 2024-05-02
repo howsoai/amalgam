@@ -678,6 +678,20 @@ public:
 		return value;
 	}
 
+	//returns the number of unique values in the column
+	//if value_type is ENIVT_NULL, then it will include all types, otherwise it will only consider
+	//the unique values for the type requested
+	inline size_t GetNumUniqueValues(EvaluableNodeImmediateValueType value_type = ENIVT_NULL)
+	{
+		if(value_type == ENIVT_NUMBER)
+			return numberIndices.size();
+
+		if(value_type == ENIVT_STRING_ID)
+			return stringIdIndices.size();
+
+		return numberIndices.size() + stringIdIndices.size() + codeIndices.size();
+	}
+
 	//returns the maximum difference between value and any other value for this column
 	//if empty, will return infinity
 	inline double GetMaxDifferenceTerm(GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs)

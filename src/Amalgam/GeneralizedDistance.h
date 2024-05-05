@@ -1129,7 +1129,7 @@ public:
 					feature_data.nominalNumberDistanceTerms.emplace(value, dist_term);
 				}
 
-				//TODO: deviations.defaultDeviation
+				//TODO 17631: deviations.defaultDeviation
 			}
 		}
 		else if(feature_data.targetValue.nodeType == ENIVT_STRING_ID)
@@ -1148,7 +1148,7 @@ public:
 					feature_data.nominalStringDistanceTerms.emplace(value, dist_term);
 				}
 
-				//TODO: deviations.defaultDeviation
+				//TODO 17631: deviations.defaultDeviation
 			}
 		}
 	}
@@ -1338,7 +1338,6 @@ public:
 		if(distEvaluator->IsFeatureNominal(index))
 			return ComputeDistanceTermNominal(other_value, other_type, index, high_accuracy);
 
-		//TODO 17631: improve the logic and efficiency here down
 		double diff = distEvaluator->ComputeDifference(feature_data.targetValue.nodeValue, other_value,
 			feature_data.targetValue.nodeType, other_type, distEvaluator->featureAttribs[index].featureType);
 

@@ -654,7 +654,7 @@ protected:
 		auto [value_index, exact_index_found] = column.FindExactIndexForValue(value);
 		if(exact_index_found)
 		{
-			double term = r_dist_eval.ComputeDistanceTermNominalNumeric(value, true, query_feature_index, high_accuracy);
+			double term = r_dist_eval.ComputeDistanceTermNominal(value, ENIVT_NUMBER, query_feature_index, high_accuracy);
 			AccumulatePartialSums(column.sortedNumberValueEntries[value_index]->indicesWithValue, query_feature_index, term);
 			return term;
 		}
@@ -670,7 +670,7 @@ protected:
 		auto value_found = column.stringIdValueToIndices.find(value);
 		if(value_found != end(column.stringIdValueToIndices))
 		{
-			double term = r_dist_eval.ComputeDistanceTermNominalString(value, true, query_feature_index, high_accuracy);
+			double term = r_dist_eval.ComputeDistanceTermNominal(value, ENIVT_STRING_ID, query_feature_index, high_accuracy);
 			AccumulatePartialSums(*(value_found->second), query_feature_index, term);
 			return term;
 		}
@@ -802,11 +802,11 @@ protected:
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 			auto &column_data = columnData[feature_attribs.featureIndex];
 			if(column_data->stringIdIndices.contains(entity_index))
-				return r_dist_eval.ComputeDistanceTermNominalString(
-					GetValue(entity_index, feature_attribs.featureIndex).stringID, true,
+				return r_dist_eval.ComputeDistanceTermNominal(
+					GetValue(entity_index, feature_attribs.featureIndex).stringID, ENIVT_STRING_ID,
 					query_feature_index, high_accuracy);
 			else
-				return r_dist_eval.ComputeDistanceTermNominalString(string_intern_pool.EMPTY_STRING_ID, false,
+				return r_dist_eval.ComputeDistanceTermNominal(string_intern_pool.EMPTY_STRING_ID, ENIVT_STRING_ID,
 					query_feature_index, high_accuracy);
 		}
 
@@ -815,11 +815,11 @@ protected:
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 			auto &column_data = columnData[feature_attribs.featureIndex];
 			if(column_data->numberIndices.contains(entity_index))
-				return r_dist_eval.ComputeDistanceTermNominalNumeric(
-					GetValue(entity_index, feature_attribs.featureIndex).number, true,
+				return r_dist_eval.ComputeDistanceTermNominal(
+					GetValue(entity_index, feature_attribs.featureIndex).number, ENIVT_NUMBER,
 					query_feature_index, high_accuracy);
 			else
-				return r_dist_eval.ComputeDistanceTermNominalNumeric(0.0, false,
+				return r_dist_eval.ComputeDistanceTermNominal(0.0, ENIVT_NUMBER,
 					query_feature_index, high_accuracy);
 		}
 

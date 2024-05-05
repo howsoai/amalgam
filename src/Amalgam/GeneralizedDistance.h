@@ -1225,50 +1225,49 @@ public:
 					!= end(feature_data.nominalStringDistanceTerms) );
 	}
 
-	//returns the inner term of the Minkowski norm summation given that the feature is nominal
-	//and the data type being compared from is numeric
-	//if value_type_numeric is false, then the value is ignored
-	__forceinline double ComputeDistanceTermNominalNumeric(double value, bool value_type_numeric,
-		size_t index, bool high_accuracy)
-	{
-		auto &feature_data = featureData[index];
-		if(feature_data.nominalNumberDistanceTerms.size() > 0)
-		{
-			//TODO 17631: implement this
-		}
-
-		if(value_type_numeric && value == feature_data.targetValue.GetValueAsNumber())
-			return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
-		else
-			return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
-	}
-
-	//returns the inner term of the Minkowski norm summation given that the feature is nominal
-	//and the data type being compared from is string
-	//if value_type_string is false, then the value is ignored
-	__forceinline double ComputeDistanceTermNominalString(StringInternPool::StringID value, bool value_type_string,
-		size_t index, bool high_accuracy)
-	{
-		auto &feature_data = featureData[index];
-		if(feature_data.nominalStringDistanceTerms.size() > 0)
-		{
-			//TODO 17631: implement this
-		}
-
-		if(value_type_string && value == feature_data.targetValue.GetValueAsStringIDIfExists())
-			return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
-		else
-			return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
-	}
-
 	//returns the distance term given that it is nominal
 	__forceinline double ComputeDistanceTermNominal(EvaluableNodeImmediateValue other_value,
 		EvaluableNodeImmediateValueType other_type, size_t index, bool high_accuracy)
 	{
-		//TODO 17631: make this more efficient, placeholder for now
 		auto &feature_data = featureData[index];
-		return distEvaluator->ComputeDistanceTermNominal(feature_data.targetValue.nodeValue, other_value,
-			feature_data.targetValue.nodeType, other_type, index, high_accuracy);
+		if(feature_data.precomputedNominalDistanceTermsHighAccuracy == high_accuracy)
+		{
+			if(other_type == ENIVT_NUMBER)
+			{
+				auto dist_term_entry = feature_data.nominalNumberDistanceTerms.find(other_value.number);
+				if(dist_term_entry != end(feature_data.nominalNumberDistanceTerms))
+					return dist_term_entry->second;
+
+				if(other_value.number == feature_data.targetValue.GetValueAsNumber())
+					return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
+			}
+			else if(other_type == ENIVT_STRING_ID)
+			{
+				auto dist_term_entry = feature_data.nominalStringDistanceTerms.find(other_value.stringID);
+				if(dist_term_entry != end(feature_data.nominalStringDistanceTerms))
+					return dist_term_entry->second;
+
+				if(other_value.stringID == feature_data.targetValue.GetValueAsStringIDIfExists())
+					return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
+			}
+
+			if(EvaluableNodeImmediateValue::IsNullEquivalent(other_type, other_value))
+			{
+				if(feature_data.targetValue.IsNullEquivalent())
+					return distEvaluator->ComputeDistanceTermUnknownToUnknown(index, high_accuracy);
+				else
+					return distEvaluator->ComputeDistanceTermKnownToUnknown(index, high_accuracy);
+			}
+			else
+			{
+				return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
+			}
+		}
+		else
+		{
+			return distEvaluator->ComputeDistanceTermNominal(feature_data.targetValue.nodeValue, other_value,
+				feature_data.targetValue.nodeType, other_type, index, high_accuracy);
+		}
 	}
 
 	//returns the smallest nonmatching distance term for the nominal given other_value

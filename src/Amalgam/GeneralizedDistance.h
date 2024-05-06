@@ -434,9 +434,10 @@ public:
 			}
 		}
 
-		if(!FastIsNaN(deviation))
+		if(deviation > 0)
 		{
 			//TODO 17631: compute the distance term from deviation
+			//if(are_equal)
 		}
 
 		//if both were null, that was caught above, so one must be known
@@ -493,20 +494,7 @@ public:
 			return -std::numeric_limits<double>::infinity();
 	}
 
-	//TODO 17631: remove this?
-	//computes the base of the difference between two nominal values that exactly match without exponentiation
-	__forceinline double ComputeDistanceTermBaseNominalExactMatchFromDeviation(size_t index, double deviation, bool high_accuracy)
-	{
-		if(!DoesFeatureHaveDeviation(index) || computeSurprisal)
-			return 0.0;
-
-		return deviation;
-	}
-
-	//TODO 17631: genericize this for use in ComputeDistanceTermNominal -- may need to take in two deviations,
-	// exact match deviation and nonmatch deviation?  Or just change the calls to pass in 1-deviation?
-	//make sure lines up with ComputeDistanceTermBaseNominalExactMatchFromDeviation for exact match, and maybe remove ComputeDistanceTermBaseNominalExactMatchFromDeviation
-
+	//TODO 17631: remove this method and replace with appropriate calls to ComputeDistanceTermBaseNominalNonmatchFromMatchProbabilities
 	//computes the base of the difference between two nominal values that do not match without exponentiation
 	__forceinline double ComputeDistanceTermBaseNominalNonMatchFromDeviation(size_t index, double deviation, bool high_accuracy)
 	{
@@ -547,7 +535,6 @@ public:
 		}
 	}
 
-	//TODO 17631: finish this and integrate it
 	//returns the base of the distance term for nominal comparisons for a match
 	//given the probablility of the class being observed given that it is a match
 	__forceinline double ComputeDistanceTermBaseNominalMatchFromMatchProbabilities(size_t index,
@@ -616,14 +603,21 @@ public:
 	//computes the distance term for a nominal when two universally symmetric nominals are equal
 	__forceinline double ComputeDistanceTermNominalUniversallySymmetricExactMatch(size_t index, bool high_accuracy)
 	{
-		double dist_term = ComputeDistanceTermBaseNominalExactMatchFromDeviation(index, featureAttribs[index].deviation, high_accuracy);
+		double dist_term = ComputeDistanceTermBaseNominalMatchFromMatchProbabilities(index, 1 - featureAttribs[index].deviation, high_accuracy);
 		return ContextuallyExponentiateAndWeightDifferenceTerm(dist_term, index, high_accuracy);
 	}
 
 	//computes the distance term for a nominal when two universally symmetric nominals are not equal
 	__forceinline double ComputeDistanceTermNominalUniversallySymmetricNonMatch(size_t index, bool high_accuracy)
 	{
-		double dist_term = ComputeDistanceTermBaseNominalNonMatchFromDeviation(index, featureAttribs[index].deviation, high_accuracy);
+		auto &feature_attribs = featureAttribs[index];
+		double deviation = feature_attribs.deviation;
+		//TODO 17631: implement this for ComputeDistanceTermBaseNominalNonmatchFromMatchProbabilities
+		//need to have at least two classes in existence
+		//double nominal_count = std::max(featureAttribs[index].typeAttributes.nominalCount, 2.0);
+		//double dist_term = ComputeDistanceTermBaseNominalNonmatchFromMatchProbabilities(index, deviation, high_accuracy);
+		double dist_term = ComputeDistanceTermBaseNominalNonMatchFromDeviation(index, deviation, high_accuracy);
+
 		return ContextuallyExponentiateAndWeightDifferenceTerm(dist_term, index, high_accuracy);
 	}
 

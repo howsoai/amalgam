@@ -170,6 +170,8 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 		return nullptr;
 	}
 
+	new_entity->SetRandomState(default_random_seed, true);
+
 	if(file_type == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 	{
 		new_entity->SetRoot(code, true);
@@ -198,7 +200,10 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 		{
 			EvaluableNode **seed = metadata->GetMappedChildNode(ENBISI_rand_seed);
 			if(seed != nullptr)
+			{
 				default_random_seed = EvaluableNode::ToStringPreservingOpcodeType(*seed);
+				new_entity->SetRandomState(default_random_seed, true);
+			}
 
 			EvaluableNode **version = metadata->GetMappedChildNode(ENBISI_version);
 			if(version != nullptr)
@@ -219,8 +224,6 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 
 		new_entity->evaluableNodeManager.FreeNodeTree(metadata);
 	}
-
-	new_entity->SetRandomState(default_random_seed, true);
 
 	if(persistent)
 		SetEntityPersistentPath(new_entity, resource_path);

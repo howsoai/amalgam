@@ -1264,22 +1264,6 @@ public:
 		}
 	}
 
-	//returns the smallest nonmatching distance term for the nominal given other_value
-	__forceinline double ComputeDistanceTermNominalSmallestNonmatch(double other_value,
-		size_t index, bool high_accuracy)
-	{
-		//TODO 17631: implement this, placeholder for now
-		return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
-	}
-
-	//returns the smallest nonmatching distance term for the nominal given other_value
-	__forceinline double ComputeDistanceTermNominalSmallestNonmatch(StringInternPool::StringID other_value,
-		size_t index, bool high_accuracy)
-	{
-		//TODO 17631: implement this, placeholder for now
-		return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
-	}
-
 	//returns the smallest nonmatching distance term regardless of value
 	__forceinline double ComputeDistanceTermNominalSmallestNonmatch(size_t index, bool high_accuracy)
 	{

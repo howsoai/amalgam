@@ -159,7 +159,8 @@ public:
 
 		} typeAttributes;
 
-		//uncertainty of each value
+		//mean absolute error of predicting the value
+		//if sparse deviation values are specified, this is the average value
 		double deviation;
 		//cached reciprocal for speed
 		double deviationReciprocal;
@@ -391,6 +392,8 @@ public:
 		}
 
 		double deviation = std::numeric_limits<double>::quiet_NaN();
+		//TODO 17631: compute match_deviation below
+		double match_deviation = std::numeric_limits<double>::quiet_NaN();
 		if(a_type == ENIVT_NUMBER && feature_attribs.nominalNumberSparseDeviationMatrix.size() > 0)
 		{
 			auto outer_it = feature_attribs.nominalNumberSparseDeviationMatrix.find(a.number);
@@ -436,8 +439,10 @@ public:
 
 		if(deviation > 0)
 		{
-			//TODO 17631: compute the distance term from deviation
-			//if(are_equal)
+			if(are_equal)
+				return ComputeDistanceTermBaseNominalMatchFromMatchProbabilities(deviation, high_accuracy);
+			else
+				return ComputeDistanceTermBaseNominalNonmatchFromMatchProbabilities(match_deviation, deviation, high_accuracy);
 		}
 
 		//if both were null, that was caught above, so one must be known
@@ -496,7 +501,7 @@ public:
 
 	//returns the base of the distance term for nominal comparisons for a match
 	//given the probablility of the class being observed given that it is a match
-	__forceinline double ComputeDistanceTermBaseNominalMatchFromMatchProbabilities(size_t index,
+	__forceinline double ComputeDistanceTermBaseNominalMatchFromMatchProbabilities(
 		double prob_class_given_match, bool high_accuracy)
 	{
 		if(computeSurprisal)
@@ -535,7 +540,7 @@ public:
 		if(DoesFeatureHaveDeviation(index))
 			prob_class_given_match = 1 - featureAttribs[index].deviation;
 
-		double dist_term = ComputeDistanceTermBaseNominalMatchFromMatchProbabilities(index, prob_class_given_match, high_accuracy);
+		double dist_term = ComputeDistanceTermBaseNominalMatchFromMatchProbabilities(prob_class_given_match, high_accuracy);
 		return ContextuallyExponentiateAndWeightDifferenceTerm(dist_term, index, high_accuracy);
 	}
 

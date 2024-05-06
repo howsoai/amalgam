@@ -494,6 +494,17 @@ public:
 			return -std::numeric_limits<double>::infinity();
 	}
 
+	//returns the base of the distance term for nominal comparisons for a match
+	//given the probablility of the class being observed given that it is a match
+	__forceinline double ComputeDistanceTermBaseNominalMatchFromMatchProbabilities(size_t index,
+		double prob_class_given_match, bool high_accuracy)
+	{
+		if(!DoesFeatureHaveDeviation(index) || computeSurprisal)
+			return 0.0;
+
+		return 1 - prob_class_given_match;
+	}
+
 	//TODO 17631: remove this method and replace with appropriate calls to ComputeDistanceTermBaseNominalNonmatchFromMatchProbabilities
 	//computes the base of the difference between two nominal values that do not match without exponentiation
 	__forceinline double ComputeDistanceTermBaseNominalNonMatchFromDeviation(size_t index, double deviation, bool high_accuracy)
@@ -535,17 +546,6 @@ public:
 		}
 	}
 
-	//returns the base of the distance term for nominal comparisons for a match
-	//given the probablility of the class being observed given that it is a match
-	__forceinline double ComputeDistanceTermBaseNominalMatchFromMatchProbabilities(size_t index,
-		double prob_class_given_match, bool high_accuracy)
-	{
-		if(!DoesFeatureHaveDeviation(index) || computeSurprisal)
-			return 0.0;
-
-		return 1 - prob_class_given_match;
-	}
-
 	//TODO 17631: finish this and integrate it
 	// for a given prob_class_given_match, which is the probability that the classes compared should have been a match,
 	// and prob_class_given_nonmatch, the probability that the particular comparison class does not match
@@ -575,29 +575,6 @@ public:
 		{
 			return 1.0;
 		}
-	}
-
-	//TODO 17631: finish this and integrate it
-	//for inputs to this method, if not using SDM, b_deviation = (1 - a_deviation) / (nominal_count - 1)
-	__forceinline double ComputeDistanceTermNominalBaseFromDeviations(size_t index, bool match,
-		double match_deviation, double nonmatch_deviation, bool high_accuracy)
-	{
-		//need to have at least two classes in existence
-		double nominal_count = std::max(featureAttribs[index].typeAttributes.nominalCount, 2.0);
-		
-		//find probability that the correct class was selected
-		double prob_class_given_match = 1 - match_deviation;
-
-		//find the probability that any other class besides the correct class was selected,
-		//but cannot exceed the probability of a match
-		double prob_class_given_nonmatch = match_deviation / (nominal_count - 1);
-
-		if(match)
-			return ComputeDistanceTermBaseNominalMatchFromMatchProbabilities(index,
-				prob_class_given_match, high_accuracy);
-		else
-			return ComputeDistanceTermBaseNominalNonmatchFromMatchProbabilities(index,
-				prob_class_given_match, prob_class_given_nonmatch, high_accuracy);
 	}
 
 	//computes the distance term for a nominal when two universally symmetric nominals are equal

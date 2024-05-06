@@ -386,7 +386,7 @@
  (print "21 " (generalized_distance (list 0.3333 0.3333 0.3333) (list "nominal_numeric") (list 1) (null) 1 (list 1 2 3) (list 10 2 10) ) "\n")
  (print "22 " (generalized_distance (list 0.3333 0.3333 0.3333) (list "nominal_numeric") (list 1) (null) 1 (list 1 2 3) (list 10 2 10) ) "\n")
  (print "23 " (generalized_distance (list 0.3333 0.3333 0.3333) (list "nominal_numeric" "continuous_numeric_cyclic" "continuous_numeric_cyclic") (list 1 360 12) (null) 1 (list 1 2 3) (list 10 2 10) ) "\n")
- (print "24 " (generalized_distance (list 0.3333 0.3333 0.3333) (list "nominal_numeric") (list 1) (list 0.25 180 -12) 1 (list 1 2 3) (list 10 2 10) ) "\n")
+ (print "24 " (generalized_distance (list 0.3333 0.3333 0.3333) (list "nominal_numeric") (list 1.1) (list 0.25 180 -12) 1 (list 1 2 3) (list 10 2 10) ) "\n")
  (print "25 " (generalized_distance (list 1 0 1 ) (list "continuous_numeric" "nominal_numeric" "nominal_numeric") (list (null) 5 5) (list .1 .1 .1 ) 2 (list 4 4 (null) ) (list 2 (null) (null) ) ) "\n" )
  (print "26 " (generalized_distance (list 1 0 1 ) (list "continuous_numeric" "nominal_numeric" "nominal_numeric") (list (null) 5 5) (null) 2 (list 4 4 (null) ) (list 2 (null) (null) ) ) "\n")
  (print "27 " (generalized_distance (list 1 0 1 1 ) (list "continuous_numeric" "nominal_numeric" "nominal_numeric") (list (null) 5 5) (list .1 .1 .1 .1) 2 (list 4 4 (null) 4) (list 2 (null) (null) 2) ) "\n" )

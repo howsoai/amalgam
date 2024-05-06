@@ -499,7 +499,7 @@ public:
 	__forceinline double ComputeDistanceTermBaseNominalMatchFromMatchProbabilities(size_t index,
 		double prob_class_given_match, bool high_accuracy)
 	{
-		if(!DoesFeatureHaveDeviation(index) || computeSurprisal)
+		if(computeSurprisal)
 			return 0.0;
 
 		return 1 - prob_class_given_match;
@@ -580,7 +580,11 @@ public:
 	//computes the distance term for a nominal when two universally symmetric nominals are equal
 	__forceinline double ComputeDistanceTermNominalUniversallySymmetricExactMatch(size_t index, bool high_accuracy)
 	{
-		double dist_term = ComputeDistanceTermBaseNominalMatchFromMatchProbabilities(index, 1 - featureAttribs[index].deviation, high_accuracy);
+		double prob_class_given_match = 1;
+		if(DoesFeatureHaveDeviation(index))
+			prob_class_given_match = 1 - featureAttribs[index].deviation;
+
+		double dist_term = ComputeDistanceTermBaseNominalMatchFromMatchProbabilities(index, prob_class_given_match, high_accuracy);
 		return ContextuallyExponentiateAndWeightDifferenceTerm(dist_term, index, high_accuracy);
 	}
 

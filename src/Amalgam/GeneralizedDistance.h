@@ -1208,13 +1208,6 @@ public:
 		}
 	}
 
-	//returns the smallest nonmatching distance term regardless of value
-	__forceinline double ComputeDistanceTermNominalSmallestNonmatch(size_t index, bool high_accuracy)
-	{
-		//TODO 17631: implement this, placeholder for now
-		return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
-	}
-
 	//for all nominal distance term values that equal dist_term for the given high_accuracy,
 	//it will call func passing in the numeric value
 	template<typename Func>
@@ -1243,11 +1236,44 @@ public:
 		}
 	}
 
-	//returns the smallest distance term larger than dist_term
-	__forceinline double ComputeDistanceTermNominalNextSmallest(double dist_term, size_t index, bool high_accuracy)
+	//returns the smallest distance term larger than compared_dist_term
+	__forceinline double ComputeDistanceTermNonNullNominalNextSmallest(double compared_dist_term, size_t index, bool high_accuracy)
 	{
-		//TODO 17631: implement this, placeholder for now
+		double next_smallest_dist_term = std::numeric_limits<double>::infinity();
+		
+		auto &feature_data = featureData[index];
+		for(auto &entry : feature_data.nominalStringDistanceTerms)
+		{
+			if(entry.second > compared_dist_term)
+			{
+				if(entry.second < next_smallest_dist_term)
+					next_smallest_dist_term  = entry.second;
+			}
+		}
+
+		for(auto &entry : feature_data.nominalNumberDistanceTerms)
+		{
+			if(entry.second > compared_dist_term)
+			{
+				if(entry.second < next_smallest_dist_term)
+					next_smallest_dist_term = entry.second;
+			}
+		}
+
 		return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
+	}
+
+	//returns the smallest nonmatching distance term regardless of value
+	__forceinline double ComputeDistanceTermNominalNonNullSmallestNonmatch(size_t index, bool high_accuracy)
+	{
+		double match_dist_term = distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
+		double smallest_nonmatch = ComputeDistanceTermNonNullNominalNextSmallest(match_dist_term, index, high_accuracy);
+
+		//if there is no such value, return infinite
+		if(smallest_nonmatch == match_dist_term)
+			return std::numeric_limits<double>::infinity();
+
+		return smallest_nonmatch;
 	}
 
 	//computes the inner term of the Minkowski norm summation

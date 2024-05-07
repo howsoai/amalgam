@@ -1,3 +1,19 @@
-(seeq
- (a)
+(seq
+  (print "40 " (generalized_distance
+				(list 1 1) ;weights
+				(list "nominal_string") ;types
+				(list 2 2) ;attributes
+				(list
+					(assoc
+						a (assoc a 0.00744879	b 0.996275605	c 0.996275605)
+						b (assoc a 0.501736111	b 0.501736111	c 0.996527778)
+						c (assoc a 0.996539792	b 0.996539792	c 0.006920415)
+					)
+				) ;deviations
+				1 ;p
+				(list "b") ;vector 1
+				(list "c") ;vector 2
+				(null) ;names
+				(true) ;surprisal
+				) "\n" )
 )

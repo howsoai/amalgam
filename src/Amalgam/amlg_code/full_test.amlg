@@ -427,17 +427,6 @@
  (print "39 " (generalized_distance (list 1 1) (list "nominal_numeric" "nominal_numeric") (list 2 2) (list 0.25 0.25) 1 (list 1 1) (list 2 2) (null) (true) ) "\n" )
 
  ;TODO 17631: add unit tests for sparse deviation matrices
- (print "40 " (generalized_distance
-				(list 1 1) ;weights
-				(list "nominal_numeric") ;types
-				(list 2 2) ;attributes
-				(list 0.25 0.25) ;deviations
-				1 ;p
-				(list 1 1) ;vector 1
-				(list 2 2) ;vector 2
-				(null) ;names
-				(true) ;surprisal
-				) "\n" )
 
  (print "--entropy--\n")
  (print (entropy (list 0.5 0.5)) "\n")

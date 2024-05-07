@@ -106,58 +106,72 @@ namespace EntityQueryBuilder
 		}
 	}
 
-	//populates deviation data for feature_attribs from deviation_node
-	inline void PopulateFeatureDeviationNominalValuesData(GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs, EvaluableNode *deviation_node)
+	//populates deviation data for feature_attribs from deviation_node given that deviation_node is known to be an ENT_ASSOC
+	inline void PopulateFeatureDeviationNominalValuesMatrixData(GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs, EvaluableNode *deviation_node)
 	{
 		auto &number_sdm = feature_attribs.nominalNumberSparseDeviationMatrix;
 		auto &string_sdm = feature_attribs.nominalStringSparseDeviationMatrix;
 		number_sdm.clear();
 		string_sdm.clear();
 
-		if(deviation_node == nullptr)
+		auto &mcn = deviation_node->GetMappedChildNodesReference();
+		if(feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC)
 		{
-			feature_attribs.deviation = 0.0;
-			return;
-		}
+			number_sdm.reserve(mcn.size());
+			for(auto &cn : mcn)
+			{
+				double value = std::numeric_limits<double>::quiet_NaN();
+				if(cn.first != string_intern_pool.EMPTY_STRING_ID)
+				{
+					auto [number_value, success] = Platform_StringToNumber(string_intern_pool.GetStringFromID(cn.first));
+					if(success)
+						value = number_value;
+				}
 
-		//TODO 17631: need to get default deviation for unknown values -- look for outer list
-		//TODO 17631: for default deviations first, try to use default.  if not exist, use unknown - unknown.  if not exist, use 1 / num classes
+				number_sdm.emplace(value);
+				PopulateFeatureDeviationNominalValueData(number_sdm.back().second, cn.second);
+			}
+		}
+		else if(feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
+			|| feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
+		{
+			string_sdm.reserve(mcn.size());
+			for(auto &cn : deviation_node->GetMappedChildNodes())
+			{
+				string_sdm.emplace(cn.first);
+				PopulateFeatureDeviationNominalValueData(string_sdm.back().second, cn.second);
+			}
+		}
+	}
+
+	//populates deviation data for feature_attribs from deviation_node
+	inline void PopulateFeatureDeviationNominalValuesData(GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs, EvaluableNode *deviation_node)
+	{
+		feature_attribs.deviation = std::numeric_limits<double>::quiet_NaN();
+
+		if(deviation_node == nullptr)
+			return;
+
+		//TODO 17631: for default deviations first, try to use default.  if not exist, use unknown - unknown.  if not exist, use 1 / num classes -- change below to nan?
 		//TODO 17631: update documentation
 
-		if(deviation_node->GetType() == ENT_ASSOC)
+		auto dnt = deviation_node->GetType();
+		if(dnt == ENT_ASSOC)
 		{
-			auto &mcn = deviation_node->GetMappedChildNodesReference();
-			if(feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC)
-			{
-				number_sdm.reserve(mcn.size());
-				for(auto &cn : mcn)
-				{
-					double value = std::numeric_limits<double>::quiet_NaN();
-					if(cn.first != string_intern_pool.EMPTY_STRING_ID)
-					{
-						auto [number_value, success] = Platform_StringToNumber(string_intern_pool.GetStringFromID(cn.first));
-						if(success)
-							value = number_value;
-					}
+			PopulateFeatureDeviationNominalValuesMatrixData(feature_attribs, deviation_node);
+		}
+		else if(dnt == ENT_LIST)
+		{
+			auto &ocn = deviation_node->GetOrderedChildNodesReference();
+			if(ocn.size() > 1)
+				PopulateFeatureDeviationNominalValuesMatrixData(feature_attribs, ocn[0]);
 
-					number_sdm.emplace(value);
-					PopulateFeatureDeviationNominalValueData(number_sdm.back().second, cn.second);
-				}
-			}
-			else if(feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
-				|| feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
-			{
-				string_sdm.reserve(mcn.size());
-				for(auto &cn : deviation_node->GetMappedChildNodes())
-				{
-					string_sdm.emplace(cn.first);
-					PopulateFeatureDeviationNominalValueData(string_sdm.back().second, cn.second);
-				}
-			}
+			if(ocn.size() > 2)
+				feature_attribs.deviation = EvaluableNode::ToNumber(ocn[1]);
 		}
 		else
 		{
-			feature_attribs.deviation = EvaluableNode::ToNumber(deviation_node, 0.0);
+			feature_attribs.deviation = EvaluableNode::ToNumber(deviation_node);
 		}
 	}
 

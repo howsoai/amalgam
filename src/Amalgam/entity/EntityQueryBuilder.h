@@ -120,6 +120,10 @@ namespace EntityQueryBuilder
 			return;
 		}
 
+		//TODO 17631: need to get default deviation for unknown values -- look for outer list
+		//TODO 17631: for default deviations first, try to use default.  if not exist, use unknown - unknown.  if not exist, use 1 / num classes
+		//TODO 17631: update documentation
+
 		if(deviation_node->GetType() == ENT_ASSOC)
 		{
 			auto &mcn = deviation_node->GetMappedChildNodesReference();

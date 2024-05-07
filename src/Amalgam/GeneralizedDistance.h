@@ -407,26 +407,26 @@ public:
 
 				auto match_deviation_it = ndd.find(a.number);
 				if(match_deviation_it != end(ndd))
-					prob_class_given_match = match_deviation_it->second;
+					prob_class_given_match = 1 - match_deviation_it->second;
 				else
 					prob_class_given_match = 1 - ndd.defaultDeviation;					
 
 				auto nonmatch_deviation_it = ndd.find(b.number);
 				if(nonmatch_deviation_it != end(ndd))
-					prob_class_given_nonmatch = nonmatch_deviation_it->second;
+					prob_class_given_nonmatch = 1 - nonmatch_deviation_it->second;
 				else
-					prob_class_given_nonmatch = ndd.defaultDeviation / nonmatching_classes;
+					prob_class_given_nonmatch = (1 - ndd.defaultDeviation) / nonmatching_classes;
 			}
 			else //not found, so fall back to the appropriate default
 			{
 				if(!b_is_null)
 				{
 					prob_class_given_match = 1 - a_deviations_it->second.defaultDeviation;
-					prob_class_given_nonmatch = a_deviations_it->second.defaultDeviation / nonmatching_classes;
+					prob_class_given_nonmatch = (1 - a_deviations_it->second.defaultDeviation) / nonmatching_classes;
 				}
 				else
 				{
-					prob_class_given_match = feature_attribs.knownToUnknownDistanceTerm.deviation;
+					prob_class_given_match = 1 - feature_attribs.knownToUnknownDistanceTerm.deviation;
 				}
 			}
 		}
@@ -439,26 +439,26 @@ public:
 
 				auto match_deviation_it = ndd.find(a.stringID);
 				if(match_deviation_it != end(ndd))
-					prob_class_given_match = match_deviation_it->second;
+					prob_class_given_match = 1 - match_deviation_it->second;
 				else
 					prob_class_given_match = 1 - ndd.defaultDeviation;
 
 				auto nonmatch_deviation_it = ndd.find(b.stringID);
 				if(nonmatch_deviation_it != end(ndd))
-					prob_class_given_nonmatch = nonmatch_deviation_it->second;
+					prob_class_given_nonmatch = 1 - nonmatch_deviation_it->second;
 				else
-					prob_class_given_nonmatch = ndd.defaultDeviation / nonmatching_classes;
+					prob_class_given_nonmatch = (1 - ndd.defaultDeviation) / nonmatching_classes;
 			}
 			else //not found, so fall back to the appropriate default
 			{
 				if(!b_is_null)
 				{
 					prob_class_given_match = 1 - a_deviations_it->second.defaultDeviation;
-					prob_class_given_nonmatch = a_deviations_it->second.defaultDeviation / nonmatching_classes;
+					prob_class_given_nonmatch = (1 - a_deviations_it->second.defaultDeviation) / nonmatching_classes;
 				}
 				else
 				{
-					prob_class_given_match = feature_attribs.knownToUnknownDistanceTerm.deviation;
+					prob_class_given_match = 1 - feature_attribs.knownToUnknownDistanceTerm.deviation;
 				}
 			}
 		}

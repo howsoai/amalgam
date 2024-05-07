@@ -591,8 +591,6 @@ public:
 		if(DoesFeatureHaveDeviation(index))
 			deviation = feature_attribs.deviation;
 
-		//TODO 17631: make a method around ComputeDistanceTermNominalNonmatchFromMatchProbabilities to compute from deviation and nonmatching_classes
-
 		//find probability that the correct class was selected
 		double prob_class_given_match = 1 - deviation;
 

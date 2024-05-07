@@ -417,18 +417,6 @@ public:
 				else
 					prob_class_given_nonmatch = (1 - ndd.defaultDeviation) / nonmatching_classes;
 			}
-			else //not found, so fall back to the appropriate default
-			{
-				if(!b_is_null)
-				{
-					prob_class_given_match = 1 - a_deviations_it->second.defaultDeviation;
-					prob_class_given_nonmatch = (1 - a_deviations_it->second.defaultDeviation) / nonmatching_classes;
-				}
-				else
-				{
-					prob_class_given_match = 1 - feature_attribs.knownToUnknownDistanceTerm.deviation;
-				}
-			}
 		}
 		else if(a_type == ENIVT_STRING_ID && feature_attribs.nominalStringSparseDeviationMatrix.size() > 0)
 		{
@@ -448,18 +436,6 @@ public:
 					prob_class_given_nonmatch = 1 - nonmatch_deviation_it->second;
 				else
 					prob_class_given_nonmatch = (1 - ndd.defaultDeviation) / nonmatching_classes;
-			}
-			else //not found, so fall back to the appropriate default
-			{
-				if(!b_is_null)
-				{
-					prob_class_given_match = 1 - a_deviations_it->second.defaultDeviation;
-					prob_class_given_nonmatch = (1 - a_deviations_it->second.defaultDeviation) / nonmatching_classes;
-				}
-				else
-				{
-					prob_class_given_match = 1 - feature_attribs.knownToUnknownDistanceTerm.deviation;
-				}
 			}
 		}
 

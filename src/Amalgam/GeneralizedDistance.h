@@ -537,7 +537,8 @@ public:
 		return 1 - prob_class_given_match;
 	}
 
-	//for a given prob_class_given_match, which is the probability that the classes compared should have been a match,
+	//computes the base of the distance term
+	// for a given prob_class_given_match, which is the probability that the classes compared should have been a match,
 	// and prob_class_given_nonmatch, the probability that the particular comparison class does not match
 	__forceinline double ComputeDistanceTermBaseNominalNonmatchFromMatchProbabilities(
 		double prob_class_given_match, double prob_class_given_nonmatch, bool high_accuracy)
@@ -558,6 +559,16 @@ public:
 		{
 			return 1.0 - prob_class_given_nonmatch;
 		}
+	}
+
+	//computes the distance term
+	// for a given prob_class_given_match, which is the probability that the classes compared should have been a match,
+	// and prob_class_given_nonmatch, the probability that the particular comparison class does not match
+	__forceinline double ComputeDistanceTermNominalNonmatchFromMatchProbabilities(size_t index,
+		double prob_class_given_match, double prob_class_given_nonmatch, bool high_accuracy)
+	{
+		double dist_term = ComputeDistanceTermBaseNominalNonmatchFromMatchProbabilities(prob_class_given_match, prob_class_given_nonmatch, high_accuracy);
+		return ContextuallyExponentiateAndWeightDifferenceTerm(dist_term, index, high_accuracy);
 	}
 
 	//computes the distance term for a nominal when two universally symmetric nominals are equal
@@ -585,6 +596,8 @@ public:
 		if(DoesFeatureHaveDeviation(index))
 			deviation = feature_attribs.deviation;
 
+		//TODO 17631: make a method around ComputeDistanceTermNominalNonmatchFromMatchProbabilities to compute from deviation and nonmatching_classes
+
 		//find probability that the correct class was selected
 		double prob_class_given_match = 1 - deviation;
 
@@ -592,9 +605,7 @@ public:
 		//divide the probability among the other classes
 		double prob_class_given_nonmatch = deviation / nonmatching_classes;
 
-		double dist_term = ComputeDistanceTermBaseNominalNonmatchFromMatchProbabilities(prob_class_given_match, prob_class_given_nonmatch, high_accuracy);
-
-		return ContextuallyExponentiateAndWeightDifferenceTerm(dist_term, index, high_accuracy);
+		return ComputeDistanceTermNominalNonmatchFromMatchProbabilities(index, prob_class_given_match, prob_class_given_nonmatch, high_accuracy);
 	}
 
 	//computes the distance term for an unknown-unknown
@@ -1070,7 +1081,7 @@ public:
 	//for the feature index, computes and stores the distance terms for nominal values
 	inline void ComputeAndStoreNominalDistanceTerms(size_t index)
 	{
-		bool compute_approximate = distEvaluator->NeedToPrecomputeApproximate();
+		bool high_accuracy = !distEvaluator->NeedToPrecomputeApproximate();
 
 		//make sure there's room for the interned index
 		if(featureData.size() <= index)
@@ -1079,9 +1090,14 @@ public:
 		auto &feature_attributes = distEvaluator->featureAttribs[index];
 		auto &feature_data = featureData[index];
 
+		//assume one nonmatching class in existence if not specified
+		double nonmatching_classes = 1;
+		if(feature_attributes.typeAttributes.nominalCount > 1)
+			nonmatching_classes = feature_attributes.typeAttributes.nominalCount - 1;
+
 		//since most of the computations will be using approximate if it is needed,
 		//only set to high accuracy if not using approximate
-		feature_data.precomputedNominalDistanceTermsHighAccuracy = (!compute_approximate);
+		feature_data.precomputedNominalDistanceTermsHighAccuracy = high_accuracy;
 
 		if(feature_data.targetValue.nodeType == ENIVT_NUMBER)
 		{
@@ -1094,12 +1110,30 @@ public:
 				auto &deviations = deviations_for_value->second;
 				for(auto &[value, deviation] : deviations)
 				{
-					//TODO 17631: finish this
-					double dist_term = deviation;// = distEvaluator->ComputeDistanceTermNominalBaseFromDeviations(index, value == sid, )
+					double dist_term = distEvaluator->ComputeDistanceTermNominal(target_value,
+						value, ENIVT_NUMBER, ENIVT_NUMBER, index, high_accuracy);
 					feature_data.nominalNumberDistanceTerms.emplace(value, dist_term);
 				}
 
-				//TODO 17631: deviations.defaultDeviation
+				double default_deviation = deviations_for_value->second.defaultDeviation;
+				if(FastIsNaN(default_deviation))
+				{
+					deviations.defaultDeviation
+						= distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
+				}
+				else
+				{
+					//find probability that the correct class was selected
+					double prob_class_given_match = 1 - default_deviation;
+
+					//find the probability that any other class besides the correct class was selected
+					//divide the probability among the other classes
+					double prob_class_given_nonmatch = default_deviation / nonmatching_classes;
+
+					deviations.defaultDeviation
+						= distEvaluator->ComputeDistanceTermNominalNonmatchFromMatchProbabilities(
+							index, prob_class_given_match, prob_class_given_nonmatch, high_accuracy);
+				}
 			}
 		}
 		else if(feature_data.targetValue.nodeType == ENIVT_STRING_ID)
@@ -1107,18 +1141,36 @@ public:
 			auto &sdm = feature_attributes.nominalStringSparseDeviationMatrix;
 			auto target_sid = feature_data.targetValue.nodeValue.stringID;
 
-			auto deviations_for_value = sdm.find(target_sid);
-			if(deviations_for_value != end(sdm))
+			auto deviations_for_sid = sdm.find(target_sid);
+			if(deviations_for_sid != end(sdm))
 			{
-				auto &deviations = deviations_for_value->second;
-				for(auto &[value, deviation] : deviations)
+				auto &deviations = deviations_for_sid->second;
+				for(auto &[sid, deviation] : deviations)
 				{
-					//TODO 17631: finish this
-					double dist_term = deviation;// distEvaluator->ComputeDistanceTermNominalBaseFromDeviations(index, value == sid, )
-					feature_data.nominalStringDistanceTerms.emplace(value, dist_term);
+					double dist_term = distEvaluator->ComputeDistanceTermNominal(target_sid,
+						sid, ENIVT_NUMBER, ENIVT_NUMBER, index, high_accuracy);
+					feature_data.nominalStringDistanceTerms.emplace(sid, dist_term);
 				}
 
-				//TODO 17631: deviations.defaultDeviation
+				double default_deviation = deviations_for_sid->second.defaultDeviation;
+				if(FastIsNaN(default_deviation))
+				{
+					deviations.defaultDeviation
+						= distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
+				}
+				else
+				{
+					//find probability that the correct class was selected
+					double prob_class_given_match = 1 - default_deviation;
+
+					//find the probability that any other class besides the correct class was selected
+					//divide the probability among the other classes
+					double prob_class_given_nonmatch = default_deviation / nonmatching_classes;
+
+					deviations.defaultDeviation
+						= distEvaluator->ComputeDistanceTermNominalNonmatchFromMatchProbabilities(
+							index, prob_class_given_match, prob_class_given_nonmatch, high_accuracy);
+				}
 			}
 		}
 	}

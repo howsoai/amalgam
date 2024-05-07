@@ -466,10 +466,11 @@ public:
 		if(!FastIsNaN(prob_class_given_match))
 		{
 			if(are_equal)
-				return ComputeDistanceTermBaseNominalMatchFromMatchProbabilities(prob_class_given_match, high_accuracy);
+				return ComputeDistanceTermNominalMatchFromMatchProbabilities(
+					index, prob_class_given_match, high_accuracy);
 			else if(!FastIsNaN(prob_class_given_nonmatch))
-				return ComputeDistanceTermBaseNominalNonmatchFromMatchProbabilities(
-					prob_class_given_match, prob_class_given_nonmatch, high_accuracy);
+				return ComputeDistanceTermNominalNonmatchFromMatchProbabilities(
+					index, prob_class_given_match, prob_class_given_nonmatch, high_accuracy);
 		}
 
 		//if both were null, that was caught above, so one must be known
@@ -528,37 +529,14 @@ public:
 
 	//returns the base of the distance term for nominal comparisons for a match
 	//given the probablility of the class being observed given that it is a match
-	__forceinline double ComputeDistanceTermBaseNominalMatchFromMatchProbabilities(
+	__forceinline double ComputeDistanceTermNominalMatchFromMatchProbabilities(size_t index,
 		double prob_class_given_match, bool high_accuracy)
 	{
-		if(computeSurprisal)
-			return 0.0;
+		double dist_term_base = 0.0;
+		if(!computeSurprisal)
+			dist_term_base = 1 - prob_class_given_match;
 
-		return 1 - prob_class_given_match;
-	}
-
-	//computes the base of the distance term
-	// for a given prob_class_given_match, which is the probability that the classes compared should have been a match,
-	// and prob_class_given_nonmatch, the probability that the particular comparison class does not match
-	__forceinline double ComputeDistanceTermBaseNominalNonmatchFromMatchProbabilities(
-		double prob_class_given_match, double prob_class_given_nonmatch, bool high_accuracy)
-	{
-		if(computeSurprisal)
-		{
-			if(prob_class_given_match <= prob_class_given_nonmatch)
-				return 0.0;
-
-			double surprisal_class_given_match = -std::log(prob_class_given_match);
-			double surprisal_class_given_nonmatch = -std::log(prob_class_given_nonmatch);
-
-			//the surprisal of the class matching on a different value is the difference between
-			//how surprised it would be given a nonmatch but without the surprisal given a match
-			return surprisal_class_given_nonmatch - surprisal_class_given_match;
-		}
-		else
-		{
-			return 1.0 - prob_class_given_nonmatch;
-		}
+		return ContextuallyExponentiateAndWeightDifferenceTerm(dist_term_base, index, high_accuracy);
 	}
 
 	//computes the distance term
@@ -567,8 +545,25 @@ public:
 	__forceinline double ComputeDistanceTermNominalNonmatchFromMatchProbabilities(size_t index,
 		double prob_class_given_match, double prob_class_given_nonmatch, bool high_accuracy)
 	{
-		double dist_term = ComputeDistanceTermBaseNominalNonmatchFromMatchProbabilities(prob_class_given_match, prob_class_given_nonmatch, high_accuracy);
-		return ContextuallyExponentiateAndWeightDifferenceTerm(dist_term, index, high_accuracy);
+		double dist_term_base = 0.0;
+		if(computeSurprisal)
+		{
+			if(prob_class_given_match >= prob_class_given_nonmatch)
+			{
+				double surprisal_class_given_match = -std::log(prob_class_given_match);
+				double surprisal_class_given_nonmatch = -std::log(prob_class_given_nonmatch);
+
+				//the surprisal of the class matching on a different value is the difference between
+				//how surprised it would be given a nonmatch but without the surprisal given a match
+				dist_term_base = surprisal_class_given_nonmatch - surprisal_class_given_match;
+			}
+		}
+		else
+		{
+			dist_term_base = 1.0 - prob_class_given_nonmatch;
+		}
+
+		return ContextuallyExponentiateAndWeightDifferenceTerm(dist_term_base, index, high_accuracy);
 	}
 
 	//computes the distance term for a nominal when two universally symmetric nominals are equal
@@ -578,7 +573,7 @@ public:
 		if(DoesFeatureHaveDeviation(index))
 			prob_class_given_match = 1 - featureAttribs[index].deviation;
 
-		double dist_term = ComputeDistanceTermBaseNominalMatchFromMatchProbabilities(prob_class_given_match, high_accuracy);
+		double dist_term = ComputeDistanceTermNominalMatchFromMatchProbabilities(index, prob_class_given_match, high_accuracy);
 		return ContextuallyExponentiateAndWeightDifferenceTerm(dist_term, index, high_accuracy);
 	}
 

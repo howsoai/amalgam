@@ -391,58 +391,85 @@ public:
 				: feature_attribs.nominalSymmetricNonMatchDistanceTerm.GetValue(high_accuracy);
 		}
 
-		double deviation = std::numeric_limits<double>::quiet_NaN();
-		//TODO 17631: compute match_deviation below
-		double match_deviation = std::numeric_limits<double>::quiet_NaN();
+		//assume one nonmatching class in existence if not specified
+		double nonmatching_classes = 1;
+		if(featureAttribs[index].typeAttributes.nominalCount > 1)
+			nonmatching_classes = featureAttribs[index].typeAttributes.nominalCount - 1;
+
+		double prob_class_given_match = std::numeric_limits<double>::quiet_NaN();
+		double prob_class_given_nonmatch = std::numeric_limits<double>::quiet_NaN();
 		if(a_type == ENIVT_NUMBER && feature_attribs.nominalNumberSparseDeviationMatrix.size() > 0)
 		{
-			auto outer_it = feature_attribs.nominalNumberSparseDeviationMatrix.find(a.number);
-			if(outer_it != std::end(feature_attribs.nominalNumberSparseDeviationMatrix))
+			auto a_deviations_it = feature_attribs.nominalNumberSparseDeviationMatrix.find(a.number);
+			if(a_deviations_it != std::end(feature_attribs.nominalNumberSparseDeviationMatrix))
 			{
-				auto &ndd = outer_it->second;
-				auto inner_it = ndd.find(b.number);
+				auto &ndd = a_deviations_it->second;
 
-				if(inner_it == end(ndd))
-					deviation = ndd.defaultDeviation;
+				auto match_deviation_it = ndd.find(a.number);
+				if(match_deviation_it != end(ndd))
+					prob_class_given_match = match_deviation_it->second;
 				else
-					deviation = inner_it->second;
+					prob_class_given_match = 1 - ndd.defaultDeviation;					
+
+				auto nonmatch_deviation_it = ndd.find(b.number);
+				if(nonmatch_deviation_it != end(ndd))
+					prob_class_given_nonmatch = nonmatch_deviation_it->second;
+				else
+					prob_class_given_nonmatch = ndd.defaultDeviation / nonmatching_classes;
 			}
 			else //not found, so fall back to the appropriate default
 			{
 				if(!b_is_null)
-					deviation = outer_it->second.defaultDeviation;
+				{
+					prob_class_given_match = 1 - a_deviations_it->second.defaultDeviation;
+					prob_class_given_nonmatch = a_deviations_it->second.defaultDeviation / nonmatching_classes;
+				}
 				else
-					deviation = feature_attribs.knownToUnknownDistanceTerm.deviation;
+				{
+					prob_class_given_match = feature_attribs.knownToUnknownDistanceTerm.deviation;
+				}
 			}
 		}
 		else if(a_type == ENIVT_STRING_ID && feature_attribs.nominalStringSparseDeviationMatrix.size() > 0)
 		{
-			auto outer_it = feature_attribs.nominalStringSparseDeviationMatrix.find(a.stringID);
-			if(outer_it != std::end(feature_attribs.nominalStringSparseDeviationMatrix))
+			auto a_deviations_it = feature_attribs.nominalStringSparseDeviationMatrix.find(a.stringID);
+			if(a_deviations_it != std::end(feature_attribs.nominalStringSparseDeviationMatrix))
 			{
-				auto &ndd = outer_it->second;
-				auto inner_it = ndd.find(b.stringID);
+				auto &ndd = a_deviations_it->second;
 
-				if(inner_it == end(ndd))
-					deviation = ndd.defaultDeviation;
+				auto match_deviation_it = ndd.find(a.stringID);
+				if(match_deviation_it != end(ndd))
+					prob_class_given_match = match_deviation_it->second;
 				else
-					deviation = inner_it->second;
+					prob_class_given_match = 1 - ndd.defaultDeviation;
+
+				auto nonmatch_deviation_it = ndd.find(b.stringID);
+				if(nonmatch_deviation_it != end(ndd))
+					prob_class_given_nonmatch = nonmatch_deviation_it->second;
+				else
+					prob_class_given_nonmatch = ndd.defaultDeviation / nonmatching_classes;
 			}
 			else //not found, so fall back to the appropriate default
 			{
 				if(!b_is_null)
-					deviation = outer_it->second.defaultDeviation;
+				{
+					prob_class_given_match = 1 - a_deviations_it->second.defaultDeviation;
+					prob_class_given_nonmatch = a_deviations_it->second.defaultDeviation / nonmatching_classes;
+				}
 				else
-					deviation = feature_attribs.knownToUnknownDistanceTerm.deviation;
+				{
+					prob_class_given_match = feature_attribs.knownToUnknownDistanceTerm.deviation;
+				}
 			}
 		}
 
-		if(deviation > 0)
+		if(!FastIsNaN(prob_class_given_match))
 		{
 			if(are_equal)
-				return ComputeDistanceTermBaseNominalMatchFromMatchProbabilities(deviation, high_accuracy);
-			else
-				return ComputeDistanceTermBaseNominalNonmatchFromMatchProbabilities(match_deviation, deviation, high_accuracy);
+				return ComputeDistanceTermBaseNominalMatchFromMatchProbabilities(prob_class_given_match, high_accuracy);
+			else if(!FastIsNaN(prob_class_given_nonmatch))
+				return ComputeDistanceTermBaseNominalNonmatchFromMatchProbabilities(
+					prob_class_given_match, prob_class_given_nonmatch, high_accuracy);
 		}
 
 		//if both were null, that was caught above, so one must be known
@@ -549,10 +576,10 @@ public:
 	{
 		auto &feature_attribs = featureAttribs[index];
 
-		//assume two classes in existence if not specified
-		double nominal_count = 2;
+		//assume one nonmatching class in existence if not specified
+		double nonmatching_classes = 1;
 		if(featureAttribs[index].typeAttributes.nominalCount > 1)
-			nominal_count = featureAttribs[index].typeAttributes.nominalCount;
+			nonmatching_classes = featureAttribs[index].typeAttributes.nominalCount - 1;
 
 		double deviation = 0.0;
 		if(DoesFeatureHaveDeviation(index))
@@ -563,7 +590,7 @@ public:
 
 		//find the probability that any other class besides the correct class was selected
 		//divide the probability among the other classes
-		double prob_class_given_nonmatch = deviation / (nominal_count - 1);
+		double prob_class_given_nonmatch = deviation / nonmatching_classes;
 
 		double dist_term = ComputeDistanceTermBaseNominalNonmatchFromMatchProbabilities(prob_class_given_match, prob_class_given_nonmatch, high_accuracy);
 

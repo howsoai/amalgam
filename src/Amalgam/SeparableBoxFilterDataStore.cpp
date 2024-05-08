@@ -950,7 +950,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			if(nas_iter != end(column->stringIdValueToIndices))
 				AccumulatePartialSums(*nas_iter->second, query_feature_index, unknown_unknown_term);
 
-			double nonmatch_dist_term = r_dist_eval.ComputeDistanceTermNominalSmallestNonmatch(query_feature_index, high_accuracy);
+			double nonmatch_dist_term = r_dist_eval.ComputeDistanceTermNominalNonNullSmallestNonmatch(query_feature_index, high_accuracy);
 			//if the next closest match is larger, no need to compute any more values
 			if(nonmatch_dist_term > unknown_unknown_term)
 				return nonmatch_dist_term;
@@ -968,7 +968,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 					AccumulatePartialSumsForNominalStringIdValueIfExists(r_dist_eval, sid, query_feature_index, *column, high_accuracy);
 				});
 
-			return r_dist_eval.ComputeDistanceTermNominalNextSmallest(unknown_unknown_term, query_feature_index, high_accuracy);;
+			return r_dist_eval.ComputeDistanceTermNonNullNominalNextSmallest(unknown_unknown_term, query_feature_index, high_accuracy);;
 		}
 	}
 
@@ -1027,7 +1027,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			accumulated_term = AccumulatePartialSumsForNominalStringIdValueIfExists(
 				r_dist_eval, value.nodeValue.stringID, query_feature_index, *column, high_accuracy);
 
-		double nonmatch_dist_term = r_dist_eval.ComputeDistanceTermNominalSmallestNonmatch(query_feature_index, high_accuracy);
+		double nonmatch_dist_term = r_dist_eval.ComputeDistanceTermNominalNonNullSmallestNonmatch(query_feature_index, high_accuracy);
 		//if the next closest match is larger, no need to compute any more values
 		if(nonmatch_dist_term > accumulated_term)
 			return nonmatch_dist_term;
@@ -1042,7 +1042,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 						r_dist_eval, value.nodeValue.stringID, query_feature_index, *column, high_accuracy);
 			});
 
-		return r_dist_eval.ComputeDistanceTermNominalNextSmallest(nonmatch_dist_term, query_feature_index, high_accuracy);
+		return r_dist_eval.ComputeDistanceTermNonNullNominalNextSmallest(nonmatch_dist_term, query_feature_index, high_accuracy);
 	}
 	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMERIC)
 	{
@@ -1053,7 +1053,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			accumulated_term = AccumulatePartialSumsForNominalNumberValueIfExists(
 				r_dist_eval, value.nodeValue.number, query_feature_index, *column, high_accuracy);
 
-		double nonmatch_dist_term = r_dist_eval.ComputeDistanceTermNominalSmallestNonmatch(query_feature_index, high_accuracy);
+		double nonmatch_dist_term = r_dist_eval.ComputeDistanceTermNominalNonNullSmallestNonmatch(query_feature_index, high_accuracy);
 		//if the next closest match is larger, no need to compute any more values
 		if(nonmatch_dist_term > accumulated_term)
 			return nonmatch_dist_term;
@@ -1068,7 +1068,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 						r_dist_eval, value.nodeValue.number, query_feature_index, *column, high_accuracy);
 			});
 
-		return r_dist_eval.ComputeDistanceTermNominalNextSmallest(nonmatch_dist_term, query_feature_index, high_accuracy);
+		return r_dist_eval.ComputeDistanceTermNonNullNominalNextSmallest(nonmatch_dist_term, query_feature_index, high_accuracy);
 	}
 	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_CODE
 		|| effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE)
@@ -1087,7 +1087,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 		if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_CODE)
 		{
-			double nonmatch_dist_term = r_dist_eval.ComputeDistanceTermNominalSmallestNonmatch(query_feature_index, high_accuracy);
+			double nonmatch_dist_term = r_dist_eval.ComputeDistanceTermNominalNonNullSmallestNonmatch(query_feature_index, high_accuracy);
 			return nonmatch_dist_term;
 		}
 		else //RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE

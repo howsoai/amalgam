@@ -89,6 +89,8 @@ namespace EntityQueryBuilder
 		}
 		else if(vdn_type == ENT_LIST)
 		{
+			//a list indicates that it is a pair of a sparse deviation assoc followed by a default deviation
+			//the default being for when one of the values is found, but not the other
 			auto &ocn = value_deviation_node->GetOrderedChildNodesReference();
 			size_t ocn_size = ocn.size();
 
@@ -159,6 +161,8 @@ namespace EntityQueryBuilder
 		}
 		else if(dnt == ENT_LIST)
 		{
+			//a list indicates that it is a pair of a sparse deviation matrix followed by a default deviation
+			//the default being for when the first value being compared is not found
 			auto &ocn = deviation_node->GetOrderedChildNodesReference();
 			if(ocn.size() > 1)
 				PopulateFeatureDeviationNominalValuesMatrixData(feature_attribs, ocn[0]);

@@ -127,26 +127,26 @@ public:
 //acts as a reference to an Entity that can be treated as an Entity *
 // but also performs a read-lock on the container if multithreaded, and frees the read lock when goes out of scope
 //can't be a typedef due to the inability to do forward declarations, so have to include constructors
-class EntityReadReference : public EntityReference<EntityType>
+class EntityReadReference : public EntityReference<Entity>
 {
 public:
-	EntityReadReference() : EntityReference<EntityType>()
+	EntityReadReference() : EntityReference<Entity>()
 	{	}
 
-	EntityReadReference(Entity *e) : EntityReference<EntityType>(e)
+	EntityReadReference(Entity *e) : EntityReference<Entity>(e)
 	{	}
 };
 
 //acts as a reference to an Entity that can be treated as an Entity *
 // but also performs a write-lock on the container if multithreaded, and frees the read lock when goes out of scope
 //can't be a typedef due to the inability to do forward declarations, so have to include constructors
-class EntityWriteReference : public EntityReference<EntityType>
+class EntityWriteReference : public EntityReference<Entity>
 {
 public:
-	EntityWriteReference() : EntityReference<EntityType>()
+	EntityWriteReference() : EntityReference<Entity>()
 	{	}
 
-	EntityWriteReference(Entity *e) : EntityReference<EntityType>(e)
+	EntityWriteReference(Entity *e) : EntityReference<Entity>(e)
 	{	}
 };
 

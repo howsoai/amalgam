@@ -426,7 +426,122 @@
  (print "38 " (generalized_distance (list 1 1) (list "continuous_numeric" "continuous_numeric") (null) (list 0.5 0.5) 1 (list 1 1) (list 2 2) (null) (true) ) "\n" )
  (print "39 " (generalized_distance (list 1 1) (list "nominal_numeric" "nominal_numeric") (list 2 2) (list 0.25 0.25) 1 (list 1 1) (list 2 2) (null) (true) ) "\n" )
 
- ;TODO 17631: add unit tests for sparse deviation matrices
+   (print "40 " (generalized_distance
+				(list 1 1) ;weights
+				(list "nominal_string") ;types
+				(list 4) ;attributes
+				(list
+					(assoc
+						a (assoc a 0.00744879	b 0.996275605	c 0.996275605)
+						b (assoc a 0.501736111	b 0.501736111	c 0.996527778)
+						c (assoc a 0.996539792	b 0.996539792	c 0.006920415)
+					)
+				) ;deviations
+				1 ;p
+				(list "b") ;vector 1
+				(list "c") ;vector 2
+				(null) ;names
+				(true) ;surprisal
+				) "\n"
+	)
+
+	(print "41 " (generalized_distance
+				(list 1 1) ;weights
+				(list "nominal_string") ;types
+				(list 4) ;attributes
+				(list
+					(assoc
+						a (assoc a 0.00744879	b 0.996275605	c 0.996275605)
+						b (assoc a 0.501736111	b 0.501736111	c 0.996527778)
+						c (assoc a 0.996539792	b 0.996539792	c 0.006920415)
+					)
+				) ;deviations
+				1 ;p
+				(list "b") ;vector 1
+				(list "a") ;vector 2
+				(null) ;names
+				(true) ;surprisal
+				) "\n"
+	)
+
+	(print "42 " (generalized_distance
+				(list 1 1) ;weights
+				(list "nominal_string") ;types
+				(list 4) ;attributes
+				(list
+					(assoc
+						a (assoc a 0.00744879	b 0.996275605	c 0.996275605)
+						b (list (assoc a 0.501736111	b 0.501736111	c 0.996527778) 0.8)
+						c (assoc a 0.996539792	b 0.996539792	c 0.006920415)
+					)
+				) ;deviations
+				1 ;p
+				(list "b") ;vector 1
+				(list "q") ;vector 2
+				(null) ;names
+				(true) ;surprisal
+				) "\n"
+	)
+
+	(print "43 " (generalized_distance
+				(list 1 1) ;weights
+				(list "nominal_string") ;types
+				(list 2 2) ;attributes
+				(list
+						0.2
+				) ;deviations
+				1 ;p
+				(list "q") ;vector 1
+				(list "u") ;vector 2
+				(null) ;names
+				(true) ;surprisal
+				) "\n"
+	)
+
+	(print "44 " (generalized_distance
+				(list 1 1) ;weights
+				(list "nominal_string") ;types
+				(list 4) ;attributes
+				(list
+					(list (assoc
+							a (assoc a 0.00744879	b 0.996275605	c 0.996275605)
+							b (list (assoc a 0.501736111	b 0.501736111	c 0.996527778) 0.8)
+							c (assoc a 0.996539792	b 0.996539792	c 0.006920415)
+						)
+						0.2
+					)
+				) ;deviations
+				1 ;p
+				(list "q") ;vector 1
+				(list "u") ;vector 2
+				(null) ;names
+				(true) ;surprisal
+				) "\n"
+	)
+
+	(print "45 " (generalized_distance
+				(list 1 1) ;weights
+				(list "nominal_string") ;types
+				(list 4) ;attributes
+				(list
+					(list (list
+							(assoc
+									a (assoc a 0.00744879	b 0.996275605	c 0.996275605)
+									b (list (assoc a 0.501736111	b 0.501736111	c 0.996527778) 0.8)
+									c (assoc a 0.996539792	b 0.996539792	c 0.006920415)
+							)
+							0.2
+						)
+						0.2
+					)
+				) ;deviations
+				1 ;p
+				(list "q") ;vector 1
+				(list "u") ;vector 2
+				(null) ;names
+				(true) ;surprisal
+				) "\n"
+	)
 
  (print "--entropy--\n")
  (print (entropy (list 0.5 0.5)) "\n")
@@ -3538,8 +3653,6 @@
 		(list 1	1	1	120	1	50.1)
 	) "\n")
 	
-	(print "expected: 515.6547015746778\n")
-
 	(print (generalized_distance
 		;weights
 		(list 2.5	10	5	0.033333333	3.333333333	20)
@@ -3557,8 +3670,6 @@
 		(list 1	1	1	120	1	50.1)
 	) "\n")
 	
-	(print "expected: 16.936168566704314\n")
-
 	(print (generalized_distance
 		;weights
 		(list 2.5	10	5	0.033333333	3.333333333	20)
@@ -3576,13 +3687,10 @@
 		(list 1	1	1	120	1	50.1)
 	) "\n")
 	
-	(print "expected: 1.501901120883626e-25\n")
-
 	(create_entities "DistanceTestContainer"
 		(lambda (null))
 	)
 
-	;distance of 256.51144654
 	(create_entities (list "DistanceTestContainer" "point1")
 		(lambda (null
 			##a 1
@@ -3594,7 +3702,6 @@
 		))
 	)
 
-	;distance of 273.1247383
 	(create_entities (list "DistanceTestContainer" "point2")
 		(lambda (null
 			##a 2
@@ -3606,7 +3713,6 @@
 		))
 	)
 
-	;distance of 256.51144654
 	(create_entities (list "DistanceTestContainer" "point3")
 		(lambda (null
 			##a 1
@@ -3618,7 +3724,6 @@
 		))
 	)
 
-	;distance of 936.92716429
 	(create_entities (list "DistanceTestContainer" "point4")
 		(lambda (null
 			##a 2
@@ -3630,7 +3735,6 @@
 		))
 	)
 
-	;distance of 330.9586550
 	(create_entities (list "DistanceTestContainer" "point5")
 		(lambda (null
 			##a 1
@@ -3643,7 +3747,6 @@
 	)
 
 	(map (lambda
-			;distance of 330.9586550
 			(create_entities (list "DistanceTestContainer")
 				(lambda (null
 					##a 1

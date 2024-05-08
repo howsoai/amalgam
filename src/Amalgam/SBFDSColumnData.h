@@ -701,7 +701,7 @@ public:
 		case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC:
 		case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
 		case GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE:
-			return 1.0;
+			return 1.0 / (numberIndices.size() + stringIdIndices.size() + codeIndices.size());
 
 		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC:
 			if(sortedNumberValueEntries.size() <= 1)

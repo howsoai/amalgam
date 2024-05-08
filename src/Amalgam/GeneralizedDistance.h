@@ -920,6 +920,9 @@ protected:
 			auto &feature_attribs = featureAttribs[i];
 			if(feature_attribs.IsFeatureNominal())
 			{
+				if(computeSurprisal && !DoesFeatureHaveDeviation(i))
+					feature_attribs.deviation = feature_attribs.unknownToUnknownDistanceTerm.deviation;
+
 				//ensure if a feature has deviations they're not too small to underflow
 				if(DoesFeatureHaveDeviation(i))
 				{

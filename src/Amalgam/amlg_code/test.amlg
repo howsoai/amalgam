@@ -1,5 +1,5 @@
 (seq
-(if 0 (seq
+
   (print "40 " (generalized_distance
 				(list 1 1) ;weights
 				(list "nominal_string") ;types
@@ -71,8 +71,7 @@
 				(true) ;surprisal
 				) "\n"
 	)
-))
-	;TODO 17631: this shouldn't be infinity
+
 	(print "44 " (generalized_distance
 				(list 1 1) ;weights
 				(list "nominal_string") ;types

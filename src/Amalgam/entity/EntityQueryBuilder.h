@@ -152,9 +152,6 @@ namespace EntityQueryBuilder
 		if(deviation_node == nullptr)
 			return;
 
-		//TODO 17631: for default deviations first, try to use default.  if not exist, use unknown - unknown.  if not exist, use 1 / num classes -- change below to nan?
-		//TODO 17631: update documentation
-
 		auto dnt = deviation_node->GetType();
 		if(dnt == ENT_ASSOC)
 		{
@@ -171,7 +168,7 @@ namespace EntityQueryBuilder
 		}
 		else
 		{
-			feature_attribs.deviation = EvaluableNode::ToNumber(deviation_node);
+			feature_attribs.deviation = EvaluableNode::ToNumber(deviation_node, 0);
 		}
 	}
 

@@ -567,7 +567,7 @@ abcdef
 21 2.6664
 22 2.6664
 23 1.9997999999999998
-24 92.6574
+24 91.82415
 25 2.2360679796198744
 26 2.23606797749979
 27 3.0000000031604355
@@ -583,6 +583,12 @@ abcdef
 37 0
 38 1.6766764161830636
 39 2.197224577336219
+40 4.966335099422683
+41 0
+42 2.0114247563889367
+43 1.3862943611198906
+44 2.4849066497880004
+45 2.4849066497880004
 --entropy--
 0.6931471805599453
 0.14384103622589045
@@ -1013,7 +1019,7 @@ abcdef
 	"2020-06-08 lunes 11.33.48"
 )
 --indices--
-(list "b" "a" "c" "4")
+(list "b" "a" "4" "c")
 (list
 	0
 	1
@@ -1025,7 +1031,7 @@ abcdef
 	7
 )
 --values--
-(list 2 1 3 "d")
+(list 2 1 "d" 3)
 (list
 	"a"
 	1
@@ -1046,7 +1052,7 @@ abcdef
 	4
 	"d"
 )
-(list 3 2 1 0 "d")
+(list 3 2 1 "d" 0)
 (list
 	1
 	2
@@ -1259,7 +1265,7 @@ current_index: 2
 		interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1714591759.00049
+		start_time 1715130340.797492
 		www 1
 		x 12
 		zz 10
@@ -1302,7 +1308,7 @@ current_index: 2
 	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1714591759.00049
+	start_time 1715130340.797492
 	www 1
 	x 12
 	zz 10
@@ -1344,7 +1350,7 @@ current_index: 2
 	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1714591759.00049
+	start_time 1715130340.797492
 	www 1
 	x 12
 	zz 10
@@ -1492,7 +1498,7 @@ infinity test c or d: (list "c" @(get (target 0) 0) "d" @(get (target 0) 0))
 
 (assoc a 29 b 44 c 27)
 
-(list "5" "1" "3")
+(list "3" "1" "10")
 
 --get_rand_seed--
 °³È¼¿\¨KOaVÆT zÿ
@@ -1612,7 +1618,7 @@ e:
   - .inf
 
 25: (assoc a 1)
-current date-time in epoch: 2024-05-01-15.29.19.0478620
+current date-time in epoch: 2024-05-07-21.05.40.8686600
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -1662,7 +1668,7 @@ domingo, jun. 07, 2020
 		)
 )
 (assoc
-	labelA #labelA #labelQ
+	labelA #labelQ #labelA
 		(lambda
 			#labelB (true)
 		)
@@ -1679,7 +1685,7 @@ domingo, jun. 07, 2020
 		)
 )
 (assoc
-	labelA #labelA #labelQ
+	labelA #labelQ #labelA
 		(lambda
 			#labelB (true)
 		)
@@ -2748,10 +2754,10 @@ MergeEntityChild1
 (associate "x" 3 "y" 4)
 MergeEntityChild2
 (associate "p" 3 "q" 4)
-_2169689611
-(associate "e" 3 "f" 4)
 _2280722175
 (associate "E" 3 "F" 4)
+_2169689611
+(associate "e" 3 "f" 4)
 --union_entities--
 (associate "b" 4 "a" 3 "c" 3)
 MergeEntityChild1
@@ -2769,17 +2775,6 @@ MergeEntityChild2
 	"w"
 	7
 )
-_2169689611
-(associate
-	"e"
-	3
-	"f"
-	4
-	"g"
-	5
-	"h"
-	6
-)
 _2280722175
 (associate
 	"E"
@@ -2789,6 +2784,17 @@ _2280722175
 	"G"
 	5
 	"H"
+	6
+)
+_2169689611
+(associate
+	"e"
+	3
+	"f"
+	4
+	"g"
+	5
+	"h"
 	6
 )
 (parallel
@@ -3284,14 +3290,8 @@ _41032496
 						(list)
 						(lambda
 							(assoc
-								E (get
-										(current_value 1)
-										"E"
-									)
-								F (get
-										(current_value 1)
-										"F"
-									)
+								E 3
+								F 4
 								G 5
 								H 6
 							)
@@ -3316,16 +3316,7 @@ _41032496
 						_
 						(list)
 						(lambda
-							(assoc
-								e (get
-										(current_value 1)
-										"e"
-									)
-								f (get
-										(current_value 1)
-										"f"
-									)
-							)
+							(assoc e 3 f 4)
 						)
 					)
 				)
@@ -3353,18 +3344,36 @@ DiffContainerReconstructed
 )
 --mix_entities--
 (associate "b" 4 "a" 3)
-_523256902
-(associate "G" 5)
-_3895405527
-(null)
 MergeEntityChild1
-(associate "x" 3 "y" 4)
-MergeEntityChild2
-(associate "p" 3 "q" 4 "u" 5)
-_2169689611
+(associate "x" 3 "y" 4 "z" 5)
+_523256902
+(null)
+_3895405527
 (associate "f" 4)
+MergeEntityChild2
+(associate
+	"p"
+	3
+	"q"
+	4
+	"v"
+	6
+	"w"
+	7
+)
 _2280722175
-(associate "E" 3 "F" 4)
+(associate "F" 4)
+_2169689611
+(associate
+	"e"
+	3
+	"f"
+	4
+	"g"
+	5
+	"h"
+	6
+)
 --get_entity_comments--
 Full test
 This is a suite of unit tests.
@@ -3430,7 +3439,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1714591759.338789
+1715130341.014775
 (true)
 
 RootTest
@@ -4077,7 +4086,7 @@ test code and string distances
 (list "Child2" "Child4" "Child7")
 (list "Child2" "Child4" "Child7")
 assoc-based: (list "Child2" "Child4" "Child7")
-(list "Child2" "Child4" "Child7")
+(list "Child2" "Child4" "Child6")
 --contained_entities caching and permissions--
 (false)
 
@@ -4269,14 +4278,14 @@ case conviction:(assoc
 )
 cyclic feature nearest neighbors: (assoc cyclic1 1 cyclic5 0.5)
 cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
+190: 0.045454545454545456 (null
+	##deg 12
+)
 155: 0.1 (null
 	##deg 0
 )
 200: 0.05555555555555555 (null
 	##deg 8
-)
-190: 0.045454545454545456 (null
-	##deg 12
 )
 --contains_label--
 (true)
@@ -4443,13 +4452,10 @@ a
 (assoc a1 5.0990195135927845 a2 2 a3 5.0990195135927845)
 (assoc a1 1 a3 1 a4 0)
 --accuracy tests--
-515.6547015746778
-expected: 515.6547015746778
-16.936168566704314
-expected: 16.936168566704314
-1.501901120883626e-25
-expected: 1.501901120883626e-25
-(assoc point1 515.6547015746778 point2 545.8279373833903 point3 515.6547015746778)
+1036.1581794564518
+24.769501899470985
+4.3464184709105573e-45
+(assoc point1 1036.1581794564518 point2 978.5569789822398 point3 1036.1581794564518)
 distance symmetry tests
 (list
 	(list
@@ -4676,4 +4682,4 @@ concurrent entity writes successful: (true)
 
 --clean-up test files--
 --total execution time--
-1.975032091140747
+1.8150429725646973

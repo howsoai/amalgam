@@ -266,7 +266,8 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 
 bool AssetManager::StoreEntityToResourcePath(Entity *entity, std::string &resource_path, std::string &file_type,
 	bool update_persistence_location, bool store_contained_entities, bool escape_filename, bool escape_contained_filenames,
-	bool sort_keys, bool include_rand_seeds, bool parallel_create)
+	bool sort_keys, bool include_rand_seeds, bool parallel_create,
+	Entity::EntityReferenceBufferReference<EntityReadReference> *all_contained_entities)
 {
 	if(entity == nullptr)
 		return false;
@@ -275,10 +276,17 @@ bool AssetManager::StoreEntityToResourcePath(Entity *entity, std::string &resour
 	std::string complete_resource_path;
 	PreprocessFileNameAndType(resource_path, file_type, escape_filename, resource_base_path, complete_resource_path);
 
+	Entity::EntityReferenceBufferReference<EntityReadReference> erbr;
+	if(all_contained_entities == nullptr)
+	{
+		erbr = entity->GetAllDeeplyContainedEntityReadReferencesGroupedByDepth();
+		all_contained_entities = &erbr;
+	}
+
 	if(file_type == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 	{
-		EvaluableNodeReference flattened_entity = EntityManipulation::FlattenEntity(&entity->evaluableNodeManager, entity,
-			include_rand_seeds, parallel_create);
+		EvaluableNodeReference flattened_entity = EntityManipulation::FlattenEntity(&entity->evaluableNodeManager,
+			entity, *all_contained_entities, include_rand_seeds, parallel_create);
 
 		bool all_stored_successfully = AssetManager::StoreResourcePathFromProcessedResourcePaths(flattened_entity,
 			complete_resource_path, file_type, &entity->evaluableNodeManager, escape_filename, sort_keys);

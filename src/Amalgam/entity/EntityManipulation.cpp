@@ -649,7 +649,9 @@ Entity *EntityManipulation::MutateEntity(Interpreter *interpreter, Entity *entit
 	return new_entity;
 }
 
-EvaluableNodeReference EntityManipulation::FlattenEntity(EvaluableNodeManager *enm, Entity *entity, bool include_rand_seeds, bool parallel_create)
+EvaluableNodeReference EntityManipulation::FlattenEntity(EvaluableNodeManager *enm,
+	Entity *entity, Entity::EntityReferenceBufferReference<EntityReadReference> &all_contained_entities,
+	bool include_rand_seeds, bool parallel_create)
 {
 	//////////
 	//build code to look like:
@@ -687,12 +689,11 @@ EvaluableNodeReference EntityManipulation::FlattenEntity(EvaluableNodeManager *e
 	// )
 
 	bool cycle_free = true;
-	auto contained_entities = entity->GetAllDeeplyContainedEntityReadReferencesGroupedByDepth();
 
 	// (declare (assoc new_entity (null) create_new_entity (true))
 	EvaluableNode *declare_flatten = enm->AllocNode(ENT_DECLARE);
 	//preallocate the assoc, set_entity_rand_seed, create and set_entity_rand_seed for each contained entity, then the return new_entity
-	declare_flatten->ReserveOrderedChildNodes(3 + 2 * contained_entities->size());
+	declare_flatten->ReserveOrderedChildNodes(3 + 2 * all_contained_entities->size());
 
 	EvaluableNode *flatten_params = enm->AllocNode(ENT_ASSOC);
 	declare_flatten->AppendOrderedChildNode(flatten_params);
@@ -755,9 +756,9 @@ EvaluableNodeReference EntityManipulation::FlattenEntity(EvaluableNodeManager *e
 	size_t start_index_of_next_group = 0;
 	size_t cur_group_size = 0;
 	Entity *container = entity;
-	for(size_t i = 0; i < contained_entities->size(); i++)
+	for(size_t i = 0; i < all_contained_entities->size(); i++)
 	{
-		auto &cur_entity = (*contained_entities)[i];
+		auto &cur_entity = (*all_contained_entities)[i];
 		if(parallel_create && i == start_index_of_next_group)
 		{
 			//insert another parallel for the this group of entities

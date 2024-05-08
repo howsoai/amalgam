@@ -473,6 +473,10 @@ public:
 	class EntityReferenceBufferReference
 	{
 	public:
+		inline EntityReferenceBufferReference()
+			: bufferReference(nullptr)
+		{ }
+
 		inline EntityReferenceBufferReference(std::vector<EntityReferenceType> &buffer)
 			: bufferReference(&buffer)
 		{ }
@@ -505,10 +509,9 @@ public:
 	//entities at the same level of depth
 	//returns the thread_local static variable entityReadReferenceBuffer, so results will be invalidated
 	//by subsequent calls
-	//TODO 15698: update this for read locks as appropriate
 	inline EntityReferenceBufferReference<EntityReadReference> GetAllDeeplyContainedEntityReadReferencesGroupedByDepth()
 	{
-		EntityReferenceBufferReference erbr(entityReadReferenceBuffer);
+		EntityReferenceBufferReference<EntityReadReference> erbr(entityReadReferenceBuffer);
 		GetAllDeeplyContainedEntityReadReferencesGroupedByDepthRecurse();
 		return erbr;
 	}

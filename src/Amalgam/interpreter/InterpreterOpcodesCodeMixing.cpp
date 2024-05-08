@@ -296,13 +296,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TOTAL_ENTITY_SIZE(Evaluabl
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
 
-	//TODO 10975: lock entire entity tree
-	//get the id of the first source entity
-	EntityReadReference source_entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
-	if(source_entity == nullptr)
+	EntityReadReference entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
+	if(entity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	double size = static_cast<double>(source_entity->GetDeepSizeInNodes());
+	auto erbr = entity->GetAllDeeplyContainedEntityReadReferencesGroupedByDepth();
+	double size = static_cast<double>(entity->GetDeepSizeInNodes());
 	return AllocReturn(size, immediate_result);
 }
 
@@ -321,12 +320,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FLATTEN_ENTITY(EvaluableNo
 	if(ocn.size() > 2)
 		parallel_create = InterpretNodeIntoBoolValue(ocn[2]);
 
-	//get the id of the first source entity
-	EntityReadReference source_entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
-	if(source_entity == nullptr)
+	EntityReadReference entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
+	if(entity == nullptr)
 		return EvaluableNodeReference::Null();
-	
-	return EntityManipulation::FlattenEntity(evaluableNodeManager, source_entity, include_rand_seeds, parallel_create);
+
+	auto erbr = entity->GetAllDeeplyContainedEntityReadReferencesGroupedByDepth();
+	return EntityManipulation::FlattenEntity(evaluableNodeManager, entity, erbr, include_rand_seeds, parallel_create);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNode *en, bool immediate_result)

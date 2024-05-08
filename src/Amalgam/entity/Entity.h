@@ -88,7 +88,7 @@ public:
 	inline EntityReferenceWithLock(EntityType *e) : EntityReference<EntityType>(e)
 	{
 		if(e != nullptr)
-			lock = e->CreateEntityLock<LockType>();
+			lock = e->template CreateEntityLock<LockType>();
 		else
 			lock = LockType();
 	}

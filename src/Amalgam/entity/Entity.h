@@ -99,26 +99,26 @@ public:
 //acts as a reference to an Entity that can be treated as an Entity *
 // but also performs a read-lock on the container if multithreaded, and frees the read lock when goes out of scope
 //can't be a typedef due to the inability to do forward declarations, so have to include constructors
-class EntityReadReference : public EntityReferenceWithLock<Concurrency::ReadLock>
+class EntityReadReference : public EntityReferenceWithLock<Concurrency::ReadLock, Entity>
 {
 public:
-	EntityReadReference() : EntityReferenceWithLock<Concurrency::ReadLock>()
+	EntityReadReference() : EntityReferenceWithLock<Concurrency::ReadLock, Entity>()
 	{	}
 
-	EntityReadReference(Entity *e) : EntityReferenceWithLock<Concurrency::ReadLock>(e)
+	EntityReadReference(Entity *e) : EntityReferenceWithLock<Concurrency::ReadLock, Entity>(e)
 	{	}
 };
 
 //acts as a reference to an Entity that can be treated as an Entity *
 // but also performs a write-lock on the container if multithreaded, and frees the read lock when goes out of scope
 //can't be a typedef due to the inability to do forward declarations, so have to include constructors
-class EntityWriteReference : public EntityReferenceWithLock<Concurrency::WriteLock>
+class EntityWriteReference : public EntityReferenceWithLock<Concurrency::WriteLock, Entity>
 {
 public:
-	EntityWriteReference() : EntityReferenceWithLock<Concurrency::WriteLock>()
+	EntityWriteReference() : EntityReferenceWithLock<Concurrency::WriteLock, Entity>()
 	{	}
 
-	EntityWriteReference(Entity *e) : EntityReferenceWithLock<Concurrency::WriteLock>(e)
+	EntityWriteReference(Entity *e) : EntityReferenceWithLock<Concurrency::WriteLock, Entity>(e)
 	{	}
 };
 

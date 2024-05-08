@@ -27,6 +27,8 @@ class PrintListener;
 //base class for accessing an entity via a reference
 // includes everything that can be accessed via a read operation
 // note that this class should not be used directly, which is why it does not yield access to edit entity other than nullptr
+//need to templatize EntityType because can't foreward declare a method
+template<typename EntityType = Entity>
 class EntityReference
 {
 public:
@@ -34,12 +36,12 @@ public:
 		: entity(nullptr)
 	{	}
 
-	constexpr EntityReference(Entity *e)
+	constexpr EntityReference(EntityType *e)
 		: entity(e)
 	{	}
 
 	//allow to use as an Entity *
-	constexpr operator Entity *()
+	constexpr operator EntityType *()
 	{
 		return entity;
 	}
@@ -57,33 +59,32 @@ public:
 	}
 
 	//allow to use as an Entity *
-	constexpr Entity *operator->()
+	constexpr EntityType *operator->()
 	{
 		return entity;
 	}
 
 	//allow to use as an Entity *
-	constexpr Entity *operator*()
+	constexpr EntityType *operator*()
 	{
 		return entity;
 	}
 
 protected:
-	Entity *entity;
+	EntityType *entity;
 };
 
 #ifdef MULTITHREAD_SUPPORT
 
 //encapsulates EntityReference with a lock type
-template<typename LockType>
-class EntityReferenceWithLock : public EntityReference
+//need to templatize EntityType because can't foreward declare a method
+template<typename LockType, typename EntityType = Entity>
+class EntityReferenceWithLock : public EntityReference<EntityType>
 {
 public:
 	inline EntityReferenceWithLock() : EntityReference()
 	{	}
 
-	//need to templatize EntityType because can't foreward declare a method
-	template<typename EntityType>
 	inline EntityReferenceWithLock(EntityType *e) : EntityReference(e)
 	{
 		if(e != nullptr)

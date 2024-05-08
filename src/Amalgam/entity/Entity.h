@@ -79,10 +79,12 @@ template<typename LockType>
 class EntityReferenceWithLock : public EntityReference
 {
 public:
-	EntityReferenceWithLock() : EntityReference()
+	inline EntityReferenceWithLock() : EntityReference()
 	{	}
 
-	EntityReferenceWithLock(Entity *e) : EntityReference(e)
+	//need to templatize EntityType because can't foreward declare a method
+	template<typename EntityType>
+	inline EntityReferenceWithLock(EntityType *e) : EntityReference(e)
 	{
 		if(e != nullptr)
 			lock = e->CreateEntityLock<LockType>();

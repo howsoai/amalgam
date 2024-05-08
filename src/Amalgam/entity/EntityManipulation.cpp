@@ -754,8 +754,6 @@ EvaluableNodeReference EntityManipulation::FlattenEntity(EvaluableNodeManager *e
 	EvaluableNode *cur_entity_creation_list = declare_flatten;
 
 	size_t start_index_of_next_group = 0;
-	size_t cur_group_size = 0;
-	Entity *container = entity;
 	for(size_t i = 0; i < all_contained_entities->size(); i++)
 	{
 		auto &cur_entity = (*all_contained_entities)[i];

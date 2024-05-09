@@ -123,7 +123,7 @@ inline std::pair<std::string, bool> Platform_OpenFileAsString(const std::string 
 
 	if(!inf.good())
 	{
-		data = "Error loading file: " + filename;
+		data = "Error loading file " + filename;
 		return std::make_pair(data, false);
 	}
 

@@ -198,7 +198,7 @@ bool EvaluableNodeYAMLTranslation::Store(EvaluableNode *code, const std::string 
 	std::string error_string;
 	if(!Platform_IsResourcePathAccessible(resource_path, false, error_string))
 	{
-		std::cerr << "Error storing YAML: " << error_string << std::endl;
+		std::cerr << "Error storing YAML to " + resource_path + ": " << error_string << std::endl;
 		return false;
 	}
 

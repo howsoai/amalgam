@@ -195,20 +195,19 @@ EvaluableNode *EvaluableNodeYAMLTranslation::Load(const std::string &resource_pa
 
 bool EvaluableNodeYAMLTranslation::Store(EvaluableNode *code, const std::string &resource_path, EvaluableNodeManager *enm, bool sort_keys)
 {
-	std::string error_string;
-	if(!Platform_IsResourcePathAccessible(resource_path, false, error_string))
-	{
-		std::cerr << "Error storing YAML to " + resource_path + ": " << error_string << std::endl;
-		return false;
-	}
-
 	auto [result, converted] = EvaluableNodeToYaml(code, sort_keys);
 	if(!converted)
 	{
 		std::cerr << "Error storing YAML: cannot convert node to YAML" << std::endl;
 		return false;
 	}
+
 	std::ofstream file(resource_path);
+	if(!file.good())
+	{
+		std::cerr << "Error storing JSON: cannot write to file " + resource_path << std::endl;
+		return false;
+	}
 	file << result;
 
 	return true;

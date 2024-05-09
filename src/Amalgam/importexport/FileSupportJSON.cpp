@@ -366,20 +366,20 @@ EvaluableNode *EvaluableNodeJSONTranslation::Load(const std::string &resource_pa
 // Save node tree to disk as JSON.
 bool EvaluableNodeJSONTranslation::Store(EvaluableNode *code, const std::string &resource_path, EvaluableNodeManager *enm, bool sort_keys)
 {
-	std::string error_string;
-	if(!Platform_IsResourcePathAccessible(resource_path, false, error_string))
-	{
-		std::cerr << "Error storing JSON to " << resource_path + ": " << error_string << std::endl;
-		return false;
-	}
-
 	auto [result, converted] = EvaluableNodeToJson(code, sort_keys);
 	if(!converted)
 	{
 		std::cerr << "Error storing JSON: cannot convert node to JSON" << std::endl;
 		return false;
 	}
+
 	std::ofstream file(resource_path);
+	if(!file.good())
+	{
+		std::cerr << "Error storing JSON: cannot write to file " +  resource_path << std::endl;
+		return false;
+	}
+
 	file << result;
 
 	return true;

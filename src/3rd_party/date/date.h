@@ -6527,7 +6527,14 @@ read(std::basic_istream<CharT, Traits>& is, int a0, Args&& ...args)
             *e++ = static_cast<CharT>(CharT(u % 10) + CharT{'0'});
             u /= 10;
         } while (u > 0);
+#if defined(__GNUC__) && __GNUC__ >= 11
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
         std::reverse(buf, e);
+#if defined(__GNUC__) && __GNUC__ >= 11
+#pragma GCC diagnostic pop
+#endif
         for (auto p = buf; p != e && is.rdstate() == std::ios::goodbit; ++p)
             read(is, *p);
     }
@@ -7741,9 +7748,7 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
                 year_month_day ymd_trial = sys_days(year{Y}/January/Sunday[1]) +
                                            weeks{U-1} +
                                            (weekday{static_cast<unsigned>(wd)} - Sunday);
-                if (Y == not_a_year)
-                    Y = static_cast<int>(ymd_trial.year());
-                else if (year{Y} != ymd_trial.year())
+                if (year{Y} != ymd_trial.year())
                     goto broken;
                 if (m == not_a_month)
                     m = static_cast<int>(static_cast<unsigned>(ymd_trial.month()));
@@ -7760,9 +7765,7 @@ from_stream(std::basic_istream<CharT, Traits>& is, const CharT* fmt,
                 year_month_day ymd_trial = sys_days(year{Y}/January/Monday[1]) +
                                            weeks{W-1} +
                                            (weekday{static_cast<unsigned>(wd)} - Monday);
-                if (Y == not_a_year)
-                    Y = static_cast<int>(ymd_trial.year());
-                else if (year{Y} != ymd_trial.year())
+                if (year{Y} != ymd_trial.year())
                     goto broken;
                 if (m == not_a_month)
                     m = static_cast<int>(static_cast<unsigned>(ymd_trial.month()));

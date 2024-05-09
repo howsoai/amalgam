@@ -139,18 +139,12 @@ bool AssetManager::StoreResourcePathFromProcessedResourcePaths(EvaluableNode *co
 
 		//compress and store
 		BinaryData compressed_data = CompressStrings(string_map);
-		if(StoreFileFromBuffer<BinaryData>(complete_resource_path, file_type, compressed_data))
-			return EvaluableNodeReference(enm->AllocNode(ENT_TRUE), true);
-		else
-			return EvaluableNodeReference::Null();
+		return StoreFileFromBuffer<BinaryData>(complete_resource_path, file_type, compressed_data);
 	}
 	else //binary string
 	{
 		std::string s = EvaluableNode::ToStringPreservingOpcodeType(code);
-		if(StoreFileFromBuffer<std::string>(complete_resource_path, file_type, s))
-			return EvaluableNodeReference(enm->AllocNode(ENT_TRUE), true);
-		else
-			return EvaluableNodeReference::Null();
+		return StoreFileFromBuffer<std::string>(complete_resource_path, file_type, s);
 	}
 
 	return false;

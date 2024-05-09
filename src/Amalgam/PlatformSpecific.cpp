@@ -214,30 +214,21 @@ bool Platform_IsResourcePathAccessible(const std::string &resource_path, bool mu
 	if(stat(resource_path.c_str(), &fileStatus) == -1) // == 0 ok; == -1 error
 	{
 		if(must_exist && errno == ENOENT)
-		{
 			error = "Resource path does not exist, or path is an empty string.";
-			return false;
-		}
 		else if(errno == ENOTDIR)
-		{
 			error = "A component of the path is not a directory.";
-			return false;
-		}
 		else if(errno == ELOOP)
-		{
 			error = "Too many symbolic links encountered while traversing the path.";
-			return false;
-		}
 		else if(errno == EACCES)
-		{
 			error = "Permission denied.";
-			return false;
-		}
 		else if(errno == ENAMETOOLONG)
-		{
 			error = "File cannot be read.";
-			return false;
-		}
+		else if(errno == EBADF)
+			error = "Bad filename.";
+		else
+			error = "Could not access file.";
+
+		return false;
 	}
 
 	return true;

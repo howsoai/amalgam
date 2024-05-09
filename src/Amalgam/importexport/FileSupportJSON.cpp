@@ -339,7 +339,7 @@ EvaluableNode *EvaluableNodeJSONTranslation::Load(const std::string &resource_pa
 	std::string error_string;
 	if(!Platform_IsResourcePathAccessible(resource_path, true, error_string))
 	{
-		std::string err = "Error loading JSON: " + error_string;
+		std::string err = "Error loading JSON from " + resource_path + ": " + error_string;
 		status.SetStatus(false, err);
 		std::cerr << err << std::endl;
 		return nullptr;
@@ -369,7 +369,7 @@ bool EvaluableNodeJSONTranslation::Store(EvaluableNode *code, const std::string 
 	std::string error_string;
 	if(!Platform_IsResourcePathAccessible(resource_path, false, error_string))
 	{
-		std::cerr << "Error storing JSON: " << error_string << std::endl;
+		std::cerr << "Error storing JSON to " << resource_path + ": " << error_string << std::endl;
 		return false;
 	}
 

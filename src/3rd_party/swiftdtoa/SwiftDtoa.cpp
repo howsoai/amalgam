@@ -1,4 +1,4 @@
-//===--- SwiftDtoa.c ---------------------------------------------*- c -*-===//
+//===--- SwiftDtoa.cpp ---------------------------------------------*- C++ -*-===//
 //
 // This source file is part of the Swift.org open source project
 //
@@ -40,12 +40,12 @@
 ///
 /// * Fast.  It uses only fixed-width integer arithmetic and has
 ///   constant memory requirements.  For double-precision values on
-///   64-bit processors, it is competitive with Ryu.  For double-precision
+///   64-bit processors, it is competitive with Ryu. For double-precision
 ///   values on 32-bit processors, and higher-precision values on all
 ///   processors, it is considerably faster.
 ///
 /// * Always Accurate. Converting the decimal form back to binary
-///   will always yield exactly the same value.  For the IEEE 754
+///   will always yield exactly the same value. For the IEEE 754
 ///   formats, the round-trip will produce exactly the same bit
 ///   pattern in memory.
 ///
@@ -65,6 +65,7 @@
 ///
 // ----------------------------------------------------------------------------
 
+//HOWSO changes: ignore these warnings
 #pragma warning(disable: 4244)
 #pragma warning(disable: 4319)
 
@@ -76,6 +77,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+//HOWSO changes: use different include path
 #include "SwiftDtoa.h"
 
 #if defined(__SIZEOF_INT128__)
@@ -128,7 +130,7 @@ static void intervalContainingPowerOf10_Binary32(int p, uint64_t *lower, uint64_
 #endif
 
 //
-// Helpers used by binary32, binary64, float80, and binary128
+// Helpers used by binary32, binary64, float80, and binary128.
 //
 
 #if SWIFT_DTOA_BINARY32_SUPPORT || SWIFT_DTOA_BINARY64_SUPPORT || SWIFT_DTOA_FLOAT80_SUPPORT || SWIFT_DTOA_BINARY128_SUPPORT
@@ -295,11 +297,13 @@ static size_t infinity(char *dest, size_t len, int negative) {
 static size_t zero(char *dest, size_t len, int negative) {
   if (negative) {
     if (len >= 5) {
+      //HOWSO changes: don't put extra .0 at the end of integers
       memcpy(dest, "-0", 3);
       return 2;
     }
   } else {
     if (len >= 4) {
+      //HOWSO changes: don't put extra .0 at the end of integers
       memcpy(dest, "0", 2);
       return 1;
     }
@@ -346,6 +350,13 @@ static size_t nan_details(char *dest, size_t len, int negative, int quiet, uint6
 
 
 #if SWIFT_DTOA_BINARY16_SUPPORT
+#if !SWIFT_DTOA_PASS_FLOAT16_AS_FLOAT
+// Format a C `_Float16`
+size_t swift_dtoa_optimal_binary16(_Float16 d, char *dest, size_t length) {
+  return swift_dtoa_optimal_binary16_p(&d, dest, length);
+}
+#endif
+
 // Format an IEEE 754 binary16 half-precision floating point value
 // into an optimal text form.
 
@@ -517,13 +528,17 @@ size_t swift_dtoa_optimal_binary16_p(const void *f, char *dest, size_t length) {
       dest[0] = '\0';
       return 0;
     }
-    
+    //HOWSO changes: don't put extra .0 at the end of integers
+    //*p++ = '.';
     if (significand == 0) { // No fraction, so we're done.
+      //HOWSO changes: don't put extra .0 at the end of integers
+      //*p++ = '0';
       *p = '\0';
       return p - dest;
     }
 
-	*p++ = '.';
+    //HOWSO changes: don't put extra .0 at the end of integers, but this is a fraction, so need it
+    *p++ = '.';
 
     // Format the fractional part
     uint32_t u = upperMidpointExact << (28 - 13 + binaryExponent);
@@ -786,7 +801,7 @@ size_t swift_dtoa_optimal_binary64_p(const void *d, char *dest, size_t length)
     // bias.  That's because they treat the significand as a
     // fixed-point number with one bit (the hidden bit) integer
     // portion.  The logic here reconstructs the significand as a
-    // pure fraction, so we need to accomodate that when
+    // pure fraction, so we need to accommodate that when
     // reconstructing the binary exponent.
     static const int64_t exponentBias = (1 << (exponentBitCount - 1)) - 2; // 1022
 
@@ -915,14 +930,14 @@ size_t swift_dtoa_optimal_binary64_p(const void *d, char *dest, size_t length)
         // This ensures accuracy but, as explained in Loitsch' paper,
         // this carries a risk that there will be a shorter digit
         // sequence outside of our narrowed interval that we will
-        // miss.  This risk obviously gets lower with increased
+        // miss. This risk obviously gets lower with increased
         // precision, but it wasn't until the Errol paper that anyone
         // had a good way to test whether a particular implementation
-        // had sufficient precision.  That paper shows a way to enumerate
+        // had sufficient precision. That paper shows a way to enumerate
         // the worst-case numbers; those numbers that are extremely close
         // to the mid-points between adjacent floating-point values.
         // These are the values that might sit just outside of the
-        // narrowed interval.  By testing these values, we can verify
+        // narrowed interval. By testing these values, we can verify
         // the correctness of our implementation.
 
         // Multiply out the upper midpoint, rounding down...
@@ -971,7 +986,7 @@ size_t swift_dtoa_optimal_binary64_p(const void *d, char *dest, size_t length)
     // Calculations above used an estimate for the power-of-ten scale.
     // Here, we compensate for any error in that estimate by testing
     // whether we have the expected number of digits in the integer
-    // portion and correcting as necesssary.  This also serves to
+    // portion and correcting as necessary.  This also serves to
     // prune leading zeros from subnormals.
 
     // Except for subnormals, this loop should never run more than once.
@@ -1206,7 +1221,8 @@ size_t swift_dtoa_optimal_binary64_p(const void *d, char *dest, size_t length)
       // value 0.1234 and computed u = 0.1257, l = 0.1211.  The above
       // digit generation works with `u`, so produces 0.125.  But the
       // values 0.122, 0.123, and 0.124 are just as short and 0.123 is
-      // the best choice, since it's closest to the original value.
+      // therefore the best choice, since it's closest to the original
+      // value.
 
       // We know delta and t are both less than 10.0 here, so we can
       // shed some excess integer bits to simplify the following:
@@ -1709,6 +1725,9 @@ static int finishFormatting(char *dest, size_t length,
       p -= 1;
       memset(p, '0', base10Exponent - digitCount + 1);
       p += base10Exponent - digitCount + 1;
+      //HOWSO changes: don't put extra .0 at the end of integers
+      //*p++ = '.';
+      //*p++ = '0';
     }
     *p = '\0';
     return p - dest;
@@ -1735,7 +1754,7 @@ static int finishFormatting(char *dest, size_t length,
 // low-order part (rounding).  So most of the arithmetic helpers here
 // are for multiplication.
 
-// Note: With 64-bit GCC and Clang, we get a noticable performance
+// Note: With 64-bit GCC and Clang, we get a noticeable performance
 // gain by using `__uint128_t`.  Otherwise, we have to break things
 // down into 32-bit chunks so we don't overflow 64-bit temporaries.
 
@@ -2623,7 +2642,7 @@ static const uint64_t powersOf10_Binary128[] = {
 // * 64-bit fractions `lower` and `upper`
 // * integer `exponent`
 //
-// The returned values satisty the following:
+// The returned values satisfy the following:
 // ```
 //    lower * 2^exponent <= 10^p <= upper * 2^exponent
 // ```
@@ -2657,7 +2676,7 @@ static void intervalContainingPowerOf10_Binary32(int p, uint64_t *lower, uint64_
 // multiplications to accurately reconstruct the lower and upper
 // bounds.
 //
-// The returned values satisty the following:
+// The returned values satisfy the following:
 // ```
 //    lower * 2^exponent <= 10^p <= upper * 2^exponent
 // ```

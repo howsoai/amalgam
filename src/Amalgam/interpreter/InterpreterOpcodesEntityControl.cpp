@@ -513,29 +513,23 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DESTROY_ENTITIES(Evaluable
 	for(auto &cn : en->GetOrderedChildNodes())
 	{
 		//get the id of the source entity
-		auto source_id_node = InterpretNodeForImmediateUse(cn);
-		Entity *source_entity = nullptr, *source_entity_parent = nullptr;
+		auto id_node = InterpretNodeForImmediateUse(cn);
+		Entity *entity = nullptr, *entity_parent = nullptr;
 		StringInternRef source_id;
-		TraverseToEntityViaEvaluableNodeIDPath(curEntity, source_id_node, source_entity_parent, source_id, source_entity);
-		evaluableNodeManager->FreeNodeTreeIfPossible(source_id_node);
+		TraverseToEntityViaEvaluableNodeIDPath(curEntity, id_node, entity_parent, source_id, entity);
+		evaluableNodeManager->FreeNodeTreeIfPossible(id_node);
 
-		//need a source entity, and can't destroy self! (that could cause badness)
-		if(source_entity == nullptr || source_entity == curEntity)
+		//need a valid entity that isn't itself or currently has execution
+		if(entity == nullptr || entity == curEntity || entity->IsEntityCurrentlyBeingExecuted())
 		{
 			all_destroys_successful = false;
 			continue;
 		}
 
-		if(source_entity->IsEntityCurrentlyBeingExecuted())
-		{
-			all_destroys_successful = false;
-			continue;
-		}
+		if(entity_parent != nullptr)
+			entity_parent->RemoveContainedEntity(source_id, writeListeners);
 
-		if(source_entity_parent != nullptr)
-			source_entity_parent->RemoveContainedEntity(source_id, writeListeners);
-
-		delete source_entity;
+		delete entity;
 	}
 
 	return AllocReturn(all_destroys_successful, immediate_result);
@@ -753,10 +747,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
 
-	//TODO 10975: lock entire entity tree
 	//get the id of the source entity to store.  Don't need to keep the reference because it won't be used once the source entety pointer is looked up
 	//retrieve the entity after other parameters to minimize time in locks
 	// and prevent deadlock if one of the params accessed the entity
+	//StoreEntityToResourcePath will read lock all contained entities appropriately
 	EntityReadReference source_entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[1]);
 	if(source_entity == nullptr || source_entity == curEntity)
 		return EvaluableNodeReference::Null();

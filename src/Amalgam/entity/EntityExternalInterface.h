@@ -237,10 +237,22 @@ protected:
 		if(bundle_handle == end(handleToBundle) || bundle_handle->second == nullptr)
 			return;
 
-		//because handleToBundle is a flat hashmap, erasure will invalidate the iterator
-		//so delete first
-		delete bundle_handle->second;
+		//copy out of the iterator, since changing the container may invalidate the iterator
+		EntityListenerBundle *elb = bundle_handle->second;
+
+		//if it's being executed, can't delete
+		if(elb->entity->IsEntityCurrentlyBeingExecuted())
+			return;
+
 		handleToBundle.erase(handle);
+
+	#ifdef MULTITHREAD_INTERFACE
+		//obtain a write lock and release it -- just make sure nothing else has the entity locked
+		EntityWriteReference ewr(elb->entity);
+		ewr = EntityWriteReference();
+	#endif
+
+		delete elb;
 	}
 
 	//for concurrent reading and writing the interface management data below

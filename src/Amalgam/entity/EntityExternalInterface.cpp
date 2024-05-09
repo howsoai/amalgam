@@ -632,6 +632,7 @@ bool EntityExternalInterface::EntityListenerBundle::SetEntityValueAtLabel(std::s
 {
 	StringInternPool::StringID label_sid = string_intern_pool.GetIDFromString(label_name);
 
+	EntityWriteReference entity_wr(entity);
 #ifdef MULTITHREAD_SUPPORT
 	//make a full copy of the entity in case any other threads are operating on it
 	entity->SetRoot(entity->GetRoot(), false);
@@ -648,8 +649,7 @@ EntityExternalInterface::EntityListenerBundle::~EntityListenerBundle()
 {
 	if(entity != nullptr)
 	{
-		EntityWriteReference entity_wr(entity);
-		asset_manager.DestroyEntity(entity_wr);
+		asset_manager.DestroyEntity(entity);
 		delete entity;
 	}
 

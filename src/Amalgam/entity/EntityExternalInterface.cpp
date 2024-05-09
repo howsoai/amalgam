@@ -115,14 +115,11 @@ bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &clon
 void EntityExternalInterface::StoreEntity(std::string &handle, std::string &path, bool update_persistence_location, bool store_contained_entities)
 {
 	auto bundle = FindEntityBundle(handle);
-	if(bundle == nullptr)
-		return;
-
-	Entity *entity = bundle->entity;
-	if(entity == nullptr)
+	if(bundle == nullptr || bundle->entity == nullptr)
 		return;
 
 	std::string file_type = "";
+	EntityReadReference entity(bundle->entity);
 	asset_manager.StoreEntityToResourcePath(entity, path, file_type, update_persistence_location, store_contained_entities, false, true, false);
 }
 
@@ -635,8 +632,9 @@ bool EntityExternalInterface::EntityListenerBundle::SetEntityValueAtLabel(std::s
 {
 	StringInternPool::StringID label_sid = string_intern_pool.GetIDFromString(label_name);
 
+	EntityWriteReference entity_wr(entity);
 #ifdef MULTITHREAD_SUPPORT
-	auto write_lock = entity->CreateEntityLock<Concurrency::WriteLock>();
+	//make a full copy of the entity in case any other threads are operating on it
 	entity->SetRoot(entity->GetRoot(), false);
 #endif
 

@@ -7,6 +7,16 @@
 #include "EvaluableNodeTreeFunctions.h"
 #include "Interpreter.h"
 
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+thread_local
+#endif
+std::vector<EntityReadReference> Entity::entityReadReferenceBuffer;
+
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+thread_local
+#endif
+std::vector<EntityWriteReference> Entity::entityWriteReferenceBuffer;
+
 std::vector<Entity *> Entity::emptyContainedEntities;
 
 Entity::Entity()
@@ -79,10 +89,6 @@ Entity::Entity(Entity *t)
 
 Entity::~Entity()
 {
-#ifdef MULTITHREAD_SUPPORT
-	Concurrency::WriteLock lock(mutex);
-#endif
-
 	//clear query caches before destroying contained entities for performance
 	ClearQueryCaches();
 
@@ -983,17 +989,15 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 	}
 }
 
-void Entity::GetAllDeeplyContainedEntitiesGroupedRecurse(std::vector<Entity *> &entities)
+void Entity::GetAllDeeplyContainedEntityReadReferencesGroupedByDepthRecurse()
 {
 	if(!hasContainedEntities)
 		return;
 
 	auto &contained_entities = GetContainedEntities();
-	entities.insert(end(entities), begin(contained_entities), end(contained_entities));
-
-	//insert a nullptr at the end to indicate this group is complete
-	entities.emplace_back(nullptr);
+	for(Entity *e : contained_entities)
+		entityReadReferenceBuffer.emplace_back(e);
 
 	for(auto &ce : contained_entities)
-		ce->GetAllDeeplyContainedEntitiesGroupedRecurse(entities);
+		ce->GetAllDeeplyContainedEntityReadReferencesGroupedByDepthRecurse();
 }

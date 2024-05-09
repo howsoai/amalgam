@@ -74,6 +74,10 @@
 //
 //===---------------------------------------------------------------------===//
 
+//HOWSO changes: disable support, as not needed and makes less compatible across platforms
+#define SWIFT_DTOA_PASS_FLOAT16_AS_FLOAT 0
+#define SWIFT_DTOA_BINARY16_SUPPORT 0
+
 #ifndef SWIFT_DTOA_H
 #define SWIFT_DTOA_H
 

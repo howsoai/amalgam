@@ -89,10 +89,6 @@ Entity::Entity(Entity *t)
 
 Entity::~Entity()
 {
-#ifdef MULTITHREAD_SUPPORT
-	Concurrency::WriteLock lock(mutex);
-#endif
-
 	//clear query caches before destroying contained entities for performance
 	ClearQueryCaches();
 

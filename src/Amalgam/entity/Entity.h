@@ -484,9 +484,29 @@ public:
 			: bufferReference(&buffer)
 		{ }
 
+		inline EntityReferenceBufferReference(EntityReferenceBufferReference &&erbr)
+		{
+			bufferReference = erbr.bufferReference;
+			erbr.bufferReference = nullptr;
+		}
+
 		inline ~EntityReferenceBufferReference()
 		{
-			bufferReference->clear();
+			if(bufferReference != nullptr)
+				bufferReference->clear();
+		}
+
+		inline EntityReferenceBufferReference &operator=(EntityReferenceBufferReference &&erbr)
+		{
+			if(this != &erbr)
+			{
+				if(bufferReference != nullptr)
+					bufferReference->clear();
+
+				bufferReference = erbr.bufferReference;
+				erbr.bufferReference = nullptr;
+			}
+			return *this;
 		}
 
 		constexpr operator std::vector<EntityReferenceType> *()

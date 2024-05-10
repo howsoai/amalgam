@@ -273,7 +273,8 @@ bool AssetManager::StoreEntityToResourcePath(Entity *entity, std::string &resour
 	Entity::EntityReferenceBufferReference<EntityReadReference> erbr;
 	if(all_contained_entities == nullptr)
 	{
-		erbr = entity->GetAllDeeplyContainedEntityReadReferencesGroupedByDepth();
+		//use std::move to not make a copy, since erbr acts like a lock and may clear a common data structure
+		erbr = std::move(entity->GetAllDeeplyContainedEntityReadReferencesGroupedByDepth());
 		all_contained_entities = &erbr;
 	}
 

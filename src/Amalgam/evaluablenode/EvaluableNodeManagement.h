@@ -187,11 +187,20 @@ public:
 	std::vector<EvaluableNode *> *stack;
 	size_t originalStackSize;
 };
-
 	
 class EvaluableNodeManager
 {
 public:
+	//data structure to store which nodes are referenced with a lock
+	struct NodesReferenced
+	{
+	#ifdef MULTITHREAD_SUPPORT
+		Concurrency::SingleMutex mutex;
+	#endif
+
+		EvaluableNode::ReferenceCountType nodesReferenced;
+	};
+
 	EvaluableNodeManager() :
 		numNodesToRunGarbageCollection(200), firstUnusedNodeIndex(0)
 	{	}
@@ -598,57 +607,103 @@ public:
 		ReclaimFreedNodesAtEnd();
 	}
 
-	//if no nodes are referenced, then will free all
-	inline void ClearAllNodesIfNoneReferenced()
+	//retuns the nodes currently referenced, allocating if they don't exist
+	NodesReferenced &GetNodesReferenced()
 	{
-		if(nodesCurrentlyReferenced.size() == 0)
-			FreeAllNodes();
+		if(nodesCurrentlyReferenced.get() == nullptr)
+		{
+		#ifdef MULTITHREAD_SUPPORT
+			Concurrency::WriteLock write_lock(managerAttributesMutex);
+		#endif
+			nodesCurrentlyReferenced = std::make_unique<NodesReferenced>();
+		}
+
+		return *nodesCurrentlyReferenced.get();
 	}
 
-#ifdef MULTITHREAD_SUPPORT
-	//creates a lock for calling KeepNodeReference and FreeNodeReference
-	inline Concurrency::WriteLock GetNodeReferenceUpdateLock()
-	{
-		return Concurrency::WriteLock(managerAttributesMutex);
-	}
-#endif
-
-	//adds the node to nodesCurrentlyReferenced
+	//adds the node to nodes referenced
 	//if called within multithreading, GetNodeReferenceUpdateLock() needs to be called
 	//to obtain a lock around all calls to this methed
-	inline void KeepNodeReference(EvaluableNode *en)
+	inline void KeepNodeReferences(EvaluableNode *nodes, ...)
 	{
-		if(en == nullptr)
-			return;
+		NodesReferenced &nr = GetNodesReferenced();
+	#ifdef MULTITHREAD_SUPPORT
+		Concurrency::SingleLock lock(nr.mutex);
+	#endif
 
-		//attempt to put in value 1 for the reference
-		auto [inserted_entry, inserted] = nodesCurrentlyReferenced.insert(std::make_pair(en, 1));
+		for(EvaluableNode *en : { nodes })
+		{
+			if(en == nullptr)
+				continue;
 
-		//if couldn't insert because already referenced, then increment
-		if(!inserted)
-			inserted_entry->second++;
+			//attempt to put in value 1 for the reference
+			auto [inserted_entry, inserted] = nr.nodesReferenced.insert(std::make_pair(en, 1));
+
+			//if couldn't insert because already referenced, then increment
+			if(!inserted)
+				inserted_entry->second++;
+		}
 	}
 
-	//removes the node from nodesCurrentlyReferenced
+	//removes the node from nodes referenced
 	//if called within multithreading, GetNodeReferenceUpdateLock() needs to be called
 	//to obtain a lock around all calls to this methed
-	void FreeNodeReference(EvaluableNode *en)
+	void FreeNodeReferences(EvaluableNode *nodes, ...)
 	{
-		if(en == nullptr)
-			return;
+		NodesReferenced &nr = GetNodesReferenced();
+	#ifdef MULTITHREAD_SUPPORT
+		Concurrency::SingleLock lock(nr.mutex);
+	#endif
 
-		//get reference count
-		auto node = nodesCurrentlyReferenced.find(en);
+		for(EvaluableNode *en : { nodes })
+		{
+			if(en == nullptr)
+				continue;
 
-		//don't do anything if not counted
-		if(node == nodesCurrentlyReferenced.end())
-			return;
+			//get reference count
+			auto node = nr.nodesReferenced.find(en);
 
-		//if it has sufficient refcount, then just decrement
-		if(node->second > 1)
-			node->second--;
-		else //otherwise remove reference
-			nodesCurrentlyReferenced.erase(node);
+			//don't do anything if not counted
+			if(node == nr.nodesReferenced.end())
+				return;
+
+			//if it has sufficient refcount, then just decrement
+			if(node->second > 1)
+				node->second--;
+			else //otherwise remove reference
+				nr.nodesReferenced.erase(node);
+		}
+	}
+
+	//removes the node from nodes referenced
+	//if called within multithreading, GetNodeReferenceUpdateLock() needs to be called
+	//to obtain a lock around all calls to this methed
+	template<typename NodeType>
+	void FreeNodeReferences(std::vector<NodeType> &nodes)
+	{
+		NodesReferenced &nr = GetNodesReferenced();
+	#ifdef MULTITHREAD_SUPPORT
+		Concurrency::SingleLock lock(nr.mutex);
+	#endif
+
+		for(EvaluableNode *en : nodes)
+		{
+			if(en == nullptr)
+				continue;
+
+			//get reference count
+			auto node = nr.nodesReferenced.find(en);
+
+			//don't do anything if not counted
+			if(node == nr.nodesReferenced.end())
+				return;
+
+			//if it has sufficient refcount, then just decrement
+			if(node->second > 1)
+				node->second--;
+			else //otherwise remove reference
+				nr.nodesReferenced.erase(node);
+		}
 	}
 
 	//compacts allocated nodes so that the node pool can be used more efficiently
@@ -687,7 +742,12 @@ public:
 
 	__forceinline size_t GetNumberOfNodesReferenced()
 	{
-		return nodesCurrentlyReferenced.size();
+		NodesReferenced &nr = GetNodesReferenced();
+	#ifdef MULTITHREAD_SUPPORT
+		Concurrency::SingleLock lock(nr.mutex);
+	#endif
+
+		return nr.nodesReferenced.size();
 	}
 
 	//returns the root node, implicitly defined as the first node in memory
@@ -714,12 +774,6 @@ public:
 		Concurrency::WriteLock lock(managerAttributesMutex);
 	#endif
 
-		//if currently has a root node, free it
-		if(firstUnusedNodeIndex > 0)
-			FreeNodeReference(nodes[0]);
-
-		KeepNodeReference(new_root);
-
 		//iteratively search forward; this will be fast for newly created entities but potentially slow for those that are not
 		// however, this should be rarely called on those entities since it's basically clearing them out, so it should not generally be a performance issue
 		auto location = std::find(begin(nodes), begin(nodes) + firstUnusedNodeIndex, new_root);
@@ -729,35 +783,18 @@ public:
 			std::swap(*begin(nodes), *location);
 	}
 
-	//returns a copy of the nodes referenced; should be used only for debugging
-	inline EvaluableNode::ReferenceCountType &GetNodesReferenced()
-	{
-		return nodesCurrentlyReferenced;
-	}
-
 	//returns true if any node is referenced other than root, which is an indication if there are
 	// any interpreters operating on the nodes managed by this instance
 	inline bool IsAnyNodeReferencedOtherThanRoot()
 	{
+		NodesReferenced &nr = GetNodesReferenced();
+
 	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::ReadLock lock(managerAttributesMutex);
+		Concurrency::SingleLock lock(nr.mutex);
 	#endif
 
-		size_t num_nodes_currently_referenced = nodesCurrentlyReferenced.size();
-		if(num_nodes_currently_referenced > 1)
-			return true;
-
-		if(num_nodes_currently_referenced == 0)
-			return false;
-
-		//exactly one node referenced; if the root is null, then it has to be something else
-		if(nodes[0] == nullptr)
-			return true;
-
-		//in theory this should always find the root node being referenced and thus return false
-		// but if there is any sort of unusual situation where the root node isn't referenced, it'll catch it
-		// and report that there is something else being referenced
-		return (nodesCurrentlyReferenced.find(nodes[0]) == end(nodesCurrentlyReferenced));		
+		size_t num_nodes_currently_referenced = nr.nodesReferenced.size();
+		return (num_nodes_currently_referenced > 0);
 	}
 
 	//Returns all nodes still in use.  For debugging purposes
@@ -859,9 +896,6 @@ public:
 protected:
 #endif
 
-	//keeps track of all of the nodes currently referenced by any resource or interpreter
-	EvaluableNode::ReferenceCountType nodesCurrentlyReferenced;
-
 	//nodes that have been allocated and may be in use
 	// all nodes in use are below firstUnusedNodeIndex, such that all above that index are free for use
 	// nodes cannot be nullptr for lower indices than firstUnusedNodeIndex
@@ -872,6 +906,10 @@ protected:
 #else
 	size_t firstUnusedNodeIndex;
 #endif
+
+	//keeps track of all of the nodes currently referenced by any resource or interpreter
+	//only allocated if needed
+	std::unique_ptr<NodesReferenced> nodesCurrentlyReferenced;
 
 	//extra space to allocate when allocating
 	static const double allocExpansionFactor;

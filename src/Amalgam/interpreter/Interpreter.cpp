@@ -386,35 +386,14 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	construction_stack->SetNeedCycleCheck(true);
 
 	//keep these references as long as the interpreter is around
-#ifdef MULTITHREAD_SUPPORT
-	auto node_keep_lock = evaluableNodeManager->GetNodeReferenceUpdateLock();
-	evaluableNodeManager->KeepNodeReference(call_stack);
-	evaluableNodeManager->KeepNodeReference(interpreter_node_stack);
-	evaluableNodeManager->KeepNodeReference(construction_stack);
-	node_keep_lock.unlock();
-#else
-	evaluableNodeManager->KeepNodeReference(call_stack);
-	evaluableNodeManager->KeepNodeReference(interpreter_node_stack);
-	evaluableNodeManager->KeepNodeReference(construction_stack);
-#endif
+	evaluableNodeManager->KeepNodeReferences(call_stack, interpreter_node_stack, construction_stack);
 
 	auto retval = InterpretNode(en);
 
-#ifdef MULTITHREAD_SUPPORT
-	node_keep_lock.lock();
-
 	if(keep_result_node_reference)
-		evaluableNodeManager->KeepNodeReference(retval);
-
-	evaluableNodeManager->FreeNodeReference(call_stack);
-	evaluableNodeManager->FreeNodeReference(interpreter_node_stack);
-	evaluableNodeManager->FreeNodeReference(construction_stack);
-	node_keep_lock.unlock();
-#else
-	evaluableNodeManager->FreeNodeReference(call_stack);
-	evaluableNodeManager->FreeNodeReference(interpreter_node_stack);
-	evaluableNodeManager->FreeNodeReference(construction_stack);
-#endif
+		evaluableNodeManager->FreeNodeReferences(retval, call_stack, interpreter_node_stack, construction_stack);
+	else
+		evaluableNodeManager->FreeNodeReferences(call_stack, interpreter_node_stack, construction_stack);
 
 	//remove these nodes
 	evaluableNodeManager->FreeNode(interpreter_node_stack);

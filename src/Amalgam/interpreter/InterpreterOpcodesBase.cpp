@@ -1970,8 +1970,8 @@ void Interpreter::ValidateEvaluableNodeIntegrity()
 	if(curEntity != nullptr)
 		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(curEntity->GetRoot());
 
-	auto &nodes_referenced = evaluableNodeManager->GetNodesReferenced();
-	for(auto &[en, _] : nodes_referenced)
+	auto &nr = evaluableNodeManager->GetNodesReferenced();
+	for(auto &[en, _] : nr.nodesReferenced)
 		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
 
 	if(callingInterpreter != nullptr)

@@ -1001,3 +1001,24 @@ void Entity::GetAllDeeplyContainedEntityReadReferencesGroupedByDepthRecurse()
 	for(auto &ce : contained_entities)
 		ce->GetAllDeeplyContainedEntityReadReferencesGroupedByDepthRecurse();
 }
+
+bool Entity::GetAllDeeplyContainedEntityWriteReferencesGroupedByDepthRecurse()
+{
+	if(!hasContainedEntities)
+		return true;
+
+	if(IsEntityCurrentlyBeingExecuted())
+		return false;
+
+	auto &contained_entities = GetContainedEntities();
+	for(Entity *e : contained_entities)
+		entityWriteReferenceBuffer.emplace_back(e);
+
+	for(auto &ce : contained_entities)
+	{
+		if(!ce->GetAllDeeplyContainedEntityWriteReferencesGroupedByDepthRecurse())
+			return false;
+	}
+
+	return true;
+}

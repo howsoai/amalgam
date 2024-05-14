@@ -492,8 +492,16 @@ public:
 
 		inline ~EntityReferenceBufferReference()
 		{
+			Clear();
+		}
+
+		inline void Clear()
+		{
 			if(bufferReference != nullptr)
+			{
 				bufferReference->clear();
+				bufferReference = nullptr;
+			}
 		}
 
 		inline EntityReferenceBufferReference &operator=(EntityReferenceBufferReference &&erbr)
@@ -528,7 +536,7 @@ public:
 		std::vector<EntityReferenceType> *bufferReference;
 	};
 
-	//returns a list of all entities contained, all entities they contain, etc. grouped by all
+	//returns a list of read references for all entities contained, all entities they contain, etc. grouped by all
 	//entities at the same level of depth
 	//returns the thread_local static variable entityReadReferenceBuffer, so results will be invalidated
 	//by subsequent calls
@@ -536,6 +544,20 @@ public:
 	{
 		EntityReferenceBufferReference<EntityReadReference> erbr(entityReadReferenceBuffer);
 		GetAllDeeplyContainedEntityReadReferencesGroupedByDepthRecurse();
+		return erbr;
+	}
+
+	//returns a list of write references for all entities contained, all entities they contain, etc. grouped by all
+	//entities at the same level of depth
+	//returns the thread_local static variable entityWriteReferenceBuffer, so results will be invalidated
+	//by subsequent calls
+	//if any contained entities are being executed, it will return a nullptr for the reference
+	inline EntityReferenceBufferReference<EntityWriteReference> GetAllDeeplyContainedEntityWriteReferencesGroupedByDepth()
+	{
+		EntityReferenceBufferReference<EntityWriteReference> erbr(entityWriteReferenceBuffer);
+		if(!GetAllDeeplyContainedEntityWriteReferencesGroupedByDepthRecurse())
+			erbr.Clear();
+
 		return erbr;
 	}
 
@@ -915,6 +937,10 @@ protected:
 
 	//helper function for GetAllDeeplyContainedEntityReadReferencesGroupedByDepth
 	void GetAllDeeplyContainedEntityReadReferencesGroupedByDepthRecurse();
+
+	//helper function for GetAllDeeplyContainedEntityWriteReferencesGroupedByDepth
+	//if any entity is executing, it will stop locking and return false.  returns true if successful
+	bool GetAllDeeplyContainedEntityWriteReferencesGroupedByDepthRecurse();
 
 	//ensures the data structures will exist for containing entities if they don't already
 	inline void EnsureHasContainedEntities()

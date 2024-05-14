@@ -526,8 +526,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DESTROY_ENTITIES(Evaluable
 			continue;
 		}
 
+		auto contained_entities = entity->GetAllDeeplyContainedEntityWriteReferencesGroupedByDepth();
+		if(contained_entities == nullptr)
+		{
+			all_destroys_successful = false;
+			continue;
+		}
+
 		if(entity_parent != nullptr)
 			entity_parent->RemoveContainedEntity(source_id, writeListeners);
+
+		contained_entities.Clear();
+		//TODO 10975: free entity write lock before calling delete
 
 		delete entity;
 	}

@@ -269,7 +269,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED(Evalu
 	if(entity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	entity->SetRandomState(seed_string, deep_set, writeListeners);
+#ifdef MULTITHREAD_SUPPORT
+	if(deep_set)
+	{
+		auto contained_entities = entity->GetAllDeeplyContainedEntityWriteReferencesGroupedByDepth();
+		if(contained_entities == nullptr)
+			return EvaluableNodeReference::Null();
+
+		entity->SetRandomState(seed_string, true, writeListeners);
+	}
+	else
+#endif
+		entity->SetRandomState(seed_string, deep_set, writeListeners);
 
 	return seed_node;
 }

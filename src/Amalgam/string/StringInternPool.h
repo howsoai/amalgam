@@ -35,7 +35,7 @@ public:
 	//translates the id to a string, empty string if it does not exist
 	//because a flat hash map is used as the storage container, it is possible that any allocation or deallocation
 	//may invalidate the location, so a copy must be made to return the value
-	inline const std::string StringInternPool::GetStringFromID(StringInternPool::StringID id)
+	inline const std::string GetStringFromID(StringID id)
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		Concurrency::ReadLock lock(sharedMutex);
@@ -45,7 +45,7 @@ public:
 	}
 
 	//translates the string to the corresponding ID, 0 is the empty string, maximum value of size_t means it does not exist
-	inline StringInternPool::StringID StringInternPool::GetIDFromString(const std::string &str)
+	inline StringID GetIDFromString(const std::string &str)
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		Concurrency::ReadLock lock(sharedMutex);
@@ -59,7 +59,7 @@ public:
 	}
 
 	//makes a new reference to the string specified, returning the ID
-	inline StringInternPool::StringID StringInternPool::CreateStringReference(const std::string &str)
+	inline StringID CreateStringReference(const std::string &str)
 	{
 		if(str.size() == 0)
 			return EMPTY_STRING_ID;
@@ -72,7 +72,7 @@ public:
 		auto [inserted_id, inserted] = stringToID.insert(std::make_pair(str, 0));
 		if(inserted)
 		{
-			StringInternPool::StringID id;
+			StringID id;
 			//new string, see if any ids are ready for reuse
 			if(unusedIDs.size() > 0)
 			{
@@ -94,7 +94,7 @@ public:
 		}
 
 		//found, so count the reference if applicable
-		StringInternPool::StringID id = inserted_id->second;
+		StringID id = inserted_id->second;
 		if(!IsStringIDStatic(id))
 			idToStringAndRefCount[id].second++;
 		return id;
@@ -117,7 +117,7 @@ public:
 
 	//creates new references from the references container and function
 	template<typename ReferencesContainer,
-		typename GetStringIdFunction = StringInternPool::StringID(StringInternPool::StringID)>
+		typename GetStringIdFunction = StringID(StringID)>
 	inline void CreateStringReferences(ReferencesContainer &references_container,
 		GetStringIdFunction get_string_id = [](auto sid) { return sid;  })
 	{
@@ -142,7 +142,7 @@ public:
 	//creates additional_reference_count new references from the references container and function
 	// specialized for size_t indexed containers, where the index is desired
 	template<typename ReferencesContainer,
-		typename GetStringIdFunction = StringInternPool::StringID(StringInternPool::StringID)>
+		typename GetStringIdFunction = StringID(StringID)>
 	inline void CreateMultipleStringReferences(ReferencesContainer &references_container,
 		size_t additional_reference_count,
 		GetStringIdFunction get_string_id = [](auto sid) { return sid;  })
@@ -168,7 +168,7 @@ public:
 	//creates new references from the references container and function
 	// specialized for size_t indexed containers, where the index is desired
 	template<typename ReferencesContainer,
-		typename GetStringIdFunction = StringInternPool::StringID(StringInternPool::StringID)>
+		typename GetStringIdFunction = StringID(StringID)>
 	inline void CreateStringReferencesByIndex(ReferencesContainer &references_container,
 		GetStringIdFunction get_string_id = [](auto sid) { return sid;  })
 	{
@@ -191,7 +191,7 @@ public:
 	}
 
 	//removes a reference to the string specified by the ID
-	inline void StringInternPool::DestroyStringReference(StringInternPool::StringID id)
+	inline void DestroyStringReference(StringID id)
 	{
 		if(IsStringIDStatic(id))
 			return;
@@ -231,7 +231,7 @@ public:
 
 	//creates new references from the references container and function
 	template<typename ReferencesContainer,
-		typename GetStringIdFunction = StringInternPool::StringID(StringInternPool::StringID)>
+		typename GetStringIdFunction = StringID(StringID)>
 	inline void DestroyStringReferences(ReferencesContainer &references_container,
 		GetStringIdFunction get_string_id = [](auto sid) { return sid;  })
 	{
@@ -311,7 +311,7 @@ public:
 				DestroyStringReference(sid_1_static);
 		}
 		
-		std::array<StringInternPool::StringID, 2> string_ids = { sid_1, sid_2 };
+		std::array<StringID, 2> string_ids = { sid_1, sid_2 };
 		DestroyStringReferences(string_ids);
 	}
 

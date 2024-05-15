@@ -571,11 +571,7 @@ protected:
 			for(size_t i = 0; i < numTasks; i++)
 				results[i] = resultFutures[i].get();
 
-		#ifdef MULTITHREAD_SUPPORT
-			auto node_keep_lock = parentInterpreter->evaluableNodeManager->GetNodeReferenceUpdateLock();
-		#endif
-			for(auto &r : results)
-				parentInterpreter->evaluableNodeManager->FreeNodeReference(r);
+			parentInterpreter->evaluableNodeManager->FreeNodeReferences(results);
 
 			return results;
 		}

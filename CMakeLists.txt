@@ -174,7 +174,6 @@ set(COMMON_SOURCE
     src/Amalgam/SBFDSColumnData.h
     src/Amalgam/SeparableBoxFilterDataStore.cpp
     src/Amalgam/SeparableBoxFilterDataStore.h
-    src/Amalgam/string/StringInternPool.cpp
     src/Amalgam/string/StringInternPool.h
     src/Amalgam/string/StringManipulation.cpp
     src/Amalgam/string/StringManipulation.h

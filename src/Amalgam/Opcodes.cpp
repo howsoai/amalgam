@@ -2,6 +2,8 @@
 #include "Opcodes.h"
 #include "StringInternPool.h"
 
+StringInternPool string_intern_pool;
+
 void StringInternPool::InitializeStaticStrings()
 {
 	numStaticStrings = ENBISI_FIRST_DYNAMIC_STRING;

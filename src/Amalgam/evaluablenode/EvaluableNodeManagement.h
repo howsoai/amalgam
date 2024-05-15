@@ -198,6 +198,40 @@ public:
 		Concurrency::SingleMutex mutex;
 	#endif
 
+		//adds the node to nodes referenced
+		inline void KeepNodeReference(EvaluableNode *en)
+		{
+			if(en == nullptr)
+				return;
+
+			//attempt to put in value 1 for the reference
+			auto [inserted_entry, inserted] = nodesReferenced.insert(std::make_pair(en, 1));
+
+			//if couldn't insert because already referenced, then increment
+			if(!inserted)
+				inserted_entry->second++;
+		}
+
+		//removes the node from nodes referenced
+		inline void FreeNodeReference(EvaluableNode *en)
+		{
+			if(en == nullptr)
+				return;
+
+			//get reference count
+			auto node = nodesReferenced.find(en);
+
+			//don't do anything if not counted
+			if(node == nodesReferenced.end())
+				return;
+
+			//if it has sufficient refcount, then just decrement
+			if(node->second > 1)
+				node->second--;
+			else //otherwise remove reference
+				nodesReferenced.erase(node);
+		}
+
 		EvaluableNode::ReferenceCountType nodesReferenced;
 	};
 
@@ -636,17 +670,7 @@ public:
 	#endif
 
 		for(EvaluableNode *en : { nodes... })
-		{
-			if(en == nullptr)
-				continue;
-
-			//attempt to put in value 1 for the reference
-			auto [inserted_entry, inserted] = nr.nodesReferenced.insert(std::make_pair(en, 1));
-
-			//if couldn't insert because already referenced, then increment
-			if(!inserted)
-				inserted_entry->second++;
-		}
+			nr.KeepNodeReference(en);
 	}
 
 	//removes the node from nodes referenced
@@ -661,23 +685,7 @@ public:
 	#endif
 
 		for(EvaluableNode *en : { nodes... })
-		{
-			if(en == nullptr)
-				continue;
-
-			//get reference count
-			auto node = nr.nodesReferenced.find(en);
-
-			//don't do anything if not counted
-			if(node == nr.nodesReferenced.end())
-				return;
-
-			//if it has sufficient refcount, then just decrement
-			if(node->second > 1)
-				node->second--;
-			else //otherwise remove reference
-				nr.nodesReferenced.erase(node);
-		}
+			nr.FreeNodeReference(en);
 	}
 
 	//removes the node from nodes referenced
@@ -692,23 +700,25 @@ public:
 	#endif
 
 		for(EvaluableNode *en : nodes)
-		{
-			if(en == nullptr)
-				continue;
+			nr.FreeNodeReference(en);
+	}
 
-			//get reference count
-			auto node = nr.nodesReferenced.find(en);
+	//keeps the first node and removes the remaining node from nodes referenced
+	//if called within multithreading, GetNodeReferenceUpdateLock() needs to be called
+	//to obtain a lock around all calls to this methed
+	template<typename ...EvaluableNodeReferenceType>
+	void KeepFirstAndFreeRemainingNodeReferences(EvaluableNode *node_to_keep,
+		EvaluableNodeReferenceType... nodes_to_remove)
+	{
+		NodesReferenced &nr = GetNodesReferenced();
+	#ifdef MULTITHREAD_SUPPORT
+		Concurrency::SingleLock lock(nr.mutex);
+	#endif
 
-			//don't do anything if not counted
-			if(node == nr.nodesReferenced.end())
-				return;
+		nr.KeepNodeReference(node_to_keep);
 
-			//if it has sufficient refcount, then just decrement
-			if(node->second > 1)
-				node->second--;
-			else //otherwise remove reference
-				nr.nodesReferenced.erase(node);
-		}
+		for(EvaluableNode *en : { nodes_to_remove... })
+			nr.FreeNodeReference(en);
 	}
 
 	//compacts allocated nodes so that the node pool can be used more efficiently

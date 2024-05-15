@@ -4,6 +4,9 @@
 #include "Concurrency.h"
 #include "EvaluableNode.h"
 
+//system headers:
+#include <memory>
+
 typedef int64_t ExecutionCycleCount;
 typedef int32_t ExecutionCycleCountCompactDelta;
 

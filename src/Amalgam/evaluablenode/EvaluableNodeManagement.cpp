@@ -4,6 +4,7 @@
 
 //system headers:
 #include <limits>
+#include <memory>
 #include <string>
 #include <vector>
 #include <utility>

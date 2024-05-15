@@ -816,9 +816,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 
 #ifdef MULTITHREAD_SUPPORT
 	Concurrency::SingleLock lock(nr.mutex);
-#endif
 
-#ifdef MULTITHREAD_SUPPORT
 	size_t reference_count = nr.nodesReferenced.size();
 	//heuristic to ensure there's enough to do to warrant the overhead of using multiple threads
 	if(reference_count > 1 && (estimated_nodes_in_use / reference_count) >= 1000)

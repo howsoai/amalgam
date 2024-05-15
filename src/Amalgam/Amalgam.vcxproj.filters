@@ -138,9 +138,6 @@
     <ClCompile Include="interpreter\InterpreterOpcodesTransformations.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="string\StringInternPool.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="string\StringManipulation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

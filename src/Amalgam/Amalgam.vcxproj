@@ -591,7 +591,6 @@
     <ClCompile Include="PrintListener.cpp" />
     <ClCompile Include="rand\RandomStream.cpp" />
     <ClCompile Include="SeparableBoxFilterDataStore.cpp" />
-    <ClCompile Include="string\StringInternPool.cpp" />
     <ClCompile Include="string\StringManipulation.cpp" />
     <ClCompile Include="ThreadPool.cpp" />
   </ItemGroup>

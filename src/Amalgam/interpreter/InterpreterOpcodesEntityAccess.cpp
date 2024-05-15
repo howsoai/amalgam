@@ -33,12 +33,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_ENTITY(EvaluableN
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	//get the id of the source entity
-	auto source_id_node = InterpretNodeForImmediateUse(ocn[0]);
-	EntityReadReference source_entity = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReadReference>(curEntity, source_id_node);
-	evaluableNodeManager->FreeNodeTreeIfPossible(source_id_node);
-
-	return AllocReturn(source_entity != nullptr, immediate_result);
+	EntityReadReference entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
+	return AllocReturn(entity != nullptr, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COMPUTE_ON_CONTAINED_ENTITIES(EvaluableNode *en, bool immediate_result)

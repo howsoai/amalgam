@@ -624,14 +624,15 @@ public:
 	//adds the node to nodes referenced
 	//if called within multithreading, GetNodeReferenceUpdateLock() needs to be called
 	//to obtain a lock around all calls to this methed
-	inline void KeepNodeReferences(EvaluableNode *nodes, ...)
+	template<typename ...EvaluableNodeReferenceType>
+	inline void KeepNodeReferences(EvaluableNodeReferenceType... nodes)
 	{
 		NodesReferenced &nr = GetNodesReferenced();
 	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::SingleLock lock(nr.mutex);
 	#endif
 
-		for(EvaluableNode *en : { nodes })
+		for(EvaluableNode *en : { nodes... })
 		{
 			if(en == nullptr)
 				continue;
@@ -648,14 +649,15 @@ public:
 	//removes the node from nodes referenced
 	//if called within multithreading, GetNodeReferenceUpdateLock() needs to be called
 	//to obtain a lock around all calls to this methed
-	void FreeNodeReferences(EvaluableNode *nodes, ...)
+	template<typename ...EvaluableNodeReferenceType>
+	void FreeNodeReferences(EvaluableNodeReferenceType... nodes)
 	{
 		NodesReferenced &nr = GetNodesReferenced();
 	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::SingleLock lock(nr.mutex);
 	#endif
 
-		for(EvaluableNode *en : { nodes })
+		for(EvaluableNode *en : { nodes... })
 		{
 			if(en == nullptr)
 				continue;

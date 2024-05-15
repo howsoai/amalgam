@@ -843,8 +843,8 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 			}
 		}
 
-		if(root_node != nullptr && root_node->GetKnownToBeInUseAtomic())
-			MarkAllReferencedNodesInUseRecurse(root_node);
+		if(root_node != nullptr && !root_node->GetKnownToBeInUseAtomic())
+			MarkAllReferencedNodesInUseRecurseConcurrent(root_node);
 
 		Concurrency::urgentThreadPool.ChangeCurrentThreadStateFromActiveToWaiting();
 		for(auto& future : nodesCompleted)
@@ -856,7 +856,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 #endif
 
 	//check for null or insertion before calling recursion to minimize number of branches (slight performance improvement)
-	if(root_node != nullptr && root_node->GetKnownToBeInUse())
+	if(root_node != nullptr && !root_node->GetKnownToBeInUse())
 		MarkAllReferencedNodesInUseRecurse(root_node);
 
 	for(auto& [t, _] : nr.nodesReferenced)

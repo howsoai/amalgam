@@ -390,9 +390,12 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 
 	auto retval = InterpretNode(en);
 
+#ifdef MULTITHREAD_SUPPORT
 	if(keep_result_node_reference)
-		evaluableNodeManager->FreeNodeReferences(retval, call_stack, interpreter_node_stack, construction_stack);
+		evaluableNodeManager->FreeNodeReferences(static_cast<EvaluableNode *>(retval),
+			call_stack, interpreter_node_stack, construction_stack);
 	else
+#endif
 		evaluableNodeManager->FreeNodeReferences(call_stack, interpreter_node_stack, construction_stack);
 
 	//remove these nodes

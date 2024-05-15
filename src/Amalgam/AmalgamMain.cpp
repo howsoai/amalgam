@@ -282,13 +282,13 @@ PLATFORM_MAIN_CONSOLE
 		// the entity should have one reference left, which is the entity's code itself
 		if(entity->evaluableNodeManager.GetNumberOfNodesReferenced() > 1)
 		{
-			auto &temp_used_nodes = entity->evaluableNodeManager.GetNodesReferenced();
+			auto &nr = entity->evaluableNodeManager.GetNodesReferenced();
 			std::cerr << "Error: memory leak." << std::endl;
 
 			if(Platform_IsDebuggerPresent())
 			{
 				std::cerr << "The following temporary nodes are still in use : " << std::endl;
-				for(auto &[used_node, _] : temp_used_nodes)
+				for(auto &[used_node, _] : nr.nodesReferenced)
 				{
 					std::cerr << "Item:" << std::endl;
 					std::cerr << Parser::Unparse(used_node, &entity->evaluableNodeManager);

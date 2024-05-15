@@ -811,14 +811,20 @@ void EvaluableNodeManager::NonCycleModifyLabelsForNodeTree(EvaluableNode *tree, 
 
 void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in_use)
 {
+	NodesReferenced &nr = GetNodesReferenced();
+	EvaluableNode *root_node = nodes[0];
+
 #ifdef MULTITHREAD_SUPPORT
-	size_t reference_count = nodesCurrentlyReferenced.size();
+	//because code cannot be executed when in garbage collection due to other locks,
+	//the nodes referenced cannot be modified while in this method, so nr.mutex does not need to be locked
+
+	size_t reference_count = nr.nodesReferenced.size();
 	//heuristic to ensure there's enough to do to warrant the overhead of using multiple threads
 	if(reference_count > 1 && (estimated_nodes_in_use / reference_count) >= 1000)
 	{
 		nodesCompleted.clear();
 
-		for(auto &[enr, _] : nodesCurrentlyReferenced)
+		for(auto &[enr, _] : nr.nodesReferenced)
 		{
 			//some compilers are pedantic about the types passed into the lambda, so make a copy
 			EvaluableNode *en = enr;
@@ -836,6 +842,9 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 			}
 		}
 
+		if(root_node != nullptr && !root_node->GetKnownToBeInUseAtomic())
+			MarkAllReferencedNodesInUseRecurseConcurrent(root_node);
+
 		Concurrency::urgentThreadPool.ChangeCurrentThreadStateFromActiveToWaiting();
 		for(auto& future : nodesCompleted)
 			future.wait();
@@ -846,7 +855,10 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 #endif
 
 	//check for null or insertion before calling recursion to minimize number of branches (slight performance improvement)
-	for(auto& [t, _] : nodesCurrentlyReferenced)
+	if(root_node != nullptr && !root_node->GetKnownToBeInUse())
+		MarkAllReferencedNodesInUseRecurse(root_node);
+
+	for(auto& [t, _] : nr.nodesReferenced)
 	{
 		if(t == nullptr || t->GetKnownToBeInUse())
 			continue;

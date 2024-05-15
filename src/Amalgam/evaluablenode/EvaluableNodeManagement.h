@@ -614,8 +614,11 @@ public:
 		{
 		#ifdef MULTITHREAD_SUPPORT
 			Concurrency::WriteLock write_lock(managerAttributesMutex);
+
+			//double check that it's still nullptr in case another thread created it
+			if(nodesCurrentlyReferenced.get() == nullptr)
 		#endif
-			nodesCurrentlyReferenced = std::make_unique<NodesReferenced>();
+				nodesCurrentlyReferenced = std::make_unique<NodesReferenced>();
 		}
 
 		return *nodesCurrentlyReferenced.get();

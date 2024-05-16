@@ -114,7 +114,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_ENTITY_ROOT(Evalu
 {
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
-	auto& ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodes();
 
 	//get second parameter if exists
 	auto label_escape_increment = EvaluableNodeManager::ENMM_LABEL_ESCAPE_INCREMENT;

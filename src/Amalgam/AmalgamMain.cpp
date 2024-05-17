@@ -115,6 +115,7 @@ PLATFORM_MAIN_CONSOLE
 #if defined(MULTITHREAD_SUPPORT) || defined(_OPENMP)
 	size_t num_threads = 0;
 #endif
+	bool debug_internal_memory = Platform_IsDebuggerPresent();
 
 	typedef std::chrono::steady_clock clk;
 	auto t = std::chrono::duration_cast<std::chrono::milliseconds>(clk::now().time_since_epoch()).count();
@@ -177,6 +178,11 @@ PLATFORM_MAIN_CONSOLE
 		else if(args[i] == "--numthreads")
 			num_threads = static_cast<size_t>(std::max(std::atoi(args[++i].data()), 0));
 	#endif
+		else if(args[i] == "--debug-internal-memory")
+		{
+			//parameter for internal debugging only -- intentionally not listed in documentation
+			debug_internal_memory = true;
+		}
 		else if(amlg_file_to_run == "")
 		{
 			//if relative path, prepend current working dir to make absolute path
@@ -285,7 +291,7 @@ PLATFORM_MAIN_CONSOLE
 			auto &nr = entity->evaluableNodeManager.GetNodesReferenced();
 			std::cerr << "Error: memory leak." << std::endl;
 
-			if(Platform_IsDebuggerPresent())
+			if(debug_internal_memory)
 			{
 				std::cerr << "The following temporary nodes are still in use : " << std::endl;
 				for(auto &[used_node, _] : nr.nodesReferenced)
@@ -299,7 +305,7 @@ PLATFORM_MAIN_CONSOLE
 		if(profile_opcodes || profile_labels)
 			PerformanceProfiler::PrintProfilingInformation(profile_out_file, profile_count);
 
-		if(Platform_IsDebuggerPresent())
+		if(debug_internal_memory)
 		{
 			auto nodes_used = entity->evaluableNodeManager.GetNumberOfUsedNodes();
 			auto nodes_free = entity->evaluableNodeManager.GetNumberOfUnusedNodes();
@@ -311,7 +317,7 @@ PLATFORM_MAIN_CONSOLE
 		if(print_listener != nullptr)
 			delete print_listener;
 
-		if(Platform_IsDebuggerPresent())
+		if(debug_internal_memory)
 		{
 			delete entity;
 

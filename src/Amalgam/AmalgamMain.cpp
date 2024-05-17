@@ -115,6 +115,7 @@ PLATFORM_MAIN_CONSOLE
 #if defined(MULTITHREAD_SUPPORT) || defined(_OPENMP)
 	size_t num_threads = 0;
 #endif
+	bool debug_internal_memory = Platform_IsDebuggerPresent();
 
 	typedef std::chrono::steady_clock clk;
 	auto t = std::chrono::duration_cast<std::chrono::milliseconds>(clk::now().time_since_epoch()).count();
@@ -177,6 +178,11 @@ PLATFORM_MAIN_CONSOLE
 		else if(args[i] == "--numthreads")
 			num_threads = static_cast<size_t>(std::max(std::atoi(args[++i].data()), 0));
 	#endif
+		else if(args[i] == "--debug-internal-memory")
+		{
+			//parameter for internal debugging only -- intentionally not listed in documentation
+			debug_internal_memory = true;
+		}
 		else if(amlg_file_to_run == "")
 		{
 			//if relative path, prepend current working dir to make absolute path
@@ -278,6 +284,8 @@ PLATFORM_MAIN_CONSOLE
 		//clean up the nodes created here
 		entity->evaluableNodeManager.FreeNodeTree(call_stack);
 
+		int return_val = 0;
+
 		//detect memory leaks for debugging
 		// the entity should have one reference left, which is the entity's code itself
 		if(entity->evaluableNodeManager.GetNumberOfNodesReferenced() > 1)
@@ -285,7 +293,7 @@ PLATFORM_MAIN_CONSOLE
 			auto &nr = entity->evaluableNodeManager.GetNodesReferenced();
 			std::cerr << "Error: memory leak." << std::endl;
 
-			if(Platform_IsDebuggerPresent())
+			if(debug_internal_memory)
 			{
 				std::cerr << "The following temporary nodes are still in use : " << std::endl;
 				for(auto &[used_node, _] : nr.nodesReferenced)
@@ -294,12 +302,14 @@ PLATFORM_MAIN_CONSOLE
 					std::cerr << Parser::Unparse(used_node, &entity->evaluableNodeManager);
 				}
 			}
+
+			return_val = -1;
 		}
 
 		if(profile_opcodes || profile_labels)
 			PerformanceProfiler::PrintProfilingInformation(profile_out_file, profile_count);
 
-		if(Platform_IsDebuggerPresent())
+		if(debug_internal_memory)
 		{
 			auto nodes_used = entity->evaluableNodeManager.GetNumberOfUsedNodes();
 			auto nodes_free = entity->evaluableNodeManager.GetNumberOfUnusedNodes();
@@ -311,7 +321,7 @@ PLATFORM_MAIN_CONSOLE
 		if(print_listener != nullptr)
 			delete print_listener;
 
-		if(Platform_IsDebuggerPresent())
+		if(debug_internal_memory)
 		{
 			delete entity;
 
@@ -323,10 +333,14 @@ PLATFORM_MAIN_CONSOLE
 				std::vector<std::pair<std::string, int64_t>> in_use = string_intern_pool.GetNonStaticStringsInUse();
 				for(auto &[s, count] : in_use)
 					std::cerr << '"' << s << "\":" << count << std::endl;
+
+				return_val = -1;
 			}
 
 			std::cout << "Memory reclaimation complete." << std::endl;
 		}
+
+		return return_val;
 	}
 
 	return 0;

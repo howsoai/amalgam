@@ -33,12 +33,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_ENTITY(EvaluableN
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	//get the id of the source entity
-	auto source_id_node = InterpretNodeForImmediateUse(ocn[0]);
-	EntityReadReference source_entity = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReadReference>(curEntity, source_id_node);
-	evaluableNodeManager->FreeNodeTreeIfPossible(source_id_node);
-
-	return AllocReturn(source_entity != nullptr, immediate_result);
+	EntityReadReference entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
+	return AllocReturn(entity != nullptr, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COMPUTE_ON_CONTAINED_ENTITIES(EvaluableNode *en, bool immediate_result)
@@ -415,9 +411,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	StringInternPool::StringID entity_label_sid = StringInternPool::NOT_A_STRING_ID;
+	StringInternRef entity_label_sid;
 	if(ocn.size() > 1)
-		entity_label_sid = InterpretNodeIntoStringIDValueWithReference(ocn[1]);
+		entity_label_sid.SetIDWithReferenceHandoff(InterpretNodeIntoStringIDValueWithReference(ocn[1]));
 
 	if(_label_profiling_enabled)
 		PerformanceProfiler::StartOperation(string_intern_pool.GetStringFromID(entity_label_sid),
@@ -517,8 +513,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	//accumulate costs of execution
 	curExecutionStep += num_steps_executed;
 	curNumExecutionNodesAllocatedToEntities += num_nodes_allocated;
-
-	string_intern_pool.DestroyStringReference(entity_label_sid);
 
 	if(called_entity != curEntity)
 	{

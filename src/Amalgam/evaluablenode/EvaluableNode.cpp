@@ -637,12 +637,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 
 void EvaluableNode::InitNumberValue()
 {
-	if(type == ENT_NUMBER)
-		return;
-
 	DestructValue();
-
-	SetNeedCycleCheck(false);
 
 	if(HasExtendedValue())
 	{
@@ -657,12 +652,7 @@ void EvaluableNode::InitNumberValue()
 
 void EvaluableNode::InitStringValue()
 {
-	if(DoesEvaluableNodeTypeUseStringData(GetType()))
-		return;
-
 	DestructValue();
-
-	SetNeedCycleCheck(false);
 
 	if(HasExtendedValue())
 	{
@@ -1154,10 +1144,6 @@ size_t EvaluableNode::GetNumChildNodes()
 void EvaluableNode::InitOrderedChildNodes()
 {
 	DestructValue();
-
-	//if can't hold a list, then just set it to the most generic type
-	if(!DoesEvaluableNodeTypeUseOrderedData(GetType()))
-		type = ENT_LIST;
 
 	if(HasExtendedValue())
 		value.extension.extendedValue->value.ConstructOrderedChildNodes();

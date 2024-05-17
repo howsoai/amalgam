@@ -344,7 +344,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 	size_t first_unused_node_index_temp = 0;
 
 #ifdef MULTITHREAD_SUPPORT
-	if(true)//Concurrency::GetMaxNumThreads() > 1 && cur_first_unused_node_index > 6000)
+	if(Concurrency::GetMaxNumThreads() > 1 && cur_first_unused_node_index > 6000)
 	{
 		//used to climb up the indices, swapping out unused nodes above this as moves downward
 		std::atomic<size_t> lowest_known_unused_index = cur_first_unused_node_index;

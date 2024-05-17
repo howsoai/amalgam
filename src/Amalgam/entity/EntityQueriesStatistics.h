@@ -372,7 +372,7 @@ public:
 				return curr_value;
 			else if(cdf_term_prev < q_percentage && q_percentage < cdf_term)
 			{
-				const auto& prev_value = value_weights[i - 1].first;
+				const auto &prev_value = value_weights[i - 1].first;
 
 				//linearly interpolate
 				return prev_value + (curr_value - prev_value) * (q_percentage - cdf_term_prev) / (cdf_term - cdf_term_prev);

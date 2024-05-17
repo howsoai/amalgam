@@ -454,7 +454,7 @@ MergeMetricResults<Entity *> EntityManipulation::NumberOfSharedNodes(Entity *ent
 		bool best_match_found = false;
 		StringInternPool::StringID best_match_key = StringInternPool::NOT_A_STRING_ID;
 		MergeMetricResults<Entity *> best_match_value;
-		for(auto& [e2c_id, e2c] : entity2_unmatched)
+		for(auto &[e2c_id, e2c] : entity2_unmatched)
 		{
 			auto match_value = NumberOfSharedNodes(e1c, e2c);
 			//entities won't necessarily must-match even if the labels are the same; those are the matching_entities by name covered above

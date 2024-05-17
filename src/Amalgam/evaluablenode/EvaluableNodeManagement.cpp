@@ -846,7 +846,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 			MarkAllReferencedNodesInUseRecurseConcurrent(root_node);
 
 		Concurrency::urgentThreadPool.ChangeCurrentThreadStateFromActiveToWaiting();
-		for(auto& future : nodesCompleted)
+		for(auto &future : nodesCompleted)
 			future.wait();
 		Concurrency::urgentThreadPool.ChangeCurrentThreadStateFromWaitingToActive();
 
@@ -858,7 +858,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 	if(root_node != nullptr && !root_node->GetKnownToBeInUse())
 		MarkAllReferencedNodesInUseRecurse(root_node);
 
-	for(auto& [t, _] : nr.nodesReferenced)
+	for(auto &[t, _] : nr.nodesReferenced)
 	{
 		if(t == nullptr || t->GetKnownToBeInUse())
 			continue;
@@ -964,7 +964,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUseRecurseConcurrent(Evaluabl
 
 	if(tree->IsAssociativeArray())
 	{
-		for(auto& [_, e] : tree->GetMappedChildNodesReference())
+		for(auto &[_, e] : tree->GetMappedChildNodesReference())
 		{
 			if(e != nullptr && !e->GetKnownToBeInUseAtomic())
 				MarkAllReferencedNodesInUseRecurseConcurrent(e);
@@ -972,7 +972,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUseRecurseConcurrent(Evaluabl
 	}
 	else if(!tree->IsImmediate())
 	{
-		for(auto& e : tree->GetOrderedChildNodesReference())
+		for(auto &e : tree->GetOrderedChildNodesReference())
 		{
 			if(e != nullptr && !e->GetKnownToBeInUseAtomic())
 				MarkAllReferencedNodesInUseRecurseConcurrent(e);

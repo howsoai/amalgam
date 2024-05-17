@@ -820,7 +820,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 
 	size_t reference_count = nr.nodesReferenced.size();
 	//heuristic to ensure there's enough to do to warrant the overhead of using multiple threads
-	if(reference_count > 1 && (estimated_nodes_in_use / reference_count) >= 1000)
+	if(reference_count > 0 && (estimated_nodes_in_use / (reference_count + 1)) >= 1000)
 	{
 		nodesCompleted.clear();
 

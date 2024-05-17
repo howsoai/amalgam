@@ -184,6 +184,34 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 		{
 			response = AMALGAM_VERSION_STRING;
 		}
+		else if(command == "GET_MAX_NUM_THREADS")
+		{
+		#if defined(MULTITHREAD_SUPPORT)
+			response = std::to_string(Concurrency::GetMaxNumThreads());
+		#else
+			response = FAILURE_RESPONSE;
+		#endif
+		}
+		else if(command == "SET_MAX_NUM_THREADS")
+		{
+		#if defined(MULTITHREAD_SUPPORT)
+			response = SUCCESS_RESPONSE;
+			try
+			{
+				auto num_threads = std::stoll(input);
+				if(num_threads >= 0)
+					Concurrency::SetMaxNumThreads(static_cast<size_t>(num_threads));
+				else
+					response = FAILURE_RESPONSE;
+			}
+			catch(...)
+			{
+				response = FAILURE_RESPONSE;
+			}
+		#else
+			response = FAILURE_RESPONSE;
+		#endif
+		}
 		else if(command == "EXIT")
 		{
 			break;

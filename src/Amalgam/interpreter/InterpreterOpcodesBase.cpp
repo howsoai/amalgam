@@ -912,7 +912,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	}
 	
 	//using a single variable
-	StringInternPool::StringID variable_sid = InterpretNodeIntoStringIDValueWithReference(ocn[0]);
+	StringInternRef variable_sid;
+	variable_sid.SetIDWithReferenceHandoff(InterpretNodeIntoStringIDValueWithReference(ocn[0]));
 	if(variable_sid == StringInternPool::NOT_A_STRING_ID)
 		return EvaluableNodeReference::Null();
 	
@@ -1040,7 +1041,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		*value_destination = value_replacement;
 	}
 
-	string_intern_pool.DestroyStringReference(variable_sid);
 	return EvaluableNodeReference::Null();
 }
 

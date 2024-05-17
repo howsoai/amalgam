@@ -311,8 +311,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 	if(ocn.size() < 3)
 		return EvaluableNodeReference::Null();
 
-	StringInternPool::StringID from_type = InterpretNodeIntoStringIDValueWithReference(ocn[1]);
-	StringInternPool::StringID to_type = InterpretNodeIntoStringIDValueWithReference(ocn[2]);
+	StringInternRef from_type, to_type;
+	from_type.SetIDWithReferenceHandoff(InterpretNodeIntoStringIDValueWithReference(ocn[1]));
+	to_type.SetIDWithReferenceHandoff(InterpretNodeIntoStringIDValueWithReference(ocn[2]));
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver();
 	bool node_stack_needs_popping = false;
@@ -568,7 +569,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 	//have everything from from_type, so no longer need the reference
 	if(node_stack_needs_popping)
 		node_stack.PopEvaluableNode();
-	string_intern_pool.DestroyStringReference(from_type);
 	evaluableNodeManager->FreeNodeTreeIfPossible(from_params);
 
 	EvaluableNodeReference to_params;
@@ -592,13 +592,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 		else if(use_code)
 			number_value = EvaluableNode::ToNumber(code_value);
 
-		string_intern_pool.DestroyStringReference(to_type);
-
 		return ReuseOrAllocOneOfReturn(to_params, code_value, number_value, immediate_result);
 	}
 	else if(to_type == ENBISI_code)
 	{
-		string_intern_pool.DestroyStringReference(to_type);
 		evaluableNodeManager->FreeNodeTreeIfPossible(to_params);
 		return code_value;
 	}
@@ -891,8 +888,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			string_value = GetDateTimeStringFromNumSecondsSinceEpoch(num_secs_from_epoch, to_type_str.c_str() + date_string.size(), locale, timezone);
 		}
 	}
-
-	string_intern_pool.DestroyStringReference(to_type);
 
 	if(!valid_string_value)
 		return ReuseOrAllocReturn(to_params, string_intern_pool.NOT_A_STRING_ID, immediate_result);

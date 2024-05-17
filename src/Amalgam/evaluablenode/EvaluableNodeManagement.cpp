@@ -328,35 +328,35 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 	if(nodes.size() == 0)
 		return;
 
-	size_t original_num_nodes = firstUnusedNodeIndex;
+	size_t cur_first_unused_node_index = firstUnusedNodeIndex;
 	//clear firstUnusedNodeIndex to signal to other threads that they won't need to do garbage collection
 	firstUnusedNodeIndex = 0;
 
 	//if any group of nodes on the top are ready to be cleaned up cheaply, do so first
-	while(original_num_nodes > 0 && nodes[original_num_nodes - 1] != nullptr
-			&& nodes[original_num_nodes - 1]->GetType() == ENT_DEALLOCATED)
-		original_num_nodes--;
+	while(cur_first_unused_node_index > 0 && nodes[cur_first_unused_node_index - 1] != nullptr
+			&& nodes[cur_first_unused_node_index - 1]->GetType() == ENT_DEALLOCATED)
+		cur_first_unused_node_index--;
 
 	//set to contain everything that is referenced
-	MarkAllReferencedNodesInUse(original_num_nodes);
+	MarkAllReferencedNodesInUse(cur_first_unused_node_index);
 
 	//create a temporary variable for multithreading as to not use the atomic variable to slow things down
 	size_t first_unused_node_index_temp = 0;
 
 #ifdef MULTITHREAD_SUPPORT
-	if(Concurrency::GetMaxNumThreads() > 1 && original_num_nodes > 6000)
+	if(Concurrency::GetMaxNumThreads() > 1 && cur_first_unused_node_index > 6000)
 	{
 		//used to climb up the indices, swapping out unused nodes above this as moves downward
-		std::atomic<size_t> lowest_known_unused_index = original_num_nodes;
+		std::atomic<size_t> lowest_known_unused_index = cur_first_unused_node_index;
 		//used by the independent freeing thread to climb down from lowest_known_unused_index
-		size_t highest_possibly_unfreed_node = original_num_nodes;
+		size_t highest_possibly_unfreed_node = cur_first_unused_node_index;
 		std::atomic<bool> all_nodes_finished = false;
 
 		//free nodes in a separate thread
 		auto completed_node_cleanup = Concurrency::urgentThreadPool.EnqueueTask(
 			[this, &lowest_known_unused_index, &highest_possibly_unfreed_node, &all_nodes_finished]
 			{
-				do
+				while(true)
 				{
 					while(highest_possibly_unfreed_node > lowest_known_unused_index)
 					{
@@ -364,7 +364,17 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 						if(cur_node_ptr != nullptr && cur_node_ptr->GetType() != ENT_DEALLOCATED)
 							cur_node_ptr->Invalidate();
 					}
-				} while(!all_nodes_finished);
+
+					if(all_nodes_finished)
+					{
+						//need to double-check to make sure there's nothing left
+						//just in case the atomic variables were updated in a different order
+						if(highest_possibly_unfreed_node > lowest_known_unused_index)
+							continue;
+
+						return;
+					}
+				}
 			}
 		);
 
@@ -400,12 +410,12 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 		//assign back to the atomic variable
 		firstUnusedNodeIndex = first_unused_node_index_temp;
 
-		UpdateGarbageCollectionTrigger(original_num_nodes);
+		UpdateGarbageCollectionTrigger(cur_first_unused_node_index);
 		return;
 	}
 #endif
 
-	size_t lowest_known_unused_index = original_num_nodes;
+	size_t lowest_known_unused_index = cur_first_unused_node_index;
 	while(first_unused_node_index_temp < lowest_known_unused_index)
 	{
 		//nodes can't be nullptr below firstUnusedNodeIndex
@@ -435,7 +445,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 	//assign back to the atomic variable
 	firstUnusedNodeIndex = first_unused_node_index_temp;
 
-	UpdateGarbageCollectionTrigger(original_num_nodes);
+	UpdateGarbageCollectionTrigger(cur_first_unused_node_index);
 }
 
 void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree)

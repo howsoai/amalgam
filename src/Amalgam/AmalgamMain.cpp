@@ -284,6 +284,8 @@ PLATFORM_MAIN_CONSOLE
 		//clean up the nodes created here
 		entity->evaluableNodeManager.FreeNodeTree(call_stack);
 
+		int return_val = 0;
+
 		//detect memory leaks for debugging
 		// the entity should have one reference left, which is the entity's code itself
 		if(entity->evaluableNodeManager.GetNumberOfNodesReferenced() > 1)
@@ -300,6 +302,8 @@ PLATFORM_MAIN_CONSOLE
 					std::cerr << Parser::Unparse(used_node, &entity->evaluableNodeManager);
 				}
 			}
+
+			return_val = -1;
 		}
 
 		if(profile_opcodes || profile_labels)
@@ -329,10 +333,14 @@ PLATFORM_MAIN_CONSOLE
 				std::vector<std::pair<std::string, int64_t>> in_use = string_intern_pool.GetNonStaticStringsInUse();
 				for(auto &[s, count] : in_use)
 					std::cerr << '"' << s << "\":" << count << std::endl;
+
+				return_val = -1;
 			}
 
 			std::cout << "Memory reclaimation complete." << std::endl;
 		}
+
+		return return_val;
 	}
 
 	return 0;

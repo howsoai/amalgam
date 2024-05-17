@@ -369,10 +369,9 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 					{
 						//need to double-check to make sure there's nothing left
 						//just in case the atomic variables were updated in a different order
-						if(highest_possibly_unfreed_node > lowest_known_unused_index)
-							continue;
-
-						return;
+						//otherwise go around the loop again
+						if(highest_possibly_unfreed_node <= lowest_known_unused_index)
+							return;
 					}
 				}
 			}

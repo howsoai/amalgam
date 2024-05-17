@@ -344,7 +344,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
 	size_t first_unused_node_index_temp = 0;
 
 #ifdef MULTITHREAD_SUPPORT
-	if(original_num_nodes > 6000)
+	if(Concurrency::GetMaxNumThreads() > 1 && original_num_nodes > 6000)
 	{
 		//used to climb up the indices, swapping out unused nodes above this as moves downward
 		std::atomic<size_t> lowest_known_unused_index = original_num_nodes;
@@ -820,7 +820,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 
 	size_t reference_count = nr.nodesReferenced.size();
 	//heuristic to ensure there's enough to do to warrant the overhead of using multiple threads
-	if(reference_count > 0 && (estimated_nodes_in_use / (reference_count + 1)) >= 1000)
+	if(Concurrency::GetMaxNumThreads() > 1 && reference_count > 0 && (estimated_nodes_in_use / (reference_count + 1)) >= 1000)
 	{
 		nodesCompleted.clear();
 

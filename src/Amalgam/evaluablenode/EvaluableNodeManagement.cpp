@@ -824,6 +824,19 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 	{
 		nodesCompleted.clear();
 
+		//start processing root node first, as there's a good chance it will be the largest
+		if(root_node != nullptr && !root_node->GetKnownToBeInUseAtomic())
+		{
+			//don't enqueue in batch, as threads racing ahead of others will reduce memory
+			//contention
+			nodesCompleted.emplace_back(
+				Concurrency::urgentThreadPool.EnqueueTask(
+					[root_node]
+					{	MarkAllReferencedNodesInUseRecurseConcurrent(root_node);	}
+				)
+			);
+		}
+
 		for(auto &[enr, _] : nr.nodesReferenced)
 		{
 			//some compilers are pedantic about the types passed into the lambda, so make a copy
@@ -841,9 +854,6 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 				);
 			}
 		}
-
-		if(root_node != nullptr && !root_node->GetKnownToBeInUseAtomic())
-			MarkAllReferencedNodesInUseRecurseConcurrent(root_node);
 
 		Concurrency::urgentThreadPool.ChangeCurrentThreadStateFromActiveToWaiting();
 		for(auto &future : nodesCompleted)

@@ -443,7 +443,7 @@ public:
 		auto [source_entity, container] = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReferenceType>(curEntity, source_id_node);
 		evaluableNodeManager->FreeNodeTreeIfPossible(source_id_node);
 
-		return source_entity;
+		return std::move(source_entity);
 	}
 
 	//like InterpretNodeIntoRelativeSourceEntityReference but with a read reference

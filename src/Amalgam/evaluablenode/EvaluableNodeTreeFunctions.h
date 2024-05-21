@@ -54,10 +54,10 @@ std::pair<EntityReferenceType, ContainerEntityReferenceType> TraverseToExistingE
 																Entity *from_entity, EvaluableNode *id_path)
 {
 	if(from_entity == nullptr)
-		return EntityReferenceType(nullptr);
+		return std::make_pair(EntityReferenceType(nullptr), ContainerEntityReferenceType(nullptr));
 
 	if(EvaluableNode::IsEmptyNode(id_path))
-		return EntityReferenceType(from_entity);
+		return std::make_pair(EntityReferenceType(from_entity), ContainerEntityReferenceType(nullptr));
 
 	if(id_path->GetType() != ENT_LIST)
 	{
@@ -65,7 +65,8 @@ std::pair<EntityReferenceType, ContainerEntityReferenceType> TraverseToExistingE
 		StringInternPool::StringID sid = EvaluableNode::ToStringIDIfExists(id_path);
 		//need to lock the container first
 		ContainerEntityReferenceType container_reference(from_entity);
-		return std::make_pair(EntityReferenceType(from_entity->GetContainedEntity(sid)), container_reference);
+		return std::make_pair(EntityReferenceType(from_entity->GetContainedEntity(sid)),
+			std::move(container_reference));
 	}
 
 	auto &ocn = id_path->GetOrderedChildNodes();
@@ -99,7 +100,8 @@ std::pair<EntityReferenceType, ContainerEntityReferenceType> TraverseToExistingE
 		StringInternPool::StringID sid = EvaluableNode::ToStringIDIfExists(id_path);
 		//need to lock the container first
 		ContainerEntityReferenceType container_reference(from_entity);
-		return std::make_pair(EntityReferenceType(from_entity->GetContainedEntity(sid)), container_reference);
+		return std::make_pair(EntityReferenceType(from_entity->GetContainedEntity(sid)),
+			std::move(container_reference));
 	}
 
 	//the entity is deeper than one of the container's entities, so put a read lock on it and traverse
@@ -109,7 +111,7 @@ std::pair<EntityReferenceType, ContainerEntityReferenceType> TraverseToExistingE
 	EntityReadReference relative_entity_container(nullptr);
 	ContainerEntityReferenceType target_container(nullptr);
 
-	if(cur_index == target_container_id)
+	if(cur_index == target_container_id_index)
 		target_container = ContainerEntityReferenceType(from_entity);
 	else
 		relative_entity_container = EntityReadReference(from_entity);
@@ -130,11 +132,11 @@ std::pair<EntityReferenceType, ContainerEntityReferenceType> TraverseToExistingE
 		if(relative_entity == nullptr)
 			return std::make_pair(EntityReferenceType(nullptr), ContainerEntityReferenceType(nullptr));
 
-		if(cur_index < target_container_id)
+		if(cur_index < target_container_id_index)
 		{
 			relative_entity_container = EntityReadReference(relative_entity);
 		}
-		else if(cur_index == target_container_id)
+		else if(cur_index == target_container_id_index)
 		{
 			//first acquire the container's reference, then free its container's reference
 			target_container = ContainerEntityReferenceType(relative_entity);
@@ -142,7 +144,8 @@ std::pair<EntityReferenceType, ContainerEntityReferenceType> TraverseToExistingE
 		}
 		else //cur_index == target_entity_id_index
 		{
-			return std::make_pair(EntityReferenceType(relative_entity), relative_entity_container);
+			return std::make_pair(EntityReferenceType(relative_entity),
+				std::move(relative_entity_container));
 		}
 	}
 

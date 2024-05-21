@@ -89,7 +89,16 @@ std::pair<EntityReferenceType, ContainerEntityReferenceType>
 	while(cur_index < non_null_size && EvaluableNode::IsNull(ocn[cur_index]))
 		cur_index++;
 
-	//TODO 10428: debug and fix here on down
+	//if there's only one valid entry in the list, retrieve it
+	if(cur_index == target_entity_id_index)
+	{
+		//if the string doesn't exist, then there can't be an entity with that name, which won't create a reference
+		StringInternPool::StringID sid = EvaluableNode::ToStringIDIfExists(ocn[cur_index]);
+		//need to lock the container first
+		ContainerEntityReferenceType container_reference(from_entity);
+		return std::make_pair(EntityReferenceType(from_entity->GetContainedEntity(sid)),
+			std::move(container_reference));
+	}
 
 	//index of the target entity's container's id; start at cur_index,
 	//and if there's room, try to work downward to find the id previous to target_entity_id_index
@@ -102,28 +111,12 @@ std::pair<EntityReferenceType, ContainerEntityReferenceType>
 			target_container_id_index--;
 	}
 
-	//if there's only one valid entry in the list, retrieve it
-	if(cur_index == target_container_id_index)
-	{
-		//if the string doesn't exist, then there can't be an entity with that name, which won't create a reference
-		StringInternPool::StringID sid = EvaluableNode::ToStringIDIfExists(ocn[cur_index]);
-		//need to lock the container first
-		ContainerEntityReferenceType container_reference(from_entity);
-		return std::make_pair(EntityReferenceType(from_entity->GetContainedEntity(sid)),
-			std::move(container_reference));
-	}
-
 	//the entity is deeper than one of the container's entities, so put a read lock on it and traverse
 	//always keep one to two locks active at once to walk down the entity containers
 	//keep track of a reference for the current entity being considered
 	//and a reference of the type that will be used for the target container
-	EntityReadReference relative_entity_container(nullptr);
+	EntityReadReference relative_entity_container(from_entity);
 	ContainerEntityReferenceType target_container(nullptr);
-
-	if(cur_index == target_container_id_index)
-		target_container = ContainerEntityReferenceType(from_entity);
-	else
-		relative_entity_container = EntityReadReference(from_entity);
 
 	for(; cur_index < non_null_size; cur_index++)
 	{

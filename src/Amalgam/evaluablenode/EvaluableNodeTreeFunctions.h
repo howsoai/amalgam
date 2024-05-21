@@ -147,7 +147,7 @@ std::pair<EntityReferenceType, ContainerEntityReferenceType>
 		else //cur_index == target_entity_id_index
 		{
 			return std::make_pair(EntityReferenceType(from_entity),
-				std::move(relative_entity_container));
+				std::move(target_container));
 		}
 	}
 

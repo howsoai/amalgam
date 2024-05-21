@@ -430,7 +430,7 @@ public:
 
 	//Interprets node_id_path_to_interpret and then attempts to find the Entity relative to curEntity. Returns nullptr if cannot find
 	template<typename EntityReferenceType>
-	EntityReferenceType InterpretNodeIntoRelativeSourceEntityReference(EvaluableNode *node_id_path_to_interpret)
+	inline EntityReferenceType InterpretNodeIntoRelativeSourceEntityReference(EvaluableNode *node_id_path_to_interpret)
 	{
 		if(curEntity == nullptr)
 			return EntityReferenceType(nullptr);
@@ -440,7 +440,7 @@ public:
 
 		//only need to interpret if not idempotent
 		EvaluableNodeReference source_id_node = InterpretNodeForImmediateUse(node_id_path_to_interpret);
-		EntityReferenceType source_entity = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReferenceType>(curEntity, source_id_node);
+		auto [source_entity, container] = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReferenceType>(curEntity, source_id_node);
 		evaluableNodeManager->FreeNodeTreeIfPossible(source_id_node);
 
 		return source_entity;

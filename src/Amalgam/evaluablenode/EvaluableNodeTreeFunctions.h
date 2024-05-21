@@ -50,7 +50,8 @@ void TraverseToEntityViaEvaluableNodeIDPath(Entity *container, EvaluableNode *id
 //if id_path does not exist or is invalid then returns nullptr for both
 //if id_path specifies the entity in from_entity, then it returns a reference to it
 template<typename EntityReferenceType, typename ContainerEntityReferenceType = EntityReadReference>
-std::pair<EntityReferenceType, ContainerEntityReferenceType> TraverseToExistingEntityReferenceViaEvaluableNodeIDPath(
+std::pair<EntityReferenceType, ContainerEntityReferenceType>
+	TraverseToExistingEntityReferenceAndContainerViaEvaluableNodeIDPath(
 																Entity *from_entity, EvaluableNode *id_path)
 {
 	if(from_entity == nullptr)
@@ -151,6 +152,20 @@ std::pair<EntityReferenceType, ContainerEntityReferenceType> TraverseToExistingE
 
 	//shouldn't make it here
 	return std::make_pair(EntityReferenceType(nullptr), ContainerEntityReferenceType(nullptr));
+}
+
+//like TraverseToExistingEntityReferenceAndContainerViaEvaluableNodeIDPath
+//except only returns the entity requested
+template<typename EntityReferenceType>
+inline EntityReferenceType TraverseToExistingEntityReferenceViaEvaluableNodeIDPath(
+	Entity *from_entity, EvaluableNode *id_path)
+{
+	auto [entity, container]
+		= TraverseToExistingEntityReferenceAndContainerViaEvaluableNodeIDPath<EntityReferenceType, EntityReadReference>(
+			from_entity, id_path
+		);
+
+	return std::move(entity);
 }
 
 //constructs an ID or list of IDs that will traverse frome a to b, assuming that b is contained somewhere within a

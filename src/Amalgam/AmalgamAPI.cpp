@@ -43,18 +43,18 @@ extern "C"
 	//          across the library boundary, the callers must free the
 	//          memory using 'DeleteString', otherwise a leak occurs.
 
-	char* StringToCharPtr(std::string& value)
+	char *StringToCharPtr(std::string& value)
 	{
-		char* out = new char[value.length() + 1];
+		char *out = new char[value.length() + 1];
 		strcpy_s(out, value.length() + 1, value.c_str());
 		return out;
 	}
 
-	wchar_t* StringToWCharPtr(std::string& value)
+	wchar_t *StringToWCharPtr(std::string& value)
 	{
 		std::wstring widestr = std::wstring(value.begin(), value.end());
 		widestr += (wchar_t)0;
-		wchar_t* wct = new wchar_t[widestr.length()];
+		wchar_t *wct = new wchar_t[widestr.length()];
 
 		//The below call is depricated but medium risk since the buffer is generated within the function
 		//and length of the string is tracked. This still could pose a vulnerability with malicious unicode
@@ -168,13 +168,13 @@ extern "C"
 		return StringToCharPtr(version);
 	}
 
-	wchar_t* GetConcurrencyTypeStringWide()
+	wchar_t *GetConcurrencyTypeStringWide()
 	{
 		std::string ct = ConcurrencyType();
 		return StringToWCharPtr(ct);
 	}
 
-	char* GetConcurrencyTypeString()
+	char *GetConcurrencyTypeString()
 	{
 		std::string ct = ConcurrencyType();
 		return StringToCharPtr(ct);

@@ -440,7 +440,7 @@ public:
 
 		//only need to interpret if not idempotent
 		EvaluableNodeReference source_id_node = InterpretNodeForImmediateUse(node_id_path_to_interpret);
-		auto source_entity = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReferenceType>(curEntity, source_id_node);
+		EntityReferenceType source_entity = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReferenceType>(curEntity, source_id_node);
 		evaluableNodeManager->FreeNodeTreeIfPossible(source_id_node);
 
 		return std::move(source_entity);

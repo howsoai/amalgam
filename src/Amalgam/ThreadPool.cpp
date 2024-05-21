@@ -22,6 +22,10 @@ void ThreadPool::SetMaxNumActiveThreads(int32_t new_max_num_active_threads)
 {
 	std::unique_lock<std::mutex> lock(threadsMutex);
 
+	//if zero is specified, attempt to get hardware concurrency
+	if(new_max_num_active_threads == 0)
+		new_max_num_active_threads = std::thread::hardware_concurrency();
+
 	//don't need to change anything
 	if(new_max_num_active_threads == maxNumActiveThreads || new_max_num_active_threads < 1)
 		return;

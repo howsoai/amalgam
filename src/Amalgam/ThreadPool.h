@@ -35,6 +35,8 @@ public:
 	}
 
 	//changes the maximum number of active threads
+	//if max_num_active_threads is 0, it will attempt to ascertain and
+	//use the number of cores specified by hardware
 	void SetMaxNumActiveThreads(int32_t max_num_active_threads);
 
 	//returns the current maximum number of threads that are available

@@ -49,11 +49,20 @@ void TraverseToEntityViaEvaluableNodeIDPath(Entity *container, EvaluableNode *id
 //returns a reference of the entity specified by the id path followed by a reference to its container
 //if id_path does not exist or is invalid then returns nullptr for both
 //if id_path specifies the entity in from_entity, then it returns a reference to it
+//if dest_id is not null, it will assume 
 template<typename EntityReferenceType, typename ContainerEntityReferenceType = EntityReadReference>
 std::pair<EntityReferenceType, ContainerEntityReferenceType>
-	TraverseToExistingEntityReferenceAndContainerViaEvaluableNodeIDPath(
-																Entity *from_entity, EvaluableNode *id_path)
+TraverseToExistingEntityReferenceAndContainerViaEvaluableNodeIDPath(
+	Entity *from_entity, EvaluableNode *id_path,
+	StringInternPool::StringID *dest_sid_with_reference = nullptr)
 {
+	//if the destination sid is requested, initialize it
+	if(dest_sid_with_reference != nullptr)
+		*dest_sid_with_reference = string_intern_pool.NOT_A_STRING_ID;
+
+	//string id to use throughout various flows
+	StringInternPool::StringID sid = string_intern_pool.NOT_A_STRING_ID;
+
 	if(from_entity == nullptr)
 		return std::make_pair(EntityReferenceType(nullptr), ContainerEntityReferenceType(nullptr));
 
@@ -62,8 +71,12 @@ std::pair<EntityReferenceType, ContainerEntityReferenceType>
 
 	if(id_path->GetType() != ENT_LIST)
 	{
-		//if the string doesn't exist, then there can't be an entity with that name, which won't create a reference
-		StringInternPool::StringID sid = EvaluableNode::ToStringIDIfExists(id_path);
+		//get the string id, get a reference if returning it
+		if(dest_sid_with_reference == nullptr)
+			sid = EvaluableNode::ToStringIDIfExists(id_path);
+		else
+			sid = *dest_sid_with_reference = EvaluableNode::ToStringIDWithReference(id_path);
+
 		//need to lock the container first
 		ContainerEntityReferenceType container_reference(from_entity);
 		return std::make_pair(EntityReferenceType(from_entity->GetContainedEntity(sid)),
@@ -92,8 +105,12 @@ std::pair<EntityReferenceType, ContainerEntityReferenceType>
 	//if there's only one valid entry in the list, retrieve it
 	if(cur_index == target_entity_id_index)
 	{
-		//if the string doesn't exist, then there can't be an entity with that name, which won't create a reference
-		StringInternPool::StringID sid = EvaluableNode::ToStringIDIfExists(ocn[cur_index]);
+		//get the string id, get a reference if returning it
+		if(dest_sid_with_reference == nullptr)
+			sid = EvaluableNode::ToStringIDIfExists(ocn[cur_index]);
+		else
+			sid = *dest_sid_with_reference = EvaluableNode::ToStringIDWithReference(ocn[cur_index]);
+
 		//need to lock the container first
 		ContainerEntityReferenceType container_reference(from_entity);
 		return std::make_pair(EntityReferenceType(from_entity->GetContainedEntity(sid)),
@@ -126,13 +143,17 @@ std::pair<EntityReferenceType, ContainerEntityReferenceType>
 		if(EvaluableNode::IsNull(cn))
 			continue;
 
-		//if the string doesn't exist, then there can't be an entity with that name
-		StringInternPool::StringID sid = EvaluableNode::ToStringIDIfExists(cn);
+		//get the string id, get a reference if returning it
+		if(dest_sid_with_reference == nullptr)
+			sid = EvaluableNode::ToStringIDIfExists(cn);
+		else
+			sid = *dest_sid_with_reference = EvaluableNode::ToStringIDWithReference(cn);
+
 		from_entity = from_entity->GetContainedEntity(sid);
 
-		//if entity doesn't exist, exit gracefully
+		//if entity doesn't exist, exit gracefully, returning the container if already set
 		if(from_entity == nullptr)
-			return std::make_pair(EntityReferenceType(nullptr), ContainerEntityReferenceType(nullptr));
+			return std::make_pair(EntityReferenceType(nullptr), std::move(target_container));
 
 		if(cur_index < target_container_id_index)
 		{

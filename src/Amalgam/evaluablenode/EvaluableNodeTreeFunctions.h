@@ -50,7 +50,8 @@ void TraverseToEntityViaEvaluableNodeIDPath(Entity *container, EvaluableNode *id
 //if id_path does not exist or is invalid then returns nullptr for both
 //if id_path specifies the entity in from_entity, then it returns a reference to it
 template<typename EntityReferenceType, typename ContainerEntityReferenceType = EntityReadReference>
-std::pair<EntityReferenceType, ContainerEntityReferenceType> TraverseToExistingEntityReferenceViaEvaluableNodeIDPath(
+std::pair<EntityReferenceType, ContainerEntityReferenceType>
+	TraverseToExistingEntityReferenceAndContainerViaEvaluableNodeIDPath(
 																Entity *from_entity, EvaluableNode *id_path)
 {
 	if(from_entity == nullptr)
@@ -83,21 +84,29 @@ std::pair<EntityReferenceType, ContainerEntityReferenceType> TraverseToExistingE
 	//index of the id that will be used for the target entity
 	size_t target_entity_id_index = non_null_size - 1;
 
-	//index of the target entity's container's id, one nonnull entry before the target entity itself
-	size_t target_container_id_index = target_entity_id_index;
-	while(target_container_id_index >  0 && EvaluableNode::IsNull(ocn[target_container_id_index - 1]))
-		target_container_id_index--;
-
 	//find first index
 	size_t cur_index = 0;
 	while(cur_index < non_null_size && EvaluableNode::IsNull(ocn[cur_index]))
 		cur_index++;
 
+	//TODO 10428: debug and fix here on down
+
+	//index of the target entity's container's id; start at cur_index,
+	//and if there's room, try to work downward to find the id previous to target_entity_id_index
+	//if there's nothing between, it won't execute, or it will set them back to being the same
+	size_t target_container_id_index = cur_index;
+	if(target_entity_id_index > cur_index)
+	{
+		target_container_id_index = target_entity_id_index - 1;
+		while(target_container_id_index > 0 && EvaluableNode::IsNull(ocn[target_container_id_index - 1]))
+			target_container_id_index--;
+	}
+
 	//if there's only one valid entry in the list, retrieve it
-	if(cur_index == target_entity_id_index)
+	if(cur_index == target_container_id_index)
 	{
 		//if the string doesn't exist, then there can't be an entity with that name, which won't create a reference
-		StringInternPool::StringID sid = EvaluableNode::ToStringIDIfExists(id_path);
+		StringInternPool::StringID sid = EvaluableNode::ToStringIDIfExists(ocn[cur_index]);
 		//need to lock the container first
 		ContainerEntityReferenceType container_reference(from_entity);
 		return std::make_pair(EntityReferenceType(from_entity->GetContainedEntity(sid)),
@@ -126,31 +135,45 @@ std::pair<EntityReferenceType, ContainerEntityReferenceType> TraverseToExistingE
 
 		//if the string doesn't exist, then there can't be an entity with that name
 		StringInternPool::StringID sid = EvaluableNode::ToStringIDIfExists(cn);
-		Entity *relative_entity = relative_entity_container->GetContainedEntity(sid);
+		from_entity = from_entity->GetContainedEntity(sid);
 
 		//if entity doesn't exist, exit gracefully
-		if(relative_entity == nullptr)
+		if(from_entity == nullptr)
 			return std::make_pair(EntityReferenceType(nullptr), ContainerEntityReferenceType(nullptr));
 
 		if(cur_index < target_container_id_index)
 		{
-			relative_entity_container = EntityReadReference(relative_entity);
+			relative_entity_container = EntityReadReference(from_entity);
 		}
 		else if(cur_index == target_container_id_index)
 		{
 			//first acquire the container's reference, then free its container's reference
-			target_container = ContainerEntityReferenceType(relative_entity);
+			target_container = ContainerEntityReferenceType(from_entity);
 			relative_entity_container = EntityReadReference(nullptr);
 		}
 		else //cur_index == target_entity_id_index
 		{
-			return std::make_pair(EntityReferenceType(relative_entity),
+			return std::make_pair(EntityReferenceType(from_entity),
 				std::move(relative_entity_container));
 		}
 	}
 
 	//shouldn't make it here
 	return std::make_pair(EntityReferenceType(nullptr), ContainerEntityReferenceType(nullptr));
+}
+
+//like TraverseToExistingEntityReferenceAndContainerViaEvaluableNodeIDPath
+//except only returns the entity requested
+template<typename EntityReferenceType>
+inline EntityReferenceType TraverseToExistingEntityReferenceViaEvaluableNodeIDPath(
+	Entity *from_entity, EvaluableNode *id_path)
+{
+	auto [entity, container]
+		= TraverseToExistingEntityReferenceAndContainerViaEvaluableNodeIDPath<EntityReferenceType, EntityReadReference>(
+			from_entity, id_path
+		);
+
+	return std::move(entity);
 }
 
 //constructs an ID or list of IDs that will traverse frome a to b, assuming that b is contained somewhere within a

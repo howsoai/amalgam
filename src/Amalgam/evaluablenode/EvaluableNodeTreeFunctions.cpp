@@ -80,8 +80,7 @@ std::vector<EvaluableNode *> CustomEvaluableNodeOrderedChildNodesSort(std::vecto
 void TraverseToEntityViaEvaluableNodeIDPath(Entity *container, EvaluableNode *id_path,
 	Entity *&relative_entity_container, StringInternRef &id, Entity *&relative_entity)
 {
-	//TODO 10975: change this into a multilock method to retrieve 2-3 entities
-	//TODO 10975: templatize like TraverseToExistingEntityReferenceViaEvaluableNodeIDPath?
+	//TODO 10975: remove this function, deprecated by TraverseToExistingEntityReferenceAndContainerViaEvaluableNodeIDPath
 	relative_entity_container = nullptr;
 	id = StringInternPool::NOT_A_STRING_ID;
 

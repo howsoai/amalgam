@@ -893,12 +893,13 @@ protected:
 	static void ValidateEvaluableNodeTreeMemoryIntegrityRecurse(EvaluableNode *en, EvaluableNode::ReferenceSetType &checked);
 
 #ifdef MULTITHREAD_SUPPORT
-public:
-
 	//mutex to manage attributes of manager, including operations such as
 	// memory allocation, reference management, etc.
 	Concurrency::ReadWriteMutex managerAttributesMutex;
 
+	std::atomic<size_t> firstUnusedNodeIndex;
+
+public:
 	//global mutex to manage whether memory nodes are being modified
 	//concurrent modifications can occur as long as there is only one unique thread
 	// that has allocated the memory
@@ -908,22 +909,19 @@ public:
 	// EvaluableNodeManager and so garbage collection should not happening while memory is being modified
 	static Concurrency::ReadWriteMutex memoryModificationMutex;
 
+protected:
+
 	//used to buffer multithreaded garbage collection tasks
 	thread_local static std::vector<std::future<void>> nodesCompleted;
 
-protected:
+#else
+	size_t firstUnusedNodeIndex;
 #endif
 
 	//nodes that have been allocated and may be in use
 	// all nodes in use are below firstUnusedNodeIndex, such that all above that index are free for use
 	// nodes cannot be nullptr for lower indices than firstUnusedNodeIndex
 	std::vector<EvaluableNode *> nodes;
-
-#ifdef MULTITHREAD_SUPPORT
-	std::atomic<size_t> firstUnusedNodeIndex;
-#else
-	size_t firstUnusedNodeIndex;
-#endif
 
 	//keeps track of all of the nodes currently referenced by any resource or interpreter
 	//only allocated if needed

@@ -697,7 +697,7 @@ void Interpreter::InterpretNodeIntoDestinationEntity(EvaluableNode *n, Entity *&
 {
 	EvaluableNodeReference destination_entity_id_path = InterpretNodeForImmediateUse(n);
 
-	//TODO 10428: change to use TraverseToExistingEntityReferenceAndContainerViaEvaluableNodeIDPath
+	//TODO 10975: change to use TraverseToExistingEntityReferenceAndContainerViaEvaluableNodeIDPath
 	Entity *container = curEntity;
 	Entity *destination_entity = nullptr;
 	TraverseToEntityViaEvaluableNodeIDPath(container, destination_entity_id_path, destination_entity_parent, destination_entity_id, destination_entity);

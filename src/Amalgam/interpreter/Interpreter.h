@@ -290,19 +290,6 @@ public:
 	constexpr size_t GetNumEntityNodesAllocated()
 	{	return curNumExecutionNodesAllocatedToEntities;	}
 
-	//Current entity that is being interpreted upon. If null, then it is assumed to be running in sandboxed mode
-	Entity *curEntity;
-
-	//random stream to get random numbers from
-	RandomStream randomStream;
-
-	//references to listeners for writes on an Entity and prints
-	std::vector<EntityWriteListener *> *writeListeners;
-	PrintListener *printListener;
-
-	//where to allocate new nodes
-	EvaluableNodeManager *evaluableNodeManager;
-
 	//returns the current call stack context, nullptr if none
 	EvaluableNode *GetCurrentCallStackContext();
 
@@ -430,7 +417,7 @@ public:
 
 	//Interprets node_id_path_to_interpret and then attempts to find the Entity relative to curEntity. Returns nullptr if cannot find
 	template<typename EntityReferenceType>
-	EntityReferenceType InterpretNodeIntoRelativeSourceEntityReference(EvaluableNode *node_id_path_to_interpret)
+	inline EntityReferenceType InterpretNodeIntoRelativeSourceEntityReference(EvaluableNode *node_id_path_to_interpret)
 	{
 		if(curEntity == nullptr)
 			return EntityReferenceType(nullptr);
@@ -964,11 +951,23 @@ protected:
 	//will terminate execution if the value is reached
 	size_t maxNumExecutionNodes;
 
-	//the call stack is comprised of the variable contexts
-	std::vector<EvaluableNode *> *callStackNodes;
-
 	//a stack (list) of the current nodes being executed
 	std::vector<EvaluableNode *> *interpreterNodeStackNodes;
+
+public:
+	//where to allocate new nodes
+	EvaluableNodeManager *evaluableNodeManager;
+
+	//Current entity that is being interpreted upon. If null, then it is assumed to be running in sandboxed mode
+	Entity *curEntity;
+
+	//random stream to get random numbers from
+	RandomStream randomStream;
+
+protected:
+
+	//the call stack is comprised of the variable contexts
+	std::vector<EvaluableNode *> *callStackNodes;
 
 	//the current construction stack, containing an interleaved array of nodes
 	std::vector<EvaluableNode *> *constructionStackNodes;
@@ -976,6 +975,10 @@ protected:
 	//current index for each level of constructionStackNodes;
 	//note, this should always be the same size as constructionStackNodes
 	std::vector<ConstructionStackIndexAndPreviousResultUniqueness> constructionStackIndicesAndUniqueness;
+
+	//references to listeners for writes on an Entity and prints
+	std::vector<EntityWriteListener *> *writeListeners;
+	PrintListener *printListener;
 
 	//buffer to use as for parsing and querying conditions
 	//one per thread to save memory on Interpreter objects

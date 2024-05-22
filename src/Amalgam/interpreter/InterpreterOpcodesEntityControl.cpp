@@ -269,7 +269,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED(Evalu
 	if(entity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	entity->SetRandomState(seed_string, deep_set, writeListeners);
+#ifdef MULTITHREAD_SUPPORT
+	if(deep_set)
+	{
+		auto contained_entities = entity->GetAllDeeplyContainedEntityWriteReferencesGroupedByDepth();
+		if(contained_entities == nullptr)
+			return EvaluableNodeReference::Null();
+
+		entity->SetRandomState(seed_string, true, writeListeners);
+	}
+	else
+#endif
+		entity->SetRandomState(seed_string, deep_set, writeListeners);
 
 	return seed_node;
 }
@@ -481,7 +492,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MOVE_ENTITIES(EvaluableNod
 		}
 
 		//remove source entity from its parent
-		source_entity_parent->RemoveContainedEntity(source_entity_id, writeListeners);
+		source_entity_parent->RemoveContainedEntity(source_entity->GetIdStringId(), writeListeners);
 
 		//put it in the destination
 		destination_entity_parent->AddContainedEntityViaReference(source_entity, new_entity_id, writeListeners);
@@ -508,15 +519,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DESTROY_ENTITIES(Evaluable
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	//TODO 10975: change this to lock all entities at once
 	bool all_destroys_successful = true;
 	for(auto &cn : en->GetOrderedChildNodes())
 	{
 		//get the id of the source entity
 		auto id_node = InterpretNodeForImmediateUse(cn);
-		Entity *entity = nullptr, *entity_parent = nullptr;
-		StringInternRef source_id;
-		TraverseToEntityViaEvaluableNodeIDPath(curEntity, id_node, entity_parent, source_id, entity);
+		auto [entity, entity_container]
+			= TraverseToExistingEntityReferenceAndContainerViaEvaluableNodeIDPath<EntityWriteReference,
+				EntityWriteReference>(curEntity, id_node);
 		evaluableNodeManager->FreeNodeTreeIfPossible(id_node);
 
 		//need a valid entity that isn't itself or currently has execution
@@ -526,8 +536,23 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DESTROY_ENTITIES(Evaluable
 			continue;
 		}
 
-		if(entity_parent != nullptr)
-			entity_parent->RemoveContainedEntity(source_id, writeListeners);
+		//lock all entities
+		auto contained_entities = entity->GetAllDeeplyContainedEntityWriteReferencesGroupedByDepth();
+		if(contained_entities == nullptr)
+		{
+			all_destroys_successful = false;
+			continue;
+		}
+
+		if(entity_container != nullptr)
+			entity_container->RemoveContainedEntity(entity->GetIdStringId(), writeListeners);
+
+		contained_entities.Clear();
+
+	#ifdef MULTITHREAD_SUPPORT
+		//free entity write lock before calling delete
+		entity.lock.unlock();
+	#endif
 
 		delete entity;
 	}

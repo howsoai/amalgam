@@ -430,7 +430,7 @@ public:
 		EntityReferenceType source_entity = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReferenceType>(curEntity, source_id_node);
 		evaluableNodeManager->FreeNodeTreeIfPossible(source_id_node);
 
-		return std::move(source_entity);
+		return source_entity;
 	}
 
 	//like InterpretNodeIntoRelativeSourceEntityReference but with a read reference

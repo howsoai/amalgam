@@ -49,7 +49,8 @@ void TraverseToEntityViaEvaluableNodeIDPath(Entity *container, EvaluableNode *id
 //returns a reference of the entity specified by the id path followed by a reference to its container
 //if id_path does not exist or is invalid then returns nullptr for both
 //if id_path specifies the entity in from_entity, then it returns a reference to it
-//if dest_id is not null, it will assume 
+//if dest_sid_with_reference is not null, it will assume it is a location to store a string id with reference
+// that must be managed by caller
 template<typename EntityReferenceType, typename ContainerEntityReferenceType = EntityReadReference>
 std::pair<EntityReferenceType, ContainerEntityReferenceType>
 TraverseToExistingEntityReferenceAndContainerViaEvaluableNodeIDPath(
@@ -184,8 +185,7 @@ inline EntityReferenceType TraverseToExistingEntityReferenceViaEvaluableNodeIDPa
 {
 	auto [entity, container]
 		= TraverseToExistingEntityReferenceAndContainerViaEvaluableNodeIDPath<EntityReferenceType, EntityReadReference>(
-			from_entity, id_path
-		);
+			from_entity, id_path);
 
 	return std::move(entity);
 }

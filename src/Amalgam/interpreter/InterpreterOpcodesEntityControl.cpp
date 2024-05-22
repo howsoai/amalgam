@@ -492,7 +492,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MOVE_ENTITIES(EvaluableNod
 		}
 
 		//remove source entity from its parent
-		source_entity_parent->RemoveContainedEntity(source_entity_id, writeListeners);
+		source_entity_parent->RemoveContainedEntity(source_entity->GetIdStringId(), writeListeners);
 
 		//put it in the destination
 		destination_entity_parent->AddContainedEntityViaReference(source_entity, new_entity_id, writeListeners);

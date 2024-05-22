@@ -192,40 +192,38 @@ void EvaluableNodeManager::CollectGarbage()
 	//keep trying to acquire write lock to see if this thread wins the race to collect garbage
 	Concurrency::WriteLock write_lock(memoryModificationMutex, std::defer_lock);
 
-	while(!write_lock.try_lock())
-	{
-		if(!RecommendGarbageCollection())
-		{
-			if(memory_modification_lock != nullptr)
-				memory_modification_lock->lock();
-
-			if(PerformanceProfiler::IsProfilingEnabled())
-				PerformanceProfiler::EndOperation(GetNumberOfUsedNodes());
-
-			return;
-		}
-	}
+	//wait for either the lock or no lorger need garbage collecting
+	while(!write_lock.try_lock() && RecommendGarbageCollection())
+	{	}
 		
-	//double-check still needs collection, and not that another thread collected it
-	if(!RecommendGarbageCollection())
+	//if owns lock, double-check still needs collection,
+	// and not that another thread collected it since acquiring the lock
+	if(write_lock.owns_lock())
 	{
-		write_lock.unlock();
-		if(memory_modification_lock != nullptr)
-			memory_modification_lock->lock();
-
-		if(PerformanceProfiler::IsProfilingEnabled())
-			PerformanceProfiler::EndOperation(GetNumberOfUsedNodes());
-
-		return;
-	}
+		if(RecommendGarbageCollection())
+		{
 #endif
+			size_t cur_first_unused_node_index = firstUnusedNodeIndex;
+			//clear firstUnusedNodeIndex to signal to other threads that they won't need to do garbage collection
+			firstUnusedNodeIndex = 0;
 
-	//perform garbage collection
-	FreeAllNodesExceptReferencedNodes();
+			//if any group of nodes on the top are ready to be cleaned up cheaply, do so first
+			while(cur_first_unused_node_index > 0 && nodes[cur_first_unused_node_index - 1] != nullptr
+				&& nodes[cur_first_unused_node_index - 1]->GetType() == ENT_DEALLOCATED)
+				cur_first_unused_node_index--;
+
+			//set to contain everything that is referenced
+			MarkAllReferencedNodesInUse(cur_first_unused_node_index);
+
+			FreeAllNodesExceptReferencedNodes(cur_first_unused_node_index);
 
 #ifdef MULTITHREAD_SUPPORT
-	//free the unique lock and reacquire the shared lock
-	write_lock.unlock();
+		}
+
+		//free the unique lock and reacquire the shared lock
+		write_lock.unlock();
+	}
+
 	if(memory_modification_lock != nullptr)
 		memory_modification_lock->lock();
 #endif
@@ -323,23 +321,8 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 	return nodes[firstUnusedNodeIndex++];
 }
 
-void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes()
+void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_unused_node_index)
 {
-	if(nodes.size() == 0)
-		return;
-
-	size_t cur_first_unused_node_index = firstUnusedNodeIndex;
-	//clear firstUnusedNodeIndex to signal to other threads that they won't need to do garbage collection
-	firstUnusedNodeIndex = 0;
-
-	//if any group of nodes on the top are ready to be cleaned up cheaply, do so first
-	while(cur_first_unused_node_index > 0 && nodes[cur_first_unused_node_index - 1] != nullptr
-			&& nodes[cur_first_unused_node_index - 1]->GetType() == ENT_DEALLOCATED)
-		cur_first_unused_node_index--;
-
-	//set to contain everything that is referenced
-	MarkAllReferencedNodesInUse(cur_first_unused_node_index);
-
 	//create a temporary variable for multithreading as to not use the atomic variable to slow things down
 	size_t first_unused_node_index_temp = 0;
 

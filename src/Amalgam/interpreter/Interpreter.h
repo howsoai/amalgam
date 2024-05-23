@@ -95,16 +95,6 @@ public:
 		if(evaluableNodeManager->RecommendGarbageCollection())
 		{
 		#ifdef MULTITHREAD_SUPPORT
-			//TODO 20367: debug why deadlock with pedantic gc, and remove pedantic gc
-			//TODO 20367: try to add this back in.  if can't remove method MarkNodesInUse
-			//use this thread to mark everything applicable in use
-			//if(interpreterNodeStackNodes != nullptr)
-			//	evaluableNodeManager->MarkNodesInUse(*interpreterNodeStackNodes);
-			//if(constructionStackNodes != nullptr)
-			//	evaluableNodeManager->MarkNodesInUse(*constructionStackNodes);
-			//if(callStackNodes != nullptr)
-			//	evaluableNodeManager->MarkNodesInUse(*callStackNodes);
-
 			evaluableNodeManager->CollectGarbage(&memoryModificationLock);
 		#else
 			evaluableNodeManager->CollectGarbage();

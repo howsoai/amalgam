@@ -559,18 +559,6 @@ public:
 #ifdef MULTITHREAD_SUPPORT
 	//if multithreaded, then memory_modification_lock is the lock used for memoryModificationMutex if not nullptr
 	void CollectGarbage(Concurrency::ReadLock *memory_modification_lock);
-
-	//used to premark nodes in use for multithreading if RecommendGarbageCollection() is true,
-	//before the thread goes into garbage collection
-	template<typename Container>
-	void MarkNodesInUse(Container &container)
-	{
-		for(EvaluableNode *en : container)
-		{
-			if(en != nullptr && !en->GetKnownToBeInUseAtomic())
-				MarkAllReferencedNodesInUseRecurseConcurrent(en);
-		}
-	}
 #else
 	void CollectGarbage();
 #endif

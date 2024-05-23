@@ -152,7 +152,7 @@ bool AssetManager::StoreResourcePathFromProcessedResourcePaths(EvaluableNode *co
 
 Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std::string &file_type,
 	bool persistent, bool load_contained_entities, bool escape_filename, bool escape_contained_filenames,
-	std::string default_random_seed, EntityExternalInterface::LoadEntityStatus &status)
+	std::string default_random_seed, Interpreter *calling_interpreter, EntityExternalInterface::LoadEntityStatus &status)
 {
 	std::string resource_base_path;
 	Entity *new_entity = new Entity();
@@ -176,7 +176,8 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 
 		ExecutionCycleCount max_num_steps = 0, num_steps_executed = 0;
 		size_t max_num_nodes = 0, num_nodes_allocated = 0;
-		new_entity->Execute(max_num_steps, num_steps_executed, max_num_nodes, num_nodes_allocated, StringInternPool::NOT_A_STRING_ID, call_stack);
+		new_entity->Execute(max_num_steps, num_steps_executed, max_num_nodes, num_nodes_allocated,
+			StringInternPool::NOT_A_STRING_ID, call_stack, false, calling_interpreter);
 		return new_entity;
 	}
 
@@ -244,7 +245,7 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 			std::string default_seed = new_entity->CreateRandomStreamFromStringAndRand(entity_name);
 			std::string contained_resource_path = resource_base_path + ce_file_base + "." + ce_extension;
 			Entity *contained_entity = LoadEntityFromResourcePath(contained_resource_path, file_type,
-				false, true, false, escape_contained_filenames, default_seed, status);
+				false, true, false, escape_contained_filenames, default_seed, calling_interpreter, status);
 			if(!status.loaded)
 			{
 				delete new_entity;

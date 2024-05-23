@@ -223,9 +223,8 @@ PLATFORM_MAIN_CONSOLE
 	}
 	else if(run_tracefile)
 	{
-		std::istream *trace_stream = new std::ifstream(tracefile);
-		int ret = RunAmalgamTrace(trace_stream, &std::cout, random_seed);
-		delete trace_stream;
+		std::ifstream trace_stream(tracefile);
+		int ret = RunAmalgamTrace(&trace_stream, &std::cout, random_seed);
 
 		if(profile_opcodes || profile_labels)
 			PerformanceProfiler::PrintProfilingInformation(profile_out_file, profile_count);
@@ -237,7 +236,9 @@ PLATFORM_MAIN_CONSOLE
 		//run the standard amlg command line interface
 		EntityExternalInterface::LoadEntityStatus status;
 		std::string file_type = "";
-		Entity *entity = asset_manager.LoadEntityFromResourcePath(amlg_file_to_run, file_type, false, true, false, true, random_seed, status);
+		Entity *entity = asset_manager.LoadEntityFromResourcePath(amlg_file_to_run, file_type,
+			false, true, false, true, random_seed, nullptr, status);
+
 		if(!status.loaded)
 			return 1;
 
@@ -279,7 +280,7 @@ PLATFORM_MAIN_CONSOLE
 
 		//execute the entity
 		entity->Execute(0, num_steps_executed, 0, num_nodes_allocated, StringInternPool::NOT_A_STRING_ID, call_stack,
-			false, &write_listeners, print_listener);
+			false, nullptr, &write_listeners, print_listener);
 
 		//clean up the nodes created here
 		entity->evaluableNodeManager.FreeNodeTree(call_stack);

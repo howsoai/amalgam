@@ -839,7 +839,11 @@ protected:
 	EvaluableNode *AllocUninitializedNode();
 
 	//frees everything execpt those nodes referenced by nodesCurrentlyReferenced
-	void FreeAllNodesExceptReferencedNodes();
+	//cur_first_unused_node_index represents the first unused index and will set firstUnusedNodeIndex
+	//to the reduced value
+	//note that this method does not read from firstUnusedNodeIndex, as it may be cleared to indicate threads
+	//to stop spinlocks
+	void FreeAllNodesExceptReferencedNodes(size_t cur_first_unused_node_index);
 
 	//support for FreeNodeTree, but requires that tree not be nullptr
 	void FreeNodeTreeRecurse(EvaluableNode *tree);

@@ -223,9 +223,8 @@ PLATFORM_MAIN_CONSOLE
 	}
 	else if(run_tracefile)
 	{
-		std::istream *trace_stream = new std::ifstream(tracefile);
-		int ret = RunAmalgamTrace(trace_stream, &std::cout, random_seed);
-		delete trace_stream;
+		std::ifstream trace_stream(tracefile);
+		int ret = RunAmalgamTrace(&trace_stream, &std::cout, random_seed);
 
 		if(profile_opcodes || profile_labels)
 			PerformanceProfiler::PrintProfilingInformation(profile_out_file, profile_count);

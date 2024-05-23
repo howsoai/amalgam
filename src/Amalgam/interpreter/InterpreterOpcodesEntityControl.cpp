@@ -636,9 +636,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSI
 
 	EntityExternalInterface::LoadEntityStatus status;
 	std::string random_seed = destination_entity_parent->CreateRandomStreamFromStringAndRand(resource_name);
-	//TODO 20367: pass in interpreter mutex if multithreaded
+	
 	Entity *loaded_entity = asset_manager.LoadEntityFromResourcePath(resource_name, file_type,
-		persistent, true, escape_filename, escape_contained_filenames, random_seed, status);
+		persistent, true, escape_filename, escape_contained_filenames, random_seed, this, status);
 
 	//handle errors
 	if(!status.loaded)

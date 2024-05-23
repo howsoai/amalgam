@@ -42,7 +42,9 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(st
 	}
 
 	std::string file_type = "";
-	Entity *entity = asset_manager.LoadEntityFromResourcePath(path, file_type, persistent, load_contained_entities, escape_filename, escape_contained_filenames, rand_seed, status);
+	Entity *entity = asset_manager.LoadEntityFromResourcePath(path, file_type, persistent, load_contained_entities,
+		escape_filename, escape_contained_filenames, rand_seed, nullptr, status);
+
 	if(!status.loaded)
 		return status;
 
@@ -132,11 +134,7 @@ void EntityExternalInterface::ExecuteEntity(std::string &handle, std::string &la
 	ExecutionCycleCount max_num_steps = 0, num_steps_executed = 0;
 	size_t max_num_nodes = 0, num_nodes_allocated = 0;
 	bundle->entity->Execute(max_num_steps, num_steps_executed, max_num_nodes, num_nodes_allocated,
-		label, nullptr, false, &bundle->writeListeners, bundle->printListener
-	#ifdef MULTITHREAD_SUPPORT
-		, nullptr, nullptr
-	#endif
-		);
+		label, nullptr, false, nullptr, &bundle->writeListeners, bundle->printListener);
 }
 
 void EntityExternalInterface::DestroyEntity(std::string &handle)
@@ -614,11 +612,7 @@ std::string EntityExternalInterface::ExecuteEntityJSON(std::string &handle, std:
 	ExecutionCycleCount max_num_steps = 0, num_steps_executed = 0;
 	size_t max_num_nodes = 0, num_nodes_allocated = 0;
 	EvaluableNodeReference returned_value = bundle->entity->Execute(max_num_steps, num_steps_executed, max_num_nodes,
-		num_nodes_allocated, label, call_stack, false, &bundle->writeListeners, bundle->printListener
-	#ifdef MULTITHREAD_SUPPORT
-		, nullptr, nullptr
-	#endif
-		);
+		num_nodes_allocated, label, call_stack, false, nullptr, &bundle->writeListeners, bundle->printListener);
 
 	//ConvertArgsToCallStack always adds an outer list that is safe to free
 	enm.FreeNode(call_stack);

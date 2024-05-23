@@ -422,20 +422,19 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 
 EvaluableNodeReference Entity::Execute(ExecutionCycleCount max_num_steps, ExecutionCycleCount &num_steps_executed,
 	size_t max_num_nodes, size_t &num_nodes_allocated,
-	StringInternPool::StringID label_sid, EvaluableNode *call_stack, bool on_self,
-	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
+	StringInternPool::StringID label_sid, EvaluableNode *call_stack, bool on_self, Interpreter *calling_interpreter,
+	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener
 #ifdef MULTITHREAD_SUPPORT
-	Concurrency::ReadLock *locked_memory_modification_lock,
-	Concurrency::ReadLock *entity_read_lock,
+	, Concurrency::ReadLock *entity_read_lock
 #endif
-	Interpreter *calling_interpreter)
+	)
 {
 	if(!on_self && IsLabelPrivate(label_sid))
 		return EvaluableNodeReference(nullptr, true);
 
 #ifdef MULTITHREAD_SUPPORT
-	if(locked_memory_modification_lock != nullptr)
-		locked_memory_modification_lock->unlock();
+	if(calling_interpreter != nullptr)
+		calling_interpreter->memoryModificationLock.unlock();
 #endif
 
 	EvaluableNode *node_to_execute = nullptr;
@@ -454,8 +453,8 @@ EvaluableNodeReference Entity::Execute(ExecutionCycleCount max_num_steps, Execut
 	{
 	#ifdef MULTITHREAD_SUPPORT
 		//put lock back in place
-		if(locked_memory_modification_lock != nullptr)
-			locked_memory_modification_lock->lock();
+		if(calling_interpreter != nullptr)
+			calling_interpreter->memoryModificationLock.lock();
 	#endif
 		return EvaluableNodeReference::Null();
 	}
@@ -476,8 +475,8 @@ EvaluableNodeReference Entity::Execute(ExecutionCycleCount max_num_steps, Execut
 
 #ifdef MULTITHREAD_SUPPORT
 	//make sure have lock before copy into destination_temp_enm
-	if(locked_memory_modification_lock != nullptr)
-		locked_memory_modification_lock->lock();
+	if(calling_interpreter != nullptr)
+		calling_interpreter->memoryModificationLock.lock();
 #endif
 
 	//find difference in entity size

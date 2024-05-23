@@ -55,8 +55,9 @@ public:
 	//if file_type is not an empty string, it will use the specified file_type instead of the filename's extension
 	// if persistent is true, then it will keep the resource updated based on any calls to UpdateEntity
 	//if the resource does not have a metadata file, will use default_random_seed as its seed
-	Entity *LoadEntityFromResourcePath(std::string &resource_path, std::string &file_type, bool persistent, bool load_contained_entities,
-		bool escape_filename, bool escape_contained_filenames, std::string default_random_seed, EntityExternalInterface::LoadEntityStatus &status);
+	Entity *LoadEntityFromResourcePath(std::string &resource_path, std::string &file_type, bool persistent,
+		bool load_contained_entities, bool escape_filename, bool escape_contained_filenames,
+		std::string default_random_seed, Interpreter *calling_interpreter, EntityExternalInterface::LoadEntityStatus &status);
 
 	//Stores an entity, including contained entites, etc. from the resource path specified
 	//if file_type is not an empty string, it will use the specified file_type instead of the filename's extension

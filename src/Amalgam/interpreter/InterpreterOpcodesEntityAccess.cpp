@@ -504,11 +504,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	size_t num_nodes_allocated = 0;
 	EvaluableNodeReference retval = called_entity->Execute(num_steps_allowed, num_steps_executed,
 		num_nodes_allowed, num_nodes_allocated,
-		entity_label_sid, call_stack, called_entity == curEntity, cur_write_listeners, printListener,
+		entity_label_sid, call_stack, called_entity == curEntity, this, cur_write_listeners, printListener
 	#ifdef MULTITHREAD_SUPPORT
-		&memoryModificationLock, &called_entity.lock,
+		, &called_entity.lock
 	#endif
-		this);
+		);
 
 	//accumulate costs of execution
 	curExecutionStep += num_steps_executed;
@@ -632,11 +632,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	ExecutionCycleCount num_steps_executed = 0;
 	size_t num_nodes_allocated = 0;
 	EvaluableNodeReference retval = container->Execute(num_steps_allowed, num_steps_executed, num_nodes_allowed, num_nodes_allocated,
-		container_label_sid, call_stack, false, writeListeners, printListener,
+		container_label_sid, call_stack, false, this, writeListeners, printListener
 	#ifdef MULTITHREAD_SUPPORT
-		&memoryModificationLock, &container.lock,
+		, &container.lock
 	#endif
-		this);
+		);
 
 	//accumulate costs of execution
 	curExecutionStep += num_steps_executed;

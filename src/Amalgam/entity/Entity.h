@@ -191,9 +191,9 @@ public:
 	// potentially writing anything out to destination_temp_enm
 	EvaluableNodeReference Execute(ExecutionCycleCount max_num_steps, ExecutionCycleCount &num_steps_executed, size_t max_num_nodes, size_t &num_nodes_allocated,
 		StringInternPool::StringID label_sid, EvaluableNode *call_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
-		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
+		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr
 	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::ReadLock *entity_read_lock = nullptr
+		, Concurrency::ReadLock *entity_read_lock = nullptr
 	#endif
 		);
 

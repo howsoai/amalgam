@@ -2902,7 +2902,6 @@
  	(query_within_generalized_distance 60 (list "x" "y") (list 0.0 0.0) (null) (null) (null) (null) 0.5 1 (null) "random seed 1234" "radius")
  )))
 
- ;TODO 17631: add unit tests for sparse deviation matrices
  (print "--query_nearest_generalized_distance--\n")
  (print (contained_entities "TestContainerExec" (list
  	(query_nearest_generalized_distance 2 (list "x" "y") (list 0.0 0.0) (null) (null) (null) (null) 0.5 1 (null) "random seed 1234" "radius")

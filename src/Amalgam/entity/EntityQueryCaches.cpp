@@ -25,11 +25,12 @@ bool EntityQueryCaches::DoesCachedConditionMatch(EntityQueryCondition *cond, boo
 	if(qt == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || qt == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE || qt == ENT_COMPUTE_ENTITY_CONVICTIONS
 		|| qt == ENT_COMPUTE_ENTITY_GROUP_KL_DIVERGENCE || qt == ENT_COMPUTE_ENTITY_DISTANCE_CONTRIBUTIONS || qt == ENT_COMPUTE_ENTITY_KL_DIVERGENCES)
 	{
-		//TODO 4948: sbfds does not fully support p0 acceleration; it requires templating and calling logs of differences, then performing an inverse transform at the end
+		//accelerating a p of 0 with the current caches would be a large effort, as everything would have to be
+		// transformed via logarithms and then pValue = 1 applied
+		//however, because other transforms, like surprisal_to_prob already transform the data to log space,
+		//accelerating this edge case does not seem worthwhile
 		if(cond->distEvaluator.pValue == 0)
 			return false;
-
-		return true;
 	}
 
 	return true;
@@ -46,7 +47,6 @@ static bool CanUseQueryCaches(std::vector<EntityQueryCondition> &conditions)
 
 	return true;
 }
-
 
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 void EntityQueryCaches::EnsureLabelsAreCached(EntityQueryCondition *cond, Concurrency::ReadLock &lock)

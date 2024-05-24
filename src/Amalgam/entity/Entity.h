@@ -542,7 +542,7 @@ public:
 	inline EntityReferenceBufferReference<EntityReferenceType> GetAllDeeplyContainedEntityReferencesGroupedByDepth()
 	{
 		EntityReferenceBufferReference<EntityReferenceType> erbr;
-		if constexpr(std::is_same<typename EntityReferenceType, EntityWriteReference>::value)
+		if constexpr(std::is_same<EntityReferenceType, EntityWriteReference>::value)
 			erbr = EntityReferenceBufferReference(entityWriteReferenceBuffer);
 		else
 			erbr = EntityReferenceBufferReference(entityReadReferenceBuffer);
@@ -861,7 +861,7 @@ protected:
 		if(!hasContainedEntities)
 			return true;
 
-		if constexpr(std::is_same<typename EntityReferenceType, EntityWriteReference>::value)
+		if constexpr(std::is_same<EntityReferenceType, EntityWriteReference>::value)
 		{
 			if(IsEntityCurrentlyBeingExecuted())
 				return false;
@@ -870,7 +870,7 @@ protected:
 		auto &contained_entities = GetContainedEntities();
 		for(Entity *e : contained_entities)
 		{
-			if constexpr(std::is_same<typename EntityReferenceType, EntityWriteReference>::value)
+			if constexpr(std::is_same<EntityReferenceType, EntityWriteReference>::value)
 				entityWriteReferenceBuffer.emplace_back(e);
 			else
 				entityReadReferenceBuffer.emplace_back(e);

@@ -1019,7 +1019,7 @@ abcdef
 	"2020-06-08 lunes 11.33.48"
 )
 --indices--
-(list "b" "a" "4" "c")
+(list "b" "4" "a" "c")
 (list
 	0
 	1
@@ -1031,7 +1031,7 @@ abcdef
 	7
 )
 --values--
-(list 2 1 "d" 3)
+(list 2 "d" 1 3)
 (list
 	"a"
 	1
@@ -1052,7 +1052,7 @@ abcdef
 	4
 	"d"
 )
-(list 3 2 1 "d" 0)
+(list 3 2 "d" 1 0)
 (list
 	1
 	2
@@ -1265,7 +1265,7 @@ current_index: 2
 		interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1715197772.825558
+		start_time 1716570941.005401
 		www 1
 		x 12
 		zz 10
@@ -1308,7 +1308,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1715197772.825558
+	start_time 1716570941.005401
 	www 1
 	x 12
 	zz 10
@@ -1350,7 +1350,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1715197772.825558
+	start_time 1716570941.005401
 	www 1
 	x 12
 	zz 10
@@ -1498,7 +1498,7 @@ infinity test c or d: (list "c" @(get (target 0) 0) "d" @(get (target 0) 0))
 
 (assoc a 29 b 44 c 27)
 
-(list "3" "1" "10")
+(list "5" "1" "7")
 
 --get_rand_seed--
 °³È¼¿\¨KOaVÆT zÿ
@@ -1618,7 +1618,7 @@ e:
   - .inf
 
 25: (assoc a 1)
-current date-time in epoch: 2024-05-08-15.49.33.2855760
+current date-time in epoch: 2024-05-24-13.15.41.2972120
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -3149,14 +3149,8 @@ _432807187
 						(list)
 						(lambda
 							(assoc
-								E (get
-										(current_value 1)
-										"E"
-									)
-								F (get
-										(current_value 1)
-										"F"
-									)
+								E 3
+								F 4
 								G 5
 								H 6
 							)
@@ -3181,16 +3175,7 @@ _432807187
 						_
 						(list)
 						(lambda
-							(assoc
-								e (get
-										(current_value 1)
-										"e"
-									)
-								f (get
-										(current_value 1)
-										"f"
-									)
-							)
+							(assoc e 3 f 4)
 						)
 					)
 				)
@@ -3289,8 +3274,14 @@ _41032496
 						(list)
 						(lambda
 							(assoc
-								E 3
-								F 4
+								E (get
+										(current_value 1)
+										"E"
+									)
+								F (get
+										(current_value 1)
+										"F"
+									)
 								G 5
 								H 6
 							)
@@ -3315,7 +3306,16 @@ _41032496
 						_
 						(list)
 						(lambda
-							(assoc e 3 f 4)
+							(assoc
+								e (get
+										(current_value 1)
+										"e"
+									)
+								f (get
+										(current_value 1)
+										"f"
+									)
+							)
 						)
 					)
 				)
@@ -3345,10 +3345,10 @@ DiffContainerReconstructed
 (associate "b" 4 "a" 3)
 MergeEntityChild1
 (associate "x" 3 "y" 4 "z" 5)
-_523256902
-(null)
 _3895405527
-(associate "f" 4)
+(null)
+_523256902
+(associate "F" 4)
 MergeEntityChild2
 (associate
 	"p"
@@ -3438,7 +3438,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1715197773.501047
+1716570941.565219
 (true)
 
 RootTest
@@ -4277,14 +4277,14 @@ case conviction:(assoc
 )
 cyclic feature nearest neighbors: (assoc cyclic1 1 cyclic5 0.5)
 cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
-190: 0.045454545454545456 (null
-	##deg 12
+200: 0.05555555555555555 (null
+	##deg 8
 )
 155: 0.1 (null
 	##deg 0
 )
-200: 0.05555555555555555 (null
-	##deg 8
+190: 0.045454545454545456 (null
+	##deg 12
 )
 --contains_label--
 (true)
@@ -4681,4 +4681,4 @@ concurrent entity writes successful: (true)
 
 --clean-up test files--
 --total execution time--
-1.583873987197876
+1.186690092086792

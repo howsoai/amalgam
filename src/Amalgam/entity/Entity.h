@@ -12,6 +12,7 @@
 #include <fstream>
 #include <functional>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 //forward declarations:
@@ -533,28 +534,20 @@ public:
 		std::vector<EntityReferenceType> *bufferReference;
 	};
 
-	//returns a list of read references for all entities contained, all entities they contain, etc. grouped by all
+	//returns a list of references for all entities contained, all entities they contain, etc. grouped by all
 	//entities at the same level of depth
-	//returns the thread_local static variable entityReadReferenceBuffer, so results will be invalidated
+	//returns the thread_local static variable entity[Read|Write]ReferenceBuffer, so results will be invalidated
 	//by subsequent calls
-	inline EntityReferenceBufferReference<EntityReadReference> GetAllDeeplyContainedEntityReadReferencesGroupedByDepth()
+	template<typename EntityReferenceType>
+	inline EntityReferenceBufferReference<EntityReferenceType> GetAllDeeplyContainedEntityReferencesGroupedByDepth()
 	{
-		EntityReferenceBufferReference<EntityReadReference> erbr(entityReadReferenceBuffer);
-		GetAllDeeplyContainedEntityReadReferencesGroupedByDepthRecurse();
-		return erbr;
-	}
+		EntityReferenceBufferReference<EntityReferenceType> erbr;
+		if constexpr(std::is_same<typename EntityReferenceType, EntityWriteReference>::value)
+			erbr = EntityReferenceBufferReference(entityWriteReferenceBuffer);
+		else
+			erbr = EntityReferenceBufferReference(entityReadReferenceBuffer);
 
-	//returns a list of write references for all entities contained, all entities they contain, etc. grouped by all
-	//entities at the same level of depth
-	//returns the thread_local static variable entityWriteReferenceBuffer, so results will be invalidated
-	//by subsequent calls
-	//if any contained entities are being executed, it will return a nullptr for the reference
-	inline EntityReferenceBufferReference<EntityWriteReference> GetAllDeeplyContainedEntityWriteReferencesGroupedByDepth()
-	{
-		EntityReferenceBufferReference<EntityWriteReference> erbr(entityWriteReferenceBuffer);
-		if(!GetAllDeeplyContainedEntityWriteReferencesGroupedByDepthRecurse())
-			erbr.Clear();
-
+		GetAllDeeplyContainedEntityReferencesGroupedByDepthRecurse<EntityReferenceType>();
 		return erbr;
 	}
 
@@ -573,7 +566,10 @@ public:
 	//sets (seeds) the current state of the random stream based on string
 	// if deep_set_seed is true, it will recursively set all contained entities with appropriate seeds
 	// write_listeners is optional, and if specified, will log the event
-	void SetRandomState(const std::string &new_state, bool deep_set_seed, std::vector<EntityWriteListener *> *write_listeners = nullptr);
+	// all_contained_entities, if specified, may be used for updating entities
+	void SetRandomState(const std::string &new_state, bool deep_set_seed,
+		std::vector<EntityWriteListener *> *write_listeners = nullptr,
+		Entity::EntityReferenceBufferReference<EntityWriteReference> *all_contained_entities = nullptr);
 
 	//sets (seeds) the current state of the random stream based on RandomStream
 	// write_listeners is optional, and if specified, will log the event
@@ -859,11 +855,36 @@ public:
 protected:
 
 	//helper function for GetAllDeeplyContainedEntityReadReferencesGroupedByDepth
-	void GetAllDeeplyContainedEntityReadReferencesGroupedByDepthRecurse();
+	template<typename EntityReferenceType>
+	bool GetAllDeeplyContainedEntityReferencesGroupedByDepthRecurse()
+	{
+		if(!hasContainedEntities)
+			return true;
 
-	//helper function for GetAllDeeplyContainedEntityWriteReferencesGroupedByDepth
-	//if any entity is executing, it will stop locking and return false.  returns true if successful
-	bool GetAllDeeplyContainedEntityWriteReferencesGroupedByDepthRecurse();
+		constexpr bool write_reference = std::is_same<typename EntityReferenceType, EntityWriteReference>::value;
+		if constexpr(write_reference)
+		{
+			if(IsEntityCurrentlyBeingExecuted())
+				return false;
+		}
+
+		auto &contained_entities = GetContainedEntities();
+		for(Entity *e : contained_entities)
+		{
+			if constexpr(write_reference)
+				entityWriteReferenceBuffer.emplace_back(e);
+			else
+				entityReadReferenceBuffer.emplace_back(e);
+		}
+
+		for(auto &ce : contained_entities)
+		{
+			if(!ce->GetAllDeeplyContainedEntityReferencesGroupedByDepthRecurse<EntityReferenceType>())
+				return false;
+		}
+
+		return true;
+	}
 
 	//ensures the data structures will exist for containing entities if they don't already
 	inline void EnsureHasContainedEntities()

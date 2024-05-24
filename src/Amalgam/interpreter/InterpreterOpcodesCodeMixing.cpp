@@ -300,7 +300,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TOTAL_ENTITY_SIZE(Evaluabl
 	if(entity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	auto erbr = entity->GetAllDeeplyContainedEntityReadReferencesGroupedByDepth();
+	auto erbr = entity->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>();
 	double size = static_cast<double>(entity->GetDeepSizeInNodes());
 	return AllocReturn(size, immediate_result);
 }
@@ -324,7 +324,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FLATTEN_ENTITY(EvaluableNo
 	if(entity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	auto erbr = entity->GetAllDeeplyContainedEntityReadReferencesGroupedByDepth();
+	auto erbr = entity->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>();
 	return EntityManipulation::FlattenEntity(evaluableNodeManager, entity, erbr, include_rand_seeds, parallel_create);
 }
 

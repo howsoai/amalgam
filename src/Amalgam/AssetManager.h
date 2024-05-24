@@ -1,13 +1,17 @@
 #pragma once
 
 //project headers:
+#include "AmalgamVersion.h"
 #include "Entity.h"
 #include "EntityExternalInterface.h"
+#include "EntityManipulation.h"
 #include "EvaluableNode.h"
+#include "FilenameEscapeProcessor.h"
 #include "FileSupportCAML.h"
 #include "HashMaps.h"
 
 //system headers:
+#include <filesystem>
 #include <string>
 
 const std::string FILE_EXTENSION_AMLG_METADATA("mdam");
@@ -64,15 +68,139 @@ public:
 	// if persistent is true, then it will keep the resource updated based on any calls to UpdateEntity (will not make not persistent if was previously loaded as persistent)
 	// if all_contained_entities is nullptr, then it will be populated, as read locks are necessary for entities in multithreading
 	//returns true if successful
+	template<typename EntityReferenceType = EntityReadReference>
 	bool StoreEntityToResourcePath(Entity *entity, std::string &resource_path, std::string &file_type,
 		bool update_persistence_location, bool store_contained_entities,
 		bool escape_filename, bool escape_contained_filenames, bool sort_keys,
 		bool include_rand_seeds = true, bool parallel_create = false,
-		Entity::EntityReferenceBufferReference<EntityReadReference> *all_contained_entities = nullptr);
+		Entity::EntityReferenceBufferReference<EntityReferenceType> *all_contained_entities = nullptr)
+	{
+		if(entity == nullptr)
+			return false;
+
+		std::string resource_base_path;
+		std::string complete_resource_path;
+		PreprocessFileNameAndType(resource_path, file_type, escape_filename, resource_base_path, complete_resource_path);
+
+		Entity::EntityReferenceBufferReference<EntityReferenceType> erbr;
+		if(all_contained_entities == nullptr)
+		{
+			erbr = entity->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReferenceType>();
+			all_contained_entities = &erbr;
+		}
+
+		if(file_type == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
+		{
+			EvaluableNodeReference flattened_entity = EntityManipulation::FlattenEntity(&entity->evaluableNodeManager,
+				entity, *all_contained_entities, include_rand_seeds, parallel_create);
+
+			bool all_stored_successfully = AssetManager::StoreResourcePathFromProcessedResourcePaths(flattened_entity,
+				complete_resource_path, file_type, &entity->evaluableNodeManager, escape_filename, sort_keys);
+
+			entity->evaluableNodeManager.FreeNodeTreeIfPossible(flattened_entity);
+			return all_stored_successfully;
+		}
+
+		bool all_stored_successfully = AssetManager::StoreResourcePathFromProcessedResourcePaths(entity->GetRoot(),
+			complete_resource_path, file_type, &entity->evaluableNodeManager, escape_filename, sort_keys);
+
+		//store any metadata like random seed
+		std::string metadata_filename = resource_base_path + "." + FILE_EXTENSION_AMLG_METADATA;
+		EvaluableNode en_assoc(ENT_ASSOC);
+		EvaluableNode en_rand_seed(ENT_STRING, entity->GetRandomState());
+		EvaluableNode en_version(ENT_STRING, AMALGAM_VERSION_STRING);
+		en_assoc.SetMappedChildNode(ENBISI_rand_seed, &en_rand_seed);
+		en_assoc.SetMappedChildNode(ENBISI_version, &en_version);
+
+		std::string metadata_extension = FILE_EXTENSION_AMLG_METADATA;
+		//don't reescape the path here, since it has already been done
+		StoreResourcePathFromProcessedResourcePaths(&en_assoc, metadata_filename, metadata_extension, &entity->evaluableNodeManager, false, sort_keys);
+
+		//store contained entities
+		if(store_contained_entities && entity->GetContainedEntities().size() > 0)
+		{
+			std::error_code ec;
+			//create directory in case it doesn't exist
+			std::filesystem::create_directories(resource_base_path, ec);
+
+			//return that the directory could not be created
+			if(ec)
+				return false;
+
+			//store any contained entities
+			resource_base_path.append("/");
+			for(auto contained_entity : entity->GetContainedEntities())
+			{
+				std::string new_resource_path;
+				if(escape_contained_filenames)
+				{
+					const std::string &ce_escaped_filename = FilenameEscapeProcessor::SafeEscapeFilename(contained_entity->GetId());
+					new_resource_path = resource_base_path + ce_escaped_filename + "." + file_type;
+				}
+				else
+					new_resource_path = resource_base_path + contained_entity->GetId() + "." + file_type;
+
+				//don't escape filename again because it's already escaped in this loop
+				bool stored_successfully = StoreEntityToResourcePath(contained_entity, new_resource_path, file_type, false, true, false,
+					escape_contained_filenames, sort_keys, include_rand_seeds, parallel_create);
+				if(!stored_successfully)
+					return false;
+			}
+		}
+
+		if(update_persistence_location)
+		{
+			std::string new_persist_path = resource_base_path + "." + file_type;
+			SetEntityPersistentPath(entity, new_persist_path);
+		}
+
+		return all_stored_successfully;
+	}
 
 	//Indicates that the entity has been written to or updated, and so if the asset is persistent, the persistent copy should be updated
-	void UpdateEntity(Entity *entity);
+	template<typename EntityReferenceType = EntityReadReference>
+	void UpdateEntity(Entity *entity,
+		Entity::EntityReferenceBufferReference<EntityReferenceType> *all_contained_entities = nullptr)
+	{
+	#ifdef MULTITHREAD_INTERFACE
+		Concurrency::ReadLock lock(persistentEntitiesMutex);
+	#endif
+		//early out if no persistent entities
+		if(persistentEntities.size() == 0)
+			return;
+
+		Entity *cur = entity;
+		std::string slice_path;
+		std::string filename;
+		std::string extension;
+		std::string traversal_path;
+
+		while(cur != nullptr)
+		{
+			const auto &pe = persistentEntities.find(cur);
+			if(pe != end(persistentEntities))
+			{
+				Platform_SeparatePathFileExtension(pe->second, slice_path, filename, extension);
+				std::string new_path = slice_path + filename + traversal_path + "." + extension;
+
+				//the outermost file is already escaped, but persistent entities must be recursively escaped
+				StoreEntityToResourcePath(entity, new_path, extension,
+					false, false, false, true, false, true, false, all_contained_entities);
+			}
+
+			//don't need to continue and allocate extra traversal path if already at outermost entity
+			Entity *cur_container = cur->GetContainer();
+			if(cur_container == nullptr)
+				break;
+
+			std::string escaped_entity_id = FilenameEscapeProcessor::SafeEscapeFilename(cur->GetId());
+			traversal_path = "/" + escaped_entity_id + traversal_path;
+			cur = cur_container;
+		}
+	}
+
 	void CreateEntity(Entity *entity);
+
 	inline void DestroyEntity(Entity *entity)
 	{
 	#ifdef MULTITHREAD_INTERFACE

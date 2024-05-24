@@ -272,11 +272,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED(Evalu
 #ifdef MULTITHREAD_SUPPORT
 	if(deep_set)
 	{
-		auto contained_entities = entity->GetAllDeeplyContainedEntityWriteReferencesGroupedByDepth();
+		auto contained_entities = entity->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityWriteReference>();
 		if(contained_entities == nullptr)
 			return EvaluableNodeReference::Null();
 
-		entity->SetRandomState(seed_string, true, writeListeners);
+		entity->SetRandomState(seed_string, true, writeListeners, &contained_entities);
 	}
 	else
 #endif
@@ -537,7 +537,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DESTROY_ENTITIES(Evaluable
 		}
 
 		//lock all entities
-		auto contained_entities = entity->GetAllDeeplyContainedEntityWriteReferencesGroupedByDepth();
+		auto contained_entities = entity->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityWriteReference>();
 		if(contained_entities == nullptr)
 		{
 			all_destroys_successful = false;

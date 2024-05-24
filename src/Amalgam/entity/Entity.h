@@ -861,8 +861,7 @@ protected:
 		if(!hasContainedEntities)
 			return true;
 
-		constexpr bool write_reference = std::is_same<typename EntityReferenceType, EntityWriteReference>::value;
-		if constexpr(write_reference)
+		if constexpr(std::is_same<typename EntityReferenceType, EntityWriteReference>::value)
 		{
 			if(IsEntityCurrentlyBeingExecuted())
 				return false;
@@ -871,7 +870,7 @@ protected:
 		auto &contained_entities = GetContainedEntities();
 		for(Entity *e : contained_entities)
 		{
-			if constexpr(write_reference)
+			if constexpr(std::is_same<typename EntityReferenceType, EntityWriteReference>::value)
 				entityWriteReferenceBuffer.emplace_back(e);
 			else
 				entityReadReferenceBuffer.emplace_back(e);

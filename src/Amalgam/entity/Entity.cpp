@@ -807,7 +807,9 @@ void Entity::CreateQueryCaches()
 		entityRelationships.relationships->queryCaches = std::make_unique<EntityQueryCaches>(this);
 }
 
-void Entity::SetRandomState(const std::string &new_state, bool deep_set_seed, std::vector<EntityWriteListener *> *write_listeners)
+void Entity::SetRandomState(const std::string &new_state, bool deep_set_seed,
+	std::vector<EntityWriteListener *> *write_listeners,
+	Entity::EntityReferenceBufferReference<EntityWriteReference> *all_contained_entities)
 {
 	randomStream.SetState(new_state);
 
@@ -816,13 +818,14 @@ void Entity::SetRandomState(const std::string &new_state, bool deep_set_seed, st
 		for(auto &wl : *write_listeners)
 			wl->LogSetEntityRandomSeed(this, new_state, false);
 
-		asset_manager.UpdateEntity(this);
+		asset_manager.UpdateEntity(this, all_contained_entities);
 	}
 
 	if(deep_set_seed)
 	{
 		for(auto entity : GetContainedEntities())
-			entity->SetRandomState(randomStream.CreateOtherStreamStateViaString(entity->GetId()), true, write_listeners);
+			entity->SetRandomState(randomStream.CreateOtherStreamStateViaString(entity->GetId()), true,
+				write_listeners, all_contained_entities);
 	}
 }
 
@@ -986,38 +989,4 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 
 		asset_manager.UpdateEntity(this);
 	}
-}
-
-void Entity::GetAllDeeplyContainedEntityReadReferencesGroupedByDepthRecurse()
-{
-	if(!hasContainedEntities)
-		return;
-
-	auto &contained_entities = GetContainedEntities();
-	for(Entity *e : contained_entities)
-		entityReadReferenceBuffer.emplace_back(e);
-
-	for(auto &ce : contained_entities)
-		ce->GetAllDeeplyContainedEntityReadReferencesGroupedByDepthRecurse();
-}
-
-bool Entity::GetAllDeeplyContainedEntityWriteReferencesGroupedByDepthRecurse()
-{
-	if(!hasContainedEntities)
-		return true;
-
-	if(IsEntityCurrentlyBeingExecuted())
-		return false;
-
-	auto &contained_entities = GetContainedEntities();
-	for(Entity *e : contained_entities)
-		entityWriteReferenceBuffer.emplace_back(e);
-
-	for(auto &ce : contained_entities)
-	{
-		if(!ce->GetAllDeeplyContainedEntityWriteReferencesGroupedByDepthRecurse())
-			return false;
-	}
-
-	return true;
 }

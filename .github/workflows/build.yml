@@ -55,6 +55,13 @@ jobs:
     - name: CMake Test
       run: cmake --build --preset $PRESET --target test
 
+    - name: Upload Test Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}
+        path: ./out/test/*
+
     - name: CMake Install
       run: cmake --build --preset $PRESET --target install
 
@@ -125,6 +132,13 @@ jobs:
     - name: CMake Test
       run: cmake --build --preset $PRESET --target test
 
+    - name: Upload Test Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}
+        path: ./out/test/*
+
     - name: CMake Install
       run: cmake --build --preset $PRESET --target install
 
@@ -191,7 +205,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: test-results-windows
+        name: test-results-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}
         path: ./out/test/*
 
     - name: CMake Install

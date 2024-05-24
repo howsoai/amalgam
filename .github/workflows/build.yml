@@ -188,6 +188,7 @@ jobs:
       run: cmake --build --preset $PRESET --target test
 
     - name: Upload Test Results
+      if: always()
       uses: actions/upload-artifact@v4
       with:
         name: test-results-windows

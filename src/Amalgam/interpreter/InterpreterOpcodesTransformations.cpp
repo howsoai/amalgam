@@ -855,8 +855,39 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
 
-	if(ocn.size() == 1)
+	EvaluableNodeReference function;
+	size_t highest_k = 0;
+	size_t lowest_k = 0;
+
+	if(ocn.size() == 3)
 	{
+		double k = InterpretNodeIntoNumberValue(ocn[3]);
+		if(k > 0)
+			highest_k = static_cast<size_t>(k);
+		else if(k < 0)
+			lowest_k = static_cast<size_t>(-k);
+		//else nan, leave both as zero
+	}
+	
+	if(ocn.size() >= 2)
+		function = InterpretNodeForImmediateUse(ocn[0]);
+
+	//TODO 20397: finish below
+	if(EvaluableNode::IsNull(function))
+	{
+		if(highest_k > 0)
+		{
+
+		}
+		else if(lowest_k > 0)
+		{
+
+		}
+		else
+		{
+
+		}
+
 		//get list
 		auto list = InterpretNode(ocn[0]);
 		if(list == nullptr)
@@ -871,6 +902,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 	}
 	else
 	{
+		//TODO 20397: check for null method, if so, just use default sorting, which may be this:
+		//std::partial_sort(begin(...), begin(...) + top_k, end(...))
+
 		//get function to apply to list
 		auto function = InterpretNodeForImmediateUse(ocn[0]);
 		if(function == nullptr)
@@ -891,6 +925,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 		//sort list; can't use the C++ sort function because it requires weak ordering and will crash otherwise
 		// the custom comparator does not guarantee this
 		std::vector<EvaluableNode *> sorted = CustomEvaluableNodeOrderedChildNodesSort(list->GetOrderedChildNodes(), comparator);
+
+		//TODO 20397: do a swap to reduce the number of mallocs
 		list->SetOrderedChildNodes(sorted);
 
 		return list;

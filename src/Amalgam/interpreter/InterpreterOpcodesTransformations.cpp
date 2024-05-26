@@ -855,13 +855,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
 
+	size_t list_index = (ocn.size() == 1 ? 0 : 1);
+
 	EvaluableNodeReference function;
 	size_t highest_k = 0;
 	size_t lowest_k = 0;
 
 	if(ocn.size() == 3)
 	{
-		double k = InterpretNodeIntoNumberValue(ocn[3]);
+		double k = InterpretNodeIntoNumberValue(ocn[2]);
 		if(k > 0)
 			lowest_k = static_cast<size_t>(k);
 		else if(k < 0)
@@ -875,7 +877,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 	if(EvaluableNode::IsNull(function))
 	{
 		//get list
-		auto list = InterpretNode(ocn[0]);
+		auto list = InterpretNode(ocn[list_index]);
 		if(list == nullptr)
 			return EvaluableNodeReference::Null();
 
@@ -890,14 +892,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 				begin(list_ocn) + highest_k,
 				end(list_ocn), EvaluableNode::IsStrictlyGreaterThan);
 
-			list_ocn.erase(begin(list_ocn), begin(list_ocn) + lowest_k);
+			list_ocn.erase(begin(list_ocn) + highest_k, end(list_ocn));
 		}
 		else if(lowest_k > 0 && lowest_k < list_ocn.size())
 		{
 			std::partial_sort(begin(list_ocn), begin(list_ocn) + lowest_k,
 				end(list_ocn), EvaluableNode::IsStrictlyLessThan);
 
-			list_ocn.erase(begin(list_ocn), begin(list_ocn) + lowest_k);
+			list_ocn.erase(begin(list_ocn) + lowest_k, end(list_ocn));
 		}
 		else
 		{
@@ -911,7 +913,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 		auto node_stack = CreateInterpreterNodeStackStateSaver(function);
 		
 		//get list
-		auto list = InterpretNode(ocn[1]);
+		auto list = InterpretNode(ocn[list_index]);
 		if(list == nullptr)
 			return EvaluableNodeReference::Null();
 
@@ -926,14 +928,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 		// the custom comparator does not guarantee this
 		std::vector<EvaluableNode *> sorted = CustomEvaluableNodeOrderedChildNodesSort(list->GetOrderedChildNodes(), comparator);
 
-		if(highest_k > 0 && highest_k < list_ocn.size())
+		if(highest_k > 0 && highest_k < sorted.size())
 		{
-			list_ocn.erase(begin(list_ocn), begin(list_ocn) + highest_k);
-			std::reverse(begin(list_ocn), end(list_ocn));
+			sorted.erase(begin(sorted), begin(sorted) + (sorted.size() - highest_k));
+			std::reverse(begin(sorted), end(sorted));
 		}
-		else if(lowest_k > 0 && lowest_k < list_ocn.size())
+		else if(lowest_k > 0 && lowest_k < sorted.size())
 		{
-			list_ocn.erase(begin(list_ocn), begin(list_ocn) + lowest_k);
+			sorted.erase(begin(sorted) + lowest_k, end(sorted));
 		}
 
 		list->SetOrderedChildNodes(sorted);

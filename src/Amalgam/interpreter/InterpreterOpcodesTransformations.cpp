@@ -863,31 +863,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 	{
 		double k = InterpretNodeIntoNumberValue(ocn[3]);
 		if(k > 0)
-			highest_k = static_cast<size_t>(k);
+			lowest_k = static_cast<size_t>(k);
 		else if(k < 0)
-			lowest_k = static_cast<size_t>(-k);
+			highest_k = static_cast<size_t>(-k);
 		//else nan, leave both as zero
 	}
 	
 	if(ocn.size() >= 2)
 		function = InterpretNodeForImmediateUse(ocn[0]);
 
-	//TODO 20397: finish below
 	if(EvaluableNode::IsNull(function))
 	{
-		if(highest_k > 0)
-		{
-
-		}
-		else if(lowest_k > 0)
-		{
-
-		}
-		else
-		{
-
-		}
-
 		//get list
 		auto list = InterpretNode(ocn[0]);
 		if(list == nullptr)
@@ -896,22 +882,34 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 		//make sure it is an editable copy
 		evaluableNodeManager->EnsureNodeIsModifiable(list);
 
-		std::sort(begin(list->GetOrderedChildNodes()), end(list->GetOrderedChildNodes()), EvaluableNode::IsStrictlyLessThan);
+		auto &list_ocn = list->GetOrderedChildNodes();
+
+		if(highest_k > 0 && highest_k < list_ocn.size())
+		{
+			std::partial_sort(begin(list_ocn),
+				begin(list_ocn) + highest_k,
+				end(list_ocn), EvaluableNode::IsStrictlyGreaterThan);
+
+			list_ocn.erase(begin(list_ocn), begin(list_ocn) + lowest_k);
+		}
+		else if(lowest_k > 0 && lowest_k < list_ocn.size())
+		{
+			std::partial_sort(begin(list_ocn), begin(list_ocn) + lowest_k,
+				end(list_ocn), EvaluableNode::IsStrictlyLessThan);
+
+			list_ocn.erase(begin(list_ocn), begin(list_ocn) + lowest_k);
+		}
+		else
+		{
+			std::sort(begin(list_ocn), end(list_ocn), EvaluableNode::IsStrictlyLessThan);
+		}
 
 		return list;
 	}
 	else
 	{
-		//TODO 20397: check for null method, if so, just use default sorting, which may be this:
-		//std::partial_sort(begin(...), begin(...) + top_k, end(...))
-
-		//get function to apply to list
-		auto function = InterpretNodeForImmediateUse(ocn[0]);
-		if(function == nullptr)
-			return EvaluableNodeReference::Null();
-
 		auto node_stack = CreateInterpreterNodeStackStateSaver(function);
-
+		
 		//get list
 		auto list = InterpretNode(ocn[1]);
 		if(list == nullptr)
@@ -920,13 +918,24 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 		//make sure it is an editable copy
 		evaluableNodeManager->EnsureNodeIsModifiable(list);
 
+		auto &list_ocn = list->GetOrderedChildNodes();
+
 		CustomEvaluableNodeComparator comparator(this, function, list);
 
 		//sort list; can't use the C++ sort function because it requires weak ordering and will crash otherwise
 		// the custom comparator does not guarantee this
 		std::vector<EvaluableNode *> sorted = CustomEvaluableNodeOrderedChildNodesSort(list->GetOrderedChildNodes(), comparator);
 
-		//TODO 20397: do a swap to reduce the number of mallocs
+		if(highest_k > 0 && highest_k < list_ocn.size())
+		{
+			list_ocn.erase(begin(list_ocn), begin(list_ocn) + highest_k);
+			std::reverse(begin(list_ocn), end(list_ocn));
+		}
+		else if(lowest_k > 0 && lowest_k < list_ocn.size())
+		{
+			list_ocn.erase(begin(list_ocn), begin(list_ocn) + lowest_k);
+		}
+
 		list->SetOrderedChildNodes(sorted);
 
 		return list;

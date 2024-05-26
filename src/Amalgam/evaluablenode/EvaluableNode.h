@@ -274,6 +274,11 @@ public:
 		return IsLessThan(a, b, false);
 	}
 
+	static inline bool IsStrictlyGreaterThan(EvaluableNode *a, EvaluableNode *b)
+	{
+		return !IsLessThan(a, b, true);
+	}
+
 	//if the node's contents can be represented as a number, which includes numbers, infinity, and even null and NaN, then return true
 	// otherwise returns false
 	static constexpr bool CanRepresentValueAsANumber(EvaluableNode *e)

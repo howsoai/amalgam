@@ -272,7 +272,7 @@ public:
 		if(FastIsNaN(q_percentage) || q_percentage < 0.0 || q_percentage > 1.0)
 			return std::numeric_limits<double>::quiet_NaN();
 
-		std::vector<std::pair<double,double>>& value_weights = values_buffer;
+		std::vector<std::pair<double,double>> &value_weights = values_buffer;
 		value_weights.clear();
 		double total_weight = 0.0;
 		bool eq_or_no_weights = true;

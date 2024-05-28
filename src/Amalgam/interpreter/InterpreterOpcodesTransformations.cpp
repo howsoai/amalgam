@@ -892,12 +892,24 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 				begin(list_ocn) + highest_k,
 				end(list_ocn), EvaluableNode::IsStrictlyGreaterThan);
 
+			if(list.unique && !list->GetNeedCycleCheck())
+			{
+				for(size_t i = highest_k; i < list_ocn.size(); i++)
+					evaluableNodeManager->FreeNodeTree(list_ocn[i]);
+			}
+
 			list_ocn.erase(begin(list_ocn) + highest_k, end(list_ocn));
 		}
 		else if(lowest_k > 0 && lowest_k < list_ocn.size())
 		{
 			std::partial_sort(begin(list_ocn), begin(list_ocn) + lowest_k,
 				end(list_ocn), EvaluableNode::IsStrictlyLessThan);
+
+			if(list.unique && !list->GetNeedCycleCheck())
+			{
+				for(size_t i = lowest_k; i < list_ocn.size(); i++)
+					evaluableNodeManager->FreeNodeTree(list_ocn[i]);
+			}
 
 			list_ocn.erase(begin(list_ocn) + lowest_k, end(list_ocn));
 		}
@@ -919,8 +931,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 
 		//make sure it is an editable copy
 		evaluableNodeManager->EnsureNodeIsModifiable(list);
-
-		auto &list_ocn = list->GetOrderedChildNodes();
 
 		CustomEvaluableNodeComparator comparator(this, function, list);
 

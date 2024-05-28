@@ -232,15 +232,15 @@ void Parser::SkipWhitespaceAndAccumulateAttributes(EvaluableNode *target)
 	while(pos < code->size())
 	{
 		//eat any whitespace
-		if(StringManipulation::IsUtf8Whitespace(*code, pos))
+		if(size_t space_size = StringManipulation::IsUtf8Whitespace(*code, pos); space_size > 0)
 		{
-			if(StringManipulation::IsUtf8Newline(*code, pos))
+			if(StringManipulation::IsUtf8Newline(*code, pos) > 0)
 			{
 				lineNumber++;
-				lineStartPos = pos + 1;
+				lineStartPos = pos + space_size;
 			}
 
-			pos++;
+			pos += space_size;
 			continue;
 		}
 

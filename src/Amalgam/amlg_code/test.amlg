@@ -1,8 +1,1 @@
-(seq
- (print (sort (null) (list 4 9 3 5 1) 2))
- (print (sort (null) (list 4 9 3 5 1) -2))
-
- (print (sort (lambda (- (current_value) (current_value 1))) (list 4 9 3 5 1) 2))
- (print (sort (lambda (- (current_value) (current_value 1))) (list 4 9 3 5 1) -2))
-
-)
+﻿(6)

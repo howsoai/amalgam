@@ -114,6 +114,11 @@ public:
 		return value.nodeType != ENIVT_CODE;
 	}
 
+	constexpr bool IsNonNullNodeReference()
+	{
+		return (value.nodeType == ENIVT_CODE && value.nodeValue.code != nullptr);
+	}
+
 	constexpr EvaluableNodeImmediateValueWithType &GetValue()
 	{
 		return value;

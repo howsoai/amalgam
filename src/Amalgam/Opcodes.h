@@ -20,6 +20,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_PARALLEL,
 	ENT_LAMBDA,
 	ENT_CONCLUDE,
+	ENT_RETURN,
 	ENT_CALL,
 	ENT_CALL_SANDBOXED,
 	ENT_WHILE,
@@ -370,7 +371,7 @@ constexpr OrderedChildNodeType GetInstructionOrderedChildNodeType(EvaluableNodeT
 		return OCNT_ONE_POSITION_THEN_PAIRED;
 
 	case ENT_PARSE:						case ENT_UNPARSE:			case ENT_IF:				case ENT_LAMBDA:
-	case ENT_CONCLUDE:
+	case ENT_CONCLUDE:					case ENT_RETURN:
 	case ENT_CALL:						case ENT_CALL_SANDBOXED:
 	case ENT_RETRIEVE:
 	case ENT_GET:
@@ -487,7 +488,7 @@ constexpr bool IsEvaluableNodeTypePotentiallyIdempotent(EvaluableNodeType type)
 	return (type == ENT_NUMBER || type == ENT_STRING
 		|| type == ENT_TRUE || type == ENT_FALSE
 		|| type == ENT_NULL || type == ENT_LIST || type == ENT_ASSOC
-		|| type == ENT_CONCLUDE
+		|| type == ENT_CONCLUDE || type == ENT_RETURN
 		|| IsEvaluableNodeTypeQuery(type));
 }
 

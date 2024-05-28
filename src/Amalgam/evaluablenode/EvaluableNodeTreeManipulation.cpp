@@ -1896,6 +1896,7 @@ CompactHashMap<EvaluableNodeType, double> EvaluableNodeTreeManipulation::evaluab
 	{ENT_PARALLEL,										0.5},
 	{ENT_LAMBDA,										1.5},
 	{ENT_CONCLUDE,										0.05},
+	{ENT_RETURN,										0.05},
 	{ENT_CALL,											1.5},
 	{ENT_CALL_SANDBOXED,								0.25},
 	{ENT_WHILE,											0.1},

@@ -306,18 +306,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_IF(EvaluableNode *en, bool
 	return EvaluableNodeReference::Null();
 }
 
-//removes the conclude node from the top of the conclusion and, if possible, will free it, saving memory
-inline EvaluableNodeReference RemoveConcludeFromConclusion(EvaluableNodeReference result, EvaluableNodeManager *enm)
-{
-	if(result == nullptr || result->GetOrderedChildNodes().size() == 0)
-		return EvaluableNodeReference::Null();
-
-	EvaluableNode *conclusion = result->GetOrderedChildNodes()[0];
-	enm->FreeNodeIfPossible(result);
-
-	return EvaluableNodeReference(conclusion, result.unique);
-}
-
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SEQUENCE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
@@ -326,11 +314,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SEQUENCE(EvaluableNode *en
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
 	for(size_t i = 0; i < ocn_size; i++)
 	{
-		if(!result.IsImmediateValue() && result != nullptr && result->GetType() == ENT_CONCLUDE)
-			return RemoveConcludeFromConclusion(result, evaluableNodeManager);
+		if(result.IsNonNullNodeReference())
+		{
+			auto result_type = result->GetType();
+			if(result_type == ENT_CONCLUDE)
+				return RemoveTopConcludeOrReturnNode(result, evaluableNodeManager);
+			else if(result_type == ENT_RETURN)
+				return result;
+		}
 
 		//free from previous iteration
 		evaluableNodeManager->FreeNodeTreeIfPossible(result);
+
 		//request immediate values when not last, since any allocs for returns would be wasted
 		//concludes won't be immediate
 		result = InterpretNode(ocn[i], immediate_result || i + 1 < ocn_size);
@@ -425,7 +420,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAMBDA(EvaluableNode *en, 
 	}
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCLUDE(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCLUDE_and_RETURN(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -437,14 +432,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCLUDE(EvaluableNode *en
 	if(en->GetIsIdempotent())
 		return evaluableNodeManager->DeepAllocCopy(en, EvaluableNodeManager::ENMM_REMOVE_ALL);
 
-	EvaluableNodeReference conclusion_value = InterpretNode(ocn[0]);
+	EvaluableNodeReference value = InterpretNode(ocn[0]);
 
 	//need to evaluate its parameter and return a new node encapsulating it
-	EvaluableNodeReference conclusion(evaluableNodeManager->AllocNode(ENT_CONCLUDE), true);
-	conclusion->AppendOrderedChildNode(conclusion_value);
-	conclusion.UpdatePropertiesBasedOnAttachedNode(conclusion_value);
+	auto node_type = en->GetType();
+	EvaluableNodeReference result(evaluableNodeManager->AllocNode(node_type), true);
+	result->AppendOrderedChildNode(value);
+	result.UpdatePropertiesBasedOnAttachedNode(value);
 
-	return conclusion;
+	return result;
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, bool immediate_result)
@@ -471,15 +467,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, bo
 	PushNewCallStack(new_context);
 	
 	//call the code
-	auto retval = InterpretNode(function, immediate_result);
+	auto result = InterpretNode(function, immediate_result);
 
 	//all finished with new context, but can't free it in case returning something
 	PopCallStack();
 
+	//call opcodes should consume the outer return opcode if there is one
+	if(result.IsNonNullNodeReference() && result->GetType() == ENT_RETURN)
+		result = RemoveTopConcludeOrReturnNode(result, evaluableNodeManager);
+
 	if(_label_profiling_enabled && function->GetNumLabels() > 0)
 		PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
 
-	return retval;
+	return result;
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNode *en, bool immediate_result)
@@ -567,6 +567,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 
 	curExecutionStep += sandbox.curExecutionStep;
 
+	//call opcodes should consume the outer return opcode if there is one
+	if(result.IsNonNullNodeReference() && result->GetType() == ENT_RETURN)
+		result = RemoveTopConcludeOrReturnNode(result, evaluableNodeManager);
+
 	if(_label_profiling_enabled && function->GetNumLabels() > 0)
 		PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
 
@@ -613,14 +617,22 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, b
 			//cannot be evaulated as immediate
 			new_result = InterpretNode(ocn[i], i + 1 < ocn_size);
 
-			if(!new_result.IsImmediateValue() && new_result != nullptr && new_result->GetType() == ENT_CONCLUDE)
+			if(new_result.IsNonNullNodeReference())
 			{
-				//if previous result is unconsumed, free if possible
-				previous_result = GetAndClearPreviousResultInConstructionStack(0);
-				evaluableNodeManager->FreeNodeTreeIfPossible(previous_result);
+				auto new_result_type = new_result->GetType();
+				if(new_result_type == ENT_CONCLUDE || new_result_type == ENT_RETURN)
+				{
+					//if previous result is unconsumed, free if possible
+					previous_result = GetAndClearPreviousResultInConstructionStack(0);
+					evaluableNodeManager->FreeNodeTreeIfPossible(previous_result);
 
-				PopConstructionContext();
-				return RemoveConcludeFromConclusion(new_result, evaluableNodeManager);
+					PopConstructionContext();
+
+					if(new_result_type == ENT_CONCLUDE)
+						return RemoveTopConcludeOrReturnNode(new_result, evaluableNodeManager);
+					else if(new_result_type == ENT_RETURN)
+						return new_result;
+				}
 			}
 
 			//don't free the last new_result
@@ -654,14 +666,24 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, boo
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
 	for(size_t i = 1; i < ocn_size; i++)
 	{
-		if(!result.IsImmediateValue() && result != nullptr && result->GetType() == ENT_CONCLUDE)
+		if(result.IsNonNullNodeReference())
 		{
-			PopCallStack();
-			return RemoveConcludeFromConclusion(result, evaluableNodeManager);
+			auto result_type = result->GetType();
+			if(result_type == ENT_CONCLUDE)
+			{
+				PopCallStack();
+				return RemoveTopConcludeOrReturnNode(result, evaluableNodeManager);
+			}
+			else if(result_type == ENT_RETURN)
+			{
+				PopCallStack();
+				return result;
+			}
 		}
 
 		//free from previous iteration
 		evaluableNodeManager->FreeNodeTreeIfPossible(result);
+
 		//request immediate values when not last, since any allocs for returns would be wasted
 		//concludes won't be immediate
 		result = InterpretNode(ocn[i], immediate_result || i + 1 < ocn_size);
@@ -669,7 +691,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, boo
 
 	//all finished with new context, but can't free it in case returning something
 	PopCallStack();
-
 	return result;
 }
 
@@ -791,11 +812,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 	//run code 
 	for(size_t i = 1; i < ocn_size; i++)
 	{
-		if(!result.IsImmediateValue() && result != nullptr && result->GetType() == ENT_CONCLUDE)
-			return RemoveConcludeFromConclusion(result, evaluableNodeManager);
+		if(result.IsNonNullNodeReference())
+		{
+			auto result_type = result->GetType();
+			if(result_type == ENT_CONCLUDE)
+				return RemoveTopConcludeOrReturnNode(result, evaluableNodeManager);
+			else if(result_type == ENT_RETURN)
+				return result;
+		}
 
 		//free from previous iteration
 		evaluableNodeManager->FreeNodeTreeIfPossible(result);
+
 		//request immediate values when not last, since any allocs for returns would be wasted
 		//concludes won't be immediate
 		result = InterpretNode(ocn[i], immediate_result || i + 1 < ocn_size);

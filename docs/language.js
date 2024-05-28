@@ -52,7 +52,7 @@ var data = [
 	{
 		"parameter" : "seq [code c1] [code c2] ... [code cN]",
 		"output" : "*",
-		"description" : "Runs each code block sequentially. Evaluates to the result of the last code block run, unless it encounters a conclude in an earlier step, in which case it will halt processing and evaluate to the value returned by conclude. Note that the last step will not consume a concluded value.",
+		"description" : "Runs each code block sequentially. Evaluates to the result of the last code block run, unless it encounters a conclude or return in an earlier step, in which case it will halt processing and evaluate to the value returned by conclude or propagate the return. Note that the last step will not consume a concluded value.",
 		"example" : "(seq (print 1) (print 2) (print 3))"
 	},
 
@@ -74,8 +74,15 @@ var data = [
 	{
 		"parameter" : "conclude * conclusion",
 		"output" : "*",
-		"description" : "Evaluates to the conclusion wrapped in a conclude opcode.  If a step in a seq, let, declare, or while evaluates to a conclude (excluding variable declarations for let and declare, the last step in set, let, and declare, or the condition of while), then it will conclude the execution and evaluate to the value conclusion.  Note that conclude opcodes may be nested to break out of outer opcodes",
+		"description" : "Evaluates to the conclusion wrapped in a conclude opcode.  If a step in a seq, let, declare, or while evaluates to a conclude (excluding variable declarations for let and declare, the last step in set, let, and declare, or the condition of while), then it will conclude the execution and evaluate to the value conclusion.  Note that conclude opcodes may be nested to break out of outer opcodes.",
 		"example" : "(print (seq (print \"seq1 \") (conclude \"success\") (print \"seq2\") ) )"
+	},
+	
+	{
+		"parameter" : "return * return_value",
+		"output" : "*",
+		"description" : "Evaluates to return_value wrapped in a return opcode.  If a step in a seq, let, declare, or while evaluates to a return (excluding variable declarations for let and declare, the last step in set, let, and declare, or the condition of while), then it will conclude the execution and evaluate to the value return_value.  Note that return opcodes may be nested to break out of outer opcodes.",
+		"example" : " (print (call (seq 1 2 (seq (return 3) 4) 5)) \"\\n\")"
 	},
 
 	{
@@ -98,7 +105,7 @@ var data = [
 		"parameter" : "while bool condition [code code1] [code code2] ... [code codeN]",
 		"output" : "*",
 		"new target scope": true,
-		"description" : "Each time the condition evaluates to true, it runs each of the code trees sequentially, looping. Evaluates to the last codeN or null if the condition was initially false or if it encounters a conclude, it will halt processing and evaluate to the value returned by conclude.  For iteration of the loop, pushes a new target scope onto the target stack, with current_index being the iteration count, and previous_result being the last evaluated codeN of the previous loop.",
+		"description" : "Each time the condition evaluates to true, it runs each of the code trees sequentially, looping. Evaluates to the last codeN or null if the condition was initially false or if it encounters a conclude or return, it will halt processing and evaluate to the value returned by conclude or propagate the return.  For iteration of the loop, pushes a new target scope onto the target stack, with current_index being the iteration count, and previous_result being the last evaluated codeN of the previous loop.",
 		"example" : "(let (assoc zz 1)\n  (while (< zz 10)\n    (print zz)\n    (assign (assoc zz (+ zz 1)))\n  )\n)"
 	},
 
@@ -106,14 +113,14 @@ var data = [
 		"parameter" : "let assoc data [code function1] [code function2] ... [code functionN]",
 		"output" : "*",
 		"new scope" : true,
-		"description" : "Pushes the key-value pairs of data onto the scope stack so that they become the new variables, then runs each code block sequentially, evaluating to the last code block run, unless it encounters a conclude, in which case it will halt processing and evaluate to the value returned by conclude.  Note that the last step will not consume a concluded value.",
+		"description" : "Pushes the key-value pairs of data onto the scope stack so that they become the new variables, then runs each code block sequentially, evaluating to the last code block run, unless it encounters a conclude or return, in which case it will halt processing and evaluate to the value returned by conclude or propagate the return.  Note that the last step will not consume a concluded value.",
 		"example" : "(let (assoc x 4 y 6) (print (+ x y)))"
 	},
 
 	{
 		"parameter" : "declare assoc data [code function1] [code function2] ... [code functionN]",
 		"output" : "*",
-		"description" : "For each key-value pair of data, if not already in the current context in the scope stack, it will define them.  Then runs each code block sequentially, evaluating to the last code block run, unless it encounters a conclude, in which case it will halt processing and evaluate to the value returned by conclude.  Note that the last step will not consume a concluded value.",
+		"description" : "For each key-value pair of data, if not already in the current context in the scope stack, it will define them.  Then runs each code block sequentially, evaluating to the last code block run, unless it encounters a conclude or return, in which case it will halt processing and evaluate to the value returned by conclude or propagate the return.  Note that the last step will not consume a concluded value.",
 		"example" : "(let (assoc x 4 y 6)\n  (declare (assoc x 5 z 1)\n    (print (+ x y z)) )\n)"
 	},
 

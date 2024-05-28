@@ -277,3 +277,21 @@ inline EvaluableNodeReference CreateListOfStringsFromIteratorAndFunction(StringC
 
 	return EvaluableNodeReference(list, true);
 }
+
+//removes the top conclude or return node and, if possible, will free it, saving memory
+inline EvaluableNodeReference RemoveTopConcludeOrReturnNode(EvaluableNodeReference result, EvaluableNodeManager *enm)
+{
+	if(result == nullptr)
+		return EvaluableNodeReference::Null();
+
+	if(result->GetOrderedChildNodes().size() == 0)
+	{
+		enm->FreeNodeTreeIfPossible(result);
+		return EvaluableNodeReference::Null();
+	}
+
+	EvaluableNode *conclusion = result->GetOrderedChildNodes()[0];
+	enm->FreeNodeIfPossible(result);
+
+	return EvaluableNodeReference(conclusion, result.unique);
+}

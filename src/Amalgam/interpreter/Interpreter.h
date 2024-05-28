@@ -703,7 +703,7 @@ protected:
 	EvaluableNodeReference InterpretNode_ENT_SEQUENCE(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_PARALLEL(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_LAMBDA(EvaluableNode *en, bool immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_CONCLUDE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_CONCLUDE_and_RETURN(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_CALL(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_CALL_SANDBOXED(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_WHILE(EvaluableNode *en, bool immediate_result);

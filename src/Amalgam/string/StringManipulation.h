@@ -24,13 +24,14 @@ namespace StringManipulation
 	//to only contain the portion of the string after the removed section
 	std::vector<std::string> SplitArgString(std::string &arg_string, bool greedy = true);
 
-	//returns true if the character in the string s starting at position is whitespace
-	inline bool IsUtf8Whitespace(std::string &s, size_t position)
+	//returns the number of bytes wide the character in position of string s is if it is whitespace,
+	// 0 if it is not a newline
+	inline size_t IsUtf8Whitespace(std::string &s, size_t position)
 	{
 		auto cur_char = s[position];
 		if(cur_char == '\t' || cur_char == '\n' || cur_char == '\v' || cur_char == '\f'
-			|| cur_char == '\r' || cur_char == ' ')
-			return true;
+				|| cur_char == '\r' || cur_char == ' ')
+			return 1;
 
 		//need to additionally check the following multicharacter utf-8 code points:
 		//name							hex			dec		bytes
@@ -53,19 +54,21 @@ namespace StringManipulation
 		// medium mathematical space	U + 205F	8287	0xE2 0x81 0x9F
 		// ideographic space			U + 3000	12288	0xE3 0x80 0x80
 
+		//need at least 2 characters for the remaining whitespace possibilities
 		if(position + 2 >= s.size())
-			return false;
+			return 0;
 
 		if(static_cast<uint8_t>(cur_char) == 0xC2 && static_cast<uint8_t>(s[position + 1]) == 0xA0)
-			return true;
+			return 2;
 
-		//need 3 characters for the remaining
+		//need 3 characters for the remaining whitespace possibilities
 		if(position + 3 >= s.size())
-			return false;
+			return 0;
 
-		if(static_cast<uint8_t>(cur_char) == 0xE1 && static_cast<uint8_t>(s[position + 1]) == 0x9A
-			&& static_cast<uint8_t>(s[position + 2]) == 0x80)
-			return true;
+		if(static_cast<uint8_t>(cur_char) == 0xE1
+				&& static_cast<uint8_t>(s[position + 1]) == 0x9A
+				&& static_cast<uint8_t>(s[position + 2]) == 0x80)
+			return 3;
 
 		if(static_cast<uint8_t>(cur_char) == 0xE2)
 		{
@@ -73,19 +76,20 @@ namespace StringManipulation
 			{
 				uint8_t third_char = s[position + 2];
 				if(third_char >= 0x80 && third_char <= 0xAF)
-					return true;
+					return 3;
 			}
 			else if(static_cast<uint8_t>(s[position + 1]) == 0x81 && static_cast<uint8_t>(s[position + 2]) == 0x9F)
 			{
-				return true;
+				return 3;
 			}
 		}
 
-		if(static_cast<uint8_t>(cur_char) == 0xE3 && static_cast<uint8_t>(s[position + 1]) == 0x80
-			&& static_cast<uint8_t>(s[position + 2]) == 0x80)
-			return true;
+		if(static_cast<uint8_t>(cur_char) == 0xE3
+				&& static_cast<uint8_t>(s[position + 1]) == 0x80
+				&& static_cast<uint8_t>(s[position + 2]) == 0x80)
+			return 3;
 
-		return false;
+		return 0;
 	}
 
 	//returns true if c is a numeric digit
@@ -94,13 +98,14 @@ namespace StringManipulation
 		return (c >= '0' && c <= '9');
 	}
 
-	//returns true if the character in the string s starting at position is a newline
-	inline bool IsUtf8Newline(std::string &s, size_t position)
+	//returns the number of bytes wide the character in position of string s is if it is a newline,
+	// 0 if it is not a newline
+	inline size_t IsUtf8Newline(std::string &s, size_t position)
 	{
 		auto cur_char = s[position];
 		//don't count carriage returns (\r) as new lines, since it just moves the cursor
 		if(cur_char == '\n' || cur_char == '\v' || cur_char == '\f')
-			return true;
+			return 1;
 
 		if(position + 3 < s.size())
 		{
@@ -108,14 +113,14 @@ namespace StringManipulation
 			{
 				//line separator
 				if(static_cast<uint8_t>(s[position + 1]) == 0x80 && static_cast<uint8_t>(s[position + 2]) == 0xA8)
-					return true;
+					return 3;
 				//paragraph separator
 				else if(static_cast<uint8_t>(s[position + 1]) == 0x80 && static_cast<uint8_t>(s[position + 2]) == 0xA9)
-					return true;
+					return 3;
 			}
 		}
 
-		return false;
+		return 0;
 	}
 
 	//returns the length of the UTF-8 character in s starting at the specified offset

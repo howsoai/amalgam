@@ -855,31 +855,77 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
 
-	if(ocn.size() == 1)
+	size_t list_index = (ocn.size() == 1 ? 0 : 1);
+
+	EvaluableNodeReference function;
+	size_t highest_k = 0;
+	size_t lowest_k = 0;
+
+	if(ocn.size() == 3)
+	{
+		double k = InterpretNodeIntoNumberValue(ocn[2]);
+		if(k > 0)
+			lowest_k = static_cast<size_t>(k);
+		else if(k < 0)
+			highest_k = static_cast<size_t>(-k);
+		//else nan, leave both as zero
+	}
+	
+	if(ocn.size() >= 2)
+		function = InterpretNodeForImmediateUse(ocn[0]);
+
+	if(EvaluableNode::IsNull(function))
 	{
 		//get list
-		auto list = InterpretNode(ocn[0]);
+		auto list = InterpretNode(ocn[list_index]);
 		if(list == nullptr)
 			return EvaluableNodeReference::Null();
 
 		//make sure it is an editable copy
 		evaluableNodeManager->EnsureNodeIsModifiable(list);
 
-		std::sort(begin(list->GetOrderedChildNodes()), end(list->GetOrderedChildNodes()), EvaluableNode::IsStrictlyLessThan);
+		auto &list_ocn = list->GetOrderedChildNodes();
+
+		if(highest_k > 0 && highest_k < list_ocn.size())
+		{
+			std::partial_sort(begin(list_ocn),
+				begin(list_ocn) + highest_k,
+				end(list_ocn), EvaluableNode::IsStrictlyGreaterThan);
+
+			if(list.unique && !list->GetNeedCycleCheck())
+			{
+				for(size_t i = highest_k; i < list_ocn.size(); i++)
+					evaluableNodeManager->FreeNodeTree(list_ocn[i]);
+			}
+
+			list_ocn.erase(begin(list_ocn) + highest_k, end(list_ocn));
+		}
+		else if(lowest_k > 0 && lowest_k < list_ocn.size())
+		{
+			std::partial_sort(begin(list_ocn), begin(list_ocn) + lowest_k,
+				end(list_ocn), EvaluableNode::IsStrictlyLessThan);
+
+			if(list.unique && !list->GetNeedCycleCheck())
+			{
+				for(size_t i = lowest_k; i < list_ocn.size(); i++)
+					evaluableNodeManager->FreeNodeTree(list_ocn[i]);
+			}
+
+			list_ocn.erase(begin(list_ocn) + lowest_k, end(list_ocn));
+		}
+		else
+		{
+			std::sort(begin(list_ocn), end(list_ocn), EvaluableNode::IsStrictlyLessThan);
+		}
 
 		return list;
 	}
 	else
 	{
-		//get function to apply to list
-		auto function = InterpretNodeForImmediateUse(ocn[0]);
-		if(function == nullptr)
-			return EvaluableNodeReference::Null();
-
 		auto node_stack = CreateInterpreterNodeStackStateSaver(function);
-
+		
 		//get list
-		auto list = InterpretNode(ocn[1]);
+		auto list = InterpretNode(ocn[list_index]);
 		if(list == nullptr)
 			return EvaluableNodeReference::Null();
 
@@ -891,6 +937,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 		//sort list; can't use the C++ sort function because it requires weak ordering and will crash otherwise
 		// the custom comparator does not guarantee this
 		std::vector<EvaluableNode *> sorted = CustomEvaluableNodeOrderedChildNodesSort(list->GetOrderedChildNodes(), comparator);
+
+		if(highest_k > 0 && highest_k < sorted.size())
+		{
+			sorted.erase(begin(sorted), begin(sorted) + (sorted.size() - highest_k));
+			std::reverse(begin(sorted), end(sorted));
+		}
+		else if(lowest_k > 0 && lowest_k < sorted.size())
+		{
+			sorted.erase(begin(sorted) + lowest_k, end(sorted));
+		}
+
 		list->SetOrderedChildNodes(sorted);
 
 		return list;

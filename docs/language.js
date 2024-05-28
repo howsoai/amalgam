@@ -529,11 +529,11 @@ var data = [
 	},
 
 	{
-		"parameter" : "sort [* function] list l",
+		"parameter" : "sort [* function] list l [number k]",
 		"output" : "list",
 		"new value" : "new",
 		"new target scope": true,
-		"description" : "Returns a new list containing the list with its elements sorted in increasing order.  Numerical values come before strings, and code will be evaluated as the representative strings.  If function is specified, it pushes a pair of new target scope onto the stack, so that current_value accesses a list of elements to from the list, and current_index accesses the list or assoc index if it is not already reduced, with target representing the original list or assoc, and evaluates function. The function should return a number, positive if \"(current_value)\" is greater, negative if \"(current_value 1)\" is greater, 0 if equal.",
+		"description" : "Returns a new list containing the list with its elements sorted in increasing order.  Numerical values come before strings, and code will be evaluated as the representative strings.  If function is specified and not null, it pushes a pair of new target scope onto the stack, so that current_value accesses a list of elements to from the list, and current_index accesses the list or assoc index if it is not already reduced, with target representing the original list or assoc, and evaluates function. The function should return a number, positive if \"(current_value)\" is greater, negative if \"(current_value 1)\" is greater, 0 if equal.  If k is specified in addition to function, then it will only return the k smallest values sorted in order, or, if k is negative, it will ignore the negative sign and return the highest k values.",
 		"example" : "(print (sort (list 4 9 3 5 1)))\n(print (sort (list \"n\" \"b\" \"hello\" 4 1 3.2 (list 1 2 3))))\n(print (sort (list 1 \"1x\" \"10\" 20 \"z2\" \"z10\" \"z100\")))\n(print (sort (lambda (- (current_value) (current_value 1))) (list 4 9 3 5 1)))"
 	},
 

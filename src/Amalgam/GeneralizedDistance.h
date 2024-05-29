@@ -1364,6 +1364,18 @@ public:
 			internedNumberIndexToNumberValue(nullptr)
 		{	}
 
+		//clears all the feature data
+		void Clear()
+		{
+			effectiveFeatureType = EFDT_CONTINUOUS_NUMERIC;
+			precomputedRemainingIdenticalDistanceTerm = 0.0;
+			internedNumberIndexToNumberValue = nullptr;
+			internedDistanceTerms.clear();
+			nominalStringDistanceTerms.clear();
+			nominalNumberDistanceTerms.clear();
+			precomputedNominalDistanceTermsHighAccuracy = false;
+		}
+
 		//sets the value for a precomputed distance term that will apply to the rest of the distance
 		//evaluations and changes the feature type appropriately
 		inline void SetPrecomputedRemainingIdenticalDistanceTerm(double dist_term)

@@ -1006,9 +1006,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		if(value_destination == nullptr)
 			value_destination = GetOrCreateCallStackSymbolLocation(variable_sid, destination_call_stack_index);
 
-		//need to make a copy so that modifications can be dropped in directly
-		// this is essential as some values may be shared by other areas of memory, threads, or entities
-		EvaluableNode *value_replacement = evaluableNodeManager->DeepAllocCopy(*value_destination);
+		EvaluableNode *value_replacement = *value_destination;
+	#ifdef MULTITHREAD_SUPPORT
+		//if editing a shared variable, then need to make a copy before editing in place to prevent another thread from reading the data structure mid-edit
+		if(accum && destination_call_stack_index < callStackUniqueAccessStartingDepth)
+			value_replacement = evaluableNodeManager->DeepAllocCopy(value_replacement);
+	#endif
 
 		for(size_t index = 0; index < num_replacements; index++)
 		{

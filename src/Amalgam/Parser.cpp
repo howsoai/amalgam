@@ -896,6 +896,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 			upd.result.append(GetStringFromEvaluableNodeType(tree_type));
 		}
 
+		//decide whether to expand whitespace of child nodes or write all on the same line
 		bool recurse_expanded_whitespace = expanded_whitespace;
 		if(expanded_whitespace)
 		{
@@ -909,7 +910,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 			{
 				recurse_expanded_whitespace = false;
 			}
-			else if(num_child_nodes <= 6 && num_child_nodes + indentation_depth < 14)
+			else if(num_child_nodes <= 6 && num_child_nodes + indentation_depth <= 14)
 			{
 				//make sure all child nodes are leaf nodes and have no metadata
 				bool all_leaf_nodes = true;

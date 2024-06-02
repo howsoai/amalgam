@@ -26,7 +26,7 @@ namespace StringManipulation
 
 	//returns the number of bytes wide the character in position of string s is if it is whitespace,
 	// 0 if it is not a newline
-	inline size_t IsUtf8Whitespace(std::string &s, size_t position)
+	inline size_t IsUtf8Whitespace(const std::string &s, size_t position)
 	{
 		auto cur_char = s[position];
 		if(cur_char == '\t' || cur_char == '\n' || cur_char == '\v' || cur_char == '\f'

@@ -388,10 +388,19 @@ void Parser::SkipToEndOfIdentifier(bool allow_leading_label_marks)
 	//eat all characters until one that indicates end of identifier
 	while(pos < code->size())
 	{
+		if(StringManipulation::IsUtf8Whitespace(*code, pos))
+			break;
+
 		auto cur_char = (*code)[pos];
-		if(cur_char == '\t' || cur_char == '\n' || cur_char == '\v' || cur_char == '\f'
-				|| cur_char == '\r' || cur_char == ' '
-				|| cur_char == '#'
+
+		if(cur_char == '\\' && pos + 1 < code->size())
+		{
+			pos += 2;
+			continue;
+		}
+
+		//check language characters
+		if(cur_char == '#'
 				|| cur_char == '(' || cur_char == ')'
 				|| cur_char == '[' || cur_char == ']'
 				|| cur_char == '{' || cur_char == '}'
@@ -683,11 +692,10 @@ void Parser::AppendComments(EvaluableNode *n, size_t indentation_depth, bool pre
 //if the string contains a character that needs to be escaped for labels, then will convert
 std::string ConvertLabelToQuotedStringIfNecessary(const std::string &s)
 {
-	bool needs_escape = false;
+	if(s.empty())
+		return s;
 
-	//check for any characters that need to be escaped
-	if(s.find_first_of(" \t\"\n\r") != std::string::npos)
-		needs_escape = true;
+	bool needs_escape = Parser::HasCharactersBeyondIdentifier(s, true);
 
 	if(!needs_escape)
 	{

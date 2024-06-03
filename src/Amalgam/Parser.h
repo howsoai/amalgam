@@ -38,19 +38,27 @@ public:
 	}
 
 	//returns true if the string needs to be backslashified, has spaces, or has special characters
-	inline static bool HasCharactersBeyondIdentifier(const std::string &s)
+	inline static bool HasCharactersBeyondIdentifier(const std::string &s, bool label = false)
 	{
-		for(auto c : s)
+		bool in_label_initial_hashes = label;
+		for(size_t i = 0; i < s.size(); i++)
 		{
-			switch(c)
+			//can ignore any #'s up front
+			if(in_label_initial_hashes)
+			{
+				if(s[i] == '#')
+					continue;
+				in_label_initial_hashes = false;
+			}
+
+			if(StringManipulation::IsUtf8Whitespace(s, i))
+				return true;
+
+			switch(s[i])
 			{
 			case '\0':
 			case '\\':
 			case '"':
-			case '\t':
-			case '\n':
-			case '\r':
-			case ' ':
 			case '(':
 			case ')':
 			case '.':

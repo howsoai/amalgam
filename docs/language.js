@@ -861,7 +861,7 @@ var data = [
 		"concurrency" : true,
 		"new target scope": true,
 		"description" : "Evaluates to the list specified by the parameters.  Pushes a new target scope such that (target), (current_index), and (current_value) access the list, the current index, and the current value.  If []'s are used instead of parenthesis, the keyword list may be omitted.  [] are considered identical to (list).",
-		"example" : "(print (list \"a\" 1 \"b\"))\n(print [1 2 3]"
+		"example" : "(print (list \"a\" 1 \"b\"))\n(print [1 2 3])"
 	},
 
 	{

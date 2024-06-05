@@ -392,6 +392,9 @@ function render() {
 	<div class='td1'><span class="parameter">rand<span></div><div class='td2'>Returns the number of bytes specified by the additional parameter of secure random data intended for cryptographic use.</div><br />
 	<div class='td1'><span class="parameter">sign_key_pair<span></div><div class='td2'>Returns a list of two values, first a public key and second a secret key, for use with cryptographic signatures using the Ed25519 algorithm, generated via securely generated random numbers.</div><br />
 	<div class='td1'><span class="parameter">encrypt_key_pair<span></div><div class='td2'>Returns a list of two values, first a public key and second a secret key, for use with cryptographic encryption using the XSalsa20 and Curve25519 algorithms, generated via securely generated random numbers.</div><br />
+	<div class='td1'><span class="parameter">debugging_info<span></div><div class='td2'>Returns a list of two values.  The first is true if a debugger is present, false if it is not.  The second is true if debugging sounces is enabled, which means that source code location information is prepended to opcodes comments for any opcodes loaded from a file.</div><br />
+	<div class='td1'><span class="parameter">get_max_num_threads<span></div><div class='td2'>Returns the current maximum number of threads.</div><br />
+	<div class='td1'><span class="parameter">set_max_num_threads<span></div><div class='td2'>Attempts to set the current maximum number of threads, where 0 means to use the number of processor cores reported by the operating system.  Returns the maximum number of threads after it has been set.</div><br />
 	<div class='td1'><span class="parameter">built_in_data<span></div><div class='td2'>Returns built-in data compiled along with the version information.</div><br />
 	
 	<br />

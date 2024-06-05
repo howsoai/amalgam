@@ -1269,7 +1269,7 @@ current_index: 2
 		interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1717207943.798667
+		start_time 1717602982.387359
 		www 1
 		x 12
 		zz 10
@@ -1312,7 +1312,7 @@ current_index: 2
 	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1717207943.798667
+	start_time 1717602982.387359
 	www 1
 	x 12
 	zz 10
@@ -1354,7 +1354,7 @@ current_index: 2
 	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1717207943.798667
+	start_time 1717602982.387359
 	www 1
 	x 12
 	zz 10
@@ -1622,7 +1622,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2024-05-31-22.12.23.8646840
+current date-time in epoch: 2024-06-05-11.56.22.4390310
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -3442,7 +3442,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1717207944.418604
+1717602982.712199
 (true)
 
 RootTest
@@ -4685,4 +4685,4 @@ concurrent entity writes successful: (true)
 
 --clean-up test files--
 --total execution time--
-2.121119976043701
+2.1674489974975586

@@ -455,13 +455,14 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, EvaluableNode *n
 		if(cur_char == '(')
 		{
 			std::string token = GetNextIdentifier();
-			//first see if it's a keyword
-			new_token->SetType(GetEvaluableNodeTypeFromString(token), evaluableNodeManager, false);
-			if(!IsEvaluableNodeTypeValid(new_token->GetType()))
+			EvaluableNodeType token_type = GetEvaluableNodeTypeFromString(token);
+			new_token->SetType(token_type, evaluableNodeManager, false);
+
+			if(!IsEvaluableNodeTypeValid(token_type) || IsEvaluableNodeTypeImmediate(token_type))
 			{
 				//invalid opcode, warn if possible and store the identifier as a string
 				if(!originalSource.empty())
-					std::cerr << "Warning: " << "Invalid opcode at line " << lineNumber + 1 << " of " << originalSource << std::endl;
+					std::cerr << "Warning: " << "Invalid opcode \"" << token << "\" at line " << lineNumber + 1 << " of " << originalSource << std::endl;
 
 				new_token->SetType(ENT_STRING, evaluableNodeManager, false);
 				new_token->SetStringValue(token);

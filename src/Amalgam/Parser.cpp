@@ -450,10 +450,12 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *new_token)
 			return nullptr;
 		}
 
-		std::string token = GetNextIdentifier();
+		std::string token_string = GetNextIdentifier();
+		EvaluableNodeType token_type = GetEvaluableNodeTypeFromString(token_string);
 		//first see if it's a keyword
-		new_token->SetType(GetEvaluableNodeTypeFromString(token), evaluableNodeManager, false);
-		if(IsEvaluableNodeTypeValid(new_token->GetType()))
+		new_token->SetType(token_type, evaluableNodeManager, false);
+
+		if(IsEvaluableNodeTypeValid(token_type) && !IsEvaluableNodeTypeImmediate(token_type))
 			return new_token;
 
 		//invalid opcode, warn if possible and store the identifier as a string
@@ -461,7 +463,7 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *new_token)
 			std::cerr << "Warning: " << " Invalid opcode at line " << lineNumber + 1 << " of " << originalSource << std::endl;
 
 		new_token->SetType(ENT_STRING, evaluableNodeManager, false);
-		new_token->SetStringValue(token);
+		new_token->SetStringValue(token_string);
 		return new_token;
 	}
 	else if(cur_char == ')')

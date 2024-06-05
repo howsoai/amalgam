@@ -318,7 +318,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, bool 
 			}
 			else if(command == "uo")
 			{
-				_interpreter_debug_data.runUntilOpcodeType = GetEvaluableNodeTypeFromString(input, true);
+				_interpreter_debug_data.runUntilOpcodeType = GetEvaluableNodeTypeFromString(input);
 
 				//go back to prompt if not valid type
 				if(_interpreter_debug_data.runUntilOpcodeType == ENT_NOT_A_BUILT_IN_TYPE)

@@ -2633,7 +2633,7 @@
              (query_nearest_generalized_distance
                  10 ;k
 				 (list "a") ;context_features
-                 (list 1.7) ;( context_values
+                 (list 1.7) ;context_values
                  (null) ;context_weights
                  (null) ;context_nominal_counts
                  (null) ;cyclic_feature_lengths

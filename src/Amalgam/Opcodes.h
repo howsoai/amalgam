@@ -643,8 +643,7 @@ inline std::string GetStringFromEvaluableNodeType(EvaluableNodeType t, bool get_
 }
 
 //returns the enumerated type for the string
-// if get_non_keywords is true, then it will return types that are not necessarily keywords, like number
-inline EvaluableNodeType GetEvaluableNodeTypeFromString(const std::string &s, bool get_non_keywords = false)
+inline EvaluableNodeType GetEvaluableNodeTypeFromString(const std::string &s)
 {
 	auto sid = string_intern_pool.GetIDFromString(s);
 	if(sid == string_intern_pool.NOT_A_STRING_ID || sid == string_intern_pool.EMPTY_STRING_ID)

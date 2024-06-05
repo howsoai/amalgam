@@ -203,11 +203,43 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 
 		return EvaluableNodeReference(list, true);
 	}
+	else if(command == "debugging_info")
+	{
+		EvaluableNode *debugger_info = evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_FALSE, 2);
+		if(Interpreter::GetDebuggingState())
+			debugger_info->GetOrderedChildNodesReference()[0]->SetType(ENT_TRUE, evaluableNodeManager);
+		if(asset_manager.debugSources)
+			debugger_info->GetOrderedChildNodesReference()[1]->SetType(ENT_TRUE, evaluableNodeManager);
+
+		return EvaluableNodeReference(debugger_info, true);
+	}
+#if defined(MULTITHREAD_SUPPORT) || defined(_OPENMP)
+	else if(command == "get_max_num_threads")
+	{
+		double max_num_threads = static_cast<double>(Concurrency::GetMaxNumThreads());
+		return AllocReturn(max_num_threads, immediate_result);
+	}
+	else if(command == "set_max_num_threads" && ocn.size() > 1)
+	{
+		double max_num_threads_raw = InterpretNodeIntoNumberValue(ocn[1]);
+		size_t max_num_threads = 0;
+		if(max_num_threads >= 0)
+			max_num_threads = static_cast<size_t>(max_num_threads_raw);
+		Concurrency::SetMaxNumThreads(max_num_threads);
+
+		max_num_threads_raw = static_cast<double>(Concurrency::GetMaxNumThreads());
+		return AllocReturn(max_num_threads_raw, immediate_result);
+	}
+#endif
 	else if(command == "built_in_data")
 	{
 		uint8_t built_in_data[] = AMALGAM_BUILT_IN_DATA;
 		std::string built_in_data_s(reinterpret_cast<char *>(&built_in_data[0]), sizeof(built_in_data));
 		return AllocReturn(built_in_data_s, immediate_result);
+	}
+	else
+	{
+		std::cerr << "Invalid system opcode command \"" << command << "\" invoked" << std::endl;
 	}
 
 	return EvaluableNodeReference::Null();

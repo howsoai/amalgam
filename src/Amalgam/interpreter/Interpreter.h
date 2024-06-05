@@ -77,6 +77,9 @@ public:
 	//cannot be enabled at the same time as profiling
 	static void SetDebuggingState(bool debugging_enabled);
 
+	//returns true if in debugging
+	static bool GetDebuggingState();
+
 	//changes opcode profiling state to opcode_profiling_enabled
 	//cannot be enabled at the same time as other profiling or debugging
 	static void SetOpcodeProfilingState(bool opcode_profiling_enabled);

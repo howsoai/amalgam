@@ -592,6 +592,11 @@ void Interpreter::SetDebuggingState(bool debugging_enabled)
 		std::swap(_opcodes[i], _debug_opcodes[i]);
 }
 
+bool Interpreter::GetDebuggingState()
+{
+	return (_opcodes[0] == &Interpreter::InterpretNode_DEBUG);
+}
+
 void Interpreter::SetOpcodeProfilingState(bool opcode_profiling_enabled)
 {
 	if(opcode_profiling_enabled)

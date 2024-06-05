@@ -387,6 +387,7 @@ void AssetManager::DestroyPersistentEntity(Entity *entity)
 	std::string filename;
 	std::string extension;
 	std::string traversal_path;
+	std::error_code ec;
 
 	//remove it as a persistent entity if it happened to be a direct one (erase won't do anything if it doesn't exist)
 	persistentEntities.erase(entity);
@@ -406,11 +407,15 @@ void AssetManager::DestroyPersistentEntity(Entity *entity)
 			std::string total_filepath = slice_path + filename + traversal_path;
 
 			//delete files
-			std::filesystem::remove(total_filepath + "." + defaultEntityExtension);
-			std::filesystem::remove(total_filepath + "." + FILE_EXTENSION_AMLG_METADATA);
+			std::filesystem::remove(total_filepath + "." + defaultEntityExtension, ec);
+			if (ec) std::cerr << "Could not remove file: " << total_filepath + "." + defaultEntityExtension << std::endl;
+
+			std::filesystem::remove(total_filepath + "." + FILE_EXTENSION_AMLG_METADATA, ec);
+			if (ec) std::cerr << "Could not remove file: " << total_filepath + "." + FILE_EXTENSION_AMLG_METADATA << std::endl;
 
 			//remove directory and all contents if it exists (command will fail if it doesn't exist)
-			std::filesystem::remove_all(total_filepath);
+			std::filesystem::remove_all(total_filepath, ec);
+			if (ec) std::cerr << "Could not remove directory: " << total_filepath << std::endl;
 		}
 
 		std::string escaped_entity_id = FilenameEscapeProcessor::SafeEscapeFilename(cur->GetId());

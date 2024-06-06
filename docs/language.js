@@ -81,7 +81,7 @@ var data = [
 	{
 		"parameter" : "return * return_value",
 		"output" : "*",
-		"description" : "Evaluates to return_value wrapped in a return opcode.  If a step in a seq, let, declare, or while evaluates to a return (excluding variable declarations for let and declare, the last step in set, let, and declare, or the condition of while), then it will conclude the execution and evaluate to the value return_value.  Note that return opcodes may be nested to break out of outer opcodes.",
+		"description" : "Evaluates to return_value wrapped in a return opcode.  If a step in a seq, let, declare, or while evaluates to a return (excluding variable declarations for let and declare, the last step in set, let, and declare, or the condition of while), then it will conclude the execution and evaluate to the return opcode with its return_value.  This means it will continue to conclude each level up the stack until it reaches any kind of call opcode, including call, call_sandboxed, call_entity, call_entity_get_changes, or call_container, at which point it will evaluate to return_value.  Note that return opcodes may be nested to break out of multiple calls.",
 		"example" : " (print (call (seq 1 2 (seq (return 3) 4) 5)) \"\\n\")"
 	},
 

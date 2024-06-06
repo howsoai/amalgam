@@ -1023,7 +1023,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-["b" "4" "a" "c"]
+["b" "a" "4" "c"]
 [
 	0
 	1
@@ -1035,7 +1035,7 @@ abcdef
 	7
 ]
 --values--
-[2 "d" 1 3]
+[2 1 "d" 3]
 [
 	"a"
 	1
@@ -1056,7 +1056,7 @@ abcdef
 	4
 	"d"
 ]
-[3 2 "d" 1 0]
+[3 2 1 "d" 0]
 [
 	1
 	2
@@ -1269,7 +1269,7 @@ current_index: 2
 		interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1717602982.387359
+		start_time 1717682414.810241
 		www 1
 		x 12
 		zz 10
@@ -1312,7 +1312,7 @@ current_index: 2
 	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1717602982.387359
+	start_time 1717682414.810241
 	www 1
 	x 12
 	zz 10
@@ -1354,7 +1354,7 @@ current_index: 2
 	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1717602982.387359
+	start_time 1717682414.810241
 	www 1
 	x 12
 	zz 10
@@ -1502,7 +1502,7 @@ infinity test c or d: ["c" @(get (target 0) 0) "d" @(get (target 0) 0)]
 
 {a 29 b 44 c 27}
 
-["5" "1" "7"]
+["3" "1" "10"]
 
 --get_rand_seed--
 °³È¼¿\¨KOaVÆT zÿ
@@ -1622,7 +1622,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2024-06-05-11.56.22.4390310
+current date-time in epoch: 2024-06-06-10.00.14.9038970
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -3153,8 +3153,14 @@ _432807187
 						[]
 						(lambda
 							{
-								E 3
-								F 4
+								E (get
+										(current_value 1)
+										"E"
+									)
+								F (get
+										(current_value 1)
+										"F"
+									)
 								G 5
 								H 6
 							}
@@ -3179,7 +3185,16 @@ _432807187
 						_
 						[]
 						(lambda
-							{e 3 f 4}
+							{
+								e (get
+										(current_value 1)
+										"e"
+									)
+								f (get
+										(current_value 1)
+										"f"
+									)
+							}
 						)
 					)
 				)
@@ -3278,14 +3293,8 @@ _41032496
 						[]
 						(lambda
 							{
-								E (get
-										(current_value 1)
-										"E"
-									)
-								F (get
-										(current_value 1)
-										"F"
-									)
+								E 3
+								F 4
 								G 5
 								H 6
 							}
@@ -3310,16 +3319,7 @@ _41032496
 						_
 						[]
 						(lambda
-							{
-								e (get
-										(current_value 1)
-										"e"
-									)
-								f (get
-										(current_value 1)
-										"f"
-									)
-							}
+							{e 3 f 4}
 						)
 					)
 				)
@@ -3349,10 +3349,10 @@ DiffContainerReconstructed
 (associate "b" 4 "a" 3)
 MergeEntityChild1
 (associate "x" 3 "y" 4 "z" 5)
-_3895405527
-(null)
 _523256902
-(associate "F" 4)
+(null)
+_3895405527
+(associate "f" 4)
 MergeEntityChild2
 (associate
 	"p"
@@ -3388,14 +3388,26 @@ this is a fully described entity
 	get_api "returns the api details"
 	publicvar "some public variable"
 }
-{x "the value of x\r\nthe default value of x" y "the value of y"}
+[
+	{
+		x ["the value of x\r\nthe default value of x" 1]
+		y ["the value of y" 2]
+	}
+	"a number representing the sum"
+]
 {
 	description "this is a fully described entity"
 	labels {
 			^containervar {description "a variable accessible to contained entities" parameters (null)}
 			foo {
 					description "the function foo"
-					parameters {x "the value of x\r\nthe default value of x" y "the value of y"}
+					parameters [
+							{
+								x ["the value of x\r\nthe default value of x" 1]
+								y ["the value of y" 2]
+							}
+							"a number representing the sum"
+						]
 				}
 			get_api {description "returns the api details" parameters (null)}
 			publicvar {description "some public variable" parameters (null)}
@@ -3442,7 +3454,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1717602982.712199
+1717682415.209901
 (true)
 
 RootTest
@@ -4281,14 +4293,14 @@ case conviction:{
 }
 cyclic feature nearest neighbors: {cyclic1 1 cyclic5 0.5}
 cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
-200: 0.05555555555555555 (null
-	##deg 8
+190: 0.045454545454545456 (null
+	##deg 12
 )
 155: 0.1 (null
 	##deg 0
 )
-190: 0.045454545454545456 (null
-	##deg 12
+200: 0.05555555555555555 (null
+	##deg 8
 )
 --contains_label--
 (true)
@@ -4685,4 +4697,4 @@ concurrent entity writes successful: (true)
 
 --clean-up test files--
 --total execution time--
-2.1674489974975586
+1.7695419788360596

@@ -1,1 +1,57 @@
-﻿(6)
+﻿(seq
+
+ (create_entities "descriptive_entity" (lambda
+	;this is a fully described entity
+	(null
+		;some public variable
+		##publicvar 1
+		;some private variable
+		##!privatevar 2
+		;a variable accessible to contained entities
+		##^containervar 3
+		;the function foo
+		##foo (declare
+					;a number representing the sum
+					(assoc
+						;the value of x
+						x 
+						;the default value of x
+						1
+						;the value of y
+						y 2
+					)
+					( + x y)
+				
+				)
+
+		;returns the api details
+		##get_api (seq
+
+			(assoc
+				"description"
+				(get_entity_comments)
+				
+				"labels"
+				(map (lambda
+						(assoc
+							"description"
+							(current_value 1)
+							"parameters"
+							(get_entity_comments (null) (current_index 1) (true))
+						)
+					)
+					(get_entity_comments (null) (null) (true))
+				)
+	
+	
+			)
+
+		)
+	)
+
+
+ ))
+
+ (print (get_entity_comments "descriptive_entity" "foo" (true)))
+
+)

@@ -40,7 +40,8 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 	&Interpreter::InterpretNode_ENT_SEQUENCE,														// ENT_SEQUENCE
 	&Interpreter::InterpretNode_ENT_PARALLEL,														// ENT_PARALLEL
 	&Interpreter::InterpretNode_ENT_LAMBDA,															// ENT_LAMBDA
-	&Interpreter::InterpretNode_ENT_CONCLUDE,														// ENT_CONCLUDE
+	&Interpreter::InterpretNode_ENT_CONCLUDE_and_RETURN,											// ENT_CONCLUDE
+	&Interpreter::InterpretNode_ENT_CONCLUDE_and_RETURN,											// ENT_RETURN
 	&Interpreter::InterpretNode_ENT_CALL,															// ENT_CALL
 	&Interpreter::InterpretNode_ENT_CALL_SANDBOXED,													// ENT_CALL_SANDBOXED
 	&Interpreter::InterpretNode_ENT_WHILE,															// ENT_WHILE

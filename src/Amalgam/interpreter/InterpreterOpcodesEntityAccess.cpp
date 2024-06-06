@@ -502,7 +502,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 
 	ExecutionCycleCount num_steps_executed = 0;
 	size_t num_nodes_allocated = 0;
-	EvaluableNodeReference retval = called_entity->Execute(num_steps_allowed, num_steps_executed,
+	EvaluableNodeReference result = called_entity->Execute(num_steps_allowed, num_steps_executed,
 		num_nodes_allowed, num_nodes_allocated,
 		entity_label_sid, call_stack, called_entity == curEntity, this, cur_write_listeners, printListener
 	#ifdef MULTITHREAD_SUPPORT
@@ -514,11 +514,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	curExecutionStep += num_steps_executed;
 	curNumExecutionNodesAllocatedToEntities += num_nodes_allocated;
 
+	//call opcodes should consume the outer return opcode if there is one
+	if(result.IsNonNullNodeReference() && result->GetType() == ENT_RETURN)
+		result = RemoveTopConcludeOrReturnNode(result, &called_entity->evaluableNodeManager);
+
 	if(called_entity != curEntity)
 	{
-		EvaluableNodeReference copied_result = evaluableNodeManager->DeepAllocCopy(retval);
-		called_entity->evaluableNodeManager.FreeNodeTreeIfPossible(retval);
-		retval = copied_result;
+		EvaluableNodeReference copied_result = evaluableNodeManager->DeepAllocCopy(result);
+		called_entity->evaluableNodeManager.FreeNodeTreeIfPossible(result);
+		result = copied_result;
 	}
 
 	if(en->GetType() == ENT_CALL_ENTITY_GET_CHANGES)
@@ -528,21 +532,21 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 
 		EvaluableNode *list = evaluableNodeManager->AllocNode(ENT_LIST);
 		//copy the data out of the write listener
-		list->AppendOrderedChildNode(retval);
+		list->AppendOrderedChildNode(result);
 		list->AppendOrderedChildNode(evaluableNodeManager->DeepAllocCopy(writes));
 
 		//delete the write listener and all of its memory
 		delete wl;
 
-		retval.SetReference(list);
-		retval.SetNeedCycleCheck(true);	//can't count on that due to things written in the write listener
-		retval->SetIsIdempotent(false);
+		result.SetReference(list);
+		result.SetNeedCycleCheck(true);	//can't count on that due to things written in the write listener
+		result->SetIsIdempotent(false);
 	}
 
 	if(_label_profiling_enabled)
 		PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
 
-	return retval;
+	return result;
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNode *en, bool immediate_result)
@@ -631,7 +635,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 
 	ExecutionCycleCount num_steps_executed = 0;
 	size_t num_nodes_allocated = 0;
-	EvaluableNodeReference retval = container->Execute(num_steps_allowed, num_steps_executed, num_nodes_allowed, num_nodes_allocated,
+	EvaluableNodeReference result = container->Execute(num_steps_allowed, num_steps_executed, num_nodes_allowed, num_nodes_allocated,
 		container_label_sid, call_stack, false, this, writeListeners, printListener
 	#ifdef MULTITHREAD_SUPPORT
 		, &container.lock
@@ -642,8 +646,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	curExecutionStep += num_steps_executed;
 	curNumExecutionNodesAllocatedToEntities += num_nodes_allocated;
 
-	EvaluableNodeReference copied_result = evaluableNodeManager->DeepAllocCopy(retval);
-	container->evaluableNodeManager.FreeNodeTreeIfPossible(retval);
+	//call opcodes should consume the outer return opcode if there is one
+	if(result.IsNonNullNodeReference() && result->GetType() == ENT_RETURN)
+		result = RemoveTopConcludeOrReturnNode(result, &container->evaluableNodeManager);
+
+	EvaluableNodeReference copied_result = evaluableNodeManager->DeepAllocCopy(result);
+	container->evaluableNodeManager.FreeNodeTreeIfPossible(result);
 
 	if(_label_profiling_enabled)
 		PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());

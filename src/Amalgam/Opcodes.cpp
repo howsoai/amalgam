@@ -30,6 +30,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(GetStringIdFromNodeTypeFromString(ENT_PARALLEL), "parallel");
 	EmplaceStaticString(GetStringIdFromNodeTypeFromString(ENT_LAMBDA), "lambda");
 	EmplaceStaticString(GetStringIdFromNodeTypeFromString(ENT_CONCLUDE), "conclude");
+	EmplaceStaticString(GetStringIdFromNodeTypeFromString(ENT_RETURN), "return");
 	EmplaceStaticString(GetStringIdFromNodeTypeFromString(ENT_CALL), "call");
 	EmplaceStaticString(GetStringIdFromNodeTypeFromString(ENT_CALL_SANDBOXED), "call_sandboxed");
 	EmplaceStaticString(GetStringIdFromNodeTypeFromString(ENT_WHILE), "while");

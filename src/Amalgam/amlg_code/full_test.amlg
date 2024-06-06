@@ -103,6 +103,12 @@
    (print "2\n")
 )
 
+ (print "--return--\n")
+
+ (print (call
+	(seq 1 2 (seq (return 3) 4) 5)
+ ) "\n")
+
  (print "--declare--\n")
  (declare (assoc x 7))
  (print x "\n")

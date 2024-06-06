@@ -171,6 +171,7 @@ notakeyword
 	retrieve 0.1
 	retrieve_entity_root 0.01
 	retrieve_from_entity 0.5
+	return 0.05
 	reverse 0.4
 	rewrite 0.1
 	round 0.6
@@ -234,11 +235,11 @@ notakeyword
 (print "hello")
 [.nan .nan .infinity -.infinity]
 
-{b 2 a 1 c ["alpha" "beta" "gamma"]}
+{a 1 c ["alpha" "beta" "gamma"] b 2}
 {
-	b 2
 	a 1
 	c ["alpha" "beta" "gamma"]
+	b 2
 }
 
 --if--
@@ -277,6 +278,8 @@ while1 success
 let1 success
 declare1 success
 142
+--return--
+3
 --declare--
 7
 7
@@ -598,7 +601,7 @@ abcdef
 0.14384103622589045
 --first--
 4
-2
+1
 1
 0
 a
@@ -614,12 +617,12 @@ a
 []
 {
 	a 1
-	b 2
+	c 3
 	d 4
 	e 5
 	f 6
 }
-{d 4 e 5}
+{d 4 f 6}
 {
 	a 1
 	d 4
@@ -647,7 +650,7 @@ abcdef
 .nas
 --last--
 this
-2
+1
 1
 0
 c
@@ -663,12 +666,12 @@ c
 []
 {
 	a 1
-	b 2
+	c 3
 	d 4
 	e 5
 	f 6
 }
-{d 4 e 5}
+{d 4 f 6}
 {
 	a 1
 	d 4
@@ -1023,7 +1026,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-["b" "a" "4" "c"]
+["a" "4" "c" "b"]
 [
 	0
 	1
@@ -1035,7 +1038,7 @@ abcdef
 	7
 ]
 --values--
-[2 1 "d" 3]
+[1 "d" 3 2]
 [
 	"a"
 	1
@@ -1056,7 +1059,7 @@ abcdef
 	4
 	"d"
 ]
-[3 2 1 "d" 0]
+[2 1 0 "d" 3]
 [
 	1
 	2
@@ -1269,7 +1272,7 @@ current_index: 2
 		interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1717682414.810241
+		start_time 1717703431.551274
 		www 1
 		x 12
 		zz 10
@@ -1312,7 +1315,7 @@ current_index: 2
 	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1717682414.810241
+	start_time 1717703431.551274
 	www 1
 	x 12
 	zz 10
@@ -1354,7 +1357,7 @@ current_index: 2
 	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1717682414.810241
+	start_time 1717703431.551274
 	www 1
 	x 12
 	zz 10
@@ -1487,22 +1490,22 @@ true
 
 --weighted_rand--
 b
-["b" "b" "b" "b"]
+["b" "b" "a" "b"]
 
 b
 ["a" "b" @(get (target 0) 0) @(get (target 0) 1)]
 
 ["a" @(get (target 0) 0) "b" @(get (target 0) 2)]
 
-infinity test c or d: ["d" "d" "d" "c"]
+infinity test c or d: ["c" "c" "c" "d"]
 
 infinity test c or d: ["c" @(get (target 0) 0) "d" @(get (target 0) 0)]
 
-{a 30 b 46 c 24}
+{a 25 b 45 c 30}
 
 {a 29 b 44 c 27}
 
-["3" "1" "10"]
+["6" "2" "1"]
 
 --get_rand_seed--
 °³È¼¿\¨KOaVÆT zÿ
@@ -1549,8 +1552,8 @@ infinity test c or d: ["c" @(get (target 0) 0) "d" @(get (target 0) 0)]
 string
 --set_type--
 (- 3 4)
-["b" 3 "a" 4]
-["b" 3 "a" 4]
+["a" 4 "b" 3]
+["a" 4 "b" 3]
 {a 4 b 3}
 8.7
 (parallel
@@ -1601,8 +1604,7 @@ string
 ]
 21: [{"b":4,"a":3},{"c":"c","d":null}]
 22: [{"a":3,"b":4},{"c":"c","d":null}]
-23: c: 3
-b: 2
+23: b: 2
 a: 1
 e:
   - a
@@ -1610,6 +1612,7 @@ e:
   - .nan
   - .inf
 d: 4
+c: 3
 
 24: a: 1
 b: 2
@@ -1622,7 +1625,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2024-06-06-10.00.14.9038970
+current date-time in epoch: 2024-06-06-15.50.31.6001170
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -1898,33 +1901,30 @@ decrypted: hello
 --mutate--
 [
 	1
-	(parallel)
-	(+)
+	(floor)
+	(parse)
 	4
-	(clone_entities)
+	(query_select)
 	6
 	7
 	8
 	9
 	10
 	11
-	(if)
-	-3.6673445641690456
-	14
-	(associate)
+	b
+	a
+	(declare)
+	(associate "a" 1)
 ]
 [
-	1
+	(*)
 	2
-	(+)
-	(+)
-	(associate)
+	3
+	(*)
+	(associate "alpha" 5 "beta" 6)
 	(associate
 		"nest"
-		(associate
-			"count"
-			[7 8 9]
-		)
+		(associate "count" [])
 		"end"
 		[10 11 12]
 	)
@@ -2167,16 +2167,6 @@ decrypted: hello
 	{_ (null)}
 	(replace
 		_
-		[]
-		(lambda
-			{
-				a 2
-				g (get
-						(current_value 1)
-						"g"
-					)
-			}
-		)
 		["g"]
 		(lambda
 			[
@@ -2186,6 +2176,16 @@ decrypted: hello
 				)
 				4
 			]
+		)
+		[]
+		(lambda
+			{
+				a 2
+				g (get
+						(current_value 1)
+						"g"
+					)
+			}
 		)
 	)
 )
@@ -2361,15 +2361,7 @@ decrypted: hello
 	]
 ]
 --mix--
-[
-	2
-	3.5
-	5
-	7.5
-	9.5
-	11.5
-	13.5
-]
+[3.5 5.5 7.5 9.5 11.5 13.5]
 [
 	
 	;comment 1
@@ -2377,9 +2369,9 @@ decrypted: hello
 	;comment 3
 	;comment 4
 	1
-	4
-	5.5
-	7.5
+	3.5
+	5
+	8
 	9.5
 	11.5
 	13.5
@@ -2395,8 +2387,11 @@ decrypted: hello
 			1
 			(parallel
 				(get_entity_comments)
-				1
-				(lambda (print))
+				(lambda
+					(print
+						[2]
+					)
+				)
 			)
 		)
 	)
@@ -2404,33 +2399,45 @@ decrypted: hello
 ]
 [
 	1
+	5
 	2.5
 	(associate "a" 3 "b" 4)
 	(lambda
 		(if
 			true
 			1
-			(seq
-				(get_entity_comments)
-				(lambda
-					(print
-						[2 9]
-					)
-				)
-				1
-			)
+			(seq (get_entity_comments) 1)
 		)
 	)
+	[5 6]
 ]
-[3.5 5.5 7.5 9.5 11.5 13.5]
-[5 8 10 12 11 13]
+[
+	2
+	3.5
+	5.5
+	7.5
+	9.5
+	11.5
+	13.5
+]
+[
+	(true)
+	4
+	5
+	8
+	7
+	10
+	11
+	14
+	13
+]
 4
-4
+1
 2.5
 2.5
-abcmxyz
-abcmxyz
 abcdmxyz
+abcemxyz
+abcomxyz
 --mix_labels--
 [
 	1
@@ -2695,56 +2702,56 @@ flatten restore with parallel
 --mutate_entity--
 [
 	1
-	2
+	(mix_labels)
 	3
+	(acos)
+	a
+	(contains_label)
 	4
 	5
-	a
+	9
+	(<)
+	(abs)
+	12
+	13
+	0.06646554813776002
+	(associate "a" (get) "b" 2)
+]
+
+[
+	(or)
+	14
+	b
+	(and)
+	5
+	(query_sample)
 	7
 	8
-	(query_within_generalized_distance)
+	(sin)
 	10
 	11
 	12
-	"b"
-	14
-	(associate "a" 1 (round) a)
-]
-
-[
-	1
-	2
-	3
-	(abs)
-	5
-	(log)
-	(values)
-	17
-	9
-	10
-	(total_size)
-	12
-	"b"
-	(and)
-	(associate (let) 1 0.14034045403278178 (call))
-]
-
-[
-	1
-	(*)
-	3
-	(-)
-	5
-	6
-	(+)
-	8
-	9
-	10
-	(+)
-	12
 	13
+	(zip)
+	(associate "a" (map) "b" (assign))
+]
+
+[
+	1
+	(-)
+	3
+	4
+	5
 	(+)
-	(associate "a" (*) "b" 2 (+))
+	7
+	8
+	(+)
+	(+)
+	11
+	(-)
+	13
+	14
+	(associate "a" (*) "b" 2)
 ]
 
 --commonality_entities--
@@ -3153,14 +3160,8 @@ _432807187
 						[]
 						(lambda
 							{
-								E (get
-										(current_value 1)
-										"E"
-									)
-								F (get
-										(current_value 1)
-										"F"
-									)
+								E 3
+								F 4
 								G 5
 								H 6
 							}
@@ -3185,16 +3186,7 @@ _432807187
 						_
 						[]
 						(lambda
-							{
-								e (get
-										(current_value 1)
-										"e"
-									)
-								f (get
-										(current_value 1)
-										"f"
-									)
-							}
+							{e 3 f 4}
 						)
 					)
 				)
@@ -3293,8 +3285,14 @@ _41032496
 						[]
 						(lambda
 							{
-								E 3
-								F 4
+								E (get
+										(current_value 1)
+										"E"
+									)
+								F (get
+										(current_value 1)
+										"F"
+									)
 								G 5
 								H 6
 							}
@@ -3319,7 +3317,16 @@ _41032496
 						_
 						[]
 						(lambda
-							{e 3 f 4}
+							{
+								e (get
+										(current_value 1)
+										"e"
+									)
+								f (get
+										(current_value 1)
+										"f"
+									)
+							}
 						)
 					)
 				)
@@ -3349,34 +3356,12 @@ DiffContainerReconstructed
 (associate "b" 4 "a" 3)
 MergeEntityChild1
 (associate "x" 3 "y" 4 "z" 5)
-_523256902
-(null)
+MergeEntityChild2
+(associate "p" 3 "q" 4 "u" 5)
 _3895405527
 (associate "f" 4)
-MergeEntityChild2
-(associate
-	"p"
-	3
-	"q"
-	4
-	"v"
-	6
-	"w"
-	7
-)
-_2280722175
-(associate "F" 4)
-_2169689611
-(associate
-	"e"
-	3
-	"f"
-	4
-	"g"
-	5
-	"h"
-	6
-)
+_523256902
+(associate "E" 3 "H" 6)
 --get_entity_comments--
 Full test
 This is a suite of unit tests.
@@ -3454,7 +3439,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1717682415.209901
+1717703431.892824
 (true)
 
 RootTest
@@ -3857,70 +3842,70 @@ store to .json normally
 ["Child2" "Child7"]
 ["Child1" "Child5"]
 ["Child3" "Child4"]
-["Child1" "Child2" "Child3" "Child7"]
-["Child1" "Child2" "Child3" "Child4"]
+["Child2" "Child3" "Child4" "Child5"]
+["Child2" "Child3" "Child4" "Child7"]
 ["Child4" "Child6"]
 --query_sample--
-["Child1"]
-["Child1" "Child5"]
-["Child2"]
+["Child4"]
+["Child1" "Child1"]
+["Child5"]
 ["Child1"]
 --query_weighted_sample--
+["Child7"]
 ["Child1"]
-["Child2"]
 [
-	"Child1"
-	"Child2"
-	"Child2"
 	"Child2"
 	"Child1"
 	"Child2"
 	"Child1"
 	"Child1"
-	"Child2"
 	"Child1"
-	"Child2"
-	"Child2"
+	"Child5"
 	"Child1"
 	"Child1"
-	"Child2"
-	"Child2"
+	"Child1"
 	"Child1"
 	"Child2"
 	"Child1"
+	"Child1"
+	"Child2"
+	"Child1"
+	"Child2"
+	"Child1"
+	"Child1"
+	"Child1"
+]
+[
+	"Child2"
+	"Child2"
+	"Child2"
+	"Child2"
+	"Child2"
 	"Child6"
-]
-[
-	"Child2"
-	"Child2"
-	"Child2"
-	"Child2"
 	"Child1"
-	"Child2"
-	"Child7"
-	"Child1"
-	"Child1"
-	"Child1"
-	"Child2"
-	"Child1"
-	"Child1"
-	"Child3"
-	"Child2"
-	"Child1"
-	"Child1"
-	"Child2"
-	"Child2"
-	"Child1"
-]
-[
-	"Child2"
-	"Child3"
-	"Child2"
-	"Child2"
-	"Child2"
 	"Child2"
 	"Child4"
 	"Child2"
+	"Child2"
+	"Child2"
+	"Child1"
+	"Child4"
+	"Child2"
+	"Child1"
+	"Child2"
+	"Child1"
+	"Child2"
+	"Child1"
+]
+[
+	"Child2"
+	"Child2"
+	"Child3"
+	"Child2"
+	"Child2"
+	"Child5"
+	"Child2"
+	"Child7"
 	"Child2"
 	"Child2"
 ]
@@ -3972,19 +3957,19 @@ cascading query_not_in_entity_list: ["Child6" "Child7"]
 unweighted query: {
 	Child1 4
 	Child2 1
-	Child4 100
+	Child3 100
 	Child6 2
 	Child7 10
 }
 weighted query: {
 	Child1 1.8
 	Child2 0.45
-	Child3 2
+	Child4 2
 	Child6 0.04
 	Child7 0.2
 }
 weighted query list of lists: [
-	["Child6" "Child7" "Child2" "Child1" "Child4"]
+	["Child6" "Child7" "Child2" "Child1" "Child3"]
 	[0.04 0.2 0.45 1.8 2]
 ]
 weighted query list of lists: [
@@ -3993,7 +3978,7 @@ weighted query list of lists: [
 	[-1 2 4 10 100]
 ]
 weighted query list of lists with multiple values: [
-	["Child2" "Child6" "Child1" "Child7" "Child3"]
+	["Child2" "Child6" "Child1" "Child7" "Child4"]
 	[1 2 4 10 100]
 	[-1 2 4 10 100]
 	[-1 1 3 0 100]
@@ -4463,7 +4448,7 @@ a
 ["hello" "!"]
 {a1 1.4142135623730951 a2 2 a3 1.4142135623730951}
 {a1 1.4142135623730951 a3 1.4142135623730951}
-{a3 1.4142135623730951}
+{a1 1.4142135623730951}
 {a1 5.0990195135927845 a2 2 a3 5.0990195135927845}
 {a1 1 a3 1 a4 0}
 --accuracy tests--
@@ -4475,12 +4460,12 @@ distance symmetry tests
 [
 	[
 		"B"
-		"D"
 		"C"
-		"I"
-		"F"
 		"A"
-		"G"
+		"F"
+		"I"
+		"D"
+		"E"
 		"H"
 	]
 	[
@@ -4497,13 +4482,13 @@ distance symmetry tests
 [
 	[
 		"B"
-		"D"
-		"C"
-		"A"
 		"I"
+		"A"
+		"D"
 		"F"
-		"G"
-		"E"
+		"C"
+		"J"
+		"H"
 	]
 	[
 		0
@@ -4697,4 +4682,4 @@ concurrent entity writes successful: (true)
 
 --clean-up test files--
 --total execution time--
-1.7695419788360596
+1.773710012435913

@@ -1026,7 +1026,7 @@ abcdef
 (list 1 3)
 (list 9 5)
 --indices--
-(list "a" "c" "4" "b")
+(list "a" "4" "c" "b")
 (list
 	0
 	1
@@ -1038,7 +1038,7 @@ abcdef
 	7
 )
 --values--
-(list 1 3 "d" 2)
+(list 1 "d" 3 2)
 (list
 	"a"
 	1
@@ -1272,7 +1272,7 @@ current_index: 2
 		interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1716918376.32278
+		start_time 1717681823.48538
 		www 1
 		x 12
 		zz 10
@@ -1315,7 +1315,7 @@ current_index: 2
 	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1716918376.32278
+	start_time 1717681823.48538
 	www 1
 	x 12
 	zz 10
@@ -1357,7 +1357,7 @@ current_index: 2
 	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1716918376.32278
+	start_time 1717681823.48538
 	www 1
 	x 12
 	zz 10
@@ -1505,7 +1505,7 @@ infinity test c or d: (list "c" @(get (target 0) 0) "d" @(get (target 0) 0))
 
 (assoc a 29 b 44 c 27)
 
-(list "4" "2" "1")
+(list "6" "2" "1")
 
 --get_rand_seed--
 °³È¼¿\¨KOaVÆT zÿ
@@ -1625,7 +1625,7 @@ e:
   - .inf
 
 25: (assoc a 1)
-current date-time in epoch: 2024-05-28-13.46.16.3914980
+current date-time in epoch: 2024-06-06-09.50.23.5360690
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -2764,10 +2764,10 @@ MergeEntityChild1
 (associate "x" 3 "y" 4)
 MergeEntityChild2
 (associate "p" 3 "q" 4)
-_2169689611
-(associate "e" 3 "f" 4)
 _2280722175
 (associate "E" 3 "F" 4)
+_2169689611
+(associate "e" 3 "f" 4)
 --union_entities--
 (associate "b" 4 "a" 3 "c" 3)
 MergeEntityChild1
@@ -2785,17 +2785,6 @@ MergeEntityChild2
 	"w"
 	7
 )
-_2169689611
-(associate
-	"e"
-	3
-	"f"
-	4
-	"g"
-	5
-	"h"
-	6
-)
 _2280722175
 (associate
 	"E"
@@ -2807,11 +2796,7 @@ _2280722175
 	"H"
 	6
 )
-(parallel
-	##p
-	(list "_3990396532" "_3990396532" "_3330773578" "_3330773578")
-)
-_3330773578
+_2169689611
 (associate
 	"e"
 	3
@@ -2822,6 +2807,10 @@ _3330773578
 	"h"
 	6
 )
+(parallel
+	##p
+	(list "_3990396532" "_3990396532" "_3330773578" "_3330773578")
+)
 _3990396532
 (associate
 	"E"
@@ -2831,6 +2820,17 @@ _3990396532
 	"G"
 	5
 	"H"
+	6
+)
+_3330773578
+(associate
+	"e"
+	3
+	"f"
+	4
+	"g"
+	5
+	"h"
 	6
 )
 --difference_entities--
@@ -3285,8 +3285,14 @@ _41032496
 						(list)
 						(lambda
 							(assoc
-								E 3
-								F 4
+								E (get
+										(current_value 1)
+										"E"
+									)
+								F (get
+										(current_value 1)
+										"F"
+									)
 								G 5
 								H 6
 							)
@@ -3311,7 +3317,16 @@ _41032496
 						_
 						(list)
 						(lambda
-							(assoc e 3 f 4)
+							(assoc
+								e (get
+										(current_value 1)
+										"e"
+									)
+								f (get
+										(current_value 1)
+										"f"
+									)
+							)
 						)
 					)
 				)
@@ -3343,10 +3358,10 @@ MergeEntityChild1
 (associate "x" 3 "y" 4 "z" 5)
 MergeEntityChild2
 (associate "p" 3 "q" 4 "u" 5)
-_523256902
-(associate "F" 4 "H" 6)
 _3895405527
-(associate "e" 3)
+(associate "f" 4)
+_523256902
+(associate "E" 3 "H" 6)
 --get_entity_comments--
 Full test
 This is a suite of unit tests.
@@ -3358,14 +3373,26 @@ this is a fully described entity
 	get_api "returns the api details"
 	publicvar "some public variable"
 )
-(assoc x "the value of x\r\nthe default value of x" y "the value of y")
+(list
+	(assoc
+		x (list "the value of x\r\nthe default value of x" 1)
+		y (list "the value of y" 2)
+	)
+	"a number representing the sum"
+)
 (assoc
 	description "this is a fully described entity"
 	labels (assoc
 			^containervar (assoc description "a variable accessible to contained entities" parameters (null))
 			foo (assoc
 					description "the function foo"
-					parameters (assoc x "the value of x\r\nthe default value of x" y "the value of y")
+					parameters (list
+							(assoc
+								x (list "the value of x\r\nthe default value of x" 1)
+								y (list "the value of y" 2)
+							)
+							"a number representing the sum"
+						)
 				)
 			get_api (assoc description "returns the api details" parameters (null))
 			publicvar (assoc description "some public variable" parameters (null))
@@ -3412,7 +3439,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1716918376.667391
+1717681823.823989
 (true)
 
 RootTest
@@ -4251,14 +4278,14 @@ case conviction:(assoc
 )
 cyclic feature nearest neighbors: (assoc cyclic1 1 cyclic5 0.5)
 cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
+190: 0.045454545454545456 (null
+	##deg 12
+)
 155: 0.1 (null
 	##deg 0
 )
 200: 0.05555555555555555 (null
 	##deg 8
-)
-190: 0.045454545454545456 (null
-	##deg 12
 )
 --contains_label--
 (true)
@@ -4655,4 +4682,4 @@ concurrent entity writes successful: (true)
 
 --clean-up test files--
 --total execution time--
-2.274893045425415
+1.9889349937438965

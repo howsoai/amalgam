@@ -1999,7 +1999,9 @@
 		;a variable accessible to contained entities
 		##^containervar 3
 		;the function foo
-		##foo (declare (assoc
+		##foo (declare
+					;a number representing the sum
+					(assoc
 						;the value of x
 						x 
 						;the default value of x

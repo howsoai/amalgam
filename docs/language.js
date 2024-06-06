@@ -1235,8 +1235,8 @@ var data = [
 		"output" : "*",
 		"permissions" : "e",
 		"new value" : "new",
-		"description" : "Evaluates to the corresponding comments based on the parameters.  If the id is specified or null is specified as the id, then it will use the current entity.  If the label is null or empty string, it will retrieve comments for the entity root, otherwise if it is a valid label it will attempt to retrieve the comments for that label, null if the label doesn't exist.  If deep_comments is specified and the label is a declare, then it will return an assoc with the keys being the parameters and the values being the descriptions.  If label is empty string or null and deep_comments is true, then it will return an assoc of label to comment for each label in the entity.",
-		"example" : "(print (get_entity_comments))"
+		"description" : "Evaluates to the corresponding comments based on the parameters.  If the id is specified or null is specified as the id, then it will use the current entity.  If the label is null or empty string, it will retrieve comments for the entity root, otherwise if it is a valid label it will attempt to retrieve the comments for that label, null if the label doesn't exist.  If deep_comments is specified and the label is a declare, then it will return a list of two elements.  The first element of this list is an assoc with the keys being the parameters and the values being lists of the descriptions followed by the default value.  The second element of this list is the comment of the assoc itself, which is intended to be used to describe what is returned.  If label is empty string or null and deep_comments is true, then it will return an assoc of label to comment for each label in the entity.",
+		"example" : "(print (get_entity_comments))\n(print (get_entity_comments \"label_name\" (true))"
 	},
 
 	{

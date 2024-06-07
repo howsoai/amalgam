@@ -1,1 +1,38 @@
-﻿(6)
+﻿(seq
+ ;3
+ (create_entities "OverflowQueryContainer" (null) )
+ ;10
+ (create_entities (list "OverflowQueryContainer" "sess") (lambda (null ##.steps (list 1 2))))
+ (create_entities "OverflowQueryContainer" (lambda (null ##a 2)))
+
+  (print (total_entity_size "OverflowQueryContainer") "\n")
+ ;(create_entities "OverflowQueryContainer" (lambda (null ##a 2)))
+ ;(create_entities "OverflowQueryContainer" (lambda (null ##a 2)))
+ ;(create_entities "OverflowQueryContainer" (lambda (null ##a 1.92)))
+ ;(create_entities "OverflowQueryContainer" (lambda (null ##a 1.82)))
+ ;(create_entities "OverflowQueryContainer" (lambda (null ##a 1.2)))
+ ;(create_entities "OverflowQueryContainer" (lambda (null ##a 2.2)))
+ ;(create_entities "OverflowQueryContainer" (lambda (null ##a 2.1)))
+ ;(print
+ ;    (compute_on_contained_entities "OverflowQueryContainer"
+ ;        (append
+ ;            (query_nearest_generalized_distance
+ ;                10 ;k
+;				 (list "a") ;context_features
+ ;                (list 1.7) ;context_values
+ ;                (null) ;context_weights
+ ;                (null) ;context_nominal_counts
+ ;                (null) ;cyclic_feature_lengths
+ ;                (null) ;context_deviations
+ ;                2
+;				 -1 ;dwe
+;				 (null) ;entity weight
+ ;                (rand)
+ ;                (null)
+ ;                "precise"
+ ;                (true)
+ ;            )
+ ;        )
+ ;    )
+ ;)
+)

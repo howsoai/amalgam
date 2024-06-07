@@ -343,22 +343,34 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableN
 
 		//get destination if applicable
 		StringInternRef new_entity_id;
-		Entity *destination_entity_parent = curEntity;
+		EntityWriteReference entity_container;
 		if(i + 1 < ocn.size())
 		{
 			node_stack.PushEvaluableNode(root);
-			InterpretNodeIntoDestinationEntity(ocn[i], destination_entity_parent, new_entity_id);
+
+			//get the id of the source entity
+			auto id_node = InterpretNodeForImmediateUse(ocn[i]);
+			EntityWriteReference entity;
+			std::tie(entity, entity_container)
+				= TraverseToExistingEntityReferenceAndContainerViaEvaluableNodeIDPath<EntityWriteReference>(
+					curEntity, id_node, &new_entity_id);
+			evaluableNodeManager->FreeNodeTreeIfPossible(id_node);
+
 			node_stack.PopEvaluableNode();
 		}
+		else
+		{
+			entity_container = EntityWriteReference(curEntity);
+		}
 
-		if(destination_entity_parent == nullptr)
+		if(entity_container == nullptr)
 		{
 			new_entity_ids_list->AppendOrderedChildNode(nullptr);
 			continue;
 		}
 
 		auto new_entity_id_string = string_intern_pool.GetStringFromID(new_entity_id);
-		std::string rand_state = destination_entity_parent->CreateRandomStreamFromStringAndRand(new_entity_id_string);
+		std::string rand_state = entity_container->CreateRandomStreamFromStringAndRand(new_entity_id_string);
 
 		//create new entity
 		Entity *new_entity = new Entity(root, rand_state, EvaluableNodeManager::ENMM_LABEL_ESCAPE_DECREMENT);
@@ -367,7 +379,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableN
 		if(!AllowUnlimitedExecutionNodes())
 			curNumExecutionNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
 
-		destination_entity_parent->AddContainedEntityViaReference(new_entity, new_entity_id, writeListeners);
+		entity_container->AddContainedEntityViaReference(new_entity, new_entity_id, writeListeners);
 
 		if(new_entity_id == StringInternPool::NOT_A_STRING_ID)
 		{
@@ -376,7 +388,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableN
 			continue;
 		}
 
-		if(destination_entity_parent == curEntity)
+		if(entity_container == curEntity)
 			new_entity_ids_list->AppendOrderedChildNode(evaluableNodeManager->AllocNode(ENT_STRING, new_entity_id));
 		else //need an id path
 			new_entity_ids_list->AppendOrderedChildNode(GetTraversalIDPathFromAToB(evaluableNodeManager, curEntity, new_entity));
@@ -473,17 +485,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MOVE_ENTITIES(EvaluableNod
 			continue;
 		}
 
-		//get destination if applicable
-		StringInternRef new_entity_id;
-		Entity *destination_entity_parent = curEntity;
-		if(i + 1 < ocn.size())
-			InterpretNodeIntoDestinationEntity(ocn[i + 1], destination_entity_parent, new_entity_id);
-		if(destination_entity_parent == nullptr)
-		{
-			new_entity_ids_list->AppendOrderedChildNode(nullptr);
-			continue;
-		}
-
 		//can't move if being executed
 		if(source_entity->IsEntityCurrentlyBeingExecuted())
 		{
@@ -494,8 +495,33 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MOVE_ENTITIES(EvaluableNod
 		//remove source entity from its parent
 		source_entity_parent->RemoveContainedEntity(source_entity->GetIdStringId(), writeListeners);
 
+		//get destination if applicable
+		StringInternRef new_entity_id;
+		EntityWriteReference entity_container;
+		if(i + 1 < ocn.size())
+		{
+			//get the id of the source entity
+			auto id_node = InterpretNodeForImmediateUse(ocn[i]);
+			EntityWriteReference entity;
+			std::tie(entity, entity_container)
+				= TraverseToExistingEntityReferenceAndContainerViaEvaluableNodeIDPath<EntityWriteReference>(
+					curEntity, id_node, &new_entity_id);
+			evaluableNodeManager->FreeNodeTreeIfPossible(id_node);
+		}
+		else
+		{
+			entity_container = EntityWriteReference(curEntity);
+		}
+
+		if(entity_container == nullptr)
+		{
+			new_entity_ids_list->AppendOrderedChildNode(nullptr);
+			delete source_entity;
+			continue;
+		}
+
 		//put it in the destination
-		destination_entity_parent->AddContainedEntityViaReference(source_entity, new_entity_id, writeListeners);
+		entity_container->AddContainedEntityViaReference(source_entity, new_entity_id, writeListeners);
 
 		if(new_entity_id == StringInternPool::NOT_A_STRING_ID)
 		{
@@ -504,7 +530,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MOVE_ENTITIES(EvaluableNod
 			continue;
 		}
 
-		if(destination_entity_parent == curEntity)
+		if(entity_container == curEntity)
 			new_entity_ids_list->AppendOrderedChildNode(evaluableNodeManager->AllocNode(ENT_STRING, new_entity_id));
 		else //need an id path
 			new_entity_ids_list->AppendOrderedChildNode(GetTraversalIDPathFromAToB(evaluableNodeManager, curEntity, source_entity));
@@ -525,8 +551,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DESTROY_ENTITIES(Evaluable
 		//get the id of the source entity
 		auto id_node = InterpretNodeForImmediateUse(cn);
 		auto [entity, entity_container]
-			= TraverseToExistingEntityReferenceAndContainerViaEvaluableNodeIDPath<EntityWriteReference,
-				EntityWriteReference>(curEntity, id_node);
+			= TraverseToExistingEntityReferenceAndContainerViaEvaluableNodeIDPath<EntityWriteReference>(curEntity, id_node);
 		evaluableNodeManager->FreeNodeTreeIfPossible(id_node);
 
 		//need a valid entity that isn't itself or currently has execution

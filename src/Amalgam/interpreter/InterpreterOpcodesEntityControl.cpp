@@ -352,7 +352,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableN
 			auto id_node = InterpretNodeForImmediateUse(ocn[i]);
 			EntityWriteReference entity;
 			std::tie(entity, entity_container)
-				= TraverseToExistingEntityReferenceAndContainerViaEvaluableNodeIDPath<EntityWriteReference>(
+				= TraverseToEntityReferenceAndContainerViaEvaluableNodeIDPath<EntityWriteReference>(
 					curEntity, id_node, &new_entity_id);
 			evaluableNodeManager->FreeNodeTreeIfPossible(id_node);
 
@@ -504,7 +504,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MOVE_ENTITIES(EvaluableNod
 			auto id_node = InterpretNodeForImmediateUse(ocn[i]);
 			EntityWriteReference entity;
 			std::tie(entity, entity_container)
-				= TraverseToExistingEntityReferenceAndContainerViaEvaluableNodeIDPath<EntityWriteReference>(
+				= TraverseToEntityReferenceAndContainerViaEvaluableNodeIDPath<EntityWriteReference>(
 					curEntity, id_node, &new_entity_id);
 			evaluableNodeManager->FreeNodeTreeIfPossible(id_node);
 		}
@@ -551,7 +551,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DESTROY_ENTITIES(Evaluable
 		//get the id of the source entity
 		auto id_node = InterpretNodeForImmediateUse(cn);
 		auto [entity, entity_container]
-			= TraverseToExistingEntityReferenceAndContainerViaEvaluableNodeIDPath<EntityWriteReference>(curEntity, id_node);
+			= TraverseToEntityReferenceAndContainerViaEvaluableNodeIDPath<EntityWriteReference>(curEntity, id_node);
 		evaluableNodeManager->FreeNodeTreeIfPossible(id_node);
 
 		//need a valid entity that isn't itself or currently has execution

@@ -80,7 +80,7 @@ std::vector<EvaluableNode *> CustomEvaluableNodeOrderedChildNodesSort(std::vecto
 void TraverseToEntityViaEvaluableNodeIDPath(Entity *container, EvaluableNode *id_path,
 	Entity *&relative_entity_container, StringInternRef &id, Entity *&relative_entity)
 {
-	//TODO 10975: remove this function, deprecated by TraverseToExistingEntityReferenceAndContainerViaEvaluableNodeIDPath
+	//TODO 10975: remove this function, deprecated by TraverseToEntityReferenceAndContainerViaEvaluableNodeIDPath
 	relative_entity_container = nullptr;
 	id = StringInternPool::NOT_A_STRING_ID;
 

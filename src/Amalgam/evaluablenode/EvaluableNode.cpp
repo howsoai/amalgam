@@ -237,15 +237,11 @@ std::pair<bool, std::string> EvaluableNode::ToString(EvaluableNode *e)
 
 StringInternPool::StringID EvaluableNode::ToStringIDIfExists(EvaluableNode *e)
 {
-	if(e == nullptr)
+	if(EvaluableNode::IsEmptyNode(e))
 		return StringInternPool::NOT_A_STRING_ID;
 
 	if((e->GetType() == ENT_STRING || e->GetType() == ENT_SYMBOL))
 		return e->GetStringIDReference();
-
-	//this will catch any other form of null or NaN not yet caught
-	if(IsNaN(e))
-		return StringInternPool::NOT_A_STRING_ID;
 
 	//see if the string exists even if it is not stored as a StringID
 	const std::string str_value = ToStringPreservingOpcodeType(e);
@@ -255,7 +251,7 @@ StringInternPool::StringID EvaluableNode::ToStringIDIfExists(EvaluableNode *e)
 
 StringInternPool::StringID EvaluableNode::ToStringIDWithReference(EvaluableNode *e)
 {
-	if(e == nullptr)
+	if(EvaluableNode::IsEmptyNode(e))
 		return StringInternPool::NOT_A_STRING_ID;
 
 	if(e->GetType() == ENT_STRING || e->GetType() == ENT_SYMBOL)

@@ -119,6 +119,9 @@ public:
 	constexpr bool IsEntity()
 	{	return (curIndex == entityIdIndex);	}
 
+	constexpr bool IsLastIndex()
+	{	return (curIndex == lastIdIndex);	}
+
 	inline void AdvanceIndex()
 	{
 		do
@@ -155,8 +158,10 @@ public:
 
 template<typename EntityReferenceType>
 std::pair<EntityReferenceType, EntityReferenceType>
-TraverseToEntityReferenceAndContainerViaEvaluableNodeID(Entity *from_entity, EvaluableNode *id_node, StringInternRef *dest_sid_ref)
+TraverseToEntityReferenceAndContainerViaEvaluableNodeID(Entity *from_entity, EvaluableNodeIDPathTraverser &traverser, StringInternRef *dest_sid_ref)
 {
+	//TODO 20477: use traverser in this method
+
 	//get the string id, get a reference if returning it
 	if(dest_sid_ref == nullptr)
 	{

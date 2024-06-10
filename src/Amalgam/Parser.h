@@ -61,6 +61,10 @@ public:
 			case '"':
 			case '(':
 			case ')':
+			case '[':
+			case ']':
+			case '{':
+			case '}':
 			case '.':
 			case '#':
 			case '@':
@@ -152,8 +156,9 @@ protected:
 	std::string GetNextIdentifier(bool allow_leading_label_marks = false);
 
 	//Returns a EvaluableNode containing the next token, null if none left in current context
+	// parent_node is primarily to check for errors or warnings
 	//if new_token is not nullptr, it will put the token in the EvaluableNode provided, otherwise will return a new one
-	EvaluableNode *GetNextToken(EvaluableNode *new_token = nullptr);
+	EvaluableNode *GetNextToken(EvaluableNode *parent_node, EvaluableNode *new_token = nullptr);
 
 	//deallocates the current node in case there is an early exit or error
 	void FreeNode(EvaluableNode *node);
@@ -170,7 +175,7 @@ protected:
 	//Prints out key and its associated node n
 	static void AppendAssocKeyValuePair(UnparseData &upd,
 		StringInternPool::StringID key_sid, EvaluableNode *n, EvaluableNode *parent,
-		bool expanded_whitespace, size_t indentation_depth);
+		bool expanded_whitespace, size_t indentation_depth, bool need_initial_space);
 
 	//Appends to the string s that represents the code tree
 	//if expanded_whitespace, then it will add whitespace as appropriate to make it pretty

@@ -867,8 +867,8 @@ var data = [
 		"new value" : "new",
 		"concurrency" : true,
 		"new target scope": true,
-		"description" : "Evaluates to the list specified by the parameters.  Pushes a new target scope such that (target), (current_index), and (current_value) access the list, the current index, and the current value.",
-		"example" : "(print (list \"a\" 1 \"b\"))"
+		"description" : "Evaluates to the list specified by the parameters.  Pushes a new target scope such that (target), (current_index), and (current_value) access the list, the current index, and the current value.  If []'s are used instead of parenthesis, the keyword list may be omitted.  [] are considered identical to (list).",
+		"example" : "(print (list \"a\" 1 \"b\"))\n(print [1 2 3])"
 	},
 
 	{
@@ -877,8 +877,8 @@ var data = [
 		"new value" : "new",
 		"concurrency" : true,
 		"new target scope": true,
-		"description" : "Evaluates to the associative list, where each pair of parameters (e.g., index1 and value1) comprises a index/value pair. Pushes a new target scope such that (target), (current_index), and (current_value) access the assoc, the current index, and the current value.  If any of the bstrings do not have reserved characters or spaces, then quotes are optional; if spaces or reserved characters are present, then quotes are required.",
-		"example" : "(print (assoc b 2 c 3))\n(print (assoc a 1 \"b\\ttab\" 2 c 3 4 \"d\"))"
+		"description" : "Evaluates to the associative list, where each pair of parameters (e.g., index1 and value1) comprises a index/value pair. Pushes a new target scope such that (target), (current_index), and (current_value) access the assoc, the current index, and the current value.  If any of the bstrings do not have reserved characters or spaces, then quotes are optional; if spaces or reserved characters are present, then quotes are required.  If {}'s are used instead of parenthesis, the keyword assoc may be omitted.  {} are considered identical to (assoc)",
+		"example" : "(print (assoc b 2 c 3))\n(print (assoc a 1 \"b\\ttab\" 2 c 3 4 \"d\"))\n(print {a 1 b 2})"
 	},
 
 	{

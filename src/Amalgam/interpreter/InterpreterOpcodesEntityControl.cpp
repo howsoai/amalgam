@@ -76,35 +76,40 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 	if(label_value == nullptr || label_value->GetType() != ENT_DECLARE || label_value->GetOrderedChildNodes().size() < 1)
 		return EvaluableNodeReference::Null();
 
-	//deep_comments of label, so get the parameters and their respective labels
-	EvaluableNodeReference retval(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
-
-	EvaluableNode *vars = label_value->GetOrderedChildNodes()[0];
+	//the first element is an assoc of the parameters, the second element is the return value
+	EvaluableNodeReference retval(evaluableNodeManager->AllocNode(ENT_LIST), true);
 	
 	//if the vars are already initialized, then pull the comments from their values
-	if(EvaluableNode::IsAssociativeArray(vars))
-	{
-		auto &mcn = vars->GetMappedChildNodesReference();
-		retval->ReserveMappedChildNodes(mcn.size());
-
-		//create the string references all at once and hand off
-		string_intern_pool.CreateStringReferences(mcn, [](auto it) { return it.first; });
-		for(auto &[cn_id, cn] : mcn)
-			retval->SetMappedChildNodeWithReferenceHandoff(cn_id, evaluableNodeManager->AllocNode(ENT_STRING, EvaluableNode::GetCommentsStringId(cn)));
-
+	EvaluableNode *vars = label_value->GetOrderedChildNodes()[0];
+	if(!EvaluableNode::IsAssociativeArray(vars))
 		return retval;
-	}
 
-	//the vars are not initialized, which means the comments are on the parameters
-	retval->ReserveMappedChildNodes(vars->GetOrderedChildNodes().size() / 2);
-	for(size_t index = 0; index < vars->GetOrderedChildNodes().size(); index += 2)
+	auto &retval_ocn = retval->GetOrderedChildNodesReference();
+	retval_ocn.resize(2);
+
+	//deep_comments of label, so get the parameters and their respective labels
+	EvaluableNodeReference params_list(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
+	retval_ocn[0] = params_list;
+
+	//get return comments
+	retval_ocn[1] = evaluableNodeManager->AllocNode(ENT_STRING, vars->GetCommentsStringId());
+
+	auto &mcn = vars->GetMappedChildNodesReference();
+	params_list->ReserveMappedChildNodes(mcn.size());
+
+	//create the string references all at once and hand off
+	string_intern_pool.CreateStringReferences(mcn, [](auto it) { return it.first; });
+	for(auto &[cn_id, cn] : mcn)
 	{
-		EvaluableNode *variable_name_node = vars->GetOrderedChildNodes()[index];
-		StringInternPool::StringID sid = EvaluableNode::ToStringIDIfExists(variable_name_node);
-		if(sid == StringInternPool::NOT_A_STRING_ID)
-			continue;
+		//create list with comment and default value
+		EvaluableNodeReference param_info(evaluableNodeManager->AllocNode(ENT_LIST), true);
+		auto &param_info_ocn = param_info->GetOrderedChildNodesReference();
+		param_info_ocn.resize(2);
+		param_info_ocn[0] = evaluableNodeManager->AllocNode(ENT_STRING, EvaluableNode::GetCommentsStringId(cn));
+		param_info_ocn[1] = evaluableNodeManager->DeepAllocCopy(cn, EvaluableNodeManager::ENMM_REMOVE_ALL);
 
-		retval->SetMappedChildNode(sid, evaluableNodeManager->AllocNode(ENT_STRING, EvaluableNode::GetCommentsStringId(variable_name_node)));
+		//add to the params
+		params_list->SetMappedChildNodeWithReferenceHandoff(cn_id, param_info);
 	}
 
 	return retval;

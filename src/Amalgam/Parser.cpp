@@ -402,6 +402,8 @@ void Parser::SkipToEndOfIdentifier(bool allow_leading_label_marks)
 		//check language characters
 		if(cur_char == '#'
 				|| cur_char == '(' || cur_char == ')'
+				|| cur_char == '[' || cur_char == ']'
+				|| cur_char == '{' || cur_char == '}'
 				|| cur_char == ';')
 			break;
 
@@ -425,7 +427,7 @@ std::string Parser::GetNextIdentifier(bool allow_leading_label_marks)
 	}
 }
 
-EvaluableNode *Parser::GetNextToken(EvaluableNode *new_token)
+EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, EvaluableNode *new_token)
 {
 	if(new_token == nullptr)
 		new_token = evaluableNodeManager->AllocNode(ENT_NULL);
@@ -439,7 +441,7 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *new_token)
 
 	auto cur_char = (*code)[pos];
 
-	if(cur_char == '(') //identifier as command
+	if(cur_char == '(' || cur_char == '[' || cur_char == '{') //identifier as command
 	{
 		pos++;
 		numOpenParenthesis++;
@@ -450,24 +452,51 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *new_token)
 			return nullptr;
 		}
 
-		std::string token_string = GetNextIdentifier();
-		EvaluableNodeType token_type = GetEvaluableNodeTypeFromString(token_string);
-		//first see if it's a keyword
-		new_token->SetType(token_type, evaluableNodeManager, false);
+		if(cur_char == '(')
+		{
+			std::string token = GetNextIdentifier();
+			EvaluableNodeType token_type = GetEvaluableNodeTypeFromString(token);
+			new_token->SetType(token_type, evaluableNodeManager, false);
 
-		if(IsEvaluableNodeTypeValid(token_type) && !IsEvaluableNodeTypeImmediate(token_type))
-			return new_token;
+			if(!IsEvaluableNodeTypeValid(token_type) || IsEvaluableNodeTypeImmediate(token_type))
+			{
+				//invalid opcode, warn if possible and store the identifier as a string
+				if(!originalSource.empty())
+					std::cerr << "Warning: " << "Invalid opcode \"" << token << "\" at line " << lineNumber + 1 << " of " << originalSource << std::endl;
 
-		//invalid opcode, warn if possible and store the identifier as a string
-		if(!originalSource.empty())
-			std::cerr << "Warning: " << " Invalid opcode at line " << lineNumber + 1 << " of " << originalSource << std::endl;
+				new_token->SetType(ENT_STRING, evaluableNodeManager, false);
+				new_token->SetStringValue(token);
+			}
+		}
+		else if(cur_char == '[')
+		{
+			new_token->SetType(ENT_LIST, evaluableNodeManager, false);
+		}
+		else if(cur_char == '{')
+		{
+			new_token->SetType(ENT_ASSOC, evaluableNodeManager, false);
+		}
 
-		new_token->SetType(ENT_STRING, evaluableNodeManager, false);
-		new_token->SetStringValue(token_string);
 		return new_token;
 	}
-	else if(cur_char == ')')
+	else if(cur_char == ')' || cur_char == ']' || cur_char == '}')
 	{
+		EvaluableNodeType parent_node_type = ENT_NULL;
+		if(parent_node != nullptr)
+			parent_node_type = parent_node->GetType();
+
+		//make sure the closing character and type match
+		if(cur_char == ']')
+		{
+			if(parent_node_type != ENT_LIST)
+				std::cerr << "Warning: " << "Mismatched ] at line " << lineNumber + 1 << " of " << originalSource << std::endl;
+		}
+		else if(cur_char == '}')
+		{
+			if(parent_node_type != ENT_ASSOC)
+				std::cerr << "Warning: " << "Mismatched } at line " << lineNumber + 1 << " of " << originalSource << std::endl;
+		}
+
 		pos++; //skip closing parenthesis
 		numOpenParenthesis--;
 		FreeNode(new_token);
@@ -529,28 +558,28 @@ void Parser::FreeNode(EvaluableNode *node)
 EvaluableNode *Parser::ParseNextBlock()
 {
 	EvaluableNode *tree_top = nullptr;
-	EvaluableNode *curnode = nullptr;
+	EvaluableNode *cur_node = nullptr;
 
 	//as long as code left
 	while(pos < code->size())
 	{
-		EvaluableNode *n = GetNextToken();
+		EvaluableNode *n = GetNextToken(cur_node);
 
 		//if end of a list
 		if(n == nullptr)
 		{
 			//nothing here at all
-			if(curnode == nullptr)
+			if(cur_node == nullptr)
 				return nullptr;
 
-			const auto &parent = parentNodes.find(curnode);
+			const auto &parent = parentNodes.find(cur_node);
 
 			//if no parent, then all finished
 			if(parent == end(parentNodes) || parent->second == nullptr)
 				return tree_top;
 
 			//jump up to the parent node
-			curnode = parent->second;
+			cur_node = parent->second;
 			continue;
 		}
 		else //got some token
@@ -559,48 +588,48 @@ EvaluableNode *Parser::ParseNextBlock()
 			if(tree_top == nullptr)
 			{
 				tree_top = n;
-				curnode = n;
+				cur_node = n;
 				continue;
 			}
 
-			if(curnode->IsOrderedArray())
+			if(cur_node->IsOrderedArray())
 			{
-				curnode->AppendOrderedChildNode(n);
+				cur_node->AppendOrderedChildNode(n);
 			}
-			else if(curnode->IsAssociativeArray())
+			else if(cur_node->IsAssociativeArray())
 			{
 				//n is the id, so need to get the next token
 				StringInternPool::StringID index_sid = EvaluableNode::ToStringIDTakingReferenceAndClearing(n);
 
 				//reset the node type but continue to accumulate any attributes
 				n->SetType(ENT_NULL, evaluableNodeManager, false);
-				n = GetNextToken(n);
-				curnode->SetMappedChildNodeWithReferenceHandoff(index_sid, n, true);
+				n = GetNextToken(cur_node, n);
+				cur_node->SetMappedChildNodeWithReferenceHandoff(index_sid, n, true);
 
 				//handle case if uneven number of arguments
 				if(n == nullptr)
 				{
 					//nothing here at all
-					if(curnode == nullptr)
+					if(cur_node == nullptr)
 						return nullptr;
 
-					const auto &parent = parentNodes.find(curnode);
+					const auto &parent = parentNodes.find(cur_node);
 
 					//if no parent, then all finished
 					if(parent == end(parentNodes) || parent->second == nullptr)
 						return tree_top;
 
 					//jump up to the parent node
-					curnode = parent->second;
+					cur_node = parent->second;
 					continue;
 				}
 			}
 
-			parentNodes[n] = curnode;
+			parentNodes[n] = cur_node;
 
 			//if it's not immediate, then descend into that part of the tree, resetting parent index counter
 			if(!IsEvaluableNodeTypeImmediate(n->GetType()))
-				curnode = n;
+				cur_node = n;
 
 			//if specifying something unusual, then assume it's just a null
 			if(n->GetType() == ENT_NOT_A_BUILT_IN_TYPE)
@@ -727,15 +756,17 @@ void Parser::AppendLabels(UnparseData &upd, EvaluableNode *n, size_t indentation
 }
 
 void Parser::AppendAssocKeyValuePair(UnparseData &upd, StringInternPool::StringID key_sid, EvaluableNode *n, EvaluableNode *parent,
-	bool expanded_whitespace, size_t indentation_depth)
+	bool expanded_whitespace, size_t indentation_depth, bool need_initial_space)
 {
 	if(expanded_whitespace)
 	{
 		for(size_t i = 0; i < indentation_depth; i++)
 			upd.result.push_back(indentationCharacter);
 	}
-	else
+	else if(need_initial_space)
+	{
 		upd.result.push_back(' ');
+	}
 
 	auto key_str = string_intern_pool.GetStringFromID(key_sid);
 
@@ -819,9 +850,10 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 	}
 
 	//check if it's an immediate/variable before deciding whether to surround with parenthesis
-	if(IsEvaluableNodeTypeImmediate(tree->GetType()))
+	EvaluableNodeType tree_type = tree->GetType();
+	if(IsEvaluableNodeTypeImmediate(tree_type))
 	{
-		switch(tree->GetType())
+		switch(tree_type)
 		{
 		case ENT_NUMBER:
 			upd.result.append(EvaluableNode::ToStringPreservingOpcodeType(tree));
@@ -859,9 +891,21 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 	else
 	{
 		//emit opcode
-		upd.result.push_back('(');
-		upd.result.append(GetStringFromEvaluableNodeType(tree->GetType()));
+		if(tree_type == ENT_LIST)
+		{
+			upd.result.push_back('[');
+		}
+		else if(tree_type == ENT_ASSOC)
+		{
+			upd.result.push_back('{');
+		}
+		else
+		{
+			upd.result.push_back('(');
+			upd.result.append(GetStringFromEvaluableNodeType(tree_type));
+		}
 
+		//decide whether to expand whitespace of child nodes or write all on the same line
 		bool recurse_expanded_whitespace = expanded_whitespace;
 		if(expanded_whitespace)
 		{
@@ -875,7 +919,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 			{
 				recurse_expanded_whitespace = false;
 			}
-			else if(num_child_nodes <= 6 && num_child_nodes + indentation_depth < 14)
+			else if(num_child_nodes <= 6 && num_child_nodes + indentation_depth <= 14)
 			{
 				//make sure all child nodes are leaf nodes and have no metadata
 				bool all_leaf_nodes = true;
@@ -912,10 +956,14 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 		if(tree->IsAssociativeArray())
 		{
 			auto &tree_mcn = tree->GetMappedChildNodesReference();
+			bool initial_space = (tree_type != ENT_LIST && tree_type != ENT_ASSOC);
 			if(!upd.sortKeys)
 			{
 				for(auto &[k_id, k] : tree_mcn)
-					AppendAssocKeyValuePair(upd, k_id, k, tree, recurse_expanded_whitespace, indentation_depth + 1);
+				{
+					AppendAssocKeyValuePair(upd, k_id, k, tree, recurse_expanded_whitespace, indentation_depth + 1, initial_space);
+					initial_space = true;
+				}
 			}
 			else //sortKeys
 			{
@@ -929,23 +977,27 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 				for(auto &key_sid : key_sids)
 				{
 					auto k = tree_mcn.find(key_sid);
-					AppendAssocKeyValuePair(upd, k->first, k->second, tree, recurse_expanded_whitespace, indentation_depth + 1);
+					AppendAssocKeyValuePair(upd, k->first, k->second, tree, recurse_expanded_whitespace, indentation_depth + 1, initial_space);
+					initial_space = true;
 				}
 			}
 		}
 		else if(tree->IsOrderedArray())
 		{
+			auto &tree_ocn = tree->GetOrderedChildNodesReference();
 			if(recurse_expanded_whitespace)
 			{
-				for(auto &e : tree->GetOrderedChildNodesReference())
+				for(auto &e : tree_ocn)
 					Unparse(upd, e, tree, true, indentation_depth + 1, true);
 			}
 			else //expanded whitespace
 			{
-				for(auto &e : tree->GetOrderedChildNodesReference())
+				for(size_t i = 0; i < tree_ocn.size(); i++)
 				{
-					upd.result.push_back(' ');
-					Unparse(upd, e, tree, false, indentation_depth + 1, true);
+					//if not the first or if it's not a type with a special delimeter, insert a space
+					if(i > 0 || (tree_type != ENT_LIST && tree_type != ENT_ASSOC))
+						upd.result.push_back(' ');
+					Unparse(upd, tree_ocn[i], tree, false, indentation_depth + 1, true);
 				}
 			}
 		}
@@ -959,11 +1011,25 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 				for(size_t i = 0; i < indentation_depth; i++)
 					upd.result.push_back(indentationCharacter);
 			}
-			upd.result.append(")\r\n");
+
+			if(tree_type == ENT_LIST)
+				upd.result.push_back(']');
+			else if(tree_type == ENT_ASSOC)
+				upd.result.push_back('}');
+			else
+				upd.result.push_back(')');
+
+			upd.result.push_back('\r');
+			upd.result.push_back('\n');
 		}
 		else
 		{
-			upd.result.append(")");
+			if(tree_type == ENT_LIST)
+				upd.result.push_back(']');
+			else if(tree_type == ENT_ASSOC)
+				upd.result.push_back('}');
+			else
+				upd.result.push_back(')');
 		}
 	}
 }

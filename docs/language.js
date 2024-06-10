@@ -52,7 +52,7 @@ var data = [
 	{
 		"parameter" : "seq [code c1] [code c2] ... [code cN]",
 		"output" : "*",
-		"description" : "Runs each code block sequentially. Evaluates to the result of the last code block run, unless it encounters a conclude in an earlier step, in which case it will halt processing and evaluate to the value returned by conclude. Note that the last step will not consume a concluded value.",
+		"description" : "Runs each code block sequentially. Evaluates to the result of the last code block run, unless it encounters a conclude or return in an earlier step, in which case it will halt processing and evaluate to the value returned by conclude or propagate the return. Note that the last step will not consume a concluded value.",
 		"example" : "(seq (print 1) (print 2) (print 3))"
 	},
 
@@ -74,8 +74,15 @@ var data = [
 	{
 		"parameter" : "conclude * conclusion",
 		"output" : "*",
-		"description" : "Evaluates to the conclusion wrapped in a conclude opcode.  If a step in a seq, let, declare, or while evaluates to a conclude (excluding variable declarations for let and declare, the last step in set, let, and declare, or the condition of while), then it will conclude the execution and evaluate to the value conclusion.  Note that conclude opcodes may be nested to break out of outer opcodes",
+		"description" : "Evaluates to the conclusion wrapped in a conclude opcode.  If a step in a seq, let, declare, or while evaluates to a conclude (excluding variable declarations for let and declare, the last step in set, let, and declare, or the condition of while), then it will conclude the execution and evaluate to the value conclusion.  Note that conclude opcodes may be nested to break out of outer opcodes.",
 		"example" : "(print (seq (print \"seq1 \") (conclude \"success\") (print \"seq2\") ) )"
+	},
+	
+	{
+		"parameter" : "return * return_value",
+		"output" : "*",
+		"description" : "Evaluates to return_value wrapped in a return opcode.  If a step in a seq, let, declare, or while evaluates to a return (excluding variable declarations for let and declare, the last step in set, let, and declare, or the condition of while), then it will conclude the execution and evaluate to the return opcode with its return_value.  This means it will continue to conclude each level up the stack until it reaches any kind of call opcode, including call, call_sandboxed, call_entity, call_entity_get_changes, or call_container, at which point it will evaluate to return_value.  Note that return opcodes may be nested to break out of multiple calls.",
+		"example" : " (print (call (seq 1 2 (seq (return 3) 4) 5)) \"\\n\")"
 	},
 
 	{
@@ -98,7 +105,7 @@ var data = [
 		"parameter" : "while bool condition [code code1] [code code2] ... [code codeN]",
 		"output" : "*",
 		"new target scope": true,
-		"description" : "Each time the condition evaluates to true, it runs each of the code trees sequentially, looping. Evaluates to the last codeN or null if the condition was initially false or if it encounters a conclude, it will halt processing and evaluate to the value returned by conclude.  For iteration of the loop, pushes a new target scope onto the target stack, with current_index being the iteration count, and previous_result being the last evaluated codeN of the previous loop.",
+		"description" : "Each time the condition evaluates to true, it runs each of the code trees sequentially, looping. Evaluates to the last codeN or null if the condition was initially false or if it encounters a conclude or return, it will halt processing and evaluate to the value returned by conclude or propagate the return.  For iteration of the loop, pushes a new target scope onto the target stack, with current_index being the iteration count, and previous_result being the last evaluated codeN of the previous loop.",
 		"example" : "(let (assoc zz 1)\n  (while (< zz 10)\n    (print zz)\n    (assign (assoc zz (+ zz 1)))\n  )\n)"
 	},
 
@@ -106,14 +113,14 @@ var data = [
 		"parameter" : "let assoc data [code function1] [code function2] ... [code functionN]",
 		"output" : "*",
 		"new scope" : true,
-		"description" : "Pushes the key-value pairs of data onto the scope stack so that they become the new variables, then runs each code block sequentially, evaluating to the last code block run, unless it encounters a conclude, in which case it will halt processing and evaluate to the value returned by conclude.  Note that the last step will not consume a concluded value.",
+		"description" : "Pushes the key-value pairs of data onto the scope stack so that they become the new variables, then runs each code block sequentially, evaluating to the last code block run, unless it encounters a conclude or return, in which case it will halt processing and evaluate to the value returned by conclude or propagate the return.  Note that the last step will not consume a concluded value.",
 		"example" : "(let (assoc x 4 y 6) (print (+ x y)))"
 	},
 
 	{
 		"parameter" : "declare assoc data [code function1] [code function2] ... [code functionN]",
 		"output" : "*",
-		"description" : "For each key-value pair of data, if not already in the current context in the scope stack, it will define them.  Then runs each code block sequentially, evaluating to the last code block run, unless it encounters a conclude, in which case it will halt processing and evaluate to the value returned by conclude.  Note that the last step will not consume a concluded value.",
+		"description" : "For each key-value pair of data, if not already in the current context in the scope stack, it will define them.  Then runs each code block sequentially, evaluating to the last code block run, unless it encounters a conclude or return, in which case it will halt processing and evaluate to the value returned by conclude or propagate the return.  Note that the last step will not consume a concluded value.",
 		"example" : "(let (assoc x 4 y 6)\n  (declare (assoc x 5 z 1)\n    (print (+ x y z)) )\n)"
 	},
 
@@ -860,8 +867,8 @@ var data = [
 		"new value" : "new",
 		"concurrency" : true,
 		"new target scope": true,
-		"description" : "Evaluates to the list specified by the parameters.  Pushes a new target scope such that (target), (current_index), and (current_value) access the list, the current index, and the current value.",
-		"example" : "(print (list \"a\" 1 \"b\"))"
+		"description" : "Evaluates to the list specified by the parameters.  Pushes a new target scope such that (target), (current_index), and (current_value) access the list, the current index, and the current value.  If []'s are used instead of parenthesis, the keyword list may be omitted.  [] are considered identical to (list).",
+		"example" : "(print (list \"a\" 1 \"b\"))\n(print [1 2 3])"
 	},
 
 	{
@@ -870,8 +877,8 @@ var data = [
 		"new value" : "new",
 		"concurrency" : true,
 		"new target scope": true,
-		"description" : "Evaluates to the associative list, where each pair of parameters (e.g., index1 and value1) comprises a index/value pair. Pushes a new target scope such that (target), (current_index), and (current_value) access the assoc, the current index, and the current value.  If any of the bstrings do not have reserved characters or spaces, then quotes are optional; if spaces or reserved characters are present, then quotes are required.",
-		"example" : "(print (assoc b 2 c 3))\n(print (assoc a 1 \"b\\ttab\" 2 c 3 4 \"d\"))"
+		"description" : "Evaluates to the associative list, where each pair of parameters (e.g., index1 and value1) comprises a index/value pair. Pushes a new target scope such that (target), (current_index), and (current_value) access the assoc, the current index, and the current value.  If any of the bstrings do not have reserved characters or spaces, then quotes are optional; if spaces or reserved characters are present, then quotes are required.  If {}'s are used instead of parenthesis, the keyword assoc may be omitted.  {} are considered identical to (assoc)",
+		"example" : "(print (assoc b 2 c 3))\n(print (assoc a 1 \"b\\ttab\" 2 c 3 4 \"d\"))\n(print {a 1 b 2})"
 	},
 
 	{
@@ -1235,8 +1242,8 @@ var data = [
 		"output" : "*",
 		"permissions" : "e",
 		"new value" : "new",
-		"description" : "Evaluates to the corresponding comments based on the parameters.  If the id is specified or null is specified as the id, then it will use the current entity.  If the label is null or empty string, it will retrieve comments for the entity root, otherwise if it is a valid label it will attempt to retrieve the comments for that label, null if the label doesn't exist.  If deep_comments is specified and the label is a declare, then it will return an assoc with the keys being the parameters and the values being the descriptions.  If label is empty string or null and deep_comments is true, then it will return an assoc of label to comment for each label in the entity.",
-		"example" : "(print (get_entity_comments))"
+		"description" : "Evaluates to the corresponding comments based on the parameters.  If the id is specified or null is specified as the id, then it will use the current entity.  If the label is null or empty string, it will retrieve comments for the entity root, otherwise if it is a valid label it will attempt to retrieve the comments for that label, null if the label doesn't exist.  If deep_comments is specified and the label is a declare, then it will return a list of two elements.  The first element of this list is an assoc with the keys being the parameters and the values being lists of the descriptions followed by the default value.  The second element of this list is the comment of the assoc itself, which is intended to be used to describe what is returned.  If label is empty string or null and deep_comments is true, then it will return an assoc of label to comment for each label in the entity.",
+		"example" : "(print (get_entity_comments))\n(print (get_entity_comments \"label_name\" (true))"
 	},
 
 	{

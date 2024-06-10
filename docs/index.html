@@ -327,9 +327,10 @@ function render() {
 	<h2>Language syntax</h2>
 	<pre class='ex code'>
 <span class='comment'>;comments until the end of the line</span>
-[#label] [||][@]( opcode [parameter1] [parameter2] ...)</pre>
-
-	# means that the opcode has that label.  Multiple labels may be specified on the same node.  If the label has any nonalphanumeric character, it may be surrounded by quotations as a string.  E.g.,  <span class='ex code'>#"Some complex label; with \"punctuation!"</span><br>
+[#label] [||][@](opcode [parameter1] [parameter2] ...)</pre>
+	The language generally follows a parse tree in a manner similar to Lisp and Scheme, with opcodes surrounded by parenthesis and including parameters in a recursive fashion.  The exceptions are that the opcodes list and assoc (associative array, sometimes referred to as a hashmap or dict) may use [] and {} respectively and ommit the opcode, though are still considered identical to <span class='ex code'>(list)</span> and <span class='ex code'>(assoc)</span>.
+	<p>
+	The character # means that the opcode has that label.  Multiple labels may be specified on the same node.  If the label has any nonalphanumeric character, it may be surrounded by quotations as a string.  E.g.,  <span class='ex code'>#"Some complex label; with \"punctuation!"</span><br>
 	If a label is preceeded by more than one #, then it is disabled and thus ignored with regard to its current entity.  Some commands will add or remove a # at the beginning to assist ease of specifying labels when creating entities and to help prevent accidental label sharing. If a label starts with a caret (^), e.g. <span class='ex code'>#^method_for_contained_entities</span>, then it can be accessed by contained entities, and they do not need to specify the caret.  Parent entities do need to specify the caret (^). For example, if #^foo is a label of a container, a contained entity within could call the label "foo".  This adds a layer of security and prevents contained entities from affecting parts of the container that are exposed for its own container's access.  Labels starting with an exclamation point (!), e.g. <span class='ex code'>#!private_method</span>, are not accessible by the container and can only be accessed by the entity itself except for by the contained entity getting all of the code, acting as a private label. A label cannot be simultaneously private to its container and accessible to contained entities.
 	<p>
 	Variables are accessed in from the closest immediate scope, which means if there is a global variable named <span class='ex code'>x</span> and a function parameter named <span class='ex code'>x</span>, the function parameter will be used.  Entity labels are considered the global-most scope.  If a variable name cannot be found, then it will look at the entity's labels instead.  Scope is handled as a stack, and some opcodes may modify the scope.
@@ -342,7 +343,7 @@ function render() {
 	<p>
 	In-order evaluation of parameters of most opcodes are not guaranteed to execute in order, or be executed at all if not necessary, unless otherwise specified in the opcode (e.g., seq, declare, let, etc. all execute in order).  It is generally not recommended practice to have side effects (variable or entity writes) in opcodes whose parameters are not guaranteed to be sequential.
 	<p>
-	If the concurrent (parallel) symbol, ||, is specified then the opcode's computations will be executed concurrently if possible.  The concurrent execution will be interpreted with regard to the specific opcode, but any function calls may be executed in any order and possibly concurrently.
+	If the concurrent/parallel symbol, ||, is specified then the opcode's computations will be executed concurrently if possible.  The concurrent execution will be interpreted with regard to the specific opcode, but any function calls may be executed in any order and possibly concurrently.
 	<p>
 	Each Entity contains code/data via a root node that is executed every call to the entity.  An Entity has complete abilities to perform reads and writes to any other Entity contained within it; it is also allowed to create, destroy, access, or modify other entities. The root-most entity has permissions to call system commands and load files, and this is called root permission.  These permissions may be set on other entities by an entity with root permission.
 	<p>
@@ -391,6 +392,9 @@ function render() {
 	<div class='td1'><span class="parameter">rand<span></div><div class='td2'>Returns the number of bytes specified by the additional parameter of secure random data intended for cryptographic use.</div><br />
 	<div class='td1'><span class="parameter">sign_key_pair<span></div><div class='td2'>Returns a list of two values, first a public key and second a secret key, for use with cryptographic signatures using the Ed25519 algorithm, generated via securely generated random numbers.</div><br />
 	<div class='td1'><span class="parameter">encrypt_key_pair<span></div><div class='td2'>Returns a list of two values, first a public key and second a secret key, for use with cryptographic encryption using the XSalsa20 and Curve25519 algorithms, generated via securely generated random numbers.</div><br />
+	<div class='td1'><span class="parameter">debugging_info<span></div><div class='td2'>Returns a list of two values.  The first is true if a debugger is present, false if it is not.  The second is true if debugging sounces is enabled, which means that source code location information is prepended to opcodes comments for any opcodes loaded from a file.</div><br />
+	<div class='td1'><span class="parameter">get_max_num_threads<span></div><div class='td2'>Returns the current maximum number of threads.</div><br />
+	<div class='td1'><span class="parameter">set_max_num_threads<span></div><div class='td2'>Attempts to set the current maximum number of threads, where 0 means to use the number of processor cores reported by the operating system.  Returns the maximum number of threads after it has been set.</div><br />
 	<div class='td1'><span class="parameter">built_in_data<span></div><div class='td2'>Returns built-in data compiled along with the version information.</div><br />
 	
 	<br />

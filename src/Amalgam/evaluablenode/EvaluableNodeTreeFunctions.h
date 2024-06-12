@@ -281,28 +281,22 @@ TraverseToEntityReferenceAndContainerViaEvaluableNodeIDPath(
 	//keep track of a reference for the current entity being considered
 	//and a reference of the type that will be used for the target container
 	EntityReadReference relative_entity_container(from_entity);
-	EvaluableNode *cn = traverser.GetCurId();
-	traverser.AdvanceIndex();
 
 	//infinite loop, but logic inside will break it out appropriately
 	while(true)
 	{
+		EvaluableNode *cur_node_id = traverser.GetCurId();
+		traverser.AdvanceIndex();
+
 		if(traverser.IsContainer())
 		{
-			EvaluableNode *node_id_1 = traverser.GetCurId();
-			traverser.AdvanceIndex();
-			EvaluableNode *node_id_2 = traverser.GetCurId();
-			return TraverseToEntityReferenceAndContainerViaEvaluableNodeID<EntityReferenceType>(from_entity, node_id_1, node_id_2, dest_sid_ref);
+			EvaluableNode *next_node_id = traverser.GetCurId();
+			return TraverseToEntityReferenceAndContainerViaEvaluableNodeID<EntityReferenceType>(relative_entity_container, cur_node_id, next_node_id, dest_sid_ref);
 		}
 
-		//traverse the id path
-		StringInternPool::StringID sid = EvaluableNode::ToStringIDIfExists(cn);
-		from_entity = from_entity->GetContainedEntity(sid);
-
-		//lock for the next loop
-		relative_entity_container = EntityReadReference(from_entity);
-		cn = traverser.GetCurId();
-		traverser.AdvanceIndex();
+		//traverse the id path for the next loop
+		StringInternPool::StringID sid = EvaluableNode::ToStringIDIfExists(cur_node_id);
+		relative_entity_container = EntityReadReference(relative_entity_container->GetContainedEntity(sid));
 	}
 
 	//can't make it here

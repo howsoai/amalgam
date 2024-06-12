@@ -694,29 +694,21 @@ bool Interpreter::InterpretNodeIntoBoolValue(EvaluableNode *n, bool value_if_nul
 	return value;
 }
 
-void Interpreter::InterpretNodeIntoDestinationEntity(EvaluableNode *n, Entity *&destination_entity_parent, StringInternRef &destination_entity_id)
+std::pair<EntityWriteReference, StringInternRef> Interpreter::InterpretNodeIntoDestinationEntity(EvaluableNode *n)
 {
 	EvaluableNodeReference destination_entity_id_path = InterpretNodeForImmediateUse(n);
 
-	//TODO 20477: change to use TraverseToEntityReferenceAndContainerViaEvaluableNodeIDPath
-	Entity *container = curEntity;
-	Entity *destination_entity = nullptr;
-	TraverseToEntityViaEvaluableNodeIDPath(container, destination_entity_id_path, destination_entity_parent, destination_entity_id, destination_entity);
-
-	//if it already exists, then place inside it
-	if(destination_entity != nullptr)
-	{
-		destination_entity_parent = destination_entity;
-		destination_entity = nullptr;
-
-		destination_entity_id = StringInternRef::EmptyString();
-	}
-
-	//if couldn't get the parent, just use the original container
-	if(destination_entity_parent == nullptr && destination_entity_id == StringInternPool::NOT_A_STRING_ID)
-		destination_entity_parent = container;
+	StringInternRef new_entity_id;
+	auto [entity, entity_container] = TraverseToEntityReferenceAndContainerViaEvaluableNodeIDPath<EntityWriteReference>(
+			curEntity, n, &new_entity_id);
 
 	evaluableNodeManager->FreeNodeTreeIfPossible(destination_entity_id_path);
+
+	//if it already exists, then place inside it
+	if(entity != nullptr)
+		return std::make_pair(std::move(entity), StringInternRef());
+	else //return the container
+		return std::make_pair(std::move(entity_container), new_entity_id);
 }
 
 EvaluableNode **Interpreter::TraverseToDestinationFromTraversalPathList(EvaluableNode **source, EvaluableNodeReference &tpl, bool create_destination_if_necessary)

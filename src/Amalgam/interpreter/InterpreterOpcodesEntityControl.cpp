@@ -506,7 +506,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MOVE_ENTITIES(EvaluableNod
 		if(i + 1 < ocn.size())
 		{
 			//get the id of the source entity
-			auto id_node = InterpretNodeForImmediateUse(ocn[i]);
+			auto id_node = InterpretNodeForImmediateUse(ocn[i + 1]);
 			EntityWriteReference entity;
 			std::tie(entity, entity_container)
 				= TraverseToEntityReferenceAndContainerViaEvaluableNodeIDPath<EntityWriteReference>(

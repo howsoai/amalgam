@@ -700,7 +700,7 @@ std::pair<EntityWriteReference, StringInternRef> Interpreter::InterpretNodeIntoD
 
 	StringInternRef new_entity_id;
 	auto [entity, entity_container] = TraverseToEntityReferenceAndContainerViaEvaluableNodeIDPath<EntityWriteReference>(
-			curEntity, n, &new_entity_id);
+			curEntity, destination_entity_id_path, &new_entity_id);
 
 	evaluableNodeManager->FreeNodeTreeIfPossible(destination_entity_id_path);
 

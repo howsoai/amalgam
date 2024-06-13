@@ -169,50 +169,6 @@ std::vector<std::string> EntityExternalInterface::GetEntities()
 	return entities;
 }
 
-EvaluableNode *NodifyNumberList(Entity *entity, double *arr, size_t len)
-{
-	EvaluableNodeManager *enm = &entity->evaluableNodeManager;
-	EvaluableNode *list_node = enm->AllocNode(ENT_LIST);
-	auto &children = list_node->GetOrderedChildNodes();
-	children.resize(len);
-	for(size_t i = 0; i < len; i++)
-		children[i] = enm->AllocNode(arr[i]);
-
-	return list_node;
-}
-
-EvaluableNode *NodifyNumberMatrix(Entity *entity, double *arr, size_t w, size_t h)
-{
-	EvaluableNodeManager *enm = &entity->evaluableNodeManager;
-	EvaluableNode *matrix_node = enm->AllocNode(ENT_LIST);
-
-	auto &children = matrix_node->GetOrderedChildNodes();
-	children.resize(w);
-	for(size_t x = 0; x < w; x++)
-	{
-		double *column = new double[h];
-		for(size_t y = 0; y < h; y++)
-			column[y] = arr[x*h + y];
-
-		children[x] = NodifyNumberList(entity, column, h);
-		delete [] column;
-	}
-
-	return matrix_node;
-}
-
-EvaluableNode *NodifyStringList(Entity *entity, char **arr, size_t len)
-{
-	EvaluableNodeManager *enm = &entity->evaluableNodeManager;
-	EvaluableNode *list_node = enm->AllocNode(ENT_LIST);
-	auto &children = list_node->GetOrderedChildNodes();
-	children.resize(len);
-	for(size_t i = 0; i < len; i++)
-		children[i] = enm->AllocNode(ENT_STRING, arr[i]);
-
-	return list_node;
-}
-
 bool EntityExternalInterface::SetJSONToLabel(std::string &handle, std::string &label, std::string_view json)
 {
 	auto bundle = FindEntityBundle(handle);

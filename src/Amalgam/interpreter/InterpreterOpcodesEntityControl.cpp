@@ -347,26 +347,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableN
 			root = InterpretNodeForImmediateUse(ocn[i + 1]);
 
 		//get destination if applicable
-		StringInternRef new_entity_id;
 		EntityWriteReference entity_container;
+		StringInternRef new_entity_id;
 		if(i + 1 < ocn.size())
-		{
-			node_stack.PushEvaluableNode(root);
-
-			//get the id of the source entity
-			auto id_node = InterpretNodeForImmediateUse(ocn[i]);
-			EntityWriteReference entity;
-			std::tie(entity, entity_container)
-				= TraverseToEntityReferenceAndContainerViaEvaluableNodeIDPath<EntityWriteReference>(
-					curEntity, id_node, &new_entity_id);
-			evaluableNodeManager->FreeNodeTreeIfPossible(id_node);
-
-			node_stack.PopEvaluableNode();
-		}
+			std::tie(entity_container, new_entity_id) = InterpretNodeIntoDestinationEntity(ocn[i]);
 		else
-		{
 			entity_container = EntityWriteReference(curEntity);
-		}
 
 		if(entity_container == nullptr)
 		{

@@ -52,31 +52,6 @@ public:
 	bool SetRandomSeed(std::string &handle, std::string &rand_seed);
 	std::vector<std::string> GetEntities();
 
-	void AppendToLabel(std::string &handle, std::string &label, double value);
-	void AppendToLabel(std::string &handle, std::string &label, std::string &value);
-
-	void SetLabel(std::string &handle, std::string &label, double value);
-	void SetLabel(std::string &handle, std::string &label, std::string &value);
-
-	double GetNumber(std::string &handle, std::string &label);
-	std::string GetString(std::string &handle, std::string &label);
-	std::string GetStringFromList(std::string &handle, std::string &label, size_t index);
-
-	size_t GetNumberListLength(std::string &handle, std::string &label);
-	void GetNumberList(std::string &handle, std::string &label, double *out_arr, size_t len);
-	void GetNumberList(EvaluableNode *label_val, double *out_arr, size_t len);
-	void SetNumberList(std::string &handle, std::string &label, double *arr, size_t len);
-	void AppendNumberList(std::string &handle, std::string &label, double *arr, size_t len);
-
-	size_t GetNumberMatrixWidth(std::string &handle, std::string &label);
-	size_t GetNumberMatrixHeight(std::string &handle, std::string &label);
-	void GetNumberMatrix(std::string &handle, std::string &label, double *out_arr, size_t w, size_t h);
-	void SetNumberMatrix(std::string &handle, std::string &label, double *arr, size_t w, size_t h);
-
-	size_t GetStringListLength(std::string &handle, std::string &label);
-	void GetStringList(std::string &handle, std::string &label, std::string *out_arr, size_t len);
-	void SetStringList(std::string &handle, std::string &label, char **arr, size_t len);
-
 	bool SetJSONToLabel(std::string &handle, std::string &label, std::string_view json);
 	std::string GetJSONFromLabel(std::string &handle, std::string &label);
 	std::string ExecuteEntityJSON(std::string &handle, std::string &label, std::string_view json);

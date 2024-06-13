@@ -70,7 +70,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 	{
 		//get list
 		auto list = InterpretNode(ocn[1]);
-		if(EvaluableNode::IsNull(list))
+		if(list == nullptr)
 			return EvaluableNodeReference::Null();
 
 		//if it's the only reference of the list (and it doesn't refer back to itself), then just reuse it for the output
@@ -361,11 +361,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 	{
 		//get list
 		auto list = InterpretNode(ocn[0]);
-		if(EvaluableNode::IsNull(list))
-		{
-			evaluableNodeManager->FreeNodeTreeIfPossible(list);
+		if(list == nullptr)
 			return EvaluableNodeReference::Null();
-		}
 
 		EvaluableNodeReference result_list(list, list.unique);
 
@@ -434,7 +431,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 	//get list
 	auto list = InterpretNode(ocn[1]);
 	//if null, just return a new null, since it has no child nodes
-	if(EvaluableNode::IsNull(list))
+	if(list == nullptr)
 		return EvaluableNodeReference::Null();
 
 	//create result_list as a copy of the current list, but clear out child nodes
@@ -720,14 +717,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en, 
 		return EvaluableNodeReference::Null();
 
 	auto function = InterpretNodeForImmediateUse(ocn[0]);
-	if(EvaluableNode::IsNull(function))
+	if(EvaluableNode::IsEmptyNode(function))
 		return EvaluableNodeReference::Null();
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(function);
 
 	//get list
 	auto list = InterpretNode(ocn[1]);
-	if(EvaluableNode::IsNull(list))
+	if(list == nullptr)
 		return EvaluableNodeReference::Null();
 
 	EvaluableNodeReference previous_result = EvaluableNodeReference::Null();
@@ -836,7 +833,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REVERSE(EvaluableNode *en,
 
 	//get the list to reverse
 	auto list = InterpretNode(ocn[0]);
-	if(EvaluableNode::IsNull(list))
+	if(list == nullptr)
 		return EvaluableNodeReference::Null();
 
 	//make sure it is an editable copy
@@ -878,7 +875,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 	{
 		//get list
 		auto list = InterpretNode(ocn[list_index]);
-		if(EvaluableNode::IsNull(list))
+		if(EvaluableNode::IsEmptyNode(list))
 			return EvaluableNodeReference::Null();
 
 		//make sure it is an editable copy
@@ -926,7 +923,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 		
 		//get list
 		auto list = InterpretNode(ocn[list_index]);
-		if(EvaluableNode::IsNull(list))
+		if(EvaluableNode::IsEmptyNode(list))
 			return EvaluableNodeReference::Null();
 
 		//make sure it is an editable copy
@@ -1584,7 +1581,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, boo
 
 	//attempt to get indices, the keys of the assoc
 	auto index_list = InterpretNodeForImmediateUse(ocn[index_list_index]);
-	if(EvaluableNode::IsNull(index_list))
+	if(EvaluableNode::IsEmptyNode(index_list))
 	{
 		EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
 		return result;

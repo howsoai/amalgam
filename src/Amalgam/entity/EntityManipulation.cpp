@@ -322,7 +322,7 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 		//    )
 		EvaluableNode *src_id_list = GetTraversalIDPathFromAToB(enm, entity2, entity_to_create);
 		EvaluableNode *src_append = enm->AllocNode(ENT_APPEND);
-		src_append->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI_new_entity));
+		src_append->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI__));
 		src_append->AppendOrderedChildNode(src_id_list);
 
 		EvaluableNode *dest_id_list = enm->DeepAllocCopy(src_id_list);

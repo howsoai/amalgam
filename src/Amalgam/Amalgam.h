@@ -54,27 +54,6 @@ extern "C"
 	//sets num_entities to the number of entities and allocates an array of string pointers for the handles loaded
 	AMALGAM_EXPORT char **GetEntities(uint64_t *num_entities);
 
-	AMALGAM_EXPORT double GetNumberValue(char *handle, char *label);
-	AMALGAM_EXPORT void   AppendNumberValue(char *handle, char *label, double value);
-	AMALGAM_EXPORT void   SetNumberValue(char *handle, char *label, double value);
-
-	AMALGAM_EXPORT void   AppendStringValue(char *handle, char *label, char *value);
-	AMALGAM_EXPORT void   SetStringValue(char *handle, char *label, char *value);
-
-	AMALGAM_EXPORT double *GetNumberListPtr(char *handle, char *label);
-	AMALGAM_EXPORT size_t GetNumberListLength(char *handle, char *label);
-	AMALGAM_EXPORT void   GetNumberList(char *handle, char *label, double *out_list);
-	AMALGAM_EXPORT void   AppendNumberList(char *handle, char *label, double *list, size_t len);
-	AMALGAM_EXPORT void   SetNumberList(char *handle, char *label, double *list, size_t len);
-
-	// IMPORTANT: GetStringList assumes that the char ** array is unallocated
-	//            If there are allocated char *s inside, they will become inacessable and be a memory leak.
-	AMALGAM_EXPORT size_t GetStringListLength(char *handle, char *label);
-	AMALGAM_EXPORT wchar_t **GetStringListPtrWide(char *handle, char *label);
-	AMALGAM_EXPORT char **GetStringListPtr(char *handle, char *label);
-	AMALGAM_EXPORT void   AppendStringList(char *handle, char *label, char **list, size_t len);
-	AMALGAM_EXPORT void   SetStringList(char *handle, char *label, char **list, size_t len);
-
 	AMALGAM_EXPORT void   SetJSONToLabel(char *handle, char *label, char *json);
 
 	AMALGAM_EXPORT wchar_t *GetJSONPtrFromLabelWide(char *handle, char *label);

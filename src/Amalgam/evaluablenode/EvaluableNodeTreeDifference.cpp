@@ -116,7 +116,7 @@ EvaluableNode *EvaluableNodeTreeDifference::DifferenceTrees(EvaluableNodeManager
 		//if node to replace is nullptr, then replace the parent object
 		if(node_to_replace == nullptr)
 		{
-			df_replace->AppendOrderedChildNode(tree2);
+			replacement_function->AppendOrderedChildNode(tree2);
 			break;
 		}
 

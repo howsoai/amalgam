@@ -34,7 +34,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en,
 	//get tree and make a copy so it can be modified in-place
 	auto to_modify = InterpretNode(ocn[1]);
 	if(to_modify == nullptr)
-		return EvaluableNodeReference::Null();
+		to_modify.SetReference(evaluableNodeManager->AllocNode(ENT_NULL), true);
 
 	if(!to_modify.unique)
 		to_modify = evaluableNodeManager->DeepAllocCopy(to_modify);
@@ -70,7 +70,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 	{
 		//get list
 		auto list = InterpretNode(ocn[1]);
-		if(list == nullptr)
+		if(EvaluableNode::IsNull(list))
 			return EvaluableNodeReference::Null();
 
 		//if it's the only reference of the list (and it doesn't refer back to itself), then just reuse it for the output
@@ -361,7 +361,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 	{
 		//get list
 		auto list = InterpretNode(ocn[0]);
-		if(list == nullptr)
+		if(EvaluableNode::IsNull(list))
 		{
 			evaluableNodeManager->FreeNodeTreeIfPossible(list);
 			return EvaluableNodeReference::Null();
@@ -434,7 +434,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 	//get list
 	auto list = InterpretNode(ocn[1]);
 	//if null, just return a new null, since it has no child nodes
-	if(list == nullptr)
+	if(EvaluableNode::IsNull(list))
 		return EvaluableNodeReference::Null();
 
 	//create result_list as a copy of the current list, but clear out child nodes
@@ -720,14 +720,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en, 
 		return EvaluableNodeReference::Null();
 
 	auto function = InterpretNodeForImmediateUse(ocn[0]);
-	if(function == nullptr)
+	if(EvaluableNode::IsNull(function))
 		return EvaluableNodeReference::Null();
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(function);
 
 	//get list
 	auto list = InterpretNode(ocn[1]);
-	if(list == nullptr)
+	if(EvaluableNode::IsNull(list))
 		return EvaluableNodeReference::Null();
 
 	EvaluableNodeReference previous_result = EvaluableNodeReference::Null();
@@ -786,7 +786,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, b
 	//get the target
 	auto source = InterpretNode(ocn[1]);
 	if(source == nullptr)
-		return EvaluableNodeReference::Null();
+		source.SetReference(evaluableNodeManager->AllocNode(ENT_NULL));
 
 	evaluableNodeManager->EnsureNodeIsModifiable(source);
 
@@ -836,7 +836,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REVERSE(EvaluableNode *en,
 
 	//get the list to reverse
 	auto list = InterpretNode(ocn[0]);
-	if(list == nullptr)
+	if(EvaluableNode::IsNull(list))
 		return EvaluableNodeReference::Null();
 
 	//make sure it is an editable copy
@@ -878,7 +878,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 	{
 		//get list
 		auto list = InterpretNode(ocn[list_index]);
-		if(list == nullptr)
+		if(EvaluableNode::IsNull(list))
 			return EvaluableNodeReference::Null();
 
 		//make sure it is an editable copy
@@ -926,7 +926,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 		
 		//get list
 		auto list = InterpretNode(ocn[list_index]);
-		if(list == nullptr)
+		if(EvaluableNode::IsNull(list))
 			return EvaluableNodeReference::Null();
 
 		//make sure it is an editable copy
@@ -1584,7 +1584,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, boo
 
 	//attempt to get indices, the keys of the assoc
 	auto index_list = InterpretNodeForImmediateUse(ocn[index_list_index]);
-	if(index_list == nullptr)
+	if(EvaluableNode::IsNull(index_list))
 	{
 		EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
 		return result;
@@ -1617,8 +1617,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, boo
 	{
 		//convert index to string
 		EvaluableNode *index = index_list_ocn[i];
-		if(index == nullptr)
-			continue;
 
 		//obtain the index, reusing the sid reference if possible
 		StringInternPool::StringID index_sid = string_intern_pool.EMPTY_STRING_ID;
@@ -1691,7 +1689,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, b
 		return EvaluableNodeReference::Null();
 
 	auto zipped = InterpretNode(ocn[0]);
-	if(zipped == nullptr)
+	if(EvaluableNode::IsEmptyNode(zipped))
 		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(zipped);
@@ -1700,7 +1698,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, b
 
 	EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_LIST), true);
 
-	if(index_list == nullptr)
+	if(EvaluableNode::IsEmptyNode(index_list))
 		return result;
 
 	auto &index_list_ocn = index_list->GetOrderedChildNodes();

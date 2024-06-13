@@ -286,6 +286,8 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 			//copy over the existing node, but don't update labels, etc.
 			destination->CopyValueFrom(new_value);
 		}
+		//the value is being used in the entity, so no longer unique if it was before
+		new_value.unique = false;
 	}
 	else //direct set
 	{

@@ -1943,6 +1943,7 @@
     (print (retrieve_entity_root new_entity))
 	(print (retrieve_entity_root (list new_entity "DiffEntityChild1")))
 	(print (contained_entities new_entity))
+	(print "difference between DiffEntity2 and new_entity:\n" (difference_entities "DiffEntity2" new_entity))
  )
 
  (create_entities "DiffContainer" null)
@@ -1972,7 +1973,7 @@
     (print (retrieve_entity_root new_entity))
 	(print (retrieve_entity_root (list new_entity "DiffEntityChild1")))
 	(print (contained_entities new_entity))
-	(print (difference_entities (list "DiffContainer" "DiffEntity2") new_entity ))
+	(print "difference between DiffContainer and DiffEntity2:\n" (difference_entities (list "DiffContainer" "DiffEntity2") new_entity ))
  )
 
  (print "--mix_entities--\n")

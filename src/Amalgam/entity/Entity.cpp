@@ -761,7 +761,7 @@ void Entity::RemoveContainedEntity(StringInternPool::StringID id, std::vector<En
 
 Entity *Entity::GetContainedEntity(StringInternPool::StringID id)
 {
-	if(!hasContainedEntities)
+	if(!hasContainedEntities || id == string_intern_pool.NOT_A_STRING_ID)
 		return nullptr;
 
 	auto &id_to_index_lookup = entityRelationships.relationships->containedEntityStringIdToIndex;
@@ -775,7 +775,7 @@ Entity *Entity::GetContainedEntity(StringInternPool::StringID id)
 
 size_t Entity::GetContainedEntityIndex(StringInternPool::StringID id)
 {
-	if(!hasContainedEntities)
+	if(!hasContainedEntities || id == string_intern_pool.NOT_A_STRING_ID)
 		return std::numeric_limits<size_t>::max();
 
 	auto &id_to_index_lookup = entityRelationships.relationships->containedEntityStringIdToIndex;

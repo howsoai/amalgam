@@ -327,7 +327,7 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 
 		EvaluableNode *dest_id_list = enm->DeepAllocCopy(src_id_list);
 		EvaluableNode *dest_append = enm->AllocNode(ENT_APPEND);
-		dest_append->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI__));
+		dest_append->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI_new_entity));
 		dest_append->AppendOrderedChildNode(dest_id_list);
 
 		EvaluableNode *create_entity = enm->AllocNode(ENT_CREATE_ENTITIES);

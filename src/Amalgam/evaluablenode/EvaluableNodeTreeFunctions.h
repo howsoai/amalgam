@@ -288,6 +288,8 @@ TraverseToEntityReferenceAndContainerViaEvaluableNodeIDPath(
 		EvaluableNode *cur_node_id = traverser.GetCurId();
 		StringInternPool::StringID sid = EvaluableNode::ToStringIDIfExists(cur_node_id);
 		Entity *next_entity = relative_entity_container->GetContainedEntity(sid);
+		if(next_entity == nullptr)
+			break;
 
 		traverser.AdvanceIndex();
 
@@ -304,7 +306,7 @@ TraverseToEntityReferenceAndContainerViaEvaluableNodeIDPath(
 		relative_entity_container = EntityReadReference(next_entity);
 	}
 
-	//can't make it here
+	//something failed
 	return std::make_pair(EntityReferenceType(nullptr), EntityReferenceType(nullptr));
 }
 

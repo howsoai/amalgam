@@ -1234,8 +1234,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_and_REPLACE(EvaluableN
 		return EvaluableNodeReference::Null();
 
 	auto result = InterpretNode(ocn[0]);
+
 	if(result == nullptr)
-		return EvaluableNodeReference::Null();
+		result.SetReference(evaluableNodeManager->AllocNode(ENT_NULL), true);
 
 	if(!result.unique)
 		result = evaluableNodeManager->DeepAllocCopy(result);

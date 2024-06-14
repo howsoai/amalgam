@@ -1088,10 +1088,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_CONCURRENCY(EvaluableN
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 	auto n = InterpretNodeForImmediateUse(ocn[0]);
-	if(n == nullptr)
-		return EvaluableNodeReference::Null();
-
-	return AllocReturn(n->GetConcurrency(), immediate_result);
+	
+	return AllocReturn(n != nullptr && n->GetConcurrency(), immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_CONCURRENCY(EvaluableNode *en, bool immediate_result)

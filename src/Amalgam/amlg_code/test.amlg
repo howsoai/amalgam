@@ -1,57 +1,50 @@
 ﻿(seq
 
- (create_entities "descriptive_entity" (lambda
-	;this is a fully described entity
-	(null
-		;some public variable
-		##publicvar 1
-		;some private variable
-		##!privatevar 2
-		;a variable accessible to contained entities
-		##^containervar 3
-		;the function foo
-		##foo (declare
-					;a number representing the sum
-					(assoc
-						;the value of x
-						x 
-						;the default value of x
-						1
-						;the value of y
-						y 2
-					)
-					( + x y)
-				
-				)
-
-		;returns the api details
-		##get_api (seq
-
-			(assoc
-				"description"
-				(get_entity_comments)
-				
-				"labels"
-				(map (lambda
-						(assoc
-							"description"
-							(current_value 1)
-							"parameters"
-							(get_entity_comments (null) (current_index 1) (true))
+(if 0 (seq
+	(print
+		(declare
+				{_ (null)}
+				(replace
+						_
+						[]
+						(lambda
+								{o 6}
 						)
-					)
-					(get_entity_comments (null) (null) (true))
 				)
-	
-	
-			)
-
 		)
+	 "\n")
+	(conclude)
 	)
+)
 
+ (create_entities "DiffEntity1" (lambda (assoc "c" 3 "b" 4)) )
+ (create_entities (list "DiffEntity1" "DiffEntityChild1") (lambda (assoc "x" 3 "y" 4 "z" 6)) )
+ (create_entities (list "DiffEntity1" "DiffEntityChild1" "DiffEntityChild2") (lambda (assoc "p" 3 "q" 4 "u" 5 "v" 6 "w" 7)) )
+ (create_entities (list "DiffEntity1" "DiffEntityChild1" "DiffEntityChild2" "DiffEntityChild3") (lambda (assoc "e" 3 "p" 4 "a" 5 "o" 6 "w" 7)) )
+ (create_entities (list "DiffEntity1" "OnlyIn1") (lambda (assoc "m" 4)) )
+ (create_entities (list "DiffEntity1") (lambda (assoc "E" 3 "F" 4)) )
+ (create_entities (list "DiffEntity1") (lambda (assoc "e" 3 "f" 4 "g" 5 "h" 6)) )
 
- ))
+ (create_entities "DiffEntity2" (lambda (assoc "c" 3 "b" 4)) )
+ (create_entities (list "DiffEntity2" "DiffEntityChild1") (lambda (assoc "x" 3 "y" 4 "z" 5)) )
+ (create_entities (list "DiffEntity2" "DiffEntityChild1" "DiffEntityChild2") (lambda (assoc "p" 3 "q" 4 "u" 5 "v" 6 "w" 7)) )
+ (create_entities (list "DiffEntity2" "DiffEntityChild1" "DiffEntityChild2" "DiffEntityChild3") (lambda (assoc "e" 3 "p" 4 "a" 5 "o" 6 "w" 7)) )
+ (create_entities (list "DiffEntity2" "OnlyIn2") (lambda (assoc "o" 6)) )
+ (create_entities (list "DiffEntity2") (lambda (assoc "E" 3 "F" 4 "G" 5 "H" 6)) )
+ (create_entities (list "DiffEntity2") (lambda (assoc "e" 3 "f" 4)) )
 
- (print (get_entity_comments "descriptive_entity" "foo" (true)))
+ (print (contained_entities "DiffEntity2"))
 
+ (print (difference_entities "DiffEntity1" "DiffEntity2"))
+
+ (let (assoc new_entity
+            (call (difference_entities "DiffEntity1" "DiffEntity2") (assoc _ "DiffEntity1")))
+	(print "new_entity: " new_entity "\n")
+    (print "new_entity root: " (retrieve_entity_root new_entity))
+	(print "DiffEntityChild1 root:\n" (retrieve_entity_root (list new_entity "DiffEntityChild1")))
+	(print "contained_entities new_entity: " (contained_entities new_entity))
+	(print "difference between DiffEntity2 and new_entity:\n" (difference_entities "DiffEntity2" new_entity))
+	;(print "DiffEntity2:\n" (flatten_entity "DiffEntity2"))
+	;(print "new_entity:\n" (flatten_entity new_entity))
+ )
 )

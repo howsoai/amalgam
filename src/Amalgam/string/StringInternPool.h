@@ -490,6 +490,15 @@ public:
 		string_intern_pool.DestroyStringReference(id);
 	}
 
+	inline void Clear()
+	{
+		if(id != StringInternPool::NOT_A_STRING_ID)
+		{
+			string_intern_pool.DestroyStringReference(id);
+			id = StringInternPool::NOT_A_STRING_ID;
+		}
+	}
+
 	//easy-to-read way of creating an empty string
 	inline static StringInternRef EmptyString()
 	{	return StringInternRef();	}

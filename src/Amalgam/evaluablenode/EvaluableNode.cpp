@@ -256,10 +256,6 @@ StringInternPool::StringID EvaluableNode::ToStringIDWithReference(EvaluableNode 
 
 	if(e->GetType() == ENT_STRING || e->GetType() == ENT_SYMBOL)
 		return string_intern_pool.CreateStringReference(e->GetStringIDReference());
-
-	//this will catch any other form of null or NaN not yet caught
-	if(IsNaN(e))
-		return StringInternPool::NOT_A_STRING_ID;
 	
 	std::string stringified = ToStringPreservingOpcodeType(e);
 	return string_intern_pool.CreateStringReference(stringified);

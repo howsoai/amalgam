@@ -28,7 +28,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 
 	auto to_mutate = InterpretNodeForImmediateUse(ocn[0]);
 	if(to_mutate == nullptr)
-		return EvaluableNodeReference::Null();
+		to_mutate.SetReference(evaluableNodeManager->AllocNode(ENT_NULL));
 	auto node_stack = CreateInterpreterNodeStackStateSaver(to_mutate);
 
 	double mutation_rate = 0.00001;

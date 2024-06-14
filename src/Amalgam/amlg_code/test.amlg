@@ -1,10 +1,12 @@
 ﻿(seq
 
  (create_entities "MergeEntity1" (lambda (associate "a" 3 "b" 4)) )
- (create_entities (list "MergeEntity1" "MergeEntityChild1") (lambda (associate "x" 3 "y" 4)) )
- (create_entities (list "MergeEntity1" "MergeEntityChild2") (lambda (associate "p" 3 "q" 4)) )
- (create_entities (list "MergeEntity1") (lambda (associate "E" 3 "F" 4)) )
- (create_entities (list "MergeEntity1") (lambda (associate "e" 3 "f" 4 "g" 5 "h" 6)) )
+ ;(create_entities (list "MergeEntity1" "MergeEntityChild1") (lambda (associate "x" 3 "y" 4)) )
+ ;(create_entities (list "MergeEntity1" "MergeEntityChild2") (lambda (associate "p" 3 "q" 4)) )
+ ;(create_entities (list "MergeEntity1") (lambda (associate "E" 3 "F" 4)) )
+ ;(create_entities (list "MergeEntity1") (lambda (associate "e" 3 "f" 4 "g" 5 "h" 6)) )
 
- (print (total_entity_size "MergeEntity1") "\n")
+  (store_entity "amlg_code/module_test_c.caml" "MergeEntity1")
+ (load_entity "amlg_code/module_test_c.caml" "MergeEntity1Decompressed")
+ (print "Compression difference: [" (difference_entities "MergeEntity1" "MergeEntity1Decompressed") "]\n")
 )

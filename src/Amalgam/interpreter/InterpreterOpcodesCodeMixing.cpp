@@ -374,7 +374,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 		}
 	}
 
-	//TODO 10975: change this to lock all entities at once
 	//retrieve the entities after other parameters to minimize time in locks
 	// and prevent deadlock if one of the params accessed the entity
 	//get the id of the first source entity
@@ -389,6 +388,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 	//accumulate usage
 	if(!AllowUnlimitedExecutionNodes())
 		curNumExecutionNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
+
+	//clear lock if applicable
+	source_entity = EntityReadReference();
 
 	//get destination if applicable
 	EntityWriteReference destination_entity_parent;

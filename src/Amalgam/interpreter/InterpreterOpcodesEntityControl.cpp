@@ -400,11 +400,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CLONE_ENTITIES(EvaluableNo
 	new_entity_ids_list->ReserveOrderedChildNodes((ocn.size() + 1) / 2);
 	auto node_stack = CreateInterpreterNodeStackStateSaver(new_entity_ids_list);
 
-	//TODO 10975: change this to lock all entities at once
 	for(size_t i = 0; i < ocn.size(); i += 2)
 	{
 		//get the id of the source entity
-		Entity *source_entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[i]);
+		EntityReadReference source_entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[i]);
 		if(source_entity == nullptr)
 		{
 			new_entity_ids_list->AppendOrderedChildNode(nullptr);
@@ -425,6 +424,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CLONE_ENTITIES(EvaluableNo
 
 		//create new entity
 		Entity *new_entity = new Entity(source_entity);
+
+		//clear previous lock
+		source_entity = EntityReadReference();
 
 		//accumulate usage
 		if(!AllowUnlimitedExecutionNodes())
@@ -460,15 +462,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MOVE_ENTITIES(EvaluableNod
 	new_entity_ids_list->ReserveOrderedChildNodes((ocn.size() + 1) / 2);
 	auto node_stack = CreateInterpreterNodeStackStateSaver(new_entity_ids_list);
 
-	//TODO 10975: change this to lock the entities
 	for(size_t i = 0; i < ocn.size(); i += 2)
 	{
 		//get the id of the source entity
 		auto source_id_node = InterpretNodeForImmediateUse(ocn[i]);
 
-		StringInternRef source_entity_id;
-		Entity *source_entity_parent = nullptr, *source_entity = nullptr;
-		TraverseToEntityViaEvaluableNodeIDPath(curEntity, source_id_node, source_entity_parent, source_entity_id, source_entity);
+		auto [source_entity, source_entity_parent]
+			= TraverseToEntityReferenceAndContainerViaEvaluableNodeIDPath<EntityWriteReference>(curEntity, source_id_node);
 		evaluableNodeManager->FreeNodeTreeIfPossible(source_id_node);
 
 		if(source_entity == nullptr || source_entity_parent == nullptr || source_entity == curEntity)
@@ -486,6 +486,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MOVE_ENTITIES(EvaluableNod
 
 		//remove source entity from its parent
 		source_entity_parent->RemoveContainedEntity(source_entity->GetIdStringId(), writeListeners);
+
+		//clear lock if applicable
+		source_entity_parent = EntityWriteReference();
 
 		//get destination if applicable
 		EntityWriteReference destination_entity_parent;

@@ -47,7 +47,7 @@ void SeparableBoxFilterDataStore::OptimizeColumn(size_t column_index)
 {
 	auto &column_data = columnData[column_index];
 
-	if(column_data->numberValuesInterned)
+	if(column_data->internedNumberValues.valueInterningEnabled)
 	{
 		if(column_data->AreNumberValuesPreferredToInterns())
 		{
@@ -1477,14 +1477,14 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 		size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
 		bool all_values_numeric = (GetNumInsertedEntities() == num_values_stored_as_numbers);
 
-		if(column_data->numberValuesInterned)
+		if(column_data->internedNumberValues.valueInterningEnabled)
 		{
 			if(all_values_numeric)
 				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NUMERIC_PRECOMPUTED;
 			else
 				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED;
 
-			r_dist_eval.ComputeAndStoreInternedNumberValuesAndDistanceTerms(query_feature_index, &column_data->internedNumberIndexToNumberValue);
+			r_dist_eval.ComputeAndStoreInternedNumberValuesAndDistanceTerms(query_feature_index, &column_data->internedNumberValues.internedIndexToValue);
 		}
 		else
 		{

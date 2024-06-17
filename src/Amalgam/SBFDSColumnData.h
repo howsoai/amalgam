@@ -9,6 +9,7 @@
 //system headers:
 #include <algorithm>
 #include <memory>
+#include <type_traits>
 #include <vector>
 
 //SBFDSColumnData class maintains a sorted linear and random access data collection
@@ -52,7 +53,7 @@ public:
 	//column needs to be named when it is created
 	inline SBFDSColumnData(StringInternPool::StringID sid)
 		: stringId(sid), indexWithLongestString(0), longestStringLength(0),
-		indexWithLargestCode(0), largestCodeSize(0), numberValuesInterned(false)
+		indexWithLargestCode(0), largestCodeSize(0)
 	{	}
 
 	//like InsertIndexValue, but used only for building the column data from an empty column
@@ -149,7 +150,7 @@ public:
 	{
 		if(numberIndices.contains(index))
 		{
-			if(numberValuesInterned)
+			if(internedNumberValues.valueInterningEnabled)
 				return ENIVT_NUMBER_INDIRECTION_INDEX;
 			return ENIVT_NUMBER;
 		}
@@ -174,7 +175,7 @@ public:
 	//returns the value type that represents the values stored in this column, performing the reverse of any resolution for intern lookups
 	__forceinline EvaluableNodeImmediateValueType GetUnresolvedValueType(EvaluableNodeImmediateValueType value_type)
 	{
-		if(value_type == ENIVT_NUMBER && numberValuesInterned)
+		if(value_type == ENIVT_NUMBER && internedNumberValues.valueInterningEnabled)
 			return ENIVT_NUMBER_INDIRECTION_INDEX;
 		return value_type;
 	}
@@ -183,7 +184,7 @@ public:
 	__forceinline EvaluableNodeImmediateValue GetResolvedValue(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value)
 	{
 		if(value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
-			return EvaluableNodeImmediateValue(internedNumberIndexToNumberValue[value.indirectionIndex]);
+			return EvaluableNodeImmediateValue(internedNumberValues.internedIndexToValue[value.indirectionIndex]);
 		return value;
 	}
 
@@ -202,7 +203,7 @@ public:
 				invalidIndices.insert(index);
 			}
 
-			if(numberValuesInterned)
+			if(internedNumberValues.valueInterningEnabled)
 				return EvaluableNodeImmediateValue(ValueEntry::NAN_INDEX);
 			else
 				return EvaluableNodeImmediateValue();
@@ -236,7 +237,7 @@ public:
 					DeleteIndexValue(old_value_type, old_value, index);
 					nanIndices.insert(index);
 
-					if(numberValuesInterned)
+					if(internedNumberValues.valueInterningEnabled)
 						return EvaluableNodeImmediateValue(ValueEntry::NAN_INDEX);
 					else
 						return EvaluableNodeImmediateValue(std::numeric_limits<double>::quiet_NaN());
@@ -307,7 +308,7 @@ public:
 					InsertFirstIndexIntoNumberValueEntry(index, new_value_index);
 				}
 
-				if(numberValuesInterned)
+				if(internedNumberValues.valueInterningEnabled)
 					return EvaluableNodeImmediateValue(new_value_index);
 				else
 					return EvaluableNodeImmediateValue(new_value);
@@ -433,25 +434,7 @@ public:
 	//deletes a particular value based on the value_index
 	void DeleteNumberValueEntry(size_t value_index)
 	{
-		if(numberValuesInterned)
-		{
-			size_t value_intern_index = sortedNumberValueEntries[value_index]->valueInternIndex;
-			//if the last entry (off by one, including ValueEntry::NO_INDEX), can just resize
-			if(value_intern_index == internedNumberIndexToNumberValue.size() - 1)
-			{
-				internedNumberIndexToNumberValue.resize(value_intern_index);
-			}
-			else //need to actually erase it
-			{
-				internedNumberIndexToNumberValue[value_intern_index] = std::numeric_limits<double>::quiet_NaN();
-				unusedNumberValueIndices.emplace(value_intern_index);
-			}
-
-			//clear out any unusedNumberValueIndices at the end other than the 0th entry
-			while(internedNumberIndexToNumberValue.size() > 1 && FastIsNaN(internedNumberIndexToNumberValue.back()))
-				internedNumberIndexToNumberValue.pop_back();
-		}
-
+		internedNumberValues.DeleteInternIndex(sortedNumberValueEntries[value_index]->valueInternIndex);
 		sortedNumberValueEntries.erase(sortedNumberValueEntries.begin() + value_index);
 	}
 
@@ -544,38 +527,7 @@ public:
 		ValueEntry *value_entry = sortedNumberValueEntries[value_index].get();
 
 		value_entry->indicesWithValue.insert(index);
-		if(numberValuesInterned)
-		{
-			if(value_entry->valueInternIndex == ValueEntry::NO_INDEX)
-			{
-				//get the highest value 
-				if(unusedNumberValueIndices.size() > 0)
-				{
-					value_entry->valueInternIndex = unusedNumberValueIndices.top();
-
-					//make sure the value is valid
-					if(value_entry->valueInternIndex < sortedNumberValueEntries.size())
-					{
-						unusedNumberValueIndices.pop();
-					}
-					else //not valid, clear queue
-					{
-						unusedNumberValueIndices.clear();
-						//just use a new value, 0-based but leaving a spot open for NAN_INDEX
-						value_entry->valueInternIndex = sortedNumberValueEntries.size();
-					}
-				}
-				else //just use new value of the latest size, 0-based but leaving a spot open for NAN_INDEX
-				{
-					value_entry->valueInternIndex = sortedNumberValueEntries.size();
-				}
-			}
-
-			if(value_entry->valueInternIndex >= internedNumberIndexToNumberValue.size())
-				internedNumberIndexToNumberValue.resize(value_entry->valueInternIndex + 1, std::numeric_limits<double>::quiet_NaN());
-
-			internedNumberIndexToNumberValue[value_entry->valueInternIndex] = value_entry->value.number;
-		}
+		internedNumberValues.InsertValueEntry(value_entry, sortedNumberValueEntries.size());
 	}
 
 	//inserts the value at id
@@ -588,7 +540,7 @@ public:
 		{
 			invalidIndices.insert(index);
 
-			if(numberValuesInterned)
+			if(internedNumberValues.valueInterningEnabled)
 				return EvaluableNodeImmediateValue(ValueEntry::NAN_INDEX);
 			else
 				return value;
@@ -598,7 +550,7 @@ public:
 		{
 			nullIndices.insert(index);
 
-			if(numberValuesInterned)
+			if(internedNumberValues.valueInterningEnabled)
 				return EvaluableNodeImmediateValue(ValueEntry::NAN_INDEX);
 			else
 				return value;
@@ -613,7 +565,7 @@ public:
 			{
 				nanIndices.insert(index);
 
-				if(numberValuesInterned)
+				if(internedNumberValues.valueInterningEnabled)
 					return EvaluableNodeImmediateValue(ValueEntry::NAN_INDEX);
 				else
 					return value;
@@ -626,7 +578,7 @@ public:
 			{
 				sortedNumberValueEntries[value_index]->indicesWithValue.insert(index);
 
-				if(numberValuesInterned)
+				if(internedNumberValues.valueInterningEnabled)
 					return EvaluableNodeImmediateValue(sortedNumberValueEntries[value_index]->valueInternIndex);
 				else
 					return value;
@@ -638,7 +590,7 @@ public:
 
 			InsertFirstIndexIntoNumberValueEntry(index, value_index);
 
-			if(numberValuesInterned)
+			if(internedNumberValues.valueInterningEnabled)
 				return sortedNumberValueEntries[value_index]->valueInternIndex;
 			else
 				return value;
@@ -1103,30 +1055,13 @@ public:
 	//clears number intern caches and changes state to not perform interning for numbers
 	void ConvertNumberInternsToValues()
 	{
-		if(!numberValuesInterned)
-			return;
-
-		internedNumberIndexToNumberValue.clear();
-		unusedNumberValueIndices.clear();
-		numberValuesInterned = false;
+		internedNumberValues.ClearInterning();
 	}
 
 	//initializes and sets up number value interning caches and changes state to perform interning for numbers
 	void ConvertNumberValuesToInterns()
 	{
-		if(numberValuesInterned)
-			return;
-
-		internedNumberIndexToNumberValue.resize(sortedNumberValueEntries.size() + 1);
-		internedNumberIndexToNumberValue[0] = std::numeric_limits<double>::quiet_NaN();
-		for(size_t i = 0; i < sortedNumberValueEntries.size(); i++)
-		{
-			auto &value_entry = sortedNumberValueEntries[i];
-			value_entry->valueInternIndex = i + 1;
-			internedNumberIndexToNumberValue[i + 1] = value_entry->value.number;
-		}
-
-		numberValuesInterned = true;
+		internedNumberValues.ConvertValueCollectionToInterns(sortedNumberValueEntries);
 	}
 
 protected:
@@ -1217,15 +1152,143 @@ public:
 	//the largest code size for this label
 	size_t largestCodeSize;
 
-	//if numberValuesInterned is true, then contains an index of each value to its location in sortedNumberValueEntries
-	//if a given index isn't used, then it will contain the maximum value for the index
-	//the 0th index is reserved for NaN, regardless of whether NaN appears in the data
-	std::vector<double> internedNumberIndexToNumberValue;
+	template<typename ValueType>
+	class InternedValues
+	{
+	public:
+		InternedValues()
+			: valueInterningEnabled(false)
+		{	}
 
-	//unused / free indices in internedNumberIndexToNumberValue to make adding and removing new values efficient
-	//always want to fetch the lowest index to keep the interned NumberIndexToNumberValue small
-	FlexiblePriorityQueue<size_t, std::vector<size_t>, std::greater<size_t>> unusedNumberValueIndices;
+		//clears all interning and cleans up data structures
+		inline void ClearInterning()
+		{
+			if(!valueInterningEnabled)
+				return;
 
-	//if true, then the indices of the values should be used and internedNumberIndexToValue populated
-	bool numberValuesInterned;
+			internedIndexToValue.clear();
+			unusedValueIndices.clear();
+			valueInterningEnabled = false;
+		}
+
+		//converts the values in value_collection into interned values
+		template<typename ValueCollectionType>
+		inline void ConvertValueCollectionToInterns(ValueCollectionType &value_collection)
+		{
+			if(valueInterningEnabled)
+				return;
+
+			//include extra entry for different type value
+			internedIndexToValue.resize(value_collection.size() + 1);
+			internedIndexToValue[0] = notAValue;
+
+			size_t intern_index = 1;
+			for(auto &value_entry : value_collection)
+			{
+				value_entry->valueInternIndex = intern_index;
+				internedIndexToValue[intern_index] = value_entry->value;
+				intern_index++;
+			}
+
+			valueInterningEnabled = true;
+		}
+
+		//if interning is enabled, inserts value_entry and populates it with the appropriate intern index
+		//total_num_values is the number of unique values
+		inline void InsertValueEntry(ValueEntry *value_entry, size_t total_num_values)
+		{
+			if(!valueInterningEnabled)
+				return;
+
+			if(value_entry->valueInternIndex == ValueEntry::NO_INDEX)
+			{
+				//get the highest value 
+				if(unusedValueIndices.size() > 0)
+				{
+					value_entry->valueInternIndex = unusedValueIndices.top();
+
+					//make sure the value is valid
+					if(value_entry->valueInternIndex < total_num_values)
+					{
+						unusedValueIndices.pop();
+					}
+					else //not valid, clear queue
+					{
+						unusedValueIndices.clear();
+						//just use a new value, 0-based but leaving a spot open for NAN_INDEX
+						value_entry->valueInternIndex = total_num_values;
+					}
+				}
+				else //just use new value of the latest size, 0-based but leaving a spot open for NAN_INDEX
+				{
+					value_entry->valueInternIndex = total_num_values;
+				}
+			}
+
+			if(value_entry->valueInternIndex >= internedIndexToValue.size())
+				internedIndexToValue.resize(value_entry->valueInternIndex + 1, notAValue);
+
+			internedIndexToValue[value_entry->valueInternIndex] = value_entry->value;
+		}
+
+		//deletes the intern index if interning is enabled
+		inline void DeleteInternIndex(size_t intern_index)
+		{
+			if(!valueInterningEnabled)
+				return;
+
+			//if the last entry (off by one, including ValueEntry::NO_INDEX), can just resize
+			if(intern_index == internedIndexToValue.size() - 1)
+			{
+				internedIndexToValue.resize(intern_index);
+			}
+			else //need to actually erase it
+			{
+				internedIndexToValue[intern_index] = notAValue;
+				unusedValueIndices.emplace(intern_index);
+			}
+
+			//clear out any unused internedIndexToValue at the end other than the 0th entry
+			while(internedIndexToValue.size() > 1 && IsNotAValue(internedIndexToValue.back()))
+				internedIndexToValue.pop_back();
+		}
+
+		//returns true if the value is equal to notAValue
+		//note that this is a method due to not-a-number being treated as not equal to itself
+		constexpr bool IsNotAValue(ValueType value)
+		{
+			if constexpr(std::is_same_v<ValueType, double>)
+				return FastIsNaN(value);
+			else
+				return (value == notAValue);
+		}
+
+		//special value that represents a value of a different type or null
+		static constexpr ValueType notAValue = []()
+			{
+				if constexpr(std::is_same_v<ValueType, double>)
+					return std::numeric_limits<double>::quiet_NaN();
+				else
+					return ValueType();
+			}();
+
+		//static constexpr ValueType notAValue = std::conditional_t<std::is_same_v<ValueType, double>,
+		//	std::numeric_limits<double>::quiet_NaN(), ValueType()>();
+
+		//if valueInterningEnabled is true, then contains each value for the given index
+		//if a given index isn't used, then it will contain the maximum value for the index
+		//the 0th index is reserved for values that are not of type ValueType,
+		//regardless of whether such values appear in the data
+		std::vector<ValueType> internedIndexToValue;
+
+		//unused / free indices in internedIndexToValue to make adding and removing new values efficient
+		//always want to fetch the lowest index to keep the interned NumberIndexToNumberValue small
+		FlexiblePriorityQueue<size_t, std::vector<size_t>, std::greater<size_t>> unusedValueIndices;
+
+		//if true, then the indices of the values should be used and internedIndexToValue populated
+		bool valueInterningEnabled;
+	};
+
+	//object that contains interned number values if applicable
+	InternedValues<double> internedNumberValues;
 };

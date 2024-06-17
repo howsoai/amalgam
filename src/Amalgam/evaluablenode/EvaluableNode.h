@@ -1053,6 +1053,16 @@ union EvaluableNodeImmediateValue
 				|| (type == ENIVT_STRING_ID && value.stringID == string_intern_pool.NOT_A_STRING_ID));
 	}
 
+	operator double()
+	{
+		return number;
+	}
+
+	operator StringInternPool::StringID()
+	{
+		return stringID;
+	}
+
 	double number;
 	StringInternPool::StringID stringID;
 	EvaluableNode *code;

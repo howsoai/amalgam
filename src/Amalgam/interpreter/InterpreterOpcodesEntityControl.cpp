@@ -350,9 +350,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableN
 		EntityWriteReference entity_container;
 		StringInternRef new_entity_id;
 		if(i + 1 < ocn.size())
+		{
+			node_stack.PushEvaluableNode(root);
 			std::tie(entity_container, new_entity_id) = InterpretNodeIntoDestinationEntity(ocn[i]);
+			node_stack.PopEvaluableNode();
+		}
 		else
+		{
 			entity_container = EntityWriteReference(curEntity);
+		}
 
 		if(entity_container == nullptr)
 		{

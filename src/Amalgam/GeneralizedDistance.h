@@ -1021,7 +1021,7 @@ public:
 		//represented by precomputedRemainingIdenticalDistanceTerm
 		EFDT_REMAINING_IDENTICAL_PRECOMPUTED,
 		//everything is precomputed from interned values that are looked up
-		EFDT_NUMERIC_PRECOMPUTED,
+		EFDT_UNIVERSALLY_INTERNED_PRECOMPUTED,
 		//continuous without cycles, but everything is always numeric
 		EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC,
 		//continuous without cycles, may contain nonnumeric data
@@ -1202,8 +1202,8 @@ public:
 		return featureData[index].internedNumberIndexToNumberValue != nullptr;
 	}
 
-	//returns the precomputed distance term for the interned number with intern_value_index
-	__forceinline double ComputeDistanceTermNumberInternedPrecomputed(size_t intern_value_index, size_t index, bool high_accuracy)
+	//returns the precomputed distance term for the interned value with intern_value_index
+	__forceinline double ComputeDistanceTermInternedPrecomputed(size_t intern_value_index, size_t index, bool high_accuracy)
 	{
 		return featureData[index].internedDistanceTerms[intern_value_index].GetValue(high_accuracy);
 	}

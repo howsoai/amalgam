@@ -344,14 +344,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 	if(ocn.size() > 1)
 		mutation_rate = InterpretNodeIntoNumberValue(ocn[1]);
 
-	//get destination if applicable
-	StringInternRef new_entity_id;
-	Entity *destination_entity_parent = curEntity;
-	if(ocn.size() > 2)
-		InterpretNodeIntoDestinationEntity(ocn[2], destination_entity_parent, new_entity_id);
-	if(destination_entity_parent == nullptr)
-		return EvaluableNodeReference::Null();
-
 	bool ow_exists = false;
 	CompactHashMap<EvaluableNodeType, double> opcode_weights;
 	if(ocn.size() > 3)
@@ -382,7 +374,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 		}
 	}
 
-	//TODO 10975: change this to lock all entities at once
 	//retrieve the entities after other parameters to minimize time in locks
 	// and prevent deadlock if one of the params accessed the entity
 	//get the id of the first source entity
@@ -397,6 +388,20 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 	//accumulate usage
 	if(!AllowUnlimitedExecutionNodes())
 		curNumExecutionNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
+
+	//clear lock if applicable
+	source_entity = EntityReadReference();
+
+	//get destination if applicable
+	EntityWriteReference destination_entity_parent;
+	StringInternRef new_entity_id;
+	if(ocn.size() > 2)
+		std::tie(destination_entity_parent, new_entity_id) = InterpretNodeIntoDestinationEntity(ocn[2]);
+	else
+		destination_entity_parent = EntityWriteReference(curEntity);
+
+	if(destination_entity_parent == nullptr)
+		return EvaluableNodeReference::Null();
 
 	destination_entity_parent->AddContainedEntityViaReference(new_entity, new_entity_id, writeListeners);
 
@@ -481,10 +486,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT_ENTITIES(Evaluab
 		return EvaluableNodeReference::Null();
 
 	//get destination if applicable
+	EntityWriteReference destination_entity_parent;
 	StringInternRef new_entity_id;
-	Entity *destination_entity_parent = curEntity;
 	if(ocn.size() > 2)
-		InterpretNodeIntoDestinationEntity(ocn[2], destination_entity_parent, new_entity_id);
+		std::tie(destination_entity_parent, new_entity_id) = InterpretNodeIntoDestinationEntity(ocn[2]);
+	else
+		destination_entity_parent = EntityWriteReference(curEntity);
+
 	if(destination_entity_parent == nullptr)
 		return EvaluableNodeReference::Null();
 
@@ -534,10 +542,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION_ENTITIES(EvaluableNo
 		return EvaluableNodeReference::Null();
 
 	//get destination if applicable
+	EntityWriteReference destination_entity_parent;
 	StringInternRef new_entity_id;
-	Entity *destination_entity_parent = curEntity;
 	if(ocn.size() > 2)
-		InterpretNodeIntoDestinationEntity(ocn[2], destination_entity_parent, new_entity_id);
+		std::tie(destination_entity_parent, new_entity_id) = InterpretNodeIntoDestinationEntity(ocn[2]);
+	else
+		destination_entity_parent = EntityWriteReference(curEntity);
+
 	if(destination_entity_parent == nullptr)
 		return EvaluableNodeReference::Null();
 
@@ -616,14 +627,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode
 	if(ocn.size() > 5)
 		fraction_unnamed_entities_to_mix = InterpretNodeIntoNumberValue(ocn[5]);
 
-	//get destination if applicable
-	StringInternRef new_entity_id;
-	Entity *destination_entity_parent = curEntity;
-	if(ocn.size() > 6)
-		InterpretNodeIntoDestinationEntity(ocn[6], destination_entity_parent, new_entity_id);
-	if(destination_entity_parent == nullptr)
-		return EvaluableNodeReference::Null();
-
 	//TODO 10975: change this to lock all entities at once
 	//retrieve the entities after other parameters to minimize time in locks
 	// and prevent deadlock if one of the params accessed the entity
@@ -646,6 +649,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode
 	//accumulate usage
 	if(!AllowUnlimitedExecutionNodes())
 		curNumExecutionNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
+
+	//get destination if applicable
+	EntityWriteReference destination_entity_parent;
+	StringInternRef new_entity_id;
+	if(ocn.size() > 6)
+		std::tie(destination_entity_parent, new_entity_id) = InterpretNodeIntoDestinationEntity(ocn[6]);
+	else
+		destination_entity_parent = EntityWriteReference(curEntity);
+
+	if(destination_entity_parent == nullptr)
+		return EvaluableNodeReference::Null();
 
 	destination_entity_parent->AddContainedEntityViaReference(new_entity, new_entity_id, writeListeners);
 

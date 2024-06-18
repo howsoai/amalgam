@@ -1480,7 +1480,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 		if(column_data->internedNumberValues.valueInterningEnabled)
 		{
 			if(all_values_numeric)
-				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NUMERIC_PRECOMPUTED;
+				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_UNIVERSALLY_INTERNED_PRECOMPUTED;
 			else
 				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED;
 

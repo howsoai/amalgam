@@ -399,9 +399,9 @@ public:
 	bool InterpretNodeIntoBoolValue(EvaluableNode *n, bool value_if_null = false);
 
 	//Calls InterpretNode on n, converts n into a destination for an Entity, relative to curEntity.
-	// If invalid, destination_entity_parent will be curEntity and new_entity_id will be the empty string
-	//new_entity_id is an alocated string, and the caller is responsible for freeing it
-	void InterpretNodeIntoDestinationEntity(EvaluableNode *n, Entity *&destination_entity_parent, StringInternRef &new_entity_id);
+	// If invalid, returns a nullptr for the EntityWriteReference
+	//StringInternRef is an alocated string reference, and the caller is responsible for freeing it
+	std::pair<EntityWriteReference, StringInternRef> InterpretNodeIntoDestinationEntity(EvaluableNode *n);
 
 	//traverses source based on traversal path list tpl
 	// If create_destination_if_necessary is set, then it will expand anything in the source as appropriate

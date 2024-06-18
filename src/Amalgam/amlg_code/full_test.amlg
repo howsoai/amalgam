@@ -1938,9 +1938,9 @@
  (print (difference_entities "DiffEntity1" "DiffEntity2"))
 
  (let (assoc new_entity
-            (call (difference_entities "DiffEntity1" "DiffEntity2") (assoc _ "DiffEntity1")))
+		(call (difference_entities "DiffEntity1" "DiffEntity2") (assoc _ "DiffEntity1")))
 	(print "new_entity: " new_entity "\n")
-    (print "new_entity root: " (retrieve_entity_root new_entity))
+	(print "new_entity root: " (retrieve_entity_root new_entity))
 	(print "DiffEntityChild1 root:\n" (retrieve_entity_root (list new_entity "DiffEntityChild1")))
 	(print "contained_entities new_entity: " (contained_entities new_entity))
 	(print "difference between DiffEntity2 and new_entity:\n" (difference_entities "DiffEntity2" new_entity))
@@ -1967,10 +1967,10 @@
  (print (difference_entities (list "DiffContainer" "DiffEntity1") (list "DiffContainer" "DiffEntity2") ))
 
  (let (assoc new_entity
-            (call (difference_entities (list "DiffContainer" "DiffEntity1") (list "DiffContainer" "DiffEntity2") )
+		(call (difference_entities (list "DiffContainer" "DiffEntity1") (list "DiffContainer" "DiffEntity2") )
 				(assoc _ (list "DiffContainer" "DiffEntity1") new_entity "DiffContainerReconstructed")))
 	(print "new_entity: " new_entity "\n")
-    (print "new_entity root: " (retrieve_entity_root new_entity))
+	(print "new_entity root: " (retrieve_entity_root new_entity))
 	(print "DiffEntityChild1 root:\n" (retrieve_entity_root (list new_entity "DiffEntityChild1")))
 	(print "contained_entities new_entity: " (contained_entities new_entity))
 	(print "difference between DiffContainer and DiffEntity2:\n" (difference_entities (list "DiffContainer" "DiffEntity2") new_entity ))

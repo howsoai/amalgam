@@ -48,7 +48,7 @@ public:
 		AnalyzeIDPath(id_path, has_destination_id);
 	}
 
-	//populates attribused based on the id_path
+	//populates attributes based on the id_path
 	//if has_destination_id, then it will leave one id at the end for the destination
 	void AnalyzeIDPath(EvaluableNode *id_path, bool has_destination_id)
 	{

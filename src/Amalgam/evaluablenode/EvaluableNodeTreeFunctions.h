@@ -75,20 +75,14 @@ public:
 		while(curIndex < non_null_size && EvaluableNode::IsNull((*idPathEntries)[curIndex]))
 			curIndex++;
 
+		lastIdIndex = non_null_size - 1;
+		entityIdIndex = lastIdIndex;
+
 		if(has_destination_id)
 		{
-			lastIdIndex = non_null_size - 1;
-
 			//walk down to find the entity id
-			entityIdIndex = lastIdIndex;
 			while(entityIdIndex > curIndex && EvaluableNode::IsNull((*idPathEntries)[entityIdIndex - 1]))
 				entityIdIndex--;
-		}
-		else
-		{
-			//index of the id that will be used for the target entity
-			entityIdIndex = non_null_size - 1;
-			lastIdIndex = entityIdIndex;
 		}
 
 		//index of the target entity's container's id; start at curIndex,
@@ -198,7 +192,7 @@ TraverseToEntityReferenceAndContainerViaEvaluableNodeID(Entity *from_entity,
 		//assume from_entity contains the container
 		EntityReadReference container_container(from_entity);
 
-		//assume id_node_2 references container
+		//assume id_node_1 references container
 		StringInternPool::StringID sid_1 = EvaluableNode::ToStringIDIfExists(id_node_1);
 		EntityReferenceType container(container_container->GetContainedEntity(sid_1));
 		if(container == nullptr)

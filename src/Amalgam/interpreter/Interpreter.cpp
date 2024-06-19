@@ -718,7 +718,7 @@ EvaluableNode **Interpreter::TraverseToDestinationFromTraversalPathList(Evaluabl
 	size_t address_list_length = 1;
 
 	//if it's an actual address list, then use it
-	if(tpl != nullptr && DoesEvaluableNodeTypeUseOrderedData(tpl->GetType()))
+	if(!EvaluableNode::IsNull(tpl) && DoesEvaluableNodeTypeUseOrderedData(tpl->GetType()))
 	{
 		auto &ocn = tpl->GetOrderedChildNodes();
 		address_list = ocn.data();

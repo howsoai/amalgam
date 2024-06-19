@@ -335,7 +335,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LESS_and_LEQUAL(EvaluableN
 	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes))
 	{
 		EvaluableNodeReference prev = interpreted_nodes[0];
-		if(EvaluableNode::IsNaN(prev))
+		if(EvaluableNode::IsNull(prev))
 		{
 			for(auto &n : interpreted_nodes)
 				evaluableNodeManager->FreeNodeTreeIfPossible(n);
@@ -349,7 +349,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LESS_and_LEQUAL(EvaluableN
 			//if not in strict increasing order, return false
 			auto &cur = interpreted_nodes[i];
 
-			if(EvaluableNode::IsNaN(cur))
+			if(EvaluableNode::IsNull(cur))
 			{
 				result = false;
 				break;
@@ -411,7 +411,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GREATER_and_GEQUAL(Evaluab
 	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes))
 	{
 		EvaluableNodeReference prev = interpreted_nodes[0];
-		if(EvaluableNode::IsNaN(prev))
+		if(EvaluableNode::IsNull(prev))
 		{
 			for(auto &n : interpreted_nodes)
 				evaluableNodeManager->FreeNodeTreeIfPossible(n);
@@ -425,7 +425,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GREATER_and_GEQUAL(Evaluab
 			//if not in strict increasing order, return false
 			auto &cur = interpreted_nodes[i];
 
-			if(EvaluableNode::IsNaN(cur))
+			if(EvaluableNode::IsNull(cur))
 			{
 				result = false;
 				break;

@@ -766,29 +766,11 @@ public:
 			double low_number = low.number;
 			double high_number = high.number;
 
-			//TODO 20490: handle this section
 			if(FastIsNaN(low_number) || FastIsNaN(high_number))
 			{
-				//both are NaN
+				//both are NaN, return nothing
 				if(FastIsNaN(low_number) && FastIsNaN(high_number))
-				{
-					//if looking for NaN
-					if(between_values)
-					{
-						nanIndices.CopyTo(out);
-					}
-					else //looking for anything but NaN
-					{
-						numberIndices.CopyTo(out);
-						nanIndices.EraseTo(out);
-					}
-
 					return;
-				}
-
-				//if NaN specified and within range, then we want to include NaN indices
-				if(between_values)
-					nanIndices.CopyTo(out);
 
 				//modify range to include elements from or up to -/+inf
 				if(FastIsNaN(low_number)) //find all NaN values and all values up to max
@@ -807,10 +789,7 @@ public:
 					if(between_values)
 						return;
 					else //the value doesn't exist, include everything
-					{
-						//include nans
 						numberIndices.CopyTo(out);
-					}
 				}
 
 				//if within range, and range has no length, just return indices in that one bucket
@@ -821,9 +800,6 @@ public:
 				}
 				else //if not within, populate with all indices not equal to value
 				{
-					//include nans
-					nanIndices.CopyTo(out);
-
 					for(auto &value_entry : sortedNumberValueEntries)
 					{
 						if(value_entry->value.number == low_number)

@@ -39,25 +39,8 @@ EvaluableNodeTreeManipulation::NodesMixMethod::NodesMixMethod(RandomStream rando
 inline double MixNumberValues(double a, double b, double fraction_a, double fraction_b)
 {
 	//quick exit for when they match
-	if(EqualIncludingNaN(a, b))
+	if(a == b)
 		return a;
-
-	//handle nans
-	if(FastIsNaN(a))
-	{
-		if(fraction_a > 0)
-			return std::numeric_limits<double>::quiet_NaN();
-		else
-			return b;
-	}
-
-	if(FastIsNaN(b))
-	{
-		if(fraction_b > 0)
-			return std::numeric_limits<double>::quiet_NaN();
-		else
-			return a;
-	}
 
 	//normalize fractions
 	fraction_a = fraction_a / (fraction_a + fraction_b);
@@ -1231,7 +1214,7 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 		{
 			double n1_value = n1->GetNumberValueReference();
 			double n2_value = n2->GetNumberValueReference();
-			return std::make_pair(n1, EqualIncludingNaN(n1_value, n2_value) ? 1.0 : 0.0);
+			return std::make_pair(n1, n1_value == n2_value ? 1.0 : 0.0);
 		}
 		if(n1->IsStringValue())
 		{
@@ -1377,7 +1360,7 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 		if(n2_type == ENT_NUMBER)
 		{
 			double n2_value = n2->GetNumberValueReference();
-			if(EqualIncludingNaN(n1_value, n2_value))
+			if(n1_value == n2_value)
 				return std::make_pair(n1, 1.0);
 
 			if(FastIsNaN(n1_value) || FastIsNaN(n2_value))

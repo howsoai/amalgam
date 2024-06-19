@@ -1730,10 +1730,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, b
 					index_value = 0;
 			}
 
-			if(FastIsNaN(index_value) || index_value >= zipped_ocn.size())
-				result_ocn.push_back(nullptr);
-			else
+			if(index_value < zipped_ocn.size())
 				result_ocn.push_back(zipped_ocn[static_cast<size_t>(index_value)]);
+			else
+				result_ocn.push_back(nullptr);				
 		}
 	}
 

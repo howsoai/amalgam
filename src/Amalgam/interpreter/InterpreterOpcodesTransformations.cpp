@@ -376,7 +376,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 			std::vector<StringInternPool::StringID> ids_to_remove;
 			for(auto &[cn_id, cn] : result_list_mcn)
 			{
-				if(EvaluableNode::IsEmptyNode(cn))
+				if(EvaluableNode::IsNull(cn))
 					ids_to_remove.push_back(cn_id);
 			}
 
@@ -407,7 +407,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 				for(size_t i = result_list_ocn.size(); i > 0; i--)
 				{
 					size_t index = i - 1;
-					if(!EvaluableNode::IsEmptyNode(result_list_ocn[index]))
+					if(!EvaluableNode::IsNull(result_list_ocn[index]))
 						continue;
 
 					evaluableNodeManager->FreeNodeTree(result_list_ocn[index]);
@@ -417,7 +417,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 			else //can't safely delete any nodes
 			{
 				auto new_end = std::remove_if(begin(result_list_ocn), end(result_list_ocn),
-					[](EvaluableNode *en) { return EvaluableNode::IsEmptyNode(en); });
+					[](EvaluableNode *en) { return EvaluableNode::IsNull(en); });
 				result_list_ocn.erase(new_end, end(result_list_ocn));
 			}
 		}
@@ -717,7 +717,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en, 
 		return EvaluableNodeReference::Null();
 
 	auto function = InterpretNodeForImmediateUse(ocn[0]);
-	if(EvaluableNode::IsEmptyNode(function))
+	if(EvaluableNode::IsNull(function))
 		return EvaluableNodeReference::Null();
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(function);
@@ -875,7 +875,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 	{
 		//get list
 		auto list = InterpretNode(ocn[list_index]);
-		if(EvaluableNode::IsEmptyNode(list))
+		if(EvaluableNode::IsNull(list))
 			return EvaluableNodeReference::Null();
 
 		//make sure it is an editable copy
@@ -923,7 +923,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 		
 		//get list
 		auto list = InterpretNode(ocn[list_index]);
-		if(EvaluableNode::IsEmptyNode(list))
+		if(EvaluableNode::IsNull(list))
 			return EvaluableNodeReference::Null();
 
 		//make sure it is an editable copy
@@ -1154,7 +1154,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 			}
 		}
 	}
-	else if(container->GetType() == ENT_STRING && !EvaluableNode::IsEmptyNode(value))
+	else if(container->GetType() == ENT_STRING && !EvaluableNode::IsNull(value))
 	{
 		//compute regular expression
 		std::string s = container->GetStringValue();
@@ -1581,7 +1581,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, boo
 
 	//attempt to get indices, the keys of the assoc
 	auto index_list = InterpretNodeForImmediateUse(ocn[index_list_index]);
-	if(EvaluableNode::IsEmptyNode(index_list))
+	if(EvaluableNode::IsNull(index_list))
 	{
 		EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
 		return result;
@@ -1686,7 +1686,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, b
 		return EvaluableNodeReference::Null();
 
 	auto zipped = InterpretNode(ocn[0]);
-	if(EvaluableNode::IsEmptyNode(zipped))
+	if(EvaluableNode::IsNull(zipped))
 		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(zipped);
@@ -1695,7 +1695,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, b
 
 	EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_LIST), true);
 
-	if(EvaluableNode::IsEmptyNode(index_list))
+	if(EvaluableNode::IsNull(index_list))
 		return result;
 
 	auto &index_list_ocn = index_list->GetOrderedChildNodes();

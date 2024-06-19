@@ -77,7 +77,7 @@ namespace EntityQueryBuilder
 	inline void PopulateFeatureDeviationNominalValueData(
 		NominalDeviationValuesType &ndd, EvaluableNode *value_deviation_node)
 	{
-		if(EvaluableNode::IsEmptyNode(value_deviation_node))
+		if(EvaluableNode::IsNull(value_deviation_node))
 			return;
 
 		auto vdn_type = value_deviation_node->GetType();
@@ -95,7 +95,7 @@ namespace EntityQueryBuilder
 			size_t ocn_size = ocn.size();
 
 			if(ocn_size > 0
-					&& !EvaluableNode::IsEmptyNode(ocn[0])
+					&& !EvaluableNode::IsNull(ocn[0])
 					&& ocn[0]->GetType() == ENT_ASSOC)
 				PopulateFeatureDeviationNominalValueAssocData<NominalDeviationValuesType>(ndd, ocn[0]);
 
@@ -472,7 +472,7 @@ namespace EntityQueryBuilder
 			cur_condition->weightLabel = EvaluableNode::ToStringIDIfExists(ocn[ENTITY_WEIGHT_LABEL_NAME]);
 
 		//set random seed
-		cur_condition->hasRandomStream = (ocn.size() > RANDOM_SEED && !EvaluableNode::IsEmptyNode(ocn[RANDOM_SEED]));
+		cur_condition->hasRandomStream = (ocn.size() > RANDOM_SEED && !EvaluableNode::IsNull(ocn[RANDOM_SEED]));
 		if(cur_condition->hasRandomStream)
 			cur_condition->randomStream.SetState(EvaluableNode::ToStringPreservingOpcodeType(ocn[RANDOM_SEED]));
 		else
@@ -511,7 +511,7 @@ namespace EntityQueryBuilder
 			{
 				EvaluableNode *list_param = ocn[NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0];
 				cur_condition->returnSortedList = EvaluableNode::IsTrue(list_param);
-				if(!EvaluableNode::IsEmptyNode(list_param))
+				if(!EvaluableNode::IsNull(list_param))
 				{
 					if(list_param->GetType() == ENT_STRING)
 					{
@@ -537,7 +537,7 @@ namespace EntityQueryBuilder
 				{
 					EvaluableNode *list_param = ocn[NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 1];
 					cur_condition->returnSortedList = EvaluableNode::IsTrue(list_param);
-					if(!EvaluableNode::IsEmptyNode(list_param))
+					if(!EvaluableNode::IsNull(list_param))
 					{
 						if(list_param->GetType() == ENT_STRING)
 						{
@@ -669,7 +669,7 @@ namespace EntityQueryBuilder
 				cur_condition->hasStartOffset = (ocn.size() >= 2);
 				cur_condition->startOffset = cur_condition->hasStartOffset ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[1], 0.0)) : 0;
 
-				cur_condition->hasRandomStream = (ocn.size() >= 3 && !EvaluableNode::IsEmptyNode(ocn[2]));
+				cur_condition->hasRandomStream = (ocn.size() >= 3 && !EvaluableNode::IsNull(ocn[2]));
 				if(cur_condition->hasRandomStream)
 					cur_condition->randomStream.SetState(EvaluableNode::ToStringPreservingOpcodeType(ocn[2]));
 				else
@@ -680,7 +680,7 @@ namespace EntityQueryBuilder
 			case ENT_QUERY_SAMPLE:
 			{
 				cur_condition->maxToRetrieve = (ocn.size() > 0) ? EvaluableNode::ToNumber(ocn[0], 0.0) : 1;
-				cur_condition->hasRandomStream = (ocn.size() > 1 && !EvaluableNode::IsEmptyNode(ocn[1]));
+				cur_condition->hasRandomStream = (ocn.size() > 1 && !EvaluableNode::IsNull(ocn[1]));
 				if(cur_condition->hasRandomStream)
 					cur_condition->randomStream.SetState(EvaluableNode::ToStringPreservingOpcodeType(ocn[1]));
 				else
@@ -691,7 +691,7 @@ namespace EntityQueryBuilder
 			{
 				cur_condition->singleLabel = (ocn.size() > 0) ? EvaluableNode::ToStringIDIfExists(ocn[0]) : StringInternPool::NOT_A_STRING_ID;
 				cur_condition->maxToRetrieve = (ocn.size() > 1) ? EvaluableNode::ToNumber(ocn[1], 0.0) : 1;
-				cur_condition->hasRandomStream = (ocn.size() > 2 && !EvaluableNode::IsEmptyNode(ocn[2]));
+				cur_condition->hasRandomStream = (ocn.size() > 2 && !EvaluableNode::IsNull(ocn[2]));
 				if(cur_condition->hasRandomStream)
 					cur_condition->randomStream.SetState(EvaluableNode::ToStringPreservingOpcodeType(ocn[2]));
 				else

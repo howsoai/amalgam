@@ -84,7 +84,7 @@ bool EvaluableNode::AreShallowEqual(EvaluableNode *a, EvaluableNode *b)
 	{
 		double av = EvaluableNode::ToNumber(a);
 		double bv = EvaluableNode::ToNumber(b);
-		return EqualIncludingNaN(av, bv);
+		return (av == bv);
 	}
 	
 	//if made it here, then it's an instruction, and they're of equal type
@@ -108,8 +108,6 @@ bool EvaluableNode::IsTrue(EvaluableNode *n)
 	{
 		double &num = n->GetNumberValueReference();
 		if(num == 0.0)
-			return false;
-		if(FastIsNaN(num))
 			return false;
 		return true;
 	}
@@ -216,8 +214,8 @@ const std::string EvaluableNode::ToStringPreservingOpcodeType(EvaluableNode *e)
 
 std::pair<bool, std::string> EvaluableNode::ToString(EvaluableNode *e)
 {
-	if(IsEmptyNode(e))
-		return std::make_pair(false, ".nas");
+	if(IsNull(e))
+		return std::make_pair(false, "(null)");
 
 	switch(e->GetType())
 	{
@@ -237,7 +235,7 @@ std::pair<bool, std::string> EvaluableNode::ToString(EvaluableNode *e)
 
 StringInternPool::StringID EvaluableNode::ToStringIDIfExists(EvaluableNode *e)
 {
-	if(EvaluableNode::IsEmptyNode(e))
+	if(EvaluableNode::IsNull(e))
 		return StringInternPool::NOT_A_STRING_ID;
 
 	if((e->GetType() == ENT_STRING || e->GetType() == ENT_SYMBOL))
@@ -251,7 +249,7 @@ StringInternPool::StringID EvaluableNode::ToStringIDIfExists(EvaluableNode *e)
 
 StringInternPool::StringID EvaluableNode::ToStringIDWithReference(EvaluableNode *e)
 {
-	if(EvaluableNode::IsEmptyNode(e))
+	if(EvaluableNode::IsNull(e))
 		return StringInternPool::NOT_A_STRING_ID;
 
 	if(e->GetType() == ENT_STRING || e->GetType() == ENT_SYMBOL)
@@ -263,8 +261,8 @@ StringInternPool::StringID EvaluableNode::ToStringIDWithReference(EvaluableNode 
 
 StringInternPool::StringID EvaluableNode::ToStringIDTakingReferenceAndClearing(EvaluableNode *e)
 {
-	//NaS doesn't need a reference
-	if(IsEmptyNode(e))
+	//null doesn't need a reference
+	if(IsNull(e))
 		return StringInternPool::NOT_A_STRING_ID;
 
 	if(e->GetType() == ENT_STRING || e->GetType() == ENT_SYMBOL)

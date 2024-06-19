@@ -40,7 +40,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 	if(ocn.size() > 2)
 	{
 		auto opcode_weights_node = InterpretNodeForImmediateUse(ocn[2]);
-		if(!EvaluableNode::IsEmptyNode(opcode_weights_node))
+		if(!EvaluableNode::IsNull(opcode_weights_node))
 		{
 			ow_exists = true;
 			for(auto &[node_id, node] : opcode_weights_node->GetMappedChildNodes())
@@ -55,7 +55,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 	if(ocn.size() > 3)
 	{
 		auto mutation_weights_node = InterpretNodeForImmediateUse(ocn[3]);
-		if(!EvaluableNode::IsEmptyNode(mutation_weights_node))
+		if(!EvaluableNode::IsNull(mutation_weights_node))
 		{
 			mtw_exists = true;
 			for(auto &[node_id, node] : mutation_weights_node->GetMappedChildNodes())
@@ -349,7 +349,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 	if(ocn.size() > 3)
 	{
 		auto opcode_weights_node = InterpretNodeForImmediateUse(ocn[3]);
-		if(!EvaluableNode::IsEmptyNode(opcode_weights_node))
+		if(!EvaluableNode::IsNull(opcode_weights_node))
 		{
 			ow_exists = true;
 			for(auto &[node_id, node] : opcode_weights_node->GetMappedChildNodes())
@@ -364,7 +364,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 	if(ocn.size() > 4)
 	{
 		auto mutation_weights_node = InterpretNodeForImmediateUse(ocn[4]);
-		if(!EvaluableNode::IsEmptyNode(mutation_weights_node))
+		if(!EvaluableNode::IsNull(mutation_weights_node))
 		{
 			mtw_exists = true;
 			for(auto &[node_id, node] : mutation_weights_node->GetMappedChildNodes())

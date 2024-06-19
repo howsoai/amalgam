@@ -548,7 +548,7 @@ EvaluableNode *Interpreter::GetCurrentCallStackContext()
 
 std::pair<bool, std::string> Interpreter::InterpretNodeIntoStringValue(EvaluableNode *n)
 {
-	if(EvaluableNode::IsEmptyNode(n))
+	if(EvaluableNode::IsNull(n))
 		return std::make_pair(false, "");
 
 	//shortcut if the node has what is being asked

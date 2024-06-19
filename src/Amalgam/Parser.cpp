@@ -510,18 +510,10 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, EvaluableNode *n
 
 		//check for special values
 		double value = 0.0;
-		if(s == ".nas")
-		{
-			new_token->SetType(ENT_STRING, evaluableNodeManager, false);
-			new_token->SetStringID(StringInternPool::NOT_A_STRING_ID);
-			return new_token;
-		}
 		if(s == ".infinity")
 			value = std::numeric_limits<double>::infinity();
 		else if(s == "-.infinity")
 			value = -std::numeric_limits<double>::infinity();
-		else if(s == ".nan")
-			value = std::numeric_limits<double>::quiet_NaN();
 		else
 		{
 			auto [converted_value, success] = Platform_StringToNumber(s);
@@ -863,7 +855,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 			auto sid = tree->GetStringIDReference();
 			if(sid == string_intern_pool.NOT_A_STRING_ID)
 			{
-				upd.result.append(".nas");
+				upd.result.append("(null)");
 			}
 			else //legitimate string
 			{

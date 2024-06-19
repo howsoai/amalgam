@@ -23,7 +23,7 @@ public:
 		//indicates the column does not use indices
 		static constexpr size_t NO_INDEX = std::numeric_limits<size_t>::max();
 		//nan value is always the 0th index
-		static constexpr size_t NAN_INDEX = 0;
+		static constexpr size_t NULL_INDEX = 0;
 
 		//if empty, initialize to invalid index
 		ValueEntry()
@@ -74,10 +74,7 @@ public:
 		else if(value_type == ENIVT_NUMBER)
 		{
 			numberIndices.insert(index);
-			if(FastIsNaN(value.number))
-				nanIndices.insert(index);
-			else
-				entities_with_number_values.emplace_back(value.number, index);
+			entities_with_number_values.emplace_back(value.number, index);
 		}
 		else if(value_type == ENIVT_STRING_ID)
 		{
@@ -204,7 +201,7 @@ public:
 			}
 
 			if(internedNumberValues.valueInterningEnabled)
-				return EvaluableNodeImmediateValue(ValueEntry::NAN_INDEX);
+				return EvaluableNodeImmediateValue(ValueEntry::NULL_INDEX);
 			else
 				return EvaluableNodeImmediateValue();
 		}
@@ -221,27 +218,8 @@ public:
 			{
 				double old_number_value = GetResolvedValue(old_value_type, old_value).number;
 				double new_number_value = GetResolvedValue(new_value_type, new_value).number;
-				if(EqualIncludingNaN(old_number_value, new_number_value))
+				if(old_number_value == new_number_value)
 					return old_value;
-
-				//if made it here, then at least one of the values is not a NaN
-				//if one value is a NaN, just insert or delete as regular since there's little to be saved
-				if(FastIsNaN(old_number_value))
-				{
-					nanIndices.erase(index);
-					return InsertIndexValue(new_value_type, new_value, index);
-				}
-
-				if(FastIsNaN(new_number_value))
-				{
-					DeleteIndexValue(old_value_type, old_value, index);
-					nanIndices.insert(index);
-
-					if(internedNumberValues.valueInterningEnabled)
-						return EvaluableNodeImmediateValue(ValueEntry::NAN_INDEX);
-					else
-						return EvaluableNodeImmediateValue(std::numeric_limits<double>::quiet_NaN());
-				}
 
 				//if the value already exists, then put the index in the list
 				//but return the lower bound if not found so don't have to search a second time
@@ -455,22 +433,19 @@ public:
 		case ENIVT_NUMBER_INDIRECTION_INDEX:
 			numberIndices.erase(index);
 
-			//remove, and if not a nan, then need to also remove the number
-			if(!nanIndices.EraseAndRetrieve(index))
-			{
-				auto resolved_value = GetResolvedValue(value_type, value);
+			auto resolved_value = GetResolvedValue(value_type, value);
 
-				//look up value
-				auto [value_index, exact_index_found] = FindExactIndexForValue(resolved_value.number);
-				if(!exact_index_found)
-					return;
+			//look up value
+			auto [value_index, exact_index_found] = FindExactIndexForValue(resolved_value.number);
+			if(!exact_index_found)
+				return;
 
-				//if the bucket has only one entry, we must delete the entire bucket
-				if(sortedNumberValueEntries[value_index]->indicesWithValue.size() == 1)
-					DeleteNumberValueEntry(value_index);
-				else //else we can just remove the id from the bucket
-					sortedNumberValueEntries[value_index]->indicesWithValue.erase(index);
-			}
+			//if the bucket has only one entry, we must delete the entire bucket
+			if(sortedNumberValueEntries[value_index]->indicesWithValue.size() == 1)
+				DeleteNumberValueEntry(value_index);
+			else //else we can just remove the id from the bucket
+				sortedNumberValueEntries[value_index]->indicesWithValue.erase(index);
+
 			break;
 
 		case ENIVT_STRING_ID:
@@ -541,7 +516,7 @@ public:
 			invalidIndices.insert(index);
 
 			if(internedNumberValues.valueInterningEnabled)
-				return EvaluableNodeImmediateValue(ValueEntry::NAN_INDEX);
+				return EvaluableNodeImmediateValue(ValueEntry::NULL_INDEX);
 			else
 				return value;
 		}
@@ -551,7 +526,7 @@ public:
 			nullIndices.insert(index);
 
 			if(internedNumberValues.valueInterningEnabled)
-				return EvaluableNodeImmediateValue(ValueEntry::NAN_INDEX);
+				return EvaluableNodeImmediateValue(ValueEntry::NULL_INDEX);
 			else
 				return value;
 		}
@@ -561,15 +536,6 @@ public:
 			numberIndices.insert(index);
 
 			double number_value = GetResolvedValue(value_type, value).number;
-			if(FastIsNaN(number_value))
-			{
-				nanIndices.insert(index);
-
-				if(internedNumberValues.valueInterningEnabled)
-					return EvaluableNodeImmediateValue(ValueEntry::NAN_INDEX);
-				else
-					return value;
-			}
 			
 			//if the value already exists, then put the index in the list
 			//but return the lower bound if not found so don't have to search a second time
@@ -784,8 +750,7 @@ public:
 	}
 
 	//given a feature_id and a range [low, high], inserts all the elements with values of feature feature_id within specified range into out; does not clear out
-	//Note about Null/NaNs:
-	//if the feature value is Nan/Null, it will NOT be present in the search results, ie "x" != 3 will NOT include elements with x is nan/Null, even though nan/null != 3
+	//if the feature value is null, it will NOT be present in the search results, ie "x" != 3 will NOT include elements with x is null, even though null != 3
 	void FindAllIndicesWithinRange(EvaluableNodeImmediateValueType value_type,
 		EvaluableNodeImmediateValue &low, EvaluableNodeImmediateValue &high, BitArrayIntegerSet &out, bool between_values = true)
 	{
@@ -799,6 +764,7 @@ public:
 			double low_number = low.number;
 			double high_number = high.number;
 
+			//TODO 20490: handle this section
 			if(FastIsNaN(low_number) || FastIsNaN(high_number))
 			{
 				//both are NaN
@@ -942,13 +908,6 @@ public:
 		}
 		else if(value_type == ENIVT_NUMBER)
 		{
-			if(FastIsNaN(value.number))
-			{
-				//only want nans
-				nanIndices.UnionTo(out);
-				return;
-			}
-
 			auto [value_index, exact_index_found] = FindExactIndexForValue(value.number);
 			if(exact_index_found)
 				out.InsertInBatch(sortedNumberValueEntries[value_index]->indicesWithValue);
@@ -1135,10 +1094,6 @@ public:
 	//indices of entities with a null for this feature
 	EfficientIntegerSet nullIndices;
 
-	//indices of entities with a NaN for this feature
-	// the entities will also be included in numberIndices
-	EfficientIntegerSet nanIndices;
-
 	//indices that don't fall into the number/string/null types but are valid
 	EfficientIntegerSet codeIndices;
 
@@ -1215,11 +1170,11 @@ public:
 					else //not valid, clear queue
 					{
 						unusedValueIndices.clear();
-						//just use a new value, 0-based but leaving a spot open for NAN_INDEX
+						//just use a new value, 0-based but leaving a spot open for NULL_INDEX
 						value_entry->valueInternIndex = total_num_values;
 					}
 				}
-				else //just use new value of the latest size, 0-based but leaving a spot open for NAN_INDEX
+				else //just use new value of the latest size, 0-based but leaving a spot open for NULL_INDEX
 				{
 					value_entry->valueInternIndex = total_num_values;
 				}
@@ -1271,9 +1226,6 @@ public:
 				else
 					return ValueType();
 			}();
-
-		//static constexpr ValueType notAValue = std::conditional_t<std::is_same_v<ValueType, double>,
-		//	std::numeric_limits<double>::quiet_NaN(), ValueType()>();
 
 		//if valueInterningEnabled is true, then contains each value for the given index
 		//if a given index isn't used, then it will contain the maximum value for the index

@@ -176,7 +176,7 @@ EvaluableNode **GetRelativeEvaluableNodeFromTraversalPathList(EvaluableNode **so
 
 		//fetch the new destination based on what is being fetched
 		EvaluableNode *addr = index_path_nodes[i];
-		bool addr_empty = EvaluableNode::IsEmptyNode(addr);
+		bool addr_empty = EvaluableNode::IsNull(addr);
 
 		//if out of nodes but need to traverse further in the index, then will need to create new nodes
 		if((*destination) == nullptr)
@@ -310,7 +310,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 	//if the value is unique, then can just edit in place
 	if(value_destination_node.unique)
 	{
-		if(EvaluableNode::CanRepresentValueAsANumber(value_destination_node) && !EvaluableNode::IsNaN(value_destination_node))
+		if(EvaluableNode::CanRepresentValueAsANumber(value_destination_node))
 		{
 			double cur_value = EvaluableNode::ToNumber(value_destination_node);
 			double inc_value = EvaluableNode::ToNumber(variable_value_node);
@@ -395,7 +395,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 	}
 
 	//not unique, so need to make a new list
-	if(EvaluableNode::CanRepresentValueAsANumber(value_destination_node) && !EvaluableNode::IsNaN(value_destination_node))
+	if(EvaluableNode::CanRepresentValueAsANumber(value_destination_node))
 	{
 		double cur_value = EvaluableNode::ToNumber(value_destination_node);
 		double inc_value = EvaluableNode::ToNumber(variable_value_node);

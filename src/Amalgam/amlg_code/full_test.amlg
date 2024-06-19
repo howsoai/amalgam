@@ -167,7 +167,7 @@
  (print accum_assoc "\n")
 
  (assign "x" 1)
- (accum "x" (null) 4)
+ (accum "x" (list) 4)
  (print x "\n")
 
  (assign "x" (list 0 1 2 (associate "a" 1 "b" 2 "c" 3)))
@@ -4120,7 +4120,7 @@
  (let (assoc x (list))
 		||(map (lambda
 				(let (assoc y (current_value 1) )
-					(accum "x" (null) y)
+					(accum "x" (list) y)
 				)
 			)
 			(range 1 1000)

@@ -590,6 +590,29 @@ EvaluableNode *Parser::ParseNextBlock()
 			}
 			else if(cur_node->IsAssociativeArray())
 			{
+				//if it's not an immediate value, then need to retrieve closing parenthesis
+				if(!IsEvaluableNodeTypeImmediate(n->GetType()))
+				{
+					SkipWhitespaceAndAccumulateAttributes(n);
+					if(pos <= code->size())
+					{
+						auto cur_char = (*code)[pos];
+						if(cur_char == ')')
+						{
+							pos++;
+							numOpenParenthesis--;
+						}
+						else
+						{
+							std::cerr << "Warning: " << "Missing ) at line " << lineNumber + 1 << " of " << originalSource << std::endl;
+						}
+					}
+					else //no more code
+					{
+						std::cerr << "Warning: " << "Mismatched ) at line " << lineNumber + 1 << " of " << originalSource << std::endl;
+					}
+				}
+
 				//n is the id, so need to get the next token
 				StringInternPool::StringID index_sid = EvaluableNode::ToStringIDTakingReferenceAndClearing(n);
 

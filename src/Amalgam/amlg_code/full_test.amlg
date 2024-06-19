@@ -24,7 +24,7 @@
 
  (print "--parse and unparse--\n")
  (print (unparse (parse "(print \"hello\")")) "\n")
- (print (parse (unparse (list (sqrt -1) .nan .infinity -.infinity))) "\n")
+ (print (parse (unparse (list (sqrt -1) (null) .infinity -.infinity))) "\n")
 
  (print (unparse (associate "a" 1 "b" 2 "c" (list "alpha" "beta" "gamma"))) "\n")
  (print (unparse (associate "a" 1 "b" 2 "c" (list "alpha" "beta" "gamma")) (true)) "\n")
@@ -381,10 +381,10 @@
  (print "10 " (generalized_distance (list 0.5 0.5) (null) (null) (null) 0.01 (list 3 4) ) "\n")
  (print "11 " (generalized_distance (list 0.5 0.5) (null) (null) (null) 0.001 (list 3 4) ) "\n")
  (print "12 " (generalized_distance (list 0.5 0.5) (null) (null) (null) 0 (list 3 4) ) "\n")
- (print "13 " (generalized_distance (list 1 1) (null) (null) (null) 2 (list .nan 4) ) "\n")
- (print "14 " (generalized_distance (list 1 1) (null) (null) (null) 0 (list .nan 4) ) "\n")
- (print "15 " (generalized_distance (list 0.5 0.5) (null) (null) (null) 2 (list .nan 4) ) "\n")
- (print "16 " (generalized_distance (list 0.5 0.5) (null) (null) (null) 0 (list .nan 4) ) "\n")
+ (print "13 " (generalized_distance (list 1 1) (null) (null) (null) 2 (list (null) 4) ) "\n")
+ (print "14 " (generalized_distance (list 1 1) (null) (null) (null) 0 (list (null) 4) ) "\n")
+ (print "15 " (generalized_distance (list 0.5 0.5) (null) (null) (null) 2 (list (null) 4) ) "\n")
+ (print "16 " (generalized_distance (list 0.5 0.5) (null) (null) (null) 0 (list (null) 4) ) "\n")
  (print "17 " (generalized_distance (null) (list "nominal_numeric") (list 1) (null) 1 (list 1 2 3) (list 10 2 4) ) "\n")
  (print "18 " (generalized_distance (null) (list "nominal_numeric") (list 1) (null) 1 (list 1 2 3) (list 10 2 10) ) "\n")
  (print "19 " (generalized_distance (null) (list "nominal_numeric") (list 1) (null) 1 (list 1 2 3) (list 10 2 10) ) "\n")
@@ -759,7 +759,7 @@
  (print (filter (lambda (< (current_index) 3)) (list 10 1 20 2 30 3 40 4)))
  (print (filter (lambda (< (current_index) 20)) (associate 10 1 20 2 30 3 40 4)))
 
- (print (filter (list 10 1 20 (null) 30 .nan .nas 40 4)))
+ (print (filter (list 10 1 20 (null) 30 (null) (null) 40 4)))
  (print (filter (list 10 1 20 (null) 30 "" 40 4)))
  (print (filter (assoc a 10 b 1 c 20 d "" e 30 f 3 g (null) h 4)))
  (print (filter (assoc a 10 b 1 c 20 d "" e 30 f 3 g (null) h 4)))
@@ -971,7 +971,7 @@
  (print "(null): " (get get_test_assoc (list "A" "C")) "\n")
  (print "(null): " (get get_test_assoc (list "B" "C")) "\n")
 
- (print (get (assoc .nas 3) .nas) "\n")
+ (print (get (assoc (null) 3) (null)) "\n")
 
  (print "--set--\n")
  (print (set (associate "a" 1 "b" 2 "c" 3 4 "d") "e" 5))
@@ -1030,8 +1030,8 @@
  (print "--=--\n")
  (print (= 4 4 5) "\n")
  (print (= 4 4 4) "\n")
- (print (= (sqrt -1) .nan) "\n")
- (print (= .nan .nan) "\n")
+ (print (= (sqrt -1) (null)) "\n")
+ (print (= (null) (null)) "\n")
  (print (= .infinity .infinity) "\n")
  (print (= .infinity -.infinity) "\n")
 
@@ -1056,7 +1056,7 @@
  (print (<= 4 5 6) "\n")
  (print (<= 4 5 6 5) "\n")
  (print (<= (null) 2) "\n")
- (print (<= 2 .nan) "\n")
+ (print (<= 2 (null)) "\n")
 
  (print "-->--\n")
  (print (> 6 5) "\n")
@@ -1070,7 +1070,7 @@
  (print (>= 6 5 4) "\n")
  (print (>= 6 5 4 5) "\n")
  (print (>= (null) 2) "\n")
- (print (>= 2 .nan) "\n")
+ (print (>= 2 (null)) "\n")
 
  (print "--~--\n")
  (print (~ 1 4 5) "\n")
@@ -1158,9 +1158,6 @@
  (print .infinity "\n")
  (print (- (* 3 .infinity)) "\n")
 
- (print "--nan--\n")
- (print .nan "\n")
-
  (print "--list--\n")
  (print (list "a" 1 "b"))
 
@@ -1224,8 +1221,8 @@
  (print "20: " (format "[{\"a\" : 3, \"b\" : 4}, {\"c\" : \"c\"}]" "json" "code"))
  (print "21: " (format (list (assoc a 3 b 4) (assoc c "c" d (null))) "code" "json") "\n")
  (print "22: " (format (list (assoc a 3 b 4) (assoc c "c" d (null))) "code" "json" (null) (assoc sort_keys (true)) ) "\n")
- (print "23: " (format (assoc "a" 1 "b" 2 "c" 3 "d" 4 "e" (list "a" "b" .nan .infinity)) "code" "yaml") "\n")
- (print "24: " (format (assoc "a" 1 "b" 2 "c" 3 "d" 4 "e" (list "a" "b" .nan .infinity)) "code" "yaml" (null) (assoc "sort_keys" (true))) "\n")
+ (print "23: " (format (assoc "a" 1 "b" 2 "c" 3 "d" 4 "e" (list "a" "b" (null) .infinity)) "code" "yaml") "\n")
+ (print "24: " (format (assoc "a" 1 "b" 2 "c" 3 "d" 4 "e" (list "a" "b" (null) .infinity)) "code" "yaml" (null) (assoc "sort_keys" (true))) "\n")
  (print "25: " (format "a: 1" "yaml" "code"))
 
  ;current date
@@ -1443,7 +1440,7 @@
  (print "--print--\n")
  (print (list 0 1 10 12 100 120 122 1000 1000.123 10000 100000 .1 .01 .001 .0001 .00001 .0000123456789 1.2345e-149) )
  (print (list -0 -1 -10 -12 -100 -120 -122 -1000 -1000.123 -10000 -100000 -.1 -.01 -.001 -.0001 -.00001 -.0000123456789 -1.2345e-149) )
- (print .nan "\n" .infinity "\n" (true) "\n" (false) "\n")
+ (print .infinity "\n" (true) "\n" (false) "\n")
 
  (print "--total_size--\n")
  (print (total_size (list 1 2 3 (associate "a" 3 "b" 4) (list 5 6))) "\n")
@@ -1476,7 +1473,7 @@
  					) "\n")
 
  (print (commonality .infinity 3) "\n")
- (print (commonality .nan 3) "\n")
+ (print (commonality (null) 3) "\n")
  (print (commonality .infinity .infinity) "\n")
  (print (commonality .infinity -.infinity) "\n")
  (print (commonality "hello" "hello") "\n")
@@ -3341,7 +3338,7 @@
 
  (print "--assign_to_entities--\n")
 
- #a2e .nan
+ #a2e (null)
  (assign_to_entities (assoc a2e (null)))
  (print a2e)
 
@@ -3441,10 +3438,10 @@
 	)
  )
 
- (print "--nan equality tests--\n")
+ (print "--null equality tests--\n")
 
- (print "(= (null) .nan): " (= (null) .nan) "\n")
- (print "(= (+ (null)) .nan): " (= (+ (null)) .nan) "\n")
+ (print "(= (null) (null)): " (= (null) (null)) "\n")
+ (print "(= (+ (null)) (null)): " (= (+ (null)) (null)) "\n")
  
  (create_entities (list "NaNTest") (null))
  
@@ -3469,7 +3466,7 @@
  (create_entities (list "NaNTest" "EntityNaN")
  	(lambda
  		(null
- 			##label1 .nan
+ 			##label1 (null)
  			##label2 1
  		)
  	)
@@ -3482,7 +3479,7 @@
  )
  
  (print (contained_entities "NaNTest" (list
- 		(query_equals "label1" .nan)
+ 		(query_equals "label1" (null))
  		(query_exists "label2")
  	))
  )

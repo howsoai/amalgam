@@ -10,7 +10,7 @@ void StringInternPool::InitializeStaticStrings()
 	stringToID.reserve(numStaticStrings);
 	idToStringAndRefCount.resize(numStaticStrings);
 
-	EmplaceStaticString(ENBISI_NOT_A_STRING, ".nas");
+	EmplaceStaticString(ENBISI_NOT_A_STRING, "(null)");
 	EmplaceStaticString(ENBISI_EMPTY_STRING, "");
 
 

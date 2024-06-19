@@ -431,6 +431,7 @@ public:
 
 		case ENIVT_NUMBER:
 		case ENIVT_NUMBER_INDIRECTION_INDEX:
+		{
 			numberIndices.erase(index);
 
 			auto resolved_value = GetResolvedValue(value_type, value);
@@ -447,6 +448,7 @@ public:
 				sortedNumberValueEntries[value_index]->indicesWithValue.erase(index);
 
 			break;
+		}
 
 		case ENIVT_STRING_ID:
 		{

@@ -310,7 +310,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 	//if the value is unique, then can just edit in place
 	if(value_destination_node.unique)
 	{
-		if(EvaluableNode::CanRepresentValueAsANumber(value_destination_node))
+		if(value_destination_node->GetType() == ENT_NUMBER)
 		{
 			double cur_value = EvaluableNode::ToNumber(value_destination_node);
 			double inc_value = EvaluableNode::ToNumber(variable_value_node);
@@ -346,7 +346,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 			value_destination_node->SetIsIdempotent(result_idempontent);
 			value_destination_node.unique = result_unique;
 		}
-		else if(value_destination_node->IsStringValue())
+		else if(value_destination_node->GetType() == ENT_STRING)
 		{
 			auto [cur_value_valid, cur_value] = EvaluableNode::ToString(value_destination_node);
 			auto [inc_value_valid, inc_value] = EvaluableNode::ToString(variable_value_node);
@@ -395,7 +395,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 	}
 
 	//not unique, so need to make a new list
-	if(EvaluableNode::CanRepresentValueAsANumber(value_destination_node))
+	if(value_destination_node->GetType() == ENT_NUMBER)
 	{
 		double cur_value = EvaluableNode::ToNumber(value_destination_node);
 		double inc_value = EvaluableNode::ToNumber(variable_value_node);
@@ -426,7 +426,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		value_destination_node->SetIsIdempotent(result_idempontent);
 		value_destination_node.SetReference(new_list, result_unique);
 	}
-	else if(value_destination_node->IsStringValue())
+	else if(value_destination_node->GetType() == ENT_STRING)
 	{
 		auto [cur_value_valid, cur_value] = EvaluableNode::ToString(value_destination_node);
 		auto [inc_value_valid, inc_value] = EvaluableNode::ToString(variable_value_node);

@@ -200,20 +200,6 @@ public:
 	//Returns true if this node evaluates to true
 	static bool IsTrue(EvaluableNode *n);
 
-	//returns true if it is explicitly a string
-	constexpr bool IsStringValue()
-	{
-		return (GetType() == ENT_STRING);
-	}
-
-	//returns true if it is explicitly a string
-	static constexpr bool IsStringValue(EvaluableNode *n)
-	{
-		if(n == nullptr)
-			return false;
-		return n->IsStringValue();
-	}
-
 	//Returns true if the node is some form of associative array
 	constexpr bool IsAssociativeArray()
 	{
@@ -309,7 +295,7 @@ public:
 	static double ToNumber(EvaluableNode *e, double value_if_null = std::numeric_limits<double>::quiet_NaN());
 
 	//returns true if the node can directly be interpreted as a number
-	static constexpr bool IsNativelyNumeric(EvaluableNode *e)
+	static constexpr bool IsNumericOrNull(EvaluableNode *e)
 	{
 		if(e == nullptr)
 			return true;
@@ -322,15 +308,9 @@ public:
 	}
 
 	//returns true if the EvaluableNode uses numeric data
-	constexpr bool IsNativelyNumeric()
+	constexpr bool IsNumericOrNull()
 	{
 		return DoesEvaluableNodeTypeUseNumberData(GetType());
-	}
-
-	//returns true if the EvaluableNode uses string data
-	constexpr bool IsNativelyString()
-	{
-		return DoesEvaluableNodeTypeUseStringData(GetType());
 	}
 
 	//Converts a number to a string in a consistent way that should be used for anything dealing with EvaulableNode

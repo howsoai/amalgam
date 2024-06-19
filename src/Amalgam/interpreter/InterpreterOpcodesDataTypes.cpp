@@ -1392,7 +1392,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 	}
 
 	//if a number, then go by offset
-	if(substr_node->IsNativelyNumeric())
+	if(substr_node->IsNumericOrNull())
 	{
 		double start_offset_raw = EvaluableNode::ToNumber(substr_node);
 		evaluableNodeManager->FreeNodeTreeIfPossible(substr_node);

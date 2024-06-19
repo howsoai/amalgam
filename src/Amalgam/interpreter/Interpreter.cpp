@@ -604,7 +604,7 @@ StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueWithRefere
 		if(result.unique)
 		{
 			StringInternPool::StringID result_sid = string_intern_pool.NOT_A_STRING_ID;
-			if(result != nullptr && result->IsStringValue())
+			if(result != nullptr && result->GetType() == ENT_STRING)
 				result_sid = result->GetAndClearStringIDWithReference();
 			else
 				result_sid = EvaluableNode::ToStringIDWithReference(result);

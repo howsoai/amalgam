@@ -93,7 +93,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::NodesMixMethod::MergeValues(Evalua
 		//if the original and merged, check to see if mergeable of same type, and if so, interpolate
 		if(merged != nullptr && a != nullptr && b != nullptr)
 		{
-			if(merged->IsNativelyNumeric() && a->IsNativelyNumeric() && b->IsNativelyNumeric())
+			if(merged->IsNumericOrNull() && a->IsNumericOrNull() && b->IsNumericOrNull())
 			{
 				double a_value = a->GetNumberValue();
 				double b_value = b->GetNumberValue();
@@ -1216,7 +1216,7 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 			double n2_value = n2->GetNumberValueReference();
 			return std::make_pair(n1, n1_value == n2_value ? 1.0 : 0.0);
 		}
-		if(n1->IsStringValue())
+		if(n1_type == ENT_STRING)
 		{
 			auto n1_sid = n1->GetStringID();
 			auto n2_sid = n2->GetStringID();

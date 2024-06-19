@@ -724,7 +724,7 @@ namespace EntityQueryBuilder
 				EvaluableNode *high_value = ocn[2];
 
 				//since types need to match, force both to the same type
-				if(EvaluableNode::IsNativelyNumeric(low_value) || EvaluableNode::IsNativelyNumeric(high_value))
+				if(EvaluableNode::IsNumericOrNull(low_value) || EvaluableNode::IsNumericOrNull(high_value))
 				{
 					cur_condition->pairedLabels.push_back(std::make_pair(label_sid, std::make_pair(
 						EvaluableNode::ToNumber(low_value), EvaluableNode::ToNumber(high_value))));
@@ -801,7 +801,7 @@ namespace EntityQueryBuilder
 				//number of parameters checked above
 				EvaluableNode *compare_value = ocn[1];
 
-				if(EvaluableNode::IsNativelyNumeric(compare_value))
+				if(EvaluableNode::IsNumericOrNull(compare_value))
 				{
 					if(type == ENT_QUERY_LESS_OR_EQUAL_TO)
 						cur_condition->pairedLabels.push_back(std::make_pair(label_sid, std::make_pair(

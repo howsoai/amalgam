@@ -1549,7 +1549,7 @@ var data = [
 		"parameter" : "query_mode string label_name [string weight_label_name] [bool numeric]",
 		"output" : "query",
 		"new value" : "new",
-		"description" : "When used as a query argument, finds the statistical mode of label_name for numerical data.  If weight_label_name is specified, it will find the weighted mode.  If numeric is true, its default, then it will treat all values as numeric, otherwise it will treat them all as strings.  If numeric and no numeric mode exists, it will return .nan, but if string and no string mode exists, it will return null.",
+		"description" : "When used as a query argument, finds the statistical mode of label_name for numerical data.  If weight_label_name is specified, it will find the weighted mode.  If numeric is true, its default, then it will treat all values as numeric, otherwise it will treat them all as strings.  If numeric and no numeric mode exists, it will return (null), but if string and no string mode exists, it will return null.",
 		"example" : "(compute_on_contained_entities \"TestEntity\" (list\n (query_mode \"TargetLabel\")\n))"
 	},
 

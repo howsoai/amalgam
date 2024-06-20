@@ -22,24 +22,23 @@ public:
 	struct RefCountAndString
 	{
 		RefCountAndString()
-			: refCount(0), string()
+			: refCount(0), id(0), string()
 		{	}
 
-		RefCountAndString(int64_t ref_count, const std::string &_string)
-			: refCount(ref_count), string(_string)
+		RefCountAndString(int64_t ref_count, size_t id, const std::string &string)
+			: refCount(ref_count), id(id), string(string)
 		{	}
 
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		//TODO 20465: put this in
-		//std::atomic<int64_t> refCount;
-		int64_t refCount;
+		std::atomic<int64_t> refCount;
 	#else
 		int64_t refCount;
 	#endif
+		size_t id;
 		std::string string;
 	};
 
-	//TODO 20465: change this to be RefCountAndString *
+	//TODO 20465: add StringRef which is RefCountAndString *, and replace most occurences of StringID with it, consider renaming to index
 	using StringID = size_t;
 	using StringToStringIDAssoc = FastHashMap<std::string, StringID>;
 
@@ -101,12 +100,13 @@ public:
 				id = unusedIDs.top();
 				unusedIDs.pop();
 				idToRefCountAndString[id]->refCount = 1;
+				idToRefCountAndString[id]->id = id;
 				idToRefCountAndString[id]->string = str;
 			}
 			else //need a new one
 			{
 				id = idToRefCountAndString.size();
-				idToRefCountAndString.emplace_back(std::make_unique<RefCountAndString>(1, str));
+				idToRefCountAndString.emplace_back(std::make_unique<RefCountAndString>(1, id, str));
 			}
 
 			//store the id along with the string
@@ -407,37 +407,19 @@ protected:
 	//increments the reference count and returns the previous reference count
 	inline int64_t IncrementRefCount(StringID id)
 	{
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		//perform an atomic increment so that it can be done under a read lock
-		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-		return reinterpret_cast<std::atomic<int64_t>&>(idToRefCountAndString[id]->refCount).fetch_add(1);
-	#else
-		return idToRefCountAndString[id].second++;
-	#endif
+		return idToRefCountAndString[id]->refCount++;
 	}
 
 	//adds advancement to the reference count
 	inline void AdvanceRefCount(StringID id, size_t advancement)
 	{
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		//perform an atomic increment so that it can be done under a read lock
-		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-		reinterpret_cast<std::atomic<int64_t>&>(idToRefCountAndString[id]->refCount).fetch_add(advancement);
-	#else
-		idToRefCountAndString[id].second += advancement;
-	#endif
+		idToRefCountAndString[id]->refCount += advancement;
 	}
 
 	//decrements the reference count and returns the previous reference count
 	inline int64_t DecrementRefCount(StringID id)
 	{
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		//perform an atomic decrement so that it can be done under a read lock
-		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-		return reinterpret_cast<std::atomic<int64_t>&>(idToRefCountAndString[id]->refCount).fetch_sub(1);
-	#else
-		return idToRefCountAndString[id].second--;
-	#endif
+		return idToRefCountAndString[id]->refCount--;
 	}
 
 	//removes everything associated with the id
@@ -459,7 +441,7 @@ protected:
 	//sets string id sid to str, assuming the position has already been allocated in idToRefCountAndString
 	inline void EmplaceStaticString(StringID sid, const char *str)
 	{
-		idToRefCountAndString[sid] = std::make_unique<RefCountAndString>(0, str);
+		idToRefCountAndString[sid] = std::make_unique<RefCountAndString>(0, sid, str);
 		stringToID.emplace(str, sid);
 	}
 

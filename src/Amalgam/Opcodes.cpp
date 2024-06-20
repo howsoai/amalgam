@@ -8,7 +8,7 @@ void StringInternPool::InitializeStaticStrings()
 {
 	numStaticStrings = ENBISI_FIRST_DYNAMIC_STRING;
 	stringToID.reserve(numStaticStrings);
-	idToStringAndRefCount.resize(numStaticStrings);
+	idToRefCountAndString.resize(numStaticStrings);
 
 	EmplaceStaticString(ENBISI_NOT_A_STRING, ".nas");
 	EmplaceStaticString(ENBISI_EMPTY_STRING, "");

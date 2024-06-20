@@ -19,6 +19,27 @@
 class StringInternPool
 {
 public:
+	struct RefCountAndString
+	{
+		RefCountAndString()
+			: refCount(0), string()
+		{	}
+
+		RefCountAndString(int64_t ref_count, const std::string &_string)
+			: refCount(ref_count), string(_string)
+		{	}
+
+	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+		//TODO 20465: put this in
+		//std::atomic<int64_t> refCount;
+		int64_t refCount;
+	#else
+		int64_t refCount;
+	#endif
+		std::string string;
+	};
+
+	//TODO 20465: change this to be RefCountAndString *
 	using StringID = size_t;
 	using StringToStringIDAssoc = FastHashMap<std::string, StringID>;
 
@@ -41,7 +62,7 @@ public:
 		Concurrency::ReadLock lock(sharedMutex);
 	#endif
 
-		return idToStringAndRefCount[id].first;
+		return idToRefCountAndString[id]->string;
 	}
 
 	//translates the string to the corresponding ID, 0 is the empty string, maximum value of size_t means it does not exist
@@ -79,12 +100,13 @@ public:
 				//reuse existing, so overwrite it
 				id = unusedIDs.top();
 				unusedIDs.pop();
-				idToStringAndRefCount[id] = std::make_pair(str, 1);
+				idToRefCountAndString[id]->refCount = 1;
+				idToRefCountAndString[id]->string = str;
 			}
 			else //need a new one
 			{
-				id = idToStringAndRefCount.size();
-				idToStringAndRefCount.emplace_back(std::make_pair(str, 1));
+				id = idToRefCountAndString.size();
+				idToRefCountAndString.emplace_back(std::make_unique<RefCountAndString>(1, str));
 			}
 
 			//store the id along with the string
@@ -96,7 +118,7 @@ public:
 		//found, so count the reference if applicable
 		StringID id = inserted_id->second;
 		if(!IsStringIDStatic(id))
-			idToStringAndRefCount[id].second++;
+			idToRefCountAndString[id]->refCount++;
 		return id;
 	}
 
@@ -198,7 +220,7 @@ public:
 
 		//get the reference count before decrement
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		//make sure have a readlock first so that the idToStringAndRefCount vector heap location doesn't change
+		//make sure have a readlock first so that the idToRefCountAndString vector heap location doesn't change
 		Concurrency::ReadLock lock(sharedMutex);
 	#endif
 
@@ -350,10 +372,10 @@ public:
 	#endif
 
 		int64_t count = 0;
-		for(size_t id = 0; id < idToStringAndRefCount.size(); id++)
+		for(size_t id = 0; id < idToRefCountAndString.size(); id++)
 		{
 			if(!IsStringIDStatic(id))
-				count += idToStringAndRefCount[id].second;
+				count += idToRefCountAndString[id]->refCount;
 		}
 		return count;
 	}
@@ -366,10 +388,10 @@ public:
 	#endif
 
 		std::vector<std::pair<std::string, int64_t>> in_use;
-		for(size_t id = 0; id < idToStringAndRefCount.size(); id++)
+		for(size_t id = 0; id < idToRefCountAndString.size(); id++)
 		{
-			if(!IsStringIDStatic(id) && idToStringAndRefCount[id].second > 0)
-				in_use.emplace_back(idToStringAndRefCount[id].first, idToStringAndRefCount[id].second);
+			if(!IsStringIDStatic(id) && idToRefCountAndString[id]->refCount > 0)
+				in_use.emplace_back(idToRefCountAndString[id]->string, idToRefCountAndString[id]->refCount);
 		}
 		return in_use;
 	}
@@ -388,9 +410,9 @@ protected:
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		//perform an atomic increment so that it can be done under a read lock
 		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-		return reinterpret_cast<std::atomic<int64_t>&>(idToStringAndRefCount[id].second).fetch_add(1);
+		return reinterpret_cast<std::atomic<int64_t>&>(idToRefCountAndString[id]->refCount).fetch_add(1);
 	#else
-		return idToStringAndRefCount[id].second++;
+		return idToRefCountAndString[id].second++;
 	#endif
 	}
 
@@ -400,9 +422,9 @@ protected:
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		//perform an atomic increment so that it can be done under a read lock
 		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-		reinterpret_cast<std::atomic<int64_t>&>(idToStringAndRefCount[id].second).fetch_add(advancement);
+		reinterpret_cast<std::atomic<int64_t>&>(idToRefCountAndString[id]->refCount).fetch_add(advancement);
 	#else
-		idToStringAndRefCount[id].second += advancement;
+		idToRefCountAndString[id].second += advancement;
 	#endif
 	}
 
@@ -412,9 +434,9 @@ protected:
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		//perform an atomic decrement so that it can be done under a read lock
 		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-		return reinterpret_cast<std::atomic<int64_t>&>(idToStringAndRefCount[id].second).fetch_sub(1);
+		return reinterpret_cast<std::atomic<int64_t>&>(idToRefCountAndString[id]->refCount).fetch_sub(1);
 	#else
-		return idToStringAndRefCount[id].second--;
+		return idToRefCountAndString[id].second--;
 	#endif
 	}
 
@@ -422,9 +444,9 @@ protected:
 	inline void RemoveId(StringID id)
 	{
 		//removed last reference; clear the string and free memory
-		stringToID.erase(idToStringAndRefCount[id].first);
-		idToStringAndRefCount[id].first = "";
-		idToStringAndRefCount[id].first.shrink_to_fit();
+		stringToID.erase(idToRefCountAndString[id]->string);
+		idToRefCountAndString[id]->string = "";
+		idToRefCountAndString[id]->string.shrink_to_fit();
 		unusedIDs.push(id);
 	}
 
@@ -434,10 +456,10 @@ protected:
 	//the first two strings MUST be not-a-string followed by empty string
 	void InitializeStaticStrings();
 
-	//sets string id sid to str, assuming the position has already been allocated in idToStringAndRefCount
+	//sets string id sid to str, assuming the position has already been allocated in idToRefCountAndString
 	inline void EmplaceStaticString(StringID sid, const char *str)
 	{
-		idToStringAndRefCount[sid] = std::make_pair(str, 0);
+		idToRefCountAndString[sid] = std::make_unique<RefCountAndString>(0, str);
 		stringToID.emplace(str, sid);
 	}
 
@@ -447,12 +469,12 @@ protected:
 
 	//mapping from ID (index) to the string and the number of references
 	//use a signed counter in case it goes negative such that comparisons work well even if multiple threads have freed it
-	std::vector<std::pair<std::string, int64_t>> idToStringAndRefCount;
+	std::vector<std::unique_ptr<RefCountAndString>> idToRefCountAndString;
 
-	//mapping from string to ID (index of idToStringAndRefCount)
+	//mapping from string to ID (index of idToRefCountAndString)
 	StringToStringIDAssoc stringToID;
 
-	//IDs (indexes of idToStringAndRefCount) that are now unused
+	//IDs (indexes of idToRefCountAndString) that are now unused
 	std::priority_queue<StringID, std::vector<StringID>, std::greater<StringID> > unusedIDs;
 
 	//number of static strings

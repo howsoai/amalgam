@@ -11,6 +11,26 @@
 #include <string>
 #include <vector>
 
+class StringInternStringData
+{
+public:
+	StringInternStringData()
+		: refCount(0), id(0), string()
+	{	}
+
+	StringInternStringData(int64_t ref_count, size_t id, const std::string &string)
+		: refCount(ref_count), id(id), string(string)
+	{	}
+
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	std::atomic<int64_t> refCount;
+#else
+	int64_t refCount;
+#endif
+	size_t id;
+	std::string string;
+};
+
 //manages all strings so they can be referred and compared easily by integers, across threads
 //depends on a method defined outside of this class, StringInternPool::InitializeStaticStrings()
 // to set up all internal static strings; see the function's declaration for details
@@ -19,26 +39,7 @@
 class StringInternPool
 {
 public:
-	struct RefCountAndString
-	{
-		RefCountAndString()
-			: refCount(0), id(0), string()
-		{	}
-
-		RefCountAndString(int64_t ref_count, size_t id, const std::string &string)
-			: refCount(ref_count), id(id), string(string)
-		{	}
-
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		std::atomic<int64_t> refCount;
-	#else
-		int64_t refCount;
-	#endif
-		size_t id;
-		std::string string;
-	};
-
-	//TODO 20465: add StringRef which is RefCountAndString *, and replace most occurences of StringID with it, consider renaming to index
+	//TODO 20465: add StringRef which is StringInternStringData *, and replace most occurences of StringID with it, consider renaming to index
 	using StringID = size_t;
 	using StringToStringIDAssoc = FastHashMap<std::string, StringID>;
 
@@ -106,7 +107,7 @@ public:
 			else //need a new one
 			{
 				id = idToRefCountAndString.size();
-				idToRefCountAndString.emplace_back(std::make_unique<RefCountAndString>(1, id, str));
+				idToRefCountAndString.emplace_back(std::make_unique<StringInternStringData>(1, id, str));
 			}
 
 			//store the id along with the string
@@ -441,7 +442,7 @@ protected:
 	//sets string id sid to str, assuming the position has already been allocated in idToRefCountAndString
 	inline void EmplaceStaticString(StringID sid, const char *str)
 	{
-		idToRefCountAndString[sid] = std::make_unique<RefCountAndString>(0, sid, str);
+		idToRefCountAndString[sid] = std::make_unique<StringInternStringData>(0, sid, str);
 		stringToID.emplace(str, sid);
 	}
 
@@ -451,7 +452,7 @@ protected:
 
 	//mapping from ID (index) to the string and the number of references
 	//use a signed counter in case it goes negative such that comparisons work well even if multiple threads have freed it
-	std::vector<std::unique_ptr<RefCountAndString>> idToRefCountAndString;
+	std::vector<std::unique_ptr<StringInternStringData>> idToRefCountAndString;
 
 	//mapping from string to ID (index of idToRefCountAndString)
 	StringToStringIDAssoc stringToID;
@@ -464,6 +465,57 @@ protected:
 };
 
 extern StringInternPool string_intern_pool;
+
+//A weak reference to a string
+// When the string does not exist, it will take on the value of the empty string
+class StringWeakRef
+{
+public:
+	constexpr StringWeakRef()
+		: id(StringInternPool::NOT_A_STRING_ID)
+	{	}
+
+	constexpr StringWeakRef(StringInternPool::StringID sid)
+		: id(sid)
+	{	}
+
+	StringWeakRef(const std::string &str)
+	{
+		id = string_intern_pool.GetIDFromString(str);
+	}
+
+	constexpr StringWeakRef(const StringWeakRef &siwr)
+		: id(siwr.id)
+	{	}
+
+	//easy-to-read way of creating an empty string
+	inline static StringWeakRef EmptyString()
+	{
+		return StringWeakRef();
+	}
+
+	//allow being able to use as a string
+	inline operator const std::string()
+	{
+		return string_intern_pool.GetStringFromID(id);
+	}
+
+	//allow being able to use as a string id
+	constexpr operator StringInternPool::StringID()
+	{
+		return id;
+	}
+
+	//only call this when the sid already has a reference and this is being used to manage it
+	constexpr void SetID(StringInternPool::StringID sid)
+	{
+		id = sid;
+	}
+
+private:
+
+	StringInternPool::StringID id;
+};
 
 //A reference to a string
 //maintains reference counts and will clear upon destruction
@@ -555,57 +607,6 @@ public:
 			string_intern_pool.DestroyStringReference(id);
 		}
 
-		id = sid;
-	}
-
-private:
-
-	StringInternPool::StringID id;
-};
-
-//A weak reference to a string
-// When the string does not exist, it will take on the value of the empty string
-class StringWeakRef
-{
-public:
-	constexpr StringWeakRef()
-		: id(StringInternPool::NOT_A_STRING_ID)
-	{	}
-
-	constexpr StringWeakRef(StringInternPool::StringID sid)
-		: id(sid)
-	{	}
-
-	StringWeakRef(const std::string &str)
-	{
-		id = string_intern_pool.GetIDFromString(str);
-	}
-
-	constexpr StringWeakRef(const StringWeakRef &siwr)
-		: id(siwr.id)
-	{	}
-
-	//easy-to-read way of creating an empty string
-	inline static StringRef EmptyString()
-	{
-		return StringRef();
-	}
-
-	//allow being able to use as a string
-	inline operator const std::string ()
-	{
-		return string_intern_pool.GetStringFromID(id);
-	}
-
-	//allow being able to use as a string id
-	constexpr operator StringInternPool::StringID()
-	{
-		return id;
-	}
-
-	//only call this when the sid already has a reference and this is being used to manage it
-	constexpr void SetID(StringInternPool::StringID sid)
-	{
 		id = sid;
 	}
 

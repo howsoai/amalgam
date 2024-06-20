@@ -394,7 +394,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 
 	//get destination if applicable
 	EntityWriteReference destination_entity_parent;
-	StringInternRef new_entity_id;
+	StringRef new_entity_id;
 	if(ocn.size() > 2)
 		std::tie(destination_entity_parent, new_entity_id) = InterpretNodeIntoDestinationEntity(ocn[2]);
 	else
@@ -487,7 +487,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT_ENTITIES(Evaluab
 
 	//get destination if applicable
 	EntityWriteReference destination_entity_parent;
-	StringInternRef new_entity_id;
+	StringRef new_entity_id;
 	if(ocn.size() > 2)
 		std::tie(destination_entity_parent, new_entity_id) = InterpretNodeIntoDestinationEntity(ocn[2]);
 	else
@@ -543,7 +543,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION_ENTITIES(EvaluableNo
 
 	//get destination if applicable
 	EntityWriteReference destination_entity_parent;
-	StringInternRef new_entity_id;
+	StringRef new_entity_id;
 	if(ocn.size() > 2)
 		std::tie(destination_entity_parent, new_entity_id) = InterpretNodeIntoDestinationEntity(ocn[2]);
 	else
@@ -652,7 +652,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode
 
 	//get destination if applicable
 	EntityWriteReference destination_entity_parent;
-	StringInternRef new_entity_id;
+	StringRef new_entity_id;
 	if(ocn.size() > 6)
 		std::tie(destination_entity_parent, new_entity_id) = InterpretNodeIntoDestinationEntity(ocn[6]);
 	else

@@ -144,7 +144,7 @@ template<typename EntityReferenceType>
 std::pair<EntityReferenceType, EntityReferenceType>
 TraverseToEntityReferenceAndContainerViaEvaluableNodeID(Entity *from_entity,
 	EvaluableNode *id_node,
-	StringInternRef *dest_sid_ref)
+	StringRef *dest_sid_ref)
 {
 	if(EvaluableNode::IsEmptyNode(id_node))
 		return std::make_pair(EntityReferenceType(from_entity), EntityReferenceType(nullptr));
@@ -180,7 +180,7 @@ template<typename EntityReferenceType>
 std::pair<EntityReferenceType, EntityReferenceType>
 TraverseToEntityReferenceAndContainerViaEvaluableNodeID(Entity *from_entity,
 	EvaluableNode *id_node_1, EvaluableNode *id_node_2,
-	StringInternRef *dest_sid_ref)
+	StringRef *dest_sid_ref)
 {
 	if(EvaluableNode::IsNull(id_node_1))
 		TraverseToEntityReferenceAndContainerViaEvaluableNodeID<EntityReferenceType>(from_entity, id_node_2, dest_sid_ref);
@@ -236,11 +236,11 @@ template<typename EntityReferenceType>
 std::pair<EntityReferenceType, EntityReferenceType>
 TraverseToEntityReferenceAndContainerViaEvaluableNodeIDPath(
 	Entity *from_entity, EvaluableNode *id_path,
-	StringInternRef *dest_sid_ref = nullptr)
+	StringRef *dest_sid_ref = nullptr)
 {
 	//if the destination sid is requested, initialize it
 	if(dest_sid_ref != nullptr)
-		*dest_sid_ref = StringInternRef(string_intern_pool.NOT_A_STRING_ID);
+		*dest_sid_ref = StringRef(string_intern_pool.NOT_A_STRING_ID);
 
 	if(from_entity == nullptr)
 		return std::make_pair(EntityReferenceType(nullptr), EntityReferenceType(nullptr));

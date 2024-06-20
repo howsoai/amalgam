@@ -400,8 +400,8 @@ public:
 
 	//Calls InterpretNode on n, converts n into a destination for an Entity, relative to curEntity.
 	// If invalid, returns a nullptr for the EntityWriteReference
-	//StringInternRef is an alocated string reference, and the caller is responsible for freeing it
-	std::pair<EntityWriteReference, StringInternRef> InterpretNodeIntoDestinationEntity(EvaluableNode *n);
+	//StringRef is an alocated string reference, and the caller is responsible for freeing it
+	std::pair<EntityWriteReference, StringRef> InterpretNodeIntoDestinationEntity(EvaluableNode *n);
 
 	//traverses source based on traversal path list tpl
 	// If create_destination_if_necessary is set, then it will expand anything in the source as appropriate

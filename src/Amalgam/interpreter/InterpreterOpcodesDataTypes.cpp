@@ -311,7 +311,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 	if(ocn.size() < 3)
 		return EvaluableNodeReference::Null();
 
-	StringInternRef from_type, to_type;
+	StringRef from_type, to_type;
 	from_type.SetIDWithReferenceHandoff(InterpretNodeIntoStringIDValueWithReference(ocn[1]));
 	to_type.SetIDWithReferenceHandoff(InterpretNodeIntoStringIDValueWithReference(ocn[2]));
 

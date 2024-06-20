@@ -694,11 +694,11 @@ bool Interpreter::InterpretNodeIntoBoolValue(EvaluableNode *n, bool value_if_nul
 	return value;
 }
 
-std::pair<EntityWriteReference, StringInternRef> Interpreter::InterpretNodeIntoDestinationEntity(EvaluableNode *n)
+std::pair<EntityWriteReference, StringRef> Interpreter::InterpretNodeIntoDestinationEntity(EvaluableNode *n)
 {
 	EvaluableNodeReference destination_entity_id_path = InterpretNodeForImmediateUse(n);
 
-	StringInternRef new_entity_id;
+	StringRef new_entity_id;
 	auto [entity, entity_container] = TraverseToEntityReferenceAndContainerViaEvaluableNodeIDPath<EntityWriteReference>(
 			curEntity, destination_entity_id_path, &new_entity_id);
 
@@ -706,7 +706,7 @@ std::pair<EntityWriteReference, StringInternRef> Interpreter::InterpretNodeIntoD
 
 	//if it already exists, then place inside it
 	if(entity != nullptr)
-		return std::make_pair(std::move(entity), StringInternRef());
+		return std::make_pair(std::move(entity), StringRef());
 	else //return the container
 		return std::make_pair(std::move(entity_container), new_entity_id);
 }

@@ -346,16 +346,10 @@ public:
 
 	StringInternPool::StringID AddContainedEntity(Entity *t, std::string id_string, std::vector<EntityWriteListener *> *write_listeners = nullptr);
 
-	inline void AddContainedEntityViaReference(Entity *t, StringInternRef &sir, std::vector<EntityWriteListener *> *write_listeners = nullptr)
+	inline void AddContainedEntityViaReference(Entity *t, StringRef &sir, std::vector<EntityWriteListener *> *write_listeners = nullptr)
 	{
 		StringInternPool::StringID new_sid = AddContainedEntity(t, static_cast<StringInternPool::StringID>(sir), write_listeners);
 		sir.SetIDAndCreateReference(new_sid);
-	}
-
-	inline void AddContainedEntityViaReference(Entity *t, StringInternWeakRef &siwr, std::vector<EntityWriteListener *> *write_listeners = nullptr)
-	{
-		StringInternPool::StringID new_sid = AddContainedEntity(t, static_cast<StringInternPool::StringID>(siwr), write_listeners);
-		siwr.SetID(new_sid);
 	}
 
 	//Removes the specified id from being contained by this Entity

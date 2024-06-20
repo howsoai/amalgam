@@ -348,7 +348,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableN
 
 		//get destination if applicable
 		EntityWriteReference entity_container;
-		StringInternRef new_entity_id;
+		StringRef new_entity_id;
 		if(i + 1 < ocn.size())
 		{
 			node_stack.PushEvaluableNode(root);
@@ -418,7 +418,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CLONE_ENTITIES(EvaluableNo
 
 		//get destination if applicable
 		EntityWriteReference destination_entity_parent;
-		StringInternRef new_entity_id;
+		StringRef new_entity_id;
 		if(i + 1 < ocn.size())
 			std::tie(destination_entity_parent, new_entity_id) = InterpretNodeIntoDestinationEntity(ocn[i + 1]);
 
@@ -498,7 +498,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MOVE_ENTITIES(EvaluableNod
 
 		//get destination if applicable
 		EntityWriteReference destination_entity_parent;
-		StringInternRef new_entity_id;
+		StringRef new_entity_id;
 		if(i + 1 < ocn.size())
 			std::tie(destination_entity_parent, new_entity_id) = InterpretNodeIntoDestinationEntity(ocn[i + 1]);
 		else
@@ -623,7 +623,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSI
 
 	//get destination if applicable
 	EntityWriteReference destination_entity_parent;
-	StringInternRef new_entity_id;
+	StringRef new_entity_id;
 	if(ocn.size() > 1)
 		std::tie(destination_entity_parent, new_entity_id) = InterpretNodeIntoDestinationEntity(ocn[1]);
 

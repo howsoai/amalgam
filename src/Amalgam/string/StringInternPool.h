@@ -467,29 +467,29 @@ extern StringInternPool string_intern_pool;
 
 //A reference to a string
 //maintains reference counts and will clear upon destruction
-class StringInternRef
+class StringRef
 {
 public:
-	constexpr StringInternRef() : id(StringInternPool::NOT_A_STRING_ID)
+	constexpr StringRef() : id(StringInternPool::NOT_A_STRING_ID)
 	{	}
 
-	inline StringInternRef(StringInternPool::StringID sid)
+	inline StringRef(StringInternPool::StringID sid)
 	{
 		id = string_intern_pool.CreateStringReference(sid);
 	}
 
-	inline StringInternRef(const std::string &str)
+	inline StringRef(const std::string &str)
 	{
 		id = string_intern_pool.CreateStringReference(str);
 	}
 
 	//copy constructor
-	inline StringInternRef(const StringInternRef &sir)
+	inline StringRef(const StringRef &sir)
 	{
 		id = string_intern_pool.CreateStringReference(sir.id);
 	}
 
-	inline ~StringInternRef()
+	inline ~StringRef()
 	{
 		string_intern_pool.DestroyStringReference(id);
 	}
@@ -504,11 +504,11 @@ public:
 	}
 
 	//easy-to-read way of creating an empty string
-	inline static StringInternRef EmptyString()
-	{	return StringInternRef();	}
+	inline static StringRef EmptyString()
+	{	return StringRef();	}
 
 	//assign another string reference
-	inline StringInternRef &operator =(const StringInternRef &sir)
+	inline StringRef &operator =(const StringRef &sir)
 	{
 		if(id != sir.id)
 		{
@@ -565,30 +565,30 @@ private:
 
 //A weak reference to a string
 // When the string does not exist, it will take on the value of the empty string
-class StringInternWeakRef
+class StringWeakRef
 {
 public:
-	constexpr StringInternWeakRef()
+	constexpr StringWeakRef()
 		: id(StringInternPool::NOT_A_STRING_ID)
 	{	}
 
-	constexpr StringInternWeakRef(StringInternPool::StringID sid)
+	constexpr StringWeakRef(StringInternPool::StringID sid)
 		: id(sid)
 	{	}
 
-	StringInternWeakRef(const std::string &str)
+	StringWeakRef(const std::string &str)
 	{
 		id = string_intern_pool.GetIDFromString(str);
 	}
 
-	constexpr StringInternWeakRef(const StringInternWeakRef &siwr)
+	constexpr StringWeakRef(const StringWeakRef &siwr)
 		: id(siwr.id)
 	{	}
 
 	//easy-to-read way of creating an empty string
-	inline static StringInternRef EmptyString()
+	inline static StringRef EmptyString()
 	{
-		return StringInternRef();
+		return StringRef();
 	}
 
 	//allow being able to use as a string

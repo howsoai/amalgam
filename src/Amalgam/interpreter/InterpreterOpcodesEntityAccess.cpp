@@ -411,7 +411,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	StringInternRef entity_label_sid;
+	StringRef entity_label_sid;
 	if(ocn.size() > 1)
 		entity_label_sid.SetIDWithReferenceHandoff(InterpretNodeIntoStringIDValueWithReference(ocn[1]));
 

@@ -972,7 +972,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	}
 	
 	//using a single variable
-	StringInternRef variable_sid;
+	StringRef variable_sid;
 	variable_sid.SetIDWithReferenceHandoff(InterpretNodeIntoStringIDValueWithReference(ocn[0]));
 	if(variable_sid == StringInternPool::NOT_A_STRING_ID)
 		return EvaluableNodeReference::Null();

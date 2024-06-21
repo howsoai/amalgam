@@ -109,10 +109,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, b
 {
 	//if idempotent, can just return a copy without any metadata
 	if(en->GetIsIdempotent())
-	{
-		EvaluableNodeReference retval = evaluableNodeManager->DeepAllocCopy(en, EvaluableNodeManager::ENMM_REMOVE_ALL);
-		return retval;
-	}
+		return evaluableNodeManager->DeepAllocCopy(en, EvaluableNodeManager::ENMM_REMOVE_ALL);
 
 	//create a new assoc from the previous
 	EvaluableNodeReference new_assoc(evaluableNodeManager->AllocNode(en, EvaluableNodeManager::ENMM_REMOVE_ALL), true);

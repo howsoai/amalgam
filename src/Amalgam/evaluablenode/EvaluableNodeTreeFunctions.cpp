@@ -85,64 +85,23 @@ std::tuple<Entity *, Entity *, Entity::EntityReferenceBufferReference<EntityRead
 		return std::make_tuple(nullptr, nullptr,
 			Entity::EntityReferenceBufferReference<EntityReadReference>());
 
-	bool entity_1_is_from_entity = false;
-	if(EvaluableNode::IsNull(id_path_1))
-	{
-		entity_1_is_from_entity = true;
-	}
-	else if(id_path_1->GetType() == ENT_LIST)
-	{
-		entity_1_is_from_entity = true;
-		for(auto en : id_path_1->GetOrderedChildNodesReference())
-		{
-			if(!EvaluableNode::IsNull(en))
-			{
-				entity_1_is_from_entity = false;
-				break;
-			}
-		}
-	}
-
-	bool entity_2_is_from_entity = false;
-	if(EvaluableNode::IsNull(id_path_2))
-	{
-		entity_2_is_from_entity = true;
-	}
-	else if(id_path_2->GetType() == ENT_LIST)
-	{
-		entity_2_is_from_entity = true;
-		for(auto en : id_path_2->GetOrderedChildNodesReference())
-		{
-			if(!EvaluableNode::IsNull(en))
-			{
-				entity_2_is_from_entity = false;
-				break;
-			}
-		}
-	}
-
-	if(entity_1_is_from_entity)
+	EvaluableNodeIDPathTraverser traverser_1(id_path_1, false);
+	if(traverser_1.IsEntity())
 	{
 		//lock everything in entity_1, and it will contain everything in entity_2
 		auto erbr = from_entity->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>(true);
-
 		Entity *entity_2 = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<Entity *>(from_entity, id_path_2);
-
 		return std::make_tuple(from_entity, entity_2, std::move(erbr));
 	}
 
-	if(entity_2_is_from_entity)
+	EvaluableNodeIDPathTraverser traverser_2(id_path_2, false);
+	if(traverser_2.IsEntity())
 	{
 		//lock everything in entity_2, and it will contain everything in entity_1
 		auto erbr = from_entity->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>(true);
-
 		Entity *entity_1 = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<Entity *>(from_entity, id_path_1);
-
 		return std::make_tuple(entity_1, from_entity, std::move(erbr));
 	}
-
-	EvaluableNodeIDPathTraverser traverser_1(id_path_1, false);
-	EvaluableNodeIDPathTraverser traverser_2(id_path_2, false);
 
 	//TODO 10430: finish this, use entity_2->AppendAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>(erbr) where appropriate
 	//TODO 10430: use this method in each place with a TODO 10975

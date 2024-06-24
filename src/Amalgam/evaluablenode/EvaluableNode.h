@@ -90,11 +90,16 @@ public:
 
 	constexpr void InitializeType(double number_value)
 	{
-		type = ENT_NUMBER;
-		attributes.allAttributes = 0;
-		attributes.individualAttribs.isIdempotent = true;
-		value.numberValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
-		value.numberValueContainer.numberValue = number_value;
+		if(std::isnan(number_value))
+			type = ENT_NULL;
+		else
+		{
+			type = ENT_NUMBER;
+			attributes.allAttributes = 0;
+			attributes.individualAttribs.isIdempotent = true;
+			value.numberValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+			value.numberValueContainer.numberValue = number_value;
+		}
 	}
 
 	//initializes to ENT_UNINITIALIZED
@@ -802,7 +807,7 @@ protected:
 		{	new (&mappedChildNodes) AssocType;	}
 
 		inline void DestructMappedChildNodes()
-		{	
+		{
 			string_intern_pool.DestroyStringReferences(mappedChildNodes, [](auto n) { return n.first; });
 			mappedChildNodes.~AssocType();
 		}
@@ -818,11 +823,11 @@ protected:
 		{
 			//string value
 			StringInternPool::StringID stringID;
-			
+
 			//allow up to one label -- only used when not part of an extended value
 			StringInternPool::StringID labelStringID;
 		} stringValueContainer;
-		
+
 		//when type represents a number, holds the corresponding value
 		struct EvaluableNodeValueNumber
 		{
@@ -931,7 +936,7 @@ enum EvaluableNodeImmediateValueType : uint8_t
 	ENIVT_NUMBER_INDIRECTION_INDEX		//not a real EvaluableNode type, but an index to some data structure that has a number
 };
 
-//structure that can hold the most immediate value type of an EvaluableNode 
+//structure that can hold the most immediate value type of an EvaluableNode
 // EvaluableNodeImmediateValueType can be used to communicate which type of data is being held
 union EvaluableNodeImmediateValue
 {

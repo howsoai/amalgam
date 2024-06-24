@@ -538,8 +538,10 @@ public:
 	//entities at the same level of depth
 	//returns the thread_local static variable entity[Read|Write]ReferenceBuffer, so results will be invalidated
 	//by subsequent calls
+	//if include_this_entity is true, it will include the entity in the references
 	template<typename EntityReferenceType>
-	inline EntityReferenceBufferReference<EntityReferenceType> GetAllDeeplyContainedEntityReferencesGroupedByDepth()
+	inline EntityReferenceBufferReference<EntityReferenceType> GetAllDeeplyContainedEntityReferencesGroupedByDepth(
+		bool include_this_entity = false)
 	{
 		EntityReferenceBufferReference<EntityReferenceType> erbr;
 		if constexpr(std::is_same<EntityReferenceType, EntityWriteReference>::value)
@@ -547,8 +549,23 @@ public:
 		else
 			erbr = EntityReferenceBufferReference(entityReadReferenceBuffer);
 
+		if(include_this_entity)
+		{
+			if constexpr(std::is_same<EntityReferenceType, EntityWriteReference>::value)
+				entityWriteReferenceBuffer.emplace_back(this);
+			else
+				entityReadReferenceBuffer.emplace_back(this);
+		}
+
 		GetAllDeeplyContainedEntityReferencesGroupedByDepthRecurse<EntityReferenceType>();
 		return erbr;
+	}
+
+	//appends deply contained entity references to erbr
+	template<typename EntityReferenceType>
+	void AppendAllDeeplyContainedEntityReferencesGroupedByDepth(EntityReferenceBufferReference<EntityReferenceType> &erbr)
+	{
+		GetAllDeeplyContainedEntityReferencesGroupedByDepthRecurse<EntityReferenceType>();
 	}
 
 	//gets the current state of the random stream in string form
@@ -684,20 +701,6 @@ public:
 	}
 
 #ifdef MULTITHREAD_SUPPORT
-
-	//TODO 10975:
-	// * Remove most locks from Entity itself into Interpreter, etc.
-	// * Make sure there is a lock so the Entity can't be deleted with interpreters running
-	// * Apply the locking mechanisms below to all appropriate entity operations and use the appropriate Entity*Reference
-
-	//returns true if Entity a should be locked before b
-	static inline bool ShouldLockEntityABeforeB(Entity *a, Entity *b)
-	{
-		if(a == nullptr || b == nullptr)
-			return true;
-		return reinterpret_cast<intptr_t>(a) < reinterpret_cast<intptr_t>(b);
-	}
-
 	//Returns an appropriate lock object for operations on this Entity
 	//Note that it will only lock the Entity's immediate attributes, not contained entities, code, etc.
 	template<typename LockType>
@@ -705,147 +708,6 @@ public:
 	{
 		return LockType(mutex);
 	}
-
-	//Returns a vector of read locks for the whole entity and all contained Entities recursively
-	template<typename LockType>
-	inline Concurrency::MultipleLockBufferObject<LockType> CreateDeepEntityReadLocks(std::vector<LockType> &lock_buffer)
-	{
-		CreateDeepEntityLocksRecurse<LockType>(lock_buffer);
-		Concurrency::MultipleLockBufferObject<LockType> mbo(lock_buffer);
-		return mbo;
-	}
-
-	//recurively grabs read locks on the whole entity and everything contained
-	template<typename LockType>
-	void CreateDeepEntityLocksRecurse(std::vector<LockType> &lock_buffer)
-	{
-		//lock this one
-		lock_buffer.emplace_back(CreateEntityLock<LockType>());
-
-		//early out if done
-		if(!HasContainedEntities())
-			return;
-
-		auto &contained_entities = GetContainedEntities();
-
-		//need to store more
-		size_t num_contained = contained_entities.size();
-		lock_buffer.reserve(lock_buffer.size() + num_contained);
-
-		//collect and sort contained entities by address
-		std::vector<Entity *> contained_sorted;
-		contained_sorted.reserve(num_contained);
-
-		for(auto ce : contained_entities)
-			contained_sorted.push_back(ce);
-
-		std::sort(begin(contained_sorted), end(contained_sorted),
-			[](Entity *a, Entity *b)
-			{
-				return ShouldLockEntityABeforeB(a, b);
-			}
-		);
-
-		//lock all contained entities before proceeding further
-		for(auto e : contained_sorted)
-			lock_buffer.emplace_back(e->CreateEntityLock<LockType>());
-
-		for(auto e : contained_sorted)
-			e->CreateDeepEntityLocksRecurse<LockType>(lock_buffer);
-	}
-
-	//locks two entities
-	// locks will be released when the object is destructed
-	// makes sure there aren't deadlock conditions (circular wait) by consistently locking them in order of memory address
-	template<typename LockType>
-	class TwoEntityLock
-	{
-	public:
-		TwoEntityLock(Entity *a, Entity *b)
-		{
-			//if equal, but not null, just lock one
-			if(a == b && a != nullptr)
-			{
-				entityLockA = a->CreateEntityLock<LockType>();
-				return;
-			}
-
-			if(ShouldLockEntityABeforeB(a, b))
-			{
-				if(a != nullptr)
-					entityLockA = a->CreateEntityLock<LockType>();
-				if(b != nullptr)
-					entityLockB = b->CreateEntityLock<LockType>();
-			}
-			else
-			{
-				if(b != nullptr)
-					entityLockB = b->CreateEntityLock<LockType>();
-				if(a != nullptr)
-					entityLockA = a->CreateEntityLock<LockType>();
-			}
-		}
-
-	protected:
-		LockType entityLockA;
-		LockType entityLockB;
-	};
-
-	//Returns a vector of read locks for the whole entity and all contained Entities recursively
-	template<typename LockType>
-	static inline Concurrency::MultipleLockBufferObject<LockType> CreateDeepTwoEntityDeepLocks(Entity *a, Entity *b, std::vector<LockType> &lock_buffer)
-	{
-		CreateDeepTwoEntityDeepLocksRecurse(a, b, lock_buffer);
-		Concurrency::MultipleLockBufferObject<LockType> mbo(lock_buffer);
-		return mbo;
-	}
-
-	template<typename LockType>
-	static inline void CreateDeepTwoEntityDeepLocksRecurse(Entity *a, Entity *b, std::vector<LockType> &lock_buffer)
-	{
-		//handle the cases where one of the entities is nullptr by locking the one that isn't
-		if(a == nullptr)
-		{
-			if(b == nullptr)
-				return;
-
-			b->CreateDeepEntityLocksRecurse<LockType>(lock_buffer);
-			return;
-		}
-
-		if(b == nullptr)
-		{
-			a->CreateDeepEntityLocksRecurse<LockType>(lock_buffer);
-			return;
-		}
-
-		//both a and b are valid
-
-		//if one contains the other, just lock the outer one
-		if(a->DoesDeepContainEntity(b))
-		{
-			a->CreateDeepEntityLocksRecurse<LockType>(lock_buffer);
-			return;
-		}
-		if(b->DoesDeepContainEntity(a))
-		{
-			b->CreateDeepEntityLocksRecurse<LockType>(lock_buffer);
-			return;
-		}
-
-		//determine which to lock first
-		if(ShouldLockEntityABeforeB(a, b))
-		{
-			a->CreateDeepEntityLocksRecurse<LockType>(lock_buffer);
-			b->CreateDeepEntityLocksRecurse<LockType>(lock_buffer);
-		}
-		else
-		{
-			b->CreateDeepEntityLocksRecurse<LockType>(lock_buffer);
-			a->CreateDeepEntityLocksRecurse<LockType>(lock_buffer);
-		}
-	}
-
 #endif
 
 	//nodes used for storing the entity and for all interpreters for this entity

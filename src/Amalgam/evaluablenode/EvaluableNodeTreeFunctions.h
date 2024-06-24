@@ -8,6 +8,7 @@
 #include <codecvt>
 #include <locale>
 #include <string_view>
+#include <tuple>
 
 //forward declarations:
 class Entity;
@@ -52,12 +53,19 @@ public:
 	//if has_destination_id, then it will leave one id at the end for the destination
 	void AnalyzeIDPath(EvaluableNode *id_path, bool has_destination_id)
 	{
-		idPath = id_path;
-		idPathEntries = &idPath->GetOrderedChildNodes();
 		curIndex = 0;
 		containerIdIndex = 0;
 		entityIdIndex = 0;
 		lastIdIndex = 0;
+
+		idPath = id_path;
+		//if single value, then just set and return
+		if(EvaluableNode::IsNull(idPath) || idPath->GetType() != ENT_LIST)
+		{
+			idPathEntries = nullptr;
+			return;
+		}
+		idPathEntries = &idPath->GetOrderedChildNodesReference();
 
 		//size of the entity list excluding trailing nulls
 		size_t non_null_size = idPathEntries->size();
@@ -118,7 +126,10 @@ public:
 	//gets the current ID, nullptr if out of ids
 	inline EvaluableNode *GetCurId()
 	{
-		if(idPathEntries == nullptr || curIndex > entityIdIndex)
+		if(idPathEntries == nullptr)
+			return idPath;
+
+		if(curIndex > entityIdIndex)
 			return nullptr;
 		return (*idPathEntries)[curIndex];
 	}
@@ -245,9 +256,6 @@ TraverseToEntityReferenceAndContainerViaEvaluableNodeIDPath(
 	if(from_entity == nullptr)
 		return std::make_pair(EntityReferenceType(nullptr), EntityReferenceType(nullptr));
 
-	if(EvaluableNode::IsNull(id_path) || id_path->GetType() != ENT_LIST)
-		return TraverseToEntityReferenceAndContainerViaEvaluableNodeID<EntityReferenceType>(from_entity, id_path, dest_sid_ref);
-
 	EvaluableNodeIDPathTraverser traverser(id_path, dest_sid_ref != nullptr);
 
 	//if already at the entity, return
@@ -309,6 +317,12 @@ inline EntityReferenceType TraverseToExistingEntityReferenceViaEvaluableNodeIDPa
 
 	return std::move(entity);
 }
+
+//traverses id_path_1 and id_path_2 from from_entity, returns the corresponding entities, as well as
+//read references to those entities and all entities they contain
+std::tuple<Entity *, Entity *, Entity::EntityReferenceBufferReference<EntityReadReference>>
+	TraverseToDeeplyContainedEntityReadReferencesViaEvaluableNodeIDPath(Entity *from_entity,
+		EvaluableNode *id_path_1, EvaluableNode *id_path_2);
 
 //constructs an ID or list of IDs that will traverse frome a to b, assuming that b is contained somewhere within a
 EvaluableNode *GetTraversalIDPathFromAToB(EvaluableNodeManager *enm, Entity *a, Entity *b);

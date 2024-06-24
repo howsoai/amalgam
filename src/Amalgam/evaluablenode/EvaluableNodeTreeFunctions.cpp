@@ -105,6 +105,31 @@ std::tuple<Entity *, Entity *, Entity::EntityReferenceBufferReference<EntityRead
 
 	//TODO 10430: finish this, use entity_2->AppendAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>(erbr) where appropriate
 	//TODO 10430: use this method in each place with a TODO 10975
+	EntityReadReference relative_entity_container(from_entity);
+
+	//infinite loop, but logic inside will break it out appropriately
+	while(true)
+	{		
+		EvaluableNode *cur_node_id_1 = traverser_1.GetCurId();
+		StringInternPool::StringID sid_1 = EvaluableNode::ToStringIDIfExists(cur_node_id_1);
+		
+		EvaluableNode *cur_node_id_2 = traverser_2.GetCurId();
+		StringInternPool::StringID sid_2 = EvaluableNode::ToStringIDIfExists(cur_node_id_2);
+
+		if(sid_1 == sid_2)
+		{
+
+		}
+
+		size_t entity_index_1 = relative_entity_container->GetContainedEntityIndex(sid_1);
+		size_t entity_index_2 = relative_entity_container->GetContainedEntityIndex(sid_2);
+
+		if(traverser_1.IsContainer())
+		{
+			//Entity *e = from_entity->GetContainedEntityFromIndex(entity_index_1);
+		}
+	}
+
 	return std::make_tuple(nullptr, nullptr,
 		Entity::EntityReferenceBufferReference<EntityReadReference>());
 }

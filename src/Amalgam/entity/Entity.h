@@ -362,7 +362,7 @@ public:
 	/// write_listeners is optional, and if specified, will log the event
 	void RemoveContainedEntity(StringInternPool::StringID id, std::vector<EntityWriteListener *> *write_listeners = nullptr);
 
-	//returns the ID for a Entity that is contained by this Entity, null if it does not exist
+	//returns the Entity contained by this Entity for the given id, null if it does not exist
 	Entity *GetContainedEntity(StringInternPool::StringID id);
 
 	//returns the entity index for the given id
@@ -371,6 +371,9 @@ public:
 
 	//looks up the contained entity's string id based on its index in contained entities list
 	StringInternPool::StringID GetContainedEntityIdFromIndex(size_t entity_index);
+
+	//returns the Entity contained by this Entity for the given index, null if it does not exist
+	Entity *GetContainedEntityFromIndex(size_t entity_index);
 
 	//returns true if this entity has one or more contained entities
 	constexpr bool HasContainedEntities()

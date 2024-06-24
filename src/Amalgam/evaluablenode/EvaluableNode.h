@@ -93,16 +93,17 @@ public:
 		if(FastIsNaN(number_value))
 		{
 			type = ENT_NULL;
+			attributes.allAttributes = 0;
 			value.ConstructOrderedChildNodes();
 		}
 		else
 		{
 			type = ENT_NUMBER;
+			attributes.allAttributes = 0;
 			attributes.individualAttribs.isIdempotent = true;
 			value.numberValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
 			value.numberValueContainer.numberValue = number_value;
 		}
-		attributes.allAttributes = 0;
 	}
 
 	//initializes to ENT_UNINITIALIZED

@@ -1361,7 +1361,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_INDEX(EvaluableNod
 	size_t offset = constructionStackIndicesAndUniqueness.size() - depth - 1;
 
 	//build the index node to return
-	EvaluableNodeImmediateValueWithType enivwt = EvaluableNodeImmediateValueWithType(constructionStackIndicesAndUniqueness[offset].index);
+	EvaluableNodeImmediateValueWithType enivwt(constructionStackIndicesAndUniqueness[offset].index);
 	if(enivwt.nodeType == ENIVT_NUMBER)
 		return AllocReturn(enivwt.nodeValue.number, immediate_result);
 	else if(enivwt.nodeType == ENIVT_STRING_ID)

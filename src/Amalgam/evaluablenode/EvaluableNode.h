@@ -1067,35 +1067,10 @@ public:
 		: nodeType(ENIVT_NULL)
 	{	}
 
-	__forceinline EvaluableNodeImmediateValueWithType(EvaluableNodeImmediateValue node_value,
+	constexpr EvaluableNodeImmediateValueWithType(EvaluableNodeImmediateValue node_value,
 		EvaluableNodeImmediateValueType node_type)
-	{
-		if(node_type == ENIVT_NUMBER)
-		{
-			if(FastIsNaN(node_value.number))
-				nodeType = ENIVT_NULL;
-			else
-			{
-				nodeType = ENIVT_NUMBER;
-				nodeValue = node_value.number;
-			}
-		}
-		else if(node_type == ENIVT_STRING_ID)
-		{
-			if(node_value.stringID == StringInternPool::NOT_A_STRING_ID)
-				nodeType = ENIVT_NULL;
-			else
-			{
-				nodeType = ENIVT_STRING_ID;
-				nodeValue = node_value.stringID;
-			}
-		}
-		else
-		{
-			nodeType = node_type;
-			nodeValue = node_value;
-		}
-	}
+		: nodeType(node_type), nodeValue(node_value)
+	{	}
 
 	__forceinline EvaluableNodeImmediateValueWithType(bool value)
 	{

@@ -85,7 +85,7 @@ public:
 	{
 		if(value.nodeValue.code == nullptr)
 			return false;
-	
+
 		return value.nodeValue.code->GetNeedCycleCheck();
 	}
 
@@ -94,7 +94,7 @@ public:
 	{
 		if(value.nodeValue.code == nullptr)
 			return;
-	
+
 		value.nodeValue.code->SetNeedCycleCheck(need_cycle_check);
 	}
 
@@ -154,7 +154,7 @@ public:
 protected:
 
 	EvaluableNodeImmediateValueWithType value;
-	
+
 public:
 
 	//this is the only reference to the result
@@ -200,7 +200,7 @@ public:
 	std::vector<EvaluableNode *> *stack;
 	size_t originalStackSize;
 };
-	
+
 class EvaluableNodeManager
 {
 public:
@@ -273,14 +273,20 @@ public:
 	inline EvaluableNode *AllocNode(EvaluableNodeType type, StringInternPool::StringID string_id)
 	{
 		EvaluableNode *n = AllocUninitializedNode();
-		n->InitializeType(type, string_id);
+		if(string_id == StringInternPool::NOT_A_STRING_ID)
+			n->InitializeType(ENT_NULL);
+		else
+			n->InitializeType(type, string_id);
 		return n;
 	}
 
 	inline EvaluableNode *AllocNode(StringInternPool::StringID string_id)
 	{
 		EvaluableNode *n = AllocUninitializedNode();
-		n->InitializeType(ENT_STRING, string_id);
+		if(string_id == StringInternPool::NOT_A_STRING_ID)
+			n->InitializeType(ENT_NULL);
+		else
+			n->InitializeType(ENT_STRING, string_id);
 		return n;
 	}
 
@@ -296,7 +302,7 @@ public:
 	{	return AllocNode(type, static_cast<StringInternPool::StringID>(sir));	}
 	inline EvaluableNode *AllocNode(EvaluableNodeType type, StringInternWeakRef &siwr)
 	{	return AllocNode(type, static_cast<StringInternPool::StringID>(siwr));	}
-	
+
 	inline EvaluableNode *AllocNode(double float_value)
 	{
 		EvaluableNode *n = AllocUninitializedNode();
@@ -475,7 +481,7 @@ public:
 	//Copies the data structure and everything underneath it, modifying labels as specified
 	// if cycle_free is true on input, then it can perform a faster copy
 	inline EvaluableNodeReference DeepAllocCopy(EvaluableNode *tree, EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE)
-	{	
+	{
 		if(tree == nullptr)
 			return EvaluableNodeReference::Null();
 
@@ -590,7 +596,7 @@ public:
 		if(enr.unique && !enr.IsImmediateValue())
 			FreeNode(enr);
 	}
-	
+
 	//frees all nodes
 	void FreeAllNodes();
 
@@ -599,7 +605,7 @@ public:
 	{
 		if(en == nullptr)
 			return;
-		
+
 		if(IsEvaluableNodeTypeImmediate(en->GetType()))
 		{
 			en->Invalidate();
@@ -649,7 +655,7 @@ public:
 				if(e != nullptr)
 					FreeNodeTreeRecurse(e);
 			}
-		}		
+		}
 
 		ReclaimFreedNodesAtEnd();
 	}
@@ -764,7 +770,7 @@ public:
 	//returns the number of nodes currently being used that have not been freed yet
 	__forceinline size_t GetNumberOfUsedNodes()
 	{	return firstUnusedNodeIndex;		}
-	
+
 	__forceinline size_t GetNumberOfUnusedNodes()
 	{	return nodes.size() - firstUnusedNodeIndex;		}
 
@@ -828,7 +834,7 @@ public:
 	//Returns all nodes still in use.  For debugging purposes
 	std::vector<EvaluableNode *> GetUsedNodes()
 	{	return std::vector<EvaluableNode *>(begin(nodes), begin(nodes) + firstUnusedNodeIndex);	}
-	
+
 	//returns an estimate of the amount of memory allocated by the nodes managed
 	// only an estimate because the platform's underlying memory management system may need to allocate additional
 	// memory that cannot be easily accounted for

@@ -743,11 +743,7 @@ StringInternPool::StringID EvaluableNode::GetAndClearStringIDWithReference()
 void EvaluableNode::SetStringIDWithReferenceHandoff(StringInternPool::StringID id)
 {
 	if(id == StringInternPool::NOT_A_STRING_ID)
-	{
 		type = ENT_NULL;
-		value.ConstructOrderedChildNodes();
-		attributes.allAttributes = 0;
-	}
 	else
 	{
 		if(DoesEvaluableNodeTypeUseStringData(GetType()))

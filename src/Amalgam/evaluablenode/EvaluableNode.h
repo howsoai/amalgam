@@ -73,19 +73,35 @@ public:
 
 	inline void InitializeType(EvaluableNodeType _type, StringInternPool::StringID string_id)
 	{
-		type = _type;
 		attributes.allAttributes = 0;
-		value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_id);
-		value.stringValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+		if(string_id == StringInternPool::NOT_A_STRING_ID)
+		{
+			type = ENT_NULL;
+			value.ConstructOrderedChildNodes();
+		}
+		else
+		{
+			type = _type;
+			value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_id);
+			value.stringValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+		}
 	}
 
 	//like InitializeType, but hands off the string reference to string_id
 	inline void InitializeTypeWithReferenceHandoff(EvaluableNodeType _type, StringInternPool::StringID string_id)
 	{
-		type = _type;
 		attributes.allAttributes = 0;
-		value.stringValueContainer.stringID = string_id;
-		value.stringValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+		if(string_id == StringInternPool::NOT_A_STRING_ID)
+		{
+			type = ENT_NULL;
+			value.ConstructOrderedChildNodes();
+		}
+		else
+		{
+			type = _type;
+			value.stringValueContainer.stringID = string_id;
+			value.stringValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+		}
 	}
 
 	constexpr void InitializeType(double number_value)
@@ -1051,10 +1067,35 @@ public:
 		: nodeType(ENIVT_NULL)
 	{	}
 
-	constexpr EvaluableNodeImmediateValueWithType(EvaluableNodeImmediateValue node_value,
+	__forceinline EvaluableNodeImmediateValueWithType(EvaluableNodeImmediateValue node_value,
 		EvaluableNodeImmediateValueType node_type)
-		: nodeType(node_type), nodeValue(node_value)
-	{	}
+	{
+		if(node_type == ENIVT_NUMBER)
+		{
+			if(FastIsNaN(node_value.number))
+				nodeType = ENIVT_NULL;
+			else
+			{
+				nodeType = ENIVT_NUMBER;
+				nodeValue = node_value.number;
+			}
+		}
+		else if(node_type == ENIVT_STRING_ID)
+		{
+			if(node_value.stringID == StringInternPool::NOT_A_STRING_ID)
+				nodeType = ENIVT_NULL;
+			else
+			{
+				nodeType = ENIVT_STRING_ID;
+				nodeValue = node_value.stringID;
+			}
+		}
+		else
+		{
+			nodeType = node_type;
+			nodeValue = node_value;
+		}
+	}
 
 	__forceinline EvaluableNodeImmediateValueWithType(bool value)
 	{
@@ -1065,13 +1106,27 @@ public:
 			nodeValue.number = 0.0;
 	}
 
-	constexpr EvaluableNodeImmediateValueWithType(double number)
-		: nodeType(ENIVT_NUMBER), nodeValue(number)
-	{	}
+	__forceinline EvaluableNodeImmediateValueWithType(double number)
+	{
+		if(FastIsNaN(number))
+			nodeType = ENIVT_NULL;
+		else
+		{
+			nodeType = ENIVT_NUMBER;
+			nodeValue = number;
+		}
+	}
 
-	constexpr EvaluableNodeImmediateValueWithType(StringInternPool::StringID string_id)
-		: nodeType(ENIVT_STRING_ID), nodeValue(string_id)
-	{	}
+	__forceinline EvaluableNodeImmediateValueWithType(StringInternPool::StringID string_id)
+	{
+		if(string_id == StringInternPool::NOT_A_STRING_ID)
+			nodeType = ENIVT_NULL;
+		else
+		{
+			nodeType = ENIVT_STRING_ID;
+			nodeValue = string_id;
+		}
+	}
 
 	constexpr EvaluableNodeImmediateValueWithType(EvaluableNode *code)
 		: nodeType(ENIVT_CODE), nodeValue(code)

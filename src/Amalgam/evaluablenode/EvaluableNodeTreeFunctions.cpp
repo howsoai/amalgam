@@ -118,7 +118,21 @@ std::tuple<Entity *, Entity *, Entity::EntityReferenceBufferReference<EntityRead
 
 		if(sid_1 == sid_2)
 		{
+			Entity *next_entity = relative_entity_container->GetContainedEntity(sid_1);
+			if(next_entity == nullptr)
+				return std::make_tuple(nullptr, nullptr,
+					Entity::EntityReferenceBufferReference<EntityReadReference>());
 
+			if(traverser_1.IsEntity() || traverser_2.IsEntity())
+			{
+				//TODO 10430: repeat traverser_1 & 2 IsEntity from above, but continue with traverser instead of starting over
+			}
+
+			relative_entity_container = EntityReadReference(next_entity);
+			traverser_1.AdvanceIndex();
+			traverser_2.AdvanceIndex();
+
+			continue;
 		}
 
 		size_t entity_index_1 = relative_entity_container->GetContainedEntityIndex(sid_1);

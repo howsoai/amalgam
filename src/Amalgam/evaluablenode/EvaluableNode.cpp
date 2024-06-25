@@ -657,24 +657,47 @@ void EvaluableNode::InitStringValue()
 
 void EvaluableNode::SetStringID(StringInternPool::StringID id)
 {
-	if(DoesEvaluableNodeTypeUseStringData(GetType()))
+	if(id == StringInternPool::NOT_A_STRING_ID)
 	{
-		if(!HasExtendedValue())
+		if(DoesEvaluableNodeTypeUseStringData(GetType()))
 		{
-			StringInternPool::StringID cur_id = value.stringValueContainer.stringID;
-			if(id != cur_id)
+			if(!HasExtendedValue())
 			{
-				string_intern_pool.DestroyStringReference(cur_id);
-				value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(id);
+				StringInternPool::StringID cur_id = value.stringValueContainer.stringID;
+				if(id != cur_id)
+					string_intern_pool.DestroyStringReference(cur_id);
+			}
+			else
+			{
+				StringInternPool::StringID cur_id = value.extension.extendedValue->value.stringValueContainer.stringID;
+				if(id != cur_id)
+					string_intern_pool.DestroyStringReference(cur_id);
 			}
 		}
-		else
+		type = ENT_NULL;
+		value.ConstructOrderedChildNodes();
+	}
+	else
+	{
+		if(DoesEvaluableNodeTypeUseStringData(GetType()))
 		{
-			StringInternPool::StringID cur_id = value.extension.extendedValue->value.stringValueContainer.stringID;
-			if(id != cur_id)
+			if(!HasExtendedValue())
 			{
-				string_intern_pool.DestroyStringReference(cur_id);
-				value.extension.extendedValue->value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(id);
+				StringInternPool::StringID cur_id = value.stringValueContainer.stringID;
+				if(id != cur_id)
+				{
+					string_intern_pool.DestroyStringReference(cur_id);
+					value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(id);
+				}
+			}
+			else
+			{
+				StringInternPool::StringID cur_id = value.extension.extendedValue->value.stringValueContainer.stringID;
+				if(id != cur_id)
+				{
+					string_intern_pool.DestroyStringReference(cur_id);
+					value.extension.extendedValue->value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(id);
+				}
 			}
 		}
 	}
@@ -743,7 +766,23 @@ StringInternPool::StringID EvaluableNode::GetAndClearStringIDWithReference()
 void EvaluableNode::SetStringIDWithReferenceHandoff(StringInternPool::StringID id)
 {
 	if(id == StringInternPool::NOT_A_STRING_ID)
+	{
+		if(DoesEvaluableNodeTypeUseStringData(GetType()))
+		{
+			if(!HasExtendedValue())
+			{
+				StringInternPool::StringID cur_id = value.stringValueContainer.stringID;
+				string_intern_pool.DestroyStringReference(cur_id);
+			}
+			else
+			{
+				StringInternPool::StringID cur_id = value.extension.extendedValue->value.stringValueContainer.stringID;
+				string_intern_pool.DestroyStringReference(cur_id);
+			}
+		}
 		type = ENT_NULL;
+		value.ConstructOrderedChildNodes();
+	}
 	else
 	{
 		if(DoesEvaluableNodeTypeUseStringData(GetType()))

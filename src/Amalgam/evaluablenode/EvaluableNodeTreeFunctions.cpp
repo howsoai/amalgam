@@ -123,9 +123,21 @@ std::tuple<Entity *, Entity *, Entity::EntityReferenceBufferReference<EntityRead
 				return std::make_tuple(nullptr, nullptr,
 					Entity::EntityReferenceBufferReference<EntityReadReference>());
 
-			if(traverser_1.IsEntity() || traverser_2.IsEntity())
+			//TODO 10430: unify these with above code?
+			if(traverser_1.IsEntity())
 			{
-				//TODO 10430: repeat traverser_1 & 2 IsEntity from above, but continue with traverser instead of starting over
+				//lock everything in entity_1, and it will contain everything in entity_2
+				auto erbr = from_entity->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>(true);
+				Entity *entity_2 = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<Entity *>(from_entity, id_path_2);
+				return std::make_tuple(from_entity, entity_2, std::move(erbr));
+			}
+
+			if(traverser_2.IsEntity())
+			{
+				//lock everything in entity_2, and it will contain everything in entity_1
+				auto erbr = from_entity->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>(true);
+				Entity *entity_1 = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<Entity *>(from_entity, id_path_1);
+				return std::make_tuple(entity_1, from_entity, std::move(erbr));
 			}
 
 			relative_entity_container = EntityReadReference(next_entity);
@@ -134,6 +146,8 @@ std::tuple<Entity *, Entity *, Entity::EntityReferenceBufferReference<EntityRead
 
 			continue;
 		}
+
+		//ids are different
 
 		size_t entity_index_1 = relative_entity_container->GetContainedEntityIndex(sid_1);
 		size_t entity_index_2 = relative_entity_container->GetContainedEntityIndex(sid_2);

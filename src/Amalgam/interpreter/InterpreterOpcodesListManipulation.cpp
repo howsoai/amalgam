@@ -88,9 +88,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, b
 		{
 			//return 0 if zero
 			double value = list->GetNumberValueReference();
-			if(FastIsNaN(value))
-				return AllocReturn(std::numeric_limits<double>::quiet_NaN(), immediate_result);
-
 			if(value == 0.0)
 				return list;
 

@@ -509,9 +509,7 @@ enum EvaluableNodeBuiltInStringId
 	//leave space for ENT_ opcodes, start at the end
 
 	//built-in common values
-	ENBISI_nas = NUM_VALID_ENT_OPCODES + NUM_ENBISI_SPECIAL_STRING_IDS,
-	ENBISI_nan,
-	ENBISI_infinity,
+	ENBISI_infinity = NUM_VALID_ENT_OPCODES + NUM_ENBISI_SPECIAL_STRING_IDS,
 	ENBISI_neg_infinity,
 	ENBISI_zero,
 	ENBISI_one,

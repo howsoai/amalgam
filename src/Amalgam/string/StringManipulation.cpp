@@ -15,7 +15,7 @@ std::string StringManipulation::NumberToString(double value)
 {
 	//first check for unusual values
 	if(FastIsNaN(value))
-		return ".nan";
+		return "(null)";
 	if(value == std::numeric_limits<double>::infinity())
 		return ".infinity";
 	if(value == -std::numeric_limits<double>::infinity())

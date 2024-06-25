@@ -109,10 +109,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, b
 {
 	//if idempotent, can just return a copy without any metadata
 	if(en->GetIsIdempotent())
-	{
-		EvaluableNodeReference retval = evaluableNodeManager->DeepAllocCopy(en, EvaluableNodeManager::ENMM_REMOVE_ALL);
-		return retval;
-	}
+		return evaluableNodeManager->DeepAllocCopy(en, EvaluableNodeManager::ENMM_REMOVE_ALL);
 
 	//create a new assoc from the previous
 	EvaluableNodeReference new_assoc(evaluableNodeManager->AllocNode(en, EvaluableNodeManager::ENMM_REMOVE_ALL), true);
@@ -552,11 +549,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 					auto &mcn = from_params->GetMappedChildNodesReference();
 
 					auto found_locale = mcn.find(ENBISI_locale);
-					if(found_locale != end(mcn) && !EvaluableNode::IsEmptyNode(found_locale->second))
+					if(found_locale != end(mcn) && !EvaluableNode::IsNull(found_locale->second))
 						locale = EvaluableNode::ToStringPreservingOpcodeType(found_locale->second);
 
 					auto found_timezone = mcn.find(ENBISI_timezone);
-					if(found_timezone != end(mcn) && !EvaluableNode::IsEmptyNode(found_timezone->second))
+					if(found_timezone != end(mcn) && !EvaluableNode::IsNull(found_timezone->second))
 						timezone = EvaluableNode::ToStringPreservingOpcodeType(found_timezone->second);
 				}
 
@@ -871,11 +868,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 				auto &mcn = to_params->GetMappedChildNodesReference();
 
 				auto found_locale = mcn.find(ENBISI_locale);
-				if(found_locale != end(mcn) && !EvaluableNode::IsEmptyNode(found_locale->second))
+				if(found_locale != end(mcn) && !EvaluableNode::IsNull(found_locale->second))
 					locale = EvaluableNode::ToStringPreservingOpcodeType(found_locale->second);
 
 				auto found_timezone = mcn.find(ENBISI_timezone);
-				if(found_timezone != end(mcn) && !EvaluableNode::IsEmptyNode(found_timezone->second))
+				if(found_timezone != end(mcn) && !EvaluableNode::IsNull(found_timezone->second))
 					timezone = EvaluableNode::ToStringPreservingOpcodeType(found_timezone->second);
 			}
 
@@ -1392,7 +1389,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 	}
 
 	//if a number, then go by offset
-	if(substr_node->IsNativelyNumeric())
+	if(substr_node->IsNumericOrNull())
 	{
 		double start_offset_raw = EvaluableNode::ToNumber(substr_node);
 		evaluableNodeManager->FreeNodeTreeIfPossible(substr_node);

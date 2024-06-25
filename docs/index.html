@@ -352,7 +352,7 @@ function render() {
 	(call (retrieve_from_contained_entity "MyLibrary" "MyFunction") (assoc parameter_a 1 parameter_b 2))
 	</span>
 	<p>
-	Numbers are represented via numbers, as well as ".", "-", and "e" for base-ten exponents.  Further, infinity and negative infinity are represented as ".infinity" and "-.infinity" respectively, and not-a-number is represented as ".nan".  The special null value with string type, not-a-string, is represented as ".nas".
+	Numbers are represented via numbers, as well as ".", "-", and "e" for base-ten exponents.  Further, infinity and negative infinity are represented as ".infinity" and "-.infinity" respectively.  Not-a-number and non-string results are represented via the opcode (null).
 	<p>
 	All regular expressions are EMCA-standard regular expressions.  See <a href="https://en.cppreference.com/w/cpp/regex/ecmascript">https://en.cppreference.com/w/cpp/regex/ecmascript</a> or <a href="https://262.ecma-international.org/5.1/#sec-15.10">https://262.ecma-international.org/5.1/#sec-15.10</a> for further details on syntax.
 

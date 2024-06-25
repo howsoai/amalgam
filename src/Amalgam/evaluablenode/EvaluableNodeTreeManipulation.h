@@ -340,7 +340,7 @@ public:
 	//returns a number between 0 and 1, where 1 is exactly the same and 0 is maximally different
 	static inline double CommonalityBetweenNumbers(double n1, double n2)
 	{
-		if(EqualIncludingNaN(n1, n2))
+		if(n1 == n2)
 			return 1.0;
 
 		double commonality = NumberCommonality(std::fabs(n1 - n2), n1, n2);

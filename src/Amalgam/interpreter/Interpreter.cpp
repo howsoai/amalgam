@@ -548,7 +548,7 @@ EvaluableNode *Interpreter::GetCurrentCallStackContext()
 
 std::pair<bool, std::string> Interpreter::InterpretNodeIntoStringValue(EvaluableNode *n)
 {
-	if(EvaluableNode::IsEmptyNode(n))
+	if(EvaluableNode::IsNull(n))
 		return std::make_pair(false, "");
 
 	//shortcut if the node has what is being asked
@@ -604,7 +604,7 @@ StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueWithRefere
 		if(result.unique)
 		{
 			StringInternPool::StringID result_sid = string_intern_pool.NOT_A_STRING_ID;
-			if(result != nullptr && result->IsStringValue())
+			if(result != nullptr && result->GetType() == ENT_STRING)
 				result_sid = result->GetAndClearStringIDWithReference();
 			else
 				result_sid = EvaluableNode::ToStringIDWithReference(result);
@@ -718,7 +718,7 @@ EvaluableNode **Interpreter::TraverseToDestinationFromTraversalPathList(Evaluabl
 	size_t address_list_length = 1;
 
 	//if it's an actual address list, then use it
-	if(tpl != nullptr && DoesEvaluableNodeTypeUseOrderedData(tpl->GetType()))
+	if(!EvaluableNode::IsNull(tpl) && DoesEvaluableNodeTypeUseOrderedData(tpl->GetType()))
 	{
 		auto &ocn = tpl->GetOrderedChildNodes();
 		address_list = ocn.data();

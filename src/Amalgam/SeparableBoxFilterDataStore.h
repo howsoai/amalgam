@@ -218,8 +218,7 @@ public:
 	}
 
 	//given a feature_id and a range [low, high], fills out with all the entities with values of feature feature_id within specified range
-	//Note about Null/NaNs:
-	//if the feature value is Nan/Null, it will NOT be present in the search results, ie "x" != 3 will NOT include elements with x is nan/Null, even though nan/null != 3
+	//if the feature value is null, it will NOT be present in the search results, ie "x" != 3 will NOT include elements with x is null, even though null != 3
 	inline void FindAllEntitiesWithinRange(size_t feature_id, EvaluableNodeImmediateValueType value_type,
 		EvaluableNodeImmediateValue &low, EvaluableNodeImmediateValue &high, BitArrayIntegerSet &out, bool between_values = true)
 	{
@@ -294,7 +293,6 @@ public:
 		auto &column_data = columnData[column_index];
 
 		column_data->numberIndices.CopyTo(enabled_entities);
-		column_data->nanIndices.EraseTo(enabled_entities);
 
 		//resize buffers and place each entity and value into its respective buffer
 		entities.resize(enabled_entities.size());
@@ -324,7 +322,6 @@ public:
 		auto &column_data = columnData[column_index];
 
 		column_data->numberIndices.IntersectTo(enabled_entities);
-		column_data->nanIndices.EraseTo(enabled_entities);
 
 		//resize buffers and place each entity and value into its respective buffer
 		entities.resize(enabled_entities.size());
@@ -519,7 +516,7 @@ protected:
 	//deletes the index and associated data
 	void DeleteEntityIndexFromColumns(size_t entity_index);
 
-	//adds a new labels to the database, populating new cells with -NaN, and updating the number of entities
+	//adds a new labels to the database
 	// assumes label_ids is not empty and num_entities is nonzero
 	//returns the number of new columns inserted
 	size_t AddLabelsAsEmptyColumns(std::vector<size_t> &label_ids, size_t num_entities);

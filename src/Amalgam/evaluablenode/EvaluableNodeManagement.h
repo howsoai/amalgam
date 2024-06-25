@@ -273,20 +273,14 @@ public:
 	inline EvaluableNode *AllocNode(EvaluableNodeType type, StringInternPool::StringID string_id)
 	{
 		EvaluableNode *n = AllocUninitializedNode();
-		if(string_id == StringInternPool::NOT_A_STRING_ID)
-			n->InitializeType(ENT_NULL);
-		else
-			n->InitializeType(type, string_id);
+		n->InitializeType(type, string_id);
 		return n;
 	}
 
 	inline EvaluableNode *AllocNode(StringInternPool::StringID string_id)
 	{
 		EvaluableNode *n = AllocUninitializedNode();
-		if(string_id == StringInternPool::NOT_A_STRING_ID)
-			n->InitializeType(ENT_NULL);
-		else
-			n->InitializeType(ENT_STRING, string_id);
+		n->InitializeType(ENT_STRING, string_id);
 		return n;
 	}
 

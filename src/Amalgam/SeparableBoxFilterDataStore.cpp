@@ -7,8 +7,6 @@ thread_local
 #endif
 SeparableBoxFilterDataStore::SBFDSParametersAndBuffers SeparableBoxFilterDataStore::parametersAndBuffers;
 
-//TODO 20490: check for NAS and remove as appropriate
-
 void SeparableBoxFilterDataStore::BuildLabel(size_t column_index, const std::vector<Entity *> &entities)
 {
 	auto &column_data = columnData[column_index];
@@ -896,23 +894,14 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			if(unknown_unknown_term == known_unknown_term && unknown_unknown_term > 0)
 				return unknown_unknown_term;
 
-			//find nas values -- common to both branches below
-			auto nas_iter = column->stringIdValueToIndices.find(string_intern_pool.NOT_A_STRING_ID);
-
 			if(unknown_unknown_term < known_unknown_term || known_unknown_term == 0.0)
-			{
 				AccumulatePartialSums(column->nullIndices, query_feature_index, unknown_unknown_term);
-				if(nas_iter != end(column->stringIdValueToIndices))
-					AccumulatePartialSums(*nas_iter->second, query_feature_index, unknown_unknown_term);
-			}
 
 			if(known_unknown_term < unknown_unknown_term || unknown_unknown_term == 0.0)
 			{
 				BitArrayIntegerSet &known_unknown_indices = parametersAndBuffers.potentialMatchesSet;
 				known_unknown_indices = enabled_indices;
 				column->nullIndices.EraseTo(known_unknown_indices);
-				if(nas_iter != end(column->stringIdValueToIndices))
-					known_unknown_indices.erase(*nas_iter->second);
 				AccumulatePartialSums(known_unknown_indices, query_feature_index, known_unknown_term);
 			}
 
@@ -930,9 +919,6 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		else //nonsymmetric nominal -- need to compute
 		{
 			AccumulatePartialSums(column->nullIndices, query_feature_index, unknown_unknown_term);
-			auto nas_iter = column->stringIdValueToIndices.find(string_intern_pool.NOT_A_STRING_ID);
-			if(nas_iter != end(column->stringIdValueToIndices))
-				AccumulatePartialSums(*nas_iter->second, query_feature_index, unknown_unknown_term);
 
 			double nonmatch_dist_term = r_dist_eval.ComputeDistanceTermNominalNonNullSmallestNonmatch(query_feature_index, high_accuracy);
 			//if the next closest match is larger, no need to compute any more values
@@ -966,9 +952,6 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	{
 		double known_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
 		AccumulatePartialSums(column->nullIndices, query_feature_index, known_unknown_term);
-		auto nas_iter = column->stringIdValueToIndices.find(string_intern_pool.NOT_A_STRING_ID);
-		if(nas_iter != end(column->stringIdValueToIndices))
-			AccumulatePartialSums(*nas_iter->second, query_feature_index, known_unknown_term);
 	}
 
 	//if nominal, only need to compute the exact match

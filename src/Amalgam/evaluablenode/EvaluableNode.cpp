@@ -26,7 +26,7 @@ void EvaluableNode::GetNodeCommonAndUniqueLabelCounts(EvaluableNode *n1, Evaluab
 	//if no labels in either, then done
 	if(num_n1_labels == 0 && num_n2_labels == 0)
 		return;
-	
+
 	//if labels in one (but not both, because would have exited), then count total and done
 	if(num_n1_labels == 0 || num_n2_labels == 0)
 	{
@@ -86,7 +86,7 @@ bool EvaluableNode::AreShallowEqual(EvaluableNode *a, EvaluableNode *b)
 		double bv = EvaluableNode::ToNumber(b);
 		return (av == bv);
 	}
-	
+
 	//if made it here, then it's an instruction, and they're of equal type
 	return true;
 }
@@ -103,7 +103,7 @@ bool EvaluableNode::IsTrue(EvaluableNode *n)
 		return false;
 	if(node_type == ENT_NULL)
 		return false;
-	
+
 	if(DoesEvaluableNodeTypeUseNumberData(node_type))
 	{
 		double &num = n->GetNumberValueReference();
@@ -146,7 +146,7 @@ int EvaluableNode::Compare(EvaluableNode *a, EvaluableNode *b)
 		else
 			return 0;
 	}
-	
+
 	//compare via strings
 	//first check if they're the same
 	if(a != nullptr && b != nullptr)
@@ -254,7 +254,7 @@ StringInternPool::StringID EvaluableNode::ToStringIDWithReference(EvaluableNode 
 
 	if(e->GetType() == ENT_STRING || e->GetType() == ENT_SYMBOL)
 		return string_intern_pool.CreateStringReference(e->GetStringIDReference());
-	
+
 	std::string stringified = ToStringPreservingOpcodeType(e);
 	return string_intern_pool.CreateStringReference(stringified);
 }
@@ -292,7 +292,7 @@ void EvaluableNode::ConvertOrderedListToNumberedAssoc()
 
 	//convert ordered child nodes into index number -> value
 	auto &ocn = GetOrderedChildNodes();
-	new_map.reserve(ocn.size()); 
+	new_map.reserve(ocn.size());
 	for(size_t i = 0; i < ocn.size(); i++)
 		new_map[string_intern_pool.CreateStringReference(NumberToString(i))] = ocn[i];
 
@@ -501,7 +501,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 
 	if(    (DoesEvaluableNodeTypeUseNumberData(cur_type) && DoesEvaluableNodeTypeUseNumberData(new_type))
 		|| (DoesEvaluableNodeTypeUseStringData(cur_type) && DoesEvaluableNodeTypeUseStringData(new_type))
-		|| (DoesEvaluableNodeTypeUseAssocData(cur_type)  && DoesEvaluableNodeTypeUseAssocData(new_type)) 
+		|| (DoesEvaluableNodeTypeUseAssocData(cur_type)  && DoesEvaluableNodeTypeUseAssocData(new_type))
 		|| (DoesEvaluableNodeTypeUseOrderedData(cur_type) && DoesEvaluableNodeTypeUseOrderedData(new_type)) )
 	{
 		type = new_type;
@@ -604,7 +604,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 			InitOrderedChildNodes();
 		}
 	}
-	
+
 	type = new_type;
 
 	//cleared child nodes, so no cycles
@@ -657,24 +657,31 @@ void EvaluableNode::InitStringValue()
 
 void EvaluableNode::SetStringID(StringInternPool::StringID id)
 {
-	if(DoesEvaluableNodeTypeUseStringData(GetType()))
+	if(id == StringInternPool::NOT_A_STRING_ID)
 	{
-		if(!HasExtendedValue())
+		SetType(ENT_NULL);
+	}
+	else
+	{
+		if(DoesEvaluableNodeTypeUseStringData(GetType()))
 		{
-			StringInternPool::StringID cur_id = value.stringValueContainer.stringID;
-			if(id != cur_id)
+			if(!HasExtendedValue())
 			{
-				string_intern_pool.DestroyStringReference(cur_id);
-				value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(id);
+				StringInternPool::StringID cur_id = value.stringValueContainer.stringID;
+				if(id != cur_id)
+				{
+					string_intern_pool.DestroyStringReference(cur_id);
+					value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(id);
+				}
 			}
-		}
-		else
-		{
-			StringInternPool::StringID cur_id = value.extension.extendedValue->value.stringValueContainer.stringID;
-			if(id != cur_id)
+			else
 			{
-				string_intern_pool.DestroyStringReference(cur_id);
-				value.extension.extendedValue->value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(id);
+				StringInternPool::StringID cur_id = value.extension.extendedValue->value.stringValueContainer.stringID;
+				if(id != cur_id)
+				{
+					string_intern_pool.DestroyStringReference(cur_id);
+					value.extension.extendedValue->value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(id);
+				}
 			}
 		}
 	}
@@ -742,19 +749,26 @@ StringInternPool::StringID EvaluableNode::GetAndClearStringIDWithReference()
 
 void EvaluableNode::SetStringIDWithReferenceHandoff(StringInternPool::StringID id)
 {
-	if(DoesEvaluableNodeTypeUseStringData(GetType()))
+	if(id == StringInternPool::NOT_A_STRING_ID)
 	{
-		if(!HasExtendedValue())
+		SetType(ENT_NULL);
+	}
+	else
+	{
+		if(DoesEvaluableNodeTypeUseStringData(GetType()))
 		{
-			StringInternPool::StringID cur_id = value.stringValueContainer.stringID;
-			string_intern_pool.DestroyStringReference(cur_id);
-			value.stringValueContainer.stringID = id;
-		}
-		else
-		{
-			StringInternPool::StringID cur_id = value.extension.extendedValue->value.stringValueContainer.stringID;
-			string_intern_pool.DestroyStringReference(cur_id);
-			value.extension.extendedValue->value.stringValueContainer.stringID = id;
+			if(!HasExtendedValue())
+			{
+				StringInternPool::StringID cur_id = value.stringValueContainer.stringID;
+				string_intern_pool.DestroyStringReference(cur_id);
+				value.stringValueContainer.stringID = id;
+			}
+			else
+			{
+				StringInternPool::StringID cur_id = value.extension.extendedValue->value.stringValueContainer.stringID;
+				string_intern_pool.DestroyStringReference(cur_id);
+				value.extension.extendedValue->value.stringValueContainer.stringID = id;
+			}
 		}
 	}
 }
@@ -1011,7 +1025,7 @@ std::vector<std::string> EvaluableNode::GetCommentsSeparateLines()
 	//early exit
 	if(full_comments.empty())
 		return comment_lines;
-	
+
 	size_t cur = 0;
 	size_t prev = 0;
 	while((cur = full_comments.find('\n', prev)) != std::string::npos)
@@ -1127,7 +1141,7 @@ size_t EvaluableNode::GetNumChildNodes()
 		return GetMappedChildNodesReference().size();
 	else
 		return GetOrderedChildNodesReference().size();
-	
+
 	return 0;
 }
 
@@ -1197,7 +1211,7 @@ void EvaluableNode::AppendOrderedChildNode(EvaluableNode *cn)
 		return;
 
 	GetOrderedChildNodesReference().push_back(cn);
-	
+
 	if(cn != nullptr)
 	{
 		//if cycles, propagate upward
@@ -1621,7 +1635,7 @@ void EvaluableNode::Invalidate()
 		value.numberValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
 		return;
 	}
-	
+
 	//has extended type
 	switch(GetType())
 	{
@@ -1653,7 +1667,7 @@ void EvaluableNode::Invalidate()
 }
 
 bool EvaluableNode::AreDeepEqualGivenShallowEqual(EvaluableNode *a, EvaluableNode *b, ReferenceAssocType *checked)
-{	
+{
 	//if either is a null and have same number of child nodes, then equal
 	if(a == nullptr || b == nullptr)
 		return true;
@@ -1687,7 +1701,7 @@ bool EvaluableNode::AreDeepEqualGivenShallowEqual(EvaluableNode *a, EvaluableNod
 		size_t a_size = a_mcn.size();
 		if(a_size != b_mcn.size())
 			return false;
-		
+
 		//both empty, so equal
 		if(a_size == 0)
 			return true;
@@ -1714,7 +1728,7 @@ bool EvaluableNode::AreDeepEqualGivenShallowEqual(EvaluableNode *a, EvaluableNod
 			if(!EvaluableNode::AreDeepEqualGivenShallowEqual(a_child, b_child, checked))
 				return false;
 		}
-		
+
 		//all child nodes are equal
 		return true;
 	}
@@ -1768,7 +1782,7 @@ bool EvaluableNode::CanNodeTreeBeFlattenedRecurse(EvaluableNode *n, std::vector<
 		{
 			if(e == nullptr)
 				continue;
-			
+
 			if(!CanNodeTreeBeFlattenedRecurse(e, stack))
 				return false;
 		}

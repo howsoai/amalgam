@@ -659,23 +659,7 @@ void EvaluableNode::SetStringID(StringInternPool::StringID id)
 {
 	if(id == StringInternPool::NOT_A_STRING_ID)
 	{
-		if(DoesEvaluableNodeTypeUseStringData(GetType()))
-		{
-			if(!HasExtendedValue())
-			{
-				StringInternPool::StringID cur_id = value.stringValueContainer.stringID;
-				if(id != cur_id)
-					string_intern_pool.DestroyStringReference(cur_id);
-			}
-			else
-			{
-				StringInternPool::StringID cur_id = value.extension.extendedValue->value.stringValueContainer.stringID;
-				if(id != cur_id)
-					string_intern_pool.DestroyStringReference(cur_id);
-			}
-		}
-		type = ENT_NULL;
-		value.ConstructOrderedChildNodes();
+		SetType(ENT_NULL);
 	}
 	else
 	{
@@ -767,21 +751,7 @@ void EvaluableNode::SetStringIDWithReferenceHandoff(StringInternPool::StringID i
 {
 	if(id == StringInternPool::NOT_A_STRING_ID)
 	{
-		if(DoesEvaluableNodeTypeUseStringData(GetType()))
-		{
-			if(!HasExtendedValue())
-			{
-				StringInternPool::StringID cur_id = value.stringValueContainer.stringID;
-				string_intern_pool.DestroyStringReference(cur_id);
-			}
-			else
-			{
-				StringInternPool::StringID cur_id = value.extension.extendedValue->value.stringValueContainer.stringID;
-				string_intern_pool.DestroyStringReference(cur_id);
-			}
-		}
-		type = ENT_NULL;
-		value.ConstructOrderedChildNodes();
+		SetType(ENT_NULL);
 	}
 	else
 	{

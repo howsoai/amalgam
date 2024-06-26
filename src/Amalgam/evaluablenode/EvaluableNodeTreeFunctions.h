@@ -53,6 +53,8 @@ public:
 	//if has non-null dest_sid_ref, then it will store the pointer and use it to populate the destination string id
 	void AnalyzeIDPath(EvaluableNode *id_path, StringInternRef *dest_sid_ref)
 	{
+		idPath = nullptr;
+		idPathEntries = nullptr;
 		curIndex = 0;
 		containerIdIndex = 0;
 		entityIdIndex = 0;
@@ -63,26 +65,25 @@ public:
 		if(destSidReference != nullptr)
 			*destSidReference = StringInternRef(string_intern_pool.NOT_A_STRING_ID);
 
-		idPath = id_path;
 		//if single value, then just set and return
-		if(EvaluableNode::IsNull(idPath) || idPath->GetType() != ENT_LIST)
+		if(EvaluableNode::IsNull(id_path) || id_path->GetType() != ENT_LIST)
 		{
-			idPathEntries = nullptr;
+			idPath = id_path;
 			return;
 		}
-		idPathEntries = &idPath->GetOrderedChildNodesReference();
 
 		//size of the entity list excluding trailing nulls
-		size_t non_null_size = idPathEntries->size();
-		while(non_null_size > 0 && EvaluableNode::IsNull((*idPathEntries)[non_null_size - 1]))
+		auto id_path_entries = &id_path->GetOrderedChildNodesReference();
+		size_t non_null_size = id_path_entries->size();
+		while(non_null_size > 0 && EvaluableNode::IsNull((*id_path_entries)[non_null_size - 1]))
 			non_null_size--;
 
 		//if no entities, nothing to traverse
 		if(non_null_size == 0)
-		{
-			idPathEntries = nullptr;
 			return;
-		}
+
+		idPath = id_path;
+		idPathEntries = id_path_entries;
 
 		//find first index
 		while(curIndex < non_null_size && EvaluableNode::IsNull((*idPathEntries)[curIndex]))
@@ -132,7 +133,11 @@ public:
 	inline EvaluableNode *GetCurId()
 	{
 		if(idPathEntries == nullptr)
-			return idPath;
+		{
+			if(curIndex == 0)
+				return idPath;
+			return nullptr;
+		}
 
 		if(curIndex > entityIdIndex)
 			return nullptr;

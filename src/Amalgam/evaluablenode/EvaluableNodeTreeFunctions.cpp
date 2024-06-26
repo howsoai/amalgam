@@ -85,7 +85,7 @@ std::tuple<Entity *, Entity *, Entity::EntityReferenceBufferReference<EntityRead
 		return std::make_tuple(nullptr, nullptr,
 			Entity::EntityReferenceBufferReference<EntityReadReference>());
 
-	EvaluableNodeIDPathTraverser traverser_1(id_path_1, false);
+	EvaluableNodeIDPathTraverser traverser_1(id_path_1, nullptr);
 	if(traverser_1.IsEntity())
 	{
 		//lock everything in entity_1, and it will contain everything in entity_2
@@ -94,7 +94,7 @@ std::tuple<Entity *, Entity *, Entity::EntityReferenceBufferReference<EntityRead
 		return std::make_tuple(from_entity, entity_2, std::move(erbr));
 	}
 
-	EvaluableNodeIDPathTraverser traverser_2(id_path_2, false);
+	EvaluableNodeIDPathTraverser traverser_2(id_path_2, nullptr);
 	if(traverser_2.IsEntity())
 	{
 		//lock everything in entity_2, and it will contain everything in entity_1

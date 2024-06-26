@@ -450,7 +450,6 @@ public:
 		return InterpretNodeIntoRelativeSourceEntityReference<EntityWriteReference>(node_id_path_to_interpret);
 	}
 
-	//TODO 10430: use this method in each place with a TODO 10975 and test it
 	//like InterpretNodeIntoRelativeSourceEntityReference, but a pair of read references
 	inline std::tuple<Entity *, Entity *, Entity::EntityReferenceBufferReference<EntityReadReference>>
 		InterpretNodeIntoRelativeSourceEntityReadReferences(EvaluableNode *node_id_path_to_interpret_1, EvaluableNode *node_id_path_to_interpret_2)

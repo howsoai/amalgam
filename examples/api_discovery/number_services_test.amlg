@@ -13,12 +13,12 @@
 	(print (call_entity "ns" "is_even" (assoc number 2)) "\n")
 	(print (call_entity "ns" "is_even" (assoc number .infinity)) "\n")
 	(print (call_entity "ns" "is_even" (assoc number -.infinity)) "\n")
-	(print (call_entity "ns" "is_even" (assoc number .nan)) "\n")
+	(print (call_entity "ns" "is_even" (assoc number (null))) "\n")
 	(print (call_entity "ns" "is_even" (assoc number -1)) "\n")
 	(print (call_entity "ns" "is_even" (assoc number "blue")) "\n")
 	(print (call_entity "ns" "is_even" (assoc number 42)) "\n")
 	
-	(print (call_entity "ns" "are_even" (assoc numbers (list 1 2 3 "0" .nan 4 4.5)) "\n"))
+	(print (call_entity "ns" "are_even" (assoc numbers (list 1 2 3 "0" (null) 4 4.5)) "\n"))
 	
 	(print (call_entity "ns" "is_sum_even" (assoc a 1 b 3)) "\n")
 	(print (call_entity "ns" "is_sum_even" (assoc a 1)) "\n")

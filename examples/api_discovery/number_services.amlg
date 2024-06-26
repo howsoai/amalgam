@@ -41,7 +41,7 @@
 	;works for infinity, -infinity
 	;does not yet support negative numbers -- if a negative number is passed in,
 	; it returns a string indicating lack of support
-	;if nan is passed in, it will return a list of true and false to represent
+	;if null is passed in, it will return a list of true and false to represent
 	; the superposition
 	;please avoid passing in the number 42...
 	#is_even
@@ -58,9 +58,9 @@
 				(true)
 				
 				(= number 42)
-				(assoc "a" (list .nan 3 (null) (list) (assoc "x" 12) .infinity) )
+				(assoc "a" (list (null) 3 (null) (list) (assoc "x" 12) .infinity) )
 				
-				(= number .nan)
+				(= number (null))
 				(list (true) (false))
 				
 				(< number 0)

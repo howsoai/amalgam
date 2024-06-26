@@ -13,6 +13,7 @@
 //system headers:
 #include <filesystem>
 #include <string>
+#include <tuple>
 
 const std::string FILE_EXTENSION_AMLG_METADATA("mdam");
 const std::string FILE_EXTENSION_AMALGAM("amlg");

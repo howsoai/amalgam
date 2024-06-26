@@ -6,6 +6,7 @@
 //system headers:
 #include <algorithm>
 #include <cctype>
+#include <tuple>
 
 bool CustomEvaluableNodeComparator::operator()(EvaluableNode *a, EvaluableNode *b)
 {
@@ -103,8 +104,6 @@ std::tuple<Entity *, Entity *, Entity::EntityReferenceBufferReference<EntityRead
 		return std::make_tuple(entity_1, from_entity, std::move(erbr));
 	}
 
-	//TODO 10430: fix testing regression issue caused by changes in this branch
-	//TODO 10430: use this method in each place with a TODO 10975 and test it
 	EntityReadReference relative_entity_container(from_entity);
 
 	//infinite loop, but logic inside will break it out appropriately

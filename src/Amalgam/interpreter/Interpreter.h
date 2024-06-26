@@ -450,6 +450,30 @@ public:
 		return InterpretNodeIntoRelativeSourceEntityReference<EntityWriteReference>(node_id_path_to_interpret);
 	}
 
+	//TODO 10430: use this method in each place with a TODO 10975 and test it
+	//like InterpretNodeIntoRelativeSourceEntityReference, but a pair of read references
+	inline std::tuple<Entity *, Entity *, Entity::EntityReferenceBufferReference<EntityReadReference>>
+		InterpretNodeIntoRelativeSourceEntityReadReferences(EvaluableNode *node_id_path_to_interpret_1, EvaluableNode *node_id_path_to_interpret_2)
+	{
+		if(curEntity == nullptr)
+			return std::make_tuple(nullptr, nullptr,
+				Entity::EntityReferenceBufferReference<EntityReadReference>());
+
+		auto node_id_path_1 = InterpretNodeForImmediateUse(node_id_path_to_interpret_1);
+		auto node_stack = CreateInterpreterNodeStackStateSaver(node_id_path_1);
+		auto node_id_path_2 = InterpretNodeForImmediateUse(node_id_path_to_interpret_2);
+		node_stack.PopEvaluableNode();
+
+		auto [entity_1, entity_2, erbr]
+			= TraverseToDeeplyContainedEntityReadReferencesViaEvaluableNodeIDPath(curEntity,
+				node_id_path_1, node_id_path_2);
+
+		evaluableNodeManager->FreeNodeTreeIfPossible(node_id_path_1);
+		evaluableNodeManager->FreeNodeTreeIfPossible(node_id_path_2);
+
+		return std::make_tuple(entity_1, entity_2, std::move(erbr));
+	}
+
 protected:
 
 	//Traverses down n until it reaches the furthest-most nodes from top_node, then bubbles back up re-evaluating each node via the specified function

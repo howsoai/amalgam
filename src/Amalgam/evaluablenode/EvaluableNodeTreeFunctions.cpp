@@ -103,8 +103,8 @@ std::tuple<Entity *, Entity *, Entity::EntityReferenceBufferReference<EntityRead
 		return std::make_tuple(entity_1, from_entity, std::move(erbr));
 	}
 
-	//TODO 10430: finish this, use entity_2->AppendAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>(erbr) where appropriate
-	//TODO 10430: use this method in each place with a TODO 10975
+	//TODO 10430: fix testing regression issue caused by changes in this branch
+	//TODO 10430: use this method in each place with a TODO 10975 and test it
 	EntityReadReference relative_entity_container(from_entity);
 
 	//infinite loop, but logic inside will break it out appropriately
@@ -116,46 +116,68 @@ std::tuple<Entity *, Entity *, Entity::EntityReferenceBufferReference<EntityRead
 		EvaluableNode *cur_node_id_2 = traverser_2.GetCurId();
 		StringInternPool::StringID sid_2 = EvaluableNode::ToStringIDIfExists(cur_node_id_2);
 
-		if(sid_1 == sid_2)
+		if(sid_1 != sid_2)
 		{
-			Entity *next_entity = relative_entity_container->GetContainedEntity(sid_1);
-			if(next_entity == nullptr)
-				return std::make_tuple(nullptr, nullptr,
-					Entity::EntityReferenceBufferReference<EntityReadReference>());
+			size_t entity_index_1 = relative_entity_container->GetContainedEntityIndex(sid_1);
+			size_t entity_index_2 = relative_entity_container->GetContainedEntityIndex(sid_2);
 
-			//TODO 10430: unify these with above code?
-			if(traverser_1.IsEntity())
+			if(entity_index_1 < entity_index_2)
 			{
-				//lock everything in entity_1, and it will contain everything in entity_2
-				auto erbr = from_entity->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>(true);
-				Entity *entity_2 = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<Entity *>(from_entity, id_path_2);
-				return std::make_tuple(from_entity, entity_2, std::move(erbr));
+				EntityReadReference entity_1 = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReadReference>(relative_entity_container, traverser_1);
+				Entity *entity_1_ptr = entity_1;
+				auto erbr = entity_1->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>(false);
+				erbr->emplace_back(std::move(entity_1));
+
+				EntityReadReference entity_2 = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReadReference>(relative_entity_container, traverser_2);
+				Entity *entity_2_ptr = entity_2;
+				entity_2->AppendAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>(erbr);
+				erbr->emplace_back(std::move(entity_2));
+
+				return std::make_tuple(entity_1_ptr, entity_2_ptr, std::move(erbr));
+			}
+			else
+			{
+				EntityReadReference entity_2 = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReadReference>(relative_entity_container, traverser_2);
+				Entity *entity_2_ptr = entity_2;
+				auto erbr = entity_2->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>(false);
+				erbr->emplace_back(std::move(entity_2));
+
+				EntityReadReference entity_1 = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReadReference>(relative_entity_container, traverser_1);
+				Entity *entity_1_ptr = entity_1;
+				entity_1->AppendAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>(erbr);
+				erbr->emplace_back(std::move(entity_1));
+
+				return std::make_tuple(entity_1_ptr, entity_2_ptr, std::move(erbr));
 			}
 
-			if(traverser_2.IsEntity())
-			{
-				//lock everything in entity_2, and it will contain everything in entity_1
-				auto erbr = from_entity->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>(true);
-				Entity *entity_1 = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<Entity *>(from_entity, id_path_1);
-				return std::make_tuple(entity_1, from_entity, std::move(erbr));
-			}
-
-			relative_entity_container = EntityReadReference(next_entity);
-			traverser_1.AdvanceIndex();
-			traverser_2.AdvanceIndex();
-
-			continue;
+			break;
 		}
 
-		//ids are different
+		//ids are the same, continue traversing
+		Entity *next_entity = relative_entity_container->GetContainedEntity(sid_1);
+		if(next_entity == nullptr)
+			return std::make_tuple(nullptr, nullptr,
+				Entity::EntityReferenceBufferReference<EntityReadReference>());
 
-		size_t entity_index_1 = relative_entity_container->GetContainedEntityIndex(sid_1);
-		size_t entity_index_2 = relative_entity_container->GetContainedEntityIndex(sid_2);
-
-		if(traverser_1.IsContainer())
+		if(traverser_1.IsEntity())
 		{
-			//Entity *e = from_entity->GetContainedEntityFromIndex(entity_index_1);
+			//lock everything in entity_1, and it will contain everything in entity_2
+			auto erbr = from_entity->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>(true);
+			Entity *entity_2 = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<Entity *>(from_entity, id_path_2);
+			return std::make_tuple(from_entity, entity_2, std::move(erbr));
 		}
+
+		if(traverser_2.IsEntity())
+		{
+			//lock everything in entity_2, and it will contain everything in entity_1
+			auto erbr = from_entity->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>(true);
+			Entity *entity_1 = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<Entity *>(from_entity, id_path_1);
+			return std::make_tuple(entity_1, from_entity, std::move(erbr));
+		}
+
+		relative_entity_container = EntityReadReference(next_entity);
+		traverser_1.AdvanceIndex();
+		traverser_2.AdvanceIndex();
 	}
 
 	return std::make_tuple(nullptr, nullptr,

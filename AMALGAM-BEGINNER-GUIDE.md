@@ -857,26 +857,23 @@ The following opcodes each have their own scope stack (in the Amalgam reference 
 
 ### Types
 
-The following are different variations of null or nonexistant:
-**(null)** - missing value (or code)
-**.nan** - missing number value (Not A Number)
-**.nas** - missing string value (Not A String)
+The value `(null)` represents not-a-value, regardless of type.  This means that not-a-number (NaN) and non-string values may be represented as such.
 
 To numerify something you can use `(+` operator:
 `(+ "5")` converts the string 5 to the number 5
 
-numerifying a null in any way or dividing 0 by 0 results in a `.nan`:
-`(+ (null)` = `.nan`
-`(* 5 (null))` = `.nan`
-`(/ 0 0)` = `.nan`
+numerifying a null in any way or dividing 0 by 0 results in a `(null)`:
+`(+ (null)` = `(null)`
+`(* 5 (null))` = `(null)`
+`(/ 0 0)` = `(null)`
 
 To stringify something you can use the `(concat` operator:
 `(concat 5)` converts the number 5 into the string 5
 
-stringifying a null in any way results in a `.nas`:
-`(concat (null))` = `.nas`
+stringifying a null in any way results in a `(null)`:
+`(concat (null))` = `(null)`
 
-`(zip (list "a" (null)) (list 1 2))) ` = `(assoc "a" 1 .nas 2)`
+`(zip (list "a" (null)) (list 1 2))) ` = `(assoc "a" 1 (null) 2)`
 
 To check the type of something you can use either **(get_type** to return the type itself
 or **(get_type_string** to return the readable string version of the type:

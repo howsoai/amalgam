@@ -47,7 +47,7 @@ std::string GetEntityMemorySizeDiagnostics(Entity *e)
 	{
 		result += e->GetId() + " (used, free): " + EvaluableNode::NumberToString(cur_used - prev_used.first->second) + ", "
 			+ EvaluableNode::NumberToString(cur_unused - prev_unused.first->second) + "\n";
-		
+
 		prev_used.first->second = cur_used;
 		prev_unused.first->second = cur_unused;
 	}
@@ -108,7 +108,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 
 		std::string directory = InterpretNodeIntoStringValueEmptyNull(ocn[1]);
 		std::filesystem::path path(directory);
-		
+
 		//try to set the directory
 		std::error_code error;
 		std::filesystem::current_path(directory, error);
@@ -179,7 +179,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 
 		std::string rand_data(num_bytes, '\0');
 		Platform_GenerateSecureRandomData(&rand_data[0], num_bytes);
-		
+
 		return AllocReturn(rand_data, immediate_result);
 	}
 	else if(command == "sign_key_pair")
@@ -497,7 +497,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, bo
 		new_context = InterpretNodeForImmediateUse(ocn[1]);
 
 	PushNewCallStack(new_context);
-	
+
 	//call the code
 	auto result = InterpretNode(function, immediate_result);
 
@@ -694,7 +694,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, boo
 	auto new_context = InterpretNodeForImmediateUse(ocn[0]);
 	PushNewCallStack(new_context);
 
-	//run code 
+	//run code
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
 	for(size_t i = 1; i < ocn_size; i++)
 	{
@@ -820,7 +820,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 
 						SetTopCurrentIndexInConstructionStack(cn_id);
 						EvaluableNodeReference value = InterpretNode(cn);
-						
+
 					#ifdef MULTITHREAD_SUPPORT
 						//relock if needed before assigning the value
 						if(need_write_lock)
@@ -841,7 +841,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 	//used to store the result or clear if possible
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
 
-	//run code 
+	//run code
 	for(size_t i = 1; i < ocn_size; i++)
 	{
 		if(result.IsNonNullNodeReference())
@@ -970,13 +970,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 		return EvaluableNodeReference::Null();
 	}
-	
+
 	//using a single variable
 	StringRef variable_sid;
 	variable_sid.SetIDWithReferenceHandoff(InterpretNodeIntoStringIDValueWithReference(ocn[0]));
 	if(variable_sid == StringInternPool::NOT_A_STRING_ID)
 		return EvaluableNodeReference::Null();
-	
+
 	//if only 2 params and not accumulating, then just assign/accum the destination
 	if(num_params == 2)
 	{
@@ -1032,7 +1032,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 		//keeps track of whether each address is unique so they can be freed if relevant
 		std::vector<bool> is_address_unique;
- 
+
 		//get each address/value pair to replace in result
 		for(size_t ocn_index = 1; ocn_index + 1 < num_params; ocn_index += 2)
 		{
@@ -1136,7 +1136,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 		//need to return an assoc, so see if need to make copy
 		evaluableNodeManager->EnsureNodeIsModifiable(to_lookup);
 
-		//overwrite values in the ordered 
+		//overwrite values in the ordered
 		for(auto &[cn_id, cn] : to_lookup->GetMappedChildNodesReference())
 		{
 			//if there are values passed in, free them to be clobbered
@@ -1152,7 +1152,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 	{
 		evaluableNodeManager->EnsureNodeIsModifiable(to_lookup);
 
-		//overwrite values in the ordered 
+		//overwrite values in the ordered
 		for(auto &cn : to_lookup->GetOrderedChildNodes())
 		{
 			StringInternPool::StringID symbol_name_sid = EvaluableNode::ToStringIDIfExists(cn);
@@ -1203,7 +1203,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET(EvaluableNode *en, boo
 
 		return EvaluableNodeReference(*target, source.unique);	//only know about the target that it has similar properties to the source
 	}
-	
+
 	//else, return a list for everything retrieved via get
 	EvaluableNodeReference retrieved_list(evaluableNodeManager->AllocNode(ENT_LIST), source.unique);
 	retrieved_list->ReserveOrderedChildNodes(ocn_size - 1);
@@ -1361,7 +1361,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_INDEX(EvaluableNod
 	size_t offset = constructionStackIndicesAndUniqueness.size() - depth - 1;
 
 	//build the index node to return
-	EvaluableNodeImmediateValueWithType enivwt = constructionStackIndicesAndUniqueness[offset].index;
+	EvaluableNodeImmediateValueWithType enivwt(constructionStackIndicesAndUniqueness[offset].index);
 	if(enivwt.nodeType == ENIVT_NUMBER)
 		return AllocReturn(enivwt.nodeValue.number, immediate_result);
 	else if(enivwt.nodeType == ENIVT_STRING_ID)
@@ -1578,10 +1578,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, bo
 
 	//want to generate multiple values, so return a list
 	EvaluableNodeReference retval(evaluableNodeManager->AllocNode(ENT_LIST), true);
-	
+
 	//just generate a list of values with replacement; either generate_unique_values was not set or the distribution "always" generates unique values
 	retval->ReserveOrderedChildNodes(number_to_generate);
-	
+
 	//just get a bunch of random values with replacement
 	bool can_free_param = true;
 	for(size_t i = 0; i < number_to_generate; i++)

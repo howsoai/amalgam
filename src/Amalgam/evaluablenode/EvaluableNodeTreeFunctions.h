@@ -146,7 +146,7 @@ TraverseToEntityReferenceAndContainerViaEvaluableNodeID(Entity *from_entity,
 	EvaluableNode *id_node,
 	StringRef *dest_sid_ref)
 {
-	if(EvaluableNode::IsEmptyNode(id_node))
+	if(EvaluableNode::IsNull(id_node))
 		return std::make_pair(EntityReferenceType(from_entity), EntityReferenceType(nullptr));
 
 	//get the string id, get a reference if returning it
@@ -245,7 +245,7 @@ TraverseToEntityReferenceAndContainerViaEvaluableNodeIDPath(
 	if(from_entity == nullptr)
 		return std::make_pair(EntityReferenceType(nullptr), EntityReferenceType(nullptr));
 
-	if(EvaluableNode::IsEmptyNode(id_path) || id_path->GetType() != ENT_LIST)
+	if(EvaluableNode::IsNull(id_path) || id_path->GetType() != ENT_LIST)
 		return TraverseToEntityReferenceAndContainerViaEvaluableNodeID<EntityReferenceType>(from_entity, id_path, dest_sid_ref);
 
 	EvaluableNodeIDPathTraverser traverser(id_path, dest_sid_ref != nullptr);

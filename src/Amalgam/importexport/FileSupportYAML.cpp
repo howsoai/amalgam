@@ -61,6 +61,13 @@ EvaluableNode *YamlToEvaluableNodeRecurse(EvaluableNodeManager *enm, ryml::Const
 //returns true if it was able to create a yaml correctly, false if there was problematic data
 bool EvaluableNodeToYamlStringRecurse(EvaluableNode *en, ryml::NodeRef &built_element, bool sort_keys)
 {
+	//if null, don't set anything
+	if(en == nullptr)
+	{
+		built_element << nullptr;
+		return true;
+	}
+	
 	if(en->IsAssociativeArray())
 	{
 		built_element |= ryml::MAP;
@@ -103,7 +110,7 @@ bool EvaluableNodeToYamlStringRecurse(EvaluableNode *en, ryml::NodeRef &built_el
 		auto node_type = en->GetType();
 		if(node_type == ENT_NULL)
 		{
-			//don't set anything
+			built_element << nullptr;
 			return true;
 		}
 		else if(node_type == ENT_TRUE)

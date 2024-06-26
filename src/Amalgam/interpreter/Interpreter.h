@@ -427,7 +427,7 @@ public:
 		if(curEntity == nullptr)
 			return EntityReferenceType(nullptr);
 
-		if(EvaluableNode::IsEmptyNode(node_id_path_to_interpret))
+		if(EvaluableNode::IsNull(node_id_path_to_interpret))
 			return EntityReferenceType(curEntity);
 
 		//only need to interpret if not idempotent

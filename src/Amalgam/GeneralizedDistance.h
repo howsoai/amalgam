@@ -373,8 +373,8 @@ public:
 	__forceinline double ComputeDistanceTermNominal(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
 		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)
 	{
-		bool a_is_null = EvaluableNodeImmediateValue::IsNullEquivalent(a_type, a);
-		bool b_is_null = EvaluableNodeImmediateValue::IsNullEquivalent(b_type, b);
+		bool a_is_null = EvaluableNodeImmediateValue::IsNull(a_type, a);
+		bool b_is_null = EvaluableNodeImmediateValue::IsNull(b_type, b);
 		if(a_is_null && b_is_null)
 			return ComputeDistanceTermUnknownToUnknown(index, high_accuracy);
 
@@ -754,8 +754,8 @@ public:
 	__forceinline double LookupNullDistanceTerm(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
 		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index, bool high_accuracy)
 	{
-		bool a_unknown = EvaluableNodeImmediateValue::IsNullEquivalent(a_type, a);
-		bool b_unknown = EvaluableNodeImmediateValue::IsNullEquivalent(b_type, b);
+		bool a_unknown = EvaluableNodeImmediateValue::IsNull(a_type, a);
+		bool b_unknown = EvaluableNodeImmediateValue::IsNull(b_type, b);
 		if(a_unknown && b_unknown)
 			return ComputeDistanceTermUnknownToUnknown(index, high_accuracy);
 		if(a_unknown || b_unknown)
@@ -1245,9 +1245,9 @@ public:
 					return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
 			}
 
-			if(EvaluableNodeImmediateValue::IsNullEquivalent(other_type, other_value))
+			if(EvaluableNodeImmediateValue::IsNull(other_type, other_value))
 			{
-				if(feature_data.targetValue.IsNullEquivalent())
+				if(feature_data.targetValue.IsNull())
 					return distEvaluator->ComputeDistanceTermUnknownToUnknown(index, high_accuracy);
 				else
 					return distEvaluator->ComputeDistanceTermKnownToUnknown(index, high_accuracy);

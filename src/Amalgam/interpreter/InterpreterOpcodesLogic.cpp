@@ -335,7 +335,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LESS_and_LEQUAL(EvaluableN
 	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes))
 	{
 		EvaluableNodeReference prev = interpreted_nodes[0];
-		if(EvaluableNode::IsNaN(prev))
+		if(EvaluableNode::IsNull(prev))
 		{
 			for(auto &n : interpreted_nodes)
 				evaluableNodeManager->FreeNodeTreeIfPossible(n);
@@ -349,7 +349,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LESS_and_LEQUAL(EvaluableN
 			//if not in strict increasing order, return false
 			auto &cur = interpreted_nodes[i];
 
-			if(EvaluableNode::IsNaN(cur))
+			if(EvaluableNode::IsNull(cur))
 			{
 				result = false;
 				break;
@@ -370,7 +370,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LESS_and_LEQUAL(EvaluableN
 #endif
 
 	auto prev = InterpretNodeForImmediateUse(ocn[0]);
-	if(EvaluableNode::IsEmptyNode(prev))
+	if(EvaluableNode::IsNull(prev))
 		return evaluableNodeManager->ReuseOrAllocNode(prev, ENT_FALSE);
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(prev);
@@ -380,7 +380,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LESS_and_LEQUAL(EvaluableN
 		//if not in strict increasing order, return false
 		auto cur = InterpretNodeForImmediateUse(ocn[i]);
 
-		if(EvaluableNode::IsEmptyNode(cur)
+		if(EvaluableNode::IsNull(cur)
 				|| !EvaluableNode::IsLessThan(prev, cur, en->GetType() == ENT_LEQUAL))
 			return ReuseOrAllocOneOfReturn(prev, cur, false, immediate_result);
 
@@ -411,7 +411,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GREATER_and_GEQUAL(Evaluab
 	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes))
 	{
 		EvaluableNodeReference prev = interpreted_nodes[0];
-		if(EvaluableNode::IsNaN(prev))
+		if(EvaluableNode::IsNull(prev))
 		{
 			for(auto &n : interpreted_nodes)
 				evaluableNodeManager->FreeNodeTreeIfPossible(n);
@@ -425,7 +425,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GREATER_and_GEQUAL(Evaluab
 			//if not in strict increasing order, return false
 			auto &cur = interpreted_nodes[i];
 
-			if(EvaluableNode::IsNaN(cur))
+			if(EvaluableNode::IsNull(cur))
 			{
 				result = false;
 				break;
@@ -446,7 +446,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GREATER_and_GEQUAL(Evaluab
 #endif
 
 	auto prev = InterpretNodeForImmediateUse(ocn[0]);
-	if(EvaluableNode::IsEmptyNode(prev))
+	if(EvaluableNode::IsNull(prev))
 		return evaluableNodeManager->ReuseOrAllocNode(prev, ENT_FALSE);
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(prev);
@@ -456,7 +456,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GREATER_and_GEQUAL(Evaluab
 		//if not in strict increasing order, return false
 		auto cur = InterpretNodeForImmediateUse(ocn[i]);
 
-		if(EvaluableNode::IsEmptyNode(cur)
+		if(EvaluableNode::IsNull(cur)
 				|| !EvaluableNode::IsLessThan(cur, prev, en->GetType() == ENT_GEQUAL))
 			return ReuseOrAllocOneOfReturn(prev, cur, false, immediate_result);
 

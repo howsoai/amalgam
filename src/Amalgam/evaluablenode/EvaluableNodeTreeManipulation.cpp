@@ -39,25 +39,8 @@ EvaluableNodeTreeManipulation::NodesMixMethod::NodesMixMethod(RandomStream rando
 inline double MixNumberValues(double a, double b, double fraction_a, double fraction_b)
 {
 	//quick exit for when they match
-	if(EqualIncludingNaN(a, b))
+	if(a == b)
 		return a;
-
-	//handle nans
-	if(FastIsNaN(a))
-	{
-		if(fraction_a > 0)
-			return std::numeric_limits<double>::quiet_NaN();
-		else
-			return b;
-	}
-
-	if(FastIsNaN(b))
-	{
-		if(fraction_b > 0)
-			return std::numeric_limits<double>::quiet_NaN();
-		else
-			return a;
-	}
 
 	//normalize fractions
 	fraction_a = fraction_a / (fraction_a + fraction_b);
@@ -110,7 +93,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::NodesMixMethod::MergeValues(Evalua
 		//if the original and merged, check to see if mergeable of same type, and if so, interpolate
 		if(merged != nullptr && a != nullptr && b != nullptr)
 		{
-			if(merged->IsNativelyNumeric() && a->IsNativelyNumeric() && b->IsNativelyNumeric())
+			if(merged->IsNumericOrNull() && a->IsNumericOrNull() && b->IsNumericOrNull())
 			{
 				double a_value = a->GetNumberValue();
 				double b_value = b->GetNumberValue();
@@ -1231,9 +1214,9 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 		{
 			double n1_value = n1->GetNumberValueReference();
 			double n2_value = n2->GetNumberValueReference();
-			return std::make_pair(n1, EqualIncludingNaN(n1_value, n2_value) ? 1.0 : 0.0);
+			return std::make_pair(n1, n1_value == n2_value ? 1.0 : 0.0);
 		}
-		if(n1->IsStringValue())
+		if(n1_type == ENT_STRING)
 		{
 			auto n1_sid = n1->GetStringID();
 			auto n2_sid = n2->GetStringID();
@@ -1377,7 +1360,7 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 		if(n2_type == ENT_NUMBER)
 		{
 			double n2_value = n2->GetNumberValueReference();
-			if(EqualIncludingNaN(n1_value, n2_value))
+			if(n1_value == n2_value)
 				return std::make_pair(n1, 1.0);
 
 			if(FastIsNaN(n1_value) || FastIsNaN(n2_value))

@@ -73,28 +73,52 @@ public:
 
 	inline void InitializeType(EvaluableNodeType _type, StringInternPool::StringID string_id)
 	{
-		type = _type;
 		attributes.allAttributes = 0;
-		value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_id);
-		value.stringValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+		if(string_id == StringInternPool::NOT_A_STRING_ID)
+		{
+			type = ENT_NULL;
+			value.ConstructOrderedChildNodes();
+		}
+		else
+		{
+			type = _type;
+			value.stringValueContainer.stringID = string_intern_pool.CreateStringReference(string_id);
+			value.stringValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+		}
 	}
 
 	//like InitializeType, but hands off the string reference to string_id
 	inline void InitializeTypeWithReferenceHandoff(EvaluableNodeType _type, StringInternPool::StringID string_id)
 	{
-		type = _type;
 		attributes.allAttributes = 0;
-		value.stringValueContainer.stringID = string_id;
-		value.stringValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+		if(string_id == StringInternPool::NOT_A_STRING_ID)
+		{
+			type = ENT_NULL;
+			value.ConstructOrderedChildNodes();
+		}
+		else
+		{
+			type = _type;
+			value.stringValueContainer.stringID = string_id;
+			value.stringValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+		}
 	}
 
 	constexpr void InitializeType(double number_value)
 	{
-		type = ENT_NUMBER;
 		attributes.allAttributes = 0;
-		attributes.individualAttribs.isIdempotent = true;
-		value.numberValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
-		value.numberValueContainer.numberValue = number_value;
+		if(FastIsNaN(number_value))
+		{
+			type = ENT_NULL;
+			value.ConstructOrderedChildNodes();
+		}
+		else
+		{
+			type = ENT_NUMBER;
+			attributes.individualAttribs.isIdempotent = true;
+			value.numberValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+			value.numberValueContainer.numberValue = number_value;
+		}
 	}
 
 	//initializes to ENT_UNINITIALIZED
@@ -200,20 +224,6 @@ public:
 	//Returns true if this node evaluates to true
 	static bool IsTrue(EvaluableNode *n);
 
-	//returns true if it is explicitly a string
-	constexpr bool IsStringValue()
-	{
-		return (GetType() == ENT_STRING);
-	}
-
-	//returns true if it is explicitly a string
-	static constexpr bool IsStringValue(EvaluableNode *n)
-	{
-		if(n == nullptr)
-			return false;
-		return n->IsStringValue();
-	}
-
 	//Returns true if the node is some form of associative array
 	constexpr bool IsAssociativeArray()
 	{
@@ -279,7 +289,7 @@ public:
 		return !IsLessThan(a, b, true);
 	}
 
-	//if the node's contents can be represented as a number, which includes numbers, infinity, and even null and NaN, then return true
+	//if the node's contents can be represented as a number, which includes numbers, infinity, then return true
 	// otherwise returns false
 	static constexpr bool CanRepresentValueAsANumber(EvaluableNode *e)
 	{
@@ -304,32 +314,12 @@ public:
 		return (e == nullptr || e->GetType() == ENT_NULL);
 	}
 
-	//returns true if node pointer e resolves to NaN (not a number) when interpreted as a number
-	static constexpr bool IsNaN(EvaluableNode *e)
-	{
-		return (IsNull(e) || FastIsNaN(e->GetNumberValue()));
-	}
-
-	//returns true if node pointer e resolves to NaS (not a string) when interpreted as a string
-	static constexpr bool IsNaS(EvaluableNode *e)
-	{
-		return (IsNull(e) || e->GetStringID() == string_intern_pool.NOT_A_STRING_ID);
-	}
-
-	//returns true if node pointer is nullptr, ENT_NULL, NaN number, or NaS string
-	static constexpr bool IsEmptyNode(EvaluableNode *e)
-	{
-		return (IsNull(e)
-			|| (e->IsNativelyNumeric() && FastIsNaN(e->GetNumberValue()))
-			|| (e->IsNativelyString() && e->GetStringID() == string_intern_pool.NOT_A_STRING_ID) );
-	}
-
 	//Converts the node to a number
 	//if null, then will return value_if_null
 	static double ToNumber(EvaluableNode *e, double value_if_null = std::numeric_limits<double>::quiet_NaN());
 
 	//returns true if the node can directly be interpreted as a number
-	static constexpr bool IsNativelyNumeric(EvaluableNode *e)
+	static constexpr bool IsNumericOrNull(EvaluableNode *e)
 	{
 		if(e == nullptr)
 			return true;
@@ -342,15 +332,9 @@ public:
 	}
 
 	//returns true if the EvaluableNode uses numeric data
-	constexpr bool IsNativelyNumeric()
+	constexpr bool IsNumericOrNull()
 	{
 		return DoesEvaluableNodeTypeUseNumberData(GetType());
-	}
-
-	//returns true if the EvaluableNode uses string data
-	constexpr bool IsNativelyString()
-	{
-		return DoesEvaluableNodeTypeUseStringData(GetType());
 	}
 
 	//Converts a number to a string in a consistent way that should be used for anything dealing with EvaulableNode
@@ -367,10 +351,10 @@ public:
 	//converts the node to a string that represents the opcode
 	const static std::string ToStringPreservingOpcodeType(EvaluableNode *e);
 
-	//converts the node to a string, returning true if valid.  If it doesn't exist, or any form of null/NaN/NaS, it returns false
+	//converts the node to a string, returning true if valid.  If it doesn't exist or it's null, it returns false
 	static std::pair<bool, std::string> ToString(EvaluableNode *e);
 
-	//converts node to an existing string. If it doesn't exist, or any form of null/NaN/NaS, it returns NOT_A_STRING_ID
+	//converts node to an existing string. If it doesn't exist or it's null, it returns NOT_A_STRING_ID
 	static StringInternPool::StringID ToStringIDIfExists(EvaluableNode *e);
 
 	//converts node to a string. Creates a reference to the string that must be destroyed, regardless of whether the string existed or not (if it did not exist, then it creates one)
@@ -434,9 +418,10 @@ public:
 
 	//transforms node to new_type, converting data if types are different
 	// enm is used if it needs to allocate nodes when changing types
+	// if enm is nullptr, then it will not necessarily keep child nodes
 	//if attempt_to_preserve_immediate_value is true, then it will try to preserve any relevant immediate value
 	// attempt_to_preserve_immediate_value should be set to false if the value will be immediately overwritten
-	void SetType(EvaluableNodeType new_type, EvaluableNodeManager *enm,
+	void SetType(EvaluableNodeType new_type, EvaluableNodeManager *enm = nullptr,
 		bool attempt_to_preserve_immediate_value = true);
 
 	//fully clears node and sets it to new_type
@@ -463,8 +448,15 @@ public:
 	//sets the number value
 	inline void SetNumberValue(double v)
 	{
-		if(DoesEvaluableNodeTypeUseNumberData(GetType()))
-			GetNumberValueReference() = v;
+		if(FastIsNaN(v))
+		{
+			SetType(ENT_NULL);
+		}
+		else
+		{
+			if(DoesEvaluableNodeTypeUseNumberData(GetType()))
+				GetNumberValueReference() = v;
+		}
 	}
 
 	//sets up the ability to contain a string
@@ -834,7 +826,7 @@ protected:
 		{	new (&mappedChildNodes) AssocType;	}
 
 		inline void DestructMappedChildNodes()
-		{	
+		{
 			string_intern_pool.DestroyStringReferences(mappedChildNodes, [](auto n) { return n.first; });
 			mappedChildNodes.~AssocType();
 		}
@@ -850,11 +842,11 @@ protected:
 		{
 			//string value
 			StringInternPool::StringID stringID;
-			
+
 			//allow up to one label -- only used when not part of an extended value
 			StringInternPool::StringID labelStringID;
 		} stringValueContainer;
-		
+
 		//when type represents a number, holds the corresponding value
 		struct EvaluableNodeValueNumber
 		{
@@ -963,7 +955,7 @@ enum EvaluableNodeImmediateValueType : uint8_t
 	ENIVT_NUMBER_INDIRECTION_INDEX		//not a real EvaluableNode type, but an index to some data structure that has a number
 };
 
-//structure that can hold the most immediate value type of an EvaluableNode 
+//structure that can hold the most immediate value type of an EvaluableNode
 // EvaluableNodeImmediateValueType can be used to communicate which type of data is being held
 union EvaluableNodeImmediateValue
 {
@@ -1036,7 +1028,7 @@ union EvaluableNodeImmediateValue
 		if(type_1 == ENIVT_NULL)
 			return true;
 		else if(type_1 == ENIVT_NUMBER)
-			return EqualIncludingNaN(value_1.number, value_2.number);
+			return (value_1.number == value_2.number);
 		else if(type_1 == ENIVT_STRING_ID)
 			return (value_1.stringID == value_2.stringID);
 		else if(type_1 == ENIVT_NUMBER_INDIRECTION_INDEX)
@@ -1046,11 +1038,9 @@ union EvaluableNodeImmediateValue
 	}
 
 	//returns true if it is a null or null equivalent
-	static constexpr bool IsNullEquivalent(EvaluableNodeImmediateValueType type, EvaluableNodeImmediateValue &value)
+	static constexpr bool IsNull(EvaluableNodeImmediateValueType type, EvaluableNodeImmediateValue &value)
 	{
-		return (type == ENIVT_NULL
-				|| (type == ENIVT_NUMBER && FastIsNaN(value.number))
-				|| (type == ENIVT_STRING_ID && value.stringID == string_intern_pool.NOT_A_STRING_ID));
+		return type == ENIVT_NULL;
 	}
 
 	operator double()
@@ -1091,13 +1081,27 @@ public:
 			nodeValue.number = 0.0;
 	}
 
-	constexpr EvaluableNodeImmediateValueWithType(double number)
-		: nodeType(ENIVT_NUMBER), nodeValue(number)
-	{	}
+	__forceinline EvaluableNodeImmediateValueWithType(double number)
+	{
+		if(FastIsNaN(number))
+			nodeType = ENIVT_NULL;
+		else
+		{
+			nodeType = ENIVT_NUMBER;
+			nodeValue = number;
+		}
+	}
 
-	constexpr EvaluableNodeImmediateValueWithType(StringInternPool::StringID string_id)
-		: nodeType(ENIVT_STRING_ID), nodeValue(string_id)
-	{	}
+	__forceinline EvaluableNodeImmediateValueWithType(StringInternPool::StringID string_id)
+	{
+		if(string_id == StringInternPool::NOT_A_STRING_ID)
+			nodeType = ENIVT_NULL;
+		else
+		{
+			nodeType = ENIVT_STRING_ID;
+			nodeValue = string_id;
+		}
+	}
 
 	constexpr EvaluableNodeImmediateValueWithType(EvaluableNode *code)
 		: nodeType(ENIVT_CODE), nodeValue(code)
@@ -1156,8 +1160,6 @@ public:
 		{
 			if(nodeValue.number == 0.0)
 				return false;
-			if(FastIsNaN(nodeValue.number))
-				return false;
 			return true;
 		}
 
@@ -1202,12 +1204,7 @@ public:
 	std::pair<bool, std::string> GetValueAsString()
 	{
 		if(nodeType == ENIVT_NUMBER)
-		{
-			if(FastIsNaN(nodeValue.number))
-				return std::make_pair(false, "");
-
 			return std::make_pair(true, EvaluableNode::NumberToString(nodeValue.number));
-		}
 
 		if(nodeType == ENIVT_STRING_ID)
 		{
@@ -1229,9 +1226,6 @@ public:
 	{
 		if(nodeType == ENIVT_NUMBER)
 		{
-			if(FastIsNaN(nodeValue.number))
-				return StringInternPool::NOT_A_STRING_ID;
-
 			const std::string str_value = EvaluableNode::NumberToString(nodeValue.number);
 			//will return empty string if not found
 			return string_intern_pool.GetIDFromString(str_value);
@@ -1251,9 +1245,6 @@ public:
 	{
 		if(nodeType == ENIVT_NUMBER)
 		{
-			if(FastIsNaN(nodeValue.number))
-				return StringInternPool::NOT_A_STRING_ID;
-
 			const std::string str_value = EvaluableNode::NumberToString(nodeValue.number);
 			//will return empty string if not found
 			return string_intern_pool.CreateStringReference(str_value);
@@ -1275,9 +1266,9 @@ public:
 	}
 
 	//returns true if it is a null or null equivalent
-	constexpr bool IsNullEquivalent()
+	constexpr bool IsNull()
 	{
-		return EvaluableNodeImmediateValue::IsNullEquivalent(nodeType, nodeValue);
+		return EvaluableNodeImmediateValue::IsNull(nodeType, nodeValue);
 	}
 
 	EvaluableNodeImmediateValueType nodeType;

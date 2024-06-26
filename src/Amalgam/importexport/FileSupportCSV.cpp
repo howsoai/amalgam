@@ -192,7 +192,7 @@ bool FileSupportCSV::Store(EvaluableNode *code, const std::string &resource_path
 					is_first_column = false;
 
 				//leave nulls blank
-				if(EvaluableNode::IsEmptyNode(column_node))
+				if(EvaluableNode::IsNull(column_node))
 					continue;
 
 				std::string original_string = EvaluableNode::ToStringPreservingOpcodeType(column_node);

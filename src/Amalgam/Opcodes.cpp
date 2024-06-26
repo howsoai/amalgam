@@ -10,7 +10,7 @@ void StringInternPool::InitializeStaticStrings()
 	stringToID.reserve(numStaticStrings);
 	idToRefCountAndString.resize(numStaticStrings);
 
-	EmplaceStaticString(ENBISI_NOT_A_STRING, ".nas");
+	EmplaceStaticString(ENBISI_NOT_A_STRING, "(null)");
 	EmplaceStaticString(ENBISI_EMPTY_STRING, "");
 
 
@@ -293,7 +293,6 @@ void StringInternPool::InitializeStaticStrings()
 	//end opcodes
 
 	//built-in common values
-	EmplaceStaticString(ENBISI_nan, ".nan");
 	EmplaceStaticString(ENBISI_infinity, ".infinity");
 	EmplaceStaticString(ENBISI_neg_infinity, "-.infinity");
 	EmplaceStaticString(ENBISI_zero, "0");

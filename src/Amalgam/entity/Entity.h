@@ -71,7 +71,6 @@ public:
 		return entity;
 	}
 
-protected:
 	EntityType *entity;
 };
 

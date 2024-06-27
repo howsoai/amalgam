@@ -566,6 +566,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DIFFERENCE_ENTITIES(Evalua
 	if(entity_1 == nullptr || entity_2 == nullptr)
 		return EvaluableNodeReference::Null();
 
+	//can't difference with self
+	if(entity_1 == curEntity || entity_2 == curEntity)
+		return EvaluableNodeReference::Null();
+
 	return EntityManipulation::DifferenceEntities(this, entity_1, entity_2);
 }
 

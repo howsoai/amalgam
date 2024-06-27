@@ -996,7 +996,7 @@ public:
 	}
 
 	//returns true if switching to number values would be expected to yield better results
-	// than number interning given the current data
+	// than interning given the current data
 	inline bool AreNumberValuesPreferredToInterns()
 	{
 		//use heuristic of sqrt number of values compared to num unique values
@@ -1004,6 +1004,27 @@ public:
 		//round up to reduce flipping back and forth
 		size_t num_unique_values = sortedNumberValueEntries.size();
 		return (num_unique_values * num_unique_values > numberIndices.size() - num_unique_values);
+	}
+
+	//returns true if switching to StringId interning would be expected to yield better results
+	// than StringId values given the current data
+	inline bool AreStringIdInternsPreferredToValues()
+	{
+		//use heuristic of sqrt number of values compared to num unique values
+		// (but computed with a multiply instead of sqrt)
+		size_t num_unique_values = stringIdValueToIndices.size();
+		return (num_unique_values * num_unique_values <= stringIdIndices.size());
+	}
+
+	//returns true if switching to StringID values would be expected to yield better results
+	// than interning given the current data
+	inline bool AreStringIdValuesPreferredToInterns()
+	{
+		//use heuristic of sqrt number of values compared to num unique values
+		// (but computed with a multiply instead of sqrt)
+		//round up to reduce flipping back and forth
+		size_t num_unique_values = stringIdValueToIndices.size();
+		return (num_unique_values * num_unique_values > stringIdIndices.size() - num_unique_values);
 	}
 
 	//clears number intern caches and changes state to not perform interning for numbers
@@ -1016,6 +1037,19 @@ public:
 	void ConvertNumberValuesToInterns()
 	{
 		internedNumberValues.ConvertValueCollectionToInterns(sortedNumberValueEntries);
+	}
+
+	//clears string intern caches and changes state to not perform interning for StringIds
+	void ConvertStringIdInternsToValues()
+	{
+		internedStringIdValues.ClearInterning();
+	}
+
+	//initializes and sets up number value interning caches and changes state to perform interning for StringIds
+	void ConvertStringIdValuesToInterns()
+	{
+		//TODO 20571: finish this, may need to change stringIdValueToIndices to possibly use ValueEntry
+		//internedStringIdValues.ConvertValueCollectionToInterns(stringIdValueToIndices);
 	}
 
 protected:

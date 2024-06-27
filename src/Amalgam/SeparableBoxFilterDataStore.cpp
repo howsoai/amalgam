@@ -47,8 +47,6 @@ void SeparableBoxFilterDataStore::OptimizeColumn(size_t column_index)
 {
 	auto &column_data = columnData[column_index];
 
-	//TODO 20571: implement this for string ids
-
 	if(column_data->internedNumberValues.valueInterningEnabled)
 	{
 		if(column_data->AreNumberValuesPreferredToInterns())
@@ -78,8 +76,41 @@ void SeparableBoxFilterDataStore::OptimizeColumn(size_t column_index)
 		}
 
 		for(auto entity_index : column_data->nullIndices)
-			GetValue(entity_index, column_index).number = SBFDSColumnData::ValueEntry::NULL_INDEX;
+			GetValue(entity_index, column_index).indirectionIndex = SBFDSColumnData::ValueEntry::NULL_INDEX;
 	}
+
+	//TODO 20571: finish this and uncomment
+	/*if(column_data->internedStringIdValues.valueInterningEnabled)
+	{
+		if(column_data->AreStringIdValuesPreferredToInterns())
+		{
+			for(auto &value_entry : column_data->stringIdValueToIndices)
+			{
+				auto value = value_entry->value.stringID;
+				for(auto entity_index : value_entry->indicesWithValue)
+					GetValue(entity_index, column_index).stringID = value;
+			}
+
+			for(auto entity_index : column_data->nullIndices)
+				GetValue(entity_index, column_index).stringID = StringInternPool::NOT_A_STRING_ID;
+
+			column_data->ConvertStringIdInternsToValues();
+		}
+	}
+	else if(column_data->AreStringIdInternsPreferredToValues())
+	{
+		column_data->ConvertStringIdValuesToInterns();
+
+		for(auto &value_entry : column_data->stringIdValueToIndices)
+		{
+			size_t value_index = value_entry->valueInternIndex;
+			for(auto entity_index : value_entry->indicesWithValue)
+				GetValue(entity_index, column_index).indirectionIndex = value_index;
+		}
+
+		for(auto entity_index : column_data->nullIndices)
+			GetValue(entity_index, column_index).indirectionIndex = SBFDSColumnData::ValueEntry::NULL_INDEX;
+	}*/
 }
 
 void SeparableBoxFilterDataStore::RemoveColumnIndex(size_t column_index_to_remove)

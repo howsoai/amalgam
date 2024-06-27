@@ -952,7 +952,8 @@ enum EvaluableNodeImmediateValueType : uint8_t
 	ENIVT_NUMBER,				//number
 	ENIVT_STRING_ID,			//stringID
 	ENIVT_CODE,					//code (more general than any of the above)
-	ENIVT_NUMBER_INDIRECTION_INDEX		//not a real EvaluableNode type, but an index to some data structure that has a number
+	ENIVT_NUMBER_INDIRECTION_INDEX,		//not a real EvaluableNode type, but an index to some data structure that has a number
+	ENIVT_STRING_ID_INDIRECTION_INDEX	//not a real EvaluableNode type, but an index to some data structure that has a stringID
 };
 
 //structure that can hold the most immediate value type of an EvaluableNode
@@ -1031,7 +1032,7 @@ union EvaluableNodeImmediateValue
 			return (value_1.number == value_2.number);
 		else if(type_1 == ENIVT_STRING_ID)
 			return (value_1.stringID == value_2.stringID);
-		else if(type_1 == ENIVT_NUMBER_INDIRECTION_INDEX)
+		else if(type_1 == ENIVT_NUMBER_INDIRECTION_INDEX || type_1 == ENIVT_STRING_ID_INDIRECTION_INDEX)
 			return (value_1.indirectionIndex == value_2.indirectionIndex);
 		else
 			return EvaluableNode::AreDeepEqual(value_1.code, value_2.code);

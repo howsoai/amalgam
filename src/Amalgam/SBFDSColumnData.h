@@ -153,7 +153,12 @@ public:
 		}
 
 		if(stringIdIndices.contains(index))
+		{
+			if(internedStringIdValues.valueInterningEnabled)
+				return ENIVT_STRING_ID_INDIRECTION_INDEX;
 			return ENIVT_STRING_ID;
+		}
+
 		if(nullIndices.contains(index))
 			return ENIVT_NULL;
 		if(invalidIndices.contains(index))
@@ -166,6 +171,8 @@ public:
 	{
 		if(value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
 			return ENIVT_NUMBER;
+		if(value_type == ENIVT_STRING_ID_INDIRECTION_INDEX)
+			return ENIVT_STRING_ID;
 		return value_type;
 	}
 
@@ -174,6 +181,8 @@ public:
 	{
 		if(value_type == ENIVT_NUMBER && internedNumberValues.valueInterningEnabled)
 			return ENIVT_NUMBER_INDIRECTION_INDEX;
+		if(value_type == ENIVT_STRING_ID && internedStringIdValues.valueInterningEnabled)
+			return ENIVT_STRING_ID_INDIRECTION_INDEX;
 		return value_type;
 	}
 
@@ -395,7 +404,7 @@ public:
 				return new_value;
 			}
 
-			if(old_value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
+			if(old_value_type == ENIVT_NUMBER_INDIRECTION_INDEX || old_value_type == ENIVT_STRING_ID_INDIRECTION_INDEX)
 			{
 				if(old_value.indirectionIndex == new_value.indirectionIndex)
 					return old_value;
@@ -451,7 +460,9 @@ public:
 		}
 
 		case ENIVT_STRING_ID:
+		case ENIVT_STRING_ID_INDIRECTION_INDEX:
 		{
+			//TODO 20571: update this
 			stringIdIndices.erase(index);
 			auto id_entry = stringIdValueToIndices.find(value.stringID);
 			if(id_entry != end(stringIdValueToIndices))
@@ -564,8 +575,9 @@ public:
 				return value;
 		}
 
-		if(value_type == ENIVT_STRING_ID)
+		if(value_type == ENIVT_STRING_ID || value_type == ENIVT_STRING_ID_INDIRECTION_INDEX)
 		{
+			//TODO 20571: update this
 			stringIdIndices.insert(index);
 
 			//try to insert the value if not already there
@@ -1221,4 +1233,5 @@ public:
 
 	//object that contains interned number values if applicable
 	InternedValues<double> internedNumberValues;
+	InternedValues<StringInternPool::StringID> internedStringIdValues;
 };

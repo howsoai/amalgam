@@ -1198,10 +1198,10 @@ public:
 		}
 	}
 
-	//returns true if the feature at index has interned number values
-	__forceinline bool HasNumberInternValues(size_t index)
+	//for the feature index, computes and stores the distance terms as measured from value to each interned value
+	inline void ComputeAndStoreInternedStringIdValuesAndDistanceTerms(size_t index, std::vector<StringInternPool::StringID> *interned_values)
 	{
-		return featureData[index].internedNumberIndexToNumberValue != nullptr;
+		//TODO 20571: finish this
 	}
 
 	//returns the precomputed distance term for the interned value with intern_value_index

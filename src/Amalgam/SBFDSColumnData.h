@@ -191,6 +191,8 @@ public:
 	{
 		if(value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
 			return EvaluableNodeImmediateValue(internedNumberValues.internedIndexToValue[value.indirectionIndex]);
+		if(value_type == ENIVT_STRING_ID_INDIRECTION_INDEX)
+			return EvaluableNodeImmediateValue(internedStringIdValues.internedIndexToValue[value.indirectionIndex]);
 		return value;
 	}
 
@@ -462,9 +464,11 @@ public:
 		case ENIVT_STRING_ID:
 		case ENIVT_STRING_ID_INDIRECTION_INDEX:
 		{
-			//TODO 20571: update this
 			stringIdIndices.erase(index);
-			auto id_entry = stringIdValueToIndices.find(value.stringID);
+
+			auto resolved_value = GetResolvedValue(value_type, value);
+
+			auto id_entry = stringIdValueToIndices.find(resolved_value.stringID);
 			if(id_entry != end(stringIdValueToIndices))
 			{
 				auto &entities = *(id_entry->second);
@@ -577,18 +581,19 @@ public:
 
 		if(value_type == ENIVT_STRING_ID || value_type == ENIVT_STRING_ID_INDIRECTION_INDEX)
 		{
-			//TODO 20571: update this
 			stringIdIndices.insert(index);
 
+			auto string_id = GetResolvedValue(value_type, value).stringID;
+
 			//try to insert the value if not already there
-			auto [inserted_id_entry, inserted] = stringIdValueToIndices.emplace(value.stringID, nullptr);
+			auto [inserted_id_entry, inserted] = stringIdValueToIndices.emplace(string_id, nullptr);
 			if(inserted)
 				inserted_id_entry->second = std::make_unique<SortedIntegerSet>();
 
 			auto &ids = *(inserted_id_entry->second);
 			ids.insert(index);
 
-			UpdateLongestString(value.stringID, index);
+			UpdateLongestString(string_id, index);
 			return value;
 		}
 

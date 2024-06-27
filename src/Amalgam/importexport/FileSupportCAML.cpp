@@ -11,6 +11,7 @@
 #include <iostream>
 #include <ostream>
 #include <string>
+#include <tuple>
 
 //magic number written at beginning of CAML file
 static const uint8_t s_magic_number[] = { 'c', 'a', 'm', 'l' };

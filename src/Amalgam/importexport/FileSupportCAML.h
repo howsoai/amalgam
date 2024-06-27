@@ -4,6 +4,7 @@
 #include <fstream>
 #include <ostream>
 #include <string>
+#include <tuple>
 #include <utility>
 
 namespace FileSupportCAML

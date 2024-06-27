@@ -66,9 +66,19 @@ public:
 			*destSidReference = StringInternRef(string_intern_pool.NOT_A_STRING_ID);
 
 		//if single value, then just set and return
-		if(EvaluableNode::IsNull(id_path) || id_path->GetType() != ENT_LIST)
+		if(EvaluableNode::IsNull(id_path))
 		{
 			idPath = id_path;
+			return;
+		}
+		else if(id_path->GetType() != ENT_LIST)
+		{
+			idPath = id_path;
+			if(destSidReference == nullptr)
+			{
+				entityIdIndex = 1;
+				lastIdIndex = 1;
+			}
 			return;
 		}
 
@@ -207,9 +217,9 @@ TraverseToEntityReferenceAndContainerViaEvaluableNodeID(Entity *from_entity,
 	StringInternRef *dest_sid_ref)
 {
 	if(EvaluableNode::IsNull(id_node_1))
-		TraverseToEntityReferenceAndContainerViaEvaluableNodeID<EntityReferenceType>(from_entity, id_node_2, dest_sid_ref);
+		return TraverseToEntityReferenceAndContainerViaEvaluableNodeID<EntityReferenceType>(from_entity, id_node_2, dest_sid_ref);
 	if(EvaluableNode::IsNull(id_node_2))
-		TraverseToEntityReferenceAndContainerViaEvaluableNodeID<EntityReferenceType>(from_entity, id_node_1, dest_sid_ref);
+		return TraverseToEntityReferenceAndContainerViaEvaluableNodeID<EntityReferenceType>(from_entity, id_node_1, dest_sid_ref);
 
 	if(dest_sid_ref == nullptr)
 	{

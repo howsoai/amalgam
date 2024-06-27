@@ -801,6 +801,18 @@ StringInternPool::StringID Entity::GetContainedEntityIdFromIndex(size_t entity_i
 	return contained_entities[entity_index]->GetIdStringId();
 }
 
+Entity *Entity::GetContainedEntityFromIndex(size_t entity_index)
+{
+	if(!hasContainedEntities)
+		return nullptr;
+
+	if(entity_index >= entityRelationships.relationships->containedEntities.size())
+		return nullptr;
+
+	//look up the pointer by its index
+	return entityRelationships.relationships->containedEntities[entity_index];
+}
+
 void Entity::CreateQueryCaches()
 {
 	EnsureHasContainedEntities();

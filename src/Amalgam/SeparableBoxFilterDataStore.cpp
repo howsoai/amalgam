@@ -76,7 +76,7 @@ void SeparableBoxFilterDataStore::OptimizeColumn(size_t column_index)
 		}
 
 		for(auto entity_index : column_data->nullIndices)
-			GetValue(entity_index, column_index).number = SBFDSColumnData::ValueEntry::NULL_INDEX;
+			GetValue(entity_index, column_index).indirectionIndex = SBFDSColumnData::ValueEntry::NULL_INDEX;
 	}
 }
 

@@ -1028,8 +1028,10 @@ public:
 		EFDT_CONTINUOUS_NUMERIC,
 		//like FDT_CONTINUOUS_NUMERIC, but has cycles
 		EFDT_CONTINUOUS_NUMERIC_CYCLIC,
-		//continuous precomputed (cyclic or not), may contain nonnumeric data
-		EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED,
+		//continuous or nominal numeric precomputed (cyclic or not), may contain nonnumeric data
+		EFDT_NUMERIC_INTERNED_PRECOMPUTED,
+		//continuous or nominal string precomputed, may contain nonnumeric data
+		EFDT_STRING_INTERNED_PRECOMPUTED,
 		//nominal compared to a string value where nominals may not be symmetric
 		EFDT_NOMINAL_STRING,
 		//nominal compared to a number value where nominals may not be symmetric

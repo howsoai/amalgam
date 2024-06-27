@@ -783,11 +783,22 @@ protected:
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
 		}
 
-		case RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED:
+		case RepeatedGeneralizedDistanceEvaluator::EFDT_NUMERIC_INTERNED_PRECOMPUTED:
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 			auto &column_data = columnData[feature_attribs.featureIndex];
 			if(column_data->numberIndices.contains(entity_index))
+				return r_dist_eval.ComputeDistanceTermInternedPrecomputed(
+					GetValue(entity_index, feature_attribs.featureIndex).indirectionIndex, query_feature_index, high_accuracy);
+			else
+				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
+		}
+
+		case RepeatedGeneralizedDistanceEvaluator::EFDT_STRING_INTERNED_PRECOMPUTED:
+		{
+			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
+			auto &column_data = columnData[feature_attribs.featureIndex];
+			if(column_data->stringIdIndices.contains(entity_index))
 				return r_dist_eval.ComputeDistanceTermInternedPrecomputed(
 					GetValue(entity_index, feature_attribs.featureIndex).indirectionIndex, query_feature_index, high_accuracy);
 			else

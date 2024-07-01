@@ -3565,7 +3565,6 @@
    (create_entities (list "nan_queries" "a2") (lambda (null ##A 11 ##B 2)))
    (create_entities (list "nan_queries" "a3") (lambda (null ##A (null) ##B 1)))
 
-
    ;expected output is 3 neighbors in order: a1, a2, a3
    (print
       (compute_on_contained_entities "nan_queries" (list
@@ -3593,12 +3592,12 @@
             (null)
             (null)
             (null)
-			2 ;p-value            
+			2 ;p-value
          )
       ))
    )
 
-   ;expected output is only 1 neighbor
+   ;expected output is only 1 neighbor, a1 or a3
    (print
       (compute_on_contained_entities "nan_queries" (list
          (query_nearest_generalized_distance
@@ -3609,7 +3608,7 @@
             (null)
             (null)
             (null)
-			2 ;p-value            
+			2 ;p-value
          )
       ))
    )

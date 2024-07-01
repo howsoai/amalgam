@@ -81,13 +81,11 @@ public:
 			stringIdIndices.insert(index);
 
 			//try to insert the value if not already there, inserting an empty pointer
-			auto [id_entry, inserted] = stringIdValueToIndices.emplace(value.stringID, nullptr);
+			auto [id_entry, inserted] = stringIdValueEntries.emplace(value.stringID, nullptr);
 			if(inserted)
-				id_entry->second = std::make_unique<SortedIntegerSet>();
+				id_entry->second = std::make_unique<ValueEntry>(value.stringID);
 
-			auto &ids = id_entry->second;
-
-			ids->InsertNewLargestInteger(index);
+			id_entry->second->indicesWithValue.InsertNewLargestInteger(index);
 
 			UpdateLongestString(value.stringID, index);
 		}
@@ -153,7 +151,12 @@ public:
 		}
 
 		if(stringIdIndices.contains(index))
+		{
+			if(internedStringIdValues.valueInterningEnabled)
+				return ENIVT_STRING_ID_INDIRECTION_INDEX;
 			return ENIVT_STRING_ID;
+		}
+
 		if(nullIndices.contains(index))
 			return ENIVT_NULL;
 		if(invalidIndices.contains(index))
@@ -166,6 +169,8 @@ public:
 	{
 		if(value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
 			return ENIVT_NUMBER;
+		if(value_type == ENIVT_STRING_ID_INDIRECTION_INDEX)
+			return ENIVT_STRING_ID;
 		return value_type;
 	}
 
@@ -174,6 +179,8 @@ public:
 	{
 		if(value_type == ENIVT_NUMBER && internedNumberValues.valueInterningEnabled)
 			return ENIVT_NUMBER_INDIRECTION_INDEX;
+		if(value_type == ENIVT_STRING_ID && internedStringIdValues.valueInterningEnabled)
+			return ENIVT_STRING_ID_INDIRECTION_INDEX;
 		return value_type;
 	}
 
@@ -182,6 +189,8 @@ public:
 	{
 		if(value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
 			return EvaluableNodeImmediateValue(internedNumberValues.internedIndexToValue[value.indirectionIndex]);
+		if(value_type == ENIVT_STRING_ID_INDIRECTION_INDEX)
+			return EvaluableNodeImmediateValue(internedStringIdValues.internedIndexToValue[value.indirectionIndex]);
 		return value;
 	}
 
@@ -294,49 +303,72 @@ public:
 
 			if(old_value_type == ENIVT_STRING_ID)
 			{
-				if(old_value.stringID == new_value.stringID)
+				StringInternPool::StringID old_sid_value = GetResolvedValue(old_value_type, old_value).stringID;
+				StringInternPool::StringID new_sid_value = GetResolvedValue(new_value_type, new_value).stringID;
+				if(old_sid_value == new_sid_value)
 					return old_value;
 
 				//try to insert the new value if not already there
-				auto [new_id_entry, inserted] = stringIdValueToIndices.emplace(new_value.stringID, nullptr);
-
-				auto old_id_entry = stringIdValueToIndices.find(old_value.stringID);
-				if(old_id_entry != end(stringIdValueToIndices))
+				auto [new_id_entry, inserted] = stringIdValueEntries.emplace(new_sid_value, nullptr);
+				
+				size_t new_value_index = 0;
+				auto old_id_entry = stringIdValueEntries.find(old_sid_value);
+				if(old_id_entry != end(stringIdValueEntries))
 				{
 					//if there are multiple entries for this string, just move the id
-					if(old_id_entry->second->size() > 1)
+					if(old_id_entry->second->indicesWithValue.size() > 1)
 					{
-						if(inserted)
-							new_id_entry->second = std::make_unique<SortedIntegerSet>();
+						old_id_entry->second->indicesWithValue.erase(index);
 
-						new_id_entry->second->insert(index);
-						old_id_entry->second->erase(index);
+						//if it was inserted, then construct everything
+						if(inserted)
+						{
+							new_id_entry->second = std::make_unique<ValueEntry>(new_sid_value);
+							InsertFirstIndexIntoStringIdValueEntry(index, new_id_entry);
+						}
+						else
+						{
+							new_id_entry->second->indicesWithValue.insert(index);
+						}
+
+						new_value_index = new_id_entry->second->valueInternIndex;
 					}
 					else //it's the last old_id_entry
 					{
-						//put the SortedIntegerSet in the new value or move the container
+						//if newly inserted, then can just move the data structure
 						if(inserted)
+						{
 							new_id_entry->second = std::move(old_id_entry->second);
-						else
-							new_id_entry->second->insert(index);
+							new_value_index = new_id_entry->second->valueInternIndex;
+							stringIdValueEntries.erase(old_id_entry);
+						}
+						else //need to clean up
+						{
+							new_id_entry->second->indicesWithValue.insert(index);
+							new_value_index = new_id_entry->second->valueInternIndex;
 
-						//erase after no longer need inserted_id_entry, as it may be invalidated
-						stringIdValueToIndices.erase(old_id_entry);
+							//erase after no longer need inserted_id_entry
+							DeleteStringIdValueEntry(old_id_entry);
+						}
 					}
 				}
 				else if(inserted) //shouldn't make it here, but ensure integrity just in case
 				{
-					new_id_entry->second = std::make_unique<SortedIntegerSet>();
-					new_id_entry->second->insert(index);
+					new_id_entry->second = std::make_unique<ValueEntry>(new_sid_value);
+					InsertFirstIndexIntoStringIdValueEntry(index, new_id_entry);
+					new_value_index = new_id_entry->second->valueInternIndex;
 				}
 
 				//update longest string as appropriate
 				if(index == indexWithLongestString)
 					RecomputeLongestString();
 				else
-					UpdateLongestString(new_value.stringID, index);
+					UpdateLongestString(new_sid_value, index);
 
-				return new_value;
+				if(internedStringIdValues.valueInterningEnabled)
+					return EvaluableNodeImmediateValue(new_value_index);
+				else
+					return EvaluableNodeImmediateValue(new_value);
 			}
 
 			if(old_value_type == ENIVT_CODE)
@@ -395,7 +427,7 @@ public:
 				return new_value;
 			}
 
-			if(old_value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
+			if(old_value_type == ENIVT_NUMBER_INDIRECTION_INDEX || old_value_type == ENIVT_STRING_ID_INDIRECTION_INDEX)
 			{
 				if(old_value.indirectionIndex == new_value.indirectionIndex)
 					return old_value;
@@ -414,6 +446,15 @@ public:
 	{
 		internedNumberValues.DeleteInternIndex(sortedNumberValueEntries[value_index]->valueInternIndex);
 		sortedNumberValueEntries.erase(sortedNumberValueEntries.begin() + value_index);
+	}
+
+	//deletes a particular value based on the value_index
+	//templated to make it efficiently work regardless of the container
+	template<typename StringIdValueEntryIterator>
+	void DeleteStringIdValueEntry(StringIdValueEntryIterator &iter)
+	{
+		internedStringIdValues.DeleteInternIndex(iter->second->valueInternIndex);
+		stringIdValueEntries.erase(iter);
 	}
 
 	//deletes everything involving the value at the index
@@ -451,17 +492,21 @@ public:
 		}
 
 		case ENIVT_STRING_ID:
+		case ENIVT_STRING_ID_INDIRECTION_INDEX:
 		{
 			stringIdIndices.erase(index);
-			auto id_entry = stringIdValueToIndices.find(value.stringID);
-			if(id_entry != end(stringIdValueToIndices))
+
+			auto resolved_value = GetResolvedValue(value_type, value);
+
+			auto id_entry = stringIdValueEntries.find(resolved_value.stringID);
+			if(id_entry != end(stringIdValueEntries))
 			{
-				auto &entities = *(id_entry->second);
+				auto &entities = id_entry->second->indicesWithValue;
 				entities.erase(index);
 
 				//if no more entries have the value, remove it
 				if(entities.size() == 0)
-					stringIdValueToIndices.erase(id_entry);
+					DeleteStringIdValueEntry(id_entry);
 			}
 
 			//see if need to compute new longest string
@@ -498,13 +543,24 @@ public:
 		}
 	}
 
-	//deletes a particular value based on the value_index
+	//inserts a particular value based on the value_index
 	void InsertFirstIndexIntoNumberValueEntry(size_t index, size_t value_index)
 	{
 		ValueEntry *value_entry = sortedNumberValueEntries[value_index].get();
 
 		value_entry->indicesWithValue.insert(index);
 		internedNumberValues.InsertValueEntry(value_entry, sortedNumberValueEntries.size());
+	}
+
+	//inserts a particular value based on the value_index
+	//templated to make it efficiently work regardless of the container
+	template<typename StringIdValueEntryIterator>
+	void InsertFirstIndexIntoStringIdValueEntry(size_t index, StringIdValueEntryIterator &value_iter)
+	{
+		ValueEntry *value_entry = value_iter->second.get();
+
+		value_entry->indicesWithValue.insert(index);
+		internedStringIdValues.InsertValueEntry(value_entry, stringIdValueEntries.size());
 	}
 
 	//inserts the value at id
@@ -527,7 +583,7 @@ public:
 		{
 			nullIndices.insert(index);
 
-			if(internedNumberValues.valueInterningEnabled)
+			if(internedNumberValues.valueInterningEnabled || internedStringIdValues.valueInterningEnabled)
 				return EvaluableNodeImmediateValue(ValueEntry::NULL_INDEX);
 			else
 				return value;
@@ -564,20 +620,25 @@ public:
 				return value;
 		}
 
-		if(value_type == ENIVT_STRING_ID)
+		if(value_type == ENIVT_STRING_ID || value_type == ENIVT_STRING_ID_INDIRECTION_INDEX)
 		{
 			stringIdIndices.insert(index);
 
+			auto string_id = GetResolvedValue(value_type, value).stringID;
+
 			//try to insert the value if not already there
-			auto [inserted_id_entry, inserted] = stringIdValueToIndices.emplace(value.stringID, nullptr);
+			auto [inserted_id_entry, inserted] = stringIdValueEntries.emplace(string_id, nullptr);
 			if(inserted)
-				inserted_id_entry->second = std::make_unique<SortedIntegerSet>();
+				inserted_id_entry->second = std::make_unique<ValueEntry>(string_id);
 
-			auto &ids = *(inserted_id_entry->second);
-			ids.insert(index);
+			InsertFirstIndexIntoStringIdValueEntry(index, inserted_id_entry);
 
-			UpdateLongestString(value.stringID, index);
-			return value;
+			UpdateLongestString(string_id, index);
+
+			if(internedStringIdValues.valueInterningEnabled)
+				return inserted_id_entry->second->valueInternIndex;
+			else
+				return value;
 		}
 
 		//value_type == ENIVT_CODE
@@ -839,11 +900,11 @@ public:
 		}
 		else if(value_type == ENIVT_STRING_ID)
 		{
-			if(stringIdValueToIndices.size() == 0)
+			if(stringIdValueEntries.size() == 0)
 				return;
 
 			//check every string value to see if between
-			for(auto &[id, entry] : stringIdValueToIndices)
+			for(auto &[id, entry] : stringIdValueEntries)
 			{
 				//check where the string is in the order; empty strings for comparison always pass
 				bool value_less_than_low = true;
@@ -866,7 +927,7 @@ public:
 				}
 				
 				//insert all entities with this value
-				for(auto index : *entry)
+				for(auto index : entry->indicesWithValue)
 					out.insert(index);
 			}
 		}
@@ -892,9 +953,9 @@ public:
 		}
 		else if(value_type == ENIVT_STRING_ID)
 		{
-			auto id_entry = stringIdValueToIndices.find(value.stringID);
-			if(id_entry != end(stringIdValueToIndices))
-				out.InsertInBatch(*(id_entry->second));
+			auto id_entry = stringIdValueEntries.find(value.stringID);
+			if(id_entry != end(stringIdValueEntries))
+				out.InsertInBatch(id_entry->second->indicesWithValue);
 		}
 	}
 
@@ -932,15 +993,15 @@ public:
 		}
 		else if(value_type == ENIVT_STRING_ID)
 		{
-			if(stringIdValueToIndices.size() == 0)
+			if(stringIdValueEntries.size() == 0)
 				return;
 
 			//else it's a string, need to do it the brute force way
 			std::vector<StringInternPool::StringID> all_sids;
-			all_sids.reserve(stringIdValueToIndices.size());
+			all_sids.reserve(stringIdValueEntries.size());
 
 			//get all strings
-			for(auto &[id, _] : stringIdValueToIndices)
+			for(auto &[id, _] : stringIdValueEntries)
 				all_sids.push_back(id);
 
 			std::sort(begin(all_sids), end(all_sids), StringIDNaturalCompareSort);
@@ -950,8 +1011,8 @@ public:
 
 			while(value_index < static_cast<int64_t>(all_sids.size()) && value_index >= 0)
 			{
-				const auto &sid_entry = stringIdValueToIndices.find(all_sids[value_index]);
-				for(auto index : *(sid_entry->second))
+				const auto &sid_entry = stringIdValueEntries.find(all_sids[value_index]);
+				for(auto index : sid_entry->second->indicesWithValue)
 				{
 					if(indices_to_consider != nullptr && !indices_to_consider->contains(index))
 						continue;
@@ -979,7 +1040,7 @@ public:
 	}
 
 	//returns true if switching to number values would be expected to yield better results
-	// than number interning given the current data
+	// than interning given the current data
 	inline bool AreNumberValuesPreferredToInterns()
 	{
 		//use heuristic of sqrt number of values compared to num unique values
@@ -989,16 +1050,51 @@ public:
 		return (num_unique_values * num_unique_values > numberIndices.size() - num_unique_values);
 	}
 
+	//returns true if switching to StringId interning would be expected to yield better results
+	// than StringId values given the current data
+	inline bool AreStringIdInternsPreferredToValues()
+	{
+		//use heuristic of sqrt number of values compared to num unique values
+		// (but computed with a multiply instead of sqrt)
+		size_t num_unique_values = stringIdValueEntries.size();
+		return (num_unique_values * num_unique_values <= stringIdIndices.size());
+	}
+
+	//returns true if switching to StringID values would be expected to yield better results
+	// than interning given the current data
+	inline bool AreStringIdValuesPreferredToInterns()
+	{
+		//use heuristic of sqrt number of values compared to num unique values
+		// (but computed with a multiply instead of sqrt)
+		//round up to reduce flipping back and forth
+		size_t num_unique_values = stringIdValueEntries.size();
+		return (num_unique_values * num_unique_values > stringIdIndices.size() - num_unique_values);
+	}
+
 	//clears number intern caches and changes state to not perform interning for numbers
-	void ConvertNumberInternsToValues()
+	inline void ConvertNumberInternsToValues()
 	{
 		internedNumberValues.ClearInterning();
 	}
 
 	//initializes and sets up number value interning caches and changes state to perform interning for numbers
-	void ConvertNumberValuesToInterns()
+	inline void ConvertNumberValuesToInterns()
 	{
-		internedNumberValues.ConvertValueCollectionToInterns(sortedNumberValueEntries);
+		internedNumberValues.ConvertValueCollectionToInterns(sortedNumberValueEntries,
+			[](auto &value_entry_iter) { return value_entry_iter.get(); });
+	}
+
+	//clears string intern caches and changes state to not perform interning for StringIds
+	inline void ConvertStringIdInternsToValues()
+	{
+		internedStringIdValues.ClearInterning();
+	}
+
+	//initializes and sets up number value interning caches and changes state to perform interning for StringIds
+	inline void ConvertStringIdValuesToInterns()
+	{
+		internedStringIdValues.ConvertValueCollectionToInterns(stringIdValueEntries,
+			[](auto &value_entry_iter) { return value_entry_iter.second.get(); });
 	}
 
 protected:
@@ -1021,8 +1117,8 @@ protected:
 		longestStringLength = 0;
 		//initialize to 0 in case there are no entities with strings
 		indexWithLongestString = 0;
-		for(auto &[s_id, s_entry] : stringIdValueToIndices)
-			UpdateLongestString(s_id, *s_entry->begin());
+		for(auto &[s_id, s_entry] : stringIdValueEntries)
+			UpdateLongestString(s_id, s_entry->indicesWithValue.GetNthElement(0));
 	}
 
 	//updates largestCodeSize and indexWithLargestCode based on parameters
@@ -1054,7 +1150,7 @@ public:
 	std::vector<std::unique_ptr<ValueEntry>> sortedNumberValueEntries;
 
 	//maps a string id to a vector of indices that have that string
-	CompactHashMap<StringInternPool::StringID, std::unique_ptr<SortedIntegerSet>> stringIdValueToIndices;
+	CompactHashMap<StringInternPool::StringID, std::unique_ptr<ValueEntry>> stringIdValueEntries;
 
 	//for any value that doesn't fit into other values ( ENIVT_CODE ), maps the number of elements in the code
 	// to the indices of the same size
@@ -1105,8 +1201,8 @@ public:
 		}
 
 		//converts the values in value_collection into interned values
-		template<typename ValueCollectionType>
-		inline void ConvertValueCollectionToInterns(ValueCollectionType &value_collection)
+		template<typename ValueEntryCollectionType, typename GetValueEntryFunction>
+		inline void ConvertValueCollectionToInterns(ValueEntryCollectionType &value_collection, GetValueEntryFunction get_value_entry)
 		{
 			if(valueInterningEnabled)
 				return;
@@ -1116,8 +1212,9 @@ public:
 			internedIndexToValue[0] = notAValue;
 
 			size_t intern_index = 1;
-			for(auto &value_entry : value_collection)
+			for(auto &value_entry_iter : value_collection)
 			{
+				ValueEntry *value_entry = get_value_entry(value_entry_iter);
 				value_entry->valueInternIndex = intern_index;
 				internedIndexToValue[intern_index] = value_entry->value;
 				intern_index++;
@@ -1221,4 +1318,5 @@ public:
 
 	//object that contains interned number values if applicable
 	InternedValues<double> internedNumberValues;
+	InternedValues<StringInternPool::StringID> internedStringIdValues;
 };

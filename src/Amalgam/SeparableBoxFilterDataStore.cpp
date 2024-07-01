@@ -78,6 +78,38 @@ void SeparableBoxFilterDataStore::OptimizeColumn(size_t column_index)
 		for(auto entity_index : column_data->nullIndices)
 			GetValue(entity_index, column_index).indirectionIndex = SBFDSColumnData::ValueEntry::NULL_INDEX;
 	}
+
+	if(column_data->internedStringIdValues.valueInterningEnabled)
+	{
+		if(column_data->AreStringIdValuesPreferredToInterns())
+		{
+			for(auto &[sid, value_entry] : column_data->stringIdValueEntries)
+			{
+				auto value = value_entry->value.stringID;
+				for(auto entity_index : value_entry->indicesWithValue)
+					GetValue(entity_index, column_index).stringID = value;
+			}
+
+			for(auto entity_index : column_data->nullIndices)
+				GetValue(entity_index, column_index).stringID = StringInternPool::NOT_A_STRING_ID;
+
+			column_data->ConvertStringIdInternsToValues();
+		}
+	}
+	else if(column_data->AreStringIdInternsPreferredToValues())
+	{
+		column_data->ConvertStringIdValuesToInterns();
+
+		for(auto &[sid, value_entry] : column_data->stringIdValueEntries)
+		{
+			size_t value_index = value_entry->valueInternIndex;
+			for(auto entity_index : value_entry->indicesWithValue)
+				GetValue(entity_index, column_index).indirectionIndex = value_index;
+		}
+
+		for(auto entity_index : column_data->nullIndices)
+			GetValue(entity_index, column_index).indirectionIndex = SBFDSColumnData::ValueEntry::NULL_INDEX;
+	}
 }
 
 void SeparableBoxFilterDataStore::RemoveColumnIndex(size_t column_index_to_remove)
@@ -1066,11 +1098,11 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	{
 		if(value.nodeType == ENIVT_STRING_ID)
 		{
-			auto value_found = column->stringIdValueToIndices.find(value.nodeValue.stringID);
-			if(value_found != end(column->stringIdValueToIndices))
+			auto value_found = column->stringIdValueEntries.find(value.nodeValue.stringID);
+			if(value_found != end(column->stringIdValueEntries))
 			{
 				double term = r_dist_eval.distEvaluator->ComputeDistanceTermContinuousExactMatch(query_feature_index, high_accuracy);
-				AccumulatePartialSums(*(value_found->second), query_feature_index, term);
+				AccumulatePartialSums(value_found->second->indicesWithValue, query_feature_index, term);
 			}
 		}
 
@@ -1405,15 +1437,47 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 	auto &feature_type = feature_attribs.featureType;
 	auto &feature_data = r_dist_eval.featureData[query_feature_index];
 	auto &effective_feature_type = r_dist_eval.featureData[query_feature_index].effectiveFeatureType;
+	auto &column_data = columnData[feature_attribs.featureIndex];
 
 	feature_data.Clear();
+	feature_data.targetValue = EvaluableNodeImmediateValueWithType(position_value, position_value_type);
 
-	if(feature_attribs.IsFeatureNominal()
+	bool complex_comparison = (feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING
-		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
-	{
-		feature_data.targetValue = EvaluableNodeImmediateValueWithType(position_value, position_value_type);
+		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE);
 
+	//consider computing interned values if appropriate
+	//however, symmetric nominals are fast, so don't compute interned values for them
+	if(!feature_attribs.IsFeatureSymmetricNominal() && !complex_comparison)
+	{
+		if(position_value_type == ENIVT_NUMBER && column_data->internedNumberValues.valueInterningEnabled)
+		{
+			size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
+
+			if(GetNumInsertedEntities() == num_values_stored_as_numbers)
+				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_UNIVERSALLY_INTERNED_PRECOMPUTED;
+			else
+				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NUMERIC_INTERNED_PRECOMPUTED;
+
+			r_dist_eval.ComputeAndStoreInternedDistanceTerms(query_feature_index, &column_data->internedNumberValues.internedIndexToValue);
+			return;
+		}
+		else if(position_value_type == ENIVT_STRING_ID && column_data->internedStringIdValues.valueInterningEnabled)
+		{
+			size_t num_values_stored_as_string_ids = column_data->stringIdIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
+
+			if(GetNumInsertedEntities() == num_values_stored_as_string_ids)
+				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_UNIVERSALLY_INTERNED_PRECOMPUTED;
+			else
+				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_STRING_INTERNED_PRECOMPUTED;
+
+			r_dist_eval.ComputeAndStoreInternedDistanceTerms(query_feature_index, &column_data->internedStringIdValues.internedIndexToValue);
+			return;
+		}
+	}
+
+	if(feature_attribs.IsFeatureNominal() || complex_comparison)
+	{
 		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC)
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMERIC;
 		else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING)
@@ -1430,36 +1494,14 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 	}
 	else // feature_type is some form of continuous numeric
 	{
-		//looking for continuous; if not a number, so just put as nan
-		double position_value_numeric = (position_value_type == ENIVT_NUMBER
-			? position_value.number : std::numeric_limits<double>::quiet_NaN());
-
-		feature_data.targetValue = EvaluableNodeImmediateValueWithType(position_value_numeric);
-
-		//set up effective_feature_type
-		auto &column_data = columnData[feature_attribs.featureIndex];
-
-		//determine if all values are numeric
-		size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
-		bool all_values_numeric = (GetNumInsertedEntities() == num_values_stored_as_numbers);
-
-		if(column_data->internedNumberValues.valueInterningEnabled)
-		{
-			if(all_values_numeric)
-				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_UNIVERSALLY_INTERNED_PRECOMPUTED;
-			else
-				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED;
-
-			r_dist_eval.ComputeAndStoreInternedNumberValuesAndDistanceTerms(query_feature_index, &column_data->internedNumberValues.internedIndexToValue);
-		}
+		size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size();
+		if(GetNumInsertedEntities() == num_values_stored_as_numbers
+				&& feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC
+				&& !column_data->internedNumberValues.valueInterningEnabled)
+			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC;
+		else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC)
+			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_CYCLIC;
 		else
-		{
-			if(all_values_numeric && feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC)
-				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC;
-			else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC)
-				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_CYCLIC;
-			else
-				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC;
-		}
+			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC;
 	}
 }

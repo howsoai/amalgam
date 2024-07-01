@@ -1442,9 +1442,13 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 	feature_data.Clear();
 	feature_data.targetValue = EvaluableNodeImmediateValueWithType(position_value, position_value_type);
 
+	bool complex_comparison = (feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE
+		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING
+		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE);
+
 	//consider computing interned values if appropriate
 	//however, symmetric nominals are fast, so don't compute interned values for them
-	if(!feature_attribs.IsFeatureSymmetricNominal())
+	if(!feature_attribs.IsFeatureSymmetricNominal() && !complex_comparison)
 	{
 		if(position_value_type == ENIVT_NUMBER && column_data->internedNumberValues.valueInterningEnabled)
 		{
@@ -1472,9 +1476,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 		}
 	}
 
-	if(feature_attribs.IsFeatureNominal()
-		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING
-		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
+	if(feature_attribs.IsFeatureNominal() || complex_comparison)
 	{
 		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC)
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMERIC;

@@ -329,8 +329,8 @@ public:
 						else
 							new_id_entry->second->indicesWithValue.insert(index);
 
-						//erase after no longer need inserted_id_entry, as it may be invalidated
-						stringIdValueEntries.erase(old_id_entry);
+						//erase after no longer need inserted_id_entry
+						DeleteStringIdValueEntry(old_id_entry);
 					}
 				}
 				else if(inserted) //shouldn't make it here, but ensure integrity just in case
@@ -425,6 +425,15 @@ public:
 		sortedNumberValueEntries.erase(sortedNumberValueEntries.begin() + value_index);
 	}
 
+	//deletes a particular value based on the value_index
+	//templated to make it efficiently work regardless of the container
+	template<typename StringIdValueEntryIterator>
+	void DeleteStringIdValueEntry(StringIdValueEntryIterator &iter)
+	{
+		internedStringIdValues.DeleteInternIndex(iter->second->valueInternIndex);
+		stringIdValueEntries.erase(iter);
+	}
+
 	//deletes everything involving the value at the index
 	void DeleteIndexValue(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value, size_t index)
 	{
@@ -474,7 +483,7 @@ public:
 
 				//if no more entries have the value, remove it
 				if(entities.size() == 0)
-					stringIdValueEntries.erase(id_entry);
+					DeleteStringIdValueEntry(id_entry);
 			}
 
 			//see if need to compute new longest string
@@ -592,7 +601,11 @@ public:
 			ids.insert(index);
 
 			UpdateLongestString(string_id, index);
-			return value;
+
+			if(internedNumberValues.valueInterningEnabled)
+				return inserted_id_entry->second->valueInternIndex;
+			else
+				return value;
 		}
 
 		//value_type == ENIVT_CODE

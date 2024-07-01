@@ -79,8 +79,6 @@ void SeparableBoxFilterDataStore::OptimizeColumn(size_t column_index)
 			GetValue(entity_index, column_index).indirectionIndex = SBFDSColumnData::ValueEntry::NULL_INDEX;
 	}
 
-	//TODO 20571: uncomment and test
-	/*
 	if(column_data->internedStringIdValues.valueInterningEnabled)
 	{
 		if(column_data->AreStringIdValuesPreferredToInterns())
@@ -111,7 +109,7 @@ void SeparableBoxFilterDataStore::OptimizeColumn(size_t column_index)
 
 		for(auto entity_index : column_data->nullIndices)
 			GetValue(entity_index, column_index).indirectionIndex = SBFDSColumnData::ValueEntry::NULL_INDEX;
-	}*/
+	}
 }
 
 void SeparableBoxFilterDataStore::RemoveColumnIndex(size_t column_index_to_remove)
@@ -1494,9 +1492,10 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 	}
 	else // feature_type is some form of continuous numeric
 	{
-		size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
+		size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size();
 		if(GetNumInsertedEntities() == num_values_stored_as_numbers
-				&& feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC)
+				&& feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC
+				&& !column_data->internedNumberValues.valueInterningEnabled)
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC;
 		else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC)
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_CYCLIC;

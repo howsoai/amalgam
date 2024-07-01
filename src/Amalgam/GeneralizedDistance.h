@@ -1160,7 +1160,6 @@ public:
 			featureData.resize(index + 1);
 
 		auto &feature_data = featureData[index];
-		feature_data.internedNumberIndexToNumberValue = interned_values;
 
 		if(interned_values == nullptr)
 		{
@@ -1362,8 +1361,7 @@ public:
 	public:
 
 		FeatureData()
-			: effectiveFeatureType(EFDT_CONTINUOUS_NUMERIC),
-			internedNumberIndexToNumberValue(nullptr)
+			: effectiveFeatureType(EFDT_CONTINUOUS_NUMERIC)
 		{	}
 
 		//clears all the feature data
@@ -1371,7 +1369,6 @@ public:
 		{
 			effectiveFeatureType = EFDT_CONTINUOUS_NUMERIC;
 			precomputedRemainingIdenticalDistanceTerm = 0.0;
-			internedNumberIndexToNumberValue = nullptr;
 			internedDistanceTerms.clear();
 			nominalStringDistanceTerms.clear();
 			nominalNumberDistanceTerms.clear();
@@ -1396,7 +1393,6 @@ public:
 		//the distance term for EFDT_REMAINING_IDENTICAL_PRECOMPUTED
 		double precomputedRemainingIdenticalDistanceTerm;
 
-		std::vector<double> *internedNumberIndexToNumberValue;
 		std::vector<GeneralizedDistanceEvaluator::DistanceTerms> internedDistanceTerms;
 
 		//used to store distance terms for the respective targetValue for the sparse deviation matrix

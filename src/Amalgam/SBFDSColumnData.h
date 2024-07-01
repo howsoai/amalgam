@@ -83,11 +83,9 @@ public:
 			//try to insert the value if not already there, inserting an empty pointer
 			auto [id_entry, inserted] = stringIdValueToIndices.emplace(value.stringID, nullptr);
 			if(inserted)
-				id_entry->second = std::make_unique<SortedIntegerSet>();
+				id_entry->second = std::make_unique<ValueEntry>(value.stringID);
 
-			auto &ids = id_entry->second;
-
-			ids->InsertNewLargestInteger(index);
+			id_entry->second->indicesWithValue.InsertNewLargestInteger(index);
 
 			UpdateLongestString(value.stringID, index);
 		}
@@ -315,13 +313,13 @@ public:
 				if(old_id_entry != end(stringIdValueToIndices))
 				{
 					//if there are multiple entries for this string, just move the id
-					if(old_id_entry->second->size() > 1)
+					if(old_id_entry->second->indicesWithValue.size() > 1)
 					{
 						if(inserted)
-							new_id_entry->second = std::make_unique<SortedIntegerSet>();
+							new_id_entry->second = std::make_unique<ValueEntry>(new_value.stringID);
 
-						new_id_entry->second->insert(index);
-						old_id_entry->second->erase(index);
+						new_id_entry->second->indicesWithValue.insert(index);
+						old_id_entry->second->indicesWithValue.erase(index);
 					}
 					else //it's the last old_id_entry
 					{
@@ -329,7 +327,7 @@ public:
 						if(inserted)
 							new_id_entry->second = std::move(old_id_entry->second);
 						else
-							new_id_entry->second->insert(index);
+							new_id_entry->second->indicesWithValue.insert(index);
 
 						//erase after no longer need inserted_id_entry, as it may be invalidated
 						stringIdValueToIndices.erase(old_id_entry);
@@ -337,8 +335,8 @@ public:
 				}
 				else if(inserted) //shouldn't make it here, but ensure integrity just in case
 				{
-					new_id_entry->second = std::make_unique<SortedIntegerSet>();
-					new_id_entry->second->insert(index);
+					new_id_entry->second = std::make_unique<ValueEntry>(new_value.stringID);
+					new_id_entry->second->indicesWithValue.insert(index);
 				}
 
 				//update longest string as appropriate
@@ -471,7 +469,7 @@ public:
 			auto id_entry = stringIdValueToIndices.find(resolved_value.stringID);
 			if(id_entry != end(stringIdValueToIndices))
 			{
-				auto &entities = *(id_entry->second);
+				auto &entities = id_entry->second->indicesWithValue;
 				entities.erase(index);
 
 				//if no more entries have the value, remove it
@@ -588,9 +586,9 @@ public:
 			//try to insert the value if not already there
 			auto [inserted_id_entry, inserted] = stringIdValueToIndices.emplace(string_id, nullptr);
 			if(inserted)
-				inserted_id_entry->second = std::make_unique<SortedIntegerSet>();
+				inserted_id_entry->second = std::make_unique<ValueEntry>(string_id);
 
-			auto &ids = *(inserted_id_entry->second);
+			auto &ids = inserted_id_entry->second->indicesWithValue;
 			ids.insert(index);
 
 			UpdateLongestString(string_id, index);
@@ -883,7 +881,7 @@ public:
 				}
 				
 				//insert all entities with this value
-				for(auto index : *entry)
+				for(auto index : entry->indicesWithValue)
 					out.insert(index);
 			}
 		}
@@ -911,7 +909,7 @@ public:
 		{
 			auto id_entry = stringIdValueToIndices.find(value.stringID);
 			if(id_entry != end(stringIdValueToIndices))
-				out.InsertInBatch(*(id_entry->second));
+				out.InsertInBatch(id_entry->second->indicesWithValue);
 		}
 	}
 
@@ -968,7 +966,7 @@ public:
 			while(value_index < static_cast<int64_t>(all_sids.size()) && value_index >= 0)
 			{
 				const auto &sid_entry = stringIdValueToIndices.find(all_sids[value_index]);
-				for(auto index : *(sid_entry->second))
+				for(auto index : sid_entry->second->indicesWithValue)
 				{
 					if(indices_to_consider != nullptr && !indices_to_consider->contains(index))
 						continue;
@@ -1073,7 +1071,7 @@ protected:
 		//initialize to 0 in case there are no entities with strings
 		indexWithLongestString = 0;
 		for(auto &[s_id, s_entry] : stringIdValueToIndices)
-			UpdateLongestString(s_id, *s_entry->begin());
+			UpdateLongestString(s_id, s_entry->indicesWithValue.GetNthElement(0));
 	}
 
 	//updates largestCodeSize and indexWithLargestCode based on parameters
@@ -1105,7 +1103,7 @@ public:
 	std::vector<std::unique_ptr<ValueEntry>> sortedNumberValueEntries;
 
 	//maps a string id to a vector of indices that have that string
-	CompactHashMap<StringInternPool::StringID, std::unique_ptr<SortedIntegerSet>> stringIdValueToIndices;
+	CompactHashMap<StringInternPool::StringID, std::unique_ptr<ValueEntry>> stringIdValueToIndices;
 
 	//for any value that doesn't fit into other values ( ENIVT_CODE ), maps the number of elements in the code
 	// to the indices of the same size

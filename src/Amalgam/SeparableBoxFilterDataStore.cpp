@@ -1103,7 +1103,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			if(value_found != end(column->stringIdValueToIndices))
 			{
 				double term = r_dist_eval.distEvaluator->ComputeDistanceTermContinuousExactMatch(query_feature_index, high_accuracy);
-				AccumulatePartialSums(*(value_found->second), query_feature_index, term);
+				AccumulatePartialSums(value_found->second->indicesWithValue, query_feature_index, term);
 			}
 		}
 

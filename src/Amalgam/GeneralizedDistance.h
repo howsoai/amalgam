@@ -7,6 +7,7 @@
 
 //system headers:
 #include <limits>
+#include <type_traits>
 #include <vector>
 
 //If defined, will use the Laplace LK metric (default).  Otherwise will use Gaussian.
@@ -1150,7 +1151,8 @@ public:
 	}
 
 	//for the feature index, computes and stores the distance terms as measured from value to each interned value
-	inline void ComputeAndStoreInternedNumberValuesAndDistanceTerms(size_t index, std::vector<double> *interned_values)
+	template<typename ValueType>
+	inline void ComputeAndStoreInternedDistanceTerms(size_t index, std::vector<ValueType> *interned_values)
 	{
 		bool compute_accurate = distEvaluator->NeedToPrecomputeAccurate();
 		bool compute_approximate = distEvaluator->NeedToPrecomputeApproximate();
@@ -1171,8 +1173,7 @@ public:
 
 		auto &feature_attribs = distEvaluator->featureAttribs[index];
 
-		double value = feature_data.targetValue.GetValueAsNumber();
-		if(FastIsNaN(value))
+		if(feature_data.targetValue.IsNull())
 		{
 			//first entry is unknown-unknown distance
 			feature_data.internedDistanceTerms[0] = feature_attribs.unknownToUnknownDistanceTerm;
@@ -1186,21 +1187,25 @@ public:
 			//first entry is known-unknown distance
 			feature_data.internedDistanceTerms[0] = feature_attribs.knownToUnknownDistanceTerm;
 
+			EvaluableNodeImmediateValueType immediate_type = ENIVT_NULL;
+			if constexpr(std::is_same<ValueType, double>::value)
+				immediate_type = ENIVT_NUMBER;
+			else if constexpr(std::is_same<ValueType, StringInternPool::StringID>::value)
+				immediate_type = ENIVT_STRING_ID;
+
 			for(size_t i = 1; i < feature_data.internedDistanceTerms.size(); i++)
 			{
-				double difference = value - (*interned_values)[i];
 				if(compute_accurate)
-					feature_data.internedDistanceTerms[i].SetValue(distEvaluator->ComputeDistanceTermContinuousNonNullRegular(difference, index, true), true);
+					feature_data.internedDistanceTerms[i].SetValue(distEvaluator->ComputeDistanceTermRegular(
+						feature_data.targetValue.nodeValue, (*interned_values)[i], immediate_type, immediate_type,
+						index, true), true);
+
 				if(compute_approximate)
-					feature_data.internedDistanceTerms[i].SetValue(distEvaluator->ComputeDistanceTermContinuousNonNullRegular(difference, index, false), false);
+					feature_data.internedDistanceTerms[i].SetValue(distEvaluator->ComputeDistanceTermRegular(
+						feature_data.targetValue.nodeValue, (*interned_values)[i], immediate_type, immediate_type,
+						index, false), false);
 			}
 		}
-	}
-
-	//for the feature index, computes and stores the distance terms as measured from value to each interned value
-	inline void ComputeAndStoreInternedStringIdValuesAndDistanceTerms(size_t index, std::vector<StringInternPool::StringID> *interned_values)
-	{
-		//TODO 20571: finish this
 	}
 
 	//returns the precomputed distance term for the interned value with intern_value_index

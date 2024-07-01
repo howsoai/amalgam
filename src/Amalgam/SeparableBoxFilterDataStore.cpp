@@ -1441,6 +1441,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 
 	feature_data.Clear();
 
+	//TODO 20571: handle interning, including numeric nominal
 	if(feature_attribs.IsFeatureNominal()
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
@@ -1461,7 +1462,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 		if(feature_attribs.IsFeatureNominal())
 			r_dist_eval.ComputeAndStoreNominalDistanceTerms(query_feature_index);
 	}
-	else // feature_type is some form of continuous numeric
+	else // feature_type is some form of continuous numeric or interned
 	{
 		//looking for continuous; if not a number, so just put as nan
 		double position_value_numeric = (position_value_type == ENIVT_NUMBER
@@ -1481,7 +1482,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 			else
 				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NUMERIC_INTERNED_PRECOMPUTED;
 
-			r_dist_eval.ComputeAndStoreInternedNumberValuesAndDistanceTerms(query_feature_index, &column_data->internedNumberValues.internedIndexToValue);
+			r_dist_eval.ComputeAndStoreInternedDistanceTerms(query_feature_index, &column_data->internedNumberValues.internedIndexToValue);
 		}
 		else if(column_data->internedStringIdValues.valueInterningEnabled)
 		{
@@ -1492,7 +1493,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 			else
 				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_STRING_INTERNED_PRECOMPUTED;
 
-			r_dist_eval.ComputeAndStoreInternedStringIdValuesAndDistanceTerms(query_feature_index, &column_data->internedStringIdValues.internedIndexToValue);
+			r_dist_eval.ComputeAndStoreInternedDistanceTerms(query_feature_index, &column_data->internedStringIdValues.internedIndexToValue);
 		}
 		else
 		{

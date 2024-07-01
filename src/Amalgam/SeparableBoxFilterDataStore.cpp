@@ -79,12 +79,13 @@ void SeparableBoxFilterDataStore::OptimizeColumn(size_t column_index)
 			GetValue(entity_index, column_index).indirectionIndex = SBFDSColumnData::ValueEntry::NULL_INDEX;
 	}
 
-	//TODO 20571: finish this and uncomment
-	/*if(column_data->internedStringIdValues.valueInterningEnabled)
+	//TODO 20571: uncomment and test
+	/*
+	if(column_data->internedStringIdValues.valueInterningEnabled)
 	{
 		if(column_data->AreStringIdValuesPreferredToInterns())
 		{
-			for(auto &value_entry : column_data->stringIdValueEntries)
+			for(auto &[sid, value_entry] : column_data->stringIdValueEntries)
 			{
 				auto value = value_entry->value.stringID;
 				for(auto entity_index : value_entry->indicesWithValue)
@@ -101,7 +102,7 @@ void SeparableBoxFilterDataStore::OptimizeColumn(size_t column_index)
 	{
 		column_data->ConvertStringIdValuesToInterns();
 
-		for(auto &value_entry : column_data->stringIdValueEntries)
+		for(auto &[sid, value_entry] : column_data->stringIdValueEntries)
 		{
 			size_t value_index = value_entry->valueInternIndex;
 			for(auto entity_index : value_entry->indicesWithValue)
@@ -1443,29 +1444,37 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 	feature_data.Clear();
 	feature_data.targetValue = EvaluableNodeImmediateValueWithType(position_value, position_value_type);
 
-	if(position_value_type == ENIVT_NUMBER && column_data->internedNumberValues.valueInterningEnabled)
+	//consider computing interned values if appropriate
+	//however, symmetric nominals are fast, so don't compute interned values for them
+	if(!feature_attribs.IsFeatureSymmetricNominal())
 	{
-		size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
+		if(position_value_type == ENIVT_NUMBER && column_data->internedNumberValues.valueInterningEnabled)
+		{
+			size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
 
-		if(GetNumInsertedEntities() == num_values_stored_as_numbers)
-			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_UNIVERSALLY_INTERNED_PRECOMPUTED;
-		else
-			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NUMERIC_INTERNED_PRECOMPUTED;
+			if(GetNumInsertedEntities() == num_values_stored_as_numbers)
+				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_UNIVERSALLY_INTERNED_PRECOMPUTED;
+			else
+				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NUMERIC_INTERNED_PRECOMPUTED;
 
-		r_dist_eval.ComputeAndStoreInternedDistanceTerms(query_feature_index, &column_data->internedNumberValues.internedIndexToValue);
+			r_dist_eval.ComputeAndStoreInternedDistanceTerms(query_feature_index, &column_data->internedNumberValues.internedIndexToValue);
+			return;
+		}
+		else if(position_value_type == ENIVT_STRING_ID && column_data->internedStringIdValues.valueInterningEnabled)
+		{
+			size_t num_values_stored_as_string_ids = column_data->stringIdIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
+
+			if(GetNumInsertedEntities() == num_values_stored_as_string_ids)
+				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_UNIVERSALLY_INTERNED_PRECOMPUTED;
+			else
+				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_STRING_INTERNED_PRECOMPUTED;
+
+			r_dist_eval.ComputeAndStoreInternedDistanceTerms(query_feature_index, &column_data->internedStringIdValues.internedIndexToValue);
+			return;
+		}
 	}
-	else if(position_value_type == ENIVT_STRING_ID && column_data->internedStringIdValues.valueInterningEnabled)
-	{
-		size_t num_values_stored_as_string_ids = column_data->stringIdIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
 
-		if(GetNumInsertedEntities() == num_values_stored_as_string_ids)
-			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_UNIVERSALLY_INTERNED_PRECOMPUTED;
-		else
-			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_STRING_INTERNED_PRECOMPUTED;
-
-		r_dist_eval.ComputeAndStoreInternedDistanceTerms(query_feature_index, &column_data->internedStringIdValues.internedIndexToValue);
-	}
-	else if(feature_attribs.IsFeatureNominal()
+	if(feature_attribs.IsFeatureNominal()
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
 	{

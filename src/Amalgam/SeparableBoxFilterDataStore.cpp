@@ -84,7 +84,7 @@ void SeparableBoxFilterDataStore::OptimizeColumn(size_t column_index)
 	{
 		if(column_data->AreStringIdValuesPreferredToInterns())
 		{
-			for(auto &value_entry : column_data->stringIdValueToIndices)
+			for(auto &value_entry : column_data->stringIdValueEntries)
 			{
 				auto value = value_entry->value.stringID;
 				for(auto entity_index : value_entry->indicesWithValue)
@@ -101,7 +101,7 @@ void SeparableBoxFilterDataStore::OptimizeColumn(size_t column_index)
 	{
 		column_data->ConvertStringIdValuesToInterns();
 
-		for(auto &value_entry : column_data->stringIdValueToIndices)
+		for(auto &value_entry : column_data->stringIdValueEntries)
 		{
 			size_t value_index = value_entry->valueInternIndex;
 			for(auto entity_index : value_entry->indicesWithValue)
@@ -1099,8 +1099,8 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	{
 		if(value.nodeType == ENIVT_STRING_ID)
 		{
-			auto value_found = column->stringIdValueToIndices.find(value.nodeValue.stringID);
-			if(value_found != end(column->stringIdValueToIndices))
+			auto value_found = column->stringIdValueEntries.find(value.nodeValue.stringID);
+			if(value_found != end(column->stringIdValueEntries))
 			{
 				double term = r_dist_eval.distEvaluator->ComputeDistanceTermContinuousExactMatch(query_feature_index, high_accuracy);
 				AccumulatePartialSums(value_found->second->indicesWithValue, query_feature_index, term);

@@ -81,7 +81,7 @@ public:
 			stringIdIndices.insert(index);
 
 			//try to insert the value if not already there, inserting an empty pointer
-			auto [id_entry, inserted] = stringIdValueToIndices.emplace(value.stringID, nullptr);
+			auto [id_entry, inserted] = stringIdValueEntries.emplace(value.stringID, nullptr);
 			if(inserted)
 				id_entry->second = std::make_unique<ValueEntry>(value.stringID);
 
@@ -307,10 +307,10 @@ public:
 					return old_value;
 
 				//try to insert the new value if not already there
-				auto [new_id_entry, inserted] = stringIdValueToIndices.emplace(new_value.stringID, nullptr);
+				auto [new_id_entry, inserted] = stringIdValueEntries.emplace(new_value.stringID, nullptr);
 
-				auto old_id_entry = stringIdValueToIndices.find(old_value.stringID);
-				if(old_id_entry != end(stringIdValueToIndices))
+				auto old_id_entry = stringIdValueEntries.find(old_value.stringID);
+				if(old_id_entry != end(stringIdValueEntries))
 				{
 					//if there are multiple entries for this string, just move the id
 					if(old_id_entry->second->indicesWithValue.size() > 1)
@@ -330,7 +330,7 @@ public:
 							new_id_entry->second->indicesWithValue.insert(index);
 
 						//erase after no longer need inserted_id_entry, as it may be invalidated
-						stringIdValueToIndices.erase(old_id_entry);
+						stringIdValueEntries.erase(old_id_entry);
 					}
 				}
 				else if(inserted) //shouldn't make it here, but ensure integrity just in case
@@ -466,15 +466,15 @@ public:
 
 			auto resolved_value = GetResolvedValue(value_type, value);
 
-			auto id_entry = stringIdValueToIndices.find(resolved_value.stringID);
-			if(id_entry != end(stringIdValueToIndices))
+			auto id_entry = stringIdValueEntries.find(resolved_value.stringID);
+			if(id_entry != end(stringIdValueEntries))
 			{
 				auto &entities = id_entry->second->indicesWithValue;
 				entities.erase(index);
 
 				//if no more entries have the value, remove it
 				if(entities.size() == 0)
-					stringIdValueToIndices.erase(id_entry);
+					stringIdValueEntries.erase(id_entry);
 			}
 
 			//see if need to compute new longest string
@@ -584,7 +584,7 @@ public:
 			auto string_id = GetResolvedValue(value_type, value).stringID;
 
 			//try to insert the value if not already there
-			auto [inserted_id_entry, inserted] = stringIdValueToIndices.emplace(string_id, nullptr);
+			auto [inserted_id_entry, inserted] = stringIdValueEntries.emplace(string_id, nullptr);
 			if(inserted)
 				inserted_id_entry->second = std::make_unique<ValueEntry>(string_id);
 
@@ -854,11 +854,11 @@ public:
 		}
 		else if(value_type == ENIVT_STRING_ID)
 		{
-			if(stringIdValueToIndices.size() == 0)
+			if(stringIdValueEntries.size() == 0)
 				return;
 
 			//check every string value to see if between
-			for(auto &[id, entry] : stringIdValueToIndices)
+			for(auto &[id, entry] : stringIdValueEntries)
 			{
 				//check where the string is in the order; empty strings for comparison always pass
 				bool value_less_than_low = true;
@@ -907,8 +907,8 @@ public:
 		}
 		else if(value_type == ENIVT_STRING_ID)
 		{
-			auto id_entry = stringIdValueToIndices.find(value.stringID);
-			if(id_entry != end(stringIdValueToIndices))
+			auto id_entry = stringIdValueEntries.find(value.stringID);
+			if(id_entry != end(stringIdValueEntries))
 				out.InsertInBatch(id_entry->second->indicesWithValue);
 		}
 	}
@@ -947,15 +947,15 @@ public:
 		}
 		else if(value_type == ENIVT_STRING_ID)
 		{
-			if(stringIdValueToIndices.size() == 0)
+			if(stringIdValueEntries.size() == 0)
 				return;
 
 			//else it's a string, need to do it the brute force way
 			std::vector<StringInternPool::StringID> all_sids;
-			all_sids.reserve(stringIdValueToIndices.size());
+			all_sids.reserve(stringIdValueEntries.size());
 
 			//get all strings
-			for(auto &[id, _] : stringIdValueToIndices)
+			for(auto &[id, _] : stringIdValueEntries)
 				all_sids.push_back(id);
 
 			std::sort(begin(all_sids), end(all_sids), StringIDNaturalCompareSort);
@@ -965,7 +965,7 @@ public:
 
 			while(value_index < static_cast<int64_t>(all_sids.size()) && value_index >= 0)
 			{
-				const auto &sid_entry = stringIdValueToIndices.find(all_sids[value_index]);
+				const auto &sid_entry = stringIdValueEntries.find(all_sids[value_index]);
 				for(auto index : sid_entry->second->indicesWithValue)
 				{
 					if(indices_to_consider != nullptr && !indices_to_consider->contains(index))
@@ -1010,7 +1010,7 @@ public:
 	{
 		//use heuristic of sqrt number of values compared to num unique values
 		// (but computed with a multiply instead of sqrt)
-		size_t num_unique_values = stringIdValueToIndices.size();
+		size_t num_unique_values = stringIdValueEntries.size();
 		return (num_unique_values * num_unique_values <= stringIdIndices.size());
 	}
 
@@ -1021,33 +1021,34 @@ public:
 		//use heuristic of sqrt number of values compared to num unique values
 		// (but computed with a multiply instead of sqrt)
 		//round up to reduce flipping back and forth
-		size_t num_unique_values = stringIdValueToIndices.size();
+		size_t num_unique_values = stringIdValueEntries.size();
 		return (num_unique_values * num_unique_values > stringIdIndices.size() - num_unique_values);
 	}
 
 	//clears number intern caches and changes state to not perform interning for numbers
-	void ConvertNumberInternsToValues()
+	inline void ConvertNumberInternsToValues()
 	{
 		internedNumberValues.ClearInterning();
 	}
 
 	//initializes and sets up number value interning caches and changes state to perform interning for numbers
-	void ConvertNumberValuesToInterns()
+	inline void ConvertNumberValuesToInterns()
 	{
-		internedNumberValues.ConvertValueCollectionToInterns(sortedNumberValueEntries);
+		internedNumberValues.ConvertValueCollectionToInterns(sortedNumberValueEntries,
+			[](auto &value_entry_iter) { return value_entry_iter.get(); });
 	}
 
 	//clears string intern caches and changes state to not perform interning for StringIds
-	void ConvertStringIdInternsToValues()
+	inline void ConvertStringIdInternsToValues()
 	{
 		internedStringIdValues.ClearInterning();
 	}
 
 	//initializes and sets up number value interning caches and changes state to perform interning for StringIds
-	void ConvertStringIdValuesToInterns()
+	inline void ConvertStringIdValuesToInterns()
 	{
-		//TODO 20571: finish this, may need to change stringIdValueToIndices to possibly use ValueEntry
-		//internedStringIdValues.ConvertValueCollectionToInterns(stringIdValueToIndices);
+		internedStringIdValues.ConvertValueCollectionToInterns(stringIdValueEntries,
+			[](auto &value_entry_iter) { return value_entry_iter.second.get(); });
 	}
 
 protected:
@@ -1070,7 +1071,7 @@ protected:
 		longestStringLength = 0;
 		//initialize to 0 in case there are no entities with strings
 		indexWithLongestString = 0;
-		for(auto &[s_id, s_entry] : stringIdValueToIndices)
+		for(auto &[s_id, s_entry] : stringIdValueEntries)
 			UpdateLongestString(s_id, s_entry->indicesWithValue.GetNthElement(0));
 	}
 
@@ -1103,7 +1104,7 @@ public:
 	std::vector<std::unique_ptr<ValueEntry>> sortedNumberValueEntries;
 
 	//maps a string id to a vector of indices that have that string
-	CompactHashMap<StringInternPool::StringID, std::unique_ptr<ValueEntry>> stringIdValueToIndices;
+	CompactHashMap<StringInternPool::StringID, std::unique_ptr<ValueEntry>> stringIdValueEntries;
 
 	//for any value that doesn't fit into other values ( ENIVT_CODE ), maps the number of elements in the code
 	// to the indices of the same size
@@ -1154,8 +1155,8 @@ public:
 		}
 
 		//converts the values in value_collection into interned values
-		template<typename ValueCollectionType>
-		inline void ConvertValueCollectionToInterns(ValueCollectionType &value_collection)
+		template<typename ValueEntryCollectionType, typename GetValueEntryFunction>
+		inline void ConvertValueCollectionToInterns(ValueEntryCollectionType &value_collection, GetValueEntryFunction get_value_entry)
 		{
 			if(valueInterningEnabled)
 				return;
@@ -1165,8 +1166,9 @@ public:
 			internedIndexToValue[0] = notAValue;
 
 			size_t intern_index = 1;
-			for(auto &value_entry : value_collection)
+			for(auto &value_entry_iter : value_collection)
 			{
+				ValueEntry *value_entry = get_value_entry(value_entry_iter);
 				value_entry->valueInternIndex = intern_index;
 				internedIndexToValue[intern_index] = value_entry->value;
 				intern_index++;

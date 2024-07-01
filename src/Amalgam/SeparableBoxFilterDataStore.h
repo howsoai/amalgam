@@ -664,8 +664,8 @@ protected:
 	inline double AccumulatePartialSumsForNominalStringIdValueIfExists(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		StringInternPool::StringID value, size_t query_feature_index, SBFDSColumnData &column, bool high_accuracy)
 	{
-		auto value_found = column.stringIdValueToIndices.find(value);
-		if(value_found != end(column.stringIdValueToIndices))
+		auto value_found = column.stringIdValueEntries.find(value);
+		if(value_found != end(column.stringIdValueEntries))
 		{
 			double term = r_dist_eval.ComputeDistanceTermNominal(value, ENIVT_STRING_ID, query_feature_index, high_accuracy);
 			AccumulatePartialSums(value_found->second->indicesWithValue, query_feature_index, term);

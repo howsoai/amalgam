@@ -303,49 +303,72 @@ public:
 
 			if(old_value_type == ENIVT_STRING_ID)
 			{
-				if(old_value.stringID == new_value.stringID)
+				StringInternPool::StringID old_sid_value = GetResolvedValue(old_value_type, old_value).stringID;
+				StringInternPool::StringID new_sid_value = GetResolvedValue(new_value_type, new_value).stringID;
+				if(old_sid_value == new_sid_value)
 					return old_value;
 
 				//try to insert the new value if not already there
-				auto [new_id_entry, inserted] = stringIdValueEntries.emplace(new_value.stringID, nullptr);
-
-				auto old_id_entry = stringIdValueEntries.find(old_value.stringID);
+				auto [new_id_entry, inserted] = stringIdValueEntries.emplace(new_sid_value, nullptr);
+				
+				size_t new_value_index = 0;
+				auto old_id_entry = stringIdValueEntries.find(old_sid_value);
 				if(old_id_entry != end(stringIdValueEntries))
 				{
 					//if there are multiple entries for this string, just move the id
 					if(old_id_entry->second->indicesWithValue.size() > 1)
 					{
-						if(inserted)
-							new_id_entry->second = std::make_unique<ValueEntry>(new_value.stringID);
-
-						new_id_entry->second->indicesWithValue.insert(index);
 						old_id_entry->second->indicesWithValue.erase(index);
+
+						//if it was inserted, then construct everything
+						if(inserted)
+						{
+							new_id_entry->second = std::make_unique<ValueEntry>(new_sid_value);
+							InsertFirstIndexIntoStringIdValueEntry(index, new_id_entry);
+						}
+						else
+						{
+							new_id_entry->second->indicesWithValue.insert(index);
+						}
+
+						new_value_index = new_id_entry->second->valueInternIndex;
 					}
 					else //it's the last old_id_entry
 					{
-						//put the SortedIntegerSet in the new value or move the container
+						//if newly inserted, then can just move the data structure
 						if(inserted)
+						{
 							new_id_entry->second = std::move(old_id_entry->second);
-						else
+							new_value_index = new_id_entry->second->valueInternIndex;
+							stringIdValueEntries.erase(old_id_entry);
+						}
+						else //need to clean up
+						{
 							new_id_entry->second->indicesWithValue.insert(index);
+							new_value_index = new_id_entry->second->valueInternIndex;
 
-						//erase after no longer need inserted_id_entry
-						DeleteStringIdValueEntry(old_id_entry);
+							//erase after no longer need inserted_id_entry
+							DeleteStringIdValueEntry(old_id_entry);
+						}
 					}
 				}
 				else if(inserted) //shouldn't make it here, but ensure integrity just in case
 				{
-					new_id_entry->second = std::make_unique<ValueEntry>(new_value.stringID);
-					new_id_entry->second->indicesWithValue.insert(index);
+					new_id_entry->second = std::make_unique<ValueEntry>(new_sid_value);
+					InsertFirstIndexIntoStringIdValueEntry(index, new_id_entry);
+					new_value_index = new_id_entry->second->valueInternIndex;
 				}
 
 				//update longest string as appropriate
 				if(index == indexWithLongestString)
 					RecomputeLongestString();
 				else
-					UpdateLongestString(new_value.stringID, index);
+					UpdateLongestString(new_sid_value, index);
 
-				return new_value;
+				if(internedStringIdValues.valueInterningEnabled)
+					return EvaluableNodeImmediateValue(new_value_index);
+				else
+					return EvaluableNodeImmediateValue(new_value);
 			}
 
 			if(old_value_type == ENIVT_CODE)
@@ -520,13 +543,24 @@ public:
 		}
 	}
 
-	//deletes a particular value based on the value_index
+	//inserts a particular value based on the value_index
 	void InsertFirstIndexIntoNumberValueEntry(size_t index, size_t value_index)
 	{
 		ValueEntry *value_entry = sortedNumberValueEntries[value_index].get();
 
 		value_entry->indicesWithValue.insert(index);
 		internedNumberValues.InsertValueEntry(value_entry, sortedNumberValueEntries.size());
+	}
+
+	//inserts a particular value based on the value_index
+	//templated to make it efficiently work regardless of the container
+	template<typename StringIdValueEntryIterator>
+	void InsertFirstIndexIntoStringIdValueEntry(size_t index, StringIdValueEntryIterator &value_iter)
+	{
+		ValueEntry *value_entry = value_iter->second.get();
+
+		value_entry->indicesWithValue.insert(index);
+		internedStringIdValues.InsertValueEntry(value_entry, stringIdValueEntries.size());
 	}
 
 	//inserts the value at id
@@ -549,7 +583,7 @@ public:
 		{
 			nullIndices.insert(index);
 
-			if(internedNumberValues.valueInterningEnabled)
+			if(internedNumberValues.valueInterningEnabled || internedStringIdValues.valueInterningEnabled)
 				return EvaluableNodeImmediateValue(ValueEntry::NULL_INDEX);
 			else
 				return value;
@@ -597,12 +631,11 @@ public:
 			if(inserted)
 				inserted_id_entry->second = std::make_unique<ValueEntry>(string_id);
 
-			auto &ids = inserted_id_entry->second->indicesWithValue;
-			ids.insert(index);
+			InsertFirstIndexIntoStringIdValueEntry(index, inserted_id_entry);
 
 			UpdateLongestString(string_id, index);
 
-			if(internedNumberValues.valueInterningEnabled)
+			if(internedStringIdValues.valueInterningEnabled)
 				return inserted_id_entry->second->valueInternIndex;
 			else
 				return value;
@@ -1021,6 +1054,8 @@ public:
 	// than StringId values given the current data
 	inline bool AreStringIdInternsPreferredToValues()
 	{
+		//TODO 20571: remove this when everything works
+		return true;
 		//use heuristic of sqrt number of values compared to num unique values
 		// (but computed with a multiply instead of sqrt)
 		size_t num_unique_values = stringIdValueEntries.size();
@@ -1031,6 +1066,8 @@ public:
 	// than interning given the current data
 	inline bool AreStringIdValuesPreferredToInterns()
 	{
+		//TODO 20571: remove this when everything works
+		return false;
 		//use heuristic of sqrt number of values compared to num unique values
 		// (but computed with a multiply instead of sqrt)
 		//round up to reduce flipping back and forth

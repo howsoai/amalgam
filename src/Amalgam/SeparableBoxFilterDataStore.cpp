@@ -1438,16 +1438,37 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 	auto &feature_type = feature_attribs.featureType;
 	auto &feature_data = r_dist_eval.featureData[query_feature_index];
 	auto &effective_feature_type = r_dist_eval.featureData[query_feature_index].effectiveFeatureType;
+	auto &column_data = columnData[feature_attribs.featureIndex];
 
 	feature_data.Clear();
+	feature_data.targetValue = EvaluableNodeImmediateValueWithType(position_value, position_value_type);
 
-	//TODO 20571: handle interning, including numeric nominal
-	if(feature_attribs.IsFeatureNominal()
+	if(position_value_type == ENIVT_NUMBER && column_data->internedNumberValues.valueInterningEnabled)
+	{
+		size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
+
+		if(GetNumInsertedEntities() == num_values_stored_as_numbers)
+			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_UNIVERSALLY_INTERNED_PRECOMPUTED;
+		else
+			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NUMERIC_INTERNED_PRECOMPUTED;
+
+		r_dist_eval.ComputeAndStoreInternedDistanceTerms(query_feature_index, &column_data->internedNumberValues.internedIndexToValue);
+	}
+	else if(position_value_type == ENIVT_STRING_ID && column_data->internedStringIdValues.valueInterningEnabled)
+	{
+		size_t num_values_stored_as_string_ids = column_data->stringIdIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
+
+		if(GetNumInsertedEntities() == num_values_stored_as_string_ids)
+			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_UNIVERSALLY_INTERNED_PRECOMPUTED;
+		else
+			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_STRING_INTERNED_PRECOMPUTED;
+
+		r_dist_eval.ComputeAndStoreInternedDistanceTerms(query_feature_index, &column_data->internedStringIdValues.internedIndexToValue);
+	}
+	else if(feature_attribs.IsFeatureNominal()
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
 	{
-		feature_data.targetValue = EvaluableNodeImmediateValueWithType(position_value, position_value_type);
-
 		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC)
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMERIC;
 		else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING)
@@ -1462,49 +1483,15 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 		if(feature_attribs.IsFeatureNominal())
 			r_dist_eval.ComputeAndStoreNominalDistanceTerms(query_feature_index);
 	}
-	else // feature_type is some form of continuous numeric or interned
+	else // feature_type is some form of continuous numeric
 	{
-		//looking for continuous; if not a number, so just put as nan
-		double position_value_numeric = (position_value_type == ENIVT_NUMBER
-			? position_value.number : std::numeric_limits<double>::quiet_NaN());
-
-		feature_data.targetValue = EvaluableNodeImmediateValueWithType(position_value_numeric);
-
-		//set up effective_feature_type
-		auto &column_data = columnData[feature_attribs.featureIndex];
-
-		if(column_data->internedNumberValues.valueInterningEnabled)
-		{
-			size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
-
-			if(GetNumInsertedEntities() == num_values_stored_as_numbers)
-				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_UNIVERSALLY_INTERNED_PRECOMPUTED;
-			else
-				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NUMERIC_INTERNED_PRECOMPUTED;
-
-			r_dist_eval.ComputeAndStoreInternedDistanceTerms(query_feature_index, &column_data->internedNumberValues.internedIndexToValue);
-		}
-		else if(column_data->internedStringIdValues.valueInterningEnabled)
-		{
-			size_t num_values_stored_as_string_ids = column_data->stringIdIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
-
-			if(GetNumInsertedEntities() == num_values_stored_as_string_ids)
-				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_UNIVERSALLY_INTERNED_PRECOMPUTED;
-			else
-				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_STRING_INTERNED_PRECOMPUTED;
-
-			r_dist_eval.ComputeAndStoreInternedDistanceTerms(query_feature_index, &column_data->internedStringIdValues.internedIndexToValue);
-		}
+		size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
+		if(GetNumInsertedEntities() == num_values_stored_as_numbers
+				&& feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC)
+			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC;
+		else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC)
+			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_CYCLIC;
 		else
-		{
-			size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
-			if(GetNumInsertedEntities() == num_values_stored_as_numbers
-					&& feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC)
-				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC;
-			else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC)
-				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_CYCLIC;
-			else
-				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC;
-		}
+			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC;
 	}
 }

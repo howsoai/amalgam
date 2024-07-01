@@ -460,16 +460,18 @@ public:
 	template<typename Iter>
 	inline std::function<bool(Iter, StringInternPool::StringID &)> GetStringIdValueFromEntityIteratorFunction(size_t column_index)
 	{
-		auto string_indices_ptr = &columnData[column_index]->stringIdIndices;
+		auto column_data = columnData[column_index].get();
+		auto string_indices_ptr = &column_data->stringIdIndices;
+		auto value_type = column_data->GetUnresolvedValueType(ENIVT_STRING_ID);
 
-		return [&, string_indices_ptr, column_index]
+		return [&, string_indices_ptr, column_index, column_data, value_type]
 		(Iter i, StringInternPool::StringID &value)
 		{
 			size_t entity_index = *i;
 			if(!string_indices_ptr->contains(entity_index))
 				return false;
 
-			value = GetValue(entity_index, column_index).stringID;
+			value = column_data->GetResolvedValue(value_type, GetValue(entity_index, column_index)).stringID;
 			return true;
 		};
 	}

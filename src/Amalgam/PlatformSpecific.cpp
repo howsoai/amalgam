@@ -7,11 +7,23 @@
 #include <algorithm>
 #include <array>
 #include <cctype>
+#include <cfenv>
 #include <codecvt>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+
+//perform universal initialization
+class PlatformSpecificStartup
+{
+public:
+    PlatformSpecificStartup()
+    {
+	    std::feclearexcept(FE_ALL_EXCEPT);
+    }
+};
+PlatformSpecificStartup _platform_specific_startup;
 
 #ifdef OS_WINDOWS
 

@@ -32,6 +32,34 @@ else()
     message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 endif()
 
+# Since -fno-exceptions is a global compiler flag for GNU/Clang,
+# we need to disable -Werror on certain 3rd party libraries.
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
+    # List of files that need -Werror disabled
+    set(NO_WERROR_FILES
+        src/3rd_party/date/tz.cpp
+    )
+
+    # List of directories that need -Werror disabled
+    set(NO_WERROR_DIRECTORIES
+        src/3rd_party/skarupke_maps
+    )
+
+    # Remove -Werror from these specific files
+    foreach(file IN LISTS NO_WERROR_FILES)
+        set_source_files_properties(${file} PROPERTIES COMPILE_FLAGS -Wno-error)
+    endforeach()
+
+    # Remove -Werror from all files in the specified directories
+    foreach(directory IN LISTS NO_WERROR_DIRECTORIES)
+        file(GLOB_RECURSE NO_WERROR_DIR_FILES "${directory}/*.cpp" "${directory}/*.hpp")
+        foreach(file IN LISTS NO_WERROR_DIR_FILES)
+            message("Applying -Wno-error to ${file}")
+            set_source_files_properties(${file} PROPERTIES COMPILE_FLAGS -Wno-error)
+        endforeach()
+    endforeach()
+endif()
+
 # Print useful info from global settings/flags/env
 message(STATUS "Amalgam version (orig)       : '${AMALGAM_VERSION_ORIG}'")
 message(STATUS "Amalgam version (clean)      : '${AMALGAM_VERSION}'")
@@ -298,7 +326,6 @@ if(IS_LINUX AND IS_AMD64)
     add_compiled_target(AUTO_NAME TYPE "sharedlib" USE_ADVANCED_ARCH_INTRINSICS USE_PGC NO_INSTALL
         SOURCE ${AMALGAM_LIB_ONLY_SOURCE} ${COMMON_SOURCE} IDE_FOLDER "OtherBuildTargets")
 endif()
-
 
 #
 # Additional artifacts/test/etc

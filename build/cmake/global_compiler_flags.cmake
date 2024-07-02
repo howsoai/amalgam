@@ -59,7 +59,7 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" S
         endif()
     endif()
 
-    string(APPEND CMAKE_CXX_FLAGS " -fPIC -fno-strict-aliasing -Wall -Wno-unknown-pragmas -Werror")
+    string(APPEND CMAKE_CXX_FLAGS " -fPIC -fno-strict-aliasing -fno-exceptions -Wall -Wno-unknown-pragmas -Werror")
     # TODO 1599: Additional warnings that are fairly strict, not enabled right now
     #string(APPEND CMAKE_CXX_FLAGS " -Wpedantic -Wextra -Wabi")
 
@@ -70,9 +70,6 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" S
         if(IS_ARM64_8A)
             add_compile_definitions(NO_REENTRANCY_LOCKS)
         endif()
-    else()
-        # Only set -fno-exceptions if not on arm64_8a
-        string(APPEND CMAKE_CXX_FLAGS " -fno-exceptions")
     endif()
 
     # TODO 1599: WASM support is experimental, these flags will be cleaned up and auto-generated where possible
@@ -88,7 +85,7 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")
         message(WARNING "AppleClang version '${CMAKE_CXX_COMPILER_VERSION}' < 14, usage is not officially supported")
     endif()
 
-    string(APPEND CMAKE_CXX_FLAGS " -fPIC -fno-strict-aliasing -fno-exceptions -Wall -Wno-unknown-pragmas -Werror")
+    string(APPEND CMAKE_CXX_FLAGS " -fPIC -fno-strict-aliasing -Wall -fno-exceptions -Wno-unknown-pragmas -Werror")
     # TODO 1599: Additional warnings that are fairly strict, not enabled right now
     #string(APPEND CMAKE_CXX_FLAGS " -Wpedantic -Wextra -Wabi")
 

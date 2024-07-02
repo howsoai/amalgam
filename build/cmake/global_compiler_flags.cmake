@@ -59,7 +59,7 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" S
         endif()
     endif()
 
-    string(APPEND CMAKE_CXX_FLAGS " -fPIC -fno-strict-aliasing -Wall -Wno-unknown-pragmas -Werror")
+    string(APPEND CMAKE_CXX_FLAGS " -fPIC -fno-strict-aliasing -fno-exceptions -Wall -Wno-unknown-pragmas -Werror")
     # TODO 1599: Additional warnings that are fairly strict, not enabled right now
     #string(APPEND CMAKE_CXX_FLAGS " -Wpedantic -Wextra -Wabi")
 

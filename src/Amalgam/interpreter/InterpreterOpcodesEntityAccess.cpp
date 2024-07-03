@@ -45,54 +45,44 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 
 	bool return_query_value = (en->GetType() == ENT_COMPUTE_ON_CONTAINED_ENTITIES);
 
-	EntityReadReference source_entity;
-
 	//parameters to search entities for
-	EvaluableNode *query_params = nullptr;
+	EvaluableNode *query_params_uninterpreted = nullptr;
+	EvaluableNode *entity_id_path_uninterpreted = nullptr;
 
 	auto &ocn = en->GetOrderedChildNodes();
 	if(ocn.size() > 0)
 	{
-		EvaluableNodeReference first_param = InterpretNodeForImmediateUse(ocn[0]);
-
-		if(first_param != nullptr)
+		EvaluableNode *first_param = ocn[0];
+		if(!EvaluableNode::IsNull(first_param))
 		{
 			if(first_param->GetType() == ENT_LIST && first_param->GetOrderedChildNodes().size() > 0
 				&& EvaluableNode::IsQuery(first_param->GetOrderedChildNodes()[0]))
 			{
-				query_params = first_param;
+				query_params_uninterpreted = first_param;
 			}
 			else //first parameter is the id
 			{
-				source_entity = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReadReference>(curEntity, first_param);
-				evaluableNodeManager->FreeNodeTreeIfPossible(first_param);
-
-				if(source_entity == nullptr)
-					return EvaluableNodeReference::Null();
-
+				entity_id_path_uninterpreted = first_param;
 				if(ocn.size() > 1)
-					query_params = InterpretNodeForImmediateUse(ocn[1]);
+					query_params_uninterpreted = ocn[1];
 			}
 		}
 		else if(ocn.size() > 1) //got a nullptr, which means keep source_entity as curEntity
 		{
-			query_params = InterpretNodeForImmediateUse(ocn[1]);
+			query_params_uninterpreted = ocn[1];
 		}
 	}
 
-	//if haven't determined source_entity, use current
-	if(source_entity == nullptr)
-	{
-		//if no entity, can't do anything
-		if(curEntity == nullptr)
-			return EvaluableNodeReference::Null();
-
-		source_entity = EntityReadReference(curEntity);
-	}
+	EvaluableNodeReference query_params = InterpretNodeForImmediateUse(query_params_uninterpreted);
+	auto node_stack = CreateInterpreterNodeStackStateSaver(query_params);
 
 	//if no query, just return all contained entities
-	if(query_params == nullptr || query_params->GetOrderedChildNodes().size() == 0)
+	if(EvaluableNode::IsNull(query_params) || query_params->GetOrderedChildNodes().size() == 0)
 	{
+		EntityReadReference source_entity = InterpretNodeIntoRelativeSourceEntityReadReference(entity_id_path_uninterpreted);
+		if(source_entity == nullptr)
+			return EvaluableNodeReference::Null();
+
 		auto &contained_entities = source_entity->GetContainedEntities();
 
 		//new list containing the contained entity ids to return
@@ -141,6 +131,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 
 	//if not a valid query, return nullptr
 	if(conditionsBuffer.size() == 0)
+		return EvaluableNodeReference::Null();
+
+	EntityReadReference source_entity = InterpretNodeIntoRelativeSourceEntityReadReference(entity_id_path_uninterpreted);
+	if(source_entity == nullptr)
 		return EvaluableNodeReference::Null();
 
 	//perform query

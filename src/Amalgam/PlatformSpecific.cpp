@@ -20,7 +20,10 @@ class PlatformSpecificStartup
 public:
     PlatformSpecificStartup()
     {
+		//clear some exceptions
 	    std::feclearexcept(FE_ALL_EXCEPT);
+		//disable trapping
+		fedisableexcept(FE_ALL_EXCEPT);
     }
 };
 PlatformSpecificStartup _platform_specific_startup;

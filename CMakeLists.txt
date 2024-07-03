@@ -16,6 +16,22 @@ include(global_settings)
 include(version)
 include(global_compiler_flags)
 
+# Enforce correct CMAKE_BUILD_TYPE value
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build (Debug or Release)" FORCE)
+endif()
+
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    message(STATUS "Release build: ${CMAKE_CXX_FLAGS_RELEASE}")
+    if(CMAKE_CXX_FLAGS_RELEASE MATCHES "-g")
+        message(FATAL_ERROR "Release build should not include debug symbols (-g)")
+    endif()
+elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    message(STATUS "Debug build: ${CMAKE_CXX_FLAGS_DEBUG}")
+else()
+    message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+endif()
+
 # Print useful info from global settings/flags/env
 message(STATUS "Amalgam version (orig)       : '${AMALGAM_VERSION_ORIG}'")
 message(STATUS "Amalgam version (clean)      : '${AMALGAM_VERSION}'")

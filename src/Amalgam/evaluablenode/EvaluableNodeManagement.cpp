@@ -10,7 +10,6 @@
 
 #ifdef MULTITHREAD_SUPPORT
 Concurrency::ReadWriteMutex EvaluableNodeManager::memoryModificationMutex;
-thread_local std::vector<std::future<void>> EvaluableNodeManager::nodesCompleted;
 #endif
 
 const double EvaluableNodeManager::allocExpansionFactor = 1.5;
@@ -336,7 +335,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 		std::atomic<bool> all_nodes_finished = false;
 
 		//free nodes in a separate thread
-		auto completed_node_cleanup = Concurrency::urgentThreadPool.EnqueueTask(
+		auto completed_node_cleanup = Concurrency::urgentThreadPool.EnqueueTaskWithResult(
 			[this, &lowest_known_unused_index, &highest_possibly_unfreed_node, &all_nodes_finished]
 			{
 				while(true)
@@ -814,19 +813,21 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 	//heuristic to ensure there's enough to do to warrant the overhead of using multiple threads
 	if(Concurrency::GetMaxNumThreads() > 1 && reference_count > 0 && (estimated_nodes_in_use / (reference_count + 1)) >= 1000)
 	{
-		nodesCompleted.clear();
+		ThreadPool::CountableTaskSet task_set;
 
 		//start processing root node first, as there's a good chance it will be the largest
 		if(root_node != nullptr && !root_node->GetKnownToBeInUseAtomic())
 		{
 			//don't enqueue in batch, as threads racing ahead of others will reduce memory
 			//contention
-			nodesCompleted.emplace_back(
-				Concurrency::urgentThreadPool.EnqueueTask(
-					[root_node]
-					{	MarkAllReferencedNodesInUseRecurseConcurrent(root_node);	}
-				)
+			Concurrency::urgentThreadPool.EnqueueTask(
+				[root_node, &task_set]
+				{
+					MarkAllReferencedNodesInUseRecurseConcurrent(root_node);
+					task_set.MarkTaskCompleted();
+				}
 			);
+			task_set.AddTask();
 		}
 
 		for(auto &[enr, _] : nr.nodesReferenced)
@@ -838,18 +839,21 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 			{
 				//don't enqueue in batch, as threads racing ahead of others will reduce memory
 				//contention
-				nodesCompleted.emplace_back(
-					Concurrency::urgentThreadPool.EnqueueTask(
-						[en]
-						{	MarkAllReferencedNodesInUseRecurseConcurrent(en);	}
-					)
+				Concurrency::urgentThreadPool.EnqueueTask(
+					[en, &task_set]
+					{
+						MarkAllReferencedNodesInUseRecurseConcurrent(en);
+						task_set.MarkTaskCompleted();
+					}
 				);
+				task_set.AddTask();
 			}
 		}
 
 		Concurrency::urgentThreadPool.ChangeCurrentThreadStateFromActiveToWaiting();
-		for(auto &future : nodesCompleted)
-			future.wait();
+
+		task_set.WaitForTasks();
+
 		Concurrency::urgentThreadPool.ChangeCurrentThreadStateFromWaitingToActive();
 
 		return;

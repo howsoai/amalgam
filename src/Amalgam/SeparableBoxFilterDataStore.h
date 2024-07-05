@@ -146,7 +146,7 @@ public:
 			for(size_t i = num_previous_columns; i < num_columns; i++)
 			{
 				columns_completed.emplace_back(
-					Concurrency::urgentThreadPool.BatchEnqueueTask([this, &entities, i]() { BuildLabel(i, entities); })
+					Concurrency::urgentThreadPool.BatchEnqueueTaskWithResult([this, &entities, i]() { BuildLabel(i, entities); })
 				);
 			}
 			enqueue_task_lock.Unlock();

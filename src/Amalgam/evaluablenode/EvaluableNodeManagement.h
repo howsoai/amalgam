@@ -920,9 +920,6 @@ public:
 
 protected:
 
-	//used to buffer multithreaded garbage collection tasks
-	thread_local static std::vector<std::future<void>> nodesCompleted;
-
 #else
 	size_t firstUnusedNodeIndex;
 #endif

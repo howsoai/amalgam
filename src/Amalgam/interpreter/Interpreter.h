@@ -530,7 +530,7 @@ protected:
 			Interpreter *interpreter = interpreters[resultFutures.size()].get();
 
 			resultFutures.emplace_back(
-				Concurrency::threadPool.BatchEnqueueTask(
+				Concurrency::threadPool.BatchEnqueueTaskWithResult(
 					[this, interpreter, node_to_execute, target_origin, target, current_index, current_value, previous_result]
 					{
 						EvaluableNodeManager *enm = interpreter->evaluableNodeManager;

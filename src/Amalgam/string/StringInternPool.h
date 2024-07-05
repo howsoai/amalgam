@@ -388,7 +388,7 @@ protected:
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		//perform an atomic increment so that it can be done under a read lock
 		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-		return reinterpret_cast<std::atomic<int64_t>&>(idToStringAndRefCount[id].second).fetch_add(1);
+		return reinterpret_cast<std::atomic<int64_t>&>(idToStringAndRefCount[id].second).fetch_add(1, std::memory_order_relaxed);
 	#else
 		return idToStringAndRefCount[id].second++;
 	#endif
@@ -400,7 +400,7 @@ protected:
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		//perform an atomic increment so that it can be done under a read lock
 		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-		reinterpret_cast<std::atomic<int64_t>&>(idToStringAndRefCount[id].second).fetch_add(advancement);
+		reinterpret_cast<std::atomic<int64_t>&>(idToStringAndRefCount[id].second).fetch_add(advancement, std::memory_order_relaxed);
 	#else
 		idToStringAndRefCount[id].second += advancement;
 	#endif
@@ -412,7 +412,7 @@ protected:
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		//perform an atomic decrement so that it can be done under a read lock
 		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-		return reinterpret_cast<std::atomic<int64_t>&>(idToStringAndRefCount[id].second).fetch_sub(1);
+		return reinterpret_cast<std::atomic<int64_t>&>(idToStringAndRefCount[id].second).fetch_sub(1, std::memory_order_relaxed);
 	#else
 		return idToStringAndRefCount[id].second--;
 	#endif

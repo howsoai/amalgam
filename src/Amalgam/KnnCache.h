@@ -47,23 +47,22 @@ public:
 			auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
 			if(enqueue_task_lock.AreThreadsAvailable())
 			{
-				std::vector<std::future<void>> indices_completed;
-				indices_completed.reserve(relevantIndices->size());
+				ThreadPool::CountableTaskSet task_set(relevantIndices->size());
 			
 				for(auto index : *relevantIndices)
 				{
 					//fill in cache entry if it is not sufficient
 					if(top_k > cachedNeighbors[index].size())
 					{
-						indices_completed.emplace_back(
-							Concurrency::threadPool.BatchEnqueueTaskWithResult(
-								[this, index, top_k]
-								{
-									// could have knn cache constructor take in dist params and just get top_k from there, so don't need to pass it in everywhere
-									sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator, *positionLabelIds, index,
-										top_k, radiusLabelId, *relevantIndices, true, cachedNeighbors[index]);
-								}
-							)
+						
+						Concurrency::threadPool.BatchEnqueueTask(
+							[this, index, top_k, &task_set]
+							{
+								// could have knn cache constructor take in dist params and just get top_k from there, so don't need to pass it in everywhere
+								sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator, *positionLabelIds, index,
+									top_k, radiusLabelId, *relevantIndices, true, cachedNeighbors[index]);
+								task_set.MarkTaskCompleted();
+							}
 						);
 					}
 				}
@@ -71,8 +70,7 @@ public:
 				enqueue_task_lock.Unlock();
 
 				Concurrency::threadPool.ChangeCurrentThreadStateFromActiveToWaiting();
-				for(auto &future : indices_completed)
-					future.wait();
+				task_set.WaitForTasks();
 				Concurrency::threadPool.ChangeCurrentThreadStateFromWaitingToActive();
 
 				return;

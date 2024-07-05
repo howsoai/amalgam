@@ -299,8 +299,8 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 	//remove the label if no longer relevant
 	if(IsColumnIndexRemovable(column_index))
 		RemoveColumnIndex(column_index);
-
-	OptimizeColumn(column_index);
+	else
+		OptimizeColumn(column_index);
 }
 
 //populates distances_out with all entities and their distances that have a distance to target less than max_dist

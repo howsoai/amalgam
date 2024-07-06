@@ -893,10 +893,52 @@ void SeparableBoxFilterDataStore::ValidateAllEntitiesForColumn(size_t column_ind
 
 	for(auto &value_entry : column_data->sortedNumberValueEntries)
 	{
-		for(auto entity_index : value_entry->indicesWithValue)
+		//ensure all interned values are valid
+		if(column_data->internedNumberValues.valueInterningEnabled)
 		{
-			if(entity_index >= numEntities)
-				assert(false);
+			auto &interns = column_data->internedNumberValues;
+			assert(value_entry->valueInternIndex < interns.internedIndexToValue.size());
+			assert(!FastIsNaN(interns.internedIndexToValue[value_entry->valueInternIndex]));
+		}
+
+		//ensure all entity ids are not out of range
+		for(auto entity_index : value_entry->indicesWithValue)
+			assert(entity_index < numEntities);
+	}
+
+	//ensure all numbers are valid
+	for(auto entity_index : column_data->numberIndices)
+	{
+		auto &feature_value = GetValue(entity_index, column_index);
+		auto feature_type = column_data->GetIndexValueType(entity_index);
+		assert(feature_type == ENIVT_NUMBER || feature_type == ENIVT_NUMBER_INDIRECTION_INDEX);
+		if(feature_type == ENIVT_NUMBER_INDIRECTION_INDEX && feature_value.indirectionIndex != 0)
+		{
+			auto feature_value_resolved = column_data->GetResolvedValue(feature_type, feature_value);
+			assert(!FastIsNaN(feature_value_resolved.number));
+		}
+	}
+
+	for(auto &[sid, value_entry] : column_data->stringIdValueEntries)
+	{
+		//ensure all interned values are valid
+		if(column_data->internedStringIdValues.valueInterningEnabled)
+		{
+			auto &interns = column_data->internedStringIdValues;
+			assert(value_entry->valueInternIndex < interns.internedIndexToValue.size());
+		}
+	}
+
+	//ensure all string ids are valid
+	for(auto entity_index : column_data->stringIdIndices)
+	{
+		auto &feature_value = GetValue(entity_index, column_index);
+		auto feature_type = column_data->GetIndexValueType(entity_index);
+		assert(feature_type == ENIVT_STRING_ID || feature_type == ENIVT_STRING_ID_INDIRECTION_INDEX);
+		if(feature_type == ENIVT_STRING_ID_INDIRECTION_INDEX && feature_value.indirectionIndex != 0)
+		{
+			auto feature_value_resolved = column_data->GetResolvedValue(feature_type, feature_value);
+			assert(feature_value_resolved.stringID != string_intern_pool.EMPTY_STRING_ID);
 		}
 	}
 }

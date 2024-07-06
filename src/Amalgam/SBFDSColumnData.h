@@ -238,56 +238,64 @@ public:
 				//if the value already exists, then put the index in the list
 				//but return the lower bound if not found so don't have to search a second time
 				//need to search the old value before inserting, as FindExactIndexForValue is fragile a placeholder empty entry
-				auto [new_value_index, new_exact_index_found] = FindExactIndexForValue(new_number_value, true);
-				auto [old_value_index, old_exact_index_found] = FindExactIndexForValue(old_number_value, true);
+				auto [new_value_entry_index, new_value_entry_index_found] = FindExactIndexForValue(new_number_value, true);
+				auto [old_value_entry_index, old_value_entry_index_found] = FindExactIndexForValue(old_number_value, true);
 
-				if(old_exact_index_found)
+				size_t new_value_index = 0;
+				if(old_value_entry_index_found)
 				{
 					//if there are multiple entries for this number, just move the id
-					if(sortedNumberValueEntries[old_value_index]->indicesWithValue.size() > 1)
+					if(sortedNumberValueEntries[old_value_entry_index]->indicesWithValue.size() > 1)
 					{
-						//erase with old_value_index first so don't need to update index
-						sortedNumberValueEntries[old_value_index]->indicesWithValue.erase(index);
+						//erase with old_value_entry_index first so don't need to update index
+						sortedNumberValueEntries[old_value_entry_index]->indicesWithValue.erase(index);
 
-						if(!new_exact_index_found)
+						if(!new_value_entry_index_found)
 						{
-							sortedNumberValueEntries.emplace(sortedNumberValueEntries.begin() + new_value_index, std::make_unique<ValueEntry>(new_number_value));
-							InsertFirstIndexIntoNumberValueEntry(index, new_value_index);
+							sortedNumberValueEntries.emplace(sortedNumberValueEntries.begin() + new_value_entry_index, std::make_unique<ValueEntry>(new_number_value));
+							InsertFirstIndexIntoNumberValueEntry(index, new_value_entry_index);
 						}
 						else //just insert
 						{
-							sortedNumberValueEntries[new_value_index]->indicesWithValue.insert(index);
+							sortedNumberValueEntries[new_value_entry_index]->indicesWithValue.insert(index);
 						}
+
+						new_value_index = sortedNumberValueEntries[new_value_entry_index]->valueInternIndex;
 					}
 					else //it's the last old_number_entry
 					{
-						if(!new_exact_index_found)
+						if(!new_value_entry_index_found)
 						{
 							//remove old value and update to new
-							std::unique_ptr<ValueEntry> new_value_entry = std::move(sortedNumberValueEntries[old_value_index]);
+							std::unique_ptr<ValueEntry> new_value_entry = std::move(sortedNumberValueEntries[old_value_entry_index]);
 							new_value_entry->value.number = new_number_value;
 
 							//move the other values out of the way
 							if(old_number_value < new_number_value)
 							{
-								for(size_t i = old_value_index; i + 1 < new_value_index; i++)
+								for(size_t i = old_value_entry_index; i + 1 < new_value_entry_index; i++)
 									sortedNumberValueEntries[i] = std::move(sortedNumberValueEntries[i + 1]);
 
-								new_value_index--;
+								new_value_entry_index--;
 							}
 							else
 							{
-								for(size_t i = old_value_index; i > new_value_index; i--)
+								for(size_t i = old_value_entry_index; i > new_value_entry_index; i--)
 									sortedNumberValueEntries[i] = std::move(sortedNumberValueEntries[i - 1]);
 							}
 
 							//move new value in to empty slot created
-							sortedNumberValueEntries[new_value_index] = std::move(new_value_entry);
+							sortedNumberValueEntries[new_value_entry_index] = std::move(new_value_entry);
+							internedNumberValues.UpdateInternIndexValue(sortedNumberValueEntries[new_value_entry_index].get());
+							new_value_index = sortedNumberValueEntries[new_value_entry_index]->valueInternIndex;
 						}
 						else //already has an entry for the new value, just delete as normal
 						{
-							sortedNumberValueEntries[new_value_index]->indicesWithValue.insert(index);
-							DeleteNumberValueEntry(old_value_index);
+							sortedNumberValueEntries[new_value_entry_index]->indicesWithValue.insert(index);
+							new_value_index = sortedNumberValueEntries[new_value_entry_index]->valueInternIndex;
+
+							internedNumberValues.DeleteInternIndex(sortedNumberValueEntries[old_value_entry_index]->valueInternIndex);
+							sortedNumberValueEntries.erase(sortedNumberValueEntries.begin() + old_value_entry_index);
 						}
 					}
 				}
@@ -295,10 +303,10 @@ public:
 				{
 					assert(false);
 					//insert new value in correct position
-					sortedNumberValueEntries.emplace(sortedNumberValueEntries.begin() + new_value_index,
+					sortedNumberValueEntries.emplace(sortedNumberValueEntries.begin() + new_value_entry_index,
 						std::make_unique<ValueEntry>(new_number_value));
 
-					InsertFirstIndexIntoNumberValueEntry(index, new_value_index);
+					InsertFirstIndexIntoNumberValueEntry(index, new_value_entry_index);
 				}
 
 				if(internedNumberValues.valueInterningEnabled)
@@ -345,7 +353,9 @@ public:
 						if(inserted)
 						{
 							new_id_entry->second = std::move(old_id_entry->second);
+							internedStringIdValues.UpdateInternIndexValue(new_id_entry->second.get());
 							new_value_index = new_id_entry->second->valueInternIndex;
+							//perform erase at the end since the iterator may no longer be viable after
 							stringIdValueEntries.erase(old_id_entry);
 						}
 						else //need to clean up
@@ -354,7 +364,8 @@ public:
 							new_value_index = new_id_entry->second->valueInternIndex;
 
 							//erase after no longer need inserted_id_entry
-							DeleteStringIdValueEntry(old_id_entry);
+							internedStringIdValues.DeleteInternIndex(old_id_entry->second->valueInternIndex);
+							stringIdValueEntries.erase(old_id_entry);
 						}
 					}
 				}
@@ -449,22 +460,6 @@ public:
 		return InsertIndexValue(new_value_type_resolved, new_value_resolved, index);
 	}
 
-	//deletes a particular value based on the value_index
-	void DeleteNumberValueEntry(size_t value_index)
-	{
-		internedNumberValues.DeleteInternIndex(sortedNumberValueEntries[value_index]->valueInternIndex);
-		sortedNumberValueEntries.erase(sortedNumberValueEntries.begin() + value_index);
-	}
-
-	//deletes a particular value based on the value_index
-	//templated to make it efficiently work regardless of the container
-	template<typename StringIdValueEntryIterator>
-	void DeleteStringIdValueEntry(StringIdValueEntryIterator &iter)
-	{
-		internedStringIdValues.DeleteInternIndex(iter->second->valueInternIndex);
-		stringIdValueEntries.erase(iter);
-	}
-
 	//deletes everything involving the value at the index
 	void DeleteIndexValue(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value, size_t index)
 	{
@@ -492,9 +487,14 @@ public:
 
 			//if the bucket has only one entry, we must delete the entire bucket
 			if(sortedNumberValueEntries[value_index]->indicesWithValue.size() == 1)
-				DeleteNumberValueEntry(value_index);
+			{
+				internedNumberValues.DeleteInternIndex(sortedNumberValueEntries[value_index]->valueInternIndex);
+				sortedNumberValueEntries.erase(sortedNumberValueEntries.begin() + value_index);
+			}
 			else //else we can just remove the id from the bucket
+			{
 				sortedNumberValueEntries[value_index]->indicesWithValue.erase(index);
+			}
 
 			break;
 		}
@@ -515,7 +515,10 @@ public:
 
 			//if no more entries have the value, remove it
 			if(entities.size() == 0)
-				DeleteStringIdValueEntry(id_entry);
+			{
+				internedStringIdValues.DeleteInternIndex(id_entry->second->valueInternIndex);
+				stringIdValueEntries.erase(id_entry);
+			}
 
 			//see if need to compute new longest string
 			if(index == indexWithLongestString)
@@ -1273,6 +1276,16 @@ public:
 
 			if(value_entry->valueInternIndex >= internedIndexToValue.size())
 				internedIndexToValue.resize(value_entry->valueInternIndex + 1, notAValue);
+
+			internedIndexToValue[value_entry->valueInternIndex] = value_entry->value;
+		}
+
+		//if interning is enabled, updates internedIndexToValue with the appropriate
+		//new value for value_entry
+		inline void UpdateInternIndexValue(ValueEntry *value_entry)
+		{
+			if(!valueInterningEnabled)
+				return;
 
 			internedIndexToValue[value_entry->valueInternIndex] = value_entry->value;
 		}

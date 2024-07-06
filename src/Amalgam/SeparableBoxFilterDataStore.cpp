@@ -41,10 +41,13 @@ void SeparableBoxFilterDataStore::BuildLabel(size_t column_index, const std::vec
 	column_data->AppendSortedNumberIndicesWithSortedIndices(entities_with_number_values);
 
 	OptimizeColumn(column_index);
+
+	ValidateAllEntitiesForColumn(column_index);
 }
 
 void SeparableBoxFilterDataStore::OptimizeColumn(size_t column_index)
 {
+	ValidateAllEntitiesForColumn(column_index);
 	auto &column_data = columnData[column_index];
 
 	if(column_data->internedNumberValues.valueInterningEnabled)
@@ -110,10 +113,15 @@ void SeparableBoxFilterDataStore::OptimizeColumn(size_t column_index)
 		for(auto entity_index : column_data->nullIndices)
 			GetValue(entity_index, column_index).indirectionIndex = SBFDSColumnData::ValueEntry::NULL_INDEX;
 	}
+
+	ValidateAllEntitiesForColumn(column_index);
 }
 
 void SeparableBoxFilterDataStore::RemoveColumnIndex(size_t column_index_to_remove)
 {
+	for(size_t i = 0; i < columnData.size(); i++)
+		ValidateAllEntitiesForColumn(i);
+
 	//will replace the values at index_to_remove with the values at index_to_move
 	size_t column_index_to_move = columnData.size() - 1;
 
@@ -151,10 +159,16 @@ void SeparableBoxFilterDataStore::RemoveColumnIndex(size_t column_index_to_remov
 	matrix.resize(columnData.size() * numEntities);
 	for(size_t i = 0; i < numEntities; i++)
 		memcpy((char *)&matrix[i * columnData.size()], (char *)&old_matrix[i * (columnData.size() + 1)], sizeof(EvaluableNodeImmediateValue) * (columnData.size()));
+
+	for(size_t i = 0; i < columnData.size(); i++)
+		ValidateAllEntitiesForColumn(i);
 }
 
 void SeparableBoxFilterDataStore::AddEntity(Entity *entity, size_t entity_index)
 {
+	for(size_t i = 0; i < columnData.size(); i++)
+		ValidateAllEntitiesForColumn(i);
+
 	size_t starting_cell_index = GetMatrixCellIndex(entity_index);
 
 	//fill with missing values, including any empty indices
@@ -175,6 +189,9 @@ void SeparableBoxFilterDataStore::AddEntity(Entity *entity, size_t entity_index)
 		numEntities = entity_index + 1;
 
 	OptimizeAllColumns();
+
+	for(size_t i = 0; i < columnData.size(); i++)
+		ValidateAllEntitiesForColumn(i);
 }
 
 void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_index, size_t entity_index_to_reassign)
@@ -182,18 +199,29 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 	if(entity_index >= numEntities || columnData.size() == 0)
 		return;
 
+	for(size_t column_index = 0; column_index < columnData.size(); column_index++)
+		ValidateAllEntitiesForColumn(column_index);
+
 	//if was the last entity and reassigning the last one or one out of bounds,
 	// simply delete from column data, delete last row, and return
 	if(entity_index + 1 == GetNumInsertedEntities() && entity_index_to_reassign >= entity_index)
 	{
 		DeleteEntityIndexFromColumns(entity_index);
 		DeleteLastRow();
+
+		for(size_t column_index = 0; column_index < columnData.size(); column_index++)
+			ValidateAllEntitiesForColumn(column_index);
+
 		return;
 	}
 
 	//make sure it's a valid rassignment
 	if(entity_index_to_reassign >= numEntities)
+	{
+		for(size_t column_index = 0; column_index < columnData.size(); column_index++)
+			ValidateAllEntitiesForColumn(column_index);
 		return;
+	}
 
 	//if deleting a row and not replacing it, just fill as if it has no data
 	if(entity_index == entity_index_to_reassign)
@@ -241,12 +269,18 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 	RemoveAnyUnusedLabels();
 
 	OptimizeAllColumns();
+
+	for(size_t column_index = 0; column_index < columnData.size(); column_index++)
+		ValidateAllEntitiesForColumn(column_index);
 }
 
 void SeparableBoxFilterDataStore::UpdateAllEntityLabels(Entity *entity, size_t entity_index)
 {
 	if(entity_index >= numEntities)
 		return;
+
+	for(size_t column_index = 0; column_index < columnData.size(); column_index++)
+		ValidateAllEntitiesForColumn(column_index);
 
 	size_t matrix_index = GetMatrixCellIndex(entity_index);
 	for(size_t column_index = 0; column_index < columnData.size(); column_index++)
@@ -271,6 +305,9 @@ void SeparableBoxFilterDataStore::UpdateAllEntityLabels(Entity *entity, size_t e
 	RemoveAnyUnusedLabels();
 
 	OptimizeAllColumns();
+
+	for(size_t column_index = 0; column_index < columnData.size(); column_index++)
+		ValidateAllEntitiesForColumn(column_index);
 }
 
 void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entity_index, StringInternPool::StringID label_updated)
@@ -284,6 +321,8 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 		return;
 	size_t column_index = column->second;
 	auto &column_data = columnData[column_index];
+
+	ValidateAllEntitiesForColumn(column_index);
 
 	//get the new value
 	EvaluableNodeImmediateValueType value_type;
@@ -304,6 +343,8 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 		RemoveColumnIndex(column_index);
 	else
 		OptimizeColumn(column_index);
+
+	ValidateAllEntitiesForColumn(column_index);
 }
 
 //populates distances_out with all entities and their distances that have a distance to target less than max_dist
@@ -845,6 +886,20 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 		previous_nn_cache[output_index] = drp.reference;
 
 		sorted_results.Pop();
+	}
+}
+
+void SeparableBoxFilterDataStore::ValidateAllEntitiesForColumn(size_t column_index)
+{
+	auto &column_data = columnData[column_index];
+
+	for(auto &value_entry : column_data->sortedNumberValueEntries)
+	{
+		for(auto entity_index : value_entry->indicesWithValue)
+		{
+			if(entity_index >= numEntities)
+				assert(false);
+		}
 	}
 }
 

@@ -483,7 +483,7 @@ public:
 			//look up value
 			auto [value_index, exact_index_found] = FindExactIndexForValue(resolved_value.number);
 			if(!exact_index_found)
-				return;
+				assert(false);
 
 			//if the bucket has only one entry, we must delete the entire bucket
 			if(sortedNumberValueEntries[value_index]->indicesWithValue.size() == 1)
@@ -502,15 +502,15 @@ public:
 			auto resolved_value = GetResolvedValue(value_type, value);
 
 			auto id_entry = stringIdValueEntries.find(resolved_value.stringID);
-			if(id_entry != end(stringIdValueEntries))
-			{
-				auto &entities = id_entry->second->indicesWithValue;
-				entities.erase(index);
+			if(id_entry == end(stringIdValueEntries))
+				assert(false);
 
-				//if no more entries have the value, remove it
-				if(entities.size() == 0)
-					DeleteStringIdValueEntry(id_entry);
-			}
+			auto &entities = id_entry->second->indicesWithValue;
+			entities.erase(index);
+
+			//if no more entries have the value, remove it
+			if(entities.size() == 0)
+				DeleteStringIdValueEntry(id_entry);
 
 			//see if need to compute new longest string
 			if(index == indexWithLongestString)
@@ -526,7 +526,7 @@ public:
 			size_t num_indices = EvaluableNode::GetDeepSize(value.code);
 			auto id_entry = valueCodeSizeToIndices.find(num_indices);
 			if(id_entry == end(valueCodeSizeToIndices))
-				return;
+				assert(false);
 
 			//remove the entity
 			auto &entities = *(id_entry->second);

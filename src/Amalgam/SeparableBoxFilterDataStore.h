@@ -504,6 +504,10 @@ public:
 
 protected:
 
+	//TODO 20793: remove all calls to this method
+	//used for debugging to make sure all entities are valid
+	void ValidateAllEntitiesForColumn(size_t column_index);
+
 	//deletes/pops off the last row in the matrix cache
 	inline void DeleteLastRow()
 	{

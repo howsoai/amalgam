@@ -124,11 +124,19 @@ std::tuple<Entity *, Entity *, Entity::EntityReferenceBufferReference<EntityRead
 			{
 				EntityReadReference entity_1 = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReadReference>(relative_entity_container, traverser_1);
 				Entity *entity_1_ptr = entity_1;
+				if(entity_1_ptr == nullptr)
+					return std::make_tuple(nullptr, nullptr,
+						Entity::EntityReferenceBufferReference<EntityReadReference>());
+
 				auto erbr = entity_1->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>(false);
 				erbr->emplace_back(std::move(entity_1));
 
 				EntityReadReference entity_2 = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReadReference>(relative_entity_container, traverser_2);
 				Entity *entity_2_ptr = entity_2;
+				if(entity_2_ptr == nullptr)
+					return std::make_tuple(nullptr, nullptr,
+						Entity::EntityReferenceBufferReference<EntityReadReference>());
+
 				entity_2->AppendAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>(erbr);
 				erbr->emplace_back(std::move(entity_2));
 
@@ -138,11 +146,19 @@ std::tuple<Entity *, Entity *, Entity::EntityReferenceBufferReference<EntityRead
 			{
 				EntityReadReference entity_2 = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReadReference>(relative_entity_container, traverser_2);
 				Entity *entity_2_ptr = entity_2;
+				if(entity_2_ptr == nullptr)
+					return std::make_tuple(nullptr, nullptr,
+						Entity::EntityReferenceBufferReference<EntityReadReference>());
+
 				auto erbr = entity_2->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>(false);
 				erbr->emplace_back(std::move(entity_2));
 
 				EntityReadReference entity_1 = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReadReference>(relative_entity_container, traverser_1);
 				Entity *entity_1_ptr = entity_1;
+				if(entity_1_ptr == nullptr)
+					return std::make_tuple(nullptr, nullptr,
+						Entity::EntityReferenceBufferReference<EntityReadReference>());
+
 				entity_1->AppendAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>(erbr);
 				erbr->emplace_back(std::move(entity_1));
 

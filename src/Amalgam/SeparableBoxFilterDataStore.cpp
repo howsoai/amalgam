@@ -180,12 +180,13 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 	{
 		auto &column_data = columnData[column_index];
 
-		auto &val_to_overwrite = GetValue(entity_index, column_index);
-		auto type_to_overwrite = column_data->GetIndexValueType(entity_index);
+		auto &val_to_overwrite_raw = GetValue(entity_index, column_index);
+		auto type_to_overwrite_raw = column_data->GetIndexValueType(entity_index);
+		auto val_to_overwrite = column_data->GetResolvedValue(type_to_overwrite_raw, val_to_overwrite_raw);
+		auto type_to_overwrite = column_data->GetResolvedValueType(type_to_overwrite_raw);
 
 		auto &raw_value_to_reassign = GetValue(entity_index_to_reassign, column_index);
 		auto raw_value_type_to_reassign = column_data->GetIndexValueType(entity_index_to_reassign);
-		//need to resolve the value just in case things move around due to entity_index being deleted
 		auto value_to_reassign = column_data->GetResolvedValue(raw_value_type_to_reassign, raw_value_to_reassign);
 		auto value_type_to_reassign = column_data->GetResolvedValueType(raw_value_type_to_reassign);
 
@@ -267,8 +268,8 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 	//remove the label if no longer relevant
 	if(IsColumnIndexRemovable(column_index))
 		RemoveColumnIndex(column_index);
-
-	OptimizeColumn(column_index);
+	else
+		OptimizeColumn(column_index);
 }
 
 //populates distances_out with all entities and their distances that have a distance to target less than max_dist

@@ -32,14 +32,9 @@ public:
 		: value(value), unique(true)
 	{	}
 
-	constexpr EvaluableNodeReference(double value)
-		: unique(true)
-	{
-		if(FastIsNaN(value))
-			this->value = EvaluableNodeImmediateValueWithType();
-		else
-			this->value = EvaluableNodeImmediateValueWithType(value);
-	}
+	__forceinline EvaluableNodeReference(double value)
+		: value(value), unique(true)
+	{	}
 
 	__forceinline EvaluableNodeReference(StringInternPool::StringID string_id)
 		: value(string_intern_pool.CreateStringReference(string_id)), unique(true)

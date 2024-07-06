@@ -424,15 +424,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY_ENTITIES(Evalu
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	//TODO 10975: change this to lock all entities at once
-	//get the id of the first source entity
-	Entity *source_entity_1 = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
-	if(source_entity_1 == nullptr)
-		return EvaluableNodeReference::Null();
-
-	//get the id of the second source entity
-	Entity *source_entity_2 = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[1]);
-	if(source_entity_2 == nullptr)
+	auto [source_entity_1, source_entity_2, erbr] = InterpretNodeIntoRelativeSourceEntityReadReferences(ocn[0], ocn[1]);
+	if(source_entity_1 == nullptr || source_entity_2 == nullptr)
 		return EvaluableNodeReference::Null();
 
 	auto commonality = EntityManipulation::NumberOfSharedNodes(source_entity_1, source_entity_2);
@@ -446,15 +439,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE_ENTITIES(Eva
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	//TODO 10975: change this to lock all entities at once
-	//get the id of the first source entity
-	Entity *source_entity_1 = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
-	if(source_entity_1 == nullptr)
-		return EvaluableNodeReference::Null();
-
-	//get the id of the second source entity
-	Entity *source_entity_2 = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[1]);
-	if(source_entity_2 == nullptr)
+	auto [source_entity_1, source_entity_2, erbr] = InterpretNodeIntoRelativeSourceEntityReadReferences(ocn[0], ocn[1]);
+	if(source_entity_1 == nullptr || source_entity_2 == nullptr)
 		return EvaluableNodeReference::Null();
 
 	double edit_distance = EntityManipulation::EditDistance(source_entity_1, source_entity_2);
@@ -472,18 +458,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT_ENTITIES(Evaluab
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	//TODO 10975: change this to lock all entities at once
-	//get the id of the first source entity
-	Entity *source_entity_1 = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
-	//need a source entity, and can't copy self! (that could cause badness)
-	if(source_entity_1 == nullptr || source_entity_1 == curEntity)
+	auto [source_entity_1, source_entity_2, erbr] = InterpretNodeIntoRelativeSourceEntityReadReferences(ocn[0], ocn[1]);
+	if(source_entity_1 == nullptr || source_entity_2 == nullptr)
 		return EvaluableNodeReference::Null();
 
-	//get the id of the second source entity
-	Entity *source_entity_2 = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[1]);
-	//need a source entity, and can't copy self! (that could cause badness)
-	if(source_entity_2 == nullptr || source_entity_2 == curEntity)
+	//need a source entity, and shouldn't copy self
+	if(source_entity_1 == curEntity || source_entity_2 == curEntity)
 		return EvaluableNodeReference::Null();
+
+	//create new entity by merging
+	Entity *new_entity = EntityManipulation::IntersectEntities(this, source_entity_1, source_entity_2);
+
+	//no longer need entity references
+	erbr.Clear();
 
 	//get destination if applicable
 	EntityWriteReference destination_entity_parent;
@@ -495,9 +482,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT_ENTITIES(Evaluab
 
 	if(destination_entity_parent == nullptr)
 		return EvaluableNodeReference::Null();
-
-	//create new entity by merging
-	Entity *new_entity = EntityManipulation::IntersectEntities(this, source_entity_1, source_entity_2);
 
 	//accumulate usage
 	if(!AllowUnlimitedExecutionNodes())
@@ -528,18 +512,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION_ENTITIES(EvaluableNo
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	//TODO 10975: change this to lock all entities at once
-	//get the id of the first source entity
-	Entity *source_entity_1 = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
-	//need a source entity, and can't copy self! (that could cause badness)
-	if(source_entity_1 == nullptr || source_entity_1 == curEntity)
+	auto [source_entity_1, source_entity_2, erbr] = InterpretNodeIntoRelativeSourceEntityReadReferences(ocn[0], ocn[1]);
+	if(source_entity_1 == nullptr || source_entity_2 == nullptr)
 		return EvaluableNodeReference::Null();
 
-	//get the id of the second source entity
-	Entity *source_entity_2 = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[1]);
-	//need a source entity, and can't copy self! (that could cause badness)
-	if(source_entity_2 == nullptr || source_entity_2 == curEntity)
+	//need a source entity, and shouldn't copy self
+	if(source_entity_1 == curEntity || source_entity_2 == curEntity)
 		return EvaluableNodeReference::Null();
+
+	//create new entity by merging
+	Entity *new_entity = EntityManipulation::UnionEntities(this, source_entity_1, source_entity_2);
+
+	//no longer need entity references
+	erbr.Clear();
 
 	//get destination if applicable
 	EntityWriteReference destination_entity_parent;
@@ -551,9 +536,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION_ENTITIES(EvaluableNo
 
 	if(destination_entity_parent == nullptr)
 		return EvaluableNodeReference::Null();
-
-	//create new entity by merging
-	Entity *new_entity = EntityManipulation::UnionEntities(this, source_entity_1, source_entity_2);
 
 	//accumulate usage
 	if(!AllowUnlimitedExecutionNodes())
@@ -580,17 +562,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DIFFERENCE_ENTITIES(Evalua
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	//TODO 10975: change this to lock all entities at once
-	//get the id of the first source entity
-	Entity *entity_1 = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
-	//need a source entity, and can't copy self! (that could cause badness)
-	if(entity_1 == nullptr || entity_1 == curEntity)
+	auto [entity_1, entity_2, erbr] = InterpretNodeIntoRelativeSourceEntityReadReferences(ocn[0], ocn[1]);
+	if(entity_1 == nullptr || entity_2 == nullptr)
 		return EvaluableNodeReference::Null();
 
-	//get the id of the second source entity
-	Entity *entity_2 = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[1]);
-	//need a source entity, and can't copy self! (that could cause badness)
-	if(entity_2 == nullptr || entity_2 == curEntity)
+	//can't difference with self
+	if(entity_1 == curEntity || entity_2 == curEntity)
 		return EvaluableNodeReference::Null();
 
 	return EntityManipulation::DifferenceEntities(this, entity_1, entity_2);
@@ -627,28 +604,20 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode
 	if(ocn.size() > 5)
 		fraction_unnamed_entities_to_mix = InterpretNodeIntoNumberValue(ocn[5]);
 
-	//TODO 10975: change this to lock all entities at once
-	//retrieve the entities after other parameters to minimize time in locks
-	// and prevent deadlock if one of the params accessed the entity
-	//get the id of the first source entity
-	Entity* source_entity_1 = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
-	//need a source entity, and can't copy self! (that could cause badness)
-	if(source_entity_1 == nullptr || source_entity_1 == curEntity)
+	auto [source_entity_1, source_entity_2, erbr] = InterpretNodeIntoRelativeSourceEntityReadReferences(ocn[0], ocn[1]);
+	if(source_entity_1 == nullptr || source_entity_2 == nullptr)
 		return EvaluableNodeReference::Null();
 
-	//get the id of the second source entity
-	Entity* source_entity_2 = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[1]);
-	//need a source entity, and can't copy self! (that could cause badness)
-	if(source_entity_2 == nullptr || source_entity_2 == curEntity)
+	//need a source entity, and shouldn't copy self
+	if(source_entity_1 == curEntity || source_entity_2 == curEntity)
 		return EvaluableNodeReference::Null();
 
 	//create new entity by merging
 	Entity *new_entity = EntityManipulation::MixEntities(this, source_entity_1, source_entity_2,
 		blend1, blend2, similar_mix_chance, fraction_unnamed_entities_to_mix);
 
-	//accumulate usage
-	if(!AllowUnlimitedExecutionNodes())
-		curNumExecutionNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
+	//no longer need entity references
+	erbr.Clear();
 
 	//get destination if applicable
 	EntityWriteReference destination_entity_parent;
@@ -660,6 +629,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode
 
 	if(destination_entity_parent == nullptr)
 		return EvaluableNodeReference::Null();
+
+	//accumulate usage
+	if(!AllowUnlimitedExecutionNodes())
+		curNumExecutionNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
 
 	destination_entity_parent->AddContainedEntityViaReference(new_entity, new_entity_id, writeListeners);
 

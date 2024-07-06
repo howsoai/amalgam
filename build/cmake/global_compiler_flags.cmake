@@ -3,7 +3,9 @@
 #
 
 # TODO 15993: do we need this? Can it be smaller? How do we set it on all platforms?
-set(DEFAULT_STACK_SIZE 67108864)
+set(DEFAULT_STACK_SIZE_WIN 67108864)
+
+set(DEFAULT_STACK_SIZE_MACOS 0x4000000)
 
 set(IS_MSVC False)
 set(IS_GCC False)
@@ -21,7 +23,7 @@ if(MSVC)
 
     # Common flags:
     string(APPEND CMAKE_CXX_FLAGS " /nologo /W3 /WX /MP /GS /TP /FC /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /analyze-")
-    string(APPEND CMAKE_EXE_LINKER_FLAGS " /STACK:${DEFAULT_STACK_SIZE}")
+    string(APPEND CMAKE_EXE_LINKER_FLAGS " /STACK:${DEFAULT_STACK_SIZE_WIN}")
 
     # Debug flags:
     string(APPEND CMAKE_CXX_FLAGS_DEBUG " /JMC")
@@ -121,6 +123,11 @@ if(IS_UNIX)
     if(NOT IS_WASM)
         string(APPEND CMAKE_CXX_FLAGS " -march=${ARCH_VERSION}")
     endif()
+endif()
+
+# Set stack size for macOS
+if(IS_MACOS)
+    string(APPEND CMAKE_EXE_LINKER_FLAGS " -Wl,-stack_size,${DEFAULT_STACK_SIZE_MACOS}")
 endif()
 
 # MSVC only:

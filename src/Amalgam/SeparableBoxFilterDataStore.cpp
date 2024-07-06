@@ -292,7 +292,9 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 
 	//update the value
 	auto &matrix_value = GetValue(entity_index, column_index);
-	auto previous_value_type = column_data->GetIndexValueType(entity_index);
+	auto raw_previous_value_type = column_data->GetIndexValueType(entity_index);
+	auto previous_value = column_data->GetResolvedValue(raw_previous_value_type, matrix_value);
+	auto previous_value_type = column_data->GetResolvedValueType(raw_previous_value_type);
 
 	//assign the matrix location to the updated value (which may be an index)
 	matrix_value = column_data->ChangeIndexValue(previous_value_type, matrix_value, value_type, value, entity_index);

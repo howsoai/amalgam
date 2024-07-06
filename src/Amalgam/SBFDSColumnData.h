@@ -288,6 +288,7 @@ public:
 				}
 				else //shouldn't make it here, but ensure integrity just in case
 				{
+					assert(false);
 					//insert new value in correct position
 					sortedNumberValueEntries.emplace(sortedNumberValueEntries.begin() + new_value_index,
 						std::make_unique<ValueEntry>(new_number_value));
@@ -354,6 +355,7 @@ public:
 				}
 				else if(inserted) //shouldn't make it here, but ensure integrity just in case
 				{
+					assert(false);
 					new_id_entry->second = std::make_unique<ValueEntry>(new_sid_value);
 					InsertFirstIndexIntoStringIdValueEntry(index, new_id_entry);
 					new_value_index = new_id_entry->second->valueInternIndex;
@@ -412,6 +414,7 @@ public:
 					}
 					else if(inserted) //shouldn't make it here, but ensure integrity just in case
 					{
+						assert(false);
 						new_size_entry->second = std::make_unique<SortedIntegerSet>();
 						new_size_entry->second->insert(index);
 					}
@@ -1033,6 +1036,8 @@ public:
 	// than number values given the current data
 	inline bool AreNumberInternsPreferredToValues()
 	{
+		//TODO 20793: remove the next line
+		return true;
 		//use heuristic of sqrt number of values compared to num unique values
 		// (but computed with a multiply instead of sqrt)
 		size_t num_unique_values = sortedNumberValueEntries.size();
@@ -1043,6 +1048,8 @@ public:
 	// than interning given the current data
 	inline bool AreNumberValuesPreferredToInterns()
 	{
+		//TODO 20793: remove the next line
+		return false;
 		//use heuristic of sqrt number of values compared to num unique values
 		// (but computed with a multiply instead of sqrt)
 		//round up to reduce flipping back and forth
@@ -1054,6 +1061,8 @@ public:
 	// than StringId values given the current data
 	inline bool AreStringIdInternsPreferredToValues()
 	{
+		//TODO 20793: remove the next line
+		return true;
 		//use heuristic of sqrt number of values compared to num unique values
 		// (but computed with a multiply instead of sqrt)
 		size_t num_unique_values = stringIdValueEntries.size();
@@ -1064,6 +1073,8 @@ public:
 	// than interning given the current data
 	inline bool AreStringIdValuesPreferredToInterns()
 	{
+		//TODO 20793: remove the next line
+		return false;
 		//use heuristic of sqrt number of values compared to num unique values
 		// (but computed with a multiply instead of sqrt)
 		//round up to reduce flipping back and forth

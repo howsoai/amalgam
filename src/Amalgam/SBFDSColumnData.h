@@ -215,18 +215,23 @@ public:
 				return EvaluableNodeImmediateValue();
 		}
 
+		auto old_value_type_resolved = GetResolvedValueType(old_value_type);
+		auto old_value_resolved = GetResolvedValue(old_value_type, old_value);
+		auto new_value_type_resolved = GetResolvedValueType(new_value_type);
+		auto new_value_resolved = GetResolvedValue(new_value_type, new_value);
+
 		//if the types are the same, some shortcuts may apply
 		//note that if the values match types and match resolved values, the old_value should be returned
 		//because it is already in the correct storage format for the column
-		if(old_value_type == new_value_type)
+		if(old_value_type_resolved == new_value_type_resolved)
 		{
-			if(old_value_type == ENIVT_NULL)
+			if(old_value_type_resolved == ENIVT_NULL)
 				return old_value;
 
-			if(old_value_type == ENIVT_NUMBER)
+			if(old_value_type_resolved == ENIVT_NUMBER)
 			{
-				double old_number_value = GetResolvedValue(old_value_type, old_value).number;
-				double new_number_value = GetResolvedValue(new_value_type, new_value).number;
+				double old_number_value = old_value_resolved.number;
+				double new_number_value = new_value_resolved.number;
 				if(old_number_value == new_number_value)
 					return old_value;
 
@@ -302,10 +307,10 @@ public:
 					return EvaluableNodeImmediateValue(new_value);
 			}
 
-			if(old_value_type == ENIVT_STRING_ID)
+			if(old_value_type_resolved == ENIVT_STRING_ID)
 			{
-				StringInternPool::StringID old_sid_value = GetResolvedValue(old_value_type, old_value).stringID;
-				StringInternPool::StringID new_sid_value = GetResolvedValue(new_value_type, new_value).stringID;
+				StringInternPool::StringID old_sid_value = old_value_resolved.stringID;
+				StringInternPool::StringID new_sid_value = new_value_resolved.stringID;
 				if(old_sid_value == new_sid_value)
 					return old_value;
 
@@ -373,7 +378,7 @@ public:
 					return EvaluableNodeImmediateValue(new_value);
 			}
 
-			if(old_value_type == ENIVT_CODE)
+			if(old_value_type_resolved == ENIVT_CODE)
 			{
 				//only early exit if the pointers to the code are exactly the same,
 				// as equivalent code may be garbage collected
@@ -438,10 +443,10 @@ public:
 		}
 
 		//delete index at old value
-		DeleteIndexValue(old_value_type, old_value, index);
+		DeleteIndexValue(old_value_type_resolved, old_value_resolved, index);
 
 		//add index at new value bucket
-		return InsertIndexValue(new_value_type, new_value, index);
+		return InsertIndexValue(new_value_type_resolved, new_value_resolved, index);
 	}
 
 	//deletes a particular value based on the value_index

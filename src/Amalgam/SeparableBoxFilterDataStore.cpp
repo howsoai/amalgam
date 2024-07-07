@@ -232,7 +232,19 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 		size_t starting_cell_index = GetMatrixCellIndex(entity_index);
 		for(size_t column_index = 0; column_index < columnData.size(); column_index++)
 			matrix[starting_cell_index + column_index].number = std::numeric_limits<double>::quiet_NaN();
+
+		for(size_t column_index = 0; column_index < columnData.size(); column_index++)
+			ValidateAllEntitiesForColumn(column_index);
 		return;
+	}
+
+	//TODO 20793: remove this
+	static int hit_count = 0;
+	hit_count++;
+	std::cout << "Hit Count: " << hit_count << std::endl;
+	if(hit_count == 4)
+	{
+		int m = 3;
 	}
 
 	//reassign index for each column
@@ -240,30 +252,29 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 	{
 		auto &column_data = columnData[column_index];
 
-		auto &val_to_overwrite_raw = GetValue(entity_index, column_index);
-		auto type_to_overwrite_raw = column_data->GetIndexValueType(entity_index);
-		auto val_to_overwrite = column_data->GetResolvedValue(type_to_overwrite_raw, val_to_overwrite_raw);
-		auto type_to_overwrite = column_data->GetResolvedValueType(type_to_overwrite_raw);
+		auto &val_to_overwrite = GetValue(entity_index, column_index);
+		auto type_to_overwrite = column_data->GetIndexValueType(entity_index);
 
-		auto &raw_value_to_reassign = GetValue(entity_index_to_reassign, column_index);
-		auto raw_value_type_to_reassign = column_data->GetIndexValueType(entity_index_to_reassign);
-		auto value_to_reassign = column_data->GetResolvedValue(raw_value_type_to_reassign, raw_value_to_reassign);
-		auto value_type_to_reassign = column_data->GetResolvedValueType(raw_value_type_to_reassign);
+		auto &value_to_reassign = GetValue(entity_index_to_reassign, column_index);
+		auto value_type_to_reassign = column_data->GetIndexValueType(entity_index_to_reassign);
+
+		//change the destination to the value
+		val_to_overwrite = columnData[column_index]->ChangeIndexValue(type_to_overwrite, val_to_overwrite, value_type_to_reassign, value_to_reassign, entity_index);
 
 		//remove the value where it is
 		columnData[column_index]->DeleteIndexValue(value_type_to_reassign, value_to_reassign, entity_index_to_reassign);
-
-		//change the destination to the value
-		columnData[column_index]->ChangeIndexValue(type_to_overwrite, val_to_overwrite, value_type_to_reassign, value_to_reassign, entity_index);
 	}
 
-	//copy data from entity_index_to_reassign to entity_index
-	memcpy((char *)&(matrix[entity_index * columnData.size()]), (char *)&(matrix[entity_index_to_reassign * columnData.size()]), sizeof(EvaluableNodeImmediateValue) * columnData.size());
+	for(size_t column_index = 0; column_index < columnData.size(); column_index++)
+		ValidateAllEntitiesForColumn(column_index);
 
 	//truncate matrix cache if removing the last entry, either by moving the last entity or by directly removing the last
 	if(entity_index_to_reassign + 1 == numEntities
 			|| (entity_index_to_reassign + 1 >= numEntities && entity_index + 1 == numEntities))
 		DeleteLastRow();
+
+	for(size_t column_index = 0; column_index < columnData.size(); column_index++)
+		ValidateAllEntitiesForColumn(column_index);
 
 	//clean up any labels that aren't relevant
 	RemoveAnyUnusedLabels();
@@ -331,10 +342,10 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 
 	//update the value
 	auto &matrix_value = GetValue(entity_index, column_index);
-	auto raw_previous_value_type = column_data->GetIndexValueType(entity_index);
+	auto previous_value_type = column_data->GetIndexValueType(entity_index);
 	
 	//assign the matrix location to the updated value (which may be an index)
-	matrix_value = column_data->ChangeIndexValue(raw_previous_value_type, matrix_value, value_type, value, entity_index);
+	matrix_value = column_data->ChangeIndexValue(previous_value_type, matrix_value, value_type, value, entity_index);
 
 	//remove the label if no longer relevant
 	if(IsColumnIndexRemovable(column_index))
@@ -941,6 +952,8 @@ void SeparableBoxFilterDataStore::ValidateAllEntitiesForColumn(size_t column_ind
 			assert(feature_value_resolved.stringID != string_intern_pool.EMPTY_STRING_ID);
 		}
 	}
+
+	//TODO 20793: add code size checking
 }
 
 void SeparableBoxFilterDataStore::DeleteEntityIndexFromColumns(size_t entity_index)

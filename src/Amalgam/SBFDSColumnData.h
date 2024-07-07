@@ -209,7 +209,7 @@ public:
 				invalidIndices.insert(index);
 			}
 
-			if(internedNumberValues.valueInterningEnabled)
+			if(internedNumberValues.valueInterningEnabled || internedStringIdValues.valueInterningEnabled)
 				return EvaluableNodeImmediateValue(ValueEntry::NULL_INDEX);
 			else
 				return EvaluableNodeImmediateValue();
@@ -286,7 +286,8 @@ public:
 
 							//move new value in to empty slot created
 							sortedNumberValueEntries[new_value_entry_index] = std::move(new_value_entry);
-							internedNumberValues.UpdateInternIndexValue(sortedNumberValueEntries[new_value_entry_index].get());
+							internedNumberValues.UpdateInternIndexValue(sortedNumberValueEntries[new_value_entry_index].get(),
+								new_number_value);
 							new_value_index = sortedNumberValueEntries[new_value_entry_index]->valueInternIndex;
 						}
 						else //already has an entry for the new value, just delete as normal
@@ -353,7 +354,8 @@ public:
 						if(inserted)
 						{
 							new_id_entry->second = std::move(old_id_entry->second);
-							internedStringIdValues.UpdateInternIndexValue(new_id_entry->second.get());
+							internedStringIdValues.UpdateInternIndexValue(new_id_entry->second.get(),
+								new_sid_value);
 							new_value_index = new_id_entry->second->valueInternIndex;
 							//perform erase at the end since the iterator may no longer be viable after
 							stringIdValueEntries.erase(old_id_entry);
@@ -1282,12 +1284,12 @@ public:
 
 		//if interning is enabled, updates internedIndexToValue with the appropriate
 		//new value for value_entry
-		inline void UpdateInternIndexValue(ValueEntry *value_entry)
+		inline void UpdateInternIndexValue(ValueEntry *value_entry, ValueType value)
 		{
 			if(!valueInterningEnabled)
 				return;
 
-			internedIndexToValue[value_entry->valueInternIndex] = value_entry->value;
+			internedIndexToValue[value_entry->valueInternIndex] = value;
 		}
 
 		//deletes the intern index if interning is enabled

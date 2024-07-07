@@ -905,6 +905,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 	}
 }
 
+#ifdef SBFDS_VERIFICATION
 void SeparableBoxFilterDataStore::VerifyAllEntitiesForColumn(size_t column_index)
 {
 	auto &column_data = columnData[column_index];
@@ -960,6 +961,7 @@ void SeparableBoxFilterDataStore::VerifyAllEntitiesForColumn(size_t column_index
 		}
 	}
 }
+#endif
 
 void SeparableBoxFilterDataStore::DeleteEntityIndexFromColumns(size_t entity_index)
 {

@@ -509,6 +509,7 @@ public:
 
 protected:
 
+#ifdef SBFDS_VERIFICATION
 	//used for debugging to make sure all entities are valid
 	void VerifyAllEntitiesForColumn(size_t column_index);
 
@@ -518,6 +519,7 @@ protected:
 		for(size_t i = 0; i < columnData.size(); i++)
 			VerifyAllEntitiesForColumn(i);
 	}
+#endif
 
 	//deletes/pops off the last row in the matrix cache
 	inline void DeleteLastRow()

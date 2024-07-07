@@ -297,7 +297,7 @@ public:
 		//increments the number of tasks by num_new_tasks
 		inline void AddTask(size_t num_new_tasks = 1)
 		{
-			numTasks.fetch_add(num_new_tasks, std::memory_order_relaxed);
+			numTasks.fetch_add(num_new_tasks);
 		}
 
 		//returns when all the tasks have been completed
@@ -310,7 +310,7 @@ public:
 		//marks one task as completed
 		inline void MarkTaskCompleted()
 		{
-			size_t prev_tasks_completed = numTasksCompleted.fetch_add(1, std::memory_order_relaxed);
+			size_t prev_tasks_completed = numTasksCompleted.fetch_add(1);
 			if(prev_tasks_completed + 1 == numTasks)
 			{
 				std::unique_lock<std::mutex> lock(mutex);

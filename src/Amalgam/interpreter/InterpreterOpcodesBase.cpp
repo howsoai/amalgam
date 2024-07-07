@@ -2020,7 +2020,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT_A_BUILT_IN_TYPE(Evalua
 	return EvaluableNodeReference::Null();
 }
 
-void Interpreter::ValidateEvaluableNodeIntegrity()
+void Interpreter::VerifyEvaluableNodeIntegrity()
 {
 	for(EvaluableNode *en : *callStackNodes)
 		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
@@ -2039,5 +2039,5 @@ void Interpreter::ValidateEvaluableNodeIntegrity()
 		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
 
 	if(callingInterpreter != nullptr)
-		callingInterpreter->ValidateEvaluableNodeIntegrity();
+		callingInterpreter->VerifyEvaluableNodeIntegrity();
 }

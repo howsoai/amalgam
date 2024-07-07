@@ -1061,8 +1061,12 @@ public:
 	// than number values given the current data
 	inline bool AreNumberInternsPreferredToValues()
 	{
-		//TODO 20793: remove the next line
+	#ifdef FORCE_SBFDS_VALUE_INTERNING
 		return true;
+	#endif
+	#ifdef DISABLE_SBFDS_VALUE_INTERNING
+		return false;
+	#endif
 		//use heuristic of sqrt number of values compared to num unique values
 		// (but computed with a multiply instead of sqrt)
 		size_t num_unique_values = sortedNumberValueEntries.size();
@@ -1073,8 +1077,12 @@ public:
 	// than interning given the current data
 	inline bool AreNumberValuesPreferredToInterns()
 	{
-		//TODO 20793: remove the next line
+	#ifdef FORCE_SBFDS_VALUE_INTERNING
 		return false;
+	#endif
+	#ifdef DISABLE_SBFDS_VALUE_INTERNING
+		return true;
+	#endif
 		//use heuristic of sqrt number of values compared to num unique values
 		// (but computed with a multiply instead of sqrt)
 		//round up to reduce flipping back and forth
@@ -1086,8 +1094,12 @@ public:
 	// than StringId values given the current data
 	inline bool AreStringIdInternsPreferredToValues()
 	{
-		//TODO 20793: remove the next line
+	#ifdef FORCE_SBFDS_VALUE_INTERNING
 		return true;
+	#endif
+	#ifdef DISABLE_SBFDS_VALUE_INTERNING
+		return false;
+	#endif
 		//use heuristic of sqrt number of values compared to num unique values
 		// (but computed with a multiply instead of sqrt)
 		size_t num_unique_values = stringIdValueEntries.size();
@@ -1098,8 +1110,12 @@ public:
 	// than interning given the current data
 	inline bool AreStringIdValuesPreferredToInterns()
 	{
-		//TODO 20793: remove the next line
+	#ifdef FORCE_SBFDS_VALUE_INTERNING
 		return false;
+	#endif
+	#ifdef DISABLE_SBFDS_VALUE_INTERNING
+		return true;
+	#endif
 		//use heuristic of sqrt number of values compared to num unique values
 		// (but computed with a multiply instead of sqrt)
 		//round up to reduce flipping back and forth

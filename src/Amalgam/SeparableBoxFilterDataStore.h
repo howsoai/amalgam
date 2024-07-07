@@ -1,10 +1,15 @@
 #pragma once
 
-//-------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------
 //Seperable Box-Filter Data Store
-//Spatial acceleration database for high-dimensional data with no constraints on metric space (Minkowski, Euclidean, LK, etc).
-//The structure can efficiently search for data when using different metric space parameters without being rebuilt.
-//-------------------------------------------------------------------------------------------------------------------------------------
+//Spatial acceleration database for high-dimensional data without constraints on metric space (Minkowski, Euclidean, LK, etc).
+//The structure can efficiently search data when using different metric space parameters without being rebuilt.
+//----------------------------------------------------------------------------------------------------------------------------
+
+//if SBFDS_VERIFICATION is defined, then it will frequently verify integrity at cost of performance
+//if FORCE_SBFDS_VALUE_INTERNING is defined, then it will force value interning to always be on
+//if DISABLE_SBFDS_VALUE_INTERNING is defined, then it will disable all value interning
+//if FORCE_SBFDS_VALUE_INTERNING and DISABLE_SBFDS_VALUE_INTERNING, FORCE_SBFDS_VALUE_INTERNING takes precedence
 
 //project headers:
 #include "Concurrency.h"
@@ -504,9 +509,15 @@ public:
 
 protected:
 
-	//TODO 20793: remove all calls to this method
 	//used for debugging to make sure all entities are valid
-	void ValidateAllEntitiesForColumn(size_t column_index);
+	void VerifyAllEntitiesForColumn(size_t column_index);
+
+	//used for debugging to make sure all entities are valid
+	inline void VerifyAllEntitiesForAllColumns()
+	{
+		for(size_t i = 0; i < columnData.size(); i++)
+			VerifyAllEntitiesForColumn(i);
+	}
 
 	//deletes/pops off the last row in the matrix cache
 	inline void DeleteLastRow()

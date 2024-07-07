@@ -239,13 +239,13 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 	}
 
 	//TODO 20793: remove this
-	static int hit_count = 0;
-	hit_count++;
-	std::cout << "Hit Count: " << hit_count << std::endl;
-	if(hit_count == 4)
-	{
-		int m = 3;
-	}
+	//static int hit_count = 0;
+	//hit_count++;
+	//std::cout << "Hit Count: " << hit_count << std::endl;
+	//if(hit_count == 4)
+	//{
+	//	int m = 3;
+	//}
 
 	//reassign index for each column
 	for(size_t column_index = 0; column_index < columnData.size(); column_index++)

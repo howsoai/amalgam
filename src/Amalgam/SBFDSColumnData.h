@@ -536,7 +536,22 @@ public:
 			size_t num_indices = EvaluableNode::GetDeepSize(value.code);
 			auto id_entry = valueCodeSizeToIndices.find(num_indices);
 			if(id_entry == end(valueCodeSizeToIndices))
-				assert(false);
+			{
+				//value must have changed sizes, look in each size
+				//note that this is inefficient -- if this ends up being a bottleneck,
+				//an additional data structure will need to be built to maintain the previous size
+				for(auto cur_id_entry = begin(valueCodeSizeToIndices); cur_id_entry != end(valueCodeSizeToIndices); ++cur_id_entry)
+				{
+					if(cur_id_entry->second->contains(index))
+					{
+						id_entry = cur_id_entry;
+						break;
+					}
+				}
+
+				if(id_entry == end(valueCodeSizeToIndices))
+					assert(false);
+			}
 
 			//remove the entity
 			auto &entities = *(id_entry->second);

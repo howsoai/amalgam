@@ -7,6 +7,7 @@
 
 //system headers:
 #include <limits>
+#include <type_traits>
 #include <vector>
 
 //If defined, will use the Laplace LK metric (default).  Otherwise will use Gaussian.
@@ -1028,8 +1029,10 @@ public:
 		EFDT_CONTINUOUS_NUMERIC,
 		//like FDT_CONTINUOUS_NUMERIC, but has cycles
 		EFDT_CONTINUOUS_NUMERIC_CYCLIC,
-		//continuous precomputed (cyclic or not), may contain nonnumeric data
-		EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED,
+		//continuous or nominal numeric precomputed (cyclic or not), may contain nonnumeric data
+		EFDT_NUMERIC_INTERNED_PRECOMPUTED,
+		//continuous or nominal string precomputed, may contain nonnumeric data
+		EFDT_STRING_INTERNED_PRECOMPUTED,
 		//nominal compared to a string value where nominals may not be symmetric
 		EFDT_NOMINAL_STRING,
 		//nominal compared to a number value where nominals may not be symmetric
@@ -1148,7 +1151,8 @@ public:
 	}
 
 	//for the feature index, computes and stores the distance terms as measured from value to each interned value
-	inline void ComputeAndStoreInternedNumberValuesAndDistanceTerms(size_t index, std::vector<double> *interned_values)
+	template<typename ValueType>
+	inline void ComputeAndStoreInternedDistanceTerms(size_t index, std::vector<ValueType> *interned_values)
 	{
 		bool compute_accurate = distEvaluator->NeedToPrecomputeAccurate();
 		bool compute_approximate = distEvaluator->NeedToPrecomputeApproximate();
@@ -1158,7 +1162,6 @@ public:
 			featureData.resize(index + 1);
 
 		auto &feature_data = featureData[index];
-		feature_data.internedNumberIndexToNumberValue = interned_values;
 
 		if(interned_values == nullptr)
 		{
@@ -1170,42 +1173,41 @@ public:
 
 		auto &feature_attribs = distEvaluator->featureAttribs[index];
 
-		double value = feature_data.targetValue.GetValueAsNumber();
-		if(FastIsNaN(value))
+		bool high_accuracy_interned_values = (compute_accurate && !compute_approximate);
+
+		if(feature_data.targetValue.IsNull())
 		{
 			//first entry is unknown-unknown distance
-			feature_data.internedDistanceTerms[0] = feature_attribs.unknownToUnknownDistanceTerm;
+			feature_data.internedDistanceTerms[0] = feature_attribs.unknownToUnknownDistanceTerm.GetValue(high_accuracy_interned_values);;
 			
-			auto k_to_unk = feature_attribs.knownToUnknownDistanceTerm;
+			double k_to_unk = feature_attribs.knownToUnknownDistanceTerm.GetValue(high_accuracy_interned_values);
 			for(size_t i = 1; i < feature_data.internedDistanceTerms.size(); i++)
 				feature_data.internedDistanceTerms[i] = k_to_unk;
 		}
 		else
 		{
 			//first entry is known-unknown distance
-			feature_data.internedDistanceTerms[0] = feature_attribs.knownToUnknownDistanceTerm;
+			feature_data.internedDistanceTerms[0] = feature_attribs.knownToUnknownDistanceTerm.GetValue(high_accuracy_interned_values);
+
+			EvaluableNodeImmediateValueType immediate_type = ENIVT_NULL;
+			if constexpr(std::is_same<ValueType, double>::value)
+				immediate_type = ENIVT_NUMBER;
+			else if constexpr(std::is_same<ValueType, StringInternPool::StringID>::value)
+				immediate_type = ENIVT_STRING_ID;
 
 			for(size_t i = 1; i < feature_data.internedDistanceTerms.size(); i++)
 			{
-				double difference = value - (*interned_values)[i];
-				if(compute_accurate)
-					feature_data.internedDistanceTerms[i].SetValue(distEvaluator->ComputeDistanceTermContinuousNonNullRegular(difference, index, true), true);
-				if(compute_approximate)
-					feature_data.internedDistanceTerms[i].SetValue(distEvaluator->ComputeDistanceTermContinuousNonNullRegular(difference, index, false), false);
+				feature_data.internedDistanceTerms[i] = distEvaluator->ComputeDistanceTermRegular(
+						feature_data.targetValue.nodeValue, (*interned_values)[i], immediate_type, immediate_type,
+						index, high_accuracy_interned_values);
 			}
 		}
 	}
 
-	//returns true if the feature at index has interned number values
-	__forceinline bool HasNumberInternValues(size_t index)
-	{
-		return featureData[index].internedNumberIndexToNumberValue != nullptr;
-	}
-
 	//returns the precomputed distance term for the interned value with intern_value_index
-	__forceinline double ComputeDistanceTermInternedPrecomputed(size_t intern_value_index, size_t index, bool high_accuracy)
+	__forceinline double ComputeDistanceTermInternedPrecomputed(size_t intern_value_index, size_t index)
 	{
-		return featureData[index].internedDistanceTerms[intern_value_index].GetValue(high_accuracy);
+		return featureData[index].internedDistanceTerms[intern_value_index];
 	}
 
 	//returns true if the nominal feature has a specific distance term when compared with unknown values
@@ -1360,8 +1362,7 @@ public:
 	public:
 
 		FeatureData()
-			: effectiveFeatureType(EFDT_CONTINUOUS_NUMERIC),
-			internedNumberIndexToNumberValue(nullptr)
+			: effectiveFeatureType(EFDT_CONTINUOUS_NUMERIC)
 		{	}
 
 		//clears all the feature data
@@ -1369,7 +1370,6 @@ public:
 		{
 			effectiveFeatureType = EFDT_CONTINUOUS_NUMERIC;
 			precomputedRemainingIdenticalDistanceTerm = 0.0;
-			internedNumberIndexToNumberValue = nullptr;
 			internedDistanceTerms.clear();
 			nominalStringDistanceTerms.clear();
 			nominalNumberDistanceTerms.clear();
@@ -1394,8 +1394,7 @@ public:
 		//the distance term for EFDT_REMAINING_IDENTICAL_PRECOMPUTED
 		double precomputedRemainingIdenticalDistanceTerm;
 
-		std::vector<double> *internedNumberIndexToNumberValue;
-		std::vector<GeneralizedDistanceEvaluator::DistanceTerms> internedDistanceTerms;
+		std::vector<double> internedDistanceTerms;
 
 		//used to store distance terms for the respective targetValue for the sparse deviation matrix
 		FastHashMap<StringInternPool::StringID, double> nominalStringDistanceTerms;

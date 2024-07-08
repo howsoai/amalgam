@@ -506,13 +506,15 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, bool immedi
 	//especially because only one node is kept
 	interpreterNodeStackNodes->push_back(en);
 
-	//for deep debugging only
-	//ValidateEvaluableNodeIntegrity();
+#ifdef AMALGAM_MEMORY_INTEGRITY
+	VerifyEvaluableNodeIntegrity();
+#endif
 
 	CollectGarbage();
 
-	//for deep debugging only
-	//ValidateEvaluableNodeIntegrity();
+#ifdef AMALGAM_MEMORY_INTEGRITY
+	VerifyEvaluableNodeIntegrity();
+#endif
 
 	//make sure don't eat more memory than allowed
 	if(!AllowUnlimitedExecutionNodes())
@@ -528,8 +530,9 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, bool immedi
 
 	EvaluableNodeReference retval = (this->*oc)(en, immediate_result);
 
-	//for deep debugging only
-	//ValidateEvaluableNodeIntegrity();
+#ifdef AMALGAM_MEMORY_INTEGRITY
+	VerifyEvaluableNodeIntegrity();
+#endif
 
 	//finished with opcode
 	interpreterNodeStackNodes->pop_back();

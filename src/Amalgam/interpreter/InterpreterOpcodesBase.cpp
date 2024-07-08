@@ -408,7 +408,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PARALLEL(EvaluableNode *en
 			}
 
 			enqueue_task_lock.Unlock();
-
 			concurrency_manager.EndConcurrency();
 
 			return EvaluableNodeReference::Null();

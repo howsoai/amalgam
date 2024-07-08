@@ -541,7 +541,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, bool 
 		}
 		else if(command == "validate")
 		{
-			ValidateEvaluableNodeIntegrity();
+			VerifyEvaluableNodeIntegrity();
 			std::cout << "validation completed successfully" << std::endl;
 		}
 	#ifdef MULTITHREAD_SUPPORT

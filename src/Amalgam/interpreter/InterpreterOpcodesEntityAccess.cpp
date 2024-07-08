@@ -258,8 +258,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 			//collect garbage, but not on current entity, save that for between instructions
 			if(target_entity != curEntity)
 			{
-				//for deep debugging only
-				//ValidateEvaluableNodeIntegrity();
+			#ifdef AMALGAM_MEMORY_INTEGRITY
+				VerifyEvaluableNodeIntegrity();
+			#endif
 
 			#ifdef MULTITHREAD_SUPPORT
 				target_entity->CollectGarbage(&memoryModificationLock);
@@ -267,8 +268,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 				target_entity->CollectGarbage();
 			#endif
 
-				//for deep debugging only
-				//ValidateEvaluableNodeIntegrity();
+			#ifdef AMALGAM_MEMORY_INTEGRITY
+				VerifyEvaluableNodeIntegrity();
+			#endif
 			}
 		}
 

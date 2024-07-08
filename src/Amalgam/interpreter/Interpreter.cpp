@@ -806,6 +806,8 @@ bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node
 
 	ConcurrencyManager concurrency_manager(this, num_tasks);
 
+	interpreted_nodes.resize(num_tasks);
+
 	//kick off interpreters
 	for(size_t task_index = 0; task_index < num_tasks; task_index++)
 	{

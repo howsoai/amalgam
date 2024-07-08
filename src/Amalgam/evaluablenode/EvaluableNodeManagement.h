@@ -96,6 +96,30 @@ public:
 		value.nodeValue.code->SetNeedCycleCheck(need_cycle_check);
 	}
 
+	//returns true if the reference is idempotent
+	constexpr bool GetIsIdempotent()
+	{
+		if(value.nodeType != ENIVT_CODE)
+			return true;
+
+		if(value.nodeValue.code == nullptr)
+			return true;
+
+		return value.nodeValue.code->GetIsIdempotent();
+	}
+
+	//sets idempotency if the reference is code and not nullptr
+	constexpr void SetIsIdempotent(bool is_idempotent)
+	{
+		if(value.nodeType != ENIVT_CODE)
+			return;
+
+		if(value.nodeValue.code == nullptr)
+			return;
+
+		return value.nodeValue.code->SetIsIdempotent(is_idempotent);
+	}
+
 	constexpr static EvaluableNodeReference Null()
 	{
 		return EvaluableNodeReference(nullptr, true);

@@ -345,7 +345,7 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	EvaluableNode *construction_stack, std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices)
 #endif
 {
-
+	//TODO 20780: remove keep_result_node_reference param?
 #ifdef MULTITHREAD_SUPPORT
 	if(call_stack == nullptr)
 		callStackUniqueAccessStartingDepth = 0;

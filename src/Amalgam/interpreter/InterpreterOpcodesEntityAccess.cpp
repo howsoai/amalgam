@@ -46,27 +46,54 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 	bool return_query_value = (en->GetType() == ENT_COMPUTE_ON_CONTAINED_ENTITIES);
 
 	//parameters to search entities for
-	EvaluableNode *query_params_uninterpreted = nullptr;
-	EvaluableNode *entity_id_path_uninterpreted = nullptr;
+	EvaluableNodeReference query_params;
+	EvaluableNodeReference entity_id_path;
 
 	auto &ocn = en->GetOrderedChildNodes();
 	if(ocn.size() == 1)
 	{
-		query_params_uninterpreted = ocn[0];
+		query_params = InterpretNodeForImmediateUse(ocn[0]);
+
+		//detect whether it's a query
+		bool is_query = true;
+		if(EvaluableNode::IsNull(query_params))
+		{
+			is_query = false;
+		}
+		else if(!IsEvaluableNodeTypeQuery(query_params->GetType()))
+		{
+			if(query_params->GetType() == ENT_LIST)
+			{
+				auto &qp_ocn = query_params->GetOrderedChildNodesReference();
+				if(qp_ocn.size() == 0)
+					is_query = false;
+				else if(!EvaluableNode::IsQuery(qp_ocn[0]))
+					is_query = false;
+			}
+			else
+			{
+				is_query = false;
+			}
+		}
+
+		if(!is_query)
+			std::swap(entity_id_path, query_params);
 	}
 	else if(ocn.size() >= 2)
 	{
-		entity_id_path_uninterpreted = ocn[0];
-		query_params_uninterpreted = ocn[1];
+		entity_id_path = InterpretNodeForImmediateUse(ocn[0]);
+		auto node_stack = CreateInterpreterNodeStackStateSaver(entity_id_path);
+		query_params = InterpretNodeForImmediateUse(ocn[1]);
 	}
-
-	EvaluableNodeReference query_params = InterpretNodeForImmediateUse(query_params_uninterpreted);
-	auto node_stack = CreateInterpreterNodeStackStateSaver(query_params);
 
 	//if no query, just return all contained entities
 	if(EvaluableNode::IsNull(query_params))
 	{
-		EntityReadReference source_entity = InterpretNodeIntoRelativeSourceEntityReadReference(entity_id_path_uninterpreted);
+		//in case the null was created
+		evaluableNodeManager->FreeNodeTreeIfPossible(query_params);
+
+		EntityReadReference source_entity = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReadReference>(curEntity, entity_id_path);
+		evaluableNodeManager->FreeNodeTreeIfPossible(entity_id_path);
 		if(source_entity == nullptr)
 			return EvaluableNodeReference::Null();
 
@@ -118,14 +145,26 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 
 	//if not a valid query, return nullptr
 	if(conditionsBuffer.size() == 0)
+	{
+		evaluableNodeManager->FreeNodeTreeIfPossible(query_params);
 		return EvaluableNodeReference::Null();
+	}
 
-	EntityReadReference source_entity = InterpretNodeIntoRelativeSourceEntityReadReference(entity_id_path_uninterpreted);
+	EntityReadReference source_entity = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReadReference>(curEntity, entity_id_path);
+	evaluableNodeManager->FreeNodeTreeIfPossible(entity_id_path);
 	if(source_entity == nullptr)
+	{
+		evaluableNodeManager->FreeNodeTreeIfPossible(query_params);
 		return EvaluableNodeReference::Null();
+	}
 
 	//perform query
-	return EntityQueryCaches::GetEntitiesMatchingQuery(source_entity, conditionsBuffer, evaluableNodeManager, return_query_value);
+	auto result = EntityQueryCaches::GetEntitiesMatchingQuery(source_entity, conditionsBuffer, evaluableNodeManager, return_query_value);
+
+	//free query_params after the query just in case query_params is the only place that a given string id exists,
+	//so the value isn't swapped out
+	evaluableNodeManager->FreeNodeTreeIfPossible(query_params);
+	return result;
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes(EvaluableNode *en, bool immediate_result)

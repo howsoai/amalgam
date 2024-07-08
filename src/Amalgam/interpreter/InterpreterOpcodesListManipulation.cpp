@@ -625,21 +625,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, b
 
 			for(size_t node_index = 0; node_index < num_nodes; node_index++)
 				concurrency_manager.PushTaskToResultFuturesWithConstructionStack(function,
-					nullptr, result, EvaluableNodeImmediateValueWithType(node_index * range_step_size + range_start), nullptr);
+					nullptr, result, EvaluableNodeImmediateValueWithType(node_index * range_step_size + range_start),
+					nullptr, list_ocn[node_index]);
 
 			enqueue_task_lock.Unlock();
-
 			concurrency_manager.EndConcurrency();
 
-			//filter by those child nodes that are true
-			auto evaluations = concurrency_manager.GetResultsAndFreeReferences();
-			auto &result_ocn = result->GetOrderedChildNodes();
-			for(size_t i = 0; i < num_nodes; i++)
-			{
-				result_ocn[i] = evaluations[i];
-				result.UpdatePropertiesBasedOnAttachedNode(evaluations[i]);
-			}
-
+			concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(result);
 			return result;
 		}
 	}

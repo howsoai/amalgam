@@ -41,10 +41,18 @@ void SeparableBoxFilterDataStore::BuildLabel(size_t column_index, const std::vec
 	column_data->AppendSortedNumberIndicesWithSortedIndices(entities_with_number_values);
 
 	OptimizeColumn(column_index);
+
+#ifdef SBFDS_VERIFICATION
+	VerifyAllEntitiesForColumn(column_index);
+#endif
 }
 
 void SeparableBoxFilterDataStore::OptimizeColumn(size_t column_index)
 {
+#ifdef SBFDS_VERIFICATION
+	VerifyAllEntitiesForColumn(column_index);
+#endif
+
 	auto &column_data = columnData[column_index];
 
 	if(column_data->internedNumberValues.valueInterningEnabled)
@@ -78,10 +86,50 @@ void SeparableBoxFilterDataStore::OptimizeColumn(size_t column_index)
 		for(auto entity_index : column_data->nullIndices)
 			GetValue(entity_index, column_index).indirectionIndex = SBFDSColumnData::ValueEntry::NULL_INDEX;
 	}
+
+	if(column_data->internedStringIdValues.valueInterningEnabled)
+	{
+		if(column_data->AreStringIdValuesPreferredToInterns())
+		{
+			for(auto &[sid, value_entry] : column_data->stringIdValueEntries)
+			{
+				auto value = value_entry->value.stringID;
+				for(auto entity_index : value_entry->indicesWithValue)
+					GetValue(entity_index, column_index).stringID = value;
+			}
+
+			for(auto entity_index : column_data->nullIndices)
+				GetValue(entity_index, column_index).stringID = StringInternPool::NOT_A_STRING_ID;
+
+			column_data->ConvertStringIdInternsToValues();
+		}
+	}
+	else if(column_data->AreStringIdInternsPreferredToValues())
+	{
+		column_data->ConvertStringIdValuesToInterns();
+
+		for(auto &[sid, value_entry] : column_data->stringIdValueEntries)
+		{
+			size_t value_index = value_entry->valueInternIndex;
+			for(auto entity_index : value_entry->indicesWithValue)
+				GetValue(entity_index, column_index).indirectionIndex = value_index;
+		}
+
+		for(auto entity_index : column_data->nullIndices)
+			GetValue(entity_index, column_index).indirectionIndex = SBFDSColumnData::ValueEntry::NULL_INDEX;
+	}
+
+#ifdef SBFDS_VERIFICATION
+	VerifyAllEntitiesForColumn(column_index);
+#endif
 }
 
 void SeparableBoxFilterDataStore::RemoveColumnIndex(size_t column_index_to_remove)
 {
+#ifdef SBFDS_VERIFICATION
+	VerifyAllEntitiesForAllColumns();
+#endif
+
 	//will replace the values at index_to_remove with the values at index_to_move
 	size_t column_index_to_move = columnData.size() - 1;
 
@@ -119,10 +167,18 @@ void SeparableBoxFilterDataStore::RemoveColumnIndex(size_t column_index_to_remov
 	matrix.resize(columnData.size() * numEntities);
 	for(size_t i = 0; i < numEntities; i++)
 		memcpy((char *)&matrix[i * columnData.size()], (char *)&old_matrix[i * (columnData.size() + 1)], sizeof(EvaluableNodeImmediateValue) * (columnData.size()));
+
+#ifdef SBFDS_VERIFICATION
+	VerifyAllEntitiesForAllColumns();
+#endif
 }
 
 void SeparableBoxFilterDataStore::AddEntity(Entity *entity, size_t entity_index)
 {
+#ifdef SBFDS_VERIFICATION
+	VerifyAllEntitiesForAllColumns();
+#endif
+
 	size_t starting_cell_index = GetMatrixCellIndex(entity_index);
 
 	//fill with missing values, including any empty indices
@@ -143,6 +199,10 @@ void SeparableBoxFilterDataStore::AddEntity(Entity *entity, size_t entity_index)
 		numEntities = entity_index + 1;
 
 	OptimizeAllColumns();
+
+#ifdef SBFDS_VERIFICATION
+	VerifyAllEntitiesForAllColumns();
+#endif
 }
 
 void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_index, size_t entity_index_to_reassign)
@@ -150,18 +210,32 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 	if(entity_index >= numEntities || columnData.size() == 0)
 		return;
 
+#ifdef SBFDS_VERIFICATION
+	VerifyAllEntitiesForAllColumns();
+#endif
+
 	//if was the last entity and reassigning the last one or one out of bounds,
 	// simply delete from column data, delete last row, and return
 	if(entity_index + 1 == GetNumInsertedEntities() && entity_index_to_reassign >= entity_index)
 	{
 		DeleteEntityIndexFromColumns(entity_index);
 		DeleteLastRow();
+
+	#ifdef SBFDS_VERIFICATION
+		VerifyAllEntitiesForAllColumns();
+	#endif
+
 		return;
 	}
 
 	//make sure it's a valid rassignment
 	if(entity_index_to_reassign >= numEntities)
+	{
+	#ifdef SBFDS_VERIFICATION
+		VerifyAllEntitiesForAllColumns();
+	#endif
 		return;
+	}
 
 	//if deleting a row and not replacing it, just fill as if it has no data
 	if(entity_index == entity_index_to_reassign)
@@ -172,6 +246,10 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 		size_t starting_cell_index = GetMatrixCellIndex(entity_index);
 		for(size_t column_index = 0; column_index < columnData.size(); column_index++)
 			matrix[starting_cell_index + column_index].number = std::numeric_limits<double>::quiet_NaN();
+
+	#ifdef SBFDS_VERIFICATION
+		VerifyAllEntitiesForAllColumns();
+	#endif
 		return;
 	}
 
@@ -180,25 +258,18 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 	{
 		auto &column_data = columnData[column_index];
 
-		auto &val_to_overwrite_raw = GetValue(entity_index, column_index);
-		auto type_to_overwrite_raw = column_data->GetIndexValueType(entity_index);
-		auto val_to_overwrite = column_data->GetResolvedValue(type_to_overwrite_raw, val_to_overwrite_raw);
-		auto type_to_overwrite = column_data->GetResolvedValueType(type_to_overwrite_raw);
+		auto &val_to_overwrite = GetValue(entity_index, column_index);
+		auto type_to_overwrite = column_data->GetIndexValueType(entity_index);
 
-		auto &raw_value_to_reassign = GetValue(entity_index_to_reassign, column_index);
-		auto raw_value_type_to_reassign = column_data->GetIndexValueType(entity_index_to_reassign);
-		auto value_to_reassign = column_data->GetResolvedValue(raw_value_type_to_reassign, raw_value_to_reassign);
-		auto value_type_to_reassign = column_data->GetResolvedValueType(raw_value_type_to_reassign);
+		auto &value_to_reassign = GetValue(entity_index_to_reassign, column_index);
+		auto value_type_to_reassign = column_data->GetIndexValueType(entity_index_to_reassign);
+
+		//change the destination to the value
+		val_to_overwrite = columnData[column_index]->ChangeIndexValue(type_to_overwrite, val_to_overwrite, value_type_to_reassign, value_to_reassign, entity_index);
 
 		//remove the value where it is
 		columnData[column_index]->DeleteIndexValue(value_type_to_reassign, value_to_reassign, entity_index_to_reassign);
-
-		//change the destination to the value
-		columnData[column_index]->ChangeIndexValue(type_to_overwrite, val_to_overwrite, value_type_to_reassign, value_to_reassign, entity_index);
 	}
-
-	//copy data from entity_index_to_reassign to entity_index
-	memcpy((char *)&(matrix[entity_index * columnData.size()]), (char *)&(matrix[entity_index_to_reassign * columnData.size()]), sizeof(EvaluableNodeImmediateValue) * columnData.size());
 
 	//truncate matrix cache if removing the last entry, either by moving the last entity or by directly removing the last
 	if(entity_index_to_reassign + 1 == numEntities
@@ -209,12 +280,20 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 	RemoveAnyUnusedLabels();
 
 	OptimizeAllColumns();
+
+#ifdef SBFDS_VERIFICATION
+	VerifyAllEntitiesForAllColumns();
+#endif
 }
 
 void SeparableBoxFilterDataStore::UpdateAllEntityLabels(Entity *entity, size_t entity_index)
 {
 	if(entity_index >= numEntities)
 		return;
+
+#ifdef SBFDS_VERIFICATION
+	VerifyAllEntitiesForAllColumns();
+#endif
 
 	size_t matrix_index = GetMatrixCellIndex(entity_index);
 	for(size_t column_index = 0; column_index < columnData.size(); column_index++)
@@ -239,6 +318,10 @@ void SeparableBoxFilterDataStore::UpdateAllEntityLabels(Entity *entity, size_t e
 	RemoveAnyUnusedLabels();
 
 	OptimizeAllColumns();
+
+#ifdef SBFDS_VERIFICATION
+	VerifyAllEntitiesForAllColumns();
+#endif
 }
 
 void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entity_index, StringInternPool::StringID label_updated)
@@ -253,6 +336,10 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 	size_t column_index = column->second;
 	auto &column_data = columnData[column_index];
 
+#ifdef SBFDS_VERIFICATION
+	VerifyAllEntitiesForColumn(column_index);
+#endif
+
 	//get the new value
 	EvaluableNodeImmediateValueType value_type;
 	EvaluableNodeImmediateValue value;
@@ -261,7 +348,7 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 	//update the value
 	auto &matrix_value = GetValue(entity_index, column_index);
 	auto previous_value_type = column_data->GetIndexValueType(entity_index);
-
+	
 	//assign the matrix location to the updated value (which may be an index)
 	matrix_value = column_data->ChangeIndexValue(previous_value_type, matrix_value, value_type, value, entity_index);
 
@@ -270,6 +357,10 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 		RemoveColumnIndex(column_index);
 	else
 		OptimizeColumn(column_index);
+
+#ifdef SBFDS_VERIFICATION
+	VerifyAllEntitiesForColumn(column_index);
+#endif
 }
 
 //populates distances_out with all entities and their distances that have a distance to target less than max_dist
@@ -814,6 +905,64 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 	}
 }
 
+#ifdef SBFDS_VERIFICATION
+void SeparableBoxFilterDataStore::VerifyAllEntitiesForColumn(size_t column_index)
+{
+	auto &column_data = columnData[column_index];
+
+	for(auto &value_entry : column_data->sortedNumberValueEntries)
+	{
+		//ensure all interned values are valid
+		if(column_data->internedNumberValues.valueInterningEnabled)
+		{
+			auto &interns = column_data->internedNumberValues;
+			assert(value_entry->valueInternIndex < interns.internedIndexToValue.size());
+			assert(!FastIsNaN(interns.internedIndexToValue[value_entry->valueInternIndex]));
+		}
+
+		//ensure all entity ids are not out of range
+		for(auto entity_index : value_entry->indicesWithValue)
+			assert(entity_index < numEntities);
+	}
+
+	//ensure all numbers are valid
+	for(auto entity_index : column_data->numberIndices)
+	{
+		auto &feature_value = GetValue(entity_index, column_index);
+		auto feature_type = column_data->GetIndexValueType(entity_index);
+		assert(feature_type == ENIVT_NUMBER || feature_type == ENIVT_NUMBER_INDIRECTION_INDEX);
+		if(feature_type == ENIVT_NUMBER_INDIRECTION_INDEX && feature_value.indirectionIndex != 0)
+		{
+			auto feature_value_resolved = column_data->GetResolvedValue(feature_type, feature_value);
+			assert(!FastIsNaN(feature_value_resolved.number));
+		}
+	}
+
+	for(auto &[sid, value_entry] : column_data->stringIdValueEntries)
+	{
+		//ensure all interned values are valid
+		if(column_data->internedStringIdValues.valueInterningEnabled)
+		{
+			auto &interns = column_data->internedStringIdValues;
+			assert(value_entry->valueInternIndex < interns.internedIndexToValue.size());
+		}
+	}
+
+	//ensure all string ids are valid
+	for(auto entity_index : column_data->stringIdIndices)
+	{
+		auto &feature_value = GetValue(entity_index, column_index);
+		auto feature_type = column_data->GetIndexValueType(entity_index);
+		assert(feature_type == ENIVT_STRING_ID || feature_type == ENIVT_STRING_ID_INDIRECTION_INDEX);
+		if(feature_type == ENIVT_STRING_ID_INDIRECTION_INDEX && feature_value.indirectionIndex != 0)
+		{
+			auto feature_value_resolved = column_data->GetResolvedValue(feature_type, feature_value);
+			assert(feature_value_resolved.stringID != string_intern_pool.EMPTY_STRING_ID);
+		}
+	}
+}
+#endif
+
 void SeparableBoxFilterDataStore::DeleteEntityIndexFromColumns(size_t entity_index)
 {
 	for(size_t i = 0; i < columnData.size(); i++)
@@ -1067,11 +1216,11 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	{
 		if(value.nodeType == ENIVT_STRING_ID)
 		{
-			auto value_found = column->stringIdValueToIndices.find(value.nodeValue.stringID);
-			if(value_found != end(column->stringIdValueToIndices))
+			auto value_found = column->stringIdValueEntries.find(value.nodeValue.stringID);
+			if(value_found != end(column->stringIdValueEntries))
 			{
 				double term = r_dist_eval.distEvaluator->ComputeDistanceTermContinuousExactMatch(query_feature_index, high_accuracy);
-				AccumulatePartialSums(*(value_found->second), query_feature_index, term);
+				AccumulatePartialSums(value_found->second->indicesWithValue, query_feature_index, term);
 			}
 		}
 
@@ -1406,15 +1555,47 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 	auto &feature_type = feature_attribs.featureType;
 	auto &feature_data = r_dist_eval.featureData[query_feature_index];
 	auto &effective_feature_type = r_dist_eval.featureData[query_feature_index].effectiveFeatureType;
+	auto &column_data = columnData[feature_attribs.featureIndex];
 
 	feature_data.Clear();
+	feature_data.targetValue = EvaluableNodeImmediateValueWithType(position_value, position_value_type);
 
-	if(feature_attribs.IsFeatureNominal()
+	bool complex_comparison = (feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING
-		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
-	{
-		feature_data.targetValue = EvaluableNodeImmediateValueWithType(position_value, position_value_type);
+		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE);
 
+	//consider computing interned values if appropriate
+	//however, symmetric nominals are fast, so don't compute interned values for them
+	if(!feature_attribs.IsFeatureSymmetricNominal() && !complex_comparison)
+	{
+		if(position_value_type == ENIVT_NUMBER && column_data->internedNumberValues.valueInterningEnabled)
+		{
+			size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
+
+			if(GetNumInsertedEntities() == num_values_stored_as_numbers)
+				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_UNIVERSALLY_INTERNED_PRECOMPUTED;
+			else
+				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NUMERIC_INTERNED_PRECOMPUTED;
+
+			r_dist_eval.ComputeAndStoreInternedDistanceTerms(query_feature_index, &column_data->internedNumberValues.internedIndexToValue);
+			return;
+		}
+		else if(position_value_type == ENIVT_STRING_ID && column_data->internedStringIdValues.valueInterningEnabled)
+		{
+			size_t num_values_stored_as_string_ids = column_data->stringIdIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
+
+			if(GetNumInsertedEntities() == num_values_stored_as_string_ids)
+				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_UNIVERSALLY_INTERNED_PRECOMPUTED;
+			else
+				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_STRING_INTERNED_PRECOMPUTED;
+
+			r_dist_eval.ComputeAndStoreInternedDistanceTerms(query_feature_index, &column_data->internedStringIdValues.internedIndexToValue);
+			return;
+		}
+	}
+
+	if(feature_attribs.IsFeatureNominal() || complex_comparison)
+	{
 		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC)
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMERIC;
 		else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING)
@@ -1431,36 +1612,14 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 	}
 	else // feature_type is some form of continuous numeric
 	{
-		//looking for continuous; if not a number, so just put as nan
-		double position_value_numeric = (position_value_type == ENIVT_NUMBER
-			? position_value.number : std::numeric_limits<double>::quiet_NaN());
-
-		feature_data.targetValue = EvaluableNodeImmediateValueWithType(position_value_numeric);
-
-		//set up effective_feature_type
-		auto &column_data = columnData[feature_attribs.featureIndex];
-
-		//determine if all values are numeric
-		size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size() + column_data->nullIndices.size();
-		bool all_values_numeric = (GetNumInsertedEntities() == num_values_stored_as_numbers);
-
-		if(column_data->internedNumberValues.valueInterningEnabled)
-		{
-			if(all_values_numeric)
-				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_UNIVERSALLY_INTERNED_PRECOMPUTED;
-			else
-				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED;
-
-			r_dist_eval.ComputeAndStoreInternedNumberValuesAndDistanceTerms(query_feature_index, &column_data->internedNumberValues.internedIndexToValue);
-		}
+		size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size();
+		if(GetNumInsertedEntities() == num_values_stored_as_numbers
+				&& feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC
+				&& !column_data->internedNumberValues.valueInterningEnabled)
+			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC;
+		else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC)
+			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_CYCLIC;
 		else
-		{
-			if(all_values_numeric && feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC)
-				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC;
-			else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC)
-				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_CYCLIC;
-			else
-				effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC;
-		}
+			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC;
 	}
 }

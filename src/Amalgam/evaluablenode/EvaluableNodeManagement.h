@@ -7,6 +7,9 @@
 //system headers:
 #include <memory>
 
+//if the macro PEDANTIC_GARBAGE_COLLECTION is defined, then garbage collection will be performed
+//after every opcode, to help find and debug memory issues
+
 typedef int64_t ExecutionCycleCount;
 typedef int32_t ExecutionCycleCountCompactDelta;
 

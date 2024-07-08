@@ -20,6 +20,9 @@
 #include <type_traits>
 #include <vector>
 
+//if the macro AMALGAM_MEMORY_INTEGRITY is defined, then it will continuously verify memory, at a high cost of performance
+//this is useful for diagnosing and debugging memory issues
+
 //forward declarations:
 class EntityQueryCondition;
 
@@ -959,7 +962,7 @@ protected:
 	EvaluableNodeReference InterpretNode_PROFILE(EvaluableNode *en, bool immediate_result);
 
 	//ensures that there are no reachable nodes that are deallocated
-	void ValidateEvaluableNodeIntegrity();
+	void VerifyEvaluableNodeIntegrity();
 
 	//current execution step - number of nodes executed
 	ExecutionCycleCount curExecutionStep;

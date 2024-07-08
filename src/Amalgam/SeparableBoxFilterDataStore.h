@@ -1,10 +1,15 @@
 #pragma once
 
-//-------------------------------------------------------------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------------------------------------------------
 //Seperable Box-Filter Data Store
-//Spatial acceleration database for high-dimensional data with no constraints on metric space (Minkowski, Euclidean, LK, etc).
-//The structure can efficiently search for data when using different metric space parameters without being rebuilt.
-//-------------------------------------------------------------------------------------------------------------------------------------
+//Spatial acceleration database for high-dimensional data without constraints on metric space (Minkowski, Euclidean, LK, etc).
+//The structure can efficiently search data when using different metric space parameters without being rebuilt.
+//----------------------------------------------------------------------------------------------------------------------------
+
+//if SBFDS_VERIFICATION is defined, then it will frequently verify integrity at cost of performance
+//if FORCE_SBFDS_VALUE_INTERNING is defined, then it will force value interning to always be on
+//if DISABLE_SBFDS_VALUE_INTERNING is defined, then it will disable all value interning
+//if FORCE_SBFDS_VALUE_INTERNING and DISABLE_SBFDS_VALUE_INTERNING, FORCE_SBFDS_VALUE_INTERNING takes precedence
 
 //project headers:
 #include "Concurrency.h"
@@ -460,16 +465,18 @@ public:
 	template<typename Iter>
 	inline std::function<bool(Iter, StringInternPool::StringID &)> GetStringIdValueFromEntityIteratorFunction(size_t column_index)
 	{
-		auto string_indices_ptr = &columnData[column_index]->stringIdIndices;
+		auto column_data = columnData[column_index].get();
+		auto string_indices_ptr = &column_data->stringIdIndices;
+		auto value_type = column_data->GetUnresolvedValueType(ENIVT_STRING_ID);
 
-		return [&, string_indices_ptr, column_index]
+		return [&, string_indices_ptr, column_index, column_data, value_type]
 		(Iter i, StringInternPool::StringID &value)
 		{
 			size_t entity_index = *i;
 			if(!string_indices_ptr->contains(entity_index))
 				return false;
 
-			value = GetValue(entity_index, column_index).stringID;
+			value = column_data->GetResolvedValue(value_type, GetValue(entity_index, column_index)).stringID;
 			return true;
 		};
 	}
@@ -501,6 +508,18 @@ public:
 		std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream = RandomStream());
 
 protected:
+
+#ifdef SBFDS_VERIFICATION
+	//used for debugging to make sure all entities are valid
+	void VerifyAllEntitiesForColumn(size_t column_index);
+
+	//used for debugging to make sure all entities are valid
+	inline void VerifyAllEntitiesForAllColumns()
+	{
+		for(size_t i = 0; i < columnData.size(); i++)
+			VerifyAllEntitiesForColumn(i);
+	}
+#endif
 
 	//deletes/pops off the last row in the matrix cache
 	inline void DeleteLastRow()
@@ -664,11 +683,11 @@ protected:
 	inline double AccumulatePartialSumsForNominalStringIdValueIfExists(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		StringInternPool::StringID value, size_t query_feature_index, SBFDSColumnData &column, bool high_accuracy)
 	{
-		auto value_found = column.stringIdValueToIndices.find(value);
-		if(value_found != end(column.stringIdValueToIndices))
+		auto value_found = column.stringIdValueEntries.find(value);
+		if(value_found != end(column.stringIdValueEntries))
 		{
 			double term = r_dist_eval.ComputeDistanceTermNominal(value, ENIVT_STRING_ID, query_feature_index, high_accuracy);
-			AccumulatePartialSums(*(value_found->second), query_feature_index, term);
+			AccumulatePartialSums(value_found->second->indicesWithValue, query_feature_index, term);
 			return term;
 		}
 
@@ -756,7 +775,7 @@ protected:
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 			return r_dist_eval.ComputeDistanceTermInternedPrecomputed(
-				GetValue(entity_index, feature_attribs.featureIndex).indirectionIndex, query_feature_index, high_accuracy);
+				GetValue(entity_index, feature_attribs.featureIndex).indirectionIndex, query_feature_index);
 		}
 
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC:
@@ -783,13 +802,24 @@ protected:
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
 		}
 
-		case RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_PRECOMPUTED:
+		case RepeatedGeneralizedDistanceEvaluator::EFDT_NUMERIC_INTERNED_PRECOMPUTED:
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 			auto &column_data = columnData[feature_attribs.featureIndex];
 			if(column_data->numberIndices.contains(entity_index))
 				return r_dist_eval.ComputeDistanceTermInternedPrecomputed(
-					GetValue(entity_index, feature_attribs.featureIndex).indirectionIndex, query_feature_index, high_accuracy);
+					GetValue(entity_index, feature_attribs.featureIndex).indirectionIndex, query_feature_index);
+			else
+				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
+		}
+
+		case RepeatedGeneralizedDistanceEvaluator::EFDT_STRING_INTERNED_PRECOMPUTED:
+		{
+			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
+			auto &column_data = columnData[feature_attribs.featureIndex];
+			if(column_data->stringIdIndices.contains(entity_index))
+				return r_dist_eval.ComputeDistanceTermInternedPrecomputed(
+					GetValue(entity_index, feature_attribs.featureIndex).indirectionIndex, query_feature_index);
 			else
 				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
 		}
@@ -827,7 +857,10 @@ protected:
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 			auto &column_data = columnData[feature_attribs.featureIndex];
 			auto other_value_type = column_data->GetIndexValueType(entity_index);
+
+			//resolve value
 			auto other_value = column_data->GetResolvedValue(other_value_type, GetValue(entity_index, feature_attribs.featureIndex));
+			other_value_type = column_data->GetResolvedValueType(other_value_type);
 
 			return r_dist_eval.ComputeDistanceTerm(other_value, other_value_type, query_feature_index, high_accuracy);
 		}

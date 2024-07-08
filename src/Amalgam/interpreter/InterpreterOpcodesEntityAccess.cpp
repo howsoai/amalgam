@@ -50,34 +50,21 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 	EvaluableNode *entity_id_path_uninterpreted = nullptr;
 
 	auto &ocn = en->GetOrderedChildNodes();
-	if(ocn.size() > 0)
+	if(ocn.size() == 1)
 	{
-		EvaluableNode *first_param = ocn[0];
-		if(!EvaluableNode::IsNull(first_param))
-		{
-			if(first_param->GetType() == ENT_LIST && first_param->GetOrderedChildNodes().size() > 0
-				&& EvaluableNode::IsQuery(first_param->GetOrderedChildNodes()[0]))
-			{
-				query_params_uninterpreted = first_param;
-			}
-			else //first parameter is the id
-			{
-				entity_id_path_uninterpreted = first_param;
-				if(ocn.size() > 1)
-					query_params_uninterpreted = ocn[1];
-			}
-		}
-		else if(ocn.size() > 1) //got a nullptr, which means keep source_entity as curEntity
-		{
-			query_params_uninterpreted = ocn[1];
-		}
+		query_params_uninterpreted = ocn[0];
+	}
+	else if(ocn.size() >= 2)
+	{
+		entity_id_path_uninterpreted = ocn[0];
+		query_params_uninterpreted = ocn[1];
 	}
 
 	EvaluableNodeReference query_params = InterpretNodeForImmediateUse(query_params_uninterpreted);
 	auto node_stack = CreateInterpreterNodeStackStateSaver(query_params);
 
 	//if no query, just return all contained entities
-	if(EvaluableNode::IsNull(query_params) || query_params->GetOrderedChildNodes().size() == 0)
+	if(EvaluableNode::IsNull(query_params) && ocn.size() <= 1)
 	{
 		EntityReadReference source_entity = InterpretNodeIntoRelativeSourceEntityReadReference(entity_id_path_uninterpreted);
 		if(source_entity == nullptr)

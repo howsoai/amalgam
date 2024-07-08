@@ -64,7 +64,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 	auto node_stack = CreateInterpreterNodeStackStateSaver(query_params);
 
 	//if no query, just return all contained entities
-	if(EvaluableNode::IsNull(query_params) && ocn.size() <= 1)
+	if(EvaluableNode::IsNull(query_params))
 	{
 		EntityReadReference source_entity = InterpretNodeIntoRelativeSourceEntityReadReference(entity_id_path_uninterpreted);
 		if(source_entity == nullptr)

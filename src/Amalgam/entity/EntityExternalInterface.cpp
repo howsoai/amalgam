@@ -199,6 +199,10 @@ std::string EntityExternalInterface::ExecuteEntityJSON(std::string &handle, std:
 		return "";
 
 	EvaluableNodeManager &enm = bundle->entity->evaluableNodeManager;
+#ifdef MULTITHREAD_INTERFACE
+	EntityReadReferenceConcurrency::ReadLock enm_lock(bundle->entity->evaluableNodeManager.memoryModificationMutex);
+#endif
+
 	EvaluableNodeReference args = EvaluableNodeReference(EvaluableNodeJSONTranslation::JsonToEvaluableNode(&enm, json), true);
 
 	auto call_stack = Interpreter::ConvertArgsToCallStack(args, enm);
@@ -206,7 +210,11 @@ std::string EntityExternalInterface::ExecuteEntityJSON(std::string &handle, std:
 	ExecutionCycleCount max_num_steps = 0, num_steps_executed = 0;
 	size_t max_num_nodes = 0, num_nodes_allocated = 0;
 	EvaluableNodeReference returned_value = bundle->entity->Execute(max_num_steps, num_steps_executed, max_num_nodes,
-		num_nodes_allocated, label, call_stack, false, nullptr, &bundle->writeListeners, bundle->printListener);
+		num_nodes_allocated, label, call_stack, false, nullptr, &bundle->writeListeners, bundle->printListener
+#ifdef MULTITHREAD_INTERFACE
+		, &enm_lock
+#endif
+	);
 
 	//ConvertArgsToCallStack always adds an outer list that is safe to free
 	enm.FreeNode(call_stack);

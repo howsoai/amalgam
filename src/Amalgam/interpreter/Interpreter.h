@@ -527,9 +527,10 @@ protected:
 			parentInterpreter->memoryModificationLock.unlock();
 		}
 
-		//Enqueues a concurrent task resultFutures that needs a construction stack, using the relative interpreter
+		//Enqueues a concurrent task that needs a construction stack, using the relative interpreter
 		// executes node_to_execute with the following parameters matching those of pushing on the construction stack
 		// will allocate an approrpiate node matching the type of current_index
+		//result is set to the result of the task
 		void EnqueueTaskWithConstructionStack(EvaluableNode *node_to_execute,
 			EvaluableNode *target_origin, EvaluableNode *target,
 			EvaluableNodeImmediateValueWithType current_index,
@@ -588,7 +589,63 @@ protected:
 			);
 		}
 
-		//TODO 20780: add new method like EnqueueTaskWithConstructionStack that doesn't store results, use for parallel opcode
+		//TODO 20780: incorporate this where appropriate
+		//Enqueues a concurrent task using the relative interpreter, executing node_to_execute
+		//if result is specified, it will store the result there, otherwise it will free it
+		void EnqueueTask(EvaluableNode *node_to_execute, EvaluableNode **result = nullptr)
+		{
+			//get the interpreter corresponding to the resultFutures
+			Interpreter *interpreter = interpreters[curNumTasksEnqueued++].get();
+
+			Concurrency::threadPool.BatchEnqueueTask(
+				[this, interpreter, node_to_execute, &result]
+				{
+					EvaluableNodeManager *enm = interpreter->evaluableNodeManager;
+					interpreter->memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
+
+					std::vector<ConstructionStackIndexAndPreviousResultUniqueness> csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
+					auto result_ref = interpreter->ExecuteNode(node_to_execute,
+						enm->AllocListNode(parentInterpreter->callStackNodes),
+						enm->AllocListNode(parentInterpreter->interpreterNodeStackNodes),
+						enm->AllocListNode(parentInterpreter->constructionStackNodes),
+						&csiau,
+						GetCallStackMutex());
+
+					if(result == nullptr)
+					{
+						enm->FreeNodeTreeIfPossible(result_ref);
+					}
+					else //want result
+					{
+						if(result_ref.unique)
+						{
+							if(result_ref.GetNeedCycleCheck())
+								resultsNeedCycleCheck = true;
+						}
+						else
+						{
+							resultsUnique = false;
+							resultsNeedCycleCheck = true;
+						}
+
+						if(result_ref.GetIsIdempotent())
+							resultsIdempotent = false;
+
+						*result = result_ref;
+
+						//store the result, but make sure there's a write lock to protect it
+						{
+							Concurrency::WriteLock write_lock(*GetCallStackMutex());
+							resultsSaver.PushEvaluableNode(*result);
+						}
+					}
+
+					interpreter->memoryModificationLock.unlock();
+
+					taskSet.MarkTaskCompleted();
+				}
+			);
+		}
 
 		//ends concurrency from all interpreters and waits for them to finish
 		inline void EndConcurrency()

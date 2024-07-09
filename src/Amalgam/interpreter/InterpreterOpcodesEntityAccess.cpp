@@ -45,54 +45,58 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 
 	bool return_query_value = (en->GetType() == ENT_COMPUTE_ON_CONTAINED_ENTITIES);
 
-	EntityReadReference source_entity;
-
 	//parameters to search entities for
-	EvaluableNode *query_params = nullptr;
+	EvaluableNodeReference query_params;
+	EvaluableNodeReference entity_id_path;
 
 	auto &ocn = en->GetOrderedChildNodes();
-	if(ocn.size() > 0)
+	if(ocn.size() == 1)
 	{
-		EvaluableNodeReference first_param = InterpretNodeForImmediateUse(ocn[0]);
+		query_params = InterpretNodeForImmediateUse(ocn[0]);
 
-		if(first_param != nullptr)
+		//detect whether it's a query
+		bool is_query = true;
+		if(EvaluableNode::IsNull(query_params))
 		{
-			if(first_param->GetType() == ENT_LIST && first_param->GetOrderedChildNodes().size() > 0
-				&& EvaluableNode::IsQuery(first_param->GetOrderedChildNodes()[0]))
+			is_query = false;
+		}
+		else if(!IsEvaluableNodeTypeQuery(query_params->GetType()))
+		{
+			if(query_params->GetType() == ENT_LIST)
 			{
-				query_params = first_param;
+				auto &qp_ocn = query_params->GetOrderedChildNodesReference();
+				if(qp_ocn.size() == 0)
+					is_query = false;
+				else if(!EvaluableNode::IsQuery(qp_ocn[0]))
+					is_query = false;
 			}
-			else //first parameter is the id
+			else
 			{
-				source_entity = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReadReference>(curEntity, first_param);
-				evaluableNodeManager->FreeNodeTreeIfPossible(first_param);
-
-				if(source_entity == nullptr)
-					return EvaluableNodeReference::Null();
-
-				if(ocn.size() > 1)
-					query_params = InterpretNodeForImmediateUse(ocn[1]);
+				is_query = false;
 			}
 		}
-		else if(ocn.size() > 1) //got a nullptr, which means keep source_entity as curEntity
-		{
-			query_params = InterpretNodeForImmediateUse(ocn[1]);
-		}
+
+		if(!is_query)
+			std::swap(entity_id_path, query_params);
 	}
-
-	//if haven't determined source_entity, use current
-	if(source_entity == nullptr)
+	else if(ocn.size() >= 2)
 	{
-		//if no entity, can't do anything
-		if(curEntity == nullptr)
-			return EvaluableNodeReference::Null();
-
-		source_entity = EntityReadReference(curEntity);
+		entity_id_path = InterpretNodeForImmediateUse(ocn[0]);
+		auto node_stack = CreateInterpreterNodeStackStateSaver(entity_id_path);
+		query_params = InterpretNodeForImmediateUse(ocn[1]);
 	}
 
 	//if no query, just return all contained entities
-	if(query_params == nullptr || query_params->GetOrderedChildNodes().size() == 0)
+	if(EvaluableNode::IsNull(query_params))
 	{
+		//in case the null was created
+		evaluableNodeManager->FreeNodeTreeIfPossible(query_params);
+
+		EntityReadReference source_entity = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReadReference>(curEntity, entity_id_path);
+		evaluableNodeManager->FreeNodeTreeIfPossible(entity_id_path);
+		if(source_entity == nullptr)
+			return EvaluableNodeReference::Null();
+
 		auto &contained_entities = source_entity->GetContainedEntities();
 
 		//new list containing the contained entity ids to return
@@ -141,10 +145,26 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 
 	//if not a valid query, return nullptr
 	if(conditionsBuffer.size() == 0)
+	{
+		evaluableNodeManager->FreeNodeTreeIfPossible(query_params);
 		return EvaluableNodeReference::Null();
+	}
+
+	EntityReadReference source_entity = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReadReference>(curEntity, entity_id_path);
+	evaluableNodeManager->FreeNodeTreeIfPossible(entity_id_path);
+	if(source_entity == nullptr)
+	{
+		evaluableNodeManager->FreeNodeTreeIfPossible(query_params);
+		return EvaluableNodeReference::Null();
+	}
 
 	//perform query
-	return EntityQueryCaches::GetEntitiesMatchingQuery(source_entity, conditionsBuffer, evaluableNodeManager, return_query_value);
+	auto result = EntityQueryCaches::GetEntitiesMatchingQuery(source_entity, conditionsBuffer, evaluableNodeManager, return_query_value);
+
+	//free query_params after the query just in case query_params is the only place that a given string id exists,
+	//so the value isn't swapped out
+	evaluableNodeManager->FreeNodeTreeIfPossible(query_params);
+	return result;
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes(EvaluableNode *en, bool immediate_result)

@@ -532,11 +532,12 @@ protected:
 		// executes node_to_execute with the following parameters matching those of pushing on the construction stack
 		// will allocate an approrpiate node matching the type of current_index
 		//result is set to the result of the task
+		template<typename EvaluableNodeRefType>
 		void EnqueueTaskWithConstructionStack(EvaluableNode *node_to_execute,
 			EvaluableNode *target_origin, EvaluableNode *target,
 			EvaluableNodeImmediateValueWithType current_index,
 			EvaluableNode *current_value,
-			EvaluableNode *&result,
+			EvaluableNodeRefType &result,
 			EvaluableNodeReference previous_result = EvaluableNodeReference::Null())
 		{
 			//get the interpreter corresponding to the resultFutures

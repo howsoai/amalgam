@@ -430,6 +430,7 @@ public:
 		if(curEntity == nullptr)
 			return EntityReferenceType(nullptr);
 
+		//extra optimization to skip the logic below when the path is null
 		if(EvaluableNode::IsNull(node_id_path_to_interpret))
 			return EntityReferenceType(curEntity);
 

@@ -530,7 +530,7 @@ protected:
 		//Enqueues a concurrent task resultFutures that needs a construction stack, using the relative interpreter
 		// executes node_to_execute with the following parameters matching those of pushing on the construction stack
 		// will allocate an approrpiate node matching the type of current_index
-		void PushTaskToResultFuturesWithConstructionStack(EvaluableNode *node_to_execute,
+		void EnqueueTaskWithConstructionStack(EvaluableNode *node_to_execute,
 			EvaluableNode *target_origin, EvaluableNode *target,
 			EvaluableNodeImmediateValueWithType current_index,
 			EvaluableNode *current_value,
@@ -588,7 +588,7 @@ protected:
 			);
 		}
 
-		//TODO 20780: add new method like PushTaskToResultFuturesWithConstructionStack that doesn't store results, use for parallel opcode
+		//TODO 20780: add new method like EnqueueTaskWithConstructionStack that doesn't store results, use for parallel opcode
 
 		//ends concurrency from all interpreters and waits for them to finish
 		inline void EndConcurrency()

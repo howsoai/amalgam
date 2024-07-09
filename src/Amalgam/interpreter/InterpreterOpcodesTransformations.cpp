@@ -97,7 +97,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 					ConcurrencyManager concurrency_manager(this, num_nodes);
 
 					for(size_t node_index = 0; node_index < num_nodes; node_index++)
-						concurrency_manager.PushTaskToResultFuturesWithConstructionStack(function,
+						concurrency_manager.EnqueueTaskWithConstructionStack(function,
 							list, result, EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)),
 							list_ocn[node_index], result_ocn[node_index]);
 
@@ -142,7 +142,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 					ConcurrencyManager concurrency_manager(this, num_nodes);
 
 					for(auto &[node_id, node] : result_mcn)
-						concurrency_manager.PushTaskToResultFuturesWithConstructionStack(function,
+						concurrency_manager.EnqueueTaskWithConstructionStack(function,
 							list, result, EvaluableNodeImmediateValueWithType(node_id), node, node);
 
 					enqueue_task_lock.Unlock();
@@ -439,7 +439,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 				ConcurrencyManager concurrency_manager(this, num_nodes);
 
 				for(size_t node_index = 0; node_index < num_nodes; node_index++)
-					concurrency_manager.PushTaskToResultFuturesWithConstructionStack(function,
+					concurrency_manager.EnqueueTaskWithConstructionStack(function,
 						list, result_list, EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)), list_ocn[node_index]);
 
 				enqueue_task_lock.Unlock();
@@ -516,7 +516,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 
 				//kick off interpreters
 				for(auto &[node_id, node] : list_mcn)
-					concurrency_manager.PushTaskToResultFuturesWithConstructionStack(function,
+					concurrency_manager.EnqueueTaskWithConstructionStack(function,
 						list, result_list, EvaluableNodeImmediateValueWithType(node_id), node);
 
 				enqueue_task_lock.Unlock();
@@ -1485,7 +1485,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 
 				//kick off interpreters
 				for(size_t node_index = 0; node_index + 1 < num_nodes; node_index += 2)
-					concurrency_manager.PushTaskToResultFuturesWithConstructionStack(ocn[node_index + 1], en, new_assoc,
+					concurrency_manager.EnqueueTaskWithConstructionStack(ocn[node_index + 1], en, new_assoc,
 						EvaluableNodeImmediateValueWithType(keys[node_index / 2]), nullptr);
 				
 				enqueue_task_lock.Unlock();

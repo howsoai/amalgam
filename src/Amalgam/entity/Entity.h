@@ -187,13 +187,12 @@ public:
 	// Uses max_num_steps as the maximum number of operations that can be executed by this and any subordinate operations called. If max_num_steps is 0, then it will execute unlimeted steps
 	// Uses max_num_nodes as the maximum number of nodes that can be allocated in memory by this and any subordinate operations called. If max_num_nodes is 0, then it will allow unlimited allocations
 	// If on_self is true, then it will be allowed to access private variables
-	// If entity_read_lock is specified, then it will unlock prior to execution after the interpreter's memoryModificationLock is locked
-	// potentially writing anything out to destination_temp_enm
+	// If enm_lock is specified, it should be a lock on this entity's evaluableNodeManager.memoryModificationMutex
 	EvaluableNodeReference Execute(ExecutionCycleCount max_num_steps, ExecutionCycleCount &num_steps_executed, size_t max_num_nodes, size_t &num_nodes_allocated,
 		StringInternPool::StringID label_sid, EvaluableNode *call_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr
 	#ifdef MULTITHREAD_SUPPORT
-		, Concurrency::ReadLock *entity_read_lock = nullptr
+		, Concurrency::ReadLock *enm_lock = nullptr
 	#endif
 		);
 
@@ -203,7 +202,7 @@ public:
 		std::string &label_name, EvaluableNode *call_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr
 	#ifdef MULTITHREAD_SUPPORT
-		, Concurrency::ReadLock *entity_read_lock = nullptr
+		, Concurrency::ReadLock *enm_lock = nullptr
 	#endif
 		)
 	{
@@ -211,7 +210,7 @@ public:
 		return Execute(max_num_steps, num_steps_executed, max_num_nodes, num_nodes_allocated,
 			label_sid, call_stack, on_self, calling_interpreter, write_listeners, print_listener
 		#ifdef MULTITHREAD_SUPPORT
-			, entity_read_lock
+			, enm_lock
 		#endif
 			);
 	}

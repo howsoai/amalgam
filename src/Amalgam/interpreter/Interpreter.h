@@ -652,7 +652,10 @@ protected:
 							resultsIdempotent = false;
 
 						*result = result_ref;
-						resultsSaver.SetStackLocation(results_saver_location, *result);
+
+						//only save the result if it's not immediate
+						if(!immediate_results || !result_ref.IsImmediateValue())
+							resultsSaver.SetStackLocation(results_saver_location, *result);
 					}
 
 					interpreter->memoryModificationLock.unlock();

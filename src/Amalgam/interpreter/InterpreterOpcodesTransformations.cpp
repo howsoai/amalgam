@@ -436,18 +436,20 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 				node_stack.PushEvaluableNode(list);
 				node_stack.PushEvaluableNode(result_list);
 
+				std::vector<EvaluableNodeReference> evaluations(num_nodes);
+
 				ConcurrencyManager concurrency_manager(this, num_nodes);
 
 				for(size_t node_index = 0; node_index < num_nodes; node_index++)
 					concurrency_manager.EnqueueTaskWithConstructionStack(function,
-						list, result_list, EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)), list_ocn[node_index]);
+						list, result_list, EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)),
+						list_ocn[node_index], evaluations[node_index]);
 
 				enqueue_task_lock.Unlock();
 
 				concurrency_manager.EndConcurrency();
 
 				//filter by those child nodes that are true
-				auto evaluations = concurrency_manager.GetResultsAndFreeReferences();
 				for(size_t i = 0; i < num_nodes; i++)
 				{
 					if(EvaluableNode::IsTrue(evaluations[i]))
@@ -512,22 +514,23 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 				node_stack.PushEvaluableNode(list);
 				node_stack.PushEvaluableNode(result_list);
 
+				std::vector<EvaluableNodeReference> evaluations(num_nodes);
+
 				ConcurrencyManager concurrency_manager(this, num_nodes);
 
 				//kick off interpreters
+				size_t node_index = 0;
 				for(auto &[node_id, node] : list_mcn)
 					concurrency_manager.EnqueueTaskWithConstructionStack(function,
-						list, result_list, EvaluableNodeImmediateValueWithType(node_id), node);
+						list, result_list, EvaluableNodeImmediateValueWithType(node_id),
+						node, evaluations[node_index++]);
 
 				enqueue_task_lock.Unlock();
 
 				concurrency_manager.EndConcurrency();
 
-				//filter by those child nodes that are true
-				auto evaluations = concurrency_manager.GetResultsAndFreeReferences();
-
 				//iterate in same order with same node_index
-				size_t node_index = 0;
+				node_index = 0;
 				for(auto &[node_id, node] : list_mcn)
 				{
 					if(EvaluableNode::IsTrue(evaluations[node_index]))

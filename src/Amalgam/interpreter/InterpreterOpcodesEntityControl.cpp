@@ -653,9 +653,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSI
 
 	EntityExternalInterface::LoadEntityStatus status;
 	std::string random_seed = destination_entity_parent->CreateRandomStreamFromStringAndRand(resource_name);
+
+#ifdef MULTITHREAD_SUPPORT
+	//this interpreter is no longer executing
+	memoryModificationLock.unlock();
+#endif
 	
 	Entity *loaded_entity = asset_manager.LoadEntityFromResourcePath(resource_name, file_type,
 		persistent, true, escape_filename, escape_contained_filenames, random_seed, this, status);
+
+#ifdef MULTITHREAD_SUPPORT
+	//this interpreter is executing again
+	memoryModificationLock.lock();
+#endif
 
 	//handle errors
 	if(!status.loaded)

@@ -1,5 +1,5 @@
 --Amalgam Version--
-54.0.1-alpha+local.dev
+0.0.0
 --system_time--
 --label--
 hello world: 12 and 2
@@ -1224,7 +1224,7 @@ abcdef
 [0 1 10 3 4]
 {a 3 b 2}
 --target--
-[1 2 3]
+[1 2 3 (null) (null)]
 --current_index--
 3
 (null)
@@ -1279,7 +1279,7 @@ current_index: 2
 		interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1719860994.963796
+		start_time 1720645147.345113
 		www 1
 		x 12
 		zz 10
@@ -1322,7 +1322,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1719860994.963796
+	start_time 1720645147.345113
 	www 1
 	x 12
 	zz 10
@@ -1364,7 +1364,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1719860994.963796
+	start_time 1720645147.345113
 	www 1
 	x 12
 	zz 10
@@ -1630,7 +1630,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2024-07-01-15.09.55.2165990
+current date-time in epoch: 2024-07-10-16.59.07.5790910
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -3451,7 +3451,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1719860995.44061
+1720645147.719375
 (true)
 
 RootTest
@@ -3693,7 +3693,7 @@ hello
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "1a2Ø.²³W«w¸ˆæÿ")
+	(set_entity_rand_seed new_entity "Fşôì°.G!W«w¸ˆæÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3703,7 +3703,7 @@ hello
 				)
 			)
 		)
-		"ˆ-ìO[¿ë3yC“Å’ŒÑÿ"
+		"3Æ‚`ÈÏşŒ¬ÑÀ+|†eàÿ"
 	)
 	(set_entity_rand_seed
 		(first
@@ -3745,7 +3745,7 @@ hello
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "1a2Ø.²³W«w¸ˆæÿ")
+	(set_entity_rand_seed new_entity "Fşôì°.G!W«w¸ˆæÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -4694,4 +4694,4 @@ concurrent entity writes successful: (true)
 
 --clean-up test files--
 --total execution time--
-1.2001371383666992
+1.0444378852844238

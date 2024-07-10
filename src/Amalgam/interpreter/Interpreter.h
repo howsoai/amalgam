@@ -627,7 +627,7 @@ protected:
 						enm->AllocListNode(parentInterpreter->interpreterNodeStackNodes),
 						enm->AllocListNode(parentInterpreter->constructionStackNodes),
 						&csiau,
-						GetCallStackMutex());
+						GetCallStackMutex(), immediate_results);
 
 					if(result == nullptr)
 					{

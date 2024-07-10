@@ -81,6 +81,9 @@ public:
 	//calls GetNeedCycleCheck if the reference is not nullptr, returns false if it is nullptr
 	constexpr bool GetNeedCycleCheck()
 	{
+		if(value.nodeType != ENIVT_CODE)
+			return false;
+
 		if(value.nodeValue.code == nullptr)
 			return false;
 

@@ -337,12 +337,15 @@ Interpreter::Interpreter(EvaluableNodeManager *enm,
 #ifdef MULTITHREAD_SUPPORT
 EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	EvaluableNode *call_stack, EvaluableNode *interpreter_node_stack,
-	EvaluableNode *construction_stack, std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices,
-	Concurrency::ReadWriteMutex *call_stack_write_mutex)
+	EvaluableNode *construction_stack,
+	std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices,
+	Concurrency::ReadWriteMutex *call_stack_write_mutex, bool immediate_result)
 #else
 EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	EvaluableNode *call_stack, EvaluableNode *interpreter_node_stack,
-	EvaluableNode *construction_stack, std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices)
+	EvaluableNode *construction_stack,
+	std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices,
+	bool immediate_result)
 #endif
 {
 
@@ -389,7 +392,7 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	//keep these references as long as the interpreter is around
 	evaluableNodeManager->KeepNodeReferences(call_stack, interpreter_node_stack, construction_stack);
 
-	auto retval = InterpretNode(en);
+	auto retval = InterpretNode(en, immediate_result);
 
 	evaluableNodeManager->FreeNodeReferences(call_stack, interpreter_node_stack, construction_stack);
 
@@ -785,9 +788,10 @@ EvaluableNode *Interpreter::RewriteByFunction(EvaluableNodeReference function, E
 
 #ifdef MULTITHREAD_SUPPORT
 
-bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node, std::vector<EvaluableNode *> &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes)
+bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node,
+	std::vector<EvaluableNode *> &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes,
+	bool immediate_results)
 {
-	//TODO 20780: allow this to interpret into immediate values
 	if(!parent_node->GetConcurrency())
 		return false;
 
@@ -805,7 +809,7 @@ bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node
 
 	//kick off interpreters
 	for(size_t i = 0; i < num_tasks; i++)
-		concurrency_manager.EnqueueTask(nodes[i], &interpreted_nodes[i]);
+		concurrency_manager.EnqueueTask(nodes[i], &interpreted_nodes[i], immediate_results);
 
 	enqueue_task_lock.Unlock();
 	concurrency_manager.EndConcurrency();

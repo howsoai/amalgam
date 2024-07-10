@@ -30,10 +30,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ADD(EvaluableNode *en, boo
 
 #ifdef MULTITHREAD_SUPPORT
 	std::vector<EvaluableNodeReference> interpreted_nodes;
-	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes))
+	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes, true))
 	{
 		for(auto &cn : interpreted_nodes)
-			value += EvaluableNode::ToNumber(cn);
+			value += ConvertNodeIntoNumberValueAndFreeIfPossible(cn);
 
 		return AllocReturn(value, immediate_result);
 	}
@@ -53,11 +53,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBTRACT(EvaluableNode *en
 
 #ifdef MULTITHREAD_SUPPORT
 	std::vector<EvaluableNodeReference> interpreted_nodes;
-	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes))
+	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes, true))
 	{
-		double value = EvaluableNode::ToNumber(interpreted_nodes[0]);
+		double value = ConvertNodeIntoNumberValueAndFreeIfPossible(interpreted_nodes[0]);
 		for(size_t i = 1; i < ocn.size(); i++)
-			value -= EvaluableNode::ToNumber(interpreted_nodes[i]);
+			value -= ConvertNodeIntoNumberValueAndFreeIfPossible(interpreted_nodes[i]);
 
 		return AllocReturn(value, immediate_result);
 	}
@@ -84,10 +84,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MULTIPLY(EvaluableNode *en
 
 #ifdef MULTITHREAD_SUPPORT
 	std::vector<EvaluableNodeReference> interpreted_nodes;
-	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes))
+	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes, true))
 	{
 		for(auto &cn : interpreted_nodes)
-			value *= EvaluableNode::ToNumber(cn);
+			value *= ConvertNodeIntoNumberValueAndFreeIfPossible(cn);
 
 		return AllocReturn(value, immediate_result);
 	}
@@ -107,12 +107,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DIVIDE(EvaluableNode *en, 
 
 #ifdef MULTITHREAD_SUPPORT
 	std::vector<EvaluableNodeReference> interpreted_nodes;
-	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes))
+	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes, true))
 	{
-		double value = EvaluableNode::ToNumber(interpreted_nodes[0]);
+		double value = ConvertNodeIntoNumberValueAndFreeIfPossible(interpreted_nodes[0]);
 		for(size_t i = 1; i < interpreted_nodes.size(); i++)
 		{
-			double divisor = EvaluableNode::ToNumber(interpreted_nodes[i]);
+			double divisor = ConvertNodeIntoNumberValueAndFreeIfPossible(interpreted_nodes[i]);
 
 			if(divisor != 0.0)
 				value /= divisor;
@@ -164,12 +164,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MODULUS(EvaluableNode *en,
 
 #ifdef MULTITHREAD_SUPPORT
 	std::vector<EvaluableNodeReference> interpreted_nodes;
-	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes))
+	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes, true))
 	{
-		double value = EvaluableNode::ToNumber(interpreted_nodes[0]);
+		double value = ConvertNodeIntoNumberValueAndFreeIfPossible(interpreted_nodes[0]);
 		for(size_t i = 1; i < interpreted_nodes.size(); i++)
 		{
-			double mod = EvaluableNode::ToNumber(interpreted_nodes[i]);
+			double mod = ConvertNodeIntoNumberValueAndFreeIfPossible(interpreted_nodes[i]);
 			value = std::fmod(value, mod);
 		}
 
@@ -730,63 +730,44 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAX(EvaluableNode *en, boo
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	EvaluableNodeReference result = EvaluableNodeReference::Null();
+	bool value_found = false;
 	double result_value = -std::numeric_limits<double>::infinity();
 
 #ifdef MULTITHREAD_SUPPORT
 	std::vector<EvaluableNodeReference> interpreted_nodes;
-	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes))
+	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes, true))
 	{
 		for(size_t i = 0; i < interpreted_nodes.size(); i++)
 		{
 			//do the comparison and keep the greater
-			double cur_value = EvaluableNode::ToNumber(interpreted_nodes[i]);
+			double cur_value = ConvertNodeIntoNumberValueAndFreeIfPossible(interpreted_nodes[i]);
 			if(cur_value > result_value)
 			{
-				result = interpreted_nodes[i];
+				value_found = true;
 				result_value = cur_value;
 			}
 		}
 
-		return result;
+		if(value_found)
+			return AllocReturn(result_value, immediate_result);;
+		return EvaluableNodeReference::Null();
 	}
 #endif
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver();
 	for(auto &cn : ocn)
 	{
-		auto cur = InterpretNodeForImmediateUse(cn);
-		if(cur == nullptr)
-			continue;
-
-		double cur_value = EvaluableNode::ToNumber(cur);
-		if(FastIsNaN(cur_value))
-			continue;
-
-		//if haven't gotten a result yet, then use this as the first data
-		if(result == nullptr)
-		{
-			node_stack.PushEvaluableNode(cur);
-
-			result = cur;
-			result_value = cur_value;
-			continue;
-		}
-
-		//do the comparison and keep the greater
+		double cur_value = InterpretNodeIntoNumberValue(cn);
 		if(cur_value > result_value)
 		{
-			node_stack.PopEvaluableNode();
-			node_stack.PushEvaluableNode(cur);
-
-			//replace previous result with cur
-			evaluableNodeManager->FreeNodeTreeIfPossible(result);
-			result = cur;
+			value_found = true;
 			result_value = cur_value;
 		}
 	}
 
-	return result;
+	if(value_found)
+		return AllocReturn(result_value, immediate_result);;
+	return EvaluableNodeReference::Null();
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MIN(EvaluableNode *en, bool immediate_result)
@@ -796,63 +777,44 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIN(EvaluableNode *en, boo
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	EvaluableNodeReference result = EvaluableNodeReference::Null();
+	bool value_found = false;
 	double result_value = std::numeric_limits<double>::infinity();
 
 #ifdef MULTITHREAD_SUPPORT
 	std::vector<EvaluableNodeReference> interpreted_nodes;
-	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes))
+	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes, true))
 	{
 		for(size_t i = 0; i < interpreted_nodes.size(); i++)
 		{
 			//do the comparison and keep the greater
-			double cur_value = EvaluableNode::ToNumber(interpreted_nodes[i]);
+			double cur_value = ConvertNodeIntoNumberValueAndFreeIfPossible(interpreted_nodes[i]);
 			if(cur_value < result_value)
 			{
-				result = interpreted_nodes[i];
+				value_found = true;
 				result_value = cur_value;
 			}
 		}
 
-		return result;
+		if(value_found)
+			return AllocReturn(result_value, immediate_result);;
+		return EvaluableNodeReference::Null();
 	}
 #endif
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver();
 	for(auto &cn : ocn)
 	{
-		auto cur = InterpretNodeForImmediateUse(cn);
-		if(cur == nullptr)
-			continue;
-
-		double cur_value = EvaluableNode::ToNumber(cur);
-		if(FastIsNaN(cur_value))
-			continue;
-
-		//if haven't gotten a result yet, then use this as the first data
-		if(result == nullptr)
-		{
-			node_stack.PushEvaluableNode(cur);
-
-			result = cur;
-			result_value = cur_value;
-			continue;
-		}
-
-		//do the comparison and keep the lesser 
+		auto cur_value = InterpretNodeIntoNumberValue(cn);
 		if(cur_value < result_value)
 		{
-			node_stack.PopEvaluableNode();
-			node_stack.PushEvaluableNode(cur);
-
-			//replace previous result with cur
-			evaluableNodeManager->FreeNodeTreeIfPossible(result);
-			result = cur;
+			value_found = true;
 			result_value = cur_value;
 		}
 	}
 
-	return result;
+	if(value_found)
+		return AllocReturn(result_value, immediate_result);;
+	return EvaluableNodeReference::Null();
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_DOT_PRODUCT(EvaluableNode *en, bool immediate_result)

@@ -60,6 +60,7 @@ public:
 	// sets up all of the stack and contextual structures, then calls InterpretNode on en
 	//if call_stack, interpreter_node_stack, or construction_stack are nullptr, it will start with a new one
 	//note that construction_stack and construction_stack_indices should be specified together and should be the same length
+	//if immediate_resultis true, then the returned value may be immediate
 #ifdef MULTITHREAD_SUPPORT
 	//if run multithreaded, then for performance reasons, it is optimal to have one of each stack per thread
 	// and call_stack_write_mutex is the mutex needed to lock for writing
@@ -67,12 +68,14 @@ public:
 		EvaluableNode *call_stack = nullptr, EvaluableNode *interpreter_node_stack = nullptr,
 		EvaluableNode *construction_stack = nullptr,
 		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices = nullptr,
-		Concurrency::ReadWriteMutex *call_stack_write_mutex = nullptr);
+		Concurrency::ReadWriteMutex *call_stack_write_mutex = nullptr,
+		bool immediate_result = false);
 #else
 	EvaluableNodeReference ExecuteNode(EvaluableNode *en,
 		EvaluableNode *call_stack = nullptr, EvaluableNode *interpreter_node_stack = nullptr,
 		EvaluableNode *construction_stack = nullptr,
-		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices = nullptr);
+		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices = nullptr,
+		bool immediate_result = false);
 #endif
 
 	//changes debugging state to debugging_enabled
@@ -343,6 +346,17 @@ public:
 		return evaluableNodeManager->ReuseOrAllocOneOfNodes(candidate_1, candidate_2, value);
 	}
 
+	//converts enr into a number and frees
+	double ConvertNodeIntoNumberValueAndFreeIfPossible(EvaluableNodeReference &enr)
+	{
+		if(enr.IsImmediateValue())
+			return enr.GetValue().GetValueAsNumber();
+
+		double value = EvaluableNode::ToNumber(enr);
+		evaluableNodeManager->FreeNodeTreeIfPossible(enr);
+		return value;
+	}
+
 	//if n is immediate, it just returns it, otherwise calls InterpretNode
 	__forceinline EvaluableNodeReference InterpretNodeForImmediateUse(EvaluableNode *n, bool immediate_result = false)
 	{
@@ -593,7 +607,8 @@ protected:
 		//Enqueues a concurrent task using the relative interpreter, executing node_to_execute
 		//if result is specified, it will store the result there, otherwise it will free it
 		template<typename EvaluableNodeRefType = EvaluableNodeReference>
-		void EnqueueTask(EvaluableNode *node_to_execute, EvaluableNodeRefType *result = nullptr)
+		void EnqueueTask(EvaluableNode *node_to_execute,
+			EvaluableNodeRefType *result = nullptr, bool immediate_results = false)
 		{
 			resultsSaver.PushEvaluableNode(node_to_execute);
 
@@ -601,7 +616,7 @@ protected:
 			Interpreter *interpreter = interpreters[curNumTasksEnqueued++].get();
 
 			Concurrency::threadPool.BatchEnqueueTask(
-				[this, interpreter, node_to_execute, result]
+				[this, interpreter, node_to_execute, result, immediate_results]
 				{
 					EvaluableNodeManager *enm = interpreter->evaluableNodeManager;
 					interpreter->memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
@@ -719,8 +734,11 @@ protected:
 
 	//computes the nodes concurrently and stores the interpreted values into interpreted_nodes
 	// looks to parent_node to whether concurrency is enabled
+	//if true, immediate_results allows the interpreted_nodes to be set to immediate values
 	//returns true if it is able to interpret the nodes concurrently
-	bool InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node, std::vector<EvaluableNode *> &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes);
+	bool InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node,
+		std::vector<EvaluableNode *> &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes,
+		bool immediate_results = false);
 
 	//acquires lock, but does so in a way as to not block other threads that may be waiting on garbage collection
 	//if en_to_preserve is not null, then it will create a stack saver for it if garbage collection is invoked

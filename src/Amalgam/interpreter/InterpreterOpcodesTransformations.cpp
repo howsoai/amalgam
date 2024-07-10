@@ -105,6 +105,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 					concurrency_manager.EndConcurrency();
 
 					concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(result);
+
+					return result;
 				}
 			}
 		#endif

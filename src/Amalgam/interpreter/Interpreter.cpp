@@ -793,6 +793,7 @@ EvaluableNode *Interpreter::RewriteByFunction(EvaluableNodeReference function, E
 
 bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node, std::vector<EvaluableNode *> &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes)
 {
+	//TODO 20780: allow this to interpret into immediate values
 	if(!parent_node->GetConcurrency())
 		return false;
 

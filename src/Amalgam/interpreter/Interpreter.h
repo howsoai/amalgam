@@ -596,11 +596,13 @@ protected:
 		template<typename EvaluableNodeRefType = EvaluableNodeReference>
 		void EnqueueTask(EvaluableNode *node_to_execute, EvaluableNodeRefType *result = nullptr)
 		{
+			resultsSaver.PushEvaluableNode(node_to_execute);
+
 			//get the interpreter corresponding to the resultFutures
 			Interpreter *interpreter = interpreters[curNumTasksEnqueued++].get();
 
 			Concurrency::threadPool.BatchEnqueueTask(
-				[this, interpreter, node_to_execute, &result]
+				[this, interpreter, node_to_execute, result]
 				{
 					EvaluableNodeManager *enm = interpreter->evaluableNodeManager;
 					interpreter->memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);

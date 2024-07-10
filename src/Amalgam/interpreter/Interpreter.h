@@ -586,7 +586,7 @@ protected:
 						resultsNeedCycleCheck = true;
 					}
 
-					if(result_ref.GetIsIdempotent())
+					if(!result_ref.GetIsIdempotent())
 						resultsIdempotent = false;
 
 					result = result_ref;
@@ -646,7 +646,7 @@ protected:
 							resultsNeedCycleCheck = true;
 						}
 
-						if(result_ref.GetIsIdempotent())
+						if(!result_ref.GetIsIdempotent())
 							resultsIdempotent = false;
 
 						*result = result_ref;
@@ -719,7 +719,7 @@ protected:
 		//if true, indicates all results are unique
 		std::atomic_bool resultsUnique;
 
-		//if true, indicates all results are cycle free
+		//if false, indicates all results are cycle free
 		std::atomic_bool resultsNeedCycleCheck;
 
 		//if true, indicates all results are idempotent

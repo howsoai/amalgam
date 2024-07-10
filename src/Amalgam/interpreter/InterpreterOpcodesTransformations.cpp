@@ -446,7 +446,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 						list_ocn[node_index], evaluations[node_index]);
 
 				enqueue_task_lock.Unlock();
-
 				concurrency_manager.EndConcurrency();
 
 				//filter by those child nodes that are true
@@ -526,7 +525,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 						node, evaluations[node_index++]);
 
 				enqueue_task_lock.Unlock();
-
 				concurrency_manager.EndConcurrency();
 
 				//iterate in same order with same node_index
@@ -1484,19 +1482,20 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 				for(size_t i = 0; i + 1 < num_nodes; i += 2)
 					keys.push_back(InterpretNodeIntoStringIDValueWithReference(ocn[i]));
 
+				std::vector<EvaluableNodeReference> results(num_nodes / 2);
+
 				ConcurrencyManager concurrency_manager(this, num_nodes / 2);
 
 				//kick off interpreters
 				for(size_t node_index = 0; node_index + 1 < num_nodes; node_index += 2)
 					concurrency_manager.EnqueueTaskWithConstructionStack(ocn[node_index + 1], en, new_assoc,
-						EvaluableNodeImmediateValueWithType(keys[node_index / 2]), nullptr);
+						EvaluableNodeImmediateValueWithType(keys[node_index / 2]),
+						nullptr, results[node_index / 2]);
 				
 				enqueue_task_lock.Unlock();
-
 				concurrency_manager.EndConcurrency();
 
 				//add results to assoc
-				auto results = concurrency_manager.GetResultsAndFreeReferences();
 				for(size_t i = 0; i < num_nodes / 2; i++)
 				{
 					auto key_sid = keys[i];

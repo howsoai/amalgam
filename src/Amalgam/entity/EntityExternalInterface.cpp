@@ -199,7 +199,7 @@ std::string EntityExternalInterface::ExecuteEntityJSON(std::string &handle, std:
 		return "";
 
 	EvaluableNodeManager &enm = bundle->entity->evaluableNodeManager;
-#ifdef MULTITHREAD_INTERFACE
+#ifdef MULTITHREAD_SUPPORT
 	//lock memory before allocating call stack
 	Concurrency::ReadLock enm_lock(enm.memoryModificationMutex);
 #endif
@@ -211,7 +211,7 @@ std::string EntityExternalInterface::ExecuteEntityJSON(std::string &handle, std:
 	size_t max_num_nodes = 0, num_nodes_allocated = 0;
 	EvaluableNodeReference returned_value = bundle->entity->Execute(max_num_steps, num_steps_executed, max_num_nodes,
 		num_nodes_allocated, label, call_stack, false, nullptr, &bundle->writeListeners, bundle->printListener
-#ifdef MULTITHREAD_INTERFACE
+#ifdef MULTITHREAD_SUPPORT
 		, &enm_lock
 #endif
 	);

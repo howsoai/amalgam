@@ -553,11 +553,16 @@ protected:
 			EvaluableNodeRefType &result,
 			EvaluableNodeReference previous_result = EvaluableNodeReference::Null())
 		{
+			//save a location in the stack now to store the result in later
+			resultsSaver.PushEvaluableNode(nullptr);
+			size_t results_saver_location = resultsSaver.GetLocationOfCurrentStackTop();
+
 			//get the interpreter corresponding to the resultFutures
 			Interpreter *interpreter = interpreters[curNumTasksEnqueued++].get();
 
 			Concurrency::threadPool.BatchEnqueueTask(
-				[this, interpreter, node_to_execute, target_origin, target, current_index, current_value, &result, previous_result]
+				[this, interpreter, node_to_execute, target_origin, target, current_index,
+					current_value, &result, previous_result, results_saver_location]
 				{
 					EvaluableNodeManager *enm = interpreter->evaluableNodeManager;
 					interpreter->memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
@@ -590,15 +595,9 @@ protected:
 						resultsIdempotent = false;
 
 					result = result_ref;
-
-					//store the result, but make sure there's a write lock to protect it
-					{
-						Concurrency::WriteLock write_lock(*GetCallStackMutex());
-						resultsSaver.PushEvaluableNode(result);
-					}
+					resultsSaver.SetStackLocation(results_saver_location, result);
 
 					interpreter->memoryModificationLock.unlock();
-
 					taskSet.MarkTaskCompleted();
 				}
 			);
@@ -610,13 +609,16 @@ protected:
 		void EnqueueTask(EvaluableNode *node_to_execute,
 			EvaluableNodeRefType *result = nullptr, bool immediate_results = false)
 		{
+			//save the node to execute, but also save the location
+			//so the location can be used later to save the result
 			resultsSaver.PushEvaluableNode(node_to_execute);
+			size_t results_saver_location = resultsSaver.GetLocationOfCurrentStackTop();
 
 			//get the interpreter corresponding to the resultFutures
 			Interpreter *interpreter = interpreters[curNumTasksEnqueued++].get();
 
 			Concurrency::threadPool.BatchEnqueueTask(
-				[this, interpreter, node_to_execute, result, immediate_results]
+				[this, interpreter, node_to_execute, result, immediate_results, results_saver_location]
 				{
 					EvaluableNodeManager *enm = interpreter->evaluableNodeManager;
 					interpreter->memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
@@ -650,16 +652,10 @@ protected:
 							resultsIdempotent = false;
 
 						*result = result_ref;
-
-						//store the result, but make sure there's a write lock to protect it
-						{
-							Concurrency::WriteLock write_lock(*GetCallStackMutex());
-							resultsSaver.PushEvaluableNode(*result);
-						}
+						resultsSaver.SetStackLocation(results_saver_location, *result);
 					}
 
 					interpreter->memoryModificationLock.unlock();
-
 					taskSet.MarkTaskCompleted();
 				}
 			);

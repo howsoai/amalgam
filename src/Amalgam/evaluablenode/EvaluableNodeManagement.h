@@ -222,6 +222,18 @@ public:
 		stack->pop_back();
 	}
 
+	//returns the offset to the location of the current top of the stack
+	__forceinline size_t GetLocationOfCurrentStackTop()
+	{
+		return stack->size() - 1;
+	}
+
+	//replaces the position of the stack with new_value
+	__forceinline void SetStackLocation(size_t location, EvaluableNode *new_value)
+	{
+		(*stack)[location] = new_value;
+	}
+
 	std::vector<EvaluableNode *> *stack;
 	size_t originalStackSize;
 };

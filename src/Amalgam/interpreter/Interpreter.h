@@ -532,7 +532,7 @@ protected:
 		// executes node_to_execute with the following parameters matching those of pushing on the construction stack
 		// will allocate an approrpiate node matching the type of current_index
 		//result is set to the result of the task
-		template<typename EvaluableNodeRefType>
+		template<typename EvaluableNodeRefType = EvaluableNodeReference>
 		void EnqueueTaskWithConstructionStack(EvaluableNode *node_to_execute,
 			EvaluableNode *target_origin, EvaluableNode *target,
 			EvaluableNodeImmediateValueWithType current_index,
@@ -591,10 +591,10 @@ protected:
 			);
 		}
 
-		//TODO 20780: incorporate this where appropriate
 		//Enqueues a concurrent task using the relative interpreter, executing node_to_execute
 		//if result is specified, it will store the result there, otherwise it will free it
-		void EnqueueTask(EvaluableNode *node_to_execute, EvaluableNode **result = nullptr)
+		template<typename EvaluableNodeRefType = EvaluableNodeReference>
+		void EnqueueTask(EvaluableNode *node_to_execute, EvaluableNodeRefType *result = nullptr)
 		{
 			//get the interpreter corresponding to the resultFutures
 			Interpreter *interpreter = interpreters[curNumTasksEnqueued++].get();

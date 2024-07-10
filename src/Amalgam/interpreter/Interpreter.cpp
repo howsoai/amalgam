@@ -795,7 +795,7 @@ bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node
 {
 	if(!parent_node->GetConcurrency())
 		return false;
-	
+
 	size_t num_tasks = nodes.size();
 	if(num_tasks < 2)
 		return false;
@@ -809,34 +809,11 @@ bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node
 	interpreted_nodes.resize(num_tasks);
 
 	//kick off interpreters
-	for(size_t task_index = 0; task_index < num_tasks; task_index++)
-	{
-		auto &interpreter = *concurrency_manager.interpreters[task_index];
-		EvaluableNode *node_to_execute = nodes[task_index];
-
-		concurrency_manager.resultFutures.emplace_back(
-			Concurrency::threadPool.BatchEnqueueTaskWithResult(
-				[this, &interpreter, node_to_execute, &concurrency_manager]
-				{
-					interpreter.memoryModificationLock = Concurrency::ReadLock(interpreter.evaluableNodeManager->memoryModificationMutex);
-					auto result = interpreter.ExecuteNode(node_to_execute,
-						evaluableNodeManager->AllocListNode(callStackNodes),
-						evaluableNodeManager->AllocListNode(interpreterNodeStackNodes),
-						evaluableNodeManager->AllocListNode(constructionStackNodes),
-						&constructionStackIndicesAndUniqueness,
-						concurrency_manager.GetCallStackMutex(), true);
-
-					interpreter.memoryModificationLock.unlock();
-					return result;
-				}
-			)
-		);
-	}
+	for(size_t i = 0; i < num_tasks; i++)
+		concurrency_manager.EnqueueTask(nodes[i], &interpreted_nodes[i]);
 
 	enqueue_task_lock.Unlock();
-
 	concurrency_manager.EndConcurrency();
-	interpreted_nodes = concurrency_manager.GetResultsAndFreeReferences();
 	return true;
 }
 

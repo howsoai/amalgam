@@ -338,14 +338,14 @@ Interpreter::Interpreter(EvaluableNodeManager *enm,
 EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	EvaluableNode *call_stack, EvaluableNode *interpreter_node_stack,
 	EvaluableNode *construction_stack, std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices,
-	Concurrency::ReadWriteMutex *call_stack_write_mutex, bool keep_result_node_reference)
+	Concurrency::ReadWriteMutex *call_stack_write_mutex)
 #else
 EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	EvaluableNode *call_stack, EvaluableNode *interpreter_node_stack,
 	EvaluableNode *construction_stack, std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices)
 #endif
 {
-	//TODO 20780: remove keep_result_node_reference param?
+
 #ifdef MULTITHREAD_SUPPORT
 	if(call_stack == nullptr)
 		callStackUniqueAccessStartingDepth = 0;
@@ -391,13 +391,7 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 
 	auto retval = InterpretNode(en);
 
-#ifdef MULTITHREAD_SUPPORT
-	evaluableNodeManager->KeepFirstAndFreeRemainingNodeReferences(
-		keep_result_node_reference ? static_cast<EvaluableNode *>(retval) : nullptr,
-		call_stack, interpreter_node_stack, construction_stack);
-#else
 	evaluableNodeManager->FreeNodeReferences(call_stack, interpreter_node_stack, construction_stack);
-#endif
 
 	//remove these nodes
 	evaluableNodeManager->FreeNode(interpreter_node_stack);

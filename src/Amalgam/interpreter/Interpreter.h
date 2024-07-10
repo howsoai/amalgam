@@ -63,12 +63,11 @@ public:
 #ifdef MULTITHREAD_SUPPORT
 	//if run multithreaded, then for performance reasons, it is optimal to have one of each stack per thread
 	// and call_stack_write_mutex is the mutex needed to lock for writing
-	//if keep_result_node_reference is true, then the result is kept and FreeNodeReference must be invoked by the caller
 	EvaluableNodeReference ExecuteNode(EvaluableNode *en,
 		EvaluableNode *call_stack = nullptr, EvaluableNode *interpreter_node_stack = nullptr,
 		EvaluableNode *construction_stack = nullptr,
 		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices = nullptr,
-		Concurrency::ReadWriteMutex *call_stack_write_mutex = nullptr, bool keep_result_node_reference = false);
+		Concurrency::ReadWriteMutex *call_stack_write_mutex = nullptr);
 #else
 	EvaluableNodeReference ExecuteNode(EvaluableNode *en,
 		EvaluableNode *call_stack = nullptr, EvaluableNode *interpreter_node_stack = nullptr,

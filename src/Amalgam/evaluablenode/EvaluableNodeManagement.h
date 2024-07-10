@@ -738,24 +738,6 @@ public:
 			nr.FreeNodeReference(en);
 	}
 
-	//keeps the first node and removes the remaining node from nodes referenced
-	//if called within multithreading, GetNodeReferenceUpdateLock() needs to be called
-	//to obtain a lock around all calls to this methed
-	template<typename ...EvaluableNodeReferenceType>
-	void KeepFirstAndFreeRemainingNodeReferences(EvaluableNode *node_to_keep,
-		EvaluableNodeReferenceType... nodes_to_remove)
-	{
-		NodesReferenced &nr = GetNodesReferenced();
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::SingleLock lock(nr.mutex);
-	#endif
-
-		nr.KeepNodeReference(node_to_keep);
-
-		for(EvaluableNode *en : { nodes_to_remove... })
-			nr.FreeNodeReference(en);
-	}
-
 	//compacts allocated nodes so that the node pool can be used more efficiently
 	// and can improve reuse without calling the more expensive FreeAllNodesExceptReferencedNodes
 	void CompactAllocatedNodes();

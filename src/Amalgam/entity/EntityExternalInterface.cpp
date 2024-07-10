@@ -200,9 +200,9 @@ std::string EntityExternalInterface::ExecuteEntityJSON(std::string &handle, std:
 
 	EvaluableNodeManager &enm = bundle->entity->evaluableNodeManager;
 #ifdef MULTITHREAD_INTERFACE
-	EntityReadReferenceConcurrency::ReadLock enm_lock(bundle->entity->evaluableNodeManager.memoryModificationMutex);
+	//lock memory before allocating call stack
+	Concurrency::ReadLock enm_lock(enm.memoryModificationMutex);
 #endif
-
 	EvaluableNodeReference args = EvaluableNodeReference(EvaluableNodeJSONTranslation::JsonToEvaluableNode(&enm, json), true);
 
 	auto call_stack = Interpreter::ConvertArgsToCallStack(args, enm);
@@ -229,7 +229,7 @@ bool EntityExternalInterface::EntityListenerBundle::SetEntityValueAtLabel(std::s
 	StringInternPool::StringID label_sid = string_intern_pool.GetIDFromString(label_name);
 
 	EntityWriteReference entity_wr(entity);
-#ifdef MULTITHREAD_SUPPORT
+#ifdef MULTITHREAD_INTERFACE
 	//make a full copy of the entity in case any other threads are operating on it
 	entity->SetRoot(entity->GetRoot(), false);
 #endif

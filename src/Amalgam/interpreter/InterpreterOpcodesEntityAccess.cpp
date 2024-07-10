@@ -503,8 +503,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 
 	//get a write lock on the entity
 	EntityReadReference called_entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
+
 	if(called_entity == nullptr)
 		return EvaluableNodeReference::Null();
+
+#ifdef MULTITHREAD_SUPPORT
+	//lock memory before allocating call stack, then can release the entity lock
+	Concurrency::ReadLock enm_lock(called_entity->evaluableNodeManager.memoryModificationMutex);
+	called_entity.lock.unlock();
+#endif
 
 	EvaluableNodeReference call_stack;
 	if(called_entity == curEntity)
@@ -522,19 +529,29 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		call_stack = ConvertArgsToCallStack(called_entity_args, called_entity->evaluableNodeManager);
 	}
 
+#ifdef MULTITHREAD_SUPPORT
+	//this interpreter is no longer executing
+	memoryModificationLock.unlock();
+#endif
+
 	ExecutionCycleCount num_steps_executed = 0;
 	size_t num_nodes_allocated = 0;
 	EvaluableNodeReference result = called_entity->Execute(num_steps_allowed, num_steps_executed,
 		num_nodes_allowed, num_nodes_allocated,
 		entity_label_sid, call_stack, called_entity == curEntity, this, cur_write_listeners, printListener
 	#ifdef MULTITHREAD_SUPPORT
-		, &called_entity.lock
+		, &enm_lock
 	#endif
 		);
 
 	//accumulate costs of execution
 	curExecutionStep += num_steps_executed;
 	curNumExecutionNodesAllocatedToEntities += num_nodes_allocated;
+
+#ifdef MULTITHREAD_SUPPORT
+	//this interpreter is executing again
+	memoryModificationLock.lock();
+#endif
 
 	//call opcodes should consume the outer return opcode if there is one
 	if(result.IsNonNullNodeReference() && result->GetType() == ENT_RETURN)
@@ -635,15 +652,20 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 			num_nodes_allowed = std::min(num_nodes_allowed, GetRemainingNumExecutionNodes());
 	}
 
-	//lock the current entity
+	//obtain a lock on the container
 	EntityReadReference cur_entity(curEntity);
 	StringInternPool::StringID cur_entity_sid = curEntity->GetIdStringId();
 	EntityReadReference container(curEntity->GetContainer());
 	if(container == nullptr)
 		return EvaluableNodeReference::Null();
-
 	//don't need the curEntity as a reference anymore -- can free the lock
 	cur_entity = EntityReadReference();
+
+#ifdef MULTITHREAD_SUPPORT
+	//lock memory before allocating call stack, then can release the entity lock
+	Concurrency::ReadLock enm_lock(container->evaluableNodeManager.memoryModificationMutex);
+	container.lock.unlock();
+#endif
 
 	//copy arguments to container, free args from this entity
 	EvaluableNodeReference called_entity_args = container->evaluableNodeManager.DeepAllocCopy(args);
@@ -655,18 +677,28 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	EvaluableNode *call_stack_args = call_stack->GetOrderedChildNodesReference()[0];
 	call_stack_args->SetMappedChildNode(ENBISI_accessing_entity, container->evaluableNodeManager.AllocNode(ENT_STRING, cur_entity_sid));
 
+#ifdef MULTITHREAD_SUPPORT
+	//this interpreter is no longer executing
+	memoryModificationLock.unlock();
+#endif
+
 	ExecutionCycleCount num_steps_executed = 0;
 	size_t num_nodes_allocated = 0;
 	EvaluableNodeReference result = container->Execute(num_steps_allowed, num_steps_executed, num_nodes_allowed, num_nodes_allocated,
 		container_label_sid, call_stack, false, this, writeListeners, printListener
 	#ifdef MULTITHREAD_SUPPORT
-		, &container.lock
+		, &enm_lock
 	#endif
 		);
 
 	//accumulate costs of execution
 	curExecutionStep += num_steps_executed;
 	curNumExecutionNodesAllocatedToEntities += num_nodes_allocated;
+
+#ifdef MULTITHREAD_SUPPORT
+	//this interpreter is executing again
+	memoryModificationLock.lock();
+#endif
 
 	//call opcodes should consume the outer return opcode if there is one
 	if(result.IsNonNullNodeReference() && result->GetType() == ENT_RETURN)

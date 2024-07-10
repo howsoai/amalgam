@@ -427,17 +427,12 @@ EvaluableNodeReference Entity::Execute(ExecutionCycleCount max_num_steps, Execut
 	StringInternPool::StringID label_sid, EvaluableNode *call_stack, bool on_self, Interpreter *calling_interpreter,
 	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener
 #ifdef MULTITHREAD_SUPPORT
-	, Concurrency::ReadLock *entity_read_lock
+	, Concurrency::ReadLock *enm_lock
 #endif
 	)
 {
 	if(!on_self && IsLabelPrivate(label_sid))
 		return EvaluableNodeReference(nullptr, true);
-
-#ifdef MULTITHREAD_SUPPORT
-	if(calling_interpreter != nullptr)
-		calling_interpreter->memoryModificationLock.unlock();
-#endif
 
 	EvaluableNode *node_to_execute = nullptr;
 	if(label_sid <= StringInternPool::EMPTY_STRING_ID)	//if not specified, then use root
@@ -452,14 +447,7 @@ EvaluableNodeReference Entity::Execute(ExecutionCycleCount max_num_steps, Execut
 
 	//if label not found or no code, can't do anything
 	if(node_to_execute == nullptr)
-	{
-	#ifdef MULTITHREAD_SUPPORT
-		//put lock back in place
-		if(calling_interpreter != nullptr)
-			calling_interpreter->memoryModificationLock.lock();
-	#endif
 		return EvaluableNodeReference::Null();
-	}
 
 	size_t a_priori_entity_storage = evaluableNodeManager.GetNumberOfUsedNodes();
 
@@ -467,19 +455,14 @@ EvaluableNodeReference Entity::Execute(ExecutionCycleCount max_num_steps, Execut
 		write_listeners, print_listener, this, calling_interpreter);
 
 #ifdef MULTITHREAD_SUPPORT
-	interpreter.memoryModificationLock = Concurrency::ReadLock(interpreter.evaluableNodeManager->memoryModificationMutex);
-	if(entity_read_lock != nullptr)
-		entity_read_lock->unlock();
+	if(enm_lock == nullptr)
+		interpreter.memoryModificationLock = Concurrency::ReadLock(evaluableNodeManager.memoryModificationMutex);
+	else
+		interpreter.memoryModificationLock = std::move(*enm_lock);
 #endif
 
 	EvaluableNodeReference retval = interpreter.ExecuteNode(node_to_execute, call_stack);
 	num_steps_executed = interpreter.GetNumStepsExecuted();
-
-#ifdef MULTITHREAD_SUPPORT
-	//make sure have lock before copy into destination_temp_enm
-	if(calling_interpreter != nullptr)
-		calling_interpreter->memoryModificationLock.lock();
-#endif
 
 	//find difference in entity size
 	size_t post_entity_storage = evaluableNodeManager.GetNumberOfUsedNodes() + interpreter.GetNumEntityNodesAllocated();
@@ -489,9 +472,10 @@ EvaluableNodeReference Entity::Execute(ExecutionCycleCount max_num_steps, Execut
 		num_nodes_allocated = post_entity_storage - a_priori_entity_storage;
 
 #ifdef MULTITHREAD_SUPPORT
-	interpreter.memoryModificationLock.unlock();
+	if(enm_lock != nullptr)
+		*enm_lock = std::move(interpreter.memoryModificationLock);
 #endif
-		
+
 	return retval;
 }
 

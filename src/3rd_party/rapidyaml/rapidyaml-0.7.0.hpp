@@ -19620,7 +19620,7 @@ bool is_debugger_attached()
     // https://stackoverflow.com/questions/2200277/detecting-debugger-on-mac-os-x
     // Returns true if the current process is being debugged (either
     // running under the debugger or has a debugger attached post facto).
-    int                 junk;
+    //int                 junk;
     int                 mib[4];
     struct kinfo_proc   info;
     size_t              size;
@@ -19641,8 +19641,8 @@ bool is_debugger_attached()
     // Call sysctl.
 
     size = sizeof(info);
-    junk = sysctl(mib, sizeof(mib) / sizeof(*mib), &info, &size, NULL, 0);
-    assert(junk == 0);
+    sysctl(mib, sizeof(mib) / sizeof(*mib), &info, &size, NULL, 0);
+    //assert(junk == 0);
 
     // We're being debugged if the P_TRACED flag is set.
     return ((info.kp_proc.p_flag & P_TRACED) != 0);

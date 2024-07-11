@@ -5,7 +5,7 @@
 
 //3rd party headers:
 #define RYML_SINGLE_HDR_DEFINE_NOW
-#include "rapidyaml/rapidyaml-0.6.0.hpp"
+#include "rapidyaml/rapidyaml-0.7.0.hpp"
 
 //system headers:
 #include <iostream>

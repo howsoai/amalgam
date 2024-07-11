@@ -53,7 +53,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST(EvaluableNode *en, bo
 	size_t num_nodes = ocn.size();
 	if(num_nodes > 0)
 	{
-		new_list->ReserveOrderedChildNodes(num_nodes);
+		auto &new_list_ocn = new_list->GetOrderedChildNodesReference();
+		new_list_ocn.resize(num_nodes);
 
 	#ifdef MULTITHREAD_SUPPORT
 		if(en->GetConcurrency() && num_nodes > 1)
@@ -67,20 +68,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST(EvaluableNode *en, bo
 
 				//kick off interpreters
 				for(size_t node_index = 0; node_index < num_nodes; node_index++)
-					concurrency_manager.PushTaskToResultFuturesWithConstructionStack(ocn[node_index], en, new_list,
-						EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)), nullptr);
+					concurrency_manager.EnqueueTaskWithConstructionStack(ocn[node_index], en, new_list,
+						EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)), nullptr,
+						new_list_ocn[node_index]);
 
 				enqueue_task_lock.Unlock();
-
 				concurrency_manager.EndConcurrency();
 
-				for(auto &value : concurrency_manager.GetResultsAndFreeReferences())
-				{
-					//add it to the list
-					new_list->AppendOrderedChildNode(value);
-					new_list.UpdatePropertiesBasedOnAttachedNode(value);
-				}
-
+				concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(new_list);
 				return new_list;
 			}
 		}
@@ -95,7 +90,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST(EvaluableNode *en, bo
 
 			auto value = InterpretNode(ocn[i]);
 			//add it to the list
-			new_list->AppendOrderedChildNode(value);
+			new_list_ocn[i] = value;
 			new_list.UpdatePropertiesBasedOnAttachedNode(value);
 		}
 
@@ -132,25 +127,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, b
 
 				//kick off interpreters
 				for(auto &[cn_id, cn] : new_mcn)
-					concurrency_manager.PushTaskToResultFuturesWithConstructionStack(cn, en, new_assoc, EvaluableNodeImmediateValueWithType(cn_id), nullptr);
+					concurrency_manager.EnqueueTaskWithConstructionStack(cn, en, new_assoc,
+						EvaluableNodeImmediateValueWithType(cn_id), nullptr, cn);
 
 				enqueue_task_lock.Unlock();
 				concurrency_manager.EndConcurrency();
 
-				//add results to assoc
-				auto results = concurrency_manager.GetResultsAndFreeReferences();
-				//will iterate in the same order as above
-				size_t result_index = 0;
-				for(auto &[_, cn] : new_mcn)
-				{
-					auto &value = results[result_index++];
-
-					//add it to the list
-					cn = value;
-					new_assoc.UpdatePropertiesBasedOnAttachedNode(value);
-				}
-
-				return new_assoc;
+				concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(new_assoc);
 			}
 		}
 	#endif

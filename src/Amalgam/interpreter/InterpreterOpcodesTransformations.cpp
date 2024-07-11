@@ -82,6 +82,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 		if(list->IsOrderedArray())
 		{
 			auto &list_ocn = list->GetOrderedChildNodesReference();
+			auto &result_ocn = result->GetOrderedChildNodesReference();
 
 		#ifdef MULTITHREAD_SUPPORT
 			size_t num_nodes = list_ocn.size();
@@ -96,21 +97,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 					ConcurrencyManager concurrency_manager(this, num_nodes);
 
 					for(size_t node_index = 0; node_index < num_nodes; node_index++)
-						concurrency_manager.PushTaskToResultFuturesWithConstructionStack(function,
-							list, result, EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)), list_ocn[node_index]);
+						concurrency_manager.EnqueueTaskWithConstructionStack(function,
+							list, result, EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)),
+							list_ocn[node_index], result_ocn[node_index]);
 
 					enqueue_task_lock.Unlock();
-
 					concurrency_manager.EndConcurrency();
 
-					//filter by those child nodes that are true
-					auto evaluations = concurrency_manager.GetResultsAndFreeReferences();
-					auto &result_ocn = result->GetOrderedChildNodes();
-					for(size_t i = 0; i < num_nodes; i++)
-					{
-						result_ocn[i] = evaluations[i];
-						result.UpdatePropertiesBasedOnAttachedNode(evaluations[i]);
-					}
+					concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(result);
 
 					return result;
 				}
@@ -119,7 +113,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 
 			PushNewConstructionContext(list, result, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 
-			auto &result_ocn = result->GetOrderedChildNodesReference();
 			for(size_t i = 0; i < list_ocn.size(); i++)
 			{
 				//pass value of list to be mapped
@@ -151,23 +144,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 					ConcurrencyManager concurrency_manager(this, num_nodes);
 
 					for(auto &[node_id, node] : result_mcn)
-						concurrency_manager.PushTaskToResultFuturesWithConstructionStack(function,
-							list, result, EvaluableNodeImmediateValueWithType(node_id), node);
+						concurrency_manager.EnqueueTaskWithConstructionStack(function,
+							list, result, EvaluableNodeImmediateValueWithType(node_id), node, node);
 
 					enqueue_task_lock.Unlock();
-
 					concurrency_manager.EndConcurrency();
 
-					//filter by those child nodes that are true
-					auto evaluations = concurrency_manager.GetResultsAndFreeReferences();
-					size_t node_index = 0;
-					for(auto &[cn_id, cn] : result_mcn)
-					{
-						cn = evaluations[node_index];
-						result.UpdatePropertiesBasedOnAttachedNode(evaluations[node_index]);
-						node_index++;
-					}
-
+					concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(result);
 					return result;
 				}
 			}
@@ -455,18 +438,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 				node_stack.PushEvaluableNode(list);
 				node_stack.PushEvaluableNode(result_list);
 
+				std::vector<EvaluableNodeReference> evaluations(num_nodes);
+
 				ConcurrencyManager concurrency_manager(this, num_nodes);
 
 				for(size_t node_index = 0; node_index < num_nodes; node_index++)
-					concurrency_manager.PushTaskToResultFuturesWithConstructionStack(function,
-						list, result_list, EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)), list_ocn[node_index]);
+					concurrency_manager.EnqueueTaskWithConstructionStack(function,
+						list, result_list, EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)),
+						list_ocn[node_index], evaluations[node_index]);
 
 				enqueue_task_lock.Unlock();
-
 				concurrency_manager.EndConcurrency();
 
 				//filter by those child nodes that are true
-				auto evaluations = concurrency_manager.GetResultsAndFreeReferences();
 				for(size_t i = 0; i < num_nodes; i++)
 				{
 					if(EvaluableNode::IsTrue(evaluations[i]))
@@ -531,22 +515,22 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 				node_stack.PushEvaluableNode(list);
 				node_stack.PushEvaluableNode(result_list);
 
+				std::vector<EvaluableNodeReference> evaluations(num_nodes);
+
 				ConcurrencyManager concurrency_manager(this, num_nodes);
 
 				//kick off interpreters
+				size_t node_index = 0;
 				for(auto &[node_id, node] : list_mcn)
-					concurrency_manager.PushTaskToResultFuturesWithConstructionStack(function,
-						list, result_list, EvaluableNodeImmediateValueWithType(node_id), node);
+					concurrency_manager.EnqueueTaskWithConstructionStack(function,
+						list, result_list, EvaluableNodeImmediateValueWithType(node_id),
+						node, evaluations[node_index++]);
 
 				enqueue_task_lock.Unlock();
-
 				concurrency_manager.EndConcurrency();
 
-				//filter by those child nodes that are true
-				auto evaluations = concurrency_manager.GetResultsAndFreeReferences();
-
 				//iterate in same order with same node_index
-				size_t node_index = 0;
+				node_index = 0;
 				for(auto &[node_id, node] : list_mcn)
 				{
 					if(EvaluableNode::IsTrue(evaluations[node_index]))
@@ -945,7 +929,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 			sorted.erase(begin(sorted) + lowest_k, end(sorted));
 		}
 
-		list->SetOrderedChildNodes(sorted);
+		list->SetOrderedChildNodes(sorted, list->GetNeedCycleCheck(), list->GetIsIdempotent());
 
 		return list;
 	}
@@ -1500,19 +1484,20 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 				for(size_t i = 0; i + 1 < num_nodes; i += 2)
 					keys.push_back(InterpretNodeIntoStringIDValueWithReference(ocn[i]));
 
+				std::vector<EvaluableNodeReference> results(num_nodes / 2);
+
 				ConcurrencyManager concurrency_manager(this, num_nodes / 2);
 
 				//kick off interpreters
 				for(size_t node_index = 0; node_index + 1 < num_nodes; node_index += 2)
-					concurrency_manager.PushTaskToResultFuturesWithConstructionStack(ocn[node_index + 1], en, new_assoc,
-						EvaluableNodeImmediateValueWithType(keys[node_index / 2]), nullptr);
+					concurrency_manager.EnqueueTaskWithConstructionStack(ocn[node_index + 1], en, new_assoc,
+						EvaluableNodeImmediateValueWithType(keys[node_index / 2]),
+						nullptr, results[node_index / 2]);
 				
 				enqueue_task_lock.Unlock();
-
 				concurrency_manager.EndConcurrency();
 
 				//add results to assoc
-				auto results = concurrency_manager.GetResultsAndFreeReferences();
 				for(size_t i = 0; i < num_nodes / 2; i++)
 				{
 					auto key_sid = keys[i];

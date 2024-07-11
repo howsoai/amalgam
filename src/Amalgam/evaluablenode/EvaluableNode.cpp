@@ -448,7 +448,7 @@ void EvaluableNode::CopyValueFrom(EvaluableNode *n)
 		if(n_ocn.empty())
 			ClearOrderedChildNodes();
 		else
-			SetOrderedChildNodes(n_ocn);
+			SetOrderedChildNodes(n_ocn, n->GetNeedCycleCheck(), n->GetIsIdempotent());
 	}
 
 	if(GetNumLabels() > 0)
@@ -1155,41 +1155,20 @@ void EvaluableNode::InitOrderedChildNodes()
 		value.ConstructOrderedChildNodes();
 }
 
-void EvaluableNode::SetOrderedChildNodes(const std::vector<EvaluableNode *> &ocn)
+void EvaluableNode::SetOrderedChildNodes(const std::vector<EvaluableNode *> &ocn,
+	bool need_cycle_check, bool is_idempotent)
 {
 	if(!IsOrderedArray())
 		return;
 
 	GetOrderedChildNodesReference() = ocn;
 
-	//if cycles, propagate upward
-	SetNeedCycleCheck(false);
-	for(auto cn : ocn)
-	{
-		if(cn != nullptr && cn->GetNeedCycleCheck())
-		{
-			SetNeedCycleCheck(true);
-			break;
-		}
-	}
+	SetNeedCycleCheck(need_cycle_check);
 
-	//set idempotency
-	if(GetNumLabels() == 0)
-	{
-		//if potentially idempotent, then see if it is
-		if(IsEvaluableNodeTypePotentiallyIdempotent(type))
-		{
-			SetIsIdempotent(true);
-			for(auto cn : ocn)
-			{
-				if(cn != nullptr && !cn->GetIsIdempotent())
-				{
-					SetIsIdempotent(false);
-					break;
-				}
-			}
-		}
-	}
+	if(is_idempotent && (GetNumLabels() > 0 || !IsEvaluableNodeTypePotentiallyIdempotent(type)))
+		SetIsIdempotent(false);
+	else
+		SetIsIdempotent(is_idempotent);
 }
 
 void EvaluableNode::ClearOrderedChildNodes()

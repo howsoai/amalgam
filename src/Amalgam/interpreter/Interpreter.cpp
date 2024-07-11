@@ -337,12 +337,15 @@ Interpreter::Interpreter(EvaluableNodeManager *enm,
 #ifdef MULTITHREAD_SUPPORT
 EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	EvaluableNode *call_stack, EvaluableNode *interpreter_node_stack,
-	EvaluableNode *construction_stack, std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices,
-	Concurrency::ReadWriteMutex *call_stack_write_mutex, bool keep_result_node_reference)
+	EvaluableNode *construction_stack,
+	std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices,
+	Concurrency::ReadWriteMutex *call_stack_write_mutex, bool immediate_result)
 #else
 EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	EvaluableNode *call_stack, EvaluableNode *interpreter_node_stack,
-	EvaluableNode *construction_stack, std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices)
+	EvaluableNode *construction_stack,
+	std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices,
+	bool immediate_result)
 #endif
 {
 
@@ -389,15 +392,9 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	//keep these references as long as the interpreter is around
 	evaluableNodeManager->KeepNodeReferences(call_stack, interpreter_node_stack, construction_stack);
 
-	auto retval = InterpretNode(en);
+	auto retval = InterpretNode(en, immediate_result);
 
-#ifdef MULTITHREAD_SUPPORT
-	evaluableNodeManager->KeepFirstAndFreeRemainingNodeReferences(
-		keep_result_node_reference ? static_cast<EvaluableNode *>(retval) : nullptr,
-		call_stack, interpreter_node_stack, construction_stack);
-#else
 	evaluableNodeManager->FreeNodeReferences(call_stack, interpreter_node_stack, construction_stack);
-#endif
 
 	//remove these nodes
 	evaluableNodeManager->FreeNode(interpreter_node_stack);
@@ -791,11 +788,13 @@ EvaluableNode *Interpreter::RewriteByFunction(EvaluableNodeReference function, E
 
 #ifdef MULTITHREAD_SUPPORT
 
-bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node, std::vector<EvaluableNode *> &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes)
+bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node,
+	std::vector<EvaluableNode *> &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes,
+	bool immediate_results)
 {
 	if(!parent_node->GetConcurrency())
 		return false;
-	
+
 	size_t num_tasks = nodes.size();
 	if(num_tasks < 2)
 		return false;
@@ -806,35 +805,14 @@ bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node
 
 	ConcurrencyManager concurrency_manager(this, num_tasks);
 
+	interpreted_nodes.resize(num_tasks);
+
 	//kick off interpreters
-	for(size_t task_index = 0; task_index < num_tasks; task_index++)
-	{
-		auto &interpreter = *concurrency_manager.interpreters[task_index];
-		EvaluableNode *node_to_execute = nodes[task_index];
-
-		concurrency_manager.resultFutures.emplace_back(
-			Concurrency::threadPool.BatchEnqueueTask(
-				[this, &interpreter, node_to_execute, &concurrency_manager]
-				{
-					interpreter.memoryModificationLock = Concurrency::ReadLock(interpreter.evaluableNodeManager->memoryModificationMutex);
-					auto result = interpreter.ExecuteNode(node_to_execute,
-						evaluableNodeManager->AllocListNode(callStackNodes),
-						evaluableNodeManager->AllocListNode(interpreterNodeStackNodes),
-						evaluableNodeManager->AllocListNode(constructionStackNodes),
-						&constructionStackIndicesAndUniqueness,
-						concurrency_manager.GetCallStackMutex(), true);
-
-					interpreter.memoryModificationLock.unlock();
-					return result;
-				}
-			)
-		);
-	}
+	for(size_t i = 0; i < num_tasks; i++)
+		concurrency_manager.EnqueueTask(nodes[i], &interpreted_nodes[i], immediate_results);
 
 	enqueue_task_lock.Unlock();
-
 	concurrency_manager.EndConcurrency();
-	interpreted_nodes = concurrency_manager.GetResultsAndFreeReferences();
 	return true;
 }
 

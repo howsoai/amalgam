@@ -60,20 +60,22 @@ public:
 	// sets up all of the stack and contextual structures, then calls InterpretNode on en
 	//if call_stack, interpreter_node_stack, or construction_stack are nullptr, it will start with a new one
 	//note that construction_stack and construction_stack_indices should be specified together and should be the same length
+	//if immediate_resultis true, then the returned value may be immediate
 #ifdef MULTITHREAD_SUPPORT
 	//if run multithreaded, then for performance reasons, it is optimal to have one of each stack per thread
 	// and call_stack_write_mutex is the mutex needed to lock for writing
-	//if keep_result_node_reference is true, then the result is kept and FreeNodeReference must be invoked by the caller
 	EvaluableNodeReference ExecuteNode(EvaluableNode *en,
 		EvaluableNode *call_stack = nullptr, EvaluableNode *interpreter_node_stack = nullptr,
 		EvaluableNode *construction_stack = nullptr,
 		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices = nullptr,
-		Concurrency::ReadWriteMutex *call_stack_write_mutex = nullptr, bool keep_result_node_reference = false);
+		Concurrency::ReadWriteMutex *call_stack_write_mutex = nullptr,
+		bool immediate_result = false);
 #else
 	EvaluableNodeReference ExecuteNode(EvaluableNode *en,
 		EvaluableNode *call_stack = nullptr, EvaluableNode *interpreter_node_stack = nullptr,
 		EvaluableNode *construction_stack = nullptr,
-		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices = nullptr);
+		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices = nullptr,
+		bool immediate_result = false);
 #endif
 
 	//changes debugging state to debugging_enabled
@@ -344,6 +346,17 @@ public:
 		return evaluableNodeManager->ReuseOrAllocOneOfNodes(candidate_1, candidate_2, value);
 	}
 
+	//converts enr into a number and frees
+	double ConvertNodeIntoNumberValueAndFreeIfPossible(EvaluableNodeReference &enr)
+	{
+		if(enr.IsImmediateValue())
+			return enr.GetValue().GetValueAsNumber();
+
+		double value = EvaluableNode::ToNumber(enr);
+		evaluableNodeManager->FreeNodeTreeIfPossible(enr);
+		return value;
+	}
+
 	//if n is immediate, it just returns it, otherwise calls InterpretNode
 	__forceinline EvaluableNodeReference InterpretNodeForImmediateUse(EvaluableNode *n, bool immediate_result = false)
 	{
@@ -492,13 +505,19 @@ protected:
 
 		//constructs the concurrency manager.  Assumes parent_interpreter is NOT null
 		ConcurrencyManager(Interpreter *parent_interpreter, size_t num_tasks)
+			: resultsSaver(parent_interpreter->CreateInterpreterNodeStackStateSaver())
 		{
+			resultsUnique = true;
+			resultsNeedCycleCheck = false;
+			resultsIdempotent = true;
+
 			parentInterpreter = parent_interpreter;
 			numTasks = num_tasks;
+			curNumTasksEnqueued = 0;
+			taskSet.AddTask(num_tasks);
 
 			//set up data
 			interpreters.reserve(numTasks);
-			resultFutures.reserve(numTasks);
 
 			size_t max_execution_steps_per_element = 0;
 			if(parentInterpreter->maxNumExecutionSteps > 0)
@@ -522,41 +541,126 @@ protected:
 			parentInterpreter->memoryModificationLock.unlock();
 		}
 
-		//Enqueues a concurrent task resultFutures that needs a construction stack, using the relative interpreter
+		//Enqueues a concurrent task that needs a construction stack, using the relative interpreter
 		// executes node_to_execute with the following parameters matching those of pushing on the construction stack
 		// will allocate an approrpiate node matching the type of current_index
-		void PushTaskToResultFuturesWithConstructionStack(EvaluableNode *node_to_execute,
+		//result is set to the result of the task
+		template<typename EvaluableNodeRefType = EvaluableNodeReference>
+		void EnqueueTaskWithConstructionStack(EvaluableNode *node_to_execute,
 			EvaluableNode *target_origin, EvaluableNode *target,
 			EvaluableNodeImmediateValueWithType current_index,
-			EvaluableNode *current_value, EvaluableNodeReference previous_result = EvaluableNodeReference::Null())
+			EvaluableNode *current_value,
+			EvaluableNodeRefType &result,
+			EvaluableNodeReference previous_result = EvaluableNodeReference::Null())
 		{
+			//save a location in the stack now to store the result in later
+			resultsSaver.PushEvaluableNode(nullptr);
+			size_t results_saver_location = resultsSaver.GetLocationOfCurrentStackTop();
+
 			//get the interpreter corresponding to the resultFutures
-			Interpreter *interpreter = interpreters[resultFutures.size()].get();
+			Interpreter *interpreter = interpreters[curNumTasksEnqueued++].get();
 
-			resultFutures.emplace_back(
-				Concurrency::threadPool.BatchEnqueueTask(
-					[this, interpreter, node_to_execute, target_origin, target, current_index, current_value, previous_result]
+			Concurrency::threadPool.BatchEnqueueTask(
+				[this, interpreter, node_to_execute, target_origin, target, current_index,
+					current_value, &result, previous_result, results_saver_location]
+				{
+					EvaluableNodeManager *enm = interpreter->evaluableNodeManager;
+					interpreter->memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
+
+					//build new construction stack
+					EvaluableNode *construction_stack = enm->AllocListNode(parentInterpreter->constructionStackNodes);
+					std::vector<ConstructionStackIndexAndPreviousResultUniqueness> csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
+					interpreter->PushNewConstructionContextToStack(construction_stack->GetOrderedChildNodes(),
+						csiau, target_origin, target, current_index, current_value, previous_result);
+
+					auto result_ref = interpreter->ExecuteNode(node_to_execute,
+						enm->AllocListNode(parentInterpreter->callStackNodes),
+						enm->AllocListNode(parentInterpreter->interpreterNodeStackNodes),
+						construction_stack,
+						&csiau,
+						GetCallStackMutex());
+
+					if(result_ref.unique)
 					{
-						EvaluableNodeManager *enm = interpreter->evaluableNodeManager;
-						interpreter->memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
-
-						//build new construction stack
-						EvaluableNode *construction_stack = enm->AllocListNode(parentInterpreter->constructionStackNodes);
-						std::vector<ConstructionStackIndexAndPreviousResultUniqueness> csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
-						interpreter->PushNewConstructionContextToStack(construction_stack->GetOrderedChildNodes(),
-							csiau, target_origin, target, current_index, current_value, previous_result);
-
-						auto result = interpreter->ExecuteNode(node_to_execute,
-							enm->AllocListNode(parentInterpreter->callStackNodes),
-							enm->AllocListNode(parentInterpreter->interpreterNodeStackNodes),
-							construction_stack,
-							&csiau,
-							GetCallStackMutex(), true);
-
-						interpreter->memoryModificationLock.unlock();
-						return result;
+						if(result_ref.GetNeedCycleCheck())
+							resultsNeedCycleCheck = true;
 					}
-				)
+					else
+					{
+						resultsUnique = false;
+						resultsNeedCycleCheck = true;
+					}
+
+					if(!result_ref.GetIsIdempotent())
+						resultsIdempotent = false;
+
+					result = result_ref;
+					resultsSaver.SetStackLocation(results_saver_location, result);
+
+					interpreter->memoryModificationLock.unlock();
+					taskSet.MarkTaskCompleted();
+				}
+			);
+		}
+
+		//Enqueues a concurrent task using the relative interpreter, executing node_to_execute
+		//if result is specified, it will store the result there, otherwise it will free it
+		template<typename EvaluableNodeRefType = EvaluableNodeReference>
+		void EnqueueTask(EvaluableNode *node_to_execute,
+			EvaluableNodeRefType *result = nullptr, bool immediate_results = false)
+		{
+			//save the node to execute, but also save the location
+			//so the location can be used later to save the result
+			resultsSaver.PushEvaluableNode(node_to_execute);
+			size_t results_saver_location = resultsSaver.GetLocationOfCurrentStackTop();
+
+			//get the interpreter corresponding to the resultFutures
+			Interpreter *interpreter = interpreters[curNumTasksEnqueued++].get();
+
+			Concurrency::threadPool.BatchEnqueueTask(
+				[this, interpreter, node_to_execute, result, immediate_results, results_saver_location]
+				{
+					EvaluableNodeManager *enm = interpreter->evaluableNodeManager;
+					interpreter->memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
+
+					std::vector<ConstructionStackIndexAndPreviousResultUniqueness> csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
+					auto result_ref = interpreter->ExecuteNode(node_to_execute,
+						enm->AllocListNode(parentInterpreter->callStackNodes),
+						enm->AllocListNode(parentInterpreter->interpreterNodeStackNodes),
+						enm->AllocListNode(parentInterpreter->constructionStackNodes),
+						&csiau,
+						GetCallStackMutex(), immediate_results);
+
+					if(result == nullptr)
+					{
+						enm->FreeNodeTreeIfPossible(result_ref);
+					}
+					else //want result
+					{
+						if(result_ref.unique)
+						{
+							if(result_ref.GetNeedCycleCheck())
+								resultsNeedCycleCheck = true;
+						}
+						else
+						{
+							resultsUnique = false;
+							resultsNeedCycleCheck = true;
+						}
+
+						if(!result_ref.GetIsIdempotent())
+							resultsIdempotent = false;
+
+						*result = result_ref;
+
+						//only save the result if it's not immediate
+						if(!immediate_results || !result_ref.IsImmediateValue())
+							resultsSaver.SetStackLocation(results_saver_location, *result);
+					}
+
+					interpreter->memoryModificationLock.unlock();
+					taskSet.MarkTaskCompleted();
+				}
 			);
 		}
 
@@ -564,8 +668,7 @@ protected:
 		inline void EndConcurrency()
 		{
 			Concurrency::threadPool.ChangeCurrentThreadStateFromActiveToWaiting();
-			for(auto &future : resultFutures)
-				future.wait();
+			taskSet.WaitForTasks();
 			Concurrency::threadPool.ChangeCurrentThreadStateFromWaitingToActive();
 
 			if(!parentInterpreter->AllowUnlimitedExecutionSteps())
@@ -577,22 +680,12 @@ protected:
 			parentInterpreter->memoryModificationLock.lock();
 		}
 
-		//returns results from the futures
-		// assumes that each result has had KeepNodeReference called upon it, otherwise it'd have not been safe,
-		// so it calls FreeNodeReference on each
-		inline std::vector<EvaluableNodeReference> GetResultsAndFreeReferences()
+		//updates the aggregated result reference's properties based on all of the child nodes
+		inline void UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(EvaluableNodeReference &new_result)
 		{
-			std::vector<EvaluableNodeReference> results;
-			results.resize(numTasks);
-
-			//fill in results from result_futures and free references
-			// note that std::future becomes invalid once get is called
-			for(size_t i = 0; i < numTasks; i++)
-				results[i] = resultFutures[i].get();
-
-			parentInterpreter->evaluableNodeManager->FreeNodeReferences(results);
-
-			return results;
+			new_result.unique = resultsUnique;
+			new_result.SetNeedCycleCheck(resultsNeedCycleCheck);
+			new_result.SetIsIdempotent(resultsIdempotent);
 		}
 
 		//returns the relevant write mutex for the call stack
@@ -609,24 +702,42 @@ protected:
 		//interpreters run concurrently, the size of numTasks
 		std::vector<std::unique_ptr<Interpreter>> interpreters;
 
-		//where results are placed, the size of numTasks
-		std::vector<std::future<EvaluableNodeReference>> resultFutures;
-
 		//mutex to allow only one thread to write to a call stack symbol at once
 		Concurrency::ReadWriteMutex callStackMutex;
 
 	protected:
+		//a barrier to wait for the tasks being run
+		ThreadPool::CountableTaskSet taskSet;
+
+		//structure to keep track of the stack to prevent results from being garbage collected
+		EvaluableNodeStackStateSaver resultsSaver;
+
 		//interpreter that is running all the concurrent interpreters
 		Interpreter *parentInterpreter;
 
-		//the number of elements being processed
+		//if true, indicates all results are unique
+		std::atomic_bool resultsUnique;
+
+		//if false, indicates all results are cycle free
+		std::atomic_bool resultsNeedCycleCheck;
+
+		//if true, indicates all results are idempotent
+		std::atomic_bool resultsIdempotent;
+
+		//the total number of tasks to be processed
 		size_t numTasks;
+
+		//number of tasks enqueued so far
+		size_t curNumTasksEnqueued;
 	};
 
 	//computes the nodes concurrently and stores the interpreted values into interpreted_nodes
 	// looks to parent_node to whether concurrency is enabled
+	//if true, immediate_results allows the interpreted_nodes to be set to immediate values
 	//returns true if it is able to interpret the nodes concurrently
-	bool InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node, std::vector<EvaluableNode *> &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes);
+	bool InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node,
+		std::vector<EvaluableNode *> &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes,
+		bool immediate_results = false);
 
 	//acquires lock, but does so in a way as to not block other threads that may be waiting on garbage collection
 	//if en_to_preserve is not null, then it will create a stack saver for it if garbage collection is invoked

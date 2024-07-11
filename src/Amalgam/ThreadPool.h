@@ -131,9 +131,20 @@ public:
 		waitForTask.notify_one();
 	}
 
+	//enqueues a task into the thread pool
+	//it is up to the caller to determine when the task is complete
+	inline void EnqueueTask(std::function<void()> &&function)
+	{
+		{
+			std::unique_lock<std::mutex> lock(threadsMutex);
+			taskQueue.emplace(std::move(function));
+		}
+		waitForTask.notify_one();
+	}
+
 	//enqueues a task into the thread pool comprised of a function and arguments, automatically inferring the function type
 	template<class FunctionType, class ...ArgsType>
-	inline std::future<typename std::invoke_result<FunctionType, ArgsType ...>::type> EnqueueTask(FunctionType &&function, ArgsType &&...args)
+	inline std::future<typename std::invoke_result<FunctionType, ArgsType ...>::type> EnqueueTaskWithResult(FunctionType &&function, ArgsType &&...args)
 	{
 		using return_type = typename std::invoke_result<FunctionType, ArgsType ...>::type;
 
@@ -147,22 +158,17 @@ public:
 		//hold the future to return
 		std::future<return_type> result = task->get_future();
 
-		//put the task on the queue
-		{
-			std::unique_lock<std::mutex> lock(threadsMutex);
-			taskQueue.emplace(
-					[task]()
-					{
-						(*task)();
-					}
-				);
-		}
-		waitForTask.notify_one();
+		EnqueueTask(
+			[task]()
+			{
+				(*task)();
+			}
+		);
 
 		return result;
 	}
 
-	//Contains a lock for the task queue for calling BatchEnqueueTask repeatedly while maintaining the lock and layer count
+	//Contains a lock for the task queue for calling BatchEnqueueTaskWithResult repeatedly while maintaining the lock and layer count
 	struct BatchTaskEnqueueLockAndLayer
 	{
 		inline BatchTaskEnqueueLockAndLayer(std::condition_variable *wait_for_task, std::mutex &task_queue_mutex)
@@ -245,9 +251,16 @@ public:
 		return btel;
 	}
 
+	//enqueues a task into the thread pool
+	//it is up to the caller to determine when the task is complete
+	inline void BatchEnqueueTask(std::function<void()> &&function)
+	{
+		taskQueue.emplace(std::move(function));
+	}
+
 	//enqueues a task into the thread pool comprised of a function and arguments, automatically inferring the function type
 	template<class FunctionType, class ...ArgsType>
-	inline std::future<typename std::invoke_result<FunctionType, ArgsType ...>::type> BatchEnqueueTask(FunctionType &&function, ArgsType &&...args)
+	inline std::future<typename std::invoke_result<FunctionType, ArgsType ...>::type> BatchEnqueueTaskWithResult(FunctionType &&function, ArgsType &&...args)
 	{
 		using return_type = typename std::invoke_result<FunctionType, ArgsType ...>::type;
 
@@ -261,8 +274,7 @@ public:
 		//hold the future to return
 		std::future<return_type> result = task->get_future();
 
-		//put the task on the queue
-		taskQueue.emplace(
+		BatchEnqueueTask(
 			[task]()
 			{
 				(*task)();
@@ -271,6 +283,47 @@ public:
 
 		return result;
 	}
+
+
+	//implements a counter for a set of tasks
+	//when the number of tasks has been completed, it WaitForTasks will return
+	class CountableTaskSet
+	{
+	public:
+		inline CountableTaskSet(size_t num_tasks = 0)
+			: numTasks(num_tasks), numTasksCompleted(0)
+		{	}
+
+		//increments the number of tasks by num_new_tasks
+		inline void AddTask(size_t num_new_tasks = 1)
+		{
+			numTasks.fetch_add(num_new_tasks);
+		}
+
+		//returns when all the tasks have been completed
+		inline void WaitForTasks()
+		{
+			std::unique_lock<std::mutex> lock(mutex);
+			cond_var.wait(lock, [&] { return numTasksCompleted >= numTasks; });
+		}
+
+		//marks one task as completed
+		inline void MarkTaskCompleted()
+		{
+			size_t prev_tasks_completed = numTasksCompleted.fetch_add(1);
+			if(prev_tasks_completed + 1 == numTasks)
+			{
+				std::unique_lock<std::mutex> lock(mutex);
+				cond_var.notify_all();
+			}
+		}
+
+	protected:
+		std::atomic<size_t> numTasks;
+		std::atomic<size_t> numTasksCompleted;
+		std::mutex mutex;
+		std::condition_variable cond_var;
+	};
 
 protected:
 	//adds a new thread to threads

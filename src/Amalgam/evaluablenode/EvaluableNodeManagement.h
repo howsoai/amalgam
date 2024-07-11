@@ -81,6 +81,9 @@ public:
 	//calls GetNeedCycleCheck if the reference is not nullptr, returns false if it is nullptr
 	constexpr bool GetNeedCycleCheck()
 	{
+		if(value.nodeType != ENIVT_CODE)
+			return false;
+
 		if(value.nodeValue.code == nullptr)
 			return false;
 
@@ -94,6 +97,30 @@ public:
 			return;
 
 		value.nodeValue.code->SetNeedCycleCheck(need_cycle_check);
+	}
+
+	//returns true if the reference is idempotent
+	constexpr bool GetIsIdempotent()
+	{
+		if(value.nodeType != ENIVT_CODE)
+			return true;
+
+		if(value.nodeValue.code == nullptr)
+			return true;
+
+		return value.nodeValue.code->GetIsIdempotent();
+	}
+
+	//sets idempotency if the reference is code and not nullptr
+	constexpr void SetIsIdempotent(bool is_idempotent)
+	{
+		if(value.nodeType != ENIVT_CODE)
+			return;
+
+		if(value.nodeValue.code == nullptr)
+			return;
+
+		return value.nodeValue.code->SetIsIdempotent(is_idempotent);
 	}
 
 	constexpr static EvaluableNodeReference Null()
@@ -193,6 +220,18 @@ public:
 	__forceinline void PopEvaluableNode()
 	{
 		stack->pop_back();
+	}
+
+	//returns the offset to the location of the current top of the stack
+	__forceinline size_t GetLocationOfCurrentStackTop()
+	{
+		return stack->size() - 1;
+	}
+
+	//replaces the position of the stack with new_value
+	__forceinline void SetStackLocation(size_t location, EvaluableNode *new_value)
+	{
+		(*stack)[location] = new_value;
 	}
 
 	std::vector<EvaluableNode *> *stack;
@@ -314,10 +353,11 @@ public:
 		return n;
 	}
 
-	inline EvaluableNode *AllocListNode(std::vector<EvaluableNode *> *child_nodes)
+	inline EvaluableNode *AllocListNode(std::vector<EvaluableNode *> *child_nodes,
+		bool need_cycle_check = true, bool is_idempotent = false)
 	{
 		EvaluableNode *n = AllocNode(ENT_LIST);
-		n->SetOrderedChildNodes(*child_nodes);
+		n->SetOrderedChildNodes(*child_nodes, need_cycle_check, is_idempotent);
 		return n;
 	}
 
@@ -712,24 +752,6 @@ public:
 			nr.FreeNodeReference(en);
 	}
 
-	//keeps the first node and removes the remaining node from nodes referenced
-	//if called within multithreading, GetNodeReferenceUpdateLock() needs to be called
-	//to obtain a lock around all calls to this methed
-	template<typename ...EvaluableNodeReferenceType>
-	void KeepFirstAndFreeRemainingNodeReferences(EvaluableNode *node_to_keep,
-		EvaluableNodeReferenceType... nodes_to_remove)
-	{
-		NodesReferenced &nr = GetNodesReferenced();
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::SingleLock lock(nr.mutex);
-	#endif
-
-		nr.KeepNodeReference(node_to_keep);
-
-		for(EvaluableNode *en : { nodes_to_remove... })
-			nr.FreeNodeReference(en);
-	}
-
 	//compacts allocated nodes so that the node pool can be used more efficiently
 	// and can improve reuse without calling the more expensive FreeAllNodesExceptReferencedNodes
 	void CompactAllocatedNodes();
@@ -920,9 +942,6 @@ public:
 	static Concurrency::ReadWriteMutex memoryModificationMutex;
 
 protected:
-
-	//used to buffer multithreaded garbage collection tasks
-	thread_local static std::vector<std::future<void>> nodesCompleted;
 
 #else
 	size_t firstUnusedNodeIndex;

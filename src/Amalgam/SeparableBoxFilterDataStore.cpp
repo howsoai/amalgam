@@ -166,8 +166,7 @@ void SeparableBoxFilterDataStore::RemoveColumnIndex(size_t column_index_to_remov
 	//move data over to new reduced copy of matrix
 	matrix.resize(columnData.size() * numEntities);
 	for(size_t i = 0; i < numEntities; i++)
-		std::memcpy(&matrix[i * columnData.size()],
-			&old_matrix[i * (columnData.size() + 1)],
+		std::memcpy(&matrix[i * columnData.size()], &old_matrix[i * (columnData.size() + 1)],
 			sizeof(EvaluableNodeImmediateValue) * (columnData.size()));
 
 #ifdef SBFDS_VERIFICATION
@@ -1009,8 +1008,7 @@ size_t SeparableBoxFilterDataStore::AddLabelsAsEmptyColumns(std::vector<size_t> 
 
 	//copy over existing data in blocks per entity
 	for(size_t i = 0; i < num_entities; i++)
-		std::memcpy(&matrix[i * num_columns_new],
-			&old_matrix[i * num_existing_columns],
+		std::memcpy(&matrix[i * num_columns_new], &old_matrix[i * num_existing_columns],
 			sizeof(EvaluableNodeImmediateValue) * num_existing_columns);
 
 	//update the number of entities

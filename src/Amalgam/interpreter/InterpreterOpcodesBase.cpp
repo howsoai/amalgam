@@ -500,6 +500,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	if(function == nullptr)
 		return EvaluableNodeReference::Null();
 
+	//TODO 20879: move constraint argument processing into common method across various calls, add call stack depth
+
 	//number of execution steps
 	//evaluate before context so don't need to keep/remove reference for context
 	ExecutionCycleCount num_steps_allowed = GetRemainingNumExecutionSteps();

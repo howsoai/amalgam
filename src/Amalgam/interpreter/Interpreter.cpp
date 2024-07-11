@@ -308,18 +308,9 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 Interpreter::Interpreter(EvaluableNodeManager *enm,
 	ExecutionCycleCount max_num_steps, size_t max_num_nodes, RandomStream rand_stream,
 	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
-	Entity *t, Interpreter *calling_interpreter)
+	Entity *t, Interpreter *calling_interpreter, PerformanceConstraints *performance_constraints)
 {
-	curExecutionStep = 0;
-	maxNumExecutionSteps = max_num_steps;
-
-	//account for what is already in use
-	curNumExecutionNodes = enm->GetNumberOfUsedNodes();
-	curNumExecutionNodesAllocatedToEntities = 0;
-	if(max_num_nodes == 0)
-		maxNumExecutionNodes = 0;
-	else
-		maxNumExecutionNodes = max_num_nodes + enm->GetNumberOfUsedNodes();
+	performanceConstraints = performance_constraints;
 
 	randomStream = rand_stream;
 	curEntity = t;
@@ -490,14 +481,6 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, bool immedi
 	if(EvaluableNode::IsNull(en))
 		return EvaluableNodeReference::Null();
 
-	//make sure don't run for longer than allowed
-	if(!AllowUnlimitedExecutionSteps())
-	{
-		curExecutionStep++;
-		if(curExecutionStep >= maxNumExecutionSteps)
-			return EvaluableNodeReference::Null();
-	}
-
 	//reference this node before we collect garbage
 	//CreateInterpreterNodeStackStateSaver is a bit expensive for this frequently called function
 	//especially because only one node is kept
@@ -513,13 +496,8 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, bool immedi
 	VerifyEvaluableNodeIntegrity();
 #endif
 
-	//make sure don't eat more memory than allowed
-	if(!AllowUnlimitedExecutionNodes())
-	{
-		UpdateCurNumExecutionNodes();
-		if(curNumExecutionNodes >= maxNumExecutionNodes)
-			return EvaluableNodeReference::Null();
-	}
+	if(AreExecutionResourcesExhausted(true))
+		return EvaluableNodeReference::Null();
 
 	//get corresponding opcode
 	EvaluableNodeType ent = en->GetType();

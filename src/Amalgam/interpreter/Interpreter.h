@@ -42,16 +42,49 @@ public:
 		bool unique;
 	};
 
+	//TODO 20879: finish this
+	//TODO 20879: initialize curNomExecutionNodes and maxNumExecutionNodes via enm->GetNumberOfUsedNodes();
+	struct PerformanceConstraints
+	{
+		//current execution step - number of nodes executed
+	#if defined(MULTITHREAD_SUPPORT)
+		std::atomic<ExecutionCycleCount> curExecutionStep;
+	#else
+		std::atomic<ExecutionCycleCount> curExecutionStep;
+	#endif
+
+		//maximum number of execution steps by this Interpreter and anything called from it.  If 0, then unlimited.
+		//will terminate execution if the value is reached
+		ExecutionCycleCount maxNumExecutionSteps;
+
+		//the recursion depth at the start of execution
+		ExecutionCycleCount baseRecursionDepth;
+
+		//the maximum recursion depth
+		ExecutionCycleCount maxRecursionDepth;
+
+		//current number of nodes created by this interpreter, to be compared to maxNumExecutionNodes
+		// should be the sum of curNumExecutionNodesAllocatedToEntities plus any temporary nodes
+		size_t curNumExecutionNodes;
+
+		//number of nodes allocated only to entities
+		size_t curNumExecutionNodesAllocatedToEntities;
+
+		//maximum number of nodes allowed to be allocated by this Interpreter and anything called from it.  If 0, then unlimited.
+		//will terminate execution if the value is reached
+		size_t maxNumExecutionNodes;
+	};
+
 	//Creates a new interpreter to run code and to store labels.
 	// If no entity is specified via nullptr, then it will run sandboxed
 	// Uses max_num_steps as the maximum number of operations that can be executed by this and any subordinate operations called. If max_num_steps is 0, then it will execute unlimeted steps
 	// Uses max_num_nodes as the maximum number of nodes that can be allocated in memory by this and any subordinate operations called. If max_num_nodes is 0, then it will allow unlimited allocations
 	// max_num_sets is also used for any subsequently limited executions
+	// if performance_constraints is not nullptr, then it will limit execution appropriately
 	Interpreter(EvaluableNodeManager *enm,
 		ExecutionCycleCount max_num_steps, size_t max_num_nodes, RandomStream rand_stream,
 		std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
-		Entity *t = nullptr, Interpreter *calling_interpreter = nullptr
-	);
+		Entity *t = nullptr, Interpreter *calling_interpreter = nullptr, PerformanceConstraints *performance_constraints = nullptr);
 
 	~Interpreter()
 	{	}
@@ -291,14 +324,6 @@ public:
 	//keeps the current node on the stack and calls InterpretNodeExecution
 	//if immediate_result is true, it will not allocate a node
 	EvaluableNodeReference InterpretNode(EvaluableNode *en, bool immediate_result = false);
-
-	//returns the number of steps executed since Interpreter was created
-	constexpr ExecutionCycleCount GetNumStepsExecuted()
-	{	return curExecutionStep;	}
-
-	//returns the number of nodes allocated to all contained entities since Interpreter was created
-	constexpr size_t GetNumEntityNodesAllocated()
-	{	return curNumExecutionNodesAllocatedToEntities;	}
 
 	//returns the current call stack context, nullptr if none
 	EvaluableNode *GetCurrentCallStackContext();
@@ -671,12 +696,6 @@ protected:
 			taskSet.WaitForTasks();
 			Concurrency::threadPool.ChangeCurrentThreadStateFromWaitingToActive();
 
-			if(!parentInterpreter->AllowUnlimitedExecutionSteps())
-			{
-				for(auto &i : interpreters)
-					parentInterpreter->curExecutionStep += i->curExecutionStep;
-			}
-
 			parentInterpreter->memoryModificationLock.lock();
 		}
 
@@ -784,6 +803,8 @@ protected:
 		return true;
 	}
 
+	//TODO 20879: update these methods
+
 	//recalculates curNumExecutionNodes
 	__forceinline void UpdateCurNumExecutionNodes()
 	{
@@ -815,8 +836,14 @@ protected:
 	}
 
 	//returns true if there's a max number of execution steps or nodes and at least one is exhausted
-	constexpr bool AreExecutionResourcesExhausted()
+	__forceinline bool AreExecutionResourcesExhausted(bool increment_execution_step = false)
 	{
+		if(performanceConstraints == nullptr)
+			return false;
+
+		if(increment_execution_step)
+			performanceConstraints->curExecutionStep++;
+
 		if(!AllowUnlimitedExecutionSteps() && curExecutionStep >= maxNumExecutionSteps)
 			return true;
 
@@ -1076,23 +1103,8 @@ protected:
 	//ensures that there are no reachable nodes that are deallocated
 	void VerifyEvaluableNodeIntegrity();
 
-	//current execution step - number of nodes executed
-	ExecutionCycleCount curExecutionStep;
-
-	//maximum number of execution steps by this Interpreter and anything called from it.  If 0, then unlimited.
-	//will terminate execution if the value is reached
-	ExecutionCycleCount maxNumExecutionSteps;
-
-	//current number of nodes created by this interpreter, to be compared to maxNumExecutionNodes
-	// should be the sum of curNumExecutionNodesAllocatedToEntities plus any temporary nodes
-	size_t curNumExecutionNodes;
-
-	//number of nodes allocated only to entities
-	size_t curNumExecutionNodesAllocatedToEntities;
-
-	//maximum number of nodes allowed to be allocated by this Interpreter and anything called from it.  If 0, then unlimited.
-	//will terminate execution if the value is reached
-	size_t maxNumExecutionNodes;
+	//if not nullptr, then contains the respective constraints on performance
+	PerformanceConstraints *performanceConstraints;
 
 	//a stack (list) of the current nodes being executed
 	std::vector<EvaluableNode *> *interpreterNodeStackNodes;

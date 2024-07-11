@@ -355,10 +355,11 @@ public:
 		return n;
 	}
 
-	inline EvaluableNode *AllocListNode(std::vector<EvaluableNode *> *child_nodes)
+	inline EvaluableNode *AllocListNode(std::vector<EvaluableNode *> *child_nodes,
+		bool need_cycle_check = true, bool is_idempotent = false)
 	{
 		EvaluableNode *n = AllocNode(ENT_LIST);
-		n->SetOrderedChildNodes(*child_nodes);
+		n->SetOrderedChildNodes(*child_nodes, need_cycle_check, is_idempotent);
 		return n;
 	}
 
@@ -590,6 +591,7 @@ public:
 	//force this inline because it occurs in inner loops
 	__forceinline bool RecommendGarbageCollection()
 	{
+		return true;
 		//makes sure to perform garbage collection between every opcode to find memory reference errors
 	#ifdef PEDANTIC_GARBAGE_COLLECTION
 		return true;

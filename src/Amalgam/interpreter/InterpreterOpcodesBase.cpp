@@ -1392,7 +1392,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OPCODE_STACK(EvaluableNode
 {
 	//can create this node on the stack because will be making a copy
 	EvaluableNode stack_top_holder(ENT_LIST);
-	stack_top_holder.SetNeedCycleCheck(true);
 	stack_top_holder.SetOrderedChildNodes(*interpreterNodeStackNodes);
 	return evaluableNodeManager->DeepAllocCopy(&stack_top_holder);
 }
@@ -1407,7 +1406,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STACK(EvaluableNode *en, b
 
 	//can create this node on the stack because will be making a copy
 	EvaluableNode stack_top_holder(ENT_LIST);
-	stack_top_holder.SetNeedCycleCheck(true);
 	stack_top_holder.SetOrderedChildNodes(*callStackNodes);
 	return evaluableNodeManager->DeepAllocCopy(&stack_top_holder);
 }
@@ -1524,7 +1522,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, bo
 		else
 		{
 			retval = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
-			retval->SetOrderedChildNodes(param->GetOrderedChildNodes());
+			retval->SetOrderedChildNodes(param->GetOrderedChildNodes(),
+				param->GetNeedCycleCheck(), param->GetIsIdempotent());
 		}
 
 		//shuffle ordered child nodes

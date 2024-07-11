@@ -688,7 +688,9 @@ public:
 			GetOrderedChildNodesReference().resize(new_size);
 	}
 
-	void SetOrderedChildNodes(const std::vector<EvaluableNode *> &ocn);
+	//sets the ordered child nodes and updates flags
+	void SetOrderedChildNodes(const std::vector<EvaluableNode *> &ocn,
+		bool need_cycle_check = true, bool is_idempotent = false);
 	void ClearOrderedChildNodes();
 	void AppendOrderedChildNode(EvaluableNode *cn);
 	void AppendOrderedChildNodes(const std::vector<EvaluableNode *> &ocn_to_append);

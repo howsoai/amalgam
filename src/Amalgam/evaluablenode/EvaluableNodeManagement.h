@@ -591,7 +591,6 @@ public:
 	//force this inline because it occurs in inner loops
 	__forceinline bool RecommendGarbageCollection()
 	{
-		return true;
 		//makes sure to perform garbage collection between every opcode to find memory reference errors
 	#ifdef PEDANTIC_GARBAGE_COLLECTION
 		return true;

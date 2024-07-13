@@ -1027,6 +1027,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	auto &feature_data = r_dist_eval.featureData[query_feature_index];
 	size_t absolute_feature_index = feature_attribs.featureIndex;
 	auto &column = columnData[absolute_feature_index];
+	auto feature_type = feature_attribs.featureType;
 	auto effective_feature_type = feature_data.effectiveFeatureType;
 	auto &value = feature_data.targetValue;
 
@@ -1138,7 +1139,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		feature_data.SetPrecomputedRemainingIdenticalDistanceTerm(nonmatch_dist_term);
 		return nonmatch_dist_term;
 	}
-	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_STRING)
+	else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING)
 	{
 		//initialize to zero, because if don't find an exact match, but there are distance terms of
 		//0, then need to accumulate those later
@@ -1164,7 +1165,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 		return r_dist_eval.ComputeDistanceTermNonNullNominalNextSmallest(nonmatch_dist_term, query_feature_index, high_accuracy);
 	}
-	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMERIC)
+	else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC)
 	{
 		//initialize to zero, because if don't find an exact match, but there are distance terms of
 		//0, then need to accumulate those later
@@ -1190,8 +1191,8 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 		return r_dist_eval.ComputeDistanceTermNonNullNominalNextSmallest(nonmatch_dist_term, query_feature_index, high_accuracy);
 	}
-	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_CODE
-		|| effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE)
+	else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE
+		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
 	{
 		//compute partial sums for all code of matching size
 		size_t code_size = 1;
@@ -1205,18 +1206,18 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			ComputeAndAccumulatePartialSums(r_dist_eval, entity_indices, query_feature_index, absolute_feature_index, high_accuracy);
 		}
 
-		if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_CODE)
+		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
 		{
 			double nonmatch_dist_term = r_dist_eval.ComputeDistanceTermNominalNonNullSmallestNonmatch(query_feature_index, high_accuracy);
 			return nonmatch_dist_term;
 		}
-		else //RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE
+		else //GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE
 		{
 			//next most similar code must be at least a distance of 1 edit away
 			return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicNonNullRegular(1.0, query_feature_index, high_accuracy);
 		}
 	}
-	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING)
+	else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING)
 	{
 		if(value.nodeType == ENIVT_STRING_ID)
 		{
@@ -1231,7 +1232,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		//the next closest string will have an edit distance of 1
 		return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicNonNullRegular(1.0, query_feature_index, high_accuracy);
 	}
-	//else feature_type == FDT_CONTINUOUS_NUMERIC or FDT_CONTINUOUS_UNIVERSALLY_NUMERIC
+	//else feature_type == FDT_CONTINUOUS_NUMERIC or FDT_CONTINUOUS_NUMERIC_CYCLIC
 
 	//if not a number or no numbers available, then no size
 	if(value.nodeType != ENIVT_NUMBER || column->sortedNumberValueEntries.size() == 0)

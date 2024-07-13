@@ -1028,7 +1028,6 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	size_t absolute_feature_index = feature_attribs.featureIndex;
 	auto &column = columnData[absolute_feature_index];
 	auto feature_type = feature_attribs.featureType;
-	auto effective_feature_type = feature_data.effectiveFeatureType;
 	auto &value = feature_data.targetValue;
 
 	//need to accumulate values for nulls if the value is a null

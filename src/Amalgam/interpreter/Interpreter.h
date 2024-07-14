@@ -545,7 +545,7 @@ protected:
 		// executes node_to_execute with the following parameters matching those of pushing on the construction stack
 		// will allocate an approrpiate node matching the type of current_index
 		//result is set to the result of the task
-		template<typename EvaluableNodeRefType = EvaluableNodeReference>
+		template<typename EvaluableNodeRefType>
 		void EnqueueTaskWithConstructionStack(EvaluableNode *node_to_execute,
 			EvaluableNode *target_origin, EvaluableNode *target,
 			EvaluableNodeImmediateValueWithType current_index,
@@ -605,7 +605,7 @@ protected:
 
 		//Enqueues a concurrent task using the relative interpreter, executing node_to_execute
 		//if result is specified, it will store the result there, otherwise it will free it
-		template<typename EvaluableNodeRefType = EvaluableNodeReference>
+		template<typename EvaluableNodeRefType>
 		void EnqueueTask(EvaluableNode *node_to_execute,
 			EvaluableNodeRefType *result = nullptr, bool immediate_results = false)
 		{
@@ -683,9 +683,11 @@ protected:
 		//updates the aggregated result reference's properties based on all of the child nodes
 		inline void UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(EvaluableNodeReference &new_result)
 		{
-			new_result.unique = resultsUnique;
-			new_result.SetNeedCycleCheck(resultsNeedCycleCheck);
-			new_result.SetIsIdempotent(resultsIdempotent);
+			new_result.unique &= resultsUnique;
+			if(resultsNeedCycleCheck)
+				new_result.SetNeedCycleCheck(resultsNeedCycleCheck);
+			if(!resultsIdempotent)
+				new_result.SetIsIdempotent(resultsIdempotent);
 		}
 
 		//returns the relevant write mutex for the call stack

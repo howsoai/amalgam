@@ -97,7 +97,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 					ConcurrencyManager concurrency_manager(this, num_nodes);
 
 					for(size_t node_index = 0; node_index < num_nodes; node_index++)
-						concurrency_manager.EnqueueTaskWithConstructionStack(function,
+						concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNode *>(function,
 							list, result, EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)),
 							list_ocn[node_index], result_ocn[node_index]);
 
@@ -144,7 +144,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 					ConcurrencyManager concurrency_manager(this, num_nodes);
 
 					for(auto &[node_id, node] : result_mcn)
-						concurrency_manager.EnqueueTaskWithConstructionStack(function,
+						concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNode *>(function,
 							list, result, EvaluableNodeImmediateValueWithType(node_id), node, node);
 
 					enqueue_task_lock.Unlock();
@@ -419,6 +419,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 
 	//create result_list as a copy of the current list, but clear out child nodes
 	EvaluableNodeReference result_list(evaluableNodeManager->AllocNode(list->GetType()), list.unique);
+	result_list->SetNeedCycleCheck(list->GetNeedCycleCheck());
+	result_list->SetIsIdempotent(list->GetIsIdempotent());
 
 	if(EvaluableNode::IsNull(function))
 		return result_list;
@@ -443,7 +445,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 				ConcurrencyManager concurrency_manager(this, num_nodes);
 
 				for(size_t node_index = 0; node_index < num_nodes; node_index++)
-					concurrency_manager.EnqueueTaskWithConstructionStack(function,
+					concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNodeReference>(function,
 						list, result_list, EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)),
 						list_ocn[node_index], evaluations[node_index]);
 
@@ -522,7 +524,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 				//kick off interpreters
 				size_t node_index = 0;
 				for(auto &[node_id, node] : list_mcn)
-					concurrency_manager.EnqueueTaskWithConstructionStack(function,
+					concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNodeReference>(function,
 						list, result_list, EvaluableNodeImmediateValueWithType(node_id),
 						node, evaluations[node_index++]);
 
@@ -1490,8 +1492,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 
 				//kick off interpreters
 				for(size_t node_index = 0; node_index + 1 < num_nodes; node_index += 2)
-					concurrency_manager.EnqueueTaskWithConstructionStack(ocn[node_index + 1], en, new_assoc,
-						EvaluableNodeImmediateValueWithType(keys[node_index / 2]),
+					concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNodeReference>(ocn[node_index + 1],
+						en, new_assoc, EvaluableNodeImmediateValueWithType(keys[node_index / 2]),
 						nullptr, results[node_index / 2]);
 				
 				enqueue_task_lock.Unlock();

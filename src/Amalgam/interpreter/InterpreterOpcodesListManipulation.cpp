@@ -624,7 +624,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, b
 			ConcurrencyManager concurrency_manager(this, num_nodes);
 
 			for(size_t node_index = 0; node_index < num_nodes; node_index++)
-				concurrency_manager.EnqueueTaskWithConstructionStack(function,
+				concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNode *>(function,
 					nullptr, result, EvaluableNodeImmediateValueWithType(node_index * range_step_size + range_start),
 					nullptr, list_ocn[node_index]);
 

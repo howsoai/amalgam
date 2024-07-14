@@ -19777,7 +19777,7 @@ using Parser = ParseEngine<EventHandlerTree>;
 #endif /* C4_YML_EXPORT_HPP_ */
 
 
-#ifdef C4_MSVC
+#if defined(C4_MSVC) || defined(_WIN32)
 //included above:
 //#include <malloc.h>
 #else

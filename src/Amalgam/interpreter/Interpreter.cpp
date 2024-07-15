@@ -764,6 +764,76 @@ EvaluableNode *Interpreter::RewriteByFunction(EvaluableNodeReference function, E
 	return result;
 }
 
+bool Interpreter::PopulatePerformanceConstraintsFromParams(std::vector<EvaluableNode *> &params, size_t perf_constraint_param_offset, PerformanceConstraints &perf_constraints)
+{
+	//for each of the three parameters below, values of zero indicate no limit
+
+	//populate maxNumExecutionSteps
+	perf_constraints.curExecutionStep = 0;
+	perf_constraints.maxNumExecutionSteps = 0;
+	size_t execution_steps_offset = perf_constraint_param_offset + 0;
+	if(params.size() > execution_steps_offset)
+	{
+		double value = InterpretNodeIntoNumberValue(params[execution_steps_offset]);
+		if(!FastIsNaN(value))
+			perf_constraints.maxNumExecutionSteps = static_cast<ExecutionCycleCount>(value);
+	}
+
+	//populate maxNumExecutionNodes
+	perf_constraints.maxNumExecutionNodes = 0;
+	size_t nodes_allowed_offset = perf_constraint_param_offset + 1;
+	if(params.size() > nodes_allowed_offset)
+	{
+		double value = InterpretNodeIntoNumberValue(params[nodes_allowed_offset]);
+		if(!FastIsNaN(value))
+			perf_constraints.maxNumExecutionNodes = static_cast<ExecutionCycleCount>(value);
+	}
+	//populate maxOpcodeExecutionDepth
+	perf_constraints.maxOpcodeExecutionDepth = 0;
+	size_t stack_depth_allowed_offset = perf_constraint_param_offset + 2;
+	if(params.size() > stack_depth_allowed_offset)
+	{
+		double value = InterpretNodeIntoNumberValue(params[stack_depth_allowed_offset]);
+		if(!FastIsNaN(value))
+			perf_constraints.maxOpcodeExecutionDepth = static_cast<ExecutionCycleCount>(value);
+	}
+}
+
+void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_constraints)
+{
+	if(perf_constraints == nullptr)
+		return;
+
+	//clamp to minimum remaining values from caller
+	if(!AllowUnlimitedExecutionSteps())
+		perf_constraints->maxNumExecutionSteps = std::min(perf_constraints->maxNumExecutionSteps, GetRemainingNumExecutionSteps());
+
+	//clamp to minimum remaining values from caller
+	if(!AllowUnlimitedExecutionNodes())
+	{
+	#ifdef MULTITHREAD_SUPPORT
+		//if multiple threads, the other threads could be eating into this
+		perf_constraints->maxNumExecutionNodes *= Concurrency::threadPool.GetNumActiveThreads();
+	#endif
+		perf_constraints->maxNumExecutionNodes = std::min(perf_constraints->curNumExecutionNodes, GetRemainingNumExecutionNodes());
+
+		//offset the current and max appropriately
+		perf_constraints->curNumExecutionNodes = evaluableNodeManager->GetNumberOfUsedNodes();
+		perf_constraints->maxNumExecutionNodes += perf_constraints->curNumExecutionNodes;
+	}
+
+	//clamp to minimum remaining values from caller
+	if(!AllowUnlimitedOpcodeExecutionDepth())
+	{
+		perf_constraints->maxOpcodeExecutionDepth = std::min(perf_constraints->maxOpcodeExecutionDepth, GetRemainingOpcodeExecutionDepth());
+
+		//offset the base and max appropriately
+		perf_constraints->baseOpcodeExecutionDepth = interpreterNodeStackNodes->size();
+		perf_constraints->maxOpcodeExecutionDepth += perf_constraints->baseOpcodeExecutionDepth;
+	}
+}
+
+
 #ifdef MULTITHREAD_SUPPORT
 
 bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node,

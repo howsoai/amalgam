@@ -43,7 +43,6 @@ public:
 	};
 
 	//TODO 20879: finish this
-	//TODO 20879: initialize curNomExecutionNodes and maxNumExecutionNodes via enm->GetNumberOfUsedNodes();
 	struct PerformanceConstraints
 	{
 		//current execution step - number of nodes executed
@@ -57,11 +56,11 @@ public:
 		//will terminate execution if the value is reached
 		ExecutionCycleCount maxNumExecutionSteps;
 
-		//the recursion depth at the start of execution
-		ExecutionCycleCount baseRecursionDepth;
+		//the opcode execution depth at the start of the call
+		ExecutionCycleCount baseOpcodeExecutionDepth;
 
-		//the maximum recursion depth
-		ExecutionCycleCount maxRecursionDepth;
+		//the maximum opcode execution depth
+		size_t maxOpcodeExecutionDepth;
 
 		//current number of nodes created by this interpreter, to be compared to maxNumExecutionNodes
 		// should be the sum of curNumExecutionNodesAllocatedToEntities plus any temporary nodes
@@ -521,6 +520,13 @@ protected:
 	// Returns the (potentially) modified tree of n, modified in-place
 	EvaluableNode *RewriteByFunction(EvaluableNodeReference function, EvaluableNode *top_node, EvaluableNode *n, EvaluableNode::ReferenceSetType &references);
 
+	//populates perf_constraints from params starting at the offset perf_constraint_param_offset, in the order of execution cycles, maximum memory, maximum stack depth
+	//returns true if there are any performance constraints, false if not
+	bool PopulatePerformanceConstraintsFromParams(std::vector<EvaluableNode *> &params, size_t perf_constraint_param_offset, PerformanceConstraints &perf_constraints);
+
+	//if perf_constraints is not null, populates the counters representing the current state of the interpreter
+	void PopulatePerformanceCounters(PerformanceConstraints *perf_constraints);
+
 #ifdef MULTITHREAD_SUPPORT
 
 	//class to manage the data for concurrent execution by an interpreter
@@ -807,12 +813,6 @@ protected:
 
 	//TODO 20879: update these methods
 
-	//recalculates curNumExecutionNodes
-	__forceinline void UpdateCurNumExecutionNodes()
-	{
-		curNumExecutionNodes = curNumExecutionNodesAllocatedToEntities + evaluableNodeManager->GetNumberOfUsedNodes();
-	}
-
 	//if true, no limit to how long can utilize CPU
 	constexpr bool AllowUnlimitedExecutionSteps()
 	{	return maxNumExecutionSteps == 0;	}
@@ -838,21 +838,40 @@ protected:
 	}
 
 	//returns true if there's a max number of execution steps or nodes and at least one is exhausted
-	__forceinline bool AreExecutionResourcesExhausted(bool increment_execution_step = false)
+	__forceinline bool AreExecutionResourcesExhausted(bool increment_performance_counters = false)
 	{
 		if(performanceConstraints == nullptr)
 			return false;
 
-		if(increment_execution_step)
-			performanceConstraints->curExecutionStep++;
+		if(!AllowUnlimitedExecutionSteps())
+		{
+			if(increment_performance_counters)
+				performanceConstraints->curExecutionStep++;
 
-		if(!AllowUnlimitedExecutionSteps() && curExecutionStep >= maxNumExecutionSteps)
-			return true;
+			if(performanceConstraints->curExecutionStep >= performanceConstraints->maxNumExecutionSteps)
+				return true;
+		}
 
-		if(!AllowUnlimitedExecutionNodes() && curNumExecutionNodes >= maxNumExecutionNodes)
-			return true;
+		if(!AllowUnlimitedExecutionNodes())
+		{
+			performanceConstraints->curNumExecutionNodes = performanceConstraints->curNumExecutionNodesAllocatedToEntities + evaluableNodeManager->GetNumberOfUsedNodes();
+
+			if(performanceConstraints->curNumExecutionNodes >= performanceConstraints->maxNumExecutionNodes)
+				return true;
+		}
 
 		return false;
+	}
+
+	//if true, no limit to how deep opcodes can execute
+	constexpr bool AllowUnlimitedOpcodeExecutionDepth()
+	{
+
+	}
+
+	constexpr size_t GetRemainingOpcodeExecutionDepth()
+	{
+
 	}
 
 	//opcodes

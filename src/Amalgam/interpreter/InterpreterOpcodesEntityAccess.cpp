@@ -441,44 +441,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		PerformanceProfiler::StartOperation(string_intern_pool.GetStringFromID(entity_label_sid),
 			evaluableNodeManager->GetNumberOfUsedNodes());
 
-	//number of execution steps
-	//evaluate before context so don't need to keep/remove reference for context
-	ExecutionCycleCount num_steps_allowed = GetRemainingNumExecutionSteps();
-	bool num_steps_allowed_specified = false;
-	if(ocn.size() > 3)
-	{
-		num_steps_allowed = static_cast<ExecutionCycleCount>(InterpretNodeIntoNumberValue(ocn[3]));
-		num_steps_allowed_specified = true;
-	}
-
-	//compute execution limits
-	if(AllowUnlimitedExecutionSteps() && (!num_steps_allowed_specified || num_steps_allowed == 0))
-		num_steps_allowed = 0;
-	else
-	{
-		//if unlimited steps are allowed, then leave the value as specified, otherwise clamp to what is remaining
-		if(!AllowUnlimitedExecutionSteps())
-			num_steps_allowed = std::min(num_steps_allowed, GetRemainingNumExecutionSteps());
-	}
-
-	//number of execution nodes
-	//evaluate before context so don't need to keep/remove reference for context
-	size_t num_nodes_allowed = GetRemainingNumExecutionNodes();
-	bool num_nodes_allowed_specified = false;
-	if(ocn.size() > 4)
-	{
-		num_nodes_allowed = static_cast<size_t>(InterpretNodeIntoNumberValue(ocn[4]));
-		num_nodes_allowed_specified = true;
-	}
-
-	if(AllowUnlimitedExecutionNodes() && (!num_nodes_allowed_specified || num_nodes_allowed == 0))
-		num_nodes_allowed = 0;
-	else
-	{
-		//if unlimited nodes are allowed, then leave the value as specified, otherwise clamp to what is remaining
-		if(!AllowUnlimitedExecutionNodes())
-			num_nodes_allowed = std::min(num_nodes_allowed, GetRemainingNumExecutionNodes());
-	}
+	PerformanceConstraints perf_constraints;
+	PerformanceConstraints *perf_constraints_ptr = nullptr;
+	if(PopulatePerformanceConstraintsFromParams(ocn, 3, perf_constraints))
+		perf_constraints_ptr = &perf_constraints;
 
 	//attempt to get arguments
 	EvaluableNodeReference args = EvaluableNodeReference::Null();
@@ -528,6 +494,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 
 		call_stack = ConvertArgsToCallStack(called_entity_args, called_entity->evaluableNodeManager);
 	}
+
+	PopulatePerformanceCounters(perf_constraints_ptr);
+	//TODO 20879: finish updating the code below
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is no longer executing
@@ -608,49 +577,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 		PerformanceProfiler::StartOperation(string_intern_pool.GetStringFromID(container_label_sid),
 			evaluableNodeManager->GetNumberOfUsedNodes());
 
-	//number of execution steps
-	//evaluate before context so don't need to keep/remove reference for context
-	ExecutionCycleCount num_steps_allowed = GetRemainingNumExecutionSteps();
-	bool num_steps_allowed_specified = false;
-	if(ocn.size() > 2)
-	{
-		num_steps_allowed = static_cast<ExecutionCycleCount>(InterpretNodeIntoNumberValue(ocn[2]));
-		num_steps_allowed_specified = true;
-	}
-
-	//number of execution nodes
-	//evaluate before context so don't need to keep/remove reference for context
-	size_t num_nodes_allowed = GetRemainingNumExecutionNodes();
-	bool num_nodes_allowed_specified = false;
-	if(ocn.size() > 3)
-	{
-		num_nodes_allowed = static_cast<size_t>(InterpretNodeIntoNumberValue(ocn[3]));
-		num_nodes_allowed_specified = true;
-	}
+	PerformanceConstraints perf_constraints;
+	PerformanceConstraints *perf_constraints_ptr = nullptr;
+	if(PopulatePerformanceConstraintsFromParams(ocn, 2, perf_constraints))
+		perf_constraints_ptr = &perf_constraints;
 
 	//attempt to get arguments
 	EvaluableNodeReference args = EvaluableNodeReference::Null();
 	if(ocn.size() > 1)
 		args = InterpretNodeForImmediateUse(ocn[1]);
-
-	//compute execution limits
-	if(AllowUnlimitedExecutionSteps() && (!num_steps_allowed_specified || num_steps_allowed == 0))
-		num_steps_allowed = 0;
-	else
-	{
-		//if unlimited steps are allowed, then leave the value as specified, otherwise clamp to what is remaining
-		if(!AllowUnlimitedExecutionSteps())
-			num_steps_allowed = std::min(num_steps_allowed, GetRemainingNumExecutionSteps());
-	}
-
-	if(AllowUnlimitedExecutionNodes() && (!num_nodes_allowed_specified || num_nodes_allowed == 0))
-		num_nodes_allowed = 0;
-	else
-	{
-		//if unlimited nodes are allowed, then leave the value as specified, otherwise clamp to what is remaining
-		if(!AllowUnlimitedExecutionNodes())
-			num_nodes_allowed = std::min(num_nodes_allowed, GetRemainingNumExecutionNodes());
-	}
 
 	//obtain a lock on the container
 	EntityReadReference cur_entity(curEntity);
@@ -676,6 +611,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	//add accessing_entity to arguments. If accessing_entity already specified (it shouldn't be), let garbage collection clean it up
 	EvaluableNode *call_stack_args = call_stack->GetOrderedChildNodesReference()[0];
 	call_stack_args->SetMappedChildNode(ENBISI_accessing_entity, container->evaluableNodeManager.AllocNode(ENT_STRING, cur_entity_sid));
+
+	PopulatePerformanceCounters(perf_constraints_ptr);
+	//TODO 20879: finish updating the code below
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is no longer executing

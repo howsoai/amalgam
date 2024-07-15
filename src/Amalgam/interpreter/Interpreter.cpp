@@ -787,7 +787,7 @@ bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node
 
 	//kick off interpreters
 	for(size_t i = 0; i < num_tasks; i++)
-		concurrency_manager.EnqueueTask(nodes[i], &interpreted_nodes[i], immediate_results);
+		concurrency_manager.EnqueueTask<EvaluableNodeReference>(nodes[i], &interpreted_nodes[i], immediate_results);
 
 	enqueue_task_lock.Unlock();
 	concurrency_manager.EndConcurrency();

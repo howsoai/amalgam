@@ -381,7 +381,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PARALLEL(EvaluableNode *en
 
 			//kick off interpreters
 			for(size_t element_index = 0; element_index < num_elements; element_index++)
-				concurrency_manager.EnqueueTask(ocn[element_index]);
+				concurrency_manager.EnqueueTask<EvaluableNodeReference>(ocn[element_index]);
 
 			enqueue_task_lock.Unlock();
 			concurrency_manager.EndConcurrency();

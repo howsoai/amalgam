@@ -817,10 +817,17 @@ void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_const
 
 	//clamp to minimum remaining values from caller
 	if(perf_constraints->ConstrainedExecutionSteps())
-		perf_constraints->maxNumExecutionSteps = std::min(perf_constraints->maxNumExecutionSteps,
-			perf_constraints->GetRemainingNumExecutionSteps());
+	{
+		//TODO 20879: use similar logic throughout the other two paths
+		//TODO 20879: add unit tests
+		if(performanceConstraints != nullptr && performanceConstraints->ConstrainedExecutionSteps())
+			perf_constraints->maxNumExecutionSteps = std::min(perf_constraints->maxNumExecutionSteps,
+				performanceConstraints->GetRemainingNumExecutionSteps());
+	}
 	else
+	{
 		perf_constraints->maxNumExecutionSteps = 0;
+	}
 
 	//clamp to minimum remaining values from caller
 	if(perf_constraints->ConstrainedAllocatedNodes())
@@ -831,8 +838,8 @@ void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_const
 		//if multiple threads, the other threads could be eating into this
 		perf_constraints->maxNumAllocatedNodes *= Concurrency::threadPool.GetNumActiveThreads();
 	#endif
-		perf_constraints->maxNumAllocatedNodes = std::min(perf_constraints->curNumAllocatedNodes,
-											perf_constraints->GetRemainingNumAllocatedNodes(num_nodes_in_use));
+		perf_constraints->maxNumAllocatedNodes = std::min(perf_constraints->maxNumAllocatedNodes,
+			performanceConstraints->GetRemainingNumAllocatedNodes(num_nodes_in_use));
 
 		//offset the current and max appropriately
 		perf_constraints->curNumAllocatedNodes = num_nodes_in_use;
@@ -848,7 +855,7 @@ void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_const
 	if(perf_constraints->ConstrainedExecutionDepth())
 	{
 		perf_constraints->maxOpcodeExecutionDepth = std::min(perf_constraints->maxOpcodeExecutionDepth,
-			perf_constraints->GetRemainingOpcodeExecutionDepth(interpreterNodeStackNodes->size()));
+			performanceConstraints->GetRemainingOpcodeExecutionDepth(interpreterNodeStackNodes->size()));
 
 		//offset the base and max appropriately
 		perf_constraints->baseOpcodeExecutionDepth = interpreterNodeStackNodes->size();

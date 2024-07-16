@@ -114,12 +114,6 @@ public:
 	//the maximum opcode execution depth
 	size_t maxOpcodeExecutionDepth;
 
-	//TODO 20879: evaluate whether this should be kept
-	//TODO 20879: add unit tests
-	//current number of nodes created by this interpreter, to be compared to maxNumAllocatedNodes
-	// should be the sum of curNumAllocatedNodesAllocatedToEntities plus any temporary nodes
-	size_t curNumAllocatedNodes;
-
 	//number of nodes allocated only to entities
 	size_t curNumAllocatedNodesAllocatedToEntities;
 
@@ -898,9 +892,8 @@ protected:
 
 		if(performanceConstraints->ConstrainedAllocatedNodes())
 		{
-			performanceConstraints->curNumAllocatedNodes = performanceConstraints->curNumAllocatedNodesAllocatedToEntities + evaluableNodeManager->GetNumberOfUsedNodes();
-
-			if(performanceConstraints->curNumAllocatedNodes >= performanceConstraints->maxNumAllocatedNodes)
+			size_t cur_allocated_nodes = performanceConstraints->curNumAllocatedNodesAllocatedToEntities + evaluableNodeManager->GetNumberOfUsedNodes();
+			if(cur_allocated_nodes >= performanceConstraints->maxNumAllocatedNodes)
 				return true;
 		}
 

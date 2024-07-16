@@ -502,7 +502,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 
 	PerformanceConstraints perf_constraints;
 	PerformanceConstraints *perf_constraints_ptr = nullptr;
-	if(PopulatePerformanceConstraintsFromParams(ocn, 1, perf_constraints))
+	if(PopulatePerformanceConstraintsFromParams(ocn, 2, perf_constraints))
 		perf_constraints_ptr = &perf_constraints;
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(function);

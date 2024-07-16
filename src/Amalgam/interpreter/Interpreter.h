@@ -108,9 +108,6 @@ public:
 	//will terminate execution if the value is reached
 	ExecutionCycleCount maxNumExecutionSteps;
 
-	//the opcode execution depth at the start of the call
-	ExecutionCycleCount baseOpcodeExecutionDepth;
-
 	//the maximum opcode execution depth
 	size_t maxOpcodeExecutionDepth;
 
@@ -886,20 +883,20 @@ protected:
 			if(increment_performance_counters)
 				performanceConstraints->curExecutionStep++;
 
-			if(performanceConstraints->curExecutionStep >= performanceConstraints->maxNumExecutionSteps)
+			if(performanceConstraints->curExecutionStep > performanceConstraints->maxNumExecutionSteps)
 				return true;
 		}
 
 		if(performanceConstraints->ConstrainedAllocatedNodes())
 		{
 			size_t cur_allocated_nodes = performanceConstraints->curNumAllocatedNodesAllocatedToEntities + evaluableNodeManager->GetNumberOfUsedNodes();
-			if(cur_allocated_nodes >= performanceConstraints->maxNumAllocatedNodes)
+			if(cur_allocated_nodes > performanceConstraints->maxNumAllocatedNodes)
 				return true;
 		}
 
 		if(performanceConstraints->ConstrainedOpcodeExecutionDepth())
 		{
-			if(interpreterNodeStackNodes->size() >= performanceConstraints->maxOpcodeExecutionDepth)
+			if(interpreterNodeStackNodes->size() > performanceConstraints->maxOpcodeExecutionDepth)
 				return true;
 		}
 

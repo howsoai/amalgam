@@ -783,6 +783,7 @@ bool Interpreter::PopulatePerformanceConstraintsFromParams(std::vector<Evaluable
 	}
 
 	//populate maxNumAllocatedNodes
+	perf_constraints.curNumAllocatedNodesAllocatedToEntities = 0;
 	perf_constraints.maxNumAllocatedNodes = 0;
 	size_t nodes_allowed_offset = perf_constraint_param_offset + 1;
 	if(params.size() > nodes_allowed_offset)
@@ -881,13 +882,6 @@ void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_const
 		{
 			perf_constraints->maxOpcodeExecutionDepth = 1;
 		}
-	}
-
-	if(perf_constraints->ConstrainedOpcodeExecutionDepth())
-	{
-		//offset the base and max appropriately
-		perf_constraints->baseOpcodeExecutionDepth = interpreterNodeStackNodes->size();
-		perf_constraints->maxOpcodeExecutionDepth += perf_constraints->baseOpcodeExecutionDepth;
 	}
 }
 

@@ -56,6 +56,26 @@
  (print (call_sandboxed (lambda (+ y 4)) (assoc y 3)) "\n")
  (print (call_sandboxed (lambda (+ y x 4)) (assoc y 3)) "\n")
 
+ (print (call_sandboxed (lambda (+ (+ y 4) 4)) (assoc y 3) 5) "\n")
+ (print (call_sandboxed (lambda (+ (+ y 4) 4)) (assoc y 3) 1) "\n")
+
+ (print (call_sandboxed (lambda (+ (+ y 4) 4)) (assoc y 3) (null) 50) "\n")
+ (print (call_sandboxed (lambda (+ (+ y 4) 4)) (assoc y 3) (null) 1) "\n")
+
+ (print (call_sandboxed (lambda (+ (+ y 4) 4)) (assoc y 3) (null) (null) 3) "\n")
+ (print (call_sandboxed (lambda (+ (+ y 4) 4)) (assoc y 3) (null) (null) 1) "\n")
+
+(print (call_sandboxed
+	(lambda
+		(call_sandboxed
+			(+ (+ y 4) 4)
+			(assoc y y)
+			(null) (null) 50
+		)
+	)
+	(assoc y 3)
+	(null) (null) 2) "\n")
+
  (print "--while--\n")
  (assign (assoc zz 1))
  (while (< zz 10)

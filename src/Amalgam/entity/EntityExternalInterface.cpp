@@ -131,10 +131,7 @@ void EntityExternalInterface::ExecuteEntity(std::string &handle, std::string &la
 	if(bundle == nullptr)
 		return;
 
-	ExecutionCycleCount max_num_steps = 0, num_steps_executed = 0;
-	size_t max_num_nodes = 0, num_nodes_allocated = 0;
-	bundle->entity->Execute(max_num_steps, num_steps_executed, max_num_nodes, num_nodes_allocated,
-		label, nullptr, false, nullptr, &bundle->writeListeners, bundle->printListener);
+	bundle->entity->Execute(label, nullptr, false, nullptr, &bundle->writeListeners, bundle->printListener);
 }
 
 void EntityExternalInterface::DestroyEntity(std::string &handle)
@@ -207,10 +204,8 @@ std::string EntityExternalInterface::ExecuteEntityJSON(std::string &handle, std:
 
 	auto call_stack = Interpreter::ConvertArgsToCallStack(args, enm);
 
-	ExecutionCycleCount max_num_steps = 0, num_steps_executed = 0;
-	size_t max_num_nodes = 0, num_nodes_allocated = 0;
-	EvaluableNodeReference returned_value = bundle->entity->Execute(max_num_steps, num_steps_executed, max_num_nodes,
-		num_nodes_allocated, label, call_stack, false, nullptr, &bundle->writeListeners, bundle->printListener
+	EvaluableNodeReference returned_value = bundle->entity->Execute(label, call_stack, false, nullptr,
+		&bundle->writeListeners, bundle->printListener, nullptr
 #ifdef MULTITHREAD_SUPPORT
 		, &enm_lock
 #endif

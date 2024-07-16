@@ -53,12 +53,23 @@ public:
 	}
 
 	//returns the remaining execution nodes
-	__forceinline size_t GetRemainingNumExecutionNodes(size_t cur_execution_nodes)
+	__forceinline size_t GetRemainingNumAllocatedNodes(size_t cur_allocated_nodes)
 	{
-		if(cur_execution_nodes < maxNumAllocatedNodes)
-			return maxNumAllocatedNodes - cur_execution_nodes;
+		cur_allocated_nodes += curNumAllocatedNodesAllocatedToEntities;
+		if(cur_allocated_nodes < maxNumAllocatedNodes)
+			return maxNumAllocatedNodes - cur_allocated_nodes;
 		else //already past limit
 			return 0;
+	}
+
+	//returns true if new_allocated_nodes would exceed the constraint
+	__forceinline bool WouldNewAllocatedNodesExceedConstraint(size_t new_allocated_nodes)
+	{
+		if(!ConstrainedAllocatedNodes())
+			return false;
+
+		new_allocated_nodes += curNumAllocatedNodesAllocatedToEntities;
+		return (new_allocated_nodes >= maxNumAllocatedNodes);
 	}
 
 	//if true, there is a limit on how deep execution can go in opcodes
@@ -104,6 +115,7 @@ public:
 	size_t maxOpcodeExecutionDepth;
 
 	//TODO 20879: evaluate whether this should be kept
+	//TODO 20879: add unit tests
 	//current number of nodes created by this interpreter, to be compared to maxNumAllocatedNodes
 	// should be the sum of curNumAllocatedNodesAllocatedToEntities plus any temporary nodes
 	size_t curNumAllocatedNodes;
@@ -868,9 +880,6 @@ protected:
 	{
 		return (performanceConstraints != nullptr && performanceConstraints->ConstrainedAllocatedNodes());
 	}
-
-	//TODO 20879: implement this
-	//__forceinline bool WouldNodesBeExhausted(size_t )
 
 	//returns true if there's a max number of execution steps or nodes and at least one is exhausted
 	__forceinline bool AreExecutionResourcesExhausted(bool increment_performance_counters = false)

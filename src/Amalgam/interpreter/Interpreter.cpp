@@ -708,7 +708,7 @@ EvaluableNode **Interpreter::TraverseToDestinationFromTraversalPathList(Evaluabl
 
 	size_t max_num_nodes = 0;
 	if(ConstrainedAllocatedNodes())
-		max_num_nodes = performanceConstraints->GetRemainingNumExecutionNodes(evaluableNodeManager->GetNumberOfUsedNodes());
+		max_num_nodes = performanceConstraints->GetRemainingNumAllocatedNodes(evaluableNodeManager->GetNumberOfUsedNodes());
 
 	EvaluableNode **destination = GetRelativeEvaluableNodeFromTraversalPathList(source, address_list, address_list_length, create_destination_if_necessary ? evaluableNodeManager : nullptr, max_num_nodes);
 
@@ -766,6 +766,7 @@ EvaluableNode *Interpreter::RewriteByFunction(EvaluableNodeReference function, E
 bool Interpreter::PopulatePerformanceConstraintsFromParams(std::vector<EvaluableNode *> &params, size_t perf_constraint_param_offset, PerformanceConstraints &perf_constraints)
 {
 	//for each of the three parameters below, values of zero indicate no limit
+	bool any_constraints = false;
 
 	//populate maxNumExecutionSteps
 	perf_constraints.curExecutionStep = 0;
@@ -775,7 +776,10 @@ bool Interpreter::PopulatePerformanceConstraintsFromParams(std::vector<Evaluable
 	{
 		double value = InterpretNodeIntoNumberValue(params[execution_steps_offset]);
 		if(!FastIsNaN(value))
+		{
 			perf_constraints.maxNumExecutionSteps = static_cast<ExecutionCycleCount>(value);
+			any_constraints = true;
+		}
 	}
 
 	//populate maxNumAllocatedNodes
@@ -785,7 +789,10 @@ bool Interpreter::PopulatePerformanceConstraintsFromParams(std::vector<Evaluable
 	{
 		double value = InterpretNodeIntoNumberValue(params[nodes_allowed_offset]);
 		if(!FastIsNaN(value))
+		{
 			perf_constraints.maxNumAllocatedNodes = static_cast<ExecutionCycleCount>(value);
+			any_constraints = true;
+		}
 	}
 	//populate maxOpcodeExecutionDepth
 	perf_constraints.maxOpcodeExecutionDepth = 0;
@@ -794,8 +801,13 @@ bool Interpreter::PopulatePerformanceConstraintsFromParams(std::vector<Evaluable
 	{
 		double value = InterpretNodeIntoNumberValue(params[stack_depth_allowed_offset]);
 		if(!FastIsNaN(value))
+		{
 			perf_constraints.maxOpcodeExecutionDepth = static_cast<ExecutionCycleCount>(value);
+			any_constraints = true;
+		}
 	}
+
+	return any_constraints;
 }
 
 void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_constraints)
@@ -820,7 +832,7 @@ void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_const
 		perf_constraints->maxNumAllocatedNodes *= Concurrency::threadPool.GetNumActiveThreads();
 	#endif
 		perf_constraints->maxNumAllocatedNodes = std::min(perf_constraints->curNumAllocatedNodes,
-											perf_constraints->GetRemainingNumExecutionNodes(num_nodes_in_use));
+											perf_constraints->GetRemainingNumAllocatedNodes(num_nodes_in_use));
 
 		//offset the current and max appropriately
 		perf_constraints->curNumAllocatedNodes = num_nodes_in_use;

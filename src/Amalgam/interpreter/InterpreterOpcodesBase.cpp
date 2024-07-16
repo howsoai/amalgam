@@ -1449,10 +1449,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, bo
 	//make sure not eating up too much memory
 	if(ConstrainedAllocatedNodes())
 	{
-		size_t remaining_nodes = performanceConstraints->GetRemainingNumExecutionNodes(
-			evaluableNodeManager->GetNumberOfUsedNodes());
-		if(curNumAllocatedNodes + number_to_generate >= maxNumAllocatedNodes)
-		return EvaluableNodeReference::Null();
+		if(performanceConstraints->WouldNewAllocatedNodesExceedConstraint(
+				evaluableNodeManager->GetNumberOfUsedNodes() + number_to_generate))
+			return EvaluableNodeReference::Null();
 	}
 
 	//get whether it needs to be unique
@@ -1751,8 +1750,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEIGHTED_RAND(EvaluableNod
 		generate_list = true;
 	}
 	//make sure not eating up too much memory
-	if(ConstrainedAllocatedNodes() && curNumAllocatedNodes + number_to_generate >= maxNumAllocatedNodes)
-		return EvaluableNodeReference::Null();
+	if(ConstrainedAllocatedNodes())
+	{
+		if(performanceConstraints->WouldNewAllocatedNodesExceedConstraint(
+				evaluableNodeManager->GetNumberOfUsedNodes() + number_to_generate))
+			return EvaluableNodeReference::Null();
+	}
 
 	//get whether it needs to be unique
 	bool generate_unique_values = false;

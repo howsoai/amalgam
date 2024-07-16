@@ -539,7 +539,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION_ENTITIES(EvaluableNo
 
 	//accumulate usage
 	if(ConstrainedExecutionNodes())
-		curNumExecutionNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
+		performanceConstraints->curNumExecutionNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
 
 	destination_entity_parent->AddContainedEntityViaReference(new_entity, new_entity_id, writeListeners);
 
@@ -632,7 +632,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode
 
 	//accumulate usage
 	if(ConstrainedExecutionNodes())
-		curNumExecutionNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
+		performanceConstraints->curNumExecutionNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
 
 	destination_entity_parent->AddContainedEntityViaReference(new_entity, new_entity_id, writeListeners);
 

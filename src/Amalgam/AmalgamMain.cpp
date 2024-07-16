@@ -244,8 +244,6 @@ PLATFORM_MAIN_CONSOLE
 
 		asset_manager.SetRootPermission(entity, true);
 
-		ExecutionCycleCount num_steps_executed = 0;
-		size_t num_nodes_allocated = 0;
 		PrintListener *print_listener = nullptr;
 		std::vector<EntityWriteListener *> write_listeners;
 
@@ -279,8 +277,8 @@ PLATFORM_MAIN_CONSOLE
 		args_node->SetMappedChildNode("interpreter", interpreter_node);
 
 		//execute the entity
-		entity->Execute(0, num_steps_executed, 0, num_nodes_allocated, StringInternPool::NOT_A_STRING_ID, call_stack,
-			false, nullptr, &write_listeners, print_listener);
+		entity->Execute(StringInternPool::NOT_A_STRING_ID, call_stack, false, nullptr,
+			&write_listeners, print_listener);
 
 		//clean up the nodes created here
 		entity->evaluableNodeManager.FreeNodeTree(call_stack);

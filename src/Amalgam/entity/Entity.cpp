@@ -425,7 +425,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 EvaluableNodeReference Entity::Execute(StringInternPool::StringID label_sid,
 	EvaluableNode *call_stack, bool on_self, Interpreter *calling_interpreter,
 	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
-	Interpreter::PerformanceConstraints *performance_constraints
+	PerformanceConstraints *performance_constraints
 #ifdef MULTITHREAD_SUPPORT
 	, Concurrency::ReadLock *enm_lock
 #endif
@@ -451,8 +451,8 @@ EvaluableNodeReference Entity::Execute(StringInternPool::StringID label_sid,
 
 	size_t a_priori_entity_storage = evaluableNodeManager.GetNumberOfUsedNodes();
 
-	Interpreter interpreter(&evaluableNodeManager, max_num_steps, max_num_nodes, randomStream.CreateOtherStreamViaRand(),
-		write_listeners, print_listener, this, calling_interpreter);
+	Interpreter interpreter(&evaluableNodeManager, randomStream.CreateOtherStreamViaRand(),
+		write_listeners, print_listener, performance_constraints, this, calling_interpreter);
 
 #ifdef MULTITHREAD_SUPPORT
 	if(enm_lock == nullptr)
@@ -462,15 +462,7 @@ EvaluableNodeReference Entity::Execute(StringInternPool::StringID label_sid,
 #endif
 
 	EvaluableNodeReference retval = interpreter.ExecuteNode(node_to_execute, call_stack);
-	num_steps_executed = interpreter.GetNumStepsExecuted();
-
-	//find difference in entity size
-	size_t post_entity_storage = evaluableNodeManager.GetNumberOfUsedNodes() + interpreter.GetNumEntityNodesAllocated();
-	if(a_priori_entity_storage > post_entity_storage)
-		num_nodes_allocated = 0;
-	else
-		num_nodes_allocated = post_entity_storage - a_priori_entity_storage;
-
+	
 #ifdef MULTITHREAD_SUPPORT
 	if(enm_lock != nullptr)
 		*enm_lock = std::move(interpreter.memoryModificationLock);

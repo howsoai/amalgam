@@ -22,8 +22,8 @@ class EntityWriteListener;
 class EvaluableNode;
 class EvaluableNodeManagement;
 class Interpreter;
+class PerformanceConstraints;
 class PrintListener;
-
 
 //base class for accessing an entity via a reference
 // includes everything that can be accessed via a read operation
@@ -190,7 +190,7 @@ public:
 	EvaluableNodeReference Execute(StringInternPool::StringID label_sid,
 		EvaluableNode *call_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
-		Interpreter::PerformanceConstraints *performance_constraints = nullptr
+		PerformanceConstraints *performance_constraints = nullptr
 	#ifdef MULTITHREAD_SUPPORT
 		, Concurrency::ReadLock *enm_lock = nullptr
 	#endif
@@ -200,7 +200,7 @@ public:
 	inline EvaluableNodeReference Execute(std::string &label_name,
 		EvaluableNode *call_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
-		Interpreter::PerformanceConstraints *performance_constraints = nullptr
+		PerformanceConstraints *performance_constraints = nullptr
 	#ifdef MULTITHREAD_SUPPORT
 		, Concurrency::ReadLock *enm_lock = nullptr
 	#endif

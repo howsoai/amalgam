@@ -189,7 +189,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_AC
 			
 			//accumulate new node usage
 			if(ConstrainedExecutionNodes())
-				curNumExecutionNodesAllocatedToEntities += EvaluableNode::GetDeepSize(new_code);
+				performanceConstraints->curNumExecutionNodesAllocatedToEntities += EvaluableNode::GetDeepSize(new_code);
 		}
 		else
 		{
@@ -204,7 +204,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_AC
 				size_t cur_size = target_entity->GetSizeInNodes();
 				//don't get credit for freeing memory, but do count toward memory consumed
 				if(cur_size > prev_size)
-					curNumExecutionNodesAllocatedToEntities += cur_size - prev_size;
+					performanceConstraints->curNumExecutionNodesAllocatedToEntities += cur_size - prev_size;
 			}
 		}
 
@@ -374,7 +374,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableN
 
 		//accumulate usage
 		if(ConstrainedExecutionNodes())
-			curNumExecutionNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
+			performanceConstraints->curNumExecutionNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
 
 		entity_container->AddContainedEntityViaReference(new_entity, new_entity_id, writeListeners);
 
@@ -436,7 +436,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CLONE_ENTITIES(EvaluableNo
 
 		//accumulate usage
 		if(ConstrainedExecutionNodes())
-			curNumExecutionNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
+			performanceConstraints->curNumExecutionNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
 
 		destination_entity_parent->AddContainedEntityViaReference(new_entity, new_entity_id, writeListeners);
 
@@ -679,7 +679,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSI
 
 	//accumulate usage
 	if(ConstrainedExecutionNodes())
-		curNumExecutionNodesAllocatedToEntities += loaded_entity->GetDeepSizeInNodes();
+		performanceConstraints->curNumExecutionNodesAllocatedToEntities += loaded_entity->GetDeepSizeInNodes();
 
 	//put it in the destination
 	destination_entity_parent->AddContainedEntityViaReference(loaded_entity, new_entity_id, writeListeners);

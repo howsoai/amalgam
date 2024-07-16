@@ -26,6 +26,95 @@
 //forward declarations:
 class EntityQueryCondition;
 
+//Manages performance constraints and accompanying performance counters
+class PerformanceConstraints
+{
+public:
+
+	//if true, no limit to how long can utilize CPU
+	constexpr bool ConstrainedExecutionSteps()
+	{
+		return maxNumExecutionSteps != 0;
+	}
+
+	//returns the remaining execution steps
+	__forceinline ExecutionCycleCount GetRemainingNumExecutionSteps()
+	{
+		if(curExecutionStep < maxNumExecutionSteps)
+			return maxNumExecutionSteps - curExecutionStep;
+		else //already past limit
+			return 0;
+	}
+
+	//if true, there is a limit on how much memory can utilize
+	constexpr bool ConstrainedExecutionNodes()
+	{
+		return maxNumExecutionNodes != 0;
+	}
+
+	//returns the remaining execution nodes
+	__forceinline size_t GetRemainingNumExecutionNodes(size_t cur_execution_nodes)
+	{
+		if(cur_execution_nodes < maxNumExecutionNodes)
+			return maxNumExecutionNodes - cur_execution_nodes;
+		else //already past limit
+			return 0;
+	}
+
+	//if true, there is a limit on how deep execution can go in opcodes
+	constexpr bool ConstrainedExecutionDepth()
+	{
+		return maxOpcodeExecutionDepth != 0;
+	}
+
+	//returns the remaining execution depth
+	__forceinline size_t GetRemainingOpcodeExecutionDepth(size_t cur_execution_depth)
+	{
+		if(cur_execution_depth < maxOpcodeExecutionDepth)
+			return maxOpcodeExecutionDepth - cur_execution_depth;
+		else //already past limit
+			return 0;
+	}
+
+	//accrues performance counters into the current object from perf_constraints
+	__forceinline void AccruePerformanceCounters(PerformanceConstraints *perf_constraints)
+	{
+		if(perf_constraints == nullptr)
+			return;
+
+		curExecutionStep += perf_constraints->curExecutionStep;
+		curNumExecutionNodesAllocatedToEntities += perf_constraints->curNumExecutionNodesAllocatedToEntities;
+	}
+
+	//current execution step - number of nodes executed
+#if defined(MULTITHREAD_SUPPORT)
+	std::atomic<ExecutionCycleCount> curExecutionStep;
+#else
+	std::atomic<ExecutionCycleCount> curExecutionStep;
+#endif
+
+	//maximum number of execution steps by this Interpreter and anything called from it.  If 0, then unlimited.
+	//will terminate execution if the value is reached
+	ExecutionCycleCount maxNumExecutionSteps;
+
+	//the opcode execution depth at the start of the call
+	ExecutionCycleCount baseOpcodeExecutionDepth;
+
+	//the maximum opcode execution depth
+	size_t maxOpcodeExecutionDepth;
+
+	//current number of nodes created by this interpreter, to be compared to maxNumExecutionNodes
+	// should be the sum of curNumExecutionNodesAllocatedToEntities plus any temporary nodes
+	size_t curNumExecutionNodes;
+
+	//number of nodes allocated only to entities
+	size_t curNumExecutionNodesAllocatedToEntities;
+
+	//maximum number of nodes allowed to be allocated by this Interpreter and anything called from it.  If 0, then unlimited.
+	//will terminate execution if the value is reached
+	size_t maxNumExecutionNodes;
+};
+
 class Interpreter
 {
 public:
@@ -40,93 +129,6 @@ public:
 
 		EvaluableNodeImmediateValueWithType index;
 		bool unique;
-	};
-
-	//Manages performance constraints and accompanying performance counters
-	struct PerformanceConstraints
-	{
-		//if true, no limit to how long can utilize CPU
-		constexpr bool ConstrainedExecutionSteps()
-		{
-			return maxNumExecutionSteps != 0;
-		}
-
-		//returns the remaining execution steps
-		constexpr ExecutionCycleCount GetRemainingNumExecutionSteps()
-		{
-			if(curExecutionStep < maxNumExecutionSteps)
-				return maxNumExecutionSteps - curExecutionStep;
-			else //already past limit
-				return 0;
-		}
-
-		//if true, there is a limit on how much memory can utilize
-		constexpr bool ConstrainedExecutionNodes()
-		{
-			return maxNumExecutionNodes != 0;
-		}
-
-		//returns the remaining execution nodes
-		constexpr size_t GetRemainingNumExecutionNodes(size_t cur_execution_nodes)
-		{
-			if(cur_execution_nodes < maxNumExecutionNodes)
-				return maxNumExecutionNodes - cur_execution_nodes;
-			else //already past limit
-				return 0;
-		}
-
-		//if true, there is a limit on how deep execution can go in opcodes
-		constexpr bool ConstrainedExecutionDepth()
-		{
-			return maxOpcodeExecutionDepth != 0;
-		}
-
-		//returns the remaining execution depth
-		constexpr size_t GetRemainingOpcodeExecutionDepth(size_t cur_execution_depth)
-		{
-			if(cur_execution_depth < maxOpcodeExecutionDepth)
-				return maxOpcodeExecutionDepth - cur_execution_depth;
-			else //already past limit
-				return 0;
-		}
-
-		//accrues performance counters into the current object from perf_constraints
-		__forceinline void AccruePerformanceCounters(PerformanceConstraints *perf_constraints)
-		{
-			if(perf_constraints == nullptr)
-				return;
-
-			curExecutionStep += perf_constraints->curExecutionStep;
-			curNumExecutionNodesAllocatedToEntities += perf_constraints->curNumExecutionNodesAllocatedToEntities;
-		}
-
-		//current execution step - number of nodes executed
-	#if defined(MULTITHREAD_SUPPORT)
-		std::atomic<ExecutionCycleCount> curExecutionStep;
-	#else
-		std::atomic<ExecutionCycleCount> curExecutionStep;
-	#endif
-
-		//maximum number of execution steps by this Interpreter and anything called from it.  If 0, then unlimited.
-		//will terminate execution if the value is reached
-		ExecutionCycleCount maxNumExecutionSteps;
-
-		//the opcode execution depth at the start of the call
-		ExecutionCycleCount baseOpcodeExecutionDepth;
-
-		//the maximum opcode execution depth
-		size_t maxOpcodeExecutionDepth;
-
-		//current number of nodes created by this interpreter, to be compared to maxNumExecutionNodes
-		// should be the sum of curNumExecutionNodesAllocatedToEntities plus any temporary nodes
-		size_t curNumExecutionNodes;
-
-		//number of nodes allocated only to entities
-		size_t curNumExecutionNodesAllocatedToEntities;
-
-		//maximum number of nodes allowed to be allocated by this Interpreter and anything called from it.  If 0, then unlimited.
-		//will terminate execution if the value is reached
-		size_t maxNumExecutionNodes;
 	};
 
 	//Creates a new interpreter to run code and to store labels.
@@ -602,10 +604,6 @@ protected:
 			//set up data
 			interpreters.reserve(numTasks);
 
-			size_t max_execution_steps_per_element = 0;
-			if(parentInterpreter->maxNumExecutionSteps > 0)
-				max_execution_steps_per_element = (parentInterpreter->maxNumExecutionSteps - parentInterpreter->GetNumStepsExecuted()) / numTasks;
-
 			//since each thread has a copy of the constructionStackNodes, it's possible that more than one of the threads
 			//obtains previous_results, so they must all be marked as not unique
 			parentInterpreter->RemoveUniquenessFromPreviousResultsInConstructionStack();
@@ -615,9 +613,10 @@ protected:
 			for(size_t element_index = 0; element_index < numTasks; element_index++)
 			{
 				//create interpreter
-				interpreters.emplace_back(std::make_unique<Interpreter>(parentInterpreter->evaluableNodeManager, max_execution_steps_per_element, parentInterpreter->maxNumExecutionNodes,
+				interpreters.emplace_back(std::make_unique<Interpreter>(parentInterpreter->evaluableNodeManager,
 					parentInterpreter->randomStream.CreateOtherStreamViaRand(),
-					parentInterpreter->writeListeners, parentInterpreter->printListener, parentInterpreter->curEntity));
+					parentInterpreter->writeListeners, parentInterpreter->printListener,
+					parentInterpreter->performanceConstraints, parentInterpreter->curEntity));
 			}
 
 			//begins concurrency over all interpreters

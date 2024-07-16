@@ -47,16 +47,16 @@ public:
 	}
 
 	//if true, there is a limit on how much memory can utilize
-	constexpr bool ConstrainedExecutionNodes()
+	constexpr bool ConstrainedAllocatedNodes()
 	{
-		return maxNumExecutionNodes != 0;
+		return maxNumAllocatedNodes != 0;
 	}
 
 	//returns the remaining execution nodes
 	__forceinline size_t GetRemainingNumExecutionNodes(size_t cur_execution_nodes)
 	{
-		if(cur_execution_nodes < maxNumExecutionNodes)
-			return maxNumExecutionNodes - cur_execution_nodes;
+		if(cur_execution_nodes < maxNumAllocatedNodes)
+			return maxNumAllocatedNodes - cur_execution_nodes;
 		else //already past limit
 			return 0;
 	}
@@ -83,7 +83,7 @@ public:
 			return;
 
 		curExecutionStep += perf_constraints->curExecutionStep;
-		curNumExecutionNodesAllocatedToEntities += perf_constraints->curNumExecutionNodesAllocatedToEntities;
+		curNumAllocatedNodesAllocatedToEntities += perf_constraints->curNumAllocatedNodesAllocatedToEntities;
 	}
 
 	//current execution step - number of nodes executed
@@ -103,16 +103,17 @@ public:
 	//the maximum opcode execution depth
 	size_t maxOpcodeExecutionDepth;
 
-	//current number of nodes created by this interpreter, to be compared to maxNumExecutionNodes
-	// should be the sum of curNumExecutionNodesAllocatedToEntities plus any temporary nodes
-	size_t curNumExecutionNodes;
+	//TODO 20879: evaluate whether this should be kept
+	//current number of nodes created by this interpreter, to be compared to maxNumAllocatedNodes
+	// should be the sum of curNumAllocatedNodesAllocatedToEntities plus any temporary nodes
+	size_t curNumAllocatedNodes;
 
 	//number of nodes allocated only to entities
-	size_t curNumExecutionNodesAllocatedToEntities;
+	size_t curNumAllocatedNodesAllocatedToEntities;
 
 	//maximum number of nodes allowed to be allocated by this Interpreter and anything called from it.  If 0, then unlimited.
 	//will terminate execution if the value is reached
-	size_t maxNumExecutionNodes;
+	size_t maxNumAllocatedNodes;
 };
 
 class Interpreter
@@ -863,10 +864,13 @@ protected:
 	}
 
 	//if true, no limit on how much memory can utilize
-	constexpr bool ConstrainedExecutionNodes()
+	constexpr bool ConstrainedAllocatedNodes()
 	{
-		return (performanceConstraints != nullptr && performanceConstraints->ConstrainedExecutionNodes());
+		return (performanceConstraints != nullptr && performanceConstraints->ConstrainedAllocatedNodes());
 	}
+
+	//TODO 20879: implement this
+	//__forceinline bool WouldNodesBeExhausted(size_t )
 
 	//returns true if there's a max number of execution steps or nodes and at least one is exhausted
 	__forceinline bool AreExecutionResourcesExhausted(bool increment_performance_counters = false)
@@ -883,11 +887,11 @@ protected:
 				return true;
 		}
 
-		if(performanceConstraints->ConstrainedExecutionNodes())
+		if(performanceConstraints->ConstrainedAllocatedNodes())
 		{
-			performanceConstraints->curNumExecutionNodes = performanceConstraints->curNumExecutionNodesAllocatedToEntities + evaluableNodeManager->GetNumberOfUsedNodes();
+			performanceConstraints->curNumAllocatedNodes = performanceConstraints->curNumAllocatedNodesAllocatedToEntities + evaluableNodeManager->GetNumberOfUsedNodes();
 
-			if(performanceConstraints->curNumExecutionNodes >= performanceConstraints->maxNumExecutionNodes)
+			if(performanceConstraints->curNumAllocatedNodes >= performanceConstraints->maxNumAllocatedNodes)
 				return true;
 		}
 

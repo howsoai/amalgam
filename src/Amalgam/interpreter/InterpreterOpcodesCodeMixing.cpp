@@ -386,8 +386,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 	Entity *new_entity = EntityManipulation::MutateEntity(this, source_entity, mutation_rate, mtw_exists ? &mutation_type_weights : nullptr, ow_exists ? &opcode_weights : nullptr);
 	
 	//accumulate usage
-	if(ConstrainedExecutionNodes())
-		performanceConstraints->curNumExecutionNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
+	if(ConstrainedAllocatedNodes())
+		performanceConstraints->curNumAllocatedNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
 
 	//clear lock if applicable
 	source_entity = EntityReadReference();
@@ -484,8 +484,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT_ENTITIES(Evaluab
 		return EvaluableNodeReference::Null();
 
 	//accumulate usage
-	if(ConstrainedExecutionNodes())
-		performanceConstraints->curNumExecutionNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
+	if(ConstrainedAllocatedNodes())
+		performanceConstraints->curNumAllocatedNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
 
 	destination_entity_parent->AddContainedEntityViaReference(new_entity, new_entity_id, writeListeners);
 
@@ -538,8 +538,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION_ENTITIES(EvaluableNo
 		return EvaluableNodeReference::Null();
 
 	//accumulate usage
-	if(ConstrainedExecutionNodes())
-		performanceConstraints->curNumExecutionNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
+	if(ConstrainedAllocatedNodes())
+		performanceConstraints->curNumAllocatedNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
 
 	destination_entity_parent->AddContainedEntityViaReference(new_entity, new_entity_id, writeListeners);
 
@@ -631,8 +631,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode
 		return EvaluableNodeReference::Null();
 
 	//accumulate usage
-	if(ConstrainedExecutionNodes())
-		performanceConstraints->curNumExecutionNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
+	if(ConstrainedAllocatedNodes())
+		performanceConstraints->curNumAllocatedNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
 
 	destination_entity_parent->AddContainedEntityViaReference(new_entity, new_entity_id, writeListeners);
 

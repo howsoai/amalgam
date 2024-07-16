@@ -707,7 +707,7 @@ EvaluableNode **Interpreter::TraverseToDestinationFromTraversalPathList(Evaluabl
 	}
 
 	size_t max_num_nodes = 0;
-	if(ConstrainedExecutionNodes())
+	if(ConstrainedAllocatedNodes())
 		max_num_nodes = performanceConstraints->GetRemainingNumExecutionNodes(evaluableNodeManager->GetNumberOfUsedNodes());
 
 	EvaluableNode **destination = GetRelativeEvaluableNodeFromTraversalPathList(source, address_list, address_list_length, create_destination_if_necessary ? evaluableNodeManager : nullptr, max_num_nodes);
@@ -778,14 +778,14 @@ bool Interpreter::PopulatePerformanceConstraintsFromParams(std::vector<Evaluable
 			perf_constraints.maxNumExecutionSteps = static_cast<ExecutionCycleCount>(value);
 	}
 
-	//populate maxNumExecutionNodes
-	perf_constraints.maxNumExecutionNodes = 0;
+	//populate maxNumAllocatedNodes
+	perf_constraints.maxNumAllocatedNodes = 0;
 	size_t nodes_allowed_offset = perf_constraint_param_offset + 1;
 	if(params.size() > nodes_allowed_offset)
 	{
 		double value = InterpretNodeIntoNumberValue(params[nodes_allowed_offset]);
 		if(!FastIsNaN(value))
-			perf_constraints.maxNumExecutionNodes = static_cast<ExecutionCycleCount>(value);
+			perf_constraints.maxNumAllocatedNodes = static_cast<ExecutionCycleCount>(value);
 	}
 	//populate maxOpcodeExecutionDepth
 	perf_constraints.maxOpcodeExecutionDepth = 0;
@@ -811,25 +811,25 @@ void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_const
 		perf_constraints->maxNumExecutionSteps = 0;
 
 	//clamp to minimum remaining values from caller
-	if(perf_constraints->ConstrainedExecutionNodes())
+	if(perf_constraints->ConstrainedAllocatedNodes())
 	{
 		size_t num_nodes_in_use = evaluableNodeManager->GetNumberOfUsedNodes()
-			+ perf_constraints->curNumExecutionNodesAllocatedToEntities;
+			+ perf_constraints->curNumAllocatedNodesAllocatedToEntities;
 	#ifdef MULTITHREAD_SUPPORT
 		//if multiple threads, the other threads could be eating into this
-		perf_constraints->maxNumExecutionNodes *= Concurrency::threadPool.GetNumActiveThreads();
+		perf_constraints->maxNumAllocatedNodes *= Concurrency::threadPool.GetNumActiveThreads();
 	#endif
-		perf_constraints->maxNumExecutionNodes = std::min(perf_constraints->curNumExecutionNodes,
+		perf_constraints->maxNumAllocatedNodes = std::min(perf_constraints->curNumAllocatedNodes,
 											perf_constraints->GetRemainingNumExecutionNodes(num_nodes_in_use));
 
 		//offset the current and max appropriately
-		perf_constraints->curNumExecutionNodes = num_nodes_in_use;
-		perf_constraints->curNumExecutionNodesAllocatedToEntities = 0;
-		perf_constraints->maxNumExecutionNodes += perf_constraints->curNumExecutionNodes;
+		perf_constraints->curNumAllocatedNodes = num_nodes_in_use;
+		perf_constraints->curNumAllocatedNodesAllocatedToEntities = 0;
+		perf_constraints->maxNumAllocatedNodes += perf_constraints->curNumAllocatedNodes;
 	}
 	else
 	{
-		perf_constraints->maxNumExecutionNodes = 0;
+		perf_constraints->maxNumAllocatedNodes = 0;
 	}
 
 	//clamp to minimum remaining values from caller

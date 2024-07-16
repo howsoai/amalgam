@@ -188,23 +188,23 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_AC
 			target_entity->AccumRoot(new_code, false, EvaluableNodeManager::ENMM_LABEL_ESCAPE_DECREMENT, writeListeners);
 			
 			//accumulate new node usage
-			if(ConstrainedExecutionNodes())
-				performanceConstraints->curNumExecutionNodesAllocatedToEntities += EvaluableNode::GetDeepSize(new_code);
+			if(ConstrainedAllocatedNodes())
+				performanceConstraints->curNumAllocatedNodesAllocatedToEntities += EvaluableNode::GetDeepSize(new_code);
 		}
 		else
 		{
 			size_t prev_size = 0;
-			if(ConstrainedExecutionNodes())
+			if(ConstrainedAllocatedNodes())
 				prev_size = target_entity->GetSizeInNodes();
 
 			target_entity->SetRoot(new_code, false, EvaluableNodeManager::ENMM_LABEL_ESCAPE_DECREMENT, writeListeners);
 
-			if(ConstrainedExecutionNodes())
+			if(ConstrainedAllocatedNodes())
 			{
 				size_t cur_size = target_entity->GetSizeInNodes();
 				//don't get credit for freeing memory, but do count toward memory consumed
 				if(cur_size > prev_size)
-					performanceConstraints->curNumExecutionNodesAllocatedToEntities += cur_size - prev_size;
+					performanceConstraints->curNumAllocatedNodesAllocatedToEntities += cur_size - prev_size;
 			}
 		}
 
@@ -373,8 +373,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableN
 		Entity *new_entity = new Entity(root, rand_state, EvaluableNodeManager::ENMM_LABEL_ESCAPE_DECREMENT);
 
 		//accumulate usage
-		if(ConstrainedExecutionNodes())
-			performanceConstraints->curNumExecutionNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
+		if(ConstrainedAllocatedNodes())
+			performanceConstraints->curNumAllocatedNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
 
 		entity_container->AddContainedEntityViaReference(new_entity, new_entity_id, writeListeners);
 
@@ -435,8 +435,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CLONE_ENTITIES(EvaluableNo
 		source_entity = EntityReadReference();
 
 		//accumulate usage
-		if(ConstrainedExecutionNodes())
-			performanceConstraints->curNumExecutionNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
+		if(ConstrainedAllocatedNodes())
+			performanceConstraints->curNumAllocatedNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
 
 		destination_entity_parent->AddContainedEntityViaReference(new_entity, new_entity_id, writeListeners);
 
@@ -678,8 +678,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSI
 	}
 
 	//accumulate usage
-	if(ConstrainedExecutionNodes())
-		performanceConstraints->curNumExecutionNodesAllocatedToEntities += loaded_entity->GetDeepSizeInNodes();
+	if(ConstrainedAllocatedNodes())
+		performanceConstraints->curNumAllocatedNodesAllocatedToEntities += loaded_entity->GetDeepSizeInNodes();
 
 	//put it in the destination
 	destination_entity_parent->AddContainedEntityViaReference(loaded_entity, new_entity_id, writeListeners);

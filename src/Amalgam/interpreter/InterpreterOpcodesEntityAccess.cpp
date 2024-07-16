@@ -274,12 +274,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 
 		auto [any_success, all_success] = target_entity->SetValuesAtLabels(
 										assigned_vars, accum_assignment, direct, writeListeners,
-										(ConstrainedExecutionNodes() ? &num_new_nodes_allocated : nullptr), target_entity == curEntity, copy_entity);
+										(ConstrainedAllocatedNodes() ? &num_new_nodes_allocated : nullptr), target_entity == curEntity, copy_entity);
 
 		if(any_success)
 		{
-			if(ConstrainedExecutionNodes())
-				performanceConstraints->curNumExecutionNodesAllocatedToEntities += num_new_nodes_allocated;
+			if(ConstrainedAllocatedNodes())
+				performanceConstraints->curNumAllocatedNodesAllocatedToEntities += num_new_nodes_allocated;
 
 			//collect garbage, but not on current entity, save that for between instructions
 			if(target_entity != curEntity)

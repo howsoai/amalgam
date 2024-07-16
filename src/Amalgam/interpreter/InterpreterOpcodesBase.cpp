@@ -520,9 +520,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	node_stack.PushEvaluableNode(call_stack);
 
 	PopulatePerformanceCounters(perf_constraints_ptr);
-	//TODO 20879: finish updating the code below
 
-	Interpreter sandbox(evaluableNodeManager, num_steps_allowed, num_nodes_allowed, randomStream.CreateOtherStreamViaRand(), writeListeners, printListener, nullptr);
+	Interpreter sandbox(evaluableNodeManager, randomStream.CreateOtherStreamViaRand(),
+		writeListeners, printListener, perf_constraints_ptr);
 
 #ifdef MULTITHREAD_SUPPORT
 	//everything at this point is referenced on stacks; allow the sandbox to trigger a garbage collect without this interpreter blocking
@@ -536,7 +536,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	std::swap(memoryModificationLock, sandbox.memoryModificationLock);
 #endif
 
-	curExecutionStep += sandbox.curExecutionStep;
+	if(performanceConstraints != nullptr)
+		performanceConstraints->AccruePerformonceCounters(perf_constraints_ptr);
 
 	//call opcodes should consume the outer return opcode if there is one
 	if(result.IsNonNullNodeReference() && result->GetType() == ENT_RETURN)

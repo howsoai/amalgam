@@ -305,10 +305,9 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 };
 
 
-Interpreter::Interpreter(EvaluableNodeManager *enm,
-	ExecutionCycleCount max_num_steps, size_t max_num_nodes, RandomStream rand_stream,
+Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
-	Entity *t, Interpreter *calling_interpreter, PerformanceConstraints *performance_constraints)
+	PerformanceConstraints *performance_constraints, Entity *t, Interpreter *calling_interpreter)
 {
 	performanceConstraints = performance_constraints;
 

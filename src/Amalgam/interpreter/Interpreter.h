@@ -45,6 +45,16 @@ public:
 	//TODO 20879: finish this
 	struct PerformanceConstraints
 	{
+		//accrues performance counters into the current object from perf_constraints
+		__forceinline void AccruePerformonceCounters(PerformanceConstraints *perf_constraints)
+		{
+			if(perf_constraints == nullptr)
+				return;
+
+			curExecutionStep += perf_constraints->curExecutionStep;
+			curNumExecutionNodesAllocatedToEntities += perf_constraints->curNumExecutionNodesAllocatedToEntities;
+		}
+
 		//current execution step - number of nodes executed
 	#if defined(MULTITHREAD_SUPPORT)
 		std::atomic<ExecutionCycleCount> curExecutionStep;
@@ -76,14 +86,11 @@ public:
 
 	//Creates a new interpreter to run code and to store labels.
 	// If no entity is specified via nullptr, then it will run sandboxed
-	// Uses max_num_steps as the maximum number of operations that can be executed by this and any subordinate operations called. If max_num_steps is 0, then it will execute unlimeted steps
-	// Uses max_num_nodes as the maximum number of nodes that can be allocated in memory by this and any subordinate operations called. If max_num_nodes is 0, then it will allow unlimited allocations
-	// max_num_sets is also used for any subsequently limited executions
 	// if performance_constraints is not nullptr, then it will limit execution appropriately
-	Interpreter(EvaluableNodeManager *enm,
-		ExecutionCycleCount max_num_steps, size_t max_num_nodes, RandomStream rand_stream,
+	Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 		std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
-		Entity *t = nullptr, Interpreter *calling_interpreter = nullptr, PerformanceConstraints *performance_constraints = nullptr);
+		PerformanceConstraints *performance_constraints = nullptr,
+		Entity *t = nullptr, Interpreter *calling_interpreter = nullptr);
 
 	~Interpreter()
 	{	}

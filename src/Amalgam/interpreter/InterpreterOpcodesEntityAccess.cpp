@@ -274,12 +274,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 
 		auto [any_success, all_success] = target_entity->SetValuesAtLabels(
 										assigned_vars, accum_assignment, direct, writeListeners,
-										(AllowUnlimitedExecutionNodes() ? nullptr : &num_new_nodes_allocated), target_entity == curEntity, copy_entity);
+										(ConstrainedAllocatedNodes() ? &num_new_nodes_allocated : nullptr), target_entity == curEntity, copy_entity);
 
 		if(any_success)
 		{
-			if(!AllowUnlimitedExecutionNodes())
-				curNumExecutionNodesAllocatedToEntities += num_new_nodes_allocated;
+			if(ConstrainedAllocatedNodes())
+				performanceConstraints->curNumAllocatedNodesAllocatedToEntities += num_new_nodes_allocated;
 
 			//collect garbage, but not on current entity, save that for between instructions
 			if(target_entity != curEntity)
@@ -351,11 +351,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 	if(to_lookup == nullptr || IsEvaluableNodeTypeImmediate(to_lookup->GetType()))
 	{
 		StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(to_lookup);
-
-		ExecutionCycleCount num_steps_executed = 0;
 		EvaluableNodeReference value = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager, direct, target_entity == curEntity);
-		curExecutionStep += num_steps_executed;
-
 		evaluableNodeManager->FreeNodeTreeIfPossible(to_lookup);
 
 		return value;
@@ -379,9 +375,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 			cnr.SetReference(cn);
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);
 
-			ExecutionCycleCount num_steps_executed = 0;
 			EvaluableNodeReference value = target_entity->GetValueAtLabel(cn_id, evaluableNodeManager, direct, target_entity == curEntity);
-			curExecutionStep += num_steps_executed;
 
 			cn = value;
 			to_lookup.UpdatePropertiesBasedOnAttachedNode(value);
@@ -410,9 +404,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 			cnr.SetReference(cn);
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);
 
-			ExecutionCycleCount num_steps_executed = 0;
 			EvaluableNodeReference value = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager, direct, target_entity == curEntity);
-			curExecutionStep += num_steps_executed;
 
 			cn = value;
 			to_lookup.UpdatePropertiesBasedOnAttachedNode(value);
@@ -441,44 +433,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		PerformanceProfiler::StartOperation(string_intern_pool.GetStringFromID(entity_label_sid),
 			evaluableNodeManager->GetNumberOfUsedNodes());
 
-	//number of execution steps
-	//evaluate before context so don't need to keep/remove reference for context
-	ExecutionCycleCount num_steps_allowed = GetRemainingNumExecutionSteps();
-	bool num_steps_allowed_specified = false;
-	if(ocn.size() > 3)
-	{
-		num_steps_allowed = static_cast<ExecutionCycleCount>(InterpretNodeIntoNumberValue(ocn[3]));
-		num_steps_allowed_specified = true;
-	}
-
-	//compute execution limits
-	if(AllowUnlimitedExecutionSteps() && (!num_steps_allowed_specified || num_steps_allowed == 0))
-		num_steps_allowed = 0;
-	else
-	{
-		//if unlimited steps are allowed, then leave the value as specified, otherwise clamp to what is remaining
-		if(!AllowUnlimitedExecutionSteps())
-			num_steps_allowed = std::min(num_steps_allowed, GetRemainingNumExecutionSteps());
-	}
-
-	//number of execution nodes
-	//evaluate before context so don't need to keep/remove reference for context
-	size_t num_nodes_allowed = GetRemainingNumExecutionNodes();
-	bool num_nodes_allowed_specified = false;
-	if(ocn.size() > 4)
-	{
-		num_nodes_allowed = static_cast<size_t>(InterpretNodeIntoNumberValue(ocn[4]));
-		num_nodes_allowed_specified = true;
-	}
-
-	if(AllowUnlimitedExecutionNodes() && (!num_nodes_allowed_specified || num_nodes_allowed == 0))
-		num_nodes_allowed = 0;
-	else
-	{
-		//if unlimited nodes are allowed, then leave the value as specified, otherwise clamp to what is remaining
-		if(!AllowUnlimitedExecutionNodes())
-			num_nodes_allowed = std::min(num_nodes_allowed, GetRemainingNumExecutionNodes());
-	}
+	PerformanceConstraints perf_constraints;
+	PerformanceConstraints *perf_constraints_ptr = nullptr;
+	if(PopulatePerformanceConstraintsFromParams(ocn, 3, perf_constraints))
+		perf_constraints_ptr = &perf_constraints;
 
 	//attempt to get arguments
 	EvaluableNodeReference args = EvaluableNodeReference::Null();
@@ -529,24 +487,22 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		call_stack = ConvertArgsToCallStack(called_entity_args, called_entity->evaluableNodeManager);
 	}
 
+	PopulatePerformanceCounters(perf_constraints_ptr);
+
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is no longer executing
 	memoryModificationLock.unlock();
 #endif
 
-	ExecutionCycleCount num_steps_executed = 0;
-	size_t num_nodes_allocated = 0;
-	EvaluableNodeReference result = called_entity->Execute(num_steps_allowed, num_steps_executed,
-		num_nodes_allowed, num_nodes_allocated,
-		entity_label_sid, call_stack, called_entity == curEntity, this, cur_write_listeners, printListener
+	EvaluableNodeReference result = called_entity->Execute(entity_label_sid,
+		call_stack, called_entity == curEntity, this, cur_write_listeners, printListener, perf_constraints_ptr
 	#ifdef MULTITHREAD_SUPPORT
 		, &enm_lock
 	#endif
 		);
 
-	//accumulate costs of execution
-	curExecutionStep += num_steps_executed;
-	curNumExecutionNodesAllocatedToEntities += num_nodes_allocated;
+	if(performanceConstraints != nullptr)
+		performanceConstraints->AccruePerformanceCounters(perf_constraints_ptr);
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is executing again
@@ -608,49 +564,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 		PerformanceProfiler::StartOperation(string_intern_pool.GetStringFromID(container_label_sid),
 			evaluableNodeManager->GetNumberOfUsedNodes());
 
-	//number of execution steps
-	//evaluate before context so don't need to keep/remove reference for context
-	ExecutionCycleCount num_steps_allowed = GetRemainingNumExecutionSteps();
-	bool num_steps_allowed_specified = false;
-	if(ocn.size() > 2)
-	{
-		num_steps_allowed = static_cast<ExecutionCycleCount>(InterpretNodeIntoNumberValue(ocn[2]));
-		num_steps_allowed_specified = true;
-	}
-
-	//number of execution nodes
-	//evaluate before context so don't need to keep/remove reference for context
-	size_t num_nodes_allowed = GetRemainingNumExecutionNodes();
-	bool num_nodes_allowed_specified = false;
-	if(ocn.size() > 3)
-	{
-		num_nodes_allowed = static_cast<size_t>(InterpretNodeIntoNumberValue(ocn[3]));
-		num_nodes_allowed_specified = true;
-	}
+	PerformanceConstraints perf_constraints;
+	PerformanceConstraints *perf_constraints_ptr = nullptr;
+	if(PopulatePerformanceConstraintsFromParams(ocn, 2, perf_constraints))
+		perf_constraints_ptr = &perf_constraints;
 
 	//attempt to get arguments
 	EvaluableNodeReference args = EvaluableNodeReference::Null();
 	if(ocn.size() > 1)
 		args = InterpretNodeForImmediateUse(ocn[1]);
-
-	//compute execution limits
-	if(AllowUnlimitedExecutionSteps() && (!num_steps_allowed_specified || num_steps_allowed == 0))
-		num_steps_allowed = 0;
-	else
-	{
-		//if unlimited steps are allowed, then leave the value as specified, otherwise clamp to what is remaining
-		if(!AllowUnlimitedExecutionSteps())
-			num_steps_allowed = std::min(num_steps_allowed, GetRemainingNumExecutionSteps());
-	}
-
-	if(AllowUnlimitedExecutionNodes() && (!num_nodes_allowed_specified || num_nodes_allowed == 0))
-		num_nodes_allowed = 0;
-	else
-	{
-		//if unlimited nodes are allowed, then leave the value as specified, otherwise clamp to what is remaining
-		if(!AllowUnlimitedExecutionNodes())
-			num_nodes_allowed = std::min(num_nodes_allowed, GetRemainingNumExecutionNodes());
-	}
 
 	//obtain a lock on the container
 	EntityReadReference cur_entity(curEntity);
@@ -677,23 +599,22 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	EvaluableNode *call_stack_args = call_stack->GetOrderedChildNodesReference()[0];
 	call_stack_args->SetMappedChildNode(ENBISI_accessing_entity, container->evaluableNodeManager.AllocNode(ENT_STRING, cur_entity_sid));
 
+	PopulatePerformanceCounters(perf_constraints_ptr);
+
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is no longer executing
 	memoryModificationLock.unlock();
 #endif
 
-	ExecutionCycleCount num_steps_executed = 0;
-	size_t num_nodes_allocated = 0;
-	EvaluableNodeReference result = container->Execute(num_steps_allowed, num_steps_executed, num_nodes_allowed, num_nodes_allocated,
-		container_label_sid, call_stack, false, this, writeListeners, printListener
+	EvaluableNodeReference result = container->Execute(container_label_sid,
+		call_stack, false, this, writeListeners, printListener, perf_constraints_ptr
 	#ifdef MULTITHREAD_SUPPORT
 		, &enm_lock
 	#endif
 		);
 
-	//accumulate costs of execution
-	curExecutionStep += num_steps_executed;
-	curNumExecutionNodesAllocatedToEntities += num_nodes_allocated;
+	if(performanceConstraints != nullptr)
+		performanceConstraints->AccruePerformanceCounters(perf_constraints_ptr);
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is executing again

@@ -305,21 +305,11 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 };
 
 
-Interpreter::Interpreter(EvaluableNodeManager *enm,
-	ExecutionCycleCount max_num_steps, size_t max_num_nodes, RandomStream rand_stream,
+Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
-	Entity *t, Interpreter *calling_interpreter)
+	PerformanceConstraints *performance_constraints, Entity *t, Interpreter *calling_interpreter)
 {
-	curExecutionStep = 0;
-	maxNumExecutionSteps = max_num_steps;
-
-	//account for what is already in use
-	curNumExecutionNodes = enm->GetNumberOfUsedNodes();
-	curNumExecutionNodesAllocatedToEntities = 0;
-	if(max_num_nodes == 0)
-		maxNumExecutionNodes = 0;
-	else
-		maxNumExecutionNodes = max_num_nodes + enm->GetNumberOfUsedNodes();
+	performanceConstraints = performance_constraints;
 
 	randomStream = rand_stream;
 	curEntity = t;
@@ -490,14 +480,6 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, bool immedi
 	if(EvaluableNode::IsNull(en))
 		return EvaluableNodeReference::Null();
 
-	//make sure don't run for longer than allowed
-	if(!AllowUnlimitedExecutionSteps())
-	{
-		curExecutionStep++;
-		if(curExecutionStep >= maxNumExecutionSteps)
-			return EvaluableNodeReference::Null();
-	}
-
 	//reference this node before we collect garbage
 	//CreateInterpreterNodeStackStateSaver is a bit expensive for this frequently called function
 	//especially because only one node is kept
@@ -513,13 +495,8 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, bool immedi
 	VerifyEvaluableNodeIntegrity();
 #endif
 
-	//make sure don't eat more memory than allowed
-	if(!AllowUnlimitedExecutionNodes())
-	{
-		UpdateCurNumExecutionNodes();
-		if(curNumExecutionNodes >= maxNumExecutionNodes)
-			return EvaluableNodeReference::Null();
-	}
+	if(AreExecutionResourcesExhausted(true))
+		return EvaluableNodeReference::Null();
 
 	//get corresponding opcode
 	EvaluableNodeType ent = en->GetType();
@@ -730,8 +707,8 @@ EvaluableNode **Interpreter::TraverseToDestinationFromTraversalPathList(Evaluabl
 	}
 
 	size_t max_num_nodes = 0;
-	if(!AllowUnlimitedExecutionNodes())
-		max_num_nodes = (maxNumExecutionNodes - curNumExecutionNodes);
+	if(ConstrainedAllocatedNodes())
+		max_num_nodes = performanceConstraints->GetRemainingNumAllocatedNodes(evaluableNodeManager->GetNumberOfUsedNodes());
 
 	EvaluableNode **destination = GetRelativeEvaluableNodeFromTraversalPathList(source, address_list, address_list_length, create_destination_if_necessary ? evaluableNodeManager : nullptr, max_num_nodes);
 
@@ -785,6 +762,129 @@ EvaluableNode *Interpreter::RewriteByFunction(EvaluableNodeReference function, E
 
 	return result;
 }
+
+bool Interpreter::PopulatePerformanceConstraintsFromParams(std::vector<EvaluableNode *> &params, size_t perf_constraint_param_offset, PerformanceConstraints &perf_constraints)
+{
+	//for each of the three parameters below, values of zero indicate no limit
+	bool any_constraints = false;
+
+	//populate maxNumExecutionSteps
+	perf_constraints.curExecutionStep = 0;
+	perf_constraints.maxNumExecutionSteps = 0;
+	size_t execution_steps_offset = perf_constraint_param_offset + 0;
+	if(params.size() > execution_steps_offset)
+	{
+		double value = InterpretNodeIntoNumberValue(params[execution_steps_offset]);
+		if(!FastIsNaN(value))
+		{
+			perf_constraints.maxNumExecutionSteps = static_cast<ExecutionCycleCount>(value);
+			any_constraints = true;
+		}
+	}
+
+	//populate maxNumAllocatedNodes
+	perf_constraints.curNumAllocatedNodesAllocatedToEntities = 0;
+	perf_constraints.maxNumAllocatedNodes = 0;
+	size_t nodes_allowed_offset = perf_constraint_param_offset + 1;
+	if(params.size() > nodes_allowed_offset)
+	{
+		double value = InterpretNodeIntoNumberValue(params[nodes_allowed_offset]);
+		if(!FastIsNaN(value))
+		{
+			perf_constraints.maxNumAllocatedNodes = static_cast<ExecutionCycleCount>(value);
+			any_constraints = true;
+		}
+	}
+	//populate maxOpcodeExecutionDepth
+	perf_constraints.maxOpcodeExecutionDepth = 0;
+	size_t stack_depth_allowed_offset = perf_constraint_param_offset + 2;
+	if(params.size() > stack_depth_allowed_offset)
+	{
+		double value = InterpretNodeIntoNumberValue(params[stack_depth_allowed_offset]);
+		if(!FastIsNaN(value))
+		{
+			perf_constraints.maxOpcodeExecutionDepth = static_cast<ExecutionCycleCount>(value);
+			any_constraints = true;
+		}
+	}
+
+	return any_constraints;
+}
+
+void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_constraints)
+{
+	if(perf_constraints == nullptr)
+		return;
+
+	//handle execution steps
+	if(performanceConstraints != nullptr && performanceConstraints->ConstrainedExecutionSteps())
+	{
+		ExecutionCycleCount remaining_steps = performanceConstraints->GetRemainingNumExecutionSteps();
+		if(remaining_steps > 0)
+		{
+			if(perf_constraints->ConstrainedExecutionSteps())
+				perf_constraints->maxNumExecutionSteps = std::min(
+					perf_constraints->maxNumExecutionSteps, remaining_steps);
+			else
+				perf_constraints->maxNumExecutionSteps = remaining_steps;
+		}
+		else //out of resources, ensure nothing will run (can't use 0 for maxNumExecutionSteps)
+		{
+			perf_constraints->maxNumExecutionSteps = 1;
+			perf_constraints->curExecutionStep = 1;
+		}
+	}
+
+	//handle allocated nodes
+	if(performanceConstraints != nullptr && performanceConstraints->ConstrainedAllocatedNodes())
+	{
+		size_t remaining_allocs = performanceConstraints->GetRemainingNumAllocatedNodes(
+			evaluableNodeManager->GetNumberOfUsedNodes());
+		if(remaining_allocs > 0)
+		{
+			if(perf_constraints->ConstrainedAllocatedNodes())
+				perf_constraints->maxNumAllocatedNodes = std::min(
+					perf_constraints->maxNumAllocatedNodes, remaining_allocs);
+			else
+				perf_constraints->maxNumAllocatedNodes = remaining_allocs;
+		}
+		else //out of resources, ensure nothing will run (can't use 0 for maxNumAllocatedNodes)
+		{
+			perf_constraints->maxNumAllocatedNodes = 1;
+		}
+	}
+
+	if(perf_constraints->ConstrainedAllocatedNodes())
+	{
+	#ifdef MULTITHREAD_SUPPORT
+		//if multiple threads, the other threads could be eating into this
+		perf_constraints->maxNumAllocatedNodes *= Concurrency::threadPool.GetNumActiveThreads();
+	#endif
+
+		//offset the max appropriately
+		perf_constraints->maxNumAllocatedNodes += evaluableNodeManager->GetNumberOfUsedNodes();
+	}
+
+	//handle opcode execution depth
+	if(performanceConstraints != nullptr && performanceConstraints->ConstrainedOpcodeExecutionDepth())
+	{
+		size_t remaining_depth = performanceConstraints->GetRemainingOpcodeExecutionDepth(
+			interpreterNodeStackNodes->size());
+		if(remaining_depth > 0)
+		{
+			if(perf_constraints->ConstrainedOpcodeExecutionDepth())
+				perf_constraints->maxOpcodeExecutionDepth = std::min(
+					perf_constraints->maxOpcodeExecutionDepth, remaining_depth);
+			else
+				perf_constraints->maxOpcodeExecutionDepth = remaining_depth;
+		}
+		else //out of resources, ensure nothing will run (can't use 0 for maxOpcodeExecutionDepth)
+		{
+			perf_constraints->maxOpcodeExecutionDepth = 1;
+		}
+	}
+}
+
 
 #ifdef MULTITHREAD_SUPPORT
 

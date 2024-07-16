@@ -585,11 +585,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, b
 	size_t num_nodes = static_cast<size_t>((range_end - range_start) / range_step_size) + 1;
 
 	//make sure not eating up too much memory
-	if(!AllowUnlimitedExecutionNodes() && curNumExecutionNodes + num_nodes >= maxNumExecutionNodes)
+	if(ConstrainedAllocatedNodes())
 	{
-		curNumExecutionNodes = maxNumExecutionNodes;
-		//also make it fail by adding to the cumulative allocation pool reserved for entities, in case curNumExecutionNodes is recalculated
-		curNumExecutionNodesAllocatedToEntities = maxNumExecutionNodes;
+		if(performanceConstraints->WouldNewAllocatedNodesExceedConstraint(
+				evaluableNodeManager->GetNumberOfUsedNodes() + num_nodes))
 		return EvaluableNodeReference::Null();
 	}
 

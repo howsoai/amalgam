@@ -422,10 +422,10 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 	return std::make_pair(any_successful_assignment, all_successful_assignments);
 }
 
-EvaluableNodeReference Entity::Execute(ExecutionCycleCount max_num_steps, ExecutionCycleCount &num_steps_executed,
-	size_t max_num_nodes, size_t &num_nodes_allocated,
-	StringInternPool::StringID label_sid, EvaluableNode *call_stack, bool on_self, Interpreter *calling_interpreter,
-	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener
+EvaluableNodeReference Entity::Execute(StringInternPool::StringID label_sid,
+	EvaluableNode *call_stack, bool on_self, Interpreter *calling_interpreter,
+	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
+	PerformanceConstraints *performance_constraints
 #ifdef MULTITHREAD_SUPPORT
 	, Concurrency::ReadLock *enm_lock
 #endif
@@ -449,10 +449,8 @@ EvaluableNodeReference Entity::Execute(ExecutionCycleCount max_num_steps, Execut
 	if(node_to_execute == nullptr)
 		return EvaluableNodeReference::Null();
 
-	size_t a_priori_entity_storage = evaluableNodeManager.GetNumberOfUsedNodes();
-
-	Interpreter interpreter(&evaluableNodeManager, max_num_steps, max_num_nodes, randomStream.CreateOtherStreamViaRand(),
-		write_listeners, print_listener, this, calling_interpreter);
+	Interpreter interpreter(&evaluableNodeManager, randomStream.CreateOtherStreamViaRand(),
+		write_listeners, print_listener, performance_constraints, this, calling_interpreter);
 
 #ifdef MULTITHREAD_SUPPORT
 	if(enm_lock == nullptr)
@@ -462,15 +460,7 @@ EvaluableNodeReference Entity::Execute(ExecutionCycleCount max_num_steps, Execut
 #endif
 
 	EvaluableNodeReference retval = interpreter.ExecuteNode(node_to_execute, call_stack);
-	num_steps_executed = interpreter.GetNumStepsExecuted();
-
-	//find difference in entity size
-	size_t post_entity_storage = evaluableNodeManager.GetNumberOfUsedNodes() + interpreter.GetNumEntityNodesAllocated();
-	if(a_priori_entity_storage > post_entity_storage)
-		num_nodes_allocated = 0;
-	else
-		num_nodes_allocated = post_entity_storage - a_priori_entity_storage;
-
+	
 #ifdef MULTITHREAD_SUPPORT
 	if(enm_lock != nullptr)
 		*enm_lock = std::move(interpreter.memoryModificationLock);

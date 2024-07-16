@@ -500,25 +500,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	if(function == nullptr)
 		return EvaluableNodeReference::Null();
 
-	//number of execution steps
-	//evaluate before context so don't need to keep/remove reference for context
-	ExecutionCycleCount num_steps_allowed = GetRemainingNumExecutionSteps();
-	bool num_steps_allowed_specified = false;
-	if(ocn.size() > 2)
-	{
-		num_steps_allowed = static_cast<ExecutionCycleCount>(InterpretNodeIntoNumberValue(ocn[2]));
-		num_steps_allowed_specified = true;
-	}
-
-	//number of execution nodes
-	//evaluate before context so don't need to keep/remove reference for context
-	size_t num_nodes_allowed = GetRemainingNumExecutionNodes();
-	bool num_nodes_allowed_specified = false;
-	if(ocn.size() > 3)
-	{
-		num_nodes_allowed = static_cast<size_t>(InterpretNodeIntoNumberValue(ocn[3]));
-		num_nodes_allowed_specified = true;
-	}
+	PerformanceConstraints perf_constraints;
+	PerformanceConstraints *perf_constraints_ptr = nullptr;
+	if(PopulatePerformanceConstraintsFromParams(ocn, 2, perf_constraints))
+		perf_constraints_ptr = &perf_constraints;
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(function);
 
@@ -534,31 +519,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	EvaluableNodeReference call_stack = ConvertArgsToCallStack(args, *evaluableNodeManager);
 	node_stack.PushEvaluableNode(call_stack);
 
-	//compute execution limits
-	if(AllowUnlimitedExecutionSteps() && (!num_steps_allowed_specified || num_steps_allowed == 0))
-		num_steps_allowed = 0;
-	else
-	{
-		//if unlimited steps are allowed, then leave the value as specified, otherwise clamp to what is remaining
-		if(!AllowUnlimitedExecutionSteps())
-			num_steps_allowed = std::min(num_steps_allowed, GetRemainingNumExecutionSteps());
-	}
+	PopulatePerformanceCounters(perf_constraints_ptr);
 
-	if(AllowUnlimitedExecutionNodes() && (!num_nodes_allowed_specified || num_nodes_allowed == 0))
-		num_nodes_allowed = 0;
-	else
-	{
-	#ifdef MULTITHREAD_SUPPORT
-		//if multiple threads, the other threads could be eating into this
-		num_nodes_allowed *= Concurrency::threadPool.GetNumActiveThreads();
-	#endif
-
-		//if unlimited nodes are allowed, then leave the value as specified, otherwise clamp to what is remaining
-		if(!AllowUnlimitedExecutionNodes())
-			num_nodes_allowed = std::min(num_nodes_allowed, GetRemainingNumExecutionNodes());
-	}
-
-	Interpreter sandbox(evaluableNodeManager, num_steps_allowed, num_nodes_allowed, randomStream.CreateOtherStreamViaRand(), writeListeners, printListener, nullptr);
+	Interpreter sandbox(evaluableNodeManager, randomStream.CreateOtherStreamViaRand(),
+		writeListeners, printListener, perf_constraints_ptr);
 
 #ifdef MULTITHREAD_SUPPORT
 	//everything at this point is referenced on stacks; allow the sandbox to trigger a garbage collect without this interpreter blocking
@@ -572,7 +536,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	std::swap(memoryModificationLock, sandbox.memoryModificationLock);
 #endif
 
-	curExecutionStep += sandbox.curExecutionStep;
+	if(performanceConstraints != nullptr)
+		performanceConstraints->AccruePerformanceCounters(perf_constraints_ptr);
 
 	//call opcodes should consume the outer return opcode if there is one
 	if(result.IsNonNullNodeReference() && result->GetType() == ENT_RETURN)
@@ -1482,8 +1447,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, bo
 		generate_list = true;
 	}
 	//make sure not eating up too much memory
-	if(!AllowUnlimitedExecutionNodes() && curNumExecutionNodes + number_to_generate >= maxNumExecutionNodes)
-		return EvaluableNodeReference::Null();
+	if(ConstrainedAllocatedNodes())
+	{
+		if(performanceConstraints->WouldNewAllocatedNodesExceedConstraint(
+				evaluableNodeManager->GetNumberOfUsedNodes() + number_to_generate))
+			return EvaluableNodeReference::Null();
+	}
 
 	//get whether it needs to be unique
 	bool generate_unique_values = false;
@@ -1781,8 +1750,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEIGHTED_RAND(EvaluableNod
 		generate_list = true;
 	}
 	//make sure not eating up too much memory
-	if(!AllowUnlimitedExecutionNodes() && curNumExecutionNodes + number_to_generate >= maxNumExecutionNodes)
-		return EvaluableNodeReference::Null();
+	if(ConstrainedAllocatedNodes())
+	{
+		if(performanceConstraints->WouldNewAllocatedNodesExceedConstraint(
+				evaluableNodeManager->GetNumberOfUsedNodes() + number_to_generate))
+			return EvaluableNodeReference::Null();
+	}
 
 	//get whether it needs to be unique
 	bool generate_unique_values = false;

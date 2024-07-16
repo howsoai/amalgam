@@ -169,10 +169,7 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 		args->SetMappedChildNode(ENBISI_create_new_entity, new_entity->evaluableNodeManager.AllocNode(ENT_FALSE));
 		auto call_stack = Interpreter::ConvertArgsToCallStack(args, new_entity->evaluableNodeManager);
 
-		ExecutionCycleCount max_num_steps = 0, num_steps_executed = 0;
-		size_t max_num_nodes = 0, num_nodes_allocated = 0;
-		new_entity->Execute(max_num_steps, num_steps_executed, max_num_nodes, num_nodes_allocated,
-			StringInternPool::NOT_A_STRING_ID, call_stack, false, calling_interpreter);
+		new_entity->Execute(StringInternPool::NOT_A_STRING_ID, call_stack, false, calling_interpreter);
 		return new_entity;
 	}
 

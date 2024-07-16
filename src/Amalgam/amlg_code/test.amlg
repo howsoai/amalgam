@@ -1,15 +1,23 @@
 ﻿(seq
+ (print (call_sandboxed (lambda (+ y 4)) (assoc y 3)) "\n")
 
- (create_entities "QueryCacheTest1" (lambda
-   (parallel ##a 3 )
- ) )
+ (print (call_sandboxed (lambda (+ (+ y 4) 4)) (assoc y 3) 5) "\n")
+ (print (call_sandboxed (lambda (+ (+ y 4) 4)) (assoc y 3) 1) "\n")
 
- (print (size (contained_entities (list
-   (query_equals "a" 3)
- ))) "\n")
+ (print (call_sandboxed (lambda (+ (+ y 4) 4)) (assoc y 3) (null) 50) "\n")
+ (print (call_sandboxed (lambda (+ (+ y 4) 4)) (assoc y 3) (null) 1) "\n")
 
- (assign_to_entities "QueryCacheTest1" (assoc a 3))
+ (print (call_sandboxed (lambda (+ (+ y 4) 4)) (assoc y 3) (null) (null) 3) "\n")
+ (print (call_sandboxed (lambda (+ (+ y 4) 4)) (assoc y 3) (null) (null) 1) "\n")
 
- (destroy_entities "QueryCacheTest1")
-
+(print (call_sandboxed
+	(lambda
+		(call_sandboxed
+			(+ (+ y 4) 4)
+			(assoc y y)
+			(null) (null) 50
+		)
+	)
+	(assoc y 3)
+	(null) (null) 2) "\n")
 )

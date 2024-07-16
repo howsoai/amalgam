@@ -31,7 +31,7 @@ class PerformanceConstraints
 {
 public:
 
-	//if true, no limit to how long can utilize CPU
+	//if true, there is a limit to how long can utilize CPU
 	constexpr bool ConstrainedExecutionSteps()
 	{
 		return maxNumExecutionSteps != 0;

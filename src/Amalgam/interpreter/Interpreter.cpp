@@ -708,7 +708,7 @@ EvaluableNode **Interpreter::TraverseToDestinationFromTraversalPathList(Evaluabl
 
 	size_t max_num_nodes = 0;
 	if(ConstrainedExecutionNodes())
-		max_num_nodes = (maxNumExecutionNodes - curNumExecutionNodes);
+		max_num_nodes = performanceConstraints->GetRemainingNumExecutionNodes(evaluableNodeManager->GetNumberOfUsedNodes());
 
 	EvaluableNode **destination = GetRelativeEvaluableNodeFromTraversalPathList(source, address_list, address_list_length, create_destination_if_necessary ? evaluableNodeManager : nullptr, max_num_nodes);
 

@@ -279,7 +279,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 		if(any_success)
 		{
 			if(ConstrainedExecutionNodes())
-				curNumExecutionNodesAllocatedToEntities += num_new_nodes_allocated;
+				performanceConstraints->curNumExecutionNodesAllocatedToEntities += num_new_nodes_allocated;
 
 			//collect garbage, but not on current entity, save that for between instructions
 			if(target_entity != curEntity)

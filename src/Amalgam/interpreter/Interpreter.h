@@ -42,7 +42,6 @@ public:
 		bool unique;
 	};
 
-	//TODO 20879: finish this
 	//Manages performance constraints and accompanying performance counters
 	struct PerformanceConstraints
 	{
@@ -863,8 +862,6 @@ protected:
 
 		return true;
 	}
-
-	//TODO 20879: update these methods
 
 	//if true, no limit on how much memory can utilize
 	constexpr bool ConstrainedExecutionNodes()

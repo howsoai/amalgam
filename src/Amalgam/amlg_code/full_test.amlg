@@ -52,6 +52,7 @@
 
  (print (lambda (lambda (+ 1 2)) (true) ))
 
+;TODO 20879: add unit tests for constrained compute
  (print "--call_sandboxed--\n")
  (print (call_sandboxed (lambda (+ y 4)) (assoc y 3)) "\n")
  (print (call_sandboxed (lambda (+ y x 4)) (assoc y 3)) "\n")

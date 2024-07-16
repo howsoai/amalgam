@@ -73,7 +73,7 @@ public:
 	}
 
 	//if true, there is a limit on how deep execution can go in opcodes
-	constexpr bool ConstrainedExecutionDepth()
+	constexpr bool ConstrainedOpcodeExecutionDepth()
 	{
 		return maxOpcodeExecutionDepth != 0;
 	}
@@ -897,7 +897,7 @@ protected:
 				return true;
 		}
 
-		if(performanceConstraints->ConstrainedExecutionDepth())
+		if(performanceConstraints->ConstrainedOpcodeExecutionDepth())
 		{
 			if(interpreterNodeStackNodes->size() >= performanceConstraints->maxOpcodeExecutionDepth)
 				return true;

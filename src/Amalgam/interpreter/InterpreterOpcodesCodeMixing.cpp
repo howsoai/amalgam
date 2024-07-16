@@ -386,7 +386,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 	Entity *new_entity = EntityManipulation::MutateEntity(this, source_entity, mutation_rate, mtw_exists ? &mutation_type_weights : nullptr, ow_exists ? &opcode_weights : nullptr);
 	
 	//accumulate usage
-	if(!AllowUnlimitedExecutionNodes())
+	if(ConstrainedExecutionNodes())
 		curNumExecutionNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
 
 	//clear lock if applicable

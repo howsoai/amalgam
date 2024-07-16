@@ -43,6 +43,7 @@ public:
 	};
 
 	//TODO 20879: finish this
+	//Manages performance constraints and accompanying performance counters
 	struct PerformanceConstraints
 	{
 		//if true, no limit to how long can utilize CPU
@@ -56,6 +57,36 @@ public:
 		{
 			if(curExecutionStep < maxNumExecutionSteps)
 				return maxNumExecutionSteps - curExecutionStep;
+			else //already past limit
+				return 0;
+		}
+
+		//if true, there is a limit on how much memory can utilize
+		constexpr bool ConstrainedExecutionNodes()
+		{
+			return maxNumExecutionNodes != 0;
+		}
+
+		//returns the remaining execution nodes
+		constexpr size_t GetRemainingNumExecutionNodes(size_t cur_execution_nodes)
+		{
+			if(cur_execution_nodes < maxNumExecutionNodes)
+				return maxNumExecutionNodes - cur_execution_nodes;
+			else //already past limit
+				return 0;
+		}
+
+		//if true, there is a limit on how deep execution can go in opcodes
+		constexpr bool ConstrainedExecutionDepth()
+		{
+			return maxOpcodeExecutionDepth != 0;
+		}
+
+		//returns the remaining execution depth
+		constexpr size_t GetRemainingOpcodeExecutionDepth(size_t cur_execution_depth)
+		{
+			if(cur_execution_depth < maxOpcodeExecutionDepth)
+				return maxOpcodeExecutionDepth - cur_execution_depth;
 			else //already past limit
 				return 0;
 		}
@@ -836,18 +867,9 @@ protected:
 	//TODO 20879: update these methods
 
 	//if true, no limit on how much memory can utilize
-	constexpr bool AllowUnlimitedExecutionNodes()
-	{	return maxNumExecutionNodes == 0;	}
-
-	//if true, no limit to how deep opcodes can execute
-	constexpr bool AllowUnlimitedOpcodeExecutionDepth()
+	constexpr bool ConstrainedExecutionNodes()
 	{
-
-	}
-
-	constexpr size_t GetRemainingOpcodeExecutionDepth()
-	{
-
+		return (performanceConstraints != nullptr && performanceConstraints->ConstrainedExecutionNodes());
 	}
 
 	//returns true if there's a max number of execution steps or nodes and at least one is exhausted
@@ -865,11 +887,17 @@ protected:
 				return true;
 		}
 
-		if(!AllowUnlimitedExecutionNodes())
+		if(performanceConstraints->ConstrainedExecutionNodes())
 		{
 			performanceConstraints->curNumExecutionNodes = performanceConstraints->curNumExecutionNodesAllocatedToEntities + evaluableNodeManager->GetNumberOfUsedNodes();
 
 			if(performanceConstraints->curNumExecutionNodes >= performanceConstraints->maxNumExecutionNodes)
+				return true;
+		}
+
+		if(performanceConstraints->ConstrainedExecutionDepth())
+		{
+			if(interpreterNodeStackNodes->size() >= performanceConstraints->maxOpcodeExecutionDepth)
 				return true;
 		}
 

@@ -707,7 +707,7 @@ EvaluableNode **Interpreter::TraverseToDestinationFromTraversalPathList(Evaluabl
 	}
 
 	size_t max_num_nodes = 0;
-	if(!AllowUnlimitedExecutionNodes())
+	if(ConstrainedExecutionNodes())
 		max_num_nodes = (maxNumExecutionNodes - curNumExecutionNodes);
 
 	EvaluableNode **destination = GetRelativeEvaluableNodeFromTraversalPathList(source, address_list, address_list_length, create_destination_if_necessary ? evaluableNodeManager : nullptr, max_num_nodes);
@@ -806,26 +806,37 @@ void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_const
 	//clamp to minimum remaining values from caller
 	if(perf_constraints->ConstrainedExecutionSteps())
 		perf_constraints->maxNumExecutionSteps = std::min(perf_constraints->maxNumExecutionSteps,
-															perf_constraints->GetRemainingNumExecutionSteps());
+			perf_constraints->GetRemainingNumExecutionSteps());
+	else
+		perf_constraints->maxNumExecutionSteps = 0;
 
 	//clamp to minimum remaining values from caller
-	if(!AllowUnlimitedExecutionNodes())
+	if(perf_constraints->ConstrainedExecutionNodes())
 	{
+		size_t num_nodes_in_use = evaluableNodeManager->GetNumberOfUsedNodes()
+			+ perf_constraints->curNumExecutionNodesAllocatedToEntities;
 	#ifdef MULTITHREAD_SUPPORT
 		//if multiple threads, the other threads could be eating into this
 		perf_constraints->maxNumExecutionNodes *= Concurrency::threadPool.GetNumActiveThreads();
 	#endif
-		perf_constraints->maxNumExecutionNodes = std::min(perf_constraints->curNumExecutionNodes, GetRemainingNumExecutionNodes());
+		perf_constraints->maxNumExecutionNodes = std::min(perf_constraints->curNumExecutionNodes,
+											perf_constraints->GetRemainingNumExecutionNodes(num_nodes_in_use));
 
 		//offset the current and max appropriately
-		perf_constraints->curNumExecutionNodes = evaluableNodeManager->GetNumberOfUsedNodes();
+		perf_constraints->curNumExecutionNodes = num_nodes_in_use;
+		perf_constraints->curNumExecutionNodesAllocatedToEntities = 0;
 		perf_constraints->maxNumExecutionNodes += perf_constraints->curNumExecutionNodes;
+	}
+	else
+	{
+		perf_constraints->maxNumExecutionNodes = 0;
 	}
 
 	//clamp to minimum remaining values from caller
-	if(!AllowUnlimitedOpcodeExecutionDepth())
+	if(perf_constraints->ConstrainedExecutionDepth())
 	{
-		perf_constraints->maxOpcodeExecutionDepth = std::min(perf_constraints->maxOpcodeExecutionDepth, GetRemainingOpcodeExecutionDepth());
+		perf_constraints->maxOpcodeExecutionDepth = std::min(perf_constraints->maxOpcodeExecutionDepth,
+			perf_constraints->GetRemainingOpcodeExecutionDepth(interpreterNodeStackNodes->size()));
 
 		//offset the base and max appropriately
 		perf_constraints->baseOpcodeExecutionDepth = interpreterNodeStackNodes->size();

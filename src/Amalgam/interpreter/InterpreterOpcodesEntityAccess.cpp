@@ -494,8 +494,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	memoryModificationLock.unlock();
 #endif
 
-	ExecutionCycleCount num_steps_executed = 0;
-	size_t num_nodes_allocated = 0;
 	EvaluableNodeReference result = called_entity->Execute(entity_label_sid,
 		call_stack, called_entity == curEntity, this, cur_write_listeners, printListener, perf_constraints_ptr
 	#ifdef MULTITHREAD_SUPPORT
@@ -608,8 +606,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	memoryModificationLock.unlock();
 #endif
 
-	ExecutionCycleCount num_steps_executed = 0;
-	size_t num_nodes_allocated = 0;
 	EvaluableNodeReference result = container->Execute(container_label_sid,
 		call_stack, false, this, writeListeners, printListener, perf_constraints_ptr
 	#ifdef MULTITHREAD_SUPPORT

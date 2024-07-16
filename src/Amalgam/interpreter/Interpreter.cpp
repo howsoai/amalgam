@@ -804,8 +804,9 @@ void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_const
 		return;
 
 	//clamp to minimum remaining values from caller
-	if(!AllowUnlimitedExecutionSteps())
-		perf_constraints->maxNumExecutionSteps = std::min(perf_constraints->maxNumExecutionSteps, GetRemainingNumExecutionSteps());
+	if(perf_constraints->ConstrainedExecutionSteps())
+		perf_constraints->maxNumExecutionSteps = std::min(perf_constraints->maxNumExecutionSteps,
+															perf_constraints->GetRemainingNumExecutionSteps());
 
 	//clamp to minimum remaining values from caller
 	if(!AllowUnlimitedExecutionNodes())

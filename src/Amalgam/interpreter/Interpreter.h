@@ -45,6 +45,21 @@ public:
 	//TODO 20879: finish this
 	struct PerformanceConstraints
 	{
+		//if true, no limit to how long can utilize CPU
+		constexpr bool ConstrainedExecutionSteps()
+		{
+			return maxNumExecutionSteps != 0;
+		}
+
+		//returns the remaining execution steps
+		constexpr ExecutionCycleCount GetRemainingNumExecutionSteps()
+		{
+			if(curExecutionStep < maxNumExecutionSteps)
+				return maxNumExecutionSteps - curExecutionStep;
+			else //already past limit
+				return 0;
+		}
+
 		//accrues performance counters into the current object from perf_constraints
 		__forceinline void AccruePerformanceCounters(PerformanceConstraints *perf_constraints)
 		{
@@ -820,28 +835,19 @@ protected:
 
 	//TODO 20879: update these methods
 
-	//if true, no limit to how long can utilize CPU
-	constexpr bool AllowUnlimitedExecutionSteps()
-	{	return maxNumExecutionSteps == 0;	}
-
-	constexpr ExecutionCycleCount GetRemainingNumExecutionSteps()
-	{
-		if(curExecutionStep < maxNumExecutionSteps)
-			return maxNumExecutionSteps - curExecutionStep;
-		else //already past limit
-			return 0;
-	}
-
 	//if true, no limit on how much memory can utilize
 	constexpr bool AllowUnlimitedExecutionNodes()
 	{	return maxNumExecutionNodes == 0;	}
 
-	constexpr size_t GetRemainingNumExecutionNodes()
+	//if true, no limit to how deep opcodes can execute
+	constexpr bool AllowUnlimitedOpcodeExecutionDepth()
 	{
-		if(curNumExecutionNodes < maxNumExecutionNodes)
-			return maxNumExecutionNodes - curNumExecutionNodes;
-		else //already past limit
-			return 0;
+
+	}
+
+	constexpr size_t GetRemainingOpcodeExecutionDepth()
+	{
+
 	}
 
 	//returns true if there's a max number of execution steps or nodes and at least one is exhausted
@@ -850,7 +856,7 @@ protected:
 		if(performanceConstraints == nullptr)
 			return false;
 
-		if(!AllowUnlimitedExecutionSteps())
+		if(performanceConstraints->ConstrainedExecutionSteps())
 		{
 			if(increment_performance_counters)
 				performanceConstraints->curExecutionStep++;
@@ -868,17 +874,6 @@ protected:
 		}
 
 		return false;
-	}
-
-	//if true, no limit to how deep opcodes can execute
-	constexpr bool AllowUnlimitedOpcodeExecutionDepth()
-	{
-
-	}
-
-	constexpr size_t GetRemainingOpcodeExecutionDepth()
-	{
-
 	}
 
 	//opcodes

@@ -101,7 +101,7 @@ public:
 #if defined(MULTITHREAD_SUPPORT)
 	std::atomic<ExecutionCycleCount> curExecutionStep;
 #else
-	std::atomic<ExecutionCycleCount> curExecutionStep;
+	ExecutionCycleCount curExecutionStep;
 #endif
 
 	//maximum number of execution steps by this Interpreter and anything called from it.  If 0, then unlimited.

@@ -449,8 +449,6 @@ EvaluableNodeReference Entity::Execute(StringInternPool::StringID label_sid,
 	if(node_to_execute == nullptr)
 		return EvaluableNodeReference::Null();
 
-	size_t a_priori_entity_storage = evaluableNodeManager.GetNumberOfUsedNodes();
-
 	Interpreter interpreter(&evaluableNodeManager, randomStream.CreateOtherStreamViaRand(),
 		write_listeners, print_listener, performance_constraints, this, calling_interpreter);
 

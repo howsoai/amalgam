@@ -422,10 +422,10 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 	return std::make_pair(any_successful_assignment, all_successful_assignments);
 }
 
-EvaluableNodeReference Entity::Execute(ExecutionCycleCount max_num_steps, ExecutionCycleCount &num_steps_executed,
-	size_t max_num_nodes, size_t &num_nodes_allocated,
-	StringInternPool::StringID label_sid, EvaluableNode *call_stack, bool on_self, Interpreter *calling_interpreter,
-	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener
+EvaluableNodeReference Entity::Execute(StringInternPool::StringID label_sid,
+	EvaluableNode *call_stack, bool on_self, Interpreter *calling_interpreter,
+	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
+	Interpreter::PerformanceConstraints *performance_constraints
 #ifdef MULTITHREAD_SUPPORT
 	, Concurrency::ReadLock *enm_lock
 #endif

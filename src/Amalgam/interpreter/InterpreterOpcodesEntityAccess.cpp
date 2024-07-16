@@ -496,7 +496,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	}
 
 	PopulatePerformanceCounters(perf_constraints_ptr);
-	//TODO 20879: finish updating the code below
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is no longer executing
@@ -505,17 +504,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 
 	ExecutionCycleCount num_steps_executed = 0;
 	size_t num_nodes_allocated = 0;
-	EvaluableNodeReference result = called_entity->Execute(num_steps_allowed, num_steps_executed,
-		num_nodes_allowed, num_nodes_allocated,
-		entity_label_sid, call_stack, called_entity == curEntity, this, cur_write_listeners, printListener
+	EvaluableNodeReference result = called_entity->Execute(entity_label_sid,
+		call_stack, called_entity == curEntity, this, cur_write_listeners, printListener, perf_constraints_ptr
 	#ifdef MULTITHREAD_SUPPORT
 		, &enm_lock
 	#endif
 		);
 
-	//accumulate costs of execution
-	curExecutionStep += num_steps_executed;
-	curNumExecutionNodesAllocatedToEntities += num_nodes_allocated;
+	if(performanceConstraints != nullptr)
+		performanceConstraints->AccruePerformanceCounters(perf_constraints_ptr);
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is executing again
@@ -613,7 +610,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	call_stack_args->SetMappedChildNode(ENBISI_accessing_entity, container->evaluableNodeManager.AllocNode(ENT_STRING, cur_entity_sid));
 
 	PopulatePerformanceCounters(perf_constraints_ptr);
-	//TODO 20879: finish updating the code below
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is no longer executing
@@ -622,16 +618,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 
 	ExecutionCycleCount num_steps_executed = 0;
 	size_t num_nodes_allocated = 0;
-	EvaluableNodeReference result = container->Execute(num_steps_allowed, num_steps_executed, num_nodes_allowed, num_nodes_allocated,
-		container_label_sid, call_stack, false, this, writeListeners, printListener
+	EvaluableNodeReference result = container->Execute(container_label_sid,
+		call_stack, false, this, writeListeners, printListener, perf_constraints_ptr
 	#ifdef MULTITHREAD_SUPPORT
 		, &enm_lock
 	#endif
 		);
 
-	//accumulate costs of execution
-	curExecutionStep += num_steps_executed;
-	curNumExecutionNodesAllocatedToEntities += num_nodes_allocated;
+	if(performanceConstraints != nullptr)
+		performanceConstraints->AccruePerformanceCounters(perf_constraints_ptr);
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is executing again

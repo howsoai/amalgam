@@ -46,7 +46,7 @@ public:
 	struct PerformanceConstraints
 	{
 		//accrues performance counters into the current object from perf_constraints
-		__forceinline void AccruePerformonceCounters(PerformanceConstraints *perf_constraints)
+		__forceinline void AccruePerformanceCounters(PerformanceConstraints *perf_constraints)
 		{
 			if(perf_constraints == nullptr)
 				return;

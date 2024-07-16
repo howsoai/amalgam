@@ -537,7 +537,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 #endif
 
 	if(performanceConstraints != nullptr)
-		performanceConstraints->AccruePerformonceCounters(perf_constraints_ptr);
+		performanceConstraints->AccruePerformanceCounters(perf_constraints_ptr);
 
 	//call opcodes should consume the outer return opcode if there is one
 	if(result.IsNonNullNodeReference() && result->GetType() == ENT_RETURN)

@@ -40,6 +40,12 @@ public:
 	//returns true if the string needs to be backslashified, has spaces, or has special characters
 	inline static bool HasCharactersBeyondIdentifier(const std::string &s, bool label = false)
 	{
+		if(s.empty())
+			return false;
+
+		if(s[0] == '.' || s[0] == '-')
+			return true;
+
 		bool in_label_initial_hashes = label;
 		for(size_t i = 0; i < s.size(); i++)
 		{
@@ -65,7 +71,6 @@ public:
 			case ']':
 			case '{':
 			case '}':
-			case '.':
 			case '#':
 			case '@':
 			case ';':

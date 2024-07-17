@@ -25,7 +25,7 @@ namespace StringManipulation
 	std::vector<std::string> SplitArgString(std::string &arg_string, bool greedy = true);
 
 	//returns the number of bytes wide the character in position of string s is if it is whitespace,
-	// 0 if it is not a newline
+	// 0 if it is not whitespace
 	inline size_t IsUtf8Whitespace(const std::string &s, size_t position)
 	{
 		auto cur_char = s[position];
@@ -75,7 +75,9 @@ namespace StringManipulation
 			if(static_cast<uint8_t>(s[position + 1]) == 0x80)
 			{
 				uint8_t third_char = s[position + 2];
-				if(third_char >= 0x80 && third_char <= 0xAF)
+				if(third_char >= 0x80 && third_char <= 0x8A)
+					return 3;
+				if(third_char == 0xA8 || third_char == 0xA9 || third_char == 0xAF)
 					return 3;
 			}
 			else if(static_cast<uint8_t>(s[position + 1]) == 0x81 && static_cast<uint8_t>(s[position + 2]) == 0x9F)

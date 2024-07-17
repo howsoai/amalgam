@@ -765,8 +765,10 @@ EvaluableNode *Interpreter::RewriteByFunction(EvaluableNodeReference function, E
 
 bool Interpreter::PopulatePerformanceConstraintsFromParams(std::vector<EvaluableNode *> &params, size_t perf_constraint_param_offset, PerformanceConstraints &perf_constraints)
 {
+	//start with constraints if there are already performance constraints
+	bool any_constraints = (performanceConstraints != nullptr);
+
 	//for each of the three parameters below, values of zero indicate no limit
-	bool any_constraints = false;
 
 	//populate maxNumExecutionSteps
 	perf_constraints.curExecutionStep = 0;

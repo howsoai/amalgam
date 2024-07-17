@@ -60,6 +60,9 @@ public:
 
 	inline size_t RandSize(size_t max_size)
 	{
+		if(max_size == 0)
+			return 0;
+
 		if(max_size < std::numeric_limits<uint32_t>::max())
 			return (RandUInt32() % max_size);
 		

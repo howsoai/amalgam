@@ -223,19 +223,38 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX(EvaluableNode *en, boo
 
 	double blend2 = 0.5; //default to half
 	if(ocn.size() > 2)
-		blend2 = InterpretNodeIntoNumberValue(ocn[2]);
+	{
+		double new_value = InterpretNodeIntoNumberValue(ocn[2]);
+		if(!FastIsNaN(new_value))
+			blend2 = new_value;
+	}
 
 	double blend1 = 1.0 - blend2; //default to the remainder
 	if(ocn.size() > 3)
 	{
-		blend1 = InterpretNodeIntoNumberValue(ocn[3]);
+		double new_value = InterpretNodeIntoNumberValue(ocn[3]);
+		if(!FastIsNaN(new_value))
+			blend1 = new_value;
+
 		//if have a third parameter, then use the fractions in order (so need to swap)
 		std::swap(blend1, blend2);
 	}
 
+	//clamp both blend values to be nonnegative
+	blend1 = std::max(0.0, blend1);
+	blend2 = std::max(0.0, blend2);
+
+	//stop if have nothing
+	if(blend1 == 0.0 && blend2 == 0.0)
+		return EvaluableNodeReference::Null();
+
 	double similar_mix_chance = 0.0;
 	if(ocn.size() > 4)
-		similar_mix_chance = InterpretNodeIntoNumberValue(ocn[4]);
+	{
+		double new_value = InterpretNodeIntoNumberValue(ocn[4]);
+		if(!FastIsNaN(new_value))
+			similar_mix_chance = new_value;
+	}
 
 	auto n1 = InterpretNodeForImmediateUse(ocn[0]);
 	auto node_stack = CreateInterpreterNodeStackStateSaver(n1);
@@ -263,15 +282,30 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_LABELS(EvaluableNode *
 
 	double blend2 = 0.5; //default to half
 	if(ocn.size() > 2)
-		blend2 = InterpretNodeIntoNumberValue(ocn[2]);
+	{
+		double new_value = InterpretNodeIntoNumberValue(ocn[2]);
+		if(!FastIsNaN(new_value))
+			blend2 = new_value;
+	}
 
 	double blend1 = 1.0 - blend2; //default to the remainder
 	if(ocn.size() > 3)
 	{
-		blend1 = InterpretNodeIntoNumberValue(ocn[2]);
+		double new_value = InterpretNodeIntoNumberValue(ocn[3]);
+		if(!FastIsNaN(new_value))
+			blend1 = new_value;
+
 		//if have a third parameter, then use the fractions in order (so need to swap)
 		std::swap(blend1, blend2);
 	}
+
+	//clamp both blend values to be nonnegative
+	blend1 = std::max(0.0, blend1);
+	blend2 = std::max(0.0, blend2);
+
+	//stop if have nothing
+	if(blend1 == 0.0 && blend2 == 0.0)
+		return EvaluableNodeReference::Null();
 
 	auto n1 = InterpretNodeForImmediateUse(ocn[0]);
 	auto node_stack = CreateInterpreterNodeStackStateSaver(n1);
@@ -586,23 +620,46 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode
 
 	double blend2 = 0.5; //default to half
 	if(ocn.size() > 2)
-		blend2 = InterpretNodeIntoNumberValue(ocn[2]);
+	{
+		double new_value = InterpretNodeIntoNumberValue(ocn[2]);
+		if(!FastIsNaN(new_value))
+			blend2 = new_value;
+	}
 
 	double blend1 = 1.0 - blend2; //default to the remainder
 	if(ocn.size() > 3)
 	{
-		blend1 = InterpretNodeIntoNumberValue(ocn[3]);
+		double new_value = InterpretNodeIntoNumberValue(ocn[3]);
+		if(!FastIsNaN(new_value))
+			blend1 = new_value;
+
 		//if have a third parameter, then use the fractions in order (so need to swap)
 		std::swap(blend1, blend2);
 	}
 
+	//clamp both blend values to be nonnegative
+	blend1 = std::max(0.0, blend1);
+	blend2 = std::max(0.0, blend2);
+
+	//stop if have nothing
+	if(blend1 == 0.0 && blend2 == 0.0)
+		return EvaluableNodeReference::Null();
+
 	double similar_mix_chance = 0.0;
 	if(ocn.size() > 4)
-		similar_mix_chance = InterpretNodeIntoNumberValue(ocn[4]);
+	{
+		double new_value = InterpretNodeIntoNumberValue(ocn[4]);
+		if(!FastIsNaN(new_value))
+			similar_mix_chance = new_value;
+	}
 
 	double fraction_unnamed_entities_to_mix = 0.2;
 	if(ocn.size() > 5)
-		fraction_unnamed_entities_to_mix = InterpretNodeIntoNumberValue(ocn[5]);
+	{
+		double new_value = InterpretNodeIntoNumberValue(ocn[5]);
+		if(!FastIsNaN(new_value))
+			fraction_unnamed_entities_to_mix = new_value;
+	}
 
 	auto [source_entity_1, source_entity_2, erbr] = InterpretNodeIntoRelativeSourceEntityReadReferences(ocn[0], ocn[1]);
 	if(source_entity_1 == nullptr || source_entity_2 == nullptr)

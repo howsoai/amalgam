@@ -500,12 +500,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	if(function == nullptr)
 		return EvaluableNodeReference::Null();
 
+	auto node_stack = CreateInterpreterNodeStackStateSaver(function);
+
 	PerformanceConstraints perf_constraints;
 	PerformanceConstraints *perf_constraints_ptr = nullptr;
 	if(PopulatePerformanceConstraintsFromParams(ocn, 2, perf_constraints))
 		perf_constraints_ptr = &perf_constraints;
-
-	auto node_stack = CreateInterpreterNodeStackStateSaver(function);
 
 	if(_label_profiling_enabled && function->GetNumLabels() > 0)
 		PerformanceProfiler::StartOperation(function->GetLabel(0), evaluableNodeManager->GetNumberOfUsedNodes());

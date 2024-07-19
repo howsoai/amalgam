@@ -610,14 +610,32 @@ size_t EvaluableNodeManager::GetEstimatedTotalUsedSizeInBytes()
 	return total_size;
 }
 
-void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(EvaluableNode *en)
+void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(EvaluableNode *en,
+	EvaluableNodeManager *ensure_nodes_in_enm)
 {
 	if(en == nullptr)
 		return;
 
 	static EvaluableNode::ReferenceSetType checked;
 	checked.clear();
-	return ValidateEvaluableNodeTreeMemoryIntegrityRecurse(en, checked);
+
+	if(ensure_nodes_in_enm)
+	{
+		static FastHashSet<EvaluableNode *> existing_nodes;
+		existing_nodes.clear();
+
+		for(size_t i = 0; i < ensure_nodes_in_enm->firstUnusedNodeIndex; i++)
+		{
+			if(ensure_nodes_in_enm->nodes[i] != nullptr)
+				existing_nodes.insert(ensure_nodes_in_enm->nodes[i]);
+		}
+
+		return ValidateEvaluableNodeTreeMemoryIntegrityRecurse(en, checked, &existing_nodes);
+	}
+	else
+	{
+		return ValidateEvaluableNodeTreeMemoryIntegrityRecurse(en, checked, nullptr);
+	}
 }
 
 std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopy(EvaluableNode *tree, DeepAllocCopyParams &dacp)
@@ -987,7 +1005,8 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUseRecurseConcurrent(Evaluabl
 }
 #endif
 
-void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrityRecurse(EvaluableNode *en, EvaluableNode::ReferenceSetType &checked)
+void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrityRecurse(EvaluableNode *en,
+	EvaluableNode::ReferenceSetType &checked, FastHashSet<EvaluableNode *> *existing_nodes)
 {
 	auto [_, inserted] = checked.insert(en);
 	if(!inserted)
@@ -996,6 +1015,12 @@ void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrityRecurse(Evalu
 	if(en->IsNodeDeallocated() || en->GetKnownToBeInUse())
 		assert(false);
 
+	if(existing_nodes != nullptr)
+	{
+		if(existing_nodes->find(en) == end(*existing_nodes))
+			assert(false);
+	}
+
 	if(en->IsAssociativeArray())
 	{
 		for(auto &[cn_id, cn] : en->GetMappedChildNodesReference())
@@ -1003,7 +1028,7 @@ void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrityRecurse(Evalu
 			if(cn == nullptr)
 				continue;
 
-			ValidateEvaluableNodeTreeMemoryIntegrityRecurse(cn, checked);
+			ValidateEvaluableNodeTreeMemoryIntegrityRecurse(cn, checked, existing_nodes);
 		}
 	}
 	else if(!en->IsImmediate())
@@ -1013,7 +1038,7 @@ void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrityRecurse(Evalu
 			if(cn == nullptr)
 				continue;
 
-			ValidateEvaluableNodeTreeMemoryIntegrityRecurse(cn, checked);
+			ValidateEvaluableNodeTreeMemoryIntegrityRecurse(cn, checked, existing_nodes);
 		}
 	}	
 }

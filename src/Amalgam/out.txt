@@ -1288,7 +1288,7 @@ current_index: 2
 		interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1721242843.862822
+		start_time 1721424100.605547
 		www 1
 		x 12
 		zz 10
@@ -1331,7 +1331,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1721242843.862822
+	start_time 1721424100.605547
 	www 1
 	x 12
 	zz 10
@@ -1373,7 +1373,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1721242843.862822
+	start_time 1721424100.605547
 	www 1
 	x 12
 	zz 10
@@ -1639,7 +1639,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2024-07-17-15.00.44.0947660
+current date-time in epoch: 2024-07-19-17.21.40.8411640
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -2408,33 +2408,33 @@ decrypted: hello
 ]
 [
 	1
-	2.5
+	5
+	3
 	(associate "a" 3 "b" 4)
 	(lambda
 		(if
 			true
 			1
-			(parallel (get_entity_comments) 1)
+			(parallel
+				(get_entity_comments)
+				1
+				(lambda (print))
+			)
 		)
 	)
 	[6]
 ]
 [
 	1
-	5
 	2.5
-	(associate "a" 3 "b" 4)
+	(associate "b" 4)
 	(lambda
 		(if
 			true
 			1
 			(seq
 				(get_entity_comments)
-				(lambda
-					(print
-						[2 9]
-					)
-				)
+				(lambda (null))
 				1
 			)
 		)
@@ -2450,17 +2450,7 @@ decrypted: hello
 	11.5
 	13.5
 ]
-[
-	(true)
-	2
-	4
-	5
-	10
-	12
-	11
-	14
-	13
-]
+[(true) 3 6 7 11 13]
 1
 4
 2.5
@@ -3661,7 +3651,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1721242844.245651
+1721424101.009536
 (true)
 
 RootTest
@@ -4904,4 +4894,4 @@ concurrent entity writes successful: (true)
 
 --clean-up test files--
 --total execution time--
-1.0749130249023438
+1.4733970165252686

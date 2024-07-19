@@ -770,6 +770,16 @@ protected:
 			entityRelationships.container = container;
 	}
 
+	//ensures that there are no reachable nodes that are deallocated
+	void VerifyEvaluableNodeIntegrity()
+	{
+		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(GetRoot());
+
+		auto &nr = evaluableNodeManager.GetNodesReferenced();
+		for(auto &[en, _] : nr.nodesReferenced)
+			EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
+	}
+
 	//when an entity has contained entities, then it needs to store the container and the contained entities
 	struct EntityRelationships
 	{

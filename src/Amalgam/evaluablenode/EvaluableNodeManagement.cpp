@@ -208,7 +208,7 @@ void EvaluableNodeManager::CollectGarbage()
 
 			//if any group of nodes on the top are ready to be cleaned up cheaply, do so first
 			while(cur_first_unused_node_index > 0 && nodes[cur_first_unused_node_index - 1] != nullptr
-				&& nodes[cur_first_unused_node_index - 1]->GetType() == ENT_DEALLOCATED)
+					&& nodes[cur_first_unused_node_index - 1]->IsNodeDeallocated())
 				cur_first_unused_node_index--;
 
 			//set to contain everything that is referenced
@@ -343,7 +343,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 					while(highest_possibly_unfreed_node > lowest_known_unused_index)
 					{
 						auto &cur_node_ptr = nodes[--highest_possibly_unfreed_node];
-						if(cur_node_ptr != nullptr && cur_node_ptr->GetType() != ENT_DEALLOCATED)
+						if(cur_node_ptr != nullptr && !cur_node_ptr->IsNodeDeallocated())
 							cur_node_ptr->Invalidate();
 					}
 
@@ -411,7 +411,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 		else //collect the node
 		{
 			//free any extra memory used, since this node is no longer needed
-			if(cur_node_ptr != nullptr && cur_node_ptr->GetType() != ENT_DEALLOCATED)
+			if(cur_node_ptr != nullptr && !cur_node_ptr->IsNodeDeallocated())
 				cur_node_ptr->Invalidate();
 
 			//see if out of things to free; if so exit early
@@ -464,7 +464,7 @@ void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
 
 		for(auto &[_, e] : mcn)
 		{
-			if(e != nullptr && e->GetType() != ENT_DEALLOCATED)
+			if(e != nullptr && !e->IsNodeDeallocated())
 				FreeNodeTreeWithCyclesRecurse(e);
 		}
 
@@ -486,7 +486,7 @@ void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
 
 		for(auto &e : ocn)
 		{
-			if(e != nullptr && e->GetType() != ENT_DEALLOCATED)
+			if(e != nullptr && !e->IsNodeDeallocated())
 				FreeNodeTreeWithCyclesRecurse(e);
 		}
 	}
@@ -570,7 +570,7 @@ void EvaluableNodeManager::CompactAllocatedNodes()
 
 	while(firstUnusedNodeIndex < lowest_known_unused_index)
 	{
-		if(nodes[firstUnusedNodeIndex] != nullptr && nodes[firstUnusedNodeIndex]->GetType() != ENT_DEALLOCATED)
+		if(nodes[firstUnusedNodeIndex] != nullptr && !nodes[firstUnusedNodeIndex]->IsNodeDeallocated())
 			firstUnusedNodeIndex++;
 		else
 		{
@@ -993,7 +993,7 @@ void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrityRecurse(Evalu
 	if(!inserted)
 		return;
 
-	if(en->GetType() == ENT_DEALLOCATED)
+	if(en->IsNodeDeallocated() || en->GetKnownToBeInUse())
 		assert(false);
 
 	if(en->IsAssociativeArray())

@@ -777,7 +777,7 @@ public:
 
 		//if any group of nodes on the top are ready to be cleaned up cheaply, do so
 		while(firstUnusedNodeIndex > 0 && nodes[firstUnusedNodeIndex - 1] != nullptr
-				&& nodes[firstUnusedNodeIndex - 1]->GetType() == ENT_DEALLOCATED)
+				&& nodes[firstUnusedNodeIndex - 1]->IsNodeDeallocated())
 			firstUnusedNodeIndex--;
 	}
 

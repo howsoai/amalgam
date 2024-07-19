@@ -863,7 +863,15 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, Evalu
 	if(entity_previously_empty)
 		evaluableNodeManager.UpdateGarbageCollectionTrigger();
 
+#ifdef AMALGAM_MEMORY_INTEGRITY
+	VerifyEvaluableNodeIntegrity();
+#endif
+
 	RebuildLabelIndex();
+
+#ifdef AMALGAM_MEMORY_INTEGRITY
+	VerifyEvaluableNodeIntegrity();
+#endif
 
 	EntityQueryCaches *container_caches = GetContainerQueryCaches();
 	if(container_caches != nullptr)
@@ -894,6 +902,10 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 	EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier,
 	std::vector<EntityWriteListener *> *write_listeners)
 {
+#ifdef AMALGAM_MEMORY_INTEGRITY
+	VerifyEvaluableNodeIntegrity();
+#endif
+
 	if(!(allocated_with_entity_enm && metadata_modifier == EvaluableNodeManager::ENMM_NO_CHANGE))
 		accum_code = evaluableNodeManager.DeepAllocCopy(accum_code, metadata_modifier);
 
@@ -977,4 +989,8 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 
 		asset_manager.UpdateEntity(this);
 	}
+
+#ifdef AMALGAM_MEMORY_INTEGRITY
+	VerifyEvaluableNodeIntegrity();
+#endif
 }

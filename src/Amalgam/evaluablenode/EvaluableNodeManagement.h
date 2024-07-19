@@ -7,6 +7,7 @@
 //system headers:
 #include <memory>
 
+#define PEDANTIC_GARBAGE_COLLECTION
 //if the macro PEDANTIC_GARBAGE_COLLECTION is defined, then garbage collection will be performed
 //after every opcode, to help find and debug memory issues
 
@@ -777,7 +778,7 @@ public:
 
 		//if any group of nodes on the top are ready to be cleaned up cheaply, do so
 		while(firstUnusedNodeIndex > 0 && nodes[firstUnusedNodeIndex - 1] != nullptr
-				&& nodes[firstUnusedNodeIndex - 1]->GetType() == ENT_DEALLOCATED)
+				&& nodes[firstUnusedNodeIndex - 1]->IsNodeDeallocated())
 			firstUnusedNodeIndex--;
 	}
 

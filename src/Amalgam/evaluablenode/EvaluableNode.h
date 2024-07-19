@@ -19,6 +19,10 @@
 #include <string>
 #include <vector>
 
+#define AMALGAM_MEMORY_INTEGRITY
+//if the macro AMALGAM_MEMORY_INTEGRITY is defined, then it will continuously verify memory, at a high cost of performance
+//this is useful for diagnosing and debugging memory issues
+
 //forward declarations:
 class EvaluableNodeManager;
 
@@ -413,7 +417,19 @@ public:
 	//gets current type
 	constexpr EvaluableNodeType &GetType()
 	{
+	#ifdef AMALGAM_MEMORY_INTEGRITY
+		if(type == ENT_DEALLOCATED)
+		{
+			assert(false);
+		}
+	#endif
 		return type;
+	}
+
+	//returns true if the node is currently deallocated
+	constexpr bool IsNodeDeallocated()
+	{
+		return (type == ENT_DEALLOCATED);
 	}
 
 	//transforms node to new_type, converting data if types are different

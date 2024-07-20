@@ -712,14 +712,7 @@ public:
 #endif
 
 	//ensures that there are no reachable nodes that are deallocated
-	inline void VerifyEvaluableNodeIntegrity()
-	{
-		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(GetRoot(), &evaluableNodeManager);
-
-		auto &nr = evaluableNodeManager.GetNodesReferenced();
-		for(auto &[en, _] : nr.nodesReferenced)
-			EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
-	}
+	void VerifyEvaluableNodeIntegrity();
 
 	//nodes used for storing the entity and for all interpreters for this entity
 	//the 0th node is implicitly the root node of the entity

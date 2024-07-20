@@ -267,7 +267,10 @@ public:
 			{
 				//no match, so keep it for later if keeping all
 				if(KeepSomeNonMergeableValues())
-					unmatched_a1.emplace_back(a1[0]);
+				{
+					T m = MergeValues(a1[0], NullValue, true);
+					unmatched_a1.emplace_back(m);
+				}
 			}
 
 			//remove from the first list
@@ -368,7 +371,9 @@ public:
 				//no match, so keep it for later if keeping all
 				if(KeepSomeNonMergeableValues())
 				{
-					unmatched_a1.emplace_back(a1[0]);
+					if(a1.size() > 0)
+						unmatched_a1.emplace_back(a1[0]);
+
 					if(a1.size() > 1)
 						unmatched_a1.emplace_back(a1[1]);
 				}
@@ -392,9 +397,14 @@ public:
 				merged.emplace_back(m);
 
 				if(i + 1 < unmatched_a1.size())
-					merged.emplace_back(unmatched_a1[i + 1]);
+				{
+					T m = MergeValues(unmatched_a1[i + 1], NullValue, true);
+					merged.emplace_back(m);
+				}
 				else
+				{
 					merged.emplace_back(NullValue);
+				}
 			}
 
 			for(size_t i = 0; i < a2.size(); i += 2)
@@ -402,12 +412,18 @@ public:
 				if(!KeepNonMergeableB())
 					continue;
 
-				T m = MergeValues(a2[i], NullValue, true);
+				T m = MergeValues(NullValue, a2[i], true);
 				merged.emplace_back(m);
+
 				if(i + 1 < a2.size())
-					merged.emplace_back(a2[i + 1]);
+				{
+					T m = MergeValues(NullValue, a2[i + 1], true);
+					merged.emplace_back(m);
+				}
 				else
+				{
 					merged.emplace_back(NullValue);
+				}
 			}
 		}
 
@@ -478,9 +494,15 @@ public:
 			else
 			{
 				if(KeepNonMergeableA())
-					merged.push_back(list_a[a_index]);
+				{
+					T m = MergeValues(list_a[a_index], NullValue, true);
+					merged.emplace_back(m);
+				}
 				if(KeepNonMergeableB())
-					merged.push_back(list_b[b_index]);
+				{
+					T m = MergeValues(NullValue, list_b[b_index], true);
+					merged.emplace_back(m);
+				}
 			}
 		}
 
@@ -531,8 +553,8 @@ public:
 		size_t smallest_list_size = std::min(list_a.size(), list_b.size());
 		for(size_t i = 0; i < smallest_list_size; i++)
 		{
-			T generalized_child = MergeValues(list_a[i], list_b[i]);
-			merged.emplace_back(generalized_child);
+			T m = MergeValues(list_a[i], list_b[i]);
+			merged.emplace_back(m);
 		}
 
 		if(KeepSomeNonMergeableValues())
@@ -542,8 +564,8 @@ public:
 			{
 				if(KeepNonMergeableA())
 				{
-					T generalized_child = MergeValues(list_a[i], NullValue, true);
-					merged.emplace_back(generalized_child);
+					T m = MergeValues(list_a[i], NullValue, true);
+					merged.emplace_back(m);
 				}
 				else
 				{
@@ -556,8 +578,8 @@ public:
 			{
 				if(KeepNonMergeableB())
 				{
-					T generalized_child = MergeValues(NullValue, list_b[i], true);
-					merged.emplace_back(generalized_child);
+					T m = MergeValues(NullValue, list_b[i], true);
+					merged.emplace_back(m);
 				}
 				else
 				{

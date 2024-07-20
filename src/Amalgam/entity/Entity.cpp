@@ -994,3 +994,12 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 	VerifyEvaluableNodeIntegrity();
 #endif
 }
+
+void Entity::VerifyEvaluableNodeIntegrity()
+{
+	EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(GetRoot(), &evaluableNodeManager);
+
+	auto &nr = evaluableNodeManager.GetNodesReferenced();
+	for(auto &[en, _] : nr.nodesReferenced)
+		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
+}

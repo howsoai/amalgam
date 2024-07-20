@@ -20,9 +20,6 @@
 #include <type_traits>
 #include <vector>
 
-//if the macro AMALGAM_MEMORY_INTEGRITY is defined, then it will continuously verify memory, at a high cost of performance
-//this is useful for diagnosing and debugging memory issues
-
 //forward declarations:
 class EntityQueryCondition;
 

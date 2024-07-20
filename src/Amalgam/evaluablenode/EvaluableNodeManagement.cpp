@@ -208,7 +208,7 @@ void EvaluableNodeManager::CollectGarbage()
 
 			//if any group of nodes on the top are ready to be cleaned up cheaply, do so first
 			while(cur_first_unused_node_index > 0 && nodes[cur_first_unused_node_index - 1] != nullptr
-				&& nodes[cur_first_unused_node_index - 1]->GetType() == ENT_DEALLOCATED)
+					&& nodes[cur_first_unused_node_index - 1]->IsNodeDeallocated())
 				cur_first_unused_node_index--;
 
 			//set to contain everything that is referenced
@@ -343,7 +343,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 					while(highest_possibly_unfreed_node > lowest_known_unused_index)
 					{
 						auto &cur_node_ptr = nodes[--highest_possibly_unfreed_node];
-						if(cur_node_ptr != nullptr && cur_node_ptr->GetType() != ENT_DEALLOCATED)
+						if(cur_node_ptr != nullptr && !cur_node_ptr->IsNodeDeallocated())
 							cur_node_ptr->Invalidate();
 					}
 
@@ -411,7 +411,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 		else //collect the node
 		{
 			//free any extra memory used, since this node is no longer needed
-			if(cur_node_ptr != nullptr && cur_node_ptr->GetType() != ENT_DEALLOCATED)
+			if(cur_node_ptr != nullptr && !cur_node_ptr->IsNodeDeallocated())
 				cur_node_ptr->Invalidate();
 
 			//see if out of things to free; if so exit early
@@ -464,7 +464,7 @@ void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
 
 		for(auto &[_, e] : mcn)
 		{
-			if(e != nullptr && e->GetType() != ENT_DEALLOCATED)
+			if(e != nullptr && !e->IsNodeDeallocated())
 				FreeNodeTreeWithCyclesRecurse(e);
 		}
 
@@ -486,7 +486,7 @@ void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
 
 		for(auto &e : ocn)
 		{
-			if(e != nullptr && e->GetType() != ENT_DEALLOCATED)
+			if(e != nullptr && !e->IsNodeDeallocated())
 				FreeNodeTreeWithCyclesRecurse(e);
 		}
 	}
@@ -570,7 +570,7 @@ void EvaluableNodeManager::CompactAllocatedNodes()
 
 	while(firstUnusedNodeIndex < lowest_known_unused_index)
 	{
-		if(nodes[firstUnusedNodeIndex] != nullptr && nodes[firstUnusedNodeIndex]->GetType() != ENT_DEALLOCATED)
+		if(nodes[firstUnusedNodeIndex] != nullptr && !nodes[firstUnusedNodeIndex]->IsNodeDeallocated())
 			firstUnusedNodeIndex++;
 		else
 		{
@@ -610,14 +610,32 @@ size_t EvaluableNodeManager::GetEstimatedTotalUsedSizeInBytes()
 	return total_size;
 }
 
-void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(EvaluableNode *en)
+void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(EvaluableNode *en,
+	EvaluableNodeManager *ensure_nodes_in_enm)
 {
 	if(en == nullptr)
 		return;
 
 	static EvaluableNode::ReferenceSetType checked;
 	checked.clear();
-	return ValidateEvaluableNodeTreeMemoryIntegrityRecurse(en, checked);
+
+	if(ensure_nodes_in_enm)
+	{
+		static FastHashSet<EvaluableNode *> existing_nodes;
+		existing_nodes.clear();
+
+		for(size_t i = 0; i < ensure_nodes_in_enm->firstUnusedNodeIndex; i++)
+		{
+			if(ensure_nodes_in_enm->nodes[i] != nullptr)
+				existing_nodes.insert(ensure_nodes_in_enm->nodes[i]);
+		}
+
+		return ValidateEvaluableNodeTreeMemoryIntegrityRecurse(en, checked, &existing_nodes);
+	}
+	else
+	{
+		return ValidateEvaluableNodeTreeMemoryIntegrityRecurse(en, checked, nullptr);
+	}
 }
 
 std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopy(EvaluableNode *tree, DeepAllocCopyParams &dacp)
@@ -987,14 +1005,21 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUseRecurseConcurrent(Evaluabl
 }
 #endif
 
-void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrityRecurse(EvaluableNode *en, EvaluableNode::ReferenceSetType &checked)
+void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrityRecurse(EvaluableNode *en,
+	EvaluableNode::ReferenceSetType &checked, FastHashSet<EvaluableNode *> *existing_nodes)
 {
 	auto [_, inserted] = checked.insert(en);
 	if(!inserted)
 		return;
 
-	if(en->GetType() == ENT_DEALLOCATED)
+	if(en->IsNodeDeallocated() || en->GetKnownToBeInUse())
 		assert(false);
+
+	if(existing_nodes != nullptr)
+	{
+		if(existing_nodes->find(en) == end(*existing_nodes))
+			assert(false);
+	}
 
 	if(en->IsAssociativeArray())
 	{
@@ -1003,7 +1028,7 @@ void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrityRecurse(Evalu
 			if(cn == nullptr)
 				continue;
 
-			ValidateEvaluableNodeTreeMemoryIntegrityRecurse(cn, checked);
+			ValidateEvaluableNodeTreeMemoryIntegrityRecurse(cn, checked, existing_nodes);
 		}
 	}
 	else if(!en->IsImmediate())
@@ -1013,7 +1038,7 @@ void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrityRecurse(Evalu
 			if(cn == nullptr)
 				continue;
 
-			ValidateEvaluableNodeTreeMemoryIntegrityRecurse(cn, checked);
+			ValidateEvaluableNodeTreeMemoryIntegrityRecurse(cn, checked, existing_nodes);
 		}
 	}	
 }

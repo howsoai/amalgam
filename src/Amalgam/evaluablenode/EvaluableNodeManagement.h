@@ -775,7 +775,7 @@ public:
 
 		//if any group of nodes on the top are ready to be cleaned up cheaply, do so
 		while(firstUnusedNodeIndex > 0 && nodes[firstUnusedNodeIndex - 1] != nullptr
-				&& nodes[firstUnusedNodeIndex - 1]->GetType() == ENT_DEALLOCATED)
+				&& nodes[firstUnusedNodeIndex - 1]->IsNodeDeallocated())
 			firstUnusedNodeIndex--;
 	}
 
@@ -854,9 +854,11 @@ public:
 	size_t GetEstimatedTotalUsedSizeInBytes();
 
 	//makes sure that the evaluable node and everything referenced by it has not been deallocated
+	// if ensure_nodes_in_enm is passed in, it will ensure all nodes are contained within this EvaluableNodeManager
 	//asserts an error if it finds any
 	//intended for debugging only
-	static void ValidateEvaluableNodeTreeMemoryIntegrity(EvaluableNode *en);
+	static void ValidateEvaluableNodeTreeMemoryIntegrity(EvaluableNode *en,
+		EvaluableNodeManager *ensure_nodes_in_enm = nullptr);
 
 	//when numNodesToRunGarbageCollection are allocated, then it is time to run garbage collection
 	size_t numNodesToRunGarbageCollection;
@@ -922,7 +924,9 @@ protected:
 	static void MarkAllReferencedNodesInUseRecurseConcurrent(EvaluableNode* tree);
 #endif
 
-	static void ValidateEvaluableNodeTreeMemoryIntegrityRecurse(EvaluableNode *en, EvaluableNode::ReferenceSetType &checked);
+	//helper method for ValidateEvaluableNodeTreeMemoryIntegrity
+	static void ValidateEvaluableNodeTreeMemoryIntegrityRecurse(EvaluableNode *en,
+		EvaluableNode::ReferenceSetType &checked, FastHashSet<EvaluableNode *> *existing_nodes);
 
 #ifdef MULTITHREAD_SUPPORT
 	//mutex to manage attributes of manager, including operations such as

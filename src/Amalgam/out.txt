@@ -1272,7 +1272,7 @@ current_index: 2
 				8
 			]
 		accum_string "abcdef"
-		argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+		argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 		bar (declare
 				{x 6}
 				(+ x 2)
@@ -1285,10 +1285,10 @@ current_index: 2
 				A {B 2}
 				B 2
 			}
-		interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+		interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1721248534.028046
+		start_time 1721437818.044698
 		www 1
 		x 12
 		zz 10
@@ -1315,7 +1315,7 @@ current_index: 2
 			8
 		]
 	accum_string "abcdef"
-	argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+	argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 	bar (declare
 			{x 6}
 			(+ x 2)
@@ -1328,10 +1328,10 @@ current_index: 2
 			A {B 2}
 			B 2
 		}
-	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1721248534.028046
+	start_time 1721437818.044698
 	www 1
 	x 12
 	zz 10
@@ -1357,7 +1357,7 @@ current_index: 2
 			8
 		]
 	accum_string "abcdef"
-	argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+	argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 	bar (declare
 			{x 6}
 			(+ x 2)
@@ -1370,10 +1370,10 @@ current_index: 2
 			A {B 2}
 			B 2
 		}
-	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1721248534.028046
+	start_time 1721437818.044698
 	www 1
 	x 12
 	zz 10
@@ -1639,7 +1639,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2024-07-17-16.35.34.3674780
+current date-time in epoch: 2024-07-19-21.10.18.0918270
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -2408,33 +2408,33 @@ decrypted: hello
 ]
 [
 	1
-	2.5
+	5
+	3
 	(associate "a" 3 "b" 4)
 	(lambda
 		(if
 			true
 			1
-			(parallel (get_entity_comments) 1)
+			(parallel
+				(get_entity_comments)
+				1
+				(lambda (print))
+			)
 		)
 	)
 	[6]
 ]
 [
 	1
-	5
 	2.5
-	(associate "a" 3 "b" 4)
+	(associate "b" 4)
 	(lambda
 		(if
 			true
 			1
 			(seq
 				(get_entity_comments)
-				(lambda
-					(print
-						[2 9]
-					)
-				)
+				(lambda (null))
 				1
 			)
 		)
@@ -2450,17 +2450,7 @@ decrypted: hello
 	11.5
 	13.5
 ]
-[
-	(true)
-	2
-	4
-	5
-	10
-	12
-	11
-	14
-	13
-]
+[(true) 3 6 7 11 13]
 1
 4
 2.5
@@ -3661,7 +3651,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1721248534.595976
+1721437818.367976
 (true)
 
 RootTest
@@ -4904,4 +4894,4 @@ concurrent entity writes successful: (true)
 
 --clean-up test files--
 --total execution time--
-1.1680800914764404
+1.639106035232544

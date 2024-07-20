@@ -1586,12 +1586,13 @@ void EvaluableNode::DestructValue()
 
 void EvaluableNode::Invalidate()
 {
+	if(IsNodeDeallocated())
+		return;
+
 	if(!HasExtendedValue())
 	{
 		switch(GetType())
 		{
-		case ENT_DEALLOCATED:
-			return;
 		case ENT_NUMBER:
 			string_intern_pool.DestroyStringReference(value.numberValueContainer.labelStringID);
 			break;

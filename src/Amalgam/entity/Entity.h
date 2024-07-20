@@ -712,7 +712,7 @@ public:
 #endif
 
 	//ensures that there are no reachable nodes that are deallocated
-	void VerifyEvaluableNodeIntegrity()
+	inline void VerifyEvaluableNodeIntegrity()
 	{
 		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(GetRoot(), &evaluableNodeManager);
 

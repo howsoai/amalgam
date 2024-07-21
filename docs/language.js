@@ -1160,7 +1160,7 @@ var data = [
 		"parameter" : "total_entity_size id entity",
 		"output" : "number",
 		"new value" : "new",
-		"description" : "Evaluates to the total count of all of the nodes of the entity represented by the input id and all its contained entities.",
+		"description" : "Evaluates to the total count of all of the nodes of the entity represented by the input id and all its contained entities.  Each entity itself counts as multiple nodes, as it requires multiple nodes to create an entity as exhibited by flattening an entity.",
 		"example" : "(create_entities \"MergeEntity1\" (lambda (assoc \"a\" 3 \"b\" 4)) )\n(create_entities (list \"MergeEntity1\" \"MergeEntityChild1\") (lambda (assoc \"x\" 3 \"y\" 4)) )\n(create_entities (list \"MergeEntity1\" \"MergeEntityChild2\") (lambda (assoc \"p\" 3 \"q\" 4)) )\n(create_entities (list \"MergeEntity1\") (lambda (assoc \"E\" 3 \"F\" 4)) )\n(create_entities (list \"MergeEntity1\") (lambda (assoc \"e\" 3 \"f\" 4 \"g\" 5 \"h\" 6)) )\n\n(create_entities \"MergeEntity2\" (lambda (assoc \"c\" 3 \"b\" 4)) )\n(create_entities (list \"MergeEntity2\" \"MergeEntityChild1\") (lambda (assoc \"x\" 3 \"y\" 4 \"z\" 5)) )\n(create_entities (list \"MergeEntity2\" \"MergeEntityChild2\") (lambda (assoc \"p\" 3 \"q\" 4 \"u\" 5 \"v\" 6 \"w\" 7)) )\n(create_entities (list \"MergeEntity2\") (lambda (assoc \"E\" 3 \"F\" 4 \"G\" 5 \"H\" 6)) )\n(create_entities (list \"MergeEntity2\") (lambda (assoc \"e\" 3 \"f\" 4)) )\n\n(print (total_entity_size \"MergeEntity1\"))\n(print (total_entity_size \"MergeEntity2\"))"
 	},
 

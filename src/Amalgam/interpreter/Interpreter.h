@@ -762,7 +762,7 @@ protected:
 		{
 			new_result.unique &= resultsUnique;
 			if(resultsNeedCycleCheck)
-				new_result.SetNeedCycleCheck(resultsNeedCycleCheck);
+				EvaluableNodeManager::UpdateFlagsForNodeTree(new_result);
 			if(!resultsIdempotent)
 				new_result.SetIsIdempotent(resultsIdempotent);
 		}

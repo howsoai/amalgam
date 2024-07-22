@@ -416,6 +416,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CLONE_ENTITIES(EvaluableNo
 			continue;
 		}
 
+		//create new entity
+		Entity *new_entity = new Entity(source_entity);
+
+		//clear previous lock
+		source_entity = EntityReadReference();
+
 		//get destination if applicable
 		EntityWriteReference destination_entity_parent;
 		StringInternRef new_entity_id;
@@ -424,15 +430,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CLONE_ENTITIES(EvaluableNo
 
 		if(destination_entity_parent == nullptr)
 		{
+			delete new_entity;
 			new_entity_ids_list->AppendOrderedChildNode(nullptr);
 			continue;
 		}
-
-		//create new entity
-		Entity *new_entity = new Entity(source_entity);
-
-		//clear previous lock
-		source_entity = EntityReadReference();
 
 		//accumulate usage
 		if(ConstrainedAllocatedNodes())

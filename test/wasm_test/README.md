@@ -2,7 +2,9 @@
 
 Install dependencies
 
-    npm install
+```bash
+npm install
+```
 
 Define the environment variable `AMALGAM_WASM_DIR` to the directory where the following files exist:
 
@@ -12,4 +14,7 @@ Define the environment variable `AMALGAM_WASM_DIR` to the directory where the fo
 
 Run tests
 
-    npm run test
+````bash
+npm run test
+```bash
+````

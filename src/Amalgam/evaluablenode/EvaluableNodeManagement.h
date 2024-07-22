@@ -20,7 +20,7 @@ class EvaluableNodeReference
 {
 public:
 	constexpr EvaluableNodeReference()
-		: value(nullptr), unique(true)
+		: value(), unique(true)
 	{	}
 
 	constexpr EvaluableNodeReference(EvaluableNode *_reference, bool _unique)

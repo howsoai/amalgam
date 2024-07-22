@@ -602,22 +602,26 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_FIRST_DYNAMIC_STRING
 };
 
+//built in strings for the given opcodes, indexed by ENBISI_*
+extern std::vector<StringInternPool::StringID> en_built_in_strings;
+extern FastHashMap< StringInternPool::StringID, EvaluableNodeType> en_built_in_string_to_en_type;
 
 //returns the string id representing EvaluableNodeType t
-constexpr StringInternPool::StringID GetStringIdFromNodeTypeFromString(EvaluableNodeType t)
+inline StringInternPool::StringID GetStringIdFromNodeTypeFromString(EvaluableNodeType t)
 {
 	if(t >= NUM_VALID_ENT_OPCODES)
-		return ENT_NOT_A_BUILT_IN_TYPE;
-	return static_cast<StringInternPool::StringID>(t + NUM_ENBISI_SPECIAL_STRING_IDS);
+		return en_built_in_strings[ENT_NOT_A_BUILT_IN_TYPE];
+	return en_built_in_strings[t + NUM_ENBISI_SPECIAL_STRING_IDS];
 }
 
 //like GetEvaluableNodeTypeFromString but uses a string id
-constexpr EvaluableNodeType GetEvaluableNodeTypeFromStringId(StringInternPool::StringID sid)
+inline EvaluableNodeType GetEvaluableNodeTypeFromStringId(StringInternPool::StringID sid)
 {
-	if(sid <= ENBISI_EMPTY_STRING)
+	auto found = en_built_in_string_to_en_type.find(sid);
+	if(found == end(en_built_in_string_to_en_type))
 		return ENT_NOT_A_BUILT_IN_TYPE;
 
-	size_t type_index = sid - NUM_ENBISI_SPECIAL_STRING_IDS;
+	size_t type_index = found->second - NUM_ENBISI_SPECIAL_STRING_IDS;
 	if(type_index >= NUM_VALID_ENT_OPCODES)
 		return ENT_NOT_A_BUILT_IN_TYPE;
 

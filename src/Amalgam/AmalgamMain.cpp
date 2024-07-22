@@ -329,7 +329,7 @@ PLATFORM_MAIN_CONSOLE
 			if(num_strings_used > 0)
 			{
 				std::cerr << "ERROR: Num strings still in use: " << num_strings_used << std::endl;
-				std::vector<std::pair<std::string, int64_t>> in_use = string_intern_pool.GetNonStaticStringsInUse();
+				std::vector<std::pair<std::string, int64_t>> in_use = string_intern_pool.GetStringsInUse();
 				for(auto &[s, count] : in_use)
 					std::cerr << '"' << s << "\":" << count << std::endl;
 

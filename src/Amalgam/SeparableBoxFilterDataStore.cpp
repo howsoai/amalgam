@@ -133,7 +133,7 @@ void SeparableBoxFilterDataStore::RemoveColumnIndex(size_t column_index_to_remov
 	//will replace the values at index_to_remove with the values at index_to_move
 	size_t column_index_to_move = columnData.size() - 1;
 
-	size_t label_id = columnData[column_index_to_remove]->stringId;
+	StringInternPool::StringID label_id = columnData[column_index_to_remove]->stringId;
 
 	size_t num_columns = columnData.size();
 
@@ -144,7 +144,7 @@ void SeparableBoxFilterDataStore::RemoveColumnIndex(size_t column_index_to_remov
 			matrix[i * num_columns + column_index_to_remove] = matrix[i * num_columns + column_index_to_move];
 
 		//update column lookup
-		size_t label_id_to_move = columnData[column_index_to_move]->stringId;
+		StringInternPool::StringID label_id_to_move = columnData[column_index_to_move]->stringId;
 		labelIdToColumnIndex[label_id_to_move] = column_index_to_remove;
 
 		//rearrange columns
@@ -369,7 +369,8 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 // and sets distances_out to the found entities.  Infinity is allowed to compute all distances.
 //if enabled_indices is not nullptr, it will only find distances to those entities, and it will modify enabled_indices in-place
 // removing entities that do not have the corresponding labels
-void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistanceEvaluator &dist_eval, std::vector<size_t> &position_label_ids,
+void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistanceEvaluator &dist_eval,
+	std::vector<StringInternPool::StringID> &position_label_sids,
 	std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types,
 	double max_dist, StringInternPool::StringID radius_label,
 	BitArrayIntegerSet &enabled_indices, std::vector<DistanceReferencePair<size_t>> &distances_out)
@@ -381,7 +382,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 	r_dist_eval.distEvaluator = &dist_eval;
 
 	//look up these data structures upfront for performance
-	PopulateTargetValuesAndLabelIndices(r_dist_eval, position_label_ids, position_values, position_value_types);
+	PopulateTargetValuesAndLabelIndices(r_dist_eval, position_label_sids, position_values, position_value_types);
 	
 	bool high_accuracy = dist_eval.highAccuracyDistances;
 	double max_dist_exponentiated = dist_eval.ExponentiateDifferenceTerm(max_dist, high_accuracy);
@@ -531,7 +532,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 }
 
 void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(GeneralizedDistanceEvaluator &dist_eval,
-	std::vector<size_t> &position_label_ids, size_t search_index,
+	std::vector<StringInternPool::StringID> &position_label_sids, size_t search_index,
 	size_t top_k, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
 	bool expand_to_first_nonzero_distance, std::vector<DistanceReferencePair<size_t>> &distances_out, size_t ignore_index, RandomStream rand_stream)
 {
@@ -548,7 +549,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 	r_dist_eval.featureData.resize(num_enabled_features);
 	for(size_t i = 0; i < num_enabled_features; i++)
 	{
-		auto found = labelIdToColumnIndex.find(position_label_ids[i]);
+		auto found = labelIdToColumnIndex.find(position_label_sids[i]);
 		if(found == end(labelIdToColumnIndex))
 			continue;
 		
@@ -713,7 +714,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 }
 
 void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluator &dist_eval,
-	std::vector<size_t> &position_label_ids, std::vector<EvaluableNodeImmediateValue> &position_values,
+	std::vector<StringInternPool::StringID> &position_label_sids, std::vector<EvaluableNodeImmediateValue> &position_values,
 	std::vector<EvaluableNodeImmediateValueType> &position_value_types,
 	size_t top_k, StringInternPool::StringID radius_label, size_t ignore_entity_index,
 	BitArrayIntegerSet &enabled_indices, std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream)
@@ -725,7 +726,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 	r_dist_eval.distEvaluator = &dist_eval;
 
 	//look up these data structures upfront for performance
-	PopulateTargetValuesAndLabelIndices(r_dist_eval, position_label_ids, position_values, position_value_types);
+	PopulateTargetValuesAndLabelIndices(r_dist_eval, position_label_sids, position_values, position_value_types);
 
 	enabled_indices.erase(ignore_entity_index);
 
@@ -976,13 +977,13 @@ void SeparableBoxFilterDataStore::DeleteEntityIndexFromColumns(size_t entity_ind
 	}
 }
 
-size_t SeparableBoxFilterDataStore::AddLabelsAsEmptyColumns(std::vector<size_t> &label_ids, size_t num_entities)
+size_t SeparableBoxFilterDataStore::AddLabelsAsEmptyColumns(std::vector<StringInternPool::StringID> &label_sids, size_t num_entities)
 {
 	size_t num_existing_columns = columnData.size();
 	size_t num_inserted_columns = 0;
 
 	//create columns for the labels, don't count any that already exist
-	for(auto label_id : label_ids)
+	for(auto label_id : label_sids)
 	{
 		auto [_, inserted] = labelIdToColumnIndex.insert(std::make_pair(label_id, columnData.size()));
 		if(inserted)

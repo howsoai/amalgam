@@ -997,6 +997,10 @@ union EvaluableNodeImmediateValue
 		: code(eniv.code)
 	{	}
 
+	constexpr EvaluableNodeImmediateValue(size_t indirection_index)
+		: indirectionIndex(indirection_index)
+	{	}
+
 	__forceinline EvaluableNodeImmediateValue &operator =(const EvaluableNodeImmediateValue &eniv)
 	{
 		//perform a memcpy because it's a union, to be safe; the compiler should optimize this out
@@ -1183,7 +1187,7 @@ public:
 
 		if(nodeType == ENIVT_STRING_ID)
 		{
-			if(nodeValue.stringID <= StringInternPool::EMPTY_STRING_ID)
+			if(nodeValue.stringID <= string_intern_pool.EMPTY_STRING_ID)
 				return false;
 			return true;
 		}

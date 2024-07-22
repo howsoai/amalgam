@@ -108,7 +108,7 @@ public:
 	}
 
 	//returns true if the structure already has the label
-	inline bool DoesHaveLabel(size_t label_id)
+	inline bool DoesHaveLabel(StringInternPool::StringID label_id)
 	{
 		return (labelIdToColumnIndex.count(label_id) > 0);
 	}
@@ -128,14 +128,14 @@ public:
 	}
 
 	//expand the structure by adding a new column/label/feature and populating with data from entities
-	void AddLabels(std::vector<size_t> &label_ids, const std::vector<Entity *> &entities)
+	void AddLabels(std::vector<StringInternPool::StringID> &label_sids, const std::vector<Entity *> &entities)
 	{
 		//make sure have data to add
-		if(label_ids.size() == 0 || entities.size() == 0)
+		if(label_sids.size() == 0 || entities.size() == 0)
 			return;
 
 		//resize the matrix and populate column and label_id lookups
-		size_t num_columns_added = AddLabelsAsEmptyColumns(label_ids, entities.size());
+		size_t num_columns_added = AddLabelsAsEmptyColumns(label_sids, entities.size());
 
 		size_t num_columns = columnData.size();
 		size_t num_previous_columns = columnData.size() - num_columns_added;
@@ -223,9 +223,9 @@ public:
 		return columnData[column_index]->stringIdIndices;
 	}
 
-	//given a feature_id and a range [low, high], fills out with all the entities with values of feature feature_id within specified range
+	//given a feature_id and a range [low, high], fills out with all the entities with values of feature feature_sid within specified range
 	//if the feature value is null, it will NOT be present in the search results, ie "x" != 3 will NOT include elements with x is null, even though null != 3
-	inline void FindAllEntitiesWithinRange(size_t feature_id, EvaluableNodeImmediateValueType value_type,
+	inline void FindAllEntitiesWithinRange(StringInternPool::StringID feature_sid, EvaluableNodeImmediateValueType value_type,
 		EvaluableNodeImmediateValue &low, EvaluableNodeImmediateValue &high, BitArrayIntegerSet &out, bool between_values = true)
 	{
 		if(numEntities == 0)
@@ -234,7 +234,7 @@ public:
 			return;
 		}
 
-		auto column = labelIdToColumnIndex.find(feature_id);
+		auto column = labelIdToColumnIndex.find(feature_sid);
 		if(column == labelIdToColumnIndex.end())
 		{
 			out.clear();
@@ -245,7 +245,7 @@ public:
 	}
 
 	//sets out to include only entities that have the given feature
-	inline void FindAllEntitiesWithFeature(size_t feature_id, BitArrayIntegerSet &out)
+	inline void FindAllEntitiesWithFeature(StringInternPool::StringID feature_sid, BitArrayIntegerSet &out)
 	{
 		if(numEntities == 0)
 		{
@@ -253,7 +253,7 @@ public:
 			return;
 		}
 
-		auto column = labelIdToColumnIndex.find(feature_id);
+		auto column = labelIdToColumnIndex.find(feature_sid);
 		if(column == labelIdToColumnIndex.end())
 		{
 			out.clear();
@@ -266,7 +266,7 @@ public:
 	//filters out to include only entities that have the given feature
 	//if in_batch is true, will update out in batch for performance,
 	//meaning its number of elements will need to be updated
-	inline void IntersectEntitiesWithFeature(size_t feature_id, BitArrayIntegerSet &out, bool in_batch)
+	inline void IntersectEntitiesWithFeature(StringInternPool::StringID feature_sid, BitArrayIntegerSet &out, bool in_batch)
 	{
 		if(numEntities == 0)
 		{
@@ -274,7 +274,7 @@ public:
 			return;
 		}
 
-		auto column = labelIdToColumnIndex.find(feature_id);
+		auto column = labelIdToColumnIndex.find(feature_sid);
 		if(column == labelIdToColumnIndex.end())
 		{
 			out.clear();
@@ -286,13 +286,13 @@ public:
 
 	//sets out to include only entities that have the given feature and records the values into
 	// entities and values respectively.  enabled_entities is used as a buffer
-	inline void FindAllEntitiesWithValidNumbers(size_t feature_id, BitArrayIntegerSet &enabled_entities,
+	inline void FindAllEntitiesWithValidNumbers(StringInternPool::StringID feature_sid, BitArrayIntegerSet &enabled_entities,
 		std::vector<size_t> &entities, std::vector<double> &values)
 	{
 		if(numEntities == 0)
 			return;
 
-		auto column = labelIdToColumnIndex.find(feature_id);
+		auto column = labelIdToColumnIndex.find(feature_sid);
 		if(column == labelIdToColumnIndex.end())
 			return;
 		size_t column_index = column->second;
@@ -315,13 +315,13 @@ public:
 
 	//filters enabled_indices to include only entities that have the given feature
 	// records the entities into entities and values respectively
-	inline void IntersectEntitiesWithValidNumbers(size_t feature_id, BitArrayIntegerSet &enabled_entities,
+	inline void IntersectEntitiesWithValidNumbers(StringInternPool::StringID feature_sid, BitArrayIntegerSet &enabled_entities,
 		std::vector<size_t> &entities, std::vector<double> &values)
 	{
 		if(numEntities == 0)
 			return;
 
-		auto column = labelIdToColumnIndex.find(feature_id);
+		auto column = labelIdToColumnIndex.find(feature_sid);
 		if(column == labelIdToColumnIndex.end())
 			return;
 		size_t column_index = column->second;
@@ -343,7 +343,7 @@ public:
 	}
 
 	//sets out to include only entities that don't have the given feature
-	inline void FindAllEntitiesWithoutFeature(size_t feature_id, BitArrayIntegerSet &out)
+	inline void FindAllEntitiesWithoutFeature(StringInternPool::StringID feature_sid, BitArrayIntegerSet &out)
 	{
 		if(numEntities == 0)
 		{
@@ -351,7 +351,7 @@ public:
 			return;
 		}
 
-		auto column = labelIdToColumnIndex.find(feature_id);
+		auto column = labelIdToColumnIndex.find(feature_sid);
 		if(column == labelIdToColumnIndex.end())
 		{
 			out.clear();
@@ -364,23 +364,23 @@ public:
 	//filters out to include only entities that don't have the given feature
 	//if in_batch is true, will update out in batch for performance,
 	//meaning its number of elements will need to be updated
-	inline void IntersectEntitiesWithoutFeature(size_t feature_id, BitArrayIntegerSet &out, bool in_batch)
+	inline void IntersectEntitiesWithoutFeature(StringInternPool::StringID feature_sid, BitArrayIntegerSet &out, bool in_batch)
 	{
 		if(numEntities == 0)
 			return;
 
-		auto column = labelIdToColumnIndex.find(feature_id);
+		auto column = labelIdToColumnIndex.find(feature_sid);
 		if(column == labelIdToColumnIndex.end())
 			return;
 
 		columnData[column->second]->invalidIndices.IntersectTo(out, in_batch);
 	}
 
-	//given a feature_id, value_type, and value, inserts into out all the entities that have the value
-	inline void UnionAllEntitiesWithValue(size_t feature_id,
+	//given a feature_sid, value_type, and value, inserts into out all the entities that have the value
+	inline void UnionAllEntitiesWithValue(StringInternPool::StringID feature_sid,
 		EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue &value, BitArrayIntegerSet &out)
 	{
-		auto column = labelIdToColumnIndex.find(feature_id);
+		auto column = labelIdToColumnIndex.find(feature_sid);
 		if(column == labelIdToColumnIndex.end())
 			return;
 		size_t column_index = column->second;
@@ -400,11 +400,11 @@ public:
 	}
 
 	//Finds the Minimum or Maximum (with respect to feature_id feature value) num_to_find entities in the database; if is_max is true, finds max, else finds min
-	inline void FindMinMax(size_t feature_id,
+	inline void FindMinMax(StringInternPool::StringID feature_sid,
 		EvaluableNodeImmediateValueType value_type, size_t num_to_find, bool is_max,
 		BitArrayIntegerSet *enabled_indices, BitArrayIntegerSet &out)
 	{
-		auto column = labelIdToColumnIndex.find(feature_id);
+		auto column = labelIdToColumnIndex.find(feature_sid);
 		if(column == labelIdToColumnIndex.end())
 			return;
 
@@ -485,7 +485,7 @@ public:
 	//populates distances_out with all entities and their distances that have a distance to target less than max_dist
 	//if enabled_indices is not nullptr, intersects with the enabled_indices set.
 	//assumes that enabled_indices only contains indices that have valid values for all the features
-	void FindEntitiesWithinDistance(GeneralizedDistanceEvaluator &r_dist_eval, std::vector<size_t> &position_label_ids,
+	void FindEntitiesWithinDistance(GeneralizedDistanceEvaluator &r_dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
 		std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types,
 		double max_dist, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
 		std::vector<DistanceReferencePair<size_t>> &distances_out);
@@ -494,7 +494,7 @@ public:
 	// if expand_to_first_nonzero_distance is set, then it will expand top_k until it it finds the first nonzero distance or until it includes all enabled indices 
 	//will not modify enabled_indices, but instead will make a copy for any modifications
 	//assumes that enabled_indices only contains indices that have valid values for all the features
-	void FindEntitiesNearestToIndexedEntity(GeneralizedDistanceEvaluator &dist_eval, std::vector<size_t> &position_label_ids,
+	void FindEntitiesNearestToIndexedEntity(GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
 		size_t search_index, size_t top_k, StringInternPool::StringID radius_label,
 		BitArrayIntegerSet &enabled_indices, bool expand_to_first_nonzero_distance,
 		std::vector<DistanceReferencePair<size_t>> &distances_out,
@@ -503,7 +503,7 @@ public:
 	//Finds the nearest neighbors
 	//enabled_indices is the set of entities to find from, and will be modified
 	//assumes that enabled_indices only contains indices that have valid values for all the features
-	void FindNearestEntities(GeneralizedDistanceEvaluator &dist_eval, std::vector<size_t> &position_label_ids,
+	void FindNearestEntities(GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
 		std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types,
 		size_t top_k, StringInternPool::StringID radius_label, size_t ignore_entity_index, BitArrayIntegerSet &enabled_indices,
 		std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream = RandomStream());
@@ -539,7 +539,7 @@ protected:
 	//adds a new labels to the database
 	// assumes label_ids is not empty and num_entities is nonzero
 	//returns the number of new columns inserted
-	size_t AddLabelsAsEmptyColumns(std::vector<size_t> &label_ids, size_t num_entities);
+	size_t AddLabelsAsEmptyColumns(std::vector<StringInternPool::StringID> &label_sids, size_t num_entities);
 
 	//computes each partial sum and adds the term to the partial sums associated for each id in entity_indices for query_feature_index
 	//returns the number of entities indices accumulated
@@ -946,14 +946,14 @@ public:
 
 	//populates all target values given the selected target values for each value in corresponding position* parameters
 	void PopulateTargetValuesAndLabelIndices(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
-		std::vector<size_t> &position_label_ids, std::vector<EvaluableNodeImmediateValue> &position_values,
+		std::vector<StringInternPool::StringID> &position_label_sids, std::vector<EvaluableNodeImmediateValue> &position_values,
 		std::vector<EvaluableNodeImmediateValueType> &position_value_types)
 	{
 		size_t num_features = position_values.size();
 		r_dist_eval.featureData.resize(num_features);
 		for(size_t query_feature_index = 0; query_feature_index < num_features; query_feature_index++)
 		{
-			auto column = labelIdToColumnIndex.find(position_label_ids[query_feature_index]);
+			auto column = labelIdToColumnIndex.find(position_label_sids[query_feature_index]);
 			if(column != end(labelIdToColumnIndex))
 				PopulateTargetValueAndLabelIndex(r_dist_eval, query_feature_index,
 					position_values[query_feature_index], position_value_types[query_feature_index]);
@@ -962,11 +962,11 @@ public:
 
 	//sets values in dist_eval corresponding to the columns specified by position_label_ids
 	inline void PopulateGeneralizedDistanceEvaluatorFromColumnData(
-		GeneralizedDistanceEvaluator &dist_eval, std::vector<size_t> &position_label_ids)
+		GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids)
 	{
-		for(size_t query_feature_index = 0; query_feature_index < position_label_ids.size(); query_feature_index++)
+		for(size_t query_feature_index = 0; query_feature_index < position_label_sids.size(); query_feature_index++)
 		{
-			auto column = labelIdToColumnIndex.find(position_label_ids[query_feature_index]);
+			auto column = labelIdToColumnIndex.find(position_label_sids[query_feature_index]);
 			if(column == end(labelIdToColumnIndex))
 				continue;
 

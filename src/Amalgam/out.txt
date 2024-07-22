@@ -1288,7 +1288,7 @@ current_index: 2
 		interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1721593151.724614
+		start_time 1721654630.133332
 		www 1
 		x 12
 		zz 10
@@ -1331,7 +1331,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1721593151.724614
+	start_time 1721654630.133332
 	www 1
 	x 12
 	zz 10
@@ -1373,7 +1373,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1721593151.724614
+	start_time 1721654630.133332
 	www 1
 	x 12
 	zz 10
@@ -1639,7 +1639,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2024-07-21-16.19.12.3718350
+current date-time in epoch: 2024-07-22-09.23.50.6005630
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -2408,18 +2408,13 @@ decrypted: hello
 ]
 [
 	1
-	5
-	3
+	2.5
 	(associate "a" 3 "b" 4)
 	(lambda
 		(if
 			true
 			1
-			(parallel
-				(get_entity_comments)
-				1
-				(lambda (print))
-			)
+			(parallel (get_entity_comments) 1)
 		)
 	)
 	[6]
@@ -2784,10 +2779,10 @@ MergeEntityChild1
 (associate "x" 3 "y" 4)
 MergeEntityChild2
 (associate "p" 3 "q" 4)
-_2280722175
-(associate "E" 3 "F" 4)
 _2169689611
 (associate "e" 3 "f" 4)
+_2280722175
+(associate "E" 3 "F" 4)
 --union_entities--
 (associate "b" 4 "a" 3 "c" 3)
 MergeEntityChild1
@@ -2805,17 +2800,6 @@ MergeEntityChild2
 	"w"
 	7
 )
-_2280722175
-(associate
-	"E"
-	3
-	"F"
-	4
-	"G"
-	5
-	"H"
-	6
-)
 _2169689611
 (associate
 	"e"
@@ -2825,6 +2809,17 @@ _2169689611
 	"g"
 	5
 	"h"
+	6
+)
+_2280722175
+(associate
+	"E"
+	3
+	"F"
+	4
+	"G"
+	5
+	"H"
 	6
 )
 (parallel
@@ -3181,14 +3176,8 @@ _432807187
 						[]
 						(lambda
 							{
-								E (get
-										(current_value 1)
-										"E"
-									)
-								F (get
-										(current_value 1)
-										"F"
-									)
+								E 3
+								F 4
 								G 5
 								H 6
 							}
@@ -3213,16 +3202,7 @@ _432807187
 						_
 						[]
 						(lambda
-							{
-								e (get
-										(current_value 1)
-										"e"
-									)
-								f (get
-										(current_value 1)
-										"f"
-									)
-							}
+							{e 3 f 4}
 						)
 					)
 				)
@@ -3254,89 +3234,7 @@ contained_entities new_entity: ["DiffEntityChild1" "OnlyIn2" "_350925375" "_2742
 difference between DiffEntity2 and new_entity:
 (declare
 	{_ (null) new_entity (null)}
-	(assign
-		"new_entity"
-		(first
-			(create_entities
-				new_entity
-				(call
-					(lambda
-						(declare
-							{_ (null)}
-							(replace _)
-						)
-					)
-					{
-						_ (retrieve_entity_root _)
-					}
-				)
-			)
-		)
-	)
-	(create_entities
-		(append new_entity "_350925375")
-		(call
-			(lambda
-				(declare
-					{_ (null)}
-					(replace
-						_
-						[]
-						(lambda
-							{
-								E (null)
-								F (null)
-								G (get
-										(current_value 1)
-										"G"
-									)
-								H (get
-										(current_value 1)
-										"H"
-									)
-							}
-						)
-					)
-				)
-			)
-			{
-				_ (retrieve_entity_root
-						(append _ "_350925375")
-					)
-			}
-		)
-	)
-	(create_entities
-		(append new_entity "_2742810479")
-		(call
-			(lambda
-				(declare
-					{_ (null)}
-					(replace
-						_
-						[]
-						(lambda
-							{e (null) f (null)}
-						)
-					)
-				)
-			)
-			{
-				_ (retrieve_entity_root
-						(append _ "_2742810479")
-					)
-			}
-		)
-	)
-	(clone_entities
-		(append _ "DiffEntityChild1")
-		(append new_entity "DiffEntityChild1")
-	)
-	(clone_entities
-		(append _ "OnlyIn2")
-		(append new_entity "OnlyIn2")
-	)
-	new_entity
+	(clone_entities _ new_entity)
 )
 (declare
 	{_ (null) new_entity (null)}
@@ -3570,10 +3468,10 @@ MergeEntityChild2
 	"w"
 	7
 )
-_2280722175
-(associate "E" 3 "F" 4 "H" 6)
 _2169689611
-(associate "e" 3 "f" 4 "g" 5)
+(associate "e" 3 "f" 4 "h" 6)
+_2280722175
+(associate "E" 3 "F" 4 "G" 5)
 --get_entity_comments--
 Full test
 This is a suite of unit tests.
@@ -3651,7 +3549,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1721593152.538222
+1721654630.776187
 (true)
 
 RootTest
@@ -4894,4 +4792,4 @@ concurrent entity writes successful: (true)
 
 --clean-up test files--
 --total execution time--
-1.6156280040740967
+1.4997260570526123

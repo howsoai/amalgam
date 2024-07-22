@@ -306,9 +306,10 @@ public:
 
 			//one is static, destroy the other
 			if(sid_1_static)
-				DestroyStringReference(sid_2_static);
+				DestroyStringReference(sid_2);
 			else
-				DestroyStringReference(sid_1_static);
+				DestroyStringReference(sid_1);
+			return;
 		}
 		
 		std::array<StringID, 2> string_ids = { sid_1, sid_2 };

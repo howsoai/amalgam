@@ -1445,6 +1445,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, bo
 			return EvaluableNodeReference::Null();
 		number_to_generate = static_cast<size_t>(num_value);
 		generate_list = true;
+		//because generating a list, can no longer return an immediate
+		immediate_result = false;
 	}
 	//make sure not eating up too much memory
 	if(ConstrainedAllocatedNodes())
@@ -1748,6 +1750,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEIGHTED_RAND(EvaluableNod
 			return EvaluableNodeReference::Null();
 		number_to_generate = static_cast<size_t>(num_value);
 		generate_list = true;
+		//because generating a list, can no longer return an immediate
+		immediate_result = false;
 	}
 	//make sure not eating up too much memory
 	if(ConstrainedAllocatedNodes())

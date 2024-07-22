@@ -1288,7 +1288,7 @@ current_index: 2
 		interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1721437818.044698
+		start_time 1721611539.939273
 		www 1
 		x 12
 		zz 10
@@ -1331,7 +1331,7 @@ current_index: 2
 	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1721437818.044698
+	start_time 1721611539.939273
 	www 1
 	x 12
 	zz 10
@@ -1373,7 +1373,7 @@ current_index: 2
 	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1721437818.044698
+	start_time 1721611539.939273
 	www 1
 	x 12
 	zz 10
@@ -1639,7 +1639,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2024-07-19-21.10.18.0918270
+current date-time in epoch: 2024-07-21-21.25.39.9845480
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -2477,8 +2477,8 @@ abcdeoxyz
 	[5 6]
 ]
 --total_entity_size--
-37
-45
+79
+87
 --flatten_entity--
 0.4476445420518951
 iûÛAŽ;@Vëó¬OV-ÿ
@@ -2775,9 +2775,9 @@ flatten restore with parallel
 ]
 
 --commonality_entities--
-23.367879450321198
+73.3678794503212
 --edit_distance_entities--
-35.264241099357605
+19.264241099357605
 --intersect_entities--
 (associate "b" 4)
 MergeEntityChild1
@@ -3651,7 +3651,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1721437818.367976
+1721611540.255183
 (true)
 
 RootTest
@@ -4894,4 +4894,4 @@ concurrent entity writes successful: (true)
 
 --clean-up test files--
 --total execution time--
-1.639106035232544
+1.3509938716888428

@@ -777,7 +777,8 @@ bool Interpreter::PopulatePerformanceConstraintsFromParams(std::vector<Evaluable
 	if(params.size() > execution_steps_offset)
 	{
 		double value = InterpretNodeIntoNumberValue(params[execution_steps_offset]);
-		if(!FastIsNaN(value))
+		//nan will fail, so don't need a separate nan check
+		if(value >= 1.0)
 		{
 			perf_constraints.maxNumExecutionSteps = static_cast<ExecutionCycleCount>(value);
 			any_constraints = true;
@@ -791,7 +792,8 @@ bool Interpreter::PopulatePerformanceConstraintsFromParams(std::vector<Evaluable
 	if(params.size() > nodes_allowed_offset)
 	{
 		double value = InterpretNodeIntoNumberValue(params[nodes_allowed_offset]);
-		if(!FastIsNaN(value))
+		//nan will fail, so don't need a separate nan check
+		if(value >= 1.0)
 		{
 			perf_constraints.maxNumAllocatedNodes = static_cast<ExecutionCycleCount>(value);
 			any_constraints = true;
@@ -803,7 +805,8 @@ bool Interpreter::PopulatePerformanceConstraintsFromParams(std::vector<Evaluable
 	if(params.size() > stack_depth_allowed_offset)
 	{
 		double value = InterpretNodeIntoNumberValue(params[stack_depth_allowed_offset]);
-		if(!FastIsNaN(value))
+		//nan will fail, so don't need a separate nan check
+		if(value >= 1.0)
 		{
 			perf_constraints.maxOpcodeExecutionDepth = static_cast<ExecutionCycleCount>(value);
 			any_constraints = true;

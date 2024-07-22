@@ -497,12 +497,8 @@ size_t Entity::GetDeepSizeInNodes()
 {
 	size_t total_size = GetSizeInNodes();
 
-	//count one more for being an entity
-	total_size += 1;
-
-	//count one more if customly named
-	if(IsNamedEntity(GetId()))
-		total_size += 1;
+	//count for creating the entity
+	total_size += GetEntityCreationSizeInNodes();
 
 	for(auto entity : GetContainedEntities())
 		total_size += entity->GetDeepSizeInNodes();

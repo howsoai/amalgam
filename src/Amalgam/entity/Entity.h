@@ -708,6 +708,13 @@ public:
 	//ensures that there are no reachable nodes that are deallocated
 	void VerifyEvaluableNodeIntegrity();
 
+	//this is an estimate of the number of nodes required to reconstruct the entity if it were flattened
+	// including amortization of all extra overhead
+	static inline size_t GetEntityCreationSizeInNodes()
+	{
+		return 10;
+	}
+
 	//nodes used for storing the entity and for all interpreters for this entity
 	//the 0th node is implicitly the root node of the entity
 	EvaluableNodeManager evaluableNodeManager;

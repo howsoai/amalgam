@@ -424,7 +424,8 @@ MergeMetricResults<Entity *> EntityManipulation::NumberOfSharedNodes(Entity *ent
 	if(entity1 == nullptr || entity2 == nullptr)
 		return MergeMetricResults(0.0, entity1, entity2, false, false);
 
-	MergeMetricResults commonality(0.0, entity1, entity2);
+	//start the initial commonality as that required to create an entity
+	MergeMetricResults commonality(static_cast<double>(Entity::GetEntityCreationSizeInNodes()), entity1, entity2);
 	commonality += EvaluableNodeTreeManipulation::NumberOfSharedNodes(entity1->GetRoot(), entity2->GetRoot());
 
 	Entity::EntityLookupAssocType entity1_unmatched = CreateContainedEntityLookupByStringId(entity1);

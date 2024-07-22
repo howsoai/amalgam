@@ -160,12 +160,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT(EvaluableNode *e
 
 	EvaluableNode *result = EvaluableNodeTreeManipulation::IntersectTrees(evaluableNodeManager, n1, n2);
 
-	//both must be unique and both must be cycle free, otherwise there's a possibility of a cycle
-	bool cycle_free = (n1.unique && n2.unique && !n1.GetNeedCycleCheck() && !n2.GetNeedCycleCheck());
-	//if cycle, double-check everything
-	if(!cycle_free)
-		EvaluableNodeManager::UpdateFlagsForNodeTree(result);
-	return EvaluableNodeReference(result, (n1.unique && n2.unique));
+	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
+	return EvaluableNodeReference(result, true);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION(EvaluableNode *en, bool immediate_result)
@@ -183,12 +179,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION(EvaluableNode *en, b
 
 	EvaluableNode *result = EvaluableNodeTreeManipulation::UnionTrees(evaluableNodeManager, n1, n2);
 
-	//both must be unique and both must be cycle free, otherwise there's a possibility of a cycle
-	bool cycle_free = (n1.unique && n2.unique && !n1.GetNeedCycleCheck() && !n2.GetNeedCycleCheck());
-	//if cycle, double-check everything
-	if(!cycle_free)
-		EvaluableNodeManager::UpdateFlagsForNodeTree(result);
-	return EvaluableNodeReference(result, (n1.unique && n2.unique));
+	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
+	return EvaluableNodeReference(result, true);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_DIFFERENCE(EvaluableNode *en, bool immediate_result)
@@ -206,11 +198,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DIFFERENCE(EvaluableNode *
 
 	EvaluableNode *result = EvaluableNodeTreeDifference::DifferenceTrees(evaluableNodeManager, n1, n2);
 
-	//both must be unique and both must be cycle free, otherwise there's a possibility of a cycle
-	bool cycle_free = (n1.unique && n2.unique && !n1.GetNeedCycleCheck() && !n2.GetNeedCycleCheck());
-	//if cycle, double-check everything
-	if(!cycle_free)
-		EvaluableNodeManager::UpdateFlagsForNodeTree(result);
+	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 	return EvaluableNodeReference(result, (n1.unique && n2.unique));
 }
 
@@ -265,12 +253,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX(EvaluableNode *en, boo
 	EvaluableNode *result = EvaluableNodeTreeManipulation::MixTrees(randomStream.CreateOtherStreamViaRand(),
 		evaluableNodeManager, n1, n2, blend1, blend2, similar_mix_chance);
 
-	//both must be unique and both must be cycle free, otherwise there's a possibility of a cycle
-	bool cycle_free = (n1.unique && n2.unique && !n1.GetNeedCycleCheck() && !n2.GetNeedCycleCheck());
-	//if cycle, double-check everything
-	if(!cycle_free)
-		EvaluableNodeManager::UpdateFlagsForNodeTree(result);
-	return EvaluableNodeReference(result, (n1.unique && n2.unique));
+	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
+	return EvaluableNodeReference(result, true);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_LABELS(EvaluableNode *en, bool immediate_result)
@@ -315,11 +299,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_LABELS(EvaluableNode *
 
 	EvaluableNode *result = EvaluableNodeTreeManipulation::MixTreesByCommonLabels(this, evaluableNodeManager, n1, n2, randomStream, blend1, blend2);
 
-	//both must be unique and both must be cycle free, otherwise there's a possibility of a cycle
-	bool cycle_free = (n1.unique && n2.unique && !n1.GetNeedCycleCheck() && !n2.GetNeedCycleCheck());
-	//if cycle, double-check everything
-	if(!cycle_free)
-		EvaluableNodeManager::UpdateFlagsForNodeTree(result);
+	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 	return EvaluableNodeReference(result, (n1.unique && n2.unique));
 }
 

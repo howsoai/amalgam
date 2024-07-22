@@ -267,10 +267,7 @@ public:
 			{
 				//no match, so keep it for later if keeping all
 				if(KeepSomeNonMergeableValues())
-				{
-					T m = MergeValues(a1[0], NullValue, true);
-					unmatched_a1.emplace_back(m);
-				}
+					unmatched_a1.emplace_back(a1[0]);
 			}
 
 			//remove from the first list

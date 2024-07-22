@@ -671,12 +671,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSI
 	//handle errors
 	if(!status.loaded)
 		return EvaluableNodeReference::Null();
-	if(new_entity_id == StringInternPool::NOT_A_STRING_ID)
-	{
-		if(loaded_entity != nullptr)
-			delete loaded_entity;
-		return EvaluableNodeReference::Null();
-	}
 
 	//accumulate usage
 	if(ConstrainedAllocatedNodes())

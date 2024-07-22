@@ -338,13 +338,13 @@ std::pair<std::string, bool> AssetManager::ValidateVersionAgainstAmalgam(std::st
 		(major == AMALGAM_VERSION_MAJOR && minor > AMALGAM_VERSION_MINOR) ||
 		(major == AMALGAM_VERSION_MAJOR && minor == AMALGAM_VERSION_MINOR && patch > AMALGAM_VERSION_PATCH))
 	{
-		std::string err_msg = "Reading newer version not supported";
+		std::string err_msg = "Parsing Amalgam that is more recent than the current version is not supported";
 		std::cerr << err_msg << ", version=" << version << std::endl;
 		return std::make_pair(err_msg, false);
 	}
 	else if(AMALGAM_VERSION_MAJOR > major)
 	{
-		std::string err_msg = "Newer Amalgam cannot read older versions";
+		std::string err_msg = "Parsing Amalgam that is older than the current major version is not supported";
 		std::cerr << err_msg << ", version=" << version << std::endl;
 		return std::make_pair(err_msg, false);
 	}

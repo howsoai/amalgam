@@ -18,7 +18,6 @@ On your personal machine, you may find it easier to copy [.env.sample](./.env.sa
 
 ## Run tests
 
-````bash
-npm run test
 ```bash
-````
+npm run test
+```

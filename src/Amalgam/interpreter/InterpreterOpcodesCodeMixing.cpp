@@ -165,7 +165,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT(EvaluableNode *e
 	//if cycle, double-check everything
 	if(!cycle_free)
 		EvaluableNodeManager::UpdateFlagsForNodeTree(result);
-	return EvaluableNodeReference(result, (n1.unique && n2.unique));
+	return EvaluableNodeReference(result, true);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION(EvaluableNode *en, bool immediate_result)
@@ -188,7 +188,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION(EvaluableNode *en, b
 	//if cycle, double-check everything
 	if(!cycle_free)
 		EvaluableNodeManager::UpdateFlagsForNodeTree(result);
-	return EvaluableNodeReference(result, (n1.unique && n2.unique));
+	return EvaluableNodeReference(result, true);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_DIFFERENCE(EvaluableNode *en, bool immediate_result)
@@ -270,7 +270,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX(EvaluableNode *en, boo
 	//if cycle, double-check everything
 	if(!cycle_free)
 		EvaluableNodeManager::UpdateFlagsForNodeTree(result);
-	return EvaluableNodeReference(result, (n1.unique && n2.unique));
+	return EvaluableNodeReference(result, true);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_LABELS(EvaluableNode *en, bool immediate_result)

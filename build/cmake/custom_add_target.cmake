@@ -214,10 +214,12 @@ function(add_compiled_target)
         elseif(IS_GCC_FLAG_COMPAT_COMPILER)
             target_link_libraries(${TARGET_NAME} PUBLIC -lgomp)
         elseif(IS_APPLECLANG)
-            # Assumes libomp was installed with brew at this location
-            target_compile_options(${TARGET_NAME} PUBLIC -Xpreprocessor -fopenmp -I/usr/local/opt/libomp/include)
-            target_link_options(${TARGET_NAME} PUBLIC -L/usr/local/opt/libomp/lib)
-            target_link_libraries(${TARGET_NAME} PUBLIC /usr/local/opt/libomp/lib/libomp.a)
+            # Look for libomp installed via Homebrew
+            find_library(OMP_LIB libomp.a PATHS /usr/local/opt/libomp /opt/homebrew/opt/libomp PATH_SUFFIXES /lib DOC "Location of libomp" REQUIRED)
+            find_path(OMP_INCLUDE omp.h PATHS /usr/local/opt/libomp /opt/homebrew/opt/libomp PATH_SUFFIXES /include REQUIRED)
+            target_compile_options(${TARGET_NAME} PUBLIC -Xpreprocessor -fopenmp)
+            target_include_directories(${TARGET_NAME} PUBLIC ${OMP_INCLUDE})
+            target_link_libraries(${TARGET_NAME} PUBLIC ${OMP_LIB})
         endif()
     endif()
 

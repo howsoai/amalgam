@@ -574,7 +574,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, b
 		if(!condition_true)
 			break;
 
-		if(AreExecutionResourcesExhausted())
+		//count an extra cycle for each loop
+		//this ensures that even if all of the nodes are immediate, it'll still count the performance
+		if(AreExecutionResourcesExhausted(true))
 			return EvaluableNodeReference::Null();
 
 		SetTopPreviousResultInConstructionStack(previous_result);

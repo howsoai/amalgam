@@ -480,6 +480,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TYPE_EQUALS(EvaluableNode 
 
 	bool processed_first_value = false;
 	EvaluableNodeReference to_match = EvaluableNodeReference::Null();
+	EvaluableNodeType to_match_type = ENT_NULL;
 
 #ifdef MULTITHREAD_SUPPORT
 	std::vector<EvaluableNodeReference> interpreted_nodes;
@@ -491,6 +492,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TYPE_EQUALS(EvaluableNode 
 			if(!processed_first_value)
 			{
 				to_match = cur;
+				if(to_match != nullptr)
+					to_match_type = to_match->GetType();
 				processed_first_value = true;
 				continue;
 			}
@@ -498,10 +501,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TYPE_EQUALS(EvaluableNode 
 			EvaluableNodeType cur_type = ENT_NULL;
 			if(cur != nullptr)
 				cur_type = cur->GetType();
-
-			EvaluableNodeType to_match_type = ENT_NULL;
-			if(to_match != nullptr)
-				to_match_type = to_match->GetType();
 
 			if(cur_type != to_match_type)
 				return ReuseOrAllocOneOfReturn(to_match, cur, false, immediate_result);
@@ -523,6 +522,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TYPE_EQUALS(EvaluableNode 
 		if(!processed_first_value)
 		{
 			to_match = cur;
+			if(to_match != nullptr)
+				to_match_type = to_match->GetType();
 			node_stack.PushEvaluableNode(to_match);
 			processed_first_value = true;
 			continue;
@@ -531,10 +532,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TYPE_EQUALS(EvaluableNode 
 		EvaluableNodeType cur_type = ENT_NULL;
 		if(cur != nullptr)
 			cur_type = cur->GetType();
-		
-		EvaluableNodeType to_match_type = ENT_NULL;
-		if(to_match != nullptr)
-			to_match_type = to_match->GetType();
 
 		if(cur_type != to_match_type)
 			return ReuseOrAllocOneOfReturn(to_match, cur, false, immediate_result);
@@ -551,6 +548,23 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TYPE_NEQUALS(EvaluableNode
 
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
+
+	//special (faster) case for comparing two
+	if(ocn.size() == 2)
+	{
+		EvaluableNodeReference a = InterpretNodeForImmediateUse(ocn[0]);
+		EvaluableNodeType a_type = ENT_NULL;
+		if(a != nullptr)
+			a_type = a->GetType();
+
+		auto node_stack = CreateInterpreterNodeStackStateSaver(a);
+		EvaluableNodeReference b = InterpretNodeForImmediateUse(ocn[1]);
+		EvaluableNodeType b_type = ENT_NULL;
+		if(b != nullptr)
+			b_type = b->GetType();
+
+		return ReuseOrAllocOneOfReturn(a, b, a_type != b_type, immediate_result);
+	}
 
 	std::vector<EvaluableNodeReference> values(ocn.size());
 
@@ -572,8 +586,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TYPE_NEQUALS(EvaluableNode
 			EvaluableNode *cur1 = values[i];
 			EvaluableNode *cur2 = values[j];
 
+			EvaluableNodeType cur1_type = ENT_NULL;
+			if(cur1 != nullptr)
+				cur1_type = cur1->GetType();
+
+			EvaluableNodeType cur2_type = ENT_NULL;
+			if(cur2 != nullptr)
+				cur2_type = cur2->GetType();
+
 			//if they're equal, then it fails
-			if((cur1 == nullptr && cur2 == nullptr) || (cur1 != nullptr && cur2 != nullptr && cur1->GetType() == cur2->GetType()))
+			if(cur1_type == cur2_type)
 			{
 				all_not_equal = false;
 

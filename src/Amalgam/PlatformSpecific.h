@@ -216,7 +216,7 @@ std::string Platform_GetOperatingSystemName();
 #pragma GCC diagnostic pop
 #endif
 
-inline void Platform_Assert(bool expr, char *file, int line)
+inline void Platform_Assert(bool expr, const char *file, int line)
 {
 	if(!expr)
 	{

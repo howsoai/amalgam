@@ -73,15 +73,15 @@ Pre-built binaries are provided for specific target systems. They are as statica
 
 An interpreter application and shared library (dll/so/dylib) are built for each release. A versioned tarball is created for each target platform in the build matrix:
 
-| Platform                     | Variants <sup>1</sup>         | Automated Testing  | Notes |
-|------------------------------|-------------------------------|:------------------:|-------|
-| Windows amd64                | MT, ST, OMP, MT-NoAVX         | :heavy_check_mark: | |
-| Linux amd64                  | MT, ST, OMP, MT-NoAVX, ST-PGC | :heavy_check_mark: | ST-PGC is for testing only, not packaged for release |
-| Linux arm64: 8.2-a+simd+rcpc | MT, ST, OMP                   | :heavy_check_mark: | Tested with [qemu](https://www.qemu.org/) |
-| Linux arm64: 8-a+simd        | ST                            | :heavy_check_mark: | Tested with [qemu](https://www.qemu.org/) |
-| macOS amd64                  | MT, ST, OMP, MT-NoAVX         | :heavy_check_mark: | |
-| macOS arm64: 8.4-a+simd      | MT, ST, OMP                   | :heavy_check_mark: | M1 and newer supported (amd64 NoAVX also tested w/ emulation) |
-| WASM 64-bit                  | ST                            | :heavy_check_mark: | Built on linux using emscripten, headless test with node:18 + jest |
+| Platform                     | Variants <sup>1</sup>               | Automated Testing  | Notes |
+|------------------------------|-------------------------------------|:------------------:|-------|
+| Windows amd64                | MT, ST, OMP, MT-NoAVX               | :heavy_check_mark: | |
+| Linux amd64                  | MT, ST, OMP, MT-NoAVX, ST-PGC, AFMI | :heavy_check_mark: | ST-PGC and AFMI are for testing only, not packaged for release |
+| Linux arm64: 8.2-a+simd+rcpc | MT, ST, OMP                         | :heavy_check_mark: | Tested with [qemu](https://www.qemu.org/) |
+| Linux arm64: 8-a+simd        | ST                                  | :heavy_check_mark: | Tested with [qemu](https://www.qemu.org/) |
+| macOS amd64                  | MT, ST, OMP, MT-NoAVX               | :heavy_check_mark: | |
+| macOS arm64: 8.4-a+simd      | MT, ST, OMP                         | :heavy_check_mark: | M1 and newer supported (amd64 NoAVX also tested w/ emulation) |
+| WASM 64-bit                  | ST                                  | :heavy_check_mark: | Built on linux using emscripten, headless test with node:18 + jest |
 
 * <sup>1</sup> Variant meanings:
     * MT

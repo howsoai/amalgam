@@ -11,7 +11,7 @@ THIRD_PARTY_FLAGS="-DUSE_OS_TZDB=1 -Wno-deprecated-declarations"
 # debug flags
 COMPILER_FLAGS="-g -O0"
 #release flags
-#COMPILER_FLAGS="-O3"
+#COMPILER_FLAGS="-g -O3 -DMULTITHREAD_SUPPORT"
 
 LINKER_FLAGS="-lpthread"
 

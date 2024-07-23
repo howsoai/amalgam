@@ -203,56 +203,36 @@ bool Platform_IsDebuggerPresent();
 //returns a string representing the name of the operating system
 std::string Platform_GetOperatingSystemName();
 
-//platform dependent assertion function
-#ifdef _DEBUG
-
 #ifdef OS_MAC
 // warnings thrown on OS_MAC
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmacro-redefined"
 #endif
 
-#define assert(expr) Platform_Assert(expr, __LINE__)
+#define assert(expr) Platform_Assert(expr, __FILE__, __LINE__)
 
 #ifdef OS_MAC
 // warnings thrown on OS_MAC
 #pragma GCC diagnostic pop
 #endif
 
-inline void Platform_Assert(bool expr, size_t line)
+inline void Platform_Assert(bool expr, char *file, int line)
 {
 	if(!expr)
 	{
-		std::cerr << "Runtime Exception: Debug Assertion Failed!\nLine: " << line << "\n";
-#ifdef OS_WINDOWS
-		_ASSERT(expr);
-#else
-		raise(SIGTRAP);
-#endif
-		exit(-1);
-	}
-}
+		std::cerr << "Runtime Exception: Debug Assertion Failed at line " << line << " of " << file << "\n";
 
-#else
+	//platform dependent assertion function
+	#ifdef _DEBUG
 
-#ifdef OS_MAC
-// warnings thrown on OS_MAC
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmacro-redefined"
-#endif
+		#ifdef OS_WINDOWS
+			_ASSERT(expr);
+		#else
+			raise(SIGTRAP);
+		#endif
+			exit(-1);
 
-#define assert(expr) Platform_Assert(expr)
-
-#ifdef OS_MAC
-// warnings thrown on OS_MAC
-#pragma GCC diagnostic pop
-#endif
-
-inline void Platform_Assert(bool expr)
-{
-	if(!expr)
-	{
-		std::cerr << "Runtime Exception: Debug Assertion Failed!\n";
+	#else
 		if(Platform_IsDebuggerPresent())
 		{
 			//wait for user input
@@ -260,7 +240,6 @@ inline void Platform_Assert(bool expr)
 			std::getline(std::cin, temp);
 		}
 		exit(-1);
+	#endif
 	}
 }
-
-#endif

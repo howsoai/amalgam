@@ -21,6 +21,10 @@
 
 //if the macro AMALGAM_MEMORY_INTEGRITY is defined, then it will continuously verify memory, at a high cost of performance
 //this is useful for diagnosing and debugging memory issues
+//if the macro AMALGAM_FAST_MEMORY_INTEGRITY is defined, then only the checks that are fast will be made
+#ifdef AMALGAM_MEMORY_INTEGRITY
+#define AMALGAM_FAST_MEMORY_INTEGRITY
+#endif
 
 //forward declarations:
 class EvaluableNodeManager;
@@ -57,7 +61,8 @@ public:
 
 	__forceinline ~EvaluableNode()
 	{
-		Invalidate();
+		if(!IsNodeDeallocated())
+			Invalidate();
 	}
 
 	//clears out all data and makes the unusable in the ENT_DEALLOCATED state
@@ -416,7 +421,7 @@ public:
 	//gets current type
 	constexpr EvaluableNodeType &GetType()
 	{
-	#ifdef AMALGAM_MEMORY_INTEGRITY
+	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 		if(type == ENT_DEALLOCATED)
 		{
 			assert(false);

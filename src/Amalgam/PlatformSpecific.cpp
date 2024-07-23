@@ -14,6 +14,11 @@
 #include <cstring>
 #include <fstream>
 
+//3rd party headers:
+#include "backward/backward.hpp"
+
+backward::SignalHandling sh;
+
 //perform universal initialization
 class PlatformSpecificStartup
 {

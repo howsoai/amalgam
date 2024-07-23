@@ -90,6 +90,7 @@ message(STATUS "Linker C++ lib release flags : ${CMAKE_SHARED_LINKER_FLAGS_RELEA
 # Common source between apps & libs
 # Note: do not change to globbing, that is a CMake anti-pattern
 set(COMMON_SOURCE
+    src/backward/backward.hpp
     src/3rd_party/date/date.h
     src/3rd_party/date/ios.h
     src/3rd_party/date/tz.cpp

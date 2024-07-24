@@ -314,7 +314,7 @@ public:
 			if(prev_tasks_completed + 1 == numTasks)
 			{
 				std::unique_lock<std::mutex> lock(mutex);
-				cond_var.notify_one();
+				cond_var.notify_all();
 			}
 		}
 

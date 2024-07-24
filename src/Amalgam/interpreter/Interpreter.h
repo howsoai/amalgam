@@ -760,14 +760,14 @@ protected:
 		//updates the aggregated result reference's properties based on all of the child nodes
 		inline void UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(EvaluableNodeReference &new_result)
 		{
-			new_result.unique &= resultsUnique;
+			if(!resultsUnique)
+				new_result.unique = false;
 
-			//if any of the results were not unique, then they may be duplicated
-			if(resultsNeedCycleCheck || !new_result.unique)
+			if(resultsNeedCycleCheck)
 				new_result.SetNeedCycleCheck(true);
 
 			if(!resultsIdempotent)
-				new_result.SetIsIdempotent(resultsIdempotent);
+				new_result.SetIsIdempotent(false);
 		}
 
 		//returns the relevant write mutex for the call stack

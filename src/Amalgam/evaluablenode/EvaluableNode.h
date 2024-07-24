@@ -752,7 +752,8 @@ public:
 	//returns a pointer to the pointer of the child node, creating it if necessary and populating it with a nullptr
 	EvaluableNode **GetOrCreateMappedChildNode(const StringInternPool::StringID sid);
 	// if copy is set to true, then it will copy the map, otherwise it will swap
-	void SetMappedChildNodes(AssocType &new_mcn, bool copy);
+	void SetMappedChildNodes(AssocType &new_mcn, bool copy,
+		bool need_cycle_check = true, bool is_idempotent = false);
 	//if overwrite is true, then it will overwrite the value, otherwise it will only set it if it does not exist
 	// will return true if it was successfully written (false if overwrite is set to false and the key already exists),
 	// as well as a pointer to where the pointer is stored

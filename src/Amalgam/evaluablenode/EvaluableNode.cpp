@@ -436,7 +436,7 @@ void EvaluableNode::CopyValueFrom(EvaluableNode *n)
 		if(n_mcn.empty())
 			ClearMappedChildNodes();
 		else
-			SetMappedChildNodes(n_mcn, true);
+			SetMappedChildNodes(n_mcn, true, n->GetNeedCycleCheck(), n->GetIsIdempotent());
 	}
 	else if(DoesEvaluableNodeTypeUseNumberData(cur_type))
 		GetNumberValueReference() = n->GetNumberValueReference();
@@ -1285,7 +1285,7 @@ EvaluableNode **EvaluableNode::GetOrCreateMappedChildNode(const StringInternPool
 	return &inserted_node->second;
 }
 
-void EvaluableNode::SetMappedChildNodes(AssocType &new_mcn, bool copy)
+void EvaluableNode::SetMappedChildNodes(AssocType &new_mcn, bool copy, bool need_cycle_check, bool is_idempotent)
 {
 	if(!IsAssociativeArray())
 		return;
@@ -1304,34 +1304,12 @@ void EvaluableNode::SetMappedChildNodes(AssocType &new_mcn, bool copy)
 	else
 		mcn.swap(new_mcn);
 
-	//if cycles, propagate upward
-	SetNeedCycleCheck(false);
-	for(auto &[_, cn] : mcn)
-	{
-		if(cn != nullptr && cn->GetNeedCycleCheck())
-		{
-			SetNeedCycleCheck(true);
-			break;
-		}
-	}
+	SetNeedCycleCheck(need_cycle_check);
 
-	//set idempotency
-	if(GetNumLabels() == 0)
-	{
-		//if potentially idempotent, then see if it is
-		if(IsEvaluableNodeTypePotentiallyIdempotent(type))
-		{
-			SetIsIdempotent(true);
-			for(auto &[_, cn] : mcn)
-			{
-				if(cn != nullptr && !cn->GetIsIdempotent())
-				{
-					SetIsIdempotent(false);
-					break;
-				}
-			}
-		}
-	}
+	if(is_idempotent && (GetNumLabels() > 0 || !IsEvaluableNodeTypePotentiallyIdempotent(type)))
+		SetIsIdempotent(false);
+	else
+		SetIsIdempotent(is_idempotent);
 }
 
 std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const std::string &id, EvaluableNode *node, bool overwrite)

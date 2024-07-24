@@ -633,8 +633,7 @@ protected:
 			EvaluableNode *target_origin, EvaluableNode *target,
 			EvaluableNodeImmediateValueWithType current_index,
 			EvaluableNode *current_value,
-			EvaluableNodeRefType &result,
-			EvaluableNodeReference previous_result = EvaluableNodeReference::Null())
+			EvaluableNodeRefType &result)
 		{
 			//save a location in the stack now to store the result in later
 			resultsSaver.PushEvaluableNode(nullptr);
@@ -645,7 +644,7 @@ protected:
 
 			Concurrency::threadPool.BatchEnqueueTask(
 				[this, interpreter, node_to_execute, target_origin, target, current_index,
-					current_value, &result, previous_result, results_saver_location]
+					current_value, &result, results_saver_location]
 				{
 					EvaluableNodeManager *enm = interpreter->evaluableNodeManager;
 					interpreter->memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
@@ -654,7 +653,7 @@ protected:
 					EvaluableNode *construction_stack = enm->AllocListNode(parentInterpreter->constructionStackNodes);
 					std::vector<ConstructionStackIndexAndPreviousResultUniqueness> csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
 					interpreter->PushNewConstructionContextToStack(construction_stack->GetOrderedChildNodes(),
-						csiau, target_origin, target, current_index, current_value, previous_result);
+						csiau, target_origin, target, current_index, current_value, EvaluableNodeReference::Null());
 
 					auto result_ref = interpreter->ExecuteNode(node_to_execute,
 						enm->AllocListNode(parentInterpreter->callStackNodes),

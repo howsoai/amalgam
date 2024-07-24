@@ -609,8 +609,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, b
 	auto node_stack = CreateInterpreterNodeStackStateSaver(function);
 
 	EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_LIST), true);
-	auto &list_ocn = result->GetOrderedChildNodesReference();
-	list_ocn.resize(num_nodes);
+	auto &result_ocn = result->GetOrderedChildNodesReference();
+	result_ocn.resize(num_nodes);
 
 #ifdef MULTITHREAD_SUPPORT
 	if(en->GetConcurrency() && num_nodes > 1)
@@ -625,7 +625,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, b
 			for(size_t node_index = 0; node_index < num_nodes; node_index++)
 				concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNode *>(function,
 					nullptr, result, EvaluableNodeImmediateValueWithType(node_index * range_step_size + range_start),
-					nullptr, list_ocn[node_index]);
+					nullptr, result_ocn[node_index]);
 
 			enqueue_task_lock.Unlock();
 			concurrency_manager.EndConcurrency();
@@ -638,7 +638,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, b
 
 	PushNewConstructionContext(nullptr, result, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 
-	auto &result_ocn = result->GetOrderedChildNodesReference();
 	for(size_t i = 0; i < num_nodes; i++)
 	{
 		//pass index of list to be mapped -- leave value at nullptr

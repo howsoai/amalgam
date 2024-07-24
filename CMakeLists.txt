@@ -288,15 +288,22 @@ add_compiled_target(AUTO_NAME TYPE "app" USE_ADVANCED_ARCH_INTRINSICS
 add_compiled_target(AUTO_NAME TYPE "sharedlib" USE_ADVANCED_ARCH_INTRINSICS
     SOURCE ${AMALGAM_LIB_ONLY_SOURCE} ${COMMON_SOURCE} IDE_FOLDER "OtherBuildTargets")
 
-# Single-threaded PGC targets (amalgam-st-pgc):
-# Note: only run on amd64 linux since it is for test verification only, hence NO_INSTALL
+# Linux-only/amd64 debug targets
 if(IS_LINUX AND IS_AMD64)
+    # Single-threaded PGC targets (amalgam-st-pgc):
     add_compiled_target(AUTO_NAME TYPE "objlib" USE_ADVANCED_ARCH_INTRINSICS USE_PGC NO_INSTALL
         SOURCE ${COMMON_SOURCE} IDE_FOLDER "OtherBuildTargets")
     add_compiled_target(AUTO_NAME TYPE "app" USE_ADVANCED_ARCH_INTRINSICS USE_PGC NO_INSTALL
         SOURCE ${COMMON_SOURCE} APP_ONLY_SOURCE ${AMALGAM_APP_ONLY_SOURCE} IDE_FOLDER "OtherBuildTargets")
     add_compiled_target(AUTO_NAME TYPE "sharedlib" USE_ADVANCED_ARCH_INTRINSICS USE_PGC NO_INSTALL
         SOURCE ${AMALGAM_LIB_ONLY_SOURCE} ${COMMON_SOURCE} IDE_FOLDER "OtherBuildTargets")
+    # Multi-threaded AFMI targets (amalgam-mt-afmi)
+    add_compiled_target(AUTO_NAME TYPE "objlib" USE_ADVANCED_ARCH_INTRINSICS USE_AFMI
+        SOURCE ${COMMON_SOURCE_THREADS} IDE_FOLDER "OtherBuildTargets")
+    add_compiled_target(AUTO_NAME TYPE "app" USE_ADVANCED_ARCH_INTRINSICS USE_AFMI
+        SOURCE ${COMMON_SOURCE_THREADS} APP_ONLY_SOURCE ${AMALGAM_APP_ONLY_SOURCE})
+    add_compiled_target(AUTO_NAME TYPE "sharedlib" USE_ADVANCED_ARCH_INTRINSICS USE_AFMI
+        SOURCE ${AMALGAM_LIB_ONLY_SOURCE} ${COMMON_SOURCE_THREADS} IDE_FOLDER "OtherBuildTargets")
 endif()
 
 

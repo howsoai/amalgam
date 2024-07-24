@@ -405,7 +405,10 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 
 	delete root_merged;
 
-	EvaluableNodeManager::UpdateFlagsForNodeTree(difference_function);
+	//if anything isn't cycle free, then need to recompute everything
+	if(!cycle_free)
+		EvaluableNodeManager::UpdateFlagsForNodeTree(difference_function);
+
 	return EvaluableNodeReference(difference_function, true);
 }
 

@@ -304,7 +304,7 @@ public:
 		inline void WaitForTasks()
 		{
 			std::unique_lock<std::mutex> lock(mutex);
-			cond_var.wait(lock, [&] { return numTasksCompleted >= numTasks; });
+			cond_var.wait(lock, [this] { return numTasksCompleted >= numTasks; });
 		}
 
 		//marks one task as completed
@@ -314,7 +314,7 @@ public:
 			if(prev_tasks_completed + 1 == numTasks)
 			{
 				std::unique_lock<std::mutex> lock(mutex);
-				cond_var.notify_all();
+				cond_var.notify_one();
 			}
 		}
 

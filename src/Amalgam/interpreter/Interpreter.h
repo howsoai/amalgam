@@ -761,8 +761,11 @@ protected:
 		inline void UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(EvaluableNodeReference &new_result)
 		{
 			new_result.unique &= resultsUnique;
-			if(resultsNeedCycleCheck)
-				EvaluableNodeManager::UpdateFlagsForNodeTree(new_result);
+
+			//if any of the results were not unique, then they may be duplicated
+			if(resultsNeedCycleCheck || !new_result.unique)
+				new_result.SetNeedCycleCheck(true);
+
 			if(!resultsIdempotent)
 				new_result.SetIsIdempotent(resultsIdempotent);
 		}

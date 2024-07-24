@@ -160,7 +160,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT(EvaluableNode *e
 
 	EvaluableNode *result = EvaluableNodeTreeManipulation::IntersectTrees(evaluableNodeManager, n1, n2);
 
-	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
+	if(n1.GetNeedCycleCheck() || n2.GetNeedCycleCheck())
+		EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 	return EvaluableNodeReference(result, true);
 }
 
@@ -179,7 +180,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION(EvaluableNode *en, b
 
 	EvaluableNode *result = EvaluableNodeTreeManipulation::UnionTrees(evaluableNodeManager, n1, n2);
 
-	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
+	if(n1.GetNeedCycleCheck() || n2.GetNeedCycleCheck())
+		EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 	return EvaluableNodeReference(result, true);
 }
 
@@ -253,7 +255,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX(EvaluableNode *en, boo
 	EvaluableNode *result = EvaluableNodeTreeManipulation::MixTrees(randomStream.CreateOtherStreamViaRand(),
 		evaluableNodeManager, n1, n2, blend1, blend2, similar_mix_chance);
 
-	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
+	if(n1.GetNeedCycleCheck() || n2.GetNeedCycleCheck())
+		EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 	return EvaluableNodeReference(result, true);
 }
 

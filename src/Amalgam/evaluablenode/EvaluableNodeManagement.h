@@ -394,27 +394,24 @@ public:
 	//if candidate is not unique, then it allocates and returns a new node
 	inline EvaluableNodeReference ReuseOrAllocNode(EvaluableNodeReference candidate, EvaluableNodeType type)
 	{
-		if(candidate.unique && candidate != nullptr)
+		//if not cyclic, can attempt to free all child nodes
+		//if cyclic, don't try, in case a child node points back to candidate
+		if(candidate.unique && candidate != nullptr && !candidate->GetNeedCycleCheck())
 		{
-			//if not cyclic, can attempt to free all child nodes
-			//if cyclic, don't try, in case a child node points back to candidate
-			if(!candidate->GetNeedCycleCheck())
+			if(candidate->IsAssociativeArray())
 			{
-				if(candidate->IsAssociativeArray())
+				for(auto &[_, e] : candidate->GetMappedChildNodesReference())
 				{
-					for(auto &[_, e] : candidate->GetMappedChildNodesReference())
-					{
-						if(e != nullptr)
-							FreeNodeTreeRecurse(e);
-					}
+					if(e != nullptr)
+						FreeNodeTreeRecurse(e);
 				}
-				else if(!candidate->IsImmediate())
+			}
+			else if(!candidate->IsImmediate())
+			{
+				for(auto &e : candidate->GetOrderedChildNodesReference())
 				{
-					for(auto &e : candidate->GetOrderedChildNodesReference())
-					{
-						if(e != nullptr)
-							FreeNodeTreeRecurse(e);
-					}
+					if(e != nullptr)
+						FreeNodeTreeRecurse(e);
 				}
 			}
 
@@ -625,7 +622,7 @@ public:
 	//attempts to free the node reference
 	__forceinline void FreeNodeIfPossible(EvaluableNodeReference &enr)
 	{
-		if(enr.unique && !enr.IsImmediateValue())
+		if(enr.unique && !enr.IsImmediateValue() && !enr->GetNeedCycleCheck())
 			FreeNode(enr);
 	}
 

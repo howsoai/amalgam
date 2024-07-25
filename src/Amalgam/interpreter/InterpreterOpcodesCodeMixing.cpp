@@ -156,11 +156,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT(EvaluableNode *e
 	auto node_stack = CreateInterpreterNodeStackStateSaver(n1);
 
 	auto n2 = InterpretNodeForImmediateUse(ocn[1]);
-	node_stack.PushEvaluableNode(n2);
 
 	EvaluableNode *result = EvaluableNodeTreeManipulation::IntersectTrees(evaluableNodeManager, n1, n2);
-
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
+
+	evaluableNodeManager->FreeNodeTreeIfPossible(n1);
+	evaluableNodeManager->FreeNodeTreeIfPossible(n2);
+
 	return EvaluableNodeReference(result, true);
 }
 
@@ -175,11 +177,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION(EvaluableNode *en, b
 	auto node_stack = CreateInterpreterNodeStackStateSaver(n1);
 	
 	auto n2 = InterpretNodeForImmediateUse(ocn[1]);
-	node_stack.PushEvaluableNode(n2);
 
 	EvaluableNode *result = EvaluableNodeTreeManipulation::UnionTrees(evaluableNodeManager, n1, n2);
-
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
+
+	evaluableNodeManager->FreeNodeTreeIfPossible(n1);
+	evaluableNodeManager->FreeNodeTreeIfPossible(n2);
+
 	return EvaluableNodeReference(result, true);
 }
 
@@ -197,8 +201,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DIFFERENCE(EvaluableNode *
 	node_stack.PushEvaluableNode(n2);
 
 	EvaluableNode *result = EvaluableNodeTreeDifference::DifferenceTrees(evaluableNodeManager, n1, n2);
-
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
+
 	return EvaluableNodeReference(result, (n1.unique && n2.unique));
 }
 
@@ -248,12 +252,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX(EvaluableNode *en, boo
 	auto node_stack = CreateInterpreterNodeStackStateSaver(n1);
 
 	auto n2 = InterpretNodeForImmediateUse(ocn[1]);
-	node_stack.PushEvaluableNode(n2);
 
 	EvaluableNode *result = EvaluableNodeTreeManipulation::MixTrees(randomStream.CreateOtherStreamViaRand(),
 		evaluableNodeManager, n1, n2, blend1, blend2, similar_mix_chance);
-
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
+
+	evaluableNodeManager->FreeNodeTreeIfPossible(n1);
+	evaluableNodeManager->FreeNodeTreeIfPossible(n2);
+
 	return EvaluableNodeReference(result, true);
 }
 
@@ -298,8 +304,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_LABELS(EvaluableNode *
 	node_stack.PushEvaluableNode(n2);
 
 	EvaluableNode *result = EvaluableNodeTreeManipulation::MixTreesByCommonLabels(this, evaluableNodeManager, n1, n2, randomStream, blend1, blend2);
-
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
+
 	return EvaluableNodeReference(result, (n1.unique && n2.unique));
 }
 

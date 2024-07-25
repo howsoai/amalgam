@@ -324,78 +324,6 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 {
 	//create a temporary variable for multithreading as to not use the atomic variable to slow things down
 	size_t first_unused_node_index_temp = 0;
-
-#ifdef MULTITHREAD_SUPPORT
-	if(Concurrency::GetMaxNumThreads() > 1 && cur_first_unused_node_index > 6000)
-	{
-		//used to climb up the indices, swapping out unused nodes above this as moves downward
-		std::atomic<size_t> lowest_known_unused_index = cur_first_unused_node_index;
-		//used by the independent freeing thread to climb down from lowest_known_unused_index
-		size_t highest_possibly_unfreed_node = cur_first_unused_node_index;
-		std::atomic<bool> all_nodes_finished = false;
-
-		//free nodes in a separate thread
-		auto completed_node_cleanup = Concurrency::urgentThreadPool.EnqueueTaskWithResult(
-			[this, &lowest_known_unused_index, &highest_possibly_unfreed_node, &all_nodes_finished]
-			{
-				while(true)
-				{
-					while(highest_possibly_unfreed_node > lowest_known_unused_index)
-					{
-						auto &cur_node_ptr = nodes[--highest_possibly_unfreed_node];
-						if(cur_node_ptr != nullptr && !cur_node_ptr->IsNodeDeallocated())
-							cur_node_ptr->Invalidate();
-					}
-
-					if(all_nodes_finished)
-					{
-						//need to double-check to make sure there's nothing left
-						//just in case the atomic variables were updated in a different order
-						//otherwise go around the loop again
-						if(highest_possibly_unfreed_node <= lowest_known_unused_index)
-							return;
-					}
-				}
-			}
-		);
-
-		//organize nodes above lowest_known_unused_index that are unused
-		while(first_unused_node_index_temp < lowest_known_unused_index)
-		{
-			//nodes can't be nullptr below firstUnusedNodeIndex
-			auto &cur_node_ptr = nodes[first_unused_node_index_temp];
-
-			//if the node has been found on this iteration, then clear it as counted so it's clean for next garbage collection
-			if(cur_node_ptr != nullptr && cur_node_ptr->GetKnownToBeInUse())
-			{
-				cur_node_ptr->SetKnownToBeInUse(false);
-				first_unused_node_index_temp++;
-			}
-			else //collect the node
-			{
-				//see if out of things to free; if so exit early
-				if(lowest_known_unused_index == 0)
-					break;
-
-				//put the node up at the top where unused memory resides
-				// and reduce lowest_known_unused_index after the swap occurs so the other thread doesn't get misaligned
-				std::swap(cur_node_ptr, nodes[lowest_known_unused_index - 1]);
-				--lowest_known_unused_index;
-			}
-		}
-
-		all_nodes_finished = true;
-
-		completed_node_cleanup.wait();
-
-		//assign back to the atomic variable
-		firstUnusedNodeIndex = first_unused_node_index_temp;
-
-		UpdateGarbageCollectionTrigger(cur_first_unused_node_index);
-		return;
-	}
-#endif
-
 	size_t lowest_known_unused_index = cur_first_unused_node_index;
 	while(first_unused_node_index_temp < lowest_known_unused_index)
 	{
@@ -823,61 +751,6 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 	NodesReferenced &nr = GetNodesReferenced();
 	EvaluableNode *root_node = nodes[0];
 
-#ifdef MULTITHREAD_SUPPORT
-	//because code cannot be executed when in garbage collection due to other locks,
-	//the nodes referenced cannot be modified while in this method, so nr.mutex does not need to be locked
-
-	size_t reference_count = nr.nodesReferenced.size();
-	//heuristic to ensure there's enough to do to warrant the overhead of using multiple threads
-	if(Concurrency::GetMaxNumThreads() > 1 && reference_count > 0 && (estimated_nodes_in_use / (reference_count + 1)) >= 1000)
-	{
-		ThreadPool::CountableTaskSet task_set;
-
-		//start processing root node first, as there's a good chance it will be the largest
-		if(root_node != nullptr && !root_node->GetKnownToBeInUseAtomic())
-		{
-			//don't enqueue in batch, as threads racing ahead of others will reduce memory
-			//contention
-			Concurrency::urgentThreadPool.EnqueueTask(
-				[root_node, &task_set]
-				{
-					MarkAllReferencedNodesInUseRecurseConcurrent(root_node);
-					task_set.MarkTaskCompleted();
-				}
-			);
-			task_set.AddTask();
-		}
-
-		for(auto &[enr, _] : nr.nodesReferenced)
-		{
-			//some compilers are pedantic about the types passed into the lambda, so make a copy
-			EvaluableNode *en = enr;
-			//only enqueue a task if the top node isn't known to be in use
-			if(en != nullptr && !en->GetKnownToBeInUseAtomic())
-			{
-				//don't enqueue in batch, as threads racing ahead of others will reduce memory
-				//contention
-				Concurrency::urgentThreadPool.EnqueueTask(
-					[en, &task_set]
-					{
-						MarkAllReferencedNodesInUseRecurseConcurrent(en);
-						task_set.MarkTaskCompleted();
-					}
-				);
-				task_set.AddTask();
-			}
-		}
-
-		Concurrency::urgentThreadPool.ChangeCurrentThreadStateFromActiveToWaiting();
-
-		task_set.WaitForTasks();
-
-		Concurrency::urgentThreadPool.ChangeCurrentThreadStateFromWaitingToActive();
-
-		return;
-	}
-#endif
-
 	//check for null or insertion before calling recursion to minimize number of branches (slight performance improvement)
 	if(root_node != nullptr && !root_node->GetKnownToBeInUse())
 		MarkAllReferencedNodesInUseRecurse(root_node);
@@ -979,31 +852,6 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUseRecurse(EvaluableNode *tre
 		}
 	}	
 }
-
-#ifdef MULTITHREAD_SUPPORT
-void EvaluableNodeManager::MarkAllReferencedNodesInUseRecurseConcurrent(EvaluableNode* tree)
-{
-	//if entering this function, then the node hasn't been marked yet
-	tree->SetKnownToBeInUseAtomic(true);
-
-	if(tree->IsAssociativeArray())
-	{
-		for(auto &[_, e] : tree->GetMappedChildNodesReference())
-		{
-			if(e != nullptr && !e->GetKnownToBeInUseAtomic())
-				MarkAllReferencedNodesInUseRecurseConcurrent(e);
-		}
-	}
-	else if(!tree->IsImmediate())
-	{
-		for(auto &e : tree->GetOrderedChildNodesReference())
-		{
-			if(e != nullptr && !e->GetKnownToBeInUseAtomic())
-				MarkAllReferencedNodesInUseRecurseConcurrent(e);
-		}
-	}
-}
-#endif
 
 void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrityRecurse(EvaluableNode *en,
 	EvaluableNode::ReferenceSetType &checked, FastHashSet<EvaluableNode *> *existing_nodes)

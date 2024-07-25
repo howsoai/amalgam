@@ -146,6 +146,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 	//if not a valid query, return nullptr
 	if(conditionsBuffer.size() == 0)
 	{
+		evaluableNodeManager->FreeNodeTreeIfPossible(entity_id_path);
 		evaluableNodeManager->FreeNodeTreeIfPossible(query_params);
 		return EvaluableNodeReference::Null();
 	}

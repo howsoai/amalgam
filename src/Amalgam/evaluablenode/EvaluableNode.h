@@ -602,43 +602,6 @@ public:
 		attributes.individualAttribs.knownToBeInUse = in_use;
 	}
 
-#ifdef MULTITHREAD_SUPPORT
-	//returns whether this node has been marked as known to be currently in use
-	__forceinline bool GetKnownToBeInUseAtomic()
-	{
-		EvaluableNodeAttributesType attrib_with_known_true;
-		attrib_with_known_true.allAttributes = 0;
-		attrib_with_known_true.individualAttribs.knownToBeInUse = true;
-
-		//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-		uint8_t all_attributes = reinterpret_cast<std::atomic<uint8_t>&>(attributes.allAttributes);
-		return (all_attributes & attrib_with_known_true.allAttributes);
-	}
-
-	//sets whether this node is currently known to be in use
-	__forceinline void SetKnownToBeInUseAtomic(bool in_use)
-	{
-		if(in_use)
-		{
-			EvaluableNodeAttributesType attrib_with_known_true;
-			attrib_with_known_true.allAttributes = 0;
-			attrib_with_known_true.individualAttribs.knownToBeInUse = true;
-
-			//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-			reinterpret_cast<std::atomic<uint8_t>&>(attributes.allAttributes).fetch_or(attrib_with_known_true.allAttributes);
-		}
-		else
-		{
-			EvaluableNodeAttributesType attrib_with_known_false;
-			attrib_with_known_false.allAttributes = 0xFF;
-			attrib_with_known_false.individualAttribs.knownToBeInUse = false;
-
-			//TODO 15993: once C++20 is widely supported, change type to atomic_ref
-			reinterpret_cast<std::atomic<uint8_t>&>(attributes.allAttributes).fetch_and(attrib_with_known_false.allAttributes);
-		}
-	}
-#endif
-
 	//returns the number of child nodes regardless of mapped or ordered
 	size_t GetNumChildNodes();
 

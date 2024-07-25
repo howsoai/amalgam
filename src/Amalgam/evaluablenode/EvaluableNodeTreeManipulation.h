@@ -501,10 +501,12 @@ public:
 
 	//Returns a tree that consists of only nodes that are common across all of the trees specified,
 	// where all returned values are newly allocated and modifiable
+	//Note that MergeTrees does not guarantee that EvaluableNodeFlags will be set appropriately
 	static EvaluableNode *MergeTrees(NodesMergeMethod *mm, EvaluableNode *tree1, EvaluableNode *tree2);
 
 	//Returns a tree that is a copy of tree but mutated based on mutation_rate
 	// will create the new tree with interpreter's evaluableNodeManager and will use interpreter's RandomStream
+	//Note that MutateTree does not guarantee that EvaluableNodeFlags will be set appropriately
 	static EvaluableNode *MutateTree(Interpreter *interpreter, EvaluableNodeManager *enm, EvaluableNode *tree, double mutation_rate, CompactHashMap<StringInternPool::StringID, double> *mutation_weights, CompactHashMap<EvaluableNodeType, double> *evaluable_node_weights);
 
 	//traverses tree and replaces any string that matches a key of to_replace with the value in to_replace

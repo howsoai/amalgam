@@ -357,13 +357,12 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 				a_code = entity_from_a->second->GetRoot(enm);
 
 			EvaluableNode *b_code = entity_to_create->GetRoot(enm);
+			EvaluableNode *entity_difference = EvaluableNodeTreeDifference::DifferenceTrees(enm, a_code, b_code);
 
-			//if either entity needs a cycle check, then everything will need to be checked for cycles later
-			if( (a_code != nullptr && a_code->GetNeedCycleCheck())
-					|| (b_code != nullptr && b_code->GetNeedCycleCheck()) )
+			EvaluableNodeManager::UpdateFlagsForNodeTree(entity_difference);
+			if(entity_difference != nullptr && entity_difference->GetNeedCycleCheck())
 				cycle_free = false;
 
-			EvaluableNode *entity_difference = EvaluableNodeTreeDifference::DifferenceTrees(enm, a_code, b_code);
 			call_lambda->AppendOrderedChildNode(entity_difference);
 
 			EvaluableNode *call_assoc = enm->AllocNode(ENT_ASSOC);

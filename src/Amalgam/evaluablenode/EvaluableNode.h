@@ -239,7 +239,7 @@ public:
 	}
 
 	//Returns true if the node is some form of associative array
-	static constexpr bool IsAssociativeArray(EvaluableNode *n)
+	static __forceinline bool IsAssociativeArray(EvaluableNode *n)
 	{
 		if(n == nullptr)
 			return false;
@@ -247,19 +247,19 @@ public:
 	}
 
 	//returns true if the type is immediate
-	constexpr bool IsImmediate()
+	__forceinline bool IsImmediate()
 	{
 		return IsEvaluableNodeTypeImmediate(GetType());
 	}
 
 	//Returns true if the node is some form of ordered array
-	constexpr bool IsOrderedArray()
+	__forceinline bool IsOrderedArray()
 	{
 		return DoesEvaluableNodeTypeUseOrderedData(GetType());
 	}
 
 	//Returns true if the node is some form of ordered array
-	static constexpr bool IsOrderedArray(EvaluableNode *n)
+	static __forceinline bool IsOrderedArray(EvaluableNode *n)
 	{
 		if(n == nullptr)
 			return false;
@@ -267,7 +267,7 @@ public:
 	}
 
 	//returns true if the EvaluableNode is of a query type
-	static constexpr bool IsQuery(EvaluableNode *n)
+	static __forceinline bool IsQuery(EvaluableNode *n)
 	{
 		return (n != nullptr && IsEvaluableNodeTypeQuery(n->GetType()));
 	}

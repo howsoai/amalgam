@@ -1565,8 +1565,7 @@ void EvaluableNode::DestructValue()
 void EvaluableNode::Invalidate()
 {
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-	if(IsNodeDeallocated())
-		assert(false);
+	assert(!IsNodeDeallocated());
 #endif
 
 	if(!HasExtendedValue())

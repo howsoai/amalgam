@@ -419,13 +419,10 @@ public:
 	static size_t GetEstimatedNodeSizeInBytes(EvaluableNode *n);
 
 	//gets current type
-	constexpr EvaluableNodeType &GetType()
+	__forceinline EvaluableNodeType &GetType()
 	{
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		if(type == ENT_DEALLOCATED)
-		{
-			assert(false);
-		}
+		assert(type != ENT_DEALLOCATED);
 	#endif
 		return type;
 	}

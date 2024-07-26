@@ -204,6 +204,13 @@ public:
 		stack = _stack;
 		originalStackSize = stack->size();
 
+	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+		if(initial_element != nullptr && initial_element->IsNodeDeallocated())
+		{
+			assert(false);
+		}
+	#endif
+
 		stack->push_back(initial_element);
 	}
 
@@ -214,6 +221,12 @@ public:
 
 	__forceinline void PushEvaluableNode(EvaluableNode *n)
 	{
+	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+		if(n != nullptr && n->IsNodeDeallocated())
+		{
+			assert(false);
+		}
+	#endif
 		stack->push_back(n);
 	}
 
@@ -231,6 +244,12 @@ public:
 	//replaces the position of the stack with new_value
 	__forceinline void SetStackLocation(size_t location, EvaluableNode *new_value)
 	{
+	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+		if(new_value != nullptr && new_value->IsNodeDeallocated())
+		{
+			assert(false);
+		}
+	#endif
 		(*stack)[location] = new_value;
 	}
 

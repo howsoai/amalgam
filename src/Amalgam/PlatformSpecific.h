@@ -223,23 +223,19 @@ inline void Platform_Assert(bool expr, const char *file, int line)
 		std::cerr << "Runtime Exception: Debug Assertion Failed at line " << line << " of " << file << "\n";
 
 	//platform dependent assertion function
-	#ifdef _DEBUG
-
-		#ifdef OS_WINDOWS
-			_ASSERT(expr);
-		#else
-			raise(SIGTRAP);
-		#endif
-			exit(-1);
-
+	#ifdef OS_WINDOWS
+		_ASSERT(expr);
 	#else
-		if(Platform_IsDebuggerPresent())
-		{
-			//wait for user input
-			std::string temp;
-			std::getline(std::cin, temp);
-		}
-		exit(-1);
+		raise(SIGTRAP);
 	#endif
+
+	if(Platform_IsDebuggerPresent())
+	{
+		//wait for user input in case the _ASSERT above was optimized out
+		std::string temp;
+		std::getline(std::cin, temp);
+	}
+
+	exit(-1);
 	}
 }

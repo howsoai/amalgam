@@ -73,19 +73,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 		if(list == nullptr)
 			return EvaluableNodeReference::Null();
 
-		//if it's the only reference of the list (and it doesn't refer back to itself), then just reuse it for the output
-		if(list.unique && !list->GetNeedCycleCheck())
-			result = list;
-		else //the list is used elsewhere, so need to create a new one
-			result = EvaluableNodeReference(evaluableNodeManager->AllocNode(list), true);	//starts out cycle free unless attach something cyclic or not unique
+		//create result_list as a copy of the current list, but without child nodes
+		result = EvaluableNodeReference(evaluableNodeManager->AllocNode(list->GetType()), true);
 
 		if(list->IsOrderedArray())
 		{
 			auto &list_ocn = list->GetOrderedChildNodesReference();
+			size_t num_nodes = list_ocn.size();
+
 			auto &result_ocn = result->GetOrderedChildNodesReference();
+			result_ocn.resize(num_nodes);
 
 		#ifdef MULTITHREAD_SUPPORT
-			size_t num_nodes = list_ocn.size();
 			if(en->GetConcurrency() && num_nodes > 1)
 			{
 				auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
@@ -113,7 +112,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 
 			PushNewConstructionContext(list, result, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 
-			for(size_t i = 0; i < list_ocn.size(); i++)
+			for(size_t i = 0; i < num_nodes; i++)
 			{
 				//pass value of list to be mapped
 				SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
@@ -128,11 +127,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 		}
 		else if(list->IsAssociativeArray())
 		{
-			//result_mcn is either the same as list_mcn or a copy of it
+			auto &list_mcn = list->GetMappedChildNodesReference();
+			size_t num_nodes = list_mcn.size();
+
+			//populate result_mcn with all a slot for each child node,
+			//as do not want to change this allocation during potential concurrent execution
+			//and because iterators may be invalidated when the map is changed
 			auto &result_mcn = result->GetMappedChildNodesReference();
+			result_mcn.reserve(num_nodes);
+			string_intern_pool.CreateStringReferences(list_mcn, [](auto it) { return it.first; });
+			for(auto &[sid, cn] : list_mcn)
+				result_mcn.emplace(sid, nullptr);
 
 		#ifdef MULTITHREAD_SUPPORT
-			size_t num_nodes = result_mcn.size();
 			if(en->GetConcurrency() && num_nodes > 1)
 			{
 				auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
@@ -143,9 +150,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 
 					ConcurrencyManager concurrency_manager(this, num_nodes);
 
-					for(auto &[node_id, node] : result_mcn)
+					for(auto &[result_id, result_node] : result_mcn)
+					{
+						//get the original data element
+						auto list_node_entry = list_mcn.find(result_id);
+						EvaluableNode *list_node = nullptr;
+						if(list_node_entry != end(list_mcn))
+							list_node = list_node_entry->second;
+
 						concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNode *>(function,
-							list, result, EvaluableNodeImmediateValueWithType(node_id), node, node);
+							list, result, EvaluableNodeImmediateValueWithType(result_id),
+							list_node, result_node);
+					}
 
 					enqueue_task_lock.Unlock();
 					concurrency_manager.EndConcurrency();
@@ -158,13 +174,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 
 			PushNewConstructionContext(list, result, EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 
-			for(auto &[cn_id, cn] : result_mcn)
+			for(auto &[result_id, result_node] : result_mcn)
 			{
-				SetTopCurrentIndexInConstructionStack(cn_id);
-				SetTopCurrentValueInConstructionStack(cn);
+				SetTopCurrentIndexInConstructionStack(result_id);
 
+				//get the original data element
+				auto list_node_entry = list_mcn.find(result_id);
+				if(list_node_entry != end(list_mcn))
+					SetTopCurrentValueInConstructionStack(list_node_entry->second);
+
+				//keep the original type of elment_result instead of directly assigning
+				//in order to keep the node properties to be updated below
 				EvaluableNodeReference element_result = InterpretNode(function);
-				cn = element_result;
+				result_node = element_result;
 				result.UpdatePropertiesBasedOnAttachedNode(element_result);
 			}
 
@@ -417,7 +439,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 	if(list == nullptr)
 		return EvaluableNodeReference::Null();
 
-	//create result_list as a copy of the current list, but clear out child nodes
+	//create result_list as a copy of the current list, but without child nodes
 	EvaluableNodeReference result_list(evaluableNodeManager->AllocNode(list->GetType()), list.unique);
 	result_list->SetNeedCycleCheck(list->GetNeedCycleCheck());
 	result_list->SetIsIdempotent(list->GetIsIdempotent());

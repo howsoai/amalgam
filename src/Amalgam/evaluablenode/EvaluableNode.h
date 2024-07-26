@@ -233,13 +233,13 @@ public:
 	static bool IsTrue(EvaluableNode *n);
 
 	//Returns true if the node is some form of associative array
-	constexpr bool IsAssociativeArray()
+	__forceinline bool IsAssociativeArray()
 	{
 		return DoesEvaluableNodeTypeUseAssocData(GetType());
 	}
 
 	//Returns true if the node is some form of associative array
-	static constexpr bool IsAssociativeArray(EvaluableNode *n)
+	static __forceinline bool IsAssociativeArray(EvaluableNode *n)
 	{
 		if(n == nullptr)
 			return false;
@@ -247,19 +247,19 @@ public:
 	}
 
 	//returns true if the type is immediate
-	constexpr bool IsImmediate()
+	__forceinline bool IsImmediate()
 	{
 		return IsEvaluableNodeTypeImmediate(GetType());
 	}
 
 	//Returns true if the node is some form of ordered array
-	constexpr bool IsOrderedArray()
+	__forceinline bool IsOrderedArray()
 	{
 		return DoesEvaluableNodeTypeUseOrderedData(GetType());
 	}
 
 	//Returns true if the node is some form of ordered array
-	static constexpr bool IsOrderedArray(EvaluableNode *n)
+	static __forceinline bool IsOrderedArray(EvaluableNode *n)
 	{
 		if(n == nullptr)
 			return false;
@@ -267,7 +267,7 @@ public:
 	}
 
 	//returns true if the EvaluableNode is of a query type
-	static constexpr bool IsQuery(EvaluableNode *n)
+	static __forceinline bool IsQuery(EvaluableNode *n)
 	{
 		return (n != nullptr && IsEvaluableNodeTypeQuery(n->GetType()));
 	}
@@ -299,7 +299,7 @@ public:
 
 	//if the node's contents can be represented as a number, which includes numbers, infinity, then return true
 	// otherwise returns false
-	static constexpr bool CanRepresentValueAsANumber(EvaluableNode *e)
+	static __forceinline bool CanRepresentValueAsANumber(EvaluableNode *e)
 	{
 		if(e == nullptr)
 			return true;
@@ -317,7 +317,7 @@ public:
 	}
 
 	//returns true is node pointer e is nullptr or value of e has type ENT_NULL
-	static constexpr bool IsNull(EvaluableNode *e)
+	static __forceinline bool IsNull(EvaluableNode *e)
 	{
 		return (e == nullptr || e->GetType() == ENT_NULL);
 	}
@@ -327,7 +327,7 @@ public:
 	static double ToNumber(EvaluableNode *e, double value_if_null = std::numeric_limits<double>::quiet_NaN());
 
 	//returns true if the node can directly be interpreted as a number
-	static constexpr bool IsNumericOrNull(EvaluableNode *e)
+	static __forceinline bool IsNumericOrNull(EvaluableNode *e)
 	{
 		if(e == nullptr)
 			return true;
@@ -340,7 +340,7 @@ public:
 	}
 
 	//returns true if the EvaluableNode uses numeric data
-	constexpr bool IsNumericOrNull()
+	__forceinline bool IsNumericOrNull()
 	{
 		return DoesEvaluableNodeTypeUseNumberData(GetType());
 	}
@@ -419,13 +419,10 @@ public:
 	static size_t GetEstimatedNodeSizeInBytes(EvaluableNode *n);
 
 	//gets current type
-	constexpr EvaluableNodeType &GetType()
+	__forceinline EvaluableNodeType &GetType()
 	{
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		if(type == ENT_DEALLOCATED)
-		{
-			assert(false);
-		}
+		assert(type != ENT_DEALLOCATED);
 	#endif
 		return type;
 	}
@@ -456,7 +453,7 @@ public:
 	void InitNumberValue();
 
 	//gets the value by reference
-	constexpr double &GetNumberValue()
+	__forceinline double &GetNumberValue()
 	{
 		if(DoesEvaluableNodeTypeUseNumberData(GetType()))
 			return GetNumberValueReference();
@@ -481,7 +478,7 @@ public:
 
 	//sets up the ability to contain a string
 	void InitStringValue();
-	constexpr StringInternPool::StringID GetStringID()
+	__forceinline StringInternPool::StringID GetStringID()
 	{
 		if(DoesEvaluableNodeTypeUseStringData(GetType()))
 			return GetStringIDReference();
@@ -650,7 +647,7 @@ public:
 			GetOrderedChildNodesReference().reserve(to_reserve);
 	}
 
-	constexpr std::vector<EvaluableNode *> &GetOrderedChildNodes()
+	__forceinline std::vector<EvaluableNode *> &GetOrderedChildNodes()
 	{
 		if(IsOrderedArray())
 			return GetOrderedChildNodesReference();
@@ -729,7 +726,7 @@ public:
 			GetMappedChildNodesReference().reserve(to_reserve);
 	}
 
-	constexpr AssocType &GetMappedChildNodes()
+	__forceinline AssocType &GetMappedChildNodes()
 	{
 		if(IsAssociativeArray())
 			return GetMappedChildNodesReference();

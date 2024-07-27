@@ -665,13 +665,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, b
 			}
 		}
 
-		//ensure that uniqueness attribute is correct
-		for(auto &list : lists)
-			woven_list.UpdatePropertiesBasedOnAttachedNode(list);
-
 		//because each list can be unique but from the same source, still need to update all flags in case of cycle
 		EvaluableNodeManager::UpdateFlagsForNodeTree(woven_list);
-
 		return woven_list;
 	}
 
@@ -714,6 +709,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, b
 		evaluableNodeManager->FreeNodeIfPossible(values_to_weave);
 	}
 
+	EvaluableNodeManager::UpdateFlagsForNodeTree(woven_list);
 	return woven_list;
 }
 

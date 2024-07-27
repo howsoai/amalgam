@@ -634,6 +634,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, b
 	//find the largest of all the lists and the total number of elements
 	size_t maximum_list_size = 0;
 	size_t total_num_elements = 0;
+	bool all_lists_unique = true;
 	for(auto &list : lists)
 	{
 		if(list != nullptr)
@@ -641,11 +642,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, b
 			size_t num_elements = list->GetOrderedChildNodes().size();
 			maximum_list_size = std::max(maximum_list_size, num_elements);
 			total_num_elements += num_elements;
+
+			all_lists_unique &= list.unique;
 		}
 	}
 
 	//the result
-	EvaluableNodeReference woven_list(evaluableNodeManager->AllocNode(ENT_LIST), true);
+	EvaluableNodeReference woven_list(evaluableNodeManager->AllocNode(ENT_LIST), all_lists_unique);
 
 	//just lists, interleave
 	if(EvaluableNode::IsNull(function))

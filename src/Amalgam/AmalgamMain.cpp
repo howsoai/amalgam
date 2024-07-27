@@ -319,6 +319,8 @@ PLATFORM_MAIN_CONSOLE
 
 		if(debug_internal_memory)
 		{
+			entity->VerifyEvaluableNodeIntegrityAndAllContainedEntities();
+
 			delete entity;
 
 			auto num_strings_used = string_intern_pool.GetNumDynamicStringsInUse();

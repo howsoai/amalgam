@@ -999,3 +999,10 @@ void Entity::VerifyEvaluableNodeIntegrity()
 	for(auto &[en, _] : nr.nodesReferenced)
 		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
 }
+
+void Entity::VerifyEvaluableNodeIntegrityAndAllContainedEntities()
+{
+	VerifyEvaluableNodeIntegrity();
+	for(auto ce : GetContainedEntities())
+		ce->VerifyEvaluableNodeIntegrity();
+}

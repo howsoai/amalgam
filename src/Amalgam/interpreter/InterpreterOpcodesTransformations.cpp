@@ -1204,24 +1204,22 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(container);
 
 	//get indices (or index) to remove
-	auto indices = InterpretNodeForImmediateUse(ocn[1]);
-	if(indices == nullptr)	//if not found, just return container unmodified
-		return container;
+	auto indices = InterpretNodeForImmediateUse(ocn[1], true);
 
 	//used for deleting nodes if possible -- unique and cycle free
 	EvaluableNodeReference removed_node = EvaluableNodeReference(nullptr, container.unique && !container->GetNeedCycleCheck());
 
 	//if not a list, then just remove individual element
-	if(!indices->IsOrderedArray())
+	if(indices.IsImmediateValue())
 	{
 		if(container->IsAssociativeArray())
 		{
-			StringInternPool::StringID key_sid = EvaluableNode::ToStringIDIfExists(indices);
+			StringInternPool::StringID key_sid = indices.GetValue().GetValueAsStringIDIfExists();
 			removed_node.SetReference(container->EraseMappedChildNode(key_sid));
 		}
 		else if(container->IsOrderedArray())
 		{
-			double relative_pos = EvaluableNode::ToNumber(indices);
+			double relative_pos = indices.GetValue().GetValueAsNumber();
 			auto &container_ocn = container->GetOrderedChildNodesReference();
 
 			//get relative position
@@ -1316,17 +1314,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, bo
 	auto node_stack = CreateInterpreterNodeStackStateSaver(container);
 
 	//get indices (or index) to keep
-	auto indices = InterpretNodeForImmediateUse(ocn[1]);
-	if(indices == nullptr)	//if not found, just return container unmodified
-		return container;
+	auto indices = InterpretNodeForImmediateUse(ocn[1], true);
 
-	//if not a list, then just remove individual element
-	auto &indices_ocn = indices->GetOrderedChildNodes();
-	if(indices_ocn.size() == 0)
+	//if immediate then just keep individual element
+	if(indices.IsImmediateValue())
 	{
 		if(container->IsAssociativeArray())
 		{
-			StringInternPool::StringID key_sid = EvaluableNode::ToStringIDWithReference(indices);
+			StringInternPool::StringID key_sid = indices.GetValue().GetValueAsStringIDWithReference();
 			auto &container_mcn = container->GetMappedChildNodesReference();
 		
 			//find what should be kept, or clear key_sid if not found
@@ -1357,7 +1352,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, bo
 		}
 		else if(container->IsOrderedArray())
 		{
-			double relative_pos = EvaluableNode::ToNumber(indices);
+			double relative_pos = indices.GetValue().GetValueAsNumber();
 			auto &container_ocn = container->GetOrderedChildNodesReference();
 
 			//get relative position
@@ -1387,8 +1382,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, bo
 			}
 		}
 	}
-	else //keep all of the child nodes of the index
+	else //not immediate, keep all of the child nodes of the index
 	{
+		auto &indices_ocn = indices->GetOrderedChildNodes();
 		if(container->IsAssociativeArray())
 		{
 			auto &container_mcn = container->GetMappedChildNodesReference();

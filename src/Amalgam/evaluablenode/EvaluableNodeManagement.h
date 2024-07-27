@@ -141,7 +141,8 @@ public:
 
 	constexpr bool IsImmediateValue()
 	{
-		return value.nodeType != ENIVT_CODE;
+		return (value.nodeType != ENIVT_CODE
+			|| value.nodeValue.code == nullptr || value.nodeValue.code->IsImmediate());
 	}
 
 	constexpr bool IsNonNullNodeReference()

@@ -53,7 +53,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_AND(EvaluableNode *en, boo
 
 		cur = InterpretNode(cn, immediate_result);
 
-		if(cur.IsImmediateValue())
+		if(cur.IsImmediateValue(false))
 		{
 			if(!cur.GetValue().GetValueAsBoolean())
 				return AllocReturn(false, immediate_result);
@@ -103,16 +103,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OR(EvaluableNode *en, bool
 
 		cur = InterpretNode(cn, immediate_result);
 
-		if(cur.IsImmediateValue())
-		{
-			if(cur.GetValue().GetValueAsBoolean())
-				return cur;
-		}
-		else
-		{
-			if(EvaluableNode::IsTrue(cur))
-				return cur;
-		}
+		if(cur.GetValue().GetValueAsBoolean())
+			return cur;
 	}
 
 	return ReuseOrAllocReturn(cur, false, immediate_result);
@@ -166,7 +158,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT(EvaluableNode *en, boo
 		return EvaluableNodeReference::Null();
 
 	auto cur = InterpretNodeForImmediateUse(ocn[0], immediate_result);
-	if(cur.IsImmediateValue())
+	if(cur.IsImmediateValue(false))
 	{
 		bool is_true = cur.GetValue().GetValueAsBoolean();
 		return AllocReturn(!is_true, immediate_result);

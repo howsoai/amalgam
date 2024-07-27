@@ -1288,7 +1288,7 @@ current_index: 2
 		interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1722099436.346578
+		start_time 1722103884.665378
 		www 1
 		x 12
 		zz 10
@@ -1331,7 +1331,7 @@ current_index: 2
 	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1722099436.346578
+	start_time 1722103884.665378
 	www 1
 	x 12
 	zz 10
@@ -1373,7 +1373,7 @@ current_index: 2
 	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1722099436.346578
+	start_time 1722103884.665378
 	www 1
 	x 12
 	zz 10
@@ -1521,7 +1521,7 @@ infinity test c or d: ["d" @(get (target 0) 0) "c" @(get (target 0) 2)]
 
 {a 24 b 52 c 24}
 
-["4" "2" "6"]
+["3" "2" "5"]
 
 --get_rand_seed--
 N9ìÀù∏UØOaV∆T zˇ
@@ -1639,7 +1639,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2024-07-27-12.57.16.3922950
+current date-time in epoch: 2024-07-27-14.11.24.7092520
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -2779,10 +2779,10 @@ MergeEntityChild1
 (associate "x" 3 "y" 4)
 MergeEntityChild2
 (associate "p" 3 "q" 4)
-_2280722175
-(associate "E" 3 "F" 4)
 _2169689611
 (associate "e" 3 "f" 4)
+_2280722175
+(associate "E" 3 "F" 4)
 --union_entities--
 (associate "b" 4 "a" 3 "c" 3)
 MergeEntityChild1
@@ -2800,17 +2800,6 @@ MergeEntityChild2
 	"w"
 	7
 )
-_2280722175
-(associate
-	"E"
-	3
-	"F"
-	4
-	"G"
-	5
-	"H"
-	6
-)
 _2169689611
 (associate
 	"e"
@@ -2822,11 +2811,7 @@ _2169689611
 	"h"
 	6
 )
-(parallel
-	##p
-	["_3990396532" "_3990396532" "_3330773578" "_3330773578"]
-)
-_3990396532
+_2280722175
 (associate
 	"E"
 	3
@@ -2837,6 +2822,10 @@ _3990396532
 	"H"
 	6
 )
+(parallel
+	##p
+	["_3990396532" "_3990396532" "_3330773578" "_3330773578"]
+)
 _3330773578
 (associate
 	"e"
@@ -2846,6 +2835,17 @@ _3330773578
 	"g"
 	5
 	"h"
+	6
+)
+_3990396532
+(associate
+	"E"
+	3
+	"F"
+	4
+	"G"
+	5
+	"H"
 	6
 )
 --difference_entities--
@@ -3302,8 +3302,14 @@ difference between DiffEntity2 and new_entity:
 						[]
 						(lambda
 							{
-								E 3
-								F 4
+								E (get
+										(current_value 1)
+										"E"
+									)
+								F (get
+										(current_value 1)
+										"F"
+									)
 								G 5
 								H 6
 							}
@@ -3328,7 +3334,16 @@ difference between DiffEntity2 and new_entity:
 						_
 						[]
 						(lambda
-							{e 3 f 4}
+							{
+								e (get
+										(current_value 1)
+										"e"
+									)
+								f (get
+										(current_value 1)
+										"f"
+									)
+							}
 						)
 					)
 				)
@@ -3354,7 +3369,89 @@ contained_entities new_entity: ["OnlyIn2" "_3631850880" "_1938178219" "DiffEntit
 difference between DiffContainer and DiffEntity2:
 (declare
 	{_ (null) new_entity (null)}
-	(clone_entities _ new_entity)
+	(assign
+		"new_entity"
+		(first
+			(create_entities
+				new_entity
+				(call
+					(lambda
+						(declare
+							{_ (null)}
+							(replace _)
+						)
+					)
+					{
+						_ (retrieve_entity_root _)
+					}
+				)
+			)
+		)
+	)
+	(create_entities
+		(append new_entity "_3631850880")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{
+								E (null)
+								F (null)
+								G (get
+										(current_value 1)
+										"G"
+									)
+								H (get
+										(current_value 1)
+										"H"
+									)
+							}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_3631850880")
+					)
+			}
+		)
+	)
+	(create_entities
+		(append new_entity "_1938178219")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{e (null) f (null)}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_1938178219")
+					)
+			}
+		)
+	)
+	(clone_entities
+		(append _ "OnlyIn2")
+		(append new_entity "OnlyIn2")
+	)
+	(clone_entities
+		(append _ "DiffEntityChild1")
+		(append new_entity "DiffEntityChild1")
+	)
+	new_entity
 )
 --mix_entities--
 (associate "b" 4 "a" 3 "c" 3)
@@ -3371,10 +3468,10 @@ MergeEntityChild2
 	"w"
 	7
 )
-_2280722175
-(associate "E" 3 "F" 4 "H" 6)
 _2169689611
-(associate "e" 3 "f" 4 "g" 5)
+(associate "e" 3 "f" 4 "h" 6)
+_2280722175
+(associate "E" 3 "F" 4 "G" 5)
 --get_entity_comments--
 Full test
 This is a suite of unit tests.
@@ -3452,7 +3549,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1722099436.683523
+1722103884.820907
 (true)
 
 RootTest
@@ -4695,4 +4792,4 @@ concurrent entity writes successful: (true)
 
 --clean-up test files--
 --total execution time--
-1.804328203201294
+1.437757968902588

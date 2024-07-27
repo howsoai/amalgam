@@ -428,10 +428,7 @@ public:
 	//converts enr into a number and frees
 	double ConvertNodeIntoNumberValueAndFreeIfPossible(EvaluableNodeReference &enr)
 	{
-		if(enr.IsImmediateValue())
-			return enr.GetValue().GetValueAsNumber();
-
-		double value = EvaluableNode::ToNumber(enr);
+		double value = enr.GetValue().GetValueAsNumber();
 		evaluableNodeManager->FreeNodeTreeIfPossible(enr);
 		return value;
 	}
@@ -736,7 +733,7 @@ protected:
 						*result = result_ref;
 
 						//only save the result if it's not immediate
-						if(!result_ref.IsImmediateValue())
+						if(!result_ref.IsImmediateValue(false))
 							resultsSaver.SetStackLocation(results_saver_location, *result);
 					}
 

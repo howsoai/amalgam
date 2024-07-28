@@ -280,9 +280,6 @@ PLATFORM_MAIN_CONSOLE
 		entity->Execute(StringInternPool::NOT_A_STRING_ID, call_stack, false, nullptr,
 			&write_listeners, print_listener);
 
-		//clean up the nodes created here
-		entity->evaluableNodeManager.FreeNodeTree(call_stack);
-
 		int return_val = 0;
 
 		//detect memory leaks for debugging
@@ -322,6 +319,8 @@ PLATFORM_MAIN_CONSOLE
 
 		if(debug_internal_memory)
 		{
+			entity->VerifyEvaluableNodeIntegrityAndAllContainedEntities();
+
 			delete entity;
 
 			auto num_strings_used = string_intern_pool.GetNumDynamicStringsInUse();

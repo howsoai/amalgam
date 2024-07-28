@@ -53,7 +53,7 @@ public:
 	//that it's just as complex to put it in the destructor but will incur more overhead
 	__forceinline void FreeImmediateResources()
 	{
-		if(IsImmediateValue() && value.nodeType == ENIVT_STRING_ID)
+		if(value.nodeType == ENIVT_STRING_ID)
 			string_intern_pool.DestroyStringReference(value.nodeValue.stringID);
 	}
 
@@ -139,32 +139,37 @@ public:
 		unique = _unique;
 	}
 
-	constexpr bool IsImmediateValue()
+	//if check_reference is true, then it will additionally check any nodes referenced
+	__forceinline bool IsImmediateValue(bool check_reference = true)
 	{
-		return value.nodeType != ENIVT_CODE;
+		if(value.nodeType != ENIVT_CODE)
+			return true;
+
+		return (check_reference && 
+			(value.nodeValue.code == nullptr || value.nodeValue.code->IsImmediate()));
 	}
 
-	constexpr bool IsNonNullNodeReference()
+	__forceinline bool IsNonNullNodeReference()
 	{
 		return (value.nodeType == ENIVT_CODE && value.nodeValue.code != nullptr);
 	}
 
-	constexpr EvaluableNodeImmediateValueWithType &GetValue()
+	__forceinline EvaluableNodeImmediateValueWithType &GetValue()
 	{
 		return value;
 	}
 
-	constexpr EvaluableNode *&GetReference()
+	__forceinline EvaluableNode *&GetReference()
 	{
 		return value.nodeValue.code;
 	}
 
 	//allow to use as an EvaluableNode *
-	constexpr operator EvaluableNode *&()
+	__forceinline operator EvaluableNode *&()
 	{	return value.nodeValue.code;	}
 
 	//allow to use as an EvaluableNode *
-	constexpr EvaluableNode *operator->()
+	__forceinline EvaluableNode *operator->()
 	{	return value.nodeValue.code;	}
 
 	__forceinline EvaluableNodeReference &operator =(const EvaluableNodeReference &enr)
@@ -630,7 +635,7 @@ public:
 	//attempts to free the node reference
 	__forceinline void FreeNodeIfPossible(EvaluableNodeReference &enr)
 	{
-		if(enr.unique && !enr.IsImmediateValue() && !enr->GetNeedCycleCheck())
+		if(enr.unique && !enr.IsImmediateValue(false) && !enr->GetNeedCycleCheck())
 			FreeNode(enr);
 	}
 
@@ -668,7 +673,7 @@ public:
 	//attempts to free the node reference
 	__forceinline void FreeNodeTreeIfPossible(EvaluableNodeReference &enr)
 	{
-		if(enr.IsImmediateValue())
+		if(enr.IsImmediateValue(false))
 			enr.FreeImmediateResources();
 		else if(enr.unique)
 			FreeNodeTree(enr);

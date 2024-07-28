@@ -448,6 +448,10 @@ void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree)
 		}
 	}
 
+#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+	assert(!tree->GetNeedCycleCheck());
+#endif
+
 	tree->Invalidate();
 }
 

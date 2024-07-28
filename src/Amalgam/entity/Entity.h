@@ -708,6 +708,9 @@ public:
 	//ensures that there are no reachable nodes that are deallocated
 	void VerifyEvaluableNodeIntegrity();
 
+	//like VerifyEvaluableNodeIntegrity but includes all contained
+	void VerifyEvaluableNodeIntegrityAndAllContainedEntities();
+
 	//this is an estimate of the number of nodes required to reconstruct the entity if it were flattened
 	// including amortization of all extra overhead
 	static inline size_t GetEntityCreationSizeInNodes()

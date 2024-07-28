@@ -989,6 +989,11 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 
 			std::swap(labelIndex, new_label_index);
 		}
+		else //RetrieveLabelIndexesFromTreeAndNormalize will update flags, but if no collisions, still need to check
+		{
+			if(node_flags_need_update)
+				EvaluableNodeManager::UpdateFlagsForNodeTree(new_root);
+		}
 
 		if(container_caches != nullptr)
 			container_caches->UpdateAllEntityLabels(this, GetEntityIndexOfContainer());

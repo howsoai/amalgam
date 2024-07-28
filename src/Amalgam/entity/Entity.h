@@ -307,9 +307,12 @@ public:
 	// If direct_get is true, then it will return values with all labels
 	// If on_self is true, then it will be allowed to access private variables
 	// If batch_call is true, then it assumes it will be called in a batch of updates and will not perform any cleanup
+	// need_node_flags_updated is used when batch_call = true.  if need_node_flags_updated is not null, then it set the value to true
+	// if the Entity needs to have its node flags updated at the end of this batch update, because a cycle free flag has changed
 	//note that this cannot be called concurrently on the same entity
 	bool SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNodeReference &new_value, bool direct_set,
-		std::vector<EntityWriteListener *> *write_listeners, bool on_self = false, bool batch_call = false);
+		std::vector<EntityWriteListener *> *write_listeners, bool on_self = false, bool batch_call = false,
+		bool *need_node_flags_updated = nullptr);
 
 	//For each label-value pair in an associative array new_label_values, attempts to set the value at the label
 	// If new_value is unique (EvaluableNodeReference property) and on_self is true, then it will take ownership of new_value
@@ -322,7 +325,8 @@ public:
 		std::vector<EntityWriteListener *> *write_listeners, size_t *num_new_nodes_allocated, bool on_self, bool copy_entity);
 
 	//Rebuilds label index
-	void RebuildLabelIndex();
+	//returns true if there was a change and cycle checks were updated across the entity
+	bool RebuildLabelIndex();
 
 	//Returns the id for this Entity
 	inline const std::string GetId()

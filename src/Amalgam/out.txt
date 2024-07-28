@@ -1272,7 +1272,7 @@ current_index: 2
 				8
 			]
 		accum_string "abcdef"
-		argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+		argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 		bar (declare
 				{x 6}
 				(+ x 2)
@@ -1285,13 +1285,17 @@ current_index: 2
 				A {B 2}
 				B 2
 			}
-		interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+		interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
+<<<<<<< HEAD
 <<<<<<< HEAD
 		start_time 1721657143.924886
 =======
 		start_time 1722103884.665378
+>>>>>>> main
+=======
+		start_time 1722180028.817478
 >>>>>>> main
 		www 1
 		x 12
@@ -1319,7 +1323,7 @@ current_index: 2
 			8
 		]
 	accum_string "abcdef"
-	argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+	argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 	bar (declare
 			{x 6}
 			(+ x 2)
@@ -1332,13 +1336,17 @@ current_index: 2
 			A {B 2}
 			B 2
 		}
-	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
+<<<<<<< HEAD
 <<<<<<< HEAD
 	start_time 1721657143.924886
 =======
 	start_time 1722103884.665378
+>>>>>>> main
+=======
+	start_time 1722180028.817478
 >>>>>>> main
 	www 1
 	x 12
@@ -1365,7 +1373,7 @@ current_index: 2
 			8
 		]
 	accum_string "abcdef"
-	argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+	argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 	bar (declare
 			{x 6}
 			(+ x 2)
@@ -1378,13 +1386,17 @@ current_index: 2
 			A {B 2}
 			B 2
 		}
-	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
+<<<<<<< HEAD
 <<<<<<< HEAD
 	start_time 1721657143.924886
 =======
 	start_time 1722103884.665378
+>>>>>>> main
+=======
+	start_time 1722180028.817478
 >>>>>>> main
 	www 1
 	x 12
@@ -1652,9 +1664,13 @@ e:
 
 25: {a 1}
 <<<<<<< HEAD
+<<<<<<< HEAD
 current date-time in epoch: 2024-07-22-10.05.44.5063360
 =======
 current date-time in epoch: 2024-07-27-14.11.24.7092520
+>>>>>>> main
+=======
+current date-time in epoch: 2024-07-28-11.20.29.0661580
 >>>>>>> main
 2020-06-07 00:22:59
 1391230800
@@ -3566,9 +3582,13 @@ deep sets
 --set_entity_root_permission--
 RootTest
 <<<<<<< HEAD
+<<<<<<< HEAD
 1721657144.674248
 =======
 1722103884.820907
+>>>>>>> main
+=======
+1722180029.283405
 >>>>>>> main
 (true)
 
@@ -4813,7 +4833,11 @@ concurrent entity writes successful: (true)
 --clean-up test files--
 --total execution time--
 <<<<<<< HEAD
+<<<<<<< HEAD
 1.6945970058441162
 =======
 1.437757968902588
+>>>>>>> main
+=======
+1.9058191776275635
 >>>>>>> main

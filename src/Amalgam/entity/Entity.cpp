@@ -242,7 +242,7 @@ EvaluableNodeImmediateValueType Entity::GetValueAtLabelAsImmediateValue(StringIn
 }
 
 bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNodeReference &new_value, bool direct_set,
-	std::vector<EntityWriteListener *> *write_listeners, bool on_self, bool batch_call)
+	std::vector<EntityWriteListener *> *write_listeners, bool on_self, bool batch_call, bool *need_node_flags_updated)
 {
 	if(label_sid <= StringInternPool::EMPTY_STRING_ID)
 		return false;
@@ -267,6 +267,10 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 	//can't replace if the label points to null - shouldn't happen
 	if(destination == nullptr)
 		return false;
+
+	//determine whether this label is cycle free -- if the value changes, then need to update the entity
+	bool dest_prev_value_need_cycle_check = destination->GetNeedCycleCheck();
+	bool root_rebuilt = false;
 
 	if(!direct_set)
 	{
@@ -318,11 +322,23 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 		evaluableNodeManager.SetRootNode(root);
 
 		if(!batch_call)
-			RebuildLabelIndex();
+			root_rebuilt = RebuildLabelIndex();
 	}
 
-	if(!batch_call)
+	bool dest_new_value_need_cycle_check = (new_value != nullptr && new_value->GetNeedCycleCheck());
+
+	if(batch_call)
 	{
+		//if any cycle check has changed, notify caller that flags need to be updated
+		if(need_node_flags_updated != nullptr && dest_prev_value_need_cycle_check != dest_new_value_need_cycle_check)
+			*need_node_flags_updated = true;
+	}
+	else
+	{
+		//if cycle check was changed, and wasn't rebuilt, then need to do so now
+		if(!root_rebuilt && dest_prev_value_need_cycle_check != dest_new_value_need_cycle_check)
+			EvaluableNodeManager::UpdateFlagsForNodeTree(evaluableNodeManager.GetRootNode());
+
 		EntityQueryCaches *container_caches = GetContainerQueryCaches();
 		if(container_caches != nullptr)
 			container_caches->UpdateAllEntityLabels(this, GetEntityIndexOfContainer());
@@ -361,6 +377,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 	//make assignments
 	bool any_successful_assignment = false;
 	bool all_successful_assignments = true;
+	bool need_node_flags_updated = false;
 	auto &new_label_values_mcn = new_label_values->GetMappedChildNodesReference();
 
 	//write changes to write listeners first, as code below may invalidate portions of new_label_values
@@ -386,7 +403,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 			variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, variable_value_node, &evaluableNodeManager);
 		}
 
-		if(SetValueAtLabel(variable_sid, variable_value_node, direct_set, write_listeners, on_self, true))
+		if(SetValueAtLabel(variable_sid, variable_value_node, direct_set, write_listeners, on_self, true, &need_node_flags_updated))
 			any_successful_assignment = true;
 		else
 			all_successful_assignments = false;
@@ -397,13 +414,16 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 		EntityQueryCaches *container_caches = GetContainerQueryCaches();
 		if(direct_set)
 		{
-			//direct assigments need a rebuild of the index just in case a label collision occurs
+			//direct assigments need a rebuild of the index just in case a label collision occurs -- will update node flags if needed
 			RebuildLabelIndex();
 			if(container_caches != nullptr)
 				container_caches->UpdateAllEntityLabels(this, GetEntityIndexOfContainer());
 		}
 		else
 		{
+			if(need_node_flags_updated)
+				EvaluableNodeManager::UpdateFlagsForNodeTree(evaluableNodeManager.GetRootNode());
+
 			if(container_caches != nullptr)
 				container_caches->UpdateEntityLabels(this, GetEntityIndexOfContainer(), new_label_values_mcn);
 		}
@@ -526,7 +546,7 @@ size_t Entity::GetEstimatedUsedDeepSizeInBytes()
 	return total_size;
 }
 
-void Entity::RebuildLabelIndex()
+bool Entity::RebuildLabelIndex()
 {
 	auto [new_labels, collision_free] = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTreeAndNormalize(evaluableNodeManager.GetRootNode());
 
@@ -536,6 +556,7 @@ void Entity::RebuildLabelIndex()
 
 	//let the destructor of new_labels deallocate the old labelIndex
 	std::swap(labelIndex, new_labels);
+	return !collision_free;
 }
 
 StringInternPool::StringID Entity::AddContainedEntity(Entity *t, StringInternPool::StringID id_sid, std::vector<EntityWriteListener *> *write_listeners)

@@ -312,7 +312,11 @@ public:
 		{
 			size_t prev_tasks_completed = numTasksCompleted.fetch_add(1);
 			if(prev_tasks_completed + 1 == numTasks)
+			{
+				//in theory, this lock may not be necessary, but in practice it is to prevent deadlock
+				std::unique_lock<std::mutex> lock(mutex);
 				cond_var.notify_all();
+			}
 		}
 
 	protected:

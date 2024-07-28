@@ -139,14 +139,19 @@ public:
 		unique = _unique;
 	}
 
-	//if check_reference is true, then it will additionally check any nodes referenced
-	__forceinline bool IsImmediateValue(bool check_reference = true)
+	//returns true if it is an immediate value stored in this EvaluableNodeReference
+	__forceinline bool IsImmediateValue()
+	{
+		return (value.nodeType != ENIVT_CODE);
+	}
+
+	//returns true if the type of whatever is stored is an immediate type
+	__forceinline bool IsImmediateValueType()
 	{
 		if(value.nodeType != ENIVT_CODE)
 			return true;
 
-		return (check_reference && 
-			(value.nodeValue.code == nullptr || value.nodeValue.code->IsImmediate()));
+		return (value.nodeValue.code == nullptr || value.nodeValue.code->IsImmediate());
 	}
 
 	__forceinline bool IsNonNullNodeReference()
@@ -630,15 +635,20 @@ public:
 			return;
 
 		n->Invalidate();
-
 		ReclaimFreedNodesAtEnd();
 	}
 
 	//attempts to free the node reference
 	__forceinline void FreeNodeIfPossible(EvaluableNodeReference &enr)
 	{
-		if(enr.unique && !enr.IsImmediateValue(false) && !enr->GetNeedCycleCheck())
-			FreeNode(enr);
+		if(enr.IsImmediateValue())
+			enr.FreeImmediateResources();
+
+		if(enr.unique && enr != nullptr && !enr->GetNeedCycleCheck())
+		{
+			enr->Invalidate();
+			ReclaimFreedNodesAtEnd();
+		}
 	}
 
 	//frees all nodes
@@ -675,7 +685,7 @@ public:
 	//attempts to free the node reference
 	__forceinline void FreeNodeTreeIfPossible(EvaluableNodeReference &enr)
 	{
-		if(enr.IsImmediateValue(false))
+		if(enr.IsImmediateValue())
 			enr.FreeImmediateResources();
 		else if(enr.unique)
 			FreeNodeTree(enr);

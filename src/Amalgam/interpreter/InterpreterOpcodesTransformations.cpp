@@ -1209,7 +1209,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 	EvaluableNodeReference removed_node = EvaluableNodeReference(nullptr, container.unique && !container->GetNeedCycleCheck());
 
 	//if not a list, then just remove individual element
-	if(indices.IsImmediateValue())
+	if(indices.IsImmediateValueType())
 	{
 		if(container->IsAssociativeArray())
 		{
@@ -1316,7 +1316,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, bo
 	auto indices = InterpretNodeForImmediateUse(ocn[1], true);
 
 	//if immediate then just keep individual element
-	if(indices.IsImmediateValue())
+	if(indices.IsImmediateValueType())
 	{
 		if(container->IsAssociativeArray())
 		{

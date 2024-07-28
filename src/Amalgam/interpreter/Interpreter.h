@@ -733,7 +733,7 @@ protected:
 						*result = result_ref;
 
 						//only save the result if it's not immediate
-						if(!result_ref.IsImmediateValue(false))
+						if(!result_ref.IsImmediateValue())
 							resultsSaver.SetStackLocation(results_saver_location, *result);
 					}
 

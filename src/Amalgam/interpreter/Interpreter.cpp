@@ -566,7 +566,14 @@ StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueWithRefere
 
 	if(result.IsImmediateValue())
 	{
-		return result.GetValue().GetValueAsStringIDWithReference();
+		auto &result_value = result.GetValue();
+
+		//reuse the reference if it has one
+		if(result_value.nodeType == ENIVT_STRING_ID)
+			return result_value.nodeValue.stringID;
+
+		//create new reference
+		return result_value.GetValueAsStringIDWithReference();
 	}
 	else //not immediate
 	{

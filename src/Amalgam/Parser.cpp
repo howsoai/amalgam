@@ -1084,6 +1084,8 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 		size_t index = static_cast<size_t>(EvaluableNode::ToNumber(index_node));
 		if(result->GetOrderedChildNodes().size() > index)
 			return result->GetOrderedChildNodes()[index];
+
+		return nullptr;
 	}
 
 	case ENT_TARGET:
@@ -1103,6 +1105,8 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 			else
 				result = nullptr;
 		}
+
+		return result;
 	}
 
 	default:

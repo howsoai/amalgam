@@ -1,23 +1,40 @@
 ﻿(seq
- (print (call_sandboxed (lambda (+ y 4)) (assoc y 3)) "\n")
 
- (print (call_sandboxed (lambda (+ (+ y 4) 4)) (assoc y 3) 5) "\n")
- (print (call_sandboxed (lambda (+ (+ y 4) 4)) (assoc y 3) 1) "\n")
+	(print (get
+				(list
+					{"a" 1}
+					;@(get (get (target 1) 0) "a"))
+					;@(get (get (target 3) 0) "a"))
+					;@(get (target) [0 "a"])
+					(get (target 1) [0 "a"])
+				)
+			1)
+		"\n")
 
- (print (call_sandboxed (lambda (+ (+ y 4) 4)) (assoc y 3) (null) 50) "\n")
- (print (call_sandboxed (lambda (+ (+ y 4) 4)) (assoc y 3) (null) 1) "\n")
 
- (print (call_sandboxed (lambda (+ (+ y 4) 4)) (assoc y 3) (null) (null) 3) "\n")
- (print (call_sandboxed (lambda (+ (+ y 4) 4)) (assoc y 3) (null) (null) 1) "\n")
+	;(create_entities "test"
+	;	(lambda
+	;		##label_target
+	;		(list
+	;				{"a" 1}
+	;				@(get (get (target 2) 0) "a"))
+	;		)
+	;	)
+	;)
 
-(print (call_sandboxed
-	(lambda
-		(call_sandboxed
-			(+ (+ y 4) 4)
-			(assoc y y)
-			(null) (null) 50
-		)
-	)
-	(assoc y 3)
-	(null) (null) 2) "\n")
+	;(print (flatten_entity "test"))
+
+	;(print
+	;	;(get
+	;		(retrieve_from_entity "test" "label_target)
+	;		;(list 0 "a")
+	;	;)
+	;"\n")
+
+	;(store_entity "testsave.amlg" "test")
+
+	;(call (flatten_entity "test") {new_entity "test2"})
+
+	;(load_entity "testsave.amlg" "test2")
+	;(print (flatten_entity "test2"))
 )

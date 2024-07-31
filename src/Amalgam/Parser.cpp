@@ -1049,6 +1049,31 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 	}
 }
 
+//given a node, traverses the node via index and returns that child, nullptr if invalid
+static EvaluableNode *GetNodeRelativeToIndex(EvaluableNode *node, EvaluableNode *index_node)
+{
+	if(node == nullptr)
+		return nullptr;
+
+	//if it's an assoc, then treat the index as a string
+	if(node->IsAssociativeArray())
+	{
+		StringInternPool::StringID index_sid = EvaluableNode::ToStringIDIfExists(index_node);
+		EvaluableNode **found = node->GetMappedChildNode(index_sid);
+		if(found != nullptr)
+			return *found;
+		return nullptr;
+	}
+
+	//otherwise treat the index as a number for a list
+	size_t index = static_cast<size_t>(EvaluableNode::ToNumber(index_node));
+	if(index < node->GetOrderedChildNodes().size())
+		return node->GetOrderedChildNodes()[index];
+
+	//didn't find anything
+	return nullptr;
+}
+
 EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 {
 	if(path == nullptr)
@@ -1070,20 +1095,17 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 		if(index_node == nullptr)
 			return nullptr;
 
-		//if it's an assoc, then treat the index as a string
-		if(result->GetMappedChildNodes().size() > 0)
+		if(index_node->IsOrderedArray())
 		{
-			StringInternPool::StringID index_sid = EvaluableNode::ToStringIDIfExists(index_node);
-			EvaluableNode **found = result->GetMappedChildNode(index_sid);
-			if(found != nullptr)
-				return *found;
-			return nullptr;
-		}
+			auto &index_ocn = index_node->GetOrderedChildNodesReference();
+			for(auto index_node : index_ocn)
+				//TODO 21093: finish this, calling GetNodeRelativeToIndex
 
-		//otherwise treat the index as a number for a list
-		size_t index = static_cast<size_t>(EvaluableNode::ToNumber(index_node));
-		if(result->GetOrderedChildNodes().size() > index)
-			return result->GetOrderedChildNodes()[index];
+		}
+		else //immediate
+		{
+			return GetNodeRelativeToIndex(result, index_node);
+		}
 
 		return nullptr;
 	}
@@ -1091,13 +1113,19 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 	case ENT_TARGET:
 	{
 		//first parameter is the number of steps to crawl up in the parent tree
-		size_t steps_up = 1;
+		size_t target_steps_up = 1;
 		if(path->GetOrderedChildNodes().size() > 0)
-			steps_up = static_cast<size_t>(EvaluableNode::ToNumber(path->GetOrderedChildNodes()[0]));
+		{
+			double step_value = EvaluableNode::ToNumber(path->GetOrderedChildNodes()[0]);
+			if(step_value >= 1)
+				target_steps_up = static_cast<size_t>(step_value);
+			else
+				return nullptr;
+		}
 
 		//crawl up parse tree
 		EvaluableNode *result = path;
-		for(size_t i = 0; i < steps_up && result != nullptr; i++)
+		for(size_t i = 0; i < target_steps_up && result != nullptr; i++)
 		{
 			auto found = parentNodes.find(result);
 			if(found != end(parentNodes))

@@ -2,11 +2,10 @@
 
 	(print (get
 				(list
-					{"a" 1}
-					;@(get (get (target 1) 0) "a"))
-					;@(get (get (target 3) 0) "a"))
-					;@(get (target) [0 "a"])
-					(get (target 1) [0 "a"])
+					{"a" 3}
+					;@(get (get (target 0) 0) "a"))
+					@(get (target 2) [0 "a"])
+					;(get (target 0) [0 "a"])
 				)
 			1)
 		"\n")

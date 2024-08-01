@@ -647,14 +647,14 @@ protected:
 					interpreter->memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
 
 					//build new construction stack
-					EvaluableNode *construction_stack = enm->AllocNode(parentInterpreter->constructionStackNodes);
+					EvaluableNode *construction_stack = enm->AllocNode(*parentInterpreter->constructionStackNodes);
 					std::vector<ConstructionStackIndexAndPreviousResultUniqueness> csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
 					interpreter->PushNewConstructionContextToStack(construction_stack->GetOrderedChildNodes(),
 						csiau, target_origin, target, current_index, current_value, EvaluableNodeReference::Null());
 
 					auto result_ref = interpreter->ExecuteNode(node_to_execute,
-						enm->AllocNode(parentInterpreter->callStackNodes),
-						enm->AllocNode(parentInterpreter->interpreterNodeStackNodes),
+						enm->AllocNode(*parentInterpreter->callStackNodes),
+						enm->AllocNode(*parentInterpreter->interpreterNodeStackNodes),
 						construction_stack,
 						&csiau,
 						GetCallStackMutex());
@@ -704,9 +704,9 @@ protected:
 
 					std::vector<ConstructionStackIndexAndPreviousResultUniqueness> csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
 					auto result_ref = interpreter->ExecuteNode(node_to_execute,
-						enm->AllocNode(parentInterpreter->callStackNodes),
-						enm->AllocNode(parentInterpreter->interpreterNodeStackNodes),
-						enm->AllocNode(parentInterpreter->constructionStackNodes),
+						enm->AllocNode(*parentInterpreter->callStackNodes),
+						enm->AllocNode(*parentInterpreter->interpreterNodeStackNodes),
+						enm->AllocNode(*parentInterpreter->constructionStackNodes),
 						&csiau,
 						GetCallStackMutex(), immediate_results);
 

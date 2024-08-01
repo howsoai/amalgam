@@ -309,7 +309,7 @@ enum OrderedChildNodeType
 	OCNT_POSITION
 };
 
-//Returns the t of structure that the ordered child nodes have for a given t
+//Returns the type of structure that the ordered child nodes have for a given t
 constexpr OrderedChildNodeType GetInstructionOrderedChildNodeType(EvaluableNodeType t)
 {
 	switch(t)
@@ -435,37 +435,37 @@ constexpr bool DoesInstructionUseAssocParameters(EvaluableNodeType t)
 	return GetInstructionOrderedChildNodeType(t) == OCNT_PAIRED;
 }
 
-//returns true if the t is an immediate value
+//returns true if t is an immediate value
 constexpr bool IsEvaluableNodeTypeImmediate(EvaluableNodeType t)
 {
 	return (t == ENT_NUMBER || t == ENT_STRING || t == ENT_SYMBOL);
 }
 
-//returns true if the t uses string data
+//returns true if t uses string data
 constexpr bool DoesEvaluableNodeTypeUseStringData(EvaluableNodeType t)
 {
 	return (t == ENT_STRING || t == ENT_SYMBOL);
 }
 
-//returns true if the t uses number data
+//returns true if t uses number data
 constexpr bool DoesEvaluableNodeTypeUseNumberData(EvaluableNodeType t)
 {
 	return (t == ENT_NUMBER);
 }
 
-//returns true if the t uses association data
+//returns true if t uses association data
 constexpr bool DoesEvaluableNodeTypeUseAssocData(EvaluableNodeType t)
 {
 	return (t == ENT_ASSOC);
 }
 
-//returns true if the t uses ordered data (doesn't use any other t)
+//returns true if t uses ordered data (doesn't use any other t)
 constexpr bool DoesEvaluableNodeTypeUseOrderedData(EvaluableNodeType t)
 {
 	return (!IsEvaluableNodeTypeImmediate(t) && !DoesEvaluableNodeTypeUseAssocData(t));
 }
 
-//returns true if the t creates a scope on the stack
+//returns true if t creates a scope on the stack
 constexpr bool DoesEvaluableNodeTypeCreateScope(EvaluableNodeType t)
 {
 	return (t == ENT_CALL || t == ENT_CALL_SANDBOXED || t == ENT_WHILE || t == ENT_LET || t == ENT_REPLACE
@@ -475,7 +475,7 @@ constexpr bool DoesEvaluableNodeTypeCreateScope(EvaluableNodeType t)
 		);
 }
 
-//returns true if the t is a query
+//returns true if t is a query
 constexpr bool IsEvaluableNodeTypeQuery(EvaluableNodeType t)
 {
 	return (t == ENT_QUERY_SELECT || t == ENT_QUERY_IN_ENTITY_LIST || t == ENT_QUERY_NOT_IN_ENTITY_LIST || t == ENT_QUERY_COUNT
@@ -492,7 +492,7 @@ constexpr bool IsEvaluableNodeTypeQuery(EvaluableNodeType t)
 		);
 }
 
-//returns true if the t could potentially be idempotent
+//returns true if t could potentially be idempotent
 constexpr bool IsEvaluableNodeTypePotentiallyIdempotent(EvaluableNodeType t)
 {
 	return (t == ENT_NUMBER || t == ENT_STRING
@@ -634,7 +634,7 @@ constexpr EvaluableNodeType GetEvaluableNodeTypeFromStringId(StringInternPool::S
 	return static_cast<EvaluableNodeType>(type_index);
 }
 
-//returns a string of the enumerated t specified
+//returns a string of the type specified
 // if get_non_keywords is true, then it will return types that are not necessarily keywords, like number
 inline std::string GetStringFromEvaluableNodeType(EvaluableNodeType t, bool get_non_keywords = false)
 {
@@ -650,7 +650,7 @@ inline std::string GetStringFromEvaluableNodeType(EvaluableNodeType t, bool get_
 	return string_intern_pool.GetStringFromID(GetStringIdFromNodeTypeFromString(t));
 }
 
-//returns the enumerated t for the string
+//returns the enumerated type for the string
 inline EvaluableNodeType GetEvaluableNodeTypeFromString(const std::string &s)
 {
 	auto sid = string_intern_pool.GetIDFromString(s);

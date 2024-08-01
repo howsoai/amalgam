@@ -144,7 +144,8 @@ protected:
 	};
 
 	//Returns code that will get from location a to b.
-	static EvaluableNode *GetCodeForPathFromAToB(UnparseData &upd, EvaluableNode *a, EvaluableNode *b);
+	static EvaluableNode *GetCodeForPathToSharedNodeFromParentAToParentB(UnparseData &upd,
+		EvaluableNode *shared_node, EvaluableNode *a_parent, EvaluableNode *b_parent);
 
 	//Skips whitespace and accumulates any attributes (e.g., labels, comments) on to target
 	void SkipWhitespaceAndAccumulateAttributes(EvaluableNode *target);

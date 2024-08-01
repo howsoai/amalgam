@@ -3453,10 +3453,57 @@
 	   (list 1) (lambda (get (target) 0))))
 
  (print
-	(list (associate "a" 1)
-		@(get (target 0) 0) 1
+	(list (assoc "a" 1)
+		@(get (target 2) 0) 1
 	)
  )
+
+ (print (get
+ 			(list
+ 				{"a" 3}
+ 				@(get (target 2) [0 "a"])
+ 			)
+ 		1)
+ 	"\n")
+ 
+ (print
+ 		(list
+ 			{"a" 3}
+ 			@(get (target 2) [0 "a"])
+ 		)
+ "\n")
+ 
+ (print
+ 		(list
+ 				{"a" 3}
+ 				;@(get (target 2) [0 "a"])
+ 				(get (target) [0 "a"])
+ 		)
+ 	"\n")
+ 
+ 
+ (create_entities "test"
+ 		(set_labels
+ 			(list
+ 					{"a" 3}
+ 					(get (target) [0 "a"])
+ 			)
+ 			["label_target"]
+ 		)
+ )
+ 
+ (print (flatten_entity "test"))
+ 
+ (print
+ 	(get
+ 		(retrieve_from_entity "test" "label_target")
+ 		(list 0 "a")
+ 	)
+ "\n")
+ 
+ (call (flatten_entity "test") {new_entity "test2"})
+ 
+ (print (flatten_entity "test2"))
 
  (print "--null equality tests--\n")
 

@@ -121,11 +121,14 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 	if(shared_node == nullptr || a_parent == nullptr || b_parent == nullptr)
 		return nullptr;
 
-	//find all parent nodes of a to find collision with parent node of b
-	EvaluableNode::ReferenceSetType a_parent_nodes;
-	while(a_parent != nullptr && a_parent_nodes.emplace(a_parent).second == true)
+	//find all parent nodes of a to find collision with parent node of b, along with depth counts
+	EvaluableNode::ReferenceCountType a_parent_nodes;
+	size_t a_ancestor_depth = 1;
+	while(a_parent != nullptr && a_parent_nodes.emplace(a_parent, a_ancestor_depth++).second == true)
 		a_parent = upd.parentNodes[a_parent];
 
+	//restart at a depth of 1 in case something goes wrong
+	a_ancestor_depth = 1;
 	//keep track of nodes visited to make sure there's no cycle
 	EvaluableNode::ReferenceSetType b_nodes_visited;
 	//ids to traverse along the path
@@ -137,7 +140,10 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 	{
 		//stop if found common parent node
 		if(auto a_entry = a_parent_nodes.find(b); a_entry != end(a_parent_nodes))
+		{
+			a_ancestor_depth = a_entry->second;
 			break;
+		}
 
 		//each kind of child nodes
 		if(b_parent->IsAssociativeArray())
@@ -197,7 +203,7 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 	//build code to get the reference
 	EvaluableNode *target = upd.enm->AllocNode(ENT_TARGET);
 	//need to include the get (below) in the depth, so add 1
-	target->AppendOrderedChildNode(upd.enm->AllocNode(static_cast<double>(b_path_nodes.size())));
+	target->AppendOrderedChildNode(upd.enm->AllocNode(static_cast<double>(a_ancestor_depth + 1)));
 
 	EvaluableNode *indices = nullptr;
 	if(b_path_nodes.size() == 0)
@@ -208,7 +214,7 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 		indices = upd.enm->AllocNode(b_path_nodes, false, true);
 
 	EvaluableNode *get = upd.enm->AllocNode(ENT_GET);
-	get->AppendOrderedChildNode(target); //placeholder for the object to use when assembling chain later
+	get->AppendOrderedChildNode(target);
 	get->AppendOrderedChildNode(indices);
 
 	return get;

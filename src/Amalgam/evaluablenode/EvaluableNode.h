@@ -569,24 +569,6 @@ public:
 		attributes.individualAttribs.isIdempotent = is_idempotent;
 	}
 
-	//marks n and all its parent nodes as needing a cycle check
-	//nodes_to_parent_nodes is a lookup, for each node the lookup is its parent
-	static inline void SetParentEvaluableNodesCycleChecks(EvaluableNode *n, ReferenceAssocType &nodes_to_parent_nodes)
-	{
-		//mark until/unless have found a cycle
-		while(n != nullptr && !n->GetNeedCycleCheck())
-		{
-			n->SetNeedCycleCheck(true);
-
-			//attempt to find parent
-			auto found_parent = nodes_to_parent_nodes.find(n);
-			if(found_parent == end(nodes_to_parent_nodes))
-				return;
-
-			n = found_parent->second;
-		}
-	}
-
 	//returns whether this node has been marked as known to be currently in use
 	constexpr bool GetKnownToBeInUse()
 	{

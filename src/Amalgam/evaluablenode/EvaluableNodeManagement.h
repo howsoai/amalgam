@@ -373,11 +373,11 @@ public:
 		return n;
 	}
 
-	inline EvaluableNode *AllocListNode(std::vector<EvaluableNode *> *child_nodes,
+	inline EvaluableNode *AllocNode(std::vector<EvaluableNode *> &child_nodes,
 		bool need_cycle_check = true, bool is_idempotent = false)
 	{
 		EvaluableNode *n = AllocNode(ENT_LIST);
-		n->SetOrderedChildNodes(*child_nodes, need_cycle_check, is_idempotent);
+		n->SetOrderedChildNodes(child_nodes, need_cycle_check, is_idempotent);
 		return n;
 	}
 

@@ -298,7 +298,7 @@ constexpr size_t NUM_ENT_OPCODES = ENT_NOT_A_BUILT_IN_TYPE;
 constexpr size_t NUM_VALID_ENT_OPCODES = ENT_DEALLOCATED;
 
 
-//Different arrangements of ordered parameters
+//different arrangements of ordered parameters
 enum OrderedChildNodeType
 {
 	OCNT_UNORDERED,
@@ -309,7 +309,7 @@ enum OrderedChildNodeType
 	OCNT_POSITION
 };
 
-//Returns the type of structure that the ordered child nodes have for a given type
+//returns the type of structure that the ordered child nodes have for a given t
 constexpr OrderedChildNodeType GetInstructionOrderedChildNodeType(EvaluableNodeType t)
 {
 	switch(t)
@@ -429,67 +429,77 @@ constexpr OrderedChildNodeType GetInstructionOrderedChildNodeType(EvaluableNodeT
 	}
 }
 
-//Returns true if the instruction uses an associative array as parameters. If false, then a regular kind of list
+//returns true if the instruction uses an associative array as parameters. If false, then a regular kind of list
 constexpr bool DoesInstructionUseAssocParameters(EvaluableNodeType t)
 {
 	return GetInstructionOrderedChildNodeType(t) == OCNT_PAIRED;
 }
 
-//Returns true if the type is an immediate value
+//returns true if t is an immediate value
 constexpr bool IsEvaluableNodeTypeImmediate(EvaluableNodeType t)
 {
 	return (t == ENT_NUMBER || t == ENT_STRING || t == ENT_SYMBOL);
 }
 
-//Returns true if the type uses string data
+//returns true if t uses string data
 constexpr bool DoesEvaluableNodeTypeUseStringData(EvaluableNodeType t)
 {
 	return (t == ENT_STRING || t == ENT_SYMBOL);
 }
 
-//Returns true if the type uses number data
+//returns true if t uses number data
 constexpr bool DoesEvaluableNodeTypeUseNumberData(EvaluableNodeType t)
 {
 	return (t == ENT_NUMBER);
 }
 
-//Returns true if the type uses association data
+//returns true if t uses association data
 constexpr bool DoesEvaluableNodeTypeUseAssocData(EvaluableNodeType t)
 {
 	return (t == ENT_ASSOC);
 }
 
-//Returns true if the type uses ordered data (doesn't use any other type)
+//returns true if t uses ordered data (doesn't use any other t)
 constexpr bool DoesEvaluableNodeTypeUseOrderedData(EvaluableNodeType t)
 {
 	return (!IsEvaluableNodeTypeImmediate(t) && !DoesEvaluableNodeTypeUseAssocData(t));
 }
 
-//returns true if the type is a query
-constexpr bool IsEvaluableNodeTypeQuery(EvaluableNodeType type)
+//returns true if t creates a scope on the stack
+constexpr bool DoesEvaluableNodeTypeCreateScope(EvaluableNodeType t)
 {
-	return (type == ENT_QUERY_SELECT || type == ENT_QUERY_IN_ENTITY_LIST || type == ENT_QUERY_NOT_IN_ENTITY_LIST || type == ENT_QUERY_COUNT
-		|| type == ENT_QUERY_SAMPLE || type == ENT_QUERY_WEIGHTED_SAMPLE || type == ENT_QUERY_EXISTS || type == ENT_QUERY_NOT_EXISTS
-		|| type == ENT_QUERY_EQUALS || type == ENT_QUERY_NOT_EQUALS
-		|| type == ENT_QUERY_BETWEEN || type == ENT_QUERY_NOT_BETWEEN || type == ENT_QUERY_AMONG || type == ENT_QUERY_NOT_AMONG
-		|| type == ENT_QUERY_MAX || type == ENT_QUERY_MIN || type == ENT_QUERY_SUM || type == ENT_QUERY_MODE
-		|| type == ENT_QUERY_QUANTILE || type == ENT_QUERY_GENERALIZED_MEAN
-		|| type == ENT_QUERY_MIN_DIFFERENCE || type == ENT_QUERY_MAX_DIFFERENCE || type == ENT_QUERY_VALUE_MASSES
-		|| type == ENT_QUERY_LESS_OR_EQUAL_TO || type == ENT_QUERY_GREATER_OR_EQUAL_TO
-		|| type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE || type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
-		|| type == ENT_COMPUTE_ENTITY_CONVICTIONS || type == ENT_COMPUTE_ENTITY_GROUP_KL_DIVERGENCE
-		|| type == ENT_COMPUTE_ENTITY_DISTANCE_CONTRIBUTIONS || type == ENT_COMPUTE_ENTITY_KL_DIVERGENCES
+	return (t == ENT_CALL || t == ENT_CALL_SANDBOXED || t == ENT_WHILE || t == ENT_LET || t == ENT_REPLACE
+		|| t == ENT_RANGE || t == ENT_REWRITE || t == ENT_MAP || t == ENT_FILTER || t == ENT_WEAVE
+		|| t == ENT_REDUCE || t == ENT_SORT || t == ENT_ASSOCIATE || t == ENT_ZIP || t == ENT_LIST
+		|| t == ENT_ASSOC || t == ENT_CALL_ENTITY || t == ENT_CALL_ENTITY_GET_CHANGES || t == ENT_CALL_CONTAINER
 		);
 }
 
-//returns true if the type could potentially be idempotent
-constexpr bool IsEvaluableNodeTypePotentiallyIdempotent(EvaluableNodeType type)
+//returns true if t is a query
+constexpr bool IsEvaluableNodeTypeQuery(EvaluableNodeType t)
 {
-	return (type == ENT_NUMBER || type == ENT_STRING
-		|| type == ENT_TRUE || type == ENT_FALSE
-		|| type == ENT_NULL || type == ENT_LIST || type == ENT_ASSOC
-		|| type == ENT_CONCLUDE || type == ENT_RETURN
-		|| IsEvaluableNodeTypeQuery(type));
+	return (t == ENT_QUERY_SELECT || t == ENT_QUERY_IN_ENTITY_LIST || t == ENT_QUERY_NOT_IN_ENTITY_LIST || t == ENT_QUERY_COUNT
+		|| t == ENT_QUERY_SAMPLE || t == ENT_QUERY_WEIGHTED_SAMPLE || t == ENT_QUERY_EXISTS || t == ENT_QUERY_NOT_EXISTS
+		|| t == ENT_QUERY_EQUALS || t == ENT_QUERY_NOT_EQUALS
+		|| t == ENT_QUERY_BETWEEN || t == ENT_QUERY_NOT_BETWEEN || t == ENT_QUERY_AMONG || t == ENT_QUERY_NOT_AMONG
+		|| t == ENT_QUERY_MAX || t == ENT_QUERY_MIN || t == ENT_QUERY_SUM || t == ENT_QUERY_MODE
+		|| t == ENT_QUERY_QUANTILE || t == ENT_QUERY_GENERALIZED_MEAN
+		|| t == ENT_QUERY_MIN_DIFFERENCE || t == ENT_QUERY_MAX_DIFFERENCE || t == ENT_QUERY_VALUE_MASSES
+		|| t == ENT_QUERY_LESS_OR_EQUAL_TO || t == ENT_QUERY_GREATER_OR_EQUAL_TO
+		|| t == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE || t == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
+		|| t == ENT_COMPUTE_ENTITY_CONVICTIONS || t == ENT_COMPUTE_ENTITY_GROUP_KL_DIVERGENCE
+		|| t == ENT_COMPUTE_ENTITY_DISTANCE_CONTRIBUTIONS || t == ENT_COMPUTE_ENTITY_KL_DIVERGENCES
+		);
+}
+
+//returns true if t could potentially be idempotent
+constexpr bool IsEvaluableNodeTypePotentiallyIdempotent(EvaluableNodeType t)
+{
+	return (t == ENT_NUMBER || t == ENT_STRING
+		|| t == ENT_TRUE || t == ENT_FALSE
+		|| t == ENT_NULL || t == ENT_LIST || t == ENT_ASSOC
+		|| t == ENT_CONCLUDE || t == ENT_RETURN
+		|| IsEvaluableNodeTypeQuery(t));
 }
 
 constexpr bool IsEvaluableNodeTypeValid(EvaluableNodeType t)
@@ -628,7 +638,7 @@ inline EvaluableNodeType GetEvaluableNodeTypeFromStringId(StringInternPool::Stri
 	return static_cast<EvaluableNodeType>(type_index);
 }
 
-//returns a string of the enumerated type specified
+//returns a string of the type specified
 // if get_non_keywords is true, then it will return types that are not necessarily keywords, like number
 inline std::string GetStringFromEvaluableNodeType(EvaluableNodeType t, bool get_non_keywords = false)
 {

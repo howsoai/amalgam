@@ -441,7 +441,11 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, EvaluableNode *n
 	{
 		pos++;
 		numOpenParenthesis++;
-		SkipWhitespaceAndAccumulateAttributes(new_token);
+
+		//only accumulate attributes for opcodes -- attributes for [ and { must be before the character
+		if(cur_char == '(')
+			SkipWhitespaceAndAccumulateAttributes(new_token);
+
 		if(pos >= code->size())
 		{
 			FreeNode(new_token);

@@ -3481,7 +3481,7 @@
  		)
  	"\n")
  
- 
+  (print "entity cyclic test:\n")
  (create_entities "test"
  		(set_labels
  			(list
@@ -3511,27 +3511,24 @@
 	))
 
 
+ (print "cyclic lookup test:\n")
+ (declare (assoc
+		id "id"
+	))
   (declare (assoc
   	data_assoc
   		{
   			"original" {
   				auto_derive_on_train {
-  						ordered_by_features [ date ]
-  						series_id_features id_list
-  						derive_type "custom"
+  						series_id_features id
   					}
   			}
   
-  			"pointer" {
-  				auto_derive_on_train {
-  						ordered_by_features [ date ]
-  						series_id_features id_list
-  						derive_type "custom"
-  					}
-  			}
+  			"pointer" [[
+  						id
+  					]]
   		}
   ))
-  
   (print data_assoc)
 
  (print "--null equality tests--\n")

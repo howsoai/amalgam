@@ -135,8 +135,7 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 	std::vector<EvaluableNode *> b_path_nodes;
 	//the current node from path b
 	EvaluableNode *b = shared_node;
-	while(b_parent != nullptr
-		&& b_nodes_visited.insert(b_parent).second == true) //make sure not visited yet
+	while(b_nodes_visited.insert(b_parent).second == true) //make sure not visited yet
 	{
 		//stop if found common parent node
 		if(auto a_entry = a_parent_nodes.find(b); a_entry != end(a_parent_nodes))
@@ -144,6 +143,10 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 			a_ancestor_depth = a_entry->second;
 			break;
 		}
+
+		//could not find a common ancestor, so error out
+		if(b == nullptr)
+			return nullptr;
 
 		//each kind of child nodes
 		if(b_parent->IsAssociativeArray())

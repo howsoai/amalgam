@@ -1124,6 +1124,10 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 		if(path->GetOrderedChildNodes().size() > 0)
 		{
 			double step_value = EvaluableNode::ToNumber(path->GetOrderedChildNodes()[0]);
+
+			//zero is not allowed here because that means it would attempt to replace itself with itself
+			//within the data -- in actual runtime, 0 is allowed for target because other things can point to it,
+			//but not during parsing
 			if(step_value >= 1)
 				target_steps_up = static_cast<size_t>(step_value);
 			else

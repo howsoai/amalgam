@@ -298,7 +298,7 @@ constexpr size_t NUM_ENT_OPCODES = ENT_NOT_A_BUILT_IN_TYPE;
 constexpr size_t NUM_VALID_ENT_OPCODES = ENT_DEALLOCATED;
 
 
-//Different arrangements of ordered parameters
+//different arrangements of ordered parameters
 enum OrderedChildNodeType
 {
 	OCNT_UNORDERED,
@@ -309,7 +309,7 @@ enum OrderedChildNodeType
 	OCNT_POSITION
 };
 
-//Returns the type of structure that the ordered child nodes have for a given t
+//returns the type of structure that the ordered child nodes have for a given t
 constexpr OrderedChildNodeType GetInstructionOrderedChildNodeType(EvaluableNodeType t)
 {
 	switch(t)

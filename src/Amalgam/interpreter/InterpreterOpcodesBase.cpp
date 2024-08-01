@@ -1269,7 +1269,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET(EvaluableNode *en, 
 		double value = InterpretNodeIntoNumberValue(ocn[0]);
 		if(value >= 0)
 			depth = static_cast<size_t>(value);
-		else if(!FastIsNaN(value)) //null should leave depth as 0
+		else if(!FastIsNaN(value)) //null/nan should leave depth as 0, any negative value is an error
 			return EvaluableNodeReference::Null();
 	}
 

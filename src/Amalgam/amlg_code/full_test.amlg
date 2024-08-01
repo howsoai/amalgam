@@ -3505,6 +3505,35 @@
  
  (print (flatten_entity "test2"))
 
+ (declare (assoc
+		date "date"
+		id_list [ "id" ]
+	))
+
+
+  (declare (assoc
+  	data_assoc
+  		{
+  			"original" {
+  				auto_derive_on_train {
+  						ordered_by_features [ date ]
+  						series_id_features id_list
+  						derive_type "custom"
+  					}
+  			}
+  
+  			"pointer" {
+  				auto_derive_on_train {
+  						ordered_by_features [ date ]
+  						series_id_features id_list
+  						derive_type "custom"
+  					}
+  			}
+  		}
+  ))
+  
+  (print data_assoc)
+
  (print "--null equality tests--\n")
 
  (print "(= (null) (null)): " (= (null) (null)) "\n")

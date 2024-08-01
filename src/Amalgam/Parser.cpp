@@ -126,8 +126,6 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 	while(a_parent != nullptr && a_parent_nodes.emplace(a_parent).second == true)
 		a_parent = upd.parentNodes[a_parent];
 
-	//start at a depth of 1 because target needs 1 to get out
-	size_t b_ancestor_depth = 1;
 	//keep track of nodes visited to make sure there's no cycle
 	EvaluableNode::ReferenceSetType b_nodes_visited;
 	//ids to traverse along the path
@@ -199,7 +197,7 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 	//build code to get the reference
 	EvaluableNode *target = upd.enm->AllocNode(ENT_TARGET);
 	//need to include the get (below) in the depth, so add 1
-	target->AppendOrderedChildNode(upd.enm->AllocNode(static_cast<double>(b_ancestor_depth + 1)));
+	target->AppendOrderedChildNode(upd.enm->AllocNode(static_cast<double>(b_path_nodes.size())));
 
 	EvaluableNode *indices = nullptr;
 	if(b_path_nodes.size() == 0)

@@ -66,12 +66,12 @@ void ThreadPool::AddNewThread()
 	threads.emplace_back(
 		[this]
 		{
+			std::unique_lock<std::mutex> lock(threadsMutex);
+
 			//count this thread as active during startup
 			//this is important, as the inner loop assumes the default state of the thread is to count itself
 			//so the number of threads doesn't change when switching between a completed task and a new one
 			numActiveThreads++;
-
-			std::unique_lock<std::mutex> lock(threadsMutex);
 
 			//infinite loop waiting for work
 			for(;;)

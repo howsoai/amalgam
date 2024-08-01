@@ -1089,9 +1089,9 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 		{
 			//travers the nodes over each index to find the location
 			auto &index_ocn = index_node->GetOrderedChildNodesReference();
-			for(auto &index_node : index_ocn)
+			for(auto &index_node_element : index_ocn)
 			{
-				result = GetNodeRelativeToIndex(result, index_node);
+				result = GetNodeRelativeToIndex(result, index_node_element);
 				if(result == nullptr)
 					break;
 			}
@@ -1148,45 +1148,39 @@ void Parser::PreevaluateNodes()
 			continue;
 
 		auto node_type = n->GetType();
-		if(node_type == ENT_GET || node_type == ENT_TARGET)
-		{
-			EvaluableNode *target = GetNodeFromRelativeCodePath(n);
-
-			//find the node's parent in order to set it to target
-			EvaluableNode *parent = nullptr;
-			parent = parentNodes[n];
-			if(parent == nullptr)
-				continue;
-
-			//copy reference of target to the parent's index of the target
-			if(parent->IsAssociativeArray())
-			{
-				for(auto &[_, cn] : parent->GetMappedChildNodesReference())
-				{
-					if(cn == n)
-					{
-						cn = target;
-						break;
-					}
-				}
-			}
-			else if(parent->IsOrderedArray())
-			{
-				for(auto &cn : parent->GetOrderedChildNodesReference())
-				{
-					if(cn == n)
-					{
-						cn = target;
-						break;
-					}
-				}
-			}
-
-			//mark both the originals' parents and the new parents as both cyclic
-			EvaluableNode::SetParentEvaluableNodesCycleChecks(parentNodes[n], parentNodes);
-			EvaluableNode::SetParentEvaluableNodesCycleChecks(parent, parentNodes);
-
+		if(node_type != ENT_GET && node_type != ENT_TARGET)
 			continue;
+
+		EvaluableNode *target = GetNodeFromRelativeCodePath(n);
+
+		//find the node's parent in order to set it to target
+		EvaluableNode *parent = nullptr;
+		parent = parentNodes[n];
+		if(parent == nullptr)
+			continue;
+
+		//copy reference of target to the parent's index of the target
+		if(parent->IsAssociativeArray())
+		{
+			for(auto &[_, cn] : parent->GetMappedChildNodesReference())
+			{
+				if(cn == n)
+				{
+					cn = target;
+					break;
+				}
+			}
+		}
+		else if(parent->IsOrderedArray())
+		{
+			for(auto &cn : parent->GetOrderedChildNodesReference())
+			{
+				if(cn == n)
+				{
+					cn = target;
+					break;
+				}
+			}
 		}
 	}
 }

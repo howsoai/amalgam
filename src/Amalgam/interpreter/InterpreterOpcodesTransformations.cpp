@@ -655,6 +655,23 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, b
 	{
 		woven_list->ReserveOrderedChildNodes(total_num_elements);
 
+		if(all_lists_unique)
+		{
+			//if any value is immediate, it will be repeated, so it won't be cycle free
+			for(auto &list : lists)
+			{
+				if(list != nullptr && IsEvaluableNodeTypeImmediate(list->GetType()))
+				{
+					woven_list->SetNeedCycleCheck(true);
+					break;
+				}
+			}
+		}
+		else //not all unique
+		{
+			woven_list->SetNeedCycleCheck(true);
+		}
+
 		//for every index, iterate over every list and if there is an element, put it in the woven list
 		for(size_t list_index = 0; list_index < maximum_list_size; list_index++)
 		{

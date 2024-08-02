@@ -589,8 +589,8 @@ public:
 		if(tree == nullptr)
 			return;
 
-		checkedNodesBuffer.clear();
-		UpdateFlagsForNodeTreeRecurse(tree, checkedNodesBuffer);
+		nodeToParentNodeCache.clear();
+		UpdateFlagsForNodeTreeRecurse(tree, nullptr, nodeToParentNodeCache);
 	}
 
 	//heuristic used to determine whether unused memory should be collected (e.g., by FreeAllNodesExcept*)
@@ -925,8 +925,9 @@ protected:
 
 	//computes whether the code is cycle free and idempotent and updates all nodes appropriately
 	// returns flags for whether cycle free and idempotent
-	// requires n not be nullptr
-	static std::pair<bool, bool> UpdateFlagsForNodeTreeRecurse(EvaluableNode *n, std::vector<EvaluableNode *> &stack);
+	// requires tree not be nullptr; the first tree should have nullptr as parent
+	static std::pair<bool, bool> UpdateFlagsForNodeTreeRecurse(EvaluableNode *tree, EvaluableNode *parent,
+		EvaluableNode::ReferenceAssocType &checked_to_parent);
 
 	//sets or clears all referenced nodes' in use flags
 	//if set_in_use is true, then it will set the value, if false, it will clear the value
@@ -977,7 +978,7 @@ protected:
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 	thread_local
 #endif
-		static std::vector<EvaluableNode *> checkedNodesBuffer;
+		static EvaluableNode::ReferenceAssocType nodeToParentNodeCache;
 
 
 	//extra space to allocate when allocating

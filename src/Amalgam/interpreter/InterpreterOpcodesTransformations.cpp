@@ -634,7 +634,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, b
 	//find the largest of all the lists and the total number of elements
 	size_t maximum_list_size = 0;
 	size_t total_num_elements = 0;
-	bool all_lists_unique = true;
 	for(auto &list : lists)
 	{
 		if(list != nullptr)
@@ -642,34 +641,23 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, b
 			size_t num_elements = list->GetOrderedChildNodes().size();
 			maximum_list_size = std::max(maximum_list_size, num_elements);
 			total_num_elements += num_elements;
-
-			all_lists_unique &= list.unique;
 		}
 	}
 
 	//the result
-	EvaluableNodeReference woven_list(evaluableNodeManager->AllocNode(ENT_LIST), all_lists_unique);
+	EvaluableNodeReference woven_list(evaluableNodeManager->AllocNode(ENT_LIST), true);
 
 	//just lists, interleave
 	if(EvaluableNode::IsNull(function))
 	{
 		woven_list->ReserveOrderedChildNodes(total_num_elements);
 
-		if(all_lists_unique)
+		for(auto &list : lists)
 		{
-			//if any value is immediate, it will be repeated, so it won't be cycle free
-			for(auto &list : lists)
-			{
-				if(list != nullptr && IsEvaluableNodeTypeImmediate(list->GetType()))
-				{
-					woven_list->SetNeedCycleCheck(true);
-					break;
-				}
-			}
-		}
-		else //not all unique
-		{
-			woven_list->SetNeedCycleCheck(true);
+			if(list != nullptr && IsEvaluableNodeTypeImmediate(list->GetType()))
+				woven_list->SetNeedCycleCheck(true);
+			else
+				woven_list.UpdatePropertiesBasedOnAttachedNode(list);
 		}
 
 		//for every index, iterate over every list and if there is an element, put it in the woven list
@@ -685,8 +673,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, b
 			}
 		}
 
-		//because each list can be unique but from the same source, still need to update all flags in case of cycle
-		EvaluableNodeManager::UpdateFlagsForNodeTree(woven_list);
 		return woven_list;
 	}
 
@@ -729,7 +715,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, b
 		evaluableNodeManager->FreeNodeIfPossible(values_to_weave);
 	}
 
-	EvaluableNodeManager::UpdateFlagsForNodeTree(woven_list);
 	return woven_list;
 }
 

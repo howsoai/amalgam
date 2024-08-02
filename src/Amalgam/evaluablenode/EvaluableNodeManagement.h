@@ -78,6 +78,29 @@ public:
 			value.nodeValue.code->SetIsIdempotent(false);
 	}
 
+	//when attached a child node to a random location under this node, checks to see
+	//if all flags for this node should be rechecked
+	//this will update uniqueness based on the new attachment
+	bool NeedAllFlagsRecheckedAfterNodeAttachedAndUpdateUniqueness(EvaluableNodeReference &attached)
+	{
+		if(attached.value.nodeValue.code == nullptr)
+			return false;
+
+		if(!attached.unique)
+		{
+			unique = false;
+			return true;
+		}
+
+		if(value.nodeValue.code->GetNeedCycleCheck() != attached.value.nodeValue.code->GetNeedCycleCheck())
+			return true;
+
+		if(value.nodeValue.code->GetIsIdempotent() != attached.value.nodeValue.code->GetIsIdempotent())
+			return true;
+
+		return false;
+	}
+
 	//calls GetNeedCycleCheck if the reference is not nullptr, returns false if it is nullptr
 	constexpr bool GetNeedCycleCheck()
 	{

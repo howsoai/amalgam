@@ -78,6 +78,29 @@ public:
 			value.nodeValue.code->SetIsIdempotent(false);
 	}
 
+	//when attached a child node to a random location under this node, checks to see
+	//if all flags for this node should be rechecked
+	//this will update uniqueness based on the new attachment
+	bool NeedAllFlagsRecheckedAfterNodeAttachedAndUpdateUniqueness(EvaluableNodeReference &attached)
+	{
+		if(attached.value.nodeValue.code == nullptr)
+			return false;
+
+		if(!attached.unique)
+		{
+			unique = false;
+			return true;
+		}
+
+		if(value.nodeValue.code->GetNeedCycleCheck() != attached.value.nodeValue.code->GetNeedCycleCheck())
+			return true;
+
+		if(value.nodeValue.code->GetIsIdempotent() != attached.value.nodeValue.code->GetIsIdempotent())
+			return true;
+
+		return false;
+	}
+
 	//calls GetNeedCycleCheck if the reference is not nullptr, returns false if it is nullptr
 	constexpr bool GetNeedCycleCheck()
 	{
@@ -587,19 +610,8 @@ public:
 		if(tree == nullptr)
 			return;
 
-		EvaluableNode::ReferenceSetType checked;
-		UpdateFlagsForNodeTreeRecurse(tree, checked);
-	}
-
-	//computes whether the code is cycle free and idempotent and updates all nodes appropriately
-	// uses checked to store nodes
-	static inline void UpdateFlagsForNodeTree(EvaluableNode *tree, EvaluableNode::ReferenceSetType &checked)
-	{
-		if(tree == nullptr)
-			return;
-
-		checked.clear();
-		UpdateFlagsForNodeTreeRecurse(tree, checked);
+		nodeToParentNodeCache.clear();
+		UpdateFlagsForNodeTreeRecurse(tree, nullptr, nodeToParentNodeCache);
 	}
 
 	//heuristic used to determine whether unused memory should be collected (e.g., by FreeAllNodesExcept*)
@@ -934,8 +946,9 @@ protected:
 
 	//computes whether the code is cycle free and idempotent and updates all nodes appropriately
 	// returns flags for whether cycle free and idempotent
-	// requires tree not be nullptr
-	static std::pair<bool, bool> UpdateFlagsForNodeTreeRecurse(EvaluableNode *tree, EvaluableNode::ReferenceSetType &checked);
+	// requires tree not be nullptr; the first tree should have nullptr as parent
+	static std::pair<bool, bool> UpdateFlagsForNodeTreeRecurse(EvaluableNode *tree, EvaluableNode *parent,
+		EvaluableNode::ReferenceAssocType &checked_to_parent);
 
 	//sets or clears all referenced nodes' in use flags
 	//if set_in_use is true, then it will set the value, if false, it will clear the value
@@ -981,6 +994,13 @@ protected:
 	//keeps track of all of the nodes currently referenced by any resource or interpreter
 	//only allocated if needed
 	std::unique_ptr<NodesReferenced> nodesCurrentlyReferenced;
+
+	//buffer used for updating EvaluableNodeFlags, particularly UpdateFlagsForNodeTree
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	thread_local
+#endif
+		static EvaluableNode::ReferenceAssocType nodeToParentNodeCache;
+
 
 	//extra space to allocate when allocating
 	static const double allocExpansionFactor;

@@ -1185,6 +1185,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_and_REPLACE(EvaluableN
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(result);
 
+	bool result_flags_need_updates = false;
+
 	//get each address/value pair to replace in result
 	for(size_t replace_change_index = 1; replace_change_index + 1 < ocn.size(); replace_change_index += 2)
 	{
@@ -1221,7 +1223,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_and_REPLACE(EvaluableN
 				node_stack.PushEvaluableNode(result);
 			}
 
-			result.UpdatePropertiesBasedOnAttachedNode(new_value);
+			if(result.NeedAllFlagsRecheckedAfterNodeAttachedAndUpdateUniqueness(new_value))
+				result_flags_need_updates = true;
 		}
 		else //en->GetType() == ENT_REPLACE
 		{
@@ -1252,9 +1255,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_and_REPLACE(EvaluableN
 				node_stack.PushEvaluableNode(result);
 			}
 
-			result.UpdatePropertiesBasedOnAttachedNode(new_value);
+			//need to update flags because of execution happening between all
+			if(result.NeedAllFlagsRecheckedAfterNodeAttachedAndUpdateUniqueness(new_value))
+				EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 		}
 	}
+
+	if(result_flags_need_updates)
+		EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 
 	return result;
 }

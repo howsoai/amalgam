@@ -482,7 +482,7 @@ public:
 	{
 		EvaluableNode::ReferenceSetType checked;
 		ReplaceLabelInTreeRecurse(tree, label_id, replacement, checked);
-		EvaluableNodeManager::UpdateFlagsForNodeTree(tree, checked);
+		EvaluableNodeManager::UpdateFlagsForNodeTree(tree);
 	}
 
 	//If the nodes, n1 and n2 can be generalized, then returns a new (allocated) node that is preferable to use (usually the more specific one)

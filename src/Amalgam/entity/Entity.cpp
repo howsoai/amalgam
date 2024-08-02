@@ -270,6 +270,7 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 
 	//determine whether this label is cycle free -- if the value changes, then need to update the entity
 	bool dest_prev_value_need_cycle_check = destination->GetNeedCycleCheck();
+	bool dest_prev_value_idempotent = destination->GetIsIdempotent();
 	bool root_rebuilt = false;
 
 	if(!direct_set)
@@ -326,6 +327,7 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 	}
 
 	bool dest_new_value_need_cycle_check = (new_value != nullptr && new_value->GetNeedCycleCheck());
+	bool dest_new_value_idempotent = (new_value != nullptr && new_value->GetIsIdempotent());
 
 	if(batch_call)
 	{
@@ -336,7 +338,9 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 	else
 	{
 		//if cycle check was changed, and wasn't rebuilt, then need to do so now
-		if(!root_rebuilt && dest_prev_value_need_cycle_check != dest_new_value_need_cycle_check)
+		if(!root_rebuilt && (
+				dest_prev_value_need_cycle_check != dest_new_value_need_cycle_check
+				|| dest_prev_value_idempotent != dest_new_value_idempotent))
 			EvaluableNodeManager::UpdateFlagsForNodeTree(evaluableNodeManager.GetRootNode());
 
 		EntityQueryCaches *container_caches = GetContainerQueryCaches();

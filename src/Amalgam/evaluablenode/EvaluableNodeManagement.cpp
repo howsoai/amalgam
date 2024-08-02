@@ -12,6 +12,12 @@
 Concurrency::ReadWriteMutex EvaluableNodeManager::memoryModificationMutex;
 #endif
 
+
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+thread_local
+#endif
+EvaluableNode::ReferenceAssocType EvaluableNodeManager::nodeToParentNodeCache;
+
 const double EvaluableNodeManager::allocExpansionFactor = 1.5;
 
 EvaluableNodeManager::~EvaluableNodeManager()
@@ -895,15 +901,36 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 	}
 }
 
-std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(EvaluableNode *tree, EvaluableNode::ReferenceSetType &checked)
+std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(EvaluableNode *tree,
+	EvaluableNode *parent, EvaluableNode::ReferenceAssocType &checked_to_parent)
 {
 	//attempt to insert; if new, mark as not needing a cycle check yet
 	// though that may be changed when child nodes are evaluated below
-	auto [_, inserted] = checked.insert(tree);
+	auto [existing_record, inserted] = checked_to_parent.emplace(tree, parent);
 	if(inserted)
+	{
 		tree->SetNeedCycleCheck(false);
-	else //already exists, notify caller
+	}
+	else //this node has already been checked
+	{
+		//climb back up to top setting cycle checks needed
+		EvaluableNode *cur_node = existing_record->second;
+		while(cur_node != nullptr)
+		{
+			//if it's already set to cycle check, don't need to keep going
+			if(cur_node->GetNeedCycleCheck())
+				break;
+
+			cur_node->SetNeedCycleCheck(true);
+
+			auto parent_record = checked_to_parent.find(cur_node);
+			if(parent_record != end(checked_to_parent))
+				cur_node = parent_record->second;
+			else //shouldn't make it here
+				break;
+		}
 		return std::make_pair(true, tree->GetIsIdempotent());
+	}
 
 	bool is_idempotent = (IsEvaluableNodeTypePotentiallyIdempotent(tree->GetType()) && (tree->GetNumLabels() == 0));
 	
@@ -916,7 +943,7 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 			if(cn == nullptr)
 				continue;
 
-			auto [cn_need_cycle_check, cn_is_idempotent] = UpdateFlagsForNodeTreeRecurse(cn, checked);
+			auto [cn_need_cycle_check, cn_is_idempotent] = UpdateFlagsForNodeTreeRecurse(cn, tree, checked_to_parent);
 
 			//update flags for tree
 			if(cn_need_cycle_check)
@@ -939,7 +966,7 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 			if(cn == nullptr)
 				continue;
 
-			auto [cn_need_cycle_check, cn_is_idempotent] = UpdateFlagsForNodeTreeRecurse(cn, checked);
+			auto [cn_need_cycle_check, cn_is_idempotent] = UpdateFlagsForNodeTreeRecurse(cn, tree, checked_to_parent);
 
 			//update flags for tree
 			if(cn_need_cycle_check)

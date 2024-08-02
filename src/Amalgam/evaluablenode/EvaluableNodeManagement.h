@@ -589,19 +589,8 @@ public:
 		if(tree == nullptr)
 			return;
 
-		EvaluableNode::ReferenceSetType checked;
-		UpdateFlagsForNodeTreeRecurse(tree, checked);
-	}
-
-	//computes whether the code is cycle free and idempotent and updates all nodes appropriately
-	// uses checked to store nodes
-	static inline void UpdateFlagsForNodeTree(EvaluableNode *tree, EvaluableNode::ReferenceSetType &checked)
-	{
-		if(tree == nullptr)
-			return;
-
-		checked.clear();
-		UpdateFlagsForNodeTreeRecurse(tree, checked);
+		checkedNodesBuffer.clear();
+		UpdateFlagsForNodeTreeRecurse(tree, checkedNodesBuffer);
 	}
 
 	//heuristic used to determine whether unused memory should be collected (e.g., by FreeAllNodesExcept*)
@@ -936,8 +925,8 @@ protected:
 
 	//computes whether the code is cycle free and idempotent and updates all nodes appropriately
 	// returns flags for whether cycle free and idempotent
-	// requires tree not be nullptr
-	static std::pair<bool, bool> UpdateFlagsForNodeTreeRecurse(EvaluableNode *tree, EvaluableNode::ReferenceSetType &checked);
+	// requires n not be nullptr
+	static std::pair<bool, bool> UpdateFlagsForNodeTreeRecurse(EvaluableNode *n, std::vector<EvaluableNode *> &stack);
 
 	//sets or clears all referenced nodes' in use flags
 	//if set_in_use is true, then it will set the value, if false, it will clear the value
@@ -983,6 +972,13 @@ protected:
 	//keeps track of all of the nodes currently referenced by any resource or interpreter
 	//only allocated if needed
 	std::unique_ptr<NodesReferenced> nodesCurrentlyReferenced;
+
+	//buffer used for updating EvaluableNodeFlags, particularly UpdateFlagsForNodeTree
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	thread_local
+#endif
+		static std::vector<EvaluableNode *> checkedNodesBuffer;
+
 
 	//extra space to allocate when allocating
 	static const double allocExpansionFactor;

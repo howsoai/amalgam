@@ -323,7 +323,7 @@ std::pair<EvaluableNode::LabelsAssocType, bool> EvaluableNodeTreeManipulation::R
 	}
 
 	//things have been replaced, so anything might need to be updated
-	EvaluableNodeManager::UpdateFlagsForNodeTree(en, checked);
+	EvaluableNodeManager::UpdateFlagsForNodeTree(en);
 
 	return std::make_pair(index, false);
 }

@@ -12,6 +12,11 @@
 Concurrency::ReadWriteMutex EvaluableNodeManager::memoryModificationMutex;
 #endif
 
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+thread_local
+#endif
+std::vector<EvaluableNode *> EvaluableNodeManager::checkedNodesBuffer;
+
 const double EvaluableNodeManager::allocExpansionFactor = 1.5;
 
 EvaluableNodeManager::~EvaluableNodeManager()
@@ -895,28 +900,27 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 	}
 }
 
-std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(EvaluableNode *tree, EvaluableNode::ReferenceSetType &checked)
+std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(EvaluableNode *n, std::vector<EvaluableNode *> &stack)
 {
-	//attempt to insert; if new, mark as not needing a cycle check yet
-	// though that may be changed when child nodes are evaluated below
-	auto [_, inserted] = checked.insert(tree);
-	if(inserted)
-		tree->SetNeedCycleCheck(false);
-	else //already exists, notify caller
-		return std::make_pair(true, tree->GetIsIdempotent());
+	//do a linear find because the logarithmic size of depth should be small enough to make this faster
+	// than a ReferenceSetType
+	if(std::find(begin(stack), end(stack), n) != end(stack))
+		return std::make_pair(false, n->GetIsIdempotent());
 
-	bool is_idempotent = (IsEvaluableNodeTypePotentiallyIdempotent(tree->GetType()) && (tree->GetNumLabels() == 0));
-	
-	if(tree->IsAssociativeArray())
+	stack.push_back(n);
+
+	bool is_idempotent = (IsEvaluableNodeTypePotentiallyIdempotent(n->GetType()) && (n->GetNumLabels() == 0));
+
+	if(n->IsAssociativeArray())
 	{
 		bool need_cycle_check = false;
 
-		for(auto &[cn_id, cn] : tree->GetMappedChildNodesReference())
+		for(auto &[cn_id, cn] : n->GetMappedChildNodesReference())
 		{
 			if(cn == nullptr)
 				continue;
 
-			auto [cn_need_cycle_check, cn_is_idempotent] = UpdateFlagsForNodeTreeRecurse(cn, checked);
+			auto [cn_need_cycle_check, cn_is_idempotent] = UpdateFlagsForNodeTreeRecurse(cn, stack);
 
 			//update flags for tree
 			if(cn_need_cycle_check)
@@ -926,20 +930,20 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 				is_idempotent = false;
 		}
 
-		tree->SetNeedCycleCheck(need_cycle_check);
-		tree->SetIsIdempotent(is_idempotent);
+		n->SetNeedCycleCheck(need_cycle_check);
+		n->SetIsIdempotent(is_idempotent);
 		return std::make_pair(need_cycle_check, is_idempotent);
 	}
-	else if(!tree->IsImmediate())
+	else if(!n->IsImmediate())
 	{
 		bool need_cycle_check = false;
 
-		for(auto cn : tree->GetOrderedChildNodesReference())
+		for(auto cn : n->GetOrderedChildNodesReference())
 		{
 			if(cn == nullptr)
 				continue;
 
-			auto [cn_need_cycle_check, cn_is_idempotent] = UpdateFlagsForNodeTreeRecurse(cn, checked);
+			auto [cn_need_cycle_check, cn_is_idempotent] = UpdateFlagsForNodeTreeRecurse(cn, stack);
 
 			//update flags for tree
 			if(cn_need_cycle_check)
@@ -949,14 +953,14 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 				is_idempotent = false;
 		}
 
-		tree->SetNeedCycleCheck(need_cycle_check);
-		tree->SetIsIdempotent(is_idempotent);
+		n->SetNeedCycleCheck(need_cycle_check);
+		n->SetIsIdempotent(is_idempotent);
 		return std::make_pair(need_cycle_check, is_idempotent);
 	}
 	else //immediate value
 	{
-		tree->SetIsIdempotent(is_idempotent);
-		tree->SetNeedCycleCheck(false);
+		n->SetIsIdempotent(is_idempotent);
+		n->SetNeedCycleCheck(false);
 		return std::make_pair(false, is_idempotent);
 	}
 }

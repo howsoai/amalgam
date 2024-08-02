@@ -1221,7 +1221,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_and_REPLACE(EvaluableN
 				node_stack.PushEvaluableNode(result);
 			}
 
+			//update in case no longer unique
 			result.UpdatePropertiesBasedOnAttachedNode(new_value);
+			//don't know what it was replaced with, so need to update everything
+			EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 		}
 		else //en->GetType() == ENT_REPLACE
 		{
@@ -1252,7 +1255,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_and_REPLACE(EvaluableN
 				node_stack.PushEvaluableNode(result);
 			}
 
+			//update in case no longer unique
 			result.UpdatePropertiesBasedOnAttachedNode(new_value);
+			//don't know what it was replaced with, so need to update everything
+			EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 		}
 	}
 

@@ -49,7 +49,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en,
 
 	PopConstructionContext();
 
-	EvaluableNodeManager::UpdateFlagsForNodeTree(result, references);
+	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 
 	return EvaluableNodeReference(result, false);	//can't make any guarantees about the new code
 }

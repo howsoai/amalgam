@@ -535,6 +535,10 @@ public:
 			return *bufferReference;
 		}
 
+		//TODO 21133: use this where appropriate
+		//maximum depth of an id path
+		size_t maxEntityPathDepth;
+
 	protected:
 		std::vector<EntityReferenceType> *bufferReference;
 	};

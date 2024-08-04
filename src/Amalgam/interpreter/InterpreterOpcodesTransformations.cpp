@@ -656,8 +656,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, b
 		{
 			if(list != nullptr && IsEvaluableNodeTypeImmediate(list->GetType()))
 				woven_list->SetNeedCycleCheck(true);
-			else
-				woven_list.UpdatePropertiesBasedOnAttachedNode(list);
+
+			woven_list.UpdatePropertiesBasedOnAttachedNode(list);
 		}
 
 		//for every index, iterate over every list and if there is an element, put it in the woven list

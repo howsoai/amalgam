@@ -114,6 +114,21 @@ public:
 	//maximum number of nodes allowed to be allocated by this Interpreter and anything called from it.  If 0, then unlimited.
 	//will terminate execution if the value is reached
 	size_t maxNumAllocatedNodes;
+
+	//entity from which the constraints are based
+	Entity *entityToConstrainFrom;
+
+	//constrains the maximum number of contained entities
+	bool constrainMaxContainedEntities;
+	size_t maxContainedEntities;
+
+	//constrains how deep entities can be created
+	bool constrainMaxContainedEntityDepth;
+	size_t maxContainedEntityDepth;
+
+	//constrains the maximum length of an entity id (primarily to make sure it doesn't cause problems for file systems)
+	//If 0, then unlimited
+	size_t maxEntityIdLength;
 };
 
 class Interpreter
@@ -574,10 +589,12 @@ protected:
 
 	//populates perf_constraints from params starting at the offset perf_constraint_param_offset, in the order of execution cycles, maximum memory, maximum stack depth
 	//returns true if there are any performance constraints, false if not
-	bool PopulatePerformanceConstraintsFromParams(std::vector<EvaluableNode *> &params, size_t perf_constraint_param_offset, PerformanceConstraints &perf_constraints);
+	//if include_entity_constraints is true, it will include constraints regarding entities
+	bool PopulatePerformanceConstraintsFromParams(std::vector<EvaluableNode *> &params,
+		size_t perf_constraint_param_offset, PerformanceConstraints &perf_constraints, bool include_entity_constraints = false);
 
 	//if perf_constraints is not null, populates the counters representing the current state of the interpreter
-	void PopulatePerformanceCounters(PerformanceConstraints *perf_constraints);
+	void PopulatePerformanceCounters(PerformanceConstraints *perf_constraints, Entity *entity_to_constrain_from);
 
 #ifdef MULTITHREAD_SUPPORT
 
@@ -866,6 +883,28 @@ protected:
 	constexpr bool ConstrainedAllocatedNodes()
 	{
 		return (performanceConstraints != nullptr && performanceConstraints->ConstrainedAllocatedNodes());
+	}
+
+	//returns true if it can create a new entity given the constraints
+	__forceinline bool CanCreateNewEntityFromConstraints(Entity *destination_container, StringInternPool::StringID entity_id)
+	{
+		if(performanceConstraints == nullptr)
+			return true;
+
+		if(performanceConstraints->maxEntityIdLength > 0
+				&& string_intern_pool.GetStringFromID(entity_id).size() > performanceConstraints->maxEntityIdLength)
+			return false;
+
+		//TODO 21133: finish this
+		if(performanceConstraints->maxContainedEntities > 0)
+		{
+
+		}
+
+		if(performanceConstraints->maxContainedEntityDepth > 0)
+		{
+
+		}
 	}
 
 	//returns true if there's a max number of execution steps or nodes and at least one is exhausted

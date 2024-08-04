@@ -571,6 +571,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DESTROY_ENTITIES(Evaluable
 		entity.lock.unlock();
 	#endif
 
+		//accumulate usage -- gain back freed resources
+		if(ConstrainedAllocatedNodes())
+			performanceConstraints->curNumAllocatedNodesAllocatedToEntities -= entity->GetDeepSizeInNodes();
+
 		delete entity;
 	}
 

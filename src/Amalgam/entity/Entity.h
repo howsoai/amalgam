@@ -493,11 +493,11 @@ public:
 	{
 	public:
 		inline EntityReferenceBufferReference()
-			: bufferReference(nullptr), maxEntityPathDepth(0)
+			: maxEntityPathDepth(0), bufferReference(nullptr)
 		{ }
 
 		inline EntityReferenceBufferReference(std::vector<EntityReferenceType> &buffer)
-			: bufferReference(&buffer), maxEntityPathDepth(0)
+			: maxEntityPathDepth(0), bufferReference(&buffer)
 		{ }
 
 		inline EntityReferenceBufferReference(EntityReferenceBufferReference &&erbr)

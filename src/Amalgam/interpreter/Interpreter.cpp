@@ -620,7 +620,7 @@ EvaluableNodeReference Interpreter::InterpretNodeIntoUniqueStringIDValueEvaluabl
 
 double Interpreter::InterpretNodeIntoNumberValue(EvaluableNode *n)
 {
-	if(n == nullptr)
+	if(EvaluableNode::IsNull(n))
 		return std::numeric_limits<double>::quiet_NaN();
 
 	auto type = n->GetType();
@@ -659,7 +659,7 @@ EvaluableNodeReference Interpreter::InterpretNodeIntoUniqueNumberValueEvaluableN
 bool Interpreter::InterpretNodeIntoBoolValue(EvaluableNode *n, bool value_if_null)
 {
 	//shortcut if the node has what is being asked
-	if(n == nullptr)
+	if(EvaluableNode::IsNull(n))
 		return value_if_null;
 
 	auto result = InterpretNodeForImmediateUse(n, true);

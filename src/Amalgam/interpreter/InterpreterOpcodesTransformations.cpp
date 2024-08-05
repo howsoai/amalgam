@@ -27,7 +27,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en,
 		return EvaluableNodeReference::Null();
 
 	auto function = InterpretNodeForImmediateUse(ocn[0]);
-	if(function == nullptr)
+	if(EvaluableNode::IsNull(function))
 		return EvaluableNodeReference::Null();
 	auto node_stack = CreateInterpreterNodeStackStateSaver(function);
 
@@ -1645,7 +1645,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, boo
 		}
 
 		//if no function, then just put value into the appropriate slot for the index
-		if(function == nullptr)
+		if(EvaluableNode::IsNull(function))
 		{
 			result->SetMappedChildNodeWithReferenceHandoff(index_sid, value, true);
 		}
@@ -1674,7 +1674,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, boo
 	//the index list has been converted to strings, so therefore can be freed
 	evaluableNodeManager->FreeNodeTreeIfPossible(index_list);
 
-	if(function != nullptr)
+	if(!EvaluableNode::IsNull(function))
 	{
 		//the values have likely been copied, so only the top node can be freed as long as it doesn't point back to itself
 		if(!value_list.GetNeedCycleCheck())

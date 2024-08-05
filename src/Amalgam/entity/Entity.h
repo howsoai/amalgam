@@ -392,6 +392,19 @@ public:
 			return 0;
 	}
 
+	//returns the total number of all contained entities including indirectly contained entities
+	inline size_t GetTotalNumContainedEntitiesIncludingSelf()
+	{
+		size_t total = 1;
+		if(hasContainedEntities)
+		{
+			for(Entity *e : entityRelationships.relationships->containedEntities)
+				total += e->GetTotalNumContainedEntitiesIncludingSelf();
+		}
+
+		return total;
+	}
+
 	//returns direct access to vector of pointers to Entity objects contained by this Entity
 	inline std::vector<Entity *> &GetContainedEntities()
 	{

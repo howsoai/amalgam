@@ -945,7 +945,7 @@ void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_const
 		}
 	}
 
-	if(entity_to_constrain_from)
+	if(entity_to_constrain_from == nullptr)
 		return;
 
 	perf_constraints->entityToConstrainFrom = entity_to_constrain_from;

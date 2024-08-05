@@ -378,7 +378,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableN
 
 		entity_container->AddContainedEntityViaReference(new_entity, new_entity_id, writeListeners);
 
-		if(new_entity_id == StringInternPool::NOT_A_STRING_ID)
+		if(new_entity_id == StringInternPool::NOT_A_STRING_ID || !CanCreateNewEntityFromConstraints(entity_container, new_entity_id))
 		{
 			delete new_entity;
 			new_entity_ids_list->AppendOrderedChildNode(nullptr);
@@ -416,11 +416,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CLONE_ENTITIES(EvaluableNo
 			continue;
 		}
 
+		auto erbr = source_entity->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>();
+		size_t num_new_entities = erbr->size();
+
 		//create new entity
 		Entity *new_entity = new Entity(source_entity);
 
-		//clear previous lock
+		//clear previous locks
 		source_entity = EntityReadReference();
+		erbr.Clear();
 
 		//get destination if applicable
 		EntityWriteReference destination_entity_parent;
@@ -428,7 +432,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CLONE_ENTITIES(EvaluableNo
 		if(i + 1 < ocn.size())
 			std::tie(destination_entity_parent, new_entity_id) = InterpretNodeIntoDestinationEntity(ocn[i + 1]);
 
-		if(destination_entity_parent == nullptr)
+		if(destination_entity_parent == nullptr
+			|| !CanCreateNewEntityFromConstraints(destination_entity_parent, new_entity_id, num_new_entities))
 		{
 			delete new_entity;
 			new_entity_ids_list->AppendOrderedChildNode(nullptr);

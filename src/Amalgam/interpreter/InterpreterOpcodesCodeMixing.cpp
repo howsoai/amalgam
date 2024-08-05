@@ -492,6 +492,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT_ENTITIES(Evaluab
 	//no longer need entity references
 	erbr.Clear();
 
+	size_t num_new_entities = new_entity->GetTotalNumContainedEntitiesIncludingSelf();
+
 	//get destination if applicable
 	EntityWriteReference destination_entity_parent;
 	StringInternRef new_entity_id;
@@ -500,8 +502,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT_ENTITIES(Evaluab
 	else
 		destination_entity_parent = EntityWriteReference(curEntity);
 
-	if(destination_entity_parent == nullptr)
+	if(destination_entity_parent == nullptr
+		|| !CanCreateNewEntityFromConstraints(destination_entity_parent, new_entity_id, num_new_entities))
+	{
+		delete new_entity;
 		return EvaluableNodeReference::Null();
+	}
 
 	//accumulate usage
 	if(ConstrainedAllocatedNodes())
@@ -546,6 +552,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION_ENTITIES(EvaluableNo
 	//no longer need entity references
 	erbr.Clear();
 
+	size_t num_new_entities = new_entity->GetTotalNumContainedEntitiesIncludingSelf();
+
 	//get destination if applicable
 	EntityWriteReference destination_entity_parent;
 	StringInternRef new_entity_id;
@@ -554,8 +562,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION_ENTITIES(EvaluableNo
 	else
 		destination_entity_parent = EntityWriteReference(curEntity);
 
-	if(destination_entity_parent == nullptr)
+	if(destination_entity_parent == nullptr
+		|| !CanCreateNewEntityFromConstraints(destination_entity_parent, new_entity_id, num_new_entities))
+	{
+		delete new_entity;
 		return EvaluableNodeReference::Null();
+	}
 
 	//accumulate usage
 	if(ConstrainedAllocatedNodes())
@@ -662,6 +674,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode
 	//no longer need entity references
 	erbr.Clear();
 
+	size_t num_new_entities = new_entity->GetTotalNumContainedEntitiesIncludingSelf();
+
 	//get destination if applicable
 	EntityWriteReference destination_entity_parent;
 	StringInternRef new_entity_id;
@@ -670,8 +684,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode
 	else
 		destination_entity_parent = EntityWriteReference(curEntity);
 
-	if(destination_entity_parent == nullptr)
+	if(destination_entity_parent == nullptr
+		|| !CanCreateNewEntityFromConstraints(destination_entity_parent, new_entity_id, num_new_entities))
+	{
+		delete new_entity;
 		return EvaluableNodeReference::Null();
+	}
 
 	//accumulate usage
 	if(ConstrainedAllocatedNodes())

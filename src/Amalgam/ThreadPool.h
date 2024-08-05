@@ -304,7 +304,7 @@ public:
 		inline void WaitForTasks()
 		{
 			std::unique_lock<std::mutex> lock(mutex);
-			cond_var.wait(lock, [this] { return numTasksCompleted >= numTasks; });
+			condVar.wait(lock, [this] { return numTasksCompleted >= numTasks; });
 		}
 
 		//marks one task as completed
@@ -315,7 +315,7 @@ public:
 			{
 				//in theory, this lock may not be necessary, but in practice it is to prevent deadlock
 				std::unique_lock<std::mutex> lock(mutex);
-				cond_var.notify_all();
+				condVar.notify_all();
 			}
 		}
 
@@ -323,7 +323,7 @@ public:
 		std::atomic<size_t> numTasks;
 		std::atomic<size_t> numTasksCompleted;
 		std::mutex mutex;
-		std::condition_variable cond_var;
+		std::condition_variable condVar;
 	};
 
 protected:

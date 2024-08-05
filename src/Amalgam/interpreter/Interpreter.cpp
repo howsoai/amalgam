@@ -355,6 +355,7 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 		call_stack = evaluableNodeManager->AllocNode(ENT_LIST);
 
 		EvaluableNode *new_context_entry = evaluableNodeManager->AllocNode(ENT_ASSOC);
+		new_context_entry->SetNeedCycleCheck(true);
 		call_stack->AppendOrderedChildNode(new_context_entry);
 	}
 
@@ -411,6 +412,9 @@ EvaluableNodeReference Interpreter::ConvertArgsToCallStack(EvaluableNodeReferenc
 	
 	EvaluableNode *call_stack = enm.AllocNode(ENT_LIST);
 	call_stack->AppendOrderedChildNode(args);
+
+	call_stack->SetNeedCycleCheck(true);
+	args->SetNeedCycleCheck(true);
 
 	return EvaluableNodeReference(call_stack, args.unique);
 }

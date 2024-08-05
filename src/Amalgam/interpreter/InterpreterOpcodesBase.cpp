@@ -170,6 +170,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 
 		return AllocReturn(GetEntityMemorySizeDiagnostics(curEntity), immediate_result);
 	}
+	else if(command == "validate")
+	{
+		VerifyEvaluableNodeIntegrity();
+		return AllocReturn(true, immediate_result);
+	}
 	else if(command == "rand" && ocn.size() > 1)
 	{
 		double num_bytes_raw = InterpretNodeIntoNumberValue(ocn[1]);

@@ -640,11 +640,11 @@ void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(EvaluableNod
 				existing_nodes.insert(ensure_nodes_in_enm->nodes[i]);
 		}
 
-		return ValidateEvaluableNodeTreeMemoryIntegrityRecurse(en, checked, &existing_nodes);
+		ValidateEvaluableNodeTreeMemoryIntegrityRecurse(en, checked, &existing_nodes);
 	}
 	else
 	{
-		return ValidateEvaluableNodeTreeMemoryIntegrityRecurse(en, checked, nullptr);
+		ValidateEvaluableNodeTreeMemoryIntegrityRecurse(en, checked, nullptr);
 	}
 }
 
@@ -1036,12 +1036,14 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUseRecurseConcurrent(Evaluabl
 }
 #endif
 
-void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrityRecurse(EvaluableNode *en,
+std::pair<bool, bool> EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrityRecurse(EvaluableNode *en,
 	EvaluableNode::ReferenceSetType &checked, FastHashSet<EvaluableNode *> *existing_nodes)
 {
 	auto [_, inserted] = checked.insert(en);
+	//can't assume that, just because something was inserted before,
+	// doesn't mean it isn't cycle free from where it is, so return true to exclude false negatives
 	if(!inserted)
-		return;
+		return std::make_pair(true, en->GetIsIdempotent());
 
 	if(en->IsNodeDeallocated() || en->GetKnownToBeInUse())
 		assert(false);
@@ -1052,6 +1054,8 @@ void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrityRecurse(Evalu
 			assert(false);
 	}
 
+	bool child_nodes_cycle_free = true;
+	bool child_nodes_idempotent = IsEvaluableNodeTypePotentiallyIdempotent(en->GetType());
 	if(en->IsAssociativeArray())
 	{
 		for(auto &[cn_id, cn] : en->GetMappedChildNodesReference())
@@ -1059,7 +1063,12 @@ void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrityRecurse(Evalu
 			if(cn == nullptr)
 				continue;
 
-			ValidateEvaluableNodeTreeMemoryIntegrityRecurse(cn, checked, existing_nodes);
+			auto [node_cycle_free, node_idempotent]
+				= ValidateEvaluableNodeTreeMemoryIntegrityRecurse(cn, checked, existing_nodes);
+			if(!node_cycle_free)
+				child_nodes_cycle_free = false;
+			if(!child_nodes_idempotent)
+				child_nodes_idempotent = false;
 		}
 	}
 	else if(!en->IsImmediate())
@@ -1069,7 +1078,20 @@ void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrityRecurse(Evalu
 			if(cn == nullptr)
 				continue;
 
-			ValidateEvaluableNodeTreeMemoryIntegrityRecurse(cn, checked, existing_nodes);
+			auto [node_cycle_free, node_idempotent]
+				= ValidateEvaluableNodeTreeMemoryIntegrityRecurse(cn, checked, existing_nodes);
+			if(!node_cycle_free)
+				child_nodes_cycle_free = false;
+			if(!child_nodes_idempotent)
+				child_nodes_idempotent = false;
 		}
-	}	
+	}
+
+	if(!child_nodes_idempotent && en->GetIsIdempotent())
+		assert(false);
+
+	if(!child_nodes_cycle_free && !en->GetNeedCycleCheck())
+		assert(false);
+
+	return std::make_pair(!en->GetNeedCycleCheck(), en->GetIsIdempotent());
 }

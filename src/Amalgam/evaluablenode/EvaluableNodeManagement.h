@@ -960,7 +960,8 @@ protected:
 #endif
 
 	//helper method for ValidateEvaluableNodeTreeMemoryIntegrity
-	static void ValidateEvaluableNodeTreeMemoryIntegrityRecurse(EvaluableNode *en,
+	//returns a tuple of whether it is cycle free and whether it is idempotent
+	static std::pair<bool, bool> ValidateEvaluableNodeTreeMemoryIntegrityRecurse(EvaluableNode *en,
 		EvaluableNode::ReferenceSetType &checked, FastHashSet<EvaluableNode *> *existing_nodes);
 
 #ifdef MULTITHREAD_SUPPORT

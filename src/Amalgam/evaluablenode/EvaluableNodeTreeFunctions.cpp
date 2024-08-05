@@ -549,9 +549,9 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 
 		enm->FreeNodeIfPossible(variable_value_node);
 
+		value_destination_node.SetReference(new_list, result_unique);
 		value_destination_node->SetNeedCycleCheck(result_need_cycle_check);
 		value_destination_node->SetIsIdempotent(result_idempontent);
-		value_destination_node.SetReference(new_list, result_unique);
 	}
 	else if(value_destination_node->GetType() == ENT_STRING)
 	{
@@ -593,9 +593,9 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 			new_list->AppendOrderedChildNode(variable_value_node);
 		}
 
+		value_destination_node.SetReference(new_list, result_unique);
 		value_destination_node->SetNeedCycleCheck(result_need_cycle_check);
 		value_destination_node->SetIsIdempotent(result_idempontent);
-		value_destination_node.SetReference(new_list, result_unique);
 	}
 
 	return value_destination_node;

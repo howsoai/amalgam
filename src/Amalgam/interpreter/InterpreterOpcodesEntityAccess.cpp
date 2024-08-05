@@ -436,7 +436,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 
 	PerformanceConstraints perf_constraints;
 	PerformanceConstraints *perf_constraints_ptr = nullptr;
-	if(PopulatePerformanceConstraintsFromParams(ocn, 3, perf_constraints))
+	if(PopulatePerformanceConstraintsFromParams(ocn, 3, perf_constraints, true))
 		perf_constraints_ptr = &perf_constraints;
 
 	//attempt to get arguments
@@ -488,7 +488,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		call_stack = ConvertArgsToCallStack(called_entity_args, called_entity->evaluableNodeManager);
 	}
 
-	PopulatePerformanceCounters(perf_constraints_ptr);
+	PopulatePerformanceCounters(perf_constraints_ptr, called_entity);
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is no longer executing
@@ -600,7 +600,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	EvaluableNode *call_stack_args = call_stack->GetOrderedChildNodesReference()[0];
 	call_stack_args->SetMappedChildNode(ENBISI_accessing_entity, container->evaluableNodeManager.AllocNode(ENT_STRING, cur_entity_sid));
 
-	PopulatePerformanceCounters(perf_constraints_ptr);
+	PopulatePerformanceCounters(perf_constraints_ptr, container);
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is no longer executing

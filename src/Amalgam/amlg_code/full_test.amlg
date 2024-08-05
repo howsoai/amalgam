@@ -3415,6 +3415,25 @@
  (print (unparse (call_entity "TestContainerExec" "b") (true) (true)))
  (print (unparse (call_entity "TestContainerExec" "c" (assoc x 5)) (true) (true)))
 
+  (print "execution limits tests\n")
+  (create_entities "ExecLimitsTest" (lambda
+	(null
+	#copy_entity
+		(while (true)
+			(clone_entities (null) (null))
+		)
+
+	#load
+		(while
+			(true)
+		)
+	))
+ )
+
+ (call_entity "ExecLimitsTest" "load" (null) 100)
+ (call_entity "ExecLimitsTest" "copy_entity" (null) 1000 1000 100 10 3 20)
+ (print (total_size (flatten_entity "ExecLimitsTest")) "\n")
+
  (print "--call_entity_get_changes--\n")
  (create_entities "CEGCTest" (lambda
     (parallel ##a_assign

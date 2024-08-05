@@ -524,7 +524,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	EvaluableNodeReference call_stack = ConvertArgsToCallStack(args, *evaluableNodeManager);
 	node_stack.PushEvaluableNode(call_stack);
 
-	PopulatePerformanceCounters(perf_constraints_ptr);
+	PopulatePerformanceCounters(perf_constraints_ptr, nullptr);
 
 	Interpreter sandbox(evaluableNodeManager, randomStream.CreateOtherStreamViaRand(),
 		writeListeners, printListener, perf_constraints_ptr);

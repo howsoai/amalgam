@@ -392,6 +392,19 @@ public:
 			return 0;
 	}
 
+	//returns the total number of all contained entities including indirectly contained entities
+	inline size_t GetTotalNumContainedEntitiesIncludingSelf()
+	{
+		size_t total = 1;
+		if(hasContainedEntities)
+		{
+			for(Entity *e : entityRelationships.relationships->containedEntities)
+				total += e->GetTotalNumContainedEntitiesIncludingSelf();
+		}
+
+		return total;
+	}
+
 	//returns direct access to vector of pointers to Entity objects contained by this Entity
 	inline std::vector<Entity *> &GetContainedEntities()
 	{
@@ -480,16 +493,17 @@ public:
 	{
 	public:
 		inline EntityReferenceBufferReference()
-			: bufferReference(nullptr)
+			: maxEntityPathDepth(0), bufferReference(nullptr)
 		{ }
 
 		inline EntityReferenceBufferReference(std::vector<EntityReferenceType> &buffer)
-			: bufferReference(&buffer)
+			: maxEntityPathDepth(0), bufferReference(&buffer)
 		{ }
 
 		inline EntityReferenceBufferReference(EntityReferenceBufferReference &&erbr)
 		{
 			bufferReference = erbr.bufferReference;
+			maxEntityPathDepth = erbr.maxEntityPathDepth;
 			erbr.bufferReference = nullptr;
 		}
 
@@ -504,6 +518,7 @@ public:
 			{
 				bufferReference->clear();
 				bufferReference = nullptr;
+				maxEntityPathDepth = 0;
 			}
 		}
 
@@ -515,6 +530,7 @@ public:
 					bufferReference->clear();
 
 				bufferReference = erbr.bufferReference;
+				maxEntityPathDepth = erbr.maxEntityPathDepth;
 				erbr.bufferReference = nullptr;
 			}
 			return *this;
@@ -535,6 +551,9 @@ public:
 			return *bufferReference;
 		}
 
+		//maximum depth of an id path
+		size_t maxEntityPathDepth;
+
 	protected:
 		std::vector<EntityReferenceType> *bufferReference;
 	};
@@ -554,15 +573,21 @@ public:
 		else
 			erbr = EntityReferenceBufferReference(entityReadReferenceBuffer);
 
+		erbr.maxEntityPathDepth = 0;
+
 		if(include_this_entity)
 		{
 			if constexpr(std::is_same<EntityReferenceType, EntityWriteReference>::value)
 				entityWriteReferenceBuffer.emplace_back(this);
 			else
 				entityReadReferenceBuffer.emplace_back(this);
+
+			erbr.maxEntityPathDepth++;
 		}
 
-		GetAllDeeplyContainedEntityReferencesGroupedByDepthRecurse<EntityReferenceType>();
+		size_t max_depth = 0;
+		GetAllDeeplyContainedEntityReferencesGroupedByDepthRecurse<EntityReferenceType>(0, max_depth);
+		erbr.maxEntityPathDepth += max_depth;
 		return erbr;
 	}
 
@@ -570,7 +595,9 @@ public:
 	template<typename EntityReferenceType>
 	void AppendAllDeeplyContainedEntityReferencesGroupedByDepth(EntityReferenceBufferReference<EntityReferenceType> &erbr)
 	{
-		GetAllDeeplyContainedEntityReferencesGroupedByDepthRecurse<EntityReferenceType>();
+		size_t max_depth = 0;
+		GetAllDeeplyContainedEntityReferencesGroupedByDepthRecurse<EntityReferenceType>(0, max_depth);
+		erbr.maxEntityPathDepth += max_depth;
 	}
 
 	//gets the current state of the random stream in string form
@@ -736,8 +763,11 @@ protected:
 
 	//helper function for GetAllDeeplyContainedEntityReadReferencesGroupedByDepth
 	template<typename EntityReferenceType>
-	bool GetAllDeeplyContainedEntityReferencesGroupedByDepthRecurse()
+	bool GetAllDeeplyContainedEntityReferencesGroupedByDepthRecurse(size_t cur_depth, size_t &max_depth)
 	{
+		if(cur_depth > max_depth)
+			max_depth = cur_depth;
+
 		if(!hasContainedEntities)
 			return true;
 
@@ -758,7 +788,7 @@ protected:
 
 		for(auto &ce : contained_entities)
 		{
-			if(!ce->GetAllDeeplyContainedEntityReferencesGroupedByDepthRecurse<EntityReferenceType>())
+			if(!ce->GetAllDeeplyContainedEntityReferencesGroupedByDepthRecurse<EntityReferenceType>(cur_depth + 1, max_depth))
 				return false;
 		}
 

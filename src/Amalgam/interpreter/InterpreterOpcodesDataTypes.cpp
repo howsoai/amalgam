@@ -983,8 +983,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP_LABELS(EvaluableNode *
 	auto source = InterpretNode(ocn[1]);
 
 	//if no label list, or no source or source is immediate, then just return the source
-	if(label_list == nullptr || !label_list->IsOrderedArray()
-			|| source == nullptr || !source->IsOrderedArray())
+	if(EvaluableNode::IsNull(label_list) || !label_list->IsOrderedArray()
+			|| EvaluableNode::IsNull(source) || !source->IsOrderedArray())
 		return source;
 
 	node_stack.PopEvaluableNode();

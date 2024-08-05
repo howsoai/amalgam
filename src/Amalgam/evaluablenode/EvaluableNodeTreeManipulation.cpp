@@ -412,6 +412,13 @@ EvaluableNode *EvaluableNodeTreeManipulation::CreateGeneralizedNode(NodesMergeMe
 	else if(DoesEvaluableNodeTypeUseStringData(common_type))
 		n->SetStringID(node->GetStringID());
 
+	//if either is a null, then handle logic below by creating a null EvaluableNode
+	EvaluableNode null_merge_node(ENT_NULL);
+	if(n1 == nullptr)
+		n1 = &null_merge_node;
+	if(n2 == nullptr)
+		n2 = &null_merge_node;
+
 	//merge labels
 	size_t n1_num_labels = n1->GetNumLabels();
 	size_t n2_num_labels = n2->GetNumLabels();

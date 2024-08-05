@@ -432,7 +432,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCLUDE_and_RETURN(Evalua
 	auto &ocn = en->GetOrderedChildNodes();
 
 	//if no parameter, then return itself for performance
-	if(ocn.size() == 0 || ocn[0] == nullptr)
+	if(ocn.size() == 0)
 		return EvaluableNodeReference(en, false);
 
 	//if idempotent, can just return a copy without any metadata
@@ -458,7 +458,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, bo
 		return EvaluableNodeReference::Null();
 
 	auto function = InterpretNodeForImmediateUse(ocn[0]);
-	if(function == nullptr)
+	if(EvaluableNode::IsNull(function))
 		return EvaluableNodeReference::Null();
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(function);
@@ -497,7 +497,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 		return EvaluableNodeReference::Null();
 
 	auto function = InterpretNodeForImmediateUse(ocn[0]);
-	if(function == nullptr)
+	if(EvaluableNode::IsNull(function))
 		return EvaluableNodeReference::Null();
 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(function);
@@ -1066,7 +1066,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 #endif
 
 	//get the value(s)
-	if(to_lookup == nullptr || IsEvaluableNodeTypeImmediate(to_lookup->GetType()))
+	if(EvaluableNode::IsNull(to_lookup) || IsEvaluableNodeTypeImmediate(to_lookup->GetType()))
 	{
 		StringInternPool::StringID symbol_name_sid = EvaluableNode::ToStringIDIfExists(to_lookup);
 		EvaluableNode* symbol_value = GetCallStackSymbol(symbol_name_sid);
@@ -1415,7 +1415,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ARGS(EvaluableNode *en, bo
 EvaluableNodeReference GenerateRandomValueBasedOnRandParam(EvaluableNodeReference param, Interpreter *interpreter,
 	RandomStream &random_stream, bool &can_free_param, bool immediate_result)
 {
-	if(param == nullptr)
+	if(EvaluableNode::IsNull(param))
 		return interpreter->AllocReturn(random_stream.RandFull(), immediate_result);
 
 	auto &ocn = param->GetOrderedChildNodes();
@@ -1548,7 +1548,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, bo
 	}
 
 	if(can_free_param)
+	{
 		evaluableNodeManager->FreeNodeTreeIfPossible(param);
+	}
 	else
 	{
 		//if used the parameters, a parameter might be used more than once
@@ -1714,14 +1716,14 @@ size_t GetRandomWeightedValueIndex(std::vector<EvaluableNode *> &probability_nod
 // if any part of param is preserved in the return value, then can_free_param will be set to false, otherwise it will be left alone
 EvaluableNodeReference GenerateWeightedRandomValueBasedOnRandParam(EvaluableNodeReference param, EvaluableNodeManager *enm, RandomStream &random_stream, bool &can_free_param)
 {
-	if(param == nullptr)
+	if(EvaluableNode::IsNull(param))
 		return EvaluableNodeReference::Null();
 
 	auto &ocn = param->GetOrderedChildNodes();
 	//need to have a value and probability list
 	if(ocn.size() >= 2)
 	{
-		if(ocn[0] == nullptr || ocn[1] == nullptr)
+		if(EvaluableNode::IsNull(ocn[0]) || EvaluableNode::IsNull(ocn[1]))
 			return EvaluableNodeReference::Null();
 
 		can_free_param = false;
@@ -1798,7 +1800,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEIGHTED_RAND(EvaluableNod
 		{
 			EvaluableNodeReference retval(evaluableNodeManager->AllocNode(ENT_LIST), true);
 
-			if(param_ocn.size() < 2 || param_ocn[0] == nullptr || param_ocn[1] == nullptr)
+			if(param_ocn.size() < 2 || EvaluableNode::IsNull(param_ocn[0]) || EvaluableNode::IsNull(param_ocn[1]))
 				return retval;
 
 			//clamp to the maximum number that can possibly be generated
@@ -1864,7 +1866,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEIGHTED_RAND(EvaluableNod
 	//if generating many values with weighted probabilites, use fast method
 	if(param_ocn.size() > 0 && (number_to_generate > 10 || (number_to_generate > 3 && param_ocn.size() > 200)))
 	{
-		if(param_ocn.size() < 2 || param_ocn[0] == nullptr || param_ocn[1] == nullptr)
+		if(param_ocn.size() < 2 || EvaluableNode::IsNull(param_ocn[0]) || EvaluableNode::IsNull(param_ocn[1]))
 		{
 			evaluableNodeManager->FreeNodeIfPossible(param);
 			return retval;
@@ -1918,7 +1920,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEIGHTED_RAND(EvaluableNod
 	}
 
 	if(can_free_param)
+	{
 		evaluableNodeManager->FreeNodeTreeIfPossible(param);
+	}
 	else
 	{
 		//if used the parameters, a parameter might be used more than once

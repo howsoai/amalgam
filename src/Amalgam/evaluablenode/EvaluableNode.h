@@ -402,7 +402,7 @@ public:
 	static inline size_t GetDeepSize(EvaluableNode *n)
 	{
 		if(n == nullptr)
-			return 0;
+			return 1;
 
 		if(!n->GetNeedCycleCheck())
 		{

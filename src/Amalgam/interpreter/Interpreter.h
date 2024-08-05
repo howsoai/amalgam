@@ -886,7 +886,8 @@ protected:
 	}
 
 	//returns true if it can create a new entity given the constraints
-	__forceinline bool CanCreateNewEntityFromConstraints(Entity *destination_container, StringInternPool::StringID entity_id)
+	__forceinline bool CanCreateNewEntityFromConstraints(Entity *destination_container, StringInternPool::StringID entity_id,
+		size_t total_num_new_entities = 1)
 	{
 		if(performanceConstraints == nullptr)
 			return true;
@@ -895,16 +896,25 @@ protected:
 				&& string_intern_pool.GetStringFromID(entity_id).size() > performanceConstraints->maxEntityIdLength)
 			return false;
 
-		//TODO 21133: finish this
-		if(performanceConstraints->maxContainedEntities > 0)
-		{
+		//exit early if don't need to lock all contained entities
+		if(!performanceConstraints->constrainMaxContainedEntities && !performanceConstraints->constrainMaxContainedEntityDepth)
+			return true;
 
+		auto erbr = performanceConstraints->entityToConstrainFrom->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>();
+
+		if(performanceConstraints->constrainMaxContainedEntities)
+		{
+			if(erbr->size() + total_num_new_entities > performanceConstraints->maxContainedEntities)
+				return false;
 		}
 
-		if(performanceConstraints->maxContainedEntityDepth > 0)
+		if(performanceConstraints->constrainMaxContainedEntityDepth)
 		{
-
+			if(1 + erbr.maxEntityPathDepth > performanceConstraints->maxContainedEntityDepth)
+				return false;
 		}
+
+		return true;
 	}
 
 	//returns true if there's a max number of execution steps or nodes and at least one is exhausted

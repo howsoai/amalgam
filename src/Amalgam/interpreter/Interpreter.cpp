@@ -976,10 +976,21 @@ void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_const
 	{
 		perf_constraints->constrainMaxContainedEntityDepth = true;
 
-		//TODO 21133: need logic for contained entity if applicable
+		size_t max_depth = performanceConstraints->maxContainedEntityDepth;
+		size_t cur_depth = 0;
+		if(performanceConstraints->entityToConstrainFrom->DoesDeepContainEntity(perf_constraints->entityToConstrainFrom))
+		{
+			for(Entity *cur_entity = perf_constraints->entityToConstrainFrom;
+					cur_entity != performanceConstraints->entityToConstrainFrom;
+					cur_entity = cur_entity->GetContainer())
+				cur_depth++;
+		}
 
-		perf_constraints->maxContainedEntityDepth = std::min(perf_constraints->maxContainedEntityDepth,
-			performanceConstraints->maxContainedEntityDepth);
+		if(cur_depth >= max_depth)
+			perf_constraints->maxContainedEntityDepth = 0;
+		else
+			perf_constraints->maxContainedEntityDepth = std::min(perf_constraints->maxContainedEntityDepth,
+				max_depth - cur_depth);
 	}
 
 	if(performanceConstraints != nullptr && performanceConstraints->maxEntityIdLength > 0)

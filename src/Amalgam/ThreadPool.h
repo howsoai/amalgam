@@ -297,7 +297,8 @@ public:
 		//increments the number of tasks by num_new_tasks
 		inline void AddTask(size_t num_new_tasks = 1)
 		{
-			numTasks.fetch_add(num_new_tasks);
+			std::unique_lock<std::mutex> lock(mutex);
+			numTasks += num_new_tasks;
 		}
 
 		//returns when all the tasks have been completed
@@ -310,24 +311,22 @@ public:
 		//marks one task as completed
 		inline void MarkTaskCompleted()
 		{
-			size_t prev_tasks_completed = numTasksCompleted.fetch_add(1);
-			if(prev_tasks_completed + 1 == numTasks)
-			{
-				//in theory, this lock may not be necessary, but in practice it is to prevent deadlock
-				std::unique_lock<std::mutex> lock(mutex);
+			std::unique_lock<std::mutex> lock(mutex);
+			if(++numTasksCompleted == numTasks)
 				condVar.notify_all();
-			}
 		}
 
 		//marks one task as completed, but can be called from the thread setting up the tasks
 		inline void MarkTaskCompletedBeforeWaitForTasks()
 		{
-			numTasksCompleted.fetch_add(1);
+			std::unique_lock<std::mutex> lock(mutex);
+			numTasksCompleted++;
 		}
 
 	protected:
-		std::atomic<size_t> numTasks;
-		std::atomic<size_t> numTasksCompleted;
+		//the counters are not atomic as the condVar needs a mutex around any change of value anyway
+		size_t numTasks;
+		size_t numTasksCompleted;
 		std::mutex mutex;
 		std::condition_variable condVar;
 	};

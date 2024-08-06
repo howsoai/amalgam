@@ -114,7 +114,7 @@ bool EvaluableNode::IsTrue(EvaluableNode *n)
 
 	if(DoesEvaluableNodeTypeUseStringData(node_type))
 	{
-		if(n->GetStringIDReference() <= StringInternPool::EMPTY_STRING_ID)
+		if(n->GetStringIDReference() <= string_intern_pool.EMPTY_STRING_ID)
 			return false;
 		return true;
 	}
@@ -1017,7 +1017,7 @@ std::vector<std::string> EvaluableNode::GetCommentsSeparateLines()
 	std::vector<std::string> comment_lines;
 
 	StringInternPool::StringID comment_sid = GetCommentsStringId();
-	if(comment_sid <= StringInternPool::EMPTY_STRING_ID)
+	if(comment_sid <= string_intern_pool.EMPTY_STRING_ID)
 		return comment_lines;
 
 	auto full_comments = string_intern_pool.GetStringFromID(comment_sid);

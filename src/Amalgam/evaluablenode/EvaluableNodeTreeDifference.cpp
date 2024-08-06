@@ -37,13 +37,13 @@ EvaluableNode *EvaluableNodeTreeDifference::DifferenceTrees(EvaluableNodeManager
 
 	//update difference function to: (declare (assoc _ null) )
 	EvaluableNode *df_vars = enm->AllocNode(ENT_ASSOC);
-	df_vars->SetMappedChildNode(ENBISI__, enm->AllocNode(ENT_NULL));
+	df_vars->SetMappedChildNode(GetStringIdFromNodeTypeFromString(ENBISI__), enm->AllocNode(ENT_NULL));
 	difference_function->AppendOrderedChildNode(df_vars);
 
 	//update difference function to: (declare (assoc _ null) (replace _ ) )
 	EvaluableNode *df_replace = enm->AllocNode(ENT_REPLACE);
 	difference_function->AppendOrderedChildNode(df_replace);
-	df_replace->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI__));
+	df_replace->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, GetStringIdFromNodeTypeFromString(ENBISI__)));
 
 	//////////
 	//find nodes that are mutually exclusive and create lookup tables

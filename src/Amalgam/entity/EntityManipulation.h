@@ -179,8 +179,8 @@ public:
 
 		EvaluableNode *flatten_params = enm->AllocNode(ENT_ASSOC);
 		declare_flatten->AppendOrderedChildNode(flatten_params);
-		flatten_params->SetMappedChildNode(ENBISI_new_entity, nullptr);
-		flatten_params->SetMappedChildNode(ENBISI_create_new_entity, enm->AllocNode(ENT_TRUE));
+		flatten_params->SetMappedChildNode(GetStringIdFromNodeTypeFromString(ENBISI_new_entity), nullptr);
+		flatten_params->SetMappedChildNode(GetStringIdFromNodeTypeFromString(ENBISI_create_new_entity), enm->AllocNode(ENT_TRUE));
 
 		//   (let (assoc _ (lambda *entity code*))
 		EvaluableNode *let_entity_code = enm->AllocNode(ENT_LET);
@@ -189,7 +189,7 @@ public:
 		let_entity_code->AppendOrderedChildNode(let_assoc);
 
 		EvaluableNode *lambda_for_create_root = enm->AllocNode(ENT_LAMBDA);
-		let_assoc->SetMappedChildNode(ENBISI__, lambda_for_create_root);
+		let_assoc->SetMappedChildNode(GetStringIdFromNodeTypeFromString(ENBISI__), lambda_for_create_root);
 
 		EvaluableNodeReference root_copy = entity->GetRoot(enm, EvaluableNodeManager::ENMM_LABEL_ESCAPE_INCREMENT);
 		lambda_for_create_root->AppendOrderedChildNode(root_copy);
@@ -199,17 +199,17 @@ public:
 		//   (if create_new_entity
 		EvaluableNode *if_create_new = enm->AllocNode(ENT_IF);
 		let_entity_code->AppendOrderedChildNode(if_create_new);
-		if_create_new->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI_create_new_entity));
+		if_create_new->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, GetStringIdFromNodeTypeFromString(ENBISI_create_new_entity)));
 
 		//     (assign "new_entity" (first
 		//       (create_entities new_entity _)
 		//     ))
 		EvaluableNode *assign_new_entity_from_create = enm->AllocNode(ENT_ASSIGN);
 		if_create_new->AppendOrderedChildNode(assign_new_entity_from_create);
-		assign_new_entity_from_create->AppendOrderedChildNode(enm->AllocNode(ENT_STRING, ENBISI_new_entity));
+		assign_new_entity_from_create->AppendOrderedChildNode(enm->AllocNode(ENT_STRING, GetStringIdFromNodeTypeFromString(ENBISI_new_entity)));
 		EvaluableNode *create_root_entity = enm->AllocNode(ENT_CREATE_ENTITIES);
-		create_root_entity->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI_new_entity));
-		create_root_entity->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI__));
+		create_root_entity->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, GetStringIdFromNodeTypeFromString(ENBISI_new_entity)));
+		create_root_entity->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, GetStringIdFromNodeTypeFromString(ENBISI__)));
 		EvaluableNode *first_of_create_entity = enm->AllocNode(ENT_FIRST);
 		first_of_create_entity->AppendOrderedChildNode(create_root_entity);
 		assign_new_entity_from_create->AppendOrderedChildNode(first_of_create_entity);
@@ -217,8 +217,8 @@ public:
 		//     (assign_entity_roots new_entity _)
 		EvaluableNode *assign_new_entity_into_current = enm->AllocNode(ENT_ASSIGN_ENTITY_ROOTS);
 		if_create_new->AppendOrderedChildNode(assign_new_entity_into_current);
-		assign_new_entity_into_current->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI_new_entity));
-		assign_new_entity_into_current->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI__));
+		assign_new_entity_into_current->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, GetStringIdFromNodeTypeFromString(ENBISI_new_entity)));
+		assign_new_entity_into_current->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, GetStringIdFromNodeTypeFromString(ENBISI__)));
 
 		if(include_rand_seeds)
 		{
@@ -226,7 +226,7 @@ public:
 			//        new_entity
 			//        *rand seed string* )
 			EvaluableNode *set_rand_seed_root = enm->AllocNode(ENT_SET_ENTITY_RAND_SEED);
-			set_rand_seed_root->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI_new_entity));
+			set_rand_seed_root->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, GetStringIdFromNodeTypeFromString(ENBISI_new_entity)));
 			set_rand_seed_root->AppendOrderedChildNode(enm->AllocNode(ENT_STRING, entity->GetRandomState()));
 
 			declare_flatten->AppendOrderedChildNode(set_rand_seed_root);
@@ -260,7 +260,7 @@ public:
 
 			EvaluableNode *src_id_list = GetTraversalIDPathFromAToB(enm, entity, cur_entity);
 			EvaluableNode *src_append = enm->AllocNode(ENT_APPEND);
-			src_append->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI_new_entity));
+			src_append->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, GetStringIdFromNodeTypeFromString(ENBISI_new_entity)));
 			src_append->AppendOrderedChildNode(src_id_list);
 			create_entity->AppendOrderedChildNode(src_append);
 
@@ -291,7 +291,7 @@ public:
 		}
 
 		//add new_entity to return value of let statement to return the newly created id
-		declare_flatten->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI_new_entity));
+		declare_flatten->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, GetStringIdFromNodeTypeFromString(ENBISI_new_entity)));
 
 		//if anything isn't cycle free, then need to recompute everything
 		if(!cycle_free)

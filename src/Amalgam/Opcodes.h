@@ -614,7 +614,15 @@ enum EvaluableNodeBuiltInStringId
 
 //built in strings for the given opcodes, indexed by ENBISI_*
 extern std::vector<StringInternPool::StringID> en_built_in_strings;
-extern FastHashMap< StringInternPool::StringID, EvaluableNodeType> en_built_in_string_to_en_type;
+extern FastHashMap<StringInternPool::StringID, EvaluableNodeType> en_built_in_string_to_en_type;
+
+//returns the string id representing EvaluableNodeBuiltInStringId t
+inline StringInternPool::StringID GetStringIdFromNodeTypeFromString(EvaluableNodeBuiltInStringId t)
+{
+	if(t >= ENBISI_FIRST_DYNAMIC_STRING)
+		return en_built_in_strings[ENBISI_NOT_A_STRING];
+	return en_built_in_strings[t];
+}
 
 //returns the string id representing EvaluableNodeType t
 inline StringInternPool::StringID GetStringIdFromNodeTypeFromString(EvaluableNodeType t)

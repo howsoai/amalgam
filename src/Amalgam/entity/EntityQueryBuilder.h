@@ -205,18 +205,14 @@ namespace EntityQueryBuilder
 					if(found)
 					{
 						StringInternPool::StringID feature_type_id = EvaluableNode::ToStringIDIfExists(en);
-						switch(feature_type_id)
-						{
-						case ENBISI_nominal_numeric:			feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC;			break;
-						case ENBISI_nominal_string:				feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING;			break;
-						case ENBISI_nominal_code:				feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE;				break;
-						case ENBISI_continuous_numeric:			feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC;		break;
-						case ENBISI_continuous_numeric_cyclic:	feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC;	break;
-						case ENBISI_continuous_string:			feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING;			break;
-						case ENBISI_continuous_code:			feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE;			break;
-
-						default:								feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC;		break;
-						}
+						if(feature_type_id == GetStringIdFromNodeTypeFromString(ENBISI_nominal_numeric))				feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC;
+						else if(feature_type_id == GetStringIdFromNodeTypeFromString(ENBISI_nominal_string))			feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING;
+						else if(feature_type_id == GetStringIdFromNodeTypeFromString(ENBISI_nominal_code))				feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE;
+						else if(feature_type_id == GetStringIdFromNodeTypeFromString(ENBISI_continuous_numeric))		feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC;
+						else if(feature_type_id == GetStringIdFromNodeTypeFromString(ENBISI_continuous_numeric_cyclic))	feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC;
+						else if(feature_type_id == GetStringIdFromNodeTypeFromString(ENBISI_continuous_string))			feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING;
+						else if(feature_type_id == GetStringIdFromNodeTypeFromString(ENBISI_continuous_code))			feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE;
+						else																							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC;
 					}
 					dist_eval.featureAttribs[i].featureType = feature_type;
 				}
@@ -460,7 +456,7 @@ namespace EntityQueryBuilder
 			EvaluableNode *dwe_param = ocn[DISTANCE_VALUE_TRANSFORM];
 			if(!EvaluableNode::IsNull(dwe_param))
 			{
-				if(dwe_param->GetType() == ENT_STRING && dwe_param->GetStringIDReference() == ENBISI_surprisal_to_prob)
+				if(dwe_param->GetType() == ENT_STRING && dwe_param->GetStringIDReference() == GetStringIdFromNodeTypeFromString(ENBISI_surprisal_to_prob))
 					cur_condition->distEvaluator.computeSurprisal = true;
 				else //try to convert to number
 					cur_condition->distanceWeightExponent = EvaluableNode::ToNumber(dwe_param, 1.0);
@@ -490,12 +486,12 @@ namespace EntityQueryBuilder
 		if(ocn.size() > NUMERICAL_PRECISION)
 		{
 			StringInternPool::StringID np_sid = EvaluableNode::ToStringIDIfExists(ocn[NUMERICAL_PRECISION]);
-			if(np_sid == ENBISI_precise)
+			if(np_sid == GetStringIdFromNodeTypeFromString(ENBISI_precise))
 			{
 				cur_condition->distEvaluator.highAccuracyDistances = true;
 				cur_condition->distEvaluator.recomputeAccurateDistances = false;
 			}
-			else if(np_sid == ENBISI_fast)
+			else if(np_sid == GetStringIdFromNodeTypeFromString(ENBISI_fast))
 			{
 				cur_condition->distEvaluator.highAccuracyDistances = false;
 				cur_condition->distEvaluator.recomputeAccurateDistances = false;

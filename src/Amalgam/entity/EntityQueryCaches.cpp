@@ -901,7 +901,7 @@ void EntityQueryCaches::GetMatchingEntitiesViaSamplingWithReplacement(EntityQuer
 	else //sampling a bunch, better to precompute and use faster method
 	{
 		//a table for quickly generating entity indices based on weights
-		WeightedDiscreteRandomStreamTransform<StringInternPool::StringID, CompactHashMap<size_t, double>> ewt(entity_indices, probabilities, false);
+		WeightedDiscreteRandomStreamTransform<size_t, CompactHashMap<size_t, double>> ewt(entity_indices, probabilities, false);
 
 		//sample the entities
 		for(size_t i = 0; i < num_to_sample; i++)

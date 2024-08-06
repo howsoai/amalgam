@@ -841,7 +841,8 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 	//heuristic to ensure there's enough to do to warrant the overhead of using multiple threads
 	if(Concurrency::GetMaxNumThreads() > 1 && reference_count > 0 && (estimated_nodes_in_use / (reference_count + 1)) >= 1000)
 	{
-		ThreadPool::CountableTaskSet task_set;
+		//allocate all the tasks assuming they will happen, but mark when they can be skipped
+		ThreadPool::CountableTaskSet task_set(1 + nr.nodesReferenced.size());
 
 		//start processing root node first, as there's a good chance it will be the largest
 		if(root_node != nullptr && !root_node->GetKnownToBeInUseAtomic())
@@ -855,7 +856,10 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 					task_set.MarkTaskCompleted();
 				}
 			);
-			task_set.AddTask();
+		}
+		else //autocompleted
+		{
+			task_set.MarkTaskCompletedBeforeWaitForTasks();
 		}
 
 		for(auto &[enr, _] : nr.nodesReferenced)
@@ -874,7 +878,10 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 						task_set.MarkTaskCompleted();
 					}
 				);
-				task_set.AddTask();
+			}
+			else //autocompleted
+			{
+				task_set.MarkTaskCompletedBeforeWaitForTasks();
 			}
 		}
 

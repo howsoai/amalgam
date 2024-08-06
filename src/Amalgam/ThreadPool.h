@@ -319,6 +319,12 @@ public:
 			}
 		}
 
+		//marks one task as completed, but can be called from the thread setting up the tasks
+		inline void MarkTaskCompletedBeforeWaitForTasks()
+		{
+			numTasksCompleted.fetch_add(1);
+		}
+
 	protected:
 		std::atomic<size_t> numTasks;
 		std::atomic<size_t> numTasksCompleted;

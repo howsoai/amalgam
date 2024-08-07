@@ -598,7 +598,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 
 	//add accessing_entity to arguments. If accessing_entity already specified (it shouldn't be), let garbage collection clean it up
 	EvaluableNode *call_stack_args = call_stack->GetOrderedChildNodesReference()[0];
-	call_stack_args->SetMappedChildNode(GetStringIdFromNodeTypeFromString(ENBISI_accessing_entity),
+	call_stack_args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_accessing_entity),
 		container->evaluableNodeManager.AllocNode(ENT_STRING, cur_entity_sid));
 
 	PopulatePerformanceCounters(perf_constraints_ptr, container);

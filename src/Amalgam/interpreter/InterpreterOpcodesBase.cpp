@@ -266,8 +266,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_DEFAULTS(EvaluableNode
 			EvaluableNode *num_node = evaluableNodeManager->AllocNode(ENT_NUMBER);
 			num_node->SetNumberValue(node_prob);
 
-			const std::string &node_type_string = GetStringFromEvaluableNodeType(node_type, true);
-			out_node->SetMappedChildNode(node_type_string, num_node);
+			StringInternPool::StringID node_type_sid = GetStringIdFromNodeType(node_type);
+			out_node->SetMappedChildNode(node_type_sid, num_node);
 		}
 
 		return EvaluableNodeReference(out_node, true);
@@ -281,7 +281,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_DEFAULTS(EvaluableNode
 		{
 			EvaluableNode *num_node = evaluableNodeManager->AllocNode(ENT_NUMBER);
 			num_node->SetNumberValue(op_prob);
-			out_node->SetMappedChildNode(op_type, num_node);
+			StringInternPool::StringID op_type_sid = GetStringIdFromBuiltInStringId(op_type);
+			out_node->SetMappedChildNode(op_type_sid, num_node);
 		}
 
 		return EvaluableNodeReference(out_node, true);
@@ -1904,7 +1905,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEIGHTED_RAND(EvaluableNod
 	//if generating many values with weighted probabilites, use fast method
 	if(mcn.size() > 0 && (number_to_generate > 10 || (number_to_generate > 3 && mcn.size() > 200)))
 	{
-		EvaluableNodeMappedWeightedDiscreteRandomStreamTransform wdrst(mcn, false);
+		WeightedDiscreteRandomStreamTransform<StringInternPool::StringID,
+			EvaluableNode::AssocType, EvaluableNodeAsDouble> wdrst(mcn, false);
 		for(size_t i = 0; i < number_to_generate; i++)
 		{
 			EvaluableNode *rand_value = evaluableNodeManager->AllocNode(ENT_STRING, wdrst.WeightedDiscreteRand(randomStream));

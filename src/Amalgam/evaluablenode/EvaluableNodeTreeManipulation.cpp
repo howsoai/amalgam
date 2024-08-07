@@ -662,7 +662,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 
 EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(Interpreter *interpreter, EvaluableNodeManager *enm,
 	EvaluableNode *tree, double mutation_rate,
-	CompactHashMap<StringInternPool::StringID, double> *mutation_weights,
+	CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights,
 	CompactHashMap<EvaluableNodeType, double> *evaluable_node_weights)
 {
 	std::vector<std::string> strings;
@@ -1515,7 +1515,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			MutateImmediateNode(n, mp.interpreter->randomStream, *mp.strings);
 	}
 
-	StringInternPool::StringID mutation_type = mp.randMutationType->WeightedDiscreteRand(mp.interpreter->randomStream);
+	EvaluableNodeBuiltInStringId mutation_type = mp.randMutationType->WeightedDiscreteRand(mp.interpreter->randomStream);
 	//only mark for likely deletion if null has no parameters
 	if(n->GetType() == ENT_NULL && n->GetNumChildNodes() == 0 && mp.interpreter->randomStream.Rand() < 0.5)
 		mutation_type = ENBISI_delete;
@@ -1857,7 +1857,7 @@ FlatMatrix<size_t> EvaluableNodeTreeManipulation::sequenceCommonalityBuffer;
 
 EvaluableNode EvaluableNodeTreeManipulation::nullEvaluableNode(ENT_NULL);
 
-CompactHashMap<StringInternPool::StringID, double> EvaluableNodeTreeManipulation::mutationOperationTypeProbabilities
+CompactHashMap<EvaluableNodeBuiltInStringId, double> EvaluableNodeTreeManipulation::mutationOperationTypeProbabilities
 {
 	{ ENBISI_change_type,		0.28 },
 	{ ENBISI_delete,			0.12 },
@@ -1868,7 +1868,7 @@ CompactHashMap<StringInternPool::StringID, double> EvaluableNodeTreeManipulation
 	{ ENBISI_change_label,		0.04 }
 };
 
-EvaluableNodeTreeManipulation::MutationParameters::WeightedRandMutationType  EvaluableNodeTreeManipulation::mutationOperationTypeRandomStream(mutationOperationTypeProbabilities, true);
+EvaluableNodeTreeManipulation::MutationParameters::WeightedRandMutationType EvaluableNodeTreeManipulation::mutationOperationTypeRandomStream(mutationOperationTypeProbabilities, true);
 
 CompactHashMap<EvaluableNodeType, double> EvaluableNodeTreeManipulation::evaluableNodeTypeProbabilities
 {

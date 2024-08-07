@@ -69,6 +69,9 @@ public:
 	//a label of an id to exclude
 	StringInternPool::StringID exclusionLabel;
 
+	//index of an entity to exclude
+	size_t exclusionEntityIndex;
+
 	//a label representing a weight label
 	StringInternPool::StringID weightLabel;
 

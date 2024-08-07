@@ -51,7 +51,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 	}
 
 	bool mtw_exists = false;
-	CompactHashMap<StringInternPool::StringID, double> mutation_type_weights;
+	CompactHashMap<EvaluableNodeBuiltInStringId, double> mutation_type_weights;
 	if(ocn.size() > 3)
 	{
 		auto mutation_weights_node = InterpretNodeForImmediateUse(ocn[3]);
@@ -66,7 +66,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 	}
 
 	//result contains the copied result which may incur replacements
-	EvaluableNode *result = EvaluableNodeTreeManipulation::MutateTree(this, evaluableNodeManager, to_mutate, mutation_rate, mtw_exists ? &mutation_type_weights : nullptr, ow_exists ? &opcode_weights : nullptr);
+	EvaluableNode *result = EvaluableNodeTreeManipulation::MutateTree(this, evaluableNodeManager,
+		to_mutate, mutation_rate, mtw_exists ? &mutation_type_weights : nullptr, ow_exists ? &opcode_weights : nullptr);
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 	return EvaluableNodeReference(result, true);
 }
@@ -380,7 +381,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 	}
 
 	bool mtw_exists = false;
-	CompactHashMap<StringInternPool::StringID, double> mutation_type_weights;
+	CompactHashMap<EvaluableNodeBuiltInStringId, double> mutation_type_weights;
 	if(ocn.size() > 4)
 	{
 		auto mutation_weights_node = InterpretNodeForImmediateUse(ocn[4]);
@@ -403,7 +404,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 		return EvaluableNodeReference::Null();
 
 	//create new entity by mutating
-	Entity *new_entity = EntityManipulation::MutateEntity(this, source_entity, mutation_rate, mtw_exists ? &mutation_type_weights : nullptr, ow_exists ? &opcode_weights : nullptr);
+	Entity *new_entity = EntityManipulation::MutateEntity(this, source_entity, mutation_rate,
+		mtw_exists ? &mutation_type_weights : nullptr, ow_exists ? &opcode_weights : nullptr);
 	
 	//accumulate usage
 	if(ConstrainedAllocatedNodes())

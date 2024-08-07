@@ -324,12 +324,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 
 	const std::string date_string("date:");
 
-	if(from_type == GetStringIdFromNodeTypeFromString(ENT_NUMBER))
+	if(from_type == GetStringIdFromBuiltInStringId(ENT_NUMBER))
 	{
 		use_number = true;
 		number_value = InterpretNodeIntoNumberValue(ocn[0]);
 	}
-	else if(from_type == GetStringIdFromNodeTypeFromString(ENBISI_code))
+	else if(from_type == GetStringIdFromBuiltInStringId(ENBISI_code))
 	{
 		use_code = true;
 		code_value = InterpretNodeForImmediateUse(ocn[0]);
@@ -338,83 +338,83 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 	{
 		string_value = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
 
-		if(from_type == GetStringIdFromNodeTypeFromString(ENT_STRING))
+		if(from_type == GetStringIdFromBuiltInStringId(ENT_STRING))
 		{
 			use_string = true;
 		}
-		else if(from_type == GetStringIdFromNodeTypeFromString(ENBISI_Base16))
+		else if(from_type == GetStringIdFromBuiltInStringId(ENBISI_Base16))
 		{
 			use_string = true;
 			string_value = StringManipulation::Base16ToBinaryString(string_value);
 		}
-		else if(from_type == GetStringIdFromNodeTypeFromString(ENBISI_Base64))
+		else if(from_type == GetStringIdFromBuiltInStringId(ENBISI_Base64))
 		{
 			use_string = true;
 			string_value = StringManipulation::Base64ToBinaryString(string_value);
 		}
-		else if(from_type == GetStringIdFromNodeTypeFromString(ENBISI_uint8) || from_type == GetStringIdFromNodeTypeFromString(ENBISI_UINT8))
+		else if(from_type == GetStringIdFromBuiltInStringId(ENBISI_uint8) || from_type == GetStringIdFromBuiltInStringId(ENBISI_UINT8))
 		{
 			use_uint_number = true;
 			uint_number_value = reinterpret_cast<uint8_t &>(string_value[0]);
 		}
-		else if(from_type == GetStringIdFromNodeTypeFromString(ENBISI_int8) || from_type == GetStringIdFromNodeTypeFromString(ENBISI_INT8))
+		else if(from_type == GetStringIdFromBuiltInStringId(ENBISI_int8) || from_type == GetStringIdFromBuiltInStringId(ENBISI_INT8))
 		{
 			use_int_number = true;
 			int_number_value = ExpandCharStorage<int64_t, int8_t>(string_value[0]);
 		}
-		else if(from_type == GetStringIdFromNodeTypeFromString(ENBISI_uint16))
+		else if(from_type == GetStringIdFromBuiltInStringId(ENBISI_uint16))
 		{
 			use_uint_number = true;
 			if(string_value.size() >= 2)
 				uint_number_value = ExpandCharStorage<uint64_t>(string_value[0]) | (ExpandCharStorage<uint64_t>(string_value[1]) << 8);
 		}
-		else if(from_type == GetStringIdFromNodeTypeFromString(ENBISI_UINT16))
+		else if(from_type == GetStringIdFromBuiltInStringId(ENBISI_UINT16))
 		{
 			use_uint_number = true;
 			if(string_value.size() >= 2)
 				uint_number_value = ExpandCharStorage<uint64_t>(string_value[1]) | (ExpandCharStorage<uint64_t>(string_value[1]) << 8);
 		}
-		else if(from_type == GetStringIdFromNodeTypeFromString(ENBISI_int16))
+		else if(from_type == GetStringIdFromBuiltInStringId(ENBISI_int16))
 		{
 			use_int_number = true;
 			if(string_value.size() >= 2) //sign extend the most significant byte
 				int_number_value = ExpandCharStorage<int64_t>(string_value[0]) | (ExpandCharStorage<int64_t, int8_t>(string_value[1]) << 8);
 		}
-		else if(from_type == GetStringIdFromNodeTypeFromString(ENBISI_INT16))
+		else if(from_type == GetStringIdFromBuiltInStringId(ENBISI_INT16))
 		{
 			use_int_number = true;
 			if(string_value.size() >= 2) //sign extend the most significant byte
 				int_number_value = ExpandCharStorage<int64_t>(string_value[1]) | (ExpandCharStorage<int64_t, int8_t>(string_value[0]) << 8);
 		}
-		else if(from_type == GetStringIdFromNodeTypeFromString(ENBISI_uint32))
+		else if(from_type == GetStringIdFromBuiltInStringId(ENBISI_uint32))
 		{
 			use_uint_number = true;
 			if(string_value.size() >= 4)
 				uint_number_value = ExpandCharStorage<uint64_t>(string_value[0]) | (ExpandCharStorage<uint64_t>(string_value[1]) << 8)
 					| (ExpandCharStorage<uint64_t>(string_value[2]) << 16) | (ExpandCharStorage<uint64_t>(string_value[3]) << 24);
 		}
-		else if(from_type == GetStringIdFromNodeTypeFromString(ENBISI_UINT32))
+		else if(from_type == GetStringIdFromBuiltInStringId(ENBISI_UINT32))
 		{
 			use_uint_number = true;
 			if(string_value.size() >= 4)
 				uint_number_value = ExpandCharStorage<uint64_t>(string_value[3]) | (ExpandCharStorage<uint64_t>(string_value[2]) << 8)
 					| (ExpandCharStorage<uint64_t>(string_value[1]) << 16) | (ExpandCharStorage<uint64_t>(string_value[0]) << 24);
 		}
-		else if(from_type == GetStringIdFromNodeTypeFromString(ENBISI_int32))
+		else if(from_type == GetStringIdFromBuiltInStringId(ENBISI_int32))
 		{
 			use_int_number = true;
 			if(string_value.size() >= 4) //sign extend the most significant byte
 				int_number_value = ExpandCharStorage<int64_t>(string_value[0]) | (ExpandCharStorage<int64_t>(string_value[1]) << 8)
 				| (ExpandCharStorage<int64_t>(string_value[2]) << 16) | (ExpandCharStorage<int64_t, int8_t>(string_value[3]) << 24);
 		}
-		else if(from_type == GetStringIdFromNodeTypeFromString(ENBISI_INT32))
+		else if(from_type == GetStringIdFromBuiltInStringId(ENBISI_INT32))
 		{
 			use_int_number = true;
 			if(string_value.size() >= 4) //sign extend the most significant byte
 				int_number_value = ExpandCharStorage<int64_t>(string_value[3]) | (ExpandCharStorage<int64_t>(string_value[2]) << 8)
 					| (ExpandCharStorage<int64_t>(string_value[1]) << 16) | (ExpandCharStorage<int64_t, int8_t>(string_value[0]) << 24);
 		}
-		else if(from_type == GetStringIdFromNodeTypeFromString(ENBISI_uint64))
+		else if(from_type == GetStringIdFromBuiltInStringId(ENBISI_uint64))
 		{
 			use_uint_number = true;
 			if(string_value.size() >= 8)
@@ -424,7 +424,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 					| (ExpandCharStorage<uint64_t>(string_value[4]) << 32) | (ExpandCharStorage<uint64_t>(string_value[5]) << 40)
 					| (ExpandCharStorage<uint64_t>(string_value[6]) << 48) | (ExpandCharStorage<uint64_t>(string_value[7]) << 56);
 		}
-		else if(from_type == GetStringIdFromNodeTypeFromString(ENBISI_UINT64))
+		else if(from_type == GetStringIdFromBuiltInStringId(ENBISI_UINT64))
 		{
 			use_uint_number = true;
 			if(string_value.size() >= 8)
@@ -434,7 +434,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 					| (ExpandCharStorage<uint64_t>(string_value[3]) << 32) | (ExpandCharStorage<uint64_t>(string_value[2]) << 40)
 					| (ExpandCharStorage<uint64_t>(string_value[1]) << 48) | (ExpandCharStorage<uint64_t>(string_value[0]) << 56);
 		}
-		else if(from_type == GetStringIdFromNodeTypeFromString(ENBISI_int64))
+		else if(from_type == GetStringIdFromBuiltInStringId(ENBISI_int64))
 		{
 			use_int_number = true;
 			if(string_value.size() >= 8)
@@ -447,7 +447,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 				int_number_value = reinterpret_cast<int64_t &>(uint_number_value);
 			}
 		}
-		else if(from_type == GetStringIdFromNodeTypeFromString(ENBISI_INT64))
+		else if(from_type == GetStringIdFromBuiltInStringId(ENBISI_INT64))
 		{
 			use_int_number = true;
 			if(string_value.size() >= 8)
@@ -460,7 +460,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 				int_number_value = reinterpret_cast<int64_t &>(uint_number_value);
 			}
 		}
-		else if(from_type == GetStringIdFromNodeTypeFromString(ENBISI_float))
+		else if(from_type == GetStringIdFromBuiltInStringId(ENBISI_float))
 		{
 			use_number = true;
 			if(string_value.size() >= 4)
@@ -471,7 +471,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 				number_value = reinterpret_cast<float &>(temp);
 			}
 		}
-		else if(from_type == GetStringIdFromNodeTypeFromString(ENBISI_FLOAT))
+		else if(from_type == GetStringIdFromBuiltInStringId(ENBISI_FLOAT))
 		{
 			use_number = true;
 			if(string_value.size() >= 4)
@@ -482,7 +482,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 				number_value = reinterpret_cast<float &>(temp);
 			}
 		}
-		else if(from_type == GetStringIdFromNodeTypeFromString(ENBISI_double))
+		else if(from_type == GetStringIdFromBuiltInStringId(ENBISI_double))
 		{
 			use_number = true;
 			if(string_value.size() >= 8)
@@ -495,7 +495,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 				number_value = reinterpret_cast<double &>(uint_number_value);
 			}
 		}
-		else if(from_type == GetStringIdFromNodeTypeFromString(ENBISI_DOUBLE))
+		else if(from_type == GetStringIdFromBuiltInStringId(ENBISI_DOUBLE))
 		{
 			use_number = true;
 			if(string_value.size() >= 8)
@@ -508,12 +508,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 				number_value = reinterpret_cast<double &>(uint_number_value);
 			}
 		}
-		else if(from_type == GetStringIdFromNodeTypeFromString(ENBISI_json))
+		else if(from_type == GetStringIdFromBuiltInStringId(ENBISI_json))
 		{
 			use_code = true;
 			code_value = EvaluableNodeReference(EvaluableNodeJSONTranslation::JsonToEvaluableNode(evaluableNodeManager, string_value), true);
 		}
-		else if(from_type == GetStringIdFromNodeTypeFromString(ENBISI_yaml))
+		else if(from_type == GetStringIdFromBuiltInStringId(ENBISI_yaml))
 		{
 			use_code = true;
 			code_value = EvaluableNodeReference(EvaluableNodeYAMLTranslation::YamlToEvaluableNode(evaluableNodeManager, string_value), true);
@@ -531,11 +531,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 				{
 					auto &mcn = from_params->GetMappedChildNodesReference();
 
-					auto found_locale = mcn.find(GetStringIdFromNodeTypeFromString(ENBISI_locale));
+					auto found_locale = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_locale));
 					if(found_locale != end(mcn) && !EvaluableNode::IsNull(found_locale->second))
 						locale = EvaluableNode::ToStringPreservingOpcodeType(found_locale->second);
 
-					auto found_timezone = mcn.find(GetStringIdFromNodeTypeFromString(ENBISI_timezone));
+					auto found_timezone = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_timezone));
 					if(found_timezone != end(mcn) && !EvaluableNode::IsNull(found_timezone->second))
 						timezone = EvaluableNode::ToStringPreservingOpcodeType(found_timezone->second);
 				}
@@ -556,7 +556,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 		to_params = InterpretNodeForImmediateUse(ocn[4]);
 
 	//convert
-	if(to_type == GetStringIdFromNodeTypeFromString(ENT_NUMBER))
+	if(to_type == GetStringIdFromBuiltInStringId(ENT_NUMBER))
 	{
 		//don't need to do anything if use_number
 		if(use_uint_number)
@@ -574,12 +574,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 
 		return ReuseOrAllocOneOfReturn(to_params, code_value, number_value, immediate_result);
 	}
-	else if(to_type == GetStringIdFromNodeTypeFromString(ENBISI_code))
+	else if(to_type == GetStringIdFromBuiltInStringId(ENBISI_code))
 	{
 		evaluableNodeManager->FreeNodeTreeIfPossible(to_params);
 		return code_value;
 	}
-	else if(to_type == GetStringIdFromNodeTypeFromString(ENT_STRING))
+	else if(to_type == GetStringIdFromBuiltInStringId(ENT_STRING))
 	{
 		//don't need to do anything if use_string
 		if(use_number)
@@ -595,7 +595,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			{
 				auto &mcn = to_params->GetMappedChildNodesReference();
 
-				auto found_sort_keys = mcn.find(GetStringIdFromNodeTypeFromString(ENBISI_sort_keys));
+				auto found_sort_keys = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_sort_keys));
 				if(found_sort_keys != end(mcn))
 					sort_keys = EvaluableNode::IsTrue(found_sort_keys->second);
 			}
@@ -603,7 +603,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			string_value = Parser::Unparse(code_value, evaluableNodeManager, false, true, sort_keys);
 		}
 	}
-	else if(to_type == GetStringIdFromNodeTypeFromString(ENBISI_Base16) || to_type == GetStringIdFromNodeTypeFromString(ENBISI_Base64))
+	else if(to_type == GetStringIdFromBuiltInStringId(ENBISI_Base16) || to_type == GetStringIdFromBuiltInStringId(ENBISI_Base64))
 	{
 		if(use_number)
 		{
@@ -640,89 +640,89 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 		if(use_code)
 			string_value = Parser::Unparse(code_value, evaluableNodeManager, false);
 
-		if(to_type == GetStringIdFromNodeTypeFromString(ENBISI_Base16))
+		if(to_type == GetStringIdFromBuiltInStringId(ENBISI_Base16))
 			string_value = StringManipulation::BinaryStringToBase16(string_value);
 		else //Base64
 			string_value = StringManipulation::BinaryStringToBase64(string_value);
 	}
-	else if(to_type == GetStringIdFromNodeTypeFromString(ENBISI_uint8) || to_type == GetStringIdFromNodeTypeFromString(ENBISI_UINT8))
+	else if(to_type == GetStringIdFromBuiltInStringId(ENBISI_uint8) || to_type == GetStringIdFromBuiltInStringId(ENBISI_UINT8))
 	{
 		if(use_number)				string_value = StringManipulation::To1ByteString(static_cast<uint8_t>(number_value));
 		else if(use_uint_number)	string_value = StringManipulation::To1ByteString(static_cast<uint8_t>(uint_number_value));
 		else if(use_int_number)		string_value = StringManipulation::To1ByteString(static_cast<uint8_t>(int_number_value));
 		else if(use_code)			string_value = StringManipulation::To1ByteString(static_cast<uint8_t>(EvaluableNode::ToNumber(code_value)));
 	}
-	else if(to_type == GetStringIdFromNodeTypeFromString(ENBISI_int8) || to_type == GetStringIdFromNodeTypeFromString(ENBISI_INT8))
+	else if(to_type == GetStringIdFromBuiltInStringId(ENBISI_int8) || to_type == GetStringIdFromBuiltInStringId(ENBISI_INT8))
 	{
 		if(use_number)				string_value = StringManipulation::To1ByteString(static_cast<int8_t>(number_value));
 		else if(use_uint_number)	string_value = StringManipulation::To1ByteString(static_cast<int8_t>(uint_number_value));
 		else if(use_int_number)		string_value = StringManipulation::To1ByteString(static_cast<int8_t>(int_number_value));
 		else if(use_code)			string_value = StringManipulation::To1ByteString(static_cast<int8_t>(EvaluableNode::ToNumber(code_value)));
 	}
-	else if(to_type == GetStringIdFromNodeTypeFromString(ENBISI_uint16))
+	else if(to_type == GetStringIdFromBuiltInStringId(ENBISI_uint16))
 	{
 		if(use_number)				string_value = StringManipulation::To2ByteStringLittleEndian(static_cast<uint16_t>(number_value));
 		else if(use_uint_number)	string_value = StringManipulation::To2ByteStringLittleEndian(static_cast<uint16_t>(uint_number_value));
 		else if(use_int_number)		string_value = StringManipulation::To2ByteStringLittleEndian(static_cast<uint16_t>(int_number_value));
 		else if(use_code)			string_value = StringManipulation::To2ByteStringLittleEndian(static_cast<uint16_t>(EvaluableNode::ToNumber(code_value)));
 	}
-	else if(to_type == GetStringIdFromNodeTypeFromString(ENBISI_UINT16))
+	else if(to_type == GetStringIdFromBuiltInStringId(ENBISI_UINT16))
 	{
 		if(use_number)				string_value = StringManipulation::To2ByteStringBigEndian(static_cast<uint16_t>(number_value));
 		else if(use_uint_number)	string_value = StringManipulation::To2ByteStringBigEndian(static_cast<uint16_t>(uint_number_value));
 		else if(use_int_number)		string_value = StringManipulation::To2ByteStringBigEndian(static_cast<uint16_t>(int_number_value));
 		else if(use_code)			string_value = StringManipulation::To2ByteStringBigEndian(static_cast<uint16_t>(EvaluableNode::ToNumber(code_value)));
 	}
-	else if(to_type == GetStringIdFromNodeTypeFromString(ENBISI_int16))
+	else if(to_type == GetStringIdFromBuiltInStringId(ENBISI_int16))
 	{
 		if(use_number)				string_value = StringManipulation::To2ByteStringLittleEndian(static_cast<int16_t>(number_value));
 		else if(use_uint_number)	string_value = StringManipulation::To2ByteStringLittleEndian(static_cast<int16_t>(uint_number_value));
 		else if(use_int_number)		string_value = StringManipulation::To2ByteStringLittleEndian(static_cast<int16_t>(int_number_value));
 		else if(use_code)			string_value = StringManipulation::To2ByteStringLittleEndian(static_cast<int16_t>(EvaluableNode::ToNumber(code_value)));
 	}
-	else if(to_type == GetStringIdFromNodeTypeFromString(ENBISI_INT16))
+	else if(to_type == GetStringIdFromBuiltInStringId(ENBISI_INT16))
 	{
 		if(use_number)				string_value = StringManipulation::To2ByteStringBigEndian(static_cast<int16_t>(number_value));
 		else if(use_uint_number)	string_value = StringManipulation::To2ByteStringBigEndian(static_cast<int16_t>(uint_number_value));
 		else if(use_int_number)		string_value = StringManipulation::To2ByteStringBigEndian(static_cast<int16_t>(int_number_value));
 		else if(use_code)			string_value = StringManipulation::To2ByteStringBigEndian(static_cast<int16_t>(EvaluableNode::ToNumber(code_value)));
 	}
-	else if(to_type == GetStringIdFromNodeTypeFromString(ENBISI_uint32))
+	else if(to_type == GetStringIdFromBuiltInStringId(ENBISI_uint32))
 	{
 		if(use_number)				string_value = StringManipulation::To4ByteStringLittleEndian(static_cast<uint32_t>(number_value));
 		else if(use_uint_number)	string_value = StringManipulation::To4ByteStringLittleEndian(static_cast<uint32_t>(uint_number_value));
 		else if(use_int_number)		string_value = StringManipulation::To4ByteStringLittleEndian(static_cast<uint32_t>(int_number_value));
 		else if(use_code)			string_value = StringManipulation::To4ByteStringLittleEndian(static_cast<uint32_t>(EvaluableNode::ToNumber(code_value)));
 	}
-	else if(to_type == GetStringIdFromNodeTypeFromString(ENBISI_UINT32))
+	else if(to_type == GetStringIdFromBuiltInStringId(ENBISI_UINT32))
 	{
 		if(use_number)				string_value = StringManipulation::To4ByteStringBigEndian(static_cast<uint32_t>(number_value));
 		else if(use_uint_number)	string_value = StringManipulation::To4ByteStringBigEndian(static_cast<uint32_t>(uint_number_value));
 		else if(use_int_number)		string_value = StringManipulation::To4ByteStringBigEndian(static_cast<uint32_t>(int_number_value));
 		else if(use_code)			string_value = StringManipulation::To4ByteStringBigEndian(static_cast<uint32_t>(EvaluableNode::ToNumber(code_value)));
 	}
-	else if(to_type == GetStringIdFromNodeTypeFromString(ENBISI_int32))
+	else if(to_type == GetStringIdFromBuiltInStringId(ENBISI_int32))
 	{
 		if(use_number)				string_value = StringManipulation::To4ByteStringLittleEndian(static_cast<int32_t>(number_value));
 		else if(use_uint_number)	string_value = StringManipulation::To4ByteStringLittleEndian(static_cast<int32_t>(uint_number_value));
 		else if(use_int_number)		string_value = StringManipulation::To4ByteStringLittleEndian(static_cast<int32_t>(int_number_value));
 		else if(use_code)			string_value = StringManipulation::To4ByteStringLittleEndian(static_cast<int32_t>(EvaluableNode::ToNumber(code_value)));
 	}
-	else if(to_type == GetStringIdFromNodeTypeFromString(ENBISI_INT32))
+	else if(to_type == GetStringIdFromBuiltInStringId(ENBISI_INT32))
 	{
 		if(use_number)				string_value = StringManipulation::To4ByteStringBigEndian(static_cast<int32_t>(number_value));
 		else if(use_uint_number)	string_value = StringManipulation::To4ByteStringBigEndian(static_cast<int32_t>(uint_number_value));
 		else if(use_int_number)		string_value = StringManipulation::To4ByteStringBigEndian(static_cast<int32_t>(int_number_value));
 		else if(use_code)			string_value = StringManipulation::To4ByteStringBigEndian(static_cast<int32_t>(EvaluableNode::ToNumber(code_value)));
 	}
-	else if(to_type == GetStringIdFromNodeTypeFromString(ENBISI_uint64))
+	else if(to_type == GetStringIdFromBuiltInStringId(ENBISI_uint64))
 	{
 		if(use_number)				string_value = StringManipulation::To8ByteStringLittleEndian(static_cast<uint64_t>(number_value));
 		else if(use_uint_number)	string_value = StringManipulation::To8ByteStringLittleEndian(static_cast<uint64_t>(uint_number_value));
 		else if(use_int_number)		string_value = StringManipulation::To8ByteStringLittleEndian(static_cast<uint64_t>(int_number_value));
 		else if(use_code)			string_value = StringManipulation::To8ByteStringLittleEndian(static_cast<uint64_t>(EvaluableNode::ToNumber(code_value)));
 	}
-	else if(to_type == GetStringIdFromNodeTypeFromString(ENBISI_UINT64))
+	else if(to_type == GetStringIdFromBuiltInStringId(ENBISI_UINT64))
 	{
 		if(use_number)				string_value = StringManipulation::To8ByteStringBigEndian(static_cast<uint64_t>(number_value));
 		else if(use_uint_number)	string_value = StringManipulation::To8ByteStringBigEndian(static_cast<uint64_t>(uint_number_value));
@@ -730,49 +730,49 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 		else if(use_code)			string_value = StringManipulation::To8ByteStringBigEndian(static_cast<uint64_t>(EvaluableNode::ToNumber(code_value)));
 
 	}
-	else if(to_type == GetStringIdFromNodeTypeFromString(ENBISI_int64))
+	else if(to_type == GetStringIdFromBuiltInStringId(ENBISI_int64))
 	{
 		if(use_number)				string_value = StringManipulation::To8ByteStringLittleEndian(static_cast<int64_t>(number_value));
 		else if(use_uint_number)	string_value = StringManipulation::To8ByteStringLittleEndian(static_cast<int64_t>(uint_number_value));
 		else if(use_int_number)		string_value = StringManipulation::To8ByteStringLittleEndian(static_cast<int64_t>(int_number_value));
 		else if(use_code)			string_value = StringManipulation::To8ByteStringLittleEndian(static_cast<int64_t>(EvaluableNode::ToNumber(code_value)));
 	}
-	else if(to_type == GetStringIdFromNodeTypeFromString(ENBISI_INT64))
+	else if(to_type == GetStringIdFromBuiltInStringId(ENBISI_INT64))
 	{
 		if(use_number)				string_value = StringManipulation::To8ByteStringBigEndian(static_cast<int64_t>(number_value));
 		else if(use_uint_number)	string_value = StringManipulation::To8ByteStringBigEndian(static_cast<int64_t>(uint_number_value));
 		else if(use_int_number)		string_value = StringManipulation::To8ByteStringBigEndian(static_cast<int64_t>(int_number_value));
 		else if(use_code)			string_value = StringManipulation::To8ByteStringBigEndian(static_cast<int64_t>(EvaluableNode::ToNumber(code_value)));
 	}
-	else if(to_type == GetStringIdFromNodeTypeFromString(ENBISI_float))
+	else if(to_type == GetStringIdFromBuiltInStringId(ENBISI_float))
 	{
 		if(use_number)				string_value = StringManipulation::To4ByteStringLittleEndian(static_cast<float>(number_value));
 		else if(use_uint_number)	string_value = StringManipulation::To4ByteStringLittleEndian(static_cast<float>(uint_number_value));
 		else if(use_int_number)		string_value = StringManipulation::To4ByteStringLittleEndian(static_cast<float>(int_number_value));
 		else if(use_code)			string_value = StringManipulation::To4ByteStringLittleEndian(static_cast<float>(EvaluableNode::ToNumber(code_value)));
 	}
-	else if(to_type == GetStringIdFromNodeTypeFromString(ENBISI_FLOAT))
+	else if(to_type == GetStringIdFromBuiltInStringId(ENBISI_FLOAT))
 	{
 		if(use_number)				string_value = StringManipulation::To4ByteStringBigEndian(static_cast<float>(number_value));
 		else if(use_uint_number)	string_value = StringManipulation::To4ByteStringBigEndian(static_cast<float>(uint_number_value));
 		else if(use_int_number)		string_value = StringManipulation::To4ByteStringBigEndian(static_cast<float>(int_number_value));
 		else if(use_code)			string_value = StringManipulation::To4ByteStringBigEndian(static_cast<float>(EvaluableNode::ToNumber(code_value)));
 	}
-	else if(to_type == GetStringIdFromNodeTypeFromString(ENBISI_double))
+	else if(to_type == GetStringIdFromBuiltInStringId(ENBISI_double))
 	{
 		if(use_number)				string_value = StringManipulation::To8ByteStringLittleEndian(static_cast<double>(number_value));
 		else if(use_uint_number)	string_value = StringManipulation::To8ByteStringLittleEndian(static_cast<double>(uint_number_value));
 		else if(use_int_number)		string_value = StringManipulation::To8ByteStringLittleEndian(static_cast<double>(int_number_value));
 		else if(use_code)			string_value = StringManipulation::To8ByteStringLittleEndian(static_cast<double>(EvaluableNode::ToNumber(code_value)));
 	}
-	else if(to_type == GetStringIdFromNodeTypeFromString(ENBISI_DOUBLE))
+	else if(to_type == GetStringIdFromBuiltInStringId(ENBISI_DOUBLE))
 	{
 		if(use_number)				string_value = StringManipulation::To8ByteStringBigEndian(static_cast<double>(number_value));
 		else if(use_uint_number)	string_value = StringManipulation::To8ByteStringBigEndian(static_cast<double>(uint_number_value));
 		else if(use_int_number)		string_value = StringManipulation::To8ByteStringBigEndian(static_cast<double>(int_number_value));
 		else if(use_code)			string_value = StringManipulation::To8ByteStringBigEndian(static_cast<double>(EvaluableNode::ToNumber(code_value)));
 	}
-	else if(to_type == GetStringIdFromNodeTypeFromString(ENBISI_json))
+	else if(to_type == GetStringIdFromBuiltInStringId(ENBISI_json))
 	{
 		if(use_number)
 			string_value = EvaluableNode::NumberToString(number_value);
@@ -792,7 +792,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			{
 				auto &mcn = to_params->GetMappedChildNodesReference();
 
-				auto found_sort_keys = mcn.find(GetStringIdFromNodeTypeFromString(ENBISI_sort_keys));
+				auto found_sort_keys = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_sort_keys));
 				if(found_sort_keys != end(mcn))
 					sort_keys = EvaluableNode::IsTrue(found_sort_keys->second);
 			}
@@ -800,7 +800,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			std::tie(string_value, valid_string_value) = EvaluableNodeJSONTranslation::EvaluableNodeToJson(code_value, sort_keys);
 		}
 	}
-	else if(to_type == GetStringIdFromNodeTypeFromString(ENBISI_yaml))
+	else if(to_type == GetStringIdFromBuiltInStringId(ENBISI_yaml))
 	{
 		if(use_number)
 		{
@@ -829,7 +829,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			{
 				auto &mcn = to_params->GetMappedChildNodesReference();
 
-				auto found_sort_keys = mcn.find(GetStringIdFromNodeTypeFromString(ENBISI_sort_keys));
+				auto found_sort_keys = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_sort_keys));
 				if(found_sort_keys != end(mcn))
 					sort_keys = EvaluableNode::IsTrue(found_sort_keys->second);
 			}
@@ -850,11 +850,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			{
 				auto &mcn = to_params->GetMappedChildNodesReference();
 
-				auto found_locale = mcn.find(GetStringIdFromNodeTypeFromString(ENBISI_locale));
+				auto found_locale = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_locale));
 				if(found_locale != end(mcn) && !EvaluableNode::IsNull(found_locale->second))
 					locale = EvaluableNode::ToStringPreservingOpcodeType(found_locale->second);
 
-				auto found_timezone = mcn.find(GetStringIdFromNodeTypeFromString(ENBISI_timezone));
+				auto found_timezone = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_timezone));
 				if(found_timezone != end(mcn) && !EvaluableNode::IsNull(found_timezone->second))
 					timezone = EvaluableNode::ToStringPreservingOpcodeType(found_timezone->second);
 			}
@@ -1537,12 +1537,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 				if(param_node->GetType() == ENT_STRING)
 				{
 					auto pnsid = param_node->GetStringIDReference();
-					if(pnsid == GetStringIdFromNodeTypeFromString(ENBISI_all))
+					if(pnsid == GetStringIdFromBuiltInStringId(ENBISI_all))
 					{
 						first_match_only = false;
 						full_matches = true;
 					}
-					else if(pnsid == GetStringIdFromNodeTypeFromString(ENBISI_submatches))
+					else if(pnsid == GetStringIdFromBuiltInStringId(ENBISI_submatches))
 					{
 						first_match_only = false;
 						submatches = true;

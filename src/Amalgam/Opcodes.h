@@ -617,7 +617,7 @@ extern std::vector<StringInternPool::StringID> en_built_in_strings;
 extern FastHashMap<StringInternPool::StringID, EvaluableNodeType> en_built_in_string_to_en_type;
 
 //returns the string id representing EvaluableNodeBuiltInStringId t
-inline StringInternPool::StringID GetStringIdFromNodeTypeFromString(EvaluableNodeBuiltInStringId t)
+inline StringInternPool::StringID GetStringIdFromBuiltInStringId(EvaluableNodeBuiltInStringId t)
 {
 	if(t >= ENBISI_FIRST_DYNAMIC_STRING)
 		return en_built_in_strings[ENBISI_NOT_A_STRING];
@@ -625,7 +625,7 @@ inline StringInternPool::StringID GetStringIdFromNodeTypeFromString(EvaluableNod
 }
 
 //returns the string id representing EvaluableNodeType t
-inline StringInternPool::StringID GetStringIdFromNodeTypeFromString(EvaluableNodeType t)
+inline StringInternPool::StringID GetStringIdFromNodeType(EvaluableNodeType t)
 {
 	if(t >= NUM_VALID_ENT_OPCODES)
 		return en_built_in_strings[ENT_NOT_A_BUILT_IN_TYPE];
@@ -659,7 +659,7 @@ inline std::string GetStringFromEvaluableNodeType(EvaluableNodeType t, bool get_
 		return "";
 	}
 
-	return string_intern_pool.GetStringFromID(GetStringIdFromNodeTypeFromString(t));
+	return string_intern_pool.GetStringFromID(GetStringIdFromNodeType(t));
 }
 
 //returns the enumerated type for the string

@@ -157,7 +157,7 @@ public:
 	//removes a reference to the string specified by the ID
 	inline void DestroyStringReference(StringID id)
 	{
-		if(id == NOT_A_STRING_ID)
+		if(id == NOT_A_STRING_ID || id == emptyStringId)
 			return;
 
 		int64_t refcount = id->refCount--;
@@ -205,7 +205,7 @@ public:
 		for(auto r : references_container)
 		{
 			StringID id = get_string_id(r);
-			if(id == NOT_A_STRING_ID)
+			if(id == NOT_A_STRING_ID || id == emptyStringId)
 				continue;
 
 			int64_t refcount = id->refCount--;
@@ -222,7 +222,7 @@ public:
 		for(auto r : references_container)
 		{
 			StringID id = get_string_id(r);
-			if(id != NOT_A_STRING_ID)
+			if(id != NOT_A_STRING_ID && id != emptyStringId)
 				id->refCount++;
 		}
 
@@ -231,7 +231,7 @@ public:
 		for(auto r : references_container)
 		{
 			StringID id = get_string_id(r);
-			if(id == NOT_A_STRING_ID)
+			if(id == NOT_A_STRING_ID || id == emptyStringId)
 				continue;
 
 			//remove any that are the last reference

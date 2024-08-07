@@ -47,7 +47,9 @@ public:
 
 	inline StringInternPool()
 	{
-		EMPTY_STRING_ID = CreateStringReference("");
+		//create the empty string first
+		auto &[new_entry, inserted] = stringToID.emplace(std::make_pair("", std::make_unique<StringInternStringData>("")));
+		EMPTY_STRING_ID = new_entry->second.get();
 		InitializeStaticStrings();
 	}
 
@@ -56,6 +58,9 @@ public:
 	//may invalidate the location, so a copy must be made to return the value
 	inline const std::string GetStringFromID(StringID id)
 	{
+		if(id == NOT_A_STRING_ID)
+			return EMPTY_STRING;
+
 		return id->string;
 	}
 
@@ -84,13 +89,13 @@ public:
 	#endif
 
 		//try to insert it as a new string
-		auto [inserted_id, inserted] = stringToID.emplace(std::make_pair(str, nullptr));
+		auto &[new_entry, inserted] = stringToID.emplace(std::make_pair(str, nullptr));
 		if(inserted)
-			inserted_id->second = std::make_unique<StringInternStringData>(str);
+			new_entry->second = std::make_unique<StringInternStringData>(str);
 		else
-			inserted_id->second->refCount++;
+			new_entry->second->refCount++;
 
-		return inserted_id->second.get();
+		return new_entry->second.get();
 	}
 
 	//makes a new reference to the string id specified, returning the id passed in
@@ -303,6 +308,11 @@ protected:
 
 	//mapping from string to ID (index of idToRefCountAndString)
 	FastHashMap<std::string, std::unique_ptr<StringInternStringData>> stringToID;
+
+public:
+	//data structures for static strings
+	std::vector<StringInternPool::StringID> staticStringsIndexToStringID;
+	FastHashMap<StringInternPool::StringID, size_t> staticStringIDToIndex;
 };
 
 extern StringInternPool string_intern_pool;

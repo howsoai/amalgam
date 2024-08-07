@@ -863,7 +863,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 
 	size_t list_index = (ocn.size() == 1 ? 0 : 1);
 
-	EvaluableNodeReference function;
+	EvaluableNodeReference function = EvaluableNodeReference::Null();
 	size_t highest_k = 0;
 	size_t lowest_k = 0;
 
@@ -1545,7 +1545,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 			SetTopCurrentIndexInConstructionStack(key_sid);
 
 			//compute the value, but make sure have another node
-			EvaluableNodeReference value;
+			EvaluableNodeReference value = EvaluableNodeReference::Null();
 			if(i + 1 < num_nodes)
 				value = InterpretNode(ocn[i + 1]);
 

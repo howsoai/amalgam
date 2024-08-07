@@ -3,28 +3,26 @@
 #include "StringInternPool.h"
 
 StringInternPool string_intern_pool;
-std::vector<StringInternPool::StringID> en_built_in_strings;
-FastHashMap< StringInternPool::StringID, EvaluableNodeBuiltInStringId> string_id_to_built_in_string_id;
+
+static inline void EmplaceStaticString(EvaluableNodeBuiltInStringId bisid, const char *str)
+{
+	auto sid = string_intern_pool.CreateStringReference(str);
+	string_intern_pool.staticStringsIndexToStringID[bisid] = sid;
+	string_intern_pool.staticStringIDToIndex.emplace(sid, bisid);
+}
 
 inline void EmplaceNodeTypeString(EvaluableNodeType t, const char *str)
 {
-	EvaluableNodeBuiltInStringId bisid = static_cast<EvaluableNodeBuiltInStringId>(t + NUM_ENBISI_SPECIAL_STRING_IDS);
-	en_built_in_strings[bisid] = string_intern_pool.CreateStringReference(str);
-	string_id_to_built_in_string_id.emplace(en_built_in_strings[bisid], bisid);
-}
-
-static inline void EmplaceStaticString(size_t enbis_offset, const char *str)
-{
-	en_built_in_strings[enbis_offset] = string_intern_pool.CreateStringReference(str);
+	EmplaceStaticString(static_cast<EvaluableNodeBuiltInStringId>(t + NUM_ENBISI_SPECIAL_STRING_IDS), str);
 }
 
 void StringInternPool::InitializeStaticStrings()
 {
 	stringToID.reserve(ENBISI_FIRST_DYNAMIC_STRING);
-	en_built_in_strings.resize(ENBISI_FIRST_DYNAMIC_STRING);
-	string_id_to_built_in_string_id.reserve(ENBISI_FIRST_DYNAMIC_STRING);
+	staticStringsIndexToStringID.resize(ENBISI_FIRST_DYNAMIC_STRING);
+	staticStringIDToIndex.reserve(ENBISI_FIRST_DYNAMIC_STRING);
 
-	EmplaceStaticString(ENBISI_NOT_A_STRING, "(null)");
+	//skip ENBISI_NOT_A_STRING, leave it null
 	EmplaceStaticString(ENBISI_EMPTY_STRING, "");
 
 	//opcodes

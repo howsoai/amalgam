@@ -955,7 +955,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_LABELS(EvaluableNode *
 			if(e != nullptr)
 			{
 				//obtain the label, reusing the sid reference if possible
-				StringInternPool::StringID label_sid = string_intern_pool.EMPTY_STRING_ID;
+				StringInternPool::StringID label_sid = string_intern_pool.emptyStringId;
 				if(label_list.unique)
 					label_sid = EvaluableNode::ToStringIDTakingReferenceAndClearing(e);
 				else
@@ -1012,7 +1012,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP_LABELS(EvaluableNode *
 			retval_ocn[i] = evaluableNodeManager->AllocNode(retval_ocn[i]);
 
 		//obtain the label, reusing the sid reference if possible
-		StringInternPool::StringID label_sid = string_intern_pool.EMPTY_STRING_ID;
+		StringInternPool::StringID label_sid = string_intern_pool.emptyStringId;
 		if(label_list.unique)
 			label_sid = EvaluableNode::ToStringIDTakingReferenceAndClearing(label_list_ocn[i]);
 		else

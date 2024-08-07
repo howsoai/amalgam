@@ -42,14 +42,14 @@ public:
 
 	//indicates that it is not a string, like NaN or null
 	static constexpr StringID NOT_A_STRING_ID = nullptr;
-	StringID EMPTY_STRING_ID = nullptr;
+	StringID emptyStringId = nullptr;
 	inline static const std::string EMPTY_STRING = std::string("");
 
 	inline StringInternPool()
 	{
 		//create the empty string first
 		auto &[new_entry, inserted] = stringToID.emplace(std::make_pair("", std::make_unique<StringInternStringData>("")));
-		EMPTY_STRING_ID = new_entry->second.get();
+		emptyStringId = new_entry->second.get();
 		InitializeStaticStrings();
 	}
 
@@ -82,7 +82,10 @@ public:
 	inline StringID CreateStringReference(const std::string &str)
 	{
 		if(str.size() == 0)
-			return EMPTY_STRING_ID;
+		{
+			emptyStringId->refCount++;
+			return emptyStringId;
+		}
 
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		Concurrency::WriteLock lock(sharedMutex);
@@ -248,7 +251,7 @@ public:
 	}
 
 	//returns the number of strings that are still allocated
-	//even when "empty" it will still return 2 since the NOT_A_STRING_ID and EMPTY_STRING_ID take up slots
+	//even when "empty" it will still return 2 since the NOT_A_STRING_ID and emptyStringId take up slots
 	inline size_t GetNumStringsInUse()
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
@@ -259,32 +262,17 @@ public:
 	}
 
 	//returns the number of strings that are still in use
-	size_t GetNumDynamicStringsInUse()
+	inline size_t GetNumDynamicStringsInUse()
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		Concurrency::ReadLock lock(sharedMutex);
 	#endif
 
-		return stringToID.size();
-	}
-
-	//returns the number of string references that are currently in use
-	int64_t GetNumStringReferencesInUse()
-	{
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		Concurrency::ReadLock lock(sharedMutex);
-	#endif
-
-		int64_t count = 0;
-		std::vector<std::pair<std::string, int64_t>> in_use;
-		for(auto &[str, sisd] : stringToID)
-			count += sisd->refCount;
-
-		return count;
+		return stringToID.size() - staticStringIDToIndex.size();
 	}
 
 	//returns a vector of all the strings still in use.  Intended for debugging.
-	std::vector<std::pair<std::string, int64_t>> GetStringsInUse()
+	inline std::vector<std::pair<std::string, int64_t>> GetDynamicStringsInUse()
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		Concurrency::ReadLock lock(sharedMutex);
@@ -292,7 +280,10 @@ public:
 
 		std::vector<std::pair<std::string, int64_t>> in_use;
 		for(auto &[str, sisd] : stringToID)
-			in_use.emplace_back(str, sisd->refCount);
+		{
+			if(staticStringIDToIndex.find(sisd.get()) == end(staticStringIDToIndex))
+				in_use.emplace_back(str, sisd->refCount);
+		}
 
 		return in_use;
 	}
@@ -437,7 +428,7 @@ public:
 	inline void SetIDAndCreateReference(StringInternPool::StringID sid)
 	{
 		//if changing id, need to delete previous
-		if(id > string_intern_pool.EMPTY_STRING_ID && id != sid)
+		if(id > string_intern_pool.emptyStringId && id != sid)
 			string_intern_pool.DestroyStringReference(id);
 
 		if(id != sid)
@@ -450,7 +441,7 @@ public:
 	//only call this when the sid already has a reference and this is being used to manage it
 	inline void SetIDWithReferenceHandoff(StringInternPool::StringID sid)
 	{
-		if(id > string_intern_pool.EMPTY_STRING_ID)
+		if(id > string_intern_pool.emptyStringId)
 		{
 			//if the ids are different, then need to delete old
 			//if the ids are the same, then have a duplicate reference, so need to delete one

@@ -676,7 +676,7 @@ inline std::string GetStringFromEvaluableNodeType(EvaluableNodeType t, bool get_
 inline EvaluableNodeType GetEvaluableNodeTypeFromString(const std::string &s)
 {
 	auto sid = string_intern_pool.GetIDFromString(s);
-	if(sid == string_intern_pool.NOT_A_STRING_ID || sid == string_intern_pool.EMPTY_STRING_ID)
+	if(sid == string_intern_pool.NOT_A_STRING_ID || sid == string_intern_pool.emptyStringId)
 		return ENT_NOT_A_BUILT_IN_TYPE;
 
 	return GetEvaluableNodeTypeFromStringId(sid);

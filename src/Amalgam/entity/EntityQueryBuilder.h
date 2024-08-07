@@ -56,7 +56,7 @@ namespace EntityQueryBuilder
 			if constexpr(std::is_same<typename NominalDeviationValuesType::key_type, double>::value)
 			{
 				double value = std::numeric_limits<double>::quiet_NaN();
-				if(cn.first != string_intern_pool.EMPTY_STRING_ID)
+				if(cn.first != string_intern_pool.emptyStringId)
 				{
 					auto [number_value, success] = Platform_StringToNumber(string_intern_pool.GetStringFromID(cn.first));
 					if(success)
@@ -123,7 +123,7 @@ namespace EntityQueryBuilder
 			for(auto &cn : mcn)
 			{
 				double value = std::numeric_limits<double>::quiet_NaN();
-				if(cn.first != string_intern_pool.EMPTY_STRING_ID)
+				if(cn.first != string_intern_pool.emptyStringId)
 				{
 					auto [number_value, success] = Platform_StringToNumber(string_intern_pool.GetStringFromID(cn.first));
 					if(success)

@@ -1172,7 +1172,7 @@ public:
 
 		if(nodeType == ENIVT_STRING_ID)
 		{
-			if(nodeValue.stringID <= string_intern_pool.EMPTY_STRING_ID)
+			if(nodeValue.stringID <= string_intern_pool.emptyStringId)
 				return false;
 			return true;
 		}

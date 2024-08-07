@@ -4,13 +4,13 @@
 
 StringInternPool string_intern_pool;
 std::vector<StringInternPool::StringID> en_built_in_strings;
-FastHashMap< StringInternPool::StringID, EvaluableNodeType> string_id_to_built_in_string_id;
+FastHashMap< StringInternPool::StringID, EvaluableNodeBuiltInStringId> string_id_to_built_in_string_id;
 
 inline void EmplaceNodeTypeString(EvaluableNodeType t, const char *str)
 {
-	size_t offset = t + NUM_ENBISI_SPECIAL_STRING_IDS;
-	en_built_in_strings[offset] = string_intern_pool.CreateStringReference(str);
-	string_id_to_built_in_string_id.emplace(en_built_in_strings[offset], t);
+	EvaluableNodeBuiltInStringId bisid = static_cast<EvaluableNodeBuiltInStringId>(t + NUM_ENBISI_SPECIAL_STRING_IDS);
+	en_built_in_strings[bisid] = string_intern_pool.CreateStringReference(str);
+	string_id_to_built_in_string_id.emplace(en_built_in_strings[bisid], bisid);
 }
 
 static inline void EmplaceStaticString(size_t enbis_offset, const char *str)

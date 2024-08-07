@@ -324,7 +324,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 
 	const std::string date_string("date:");
 
-	if(from_type == GetStringIdFromBuiltInStringId(ENT_NUMBER))
+	if(from_type == GetStringIdFromNodeType(ENT_NUMBER))
 	{
 		use_number = true;
 		number_value = InterpretNodeIntoNumberValue(ocn[0]);
@@ -338,7 +338,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 	{
 		string_value = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
 
-		if(from_type == GetStringIdFromBuiltInStringId(ENT_STRING))
+		if(from_type == GetStringIdFromNodeType(ENT_STRING))
 		{
 			use_string = true;
 		}
@@ -556,7 +556,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 		to_params = InterpretNodeForImmediateUse(ocn[4]);
 
 	//convert
-	if(to_type == GetStringIdFromBuiltInStringId(ENT_NUMBER))
+	if(to_type == GetStringIdFromNodeType(ENT_NUMBER))
 	{
 		//don't need to do anything if use_number
 		if(use_uint_number)
@@ -579,7 +579,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 		evaluableNodeManager->FreeNodeTreeIfPossible(to_params);
 		return code_value;
 	}
-	else if(to_type == GetStringIdFromBuiltInStringId(ENT_STRING))
+	else if(to_type == GetStringIdFromNodeType(ENT_STRING))
 	{
 		//don't need to do anything if use_string
 		if(use_number)

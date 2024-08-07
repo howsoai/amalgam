@@ -614,7 +614,7 @@ enum EvaluableNodeBuiltInStringId
 
 //built in strings for the given opcodes, indexed by ENBISI_*
 extern std::vector<StringInternPool::StringID> en_built_in_strings;
-extern FastHashMap<StringInternPool::StringID, EvaluableNodeType> en_built_in_string_to_en_type;
+extern FastHashMap<StringInternPool::StringID, EvaluableNodeBuiltInStringId> string_id_to_built_in_string_id;
 
 //returns the string id representing EvaluableNodeBuiltInStringId t
 inline StringInternPool::StringID GetStringIdFromBuiltInStringId(EvaluableNodeBuiltInStringId t)
@@ -622,6 +622,20 @@ inline StringInternPool::StringID GetStringIdFromBuiltInStringId(EvaluableNodeBu
 	if(t >= ENBISI_FIRST_DYNAMIC_STRING)
 		return en_built_in_strings[ENBISI_NOT_A_STRING];
 	return en_built_in_strings[t];
+}
+
+//returns the EvaluableNodeType for a given string, ENT_NOT_A_BUILT_IN_TYPE if it isn't one
+inline EvaluableNodeBuiltInStringId GetBuiltInStringIdFromStringId(StringInternPool::StringID sid)
+{
+	auto found = string_id_to_built_in_string_id.find(sid);
+	if(found == end(string_id_to_built_in_string_id))
+		return ENBISI_NOT_A_STRING;
+
+	EvaluableNodeBuiltInStringId bisid = found->second;
+	if(bisid >= ENBISI_FIRST_DYNAMIC_STRING)
+		return ENBISI_NOT_A_STRING;
+
+	return bisid;
 }
 
 //returns the string id representing EvaluableNodeType t
@@ -632,11 +646,11 @@ inline StringInternPool::StringID GetStringIdFromNodeType(EvaluableNodeType t)
 	return en_built_in_strings[t + NUM_ENBISI_SPECIAL_STRING_IDS];
 }
 
-//like GetEvaluableNodeTypeFromString but uses a string id
+//returns the EvaluableNodeType for a given string, ENT_NOT_A_BUILT_IN_TYPE if it isn't one
 inline EvaluableNodeType GetEvaluableNodeTypeFromStringId(StringInternPool::StringID sid)
 {
-	auto found = en_built_in_string_to_en_type.find(sid);
-	if(found == end(en_built_in_string_to_en_type))
+	auto found = string_id_to_built_in_string_id.find(sid);
+	if(found == end(string_id_to_built_in_string_id))
 		return ENT_NOT_A_BUILT_IN_TYPE;
 
 	size_t type_index = found->second - NUM_ENBISI_SPECIAL_STRING_IDS;

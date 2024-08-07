@@ -4,13 +4,13 @@
 
 StringInternPool string_intern_pool;
 std::vector<StringInternPool::StringID> en_built_in_strings;
-FastHashMap< StringInternPool::StringID, EvaluableNodeType> en_built_in_string_to_en_type;
+FastHashMap< StringInternPool::StringID, EvaluableNodeType> string_id_to_built_in_string_id;
 
 inline void EmplaceNodeTypeString(EvaluableNodeType t, const char *str)
 {
 	size_t offset = t + NUM_ENBISI_SPECIAL_STRING_IDS;
 	en_built_in_strings[offset] = string_intern_pool.CreateStringReference(str);
-	en_built_in_string_to_en_type.emplace(en_built_in_strings[offset], t);
+	string_id_to_built_in_string_id.emplace(en_built_in_strings[offset], t);
 }
 
 static inline void EmplaceStaticString(size_t enbis_offset, const char *str)
@@ -22,7 +22,7 @@ void StringInternPool::InitializeStaticStrings()
 {
 	stringToID.reserve(ENBISI_FIRST_DYNAMIC_STRING);
 	en_built_in_strings.resize(ENBISI_FIRST_DYNAMIC_STRING);
-	en_built_in_string_to_en_type.reserve(ENBISI_FIRST_DYNAMIC_STRING);
+	string_id_to_built_in_string_id.reserve(ENBISI_FIRST_DYNAMIC_STRING);
 
 	EmplaceStaticString(ENBISI_NOT_A_STRING, "(null)");
 	EmplaceStaticString(ENBISI_EMPTY_STRING, "");

@@ -20,7 +20,7 @@ class EvaluableNodeReference
 {
 public:
 	constexpr EvaluableNodeReference()
-		: value(nullptr), unique(true)
+		: value(), unique(true)
 	{	}
 
 	constexpr EvaluableNodeReference(EvaluableNode *_reference, bool _unique)
@@ -102,7 +102,7 @@ public:
 	}
 
 	//calls GetNeedCycleCheck if the reference is not nullptr, returns false if it is nullptr
-	constexpr bool GetNeedCycleCheck()
+	__forceinline bool GetNeedCycleCheck()
 	{
 		if(value.nodeType != ENIVT_CODE)
 			return false;
@@ -114,7 +114,7 @@ public:
 	}
 
 	//calls SetNeedCycleCheck if the reference is not nullptr
-	constexpr void SetNeedCycleCheck(bool need_cycle_check)
+	__forceinline void SetNeedCycleCheck(bool need_cycle_check)
 	{
 		if(value.nodeValue.code == nullptr)
 			return;
@@ -123,7 +123,7 @@ public:
 	}
 
 	//returns true if the reference is idempotent
-	constexpr bool GetIsIdempotent()
+	__forceinline bool GetIsIdempotent()
 	{
 		if(value.nodeType != ENIVT_CODE)
 			return true;
@@ -135,7 +135,7 @@ public:
 	}
 
 	//sets idempotency if the reference is code and not nullptr
-	constexpr void SetIsIdempotent(bool is_idempotent)
+	__forceinline void SetIsIdempotent(bool is_idempotent)
 	{
 		if(value.nodeType != ENIVT_CODE)
 			return;
@@ -146,7 +146,7 @@ public:
 		return value.nodeValue.code->SetIsIdempotent(is_idempotent);
 	}
 
-	constexpr static EvaluableNodeReference Null()
+	__forceinline static EvaluableNodeReference Null()
 	{
 		return EvaluableNodeReference(nullptr, true);
 	}

@@ -318,7 +318,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				else if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE)
 				{
 					sbfds.FindNearestEntities(cond->distEvaluator, cond->positionLabels, cond->valueToCompare, cond->valueTypes,
-						static_cast<size_t>(cond->maxToRetrieve), cond->singleLabel, cond->exclusionLabel, matching_entities,
+						static_cast<size_t>(cond->maxToRetrieve), cond->singleLabel, cond->exclusionEntityIndex, matching_entities,
 						compute_results, cond->randomStream.CreateOtherStreamViaRand());
 				}
 				else //ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
@@ -901,7 +901,7 @@ void EntityQueryCaches::GetMatchingEntitiesViaSamplingWithReplacement(EntityQuer
 	else //sampling a bunch, better to precompute and use faster method
 	{
 		//a table for quickly generating entity indices based on weights
-		WeightedDiscreteRandomStreamTransform<StringInternPool::StringID, CompactHashMap<size_t, double>> ewt(entity_indices, probabilities, false);
+		WeightedDiscreteRandomStreamTransform<size_t, CompactHashMap<size_t, double>> ewt(entity_indices, probabilities, false);
 
 		//sample the entities
 		for(size_t i = 0; i < num_to_sample; i++)
@@ -1006,9 +1006,9 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 		{
 			//if excluding an entity, translate it into the index
 			if(cond.exclusionLabel == string_intern_pool.NOT_A_STRING_ID)
-				cond.exclusionLabel = std::numeric_limits<size_t>::max();
+				cond.exclusionEntityIndex = std::numeric_limits<size_t>::max();
 			else
-				cond.exclusionLabel = container->GetContainedEntityIndex(cond.exclusionLabel);
+				cond.exclusionEntityIndex = container->GetContainedEntityIndex(cond.exclusionLabel);
 			//fall through to cases below
 		}
 

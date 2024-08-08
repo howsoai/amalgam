@@ -343,7 +343,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_DIGITS(EvaluableNode *
 	if(num_params > 4)
 		end_digit = InterpretNodeIntoNumberValue(ocn[4]);
 
-	EvaluableNodeReference digits;
+	EvaluableNodeReference digits = EvaluableNodeReference::Null();
 	if(num_params > 2)
 		digits = InterpretNodeForImmediateUse(ocn[2]);
 
@@ -458,7 +458,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ROUND(EvaluableNode *en, b
 	if(num_params == 0)
 		return EvaluableNodeReference::Null();
 
-	EvaluableNodeReference retval;
+	EvaluableNodeReference retval = EvaluableNodeReference::Null();
 	double number_value = 0.0;
 
 	if(immediate_result)

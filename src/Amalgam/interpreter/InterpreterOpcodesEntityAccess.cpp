@@ -46,8 +46,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 	bool return_query_value = (en->GetType() == ENT_COMPUTE_ON_CONTAINED_ENTITIES);
 
 	//parameters to search entities for
-	EvaluableNodeReference query_params;
-	EvaluableNodeReference entity_id_path;
+	EvaluableNodeReference query_params = EvaluableNodeReference::Null();
+	EvaluableNodeReference entity_id_path = EvaluableNodeReference::Null();
 
 	auto &ocn = en->GetOrderedChildNodes();
 	if(ocn.size() == 1)

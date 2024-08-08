@@ -122,7 +122,7 @@ Entity::~Entity()
 
 EvaluableNodeReference Entity::GetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNodeManager *destination_temp_enm, bool direct_get, bool on_self, bool batch_call)
 {
-	if(label_sid <= StringInternPool::EMPTY_STRING_ID)
+	if(label_sid == string_intern_pool.NOT_A_STRING_ID)
 		return EvaluableNodeReference::Null();
 
 	if(!on_self && IsLabelPrivate(label_sid))
@@ -149,7 +149,7 @@ bool Entity::GetValueAtLabelAsNumber(StringInternPool::StringID label_sid, doubl
 {
 	constexpr double value_if_not_found = std::numeric_limits<double>::quiet_NaN();
 
-	if(label_sid <= StringInternPool::EMPTY_STRING_ID)
+	if(label_sid == string_intern_pool.NOT_A_STRING_ID)
 	{
 		value_out = value_if_not_found;
 		return false;
@@ -174,7 +174,7 @@ bool Entity::GetValueAtLabelAsNumber(StringInternPool::StringID label_sid, doubl
 
 bool Entity::GetValueAtLabelAsStringId(StringInternPool::StringID label_sid, StringInternPool::StringID &value_out, bool on_self)
 {
-	if(label_sid <= StringInternPool::EMPTY_STRING_ID)
+	if(label_sid == string_intern_pool.NOT_A_STRING_ID)
 	{
 		value_out = StringInternPool::NOT_A_STRING_ID;
 		return false;
@@ -199,7 +199,7 @@ bool Entity::GetValueAtLabelAsStringId(StringInternPool::StringID label_sid, Str
 
 bool Entity::GetValueAtLabelAsString(StringInternPool::StringID label_sid, std::string &value_out, bool on_self)
 {
-	if(label_sid <= StringInternPool::EMPTY_STRING_ID)
+	if(label_sid == string_intern_pool.NOT_A_STRING_ID)
 	{
 		value_out = "";
 		return false;
@@ -244,7 +244,7 @@ EvaluableNodeImmediateValueType Entity::GetValueAtLabelAsImmediateValue(StringIn
 bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNodeReference &new_value, bool direct_set,
 	std::vector<EntityWriteListener *> *write_listeners, bool on_self, bool batch_call, bool *need_node_flags_updated)
 {
-	if(label_sid <= StringInternPool::EMPTY_STRING_ID)
+	if(label_sid == string_intern_pool.NOT_A_STRING_ID)
 		return false;
 
 	if(!on_self)
@@ -459,7 +459,7 @@ EvaluableNodeReference Entity::Execute(StringInternPool::StringID label_sid,
 		return EvaluableNodeReference(nullptr, true);
 
 	EvaluableNode *node_to_execute = nullptr;
-	if(label_sid <= StringInternPool::EMPTY_STRING_ID)	//if not specified, then use root
+	if(label_sid == string_intern_pool.NOT_A_STRING_ID)	//if not specified, then use root
 		node_to_execute = evaluableNodeManager.GetRootNode();
 	else //get code at label
 	{

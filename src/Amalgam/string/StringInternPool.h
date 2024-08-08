@@ -11,14 +11,17 @@
 #include <string>
 #include <vector>
 
+//if STRING_INTERN_POOL_VALIDATION is defined, it will validate
+//every string reference, at the cost of performance
+
 class StringInternStringData
 {
 public:
-	StringInternStringData()
+	inline StringInternStringData()
 		: refCount(0), string()
 	{	}
 
-	StringInternStringData(const std::string &string)
+	inline StringInternStringData(const std::string &string)
 		: refCount(1), string(string)
 	{	}
 
@@ -61,6 +64,10 @@ public:
 		if(id == NOT_A_STRING_ID)
 			return EMPTY_STRING;
 
+	#ifdef STRING_INTERN_POOL_VALIDATION
+		ValidateStringIdExistance(id);
+	#endif
+
 		return id->string;
 	}
 
@@ -81,11 +88,8 @@ public:
 	//makes a new reference to the string specified, returning the ID
 	inline StringID CreateStringReference(const std::string &str)
 	{
-		if(str.size() == 0)
-		{
-			emptyStringId->refCount++;
+		if(str == "")
 			return emptyStringId;
-		}
 
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		Concurrency::WriteLock lock(sharedMutex);
@@ -105,7 +109,12 @@ public:
 	inline StringID CreateStringReference(StringID id)
 	{
 		if(id != NOT_A_STRING_ID)
+		{
+		#ifdef STRING_INTERN_POOL_VALIDATION
+			ValidateStringIdExistance(id);
+		#endif
 			id->refCount++;
+		}
 		return id;
 	}
 
@@ -119,7 +128,12 @@ public:
 		{
 			StringID id = get_string_id(r);
 			if(id != NOT_A_STRING_ID)
+			{
+			#ifdef STRING_INTERN_POOL_VALIDATION
+				ValidateStringIdExistance(id);
+			#endif
 				id->refCount++;
+			}
 		}
 	}
 
@@ -135,7 +149,12 @@ public:
 		{
 			StringID id = get_string_id(r);
 			if(id != NOT_A_STRING_ID)
+			{
+			#ifdef STRING_INTERN_POOL_VALIDATION
+				ValidateStringIdExistance(id);
+			#endif
 				id->refCount += additional_reference_count;
+			}
 		}
 	}
 
@@ -150,7 +169,12 @@ public:
 		{
 			StringID id = get_string_id(references_container[i], i);
 			if(id != NOT_A_STRING_ID)
+			{
+			#ifdef STRING_INTERN_POOL_VALIDATION
+				ValidateStringIdExistance(id);
+			#endif
 				id->refCount++;
+			}
 		}
 	}
 
@@ -159,6 +183,10 @@ public:
 	{
 		if(id == NOT_A_STRING_ID || id == emptyStringId)
 			return;
+
+	#ifdef STRING_INTERN_POOL_VALIDATION
+		ValidateStringIdExistance(id);
+	#endif
 
 		int64_t refcount = id->refCount--;
 
@@ -208,6 +236,10 @@ public:
 			if(id == NOT_A_STRING_ID || id == emptyStringId)
 				continue;
 
+		#ifdef STRING_INTERN_POOL_VALIDATION
+			ValidateStringIdExistance(id);
+		#endif
+
 			int64_t refcount = id->refCount--;
 
 			//if extra references, just return, but if it is 1, then it will try to clear
@@ -234,10 +266,17 @@ public:
 			if(id == NOT_A_STRING_ID || id == emptyStringId)
 				continue;
 
+		#ifdef STRING_INTERN_POOL_VALIDATION
+			ValidateStringIdExistance(id);
+		#endif
+
 			//remove any that are the last reference
 			int64_t refcount = id->refCount--;
-			if(refcount <= 1)
+
+			if(id->refCount < 1)
+			{
 				stringToID.erase(id->string);
+			}
 		}
 
 	#endif
@@ -292,6 +331,15 @@ protected:
 
 	//must be defined outside of this class and initialize all static strings
 	void InitializeStaticStrings();
+
+	inline void ValidateStringIdExistance(StringID sid)
+	{
+		auto found = stringToID.find(sid->string);
+		if(found->second.get() != sid)
+		{
+			assert(false);
+		}
+	}
 
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 	Concurrency::ReadWriteMutex sharedMutex;

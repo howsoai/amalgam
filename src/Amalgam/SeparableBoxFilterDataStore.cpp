@@ -960,7 +960,7 @@ void SeparableBoxFilterDataStore::VerifyAllEntitiesForColumn(size_t column_index
 		if(feature_type == ENIVT_STRING_ID_INDIRECTION_INDEX && feature_value.indirectionIndex != 0)
 		{
 			auto feature_value_resolved = column_data->GetResolvedValue(feature_type, feature_value);
-			assert(feature_value_resolved.stringID != string_intern_pool.EMPTY_STRING_ID);
+			assert(feature_value_resolved.stringID != string_intern_pool.NOT_A_STRING_ID);
 		}
 	}
 }

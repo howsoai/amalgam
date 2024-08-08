@@ -1360,6 +1360,8 @@ public:
 			{
 				if constexpr(std::is_same_v<ValueType, double>)
 					return std::numeric_limits<double>::quiet_NaN();
+				else if constexpr(std::is_same_v<ValueType, StringInternPool::StringID>)
+					return string_intern_pool.NOT_A_STRING_ID;
 				else
 					return ValueType();
 			}();

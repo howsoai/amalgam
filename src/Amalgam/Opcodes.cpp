@@ -22,8 +22,8 @@ void StringInternPool::InitializeStaticStrings()
 	staticStringsIndexToStringID.resize(ENBISI_FIRST_DYNAMIC_STRING);
 	staticStringIDToIndex.reserve(ENBISI_FIRST_DYNAMIC_STRING);
 
-	//skip ENBISI_NOT_A_STRING, leave it null
-	EmplaceStaticString(ENBISI_EMPTY_STRING, "");
+	string_intern_pool.staticStringsIndexToStringID[ENBISI_EMPTY_STRING] = string_intern_pool.emptyStringId;
+	string_intern_pool.staticStringIDToIndex.emplace(string_intern_pool.emptyStringId, ENBISI_EMPTY_STRING);
 
 	//opcodes
 

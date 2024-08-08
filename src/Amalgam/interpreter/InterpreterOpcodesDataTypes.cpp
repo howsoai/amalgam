@@ -298,7 +298,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 	auto node_stack = CreateInterpreterNodeStackStateSaver();
 	bool node_stack_needs_popping = false;
 
-	EvaluableNodeReference from_params;
+	EvaluableNodeReference from_params = EvaluableNodeReference::Null();
 	if(ocn.size() > 3)
 	{
 		from_params = InterpretNodeForImmediateUse(ocn[3]);
@@ -307,7 +307,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 	}
 
 	bool use_code = false;
-	EvaluableNodeReference code_value;
+	EvaluableNodeReference code_value = EvaluableNodeReference::Null();
 
 	bool use_number = false;
 	double number_value = 0;
@@ -551,7 +551,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 		node_stack.PopEvaluableNode();
 	evaluableNodeManager->FreeNodeTreeIfPossible(from_params);
 
-	EvaluableNodeReference to_params;
+	EvaluableNodeReference to_params = EvaluableNodeReference::Null();
 	if(ocn.size() > 4)
 		to_params = InterpretNodeForImmediateUse(ocn[4]);
 
@@ -1518,7 +1518,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 		}
 		else //finding matches
 		{
-			EvaluableNodeReference param_node;
+			EvaluableNodeReference param_node = EvaluableNodeReference::Null();
 			if(ocn.size() >= 3)
 				param_node = InterpretNodeForImmediateUse(ocn[2]);
 

@@ -587,7 +587,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, b
 		SetTopPreviousResultInConstructionStack(previous_result);
 
 		//run each step within the loop
-		EvaluableNodeReference new_result;
+		EvaluableNodeReference new_result = EvaluableNodeReference::Null();
 		for(size_t i = 1; i < ocn_size; i++)
 		{
 			//request immediate values when not last, since any allocs for returns would be wasted
@@ -899,8 +899,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			if(accum)
 			{
 				//retrieve value_destination_node
-				EvaluableNodeReference value_destination_node;
-				value_destination_node.SetReference(*value_destination, false);
+				EvaluableNodeReference value_destination_node(*value_destination, false);
 
 			#ifdef MULTITHREAD_SUPPORT
 				//if editing a shared variable, then need to make a copy before editing in place to prevent another thread from reading the data structure mid-edit
@@ -951,8 +950,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		if(accum)
 		{
 			//create destination reference
-			EvaluableNodeReference value_destination_node;
-			value_destination_node.SetReference(*value_destination, false);
+			EvaluableNodeReference value_destination_node(*value_destination, false);
 
 		#ifdef MULTITHREAD_SUPPORT
 			//if editing a shared variable, then need to make a copy before editing in place to prevent another thread from reading the data structure mid-edit
@@ -1034,8 +1032,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			if(accum)
 			{
 				//create destination reference
-				EvaluableNodeReference value_destination_node;
-				value_destination_node.SetReference(*copy_destination, false);
+				EvaluableNodeReference value_destination_node(*copy_destination, false);
 
 				EvaluableNodeReference variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, new_value, evaluableNodeManager);
 
@@ -1904,7 +1901,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEIGHTED_RAND(EvaluableNod
 	//if generating many values with weighted probabilites, use fast method
 	if(mcn.size() > 0 && (number_to_generate > 10 || (number_to_generate > 3 && mcn.size() > 200)))
 	{
-		EvaluableNodeMappedWeightedDiscreteRandomStreamTransform wdrst(mcn, false);
+		WeightedDiscreteRandomStreamTransform<StringInternPool::StringID,
+			EvaluableNode::AssocType, EvaluableNodeAsDouble> wdrst(mcn, false);
 		for(size_t i = 0; i < number_to_generate; i++)
 		{
 			EvaluableNode *rand_value = evaluableNodeManager->AllocNode(ENT_STRING, wdrst.WeightedDiscreteRand(randomStream));

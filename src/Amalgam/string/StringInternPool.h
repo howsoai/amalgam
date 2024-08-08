@@ -33,6 +33,9 @@ public:
 	std::string string;
 };
 
+class StringInternPool;
+extern StringInternPool string_intern_pool;
+
 //manages all strings so they can be referred and compared easily by integers, across threads
 //depends on a method defined outside of this class, StringInternPool::InitializeStaticStrings()
 // to set up all internal strings; see the function's declaration for details
@@ -42,16 +45,88 @@ class StringInternPool
 {
 public:
 	using StringID = StringInternStringData *;
+	//TODO 20465: put this back in or remove entirely:
+	/*
+	class StringID
+	{
+	public:
+		constexpr StringID()
+			: stringId(nullptr)
+		{	}
+
+		inline StringID(const StringID &sid)
+			: stringId(sid.stringId)
+		{	}
+
+		inline StringID(StringInternStringData *sisd)
+			: stringId(sisd)
+		{	}
+
+		inline StringID &operator=(StringID sid)
+		{
+			string_intern_pool.ValidateStringIdExistance(sid);
+
+			stringId = sid.stringId;
+			return *this;
+		}
+
+		inline StringInternStringData *operator->()
+		{
+			return stringId;
+		}
+
+		inline StringInternStringData &operator*()
+		{
+			return *stringId;
+		}
+
+		inline StringID &operator =(StringInternStringData *sisd)
+		{
+			stringId = sisd;
+			return *this;
+		}
+
+		inline bool operator==(StringID sid)
+		{
+			return stringId == sid.stringId;
+		}
+
+		inline bool operator!=(StringID sid)
+		{
+			return stringId != sid.stringId;
+		}
+
+		inline bool operator==(StringInternStringData *sisd)
+		{
+			return stringId == sisd;
+		}
+
+		inline bool operator!=(StringInternStringData *sisd)
+		{
+			return stringId != sisd;
+		}
+
+		size_t hash_value()
+		{
+			return std::hash<StringInternStringData *>{}(stringId);
+		}
+
+	private:
+		StringInternStringData *stringId;
+	};
+
 
 	//indicates that it is not a string, like NaN or null
+	static constexpr StringInternStringData *NOT_A_STRING_ID = nullptr;
+	*/
 	static constexpr StringID NOT_A_STRING_ID = nullptr;
-	StringID emptyStringId = nullptr;
+	StringID emptyStringId;
 	inline static const std::string EMPTY_STRING = std::string("");
 
 	inline StringInternPool()
 	{
 		//create the empty string first
-		auto &[new_entry, inserted] = stringToID.emplace(std::make_pair("", std::make_unique<StringInternStringData>("")));
+		auto [new_entry, inserted] = stringToID.emplace(std::make_pair("", std::make_unique<StringInternStringData>("")));
 		emptyStringId = new_entry->second.get();
 		InitializeStaticStrings();
 	}
@@ -96,7 +171,7 @@ public:
 	#endif
 
 		//try to insert it as a new string
-		auto &[new_entry, inserted] = stringToID.emplace(std::make_pair(str, nullptr));
+		auto [new_entry, inserted] = stringToID.emplace(std::make_pair(str, nullptr));
 		if(inserted)
 			new_entry->second = std::make_unique<StringInternStringData>(str);
 		else
@@ -227,7 +302,7 @@ public:
 			return;
 
 		//as it goes through, if any id needs removal, will set this to true so that
-		// removal can be done after refernce count decreases are done
+		// removal can be done after reference count decreases are done
 		bool ids_need_removal = false;
 
 		for(auto r : references_container)
@@ -334,7 +409,7 @@ public:
 			return;
 
 		auto found = stringToID.find(sid->string);
-		if(found->second.get() != sid)
+		if(sid != found->second.get())
 		{
 			assert(false);
 		}
@@ -358,14 +433,13 @@ public:
 	FastHashMap<StringInternPool::StringID, size_t> staticStringIDToIndex;
 };
 
-extern StringInternPool string_intern_pool;
-
 //A reference to a string
 //maintains reference counts and will clear upon destruction
 class StringRef
 {
 public:
-	constexpr StringRef() : id(StringInternPool::NOT_A_STRING_ID)
+	inline StringRef()
+		: id(StringInternPool::NOT_A_STRING_ID)
 	{	}
 
 	inline StringRef(StringInternPool::StringID sid)
@@ -376,7 +450,7 @@ public:
 		id = string_intern_pool.CreateStringReference(sid);
 	}
 
-	inline StringRef(const std::string &str)
+	inline StringRef(std::string &str)
 	{
 		id = string_intern_pool.CreateStringReference(str);
 	#ifdef STRING_INTERN_POOL_VALIDATION
@@ -391,6 +465,16 @@ public:
 	#ifdef STRING_INTERN_POOL_VALIDATION
 		string_intern_pool.ValidateStringIdExistance(id);
 	#endif
+	}
+
+	//move constructor
+	inline StringRef(StringRef &&sir)
+	{
+		id = sir.id;
+	#ifdef STRING_INTERN_POOL_VALIDATION
+		string_intern_pool.ValidateStringIdExistance(id);
+	#endif
+		sir.id = nullptr;
 	}
 
 	inline ~StringRef()
@@ -409,9 +493,9 @@ public:
 	{	return StringRef();	}
 
 	//assign another string reference
-	inline StringRef &operator =(const StringRef &sir)
+	inline StringRef &operator =(StringRef &sir)
 	{
-		if(id != sir.id)
+		if(sir.id != id)
 		{
 			string_intern_pool.DestroyStringReference(id);
 			id = string_intern_pool.CreateStringReference(sir.id);
@@ -423,13 +507,13 @@ public:
 	}
 
 	//allow being able to use as a string
-	inline operator const std::string ()
+	inline operator const std::string()
 	{
 		return string_intern_pool.GetStringFromID(id);
 	}
 
 	//allow being able to use as a string id
-	constexpr operator StringInternPool::StringID()
+	inline operator StringInternPool::StringID()
 	{
 		return id;
 	}
@@ -442,7 +526,7 @@ public:
 	#endif
 
 		//if changing id, need to delete previous
-		if(id > string_intern_pool.emptyStringId && id != sid)
+		if(id != sid)
 			string_intern_pool.DestroyStringReference(id);
 
 		if(id != sid)

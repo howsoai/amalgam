@@ -1347,7 +1347,7 @@ public:
 
 		//returns true if the value is equal to notAValue
 		//note that this is a method due to not-a-number being treated as not equal to itself
-		constexpr bool IsNotAValue(ValueType value)
+		__forceinline bool IsNotAValue(ValueType value)
 		{
 			if constexpr(std::is_same_v<ValueType, double>)
 				return FastIsNaN(value);

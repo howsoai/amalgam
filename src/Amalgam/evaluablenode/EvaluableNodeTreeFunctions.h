@@ -63,7 +63,7 @@ public:
 		destSidReference = dest_sid_ref;
 		//if the destination sid is requested, initialize it
 		if(destSidReference != nullptr)
-			*destSidReference = StringRef(string_intern_pool.NOT_A_STRING_ID);
+			destSidReference->Clear();
 
 		//if single value, then just set and return
 		if(EvaluableNode::IsNull(id_path))

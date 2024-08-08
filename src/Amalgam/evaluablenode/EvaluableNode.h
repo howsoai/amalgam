@@ -970,7 +970,7 @@ union EvaluableNodeImmediateValue
 		: number(_number)
 	{	}
 
-	constexpr EvaluableNodeImmediateValue(StringInternPool::StringID string_id)
+	__forceinline EvaluableNodeImmediateValue(StringInternPool::StringID string_id)
 		: stringID(string_id)
 	{	}
 
@@ -1074,7 +1074,7 @@ public:
 		: nodeType(ENIVT_NULL)
 	{	}
 
-	constexpr EvaluableNodeImmediateValueWithType(EvaluableNodeImmediateValue node_value,
+	__forceinline EvaluableNodeImmediateValueWithType(EvaluableNodeImmediateValue node_value,
 		EvaluableNodeImmediateValueType node_type)
 		: nodeType(node_type), nodeValue(node_value)
 	{	}

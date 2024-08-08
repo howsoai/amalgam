@@ -50,8 +50,8 @@ public:
 	inline StringInternPool()
 	{
 		//create the empty string first
-		auto &[new_entry, inserted] = stringToID.emplace("", std::make_unique<StringInternStringData>(""));
-		emptyStringId = new_entry->second.get();
+		auto inserted = stringToID.emplace("", std::make_unique<StringInternStringData>(""));
+		emptyStringId = inserted.first->second.get();
 		InitializeStaticStrings();
 	}
 
@@ -99,13 +99,13 @@ public:
 	#endif
 
 		//try to insert it as a new string
-		auto &[new_entry, inserted] = stringToID.emplace(str, nullptr);
-		if(inserted)
-			new_entry->second = std::make_unique<StringInternStringData>(str);
+		auto inserted = stringToID.emplace(str, nullptr);
+		if(inserted.second)
+			inserted.first->second = std::make_unique<StringInternStringData>(str);
 		else
-			new_entry->second->refCount++;
+			inserted.first->second->refCount++;
 
-		StringID id = new_entry->second.get();
+		StringID id = inserted.first->second.get();
 	#ifdef STRING_INTERN_POOL_VALIDATION
 		ValidateStringIdExistanceUnderLock(id);
 	#endif

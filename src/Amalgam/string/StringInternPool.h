@@ -7,6 +7,7 @@
 #include "StringManipulation.h"
 
 //system headers:
+#include <memory>
 #include <queue>
 #include <string>
 #include <vector>

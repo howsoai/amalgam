@@ -50,7 +50,7 @@ public:
 	inline StringInternPool()
 	{
 		//create the empty string first
-		auto [new_entry, inserted] = stringToID.emplace(std::make_pair("", std::make_unique<StringInternStringData>("")));
+		auto &[new_entry, inserted] = stringToID.emplace(std::make_pair("", std::make_unique<StringInternStringData>("")));
 		emptyStringId = new_entry->second.get();
 		InitializeStaticStrings();
 	}
@@ -99,7 +99,7 @@ public:
 	#endif
 
 		//try to insert it as a new string
-		auto [new_entry, inserted] = stringToID.emplace(std::make_pair(str, nullptr));
+		auto &[new_entry, inserted] = stringToID.emplace(std::make_pair(str, nullptr));
 		if(inserted)
 			new_entry->second = std::make_unique<StringInternStringData>(str);
 		else
@@ -293,7 +293,7 @@ public:
 			//remove any that are the last reference
 			int64_t refcount = id->refCount--;
 
-			if(id->refCount < 1)
+			if(refcount <= 1)
 				stringToID.erase(id->string);
 		}
 

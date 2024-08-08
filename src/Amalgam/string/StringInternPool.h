@@ -327,19 +327,23 @@ public:
 		return in_use;
 	}
 
-protected:
-
-	//must be defined outside of this class and initialize all static strings
-	void InitializeStaticStrings();
-
+	//validates the string id, throwing an assert if it is not valid
 	inline void ValidateStringIdExistance(StringID sid)
 	{
+		if(sid == NOT_A_STRING_ID)
+			return;
+
 		auto found = stringToID.find(sid->string);
 		if(found->second.get() != sid)
 		{
 			assert(false);
 		}
 	}
+
+protected:
+
+	//must be defined outside of this class and initialize all static strings
+	void InitializeStaticStrings();
 
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 	Concurrency::ReadWriteMutex sharedMutex;
@@ -356,57 +360,6 @@ public:
 
 extern StringInternPool string_intern_pool;
 
-//A weak reference to a string
-// When the string does not exist, it will take on the value of the empty string
-class StringWeakRef
-{
-public:
-	constexpr StringWeakRef()
-		: id(StringInternPool::NOT_A_STRING_ID)
-	{	}
-
-	constexpr StringWeakRef(StringInternPool::StringID sid)
-		: id(sid)
-	{	}
-
-	StringWeakRef(const std::string &str)
-	{
-		id = string_intern_pool.GetIDFromString(str);
-	}
-
-	constexpr StringWeakRef(const StringWeakRef &siwr)
-		: id(siwr.id)
-	{	}
-
-	//easy-to-read way of creating an empty string
-	inline static StringWeakRef EmptyString()
-	{
-		return StringWeakRef();
-	}
-
-	//allow being able to use as a string
-	inline operator const std::string()
-	{
-		return string_intern_pool.GetStringFromID(id);
-	}
-
-	//allow being able to use as a string id
-	constexpr operator StringInternPool::StringID()
-	{
-		return id;
-	}
-
-	//only call this when the sid already has a reference and this is being used to manage it
-	constexpr void SetID(StringInternPool::StringID sid)
-	{
-		id = sid;
-	}
-
-private:
-
-	StringInternPool::StringID id;
-};
-
 //A reference to a string
 //maintains reference counts and will clear upon destruction
 class StringRef
@@ -417,18 +370,27 @@ public:
 
 	inline StringRef(StringInternPool::StringID sid)
 	{
+	#ifdef STRING_INTERN_POOL_VALIDATION
+		string_intern_pool.ValidateStringIdExistance(sid);
+	#endif
 		id = string_intern_pool.CreateStringReference(sid);
 	}
 
 	inline StringRef(const std::string &str)
 	{
 		id = string_intern_pool.CreateStringReference(str);
+	#ifdef STRING_INTERN_POOL_VALIDATION
+		string_intern_pool.ValidateStringIdExistance(id);
+	#endif
 	}
 
 	//copy constructor
 	inline StringRef(const StringRef &sir)
 	{
 		id = string_intern_pool.CreateStringReference(sir.id);
+	#ifdef STRING_INTERN_POOL_VALIDATION
+		string_intern_pool.ValidateStringIdExistance(id);
+	#endif
 	}
 
 	inline ~StringRef()
@@ -438,11 +400,8 @@ public:
 
 	inline void Clear()
 	{
-		if(id != StringInternPool::NOT_A_STRING_ID)
-		{
-			string_intern_pool.DestroyStringReference(id);
-			id = StringInternPool::NOT_A_STRING_ID;
-		}
+		string_intern_pool.DestroyStringReference(id);
+		id = StringInternPool::NOT_A_STRING_ID;
 	}
 
 	//easy-to-read way of creating an empty string
@@ -456,6 +415,9 @@ public:
 		{
 			string_intern_pool.DestroyStringReference(id);
 			id = string_intern_pool.CreateStringReference(sir.id);
+		#ifdef STRING_INTERN_POOL_VALIDATION
+			string_intern_pool.ValidateStringIdExistance(id);
+		#endif
 		}
 		return *this;
 	}
@@ -475,6 +437,10 @@ public:
 	//call this to set the id and create a reference
 	inline void SetIDAndCreateReference(StringInternPool::StringID sid)
 	{
+	#ifdef STRING_INTERN_POOL_VALIDATION
+		string_intern_pool.ValidateStringIdExistance(sid);
+	#endif
+
 		//if changing id, need to delete previous
 		if(id > string_intern_pool.emptyStringId && id != sid)
 			string_intern_pool.DestroyStringReference(id);
@@ -489,13 +455,14 @@ public:
 	//only call this when the sid already has a reference and this is being used to manage it
 	inline void SetIDWithReferenceHandoff(StringInternPool::StringID sid)
 	{
-		if(id > string_intern_pool.emptyStringId)
-		{
-			//if the ids are different, then need to delete old
-			//if the ids are the same, then have a duplicate reference, so need to delete one
-			//so delete a reference either way
-			string_intern_pool.DestroyStringReference(id);
-		}
+	#ifdef STRING_INTERN_POOL_VALIDATION
+		string_intern_pool.ValidateStringIdExistance(sid);
+	#endif
+		
+		//if the ids are different, then need to delete old
+		//if the ids are the same, then have a duplicate reference, so need to delete one
+		//so delete a reference either way
+		string_intern_pool.DestroyStringReference(id);
 
 		id = sid;
 	}

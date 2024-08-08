@@ -808,7 +808,7 @@ public:
 
 protected:
 
-	//align to the nearest 2-bytes to minimize aligment issues but reduce the overall memory footprint
+	//align to the nearest 2-bytes to minimize alignment issues but reduce the overall memory footprint
 	// while maintaining some alignment
 #pragma pack(push, 2)
 	union EvaluableNodeValue

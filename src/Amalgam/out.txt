@@ -235,10 +235,10 @@ notakeyword
 (print "hello")
 [(null) (null) .infinity -.infinity]
 
-{c ["alpha" "beta" "gamma"] b 2 a 1}
+{b 2 c ["alpha" "beta" "gamma"] a 1}
 {
-	c ["alpha" "beta" "gamma"]
 	b 2
+	c ["alpha" "beta" "gamma"]
 	a 1
 }
 
@@ -631,16 +631,16 @@ a
 {
 	a 1
 	b 2
+	c 3
 	d 4
 	e 5
-	f 6
 }
-{a 1 d 4}
+{a 1 e 5}
 {
 	a 1
-	d 4
+	b 2
+	c 3
 	e 5
-	f 6
 }
 {
 	a 1
@@ -682,16 +682,16 @@ c
 {
 	a 1
 	b 2
+	c 3
 	d 4
 	e 5
-	f 6
 }
-{a 1 d 4}
+{a 1 e 5}
 {
 	a 1
-	d 4
+	b 2
+	c 3
 	e 5
-	f 6
 }
 {
 	a 1
@@ -1042,7 +1042,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-["c" "b" "a" "4"]
+["b" "c" "4" "a"]
 [
 	0
 	1
@@ -1054,7 +1054,7 @@ abcdef
 	7
 ]
 --values--
-[3 2 1 "d"]
+["d" 2 3 1]
 [
 	"a"
 	1
@@ -1075,7 +1075,7 @@ abcdef
 	4
 	"d"
 ]
-[3 "d" 2 0 1]
+[2 "d" 3 1 0]
 [
 	1
 	2
@@ -1288,7 +1288,7 @@ current_index: 2
 		interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1723067226.921168
+		start_time 1723141914.850715
 		www 1
 		x 12
 		zz 10
@@ -1331,7 +1331,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1723067226.921168
+	start_time 1723141914.850715
 	www 1
 	x 12
 	zz 10
@@ -1373,7 +1373,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1723067226.921168
+	start_time 1723141914.850715
 	www 1
 	x 12
 	zz 10
@@ -1513,15 +1513,15 @@ a
 
 ["b" @(get (target 2) 0) @(get (target 2) 0) @(get (target 2) 0)]
 
-infinity test c or d: ["d" "d" "d" "c"]
+infinity test c or d: ["c" "c" "c" "d"]
 
 infinity test c or d: ["d" @(get (target 2) 0) "c" @(get (target 2) 2)]
 
-{a 25 b 47 c 28}
+{a 25 b 48 c 27}
 
 {a 24 b 52 c 24}
 
-["3" "4" "1"]
+["5" "2" "1"]
 
 --get_rand_seed--
 N9ìÀù∏UØOaV∆T zˇ
@@ -1616,17 +1616,17 @@ string
 	{a 3 b 4}
 	{c "c"}
 ]
-21: [{"b":4,"a":3},{"c":"c","d":null}]
+21: [{"b":4,"a":3},{"d":null,"c":"c"}]
 22: [{"a":3,"b":4},{"c":"c","d":null}]
-23: c: 3
+23: d: 4
 b: 2
+c: 3
+a: 1
 e:
   - a
   - b
   - 
   - .inf
-d: 4
-a: 1
 
 24: a: 1
 b: 2
@@ -1639,7 +1639,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2024-08-07-17.47.07.1763410
+current date-time in epoch: 2024-08-08-14.31.55.2530610
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -2766,16 +2766,18 @@ flatten restore with parallel
 19.264241099357605
 --intersect_entities--
 (associate "b" 4)
-MergeEntityChild2
-(associate "p" 3 "q" 4)
 MergeEntityChild1
 (associate "x" 3 "y" 4)
+MergeEntityChild2
+(associate "p" 3 "q" 4)
 _2280722175
 (associate "E" 3 "F" 4)
 _2169689611
 (associate "e" 3 "f" 4)
 --union_entities--
 (associate "b" 4 "a" 3 "c" 3)
+MergeEntityChild1
+(associate "x" 3 "y" 4 "z" 5)
 MergeEntityChild2
 (associate
 	"p"
@@ -2789,8 +2791,6 @@ MergeEntityChild2
 	"w"
 	7
 )
-MergeEntityChild1
-(associate "x" 3 "y" 4 "z" 5)
 _2280722175
 (associate
 	"E"
@@ -2817,17 +2817,6 @@ _2169689611
 	##p
 	["_3990396532" "_3990396532" "_3330773578" "_3330773578"]
 )
-_3330773578
-(associate
-	"e"
-	3
-	"f"
-	4
-	"g"
-	5
-	"h"
-	6
-)
 _3990396532
 (associate
 	"E"
@@ -2837,6 +2826,17 @@ _3990396532
 	"G"
 	5
 	"H"
+	6
+)
+_3330773578
+(associate
+	"e"
+	3
+	"f"
+	4
+	"g"
+	5
+	"h"
 	6
 )
 --difference_entities--
@@ -3167,8 +3167,14 @@ _432807187
 						[]
 						(lambda
 							{
-								E 3
-								F 4
+								E (get
+										(current_value 1)
+										"E"
+									)
+								F (get
+										(current_value 1)
+										"F"
+									)
 								G 5
 								H 6
 							}
@@ -3193,7 +3199,16 @@ _432807187
 						_
 						[]
 						(lambda
-							{e 3 f 4}
+							{
+								e (get
+										(current_value 1)
+										"e"
+									)
+								f (get
+										(current_value 1)
+										"f"
+									)
+							}
 						)
 					)
 				)
@@ -3225,7 +3240,89 @@ contained_entities new_entity: ["DiffEntityChild1" "OnlyIn2" "_350925375" "_2742
 difference between DiffEntity2 and new_entity:
 (declare
 	{_ (null) new_entity (null)}
-	(clone_entities _ new_entity)
+	(assign
+		"new_entity"
+		(first
+			(create_entities
+				new_entity
+				(call
+					(lambda
+						(declare
+							{_ (null)}
+							(replace _)
+						)
+					)
+					{
+						_ (retrieve_entity_root _)
+					}
+				)
+			)
+		)
+	)
+	(create_entities
+		(append new_entity "_350925375")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{
+								E (null)
+								F (null)
+								G (get
+										(current_value 1)
+										"G"
+									)
+								H (get
+										(current_value 1)
+										"H"
+									)
+							}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_350925375")
+					)
+			}
+		)
+	)
+	(create_entities
+		(append new_entity "_2742810479")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{e (null) f (null)}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_2742810479")
+					)
+			}
+		)
+	)
+	(clone_entities
+		(append _ "DiffEntityChild1")
+		(append new_entity "DiffEntityChild1")
+	)
+	(clone_entities
+		(append _ "OnlyIn2")
+		(append new_entity "OnlyIn2")
+	)
+	new_entity
 )
 (declare
 	{_ (null) new_entity (null)}
@@ -3446,10 +3543,10 @@ difference between DiffContainer and DiffEntity2:
 )
 --mix_entities--
 (associate "b" 4 "c" 3)
-MergeEntityChild2
-(associate "p" 3 "q" 4 "w" 7)
 MergeEntityChild1
 (associate "x" 3 "y" 4)
+MergeEntityChild2
+(associate "p" 3 "q" 4 "w" 7)
 _2280722175
 (associate "E" 3 "F" 4 "H" 6)
 _2169689611
@@ -3531,7 +3628,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1723067227.385834
+1723141915.486801
 (true)
 
 RootTest
@@ -4875,4 +4972,4 @@ concurrent entity writes successful: (true)
 
 --clean-up test files--
 --total execution time--
-1.5681350231170654
+1.5147020816802979

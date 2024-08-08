@@ -19,7 +19,7 @@ jobs:
   build-linux:
     runs-on: ubuntu-20.04
     container:
-      image: ghcr.io/howsoai/amalgam-build-container-linux:1.0.0
+      image: ghcr.io/howsoai/amalgam-build-container-linux:2.0.0
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -39,6 +39,16 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
+    - name: Install cmake
+      run: |
+        sudo apt-get update
+        sudo apt-get install ca-certificates gpg wget
+        test -f /usr/share/doc/kitware-archive-keyring/copyright ||
+        wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
+        echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ noble main' | sudo tee /etc/apt/sources.list.d/kitware.list >/dev/null
+        sudo apt-get update
+        sudo apt-get -y install cmake ninja-build
 
     - name: Set build preset
       run: |

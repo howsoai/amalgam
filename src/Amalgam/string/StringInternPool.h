@@ -493,7 +493,7 @@ public:
 	{	return StringRef();	}
 
 	//assign another string reference
-	inline StringRef &operator =(StringRef &sir)
+	inline StringRef &operator =(const StringRef &sir)
 	{
 		if(sir.id != id)
 		{

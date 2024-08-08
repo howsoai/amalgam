@@ -45,83 +45,6 @@ class StringInternPool
 {
 public:
 	using StringID = StringInternStringData *;
-	//TODO 20465: put this back in or remove entirely:
-	/*
-	class StringID
-	{
-	public:
-		constexpr StringID()
-			: stringId(nullptr)
-		{	}
-
-		inline StringID(const StringID &sid)
-			: stringId(sid.stringId)
-		{	}
-
-		inline StringID(StringInternStringData *sisd)
-			: stringId(sisd)
-		{	}
-
-		inline StringID &operator=(StringID sid)
-		{
-			string_intern_pool.ValidateStringIdExistance(sid);
-
-			stringId = sid.stringId;
-			return *this;
-		}
-
-		inline StringInternStringData *operator->()
-		{
-			return stringId;
-		}
-
-		inline StringInternStringData &operator*()
-		{
-			return *stringId;
-		}
-
-		inline StringID &operator =(StringInternStringData *sisd)
-		{
-			stringId = sisd;
-			return *this;
-		}
-
-		inline bool operator==(StringID sid)
-		{
-			return stringId == sid.stringId;
-		}
-
-		inline bool operator!=(StringID sid)
-		{
-			return stringId != sid.stringId;
-		}
-
-		inline bool operator==(StringInternStringData *sisd)
-		{
-			return stringId == sisd;
-		}
-
-		inline bool operator!=(StringInternStringData *sisd)
-		{
-			return stringId != sisd;
-		}
-
-		size_t hash_value()
-		{
-			return std::hash<StringInternStringData *>{}(stringId);
-		}
-
-	private:
-		StringInternStringData *stringId;
-	};
-
-
-	//indicates that it is not a string, like NaN or null
-	static constexpr StringInternStringData *NOT_A_STRING_ID = nullptr;
-	*/
-	static constexpr StringID NOT_A_STRING_ID = nullptr;
-	StringID emptyStringId;
-	inline static const std::string EMPTY_STRING = std::string("");
 
 	inline StringInternPool()
 	{
@@ -157,7 +80,11 @@ public:
 		if(id_iter == end(stringToID))
 			return NOT_A_STRING_ID;	//the string was never entered in and don't want to cause more errors
 
-		return id_iter->second.get();
+		StringID id = id_iter->second.get();
+	#ifdef STRING_INTERN_POOL_VALIDATION
+		ValidateStringIdExistanceUnderLock(id);
+	#endif
+		return id;
 	}
 
 	//makes a new reference to the string specified, returning the ID
@@ -177,7 +104,11 @@ public:
 		else
 			new_entry->second->refCount++;
 
-		return new_entry->second.get();
+		StringID id = new_entry->second.get();
+	#ifdef STRING_INTERN_POOL_VALIDATION
+		ValidateStringIdExistanceUnderLock(id);
+	#endif
+		return id;
 	}
 
 	//makes a new reference to the string id specified, returning the id passed in
@@ -259,8 +190,14 @@ public:
 		if(id == NOT_A_STRING_ID || id == emptyStringId)
 			return;
 
+		//get the reference count before decrement
+	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+		//make sure have a readlock first so that the idToStringAndRefCount vector heap location doesn't change
+		Concurrency::ReadLock lock(sharedMutex);
+	#endif
+
 	#ifdef STRING_INTERN_POOL_VALIDATION
-		ValidateStringIdExistance(id);
+		ValidateStringIdExistanceUnderLock(id);
 	#endif
 
 		int64_t refcount = id->refCount--;
@@ -274,6 +211,8 @@ public:
 		// so, keep the reference alive by incrementing it *before* attempting the write lock
 		id->refCount++;
 
+		//grab a write lock
+		lock.unlock();
 		Concurrency::WriteLock write_lock(sharedMutex);
 
 		//with the write lock, decrement reference count in case this string should stay active
@@ -305,6 +244,9 @@ public:
 		// removal can be done after reference count decreases are done
 		bool ids_need_removal = false;
 
+		//only need a ReadLock because the count is atomic
+		Concurrency::ReadLock lock(sharedMutex);
+
 		for(auto r : references_container)
 		{
 			StringID id = get_string_id(r);
@@ -312,7 +254,7 @@ public:
 				continue;
 
 		#ifdef STRING_INTERN_POOL_VALIDATION
-			ValidateStringIdExistance(id);
+			ValidateStringIdExistanceUnderLock(id);
 		#endif
 
 			int64_t refcount = id->refCount--;
@@ -333,6 +275,8 @@ public:
 				id->refCount++;
 		}
 
+		//grab a write lock
+		lock.unlock();
 		Concurrency::WriteLock write_lock(sharedMutex);
 
 		for(auto r : references_container)
@@ -342,16 +286,14 @@ public:
 				continue;
 
 		#ifdef STRING_INTERN_POOL_VALIDATION
-			ValidateStringIdExistance(id);
+			ValidateStringIdExistanceUnderLock(id);
 		#endif
 
 			//remove any that are the last reference
 			int64_t refcount = id->refCount--;
 
 			if(id->refCount < 1)
-			{
 				stringToID.erase(id->string);
-			}
 		}
 
 	#endif
@@ -395,7 +337,8 @@ public:
 		std::vector<std::pair<std::string, int64_t>> in_use;
 		for(auto &[str, sisd] : stringToID)
 		{
-			if(staticStringIDToIndex.find(sisd.get()) == end(staticStringIDToIndex))
+			StringID sid(sisd.get());
+			if(staticStringIDToIndex.find(sid) == end(staticStringIDToIndex))
 				in_use.emplace_back(str, sisd->refCount);
 		}
 
@@ -405,17 +348,34 @@ public:
 	//validates the string id, throwing an assert if it is not valid
 	inline void ValidateStringIdExistance(StringID sid)
 	{
+	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+		Concurrency::ReadLock lock(sharedMutex);
+	#endif
+		ValidateStringIdExistanceUnderLock(sid);
+	}
+
+protected:
+
+	//validates the string id, throwing an assert if it is not valid
+	//requires being under a lock
+	inline void ValidateStringIdExistanceUnderLock(StringID sid)
+	{
 		if(sid == NOT_A_STRING_ID)
 			return;
 
 		auto found = stringToID.find(sid->string);
-		if(sid != found->second.get())
+		if(found == end(stringToID))
+		{
+			assert(false);
+			return;
+		}
+
+		StringID found_sid = found->second.get();
+		if(sid != found_sid)
 		{
 			assert(false);
 		}
 	}
-
-protected:
 
 	//must be defined outside of this class and initialize all static strings
 	void InitializeStaticStrings();
@@ -428,6 +388,11 @@ protected:
 	FastHashMap<std::string, std::unique_ptr<StringInternStringData>> stringToID;
 
 public:
+	//indicates that it is not a string, like NaN or null
+	static constexpr StringID NOT_A_STRING_ID = nullptr;
+	StringID emptyStringId;
+	inline static const std::string EMPTY_STRING = std::string("");
+
 	//data structures for static strings
 	std::vector<StringInternPool::StringID> staticStringsIndexToStringID;
 	FastHashMap<StringInternPool::StringID, size_t> staticStringIDToIndex;
@@ -495,7 +460,7 @@ public:
 	//assign another string reference
 	inline StringRef &operator =(const StringRef &sir)
 	{
-		if(sir.id != id)
+		if(id != sir.id)
 		{
 			string_intern_pool.DestroyStringReference(id);
 			id = string_intern_pool.CreateStringReference(sir.id);

@@ -360,7 +360,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableN
 			entity_container = EntityWriteReference(curEntity);
 		}
 
-		if(entity_container == nullptr)
+		if(entity_container == nullptr || !CanCreateNewEntityFromConstraints(entity_container, new_entity_id))
 		{
 			new_entity_ids_list->AppendOrderedChildNode(nullptr);
 			continue;
@@ -376,14 +376,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableN
 		if(ConstrainedAllocatedNodes())
 			performanceConstraints->curNumAllocatedNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
 
-		if(new_entity_id == StringInternPool::NOT_A_STRING_ID || !CanCreateNewEntityFromConstraints(entity_container, new_entity_id))
+		entity_container->AddContainedEntityViaReference(new_entity, new_entity_id, writeListeners);
+
+		if(new_entity_id == StringInternPool::NOT_A_STRING_ID)
 		{
 			delete new_entity;
 			new_entity_ids_list->AppendOrderedChildNode(nullptr);
 			continue;
 		}
-
-		entity_container->AddContainedEntityViaReference(new_entity, new_entity_id, writeListeners);
 
 		if(entity_container == curEntity)
 			new_entity_ids_list->AppendOrderedChildNode(evaluableNodeManager->AllocNode(ENT_STRING, new_entity_id));

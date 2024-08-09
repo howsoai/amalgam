@@ -235,6 +235,7 @@ function(add_compiled_target)
     if(USE_AFMI)
         target_compile_definitions(${TARGET_NAME} PUBLIC AMALGAM_FAST_MEMORY_INTEGRITY MULTITHREAD_SUPPORT)
         target_compile_options(${TARGET_NAME} PUBLIC -g)
+        target_compile_options(${TARGET_NAME} PUBLIC -O0)
     endif()
 
     # Advanced arch intrinsics:

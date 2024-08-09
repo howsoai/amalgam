@@ -12,6 +12,7 @@ else()
 endif()
 set(CPACK_OUTPUT_FILE_PREFIX "${CMAKE_INSTALL_PREFIX}/../../package")
 set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY False)
+# Release builds are never compiled with -g, so no need to strip files during packaging
 set(CPACK_STRIP_FILES False)
 set(CPACK_THREADS 0)
 set(CPACK_ARCHIVE_THREADS 0)

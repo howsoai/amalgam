@@ -557,9 +557,10 @@ public:
 	//returns the thread_local static variable entity[Read|Write]ReferenceBuffer, so results will be invalidated
 	//by subsequent calls
 	//if include_this_entity is true, it will include the entity in the references
+	//if exclude_entity is not nullptr, it will not include it, for example, if it's already locked
 	template<typename EntityReferenceType>
 	inline EntityReferenceBufferReference<EntityReferenceType> GetAllDeeplyContainedEntityReferencesGroupedByDepth(
-		bool include_this_entity = false)
+		bool include_this_entity = false, Entity *exclude_entity = nullptr)
 	{
 		EntityReferenceBufferReference<EntityReferenceType> erbr;
 		if constexpr(std::is_same<EntityReferenceType, EntityWriteReference>::value)
@@ -571,16 +572,21 @@ public:
 
 		if(include_this_entity)
 		{
-			if constexpr(std::is_same<EntityReferenceType, EntityWriteReference>::value)
-				entityWriteReferenceBuffer.emplace_back(this);
-			else
-				entityReadReferenceBuffer.emplace_back(this);
+			//don't put the entity in the buffer if it's excluded,
+			// as it should already have a lock, but include it in the count below
+			if(this != exclude_entity)
+			{
+				if constexpr(std::is_same<EntityReferenceType, EntityWriteReference>::value)
+					entityWriteReferenceBuffer.emplace_back(this);
+				else
+					entityReadReferenceBuffer.emplace_back(this);
+			}
 
 			erbr.maxEntityPathDepth++;
 		}
 
 		size_t max_depth = 0;
-		GetAllDeeplyContainedEntityReferencesGroupedByDepthRecurse<EntityReferenceType>(0, max_depth);
+		GetAllDeeplyContainedEntityReferencesGroupedByDepthRecurse<EntityReferenceType>(0, max_depth, exclude_entity);
 		erbr.maxEntityPathDepth += max_depth;
 		return erbr;
 	}
@@ -590,7 +596,7 @@ public:
 	void AppendAllDeeplyContainedEntityReferencesGroupedByDepth(EntityReferenceBufferReference<EntityReferenceType> &erbr)
 	{
 		size_t max_depth = 0;
-		GetAllDeeplyContainedEntityReferencesGroupedByDepthRecurse<EntityReferenceType>(0, max_depth);
+		GetAllDeeplyContainedEntityReferencesGroupedByDepthRecurse<EntityReferenceType>(0, max_depth, nullptr);
 		erbr.maxEntityPathDepth += max_depth;
 	}
 
@@ -757,7 +763,8 @@ protected:
 
 	//helper function for GetAllDeeplyContainedEntityReadReferencesGroupedByDepth
 	template<typename EntityReferenceType>
-	bool GetAllDeeplyContainedEntityReferencesGroupedByDepthRecurse(size_t cur_depth, size_t &max_depth)
+	bool GetAllDeeplyContainedEntityReferencesGroupedByDepthRecurse(
+		size_t cur_depth, size_t &max_depth, Entity *exclude_entity)
 	{
 		if(cur_depth > max_depth)
 			max_depth = cur_depth;
@@ -774,6 +781,9 @@ protected:
 		auto &contained_entities = GetContainedEntities();
 		for(Entity *e : contained_entities)
 		{
+			if(e == exclude_entity)
+				continue;
+
 			if constexpr(std::is_same<EntityReferenceType, EntityWriteReference>::value)
 				entityWriteReferenceBuffer.emplace_back(e);
 			else
@@ -782,7 +792,8 @@ protected:
 
 		for(auto &ce : contained_entities)
 		{
-			if(!ce->GetAllDeeplyContainedEntityReferencesGroupedByDepthRecurse<EntityReferenceType>(cur_depth + 1, max_depth))
+			if(!ce->GetAllDeeplyContainedEntityReferencesGroupedByDepthRecurse<EntityReferenceType>(cur_depth + 1,
+					max_depth, exclude_entity))
 				return false;
 		}
 

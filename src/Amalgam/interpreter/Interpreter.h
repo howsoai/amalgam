@@ -900,7 +900,9 @@ protected:
 		if(!performanceConstraints->constrainMaxContainedEntities && !performanceConstraints->constrainMaxContainedEntityDepth)
 			return true;
 
-		auto erbr = performanceConstraints->entityToConstrainFrom->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>();
+		auto erbr
+			= performanceConstraints->entityToConstrainFrom->GetAllDeeplyContainedEntityReferencesGroupedByDepth<
+			EntityReadReference>(true, destination_container);
 
 		if(performanceConstraints->constrainMaxContainedEntities)
 		{

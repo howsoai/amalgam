@@ -235,11 +235,11 @@ notakeyword
 (print "hello")
 [(null) (null) .infinity -.infinity]
 
-{b 2 c ["alpha" "beta" "gamma"] a 1}
+{b 2 a 1 c ["alpha" "beta" "gamma"]}
 {
 	b 2
-	c ["alpha" "beta" "gamma"]
 	a 1
+	c ["alpha" "beta" "gamma"]
 }
 
 --if--
@@ -630,17 +630,17 @@ a
 []
 {
 	a 1
-	b 2
 	c 3
 	d 4
 	e 5
+	f 6
 }
-{a 1 e 5}
+{c 3 f 6}
 {
 	a 1
-	b 2
 	c 3
-	e 5
+	d 4
+	f 6
 }
 {
 	a 1
@@ -681,17 +681,17 @@ c
 []
 {
 	a 1
-	b 2
 	c 3
 	d 4
 	e 5
+	f 6
 }
-{a 1 e 5}
+{c 3 f 6}
 {
 	a 1
-	b 2
 	c 3
-	e 5
+	d 4
+	f 6
 }
 {
 	a 1
@@ -1042,7 +1042,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-["b" "c" "4" "a"]
+["b" "4" "a" "c"]
 [
 	0
 	1
@@ -1054,7 +1054,7 @@ abcdef
 	7
 ]
 --values--
-["d" 2 3 1]
+[2 "d" 1 3]
 [
 	"a"
 	1
@@ -1075,7 +1075,7 @@ abcdef
 	4
 	"d"
 ]
-[2 "d" 3 1 0]
+[2 "d" 0 1 3]
 [
 	1
 	2
@@ -1288,7 +1288,7 @@ current_index: 2
 		interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1723141914.850715
+		start_time 1723240524.247239
 		www 1
 		x 12
 		zz 10
@@ -1331,7 +1331,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1723141914.850715
+	start_time 1723240524.247239
 	www 1
 	x 12
 	zz 10
@@ -1373,7 +1373,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1723141914.850715
+	start_time 1723240524.247239
 	www 1
 	x 12
 	zz 10
@@ -1517,11 +1517,11 @@ infinity test c or d: ["c" "c" "c" "d"]
 
 infinity test c or d: ["d" @(get (target 2) 0) "c" @(get (target 2) 2)]
 
-{a 25 b 48 c 27}
+{a 27 b 48 c 25}
 
 {a 24 b 52 c 24}
 
-["5" "2" "1"]
+["5" "1" "8"]
 
 --get_rand_seed--
 N9ìÀù∏UØOaV∆T zˇ
@@ -1618,15 +1618,15 @@ string
 ]
 21: [{"b":4,"a":3},{"d":null,"c":"c"}]
 22: [{"a":3,"b":4},{"c":"c","d":null}]
-23: d: 4
-b: 2
-c: 3
-a: 1
+23: b: 2
 e:
   - a
   - b
   - 
   - .inf
+d: 4
+a: 1
+c: 3
 
 24: a: 1
 b: 2
@@ -1639,7 +1639,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2024-08-08-14.31.55.2530610
+current date-time in epoch: 2024-08-09-17.55.24.4848300
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -2766,18 +2766,16 @@ flatten restore with parallel
 19.264241099357605
 --intersect_entities--
 (associate "b" 4)
-MergeEntityChild1
-(associate "x" 3 "y" 4)
 MergeEntityChild2
 (associate "p" 3 "q" 4)
+MergeEntityChild1
+(associate "x" 3 "y" 4)
 _2280722175
 (associate "E" 3 "F" 4)
 _2169689611
 (associate "e" 3 "f" 4)
 --union_entities--
 (associate "b" 4 "a" 3 "c" 3)
-MergeEntityChild1
-(associate "x" 3 "y" 4 "z" 5)
 MergeEntityChild2
 (associate
 	"p"
@@ -2791,6 +2789,8 @@ MergeEntityChild2
 	"w"
 	7
 )
+MergeEntityChild1
+(associate "x" 3 "y" 4 "z" 5)
 _2280722175
 (associate
 	"E"
@@ -3390,14 +3390,8 @@ difference between DiffEntity2 and new_entity:
 						[]
 						(lambda
 							{
-								E (get
-										(current_value 1)
-										"E"
-									)
-								F (get
-										(current_value 1)
-										"F"
-									)
+								E 3
+								F 4
 								G 5
 								H 6
 							}
@@ -3422,16 +3416,7 @@ difference between DiffEntity2 and new_entity:
 						_
 						[]
 						(lambda
-							{
-								e (get
-										(current_value 1)
-										"e"
-									)
-								f (get
-										(current_value 1)
-										"f"
-									)
-							}
+							{e 3 f 4}
 						)
 					)
 				)
@@ -3457,96 +3442,14 @@ contained_entities new_entity: ["OnlyIn2" "_3631850880" "_1938178219" "DiffEntit
 difference between DiffContainer and DiffEntity2:
 (declare
 	{_ (null) new_entity (null)}
-	(assign
-		"new_entity"
-		(first
-			(create_entities
-				new_entity
-				(call
-					(lambda
-						(declare
-							{_ (null)}
-							(replace _)
-						)
-					)
-					{
-						_ (retrieve_entity_root _)
-					}
-				)
-			)
-		)
-	)
-	(create_entities
-		(append new_entity "_3631850880")
-		(call
-			(lambda
-				(declare
-					{_ (null)}
-					(replace
-						_
-						[]
-						(lambda
-							{
-								E (null)
-								F (null)
-								G (get
-										(current_value 1)
-										"G"
-									)
-								H (get
-										(current_value 1)
-										"H"
-									)
-							}
-						)
-					)
-				)
-			)
-			{
-				_ (retrieve_entity_root
-						(append _ "_3631850880")
-					)
-			}
-		)
-	)
-	(create_entities
-		(append new_entity "_1938178219")
-		(call
-			(lambda
-				(declare
-					{_ (null)}
-					(replace
-						_
-						[]
-						(lambda
-							{e (null) f (null)}
-						)
-					)
-				)
-			)
-			{
-				_ (retrieve_entity_root
-						(append _ "_1938178219")
-					)
-			}
-		)
-	)
-	(clone_entities
-		(append _ "OnlyIn2")
-		(append new_entity "OnlyIn2")
-	)
-	(clone_entities
-		(append _ "DiffEntityChild1")
-		(append new_entity "DiffEntityChild1")
-	)
-	new_entity
+	(clone_entities _ new_entity)
 )
 --mix_entities--
 (associate "b" 4 "c" 3)
-MergeEntityChild1
-(associate "x" 3 "y" 4)
 MergeEntityChild2
 (associate "p" 3 "q" 4 "w" 7)
+MergeEntityChild1
+(associate "x" 3 "y" 4)
 _2280722175
 (associate "E" 3 "F" 4 "H" 6)
 _2169689611
@@ -3628,7 +3531,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1723141915.486801
+1723240524.731905
 (true)
 
 RootTest
@@ -4467,14 +4370,14 @@ case conviction:{
 }
 cyclic feature nearest neighbors: {cyclic1 1 cyclic5 0.5}
 cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
+190: 0.045454545454545456 (null
+	##deg 12
+)
 155: 0.1 (null
 	##deg 0
 )
 200: 0.05555555555555555 (null
 	##deg 8
-)
-190: 0.045454545454545456 (null
-	##deg 12
 )
 --contains_label--
 (true)
@@ -4558,7 +4461,7 @@ cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
 ]
 6
 execution limits tests
-166
+87
 --call_entity_get_changes--
 4
 6
@@ -4972,4 +4875,4 @@ concurrent entity writes successful: (true)
 
 --clean-up test files--
 --total execution time--
-1.5147020816802979
+1.316145896911621

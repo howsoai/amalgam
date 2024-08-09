@@ -75,7 +75,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, b
 		if(DoesEvaluableNodeTypeUseStringData(list->GetType()))
 		{
 			auto sid = list->GetStringIDReference();
-			if(sid <= string_intern_pool.EMPTY_STRING_ID)
+			if(sid == string_intern_pool.NOT_A_STRING_ID  || sid == string_intern_pool.emptyStringId)
 				return AllocReturn(StringInternPool::NOT_A_STRING_ID, immediate_result);
 
 			std::string s = string_intern_pool.GetStringFromID(sid);
@@ -184,7 +184,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, bo
 		if(DoesEvaluableNodeTypeUseStringData(list->GetType()))
 		{
 			auto sid = list->GetStringIDReference();
-			if(sid <= string_intern_pool.EMPTY_STRING_ID)
+			if(sid == string_intern_pool.NOT_A_STRING_ID  || sid == string_intern_pool.emptyStringId)
 				return AllocReturn(StringInternPool::NOT_A_STRING_ID, immediate_result);
 
 			std::string s = string_intern_pool.GetStringFromID(sid);
@@ -282,7 +282,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, bo
 		if(DoesEvaluableNodeTypeUseStringData(list->GetType()))
 		{
 			auto sid = list->GetStringIDReference();
-			if(sid <= string_intern_pool.EMPTY_STRING_ID)
+			if(sid == string_intern_pool.NOT_A_STRING_ID || sid == string_intern_pool.emptyStringId)
 				return AllocReturn(StringInternPool::NOT_A_STRING_ID, immediate_result);
 
 			std::string s = string_intern_pool.GetStringFromID(sid);
@@ -389,7 +389,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, b
 		if(DoesEvaluableNodeTypeUseStringData(list->GetType()))
 		{
 			auto sid = list->GetStringIDReference();
-			if(sid <= string_intern_pool.EMPTY_STRING_ID)
+			if(sid == string_intern_pool.NOT_A_STRING_ID  || sid == string_intern_pool.emptyStringId)
 				return AllocReturn(StringInternPool::NOT_A_STRING_ID, immediate_result);
 
 			std::string s = string_intern_pool.GetStringFromID(sid);

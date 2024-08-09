@@ -63,7 +63,7 @@ inline double NumberCommonality(double difference, double a, double b)
 }
 
 //for random streams that are based on an EvaluableNode MappedChildNodes
-typedef WeightedDiscreteRandomStreamTransform<StringInternPool::StringID, EvaluableNode::AssocType, EvaluableNodeAsDouble>
+typedef WeightedDiscreteRandomStreamTransform<EvaluableNodeBuiltInStringId, EvaluableNode::AssocType, EvaluableNodeAsDouble>
 			EvaluableNodeMappedWeightedDiscreteRandomStreamTransform;
 
 class EvaluableNodeTreeManipulation
@@ -75,8 +75,8 @@ public:
 		typedef WeightedDiscreteRandomStreamTransform<EvaluableNodeType,
 			CompactHashMap<EvaluableNodeType, double>> WeightedRandEvaluableNodeType;
 
-		typedef WeightedDiscreteRandomStreamTransform<StringInternPool::StringID,
-			CompactHashMap<StringInternPool::StringID, double>> WeightedRandMutationType;
+		typedef WeightedDiscreteRandomStreamTransform<EvaluableNodeBuiltInStringId,
+			CompactHashMap<EvaluableNodeBuiltInStringId, double>> WeightedRandMutationType;
 
 		Interpreter *interpreter;
 		EvaluableNodeManager *enm;
@@ -109,7 +109,7 @@ public:
 		}
 	};
 
-	static CompactHashMap<StringInternPool::StringID, double> mutationOperationTypeProbabilities;
+	static CompactHashMap<EvaluableNodeBuiltInStringId, double> mutationOperationTypeProbabilities;
 	static CompactHashMap<EvaluableNodeType, double> evaluableNodeTypeProbabilities;
 
 	//functionality to merge two nodes
@@ -507,7 +507,8 @@ public:
 	//Returns a tree that is a copy of tree but mutated based on mutation_rate
 	// will create the new tree with interpreter's evaluableNodeManager and will use interpreter's RandomStream
 	//Note that MutateTree does not guarantee that EvaluableNodeFlags will be set appropriately
-	static EvaluableNode *MutateTree(Interpreter *interpreter, EvaluableNodeManager *enm, EvaluableNode *tree, double mutation_rate, CompactHashMap<StringInternPool::StringID, double> *mutation_weights, CompactHashMap<EvaluableNodeType, double> *evaluable_node_weights);
+	static EvaluableNode *MutateTree(Interpreter *interpreter, EvaluableNodeManager *enm, EvaluableNode *tree, double mutation_rate,
+		CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights, CompactHashMap<EvaluableNodeType, double> *evaluable_node_weights);
 
 	//traverses tree and replaces any string that matches a key of to_replace with the value in to_replace
 	static void ReplaceStringsInTree(EvaluableNode *tree, CompactHashMap<StringInternPool::StringID, StringInternPool::StringID> &to_replace);

@@ -348,7 +348,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableN
 
 		//get destination if applicable
 		EntityWriteReference entity_container;
-		StringInternRef new_entity_id;
+		StringRef new_entity_id;
 		if(i + 1 < ocn.size())
 		{
 			node_stack.PushEvaluableNode(root);
@@ -428,7 +428,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CLONE_ENTITIES(EvaluableNo
 
 		//get destination if applicable
 		EntityWriteReference destination_entity_parent;
-		StringInternRef new_entity_id;
+		StringRef new_entity_id;
 		if(i + 1 < ocn.size())
 			std::tie(destination_entity_parent, new_entity_id) = InterpretNodeIntoDestinationEntity(ocn[i + 1]);
 
@@ -504,7 +504,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MOVE_ENTITIES(EvaluableNod
 
 		//get destination if applicable
 		EntityWriteReference destination_entity_parent;
-		StringInternRef new_entity_id;
+		StringRef new_entity_id;
 		if(i + 1 < ocn.size())
 			std::tie(destination_entity_parent, new_entity_id) = InterpretNodeIntoDestinationEntity(ocn[i + 1]);
 		else
@@ -633,7 +633,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSI
 
 	//get destination if applicable
 	EntityWriteReference destination_entity_parent;
-	StringInternRef new_entity_id;
+	StringRef new_entity_id;
 	if(ocn.size() > 1)
 		std::tie(destination_entity_parent, new_entity_id) = InterpretNodeIntoDestinationEntity(ocn[1]);
 
@@ -732,7 +732,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, b
 		{
 			auto &mcn = params->GetMappedChildNodesReference();
 
-			auto found_sort_keys = mcn.find(ENBISI_sort_keys);
+			auto found_sort_keys = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_sort_keys));
 			if(found_sort_keys != end(mcn))
 				sort_keys = EvaluableNode::IsTrue(found_sort_keys->second);
 		}
@@ -788,15 +788,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 		{
 			auto &mcn = params->GetMappedChildNodesReference();
 
-			auto found_sort_keys = mcn.find(ENBISI_sort_keys);
+			auto found_sort_keys = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_sort_keys));
 			if(found_sort_keys != end(mcn))
 				sort_keys = EvaluableNode::IsTrue(found_sort_keys->second);
 
-			auto found_include_rand_seeds = mcn.find(ENBISI_include_rand_seeds);
+			auto found_include_rand_seeds = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_include_rand_seeds));
 			if(found_include_rand_seeds != end(mcn))
 				include_rand_seeds = EvaluableNode::IsTrue(found_include_rand_seeds->second);
 
-			auto found_parallel_create = mcn.find(ENBISI_parallel_create);
+			auto found_parallel_create = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_parallel_create));
 			if(found_parallel_create != end(mcn))
 				parallel_create = EvaluableNode::IsTrue(found_parallel_create->second);
 		}

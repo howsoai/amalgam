@@ -262,8 +262,8 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 
 	EvaluableNode *df_assoc = enm->AllocNode(ENT_ASSOC);
 	difference_function->AppendOrderedChildNode(df_assoc);
-	df_assoc->SetMappedChildNode(ENBISI__, nullptr);
-	df_assoc->SetMappedChildNode(ENBISI_new_entity, nullptr);
+	df_assoc->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI__), nullptr);
+	df_assoc->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_new_entity), nullptr);
 
 	//find entities that match up, and if no difference, then can shortcut the function
 	std::vector<Entity *> top_entities_identical;
@@ -272,8 +272,8 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 	{
 		EvaluableNode *clone_entity = enm->AllocNode(ENT_CLONE_ENTITIES);
 		difference_function->AppendOrderedChildNode(clone_entity);
-		clone_entity->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI__));
-		clone_entity->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI_new_entity));
+		clone_entity->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, GetStringIdFromBuiltInStringId(ENBISI__)));
+		clone_entity->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, GetStringIdFromBuiltInStringId(ENBISI_new_entity)));
 		delete root_merged;
 		return EvaluableNodeReference(difference_function, true);
 	}
@@ -282,9 +282,11 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 	//  (assign "new_entity" (first (create_entities new_entity
 	EvaluableNode *assign_new_entity = enm->AllocNode(ENT_ASSIGN);
 	difference_function->AppendOrderedChildNode(assign_new_entity);
-	assign_new_entity->AppendOrderedChildNode(enm->AllocNode(ENT_STRING, ENBISI_new_entity));
+	assign_new_entity->AppendOrderedChildNode(enm->AllocNode(ENT_STRING,
+		GetStringIdFromBuiltInStringId(ENBISI_new_entity)));
 	EvaluableNode *create_root_entity = enm->AllocNode(ENT_CREATE_ENTITIES);
-	create_root_entity->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI_new_entity));
+	create_root_entity->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL,
+		GetStringIdFromBuiltInStringId(ENBISI_new_entity)));
 	EvaluableNode *first_of_create_entity = enm->AllocNode(ENT_FIRST);
 	first_of_create_entity->AppendOrderedChildNode(create_root_entity);
 	assign_new_entity->AppendOrderedChildNode(first_of_create_entity);
@@ -301,8 +303,8 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 	EvaluableNode *edac_assoc = enm->AllocNode(ENT_ASSOC);
 	entity_difference_apply_call->AppendOrderedChildNode(edac_assoc);
 	EvaluableNode *get_entity_code = enm->AllocNode(ENT_RETRIEVE_ENTITY_ROOT);
-	edac_assoc->SetMappedChildNode(ENBISI__, get_entity_code);
-	get_entity_code->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI__));
+	edac_assoc->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI__), get_entity_code);
+	get_entity_code->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, GetStringIdFromBuiltInStringId(ENBISI__)));
 
 	//apply difference function for root entities
 	// make sure to make a copy of each root so don't end up with mixed entity nodes
@@ -322,12 +324,12 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 		//    )
 		EvaluableNode *src_id_list = GetTraversalIDPathFromAToB(enm, entity2, entity_to_create);
 		EvaluableNode *src_append = enm->AllocNode(ENT_APPEND);
-		src_append->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI__));
+		src_append->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, GetStringIdFromBuiltInStringId(ENBISI__)));
 		src_append->AppendOrderedChildNode(src_id_list);
 
 		EvaluableNode *dest_id_list = enm->DeepAllocCopy(src_id_list);
 		EvaluableNode *dest_append = enm->AllocNode(ENT_APPEND);
-		dest_append->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI_new_entity));
+		dest_append->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, GetStringIdFromBuiltInStringId(ENBISI_new_entity)));
 		dest_append->AppendOrderedChildNode(dest_id_list);
 
 		EvaluableNode *create_entity = enm->AllocNode(ENT_CREATE_ENTITIES);
@@ -369,7 +371,7 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 			call_diff->AppendOrderedChildNode(call_assoc);
 
 			EvaluableNode *entity_code = enm->AllocNode(ENT_RETRIEVE_ENTITY_ROOT);
-			call_assoc->SetMappedChildNode(ENBISI__, entity_code);
+			call_assoc->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI__), entity_code);
 			entity_code->AppendOrderedChildNode(src_append);
 		}
 	}
@@ -387,12 +389,12 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 
 		EvaluableNode *src_id_list = GetTraversalIDPathFromAToB(enm, entity2, entity_to_clone);
 		EvaluableNode *src_append = enm->AllocNode(ENT_APPEND);
-		src_append->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI__));
+		src_append->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, GetStringIdFromBuiltInStringId(ENBISI__)));
 		src_append->AppendOrderedChildNode(src_id_list);
 
 		EvaluableNode *dest_id_list = enm->DeepAllocCopy(src_id_list);
 		EvaluableNode *dest_append = enm->AllocNode(ENT_APPEND);
-		dest_append->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI_new_entity));
+		dest_append->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, GetStringIdFromBuiltInStringId(ENBISI_new_entity)));
 		dest_append->AppendOrderedChildNode(dest_id_list);
 
 		clone_entity->AppendOrderedChildNode(src_append);
@@ -400,7 +402,7 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 	}
 
 	//add new_entity to return value of let statement to return the newly created id
-	difference_function->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, ENBISI_new_entity));
+	difference_function->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, GetStringIdFromBuiltInStringId(ENBISI_new_entity)));
 
 	delete root_merged;
 
@@ -630,7 +632,8 @@ void EntityManipulation::MergeContainedEntities(EntitiesMergeMethod *mm, Entity 
 		RecursivelyRenameAllEntityReferences(merged_entity, entities_renamed);
 }
 
-Entity *EntityManipulation::MutateEntity(Interpreter *interpreter, Entity *entity, double mutation_rate, CompactHashMap<StringInternPool::StringID, double> *mutation_weights, CompactHashMap<EvaluableNodeType, double> *operation_type)
+Entity *EntityManipulation::MutateEntity(Interpreter *interpreter, Entity *entity, double mutation_rate,
+	CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights, CompactHashMap<EvaluableNodeType, double> *operation_type)
 {
 	if(entity == nullptr)
 		return nullptr;

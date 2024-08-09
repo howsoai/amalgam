@@ -266,8 +266,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_DEFAULTS(EvaluableNode
 			EvaluableNode *num_node = evaluableNodeManager->AllocNode(ENT_NUMBER);
 			num_node->SetNumberValue(node_prob);
 
-			const std::string &node_type_string = GetStringFromEvaluableNodeType(node_type, true);
-			out_node->SetMappedChildNode(node_type_string, num_node);
+			StringInternPool::StringID node_type_sid = GetStringIdFromNodeType(node_type);
+			out_node->SetMappedChildNode(node_type_sid, num_node);
 		}
 
 		return EvaluableNodeReference(out_node, true);
@@ -281,7 +281,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_DEFAULTS(EvaluableNode
 		{
 			EvaluableNode *num_node = evaluableNodeManager->AllocNode(ENT_NUMBER);
 			num_node->SetNumberValue(op_prob);
-			out_node->SetMappedChildNode(op_type, num_node);
+			StringInternPool::StringID op_type_sid = GetStringIdFromBuiltInStringId(op_type);
+			out_node->SetMappedChildNode(op_type_sid, num_node);
 		}
 
 		return EvaluableNodeReference(out_node, true);
@@ -918,7 +919,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	}
 
 	//using a single variable
-	StringInternRef variable_sid;
+	StringRef variable_sid;
 	variable_sid.SetIDWithReferenceHandoff(InterpretNodeIntoStringIDValueWithReference(ocn[0]));
 	if(variable_sid == StringInternPool::NOT_A_STRING_ID)
 		return EvaluableNodeReference::Null();

@@ -1,39 +1,4 @@
 ﻿(seq
-
-	(print (get
-				(list
-					{"a" 3}
-					;@(get (get (target 0) 0) "a"))
-					@(get (target 2) [0 "a"])
-					;(get (target 0) [0 "a"])
-				)
-			1)
-		"\n")
-
-
-	;(create_entities "test"
-	;	(lambda
-	;		##label_target
-	;		(list
-	;				{"a" 1}
-	;				@(get (get (target 2) 0) "a"))
-	;		)
-	;	)
-	;)
-
-	;(print (flatten_entity "test"))
-
-	;(print
-	;	;(get
-	;		(retrieve_from_entity "test" "label_target)
-	;		;(list 0 "a")
-	;	;)
-	;"\n")
-
-	;(store_entity "testsave.amlg" "test")
-
-	;(call (flatten_entity "test") {new_entity "test2"})
-
-	;(load_entity "testsave.amlg" "test2")
-	;(print (flatten_entity "test2"))
+ (print (tail "abcdef" -10) "\n")
+(print (tail "") "\n")
 )

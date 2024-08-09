@@ -860,9 +860,14 @@ public:
 		// however, this should be rarely called on those entities since it's basically clearing them out, so it should not generally be a performance issue
 		auto location = std::find(begin(nodes), begin(nodes) + firstUnusedNodeIndex, new_root);
 
+		if(location == end(nodes))
+		{
+			assert(false);
+			return;
+		}
+
 		//put the new root in the proper place
-		if(location != end(nodes))
-			std::swap(*begin(nodes), *location);
+		std::swap(*begin(nodes), *location);
 	}
 
 	//returns true if any node is referenced other than root, which is an indication if there are

@@ -1505,7 +1505,7 @@ void MutateImmediateNode(EvaluableNode *n, RandomStream &rs, std::vector<std::st
 EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, MutationParameters &mp)
 {
 	if(n == nullptr)
-		return nullptr;
+		n = mp.enm->AllocNode(ENT_NULL);
 
 	//if immediate type (after initial mutation), see if should mutate value
 	bool is_immediate = n->IsImmediate();
@@ -1583,7 +1583,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 		}
 
 		case ENBISI_swap_elements:
-			if(n->GetOrderedChildNodes().size() > 0)
+			if(n->GetOrderedChildNodes().size() > 1)
 			{
 				size_t num_child_nodes = n->GetOrderedChildNodesReference().size();
 				auto first_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
@@ -1714,13 +1714,14 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 
 EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp, EvaluableNode *tree)
 {
-	if(tree == nullptr)
-		return nullptr;
-
-	//if this object has already been copied, then just return the reference to the new copy
-	auto found_copy = mp.references.find(tree);
-	if(found_copy != end(mp.references))
-		return found_copy->second;
+	//if it's nullptr, then move on to making a copy, otherwise see if it's already been copied
+	if(tree != nullptr)
+	{
+		//if this object has already been copied, then just return the reference to the new copy
+		auto found_copy = mp.references.find(tree);
+		if(found_copy != end(mp.references))
+			return found_copy->second;
+	}
 
 	EvaluableNode *copy = mp.enm->AllocNode(tree);
 	auto node_stack = mp.interpreter->CreateInterpreterNodeStackStateSaver(copy);
@@ -1753,10 +1754,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 		//for any mapped children, copy and update
 		for(auto &[_, s] : copy->GetMappedChildNodesReference())
 		{
-			//get current item in list
 			EvaluableNode *n = s;
-			if(n == nullptr)
-				continue;
 
 			//turn into a copy and mutate
 			n = MutateTree(mp, n);
@@ -1773,8 +1771,6 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 		{
 			//get current item in list
 			EvaluableNode *n = ocn[i];
-			if(n == nullptr)
-				continue;
 
 			//turn into a copy and mutate
 			n = MutateTree(mp, n);

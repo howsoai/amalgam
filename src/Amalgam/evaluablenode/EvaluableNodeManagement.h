@@ -372,11 +372,9 @@ public:
 		return n;
 	}
 
-	inline EvaluableNode *AllocNode(EvaluableNodeType type, StringInternRef &sir)
+	inline EvaluableNode *AllocNode(EvaluableNodeType type, StringRef &sir)
 	{	return AllocNode(type, static_cast<StringInternPool::StringID>(sir));	}
-	inline EvaluableNode *AllocNode(EvaluableNodeType type, StringInternWeakRef &siwr)
-	{	return AllocNode(type, static_cast<StringInternPool::StringID>(siwr));	}
-
+	
 	inline EvaluableNode *AllocNode(double float_value)
 	{
 		EvaluableNode *n = AllocUninitializedNode();

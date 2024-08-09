@@ -834,7 +834,7 @@ protected:
 					GetValue(entity_index, feature_attribs.featureIndex).stringID, ENIVT_STRING_ID,
 					query_feature_index, high_accuracy);
 			else
-				return r_dist_eval.ComputeDistanceTermNominal(string_intern_pool.EMPTY_STRING_ID, ENIVT_STRING_ID,
+				return r_dist_eval.ComputeDistanceTermNominal(string_intern_pool.emptyStringId, ENIVT_STRING_ID,
 					query_feature_index, high_accuracy);
 		}
 

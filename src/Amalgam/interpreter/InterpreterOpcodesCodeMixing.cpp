@@ -51,7 +51,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 	}
 
 	bool mtw_exists = false;
-	CompactHashMap<StringInternPool::StringID, double> mutation_type_weights;
+	CompactHashMap<EvaluableNodeBuiltInStringId, double> mutation_type_weights;
 	if(ocn.size() > 3)
 	{
 		auto mutation_weights_node = InterpretNodeForImmediateUse(ocn[3]);
@@ -59,14 +59,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 		{
 			mtw_exists = true;
 			for(auto &[node_id, node] : mutation_weights_node->GetMappedChildNodes())
-				mutation_type_weights[node_id] = EvaluableNode::ToNumber(node);
+			{
+				auto bisid = GetBuiltInStringIdFromStringId(node_id);
+				mutation_type_weights[bisid] = EvaluableNode::ToNumber(node);
+			}
 
 			evaluableNodeManager->FreeNodeTreeIfPossible(mutation_weights_node);
 		}
 	}
 
 	//result contains the copied result which may incur replacements
-	EvaluableNode *result = EvaluableNodeTreeManipulation::MutateTree(this, evaluableNodeManager, to_mutate, mutation_rate, mtw_exists ? &mutation_type_weights : nullptr, ow_exists ? &opcode_weights : nullptr);
+	EvaluableNode *result = EvaluableNodeTreeManipulation::MutateTree(this, evaluableNodeManager,
+		to_mutate, mutation_rate, mtw_exists ? &mutation_type_weights : nullptr, ow_exists ? &opcode_weights : nullptr);
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 	return EvaluableNodeReference(result, true);
 }
@@ -380,7 +384,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 	}
 
 	bool mtw_exists = false;
-	CompactHashMap<StringInternPool::StringID, double> mutation_type_weights;
+	CompactHashMap<EvaluableNodeBuiltInStringId, double> mutation_type_weights;
 	if(ocn.size() > 4)
 	{
 		auto mutation_weights_node = InterpretNodeForImmediateUse(ocn[4]);
@@ -388,7 +392,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 		{
 			mtw_exists = true;
 			for(auto &[node_id, node] : mutation_weights_node->GetMappedChildNodes())
-				mutation_type_weights[node_id] = EvaluableNode::ToNumber(node);
+			{
+				auto bisid = GetBuiltInStringIdFromStringId(node_id);
+				mutation_type_weights[bisid] = EvaluableNode::ToNumber(node);
+			}
 
 			evaluableNodeManager->FreeNodeTreeIfPossible(mutation_weights_node);
 		}
@@ -403,7 +410,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 		return EvaluableNodeReference::Null();
 
 	//create new entity by mutating
-	Entity *new_entity = EntityManipulation::MutateEntity(this, source_entity, mutation_rate, mtw_exists ? &mutation_type_weights : nullptr, ow_exists ? &opcode_weights : nullptr);
+	Entity *new_entity = EntityManipulation::MutateEntity(this, source_entity, mutation_rate,
+		mtw_exists ? &mutation_type_weights : nullptr, ow_exists ? &opcode_weights : nullptr);
 	
 	//accumulate usage
 	if(ConstrainedAllocatedNodes())
@@ -414,7 +422,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNod
 
 	//get destination if applicable
 	EntityWriteReference destination_entity_parent;
-	StringInternRef new_entity_id;
+	StringRef new_entity_id;
 	if(ocn.size() > 2)
 		std::tie(destination_entity_parent, new_entity_id) = InterpretNodeIntoDestinationEntity(ocn[2]);
 	else
@@ -496,7 +504,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT_ENTITIES(Evaluab
 
 	//get destination if applicable
 	EntityWriteReference destination_entity_parent;
-	StringInternRef new_entity_id;
+	StringRef new_entity_id;
 	if(ocn.size() > 2)
 		std::tie(destination_entity_parent, new_entity_id) = InterpretNodeIntoDestinationEntity(ocn[2]);
 	else
@@ -556,7 +564,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION_ENTITIES(EvaluableNo
 
 	//get destination if applicable
 	EntityWriteReference destination_entity_parent;
-	StringInternRef new_entity_id;
+	StringRef new_entity_id;
 	if(ocn.size() > 2)
 		std::tie(destination_entity_parent, new_entity_id) = InterpretNodeIntoDestinationEntity(ocn[2]);
 	else
@@ -678,7 +686,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode
 
 	//get destination if applicable
 	EntityWriteReference destination_entity_parent;
-	StringInternRef new_entity_id;
+	StringRef new_entity_id;
 	if(ocn.size() > 6)
 		std::tie(destination_entity_parent, new_entity_id) = InterpretNodeIntoDestinationEntity(ocn[6]);
 	else

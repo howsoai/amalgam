@@ -970,7 +970,7 @@ union EvaluableNodeImmediateValue
 		: number(_number)
 	{	}
 
-	constexpr EvaluableNodeImmediateValue(StringInternPool::StringID string_id)
+	__forceinline EvaluableNodeImmediateValue(StringInternPool::StringID string_id)
 		: stringID(string_id)
 	{	}
 
@@ -980,6 +980,10 @@ union EvaluableNodeImmediateValue
 
 	constexpr EvaluableNodeImmediateValue(const EvaluableNodeImmediateValue &eniv)
 		: code(eniv.code)
+	{	}
+
+	constexpr EvaluableNodeImmediateValue(size_t indirection_index)
+		: indirectionIndex(indirection_index)
 	{	}
 
 	__forceinline EvaluableNodeImmediateValue &operator =(const EvaluableNodeImmediateValue &eniv)
@@ -1070,7 +1074,7 @@ public:
 		: nodeType(ENIVT_NULL)
 	{	}
 
-	constexpr EvaluableNodeImmediateValueWithType(EvaluableNodeImmediateValue node_value,
+	__forceinline EvaluableNodeImmediateValueWithType(EvaluableNodeImmediateValue node_value,
 		EvaluableNodeImmediateValueType node_type)
 		: nodeType(node_type), nodeValue(node_value)
 	{	}
@@ -1168,7 +1172,8 @@ public:
 
 		if(nodeType == ENIVT_STRING_ID)
 		{
-			if(nodeValue.stringID <= StringInternPool::EMPTY_STRING_ID)
+			if(nodeValue.stringID == string_intern_pool.NOT_A_STRING_ID
+					|| nodeValue.stringID == string_intern_pool.emptyStringId)
 				return false;
 			return true;
 		}

@@ -166,7 +166,7 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 		new_entity->SetRoot(code, true);
 
 		EvaluableNodeReference args = EvaluableNodeReference(new_entity->evaluableNodeManager.AllocNode(ENT_ASSOC), true);
-		args->SetMappedChildNode(ENBISI_create_new_entity, new_entity->evaluableNodeManager.AllocNode(ENT_FALSE));
+		args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_create_new_entity), new_entity->evaluableNodeManager.AllocNode(ENT_FALSE));
 		auto call_stack = Interpreter::ConvertArgsToCallStack(args, new_entity->evaluableNodeManager);
 
 		new_entity->Execute(StringInternPool::NOT_A_STRING_ID, call_stack, false, calling_interpreter);
@@ -185,14 +185,14 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 	{
 		if(EvaluableNode::IsAssociativeArray(metadata))
 		{
-			EvaluableNode **seed = metadata->GetMappedChildNode(ENBISI_rand_seed);
+			EvaluableNode **seed = metadata->GetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_rand_seed));
 			if(seed != nullptr)
 			{
 				default_random_seed = EvaluableNode::ToStringPreservingOpcodeType(*seed);
 				new_entity->SetRandomState(default_random_seed, true);
 			}
 
-			EvaluableNode **version = metadata->GetMappedChildNode(ENBISI_version);
+			EvaluableNode **version = metadata->GetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_version));
 			if(version != nullptr)
 			{
 				auto [tostr_success, version_str] = EvaluableNode::ToString(*version);

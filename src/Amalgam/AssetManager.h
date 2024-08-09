@@ -110,8 +110,8 @@ public:
 		EvaluableNode en_assoc(ENT_ASSOC);
 		EvaluableNode en_rand_seed(ENT_STRING, entity->GetRandomState());
 		EvaluableNode en_version(ENT_STRING, AMALGAM_VERSION_STRING);
-		en_assoc.SetMappedChildNode(ENBISI_rand_seed, &en_rand_seed);
-		en_assoc.SetMappedChildNode(ENBISI_version, &en_version);
+		en_assoc.SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_rand_seed), &en_rand_seed);
+		en_assoc.SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_version), &en_version);
 
 		std::string metadata_extension = FILE_EXTENSION_AMLG_METADATA;
 		//don't reescape the path here, since it has already been done

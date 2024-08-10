@@ -920,7 +920,8 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 	}
 	else //this node has already been checked
 	{
-		//climb back up to top setting cycle checks needed
+		//climb back up to top setting cycle checks needed,
+		//starting with tree's parent node
 		EvaluableNode *cur_node = existing_record->second;
 		while(cur_node != nullptr)
 		{
@@ -931,10 +932,12 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 			cur_node->SetNeedCycleCheck(true);
 
 			auto parent_record = checked_to_parent.find(cur_node);
-			if(parent_record != end(checked_to_parent))
-				cur_node = parent_record->second;
-			else //shouldn't make it here
-				break;
+			if(parent_record == end(checked_to_parent))
+			{
+				assert(false);
+			}
+
+			cur_node = parent_record->second;
 		}
 		return std::make_pair(true, tree->GetIsIdempotent());
 	}

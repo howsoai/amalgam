@@ -28,7 +28,7 @@ class PrintListener;
 //base class for accessing an entity via a reference
 // includes everything that can be accessed via a read operation
 // note that this class should not be used directly, which is why it does not yield access to edit entity other than nullptr
-//need to templatize EntityType because can't foreward declare a method
+//need to templatize EntityType because can't forward declare a method
 template<typename EntityType = Entity>
 class EntityReference
 {

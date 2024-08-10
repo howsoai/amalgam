@@ -1995,7 +1995,7 @@ void Interpreter::VerifyEvaluableNodeIntegrity()
 		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
 
 	for(EvaluableNode *en : *interpreterNodeStackNodes)
-		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
+		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en, nullptr, false);
 
 	for(EvaluableNode *en : *constructionStackNodes)
 		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
@@ -2005,7 +2005,7 @@ void Interpreter::VerifyEvaluableNodeIntegrity()
 
 	auto &nr = evaluableNodeManager->GetNodesReferenced();
 	for(auto &[en, _] : nr.nodesReferenced)
-		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
+		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en, nullptr, false);
 
 	if(callingInterpreter != nullptr)
 		callingInterpreter->VerifyEvaluableNodeIntegrity();

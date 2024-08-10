@@ -345,7 +345,7 @@ public:
 		return DoesEvaluableNodeTypeUseNumberData(GetType());
 	}
 
-	//Converts a number to a string in a consistent way that should be used for anything dealing with EvaulableNode
+	//Converts a number to a string in a consistent way that should be used for anything dealing with EvaluableNode
 	static __forceinline std::string NumberToString(double value)
 	{
 		return StringManipulation::NumberToString(value);
@@ -640,7 +640,7 @@ public:
 	//using ordered or mapped child nodes as appropriate, transforms into numeric values and passes into store_value
 	// if node is mapped child nodes, it will use element_names to order populate out and use default_value if any given id is not found
 	//will use num_expected_elements for immediate values
-	//store_nomeric_value takes in 3 parameters, the index, a bool if the value was found, and the EvaluableNode of the value
+	//store_value takes in 3 parameters, the index, a bool if the value was found, and the EvaluableNode of the value
 	template<typename StoreValueFunction = void(size_t, bool, EvaluableNode *)>
 	static inline void ConvertChildNodesAndStoreValue(EvaluableNode *node, std::vector<StringInternPool::StringID> &element_names,
 		size_t num_expected_elements, StoreValueFunction store_value)

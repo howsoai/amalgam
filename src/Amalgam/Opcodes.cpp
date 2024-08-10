@@ -379,7 +379,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_json, "json");
 	EmplaceStaticString(ENBISI_yaml, "yaml");
 
-	//formapt opcode params
+	//format opcode params
 	EmplaceStaticString(ENBISI_sort_keys, "sort_keys");
 	EmplaceStaticString(ENBISI_locale, "locale");
 	EmplaceStaticString(ENBISI_timezone, "timezone");

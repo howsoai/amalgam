@@ -232,7 +232,7 @@ public:
 	static constexpr double s_surprisal_of_gaussian = 1.1283791670955126;
 	static constexpr double s_surprisal_of_gaussian_approx = 1.128615528679644;
 
-	//computes the Lukaszyk–Karmowski metric deviation component for the minkowski distance equation given the feature difference and feature deviation
+	//computes the Lukaszyk–Karmowski metric deviation component for the Minkowski distance equation given the feature difference and feature deviation
 	// and adds the deviation to diff. assumes deviation is nonnegative
 	//if surprisal_transform is true, then it will transform the result into surprisal space and remove the appropriate assumption of uncertainty
 	// for Laplace, the Laplace distribution has 1 nat worth of information, but additionally, there is a 50/50 chance that the
@@ -461,7 +461,7 @@ public:
 			return ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
 	}
 
-	//exponentiats and weights the difference term contextually based on pValue
+	//exponentiates and weights the difference term contextually based on pValue
 	//note that it has extra logic to account for extreme values like infinity, negative infinity, and 0
 	__forceinline double ContextuallyExponentiateAndWeightDifferenceTerm(double dist_term, size_t index, bool high_accuracy)
 	{

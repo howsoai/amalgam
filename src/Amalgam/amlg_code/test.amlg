@@ -1,4 +1,25 @@
 ﻿(seq
- (print (tail "abcdef" -10) "\n")
-(print (tail "") "\n")
+
+  (declare (assoc
+		mymap
+			{
+				".f1_rate_1" {
+						auto_derive_on_train {
+								ordered_by_features ["date"]
+							}
+
+					}
+				".f3_rate_1" {
+
+						auto_derive_on_train {
+								ordered_by_features [ @(get (target 5) [".f1_rate_1" "auto_derive_on_train" "ordered_by_features" 0])]
+								
+							}
+
+					}
+			}
+
+	))
+
+	(print mymap)
 )

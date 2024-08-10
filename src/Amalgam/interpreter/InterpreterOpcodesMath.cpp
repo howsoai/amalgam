@@ -483,7 +483,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ROUND(EvaluableNode *en, b
 		//round to the specified number of significant digits or the specified number of digits after the decimal place, whichever is larger
 		double num_significant_digits = InterpretNodeIntoNumberValue(ocn[1]);
 		
-		//assume don't want any digits after decimal (this will be ignored with negitive infinity)
+		//assume don't want any digits after decimal (this will be ignored with negative infinity)
 		double num_digits_after_decimal = std::numeric_limits<double>::infinity();
 		if(num_params > 2)
 			num_digits_after_decimal = InterpretNodeIntoNumberValue(ocn[2]);
@@ -1098,7 +1098,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 	//exponents are affected if we have two distributions specified
 	bool have_q_distribution = false;
 
-	//get second list of propbabilities, q
+	//get second list of probabilities q
 	bool q_is_constant = false;
 	double q_constant_value = 0.0;
 
@@ -1263,7 +1263,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 	//negate
 	accumulated_entropy = -accumulated_entropy;
 
-	//in rare cases where the values in either p or q may not add up exactly to 1 due to floating point percision, and where the values in q
+	//in rare cases where the values in either p or q may not add up exactly to 1 due to floating point precision, and where the values in q
 	//are larger than the values in p, the resulting value may wind up being a tiny negative, but since information gain cannot be negative,
 	//we take the max of the result and 0
 	accumulated_entropy = std::max(0.0, accumulated_entropy);

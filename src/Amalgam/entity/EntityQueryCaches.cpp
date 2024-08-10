@@ -919,7 +919,7 @@ void EntityQueryCaches::GetMatchingEntitiesViaSamplingWithReplacement(EntityQuer
 EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Entity *container,
 	std::vector<EntityQueryCondition> &conditions, EvaluableNodeManager *enm, bool return_query_value)
 {
-	//get the label existance cache associated with this container
+	//get the cache associated with this container
 	// use the first condition as an heuristic for building it if it doesn't exist
 	EntityQueryCaches *entity_caches = container->GetQueryCaches();
 

@@ -761,7 +761,7 @@ EvaluableNode *Interpreter::RewriteByFunction(EvaluableNodeReference function, E
 	}
 
 	EvaluableNodeReference result = InterpretNode(function);
-	//reuse the existing node since it has already been deepcopied
+	//reuse the existing node since it has already been deep copied
 	n->CopyValueFrom(result);
 
 	return result;

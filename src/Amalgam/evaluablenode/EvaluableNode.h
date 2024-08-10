@@ -112,7 +112,7 @@ public:
 		}
 	}
 
-	constexpr void InitializeType(double number_value)
+	inline void InitializeType(double number_value)
 	{
 		attributes.allAttributes = 0;
 		if(FastIsNaN(number_value))
@@ -345,7 +345,7 @@ public:
 		return DoesEvaluableNodeTypeUseNumberData(GetType());
 	}
 
-	//Converts a number to a string in a consistent way that should be used for anything dealing with EvaulableNode
+	//Converts a number to a string in a consistent way that should be used for anything dealing with EvaluableNode
 	static __forceinline std::string NumberToString(double value)
 	{
 		return StringManipulation::NumberToString(value);
@@ -640,7 +640,7 @@ public:
 	//using ordered or mapped child nodes as appropriate, transforms into numeric values and passes into store_value
 	// if node is mapped child nodes, it will use element_names to order populate out and use default_value if any given id is not found
 	//will use num_expected_elements for immediate values
-	//store_nomeric_value takes in 3 parameters, the index, a bool if the value was found, and the EvaluableNode of the value
+	//store_value takes in 3 parameters, the index, a bool if the value was found, and the EvaluableNode of the value
 	template<typename StoreValueFunction = void(size_t, bool, EvaluableNode *)>
 	static inline void ConvertChildNodesAndStoreValue(EvaluableNode *node, std::vector<StringInternPool::StringID> &element_names,
 		size_t num_expected_elements, StoreValueFunction store_value)
@@ -806,6 +806,35 @@ public:
 		return value.stringValueContainer.labelStringID;
 	}
 
+	//registers and unregisters an EvaluableNode for debug watching
+	static inline void RegisterEvaluableNodeForDebugWatch(EvaluableNode *en)
+	{
+	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+		Concurrency::SingleLock lock(debugWatchMutex);
+	#endif
+		debugWatch.emplace(en);
+	}
+
+	static inline void UnregisterEvaluableNodeForDebugWatch(EvaluableNode *en)
+	{
+	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+		Concurrency::SingleLock lock(debugWatchMutex);
+	#endif
+		debugWatch.erase(en);
+	}
+
+	//returns true if the EvaluableNode is in the debug watch
+	static inline void AssertIfInDebugWatch(EvaluableNode *en)
+	{
+	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+		Concurrency::SingleLock lock(debugWatchMutex);
+	#endif
+		if(debugWatch.find(en) != end(debugWatch))
+		{
+			assert(false);
+		}
+	}
+
 protected:
 
 	//align to the nearest 2-bytes to minimize alignment issues but reduce the overall memory footprint
@@ -941,6 +970,12 @@ protected:
 	static std::vector<StringInternPool::StringID> emptyStringIdVector;
 	static std::vector<EvaluableNode *> emptyOrderedChildNodes;
 	static AssocType emptyMappedChildNodes;
+
+	//field for watching EvaluableNodes for debugging
+	static FastHashSet<EvaluableNode *> debugWatch;
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	static Concurrency::SingleMutex debugWatchMutex;
+#endif
 };
 
 //EvaluableNode type upper taxonomy for determining the most generic way

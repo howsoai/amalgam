@@ -93,7 +93,7 @@ public:
 		{
 			codeIndices.insert(index);
 
-			//find the entities that have the correspending size; if the size doesn't exist, create it
+			//find the entities that have the corresponding size; if the size doesn't exist, create it
 			size_t code_size = EvaluableNode::GetDeepSize(value.code);
 
 			auto [size_entry, inserted] = valueCodeSizeToIndices.emplace(code_size, nullptr);
@@ -532,7 +532,7 @@ public:
 		{
 			codeIndices.erase(index);
 
-			//find the entities that have the correspending size
+			//find the entities that have the corresponding size
 			size_t num_indices = EvaluableNode::GetDeepSize(value.code);
 			auto id_entry = valueCodeSizeToIndices.find(num_indices);
 			if(id_entry == end(valueCodeSizeToIndices))
@@ -672,7 +672,7 @@ public:
 		//value_type == ENIVT_CODE
 		codeIndices.insert(index);
 
-		//find the entities that have the correspending size; if the size doesn't exist, create it
+		//find the entities that have the corresponding size; if the size doesn't exist, create it
 		size_t code_size = EvaluableNode::GetDeepSize(value.code);
 
 		auto [size_entry, inserted] = valueCodeSizeToIndices.emplace(code_size, nullptr);

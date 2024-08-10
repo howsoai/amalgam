@@ -116,7 +116,7 @@ EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(Evaluabl
 						//advance type to child node type
 						cur_type = child_node_type;
 					}
-					else //set the appropritae child node
+					else //set the appropriate child node
 					{
 						(*ocn_ptr)[num_allocated - 1] = nodes[allocated_index];
 					}
@@ -466,7 +466,7 @@ void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
 	if(tree->IsAssociativeArray())
 	{
 		//pull the mapped child nodes out of the tree before invalidating it
-		//need to invalidate before call child nodes to prevent infinite recrusion loop
+		//need to invalidate before call child nodes to prevent infinite recursion loop
 		EvaluableNode::AssocType mcn;
 		auto &tree_mcn = tree->GetMappedChildNodesReference();
 		std::swap(mcn, tree_mcn);
@@ -488,7 +488,7 @@ void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
 	else //ordered
 	{
 		//pull the ordered child nodes out of the tree before invalidating it
-		//need to invalidate before call child nodes to prevent infinite recrusion loop
+		//need to invalidate before call child nodes to prevent infinite recursion loop
 		std::vector<EvaluableNode *> ocn;
 		auto &tree_ocn = tree->GetOrderedChildNodesReference();
 		std::swap(ocn, tree_ocn);
@@ -621,7 +621,7 @@ size_t EvaluableNodeManager::GetEstimatedTotalUsedSizeInBytes()
 }
 
 void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(EvaluableNode *en,
-	EvaluableNodeManager *ensure_nodes_in_enm)
+	EvaluableNodeManager *ensure_nodes_in_enm, bool check_cycle_flag_consistency)
 {
 	if(en == nullptr)
 		return;
@@ -640,11 +640,11 @@ void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(EvaluableNod
 				existing_nodes.insert(ensure_nodes_in_enm->nodes[i]);
 		}
 
-		ValidateEvaluableNodeTreeMemoryIntegrityRecurse(en, checked, &existing_nodes);
+		ValidateEvaluableNodeTreeMemoryIntegrityRecurse(en, checked, &existing_nodes, check_cycle_flag_consistency);
 	}
 	else
 	{
-		ValidateEvaluableNodeTreeMemoryIntegrityRecurse(en, checked, nullptr);
+		ValidateEvaluableNodeTreeMemoryIntegrityRecurse(en, checked, nullptr, check_cycle_flag_consistency);
 	}
 }
 
@@ -920,7 +920,8 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 	}
 	else //this node has already been checked
 	{
-		//climb back up to top setting cycle checks needed
+		//climb back up to top setting cycle checks needed,
+		//starting with tree's parent node
 		EvaluableNode *cur_node = existing_record->second;
 		while(cur_node != nullptr)
 		{
@@ -931,15 +932,18 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 			cur_node->SetNeedCycleCheck(true);
 
 			auto parent_record = checked_to_parent.find(cur_node);
-			if(parent_record != end(checked_to_parent))
-				cur_node = parent_record->second;
-			else //shouldn't make it here
-				break;
+			if(parent_record == end(checked_to_parent))
+			{
+				assert(false);
+			}
+
+			cur_node = parent_record->second;
 		}
 		return std::make_pair(true, tree->GetIsIdempotent());
 	}
 
 	bool is_idempotent = (IsEvaluableNodeTypePotentiallyIdempotent(tree->GetType()) && (tree->GetNumLabels() == 0));
+	tree->SetIsIdempotent(is_idempotent);
 	
 	if(tree->IsAssociativeArray())
 	{
@@ -960,8 +964,10 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 				is_idempotent = false;
 		}
 
-		tree->SetNeedCycleCheck(need_cycle_check);
-		tree->SetIsIdempotent(is_idempotent);
+		if(need_cycle_check)
+			tree->SetNeedCycleCheck(need_cycle_check);
+		if(!is_idempotent)
+			tree->SetIsIdempotent(is_idempotent);
 		return std::make_pair(need_cycle_check, is_idempotent);
 	}
 	else if(!tree->IsImmediate())
@@ -983,14 +989,15 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 				is_idempotent = false;
 		}
 
-		tree->SetNeedCycleCheck(need_cycle_check);
-		tree->SetIsIdempotent(is_idempotent);
+		if(need_cycle_check)
+			tree->SetNeedCycleCheck(need_cycle_check);
+		if(!is_idempotent)
+			tree->SetIsIdempotent(is_idempotent);
 		return std::make_pair(need_cycle_check, is_idempotent);
 	}
 	else //immediate value
 	{
 		tree->SetIsIdempotent(is_idempotent);
-		tree->SetNeedCycleCheck(false);
 		return std::make_pair(false, is_idempotent);
 	}
 }
@@ -1043,8 +1050,9 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUseRecurseConcurrent(Evaluabl
 }
 #endif
 
-std::pair<bool, bool> EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrityRecurse(EvaluableNode *en,
-	EvaluableNode::ReferenceSetType &checked, FastHashSet<EvaluableNode *> *existing_nodes)
+std::pair<bool, bool> EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrityRecurse(
+	EvaluableNode *en, EvaluableNode::ReferenceSetType &checked,
+	FastHashSet<EvaluableNode *> *existing_nodes, bool check_cycle_flag_consistency)
 {
 	auto [_, inserted] = checked.insert(en);
 	//can't assume that, just because something was inserted before,
@@ -1071,7 +1079,8 @@ std::pair<bool, bool> EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryInteg
 				continue;
 
 			auto [node_cycle_free, node_idempotent]
-				= ValidateEvaluableNodeTreeMemoryIntegrityRecurse(cn, checked, existing_nodes);
+				= ValidateEvaluableNodeTreeMemoryIntegrityRecurse(cn, checked,
+					existing_nodes, check_cycle_flag_consistency);
 			if(!node_cycle_free)
 				child_nodes_cycle_free = false;
 			if(!child_nodes_idempotent)
@@ -1086,7 +1095,8 @@ std::pair<bool, bool> EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryInteg
 				continue;
 
 			auto [node_cycle_free, node_idempotent]
-				= ValidateEvaluableNodeTreeMemoryIntegrityRecurse(cn, checked, existing_nodes);
+				= ValidateEvaluableNodeTreeMemoryIntegrityRecurse(cn, checked,
+					existing_nodes, check_cycle_flag_consistency);
 			if(!node_cycle_free)
 				child_nodes_cycle_free = false;
 			if(!child_nodes_idempotent)
@@ -1097,7 +1107,7 @@ std::pair<bool, bool> EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryInteg
 	if(!child_nodes_idempotent && en->GetIsIdempotent())
 		assert(false);
 
-	if(!child_nodes_cycle_free && !en->GetNeedCycleCheck())
+	if(check_cycle_flag_consistency && !child_nodes_cycle_free && !en->GetNeedCycleCheck())
 		assert(false);
 
 	return std::make_pair(!en->GetNeedCycleCheck(), en->GetIsIdempotent());

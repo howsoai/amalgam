@@ -576,6 +576,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 		else //just set up empty assoc
 		{
 			InitMappedChildNodes();
+			SetNeedCycleCheck(false);
 		}
 	}
 	else //ordered pairs
@@ -603,13 +604,11 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 		else //just set up empty ordered
 		{
 			InitOrderedChildNodes();
+			SetNeedCycleCheck(false);
 		}
 	}
 
 	type = new_type;
-
-	//cleared child nodes, so no cycles
-	SetNeedCycleCheck(false);
 
 	//put the extra label back on if exists (already have the reference)
 	if(extra_label != StringInternPool::NOT_A_STRING_ID)

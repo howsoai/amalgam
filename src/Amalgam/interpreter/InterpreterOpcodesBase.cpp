@@ -1164,7 +1164,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET(EvaluableNode *en, boo
 	}
 
 	//if one or fewer child nodes, the append function will have set the appropriate cycle check flag,
-	// but if two or more nodes, then there colud be duplicate nodes
+	// but if two or more nodes, then there could be duplicate nodes
 	if(retrieved_list->GetNumChildNodes() > 1)
 		retrieved_list->SetNeedCycleCheck(true);
 
@@ -1899,7 +1899,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEIGHTED_RAND(EvaluableNod
 	}
 
 	auto &mcn = param->GetMappedChildNodes();
-	//if generating many values with weighted probabilites, use fast method
+	//if generating many values with weighted probabilities, use fast method
 	if(mcn.size() > 0 && (number_to_generate > 10 || (number_to_generate > 3 && mcn.size() > 200)))
 	{
 		WeightedDiscreteRandomStreamTransform<StringInternPool::StringID,

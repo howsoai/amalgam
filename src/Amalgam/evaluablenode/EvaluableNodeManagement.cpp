@@ -960,8 +960,10 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 				is_idempotent = false;
 		}
 
-		tree->SetNeedCycleCheck(need_cycle_check);
-		tree->SetIsIdempotent(is_idempotent);
+		if(need_cycle_check)
+			tree->SetNeedCycleCheck(need_cycle_check);
+		if(!is_idempotent)
+			tree->SetIsIdempotent(is_idempotent);
 		return std::make_pair(need_cycle_check, is_idempotent);
 	}
 	else if(!tree->IsImmediate())
@@ -983,14 +985,15 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 				is_idempotent = false;
 		}
 
-		tree->SetNeedCycleCheck(need_cycle_check);
-		tree->SetIsIdempotent(is_idempotent);
+		if(need_cycle_check)
+			tree->SetNeedCycleCheck(need_cycle_check);
+		if(!is_idempotent)
+			tree->SetIsIdempotent(is_idempotent);
 		return std::make_pair(need_cycle_check, is_idempotent);
 	}
 	else //immediate value
 	{
 		tree->SetIsIdempotent(is_idempotent);
-		tree->SetNeedCycleCheck(false);
 		return std::make_pair(false, is_idempotent);
 	}
 }

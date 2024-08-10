@@ -10,6 +10,20 @@
 #include <cctype>
 #include <iomanip>
 
+double EvaluableNode::zeroNumberValue = 0.0;
+std::string EvaluableNode::emptyStringValue = "";
+EvaluableNode *EvaluableNode::emptyEvaluableNodeNullptr = nullptr;
+std::vector<std::string> EvaluableNode::emptyStringVector;
+std::vector<StringInternPool::StringID> EvaluableNode::emptyStringIdVector;
+std::vector<EvaluableNode *> EvaluableNode::emptyOrderedChildNodes;
+EvaluableNode::AssocType EvaluableNode::emptyMappedChildNodes;
+
+//field for watching EvaluableNodes for debugging
+FastHashSet<EvaluableNode *> EvaluableNode::debugWatch;
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+Concurrency::SingleMutex EvaluableNode::debugWatchMutex;
+#endif
+
 void EvaluableNode::GetNodeCommonAndUniqueLabelCounts(EvaluableNode *n1, EvaluableNode *n2, size_t &num_common_labels, size_t &num_unique_labels)
 {
 	num_common_labels = 0;
@@ -1825,11 +1839,3 @@ size_t EvaluableNode::GetDeepSizeNoCycleRecurse(EvaluableNode *n)
 
 	return size;
 }
-
-double EvaluableNode::zeroNumberValue = 0.0;
-std::string EvaluableNode::emptyStringValue = "";
-EvaluableNode *EvaluableNode::emptyEvaluableNodeNullptr = nullptr;
-std::vector<std::string> EvaluableNode::emptyStringVector;
-std::vector<StringInternPool::StringID> EvaluableNode::emptyStringIdVector;
-std::vector<EvaluableNode *> EvaluableNode::emptyOrderedChildNodes;
-EvaluableNode::AssocType EvaluableNode::emptyMappedChildNodes;

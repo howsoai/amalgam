@@ -112,7 +112,7 @@ public:
 		}
 	}
 
-	constexpr void InitializeType(double number_value)
+	inline void InitializeType(double number_value)
 	{
 		attributes.allAttributes = 0;
 		if(FastIsNaN(number_value))
@@ -806,6 +806,35 @@ public:
 		return value.stringValueContainer.labelStringID;
 	}
 
+	//registers and unregisters an EvaluableNode for debug watching
+	static inline void RegisterEvaluableNodeForDebugWatch(EvaluableNode *en)
+	{
+	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+		Concurrency::SingleLock lock(debugWatchMutex);
+	#endif
+		debugWatch.emplace(en);
+	}
+
+	static inline void UnregisterEvaluableNodeForDebugWatch(EvaluableNode *en)
+	{
+	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+		Concurrency::SingleLock lock(debugWatchMutex);
+	#endif
+		debugWatch.erase(en);
+	}
+
+	//returns true if the EvaluableNode is in the debug watch
+	static inline void AssertIfInDebugWatch(EvaluableNode *en)
+	{
+	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+		Concurrency::SingleLock lock(debugWatchMutex);
+	#endif
+		if(debugWatch.find(en) != end(debugWatch))
+		{
+			assert(false);
+		}
+	}
+
 protected:
 
 	//align to the nearest 2-bytes to minimize alignment issues but reduce the overall memory footprint
@@ -941,6 +970,12 @@ protected:
 	static std::vector<StringInternPool::StringID> emptyStringIdVector;
 	static std::vector<EvaluableNode *> emptyOrderedChildNodes;
 	static AssocType emptyMappedChildNodes;
+
+	//field for watching EvaluableNodes for debugging
+	static FastHashSet<EvaluableNode *> debugWatch;
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	static Concurrency::SingleMutex debugWatchMutex;
+#endif
 };
 
 //EvaluableNode type upper taxonomy for determining the most generic way

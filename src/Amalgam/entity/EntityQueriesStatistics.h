@@ -337,7 +337,7 @@ public:
 		{
 			const auto &[curr_value, curr_weight] = value_weights[i];
 
-			//calculuate cdf term
+			//calculate cdf term
 			double cdf_term = 0.0;
 			accum_weight += value_weights[i].second;
 			cdf_term += accum_weight - 0.5 * value_weights[i].second;
@@ -507,7 +507,7 @@ public:
 					}
 				}
 
-				//can divide at the end because multiplication is associative and communative
+				//can divide at the end because multiplication is associative and commutative
 				mean /= weights_sum;
 			}
 			else if(p_value == 2.0) // root mean square (quadratic)
@@ -530,7 +530,7 @@ public:
 					}
 				}
 
-				//can divide at the end because multiplication is associative and communative
+				//can divide at the end because multiplication is associative and commutative
 				mean /= weights_sum;
 				if(!calculate_moment)
 					mean = std::sqrt(mean);
@@ -589,7 +589,7 @@ public:
 					}
 				}
 
-				//can divide at the end because multiplication is associative and communative
+				//can divide at the end because multiplication is associative and commutative
 				mean /= weights_sum;
 				if(!calculate_moment)
 					mean = (1.0 / mean);
@@ -613,7 +613,7 @@ public:
 					}
 				}
 
-				//can divide at the end because multiplication is associative and communative
+				//can divide at the end because multiplication is associative and commutative
 				mean /= weights_sum;
 				if(!calculate_moment)
 					mean = std::pow(mean, 1.0 / p_value);

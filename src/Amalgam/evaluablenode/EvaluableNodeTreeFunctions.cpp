@@ -297,7 +297,7 @@ EvaluableNode **GetRelativeEvaluableNodeFromTraversalPathList(EvaluableNode **so
 	EvaluableNode **destination = source;
 	for(size_t i = 0; i < num_index_path_nodes; i++)
 	{
-		//make sure valid and traversible, since at least one more address will be dereferenced
+		//make sure valid and traversable, since at least one more address will be dereferenced
 		if(destination == nullptr)
 			break;
 
@@ -432,7 +432,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 	bool result_need_cycle_check = value_destination_node->GetNeedCycleCheck();
 	if(!variable_value_node.unique || (variable_value_node != nullptr && variable_value_node->GetNeedCycleCheck()))
 		result_need_cycle_check = true;
-	bool result_idempontent = (value_destination_node->GetIsIdempotent() && (variable_value_node == nullptr || variable_value_node->GetIsIdempotent()));
+	bool result_idempotent = (value_destination_node->GetIsIdempotent() && (variable_value_node == nullptr || variable_value_node->GetIsIdempotent()));
 
 	//if the value is unique, then can just edit in place
 	if(value_destination_node.unique)
@@ -470,7 +470,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 			enm->FreeNodeIfPossible(variable_value_node);
 
 			value_destination_node->SetNeedCycleCheck(result_need_cycle_check);
-			value_destination_node->SetIsIdempotent(result_idempontent);
+			value_destination_node->SetIsIdempotent(result_idempotent);
 			value_destination_node.unique = result_unique;
 		}
 		else if(value_destination_node->GetType() == ENT_STRING)
@@ -514,7 +514,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 			}
 
 			value_destination_node->SetNeedCycleCheck(result_need_cycle_check);
-			value_destination_node->SetIsIdempotent(result_idempontent);
+			value_destination_node->SetIsIdempotent(result_idempotent);
 			value_destination_node.unique = result_unique;
 		}
 
@@ -551,7 +551,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 
 		value_destination_node.SetReference(new_list, result_unique);
 		value_destination_node->SetNeedCycleCheck(result_need_cycle_check);
-		value_destination_node->SetIsIdempotent(result_idempontent);
+		value_destination_node->SetIsIdempotent(result_idempotent);
 	}
 	else if(value_destination_node->GetType() == ENT_STRING)
 	{
@@ -595,7 +595,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 
 		value_destination_node.SetReference(new_list, result_unique);
 		value_destination_node->SetNeedCycleCheck(result_need_cycle_check);
-		value_destination_node->SetIsIdempotent(result_idempontent);
+		value_destination_node->SetIsIdempotent(result_idempotent);
 	}
 
 	return value_destination_node;

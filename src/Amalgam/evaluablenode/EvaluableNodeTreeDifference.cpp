@@ -107,7 +107,7 @@ EvaluableNode *EvaluableNodeTreeDifference::DifferenceTrees(EvaluableNodeManager
 			EvaluableNode *path_to_replace = GetTraversalPathListFromAToB(enm, tree1_to_parent_node, merged_to_tree1_node[anded_trees], merged_to_tree1_node[node_to_replace]);
 			df_replace->AppendOrderedChildNode(path_to_replace);
 		}
-		else //pointing to top-most node, so leave list accsess blank
+		else //pointing to top-most node, so leave list access blank
 			df_replace->AppendOrderedChildNode(enm->AllocNode(ENT_LIST));
 
 		EvaluableNode *replacement_function = enm->AllocNode(ENT_LAMBDA);

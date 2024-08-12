@@ -193,7 +193,7 @@ public:
 
 		//get the reference count before decrement
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		//make sure have a readlock first so that the idToStringAndRefCount vector heap location doesn't change
+		//make sure have a read lock first so that the idToStringAndRefCount vector heap location doesn't change
 		Concurrency::ReadLock lock(sharedMutex);
 	#endif
 

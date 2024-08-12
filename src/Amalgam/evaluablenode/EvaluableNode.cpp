@@ -10,6 +10,20 @@
 #include <cctype>
 #include <iomanip>
 
+double EvaluableNode::zeroNumberValue = 0.0;
+std::string EvaluableNode::emptyStringValue = "";
+EvaluableNode *EvaluableNode::emptyEvaluableNodeNullptr = nullptr;
+std::vector<std::string> EvaluableNode::emptyStringVector;
+std::vector<StringInternPool::StringID> EvaluableNode::emptyStringIdVector;
+std::vector<EvaluableNode *> EvaluableNode::emptyOrderedChildNodes;
+EvaluableNode::AssocType EvaluableNode::emptyMappedChildNodes;
+
+//field for watching EvaluableNodes for debugging
+FastHashSet<EvaluableNode *> EvaluableNode::debugWatch;
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+Concurrency::SingleMutex EvaluableNode::debugWatchMutex;
+#endif
+
 void EvaluableNode::GetNodeCommonAndUniqueLabelCounts(EvaluableNode *n1, EvaluableNode *n2, size_t &num_common_labels, size_t &num_unique_labels)
 {
 	num_common_labels = 0;
@@ -576,6 +590,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 		else //just set up empty assoc
 		{
 			InitMappedChildNodes();
+			SetNeedCycleCheck(false);
 		}
 	}
 	else //ordered pairs
@@ -603,13 +618,11 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 		else //just set up empty ordered
 		{
 			InitOrderedChildNodes();
+			SetNeedCycleCheck(false);
 		}
 	}
 
 	type = new_type;
-
-	//cleared child nodes, so no cycles
-	SetNeedCycleCheck(false);
 
 	//put the extra label back on if exists (already have the reference)
 	if(extra_label != StringInternPool::NOT_A_STRING_ID)
@@ -1826,11 +1839,3 @@ size_t EvaluableNode::GetDeepSizeNoCycleRecurse(EvaluableNode *n)
 
 	return size;
 }
-
-double EvaluableNode::zeroNumberValue = 0.0;
-std::string EvaluableNode::emptyStringValue = "";
-EvaluableNode *EvaluableNode::emptyEvaluableNodeNullptr = nullptr;
-std::vector<std::string> EvaluableNode::emptyStringVector;
-std::vector<StringInternPool::StringID> EvaluableNode::emptyStringIdVector;
-std::vector<EvaluableNode *> EvaluableNode::emptyOrderedChildNodes;
-EvaluableNode::AssocType EvaluableNode::emptyMappedChildNodes;

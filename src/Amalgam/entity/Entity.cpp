@@ -418,7 +418,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 		EntityQueryCaches *container_caches = GetContainerQueryCaches();
 		if(direct_set)
 		{
-			//direct assigments need a rebuild of the index just in case a label collision occurs -- will update node flags if needed
+			//direct assignments need a rebuild of the index just in case a label collision occurs -- will update node flags if needed
 			RebuildLabelIndex();
 			if(container_caches != nullptr)
 				container_caches->UpdateAllEntityLabels(this, GetEntityIndexOfContainer());

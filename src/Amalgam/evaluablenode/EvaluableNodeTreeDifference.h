@@ -38,7 +38,7 @@ protected:
 
 	//given a set of nodes to be included (nodes_included, with the values being their matching original tree counterparts),
 	// will traverse tree to find the topmost nodes excluded (top_nodes_excluded, with the values being their matching original tree counterparts) which is the parent of all of the subtrees that will be excluded
-	// adds any nodes encountered to references_with_parets, as to be used for finding the paths to any of the nodes for creation and deletion
+	// adds any nodes encountered to references_with_parents, as to be used for finding the paths to any of the nodes for creation and deletion
 	static void FindTopNodesExcluded(EvaluableNode *tree, EvaluableNode::ReferenceAssocType &nodes_included,
 		std::vector<EvaluableNode *> &top_nodes_excluded, EvaluableNode::ReferenceAssocType &references_with_parents, EvaluableNode *parent = nullptr);
 };

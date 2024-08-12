@@ -664,7 +664,7 @@ public:
 	//frees all nodes
 	void FreeAllNodes();
 
-	//frees the entire tree in the respective ways for the corresponding permanance types allowed
+	//frees the entire tree in the respective ways for the corresponding permanence types allowed
 	inline void FreeNodeTree(EvaluableNode *en)
 	{
 		if(en == nullptr)
@@ -743,7 +743,7 @@ public:
 
 	//adds the node to nodes referenced
 	//if called within multithreading, GetNodeReferenceUpdateLock() needs to be called
-	//to obtain a lock around all calls to this methed
+	//to obtain a lock around all calls to this method
 	template<typename ...EvaluableNodeReferenceType>
 	inline void KeepNodeReferences(EvaluableNodeReferenceType... nodes)
 	{
@@ -758,7 +758,7 @@ public:
 
 	//removes the node from nodes referenced
 	//if called within multithreading, GetNodeReferenceUpdateLock() needs to be called
-	//to obtain a lock around all calls to this methed
+	//to obtain a lock around all calls to this method
 	template<typename ...EvaluableNodeReferenceType>
 	void FreeNodeReferences(EvaluableNodeReferenceType... nodes)
 	{
@@ -773,7 +773,7 @@ public:
 
 	//removes the node from nodes referenced
 	//if called within multithreading, GetNodeReferenceUpdateLock() needs to be called
-	//to obtain a lock around all calls to this methed
+	//to obtain a lock around all calls to this method
 	template<typename NodeType>
 	void FreeNodeReferences(std::vector<NodeType> &nodes)
 	{
@@ -858,9 +858,14 @@ public:
 		// however, this should be rarely called on those entities since it's basically clearing them out, so it should not generally be a performance issue
 		auto location = std::find(begin(nodes), begin(nodes) + firstUnusedNodeIndex, new_root);
 
+		if(location == end(nodes))
+		{
+			assert(false);
+			return;
+		}
+
 		//put the new root in the proper place
-		if(location != end(nodes))
-			std::swap(*begin(nodes), *location);
+		std::swap(*begin(nodes), *location);
 	}
 
 	//returns true if any node is referenced other than root, which is an indication if there are
@@ -889,10 +894,13 @@ public:
 
 	//makes sure that the evaluable node and everything referenced by it has not been deallocated
 	// if ensure_nodes_in_enm is passed in, it will ensure all nodes are contained within this EvaluableNodeManager
-	//asserts an error if it finds any
+	// if check_cycle_flag_consistency is set, it will ensure that all cycle flags are consistent
+	// note that for stacks that are not accessible, it may be acceptable to not have cycle flags be consistent for
+	// data unreachable by execution
+	//asserts an error if it finds any issues
 	//intended for debugging only
 	static void ValidateEvaluableNodeTreeMemoryIntegrity(EvaluableNode *en,
-		EvaluableNodeManager *ensure_nodes_in_enm = nullptr);
+		EvaluableNodeManager *ensure_nodes_in_enm = nullptr, bool check_cycle_flag_consistency = true);
 
 	//when numNodesToRunGarbageCollection are allocated, then it is time to run garbage collection
 	size_t numNodesToRunGarbageCollection;
@@ -902,7 +910,7 @@ protected:
 	// returns an uninitialized EvaluableNode -- care must be taken to set fields properly
 	EvaluableNode *AllocUninitializedNode();
 
-	//frees everything execpt those nodes referenced by nodesCurrentlyReferenced
+	//frees everything except those nodes referenced by nodesCurrentlyReferenced
 	//cur_first_unused_node_index represents the first unused index and will set firstUnusedNodeIndex
 	//to the reduced value
 	//note that this method does not read from firstUnusedNodeIndex, as it may be cleared to indicate threads
@@ -961,8 +969,9 @@ protected:
 
 	//helper method for ValidateEvaluableNodeTreeMemoryIntegrity
 	//returns a tuple of whether it is cycle free and whether it is idempotent
-	static std::pair<bool, bool> ValidateEvaluableNodeTreeMemoryIntegrityRecurse(EvaluableNode *en,
-		EvaluableNode::ReferenceSetType &checked, FastHashSet<EvaluableNode *> *existing_nodes);
+	static std::pair<bool, bool> ValidateEvaluableNodeTreeMemoryIntegrityRecurse(
+		EvaluableNode *en, EvaluableNode::ReferenceSetType &checked,
+		FastHashSet<EvaluableNode *> *existing_nodes, bool check_cycle_flag_consistency);
 
 #ifdef MULTITHREAD_SUPPORT
 	//mutex to manage attributes of manager, including operations such as

@@ -162,7 +162,7 @@ public:
 	// sets up all of the stack and contextual structures, then calls InterpretNode on en
 	//if call_stack, interpreter_node_stack, or construction_stack are nullptr, it will start with a new one
 	//note that construction_stack and construction_stack_indices should be specified together and should be the same length
-	//if immediate_resultis true, then the returned value may be immediate
+	//if immediate_result is true, then the returned value may be immediate
 #ifdef MULTITHREAD_SUPPORT
 	//if run multithreaded, then for performance reasons, it is optimal to have one of each stack per thread
 	// and call_stack_write_mutex is the mutex needed to lock for writing
@@ -493,13 +493,13 @@ public:
 	//like InterpretNodeIntoStringValue, but creates a reference to the string that must be destroyed, regardless of whether the string existed or not (if it did not exist, then it creates one)
 	StringInternPool::StringID InterpretNodeIntoStringIDValueWithReference(EvaluableNode *n);
 
-	//Calls InterpnetNode on n, convers to a string, and makes sure that the node returned is new and unique so that it can be modified
+	//Calls InterpretNode on n, convers to a string, and makes sure that the node returned is new and unique so that it can be modified
 	EvaluableNodeReference InterpretNodeIntoUniqueStringIDValueEvaluableNode(EvaluableNode *n);
 
 	//Calls InterpretNode on n, converts to double and returns, then cleans up any resources used
 	double InterpretNodeIntoNumberValue(EvaluableNode *n);
 
-	//Calls InterpnetNode on n, convers to a double, and makes sure that the node returned is new and unique so that it can be modified
+	//Calls InterpretNode on n, convers to a double, and makes sure that the node returned is new and unique so that it can be modified
 	EvaluableNodeReference InterpretNodeIntoUniqueNumberValueEvaluableNode(EvaluableNode *n);
 
 	//Calls InterpretNode on n, converts to boolean and returns, then cleans up any resources used
@@ -507,7 +507,7 @@ public:
 
 	//Calls InterpretNode on n, converts n into a destination for an Entity, relative to curEntity.
 	// If invalid, returns a nullptr for the EntityWriteReference
-	//StringRef is an alocated string reference, and the caller is responsible for freeing it
+	//StringRef is an allocated string reference, and the caller is responsible for freeing it
 	std::pair<EntityWriteReference, StringRef> InterpretNodeIntoDestinationEntity(EvaluableNode *n);
 
 	//traverses source based on traversal path list tpl
@@ -900,7 +900,9 @@ protected:
 		if(!performanceConstraints->constrainMaxContainedEntities && !performanceConstraints->constrainMaxContainedEntityDepth)
 			return true;
 
-		auto erbr = performanceConstraints->entityToConstrainFrom->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>();
+		auto erbr
+			= performanceConstraints->entityToConstrainFrom->GetAllDeeplyContainedEntityReferencesGroupedByDepth<
+			EntityReadReference>(true, destination_container);
 
 		if(performanceConstraints->constrainMaxContainedEntities)
 		{

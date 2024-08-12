@@ -194,7 +194,7 @@ public:
 	virtual bool KeepAllNonMergeableValues() = 0;
 
 	//Returns true if the merge should keep some elements that do not have a corresponding element to merge with
-	//if KeepAllNonMergeableValues retursn true, then this should return true too
+	//if KeepAllNonMergeableValues returns true, then this should return true too
 	virtual bool KeepSomeNonMergeableValues() = 0;
 
 	//Returns true if the merge should keep one of either particular element, a or b, that does not have a corresponding element

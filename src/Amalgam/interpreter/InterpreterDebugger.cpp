@@ -59,10 +59,10 @@ struct InterpreterDebugData
 	//will run until it reaches this label, then it will clear it
 	std::string runUntilLabel = "";
 
-	//will run until it reaches the next occurance of this opcode, then it will clear it
+	//will run until it reaches the next occurrence of this opcode, then it will clear it
 	EvaluableNodeType runUntilOpcodeType = ENT_NOT_A_BUILT_IN_TYPE;
 
-	//will run until this opcode is reached.  should only be used for opcodes that are preserved in the callstack
+	//will run until this opcode is reached.  should only be used for opcodes that are preserved in the call stack
 	EvaluableNode *runUntilOpcode = nullptr;
 
 	//will run until the call stack size is this value
@@ -257,7 +257,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, bool 
 			std::cout << "finish: finish running the program, leaving debug mode, running at full speed" << std::endl;
 			std::cout << "bl label: toggles breakpoint at the label" << std::endl;
 			std::cout << "bn line_number file: toggles breakpoint at the line number for file" << std::endl;
-			std::cout << "bo opcode: toggles breakpoint on all occurances of opcode" << std::endl;
+			std::cout << "bo opcode: toggles breakpoint on all occurrences of opcode" << std::endl;
 			std::cout << "br: lists breakpoints" << std::endl;
 			std::cout << "stack: prints out the stack" << std::endl;
 			std::cout << "entities: prints out the contained entities" << std::endl;

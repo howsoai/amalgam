@@ -1186,6 +1186,7 @@
 
  (print "--assoc--\n")
  (print (assoc b 2 c 3))
+ (print (assoc (null) 3))
 
  (print "--get_type--\n")
  (print (get_type (lambda (+ 3 4))))

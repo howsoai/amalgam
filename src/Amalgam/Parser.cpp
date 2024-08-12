@@ -783,19 +783,25 @@ void Parser::AppendAssocKeyValuePair(UnparseData &upd, StringInternPool::StringI
 		upd.result.push_back(' ');
 	}
 
-	auto key_str = string_intern_pool.GetStringFromID(key_sid);
-
-	//surround in quotes only if needed
-	if(key_sid != string_intern_pool.NOT_A_STRING_ID
-		&& HasCharactersBeyondIdentifier(key_str))
+	if(key_sid == string_intern_pool.NOT_A_STRING_ID)
 	{
-		upd.result.push_back('"');
-		upd.result.append(Backslashify(key_str));
-		upd.result.push_back('"');
+		upd.result.append("(null)");
 	}
 	else
 	{
-		upd.result.append(key_str);
+		auto key_str = string_intern_pool.GetStringFromID(key_sid);
+
+		//surround in quotes only if needed
+		if(HasCharactersBeyondIdentifier(key_str))
+		{
+			upd.result.push_back('"');
+			upd.result.append(Backslashify(key_str));
+			upd.result.push_back('"');
+		}
+		else
+		{
+			upd.result.append(key_str);
+		}
 	}
 
 	//space between key and value

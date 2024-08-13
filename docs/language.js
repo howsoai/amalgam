@@ -5,7 +5,7 @@ var data = [
 		"parameter" : "Token params column text goes here",
 		"output" : "Output column text goes here",
 		"permissions" : "P column text", 	//optional, one of: entity, root_entity, e = entity, r = root_entity
-		"new value" : "N column text", 		//optional, one of: new, conditional, + = new, c = conditional
+		"new value" : "N column text", 		//optional, one of: new, conditional, partial
 		"description" : "Description column text goes here",
 		"example" : ""			//insert this everywhere but leave it blank like so
 	},
@@ -450,7 +450,7 @@ var data = [
 	{
 		"parameter" : "append [list|assoc|* collection1] [list|assoc|* collection2] ... [list|assoc|* collectionN]",
 		"output" : "list|assoc",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "Evaluates to a new list or assoc which merges all lists (collection1 through collectionN) based on parameter order. If any assoc is passed in, then returns an assoc (lists will be automatically converted to an assoc with the indices as keys and the list elements as values). If a non-list and non-assoc is specified, then it just adds that one element to the list",
 		"example" : "(print (append (list 1 2 3) (list 4 5 6) (list 7 8 9)))\n(print (append (list 1 2 3) (assoc \"a\" 4 \"b\" 5 \"c\" 6) (list 7 8 9) (assoc d 10 e 11)))\n(print (append (list 4 9.2 \"this\") \"end\"))\n(print (append (assoc 0 4 1 9.2 2 \"this\") \"end\"))"
 	},
@@ -466,7 +466,7 @@ var data = [
 	{
 		"parameter" : "range [* function] number low_endpoint number high_endpoint [number step_size]",
 		"output" : "list",
-		"new value" : "new",
+		"new value" : "conditional",
 		"concurrency" : true,
 		"new target scope": true,
 		"description" : "Evaluates to a list with the range from low_endpoint to high_endpoint.  The default step_size is 1.  Evaluates to an empty list if the range is not valid.  If four arguments are specified, then the function will be evaluated for each value in the range.",
@@ -485,7 +485,7 @@ var data = [
 	{
 		"parameter" : "map * function [list|assoc collection1] [list|assoc collection2] ... [list|assoc collectionN]",
 		"output" : "list",
-		"new value" : "new",
+		"new value" : "partial",
 		"concurrency" : true,
 		"new target scope": true,
 		"description" : "For each element in the collection, pushes a new target scope onto the stack, so that current_value accesses the element or elements in the list and current_index accesses the list or assoc index, with target representing the outer set of lists or assocs, and evaluates the function.  Returns the list of results, mapping the list via the specified function. If multiple lists or assocs are specified, then it pulls from each list or assoc simultaneously (null if overrun or index does not exist) and (current_value) contains an array of the values in parameter order.  Note that concurrency is only available when one collection is specified.",
@@ -495,7 +495,7 @@ var data = [
 	{
 		"parameter" : "filter [* function] list|assoc collection",
 		"output" : "list|assoc",
-		"new value" : "new",
+		"new value" : "partial",
 		"concurrency" : true,
 		"new target scope": true,
 		"description" : "For each element in the collection, pushes a new target scope onto the stack, so that current_value accesses the element in the list and current_index accesses the list or assoc index, with target representing the original list or assoc, and evaluates the function.  If function evaluates to true, then the element is put in a new list or assoc (matching the input type) that is returned.  If function is omitted, then it will remove any elements in the collection that are null.",
@@ -513,7 +513,7 @@ var data = [
 	{
 		"parameter" : "reduce * function list|assoc collection",
 		"output" : "*",
-		"new value" : "new",
+		"new value" : "conditional",
 		"new target scope": true,
 		"description" : "For each element in the collection after the first one, it evaluates function with a new target scope on the stack where current_value accesses each of the elements from the collection, current_index accesses the list or assoc index, target accesses the original list or assoc, and previous_result accesses the previously reduced result. If the collection is empty, null is returned. if the collection is of size one, the single element is returned.",
 		"example" : "(print (reduce (lambda (* (previous_result) (current_value))) (list 1 2 3 4)))"
@@ -522,7 +522,7 @@ var data = [
 	{
 		"parameter" : "apply * to_apply [list|assoc collection]",
 		"output" : "*",
-		"new value" : "new",
+		"new value" : "conditional",
 		"description" : "Creates a new list of the values of the elements of the collection, applies the type specified by to_apply, which is either the type corresponding to a string or the type of to_apply, and then evaluates it. If to_apply has any parameters, these are prepended to the collection as the first parameters. When no extra parameters are passed, it is roughly equivalent to (call (set_type list \"+\")).",
 		"example" : "(print (apply (lambda (+)) (list 1 2 3 4)))\n(print (apply (lambda (+ 5)) (list 1 2 3 4)) \"\n\")\n(print (apply \"+\" (list 1 2 3 4)))"
 	},
@@ -530,7 +530,7 @@ var data = [
 	{
 		"parameter" : "reverse list l",
 		"output" : "list",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "Returns a new list containing the list with its elements in reversed order.",
 		"example" : "(print (reverse (list 1 2 3 4 5)))"
 	},
@@ -538,7 +538,7 @@ var data = [
 	{
 		"parameter" : "sort [* function] list l [number k]",
 		"output" : "list",
-		"new value" : "new",
+		"new value" : "partial",
 		"new target scope": true,
 		"description" : "Returns a new list containing the list with its elements sorted in increasing order.  Numerical values come before strings, and code will be evaluated as the representative strings.  If function is specified and not null, it pushes a pair of new target scope onto the stack, so that current_value accesses a list of elements to from the list, and current_index accesses the list or assoc index if it is not already reduced, with target representing the original list or assoc, and evaluates function. The function should return a number, positive if \"(current_value)\" is greater, negative if \"(current_value 1)\" is greater, 0 if equal.  If k is specified in addition to function, then it will only return the k smallest values sorted in order, or, if k is negative, it will ignore the negative sign and return the highest k values.",
 		"example" : "(print (sort (list 4 9 3 5 1)))\n(print (sort (list \"n\" \"b\" \"hello\" 4 1 3.2 (list 1 2 3))))\n(print (sort (list 1 \"1x\" \"10\" 20 \"z2\" \"z10\" \"z100\")))\n(print (sort (lambda (- (current_value) (current_value 1))) (list 4 9 3 5 1)))"
@@ -578,7 +578,7 @@ var data = [
 	{
 		"parameter" : "remove list|assoc a number|string|list index",
 		"output" : "list|assoc",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "Removes the index-value pair with index being the index in assoc or index of the list or assoc, returning a new list or assoc with that index removed.  If index is a list of numbers or strings, then it will remove each of the requested indices.  Negative numbered indices will count back from the end of a list.",
 		"example" : "(print (remove (assoc \"a\" 1 \"b\" 2 \"c\" 3 4 \"d\") 4))\n(print (remove (list \"a\" 1 \"b\" 2 \"c\" 3 4 \"d\") 4))\n (print (remove (assoc \"a\" 1 \"b\" 2 \"c\" 3 4 \"d\") (list 4 \"a\") ))"
 	},
@@ -586,7 +586,7 @@ var data = [
 	{
 		"parameter" : "keep list|assoc a number|string|list index",
 		"output" : "list|assoc",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "Keeps only the index-value pair with index being the index in assoc or index of the list or assoc, returning a new list or assoc with that only that index.  If index is a list of numbers or strings, then it will only keep each of the requested indices.  Negative numbered indices will count back from the end of a list.",
 		"example" : "(print (keep (assoc \"a\" 1 \"b\" 2 \"c\" 3 4 \"d\") 4))\n(print (keep (list \"a\" 1 \"b\" 2 \"c\" 3 4 \"d\") 4))\n (print (keep (assoc \"a\" 1 \"b\" 2 \"c\" 3 4 \"d\") (list 4 \"a\") ))"
 	},
@@ -594,7 +594,7 @@ var data = [
 	{
 		"parameter" : "associate [* index1] [* value1] [* index2] [* value2] ... [* indexN] [* valueN]",
 		"output" : "assoc",
-		"new value" : "new",
+		"new value" : "partial",
 		"concurrency" : true,
 		"new target scope": true,
 		"description" : "Evaluates to the assoc, where each pair of parameters (e.g., index1 and value1) comprises a index/value pair. Pushes a new target scope such that (target), (current_index), and (current_value) access the assoc, the current index, and the current value.",
@@ -604,7 +604,7 @@ var data = [
 	{
 		"parameter" : "zip [* function] list indices [* values]",
 		"output" : "assoc",
-		"new value" : "new",
+		"new value" : "partial",
 		"new target scope": true,
 		"description" : "Evaluates to a new assoc where the indices are the keys and the values are the values, with corresponding positions in the list matched. If the values is omitted, then it will use nulls for each of the values.  If values is not a list, then all of the values in the assoc returned are set to the same value.  When one parameter is specified, it is the list of indices.  When two parameters are specified, it is the indices and values.  When three values are specified, it is the function, indices and values.  Values defaults to (null) and function defaults to (lambda (current_value)).  When there is a collision of indices, the function is called, it pushes a pair of new target scope onto the stack, so that current_value accesses a list of elements from the list, current_index accesses the list or assoc index if it is not already reduced, with target representing the original list or assoc, evaluates function if one exists, and (current_value) is the new value attempted to be inserted over (current_value 1).",
 		"example" : "(print (zip (list \"a\" \"b\" \"c\" \"d\") (list 1 2 3 4)))"
@@ -613,7 +613,7 @@ var data = [
 	{
 		"parameter" : "unzip [list|assoc values] list indices",
 		"output" : "list",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "Evaluates to a new list, using the indices list to look up each value from the values list or assoc, in the same order as each index is specified in indices.",
 		"example" : "(print (unzip (assoc \"a\" 1 \"b\" 2 \"c\" 3) (list \"a\" \"b\")))\n(print (unzip (list 1 2 3) (list 0 -1 1)))"
 	},
@@ -695,7 +695,7 @@ var data = [
 	{
 		"parameter" : "and [bool condition1] [bool condition2] ... [bool conditionN]",
 		"output" : "*",
-		"new value" : "c",
+		"new value" : "conditional",
 		"concurrency" : true,
 		"description" : "If all condition expressions are true, evaluates to conditionN. Otherwise evaluates to false.",
 		"example" : "(print (and 1 4.8 \"true\"))\n(print (and 1 0.0 \"true\"))"
@@ -704,7 +704,7 @@ var data = [
 	{
 		"parameter" : "or [bool condition1] [bool condition2] ... [bool conditionN]",
 		"output" : "*",
-		"new value" : "c",
+		"new value" : "conditional",
 		"concurrency" : true,
 		"description" : "If all condition expressions are false, evaluates to false. Otherwise evaluates to the first condition that is true.",
 		"example" : "(print (or 1 4.8 \"true\"))\n(print (or 1 0.0 \"true\"))\n(print (or 0 0.0 \"\"))"
@@ -801,7 +801,7 @@ var data = [
 	{
 		"parameter" : "rand [list|number range] [number number_to_generate] [bool unique]",
 		"output" : "*",
-		"new value" : "new, unless range is a list",
+		"new value" : "conditional, new if range is not a list",
 		"description" : "With no parameters, evaluates to a random number between 0.0 and 1.0.  Each entity has its own random stream, and if called from a sandbox, then it uses a new stream without interrupting the stream of the calling entity. If the parameter is a list, it will uniformly randomly choose and evaluate to one element of the list. If number, it will evaluate to a value greater than or equal to zero and less than the number specified.  If  number_to_generate is specified, it will generate a list of multiple values (even if  number_to_generate is 1).  If unique is true (it defaults to false), then it will only return unique values, the same as selecting from the list or assoc without replacement.",
 		"example" : "(print (rand))\n(print (rand 50))\n(print (rand (list 1 2 4 5 7)))\n(print (rand (range 0 10) 10 (true)) \"\\n\")"
 	},
@@ -864,7 +864,7 @@ var data = [
 	{
 		"parameter" : "list [* node1] [* node2] ... [* nodeN]",
 		"output" : "list of *",
-		"new value" : "new",
+		"new value" : "partial",
 		"concurrency" : true,
 		"new target scope": true,
 		"description" : "Evaluates to the list specified by the parameters.  Pushes a new target scope such that (target), (current_index), and (current_value) access the list, the current index, and the current value.  If []'s are used instead of parenthesis, the keyword list may be omitted.  [] are considered identical to (list).",
@@ -874,7 +874,7 @@ var data = [
 	{
 		"parameter" : "assoc [bstring index1] [* value1] [bstring index1] [* value2] ...",
 		"output" : "assoc",
-		"new value" : "new",
+		"new value" : "partial",
 		"concurrency" : true,
 		"new target scope": true,
 		"description" : "Evaluates to the associative list, where each pair of parameters (e.g., index1 and value1) comprises a index/value pair. Pushes a new target scope such that (target), (current_index), and (current_value) access the assoc, the current index, and the current value.  If any of the bstrings do not have reserved characters or spaces, then quotes are optional; if spaces or reserved characters are present, then quotes are required.  If {}'s are used instead of parenthesis, the keyword assoc may be omitted.  {} are considered identical to (assoc)",
@@ -921,7 +921,7 @@ var data = [
 	{
 		"parameter" : "set_type * node1 [string|* type]",
 		"output" : "*",
-		"new value" : "c",
+		"new value" : "partial",
 		"description" : "Creates a copy of node1, setting the type of the node of to whatever node type is specified by string or to the same type as the top node of type.  It will convert the parameters to or from assoc if necessary.",
 		"example" : "(print (set_type (lambda (+ 3 4)) \"-\"))\n(print (set_type (assoc \"a\" 4 \"b\" 3) \"list\"))\n(print (set_type (assoc \"a\" 4 \"b\" 3) (list)))\n(print (set_type (list \"a\" 4 \"b\" 3) \"assoc\"))\n(print (call (set_type (list 1 0.5 \"3.2\" 4) \"+\")))"
 	},
@@ -952,7 +952,7 @@ var data = [
 	{
 		"parameter" : "set_labels * node (list [string new_label1]...[string new_labelN])",
 		"output" : "*",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "Sets the labels for the node of code. Evaluates to the node represented by the input node.",
 		"example" : "(print (set_labels\n  ( lambda\n   (#labelC true)) (list \"labelD\" \"labelE\")))"
 	},
@@ -960,7 +960,7 @@ var data = [
 	{
 		"parameter" : "zip_labels list labels * to_add_labels",
 		"output" : "*",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "For each of the values in to_add_labels, it takes respective value for labels and applies that string as a label to the respective value, and returns a new set of values with the labels.",
 		"example" : "(print (zip_labels (list \"l1\" \"l2\" \"l3\") (list 1 2 3)))"
 	},
@@ -976,7 +976,7 @@ var data = [
 	{
 		"parameter" : "set_comments * node [string new_comment]",
 		"output" : "*",
-		"new value" : "",
+		"new value" : "partial",
 		"description" : "Sets the comments for the node of code. Evaluates to the node represented by new_comment.",
 		"example" : "(print (set_comments\n  ;this is a comment\n  (lambda ;comment too\n    (true)) \"new comment\"))"
 	},
@@ -992,7 +992,7 @@ var data = [
 	{
 		"parameter" : "set_concurrency * node bool concurrent",
 		"output" : "*",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "Sets whether the node has a preference to be processed in a manner where its operations are run concurrently (and potentially subject to race conditions). Evaluates to the node represented by the input node.",
 		"example" : "(print (set_concurrency (lambda (map foo array)) (true)) \"\n\")"
 	},
@@ -1000,7 +1000,7 @@ var data = [
 	{
 		"parameter" : "get_value * node",
 		"output" : "*",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "Returns just the value portion of node (no labels or comments). Will evaluate to a copy of the value if it is not a unique reference, making it useful to ensure that the copy of the data is unique.",
 		"example" : "(print (get_value\n  ;this is a comment\n  (lambda ;comment too\n    #withalabel (true))))"
 	},
@@ -1008,7 +1008,7 @@ var data = [
 	{
 		"parameter" : "set_value * target * val",
 		"output" : "*",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "Sets target's value to the value of val, keeping existing labels, and comments).",
 		"example" : "(print (set_value\n  ;this is a comment\n  (lambda ;comment too\n    (true)) 3))"
 	},
@@ -1672,6 +1672,7 @@ var data = [
 	{
 		"parameter" : "assign_to_entities [id entity_1] assoc variable_value_pairs_1 [id entity_2] [assoc variable_value_pairs_2] [...]",
 		"output" : "bool",
+		"new value" : "new",
 		"permissions" : "e",
 		"description" : "For each index-value pair of variable_value_pairs, assigns the value to the labeled variable on the contained entity represented by the respective entity, itself if no id specified, while retaining the original labels. If none found, it will not cause an assignment. When the value is assigned, any labels will be cleared out and the root of the value will be assigned the comments and labels of the previous root at the label. Will perform an assignment for each of the entities referenced, returning (true) if all assignments were successful, (false) if not.",
 		"example" : "(null #asgn_test1 12)\n(assign_to_entities (assoc asgn_test1 4))\n(print (retrieve_from_entity \"asgn_test1\"))\n\n"
@@ -1680,6 +1681,7 @@ var data = [
 	{
 		"parameter" : "accum_to_entities [id entity_1] assoc variable_value_pairs_1 [id entity_2] [assoc variable_value_pairs_2] [...]",
 		"output" : "bool",
+		"new value" : "new",
 		"permissions" : "e",
 		"description" : "For each index-value pair of assoc, retrieves the labeled variable from the respective entity, accumulates it by the corresponding value in variable_value_pairs, then assigns the value to the labeled variable on the contained entity represented by the id, itself if no id specified, while retaining the original labels. If none found, it will not cause an assignment. When the value is assigned, any labels will be cleared out and the root of the value will be assigned the comments and labels of the previous root at the label.  Accumulation is performed differently based on the type: for numeric values it adds, for strings, it concatenates, for lists it appends, and for assocs it appends based on the pair. Will perform an accum for each of the entities referenced, returning (true) if all assignments were successful, (false) if not.",
 		"example" : "(null #asgn_test1 12)\n(accum_to_entities (assoc asgn_test1 4))\n(print (retrieve_from_entity \"asgn_test1\"))\n\n"
@@ -1688,6 +1690,7 @@ var data = [
 	{
 		"parameter" : "direct_assign_to_entities [id entity_1] assoc variable_value_pairs_1 [id entity_2] [assoc variable_value_pairs_2] [...]",
 		"output" : "bool",
+		"new value" : "new",
 		"permissions" : "e",
 		"description" : "Like assign_to_entities, except retains any/all labels, comments, etc.",
 		"example" : "(create_entities \"DRFE\" (lambda (null ##a 12)) )\n(print (direct_retrieve_from_entity \"DRFE\" \"a\"))\n(print (direct_assign_to_entities \"DRFE\" (assoc a 7)))\n(print (direct_retrieve_from_entity \"DRFE\" \"a\"))"
@@ -1696,6 +1699,7 @@ var data = [
 	{
 		"parameter" : "retrieve_from_entity [id entity] [string|list|assoc label_names]",
 		"output" : "*",
+		"new value" : "conditional",
 		"permissions" : "e",
 		"description" : "If string specified, returns the value of the contained entity id, itself if no id specified, at the label specified by the string. If list specified, returns the value of the contained entity id, itself if no id specified, returns a list of the values on the stack specified by each element of the list interpreted as a string label. If assoc specified, returns the value of the contained entity id, itself if no id specified, returns an assoc with the indices of the assoc passed in with the values being the appropriate values of the label represented by each index.",
 		"example" : "(null #asgn_test1 12)\n(assign_to_entities (assoc asgn_test1 4))\n(print (retrieve_from_entity \"asgn_test1\"))\n\n(null #asgn_test2 12)\n(assign_to_entities (assoc asgn_test2 4))\n(print (retrieve_from_entity \"asgn_test2\"))\n(create_entities \"RCT\" (lambda (null ##a 12 ##b 13)) )\n(print (retrieve_from_entity \"RCT\" \"a\"))\n(print (retrieve_from_entity \"RCT\" (list \"a\" \"b\") ))\n(print (retrieve_from_entity \"RCT\" (zip (list \"a\" \"b\") null) ))\n"
@@ -1704,6 +1708,7 @@ var data = [
 	{
 		"parameter" : "direct_retrieve_from_entity [id entity] [string|list|assoc label_names]",
 		"output" : "*",
+		"new value" : "conditional",
 		"permissions" : "e",
 		"description" : "Like retrieve_from_entity, except retains labels.",
 		"example" : "(create_entities \"DRFE\" (lambda (null ##a 12)) )\n(print (direct_retrieve_from_entity \"DRFE\" \"a\"))\n(print (direct_assign_to_entities \"DRFE\" (assoc a 7)))\n(print (direct_retrieve_from_entity \"DRFE\" \"a\"))"
@@ -1712,6 +1717,7 @@ var data = [
 	{
 		"parameter" : "call_entity id entity [string label_name] [assoc arguments] [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [number max_contained_entities] [number max_contained_entity_depth] [number max_entity_id_length]",
 		"output" : "*",
+		"new value" : "conditional",
 		"permissions" : "e",
 		"new scope" : true,
 		"description" : "Calls the contained entity specified by id, using the entity as the new entity context.  It will evaluate to the return value of the call, null if not found.  If string is specified, then it will call the label specified by string.  If assoc is specified, then it will pass assoc as the arguments on the scope stack.  If operation_limit is specified, it represents the number of operations that are allowed to be performed. If operation_limit is 0 or infinite, then an infinite of operations will be allotted to the entity, but only if its containing entity (the current entity) has infinite operations. The root entity has infinite computing cycles.  If max_node_allocations is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory.   If max_node_allocations is 0 or infinite, then there is no limit to the number of nodes to be allotted to the entity as long as the machine has sufficient memory, but only if the containing entity (the current entity) has unlimited memory access.  If max_opcode_execution_depth is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise max_opcode_execution_depth limits how deep nested opcodes will be called.  The parameters max_contained_entities, max_contained_entity_depth, and max_entity_id_length constrain what they describe, and are primarily useful when ensuring that an entity and all its contained entities can be stored out to the filesystem.  The execution performed will use a random number stream created from the entity's random number stream.",
@@ -1721,6 +1727,7 @@ var data = [
 	{
 		"parameter" : "call_entity_get_changes id entity [string label_name] [assoc arguments] [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [number max_contained_entities] [number max_contained_entity_depth] [number max_entity_id_length]",
 		"output" : "list of *1 *2",
+		"new value" : "conditional",
 		"permissions" : "e",
 		"new scope" : true,
 		"description" : "Like call_entity returning the value in *1.  However, it also returns a list of direct_assign_to_entities calls with respective data in *2, holding a log of all of the changes that have elapsed.  The log may be evaluated to apply or re-apply the changes to any id passed in to the log as _.",
@@ -1730,6 +1737,7 @@ var data = [
 	{
 		"parameter" : "call_container string parent_label_name [assoc arguments] [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth]",
 		"output" : "*",
+		"new value" : "new",
 		"new scope" : true,
 		"description" : "Attempts to call the container associated with the label that begins with a caret (^); the caret indicates that the label is allowed to be accessed by contained entities.  It will evaluate to the return value of the call, null if not found.  The call is made on the label specified by string.  If assoc is specified, then it will pass assoc as the arguments on the scope stack.  The parameter accessing_entity will automatically be set to the id of the caller, regardless of the arguments.  If operation_limit is specified, it represents the number of operations that are allowed to be performed. If operation_limit is 0 or infinite, then an infinite of operations will be allotted to the entity, but only if its containing entity (the current entity) has infinite operations. The root entity has infinite computing cycles.  If max_node_allocations is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory.   If max_node_allocations is 0 or infinite, then there is no limit to the number of nodes to be allotted to the entity as long as the machine has sufficient memory, but only if the containing entity (the current entity) has unlimited memory access.  If max_opcode_execution_depth is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise max_opcode_execution_depth limits how deep nested opcodes will be called.  The execution performed will use a random number stream created from the entity's random number stream.",
 		"permissions" : "e",

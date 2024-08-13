@@ -196,6 +196,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 	else //multiple inputs
 	{
 		EvaluableNode *inputs_list_node = evaluableNodeManager->AllocNode(ENT_LIST);
+		//set to need cycle check because don't know what will be attached
+		inputs_list_node->SetNeedCycleCheck(true);
 		inputs_list_node->SetOrderedChildNodesSize(ocn.size() - 1);
 		auto &inputs = inputs_list_node->GetOrderedChildNodes();
 

@@ -12,35 +12,6 @@
 
 //forward declarations:
 class Entity;
-class Interpreter;
-
-//used for any operation that must sort different values - for passing in a lambda to run on every operation
-class CustomEvaluableNodeComparator
-{
-public:
-	constexpr CustomEvaluableNodeComparator(Interpreter *_interpreter, EvaluableNode *_function, EvaluableNode *target_list)
-		: interpreter(_interpreter), function(_function), targetList(target_list), hadExecutionSideEffects(false)
-	{ }
-
-	bool operator()(EvaluableNode *a, EvaluableNode *b);
-
-	inline bool DidAnyComparisonHaveExecutionSideEffects()
-	{
-		return hadExecutionSideEffects;
-	}
-
-private:
-	Interpreter *interpreter;
-	EvaluableNode *function;
-	EvaluableNode *targetList;
-	bool hadExecutionSideEffects;
-};
-
-//sorts list based on the specified CustomEvaluableNodeComparator using a stable merge sort
-// does not require weak ordering from cenc
-// merge sort is the preferrable sort due to the lack of weak ordering and bottleneck being interpretation
-//returns a newly sorted list
-std::vector<EvaluableNode *> CustomEvaluableNodeOrderedChildNodesSort(std::vector<EvaluableNode *> &list, CustomEvaluableNodeComparator &cenc);
 
 class EvaluableNodeIDPathTraverser
 {

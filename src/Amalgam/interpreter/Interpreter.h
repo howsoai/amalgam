@@ -1,15 +1,9 @@
 #pragma once
 
 //project headers:
-#include "Entity.h"
 #include "EntityTreeFunctions.h"
-#include "EntityWriteListener.h"
-#include "EvaluableNode.h"
+
 #include "EvaluableNodeContext.h"
-#include "FastMath.h"
-#include "Parser.h"
-#include "PerformanceProfiler.h"
-#include "PrintListener.h"
 
 //system headers:
 #include <algorithm>
@@ -18,9 +12,6 @@
 #include <string>
 #include <type_traits>
 #include <vector>
-
-//forward declarations:
-class EntityQueryCondition;
 
 //Manages performance constraints and accompanying performance counters
 class PerformanceConstraints

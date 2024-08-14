@@ -1,15 +1,6 @@
 //project headers:
 #include "Interpreter.h"
 
-#include "AmalgamVersion.h"
-#include "EntityManipulation.h"
-#include "EntityQueries.h"
-#include "EntityQueryBuilder.h"
-#include "EvaluableNodeTreeDifference.h"
-#include "EvaluableNodeTreeFunctions.h"
-#include "EvaluableNodeTreeManipulation.h"
-#include "StringInternPool.h"
-
 //system headers:
 #include <chrono>
 #include <cstdlib>

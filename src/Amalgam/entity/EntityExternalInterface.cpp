@@ -1,9 +1,11 @@
 //project headers:
 #include "EntityExternalInterface.h"
+#include "EntityWriteListener.h"
 #include "AssetManager.h"
 #include "FileSupportJSON.h"
 #include "ImportEntityStatus.h"
 #include "Interpreter.h"
+#include "PrintListener.h"
 
 ImportEntityStatus EntityExternalInterface::LoadEntity(std::string &handle, std::string &path, bool persistent, bool load_contained_entities,
 	bool escape_filename, bool escape_contained_filenames, std::string &write_log_filename, std::string &print_log_filename, std::string rand_seed)

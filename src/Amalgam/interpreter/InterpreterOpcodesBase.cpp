@@ -12,6 +12,7 @@
 #include "EvaluableNodeManagement.h"
 #include "EvaluableNodeTreeFunctions.h"
 #include "PerformanceProfiler.h"
+#include "PrintListener.h"
 
 //system headers:
 #include <array>

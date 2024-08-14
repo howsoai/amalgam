@@ -14,6 +14,7 @@
 #include "Parser.h"
 #include "PerformanceProfiler.h"
 #include "PlatformSpecific.h"
+#include "PrintListener.h"
 
 //system headers:
 #include <iostream>

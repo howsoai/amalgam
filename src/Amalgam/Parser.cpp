@@ -2,7 +2,6 @@
 #include "Parser.h"
 
 #include "EvaluableNode.h"
-#include "EvaluableNodeTreeFunctions.h"
 #include "StringManipulation.h"
 
 //system headers:

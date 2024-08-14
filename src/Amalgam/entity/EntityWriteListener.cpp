@@ -1,6 +1,6 @@
 //project headers:
 #include "EntityWriteListener.h"
-#include "EvaluableNodeTreeFunctions.h"
+#include "EntityTreeFunctions.h"
 
 EntityWriteListener::EntityWriteListener(Entity *listening_entity, bool retain_writes, const std::string &filename)
 {

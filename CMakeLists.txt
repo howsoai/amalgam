@@ -135,6 +135,8 @@ set(COMMON_SOURCE
     src/Amalgam/entity/EntityQueryBuilder.h
     src/Amalgam/entity/EntityQueryCaches.cpp
     src/Amalgam/entity/EntityQueryCaches.h
+    src/Amalgam/entity/EntityTreeFunctions.cpp
+    src/Amalgam/entity/EntityTreeFunctions.h
     src/Amalgam/entity/EntityWriteListener.cpp
     src/Amalgam/entity/EntityWriteListener.h
     src/Amalgam/evaluablenode/EvaluableNode.cpp

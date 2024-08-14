@@ -111,6 +111,7 @@ set(COMMON_SOURCE
     src/3rd_party/tweetnacl/tweetnacl.h
     src/Amalgam/Amalgam.h
     src/Amalgam/AmalgamAPI.cpp
+    src/Amalgam/AmalgamVersion.cpp
     src/Amalgam/AmalgamVersion.h
     src/Amalgam/AssetManager.cpp
     src/Amalgam/AssetManager.h

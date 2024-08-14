@@ -2,7 +2,6 @@
 #include "FileSupportCAML.h"
 
 #include "AmalgamVersion.h"
-#include "AssetManager.h"
 
 //system headers:
 #include <cstdint>
@@ -93,7 +92,7 @@ std::tuple<std::string, std::string, bool> FileSupportCAML::ReadHeader(std::ifst
 		version = std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(patch);
 
 		//validate version
-		auto [error_message, success] = AssetManager::ValidateVersionAgainstAmalgam(version);
+		auto [error_message, success] = ::ValidateVersionAgainstAmalgam(version);
 		if(!success)
 			return std::make_tuple(error_message, version, false);
 	}

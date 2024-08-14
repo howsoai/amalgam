@@ -21,3 +21,7 @@
 
 //data that can be accessed via system command; any length is allowed
 #define AMALGAM_BUILT_IN_DATA { 0x00, 0x00, 0x00, 0x00 }
+
+#include <string>
+
+std::pair<std::string, bool> ValidateVersionAgainstAmalgam(std::string &version);

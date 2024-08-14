@@ -1,6 +1,5 @@
 //project headers:
 #include "EvaluableNode.h"
-#include "EvaluableNodeTreeFunctions.h"
 #include "EvaluableNodeManagement.h"
 #include "FastMath.h"
 #include "StringInternPool.h"

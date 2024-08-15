@@ -1013,11 +1013,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			value_destination = GetOrCreateCallStackSymbolLocation(variable_sid, destination_call_stack_index);
 
 		EvaluableNode *value_replacement = *value_destination;
-	#ifdef MULTITHREAD_SUPPORT
-		//if editing a shared variable, then need to make a copy before editing in place to prevent another thread from reading the data structure mid-edit
-		if(accum && destination_call_stack_index < callStackUniqueAccessStartingDepth)
-			value_replacement = evaluableNodeManager->DeepAllocCopy(value_replacement);
-	#endif
+		//make a copy of value_replacement because not sure where else it may be used
+		value_replacement = evaluableNodeManager->DeepAllocCopy(value_replacement);
 
 		for(size_t index = 0; index < num_replacements; index++)
 		{
@@ -1046,6 +1043,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			}
 		}
 
+		EvaluableNodeManager::UpdateFlagsForNodeTree(value_replacement);
 		*value_destination = value_replacement;
 	}
 

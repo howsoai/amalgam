@@ -594,7 +594,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, b
 			//request immediate values when not last, since any allocs for returns would be wasted
 			//concludes won't be immediate
 			//but because previous_result may be used, that can't be immediate, so the last param
-			//cannot be evaulated as immediate
+			//cannot be evaluated as immediate
 			new_result = InterpretNode(ocn[i], i + 1 < ocn_size);
 
 			if(new_result.IsNonNullNodeReference())
@@ -1013,11 +1013,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			value_destination = GetOrCreateCallStackSymbolLocation(variable_sid, destination_call_stack_index);
 
 		EvaluableNode *value_replacement = *value_destination;
-	#ifdef MULTITHREAD_SUPPORT
-		//if editing a shared variable, then need to make a copy before editing in place to prevent another thread from reading the data structure mid-edit
-		if(accum && destination_call_stack_index < callStackUniqueAccessStartingDepth)
-			value_replacement = evaluableNodeManager->DeepAllocCopy(value_replacement);
-	#endif
+		//make a copy of value_replacement because not sure where else it may be used
+		value_replacement = evaluableNodeManager->DeepAllocCopy(value_replacement);
 
 		for(size_t index = 0; index < num_replacements; index++)
 		{
@@ -1046,6 +1043,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			}
 		}
 
+		EvaluableNodeManager::UpdateFlagsForNodeTree(value_replacement);
 		*value_destination = value_replacement;
 	}
 
@@ -1866,7 +1864,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEIGHTED_RAND(EvaluableNod
 	retval->ReserveOrderedChildNodes(number_to_generate);
 
 	auto &param_ocn = param->GetOrderedChildNodes();
-	//if generating many values with weighted probabilites, use fast method
+	//if generating many values with weighted probabilities, use fast method
 	if(param_ocn.size() > 0 && (number_to_generate > 10 || (number_to_generate > 3 && param_ocn.size() > 200)))
 	{
 		if(param_ocn.size() < 2 || EvaluableNode::IsNull(param_ocn[0]) || EvaluableNode::IsNull(param_ocn[1]))

@@ -1,0 +1,354 @@
+Found 79 filename(s)
+Found 79 node(s) and 303 arc(s)
+DateTimeFormat 1 discovering
+ PlatformSpecific 2 discovering
+  Concurrency 3 discovering
+  Concurrency discovered at rank 0
+ PlatformSpecific discovered at rank 1
+ date 4 discovering
+ date discovered at rank 0
+ tz 5 discovering
+  tz_private 6 discovering
+   tz 5 revisited
+  tz_private deferred to 5
+  ios 7 discovering
+  ios discovered at rank 0
+ tz and 1 other(s) discovered at rank 1
+DateTimeFormat discovered at rank 2
+InterpreterOpcodesTransformations 8 discovering
+ EvaluableNodeTreeManipulation 9 discovering
+  EvaluableNode 10 discovering
+   HashMaps 11 discovering
+   HashMaps discovered at rank 0
+   Opcodes 12 discovering
+    StringInternPool 13 discovering
+     StringManipulation 14 discovering
+      SwiftDtoa 15 discovering
+      SwiftDtoa discovered at rank 0
+      FastMath 16 discovering
+       FastEMath 17 discovering
+        exp_table 18 discovering
+        exp_table discovered at rank 0
+       FastEMath discovered at rank 1
+      FastMath discovered at rank 2
+     StringManipulation discovered at rank 3
+    StringInternPool discovered at rank 4
+   Opcodes discovered at rank 5
+  EvaluableNode discovered at rank 6
+  EvaluableNodeTreeFunctions 19 discovering
+   EvaluableNodeManagement 20 discovering
+    PerformanceProfiler 21 discovering
+    PerformanceProfiler discovered at rank 7
+   EvaluableNodeManagement discovered at rank 8
+  EvaluableNodeTreeFunctions discovered at rank 9
+  WeightedDiscreteRandomStream 22 discovering
+   RandomStream 23 discovering
+    MurmurHash3 24 discovering
+    MurmurHash3 discovered at rank 0
+   RandomStream discovered at rank 3
+  WeightedDiscreteRandomStream discovered at rank 4
+  EvaluableNodeContext 25 discovering
+  EvaluableNodeContext discovered at rank 9
+  Merger 26 discovering
+  Merger discovered at rank 5
+ EvaluableNodeTreeManipulation discovered at rank 10
+ Interpreter 27 discovering
+  EntityTreeFunctions 28 discovering
+   Entity 29 discovering
+    EntityWriteCallbacks 30 discovering
+    EntityWriteCallbacks discovered at rank 5
+    Parser 31 discovering
+    Parser discovered at rank 9
+    EntityContainerCaches 32 discovering
+    EntityContainerCaches discovered at rank 7
+   Entity discovered at rank 11
+  EntityTreeFunctions discovered at rank 12
+  EntityQueries 33 discovering
+   EntityQueriesStatistics 34 discovering
+    DistanceReferencePair 35 discovering
+    DistanceReferencePair discovered at rank 0
+   EntityQueriesStatistics discovered at rank 6
+   EntityManipulation 36 discovering
+    EvaluableNodeTreeDifference 37 discovering
+    EvaluableNodeTreeDifference discovered at rank 11
+   EntityManipulation discovered at rank 13
+   GeneralizedDistance 38 discovering
+   GeneralizedDistance discovered at rank 11
+  EntityQueries discovered at rank 14
+ Interpreter discovered at rank 15
+ AmalgamVersion 39 discovering
+ AmalgamVersion discovered at rank 4
+InterpreterOpcodesTransformations discovered at rank 16
+EntityWriteListener 40 discovering
+EntityWriteListener discovered at rank 13
+InterpreterOpcodesBase 41 discovering
+ AssetManager 42 discovering
+  FileSupportJSON 43 discovering
+   simdjson 44 discovering
+   simdjson discovered at rank 0
+   ImportEntityStatus 45 discovering
+   ImportEntityStatus discovered at rank 0
+  FileSupportJSON discovered at rank 9
+  FilenameEscapeProcessor 46 discovering
+  FilenameEscapeProcessor discovered at rank 2
+  FileSupportCSV 47 discovering
+  FileSupportCSV discovered at rank 9
+  BinaryPacking 48 discovering
+  BinaryPacking discovered at rank 1
+  FileSupportCAML 49 discovering
+  FileSupportCAML discovered at rank 5
+  EntityExecution 50 discovering
+  EntityExecution discovered at rank 16
+  FileSupportYAML 51 discovering
+  FileSupportYAML discovered at rank 9
+ AssetManager discovered at rank 17
+ PrintListener 52 discovering
+ PrintListener discovered at rank 1
+ Cryptography 53 discovering
+  tweetnacl 54 discovering
+  tweetnacl discovered at rank 0
+ Cryptography discovered at rank 2
+InterpreterOpcodesBase discovered at rank 18
+EntityExternalInterface 55 discovering
+EntityExternalInterface discovered at rank 18
+InterpreterOpcodesMath 56 discovering
+ EntityQueryBuilder 57 discovering
+ EntityQueryBuilder discovered at rank 15
+InterpreterOpcodesMath discovered at rank 16
+AmalgamTrace 58 discovering
+AmalgamTrace discovered at rank 19
+AmalgamMain 59 discovering
+ Amalgam 60 discovering
+ Amalgam discovered at rank 0
+AmalgamMain discovered at rank 18
+ConvictionUtil 61 discovering
+ConvictionUtil discovered at rank 3
+InterpreterOpcodesListManipulation 62 discovering
+InterpreterOpcodesListManipulation discovered at rank 16
+SBFDSColumnData 63 discovering
+ IntegerSet 64 discovering
+ IntegerSet discovered at rank 4
+SBFDSColumnData discovered at rank 7
+ThreadPool 65 discovering
+ThreadPool discovered at rank 0
+InterpreterOpcodesDataTypes 66 discovering
+InterpreterOpcodesDataTypes discovered at rank 16
+util 67 discovering
+util discovered at rank 0
+Conviction 68 discovering
+ SeparableBoxFilterDataStore 69 discovering
+  PartialSum 70 discovering
+  PartialSum discovered at rank 3
+ SeparableBoxFilterDataStore discovered at rank 12
+ KnnCache 71 discovering
+ KnnCache discovered at rank 13
+Conviction discovered at rank 14
+AmalgamAPI 72 discovering
+AmalgamAPI discovered at rank 19
+InterpreterOpcodesLogic 73 discovering
+InterpreterOpcodesLogic discovered at rank 16
+InterpreterDebugger 74 discovering
+InterpreterDebugger discovered at rank 18
+InterpreterOpcodesEntityAccess 75 discovering
+ EntityQueryCaches 76 discovering
+ EntityQueryCaches discovered at rank 15
+InterpreterOpcodesEntityAccess discovered at rank 18
+InterpreterOpcodesEntityControl 77 discovering
+InterpreterOpcodesEntityControl discovered at rank 18
+InterpreterOpcodesCodeMixing 78 discovering
+InterpreterOpcodesCodeMixing discovered at rank 16
+resource 79 discovering
+resource discovered at rank 0
+Found 78 strongly connected component(s) in 20 rank(s)
+Largest component size is 2
+290 arc(s) found (127 after pruning)
+Generating .dot file
+subgraph ""
+subgraph "/3rd_party"
+subgraph "/3rd_party/date"
+subgraph "/3rd_party/fast_log"
+subgraph "/3rd_party/fast_log/src"
+subgraph "/3rd_party/murmurhash3"
+subgraph "/3rd_party/simdjson"
+subgraph "/3rd_party/swiftdtoa"
+subgraph "/3rd_party/tweetnacl"
+subgraph "/Amalgam"
+subgraph "/Amalgam/entity"
+subgraph "/Amalgam/evaluablenode"
+subgraph "/Amalgam/importexport"
+subgraph "/Amalgam/interpreter"
+subgraph "/Amalgam/math"
+subgraph "/Amalgam/rand"
+subgraph "/Amalgam/string"
+Generating image...
+dot - graphviz version 7.0.6 (20230106.0513)
+libdir = "/usr/local/Cellar/graphviz/7.0.6/lib/graphviz"
+Activated plugin library: libgvplugin_core.6.dylib
+Using render: svg:core
+Using device: svg:svg:core
+Activated plugin library: libgvplugin_dot_layout.6.dylib
+Using layout: dot:dot_layout
+The plugin configuration file:
+	/usr/local/Cellar/graphviz/7.0.6/lib/graphviz/config6
+		was successfully loaded.
+    render	:  cairo dot dot_json fig gd json json0 map mp pic pov ps quartz svg tk visio vml vrml xdot xdot_json
+    layout	:  circo dot fdp neato nop nop1 nop2 osage patchwork sfdp twopi
+    textlayout	:  textlayout
+    device	:  bmp canon cgimage cmap cmapx cmapx_np dot dot_json eps exr fig gd gd2 gif gv icns ico imap imap_np ismap jp2 jpe jpeg jpg json json0 mp pct pdf pic pict plain plain-ext png pov ps ps2 psd sgi svg svgz tga tif tiff tk vdx vml vmlz vrml wbmp webp xdot xdot1.2 xdot1.4 xdot_json
+    loadimage	:  (lib) bmp eps gd gd2 gif jpe jpeg jpg pdf png ps svg webp xbm
+pack info:
+  mode   undefined
+  size   0
+  flags  0
+  margin 8
+pack info:
+  mode   node
+  size   0
+  flags  0
+fontname: "Times-Roman" resolved to: (ps:pango  Times,  REGULAR) (PangoCairoCoreTextFont) "Times 14" 
+network simplex:  79 nodes 131 edges maxiter=2147483647 balance=1
+network simplex: 79 nodes 131 edges 12 iter 0.00 sec
+Maxrank = 19, minrank = 0
+mincross: pass 0 iter 0 trying 0 cur_cross 43202 best_cross 43202
+mincross: pass 0 iter 1 trying 0 cur_cross 17123 best_cross 17123
+mincross: pass 0 iter 2 trying 1 cur_cross 26118 best_cross 17123
+mincross: pass 0 iter 3 trying 2 cur_cross 1017097 best_cross 17123
+mincross: pass 1 iter 0 trying 0 cur_cross 34214 best_cross 17123
+mincross: pass 1 iter 1 trying 0 cur_cross 11111 best_cross 11111
+mincross: pass 1 iter 2 trying 1 cur_cross 19107 best_cross 11111
+mincross: pass 1 iter 3 trying 2 cur_cross 1010079 best_cross 11111
+mincross: pass 2 iter 0 trying 0 cur_cross 11111 best_cross 11111
+mincross: pass 2 iter 1 trying 0 cur_cross 9102 best_cross 9102
+mincross: pass 2 iter 2 trying 1 cur_cross 2021104 best_cross 9102
+mincross: pass 2 iter 3 trying 0 cur_cross 8092 best_cross 8092
+mincross: pass 2 iter 4 trying 1 cur_cross 19079 best_cross 8092
+mincross: pass 2 iter 5 trying 2 cur_cross 3012106 best_cross 8092
+mincross: pass 2 iter 6 trying 3 cur_cross 1015095 best_cross 8092
+mincross: pass 2 iter 7 trying 4 cur_cross 1010088 best_cross 8092
+mincross: pass 2 iter 8 trying 5 cur_cross 1011066 best_cross 8092
+mincross: pass 2 iter 9 trying 6 cur_cross 2032107 best_cross 8092
+mincross: pass 2 iter 10 trying 7 cur_cross 1030162 best_cross 8092
+mincross: pass 2 iter 11 trying 8 cur_cross 8090 best_cross 8090
+mincross: pass 0 iter 0 trying 0 cur_cross 0 best_cross 0
+mincross: pass 0 iter 0 trying 0 cur_cross 0 best_cross 0
+merge2: graph %3, rank 1 has only 5 < 8 nodes
+merge2: graph %3, rank 2 has only 11 < 12 nodes
+merge2: graph %3, rank 3 has only 12 < 21 nodes
+merge2: graph %3, rank 4 has only 16 < 18 nodes
+merge2: graph %3, rank 5 has only 13 < 15 nodes
+merge2: graph %3, rank 6 has only 15 < 16 nodes
+merge2: graph %3, rank 9 has only 19 < 20 nodes
+merge2: graph %3, rank 10 has only 20 < 22 nodes
+merge2: graph %3, rank 11 has only 16 < 17 nodes
+mincross: pass 2 iter 0 trying 0 cur_cross 2018 best_cross 2018
+mincross: pass 2 iter 1 trying 1 cur_cross 2018 best_cross 2018
+mincross: pass 2 iter 2 trying 2 cur_cross 2018 best_cross 2018
+mincross: pass 2 iter 3 trying 3 cur_cross 2018 best_cross 2018
+mincross: pass 2 iter 4 trying 4 cur_cross 2018 best_cross 2018
+mincross: pass 2 iter 5 trying 5 cur_cross 2018 best_cross 2018
+mincross: pass 2 iter 6 trying 6 cur_cross 2018 best_cross 2018
+mincross: pass 2 iter 7 trying 7 cur_cross 2018 best_cross 2018
+mincross: pass 2 iter 8 trying 8 cur_cross 2018 best_cross 2018
+mincross: pass 2 iter 0 trying 0 cur_cross 8090 best_cross 8090
+mincross: pass 2 iter 1 trying 1 cur_cross 8090 best_cross 8090
+mincross: pass 2 iter 2 trying 2 cur_cross 8090 best_cross 8090
+mincross: pass 2 iter 3 trying 3 cur_cross 8090 best_cross 8090
+mincross: pass 2 iter 4 trying 4 cur_cross 8090 best_cross 8090
+mincross: pass 2 iter 5 trying 5 cur_cross 8090 best_cross 8090
+mincross: pass 2 iter 6 trying 6 cur_cross 8090 best_cross 8090
+mincross: pass 2 iter 7 trying 7 cur_cross 8090 best_cross 8090
+mincross: pass 2 iter 8 trying 8 cur_cross 8090 best_cross 8090
+mincross: pass 2 iter 0 trying 0 cur_cross 8090 best_cross 8090
+mincross: pass 2 iter 1 trying 1 cur_cross 8090 best_cross 8090
+mincross: pass 2 iter 2 trying 2 cur_cross 8090 best_cross 8090
+mincross: pass 2 iter 3 trying 3 cur_cross 8090 best_cross 8090
+mincross: pass 2 iter 4 trying 4 cur_cross 8090 best_cross 8090
+mincross: pass 2 iter 5 trying 5 cur_cross 8090 best_cross 8090
+mincross: pass 2 iter 6 trying 6 cur_cross 8090 best_cross 8090
+mincross: pass 2 iter 7 trying 7 cur_cross 8090 best_cross 8090
+mincross: pass 2 iter 8 trying 8 cur_cross 8090 best_cross 8090
+mincross: pass 2 iter 0 trying 0 cur_cross 2113 best_cross 2113
+mincross: pass 2 iter 1 trying 1 cur_cross 2113 best_cross 2113
+mincross: pass 2 iter 2 trying 2 cur_cross 2112 best_cross 2112
+mincross: pass 2 iter 3 trying 3 cur_cross 2112 best_cross 2112
+mincross: pass 2 iter 4 trying 4 cur_cross 2112 best_cross 2112
+mincross: pass 2 iter 5 trying 5 cur_cross 2112 best_cross 2112
+mincross: pass 2 iter 6 trying 6 cur_cross 2112 best_cross 2112
+mincross: pass 2 iter 7 trying 7 cur_cross 2112 best_cross 2112
+mincross: pass 2 iter 8 trying 8 cur_cross 2112 best_cross 2112
+mincross: pass 2 iter 0 trying 0 cur_cross 1115 best_cross 1115
+mincross: pass 2 iter 1 trying 1 cur_cross 1114 best_cross 1114
+mincross: pass 2 iter 2 trying 2 cur_cross 1114 best_cross 1114
+mincross: pass 2 iter 3 trying 3 cur_cross 1114 best_cross 1114
+mincross: pass 2 iter 4 trying 4 cur_cross 1114 best_cross 1114
+mincross: pass 2 iter 5 trying 5 cur_cross 1114 best_cross 1114
+mincross: pass 2 iter 6 trying 6 cur_cross 1114 best_cross 1114
+mincross: pass 2 iter 7 trying 7 cur_cross 1114 best_cross 1114
+mincross: pass 2 iter 8 trying 8 cur_cross 1114 best_cross 1114
+mincross: pass 2 iter 0 trying 0 cur_cross 1128 best_cross 1128
+mincross: pass 2 iter 1 trying 1 cur_cross 1123 best_cross 1123
+mincross: pass 2 iter 2 trying 2 cur_cross 1123 best_cross 1123
+mincross: pass 2 iter 3 trying 3 cur_cross 1123 best_cross 1123
+mincross: pass 2 iter 4 trying 4 cur_cross 1124 best_cross 1123
+mincross: pass 2 iter 5 trying 5 cur_cross 1123 best_cross 1123
+mincross: pass 2 iter 6 trying 6 cur_cross 1123 best_cross 1123
+mincross: pass 2 iter 7 trying 7 cur_cross 1123 best_cross 1123
+mincross: pass 2 iter 8 trying 8 cur_cross 1124 best_cross 1123
+mincross: pass 2 iter 0 trying 0 cur_cross 164 best_cross 164
+mincross: pass 2 iter 1 trying 0 cur_cross 146 best_cross 146
+mincross: pass 2 iter 2 trying 1 cur_cross 146 best_cross 146
+mincross: pass 2 iter 3 trying 2 cur_cross 146 best_cross 146
+mincross: pass 2 iter 4 trying 3 cur_cross 146 best_cross 146
+mincross: pass 2 iter 5 trying 4 cur_cross 146 best_cross 146
+mincross: pass 2 iter 6 trying 5 cur_cross 146 best_cross 146
+mincross: pass 2 iter 7 trying 6 cur_cross 146 best_cross 146
+mincross: pass 2 iter 8 trying 7 cur_cross 146 best_cross 146
+mincross: pass 2 iter 9 trying 8 cur_cross 146 best_cross 146
+mincross: pass 2 iter 0 trying 0 cur_cross 146 best_cross 146
+mincross: pass 2 iter 1 trying 1 cur_cross 146 best_cross 146
+mincross: pass 2 iter 2 trying 2 cur_cross 146 best_cross 146
+mincross: pass 2 iter 3 trying 3 cur_cross 146 best_cross 146
+mincross: pass 2 iter 4 trying 4 cur_cross 146 best_cross 146
+mincross: pass 2 iter 5 trying 5 cur_cross 146 best_cross 146
+mincross: pass 2 iter 6 trying 6 cur_cross 146 best_cross 146
+mincross: pass 2 iter 7 trying 7 cur_cross 146 best_cross 146
+mincross: pass 2 iter 8 trying 8 cur_cross 146 best_cross 146
+mincross: pass 2 iter 0 trying 0 cur_cross 146 best_cross 146
+mincross: pass 2 iter 1 trying 1 cur_cross 146 best_cross 146
+mincross: pass 2 iter 2 trying 2 cur_cross 146 best_cross 146
+mincross: pass 2 iter 3 trying 3 cur_cross 146 best_cross 146
+mincross: pass 2 iter 4 trying 4 cur_cross 146 best_cross 146
+mincross: pass 2 iter 5 trying 5 cur_cross 146 best_cross 146
+mincross: pass 2 iter 6 trying 6 cur_cross 146 best_cross 146
+mincross: pass 2 iter 7 trying 7 cur_cross 146 best_cross 146
+mincross: pass 2 iter 8 trying 8 cur_cross 146 best_cross 146
+mincross: pass 2 iter 0 trying 0 cur_cross 146 best_cross 146
+mincross: pass 2 iter 1 trying 1 cur_cross 146 best_cross 146
+mincross: pass 2 iter 2 trying 2 cur_cross 146 best_cross 146
+mincross: pass 2 iter 3 trying 3 cur_cross 146 best_cross 146
+mincross: pass 2 iter 4 trying 4 cur_cross 146 best_cross 146
+mincross: pass 2 iter 5 trying 5 cur_cross 146 best_cross 146
+mincross: pass 2 iter 6 trying 6 cur_cross 146 best_cross 146
+mincross: pass 2 iter 7 trying 7 cur_cross 146 best_cross 146
+mincross: pass 2 iter 8 trying 8 cur_cross 146 best_cross 146
+mincross: pass 2 iter 0 trying 0 cur_cross 146 best_cross 146
+mincross: pass 2 iter 1 trying 0 cur_cross 142 best_cross 142
+mincross: pass 2 iter 2 trying 1 cur_cross 147 best_cross 142
+mincross: pass 2 iter 3 trying 0 cur_cross 139 best_cross 139
+mincross: pass 2 iter 4 trying 1 cur_cross 139 best_cross 139
+mincross: pass 2 iter 5 trying 2 cur_cross 140 best_cross 139
+mincross: pass 2 iter 6 trying 3 cur_cross 146 best_cross 139
+mincross: pass 2 iter 7 trying 4 cur_cross 139 best_cross 139
+mincross: pass 2 iter 8 trying 5 cur_cross 139 best_cross 139
+mincross: pass 2 iter 9 trying 6 cur_cross 141 best_cross 139
+mincross: pass 2 iter 10 trying 7 cur_cross 147 best_cross 139
+mincross: pass 2 iter 11 trying 8 cur_cross 140 best_cross 139
+mincross %3: 139 crossings, 0.02 secs.
+network simplex:  579 nodes 1071 edges maxiter=2147483647 balance=2
+network simplex: 100 200 
+network simplex: 579 nodes 1071 edges 202 iter 0.02 sec
+routesplines: 137 edges, 651 boxes 0.02 sec
+Using render: svg:core
+Using device: svg:svg:core
+gvRenderJobs %3: 0.00 secs.
+done

@@ -183,7 +183,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 				if(list_node_entry != end(list_mcn))
 					SetTopCurrentValueInConstructionStack(list_node_entry->second);
 
-				//keep the original type of elment_result instead of directly assigning
+				//keep the original type of element_result instead of directly assigning
 				//in order to keep the node properties to be updated below
 				EvaluableNodeReference element_result = InterpretNode(function);
 				result_node = element_result;
@@ -1068,15 +1068,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 		}
 		else //use a hash-set and look up stringified values for collisions
 		{
-			//attempt to emplace/insert the unparsed node into values_in_existance, and if successful, append the value
-			FastHashSet<std::string> values_in_existance;
+			//attempt to emplace/insert the unparsed node into values_in_existence, and if successful, append the value
+			FastHashSet<std::string> values_in_existence;
 
 			if(container->IsOrderedArray())
 			{
 				for(auto &n : container->GetOrderedChildNodesReference())
 				{
 					std::string str_value = Parser::Unparse(n, evaluableNodeManager, false, false, true);
-					if(values_in_existance.emplace(str_value).second)
+					if(values_in_existence.emplace(str_value).second)
 						result->AppendOrderedChildNode(n);
 				}
 			}
@@ -1085,7 +1085,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 				for(auto &[_, cn] : container->GetMappedChildNodesReference())
 				{
 					std::string str_value = Parser::Unparse(cn, evaluableNodeManager, false, false, true);
-					if(values_in_existance.emplace(str_value).second)
+					if(values_in_existence.emplace(str_value).second)
 						result->AppendOrderedChildNode(cn);
 				}
 			}

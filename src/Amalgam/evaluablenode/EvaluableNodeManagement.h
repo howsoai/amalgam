@@ -639,12 +639,16 @@ public:
 #endif
 
 	//frees an EvaluableNode (must be owned by this EvaluableNodeManager)
-	inline void FreeNode(EvaluableNode *n)
+	inline void FreeNode(EvaluableNode *en)
 	{
-		if(n == nullptr)
+		if(en == nullptr)
 			return;
 
-		n->Invalidate();
+	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+		assert(!en->IsNodeDeallocated());
+	#endif
+
+		en->Invalidate();
 		ReclaimFreedNodesAtEnd();
 	}
 
@@ -653,6 +657,13 @@ public:
 	{
 		if(enr.IsImmediateValue())
 			enr.FreeImmediateResources();
+
+	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+		if(enr != nullptr)
+		{
+			assert(!enr->IsNodeDeallocated());
+		}
+	#endif
 
 		if(enr.unique && enr != nullptr && !enr->GetNeedCycleCheck())
 		{
@@ -669,6 +680,10 @@ public:
 	{
 		if(en == nullptr)
 			return;
+
+	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+		assert(!en->IsNodeDeallocated());
+	#endif
 
 		if(IsEvaluableNodeTypeImmediate(en->GetType()))
 		{

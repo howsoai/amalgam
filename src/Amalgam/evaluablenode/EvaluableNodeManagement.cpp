@@ -437,6 +437,11 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 
 void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree)
 {
+#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+	assert(!tree->IsNodeDeallocated());
+	assert(!tree->GetNeedCycleCheck());
+#endif
+
 	if(tree->IsAssociativeArray())
 	{
 		for(auto &[_, e] : tree->GetMappedChildNodesReference())
@@ -454,15 +459,15 @@ void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree)
 		}
 	}
 
-#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-	assert(!tree->GetNeedCycleCheck());
-#endif
-
 	tree->Invalidate();
 }
 
 void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
 {
+#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+	assert(!tree->IsNodeDeallocated());
+#endif
+
 	if(tree->IsAssociativeArray())
 	{
 		//pull the mapped child nodes out of the tree before invalidating it
@@ -1004,6 +1009,10 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 
 void EvaluableNodeManager::MarkAllReferencedNodesInUseRecurse(EvaluableNode *tree)
 {
+#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+	assert(!tree->IsNodeDeallocated());
+#endif
+
 	//if entering this function, then the node hasn't been marked yet
 	tree->SetKnownToBeInUse(true);
 
@@ -1028,6 +1037,10 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUseRecurse(EvaluableNode *tre
 #ifdef MULTITHREAD_SUPPORT
 void EvaluableNodeManager::MarkAllReferencedNodesInUseRecurseConcurrent(EvaluableNode* tree)
 {
+#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+	assert(!tree->IsNodeDeallocated());
+#endif
+
 	//if entering this function, then the node hasn't been marked yet
 	tree->SetKnownToBeInUseAtomic(true);
 

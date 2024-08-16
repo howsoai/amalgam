@@ -583,7 +583,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, b
 		//count an extra cycle for each loop
 		//this ensures that even if all of the nodes are immediate, it'll still count the performance
 		if(AreExecutionResourcesExhausted(true))
+		{
+			PopConstructionContext();
 			return EvaluableNodeReference::Null();
+		}
 
 		SetTopPreviousResultInConstructionStack(previous_result);
 

@@ -500,7 +500,10 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, bool immedi
 #endif
 
 	if(AreExecutionResourcesExhausted(true))
+	{
+		interpreterNodeStackNodes->pop_back();
 		return EvaluableNodeReference::Null();
+	}
 
 	//get corresponding opcode
 	EvaluableNodeType ent = en->GetType();

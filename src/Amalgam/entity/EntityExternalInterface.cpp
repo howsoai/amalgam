@@ -6,33 +6,17 @@
 #include "EntityWriteListener.h"
 #include "FileSupportCAML.h"
 #include "FileSupportJSON.h"
+#include "ImportEntityStatus.h"
 #include "Interpreter.h"
 
 //system headers:
 #include <string>
 #include <vector>
 
-EntityExternalInterface::LoadEntityStatus::LoadEntityStatus()
-{
-	SetStatus(true);
-}
-
-EntityExternalInterface::LoadEntityStatus::LoadEntityStatus(bool loaded, std::string message, std::string version)
-{
-	SetStatus(loaded, message, version);
-}
-
-void EntityExternalInterface::LoadEntityStatus::SetStatus(bool loaded_in, std::string message_in, std::string version_in)
-{
-	loaded = loaded_in;
-	message = std::move(message_in);
-	version = std::move(version_in);
-}
-
-EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(std::string &handle, std::string &path, bool persistent, bool load_contained_entities,
+ImportEntityStatus EntityExternalInterface::LoadEntity(std::string &handle, std::string &path, bool persistent, bool load_contained_entities,
 	bool escape_filename, bool escape_contained_filenames, std::string &write_log_filename, std::string &print_log_filename, std::string rand_seed)
 {
-	LoadEntityStatus status;
+	ImportEntityStatus status;
 
 	if(rand_seed.empty())
 	{
@@ -67,19 +51,19 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(st
 	return status;
 }
 
-EntityExternalInterface::LoadEntityStatus EntityExternalInterface::VerifyEntity(std::string &path)
+ImportEntityStatus EntityExternalInterface::VerifyEntity(std::string &path)
 {
 	std::ifstream f(path, std::fstream::binary | std::fstream::in);
 
 	if(!f.good())
-		return EntityExternalInterface::LoadEntityStatus(false, "Cannot open file", "");
+		return ImportEntityStatus(false, "Cannot open file", "");
 
 	size_t header_size = 0;
 	auto [error_string, version, success] = FileSupportCAML::ReadHeader(f, header_size);
 	if(!success)
-		return EntityExternalInterface::LoadEntityStatus(false, error_string, version);
+		return ImportEntityStatus(false, error_string, version);
 
-	return EntityExternalInterface::LoadEntityStatus(false, "", version);
+	return ImportEntityStatus(false, "", version);
 }
 
 bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &cloned_handle, std::string &path, bool persistent,

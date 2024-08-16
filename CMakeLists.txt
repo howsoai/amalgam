@@ -163,6 +163,8 @@ set(COMMON_SOURCE
     src/Amalgam/importexport/FileSupportJSON.h
     src/Amalgam/importexport/FileSupportYAML.cpp
     src/Amalgam/importexport/FileSupportYAML.h
+    src/Amalgam/importexport/ImportEntityStatus.cpp
+    src/Amalgam/importexport/ImportEntityStatus.h
     src/Amalgam/IntegerSet.h
     src/Amalgam/interpreter/Interpreter.cpp
     src/Amalgam/interpreter/Interpreter.h

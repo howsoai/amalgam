@@ -10,6 +10,9 @@
 #include <string>
 #include <vector>
 
+//forward declarations:
+class ImportEntityStatus;
+
 /*
  * This class constitutes the C++ backing for the C API, and is fully functional as a C++ API.
  *
@@ -23,23 +26,10 @@ class EntityExternalInterface
 {
 public:
 
-	//status from LoadEntity
-	class LoadEntityStatus
-	{
-	public:
-		LoadEntityStatus();
-		LoadEntityStatus(bool loaded, std::string message = std::string(), std::string version = std::string());
-		void SetStatus(bool loaded_in, std::string message_in = std::string(), std::string version_in = std::string());
-
-		bool loaded;
-		std::string message;
-		std::string version;
-	};
-
-	LoadEntityStatus LoadEntity(std::string &handle, std::string &path, bool persistent, bool load_contained_entities,
+	ImportEntityStatus LoadEntity(std::string &handle, std::string &path, bool persistent, bool load_contained_entities,
 		bool escape_filename, bool escape_contained_filenames, std::string &write_log_filename, std::string &print_log_filename,
 		std::string rand_seed = std::string(""));
-	LoadEntityStatus VerifyEntity(std::string &path);
+	ImportEntityStatus VerifyEntity(std::string &path);
 
 	bool CloneEntity(std::string &handle, std::string &cloned_handle, std::string &path, bool persistent,
 		std::string &write_log_filename, std::string &print_log_filename);

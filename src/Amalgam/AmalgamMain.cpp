@@ -9,6 +9,7 @@
 #include "EntityWriteListener.h"
 #include "EvaluableNode.h"
 #include "EvaluableNodeTreeFunctions.h"
+#include "ImportEntityStatus.h"
 #include "Interpreter.h"
 #include "Parser.h"
 #include "PerformanceProfiler.h"
@@ -234,7 +235,7 @@ PLATFORM_MAIN_CONSOLE
 	else
 	{
 		//run the standard amlg command line interface
-		EntityExternalInterface::LoadEntityStatus status;
+		ImportEntityStatus status;
 		std::string file_type = "";
 		Entity *entity = asset_manager.LoadEntityFromResourcePath(amlg_file_to_run, file_type,
 			false, true, false, true, random_seed, nullptr, status);

@@ -8,6 +8,7 @@
 #include "EvaluableNodeTreeFunctions.h"
 #include "EvaluableNodeTreeManipulation.h"
 #include "EvaluableNodeTreeDifference.h"
+#include "ImportEntityStatus.h"
 #include "PerformanceProfiler.h"
 
 //system headers:
@@ -612,7 +613,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, bo
 			file_type = file_type_temp;
 	}
 
-	EntityExternalInterface::LoadEntityStatus status;
+	ImportEntityStatus status;
 	std::string resource_base_path;
 	return asset_manager.LoadResourcePath(resource_name, resource_base_path, file_type, evaluableNodeManager, escape_filename, status);
 }
@@ -661,7 +662,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSI
 			file_type = file_type_temp;
 	}
 
-	EntityExternalInterface::LoadEntityStatus status;
+	ImportEntityStatus status;
 	std::string random_seed = destination_entity_parent->CreateRandomStreamFromStringAndRand(resource_name);
 
 #ifdef MULTITHREAD_SUPPORT

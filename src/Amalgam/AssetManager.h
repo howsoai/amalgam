@@ -38,7 +38,7 @@ public:
 	// sets resource_base_path to the resource path without the extension
 	//if file_type is not an empty string, it will use the specified file_type instead of the filename's extension
 	EvaluableNodeReference LoadResourcePath(std::string &resource_path, std::string &resource_base_path,
-		std::string &file_type, EvaluableNodeManager *enm, bool escape_filename, EntityExternalInterface::LoadEntityStatus &status);
+		std::string &file_type, EvaluableNodeManager *enm, bool escape_filename, ImportEntityStatus &status);
 
 	//Stores the code to the corresponding resource path
 	// sets resource_base_path to the resource path without the extension, and extension accordingly
@@ -62,7 +62,7 @@ public:
 	//if the resource does not have a metadata file, will use default_random_seed as its seed
 	Entity *LoadEntityFromResourcePath(std::string &resource_path, std::string &file_type, bool persistent,
 		bool load_contained_entities, bool escape_filename, bool escape_contained_filenames,
-		std::string default_random_seed, Interpreter *calling_interpreter, EntityExternalInterface::LoadEntityStatus &status);
+		std::string default_random_seed, Interpreter *calling_interpreter, ImportEntityStatus &status);
 
 	//Stores an entity, including contained entities, etc. from the resource path specified
 	//if file_type is not an empty string, it will use the specified file_type instead of the filename's extension

@@ -2,6 +2,7 @@
 #include "AmalgamVersion.h"
 #include "AssetManager.h"
 #include "EntityExternalInterface.h"
+#include "ImportEntityStatus.h"
 #include "PlatformSpecific.h"
 #include "RandomStream.h"
 

@@ -4,6 +4,7 @@
 #include "Concurrency.h"
 #include "EntityExternalInterface.h"
 #include "EntityQueries.h"
+#include "ImportEntityStatus.h"
 
 //system headers:
 #include <string>
@@ -72,7 +73,7 @@ extern "C"
 		return wct;
 	}
 
-	LoadEntityStatus ConvertLoadStatusToCStatus(EntityExternalInterface::LoadEntityStatus &status)
+	LoadEntityStatus ConvertLoadStatusToCStatus(ImportEntityStatus &status)
 	{
 		return {
 			status.loaded,

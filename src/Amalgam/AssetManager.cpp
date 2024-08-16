@@ -9,6 +9,7 @@
 #include "FileSupportCSV.h"
 #include "FileSupportJSON.h"
 #include "FileSupportYAML.h"
+#include "ImportEntityStatus.h"
 #include "Interpreter.h"
 #include "PlatformSpecific.h"
 
@@ -21,7 +22,7 @@
 AssetManager asset_manager;
 
 EvaluableNodeReference AssetManager::LoadResourcePath(std::string &resource_path,
-	std::string &resource_base_path, std::string &file_type, EvaluableNodeManager *enm, bool escape_filename, EntityExternalInterface::LoadEntityStatus &status)
+	std::string &resource_base_path, std::string &file_type, EvaluableNodeManager *enm, bool escape_filename, ImportEntityStatus &status)
 {
 	//get file path based on the file loaded
 	std::string path, file_base, extension;
@@ -148,7 +149,7 @@ bool AssetManager::StoreResourcePathFromProcessedResourcePaths(EvaluableNode *co
 
 Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std::string &file_type,
 	bool persistent, bool load_contained_entities, bool escape_filename, bool escape_contained_filenames,
-	std::string default_random_seed, Interpreter *calling_interpreter, EntityExternalInterface::LoadEntityStatus &status)
+	std::string default_random_seed, Interpreter *calling_interpreter, ImportEntityStatus &status)
 {
 	std::string resource_base_path;
 	Entity *new_entity = new Entity();
@@ -180,7 +181,7 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 	std::string metadata_filename = resource_base_path + "." + FILE_EXTENSION_AMLG_METADATA;
 	std::string metadata_base_path;
 	std::string metadata_extension;
-	EntityExternalInterface::LoadEntityStatus metadata_status;
+	ImportEntityStatus metadata_status;
 	EvaluableNode *metadata = LoadResourcePath(metadata_filename, metadata_base_path, metadata_extension, &new_entity->evaluableNodeManager, escape_filename, metadata_status);
 	if(metadata_status.loaded)
 	{

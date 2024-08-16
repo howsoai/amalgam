@@ -4,7 +4,6 @@
 #include "PlatformSpecific.h"
 #include "StringManipulation.h"
 
-#include "EntityExternalInterface.h"
 #include "FastMath.h"
 #include "PlatformSpecific.h"
 #include "StringManipulation.h"

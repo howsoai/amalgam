@@ -1,12 +1,14 @@
 #pragma once
 
 //project headers:
-#include "EntityExternalInterface.h"
 #include "EvaluableNode.h"
 #include "EvaluableNodeManagement.h"
 
 //system headers:
 #include <string_view>
+
+//forward declarations:
+class ImportEntityStatus;
 
 namespace EvaluableNodeJSONTranslation
 {

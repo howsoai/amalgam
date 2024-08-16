@@ -1,9 +1,11 @@
 #pragma once
 
 //project headers:
-#include "EntityExternalInterface.h"
 #include "EvaluableNode.h"
 #include "EvaluableNodeManagement.h"
+
+//forward declarations:
+class ImportEntityStatus;
 
 namespace FileSupportCSV
 {

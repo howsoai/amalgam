@@ -721,18 +721,16 @@ void EvaluableNode::SetStringValue(const std::string &v)
 {
 	if(DoesEvaluableNodeTypeUseStringData(GetType()))
 	{
+		//create a new reference before destroying so don't accidentally destroy something that will then need to be recreated
+		auto new_id = string_intern_pool.CreateStringReference(v);
 		if(!HasExtendedValue())
-		{
-			//create a new reference before destroying so don't accidentally destroy something that will then need to be recreated
-			auto new_id = string_intern_pool.CreateStringReference(v);
+		{	
 			//destroy anything that was already in there
 			string_intern_pool.DestroyStringReference(value.stringValueContainer.stringID);
 			value.stringValueContainer.stringID = new_id;
 		}
 		else
 		{
-			//create a new reference before destroying so don't accidentally destroy something that will then need to be recreated
-			auto new_id = string_intern_pool.CreateStringReference(v);
 			//destroy anything that was already in there
 			string_intern_pool.DestroyStringReference(value.extension.extendedValue->value.stringValueContainer.stringID);
 			value.extension.extendedValue->value.stringValueContainer.stringID = new_id;
@@ -1605,6 +1603,7 @@ void EvaluableNode::Invalidate()
 		//return early if no extended value, make sure to clear out data so it isn't double-deleted
 		type = ENT_DEALLOCATED;
 		attributes.allAttributes = 0;
+		value.numberValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
 		value.numberValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
 		return;
 	}
@@ -1636,6 +1635,7 @@ void EvaluableNode::Invalidate()
 
 	type = ENT_DEALLOCATED;
 	attributes.allAttributes = 0;
+	value.numberValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
 	value.numberValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
 }
 

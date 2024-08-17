@@ -409,16 +409,16 @@ public:
 	}
 
 	//creates a stack state saver for the interpreterNodeStack, which will be restored back to its previous condition when this object is destructed
-	__forceinline EvaluableNodeStackStateSaver CreateInterpreterNodeStackStateSaver()
+	__forceinline EvaluableNodeStackStateSaver CreateNodeStackStateSaver()
 	{
-		return EvaluableNodeStackStateSaver(interpreterNodeStackNodes);
+		return EvaluableNodeStackStateSaver(nodeStackNodes);
 	}
 
-	//like CreateInterpreterNodeStackStateSaver, but also pushes another node on the stack
-	__forceinline EvaluableNodeStackStateSaver CreateInterpreterNodeStackStateSaver(EvaluableNode *en)
+	//like CreateNodeStackStateSaver, but also pushes another node on the stack
+	__forceinline EvaluableNodeStackStateSaver CreateNodeStackStateSaver(EvaluableNode *en)
 	{
 		//count on C++ return value optimization to not call the destructor
-		return EvaluableNodeStackStateSaver(interpreterNodeStackNodes, en);
+		return EvaluableNodeStackStateSaver(nodeStackNodes, en);
 	}
 
 	//keeps the current node on the stack and calls InterpretNodeExecution
@@ -598,7 +598,7 @@ public:
 				Entity::EntityReferenceBufferReference<EntityReadReference>());
 
 		auto node_id_path_1 = InterpretNodeForImmediateUse(node_id_path_to_interpret_1);
-		auto node_stack = CreateInterpreterNodeStackStateSaver(node_id_path_1);
+		auto node_stack = CreateNodeStackStateSaver(node_id_path_1);
 		auto node_id_path_2 = InterpretNodeForImmediateUse(node_id_path_to_interpret_2);
 		node_stack.PopEvaluableNode();
 
@@ -641,7 +641,7 @@ protected:
 
 		//constructs the concurrency manager.  Assumes parent_interpreter is NOT null
 		ConcurrencyManager(Interpreter *parent_interpreter, size_t num_tasks)
-			: resultsSaver(parent_interpreter->CreateInterpreterNodeStackStateSaver())
+			: resultsSaver(parent_interpreter->CreateNodeStackStateSaver())
 		{
 			resultsUnique = true;
 			resultsNeedCycleCheck = false;
@@ -707,7 +707,7 @@ protected:
 
 					auto result_ref = interpreter->ExecuteNode(node_to_execute,
 						enm->AllocNode(*parentInterpreter->callStackNodes),
-						enm->AllocNode(*parentInterpreter->interpreterNodeStackNodes),
+						enm->AllocNode(*parentInterpreter->nodeStackNodes),
 						construction_stack,
 						&csiau,
 						GetCallStackMutex());
@@ -764,7 +764,7 @@ protected:
 					std::vector<ConstructionStackIndexAndPreviousResultUniqueness> csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
 					auto result_ref = interpreter->ExecuteNode(node_to_execute,
 						enm->AllocNode(*parentInterpreter->callStackNodes),
-						enm->AllocNode(*parentInterpreter->interpreterNodeStackNodes),
+						enm->AllocNode(*parentInterpreter->nodeStackNodes),
 						enm->AllocNode(*parentInterpreter->constructionStackNodes),
 						&csiau,
 						GetCallStackMutex(), immediate_results);
@@ -896,7 +896,7 @@ protected:
 		{
 			while(!lock.try_lock())
 			{
-				auto node_stack = CreateInterpreterNodeStackStateSaver(en_to_preserve);
+				auto node_stack = CreateNodeStackStateSaver(en_to_preserve);
 				CollectGarbage();
 			}
 		}
@@ -913,7 +913,8 @@ protected:
 	// actively editing an entity's EvaluableNode data can cause memory errors if being accessed elsewhere, so a copy must be made
 	bool IsEntitySafeForModification(Entity *entity)
 	{
-		for(Interpreter *cur_interpreter = this; cur_interpreter != nullptr; cur_interpreter = cur_interpreter->callingInterpreter)
+		for(Interpreter *cur_interpreter = this; cur_interpreter != nullptr;
+			 cur_interpreter = cur_interpreter->callingInterpreter)
 		{
 			//if accessing the entity or have multiple threads, can't ensure safety
 			if(cur_interpreter->curEntity == entity)
@@ -992,7 +993,7 @@ protected:
 
 		if(performanceConstraints->ConstrainedOpcodeExecutionDepth())
 		{
-			if(interpreterNodeStackNodes->size() > performanceConstraints->maxOpcodeExecutionDepth)
+			if(nodeStackNodes->size() > performanceConstraints->maxOpcodeExecutionDepth)
 				return true;
 		}
 
@@ -1253,7 +1254,7 @@ protected:
 	PerformanceConstraints *performanceConstraints;
 
 	//a stack (list) of the current nodes being executed
-	std::vector<EvaluableNode *> *interpreterNodeStackNodes;
+	std::vector<EvaluableNode *> *nodeStackNodes;
 
 public:
 	//where to allocate new nodes

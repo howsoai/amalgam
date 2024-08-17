@@ -258,7 +258,7 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 	//create: (declare (assoc new_entity (null) create_new_entity (null)) )
 	EvaluableNode *difference_function = enm->AllocNode(ENT_DECLARE);
 
-	auto node_stack = interpreter->CreateInterpreterNodeStackStateSaver(difference_function);
+	auto node_stack = interpreter->CreateNodeStackStateSaver(difference_function);
 
 	EvaluableNode *df_assoc = enm->AllocNode(ENT_ASSOC);
 	difference_function->AppendOrderedChildNode(df_assoc);

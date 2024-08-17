@@ -127,7 +127,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en,
 	auto function = InterpretNodeForImmediateUse(ocn[0]);
 	if(EvaluableNode::IsNull(function))
 		return EvaluableNodeReference::Null();
-	auto node_stack = CreateInterpreterNodeStackStateSaver(function);
+	auto node_stack = CreateNodeStackStateSaver(function);
 
 	//get tree and make a copy so it can be modified in-place
 	auto to_modify = InterpretNode(ocn[1]);
@@ -155,7 +155,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 		return EvaluableNodeReference::Null();
 
 	auto function = InterpretNodeForImmediateUse(ocn[0]);
-	auto node_stack = CreateInterpreterNodeStackStateSaver(function);
+	auto node_stack = CreateNodeStackStateSaver(function);
 
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
 
@@ -530,7 +530,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 	}
 
 	auto function = InterpretNodeForImmediateUse(ocn[0]);
-	auto node_stack = CreateInterpreterNodeStackStateSaver(function);
+	auto node_stack = CreateNodeStackStateSaver(function);
 
 	//get list
 	auto list = InterpretNode(ocn[1]);
@@ -713,7 +713,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, b
 	//get the index of the first list to weave based on how many parameters there are
 	size_t index_of_first_list = 0;
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver();
+	auto node_stack = CreateNodeStackStateSaver();
 
 	//if a function is specified, then set up appropriate data structures to call the function and move the indices for the index and value parameters
 	EvaluableNodeReference function = EvaluableNodeReference::Null();
@@ -835,7 +835,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en, 
 	if(EvaluableNode::IsNull(function))
 		return EvaluableNodeReference::Null();
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(function);
+	auto node_stack = CreateNodeStackStateSaver(function);
 
 	//get list
 	auto list = InterpretNode(ocn[1]);
@@ -902,7 +902,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, b
 
 	evaluableNodeManager->EnsureNodeIsModifiable(source);
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(source);
+	auto node_stack = CreateNodeStackStateSaver(source);
 
 	//get the type to set
 	EvaluableNodeType new_type = ENT_NULL;
@@ -1034,7 +1034,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 	}
 	else
 	{
-		auto node_stack = CreateInterpreterNodeStackStateSaver(function);
+		auto node_stack = CreateNodeStackStateSaver(function);
 		
 		//get list
 		auto list = InterpretNode(ocn[list_index]);
@@ -1218,7 +1218,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_INDEX(EvaluableNo
 	if(container == nullptr)
 		return AllocReturn(false, immediate_result);
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(container);
+	auto node_stack = CreateNodeStackStateSaver(container);
 
 	//get index to look up (will attempt to reuse this node below)
 	auto index = InterpretNodeForImmediateUse(ocn[1]);
@@ -1242,7 +1242,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 	if(container == nullptr)
 		return AllocReturn(false, immediate_result);
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(container);
+	auto node_stack = CreateNodeStackStateSaver(container);
 
 	//get value to look up (will attempt to reuse this node below)
 	auto value = InterpretNodeForImmediateUse(ocn[1]);
@@ -1311,7 +1311,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 	//make sure it's editable
 	evaluableNodeManager->EnsureNodeIsModifiable(container);
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(container);
+	auto node_stack = CreateNodeStackStateSaver(container);
 
 	//get indices (or index) to remove
 	auto indices = InterpretNodeForImmediateUse(ocn[1], true);
@@ -1421,7 +1421,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, bo
 	//make sure it's editable
 	evaluableNodeManager->EnsureNodeIsModifiable(container);
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(container);
+	auto node_stack = CreateNodeStackStateSaver(container);
 
 	//get indices (or index) to keep
 	auto indices = InterpretNodeForImmediateUse(ocn[1], true);
@@ -1605,7 +1605,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 			auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
 			if(enqueue_task_lock.AreThreadsAvailable())
 			{
-				auto node_stack = CreateInterpreterNodeStackStateSaver(new_assoc);
+				auto node_stack = CreateNodeStackStateSaver(new_assoc);
 
 				//get keys
 				std::vector<StringInternPool::StringID> keys;
@@ -1684,7 +1684,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, boo
 	size_t index_list_index = 0;
 	size_t value_list_index = 1;
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver();
+	auto node_stack = CreateNodeStackStateSaver();
 
 	//if a function is specified, then set up appropriate data structures to call the function and move the indices for the index and value parameters
 	EvaluableNodeReference function = EvaluableNodeReference::Null();
@@ -1809,7 +1809,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, b
 	if(EvaluableNode::IsNull(zipped))
 		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(zipped);
+	auto node_stack = CreateNodeStackStateSaver(zipped);
 	auto index_list = InterpretNodeForImmediateUse(ocn[1]);
 	node_stack.PopEvaluableNode();
 

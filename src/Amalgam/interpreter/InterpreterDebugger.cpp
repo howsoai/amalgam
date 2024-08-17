@@ -300,8 +300,8 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, bool 
 		{
 			if(command == "f")
 			{
-				if(interpreterNodeStackNodes->size() > 0)
-					_interpreter_debug_data.runUntilOpcode = interpreterNodeStackNodes->back();
+				if(nodeStackNodes->size() > 0)
+					_interpreter_debug_data.runUntilOpcode = nodeStackNodes->back();
 			}
 			else if(command == "fc")
 			{
@@ -424,7 +424,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, bool 
 				PrintStackNode(csn, evaluableNodeManager);
 
 			std::cout << "Interpret node stack:" << std::endl;
-			for(EvaluableNode *insn : *interpreterNodeStackNodes)
+			for(EvaluableNode *insn : *nodeStackNodes)
 				PrintStackNode(insn, evaluableNodeManager);
 		}
 		else if(command == "entities")

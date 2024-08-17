@@ -467,7 +467,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, bo
 	if(EvaluableNode::IsNull(function))
 		return EvaluableNodeReference::Null();
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(function);
+	auto node_stack = CreateNodeStackStateSaver(function);
 
 	if(_label_profiling_enabled && function->GetNumLabels() > 0)
 		PerformanceProfiler::StartOperation(function->GetLabel(0), evaluableNodeManager->GetNumberOfUsedNodes());
@@ -506,7 +506,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	if(EvaluableNode::IsNull(function))
 		return EvaluableNodeReference::Null();
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(function);
+	auto node_stack = CreateNodeStackStateSaver(function);
 
 	PerformanceConstraints perf_constraints;
 	PerformanceConstraints *perf_constraints_ptr = nullptr;
@@ -566,7 +566,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, b
 
 	PushNewConstructionContext(nullptr, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver();
+	auto node_stack = CreateNodeStackStateSaver();
 	size_t loop_iteration = 0;
 	for(;;)
 	{
@@ -865,7 +865,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		if(assigned_vars == nullptr || !assigned_vars->IsAssociativeArray())
 			return EvaluableNodeReference::Null();
 
-		auto node_stack = CreateInterpreterNodeStackStateSaver(assigned_vars);
+		auto node_stack = CreateNodeStackStateSaver(assigned_vars);
 
 		//iterate over every variable being assigned
 		for(auto &[cn_id, cn] : assigned_vars->GetMappedChildNodesReference())
@@ -986,7 +986,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	else //more than 2, need to make a copy and fill in as appropriate
 	{
 		//obtain all of the edits to make the edits transactionally at once when all are collected
-		auto node_stack = CreateInterpreterNodeStackStateSaver();
+		auto node_stack = CreateNodeStackStateSaver();
 		auto &replacements = *node_stack.stack;
 		size_t replacements_start_index = node_stack.originalStackSize;
 
@@ -1143,7 +1143,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET(EvaluableNode *en, boo
 	if(ocn_size < 2 || source == nullptr)
 		return source;
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(source);
+	auto node_stack = CreateNodeStackStateSaver(source);
 
 	//if just a single index passed to get
 	if(ocn_size == 2)
@@ -1198,7 +1198,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_and_REPLACE(EvaluableN
 	if(!result.unique)
 		result = evaluableNodeManager->DeepAllocCopy(result);
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(result);
+	auto node_stack = CreateNodeStackStateSaver(result);
 
 	bool result_flags_need_updates = false;
 
@@ -1384,7 +1384,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OPCODE_STACK(EvaluableNode
 {
 	//can create this node on the stack because will be making a copy
 	EvaluableNode stack_top_holder(ENT_LIST);
-	stack_top_holder.SetOrderedChildNodes(*interpreterNodeStackNodes);
+	stack_top_holder.SetOrderedChildNodes(*nodeStackNodes);
 	return evaluableNodeManager->DeepAllocCopy(&stack_top_holder);
 }
 
@@ -2008,7 +2008,7 @@ void Interpreter::VerifyEvaluableNodeIntegrity()
 	for(EvaluableNode *en : *callStackNodes)
 		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
 
-	for(EvaluableNode *en : *interpreterNodeStackNodes)
+	for(EvaluableNode *en : *nodeStackNodes)
 		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en, nullptr, false);
 
 	for(EvaluableNode *en : *constructionStackNodes)

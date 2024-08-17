@@ -335,7 +335,7 @@ PLATFORM_MAIN_CONSOLE
 				return_val = -1;
 			}
 
-			std::cout << "Memory reclaimation complete." << std::endl;
+			std::cout << "Memory reclamation complete." << std::endl;
 		}
 
 		return return_val;

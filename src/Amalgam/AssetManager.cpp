@@ -128,7 +128,7 @@ bool AssetManager::StoreResourcePathFromProcessedResourcePaths(EvaluableNode *co
 	{
 		std::string code_string = Parser::Unparse(code, enm, false, true, sort_keys);
 
-		//transforminto format needed for compression
+		//transform into format needed for compression
 		CompactHashMap<std::string, size_t> string_map;
 		string_map[code_string] = 0;
 

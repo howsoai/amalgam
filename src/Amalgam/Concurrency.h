@@ -75,7 +75,7 @@ namespace Concurrency
 	void SetMaxNumThreads(size_t max_num_threads);
 
 #ifdef MULTITHREAD_SUPPORT
-	//threadPool is the primary threadpool shared for common tasks
+	//threadPool is the primary thread pool shared for common tasks
 	//any tasks that have interdependencies should be enqueued as one batch
 	//to make sure that interdependency deadlocks do not occur
 	extern ThreadPool threadPool;

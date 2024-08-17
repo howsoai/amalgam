@@ -18,7 +18,7 @@ public:
 	}
 };
 
-//Normalizes the probabilities; if any probabilities are infinity, it will equally uniformally normalize over just the infinite values
+//Normalizes the probabilities; if any probabilities are infinity, it will equally uniformly normalize over just the infinite values
 template<typename ContainerType>
 void NormalizeProbabilities(ContainerType &probabilities)
 {
@@ -46,7 +46,7 @@ void NormalizeProbabilities(ContainerType &probabilities)
 	}
 }
 
-//Normalizes the probabilities; if any probabilities are infinity, it will equally uniformally normalize over just the infinite values
+//Normalizes the probabilities; if any probabilities are infinity, it will equally uniformly normalize over just the infinite values
 template<typename ContainerType, typename ValueType>
 void NormalizeProbabilitiesMap(ContainerType &probabilities_map)
 {

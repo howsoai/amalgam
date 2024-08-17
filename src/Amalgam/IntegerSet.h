@@ -548,7 +548,7 @@ public:
 		if(n > numElements)
 			return GetEndInteger();
 
-		//fast forward using poopulation count to find the bucket
+		//fast forward using population count to find the bucket
 		size_t iteration = 0;
 		size_t bucket = 0;
 		for(; bucket < bitBucket.size(); bucket++)
@@ -585,7 +585,7 @@ public:
 	//does not uniformly get an element, first selects a bucket at random, then selects an element in the bucket at random
 	size_t GetRandomElement(RandomStream &random_stream)
 	{
-		//if there are significatly less elements than the set size, use the iterative method to select a uniformly random element
+		//if there are significantly less elements than the set size, use the iterative method to select a uniformly random element
 		if(curMaxNumIndices / 4 > numElements)
 			return GetNthElement(random_stream.RandSize(numElements));
 
@@ -1515,7 +1515,7 @@ public:
 		}
 	}
 
-	//removs all elements of this container from other
+	//removes all elements of this container from other
 	inline void EraseTo(BitArrayIntegerSet &other, bool in_batch = false)
 	{
 		if(isSisContainer)
@@ -1794,7 +1794,7 @@ public:
 protected:
 
 	//returns true if it would be more efficient to convert from sis to bais
-	//assumes conitainer is already sis
+	//assumes container is already sis
 	inline bool IsBaisPreferredToSis(size_t num_elements, size_t max_element)
 	{
 		//add 1 to round up to make it less likely to flip back and forth between types
@@ -1804,7 +1804,7 @@ protected:
 	}
 
 	//returns true if it would be more efficient to convert from bais to sis
-	//assumes conitainer is already bais
+	//assumes container is already bais
 	inline bool IsSisPreferredToBais(size_t num_elements, size_t max_element)
 	{
 		//round this down (don't take ceil) to make it less likely to flip back and forth between types

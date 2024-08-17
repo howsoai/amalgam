@@ -82,7 +82,7 @@ inline double FastLog(double x)
 	x = a.first;
 	int pow2 = a.second;
 
-	// Use a 4-part polynom to approximate log2(x);
+	// Use a 4-part polynomial to approximate log2(x);
 	double c[] = { 1.33755322, -4.42852392, 6.30371424, -3.21430967 };
 	double log2 = 0.6931471805599453;
 

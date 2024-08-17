@@ -67,7 +67,7 @@ public:
 	}
 
 	//Computes the Distance Contributions for each entity specified in entities_to_compute
-	//if entities_to_compute is specified (i.e., not nullptr), any entity not in entities_to_compute will be ommitted
+	//if entities_to_compute is specified (i.e., not nullptr), any entity not in entities_to_compute will be omitted
 	//sets contribs_out to the respective distance contributions of each entity in entities_to_compute, or, for all entities in the cache
 	//sets contribs_sum_out to the sum of all distance contributions of entities in entities_to_compute and also, if not nullptr, in the cache.
 	inline void ComputeDistanceContributions(EntityReferenceSet *entities_to_compute, std::vector<double> &contribs_out, double &contribs_sum_out)
@@ -104,7 +104,7 @@ public:
 		ComputeDistanceContributions(entities_to_compute, contribs_out, contribs_sum_out);
 	}
 
-	//Like ComputeDistanceContributions, but will populate contribs_out with a value for each of the included_entities, and will set any releavant entity
+	//Like ComputeDistanceContributions, but will populate contribs_out with a value for each of the included_entities, and will set any relevant entity
 	// in the cache but only in included_entities to excluded_entity_distance_contribution_value, which will not be included in the contribs_sum_out
 	inline void ComputeDistanceContributionsFromEntities(EntityReferenceSet &included_entities, double excluded_entity_distance_contribution_value,
 		std::vector<double> &contribs_out, double &contribs_sum_out)
@@ -272,7 +272,7 @@ public:
 			//d_KL = sum_i -base_distance_probabilities[i] * log( base_distance_probabilities[i] / new_probabilities[i])
 			//but because we know new_probabilities[i] = base_distance_probabilities[i] * dc_update_scale we can rewrite this as:
 			// d_KL = sum_i -base_distance_probabilities[i] * log( 1 / dc_update_scale) )
-			//the logarithm doesn't change and can be pulled out of the sum (pulling out the reciprocol as -1) to be:
+			//the logarithm doesn't change and can be pulled out of the sum (pulling out the reciprocal as -1) to be:
 			// d_KL = log( dc_update_scale) ) * sum_i base_distance_probabilities[i]
 			//but because we've already computed the kl divergence for the updated_distance_contribs (changed neighbor sets),
 			// we only want to compute d_KL for those that just need to be scaled
@@ -360,7 +360,7 @@ public:
 	inline double ComputeCaseGroupKLDivergence(EntityReferenceSet &base_group_entities, bool conviction_of_removal)
 	{
 		//prime cache; get double the number of numNearestNeighbors in attempt to reduce the number of queries needed
-		// other heuristics other than 2x may be considered, and the effectiness of the heuristic entirely will depend on the overlap between the two case groups
+		// other heuristics other than 2x may be considered, and the effectiveness of the heuristic entirely will depend on the overlap between the two case groups
 	#ifdef MULTITHREAD_SUPPORT
 		knnCache->PreCacheAllKnn(numNearestNeighbors * 2, runConcurrently);
 	#else

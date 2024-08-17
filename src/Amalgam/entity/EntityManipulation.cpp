@@ -19,7 +19,7 @@ Entity *EntityManipulation::EntitiesMergeMethod::MergeValues(Entity *a, Entity *
 	else if(b != nullptr)
 		merged_entity->SetRandomStream(b->GetRandomStream());
 
-	//merge entitys' code
+	//merge entity code
 	EvaluableNodeReference code_a = (a != nullptr ? a->GetRoot() : EvaluableNodeReference::Null());
 	EvaluableNodeReference code_b = (b != nullptr ? b->GetRoot() : EvaluableNodeReference::Null());
 
@@ -43,7 +43,7 @@ Entity *EntityManipulation::EntitiesMergeForDifferenceMethod::MergeValues(Entity
 	//create new entity
 	Entity *result = new Entity();
 
-	//compare entitys' code
+	//compare entity code
 	EvaluableNodeReference code_a = (a != nullptr ? a->GetRoot() : EvaluableNodeReference::Null());
 	EvaluableNodeReference code_b = (b != nullptr ? b->GetRoot() : EvaluableNodeReference::Null());
 

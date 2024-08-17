@@ -1239,6 +1239,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_and_REPLACE(EvaluableN
 				(*copy_destination) = nullptr;
 				continue;
 			}
+			//can no longer gaurantee uniqueness as the function could have stored the data elsewhere
+			result.unique = false;
 
 			node_stack.PushEvaluableNode(function);
 			PushNewConstructionContext(nullptr, result, EvaluableNodeImmediateValueWithType(), *copy_destination);

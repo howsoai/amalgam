@@ -51,7 +51,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en,
 
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 
-	return EvaluableNodeReference(result, false);	//can't make any guarantees about the new code
+	//can't gaurantee uniqueness as the function could have loaded or stored the data
+	return EvaluableNodeReference(result, false);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, bool immediate_result)
@@ -442,7 +443,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		return EvaluableNodeReference::Null();
 
 	//create result_list as a copy of the current list, but without child nodes
-	EvaluableNodeReference result_list(evaluableNodeManager->AllocNode(list->GetType()), list.unique);
+	//can no longer gaurantee uniqueness as the function could have stored the data elsewhere
+	EvaluableNodeReference result_list(evaluableNodeManager->AllocNode(list->GetType()), false);
 	result_list->SetNeedCycleCheck(list->GetNeedCycleCheck());
 	result_list->SetIsIdempotent(list->GetIsIdempotent());
 
@@ -1610,8 +1612,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, boo
 	if(value_list != nullptr)
 		result.UpdatePropertiesBasedOnAttachedNode(value_list);
 
-	if(function != nullptr)
+	if(!EvaluableNode::IsNull(function))
 	{
+		//can't make any guarantees about the first term because function may retrieve it
+		result.unique = false;
 		node_stack.PushEvaluableNode(index_list);
 		node_stack.PushEvaluableNode(value_list);
 	}

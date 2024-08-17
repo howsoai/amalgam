@@ -80,7 +80,7 @@ inline bool ConstrainDateTimeStringToValidFormat(std::string &s)
 
 		switch(s[index + 1])
 		{
-		//valid single-caracter format specifiers
+		//valid single-character format specifiers
 		case 'z':
 		{
 			index++;
@@ -235,7 +235,7 @@ double GetNumSecondsSinceEpochFromDateTimeString(const std::string &datetime, st
 			//month and year only dates must be parsed specifically into year_month 
 			date::year_month ym;
 			ss >> date::parse(format, ym, in_date_timezone);
-			//convert to time_point by specifiying the day to be 1 for the parsed year month
+			//convert to time_point by specifying the day to be 1 for the parsed year month
 			dt = date::sys_days{ ym / 1 };
 		}
 		else

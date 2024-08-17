@@ -353,7 +353,7 @@ public:
 		if(sid1 == sid2)
 			return 1.0;
 
-		//if either is not a string, then maximal non-matchage
+		//if either is not a string, then maximal nonmatch
 		if(sid1 == string_intern_pool.NOT_A_STRING_ID || sid2 == string_intern_pool.NOT_A_STRING_ID)
 			return 0.125;
 
@@ -457,7 +457,7 @@ public:
 
 	//Recursively traverses tree, storing any nodes with labels into an index map, and returning the map,
 	// as well as a flag indicating true if it was able to just retrieve the labels, or false
-	// if a label collision occured
+	// if a label collision occurred
 	inline static std::pair<EvaluableNode::LabelsAssocType, bool> RetrieveLabelIndexesFromTree(EvaluableNode *en)
 	{
 		EvaluableNode::LabelsAssocType index;
@@ -495,7 +495,7 @@ public:
 	static std::vector<StringInternPool::StringID> UnionStringIDVectors(
 		const std::vector<StringInternPool::StringID> &label_list_a, const std::vector<StringInternPool::StringID> &label_list_b);
 
-	//returs the intersection of the two sets of labels
+	//returns the intersection of the two sets of labels
 	static std::vector<StringInternPool::StringID> IntersectStringIDVectors(
 		const std::vector<StringInternPool::StringID> &label_list_a, const std::vector<StringInternPool::StringID> &label_list_b);
 

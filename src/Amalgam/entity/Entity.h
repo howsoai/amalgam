@@ -77,7 +77,7 @@ public:
 #ifdef MULTITHREAD_SUPPORT
 
 //encapsulates EntityReference with a lock type
-//need to templatize EntityType because can't foreward declare a method
+//need to templatize EntityType because can't forward declare a method
 template<typename LockType, typename EntityType = Entity>
 class EntityReferenceWithLock : public EntityReference<EntityType>
 {
@@ -591,7 +591,7 @@ public:
 		return erbr;
 	}
 
-	//appends deply contained entity references to erbr
+	//appends deeply contained entity references to erbr
 	template<typename EntityReferenceType>
 	void AppendAllDeeplyContainedEntityReferencesGroupedByDepth(EntityReferenceBufferReference<EntityReferenceType> &erbr)
 	{

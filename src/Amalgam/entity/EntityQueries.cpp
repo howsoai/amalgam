@@ -498,7 +498,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 				entity_values.push_back(std::make_pair(matching_entities[i], value));
 		}
 
-		//sort entites by value
+		//sort entities by value
 		if(queryType == ENT_QUERY_MIN)
 		{
 			if(singleLabelType == ENIVT_NUMBER)

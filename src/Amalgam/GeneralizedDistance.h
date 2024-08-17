@@ -505,7 +505,7 @@ public:
 	}
 
 	//returns the base of the distance term for nominal comparisons for a match
-	//given the probablility of the class being observed given that it is a match
+	//given the probability of the class being observed given that it is a match
 	__forceinline double ComputeDistanceTermNominalMatchFromMatchProbabilities(size_t index,
 		double prob_class_given_match, bool high_accuracy)
 	{

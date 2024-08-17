@@ -369,7 +369,7 @@ std::tuple<Entity *, Entity *, Entity::EntityReferenceBufferReference<EntityRead
 	TraverseToDeeplyContainedEntityReadReferencesViaEvaluableNodeIDPath(Entity *from_entity,
 		EvaluableNode *id_path_1, EvaluableNode *id_path_2);
 
-//constructs an ID or list of IDs that will traverse frome a to b, assuming that b is contained somewhere within a
+//constructs an ID or list of IDs that will traverse from a to b, assuming that b is contained somewhere within a
 EvaluableNode *GetTraversalIDPathFromAToB(EvaluableNodeManager *enm, Entity *a, Entity *b);
 
 //similar to Parser::GetCodeForPathFromAToB, but instead returns a list of how to traverse each node, such as which index or which key to use to traverse

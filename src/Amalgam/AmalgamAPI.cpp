@@ -56,7 +56,7 @@ extern "C"
 		widestr += (wchar_t)0;
 		wchar_t *wct = new wchar_t[widestr.length()];
 
-		//The below call is depricated but medium risk since the buffer is generated within the function
+		//The below call is deprecated but medium risk since the buffer is generated within the function
 		//and length of the string is tracked. This still could pose a vulnerability with malicious unicode
 		//however and an alternative that returns with minimal amount of allocations that secure should
 		//be explored. wcsncpy_s was explored as an option but is not guaranteed to exist in the STL for

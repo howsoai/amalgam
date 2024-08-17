@@ -230,7 +230,7 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 		return;
 	}
 
-	//make sure it's a valid rassignment
+	//make sure it's a valid reassignment
 	if(entity_index_to_reassign >= numEntities)
 	{
 	#ifdef SBFDS_VERIFICATION
@@ -394,8 +394,8 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 
 	//if there is a radius, then change the flow such that every distance starts out with the negative of the maximum
 	//distance, such that if the distance is greater than zero, it is too far away
-	//this requires populating every initial distance with either the exponented maximum distance, or the
-	//exponented maximum distance plus the radius
+	//this requires populating every initial distance with either the exponentiated maximum distance, or the
+	//exponentiated maximum distance plus the radius
 	size_t radius_column_index = GetColumnIndexFromLabelId(radius_label);
 	if(radius_column_index < columnData.size())
 	{

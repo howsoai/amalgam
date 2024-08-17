@@ -51,7 +51,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en,
 
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 
-	return EvaluableNodeReference(result, false);	//can't make any guarantees about the new code
+	//can't gaurantee uniqueness as the function could have loaded or stored the data
+	return EvaluableNodeReference(result, false);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, bool immediate_result)
@@ -74,7 +75,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 			return EvaluableNodeReference::Null();
 
 		//create result_list as a copy of the current list, but without child nodes
-		result = EvaluableNodeReference(evaluableNodeManager->AllocNode(list->GetType()), true);
+		//can't gaurantee uniqueness as the function could have stored the data elsewhere
+		result = EvaluableNodeReference(evaluableNodeManager->AllocNode(list->GetType()), false);
 
 		if(list->IsOrderedArray())
 		{
@@ -235,7 +237,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 
 		if(!need_assoc)
 		{
-			result = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
+			//can't gaurantee uniqueness as the function could have stored the data elsewhere
+			result = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), false);
 			result->GetOrderedChildNodes().resize(largest_size);
 
 			PushNewConstructionContext(inputs_list_node, result, EvaluableNodeImmediateValueWithType(0.0), nullptr);
@@ -269,7 +272,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 		}
 		else //need associative array
 		{
-			result = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
+			//can't gaurantee uniqueness as the function could have stored the data elsewhere
+			result = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_ASSOC), false);
 			result->ReserveMappedChildNodes(largest_size + all_keys.size());
 
 			PushNewConstructionContext(inputs_list_node, result, EvaluableNodeImmediateValueWithType(0.0), nullptr);
@@ -442,7 +446,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		return EvaluableNodeReference::Null();
 
 	//create result_list as a copy of the current list, but without child nodes
-	EvaluableNodeReference result_list(evaluableNodeManager->AllocNode(list->GetType()), list.unique);
+	//can no longer gaurantee uniqueness as the function could have stored the data elsewhere
+	EvaluableNodeReference result_list(evaluableNodeManager->AllocNode(list->GetType()), false);
 	result_list->SetNeedCycleCheck(list->GetNeedCycleCheck());
 	result_list->SetIsIdempotent(list->GetIsIdempotent());
 

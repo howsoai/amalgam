@@ -138,7 +138,7 @@ public:
 	//buffers to be reused for less memory churn
 	struct QueryCachesBuffers
 	{
-		//for storting compute results
+		//for storing compute results
 		std::vector<DistanceReferencePair<size_t>> computeResultsIdToValue;
 
 		//buffer to keep track of which entities are currently matching

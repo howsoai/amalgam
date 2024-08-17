@@ -15,7 +15,7 @@ public:
 	//stores all writes to entities as a seq of direct_assigns
 	//listening_entity is the entity to store the relative ids to
 	//if retain_writes is true, then the listener will store the writes, and GetWrites() will return the list of all writes accumulated
-	//if filename is not empty, then it will attempt to open the file and log all writes to that file, and then flush the filestream
+	//if filename is not empty, then it will attempt to open the file and log all writes to that file, and then flush the file stream
 	EntityWriteListener(Entity *listening_entity, bool retain_writes = false, const std::string &filename = std::string());
 
 	~EntityWriteListener();

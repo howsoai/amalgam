@@ -75,8 +75,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 			return EvaluableNodeReference::Null();
 
 		//create result_list as a copy of the current list, but without child nodes
-		//can't gaurantee uniqueness as the function could have stored the data elsewhere
-		result = EvaluableNodeReference(evaluableNodeManager->AllocNode(list->GetType()), false);
+		result = EvaluableNodeReference(evaluableNodeManager->AllocNode(list->GetType()), true);
 
 		if(list->IsOrderedArray())
 		{
@@ -237,8 +236,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 
 		if(!need_assoc)
 		{
-			//can't gaurantee uniqueness as the function could have stored the data elsewhere
-			result = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), false);
+			result = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
 			result->GetOrderedChildNodes().resize(largest_size);
 
 			PushNewConstructionContext(inputs_list_node, result, EvaluableNodeImmediateValueWithType(0.0), nullptr);
@@ -272,8 +270,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 		}
 		else //need associative array
 		{
-			//can't gaurantee uniqueness as the function could have stored the data elsewhere
-			result = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_ASSOC), false);
+			result = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
 			result->ReserveMappedChildNodes(largest_size + all_keys.size());
 
 			PushNewConstructionContext(inputs_list_node, result, EvaluableNodeImmediateValueWithType(0.0), nullptr);
@@ -1615,8 +1612,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, boo
 	if(value_list != nullptr)
 		result.UpdatePropertiesBasedOnAttachedNode(value_list);
 
-	if(function != nullptr)
+	if(!EvaluableNode::IsNull(function))
 	{
+		//can't make any guarantees about the first term because function may retrieve it
+		result.unique = false;
 		node_stack.PushEvaluableNode(index_list);
 		node_stack.PushEvaluableNode(value_list);
 	}

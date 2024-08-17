@@ -9,6 +9,7 @@
 
 //forward declarations:
 class ImportEntityStatus;
+class Interpreter;
 
 /*
  * This class constitutes the C++ backing for the C API, and is fully functional as a C++ API.

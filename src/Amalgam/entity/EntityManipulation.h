@@ -5,6 +5,9 @@
 #include "EntityTreeFunctions.h"
 #include "Merger.h"
 
+//forward declarations:
+class Interpreter;
+
 //Contains various classes and functions to manipulate entities
 class EntityManipulation
 {

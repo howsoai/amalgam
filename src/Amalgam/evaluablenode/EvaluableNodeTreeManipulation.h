@@ -15,7 +15,7 @@
 #include <vector>
 
 //forward declarations:
-class Interpreter;
+class EvaluableNodeContext;
 
 //Functor to transform EvaluableNode into doubles
 class EvaluableNodeAsDouble
@@ -78,7 +78,7 @@ public:
 		typedef WeightedDiscreteRandomStreamTransform<EvaluableNodeBuiltInStringId,
 			CompactHashMap<EvaluableNodeBuiltInStringId, double>> WeightedRandMutationType;
 
-		Interpreter *interpreter;
+		EvaluableNodeContext *context;
 		EvaluableNodeManager *enm;
 		double mutation_rate;
 		std::vector<std::string> *strings;
@@ -86,13 +86,13 @@ public:
 		WeightedRandEvaluableNodeType *randEvaluableNodeType;
 		WeightedRandMutationType *randMutationType;
 
-		MutationParameters(Interpreter *interpreter,
+		MutationParameters(EvaluableNodeContext *context,
 			EvaluableNodeManager *enm,
 			double mutation_rate,
 			std::vector<std::string> *strings,
 			WeightedRandEvaluableNodeType *rand_operation,
 			WeightedRandMutationType *rand_operation_type) :
-			interpreter(nullptr),
+			context(nullptr),
 			enm(nullptr),
 			mutation_rate(0),
 			strings(nullptr),
@@ -100,7 +100,7 @@ public:
 			randEvaluableNodeType(&evaluableNodeTypeRandomStream),
 			randMutationType(&mutationOperationTypeRandomStream)
 		{
-			this->interpreter = interpreter;
+			this->context = context;
 			this->enm = enm;
 			this->mutation_rate = mutation_rate;
 			this->strings = strings;
@@ -332,7 +332,7 @@ public:
 	static EvaluableNode *MixTrees(RandomStream random_stream, EvaluableNodeManager *enm, EvaluableNode *tree1, EvaluableNode *tree2,
 		double fraction_a, double fraction_b, double similar_mix_chance);
 
-	static EvaluableNode *MixTreesByCommonLabels(Interpreter *interpreter, EvaluableNodeManager *enm,
+	static EvaluableNode *MixTreesByCommonLabels(EvaluableNodeContext *context, EvaluableNodeManager *enm,
 		EvaluableNodeReference tree1, EvaluableNodeReference tree2, RandomStream &rs, double fraction_a, double fraction_b);
 
 	static std::string MixStrings(const std::string &a, const std::string &b, RandomStream random_stream, double fraction_a, double fraction_b);
@@ -507,7 +507,7 @@ public:
 	//Returns a tree that is a copy of tree but mutated based on mutation_rate
 	// will create the new tree with interpreter's evaluableNodeManager and will use interpreter's RandomStream
 	//Note that MutateTree does not guarantee that EvaluableNodeFlags will be set appropriately
-	static EvaluableNode *MutateTree(Interpreter *interpreter, EvaluableNodeManager *enm, EvaluableNode *tree, double mutation_rate,
+	static EvaluableNode *MutateTree(EvaluableNodeContext *context, EvaluableNodeManager *enm, EvaluableNode *tree, double mutation_rate,
 		CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights, CompactHashMap<EvaluableNodeType, double> *evaluable_node_weights);
 
 	//traverses tree and replaces any string that matches a key of to_replace with the value in to_replace

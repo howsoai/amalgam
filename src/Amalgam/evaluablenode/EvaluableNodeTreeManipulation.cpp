@@ -1,9 +1,9 @@
 //project headers:
 #include "EvaluableNodeTreeManipulation.h"
 #include "EvaluableNode.h"
+#include "EvaluableNodeContext.h"
 #include "EvaluableNodeTreeFunctions.h"
 #include "FastMath.h"
-#include "Interpreter.h"
 #include "Merger.h"
 
 //system headers:
@@ -217,7 +217,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MixTrees(RandomStream random_strea
 	return mm.MergeValues(tree1, tree2);
 }
 
-EvaluableNode *EvaluableNodeTreeManipulation::MixTreesByCommonLabels(Interpreter *interpreter, EvaluableNodeManager *enm,
+EvaluableNode *EvaluableNodeTreeManipulation::MixTreesByCommonLabels(EvaluableNodeContext *context, EvaluableNodeManager *enm,
 	EvaluableNodeReference tree1, EvaluableNodeReference tree2, RandomStream &rs, double fraction_a, double fraction_b)
 {
 	//can't merge anything into an empty tree
@@ -660,7 +660,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 	return generalized_node;
 }
 
-EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(Interpreter *interpreter, EvaluableNodeManager *enm,
+EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(EvaluableNodeContext *context, EvaluableNodeManager *enm,
 	EvaluableNode *tree, double mutation_rate,
 	CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights,
 	CompactHashMap<EvaluableNodeType, double> *evaluable_node_weights)
@@ -677,7 +677,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(Interpreter *interprete
 	if(mutation_weights != nullptr && !mutation_weights->empty())
 		rand_mutation_type.Initialize(*mutation_weights, true);
 
-	MutationParameters mp(interpreter, enm, mutation_rate, &strings, operation_type_wrs.IsInitialized() ? &operation_type_wrs : &evaluableNodeTypeRandomStream, rand_mutation_type.IsInitialized() ? &rand_mutation_type : &mutationOperationTypeRandomStream);
+	MutationParameters mp(context, enm, mutation_rate, &strings, operation_type_wrs.IsInitialized() ? &operation_type_wrs : &evaluableNodeTypeRandomStream, rand_mutation_type.IsInitialized() ? &rand_mutation_type : &mutationOperationTypeRandomStream);
 	EvaluableNode *ret = MutateTree(mp, tree);
 
 	return ret;
@@ -1511,13 +1511,13 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 	bool is_immediate = n->IsImmediate();
 	if(is_immediate)
 	{
-		if(mp.interpreter->randomStream.Rand() < 0.5)
-			MutateImmediateNode(n, mp.interpreter->randomStream, *mp.strings);
+		if(mp.context->randomStream.Rand() < 0.5)
+			MutateImmediateNode(n, mp.context->randomStream, *mp.strings);
 	}
 
-	EvaluableNodeBuiltInStringId mutation_type = mp.randMutationType->WeightedDiscreteRand(mp.interpreter->randomStream);
+	EvaluableNodeBuiltInStringId mutation_type = mp.randMutationType->WeightedDiscreteRand(mp.context->randomStream);
 	//only mark for likely deletion if null has no parameters
-	if(n->GetType() == ENT_NULL && n->GetNumChildNodes() == 0 && mp.interpreter->randomStream.Rand() < 0.5)
+	if(n->GetType() == ENT_NULL && n->GetNumChildNodes() == 0 && mp.context->randomStream.Rand() < 0.5)
 		mutation_type = ENBISI_delete;
 
 	//if immediate, can't perform most of the mutations, just mutate it
@@ -1527,22 +1527,22 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 	switch(mutation_type)
 	{
 		case ENBISI_change_type:
-			n->SetType(mp.randEvaluableNodeType->WeightedDiscreteRand(mp.interpreter->randomStream), mp.enm);
+			n->SetType(mp.randEvaluableNodeType->WeightedDiscreteRand(mp.context->randomStream), mp.enm);
 			if(IsEvaluableNodeTypeImmediate(n->GetType()))
-				MutateImmediateNode(n, mp.interpreter->randomStream, *mp.strings);
+				MutateImmediateNode(n, mp.context->randomStream, *mp.strings);
 			break;
 
 		case ENBISI_delete:
 			if(n->GetOrderedChildNodes().size() > 0)
 			{
 				size_t num_children = n->GetOrderedChildNodes().size();
-				size_t replace_with = mp.interpreter->randomStream.RandSize(num_children);
+				size_t replace_with = mp.context->randomStream.RandSize(num_children);
 				n = mp.enm->AllocNode(n->GetOrderedChildNodes()[replace_with]);
 			}
 			else if(n->GetMappedChildNodes().size() > 0)
 			{
 				auto &mcn = n->GetMappedChildNodesReference();
-				double replace_with = mp.interpreter->randomStream.Rand() * mcn.size();
+				double replace_with = mp.context->randomStream.Rand() * mcn.size();
 				//iterate over child nodes until find the right index
 				for(auto &[_, cn] : mcn)
 				{
@@ -1562,7 +1562,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 		case ENBISI_insert:
 		{
 			//use some heuristics to generate some random immediate value
-			EvaluableNode *new_node = mp.enm->AllocNode(mp.randEvaluableNodeType->WeightedDiscreteRand(mp.interpreter->randomStream));
+			EvaluableNode *new_node = mp.enm->AllocNode(mp.randEvaluableNodeType->WeightedDiscreteRand(mp.context->randomStream));
 
 			//give it a respectable default before randomizing
 			if(DoesEvaluableNodeTypeUseNumberData(new_node->GetType()))
@@ -1570,11 +1570,11 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			if(DoesEvaluableNodeTypeUseStringData(new_node->GetType()))
 				n->SetStringValue("string");
 
-			MutateImmediateNode(n, mp.interpreter->randomStream, *mp.strings);
+			MutateImmediateNode(n, mp.context->randomStream, *mp.strings);
 			if(n->IsAssociativeArray())
 			{
 				// get a random key
-				std::string key = GenerateRandomStringGivenStringSet(mp.interpreter->randomStream, *mp.strings);
+				std::string key = GenerateRandomStringGivenStringSet(mp.context->randomStream, *mp.strings);
 				n->SetMappedChildNode(key, new_node);
 			}
 			else
@@ -1586,16 +1586,16 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			if(n->GetOrderedChildNodes().size() > 1)
 			{
 				size_t num_child_nodes = n->GetOrderedChildNodesReference().size();
-				auto first_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
-				auto second_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
+				auto first_index = mp.context->randomStream.RandSize(num_child_nodes);
+				auto second_index = mp.context->randomStream.RandSize(num_child_nodes);
 				std::swap(n->GetOrderedChildNodes()[first_index], n->GetOrderedChildNodes()[second_index]);
 			}
 			else if(n->GetMappedChildNodes().size() > 1)
 			{
 				auto &n_mcn = n->GetMappedChildNodesReference();
 				size_t num_child_nodes = n_mcn.size();
-				auto first_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
-				auto second_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
+				auto first_index = mp.context->randomStream.RandSize(num_child_nodes);
+				auto second_index = mp.context->randomStream.RandSize(num_child_nodes);
 
 				if(first_index != second_index)
 				{
@@ -1620,8 +1620,8 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			if(n->GetOrderedChildNodes().size() > 0)
 			{
 				size_t num_children = n->GetOrderedChildNodesReference().size();
-				size_t source_index = mp.interpreter->randomStream.RandSize(num_children);
-				size_t destination_index = mp.interpreter->randomStream.RandSize(num_children + 1);
+				size_t source_index = mp.context->randomStream.RandSize(num_children);
+				size_t destination_index = mp.context->randomStream.RandSize(num_children + 1);
 				if(destination_index >= num_children)
 					n->AppendOrderedChildNode(mp.enm->DeepAllocCopy(n->GetOrderedChildNodes()[source_index]));
 				else
@@ -1631,9 +1631,9 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			{
 				auto &mcn = n->GetMappedChildNodes();
 				auto num_children = mcn.size();
-				size_t source_index = mp.interpreter->randomStream.RandSize(num_children);
+				size_t source_index = mp.context->randomStream.RandSize(num_children);
 				EvaluableNode *source_node = nullptr;
-				size_t destination_index = mp.interpreter->randomStream.RandSize(num_children + 1);
+				size_t destination_index = mp.context->randomStream.RandSize(num_children + 1);
 				//iterate over child nodes until find the right index
 				for(auto &[_, cn] : mcn)
 				{
@@ -1659,7 +1659,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 				//need to create a new key
 				if(destination_index > 0)
 				{
-					std::string new_key = GenerateRandomStringGivenStringSet(mp.interpreter->randomStream, *mp.strings, 0.6);
+					std::string new_key = GenerateRandomStringGivenStringSet(mp.context->randomStream, *mp.strings, 0.6);
 					n->SetMappedChildNode(new_key, mp.enm->DeepAllocCopy(source_node));
 				}
 			}
@@ -1675,14 +1675,14 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 			if(n != nullptr)
 			{
 				//see if can delete a label, and delete all if the option is available and chosen to keep new label creation balanced
-				if(n->GetNumLabels() > 0 && mp.interpreter->randomStream.Rand() < 0.875)
+				if(n->GetNumLabels() > 0 && mp.context->randomStream.Rand() < 0.875)
 				{
 					n->ClearLabels();
 				}
 				else
 				{
 					//add new label
-					std::string new_label = GenerateRandomStringGivenStringSet(mp.interpreter->randomStream, *mp.strings);
+					std::string new_label = GenerateRandomStringGivenStringSet(mp.context->randomStream, *mp.strings);
 					n->AppendLabel(new_label);
 				}
 			}
@@ -1702,7 +1702,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 						&& n->GetOrderedChildNodes().back()->GetMappedChildNodes().size() == 0) ))
 		{
 			//either remove this one or stop removing
-			if(mp.interpreter->randomStream.Rand() > 0.125)
+			if(mp.context->randomStream.Rand() > 0.125)
 				n->GetOrderedChildNodes().pop_back();
 			else
 				break;
@@ -1724,13 +1724,13 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 	}
 
 	EvaluableNode *copy = mp.enm->AllocNode(tree);
-	auto node_stack = mp.interpreter->CreateNodeStackStateSaver(copy);
+	auto node_stack = mp.context->CreateNodeStackStateSaver(copy);
 
 	//shouldn't happen, but just to be safe
 	if(copy == nullptr)
 		return nullptr;
 
-	if(mp.interpreter->randomStream.Rand() < mp.mutation_rate)
+	if(mp.context->randomStream.Rand() < mp.mutation_rate)
 	{
 		EvaluableNode *new_node = MutateNode(copy, mp);
 		//make sure have the right node to reference if it's a new node

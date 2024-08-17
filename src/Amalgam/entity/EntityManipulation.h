@@ -5,9 +5,6 @@
 #include "EntityTreeFunctions.h"
 #include "Merger.h"
 
-//forward declarations:
-class Interpreter;
-
 //Contains various classes and functions to manipulate entities
 class EntityManipulation
 {
@@ -16,8 +13,8 @@ public:
 	class EntitiesMergeMethod : public Merger<Entity *>
 	{
 	public:
-		constexpr EntitiesMergeMethod(Interpreter *_interpreter, bool keep_all_of_both)
-			: interpreter(_interpreter), keepAllOfBoth(keep_all_of_both)
+		constexpr EntitiesMergeMethod(EvaluableNodeContext *_context, bool keep_all_of_both)
+			: context(_context), keepAllOfBoth(keep_all_of_both)
 		{	}
 
 		virtual MergeMetricResults<Entity *> MergeMetric(Entity *a, Entity *b)
@@ -47,7 +44,7 @@ public:
 		virtual bool AreMergeable(Entity *a, Entity *b)
 		{	return keepAllOfBoth;	}
 
-		Interpreter *interpreter;
+		EvaluableNodeContext *context;
 
 	protected:
 		bool keepAllOfBoth;
@@ -58,8 +55,8 @@ public:
 	class EntitiesMergeForDifferenceMethod : public EntitiesMergeMethod
 	{
 	public:
-		inline EntitiesMergeForDifferenceMethod(Interpreter *_interpreter)
-			: EntitiesMergeMethod(_interpreter, false)
+		inline EntitiesMergeForDifferenceMethod(EvaluableNodeContext *_context)
+			: EntitiesMergeMethod(_context, false)
 		{	}
 
 		virtual Entity *MergeValues(Entity *a, Entity *b, bool must_merge = false);
@@ -81,7 +78,7 @@ public:
 	class EntitiesMixMethod : public EntitiesMergeMethod
 	{
 	public:
-		EntitiesMixMethod(Interpreter *_interpreter,
+		EntitiesMixMethod(EvaluableNodeContext *_context,
 			double fraction_a, double fraction_b, double similar_mix_chance, double fraction_entities_to_mix);
 
 		virtual Entity *MergeValues(Entity *a, Entity *b, bool must_merge);
@@ -111,14 +108,14 @@ public:
 	};
 
 	//Entity merging functions
-	static Entity *IntersectEntities(Interpreter *interpreter, Entity *entity1, Entity *entity2);
+	static Entity *IntersectEntities(EvaluableNodeContext *context, Entity *entity1, Entity *entity2);
 
-	static Entity *UnionEntities(Interpreter *interpreter, Entity *entity1, Entity *entity2);
+	static Entity *UnionEntities(EvaluableNodeContext *context, Entity *entity1, Entity *entity2);
 
 	//returns code that will transform entity1 into entity2, allocated with enm
-	static EvaluableNodeReference DifferenceEntities(Interpreter *interpreter, Entity *entity1, Entity *entity2);
+	static EvaluableNodeReference DifferenceEntities(EvaluableNodeContext *context, Entity *entity1, Entity *entity2);
 
-	static Entity *MixEntities(Interpreter *interpreter, Entity *entity1, Entity *entity2,
+	static Entity *MixEntities(EvaluableNodeContext *context, Entity *entity1, Entity *entity2,
 		double fractionA, double fractionB, double similar_mix_chance, double fraction_entities_to_mix);
 
 	//Computes the total number of nodes in both trees that are equal
@@ -127,7 +124,7 @@ public:
 	//computes the edit distance between the two entities
 	static double EditDistance(Entity *entity1, Entity *entity2);
 
-	static Entity *MutateEntity(Interpreter *interpreter, Entity *entity, double mutation_rate,
+	static Entity *MutateEntity(EvaluableNodeContext *context, Entity *entity, double mutation_rate,
 		CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights, CompactHashMap<EvaluableNodeType, double> *operation_type);
 
 	//flattens entity using enm to allocate code that can recreate it

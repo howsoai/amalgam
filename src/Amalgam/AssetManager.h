@@ -16,6 +16,7 @@
 
 //forward declarations:
 class ImportEntityStatus;
+class Interpreter;
 
 const std::string FILE_EXTENSION_AMLG_METADATA("mdam");
 const std::string FILE_EXTENSION_AMALGAM("amlg");

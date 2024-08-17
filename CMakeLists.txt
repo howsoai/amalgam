@@ -5,6 +5,8 @@
 cmake_minimum_required(VERSION 3.26)
 project(amalgam LANGUAGES CXX DESCRIPTION "Amalgam Language Interpreter")
 
+set(CMAKE_CXX_STANDARD 17)
+
 # Options:
 set(USE_OBJECT_LIBS ON CACHE BOOL "Build using object libs")
 set(TRY_GIT_TAG_FOR_UNKNOWN_VERSION ON CACHE BOOL

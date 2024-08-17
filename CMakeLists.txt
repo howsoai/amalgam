@@ -144,6 +144,8 @@ set(COMMON_SOURCE
     src/Amalgam/entity/EntityWriteListener.h
     src/Amalgam/evaluablenode/EvaluableNode.cpp
     src/Amalgam/evaluablenode/EvaluableNode.h
+    src/Amalgam/evaluablenode/EvaluableNodeContext.cpp
+    src/Amalgam/evaluablenode/EvaluableNodeContext.h
     src/Amalgam/evaluablenode/EvaluableNodeManagement.cpp
     src/Amalgam/evaluablenode/EvaluableNodeManagement.h
     src/Amalgam/evaluablenode/EvaluableNodeTreeDifference.cpp

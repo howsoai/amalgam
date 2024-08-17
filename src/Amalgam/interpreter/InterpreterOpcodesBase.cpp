@@ -2005,11 +2005,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT_A_BUILT_IN_TYPE(Evalua
 
 void Interpreter::VerifyEvaluableNodeIntegrity()
 {
+	EvaluableNodeContext::VerifyEvaluableNodeIntegrity();
+
 	for(EvaluableNode *en : *callStackNodes)
 		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
-
-	for(EvaluableNode *en : *nodeStackNodes)
-		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en, nullptr, false);
 
 	for(EvaluableNode *en : *constructionStackNodes)
 		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
@@ -2017,10 +2016,7 @@ void Interpreter::VerifyEvaluableNodeIntegrity()
 	if(curEntity != nullptr)
 		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(curEntity->GetRoot());
 
-	auto &nr = evaluableNodeManager->GetNodesReferenced();
-	for(auto &[en, _] : nr.nodesReferenced)
-		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en, nullptr, false);
-
 	if(callingInterpreter != nullptr)
 		callingInterpreter->VerifyEvaluableNodeIntegrity();
 }
+

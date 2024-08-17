@@ -5,12 +5,11 @@
 #include "EntityTreeFunctions.h"
 #include "EntityWriteListener.h"
 #include "EvaluableNode.h"
-#include "EvaluableNodeManagement.h"
+#include "EvaluableNodeContext.h"
 #include "FastMath.h"
 #include "Parser.h"
 #include "PerformanceProfiler.h"
 #include "PrintListener.h"
-#include "RandomStream.h"
 
 //system headers:
 #include <algorithm>
@@ -131,7 +130,7 @@ public:
 	size_t maxEntityIdLength;
 };
 
-class Interpreter
+class Interpreter : public EvaluableNodeContext
 {
 public:
 
@@ -406,19 +405,6 @@ public:
 	__forceinline size_t GetCallStackDepth()
 	{
 		return callStackNodes->size() - 1;
-	}
-
-	//creates a stack state saver for the interpreterNodeStack, which will be restored back to its previous condition when this object is destructed
-	__forceinline EvaluableNodeStackStateSaver CreateNodeStackStateSaver()
-	{
-		return EvaluableNodeStackStateSaver(nodeStackNodes);
-	}
-
-	//like CreateNodeStackStateSaver, but also pushes another node on the stack
-	__forceinline EvaluableNodeStackStateSaver CreateNodeStackStateSaver(EvaluableNode *en)
-	{
-		//count on C++ return value optimization to not call the destructor
-		return EvaluableNodeStackStateSaver(nodeStackNodes, en);
 	}
 
 	//keeps the current node on the stack and calls InterpretNodeExecution
@@ -1249,30 +1235,21 @@ protected:
 
 	//ensures that there are no reachable nodes that are deallocated
 	void VerifyEvaluableNodeIntegrity();
-
+	
 	//if not nullptr, then contains the respective constraints on performance
 	PerformanceConstraints *performanceConstraints;
 
-	//a stack (list) of the current nodes being executed
-	std::vector<EvaluableNode *> *nodeStackNodes;
-
 public:
-	//where to allocate new nodes
-	EvaluableNodeManager *evaluableNodeManager;
-
 	//Current entity that is being interpreted upon. If null, then it is assumed to be running in sandboxed mode
-	Entity *curEntity;
-
-	//random stream to get random numbers from
-	RandomStream randomStream;
+	Entity *curEntity{ nullptr };
 
 protected:
 
 	//the call stack is comprised of the variable contexts
-	std::vector<EvaluableNode *> *callStackNodes;
+	std::vector<EvaluableNode *> *callStackNodes{ nullptr };
 
 	//the current construction stack, containing an interleaved array of nodes
-	std::vector<EvaluableNode *> *constructionStackNodes;
+	std::vector<EvaluableNode *> *constructionStackNodes{ nullptr };
 
 	//current index for each level of constructionStackNodes;
 	//note, this should always be the same size as constructionStackNodes

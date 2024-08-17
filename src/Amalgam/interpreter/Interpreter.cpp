@@ -308,20 +308,14 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
 	PerformanceConstraints *performance_constraints, Entity *t, Interpreter *calling_interpreter)
+: EvaluableNodeContext{ enm, rand_stream }
 {
 	performanceConstraints = performance_constraints;
 
-	randomStream = rand_stream;
 	curEntity = t;
 	callingInterpreter = calling_interpreter;
 	writeListeners = write_listeners;
 	printListener = print_listener;
-
-	callStackNodes = nullptr;
-	nodeStackNodes = nullptr;
-	constructionStackNodes = nullptr;
-
-	evaluableNodeManager = enm;
 }
 
 #ifdef MULTITHREAD_SUPPORT

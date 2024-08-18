@@ -51,7 +51,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en,
 
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 
-	//can't gaurantee uniqueness as the function could have loaded or stored the data
+	//can't guarantee uniqueness as the function could have loaded or stored the data
 	return EvaluableNodeReference(result, false);
 }
 
@@ -443,7 +443,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		return EvaluableNodeReference::Null();
 
 	//create result_list as a copy of the current list, but without child nodes
-	EvaluableNodeReference result_list(evaluableNodeManager->AllocNode(list->GetType()), true);
+	EvaluableNodeReference result_list(evaluableNodeManager->AllocNode(list->GetType()), list.unique);
 	result_list->SetNeedCycleCheck(list->GetNeedCycleCheck());
 	result_list->SetIsIdempotent(list->GetIsIdempotent());
 

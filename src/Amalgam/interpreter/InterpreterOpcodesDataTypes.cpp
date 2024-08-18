@@ -2,7 +2,6 @@
 #include "Interpreter.h"
 
 #include "AmalgamVersion.h"
-#include "AssetManager.h"
 #include "Cryptography.h"
 #include "DateTimeFormat.h"
 #include "EvaluableNodeTreeFunctions.h"

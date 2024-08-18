@@ -2,7 +2,6 @@
 #include "Interpreter.h"
 
 #include "AmalgamVersion.h"
-#include "AssetManager.h"
 #include "EntityQueryBuilder.h"
 #include "EntityManipulation.h"
 #include "EntityQueries.h"

@@ -584,7 +584,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, b
 		//this ensures that even if all of the nodes are immediate, it'll still count the performance
 		if(AreExecutionResourcesExhausted(true))
 		{
-			PopConstructionContext();
+			PopConstructionContextAndGetExecutionSideEffectFlag();
 			return EvaluableNodeReference::Null();
 		}
 
@@ -609,7 +609,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, b
 					previous_result = GetAndClearPreviousResultInConstructionStack(0);
 					evaluableNodeManager->FreeNodeTreeIfPossible(previous_result);
 
-					PopConstructionContext();
+					PopConstructionContextAndGetExecutionSideEffectFlag();
 
 					if(new_result_type == ENT_CONCLUDE)
 						return RemoveTopConcludeOrReturnNode(new_result, evaluableNodeManager);
@@ -630,7 +630,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, b
 		previous_result = new_result;
 	}
 
-	PopConstructionContext();
+	PopConstructionContextAndGetExecutionSideEffectFlag();
 	return previous_result;
 }
 
@@ -781,7 +781,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 						scope->SetMappedChildNode(cn_id, value, false);
 					}
 				}
-				PopConstructionContext();
+				PopConstructionContextAndGetExecutionSideEffectFlag();
 			}
 
 			//free the vars / assoc node
@@ -827,6 +827,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	if(callStackNodes->size() < 1)
 		return EvaluableNodeReference::Null();
 
+	SetSideEffectsFlagsInConstructionStack();
+
 	bool accum = (en->GetType() == ENT_ACCUM);
 
 	//if only one parameter, then assume it is an assoc of variables to accum or assign
@@ -870,7 +872,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			{
 				PushNewConstructionContext(assigned_vars, assigned_vars, EvaluableNodeImmediateValueWithType(variable_sid), nullptr);
 				variable_value_node = InterpretNode(cn);
-				PopConstructionContext();
+				PopConstructionContextAndGetExecutionSideEffectFlag();
 			}
 
 			//retrieve the symbol
@@ -1239,15 +1241,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_and_REPLACE(EvaluableN
 				(*copy_destination) = nullptr;
 				continue;
 			}
-			//can no longer gaurantee uniqueness as the function could have stored the data elsewhere
-			result.unique = false;
-
+			
 			node_stack.PushEvaluableNode(function);
 			PushNewConstructionContext(nullptr, result, EvaluableNodeImmediateValueWithType(), *copy_destination);
 
 			EvaluableNodeReference new_value = InterpretNodeForImmediateUse(function);
 
-			PopConstructionContext();
+			if(PopConstructionContextAndGetExecutionSideEffectFlag())
+				result.unique = false;
+
 			node_stack.PopEvaluableNode();
 
 			if(*copy_destination != result) //normal replacement

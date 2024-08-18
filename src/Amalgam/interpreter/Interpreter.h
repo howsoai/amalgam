@@ -135,16 +135,19 @@ class Interpreter
 {
 public:
 
-	//used with construction stack to store the index and whether previous_result is unique
+	//used with construction stack to store the index and whether previous_result is unique,
+	//as well as whether any opcodes have been executed that have side effects, that could have written memory elsewhere,
+	//and prevent any part of the construction stack from being unique
 	struct ConstructionStackIndexAndPreviousResultUniqueness
 	{
 		inline ConstructionStackIndexAndPreviousResultUniqueness(EvaluableNodeImmediateValueWithType _index,
-			bool _unique)
-			: index(_index), unique(_unique)
+			bool _unique, bool execution_side_effects = false)
+			: index(_index), unique(_unique), executionSideEffects(execution_side_effects)
 		{	}
 
 		EvaluableNodeImmediateValueWithType index;
 		bool unique;
+		bool executionSideEffects;
 	};
 
 	//Creates a new interpreter to run code and to store labels.
@@ -273,7 +276,7 @@ public:
 	}
 
 	//pops the top construction context off the stack
-	inline void PopConstructionContext()
+	inline bool PopConstructionContextAndGetExecutionSideEffectFlag()
 	{
 		size_t new_size = constructionStackNodes->size();
 		if(new_size > constructionStackOffsetStride)
@@ -284,7 +287,14 @@ public:
 		constructionStackNodes->resize(new_size);
 
 		if(constructionStackIndicesAndUniqueness.size() > 0)
+		{
+			bool execution_side_effects = constructionStackIndicesAndUniqueness.back().executionSideEffects;
 			constructionStackIndicesAndUniqueness.pop_back();
+			return execution_side_effects;
+		}
+
+		//something odd happened, shouldn't be here
+		return true;
 	}
 
 	//updates the construction index at top of the stack to the new value
@@ -337,6 +347,20 @@ public:
 	{
 		for(auto &entry : constructionStackIndicesAndUniqueness)
 			entry.unique = false;
+	}
+
+	//should be called by any opcode that has side effects setting memory, such as assignment, accumulation, etc.
+	inline void SetSideEffectsFlagsInConstructionStack()
+	{
+		for(size_t i = constructionStackIndicesAndUniqueness.size(); i > 0; i--)
+		{
+			size_t index = i - 1;
+			//early out if already set with side effects
+			if(constructionStackIndicesAndUniqueness[index].executionSideEffects)
+				break;
+
+			constructionStackIndicesAndUniqueness[index].executionSideEffects = true;
+		}
 	}
 
 	//Makes sure that args is an active associative array is proper for context, meaning initialized assoc and a unique reference.
@@ -675,6 +699,9 @@ protected:
 						construction_stack,
 						&csiau,
 						GetCallStackMutex());
+
+					if(interpreter->PopConstructionContextAndGetExecutionSideEffectFlag())
+						resultsUnique = false;
 
 					if(result_ref.unique)
 					{

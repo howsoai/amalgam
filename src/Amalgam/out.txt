@@ -630,17 +630,17 @@ a
 []
 {
 	a 1
+	b 2
 	c 3
 	d 4
-	e 5
 	f 6
 }
-{d 4 e 5}
+{a 1 f 6}
 {
 	a 1
 	c 3
 	d 4
-	e 5
+	f 6
 }
 {
 	a 1
@@ -681,17 +681,17 @@ c
 []
 {
 	a 1
+	b 2
 	c 3
 	d 4
-	e 5
 	f 6
 }
-{d 4 e 5}
+{a 1 f 6}
 {
 	a 1
 	c 3
 	d 4
-	e 5
+	f 6
 }
 {
 	a 1
@@ -1042,7 +1042,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-["b" "c" "a" "4"]
+["4" "b" "c" "a"]
 [
 	0
 	1
@@ -1054,7 +1054,7 @@ abcdef
 	7
 ]
 --values--
-[2 3 1 "d"]
+[2 "d" 3 1]
 [
 	"a"
 	1
@@ -1075,7 +1075,7 @@ abcdef
 	4
 	"d"
 ]
-[2 3 1 0 "d"]
+[0 2 "d" 3 1]
 [
 	1
 	2
@@ -1272,7 +1272,7 @@ current_index: 2
 				8
 			]
 		accum_string "abcdef"
-		argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+		argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 		bar (declare
 				{x 6}
 				(+ x 2)
@@ -1285,10 +1285,10 @@ current_index: 2
 				A {B 2}
 				B 2
 			}
-		interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+		interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1723908438.795654
+		start_time 1724004351.743485
 		www 1
 		x 12
 		zz 10
@@ -1315,7 +1315,7 @@ current_index: 2
 			8
 		]
 	accum_string "abcdef"
-	argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+	argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 	bar (declare
 			{x 6}
 			(+ x 2)
@@ -1328,10 +1328,10 @@ current_index: 2
 			A {B 2}
 			B 2
 		}
-	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1723908438.795654
+	start_time 1724004351.743485
 	www 1
 	x 12
 	zz 10
@@ -1357,7 +1357,7 @@ current_index: 2
 			8
 		]
 	accum_string "abcdef"
-	argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+	argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 	bar (declare
 			{x 6}
 			(+ x 2)
@@ -1370,10 +1370,10 @@ current_index: 2
 			A {B 2}
 			B 2
 		}
-	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1723908438.795654
+	start_time 1724004351.743485
 	www 1
 	x 12
 	zz 10
@@ -1513,7 +1513,7 @@ a
 
 ["b" @(get (target 2) 0) @(get (target 2) 0) @(get (target 2) 0)]
 
-infinity test c or d: ["d" "d" "d" "c"]
+infinity test c or d: ["c" "c" "c" "d"]
 
 infinity test c or d: ["d" @(get (target 2) 0) "c" @(get (target 2) 2)]
 
@@ -1521,7 +1521,7 @@ infinity test c or d: ["d" @(get (target 2) 0) "c" @(get (target 2) 2)]
 
 {a 24 b 52 c 24}
 
-["10" "3" "4"]
+["7" "1" "6"]
 
 --get_rand_seed--
 N9ìÀù∏UØOaV∆T zˇ
@@ -1619,15 +1619,15 @@ string
 ]
 21: [{"b":4,"a":3},{"c":"c","d":null}]
 22: [{"a":3,"b":4},{"c":"c","d":null}]
-23: b: 2
-c: 3
-a: 1
-e:
+23: e:
   - a
   - b
   - 
   - .inf
+b: 2
+c: 3
 d: 4
+a: 1
 
 24: a: 1
 b: 2
@@ -1640,7 +1640,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2024-08-17-11.27.18.8424750
+current date-time in epoch: 2024-08-18-14.05.51.9692350
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -3532,7 +3532,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1723908439.203539
+1724004352.346834
 (true)
 
 RootTest
@@ -4371,14 +4371,14 @@ case conviction:{
 }
 cyclic feature nearest neighbors: {cyclic1 1 cyclic5 0.5}
 cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
+190: 0.045454545454545456 (null
+	##deg 12
+)
 155: 0.1 (null
 	##deg 0
 )
 200: 0.05555555555555555 (null
 	##deg 8
-)
-190: 0.045454545454545456 (null
-	##deg 12
 )
 --contains_label--
 (true)
@@ -4876,4 +4876,4 @@ concurrent entity writes successful: (true)
 
 --clean-up test files--
 --total execution time--
-2.322291851043701
+1.6749601364135742

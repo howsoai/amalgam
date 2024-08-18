@@ -19,15 +19,21 @@ class CustomEvaluableNodeComparator
 {
 public:
 	constexpr CustomEvaluableNodeComparator(Interpreter *_interpreter, EvaluableNode *_function, EvaluableNode *target_list)
-		: interpreter(_interpreter), function(_function), targetList(target_list)
+		: interpreter(_interpreter), function(_function), targetList(target_list), hadExecutionSideEffects(false)
 	{ }
 
 	bool operator()(EvaluableNode *a, EvaluableNode *b);
+
+	inline bool DidAnyComparisonHaveExecutionSideEffects()
+	{
+		return hadExecutionSideEffects;
+	}
 
 private:
 	Interpreter *interpreter;
 	EvaluableNode *function;
 	EvaluableNode *targetList;
+	bool hadExecutionSideEffects;
 };
 
 //sorts list based on the specified CustomEvaluableNodeComparator using a stable merge sort

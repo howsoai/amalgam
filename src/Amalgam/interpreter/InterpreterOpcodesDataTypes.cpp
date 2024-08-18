@@ -94,7 +94,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST(EvaluableNode *en, bo
 			new_list.UpdatePropertiesBasedOnAttachedNode(value);
 		}
 
-		PopConstructionContext();
+		if(PopConstructionContextAndGetExecutionSideEffectFlag())
+			new_list.unique = false;
 	}
 
 	return new_list;
@@ -152,7 +153,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, b
 			new_assoc.UpdatePropertiesBasedOnAttachedNode(element_result);
 		}
 
-		PopConstructionContext();
+		if(PopConstructionContextAndGetExecutionSideEffectFlag())
+			new_assoc.unique = false;
 	}
 
 	return new_assoc;

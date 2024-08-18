@@ -17,8 +17,10 @@ bool CustomEvaluableNodeComparator::operator()(EvaluableNode *a, EvaluableNode *
 	//compare
 	bool retval = (interpreter->InterpretNodeIntoNumberValue(function) > 0);
 
-	interpreter->PopConstructionContext();
-	interpreter->PopConstructionContext();
+	if(interpreter->PopConstructionContextAndGetExecutionSideEffectFlag())
+		hadExecutionSideEffects = true;
+	if(interpreter->PopConstructionContextAndGetExecutionSideEffectFlag())
+		hadExecutionSideEffects = true;
 
 	return retval;
 }

@@ -648,7 +648,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, b
 		result.UpdatePropertiesBasedOnAttachedNode(element_result);
 	}
 
-	PopConstructionContext();
+	if(PopConstructionContextAndGetExecutionSideEffectFlag())
+		result.unique = false;
 
 	return result;
 }

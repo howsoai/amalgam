@@ -282,13 +282,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 			if(ConstrainedAllocatedNodes())
 				performanceConstraints->curNumAllocatedNodesAllocatedToEntities += num_new_nodes_allocated;
 
-			//collect garbage, but not on current entity, save that for between instructions
-			if(target_entity != curEntity)
+			if(target_entity == curEntity)
+			{
+				SetSideEffectsFlagsInConstructionStack();
+			}
+			else
 			{
 			#ifdef AMALGAM_MEMORY_INTEGRITY
 				VerifyEvaluableNodeIntegrity();
 			#endif
 
+				//collect garbage, but not on current entity, save that for between instructions
 			#ifdef MULTITHREAD_SUPPORT
 				target_entity->CollectGarbage(&memoryModificationLock);
 			#else

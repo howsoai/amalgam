@@ -742,7 +742,7 @@ EvaluableNode *Interpreter::RewriteByFunction(EvaluableNodeReference function, E
 			e = RewriteByFunction(function, top_node, e, references);
 		}
 
-		PopConstructionContext();
+		PopConstructionContextAndGetExecutionSideEffectFlag();
 	}
 	else
 	{
@@ -759,7 +759,7 @@ EvaluableNode *Interpreter::RewriteByFunction(EvaluableNodeReference function, E
 				ocn[i] = RewriteByFunction(function, top_node, ocn[i], references);
 			}
 
-			PopConstructionContext();
+			PopConstructionContextAndGetExecutionSideEffectFlag();
 		}
 	}
 

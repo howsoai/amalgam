@@ -47,11 +47,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en,
 	EvaluableNode::ReferenceSetType references;
 	EvaluableNode *result = RewriteByFunction(function, to_modify, to_modify, references);
 
-	PopConstructionContext();
+	PopConstructionContextAndGetExecutionSideEffectFlag();
 
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 
-	//can't gaurantee uniqueness as the function could have loaded or stored the data
+	//can't guarantee uniqueness as the function could have loaded or stored the data
 	return EvaluableNodeReference(result, false);
 }
 
@@ -124,7 +124,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 				result.UpdatePropertiesBasedOnAttachedNode(element_result);
 			}
 
-			PopConstructionContext();
+			if(PopConstructionContextAndGetExecutionSideEffectFlag())
+				result.unique = false;
 		}
 		else if(list->IsAssociativeArray())
 		{
@@ -191,7 +192,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 				result.UpdatePropertiesBasedOnAttachedNode(element_result);
 			}
 
-			PopConstructionContext();
+			if(PopConstructionContextAndGetExecutionSideEffectFlag())
+				result.unique = false;
 		}
 	}
 	else //multiple inputs
@@ -266,7 +268,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 				result.UpdatePropertiesBasedOnAttachedNode(element_result);
 			}
 
-			PopConstructionContext();
+			if(PopConstructionContextAndGetExecutionSideEffectFlag())
+				result.unique = false;
 		}
 		else //need associative array
 		{
@@ -347,7 +350,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 				result.UpdatePropertiesBasedOnAttachedNode(element_result);
 			}
 
-			PopConstructionContext();
+			if(PopConstructionContextAndGetExecutionSideEffectFlag())
+				result.unique = false;
 
 		} //needed to process as assoc array
 
@@ -443,8 +447,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		return EvaluableNodeReference::Null();
 
 	//create result_list as a copy of the current list, but without child nodes
-	//can no longer gaurantee uniqueness as the function could have stored the data elsewhere
-	EvaluableNodeReference result_list(evaluableNodeManager->AllocNode(list->GetType()), false);
+	EvaluableNodeReference result_list(evaluableNodeManager->AllocNode(list->GetType()), list.unique);
 	result_list->SetNeedCycleCheck(list->GetNeedCycleCheck());
 	result_list->SetIsIdempotent(list->GetIsIdempotent());
 
@@ -507,7 +510,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 					result_ocn.push_back(cur_value);
 			}
 
-			PopConstructionContext();
+			if(PopConstructionContextAndGetExecutionSideEffectFlag())
+				result_list.unique = false;
 
 			//free anything not in filtered list
 			// need to do this outside of the iteration loop in case anything is accessing the original list
@@ -590,7 +594,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 				result_list->SetMappedChildNode(cn_id, cn);
 		}
 
-		PopConstructionContext();
+		if(PopConstructionContextAndGetExecutionSideEffectFlag())
+			result_list.unique = false;
 	}
 
 	evaluableNodeManager->FreeNodeIfPossible(list);
@@ -701,7 +706,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, b
 
 		EvaluableNodeReference values_to_weave = InterpretNode(function);
 
-		PopConstructionContext();
+		if(PopConstructionContextAndGetExecutionSideEffectFlag())
+			woven_list.unique = false;
 
 		if(EvaluableNode::IsNull(values_to_weave))
 		{
@@ -781,7 +787,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en, 
 		}
 	}
 
-	PopConstructionContext();
+	PopConstructionContextAndGetExecutionSideEffectFlag();
 
 	return previous_result;
 }
@@ -959,6 +965,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 		}
 
 		list->SetOrderedChildNodes(sorted, list->GetNeedCycleCheck(), list->GetIsIdempotent());
+
+		if(comparator.DidAnyComparisonHaveExecutionSideEffects())
+			list.unique = false;
 
 		return list;
 	}
@@ -1558,7 +1567,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 			new_assoc.UpdatePropertiesBasedOnAttachedNode(value);
 		}
 
-		PopConstructionContext();
+		if(PopConstructionContextAndGetExecutionSideEffectFlag())
+			new_assoc.unique = false;
 	}
 
 	return new_assoc;
@@ -1614,8 +1624,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, boo
 
 	if(!EvaluableNode::IsNull(function))
 	{
-		//can't make any guarantees about the first term because function may retrieve it
-		result.unique = false;
 		node_stack.PushEvaluableNode(index_list);
 		node_stack.PushEvaluableNode(value_list);
 	}
@@ -1668,8 +1676,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, boo
 
 				EvaluableNodeReference collision_result = InterpretNode(function);
 
-				PopConstructionContext();
-				PopConstructionContext();
+				if(PopConstructionContextAndGetExecutionSideEffectFlag())
+					result.unique = false;
+				if(PopConstructionContextAndGetExecutionSideEffectFlag())
+					result.unique = false;
 
 				*cur_value_ptr = collision_result;
 				result.UpdatePropertiesBasedOnAttachedNode(collision_result);

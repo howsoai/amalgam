@@ -124,7 +124,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 				result.UpdatePropertiesBasedOnAttachedNode(element_result);
 			}
 
-			PopConstructionContextAndGetExecutionSideEffectFlag();
+			if(PopConstructionContextAndGetExecutionSideEffectFlag())
+				result.unique = false;
 		}
 		else if(list->IsAssociativeArray())
 		{
@@ -191,7 +192,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 				result.UpdatePropertiesBasedOnAttachedNode(element_result);
 			}
 
-			PopConstructionContextAndGetExecutionSideEffectFlag();
+			if(PopConstructionContextAndGetExecutionSideEffectFlag())
+				result.unique = false;
 		}
 	}
 	else //multiple inputs
@@ -266,7 +268,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 				result.UpdatePropertiesBasedOnAttachedNode(element_result);
 			}
 
-			PopConstructionContextAndGetExecutionSideEffectFlag();
+			if(PopConstructionContextAndGetExecutionSideEffectFlag())
+				result.unique = false;
 		}
 		else //need associative array
 		{
@@ -347,7 +350,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 				result.UpdatePropertiesBasedOnAttachedNode(element_result);
 			}
 
-			PopConstructionContextAndGetExecutionSideEffectFlag();
+			if(PopConstructionContextAndGetExecutionSideEffectFlag())
+				result.unique = false;
 
 		} //needed to process as assoc array
 

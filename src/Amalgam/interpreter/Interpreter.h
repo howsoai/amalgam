@@ -646,7 +646,6 @@ protected:
 			//since each thread has a copy of the constructionStackNodes, it's possible that more than one of the threads
 			//obtains previous_results, so they must all be marked as not unique
 			parentInterpreter->RemoveUniquenessFromPreviousResultsInConstructionStack();
-			parentInterpreter->SetSideEffectsFlagsInConstructionStack();
 
 			//set up all the interpreters
 			// do this as its own loop to make sure that the vector memory isn't reallocated once the threads have kicked off
@@ -700,6 +699,9 @@ protected:
 						construction_stack,
 						&csiau,
 						GetCallStackMutex());
+
+					if(interpreter->PopConstructionContextAndGetExecutionSideEffectFlag())
+						resultsUnique = false;
 
 					if(result_ref.unique)
 					{

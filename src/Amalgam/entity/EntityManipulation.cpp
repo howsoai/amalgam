@@ -1,6 +1,6 @@
 //project headers:
-#include "Entity.h"
 #include "EntityManipulation.h"
+#include "Entity.h"
 #include "EvaluableNodeTreeDifference.h"
 #include "EvaluableNodeTreeFunctions.h"
 #include "EvaluableNodeTreeManipulation.h"

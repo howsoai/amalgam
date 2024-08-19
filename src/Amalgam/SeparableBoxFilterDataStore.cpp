@@ -1,6 +1,6 @@
 //project headers:
-#include "Entity.h"
 #include "SeparableBoxFilterDataStore.h"
+#include "Entity.h"
 
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 thread_local

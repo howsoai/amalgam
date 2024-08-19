@@ -481,6 +481,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 				enqueue_task_lock.Unlock();
 				concurrency_manager.EndConcurrency();
 
+				concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(result_list);
+
 				//filter by those child nodes that are true
 				for(size_t i = 0; i < num_nodes; i++)
 				{
@@ -560,6 +562,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 
 				enqueue_task_lock.Unlock();
 				concurrency_manager.EndConcurrency();
+
+				concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(result_list);
 
 				//iterate in same order with same node_index
 				node_index = 0;
@@ -1530,6 +1534,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 				
 				enqueue_task_lock.Unlock();
 				concurrency_manager.EndConcurrency();
+
+				concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(new_assoc);
 
 				//add results to assoc
 				for(size_t i = 0; i < num_nodes / 2; i++)

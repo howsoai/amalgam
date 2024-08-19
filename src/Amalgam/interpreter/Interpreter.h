@@ -664,7 +664,7 @@ protected:
 
 		//Enqueues a concurrent task that needs a construction stack, using the relative interpreter
 		// executes node_to_execute with the following parameters matching those of pushing on the construction stack
-		// will allocate an approrpiate node matching the type of current_index
+		// will allocate an appropriate node matching the type of current_index
 		//result is set to the result of the task
 		template<typename EvaluableNodeRefType>
 		void EnqueueTaskWithConstructionStack(EvaluableNode *node_to_execute,
@@ -701,7 +701,10 @@ protected:
 						GetCallStackMutex());
 
 					if(interpreter->PopConstructionContextAndGetExecutionSideEffectFlag())
+					{
+						resultsSideEffect = true;
 						resultsUnique = false;
+					}
 
 					if(result_ref.unique)
 					{
@@ -795,6 +798,10 @@ protected:
 			Concurrency::threadPool.ChangeCurrentThreadStateFromWaitingToActive();
 
 			parentInterpreter->memoryModificationLock.lock();
+
+			//propagate side effects back up
+			if(resultsSideEffect)
+				parentInterpreter->SetSideEffectsFlagsInConstructionStack();
 		}
 
 		//updates the aggregated result reference's properties based on all of the child nodes
@@ -845,6 +852,9 @@ protected:
 
 		//if true, indicates all results are idempotent
 		std::atomic_bool resultsIdempotent;
+
+		//if true, indicates there was a side effect
+		std::atomic_bool resultsSideEffect;
 
 		//the total number of tasks to be processed
 		size_t numTasks;

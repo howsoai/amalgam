@@ -742,7 +742,8 @@ EvaluableNode *Interpreter::RewriteByFunction(EvaluableNodeReference function, E
 			e = RewriteByFunction(function, top_node, e, references);
 		}
 
-		PopConstructionContextAndGetExecutionSideEffectFlag();
+		if(PopConstructionContextAndGetExecutionSideEffectFlag())
+			n->SetNeedCycleCheck(true);
 	}
 	else
 	{
@@ -759,13 +760,21 @@ EvaluableNode *Interpreter::RewriteByFunction(EvaluableNodeReference function, E
 				ocn[i] = RewriteByFunction(function, top_node, ocn[i], references);
 			}
 
-			PopConstructionContextAndGetExecutionSideEffectFlag();
+			if(PopConstructionContextAndGetExecutionSideEffectFlag())
+				n->SetNeedCycleCheck(true);
 		}
 	}
 
 	EvaluableNodeReference result = InterpretNode(function);
 	//reuse the existing node since it has already been deep copied
 	n->CopyValueFrom(result);
+	if(result != nullptr)
+	{
+		if(result->GetNeedCycleCheck())
+			n->SetNeedCycleCheck(true);
+		if(!result->GetIsIdempotent())
+			n->SetIsIdempotent(false);
+	}
 
 	return result;
 }

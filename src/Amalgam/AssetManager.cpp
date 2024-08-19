@@ -4,6 +4,7 @@
 
 #include "Amalgam.h"
 #include "BinaryPacking.h"
+#include "EntityExecution.h"
 #include "EvaluableNode.h"
 #include "FileSupportCSV.h"
 #include "FileSupportJSON.h"
@@ -170,7 +171,8 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 		args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_create_new_entity), new_entity->evaluableNodeManager.AllocNode(ENT_FALSE));
 		auto call_stack = Interpreter::ConvertArgsToCallStack(args, new_entity->evaluableNodeManager);
 
-		new_entity->Execute(StringInternPool::NOT_A_STRING_ID, call_stack, false, calling_interpreter);
+		EntityExecution::ExecuteEntity(*new_entity,
+			StringInternPool::NOT_A_STRING_ID, call_stack, false, calling_interpreter);
 		return new_entity;
 	}
 

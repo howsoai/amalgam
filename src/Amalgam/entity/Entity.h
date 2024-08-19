@@ -21,7 +21,6 @@ class EntityQueryCaches;
 class EntityWriteListener;
 class EvaluableNode;
 class EvaluableNodeManagement;
-class Interpreter;
 class PerformanceConstraints;
 class PrintListener;
 
@@ -181,39 +180,6 @@ public:
 	Entity(Entity *t);
 
 	~Entity();
-
-	//executes the entity on label_name (if empty string, then evaluates root node)
-	// returns the result from the execution
-	// if on_self is true, then it will be allowed to access private variables
-	// if performance_constraints is not nullptr, then it will constrain performance and update performance_constraints
-	// if enm_lock is specified, it should be a lock on this entity's evaluableNodeManager.memoryModificationMutex
-	EvaluableNodeReference Execute(StringInternPool::StringID label_sid,
-		EvaluableNode *call_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
-		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
-		PerformanceConstraints *performance_constraints = nullptr
-	#ifdef MULTITHREAD_SUPPORT
-		, Concurrency::ReadLock *enm_lock = nullptr
-	#endif
-		);
-
-	//same as Execute but accepts a string for label name
-	inline EvaluableNodeReference Execute(std::string &label_name,
-		EvaluableNode *call_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
-		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
-		PerformanceConstraints *performance_constraints = nullptr
-	#ifdef MULTITHREAD_SUPPORT
-		, Concurrency::ReadLock *enm_lock = nullptr
-	#endif
-		)
-	{
-		StringInternPool::StringID label_sid = string_intern_pool.GetIDFromString(label_name);
-		return Execute(label_sid, call_stack, on_self, calling_interpreter,
-			write_listeners, print_listener, performance_constraints
-		#ifdef MULTITHREAD_SUPPORT
-			, enm_lock
-		#endif
-			);
-	}
 
 	//returns true if the entity or any of its contained entities are currently being executed, either because of multiple threads executing on it
 	// or calls to contained entities back to the container etc., because certain operations (such as move and destroy)
@@ -606,10 +572,21 @@ public:
 		return randomStream.GetState();
 	}
 
-	//gets the current random stream in RandomStream form
-	inline RandomStream GetRandomStream()
+	//gets a copy of the current random stream in RandomStream form
+	inline RandomStream GetRandomStream() const
 	{
 		return randomStream;
+	}
+
+	//gets the current random stream in RandomStream form
+	inline RandomStream &GetRandomStreamRef()
+	{
+		return randomStream;
+	}
+
+	inline const EvaluableNode::AssocType &GetLabelIndex() const
+	{
+		return labelIndex;
 	}
 
 	//sets (seeds) the current state of the random stream based on string

@@ -4,6 +4,7 @@
 #include "AssetManager.h"
 #include "Concurrency.h"
 #include "Entity.h"
+#include "EntityExecution.h"
 #include "EntityQueries.h"
 #include "EntityWriteListener.h"
 #include "EvaluableNode.h"
@@ -277,7 +278,8 @@ PLATFORM_MAIN_CONSOLE
 		args_node->SetMappedChildNode("interpreter", interpreter_node);
 
 		//execute the entity
-		entity->Execute(StringInternPool::NOT_A_STRING_ID, call_stack, false, nullptr,
+		EntityExecution::ExecuteEntity(*entity,
+			StringInternPool::NOT_A_STRING_ID, call_stack, false, nullptr,
 			&write_listeners, print_listener);
 
 		int return_val = 0;

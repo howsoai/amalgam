@@ -15,6 +15,42 @@
 class EntityExecution
 {
 public:
+	//executes the entity on label_name (if empty string, then evaluates root node)
+	// returns the result from the execution
+	// if on_self is true, then it will be allowed to access private variables
+	// if performance_constraints is not nullptr, then it will constrain performance and update performance_constraints
+	// if enm_lock is specified, it should be a lock on this entity's evaluableNodeManager.memoryModificationMutex
+	static EvaluableNodeReference ExecuteEntity(Entity &entity,
+		StringInternPool::StringID label_sid,
+		EvaluableNode *call_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
+		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
+		PerformanceConstraints *performance_constraints = nullptr
+	#ifdef MULTITHREAD_SUPPORT
+		, Concurrency::ReadLock *enm_lock = nullptr
+	#endif
+	);
+	
+	//overload accepting a string for label name
+	static inline EvaluableNodeReference ExecuteEntity(Entity &entity,
+		std::string &label_name,
+		EvaluableNode *call_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
+		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
+		PerformanceConstraints *performance_constraints = nullptr
+	#ifdef MULTITHREAD_SUPPORT
+		, Concurrency::ReadLock *enm_lock = nullptr
+	#endif
+	)
+	{
+		StringInternPool::StringID label_sid = string_intern_pool.GetIDFromString(label_name);
+		return ExecuteEntity(entity,
+			label_sid, call_stack, on_self, calling_interpreter,
+			write_listeners, print_listener, performance_constraints
+		#ifdef MULTITHREAD_SUPPORT
+			, enm_lock
+		#endif
+			);
+	}
+
 	void ExecuteEntity(std::string &handle, std::string &label);
 
 protected:

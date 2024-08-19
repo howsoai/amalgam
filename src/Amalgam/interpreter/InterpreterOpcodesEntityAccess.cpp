@@ -3,6 +3,7 @@
 
 #include "AmalgamVersion.h"
 #include "AssetManager.h"
+#include "EntityExecution.h"
 #include "EntityManipulation.h"
 #include "EntityQueries.h"
 #include "EntityQueryBuilder.h"
@@ -506,7 +507,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	memoryModificationLock.unlock();
 #endif
 
-	EvaluableNodeReference result = called_entity->Execute(entity_label_sid,
+	EvaluableNodeReference result = EntityExecution::ExecuteEntity(
+		**called_entity, entity_label_sid,
 		call_stack, called_entity == curEntity, this, cur_write_listeners, printListener, perf_constraints_ptr
 	#ifdef MULTITHREAD_SUPPORT
 		, &enm_lock
@@ -619,7 +621,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	memoryModificationLock.unlock();
 #endif
 
-	EvaluableNodeReference result = container->Execute(container_label_sid,
+	EvaluableNodeReference result = EntityExecution::ExecuteEntity(
+		**container, container_label_sid,
 		call_stack, false, this, writeListeners, printListener, perf_constraints_ptr
 	#ifdef MULTITHREAD_SUPPORT
 		, &enm_lock

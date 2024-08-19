@@ -171,7 +171,8 @@ std::string EntityExternalInterface::ExecuteEntityJSON(std::string &handle, std:
 
 	auto call_stack = Interpreter::ConvertArgsToCallStack(args, enm);
 
-	EvaluableNodeReference returned_value = bundle->entity->Execute(label, call_stack, false, nullptr,
+	EvaluableNodeReference returned_value = ExecuteEntity(
+		*bundle->entity, label, call_stack, false, nullptr,
 		&bundle->writeListeners, bundle->printListener, nullptr
 #ifdef MULTITHREAD_SUPPORT
 		, &enm_lock

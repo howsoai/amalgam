@@ -38,6 +38,9 @@ thread_local
 #endif
 	std::vector<std::pair<std::string, StartTimeAndMemUse>> instructionStackTypeAndStartTimeAndMemUse;
 
+FastHashMap<std::string, size_t> _side_effect_total_memory_write_counters;
+FastHashMap<std::string, size_t> _side_effect_initial_memory_write_counters;
+
 //gets the current time with nanosecond resolution cast to a double measured in seconds
 inline double GetCurTime()
 {
@@ -114,6 +117,30 @@ void PerformanceProfiler::AccumulateLockContentionCount(std::string t)
 		insertion.first->second++;
 }
 #endif
+
+void PerformanceProfiler::AccumulateTotalSideEffectMemoryWrites(std::string t)
+{
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	Concurrency::SingleLock lock(performance_profiler_mutex);
+#endif
+
+	//attempt to insert a first count, if not, increment
+	auto insertion = _side_effect_total_memory_write_counters.emplace(t, 1);
+	if(!insertion.second)
+		insertion.first->second++;
+}
+
+void PerformanceProfiler::AccumulateInitialSideEffectMemoryWrites(std::string t)
+{
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	Concurrency::SingleLock lock(performance_profiler_mutex);
+#endif
+
+	//attempt to insert a first count, if not, increment
+	auto insertion = _side_effect_initial_memory_write_counters.emplace(t, 1);
+	if(!insertion.second)
+		insertion.first->second++;
+}
 
 void PerformanceProfiler::PrintProfilingInformation(std::string outfile_name, size_t max_print_count)
 {
@@ -221,11 +248,25 @@ void PerformanceProfiler::PrintProfilingInformation(std::string outfile_name, si
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 	out_dest << "------------------------------------------------------" << std::endl;
 	out_dest << "Variable assignments that had the most lock contention: " << std::endl;
-	auto most_lock_contention = PerformanceProfiler::GetVariableAssignmentsByLockContentionCount();
+	auto most_lock_contention = PerformanceProfiler::GetPerformanceCounterResultsSortedByCount(_lock_contention_counters);
 	for(size_t i = 0; i < max_print_count && i < most_lock_contention.size(); i++)
 		out_dest << most_lock_contention[i].first << ": " << most_lock_contention[i].second << std::endl;
 	out_dest << std::endl;
 #endif
+
+	out_dest << "------------------------------------------------------" << std::endl;
+	out_dest << "Opcodes with the most total memory writes when constructing results: " << std::endl;
+	auto most_side_effects = PerformanceProfiler::GetPerformanceCounterResultsSortedByCount(_side_effect_total_memory_write_counters);
+	for(size_t i = 0; i < max_print_count && i < most_side_effects.size(); i++)
+		out_dest << most_side_effects[i].first << ": " << most_side_effects[i].second << std::endl;
+	out_dest << std::endl;
+
+	out_dest << "------------------------------------------------------" << std::endl;
+	out_dest << "Opcodes with the most initial memory writes when constructing results: " << std::endl;
+	auto most_initial_side_effects = PerformanceProfiler::GetPerformanceCounterResultsSortedByCount(_side_effect_initial_memory_write_counters);
+	for(size_t i = 0; i < max_print_count && i < most_initial_side_effects.size(); i++)
+		out_dest << most_initial_side_effects[i].first << ": " << most_initial_side_effects[i].second << std::endl;
+	out_dest << std::endl;
 
 	out_dest << "------------------------------------------------------" << std::endl;
 	size_t total_call_count = GetTotalNumCalls();
@@ -437,15 +478,17 @@ std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByAv
 	return results;
 }
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-std::vector<std::pair<std::string, size_t>> PerformanceProfiler::GetVariableAssignmentsByLockContentionCount()
+std::vector<std::pair<std::string, size_t>> PerformanceProfiler::GetPerformanceCounterResultsSortedByCount(
+	FastHashMap<std::string, size_t> &counters)
 {
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 	Concurrency::SingleLock lock(performance_profiler_mutex);
+#endif
 
 	//copy to proper data structure
 	std::vector<std::pair<std::string, size_t>> results;
-	results.reserve(_lock_contention_counters.size());
-	for(auto &[s, value] : _lock_contention_counters)
+	results.reserve(counters.size());
+	for(auto &[s, value] : counters)
 		results.push_back(std::make_pair(static_cast<std::string>(s), static_cast<size_t>(value)));
 
 	//sort high to low
@@ -454,4 +497,3 @@ std::vector<std::pair<std::string, size_t>> PerformanceProfiler::GetVariableAssi
 		{	return (a.second) > (b.second);	});
 	return results;
 }
-#endif

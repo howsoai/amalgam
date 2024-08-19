@@ -34,6 +34,12 @@ namespace PerformanceProfiler
 	void AccumulateLockContentionCount(std::string t);
 #endif
 
+	//accumulates all locations of memory writes that make outputs of opcodes with construction stacks nonunique
+	void AccumulateTotalSideEffectMemoryWrites(std::string t);
+
+	//accumulates initial locations of memory writes that make outputs of opcodes with construction stacks nonunique
+	void AccumulateInitialSideEffectMemoryWrites(std::string t);
+
 	//prints profiling information
 	//if outfile_name is empty string, will print to stdout
 	//if max_print_count is 0, will print a default of 20 for stdout, will print all for a file
@@ -57,7 +63,6 @@ namespace PerformanceProfiler
 	std::vector<std::pair<std::string, double>> GetNumCallsByTotalMemoryIncreaseInclusive();
 	std::vector<std::pair<std::string, double>> GetNumCallsByAveMemoryIncreaseInclusive();
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	std::vector<std::pair<std::string, size_t>> GetVariableAssignmentsByLockContentionCount();
-#endif
+	std::vector<std::pair<std::string, size_t>> GetPerformanceCounterResultsSortedByCount(
+		FastHashMap<std::string, size_t> &counters);
 };

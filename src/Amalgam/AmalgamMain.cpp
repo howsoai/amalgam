@@ -4,7 +4,6 @@
 #include "AssetManager.h"
 #include "Concurrency.h"
 #include "Entity.h"
-#include "EntityExternalInterface.h"
 #include "EntityQueries.h"
 #include "EntityWriteListener.h"
 #include "EvaluableNode.h"

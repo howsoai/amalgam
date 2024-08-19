@@ -2,7 +2,6 @@
 #include "Interpreter.h"
 
 #include "AssetManager.h"
-#include "EntityExternalInterface.h"
 #include "EntityManipulation.h"
 #include "EntityQueries.h"
 #include "EvaluableNodeTreeFunctions.h"

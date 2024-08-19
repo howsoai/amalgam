@@ -3,7 +3,6 @@
 //project headers:
 #include "AmalgamVersion.h"
 #include "Entity.h"
-#include "EntityExternalInterface.h"
 #include "EntityManipulation.h"
 #include "EvaluableNode.h"
 #include "FilenameEscapeProcessor.h"
@@ -14,6 +13,9 @@
 #include <filesystem>
 #include <string>
 #include <tuple>
+
+//forward declarations:
+class ImportEntityStatus;
 
 const std::string FILE_EXTENSION_AMLG_METADATA("mdam");
 const std::string FILE_EXTENSION_AMALGAM("amlg");

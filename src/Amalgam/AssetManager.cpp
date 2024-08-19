@@ -4,7 +4,6 @@
 
 #include "Amalgam.h"
 #include "BinaryPacking.h"
-#include "EntityExternalInterface.h"
 #include "EvaluableNode.h"
 #include "FileSupportCSV.h"
 #include "FileSupportJSON.h"

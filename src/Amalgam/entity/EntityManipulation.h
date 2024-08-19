@@ -1,9 +1,13 @@
 #pragma once
 
 //project headers:
+#include "DistanceReferencePair.h"
 #include "Entity.h"
 #include "EntityTreeFunctions.h"
 #include "Merger.h"
+
+//forward declarations:
+class EvaluableNodeContext;
 
 //Contains various classes and functions to manipulate entities
 class EntityManipulation

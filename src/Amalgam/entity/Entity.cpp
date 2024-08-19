@@ -1,8 +1,6 @@
 //project headers:
 #include "Entity.h"
-#include "EntityQueries.h"
 #include "EntityWriteListener.h"
-#include "EvaluableNodeTreeManipulation.h"
 #include "EvaluableNodeTreeFunctions.h"
 
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)

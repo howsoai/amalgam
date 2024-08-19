@@ -1,17 +1,9 @@
 //project headers:
 #include "EntityExternalInterface.h"
-
 #include "AssetManager.h"
-#include "Entity.h"
-#include "EntityWriteListener.h"
-#include "FileSupportCAML.h"
 #include "FileSupportJSON.h"
 #include "ImportEntityStatus.h"
 #include "Interpreter.h"
-
-//system headers:
-#include <string>
-#include <vector>
 
 ImportEntityStatus EntityExternalInterface::LoadEntity(std::string &handle, std::string &path, bool persistent, bool load_contained_entities,
 	bool escape_filename, bool escape_contained_filenames, std::string &write_log_filename, std::string &print_log_filename, std::string rand_seed)
@@ -107,15 +99,6 @@ void EntityExternalInterface::StoreEntity(std::string &handle, std::string &path
 	std::string file_type = "";
 	EntityReadReference entity(bundle->entity);
 	asset_manager.StoreEntityToResourcePath(entity, path, file_type, update_persistence_location, store_contained_entities, false, true, false);
-}
-
-void EntityExternalInterface::ExecuteEntity(std::string &handle, std::string &label)
-{
-	auto bundle = FindEntityBundle(handle);
-	if(bundle == nullptr)
-		return;
-
-	bundle->entity->Execute(label, nullptr, false, nullptr, &bundle->writeListeners, bundle->printListener);
 }
 
 void EntityExternalInterface::DestroyEntity(std::string &handle)

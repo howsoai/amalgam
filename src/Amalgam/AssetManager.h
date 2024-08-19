@@ -26,6 +26,7 @@ const std::string FILE_EXTENSION_COMPRESSED_AMALGAM_CODE("caml");
 
 //forward declarations:
 class AssetManager;
+class ImportEntityStatus;
 
 extern AssetManager asset_manager;
 

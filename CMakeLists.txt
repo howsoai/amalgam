@@ -126,6 +126,8 @@ set(COMMON_SOURCE
     src/Amalgam/DistanceReferencePair.h
     src/Amalgam/entity/Entity.cpp
     src/Amalgam/entity/Entity.h
+    src/Amalgam/entity/EntityExecution.cpp
+    src/Amalgam/entity/EntityExecution.h
     src/Amalgam/entity/EntityExternalInterface.cpp
     src/Amalgam/entity/EntityExternalInterface.h
     src/Amalgam/entity/EntityManipulation.cpp

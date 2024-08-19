@@ -2,16 +2,6 @@
 
 //project headers:
 #include "Entity.h"
-#include "EntityWriteListener.h"
-#include "HashMaps.h"
-#include "PrintListener.h"
-
-//system headers:
-#include <string>
-#include <vector>
-
-//forward declarations:
-class ImportEntityStatus;
 
 /*
  * This class constitutes the C++ backing for the C API, and is fully functional as a C++ API.
@@ -22,32 +12,12 @@ class ImportEntityStatus;
  * Some labels will be loaded with functions which can be executed (refer to the instructions for the entity you loaded).
  */
 
-class EntityExternalInterface
+class EntityExecution
 {
 public:
-
-	ImportEntityStatus LoadEntity(std::string &handle, std::string &path, bool persistent, bool load_contained_entities,
-		bool escape_filename, bool escape_contained_filenames, std::string &write_log_filename, std::string &print_log_filename,
-		std::string rand_seed = std::string(""));
-	ImportEntityStatus VerifyEntity(std::string &path);
-
-	bool CloneEntity(std::string &handle, std::string &cloned_handle, std::string &path, bool persistent,
-		std::string &write_log_filename, std::string &print_log_filename);
-
-	void StoreEntity(std::string &handle, std::string &path, bool update_persistence_location, bool store_contained_entities);
-
 	void ExecuteEntity(std::string &handle, std::string &label);
 
-	void DestroyEntity(std::string &handle);
-	bool SetRandomSeed(std::string &handle, std::string &rand_seed);
-	std::vector<std::string> GetEntities();
-
-	bool SetJSONToLabel(std::string &handle, std::string &label, std::string_view json);
-	std::string GetJSONFromLabel(std::string &handle, std::string &label);
-	std::string ExecuteEntityJSON(std::string &handle, std::string &label, std::string_view json);
-
 protected:
-
 	//a class that manages the entity
 	// when the bundle is destroyed, everything in it is also destroyed
 	class EntityListenerBundle

@@ -427,8 +427,8 @@ public:
 			return;
 
 		EvaluableNode *copy = AllocNode(original.GetReference(), metadata_modifier);
-		//the copy will only be unique if all child nodes are unique or there are no child nodes
-		original = EvaluableNodeReference(copy, original.unique || (copy->GetNumChildNodes() == 0));
+		//the copy will only be unique if there are no child nodes
+		original = EvaluableNodeReference(copy, (copy->GetNumChildNodes() == 0));
 	}
 
 	//attempts to reuse candidate if it is unique and change it into the specified type

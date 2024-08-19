@@ -2,16 +2,13 @@
 #include "AssetManager.h"
 #include "AmalgamVersion.h"
 
-#include "Amalgam.h"
 #include "BinaryPacking.h"
 #include "EntityExecution.h"
-#include "EvaluableNode.h"
 #include "FileSupportCSV.h"
 #include "FileSupportJSON.h"
 #include "FileSupportYAML.h"
 #include "ImportEntityStatus.h"
 #include "Interpreter.h"
-#include "PlatformSpecific.h"
 
 //system headers:
 #include <algorithm>

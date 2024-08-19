@@ -4,10 +4,6 @@
 #include "PlatformSpecific.h"
 #include "StringManipulation.h"
 
-#include "FastMath.h"
-#include "PlatformSpecific.h"
-#include "StringManipulation.h"
-
 //3rd party headers:
 #include "simdjson/simdjson.h"
 

@@ -1,16 +1,7 @@
 //project headers:
 #include "EntityQueryCaches.h"
-#include "Conviction.h"
-#include "Entity.h"
 #include "EntityManipulation.h"
-#include "EntityQueries.h"
 #include "EvaluableNodeTreeFunctions.h"
-#include "HashMaps.h"
-#include "IntegerSet.h"
-#include "KnnCache.h"
-#include "SeparableBoxFilterDataStore.h"
-#include "StringInternPool.h"
-#include "WeightedDiscreteRandomStream.h"
 
 EntityQueryCaches::~EntityQueryCaches() = default;
 

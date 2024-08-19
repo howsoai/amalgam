@@ -350,8 +350,12 @@ public:
 	}
 
 	//should be called by any opcode that has side effects setting memory, such as assignment, accumulation, etc.
-	inline void SetSideEffectsFlagsInConstructionStack()
+	//returns a pair of booleans, where the first value is true if there are any constructions,
+	// and the second is true if it set at least one flag (i.e., it was the first time doing so)
+	inline std::pair<bool, bool> SetSideEffectsFlagsInConstructionStack()
 	{
+		bool any_constructions = (constructionStackIndicesAndUniqueness.size() > 0);
+		bool any_set = false;
 		for(size_t i = constructionStackIndicesAndUniqueness.size(); i > 0; i--)
 		{
 			size_t index = i - 1;
@@ -360,7 +364,10 @@ public:
 				break;
 
 			constructionStackIndicesAndUniqueness[index].executionSideEffects = true;
+			any_set = true;
 		}
+
+		return std::make_pair(any_constructions, any_set);
 	}
 
 	//Makes sure that args is an active associative array is proper for context, meaning initialized assoc and a unique reference.

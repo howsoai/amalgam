@@ -827,7 +827,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	if(callStackNodes->size() < 1)
 		return EvaluableNodeReference::Null();
 
-	SetSideEffectsFlagsInConstructionStack();
+	auto [any_constructions, initial_side_effect] = SetSideEffectsFlagsInConstructionStack();
+	if(_opcode_profiling_enabled && any_constructions)
+	{
+		std::string variable_location = asset_manager.GetEvaluableNodeSourceFromComments(en);
+		PerformanceProfiler::AccumulateTotalSideEffectMemoryWrites(variable_location);
+		if(initial_side_effect)
+			PerformanceProfiler::AccumulateInitialSideEffectMemoryWrites(variable_location);
+	}
 
 	bool accum = (en->GetType() == ENT_ACCUM);
 

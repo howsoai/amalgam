@@ -664,7 +664,7 @@ protected:
 
 		//Enqueues a concurrent task that needs a construction stack, using the relative interpreter
 		// executes node_to_execute with the following parameters matching those of pushing on the construction stack
-		// will allocate an approrpiate node matching the type of current_index
+		// will allocate an appropriate node matching the type of current_index
 		//result is set to the result of the task
 		template<typename EvaluableNodeRefType>
 		void EnqueueTaskWithConstructionStack(EvaluableNode *node_to_execute,

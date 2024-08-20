@@ -768,7 +768,7 @@ EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference fun
 	{
 		PushNewConstructionContext(nullptr, new_tree, EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 
-		for(auto &[e_id, e] : tree->GetMappedChildNodesReference())
+		for(auto &[e_id, e] : new_tree->GetMappedChildNodesReference())
 		{
 			SetTopCurrentIndexInConstructionStack(e_id);
 			SetTopCurrentValueInConstructionStack(e);
@@ -785,7 +785,7 @@ EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference fun
 	}
 	else if(!tree->IsImmediate())
 	{
-		auto &ocn = tree->GetOrderedChildNodesReference();
+		auto &ocn = new_tree->GetOrderedChildNodesReference();
 		if(ocn.size() > 0)
 		{
 			PushNewConstructionContext(nullptr, new_tree, EvaluableNodeImmediateValueWithType(0.0), nullptr);
@@ -807,6 +807,7 @@ EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference fun
 		}
 	}
 
+	SetTopCurrentValueInConstructionStack(new_tree);
 	return InterpretNode(function);
 }
 

@@ -722,61 +722,92 @@ EvaluableNode **Interpreter::TraverseToDestinationFromTraversalPathList(Evaluabl
 	return destination;
 }
 
-EvaluableNode *Interpreter::RewriteByFunction(EvaluableNodeReference function, EvaluableNode *top_node, EvaluableNode *n, EvaluableNode::ReferenceSetType &references)
+EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference function,
+	EvaluableNode *tree, EvaluableNode *parent, FastHashMap<EvaluableNode *, std::pair<EvaluableNode *, EvaluableNode *>>
+	&original_nodes_to_parents_and_replacements)
 {
-	if(function == nullptr || n == nullptr)
-		return nullptr;
-	
-	//try to record in references, but if already processed and exists, then return the existing value
-	if(references.insert(n).second == false)
-		return n;
+	if(tree == nullptr)
+		tree = evaluableNodeManager->AllocNode(ENT_NULL);
 
-	if(n->IsAssociativeArray())
+	//attempt to insert; if new, mark as not needing a cycle check yet
+	// though that may be changed when child nodes are evaluated below
+	auto [existing_record, inserted]
+		= original_nodes_to_parents_and_replacements.emplace(tree, std::make_pair(parent, nullptr));
+	if(inserted)
 	{
-		PushNewConstructionContext(top_node, nullptr, EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), n);
+		tree->SetNeedCycleCheck(false);
+	}
+	else //this node has already been checked
+	{
+		//climb back up to top setting cycle checks needed,
+		//starting with tree's parent node
+		EvaluableNode *cur_node = existing_record->second.first;
+		while(cur_node != nullptr)
+		{
+			//if it's already set to cycle check, don't need to keep going
+			if(cur_node->GetNeedCycleCheck())
+				break;
 
-		for(auto &[e_id, e] : n->GetMappedChildNodesReference())
+			cur_node->SetNeedCycleCheck(true);
+
+			auto parent_record = original_nodes_to_parents_and_replacements.find(cur_node);
+			if(parent_record == end(original_nodes_to_parents_and_replacements))
+			{
+				assert(false);
+			}
+
+			cur_node = parent_record->second.first;
+		}
+		return EvaluableNodeReference(cur_node, false);
+	}
+
+	EvaluableNodeReference new_tree = EvaluableNodeReference(evaluableNodeManager->AllocNode(tree), true);
+	existing_record->second.second = new_tree;
+
+	if(tree->IsAssociativeArray())
+	{
+		PushNewConstructionContext(nullptr, new_tree, EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
+
+		for(auto &[e_id, e] : tree->GetMappedChildNodesReference())
 		{
 			SetTopCurrentIndexInConstructionStack(e_id);
 			SetTopCurrentValueInConstructionStack(e);
-			e = RewriteByFunction(function, top_node, e, references);
+			auto new_e = RewriteByFunction(function, e, new_tree, original_nodes_to_parents_and_replacements);
+			new_tree.UpdatePropertiesBasedOnAttachedNode(new_e);
+			e = new_e;
 		}
 
 		if(PopConstructionContextAndGetExecutionSideEffectFlag())
-			n->SetNeedCycleCheck(true);
+		{
+			new_tree->SetNeedCycleCheck(true);
+			new_tree.unique = false;
+		}
 	}
-	else
+	else if(!tree->IsImmediate())
 	{
-		auto &ocn = n->GetOrderedChildNodes();
+		auto &ocn = tree->GetOrderedChildNodesReference();
 		if(ocn.size() > 0)
 		{
-			PushNewConstructionContext(top_node, nullptr, EvaluableNodeImmediateValueWithType(0.0), n);
+			PushNewConstructionContext(nullptr, new_tree, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 
-			//rewrite child nodes before rewriting this one
 			for(size_t i = 0; i < ocn.size(); i++)
 			{
 				SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
 				SetTopCurrentValueInConstructionStack(ocn[i]);
-				ocn[i] = RewriteByFunction(function, top_node, ocn[i], references);
+				auto new_e = RewriteByFunction(function, ocn[i], new_tree, original_nodes_to_parents_and_replacements);
+				new_tree.UpdatePropertiesBasedOnAttachedNode(new_e);
+				ocn[i] = new_e;
 			}
 
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
-				n->SetNeedCycleCheck(true);
+			{
+				new_tree->SetNeedCycleCheck(true);
+				new_tree.unique = false;
+			}
 		}
 	}
 
-	EvaluableNodeReference result = InterpretNode(function);
-	//reuse the existing node since it has already been deep copied
-	n->CopyValueFrom(result);
-	if(result != nullptr)
-	{
-		if(result->GetNeedCycleCheck())
-			n->SetNeedCycleCheck(true);
-		if(!result->GetIsIdempotent())
-			n->SetIsIdempotent(false);
-	}
-
-	return result;
+	return InterpretNode(function);
 }
 
 bool Interpreter::PopulatePerformanceConstraintsFromParams(std::vector<EvaluableNode *> &params,

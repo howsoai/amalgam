@@ -614,11 +614,15 @@ public:
 
 protected:
 
-	//Traverses down n until it reaches the furthest-most nodes from top_node, then bubbles back up re-evaluating each node via the specified function
-	// Returns the (potentially) modified tree of n, modified in-place
-	EvaluableNode *RewriteByFunction(EvaluableNodeReference function, EvaluableNode *top_node, EvaluableNode *n, EvaluableNode::ReferenceSetType &references);
+	//traverses down n until it reaches the furthest-most nodes from top_node,
+	// then bubbles back up re-evaluating each node via the specified function
+	//returns the (potentially) modified tree
+	EvaluableNodeReference RewriteByFunction(EvaluableNodeReference function,
+		EvaluableNode *tree, EvaluableNode *parent, FastHashMap<EvaluableNode *, std::pair<EvaluableNode *, EvaluableNode *>>
+			&original_nodes_to_parents_and_replacements);
 
-	//populates perf_constraints from params starting at the offset perf_constraint_param_offset, in the order of execution cycles, maximum memory, maximum stack depth
+	//populates perf_constraints from params starting at the offset perf_constraint_param_offset,
+	// in the order of execution cycles, maximum memory, maximum stack depth
 	//returns true if there are any performance constraints, false if not
 	//if include_entity_constraints is true, it will include constraints regarding entities
 	bool PopulatePerformanceConstraintsFromParams(std::vector<EvaluableNode *> &params,

@@ -781,7 +781,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 						scope->SetMappedChildNode(cn_id, value, false);
 					}
 				}
-				PopConstructionContextAndGetExecutionSideEffectFlag();
+				if(PopConstructionContextAndGetExecutionSideEffectFlag())
+					required_vars.unique = false;
 			}
 
 			//free the vars / assoc node
@@ -879,7 +880,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			{
 				PushNewConstructionContext(assigned_vars, assigned_vars, EvaluableNodeImmediateValueWithType(variable_sid), nullptr);
 				variable_value_node = InterpretNode(cn);
-				PopConstructionContextAndGetExecutionSideEffectFlag();
+				if(PopConstructionContextAndGetExecutionSideEffectFlag())
+					assigned_vars.unique = false;
 			}
 
 			//retrieve the symbol

@@ -751,10 +751,9 @@ EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference fun
 			cur_node->SetNeedCycleCheck(true);
 
 			auto parent_record = original_nodes_to_parents_and_replacements.find(cur_node);
+			//if at the top, don't need to update anymore
 			if(parent_record == end(original_nodes_to_parents_and_replacements))
-			{
-				assert(false);
-			}
+				break;
 
 			cur_node = parent_record->second.first;
 		}

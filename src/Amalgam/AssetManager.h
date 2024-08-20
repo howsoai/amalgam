@@ -31,21 +31,6 @@ class ImportEntityStatus;
 
 extern AssetManager asset_manager;
 
-class EntityManager
-{
-public:
-	virtual ~EntityManager();
-
-	virtual void CreateEntity(Entity *entity) = 0;
-
-	virtual void DestroyEntity(Entity *entity) = 0;
-
-	virtual void UpdateEntity(Entity *entity,
-		Entity::EntityReferenceBufferReference<EntityWriteReference> *all_contained_entities = nullptr) = 0;
-
-	static inline EntityManager &Get();
-};
-
 class AssetManager : public EntityManager
 {
 public:

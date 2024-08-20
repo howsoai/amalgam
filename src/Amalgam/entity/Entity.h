@@ -862,3 +862,21 @@ protected:
 	//container for when there are no contained entities but need to iterate over them
 	static std::vector<Entity *> emptyContainedEntities;
 };
+
+class EntityManager
+{
+public:
+	virtual ~EntityManager();
+
+	virtual void CreateEntity(Entity *entity) = 0;
+
+	virtual void DestroyEntity(Entity *entity) = 0;
+
+	virtual void UpdateEntity(Entity *entity,
+		Entity::EntityReferenceBufferReference<EntityWriteReference> *all_contained_entities = nullptr) = 0;
+
+	static EntityManager &Get();
+
+	//the entity manager must be injected at startup
+	static void Set(EntityManager *manager);
+};

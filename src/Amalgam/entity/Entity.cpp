@@ -1,6 +1,5 @@
 //project headers:
 #include "Entity.h"
-#include "AssetManager.h"
 #include "EntityQueries.h"
 #include "EntityWriteListener.h"
 #include "EvaluableNodeTreeManipulation.h"
@@ -991,4 +990,19 @@ void Entity::VerifyEvaluableNodeIntegrityAndAllContainedEntities()
 	VerifyEvaluableNodeIntegrity();
 	for(auto ce : GetContainedEntities())
 		ce->VerifyEvaluableNodeIntegrity();
+}
+
+EntityManager::~EntityManager() = default;
+
+static EntityManager *the_entity_manager = nullptr;
+
+EntityManager &entity_manager()
+{
+	assert(the_entity_manager);
+	return *the_entity_manager;
+}
+
+void EntityManager::Set(EntityManager *manager)
+{
+	the_entity_manager = manager;
 }

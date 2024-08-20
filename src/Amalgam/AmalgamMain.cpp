@@ -203,6 +203,8 @@ PLATFORM_MAIN_CONSOLE
 	Concurrency::SetMaxNumThreads(num_threads);
 #endif
 
+	EntityManager::Set(&asset_manager);
+
 	if(debug_state)
 		Interpreter::SetDebuggingState(true);
 

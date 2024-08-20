@@ -31,12 +31,29 @@ class ImportEntityStatus;
 
 extern AssetManager asset_manager;
 
-class AssetManager
+class EntityManager
+{
+public:
+	virtual ~EntityManager();
+
+	virtual void CreateEntity(Entity *entity) = 0;
+
+	virtual void DestroyEntity(Entity *entity) = 0;
+
+	virtual void UpdateEntity(Entity *entity,
+		Entity::EntityReferenceBufferReference<EntityWriteReference> *all_contained_entities = nullptr) = 0;
+
+	static inline EntityManager &Get();
+};
+
+class AssetManager : public EntityManager
 {
 public:
 	AssetManager()
 		: defaultEntityExtension(FILE_EXTENSION_AMALGAM), debugSources(false), debugMinimal(false)
 	{	}
+
+	~AssetManager() override;
 
 	//Returns the code to the corresponding entity by resource_path
 	// sets resource_base_path to the resource path without the extension
@@ -164,7 +181,7 @@ public:
 
 	//Indicates that the entity has been written to or updated, and so if the asset is persistent, the persistent copy should be updated
 	void UpdateEntity(Entity *entity,
-		Entity::EntityReferenceBufferReference<EntityWriteReference> *all_contained_entities = nullptr)
+		Entity::EntityReferenceBufferReference<EntityWriteReference> *all_contained_entities) override
 	{
 	#ifdef MULTITHREAD_INTERFACE
 		Concurrency::ReadLock lock(persistentEntitiesMutex);
@@ -203,9 +220,9 @@ public:
 		}
 	}
 
-	void CreateEntity(Entity *entity);
+	void CreateEntity(Entity *entity) override;
 
-	inline void DestroyEntity(Entity *entity)
+	inline void DestroyEntity(Entity *entity) override
 	{
 	#ifdef MULTITHREAD_INTERFACE
 		Concurrency::WriteLock lock(persistentEntitiesMutex);
@@ -353,3 +370,5 @@ private:
 	Concurrency::ReadWriteMutex rootEntitiesMutex;
 #endif
 };
+
+EntityManager &EntityManager::Get() { return asset_manager; }

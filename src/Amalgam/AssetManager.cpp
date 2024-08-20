@@ -21,6 +21,10 @@
 
 AssetManager asset_manager;
 
+EntityManager::~EntityManager() = default;
+
+AssetManager::~AssetManager() = default;
+
 EvaluableNodeReference AssetManager::LoadResourcePath(std::string &resource_path,
 	std::string &resource_base_path, std::string &file_type, EvaluableNodeManager *enm, bool escape_filename, ImportEntityStatus &status)
 {

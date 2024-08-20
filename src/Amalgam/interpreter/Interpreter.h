@@ -15,6 +15,7 @@
 
 //forward declarations:
 class EntityQueryCondition;
+class EntityWriteCallbacks;
 
 //Manages performance constraints and accompanying performance counters
 class PerformanceConstraints
@@ -147,7 +148,7 @@ public:
 	// If no entity is specified via nullptr, then it will run sandboxed
 	// if performance_constraints is not nullptr, then it will limit execution appropriately
 	Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
-		std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
+		std::vector<EntityWriteCallbacks *> *write_listeners, PrintListener *print_listener,
 		PerformanceConstraints *performance_constraints = nullptr,
 		Entity *t = nullptr, Interpreter *calling_interpreter = nullptr);
 
@@ -1250,7 +1251,7 @@ protected:
 	std::vector<ConstructionStackIndexAndPreviousResultUniqueness> constructionStackIndicesAndUniqueness;
 
 	//references to listeners for writes on an Entity and prints
-	std::vector<EntityWriteListener *> *writeListeners;
+	std::vector<EntityWriteCallbacks *> *writeListeners;
 	PrintListener *printListener;
 
 	//buffer to use as for parsing and querying conditions

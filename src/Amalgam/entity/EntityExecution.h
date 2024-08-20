@@ -26,7 +26,7 @@ public:
 	static EvaluableNodeReference ExecuteEntity(Entity &entity,
 		StringInternPool::StringID label_sid,
 		EvaluableNode *call_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
-		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
+		std::vector<EntityWriteCallbacks *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
 		PerformanceConstraints *performance_constraints = nullptr
 	#ifdef MULTITHREAD_SUPPORT
 		, Concurrency::ReadLock *enm_lock = nullptr
@@ -37,7 +37,7 @@ public:
 	static inline EvaluableNodeReference ExecuteEntity(Entity &entity,
 		std::string &label_name,
 		EvaluableNode *call_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
-		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
+		std::vector<EntityWriteCallbacks *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
 		PerformanceConstraints *performance_constraints = nullptr
 	#ifdef MULTITHREAD_SUPPORT
 		, Concurrency::ReadLock *enm_lock = nullptr
@@ -62,7 +62,7 @@ protected:
 	class EntityListenerBundle
 	{
 	public:
-		EntityListenerBundle(Entity *ent, std::vector<EntityWriteListener *> wl, PrintListener *pl = nullptr)
+		EntityListenerBundle(Entity *ent, std::vector<EntityWriteCallbacks *> wl, PrintListener *pl = nullptr)
 		{
 			entity = ent;
 			writeListeners = wl;
@@ -84,7 +84,7 @@ protected:
 	#endif
 
 		Entity *entity;
-		std::vector<EntityWriteListener *> writeListeners;
+		std::vector<EntityWriteCallbacks *> writeListeners;
 		PrintListener *printListener;
 	};
 

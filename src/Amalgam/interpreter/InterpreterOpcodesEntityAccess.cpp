@@ -459,9 +459,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	auto node_stack = CreateNodeStackStateSaver(args);
 
 	//current pointer to write listeners
-	std::vector<EntityWriteListener *> *cur_write_listeners = writeListeners;
+	std::vector<EntityWriteCallbacks *> *cur_write_listeners = writeListeners;
 	//another storage container in case getting entity changes
-	std::vector<EntityWriteListener *> get_changes_write_listeners;
+	std::vector<EntityWriteCallbacks *> get_changes_write_listeners;
 	if(en->GetType() == ENT_CALL_ENTITY_GET_CHANGES)
 	{
 		//add on extra listener and set pointer to this buffer
@@ -536,7 +536,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 
 	if(en->GetType() == ENT_CALL_ENTITY_GET_CHANGES)
 	{
-		EntityWriteListener *wl = get_changes_write_listeners.back();
+		EntityWriteCallbacks *wl = get_changes_write_listeners.back();
 		EvaluableNode *writes = wl->GetWrites();
 
 		EvaluableNode *list = evaluableNodeManager->AllocNode(ENT_LIST);

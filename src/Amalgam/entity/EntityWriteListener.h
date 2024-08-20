@@ -1,7 +1,8 @@
 #pragma once
 
 //project headers:
-#include "Entity.h"
+#include "EntityWriteCallbacks.h"
+#include "EvaluableNodeManagement.h"
 
 //system headers:
 #include <fstream>
@@ -9,7 +10,7 @@
 //forward declarations:
 class Entity;
 
-class EntityWriteListener
+class EntityWriteListener : public EntityWriteCallbacks
 {
 public:
 	//stores all writes to entities as a seq of direct_assigns
@@ -18,30 +19,28 @@ public:
 	//if filename is not empty, then it will attempt to open the file and log all writes to that file, and then flush the file stream
 	EntityWriteListener(Entity *listening_entity, bool retain_writes = false, const std::string &filename = std::string());
 
-	~EntityWriteListener();
+	~EntityWriteListener() override;
 
-	void LogSystemCall(EvaluableNode *params);
+	void LogSystemCall(EvaluableNode *params) override;
 
-	// LogPrint does not flush to allow bulk processing
-	void LogPrint(std::string &print_string);
+	void LogPrint(std::string &print_string) override;
 
-	void LogWriteValueToEntity(Entity *entity, EvaluableNode *value, const StringInternPool::StringID label_name, bool direct_set);
+	void LogWriteValueToEntity(Entity *entity, EvaluableNode *value, const StringInternPool::StringID label_name, bool direct_set) override;
 
-	//like LogWriteValueToEntity but where the keys are the labels and the values correspond in the assoc specified by label_value_pairs
-	void LogWriteValuesToEntity(Entity *entity, EvaluableNode *label_value_pairs, bool direct_set);
+	void LogWriteValuesToEntity(Entity *entity, EvaluableNode *label_value_pairs, bool direct_set) override;
 
-	void LogWriteToEntity(Entity *entity, const std::string &new_code);
+	void LogWriteToEntity(Entity *entity, const std::string &new_code) override;
 
-	void LogCreateEntity(Entity *new_entity);
+	void LogCreateEntity(Entity *new_entity) override;
 
-	void LogDestroyEntity(Entity *destroyed_entity);
+	void LogDestroyEntity(Entity *destroyed_entity) override;
 
-	void LogSetEntityRandomSeed(Entity *entity, const std::string &rand_seed, bool deep_set);
+	void LogSetEntityRandomSeed(Entity *entity, const std::string &rand_seed, bool deep_set) override;
 
-	void FlushLogFile();
+	void FlushLogFile() override;
 
 	//returns all writes that the listener was aware of
-	constexpr EvaluableNode *GetWrites()
+	EvaluableNode *GetWrites() override
 	{
 		return storedWrites;
 	}

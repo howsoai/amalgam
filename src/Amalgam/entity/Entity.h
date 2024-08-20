@@ -15,7 +15,7 @@
 
 //forward declarations:
 class Entity;
-class EntityWriteListener;
+class EntityWriteCallbacks;
 class EvaluableNode;
 class EvaluableNodeManagement;
 class PerformanceConstraints;
@@ -274,7 +274,7 @@ public:
 	// if the Entity needs to have its node flags updated at the end of this batch update, because a cycle free flag has changed
 	//note that this cannot be called concurrently on the same entity
 	bool SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNodeReference &new_value, bool direct_set,
-		std::vector<EntityWriteListener *> *write_listeners, bool on_self = false, bool batch_call = false,
+		std::vector<EntityWriteCallbacks *> *write_listeners, bool on_self = false, bool batch_call = false,
 		bool *need_node_flags_updated = nullptr);
 
 	//For each label-value pair in an associative array new_label_values, attempts to set the value at the label
@@ -285,7 +285,7 @@ public:
 	// other parameters match those of SetValueAtLabel, and will call SetValueAtLabel with batch_call = true
 	// if copy_entity is true, then it will make a full copy of the entity before setting the labels in a copy-on-write fashion (for concurrent access)
 	std::pair<bool, bool> SetValuesAtLabels(EvaluableNodeReference new_label_values, bool accum_values, bool direct_set,
-		std::vector<EntityWriteListener *> *write_listeners, size_t *num_new_nodes_allocated, bool on_self, bool copy_entity);
+		std::vector<EntityWriteCallbacks *> *write_listeners, size_t *num_new_nodes_allocated, bool on_self, bool copy_entity);
 
 	//Rebuilds label index
 	//returns true if there was a change and cycle checks were updated across the entity
@@ -307,11 +307,11 @@ public:
 	// if _id is empty, then it will automatically generate an _id
 	//returns the id used, empty string on failure
 	/// write_listeners is optional, and if specified, will log the event
-	StringInternPool::StringID AddContainedEntity(Entity *t, StringInternPool::StringID id_sid, std::vector<EntityWriteListener *> *write_listeners = nullptr);
+	StringInternPool::StringID AddContainedEntity(Entity *t, StringInternPool::StringID id_sid, std::vector<EntityWriteCallbacks *> *write_listeners = nullptr);
 
-	StringInternPool::StringID AddContainedEntity(Entity *t, std::string id_string, std::vector<EntityWriteListener *> *write_listeners = nullptr);
+	StringInternPool::StringID AddContainedEntity(Entity *t, std::string id_string, std::vector<EntityWriteCallbacks *> *write_listeners = nullptr);
 
-	inline void AddContainedEntityViaReference(Entity *t, StringRef &sir, std::vector<EntityWriteListener *> *write_listeners = nullptr)
+	inline void AddContainedEntityViaReference(Entity *t, StringRef &sir, std::vector<EntityWriteCallbacks *> *write_listeners = nullptr)
 	{
 		StringInternPool::StringID new_sid = AddContainedEntity(t, static_cast<StringInternPool::StringID>(sir), write_listeners);
 		sir.SetIDAndCreateReference(new_sid);
@@ -319,7 +319,7 @@ public:
 
 	//Removes the specified id from being contained by this Entity
 	/// write_listeners is optional, and if specified, will log the event
-	void RemoveContainedEntity(StringInternPool::StringID id, std::vector<EntityWriteListener *> *write_listeners = nullptr);
+	void RemoveContainedEntity(StringInternPool::StringID id, std::vector<EntityWriteCallbacks *> *write_listeners = nullptr);
 
 	//returns the Entity contained by this Entity for the given id, null if it does not exist
 	Entity *GetContainedEntity(StringInternPool::StringID id);
@@ -594,12 +594,12 @@ public:
 	// write_listeners is optional, and if specified, will log the event
 	// all_contained_entities, if specified, may be used for updating entities
 	void SetRandomState(const std::string &new_state, bool deep_set_seed,
-		std::vector<EntityWriteListener *> *write_listeners = nullptr,
+		std::vector<EntityWriteCallbacks *> *write_listeners = nullptr,
 		Entity::EntityReferenceBufferReference<EntityWriteReference> *all_contained_entities = nullptr);
 
 	//sets (seeds) the current state of the random stream based on RandomStream
 	// write_listeners is optional, and if specified, will log the event
-	void SetRandomStream(const RandomStream &new_stream, std::vector<EntityWriteListener *> *write_listeners = nullptr);
+	void SetRandomStream(const RandomStream &new_stream, std::vector<EntityWriteCallbacks *> *write_listeners = nullptr);
 
 	//returns a random seed based on a random number consumed from the entity and seed_string parameter
 	std::string CreateRandomStreamFromStringAndRand(const std::string &seed_string);
@@ -625,17 +625,17 @@ public:
 	//write_listeners is optional, and if specified, will log the event
 	void SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm,
 		EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE,
-		std::vector<EntityWriteListener *> *write_listeners = nullptr);
+		std::vector<EntityWriteCallbacks *> *write_listeners = nullptr);
 	void SetRoot(std::string &code_string,
 		EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE,
-		std::vector<EntityWriteListener *> *write_listeners = nullptr);
+		std::vector<EntityWriteCallbacks *> *write_listeners = nullptr);
 
 	//accumulates the code and recreates the index, modifying labels as specified
 	//if allocated_with_entity_enm is false, then it will copy the tree into the entity's EvaluableNodeManager, otherwise it will just assume it is already available
 	//write_listeners is optional, and if specified, will log the event
 	void AccumRoot(EvaluableNodeReference _code, bool allocated_with_entity_enm,
 		EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE,
-		std::vector<EntityWriteListener *> *write_listeners = nullptr);
+		std::vector<EntityWriteCallbacks *> *write_listeners = nullptr);
 
 	//collects garbage on evaluableNodeManager
 #ifdef MULTITHREAD_SUPPORT

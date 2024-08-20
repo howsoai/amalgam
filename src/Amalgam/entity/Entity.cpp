@@ -1,6 +1,6 @@
 //project headers:
 #include "Entity.h"
-#include "EntityWriteListener.h"
+#include "EntityWriteCallbacks.h"
 #include "EvaluableNodeTreeFunctions.h"
 #include "EvaluableNodeTreeManipulation.h"
 
@@ -243,7 +243,7 @@ EvaluableNodeImmediateValueType Entity::GetValueAtLabelAsImmediateValue(StringIn
 }
 
 bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNodeReference &new_value, bool direct_set,
-	std::vector<EntityWriteListener *> *write_listeners, bool on_self, bool batch_call, bool *need_node_flags_updated)
+	std::vector<EntityWriteCallbacks *> *write_listeners, bool on_self, bool batch_call, bool *need_node_flags_updated)
 {
 	if(label_sid == string_intern_pool.NOT_A_STRING_ID)
 		return false;
@@ -361,7 +361,7 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 
 //like SetValuesAtLabels, except accumulates each value at each label instead
 std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label_values, bool accum_values, bool direct_set,
-	std::vector<EntityWriteListener *> *write_listeners, size_t *num_new_nodes_allocated, bool on_self, bool copy_entity)
+	std::vector<EntityWriteCallbacks *> *write_listeners, size_t *num_new_nodes_allocated, bool on_self, bool copy_entity)
 {
 	//can only work with assoc arrays
 	if(!EvaluableNode::IsAssociativeArray(new_label_values))
@@ -517,7 +517,7 @@ bool Entity::RebuildLabelIndex()
 	return !collision_free;
 }
 
-StringInternPool::StringID Entity::AddContainedEntity(Entity *t, StringInternPool::StringID id_sid, std::vector<EntityWriteListener *> *write_listeners)
+StringInternPool::StringID Entity::AddContainedEntity(Entity *t, StringInternPool::StringID id_sid, std::vector<EntityWriteCallbacks *> *write_listeners)
 {
 	if(t == nullptr)
 		return StringInternPool::NOT_A_STRING_ID;
@@ -582,7 +582,7 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, StringInternPoo
 	return t->idStringId;
 }
 
-StringInternPool::StringID Entity::AddContainedEntity(Entity *t, std::string id_string, std::vector<EntityWriteListener *> *write_listeners)
+StringInternPool::StringID Entity::AddContainedEntity(Entity *t, std::string id_string, std::vector<EntityWriteCallbacks *> *write_listeners)
 {
 	if(t == nullptr)
 		return StringInternPool::NOT_A_STRING_ID;
@@ -649,7 +649,7 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, std::string id_
 	return t->idStringId;
 }
 
-void Entity::RemoveContainedEntity(StringInternPool::StringID id, std::vector<EntityWriteListener *> *write_listeners)
+void Entity::RemoveContainedEntity(StringInternPool::StringID id, std::vector<EntityWriteCallbacks *> *write_listeners)
 {
 	if(!hasContainedEntities)
 		return;
@@ -771,7 +771,7 @@ void Entity::CreateQueryCaches(CacheFactory factory)
 }
 
 void Entity::SetRandomState(const std::string &new_state, bool deep_set_seed,
-	std::vector<EntityWriteListener *> *write_listeners,
+	std::vector<EntityWriteCallbacks *> *write_listeners,
 	Entity::EntityReferenceBufferReference<EntityWriteReference> *all_contained_entities)
 {
 	randomStream.SetState(new_state);
@@ -792,7 +792,7 @@ void Entity::SetRandomState(const std::string &new_state, bool deep_set_seed,
 	}
 }
 
-void Entity::SetRandomStream(const RandomStream &new_stream, std::vector<EntityWriteListener *> *write_listeners)
+void Entity::SetRandomStream(const RandomStream &new_stream, std::vector<EntityWriteCallbacks *> *write_listeners)
 {
 	randomStream = new_stream;
 
@@ -816,7 +816,7 @@ std::string Entity::CreateRandomStreamFromStringAndRand(const std::string &seed_
 	return randomStream.CreateOtherStreamStateViaString(seed_string);
 }
 
-void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier, std::vector<EntityWriteListener *> *write_listeners)
+void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier, std::vector<EntityWriteCallbacks *> *write_listeners)
 {
 	EvaluableNode *cur_root = GetRoot();
 	bool entity_previously_empty = (cur_root == nullptr || cur_root->GetNumChildNodes() == 0);
@@ -867,7 +867,7 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, Evalu
 }
 
 void Entity::SetRoot(std::string &code_string, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier,
-	std::vector<EntityWriteListener *> *write_listeners)
+	std::vector<EntityWriteCallbacks *> *write_listeners)
 {
 	EvaluableNodeReference new_code = Parser::Parse(code_string, &evaluableNodeManager);
 	SetRoot(new_code, true, metadata_modifier, write_listeners);
@@ -875,7 +875,7 @@ void Entity::SetRoot(std::string &code_string, EvaluableNodeManager::EvaluableNo
 
 void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_entity_enm,
 	EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier,
-	std::vector<EntityWriteListener *> *write_listeners)
+	std::vector<EntityWriteCallbacks *> *write_listeners)
 {
 #ifdef AMALGAM_MEMORY_INTEGRITY
 	VerifyEvaluableNodeIntegrity();

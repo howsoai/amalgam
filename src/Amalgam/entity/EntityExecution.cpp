@@ -6,7 +6,7 @@
 EvaluableNodeReference EntityExecution::ExecuteEntity(Entity &entity,
 	StringInternPool::StringID label_sid,
 	EvaluableNode *call_stack, bool on_self, Interpreter *calling_interpreter,
-	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
+	std::vector<EntityWriteCallbacks *> *write_listeners, PrintListener *print_listener,
 	PerformanceConstraints *performance_constraints
 #ifdef MULTITHREAD_SUPPORT
 	, Concurrency::ReadLock *enm_lock

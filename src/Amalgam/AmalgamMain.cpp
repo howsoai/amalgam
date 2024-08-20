@@ -249,7 +249,7 @@ PLATFORM_MAIN_CONSOLE
 		asset_manager.SetRootPermission(entity, true);
 
 		PrintListener *print_listener = nullptr;
-		std::vector<EntityWriteListener *> write_listeners;
+		std::vector<EntityWriteCallbacks *> write_listeners;
 
 		if(Platform_IsDebuggerPresent())
 		{

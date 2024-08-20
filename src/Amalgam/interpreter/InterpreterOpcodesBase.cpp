@@ -8,7 +8,7 @@
 #include "DateTimeFormat.h"
 #include "EntityManipulation.h"
 #include "EntityQueries.h"
-#include "EntityWriteListener.h"
+#include "EntityWriteCallbacks.h"
 #include "EvaluableNodeManagement.h"
 #include "EvaluableNodeTreeFunctions.h"
 #include "PerformanceProfiler.h"

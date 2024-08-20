@@ -29,7 +29,7 @@ ImportEntityStatus EntityExternalInterface::LoadEntity(std::string &handle, std:
 	asset_manager.SetRootPermission(entity, true);
 
 	PrintListener *pl = nullptr;
-	std::vector<EntityWriteListener *> wl;
+	std::vector<EntityWriteCallbacks *> wl;
 
 	if(!print_log_filename.empty())
 		pl = new PrintListener(print_log_filename);
@@ -73,7 +73,7 @@ bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &clon
 	Entity *entity = new Entity(bundle->entity);
 
 	PrintListener *pl = nullptr;
-	std::vector<EntityWriteListener *> wl;
+	std::vector<EntityWriteCallbacks *> wl;
 
 	if(!print_log_filename.empty())
 		pl = new PrintListener(print_log_filename);

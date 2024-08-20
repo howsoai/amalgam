@@ -1300,6 +1300,11 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 	return CreateListOfStringsIdsFromIteratorAndFunction(matching_ents, enm, entity_index_to_id);
 }
 
+static std::unique_ptr<EntityContainerCaches> Factory(Entity *entity)
+{
+	return std::make_unique<EntityQueryCaches>(entity);
+}
+
 
 EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadReference &container, std::vector<EntityQueryCondition> &conditions, EvaluableNodeManager *enm, bool return_query_value)
 {
@@ -1312,11 +1317,11 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 		#ifdef MULTITHREAD_SUPPORT
 			container.lock.unlock();
 			EntityWriteReference write_lock(container);
-			container->CreateQueryCaches();
+			container->CreateQueryCaches(Factory);
 			write_lock.lock.unlock();
 			container.lock.lock();
 		#else
-			container->CreateQueryCaches();
+			container->CreateQueryCaches(Factory);
 		#endif
 		}
 
@@ -1353,11 +1358,11 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 			#ifdef MULTITHREAD_SUPPORT
 				container.lock.unlock();
 				EntityWriteReference write_lock(container);
-				container->CreateQueryCaches();
+				container->CreateQueryCaches(Factory);
 				write_lock.lock.unlock();
 				container.lock.lock();
 			#else
-				container->CreateQueryCaches();
+				container->CreateQueryCaches(Factory);
 			#endif
 			}
 

@@ -13,6 +13,9 @@
 #include <type_traits>
 #include <vector>
 
+//forward declarations:
+class EntityQueryCondition;
+
 //Manages performance constraints and accompanying performance counters
 class PerformanceConstraints
 {

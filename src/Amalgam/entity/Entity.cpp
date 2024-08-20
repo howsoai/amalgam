@@ -2,6 +2,7 @@
 #include "Entity.h"
 #include "EntityWriteListener.h"
 #include "EvaluableNodeTreeFunctions.h"
+#include "EvaluableNodeTreeManipulation.h"
 
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 thread_local
@@ -761,12 +762,12 @@ Entity *Entity::GetContainedEntityFromIndex(size_t entity_index)
 	return entityRelationships.relationships->containedEntities[entity_index];
 }
 
-void Entity::CreateQueryCaches()
+void Entity::CreateQueryCaches(CacheFactory factory)
 {
 	EnsureHasContainedEntities();
 
 	if(!entityRelationships.relationships->queryCaches)
-		entityRelationships.relationships->queryCaches = std::make_unique<EntityQueryCaches>(this);
+		entityRelationships.relationships->queryCaches = factory(this);
 }
 
 void Entity::SetRandomState(const std::string &new_state, bool deep_set_seed,

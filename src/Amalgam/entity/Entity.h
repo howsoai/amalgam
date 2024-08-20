@@ -1,7 +1,7 @@
 #pragma once
 
 //project headers:
-#include "EntityQueryCaches.h"
+#include "EntityContainerCaches.h"
 #include "Parser.h"
 #include "RandomStream.h"
 
@@ -15,7 +15,6 @@
 
 //forward declarations:
 class Entity;
-class EntityQueryCaches;
 class EntityWriteListener;
 class EvaluableNode;
 class EvaluableNodeManagement;
@@ -397,7 +396,8 @@ public:
 	}
 
 	//creates a cache if it does not exist
-	void CreateQueryCaches();
+	using CacheFactory = std::unique_ptr<EntityContainerCaches>(*)(Entity *);
+	void CreateQueryCaches(CacheFactory factory);
 
 	//returns a pointer to the query caches for this entity
 	//returns a nullptr if does not have an active cache

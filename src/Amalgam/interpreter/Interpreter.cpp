@@ -1,5 +1,6 @@
 //project headers:
 #include "Interpreter.h"
+#include "EntityQueries.h"
 
 //system headers:
 #include <chrono>

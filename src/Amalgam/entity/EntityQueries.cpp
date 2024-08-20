@@ -2,7 +2,7 @@
 #include "EntityQueries.h"
 #include "Concurrency.h"
 #include "EntityManipulation.h"
-#include "EntityQueryCaches.h"
+#include "EntityQueriesStatistics.h"
 #include "EvaluableNodeTreeFunctions.h"
 
 bool _enable_SBF_datastore = true;

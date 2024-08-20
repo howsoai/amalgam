@@ -12,6 +12,7 @@
 #include "StringInternPool.h"
 #include "WeightedDiscreteRandomStream.h"
 
+EntityQueryCaches::~EntityQueryCaches() = default;
 
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 thread_local
@@ -921,7 +922,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 {
 	//get the cache associated with this container
 	// use the first condition as an heuristic for building it if it doesn't exist
-	EntityQueryCaches *entity_caches = container->GetQueryCaches();
+	EntityQueryCaches *entity_caches = container->GetQueryCaches<EntityQueryCaches>();
 
 	//starting collection of matching entities, initialized to all entities with the requested labels
 	// reuse existing buffer

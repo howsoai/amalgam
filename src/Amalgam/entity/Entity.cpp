@@ -93,7 +93,7 @@ Entity::~Entity()
 	ClearQueryCaches();
 
 	//if contained in another entity, remove it
-	EntityQueryCaches *container_caches = GetContainerQueryCaches();
+	EntityContainerCaches *container_caches = GetContainerQueryCaches();
 	if(container_caches != nullptr)
 	{
 		//must have a container, overwrite with the entity in the last index
@@ -343,7 +343,7 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 				|| dest_prev_value_idempotent != dest_new_value_idempotent))
 			EvaluableNodeManager::UpdateFlagsForNodeTree(evaluableNodeManager.GetRootNode());
 
-		EntityQueryCaches *container_caches = GetContainerQueryCaches();
+		EntityContainerCaches *container_caches = GetContainerQueryCaches();
 		if(container_caches != nullptr)
 			container_caches->UpdateAllEntityLabels(this, GetEntityIndexOfContainer());
 
@@ -415,7 +415,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 
 	if(any_successful_assignment)
 	{
-		EntityQueryCaches *container_caches = GetContainerQueryCaches();
+		EntityContainerCaches *container_caches = GetContainerQueryCaches();
 		if(direct_set)
 		{
 			//direct assignments need a rebuild of the index just in case a label collision occurs -- will update node flags if needed
@@ -567,7 +567,7 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, StringInternPoo
 
 	t->SetEntityContainer(this);
 
-	EntityQueryCaches *container_caches = GetQueryCaches();
+	EntityContainerCaches *container_caches = GetQueryCaches();
 	if(container_caches != nullptr)
 		container_caches->AddEntity(t, t_index);
 
@@ -634,7 +634,7 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, std::string id_
 
 	t->SetEntityContainer(this);
 
-	EntityQueryCaches *container_caches = GetQueryCaches();
+	EntityContainerCaches *container_caches = GetQueryCaches();
 	if(container_caches != nullptr)
 		container_caches->AddEntity(t, t_index);
 
@@ -675,7 +675,7 @@ void Entity::RemoveContainedEntity(StringInternPool::StringID id, std::vector<En
 		EntityManager::Get().DestroyEntity(entity_to_remove);
 	}
 
-	EntityQueryCaches *caches = GetQueryCaches();
+	EntityContainerCaches *caches = GetQueryCaches();
 	if(caches != nullptr)
 		caches->RemoveEntity(entity_to_remove, index_to_remove, index_to_replace);
 
@@ -847,7 +847,7 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, Evalu
 	VerifyEvaluableNodeIntegrity();
 #endif
 
-	EntityQueryCaches *container_caches = GetContainerQueryCaches();
+	EntityContainerCaches *container_caches = GetContainerQueryCaches();
 	if(container_caches != nullptr)
 		container_caches->UpdateAllEntityLabels(this, GetEntityIndexOfContainer());
 
@@ -925,7 +925,7 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 		}
 	}
 
-	EntityQueryCaches *container_caches = GetContainerQueryCaches();
+	EntityContainerCaches *container_caches = GetContainerQueryCaches();
 
 	//can do a much more straightforward update if there are no label collisions and the root has no labels
 	if(no_label_collisions && new_root->GetNumLabels() == 0)

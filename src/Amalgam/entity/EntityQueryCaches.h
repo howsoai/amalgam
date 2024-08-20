@@ -3,6 +3,7 @@
 //project headers:
 #include "Conviction.h"
 #include "DistanceReferencePair.h"
+#include "EntityContainerCaches.h"
 #include "EntityQueries.h"
 #include "EvaluableNode.h"
 #include "IntegerSet.h"
@@ -20,17 +21,15 @@ class EntityQueryCondition;
 class EntityReadReference;
 
 //stores all of the types of caches needed for queries on a particular entity
-class EntityQueryCaches
+class EntityQueryCaches : public EntityContainerCaches
 {
 public:
+	~EntityQueryCaches() override;
 
 	EntityQueryCaches(Entity *_container) : container(_container)
 	{	}
 
-	//adds the entity to the cache
-	// container should contain entity
-	// entity_index is the index that the entity should be stored as
-	inline void AddEntity(Entity *e, size_t entity_index, bool batch_add = false)
+	void AddEntity(Entity *e, size_t entity_index, bool batch_add) override
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		//don't lock if batch_call is set
@@ -42,10 +41,7 @@ public:
 		sbfds.AddEntity(e, entity_index);
 	}
 
-	//like AddEntity, but removes the entity from the cache and reassigns entity_index_to_reassign to use the old
-	// entity_index; for example, if entity_index 3 is being removed and 5 is the highest index, if entity_index_to_reassign is 5,
-	// then this function will move the entity data that was previously in index 5 to be referenced by index 3 for all caches
-	inline void RemoveEntity(Entity *e, size_t entity_index, size_t entity_index_to_reassign, bool batch_remove = false)
+	void RemoveEntity(Entity *e, size_t entity_index, size_t entity_index_to_reassign, bool batch_remove) override
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		//don't lock if batch_call is set
@@ -57,8 +53,7 @@ public:
 		sbfds.RemoveEntity(e, entity_index, entity_index_to_reassign);
 	}
 
-	//updates all of the label values for entity e with index entity_index
-	inline void UpdateAllEntityLabels(Entity *entity, size_t entity_index)
+	void UpdateAllEntityLabels(Entity *entity, size_t entity_index) override
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		Concurrency::WriteLock write_lock(mutex);
@@ -67,8 +62,7 @@ public:
 		sbfds.UpdateAllEntityLabels(entity, entity_index);
 	}
 
-	//like UpdateAllEntityLabels, but only updates labels for the keys of labels_updated
-	inline void UpdateEntityLabels(Entity *entity, size_t entity_index, EvaluableNode::AssocType &labels_updated)
+	void UpdateEntityLabels(Entity *entity, size_t entity_index, EvaluableNode::AssocType &labels_updated) override
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		Concurrency::WriteLock write_lock(mutex);

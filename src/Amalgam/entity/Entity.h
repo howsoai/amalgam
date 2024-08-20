@@ -401,16 +401,18 @@ public:
 
 	//returns a pointer to the query caches for this entity
 	//returns a nullptr if does not have an active cache
-	inline EntityQueryCaches *GetQueryCaches()
+	//template parameter is the type to which the pointer is down-cast
+	template<typename Type = EntityContainerCaches>
+	inline Type *GetQueryCaches()
 	{
 		if(hasContainedEntities && entityRelationships.relationships->queryCaches)
-			return entityRelationships.relationships->queryCaches.get();
+			return static_cast<Type*>(entityRelationships.relationships->queryCaches.get());
 		return nullptr;
 	}
 
 	//returns a pointer to the query caches for this entity's container
 	//returns a nullptr if it does not have a container or the container does not have an active cache
-	inline EntityQueryCaches *GetContainerQueryCaches()
+	inline EntityContainerCaches *GetContainerQueryCaches()
 	{
 		Entity *container = GetContainer();
 		if(container == nullptr)
@@ -812,7 +814,7 @@ protected:
 		Entity *container;
 
 		//caches for querying contained entities, constructed if needed
-		std::unique_ptr<EntityQueryCaches> queryCaches;
+		std::unique_ptr<EntityContainerCaches> queryCaches;
 	};
 
 	//pointer to either the container or the EntityRelationships

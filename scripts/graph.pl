@@ -7,12 +7,15 @@ my $traceLevel = 3;
 
 # whether to box the clusters by sub-folder, but always color nodes regardless
 my @clusterlist = qw(
+    /Amalgam/amalgam
     /Amalgam/entity
+    /Amalgam/entity_interface
     /Amalgam/evaluablenode
     /Amalgam/importexport
     /Amalgam/interpreter
-    /Amalgam/rand
-    /Amalgam/string
+    /Amalgam/math
+    /Amalgam/queries
+    /Amalgam/utility
     /3rd_party/date
     /3rd_party/fast_log
     /3rd_party/murmurhash3

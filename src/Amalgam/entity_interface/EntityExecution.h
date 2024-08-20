@@ -5,6 +5,7 @@
 
 //forward declarations:
 class Interpreter;
+class PrintListener;
 
 /*
  * This class constitutes the C++ backing for the C API, and is fully functional as a C++ API.

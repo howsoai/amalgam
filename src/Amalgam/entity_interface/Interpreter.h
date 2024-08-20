@@ -16,6 +16,7 @@
 //forward declarations:
 class EntityQueryCondition;
 class EntityWriteCallbacks;
+class PrintListener;
 
 //Manages performance constraints and accompanying performance counters
 class PerformanceConstraints

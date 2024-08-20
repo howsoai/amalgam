@@ -19,7 +19,6 @@ class EntityWriteCallbacks;
 class EvaluableNode;
 class EvaluableNodeManagement;
 class PerformanceConstraints;
-class PrintListener;
 
 //base class for accessing an entity via a reference
 // includes everything that can be accessed via a read operation

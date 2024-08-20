@@ -1,8 +1,6 @@
 //project headers:
 #include "PlatformSpecific.h"
 
-#include "Concurrency.h"
-
 //system headers:
 #include <algorithm>
 #include <array>
@@ -13,6 +11,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <thread>
 
 //perform universal initialization
 class PlatformSpecificStartup

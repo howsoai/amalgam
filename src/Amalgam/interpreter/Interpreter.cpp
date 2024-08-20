@@ -723,45 +723,44 @@ EvaluableNode **Interpreter::TraverseToDestinationFromTraversalPathList(Evaluabl
 }
 
 EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference function,
-	EvaluableNode *tree, EvaluableNode *parent, FastHashMap<EvaluableNode *, std::pair<EvaluableNode *, EvaluableNode *>>
-	&original_nodes_to_parents_and_replacements)
+	EvaluableNode *tree, EvaluableNode *new_parent_node,
+	FastHashMap<EvaluableNode *, EvaluableNode *> &original_node_to_new_node,
+	FastHashMap<EvaluableNode *, EvaluableNode *> &new_node_to_new_parent_node)
 {
 	if(tree == nullptr)
 		tree = evaluableNodeManager->AllocNode(ENT_NULL);
 
 	//attempt to insert; if new, mark as not needing a cycle check yet
 	// though that may be changed when child nodes are evaluated below
-	auto [existing_record, inserted]
-		= original_nodes_to_parents_and_replacements.emplace(tree, std::make_pair(parent, nullptr));
-	if(inserted)
-	{
-		tree->SetNeedCycleCheck(false);
-	}
-	else //this node has already been checked
+	auto [existing_record, inserted] = original_node_to_new_node.emplace(tree, static_cast<EvaluableNode *>(nullptr));
+	if(!inserted)
 	{
 		//climb back up to top setting cycle checks needed,
-		//starting with tree's parent node
-		EvaluableNode *cur_node = existing_record->second.first;
-		while(cur_node != nullptr)
+		//starting with the new node
+		EvaluableNode *cur_new_node = existing_record->second;
+		while(cur_new_node != nullptr)
 		{
 			//if it's already set to cycle check, don't need to keep going
-			if(cur_node->GetNeedCycleCheck())
+			if(cur_new_node->GetNeedCycleCheck())
 				break;
 
-			cur_node->SetNeedCycleCheck(true);
+			cur_new_node->SetNeedCycleCheck(true);
 
-			auto parent_record = original_nodes_to_parents_and_replacements.find(cur_node);
+			auto parent_record = new_node_to_new_parent_node.find(cur_new_node);
 			//if at the top, don't need to update anymore
-			if(parent_record == end(original_nodes_to_parents_and_replacements))
+			if(parent_record == end(new_node_to_new_parent_node))
 				break;
 
-			cur_node = parent_record->second.first;
+			cur_new_node = parent_record->second;
 		}
-		return EvaluableNodeReference(cur_node, false);
+
+		//return the original new node
+		return EvaluableNodeReference(existing_record->second, false);
 	}
 
 	EvaluableNodeReference new_tree = EvaluableNodeReference(evaluableNodeManager->AllocNode(tree), true);
-	existing_record->second.second = new_tree;
+	existing_record->second = new_tree;
+	new_node_to_new_parent_node.emplace(new_tree.GetReference(), new_parent_node);
 
 	if(tree->IsAssociativeArray())
 	{
@@ -771,7 +770,8 @@ EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference fun
 		{
 			SetTopCurrentIndexInConstructionStack(e_id);
 			SetTopCurrentValueInConstructionStack(e);
-			auto new_e = RewriteByFunction(function, e, new_tree, original_nodes_to_parents_and_replacements);
+			auto new_e = RewriteByFunction(function, e, new_tree,
+				original_node_to_new_node, new_node_to_new_parent_node);
 			new_tree.UpdatePropertiesBasedOnAttachedNode(new_e);
 			e = new_e;
 		}
@@ -793,7 +793,8 @@ EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference fun
 			{
 				SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
 				SetTopCurrentValueInConstructionStack(ocn[i]);
-				auto new_e = RewriteByFunction(function, ocn[i], new_tree, original_nodes_to_parents_and_replacements);
+				auto new_e = RewriteByFunction(function, ocn[i], new_tree,
+					original_node_to_new_node, new_node_to_new_parent_node);
 				new_tree.UpdatePropertiesBasedOnAttachedNode(new_e);
 				ocn[i] = new_e;
 			}

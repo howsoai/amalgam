@@ -37,8 +37,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en,
 		to_modify.SetReference(evaluableNodeManager->AllocNode(ENT_NULL), true);
 
 	PushNewConstructionContext(to_modify, nullptr, EvaluableNodeImmediateValueWithType(), to_modify);
-	FastHashMap<EvaluableNode *, std::pair<EvaluableNode *, EvaluableNode *>> original_nodes_to_parents_and_replacements;
-	EvaluableNodeReference result = RewriteByFunction(function, to_modify, nullptr, original_nodes_to_parents_and_replacements);
+	FastHashMap<EvaluableNode *, EvaluableNode *> original_node_to_new_node;
+	FastHashMap<EvaluableNode *, EvaluableNode *> new_node_to_new_parent_node;
+	EvaluableNodeReference result = RewriteByFunction(function, to_modify, nullptr,
+		original_node_to_new_node, new_node_to_new_parent_node);
 
 	if(PopConstructionContextAndGetExecutionSideEffectFlag())
 		result.unique = false;

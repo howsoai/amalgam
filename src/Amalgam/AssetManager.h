@@ -163,9 +163,8 @@ public:
 	}
 
 	//Indicates that the entity has been written to or updated, and so if the asset is persistent, the persistent copy should be updated
-	template<typename EntityReferenceType = EntityReadReference>
 	void UpdateEntity(Entity *entity,
-		Entity::EntityReferenceBufferReference<EntityReferenceType> *all_contained_entities = nullptr)
+		Entity::EntityReferenceBufferReference<EntityWriteReference> *all_contained_entities = nullptr)
 	{
 	#ifdef MULTITHREAD_INTERFACE
 		Concurrency::ReadLock lock(persistentEntitiesMutex);

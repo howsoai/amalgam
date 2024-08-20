@@ -36,23 +36,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en,
 	if(to_modify == nullptr)
 		to_modify.SetReference(evaluableNodeManager->AllocNode(ENT_NULL), true);
 
-	if(!to_modify.unique)
-		to_modify = evaluableNodeManager->DeepAllocCopy(to_modify);
-	node_stack.PushEvaluableNode(to_modify);
-
-	//apply rewrite function
-	//pass value of list to be mapped
 	PushNewConstructionContext(to_modify, nullptr, EvaluableNodeImmediateValueWithType(), to_modify);
+	FastHashMap<EvaluableNode *, EvaluableNode *> original_node_to_new_node;
+	FastHashMap<EvaluableNode *, EvaluableNode *> new_node_to_new_parent_node;
+	EvaluableNodeReference result = RewriteByFunction(function, to_modify, nullptr,
+		original_node_to_new_node, new_node_to_new_parent_node);
 
-	EvaluableNode::ReferenceSetType references;
-	EvaluableNode *result = RewriteByFunction(function, to_modify, to_modify, references);
-
-	PopConstructionContextAndGetExecutionSideEffectFlag();
+	if(PopConstructionContextAndGetExecutionSideEffectFlag())
+		result.unique = false;
 
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
-
-	//can't guarantee uniqueness as the function could have loaded or stored the data
-	return EvaluableNodeReference(result, false);
+	return result;
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, bool immediate_result)

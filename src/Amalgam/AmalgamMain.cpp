@@ -224,12 +224,12 @@ PLATFORM_MAIN_CONSOLE
 	else if(run_tracefile)
 	{
 		std::ifstream trace_stream(tracefile);
-		int ret = RunAmalgamTrace(&trace_stream, &std::cout, random_seed);
+		int return_val = RunAmalgamTrace(&trace_stream, &std::cout, random_seed);
 
 		if(profile_opcodes || profile_labels)
 			PerformanceProfiler::PrintProfilingInformation(profile_out_file, profile_count);
 
-		return ret;
+		return return_val;
 	}
 	else
 	{
@@ -319,7 +319,10 @@ PLATFORM_MAIN_CONSOLE
 
 		if(debug_internal_memory)
 		{
+		#ifndef AMALGAM_FAST_MEMORY_INTEGRITY
+			//AMALGAM_FAST_MEMORY_INTEGRITY already calls VerifyEvaluableNodeIntegrity on entity destruction
 			entity->VerifyEvaluableNodeIntegrityAndAllContainedEntities();
+		#endif
 
 			delete entity;
 

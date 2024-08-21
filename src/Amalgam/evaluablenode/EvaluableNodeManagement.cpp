@@ -631,12 +631,12 @@ void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(EvaluableNod
 	if(en == nullptr)
 		return;
 
-	static EvaluableNode::ReferenceSetType checked;
+	EvaluableNode::ReferenceSetType checked;
 	checked.clear();
 
 	if(ensure_nodes_in_enm)
 	{
-		static FastHashSet<EvaluableNode *> existing_nodes;
+		FastHashSet<EvaluableNode *> existing_nodes;
 		existing_nodes.clear();
 
 		for(size_t i = 0; i < ensure_nodes_in_enm->firstUnusedNodeIndex; i++)

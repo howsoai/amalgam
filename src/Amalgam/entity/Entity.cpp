@@ -89,6 +89,10 @@ Entity::Entity(Entity *t)
 
 Entity::~Entity()
 {
+#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+	VerifyEvaluableNodeIntegrity();
+#endif
+
 	//clear query caches before destroying contained entities for performance
 	ClearQueryCaches();
 

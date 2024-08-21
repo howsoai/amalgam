@@ -1244,7 +1244,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 			|| last_query_type == ENT_COMPUTE_ENTITY_CONVICTIONS
 			|| last_query_type == ENT_COMPUTE_ENTITY_KL_DIVERGENCES)
 		{
-			return EntityManipulation::ConvertResultsToEvaluableNodes<size_t>(compute_results,
+			return ConvertResultsToEvaluableNodes<size_t>(compute_results,
 				enm, last_query->returnSortedList, last_query->additionalSortedListLabels,
 				[&contained_entities](auto entity_index) { return contained_entities[entity_index]; });
 		}

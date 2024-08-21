@@ -722,6 +722,28 @@ EvaluableNode **Interpreter::TraverseToDestinationFromTraversalPathList(Evaluabl
 	return destination;
 }
 
+//climbs up new_node_to_new_parent_node from node, calling SetNeedCycleCheck
+static void SetAllParentNodesNeedCycleCheck(EvaluableNode *node,
+	FastHashMap<EvaluableNode *, EvaluableNode *> &new_node_to_new_parent_node)
+{
+	//climb back up to top setting cycle checks needed,
+	while(node != nullptr)
+	{
+		//if it's already set to cycle check, don't need to keep going
+		if(node->GetNeedCycleCheck())
+			break;
+
+		node->SetNeedCycleCheck(true);
+
+		auto parent_record = new_node_to_new_parent_node.find(node);
+		//if at the top, don't need to update anymore
+		if(parent_record == end(new_node_to_new_parent_node))
+			return;
+
+		node = parent_record->second;
+	}
+}
+
 EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference function,
 	EvaluableNode *tree, EvaluableNode *new_parent_node,
 	FastHashMap<EvaluableNode *, EvaluableNode *> &original_node_to_new_node,
@@ -735,24 +757,8 @@ EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference fun
 	auto [existing_record, inserted] = original_node_to_new_node.emplace(tree, static_cast<EvaluableNode *>(nullptr));
 	if(!inserted)
 	{
-		//climb back up to top setting cycle checks needed,
-		//starting with the new node
-		EvaluableNode *cur_new_node = existing_record->second;
-		while(cur_new_node != nullptr)
-		{
-			//if it's already set to cycle check, don't need to keep going
-			if(cur_new_node->GetNeedCycleCheck())
-				break;
-
-			cur_new_node->SetNeedCycleCheck(true);
-
-			auto parent_record = new_node_to_new_parent_node.find(cur_new_node);
-			//if at the top, don't need to update anymore
-			if(parent_record == end(new_node_to_new_parent_node))
-				break;
-
-			cur_new_node = parent_record->second;
-		}
+		//climb back up to top setting cycle checks needed
+		SetAllParentNodesNeedCycleCheck(existing_record->second, new_node_to_new_parent_node);
 
 		//return the original new node
 		return EvaluableNodeReference(existing_record->second, false);
@@ -777,10 +783,7 @@ EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference fun
 		}
 
 		if(PopConstructionContextAndGetExecutionSideEffectFlag())
-		{
-			new_tree->SetNeedCycleCheck(true);
-			new_tree.unique = false;
-		}
+			SetAllParentNodesNeedCycleCheck(new_tree, new_node_to_new_parent_node);
 	}
 	else if(!tree->IsImmediate())
 	{
@@ -800,10 +803,7 @@ EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference fun
 			}
 
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
-			{
-				new_tree->SetNeedCycleCheck(true);
-				new_tree.unique = false;
-			}
+				SetAllParentNodesNeedCycleCheck(new_tree, new_node_to_new_parent_node);
 		}
 	}
 

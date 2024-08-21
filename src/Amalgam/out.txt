@@ -235,11 +235,11 @@ notakeyword
 (print "hello")
 [(null) (null) .infinity -.infinity]
 
-{b 2 c ["alpha" "beta" "gamma"] a 1}
+{c ["alpha" "beta" "gamma"] a 1 b 2}
 {
-	b 2
 	c ["alpha" "beta" "gamma"]
 	a 1
+	b 2
 }
 
 --if--
@@ -613,7 +613,7 @@ abcdef
 0.14384103622589045
 --first--
 4
-2
+1
 1
 0
 a
@@ -630,16 +630,16 @@ a
 []
 {
 	a 1
+	b 2
 	c 3
-	d 4
 	e 5
 	f 6
 }
-{a 1 f 6}
+{e 5 f 6}
 {
-	a 1
+	b 2
 	c 3
-	d 4
+	e 5
 	f 6
 }
 {
@@ -664,7 +664,7 @@ abcdef
 
 --last--
 this
-2
+1
 1
 0
 c
@@ -681,16 +681,16 @@ c
 []
 {
 	a 1
+	b 2
 	c 3
-	d 4
 	e 5
 	f 6
 }
-{a 1 f 6}
+{e 5 f 6}
 {
-	a 1
+	b 2
 	c 3
-	d 4
+	e 5
 	f 6
 }
 {
@@ -1042,7 +1042,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-["b" "c" "a" "4"]
+["c" "a" "b" "4"]
 [
 	0
 	1
@@ -1054,7 +1054,7 @@ abcdef
 	7
 ]
 --values--
-[2 "d" 3 1]
+["d" 3 1 2]
 [
 	"a"
 	1
@@ -1075,7 +1075,7 @@ abcdef
 	4
 	"d"
 ]
-[2 0 3 "d" 1]
+[1 3 2 0 "d"]
 [
 	1
 	2
@@ -1288,7 +1288,7 @@ current_index: 2
 		interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1724216018.495925
+		start_time 1724281469.756291
 		www 1
 		x 12
 		zz 10
@@ -1331,7 +1331,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1724216018.495925
+	start_time 1724281469.756291
 	www 1
 	x 12
 	zz 10
@@ -1373,7 +1373,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1724216018.495925
+	start_time 1724281469.756291
 	www 1
 	x 12
 	zz 10
@@ -1506,7 +1506,7 @@ true
 
 --weighted_rand--
 b
-["b" "a" "b" "a"]
+["b" "b" "b" "b"]
 
 a
 ["a" "b" @(get (target 2) 0) @(get (target 2) 1)]
@@ -1517,11 +1517,11 @@ infinity test c or d: ["c" "c" "c" "d"]
 
 infinity test c or d: ["d" @(get (target 2) 0) "c" @(get (target 2) 2)]
 
-{a 25 b 48 c 27}
+{a 27 b 45 c 28}
 
 {a 24 b 52 c 24}
 
-["5" "4" "2"]
+["1" "8" "2"]
 
 --get_rand_seed--
 N9ìÀù∏UØOaV∆T zˇ
@@ -1567,8 +1567,8 @@ N9ìÀù∏UØOaV∆T zˇ
 string
 --set_type--
 (- 3 4)
-["b" 3 "a" 4]
-["b" 3 "a" 4]
+["a" 4 "b" 3]
+["a" 4 "b" 3]
 {a 4 b 3}
 8.7
 (parallel
@@ -1617,17 +1617,17 @@ string
 	{a 3 b 4}
 	{c "c"}
 ]
-21: [{"b":4,"a":3},{"d":null,"c":"c"}]
+21: [{"a":3,"b":4},{"d":null,"c":"c"}]
 22: [{"a":3,"b":4},{"c":"c","d":null}]
-23: b: 2
+23: d: 4
+a: 1
+c: 3
+b: 2
 e:
   - a
   - b
   - 
   - .inf
-d: 4
-c: 3
-a: 1
 
 24: a: 1
 b: 2
@@ -1640,7 +1640,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2024-08-21-00.53.38.7652600
+current date-time in epoch: 2024-08-21-19.04.30.2418780
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -1687,7 +1687,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelA #labelQ
+	labelA #labelQ #labelA
 		(lambda
 			#labelB (true)
 		)
@@ -1701,7 +1701,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelA #labelQ
+	labelA #labelQ #labelA
 		(lambda
 			#labelB (true)
 		)
@@ -2767,16 +2767,18 @@ flatten restore with parallel
 19.264241099357605
 --intersect_entities--
 (associate "b" 4)
-MergeEntityChild2
-(associate "p" 3 "q" 4)
 MergeEntityChild1
 (associate "x" 3 "y" 4)
-_2169689611
-(associate "e" 3 "f" 4)
+MergeEntityChild2
+(associate "p" 3 "q" 4)
 _2280722175
 (associate "E" 3 "F" 4)
+_2169689611
+(associate "e" 3 "f" 4)
 --union_entities--
 (associate "b" 4 "a" 3 "c" 3)
+MergeEntityChild1
+(associate "x" 3 "y" 4 "z" 5)
 MergeEntityChild2
 (associate
 	"p"
@@ -2790,19 +2792,6 @@ MergeEntityChild2
 	"w"
 	7
 )
-MergeEntityChild1
-(associate "x" 3 "y" 4 "z" 5)
-_2169689611
-(associate
-	"e"
-	3
-	"f"
-	4
-	"g"
-	5
-	"h"
-	6
-)
 _2280722175
 (associate
 	"E"
@@ -2812,6 +2801,17 @@ _2280722175
 	"G"
 	5
 	"H"
+	6
+)
+_2169689611
+(associate
+	"e"
+	3
+	"f"
+	4
+	"g"
+	5
+	"h"
 	6
 )
 (parallel
@@ -3391,8 +3391,14 @@ difference between DiffEntity2 and new_entity:
 						[]
 						(lambda
 							{
-								E 3
-								F 4
+								E (get
+										(current_value 1)
+										"E"
+									)
+								F (get
+										(current_value 1)
+										"F"
+									)
 								G 5
 								H 6
 							}
@@ -3417,7 +3423,16 @@ difference between DiffEntity2 and new_entity:
 						_
 						[]
 						(lambda
-							{e 3 f 4}
+							{
+								e (get
+										(current_value 1)
+										"e"
+									)
+								f (get
+										(current_value 1)
+										"f"
+									)
+							}
 						)
 					)
 				)
@@ -3443,18 +3458,100 @@ contained_entities new_entity: ["OnlyIn2" "_3631850880" "_1938178219" "DiffEntit
 difference between DiffContainer and DiffEntity2:
 (declare
 	{_ (null) new_entity (null)}
-	(clone_entities _ new_entity)
+	(assign
+		"new_entity"
+		(first
+			(create_entities
+				new_entity
+				(call
+					(lambda
+						(declare
+							{_ (null)}
+							(replace _)
+						)
+					)
+					{
+						_ (retrieve_entity_root _)
+					}
+				)
+			)
+		)
+	)
+	(create_entities
+		(append new_entity "_3631850880")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{
+								E (null)
+								F (null)
+								G (get
+										(current_value 1)
+										"G"
+									)
+								H (get
+										(current_value 1)
+										"H"
+									)
+							}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_3631850880")
+					)
+			}
+		)
+	)
+	(create_entities
+		(append new_entity "_1938178219")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{e (null) f (null)}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_1938178219")
+					)
+			}
+		)
+	)
+	(clone_entities
+		(append _ "OnlyIn2")
+		(append new_entity "OnlyIn2")
+	)
+	(clone_entities
+		(append _ "DiffEntityChild1")
+		(append new_entity "DiffEntityChild1")
+	)
+	new_entity
 )
 --mix_entities--
 (associate "b" 4 "c" 3)
-MergeEntityChild2
-(associate "p" 3 "q" 4 "w" 7)
 MergeEntityChild1
 (associate "x" 3 "y" 4)
-_2169689611
-(associate "e" 3 "f" 4 "h" 6)
+MergeEntityChild2
+(associate "p" 3 "q" 4 "w" 7)
 _2280722175
 (associate "E" 3 "F" 4 "H" 6)
+_2169689611
+(associate "e" 3 "f" 4 "h" 6)
 --get_entity_comments--
 Full test
 This is a suite of unit tests.
@@ -3532,7 +3629,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1724216019.013526
+1724281470.389186
 (true)
 
 RootTest
@@ -4876,4 +4973,4 @@ concurrent entity writes successful: (true)
 
 --clean-up test files--
 --total execution time--
-1.470184087753296
+1.3862462043762207

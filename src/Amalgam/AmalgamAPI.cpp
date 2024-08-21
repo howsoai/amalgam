@@ -1,5 +1,6 @@
 //project headers:
 #include "Amalgam.h"
+#include "AmalgamTrace.h"
 #include "AmalgamVersion.h"
 #include "Concurrency.h"
 #include "EntityExternalInterface.h"
@@ -14,8 +15,6 @@
 #if defined(__GNUC__)
 #define strcpy_s(dest, size, source) {strncpy( (dest), (source), (size)); (dest)[(size) - 1] = '\0'; }
 #endif
-
-EntityExternalInterface entint;
 
 //binary's concurrency build type
 std::string ConcurrencyType()

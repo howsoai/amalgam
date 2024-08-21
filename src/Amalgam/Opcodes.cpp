@@ -2,8 +2,6 @@
 #include "Opcodes.h"
 #include "StringInternPool.h"
 
-StringInternPool string_intern_pool;
-
 static inline void EmplaceStaticString(EvaluableNodeBuiltInStringId bisid, const char *str)
 {
 	auto sid = string_intern_pool.CreateStringReference(str);

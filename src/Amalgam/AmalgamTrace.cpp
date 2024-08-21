@@ -1,4 +1,5 @@
 //project headers:
+#include "AmalgamTrace.h"
 #include "AmalgamVersion.h"
 #include "AssetManager.h"
 #include "EntityExternalInterface.h"
@@ -10,8 +11,6 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-
-extern EntityExternalInterface entint;
 
 const std::string SUCCESS_RESPONSE = std::string("success");
 const std::string FAILURE_RESPONSE = std::string("failure");

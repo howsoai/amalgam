@@ -205,6 +205,7 @@ set(COMMON_SOURCE
     src/Amalgam/SBFDSColumnData.h
     src/Amalgam/SeparableBoxFilterDataStore.cpp
     src/Amalgam/SeparableBoxFilterDataStore.h
+    src/Amalgam/string/StringInternPool.cpp
     src/Amalgam/string/StringInternPool.h
     src/Amalgam/string/StringManipulation.cpp
     src/Amalgam/string/StringManipulation.h
@@ -227,6 +228,7 @@ endif()
 set(AMALGAM_APP_ONLY_SOURCE
     src/Amalgam/AmalgamMain.cpp
     src/Amalgam/AmalgamTrace.cpp
+    src/Amalgam/AmalgamTrace.h
     ${RESOURCE_SOURCE}
 )
 set(AMALGAM_LIB_ONLY_SOURCE ${RESOURCE_SOURCE})

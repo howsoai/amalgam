@@ -235,11 +235,11 @@ notakeyword
 (print "hello")
 [(null) (null) .infinity -.infinity]
 
-{c ["alpha" "beta" "gamma"] a 1 b 2}
+{b 2 a 1 c ["alpha" "beta" "gamma"]}
 {
-	c ["alpha" "beta" "gamma"]
-	a 1
 	b 2
+	a 1
+	c ["alpha" "beta" "gamma"]
 }
 
 --if--
@@ -613,7 +613,7 @@ abcdef
 0.14384103622589045
 --first--
 4
-1
+2
 1
 0
 a
@@ -630,15 +630,15 @@ a
 []
 {
 	a 1
-	b 2
 	c 3
+	d 4
 	e 5
 	f 6
 }
-{e 5 f 6}
+{c 3 d 4}
 {
-	b 2
 	c 3
+	d 4
 	e 5
 	f 6
 }
@@ -664,7 +664,7 @@ abcdef
 
 --last--
 this
-1
+2
 1
 0
 c
@@ -681,15 +681,15 @@ c
 []
 {
 	a 1
-	b 2
 	c 3
+	d 4
 	e 5
 	f 6
 }
-{e 5 f 6}
+{c 3 d 4}
 {
-	b 2
 	c 3
+	d 4
 	e 5
 	f 6
 }
@@ -1042,7 +1042,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-["c" "a" "b" "4"]
+["b" "a" "c" "4"]
 [
 	0
 	1
@@ -1054,7 +1054,7 @@ abcdef
 	7
 ]
 --values--
-["d" 3 1 2]
+[2 1 "d" 3]
 [
 	"a"
 	1
@@ -1075,7 +1075,7 @@ abcdef
 	4
 	"d"
 ]
-[1 3 2 0 "d"]
+[2 1 0 "d" 3]
 [
 	1
 	2
@@ -1272,7 +1272,7 @@ current_index: 2
 				8
 			]
 		accum_string "abcdef"
-		argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+		argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 		bar (declare
 				{x 6}
 				(+ x 2)
@@ -1285,10 +1285,10 @@ current_index: 2
 				A {B 2}
 				B 2
 			}
-		interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+		interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1724281469.756291
+		start_time 1724291326.995357
 		www 1
 		x 12
 		zz 10
@@ -1315,7 +1315,7 @@ current_index: 2
 			8
 		]
 	accum_string "abcdef"
-	argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+	argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 	bar (declare
 			{x 6}
 			(+ x 2)
@@ -1328,10 +1328,10 @@ current_index: 2
 			A {B 2}
 			B 2
 		}
-	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1724281469.756291
+	start_time 1724291326.995357
 	www 1
 	x 12
 	zz 10
@@ -1357,7 +1357,7 @@ current_index: 2
 			8
 		]
 	accum_string "abcdef"
-	argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+	argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 	bar (declare
 			{x 6}
 			(+ x 2)
@@ -1370,10 +1370,10 @@ current_index: 2
 			A {B 2}
 			B 2
 		}
-	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1724281469.756291
+	start_time 1724291326.995357
 	www 1
 	x 12
 	zz 10
@@ -1506,7 +1506,7 @@ true
 
 --weighted_rand--
 b
-["b" "b" "b" "b"]
+["b" "a" "b" "a"]
 
 a
 ["a" "b" @(get (target 2) 0) @(get (target 2) 1)]
@@ -1517,11 +1517,11 @@ infinity test c or d: ["c" "c" "c" "d"]
 
 infinity test c or d: ["d" @(get (target 2) 0) "c" @(get (target 2) 2)]
 
-{a 27 b 45 c 28}
+{a 27 b 48 c 25}
 
 {a 24 b 52 c 24}
 
-["1" "8" "2"]
+["9" "5" "1"]
 
 --get_rand_seed--
 N9ìÀù∏UØOaV∆T zˇ
@@ -1567,8 +1567,8 @@ N9ìÀù∏UØOaV∆T zˇ
 string
 --set_type--
 (- 3 4)
-["a" 4 "b" 3]
-["a" 4 "b" 3]
+["b" 3 "a" 4]
+["b" 3 "a" 4]
 {a 4 b 3}
 8.7
 (parallel
@@ -1617,17 +1617,17 @@ string
 	{a 3 b 4}
 	{c "c"}
 ]
-21: [{"a":3,"b":4},{"d":null,"c":"c"}]
+21: [{"b":4,"a":3},{"d":null,"c":"c"}]
 22: [{"a":3,"b":4},{"c":"c","d":null}]
-23: d: 4
+23: b: 2
 a: 1
-c: 3
-b: 2
 e:
   - a
   - b
   - 
   - .inf
+d: 4
+c: 3
 
 24: a: 1
 b: 2
@@ -1640,7 +1640,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2024-08-21-19.04.30.2418780
+current date-time in epoch: 2024-08-21-21.48.47.0717150
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -2771,10 +2771,10 @@ MergeEntityChild1
 (associate "x" 3 "y" 4)
 MergeEntityChild2
 (associate "p" 3 "q" 4)
-_2280722175
-(associate "E" 3 "F" 4)
 _2169689611
 (associate "e" 3 "f" 4)
+_2280722175
+(associate "E" 3 "F" 4)
 --union_entities--
 (associate "b" 4 "a" 3 "c" 3)
 MergeEntityChild1
@@ -2792,17 +2792,6 @@ MergeEntityChild2
 	"w"
 	7
 )
-_2280722175
-(associate
-	"E"
-	3
-	"F"
-	4
-	"G"
-	5
-	"H"
-	6
-)
 _2169689611
 (associate
 	"e"
@@ -2814,20 +2803,20 @@ _2169689611
 	"h"
 	6
 )
+_2280722175
+(associate
+	"E"
+	3
+	"F"
+	4
+	"G"
+	5
+	"H"
+	6
+)
 (parallel
 	##p
 	["_3990396532" "_3990396532" "_3330773578" "_3330773578"]
-)
-_3330773578
-(associate
-	"e"
-	3
-	"f"
-	4
-	"g"
-	5
-	"h"
-	6
 )
 _3990396532
 (associate
@@ -2838,6 +2827,17 @@ _3990396532
 	"G"
 	5
 	"H"
+	6
+)
+_3330773578
+(associate
+	"e"
+	3
+	"f"
+	4
+	"g"
+	5
+	"h"
 	6
 )
 --difference_entities--
@@ -3548,10 +3548,10 @@ MergeEntityChild1
 (associate "x" 3 "y" 4)
 MergeEntityChild2
 (associate "p" 3 "q" 4 "w" 7)
-_2280722175
-(associate "E" 3 "F" 4 "H" 6)
 _2169689611
 (associate "e" 3 "f" 4 "h" 6)
+_2280722175
+(associate "E" 3 "F" 4 "H" 6)
 --get_entity_comments--
 Full test
 This is a suite of unit tests.
@@ -3629,7 +3629,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1724281470.389186
+1724291327.2723
 (true)
 
 RootTest
@@ -3871,7 +3871,7 @@ hello
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "1a2ÿ.≤≥W´w∏àÊùˇ")
+	(set_entity_rand_seed new_entity "F˛ÙÏ∞.G!W´w∏àÊùˇ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3881,7 +3881,7 @@ hello
 				)
 			)
 		)
-		"à-ÏO[øÎ3yCì≈íå—ˇ"
+		"3∆Ç`»œ˛å¨—¿+|Üe‡ˇ"
 	)
 	(set_entity_rand_seed
 		(first
@@ -3923,7 +3923,7 @@ hello
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "1a2ÿ.≤≥W´w∏àÊùˇ")
+	(set_entity_rand_seed new_entity "F˛ÙÏ∞.G!W´w∏àÊùˇ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -4468,11 +4468,11 @@ case conviction:{
 }
 cyclic feature nearest neighbors: {cyclic1 1 cyclic5 0.5}
 cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
-190: 0.045454545454545456 (null
-	##deg 12
-)
 155: 0.1 (null
 	##deg 0
+)
+190: 0.045454545454545456 (null
+	##deg 12
 )
 200: 0.05555555555555555 (null
 	##deg 8
@@ -4973,4 +4973,4 @@ concurrent entity writes successful: (true)
 
 --clean-up test files--
 --total execution time--
-1.3862462043762207
+2.264014959335327

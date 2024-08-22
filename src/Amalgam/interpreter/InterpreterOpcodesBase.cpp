@@ -1012,9 +1012,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		if(value_destination == nullptr)
 			value_destination = GetOrCreateCallStackSymbolLocation(variable_sid, destination_call_stack_index);
 
-		EvaluableNode *value_replacement = *value_destination;
 		//make a copy of value_replacement because not sure where else it may be used
-		value_replacement = evaluableNodeManager->DeepAllocCopy(value_replacement);
+		EvaluableNode *value_replacement = evaluableNodeManager->DeepAllocCopy(*value_destination);
 
 		for(size_t index = 0; index < num_replacements; index++)
 		{
@@ -1029,8 +1028,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 			if(accum)
 			{
-				//values should always be copied before changing, in case the value is used elsewhere, especially in another thread
-				EvaluableNodeReference value_destination_node = evaluableNodeManager->DeepAllocCopy(*copy_destination);
+				//create destination reference
+				EvaluableNodeReference value_destination_node(*copy_destination, false);
 				EvaluableNodeReference variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, new_value, evaluableNodeManager);
 
 				//assign the new accumulation

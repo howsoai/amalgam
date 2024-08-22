@@ -881,10 +881,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 				PushNewConstructionContext(assigned_vars, assigned_vars, EvaluableNodeImmediateValueWithType(variable_sid), nullptr);
 				variable_value_node = InterpretNode(cn);
 				if(PopConstructionContextAndGetExecutionSideEffectFlag())
-				{
 					assigned_vars.unique = false;
-					assigned_vars->SetNeedCycleCheck(true);
-				}
 			}
 
 			//retrieve the symbol

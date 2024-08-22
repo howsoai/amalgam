@@ -782,10 +782,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 					}
 				}
 				if(PopConstructionContextAndGetExecutionSideEffectFlag())
-				{
 					required_vars.unique = false;
-					required_vars->SetNeedCycleCheck(true);
-				}
 			}
 
 			//free the vars / assoc node
@@ -922,7 +919,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 				//retrieve value_destination_node
 				EvaluableNodeReference value_destination_node(*value_destination, false);
 
-				//TODO: undo most of the SetNeedCycleCheck except maybe the one in declare
 				//values should always be copied before changing, in case the value is used elsewhere
 				value_destination_node = evaluableNodeManager->DeepAllocCopy(value_destination_node);
 				variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, variable_value_node, evaluableNodeManager);

@@ -1061,7 +1061,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 	//accessing everything in the stack, so need exclusive access
 	Concurrency::ReadLock lock;
 	if(callStackMutex != nullptr)
-		LockWithoutBlockingGarbageCollection(*callStackMutex, lock);
+		LockWithoutBlockingGarbageCollection(*callStackMutex, lock, to_lookup);
 #endif
 
 	//get the value(s)

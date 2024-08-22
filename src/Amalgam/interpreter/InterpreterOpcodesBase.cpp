@@ -913,11 +913,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 			if(accum)
 			{
-				//retrieve value_destination_node
-				EvaluableNodeReference value_destination_node(*value_destination, false);
-
-				//values should always be copied before changing, in case the value is used elsewhere
-				value_destination_node = evaluableNodeManager->DeepAllocCopy(value_destination_node);
+				//values should always be copied before changing, in case the value is used elsewhere, especially in another thread
+				EvaluableNodeReference value_destination_node = evaluableNodeManager->DeepAllocCopy(*value_destination);
 				variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, variable_value_node, evaluableNodeManager);
 			}
 
@@ -960,15 +957,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 		if(accum)
 		{
-			//create destination reference
-			EvaluableNodeReference value_destination_node(*value_destination, false);
-
-		#ifdef MULTITHREAD_SUPPORT
-			//if editing a shared variable, then need to make a copy before editing in place to prevent another thread from reading the data structure mid-edit
-			if(destination_call_stack_index < callStackUniqueAccessStartingDepth)
-				value_destination_node = evaluableNodeManager->DeepAllocCopy(value_destination_node);
-		#endif
-
+			//values should always be copied before changing, in case the value is used elsewhere, especially in another thread
+			EvaluableNodeReference value_destination_node = evaluableNodeManager->DeepAllocCopy(*value_destination);
 			EvaluableNodeReference variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, new_value, evaluableNodeManager);
 
 			//assign the new accumulation
@@ -1039,9 +1029,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 			if(accum)
 			{
-				//create destination reference
-				EvaluableNodeReference value_destination_node(*copy_destination, false);
-
+				//values should always be copied before changing, in case the value is used elsewhere, especially in another thread
+				EvaluableNodeReference value_destination_node = evaluableNodeManager->DeepAllocCopy(*copy_destination);
 				EvaluableNodeReference variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, new_value, evaluableNodeManager);
 
 				//assign the new accumulation

@@ -881,7 +881,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 				PushNewConstructionContext(assigned_vars, assigned_vars, EvaluableNodeImmediateValueWithType(variable_sid), nullptr);
 				variable_value_node = InterpretNode(cn);
 				if(PopConstructionContextAndGetExecutionSideEffectFlag())
+				{
 					assigned_vars.unique = false;
+					assigned_vars->SetNeedCycleCheck(true);
+				}
 			}
 
 			//retrieve the symbol
@@ -916,12 +919,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 				//retrieve value_destination_node
 				EvaluableNodeReference value_destination_node(*value_destination, false);
 
-			#ifdef MULTITHREAD_SUPPORT
-				//if editing a shared variable, then need to make a copy before editing in place to prevent another thread from reading the data structure mid-edit
-				if(destination_call_stack_index < callStackUniqueAccessStartingDepth)
-					value_destination_node = evaluableNodeManager->DeepAllocCopy(value_destination_node);
-			#endif
-
+				//values should always be copied before changing, in case the value is used elsewhere
+				value_destination_node = evaluableNodeManager->DeepAllocCopy(value_destination_node);
 				variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, variable_value_node, evaluableNodeManager);
 			}
 

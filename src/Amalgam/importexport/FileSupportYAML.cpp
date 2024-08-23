@@ -1,6 +1,7 @@
 //project headers:
 #include "FileSupportYAML.h"
 
+#include "ImportEntityStatus.h"
 #include "PlatformSpecific.h"
 
 //3rd party headers:
@@ -179,7 +180,7 @@ std::pair<std::string, bool> EvaluableNodeYAMLTranslation::EvaluableNodeToYaml(E
 		return std::make_pair("", false);
 }
 
-EvaluableNode *EvaluableNodeYAMLTranslation::Load(const std::string &resource_path, EvaluableNodeManager *enm, EntityExternalInterface::LoadEntityStatus &status)
+EvaluableNode *EvaluableNodeYAMLTranslation::Load(const std::string &resource_path, EvaluableNodeManager *enm, ImportEntityStatus &status)
 {
 	auto [data, data_success] = Platform_OpenFileAsString(resource_path);
 	if(!data_success)

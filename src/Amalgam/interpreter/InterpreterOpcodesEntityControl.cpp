@@ -2,12 +2,12 @@
 #include "Interpreter.h"
 
 #include "AssetManager.h"
-#include "EntityExternalInterface.h"
 #include "EntityManipulation.h"
 #include "EntityQueries.h"
 #include "EvaluableNodeTreeFunctions.h"
 #include "EvaluableNodeTreeManipulation.h"
 #include "EvaluableNodeTreeDifference.h"
+#include "ImportEntityStatus.h"
 #include "PerformanceProfiler.h"
 
 //system headers:
@@ -163,7 +163,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_AC
 			new_code = InterpretNodeForImmediateUse(ocn[i + 1]);
 		else
 			new_code = InterpretNodeForImmediateUse(ocn[i]);
-		auto node_stack = CreateInterpreterNodeStackStateSaver(new_code);
+		auto node_stack = CreateNodeStackStateSaver(new_code);
 
 		EntityWriteReference target_entity;
 		if(i + 1 < ocn.size())
@@ -262,7 +262,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED(Evalu
 		seed_string = seed_node->GetStringValue();
 	else
 		seed_string = Parser::Unparse(seed_node, evaluableNodeManager, false, false, true);
-	auto node_stack = CreateInterpreterNodeStackStateSaver(seed_node);
+	auto node_stack = CreateNodeStackStateSaver(seed_node);
 
 	//get the entity
 	EntityWriteReference entity;
@@ -335,7 +335,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableN
 
 	EvaluableNodeReference new_entity_ids_list(evaluableNodeManager->AllocNode(ENT_LIST), true);
 	new_entity_ids_list->ReserveOrderedChildNodes((ocn.size() + 1) / 2);
-	auto node_stack = CreateInterpreterNodeStackStateSaver(new_entity_ids_list);
+	auto node_stack = CreateNodeStackStateSaver(new_entity_ids_list);
 
 	for(size_t i = 0; i < ocn.size(); i += 2)
 	{
@@ -404,7 +404,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CLONE_ENTITIES(EvaluableNo
 
 	EvaluableNodeReference new_entity_ids_list(evaluableNodeManager->AllocNode(ENT_LIST), true);
 	new_entity_ids_list->ReserveOrderedChildNodes((ocn.size() + 1) / 2);
-	auto node_stack = CreateInterpreterNodeStackStateSaver(new_entity_ids_list);
+	auto node_stack = CreateNodeStackStateSaver(new_entity_ids_list);
 
 	for(size_t i = 0; i < ocn.size(); i += 2)
 	{
@@ -472,7 +472,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MOVE_ENTITIES(EvaluableNod
 
 	EvaluableNodeReference new_entity_ids_list(evaluableNodeManager->AllocNode(ENT_LIST), true);
 	new_entity_ids_list->ReserveOrderedChildNodes((ocn.size() + 1) / 2);
-	auto node_stack = CreateInterpreterNodeStackStateSaver(new_entity_ids_list);
+	auto node_stack = CreateNodeStackStateSaver(new_entity_ids_list);
 
 	for(size_t i = 0; i < ocn.size(); i += 2)
 	{
@@ -612,7 +612,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, bo
 			file_type = file_type_temp;
 	}
 
-	EntityExternalInterface::LoadEntityStatus status;
+	ImportEntityStatus status;
 	std::string resource_base_path;
 	return asset_manager.LoadResourcePath(resource_name, resource_base_path, file_type, evaluableNodeManager, escape_filename, status);
 }
@@ -661,7 +661,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSI
 			file_type = file_type_temp;
 	}
 
-	EntityExternalInterface::LoadEntityStatus status;
+	ImportEntityStatus status;
 	std::string random_seed = destination_entity_parent->CreateRandomStreamFromStringAndRand(resource_name);
 
 #ifdef MULTITHREAD_SUPPORT
@@ -709,7 +709,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, b
 		return EvaluableNodeReference::Null();
 
 	auto to_store = InterpretNodeForImmediateUse(ocn[1]);
-	auto node_stack = CreateInterpreterNodeStackStateSaver(to_store);
+	auto node_stack = CreateNodeStackStateSaver(to_store);
 
 	bool escape_filename = false;
 	if(ocn.size() >= 3)

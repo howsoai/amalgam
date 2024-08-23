@@ -26,8 +26,16 @@
 #define AMALGAM_FAST_MEMORY_INTEGRITY
 #endif
 
-//forward declarations:
-class EvaluableNodeManager;
+class EvaluableNode;
+
+//defined to break include dependency cycle with EvaluableNodeManager
+class EvaluableNodeAllocator
+{
+public:
+	virtual ~EvaluableNodeAllocator();
+	virtual EvaluableNode *AllocNodeWithReferenceHandoff(
+		EvaluableNodeType type, StringInternPool::StringID string_id) = 0;
+};
 
 class EvaluableNode
 {
@@ -438,7 +446,7 @@ public:
 	// if enm is nullptr, then it will not necessarily keep child nodes
 	//if attempt_to_preserve_immediate_value is true, then it will try to preserve any relevant immediate value
 	// attempt_to_preserve_immediate_value should be set to false if the value will be immediately overwritten
-	void SetType(EvaluableNodeType new_type, EvaluableNodeManager *enm = nullptr,
+	void SetType(EvaluableNodeType new_type, EvaluableNodeAllocator *ena = nullptr,
 		bool attempt_to_preserve_immediate_value = true);
 
 	//fully clears node and sets it to new_type

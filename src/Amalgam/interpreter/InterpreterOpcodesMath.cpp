@@ -2,7 +2,6 @@
 #include "Interpreter.h"
 
 #include "AmalgamVersion.h"
-#include "AssetManager.h"
 #include "EntityQueryBuilder.h"
 #include "EntityManipulation.h"
 #include "EntityQueries.h"
@@ -478,7 +477,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ROUND(EvaluableNode *en, b
 	}
 	else 
 	{
-		auto node_stack = CreateInterpreterNodeStackStateSaver(retval);
+		auto node_stack = CreateNodeStackStateSaver(retval);
 
 		//round to the specified number of significant digits or the specified number of digits after the decimal place, whichever is larger
 		double num_significant_digits = InterpretNodeIntoNumberValue(ocn[1]);
@@ -754,7 +753,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAX(EvaluableNode *en, boo
 	}
 #endif
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver();
+	auto node_stack = CreateNodeStackStateSaver();
 	for(auto &cn : ocn)
 	{
 		double cur_value = InterpretNodeIntoNumberValue(cn);
@@ -801,7 +800,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIN(EvaluableNode *en, boo
 	}
 #endif
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver();
+	auto node_stack = CreateNodeStackStateSaver();
 	for(auto &cn : ocn)
 	{
 		auto cur_value = InterpretNodeIntoNumberValue(cn);
@@ -827,7 +826,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DOT_PRODUCT(EvaluableNode 
 	if(EvaluableNode::IsNull(elements1))
 		return AllocReturn(0.0, immediate_result);
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(elements1);
+	auto node_stack = CreateNodeStackStateSaver(elements1);
 	EvaluableNodeReference elements2 = InterpretNodeForImmediateUse(ocn[1]);
 	node_stack.PopEvaluableNode();
 
@@ -935,7 +934,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 	if(ocn.size() < 6)
 		return EvaluableNodeReference::Null();
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver();
+	auto node_stack = CreateNodeStackStateSaver();
 
 	//get weights list if applicable
 	auto weights_node = InterpretNodeForImmediateUse(ocn[0]);
@@ -1070,7 +1069,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 	std::vector<EvaluableNode *> p_copied_values;
 
 	auto p_node = InterpretNodeForImmediateUse(ocn[0]);
-	auto node_stack = CreateInterpreterNodeStackStateSaver(p_node);
+	auto node_stack = CreateNodeStackStateSaver(p_node);
 
 	if(EvaluableNode::IsAssociativeArray(p_node))
 	{

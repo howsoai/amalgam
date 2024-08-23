@@ -2,7 +2,6 @@
 #include "Interpreter.h"
 
 #include "AmalgamVersion.h"
-#include "AssetManager.h"
 #include "EntityManipulation.h"
 #include "EntityQueries.h"
 #include "EvaluableNodeTreeFunctions.h"
@@ -19,6 +18,104 @@
 #include <iomanip>
 #include <regex>
 
+class Interpreter;
+
+namespace {
+//used for any operation that must sort different values - for passing in a lambda to run on every operation
+class CustomEvaluableNodeComparator
+{
+public:
+	constexpr CustomEvaluableNodeComparator(Interpreter *_interpreter, EvaluableNode *_function, EvaluableNode *target_list)
+		: interpreter(_interpreter), function(_function), targetList(target_list), hadExecutionSideEffects(false)
+	{ }
+
+	bool operator()(EvaluableNode *a, EvaluableNode *b);
+
+	inline bool DidAnyComparisonHaveExecutionSideEffects()
+	{
+		return hadExecutionSideEffects;
+	}
+
+private:
+	Interpreter *interpreter;
+	EvaluableNode *function;
+	EvaluableNode *targetList;
+	bool hadExecutionSideEffects;
+};
+
+bool CustomEvaluableNodeComparator::operator()(EvaluableNode *a, EvaluableNode *b)
+{
+	//create context with "a" and "b" variables
+	interpreter->PushNewConstructionContext(nullptr, targetList, EvaluableNodeImmediateValueWithType(), a);
+	interpreter->PushNewConstructionContext(nullptr, targetList, EvaluableNodeImmediateValueWithType(), b);
+
+	//compare
+	bool retval = (interpreter->InterpretNodeIntoNumberValue(function) > 0);
+
+	if(interpreter->PopConstructionContextAndGetExecutionSideEffectFlag())
+		hadExecutionSideEffects = true;
+	if(interpreter->PopConstructionContextAndGetExecutionSideEffectFlag())
+		hadExecutionSideEffects = true;
+
+	return retval;
+}
+
+//performs a top-down stable merge on the sub-lists from start_index to middle_index and middle_index to _end_index
+//  from source into destination using cenc
+void CustomEvaluableNodeOrderedChildNodesTopDownMerge(std::vector<EvaluableNode *> &source,
+	size_t start_index, size_t middle_index, size_t end_index, std::vector<EvaluableNode *> &destination, CustomEvaluableNodeComparator &cenc)
+{
+	size_t left_pos = start_index;
+	size_t right_pos = middle_index;
+
+	//for all elements, pull from the appropriate buffer (left or right)
+	for(size_t cur_index = start_index; cur_index < end_index; cur_index++)
+	{
+		//if left_pos has elements left and is less than the right, use it
+		if(left_pos < middle_index && (right_pos >= end_index || cenc(source[left_pos], source[right_pos])))
+		{
+			destination[cur_index] = source[left_pos];
+			left_pos++;
+		}
+		else //the right is less, use that
+		{
+			destination[cur_index] = source[right_pos];
+			right_pos++;
+		}
+	}
+}
+
+//performs a stable merge sort of source (which *will* be modified and is not constant)
+// from start_index to end_index into destination; uses cenc for comparison
+void CustomEvaluableNodeOrderedChildNodesSort(std::vector<EvaluableNode *> &source,
+	size_t start_index, size_t end_index, std::vector<EvaluableNode *> &destination, CustomEvaluableNodeComparator &cenc)
+{
+	//if one element, then sorted
+	if(start_index + 1 >= end_index)
+		return;
+
+	size_t middle_index = (start_index + end_index) / 2;
+
+	//sort left into list
+	CustomEvaluableNodeOrderedChildNodesSort(destination, start_index, middle_index, source, cenc);
+	//sort right into list
+	CustomEvaluableNodeOrderedChildNodesSort(destination, middle_index, end_index, source, cenc);
+
+	//merge buffers back into buffer
+	CustomEvaluableNodeOrderedChildNodesTopDownMerge(source, start_index, middle_index, end_index, destination, cenc);
+}
+
+std::vector<EvaluableNode *> CustomEvaluableNodeOrderedChildNodesSort(std::vector<EvaluableNode *> &list, CustomEvaluableNodeComparator &cenc)
+{
+	//must make two copies of the list to edit, because switch back and forth and there is a chance that an element may be invalid
+	// in either list.  Therefore, can't use the original list in the off chance that something is garbage collected
+	std::vector<EvaluableNode *> list_copy_1(list);
+	std::vector<EvaluableNode *> list_copy_2(list);
+	CustomEvaluableNodeOrderedChildNodesSort(list_copy_1, 0, list.size(), list_copy_2, cenc);
+	return list_copy_2;
+}
+}
+
 EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
@@ -29,7 +126,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en,
 	auto function = InterpretNodeForImmediateUse(ocn[0]);
 	if(EvaluableNode::IsNull(function))
 		return EvaluableNodeReference::Null();
-	auto node_stack = CreateInterpreterNodeStackStateSaver(function);
+	auto node_stack = CreateNodeStackStateSaver(function);
 
 	//get tree and make a copy so it can be modified in-place
 	auto to_modify = InterpretNode(ocn[1]);
@@ -57,7 +154,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 		return EvaluableNodeReference::Null();
 
 	auto function = InterpretNodeForImmediateUse(ocn[0]);
-	auto node_stack = CreateInterpreterNodeStackStateSaver(function);
+	auto node_stack = CreateNodeStackStateSaver(function);
 
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
 
@@ -432,7 +529,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 	}
 
 	auto function = InterpretNodeForImmediateUse(ocn[0]);
-	auto node_stack = CreateInterpreterNodeStackStateSaver(function);
+	auto node_stack = CreateNodeStackStateSaver(function);
 
 	//get list
 	auto list = InterpretNode(ocn[1]);
@@ -615,7 +712,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEAVE(EvaluableNode *en, b
 	//get the index of the first list to weave based on how many parameters there are
 	size_t index_of_first_list = 0;
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver();
+	auto node_stack = CreateNodeStackStateSaver();
 
 	//if a function is specified, then set up appropriate data structures to call the function and move the indices for the index and value parameters
 	EvaluableNodeReference function = EvaluableNodeReference::Null();
@@ -737,7 +834,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en, 
 	if(EvaluableNode::IsNull(function))
 		return EvaluableNodeReference::Null();
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(function);
+	auto node_stack = CreateNodeStackStateSaver(function);
 
 	//get list
 	auto list = InterpretNode(ocn[1]);
@@ -804,7 +901,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, b
 
 	evaluableNodeManager->EnsureNodeIsModifiable(source);
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(source);
+	auto node_stack = CreateNodeStackStateSaver(source);
 
 	//get the type to set
 	EvaluableNodeType new_type = ENT_NULL;
@@ -936,7 +1033,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 	}
 	else
 	{
-		auto node_stack = CreateInterpreterNodeStackStateSaver(function);
+		auto node_stack = CreateNodeStackStateSaver(function);
 		
 		//get list
 		auto list = InterpretNode(ocn[list_index]);
@@ -1120,7 +1217,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_INDEX(EvaluableNo
 	if(container == nullptr)
 		return AllocReturn(false, immediate_result);
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(container);
+	auto node_stack = CreateNodeStackStateSaver(container);
 
 	//get index to look up (will attempt to reuse this node below)
 	auto index = InterpretNodeForImmediateUse(ocn[1]);
@@ -1144,7 +1241,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 	if(container == nullptr)
 		return AllocReturn(false, immediate_result);
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(container);
+	auto node_stack = CreateNodeStackStateSaver(container);
 
 	//get value to look up (will attempt to reuse this node below)
 	auto value = InterpretNodeForImmediateUse(ocn[1]);
@@ -1213,7 +1310,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 	//make sure it's editable
 	evaluableNodeManager->EnsureNodeIsModifiable(container);
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(container);
+	auto node_stack = CreateNodeStackStateSaver(container);
 
 	//get indices (or index) to remove
 	auto indices = InterpretNodeForImmediateUse(ocn[1], true);
@@ -1323,7 +1420,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, bo
 	//make sure it's editable
 	evaluableNodeManager->EnsureNodeIsModifiable(container);
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(container);
+	auto node_stack = CreateNodeStackStateSaver(container);
 
 	//get indices (or index) to keep
 	auto indices = InterpretNodeForImmediateUse(ocn[1], true);
@@ -1507,7 +1604,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 			auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
 			if(enqueue_task_lock.AreThreadsAvailable())
 			{
-				auto node_stack = CreateInterpreterNodeStackStateSaver(new_assoc);
+				auto node_stack = CreateNodeStackStateSaver(new_assoc);
 
 				//get keys
 				std::vector<StringInternPool::StringID> keys;
@@ -1586,7 +1683,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, boo
 	size_t index_list_index = 0;
 	size_t value_list_index = 1;
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver();
+	auto node_stack = CreateNodeStackStateSaver();
 
 	//if a function is specified, then set up appropriate data structures to call the function and move the indices for the index and value parameters
 	EvaluableNodeReference function = EvaluableNodeReference::Null();
@@ -1711,7 +1808,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, b
 	if(EvaluableNode::IsNull(zipped))
 		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(zipped);
+	auto node_stack = CreateNodeStackStateSaver(zipped);
 	auto index_list = InterpretNodeForImmediateUse(ocn[1]);
 	node_stack.PopEvaluableNode();
 

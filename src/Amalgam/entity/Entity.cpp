@@ -1,11 +1,8 @@
 //project headers:
 #include "Entity.h"
-#include "AssetManager.h"
-#include "EntityQueries.h"
-#include "EntityWriteListener.h"
-#include "EvaluableNodeTreeManipulation.h"
+#include "EntityWriteCallbacks.h"
 #include "EvaluableNodeTreeFunctions.h"
-#include "Interpreter.h"
+#include "EvaluableNodeTreeManipulation.h"
 
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 thread_local
@@ -97,7 +94,7 @@ Entity::~Entity()
 	ClearQueryCaches();
 
 	//if contained in another entity, remove it
-	EntityQueryCaches *container_caches = GetContainerQueryCaches();
+	EntityContainerCaches *container_caches = GetContainerQueryCaches();
 	if(container_caches != nullptr)
 	{
 		//must have a container, overwrite with the entity in the last index
@@ -246,7 +243,7 @@ EvaluableNodeImmediateValueType Entity::GetValueAtLabelAsImmediateValue(StringIn
 }
 
 bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNodeReference &new_value, bool direct_set,
-	std::vector<EntityWriteListener *> *write_listeners, bool on_self, bool batch_call, bool *need_node_flags_updated)
+	std::vector<EntityWriteCallbacks *> *write_listeners, bool on_self, bool batch_call, bool *need_node_flags_updated)
 {
 	if(label_sid == string_intern_pool.NOT_A_STRING_ID)
 		return false;
@@ -347,11 +344,11 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 				|| dest_prev_value_idempotent != dest_new_value_idempotent))
 			EvaluableNodeManager::UpdateFlagsForNodeTree(evaluableNodeManager.GetRootNode());
 
-		EntityQueryCaches *container_caches = GetContainerQueryCaches();
+		EntityContainerCaches *container_caches = GetContainerQueryCaches();
 		if(container_caches != nullptr)
 			container_caches->UpdateAllEntityLabels(this, GetEntityIndexOfContainer());
 
-		asset_manager.UpdateEntity(this);
+		EntityManager::Get().UpdateEntity(this);
 		if(write_listeners != nullptr)
 		{
 			for(auto &wl : *write_listeners)
@@ -364,7 +361,7 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 
 //like SetValuesAtLabels, except accumulates each value at each label instead
 std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label_values, bool accum_values, bool direct_set,
-	std::vector<EntityWriteListener *> *write_listeners, size_t *num_new_nodes_allocated, bool on_self, bool copy_entity)
+	std::vector<EntityWriteCallbacks *> *write_listeners, size_t *num_new_nodes_allocated, bool on_self, bool copy_entity)
 {
 	//can only work with assoc arrays
 	if(!EvaluableNode::IsAssociativeArray(new_label_values))
@@ -421,7 +418,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 
 	if(any_successful_assignment)
 	{
-		EntityQueryCaches *container_caches = GetContainerQueryCaches();
+		EntityContainerCaches *container_caches = GetContainerQueryCaches();
 		if(direct_set)
 		{
 			//direct assignments need a rebuild of the index just in case a label collision occurs -- will update node flags if needed
@@ -438,7 +435,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 				container_caches->UpdateEntityLabels(this, GetEntityIndexOfContainer(), new_label_values_mcn);
 		}
 
-		asset_manager.UpdateEntity(this);
+		EntityManager::Get().UpdateEntity(this);
 
 		if(num_new_nodes_allocated != nullptr)
 		{
@@ -450,53 +447,6 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 	}
 
 	return std::make_pair(any_successful_assignment, all_successful_assignments);
-}
-
-EvaluableNodeReference Entity::Execute(StringInternPool::StringID label_sid,
-	EvaluableNode *call_stack, bool on_self, Interpreter *calling_interpreter,
-	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
-	PerformanceConstraints *performance_constraints
-#ifdef MULTITHREAD_SUPPORT
-	, Concurrency::ReadLock *enm_lock
-#endif
-	)
-{
-	if(!on_self && IsLabelPrivate(label_sid))
-		return EvaluableNodeReference(nullptr, true);
-
-	EvaluableNode *node_to_execute = nullptr;
-	if(label_sid == string_intern_pool.NOT_A_STRING_ID)	//if not specified, then use root
-		node_to_execute = evaluableNodeManager.GetRootNode();
-	else //get code at label
-	{
-		const auto &label = labelIndex.find(label_sid);
-
-		if(label != end(labelIndex))
-			node_to_execute = label->second;
-	}
-
-	//if label not found or no code, can't do anything
-	if(node_to_execute == nullptr)
-		return EvaluableNodeReference::Null();
-
-	Interpreter interpreter(&evaluableNodeManager, randomStream.CreateOtherStreamViaRand(),
-		write_listeners, print_listener, performance_constraints, this, calling_interpreter);
-
-#ifdef MULTITHREAD_SUPPORT
-	if(enm_lock == nullptr)
-		interpreter.memoryModificationLock = Concurrency::ReadLock(evaluableNodeManager.memoryModificationMutex);
-	else
-		interpreter.memoryModificationLock = std::move(*enm_lock);
-#endif
-
-	EvaluableNodeReference retval = interpreter.ExecuteNode(node_to_execute, call_stack);
-	
-#ifdef MULTITHREAD_SUPPORT
-	if(enm_lock != nullptr)
-		*enm_lock = std::move(interpreter.memoryModificationLock);
-#endif
-
-	return retval;
 }
 
 bool Entity::IsEntityCurrentlyBeingExecuted()
@@ -569,7 +519,7 @@ bool Entity::RebuildLabelIndex()
 	return !collision_free;
 }
 
-StringInternPool::StringID Entity::AddContainedEntity(Entity *t, StringInternPool::StringID id_sid, std::vector<EntityWriteListener *> *write_listeners)
+StringInternPool::StringID Entity::AddContainedEntity(Entity *t, StringInternPool::StringID id_sid, std::vector<EntityWriteCallbacks *> *write_listeners)
 {
 	if(t == nullptr)
 		return StringInternPool::NOT_A_STRING_ID;
@@ -620,7 +570,7 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, StringInternPoo
 
 	t->SetEntityContainer(this);
 
-	EntityQueryCaches *container_caches = GetQueryCaches();
+	EntityContainerCaches *container_caches = GetQueryCaches();
 	if(container_caches != nullptr)
 		container_caches->AddEntity(t, t_index);
 
@@ -628,13 +578,13 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, StringInternPoo
 	{
 		for(auto &wl : *write_listeners)
 			wl->LogCreateEntity(t);
-		asset_manager.CreateEntity(t);
+		EntityManager::Get().CreateEntity(t);
 	}
 
 	return t->idStringId;
 }
 
-StringInternPool::StringID Entity::AddContainedEntity(Entity *t, std::string id_string, std::vector<EntityWriteListener *> *write_listeners)
+StringInternPool::StringID Entity::AddContainedEntity(Entity *t, std::string id_string, std::vector<EntityWriteCallbacks *> *write_listeners)
 {
 	if(t == nullptr)
 		return StringInternPool::NOT_A_STRING_ID;
@@ -687,7 +637,7 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, std::string id_
 
 	t->SetEntityContainer(this);
 
-	EntityQueryCaches *container_caches = GetQueryCaches();
+	EntityContainerCaches *container_caches = GetQueryCaches();
 	if(container_caches != nullptr)
 		container_caches->AddEntity(t, t_index);
 
@@ -695,13 +645,13 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, std::string id_
 	{
 		for(auto &wl : *write_listeners)
 			wl->LogCreateEntity(t);
-		asset_manager.CreateEntity(t);
+		EntityManager::Get().CreateEntity(t);
 	}
 
 	return t->idStringId;
 }
 
-void Entity::RemoveContainedEntity(StringInternPool::StringID id, std::vector<EntityWriteListener *> *write_listeners)
+void Entity::RemoveContainedEntity(StringInternPool::StringID id, std::vector<EntityWriteCallbacks *> *write_listeners)
 {
 	if(!hasContainedEntities)
 		return;
@@ -725,10 +675,10 @@ void Entity::RemoveContainedEntity(StringInternPool::StringID id, std::vector<En
 		for(auto &wl : *write_listeners)
 			wl->LogDestroyEntity(entity_to_remove);
 
-		asset_manager.DestroyEntity(entity_to_remove);
+		EntityManager::Get().DestroyEntity(entity_to_remove);
 	}
 
-	EntityQueryCaches *caches = GetQueryCaches();
+	EntityContainerCaches *caches = GetQueryCaches();
 	if(caches != nullptr)
 		caches->RemoveEntity(entity_to_remove, index_to_remove, index_to_replace);
 
@@ -814,16 +764,16 @@ Entity *Entity::GetContainedEntityFromIndex(size_t entity_index)
 	return entityRelationships.relationships->containedEntities[entity_index];
 }
 
-void Entity::CreateQueryCaches()
+void Entity::CreateQueryCaches(CacheFactory factory)
 {
 	EnsureHasContainedEntities();
 
 	if(!entityRelationships.relationships->queryCaches)
-		entityRelationships.relationships->queryCaches = std::make_unique<EntityQueryCaches>(this);
+		entityRelationships.relationships->queryCaches = factory(this);
 }
 
 void Entity::SetRandomState(const std::string &new_state, bool deep_set_seed,
-	std::vector<EntityWriteListener *> *write_listeners,
+	std::vector<EntityWriteCallbacks *> *write_listeners,
 	Entity::EntityReferenceBufferReference<EntityWriteReference> *all_contained_entities)
 {
 	randomStream.SetState(new_state);
@@ -833,7 +783,7 @@ void Entity::SetRandomState(const std::string &new_state, bool deep_set_seed,
 		for(auto &wl : *write_listeners)
 			wl->LogSetEntityRandomSeed(this, new_state, false);
 
-		asset_manager.UpdateEntity(this, all_contained_entities);
+		EntityManager::Get().UpdateEntity(this, all_contained_entities);
 	}
 
 	if(deep_set_seed)
@@ -844,7 +794,7 @@ void Entity::SetRandomState(const std::string &new_state, bool deep_set_seed,
 	}
 }
 
-void Entity::SetRandomStream(const RandomStream &new_stream, std::vector<EntityWriteListener *> *write_listeners)
+void Entity::SetRandomStream(const RandomStream &new_stream, std::vector<EntityWriteCallbacks *> *write_listeners)
 {
 	randomStream = new_stream;
 
@@ -857,7 +807,7 @@ void Entity::SetRandomStream(const RandomStream &new_stream, std::vector<EntityW
 				wl->LogSetEntityRandomSeed(this, new_state_string, false);
 		}
 
-		asset_manager.UpdateEntity(this);
+		EntityManager::Get().UpdateEntity(this);
 	}
 }
 
@@ -868,7 +818,7 @@ std::string Entity::CreateRandomStreamFromStringAndRand(const std::string &seed_
 	return randomStream.CreateOtherStreamStateViaString(seed_string);
 }
 
-void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier, std::vector<EntityWriteListener *> *write_listeners)
+void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier, std::vector<EntityWriteCallbacks *> *write_listeners)
 {
 	EvaluableNode *cur_root = GetRoot();
 	bool entity_previously_empty = (cur_root == nullptr || cur_root->GetNumChildNodes() == 0);
@@ -900,7 +850,7 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, Evalu
 	VerifyEvaluableNodeIntegrity();
 #endif
 
-	EntityQueryCaches *container_caches = GetContainerQueryCaches();
+	EntityContainerCaches *container_caches = GetContainerQueryCaches();
 	if(container_caches != nullptr)
 		container_caches->UpdateAllEntityLabels(this, GetEntityIndexOfContainer());
 
@@ -914,12 +864,12 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, Evalu
 				wl->LogWriteToEntity(this, new_code_string);
 		}
 
-		asset_manager.UpdateEntity(this);
+		EntityManager::Get().UpdateEntity(this);
 	}
 }
 
 void Entity::SetRoot(std::string &code_string, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier,
-	std::vector<EntityWriteListener *> *write_listeners)
+	std::vector<EntityWriteCallbacks *> *write_listeners)
 {
 	EvaluableNodeReference new_code = Parser::Parse(code_string, &evaluableNodeManager);
 	SetRoot(new_code, true, metadata_modifier, write_listeners);
@@ -927,7 +877,7 @@ void Entity::SetRoot(std::string &code_string, EvaluableNodeManager::EvaluableNo
 
 void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_entity_enm,
 	EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier,
-	std::vector<EntityWriteListener *> *write_listeners)
+	std::vector<EntityWriteCallbacks *> *write_listeners)
 {
 #ifdef AMALGAM_MEMORY_INTEGRITY
 	VerifyEvaluableNodeIntegrity();
@@ -978,7 +928,7 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 		}
 	}
 
-	EntityQueryCaches *container_caches = GetContainerQueryCaches();
+	EntityContainerCaches *container_caches = GetContainerQueryCaches();
 
 	//can do a much more straightforward update if there are no label collisions and the root has no labels
 	if(no_label_collisions && new_root->GetNumLabels() == 0)
@@ -1019,7 +969,7 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 				wl->LogWriteToEntity(this, new_code_string);
 		}
 
-		asset_manager.UpdateEntity(this);
+		EntityManager::Get().UpdateEntity(this);
 	}
 
 #ifdef AMALGAM_MEMORY_INTEGRITY
@@ -1041,4 +991,19 @@ void Entity::VerifyEvaluableNodeIntegrityAndAllContainedEntities()
 	VerifyEvaluableNodeIntegrity();
 	for(auto ce : GetContainedEntities())
 		ce->VerifyEvaluableNodeIntegrity();
+}
+
+EntityManager::~EntityManager() = default;
+
+static EntityManager *the_entity_manager = nullptr;
+
+EntityManager &entity_manager()
+{
+	assert(the_entity_manager);
+	return *the_entity_manager;
+}
+
+void EntityManager::Set(EntityManager *manager)
+{
+	the_entity_manager = manager;
 }

@@ -1,11 +1,7 @@
 //project headers:
-#include "Entity.h"
 #include "EntityManipulation.h"
+#include "EvaluableNodeContext.h"
 #include "EvaluableNodeTreeDifference.h"
-#include "EvaluableNodeTreeFunctions.h"
-#include "EvaluableNodeTreeManipulation.h"
-#include "Interpreter.h"
-#include "Merger.h"
 
 Entity *EntityManipulation::EntitiesMergeMethod::MergeValues(Entity *a, Entity *b, bool must_merge)
 {
@@ -62,11 +58,11 @@ Entity *EntityManipulation::EntitiesMergeForDifferenceMethod::MergeValues(Entity
 
 //////////////////////////////
 
-EntityManipulation::EntitiesMixMethod::EntitiesMixMethod(Interpreter *_interpreter,
+EntityManipulation::EntitiesMixMethod::EntitiesMixMethod(EvaluableNodeContext *_context,
 	double fraction_a, double fraction_b, double similar_mix_chance, double fraction_entities_to_mix)
-	: EntitiesMergeMethod(_interpreter, true)
+	: EntitiesMergeMethod(_context, true)
 {
-	interpreter = _interpreter;
+	context = _context;
 
 	//clamp each to the appropriate range, 0 to 1 for fractions, -1 to 1 for similarMixChance
 	if(FastIsNaN(fraction_a))
@@ -128,7 +124,7 @@ Entity *EntityManipulation::EntitiesMixMethod::MergeValues(Entity *a, Entity *b,
 	EvaluableNodeReference code_a = (a != nullptr ? a->GetRoot() : EvaluableNodeReference::Null());
 	EvaluableNodeReference code_b = (b != nullptr ? b->GetRoot() : EvaluableNodeReference::Null());
 
-	EvaluableNodeTreeManipulation::NodesMixMethod mm(interpreter->randomStream.CreateOtherStreamViaRand(),
+	EvaluableNodeTreeManipulation::NodesMixMethod mm(context->randomStream.CreateOtherStreamViaRand(),
 		&merged_entity->evaluableNodeManager, fractionA, fractionB, similarMixChance);
 
 	EvaluableNode *result = mm.MergeValues(code_a, code_b);
@@ -141,37 +137,37 @@ Entity *EntityManipulation::EntitiesMixMethod::MergeValues(Entity *a, Entity *b,
 
 bool EntityManipulation::EntitiesMixMethod::KeepNonMergeableValue()
 {
-	return interpreter->randomStream.Rand() < fractionAOrB;
+	return context->randomStream.Rand() < fractionAOrB;
 }
 
 bool EntityManipulation::EntitiesMixMethod::KeepNonMergeableAInsteadOfB()
 {
-	return interpreter->randomStream.Rand() < fractionAInsteadOfB;
+	return context->randomStream.Rand() < fractionAInsteadOfB;
 }
 
 bool EntityManipulation::EntitiesMixMethod::KeepNonMergeableA()
 {
-	return interpreter->randomStream.Rand() < fractionA;
+	return context->randomStream.Rand() < fractionA;
 }
 bool EntityManipulation::EntitiesMixMethod::KeepNonMergeableB()
 {
-	return interpreter->randomStream.Rand() < fractionB;
+	return context->randomStream.Rand() < fractionB;
 }
 
 bool EntityManipulation::EntitiesMixMethod::AreMergeable(Entity *a, Entity *b)
 {
-	return interpreter->randomStream.Rand() < fractionEntitiesToMix;
+	return context->randomStream.Rand() < fractionEntitiesToMix;
 }
 
-Entity *EntityManipulation::IntersectEntities(Interpreter *interpreter, Entity *entity1, Entity *entity2)
+Entity *EntityManipulation::IntersectEntities(EvaluableNodeContext *context, Entity *entity1, Entity *entity2)
 {
-	EntitiesMergeMethod mm(interpreter, false);
+	EntitiesMergeMethod mm(context, false);
 	return mm.MergeValues(entity1, entity2);
 }
 
-Entity *EntityManipulation::UnionEntities(Interpreter *interpreter, Entity *entity1, Entity *entity2)
+Entity *EntityManipulation::UnionEntities(EvaluableNodeContext *context, Entity *entity1, Entity *entity2)
 {
-	EntitiesMergeMethod mm(interpreter, true);
+	EntitiesMergeMethod mm(context, true);
 	return mm.MergeValues(entity1, entity2);
 }
 
@@ -216,15 +212,15 @@ bool IsEntityIdenticalToComparedEntity(Entity *root_entity,
 	}
 }
 
-EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *interpreter, Entity *entity1, Entity *entity2)
+EvaluableNodeReference EntityManipulation::DifferenceEntities(EvaluableNodeContext *context, Entity *entity1, Entity *entity2)
 {
 	//find commonality
-	EntitiesMergeForDifferenceMethod mm(interpreter);
+	EntitiesMergeForDifferenceMethod mm(context);
 	Entity *root_merged = mm.MergeValues(entity1, entity2, true);
 	auto &entity2_to_entity_a = mm.GetAEntitiesIncludedFromB();
 	auto &entity2_to_merged_entity = mm.GetMergedEntitiesIncludedFromB();
 
-	EvaluableNodeManager *enm = interpreter->evaluableNodeManager;
+	EvaluableNodeManager *enm = context->evaluableNodeManager;
 
 	//////////
 	//build code to look like:
@@ -258,7 +254,7 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 	//create: (declare (assoc new_entity (null) create_new_entity (null)) )
 	EvaluableNode *difference_function = enm->AllocNode(ENT_DECLARE);
 
-	auto node_stack = interpreter->CreateInterpreterNodeStackStateSaver(difference_function);
+	auto node_stack = context->CreateNodeStackStateSaver(difference_function);
 
 	EvaluableNode *df_assoc = enm->AllocNode(ENT_ASSOC);
 	difference_function->AppendOrderedChildNode(df_assoc);
@@ -413,10 +409,10 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 	return EvaluableNodeReference(difference_function, true);
 }
 
-Entity *EntityManipulation::MixEntities(Interpreter *interpreter, Entity *entity1, Entity *entity2,
+Entity *EntityManipulation::MixEntities(EvaluableNodeContext *context, Entity *entity1, Entity *entity2,
 	double fractionA, double fractionB, double similar_mix_chance, double fraction_entities_to_mix)
 {
-	EntitiesMixMethod mm(interpreter, fractionA, fractionB, similar_mix_chance, fraction_entities_to_mix);
+	EntitiesMixMethod mm(context, fractionA, fractionB, similar_mix_chance, fraction_entities_to_mix);
 	return mm.MergeValues(entity1, entity2, true);
 }
 
@@ -632,7 +628,7 @@ void EntityManipulation::MergeContainedEntities(EntitiesMergeMethod *mm, Entity 
 		RecursivelyRenameAllEntityReferences(merged_entity, entities_renamed);
 }
 
-Entity *EntityManipulation::MutateEntity(Interpreter *interpreter, Entity *entity, double mutation_rate,
+Entity *EntityManipulation::MutateEntity(EvaluableNodeContext *context, Entity *entity, double mutation_rate,
 	CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights, CompactHashMap<EvaluableNodeType, double> *operation_type)
 {
 	if(entity == nullptr)
@@ -640,14 +636,14 @@ Entity *EntityManipulation::MutateEntity(Interpreter *interpreter, Entity *entit
 
 	//make a new entity with mutated code
 	Entity *new_entity = new Entity();
-	EvaluableNode *mutated_code = EvaluableNodeTreeManipulation::MutateTree(interpreter, &new_entity->evaluableNodeManager, entity->GetRoot(), mutation_rate, mutation_weights, operation_type);
+	EvaluableNode *mutated_code = EvaluableNodeTreeManipulation::MutateTree(context, &new_entity->evaluableNodeManager, entity->GetRoot(), mutation_rate, mutation_weights, operation_type);
 	EvaluableNodeManager::UpdateFlagsForNodeTree(mutated_code);
 	new_entity->SetRoot(mutated_code, true);
 	new_entity->SetRandomStream(entity->GetRandomStream());
 
 	//make mutated copies of all contained entities
 	for(auto e : entity->GetContainedEntities())
-		new_entity->AddContainedEntity(MutateEntity(interpreter, e, mutation_rate, mutation_weights, operation_type), entity->GetIdStringId());
+		new_entity->AddContainedEntity(MutateEntity(context, e, mutation_rate, mutation_weights, operation_type), entity->GetIdStringId());
 
 	return new_entity;
 }

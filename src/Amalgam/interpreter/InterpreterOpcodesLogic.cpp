@@ -2,7 +2,6 @@
 #include "Interpreter.h"
 
 #include "AmalgamVersion.h"
-#include "AssetManager.h"
 #include "EntityManipulation.h"
 #include "EntityQueries.h"
 #include "EvaluableNodeTreeFunctions.h"
@@ -204,7 +203,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EQUAL(EvaluableNode *en, b
 	}
 #endif
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver();
+	auto node_stack = CreateNodeStackStateSaver();
 
 	for(auto &cn : ocn)
 	{
@@ -269,14 +268,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NEQUAL(EvaluableNode *en, 
 	{
 		EvaluableNodeReference a = InterpretNodeForImmediateUse(ocn[0]);
 
-		auto node_stack = CreateInterpreterNodeStackStateSaver(a);
+		auto node_stack = CreateNodeStackStateSaver(a);
 		EvaluableNodeReference b = InterpretNodeForImmediateUse(ocn[1]);
 
 		bool a_b_not_equal = (!EvaluableNode::AreDeepEqual(a, b));
 		return ReuseOrAllocOneOfReturn(a, b, a_b_not_equal, immediate_result);
 	}
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver();
+	auto node_stack = CreateNodeStackStateSaver();
 
 	//get the value for each node
 	std::vector<EvaluableNodeReference> values;
@@ -365,7 +364,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LESS_and_LEQUAL(EvaluableN
 	if(EvaluableNode::IsNull(prev))
 		return evaluableNodeManager->ReuseOrAllocNode(prev, ENT_FALSE);
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(prev);
+	auto node_stack = CreateNodeStackStateSaver(prev);
 
 	for(size_t i = 1; i < ocn.size(); i++)
 	{
@@ -441,7 +440,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GREATER_and_GEQUAL(Evaluab
 	if(EvaluableNode::IsNull(prev))
 		return evaluableNodeManager->ReuseOrAllocNode(prev, ENT_FALSE);
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(prev);
+	auto node_stack = CreateNodeStackStateSaver(prev);
 
 	for(size_t i = 1; i < ocn.size(); i++)
 	{
@@ -504,7 +503,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TYPE_EQUALS(EvaluableNode 
 	}
 #endif
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver();
+	auto node_stack = CreateNodeStackStateSaver();
 
 	for(auto &cn : ocn)
 	{
@@ -549,7 +548,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TYPE_NEQUALS(EvaluableNode
 		if(a != nullptr)
 			a_type = a->GetType();
 
-		auto node_stack = CreateInterpreterNodeStackStateSaver(a);
+		auto node_stack = CreateNodeStackStateSaver(a);
 		EvaluableNodeReference b = InterpretNodeForImmediateUse(ocn[1]);
 		EvaluableNodeType b_type = ENT_NULL;
 		if(b != nullptr)
@@ -560,7 +559,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TYPE_NEQUALS(EvaluableNode
 
 	std::vector<EvaluableNodeReference> values(ocn.size());
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver();
+	auto node_stack = CreateNodeStackStateSaver();
 
 	//evaluate all nodes just once
 	for(size_t i = 0; i < ocn.size(); i++)

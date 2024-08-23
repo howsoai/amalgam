@@ -5,6 +5,8 @@
 cmake_minimum_required(VERSION 3.26)
 project(amalgam LANGUAGES CXX DESCRIPTION "Amalgam Language Interpreter")
 
+set(CMAKE_CXX_STANDARD 17)
+
 # Options:
 set(USE_OBJECT_LIBS ON CACHE BOOL "Build using object libs")
 set(TRY_GIT_TAG_FOR_UNKNOWN_VERSION ON CACHE BOOL
@@ -107,36 +109,36 @@ set(COMMON_SOURCE
     src/3rd_party/swiftdtoa/SwiftDtoa.h
     src/3rd_party/tweetnacl/tweetnacl.cpp
     src/3rd_party/tweetnacl/tweetnacl.h
-    src/Amalgam/Amalgam.h
-    src/Amalgam/AmalgamAPI.cpp
+    src/Amalgam/AmalgamVersion.cpp
     src/Amalgam/AmalgamVersion.h
-    src/Amalgam/AssetManager.cpp
-    src/Amalgam/AssetManager.h
-    src/Amalgam/BinaryPacking.cpp
-    src/Amalgam/BinaryPacking.h
-    src/Amalgam/Conviction.h
-    src/Amalgam/ConvictionUtil.h
-    src/Amalgam/Cryptography.cpp
-    src/Amalgam/Cryptography.h
-    src/Amalgam/DateTimeFormat.cpp
-    src/Amalgam/DateTimeFormat.h
-    src/Amalgam/DistanceReferencePair.h
+    src/Amalgam/amalgam/Amalgam.h
+    src/Amalgam/amalgam/AmalgamAPI.cpp
     src/Amalgam/entity/Entity.cpp
     src/Amalgam/entity/Entity.h
-    src/Amalgam/entity/EntityExternalInterface.cpp
-    src/Amalgam/entity/EntityExternalInterface.h
+    src/Amalgam/entity/EntityContainerCaches.cpp
+    src/Amalgam/entity/EntityContainerCaches.h
     src/Amalgam/entity/EntityManipulation.cpp
     src/Amalgam/entity/EntityManipulation.h
-    src/Amalgam/entity/EntityQueries.cpp
-    src/Amalgam/entity/EntityQueries.h
-    src/Amalgam/entity/EntityQueriesStatistics.h
-    src/Amalgam/entity/EntityQueryBuilder.h
-    src/Amalgam/entity/EntityQueryCaches.cpp
-    src/Amalgam/entity/EntityQueryCaches.h
-    src/Amalgam/entity/EntityWriteListener.cpp
-    src/Amalgam/entity/EntityWriteListener.h
+    src/Amalgam/entity/EntityTreeFunctions.cpp
+    src/Amalgam/entity/EntityTreeFunctions.h
+    src/Amalgam/entity/EntityWriteCallbacks.cpp
+    src/Amalgam/entity/EntityWriteCallbacks.h
+    src/Amalgam/entity_interface/AssetManager.cpp
+    src/Amalgam/entity_interface/AssetManager.h
+    src/Amalgam/entity_interface/EntityExecution.cpp
+    src/Amalgam/entity_interface/EntityExecution.h
+    src/Amalgam/entity_interface/EntityExternalInterface.cpp
+    src/Amalgam/entity_interface/EntityExternalInterface.h
+    src/Amalgam/entity_interface/EntityWriteListener.cpp
+    src/Amalgam/entity_interface/EntityWriteListener.h
+    src/Amalgam/entity_interface/Interpreter.cpp
+    src/Amalgam/entity_interface/Interpreter.h
+    src/Amalgam/entity_interface/PrintListener.cpp
+    src/Amalgam/entity_interface/PrintListener.h
     src/Amalgam/evaluablenode/EvaluableNode.cpp
     src/Amalgam/evaluablenode/EvaluableNode.h
+    src/Amalgam/evaluablenode/EvaluableNodeContext.cpp
+    src/Amalgam/evaluablenode/EvaluableNodeContext.h
     src/Amalgam/evaluablenode/EvaluableNodeManagement.cpp
     src/Amalgam/evaluablenode/EvaluableNodeManagement.h
     src/Amalgam/evaluablenode/EvaluableNodeTreeDifference.cpp
@@ -145,11 +147,15 @@ set(COMMON_SOURCE
     src/Amalgam/evaluablenode/EvaluableNodeTreeFunctions.h
     src/Amalgam/evaluablenode/EvaluableNodeTreeManipulation.cpp
     src/Amalgam/evaluablenode/EvaluableNodeTreeManipulation.h
-    src/Amalgam/FastEMath.h
-    src/Amalgam/FastMath.h
-    src/Amalgam/FilenameEscapeProcessor.h
-    src/Amalgam/GeneralizedDistance.h
-    src/Amalgam/HashMaps.h
+    src/Amalgam/evaluablenode/Merger.h
+    src/Amalgam/evaluablenode/Opcodes.cpp
+    src/Amalgam/evaluablenode/Opcodes.h
+    src/Amalgam/evaluablenode/Parser.cpp
+    src/Amalgam/evaluablenode/Parser.h
+    src/Amalgam/evaluablenode/PerformanceProfiler.cpp
+    src/Amalgam/evaluablenode/PerformanceProfiler.h
+    src/Amalgam/evaluablenode/StringInternPool.cpp
+    src/Amalgam/evaluablenode/StringInternPool.h
     src/Amalgam/importexport/FileSupportCAML.cpp
     src/Amalgam/importexport/FileSupportCAML.h
     src/Amalgam/importexport/FileSupportCSV.cpp
@@ -158,9 +164,10 @@ set(COMMON_SOURCE
     src/Amalgam/importexport/FileSupportJSON.h
     src/Amalgam/importexport/FileSupportYAML.cpp
     src/Amalgam/importexport/FileSupportYAML.h
-    src/Amalgam/IntegerSet.h
-    src/Amalgam/interpreter/Interpreter.cpp
-    src/Amalgam/interpreter/Interpreter.h
+    src/Amalgam/importexport/ImportEntityStatus.cpp
+    src/Amalgam/importexport/ImportEntityStatus.h
+    src/Amalgam/interpreter/Cryptography.cpp
+    src/Amalgam/interpreter/Cryptography.h
     src/Amalgam/interpreter/InterpreterDebugger.cpp
     src/Amalgam/interpreter/InterpreterOpcodesBase.cpp
     src/Amalgam/interpreter/InterpreterOpcodesCodeMixing.cpp
@@ -171,47 +178,57 @@ set(COMMON_SOURCE
     src/Amalgam/interpreter/InterpreterOpcodesLogic.cpp
     src/Amalgam/interpreter/InterpreterOpcodesMath.cpp
     src/Amalgam/interpreter/InterpreterOpcodesTransformations.cpp
-    src/Amalgam/KnnCache.h
-    src/Amalgam/Merger.h
-    src/Amalgam/Opcodes.cpp
-    src/Amalgam/Opcodes.h
-    src/Amalgam/Parser.cpp
-    src/Amalgam/Parser.h
-    src/Amalgam/PartialSum.h
-    src/Amalgam/PerformanceProfiler.cpp
-    src/Amalgam/PerformanceProfiler.h
-    src/Amalgam/PlatformSpecific.cpp
-    src/Amalgam/PlatformSpecific.h
-    src/Amalgam/PrintListener.cpp
-    src/Amalgam/PrintListener.h
-    src/Amalgam/rand/RandomStream.cpp
-    src/Amalgam/rand/RandomStream.h
-    src/Amalgam/rand/WeightedDiscreteRandomStream.h
-    src/Amalgam/SBFDSColumnData.h
-    src/Amalgam/SeparableBoxFilterDataStore.cpp
-    src/Amalgam/SeparableBoxFilterDataStore.h
-    src/Amalgam/string/StringInternPool.h
-    src/Amalgam/string/StringManipulation.cpp
-    src/Amalgam/string/StringManipulation.h
+    src/Amalgam/math/FastEMath.h
+    src/Amalgam/math/FastMath.h
+    src/Amalgam/math/PartialSum.h
+    src/Amalgam/math/RandomStream.cpp
+    src/Amalgam/math/RandomStream.h
+    src/Amalgam/math/WeightedDiscreteRandomStream.h
+    src/Amalgam/queries/Conviction.h
+    src/Amalgam/queries/ConvictionUtil.h
+    src/Amalgam/queries/DistanceReferencePair.h
+    src/Amalgam/queries/EntityQueries.cpp
+    src/Amalgam/queries/EntityQueries.h
+    src/Amalgam/queries/EntityQueriesStatistics.h
+    src/Amalgam/queries/EntityQueryBuilder.h
+    src/Amalgam/queries/EntityQueryCaches.cpp
+    src/Amalgam/queries/EntityQueryCaches.h
+    src/Amalgam/queries/GeneralizedDistance.h
+    src/Amalgam/queries/KnnCache.h
+    src/Amalgam/queries/SBFDSColumnData.h
+    src/Amalgam/queries/SeparableBoxFilterDataStore.cpp
+    src/Amalgam/queries/SeparableBoxFilterDataStore.h
+    src/Amalgam/utility/BinaryPacking.cpp
+    src/Amalgam/utility/BinaryPacking.h
+    src/Amalgam/utility/DateTimeFormat.cpp
+    src/Amalgam/utility/DateTimeFormat.h
+    src/Amalgam/utility/FilenameEscapeProcessor.h
+    src/Amalgam/utility/HashMaps.h
+    src/Amalgam/utility/IntegerSet.h
+    src/Amalgam/utility/PlatformSpecific.cpp
+    src/Amalgam/utility/PlatformSpecific.h
+    src/Amalgam/utility/StringManipulation.cpp
+    src/Amalgam/utility/StringManipulation.h
 )
 set(COMMON_SOURCE_THREADS
     ${COMMON_SOURCE}
-    src/Amalgam/Concurrency.cpp
-    src/Amalgam/Concurrency.h
-    src/Amalgam/ThreadPool.cpp
-    src/Amalgam/ThreadPool.h
+    src/Amalgam/utility/Concurrency.cpp
+    src/Amalgam/utility/Concurrency.h
+    src/Amalgam/utility/ThreadPool.cpp
+    src/Amalgam/utility/ThreadPool.h
 )
 set(RESOURCE_SOURCE)
 if(IS_MSVC)
     set(RESOURCE_SOURCE
         docs/icon/amalgam.ico
-        src/Amalgam/resource.h
-        src/Amalgam/Resource.rc
+        src/Amalgam/amalgam/resource.h
+        src/Amalgam/amalgam/Resource.rc
     )
 endif()
 set(AMALGAM_APP_ONLY_SOURCE
-    src/Amalgam/AmalgamMain.cpp
-    src/Amalgam/AmalgamTrace.cpp
+    src/Amalgam/amalgam/AmalgamMain.cpp
+    src/Amalgam/amalgam/AmalgamTrace.cpp
+    src/Amalgam/amalgam/AmalgamTrace.h
     ${RESOURCE_SOURCE}
 )
 set(AMALGAM_LIB_ONLY_SOURCE ${RESOURCE_SOURCE})
@@ -234,12 +251,15 @@ list(APPEND AMALGAM_APP_ONLY_SOURCE ${ALL_FILES})
 include_directories(
     "${CMAKE_SOURCE_DIR}/src/3rd_party"
     "${CMAKE_SOURCE_DIR}/src/Amalgam"
+    "${CMAKE_SOURCE_DIR}/src/Amalgam/amalgam"
     "${CMAKE_SOURCE_DIR}/src/Amalgam/entity"
+    "${CMAKE_SOURCE_DIR}/src/Amalgam/entity_interface"
     "${CMAKE_SOURCE_DIR}/src/Amalgam/evaluablenode"
     "${CMAKE_SOURCE_DIR}/src/Amalgam/importexport"
     "${CMAKE_SOURCE_DIR}/src/Amalgam/interpreter"
-    "${CMAKE_SOURCE_DIR}/src/Amalgam/rand"
-    "${CMAKE_SOURCE_DIR}/src/Amalgam/string"
+    "${CMAKE_SOURCE_DIR}/src/Amalgam/math"
+    "${CMAKE_SOURCE_DIR}/src/Amalgam/queries"
+    "${CMAKE_SOURCE_DIR}/src/Amalgam/utility"
 )
 
 

@@ -1,7 +1,5 @@
 //project headers:
 #include "EvaluableNode.h"
-#include "EvaluableNodeTreeFunctions.h"
-#include "EvaluableNodeManagement.h"
 #include "FastMath.h"
 #include "StringInternPool.h"
 
@@ -23,6 +21,8 @@ FastHashSet<EvaluableNode *> EvaluableNode::debugWatch;
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 Concurrency::SingleMutex EvaluableNode::debugWatchMutex;
 #endif
+
+EvaluableNodeAllocator::~EvaluableNodeAllocator() = default;
 
 void EvaluableNode::GetNodeCommonAndUniqueLabelCounts(EvaluableNode *n1, EvaluableNode *n2, size_t &num_common_labels, size_t &num_unique_labels)
 {
@@ -507,7 +507,7 @@ void EvaluableNode::CopyMetadataFrom(EvaluableNode *n)
 	SetConcurrency(n->GetConcurrency());
 }
 
-void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *enm,
+void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeAllocator *ena,
 	bool attempt_to_preserve_immediate_value)
 {
 	EvaluableNodeType cur_type = GetType();
@@ -596,7 +596,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 	else //ordered pairs
 	{
 		//will need a valid enm to convert this
-		if(DoesEvaluableNodeTypeUseAssocData(cur_type) && enm != nullptr)
+		if(DoesEvaluableNodeTypeUseAssocData(cur_type) && ena != nullptr)
 		{
 			std::vector<EvaluableNode *> new_ordered;
 			auto &mcn = GetMappedChildNodesReference();
@@ -604,7 +604,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 			for(auto &[cn_id, cn] : mcn)
 			{
 				//keep the reference from when it was an assoc
-				new_ordered.push_back(enm->AllocNodeWithReferenceHandoff(ENT_STRING, cn_id));
+				new_ordered.push_back(ena->AllocNodeWithReferenceHandoff(ENT_STRING, cn_id));
 				new_ordered.push_back(cn);
 			}
 

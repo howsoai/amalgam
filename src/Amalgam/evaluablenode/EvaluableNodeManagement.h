@@ -281,7 +281,7 @@ public:
 	size_t originalStackSize;
 };
 
-class EvaluableNodeManager
+class EvaluableNodeManager : public EvaluableNodeAllocator
 {
 public:
 	//data structure to store which nodes are referenced with a lock
@@ -366,6 +366,7 @@ public:
 
 	//like AllocNode, but hands off the string reference to string_id
 	inline EvaluableNode *AllocNodeWithReferenceHandoff(EvaluableNodeType type, StringInternPool::StringID string_id)
+	override
 	{
 		EvaluableNode *n = AllocUninitializedNode();
 		n->InitializeTypeWithReferenceHandoff(type, string_id);

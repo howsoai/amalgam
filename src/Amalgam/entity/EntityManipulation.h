@@ -2,8 +2,11 @@
 
 //project headers:
 #include "Entity.h"
-#include "EvaluableNodeTreeManipulation.h"
+#include "EntityTreeFunctions.h"
 #include "Merger.h"
+
+//forward declarations:
+class EvaluableNodeContext;
 
 //Contains various classes and functions to manipulate entities
 class EntityManipulation
@@ -13,8 +16,8 @@ public:
 	class EntitiesMergeMethod : public Merger<Entity *>
 	{
 	public:
-		constexpr EntitiesMergeMethod(Interpreter *_interpreter, bool keep_all_of_both)
-			: interpreter(_interpreter), keepAllOfBoth(keep_all_of_both)
+		constexpr EntitiesMergeMethod(EvaluableNodeContext *_context, bool keep_all_of_both)
+			: context(_context), keepAllOfBoth(keep_all_of_both)
 		{	}
 
 		virtual MergeMetricResults<Entity *> MergeMetric(Entity *a, Entity *b)
@@ -44,7 +47,7 @@ public:
 		virtual bool AreMergeable(Entity *a, Entity *b)
 		{	return keepAllOfBoth;	}
 
-		Interpreter *interpreter;
+		EvaluableNodeContext *context;
 
 	protected:
 		bool keepAllOfBoth;
@@ -55,8 +58,8 @@ public:
 	class EntitiesMergeForDifferenceMethod : public EntitiesMergeMethod
 	{
 	public:
-		inline EntitiesMergeForDifferenceMethod(Interpreter *_interpreter)
-			: EntitiesMergeMethod(_interpreter, false)
+		inline EntitiesMergeForDifferenceMethod(EvaluableNodeContext *_context)
+			: EntitiesMergeMethod(_context, false)
 		{	}
 
 		virtual Entity *MergeValues(Entity *a, Entity *b, bool must_merge = false);
@@ -78,7 +81,7 @@ public:
 	class EntitiesMixMethod : public EntitiesMergeMethod
 	{
 	public:
-		EntitiesMixMethod(Interpreter *_interpreter,
+		EntitiesMixMethod(EvaluableNodeContext *_context,
 			double fraction_a, double fraction_b, double similar_mix_chance, double fraction_entities_to_mix);
 
 		virtual Entity *MergeValues(Entity *a, Entity *b, bool must_merge);
@@ -108,14 +111,14 @@ public:
 	};
 
 	//Entity merging functions
-	static Entity *IntersectEntities(Interpreter *interpreter, Entity *entity1, Entity *entity2);
+	static Entity *IntersectEntities(EvaluableNodeContext *context, Entity *entity1, Entity *entity2);
 
-	static Entity *UnionEntities(Interpreter *interpreter, Entity *entity1, Entity *entity2);
+	static Entity *UnionEntities(EvaluableNodeContext *context, Entity *entity1, Entity *entity2);
 
 	//returns code that will transform entity1 into entity2, allocated with enm
-	static EvaluableNodeReference DifferenceEntities(Interpreter *interpreter, Entity *entity1, Entity *entity2);
+	static EvaluableNodeReference DifferenceEntities(EvaluableNodeContext *context, Entity *entity1, Entity *entity2);
 
-	static Entity *MixEntities(Interpreter *interpreter, Entity *entity1, Entity *entity2,
+	static Entity *MixEntities(EvaluableNodeContext *context, Entity *entity1, Entity *entity2,
 		double fractionA, double fractionB, double similar_mix_chance, double fraction_entities_to_mix);
 
 	//Computes the total number of nodes in both trees that are equal
@@ -124,7 +127,7 @@ public:
 	//computes the edit distance between the two entities
 	static double EditDistance(Entity *entity1, Entity *entity2);
 
-	static Entity *MutateEntity(Interpreter *interpreter, Entity *entity, double mutation_rate,
+	static Entity *MutateEntity(EvaluableNodeContext *context, Entity *entity, double mutation_rate,
 		CompactHashMap<EvaluableNodeBuiltInStringId, double> *mutation_weights, CompactHashMap<EvaluableNodeType, double> *operation_type);
 
 	//flattens entity using enm to allocate code that can recreate it
@@ -302,64 +305,6 @@ public:
 	}
 
 	static void SortEntitiesByID(std::vector<Entity *> &entities);
-
-	//converts a set of DistanceReferencePair into the appropriate EvaluableNode structure
-	template<typename EntityReference, typename GetEntityFunction>
-	static inline EvaluableNodeReference ConvertResultsToEvaluableNodes(
-		std::vector<DistanceReferencePair<EntityReference>> &results,
-		EvaluableNodeManager *enm, bool as_sorted_list, std::vector<StringInternPool::StringID> &additional_sorted_list_labels,
-		GetEntityFunction get_entity)
-	{
-		if(as_sorted_list)
-		{
-			//build list of results
-			EvaluableNode *query_return = enm->AllocNode(ENT_LIST);
-			auto &qr_ocn = query_return->GetOrderedChildNodesReference();
-			//returning ids and computed values plus any additional values being retrieved
-			qr_ocn.resize(2 + additional_sorted_list_labels.size());
-
-			qr_ocn[0] = CreateListOfStringsIdsFromIteratorAndFunction(results, enm,
-				[get_entity](auto &drp) {  return get_entity(drp.reference)->GetIdStringId(); });
-			qr_ocn[1] = CreateListOfNumbersFromIteratorAndFunction(results, enm, [](auto drp) { return drp.distance; });
-
-			//if adding on a label, retrieve the values from the entities
-			for(size_t label_offset = 0; label_offset < additional_sorted_list_labels.size(); label_offset++)
-			{
-				auto label = additional_sorted_list_labels[label_offset];
-
-				//make a copy of the value at additionalSortedListLabel for each entity
-				EvaluableNode *list_of_values = enm->AllocNode(ENT_LIST);
-				qr_ocn[2 + label_offset] = list_of_values;
-				auto &list_ocn = list_of_values->GetOrderedChildNodes();
-				list_ocn.resize(results.size());
-				for(size_t i = 0; i < results.size(); i++)
-				{
-					Entity *entity = get_entity(results[i].reference);
-					list_ocn[i] = entity->GetValueAtLabel(label, enm, false);
-
-					//update cycle checks and idempotency
-					if(list_ocn[i] != nullptr)
-					{
-						if(list_ocn[i]->GetNeedCycleCheck())
-							query_return->SetNeedCycleCheck(true);
-
-						if(!list_ocn[i]->GetIsIdempotent())
-							query_return->SetIsIdempotent(false);
-					}
-				}
-			}
-
-			return EvaluableNodeReference(query_return, true);
-		}
-		else //return as assoc
-		{
-			return CreateAssocOfNumbersFromIteratorAndFunctions(results,
-				[get_entity](auto &drp) { return get_entity(drp.reference)->GetIdStringId(); },
-				[](auto &drp) { return drp.distance; },
-				enm
-			);
-		}
-	}
 
 protected:
 

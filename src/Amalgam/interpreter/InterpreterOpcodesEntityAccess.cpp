@@ -3,6 +3,7 @@
 
 #include "AmalgamVersion.h"
 #include "AssetManager.h"
+#include "EntityExecution.h"
 #include "EntityManipulation.h"
 #include "EntityQueries.h"
 #include "EntityQueryBuilder.h"
@@ -82,7 +83,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 	else if(ocn.size() >= 2)
 	{
 		entity_id_path = InterpretNodeForImmediateUse(ocn[0]);
-		auto node_stack = CreateInterpreterNodeStackStateSaver(entity_id_path);
+		auto node_stack = CreateNodeStackStateSaver(entity_id_path);
 		query_params = InterpretNodeForImmediateUse(ocn[1]);
 	}
 
@@ -173,7 +174,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes(
 	//use stack to lock it in place, but copy it back to temporary before returning
 	EvaluableNodeReference query_command(evaluableNodeManager->AllocNode(en->GetType()), true);
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(query_command);
+	auto node_stack = CreateNodeStackStateSaver(query_command);
 
 	//propagate concurrency
 	if(en->GetConcurrency())
@@ -253,7 +254,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 			evaluableNodeManager->FreeNodeTreeIfPossible(assigned_vars);
 			continue;
 		}
-		auto node_stack = CreateInterpreterNodeStackStateSaver(assigned_vars);
+		auto node_stack = CreateNodeStackStateSaver(assigned_vars);
 
 		EntityWriteReference target_entity;
 		if(i + 1 < ocn.size())
@@ -345,7 +346,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 	//get lookup reference
 	size_t lookup_param_index = (ocn.size() > 1 ? 1 : 0);
 	auto to_lookup = InterpretNodeForImmediateUse(ocn[lookup_param_index]);
-	auto node_stack = CreateInterpreterNodeStackStateSaver(to_lookup);
+	auto node_stack = CreateNodeStackStateSaver(to_lookup);
 
 	bool direct = (en->GetType() == ENT_DIRECT_RETRIEVE_FROM_ENTITY);
 
@@ -455,12 +456,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	if(ocn.size() > 2)
 		args = InterpretNodeForImmediateUse(ocn[2]);
 	
-	auto node_stack = CreateInterpreterNodeStackStateSaver(args);
+	auto node_stack = CreateNodeStackStateSaver(args);
 
 	//current pointer to write listeners
-	std::vector<EntityWriteListener *> *cur_write_listeners = writeListeners;
+	std::vector<EntityWriteCallbacks *> *cur_write_listeners = writeListeners;
 	//another storage container in case getting entity changes
-	std::vector<EntityWriteListener *> get_changes_write_listeners;
+	std::vector<EntityWriteCallbacks *> get_changes_write_listeners;
 	if(en->GetType() == ENT_CALL_ENTITY_GET_CHANGES)
 	{
 		//add on extra listener and set pointer to this buffer
@@ -506,7 +507,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	memoryModificationLock.unlock();
 #endif
 
-	EvaluableNodeReference result = called_entity->Execute(entity_label_sid,
+	EvaluableNodeReference result = EntityExecution::ExecuteEntity(
+		**called_entity, entity_label_sid,
 		call_stack, called_entity == curEntity, this, cur_write_listeners, printListener, perf_constraints_ptr
 	#ifdef MULTITHREAD_SUPPORT
 		, &enm_lock
@@ -534,7 +536,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 
 	if(en->GetType() == ENT_CALL_ENTITY_GET_CHANGES)
 	{
-		EntityWriteListener *wl = get_changes_write_listeners.back();
+		EntityWriteCallbacks *wl = get_changes_write_listeners.back();
 		EvaluableNode *writes = wl->GetWrites();
 
 		EvaluableNode *list = evaluableNodeManager->AllocNode(ENT_LIST);
@@ -619,7 +621,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	memoryModificationLock.unlock();
 #endif
 
-	EvaluableNodeReference result = container->Execute(container_label_sid,
+	EvaluableNodeReference result = EntityExecution::ExecuteEntity(
+		**container, container_label_sid,
 		call_stack, false, this, writeListeners, printListener, perf_constraints_ptr
 	#ifdef MULTITHREAD_SUPPORT
 		, &enm_lock

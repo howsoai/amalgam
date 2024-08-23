@@ -2,7 +2,6 @@
 #include "Interpreter.h"
 
 #include "AmalgamVersion.h"
-#include "AssetManager.h"
 #include "EntityManipulation.h"
 #include "EntityQueries.h"
 #include "EvaluableNodeTreeDifference.h"
@@ -29,7 +28,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE(EvaluableNode *en, 
 	auto to_mutate = InterpretNodeForImmediateUse(ocn[0]);
 	if(to_mutate == nullptr)
 		to_mutate.SetReference(evaluableNodeManager->AllocNode(ENT_NULL));
-	auto node_stack = CreateInterpreterNodeStackStateSaver(to_mutate);
+	auto node_stack = CreateNodeStackStateSaver(to_mutate);
 
 	double mutation_rate = 0.00001;
 	if(ocn.size() > 1)
@@ -98,7 +97,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_COMMONALITY(EvaluableNode 
 
 	//otherwise, treat both as nodes and calculate node commonality
 	auto tree1 = InterpretNodeForImmediateUse(ocn[0]);
-	auto node_stack = CreateInterpreterNodeStackStateSaver(tree1);
+	auto node_stack = CreateNodeStackStateSaver(tree1);
 
 	auto tree2 = InterpretNodeForImmediateUse(ocn[1]);
 	auto results = EvaluableNodeTreeManipulation::NumberOfSharedNodes(tree1, tree2);
@@ -124,7 +123,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EDIT_DISTANCE(EvaluableNod
 
 	//otherwise, treat both as nodes and calculate node edit distance
 	auto tree1 = InterpretNodeForImmediateUse(ocn[0]);
-	auto node_stack = CreateInterpreterNodeStackStateSaver(tree1);
+	auto node_stack = CreateNodeStackStateSaver(tree1);
 
 	auto tree2 = InterpretNodeForImmediateUse(ocn[1]);
 
@@ -157,7 +156,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INTERSECT(EvaluableNode *e
 		return EvaluableNodeReference::Null();
 
 	auto n1 = InterpretNodeForImmediateUse(ocn[0]);
-	auto node_stack = CreateInterpreterNodeStackStateSaver(n1);
+	auto node_stack = CreateNodeStackStateSaver(n1);
 
 	auto n2 = InterpretNodeForImmediateUse(ocn[1]);
 
@@ -178,7 +177,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNION(EvaluableNode *en, b
 		return EvaluableNodeReference::Null();
 
 	auto n1 = InterpretNodeForImmediateUse(ocn[0]);
-	auto node_stack = CreateInterpreterNodeStackStateSaver(n1);
+	auto node_stack = CreateNodeStackStateSaver(n1);
 	
 	auto n2 = InterpretNodeForImmediateUse(ocn[1]);
 
@@ -199,7 +198,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DIFFERENCE(EvaluableNode *
 		return EvaluableNodeReference::Null();
 
 	auto n1 = InterpretNodeForImmediateUse(ocn[0]);
-	auto node_stack = CreateInterpreterNodeStackStateSaver(n1);
+	auto node_stack = CreateNodeStackStateSaver(n1);
 
 	auto n2 = InterpretNodeForImmediateUse(ocn[1]);
 	node_stack.PushEvaluableNode(n2);
@@ -253,7 +252,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX(EvaluableNode *en, boo
 	}
 
 	auto n1 = InterpretNodeForImmediateUse(ocn[0]);
-	auto node_stack = CreateInterpreterNodeStackStateSaver(n1);
+	auto node_stack = CreateNodeStackStateSaver(n1);
 
 	auto n2 = InterpretNodeForImmediateUse(ocn[1]);
 
@@ -302,7 +301,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_LABELS(EvaluableNode *
 		return EvaluableNodeReference::Null();
 
 	auto n1 = InterpretNodeForImmediateUse(ocn[0]);
-	auto node_stack = CreateInterpreterNodeStackStateSaver(n1);
+	auto node_stack = CreateNodeStackStateSaver(n1);
 
 	auto n2 = InterpretNodeForImmediateUse(ocn[1]);
 	node_stack.PushEvaluableNode(n2);

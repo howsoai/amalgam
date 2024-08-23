@@ -402,8 +402,10 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 
 		if(accum_values)
 		{
-			//if copy_entity is set, then can treat variable_value_node as unique because it is working on an isolated copy
-			EvaluableNodeReference value_destination_node(GetValueAtLabel(variable_sid, nullptr, true, true, true), copy_entity);
+			//need to make a copy in case it is modified, so pass in evaluableNodeManager
+			EvaluableNodeReference value_destination_node(
+				GetValueAtLabel(variable_sid, &evaluableNodeManager, true, true, true),
+				true);
 			//can't assign to a label if it doesn't exist
 			if(value_destination_node == nullptr)
 				continue;

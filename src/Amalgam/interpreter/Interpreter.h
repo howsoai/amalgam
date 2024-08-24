@@ -276,6 +276,7 @@ public:
 	}
 
 	//pops the top construction context off the stack
+	//and returns true if that construction stack node had memory write side effects
 	inline bool PopConstructionContextAndGetExecutionSideEffectFlag()
 	{
 		size_t new_size = constructionStackNodes->size();
@@ -295,6 +296,14 @@ public:
 
 		//something odd happened, shouldn't be here
 		return true;
+	}
+
+	//returns true if the top of the construction stack has memory write execution side effects
+	inline bool DoesConstructionStackHaveExecutionSideEffects()
+	{
+		if(constructionStackIndicesAndUniqueness.size() > 0)
+			return constructionStackIndicesAndUniqueness.front().executionSideEffects;
+		return false;
 	}
 
 	//updates the construction index at top of the stack to the new value
@@ -768,6 +777,9 @@ protected:
 						enm->AllocNode(*parentInterpreter->constructionStackNodes),
 						&csiau,
 						GetCallStackMutex(), immediate_results);
+
+					if(interpreter->DoesConstructionStackHaveExecutionSideEffects())
+						resultsSideEffect = true;
 
 					if(result == nullptr)
 					{

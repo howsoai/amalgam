@@ -1622,10 +1622,20 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, boo
 	if(value_list != nullptr)
 		result.UpdatePropertiesBasedOnAttachedNode(value_list);
 
+	bool free_value_list_node = false;
+
 	if(!EvaluableNode::IsNull(function))
 	{
 		node_stack.PushEvaluableNode(index_list);
 		node_stack.PushEvaluableNode(value_list);
+	}
+	else //not a function
+	{
+		if(value_list.unique
+				&& value_list != nullptr
+				&& value_list->IsOrderedArray()
+				&& !value_list->GetNeedCycleCheck())
+			free_value_list_node = true;
 	}
 
 	auto &index_list_ocn = index_list->GetOrderedChildNodes();
@@ -1646,15 +1656,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, boo
 		EvaluableNode *value = nullptr;
 		if(value_list != nullptr)
 		{
-			if(i < value_list->GetOrderedChildNodes().size())
+			if(value_list->IsOrderedArray() && i < value_list->GetOrderedChildNodes().size())
+			{
 				value = value_list->GetOrderedChildNodes()[i];
+			}
 			else //not a list, so just use the value itself
 			{
 				value = value_list;
 				//reusing the value, so can't be cycle free in the result
 				result->SetNeedCycleCheck(true);
-				//and the value might no longer be unique and be able to be freed
-				value_list.unique = false;
 			}
 		}
 
@@ -1690,12 +1700,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, boo
 	//the index list has been converted to strings, so therefore can be freed
 	evaluableNodeManager->FreeNodeTreeIfPossible(index_list);
 
-	if(!EvaluableNode::IsNull(function))
-	{
-		//the values have likely been copied, so only the top node can be freed as long as it doesn't point back to itself
-		if(!value_list.GetNeedCycleCheck())
-			evaluableNodeManager->FreeNodeIfPossible(value_list);
-	}
+	if(free_value_list_node)
+		evaluableNodeManager->FreeNodeIfPossible(value_list);
 
 	return result;
 }

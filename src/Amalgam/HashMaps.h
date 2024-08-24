@@ -10,8 +10,10 @@
 
 #ifdef USE_STL_HASH_MAPS
 
+#include <functional>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 template<typename T, typename H = std::hash<T>, typename E = std::equal_to<T>, typename A = std::allocator<T> >
 using FastHashSet = std::unordered_set<T, H, E, A>;

@@ -441,7 +441,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(new_list);
 
 	size_t new_list_cur_index = 0;
-	size_t num_non_unique_child_nodes = 0;
 	for(auto &param : ocn)
 	{
 		if(AreExecutionResourcesExhausted())
@@ -449,10 +448,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, 
 
 		//get evaluated parameter
 		auto new_elements = InterpretNode(param);
-
-		//keep track of the attributes for new_list
-		if(!new_elements.unique)
-			num_non_unique_child_nodes++;
 		new_list.UpdatePropertiesBasedOnAttachedNode(new_elements);
 
 		if(EvaluableNode::IsAssociativeArray(new_elements))
@@ -461,10 +456,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, 
 				new_list->ConvertOrderedListToNumberedAssoc();
 
 			for(auto &[node_to_insert_id, node_to_insert] : new_elements->GetMappedChildNodesReference())
-			{
-				//clobber if already exist, leave for garbage collection
 				new_list->SetMappedChildNode(node_to_insert_id, node_to_insert);
-			}
 
 			//don't need the top node anymore
 			evaluableNodeManager->FreeNodeIfPossible(new_elements);
@@ -511,11 +503,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, 
 		}
 
 	} //for each child node to append
-
-	//if there is more than one non-unique child node, they could theoretically be the same node
-	// so therefore force a cycle check
-	if(num_non_unique_child_nodes > 1)
-		new_list->SetNeedCycleCheck(true);
 
 	return new_list;
 }

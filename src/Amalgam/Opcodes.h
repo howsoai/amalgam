@@ -429,6 +429,11 @@ constexpr OrderedChildNodeType GetInstructionOrderedChildNodeType(EvaluableNodeT
 	}
 }
 
+constexpr bool IsEvaluableNodeTypeValid(EvaluableNodeType t)
+{
+	return (t < NUM_VALID_ENT_OPCODES);
+}
+
 //returns true if the instruction uses an associative array as parameters. If false, then a regular kind of list
 constexpr bool DoesInstructionUseAssocParameters(EvaluableNodeType t)
 {
@@ -462,7 +467,7 @@ constexpr bool DoesEvaluableNodeTypeUseAssocData(EvaluableNodeType t)
 //returns true if t uses ordered data (doesn't use any other t)
 constexpr bool DoesEvaluableNodeTypeUseOrderedData(EvaluableNodeType t)
 {
-	return (!IsEvaluableNodeTypeImmediate(t) && !DoesEvaluableNodeTypeUseAssocData(t));
+	return (IsEvaluableNodeTypeValid(t) && !IsEvaluableNodeTypeImmediate(t) && !DoesEvaluableNodeTypeUseAssocData(t));
 }
 
 //returns true if t creates a scope on the stack
@@ -500,11 +505,6 @@ constexpr bool IsEvaluableNodeTypePotentiallyIdempotent(EvaluableNodeType t)
 		|| t == ENT_NULL || t == ENT_LIST || t == ENT_ASSOC
 		|| t == ENT_CONCLUDE || t == ENT_RETURN
 		|| IsEvaluableNodeTypeQuery(t));
-}
-
-constexpr bool IsEvaluableNodeTypeValid(EvaluableNodeType t)
-{
-	return (t < NUM_VALID_ENT_OPCODES);
 }
 
 //covers ENBISI_NOT_A_STRING and ENBISI_EMPTY_STRING

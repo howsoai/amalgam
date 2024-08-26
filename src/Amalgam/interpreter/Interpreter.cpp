@@ -318,7 +318,7 @@ Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 	printListener = print_listener;
 
 	callStackNodes = nullptr;
-	interpreterNodeStackNodes = nullptr;
+	opcodeStackNodes = nullptr;
 	constructionStackNodes = nullptr;
 
 	evaluableNodeManager = enm;
@@ -366,7 +366,7 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 		construction_stack = evaluableNodeManager->AllocNode(ENT_LIST);
 
 	callStackNodes = &call_stack->GetOrderedChildNodes();
-	interpreterNodeStackNodes = &interpreter_node_stack->GetOrderedChildNodes();
+	opcodeStackNodes = &interpreter_node_stack->GetOrderedChildNodes();
 	constructionStackNodes = &construction_stack->GetOrderedChildNodes();
 
 	if(construction_stack_indices != nullptr)
@@ -487,7 +487,7 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, bool immedi
 	//reference this node before we collect garbage
 	//CreateInterpreterNodeStackStateSaver is a bit expensive for this frequently called function
 	//especially because only one node is kept
-	interpreterNodeStackNodes->push_back(en);
+	opcodeStackNodes->push_back(en);
 
 #ifdef AMALGAM_MEMORY_INTEGRITY
 	VerifyEvaluableNodeIntegrity();
@@ -501,7 +501,7 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, bool immedi
 
 	if(AreExecutionResourcesExhausted(true))
 	{
-		interpreterNodeStackNodes->pop_back();
+		opcodeStackNodes->pop_back();
 		return EvaluableNodeReference::Null();
 	}
 
@@ -516,7 +516,7 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, bool immedi
 #endif
 
 	//finished with opcode
-	interpreterNodeStackNodes->pop_back();
+	opcodeStackNodes->pop_back();
 
 	return retval;
 }
@@ -974,7 +974,7 @@ void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_const
 	if(performanceConstraints != nullptr && performanceConstraints->ConstrainedOpcodeExecutionDepth())
 	{
 		size_t remaining_depth = performanceConstraints->GetRemainingOpcodeExecutionDepth(
-			interpreterNodeStackNodes->size());
+			opcodeStackNodes->size());
 		if(remaining_depth > 0)
 		{
 			if(perf_constraints->ConstrainedOpcodeExecutionDepth())

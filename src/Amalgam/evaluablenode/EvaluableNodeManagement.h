@@ -58,7 +58,10 @@ public:
 	}
 
 	//when attached a child node, make sure that this node reflects the same properties
-	void UpdatePropertiesBasedOnAttachedNode(EvaluableNodeReference &attached)
+	//if first_attachment_to_unique_node is true, then it will not call SetNeedCycleCheck(true)
+	//if the attached is not unique
+	void UpdatePropertiesBasedOnAttachedNode(EvaluableNodeReference &attached,
+		bool first_attachment_to_unique_node = false)
 	{
 		if(attached.value.nodeValue.code == nullptr)
 			return;
@@ -66,8 +69,17 @@ public:
 		if(!attached.unique)
 		{
 			unique = false;
-			//if new attachments aren't unique, then can't guarantee there isn't a cycle present
-			value.nodeValue.code->SetNeedCycleCheck(true);
+
+			//first attachment doesn't need to automatically require a cycle check
+			if(first_attachment_to_unique_node)
+			{
+				if(attached.value.nodeValue.code->GetNeedCycleCheck())
+					value.nodeValue.code->SetNeedCycleCheck(true);
+			}
+			else //if new attachments aren't unique, then can't guarantee there isn't a cycle present
+			{
+				value.nodeValue.code->SetNeedCycleCheck(true);
+			}
 		}
 		else if(attached.value.nodeValue.code->GetNeedCycleCheck())
 		{

@@ -1016,7 +1016,16 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUseRecurse(EvaluableNode *tre
 	//if entering this function, then the node hasn't been marked yet
 	tree->SetKnownToBeInUse(true);
 
-	if(tree->IsAssociativeArray())
+	auto type = tree->GetType();
+	if(DoesEvaluableNodeTypeUseOrderedData(type))
+	{
+		for(auto &e : tree->GetOrderedChildNodesReference())
+		{
+			if(e != nullptr && !e->GetKnownToBeInUse())
+				MarkAllReferencedNodesInUseRecurse(e);
+		}
+	}
+	else if(DoesEvaluableNodeTypeUseAssocData(type))
 	{
 		for(auto &[_, e] : tree->GetMappedChildNodesReference())
 		{
@@ -1024,14 +1033,6 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUseRecurse(EvaluableNode *tre
 				MarkAllReferencedNodesInUseRecurse(e);
 		}
 	}
-	else if(!tree->IsImmediate())
-	{
-		for(auto &e : tree->GetOrderedChildNodesReference())
-		{
-			if(e != nullptr && !e->GetKnownToBeInUse())
-				MarkAllReferencedNodesInUseRecurse(e);
-		}
-	}	
 }
 
 #ifdef MULTITHREAD_SUPPORT
@@ -1044,17 +1045,18 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUseRecurseConcurrent(Evaluabl
 	//if entering this function, then the node hasn't been marked yet
 	tree->SetKnownToBeInUseAtomic(true);
 
-	if(tree->IsAssociativeArray())
+	auto type = tree->GetType();
+	if(DoesEvaluableNodeTypeUseOrderedData(type))
 	{
-		for(auto &[_, e] : tree->GetMappedChildNodesReference())
+		for(auto &e : tree->GetOrderedChildNodesReference())
 		{
 			if(e != nullptr && !e->GetKnownToBeInUseAtomic())
 				MarkAllReferencedNodesInUseRecurseConcurrent(e);
 		}
 	}
-	else if(!tree->IsImmediate())
+	else if(DoesEvaluableNodeTypeUseAssocData(type))
 	{
-		for(auto &e : tree->GetOrderedChildNodesReference())
+		for(auto &[_, e] : tree->GetMappedChildNodesReference())
 		{
 			if(e != nullptr && !e->GetKnownToBeInUseAtomic())
 				MarkAllReferencedNodesInUseRecurseConcurrent(e);

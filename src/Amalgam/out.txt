@@ -629,13 +629,13 @@ a
 [1 2 3 4 5 6]
 []
 {
+	a 1
 	b 2
 	c 3
 	d 4
-	e 5
 	f 6
 }
-{c 3 d 4}
+{c 3 f 6}
 {
 	b 2
 	c 3
@@ -680,13 +680,13 @@ c
 [1 2 3 4 5 6]
 []
 {
+	a 1
 	b 2
 	c 3
 	d 4
-	e 5
 	f 6
 }
-{c 3 d 4}
+{c 3 f 6}
 {
 	b 2
 	c 3
@@ -1042,7 +1042,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-["a" "4" "b" "c"]
+["4" "a" "b" "c"]
 [
 	0
 	1
@@ -1054,7 +1054,7 @@ abcdef
 	7
 ]
 --values--
-[1 2 3 "d"]
+["d" 1 2 3]
 [
 	"a"
 	1
@@ -1075,7 +1075,7 @@ abcdef
 	4
 	"d"
 ]
-[1 0 2 3 "d"]
+[1 0 2 "d" 3]
 [
 	1
 	2
@@ -1288,7 +1288,7 @@ current_index: 2
 		interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1724345331.291916
+		start_time 1724692432.831448
 		www 1
 		x 12
 		zz 10
@@ -1331,7 +1331,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1724345331.291916
+	start_time 1724692432.831448
 	www 1
 	x 12
 	zz 10
@@ -1373,7 +1373,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1724345331.291916
+	start_time 1724692432.831448
 	www 1
 	x 12
 	zz 10
@@ -1513,7 +1513,7 @@ a
 
 ["b" @(get (target 2) 0) @(get (target 2) 0) @(get (target 2) 0)]
 
-infinity test c or d: ["d" "d" "d" "c"]
+infinity test c or d: ["c" "c" "c" "d"]
 
 infinity test c or d: ["d" @(get (target 2) 0) "c" @(get (target 2) 2)]
 
@@ -1521,7 +1521,7 @@ infinity test c or d: ["d" @(get (target 2) 0) "c" @(get (target 2) 2)]
 
 {a 24 b 52 c 24}
 
-["4" "1" "3"]
+["3" "4" "1"]
 
 --get_rand_seed--
 N9ìÀù∏UØOaV∆T zˇ
@@ -1617,17 +1617,17 @@ string
 	{a 3 b 4}
 	{c "c"}
 ]
-21: [{"a":3,"b":4},{"c":"c","d":null}]
+21: [{"a":3,"b":4},{"d":null,"c":"c"}]
 22: [{"a":3,"b":4},{"c":"c","d":null}]
-23: a: 1
-e:
+23: e:
   - a
   - b
   - 
   - .inf
+a: 1
+d: 4
 b: 2
 c: 3
-d: 4
 
 24: a: 1
 b: 2
@@ -1640,7 +1640,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2024-08-22-12.48.51.5353660
+current date-time in epoch: 2024-08-26-13.13.53.0672940
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -1687,7 +1687,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelQ #labelA
+	labelA #labelA #labelQ
 		(lambda
 			#labelB (true)
 		)
@@ -1701,7 +1701,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelQ #labelA
+	labelA #labelA #labelQ
 		(lambda
 			#labelB (true)
 		)
@@ -2180,16 +2180,6 @@ decrypted: hello
 	{_ (null)}
 	(replace
 		_
-		["g"]
-		(lambda
-			[
-				(get
-					(current_value 1)
-					0
-				)
-				4
-			]
-		)
 		[]
 		(lambda
 			{
@@ -2199,6 +2189,16 @@ decrypted: hello
 						"g"
 					)
 			}
+		)
+		["g"]
+		(lambda
+			[
+				(get
+					(current_value 1)
+					0
+				)
+				4
+			]
 		)
 	)
 )
@@ -2767,16 +2767,18 @@ flatten restore with parallel
 19.264241099357605
 --intersect_entities--
 (associate "b" 4)
-MergeEntityChild2
-(associate "p" 3 "q" 4)
 MergeEntityChild1
 (associate "x" 3 "y" 4)
+MergeEntityChild2
+(associate "p" 3 "q" 4)
 _2280722175
 (associate "E" 3 "F" 4)
 _2169689611
 (associate "e" 3 "f" 4)
 --union_entities--
 (associate "b" 4 "a" 3 "c" 3)
+MergeEntityChild1
+(associate "x" 3 "y" 4 "z" 5)
 MergeEntityChild2
 (associate
 	"p"
@@ -2790,8 +2792,6 @@ MergeEntityChild2
 	"w"
 	7
 )
-MergeEntityChild1
-(associate "x" 3 "y" 4 "z" 5)
 _2280722175
 (associate
 	"E"
@@ -3447,10 +3447,10 @@ difference between DiffContainer and DiffEntity2:
 )
 --mix_entities--
 (associate "b" 4 "c" 3)
-MergeEntityChild2
-(associate "p" 3 "q" 4 "w" 7)
 MergeEntityChild1
 (associate "x" 3 "y" 4)
+MergeEntityChild2
+(associate "p" 3 "q" 4 "w" 7)
 _2280722175
 (associate "E" 3 "F" 4 "H" 6)
 _2169689611
@@ -3532,7 +3532,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1724345331.733095
+1724692433.303905
 (true)
 
 RootTest
@@ -4371,14 +4371,14 @@ case conviction:{
 }
 cyclic feature nearest neighbors: {cyclic1 1 cyclic5 0.5}
 cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
-200: 0.05555555555555555 (null
-	##deg 8
-)
 155: 0.1 (null
 	##deg 0
 )
 190: 0.045454545454545456 (null
 	##deg 12
+)
+200: 0.05555555555555555 (null
+	##deg 8
 )
 --contains_label--
 (true)
@@ -4876,4 +4876,4 @@ concurrent entity writes successful: (true)
 
 --clean-up test files--
 --total execution time--
-1.7886390686035156
+1.5744059085845947

@@ -115,7 +115,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 
 				EvaluableNodeReference element_result = InterpretNode(function);
 				result_ocn[i] = element_result;
-				result.UpdatePropertiesBasedOnAttachedNode(element_result);
+				result.UpdatePropertiesBasedOnAttachedNode(element_result, i == 0);
 			}
 
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
@@ -170,6 +170,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 
 			PushNewConstructionContext(list, result, EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 
+			bool first_element = true;
 			for(auto &[result_id, result_node] : result_mcn)
 			{
 				SetTopCurrentIndexInConstructionStack(result_id);
@@ -183,7 +184,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 				//in order to keep the node properties to be updated below
 				EvaluableNodeReference element_result = InterpretNode(function);
 				result_node = element_result;
-				result.UpdatePropertiesBasedOnAttachedNode(element_result);
+				result.UpdatePropertiesBasedOnAttachedNode(element_result, first_element);
+				first_element = false;
 			}
 
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
@@ -809,7 +811,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, b
 	//get the type to set
 	EvaluableNodeType new_type = ENT_NULL;
 	auto type_node = InterpretNodeForImmediateUse(ocn[0]);
-	if(type_node != nullptr)
+	if(!EvaluableNode::IsNull(type_node))
 	{
 		if(type_node->GetType() == ENT_STRING)
 		{
@@ -820,13 +822,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, b
 		else
 		{
 			new_type = type_node->GetType();
+			auto &type_node_ocn = type_node->GetOrderedChildNodes();
 
 			//see if need to prepend anything to the source before changing type
-			if(type_node->GetOrderedChildNodes().size() == 0)
+			if(type_node_ocn.size() == 0)
 				evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
 			else //prepend the parameters of source
 			{
-				source->GetOrderedChildNodes().insert(begin(source->GetOrderedChildNodes()), begin(type_node->GetOrderedChildNodes()), end(type_node->GetOrderedChildNodes()));
+				source->GetOrderedChildNodes().insert(
+					begin(source->GetOrderedChildNodes()), begin(type_node_ocn), end(type_node_ocn));
 				source.UpdatePropertiesBasedOnAttachedNode(type_node);
 			}
 		}
@@ -1539,7 +1543,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 
 					//add it to the list
 					new_assoc->SetMappedChildNodeWithReferenceHandoff(key_sid, value);
-					new_assoc.UpdatePropertiesBasedOnAttachedNode(value);
 				}
 
 				return new_assoc;
@@ -1564,7 +1567,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 
 			//handoff the reference from index_value to the assoc
 			new_assoc->SetMappedChildNodeWithReferenceHandoff(key_sid, value);
-			new_assoc.UpdatePropertiesBasedOnAttachedNode(value);
+			new_assoc.UpdatePropertiesBasedOnAttachedNode(value, i == 0);
 		}
 
 		if(PopConstructionContextAndGetExecutionSideEffectFlag())
@@ -1620,7 +1623,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, boo
 	EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
 	//values will be placed in, so it should be updated as if it will contain them all
 	if(value_list != nullptr)
-		result.UpdatePropertiesBasedOnAttachedNode(value_list);
+		result.UpdatePropertiesBasedOnAttachedNode(value_list, true);
 
 	bool free_value_list_node = false;
 
@@ -1727,7 +1730,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, b
 		return result;
 
 	auto &index_list_ocn = index_list->GetOrderedChildNodes();
-	result.UpdatePropertiesBasedOnAttachedNode(zipped);
+	result.UpdatePropertiesBasedOnAttachedNode(zipped, true);
 
 	auto &result_ocn = result->GetOrderedChildNodesReference();
 	result_ocn.reserve(index_list_ocn.size());

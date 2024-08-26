@@ -420,14 +420,14 @@ public:
 	//creates a stack state saver for the interpreterNodeStack, which will be restored back to its previous condition when this object is destructed
 	__forceinline EvaluableNodeStackStateSaver CreateInterpreterNodeStackStateSaver()
 	{
-		return EvaluableNodeStackStateSaver(interpreterNodeStackNodes);
+		return EvaluableNodeStackStateSaver(opcodeStackNodes);
 	}
 
 	//like CreateInterpreterNodeStackStateSaver, but also pushes another node on the stack
 	__forceinline EvaluableNodeStackStateSaver CreateInterpreterNodeStackStateSaver(EvaluableNode *en)
 	{
 		//count on C++ return value optimization to not call the destructor
-		return EvaluableNodeStackStateSaver(interpreterNodeStackNodes, en);
+		return EvaluableNodeStackStateSaver(opcodeStackNodes, en);
 	}
 
 	//keeps the current node on the stack and calls InterpretNodeExecution
@@ -716,7 +716,7 @@ protected:
 
 					auto result_ref = interpreter->ExecuteNode(node_to_execute,
 						enm->AllocNode(*parentInterpreter->callStackNodes),
-						enm->AllocNode(*parentInterpreter->interpreterNodeStackNodes),
+						enm->AllocNode(*parentInterpreter->opcodeStackNodes),
 						construction_stack,
 						&csiau,
 						GetCallStackMutex());
@@ -773,7 +773,7 @@ protected:
 					std::vector<ConstructionStackIndexAndPreviousResultUniqueness> csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
 					auto result_ref = interpreter->ExecuteNode(node_to_execute,
 						enm->AllocNode(*parentInterpreter->callStackNodes),
-						enm->AllocNode(*parentInterpreter->interpreterNodeStackNodes),
+						enm->AllocNode(*parentInterpreter->opcodeStackNodes),
 						enm->AllocNode(*parentInterpreter->constructionStackNodes),
 						&csiau,
 						GetCallStackMutex(), immediate_results);
@@ -1004,7 +1004,7 @@ protected:
 
 		if(performanceConstraints->ConstrainedOpcodeExecutionDepth())
 		{
-			if(interpreterNodeStackNodes->size() > performanceConstraints->maxOpcodeExecutionDepth)
+			if(opcodeStackNodes->size() > performanceConstraints->maxOpcodeExecutionDepth)
 				return true;
 		}
 
@@ -1265,7 +1265,7 @@ protected:
 	PerformanceConstraints *performanceConstraints;
 
 	//a stack (list) of the current nodes being executed
-	std::vector<EvaluableNode *> *interpreterNodeStackNodes;
+	std::vector<EvaluableNode *> *opcodeStackNodes;
 
 public:
 	//where to allocate new nodes

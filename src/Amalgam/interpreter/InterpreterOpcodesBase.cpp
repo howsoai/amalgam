@@ -427,7 +427,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAMBDA(EvaluableNode *en, 
 		//need to evaluate its parameter and return a new node encapsulating it
 		EvaluableNodeReference lambda(evaluableNodeManager->AllocNode(ENT_LAMBDA), true);
 		lambda->AppendOrderedChildNode(evaluated_value);
-		lambda.UpdatePropertiesBasedOnAttachedNode(evaluated_value);
+		lambda.UpdatePropertiesBasedOnAttachedNode(evaluated_value, true);
 
 		return lambda;
 	}
@@ -451,7 +451,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCLUDE_and_RETURN(Evalua
 	auto node_type = en->GetType();
 	EvaluableNodeReference result(evaluableNodeManager->AllocNode(node_type), true);
 	result->AppendOrderedChildNode(value);
-	result.UpdatePropertiesBasedOnAttachedNode(value);
+	result.UpdatePropertiesBasedOnAttachedNode(value, true);
 
 	return result;
 }
@@ -1368,7 +1368,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OPCODE_STACK(EvaluableNode
 {
 	//can create this node on the stack because will be making a copy
 	EvaluableNode stack_top_holder(ENT_LIST);
-	stack_top_holder.SetOrderedChildNodes(*interpreterNodeStackNodes);
+	stack_top_holder.SetOrderedChildNodes(*opcodeStackNodes);
 	return evaluableNodeManager->DeepAllocCopy(&stack_top_holder);
 }
 
@@ -1506,6 +1506,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, bo
 			retval = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
 			retval->SetOrderedChildNodes(param->GetOrderedChildNodes(),
 				param->GetNeedCycleCheck(), param->GetIsIdempotent());
+
+			retval.UpdatePropertiesBasedOnAttachedNode(param, true);
 		}
 
 		//shuffle ordered child nodes
@@ -1515,8 +1517,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, bo
 			size_t to_swap_with = randomStream.RandSize(num_elements);
 			std::swap(retval_ocn[i], retval_ocn[to_swap_with]);
 		}
-
-		retval.UpdatePropertiesBasedOnAttachedNode(param);
 
 		//free unneeded nodes that weren't part of the shuffle
 		if(param.unique && !param->GetNeedCycleCheck())
@@ -1545,7 +1545,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, bo
 		EvaluableNodeReference rand_value = GenerateRandomValueBasedOnRandParam(param,
 			this, randomStream, can_free_param, immediate_result);
 		retval->AppendOrderedChildNode(rand_value);
-		retval.UpdatePropertiesBasedOnAttachedNode(rand_value);
+		retval.UpdatePropertiesBasedOnAttachedNode(rand_value, i == 0);
 	}
 
 	if(can_free_param)
@@ -1819,7 +1819,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEIGHTED_RAND(EvaluableNod
 					break;
 
 				retval->AppendOrderedChildNode(values[index]);
-				retval.UpdatePropertiesBasedOnAttachedNode(param);
+				retval.UpdatePropertiesBasedOnAttachedNode(param, i == 0);
 
 				//remove the element so it won't be reselected
 				values.erase(begin(values) + index);
@@ -1918,7 +1918,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEIGHTED_RAND(EvaluableNod
 	{
 		EvaluableNodeReference rand_value = GenerateWeightedRandomValueBasedOnRandParam(param, evaluableNodeManager, randomStream, can_free_param);
 		retval->AppendOrderedChildNode(rand_value);
-		retval.UpdatePropertiesBasedOnAttachedNode(rand_value);
+		retval.UpdatePropertiesBasedOnAttachedNode(rand_value, i == 0);
 	}
 
 	if(can_free_param)
@@ -1992,7 +1992,7 @@ void Interpreter::VerifyEvaluableNodeIntegrity()
 	for(EvaluableNode *en : *callStackNodes)
 		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
 
-	for(EvaluableNode *en : *interpreterNodeStackNodes)
+	for(EvaluableNode *en : *opcodeStackNodes)
 		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en, nullptr, false);
 
 	for(EvaluableNode *en : *constructionStackNodes)

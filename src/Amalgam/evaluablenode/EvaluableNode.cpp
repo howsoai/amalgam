@@ -1603,7 +1603,13 @@ void EvaluableNode::Invalidate()
 		//return early if no extended value, make sure to clear out data so it isn't double-deleted
 		type = ENT_DEALLOCATED;
 		attributes.allAttributes = 0;
+	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+		//use a value that is more apparent that something went wrong
 		value.numberValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
+	#else
+		value.numberValueContainer.numberValue = 0;
+	#endif
+
 		value.numberValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
 		return;
 	}
@@ -1635,7 +1641,14 @@ void EvaluableNode::Invalidate()
 
 	type = ENT_DEALLOCATED;
 	attributes.allAttributes = 0;
+	
+#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+	//use a value that is more apparent that something went wrong
 	value.numberValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
+#else
+	value.numberValueContainer.numberValue = 0;
+#endif
+
 	value.numberValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
 }
 

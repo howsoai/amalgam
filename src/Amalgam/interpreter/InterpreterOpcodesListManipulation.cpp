@@ -441,6 +441,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, 
 	auto node_stack = CreateInterpreterNodeStackStateSaver(new_list);
 
 	size_t new_list_cur_index = 0;
+	bool first_append = true;
 	for(auto &param : ocn)
 	{
 		if(AreExecutionResourcesExhausted())
@@ -448,15 +449,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, 
 
 		//get evaluated parameter
 		auto new_elements = InterpretNode(param);
-		new_list.UpdatePropertiesBasedOnAttachedNode(new_elements);
 
 		if(EvaluableNode::IsAssociativeArray(new_elements))
 		{
 			if(new_list->GetType() == ENT_LIST)
 				new_list->ConvertOrderedListToNumberedAssoc();
 
-			for(auto &[node_to_insert_id, node_to_insert] : new_elements->GetMappedChildNodesReference())
-				new_list->SetMappedChildNode(node_to_insert_id, node_to_insert);
+			auto &new_elements_mcn = new_elements->GetMappedChildNodesReference();
+			if(new_elements_mcn.size() > 0)
+			{
+				new_list.UpdatePropertiesBasedOnAttachedNode(new_elements, first_append);
+				for(auto &[node_to_insert_id, node_to_insert] : new_elements_mcn)
+					new_list->SetMappedChildNode(node_to_insert_id, node_to_insert);
+			}
 
 			//don't need the top node anymore
 			evaluableNodeManager->FreeNodeIfPossible(new_elements);
@@ -464,22 +469,29 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, 
 		else if(new_elements != nullptr && new_elements->GetType() == ENT_LIST)
 		{
 			auto &new_elements_ocn = new_elements->GetOrderedChildNodesReference();
-			if(new_list->GetType() == ENT_LIST)
-				new_list->GetOrderedChildNodes().insert(end(new_list->GetOrderedChildNodes()), begin(new_elements_ocn), end(new_elements_ocn));
-			else
+			if(new_elements_ocn.size() > 0)
 			{
-				//find the lowest unused index number
-				for(size_t i = 0; i < new_elements_ocn.size(); i++, new_list_cur_index++)
+				new_list.UpdatePropertiesBasedOnAttachedNode(new_elements, first_append);
+				if(new_list->GetType() == ENT_LIST)
 				{
-					//look for first index not used
-					std::string index_string = EvaluableNode::NumberToString(new_list_cur_index);
-					EvaluableNode **found = new_list->GetMappedChildNode(index_string);
-					if(found != nullptr)
+					new_list->GetOrderedChildNodes().insert(
+						end(new_list->GetOrderedChildNodes()), begin(new_elements_ocn), end(new_elements_ocn));
+				}
+				else
+				{
+					//find the lowest unused index number
+					for(size_t i = 0; i < new_elements_ocn.size(); i++, new_list_cur_index++)
 					{
-						i--;	//try this again with the next index
-						continue;
+						//look for first index not used
+						std::string index_string = EvaluableNode::NumberToString(new_list_cur_index);
+						EvaluableNode **found = new_list->GetMappedChildNode(index_string);
+						if(found != nullptr)
+						{
+							i--;	//try this again with the next index
+							continue;
+						}
+						new_list->SetMappedChildNode(index_string, new_elements_ocn[i]);
 					}
-					new_list->SetMappedChildNode(index_string, new_elements_ocn[i]);
 				}
 			}
 
@@ -488,8 +500,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, 
 		}
 		else //not a map or list, just append the element singularly
 		{
+			new_list.UpdatePropertiesBasedOnAttachedNode(new_elements, first_append);
 			if(new_list->GetType() == ENT_LIST)
+			{
 				new_list->AppendOrderedChildNode(new_elements);
+			}
 			else
 			{
 				//find the next unused index
@@ -502,6 +517,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, 
 			}
 		}
 
+		first_append = false;
 	} //for each child node to append
 
 	return new_list;
@@ -632,7 +648,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, b
 
 		EvaluableNodeReference element_result = InterpretNode(function);
 		result_ocn[i] = element_result;
-		result.UpdatePropertiesBasedOnAttachedNode(element_result);
+		result.UpdatePropertiesBasedOnAttachedNode(element_result, i == 0);
 	}
 
 	if(PopConstructionContextAndGetExecutionSideEffectFlag())

@@ -701,42 +701,6 @@ public:
 		return numberIndices.size() + stringIdIndices.size() + codeIndices.size();
 	}
 
-	//returns the maximum difference between value and any other value for this column
-	//if empty, will return infinity
-	inline double GetMaxDifferenceTerm(GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs)
-	{
-		switch(feature_attribs.featureType)
-		{
-		case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC:
-		case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
-		case GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE:
-			return 1.0 - 1.0 / (numberIndices.size() + stringIdIndices.size() + codeIndices.size());
-
-		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC:
-			if(sortedNumberValueEntries.size() <= 1)
-				return 0.0;
-
-			return sortedNumberValueEntries.back()->value.number - sortedNumberValueEntries[0]->value.number;
-
-		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC:
-			//maximum is the other side of the cycle
-			return feature_attribs.typeAttributes.maxCyclicDifference / 2;
-
-		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING:
-			//the max difference is the worst case edit distance, of removing all the characters
-			// and then adding back in another of equal size but different
-			return static_cast<double>(longestStringLength * 2);
-
-		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE:
-			//the max difference is the worst case edit distance, of removing all the characters
-			// and then adding back in another of equal size but different
-			return static_cast<double>(largestCodeSize * 2);
-
-		default:
-			return std::numeric_limits<double>::infinity();
-		}
-	}
-
 	//returns the exact index of value
 	//Same as std::binary_search but returns both index and if found
 	// .first: found index - if not found, returns closest index from lower_bound if

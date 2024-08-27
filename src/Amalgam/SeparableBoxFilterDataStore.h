@@ -77,7 +77,7 @@ public:
 	inline double GetMaxDistanceTermForContinuousFeature(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		size_t query_feature_index, size_t absolute_feature_index, bool high_accuracy)
 	{
-		double max_diff = columnData[absolute_feature_index]->GetMaxDifferenceTerm(
+		double max_diff = GetMaxDifferenceTerm(*columnData[absolute_feature_index],
 														r_dist_eval.distEvaluator->featureAttribs[query_feature_index]);
 		return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonNullRegular(
 														max_diff, query_feature_index, high_accuracy);
@@ -933,6 +933,43 @@ protected:
 		return std::make_pair(true, distance);
 	}
 
+	//returns the maximum difference between value and any other value for this column
+	//if empty, will return infinity
+	static inline double GetMaxDifferenceTerm(SBFDSColumnData &column,
+	    GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs)
+	{
+		switch(feature_attribs.featureType)
+		{
+		case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC:
+		case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
+		case GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE:
+			return 1.0 - 1.0 / (column.numberIndices.size() + column.stringIdIndices.size() + column.codeIndices.size());
+
+		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC:
+			if(column.sortedNumberValueEntries.size() <= 1)
+				return 0.0;
+
+			return column.sortedNumberValueEntries.back()->value.number - column.sortedNumberValueEntries[0]->value.number;
+
+		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC:
+			//maximum is the other side of the cycle
+			return feature_attribs.typeAttributes.maxCyclicDifference / 2;
+
+		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING:
+			//the max difference is the worst case edit distance, of removing all the characters
+			// and then adding back in another of equal size but different
+			return static_cast<double>(column.longestStringLength * 2);
+
+		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE:
+			//the max difference is the worst case edit distance, of removing all the characters
+			// and then adding back in another of equal size but different
+			return static_cast<double>(column.largestCodeSize * 2);
+
+		default:
+			return std::numeric_limits<double>::infinity();
+		}
+	}
+
 public:
 
 	//populates specified target value given the selected target values for each value in corresponding position* parameters
@@ -976,7 +1013,7 @@ public:
 			if(FastIsNaN(feature_attribs.knownToUnknownDistanceTerm.deviation)
 				|| FastIsNaN(feature_attribs.unknownToUnknownDistanceTerm.deviation))
 			{
-				unknown_distance_deviation = column_data->GetMaxDifferenceTerm(feature_attribs);
+				unknown_distance_deviation = GetMaxDifferenceTerm(*column_data, feature_attribs);
 
 				if(FastIsNaN(feature_attribs.knownToUnknownDistanceTerm.deviation))
 					feature_attribs.knownToUnknownDistanceTerm.deviation = unknown_distance_deviation;

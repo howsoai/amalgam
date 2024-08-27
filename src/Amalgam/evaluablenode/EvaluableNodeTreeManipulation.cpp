@@ -1585,10 +1585,11 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 		case ENBISI_swap_elements:
 			if(n->GetOrderedChildNodes().size() > 1)
 			{
-				size_t num_child_nodes = n->GetOrderedChildNodesReference().size();
+				auto &n_ocn = n->GetOrderedChildNodesReference();
+				size_t num_child_nodes = n_ocn.size();
 				auto first_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
 				auto second_index = mp.interpreter->randomStream.RandSize(num_child_nodes);
-				std::swap(n->GetOrderedChildNodes()[first_index], n->GetOrderedChildNodes()[second_index]);
+				std::swap(n_ocn[first_index], n_ocn[second_index]);
 			}
 			else if(n->GetMappedChildNodes().size() > 1)
 			{

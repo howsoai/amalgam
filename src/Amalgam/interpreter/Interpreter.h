@@ -650,7 +650,6 @@ protected:
 
 		//constructs the concurrency manager.  Assumes parent_interpreter is NOT null
 		ConcurrencyManager(Interpreter *parent_interpreter, size_t num_tasks)
-			: resultsSaver(parent_interpreter->CreateInterpreterNodeStackStateSaver())
 		{
 			resultsUnique = true;
 			resultsNeedCycleCheck = false;
@@ -660,6 +659,15 @@ protected:
 			numTasks = num_tasks;
 			curNumTasksEnqueued = 0;
 			taskSet.AddTask(num_tasks);
+
+			//create space to store all of these nodes on the stack, ensure that nothing else
+			//is writing to the call stack
+			auto call_stack_mutex = GetCallStackMutex();
+			Concurrency::WriteLock lock(*call_stack_mutex);
+			resultsSaver = parent_interpreter->CreateInterpreterNodeStackStateSaver();
+			resultsSaver.ReserveNodes(num_tasks);
+			resultsSaverFirstTaskOffset = resultsSaver.GetLocationOfCurrentStackTop();
+			lock.unlock();
 
 			//set up data
 			interpreters.reserve(numTasks);
@@ -691,9 +699,7 @@ protected:
 			EvaluableNode *current_value,
 			EvaluableNodeRefType &result)
 		{
-			//save a location in the stack now to store the result in later
-			resultsSaver.PushEvaluableNode(nullptr);
-			size_t results_saver_location = resultsSaver.GetLocationOfCurrentStackTop();
+			size_t results_saver_location = resultsSaverFirstTaskOffset--;
 
 			//get the interpreter corresponding to the resultFutures
 			Interpreter *interpreter = interpreters[curNumTasksEnqueued++].get();
@@ -755,8 +761,7 @@ protected:
 		{
 			//save the node to execute, but also save the location
 			//so the location can be used later to save the result
-			resultsSaver.PushEvaluableNode(node_to_execute);
-			size_t results_saver_location = resultsSaver.GetLocationOfCurrentStackTop();
+			size_t results_saver_location = resultsSaverFirstTaskOffset--;
 
 			//get the interpreter corresponding to the resultFutures
 			Interpreter *interpreter = interpreters[curNumTasksEnqueued++].get();
@@ -882,6 +887,10 @@ protected:
 
 		//the total number of tasks to be processed
 		size_t numTasks;
+
+		//offset for the first task in resultsSaver, up to numTasks
+		//starts at the top and counts downward
+		size_t resultsSaverFirstTaskOffset;
 
 		//number of tasks enqueued so far
 		size_t curNumTasksEnqueued;

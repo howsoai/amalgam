@@ -57,14 +57,16 @@ std::string Parser::Backslashify(const std::string &s)
 	return b;
 }
 
-EvaluableNodeReference Parser::Parse(std::string &code_string, EvaluableNodeManager *enm,
-	std::string *original_source, bool debug_sources)
+std::pair<EvaluableNodeReference, bool> Parser::Parse(std::string &code_string,
+	EvaluableNodeManager *enm, bool transactional_parse,  std::string *original_source, bool debug_sources)
 {
 	Parser pt;
 	pt.code = &code_string;
 	pt.pos = 0;
 	pt.preevaluationNodes.clear();
 	pt.evaluableNodeManager = enm;
+	pt.transactionalParse = transactional_parse;
+	pt.charOffsetStartOfFirstErroneousNode = std::numeric_limits<size_t>::max();
 
 	pt.originalSource = "";
 	if(original_source != nullptr)
@@ -84,9 +86,11 @@ EvaluableNodeReference Parser::Parse(std::string &code_string, EvaluableNodeMana
 
 	pt.debugSources = debug_sources;
 
+	//TODO 21359: finish this
+
 	EvaluableNode *parse_tree = pt.ParseNextBlock();
 
-	if(!pt.originalSource.empty())
+	if(!pt.transactionalParse && !pt.originalSource.empty())
 	{
 		if(pt.numOpenParenthesis > 0)
 			std::cerr << "Warning: " << pt.numOpenParenthesis << " missing parenthesis in " << pt.originalSource << std::endl;
@@ -97,7 +101,7 @@ EvaluableNodeReference Parser::Parse(std::string &code_string, EvaluableNodeMana
 	pt.PreevaluateNodes();
 	EvaluableNodeManager::UpdateFlagsForNodeTree(parse_tree);
 
-	return EvaluableNodeReference(parse_tree, true);
+	return std::make_pair(EvaluableNodeReference(parse_tree, true), pt.charOffsetStartOfFirstErroneousNode);
 }
 
 std::string Parser::Unparse(EvaluableNode *tree, EvaluableNodeManager *enm,

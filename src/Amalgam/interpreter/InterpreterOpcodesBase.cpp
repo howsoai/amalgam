@@ -296,12 +296,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PARSE(EvaluableNode *en, b
 	auto &ocn = en->GetOrderedChildNodes();
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
+
+	bool transactional_parse = false;
+	if(ocn.size() >= 2)
+		transactional_parse = InterpretNodeIntoBoolValue(ocn[1]);
+
 	//get the string to parse
 	auto [valid_string, to_parse] = InterpretNodeIntoStringValue(ocn[0]);
 	if(!valid_string)
 		return EvaluableNodeReference::Null();
 
-	return Parser::Parse(to_parse, evaluableNodeManager);
+	auto [node, char_with_error] = Parser::Parse(to_parse, evaluableNodeManager);
+	return node;
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_UNPARSE(EvaluableNode *en, bool immediate_result)

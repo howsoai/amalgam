@@ -100,11 +100,13 @@ public:
 			s.push_back(' ');
 	}
 
-	//Parses the code string and returns a tree of EvaluableNodeReference that represents the code
+	//Parses the code string and returns a tree of EvaluableNodeReference that represents the code,
+	// as well as the offset of any error, or larger than the length of code_string if no errors
+	//if transactional_parse is true, then it will ignore any incomplete or erroneous opcodes except the outermost one
 	//if original_source is a valid string, it will emit any warnings to stderr
 	//if debug_sources is true, it will prepend each node with a comment indicating original source
-	static EvaluableNodeReference Parse(std::string &code_string, EvaluableNodeManager *enm,
-		std::string *original_source = nullptr, bool debug_sources = false);
+	static std::pair<EvaluableNodeReference, bool> Parse(std::string &code_string, EvaluableNodeManager *enm,
+		bool transactional_parse = false, std::string *original_source = nullptr, bool debug_sources = false);
 
 	//Returns a string that represents the tree
 	// if expanded_whitespace, will emit additional whitespace to make it easier to read
@@ -225,6 +227,12 @@ protected:
 
 	EvaluableNodeManager *evaluableNodeManager;
 
-	//character used for indendation
+	//if true, then it will ignore any incomplete or erroneous opcodes except the outermost one
+	bool transactionalParse;
+
+	//offset of the first node that was not properly completed
+	size_t charOffsetStartOfFirstErroneousNode;
+
+	//character used for indentation
 	static const char indentationCharacter = '\t';
 };

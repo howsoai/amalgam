@@ -63,7 +63,8 @@ EvaluableNodeReference AssetManager::LoadResourcePath(std::string &resource_path
 				code.erase(0, 3);
 		}
 
-		return Parser::Parse(code, enm, &resource_path, debugSources);
+		auto [node, char_with_error] = Parser::Parse(code, enm, false, &resource_path, debugSources);
+		return node;
 	}
 	else if(file_type == FILE_EXTENSION_JSON)
 		return EvaluableNodeReference(EvaluableNodeJSONTranslation::Load(processed_resource_path, enm, status), true);
@@ -74,10 +75,10 @@ EvaluableNodeReference AssetManager::LoadResourcePath(std::string &resource_path
 	else if(file_type == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 	{
 		BinaryData compressed_data;
-		auto [error_mesg, version, success] = LoadFileToBuffer<BinaryData>(processed_resource_path, file_type, compressed_data);
+		auto [error_msg, version, success] = LoadFileToBuffer<BinaryData>(processed_resource_path, file_type, compressed_data);
 		if(!success)
 		{
-			status.SetStatus(false, error_mesg, version);
+			status.SetStatus(false, error_msg, version);
 			return EvaluableNodeReference::Null();
 		}
 
@@ -86,17 +87,18 @@ EvaluableNodeReference AssetManager::LoadResourcePath(std::string &resource_path
 		if(strings.size() == 0)
 			return EvaluableNodeReference::Null();
 
-		return Parser::Parse(strings[0], enm, &resource_path, debugSources);
+		auto [node, char_with_error] = Parser::Parse(strings[0], enm, false, &resource_path, debugSources);
+		return node;
 	}
 	else //just load the file as a string
 	{
 		std::string s;
-		auto [error_mesg, version, success] = LoadFileToBuffer<std::string>(processed_resource_path, file_type, s);
+		auto [error_msg, version, success] = LoadFileToBuffer<std::string>(processed_resource_path, file_type, s);
 		if(success)
 			return EvaluableNodeReference(enm->AllocNode(ENT_STRING, s), true);
 		else
 		{
-			status.SetStatus(false, error_mesg, version);
+			status.SetStatus(false, error_msg, version);
 			return EvaluableNodeReference::Null();
 		}
 	}

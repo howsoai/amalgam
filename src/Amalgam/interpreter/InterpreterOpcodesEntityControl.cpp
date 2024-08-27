@@ -804,7 +804,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
 
-	//get the id of the source entity to store.  Don't need to keep the reference because it won't be used once the source entety pointer is looked up
+	//get the id of the source entity to store.  Don't need to keep the reference because it won't be used once the source entity pointer is looked up
 	//retrieve the entity after other parameters to minimize time in locks
 	// and prevent deadlock if one of the params accessed the entity
 	//StoreEntityToResourcePath will read lock all contained entities appropriately

@@ -237,6 +237,10 @@ public:
 class EvaluableNodeStackStateSaver
 {
 public:
+	inline EvaluableNodeStackStateSaver()
+		: stack(nullptr), originalStackSize(0)
+	{	}
+
 	__forceinline EvaluableNodeStackStateSaver(std::vector<EvaluableNode *> *_stack)
 	{
 		stack = _stack;
@@ -259,6 +263,12 @@ public:
 	__forceinline ~EvaluableNodeStackStateSaver()
 	{
 		stack->resize(originalStackSize);
+	}
+
+	//ensures that the stack is allocated to hold up to num_new_nodes
+	__forceinline void ReserveNodes(size_t num_new_nodes)
+	{
+		stack->resize(stack->size() + num_new_nodes);
 	}
 
 	__forceinline void PushEvaluableNode(EvaluableNode *n)

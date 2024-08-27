@@ -678,9 +678,6 @@ protected:
 					parentInterpreter->writeListeners, parentInterpreter->printListener,
 					parentInterpreter->performanceConstraints, parentInterpreter->curEntity));
 			}
-
-			//begins concurrency over all interpreters
-			parentInterpreter->memoryModificationLock.unlock();
 		}
 
 		//Enqueues a concurrent task that needs a construction stack, using the relative interpreter
@@ -817,6 +814,9 @@ protected:
 		//ends concurrency from all interpreters and waits for them to finish
 		inline void EndConcurrency()
 		{
+			//allow other threads to perform garbage collection
+			parentInterpreter->memoryModificationLock.unlock();
+
 			Concurrency::threadPool.ChangeCurrentThreadStateFromActiveToWaiting();
 			taskSet.WaitForTasks();
 			Concurrency::threadPool.ChangeCurrentThreadStateFromWaitingToActive();

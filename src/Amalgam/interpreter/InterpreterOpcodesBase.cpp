@@ -1504,14 +1504,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, bo
 		else
 		{
 			retval = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
-			retval->SetOrderedChildNodes(param->GetOrderedChildNodes(),
+			retval->SetOrderedChildNodes(param->GetOrderedChildNodesReference(),
 				param->GetNeedCycleCheck(), param->GetIsIdempotent());
 
 			retval.UpdatePropertiesBasedOnAttachedNode(param, true);
 		}
 
 		//shuffle ordered child nodes
-		auto &retval_ocn = retval->GetOrderedChildNodes();
+		auto &retval_ocn = retval->GetOrderedChildNodesReference();
 		for(size_t i = 0; i < number_to_generate; i++)
 		{
 			size_t to_swap_with = randomStream.RandSize(num_elements);

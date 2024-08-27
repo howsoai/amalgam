@@ -110,7 +110,7 @@ EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(Evaluabl
 
 						//get the pointer to place child elements,
 						// but swap out the preallocated ordered child nodes
-						ocn_ptr = &retval->GetOrderedChildNodes();
+						ocn_ptr = &retval->GetOrderedChildNodesReference();
 						std::swap(ocn_buffer, *ocn_ptr);
 
 						//advance type to child node type

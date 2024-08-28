@@ -631,16 +631,16 @@ a
 {
 	a 1
 	b 2
-	c 3
 	d 4
 	e 5
+	f 6
 }
-{a 1 e 5}
+{a 1 d 4}
 {
 	a 1
-	b 2
 	d 4
 	e 5
+	f 6
 }
 {
 	a 1
@@ -682,16 +682,16 @@ c
 {
 	a 1
 	b 2
-	c 3
 	d 4
 	e 5
+	f 6
 }
-{a 1 e 5}
+{a 1 d 4}
 {
 	a 1
-	b 2
 	d 4
 	e 5
+	f 6
 }
 {
 	a 1
@@ -1042,7 +1042,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-["4" "c" "b" "a"]
+["c" "b" "4" "a"]
 [
 	0
 	1
@@ -1075,7 +1075,7 @@ abcdef
 	4
 	"d"
 ]
-[3 2 "d" 0 1]
+[3 2 0 "d" 1]
 [
 	1
 	2
@@ -1288,7 +1288,7 @@ current_index: 2
 		interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1724854665.321663
+		start_time 1724856124.867852
 		www 1
 		x 12
 		zz 10
@@ -1331,7 +1331,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1724854665.321663
+	start_time 1724856124.867852
 	www 1
 	x 12
 	zz 10
@@ -1373,7 +1373,7 @@ current_index: 2
 	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1724854665.321663
+	start_time 1724856124.867852
 	www 1
 	x 12
 	zz 10
@@ -1521,7 +1521,7 @@ infinity test c or d: ["d" @(get (target 2) 0) "c" @(get (target 2) 2)]
 
 {a 24 b 52 c 24}
 
-["8" "3" "1"]
+["1" "3" "2"]
 
 --get_rand_seed--
 N9ìÀù∏UØOaV∆T zˇ
@@ -1621,13 +1621,13 @@ string
 22: [{"a":3,"b":4},{"c":"c","d":null}]
 23: c: 3
 b: 2
-d: 4
 e:
   - a
   - b
   - 
   - .inf
 a: 1
+d: 4
 
 24: a: 1
 b: 2
@@ -1640,7 +1640,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2024-08-28-10.17.45.9062170
+current date-time in epoch: 2024-08-28-10.42.05.5137340
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -1687,7 +1687,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelQ #labelA
+	labelA #labelA #labelQ
 		(lambda
 			#labelB (true)
 		)
@@ -1701,7 +1701,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelQ #labelA
+	labelA #labelA #labelQ
 		(lambda
 			#labelB (true)
 		)
@@ -3168,8 +3168,14 @@ _432807187
 						[]
 						(lambda
 							{
-								E 3
-								F 4
+								E (get
+										(current_value 1)
+										"E"
+									)
+								F (get
+										(current_value 1)
+										"F"
+									)
 								G 5
 								H 6
 							}
@@ -3194,7 +3200,16 @@ _432807187
 						_
 						[]
 						(lambda
-							{e 3 f 4}
+							{
+								e (get
+										(current_value 1)
+										"e"
+									)
+								f (get
+										(current_value 1)
+										"f"
+									)
+							}
 						)
 					)
 				)
@@ -3226,7 +3241,89 @@ contained_entities new_entity: ["DiffEntityChild1" "OnlyIn2" "_350925375" "_2742
 difference between DiffEntity2 and new_entity:
 (declare
 	{_ (null) new_entity (null)}
-	(clone_entities _ new_entity)
+	(assign
+		"new_entity"
+		(first
+			(create_entities
+				new_entity
+				(call
+					(lambda
+						(declare
+							{_ (null)}
+							(replace _)
+						)
+					)
+					{
+						_ (retrieve_entity_root _)
+					}
+				)
+			)
+		)
+	)
+	(create_entities
+		(append new_entity "_350925375")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{
+								E (null)
+								F (null)
+								G (get
+										(current_value 1)
+										"G"
+									)
+								H (get
+										(current_value 1)
+										"H"
+									)
+							}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_350925375")
+					)
+			}
+		)
+	)
+	(create_entities
+		(append new_entity "_2742810479")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{e (null) f (null)}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_2742810479")
+					)
+			}
+		)
+	)
+	(clone_entities
+		(append _ "DiffEntityChild1")
+		(append new_entity "DiffEntityChild1")
+	)
+	(clone_entities
+		(append _ "OnlyIn2")
+		(append new_entity "OnlyIn2")
+	)
+	new_entity
 )
 (declare
 	{_ (null) new_entity (null)}
@@ -3435,7 +3532,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1724854666.079116
+1724856125.751855
 (true)
 
 RootTest
@@ -3677,7 +3774,7 @@ hello
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "F˛ÙÏ∞.G!W´w∏àÊùˇ")
+	(set_entity_rand_seed new_entity "1a2ÿ.≤≥W´w∏àÊùˇ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3687,7 +3784,7 @@ hello
 				)
 			)
 		)
-		"3∆Ç`»œ˛å¨—¿+|Üe‡ˇ"
+		"à-ÏO[øÎ3yCì≈íå—ˇ"
 	)
 	(set_entity_rand_seed
 		(first
@@ -3729,7 +3826,7 @@ hello
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "F˛ÙÏ∞.G!W´w∏àÊùˇ")
+	(set_entity_rand_seed new_entity "1a2ÿ.≤≥W´w∏àÊùˇ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -4274,14 +4371,14 @@ case conviction:{
 }
 cyclic feature nearest neighbors: {cyclic1 1 cyclic5 0.5}
 cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
-200: 0.05555555555555555 (null
-	##deg 8
-)
 190: 0.045454545454545456 (null
 	##deg 12
 )
 155: 0.1 (null
 	##deg 0
+)
+200: 0.05555555555555555 (null
+	##deg 8
 )
 --contains_label--
 (true)
@@ -4779,4 +4876,4 @@ concurrent entity writes successful: (true)
 
 --clean-up test files--
 --total execution time--
-1.761566162109375
+1.6281991004943848

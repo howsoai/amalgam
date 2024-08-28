@@ -697,8 +697,8 @@ protected:
 
 	//search a projection width in terms of bucket count or number of collected entities
 	//accumulates partial sums
-	//searches until num_entities_to_populate are popluated or other heuristics have been reached
-	//will only consider indices in enabled_indiced
+	//searches until num_entities_to_populate are populated or other heuristics have been reached
+	//will only consider indices in enabled_indices
 	// query_feature_index is the offset to access the feature relative to the particular query data parameters
 	//returns the smallest partial sum for any value not yet computed
 	double PopulatePartialSumsWithSimilarFeatureValue(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
@@ -903,7 +903,7 @@ protected:
 		auto [num_calculated_features, distance] = partial_sums.GetNumFilledAndSum(entity_index);
 
 		//complete known sums with worst and best possibilities
-		//calculate the number of features for which the minkowski distance term has not yet been calculated 
+		//calculate the number of features for which the Minkowski distance term has not yet been calculated 
 		size_t num_uncalculated_features = (num_features - num_calculated_features);
 		//if have already calculated everything, then already have the distance
 		if(num_uncalculated_features == 0)

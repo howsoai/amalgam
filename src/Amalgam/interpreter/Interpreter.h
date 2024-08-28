@@ -163,21 +163,21 @@ public:
 
 	//Executes the current Entity that this Interpreter is contained by
 	// sets up all of the stack and contextual structures, then calls InterpretNode on en
-	//if call_stack, interpreter_node_stack, or construction_stack are nullptr, it will start with a new one
+	//if call_stack, opcode_stack, or construction_stack are nullptr, it will start with a new one
 	//note that construction_stack and construction_stack_indices should be specified together and should be the same length
 	//if immediate_result is true, then the returned value may be immediate
 #ifdef MULTITHREAD_SUPPORT
 	//if run multithreaded, then for performance reasons, it is optimal to have one of each stack per thread
 	// and call_stack_write_mutex is the mutex needed to lock for writing
 	EvaluableNodeReference ExecuteNode(EvaluableNode *en,
-		EvaluableNode *call_stack = nullptr, EvaluableNode *interpreter_node_stack = nullptr,
+		EvaluableNode *call_stack = nullptr, EvaluableNode *opcode_stack = nullptr,
 		EvaluableNode *construction_stack = nullptr,
 		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices = nullptr,
 		Concurrency::ReadWriteMutex *call_stack_write_mutex = nullptr,
 		bool immediate_result = false);
 #else
 	EvaluableNodeReference ExecuteNode(EvaluableNode *en,
-		EvaluableNode *call_stack = nullptr, EvaluableNode *interpreter_node_stack = nullptr,
+		EvaluableNode *call_stack = nullptr, EvaluableNode *opcode_stack = nullptr,
 		EvaluableNode *construction_stack = nullptr,
 		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices = nullptr,
 		bool immediate_result = false);

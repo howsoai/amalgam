@@ -662,7 +662,7 @@ protected:
 
 			//create space to store all of these nodes on the stack, but won't copy these over to the other interpreters
 			resultsSaver = parent_interpreter->CreateOpcodeStackStateSaver();
-			resultsSaverFirstTaskOffset = resultsSaver.GetLocationOfCurrentStackTop()  + 1;
+			resultsSaverFirstTaskOffset = resultsSaver.GetLocationOfCurrentStackTop() + 1;
 			resultsSaverCurrentTaskOffset = resultsSaverFirstTaskOffset;
 			resultsSaver.ReserveNodes(num_tasks);
 

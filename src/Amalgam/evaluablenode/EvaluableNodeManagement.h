@@ -433,7 +433,8 @@ public:
 	{
 		EvaluableNode *n = AllocNode(ENT_LIST);
 		n->SetNeedCycleCheck(need_cycle_check);
-		n->SetIsIdempotent(false);
+		n->SetIsIdempotent(is_idempotent);
+
 		auto &ocn = n->GetOrderedChildNodesReference();
 		ocn = std::vector<EvaluableNode *>(first, last);
 		return n;

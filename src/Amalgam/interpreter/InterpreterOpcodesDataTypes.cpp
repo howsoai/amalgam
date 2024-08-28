@@ -91,7 +91,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST(EvaluableNode *en, bo
 			auto value = InterpretNode(ocn[i]);
 			//add it to the list
 			new_list_ocn[i] = value;
-			new_list.UpdatePropertiesBasedOnAttachedNode(value, i == 0);
+			new_list.UpdatePropertiesBasedOnAttachedNode(value);
 		}
 
 		if(PopConstructionContextAndGetExecutionSideEffectFlag())
@@ -142,7 +142,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, b
 		//construction stack has a reference, so no KeepNodeReference isn't needed for anything referenced
 		PushNewConstructionContext(en, new_assoc, EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 
-		bool first_node = true;
 		for(auto &[cn_id, cn] : new_mcn)
 		{
 			SetTopCurrentIndexInConstructionStack(cn_id);
@@ -151,8 +150,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, b
 			EvaluableNodeReference element_result = InterpretNode(cn);
 
 			cn = element_result;
-			new_assoc.UpdatePropertiesBasedOnAttachedNode(element_result, first_node);
-			first_node = false;
+			new_assoc.UpdatePropertiesBasedOnAttachedNode(element_result);
 		}
 
 		if(PopConstructionContextAndGetExecutionSideEffectFlag())

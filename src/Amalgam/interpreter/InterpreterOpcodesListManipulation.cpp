@@ -648,7 +648,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, b
 
 		EvaluableNodeReference element_result = InterpretNode(function);
 		result_ocn[i] = element_result;
-		result.UpdatePropertiesBasedOnAttachedNode(element_result, i == 0);
+		result.UpdatePropertiesBasedOnAttachedNode(element_result);
 	}
 
 	if(PopConstructionContextAndGetExecutionSideEffectFlag())

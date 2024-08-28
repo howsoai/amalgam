@@ -115,7 +115,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 
 				EvaluableNodeReference element_result = InterpretNode(function);
 				result_ocn[i] = element_result;
-				result.UpdatePropertiesBasedOnAttachedNode(element_result, i == 0);
+				result.UpdatePropertiesBasedOnAttachedNode(element_result);
 			}
 
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
@@ -170,7 +170,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 
 			PushNewConstructionContext(list, result, EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 
-			bool first_element = true;
 			for(auto &[result_id, result_node] : result_mcn)
 			{
 				SetTopCurrentIndexInConstructionStack(result_id);
@@ -184,8 +183,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 				//in order to keep the node properties to be updated below
 				EvaluableNodeReference element_result = InterpretNode(function);
 				result_node = element_result;
-				result.UpdatePropertiesBasedOnAttachedNode(element_result, first_element);
-				first_element = false;
+				result.UpdatePropertiesBasedOnAttachedNode(element_result);
 			}
 
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
@@ -1567,7 +1565,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 
 			//handoff the reference from index_value to the assoc
 			new_assoc->SetMappedChildNodeWithReferenceHandoff(key_sid, value);
-			new_assoc.UpdatePropertiesBasedOnAttachedNode(value, i == 0);
+			new_assoc.UpdatePropertiesBasedOnAttachedNode(value);
 		}
 
 		if(PopConstructionContextAndGetExecutionSideEffectFlag())

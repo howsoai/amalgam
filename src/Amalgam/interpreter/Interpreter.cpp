@@ -326,13 +326,13 @@ Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 
 #ifdef MULTITHREAD_SUPPORT
 EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
-	EvaluableNode *call_stack, EvaluableNode *interpreter_node_stack,
+	EvaluableNode *call_stack, EvaluableNode *opcode_stack,
 	EvaluableNode *construction_stack,
 	std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices,
 	Concurrency::ReadWriteMutex *call_stack_write_mutex, bool immediate_result)
 #else
 EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
-	EvaluableNode *call_stack, EvaluableNode *interpreter_node_stack,
+	EvaluableNode *call_stack, EvaluableNode *opcode_stack,
 	EvaluableNode *construction_stack,
 	std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices,
 	bool immediate_result)
@@ -359,14 +359,22 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 		call_stack->AppendOrderedChildNode(new_context_entry);
 	}
 
-	if(interpreter_node_stack == nullptr)
-		interpreter_node_stack = evaluableNodeManager->AllocNode(ENT_LIST);
+	bool free_opcode_stack = false;
+	if(opcode_stack == nullptr)
+	{
+		opcode_stack = evaluableNodeManager->AllocNode(ENT_LIST);
+		free_opcode_stack = true;
+	}
 
+	bool free_construction_stack = false;
 	if(construction_stack == nullptr)
+	{
 		construction_stack = evaluableNodeManager->AllocNode(ENT_LIST);
+		free_construction_stack = true;
+	}
 
 	callStackNodes = &call_stack->GetOrderedChildNodes();
-	opcodeStackNodes = &interpreter_node_stack->GetOrderedChildNodes();
+	opcodeStackNodes = &opcode_stack->GetOrderedChildNodes();
 	constructionStackNodes = &construction_stack->GetOrderedChildNodes();
 
 	if(construction_stack_indices != nullptr)
@@ -377,19 +385,21 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	call_stack->SetNeedCycleCheck(true);
 	for(auto &cn : call_stack->GetOrderedChildNodesReference())
 		cn->SetNeedCycleCheck(true);
-	interpreter_node_stack->SetNeedCycleCheck(true);
+	opcode_stack->SetNeedCycleCheck(true);
 	construction_stack->SetNeedCycleCheck(true);
 
 	//keep these references as long as the interpreter is around
-	evaluableNodeManager->KeepNodeReferences(call_stack, interpreter_node_stack, construction_stack);
+	evaluableNodeManager->KeepNodeReferences(call_stack, opcode_stack, construction_stack);
 
 	auto retval = InterpretNode(en, immediate_result);
 
-	evaluableNodeManager->FreeNodeReferences(call_stack, interpreter_node_stack, construction_stack);
+	evaluableNodeManager->FreeNodeReferences(call_stack, opcode_stack, construction_stack);
 
 	//remove these nodes
-	evaluableNodeManager->FreeNode(interpreter_node_stack);
-	evaluableNodeManager->FreeNode(construction_stack);
+	if(free_opcode_stack)
+		evaluableNodeManager->FreeNode(opcode_stack);
+	if(free_construction_stack)
+		evaluableNodeManager->FreeNode(construction_stack);
 
 	return retval;
 }

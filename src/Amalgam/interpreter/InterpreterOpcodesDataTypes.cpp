@@ -1132,7 +1132,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_VALUE(EvaluableNode *e
 	//get the new value
 	auto value_node = InterpretNode(ocn[1]);
 	source->CopyValueFrom(value_node);
-	source.UpdatePropertiesBasedOnAttachedNode(value_node);
+	source.UpdatePropertiesBasedOnAttachedNode(value_node, true);
 
 	return source;
 }

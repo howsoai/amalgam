@@ -660,15 +660,11 @@ protected:
 			curNumTasksEnqueued = 0;
 			taskSet.AddTask(num_tasks);
 
-			//create space to store all of these nodes on the stack, ensure that nothing else
-			//is writing to the call stack
-			auto call_stack_mutex = GetCallStackMutex();
-			Concurrency::WriteLock lock(*call_stack_mutex);
+			//create space to store all of these nodes on the stack, but won't copy these over to the other interpreters
 			resultsSaver = parent_interpreter->CreateOpcodeStackStateSaver();
 			resultsSaverFirstTaskOffset = resultsSaver.GetLocationOfCurrentStackTop()  + 1;
 			resultsSaverCurrentTaskOffset = resultsSaverFirstTaskOffset;
 			resultsSaver.ReserveNodes(num_tasks);
-			lock.unlock();
 
 			//set up data
 			interpreters.reserve(numTasks);

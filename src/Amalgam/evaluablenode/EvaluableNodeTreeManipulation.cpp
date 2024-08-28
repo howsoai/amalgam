@@ -1725,7 +1725,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateTree(MutationParameters &mp,
 	}
 
 	EvaluableNode *copy = mp.enm->AllocNode(tree);
-	auto node_stack = mp.interpreter->CreateInterpreterNodeStackStateSaver(copy);
+	auto node_stack = mp.interpreter->CreateOpcodeStackStateSaver(copy);
 
 	//shouldn't happen, but just to be safe
 	if(copy == nullptr)

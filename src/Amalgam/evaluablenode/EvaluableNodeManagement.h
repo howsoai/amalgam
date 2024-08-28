@@ -427,6 +427,18 @@ public:
 		return n;
 	}
 
+	template<class Iterator>
+	inline EvaluableNode *AllocNode(Iterator first, Iterator last,
+		bool need_cycle_check = true, bool is_idempotent = false)
+	{
+		EvaluableNode *n = AllocNode(ENT_LIST);
+		n->SetNeedCycleCheck(need_cycle_check);
+		n->SetIsIdempotent(false);
+		auto &ocn = n->GetOrderedChildNodesReference();
+		ocn = std::vector<EvaluableNode *>(first, last);
+		return n;
+	}
+
 	//allocates and returns a node of type ENT_LIST
 	// and allocates num_child_nodes child nodes initialized to child_node_type (with an appropriate default value)
 	EvaluableNode *AllocListNodeWithOrderedChildNodes(EvaluableNodeType child_node_type, size_t num_child_nodes);

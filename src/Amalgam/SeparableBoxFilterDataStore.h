@@ -935,7 +935,7 @@ protected:
 
 	//returns the maximum difference between value and any other value for this column
 	//if empty, will return infinity
-	static inline double GetMaxDifferenceTerm(SBFDSColumnData &column,
+	static inline double GetMaxDifferenceTerm(const SBFDSColumnData &column,
 	    GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs)
 	{
 		switch(feature_attribs.featureType)

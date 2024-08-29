@@ -656,10 +656,12 @@ public:
 
 			//try to insert the value if not already there
 			auto [inserted_id_entry, inserted] = stringIdValueEntries.emplace(string_id, nullptr);
-			if(inserted)
+			if(inserted) {
 				inserted_id_entry->second = std::make_unique<ValueEntry>(string_id);
-
-			InsertFirstIndexIntoStringIdValueEntry(index, inserted_id_entry);
+				InsertFirstIndexIntoStringIdValueEntry(index, inserted_id_entry);
+			}
+			else
+				inserted_id_entry->second->indicesWithValue.insert(index);
 
 			UpdateLongestString(string_id, index);
 

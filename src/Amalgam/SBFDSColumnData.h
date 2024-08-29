@@ -601,7 +601,7 @@ public:
 		{
 			invalidIndices.insert(index);
 
-			if(internedNumberValues.valueInterningEnabled)
+			if(internedNumberValues.valueInterningEnabled || internedStringIdValues.valueInterningEnabled)
 				return EvaluableNodeImmediateValue(ValueEntry::NULL_INDEX);
 			else
 				return value;
@@ -850,6 +850,7 @@ public:
 				//if within range, and range has no length, just return indices in that one bucket
 				if(between_values)
 				{
+					assert(exact_index_found);
 					size_t index = value_index;
 					out.InsertInBatch(sortedNumberValueEntries[index]->indicesWithValue);
 				}

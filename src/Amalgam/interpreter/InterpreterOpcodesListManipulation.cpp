@@ -111,7 +111,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, bo
 	if(list == nullptr)
 		return EvaluableNodeReference::Null();
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(list);
+	auto node_stack = CreateOpcodeStackStateSaver(list);
 
 	//default to tailing to all but the first element
 	double tail_by = -1;
@@ -319,7 +319,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, b
 	if(list == nullptr)
 		return EvaluableNodeReference::Null();
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(list);
+	auto node_stack = CreateOpcodeStackStateSaver(list);
 
 	//default to truncating to all but the last element
 	double truncate_to = -1;
@@ -438,7 +438,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, 
 		return EvaluableNodeReference::Null();
 
 	EvaluableNodeReference new_list(evaluableNodeManager->AllocNode(ENT_LIST), true);
-	auto node_stack = CreateInterpreterNodeStackStateSaver(new_list);
+	auto node_stack = CreateOpcodeStackStateSaver(new_list);
 
 	size_t new_list_cur_index = 0;
 	bool first_append = true;
@@ -609,7 +609,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, b
 
 	//if a function is specified, then set up appropriate data structures to call the function and move the indices for the index and value parameters
 	EvaluableNodeReference function = InterpretNodeForImmediateUse(ocn[0]);
-	auto node_stack = CreateInterpreterNodeStackStateSaver(function);
+	auto node_stack = CreateOpcodeStackStateSaver(function);
 
 	EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_LIST), true);
 	auto &result_ocn = result->GetOrderedChildNodesReference();

@@ -359,19 +359,11 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 		call_stack->AppendOrderedChildNode(new_context_entry);
 	}
 
-	bool free_opcode_stack = false;
 	if(opcode_stack == nullptr)
-	{
 		opcode_stack = evaluableNodeManager->AllocNode(ENT_LIST);
-		free_opcode_stack = true;
-	}
 
-	bool free_construction_stack = false;
 	if(construction_stack == nullptr)
-	{
 		construction_stack = evaluableNodeManager->AllocNode(ENT_LIST);
-		free_construction_stack = true;
-	}
 
 	callStackNodes = &call_stack->GetOrderedChildNodes();
 	opcodeStackNodes = &opcode_stack->GetOrderedChildNodes();
@@ -394,12 +386,6 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	auto retval = InterpretNode(en, immediate_result);
 
 	evaluableNodeManager->FreeNodeReferences(call_stack, opcode_stack, construction_stack);
-
-	//remove these nodes
-	if(free_opcode_stack)
-		evaluableNodeManager->FreeNode(opcode_stack);
-	if(free_construction_stack)
-		evaluableNodeManager->FreeNode(construction_stack);
 
 	return retval;
 }
@@ -495,7 +481,7 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, bool immedi
 		return EvaluableNodeReference::Null();
 
 	//reference this node before we collect garbage
-	//CreateInterpreterNodeStackStateSaver is a bit expensive for this frequently called function
+	//CreateOpcodeStackStateSaver is a bit expensive for this frequently called function
 	//especially because only one node is kept
 	opcodeStackNodes->push_back(en);
 

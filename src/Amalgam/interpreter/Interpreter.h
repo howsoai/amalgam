@@ -418,13 +418,13 @@ public:
 	}
 
 	//creates a stack state saver for the interpreterNodeStack, which will be restored back to its previous condition when this object is destructed
-	__forceinline EvaluableNodeStackStateSaver CreateInterpreterNodeStackStateSaver()
+	__forceinline EvaluableNodeStackStateSaver CreateOpcodeStackStateSaver()
 	{
 		return EvaluableNodeStackStateSaver(opcodeStackNodes);
 	}
 
-	//like CreateInterpreterNodeStackStateSaver, but also pushes another node on the stack
-	__forceinline EvaluableNodeStackStateSaver CreateInterpreterNodeStackStateSaver(EvaluableNode *en)
+	//like CreateOpcodeStackStateSaver, but also pushes another node on the stack
+	__forceinline EvaluableNodeStackStateSaver CreateOpcodeStackStateSaver(EvaluableNode *en)
 	{
 		//count on C++ return value optimization to not call the destructor
 		return EvaluableNodeStackStateSaver(opcodeStackNodes, en);
@@ -607,7 +607,7 @@ public:
 				Entity::EntityReferenceBufferReference<EntityReadReference>());
 
 		auto node_id_path_1 = InterpretNodeForImmediateUse(node_id_path_to_interpret_1);
-		auto node_stack = CreateInterpreterNodeStackStateSaver(node_id_path_1);
+		auto node_stack = CreateOpcodeStackStateSaver(node_id_path_1);
 		auto node_id_path_2 = InterpretNodeForImmediateUse(node_id_path_to_interpret_2);
 		node_stack.PopEvaluableNode();
 
@@ -660,14 +660,11 @@ protected:
 			curNumTasksEnqueued = 0;
 			taskSet.AddTask(num_tasks);
 
-			//create space to store all of these nodes on the stack, ensure that nothing else
-			//is writing to the call stack
-			auto call_stack_mutex = GetCallStackMutex();
-			Concurrency::WriteLock lock(*call_stack_mutex);
-			resultsSaver = parent_interpreter->CreateInterpreterNodeStackStateSaver();
+			//create space to store all of these nodes on the stack, but won't copy these over to the other interpreters
+			resultsSaver = parent_interpreter->CreateOpcodeStackStateSaver();
+			resultsSaverFirstTaskOffset = resultsSaver.GetLocationOfCurrentStackTop() + 1;
+			resultsSaverCurrentTaskOffset = resultsSaverFirstTaskOffset;
 			resultsSaver.ReserveNodes(num_tasks);
-			resultsSaverFirstTaskOffset = resultsSaver.GetLocationOfCurrentStackTop();
-			lock.unlock();
 
 			//set up data
 			interpreters.reserve(numTasks);
@@ -699,7 +696,7 @@ protected:
 			EvaluableNode *current_value,
 			EvaluableNodeRefType &result)
 		{
-			size_t results_saver_location = resultsSaverFirstTaskOffset--;
+			size_t results_saver_location = resultsSaverCurrentTaskOffset++;
 
 			//get the interpreter corresponding to the resultFutures
 			Interpreter *interpreter = interpreters[curNumTasksEnqueued++].get();
@@ -719,7 +716,8 @@ protected:
 
 					auto result_ref = interpreter->ExecuteNode(node_to_execute,
 						enm->AllocNode(*parentInterpreter->callStackNodes),
-						enm->AllocNode(*parentInterpreter->opcodeStackNodes),
+						enm->AllocNode(begin(*parentInterpreter->opcodeStackNodes),
+							begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset),
 						construction_stack,
 						&csiau,
 						GetCallStackMutex());
@@ -761,7 +759,7 @@ protected:
 		{
 			//save the node to execute, but also save the location
 			//so the location can be used later to save the result
-			size_t results_saver_location = resultsSaverFirstTaskOffset--;
+			size_t results_saver_location = resultsSaverCurrentTaskOffset++;
 
 			//get the interpreter corresponding to the resultFutures
 			Interpreter *interpreter = interpreters[curNumTasksEnqueued++].get();
@@ -775,7 +773,8 @@ protected:
 					std::vector<ConstructionStackIndexAndPreviousResultUniqueness> csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
 					auto result_ref = interpreter->ExecuteNode(node_to_execute,
 						enm->AllocNode(*parentInterpreter->callStackNodes),
-						enm->AllocNode(*parentInterpreter->opcodeStackNodes),
+						enm->AllocNode(begin(*parentInterpreter->opcodeStackNodes),
+							begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset),
 						enm->AllocNode(*parentInterpreter->constructionStackNodes),
 						&csiau,
 						GetCallStackMutex(), immediate_results);
@@ -889,8 +888,11 @@ protected:
 		size_t numTasks;
 
 		//offset for the first task in resultsSaver, up to numTasks
-		//starts at the top and counts downward
+		//uses current location and and counts upward
 		size_t resultsSaverFirstTaskOffset;
+
+		//current task offset, which started at resultsSaverFirstTaskOffset
+		size_t resultsSaverCurrentTaskOffset;
 
 		//number of tasks enqueued so far
 		size_t curNumTasksEnqueued;
@@ -917,7 +919,7 @@ protected:
 		{
 			while(!lock.try_lock())
 			{
-				auto node_stack = CreateInterpreterNodeStackStateSaver(en_to_preserve);
+				auto node_stack = CreateOpcodeStackStateSaver(en_to_preserve);
 				CollectGarbage();
 			}
 		}

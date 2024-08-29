@@ -62,7 +62,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST(EvaluableNode *en, bo
 			auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
 			if(enqueue_task_lock.AreThreadsAvailable())
 			{
-				auto node_stack = CreateInterpreterNodeStackStateSaver(new_list);
+				auto node_stack = CreateOpcodeStackStateSaver(new_list);
 
 				ConcurrencyManager concurrency_manager(this, num_nodes);
 
@@ -123,7 +123,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, b
 			auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
 			if(enqueue_task_lock.AreThreadsAvailable())
 			{
-				auto node_stack = CreateInterpreterNodeStackStateSaver(new_assoc);
+				auto node_stack = CreateOpcodeStackStateSaver(new_assoc);
 				ConcurrencyManager concurrency_manager(this, num_nodes);
 
 				//kick off interpreters
@@ -255,7 +255,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_TYPE(EvaluableNode *en
 
 	evaluableNodeManager->EnsureNodeIsModifiable(source);
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(source);
+	auto node_stack = CreateOpcodeStackStateSaver(source);
 
 	//get the type to set
 	EvaluableNodeType new_type = ENT_NULL;
@@ -297,7 +297,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 	from_type.SetIDWithReferenceHandoff(InterpretNodeIntoStringIDValueWithReference(ocn[1]));
 	to_type.SetIDWithReferenceHandoff(InterpretNodeIntoStringIDValueWithReference(ocn[2]));
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver();
+	auto node_stack = CreateOpcodeStackStateSaver();
 	bool node_stack_needs_popping = false;
 
 	EvaluableNodeReference from_params = EvaluableNodeReference::Null();
@@ -937,7 +937,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_LABELS(EvaluableNode *
 
 	evaluableNodeManager->EnsureNodeIsModifiable(source);
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(source);
+	auto node_stack = CreateOpcodeStackStateSaver(source);
 
 	//get the labels
 	auto label_list = InterpretNodeForImmediateUse(ocn[1]);
@@ -980,7 +980,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP_LABELS(EvaluableNode *
 		return EvaluableNodeReference::Null();
 
 	auto label_list = InterpretNodeForImmediateUse(ocn[0]);
-	auto node_stack = CreateInterpreterNodeStackStateSaver(label_list);
+	auto node_stack = CreateOpcodeStackStateSaver(label_list);
 
 	auto source = InterpretNode(ocn[1]);
 
@@ -1054,7 +1054,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_COMMENTS(EvaluableNode
 	if(!source.unique)
 		source.SetReference(evaluableNodeManager->AllocNode(source));
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(source);
+	auto node_stack = CreateOpcodeStackStateSaver(source);
 
 	//get the comments
 	StringInternPool::StringID new_comments_sid = InterpretNodeIntoStringIDValueWithReference(ocn[1]);
@@ -1087,7 +1087,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_CONCURRENCY(EvaluableN
 	else
 		evaluableNodeManager->EnsureNodeIsModifiable(source);
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(source);
+	auto node_stack = CreateOpcodeStackStateSaver(source);
 
 	//get the concurrent flag
 	bool concurrency = InterpretNodeIntoBoolValue(ocn[1]);
@@ -1127,7 +1127,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_VALUE(EvaluableNode *e
 	else
 		evaluableNodeManager->EnsureNodeIsModifiable(source);
 
-	auto node_stack = CreateInterpreterNodeStackStateSaver(source);
+	auto node_stack = CreateOpcodeStackStateSaver(source);
 
 	//get the new value
 	auto value_node = InterpretNode(ocn[1]);
@@ -1149,7 +1149,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EXPLODE(EvaluableNode *en,
 		return EvaluableNodeReference::Null();
 
 	EvaluableNode *result = evaluableNodeManager->AllocNode(ENT_LIST);
-	auto node_stack = CreateInterpreterNodeStackStateSaver(result);
+	auto node_stack = CreateOpcodeStackStateSaver(result);
 
 	//a stride of 0 means use variable width utf-8
 	size_t stride = 0;
@@ -1209,7 +1209,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SPLIT(EvaluableNode *en, b
 		return EvaluableNodeReference::Null();
 
 	EvaluableNodeReference retval(evaluableNodeManager->AllocNode(ENT_LIST), true);
-	auto node_stack = CreateInterpreterNodeStackStateSaver(retval);
+	auto node_stack = CreateOpcodeStackStateSaver(retval);
 
 	//if only one element, nothing to split on, just return the string in a list
 	if(ocn.size() == 1)

@@ -934,7 +934,6 @@ protected:
 	}
 
 	//returns the maximum difference between value and any other value for this column
-	//if empty, will return infinity
 	static inline double GetMaxDifferenceTerm(const SBFDSColumnData &column,
 	    GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs)
 	{
@@ -942,8 +941,10 @@ protected:
 		{
 		case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC:
 		case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
-		case GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE:
-			return 1.0 - 1.0 / (column.numberIndices.size() + column.stringIdIndices.size() + column.codeIndices.size());
+		case GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE: {
+			auto denom = (column.numberIndices.size() + column.stringIdIndices.size() + column.codeIndices.size());
+			return denom > 0 ? 1.0 - 1.0 / denom : 0;
+		}
 
 		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC:
 			if(column.sortedNumberValueEntries.size() <= 1)
@@ -966,6 +967,8 @@ protected:
 			return static_cast<double>(column.largestCodeSize * 2);
 
 		default:
+			//this switch should be exhaustive
+			assert(false);
 			return std::numeric_limits<double>::infinity();
 		}
 	}

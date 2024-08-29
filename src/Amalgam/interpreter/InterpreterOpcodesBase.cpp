@@ -571,13 +571,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, b
 	for(;;)
 	{
 		SetTopCurrentIndexInConstructionStack(static_cast<double>(loop_iteration++));
+		SetTopPreviousResultInConstructionStack(previous_result);
 
 		//keep the result before testing condition
-		node_stack.PushEvaluableNode(previous_result);
-		bool condition_true = InterpretNodeIntoBoolValue(ocn[0]);
-		node_stack.PopEvaluableNode();
-
-		if(!condition_true)
+		if(!InterpretNodeIntoBoolValue(ocn[0]))
 			break;
 
 		//count an extra cycle for each loop
@@ -587,8 +584,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, b
 			PopConstructionContextAndGetExecutionSideEffectFlag();
 			return EvaluableNodeReference::Null();
 		}
-
-		SetTopPreviousResultInConstructionStack(previous_result);
 
 		//run each step within the loop
 		EvaluableNodeReference new_result = EvaluableNodeReference::Null();

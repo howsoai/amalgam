@@ -67,13 +67,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 	}
 
 	auto label_value = target_entity->GetValueAtLabel(label_sid, nullptr, true);
+	if(label_value == nullptr)
+		return EvaluableNodeReference::Null();
 
 	//has valid label
 	if(!deep_comments)
 		return AllocReturn(label_value->GetCommentsStringId(), immediate_result);
 
 	//make sure a function based on declare that has parameters
-	if(label_value == nullptr || label_value->GetType() != ENT_DECLARE || label_value->GetOrderedChildNodes().size() < 1)
+	if(label_value->GetType() != ENT_DECLARE || label_value->GetOrderedChildNodes().size() < 1)
 		return EvaluableNodeReference::Null();
 
 	//the first element is an assoc of the parameters, the second element is the return value

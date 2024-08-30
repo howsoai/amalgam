@@ -117,15 +117,13 @@ public:
 	//this is intended to be called after other threads, which were being waited on, have completed their tasks
 	inline void ChangeCurrentThreadStateFromWaitingToActive()
 	{
-		{
-			std::unique_lock<std::mutex> lock(threadsMutex);
-			numActiveThreads++;
+		std::unique_lock<std::mutex> lock(threadsMutex);
+		numActiveThreads++;
 
-			//if there are currently more active threads than allowed,
-			//transition another active one to reserved
-			if(numActiveThreads > maxNumActiveThreads)
-				numThreadsToTransitionToReserved++;
-		}
+		//if there are currently more active threads than allowed,
+		//transition another active one to reserved
+		if(numActiveThreads > maxNumActiveThreads)
+			numThreadsToTransitionToReserved++;
 
 		//get another thread to transition to reserved
 		waitForTask.notify_one();
@@ -135,10 +133,9 @@ public:
 	//it is up to the caller to determine when the task is complete
 	inline void EnqueueTask(std::function<void()> &&function)
 	{
-		{
-			std::unique_lock<std::mutex> lock(threadsMutex);
-			taskQueue.emplace(std::move(function));
-		}
+		std::unique_lock<std::mutex> lock(threadsMutex);
+		taskQueue.emplace(std::move(function));
+
 		waitForTask.notify_one();
 	}
 

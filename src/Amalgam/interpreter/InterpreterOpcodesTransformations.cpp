@@ -483,7 +483,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 					if(EvaluableNode::IsTrue(evaluations[i]))
 						result_ocn.push_back(list_ocn[i]);
 
-					evaluableNodeManager->FreeNodeTreeIfPossible(evaluations[i]);
+					//only free nodes if the result is still unique, and it won't be if it was accessed
+					if(result_list.unique)
+						evaluableNodeManager->FreeNodeTreeIfPossible(evaluations[i]);
 				}
 			}
 		}
@@ -509,9 +511,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
 				result_list.unique = false;
 
-			//free anything not in filtered list
+			//free anything not in filtered list,
+			// but only free nodes if the result is still unique, and it won't be if it was accessed
 			// need to do this outside of the iteration loop in case anything is accessing the original list
-			if(list.unique && !list->GetNeedCycleCheck())
+			if(list.unique && !list->GetNeedCycleCheck() && result_list.unique)
 			{
 				size_t result_index = 0;
 				for(size_t i = 0; i < list_ocn.size(); i++)
@@ -525,7 +528,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 			}
 		}
 
-		evaluableNodeManager->FreeNodeIfPossible(list);
+		//only free nodes if the result is still unique, and it won't be if it was accessed
+		if(result_list.unique)
+			evaluableNodeManager->FreeNodeIfPossible(list);
 		return result_list;
 	}
 
@@ -566,37 +571,38 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 					if(EvaluableNode::IsTrue(evaluations[node_index]))
 						result_list->SetMappedChildNode(node_id, node);
 
-					evaluableNodeManager->FreeNodeTreeIfPossible(evaluations[node_index]);
+					//only free nodes if the result is still unique, and it won't be if it was accessed
+					if(result_list.unique)
+						evaluableNodeManager->FreeNodeTreeIfPossible(evaluations[node_index]);
 
 					node_index++;
 				}
-
-				node_stack.PopEvaluableNode();
-				node_stack.PopEvaluableNode();
-				evaluableNodeManager->FreeNodeIfPossible(list);
-				return result_list;
 			}
 		}
+		else
 	#endif
-
-		PushNewConstructionContext(list, result_list, EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
-
-		//result_list is a copy of list, so it should already be the same size (no need to reserve)
-		for(auto &[cn_id, cn] : list_mcn)
 		{
-			SetTopCurrentIndexInConstructionStack(cn_id);
-			SetTopCurrentValueInConstructionStack(cn);
+			PushNewConstructionContext(list, result_list, EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 
-			//if contained, add to result_list (and let SetMappedChildNode create the string reference)
-			if(InterpretNodeIntoBoolValue(function))
-				result_list->SetMappedChildNode(cn_id, cn);
+			//result_list is a copy of list, so it should already be the same size (no need to reserve)
+			for(auto &[cn_id, cn] : list_mcn)
+			{
+				SetTopCurrentIndexInConstructionStack(cn_id);
+				SetTopCurrentValueInConstructionStack(cn);
+
+				//if contained, add to result_list (and let SetMappedChildNode create the string reference)
+				if(InterpretNodeIntoBoolValue(function))
+					result_list->SetMappedChildNode(cn_id, cn);
+			}
+
+			if(PopConstructionContextAndGetExecutionSideEffectFlag())
+				result_list.unique = false;
 		}
-
-		if(PopConstructionContextAndGetExecutionSideEffectFlag())
-			result_list.unique = false;
 	}
 
-	evaluableNodeManager->FreeNodeIfPossible(list);
+	//only free nodes if the result is still unique, and it won't be if it was accessed
+	if(result_list.unique)
+		evaluableNodeManager->FreeNodeIfPossible(list);
 	return result_list;
 }
 

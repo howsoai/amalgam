@@ -101,7 +101,7 @@ public:
 				size_entry->second = std::make_unique<SortedIntegerSet>();
 
 			//add the entity
-			size_entry->second->insert(index);
+			size_entry->second->InsertNewLargestInteger(index);
 
 			UpdateLargestCode(code_size, index);
 		}

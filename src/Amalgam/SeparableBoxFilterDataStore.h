@@ -156,9 +156,8 @@ public:
 					}
 				);
 			}
-			enqueue_task_lock.Unlock();
 
-			task_set.WaitForTasks();
+			task_set.WaitForTasks(&enqueue_task_lock);
 			return;
 		}
 		//not running concurrently

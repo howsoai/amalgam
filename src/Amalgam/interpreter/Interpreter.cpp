@@ -1064,7 +1064,7 @@ bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node
 	if(!enqueue_task_lock.AreThreadsAvailable())
 		return false;
 
-	ConcurrencyManager concurrency_manager(this, num_tasks);
+	ConcurrencyManager concurrency_manager(this, num_tasks, enqueue_task_lock);
 
 	interpreted_nodes.resize(num_tasks);
 
@@ -1072,7 +1072,6 @@ bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node
 	for(size_t i = 0; i < num_tasks; i++)
 		concurrency_manager.EnqueueTask<EvaluableNodeReference>(nodes[i], &interpreted_nodes[i], immediate_results);
 
-	enqueue_task_lock.Unlock();
 	concurrency_manager.EndConcurrency();
 	return true;
 }

@@ -649,7 +649,8 @@ protected:
 	public:
 
 		//constructs the concurrency manager.  Assumes parent_interpreter is NOT null
-		ConcurrencyManager(Interpreter *parent_interpreter, size_t num_tasks)
+		ConcurrencyManager(Interpreter *parent_interpreter, size_t num_tasks,
+			ThreadPool::BatchTaskEnqueueLock &task_enqueue_lock)
 			: taskSet(&Concurrency::threadPool, num_tasks)
 		{
 			resultsUnique = true;
@@ -659,6 +660,7 @@ protected:
 			parentInterpreter = parent_interpreter;
 			numTasks = num_tasks;
 			curNumTasksEnqueued = 0;
+			taskEnqueueLock = &task_enqueue_lock;
 
 			//create space to store all of these nodes on the stack, but won't copy these over to the other interpreters
 			resultsSaver = parent_interpreter->CreateOpcodeStackStateSaver();
@@ -820,7 +822,7 @@ protected:
 		{
 			//allow other threads to perform garbage collection
 			parentInterpreter->memoryModificationLock.unlock();
-			taskSet.WaitForTasks();
+			taskSet.WaitForTasks(taskEnqueueLock);
 			parentInterpreter->memoryModificationLock.lock();
 
 			//propagate side effects back up
@@ -892,6 +894,9 @@ protected:
 
 		//number of tasks enqueued so far
 		size_t curNumTasksEnqueued;
+
+		//lock for enqueueing tasks
+		ThreadPool::BatchTaskEnqueueLock *taskEnqueueLock;
 	};
 
 	//computes the nodes concurrently and stores the interpreted values into interpreted_nodes

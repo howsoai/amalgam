@@ -64,7 +64,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST(EvaluableNode *en, bo
 			{
 				auto node_stack = CreateOpcodeStackStateSaver(new_list);
 
-				ConcurrencyManager concurrency_manager(this, num_nodes);
+				ConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
 
 				//kick off interpreters
 				for(size_t node_index = 0; node_index < num_nodes; node_index++)
@@ -72,7 +72,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST(EvaluableNode *en, bo
 						new_list, EvaluableNodeImmediateValueWithType(static_cast<double>(node_index)), nullptr,
 						new_list_ocn[node_index]);
 
-				enqueue_task_lock.Unlock();
 				concurrency_manager.EndConcurrency();
 
 				concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(new_list);
@@ -124,17 +123,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, b
 			if(enqueue_task_lock.AreThreadsAvailable())
 			{
 				auto node_stack = CreateOpcodeStackStateSaver(new_assoc);
-				ConcurrencyManager concurrency_manager(this, num_nodes);
+				ConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
 
 				//kick off interpreters
 				for(auto &[cn_id, cn] : new_mcn)
 					concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNode *>(cn,
 						en, new_assoc, EvaluableNodeImmediateValueWithType(cn_id), nullptr, cn);
 
-				enqueue_task_lock.Unlock();
 				concurrency_manager.EndConcurrency();
 
 				concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(new_assoc);
+				return new_assoc;
 			}
 		}
 	#endif

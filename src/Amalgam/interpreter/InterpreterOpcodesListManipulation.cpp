@@ -623,14 +623,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, b
 		{
 			node_stack.PushEvaluableNode(result);
 
-			ConcurrencyManager concurrency_manager(this, num_nodes);
+			ConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
 
 			for(size_t node_index = 0; node_index < num_nodes; node_index++)
 				concurrency_manager.EnqueueTaskWithConstructionStack<EvaluableNode *>(function,
 					nullptr, result, EvaluableNodeImmediateValueWithType(node_index * range_step_size + range_start),
 					nullptr, result_ocn[node_index]);
 
-			enqueue_task_lock.Unlock();
 			concurrency_manager.EndConcurrency();
 
 			concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(result);

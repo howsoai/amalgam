@@ -309,6 +309,7 @@ public:
 						std::make_unique<ValueEntry>(new_number_value));
 
 					InsertFirstIndexIntoNumberValueEntry(index, new_value_entry_index);
+					new_value_index = sortedNumberValueEntries[new_value_entry_index]->valueInternIndex;
 				}
 
 				if(internedNumberValues.valueInterningEnabled)
@@ -372,11 +373,16 @@ public:
 						}
 					}
 				}
-				else if(inserted) //shouldn't make it here, but ensure integrity just in case
+				else //shouldn't make it here, but ensure integrity just in case
 				{
 					assert(false);
-					new_id_entry->second = std::make_unique<ValueEntry>(new_sid_value);
-					InsertFirstIndexIntoStringIdValueEntry(index, new_id_entry);
+					if(inserted) {
+						new_id_entry->second = std::make_unique<ValueEntry>(new_sid_value);
+						InsertFirstIndexIntoStringIdValueEntry(index, new_id_entry);
+					}
+					else
+						new_id_entry->second->indicesWithValue.insert(index);
+
 					new_value_index = new_id_entry->second->valueInternIndex;
 				}
 
@@ -431,15 +437,16 @@ public:
 							valueCodeSizeToIndices.erase(old_size_entry);
 						}
 					}
-					else if(inserted) //shouldn't make it here, but ensure integrity just in case
+					else //shouldn't make it here, but ensure integrity just in case
 					{
 						assert(false);
-						new_size_entry->second = std::make_unique<SortedIntegerSet>();
+						if(inserted) {
+							new_size_entry->second = std::make_unique<SortedIntegerSet>();
+						}
 						new_size_entry->second->insert(index);
 					}
 				}
 
-				//update longest string as appropriate
 				//see if need to update largest code
 				if(index == indexWithLargestCode)
 					RecomputeLargestCode();

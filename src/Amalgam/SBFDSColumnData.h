@@ -514,14 +514,15 @@ public:
 				assert(false);
 
 			auto &entities = id_entry->second->indicesWithValue;
-			entities.erase(index);
 
 			//if no more entries have the value, remove it
-			if(entities.size() == 0)
+			if(entities.size() <= 1)
 			{
 				internedStringIdValues.DeleteInternIndex(id_entry->second->valueInternIndex);
 				stringIdValueEntries.erase(id_entry);
 			}
+			else
+				entities.erase(index);
 
 			//see if need to compute new longest string
 			if(index == indexWithLongestString)
@@ -556,10 +557,11 @@ public:
 
 			//remove the entity
 			auto &entities = *(id_entry->second);
-			entities.erase(index);
 
-			if(entities.size() == 0)
+			if(entities.size() <= 1)
 				valueCodeSizeToIndices.erase(id_entry);
+			else
+				entities.erase(index);
 
 			//see if need to update largest code
 			if(index == indexWithLargestCode)

@@ -353,6 +353,7 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	{
 		//create list of associative lists, and populate it with the top of the stack
 		call_stack = evaluableNodeManager->AllocNode(ENT_LIST);
+		call_stack->SetNeedCycleCheck(true);
 
 		EvaluableNode *new_context_entry = evaluableNodeManager->AllocNode(ENT_ASSOC);
 		new_context_entry->SetNeedCycleCheck(true);
@@ -360,10 +361,16 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	}
 
 	if(opcode_stack == nullptr)
+	{
 		opcode_stack = evaluableNodeManager->AllocNode(ENT_LIST);
+		opcode_stack->SetNeedCycleCheck(true);
+	}
 
 	if(construction_stack == nullptr)
+	{
 		construction_stack = evaluableNodeManager->AllocNode(ENT_LIST);
+		construction_stack->SetNeedCycleCheck(true);
+	}
 
 	callStackNodes = &call_stack->GetOrderedChildNodes();
 	opcodeStackNodes = &opcode_stack->GetOrderedChildNodes();
@@ -371,15 +378,7 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 
 	if(construction_stack_indices != nullptr)
 		constructionStackIndicesAndUniqueness = *construction_stack_indices;
-
-	//protect all of the stacks with needing cycle free checks
-	// in case a node is added to one which isn't cycle free
-	call_stack->SetNeedCycleCheck(true);
-	for(auto &cn : call_stack->GetOrderedChildNodesReference())
-		cn->SetNeedCycleCheck(true);
-	opcode_stack->SetNeedCycleCheck(true);
-	construction_stack->SetNeedCycleCheck(true);
-
+	
 	//keep these references as long as the interpreter is around
 	evaluableNodeManager->KeepNodeReferences(call_stack, opcode_stack, construction_stack);
 

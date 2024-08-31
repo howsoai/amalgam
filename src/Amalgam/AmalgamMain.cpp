@@ -271,6 +271,10 @@ PLATFORM_MAIN_CONSOLE
 		args_node->SetMappedChildNode("argv", CreateListOfStringsFromIteratorAndFunction(passthrough_params,
 			&entity->evaluableNodeManager, [](auto s) { return s; }));
 
+		//set need cycle check because things may be assigned
+		call_stack->SetNeedCycleCheck(true);
+		args_node->SetNeedCycleCheck(true);
+
 		//top-level stack variable holding path to interpreter
 		EvaluableNode *interpreter_node = entity->evaluableNodeManager.AllocNode(ENT_STRING);
 		interpreter_node->SetStringValue(interpreter_path);

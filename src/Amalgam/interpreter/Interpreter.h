@@ -703,7 +703,7 @@ protected:
 
 			Concurrency::threadPool.BatchEnqueueTask(
 				[this, interpreter, node_to_execute, target_origin, target, current_index,
-					current_value, &result, results_saver_location]
+				current_value, &result, results_saver_location]
 				{
 					EvaluableNodeManager *enm = interpreter->evaluableNodeManager;
 					interpreter->memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
@@ -843,6 +843,12 @@ protected:
 
 			if(!resultsIdempotent)
 				new_result.SetIsIdempotent(false);
+		}
+
+		//returns true if any writes occurred
+		inline bool HadSideEffects()
+		{
+			return resultsSideEffect;
 		}
 
 		//returns the relevant write mutex for the call stack

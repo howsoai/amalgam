@@ -135,10 +135,9 @@ public:
 	//it is up to the caller to determine when the task is complete
 	inline void EnqueueTask(std::function<void()> &&function)
 	{
-		{
-			std::unique_lock<std::mutex> lock(threadsMutex);
-			taskQueue.emplace(std::move(function));
-		}
+		std::unique_lock<std::mutex> lock(threadsMutex);
+		taskQueue.emplace(std::move(function));
+
 		waitForTask.notify_one();
 	}
 

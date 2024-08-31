@@ -135,6 +135,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, b
 				concurrency_manager.EndConcurrency();
 
 				concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(new_assoc);
+				return new_assoc;
 			}
 		}
 	#endif

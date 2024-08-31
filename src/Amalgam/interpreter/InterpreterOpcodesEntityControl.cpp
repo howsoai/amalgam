@@ -223,15 +223,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_AC
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_RAND_SEED(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
-	if(ocn.size() < 1)
-		return EvaluableNodeReference::Null();
+	EntityReadReference entity;
+	if(ocn.size() > 0)
+		entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
+	else 
+		entity = EntityReadReference(curEntity);
 
-	//not allowed if don't have a Entity to retrieve others from
-	if(curEntity == nullptr)
-		return EvaluableNodeReference::Null();
-
-	//get the id of the entity
-	EntityReadReference entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
 	if(entity == nullptr)
 		return EvaluableNodeReference::Null();
 
@@ -296,13 +293,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_ROOT_PERMISSION
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
-	if(ocn.size() < 1)
-		return EvaluableNodeReference::Null();
-
 	if(!asset_manager.DoesEntityHaveRootPermission(curEntity))
 		return EvaluableNodeReference::Null();
 
-	EntityReadReference entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
+	EntityReadReference entity;
+	if(ocn.size() > 0)
+		entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
+	else
+		entity = EntityReadReference(curEntity);
+
 	return AllocReturn(asset_manager.DoesEntityHaveRootPermission(entity), immediate_result);
 }
 

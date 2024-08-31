@@ -144,7 +144,7 @@ public:
 		//if big enough (enough entities and/or enough columns), try to use multithreading
 		if(num_columns_added > 1 && (numEntities > 10000 || (numEntities > 200 && num_columns_added > 10)))
 		{
-			ThreadPool::CountableTaskSet task_set(num_columns_added);
+			auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(num_columns_added);
 
 			auto enqueue_task_lock = Concurrency::urgentThreadPool.BeginEnqueueBatchTask(false);
 			for(size_t i = num_previous_columns; i < num_columns; i++)
@@ -158,10 +158,7 @@ public:
 			}
 			enqueue_task_lock.Unlock();
 
-			Concurrency::urgentThreadPool.ChangeCurrentThreadStateFromActiveToWaiting();
 			task_set.WaitForTasks();
-			Concurrency::urgentThreadPool.ChangeCurrentThreadStateFromWaitingToActive();
-
 			return;
 		}
 		//not running concurrently

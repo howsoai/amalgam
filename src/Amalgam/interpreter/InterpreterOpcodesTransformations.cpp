@@ -444,6 +444,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 	EvaluableNodeReference result_list(evaluableNodeManager->AllocNode(list->GetType()), list.unique);
 	result_list->SetNeedCycleCheck(list->GetNeedCycleCheck());
 	result_list->SetIsIdempotent(list->GetIsIdempotent());
+	bool had_side_effects = false;
 
 	if(EvaluableNode::IsNull(function))
 		return result_list;
@@ -476,6 +477,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 				concurrency_manager.EndConcurrency();
 
 				concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(result_list);
+				had_side_effects = concurrency_manager.HadSideEffects();
 
 				//filter by those child nodes that are true
 				for(size_t i = 0; i < num_nodes; i++)
@@ -484,7 +486,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 						result_ocn.push_back(list_ocn[i]);
 
 					//only free nodes if the result is still unique, and it won't be if it was accessed
-					if(result_list.unique)
+					if(!had_side_effects)
 						evaluableNodeManager->FreeNodeTreeIfPossible(evaluations[i]);
 				}
 			}
@@ -508,13 +510,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 					result_ocn.push_back(cur_value);
 			}
 
-			if(PopConstructionContextAndGetExecutionSideEffectFlag())
+			had_side_effects = PopConstructionContextAndGetExecutionSideEffectFlag();
+			if(had_side_effects)
 				result_list.unique = false;
 
 			//free anything not in filtered list,
 			// but only free nodes if the result is still unique, and it won't be if it was accessed
 			// need to do this outside of the iteration loop in case anything is accessing the original list
-			if(list.unique && !list->GetNeedCycleCheck() && result_list.unique)
+			if(list.unique && !list->GetNeedCycleCheck() && !had_side_effects)
 			{
 				size_t result_index = 0;
 				for(size_t i = 0; i < list_ocn.size(); i++)
@@ -528,9 +531,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 			}
 		}
 
-		//only free nodes if the result is still unique, and it won't be if it was accessed
-		if(result_list.unique)
-			evaluableNodeManager->FreeNodeIfPossible(list);
+		evaluableNodeManager->FreeNodeIfPossible(list);
 		return result_list;
 	}
 
@@ -563,6 +564,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 				concurrency_manager.EndConcurrency();
 
 				concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(result_list);
+				had_side_effects = concurrency_manager.HadSideEffects();
 
 				//iterate in same order with same node_index
 				node_index = 0;
@@ -572,7 +574,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 						result_list->SetMappedChildNode(node_id, node);
 
 					//only free nodes if the result is still unique, and it won't be if it was accessed
-					if(result_list.unique)
+					if(!had_side_effects)
 						evaluableNodeManager->FreeNodeTreeIfPossible(evaluations[node_index]);
 
 					node_index++;
@@ -600,9 +602,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		}
 	}
 
-	//only free nodes if the result is still unique, and it won't be if it was accessed
-	if(result_list.unique)
-		evaluableNodeManager->FreeNodeIfPossible(list);
+	evaluableNodeManager->FreeNodeIfPossible(list);
 	return result_list;
 }
 

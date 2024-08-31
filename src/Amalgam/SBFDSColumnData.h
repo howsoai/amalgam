@@ -14,6 +14,7 @@
 
 //SBFDSColumnData class maintains a sorted linear and random access data collection
 //values with the same key are placed into the same bucket.  buckets are stored in sorted order by key
+//this is "indexing" as in database terminology, but otherwise "index" herein means a row identifier
 class SBFDSColumnData
 {
 public:
@@ -108,7 +109,7 @@ public:
 	}
 
 	//inserts indices assuming that they have been sorted by value,
-	// and that index_values are also sorted from smallest to largest
+	// and that index_values are also sorted from smallest to largest within each value
 	void AppendSortedNumberIndicesWithSortedIndices(std::vector<DistanceReferencePair<size_t>> &index_values)
 	{
 		if(index_values.size() == 0)
@@ -895,6 +896,7 @@ public:
 		}
 		else if(value_type == ENIVT_STRING_ID)
 		{
+			//there are no ids for this column, so return no results
 			if(stringIdValueEntries.size() == 0)
 				return;
 
@@ -965,7 +967,7 @@ public:
 			if(sortedNumberValueEntries.size() == 0)
 				return;
 
-			//search left to right for max (bucket 0 is largest) or right to left for min
+			//search right to left for max (bucket 0 is smallest) or left to right for min
 			int64_t value_index = find_max ? sortedNumberValueEntries.size() - 1 : 0;
 
 			while(value_index < static_cast<int64_t>(sortedNumberValueEntries.size()) && value_index >= 0)
@@ -983,7 +985,7 @@ public:
 						return;
 				}
 
-				value_index += find_max ? -1 : 1; //search right to right for max or left to right for min
+				value_index += find_max ? -1 : 1; //search right to left for max or left to right for min
 			}
 		}
 		else if(value_type == ENIVT_STRING_ID)

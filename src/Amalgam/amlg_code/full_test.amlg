@@ -2086,6 +2086,7 @@
  (print (retrieve_entity_root "AER_test_2" 1))
 
  (print "--get_entity_rand_seed--\n")
+ (print (get_entity_rand_seed) "\n")
  (create_entities "RandTest" (lambda
  							(parallel ##a (rand) )
  							) )

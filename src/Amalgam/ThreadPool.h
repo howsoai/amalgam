@@ -80,10 +80,10 @@ public:
 		if(task_queue_size < static_cast<size_t>(maxNumActiveThreads))
 			num_threads_needed = static_cast<int32_t>(task_queue_size);
 
-		//compute and compare the current threadpool size to that which is needed
-		int32_t cur_threadpool_size = static_cast<int32_t>(threads.size());
-		int32_t needed_threadpool_size = (numReservedThreads + numThreadsToTransitionToReserved) + num_threads_needed;
-		if(cur_threadpool_size < needed_threadpool_size)
+		//compute and compare the current thread pool size to that which is needed
+		int32_t cur_thread_pool_size = static_cast<int32_t>(threads.size());
+		int32_t needed_thread_pool_size = (numReservedThreads + numThreadsToTransitionToReserved) + num_threads_needed;
+		if(cur_thread_pool_size < needed_thread_pool_size)
 		{
 			//if there are reserved threads, use them, otherwise create a new thread
 			if(numReservedThreads > 0)
@@ -92,7 +92,7 @@ public:
 			}
 			else
 			{
-				for(; cur_threadpool_size < needed_threadpool_size; cur_threadpool_size++)
+				for(; cur_thread_pool_size < needed_thread_pool_size; cur_thread_pool_size++)
 				{
 					AddNewThread();
 					waitForTask.notify_one();
@@ -214,7 +214,7 @@ public:
 	{
 	public:
 		inline CountableTaskSet(ThreadPool *thread_pool, size_t num_tasks = 0)
-			: threadPool(thread_pool), numTasks(num_tasks), numTasksCompleted(0)
+			: numTasks(num_tasks), numTasksCompleted(0), threadPool(thread_pool)
 		{	}
 
 		//increments the number of tasks by num_new_tasks

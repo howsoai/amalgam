@@ -69,7 +69,6 @@ public:
 	//changes the current thread state from active to waiting
 	//the thread must currently be active
 	//this is intended to be called before waiting for other threads to complete their tasks
-	//note that threadsMutex must be locked prior to calling this method
 	inline void ChangeCurrentThreadStateFromActiveToWaiting()
 	{
 		std::unique_lock<std::mutex> lock(threadsMutex);
@@ -106,7 +105,6 @@ public:
 	//changes the current thread state from waiting to active
 	//the thread must currently be waiting, as called by ChangeCurrentThreadStateFromActiveToWaiting
 	//this is intended to be called after other threads, which were being waited on, have completed their tasks
-	//note that threadsMutex must be locked prior to calling this method
 	inline void ChangeCurrentThreadStateFromWaitingToActive()
 	{
 		std::unique_lock<std::mutex> lock(threadsMutex);

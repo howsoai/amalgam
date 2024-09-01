@@ -59,8 +59,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST(EvaluableNode *en, bo
 	#ifdef MULTITHREAD_SUPPORT
 		if(en->GetConcurrency() && num_nodes > 1)
 		{
-			auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
-			if(enqueue_task_lock.AreThreadsAvailable())
+			auto enqueue_task_lock = Concurrency::threadPool.AcquireTaskLock();
+			if(Concurrency::threadPool.AreThreadsAvailable())
 			{
 				auto node_stack = CreateOpcodeStackStateSaver(new_list);
 
@@ -119,8 +119,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, b
 	#ifdef MULTITHREAD_SUPPORT
 		if(en->GetConcurrency() && num_nodes > 1)
 		{
-			auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
-			if(enqueue_task_lock.AreThreadsAvailable())
+			auto enqueue_task_lock = Concurrency::threadPool.AcquireTaskLock();
+			if(Concurrency::threadPool.AreThreadsAvailable())
 			{
 				auto node_stack = CreateOpcodeStackStateSaver(new_assoc);
 				ConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);

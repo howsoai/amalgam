@@ -146,7 +146,7 @@ public:
 		{
 			auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(num_columns_added);
 
-			auto enqueue_task_lock = Concurrency::urgentThreadPool.BeginEnqueueBatchTask(false);
+			auto enqueue_task_lock = Concurrency::urgentThreadPool.AcquireTaskLock();
 			for(size_t i = num_previous_columns; i < num_columns; i++)
 			{
 				Concurrency::urgentThreadPool.BatchEnqueueTask([this, &entities, i, &task_set]()

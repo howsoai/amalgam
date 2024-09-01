@@ -650,7 +650,7 @@ protected:
 
 		//constructs the concurrency manager.  Assumes parent_interpreter is NOT null
 		ConcurrencyManager(Interpreter *parent_interpreter, size_t num_tasks,
-			ThreadPool::BatchTaskEnqueueLock &task_enqueue_lock)
+			ThreadPool::TaskLock &task_enqueue_lock)
 			: taskSet(&Concurrency::threadPool, num_tasks)
 		{
 			resultsUnique = true;
@@ -902,7 +902,7 @@ protected:
 		size_t curNumTasksEnqueued;
 
 		//lock for enqueueing tasks
-		ThreadPool::BatchTaskEnqueueLock *taskEnqueueLock;
+		ThreadPool::TaskLock *taskEnqueueLock;
 	};
 
 	//computes the nodes concurrently and stores the interpreted values into interpreted_nodes

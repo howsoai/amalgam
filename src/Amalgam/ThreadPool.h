@@ -26,6 +26,8 @@
 class ThreadPool
 {
 public:
+	typedef std::unique_lock<std::mutex> TaskLock;
+
 	ThreadPool(int32_t max_num_active_threads = 0);
 
 	//destroys all the threads and waits to join them
@@ -64,22 +66,14 @@ public:
 		return thread_ids;
 	}
 
-	//returns true if there are threads currently idle
-	inline bool AreThreadsAvailable()
-	{
-		std::unique_lock<std::mutex> lock(threadsMutex);
-		//need to make sure there's at least one extra thread available to make sure that this batch of tasks can be run
-		// in case there are any interdependencies, in order to prevent deadlock
-		//need to take into account upcoming tasks, as they may consume threads
-		return ((numActiveThreads - numThreadsToTransitionToReserved) + 1 + static_cast<int32_t>(taskQueue.size()) <= maxNumActiveThreads);
-	}
-
 	//changes the current thread state from active to waiting
 	//the thread must currently be active
 	//this is intended to be called before waiting for other threads to complete their tasks
 	//note that threadsMutex must be locked prior to calling this method
 	inline void ChangeCurrentThreadStateFromActiveToWaiting()
 	{
+		std::unique_lock<std::mutex> lock(threadsMutex);
+
 		size_t task_queue_size = taskQueue.size();
 		int32_t num_threads_needed = maxNumActiveThreads;
 		//if less than the number of active threads, then small enough to safely cast to the smaller type
@@ -99,7 +93,10 @@ public:
 			else
 			{
 				for(; cur_threadpool_size < needed_threadpool_size; cur_threadpool_size++)
+				{
 					AddNewThread();
+					waitForTask.notify_one();
+				}
 			}
 		}
 
@@ -112,15 +109,16 @@ public:
 	//note that threadsMutex must be locked prior to calling this method
 	inline void ChangeCurrentThreadStateFromWaitingToActive()
 	{
+		std::unique_lock<std::mutex> lock(threadsMutex);
 		numActiveThreads++;
 
 		//if there are currently more active threads than allowed,
 		//transition another active one to reserved
 		if(numActiveThreads > maxNumActiveThreads)
+		{
 			numThreadsToTransitionToReserved++;
-
-		//get another thread to transition to reserved
-		waitForTask.notify_one();
+			waitForTask.notify_one();
+		}
 	}
 
 	//enqueues a task into the thread pool
@@ -129,6 +127,7 @@ public:
 	{
 		std::unique_lock<std::mutex> lock(threadsMutex);
 		taskQueue.emplace(std::move(function));
+		lock.unlock();
 
 		waitForTask.notify_one();
 	}
@@ -159,64 +158,21 @@ public:
 		return result;
 	}
 
-	//Contains a lock for the task queue for calling BatchEnqueueTaskWithResult repeatedly while maintaining the lock and layer count
-	struct BatchTaskEnqueueLock
+	//acquire a lock to begin enqueueing tasks or querying thread availability
+	inline TaskLock AcquireTaskLock()
 	{
-		inline BatchTaskEnqueueLock(std::mutex &task_queue_mutex)
-		{
-			lock = std::unique_lock<std::mutex>(task_queue_mutex);
-		}
+		return std::unique_lock<std::mutex>(threadsMutex);
+	}
 
-		//move constructor to allow a function to build and return the lock
-		inline BatchTaskEnqueueLock(BatchTaskEnqueueLock &&other)
-			: lock(std::move(other.lock))
-		{	}
-
-		//move assignment
-		inline BatchTaskEnqueueLock &operator =(BatchTaskEnqueueLock &&other)
-		{
-			std::swap(lock, other.lock);
-			return *this;
-		}
-
-		inline ~BatchTaskEnqueueLock()
-		{
-		}
-
-		//returns true if there's available threads as denoted by a proper way to notify the threads
-		inline bool AreThreadsAvailable()
-		{
-			return lock.owns_lock();
-		}
-
-		//marks as there aren't threads available
-		inline void MarkAsNoThreadsAvailable()
-		{
-			lock.unlock();
-		}
-
-		//lock for enqueueing tasks
-		std::unique_lock<std::mutex> lock;
-	};
-
-	//attempts to begin a batch of tasks of num_tasks
-	//if fail_unless_task_queue_availability is true and there are backlogged tasks,
-	// then it will not begin the task batch and return false; this is useful for preventing deadlock
-	// when attempting to enqueue tasks which are subtasks of other tasks
-	inline BatchTaskEnqueueLock BeginEnqueueBatchTask(bool fail_unless_task_queue_availability = true)
+	//returns true if there is at least one spare thread available
+	bool AreThreadsAvailable()
 	{
-		BatchTaskEnqueueLock btel(threadsMutex);
-
-		if(fail_unless_task_queue_availability)
-		{
-			//need to make sure there's at least one extra thread available to make sure that this batch of tasks can be run
-			// in case there are any interdependencies, in order to prevent deadlock
-			//need to take into account upcoming tasks, as they may consume threads
-			if(!((numActiveThreads - numThreadsToTransitionToReserved) + 1 + static_cast<int32_t>(taskQueue.size()) <= maxNumActiveThreads))
-				btel.MarkAsNoThreadsAvailable();
-		}
-
-		return btel;
+		//need to make sure there's at least one extra thread available to make sure that this batch of tasks can be run
+		// in case there are any interdependencies, in order to prevent deadlock
+		//need to take into account upcoming tasks, as they may consume threads
+		auto num_threads_requested = (numActiveThreads - numThreadsToTransitionToReserved)
+			+ static_cast<int32_t>(taskQueue.size());
+		return (num_threads_requested < maxNumActiveThreads);
 	}
 
 	//enqueues a task into the thread pool
@@ -269,21 +225,20 @@ public:
 		}
 
 		//returns when all the tasks have been completed
-		inline void WaitForTasks(BatchTaskEnqueueLock *task_enqueue_lock = nullptr)
+		//if task_enqueue_lock is not nullptr, it will unlock it and begin execution
+		inline void WaitForTasks(TaskLock *task_enqueue_lock = nullptr)
 		{
-			std::unique_lock<std::mutex> lock(threadPool->threadsMutex, std::defer_lock);
 			if(task_enqueue_lock != nullptr)
-				lock = std::move(task_enqueue_lock->lock);
-			else
-				lock.lock();
+			{
+				task_enqueue_lock->unlock();
+				threadPool->waitForTask.notify_all();
+			}
 
 			threadPool->ChangeCurrentThreadStateFromActiveToWaiting();
-			threadPool->waitForTask.notify_all();
-			lock.unlock();
-
+			
 			{
 				std::unique_lock<std::mutex> task_lock(mutex);
-				condVar.wait(lock, [this] { return numTasksCompleted >= numTasks; });
+				condVar.wait(task_lock, [this] { return numTasksCompleted >= numTasks; });
 			}
 
 			threadPool->ChangeCurrentThreadStateFromWaitingToActive();
@@ -294,7 +249,10 @@ public:
 		{
 			std::unique_lock<std::mutex> lock(mutex);
 			if(++numTasksCompleted == numTasks)
+			{
+				lock.unlock();
 				condVar.notify_all();
+			}
 		}
 
 		//marks one task as completed, but can be called from the thread setting up the tasks

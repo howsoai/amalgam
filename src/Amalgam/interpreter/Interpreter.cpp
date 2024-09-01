@@ -1060,8 +1060,8 @@ bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node
 	if(num_tasks < 2)
 		return false;
 
-	auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
-	if(!enqueue_task_lock.AreThreadsAvailable())
+	auto enqueue_task_lock = Concurrency::threadPool.AcquireTaskLock();
+	if(!Concurrency::threadPool.AreThreadsAvailable())
 		return false;
 
 	ConcurrencyManager concurrency_manager(this, num_tasks, enqueue_task_lock);

@@ -378,8 +378,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PARALLEL(EvaluableNode *en
 #ifdef MULTITHREAD_SUPPORT
 	if(en->GetConcurrency() && ocn.size() > 1)
 	{
-		auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
-		if(enqueue_task_lock.AreThreadsAvailable())
+		auto enqueue_task_lock = Concurrency::threadPool.AcquireTaskLock();
+		if(Concurrency::threadPool.AreThreadsAvailable())
 		{
 			size_t num_elements = ocn.size();
 

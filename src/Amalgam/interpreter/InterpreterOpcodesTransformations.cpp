@@ -527,9 +527,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 			}
 		}
 
-		//result_list won't be unique if it was accessed
-		if(result_list.unique)
-			evaluableNodeManager->FreeNodeIfPossible(list);
+		evaluableNodeManager->FreeNodeIfPossible(list);
 		return result_list;
 	}
 
@@ -599,9 +597,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		}
 	}
 
-	//result_list won't be unique if it was accessed
-	if(result_list.unique)
-		evaluableNodeManager->FreeNodeIfPossible(list);
+	evaluableNodeManager->FreeNodeIfPossible(list);
 	return result_list;
 }
 

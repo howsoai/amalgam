@@ -668,23 +668,13 @@ protected:
 			resultsSaverCurrentTaskOffset = resultsSaverFirstTaskOffset;
 			resultsSaver.ReserveNodes(num_tasks);
 
-			//set up data
-			interpreters.reserve(numTasks);
+			randomSeeds.reserve(numTasks);
+			for(size_t element_index = 0; element_index < numTasks; element_index++)
+				randomSeeds.emplace_back(parentInterpreter->randomStream.CreateOtherStreamViaRand());
 
 			//since each thread has a copy of the constructionStackNodes, it's possible that more than one of the threads
 			//obtains previous_results, so they must all be marked as not unique
 			parentInterpreter->RemoveUniquenessFromPreviousResultsInConstructionStack();
-
-			//set up all the interpreters
-			// do this as its own loop to make sure that the vector memory isn't reallocated once the threads have kicked off
-			for(size_t element_index = 0; element_index < numTasks; element_index++)
-			{
-				//create interpreter
-				interpreters.emplace_back(std::make_unique<Interpreter>(parentInterpreter->evaluableNodeManager,
-					parentInterpreter->randomStream.CreateOtherStreamViaRand(),
-					parentInterpreter->writeListeners, parentInterpreter->printListener,
-					parentInterpreter->performanceConstraints, parentInterpreter->curEntity));
-			}
 		}
 
 		//Enqueues a concurrent task that needs a construction stack, using the relative interpreter
@@ -699,24 +689,27 @@ protected:
 			EvaluableNodeRefType &result)
 		{
 			size_t results_saver_location = resultsSaverCurrentTaskOffset++;
-
-			//get the interpreter corresponding to the resultFutures
-			Interpreter *interpreter = interpreters[curNumTasksEnqueued++].get();
+			RandomStream rand_seed = randomSeeds[curNumTasksEnqueued++];
 
 			Concurrency::threadPool.BatchEnqueueTask(
-				[this, interpreter, node_to_execute, target_origin, target, current_index,
+				[this, rand_seed, node_to_execute, target_origin, target, current_index,
 				current_value, &result, results_saver_location]
 				{
-					EvaluableNodeManager *enm = interpreter->evaluableNodeManager;
-					interpreter->memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
+					EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
+
+					Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
+						parentInterpreter->writeListeners, parentInterpreter->printListener,
+						parentInterpreter->performanceConstraints, parentInterpreter->curEntity);
+
+					interpreter.memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
 
 					//build new construction stack
 					EvaluableNode *construction_stack = enm->AllocNode(*parentInterpreter->constructionStackNodes);
 					std::vector<ConstructionStackIndexAndPreviousResultUniqueness> csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
-					interpreter->PushNewConstructionContextToStack(construction_stack->GetOrderedChildNodes(),
+					interpreter.PushNewConstructionContextToStack(construction_stack->GetOrderedChildNodes(),
 						csiau, target_origin, target, current_index, current_value, EvaluableNodeReference::Null());
 
-					auto result_ref = interpreter->ExecuteNode(node_to_execute,
+					auto result_ref = interpreter.ExecuteNode(node_to_execute,
 						enm->AllocNode(*parentInterpreter->callStackNodes),
 						enm->AllocNode(begin(*parentInterpreter->opcodeStackNodes),
 							begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset),
@@ -724,7 +717,7 @@ protected:
 						&csiau,
 						GetCallStackMutex());
 
-					if(interpreter->PopConstructionContextAndGetExecutionSideEffectFlag())
+					if(interpreter.PopConstructionContextAndGetExecutionSideEffectFlag())
 					{
 						resultsSideEffect = true;
 						resultsUnique = false;
@@ -747,7 +740,7 @@ protected:
 					result = result_ref;
 					resultsSaver.SetStackLocation(results_saver_location, result);
 
-					interpreter->memoryModificationLock.unlock();
+					interpreter.memoryModificationLock.unlock();
 					taskSet.MarkTaskCompleted();
 				}
 			);
@@ -763,17 +756,21 @@ protected:
 			//so the location can be used later to save the result
 			size_t results_saver_location = resultsSaverCurrentTaskOffset++;
 
-			//get the interpreter corresponding to the resultFutures
-			Interpreter *interpreter = interpreters[curNumTasksEnqueued++].get();
+			RandomStream rand_seed = randomSeeds[curNumTasksEnqueued++];
 
 			Concurrency::threadPool.BatchEnqueueTask(
-				[this, interpreter, node_to_execute, result, immediate_results, results_saver_location]
+				[this, rand_seed, node_to_execute, result, immediate_results, results_saver_location]
 				{
-					EvaluableNodeManager *enm = interpreter->evaluableNodeManager;
-					interpreter->memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
+					EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
+
+					Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
+						parentInterpreter->writeListeners, parentInterpreter->printListener,
+						parentInterpreter->performanceConstraints, parentInterpreter->curEntity);
+
+					interpreter.memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
 
 					std::vector<ConstructionStackIndexAndPreviousResultUniqueness> csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
-					auto result_ref = interpreter->ExecuteNode(node_to_execute,
+					auto result_ref = interpreter.ExecuteNode(node_to_execute,
 						enm->AllocNode(*parentInterpreter->callStackNodes),
 						enm->AllocNode(begin(*parentInterpreter->opcodeStackNodes),
 							begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset),
@@ -781,7 +778,7 @@ protected:
 						&csiau,
 						GetCallStackMutex(), immediate_results);
 
-					if(interpreter->DoesConstructionStackHaveExecutionSideEffects())
+					if(interpreter.DoesConstructionStackHaveExecutionSideEffects())
 						resultsSideEffect = true;
 
 					if(result == nullptr)
@@ -811,7 +808,7 @@ protected:
 							resultsSaver.SetStackLocation(results_saver_location, *result);
 					}
 
-					interpreter->memoryModificationLock.unlock();
+					interpreter.memoryModificationLock.unlock();
 					taskSet.MarkTaskCompleted();
 				}
 			);
@@ -860,8 +857,8 @@ protected:
 			return &callStackMutex;
 		}
 
-		//interpreters run concurrently, the size of numTasks
-		std::vector<std::unique_ptr<Interpreter>> interpreters;
+		//random seed for each task, the size of numTasks
+		std::vector<RandomStream> randomSeeds;
 
 		//mutex to allow only one thread to write to a call stack symbol at once
 		Concurrency::ReadWriteMutex callStackMutex;

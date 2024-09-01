@@ -640,7 +640,7 @@ a
 	a 1
 	b 2
 	d 4
-	f 6
+	e 5
 }
 {
 	a 1
@@ -691,7 +691,7 @@ c
 	a 1
 	b 2
 	d 4
-	f 6
+	e 5
 }
 {
 	a 1
@@ -1042,7 +1042,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-["c" "4" "b" "a"]
+["c" "b" "a" "4"]
 [
 	0
 	1
@@ -1054,7 +1054,7 @@ abcdef
 	7
 ]
 --values--
-[3 "d" 2 1]
+[3 2 1 "d"]
 [
 	"a"
 	1
@@ -1075,7 +1075,7 @@ abcdef
 	4
 	"d"
 ]
-[3 0 "d" 2 1]
+[3 0 2 1 "d"]
 [
 	1
 	2
@@ -1272,7 +1272,7 @@ current_index: 2
 				8
 			]
 		accum_string "abcdef"
-		argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+		argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 		bar (declare
 				{x 6}
 				(+ x 2)
@@ -1285,10 +1285,10 @@ current_index: 2
 				A {B 2}
 				B 2
 			}
-		interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+		interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rwww 1
-		start_time 1725140850.920077
+		start_time 1725157396.145719
 		www 1
 		x 12
 		zz 10
@@ -1315,7 +1315,7 @@ current_index: 2
 			8
 		]
 	accum_string "abcdef"
-	argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+	argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 	bar (declare
 			{x 6}
 			(+ x 2)
@@ -1328,10 +1328,10 @@ current_index: 2
 			A {B 2}
 			B 2
 		}
-	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1725140850.920077
+	start_time 1725157396.145719
 	www 1
 	x 12
 	zz 10
@@ -1357,7 +1357,7 @@ current_index: 2
 			8
 		]
 	accum_string "abcdef"
-	argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+	argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 	bar (declare
 			{x 6}
 			(+ x 2)
@@ -1370,10 +1370,10 @@ current_index: 2
 			A {B 2}
 			B 2
 		}
-	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rwww 1
-	start_time 1725140850.920077
+	start_time 1725157396.145719
 	www 1
 	x 12
 	zz 10
@@ -1521,7 +1521,7 @@ infinity test c or d: ["d" @(get (target 2) 0) "c" @(get (target 2) 2)]
 
 {a 24 b 52 c 24}
 
-["5" "1" "7"]
+["8" "3" "5"]
 
 --get_rand_seed--
 N9ìÀù∏UØOaV∆T zˇ
@@ -1640,7 +1640,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2024-08-31-17.47.31.3514590
+current date-time in epoch: 2024-08-31-22.23.16.2018250
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -1687,7 +1687,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelA #labelQ
+	labelA #labelQ #labelA
 		(lambda
 			#labelB (true)
 		)
@@ -1701,7 +1701,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelA #labelQ
+	labelA #labelQ #labelA
 		(lambda
 			#labelB (true)
 		)
@@ -2180,16 +2180,6 @@ decrypted: hello
 	{_ (null)}
 	(replace
 		_
-		[]
-		(lambda
-			{
-				a 2
-				g (get
-						(current_value 1)
-						"g"
-					)
-			}
-		)
 		["g"]
 		(lambda
 			[
@@ -2199,6 +2189,16 @@ decrypted: hello
 				)
 				4
 			]
+		)
+		[]
+		(lambda
+			{
+				a 2
+				g (get
+						(current_value 1)
+						"g"
+					)
+			}
 		)
 	)
 )
@@ -3168,14 +3168,8 @@ _432807187
 						[]
 						(lambda
 							{
-								E (get
-										(current_value 1)
-										"E"
-									)
-								F (get
-										(current_value 1)
-										"F"
-									)
+								E 3
+								F 4
 								G 5
 								H 6
 							}
@@ -3200,16 +3194,7 @@ _432807187
 						_
 						[]
 						(lambda
-							{
-								e (get
-										(current_value 1)
-										"e"
-									)
-								f (get
-										(current_value 1)
-										"f"
-									)
-							}
+							{e 3 f 4}
 						)
 					)
 				)
@@ -3241,89 +3226,7 @@ contained_entities new_entity: ["DiffEntityChild1" "OnlyIn2" "_350925375" "_2742
 difference between DiffEntity2 and new_entity:
 (declare
 	{_ (null) new_entity (null)}
-	(assign
-		"new_entity"
-		(first
-			(create_entities
-				new_entity
-				(call
-					(lambda
-						(declare
-							{_ (null)}
-							(replace _)
-						)
-					)
-					{
-						_ (retrieve_entity_root _)
-					}
-				)
-			)
-		)
-	)
-	(create_entities
-		(append new_entity "_350925375")
-		(call
-			(lambda
-				(declare
-					{_ (null)}
-					(replace
-						_
-						[]
-						(lambda
-							{
-								E (null)
-								F (null)
-								G (get
-										(current_value 1)
-										"G"
-									)
-								H (get
-										(current_value 1)
-										"H"
-									)
-							}
-						)
-					)
-				)
-			)
-			{
-				_ (retrieve_entity_root
-						(append _ "_350925375")
-					)
-			}
-		)
-	)
-	(create_entities
-		(append new_entity "_2742810479")
-		(call
-			(lambda
-				(declare
-					{_ (null)}
-					(replace
-						_
-						[]
-						(lambda
-							{e (null) f (null)}
-						)
-					)
-				)
-			)
-			{
-				_ (retrieve_entity_root
-						(append _ "_2742810479")
-					)
-			}
-		)
-	)
-	(clone_entities
-		(append _ "DiffEntityChild1")
-		(append new_entity "DiffEntityChild1")
-	)
-	(clone_entities
-		(append _ "OnlyIn2")
-		(append new_entity "OnlyIn2")
-	)
-	new_entity
+	(clone_entities _ new_entity)
 )
 (declare
 	{_ (null) new_entity (null)}
@@ -3533,7 +3436,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1725140851.611076
+1725157396.521389
 (true)
 
 RootTest
@@ -3775,7 +3678,7 @@ hello
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "1a2ÿ.≤≥W´w∏àÊùˇ")
+	(set_entity_rand_seed new_entity "F˛ÙÏ∞.G!W´w∏àÊùˇ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3785,7 +3688,7 @@ hello
 				)
 			)
 		)
-		"à-ÏO[øÎ3yCì≈íå—ˇ"
+		"3∆Ç`»œ˛å¨—¿+|Üe‡ˇ"
 	)
 	(set_entity_rand_seed
 		(first
@@ -3827,7 +3730,7 @@ hello
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "1a2ÿ.≤≥W´w∏àÊùˇ")
+	(set_entity_rand_seed new_entity "F˛ÙÏ∞.G!W´w∏àÊùˇ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -4877,4 +4780,4 @@ concurrent entity writes successful: (true)
 
 --clean-up test files--
 --total execution time--
-1.642603874206543
+2.3212170600891113

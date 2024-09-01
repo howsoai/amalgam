@@ -857,13 +857,13 @@ protected:
 			return &callStackMutex;
 		}
 
+	protected:
 		//random seed for each task, the size of numTasks
 		std::vector<RandomStream> randomSeeds;
 
 		//mutex to allow only one thread to write to a call stack symbol at once
 		Concurrency::ReadWriteMutex callStackMutex;
 
-	protected:
 		//a barrier to wait for the tasks being run
 		ThreadPool::CountableTaskSet taskSet;
 

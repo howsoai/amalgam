@@ -1274,7 +1274,7 @@ var data = [
 	},
 
 	{
-		"parameter" : "get_entity_rand_seed id entity",
+		"parameter" : "get_entity_rand_seed [id entity]",
 		"output" : "string",
 		"permissions" : "e",
 		"new value" : "new",
@@ -1291,7 +1291,7 @@ var data = [
 	},
 
 	{
-		"parameter" : "get_entity_root_permission id entity",
+		"parameter" : "get_entity_root_permission [id entity]",
 		"output" : "number",
 		"permissions" : "r",
 		"description" : "Returns true if the entity has root permissions, false if not.  Will return null if the caller is not root.",

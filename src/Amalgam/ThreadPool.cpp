@@ -56,6 +56,7 @@ void ThreadPool::SetMaxNumActiveThreads(int32_t new_max_num_active_threads)
 	maxNumActiveThreads = new_max_num_active_threads;
 
 	//notify all just in case a new task was added as the threads were being created
+	lock.unlock();
 	waitForTask.notify_all();
 }
 
@@ -134,11 +135,12 @@ void ThreadPool::AddNewThread()
 void ThreadPool::ShutdownAllThreads()
 {
 	//initiate shutdown
-	std::unique_lock<std::mutex> lock(threadsMutex);
-	shutdownThreads = true;
+	{
+		std::unique_lock<std::mutex> lock(threadsMutex);
+		shutdownThreads = true;
+	}
 	waitForTask.notify_all();
 	waitForActivate.notify_all();
-	lock.unlock();
 
 	for(std::thread &worker : threads)
 		worker.join();

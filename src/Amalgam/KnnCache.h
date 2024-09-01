@@ -44,11 +44,10 @@ public:
 	#ifdef MULTITHREAD_SUPPORT
 		if(run_concurrently && relevantIndices->size() > 1)
 		{
-			auto enqueue_task_lock = Concurrency::threadPool.BeginEnqueueBatchTask();
-			if(enqueue_task_lock.AreThreadsAvailable())
+			auto enqueue_task_lock = Concurrency::threadPool.AcquireTaskLock();
+			if(Concurrency::threadPool.AreThreadsAvailable())
 			{
-				ThreadPool::CountableTaskSet task_set(relevantIndices->size());
-			
+				auto task_set = Concurrency::threadPool.CreateCountableTaskSet(relevantIndices->size());
 				for(auto index : *relevantIndices)
 				{
 					//fill in cache entry if it is not sufficient
@@ -66,12 +65,7 @@ public:
 					}
 				}
 
-				enqueue_task_lock.Unlock();
-
-				Concurrency::threadPool.ChangeCurrentThreadStateFromActiveToWaiting();
-				task_set.WaitForTasks();
-				Concurrency::threadPool.ChangeCurrentThreadStateFromWaitingToActive();
-
+				task_set.WaitForTasks(&enqueue_task_lock);
 				return;
 			}
 		}

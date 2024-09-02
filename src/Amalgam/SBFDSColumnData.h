@@ -118,8 +118,11 @@ public:
 		//count unique values so only need to perform one allocation for the main list
 		size_t num_uniques = 1;
 		double prev_value = index_values[0].distance;
+		size_t maxIndex = 0;
 		for(size_t i = 1; i < index_values.size(); i++)
 		{
+			if(auto reference = index_values[i].reference; maxIndex < reference)
+				maxIndex = reference;
 			if(prev_value != index_values[i].distance)
 			{
 				num_uniques++;
@@ -128,7 +131,7 @@ public:
 		}
 
 		sortedNumberValueEntries.reserve(num_uniques);
-		numberIndices.ReserveNumIntegers(index_values.back().reference + 1);
+		numberIndices.ReserveNumIntegers(maxIndex + 1);
 
 		for(auto &index_value : index_values)
 		{

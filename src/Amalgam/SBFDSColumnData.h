@@ -589,6 +589,7 @@ public:
 	{
 		ValueEntry *value_entry = sortedNumberValueEntries[value_index].get();
 
+		assert(value_entry->indicesWithValue.size() == 0);
 		value_entry->indicesWithValue.insert(index);
 		internedNumberValues.InsertValueEntry(value_entry, sortedNumberValueEntries.size());
 	}
@@ -600,6 +601,7 @@ public:
 	{
 		ValueEntry *value_entry = value_iter->second.get();
 
+		assert(value_entry->indicesWithValue.size() == 0);
 		value_entry->indicesWithValue.insert(index);
 		internedStringIdValues.InsertValueEntry(value_entry, stringIdValueEntries.size());
 	}

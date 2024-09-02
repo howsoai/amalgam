@@ -92,14 +92,15 @@ public:
 			else
 			{
 				for(; cur_thread_pool_size < needed_thread_pool_size; cur_thread_pool_size++)
-				{
 					AddNewThread();
-					waitForTask.notify_one();
-				}
 			}
 		}
 
 		numActiveThreads--;
+
+		//awaken another thread
+		lock.unlock();
+		waitForTask.notify_one();
 	}
 
 	//changes the current thread state from waiting to active
@@ -115,6 +116,8 @@ public:
 		if(numActiveThreads > maxNumActiveThreads)
 		{
 			numThreadsToTransitionToReserved++;
+
+			lock.unlock();
 			waitForTask.notify_one();
 		}
 	}

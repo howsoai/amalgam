@@ -821,8 +821,10 @@ public:
 		}
 	}
 
-	//given a feature_id and a range [low, high], inserts all the elements with values of feature feature_id within specified range into out; does not clear out
-	//if the feature value is null, it will NOT be present in the search results, ie "x" != 3 will NOT include elements with x is null, even though null != 3
+	//given a range [low, high], inserts all the elements within specified range into out; does not clear out
+	//the range is inclusive of high for numbers, but exclusive for string ids!
+	//either but not both numerical bounds may be NaN to signify an infinity
+	//if between_values is false, find complementary set
 	void FindAllIndicesWithinRange(EvaluableNodeImmediateValueType value_type,
 		EvaluableNodeImmediateValue &low, EvaluableNodeImmediateValue &high, BitArrayIntegerSet &out, bool between_values = true)
 	{
@@ -845,7 +847,7 @@ public:
 				//modify range to include elements from or up to -/+inf
 				if(FastIsNaN(low_number)) //find all NaN values and all values up to max
 					low_number = -std::numeric_limits<double>::infinity(); //else include elements from -inf to high as well as NaN elements
-				else
+				else if(FastIsNaN(high_number))
 					high_number = std::numeric_limits<double>::infinity(); //include elements from low to +inf as well as NaN elements
 			}
 
@@ -891,10 +893,6 @@ public:
 				//insert everything between the two indices
 				for(size_t i = start_index; i < end_index; i++)
 					out.InsertInBatch(sortedNumberValueEntries[i]->indicesWithValue);
-
-				//include end_index if value matches
-				if(end_index < sortedNumberValueEntries.size() && sortedNumberValueEntries[end_index]->value.number == high_number)
-					out.InsertInBatch(sortedNumberValueEntries[end_index]->indicesWithValue);
 			}
 			else //not between_values
 			{

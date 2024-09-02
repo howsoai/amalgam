@@ -172,6 +172,8 @@ Entity *AssetManager::LoadEntityFromResourcePath(std::string &resource_path, std
 		auto call_stack = Interpreter::ConvertArgsToCallStack(args, new_entity->evaluableNodeManager);
 
 		new_entity->Execute(StringInternPool::NOT_A_STRING_ID, call_stack, false, calling_interpreter);
+		new_entity->evaluableNodeManager.FreeNode(call_stack->GetOrderedChildNodesReference()[0]);
+		new_entity->evaluableNodeManager.FreeNode(call_stack);
 		return new_entity;
 	}
 

@@ -479,7 +479,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, bo
 	//if have an call stack context of variables specified, then use it
 	EvaluableNodeReference new_context = EvaluableNodeReference::Null();
 	if(en->GetOrderedChildNodes().size() > 1)
+	{
+		//can keep constant, but need the top node to be unique in case assignments are made
 		new_context = InterpretNodeForImmediateUse(ocn[1]);
+		evaluableNodeManager->EnsureNodeIsModifiable(new_context, EvaluableNodeManager::ENMM_REMOVE_ALL);
+	}
 
 	PushNewCallStack(new_context);
 
@@ -548,6 +552,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 
 	if(performanceConstraints != nullptr)
 		performanceConstraints->AccruePerformanceCounters(perf_constraints_ptr);
+
+	evaluableNodeManager->FreeNode(call_stack->GetOrderedChildNodesReference()[0]);
+	evaluableNodeManager->FreeNode(call_stack);
 
 	//call opcodes should consume the outer return opcode if there is one
 	if(result.IsNonNullNodeReference() && result->GetType() == ENT_RETURN)
@@ -642,6 +649,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, boo
 
 	//add new context
 	auto new_context = InterpretNodeForImmediateUse(ocn[0]);
+	//can keep constant, but need the top node to be unique in case assignments are made
+	evaluableNodeManager->EnsureNodeIsModifiable(new_context, EvaluableNodeManager::ENMM_REMOVE_ALL);
 	PushNewCallStack(new_context);
 
 	//run code
@@ -1404,7 +1413,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ARGS(EvaluableNode *en, bo
 			LockWithoutBlockingGarbageCollection(*callStackMutex, lock);
 	#endif
 
-		return EvaluableNodeReference((*callStackNodes)[callStackNodes->size() - (depth + 1)], false);		//0 index is top of stack
+		//0 index is top of stack
+		EvaluableNode *args = (*callStackNodes)[callStackNodes->size() - (depth + 1)];
+		//need to make a copy because when the call stack is popped, it will be freed
+		return EvaluableNodeReference(evaluableNodeManager->AllocNode(args), false);
 	}
 	else
 		return EvaluableNodeReference::Null();

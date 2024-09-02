@@ -92,14 +92,15 @@ public:
 			else
 			{
 				for(; cur_thread_pool_size < needed_thread_pool_size; cur_thread_pool_size++)
-				{
 					AddNewThread();
-					waitForTask.notify_one();
-				}
 			}
 		}
 
 		numActiveThreads--;
+
+		//awaken another thread
+		lock.unlock();
+		waitForTask.notify_one();
 	}
 
 	//changes the current thread state from waiting to active
@@ -115,6 +116,8 @@ public:
 		if(numActiveThreads > maxNumActiveThreads)
 		{
 			numThreadsToTransitionToReserved++;
+
+			lock.unlock();
 			waitForTask.notify_one();
 		}
 	}
@@ -245,12 +248,11 @@ public:
 		//marks one task as completed
 		inline void MarkTaskCompleted()
 		{
+			//call the notify_all under a lock to prevent other references to condVar
+			//in other threads from attempting to call it on a deallocated object
 			std::unique_lock<std::mutex> lock(mutex);
 			if(++numTasksCompleted == numTasks)
-			{
-				lock.unlock();
 				condVar.notify_all();
-			}
 		}
 
 		//marks one task as completed, but can be called from the thread setting up the tasks

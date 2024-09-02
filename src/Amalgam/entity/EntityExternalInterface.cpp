@@ -211,7 +211,7 @@ std::string EntityExternalInterface::ExecuteEntityJSON(std::string &handle, std:
 #endif
 	);
 
-	//ConvertArgsToCallStack always adds an outer list that is safe to free
+	enm.FreeNode(call_stack->GetOrderedChildNodesReference()[0]);
 	enm.FreeNode(call_stack);
 
 	auto [result, converted] = EvaluableNodeJSONTranslation::EvaluableNodeToJson(returned_value);

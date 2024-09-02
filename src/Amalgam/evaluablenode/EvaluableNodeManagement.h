@@ -844,24 +844,19 @@ public:
 	//allows freed nodes at the end of nodes to be reallocated
 	inline void ReclaimFreedNodesAtEnd()
 	{
-	#ifdef MULTITHREAD_SUPPORT
-		//this is much more expensive with multithreading, so do less often
-		//use the lower bits of firstUnusedNodeIndex being zero as a fast pseudorandom process
-		//given that many opcodes allocate varied number of nodes,
-		//it isn't too likely to get stuck around one of these values
-		if((firstUnusedNodeIndex & 511) != 0)
-			return;
-
-		//be opportunistic and only attempt to reclaim if it can grab a write lock
-		Concurrency::WriteLock write_lock(managerAttributesMutex, std::defer_lock);
-		if(!write_lock.try_lock())
-			return;
-	#endif
+	#ifndef MULTITHREAD_SUPPORT
+		//this cannot be used with multithreading because each thread will be using RecommendGarbageCollection
+		//to determine whether it should stay in garbage collection, and this can break the logic
+		//an alternative implementation would be to have a separate variable to indicate that everything should
+		//go into garbage collection, regardless of the current state of firstUnusedNodeIndex, but the extra
+		//overhead of that logic called for each opcode is not worth the gains of acquiring a write lock here
+		//and occasionally freeing a small bit of memory
 
 		//if any group of nodes on the top are ready to be cleaned up cheaply, do so
 		while(firstUnusedNodeIndex > 0 && nodes[firstUnusedNodeIndex - 1] != nullptr
 				&& nodes[firstUnusedNodeIndex - 1]->IsNodeDeallocated())
 			firstUnusedNodeIndex--;
+	#endif
 	}
 
 	//returns the number of nodes currently being used that have not been freed yet

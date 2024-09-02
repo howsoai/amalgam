@@ -477,26 +477,28 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	if(called_entity == nullptr)
 		return EvaluableNodeReference::Null();
 
+	auto &ce_enm = called_entity->evaluableNodeManager;
+
 #ifdef MULTITHREAD_SUPPORT
 	//lock memory before allocating call stack, then can release the entity lock
-	Concurrency::ReadLock enm_lock(called_entity->evaluableNodeManager.memoryModificationMutex);
+	Concurrency::ReadLock enm_lock(ce_enm.memoryModificationMutex);
 	called_entity.lock.unlock();
 #endif
 
 	EvaluableNodeReference call_stack;
 	if(called_entity == curEntity)
 	{
-		call_stack = ConvertArgsToCallStack(args, called_entity->evaluableNodeManager);
+		call_stack = ConvertArgsToCallStack(args, ce_enm);
 		node_stack.PushEvaluableNode(call_stack);
 	}
 	else
 	{
 		//copy arguments to called_entity, free args from this entity
-		EvaluableNodeReference called_entity_args = called_entity->evaluableNodeManager.DeepAllocCopy(args);
+		EvaluableNodeReference called_entity_args = ce_enm.DeepAllocCopy(args);
 		node_stack.PopEvaluableNode();
 		evaluableNodeManager->FreeNodeTreeIfPossible(args);
 
-		call_stack = ConvertArgsToCallStack(called_entity_args, called_entity->evaluableNodeManager);
+		call_stack = ConvertArgsToCallStack(called_entity_args, ce_enm);
 	}
 
 	PopulatePerformanceCounters(perf_constraints_ptr, called_entity);
@@ -516,6 +518,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	if(performanceConstraints != nullptr)
 		performanceConstraints->AccruePerformanceCounters(perf_constraints_ptr);
 
+	ce_enm.FreeNode(call_stack->GetOrderedChildNodesReference()[0]);
+	ce_enm.FreeNode(call_stack);
+
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is executing again
 	memoryModificationLock.lock();
@@ -528,7 +533,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	if(called_entity != curEntity)
 	{
 		EvaluableNodeReference copied_result = evaluableNodeManager->DeepAllocCopy(result);
-		called_entity->evaluableNodeManager.FreeNodeTreeIfPossible(result);
+		ce_enm.FreeNodeTreeIfPossible(result);
 		result = copied_result;
 	}
 
@@ -628,6 +633,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 
 	if(performanceConstraints != nullptr)
 		performanceConstraints->AccruePerformanceCounters(perf_constraints_ptr);
+
+	container->evaluableNodeManager.FreeNode(call_stack->GetOrderedChildNodesReference()[0]);
+	container->evaluableNodeManager.FreeNode(call_stack);
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is executing again

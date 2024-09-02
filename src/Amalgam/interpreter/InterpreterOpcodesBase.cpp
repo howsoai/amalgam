@@ -1404,7 +1404,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ARGS(EvaluableNode *en, bo
 			LockWithoutBlockingGarbageCollection(*callStackMutex, lock);
 	#endif
 
-		return EvaluableNodeReference((*callStackNodes)[callStackNodes->size() - (depth + 1)], false);		//0 index is top of stack
+		//0 index is top of stack
+		EvaluableNode *args = (*callStackNodes)[callStackNodes->size() - (depth + 1)];
+		//need to make a copy because when the call stack is popped, it will be freed
+		return EvaluableNodeReference(evaluableNodeManager->AllocNode(args), false);
 	}
 	else
 		return EvaluableNodeReference::Null();

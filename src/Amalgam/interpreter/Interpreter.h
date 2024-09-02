@@ -240,8 +240,8 @@ public:
 	//pops the top context off the stack
 	__forceinline void PopCallStack()
 	{
-		if(callStackNodes->size() >= 1)
-			callStackNodes->pop_back();
+		evaluableNodeManager->FreeNode(callStackNodes->back());
+		callStackNodes->pop_back();
 	}
 
 	//pushes a new construction context on the stack, which is assumed to not be nullptr

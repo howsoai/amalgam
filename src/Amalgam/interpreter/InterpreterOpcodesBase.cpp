@@ -473,7 +473,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, bo
 	//if have an call stack context of variables specified, then use it
 	EvaluableNodeReference new_context = EvaluableNodeReference::Null();
 	if(en->GetOrderedChildNodes().size() > 1)
-		new_context = InterpretNode(ocn[1]);
+	{
+		//can keep constant, but need the top node to be unique in case assignments are made
+		new_context = InterpretNodeForImmediateUse(ocn[1]);
+		evaluableNodeManager->EnsureNodeIsModifiable(new_context, EvaluableNodeManager::ENMM_REMOVE_ALL);
+	}
 
 	PushNewCallStack(new_context);
 
@@ -635,7 +639,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, boo
 		return EvaluableNodeReference::Null();
 
 	//add new context
-	auto new_context = InterpretNode(ocn[0]);
+	auto new_context = InterpretNodeForImmediateUse(ocn[0]);
+	//can keep constant, but need the top node to be unique in case assignments are made
+	evaluableNodeManager->EnsureNodeIsModifiable(new_context, EvaluableNodeManager::ENMM_REMOVE_ALL);
 	PushNewCallStack(new_context);
 
 	//run code

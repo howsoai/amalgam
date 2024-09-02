@@ -547,6 +547,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	if(performanceConstraints != nullptr)
 		performanceConstraints->AccruePerformanceCounters(perf_constraints_ptr);
 
+	evaluableNodeManager->FreeNode(call_stack->GetOrderedChildNodesReference()[0]);
+	evaluableNodeManager->FreeNode(call_stack);
+
 	//call opcodes should consume the outer return opcode if there is one
 	if(result.IsNonNullNodeReference() && result->GetType() == ENT_RETURN)
 		result = RemoveTopConcludeOrReturnNode(result, evaluableNodeManager);

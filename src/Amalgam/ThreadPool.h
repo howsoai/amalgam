@@ -248,12 +248,11 @@ public:
 		//marks one task as completed
 		inline void MarkTaskCompleted()
 		{
+			//call the notify_all under a lock to prevent other references to condVar
+			//in other threads from attempting to call it on a deallocated object
 			std::unique_lock<std::mutex> lock(mutex);
 			if(++numTasksCompleted == numTasks)
-			{
-				lock.unlock();
 				condVar.notify_all();
-			}
 		}
 
 		//marks one task as completed, but can be called from the thread setting up the tasks

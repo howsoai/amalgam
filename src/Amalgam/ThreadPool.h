@@ -82,7 +82,6 @@ public:
 		//compute and compare the current thread pool size to that which is needed
 		int32_t cur_thread_pool_size = static_cast<int32_t>(threads.size());
 		int32_t needed_thread_pool_size = (numReservedThreads + numThreadsToTransitionToReserved) + num_threads_needed;
-		size_t num_threads_added = 0;
 		if(cur_thread_pool_size < needed_thread_pool_size)
 		{
 			//if there are reserved threads, use them, otherwise create a new thread
@@ -92,7 +91,6 @@ public:
 			}
 			else
 			{
-				num_threads_added = needed_thread_pool_size - cur_thread_pool_size;
 				for(; cur_thread_pool_size < needed_thread_pool_size; cur_thread_pool_size++)
 					AddNewThread();
 			}

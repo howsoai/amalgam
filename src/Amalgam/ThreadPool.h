@@ -100,9 +100,9 @@ public:
 
 		numActiveThreads--;
 
+		//awaken another thread
 		lock.unlock();
-		for(size_t i = 0; i < num_threads_added; i++)
-			waitForTask.notify_one();
+		waitForTask.notify_one();
 	}
 
 	//changes the current thread state from waiting to active

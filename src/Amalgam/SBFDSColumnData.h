@@ -601,7 +601,7 @@ public:
 		{
 			invalidIndices.insert(index);
 
-			if(internedNumberValues.valueInterningEnabled)
+			if(internedNumberValues.valueInterningEnabled || internedStringIdValues.valueInterningEnabled)
 				return EvaluableNodeImmediateValue(ValueEntry::NULL_INDEX);
 			else
 				return value;

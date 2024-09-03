@@ -460,9 +460,12 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, EvaluableNode *n
 		{
 			std::string token = GetNextIdentifier();
 			EvaluableNodeType token_type = GetEvaluableNodeTypeFromString(token);
-			new_token->SetType(token_type, evaluableNodeManager, false);
 
-			if(!IsEvaluableNodeTypeValid(token_type) || IsEvaluableNodeTypeImmediate(token_type))
+			if(IsEvaluableNodeTypeValid(token_type) && !IsEvaluableNodeTypeImmediate(token_type))
+			{
+				new_token->SetType(token_type, evaluableNodeManager, false);
+			}
+			else
 			{
 				//invalid opcode, warn if possible and store the identifier as a string
 				if(!originalSource.empty())

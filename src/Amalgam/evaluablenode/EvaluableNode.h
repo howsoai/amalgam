@@ -72,6 +72,10 @@ public:
 	//Each InitializeType* sets up a given type with appropriate data
 	inline void InitializeType(EvaluableNodeType _type, const std::string &string_value)
 	{
+	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+		assert(IsEvaluableNodeTypeValid(_type));
+	#endif
+
 		type = _type;
 		attributes.allAttributes = 0;
 		attributes.individualAttribs.isIdempotent = true;
@@ -81,6 +85,10 @@ public:
 
 	inline void InitializeType(EvaluableNodeType _type, StringInternPool::StringID string_id)
 	{
+	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+		assert(IsEvaluableNodeTypeValid(_type));
+	#endif
+
 		attributes.allAttributes = 0;
 		if(string_id == StringInternPool::NOT_A_STRING_ID)
 		{
@@ -98,6 +106,10 @@ public:
 	//like InitializeType, but hands off the string reference to string_id
 	inline void InitializeTypeWithReferenceHandoff(EvaluableNodeType _type, StringInternPool::StringID string_id)
 	{
+	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+		assert(IsEvaluableNodeTypeValid(_type));
+	#endif
+
 		attributes.allAttributes = 0;
 		if(string_id == StringInternPool::NOT_A_STRING_ID)
 		{
@@ -139,6 +151,10 @@ public:
 
 	inline void InitializeType(EvaluableNodeType _type)
 	{
+	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+		assert(IsEvaluableNodeTypeValid(_type));
+	#endif
+
 		type = _type;
 		attributes.allAttributes = 0;
 		attributes.individualAttribs.isIdempotent = IsEvaluableNodeTypePotentiallyIdempotent(_type);
@@ -433,6 +449,9 @@ public:
 		return (type == ENT_DEALLOCATED);
 	}
 
+	//returns true if the node is a valid type and has valid data structures
+	bool IsNodeValid();
+
 	//transforms node to new_type, converting data if types are different
 	// enm is used if it needs to allocate nodes when changing types
 	// if enm is nullptr, then it will not necessarily keep child nodes
@@ -440,14 +459,6 @@ public:
 	// attempt_to_preserve_immediate_value should be set to false if the value will be immediately overwritten
 	void SetType(EvaluableNodeType new_type, EvaluableNodeManager *enm = nullptr,
 		bool attempt_to_preserve_immediate_value = true);
-
-	//fully clears node and sets it to new_type
-	inline void ClearAndSetType(EvaluableNodeType new_type)
-	{
-		ClearMetadata();
-		DestructValue();
-		InitializeType(new_type);
-	}
 
 	//sets up number value
 	void InitNumberValue();

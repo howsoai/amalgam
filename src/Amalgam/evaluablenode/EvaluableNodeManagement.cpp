@@ -265,10 +265,7 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 		allocated_index = firstUnusedNodeIndex++;
 		if(allocated_index < nodes.size())
 		{
-			//before releasing the lock, make sure the EvaluableNode is initialized, otherwise it could get grabbed by another thread
-			if(nodes[allocated_index] != nullptr)
-				nodes[allocated_index]->InitializeUnallocated();
-			else //allocate if nullptr
+			if(nodes[allocated_index] == nullptr)
 				nodes[allocated_index] = new EvaluableNode();
 
 			return nodes[allocated_index];
@@ -290,17 +287,8 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 	size_t num_nodes = nodes.size();
 	if(allocated_index < num_nodes && firstUnusedNodeIndex < num_nodes)
 	{
-		if(nodes[firstUnusedNodeIndex] != nullptr)
-		{
-		#ifdef MULTITHREAD_SUPPORT
-			//before releasing the lock, make sure the EvaluableNode is initialized, otherwise it could get grabbed by another thread
-			nodes[firstUnusedNodeIndex]->InitializeUnallocated();
-		#endif
-		}
-		else //allocate if nullptr
-		{
+		if(nodes[firstUnusedNodeIndex] == nullptr)
 			nodes[firstUnusedNodeIndex] = new EvaluableNode();
-		}
 
 		return nodes[firstUnusedNodeIndex++];
 	}
@@ -311,17 +299,8 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 	//fill new EvaluableNode slots with nullptr
 	nodes.resize(new_num_nodes, nullptr);
 
-	if(nodes[firstUnusedNodeIndex] != nullptr)
-	{
-	#ifdef MULTITHREAD_SUPPORT
-		//before releasing the lock, make sure the EvaluableNode is initialized, otherwise it could get grabbed by another thread
-		nodes[firstUnusedNodeIndex]->InitializeUnallocated();
-	#endif	
-	}
-	else //allocate if nullptr
-	{
+	if(nodes[firstUnusedNodeIndex] == nullptr)
 		nodes[firstUnusedNodeIndex] = new EvaluableNode();
-	}
 
 	return nodes[firstUnusedNodeIndex++];
 }
@@ -438,7 +417,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree)
 {
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-	assert(!tree->IsNodeDeallocated());
+	assert(tree->IsNodeValid());
 	assert(!tree->GetNeedCycleCheck());
 #endif
 
@@ -465,7 +444,7 @@ void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree)
 void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
 {
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-	assert(!tree->IsNodeDeallocated());
+	assert(tree->IsNodeValid());
 #endif
 
 	if(tree->IsAssociativeArray())
@@ -1005,7 +984,7 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 void EvaluableNodeManager::MarkAllReferencedNodesInUseRecurse(EvaluableNode *tree)
 {
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-	assert(!tree->IsNodeDeallocated());
+	assert(tree->IsNodeValid());
 #endif
 
 	//if entering this function, then the node hasn't been marked yet
@@ -1034,7 +1013,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUseRecurse(EvaluableNode *tre
 void EvaluableNodeManager::MarkAllReferencedNodesInUseRecurseConcurrent(EvaluableNode* tree)
 {
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-	assert(!tree->IsNodeDeallocated());
+	assert(tree->IsNodeValid());
 #endif
 
 	//if entering this function, then the node hasn't been marked yet
@@ -1070,7 +1049,7 @@ std::pair<bool, bool> EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryInteg
 	if(!inserted)
 		return std::make_pair(true, en->GetIsIdempotent());
 
-	if(en->IsNodeDeallocated() || en->GetKnownToBeInUse())
+	if(!en->IsNodeValid() || en->GetKnownToBeInUse())
 		assert(false);
 
 	if(existing_nodes != nullptr)

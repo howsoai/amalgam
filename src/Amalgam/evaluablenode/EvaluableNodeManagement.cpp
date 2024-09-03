@@ -316,7 +316,7 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 	#ifdef MULTITHREAD_SUPPORT
 		//before releasing the lock, make sure the EvaluableNode is initialized, otherwise it could get grabbed by another thread
 		nodes[firstUnusedNodeIndex]->InitializeUnallocated();
-	#endif	
+	#endif
 	}
 	else //allocate if nullptr
 	{

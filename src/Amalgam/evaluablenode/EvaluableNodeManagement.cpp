@@ -316,7 +316,7 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 	#ifdef MULTITHREAD_SUPPORT
 		//before releasing the lock, make sure the EvaluableNode is initialized, otherwise it could get grabbed by another thread
 		nodes[firstUnusedNodeIndex]->InitializeUnallocated();
-	#endif	
+	#endif
 	}
 	else //allocate if nullptr
 	{
@@ -438,7 +438,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree)
 {
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-	assert(!tree->IsNodeDeallocated());
+	assert(tree->IsNodeValid());
 	assert(!tree->GetNeedCycleCheck());
 #endif
 
@@ -465,7 +465,7 @@ void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree)
 void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
 {
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-	assert(!tree->IsNodeDeallocated());
+	assert(tree->IsNodeValid());
 #endif
 
 	if(tree->IsAssociativeArray())
@@ -1005,7 +1005,7 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 void EvaluableNodeManager::MarkAllReferencedNodesInUseRecurse(EvaluableNode *tree)
 {
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-	assert(!tree->IsNodeDeallocated());
+	assert(tree->IsNodeValid());
 #endif
 
 	//if entering this function, then the node hasn't been marked yet
@@ -1034,7 +1034,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUseRecurse(EvaluableNode *tre
 void EvaluableNodeManager::MarkAllReferencedNodesInUseRecurseConcurrent(EvaluableNode* tree)
 {
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-	assert(!tree->IsNodeDeallocated());
+	assert(tree->IsNodeValid());
 #endif
 
 	//if entering this function, then the node hasn't been marked yet
@@ -1070,7 +1070,7 @@ std::pair<bool, bool> EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryInteg
 	if(!inserted)
 		return std::make_pair(true, en->GetIsIdempotent());
 
-	if(en->IsNodeDeallocated() || en->GetKnownToBeInUse())
+	if(!en->IsNodeValid() || en->GetKnownToBeInUse())
 		assert(false);
 
 	if(existing_nodes != nullptr)

@@ -335,6 +335,42 @@ size_t EvaluableNode::GetEstimatedNodeSizeInBytes(EvaluableNode *n)
 	return total_size;
 }
 
+bool EvaluableNode::IsNodeValid()
+{
+	if(!IsEvaluableNodeTypeValid(type))
+		return false;
+
+	//set a maximum number of valid elements of 100 million
+	//this is not a hard limit, but a heuristic to detect issues
+	size_t max_size = 100000000;
+	if(DoesEvaluableNodeTypeUseAssocData(type))
+	{
+		auto &mcn = GetMappedChildNodesReference();
+		return (mcn.size() < max_size);
+	}
+	else if(DoesEvaluableNodeTypeUseNumberData(type))
+	{
+		double number = GetNumberValueReference();
+		return !FastIsNaN(number);
+	}
+	else if(DoesEvaluableNodeTypeUseStringData(type))
+	{
+		auto sid = GetStringIDReference();
+		if(sid == string_intern_pool.NOT_A_STRING_ID)
+			return true;
+
+		return (sid->string.size() < max_size);
+	}
+	else //ordered
+	{
+		auto &ocn = GetOrderedChildNodesReference();
+		return (ocn.size() < max_size);
+	}
+
+	//shouldn't make it here
+	return false;
+}
+
 void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_labels, bool copy_comments_and_concurrency)
 {
 	attributes.allAttributes = 0;
@@ -346,6 +382,10 @@ void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_labels, bool copy
 	}
 
 	type = n->GetType();
+
+#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+	assert(IsEvaluableNodeTypeValid(type));
+#endif
 
 	if(DoesEvaluableNodeTypeUseAssocData(type))
 	{
@@ -442,6 +482,11 @@ void EvaluableNode::CopyValueFrom(EvaluableNode *n)
 	}
 
 	auto cur_type = n->GetType();
+
+#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+	assert(IsEvaluableNodeTypeValid(cur_type));
+#endif
+
 	//doesn't need an EvaluableNodeManager because not converting child nodes from one type to another
 	SetType(cur_type, nullptr, false);
 
@@ -510,6 +555,10 @@ void EvaluableNode::CopyMetadataFrom(EvaluableNode *n)
 void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *enm,
 	bool attempt_to_preserve_immediate_value)
 {
+#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+	assert(IsEvaluableNodeTypeValid(new_type));
+#endif
+
 	EvaluableNodeType cur_type = GetType();
 	if(new_type == cur_type)
 		return;

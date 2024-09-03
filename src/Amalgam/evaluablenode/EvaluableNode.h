@@ -460,14 +460,6 @@ public:
 	void SetType(EvaluableNodeType new_type, EvaluableNodeManager *enm = nullptr,
 		bool attempt_to_preserve_immediate_value = true);
 
-	//fully clears node and sets it to new_type
-	inline void ClearAndSetType(EvaluableNodeType new_type)
-	{
-		ClearMetadata();
-		DestructValue();
-		InitializeType(new_type);
-	}
-
 	//sets up number value
 	void InitNumberValue();
 

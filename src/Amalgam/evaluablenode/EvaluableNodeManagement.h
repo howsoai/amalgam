@@ -492,7 +492,8 @@ public:
 				}
 			}
 
-			candidate->ClearAndSetType(type);
+			candidate->Invalidate();
+			candidate->InitializeType(type);
 			return candidate;
 		}
 		else

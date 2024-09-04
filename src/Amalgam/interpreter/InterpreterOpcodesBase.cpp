@@ -1994,6 +1994,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT_A_BUILT_IN_TYPE(Evalua
 
 void Interpreter::VerifyEvaluableNodeIntegrity()
 {
+	static Concurrency::SingleMutex sm;
+	Concurrency::SingleLock sl(sm);
+
 	for(EvaluableNode *en : *callStackNodes)
 		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en);
 

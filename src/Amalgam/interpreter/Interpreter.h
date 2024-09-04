@@ -833,8 +833,7 @@ protected:
 			if(!resultsUnique)
 				new_result.unique = false;
 
-			if(resultsNeedCycleCheck)
-				new_result.SetNeedCycleCheck(true);
+			new_result.SetNeedCycleCheck(resultsNeedCycleCheck);
 
 			if(!resultsIdempotent)
 				new_result.SetIsIdempotent(false);

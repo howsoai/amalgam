@@ -63,6 +63,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST(EvaluableNode *en, bo
 			if(Concurrency::threadPool.AreThreadsAvailable())
 			{
 				auto node_stack = CreateOpcodeStackStateSaver(new_list);
+				//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
+				new_list->SetNeedCycleCheck(true);
 
 				ConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
 
@@ -123,6 +125,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, b
 			if(Concurrency::threadPool.AreThreadsAvailable())
 			{
 				auto node_stack = CreateOpcodeStackStateSaver(new_assoc);
+				//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
+				new_assoc->SetNeedCycleCheck(true);
+
 				ConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
 
 				//kick off interpreters

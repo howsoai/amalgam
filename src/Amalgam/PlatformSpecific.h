@@ -229,13 +229,13 @@ inline void Platform_Assert(bool expr, const char *file, int line)
 		raise(SIGTRAP);
 	#endif
 
-	if(Platform_IsDebuggerPresent())
-	{
-		//wait for user input in case the _ASSERT above was optimized out
-		std::string temp;
-		std::getline(std::cin, temp);
-	}
+		if(Platform_IsDebuggerPresent())
+		{
+			//wait for user input in case the _ASSERT above was optimized out
+			std::string temp;
+			std::getline(std::cin, temp);
+		}
 
-	exit(-1);
+		exit(-1);
 	}
 }

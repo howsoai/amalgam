@@ -2012,9 +2012,14 @@ void Interpreter::VerifyEvaluableNodeIntegrity()
 	if(curEntity != nullptr)
 		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(curEntity->GetRoot());
 
-	auto &nr = evaluableNodeManager->GetNodesReferenced();
-	for(auto &[en, _] : nr.nodesReferenced)
-		EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en, nullptr, false);
+	{
+		auto &nr = evaluableNodeManager->GetNodesReferenced();
+	#ifdef MULTITHREAD_SUPPORT
+		Concurrency::SingleLock lock(nr.mutex);
+	#endif
+		for(auto &[en, _] : nr.nodesReferenced)
+			EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en, nullptr, false);
+	}
 
 	if(callingInterpreter != nullptr)
 		callingInterpreter->VerifyEvaluableNodeIntegrity();

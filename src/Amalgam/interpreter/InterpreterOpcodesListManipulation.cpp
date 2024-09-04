@@ -622,6 +622,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, b
 		if(Concurrency::threadPool.AreThreadsAvailable())
 		{
 			node_stack.PushEvaluableNode(result);
+			//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
+			result->SetNeedCycleCheck(true);
 
 			ConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
 

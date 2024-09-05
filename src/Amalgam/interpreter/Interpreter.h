@@ -507,9 +507,9 @@ public:
 		}
 
 		auto retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(n);
-		double value = retval->GetNumberValueReference();
+		double value = retval->GetNumberValue();
 		double result = func(value);
-		retval->SetNumberValue(result);
+		retval->SetTypeViaNumberValue(result);
 		return retval;
 	}
 

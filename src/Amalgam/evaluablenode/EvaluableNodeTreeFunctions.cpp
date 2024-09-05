@@ -443,8 +443,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		{
 			double cur_value = EvaluableNode::ToNumber(value_destination_node);
 			double inc_value = EvaluableNode::ToNumber(variable_value_node);
-			value_destination_node->SetType(ENT_NUMBER, enm);
-			value_destination_node->SetNumberValue(cur_value + inc_value);
+			value_destination_node->SetTypeViaNumberValue(cur_value + inc_value);
 		}
 		else if(value_destination_node->IsAssociativeArray())
 		{

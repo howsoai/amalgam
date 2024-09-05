@@ -473,17 +473,17 @@ public:
 		return zeroNumberValue;
 	}
 
-	//sets the number value
-	inline void SetNumberValue(double v)
+	//changes the type by setting it to the number value specified
+	inline void SetTypeViaNumberValue(double v)
 	{
 		if(FastIsNaN(v))
 		{
-			SetType(ENT_NULL);
+			SetType(ENT_NULL, nullptr, false);
 		}
 		else
 		{
-			if(DoesEvaluableNodeTypeUseNumberData(GetType()))
-				GetNumberValueReference() = v;
+			SetType(ENT_NUMBER, nullptr, false);
+			GetNumberValueReference() = v;
 		}
 	}
 

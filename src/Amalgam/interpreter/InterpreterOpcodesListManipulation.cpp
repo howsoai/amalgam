@@ -602,7 +602,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, b
 
 		auto &range_list_ocn = range_list->GetOrderedChildNodes();
 		for(size_t i = 0; i < num_nodes; i++)
-			range_list_ocn[i]->SetNumberValue(i * range_step_size + range_start);
+			range_list_ocn[i]->SetTypeViaNumberValue(i * range_step_size + range_start);
 
 		return range_list;
 	}

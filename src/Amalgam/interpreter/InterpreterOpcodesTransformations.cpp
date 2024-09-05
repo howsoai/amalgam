@@ -1017,7 +1017,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en,
 
 		auto &index_list_ocn = index_list->GetOrderedChildNodes();
 		for(size_t i = 0; i < num_ordered_nodes; i++)
-			index_list_ocn[i]->SetNumberValue(static_cast<double>(i));
+			index_list_ocn[i]->SetTypeViaNumberValue(static_cast<double>(i));
 	}
 	else //no child nodes, just alloc an empty list
 		index_list.SetReference(evaluableNodeManager->AllocNode(ENT_LIST));

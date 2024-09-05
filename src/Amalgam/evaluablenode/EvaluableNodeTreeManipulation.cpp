@@ -98,7 +98,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::NodesMixMethod::MergeValues(Evalua
 				double a_value = a->GetNumberValue();
 				double b_value = b->GetNumberValue();
 				double mixed_value = MixNumberValues(a_value, b_value, fractionA, fractionB);
-				merged->SetNumberValue(mixed_value);
+				merged->SetTypeViaNumberValue(mixed_value);
 			}
 			else if(merged->GetType() == ENT_STRING && a->GetType() == ENT_STRING && b->GetType() == ENT_STRING)
 			{
@@ -408,7 +408,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::CreateGeneralizedNode(NodesMergeMe
 
 	//if immediate, copy value
 	if(DoesEvaluableNodeTypeUseNumberData(common_type))
-		n->SetNumberValue(node->GetNumberValue());
+		n->SetTypeViaNumberValue(node->GetNumberValue());
 	else if(DoesEvaluableNodeTypeUseStringData(common_type))
 		n->SetStringID(node->GetStringID());
 
@@ -1494,7 +1494,7 @@ void MutateImmediateNode(EvaluableNode *n, RandomStream &rs, std::vector<std::st
 				new_value = std::numeric_limits<double>::quiet_NaN();
 		}
 
-		n->SetNumberValue((new_number_negative ? -1 : 1) * new_value);
+		n->SetTypeViaNumberValue((new_number_negative ? -1 : 1) * new_value);
 	}
 	else if(DoesEvaluableNodeTypeUseStringData(n->GetType()))
 	{
@@ -1566,7 +1566,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 
 			//give it a respectable default before randomizing
 			if(DoesEvaluableNodeTypeUseNumberData(new_node->GetType()))
-				n->SetNumberValue(50);
+				n->SetTypeViaNumberValue(50);
 			if(DoesEvaluableNodeTypeUseStringData(new_node->GetType()))
 				n->SetStringValue("string");
 

@@ -528,8 +528,7 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, EvaluableNode *n
 				value = converted_value;
 		}
 
-		new_token->SetType(ENT_NUMBER, evaluableNodeManager, false);
-		new_token->SetNumberValue(value);
+		new_token->SetTypeViaNumberValue(value);
 		return new_token;
 	}
 	else if(cur_char == '"')

@@ -263,8 +263,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_DEFAULTS(EvaluableNode
 		out_node->ReserveMappedChildNodes(EvaluableNodeTreeManipulation::evaluableNodeTypeProbabilities.size());
 		for(auto &[node_type, node_prob] : EvaluableNodeTreeManipulation::evaluableNodeTypeProbabilities)
 		{
-			EvaluableNode *num_node = evaluableNodeManager->AllocNode(ENT_NUMBER);
-			num_node->SetNumberValue(node_prob);
+			EvaluableNode *num_node = evaluableNodeManager->AllocNode(node_prob);
 
 			StringInternPool::StringID node_type_sid = GetStringIdFromNodeType(node_type);
 			out_node->SetMappedChildNode(node_type_sid, num_node);
@@ -279,8 +278,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_DEFAULTS(EvaluableNode
 		out_node->ReserveMappedChildNodes(EvaluableNodeTreeManipulation::mutationOperationTypeProbabilities.size());
 		for(auto &[op_type, op_prob] : EvaluableNodeTreeManipulation::mutationOperationTypeProbabilities)
 		{
-			EvaluableNode *num_node = evaluableNodeManager->AllocNode(ENT_NUMBER);
-			num_node->SetNumberValue(op_prob);
+			EvaluableNode *num_node = evaluableNodeManager->AllocNode(op_prob);
+
 			StringInternPool::StringID op_type_sid = GetStringIdFromBuiltInStringId(op_type);
 			out_node->SetMappedChildNode(op_type_sid, num_node);
 		}

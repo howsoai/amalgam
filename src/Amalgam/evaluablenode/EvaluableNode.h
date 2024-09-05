@@ -19,6 +19,7 @@
 #include <string>
 #include <vector>
 
+#define AMALGAM_FAST_MEMORY_INTEGRITY
 //if the macro AMALGAM_MEMORY_INTEGRITY is defined, then it will continuously verify memory, at a high cost of performance
 //this is useful for diagnosing and debugging memory issues
 //if the macro AMALGAM_FAST_MEMORY_INTEGRITY is defined, then only the checks that are fast will be made
@@ -473,17 +474,17 @@ public:
 		return zeroNumberValue;
 	}
 
-	//sets the number value
-	inline void SetNumberValue(double v)
+	//changes the type by setting it to the number value specified
+	inline void SetTypeViaNumberValue(double v)
 	{
 		if(FastIsNaN(v))
 		{
-			SetType(ENT_NULL);
+			SetType(ENT_NULL, nullptr, false);
 		}
 		else
 		{
-			if(DoesEvaluableNodeTypeUseNumberData(GetType()))
-				GetNumberValueReference() = v;
+			SetType(ENT_NUMBER, nullptr, false);
+			GetNumberValueReference() = v;
 		}
 	}
 

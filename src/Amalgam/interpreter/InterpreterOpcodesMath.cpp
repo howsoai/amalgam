@@ -467,8 +467,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ROUND(EvaluableNode *en, b
 	}
 	else
 	{
-		retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(ocn[0]);
-		number_value = retval->GetNumberValueReference();
+		retval = InterpretNodeIntoUniqueNumberValueOrNullEvaluableNode(ocn[0]);
+		number_value = EvaluableNode::ToNumber(retval);
 	}
 
 	if(num_params == 1)

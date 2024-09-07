@@ -640,7 +640,7 @@ double Interpreter::InterpretNodeIntoNumberValue(EvaluableNode *n)
 	return value;
 }
 
-EvaluableNodeReference Interpreter::InterpretNodeIntoUniqueNumberValueEvaluableNode(EvaluableNode *n)
+EvaluableNodeReference Interpreter::InterpretNodeIntoUniqueNumberValueOrNullEvaluableNode(EvaluableNode *n)
 {
 	if(n == nullptr || n->GetIsIdempotent())
 		return EvaluableNodeReference(evaluableNodeManager->AllocNode(EvaluableNode::ToNumber(n)), true);
@@ -652,7 +652,8 @@ EvaluableNodeReference Interpreter::InterpretNodeIntoUniqueNumberValueEvaluableN
 	
 	result->ClearMetadata();
 
-	if(result->GetType() != ENT_NUMBER)
+	auto type = result->GetType();
+	if(type != ENT_NUMBER && type != ENT_NULL)
 		result->SetType(ENT_NUMBER, evaluableNodeManager);
 
 	return result;

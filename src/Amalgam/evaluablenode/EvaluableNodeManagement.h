@@ -492,7 +492,8 @@ public:
 				}
 			}
 
-			candidate->ClearAndSetType(type);
+			candidate->Invalidate();
+			candidate->InitializeType(type);
 			return candidate;
 		}
 		else
@@ -505,7 +506,7 @@ public:
 	inline EvaluableNodeReference ReuseOrAllocNode(EvaluableNodeReference candidate, double value)
 	{
 		EvaluableNodeReference node = ReuseOrAllocNode(candidate, ENT_NUMBER);
-		node->SetNumberValue(value);
+		node->SetTypeViaNumberValue(value);
 		return node;
 	}
 
@@ -553,7 +554,7 @@ public:
 		EvaluableNodeReference candidate_1, EvaluableNodeReference candidate_2, double value)
 	{
 		EvaluableNodeReference node = ReuseOrAllocOneOfNodes(candidate_1, candidate_2, ENT_NUMBER);
-		node->SetNumberValue(value);
+		node->SetTypeViaNumberValue(value);
 		return node;
 	}
 

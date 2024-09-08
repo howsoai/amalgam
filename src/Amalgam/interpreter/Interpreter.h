@@ -506,10 +506,10 @@ public:
 			return EvaluableNodeReference(func(value));
 		}
 
-		auto retval = InterpretNodeIntoUniqueNumberValueEvaluableNode(n);
-		double value = retval->GetNumberValueReference();
+		auto retval = InterpretNodeIntoUniqueNumberValueOrNullEvaluableNode(n);
+		double value = retval->GetNumberValue();
 		double result = func(value);
-		retval->SetNumberValue(result);
+		retval->SetTypeViaNumberValue(result);
 		return retval;
 	}
 
@@ -527,20 +527,24 @@ public:
 		return str;
 	}
 
-	//like InterpretNodeIntoStringValue, but returns the ID only if the string already exists, otherwise it returns NOT_A_STRING_ID
+	//like InterpretNodeIntoStringValue, but returns the ID only if the string already exists,
+	// otherwise it returns NOT_A_STRING_ID
 	StringInternPool::StringID InterpretNodeIntoStringIDValueIfExists(EvaluableNode *n);
 
-	//like InterpretNodeIntoStringValue, but creates a reference to the string that must be destroyed, regardless of whether the string existed or not (if it did not exist, then it creates one)
+	//like InterpretNodeIntoStringValue, but creates a reference to the string that must be destroyed,
+	// regardless of whether the string existed or not (if it did not exist, then it creates one)
 	StringInternPool::StringID InterpretNodeIntoStringIDValueWithReference(EvaluableNode *n);
 
-	//Calls InterpretNode on n, convers to a string, and makes sure that the node returned is new and unique so that it can be modified
+	//Calls InterpretNode on n, convers to a string, and makes sure that the node returned is
+	// new and unique so that it can be modified
 	EvaluableNodeReference InterpretNodeIntoUniqueStringIDValueEvaluableNode(EvaluableNode *n);
 
 	//Calls InterpretNode on n, converts to double and returns, then cleans up any resources used
 	double InterpretNodeIntoNumberValue(EvaluableNode *n);
 
-	//Calls InterpretNode on n, convers to a double, and makes sure that the node returned is new and unique so that it can be modified
-	EvaluableNodeReference InterpretNodeIntoUniqueNumberValueEvaluableNode(EvaluableNode *n);
+	//Calls InterpretNode on n, convers to a double or null (representing NaN),
+	//and makes sure that the node returned is new and unique so that it can be modified
+	EvaluableNodeReference InterpretNodeIntoUniqueNumberValueOrNullEvaluableNode(EvaluableNode *n);
 
 	//Calls InterpretNode on n, converts to boolean and returns, then cleans up any resources used
 	bool InterpretNodeIntoBoolValue(EvaluableNode *n, bool value_if_null = false);
@@ -553,7 +557,8 @@ public:
 	//traverses source based on traversal path list tpl
 	// If create_destination_if_necessary is set, then it will expand anything in the source as appropriate
 	//Returns the location of the EvaluableNode * of the destination, nullptr if it does not exist
-	EvaluableNode **TraverseToDestinationFromTraversalPathList(EvaluableNode **source, EvaluableNodeReference &tpl, bool create_destination_if_necessary);
+	EvaluableNode **TraverseToDestinationFromTraversalPathList(EvaluableNode **source,
+		EvaluableNodeReference &tpl, bool create_destination_if_necessary);
 
 	//calls InterpretNode on tpl, traverses source based on tpl.
 	// If create_destination_if_necessary is set, then it will expand anything in the source as appropriate
@@ -833,8 +838,7 @@ protected:
 			if(!resultsUnique)
 				new_result.unique = false;
 
-			if(resultsNeedCycleCheck)
-				new_result.SetNeedCycleCheck(true);
+			new_result.SetNeedCycleCheck(resultsNeedCycleCheck);
 
 			if(!resultsIdempotent)
 				new_result.SetIsIdempotent(false);

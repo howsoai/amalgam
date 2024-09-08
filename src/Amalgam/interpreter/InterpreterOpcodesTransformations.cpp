@@ -87,6 +87,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 				{
 					node_stack.PushEvaluableNode(list);
 					node_stack.PushEvaluableNode(result);
+					//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
+					result->SetNeedCycleCheck(true);
 
 					ConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
 
@@ -141,6 +143,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 				{
 					node_stack.PushEvaluableNode(list);
 					node_stack.PushEvaluableNode(result);
+					//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
+					result->SetNeedCycleCheck(true);
 
 					ConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
 
@@ -460,6 +464,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 			{
 				node_stack.PushEvaluableNode(list);
 				node_stack.PushEvaluableNode(result_list);
+				//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
+				result_list->SetNeedCycleCheck(true);
 
 				std::vector<EvaluableNodeReference> evaluations(num_nodes);
 
@@ -544,6 +550,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 			{
 				node_stack.PushEvaluableNode(list);
 				node_stack.PushEvaluableNode(result_list);
+				//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
+				result_list->SetNeedCycleCheck(true);
 
 				std::vector<EvaluableNodeReference> evaluations(num_nodes);
 
@@ -1009,7 +1017,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en,
 
 		auto &index_list_ocn = index_list->GetOrderedChildNodes();
 		for(size_t i = 0; i < num_ordered_nodes; i++)
-			index_list_ocn[i]->SetNumberValue(static_cast<double>(i));
+			index_list_ocn[i]->SetTypeViaNumberValue(static_cast<double>(i));
 	}
 	else //no child nodes, just alloc an empty list
 		index_list.SetReference(evaluableNodeManager->AllocNode(ENT_LIST));
@@ -1511,6 +1519,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 			if(Concurrency::threadPool.AreThreadsAvailable())
 			{
 				auto node_stack = CreateOpcodeStackStateSaver(new_assoc);
+				//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
+				new_assoc->SetNeedCycleCheck(true);
 
 				//get keys
 				std::vector<StringInternPool::StringID> keys;

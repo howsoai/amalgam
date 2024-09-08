@@ -460,14 +460,6 @@ public:
 	void SetType(EvaluableNodeType new_type, EvaluableNodeManager *enm = nullptr,
 		bool attempt_to_preserve_immediate_value = true);
 
-	//fully clears node and sets it to new_type
-	inline void ClearAndSetType(EvaluableNodeType new_type)
-	{
-		ClearMetadata();
-		DestructValue();
-		InitializeType(new_type);
-	}
-
 	//sets up number value
 	void InitNumberValue();
 
@@ -481,17 +473,17 @@ public:
 		return zeroNumberValue;
 	}
 
-	//sets the number value
-	inline void SetNumberValue(double v)
+	//changes the type by setting it to the number value specified
+	inline void SetTypeViaNumberValue(double v)
 	{
 		if(FastIsNaN(v))
 		{
-			SetType(ENT_NULL);
+			SetType(ENT_NULL, nullptr, false);
 		}
 		else
 		{
-			if(DoesEvaluableNodeTypeUseNumberData(GetType()))
-				GetNumberValueReference() = v;
+			SetType(ENT_NUMBER, nullptr, false);
+			GetNumberValueReference() = v;
 		}
 	}
 

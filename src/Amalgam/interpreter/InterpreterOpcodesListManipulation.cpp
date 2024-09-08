@@ -602,7 +602,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, b
 
 		auto &range_list_ocn = range_list->GetOrderedChildNodes();
 		for(size_t i = 0; i < num_nodes; i++)
-			range_list_ocn[i]->SetNumberValue(i * range_step_size + range_start);
+			range_list_ocn[i]->SetTypeViaNumberValue(i * range_step_size + range_start);
 
 		return range_list;
 	}
@@ -622,6 +622,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, b
 		if(Concurrency::threadPool.AreThreadsAvailable())
 		{
 			node_stack.PushEvaluableNode(result);
+			//set as needing cycle check; concurrency_manager will clear it if it is not needed when finished
+			result->SetNeedCycleCheck(true);
 
 			ConcurrencyManager concurrency_manager(this, num_nodes, enqueue_task_lock);
 

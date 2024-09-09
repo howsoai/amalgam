@@ -592,22 +592,39 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 		if(attempt_to_preserve_immediate_value)
 			number_value = EvaluableNode::ToNumber(this);
 
-		InitNumberValue();
-		GetNumberValueReference() = number_value;
+		if(FastIsNaN(number_value))
+		{
+			InitOrderedChildNodes();
+			SetNeedCycleCheck(false);
+		}
+		else
+		{
+			InitNumberValue();
+			GetNumberValueReference() = number_value;
 
-		//will check below if any reason to not be idempotent
-		SetIsIdempotent(true);
+			//will check below if any reason to not be idempotent
+			SetIsIdempotent(true);
+		}
 	}
 	else if(DoesEvaluableNodeTypeUseStringData(new_type))
 	{
-		StringInternPool::StringID sid = string_intern_pool.NOT_A_STRING_ID;
+		StringInternPool::StringID sid = string_intern_pool.emptyStringId;
 		if(attempt_to_preserve_immediate_value)
 			sid = EvaluableNode::ToStringIDWithReference(this);
-		InitStringValue();
-		GetStringIDReference() = sid;
 
-		//will check below if any reason to not be idempotent
-		SetIsIdempotent(new_type == ENT_STRING);
+		if(sid == string_intern_pool.NOT_A_STRING_ID)
+		{
+			InitOrderedChildNodes();
+			SetNeedCycleCheck(false);
+		}
+		else
+		{
+			InitStringValue();
+			GetStringIDReference() = sid;
+
+			//will check below if any reason to not be idempotent
+			SetIsIdempotent(new_type == ENT_STRING);
+		}
 	}
 	else if(DoesEvaluableNodeTypeUseAssocData(new_type))
 	{

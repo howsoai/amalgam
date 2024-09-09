@@ -568,14 +568,9 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 
 		//string will default to invalid value -- only set if both strings are valid
 		if(cur_value_valid && inc_value_valid)
-		{
-			value_destination_node->SetType(ENT_STRING, nullptr, false);
 			value_destination_node.SetReference(enm->AllocNode(ENT_STRING, cur_value.append(inc_value)), true);
-		}
 		else
-		{
 			value_destination_node.SetReference(enm->AllocNode(ENT_NULL), true);
-		}
 	}
 	else //add ordered child node
 	{

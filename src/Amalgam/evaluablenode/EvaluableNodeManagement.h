@@ -1010,7 +1010,7 @@ protected:
 	static void MarkAllReferencedNodesInUseRecurse(EvaluableNode *tree);
 
 #ifdef MULTITHREAD_SUPPORT
-	static void MarkAllReferencedNodesInUseRecurseConcurrent(EvaluableNode* tree);
+	static void MarkAllReferencedNodesInUseRecurseConcurrent(EvaluableNode *tree);
 #endif
 
 	//helper method for ValidateEvaluableNodeTreeMemoryIntegrity

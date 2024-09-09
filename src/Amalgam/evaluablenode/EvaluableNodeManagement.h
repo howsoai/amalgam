@@ -518,7 +518,7 @@ public:
 		//perform a handoff in case candidate is the only value
 		string_intern_pool.CreateStringReference(value);
 		EvaluableNodeReference node = ReuseOrAllocNode(candidate, ENT_STRING);
-		node->SetStringIDWithReferenceHandoff(value);
+		node->SetTypeViaStringIdValueWithReferenceHandoff(value);
 		return node;
 	}
 
@@ -567,7 +567,7 @@ public:
 		//perform a handoff in case one of the candidates is the only value
 		string_intern_pool.CreateStringReference(value);
 		EvaluableNodeReference node = ReuseOrAllocOneOfNodes(candidate_1, candidate_2, ENT_STRING);
-		node->SetStringIDWithReferenceHandoff(value);
+		node->SetTypeViaStringIdValueWithReferenceHandoff(value);
 		return node;
 	}
 

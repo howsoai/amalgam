@@ -1008,7 +1008,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en,
 		auto &index_list_ocn = index_list->GetOrderedChildNodes();
 		size_t index = 0;
 		for(auto &[node_id, _] : container_mcn)
-			index_list_ocn[index++]->SetStringIDWithReferenceHandoff(node_id);
+			index_list_ocn[index++]->SetTypeViaStringIdValueWithReferenceHandoff(node_id);
 	}
 	else if(container->IsOrderedArray())
 	{

@@ -487,8 +487,8 @@ public:
 		}
 	}
 
-	//changes the type by setting it to the string id value specified
-	inline void SetTypeViaStringIdValue(StringInternPool::StringID v)
+	//changes the type by setting it to the string id value specified, handing off the reference
+	inline void SetTypeViaStringIdValueWithReferenceHandoff(StringInternPool::StringID v)
 	{
 		if(v == string_intern_pool.NOT_A_STRING_ID)
 		{

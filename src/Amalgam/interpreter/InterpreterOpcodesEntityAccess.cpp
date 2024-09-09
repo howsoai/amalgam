@@ -108,7 +108,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 		//create the string references all at once and hand off
 		string_intern_pool.CreateStringReferences(contained_entities, [](Entity *e) { return e->GetIdStringId(); });
 		for(size_t i = 0; i < contained_entities.size(); i++)
-			result_ocn[i]->SetStringIDWithReferenceHandoff(contained_entities[i]->GetIdStringId());
+			result_ocn[i]->SetTypeViaStringIdValueWithReferenceHandoff(contained_entities[i]->GetIdStringId());
 
 		//if not using SBFDS, make sure always return in the same order for consistency, regardless of cashing, hashing, etc.
 		//if using SBFDS, then the order is assumed to not matter for other queries, so don't pay the cost of sorting here

@@ -843,7 +843,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, b
 		}
 	}
 
-	source->SetType(new_type, evaluableNodeManager);
+	source->SetType(new_type, evaluableNodeManager, true);
 
 	//apply the new type, using whether or not it was a unique reference,
 	//passing through whether an immediate_result is desired
@@ -1008,7 +1008,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en,
 		auto &index_list_ocn = index_list->GetOrderedChildNodes();
 		size_t index = 0;
 		for(auto &[node_id, _] : container_mcn)
-			index_list_ocn[index++]->SetStringIDWithReferenceHandoff(node_id);
+			index_list_ocn[index++]->SetTypeViaStringIdValueWithReferenceHandoff(node_id);
 	}
 	else if(container->IsOrderedArray())
 	{
@@ -1230,7 +1230,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 	auto indices = InterpretNodeForImmediateUse(ocn[1], true);
 
 	//used for deleting nodes if possible -- unique and cycle free
-	EvaluableNodeReference removed_node = EvaluableNodeReference(nullptr, container.unique && !container->GetNeedCycleCheck());
+	EvaluableNodeReference removed_node = EvaluableNodeReference(static_cast<EvaluableNode *>(nullptr),
+		container.unique && !container->GetNeedCycleCheck());
 
 	//if not a list, then just remove individual element
 	if(indices.IsImmediateValueType())

@@ -212,9 +212,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 	{
 		EvaluableNode *debugger_info = evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_FALSE, 2);
 		if(Interpreter::GetDebuggingState())
-			debugger_info->GetOrderedChildNodesReference()[0]->SetType(ENT_TRUE, evaluableNodeManager);
+			debugger_info->GetOrderedChildNodesReference()[0]->SetType(ENT_TRUE, evaluableNodeManager, false);
 		if(asset_manager.debugSources)
-			debugger_info->GetOrderedChildNodesReference()[1]->SetType(ENT_TRUE, evaluableNodeManager);
+			debugger_info->GetOrderedChildNodesReference()[1]->SetType(ENT_TRUE, evaluableNodeManager, false);
 
 		return EvaluableNodeReference(debugger_info, true);
 	}

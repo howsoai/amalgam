@@ -39,8 +39,10 @@ public:
 		: value(value), unique(true)
 	{	}
 
-	__forceinline EvaluableNodeReference(StringInternPool::StringID string_id)
-		: value(string_intern_pool.CreateStringReference(string_id)), unique(true)
+	//if reference_handoff is true, it will assume ownership rather than creating a new reference
+	__forceinline EvaluableNodeReference(StringInternPool::StringID string_id, bool reference_handoff = false)
+		: value(reference_handoff ? string_id : string_intern_pool.CreateStringReference(string_id)),
+		unique(true)
 	{	}
 
 	__forceinline EvaluableNodeReference(const std::string &str)
@@ -161,7 +163,7 @@ public:
 
 	__forceinline static EvaluableNodeReference Null()
 	{
-		return EvaluableNodeReference(nullptr, true);
+		return EvaluableNodeReference(static_cast<EvaluableNode *>(nullptr), true);
 	}
 
 	__forceinline void SetReference(EvaluableNode *_reference)
@@ -516,7 +518,7 @@ public:
 		//perform a handoff in case candidate is the only value
 		string_intern_pool.CreateStringReference(value);
 		EvaluableNodeReference node = ReuseOrAllocNode(candidate, ENT_STRING);
-		node->SetStringIDWithReferenceHandoff(value);
+		node->SetTypeViaStringIdValueWithReferenceHandoff(value);
 		return node;
 	}
 
@@ -565,7 +567,7 @@ public:
 		//perform a handoff in case one of the candidates is the only value
 		string_intern_pool.CreateStringReference(value);
 		EvaluableNodeReference node = ReuseOrAllocOneOfNodes(candidate_1, candidate_2, ENT_STRING);
-		node->SetStringIDWithReferenceHandoff(value);
+		node->SetTypeViaStringIdValueWithReferenceHandoff(value);
 		return node;
 	}
 
@@ -1008,7 +1010,7 @@ protected:
 	static void MarkAllReferencedNodesInUseRecurse(EvaluableNode *tree);
 
 #ifdef MULTITHREAD_SUPPORT
-	static void MarkAllReferencedNodesInUseRecurseConcurrent(EvaluableNode* tree);
+	static void MarkAllReferencedNodesInUseRecurseConcurrent(EvaluableNode *tree);
 #endif
 
 	//helper method for ValidateEvaluableNodeTreeMemoryIntegrity

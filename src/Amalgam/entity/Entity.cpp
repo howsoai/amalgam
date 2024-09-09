@@ -254,7 +254,7 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 	if(!on_self)
 	{
 		if(IsLabelPrivate(label_sid))
-			return EvaluableNodeReference(nullptr, true);
+			return EvaluableNodeReference::Null();
 
 		//since it's not setting on self, another entity owns the data so it isn't unique to this entity
 		new_value.unique = false;
@@ -462,7 +462,7 @@ EvaluableNodeReference Entity::Execute(StringInternPool::StringID label_sid,
 	)
 {
 	if(!on_self && IsLabelPrivate(label_sid))
-		return EvaluableNodeReference(nullptr, true);
+		return EvaluableNodeReference::Null();
 
 	EvaluableNode *node_to_execute = nullptr;
 	if(label_sid == string_intern_pool.NOT_A_STRING_ID)	//if not specified, then use root

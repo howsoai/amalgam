@@ -1010,7 +1010,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUseRecurse(EvaluableNode *tre
 }
 
 #ifdef MULTITHREAD_SUPPORT
-void EvaluableNodeManager::MarkAllReferencedNodesInUseRecurseConcurrent(EvaluableNode* tree)
+void EvaluableNodeManager::MarkAllReferencedNodesInUseRecurseConcurrent(EvaluableNode *tree)
 {
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 	assert(tree->IsNodeValid());

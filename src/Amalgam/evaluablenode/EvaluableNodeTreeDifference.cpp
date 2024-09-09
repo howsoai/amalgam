@@ -140,7 +140,7 @@ EvaluableNode *EvaluableNodeTreeDifference::DifferenceTrees(EvaluableNodeManager
 		}
 		else //need to create a list and transform it into (set_type ... type)
 		{
-			replacement->SetType(ENT_LIST, enm);
+			replacement->SetType(ENT_LIST, enm, false);
 			EvaluableNode *set_type = enm->AllocNode(ENT_SET_TYPE);
 			set_type->AppendOrderedChildNode(replacement);
 			set_type->AppendOrderedChildNode(enm->AllocNode(ENT_STRING, GetStringFromEvaluableNodeType(replacement_type)));

@@ -1527,7 +1527,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 	switch(mutation_type)
 	{
 		case ENBISI_change_type:
-			n->SetType(mp.randEvaluableNodeType->WeightedDiscreteRand(mp.interpreter->randomStream), mp.enm);
+			n->SetType(mp.randEvaluableNodeType->WeightedDiscreteRand(mp.interpreter->randomStream), mp.enm, true);
 			if(IsEvaluableNodeTypeImmediate(n->GetType()))
 				MutateImmediateNode(n, mp.interpreter->randomStream, *mp.strings);
 			break;
@@ -1556,7 +1556,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MutateNode(EvaluableNode *n, Mutat
 
 			}
 			else
-				n->SetType(ENT_NULL, mp.enm);
+				n->SetType(ENT_NULL, nullptr, false);
 			break;
 
 		case ENBISI_insert:

@@ -442,7 +442,7 @@ inline EvaluableNodeReference CreateListOfStringsIdsFromIteratorAndFunction(Stri
 
 	size_t index = 0;
 	for(auto string_element : string_container)
-		ocn[index++]->SetStringIDWithReferenceHandoff(get_string_id(string_element));
+		ocn[index++]->SetTypeViaStringIdValueWithReferenceHandoff(get_string_id(string_element));
 
 	return EvaluableNodeReference(list, true);
 }

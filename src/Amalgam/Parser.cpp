@@ -655,7 +655,7 @@ EvaluableNode *Parser::ParseNextBlock()
 			//if specifying something unusual, then assume it's just a null
 			if(n->GetType() == ENT_NOT_A_BUILT_IN_TYPE)
 			{
-				n->SetType(ENT_NULL, evaluableNodeManager);
+				n->SetType(ENT_NULL, nullptr, false);
 				if(!originalSource.empty())
 					std::cerr << "Warning: "  << " Invalid opcode at line " << lineNumber + 1 << " of " << originalSource << std::endl;
 			}

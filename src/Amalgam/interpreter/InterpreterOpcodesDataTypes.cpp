@@ -279,7 +279,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_TYPE(EvaluableNode *en
 	if(new_type == ENT_NOT_A_BUILT_IN_TYPE)
 		new_type = ENT_NULL;
 
-	source->SetType(new_type, evaluableNodeManager);
+	source->SetType(new_type, evaluableNodeManager, true);
 
 	return source;
 }
@@ -1227,16 +1227,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SPLIT(EvaluableNode *en, b
 	auto [valid_string_to_split, string_to_split] = InterpretNodeIntoStringValue(ocn[0]);
 	if(!valid_string_to_split)
 	{
-		retval->SetType(ENT_STRING, evaluableNodeManager);
-		retval->SetStringID(string_intern_pool.NOT_A_STRING_ID);
+		retval->SetType(ENT_NULL, nullptr, false);
 		return retval;
 	}
 
 	auto [valid_split_value, split_value] = InterpretNodeIntoStringValue(ocn[1]);
 	if(!valid_split_value)
 	{
-		retval->SetType(ENT_STRING, evaluableNodeManager);
-		retval->SetStringID(string_intern_pool.NOT_A_STRING_ID);
+		retval->SetType(ENT_NULL, nullptr, false);
 		return retval;
 	}
 
@@ -1350,7 +1348,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 
 	//if only string as the parameter, just return a new copy of the string
 	if(ocn.size() == 1)
-		return InterpretNodeIntoUniqueStringIDValueEvaluableNode(ocn[0]);
+		return InterpretNodeIntoUniqueStringIDValueEvaluableNode(ocn[0], immediate_result);
 
 	//have at least 2 params
 	auto [valid_string_to_substr, string_to_substr] = InterpretNodeIntoStringValue(ocn[0]);
@@ -1675,7 +1673,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONCAT(EvaluableNode *en, 
 
 	//if only one parameter is specified, do a fast shortcut
 	if(ocn.size() == 1)
-		return InterpretNodeIntoUniqueStringIDValueEvaluableNode(ocn[0]);
+		return InterpretNodeIntoUniqueStringIDValueEvaluableNode(ocn[0], immediate_result);
 
 	std::string s;
 	for(auto &cn : ocn)

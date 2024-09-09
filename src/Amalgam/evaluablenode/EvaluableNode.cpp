@@ -594,6 +594,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 
 		if(FastIsNaN(number_value))
 		{
+			new_type = ENT_NULL;
 			InitOrderedChildNodes();
 			SetNeedCycleCheck(false);
 		}
@@ -614,6 +615,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 
 		if(sid == string_intern_pool.NOT_A_STRING_ID)
 		{
+			new_type = ENT_NULL;
 			InitOrderedChildNodes();
 			SetNeedCycleCheck(false);
 		}

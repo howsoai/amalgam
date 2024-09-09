@@ -598,13 +598,21 @@ StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueWithRefere
 	}
 }
 
-EvaluableNodeReference Interpreter::InterpretNodeIntoUniqueStringIDValueEvaluableNode(EvaluableNode *n)
+EvaluableNodeReference Interpreter::InterpretNodeIntoUniqueStringIDValueEvaluableNode(
+	EvaluableNode *n, bool immediate_result)
 {
 	//if can skip InterpretNode, then just allocate the string
 	if(n == nullptr || n->GetIsIdempotent()
-			|| n->GetType() == ENT_STRING || n->GetType() == ENT_NUMBER)
-		return EvaluableNodeReference(evaluableNodeManager->AllocNodeWithReferenceHandoff(ENT_STRING,
-												EvaluableNode::ToStringIDWithReference(n)), true);
+		|| n->GetType() == ENT_STRING || n->GetType() == ENT_NUMBER)
+	{
+		auto sid = EvaluableNode::ToStringIDWithReference(n);
+
+		if(immediate_result)
+			return EvaluableNodeReference(sid, true);
+		else
+			return EvaluableNodeReference(evaluableNodeManager->AllocNodeWithReferenceHandoff(ENT_STRING,
+				sid), true);
+	}
 
 	auto result = InterpretNode(n);
 
@@ -614,8 +622,9 @@ EvaluableNodeReference Interpreter::InterpretNodeIntoUniqueStringIDValueEvaluabl
 
 	result->ClearMetadata();
 
-	if(result->GetType() != ENT_STRING)
-		result->SetType(ENT_STRING, evaluableNodeManager);
+	auto type = result->GetType();
+	if(type != ENT_STRING && type != ENT_NULL)
+		result->SetType(ENT_STRING, evaluableNodeManager, true);
 
 	return result;
 }
@@ -654,7 +663,7 @@ EvaluableNodeReference Interpreter::InterpretNodeIntoUniqueNumberValueOrNullEval
 
 	auto type = result->GetType();
 	if(type != ENT_NUMBER && type != ENT_NULL)
-		result->SetType(ENT_NUMBER, evaluableNodeManager);
+		result->SetType(ENT_NUMBER, evaluableNodeManager, true);
 
 	return result;
 }

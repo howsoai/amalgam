@@ -371,7 +371,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 	else if(to_lookup->IsAssociativeArray())
 	{
 		//reference to keep track of to_lookup nodes to free
-		EvaluableNodeReference cnr(nullptr, to_lookup.unique);
+		EvaluableNodeReference cnr(static_cast<EvaluableNode *>(nullptr), to_lookup.unique);
 
 		//need to return an assoc, so see if need to make copy; will overwrite all values
 		if(!to_lookup.unique)
@@ -398,7 +398,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 	else //ordered params
 	{
 		//reference to keep track of to_lookup nodes to free
-		EvaluableNodeReference cnr(nullptr, to_lookup.unique);
+		EvaluableNodeReference cnr(static_cast<EvaluableNode *>(nullptr), to_lookup.unique);
 
 		//need to return an assoc, so see if need to make copy; will overwrite all values
 		if(!to_lookup.unique)

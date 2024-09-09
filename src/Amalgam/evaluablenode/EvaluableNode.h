@@ -457,8 +457,8 @@ public:
 	// if enm is nullptr, then it will not necessarily keep child nodes
 	//if attempt_to_preserve_immediate_value is true, then it will try to preserve any relevant immediate value
 	// attempt_to_preserve_immediate_value should be set to false if the value will be immediately overwritten
-	void SetType(EvaluableNodeType new_type, EvaluableNodeManager *enm = nullptr,
-		bool attempt_to_preserve_immediate_value = true);
+	void SetType(EvaluableNodeType new_type, EvaluableNodeManager *enm,
+		bool attempt_to_preserve_immediate_value);
 
 	//sets up number value
 	void InitNumberValue();
@@ -484,6 +484,20 @@ public:
 		{
 			SetType(ENT_NUMBER, nullptr, false);
 			GetNumberValueReference() = v;
+		}
+	}
+
+	//changes the type by setting it to the string id value specified
+	inline void SetTypeViaStringIdValue(StringInternPool::StringID v)
+	{
+		if(v == string_intern_pool.NOT_A_STRING_ID)
+		{
+			SetType(ENT_NULL, nullptr, false);
+		}
+		else
+		{
+			SetType(ENT_STRING, nullptr, false);
+			GetStringIDReference() = v;
 		}
 	}
 

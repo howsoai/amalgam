@@ -537,7 +537,8 @@ public:
 
 	//Calls InterpretNode on n, convers to a string, and makes sure that the node returned is
 	// new and unique so that it can be modified
-	EvaluableNodeReference InterpretNodeIntoUniqueStringIDValueEvaluableNode(EvaluableNode *n);
+	EvaluableNodeReference InterpretNodeIntoUniqueStringIDValueEvaluableNode(EvaluableNode *n,
+		bool immediate_result = false);
 
 	//Calls InterpretNode on n, converts to double and returns, then cleans up any resources used
 	double InterpretNodeIntoNumberValue(EvaluableNode *n);

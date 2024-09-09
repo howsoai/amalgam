@@ -739,7 +739,7 @@ void EvaluableNode::SetStringID(StringInternPool::StringID id)
 {
 	if(id == StringInternPool::NOT_A_STRING_ID)
 	{
-		SetType(ENT_NULL);
+		SetType(ENT_NULL, nullptr, false);
 	}
 	else
 	{
@@ -829,7 +829,7 @@ void EvaluableNode::SetStringIDWithReferenceHandoff(StringInternPool::StringID i
 {
 	if(id == StringInternPool::NOT_A_STRING_ID)
 	{
-		SetType(ENT_NULL);
+		SetType(ENT_NULL, nullptr, false);
 	}
 	else
 	{

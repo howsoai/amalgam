@@ -39,8 +39,10 @@ public:
 		: value(value), unique(true)
 	{	}
 
-	__forceinline EvaluableNodeReference(StringInternPool::StringID string_id)
-		: value(string_intern_pool.CreateStringReference(string_id)), unique(true)
+	//if reference_handoff is true, it will assume ownership rather than creating a new reference
+	__forceinline EvaluableNodeReference(StringInternPool::StringID string_id, bool reference_handoff = false)
+		: value(reference_handoff ? string_id : string_intern_pool.CreateStringReference(string_id)),
+		unique(true)
 	{	}
 
 	__forceinline EvaluableNodeReference(const std::string &str)
@@ -161,7 +163,7 @@ public:
 
 	__forceinline static EvaluableNodeReference Null()
 	{
-		return EvaluableNodeReference(nullptr, true);
+		return EvaluableNodeReference(static_cast<EvaluableNode *>(nullptr), true);
 	}
 
 	__forceinline void SetReference(EvaluableNode *_reference)

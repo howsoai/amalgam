@@ -355,7 +355,6 @@ std::string GetDateTimeStringFromNumSecondsSinceEpoch(double seconds_since_epoch
 //parses time_str based on format and locale and returns the number of seconds since midnight
 double GetNumSecondsSinceMidnight(const std::string &time_str, std::string format, std::string locale)
 {
-	std::chrono::system_clock::time_point dt;
 	std::istringstream ss{ time_str };
 
 	if(!locale.empty())

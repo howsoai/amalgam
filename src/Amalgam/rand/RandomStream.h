@@ -36,7 +36,7 @@ public:
 	//returns a random seed based on this stream's current state and seed_string parameter
 	std::string CreateOtherStreamStateViaString(const std::string &seed_string);
 
-	//returns a Randomstream based on this stream's current state and seed_string parameter
+	//returns a RandomStream based on this stream's current state and seed_string parameter
 	RandomStream CreateOtherStreamViaString(const std::string &seed_string);
 
 	//consumes random numbers from the stream to create a new RandomStream

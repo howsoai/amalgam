@@ -205,12 +205,12 @@ const date::time_zone *GetTimeZoneFromString(const std::string &timezone)
 
 
 //don't pass locale by reference so can default it
-double GetNumSecondsSinceEpochFromDateTimeString(const std::string &datetime, std::string format, std::string locale, std::string timezone)
+double GetNumSecondsSinceEpochFromDateTimeString(const std::string &datetime_str, std::string format, std::string locale, std::string timezone)
 {
 	bool has_time_offset = ConstrainDateTimeStringToValidFormat(format);
 
 	std::chrono::system_clock::time_point dt;
-	std::istringstream ss{ datetime };
+	std::istringstream ss{ datetime_str };
 	std::string in_date_timezone = "";
 
 	if(!locale.empty())
@@ -321,14 +321,19 @@ std::string ConvertZonedDateTimeToString(TimepointType datetime, const std::stri
 }
 
 //format and locale are not passed by reference because both need a copy
-std::string GetDateTimeStringFromNumSecondsSinceEpoch(double num_secs_from_epoch, std::string format, const std::string &locale, const std::string &timezone)
+std::string GetDateTimeStringFromNumSecondsSinceEpoch(double seconds_since_epoch, std::string format, const std::string &locale, const std::string &timezone)
 {
+	if(seconds_since_epoch != seconds_since_epoch
+			|| seconds_since_epoch == std::numeric_limits<double>::infinity()
+			|| seconds_since_epoch == -std::numeric_limits<double>::infinity())
+		seconds_since_epoch = 0.0;
+
 	bool has_time_offset = ConstrainDateTimeStringToValidFormat(format);
 
-	bool has_fractional_seconds = (num_secs_from_epoch != static_cast<int64_t>(num_secs_from_epoch));
+	bool has_fractional_seconds = (seconds_since_epoch != static_cast<int64_t>(seconds_since_epoch));
 
 	std::chrono::system_clock::time_point datetime;
-	datetime = std::chrono::system_clock::time_point(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::duration<double>(static_cast<double>(num_secs_from_epoch))));
+	datetime = std::chrono::system_clock::time_point(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::duration<double>(static_cast<double>(seconds_since_epoch))));
 
 	//if there is no timezone defined, but the format has a time offset provided via %z assume the offset is UTC
 	const date::time_zone *tz = nullptr;
@@ -345,6 +350,103 @@ std::string GetDateTimeStringFromNumSecondsSinceEpoch(double num_secs_from_epoch
 		auto rounded_timepoint = std::chrono::floor<std::chrono::seconds>(datetime);
 		return ConvertZonedDateTimeToString<decltype(rounded_timepoint)>(rounded_timepoint, format, locale, tz);
 	}
+}
+
+//parses time_str based on format and locale and returns the number of seconds since midnight
+double GetNumSecondsSinceMidnight(const std::string &time_str, std::string format, std::string locale)
+{
+	std::istringstream ss{ time_str };
+
+	if(!locale.empty())
+	{
+		//make sure it's utf-8
+		locale += ".utf-8";
+		//if the locale is valid, use it
+		try
+		{
+			auto cur_locale = std::locale(locale);
+			ss.imbue(cur_locale);
+		}
+		catch(...)
+		{
+			//can't emit anything
+		}
+	}
+
+	try
+	{
+		std::chrono::nanoseconds tp;
+		ss >> date::parse(format, tp);
+
+		if(ss.fail())
+			return 0.0;
+
+		double seconds_since_midnight = std::chrono::duration_cast<std::chrono::microseconds>(tp).count() / 1000000.0;
+		seconds_since_midnight = std::fmod(seconds_since_midnight, 86400);
+		if(seconds_since_midnight < 0)
+			seconds_since_midnight += 86400;
+		return seconds_since_midnight;
+	}
+	catch(...)
+	{
+		//can't emit anything
+	}
+
+	return 0.0;
+}
+
+//transfroms num_secs_from_midnight into a string representing the time of day
+std::string GetTimeStringFromNumSecondsSinceMidnight(double seconds_since_midnight, std::string format, std::string locale)
+{
+	if(seconds_since_midnight != seconds_since_midnight
+			|| seconds_since_midnight == std::numeric_limits<double>::infinity()
+			|| seconds_since_midnight == -std::numeric_limits<double>::infinity())
+		seconds_since_midnight = 0.0;
+
+	seconds_since_midnight = std::fmod(seconds_since_midnight, 86400);
+	if(seconds_since_midnight < 0)
+		seconds_since_midnight += 86400;
+	bool has_fractional_seconds = (seconds_since_midnight != static_cast<int64_t>(seconds_since_midnight));
+
+	auto tp = std::chrono::duration_cast<std::chrono::system_clock::duration>(std::chrono::duration<double>(seconds_since_midnight));
+
+	std::ostringstream os;
+	if(!locale.empty())
+	{
+		//make sure it's utf-8
+		locale += ".utf-8";
+		//if the locale is valid, use it
+		try
+		{
+			auto cur_locale = std::locale(locale);
+			os.imbue(cur_locale);
+		}
+		catch(...)
+		{
+			//can't emit anything
+		}
+	}
+
+	try
+	{
+		if(has_fractional_seconds)
+		{
+			os << date::format(format, tp);
+		}
+		else
+		{
+			auto rounded_timepoint = std::chrono::floor<std::chrono::seconds>(tp);
+			os << date::format(format, rounded_timepoint);
+		}
+
+		return os.str();
+	}
+	catch(...)
+	{
+		//can't emit anything
+	}
+
+	return "";
 }
 
 std::string _time_zone_database_path = SetTimeZoneDatabasePath();

@@ -1297,6 +1297,28 @@
 		)
 	"\n")
 
+  ;time to number
+  (print (format "13:22:44"  "time:%H:%M:%S" "number" ) "\n")
+  (print (format "13:22:44"  "time:%H:%M:%S" "number" (assoc locale "en_US")) "\n")
+  (print (format "10:22:44"  "time:%H:%M:%S" "number" ) "\n")
+  (print (format "10:22:44am"  "time:%I:%M:%S%p" "number" ) "\n")
+  (print (format "10:22:44.33am"  "time:%I:%M:%S%p" "number" ) "\n")
+  
+  ;errors
+  (print (format "10:22:44"  "time:%I:%M:%S" "number" ) "\n")
+  (print (format "10:22:44"  "time:%qqq:%qqq:%qqq" "number" ) "\n")
+  (print (format "13:22:44"  "time:%H:%M:%S" "number" (assoc locale "notalocale")) "\n")
+  
+  ;number to time
+  (print (format 48164 "number" "time:%H:%M:%S") "\n")
+  (print (format 48164 "number" "time:%I:%M:%S%p" (null) (assoc locale "es_ES")) "\n")
+  (print (format 37364.33 "number" "time:%I:%M:%S%p") "\n")
+  (print (format 0.0 "number" "time:%I:%M:%S%p") "\n")
+  
+  ;errors
+  (print (format (null) "number" "time:%I:%M:%S%p") "\n")
+  (print (format .infinity "number" "time:%I:%M:%S%p") "\n")
+
  (print "--get_labels--\n")
   (print (get_labels
   ( #labelA lambda #labelB

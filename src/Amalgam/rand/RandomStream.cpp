@@ -113,10 +113,17 @@ uint32_t RandomStream::RandUInt32()
 {
 	//perform PCG random number generation
 	//based on this: www.pcg-random.org/download.html
+	uint64_t multiplier_64 = 6364136223846793005ULL;
 	uint64_t old_value = state;
-	state = old_value * 6364136223846793005ULL + (increment | 1);
+	state = old_value * multiplier_64 + (increment | 1);
 
-	uint32_t xor_shifted = static_cast<uint32_t>(((old_value >> 18u) ^ old_value) >> 27u);
-	uint32_t rot = static_cast<uint32_t>(old_value >> 59u);
-	return (xor_shifted >> rot) | (xor_shifted << ((-static_cast<int32_t>(rot)) & 31));
+	//DXSM permutation: double xor shift multiply
+	uint32_t hi = static_cast<uint32_t>(state >> 32);
+	uint32_t lo = static_cast<uint32_t>(state | 1);
+	hi ^= hi >> 16;
+	uint32_t multiplier_32 = 747796405U;
+	hi *= multiplier_32;
+	hi ^= hi >> 24;
+	hi *= lo;
+	return hi;
 }

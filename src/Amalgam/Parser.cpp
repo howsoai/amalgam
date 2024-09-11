@@ -98,8 +98,7 @@ std::pair<EvaluableNodeReference, bool> Parser::Parse(std::string &code_string,
 			std::cerr << "Warning: " << -pt.numOpenParenthesis << " extra parenthesis in " << pt.originalSource << std::endl;
 	}
 
-	pt.PreevaluateNodes();
-	EvaluableNodeManager::UpdateFlagsForNodeTree(parse_tree);
+	pt.PreevaluateNodes(parse_tree);
 
 	return std::make_pair(EvaluableNodeReference(parse_tree, true), pt.charOffsetStartOfFirstErroneousNode);
 }
@@ -1167,8 +1166,10 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 	return nullptr;
 }
 
-void Parser::PreevaluateNodes()
+void Parser::PreevaluateNodes(EvaluableNode *parse_tree)
 {
+	//only need to update flags if any nodes actually change
+	bool any_nodes_changed = false;
 	for(auto &n : preevaluationNodes)
 	{
 		if(n == nullptr)
@@ -1194,6 +1195,7 @@ void Parser::PreevaluateNodes()
 				if(cn == n)
 				{
 					cn = target;
+					any_nodes_changed = true;
 					break;
 				}
 			}
@@ -1205,9 +1207,13 @@ void Parser::PreevaluateNodes()
 				if(cn == n)
 				{
 					cn = target;
+					any_nodes_changed = true;
 					break;
 				}
 			}
 		}
 	}
+
+	if(any_nodes_changed)
+		EvaluableNodeManager::UpdateFlagsForNodeTree(parse_tree);
 }

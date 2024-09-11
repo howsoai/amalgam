@@ -196,7 +196,7 @@ protected:
 	EvaluableNode *GetNodeFromRelativeCodePath(EvaluableNode *path);
 
 	//resolves any nodes that require preevaluation (such as assocs or circular references)
-	void PreevaluateNodes();
+	void PreevaluateNodes(EvaluableNode *parse_tree);
 
 	//Pointer to code currently being parsed
 	std::string *code;

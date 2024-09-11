@@ -15,6 +15,9 @@ Parser::Parser()
 	lineNumber = 0;
 	lineStartPos = 0;
 	numOpenParenthesis = 0;
+	originalSource = "";
+	topNode = nullptr;
+	charOffsetStartOfLastCompletedCode = std::numeric_limits<size_t>::max();
 }
 
 std::string Parser::Backslashify(const std::string &s)
@@ -57,18 +60,15 @@ std::string Parser::Backslashify(const std::string &s)
 	return b;
 }
 
-std::pair<EvaluableNodeReference, bool> Parser::Parse(std::string &code_string,
+std::pair<EvaluableNodeReference, size_t> Parser::Parse(std::string &code_string,
 	EvaluableNodeManager *enm, bool transactional_parse,  std::string *original_source, bool debug_sources)
 {
 	Parser pt;
 	pt.code = &code_string;
-	pt.pos = 0;
 	pt.preevaluationNodes.clear();
 	pt.evaluableNodeManager = enm;
 	pt.transactionalParse = transactional_parse;
-	pt.charOffsetStartOfFirstErroneousNode = std::numeric_limits<size_t>::max();
 
-	pt.originalSource = "";
 	if(original_source != nullptr)
 	{
 		//convert source to minimal absolute path
@@ -86,9 +86,7 @@ std::pair<EvaluableNodeReference, bool> Parser::Parse(std::string &code_string,
 
 	pt.debugSources = debug_sources;
 
-	//TODO 21359: finish this
-
-	EvaluableNode *parse_tree = pt.ParseNextBlock();
+	pt.ParseCode();
 
 	if(!pt.transactionalParse && !pt.originalSource.empty())
 	{
@@ -98,9 +96,9 @@ std::pair<EvaluableNodeReference, bool> Parser::Parse(std::string &code_string,
 			std::cerr << "Warning: " << -pt.numOpenParenthesis << " extra parenthesis in " << pt.originalSource << std::endl;
 	}
 
-	pt.PreevaluateNodes(parse_tree);
+	pt.PreevaluateNodes();
 
-	return std::make_pair(EvaluableNodeReference(parse_tree, true), pt.charOffsetStartOfFirstErroneousNode);
+	return std::make_pair(EvaluableNodeReference(pt.topNode, true), pt.charOffsetStartOfLastCompletedCode);
 }
 
 std::string Parser::Unparse(EvaluableNode *tree, EvaluableNodeManager *enm,
@@ -552,10 +550,12 @@ void Parser::FreeNode(EvaluableNode *node)
 		preevaluationNodes.pop_back();
 }
 
-EvaluableNode *Parser::ParseNextBlock()
+void Parser::ParseCode()
 {
-	EvaluableNode *tree_top = nullptr;
 	EvaluableNode *cur_node = nullptr;
+
+	//TODO 21359: if cur_node is one under topNode, keep track of end of last token and don't append (and stop parsing) if fails
+	//TODO 21359: update charOffsetStartOfLastCompletedCode based on logic above
 
 	//as long as code left
 	while(pos < code->size())
@@ -567,13 +567,13 @@ EvaluableNode *Parser::ParseNextBlock()
 		{
 			//nothing here at all
 			if(cur_node == nullptr)
-				return nullptr;
+				return;
 
 			const auto &parent = parentNodes.find(cur_node);
 
 			//if no parent, then all finished
 			if(parent == end(parentNodes) || parent->second == nullptr)
-				return tree_top;
+				return;
 
 			//jump up to the parent node
 			cur_node = parent->second;
@@ -582,9 +582,9 @@ EvaluableNode *Parser::ParseNextBlock()
 		else //got some token
 		{
 			//if it's the first token, then put it up top
-			if(tree_top == nullptr)
+			if(topNode == nullptr)
 			{
-				tree_top = n;
+				topNode = n;
 				cur_node = n;
 				continue;
 			}
@@ -631,13 +631,13 @@ EvaluableNode *Parser::ParseNextBlock()
 				{
 					//nothing here at all
 					if(cur_node == nullptr)
-						return nullptr;
+						return;
 
 					const auto &parent = parentNodes.find(cur_node);
 
 					//if no parent, then all finished
 					if(parent == end(parentNodes) || parent->second == nullptr)
-						return tree_top;
+						return;
 
 					//jump up to the parent node
 					cur_node = parent->second;
@@ -661,8 +661,6 @@ EvaluableNode *Parser::ParseNextBlock()
 		}
 
 	}
-
-	return tree_top;
 }
 
 void Parser::AppendComments(EvaluableNode *n, size_t indentation_depth, bool pretty, std::string &to_append)
@@ -1166,7 +1164,7 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 	return nullptr;
 }
 
-void Parser::PreevaluateNodes(EvaluableNode *parse_tree)
+void Parser::PreevaluateNodes()
 {
 	//only need to update flags if any nodes actually change
 	bool any_nodes_changed = false;
@@ -1215,5 +1213,5 @@ void Parser::PreevaluateNodes(EvaluableNode *parse_tree)
 	}
 
 	if(any_nodes_changed)
-		EvaluableNodeManager::UpdateFlagsForNodeTree(parse_tree);
+		EvaluableNodeManager::UpdateFlagsForNodeTree(topNode);
 }

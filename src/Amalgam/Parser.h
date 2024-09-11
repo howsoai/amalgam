@@ -105,7 +105,7 @@ public:
 	//if transactional_parse is true, then it will ignore any incomplete or erroneous opcodes except the outermost one
 	//if original_source is a valid string, it will emit any warnings to stderr
 	//if debug_sources is true, it will prepend each node with a comment indicating original source
-	static std::pair<EvaluableNodeReference, bool> Parse(std::string &code_string, EvaluableNodeManager *enm,
+	static std::pair<EvaluableNodeReference, size_t> Parse(std::string &code_string, EvaluableNodeManager *enm,
 		bool transactional_parse = false, std::string *original_source = nullptr, bool debug_sources = false);
 
 	//Returns a string that represents the tree
@@ -171,8 +171,8 @@ protected:
 	//deallocates the current node in case there is an early exit or error
 	void FreeNode(EvaluableNode *node);
 
-	//Parses the next block of code, then returns the block
-	EvaluableNode *ParseNextBlock();
+	//Parses the next block of code into topNode
+	void ParseCode();
 
 	//Prints out all comments for the respective node
 	static void AppendComments(EvaluableNode *n, size_t indentation_depth, bool pretty, std::string &to_append);
@@ -196,7 +196,7 @@ protected:
 	EvaluableNode *GetNodeFromRelativeCodePath(EvaluableNode *path);
 
 	//resolves any nodes that require preevaluation (such as assocs or circular references)
-	void PreevaluateNodes(EvaluableNode *parse_tree);
+	void PreevaluateNodes();
 
 	//Pointer to code currently being parsed
 	std::string *code;
@@ -219,6 +219,9 @@ protected:
 	//if true, will prepend debug sources to node comments
 	bool debugSources;
 
+	//the top node of everything being parsed
+	EvaluableNode *topNode;
+
 	//contains a list of nodes that need to be preevaluated on parsing
 	std::vector<EvaluableNode *> preevaluationNodes;
 
@@ -230,8 +233,8 @@ protected:
 	//if true, then it will ignore any incomplete or erroneous opcodes except the outermost one
 	bool transactionalParse;
 
-	//offset of the first node that was not properly completed
-	size_t charOffsetStartOfFirstErroneousNode;
+	//offset of the last code that was properly completed
+	size_t charOffsetStartOfLastCompletedCode;
 
 	//character used for indentation
 	static const char indentationCharacter = '\t';

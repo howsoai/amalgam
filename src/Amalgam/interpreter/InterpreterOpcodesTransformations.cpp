@@ -821,25 +821,30 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, b
 			auto new_type_sid = type_node->GetStringIDReference();
 			new_type = GetEvaluableNodeTypeFromStringId(new_type_sid);
 			evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
+
+			source->SetType(new_type, evaluableNodeManager, true);
 		}
 		else
 		{
 			new_type = type_node->GetType();
 			auto &type_node_ocn = type_node->GetOrderedChildNodes();
 
+			//set the type before possibly inserting any new child nodes
+			source->SetType(new_type, evaluableNodeManager, true);
+
 			//see if need to prepend anything to the source before changing type
 			if(type_node_ocn.size() == 0)
 				evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
-			else //prepend the parameters of source
+			else if(source->IsOrderedArray())
 			{
-				source->GetOrderedChildNodes().insert(
-					begin(source->GetOrderedChildNodes()), begin(type_node_ocn), end(type_node_ocn));
+				//prepend the parameters of source
+				auto &source_ocn = source->GetOrderedChildNodesReference();
+				source_ocn.insert(
+					begin(source_ocn), begin(type_node_ocn), end(type_node_ocn));
 				source.UpdatePropertiesBasedOnAttachedNode(type_node);
 			}
 		}
 	}
-
-	source->SetType(new_type, evaluableNodeManager, true);
 
 	//apply the new type, using whether or not it was a unique reference,
 	//passing through whether an immediate_result is desired

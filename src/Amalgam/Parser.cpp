@@ -554,12 +554,16 @@ void Parser::ParseCode()
 {
 	EvaluableNode *cur_node = nullptr;
 
-	//TODO 21359: if cur_node is one under topNode, keep track of end of last token and don't append (and stop parsing) if fails
-	//TODO 21359: update charOffsetStartOfLastCompletedCode based on logic above
+	//TODO 21359: if cur_node is one under topNode, keep track of end of last token and don't append (and stop parsing) if fails -- check uses of transactionalParse
 
 	//as long as code left
 	while(pos < code->size())
 	{
+		//if at the top level node and starting to parse a new structure,
+		//then all previous ones have completed and can mark this new position as a successful start
+		if(topNode != nullptr && cur_node == topNode)
+			charOffsetStartOfLastCompletedCode = pos;
+
 		EvaluableNode *n = GetNextToken(cur_node);
 
 		//if end of a list
@@ -609,11 +613,17 @@ void Parser::ParseCode()
 						}
 						else
 						{
+							if(transactionalParse)
+								break;
+
 							std::cerr << "Warning: " << "Missing ) at line " << lineNumber + 1 << " of " << originalSource << std::endl;
 						}
 					}
 					else //no more code
 					{
+						if(transactionalParse)
+							break;
+
 						std::cerr << "Warning: " << "Mismatched ) at line " << lineNumber + 1 << " of " << originalSource << std::endl;
 					}
 				}
@@ -659,7 +669,6 @@ void Parser::ParseCode()
 					std::cerr << "Warning: "  << " Invalid opcode at line " << lineNumber + 1 << " of " << originalSource << std::endl;
 			}
 		}
-
 	}
 }
 

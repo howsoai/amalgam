@@ -842,8 +842,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, b
 			else if(source->IsOrderedArray())
 			{
 				//prepend the parameters of source
-				source->GetOrderedChildNodesReference().insert(
-					begin(source->GetOrderedChildNodes()), begin(type_node_ocn), end(type_node_ocn));
+				auto &source_ocn = source->GetOrderedChildNodesReference();
+				source_ocn.insert(
+					begin(source_ocn), begin(type_node_ocn), end(type_node_ocn));
 				source.UpdatePropertiesBasedOnAttachedNode(type_node);
 			}
 		}

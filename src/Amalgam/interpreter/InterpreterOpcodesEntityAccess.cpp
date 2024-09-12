@@ -359,7 +359,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 		return EvaluableNodeReference::Null();
 
 	//get the value(s)
-	if(to_lookup == nullptr || IsEvaluableNodeTypeImmediate(to_lookup->GetType()))
+	if(to_lookup == nullptr || to_lookup->IsImmediate())
 	{
 		StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(to_lookup);
 		EvaluableNodeReference value = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager, direct, target_entity == curEntity);
@@ -372,12 +372,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 		//reference to keep track of to_lookup nodes to free
 		EvaluableNodeReference cnr(static_cast<EvaluableNode *>(nullptr), to_lookup.unique);
 
-		//need to return an assoc, so see if need to make copy; will overwrite all values
-		if(!to_lookup.unique)
-		{
-			evaluableNodeManager->EnsureNodeIsModifiable(to_lookup);
-			node_stack.PushEvaluableNode(to_lookup);
-		}
+		evaluableNodeManager->EnsureNodeIsModifiable(to_lookup);
 
 		//overwrite values in the ordered 
 		for(auto &[cn_id, cn] : to_lookup->GetMappedChildNodesReference())
@@ -399,12 +394,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 		//reference to keep track of to_lookup nodes to free
 		EvaluableNodeReference cnr(static_cast<EvaluableNode *>(nullptr), to_lookup.unique);
 
-		//need to return an assoc, so see if need to make copy; will overwrite all values
-		if(!to_lookup.unique)
-		{
-			evaluableNodeManager->EnsureNodeIsModifiable(to_lookup);
-			node_stack.PushEvaluableNode(to_lookup);
-		}
+		evaluableNodeManager->EnsureNodeIsModifiable(to_lookup);
 
 		//overwrite values in the ordered
 		for(auto &cn : to_lookup->GetOrderedChildNodes())

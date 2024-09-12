@@ -181,10 +181,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes(
 
 	auto &ocn = en->GetOrderedChildNodesReference();
 	query_command->ReserveOrderedChildNodes(ocn.size());
+	auto &qc_ocn = query_command->GetOrderedChildNodesReference();
 	for(size_t i = 0; i < ocn.size(); i++)
 	{
 		auto value = InterpretNode(ocn[i]);
-		ocn.push_back(value);
+		qc_ocn.push_back(value);
 		query_command.UpdatePropertiesBasedOnAttachedNode(value, i == 0);
 	}
 

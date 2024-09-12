@@ -33,19 +33,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en,
 
 	//get tree and make a copy so it can be modified in-place
 	auto to_modify = InterpretNode(ocn[1]);
-	if(to_modify == nullptr)
-		to_modify.SetReference(evaluableNodeManager->AllocNode(ENT_NULL), true);
-
-	PushNewConstructionContext(to_modify, nullptr, EvaluableNodeImmediateValueWithType(), to_modify);
+	
 	FastHashMap<EvaluableNode *, EvaluableNode *> original_node_to_new_node;
-	FastHashMap<EvaluableNode *, EvaluableNode *> new_node_to_new_parent_node;
-	EvaluableNodeReference result = RewriteByFunction(function, to_modify, nullptr,
-		original_node_to_new_node, new_node_to_new_parent_node);
+	PushNewConstructionContext(nullptr, nullptr, EvaluableNodeImmediateValueWithType(), to_modify);
+	EvaluableNodeReference result = RewriteByFunction(function, to_modify, original_node_to_new_node);
+	PopConstructionContextAndGetExecutionSideEffectFlag();
 
-	if(PopConstructionContextAndGetExecutionSideEffectFlag())
-		result.unique = false;
-
+	//there's a chance many of the nodes marked as being not cycle free actually are
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
+
 	return result;
 }
 

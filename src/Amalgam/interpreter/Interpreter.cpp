@@ -727,111 +727,60 @@ EvaluableNode **Interpreter::TraverseToDestinationFromTraversalPathList(Evaluabl
 	return destination;
 }
 
-//climbs up new_node_to_new_parent_node from node, calling SetNeedCycleCheck
-static void SetAllParentNodesNeedCycleCheck(EvaluableNode *node,
-	FastHashMap<EvaluableNode *, EvaluableNode *> &new_node_to_new_parent_node)
-{
-	//climb back up to top setting cycle checks needed,
-	while(node != nullptr)
-	{
-		auto parent_record = new_node_to_new_parent_node.find(node);
-		//if at the top, don't need to update anymore
-		if(parent_record == end(new_node_to_new_parent_node))
-			return;
-
-		EvaluableNode *parent = parent_record->second;
-		if(parent == nullptr)
-			return;
-
-		//if it's already set to cycle check, don't need to keep going
-		if(parent->GetNeedCycleCheck())
-			break;
-
-		parent->SetNeedCycleCheck(true);
-
-		node = parent;
-	}
-}
-
 EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference function,
-	EvaluableNode *tree, EvaluableNode *new_parent_node,
-	FastHashMap<EvaluableNode *, EvaluableNode *> &original_node_to_new_node,
-	FastHashMap<EvaluableNode *, EvaluableNode *> &new_node_to_new_parent_node)
+	EvaluableNode *tree, FastHashMap<EvaluableNode *, EvaluableNode *> &original_node_to_new_node)
 {
-	EvaluableNodeReference new_tree;
+	EvaluableNodeReference cur_node(tree, false);
 
 	if(tree != nullptr)
 	{
-		//attempt to insert; if new, mark as not needing a cycle check yet
-		// though that may be changed when child nodes are evaluated below
+		//attempt to insert; if found, return previous value
 		auto [existing_record, inserted] = original_node_to_new_node.emplace(tree, static_cast<EvaluableNode *>(nullptr));
 		if(!inserted)
-		{
-			//climb back up to top setting cycle checks needed
-			SetAllParentNodesNeedCycleCheck(existing_record->second, new_node_to_new_parent_node);
-
-			//return the original new node
 			return EvaluableNodeReference(existing_record->second, false);
-		}
 
-		new_tree = EvaluableNodeReference(evaluableNodeManager->AllocNode(tree), true);
-		existing_record->second = new_tree;
-		new_node_to_new_parent_node.emplace(new_tree.GetReference(), new_parent_node);
+		cur_node = EvaluableNodeReference(evaluableNodeManager->AllocNode(tree), true);
+		existing_record->second = cur_node;
 
-		if(tree->IsAssociativeArray())
+		if(cur_node->IsAssociativeArray())
 		{
-			PushNewConstructionContext(tree, new_tree, EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
+			PushNewConstructionContext(nullptr, cur_node, EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 
-			for(auto &[e_id, e] : new_tree->GetMappedChildNodesReference())
+			for(auto &[e_id, e] : cur_node->GetMappedChildNodesReference())
 			{
 				SetTopCurrentIndexInConstructionStack(e_id);
 				SetTopCurrentValueInConstructionStack(e);
-				auto new_e = RewriteByFunction(function, e, new_tree,
-					original_node_to_new_node, new_node_to_new_parent_node);
-				new_tree.UpdatePropertiesBasedOnAttachedNode(new_e);
+				auto new_e = RewriteByFunction(function, e, original_node_to_new_node);
+
+				cur_node.UpdatePropertiesBasedOnAttachedNode(new_e);
 				e = new_e;
 			}
-
-			//make sure to call PopConstructionContextAndGetExecutionSideEffectFlag first to ensure it's called
-			if(PopConstructionContextAndGetExecutionSideEffectFlag() || new_tree.GetNeedCycleCheck())
-			{
-				SetAllParentNodesNeedCycleCheck(new_tree, new_node_to_new_parent_node);
-				new_tree.unique = false;
-			}
+			if(PopConstructionContextAndGetExecutionSideEffectFlag())
+				cur_node->SetNeedCycleCheck(true);
 		}
-		else if(!tree->IsImmediate())
+		else if(cur_node->IsOrderedArray())
 		{
-			//save tree just in case it was newly allocated (null)
-			auto &ocn = new_tree->GetOrderedChildNodesReference();
+			auto &ocn = cur_node->GetOrderedChildNodesReference();
 			if(ocn.size() > 0)
 			{
-				PushNewConstructionContext(tree, new_tree, EvaluableNodeImmediateValueWithType(0.0), nullptr);
+				PushNewConstructionContext(nullptr, cur_node, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 
 				for(size_t i = 0; i < ocn.size(); i++)
 				{
 					SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
 					SetTopCurrentValueInConstructionStack(ocn[i]);
-					auto new_e = RewriteByFunction(function, ocn[i], new_tree,
-						original_node_to_new_node, new_node_to_new_parent_node);
-					new_tree.UpdatePropertiesBasedOnAttachedNode(new_e);
+					auto new_e = RewriteByFunction(function, ocn[i], original_node_to_new_node);
+					cur_node.UpdatePropertiesBasedOnAttachedNode(new_e);
 					ocn[i] = new_e;
 				}
 
-				//make sure to call PopConstructionContextAndGetExecutionSideEffectFlag first to ensure it's called
-				if(PopConstructionContextAndGetExecutionSideEffectFlag() || new_tree.GetNeedCycleCheck())
-				{
-					SetAllParentNodesNeedCycleCheck(new_tree, new_node_to_new_parent_node);
-					new_tree.unique = false;
-				}
+				if(PopConstructionContextAndGetExecutionSideEffectFlag())
+					cur_node->SetNeedCycleCheck(true);
 			}
 		}
 	}
-	else //tree == nullptr
-	{
-		new_tree = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_NULL), true);
-	}
 
-	SetTopCurrentValueInConstructionStack(new_tree);
+	SetTopCurrentValueInConstructionStack(cur_node);
 	return InterpretNode(function);
 }
 

@@ -207,8 +207,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 			return value;
 	}
 
-	//TODO 21546: see if there is a way to remove this copy
-
 	//if didn't find it in the stack, try it in the labels
 	EntityReadReference cur_entity_ref(curEntity);
 	if(cur_entity_ref != nullptr)

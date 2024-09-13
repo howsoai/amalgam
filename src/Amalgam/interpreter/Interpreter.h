@@ -633,9 +633,7 @@ protected:
 	// then bubbles back up re-evaluating each node via the specified function
 	//returns the (potentially) modified tree
 	EvaluableNodeReference RewriteByFunction(EvaluableNodeReference function,
-		EvaluableNode *tree, EvaluableNode *new_parent_node,
-		FastHashMap<EvaluableNode *, EvaluableNode *> &original_node_to_new_node,
-		FastHashMap<EvaluableNode *, EvaluableNode *> &new_node_to_new_parent_node);
+		EvaluableNode *tree, FastHashMap<EvaluableNode *, EvaluableNode *> &original_node_to_new_node);
 
 	//populates perf_constraints from params starting at the offset perf_constraint_param_offset,
 	// in the order of execution cycles, maximum memory, maximum stack depth

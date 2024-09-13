@@ -33,19 +33,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en,
 
 	//get tree and make a copy so it can be modified in-place
 	auto to_modify = InterpretNode(ocn[1]);
-	if(to_modify == nullptr)
-		to_modify.SetReference(evaluableNodeManager->AllocNode(ENT_NULL), true);
-
-	PushNewConstructionContext(to_modify, nullptr, EvaluableNodeImmediateValueWithType(), to_modify);
+	
 	FastHashMap<EvaluableNode *, EvaluableNode *> original_node_to_new_node;
-	FastHashMap<EvaluableNode *, EvaluableNode *> new_node_to_new_parent_node;
-	EvaluableNodeReference result = RewriteByFunction(function, to_modify, nullptr,
-		original_node_to_new_node, new_node_to_new_parent_node);
+	PushNewConstructionContext(nullptr, nullptr, EvaluableNodeImmediateValueWithType(), to_modify);
+	EvaluableNodeReference result = RewriteByFunction(function, to_modify, original_node_to_new_node);
+	PopConstructionContextAndGetExecutionSideEffectFlag();
 
-	if(PopConstructionContextAndGetExecutionSideEffectFlag())
-		result.unique = false;
-
+	//there's a chance many of the nodes marked as being not cycle free actually are
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
+
 	return result;
 }
 
@@ -825,25 +821,30 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, b
 			auto new_type_sid = type_node->GetStringIDReference();
 			new_type = GetEvaluableNodeTypeFromStringId(new_type_sid);
 			evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
+
+			source->SetType(new_type, evaluableNodeManager, true);
 		}
 		else
 		{
 			new_type = type_node->GetType();
 			auto &type_node_ocn = type_node->GetOrderedChildNodes();
 
+			//set the type before possibly inserting any new child nodes
+			source->SetType(new_type, evaluableNodeManager, true);
+
 			//see if need to prepend anything to the source before changing type
 			if(type_node_ocn.size() == 0)
 				evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
-			else //prepend the parameters of source
+			else if(source->IsOrderedArray())
 			{
-				source->GetOrderedChildNodes().insert(
-					begin(source->GetOrderedChildNodes()), begin(type_node_ocn), end(type_node_ocn));
+				//prepend the parameters of source
+				auto &source_ocn = source->GetOrderedChildNodesReference();
+				source_ocn.insert(
+					begin(source_ocn), begin(type_node_ocn), end(type_node_ocn));
 				source.UpdatePropertiesBasedOnAttachedNode(type_node);
 			}
 		}
 	}
-
-	source->SetType(new_type, evaluableNodeManager, true);
 
 	//apply the new type, using whether or not it was a unique reference,
 	//passing through whether an immediate_result is desired

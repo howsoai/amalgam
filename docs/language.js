@@ -524,7 +524,7 @@ var data = [
 		"output" : "*",
 		"new value" : "conditional",
 		"description" : "Creates a new list of the values of the elements of the collection, applies the type specified by to_apply, which is either the type corresponding to a string or the type of to_apply, and then evaluates it. If to_apply has any parameters, these are prepended to the collection as the first parameters. When no extra parameters are passed, it is roughly equivalent to (call (set_type list \"+\")).",
-		"example" : "(print (apply (lambda (+)) (list 1 2 3 4)))\n(print (apply (lambda (+ 5)) (list 1 2 3 4)) \"\n\")\n(print (apply \"+\" (list 1 2 3 4)))"
+		"example" : "(print (apply (lambda (+)) (list 1 2 3 4)))\n(print (apply (lambda (+ 5)) (list 1 2 3 4)) \"\\n\")\n(print (apply \"+\" (list 1 2 3 4)))"
 	},
 
 	{

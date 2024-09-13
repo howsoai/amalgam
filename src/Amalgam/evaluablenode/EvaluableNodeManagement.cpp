@@ -611,7 +611,6 @@ void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(EvaluableNod
 		return;
 
 	EvaluableNode::ReferenceSetType checked;
-	checked.clear();
 
 	if(ensure_nodes_in_enm)
 	{

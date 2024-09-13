@@ -179,14 +179,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes(
 	if(en->GetConcurrency())
 		query_command->SetConcurrency(true);
 
-	auto &ocn = en->GetOrderedChildNodes();
+	auto &ocn = en->GetOrderedChildNodesReference();
 	query_command->ReserveOrderedChildNodes(ocn.size());
+	auto &qc_ocn = query_command->GetOrderedChildNodesReference();
 	for(size_t i = 0; i < ocn.size(); i++)
 	{
 		auto value = InterpretNode(ocn[i]);
-		//add it to the list
-		query_command->AppendOrderedChildNode(value);
-
+		qc_ocn.push_back(value);
 		query_command.UpdatePropertiesBasedOnAttachedNode(value, i == 0);
 	}
 
@@ -360,7 +359,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 		return EvaluableNodeReference::Null();
 
 	//get the value(s)
-	if(to_lookup == nullptr || IsEvaluableNodeTypeImmediate(to_lookup->GetType()))
+	if(to_lookup == nullptr || to_lookup->IsImmediate())
 	{
 		StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(to_lookup);
 		EvaluableNodeReference value = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager, direct, target_entity == curEntity);
@@ -373,12 +372,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 		//reference to keep track of to_lookup nodes to free
 		EvaluableNodeReference cnr(static_cast<EvaluableNode *>(nullptr), to_lookup.unique);
 
-		//need to return an assoc, so see if need to make copy; will overwrite all values
-		if(!to_lookup.unique)
-		{
-			evaluableNodeManager->EnsureNodeIsModifiable(to_lookup);
-			node_stack.PushEvaluableNode(to_lookup);
-		}
+		evaluableNodeManager->EnsureNodeIsModifiable(to_lookup);
 
 		//overwrite values in the ordered 
 		for(auto &[cn_id, cn] : to_lookup->GetMappedChildNodesReference())
@@ -400,12 +394,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 		//reference to keep track of to_lookup nodes to free
 		EvaluableNodeReference cnr(static_cast<EvaluableNode *>(nullptr), to_lookup.unique);
 
-		//need to return an assoc, so see if need to make copy; will overwrite all values
-		if(!to_lookup.unique)
-		{
-			evaluableNodeManager->EnsureNodeIsModifiable(to_lookup);
-			node_stack.PushEvaluableNode(to_lookup);
-		}
+		evaluableNodeManager->EnsureNodeIsModifiable(to_lookup);
 
 		//overwrite values in the ordered
 		for(auto &cn : to_lookup->GetOrderedChildNodes())

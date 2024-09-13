@@ -703,7 +703,7 @@ protected:
 
 					Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
 						parentInterpreter->writeListeners, parentInterpreter->printListener,
-						parentInterpreter->performanceConstraints, parentInterpreter->curEntity);
+						parentInterpreter->performanceConstraints, parentInterpreter->curEntity, parentInterpreter);
 
 					interpreter.memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
 
@@ -769,7 +769,7 @@ protected:
 
 					Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
 						parentInterpreter->writeListeners, parentInterpreter->printListener,
-						parentInterpreter->performanceConstraints, parentInterpreter->curEntity);
+						parentInterpreter->performanceConstraints, parentInterpreter->curEntity, parentInterpreter);
 
 					interpreter.memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
 

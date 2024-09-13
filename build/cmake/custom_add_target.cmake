@@ -251,7 +251,7 @@ function(add_compiled_target)
         target_compile_options(${TARGET_NAME} PUBLIC -O1)
     endif()
 
-    if(IS_WASM AND USE_DEBUG)
+    if(USE_DEBUG)
         target_compile_options(${TARGET_NAME} PUBLIC -g)
         target_compile_definitions(${TARGET_NAME} PUBLIC DEBUG_BUILD)
     endif()

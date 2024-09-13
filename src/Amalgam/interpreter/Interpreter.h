@@ -939,6 +939,20 @@ protected:
 
 #endif
 
+	//returns false if this or any calling interpreter is currently running on the entity specified or if there is any active concurrency
+	// actively editing an entity's EvaluableNode data can cause memory errors if being accessed elsewhere, so a copy must be made
+	bool IsEntitySafeForModification(Entity *entity)
+	{
+		for(Interpreter *cur_interpreter = this; cur_interpreter != nullptr; cur_interpreter = cur_interpreter->callingInterpreter)
+		{
+			//if accessing the entity or have multiple threads, can't ensure safety
+			if(cur_interpreter->curEntity == entity)
+				return false;
+		}
+
+		return true;
+	}
+
 	//if true, no limit on how much memory can utilize
 	constexpr bool ConstrainedAllocatedNodes()
 	{

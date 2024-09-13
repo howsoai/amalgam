@@ -292,8 +292,6 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 			else
 				new_value = evaluableNodeManager.DeepAllocCopy(new_value, EvaluableNodeManager::ENMM_REMOVE_ALL);
 
-			//TODO 21546: see if there is a way to overwrite a single value instead of overwriting a node
-
 			//copy over the existing node, but don't update labels, etc.
 			destination->CopyValueFrom(new_value);
 		}

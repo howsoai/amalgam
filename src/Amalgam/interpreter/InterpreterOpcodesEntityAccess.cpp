@@ -268,11 +268,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 			continue;
 		}
 
+		//need to make a copy if it's not safe for modification in case any other threads try to read from it
+		bool copy_entity = !IsEntitySafeForModification(target_entity);
+
 		size_t num_new_nodes_allocated = 0;
 		auto [any_success, all_success] = target_entity->SetValuesAtLabels(
 										assigned_vars, accum_assignment, direct, writeListeners,
 										(ConstrainedAllocatedNodes() ? &num_new_nodes_allocated : nullptr),
-										target_entity == curEntity, false);
+										target_entity == curEntity, copy_entity);
 
 		if(any_success)
 		{

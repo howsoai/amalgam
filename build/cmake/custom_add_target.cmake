@@ -252,8 +252,7 @@ function(add_compiled_target)
     endif()
 
     if(USE_DEBUG)
-        target_compile_options(${TARGET_NAME} PUBLIC -g)
-        target_compile_options(${TARGET_NAME} PUBLIC -01)
+        target_compile_options(${TARGET_NAME} PUBLIC -g -O0)
         target_compile_definitions(${TARGET_NAME} PUBLIC DEBUG_BUILD)
     endif()
 

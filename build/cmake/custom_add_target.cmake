@@ -254,6 +254,10 @@ function(add_compiled_target)
     if(USE_DEBUG)
         target_compile_options(${TARGET_NAME} PUBLIC -g)
         target_compile_definitions(${TARGET_NAME} PUBLIC DEBUG_BUILD)
+        if (IS_WASM)
+            # Enabling WASM assertions can greatly assist in the debugging process
+            string(APPEND CMAKE_EXE_LINKER_FLAGS " -sASSERTIONS=2")
+        endif()
     endif()
 
     # Advanced arch intrinsics:

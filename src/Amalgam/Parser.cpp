@@ -88,14 +88,6 @@ std::pair<EvaluableNodeReference, size_t> Parser::Parse(std::string &code_string
 
 	pt.ParseCode();
 
-	if(!pt.transactionalParse && !pt.originalSource.empty())
-	{
-		if(pt.numOpenParenthesis > 0)
-			std::cerr << "Warning: " << pt.numOpenParenthesis << " missing parenthesis in " << pt.originalSource << std::endl;
-		else if(pt.numOpenParenthesis < 0)
-			std::cerr << "Warning: " << -pt.numOpenParenthesis << " extra parenthesis in " << pt.originalSource << std::endl;
-	}
-
 	pt.PreevaluateNodes();
 
 	return std::make_pair(EvaluableNodeReference(pt.topNode, true), pt.charOffsetStartOfLastCompletedCode);
@@ -554,7 +546,7 @@ void Parser::ParseCode()
 {
 	EvaluableNode *cur_node = nullptr;
 
-	//TODO 21359: accumulate errors and warnings to the object so they may be retrieved -- same with other returns
+	//TODO 21359: accumulate errors and warnings attribute to warnings and return them, have callers print them out
 	//TODO 21359: add return_errors and transactional_parse to parse opcode
 
 	//as long as code left
@@ -572,13 +564,13 @@ void Parser::ParseCode()
 		{
 			//nothing here at all
 			if(cur_node == nullptr)
-				return;
+				break;
 
 			const auto &parent = parentNodes.find(cur_node);
 
 			//if no parent, then all finished
 			if(parent == end(parentNodes) || parent->second == nullptr)
-				return;
+				break;
 
 			//jump up to the parent node
 			cur_node = parent->second;
@@ -643,13 +635,13 @@ void Parser::ParseCode()
 				{
 					//nothing here at all
 					if(cur_node == nullptr)
-						return;
+						break;
 
 					const auto &parent = parentNodes.find(cur_node);
 
 					//if no parent, then all finished
 					if(parent == end(parentNodes) || parent->second == nullptr)
-						return;
+						break;
 
 					//jump up to the parent node
 					cur_node = parent->second;
@@ -675,6 +667,14 @@ void Parser::ParseCode()
 				}
 			}
 		}
+	}
+
+	if(!transactionalParse && !originalSource.empty())
+	{
+		if(numOpenParenthesis > 0)
+			std::cerr << "Warning: " << numOpenParenthesis << " missing parenthesis in " << originalSource << std::endl;
+		else if(numOpenParenthesis < 0)
+			std::cerr << "Warning: " << -numOpenParenthesis << " extra parenthesis in " << originalSource << std::endl;
 	}
 }
 

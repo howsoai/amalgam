@@ -225,6 +225,9 @@ protected:
 	//contains a list of nodes that need to be preevaluated on parsing
 	std::vector<EvaluableNode *> preevaluationNodes;
 
+	//any warnings from parsing
+	std::vector<std::string> warnings;
+
 	//parentNodes contains each reference as the key and the parent as the value
 	EvaluableNode::ReferenceAssocType parentNodes;
 

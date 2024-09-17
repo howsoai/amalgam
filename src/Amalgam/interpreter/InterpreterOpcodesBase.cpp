@@ -1358,11 +1358,21 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PREVIOUS_RESULT(EvaluableN
 			return EvaluableNodeReference::Null();
 	}
 
+	bool make_copy = false;
+	if(ocn.size() > 1)
+	{
+		//defaults to false if ENT_NULL
+		make_copy = InterpretNodeIntoBoolValue(ocn[1]);
+	}
+
 	//make sure have a large enough stack
 	if(depth >= constructionStackIndicesAndUniqueness.size())
 		return EvaluableNodeReference::Null();
 
-	return GetAndClearPreviousResultInConstructionStack(depth);
+	if(make_copy)
+		return CopyPreviousResultInConstructionStack(depth);
+	else
+		return GetAndClearPreviousResultInConstructionStack(depth);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_OPCODE_STACK(EvaluableNode *en, bool immediate_result)
@@ -1407,11 +1417,37 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STACK(EvaluableNode *en, b
 	if(callStackMutex != nullptr)
 		LockWithoutBlockingGarbageCollection(*callStackMutex, lock);
 #endif
+	auto &ocn = en->GetOrderedChildNodes();
 
-	//can create this node on the stack because will be making a copy
-	EvaluableNode stack_top_holder(ENT_LIST);
-	stack_top_holder.SetOrderedChildNodes(*callStackNodes);
-	return evaluableNodeManager->DeepAllocCopy(&stack_top_holder);
+	size_t depth = 0;
+	if(ocn.size() > 0)
+	{
+		double value = InterpretNodeIntoNumberValue(ocn[0]);
+		if(value >= 0)
+			depth = static_cast<size_t>(value);
+	}
+
+	if(depth == 0 || depth > callStackNodes->size())
+	{
+		//can create this node on the stack because will be making a copy
+		EvaluableNode stack_top_holder(ENT_LIST);
+		stack_top_holder.SetOrderedChildNodes(*callStackNodes);
+		return evaluableNodeManager->DeepAllocCopy(&stack_top_holder);
+	}
+	else
+	{
+		EvaluableNodeReference stack_top_holder(evaluableNodeManager->AllocNode(ENT_LIST), true);
+		auto &sth_ocn = stack_top_holder->GetOrderedChildNodesReference();
+		sth_ocn.reserve(depth);
+
+		for(auto iter = end(*callStackNodes) - depth; iter != end(*callStackNodes); ++iter)
+		{
+			EvaluableNodeReference new_node = evaluableNodeManager->DeepAllocCopy(*iter);
+			sth_ocn.push_back(new_node);
+			stack_top_holder.UpdatePropertiesBasedOnAttachedNode(new_node);
+		}
+		return stack_top_holder;
+	}
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ARGS(EvaluableNode *en, bool immediate_result)

@@ -554,7 +554,8 @@ void Parser::ParseCode()
 {
 	EvaluableNode *cur_node = nullptr;
 
-	//TODO 21359: if cur_node is one under topNode, keep track of end of last token and don't append (and stop parsing) if fails -- check uses of transactionalParse
+	//TODO 21359: accumulate errors and warnings to the object so they may be retrieved -- same with other returns
+	//TODO 21359: add return_errors and transactional_parse to parse opcode
 
 	//as long as code left
 	while(pos < code->size())
@@ -621,7 +622,8 @@ void Parser::ParseCode()
 					}
 					else //no more code
 					{
-						if(transactionalParse)
+						//if transactionalParse and the last parenthesis wasn't closed
+						if(transactionalParse && numOpenParenthesis == 1)
 							break;
 
 						std::cerr << "Warning: " << "Mismatched ) at line " << lineNumber + 1 << " of " << originalSource << std::endl;
@@ -666,7 +668,11 @@ void Parser::ParseCode()
 			{
 				n->SetType(ENT_NULL, nullptr, false);
 				if(!originalSource.empty())
-					std::cerr << "Warning: "  << " Invalid opcode at line " << lineNumber + 1 << " of " << originalSource << std::endl;
+				{
+					std::cerr << "Warning: " << " Invalid opcode at line " << lineNumber + 1 << " of " << originalSource << std::endl;
+					if(transactionalParse)
+						break;
+				}
 			}
 		}
 	}

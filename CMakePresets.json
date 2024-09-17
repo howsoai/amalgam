@@ -263,6 +263,26 @@
       }
     },
     {
+      "name": "wasm64-release",
+      "description": "emcc for wasm64 (release)",
+      "inherits": [ "base", "wasm64", "release", "emcc" ],
+      "cacheVariables": {
+        "CMAKE_OSX_ARCHITECTURES": "",
+        "CMAKE_CXX_COMPILER_TARGET": "wasm64-unknown-emscripten",
+        "CMAKE_TRY_COMPILE_TARGET_TYPE": "STATIC_LIBRARY"
+      }
+    },
+    {
+      "name": "wasm64-debug",
+      "description": "emcc for wasm64 (debug)",
+      "inherits": [ "base", "wasm64", "debug", "emcc" ],
+      "cacheVariables": {
+        "CMAKE_OSX_ARCHITECTURES": "",
+        "CMAKE_CXX_COMPILER_TARGET": "wasm64-unknown-emscripten",
+        "CMAKE_TRY_COMPILE_TARGET_TYPE": "STATIC_LIBRARY"
+      }
+    },
+    {
       "name": "wasm64-debug-linux",
       "description": "emcc for wasm64 (debug) for linux",
       "inherits": [ "base", "linux", "wasm64", "debug", "emcc" ],
@@ -370,6 +390,16 @@
       "name": "wasm64-release-linux",
       "configurePreset": "wasm64-release-linux",
       "description": "linux wasm64 release build"
+    },
+    {
+      "name": "wasm64-release",
+      "configurePreset": "wasm64-release",
+      "description": "wasm64 release build"
+    },
+    {
+      "name": "wasm64-debug",
+      "configurePreset": "wasm64-debug",
+      "description": "wasm64 debug build"
     },
     {
       "name": "amd64-debug-macos",

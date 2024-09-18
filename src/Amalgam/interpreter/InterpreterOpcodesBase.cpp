@@ -1360,10 +1360,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PREVIOUS_RESULT(EvaluableN
 
 	bool make_copy = false;
 	if(ocn.size() > 1)
-	{
 		//defaults to false if ENT_NULL
 		make_copy = InterpretNodeIntoBoolValue(ocn[1]);
-	}
 
 	//make sure have a large enough stack
 	if(depth >= constructionStackIndicesAndUniqueness.size())
@@ -1379,34 +1377,74 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OPCODE_STACK(EvaluableNode
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
-	size_t depth = 0;
+	//-1 indicates whole stack should be returned
+	bool has_valid_depth = false;
+	int depth;
 	if(ocn.size() > 0)
 	{
 		double value = InterpretNodeIntoNumberValue(ocn[0]);
-		if(value >= 0)
-			depth = static_cast<size_t>(value);
+		if(!FastIsNaN(value))
+		{
+			has_valid_depth = true;
+			depth = static_cast<int>(value);
+		}
 	}
+	
+	bool no_child_nodes = false;
+	if (ocn.size() > 1)
+		no_child_nodes = InterpretNodeIntoBoolValue(ocn[1], false);
 
-	if(depth == 0 || depth >= opcodeStackNodes->size())
+	if(!has_valid_depth)
 	{
+		//return the whole opcode stack
 		//can create this node on the stack because will be making a copy
-		EvaluableNode stack_top_holder(ENT_LIST);
-		stack_top_holder.SetOrderedChildNodes(*opcodeStackNodes);
-		return evaluableNodeManager->DeepAllocCopy(&stack_top_holder);
+		EvaluableNodeReference stack_top_holder(evaluableNodeManager->AllocNode(ENT_LIST), true);
+		if(!no_child_nodes)
+		{
+			stack_top_holder->SetOrderedChildNodes(*opcodeStackNodes);
+			return evaluableNodeManager->DeepAllocCopy(stack_top_holder);
+		}
+		else
+		{
+			auto &sth_ocn = stack_top_holder->GetOrderedChildNodesReference();
+			sth_ocn.reserve(opcodeStackNodes->size());
+			for(auto iter = begin(*opcodeStackNodes); iter != end(*opcodeStackNodes); ++iter)
+			{
+				EvaluableNode *cur_node = *iter;
+				EvaluableNodeReference new_node(evaluableNodeManager->AllocNode(cur_node->GetType()), true);
+				new_node->CopyMetadataFrom(cur_node);
+				sth_ocn.push_back(new_node);
+				stack_top_holder.UpdatePropertiesBasedOnAttachedNode(new_node);
+			}
+			return stack_top_holder;
+		}
 	}
 	else
 	{
-		EvaluableNodeReference stack_top_holder(evaluableNodeManager->AllocNode(ENT_LIST), true);
-		auto &sth_ocn = stack_top_holder->GetOrderedChildNodesReference();
-		sth_ocn.reserve(depth);
-
-		for(auto iter = end(*opcodeStackNodes) - depth; iter != end(*opcodeStackNodes); ++iter)
+		if(std::abs(depth) > opcodeStackNodes->size())
 		{
-			EvaluableNodeReference new_node = evaluableNodeManager->DeepAllocCopy(*iter);
-			sth_ocn.push_back(new_node);
-			stack_top_holder.UpdatePropertiesBasedOnAttachedNode(new_node);
+			return EvaluableNodeReference::Null();
 		}
-		return stack_top_holder;
+		else
+		{
+			EvaluableNode *cur_node;
+			if(depth >= 0)
+				cur_node = *(end(*opcodeStackNodes) - depth - 1);
+			else
+				cur_node = *(begin(*opcodeStackNodes) - depth - 1);
+
+			if(!no_child_nodes)
+			{
+				return evaluableNodeManager->DeepAllocCopy(cur_node);
+			}
+			else
+			{
+				//only copy top level node
+				EvaluableNodeReference new_node(evaluableNodeManager->AllocNode(cur_node->GetType()), true);
+				new_node->CopyMetadataFrom(cur_node);
+				return new_node;
+			}
+		}
 	}
 }
 
@@ -1419,34 +1457,74 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STACK(EvaluableNode *en, b
 #endif
 	auto &ocn = en->GetOrderedChildNodes();
 
-	size_t depth = 0;
+	//-1 indicates whole stack should be returned
+	bool has_valid_depth = false;
+	int depth;
 	if(ocn.size() > 0)
 	{
 		double value = InterpretNodeIntoNumberValue(ocn[0]);
-		if(value >= 0)
-			depth = static_cast<size_t>(value);
+		if(!FastIsNaN(value))
+		{
+			has_valid_depth = true;
+			depth = static_cast<int>(value);
+		}
 	}
+	
+	bool no_child_nodes = false;
+	if (ocn.size() > 1)
+		no_child_nodes = InterpretNodeIntoBoolValue(ocn[1], false);
 
-	if(depth == 0 || depth > callStackNodes->size())
+	if(!has_valid_depth)
 	{
+		//return the whole opcode stack
 		//can create this node on the stack because will be making a copy
-		EvaluableNode stack_top_holder(ENT_LIST);
-		stack_top_holder.SetOrderedChildNodes(*callStackNodes);
-		return evaluableNodeManager->DeepAllocCopy(&stack_top_holder);
+		EvaluableNodeReference stack_top_holder(evaluableNodeManager->AllocNode(ENT_LIST), true);
+		if(!no_child_nodes)
+		{
+			stack_top_holder->SetOrderedChildNodes(*callStackNodes);
+			return evaluableNodeManager->DeepAllocCopy(stack_top_holder);
+		}
+		else
+		{
+			auto &sth_ocn = stack_top_holder->GetOrderedChildNodesReference();
+			sth_ocn.reserve(callStackNodes->size());
+			for(auto iter = begin(*callStackNodes); iter != end(*callStackNodes); ++iter)
+			{
+				EvaluableNode *cur_node = *iter;
+				EvaluableNodeReference new_node(evaluableNodeManager->AllocNode(cur_node->GetType()), true);
+				new_node->CopyMetadataFrom(cur_node);
+				sth_ocn.push_back(new_node);
+				stack_top_holder.UpdatePropertiesBasedOnAttachedNode(new_node);
+			}
+			return stack_top_holder;
+		}
 	}
 	else
 	{
-		EvaluableNodeReference stack_top_holder(evaluableNodeManager->AllocNode(ENT_LIST), true);
-		auto &sth_ocn = stack_top_holder->GetOrderedChildNodesReference();
-		sth_ocn.reserve(depth);
-
-		for(auto iter = end(*callStackNodes) - depth; iter != end(*callStackNodes); ++iter)
+		if(std::abs(depth) > callStackNodes->size())
 		{
-			EvaluableNodeReference new_node = evaluableNodeManager->DeepAllocCopy(*iter);
-			sth_ocn.push_back(new_node);
-			stack_top_holder.UpdatePropertiesBasedOnAttachedNode(new_node);
+			return EvaluableNodeReference::Null();
 		}
-		return stack_top_holder;
+		else
+		{
+			EvaluableNode *cur_node;
+			if(depth >= 0)
+				cur_node = *(end(*callStackNodes) - depth - 1);
+			else
+				cur_node = *(begin(*callStackNodes) - depth - 1);
+
+			if(!no_child_nodes)
+			{
+				return evaluableNodeManager->DeepAllocCopy(cur_node);
+			}
+			else
+			{
+				//only copy top level node
+				EvaluableNodeReference new_node(evaluableNodeManager->AllocNode(cur_node->GetType()), true);
+				new_node->CopyMetadataFrom(cur_node);
+				return new_node;
+			}
+		}
 	}
 }
 

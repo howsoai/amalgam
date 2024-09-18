@@ -1422,13 +1422,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OPCODE_STACK(EvaluableNode
 	else
 	{
 		//only return one node from the opcode stack
-		size_t actual_offset;
+		int64_t actual_offset;
 		if(depth < 0)
-			actual_offset = opcodeStackNodes->size() + static_cast<size_t>(depth);
+			actual_offset = opcodeStackNodes->size() + depth;
 		else
-			actual_offset = static_cast<size_t>(depth);
+			actual_offset = depth;
 			
-		if(actual_offset >= opcodeStackNodes->size())
+		if(actual_offset < 0 || actual_offset >= opcodeStackNodes->size())
 		{
 			return EvaluableNodeReference::Null();
 		}

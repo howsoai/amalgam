@@ -1449,6 +1449,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, bo
 			for(auto &cn : indices_ocn)
 			{
 				double relative_pos = EvaluableNode::ToNumber(cn);
+				if(FastIsNaN(relative_pos))
+					continue;
 
 				//get relative position
 				size_t actual_pos = 0;

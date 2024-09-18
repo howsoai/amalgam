@@ -1377,7 +1377,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OPCODE_STACK(EvaluableNode
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
-	//-1 indicates whole stack should be returned
 	bool has_valid_depth = false;
 	int depth;
 	if(ocn.size() > 0)

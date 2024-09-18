@@ -1390,21 +1390,22 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OPCODE_STACK(EvaluableNode
 	}
 	
 	bool no_child_nodes = false;
-	if (ocn.size() > 1)
+	if(ocn.size() > 1)
 		no_child_nodes = InterpretNodeIntoBoolValue(ocn[1], false);
 
 	if(!has_valid_depth)
 	{
 		//return the whole opcode stack
 		//can create this node on the stack because will be making a copy
-		EvaluableNodeReference stack_top_holder(evaluableNodeManager->AllocNode(ENT_LIST), true);
 		if(!no_child_nodes)
 		{
-			stack_top_holder->SetOrderedChildNodes(*opcodeStackNodes);
-			return evaluableNodeManager->DeepAllocCopy(stack_top_holder);
+			EvaluableNode stack_top_holder(ENT_LIST);
+			stack_top_holder.SetOrderedChildNodes(*opcodeStackNodes);
+			return evaluableNodeManager->DeepAllocCopy(&stack_top_holder);
 		}
 		else
 		{
+			EvaluableNodeReference stack_top_holder(evaluableNodeManager->AllocNode(ENT_LIST), true);
 			auto &sth_ocn = stack_top_holder->GetOrderedChildNodesReference();
 			sth_ocn.reserve(opcodeStackNodes->size());
 			for(auto iter = begin(*opcodeStackNodes); iter != end(*opcodeStackNodes); ++iter)
@@ -1421,18 +1422,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OPCODE_STACK(EvaluableNode
 	else
 	{
 		//only return one node from the opcode stack
-		if(std::abs(depth) > opcodeStackNodes->size())
+		size_t actual_offset;
+		if(depth < 0)
+			actual_offset = opcodeStackNodes->size() + static_cast<size_t>(depth) - 1;
+		else
+			actual_offset = static_cast<size_t>(depth);
+			
+		if(actual_offset < 0 || actual_offset >= opcodeStackNodes->size())
 		{
 			return EvaluableNodeReference::Null();
 		}
 		else
 		{
-			EvaluableNode *cur_node;
-			if(depth >= 0)
-				cur_node = *(end(*opcodeStackNodes) - depth - 1);
-			else
-				cur_node = *(begin(*opcodeStackNodes) - depth - 1);
-
+			EvaluableNode *cur_node = *(end(*opcodeStackNodes) - actual_offset - 1);
 			if(!no_child_nodes)
 			{
 				return evaluableNodeManager->DeepAllocCopy(cur_node);

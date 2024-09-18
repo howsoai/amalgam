@@ -1378,14 +1378,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OPCODE_STACK(EvaluableNode
 	auto &ocn = en->GetOrderedChildNodes();
 
 	bool has_valid_depth = false;
-	int depth;
+	int64_t depth;
 	if(ocn.size() > 0)
 	{
 		double value = InterpretNodeIntoNumberValue(ocn[0]);
 		if(!FastIsNaN(value))
 		{
 			has_valid_depth = true;
-			depth = static_cast<int>(value);
+			depth = static_cast<int64_t>(value);
 		}
 	}
 	

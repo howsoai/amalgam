@@ -1,3 +1,4 @@
 {
-  "cSpell.words": ["KullbackLeibler"]
+  "cSpell.words": ["KullbackLeibler"],
+  "files.trimTrailingWhitespace": false,
 }

@@ -1421,6 +1421,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OPCODE_STACK(EvaluableNode
 	}
 	else
 	{
+		//only return one node from the opcode stack
 		if(std::abs(depth) > opcodeStackNodes->size())
 		{
 			return EvaluableNodeReference::Null();
@@ -1455,77 +1456,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STACK(EvaluableNode *en, b
 	if(callStackMutex != nullptr)
 		LockWithoutBlockingGarbageCollection(*callStackMutex, lock);
 #endif
-	auto &ocn = en->GetOrderedChildNodes();
 
-	//-1 indicates whole stack should be returned
-	bool has_valid_depth = false;
-	int depth;
-	if(ocn.size() > 0)
-	{
-		double value = InterpretNodeIntoNumberValue(ocn[0]);
-		if(!FastIsNaN(value))
-		{
-			has_valid_depth = true;
-			depth = static_cast<int>(value);
-		}
-	}
-	
-	bool no_child_nodes = false;
-	if (ocn.size() > 1)
-		no_child_nodes = InterpretNodeIntoBoolValue(ocn[1], false);
-
-	if(!has_valid_depth)
-	{
-		//return the whole opcode stack
-		//can create this node on the stack because will be making a copy
-		EvaluableNodeReference stack_top_holder(evaluableNodeManager->AllocNode(ENT_LIST), true);
-		if(!no_child_nodes)
-		{
-			stack_top_holder->SetOrderedChildNodes(*callStackNodes);
-			return evaluableNodeManager->DeepAllocCopy(stack_top_holder);
-		}
-		else
-		{
-			auto &sth_ocn = stack_top_holder->GetOrderedChildNodesReference();
-			sth_ocn.reserve(callStackNodes->size());
-			for(auto iter = begin(*callStackNodes); iter != end(*callStackNodes); ++iter)
-			{
-				EvaluableNode *cur_node = *iter;
-				EvaluableNodeReference new_node(evaluableNodeManager->AllocNode(cur_node->GetType()), true);
-				new_node->CopyMetadataFrom(cur_node);
-				sth_ocn.push_back(new_node);
-				stack_top_holder.UpdatePropertiesBasedOnAttachedNode(new_node);
-			}
-			return stack_top_holder;
-		}
-	}
-	else
-	{
-		if(std::abs(depth) > callStackNodes->size())
-		{
-			return EvaluableNodeReference::Null();
-		}
-		else
-		{
-			EvaluableNode *cur_node;
-			if(depth >= 0)
-				cur_node = *(end(*callStackNodes) - depth - 1);
-			else
-				cur_node = *(begin(*callStackNodes) - depth - 1);
-
-			if(!no_child_nodes)
-			{
-				return evaluableNodeManager->DeepAllocCopy(cur_node);
-			}
-			else
-			{
-				//only copy top level node
-				EvaluableNodeReference new_node(evaluableNodeManager->AllocNode(cur_node->GetType()), true);
-				new_node->CopyMetadataFrom(cur_node);
-				return new_node;
-			}
-		}
-	}
+	//can create this node on the stack because will be making a copy
+	EvaluableNode stack_top_holder(ENT_LIST);
+	stack_top_holder.SetOrderedChildNodes(*callStackNodes);
+	return evaluableNodeManager->DeepAllocCopy(&stack_top_holder);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ARGS(EvaluableNode *en, bool immediate_result)

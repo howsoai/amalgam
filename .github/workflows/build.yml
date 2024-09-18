@@ -76,7 +76,7 @@ jobs:
         if-no-files-found: error
 
   build-macos:
-    runs-on: macos-12
+    runs-on: macos-13
     strategy:
       matrix:
         preset:
@@ -112,11 +112,10 @@ jobs:
           brew unlink python@3.12
           brew link --force --overwrite python@3.12
 
-          brew uninstall --ignore-dependencies libomp
           brew cleanup -s
           rm -rf `brew --cache`
-          brew fetch --force --bottle-tag=arm64_monterey libomp
-          brew install `brew --cache --bottle-tag=arm64_monterey libomp` || brew link --overwrite python@3.12
+          brew fetch --force --bottle-tag=arm64_ventura libomp
+          brew install `brew --cache --bottle-tag=arm64_ventura libomp` || brew link --overwrite python@3.12
         else
           brew install libomp
         fi

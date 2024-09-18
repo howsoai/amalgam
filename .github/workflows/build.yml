@@ -112,7 +112,6 @@ jobs:
           brew unlink python@3.12
           brew link --force --overwrite python@3.12
 
-          brew uninstall --ignore-dependencies libomp
           brew cleanup -s
           rm -rf `brew --cache`
           brew fetch --force --bottle-tag=arm64_monterey libomp

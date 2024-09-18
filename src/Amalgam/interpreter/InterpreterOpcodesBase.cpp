@@ -1428,7 +1428,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OPCODE_STACK(EvaluableNode
 		else
 			actual_offset = depth;
 			
-		if(actual_offset < 0 || actual_offset >= opcodeStackNodes->size())
+		if(actual_offset < 0 || actual_offset >= static_cast<int64_t>(opcodeStackNodes->size()))
 		{
 			return EvaluableNodeReference::Null();
 		}

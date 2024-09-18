@@ -1424,7 +1424,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OPCODE_STACK(EvaluableNode
 		//only return one node from the opcode stack
 		size_t actual_offset;
 		if(depth < 0)
-			actual_offset = opcodeStackNodes->size() + static_cast<size_t>(depth) - 1;
+			actual_offset = opcodeStackNodes->size() + static_cast<size_t>(depth);
 		else
 			actual_offset = static_cast<size_t>(depth);
 			

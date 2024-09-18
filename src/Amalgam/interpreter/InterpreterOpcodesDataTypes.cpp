@@ -931,7 +931,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_LABELS(EvaluableNode *
 
 	//make list of labels
 	EvaluableNodeReference result(evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_STRING, num_labels), true);
-	auto &result_ocn = result->GetOrderedChildNodes();
+	auto &result_ocn = result->GetOrderedChildNodesReference();
 
 	//because labels can be stored in different ways, it is just easiest to iterate
 	// rather than to get a reference to each string id

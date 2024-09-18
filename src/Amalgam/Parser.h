@@ -105,7 +105,8 @@ public:
 	//if transactional_parse is true, then it will ignore any incomplete or erroneous opcodes except the outermost one
 	//if original_source is a valid string, it will emit any warnings to stderr
 	//if debug_sources is true, it will prepend each node with a comment indicating original source
-	static std::pair<EvaluableNodeReference, size_t> Parse(std::string &code_string, EvaluableNodeManager *enm,
+	static std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t>
+		Parse(std::string &code_string, EvaluableNodeManager *enm,
 		bool transactional_parse = false, std::string *original_source = nullptr, bool debug_sources = false);
 
 	//Returns a string that represents the tree
@@ -184,6 +185,13 @@ protected:
 	static void AppendAssocKeyValuePair(UnparseData &upd,
 		StringInternPool::StringID key_sid, EvaluableNode *n, EvaluableNode *parent,
 		bool expanded_whitespace, size_t indentation_depth, bool need_initial_space);
+
+	//appends the warning string on to warnings
+	inline void EmitWarning(std::string warning)
+	{
+		warnings.emplace_back("Warning: " + warning
+			+ " at line " + StringManipulation::NumberToString(lineNumber + 1) + " of " + originalSource);
+	}
 
 	//Appends to the string s that represents the code tree
 	//if expanded_whitespace, then it will add whitespace as appropriate to make it pretty

@@ -63,7 +63,9 @@ EvaluableNodeReference AssetManager::LoadResourcePath(std::string &resource_path
 				code.erase(0, 3);
 		}
 
-		auto [node, char_with_error] = Parser::Parse(code, enm, false, &resource_path, debugSources);
+		auto [node, warnings, char_with_error] = Parser::Parse(code, enm, false, &resource_path, debugSources);
+		for(auto &w : warnings)
+			std::cerr << w << std::endl;
 		return node;
 	}
 	else if(file_type == FILE_EXTENSION_JSON)
@@ -87,7 +89,9 @@ EvaluableNodeReference AssetManager::LoadResourcePath(std::string &resource_path
 		if(strings.size() == 0)
 			return EvaluableNodeReference::Null();
 
-		auto [node, char_with_error] = Parser::Parse(strings[0], enm, false, &resource_path, debugSources);
+		auto [node, warnings, char_with_error] = Parser::Parse(strings[0], enm, false, &resource_path, debugSources);
+		for(auto &w : warnings)
+			std::cerr << w << std::endl;
 		return node;
 	}
 	else //just load the file as a string

@@ -60,8 +60,9 @@ std::string Parser::Backslashify(const std::string &s)
 	return b;
 }
 
-std::pair<EvaluableNodeReference, size_t> Parser::Parse(std::string &code_string,
-	EvaluableNodeManager *enm, bool transactional_parse,  std::string *original_source, bool debug_sources)
+std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t>
+	Parser::Parse(std::string &code_string,
+		EvaluableNodeManager *enm, bool transactional_parse,  std::string *original_source, bool debug_sources)
 {
 	Parser pt;
 	pt.code = &code_string;
@@ -90,7 +91,9 @@ std::pair<EvaluableNodeReference, size_t> Parser::Parse(std::string &code_string
 
 	pt.PreevaluateNodes();
 
-	return std::make_pair(EvaluableNodeReference(pt.topNode, true), pt.charOffsetStartOfLastCompletedCode);
+	return std::make_tuple(EvaluableNodeReference(pt.topNode, true),
+		std::move(pt.warnings),
+		pt.charOffsetStartOfLastCompletedCode);
 }
 
 std::string Parser::Unparse(EvaluableNode *tree, EvaluableNodeManager *enm,
@@ -546,9 +549,6 @@ void Parser::ParseCode()
 {
 	EvaluableNode *cur_node = nullptr;
 
-	//TODO 21359: accumulate errors and warnings attribute to warnings and return them, have callers print them out
-	//TODO 21359: add return_errors and transactional_parse to parse opcode
-
 	//as long as code left
 	while(pos < code->size())
 	{
@@ -609,7 +609,7 @@ void Parser::ParseCode()
 							if(transactionalParse)
 								break;
 
-							std::cerr << "Warning: " << "Missing ) at line " << lineNumber + 1 << " of " << originalSource << std::endl;
+							EmitWarning("Missing )");
 						}
 					}
 					else //no more code
@@ -618,7 +618,7 @@ void Parser::ParseCode()
 						if(transactionalParse && numOpenParenthesis == 1)
 							break;
 
-						std::cerr << "Warning: " << "Mismatched ) at line " << lineNumber + 1 << " of " << originalSource << std::endl;
+						EmitWarning("Mismatched )");
 					}
 				}
 
@@ -661,7 +661,7 @@ void Parser::ParseCode()
 				n->SetType(ENT_NULL, nullptr, false);
 				if(!originalSource.empty())
 				{
-					std::cerr << "Warning: " << " Invalid opcode at line " << lineNumber + 1 << " of " << originalSource << std::endl;
+					EmitWarning("Invalid opcode");
 					if(transactionalParse)
 						break;
 				}
@@ -672,9 +672,11 @@ void Parser::ParseCode()
 	if(!transactionalParse && !originalSource.empty())
 	{
 		if(numOpenParenthesis > 0)
-			std::cerr << "Warning: " << numOpenParenthesis << " missing parenthesis in " << originalSource << std::endl;
+			EmitWarning(StringManipulation::NumberToString(static_cast<size_t>(numOpenParenthesis))
+				+ " missing parenthesis");
 		else if(numOpenParenthesis < 0)
-			std::cerr << "Warning: " << -numOpenParenthesis << " extra parenthesis in " << originalSource << std::endl;
+			EmitWarning(StringManipulation::NumberToString(static_cast<size_t>(-numOpenParenthesis))
+				+ " extra parenthesis");
 	}
 }
 

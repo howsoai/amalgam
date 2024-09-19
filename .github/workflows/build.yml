@@ -33,9 +33,7 @@ jobs:
           - arch: arm64_8a
             platform: linux
           - arch: wasm64
-            platform: browser
-          - arch: wasm64
-            platform: nodejs
+            platform: unknown
     permissions:
       contents: write
 
@@ -426,26 +424,18 @@ jobs:
     - name: Download Artifact
       uses: actions/download-artifact@v4
       with:
-        name: amalgam-${{ inputs.version }}-browser-wasm64
-
-    - name: Download Artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: amalgam-${{ inputs.version }}-nodejs-wasm64
+        name: amalgam-${{ inputs.version }}-wasm64
 
     - name: Extract Amalgam
       run: |
-        mkdir ./amalgam-browser
-        mkdir ./amalgam-nodejs
-        tar -xvf ./amalgam-${{ inputs.version }}-wasm64-browser.tar.gz -C ./amalgam-browser
-        tar -xvf ./amalgam-${{ inputs.version }}-wasm64-nodejs.tar.gz -C ./amalgam-nodejs
+        mkdir ./amalgam
+        tar -xvf ./amalgam-${{ inputs.version }}-wasm64.tar.gz -C ./amalgam
 
     - name: Smoke test
       run: |
+        export AMALGAM_WASM_DIR=$(pwd)/amalgam/bin
         cd test/wasm_test
         npm install
-        export AMALGAM_WASM_NODEJS_DIR=$(pwd)/amalgam-nodejs/bin
-        export AMALGAM_WASM_BROWSER_DIR=$(pwd)/amalgam-browser/bin
         npm run test
 
   generate-changelog:

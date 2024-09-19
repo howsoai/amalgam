@@ -1,13 +1,13 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { describe, expect, test } = require("@jest/globals");
-const AmalgamRuntime = require(path.resolve(process.env.AMALGAM_WASM_BROWSER_DIR, "amalgam-st.cjs"));
+const AmalgamRuntime = require(path.resolve(process.env.AMALGAM_WASM_DIR, "amalgam-st.cjs"));
 
 describe("Test Amalgam Webassembly", () => {
   let amlg;
 
   beforeAll(async () => {
-    const binary = fs.readFileSync(path.resolve(process.env.AMALGAM_WASM_BROWSER_DIR, "amalgam-st.wasm"));
+    const binary = fs.readFileSync(path.resolve(process.env.AMALGAM_WASM_DIR, "amalgam-st.wasm"));
     amlg = await AmalgamRuntime({
       "wasmBinary": binary,
       "getPreloadedPackage": function (packagePath) {
@@ -17,7 +17,7 @@ describe("Test Amalgam Webassembly", () => {
       },
       "locateFile": function (filepath) {
         // Override the local file method to use local file system
-        return path.resolve(process.env.AMALGAM_WASM_BROWSER_DIR, filepath);
+        return path.resolve(process.env.AMALGAM_WASM_DIR, filepath);
       },
     });
   });

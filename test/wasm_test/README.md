@@ -8,7 +8,7 @@ npm install
 
 ## Define environment variables
 
-Define the environment variable `AMALGAM_WASM_NODEJS_DIR` and `AMALGAM_WASM_BROWSER_DIR` to the directory where the following files exist:
+Define the environment variable `AMALGAM_WASM_DIR` to the directory where the following files exist:
 
 - amalgam-st.wasm
 - amalgam-st.cjs

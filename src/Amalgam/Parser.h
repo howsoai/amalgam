@@ -186,18 +186,29 @@ protected:
 		StringInternPool::StringID key_sid, EvaluableNode *n, EvaluableNode *parent,
 		bool expanded_whitespace, size_t indentation_depth, bool need_initial_space);
 
+	size_t GetCurrentLineNumber()
+	{
+		return lineNumber + 1;
+	}
+
+	size_t GetCurrentCharacterNumberInLine()
+	{
+		std::string_view line_to_opcode(&(*code)[lineStartPos], pos - lineStartPos);
+		size_t char_number = StringManipulation::GetNumUTF8Characters(line_to_opcode);
+		return char_number + 1;
+	}
+
 	//appends the warning string on to warnings
 	inline void EmitWarning(std::string warning)
 	{
-		if(originalSource.empty())
-		{
-			warnings.emplace_back("Warning: " + warning);
-		}
-		else
-		{
-			warnings.emplace_back("Warning: " + warning
-				+ " at line " + StringManipulation::NumberToString(lineNumber + 1) + " of " + originalSource);
-		}
+		std::string combined = "Warning: " + warning
+			+ " at line " + StringManipulation::NumberToString(GetCurrentLineNumber())
+			+ ", column " + StringManipulation::NumberToString(GetCurrentCharacterNumberInLine());
+
+		if(!originalSource.empty())
+			combined += " of " + originalSource;
+
+		warnings.emplace_back(combined);
 	}
 
 	//Appends to the string s that represents the code tree

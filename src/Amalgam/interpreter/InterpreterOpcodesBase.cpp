@@ -555,7 +555,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	PopulatePerformanceCounters(perf_constraints_ptr, nullptr);
 
 	Interpreter sandbox(evaluableNodeManager, randomStream.CreateOtherStreamViaRand(),
-		writeListeners, printListener, perf_constraints_ptr);
+		writeListeners, printListener, perf_constraints_ptr, nullptr, this);
 
 #ifdef MULTITHREAD_SUPPORT
 	//everything at this point is referenced on stacks; allow the sandbox to trigger a garbage collect without this interpreter blocking

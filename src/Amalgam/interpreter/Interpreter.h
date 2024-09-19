@@ -155,8 +155,8 @@ public:
 	// if performance_constraints is not nullptr, then it will limit execution appropriately
 	Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 		std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
-		PerformanceConstraints *performance_constraints = nullptr,
-		Entity *t = nullptr, Interpreter *calling_interpreter = nullptr);
+		PerformanceConstraints *performance_constraints,
+		Entity *t, Interpreter *calling_interpreter);
 
 	~Interpreter()
 	{	}
@@ -714,7 +714,7 @@ protected:
 
 					Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
 						parentInterpreter->writeListeners, parentInterpreter->printListener,
-						parentInterpreter->performanceConstraints, parentInterpreter->curEntity);
+						parentInterpreter->performanceConstraints, parentInterpreter->curEntity, parentInterpreter);
 
 					interpreter.memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
 
@@ -780,7 +780,7 @@ protected:
 
 					Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
 						parentInterpreter->writeListeners, parentInterpreter->printListener,
-						parentInterpreter->performanceConstraints, parentInterpreter->curEntity);
+						parentInterpreter->performanceConstraints, parentInterpreter->curEntity, parentInterpreter);
 
 					interpreter.memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
 

@@ -652,7 +652,7 @@ void Parser::ParseCode()
 			}
 		}
 
-		if(transactionalParse && warnings.size() > 0)
+		if(transactionalParse && warnings.size() > 0 && cur_node == topNode)
 			break;
 	}
 
@@ -677,8 +677,8 @@ void Parser::ParseCode()
 	}
 
 	if(numOpenParenthesis > num_allowed_open_parens)
-		EmitWarning(StringManipulation::NumberToString(static_cast<size_t>(numOpenParenthesis))
-			+ " missing closing parenthesis");
+		EmitWarning(StringManipulation::NumberToString(
+			static_cast<size_t>(numOpenParenthesis - num_allowed_open_parens)) + " missing closing parenthesis");
 	else if(numOpenParenthesis < 0)
 		EmitWarning(StringManipulation::NumberToString(static_cast<size_t>(-numOpenParenthesis))
 			+ " extra closing parenthesis");

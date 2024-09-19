@@ -31,6 +31,7 @@
  (print (parse "(seq (+ 1 2) (+ " (true) ))
  (print (parse "(seq (+ 1 2) (+ " (false) (true)))
  (print (parse "(seq (+ 1 2) (+ " (true) (true)))
+ (print (parse "(seq (+ 1 2) (+ (a ) 3) " (true) (true)))
 
  (print "--if--\n")
  (if 1 (print "if 1\n"))

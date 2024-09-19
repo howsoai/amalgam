@@ -150,7 +150,8 @@ EvaluableNodeReference Entity::GetValueAtLabel(StringInternPool::StringID label_
 	if(direct_get && destination_temp_enm == &evaluableNodeManager)
 		return retval;
 
-	return destination_temp_enm->DeepAllocCopy(retval, EvaluableNodeManager::ENMM_REMOVE_ALL);
+	return destination_temp_enm->DeepAllocCopy(retval, direct_get
+		? EvaluableNodeManager::ENMM_NO_CHANGE : EvaluableNodeManager::ENMM_REMOVE_ALL);
 }
 
 bool Entity::GetValueAtLabelAsNumber(StringInternPool::StringID label_sid, double &value_out, bool on_self)

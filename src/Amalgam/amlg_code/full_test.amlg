@@ -909,7 +909,7 @@
  (print (values (list "a" 1 "b" 2 "c" 3 4 "d")))
 
  (print (values (list "a" 1 "b" 2 "c" 3 4 "d" 1 2 3 4 "a" "b" "c") (true)))
- (print (values (associate "a" 1 "b" 2 "c" 3 4 "d" "e" 1") (true)))
+ (print (values (associate "a" 1 "b" 2 "c" 3 4 "d" "e" 1) (true)))
 
  (print (values (append (range 1 20) (range 1 20)) (true)))
 
@@ -1016,9 +1016,22 @@
 	(print (previous_result) "\n")
 	(current_index)
  )
+ (while (< (current_index) 2)
+	(if (= (current_index) 0)
+		3
+
+		(seq
+			(print (previous_result 0 (true)) "\n")
+			(print (previous_result 0) "\n")
+			(print (previous_result 0) "\n")
+		)
+	)
+)
 
  (print "--opcode_stack--\n")
  (print (size (opcode_stack)) "\n")
+ (print (seq (seq (opcode_stack 2))) "\n")
+ (print (seq (seq (opcode_stack -1 (true)))) "\n")
 
  (print "--stack--\n")
  (print (stack))

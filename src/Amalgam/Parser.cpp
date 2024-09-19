@@ -545,8 +545,6 @@ void Parser::ParseCode()
 {
 	EvaluableNode *cur_node = nullptr;
 
-	//TODO 21359: fix logic for transactionalParse
-
 	//as long as code left
 	while(pos < code->size())
 	{
@@ -604,19 +602,12 @@ void Parser::ParseCode()
 						}
 						else
 						{
-							if(transactionalParse)
-								break;
-
 							EmitWarning("Missing )");
 						}
 					}
 					else //no more code
 					{
-						//if transactionalParse and the last parenthesis wasn't closed
-						if(transactionalParse && numOpenParenthesis == 1)
-							break;
-
-						EmitWarning("Mismatched )");
+						break;
 					}
 				}
 
@@ -657,16 +648,35 @@ void Parser::ParseCode()
 			if(n->GetType() == ENT_NOT_A_BUILT_IN_TYPE)
 			{
 				n->SetType(ENT_NULL, nullptr, false);
-
-				if(transactionalParse)
-					break;
-
 				EmitWarning("Invalid opcode");
+			}
+		}
+
+		if(transactionalParse && warnings.size() > 0)
+			break;
+	}
+
+	int64_t num_allowed_open_parens = 0;
+	if(transactionalParse)
+	{
+		num_allowed_open_parens = 1;
+
+		//if anything went wrong with the last transaction, remove it
+		if(warnings.size() > 0 || numOpenParenthesis > 1)
+		{
+			if(EvaluableNode::IsOrderedArray(topNode))
+			{
+				auto &top_node_ocn = topNode->GetOrderedChildNodesReference();
+				top_node_ocn.pop_back();
+			}
+			else //nothing came through correctly
+			{
+				topNode = nullptr;
 			}
 		}
 	}
 
-	if(!transactionalParse && numOpenParenthesis > 0)
+	if(numOpenParenthesis > num_allowed_open_parens)
 		EmitWarning(StringManipulation::NumberToString(static_cast<size_t>(numOpenParenthesis))
 			+ " missing closing parenthesis");
 	else if(numOpenParenthesis < 0)

@@ -77,7 +77,10 @@
       "hidden": true,
       "description": "Sets wasm64 arch",
       "cacheVariables": {
-        "ARCH": "wasm64"
+        "ARCH": "wasm64",
+        "CMAKE_OSX_ARCHITECTURES": "",
+        "CMAKE_CXX_COMPILER_TARGET": "wasm64-unknown-emscripten",
+        "CMAKE_TRY_COMPILE_TARGET_TYPE": "STATIC_LIBRARY"
       },
       "architecture": {
         "value": "amd64",
@@ -263,23 +266,21 @@
       }
     },
     {
-      "name": "wasm64-release",
-      "description": "emcc for wasm64 (release)",
+      "name": "wasm64-release-browser",
+      "description": "emcc for wasm64 browsers (release)",
       "inherits": [ "base", "wasm64", "release", "emcc" ],
       "cacheVariables": {
-        "CMAKE_OSX_ARCHITECTURES": "",
-        "CMAKE_CXX_COMPILER_TARGET": "wasm64-unknown-emscripten",
-        "CMAKE_TRY_COMPILE_TARGET_TYPE": "STATIC_LIBRARY"
+        "WASM64_ENVIRONMENT": "worker",
+        "WASM64_BUILD_TYPE": "browser"
       }
     },
     {
-      "name": "wasm64-release-linux",
-      "description": "emcc for wasm64 (release) for linux",
-      "inherits": [ "base", "linux", "wasm64", "release", "emcc" ],
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
+      "name": "wasm64-release-nodejs",
+      "description": "emcc for wasm64 nodejs (release)",
+      "inherits": [ "base", "wasm64", "release", "emcc" ],
+      "cacheVariables": {
+        "WASM64_ENVIRONMENT": "node",
+        "WASM64_BUILD_TYPE": "nodejs"
       }
     },
 
@@ -362,14 +363,14 @@
       "description": "linux arm64_8a release build"
     },
     {
-      "name": "wasm64-release-linux",
-      "configurePreset": "wasm64-release-linux",
-      "description": "linux wasm64 release build"
+      "name": "wasm64-release-browser",
+      "configurePreset": "wasm64-release-browser",
+      "description": "wasm64 release build for browsers"
     },
     {
-      "name": "wasm64-release",
-      "configurePreset": "wasm64-release",
-      "description": "wasm64 release build"
+      "name": "wasm64-release-nodejs",
+      "configurePreset": "wasm64-release-nodejs",
+      "description": "wasm64 release build for nodejs"
     },
     {
       "name": "amd64-debug-macos",
@@ -450,10 +451,16 @@
       "configurePreset": "arm64_8a-debug-linux"
     },
     {
-      "name": "wasm64-release-linux",
-      "description": "linux wasm64 release tests",
+      "name": "wasm64-release-browser",
+      "description": "browser wasm64 release tests",
       "inherits": "base",
-      "configurePreset": "wasm64-release-linux"
+      "configurePreset": "wasm64-release-browser"
+    },
+    {
+      "name": "wasm64-release-nodejs",
+      "description": "nodejs wasm64 release tests",
+      "inherits": "base",
+      "configurePreset": "wasm64-release-nodejs"
     },
     {
       "name": "amd64-release-macos",

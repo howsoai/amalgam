@@ -665,16 +665,16 @@ var data = [
 	},
 	
 	{
-		"parameter" : "previous_result [number stack_distance]",
+		"parameter" : "previous_result [number stack_distance] [bool copy]",
 		"output" : "*",
-		"description" : "Like target, but evaluates to the resulting node of the previous iteration for applicable opcodes.",
+		"description" : "Like target, but evaluates to the resulting node of the previous iteration for applicable opcodes. If copy is true, then a copy of the resulting node of the previous iteration is returned, otherwise the result of the previous iteration is returned directly and consumed.",
 		"example" : "(while (< (target_index) 3) (print (previous_result)) (target_index))"
 	},
 	
 	{
-		"parameter" : "opcode_stack",
+		"parameter" : "opcode_stack [number stack_distance] [bool no_child_nodes]",
 		"output" : "list of *",
-		"description" : "Evaluates to the list of opcodes that include the call stack.",
+		"description" : "Evaluates to the list of opcodes that make up the call stack or a single opcode within the call stack. If stack_distance is specified, then a copy of the node at that specified depth is returned, otherwise the list of all opcodes in opcode stack are returned. Negative values for stack_distance specify the depth from the top of the stack and positive values specify the depth from the bottom. If no_child_nodes is true, then only the root node(s) are returned, otherwise the returned node(s) are deep-copied.",
 		"example" : "(print (opcode_stack))"
 	},
 

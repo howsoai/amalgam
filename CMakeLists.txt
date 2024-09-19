@@ -313,6 +313,15 @@ if(IS_LINUX AND IS_AMD64)
         SOURCE ${AMALGAM_LIB_ONLY_SOURCE} ${COMMON_SOURCE_THREADS} IDE_FOLDER "OtherBuildTargets")
 endif()
 
+# WASM single-threaded debug target (amalgam-st-debug)
+if(IS_WASM)
+    add_compiled_target(AUTO_NAME TYPE "objlib" USE_DEBUG
+        SOURCE ${COMMON_SOURCE} IDE_FOLDER "OtherBuildTargets")
+    add_compiled_target(AUTO_NAME TYPE "app" USE_DEBUG
+        SOURCE ${COMMON_SOURCE} APP_ONLY_SOURCE ${AMALGAM_APP_ONLY_SOURCE})
+    add_compiled_target(AUTO_NAME TYPE "sharedlib" USE_DEBUG
+        SOURCE ${AMALGAM_LIB_ONLY_SOURCE} ${COMMON_SOURCE} IDE_FOLDER "OtherBuildTargets")
+endif()
 
 #
 # Additional artifacts/test/etc

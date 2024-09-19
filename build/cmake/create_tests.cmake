@@ -8,7 +8,10 @@ enable_testing()
 set(CMAKE_CTEST_ARGUMENTS "-j" "--schedule-random" "--output-on-failure" "--extra-verbose" "--output-log" "${CMAKE_SOURCE_DIR}/out/test/all_tests.log")
 
 # Not all tests can be run on all platforms:
-if(IS_MACOS)
+if(IS_WASM)
+    # No tests to run for WASM
+    list(PREPEND CMAKE_CTEST_ARGUMENTS "-LE" ".*")
+elseif(IS_MACOS)
     if(IS_ARM64)
         # Can't run cross compiled arm64 binaries on macos amd64 hosts
         list(PREPEND CMAKE_CTEST_ARGUMENTS "-LE" ".*")
@@ -16,9 +19,6 @@ if(IS_MACOS)
         # Can't run advanced intrinsic builds on macos amd64 build machines
         list(PREPEND CMAKE_CTEST_ARGUMENTS "-LE" "advanced_intrinsics")
     endif()
-elseif(IS_WASM)
-    # No tests to run for WASM
-    list(PREPEND CMAKE_CTEST_ARGUMENTS "-LE" ".*")
 else()
     list(PREPEND CMAKE_CTEST_ARGUMENTS "-L" "smoke_test")
 endif()

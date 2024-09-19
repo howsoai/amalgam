@@ -14,10 +14,6 @@
 
  (#"label 1" print "hello world: " (* #"label number 2" 3 4) #"label 3" " and " (* 1 2) "\n")
 
- (print "--non-keyword token--\n")
- (print (call (parse "(6)")) "\n")
- (print (call (parse "(notakeyword)")) "\n")
-
  (print "--get_defaults--\n")
  (print (get_defaults "mutation_opcodes"))
  (print (get_defaults "mutation_types"))
@@ -28,6 +24,12 @@
 
  (print (unparse (associate "a" 1 "b" 2 "c" (list "alpha" "beta" "gamma"))) "\n")
  (print (unparse (associate "a" 1 "b" 2 "c" (list "alpha" "beta" "gamma")) (true)) "\n")
+
+ (print (parse "(6)") "\n")
+ (print (parse "(notakeyword)") "\n")
+
+ (print (parse "(seq (+ 1 2) (+ " (true) ))
+ (print (parse "(seq (+ 1 2) (+ " (true) (true)))
 
  (print "--if--\n")
  (if 1 (print "if 1\n"))

@@ -189,8 +189,15 @@ protected:
 	//appends the warning string on to warnings
 	inline void EmitWarning(std::string warning)
 	{
-		warnings.emplace_back("Warning: " + warning
-			+ " at line " + StringManipulation::NumberToString(lineNumber + 1) + " of " + originalSource);
+		if(originalSource.empty())
+		{
+			warnings.emplace_back("Warning: " + warning);
+		}
+		else
+		{
+			warnings.emplace_back("Warning: " + warning
+				+ " at line " + StringManipulation::NumberToString(lineNumber + 1) + " of " + originalSource);
+		}
 	}
 
 	//Appends to the string s that represents the code tree

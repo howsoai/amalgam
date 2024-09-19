@@ -68,6 +68,9 @@ EvaluableNode *EvaluableNodeManager::AllocNode(EvaluableNode *original, Evaluabl
 
 EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(EvaluableNodeType child_node_type, size_t num_child_nodes)
 {
+	if(num_child_nodes == 0)
+		return AllocNode(ENT_LIST);
+
 	size_t num_allocated = 0;
 	size_t num_to_alloc = num_child_nodes + 1;
 	size_t num_total_nodes_needed = 0;

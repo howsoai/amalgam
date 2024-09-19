@@ -459,12 +459,10 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, EvaluableNode *n
 			}
 			else
 			{
-				//invalid opcode, warn if possible and store the identifier as a string
-				if(!originalSource.empty())
-					std::cerr << "Warning: " << "Invalid opcode \"" << token << "\" at line " << lineNumber + 1 << " of " << originalSource << std::endl;
+				EmitWarning("Invalid opcode \"" + token + "\"; transforming to apply opcode using the invalid opcode type");
 
-				new_token->SetType(ENT_STRING, evaluableNodeManager, false);
-				new_token->SetStringValue(token);
+				new_token->SetType(ENT_APPLY, evaluableNodeManager, false);
+				new_token->AppendOrderedChildNode(evaluableNodeManager->AllocNode(token));
 			}
 		}
 		else if(cur_char == '[')
@@ -488,12 +486,12 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, EvaluableNode *n
 		if(cur_char == ']')
 		{
 			if(parent_node_type != ENT_LIST)
-				std::cerr << "Warning: " << "Mismatched ] at line " << lineNumber + 1 << " of " << originalSource << std::endl;
+				EmitWarning("Mismatched ]");
 		}
 		else if(cur_char == '}')
 		{
 			if(parent_node_type != ENT_ASSOC)
-				std::cerr << "Warning: " << "Mismatched } at line " << lineNumber + 1 << " of " << originalSource << std::endl;
+				EmitWarning("Mismatched }");
 		}
 
 		pos++; //skip closing parenthesis
@@ -548,6 +546,8 @@ void Parser::FreeNode(EvaluableNode *node)
 void Parser::ParseCode()
 {
 	EvaluableNode *cur_node = nullptr;
+
+	//TODO 21359: fix logic for transactionalParse
 
 	//as long as code left
 	while(pos < code->size())

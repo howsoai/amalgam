@@ -302,7 +302,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PARSE(EvaluableNode *en, b
 
 	bool return_warnings = false;
 	if(ocn.size() > 2)
-		transactional_parse = InterpretNodeIntoBoolValue(ocn[2]);
+		return_warnings = InterpretNodeIntoBoolValue(ocn[2]);
 
 	//get the string to parse
 	auto [valid_string, to_parse] = InterpretNodeIntoStringValue(ocn[0]);
@@ -318,13 +318,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PARSE(EvaluableNode *en, b
 	retval->ReserveOrderedChildNodes(2);
 	retval->AppendOrderedChildNode(node);
 
-	EvaluableNodeReference warning_list
-		= evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_STRING, warnings.size());
+	EvaluableNodeReference warning_list(
+		evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_STRING, warnings.size()), true);
+	retval->AppendOrderedChildNode(warning_list);
+
 	auto &list_ocn = warning_list->GetOrderedChildNodesReference();
 	for(size_t i = 0; i < warnings.size(); i++)
 		list_ocn[i]->SetStringValue(warnings[i]);
 
-	return warning_list;
+	return retval;
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_UNPARSE(EvaluableNode *en, bool immediate_result)

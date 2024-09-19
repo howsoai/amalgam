@@ -351,6 +351,17 @@ public:
 		return EvaluableNodeReference(previous_result, previous_result_unique);
 	}
 
+	//deep copies the previous_result node for the reference at depth on the construction stack
+	//assumes there is at least one construction stack entry and depth is a valid depth
+	__forceinline EvaluableNodeReference CopyPreviousResultInConstructionStack(size_t depth)
+	{
+		//clear previous result
+		size_t prev_result_offset = constructionStackNodes->size()
+						- (constructionStackOffsetStride * depth) + constructionStackOffsetPreviousResult;
+		auto &previous_result_loc = (*constructionStackNodes)[prev_result_offset];
+		return evaluableNodeManager->DeepAllocCopy(previous_result_loc);
+	}
+
 	//clears all uniqueness of previous_results in construction stack in case the construction stack is copied across threads
 	inline void RemoveUniquenessFromPreviousResultsInConstructionStack()
 	{

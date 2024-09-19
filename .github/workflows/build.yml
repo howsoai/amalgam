@@ -424,7 +424,7 @@ jobs:
     - name: Download Artifact
       uses: actions/download-artifact@v4
       with:
-        name: amalgam-${{ inputs.version }}-wasm64
+        name: amalgam-${{ inputs.version }}-unknown-wasm64
 
     - name: Extract Amalgam
       run: |

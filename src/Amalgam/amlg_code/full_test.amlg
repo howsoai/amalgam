@@ -29,6 +29,7 @@
  (print (parse "(notakeyword)") "\n")
 
  (print (parse "(seq (+ 1 2) (+ " (true) ))
+ (print (parse "(seq (+ 1 2) (+ " (false) (true)))
  (print (parse "(seq (+ 1 2) (+ " (true) (true)))
 
  (print "--if--\n")

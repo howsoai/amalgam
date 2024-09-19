@@ -657,25 +657,21 @@ void Parser::ParseCode()
 			if(n->GetType() == ENT_NOT_A_BUILT_IN_TYPE)
 			{
 				n->SetType(ENT_NULL, nullptr, false);
-				if(!originalSource.empty())
-				{
-					EmitWarning("Invalid opcode");
-					if(transactionalParse)
-						break;
-				}
+
+				if(transactionalParse)
+					break;
+
+				EmitWarning("Invalid opcode");
 			}
 		}
 	}
 
-	if(!transactionalParse && !originalSource.empty())
-	{
-		if(numOpenParenthesis > 0)
-			EmitWarning(StringManipulation::NumberToString(static_cast<size_t>(numOpenParenthesis))
-				+ " missing parenthesis");
-		else if(numOpenParenthesis < 0)
-			EmitWarning(StringManipulation::NumberToString(static_cast<size_t>(-numOpenParenthesis))
-				+ " extra parenthesis");
-	}
+	if(!transactionalParse && numOpenParenthesis > 0)
+		EmitWarning(StringManipulation::NumberToString(static_cast<size_t>(numOpenParenthesis))
+			+ " missing closing parenthesis");
+	else if(numOpenParenthesis < 0)
+		EmitWarning(StringManipulation::NumberToString(static_cast<size_t>(-numOpenParenthesis))
+			+ " extra closing parenthesis");
 }
 
 void Parser::AppendComments(EvaluableNode *n, size_t indentation_depth, bool pretty, std::string &to_append)

@@ -1671,8 +1671,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, boo
 		EvaluableNode *value = nullptr;
 		if(EvaluableNode::IsOrderedArray(value_list))
 		{
-			if(i < value_list->GetOrderedChildNodesReference().size())
-				value = value_list->GetOrderedChildNodes()[i];
+			auto &vl_ocn = value_list->GetOrderedChildNodesReference();
+			if(i < vl_ocn.size())
+				value = vl_ocn[i];
 		}
 		else //not a list, so just use the value itself
 		{

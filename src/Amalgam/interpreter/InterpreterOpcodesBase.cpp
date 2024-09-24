@@ -935,6 +935,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	//if only 2 params and not accumulating, then just assign/accum the destination
 	if(num_params == 2)
 	{
+		//TODO 21622: consider reverting this back to immediate -- mnist is slower
 		auto new_value = InterpretNode(ocn[1]);
 
 		//retrieve the symbol
@@ -978,7 +979,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		size_t replacements_start_index = node_stack.originalStackSize;
 
 		//keeps track of whether each address is unique so they can be freed if relevant
-		std::vector<bool> is_address_unique;
+		std::vector<bool> is_value_unique;
 		//keeps track of whether all new values assigned or accumed are unique and cycle free
 		bool need_node_flags_update = false;
 
@@ -990,10 +991,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 			auto address = InterpretNodeForImmediateUse(ocn[ocn_index]);
 			node_stack.PushEvaluableNode(address);
-			is_address_unique.push_back(address.unique);
+			is_value_unique.push_back(address.unique);
 
+			//TODO 21622: consider reverting this back to immediate -- mnist is slower
 			auto new_value = InterpretNode(ocn[ocn_index + 1]);
 			node_stack.PushEvaluableNode(new_value);
+			is_value_unique.push_back(new_value.unique);
+
 			if(!new_value.unique || new_value.GetNeedCycleCheck())
 				need_node_flags_update = true;
 		}
@@ -1020,17 +1024,21 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 		//make a copy of value_replacement because not sure where else it may be used
 		EvaluableNode *value_replacement = evaluableNodeManager->DeepAllocCopy(*value_destination);
+		if(value_replacement != nullptr && value_replacement->GetNeedCycleCheck())
+			need_node_flags_update = true;
 
 		for(size_t index = 0; index < num_replacements; index++)
 		{
-			EvaluableNodeReference address(replacements[replacements_start_index + 2 * index], is_address_unique[index]);
-			EvaluableNodeReference new_value(replacements[replacements_start_index + 2 * index + 1], false);
+			EvaluableNodeReference address(replacements[replacements_start_index + 2 * index], is_value_unique[2 * index]);
+			EvaluableNodeReference new_value(replacements[replacements_start_index + 2 * index + 1], is_value_unique[2 * index + 1]);
 
 			//find location to store results
 			EvaluableNode **copy_destination = TraverseToDestinationFromTraversalPathList(&value_replacement, address, true);
 			evaluableNodeManager->FreeNodeTreeIfPossible(address);
 			if(copy_destination == nullptr)
 				continue;
+
+			bool need_cycle_check_before = ((*copy_destination) != nullptr && (*copy_destination)->GetNeedCycleCheck());
 
 			if(accum)
 			{
@@ -1045,6 +1053,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			{
 				*copy_destination = new_value;
 			}
+
+			bool need_cycle_check_after = ((*copy_destination) != nullptr && (*copy_destination)->GetNeedCycleCheck());
+			if(need_cycle_check_before != need_cycle_check_after)
+				need_node_flags_update = true;
 		}
 
 		if(need_node_flags_update)

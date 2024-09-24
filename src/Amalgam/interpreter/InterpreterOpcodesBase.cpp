@@ -935,7 +935,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	//if only 2 params and not accumulating, then just assign/accum the destination
 	if(num_params == 2)
 	{
-		auto new_value = InterpretNodeForImmediateUse(ocn[1]);
+		auto new_value = InterpretNode(ocn[1]);
 
 		//retrieve the symbol
 		size_t destination_call_stack_index = 0;
@@ -979,6 +979,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 		//keeps track of whether each address is unique so they can be freed if relevant
 		std::vector<bool> is_address_unique;
+		//keeps track of whether all new values assigned or accumed are unique and cycle free
+		bool need_node_flags_update = false;
 
 		//get each address/value pair to replace in result
 		for(size_t ocn_index = 1; ocn_index + 1 < num_params; ocn_index += 2)
@@ -989,8 +991,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			auto address = InterpretNodeForImmediateUse(ocn[ocn_index]);
 			node_stack.PushEvaluableNode(address);
 			is_address_unique.push_back(address.unique);
-			auto new_value = InterpretNodeForImmediateUse(ocn[ocn_index + 1]);
+
+			auto new_value = InterpretNode(ocn[ocn_index + 1]);
 			node_stack.PushEvaluableNode(new_value);
+			if(!new_value.unique || new_value.GetNeedCycleCheck())
+				need_node_flags_update = true;
 		}
 		size_t num_replacements = (num_params - 1) / 2;
 
@@ -1042,7 +1047,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			}
 		}
 
-		EvaluableNodeManager::UpdateFlagsForNodeTree(value_replacement);
+		if(need_node_flags_update)
+			EvaluableNodeManager::UpdateFlagsForNodeTree(value_replacement);
 		*value_destination = value_replacement;
 	}
 

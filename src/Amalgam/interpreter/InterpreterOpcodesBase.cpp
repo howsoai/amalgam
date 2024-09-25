@@ -935,7 +935,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	//if only 2 params and not accumulating, then just assign/accum the destination
 	if(num_params == 2)
 	{
-		auto new_value = InterpretNode(ocn[1]);
+		auto new_value = InterpretNodeForImmediateUse(ocn[1]);
 
 		//retrieve the symbol
 		size_t destination_call_stack_index = 0;
@@ -993,7 +993,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			node_stack.PushEvaluableNode(address);
 			is_value_unique.push_back(address.unique);
 
-			auto new_value = InterpretNode(ocn[ocn_index + 1]);
+			auto new_value = InterpretNodeForImmediateUse(ocn[ocn_index + 1]);
 			node_stack.PushEvaluableNode(new_value);
 			is_value_unique.push_back(new_value.unique);
 		}

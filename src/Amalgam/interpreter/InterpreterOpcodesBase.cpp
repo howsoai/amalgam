@@ -1020,8 +1020,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 		//make a copy of value_replacement because not sure where else it may be used
 		EvaluableNode *value_replacement = evaluableNodeManager->DeepAllocCopy(*value_destination);
-		if(value_replacement != nullptr && value_replacement->GetNeedCycleCheck())
-			result_flags_need_updates = true;
 
 		for(size_t index = 0; index < num_replacements; index++)
 		{
@@ -1058,6 +1056,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 			bool need_cycle_check_after = false;
 			bool is_idempotent_after = false;
+			if((*copy_destination) != nullptr)
+			{
+				need_cycle_check_after = (*copy_destination)->GetNeedCycleCheck();
+				is_idempotent_after = (*copy_destination)->GetIsIdempotent();
+			}
 
 			if(!new_value.unique
 					|| need_cycle_check_before != need_cycle_check_after

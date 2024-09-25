@@ -935,7 +935,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	//if only 2 params and not accumulating, then just assign/accum the destination
 	if(num_params == 2)
 	{
-		//TODO 21622: consider reverting this back to immediate -- mnist is slower
 		auto new_value = InterpretNode(ocn[1]);
 
 		//retrieve the symbol
@@ -993,7 +992,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			node_stack.PushEvaluableNode(address);
 			is_value_unique.push_back(address.unique);
 
-			//TODO 21622: consider reverting this back to immediate -- mnist is slower
 			auto new_value = InterpretNode(ocn[ocn_index + 1]);
 			node_stack.PushEvaluableNode(new_value);
 			is_value_unique.push_back(new_value.unique);

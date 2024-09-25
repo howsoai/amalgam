@@ -1021,14 +1021,24 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		//make a copy of value_replacement because not sure where else it may be used
 		EvaluableNode *value_replacement = evaluableNodeManager->DeepAllocCopy(*value_destination);
 
+		//need to obtain all of the destinations at the same time, otherwise it is possible that a
+		//modification could traverse to a location from another modification that isn't unique and
+		//modify something that shouldn't be modified.  this is more efficient and flexible than making a copy
+		//for every new value
+		std::vector<EvaluableNode **> copy_destinations;
+		copy_destinations.reserve(num_replacements);
 		for(size_t index = 0; index < num_replacements; index++)
 		{
 			EvaluableNodeReference address(replacements[replacements_start_index + 2 * index], is_value_unique[2 * index]);
-			EvaluableNodeReference new_value(replacements[replacements_start_index + 2 * index + 1], is_value_unique[2 * index + 1]);
-
-			//find location to store results
 			EvaluableNode **copy_destination = TraverseToDestinationFromTraversalPathList(&value_replacement, address, true);
 			evaluableNodeManager->FreeNodeTreeIfPossible(address);
+			copy_destinations.push_back(copy_destination);
+		}
+
+		for(size_t index = 0; index < num_replacements; index++)
+		{
+			EvaluableNodeReference new_value(replacements[replacements_start_index + 2 * index + 1], is_value_unique[2 * index + 1]);
+			EvaluableNode **copy_destination = copy_destinations[index];
 			if(copy_destination == nullptr)
 				continue;
 

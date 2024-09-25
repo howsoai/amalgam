@@ -979,6 +979,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 		//keeps track of whether each address is unique so they can be freed if relevant
 		std::vector<bool> is_value_unique;
+		is_value_unique.reserve(num_params - 1);
 		//keeps track of whether all new values assigned or accumed are unique and cycle free
 		bool need_node_flags_update = false;
 

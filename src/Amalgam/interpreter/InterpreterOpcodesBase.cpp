@@ -980,8 +980,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		//keeps track of whether each address is unique so they can be freed if relevant
 		std::vector<bool> is_value_unique;
 		is_value_unique.reserve(num_params - 1);
-		//keeps track of whether all new values assigned or accumed are unique and cycle free
-		bool need_node_flags_update = false;
+		//keeps track of whether all new values assigned or accumed are unique, cycle free, etc.
+		bool result_flags_need_updates = false;
 
 		//get each address/value pair to replace in result
 		for(size_t ocn_index = 1; ocn_index + 1 < num_params; ocn_index += 2)
@@ -996,9 +996,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			auto new_value = InterpretNode(ocn[ocn_index + 1]);
 			node_stack.PushEvaluableNode(new_value);
 			is_value_unique.push_back(new_value.unique);
-
-			if(!new_value.unique || new_value.GetNeedCycleCheck())
-				need_node_flags_update = true;
 		}
 		size_t num_replacements = (num_params - 1) / 2;
 
@@ -1024,7 +1021,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		//make a copy of value_replacement because not sure where else it may be used
 		EvaluableNode *value_replacement = evaluableNodeManager->DeepAllocCopy(*value_destination);
 		if(value_replacement != nullptr && value_replacement->GetNeedCycleCheck())
-			need_node_flags_update = true;
+			result_flags_need_updates = true;
 
 		for(size_t index = 0; index < num_replacements; index++)
 		{
@@ -1037,7 +1034,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			if(copy_destination == nullptr)
 				continue;
 
-			bool need_cycle_check_before = ((*copy_destination) != nullptr && (*copy_destination)->GetNeedCycleCheck());
+			bool need_cycle_check_before = false;
+			bool is_idempotent_before = false;
+			if((*copy_destination) != nullptr)
+			{
+				need_cycle_check_before = (*copy_destination)->GetNeedCycleCheck();
+				is_idempotent_before = (*copy_destination)->GetIsIdempotent();
+			}
 
 			if(accum)
 			{
@@ -1053,12 +1056,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 				*copy_destination = new_value;
 			}
 
-			bool need_cycle_check_after = ((*copy_destination) != nullptr && (*copy_destination)->GetNeedCycleCheck());
-			if(need_cycle_check_before != need_cycle_check_after)
-				need_node_flags_update = true;
+			bool need_cycle_check_after = false;
+			bool is_idempotent_after = false;
+
+			if(!new_value.unique
+					|| need_cycle_check_before != need_cycle_check_after
+					|| is_idempotent_before != is_idempotent_after)
+				result_flags_need_updates = true;
 		}
 
-		if(need_node_flags_update)
+		if(result_flags_need_updates)
 			EvaluableNodeManager::UpdateFlagsForNodeTree(value_replacement);
 		*value_destination = value_replacement;
 	}

@@ -1669,18 +1669,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, boo
 
 		//get value
 		EvaluableNode *value = nullptr;
-		if(value_list != nullptr)
+		if(EvaluableNode::IsOrderedArray(value_list))
 		{
-			if(value_list->IsOrderedArray() && i < value_list->GetOrderedChildNodes().size())
-			{
-				value = value_list->GetOrderedChildNodes()[i];
-			}
-			else //not a list, so just use the value itself
-			{
-				value = value_list;
-				//reusing the value, so can't be cycle free in the result
-				result->SetNeedCycleCheck(true);
-			}
+			auto &vl_ocn = value_list->GetOrderedChildNodesReference();
+			if(i < vl_ocn.size())
+				value = vl_ocn[i];
+		}
+		else //not a list, so just use the value itself
+		{
+			value = value_list;
+			//reusing the value, so can't be cycle free in the result
+			result->SetNeedCycleCheck(true);
 		}
 
 		//if no function, then just put value into the appropriate slot for the index

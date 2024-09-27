@@ -50,7 +50,7 @@ jobs:
       run: AMALGAM_BUILD_VERSION=${{ inputs.version }} cmake --preset $PRESET
 
     - name: CMake Build
-      run: cmake --build --preset $PRESET -- --quiet
+      run: cmake --build --preset $PRESET --
 
     - name: CMake Test
       run: cmake --build --preset $PRESET --target test

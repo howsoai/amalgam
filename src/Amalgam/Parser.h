@@ -100,11 +100,14 @@ public:
 			s.push_back(' ');
 	}
 
-	//Parses the code string and returns a tree of EvaluableNodeReference that represents the code
+	//Parses the code string and returns a tree of EvaluableNodeReference that represents the code,
+	// as well as the offset of any error, or larger than the length of code_string if no errors
+	//if transactional_parse is true, then it will ignore any incomplete or erroneous opcodes except the outermost one
 	//if original_source is a valid string, it will emit any warnings to stderr
 	//if debug_sources is true, it will prepend each node with a comment indicating original source
-	static EvaluableNodeReference Parse(std::string &code_string, EvaluableNodeManager *enm,
-		std::string *original_source = nullptr, bool debug_sources = false);
+	static std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t>
+		Parse(std::string &code_string, EvaluableNodeManager *enm,
+		bool transactional_parse = false, std::string *original_source = nullptr, bool debug_sources = false);
 
 	//Returns a string that represents the tree
 	// if expanded_whitespace, will emit additional whitespace to make it easier to read
@@ -169,8 +172,8 @@ protected:
 	//deallocates the current node in case there is an early exit or error
 	void FreeNode(EvaluableNode *node);
 
-	//Parses the next block of code, then returns the block
-	EvaluableNode *ParseNextBlock();
+	//Parses the next block of code into topNode
+	void ParseCode();
 
 	//Prints out all comments for the respective node
 	static void AppendComments(EvaluableNode *n, size_t indentation_depth, bool pretty, std::string &to_append);
@@ -182,6 +185,31 @@ protected:
 	static void AppendAssocKeyValuePair(UnparseData &upd,
 		StringInternPool::StringID key_sid, EvaluableNode *n, EvaluableNode *parent,
 		bool expanded_whitespace, size_t indentation_depth, bool need_initial_space);
+
+	size_t GetCurrentLineNumber()
+	{
+		return lineNumber + 1;
+	}
+
+	size_t GetCurrentCharacterNumberInLine()
+	{
+		std::string_view line_to_opcode(&(*code)[lineStartPos], pos - lineStartPos);
+		size_t char_number = StringManipulation::GetNumUTF8Characters(line_to_opcode);
+		return char_number + 1;
+	}
+
+	//appends the warning string on to warnings
+	inline void EmitWarning(std::string warning)
+	{
+		std::string combined = "Warning: " + warning
+			+ " at line " + StringManipulation::NumberToString(GetCurrentLineNumber())
+			+ ", column " + StringManipulation::NumberToString(GetCurrentCharacterNumberInLine());
+
+		if(!originalSource.empty())
+			combined += " of " + originalSource;
+
+		warnings.emplace_back(combined);
+	}
 
 	//Appends to the string s that represents the code tree
 	//if expanded_whitespace, then it will add whitespace as appropriate to make it pretty
@@ -217,14 +245,26 @@ protected:
 	//if true, will prepend debug sources to node comments
 	bool debugSources;
 
+	//the top node of everything being parsed
+	EvaluableNode *topNode;
+
 	//contains a list of nodes that need to be preevaluated on parsing
 	std::vector<EvaluableNode *> preevaluationNodes;
+
+	//any warnings from parsing
+	std::vector<std::string> warnings;
 
 	//parentNodes contains each reference as the key and the parent as the value
 	EvaluableNode::ReferenceAssocType parentNodes;
 
 	EvaluableNodeManager *evaluableNodeManager;
 
-	//character used for indendation
+	//if true, then it will ignore any incomplete or erroneous opcodes except the outermost one
+	bool transactionalParse;
+
+	//offset of the last code that was properly completed
+	size_t charOffsetStartOfLastCompletedCode;
+
+	//character used for indentation
 	static const char indentationCharacter = '\t';
 };

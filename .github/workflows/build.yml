@@ -66,7 +66,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: test-results-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}
+        name: test-results-${{ matrix.preset.type }}-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}
         path: ./out/test/*
 
     - name: CMake Install

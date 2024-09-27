@@ -272,6 +272,16 @@
         "CMAKE_TRY_COMPILE_TARGET_TYPE": "STATIC_LIBRARY"
       }
     },
+    {
+      "name": "wasm64-debug-unknown",
+      "description": "emcc for wasm64 (debug)",
+      "inherits": [ "base", "wasm64", "debug", "emcc" ],
+      "cacheVariables": {
+        "CMAKE_OSX_ARCHITECTURES": "",
+        "CMAKE_CXX_COMPILER_TARGET": "wasm64-unknown-emscripten",
+        "CMAKE_TRY_COMPILE_TARGET_TYPE": "STATIC_LIBRARY"
+      }
+    },
 
     {
       "name": "amd64-debug-macos",
@@ -355,6 +365,11 @@
       "name": "wasm64-release-unknown",
       "configurePreset": "wasm64-release-unknown",
       "description": "wasm64 release build"
+    },
+    {
+      "name": "wasm64-debug-unknown",
+      "configurePreset": "wasm64-debug-unknown",
+      "description": "wasm64 debug build"
     },
     {
       "name": "amd64-debug-macos",

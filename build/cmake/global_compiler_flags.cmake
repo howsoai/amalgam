@@ -139,6 +139,11 @@ if(IS_MSVC)
     add_compile_definitions(UNICODE _UNICODE)
 endif()
 
+# Ensure that debug WASM builds include additional WASM-specific linker flags 
+if (IS_WASM AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+    string(APPEND CMAKE_EXE_LINKER_FLAGS " -sASSERTIONS=2 -sSAFE_HEAP -sDEMANGLE_SUPPORT")
+endif()
+
 # amd64 advanced intrinsics:
 # Note: allowed values - avx avx2 avx512
 set(ADVANCED_INTRINSICS_AMD64 "avx2")

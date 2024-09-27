@@ -28,12 +28,19 @@ jobs:
         preset:
           - arch: amd64
             platform: linux
+            type: release
           - arch: arm64
             platform: linux
+            type: release
           - arch: arm64_8a
             platform: linux
+            type: release
           - arch: wasm64
             platform: unknown
+            type: release
+          - arch: wasm64
+            platform: unknown
+            type: debug
     permissions:
       contents: write
 
@@ -42,7 +49,7 @@ jobs:
 
     - name: Set build preset
       run: |
-        PRESET=$(echo ${{ matrix.preset.arch }}-release-${{ matrix.preset.platform }})
+        PRESET=$(echo ${{ matrix.preset.arch }}-${{ matrix.preset.type }}-${{ matrix.preset.platform }})
         echo "PRESET=$(echo $PRESET)" >> $GITHUB_ENV
         echo "Build preset: $PRESET"
 
@@ -71,7 +78,7 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: amalgam-${{ inputs.version }}-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}
+        name: amalgam-${{ inputs.version }}-${{ matrix.preset.type }}-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}
         path: ./out/package/amalgam-*.tar.gz
         if-no-files-found: error
 

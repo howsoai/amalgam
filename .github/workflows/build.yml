@@ -88,10 +88,10 @@ jobs:
       matrix:
         preset:
           - arch: amd64
-            build: release
+            type: release
             platform: macos
           - arch: arm64
-            build: release
+            type: release
             platform: macos
     permissions:
       contents: write
@@ -105,7 +105,7 @@ jobs:
 
     - name: Set build preset
       run: |
-        PRESET=$(echo ${{ matrix.preset.arch }}-release-${{ matrix.preset.platform }})
+        PRESET=$(echo ${{ matrix.preset.arch }}-${{ matrix.preset.type }}-${{ matrix.preset.platform }})
         echo "PRESET=$(echo $PRESET)" >> $GITHUB_ENV
         echo "Build preset: $PRESET"
 
@@ -142,7 +142,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: test-results-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}
+        name: test-results-${{ matrix.preset.type }}-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}
         path: ./out/test/*
 
     - name: CMake Install
@@ -154,7 +154,7 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: amalgam-${{ inputs.version }}-darwin-${{ matrix.preset.arch }}
+        name: amalgam-${{ inputs.version }}-${{ matrix.preset.type }}-darwin-${{ matrix.preset.arch }}
         path: ./out/package/amalgam-*.tar.gz
         if-no-files-found: error
 
@@ -164,7 +164,7 @@ jobs:
       matrix:
         preset:
           - arch: amd64
-            build: release
+            type: release
             platform: windows
     permissions:
       contents: write
@@ -174,7 +174,7 @@ jobs:
 
     - name: Set build preset
       run: |
-        PRESET=$(echo ${{ matrix.preset.arch }}-release-${{ matrix.preset.platform }})
+        PRESET=$(echo ${{ matrix.preset.arch }}-${{ matrix.preset.type }}-${{ matrix.preset.platform }})
         echo "PRESET=$(echo $PRESET)" >> $GITHUB_ENV
         echo "Build preset: $PRESET"
 
@@ -211,7 +211,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: test-results-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}
+        name: test-results-${{ matrix.preset.type }}-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}
         path: ./out/test/*
 
     - name: CMake Install
@@ -223,7 +223,7 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: amalgam-${{ inputs.version }}-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}
+        name: amalgam-${{ inputs.version }}-${{ matrix.preset.type }}-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}
         path: ./out/package/amalgam-*.tar.gz
         if-no-files-found: error
 
@@ -234,7 +234,7 @@ jobs:
     - name: Download Artifact
       uses: actions/download-artifact@v4
       with:
-        name: amalgam-${{ inputs.version }}-linux-amd64
+        name: amalgam-${{ inputs.version }}-release-linux-amd64
 
     - name: Extract Amalgam
       run: |
@@ -256,7 +256,7 @@ jobs:
     - name: Download Artifact
       uses: actions/download-artifact@v4
       with:
-        name: amalgam-${{ inputs.version }}-linux-arm64
+        name: amalgam-${{ inputs.version }}-release-linux-arm64
 
     - name: Extract Amalgam
       run: |
@@ -283,7 +283,7 @@ jobs:
     - name: Download Artifact
       uses: actions/download-artifact@v4
       with:
-        name: amalgam-${{ inputs.version }}-linux-arm64_8a
+        name: amalgam-${{ inputs.version }}-release-linux-arm64_8a
 
     - name: Extract Amalgam
       run: |
@@ -312,7 +312,7 @@ jobs:
     - name: Download Artifact
       uses: actions/download-artifact@v4
       with:
-        name: amalgam-${{ inputs.version }}-darwin-amd64
+        name: amalgam-${{ inputs.version }}-release-darwin-amd64
 
     - name: Extract Amalgam
       run: |
@@ -335,7 +335,7 @@ jobs:
     - name: Download Artifact
       uses: actions/download-artifact@v4
       with:
-        name: amalgam-${{ inputs.version }}-darwin-amd64
+        name: amalgam-${{ inputs.version }}-release-darwin-amd64
 
     - name: Extract Amalgam
       run: |
@@ -361,7 +361,7 @@ jobs:
     - name: Download Artifact
       uses: actions/download-artifact@v4
       with:
-        name: amalgam-${{ inputs.version }}-darwin-amd64
+        name: amalgam-${{ inputs.version }}-release-darwin-amd64
 
     - name: Extract Amalgam
       run: |
@@ -384,7 +384,7 @@ jobs:
     - name: Download Artifact
       uses: actions/download-artifact@v4
       with:
-        name: amalgam-${{ inputs.version }}-darwin-arm64
+        name: amalgam-${{ inputs.version }}-release-darwin-arm64
 
     - name: Extract Amalgam
       run: |
@@ -406,7 +406,7 @@ jobs:
     - name: Download Artifact
       uses: actions/download-artifact@v4
       with:
-        name: amalgam-${{ inputs.version }}-windows-amd64
+        name: amalgam-${{ inputs.version }}-release-windows-amd64
 
     - name: Extract Amalgam
       run: |
@@ -431,7 +431,7 @@ jobs:
     - name: Download Artifact
       uses: actions/download-artifact@v4
       with:
-        name: amalgam-${{ inputs.version }}-unknown-wasm64
+        name: amalgam-${{ inputs.version }}-release-unknown-wasm64
 
     - name: Extract Amalgam
       run: |

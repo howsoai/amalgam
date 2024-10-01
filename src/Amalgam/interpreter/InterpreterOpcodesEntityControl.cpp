@@ -716,22 +716,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, b
 	auto to_store = InterpretNodeForImmediateUse(ocn[1]);
 	auto node_stack = CreateOpcodeStackStateSaver(to_store);
 
-	//TODO 21711: update here downward and update documentation
-
-	bool escape_filename = false;
-	if(ocn.size() >= 3)
-		escape_filename = InterpretNodeIntoBoolValue(ocn[2], false);
-
 	std::string file_type = "";
-	if(ocn.size() >= 4)
+	if(ocn.size() > 2)
 	{
-		auto [valid, file_type_temp] = InterpretNodeIntoStringValue(ocn[3]);
+		auto [valid, file_type_temp] = InterpretNodeIntoStringValue(ocn[2]);
 		if(valid)
 			file_type = file_type_temp;
 	}
 
+	bool escape_filename = false;
+	bool pretty_print = false;
 	bool sort_keys = false;
-	if(ocn.size() >= 5)
+	if(ocn.size() > 3)
 	{
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[4]);
 		
@@ -739,9 +735,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, b
 		{
 			auto &mcn = params->GetMappedChildNodesReference();
 
-			auto found_sort_keys = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_sort_keys));
-			if(found_sort_keys != end(mcn))
-				sort_keys = EvaluableNode::IsTrue(found_sort_keys->second);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_escape_filename, escape_filename);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_pretty_print, pretty_print);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_sort_keys, sort_keys);
 		}
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
@@ -749,7 +745,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, b
 
 	std::string resource_base_path;
 	bool successful_save = asset_manager.StoreResourcePath(to_store,
-		resource_name, resource_base_path, file_type, evaluableNodeManager, escape_filename, sort_keys);
+		resource_name, resource_base_path, file_type, evaluableNodeManager, escape_filename, sort_keys, pretty_print);
 
 	return ReuseOrAllocReturn(to_store, successful_save, immediate_result);
 }
@@ -769,7 +765,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 		return EvaluableNodeReference::Null();
 
 	std::string file_type = "";
-	if(ocn.size() >= 2)
+	if(ocn.size() > 2)
 	{
 		auto [valid, file_type_temp] = InterpretNodeIntoStringValue(ocn[2]);
 		if(valid)
@@ -777,13 +773,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 	}
 
 	bool include_rand_seeds = true;
-	bool parallel_create = false;
 	bool escape_filename = false;
 	bool escape_contained_filenames = true;
 	bool pretty_print = false;
 	bool sort_keys = false;
 	bool flatten = true;
-	if(ocn.size() >= 3)
+	bool parallel_create = false;
+	if(ocn.size() > 3)
 	{
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[3]);
 
@@ -791,33 +787,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 		{
 			auto &mcn = params->GetMappedChildNodesReference();
 
-			auto found_include_rand_seeds = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_include_rand_seeds));
-			if(found_include_rand_seeds != end(mcn))
-				include_rand_seeds = EvaluableNode::IsTrue(found_include_rand_seeds->second);
-
-			auto found_escape_filename = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_escape_filename));
-			if(found_escape_filename != end(mcn))
-				escape_filename = EvaluableNode::IsTrue(found_escape_filename->second);
-
-			auto found_escape_contained_filenames = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_escape_contained_filenames));
-			if(found_escape_contained_filenames != end(mcn))
-				escape_contained_filenames = EvaluableNode::IsTrue(found_escape_contained_filenames->second);
-
-			auto found_pretty_print = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_pretty_print));
-			if(found_pretty_print != end(mcn))
-				pretty_print = EvaluableNode::IsTrue(found_pretty_print->second);
-
-			auto found_sort_keys = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_sort_keys));
-			if(found_sort_keys != end(mcn))
-				sort_keys = EvaluableNode::IsTrue(found_sort_keys->second);
-
-			auto found_flatten = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_flatten));
-			if(found_flatten != end(mcn))
-				flatten = EvaluableNode::IsTrue(found_flatten->second);
-
-			auto found_parallel_create = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_parallel_create));
-			if(found_parallel_create != end(mcn))
-				parallel_create = EvaluableNode::IsTrue(found_parallel_create->second);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_include_rand_seeds, include_rand_seeds);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_escape_filename, escape_filename);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_escape_contained_filenames, escape_contained_filenames);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_pretty_print, pretty_print);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_sort_keys, sort_keys);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_flatten, flatten);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_parallel_create, parallel_create);
 		}
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);

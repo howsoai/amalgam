@@ -109,7 +109,7 @@ EvaluableNodeReference AssetManager::LoadResourcePath(std::string &resource_path
 }
 
 bool AssetManager::StoreResourcePathFromProcessedResourcePaths(EvaluableNode *code, std::string &complete_resource_path,
-	std::string &file_type, EvaluableNodeManager *enm, bool escape_filename, bool sort_keys)
+	std::string &file_type, EvaluableNodeManager *enm, bool escape_filename, bool sort_keys, bool pretty_print)
 {
 	//store the entity based on file_type
 	if(file_type == FILE_EXTENSION_AMALGAM || file_type == FILE_EXTENSION_AMLG_METADATA)
@@ -118,7 +118,7 @@ bool AssetManager::StoreResourcePathFromProcessedResourcePaths(EvaluableNode *co
 		if(!outf.good())
 			return false;
 
-		std::string code_string = Parser::Unparse(code, enm, true, true, sort_keys);
+		std::string code_string = Parser::Unparse(code, enm, pretty_print, true, sort_keys);
 		outf.write(code_string.c_str(), code_string.size());
 		outf.close();
 
@@ -132,7 +132,7 @@ bool AssetManager::StoreResourcePathFromProcessedResourcePaths(EvaluableNode *co
 		return FileSupportCSV::Store(code, complete_resource_path, enm);
 	else if(file_type == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 	{
-		std::string code_string = Parser::Unparse(code, enm, false, true, sort_keys);
+		std::string code_string = Parser::Unparse(code, enm, pretty_print, true, sort_keys);
 
 		//transform into format needed for compression
 		CompactHashMap<std::string, size_t> string_map;

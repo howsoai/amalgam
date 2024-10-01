@@ -44,7 +44,7 @@ public:
 	// sets resource_base_path to the resource path without the extension, and extension accordingly
 	//if file_type is not an empty string, it will use the specified file_type instead of the filename's extension
 	static bool StoreResourcePath(EvaluableNode *code, std::string &resource_path, std::string &resource_base_path,
-		std::string &file_type, EvaluableNodeManager *enm, bool escape_filename, bool sort_keys)
+		std::string &file_type, EvaluableNodeManager *enm, bool escape_filename, bool sort_keys, bool pretty_print)
 	{
 		std::string complete_resource_path;
 		PreprocessFileNameAndType(resource_path, file_type, escape_filename, resource_base_path, complete_resource_path);
@@ -54,7 +54,7 @@ public:
 	}
 
 	static bool StoreResourcePathFromProcessedResourcePaths(EvaluableNode *code, std::string &complete_resource_path,
-		std::string &file_type, EvaluableNodeManager *enm, bool escape_filename, bool sort_keys);
+		std::string &file_type, EvaluableNodeManager *enm, bool escape_filename, bool sort_keys, bool pretty_print);
 
 	//Loads an entity, including contained entities, etc. from the resource path specified
 	//if file_type is not an empty string, it will use the specified file_type instead of the filename's extension
@@ -96,7 +96,7 @@ public:
 				entity, *all_contained_entities, include_rand_seeds, parallel_create);
 
 			bool all_stored_successfully = AssetManager::StoreResourcePathFromProcessedResourcePaths(flattened_entity,
-				complete_resource_path, file_type, &entity->evaluableNodeManager, escape_filename, sort_keys);
+				complete_resource_path, file_type, &entity->evaluableNodeManager, escape_filename, sort_keys, pretty_print);
 
 			entity->evaluableNodeManager.FreeNodeTreeIfPossible(flattened_entity);
 			return all_stored_successfully;
@@ -115,7 +115,7 @@ public:
 
 		std::string metadata_extension = FILE_EXTENSION_AMLG_METADATA;
 		//don't reescape the path here, since it has already been done
-		StoreResourcePathFromProcessedResourcePaths(&en_assoc, metadata_filename, metadata_extension, &entity->evaluableNodeManager, false, sort_keys);
+		StoreResourcePathFromProcessedResourcePaths(&en_assoc, metadata_filename, metadata_extension, &entity->evaluableNodeManager, false, sort_keys, pretty_print);
 
 		//store contained entities
 		if(store_contained_entities && entity->GetContainedEntities().size() > 0)

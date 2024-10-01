@@ -537,14 +537,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 				if(EvaluableNode::IsAssociativeArray(from_params))
 				{
 					auto &mcn = from_params->GetMappedChildNodesReference();
-
-					auto found_locale = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_locale));
-					if(found_locale != end(mcn) && !EvaluableNode::IsNull(found_locale->second))
-						locale = EvaluableNode::ToStringPreservingOpcodeType(found_locale->second);
-
-					auto found_timezone = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_timezone));
-					if(found_timezone != end(mcn) && !EvaluableNode::IsNull(found_timezone->second))
-						timezone = EvaluableNode::ToStringPreservingOpcodeType(found_timezone->second);
+					EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_locale, locale);
+					EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_timezone, timezone);
 				}
 
 				use_number = true;
@@ -556,10 +550,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 				if(EvaluableNode::IsAssociativeArray(from_params))
 				{
 					auto &mcn = from_params->GetMappedChildNodesReference();
-
-					auto found_locale = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_locale));
-					if(found_locale != end(mcn) && !EvaluableNode::IsNull(found_locale->second))
-						locale = EvaluableNode::ToStringPreservingOpcodeType(found_locale->second);
+					EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_locale, locale);
 				}
 
 				use_number = true;
@@ -617,10 +608,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			if(EvaluableNode::IsAssociativeArray(to_params))
 			{
 				auto &mcn = to_params->GetMappedChildNodesReference();
-
-				auto found_sort_keys = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_sort_keys));
-				if(found_sort_keys != end(mcn))
-					sort_keys = EvaluableNode::IsTrue(found_sort_keys->second);
+				EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_sort_keys, sort_keys);
 			}
 
 			string_value = Parser::Unparse(code_value, evaluableNodeManager, false, true, sort_keys);
@@ -814,10 +802,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			if(EvaluableNode::IsAssociativeArray(to_params))
 			{
 				auto &mcn = to_params->GetMappedChildNodesReference();
-
-				auto found_sort_keys = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_sort_keys));
-				if(found_sort_keys != end(mcn))
-					sort_keys = EvaluableNode::IsTrue(found_sort_keys->second);
+				EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_sort_keys, sort_keys);
 			}
 
 			std::tie(string_value, valid_string_value) = EvaluableNodeJSONTranslation::EvaluableNodeToJson(code_value, sort_keys);
@@ -851,10 +836,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			if(EvaluableNode::IsAssociativeArray(to_params))
 			{
 				auto &mcn = to_params->GetMappedChildNodesReference();
-
-				auto found_sort_keys = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_sort_keys));
-				if(found_sort_keys != end(mcn))
-					sort_keys = EvaluableNode::IsTrue(found_sort_keys->second);
+				EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_sort_keys, sort_keys);
 			}
 
 			std::tie(string_value, valid_string_value) = EvaluableNodeYAMLTranslation::EvaluableNodeToYaml(code_value, sort_keys);
@@ -872,14 +854,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			if(EvaluableNode::IsAssociativeArray(to_params))
 			{
 				auto &mcn = to_params->GetMappedChildNodesReference();
-
-				auto found_locale = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_locale));
-				if(found_locale != end(mcn) && !EvaluableNode::IsNull(found_locale->second))
-					locale = EvaluableNode::ToStringPreservingOpcodeType(found_locale->second);
-
-				auto found_timezone = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_timezone));
-				if(found_timezone != end(mcn) && !EvaluableNode::IsNull(found_timezone->second))
-					timezone = EvaluableNode::ToStringPreservingOpcodeType(found_timezone->second);
+				EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_locale, locale);
+				EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_timezone, timezone);
 			}
 
 			double num_secs_from_epoch = 0.0;
@@ -896,10 +872,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			if(EvaluableNode::IsAssociativeArray(to_params))
 			{
 				auto &mcn = to_params->GetMappedChildNodesReference();
-
-				auto found_locale = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_locale));
-				if(found_locale != end(mcn) && !EvaluableNode::IsNull(found_locale->second))
-					locale = EvaluableNode::ToStringPreservingOpcodeType(found_locale->second);
+				EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_locale, locale);
 			}
 
 			double num_secs_from_midnight = 0.0;

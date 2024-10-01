@@ -770,6 +770,23 @@ public:
 	EvaluableNode *EraseMappedChildNode(const StringInternPool::StringID sid);
 	void AppendMappedChildNodes(AssocType &mcn_to_append);
 
+	template<typename T>
+	static void GetValueFromMappedChildNodesReference(EvaluableNode::AssocType &mcn, EvaluableNodeBuiltInStringId key, T &value)
+	{
+		auto found_value = mcn.find(GetStringIdFromBuiltInStringId(key));
+		if(found_value != end(mcn))
+		{
+			if constexpr(std::is_same<T, bool>::value)
+				return EvaluableNode::IsTrue(found_value->second);
+			else if constexpr(std::is_same<T, double>::value)
+				return EvaluableNode::ToNumber(found_value->second);
+			else if constexpr(std::is_same<T, std::string>::value)
+				return EvaluableNode::ToStringPreservingOpcodeType(found_value->second);
+			else
+				return found_value->second;
+		}
+	}
+
 protected:
 	//defined since it is used as a pointer in EvaluableNodeValue
 	struct EvaluableNodeExtendedValue;

@@ -263,23 +263,13 @@
       }
     },
     {
-      "name": "wasm64-release",
+      "name": "wasm64-release-unknown",
       "description": "emcc for wasm64 (release)",
       "inherits": [ "base", "wasm64", "release", "emcc" ],
       "cacheVariables": {
         "CMAKE_OSX_ARCHITECTURES": "",
         "CMAKE_CXX_COMPILER_TARGET": "wasm64-unknown-emscripten",
         "CMAKE_TRY_COMPILE_TARGET_TYPE": "STATIC_LIBRARY"
-      }
-    },
-    {
-      "name": "wasm64-release-linux",
-      "description": "emcc for wasm64 (release) for linux",
-      "inherits": [ "base", "linux", "wasm64", "release", "emcc" ],
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
       }
     },
 
@@ -362,13 +352,8 @@
       "description": "linux arm64_8a release build"
     },
     {
-      "name": "wasm64-release-linux",
-      "configurePreset": "wasm64-release-linux",
-      "description": "linux wasm64 release build"
-    },
-    {
-      "name": "wasm64-release",
-      "configurePreset": "wasm64-release",
+      "name": "wasm64-release-unknown",
+      "configurePreset": "wasm64-release-unknown",
       "description": "wasm64 release build"
     },
     {
@@ -450,10 +435,10 @@
       "configurePreset": "arm64_8a-debug-linux"
     },
     {
-      "name": "wasm64-release-linux",
-      "description": "linux wasm64 release tests",
+      "name": "wasm64-release-unknown",
+      "description": "wasm64 release tests",
       "inherits": "base",
-      "configurePreset": "wasm64-release-linux"
+      "configurePreset": "wasm64-release-unknown"
     },
     {
       "name": "amd64-release-macos",

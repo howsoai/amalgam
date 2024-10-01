@@ -102,8 +102,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 		//new list containing the contained entity ids to return
 		EvaluableNodeReference result(
 			evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_STRING, contained_entities.size()), true);
-
-		auto &result_ocn = result->GetOrderedChildNodes();
+		auto &result_ocn = result->GetOrderedChildNodesReference();
 
 		//create the string references all at once and hand off
 		string_intern_pool.CreateStringReferences(contained_entities, [](Entity *e) { return e->GetIdStringId(); });

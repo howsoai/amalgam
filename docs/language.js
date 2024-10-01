@@ -27,10 +27,10 @@ var data = [
 	},
 
 	{
-		"parameter" : "parse string str",
-		"output" : "code",
+		"parameter" : "parse string str [bool transactional] [bool return_warnings]",
+		"output" : "*",
 		"new value" : "new",
-		"description" : "String is parsed into code, and the result is returned.",
+		"description" : "String is parsed into code, and the result is returned.  If transactional is false, the default, it will attempt to parse the whole string and will return the closest code possible if there are any parse issues.  If transactional is true, it will parse the string transactionally, meaning that any node that has a parse error or is incomplete will be omitted along with all child nodes except for the top node.  If return_warnings is true, which defaults to false, it will instead return a list, where the first element is the code and the second element is a list of warnings.",
 		"example" : "(parse \"(list 1 2 3 4 5)\")"
 	},
 

@@ -931,7 +931,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_LABELS(EvaluableNode *
 
 	//make list of labels
 	EvaluableNodeReference result(evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_STRING, num_labels), true);
-	auto &result_ocn = result->GetOrderedChildNodes();
+	auto &result_ocn = result->GetOrderedChildNodesReference();
 
 	//because labels can be stored in different ways, it is just easiest to iterate
 	// rather than to get a reference to each string id
@@ -1173,7 +1173,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_VALUE(EvaluableNode *e
 	//get the new value
 	auto value_node = InterpretNode(ocn[1]);
 	source->CopyValueFrom(value_node);
-	source.UpdatePropertiesBasedOnAttachedNode(value_node, true);
+	source.UpdatePropertiesBasedOnAttachedNode(value_node);
 
 	return source;
 }

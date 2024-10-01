@@ -1,59 +1,11 @@
-﻿(call_sandboxed 
-	(lambda
-		[
-	
-			;reacts to the input that is passed in
-			#4ouZLU #react #lxQ3I5 #GxG9 #haploid
-			(query_mode
-				#g #_2yemX #qjFY #dbbQ #LBEWx1 #x_g68z1QEE #OXyA #yDfIgfceZMM #2RC20
-				(generalized_distance
-					(null)
-					@(target 2)
-					(null)
-					(null)
-					(null)
-					(null)
-					(null)
-					(null)
-					#E00LE #O #crZz_ #Ksarqs #0Od_ #qDbE1_ #V3wrIS #cz2 #a #dBTli #e4y #BoR #IK #BjTV #iRXo4P #po #7sA
-					(rand (null))
-					(null)
-					@(get
-						(target 2)
-						8
-					)
-					(null)
-					@(get
-						(target 2)
-						8
-					)
-					@(get
-						(target 2)
-						8
-					)
-					(null)
-					(null)
-					(null)
-					(null)
-				)
-				@(get
-					(target 2)
-					0
-				)
-			)
-		]
-	)
-	(null)
-	;total number of execution cycles
-	2000
-	;count the entity size toward total memory allowed to be used
-	(- 2000 (total_entity_size entity))
-	;limit stack depth to something reasonable
-	200
-	;maximum contained entities
-	5
-	;maximum entity depth
-	3
-	;max entity name length
-	25
+﻿(seq
+	(print (parse
+		"(seq (+ 1 2) (+ (+ 3 4) 5))"
+	))
+
+	(print (parse
+		"(seq (+ 1 2) (+ (3 4) 5)"
+	))
+
+
 )

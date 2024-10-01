@@ -534,8 +534,11 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, bool 
 		else if(command == "eval")
 		{
 			SetDebuggingState(false);
-			EvaluableNode *to_eval = Parser::Parse(input, evaluableNodeManager);
-			EvaluableNodeReference result = InterpretNodeForImmediateUse(to_eval);
+			auto [node, warnings, char_with_error] = Parser::Parse(input, evaluableNodeManager);
+			for(auto &w : warnings)
+				std::cerr << w << std::endl;
+
+			EvaluableNodeReference result = InterpretNodeForImmediateUse(node);
 			std::cout << Parser::Unparse(result, evaluableNodeManager, true, true, true) << std::endl;
 			SetDebuggingState(true);
 		}

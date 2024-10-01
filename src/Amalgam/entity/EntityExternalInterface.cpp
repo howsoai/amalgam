@@ -41,6 +41,8 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(st
 		rand_seed = std::to_string(t);
 	}
 
+	//TODO 21711: update method signature and this load
+
 	std::string file_type = "";
 	Entity *entity = asset_manager.LoadEntityFromResourcePath(path, file_type, persistent, load_contained_entities,
 		escape_filename, escape_contained_filenames, rand_seed, nullptr, status);
@@ -122,6 +124,7 @@ void EntityExternalInterface::StoreEntity(std::string &handle, std::string &path
 
 	std::string file_type = "";
 	EntityReadReference entity(bundle->entity);
+	//TODO 21711: update signature
 	asset_manager.StoreEntityToResourcePath(entity, path, file_type, update_persistence_location, store_contained_entities, false, true, false);
 }
 

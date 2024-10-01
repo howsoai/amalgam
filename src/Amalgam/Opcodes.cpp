@@ -322,6 +322,12 @@ void StringInternPool::InitializeStaticStrings()
 	//file storage options
 	EmplaceStaticString(ENBISI_include_rand_seeds, "include_rand_seeds");
 	EmplaceStaticString(ENBISI_parallel_create, "parallel_create");
+	EmplaceStaticString(ENBISI_escape_filename, "escape_filename");
+	EmplaceStaticString(ENBISI_escape_contained_filenames, "escape_contained_filenames");
+	EmplaceStaticString(ENBISI_transactional, "transactional");
+	EmplaceStaticString(ENBISI_pretty_print, "pretty_print");
+	EmplaceStaticString(ENBISI_flatten, "flatten");
+	EmplaceStaticString(ENBISI_execute_on_load, "execute_on_load");
 
 	//substr parameters
 	EmplaceStaticString(ENBISI_all, "all");

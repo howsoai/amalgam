@@ -601,6 +601,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, bo
 	if(resource_name.empty())
 		return EvaluableNodeReference::Null();
 
+	//TODO 21711: update here downward and update documentation
+
 	bool escape_filename = false;
 	if(ocn.size() >= 2)
 		escape_filename = InterpretNodeIntoBoolValue(ocn[1], false);
@@ -640,6 +642,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSI
 
 	if(destination_entity_parent == nullptr)
 		return EvaluableNodeReference::Null();
+
+	//TODO 21711: update here downward and update documentation
 
 	bool escape_filename = false;
 	if(ocn.size() >= 3)
@@ -712,6 +716,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, b
 	auto to_store = InterpretNodeForImmediateUse(ocn[1]);
 	auto node_stack = CreateOpcodeStackStateSaver(to_store);
 
+	//TODO 21711: update here downward and update documentation
+
 	bool escape_filename = false;
 	if(ocn.size() >= 3)
 		escape_filename = InterpretNodeIntoBoolValue(ocn[2], false);
@@ -762,40 +768,52 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 	if(resource_name.empty())
 		return EvaluableNodeReference::Null();
 
-	bool escape_filename = false;
-	if(ocn.size() >= 3)
-		escape_filename = InterpretNodeIntoBoolValue(ocn[2], false);
-
-	bool escape_contained_filenames = true;
-	if(ocn.size() >= 4)
-		escape_contained_filenames = InterpretNodeIntoBoolValue(ocn[3], true);
-
 	std::string file_type = "";
-	if(ocn.size() >= 5)
+	if(ocn.size() >= 2)
 	{
-		auto [valid, file_type_temp] = InterpretNodeIntoStringValue(ocn[4]);
+		auto [valid, file_type_temp] = InterpretNodeIntoStringValue(ocn[2]);
 		if(valid)
 			file_type = file_type_temp;
 	}
 
-	bool sort_keys = false;
 	bool include_rand_seeds = true;
 	bool parallel_create = false;
-	if(ocn.size() >= 6)
+	bool escape_filename = false;
+	bool escape_contained_filenames = true;
+	bool pretty_print = false;
+	bool sort_keys = false;
+	bool flatten = true;
+	if(ocn.size() >= 3)
 	{
-		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[5]);
+		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[3]);
 
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
 			auto &mcn = params->GetMappedChildNodesReference();
 
+			auto found_include_rand_seeds = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_include_rand_seeds));
+			if(found_include_rand_seeds != end(mcn))
+				include_rand_seeds = EvaluableNode::IsTrue(found_include_rand_seeds->second);
+
+			auto found_escape_filename = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_escape_filename));
+			if(found_escape_filename != end(mcn))
+				escape_filename = EvaluableNode::IsTrue(found_escape_filename->second);
+
+			auto found_escape_contained_filenames = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_escape_contained_filenames));
+			if(found_escape_contained_filenames != end(mcn))
+				escape_contained_filenames = EvaluableNode::IsTrue(found_escape_contained_filenames->second);
+
+			auto found_pretty_print = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_pretty_print));
+			if(found_pretty_print != end(mcn))
+				pretty_print = EvaluableNode::IsTrue(found_pretty_print->second);
+
 			auto found_sort_keys = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_sort_keys));
 			if(found_sort_keys != end(mcn))
 				sort_keys = EvaluableNode::IsTrue(found_sort_keys->second);
 
-			auto found_include_rand_seeds = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_include_rand_seeds));
-			if(found_include_rand_seeds != end(mcn))
-				include_rand_seeds = EvaluableNode::IsTrue(found_include_rand_seeds->second);
+			auto found_flatten = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_flatten));
+			if(found_flatten != end(mcn))
+				flatten = EvaluableNode::IsTrue(found_flatten->second);
 
 			auto found_parallel_create = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_parallel_create));
 			if(found_parallel_create != end(mcn))
@@ -814,7 +832,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 		return EvaluableNodeReference::Null();
 
 	bool stored_successfully = asset_manager.StoreEntityToResourcePath(source_entity, resource_name, file_type,
-		false, true, escape_filename, escape_contained_filenames, sort_keys, include_rand_seeds, parallel_create);
+		false, true, escape_filename, escape_contained_filenames, pretty_print, sort_keys, include_rand_seeds, flatten, parallel_create);
 
 	return AllocReturn(stored_successfully, immediate_result);
 }

@@ -292,6 +292,7 @@ void AssetManager::CreateEntity(Entity *entity)
 			if(!ec)
 			{
 				new_path += id_suffix;
+				//TODO 21711: change what is stored here to include flags
 				StoreEntityToResourcePath(entity, new_path, extension, false, true, false, true, false);
 			}
 			else

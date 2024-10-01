@@ -72,8 +72,8 @@ public:
 	template<typename EntityReferenceType = EntityReadReference>
 	bool StoreEntityToResourcePath(Entity *entity, std::string &resource_path, std::string &file_type,
 		bool update_persistence_location, bool store_contained_entities,
-		bool escape_filename, bool escape_contained_filenames, bool sort_keys,
-		bool include_rand_seeds = true, bool parallel_create = false,
+		bool escape_filename, bool escape_contained_filenames, bool pretty_print, bool sort_keys,
+		bool include_rand_seeds = true, bool flatten = true, bool parallel_create = false,
 		Entity::EntityReferenceBufferReference<EntityReferenceType> *all_contained_entities = nullptr)
 	{
 		if(entity == nullptr)
@@ -90,7 +90,7 @@ public:
 			all_contained_entities = &erbr;
 		}
 
-		if(file_type == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
+		if( (file_type == FILE_EXTENSION_AMALGAM || == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE) && flatten)
 		{
 			EvaluableNodeReference flattened_entity = EntityManipulation::FlattenEntity(&entity->evaluableNodeManager,
 				entity, *all_contained_entities, include_rand_seeds, parallel_create);
@@ -141,9 +141,12 @@ public:
 				else
 					new_resource_path = resource_base_path + contained_entity->GetId() + "." + file_type;
 
+				//TODO 21711: change what is stored here to include flags
 				//don't escape filename again because it's already escaped in this loop
-				bool stored_successfully = StoreEntityToResourcePath(contained_entity, new_resource_path, file_type, false, true, false,
-					escape_contained_filenames, sort_keys, include_rand_seeds, parallel_create);
+				bool stored_successfully = StoreEntityToResourcePath(contained_entity, new_resource_path, file_type,
+					false, true, escape_filename, escape_contained_filenames, pretty_print, sort_keys,
+					include_rand_seeds, flatten, parallel_create);
+
 				if(!stored_successfully)
 					return false;
 			}
@@ -186,7 +189,7 @@ public:
 
 				//the outermost file is already escaped, but persistent entities must be recursively escaped
 				StoreEntityToResourcePath(entity, new_path, extension,
-					false, false, false, true, false, true, false, all_contained_entities);
+					false, false, false, true, false, false, true, false, false, all_contained_entities);
 			}
 
 			//don't need to continue and allocate extra traversal path if already at outermost entity
@@ -344,6 +347,7 @@ private:
 		std::string &resource_base_path, std::string &complete_resource_path);
 
 	//entities that need changes stored, and the resource paths to store them
+	//TODO 21711: change what is stored here to include flags
 	CompactHashMap<Entity *, std::string> persistentEntities;
 
 	//entities that have root permissions

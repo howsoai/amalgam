@@ -1004,7 +1004,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		size_t replacements_start_index = node_stack.originalStackSize;
 
 		//keeps track of whether each address is unique so they can be freed if relevant
-		std::vector<bool> is_address_unique;
+		std::vector<bool> is_value_unique;
+		is_value_unique.reserve(num_params - 1);
+		//keeps track of whether all new values assigned or accumed are unique, cycle free, etc.
+		bool result_flags_need_updates = false;
 
 		//get each address/value pair to replace in result
 		for(size_t ocn_index = 1; ocn_index + 1 < num_params; ocn_index += 2)
@@ -1014,9 +1017,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 			auto address = InterpretNodeForImmediateUse(ocn[ocn_index]);
 			node_stack.PushEvaluableNode(address);
-			is_address_unique.push_back(address.unique);
+			is_value_unique.push_back(address.unique);
+
 			auto new_value = InterpretNodeForImmediateUse(ocn[ocn_index + 1]);
 			node_stack.PushEvaluableNode(new_value);
+			is_value_unique.push_back(new_value.unique);
 		}
 		size_t num_replacements = (num_params - 1) / 2;
 
@@ -1042,16 +1047,34 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		//make a copy of value_replacement because not sure where else it may be used
 		EvaluableNode *value_replacement = evaluableNodeManager->DeepAllocCopy(*value_destination);
 
+		//need to obtain all of the destinations at the same time, otherwise it is possible that a
+		//modification could traverse to a location from another modification that isn't unique and
+		//modify something that shouldn't be modified.  this is more efficient and flexible than making a copy
+		//for every new value
+		std::vector<EvaluableNode **> copy_destinations;
+		copy_destinations.reserve(num_replacements);
 		for(size_t index = 0; index < num_replacements; index++)
 		{
-			EvaluableNodeReference address(replacements[replacements_start_index + 2 * index], is_address_unique[index]);
-			EvaluableNodeReference new_value(replacements[replacements_start_index + 2 * index + 1], false);
-
-			//find location to store results
+			EvaluableNodeReference address(replacements[replacements_start_index + 2 * index], is_value_unique[2 * index]);
 			EvaluableNode **copy_destination = TraverseToDestinationFromTraversalPathList(&value_replacement, address, true);
 			evaluableNodeManager->FreeNodeTreeIfPossible(address);
+			copy_destinations.push_back(copy_destination);
+		}
+
+		for(size_t index = 0; index < num_replacements; index++)
+		{
+			EvaluableNodeReference new_value(replacements[replacements_start_index + 2 * index + 1], is_value_unique[2 * index + 1]);
+			EvaluableNode **copy_destination = copy_destinations[index];
 			if(copy_destination == nullptr)
 				continue;
+
+			bool need_cycle_check_before = false;
+			bool is_idempotent_before = false;
+			if((*copy_destination) != nullptr)
+			{
+				need_cycle_check_before = (*copy_destination)->GetNeedCycleCheck();
+				is_idempotent_before = (*copy_destination)->GetIsIdempotent();
+			}
 
 			if(accum)
 			{
@@ -1066,9 +1089,23 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			{
 				*copy_destination = new_value;
 			}
+
+			bool need_cycle_check_after = false;
+			bool is_idempotent_after = false;
+			if((*copy_destination) != nullptr)
+			{
+				need_cycle_check_after = (*copy_destination)->GetNeedCycleCheck();
+				is_idempotent_after = (*copy_destination)->GetIsIdempotent();
+			}
+
+			if(!new_value.unique
+					|| need_cycle_check_before != need_cycle_check_after
+					|| is_idempotent_before != is_idempotent_after)
+				result_flags_need_updates = true;
 		}
 
-		EvaluableNodeManager::UpdateFlagsForNodeTree(value_replacement);
+		if(result_flags_need_updates)
+			EvaluableNodeManager::UpdateFlagsForNodeTree(value_replacement);
 		*value_destination = value_replacement;
 	}
 

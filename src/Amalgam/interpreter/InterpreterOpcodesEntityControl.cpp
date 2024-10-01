@@ -597,27 +597,46 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, bo
 	if(!asset_manager.DoesEntityHaveRootPermission(curEntity))
 		return EvaluableNodeReference::Null();
 
-	std::string resource_name = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
-	if(resource_name.empty())
+	AssetManager::AssetParameters asset_params;
+	asset_params.resource = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
+	if(asset_params.resource.empty())
 		return EvaluableNodeReference::Null();
 
-	//TODO 21711: update here downward and update documentation
-
-	bool escape_filename = false;
-	if(ocn.size() >= 2)
-		escape_filename = InterpretNodeIntoBoolValue(ocn[1], false);
-
 	std::string file_type = "";
-	if(ocn.size() >= 3)
+	if(ocn.size() > 2)
 	{
 		auto [valid, file_type_temp] = InterpretNodeIntoStringValue(ocn[2]);
 		if(valid)
 			file_type = file_type_temp;
 	}
 
+	if(file_type == "")
+	{
+		std::string path, file_base;
+		Platform_SeparatePathFileExtension(asset_params.resource, path, file_base, file_type);
+	}
+
+	asset_params.Initialize(false, file_type);
+	if(ocn.size() > 3)
+	{
+		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[3]);
+
+		if(EvaluableNode::IsAssociativeArray(params))
+		{
+			auto &mcn = params->GetMappedChildNodesReference();
+
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_escape_filename, asset_params.escapeFilename);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_transactional, asset_params.transactional);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_execute_on_load, asset_params.executeOnLoad);
+		}
+
+		evaluableNodeManager->FreeNodeTreeIfPossible(params);
+	}
+
+	//TODO 21711: finish this and update documentation
 	EntityExternalInterface::LoadEntityStatus status;
 	std::string resource_base_path;
-	return asset_manager.LoadResourcePath(resource_name, resource_base_path, file_type, evaluableNodeManager, escape_filename, status);
+	return asset_manager.LoadResourcePath(asset_params.resource, resource_base_path, file_type, evaluableNodeManager, escape_filename, status);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSISTENT_ENTITY(EvaluableNode *en, bool immediate_result)
@@ -630,9 +649,49 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSI
 	if(!asset_manager.DoesEntityHaveRootPermission(curEntity))
 		return EvaluableNodeReference::Null();
 
-	std::string resource_name = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
-	if(resource_name.empty())
+	AssetManager::AssetParameters asset_params;
+	asset_params.resource = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
+	if(asset_params.resource.empty())
 		return EvaluableNodeReference::Null();
+
+	bool persistent = (en->GetType() == ENT_LOAD_PERSISTENT_ENTITY);
+
+	std::string file_type = "";
+	if(!persistent && ocn.size() > 2)
+	{
+		auto [valid, file_type_temp] = InterpretNodeIntoStringValue(ocn[2]);
+		if(valid)
+			file_type = file_type_temp;
+	}
+
+	if(file_type == "")
+	{
+		std::string path, file_base;
+		Platform_SeparatePathFileExtension(asset_params.resource, path, file_base, file_type);
+	}
+
+	asset_params.Initialize(true, file_type);
+	if(ocn.size() > 3)
+	{
+		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[3]);
+
+		if(EvaluableNode::IsAssociativeArray(params))
+		{
+			auto &mcn = params->GetMappedChildNodesReference();
+
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_include_rand_seeds, asset_params.includeRandSeeds);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_escape_filename, asset_params.escapeFilename);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_escape_contained_filenames, asset_params.escapeContainedFilenames);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_transactional, asset_params.transactional);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_pretty_print, asset_params.prettyPrint);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_sort_keys, asset_params.sortKeys);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_flatten, asset_params.flatten);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_parallel_create, asset_params.parallelCreate);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_execute_on_load, asset_params.executeOnLoad);
+		}
+
+		evaluableNodeManager->FreeNodeTreeIfPossible(params);
+	}
 
 	//get destination if applicable
 	EntityWriteReference destination_entity_parent;
@@ -643,38 +702,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSI
 	if(destination_entity_parent == nullptr)
 		return EvaluableNodeReference::Null();
 
-	//TODO 21711: update here downward and update documentation
-
-	bool escape_filename = false;
-	if(ocn.size() >= 3)
-		escape_filename = InterpretNodeIntoBoolValue(ocn[2], false);
-
-	bool escape_contained_filenames = true;
-	if(ocn.size() >= 4)
-		escape_contained_filenames = InterpretNodeIntoBoolValue(ocn[3], true);
-
-	bool persistent = (en->GetType() == ENT_LOAD_PERSISTENT_ENTITY);
-	if(persistent)
-		escape_contained_filenames = true;
-
-	//persistent doesn't allow file_type
-	std::string file_type = "";
-	if(!persistent && ocn.size() >= 5)
-	{
-		auto [valid, file_type_temp] = InterpretNodeIntoStringValue(ocn[4]);
-		if(valid)
-			file_type = file_type_temp;
-	}
-
 	EntityExternalInterface::LoadEntityStatus status;
-	std::string random_seed = destination_entity_parent->CreateRandomStreamFromStringAndRand(resource_name);
+	std::string random_seed = destination_entity_parent->CreateRandomStreamFromStringAndRand(asset_params.resource);
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is no longer executing
 	memoryModificationLock.unlock();
 #endif
-	
-	Entity *loaded_entity = asset_manager.LoadEntityFromResourcePath(resource_name, file_type,
+
+	//TODO 21711: finish this and update documentation
+	Entity *loaded_entity = asset_manager.LoadEntityFromResourcePath(asset_params.resource, file_type,
 		persistent, true, escape_filename, escape_contained_filenames, random_seed, this, status);
 
 #ifdef MULTITHREAD_SUPPORT
@@ -709,8 +746,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, b
 	if(!asset_manager.DoesEntityHaveRootPermission(curEntity))
 		return EvaluableNodeReference::Null();
 
-	std::string resource_name = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
-	if(resource_name.empty())
+	AssetManager::AssetParameters asset_params;
+	asset_params.resource = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
+	if(asset_params.resource.empty())
 		return EvaluableNodeReference::Null();
 
 	auto to_store = InterpretNodeForImmediateUse(ocn[1]);
@@ -724,20 +762,24 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, b
 			file_type = file_type_temp;
 	}
 
-	bool escape_filename = false;
-	bool pretty_print = false;
-	bool sort_keys = false;
+	if(file_type == "")
+	{
+		std::string path, file_base;
+		Platform_SeparatePathFileExtension(asset_params.resource, path, file_base, file_type);
+	}
+
+	asset_params.Initialize(false, file_type);
 	if(ocn.size() > 3)
 	{
-		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[4]);
+		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[3]);
 		
 		if(EvaluableNode::IsAssociativeArray(params))
 		{
 			auto &mcn = params->GetMappedChildNodesReference();
 
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_escape_filename, escape_filename);
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_pretty_print, pretty_print);
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_sort_keys, sort_keys);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_escape_filename, asset_params.escapeFilename);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_pretty_print, asset_params.prettyPrint);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_sort_keys, asset_params.sortKeys);
 		}
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
@@ -760,8 +802,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 	if(!asset_manager.DoesEntityHaveRootPermission(curEntity))
 		return EvaluableNodeReference::Null();
 
-	std::string resource_name = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
-	if(resource_name.empty())
+	AssetManager::AssetParameters asset_params;
+	asset_params.resource = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
+	if(asset_params.resource.empty())
 		return EvaluableNodeReference::Null();
 
 	std::string file_type = "";
@@ -772,13 +815,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 			file_type = file_type_temp;
 	}
 
-	bool include_rand_seeds = true;
-	bool escape_filename = false;
-	bool escape_contained_filenames = true;
-	bool pretty_print = false;
-	bool sort_keys = false;
-	bool flatten = true;
-	bool parallel_create = false;
+	if(file_type == "")
+	{
+		std::string path, file_base;
+		Platform_SeparatePathFileExtension(asset_params.resource, path, file_base, file_type);
+	}
+
+	asset_params.Initialize(true, file_type);
 	if(ocn.size() > 3)
 	{
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[3]);
@@ -787,13 +830,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 		{
 			auto &mcn = params->GetMappedChildNodesReference();
 
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_include_rand_seeds, include_rand_seeds);
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_escape_filename, escape_filename);
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_escape_contained_filenames, escape_contained_filenames);
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_pretty_print, pretty_print);
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_sort_keys, sort_keys);
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_flatten, flatten);
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_parallel_create, parallel_create);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_include_rand_seeds, asset_params.includeRandSeeds);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_escape_filename, asset_params.escapeFilename);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_escape_contained_filenames, asset_params.escapeContainedFilenames);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_pretty_print, asset_params.prettyPrint);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_sort_keys, asset_params.sortKeys);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_flatten, asset_params.flatten);
+			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_parallel_create, asset_params.parallelCreate);
 		}
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);

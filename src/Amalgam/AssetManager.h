@@ -34,6 +34,75 @@ public:
 		: defaultEntityExtension(FILE_EXTENSION_AMALGAM), debugSources(false), debugMinimal(false)
 	{	}
 
+	//parameters that define how an asset is loaded and stored
+	struct AssetParameters
+	{
+		//initializes defaults for AssetParameters -- should specify whether it is an entity
+		void Initialize(bool is_entity, std::string filetype = std::string())
+		{
+			if(filetype == FILE_EXTENSION_AMLG_METADATA || filetype == FILE_EXTENSION_AMALGAM)
+			{
+				includeRandSeeds = false;
+				escapeFilename = false;
+				escapeContainedFilenames = true;
+				transactional = false;
+				prettyPrint = true;
+				sortKeys = true;
+				flatten = false;
+				parallelCreate = false;
+				executeOnLoad = false;
+			}
+			else if(filetype == FILE_EXTENSION_JSON || filetype == FILE_EXTENSION_YAML
+				|| filetype == FILE_EXTENSION_CSV)
+			{
+				includeRandSeeds = false;
+				escapeFilename = false;
+				escapeContainedFilenames = false;
+				transactional = false;
+				prettyPrint = false;
+				sortKeys = true;
+				flatten = false;
+				parallelCreate = false;
+				executeOnLoad = false;
+			}
+			else if(filetype == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
+			{
+				includeRandSeeds = is_entity;
+				escapeFilename = false;
+				escapeContainedFilenames = false;
+				transactional = false;
+				prettyPrint = false;
+				sortKeys = false;
+				flatten = is_entity;
+				parallelCreate = false;
+				executeOnLoad = is_entity;
+			}
+			else
+			{
+				includeRandSeeds = is_entity;
+				escapeFilename = false;
+				escapeContainedFilenames = false;
+				transactional = false;
+				prettyPrint = false;
+				sortKeys = false;
+				flatten = is_entity;
+				parallelCreate = false;
+				executeOnLoad = is_entity;
+			}
+		}
+
+		std::string resource;
+		bool includeRandSeeds;
+		bool escapeFilename;
+		bool escapeContainedFilenames;
+		bool transactional;
+		bool prettyPrint;
+		bool sortKeys;
+		bool flatten;
+		bool parallelCreate;
+		bool executeOnLoad;
+	};
+
 	//Returns the code to the corresponding entity by resource_path
 	// sets resource_base_path to the resource path without the extension
 	//if file_type is not an empty string, it will use the specified file_type instead of the filename's extension
@@ -243,15 +312,15 @@ public:
 	{	return persistentEntities.find(entity) != end(persistentEntities);	}
 
 	//sets the entity's persistent path
-	inline void SetEntityPersistentPath(Entity *entity, std::string &resource_path)
+	inline void SetEntityPersistentPath(Entity *entity, AssetParameters &asset_params)
 	{
 	#ifdef MULTITHREAD_INTERFACE
 		Concurrency::WriteLock lock(persistentEntitiesMutex);
 	#endif
-		if(resource_path.empty())
+		if(asset_params.resource.empty())
 			persistentEntities.erase(entity);
 		else
-			persistentEntities[entity] = resource_path;
+			persistentEntities.emplace(entity, asset_params);
 	}
 
 	inline bool DoesEntityHaveRootPermission(Entity *entity)
@@ -347,8 +416,7 @@ private:
 		std::string &resource_base_path, std::string &complete_resource_path);
 
 	//entities that need changes stored, and the resource paths to store them
-	//TODO 21711: change what is stored here to include flags
-	CompactHashMap<Entity *, std::string> persistentEntities;
+	CompactHashMap<Entity *, std::unique_ptr<AssetParameters>> persistentEntities;
 
 	//entities that have root permissions
 	Entity::EntitySetType rootEntities;

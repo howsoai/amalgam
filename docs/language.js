@@ -1343,7 +1343,7 @@ var data = [
 	},
 
 	{
-		"parameter" : "load string file_path [bool escape_filename] [string file_type]",
+		"parameter" : "load string file_path [string file_type] [assoc params]",
 		"output" : "*",
 		"permissions" : "r",
 		"description" : "Loads the data specified by the resource in string.  Attempts to load the file type and parse it into appropriate data and evaluate to the corresponding code. The parameter escape_filename defaults to false, but if it is true, it will agressively escape filenames using only alphanumeric characters and the underscore, using underscore as an escape character.  If file_type is specified and not null, it will use the file_type specified instead of the extension of the file_path.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  Note that loading from a non-'.amlg' extension will only ever provide lists, assocs, numbers, and strings.",
@@ -1351,7 +1351,7 @@ var data = [
 	},
 
 	{
-		"parameter" : "load_entity string file_path [id entity] [bool escape_filename] [bool escape_contained_filenames] [string file_type]",
+		"parameter" : "load_entity string file_path [id entity] [string file_type] [assoc params]",
 		"output" : "id",
 		"permissions" : "r",
 		"description" : "Loads an entity specified by the resource in string.  Attempts to load the file type and parse it into appropriate data and store it in the entity specified by id, following the same id creation rules as create_entities, except that if no id is specified, it may default to a name based on the resource if available.  The parameter escape_filename defaults to false, but if it is true, it will agressively escape filenames using only alphanumeric characters and the underscore, using underscore as an escape character.  If escape_contained_filenames is true, which is its default, it will also escape contained entity filenames. If file_type is specified and not null, it will use the file_type specified instead of the extension of the file_path.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  Note that loading from a non-'.amlg' extension will only ever provide lists, assocs, numbers, and strings.",
@@ -1359,7 +1359,7 @@ var data = [
 	},
 
 	{
-		"parameter" : "load_persistent_entity string file_path [id entity] [bool escape_filename]",
+		"parameter" : "load_persistent_entity string file_path [id entity] [string file_type] [assoc params]",
 		"output" : "id",
 		"permissions" : "r",
 		"description" : "Loads an entity specified by the resource in string.  Attempts to load the file type and parse it into appropriate data and store it in the entity specified by id, following the same id creation rules as create_entities. Any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  The parameter escape_filename defaults to false, but if it is true, it will agressively escape filenames using only alphanumeric characters and the underscore, using underscore as an escape character.  This command will escape contained filenames.  The file type of a persisted entity must match the extension of the file of the main entity.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  Note that loading from a non-'.amlg' extension will only ever provide lists, assocs, numbers, and strings.\n\n<b>WARNING:</b> Loading the same file as a persistent entity in more than one place will overwrite the file each time either entity is altered, but changes will not be propogated between the entities.",

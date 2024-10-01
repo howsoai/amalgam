@@ -1235,4 +1235,6 @@ void Parser::PreevaluateNodes()
 
 	if(any_nodes_changed)
 		EvaluableNodeManager::UpdateFlagsForNodeTree(topNode);
+	else
+		EvaluableNodeManager::UpdateIdempotencyFlagsForNonCyclicNodeTree(topNode);
 }

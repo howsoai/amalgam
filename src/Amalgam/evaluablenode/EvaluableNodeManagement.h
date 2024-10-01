@@ -653,6 +653,51 @@ public:
 		UpdateFlagsForNodeTreeRecurse(tree, nullptr, nodeToParentNodeCache);
 	}
 
+	//updates idempotency flags for tree and returns true if tree is idempotent
+	//assumes there are no cycles
+	static bool UpdateIdempotencyFlagsForNonCyclicNodeTree(EvaluableNode *tree)
+	{
+		bool is_idempotent = (IsEvaluableNodeTypePotentiallyIdempotent(tree->GetType()) && (tree->GetNumLabels() == 0));
+
+		if(tree->IsAssociativeArray())
+		{
+			for(auto &[cn_id, cn] : tree->GetMappedChildNodesReference())
+			{
+				if(cn == nullptr)
+					continue;
+
+				bool cn_is_idempotent = UpdateIdempotencyFlagsForNonCyclicNodeTree(cn);
+
+				if(!cn_is_idempotent)
+					is_idempotent = false;
+			}
+
+			tree->SetIsIdempotent(is_idempotent);
+			return is_idempotent;
+		}
+		else if(!tree->IsImmediate())
+		{
+			for(auto cn : tree->GetOrderedChildNodesReference())
+			{
+				if(cn == nullptr)
+					continue;
+
+				auto cn_is_idempotent = UpdateIdempotencyFlagsForNonCyclicNodeTree(cn);
+
+				if(!cn_is_idempotent)
+					is_idempotent = false;
+			}
+
+			tree->SetIsIdempotent(is_idempotent);
+			return is_idempotent;
+		}
+		else //immediate value
+		{
+			tree->SetIsIdempotent(is_idempotent);
+			return is_idempotent;
+		}
+	}
+
 	//heuristic used to determine whether unused memory should be collected (e.g., by FreeAllNodesExcept*)
 	//force this inline because it occurs in inner loops
 	__forceinline bool RecommendGarbageCollection()

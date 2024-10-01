@@ -191,7 +191,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 	{
 		auto [public_key, secret_key] = GenerateSignatureKeyPair();
 		EvaluableNode *list = evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_STRING, 2);
-		auto &list_ocn = list->GetOrderedChildNodes();
+		auto &list_ocn = list->GetOrderedChildNodesReference();
 		list_ocn[0]->SetStringValue(public_key);
 		list_ocn[1]->SetStringValue(secret_key);
 
@@ -202,7 +202,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 	{
 		auto [public_key, secret_key] = GenerateEncryptionKeyPair();
 		EvaluableNode *list = evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_STRING, 2);
-		auto &list_ocn = list->GetOrderedChildNodes();
+		auto &list_ocn = list->GetOrderedChildNodesReference();
 		list_ocn[0]->SetStringValue(public_key);
 		list_ocn[1]->SetStringValue(secret_key);
 
@@ -295,12 +295,38 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PARSE(EvaluableNode *en, b
 	auto &ocn = en->GetOrderedChildNodes();
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
+
+	bool transactional_parse = false;
+	if(ocn.size() > 1)
+		transactional_parse = InterpretNodeIntoBoolValue(ocn[1]);
+
+	bool return_warnings = false;
+	if(ocn.size() > 2)
+		return_warnings = InterpretNodeIntoBoolValue(ocn[2]);
+
 	//get the string to parse
 	auto [valid_string, to_parse] = InterpretNodeIntoStringValue(ocn[0]);
 	if(!valid_string)
 		return EvaluableNodeReference::Null();
 
-	return Parser::Parse(to_parse, evaluableNodeManager);
+	auto [node, warnings, char_with_error] = Parser::Parse(to_parse, evaluableNodeManager, transactional_parse);
+	
+	if(!return_warnings)
+		return node;
+
+	EvaluableNodeReference retval(evaluableNodeManager->AllocNode(ENT_LIST), true);
+	retval->ReserveOrderedChildNodes(2);
+	retval->AppendOrderedChildNode(node);
+
+	EvaluableNodeReference warning_list(
+		evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_STRING, warnings.size()), true);
+	retval->AppendOrderedChildNode(warning_list);
+
+	auto &list_ocn = warning_list->GetOrderedChildNodesReference();
+	for(size_t i = 0; i < warnings.size(); i++)
+		list_ocn[i]->SetStringValue(warnings[i]);
+
+	return retval;
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_UNPARSE(EvaluableNode *en, bool immediate_result)
@@ -529,7 +555,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	PopulatePerformanceCounters(perf_constraints_ptr, nullptr);
 
 	Interpreter sandbox(evaluableNodeManager, randomStream.CreateOtherStreamViaRand(),
-		writeListeners, printListener, perf_constraints_ptr);
+		writeListeners, printListener, perf_constraints_ptr, nullptr, this);
 
 #ifdef MULTITHREAD_SUPPORT
 	//everything at this point is referenced on stacks; allow the sandbox to trigger a garbage collect without this interpreter blocking
@@ -1955,8 +1981,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEIGHTED_RAND(EvaluableNod
 			//want to generate multiple values, so return a list
 			EvaluableNodeReference retval(
 				evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_STRING, number_to_generate), true);
-
-			auto &retval_ocn = retval->GetOrderedChildNodes();
+			auto &retval_ocn = retval->GetOrderedChildNodesReference();
 
 			//make a copy of all of the probabilities so they can be removed one at a time
 			EvaluableNode::AssocType assoc(param->GetMappedChildNodesReference());

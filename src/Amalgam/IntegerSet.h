@@ -465,6 +465,69 @@ public:
 		}
 	}
 
+	//iterates over all of the integers as efficiently as possible, passing them into func
+	template<typename IntegerFunction>
+	static inline void IterateOverIntersection(
+		BitArrayIntegerSet &bais_1, BitArrayIntegerSet &bais_2,
+		IntegerFunction func, size_t up_to_index = std::numeric_limits<size_t>::max())
+	{
+		auto &sparser_bais = (bais_1.size() < bais_2.size() ? bais_1 : bais_2);
+		auto &denser_bais = (bais_1.size() < bais_2.size() ? bais_2 : bais_1);
+
+		size_t sparser_end_integer = sparser_bais.GetEndInteger();
+		size_t sparser_num_buckets = (sparser_end_integer + 63) / 64;
+		size_t sparser_num_indices = sparser_bais.size();
+
+		size_t denser_end_integer = denser_bais.GetEndInteger();
+		size_t denser_num_buckets = (denser_end_integer + 63) / 64;
+		size_t denser_num_indices = denser_bais.size();
+
+		size_t end_index = std::min(up_to_index, sparser_end_integer);
+		end_index = std::min(end_index, denser_end_integer);
+
+		size_t num_buckets = std::min(sparser_num_buckets, denser_num_buckets);
+
+		//there are three loops optimized for different densities, high, medium high, and sparse
+		//the heuristics have been tuned by performance testing across a couple of CPU architectures
+		//and different data sets
+		size_t sparser_indices_per_bucket = sparser_num_buckets / sparser_num_buckets;
+		if(sparser_indices_per_bucket >= 48)
+		{
+			for(size_t bucket = 0, index = 0;
+				bucket < num_buckets; bucket++, index++)
+			{
+				uint64_t bucket_bits = (sparser_bais.bitBucket[bucket] & denser_bais.bitBucket[bucket]);
+				for(size_t bit = 0; bit < 64; bit++)
+				{
+					uint64_t mask = (1ULL << bit);
+					if(bucket_bits & mask)
+						func(index);
+				}
+			}
+		}
+		else if(sparser_indices_per_bucket >= 32)
+		{
+			for(size_t index = 0; index < end_index; index++)
+			{
+				if(sparser_bais.ContainsWithoutMaximumIndexCheck(index)
+						&& denser_bais.ContainsWithoutMaximumIndexCheck(index))
+					func(index);
+			}
+		}
+		else //use the iterator, which is more efficient when sparse
+		{
+			auto iter = sparser_bais.begin();
+			size_t index = *iter;
+			while(index < end_index)
+			{
+				if(denser_bais.ContainsWithoutMaximumIndexCheck(index))
+					func(index);
+				++iter;
+				index = *iter;
+			}
+		}
+	}
+
 	//sets bucket and bit to the values pointing to the first id in the hash,
 	// or the first element if it is empty
 	inline void FindFirst(size_t &bucket, size_t &bit)

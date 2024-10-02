@@ -610,12 +610,14 @@ protected:
 			}
 		}
 
+		//return an estimate (upper bound) of the number accumulated
 		return num_entity_indices;
 	}
 
 	//adds term to the partial sums associated for each id in entity_indices for query_feature_index
 	//returns the number of entities indices accumulated
-	inline size_t AccumulatePartialSums(BitArrayIntegerSet &entity_indices, size_t query_feature_index, double term)
+	inline size_t AccumulatePartialSums(BitArrayIntegerSet &enabled_indices, BitArrayIntegerSet &entity_indices,
+		size_t query_feature_index, double term)
 	{
 		size_t num_entity_indices = entity_indices.size();
 		if(num_entity_indices == 0)
@@ -627,7 +629,7 @@ protected:
 
 		if(term != 0.0)
 		{
-			entity_indices.IterateOver(
+			BitArrayIntegerSet::IterateOverIntersection(enabled_indices, entity_indices,
 				[&partial_sums, &accum_location, term]
 				(size_t entity_index)
 				{
@@ -637,7 +639,7 @@ protected:
 		}
 		else
 		{
-			entity_indices.IterateOver(
+			BitArrayIntegerSet::IterateOverIntersection(enabled_indices, entity_indices,
 				[&partial_sums, &accum_location]
 				(size_t entity_index)
 				{
@@ -646,17 +648,20 @@ protected:
 				max_element);
 		}
 
-		return entity_indices.size();
+		//return an estimate (upper bound) of the number accumulated
+		return std::min(enabled_indices.size(), entity_indices.size());
 	}
 
-	//adds term to the partial sums associated for each id in entity_indices for query_feature_index
+	//adds term to the partial sums associated for each id in both enabled_indices and entity_indices
+	// for query_feature_index
 	//returns the number of entities indices accumulated
-	inline size_t AccumulatePartialSums(EfficientIntegerSet &entity_indices, size_t query_feature_index, double term)
+	inline size_t AccumulatePartialSums(BitArrayIntegerSet &enabled_indices, EfficientIntegerSet &entity_indices,
+		size_t query_feature_index, double term)
 	{
 		if(entity_indices.IsSisContainer())
 			return AccumulatePartialSums(entity_indices.GetSisContainer(), query_feature_index, term);
 		else
-			return AccumulatePartialSums(entity_indices.GetBaisContainer(), query_feature_index, term);
+			return AccumulatePartialSums(enabled_indices, entity_indices.GetBaisContainer(), query_feature_index, term);
 	}
 
 	//accumulates the partial sums for the specified value

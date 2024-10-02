@@ -1050,14 +1050,14 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 				return unknown_unknown_term;
 
 			if(unknown_unknown_term < known_unknown_term || known_unknown_term == 0.0)
-				AccumulatePartialSums(column->nullIndices, query_feature_index, unknown_unknown_term);
+				AccumulatePartialSums(enabled_indices, column->nullIndices, query_feature_index, unknown_unknown_term);
 
 			if(known_unknown_term < unknown_unknown_term || unknown_unknown_term == 0.0)
 			{
 				BitArrayIntegerSet &known_unknown_indices = parametersAndBuffers.potentialMatchesSet;
 				known_unknown_indices = enabled_indices;
 				column->nullIndices.EraseTo(known_unknown_indices);
-				AccumulatePartialSums(known_unknown_indices, query_feature_index, known_unknown_term);
+				AccumulatePartialSums(enabled_indices, known_unknown_indices, query_feature_index, known_unknown_term);
 			}
 
 			double larget_term_not_computed = std::max(known_unknown_term, unknown_unknown_term);
@@ -1073,7 +1073,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		}
 		else //nonsymmetric nominal -- need to compute
 		{
-			AccumulatePartialSums(column->nullIndices, query_feature_index, unknown_unknown_term);
+			AccumulatePartialSums(enabled_indices, column->nullIndices, query_feature_index, unknown_unknown_term);
 
 			double nonmatch_dist_term = r_dist_eval.ComputeDistanceTermNominalNonNullSmallestNonmatch(query_feature_index, high_accuracy);
 			//if the next closest match is larger, no need to compute any more values
@@ -1106,7 +1106,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		|| r_dist_eval.distEvaluator->IsKnownToUnknownDistanceLessThanOrEqualToExactMatch(query_feature_index))
 	{
 		double known_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
-		AccumulatePartialSums(column->nullIndices, query_feature_index, known_unknown_term);
+		AccumulatePartialSums(enabled_indices, column->nullIndices, query_feature_index, known_unknown_term);
 	}
 
 	//if nominal, only need to compute the exact match

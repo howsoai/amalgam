@@ -116,15 +116,12 @@ struct sherwood_v8_block
         T data[BlockSize];
     };
 
-    static sherwood_v8_block * empty_block()
+    static sherwood_v8_block* empty_block()
     {
-        static std::array<int8_t, BlockSize> empty_bytes = []
-        {
-            std::array<int8_t, BlockSize> result;
-            result.fill(sherwood_v8_constants<>::magic_for_empty);
-            return result;
-        }();
-        return reinterpret_cast<sherwood_v8_block *>(&empty_bytes);
+        static typename std::aligned_storage<sizeof(sherwood_v8_block), alignof(sherwood_v8_block)>::type empty_bytes;
+        auto* empty_block_ptr = reinterpret_cast<sherwood_v8_block*>(&empty_bytes);
+        empty_block_ptr->fill_control_bytes(sherwood_v8_constants<>::magic_for_empty);
+        return empty_block_ptr;
     }
 
     int first_empty_index() const

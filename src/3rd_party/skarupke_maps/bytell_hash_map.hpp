@@ -116,6 +116,7 @@ struct sherwood_v8_block
         T data[BlockSize];
     };
 
+    //modified original code for empty_block due to GCC compilation issues
     static sherwood_v8_block* empty_block()
     {
         static typename std::aligned_storage<sizeof(sherwood_v8_block), alignof(sherwood_v8_block)>::type empty_bytes;

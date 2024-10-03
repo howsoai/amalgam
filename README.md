@@ -119,11 +119,11 @@ Though Amalgam is intended to support any C++17 compliant compiler, the current 
 * Windows:
     * Visual Studio 2022 v143
 * Linux:
-    * Ubuntu 20.04, gcc-10
+    * Ubuntu 24.04, gcc-13
 * macOS (Darwin):
     * macOS 12, AppleClang 14.0
 * WASM:
-    * Ubuntu 20.04, emscripten 3.1.32
+    * Ubuntu 24.04, emscripten 3.1.32
 
 #### Runtime Requirements
 

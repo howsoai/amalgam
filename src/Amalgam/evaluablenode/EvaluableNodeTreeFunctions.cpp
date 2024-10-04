@@ -378,9 +378,12 @@ EvaluableNode **GetRelativeEvaluableNodeFromTraversalPathList(EvaluableNode **so
 					index = 0;
 			}
 
-			//treat NaNs as 0
+			//NaNs are not valid list indices, return null
 			if(FastIsNaN(index))
-				index = 0;
+			{
+				destination = nullptr;
+				break;
+			}
 
 			//make sure within bounds
 			if(index < ocn.size())

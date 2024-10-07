@@ -38,64 +38,10 @@ public:
 	struct AssetParameters
 	{
 		//initializes defaults for AssetParameters -- should specify whether it is an entity
-		void Initialize(bool is_entity)
-		{
-			if(fileType == "")
-			{
-				std::string path, file_base;
-				Platform_SeparatePathFileExtension(resource, path, file_base, fileType);
-			}
+		void Initialize(bool is_entity);
 
-			if(fileType == FILE_EXTENSION_AMLG_METADATA || fileType == FILE_EXTENSION_AMALGAM)
-			{
-				includeRandSeeds = false;
-				escapeFilename = false;
-				escapeContainedFilenames = true;
-				transactional = false;
-				prettyPrint = true;
-				sortKeys = true;
-				flatten = false;
-				parallelCreate = false;
-				executeOnLoad = false;
-			}
-			else if(fileType == FILE_EXTENSION_JSON || fileType == FILE_EXTENSION_YAML
-				|| fileType == FILE_EXTENSION_CSV)
-			{
-				includeRandSeeds = false;
-				escapeFilename = false;
-				escapeContainedFilenames = false;
-				transactional = false;
-				prettyPrint = false;
-				sortKeys = true;
-				flatten = false;
-				parallelCreate = false;
-				executeOnLoad = false;
-			}
-			else if(fileType == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
-			{
-				includeRandSeeds = is_entity;
-				escapeFilename = false;
-				escapeContainedFilenames = false;
-				transactional = false;
-				prettyPrint = false;
-				sortKeys = false;
-				flatten = is_entity;
-				parallelCreate = false;
-				executeOnLoad = is_entity;
-			}
-			else
-			{
-				includeRandSeeds = is_entity;
-				escapeFilename = false;
-				escapeContainedFilenames = false;
-				transactional = false;
-				prettyPrint = false;
-				sortKeys = false;
-				flatten = is_entity;
-				parallelCreate = false;
-				executeOnLoad = is_entity;
-			}
-		}
+		//sets the parameters based on whether 
+		void SetParams(EvaluableNode::AssocType &params);
 
 		std::string resource;
 		std::string fileType;

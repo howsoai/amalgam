@@ -616,13 +616,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, bo
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[3]);
 
 		if(EvaluableNode::IsAssociativeArray(params))
-		{
-			auto &mcn = params->GetMappedChildNodesReference();
-
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_escape_filename, asset_params.escapeFilename);
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_transactional, asset_params.transactional);
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_execute_on_load, asset_params.executeOnLoad);
-		}
+			asset_params.SetParams(params->GetMappedChildNodesReference());
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
@@ -663,19 +657,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSI
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[3]);
 
 		if(EvaluableNode::IsAssociativeArray(params))
-		{
-			auto &mcn = params->GetMappedChildNodesReference();
-
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_include_rand_seeds, asset_params.includeRandSeeds);
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_escape_filename, asset_params.escapeFilename);
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_escape_contained_filenames, asset_params.escapeContainedFilenames);
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_transactional, asset_params.transactional);
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_pretty_print, asset_params.prettyPrint);
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_sort_keys, asset_params.sortKeys);
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_flatten, asset_params.flatten);
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_parallel_create, asset_params.parallelCreate);
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_execute_on_load, asset_params.executeOnLoad);
-		}
+			asset_params.SetParams(params->GetMappedChildNodesReference());
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
@@ -755,13 +737,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, b
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[3]);
 		
 		if(EvaluableNode::IsAssociativeArray(params))
-		{
-			auto &mcn = params->GetMappedChildNodesReference();
-
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_escape_filename, asset_params.escapeFilename);
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_pretty_print, asset_params.prettyPrint);
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_sort_keys, asset_params.sortKeys);
-		}
+			asset_params.SetParams(params->GetMappedChildNodesReference());
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
@@ -802,17 +778,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[3]);
 
 		if(EvaluableNode::IsAssociativeArray(params))
-		{
-			auto &mcn = params->GetMappedChildNodesReference();
-
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_include_rand_seeds, asset_params.includeRandSeeds);
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_escape_filename, asset_params.escapeFilename);
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_escape_contained_filenames, asset_params.escapeContainedFilenames);
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_pretty_print, asset_params.prettyPrint);
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_sort_keys, asset_params.sortKeys);
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_flatten, asset_params.flatten);
-			EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_parallel_create, asset_params.parallelCreate);
-		}
+			asset_params.SetParams(params->GetMappedChildNodesReference());
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}

@@ -19,6 +19,78 @@
 
 AssetManager asset_manager;
 
+void AssetManager::AssetParameters::Initialize(bool is_entity)
+{
+	if(fileType == "")
+	{
+		std::string path, file_base;
+		Platform_SeparatePathFileExtension(resource, path, file_base, fileType);
+	}
+
+	if(fileType == FILE_EXTENSION_AMLG_METADATA || fileType == FILE_EXTENSION_AMALGAM)
+	{
+		includeRandSeeds = false;
+		escapeFilename = false;
+		escapeContainedFilenames = true;
+		transactional = false;
+		prettyPrint = true;
+		sortKeys = true;
+		flatten = false;
+		parallelCreate = false;
+		executeOnLoad = false;
+	}
+	else if(fileType == FILE_EXTENSION_JSON || fileType == FILE_EXTENSION_YAML
+		|| fileType == FILE_EXTENSION_CSV)
+	{
+		includeRandSeeds = false;
+		escapeFilename = false;
+		escapeContainedFilenames = false;
+		transactional = false;
+		prettyPrint = false;
+		sortKeys = true;
+		flatten = false;
+		parallelCreate = false;
+		executeOnLoad = false;
+	}
+	else if(fileType == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
+	{
+		includeRandSeeds = is_entity;
+		escapeFilename = false;
+		escapeContainedFilenames = false;
+		transactional = false;
+		prettyPrint = false;
+		sortKeys = false;
+		flatten = is_entity;
+		parallelCreate = false;
+		executeOnLoad = is_entity;
+	}
+	else
+	{
+		includeRandSeeds = is_entity;
+		escapeFilename = false;
+		escapeContainedFilenames = false;
+		transactional = false;
+		prettyPrint = false;
+		sortKeys = false;
+		flatten = is_entity;
+		parallelCreate = false;
+		executeOnLoad = is_entity;
+	}
+}
+
+void AssetManager::AssetParameters::SetParams(EvaluableNode::AssocType &params)
+{
+	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_include_rand_seeds, includeRandSeeds);
+	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_escape_filename, escapeFilename);
+	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_escape_contained_filenames, escapeContainedFilenames);
+	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_transactional, transactional);
+	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_pretty_print, prettyPrint);
+	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_sort_keys, sortKeys);
+	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_flatten, flatten);
+	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_parallel_create, parallelCreate);
+	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_execute_on_load, executeOnLoad);
+}
+
 EvaluableNodeReference AssetManager::LoadResourcePath(AssetParameters &asset_params,
 	std::string &resource_base_path, std::string &file_type, EvaluableNodeManager *enm, EntityExternalInterface::LoadEntityStatus &status)
 {

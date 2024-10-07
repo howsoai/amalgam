@@ -56,11 +56,10 @@ public:
 		bool executeOnLoad;
 	};
 
-	//Returns the code to the corresponding entity by resource_path
-	// sets resource_base_path to the resource path without the extension
-	//if file_type is not an empty string, it will use the specified file_type instead of the filename's extension
-	EvaluableNodeReference LoadResourcePath(AssetParameters &asset_params, std::string &resource_base_path,
-		EvaluableNodeManager *enm, EntityExternalInterface::LoadEntityStatus &status);
+	//Returns the code to the corresponding entity specified by asset_params using enm
+	//Additionally returns the updated resource_base_path for the file, as well as the status
+	EvaluableNodeReference LoadResourcePath(AssetParameters &asset_params, EvaluableNodeManager *enm,
+		std::string &resource_base_path, EntityExternalInterface::LoadEntityStatus &status);
 
 	//Stores the code to the corresponding resource path
 	// sets resource_base_path to the resource path without the extension, and extension accordingly

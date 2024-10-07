@@ -623,7 +623,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, bo
 
 	EntityExternalInterface::LoadEntityStatus status;
 	std::string resource_base_path;
-	return asset_manager.LoadResourcePath(asset_params, resource_base_path, evaluableNodeManager, status);
+	return asset_manager.LoadResourcePath(asset_params, evaluableNodeManager, resource_base_path, status);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSISTENT_ENTITY(EvaluableNode *en, bool immediate_result)
@@ -679,9 +679,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSI
 	memoryModificationLock.unlock();
 #endif
 
-	//TODO 21711: finish this and update documentation
-	Entity *loaded_entity = asset_manager.LoadEntityFromResourcePath(asset_params.resource, file_type,
-		persistent, true, escape_filename, escape_contained_filenames, random_seed, this, status);
+	Entity *loaded_entity = asset_manager.LoadEntityFromResourcePath(asset_params,
+		persistent, true, random_seed, this, status);
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is executing again
@@ -791,8 +790,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 	if(source_entity == nullptr || source_entity == curEntity)
 		return EvaluableNodeReference::Null();
 
-	bool stored_successfully = asset_manager.StoreEntityToResourcePath(source_entity, resource_name, file_type,
-		false, true, escape_filename, escape_contained_filenames, pretty_print, sort_keys, include_rand_seeds, flatten, parallel_create);
+	bool stored_successfully = asset_manager.StoreEntityToResourcePath(source_entity, asset_params, false, true);
 
 	return AllocReturn(stored_successfully, immediate_result);
 }

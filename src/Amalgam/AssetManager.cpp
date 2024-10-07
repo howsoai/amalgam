@@ -91,17 +91,17 @@ void AssetManager::AssetParameters::SetParams(EvaluableNode::AssocType &params)
 	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_execute_on_load, executeOnLoad);
 }
 
-EvaluableNodeReference AssetManager::LoadResourcePath(AssetParameters &asset_params,
-	std::string &resource_base_path, std::string &file_type, EvaluableNodeManager *enm, EntityExternalInterface::LoadEntityStatus &status)
+EvaluableNodeReference AssetManager::LoadResourcePath(AssetParameters &asset_params, EvaluableNodeManager *enm,
+	std::string &resource_base_path, EntityExternalInterface::LoadEntityStatus &status)
 {
 	//get file path based on the file loaded
 	std::string path, file_base, extension;
-	Platform_SeparatePathFileExtension(resource_path, path, file_base, extension);
+	Platform_SeparatePathFileExtension(asset_params.resource, path, file_base, extension);
 	resource_base_path = path + file_base;
 
 	//escape the string if necessary, otherwise just use the regular one
 	std::string processed_resource_path;
-	if(escape_filename)
+	if(asset_params.escapeFilename)
 	{
 		resource_base_path = path + FilenameEscapeProcessor::SafeEscapeFilename(file_base);
 		processed_resource_path = resource_base_path + "." + extension;
@@ -109,20 +109,20 @@ EvaluableNodeReference AssetManager::LoadResourcePath(AssetParameters &asset_par
 	else
 	{
 		resource_base_path = path + file_base;
-		processed_resource_path = resource_path;
+		processed_resource_path = asset_params.resource;
 	}
 
-	if(file_type.empty())
-		file_type = extension;
+	if(asset_params.fileType.empty())
+		asset_params.fileType = extension;
 
 	//load this entity based on file_type
-	if(file_type == FILE_EXTENSION_AMALGAM || file_type == FILE_EXTENSION_AMLG_METADATA)
+	if(asset_params.fileType == FILE_EXTENSION_AMALGAM || asset_params.fileType == FILE_EXTENSION_AMLG_METADATA)
 	{
 		auto [code, code_success] = Platform_OpenFileAsString(processed_resource_path);
 		if(!code_success)
 		{
 			status.SetStatus(false, code);
-			if(file_type == FILE_EXTENSION_AMALGAM)
+			if(asset_params.fileType == FILE_EXTENSION_AMALGAM)
 				std::cerr << code << std::endl;
 			return EvaluableNodeReference::Null();
 		}
@@ -135,21 +135,21 @@ EvaluableNodeReference AssetManager::LoadResourcePath(AssetParameters &asset_par
 				code.erase(0, 3);
 		}
 
-		auto [node, warnings, char_with_error] = Parser::Parse(code, enm, false, &resource_path, debugSources);
+		auto [node, warnings, char_with_error] = Parser::Parse(code, enm, false, &asset_params.resource, debugSources);
 		for(auto &w : warnings)
 			std::cerr << w << std::endl;
 		return node;
 	}
-	else if(file_type == FILE_EXTENSION_JSON)
+	else if(asset_params.fileType == FILE_EXTENSION_JSON)
 		return EvaluableNodeReference(EvaluableNodeJSONTranslation::Load(processed_resource_path, enm, status), true);
-	else if(file_type == FILE_EXTENSION_YAML)
+	else if(asset_params.fileType == FILE_EXTENSION_YAML)
 		return EvaluableNodeReference(EvaluableNodeYAMLTranslation::Load(processed_resource_path, enm, status), true);
-	else if(file_type == FILE_EXTENSION_CSV)
+	else if(asset_params.fileType == FILE_EXTENSION_CSV)
 		return EvaluableNodeReference(FileSupportCSV::Load(processed_resource_path, enm, status), true);
-	else if(file_type == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
+	else if(asset_params.fileType == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 	{
 		BinaryData compressed_data;
-		auto [error_msg, version, success] = LoadFileToBuffer<BinaryData>(processed_resource_path, file_type, compressed_data);
+		auto [error_msg, version, success] = LoadFileToBuffer<BinaryData>(processed_resource_path, asset_params.fileType, compressed_data);
 		if(!success)
 		{
 			status.SetStatus(false, error_msg, version);
@@ -161,7 +161,7 @@ EvaluableNodeReference AssetManager::LoadResourcePath(AssetParameters &asset_par
 		if(strings.size() == 0)
 			return EvaluableNodeReference::Null();
 
-		auto [node, warnings, char_with_error] = Parser::Parse(strings[0], enm, false, &resource_path, debugSources);
+		auto [node, warnings, char_with_error] = Parser::Parse(strings[0], enm, false, &asset_params.resource, debugSources);
 		for(auto &w : warnings)
 			std::cerr << w << std::endl;
 		return node;
@@ -169,7 +169,7 @@ EvaluableNodeReference AssetManager::LoadResourcePath(AssetParameters &asset_par
 	else //just load the file as a string
 	{
 		std::string s;
-		auto [error_msg, version, success] = LoadFileToBuffer<std::string>(processed_resource_path, file_type, s);
+		auto [error_msg, version, success] = LoadFileToBuffer<std::string>(processed_resource_path, asset_params.fileType, s);
 		if(success)
 			return EvaluableNodeReference(enm->AllocNode(ENT_STRING, s), true);
 		else

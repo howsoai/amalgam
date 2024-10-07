@@ -145,7 +145,7 @@ if (IS_WASM AND CMAKE_BUILD_TYPE STREQUAL "Debug")
     # Remove the below flags as they are incompatible with debugging WASM
     string(REPLACE "-Werror" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
     string(REPLACE "-Wlimited-postlink-optimizations" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-    string(APPEND CMAKE_CXX_FLAGS " -gseparate-dwarf")
+    string(APPEND CMAKE_CXX_FLAGS " -O0 -gseparate-dwarf")
 endif()
 
 # amd64 advanced intrinsics:

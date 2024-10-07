@@ -515,12 +515,11 @@ void AssetManager::RemoveRootPermissions(Entity *entity)
 	SetRootPermission(entity, false);
 }
 
-void AssetManager::PreprocessFileNameAndType(std::string &resource_path,
-	std::string &file_type, bool escape_resource_path,
-	std::string &resource_base_path, std::string &complete_resource_path)
+void AssetManager::PreprocessFileNameAndType(std::string &resource_path, bool escape_resource_path,
+	std::string &extension, std::string &resource_base_path, std::string &complete_resource_path)
 {
 	//get file path based on the file being stored
-	std::string path, file_base, extension;
+	std::string path, file_base;
 	Platform_SeparatePathFileExtension(resource_path, path, file_base, extension);
 
 	//escape the string if necessary, otherwise just use the regular one
@@ -534,7 +533,4 @@ void AssetManager::PreprocessFileNameAndType(std::string &resource_path,
 		resource_base_path = path + file_base;
 		complete_resource_path = resource_path;
 	}
-
-	if(file_type.empty())
-		file_type = extension;
 }

@@ -62,14 +62,12 @@ public:
 		std::string &resource_base_path, EntityExternalInterface::LoadEntityStatus &status);
 
 	//Stores the code to the corresponding resource path
-	// sets resource_base_path to the resource path without the extension, and extension accordingly
-	//if file_type is not an empty string, it will use the specified file_type instead of the filename's extension
+	// sets resource_base_path to the resource path without the extension
 	static bool StoreResourcePath(EvaluableNode *code, AssetParameters &asset_params, std::string &resource_base_path,
 		EvaluableNodeManager *enm)
 	{
-		std::string complete_resource_path;
-		PreprocessFileNameAndType(asset_params.resource,
-			file_type, asset_params.escapeFilename, resource_base_path, complete_resource_path);
+		std::string, extension, complete_resource_path;
+		PreprocessFileNameAndType(asset_params.resource, asset_params.escapeFilename, extension, resource_base_path, complete_resource_path);
 
 		return StoreResourcePathFromProcessedResourcePaths(code, complete_resource_path,
 			file_type, enm, escape_filename, sort_keys);
@@ -103,7 +101,7 @@ public:
 
 		std::string resource_base_path;
 		std::string complete_resource_path;
-		PreprocessFileNameAndType(resource_path, file_type, escape_filename, resource_base_path, complete_resource_path);
+		PreprocessFileNameAndType(resource_path, escape_filename, file_type, resource_base_path, complete_resource_path);
 
 		Entity::EntityReferenceBufferReference<EntityReferenceType> erbr;
 		if(all_contained_entities == nullptr)
@@ -361,12 +359,11 @@ private:
 	//recursively removes root permissions
 	void RemoveRootPermissions(Entity *entity);
 
-	//using resource_path as the semantically intended path, populates resource_base_path and complete_resource_path,
-	// and populates file_type if it is unspecified (empty string)
-	//escapes the resource path if escape_resource_path is true
-	static void PreprocessFileNameAndType(std::string &resource_path,
-		std::string &file_type, bool escape_resource_path,
-		std::string &resource_base_path, std::string &complete_resource_path);
+	//using resource_path as the semantically intended path,
+	// escaping the resource path if escape_resource_path is true
+	// populates resource_base_path, complete_resource_path, and extension
+	static void PreprocessFileNameAndType(std::string &resource_path, bool escape_resource_path,
+		std::string &extension, std::string &resource_base_path, std::string &complete_resource_path);
 
 	//entities that need changes stored, and the resource paths to store them
 	CompactHashMap<Entity *, std::unique_ptr<AssetParameters>> persistentEntities;

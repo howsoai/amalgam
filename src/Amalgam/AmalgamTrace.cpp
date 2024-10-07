@@ -54,6 +54,7 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 		// perform specified operation
 		if(command == "LOAD_ENTITY")
 		{
+			//TODO 21711: update this
 			std::vector<std::string> command_tokens = StringManipulation::SplitArgString(input);
 			if(command_tokens.size() >= 4)
 			{
@@ -95,6 +96,7 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 		}
 		else if(command == "CLONE_ENTITY")
 		{
+			//TODO 21711: update this
 			std::vector<std::string> command_tokens = StringManipulation::SplitArgString(input);
 			if(command_tokens.size() >= 2)
 			{
@@ -128,6 +130,7 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 		}
 		else if(command == "STORE_ENTITY")
 		{
+			//TODO 21711: update this
 			std::vector<std::string> command_tokens = StringManipulation::SplitArgString(input);
 			if(command_tokens.size() >= 4)
 			{

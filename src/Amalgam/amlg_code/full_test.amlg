@@ -2188,7 +2188,6 @@
  (print (contained_entities))
 
  ;TODO 21711: update tests for load*/store*
- ;TODO 21711: update documentation, break file params into separate section like system commands
  (print "--load--\n")
  (print (load "amlg_code/module_test.amlg"))
 

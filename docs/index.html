@@ -296,6 +296,7 @@ function render() {
 	<a href="#operators">Language Operators</a><br>
 	<a href="#constructs">Typical Constructs</a><br>
 	<a href="#systemCommands">System Commands</a><br>
+	<a href="#fileIO">File I/O</a><br>
 	<p></p>
 	<b>Keywords</b> <input type="button" style="font-size:0.7em;" onclick='toggleSort()' value='toggle sort'/>
 	<div id='commandToc'></div>
@@ -400,6 +401,21 @@ function render() {
 	<br />
 	Additionally, the argument vector passed in on the command line is passed in as the variable <em>argv</em>, with any arguments consumed by the interpreter removed.  This includes the standard 0th argument which is the Amalgam script being run.  The interpreter path and name are passed in as the variable <em>interpreter</em>.
 	<hr />
+	
+	<a name="fileIO"></a>
+	<h2>File I/O</h2>
+	These parameters apply to load and store opcodes and API calls:<br />
+<div class='td1'><span class="parameter">include_rand_seeds<span></div><div class='td2'>If true, attempts to include random seeds when storing and loading.</div><br />
+<div class='td1'><span class="parameter">escape_filename<span></div><div class='td2'>If true, will escape any characters in the filename that are not universally supported across platforms.</div><br />
+<div class='td1'><span class="parameter">escape_contained_filenames<span></div><div class='td2'>If true, then for any contained entities or file paths that extend the base file path, it will escape any characters in filenames that are not universally supported across platforms.  This only applies to file formats where the entities are not flattened into one file.</div><br />
+<div class='td1'><span class="parameter">transactional<span></div><div class='td2'>If true, attempts to load and store files in a transactional manner, such that any interruption will not corrupt the file.  Not applicable to all file types.</div><br />
+<div class='td1'><span class="parameter">pretty_print<span></div><div class='td2'>If true, then any code stored will be pretty printed.</div><br />
+<div class='td1'><span class="parameter">sort_keys<span></div><div class='td2'>If true, then any associative arrays will be sorted by keys.</div><br />
+<div class='td1'><span class="parameter">flatten<span></div><div class='td2'>If true, then will attempt to flatten all contained entities into one executable object and thus one file.</div><br />
+<div class='td1'><span class="parameter">parallel_create<span></div><div class='td2'>If true, will attempt use concurrency to store and load entities in parallel.</div><br />
+<div class='td1'><span class="parameter">execute_on_load<span></div><div class='td2'>If true, will execute the code upon load, which is required when entities are stored using flatten in order to create all of the entity structures.</div><br />
+
+	File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  Note that loading from a non-'.amlg' extension will only ever provide lists, assocs, numbers, and strings.
 	
 	<h2>Metadata Files</h2>
 	When attempting to load an asset, whether a .amlg file or another type, the interpreter will look for a file of the same name but with the extension .madm.  The .mdam extension stands for metadata of Amalgam.  This file consists of simple code of an associative array where the data within is immediate values representing the metadata.<br />

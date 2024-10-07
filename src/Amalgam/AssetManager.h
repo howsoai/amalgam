@@ -38,9 +38,15 @@ public:
 	struct AssetParameters
 	{
 		//initializes defaults for AssetParameters -- should specify whether it is an entity
-		void Initialize(bool is_entity, std::string filetype = std::string())
+		void Initialize(bool is_entity)
 		{
-			if(filetype == FILE_EXTENSION_AMLG_METADATA || filetype == FILE_EXTENSION_AMALGAM)
+			if(fileType == "")
+			{
+				std::string path, file_base;
+				Platform_SeparatePathFileExtension(resource, path, file_base, fileType);
+			}
+
+			if(fileType == FILE_EXTENSION_AMLG_METADATA || fileType == FILE_EXTENSION_AMALGAM)
 			{
 				includeRandSeeds = false;
 				escapeFilename = false;
@@ -52,8 +58,8 @@ public:
 				parallelCreate = false;
 				executeOnLoad = false;
 			}
-			else if(filetype == FILE_EXTENSION_JSON || filetype == FILE_EXTENSION_YAML
-				|| filetype == FILE_EXTENSION_CSV)
+			else if(fileType == FILE_EXTENSION_JSON || fileType == FILE_EXTENSION_YAML
+				|| fileType == FILE_EXTENSION_CSV)
 			{
 				includeRandSeeds = false;
 				escapeFilename = false;
@@ -65,7 +71,7 @@ public:
 				parallelCreate = false;
 				executeOnLoad = false;
 			}
-			else if(filetype == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
+			else if(fileType == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 			{
 				includeRandSeeds = is_entity;
 				escapeFilename = false;
@@ -92,6 +98,7 @@ public:
 		}
 
 		std::string resource;
+		std::string fileType;
 		bool includeRandSeeds;
 		bool escapeFilename;
 		bool escapeContainedFilenames;
@@ -106,17 +113,18 @@ public:
 	//Returns the code to the corresponding entity by resource_path
 	// sets resource_base_path to the resource path without the extension
 	//if file_type is not an empty string, it will use the specified file_type instead of the filename's extension
-	EvaluableNodeReference LoadResourcePath(std::string &resource_path, std::string &resource_base_path,
-		std::string &file_type, EvaluableNodeManager *enm, bool escape_filename, EntityExternalInterface::LoadEntityStatus &status);
+	EvaluableNodeReference LoadResourcePath(AssetParameters &asset_params, std::string &resource_base_path,
+		EvaluableNodeManager *enm, EntityExternalInterface::LoadEntityStatus &status);
 
 	//Stores the code to the corresponding resource path
 	// sets resource_base_path to the resource path without the extension, and extension accordingly
 	//if file_type is not an empty string, it will use the specified file_type instead of the filename's extension
-	static bool StoreResourcePath(EvaluableNode *code, std::string &resource_path, std::string &resource_base_path,
-		std::string &file_type, EvaluableNodeManager *enm, bool escape_filename, bool sort_keys, bool pretty_print)
+	static bool StoreResourcePath(EvaluableNode *code, AssetParameters &asset_params, std::string &resource_base_path,
+		EvaluableNodeManager *enm)
 	{
 		std::string complete_resource_path;
-		PreprocessFileNameAndType(resource_path, file_type, escape_filename, resource_base_path, complete_resource_path);
+		PreprocessFileNameAndType(asset_params.resource,
+			file_type, asset_params.escapeFilename, resource_base_path, complete_resource_path);
 
 		return StoreResourcePathFromProcessedResourcePaths(code, complete_resource_path,
 			file_type, enm, escape_filename, sort_keys);

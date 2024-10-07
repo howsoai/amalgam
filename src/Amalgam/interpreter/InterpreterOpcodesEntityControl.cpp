@@ -602,21 +602,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, bo
 	if(asset_params.resource.empty())
 		return EvaluableNodeReference::Null();
 
-	std::string file_type = "";
+	asset_params.fileType = "";
 	if(ocn.size() > 2)
 	{
 		auto [valid, file_type_temp] = InterpretNodeIntoStringValue(ocn[2]);
 		if(valid)
-			file_type = file_type_temp;
+			asset_params.fileType = file_type_temp;
 	}
 
-	if(file_type == "")
-	{
-		std::string path, file_base;
-		Platform_SeparatePathFileExtension(asset_params.resource, path, file_base, file_type);
-	}
-
-	asset_params.Initialize(false, file_type);
+	asset_params.Initialize(false);
 	if(ocn.size() > 3)
 	{
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[3]);
@@ -633,10 +627,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, bo
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
 
-	//TODO 21711: finish this and update documentation
 	EntityExternalInterface::LoadEntityStatus status;
 	std::string resource_base_path;
-	return asset_manager.LoadResourcePath(asset_params.resource, resource_base_path, file_type, evaluableNodeManager, escape_filename, status);
+	return asset_manager.LoadResourcePath(asset_params, resource_base_path, evaluableNodeManager, status);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSISTENT_ENTITY(EvaluableNode *en, bool immediate_result)
@@ -664,13 +657,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSI
 			file_type = file_type_temp;
 	}
 
-	if(file_type == "")
-	{
-		std::string path, file_base;
-		Platform_SeparatePathFileExtension(asset_params.resource, path, file_base, file_type);
-	}
-
-	asset_params.Initialize(true, file_type);
+	asset_params.Initialize(true);
 	if(ocn.size() > 3)
 	{
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[3]);
@@ -762,13 +749,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, b
 			file_type = file_type_temp;
 	}
 
-	if(file_type == "")
-	{
-		std::string path, file_base;
-		Platform_SeparatePathFileExtension(asset_params.resource, path, file_base, file_type);
-	}
-
-	asset_params.Initialize(false, file_type);
+	asset_params.Initialize(false);
 	if(ocn.size() > 3)
 	{
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[3]);
@@ -786,8 +767,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, b
 	}
 
 	std::string resource_base_path;
-	bool successful_save = asset_manager.StoreResourcePath(to_store,
-		resource_name, resource_base_path, file_type, evaluableNodeManager, escape_filename, sort_keys, pretty_print);
+	bool successful_save = asset_manager.StoreResourcePath(to_store, asset_params,
+		resource_base_path, evaluableNodeManager);
 
 	return ReuseOrAllocReturn(to_store, successful_save, immediate_result);
 }
@@ -815,13 +796,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 			file_type = file_type_temp;
 	}
 
-	if(file_type == "")
-	{
-		std::string path, file_base;
-		Platform_SeparatePathFileExtension(asset_params.resource, path, file_base, file_type);
-	}
-
-	asset_params.Initialize(true, file_type);
+	asset_params.Initialize(true);
 	if(ocn.size() > 3)
 	{
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[3]);

@@ -19,8 +19,8 @@
 
 AssetManager asset_manager;
 
-EvaluableNodeReference AssetManager::LoadResourcePath(std::string &resource_path,
-	std::string &resource_base_path, std::string &file_type, EvaluableNodeManager *enm, bool escape_filename, EntityExternalInterface::LoadEntityStatus &status)
+EvaluableNodeReference AssetManager::LoadResourcePath(AssetParameters &asset_params,
+	std::string &resource_base_path, std::string &file_type, EvaluableNodeManager *enm, EntityExternalInterface::LoadEntityStatus &status)
 {
 	//get file path based on the file loaded
 	std::string path, file_base, extension;

@@ -15,7 +15,7 @@ var data = [
 		"output" : "*",
 		"permissions" : "r",
 		"new value" : "new",
-		"description" : "Executes system command specified by command.  See system commands in later table.",
+		"description" : "Executes system command specified by command.  See the system commands table for further information.",
 		"example" : "(system \"exit\")"
 	},
 

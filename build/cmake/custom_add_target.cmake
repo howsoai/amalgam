@@ -278,13 +278,24 @@ function(add_compiled_target)
 
             # Extra files to install for WASM
             if(IS_WASM)
-                install(
-                    FILES
-                        "$<TARGET_FILE_DIR:${TARGET_NAME}>/$<TARGET_FILE_BASE_NAME:${TARGET_NAME}>.data"
-                        "$<TARGET_FILE_DIR:${TARGET_NAME}>/$<TARGET_FILE_BASE_NAME:${TARGET_NAME}>.wasm"
-                    DESTINATION "${INSTALL_DIR}"
-                    PERMISSIONS ${DEFAULT_INSTALL_PERMISSIONS}
-                )
+                IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
+                    install(
+                        FILES
+                            "$<TARGET_FILE_DIR:${TARGET_NAME}>/$<TARGET_FILE_BASE_NAME:${TARGET_NAME}>.data"
+                            "$<TARGET_FILE_DIR:${TARGET_NAME}>/$<TARGET_FILE_BASE_NAME:${TARGET_NAME}>.wasm"
+                            "$<TARGET_FILE_DIR:${TARGET_NAME}>/$<TARGET_FILE_BASE_NAME:${TARGET_NAME}>.wasm.debug.wasm"
+                        DESTINATION "${INSTALL_DIR}"
+                        PERMISSIONS ${DEFAULT_INSTALL_PERMISSIONS}
+                    )
+                else()
+                    install(
+                        FILES
+                            "$<TARGET_FILE_DIR:${TARGET_NAME}>/$<TARGET_FILE_BASE_NAME:${TARGET_NAME}>.data"
+                            "$<TARGET_FILE_DIR:${TARGET_NAME}>/$<TARGET_FILE_BASE_NAME:${TARGET_NAME}>.wasm"
+                        DESTINATION "${INSTALL_DIR}"
+                        PERMISSIONS ${DEFAULT_INSTALL_PERMISSIONS}
+                    )
+                endif()
                 file(MAKE_DIRECTORY "out/config")
                 set(WASM_DECLARATION_FILE "out/config/${TARGET_NAME_BASE}.d.cts")
                 file(COPY_FILE "build/wasm/amalgam-wasm.d.cts" "${WASM_DECLARATION_FILE}" ONLY_IF_DIFFERENT)

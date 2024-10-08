@@ -72,16 +72,16 @@ std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t>
 
 	if(original_source != nullptr)
 	{
-		//convert source to minimal absolute path
-		std::filesystem::path p = *original_source;
-		try
-		{
-			pt.originalSource = std::filesystem::canonical(p).string();
-		}
-		catch(std::filesystem::filesystem_error &e)
-		{
-			//file doesn't exist
-			pt.originalSource = e.what();
+	    //convert source to minimal absolute path
+	    std::filesystem::path p = *original_source;
+	    try
+	    {
+	      pt.originalSource = std::filesystem::canonical(p).string();
+	    }
+	    catch(...)
+	    {
+	      //file doesn't exist, or was some other form of resource, just use original
+		  pt.originalSource = *original_source;
 		}
 	}
 

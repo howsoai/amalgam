@@ -225,12 +225,8 @@ public:
 	//this is equal to the nats of entropy of the distribution plus the entropy of the uncertainty
 	//in the case of Laplace, the Laplace distribution is one nat, and the mean absolute deviation is half of that,
 	//therefore the value is 1.5
-	//these values can be computed via ComputeDeviationPartLaplace(0.0, 1) for each of the corresponding methods
-	//deviations other than 1 can be used, but then the result should be divided by that deviation, yielding the same value
 	static constexpr double s_surprisal_of_laplace = 1.5;
-	static constexpr double s_surprisal_of_laplace_approx = 1.500314205;
 	static constexpr double s_surprisal_of_gaussian = 1.1283791670955126;
-	static constexpr double s_surprisal_of_gaussian_approx = 1.128615528679644;
 
 	//computes the Lukaszyk–Karmowski metric deviation component for the Minkowski distance equation given the feature difference and feature deviation
 	// and adds the deviation to diff. assumes deviation is nonnegative
@@ -246,9 +242,19 @@ public:
 		{
 			diff += std::exp(-diff / deviation) * (3 * deviation + diff) * 0.5;
 			if(!surprisal_transform)
+			{
 				return diff;
-			else
-				return (diff / deviation) - s_surprisal_of_laplace;
+			}
+			else //surprisal_transform
+			{
+				double difference = (diff / deviation) - s_surprisal_of_laplace;
+
+				//it is possible that the subtraction misses the least significant bit in the mantissa
+				//due to numerical precision, returning a negative number, which causes issues, so clamp above zero
+				if(difference >= 0)
+					return difference;
+				return 0.0;
+			}
 		}
 		else //!high_accuracy
 		{
@@ -259,9 +265,20 @@ public:
 			double deviation_reciprocal = feature_attribs.deviationReciprocal;
 			diff += std::exp(static_cast<float>(-diff * deviation_reciprocal)) * (3 * deviation + diff) * 0.5;
 			if(!surprisal_transform)
+			{
 				return diff;
-			else
-				return (diff * deviation_reciprocal) - s_surprisal_of_laplace_approx;
+			}
+			else //surprisal_transform
+			{
+				//multiplying by the reciprocal is lower accuracy due to rounding differences but faster
+				double difference = (diff * deviation_reciprocal) - s_surprisal_of_laplace;
+
+				//it is possible that the subtraction misses the least significant bit in the mantissa
+				//due to numerical precision, returning a negative number, which causes issues, so clamp above zero
+				if(difference >= 0)
+					return difference;
+				return 0.0;
+			}
 		}
 	#else
 		const double term = diff / (2.0 * deviation); //diff / (2*sigma)
@@ -270,9 +287,19 @@ public:
 			//2*sigma*(e^(-1*(diff^2)/((2*simga)^2)))/sqrt(pi) - diff*erfc(diff/(2*sigma))
 			diff += s_two_over_sqrt_pi * deviation * std::exp(-term * term) - diff * std::erfc(term);
 			if(!surprisal_transform)
+			{
 				return diff;
+			}
 			else
-				return (diff / deviation) - s_surprisal_of_gaussian;
+			{
+				double difference = (diff / deviation) - s_surprisal_of_gaussian;
+
+				//it is possible that the subtraction misses the least significant bit in the mantissa
+				//due to numerical precision, returning a negative number, which causes issues, so clamp above zero
+				if(difference >= 0)
+					return difference;
+				return 0.0;
+			}
 		}
 		else //!high_accuracy
 		{
@@ -283,10 +310,20 @@ public:
 			//2*sigma*(e^(-1*(diff^2)/((2*simga)^2)))/sqrt(pi) - diff*erfc(diff/(2*sigma))
 			diff += s_two_over_sqrt_pi * deviation * std::exp(static_cast<float>(-term * term)) - diff * std::erfc(term);
 			if(!surprisal_transform)
+			{
 				return diff;
+			}
 			else
+			{
 				//multiplying by the reciprocal is lower accuracy due to rounding differences but faster
-				return (diff * feature_attribs.deviationReciprocal) - s_surprisal_of_gaussian_approx;
+				double difference = (diff * feature_attribs.deviationReciprocal) - s_surprisal_of_gaussian_approx;
+
+				//it is possible that the subtraction misses the least significant bit in the mantissa
+				//due to numerical precision, returning a negative number, which causes issues, so clamp above zero
+				if(difference >= 0)
+					return difference;
+				return 0.0;
+			}
 		}
 	#endif
 	}

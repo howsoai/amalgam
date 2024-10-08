@@ -1045,28 +1045,27 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			value_destination = GetOrCreateCallStackSymbolLocation(variable_sid, destination_call_stack_index);
 
 		//make a copy of value_replacement because not sure where else it may be used
-		EvaluableNode *value_replacement = evaluableNodeManager->DeepAllocCopy(*value_destination);
+		EvaluableNode *value_replacement = nullptr;
+		if(*value_destination == nullptr)
+			value_replacement = evaluableNodeManager->AllocNode(ENT_NULL);
+		else
+			value_replacement = evaluableNodeManager->DeepAllocCopy(*value_destination);
 
-		//need to obtain all of the destinations at the same time, otherwise it is possible that a
-		//modification could traverse to a location from another modification that isn't unique and
-		//modify something that shouldn't be modified.  this is more efficient and flexible than making a copy
-		//for every new value
-		std::vector<EvaluableNode **> copy_destinations;
-		copy_destinations.reserve(num_replacements);
+		//replace each in order, traversing as it goes along
+		//this is safe because it is all on a copy, and each traversal must be done one at a time as to not
+		//invalidate addresses from other traversals in case containers are expanded via reallocation of memory
 		for(size_t index = 0; index < num_replacements; index++)
 		{
 			EvaluableNodeReference address(replacements[replacements_start_index + 2 * index], is_value_unique[2 * index]);
 			EvaluableNode **copy_destination = TraverseToDestinationFromTraversalPathList(&value_replacement, address, true);
 			evaluableNodeManager->FreeNodeTreeIfPossible(address);
-			copy_destinations.push_back(copy_destination);
-		}
 
-		for(size_t index = 0; index < num_replacements; index++)
-		{
 			EvaluableNodeReference new_value(replacements[replacements_start_index + 2 * index + 1], is_value_unique[2 * index + 1]);
-			EvaluableNode **copy_destination = copy_destinations[index];
 			if(copy_destination == nullptr)
+			{
+				evaluableNodeManager->FreeNodeTreeIfPossible(new_value);
 				continue;
+			}
 
 			bool need_cycle_check_before = false;
 			bool is_idempotent_before = false;
@@ -2120,13 +2119,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM_TIME(EvaluableNode 
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_DEALLOCATED(EvaluableNode *en, bool immediate_result)
 {
-	std::cout << "ERROR: attempt to use freed memory\n";
+	std::cerr << "ERROR: attempt to use freed memory\n";
+#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+	assert(false);
+#endif
 	return EvaluableNodeReference::Null();
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT_A_BUILT_IN_TYPE(EvaluableNode *en, bool immediate_result)
 {
-	std::cout << "ERROR: encountered an invalid instruction\n";
+	std::cerr << "ERROR: encountered an invalid instruction\n";
+#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+	assert(false);
+#endif
 	return EvaluableNodeReference::Null();
 }
 

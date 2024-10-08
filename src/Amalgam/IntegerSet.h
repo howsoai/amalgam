@@ -76,7 +76,7 @@ public:
 	}
 
 	//returns the number of elements that exist in the hash set
-	__forceinline size_t size()
+	__forceinline size_t size() const
 	{
 		return integers.size();
 	}
@@ -626,7 +626,7 @@ public:
 	}
 
 	//returns the number of elements that exist in the hash set
-	constexpr size_t size()
+	constexpr size_t size() const
 	{
 		return numElements;
 	}
@@ -1372,7 +1372,7 @@ public:
 	}
 
 	//returns the number of elements that exist
-	__forceinline size_t size()
+	__forceinline size_t size() const
 	{
 		if(isSisContainer)
 			return sisContainer.size();

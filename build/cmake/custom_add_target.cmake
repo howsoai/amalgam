@@ -110,7 +110,7 @@ function(add_compiled_target)
 
     # For variants not supported, skip them:
     if(IS_WASM AND (IS_SHAREDLIB OR USE_THREADS OR USE_OPENMP))
-        return()
+            return()
     elseif(IS_OBJLIB AND NOT USE_OBJECT_LIBS)
         return()
     endif()
@@ -278,7 +278,7 @@ function(add_compiled_target)
 
             # Extra files to install for WASM
             if(IS_WASM)
-                IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
+                if(CMAKE_BUILD_TYPE STREQUAL "Debug")
                     install(
                         FILES
                             "$<TARGET_FILE_DIR:${TARGET_NAME}>/$<TARGET_FILE_BASE_NAME:${TARGET_NAME}>.data"
@@ -287,6 +287,7 @@ function(add_compiled_target)
                         DESTINATION "${INSTALL_DIR}"
                         PERMISSIONS ${DEFAULT_INSTALL_PERMISSIONS}
                     )
+                    set(WASM_DECLARATION_FILE "out/config/${TARGET_NAME_BASE}-debug.d.cts")
                 else()
                     install(
                         FILES
@@ -295,9 +296,9 @@ function(add_compiled_target)
                         DESTINATION "${INSTALL_DIR}"
                         PERMISSIONS ${DEFAULT_INSTALL_PERMISSIONS}
                     )
+                    set(WASM_DECLARATION_FILE "out/config/${TARGET_NAME_BASE}.d.cts")
                 endif()
                 file(MAKE_DIRECTORY "out/config")
-                set(WASM_DECLARATION_FILE "out/config/${TARGET_NAME_BASE}.d.cts")
                 file(COPY_FILE "build/wasm/amalgam-wasm.d.cts" "${WASM_DECLARATION_FILE}" ONLY_IF_DIFFERENT)
                 install(FILES "${WASM_DECLARATION_FILE}" DESTINATION "${INSTALL_DIR}" PERMISSIONS ${DEFAULT_INSTALL_PERMISSIONS})
             endif()

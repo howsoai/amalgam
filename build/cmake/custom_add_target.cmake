@@ -289,7 +289,6 @@ function(add_compiled_target)
                         DESTINATION "${INSTALL_DIR}"
                         PERMISSIONS ${DEFAULT_INSTALL_PERMISSIONS}
                     )
-                    set(WASM_DECLARATION_FILE "out/config/${TARGET_NAME_BASE}-debug.d.cts")
                 else()
                     install(
                         FILES
@@ -298,9 +297,9 @@ function(add_compiled_target)
                         DESTINATION "${INSTALL_DIR}"
                         PERMISSIONS ${DEFAULT_INSTALL_PERMISSIONS}
                     )
-                    set(WASM_DECLARATION_FILE "out/config/${TARGET_NAME_BASE}.d.cts")
                 endif()
                 file(MAKE_DIRECTORY "out/config")
+                set(WASM_DECLARATION_FILE "out/config/${TARGET_NAME_BASE}.d.cts")
                 file(COPY_FILE "build/wasm/amalgam-wasm.d.cts" "${WASM_DECLARATION_FILE}" ONLY_IF_DIFFERENT)
                 install(FILES "${WASM_DECLARATION_FILE}" DESTINATION "${INSTALL_DIR}" PERMISSIONS ${DEFAULT_INSTALL_PERMISSIONS})
             endif()

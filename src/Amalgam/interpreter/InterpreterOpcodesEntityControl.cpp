@@ -649,13 +649,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode 
 			file_type = file_type_temp;
 	}
 
-	//TODO 21711: get persistence parameter, add  to documentation, add to STORE_ENTITY
-	bool persistent = (en->GetType() == ENT_LOAD_PERSISTENT_ENTITY);
+	bool persistent = false;
+	if(ocn.size() > 3)
+		persistent = InterpretNodeIntoBoolValue(ocn[3]);
 
 	asset_params.Initialize(true);
 	if(ocn.size() > 3)
 	{
-		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[3]);
+		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[4]);
 
 		if(EvaluableNode::IsAssociativeArray(params))
 			asset_params.SetParams(params->GetMappedChildNodesReference());
@@ -772,10 +773,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 			file_type = file_type_temp;
 	}
 
-	asset_params.Initialize(true);
+	bool persistent = false;
 	if(ocn.size() > 3)
+		persistent = InterpretNodeIntoBoolValue(ocn[3]);
+
+	asset_params.Initialize(true);
+	if(ocn.size() > 4)
 	{
-		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[3]);
+		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[4]);
 
 		if(EvaluableNode::IsAssociativeArray(params))
 			asset_params.SetParams(params->GetMappedChildNodesReference());

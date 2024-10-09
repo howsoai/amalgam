@@ -30,7 +30,7 @@ void EntityExternalInterface::LoadEntityStatus::SetStatus(bool loaded_in, std::s
 }
 
 EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(std::string &handle, std::string &path,
-	std::string file_type, std::string_view json_file_params, bool persistent,
+	std::string file_type, bool persistent, std::string_view json_file_params,
 	std::string &write_log_filename, std::string &print_log_filename, std::string rand_seed)
 {
 	LoadEntityStatus status;
@@ -42,21 +42,16 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(st
 		rand_seed = std::to_string(t);
 	}
 
-	//TODO 21711: figure out where to get enm from
-	//TODO 21711: figure out whether persistence should be a top level param and make adjustments where appropriate (including docs)
-
 	AssetManager::AssetParameters asset_params;
 	asset_params.resource = path;
 	asset_params.fileType = file_type;
 	asset_params.Initialize(true);
 
-	auto &enm = bundle->entity->evaluableNodeManager;
-	EvaluableNode *file_params = EvaluableNodeJSONTranslation::JsonToEvaluableNode(&enm, json_file_params);
+	EvaluableNodeManager temp_enm;
+	EvaluableNode *file_params = EvaluableNodeJSONTranslation::JsonToEvaluableNode(&temp_enm, json_file_params);
 
 	if(EvaluableNode::IsAssociativeArray(file_params))
 		asset_params.SetParams(file_params->GetMappedChildNodesReference());
-
-	enm.FreeNodeTree(file_params);
 
 	//TODO 21711: update method signature and this load
 
@@ -101,7 +96,8 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::VerifyEntity(
 	return EntityExternalInterface::LoadEntityStatus(false, "", version);
 }
 
-bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &cloned_handle, std::string &path, bool persistent,
+bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &cloned_handle, std::string &path,
+	std::string file_type, bool persistent, std::string_view json_file_params,
 	std::string &write_log_filename, std::string &print_log_filename)
 {
 	auto bundle = FindEntityBundle(handle);
@@ -134,7 +130,8 @@ bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &clon
 	return true;
 }
 
-void EntityExternalInterface::StoreEntity(std::string &handle, std::string &path, std::string file_type, std::string_view json_file_params)
+void EntityExternalInterface::StoreEntity(std::string &handle, std::string &path,
+	std::string file_type, bool persistent, std::string_view json_file_params)
 {
 	auto bundle = FindEntityBundle(handle);
 	if(bundle == nullptr || bundle->entity == nullptr)

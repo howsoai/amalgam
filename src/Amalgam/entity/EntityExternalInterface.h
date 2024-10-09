@@ -36,16 +36,18 @@ public:
 		std::string version;
 	};
 
-	LoadEntityStatus LoadEntity(std::string &handle, std::string &path, std::string file_type,
-		std::string_view json_file_params, bool persistent,
+	LoadEntityStatus LoadEntity(std::string &handle, std::string &path,
+		std::string file_type, bool persistent, std::string_view json_file_params,
 		std::string &write_log_filename, std::string &print_log_filename,
 		std::string rand_seed = std::string(""));
 	LoadEntityStatus VerifyEntity(std::string &path);
 
-	bool CloneEntity(std::string &handle, std::string &cloned_handle, std::string &path, bool persistent,
+	bool CloneEntity(std::string &handle, std::string &cloned_handle, std::string &path,
+		std::string file_type, bool persistent, std::string_view json_file_params,
 		std::string &write_log_filename, std::string &print_log_filename);
 
-	void StoreEntity(std::string &handle, std::string &path, std::string file_type, std::string_view json_file_params);
+	void StoreEntity(std::string &handle, std::string &path,
+		std::string file_type, bool persistent, std::string_view json_file_params);
 
 	void ExecuteEntity(std::string &handle, std::string &label);
 

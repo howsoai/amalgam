@@ -1351,19 +1351,11 @@ var data = [
 	},
 
 	{
-		"parameter" : "load_entity string file_path [id entity] [string file_type] [assoc params]",
+		"parameter" : "load_entity string file_path [id entity] [string file_type] [bool persistent] [assoc params]",
 		"output" : "id",
 		"permissions" : "r",
-		"description" : "Loads an entity specified by the resource in string.  Attempts to load the file type and parse it into appropriate data and store it in the entity specified by id, following the same id creation rules as create_entities, except that if no id is specified, it may default to a name based on the resource if available.  Options for the file I/O are specified as key-value pairs in params.  See File I/O for the file types and related params.",
+		"description" : "Loads an entity specified by the resource in string.  Attempts to load the file type and parse it into appropriate data and store it in the entity specified by id, following the same id creation rules as create_entities, except that if no id is specified, it may default to a name based on the resource if available.  If persistent is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  Options for the file I/O are specified as key-value pairs in params.  See File I/O for the file types and related params.",
 		"example" : "(load_entity \"my_directory/MyModule.amlg\" \"MyModule\")"
-	},
-
-	{
-		"parameter" : "load_persistent_entity string file_path [id entity] [string file_type] [assoc params]",
-		"output" : "id",
-		"permissions" : "r",
-		"description" : "Loads an entity specified by the resource in string.  Attempts to load the file type and parse it into appropriate data and store it in the entity specified by id, following the same id creation rules as create_entities. Any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  Options for the file I/O are specified as key-value pairs in params.  See File I/O for the file types and related params.\n\n<b>WARNING:</b> Loading the same file as a persistent entity in more than one place will overwrite the file each time either entity is altered, but changes will not be propogated between the entities.",
-		"example" : "(load_persistent_entity \"my_directory/MyModule.amlg\" \"MyModule\")"
 	},
 
 	{
@@ -1375,10 +1367,10 @@ var data = [
 	},
 
 	{
-		"parameter" : "store_entity string file_path id entity [string file_type] [assoc params]",
+		"parameter" : "store_entity string file_path id entity [string file_type] [bool persistent] [assoc params]",
 		"output" : "bool",
 		"permissions" : "r",
-		"description" : "Stores the entity specified by the id to the resource in string. Returns true if successful, false if not. If file_type is specified and not null, it will use the file_type specified instead of the extension of the file_path.  Options for the file I/O are specified as key-value pairs in params.  See File I/O for the file types and related params.",
+		"description" : "Stores the entity specified by the id to the resource in string. Returns true if successful, false if not. If file_type is specified and not null, it will use the file_type specified instead of the extension of the file_path.  If persistent is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  Options for the file I/O are specified as key-value pairs in params.  See File I/O for the file types and related params.",
 		"example" : "(store_entity \"my_directory/MyData.amlg\" \"MyData\")"
 	},
 

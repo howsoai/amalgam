@@ -25,32 +25,34 @@ extern "C"
 	};
 
 	//loads the entity specified into handle
-	AMALGAM_EXPORT LoadEntityStatus LoadEntity(char *handle, char *path, bool persistent, bool load_contained_entities,
-		bool escape_filename, bool escape_contained_filenames, char *write_log_filename, char *print_log_filename);
+	AMALGAM_EXPORT LoadEntityStatus LoadEntity(char *handle, char *path, char *file_type,
+		bool persistent, char *json_file_params, char *write_log_filename, char *print_log_filename);
 
 	//verifies the entity specified by path. Uses LoadEntityStatus to return any errors and version
 	AMALGAM_EXPORT LoadEntityStatus VerifyEntity(char *path);
 
 	//clones the entity in handle to clone_handle
-	//if persistent, then path represents the location it will be persisted to
-	AMALGAM_EXPORT bool CloneEntity(char *handle, char *clone_handle, char *path, bool persistent, char *write_log_filename, char *print_log_filename);
+	//if persistent, then path, file_type, and json_file_params represent where and how it will be stored
+	AMALGAM_EXPORT bool CloneEntity(char *handle, char *clone_handle, char *path,
+		char *file_type, bool persistent, char *json_file_params,
+		char *write_log_filename, char *print_log_filename);
 
 	//stores the entity specified by handle into path
-	AMALGAM_EXPORT void   StoreEntity(char *handle, char *path, bool update_persistence_location = false, bool store_contained_entities = true);
+	AMALGAM_EXPORT void StoreEntity(char *handle, char *path, char *file_type, bool persistent, char *json_file_params);
 
 	//executes label on handle
-	AMALGAM_EXPORT void   ExecuteEntity(char *handle, char *label);
+	AMALGAM_EXPORT void ExecuteEntity(char *handle, char *label);
 
 	//destroys the entity specified by handle
-	AMALGAM_EXPORT void   DestroyEntity(char *handle);
+	AMALGAM_EXPORT void DestroyEntity(char *handle);
 
 	//sets the random seed for the entity specified by handle
-	AMALGAM_EXPORT bool   SetRandomSeed(char *handle, char *rand_seed);
+	AMALGAM_EXPORT bool SetRandomSeed(char *handle, char *rand_seed);
 
 	//sets num_entities to the number of entities and allocates an array of string pointers for the handles loaded
 	AMALGAM_EXPORT char **GetEntities(uint64_t *num_entities);
 
-	AMALGAM_EXPORT void   SetJSONToLabel(char *handle, char *label, char *json);
+	AMALGAM_EXPORT void SetJSONToLabel(char *handle, char *label, char *json);
 
 	AMALGAM_EXPORT wchar_t *GetJSONPtrFromLabelWide(char *handle, char *label);
 	AMALGAM_EXPORT char *GetJSONPtrFromLabel(char *handle, char *label);

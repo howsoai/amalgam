@@ -66,7 +66,7 @@ public:
 	static bool StoreResourcePath(EvaluableNode *code, AssetParameters &asset_params, std::string &resource_base_path,
 		EvaluableNodeManager *enm)
 	{
-		std::string, extension, complete_resource_path;
+		std::string extension, complete_resource_path;
 		PreprocessFileNameAndType(asset_params.resource, asset_params.escapeFilename, extension, resource_base_path, complete_resource_path);
 
 		return StoreResourcePathFromProcessedResourcePaths(code, complete_resource_path,

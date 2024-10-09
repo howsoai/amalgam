@@ -1,9 +1,10 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { describe, expect, test } = require("@jest/globals");
+
 const AmalgamRuntime = require(path.resolve(
   process.env.AMALGAM_WASM_DIR,
-  "amalgam-st.cjs"
+  process.env.AMALGAM_BASE_FILE + ".cjs"
 ));
 
 describe("Test Amalgam Webassembly", () => {
@@ -11,7 +12,10 @@ describe("Test Amalgam Webassembly", () => {
 
   beforeAll(async () => {
     const binary = fs.readFileSync(
-      path.resolve(process.env.AMALGAM_WASM_DIR, "amalgam-st.wasm")
+      path.resolve(
+        process.env.AMALGAM_WASM_DIR,
+        process.env.AMALGAM_BASE_FILE + ".wasm"
+      )
     );
     amlg = await AmalgamRuntime({
       wasmBinary: binary,

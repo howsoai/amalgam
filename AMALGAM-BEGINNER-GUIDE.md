@@ -11,28 +11,28 @@ parameters of 2 and 1".
 Since the scope of all operators and operations is explicit, there is no ambiguity with regard to order of operations.
 
 Examples:
-
-`(+ 2 3)`
-&gt; 5
-`(- 7 1)`
-&gt; 6
-`(- 1 7)`
-&gt; -6
-`(* 4 3)`
-&gt; 12
-`(/ 16 2)`
-&gt; 8
-`(+ 1 2 3 4 5)`
-&gt; 15
-`(* 2 5 (+ 3 4))`
-&gt; 70
+```
+(+ 2 3)
+> 5
+(- 7 1)
+> 6
+(- 1 7)
+> -6
+(* 4 3)
+> 12
+(/ 16 2)
+> 8
+(+ 1 2 3 4 5)
+> 15
+(* 2 5 (+ 3 4))
+> 70
 
 >     #Python
 >     print("hello world")
 >
 >     ;Amalgam
 >     (print "hello world")
-
+```
 For a list of all operations, see the [Amalgam Language Reference](https://howsoai.github.io/amalgam).
 
 

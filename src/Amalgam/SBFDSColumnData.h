@@ -998,7 +998,7 @@ public:
 			if(sortedNumberValueEntries.size() == 0)
 				return;
 
-			//search left to right for max (bucket 0 is largest) or right to left for min
+			//search right to left for max (bucket 0 is smallest) or left to right for min
 			int64_t value_index = find_max ? sortedNumberValueEntries.size() - 1 : 0;
 
 			while(value_index < static_cast<int64_t>(sortedNumberValueEntries.size()) && value_index >= 0)
@@ -1016,7 +1016,7 @@ public:
 						return;
 				}
 
-				value_index += find_max ? -1 : 1; //search right to right for max or left to right for min
+				value_index += find_max ? -1 : 1; //search right to left for max or left to right for min
 			}
 		}
 		else if(value_type == ENIVT_STRING_ID)

@@ -1639,6 +1639,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, boo
 	if(value_list != nullptr)
 		result.UpdatePropertiesBasedOnAttachedNode(value_list, true);
 
+	bool value_list_is_a_list = (value_list != nullptr && value_list->GetType() == ENT_LIST);
 	bool free_value_list_node = false;
 
 	if(!EvaluableNode::IsNull(function))
@@ -1649,8 +1650,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, boo
 	else //not a function
 	{
 		if(value_list.unique
-				&& value_list != nullptr
-				&& value_list->IsOrderedArray()
+				&& value_list_is_a_list
 				&& !value_list->GetNeedCycleCheck())
 			free_value_list_node = true;
 	}
@@ -1671,7 +1671,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, boo
 
 		//get value
 		EvaluableNode *value = nullptr;
-		if(EvaluableNode::IsOrderedArray(value_list))
+		if(value_list_is_a_list)
 		{
 			auto &vl_ocn = value_list->GetOrderedChildNodesReference();
 			if(i < vl_ocn.size())

@@ -104,7 +104,7 @@ value in a list.  The order of items in an assoc is never guaranteed.
     ))
 
 lists can use bracket notation as syntactic sugar instead of the **(list)** opcode, and assocs may use curly braces instead of the **(assoc)** opcode,
-such that (list 1 2 3) is same as [1 2 3] and (assoc "a" 1 "b" 2) is same as {"a" 1 "b" 2}
+such that (list 1 2 3) is same as [1 2 3] and (assoc "a" 1 "b" 2) is same as {"a" 1 "b" 2}. They are fully interchangable.
 
 Also note that `(assoc foo 3 bar 5)` is same as `(assoc "foo" 3 "bar" 5)`, the quotes around
 the indices (keys) are *optional*. This means that **(assoc** uses the literal string value of the
@@ -120,6 +120,7 @@ either variables or output of some code. The values of an assoc are always evalu
     ;use (associate if the key is the result of output of some method:
     (print (associate (call GenerateUUID) "hello"))  ;prints (assoc "UUID_KEY_GOES_HERE" "hello")
 
+Because of this, **(associate** is not the same as the curly braces notation since **{ }** is the same as **(assoc)**
 
 Also note that once you declare a variable and it exists in the context
 you cannot use **(declare** to overwrite it. Since variables are actually
@@ -672,14 +673,14 @@ specify a list of how to 'walk' into the nested structure.
 Allows users to write their own comparators by using **(current_value 1)** and **(current_value)** (often referred to as 'a' and 'b' in other languages) as it processes the list. Details on the **(current_value)** opcode and its scope offset parameter can be found farther below.
 
     (seq
-        (declare (assoc hamsters (list 2 1 3 4 5)))
+        (declare (assoc hamsters [ 2 1 3 4 5 ] ))
         (declare (assoc
-            sorted (sort hamsters) ) ; result is (list 1 2 3 4 5)
+            sorted (sort hamsters) ) ; result is [ 1 2 3 4 5 ]
 
             ;as the items in the list are being iterated over, they are set to the built-in opcodes for
             ;current value: (current_value) and previous value (current_value 1)
             ;and if you specify the comparison method, it'll use the output of that comparison to select the order
-            reverse_sorted (sort (lambda (< (current_value) (current_value 1))) hamsters)  ; result is (list 5 4 3 2 1)
+            reverse_sorted (sort (lambda (< (current_value) (current_value 1))) hamsters)  ; result is [ 5 4 3 2 1 ]
 
     )
 
@@ -723,12 +724,12 @@ to the index "key" of the current item.
 
     (seq
         (declare (assoc
-            numbers (list 10 20 30 40 50)
-            numbers_map (assoc "a" 10 "b" 20 "c" 30)
+            numbers [ 10 20 30 40 50 ]
+            numbers_map { "a" 10 "b" 20 "c" 30 }
         ))
 
         (declare (assoc
-            ;iterate over the numbers list and add the index of the number to the number, result: (list 10 21 32 43 54)
+            ;iterate over the numbers list and add the index of the number to the number, result: [ 10 21 32 43 54 ]
             modified_numbers
                 (map
                     (lambda
@@ -738,7 +739,7 @@ to the index "key" of the current item.
                 )
 
             ;iterate over numbers_map, and for each value, convert it into a list of numbers from 1 to that value
-            ;result will be:  (assoc "a" (list 1 2 3 4 5 6 7 8 9 10) "b" (list 1 2 ...etc... 19 20) "c" (list 1 2 ...etc... 29 30))
+            ;result will be:  (assoc "a" [ 1 2 3 4 5 6 7 8 9 10 ] "b" [ 1 2 ...etc... 19 20] "c" [ 1 2 ...etc... 29 30])
             modified_numbers_map
                 (map
                     (lambda
@@ -764,7 +765,7 @@ nested map statements, they will refer to the items being
 iterated by the immediately scoped **(map** statement they are in.
 
     (seq
-        (declare (assoc matrix (list (list 1 2 3) (list 10 20 30)) ))
+        (declare (assoc matrix [[ 1 2 3] [ 10 20 30 ]] ))
 
         ;iterate over each row in the matrix and print out the values in each row, separating each row with a new line
         ;expected output:

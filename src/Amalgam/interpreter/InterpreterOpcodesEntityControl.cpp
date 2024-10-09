@@ -626,7 +626,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, bo
 	return asset_manager.LoadResourcePath(asset_params, evaluableNodeManager, resource_base_path, status);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSISTENT_ENTITY(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -641,15 +641,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSI
 	if(asset_params.resource.empty())
 		return EvaluableNodeReference::Null();
 
-	bool persistent = (en->GetType() == ENT_LOAD_PERSISTENT_ENTITY);
-
 	std::string file_type = "";
-	if(!persistent && ocn.size() > 2)
+	if(ocn.size() > 2)
 	{
 		auto [valid, file_type_temp] = InterpretNodeIntoStringValue(ocn[2]);
 		if(valid)
 			file_type = file_type_temp;
 	}
+
+	//TODO 21711: get persistence parameter, add  to documentation, add to STORE_ENTITY
+	bool persistent = (en->GetType() == ENT_LOAD_PERSISTENT_ENTITY);
 
 	asset_params.Initialize(true);
 	if(ocn.size() > 3)

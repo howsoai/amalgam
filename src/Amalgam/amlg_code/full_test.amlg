@@ -2187,7 +2187,7 @@
  (destroy_entities "MultipleTest1" "MultipleTest2")
  (print (contained_entities))
 
- ;TODO 21711: update tests for load*/store*
+ ;TODO 21711: update tests for load*/store*, especially persistent loads
  (print "--load--\n")
  (print (load "amlg_code/module_test.amlg"))
 
@@ -2203,7 +2203,7 @@
  (call_entity "ModuleTest" "hello")
  (print (flatten_entity "ModuleTest"))
 
- (print "--load_persistent_entity--\n")
+ (print "persistent loads\n")
  (load_persistent_entity "amlg_code/persist_module_test.amlg" "PersistModuleTest")
  (assign_to_entities "PersistModuleTest" (assoc a 8))
  (assign_to_entities (list "PersistModuleTest" "psm") (assoc a 5))

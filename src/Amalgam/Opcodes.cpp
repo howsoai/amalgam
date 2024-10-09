@@ -248,7 +248,6 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_DESTROY_ENTITIES, "destroy_entities");
 	EmplaceNodeTypeString(ENT_LOAD, "load");
 	EmplaceNodeTypeString(ENT_LOAD_ENTITY, "load_entity");
-	EmplaceNodeTypeString(ENT_LOAD_PERSISTENT_ENTITY, "load_persistent_entity");
 	EmplaceNodeTypeString(ENT_STORE, "store");
 	EmplaceNodeTypeString(ENT_STORE_ENTITY, "store_entity");
 	EmplaceNodeTypeString(ENT_CONTAINS_ENTITY, "contains_entity");

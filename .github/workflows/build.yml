@@ -51,6 +51,8 @@ jobs:
           PRESET=$(echo ${{ matrix.preset.arch }}-${{ matrix.preset.type }}-${{ matrix.preset.platform }})
           echo "PRESET=$(echo $PRESET)" >> $GITHUB_ENV
           echo "Build preset: $PRESET"
+          # Print glibc version
+          ldd --version
 
       - name: CMake Configure
         run: AMALGAM_BUILD_VERSION=${{ inputs.version }} cmake --preset $PRESET

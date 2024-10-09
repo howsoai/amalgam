@@ -18,7 +18,7 @@ jobs:
   build-linux:
     runs-on: ubuntu-24.04
     container:
-      image: ghcr.io/howsoai/amalgam-build-container-linux:2.0.5
+      image: ghcr.io/howsoai/amalgam-build-container-linux:2.0.6
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}

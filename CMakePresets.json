@@ -127,7 +127,7 @@
       "hidden": true,
       "description": "Sets gcc compiler",
       "cacheVariables": {
-        "CMAKE_CXX_COMPILER": "g++-11"
+        "CMAKE_CXX_COMPILER": "g++-10"
       }
     },
     {
@@ -135,7 +135,7 @@
       "hidden": true,
       "description": "Sets gcc-arm compiler",
       "cacheVariables": {
-        "CMAKE_CXX_COMPILER": "aarch64-linux-gnu-g++-11"
+        "CMAKE_CXX_COMPILER": "aarch64-linux-gnu-g++-10"
       }
     },
     {

@@ -1066,7 +1066,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 
 	//if the evaluable node for p is a list, then p_values will reference its list,
 	// otherwise if it is an assoc array, it will populate p_copied_values and have p_values point to it
-	std::vector<EvaluableNode *> *p_values;
+	std::vector<EvaluableNode *> *p_values = nullptr;
 	std::vector<EvaluableNode *> p_copied_values;
 
 	auto p_node = InterpretNodeForImmediateUse(ocn[0]);

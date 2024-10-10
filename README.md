@@ -114,8 +114,8 @@ Pre-built binaries use CMake+Ninja for CI/CD. See [PR workflow](.github/workflow
 
 Though Amalgam is intended to support any C++17 compliant compiler, the current specific tool and OS versions used are:
 
-* CMake 3.23
-* Ninja 1.11
+* CMake 3.30
+* Ninja 1.10
 * Windows:
     * Visual Studio 2022 v143
 * Linux:

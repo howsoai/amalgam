@@ -133,7 +133,7 @@ if you want to change their values, you need to use the **(assign** opcode:
 For example, after you create a variable called **my\_list** that has a
 list of letters:
 
-    (declare (assoc my_list (list "a" "b" "c")))
+    (declare (assoc my_list ["a" "b" "c"] ))
 
 if you want to now edit **my\_list** and append the letter "d" to it,
 if you simply do this:
@@ -143,7 +143,7 @@ if you simply do this:
 nothing will happen because even though the code is evaluated, we didn't
 'do' anything to the evaluated outcome, we didn't store it into anything!  To update what value **my\_list** stores we have to do this:
 
-    (assign (assoc my_list (append my_list "d")))
+    (assign (assoc my_list (append my_list "d") ))
 
 
 To make this easier, Amalgam has the **(accum** opcode that can be used as such:
@@ -156,8 +156,8 @@ More examples of basic list operations:
 
         ;declare a couple of lists of letters
         (declare (assoc
-            kitty (list "A" "B" "C" "D" "E")
-            bunny (list "x" "y" "z")
+            kitty ["A" "B" "C" "D" "E"]
+            bunny ["x" "y" "z"]
         ))
 
         ;different types of list operations
@@ -167,26 +167,26 @@ More examples of basic list operations:
             last_in_kitty (last kitty) ; result is "E"
 
             ;(trunc removes items from the end of a list
-            truncate_1_item_in_kitty (trunc kitty) ; result is (list "A" "B" "C" "D")
+            truncate_1_item_in_kitty (trunc kitty) ; result is ["A" "B" "C" "D"]
 
-            truncate_all_items_in_kitty_leaving_2 (trunc kitty 2) ; result (list "A" "B" )
+            truncate_all_items_in_kitty_leaving_2 (trunc kitty 2) ; result ["A" "B"]
 
-            truncate_2_items_in_kitty (trunc kitty -2) ; result (list "A" "B" "C" )
+            truncate_2_items_in_kitty (trunc kitty -2) ; result ["A" "B" "C"]
 
 
             ;(tail removes items from the front of a list
-            remove_1_item_from_front_of_kitty (tail kitty) ; result is (list "B" "C" "D" "E")
+            remove_1_item_from_front_of_kitty (tail kitty) ; result is ["B" "C" "D" "E"]
 
-            remove_all_from_front_of_kitty_leaving_2 (tail kitty 2) ; result is (list "D" "E")
+            remove_all_from_front_of_kitty_leaving_2 (tail kitty 2) ; result is ["D" "E"]
 
-            remove_2_items_from_front_of_kitty (tail kitty -2) ; result is (list "C" "D" "E")
+            remove_2_items_from_front_of_kitty (tail kitty -2) ; result is ["C" "D" "E"]
 
             ;(append is straight forward
-            kitty_and_bunny (append kitty bunny) ;result is (list "A" "B" "C" "D" "E" "x" "y" "z")
+            kitty_and_bunny (append kitty bunny) ;result is ["A" "B" "C" "D" "E" "x" "y" "z"]
 
             size_of_kitty (size kitty) ;result is 5
 
-            reverse_of_kitty (reverse kitty) ;result is (list "E" "D" "C" "B" "A")
+            reverse_of_kitty (reverse kitty) ;result is ["E" "D" "C" "B" "A"]
         ))
 
     )
@@ -245,8 +245,8 @@ Use `(assign` to set previously declared variables.
 >
 >     ;Amalgam
 >     (declare (assoc x 5)) ;declare and set variable x to 5
->     (declare (assoc x (list "a" "b" "c"))) ;does nothing because x has already been declared
->     (assign (assoc x (list "a" "b" "c"))) ;sets variable x to a list of letters instead
+>     (declare (assoc x (list "a" "b" "c") )) ;does nothing because x has already been declared
+>     (assign (assoc x (list "a" "b" "c") )) ;sets variable x to a list of letters instead
 
 More examples with descriptions:
 
@@ -255,14 +255,14 @@ More examples with descriptions:
      ;a (declare (assoc will create an assoc of key -> value pairs where the values can be code itself.
      ;note: the declaration can be treated as though it's done in parallel, so you CANNOT use values in the same declare to
      ; calculate subsequent values like so:
-       (declare (assoc x 3 y 2 foo (* x y)))
+       (declare (assoc x 3 y 2 foo (* x y) ))
        (print foo "\n") ;outputs 0 because foo has already been evaluated, and when it was, x and y were nulls
     )
 
     (seq
      ;if you want to use declared values to make new values, you have to chain the declare statements like so:
        (declare (assoc x 3 y 2))
-       (declare (assoc foo (* x y))) ;the multiplication is evaluated right here so the result is stored in foo
+       (declare (assoc foo (* x y) )) ;the multiplication is evaluated right here so the result is stored in foo
        (print foo) ;thus we get the expected result of 6 here
     )
 
@@ -270,7 +270,7 @@ More examples with descriptions:
     ;if we want foo to be a function, we need to make sure the code isn't evaluated right away, to do that we wrap it in a 'lambda'
     (seq
        (declare (assoc x 3 y 2))
-       (declare (assoc foo (lambda (* x y)))) ;the multiplication is stored as the code itself, WITHOUT being evaluated
+       (declare (assoc foo (lambda (* x y)) )) ;the multiplication is stored as the code itself, WITHOUT being evaluated
 
        (print "foo: " foo "\n") ;thus this returns the unevaluated code for the multiplication that's stored into foo
 
@@ -369,7 +369,7 @@ coding standards, but can be unlabeled variables as well.
 >     ;outputs: 8
 >
 >     ;unlabeled function definition:
->     (declare (assoc mul (lambda (* x y))))
+>     (declare (assoc mul (lambda (* x y)) ))
 
 Notes:
 
@@ -607,8 +607,8 @@ usage: *(get &lt;code&gt;&lt;index&gt;)*
     Getting an individual value from a list or an assoc is basic - you just specify the index of the item you want:
     (seq
         (declare (assoc
-            numbers (list 10 20 30 40 50)
-            numbers_map (assoc "a" 10 "b" 20 "c" 30)
+            numbers [10 20 30 40 50]
+            numbers_map { "a" 10 "b" 20 "c" 30 }
         ))
 
         (declare (assoc
@@ -628,8 +628,8 @@ using a list as the parameter:
 
     (seq
         (declare (assoc
-            numbers (list 10 20 (list "a" "b") 40 50)
-            numbers_map (assoc "a" 10 "b" 20 "c" (assoc "A" 1 "B" (list 2 4 8)))
+            numbers (list 10 20 ["a" "b"] 40 50)
+            numbers_map (assoc "a" 10 "b" 20 "c" {"A" 1 "B" [2 4 8]} )
         ))
 
         (declare (assoc
@@ -651,8 +651,8 @@ usage: *(set &lt;code&gt; &lt;index&gt; &lt;new\_code&gt;)*
 
     (seq
         (declare (assoc
-            numbers (list 10 20 30 40 50)
-            numbers_map (assoc "a" 10 "b" 20 "c" 30)
+            numbers [10 20 30 40 50]
+            numbers_map {"a" 10 "b" 20 "c" 30}
         ))
 
         (declare (assoc

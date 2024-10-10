@@ -10,7 +10,7 @@ set(ALL_OBJLIB_TARGETS)
 set(ALL_SHAREDLIB_TARGETS)
 set(ALL_APP_TARGETS)
 function(add_compiled_target)
-    set(options AUTO_NAME USE_THREADS USE_OPENMP USE_PGC USE_AFMI_MT USE_AFMI_ST USE_DEBUG USE_ADVANCED_ARCH_INTRINSICS NO_INSTALL)
+    set(options AUTO_NAME USE_THREADS USE_OPENMP USE_PGC USE_AFMI_MT USE_AFMI_ST USE_ADVANCED_ARCH_INTRINSICS NO_INSTALL)
     set(oneValueArgs NAME TYPE OUTPUT_NAME_BASE IDE_FOLDER)
     set(multiValueArgs INCLUDE_DIRS COMPILER_DEFINES LINK_LIBRARIES SOURCE APP_ONLY_SOURCE)
     cmake_parse_arguments(args "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
@@ -29,7 +29,6 @@ function(add_compiled_target)
     set(USE_PGC ${args_USE_PGC})
     set(USE_AFMI_MT ${args_USE_AFMI_MT})
     set(USE_AFMI_ST ${args_USE_AFMI_ST})
-    set(USE_DEBUG ${args_USE_DEBUG})
     set(USE_ADVANCED_ARCH_INTRINSICS ${args_USE_ADVANCED_ARCH_INTRINSICS})
     set(NO_INSTALL ${args_NO_INSTALL})
 
@@ -93,7 +92,7 @@ function(add_compiled_target)
             string(APPEND TARGET_NAME_BASE "-mt-afmi")
         elseif(USE_AFMI_ST)
             string(APPEND TARGET_NAME_BASE "-st-afmi")
-        elseif(USE_DEBUG)
+        elseif(IS_WASM AND CMAKE_BUILD_TYPE STREQUAL "Debug")
             string(APPEND TARGET_NAME_BASE "-st-debug")
         else()
             string(APPEND TARGET_NAME_BASE "-st")
@@ -251,15 +250,6 @@ function(add_compiled_target)
         target_compile_options(${TARGET_NAME} PUBLIC -O1)
     endif()
 
-    if(USE_DEBUG)
-        target_compile_options(${TARGET_NAME} PUBLIC -g -O1)
-        target_compile_definitions(${TARGET_NAME} PUBLIC DEBUG_BUILD)
-        if (IS_WASM)
-            # Enabling WASM assertions can greatly assist in the debugging process
-            string(APPEND CMAKE_EXE_LINKER_FLAGS " -sASSERTIONS=2")
-        endif()
-    endif()
-
     # Advanced arch intrinsics:
     if(USE_ADVANCED_ARCH_INTRINSICS AND NOT IS_WASM)
         if (IS_AMD64)
@@ -290,13 +280,24 @@ function(add_compiled_target)
 
             # Extra files to install for WASM
             if(IS_WASM)
-                install(
-                    FILES
-                        "$<TARGET_FILE_DIR:${TARGET_NAME}>/$<TARGET_FILE_BASE_NAME:${TARGET_NAME}>.data"
-                        "$<TARGET_FILE_DIR:${TARGET_NAME}>/$<TARGET_FILE_BASE_NAME:${TARGET_NAME}>.wasm"
-                    DESTINATION "${INSTALL_DIR}"
-                    PERMISSIONS ${DEFAULT_INSTALL_PERMISSIONS}
-                )
+                if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+                    install(
+                        FILES
+                            "$<TARGET_FILE_DIR:${TARGET_NAME}>/$<TARGET_FILE_BASE_NAME:${TARGET_NAME}>.data"
+                            "$<TARGET_FILE_DIR:${TARGET_NAME}>/$<TARGET_FILE_BASE_NAME:${TARGET_NAME}>.wasm"
+                            "$<TARGET_FILE_DIR:${TARGET_NAME}>/$<TARGET_FILE_BASE_NAME:${TARGET_NAME}>.wasm.debug.wasm"
+                        DESTINATION "${INSTALL_DIR}"
+                        PERMISSIONS ${DEFAULT_INSTALL_PERMISSIONS}
+                    )
+                else()
+                    install(
+                        FILES
+                            "$<TARGET_FILE_DIR:${TARGET_NAME}>/$<TARGET_FILE_BASE_NAME:${TARGET_NAME}>.data"
+                            "$<TARGET_FILE_DIR:${TARGET_NAME}>/$<TARGET_FILE_BASE_NAME:${TARGET_NAME}>.wasm"
+                        DESTINATION "${INSTALL_DIR}"
+                        PERMISSIONS ${DEFAULT_INSTALL_PERMISSIONS}
+                    )
+                endif()
                 file(MAKE_DIRECTORY "out/config")
                 set(WASM_DECLARATION_FILE "out/config/${TARGET_NAME_BASE}.d.cts")
                 file(COPY_FILE "build/wasm/amalgam-wasm.d.cts" "${WASM_DECLARATION_FILE}" ONLY_IF_DIFFERENT)

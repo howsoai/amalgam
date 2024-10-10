@@ -2203,10 +2203,8 @@
  (call_entity "ModuleTest" "hello")
  (print (flatten_entity "ModuleTest"))
 
-  ;TODO 21711: update tests for load*/store*, especially persistent loads
-
  (print "persistent loads\n")
- (load_persistent_entity "amlg_code/persist_module_test.amlg" "PersistModuleTest")
+ (load_entity "amlg_code/persist_module_test.amlg" "PersistModuleTest" (null) (true))
  (assign_to_entities "PersistModuleTest" (assoc a 8))
  (assign_to_entities (list "PersistModuleTest" "psm") (assoc a 5))
  (create_entities (list "PersistModuleTest" "NewModule") (lambda (associate "a" 1 "b" 2)) )
@@ -2225,9 +2223,10 @@
  (create_entities (list "pt" "child" "doublechild2") (list 10 11))
  (store_entity "amlg_code/test_output/pt.amlg" "pt")
  (destroy_entities "pt")
- (load_persistent_entity "amlg_code/test_output/pt.amlg" "ptl")
+ (load_entity "amlg_code/test_output/pt.amlg" "ptl" (null) (true))
  (destroy_entities (list "ptl" "child"))
 
+  ;TODO 21711: update tests for load*/store*, especially persistent loads from here down
  ; persistent grandchild test
  (print "Load Root:\n" (load_persistent_entity "amlg_code/persistent_tree_test_root.amlg" "PersistTreeRoot") "\n")
  (print "Load Inter:\n" (load_entity "amlg_code/persistent_tree_test_inter.amlg" (list "PersistTreeRoot" "PersistTreeInter")) "\n")

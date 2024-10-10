@@ -252,7 +252,7 @@ jobs:
 
   smoke-test-linux-arm64:
     needs: ["build-linux"]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
 
       - name: Download Artifact
@@ -269,7 +269,7 @@ jobs:
         uses: pguyot/arm-runner-action@v2
         with:
           base_image: raspios_lite_arm64:latest
-          cpu: cortex-a8
+          cpu: cortex-a76
           commands: |
             set -e
             PATH=$PATH:/usr/aarch64-linux-gnu
@@ -280,7 +280,7 @@ jobs:
 
   smoke-test-linux-arm64_8a:
     needs: ["build-linux"]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
 
       - name: Download Artifact
@@ -297,7 +297,7 @@ jobs:
         uses: pguyot/arm-runner-action@v2
         with:
           base_image: raspios_lite_arm64:latest
-          cpu: cortex-a7
+          cpu: cortex-a76
           commands: |
             set -e
             PATH=$PATH:/usr/aarch64-linux-gnu

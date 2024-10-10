@@ -112,7 +112,7 @@ function(add_compiled_target)
 
     # For variants not supported, skip them:
     if(IS_WASM AND (IS_SHAREDLIB OR USE_THREADS OR USE_OPENMP))
-            return()
+        return()
     elseif(IS_OBJLIB AND NOT USE_OBJECT_LIBS)
         return()
     endif()

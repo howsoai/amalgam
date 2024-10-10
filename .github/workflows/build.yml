@@ -16,9 +16,9 @@ defaults:
 
 jobs:
   build-linux:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     container:
-      image: ghcr.io/howsoai/amalgam-build-container-linux:2.0.6
+      image: ghcr.io/howsoai/amalgam-build-container-linux:2.0.7
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -251,58 +251,58 @@ jobs:
           done
 
   smoke-test-linux-arm64:
-    needs: ["build-linux"]
-    runs-on: ubuntu-24.04
+    needs: ['build-linux']
+    runs-on: ubuntu-latest
     steps:
+    - name: Download Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: amalgam-${{ inputs.version }}-linux-arm64
 
-      - name: Download Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: amalgam-${{ inputs.version }}-release-linux-arm64
+    - name: Extract Amalgam
+      run: |
+        mkdir ./amalgam
+        tar -xvf ./amalgam-${{ inputs.version }}-linux-arm64.tar.gz -C ./amalgam
 
-      - name: Extract Amalgam
-        run: |
-          mkdir ./amalgam
-          tar -xvf ./amalgam-${{ inputs.version }}-linux-arm64.tar.gz -C ./amalgam
-
-      - name: Smoke test
-        uses: pguyot/arm-runner-action@v2
-        with:
-          bind_mount_repository: true
-          cpu: cortex-a76
-          commands: |
-            set -e
-            cd ./amalgam/bin
-            for f in *; do
-              echo -n "$f: " && "./$f" --version
-            done
+    - name: Smoke test
+      uses: pguyot/arm-runner-action@v2
+      with:
+        base_image: raspios_lite_arm64:latest
+        cpu: cortex-a8
+        commands: |
+          set -e
+          PATH=$PATH:/usr/aarch64-linux-gnu
+          cd ./amalgam/bin
+          for f in *; do
+            echo -n "$f: " && "./$f" --version
+          done
 
   smoke-test-linux-arm64_8a:
-    needs: ["build-linux"]
-    runs-on: ubuntu-24.04
+    needs: ['build-linux']
+    runs-on: ubuntu-latest
     steps:
+    - name: Download Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: amalgam-${{ inputs.version }}-linux-arm64_8a
 
-      - name: Download Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: amalgam-${{ inputs.version }}-release-linux-arm64_8a
+    - name: Extract Amalgam
+      run: |
+        mkdir ./amalgam
+        tar -xvf ./amalgam-${{ inputs.version }}-linux-arm64_8a.tar.gz -C ./amalgam
 
-      - name: Extract Amalgam
-        run: |
-          mkdir ./amalgam
-          tar -xvf ./amalgam-${{ inputs.version }}-linux-arm64_8a.tar.gz -C ./amalgam
-
-      - name: Smoke test
-        uses: pguyot/arm-runner-action@v2
-        with:
-          bind_mount_repository: true
-          cpu: cortex-a76
-          commands: |
-            set -e
-            cd ./amalgam/bin
-            for f in *; do
-              echo -n "$f: " && "./$f" --version
-            done
+    - name: Smoke test
+      uses: pguyot/arm-runner-action@v2
+      with:
+        base_image: raspios_lite_arm64:latest
+        cpu: cortex-a7
+        commands: |
+          set -e
+          PATH=$PATH:/usr/aarch64-linux-gnu
+          cd ./amalgam/bin
+          for f in *; do
+            echo -n "$f: " && "./$f" --version
+          done
 
   # Uses GitHub default macos runner (amd64)
   # Note: these runners have the potential to not have AVX+ instructions so only run NoAVX binaries

@@ -121,9 +121,9 @@ Though Amalgam is intended to support any C++17 compliant compiler, the current 
 * Linux:
     * Ubuntu 20.04, gcc-10
 * macOS (Darwin):
-    * macOS 12, AppleClang 14.0
+    * macOS 13, AppleClang 15.0
 * WASM:
-    * Ubuntu 20.04, emscripten 3.1.32
+    * Ubuntu 20.04, emscripten 3.1.67
 
 #### Runtime Requirements
 
@@ -148,7 +148,7 @@ Running the pre-built interpreter has specific runtime requirements per platform
 
 ##### Linux
 
-* glibc 2.29 or later
+* glibc 2.31 or later
 * Arch: amd64 or arm64
     * Specific arm64 builds: `armv8-a+simd` & `armv8.2-a+simd+rcpc`
 

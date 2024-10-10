@@ -16,52 +16,52 @@
 	))
 
 	;create some initial 'life'
-	;glider	
-    (assign (assoc
-        board_map
-            (set board_map
-                (list 0 4) 1
-                (list 1 4) 1
-                (list 2 4) 1
-                (list 2 3) 1
-                (list 1 2) 1
-            )
-    ))
+	;glider
+	(assign (assoc
+		board_map
+			(set board_map
+				[ 0 4 ] 1
+				[ 1 4 ] 1
+				[ 2 4 ] 1
+				[ 2 3 ] 1
+				[ 1 2 ] 1
+			)
+	))
 
-    ;oscillator
-    (assign (assoc
-        board_map
-            (set board_map
-                (list 30 44) 1
-                (list 31 44) 1
-                (list 32 44) 1
-            )
-    ))
+	;oscillator
+	(assign (assoc
+		board_map
+			(set board_map
+				[ 30 44 ] 1
+				[ 31 44 ] 1
+				[ 32 44 ] 1
+			)
+	))
 
-    ;still
-    (assign (assoc
-        board_map
-            (set board_map
-                (list 70 24) 1
-                (list 71 23) 1
-                (list 71 25) 1
-                (list 72 24) 1
-            )
-    ))
+	;still
+	(assign (assoc
+		board_map
+			(set board_map
+				[ 70 24 ] 1
+				[ 71 23 ] 1
+				[ 71 25 ] 1
+				[ 72 24 ] 1
+			)
+	))
 
-    ;acorn methuseiah
-    (assign (assoc
-        board_map
-            (set board_map
-                (list 50 15) 1
-                (list 52 14) 1
-                (list 52 15) 1
-                (list 51 17) 1
-                (list 52 18) 1
-                (list 52 19) 1
-                (list 52 20) 1
-            )
-    ))
+	;acorn methuseiah
+	(assign (assoc
+		board_map
+			(set board_map
+				[ 50 15 ] 1
+				[ 52 14 ] 1
+				[ 52 15 ] 1
+				[ 51 17 ] 1
+				[ 52 18 ] 1
+				[ 52 19 ] 1
+				[ 52 20 ] 1
+			)
+	))
 
 	;any live cell with two or three live neighbours survives.
 	;any dead cell with three live neighbours becomes a live cell.
@@ -105,8 +105,8 @@
 		(map
 			(lambda (seq
 				(map
-					(lambda (print (if (target_value) " X" " -") ) )
-					(target_value)
+					(lambda (print (if (current_value) " X" " -") ) )
+					(current_value)
 				)
 				(print "\n")
 			))
@@ -118,15 +118,15 @@
 				||(map
 					(lambda (let
 						(assoc
-							row_index (target_index 1)
-							row (target_value 1)
+							row_index (current_index 1)
+							row (current_value 1)
 						)
 
 						(map
 							(lambda (let
 								(assoc
-									col_index (target_index 1)
-									cell (target_value 1)
+									col_index (current_index 1)
+									cell (current_value 1)
 									num_neighbors 0
 								)
 

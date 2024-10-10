@@ -654,7 +654,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode 
 		persistent = InterpretNodeIntoBoolValue(ocn[3]);
 
 	asset_params.Initialize(true);
-	if(ocn.size() > 3)
+	if(ocn.size() > 4)
 	{
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[4]);
 

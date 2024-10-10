@@ -272,7 +272,6 @@ jobs:
           cpu: cortex-a76
           commands: |
             set -e
-            PATH=$PATH:/usr/aarch64-linux-gnu
             cd ./amalgam/bin
             for f in *; do
               echo -n "$f: " && "./$f" --version
@@ -300,7 +299,6 @@ jobs:
           cpu: cortex-a76
           commands: |
             set -e
-            PATH=$PATH:/usr/aarch64-linux-gnu
             cd ./amalgam/bin
             for f in *; do
               echo -n "$f: " && "./$f" --version

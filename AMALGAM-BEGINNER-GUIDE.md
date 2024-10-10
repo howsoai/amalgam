@@ -11,28 +11,28 @@ parameters of 2 and 1".
 Since the scope of all operators and operations is explicit, there is no ambiguity with regard to order of operations.
 
 Examples:
-
-`(+ 2 3)`
-&gt; 5
-`(- 7 1)`
-&gt; 6
-`(- 1 7)`
-&gt; -6
-`(* 4 3)`
-&gt; 12
-`(/ 16 2)`
-&gt; 8
-`(+ 1 2 3 4 5)`
-&gt; 15
-`(* 2 5 (+ 3 4))`
-&gt; 70
+```
+(+ 2 3)
+> 5
+(- 7 1)
+> 6
+(- 1 7)
+> -6
+(* 4 3)
+> 12
+(/ 16 2)
+> 8
+(+ 1 2 3 4 5)
+> 15
+(* 2 5 (+ 3 4))
+> 70
 
 >     #Python
 >     print("hello world")
 >
 >     ;Amalgam
 >     (print "hello world")
-
+````
 For a list of all operations, see the [Amalgam Language Reference](https://howsoai.github.io/amalgam).
 
 
@@ -49,6 +49,7 @@ a `(seq` block, since that is a single function that executes everything in it s
 Example contexts of a script file:
 
 ```
+
 (seq
     (print "hello ")
     (* 2 2)
@@ -86,7 +87,7 @@ specific index from either of them, you'd get the same result:
 Data Structures:
 ---------------
 
-The data types of amalgam consist of immediate values, which are string and number, lists, which are ordered sets of elements and have an opcode associated with it (which may be list), and assoc, which is an associative array of key-value pairs.  Code is just a list with a different opcode.
+The data types of amalgam consist of immediate values, which are string and number, lists, which are ordered sets of elements and have an opcode associated with it (which may be list), and assoc, which is an associative array of key-value pairs.  Code is just a list with a different opcode. 
 
 Indices of lists are 0-based, and keys of an assoc are referred to as
 the indices of an assoc.  This concept unifies assocs and lists so that
@@ -102,6 +103,9 @@ value in a list.  The order of items in an assoc is never guaranteed.
 
     ))
 
+lists can use bracket notation as syntactic sugar instead of the **(list)** opcode, and assocs may use curly braces instead of the **(assoc)** opcode,
+such that (list 1 2 3) is same as [1 2 3] and (assoc "a" 1 "b" 2) is same as {"a" 1 "b" 2}. They are fully interchangable.
+
 Also note that `(assoc foo 3 bar 5)` is same as `(assoc "foo" 3 "bar" 5)`, the quotes around
 the indices (keys) are *optional*. This means that **(assoc** uses the literal string value of the
 keys as provided to it. Thus if you have a variable named 'foo' and you intended the key to be the value
@@ -116,6 +120,7 @@ either variables or output of some code. The values of an assoc are always evalu
     ;use (associate if the key is the result of output of some method:
     (print (associate (call GenerateUUID) "hello"))  ;prints (assoc "UUID_KEY_GOES_HERE" "hello")
 
+Because of this, **(associate** is not the same as the curly braces notation since **{ }** is the same as **(assoc)**
 
 Also note that once you declare a variable and it exists in the context
 you cannot use **(declare** to overwrite it. Since variables are actually
@@ -340,7 +345,7 @@ as while loops containing an accum can be considerably slower and consume notabl
 >     ; Print values from 1 to 10
 >     (map
 >         (lambda
->             (print (target_value)) ;run this on each item from the list
+>             (print (current_value)) ;run this on each item from the list
 >         )
 >         (range 0 9) ;generate a list from 0 through 9
 >     )
@@ -401,7 +406,7 @@ Functions with default parameters:
 >
 >     (call multiplyValuesInList)
 >     ;;outputs: 2
->     (call multiplyValuesInList (assoc my_list (list 3 2) factor 3))
+>     (call multiplyValuesInList (assoc my_list [3 2] factor 3))
 >     ;;outputs: 18
 
 # Entities (Objects)
@@ -665,17 +670,17 @@ specify a list of how to 'walk' into the nested structure.
 
 ### Sort:
 
-Allows users to write their own comparators by using **(target_value 1)** and **(target_value)** (often referred to as 'a' and 'b' in other languages) as it processes the list. Details on the **(target_value)** opcode and its scope offset parameter can be found farther below.
+Allows users to write their own comparators by using **(current_value 1)** and **(current_value)** (often referred to as 'a' and 'b' in other languages) as it processes the list. Details on the **(current_value)** opcode and its scope offset parameter can be found farther below.
 
     (seq
-        (declare (assoc hamsters (list 2 1 3 4 5)))
+        (declare (assoc hamsters [ 2 1 3 4 5 ] ))
         (declare (assoc
-            sorted (sort hamsters) ) ; result is (list 1 2 3 4 5)
+            sorted (sort hamsters) ) ; result is [ 1 2 3 4 5 ]
 
             ;as the items in the list are being iterated over, they are set to the built-in opcodes for
-            ;current value: (target_value) and previous value (target_value 1)
+            ;current value: (current_value) and previous value (current_value 1)
             ;and if you specify the comparison method, it'll use the output of that comparison to select the order
-            reverse_sorted (sort (lambda (< (target_value) (target_value 1))) hamsters)  ; result is (list 5 4 3 2 1)
+            reverse_sorted (sort (lambda (< (current_value) (current_value 1))) hamsters)  ; result is [ 5 4 3 2 1 ]
 
     )
 
@@ -686,23 +691,23 @@ Collapses all items into one using a custom operation.
 usage: *(reduce (lambda &lt;your\_custom\_operation&gt;) &lt;data&gt;)*
 
 During your custom operation, you can use the two built-in opcodes
-**(target_value)** and **(target_value 1). (target_value 1)** is the reduced result during the iteration, while
-**(target_value)** is the current item being iterated on.
+**(previous_result)** is the reduced result during the iteration, while
+**(current_value)** is the current item being iterated on.
 
-For example if you have a list of numbers that you want to add up, **(target_value 1)**
-will keep a running total, while **(target_value)** will be set to the value of the
+For example if you have a list of numbers that you want to add up, **(previous_result)**
+will keep a running total, while **(current_value)** will be set to the value of the
 next item to be added:
 
-    (reduce (lambda (+ (target_value 1) (target_value))) (list 1 2 3 4))
+    (reduce (lambda (+ (previous_result) (current_value))) (list 1 2 3 4))
 
 The internal iteration would be as follows:
 
 ```
-(target_value 1)=1 (target_value)=2
+(previous_result)=1 (current_value)=2
 
-(target_value 1)=3 (target_value)=3
+(previous_result)=3 (current_value)=3
 
-(target_value 1)=6 (target_value)=4
+(previous_result)=6 (current_value)=4
 
 result: 10
 ```
@@ -714,53 +719,53 @@ Filter returns elements that evaluate to true via a custom filtering function, w
 usage: *(map &lt;custom\_function&gt; &lt;data&gt;)*
 usage: *(filter &lt;custom\_filter\_function&gt; &lt;data&gt;)*
 
-**(target_value)** is set to the value of the current item, while **(target_index)** is set
+**(current_value)** is set to the value of the current item, while **(current_index)** is set
 to the index "key" of the current item.
 
     (seq
         (declare (assoc
-            numbers (list 10 20 30 40 50)
-            numbers_map (assoc "a" 10 "b" 20 "c" 30)
+            numbers [ 10 20 30 40 50 ]
+            numbers_map { "a" 10 "b" 20 "c" 30 }
         ))
 
         (declare (assoc
-            ;iterate over the numbers list and add the index of the number to the number, result: (list 10 21 32 43 54)
+            ;iterate over the numbers list and add the index of the number to the number, result: [ 10 21 32 43 54 ]
             modified_numbers
                 (map
                     (lambda
-                        (+ (target_value) (target_index))
+	                (+ (current_value) (current_index))
                     )
                     numbers
                 )
 
             ;iterate over numbers_map, and for each value, convert it into a list of numbers from 1 to that value
-            ;result will be:  (assoc "a" (list 1 2 3 4 5 6 7 8 9 10) "b" (list 1 2 ...etc... 19 20) "c" (list 1 2 ...etc... 29 30))
+            ;result will be:  (assoc "a" [ 1 2 3 4 5 6 7 8 9 10 ] "b" [ 1 2 ...etc... 19 20] "c" [ 1 2 ...etc... 29 30])
             modified_numbers_map
                 (map
                     (lambda
-                       ;output a list of numbers from 1 to whatever value is stored in (target_value)
-                       (range 1 (target_value))
+                       ;output a list of numbers from 1 to whatever value is stored in (current_value)
+                       (range 1 (current_value))
                     )
                     numbers_map
                 )
 
             ;filter leaves items on the list that match the specified condition and removes all others, results in (list 30 40 50)
             numbers_over_25
-                 (filter (lambda (> (target_value) 25)) numbers)
+                 (filter (lambda (> (current_value) 25)) numbers)
 
-            ;leave only those values whose (target_index) % 2 == 1, results in (list 10 30 50)
+            ;leave only those values whose (current_index) % 2 == 1, results in (list 10 30 50)
             odd_indices_only
-                 (filter (lambda (= (mod (target_index) 2) 1)) numbers)
+                 (filter (lambda (= (mod (current_index) 2) 1)) numbers)
 
         ))
     )
 
-Regarding **(target_value)** and **(target_index),** If you have
+Regarding **(current_value)** and **(current_index),** If you have
 nested map statements, they will refer to the items being
 iterated by the immediately scoped **(map** statement they are in.
 
     (seq
-        (declare (assoc matrix (list (list 1 2 3) (list 10 20 30)) ))
+        (declare (assoc matrix [[ 1 2 3] [ 10 20 30 ]] ))
 
         ;iterate over each row in the matrix and print out the values in each row, separating each row with a new line
         ;expected output:
@@ -771,12 +776,12 @@ iterated by the immediately scoped **(map** statement they are in.
                 ;iterate over each value in the row of data
                 (map
                     (lambda
-                         ;here (target_value) refers to each value in the row, print it with a space afterward
-                        (print (target_value) " ")
+                         ;here (current_value) refers to each value in the row, print it with a space afterward
+                        (print (current_value) " ")
                     )
 
-                    ;here (target_value) refers to each item, a 'row' in matrix, which itself is a a list of values
-                    (target_value)
+                    ;here (current_value) refers to each item, a 'row' in matrix, which itself is a a list of values
+                    (current_value)
                 )
 
                 ;print a new line after all the values in the row have been printed
@@ -787,7 +792,7 @@ iterated by the immediately scoped **(map** statement they are in.
     )
 
 
-**(target_value <num>)** and **(target_index <num>)** are used to access the currently iterated value farther up the stack,
+**(current_value <num>)** and **(current_index <num>)** are used to access the currently iterated value farther up the stack,
 where <num> is how many 'layers' to go up. For example:
 
     (map
@@ -795,10 +800,10 @@ where <num> is how many 'layers' to go up. For example:
             (map
                 (lambda
                    (print
-                        (target_value) " " ; prints inner-most values of 10, 20, and 30
-                        (target_index) " " ; prints inner-most indices of 0, 1, and 2
-                        (target_value 1) " " ;prints the target_value from 1 level up the stack, a, b and c
-                        (target_index 1) "\n' ; prints the target_index from 1 level up the stack  A, B, and C
+                        (current_value) " " ; prints inner-most values of 10, 20, and 30
+                        (current_index) " " ; prints inner-most indices of 0, 1, and 2
+                        (current_value 1) " " ;prints the current_value from 1 level up the stack, a, b and c
+                        (current_index 1) "\n' ; prints the current_index from 1 level up the stack  A, B, and C
                    )
                 )
                 (list "10" "20" "30")
@@ -820,7 +825,7 @@ outputs:
 30 2 a A
 ```
 
-Important note regarding **(target_value)** and **(target_index)** and how their offset parameter works:
+Important note regarding **(current_value)** and **(current_index)** and how their offset parameter works:
 The following opcodes each have their own scope stack (in the Amalgam reference document, you'll see that these all have a '_Creates one or more new entries on target stack_' under their description):
 
     assoc
@@ -838,17 +843,17 @@ The following opcodes each have their own scope stack (in the Amalgam reference 
     (map
        (lambda (let
            (assoc
-               ; store target_value into x_val, must provide stack-offset of 1 because this is inside a (assoc) that has its own scope
-               x_val (target_value 1)
+               ; store current_value into x_val, must provide stack-offset of 1 because this is inside a (assoc) that has its own scope
+               x_val (current_value 1)
 
                ; store wrapped in a list, must provide stack-offset of 2 because it's inside a (list) that has its own scope
                ; and it's inside the (assoc), therefore the value is 2 because it's nested two levels deep
-               x_list (list (target_value 2))
+               x_list (list (current_value 2))
            )
 
            (print
-               x_val " = " (target_value) "\n" ; in original scope of the (map) statement, not inside a (assoc)
-               x_list " = " (list (target_value 1)) "\n" ; wrapped in a list, must privode stack-offset of 1 because (list) has its own scope
+               x_val " = " (current_value) "\n" ; in original scope of the (map) statement, not inside a (assoc)
+               x_list " = " (list (current_value 1)) "\n" ; wrapped in a list, must provide stack-offset of 1 because (list) has its own scope
            )
        ))
        (list 1 2 3)
@@ -969,13 +974,13 @@ If the file you are loading is a standalone script, you may execute it via `(cal
 (indices (zip list_with_dupes))
 
 ;collapse a list of lists into a unique list:
-(indices (zip (reduce (lambda (append (target_value) (target_value 1))) list_of_lists )))
+(indices (zip (reduce (lambda (append (current_value) (previous_result))) list_of_lists )))
 
 ;count instances of a 'value' in a list:
-(size (filter (lambda (= (target_value) value) your_list)))
+(size (filter (lambda (= (current_value) value) your_list)))
 
 ;return values at specific indices for a list (slow):
-(filter (lambda (contains_value indices_list (target_index))) your_list)
+(filter (lambda (contains_value indices_list (current_index))) your_list)
 
 ;return values at specific indices for a list (fast):
 (unzip your_list indices_list)
@@ -990,13 +995,13 @@ If the file you are loading is a standalone script, you may execute it via `(cal
 
 ;sort keys in an assoc by their corresponding values
 (sort
-    (lambda (> (get your_assoc (target_value)) (get your_assoc (target_value 1))))
+    (lambda (> (get your_assoc (current_value)) (get your_assoc (current_value 1))))
     (indices your_assoc)
 )
 
 ;convert from a list of assocs to a flat assoc
 ;i.e. (list (assoc ...) (assoc ...)) into (assoc ...)
-(reduce (lambda (append (target_value) (target_value 1)) list_of_assocs)
+(reduce (lambda (append (current_value) (previous_result)) list_of_assocs)
 or
 (apply "append" list_of_assocs)
 
@@ -1007,7 +1012,7 @@ or
 
 ;get all possible indices of a specific your_value in a list
 (filter
-	(lambda (= your_value (get your_list (target_value))))
+	(lambda (= your_value (get your_list (current_value))))
 	(indices your_list)
 )
 
@@ -1017,7 +1022,7 @@ or
 
 ;dynamically set parallelism (concurrency) based on some logic
 (null
-    #mymap (map (lambda (print (target_value) "\n")) (range 1 30))
+    #mymap (map (lambda (print (current_value) "\n")) (range 1 30))
 )
 (if run_mt
     (call (set_concurrency mymap (true)))

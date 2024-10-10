@@ -75,7 +75,13 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" S
     # TODO 1599: WASM support is experimental, these flags will be cleaned up and auto-generated where possible
     if(IS_WASM)
         string(APPEND CMAKE_CXX_FLAGS " -sMEMORY64=2 -Wno-experimental -DSIMDJSON_NO_PORTABILITY_WARNING")
-        string(APPEND CMAKE_EXE_LINKER_FLAGS " -sINVOKE_RUN=0 -sALLOW_MEMORY_GROWTH=1 -sINITIAL_HEAP=65536000 -sSTACK_SIZE=33554432 -sMEMORY_GROWTH_GEOMETRIC_STEP=0.50 -sMODULARIZE=1 -sEXPORT_NAME=AmalgamRuntime -sENVIRONMENT=worker,node,web -sEXPORTED_RUNTIME_METHODS=cwrap,ccall,FS,setValue,getValue,UTF8ToString -sEXPORTED_FUNCTIONS=_malloc,_free,_LoadEntity,_CloneEntity,_VerifyEntity,_StoreEntity,_ExecuteEntity,_ExecuteEntityJsonPtr,_DestroyEntity,_GetEntities,_SetRandomSeed,_SetJSONToLabel,_GetJSONPtrFromLabel,_SetSBFDataStoreEnabled,_IsSBFDataStoreEnabled,_GetVersionString,_SetMaxNumThreads,_GetMaxNumThreads,_GetConcurrencyTypeString,_DeleteString --preload-file /wasm/tzdata@/tzdata --preload-file /wasm/etc@/etc")
+        string(APPEND CMAKE_EXE_LINKER_FLAGS " -sINVOKE_RUN=0 -sALLOW_MEMORY_GROWTH=1 -sMEMORY_GROWTH_GEOMETRIC_STEP=0.50 -sMODULARIZE=1 -sEXPORT_NAME=AmalgamRuntime -sENVIRONMENT=worker,node,web -sEXPORTED_RUNTIME_METHODS=cwrap,ccall,FS,setValue,getValue,UTF8ToString -sEXPORTED_FUNCTIONS=_malloc,_free,_LoadEntity,_CloneEntity,_VerifyEntity,_StoreEntity,_ExecuteEntity,_ExecuteEntityJsonPtr,_DestroyEntity,_GetEntities,_SetRandomSeed,_SetJSONToLabel,_GetJSONPtrFromLabel,_SetSBFDataStoreEnabled,_IsSBFDataStoreEnabled,_GetVersionString,_SetMaxNumThreads,_GetMaxNumThreads,_GetConcurrencyTypeString,_DeleteString --preload-file /wasm/tzdata@/tzdata --preload-file /wasm/etc@/etc")
+        # Set memory arguments
+        if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+            string(APPEND CMAKE_EXE_LINKER_FLAGS " -sINITIAL_HEAP=65536000 -sSTACK_SIZE=33554432")
+        else()
+            string(APPEND CMAKE_EXE_LINKER_FLAGS " -sINITIAL_HEAP=16777216 -sSTACK_SIZE=8388608")
+        endif()
     endif()
 
 elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "AppleClang")

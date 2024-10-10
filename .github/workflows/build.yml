@@ -252,8 +252,9 @@ jobs:
 
   smoke-test-linux-arm64:
     needs: ["build-linux"]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     steps:
+
       - name: Download Artifact
         uses: actions/download-artifact@v4
         with:
@@ -263,15 +264,6 @@ jobs:
         run: |
           mkdir ./amalgam
           tar -xvf ./amalgam-${{ inputs.version }}-linux-arm64.tar.gz -C ./amalgam
-
-      - name: Install qemu-user-static
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y qemu-user-static binfmt-support
-
-      - name: Register qemu binaries
-        run: |
-          sudo update-binfmts --enable qemu-arm
 
       - name: Smoke test
         uses: pguyot/arm-runner-action@v2
@@ -288,8 +280,9 @@ jobs:
 
   smoke-test-linux-arm64_8a:
     needs: ["build-linux"]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     steps:
+
       - name: Download Artifact
         uses: actions/download-artifact@v4
         with:
@@ -299,15 +292,6 @@ jobs:
         run: |
           mkdir ./amalgam
           tar -xvf ./amalgam-${{ inputs.version }}-linux-arm64_8a.tar.gz -C ./amalgam
-
-      - name: Install qemu-user-static
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y qemu-user-static binfmt-support
-
-      - name: Register qemu binaries
-        run: |
-          sudo update-binfmts --enable qemu-aarch64
 
       - name: Smoke test
         uses: pguyot/arm-runner-action@v2

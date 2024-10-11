@@ -284,12 +284,12 @@ jobs:
     - name: Download Artifact
       uses: actions/download-artifact@v4
       with:
-        name: amalgam-${{ inputs.version }}-linux-arm64
+        name: amalgam-${{ inputs.version }}-release-linux-arm64
 
     - name: Extract Amalgam
       run: |
         mkdir ./amalgam
-        tar -xvf ./amalgam-${{ inputs.version }}-linux-arm64.tar.gz -C ./amalgam
+        tar -xvf ./amalgam-${{ inputs.version }}-release-linux-arm64.tar.gz -C ./amalgam
 
     - name: Smoke test
       uses: pguyot/arm-runner-action@v2
@@ -311,12 +311,12 @@ jobs:
     - name: Download Artifact
       uses: actions/download-artifact@v4
       with:
-        name: amalgam-${{ inputs.version }}-linux-arm64_8a
+        name: amalgam-${{ inputs.version }}-release-linux-arm64_8a
 
     - name: Extract Amalgam
       run: |
         mkdir ./amalgam
-        tar -xvf ./amalgam-${{ inputs.version }}-linux-arm64_8a.tar.gz -C ./amalgam
+        tar -xvf ./amalgam-${{ inputs.version }}-release-linux-arm64_8a.tar.gz -C ./amalgam
 
     - name: Smoke test
       uses: pguyot/arm-runner-action@v2

@@ -73,27 +73,21 @@ public:
 			file_type, enm, escape_filename, sort_keys);
 	}
 
-	static bool StoreResourcePathFromProcessedResourcePaths(EvaluableNode *code, std::string &complete_resource_path,
-		std::string &file_type, EvaluableNodeManager *enm, bool escape_filename, bool sort_keys, bool pretty_print);
+	static bool StoreResourcePathFromProcessedResourcePaths(EvaluableNode *code,
+		AssetParameters &asset_params, EvaluableNodeManager *enm);
 
 	//Loads an entity, including contained entities, etc. from the resource path specified
-	//if file_type is not an empty string, it will use the specified file_type instead of the filename's extension
 	// if persistent is true, then it will keep the resource updated based on any calls to UpdateEntity
 	//if the resource does not have a metadata file, will use default_random_seed as its seed
-	Entity *LoadEntityFromResourcePath(std::string &resource_path, std::string &file_type, bool persistent,
-		bool load_contained_entities, bool escape_filename, bool escape_contained_filenames,
+	Entity *LoadEntityFromResourcePath(AssetParameters &asset_params, bool persistent,
 		std::string default_random_seed, Interpreter *calling_interpreter, EntityExternalInterface::LoadEntityStatus &status);
 
 	//Stores an entity, including contained entities, etc. from the resource path specified
-	//if file_type is not an empty string, it will use the specified file_type instead of the filename's extension
 	// if persistent is true, then it will keep the resource updated based on any calls to UpdateEntity (will not make not persistent if was previously loaded as persistent)
 	// if all_contained_entities is nullptr, then it will be populated, as read locks are necessary for entities in multithreading
 	//returns true if successful
 	template<typename EntityReferenceType = EntityReadReference>
-	bool StoreEntityToResourcePath(Entity *entity, std::string &resource_path, std::string &file_type,
-		bool update_persistence_location, bool store_contained_entities,
-		bool escape_filename, bool escape_contained_filenames, bool pretty_print, bool sort_keys,
-		bool include_rand_seeds = true, bool flatten = true, bool parallel_create = false,
+	bool StoreEntityToResourcePath(Entity *entity, AssetParameters &asset_params, bool persistent,
 		Entity::EntityReferenceBufferReference<EntityReferenceType> *all_contained_entities = nullptr)
 	{
 		if(entity == nullptr)

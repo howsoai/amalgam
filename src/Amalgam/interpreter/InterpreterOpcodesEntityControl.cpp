@@ -681,8 +681,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode 
 	memoryModificationLock.unlock();
 #endif
 
-	Entity *loaded_entity = asset_manager.LoadEntityFromResourcePath(asset_params,
-		persistent, true, random_seed, this, status);
+	Entity *loaded_entity = asset_manager.LoadEntityFromResourcePath(asset_params, persistent, random_seed, this, status);
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is executing again
@@ -796,7 +795,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 	if(source_entity == nullptr || source_entity == curEntity)
 		return EvaluableNodeReference::Null();
 
-	bool stored_successfully = asset_manager.StoreEntityToResourcePath(source_entity, asset_params, false, true);
+	bool stored_successfully = asset_manager.StoreEntityToResourcePath(source_entity, asset_params, persistent);
 
 	return AllocReturn(stored_successfully, immediate_result);
 }

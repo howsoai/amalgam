@@ -53,11 +53,7 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(st
 	if(EvaluableNode::IsAssociativeArray(file_params))
 		asset_params.SetParams(file_params->GetMappedChildNodesReference());
 
-	//TODO 21711: update method signature and this load
-
-	std::string file_type = "";
-	Entity *entity = asset_manager.LoadEntityFromResourcePath(path, file_type, persistent, load_contained_entities,
-		escape_filename, escape_contained_filenames, rand_seed, nullptr, status);
+	Entity *entity = asset_manager.LoadEntityFromResourcePath(asset_params, persistent, rand_seed, nullptr, status);
 
 	if(!status.loaded)
 		return status;
@@ -109,6 +105,17 @@ bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &clon
 
 	Entity *entity = new Entity(bundle->entity);
 
+	AssetManager::AssetParameters asset_params;
+	asset_params.resource = path;
+	asset_params.fileType = file_type;
+	asset_params.Initialize(true);
+
+	auto &enm = bundle->entity->evaluableNodeManager;
+	EvaluableNode *file_params = EvaluableNodeJSONTranslation::JsonToEvaluableNode(&enm, json_file_params);
+
+	if(EvaluableNode::IsAssociativeArray(file_params))
+		asset_params.SetParams(file_params->GetMappedChildNodesReference());
+
 	PrintListener *pl = nullptr;
 	std::vector<EntityWriteListener *> wl;
 
@@ -123,9 +130,8 @@ bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &clon
 
 	AddEntityBundle(cloned_handle, new EntityListenerBundle(entity, wl, pl));
 
-	//TODO 21711: update this and its signature
 	if(persistent)
-		StoreEntity(cloned_handle, path, true, true);
+		asset_manager.StoreEntityToResourcePath(entity, asset_params, persistent);
 
 	return true;
 }
@@ -152,8 +158,7 @@ void EntityExternalInterface::StoreEntity(std::string &handle, std::string &path
 
 	enm.FreeNodeTree(file_params);
 
-	//TODO 21711: update signature
-	asset_manager.StoreEntityToResourcePath(entity, path, file_type, update_persistence_location, store_contained_entities, false, true, false);
+	asset_manager.StoreEntityToResourcePath(entity, asset_params, persistent);
 }
 
 void EntityExternalInterface::ExecuteEntity(std::string &handle, std::string &label)

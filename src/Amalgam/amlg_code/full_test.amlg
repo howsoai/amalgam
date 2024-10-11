@@ -2226,11 +2226,10 @@
  (load_entity "amlg_code/test_output/pt.amlg" "ptl" (null) (true))
  (destroy_entities (list "ptl" "child"))
 
-  ;TODO 21711: update tests for load*/store*, especially persistent loads from here down
  ; persistent grandchild test
- (print "Load Root:\n" (load_persistent_entity "amlg_code/persistent_tree_test_root.amlg" "PersistTreeRoot") "\n")
+ (print "Load Root:\n" (load_entity "amlg_code/persistent_tree_test_root.amlg" "PersistTreeRoot" (null) (true)) "\n")
  (print "Load Inter:\n" (load_entity "amlg_code/persistent_tree_test_inter.amlg" (list "PersistTreeRoot" "PersistTreeInter")) "\n")
- (print "Load Leaf:\n" (load_persistent_entity "amlg_code/persistent_tree_test_leaf.amlg" (list "PersistTreeRoot" "PersistTreeInter" "PersistTreeLeaf")) "\n")
+ (print "Load Leaf:\n" (load_entity "amlg_code/persistent_tree_test_leaf.amlg" (list "PersistTreeRoot" "PersistTreeInter" "PersistTreeLeaf")  (null) (true)) "\n")
  (print "Root contained:\n" (contained_entities "PersistTreeRoot") "\n")
  (print "Root b:\n" (retrieve_from_entity "PersistTreeRoot" "b") "\n")
  (print "Inter contained:\n" (contained_entities (list "PersistTreeRoot" "PersistTreeInter")) "\n")
@@ -2283,8 +2282,8 @@
 
  (print "contained entities in quackers before file: " (contained_entities "quackerz?") "\n")
 
- (store_entity "amlg_code/test_output/!quackerz.amlg" "quackerz?" (true))
- (load_entity "amlg_code/test_output/!quackerz.amlg" "read-back quackers" (true))
+ (store_entity "amlg_code/test_output/!quackerz.amlg" "quackerz?" (null) (false) (assoc escape_filename (true)) )
+ (load_entity "amlg_code/test_output/!quackerz.amlg" "read-back quackers" (null) (false) (assoc escape_filename (true)) )
 
  (print "contained entity in quackers2 loaded back from file: " (contained_entities "read-back quackers") "\n")
 

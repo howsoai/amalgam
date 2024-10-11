@@ -31,14 +31,14 @@
 			(map
 				(lambda (let
 					(assoc
-						row (target_index 1)
-						row_pixels (target_value 1)
+						row (current_index 1)
+						row_pixels (current_value 1)
 					)
 
 					(map
 						(lambda (let
 							(assoc
-								col (target_index 1)
+								col (current_index 1)
 								pixel 0
 								old_x 0
 								old_y 0
@@ -96,8 +96,8 @@
 	(map
 		(lambda (seq
 			(map
-				(lambda (print (if (target_value) " X" " -") ) )
-				(target_value)
+				(lambda (print (if (current_value) " X" " -") ) )
+				(current_value)
 			)
 			(print "\n")
 		))

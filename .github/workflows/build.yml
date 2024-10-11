@@ -45,6 +45,10 @@ jobs:
         PRESET=$(echo ${{ matrix.preset.arch }}-release-${{ matrix.preset.platform }})
         echo "PRESET=$(echo $PRESET)" >> $GITHUB_ENV
         echo "Build preset: $PRESET"
+        ldd --version
+        gcc --version
+        cmake --version
+        ninja --version
 
     - name: CMake Configure
       run: AMALGAM_BUILD_VERSION=${{ inputs.version }} cmake --preset $PRESET

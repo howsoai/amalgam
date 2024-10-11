@@ -597,20 +597,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, bo
 	if(!asset_manager.DoesEntityHaveRootPermission(curEntity))
 		return EvaluableNodeReference::Null();
 
-	AssetManager::AssetParameters asset_params;
-	asset_params.resource = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
-	if(asset_params.resource.empty())
+	std::string path = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
+	if(path.empty())
 		return EvaluableNodeReference::Null();
 
-	asset_params.fileType = "";
+	std::string file_type = "";
 	if(ocn.size() > 2)
 	{
 		auto [valid, file_type_temp] = InterpretNodeIntoStringValue(ocn[2]);
 		if(valid)
-			asset_params.fileType = file_type_temp;
+			file_type = file_type_temp;
 	}
 
-	asset_params.Initialize(false);
+	AssetManager::AssetParameters asset_params(path, file_type, false);
 	if(ocn.size() > 3)
 	{
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[3]);
@@ -636,9 +635,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode 
 	if(!asset_manager.DoesEntityHaveRootPermission(curEntity))
 		return EvaluableNodeReference::Null();
 
-	AssetManager::AssetParameters asset_params;
-	asset_params.resource = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
-	if(asset_params.resource.empty())
+	std::string path = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
+	if(path.empty())
 		return EvaluableNodeReference::Null();
 
 	std::string file_type = "";
@@ -653,7 +651,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode 
 	if(ocn.size() > 3)
 		persistent = InterpretNodeIntoBoolValue(ocn[3]);
 
-	asset_params.Initialize(true);
+	AssetManager::AssetParameters asset_params(path, file_type, true);
 	if(ocn.size() > 4)
 	{
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[4]);
@@ -715,9 +713,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, b
 	if(!asset_manager.DoesEntityHaveRootPermission(curEntity))
 		return EvaluableNodeReference::Null();
 
-	AssetManager::AssetParameters asset_params;
-	asset_params.resource = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
-	if(asset_params.resource.empty())
+	std::string path = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
+	if(path.empty())
 		return EvaluableNodeReference::Null();
 
 	auto to_store = InterpretNodeForImmediateUse(ocn[1]);
@@ -731,7 +728,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, b
 			file_type = file_type_temp;
 	}
 
-	asset_params.Initialize(false);
+	AssetManager::AssetParameters asset_params(path, file_type, false);
 	if(ocn.size() > 3)
 	{
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[3]);
@@ -759,9 +756,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 	if(!asset_manager.DoesEntityHaveRootPermission(curEntity))
 		return EvaluableNodeReference::Null();
 
-	AssetManager::AssetParameters asset_params;
-	asset_params.resource = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
-	if(asset_params.resource.empty())
+	std::string path = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
+	if(path.empty())
 		return EvaluableNodeReference::Null();
 
 	std::string file_type = "";
@@ -776,7 +772,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 	if(ocn.size() > 3)
 		persistent = InterpretNodeIntoBoolValue(ocn[3]);
 
-	asset_params.Initialize(true);
+	AssetManager::AssetParameters asset_params(path, file_type, true);
 	if(ocn.size() > 4)
 	{
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[4]);

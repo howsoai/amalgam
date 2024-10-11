@@ -19,8 +19,11 @@
 
 AssetManager asset_manager;
 
-void AssetManager::AssetParameters::Initialize(bool is_entity)
+AssetManager::AssetParameters::AssetParameters(std::string _resource, std::string file_type, bool is_entity)
 {
+	resource = _resource;
+	fileType = file_type;
+
 	if(fileType == "")
 	{
 		std::string path, file_base;

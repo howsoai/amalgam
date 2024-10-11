@@ -42,10 +42,7 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(st
 		rand_seed = std::to_string(t);
 	}
 
-	AssetManager::AssetParameters asset_params;
-	asset_params.resource = path;
-	asset_params.fileType = file_type;
-	asset_params.Initialize(true);
+	AssetManager::AssetParameters asset_params(path, file_type, true);
 
 	EvaluableNodeManager temp_enm;
 	EvaluableNode *file_params = EvaluableNodeJSONTranslation::JsonToEvaluableNode(&temp_enm, json_file_params);
@@ -105,10 +102,7 @@ bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &clon
 
 	Entity *entity = new Entity(bundle->entity);
 
-	AssetManager::AssetParameters asset_params;
-	asset_params.resource = path;
-	asset_params.fileType = file_type;
-	asset_params.Initialize(true);
+	AssetManager::AssetParameters asset_params(path, file_type, true);
 
 	auto &enm = bundle->entity->evaluableNodeManager;
 	EvaluableNode *file_params = EvaluableNodeJSONTranslation::JsonToEvaluableNode(&enm, json_file_params);
@@ -145,10 +139,7 @@ void EntityExternalInterface::StoreEntity(std::string &handle, std::string &path
 
 	EntityReadReference entity(bundle->entity);
 
-	AssetManager::AssetParameters asset_params;
-	asset_params.resource = path;
-	asset_params.fileType = file_type;
-	asset_params.Initialize(true);
+	AssetManager::AssetParameters asset_params(path, file_type, true);
 
 	auto &enm = bundle->entity->evaluableNodeManager;
 	EvaluableNode *file_params = EvaluableNodeJSONTranslation::JsonToEvaluableNode(&enm, json_file_params);

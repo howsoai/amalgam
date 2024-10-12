@@ -94,7 +94,7 @@ void AssetManager::AssetParameters::SetParams(EvaluableNode::AssocType &params)
 	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_execute_on_load, executeOnLoad);
 }
 
-EvaluableNodeReference AssetManager::LoadResourcePath(AssetParameters &asset_params, EvaluableNodeManager *enm,
+EvaluableNodeReference AssetManager::LoadResourcePathFromProcessedResourcePaths(AssetParameters &asset_params, EvaluableNodeManager *enm,
 	std::string &resource_base_path, EntityExternalInterface::LoadEntityStatus &status)
 {
 	//get file path based on the file loaded
@@ -232,7 +232,7 @@ Entity *AssetManager::LoadEntityFromResourcePath(AssetParameters &asset_params, 
 	std::string resource_base_path;
 	Entity *new_entity = new Entity();
 
-	EvaluableNodeReference code = LoadResourcePath(resource_path, resource_base_path, file_type, &new_entity->evaluableNodeManager, escape_filename, status);
+	EvaluableNodeReference code = LoadResourcePathFromProcessedResourcePaths(resource_path, resource_base_path, file_type, &new_entity->evaluableNodeManager, escape_filename, status);
 	if(!status.loaded)
 	{
 		delete new_entity;
@@ -262,7 +262,7 @@ Entity *AssetManager::LoadEntityFromResourcePath(AssetParameters &asset_params, 
 	std::string metadata_base_path;
 	std::string metadata_extension;
 	EntityExternalInterface::LoadEntityStatus metadata_status;
-	EvaluableNode *metadata = LoadResourcePath(metadata_filename, metadata_base_path, metadata_extension, &new_entity->evaluableNodeManager, escape_filename, metadata_status);
+	EvaluableNode *metadata = LoadResourcePathFromProcessedResourcePaths(metadata_filename, metadata_base_path, metadata_extension, &new_entity->evaluableNodeManager, escape_filename, metadata_status);
 	if(metadata_status.loaded)
 	{
 		if(EvaluableNode::IsAssociativeArray(metadata))

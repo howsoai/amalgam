@@ -61,11 +61,21 @@ public:
 	//Returns the code to the corresponding entity specified by asset_params using enm
 	//Additionally returns the updated resource_base_path for the file, as well as the status
 	EvaluableNodeReference LoadResourcePath(AssetParameters &asset_params, EvaluableNodeManager *enm,
+		std::string &resource_base_path, EntityExternalInterface::LoadEntityStatus &status)
+	{
+		std::string extension, complete_resource_path;
+		PreprocessFileNameAndType(asset_params.resource, asset_params.escapeFilename, extension, resource_base_path, complete_resource_path);
+
+		return LoadResourcePathFromProcessedResourcePaths(complete_resource_path,
+			file_type, enm, escape_filename, sort_keys);
+	}
+
+	bool LoadResourcePathFromProcessedResourcePaths(AssetParameters &asset_params, EvaluableNodeManager *enm,
 		std::string &resource_base_path, EntityExternalInterface::LoadEntityStatus &status);
 
 	//Stores the code to the corresponding resource path
 	// sets resource_base_path to the resource path without the extension
-	static bool StoreResourcePath(EvaluableNode *code, AssetParameters &asset_params, std::string &resource_base_path,
+	bool StoreResourcePath(EvaluableNode *code, AssetParameters &asset_params, std::string &resource_base_path,
 		EvaluableNodeManager *enm)
 	{
 		std::string extension, complete_resource_path;
@@ -75,7 +85,7 @@ public:
 			file_type, enm, escape_filename, sort_keys);
 	}
 
-	static bool StoreResourcePathFromProcessedResourcePaths(EvaluableNode *code,
+	bool StoreResourcePathFromProcessedResourcePaths(EvaluableNode *code,
 		AssetParameters &asset_params, EvaluableNodeManager *enm);
 
 	//Loads an entity, including contained entities, etc. from the resource path specified

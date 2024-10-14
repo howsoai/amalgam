@@ -474,53 +474,30 @@ void AssetManager::DestroyPersistentEntity(Entity *entity)
 	auto pe_entry = persistentEntities.find(entity);
 	if(pe_entry == end(persistentEntities))
 		return;
+	auto &asset_params = *pe_entry->second;
 
-	//TODO 21711: add same logic for Update to traverse upward in case of flattening
-	//TODO 21711: add logic for handling metadata files
-
-	Entity *cur = entity;
-	std::string slice_path;
-	std::string filename;
-	std::string extension;
-	std::string traversal_path;
-	std::error_code ec;
-
-	//delete any contained entities that are persistent
-	for(auto contained_entity : entity->GetContainedEntities())
-		DestroyPersistentEntity(contained_entity);
-
-	//cover the case if any of this entity's containers were also persisted entities
-	while(cur != nullptr)
+	//if flattened, then just need to update it or the appropriate container
+	if(asset_params.flatten)
 	{
-		const auto &pe = persistentEntities.find(cur);
-		if(pe != end(persistentEntities))
-		{
-			//get metadata filename
-			Platform_SeparatePathFileExtension(pe->second->resource, slice_path, filename, extension);
-			std::string total_filepath = slice_path + filename + traversal_path;
-
-			//delete files
-			std::filesystem::remove(total_filepath + "." + defaultEntityExtension, ec);
-			if(ec)
-				std::cerr << "Could not remove file: " << total_filepath + "." + defaultEntityExtension << std::endl;
-
-			std::filesystem::remove(total_filepath + "." + FILE_EXTENSION_AMLG_METADATA, ec);
-			if(ec)
-				std::cerr << "Could not remove file: " << total_filepath + "." + FILE_EXTENSION_AMLG_METADATA << std::endl;
-
-			//remove directory and all contents if it exists (command will fail if it doesn't exist)
-			std::filesystem::remove_all(total_filepath, ec);
-			if(ec)
-				std::cerr << "Could not remove directory: " << total_filepath << std::endl;
-		}
-
-		std::string escaped_entity_id = FilenameEscapeProcessor::SafeEscapeFilename(cur->GetId());
-		traversal_path = "/" + escaped_entity_id + traversal_path;
-
-		cur = cur->GetContainer();
+		UpdateEntity(entity);
 	}
+	else
+	{
+		std::error_code ec;
 
-	persistentEntities.erase(pe_entry);
+		//delete files
+		std::filesystem::remove(asset_params.resource, ec);
+		if(ec)
+			std::cerr << "Could not remove file: " << asset_params.resource << std::endl;
+
+		if(asset_params.resourceType == FILE_EXTENSION_AMALGAM)
+			std::filesystem::remove(asset_params.resourceBasePath + "." + FILE_EXTENSION_AMLG_METADATA, ec);
+
+		//remove directory and all contents if it exists
+		std::filesystem::remove_all(asset_params.resourceBasePath, ec);
+
+		DeepClearEntityPersistenceRecurse(entity);
+	}
 }
 
 void AssetManager::RemoveRootPermissions(Entity *entity)

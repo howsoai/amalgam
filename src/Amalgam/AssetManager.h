@@ -125,15 +125,15 @@ public:
 			EvaluableNodeReference flattened_entity = EntityManipulation::FlattenEntity(&entity->evaluableNodeManager,
 				entity, *all_contained_entities, include_rand_seeds, parallel_create);
 
-			bool all_stored_successfully = AssetManager::StoreResource(flattened_entity,
+			bool all_stored_successfully = StoreResource(flattened_entity,
 				asset_params, &entity->evaluableNodeManager);
 
 			entity->evaluableNodeManager.FreeNodeTreeIfPossible(flattened_entity);
 			return all_stored_successfully;
 		}
 
-		bool all_stored_successfully = AssetManager::StoreResource(entity->GetRoot(),
-			asset_params, &entity->evaluableNodeManager);
+		if(!StoreResource(entity->GetRoot(), asset_params, &entity->evaluableNodeManager))
+			return false;
 
 		if(asset_params.resourceType == FILE_EXTENSION_AMALGAM)
 		{
@@ -152,7 +152,7 @@ public:
 		SetEntityPersistence(entity, persistent ? &asset_params : nullptr);
 
 		//store contained entities
-		if(store_contained_entities && entity->GetContainedEntities().size() > 0)
+		if(entity->GetContainedEntities().size() > 0)
 		{
 			std::error_code ec;
 			//create directory in case it doesn't exist
@@ -165,31 +165,35 @@ public:
 				return false;
 			}
 
-			//store any contained entities
-			for(auto contained_entity : entity->GetContainedEntities())
+			//only actually store the contained entities if directed
+			if(store_contained_entities)
 			{
-				std::string ce_resource_base_path;
-				if(asset_params.escapeContainedResourceNames)
+				//store any contained entities
+				for(auto contained_entity : entity->GetContainedEntities())
 				{
-					const std::string &ce_escaped_filename = FilenameEscapeProcessor::SafeEscapeFilename(contained_entity->GetId());
-					ce_resource_base_path = asset_params.resourceBasePath + "/" + ce_escaped_filename;
+					std::string ce_resource_base_path;
+					if(asset_params.escapeContainedResourceNames)
+					{
+						const std::string &ce_escaped_filename = FilenameEscapeProcessor::SafeEscapeFilename(contained_entity->GetId());
+						ce_resource_base_path = asset_params.resourceBasePath + "/" + ce_escaped_filename;
+					}
+					else
+					{
+						ce_resource_base_path = asset_params.resourceBasePath + "/" + contained_entity->GetId();
+					}
+
+					AssetParameters ce_asset_params = asset_params.CreateAssetParametersForContainedResource(ce_resource_base_path);
+
+					//don't escape filename again because it's already escaped in this loop
+					bool stored_successfully = StoreEntityToResource(contained_entity, ce_asset_params, persistent, true, all_contained_entities);
+
+					if(!stored_successfully)
+						return false;
 				}
-				else
-				{
-					ce_resource_base_path = asset_params.resourceBasePath + "/" + contained_entity->GetId();
-				}
-
-				AssetParameters ce_asset_params = asset_params.CreateAssetParametersForContainedResource(ce_resource_base_path);
-
-				//don't escape filename again because it's already escaped in this loop
-				bool stored_successfully = StoreEntityToResource(contained_entity, ce_asset_params, persistent, true, all_contained_entities);
-
-				if(!stored_successfully)
-					return false;
 			}
 		}
 
-		return all_stored_successfully;
+		return true;
 	}
 
 	//Indicates that the entity has been written to or updated, and so if the asset is persistent, the persistent copy should be updated
@@ -377,6 +381,15 @@ public:
 	bool debugMinimal;
 
 private:
+
+	//clears all entity persistence recursively, assumes persistentEntitiesMutex is locked before calling
+	void DeepClearEntityPersistenceRecurse(Entity *entity)
+	{
+		persistentEntities.erase(entity);
+
+		for(auto contained_entity : entity->GetContainedEntities())
+			DeepClearEntityPersistenceRecurse(contained_entity);
+	}
 
 	//recursively deletes persistent entities
 	void DestroyPersistentEntity(Entity *entity);

@@ -61,32 +61,24 @@ public:
 	//Returns the code to the corresponding entity specified by asset_params using enm
 	//Additionally returns the updated resource_base_path for the file, as well as the status
 	EvaluableNodeReference LoadResourcePath(AssetParameters &asset_params, EvaluableNodeManager *enm,
-		std::string &resource_base_path, EntityExternalInterface::LoadEntityStatus &status)
+		EntityExternalInterface::LoadEntityStatus &status)
 	{
-		std::string extension, complete_resource_path;
-		PreprocessFileNameAndType(asset_params.resource, asset_params.escapeFilename, extension, resource_base_path, complete_resource_path);
+		std::string extension, resource_base_path, processed_resource_path;
+		PreprocessFileNameAndType(asset_params.resource, asset_params.escapeFilename, extension,
+			resource_base_path, processed_resource_path);
 
-		return LoadResourcePathFromProcessedResourcePaths(complete_resource_path,
-			file_type, enm, escape_filename, sort_keys);
+		return LoadResourcePathFromProcessedResourcePaths(processed_resource_path, asset_params, enm, status);
 	}
 
-	bool LoadResourcePathFromProcessedResourcePaths(AssetParameters &asset_params, EvaluableNodeManager *enm,
-		std::string &resource_base_path, EntityExternalInterface::LoadEntityStatus &status);
-
-	//Stores the code to the corresponding resource path
-	// sets resource_base_path to the resource path without the extension
-	bool StoreResourcePath(EvaluableNode *code, AssetParameters &asset_params, std::string &resource_base_path,
-		EvaluableNodeManager *enm)
+	//Stores the code to the resource specified in asset_params
+	bool StoreResourcePath(EvaluableNode *code, AssetParameters &asset_params, EvaluableNodeManager *enm)
 	{
-		std::string extension, complete_resource_path;
-		PreprocessFileNameAndType(asset_params.resource, asset_params.escapeFilename, extension, resource_base_path, complete_resource_path);
+		std::string extension, resource_base_path, processed_resource_path;
+		PreprocessFileNameAndType(asset_params.resource, asset_params.escapeFilename, extension,
+			resource_base_path, processed_resource_path);
 
-		return StoreResourcePathFromProcessedResourcePaths(code, complete_resource_path,
-			file_type, enm, escape_filename, sort_keys);
+		return StoreResourcePathFromProcessedResourcePath(code, processed_resource_path, asset_params, enm);
 	}
-
-	bool StoreResourcePathFromProcessedResourcePaths(EvaluableNode *code,
-		AssetParameters &asset_params, EvaluableNodeManager *enm);
 
 	//Loads an entity, including contained entities, etc. from the resource path specified
 	// if persistent is true, then it will keep the resource updated based on any calls to UpdateEntity
@@ -121,14 +113,14 @@ public:
 			EvaluableNodeReference flattened_entity = EntityManipulation::FlattenEntity(&entity->evaluableNodeManager,
 				entity, *all_contained_entities, include_rand_seeds, parallel_create);
 
-			bool all_stored_successfully = AssetManager::StoreResourcePathFromProcessedResourcePaths(flattened_entity,
+			bool all_stored_successfully = AssetManager::StoreResourcePathFromProcessedResourcePath(flattened_entity,
 				complete_resource_path, file_type, &entity->evaluableNodeManager, escape_filename, sort_keys, pretty_print);
 
 			entity->evaluableNodeManager.FreeNodeTreeIfPossible(flattened_entity);
 			return all_stored_successfully;
 		}
 
-		bool all_stored_successfully = AssetManager::StoreResourcePathFromProcessedResourcePaths(entity->GetRoot(),
+		bool all_stored_successfully = AssetManager::StoreResourcePathFromProcessedResourcePath(entity->GetRoot(),
 			complete_resource_path, file_type, &entity->evaluableNodeManager, escape_filename, sort_keys);
 
 		//store any metadata like random seed
@@ -141,7 +133,7 @@ public:
 
 		std::string metadata_extension = FILE_EXTENSION_AMLG_METADATA;
 		//don't reescape the path here, since it has already been done
-		StoreResourcePathFromProcessedResourcePaths(&en_assoc, metadata_filename, metadata_extension, &entity->evaluableNodeManager, false, sort_keys, pretty_print);
+		StoreResourcePathFromProcessedResourcePath(&en_assoc, metadata_filename, metadata_extension, &entity->evaluableNodeManager, false, sort_keys, pretty_print);
 
 		//store contained entities
 		if(store_contained_entities && entity->GetContainedEntities().size() > 0)
@@ -277,7 +269,7 @@ public:
 		if(asset_params.resource.empty())
 			persistentEntities.erase(entity);
 		else
-			persistentEntities.emplace(entity, asset_params);
+			persistentEntities.emplace(entity, std::make_unique<AssetParameters>(asset_params));
 	}
 
 	inline bool DoesEntityHaveRootPermission(Entity *entity)
@@ -359,6 +351,12 @@ public:
 
 private:
 
+	EvaluableNodeReference LoadResourcePathFromProcessedResourcePaths(std::string &processed_resource_path,
+		AssetParameters &asset_params, EvaluableNodeManager *enm, EntityExternalInterface::LoadEntityStatus &status);
+
+	bool StoreResourcePathFromProcessedResourcePath(EvaluableNode *code, std::string &processed_resource_path,
+		AssetParameters &asset_params, EvaluableNodeManager *enm);
+
 	//recursively deletes persistent entities
 	void DestroyPersistentEntity(Entity *entity);
 
@@ -369,10 +367,10 @@ private:
 	// escaping the resource path if escape_resource_path is true
 	// populates resource_base_path, complete_resource_path, and extension
 	static void PreprocessFileNameAndType(std::string &resource_path, bool escape_resource_path,
-		std::string &extension, std::string &resource_base_path, std::string &complete_resource_path);
+		std::string &extension, std::string &resource_base_path, std::string &processed_resource_path);
 
 	//entities that need changes stored, and the resource paths to store them
-	CompactHashMap<Entity *, std::unique_ptr<AssetParameters>> persistentEntities;
+	FastHashMap<Entity *, std::unique_ptr<AssetParameters>> persistentEntities;
 
 	//entities that have root permissions
 	Entity::EntitySetType rootEntities;

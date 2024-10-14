@@ -621,8 +621,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, bo
 	}
 
 	EntityExternalInterface::LoadEntityStatus status;
-	std::string resource_base_path;
-	return asset_manager.LoadResourcePath(asset_params, evaluableNodeManager, resource_base_path, status);
+	return asset_manager.LoadResourcePath(asset_params, evaluableNodeManager, status);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode *en, bool immediate_result)
@@ -739,9 +738,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, b
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
 
-	std::string resource_base_path;
-	bool successful_save = asset_manager.StoreResourcePath(to_store, asset_params,
-		resource_base_path, evaluableNodeManager);
+	bool successful_save = asset_manager.StoreResourcePath(to_store, asset_params, evaluableNodeManager);
 
 	return ReuseOrAllocReturn(to_store, successful_save, immediate_result);
 }

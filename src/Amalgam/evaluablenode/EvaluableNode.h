@@ -777,13 +777,13 @@ public:
 		if(found_value != end(mcn))
 		{
 			if constexpr(std::is_same<T, bool>::value)
-				return EvaluableNode::IsTrue(found_value->second);
+				value = EvaluableNode::IsTrue(found_value->second);
 			else if constexpr(std::is_same<T, double>::value)
-				return EvaluableNode::ToNumber(found_value->second);
+				value = EvaluableNode::ToNumber(found_value->second);
 			else if constexpr(std::is_same<T, std::string>::value)
-				return EvaluableNode::ToStringPreservingOpcodeType(found_value->second);
+				value = EvaluableNode::ToStringPreservingOpcodeType(found_value->second);
 			else
-				return found_value->second;
+				value = found_value->second;
 		}
 	}
 

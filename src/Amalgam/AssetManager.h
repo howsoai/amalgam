@@ -120,34 +120,36 @@ public:
 			all_contained_entities = &erbr;
 		}
 
-		//TODO 21711: finish the rest of this method
-
 		if( (file_type == FILE_EXTENSION_AMALGAM || == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE) && flatten)
 		{
 			EvaluableNodeReference flattened_entity = EntityManipulation::FlattenEntity(&entity->evaluableNodeManager,
 				entity, *all_contained_entities, include_rand_seeds, parallel_create);
 
-			bool all_stored_successfully = AssetManager::StoreResourcePathFromProcessedResourcePath(flattened_entity,
-				processed_resource_path, file_type, &entity->evaluableNodeManager, escape_filename, sort_keys, pretty_print);
+			bool all_stored_successfully = AssetManager::StoreResource(flattened_entity,
+				asset_params, &entity->evaluableNodeManager);
 
 			entity->evaluableNodeManager.FreeNodeTreeIfPossible(flattened_entity);
 			return all_stored_successfully;
 		}
 
-		bool all_stored_successfully = AssetManager::StoreResourcePathFromProcessedResourcePath(entity->GetRoot(),
-			processed_resource_path, file_type, &entity->evaluableNodeManager, escape_filename, sort_keys);
+		bool all_stored_successfully = AssetManager::StoreResource(entity->GetRoot(),
+			asset_params, &entity->evaluableNodeManager);
 
-		//store any metadata like random seed
-		std::string metadata_filename = resource_base_path + "." + FILE_EXTENSION_AMLG_METADATA;
-		EvaluableNode en_assoc(ENT_ASSOC);
-		EvaluableNode en_rand_seed(ENT_STRING, entity->GetRandomState());
-		EvaluableNode en_version(ENT_STRING, AMALGAM_VERSION_STRING);
-		en_assoc.SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_rand_seed), &en_rand_seed);
-		en_assoc.SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_version), &en_version);
+		if(asset_params.resourceType == FILE_EXTENSION_AMALGAM)
+		{
+			//store any metadata like random seed
+			AssetParameters metadata_asset_params = asset_params.CreateAssetParametersForAssociatedResource(FILE_EXTENSION_AMLG_METADATA);
 
-		std::string metadata_extension = FILE_EXTENSION_AMLG_METADATA;
-		//don't reescape the path here, since it has already been done
-		StoreResourcePathFromProcessedResourcePath(&en_assoc, metadata_filename, metadata_extension, &entity->evaluableNodeManager, false, sort_keys, pretty_print);
+			EvaluableNode en_assoc(ENT_ASSOC);
+			EvaluableNode en_rand_seed(ENT_STRING, entity->GetRandomState());
+			EvaluableNode en_version(ENT_STRING, AMALGAM_VERSION_STRING);
+			en_assoc.SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_rand_seed), &en_rand_seed);
+			en_assoc.SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_version), &en_version);
+
+			StoreResource(&en_assoc, metadata_asset_params, &entity->evaluableNodeManager);
+		}
+
+		//TODO 21711: finish the rest of this method
 
 		//store contained entities
 		if(store_contained_entities && entity->GetContainedEntities().size() > 0)
@@ -171,9 +173,10 @@ public:
 					new_resource_path = resource_base_path + ce_escaped_filename + "." + file_type;
 				}
 				else
+				{
 					new_resource_path = resource_base_path + contained_entity->GetId() + "." + file_type;
+				}
 
-				//TODO 21711: change what is stored here to include flags
 				//don't escape filename again because it's already escaped in this loop
 				bool stored_successfully = StoreEntityToResource(contained_entity, new_resource_path, file_type,
 					false, true, escape_filename, escape_contained_filenames, pretty_print, sort_keys,

@@ -348,7 +348,7 @@ void AssetManager::CreateEntity(Entity *entity)
 	Concurrency::ReadLock lock(persistentEntitiesMutex);
 #endif
 
-	//TODO 21711: finish the rest of this method
+	//TODO 21711: finish the rest of this method, also need to potentially crawl back up container entities like update
 
 	//early out if no persistent entities
 	if(persistentEntities.size() == 0)

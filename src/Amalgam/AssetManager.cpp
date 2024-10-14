@@ -322,7 +322,8 @@ Entity *AssetManager::LoadEntityFromResource(AssetParameters &asset_params, bool
 		std::string default_seed = new_entity->CreateRandomStreamFromStringAndRand(entity_name);
 
 		std::string ce_resource_base_path = contained_entities_directory + ce_file_base;
-		AssetParameters ce_asset_params = asset_params.CreateAssetParametersForContainedResource(ce_resource_base_path);
+		AssetParameters ce_asset_params
+			= asset_params.CreateAssetParametersForContainedResourceByResourceBasePath(ce_resource_base_path);
 		
 		Entity *contained_entity = LoadEntityFromResource(ce_asset_params, persistent,
 			default_seed, calling_interpreter, status);
@@ -348,51 +349,22 @@ void AssetManager::CreateEntity(Entity *entity)
 	Concurrency::ReadLock lock(persistentEntitiesMutex);
 #endif
 
-	//TODO 21711: finish the rest of this method, also need to potentially crawl back up container entities like update
-
-	//early out if no persistent entities
-	if(persistentEntities.size() == 0)
+	Entity *container = entity->GetContainer();
+	auto pe_entry = persistentEntities.find(container);
+	if(pe_entry == end(persistentEntities))
 		return;
+	auto &container_asset_params = *pe_entry->second;
 
-	Entity *cur = entity->GetContainer();
-	std::string slice_path;
-	std::string filename;
-	std::string extension = defaultEntityExtension;
-	std::string traversal_path = "";
-	std::string escaped_entity_id = FilenameEscapeProcessor::SafeEscapeFilename(entity->GetId());
-	std::string id_suffix = "/" + escaped_entity_id + "." + defaultEntityExtension;
-	while(cur != nullptr)
+	//if flattened, then just need to update it or the appropriate container
+	if(container_asset_params.flatten)
 	{
-		const auto &pe = persistentEntities.find(cur);
-		if(pe != end(persistentEntities))
-		{
-			Platform_SeparatePathFileExtension(pe->second, slice_path, filename, extension);
-			//create contained entity directory in case it doesn't currently exist
-			std::string new_path = slice_path + filename + traversal_path;
-			std::error_code ec;
-			std::filesystem::create_directory(new_path, ec);
-
-			if(!ec)
-			{
-				new_path += id_suffix;
-				//TODO 21711: change what is stored here to include flags
-				StoreEntityToResource(entity, new_path, extension, false, true, false, true, false);
-			}
-			else
-			{
-				std::cerr << "Could not create directory: " << new_path << std::endl;
-			}
-
-		}
-
-		//don't need to continue and allocate extra traversal path if already at outermost entity
-		Entity *cur_container = cur->GetContainer();
-		if(cur_container == nullptr)
-			break;
-
-		escaped_entity_id = FilenameEscapeProcessor::SafeEscapeFilename(cur->GetId());
-		traversal_path = "/" + escaped_entity_id + traversal_path;
-		cur = cur_container;
+		UpdateEntity(container);
+	}
+	else
+	{
+		AssetParameters ce_asset_params
+			= container_asset_params.CreateAssetParametersForContainedResourceByEntityId(entity->GetId());
+		StoreEntityToResource(entity, ce_asset_params, true, false);
 	}
 }
 

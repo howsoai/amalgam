@@ -42,13 +42,36 @@ public:
 		//attempt to extract the file_type from the file extension on the resource
 		AssetParameters(std::string _resource, std::string file_type, bool is_entity);
 
-		//initializes in a way intended for contained entities, will inherit parameters
+		//initializes in a way intended for contained entities for _resource_base_path, will inherit parameters
 		//but update with the new resource_base_path
-		inline AssetParameters CreateAssetParametersForContainedResource(std::string &_resource_base_path)
+		inline AssetParameters CreateAssetParametersForContainedResourceByResourceBasePath(std::string _resource_base_path)
 		{
 			AssetParameters new_params(*this);
 			new_params.resourceBasePath = _resource_base_path;
 			new_params.resource = _resource_base_path + "." + extension;
+
+			//since it is contained, overwrite escapeResourceName
+			new_params.escapeResourceName = escapeContainedResourceNames;
+
+			return new_params;
+		}
+
+		//initializes in a way intended for contained entities for the given contained entity_id, will inherit parameters
+		//but update with the new resource_base_path
+		inline AssetParameters CreateAssetParametersForContainedResourceByEntityId(const std::string &entity_id)
+		{
+			AssetParameters new_params(*this);
+			if(escapeContainedResourceNames)
+			{
+				std::string &ce_escaped_filename = FilenameEscapeProcessor::SafeEscapeFilename(entity_id);
+				new_params.resourceBasePath = resourceBasePath + "/" + ce_escaped_filename;
+			}
+			else
+			{
+				new_params.resourceBasePath = resourceBasePath + "/" + entity_id;
+			}
+
+			new_params.resource = new_params.resourceBasePath + "." + extension;
 
 			//since it is contained, overwrite escapeResourceName
 			new_params.escapeResourceName = escapeContainedResourceNames;
@@ -115,15 +138,17 @@ public:
 			if(store_contained_entities || asset_params.flatten)
 				erbr = entity->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReferenceType>();
 			else
-				erbr->bufferReference.emplace_back(EntityReferenceType(entity));
+				erbr->emplace_back(EntityReferenceType(entity));
 
 			all_contained_entities = &erbr;
 		}
 
-		if( (file_type == FILE_EXTENSION_AMALGAM || == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE) && flatten)
+		if(asset_params.flatten
+			&& (asset_params.resourceType == FILE_EXTENSION_AMALGAM
+				|| asset_params.resourceType == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE))
 		{
 			EvaluableNodeReference flattened_entity = EntityManipulation::FlattenEntity(&entity->evaluableNodeManager,
-				entity, *all_contained_entities, include_rand_seeds, parallel_create);
+				entity, *all_contained_entities, asset_params.includeRandSeeds, asset_params.parallelCreate);
 
 			bool all_stored_successfully = StoreResource(flattened_entity,
 				asset_params, &entity->evaluableNodeManager);
@@ -171,18 +196,7 @@ public:
 				//store any contained entities
 				for(auto contained_entity : entity->GetContainedEntities())
 				{
-					std::string ce_resource_base_path;
-					if(asset_params.escapeContainedResourceNames)
-					{
-						const std::string &ce_escaped_filename = FilenameEscapeProcessor::SafeEscapeFilename(contained_entity->GetId());
-						ce_resource_base_path = asset_params.resourceBasePath + "/" + ce_escaped_filename;
-					}
-					else
-					{
-						ce_resource_base_path = asset_params.resourceBasePath + "/" + contained_entity->GetId();
-					}
-
-					AssetParameters ce_asset_params = asset_params.CreateAssetParametersForContainedResource(ce_resource_base_path);
+					AssetParameters ce_asset_params = asset_params.CreateAssetParametersForContainedResourceByEntityId(contained_entity->GetId());
 
 					//don't escape filename again because it's already escaped in this loop
 					bool stored_successfully = StoreEntityToResource(contained_entity, ce_asset_params, persistent, true, all_contained_entities);
@@ -216,7 +230,7 @@ public:
 			//that is persistent and store it out with all its contained entities
 			if(pe_entry->second->flatten)
 			{
-				Entity *container = pe->first->GetContainer();
+				Entity *container = entity->GetContainer();
 
 				while(true)
 				{
@@ -227,19 +241,19 @@ public:
 					}
 
 					auto container_pe_entry = persistentEntities.find(container);
-					if(container_pe == end(persistentEntities))
+					if(container_pe_entry == end(persistentEntities))
 					{
 						StoreEntityToResource(entity, *pe_entry->second, true, false, all_contained_entities);
 						break;
 					}
 
 					entity = container;
-					pe_entry = container_pe;
+					pe_entry = container_pe_entry;
 				}
 			}
 			else //just update the individual entity
 			{
-				StoreEntityToResource(entity, *asset_params, true, false, all_contained_entities);
+				StoreEntityToResource(entity, *pe_entry->second, true, false, all_contained_entities);
 			}
 		}
 	}

@@ -237,7 +237,7 @@ PLATFORM_MAIN_CONSOLE
 		EntityExternalInterface::LoadEntityStatus status;
 		AssetManager::AssetParameters asset_params(amlg_file_to_run, "", true);
 		std::string file_type = "";
-		Entity *entity = asset_manager.LoadEntityFromResourcePath(asset_params, false, random_seed, nullptr, status);
+		Entity *entity = asset_manager.LoadEntityFromResource(asset_params, false, random_seed, nullptr, status);
 
 		if(!status.loaded)
 			return 1;

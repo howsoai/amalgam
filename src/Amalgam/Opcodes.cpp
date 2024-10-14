@@ -321,8 +321,8 @@ void StringInternPool::InitializeStaticStrings()
 	//file storage options
 	EmplaceStaticString(ENBISI_include_rand_seeds, "include_rand_seeds");
 	EmplaceStaticString(ENBISI_parallel_create, "parallel_create");
-	EmplaceStaticString(ENBISI_escape_filename, "escape_filename");
-	EmplaceStaticString(ENBISI_escape_contained_filenames, "escape_contained_filenames");
+	EmplaceStaticString(ENBISI_escape_resource_name, "escape_resource_name");
+	EmplaceStaticString(ENBISI_escape_contained_resource_names, "escape_contained_resource_names");
 	EmplaceStaticString(ENBISI_transactional, "transactional");
 	EmplaceStaticString(ENBISI_pretty_print, "pretty_print");
 	EmplaceStaticString(ENBISI_flatten, "flatten");

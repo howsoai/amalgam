@@ -1343,15 +1343,15 @@ var data = [
 	},
 
 	{
-		"parameter" : "load string file_path [string file_type] [assoc params]",
+		"parameter" : "load string resource_path [string resource_type] [assoc params]",
 		"output" : "*",
 		"permissions" : "r",
-		"description" : "Loads the data specified by the resource in string.  Attempts to load the file type and parse it into appropriate data and evaluate to the corresponding code. The parameter escape_filename defaults to false, but if it is true, it will agressively escape filenames using only alphanumeric characters and the underscore, using underscore as an escape character.  If file_type is specified and not null, it will use the file_type specified instead of the extension of the file_path.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  Note that loading from a non-'.amlg' extension will only ever provide lists, assocs, numbers, and strings.",
+		"description" : "Loads the data specified by the resource in string.  Attempts to load the file type and parse it into appropriate data and evaluate to the corresponding code. The parameter escape_filename defaults to false, but if it is true, it will agressively escape filenames using only alphanumeric characters and the underscore, using underscore as an escape character.  If resource_type is specified and not null, it will use the resource_type specified instead of the extension of the resource_path.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  Note that loading from a non-'.amlg' extension will only ever provide lists, assocs, numbers, and strings.",
 		"example" : "(print (load \"my_directory/MyModule.amlg\"))"
 	},
 
 	{
-		"parameter" : "load_entity string file_path [id entity] [string file_type] [bool persistent] [assoc params]",
+		"parameter" : "load_entity string resource_path [id entity] [string resource_type] [bool persistent] [assoc params]",
 		"output" : "id",
 		"permissions" : "r",
 		"description" : "Loads an entity specified by the resource in string.  Attempts to load the file type and parse it into appropriate data and store it in the entity specified by id, following the same id creation rules as create_entities, except that if no id is specified, it may default to a name based on the resource if available.  If persistent is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  Options for the file I/O are specified as key-value pairs in params.  See File I/O for the file types and related params.",
@@ -1359,18 +1359,18 @@ var data = [
 	},
 
 	{
-		"parameter" : "store string file_path * node [string file_type] [assoc params]",
+		"parameter" : "store string resource_path * node [string resource_type] [assoc params]",
 		"output" : "bool",
 		"permissions" : "r",
-		"description" : "Stores the code specified by * to the resource in string. Returns true if successful, false if not. If file_type is specified and not null, it will use the file_type specified instead of the extension of the file_path.    Options for the file I/O are specified as key-value pairs in params.  See File I/O for the file types and related params.",
+		"description" : "Stores the code specified by * to the resource in string. Returns true if successful, false if not. If resource_type is specified and not null, it will use the resource_type specified instead of the extension of the resource_path.    Options for the file I/O are specified as key-value pairs in params.  See File I/O for the file types and related params.",
 		"example" : "(store \"my_directory/MyData.amlg\" (list 1 2 3))"
 	},
 
 	{
-		"parameter" : "store_entity string file_path id entity [string file_type] [bool persistent] [assoc params]",
+		"parameter" : "store_entity string resource_path id entity [string resource_type] [bool persistent] [assoc params]",
 		"output" : "bool",
 		"permissions" : "r",
-		"description" : "Stores the entity specified by the id to the resource in string. Returns true if successful, false if not. If file_type is specified and not null, it will use the file_type specified instead of the extension of the file_path.  If persistent is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  Options for the file I/O are specified as key-value pairs in params.  See File I/O for the file types and related params.",
+		"description" : "Stores the entity specified by the id to the resource in string. Returns true if successful, false if not. If resource_type is specified and not null, it will use the resource_type specified instead of the extension of the resource_path.  If persistent is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  Options for the file I/O are specified as key-value pairs in params.  See File I/O for the file types and related params.",
 		"example" : "(store_entity \"my_directory/MyData.amlg\" \"MyData\")"
 	},
 

@@ -42,14 +42,29 @@ public:
 		//attempt to extract the file_type from the file extension on the resource
 		AssetParameters(std::string _resource, std::string file_type, bool is_entity);
 
-		//sets the parameters based on whether 
-		void SetParams(EvaluableNode::AssocType &params);
+		//initializes in a way intended for contained entities, will inherit parameters
+		//but update with the new resource, as well as flags for contained entities
+		AssetParameters(std::string _resource, AssetParameters &inherit_from);
+
+		//initializes and returns new asset parameters for a file of the same name but different extension
+		inline AssetParameters CreateAssetParametersForAssociatedResource(std::string resource_type)
+		{
+			AssetParameters new_params(*this);
+			new_params.resourceType = resource_type;
+			new_params.resource = resourceBasePath + "." + resource_type;
+			return new_params;
+		}
+
+		//sets the parameters and updates resources based on params
+		void SetParamsAndUpdateResources(EvaluableNode::AssocType &params);
 
 		std::string resource;
-		std::string fileType;
+		std::string resourceBasePath;
+		std::string resourceType;
+		std::string extension;
 		bool includeRandSeeds;
-		bool escapeFilename;
-		bool escapeContainedFilenames;
+		bool escapeResourceName;
+		bool escapeContainedResourceNames;
 		bool transactional;
 		bool prettyPrint;
 		bool sortKeys;
@@ -60,53 +75,42 @@ public:
 
 	//Returns the code to the corresponding entity specified by asset_params using enm
 	//Additionally returns the updated resource_base_path for the file, as well as the status
-	EvaluableNodeReference LoadResourcePath(AssetParameters &asset_params, EvaluableNodeManager *enm,
-		EntityExternalInterface::LoadEntityStatus &status)
-	{
-		std::string extension, resource_base_path, processed_resource_path;
-		PreprocessFileNameAndType(asset_params.resource, asset_params.escapeFilename, extension,
-			resource_base_path, processed_resource_path);
-
-		return LoadResourcePathFromProcessedResourcePaths(processed_resource_path, asset_params, enm, status);
-	}
+	EvaluableNodeReference LoadResource(AssetParameters &asset_params, EvaluableNodeManager *enm,
+		EntityExternalInterface::LoadEntityStatus &status);
 
 	//Stores the code to the resource specified in asset_params
-	bool StoreResourcePath(EvaluableNode *code, AssetParameters &asset_params, EvaluableNodeManager *enm)
-	{
-		std::string extension, resource_base_path, processed_resource_path;
-		PreprocessFileNameAndType(asset_params.resource, asset_params.escapeFilename, extension,
-			resource_base_path, processed_resource_path);
+	bool StoreResource(EvaluableNode *code, AssetParameters &asset_params, EvaluableNodeManager *enm);
 
-		return StoreResourcePathFromProcessedResourcePath(code, processed_resource_path, asset_params, enm);
-	}
-
-	//Loads an entity, including contained entities, etc. from the resource path specified
+	//Loads an entity, including contained entities, etc. from the resource specified
 	// if persistent is true, then it will keep the resource updated based on any calls to UpdateEntity
 	//if the resource does not have a metadata file, will use default_random_seed as its seed
-	Entity *LoadEntityFromResourcePath(AssetParameters &asset_params, bool persistent,
+	Entity *LoadEntityFromResource(AssetParameters &asset_params, bool persistent,
 		std::string default_random_seed, Interpreter *calling_interpreter, EntityExternalInterface::LoadEntityStatus &status);
 
-	//Stores an entity, including contained entities, etc. from the resource path specified
+	//Stores an entity, including contained entities, etc. from the resource specified
 	// if persistent is true, then it will keep the resource updated based on any calls to UpdateEntity (will not make not persistent if was previously loaded as persistent)
 	// if all_contained_entities is nullptr, then it will be populated, as read locks are necessary for entities in multithreading
 	//returns true if successful
 	template<typename EntityReferenceType = EntityReadReference>
-	bool StoreEntityToResourcePath(Entity *entity, AssetParameters &asset_params, bool persistent,
+	bool StoreEntityToResource(Entity *entity, AssetParameters &asset_params, bool persistent,
+		bool store_contained_entities = true,
 		Entity::EntityReferenceBufferReference<EntityReferenceType> *all_contained_entities = nullptr)
 	{
 		if(entity == nullptr)
 			return false;
 
-		std::string resource_base_path;
-		std::string complete_resource_path;
-		PreprocessFileNameAndType(resource_path, escape_filename, file_type, resource_base_path, complete_resource_path);
-
 		Entity::EntityReferenceBufferReference<EntityReferenceType> erbr;
 		if(all_contained_entities == nullptr)
 		{
-			erbr = entity->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReferenceType>();
+			if(store_contained_entities || asset_params.flatten)
+				erbr = entity->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReferenceType>();
+			else
+				erbr->bufferReference.emplace_back(EntityReferenceType(entity));
+
 			all_contained_entities = &erbr;
 		}
+
+		//TODO 21711: finish the rest of this method
 
 		if( (file_type == FILE_EXTENSION_AMALGAM || == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE) && flatten)
 		{
@@ -114,14 +118,14 @@ public:
 				entity, *all_contained_entities, include_rand_seeds, parallel_create);
 
 			bool all_stored_successfully = AssetManager::StoreResourcePathFromProcessedResourcePath(flattened_entity,
-				complete_resource_path, file_type, &entity->evaluableNodeManager, escape_filename, sort_keys, pretty_print);
+				processed_resource_path, file_type, &entity->evaluableNodeManager, escape_filename, sort_keys, pretty_print);
 
 			entity->evaluableNodeManager.FreeNodeTreeIfPossible(flattened_entity);
 			return all_stored_successfully;
 		}
 
 		bool all_stored_successfully = AssetManager::StoreResourcePathFromProcessedResourcePath(entity->GetRoot(),
-			complete_resource_path, file_type, &entity->evaluableNodeManager, escape_filename, sort_keys);
+			processed_resource_path, file_type, &entity->evaluableNodeManager, escape_filename, sort_keys);
 
 		//store any metadata like random seed
 		std::string metadata_filename = resource_base_path + "." + FILE_EXTENSION_AMLG_METADATA;
@@ -161,7 +165,7 @@ public:
 
 				//TODO 21711: change what is stored here to include flags
 				//don't escape filename again because it's already escaped in this loop
-				bool stored_successfully = StoreEntityToResourcePath(contained_entity, new_resource_path, file_type,
+				bool stored_successfully = StoreEntityToResource(contained_entity, new_resource_path, file_type,
 					false, true, escape_filename, escape_contained_filenames, pretty_print, sort_keys,
 					include_rand_seeds, flatten, parallel_create);
 
@@ -184,40 +188,46 @@ public:
 	void UpdateEntity(Entity *entity,
 		Entity::EntityReferenceBufferReference<EntityReferenceType> *all_contained_entities = nullptr)
 	{
+		if(entity == nullptr)
+			return;
+
 	#ifdef MULTITHREAD_INTERFACE
 		Concurrency::ReadLock lock(persistentEntitiesMutex);
 	#endif
-		//early out if no persistent entities
-		if(persistentEntities.size() == 0)
-			return;
 
-		Entity *cur = entity;
-		std::string slice_path;
-		std::string filename;
-		std::string extension;
-		std::string traversal_path;
-
-		while(cur != nullptr)
+		//if persistent store only this entity, since only it is getting updated
+		auto pe_entry = persistentEntities.find(entity);
+		if(pe_entry != end(persistentEntities))
 		{
-			const auto &pe = persistentEntities.find(cur);
-			if(pe != end(persistentEntities))
+			//if the entity is flattened, then need to find top level container entity
+			//that is persistent and store it out with all its contained entities
+			if(pe_entry->second->flatten)
 			{
-				Platform_SeparatePathFileExtension(pe->second, slice_path, filename, extension);
-				std::string new_path = slice_path + filename + traversal_path + "." + extension;
+				Entity *container = pe->first->GetContainer();
 
-				//the outermost file is already escaped, but persistent entities must be recursively escaped
-				StoreEntityToResourcePath(entity, new_path, extension,
-					false, false, false, true, false, false, true, false, false, all_contained_entities);
+				while(true)
+				{
+					if(container == nullptr)
+					{
+						StoreEntityToResource(entity, *pe_entry->second, true, false, all_contained_entities);
+						break;
+					}
+
+					auto container_pe_entry = persistentEntities.find(container);
+					if(container_pe == end(persistentEntities))
+					{
+						StoreEntityToResource(entity, *pe_entry->second, true, false, all_contained_entities);
+						break;
+					}
+
+					entity = container;
+					pe_entry = container_pe;
+				}
 			}
-
-			//don't need to continue and allocate extra traversal path if already at outermost entity
-			Entity *cur_container = cur->GetContainer();
-			if(cur_container == nullptr)
-				break;
-
-			std::string escaped_entity_id = FilenameEscapeProcessor::SafeEscapeFilename(cur->GetId());
-			traversal_path = "/" + escaped_entity_id + traversal_path;
-			cur = cur_container;
+			else //just update the individual entity
+			{
+				StoreEntityToResource(entity, *asset_params, true, false, all_contained_entities);
+			}
 		}
 	}
 
@@ -231,8 +241,7 @@ public:
 
 		RemoveRootPermissions(entity);
 
-		if(persistentEntities.size() > 0)
-			DestroyPersistentEntity(entity);
+		DestroyPersistentEntity(entity);
 	}
 
 	//sets the entity's root permission to permission
@@ -261,12 +270,14 @@ public:
 	{	return persistentEntities.find(entity) != end(persistentEntities);	}
 
 	//sets the entity's persistent path
-	inline void SetEntityPersistentPath(Entity *entity, AssetParameters &asset_params)
+	inline void SetEntityPersistentPath(Entity *entity, std::string &processed_resource_path,
+		AssetParameters *asset_params = nullptr)
 	{
 	#ifdef MULTITHREAD_INTERFACE
 		Concurrency::WriteLock lock(persistentEntitiesMutex);
 	#endif
-		if(asset_params.resource.empty())
+
+		if(processed_resource_path.empty() || asset_params == nullptr)
 			persistentEntities.erase(entity);
 		else
 			persistentEntities.emplace(entity, std::make_unique<AssetParameters>(asset_params));
@@ -351,23 +362,11 @@ public:
 
 private:
 
-	EvaluableNodeReference LoadResourcePathFromProcessedResourcePaths(std::string &processed_resource_path,
-		AssetParameters &asset_params, EvaluableNodeManager *enm, EntityExternalInterface::LoadEntityStatus &status);
-
-	bool StoreResourcePathFromProcessedResourcePath(EvaluableNode *code, std::string &processed_resource_path,
-		AssetParameters &asset_params, EvaluableNodeManager *enm);
-
 	//recursively deletes persistent entities
 	void DestroyPersistentEntity(Entity *entity);
 
 	//recursively removes root permissions
 	void RemoveRootPermissions(Entity *entity);
-
-	//using resource_path as the semantically intended path,
-	// escaping the resource path if escape_resource_path is true
-	// populates resource_base_path, complete_resource_path, and extension
-	static void PreprocessFileNameAndType(std::string &resource_path, bool escape_resource_path,
-		std::string &extension, std::string &resource_base_path, std::string &processed_resource_path);
 
 	//entities that need changes stored, and the resource paths to store them
 	FastHashMap<Entity *, std::unique_ptr<AssetParameters>> persistentEntities;

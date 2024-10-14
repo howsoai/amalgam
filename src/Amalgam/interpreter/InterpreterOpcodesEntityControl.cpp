@@ -615,13 +615,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, bo
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[3]);
 
 		if(EvaluableNode::IsAssociativeArray(params))
-			asset_params.SetParams(params->GetMappedChildNodesReference());
+			asset_params.SetParamsAndUpdateResources(params->GetMappedChildNodesReference());
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
 
 	EntityExternalInterface::LoadEntityStatus status;
-	return asset_manager.LoadResourcePath(asset_params, evaluableNodeManager, status);
+	return asset_manager.LoadResource(asset_params, evaluableNodeManager, status);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode *en, bool immediate_result)
@@ -656,7 +656,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode 
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[4]);
 
 		if(EvaluableNode::IsAssociativeArray(params))
-			asset_params.SetParams(params->GetMappedChildNodesReference());
+			asset_params.SetParamsAndUpdateResources(params->GetMappedChildNodesReference());
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
@@ -678,7 +678,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode 
 	memoryModificationLock.unlock();
 #endif
 
-	Entity *loaded_entity = asset_manager.LoadEntityFromResourcePath(asset_params, persistent, random_seed, this, status);
+	Entity *loaded_entity = asset_manager.LoadEntityFromResource(asset_params, persistent, random_seed, this, status);
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is executing again
@@ -733,12 +733,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, b
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[3]);
 		
 		if(EvaluableNode::IsAssociativeArray(params))
-			asset_params.SetParams(params->GetMappedChildNodesReference());
+			asset_params.SetParamsAndUpdateResources(params->GetMappedChildNodesReference());
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
 
-	bool successful_save = asset_manager.StoreResourcePath(to_store, asset_params, evaluableNodeManager);
+	bool successful_save = asset_manager.StoreResource(to_store, asset_params, evaluableNodeManager);
 
 	return ReuseOrAllocReturn(to_store, successful_save, immediate_result);
 }
@@ -775,7 +775,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[4]);
 
 		if(EvaluableNode::IsAssociativeArray(params))
-			asset_params.SetParams(params->GetMappedChildNodesReference());
+			asset_params.SetParamsAndUpdateResources(params->GetMappedChildNodesReference());
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
@@ -783,12 +783,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 	//get the id of the source entity to store.  Don't need to keep the reference because it won't be used once the source entity pointer is looked up
 	//retrieve the entity after other parameters to minimize time in locks
 	// and prevent deadlock if one of the params accessed the entity
-	//StoreEntityToResourcePath will read lock all contained entities appropriately
+	//StoreEntityToResource will read lock all contained entities appropriately
 	EntityReadReference source_entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[1]);
 	if(source_entity == nullptr || source_entity == curEntity)
 		return EvaluableNodeReference::Null();
 
-	bool stored_successfully = asset_manager.StoreEntityToResourcePath(source_entity, asset_params, persistent);
+	bool stored_successfully = asset_manager.StoreEntityToResource(source_entity, asset_params, persistent);
 
 	return AllocReturn(stored_successfully, immediate_result);
 }

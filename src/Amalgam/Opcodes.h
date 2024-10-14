@@ -535,8 +535,8 @@ enum EvaluableNodeBuiltInStringId
 
 	//file storage options
 	ENBISI_include_rand_seeds,
-	ENBISI_escape_filename,
-	ENBISI_escape_contained_filenames,
+	ENBISI_escape_resource_name,
+	ENBISI_escape_contained_resource_names,
 	ENBISI_transactional,
 	ENBISI_pretty_print,
 	//ENBISI_sort_keys -- covered in format below

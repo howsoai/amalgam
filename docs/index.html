@@ -406,8 +406,8 @@ function render() {
 	<h2>File I/O</h2>
 	These parameters apply to load and store opcodes and API calls:<br />
 <div class='td1'><span class="parameter">include_rand_seeds<span></div><div class='td2'>If true, attempts to include random seeds when storing and loading.</div><br />
-<div class='td1'><span class="parameter">escape_filename<span></div><div class='td2'>If true, will escape any characters in the filename that are not universally supported across platforms.</div><br />
-<div class='td1'><span class="parameter">escape_contained_filenames<span></div><div class='td2'>If true, then for any contained entities or file paths that extend the base file path, it will escape any characters in filenames that are not universally supported across platforms.  This only applies to file formats where the entities are not flattened into one file.</div><br />
+<div class='td1'><span class="parameter">escape_resource_name<span></div><div class='td2'>If true, will escape any characters in the resource or file name that are not universally supported across platforms.</div><br />
+<div class='td1'><span class="parameter">escape_contained_resource_names<span></div><div class='td2'>If true, then for any contained entities and their resource or file paths that extend the base file path, it will escape any characters in the names that are not universally supported across platforms.  This only applies to file formats where the entities are not flattened into one file.</div><br />
 <div class='td1'><span class="parameter">transactional<span></div><div class='td2'>If true, attempts to load and store files in a transactional manner, such that any interruption will not corrupt the file.  Not applicable to all file types.</div><br />
 <div class='td1'><span class="parameter">pretty_print<span></div><div class='td2'>If true, then any code stored will be pretty printed.</div><br />
 <div class='td1'><span class="parameter">sort_keys<span></div><div class='td2'>If true, then any associative arrays will be sorted by keys.</div><br />

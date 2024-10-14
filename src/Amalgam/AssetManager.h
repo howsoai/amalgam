@@ -149,48 +149,44 @@ public:
 			StoreResource(&en_assoc, metadata_asset_params, &entity->evaluableNodeManager);
 		}
 
-		//TODO 21711: finish the rest of this method
+		SetEntityPersistence(entity, persistent ? &asset_params : nullptr);
 
 		//store contained entities
 		if(store_contained_entities && entity->GetContainedEntities().size() > 0)
 		{
 			std::error_code ec;
 			//create directory in case it doesn't exist
-			std::filesystem::create_directories(resource_base_path, ec);
+			std::filesystem::create_directories(asset_params.resourceBasePath, ec);
 
 			//return that the directory could not be created
 			if(ec)
+			{
+				std::cerr << "Error creating directory: " << ec.message() << std::endl;
 				return false;
+			}
 
 			//store any contained entities
-			resource_base_path.append("/");
 			for(auto contained_entity : entity->GetContainedEntities())
 			{
-				std::string new_resource_path;
-				if(escape_contained_filenames)
+				std::string ce_resource_base_path;
+				if(asset_params.escapeContainedResourceNames)
 				{
 					const std::string &ce_escaped_filename = FilenameEscapeProcessor::SafeEscapeFilename(contained_entity->GetId());
-					new_resource_path = resource_base_path + ce_escaped_filename + "." + file_type;
+					ce_resource_base_path = asset_params.resourceBasePath + "/" + ce_escaped_filename;
 				}
 				else
 				{
-					new_resource_path = resource_base_path + contained_entity->GetId() + "." + file_type;
+					ce_resource_base_path = asset_params.resourceBasePath + "/" + contained_entity->GetId();
 				}
 
+				AssetParameters ce_asset_params = asset_params.CreateAssetParametersForContainedResource(ce_resource_base_path);
+
 				//don't escape filename again because it's already escaped in this loop
-				bool stored_successfully = StoreEntityToResource(contained_entity, new_resource_path, file_type,
-					false, true, escape_filename, escape_contained_filenames, pretty_print, sort_keys,
-					include_rand_seeds, flatten, parallel_create);
+				bool stored_successfully = StoreEntityToResource(contained_entity, ce_asset_params, persistent, true, all_contained_entities);
 
 				if(!stored_successfully)
 					return false;
 			}
-		}
-
-		if(update_persistence_location)
-		{
-			std::string new_persist_path = resource_base_path + "." + file_type;
-			SetEntityPersistence(entity, new_persist_path);
 		}
 
 		return all_stored_successfully;
@@ -291,9 +287,16 @@ public:
 	#endif
 
 		if(asset_params == nullptr)
+		{
 			persistentEntities.erase(entity);
+		}
 		else
-			persistentEntities.emplace(entity, std::make_unique<AssetParameters>(asset_params));
+		{
+			//attempt to insert and if inserted, then construct the new entry
+			auto inserted = persistentEntities.emplace(entity, nullptr);
+			if(inserted.second)
+				inserted.first->second = std::make_unique<AssetParameters>(*asset_params);
+		}
 	}
 
 	inline bool DoesEntityHaveRootPermission(Entity *entity)

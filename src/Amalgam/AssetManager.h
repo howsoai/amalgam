@@ -63,7 +63,7 @@ public:
 			AssetParameters new_params(*this);
 			if(escapeContainedResourceNames)
 			{
-				std::string &ce_escaped_filename = FilenameEscapeProcessor::SafeEscapeFilename(entity_id);
+				std::string ce_escaped_filename = FilenameEscapeProcessor::SafeEscapeFilename(entity_id);
 				new_params.resourceBasePath = resourceBasePath + "/" + ce_escaped_filename;
 			}
 			else

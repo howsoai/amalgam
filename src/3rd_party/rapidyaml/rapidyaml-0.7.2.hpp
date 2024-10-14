@@ -20201,7 +20201,7 @@ RYML_EXPORT int version_patch();
 #endif /* C4_YML_EXPORT_HPP_ */
 
 
-#if defined(C4_MSVC) || defined(C4_MINGW)
+#if defined(C4_MSVC) || defined(C4_MINGW) || defined(_MSC_VER)
 //included above:
 //#include <malloc.h>
 #else

@@ -81,13 +81,15 @@ jobs:
           # Don't immediately fail if GDB exits with a non-zero code
           set +e
 
-          cp out/build/${{ matrix.preset.arch }}-release-${{ matrix.preset.platform }}/amalgam-mt ./src/Amalgam/
-          cd src/Amalgam && pwd && ls
+          #cp out/build/${{ matrix.preset.arch }}-release-${{ matrix.preset.platform }}/amalgam-mt-afmi ./src/Amalgam/
+          #cd src/Amalgam && pwd && ls
 
           echo "Running tests..."
 
           # Capture GDB output
-          gdb_output=$(gdb -batch -ex run -ex "bt" --args ./amalgam-mt amlg_code/full_test.amlg)
+          #gdb_output=$(gdb -batch -ex run -ex "bt" --args ./amalgam-mt-afmi amlg_code/full_test.amlg)
+          cd /__w/amalgam/amalgam/out/build/amd64-release-linux
+          gdb_output=$(gdb -batch -ex run -ex "bt" --args /usr/bin/ctest --force-new-ctest-process -L smoke_test -j --schedule-random --output-on-failure --extra-verbose --output-log /__w/amalgam/amalgam/out/test/all_tests.log)
           echo "$gdb_output" | tail -n 150
 
           # Evaluate GDB exit code and exit this workflow accordingly

@@ -135,7 +135,7 @@ public:
 		Entity::EntityReferenceBufferReference<EntityReferenceType> erbr;
 		if(all_contained_entities == nullptr)
 		{
-			if(store_contained_entities)
+			if(store_contained_entities || asset_params.flatten)
 				erbr = entity->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReferenceType>();
 			else
 				erbr.Clear();
@@ -236,14 +236,14 @@ public:
 				{
 					if(container == nullptr)
 					{
-						StoreEntityToResource(entity, *pe_entry->second, true, false, all_contained_entities);
+						StoreEntityToResource(entity, *pe_entry->second, false, false, all_contained_entities);
 						break;
 					}
 
 					auto container_pe_entry = persistentEntities.find(container);
 					if(container_pe_entry == end(persistentEntities))
 					{
-						StoreEntityToResource(entity, *pe_entry->second, true, false, all_contained_entities);
+						StoreEntityToResource(entity, *pe_entry->second, false, false, all_contained_entities);
 						break;
 					}
 
@@ -253,7 +253,7 @@ public:
 			}
 			else //just update the individual entity
 			{
-				StoreEntityToResource(entity, *pe_entry->second, true, false, all_contained_entities);
+				StoreEntityToResource(entity, *pe_entry->second, false, false, all_contained_entities);
 			}
 		}
 	}
@@ -295,27 +295,6 @@ public:
 	// Checks if this entity specifically has been loaded as persistent
 	inline bool IsEntityDirectlyPersistent(Entity *entity)
 	{	return persistentEntities.find(entity) != end(persistentEntities);	}
-
-	//sets the entity's persistent path
-	//if asset_params is null, then it will clear persistence
-	inline void SetEntityPersistence(Entity *entity, AssetParameters *asset_params)
-	{
-	#ifdef MULTITHREAD_INTERFACE
-		Concurrency::WriteLock lock(persistentEntitiesMutex);
-	#endif
-
-		if(asset_params == nullptr)
-		{
-			persistentEntities.erase(entity);
-		}
-		else
-		{
-			//attempt to insert and if inserted, then construct the new entry
-			auto inserted = persistentEntities.emplace(entity, nullptr);
-			if(inserted.second)
-				inserted.first->second = std::make_unique<AssetParameters>(*asset_params);
-		}
-	}
 
 	inline bool DoesEntityHaveRootPermission(Entity *entity)
 	{
@@ -395,6 +374,24 @@ public:
 	bool debugMinimal;
 
 private:
+
+	//sets the entity's persistent path
+	//if asset_params is null, then it will clear persistence
+	//assumes persistentEntitiesMutex is locked
+	inline void SetEntityPersistence(Entity *entity, AssetParameters *asset_params)
+	{
+		if(asset_params != nullptr)
+		{
+			persistentEntities.erase(entity);
+		}
+		else
+		{
+			//attempt to insert and if inserted, then construct the new entry
+			auto inserted = persistentEntities.emplace(entity, nullptr);
+			if(inserted.second)
+				inserted.first->second = std::make_unique<AssetParameters>(*asset_params);
+		}
+	}
 
 	//clears all entity persistence recursively, assumes persistentEntitiesMutex is locked before calling
 	void DeepClearEntityPersistenceRecurse(Entity *entity)

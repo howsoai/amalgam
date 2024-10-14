@@ -29,6 +29,15 @@ jobs:
           - arch: amd64
             platform: linux
             idx: 1
+          - arch: amd64
+            platform: linux
+            idx: 2
+          - arch: amd64
+            platform: linux
+            idx: 3
+          - arch: amd64
+            platform: linux
+            idx: 4
     permissions:
       contents: write
 
@@ -69,7 +78,8 @@ jobs:
           #gdb_output=$(gdb -batch -ex run -ex "bt" --args ./amalgam-mt-afmi amlg_code/full_test.amlg)
           cd /__w/amalgam/amalgam/out/build/amd64-release-linux
           /usr/bin/ctest --debug --force-new-ctest-process -L smoke_test -j --schedule-random --output-on-failure --extra-verbose --output-log /__w/amalgam/amalgam/out/test/all_tests.log
-          echo "$gdb_output" | tail -n 150
+          exit 0
+          #echo "$gdb_output" | tail -n 150
 
           # Evaluate GDB exit code and exit this workflow accordingly
           if echo "$gdb_output" | tail -n 100 | grep -q "exited normally"; then

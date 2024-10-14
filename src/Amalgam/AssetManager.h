@@ -135,10 +135,10 @@ public:
 		Entity::EntityReferenceBufferReference<EntityReferenceType> erbr;
 		if(all_contained_entities == nullptr)
 		{
-			if(store_contained_entities || asset_params.flatten)
+			if(asset_params.flatten)
 				erbr = entity->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReferenceType>();
 			else
-				erbr->emplace_back(EntityReferenceType(entity));
+				erbr.Clear();
 
 			all_contained_entities = &erbr;
 		}

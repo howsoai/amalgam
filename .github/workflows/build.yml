@@ -29,27 +29,6 @@ jobs:
           - arch: amd64
             platform: linux
             idx: 1
-          - arch: amd64
-            platform: linux
-            idx: 2
-          - arch: amd64
-            platform: linux
-            idx: 3
-          - arch: amd64
-            platform: linux
-            idx: 4
-          - arch: amd64
-            platform: linux
-            idx: 5
-          - arch: amd64
-            platform: linux
-            idx: 6
-          - arch: amd64
-            platform: linux
-            idx: 7
-          - arch: amd64
-            platform: linux
-            idx: 8
     permissions:
       contents: write
 

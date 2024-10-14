@@ -81,23 +81,6 @@ AssetManager::AssetParameters::AssetParameters(std::string _resource, std::strin
 	}
 }
 
-AssetManager::AssetParameters::AssetParameters(std::string _resource, AssetParameters &inherit_from)
-{
-	resource = _resource;
-	resourceType = inherit_from.resourceType;
-
-	includeRandSeeds = inherit_from.includeRandSeeds;
-	//inherit escaping assuming it is contained for this particular constructor type
-	escapeResourceName = inherit_from.escapeContainedResourceNames;
-	escapeContainedResourceNames = inherit_from.escapeContainedResourceNames;
-	transactional = inherit_from.transactional;
-	prettyPrint = inherit_from.prettyPrint;
-	sortKeys = inherit_from.sortKeys;
-	flatten = inherit_from.flatten;
-	parallelCreate = inherit_from.parallelCreate;
-	executeOnLoad = inherit_from.executeOnLoad;
-}
-
 void AssetManager::AssetParameters::SetParamsAndUpdateResources(EvaluableNode::AssocType &params)
 {
 	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_include_rand_seeds, includeRandSeeds);
@@ -316,42 +299,41 @@ Entity *AssetManager::LoadEntityFromResource(AssetParameters &asset_params, bool
 		}
 	}
 
-	//TODO 21711: finish the rest of this method
-
 	if(persistent)
-		SetEntityPersistentPath(new_entity, processed_resource_path);
+		SetEntityPersistence(new_entity, &asset_params);
 
 	//load contained entities
-	if(load_contained_entities)
+
+	//iterate over all files in directory
+	std::string contained_entities_directory = asset_params.resourceBasePath + "/";
+	std::vector<std::string> file_names;
+	Platform_GetFileNamesOfType(file_names, contained_entities_directory, asset_params.extension);
+	for(auto &f : file_names)
 	{
-		//iterate over all files in directory
-		resource_base_path.append("/");
-		std::vector<std::string> file_names;
-		Platform_GetFileNamesOfType(file_names, resource_base_path, file_type);
-		for(auto &f : file_names)
+		std::string ce_path, ce_file_base, ce_extension;
+		Platform_SeparatePathFileExtension(f, ce_path, ce_file_base, ce_extension);
+
+		std::string entity_name;
+		if(asset_params.escapeContainedResourceNames)
+			entity_name = FilenameEscapeProcessor::SafeUnescapeFilename(ce_file_base);
+		else
+			entity_name = ce_file_base;
+
+		std::string default_seed = new_entity->CreateRandomStreamFromStringAndRand(entity_name);
+
+		std::string ce_resource_base_path = contained_entities_directory + ce_file_base;
+		AssetParameters ce_asset_params = asset_params.CreateAssetParametersForContainedResource(ce_resource_base_path);
+		
+		Entity *contained_entity = LoadEntityFromResource(ce_asset_params, persistent,
+			default_seed, calling_interpreter, status);
+
+		if(!status.loaded)
 		{
-			std::string ce_path, ce_file_base, ce_extension;
-			Platform_SeparatePathFileExtension(f, ce_path, ce_file_base, ce_extension);
-
-			std::string entity_name;
-			if(escape_contained_filenames)
-				entity_name = FilenameEscapeProcessor::SafeUnescapeFilename(ce_file_base);
-			else
-				entity_name = ce_file_base;
-
-			//don't escape filename again because it's already escaped in this loop
-			std::string default_seed = new_entity->CreateRandomStreamFromStringAndRand(entity_name);
-			std::string contained_resource_path = resource_base_path + ce_file_base + "." + ce_extension;
-			Entity *contained_entity = LoadEntityFromResource(contained_resource_path, file_type,
-				false, true, false, escape_contained_filenames, default_seed, calling_interpreter, status);
-			if(!status.loaded)
-			{
-				delete new_entity;
-				return nullptr;
-			}
-
-			new_entity->AddContainedEntity(contained_entity, entity_name);
+			delete new_entity;
+			return nullptr;
 		}
+
+		new_entity->AddContainedEntity(contained_entity, entity_name);
 	}
 
 	return new_entity;

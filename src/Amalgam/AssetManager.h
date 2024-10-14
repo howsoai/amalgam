@@ -43,8 +43,18 @@ public:
 		AssetParameters(std::string _resource, std::string file_type, bool is_entity);
 
 		//initializes in a way intended for contained entities, will inherit parameters
-		//but update with the new resource, as well as flags for contained entities
-		AssetParameters(std::string _resource, AssetParameters &inherit_from);
+		//but update with the new resource_base_path
+		inline AssetParameters CreateAssetParametersForContainedResource(std::string &_resource_base_path)
+		{
+			AssetParameters new_params(*this);
+			new_params.resourceBasePath = _resource_base_path;
+			new_params.resource = _resource_base_path + "." + extension;
+
+			//since it is contained, overwrite escapeResourceName
+			new_params.escapeResourceName = escapeContainedResourceNames;
+
+			return new_params;
+		}
 
 		//initializes and returns new asset parameters for a file of the same name but different extension
 		inline AssetParameters CreateAssetParametersForAssociatedResource(std::string resource_type)
@@ -177,7 +187,7 @@ public:
 		if(update_persistence_location)
 		{
 			std::string new_persist_path = resource_base_path + "." + file_type;
-			SetEntityPersistentPath(entity, new_persist_path);
+			SetEntityPersistence(entity, new_persist_path);
 		}
 
 		return all_stored_successfully;
@@ -270,14 +280,14 @@ public:
 	{	return persistentEntities.find(entity) != end(persistentEntities);	}
 
 	//sets the entity's persistent path
-	inline void SetEntityPersistentPath(Entity *entity, std::string &processed_resource_path,
-		AssetParameters *asset_params = nullptr)
+	//if asset_params is null, then it will clear persistence
+	inline void SetEntityPersistence(Entity *entity, AssetParameters *asset_params)
 	{
 	#ifdef MULTITHREAD_INTERFACE
 		Concurrency::WriteLock lock(persistentEntitiesMutex);
 	#endif
 
-		if(processed_resource_path.empty() || asset_params == nullptr)
+		if(asset_params == nullptr)
 			persistentEntities.erase(entity);
 		else
 			persistentEntities.emplace(entity, std::make_unique<AssetParameters>(asset_params));

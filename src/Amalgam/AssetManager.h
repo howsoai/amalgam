@@ -135,7 +135,7 @@ public:
 		Entity::EntityReferenceBufferReference<EntityReferenceType> erbr;
 		if(all_contained_entities == nullptr)
 		{
-			if(asset_params.flatten)
+			if(store_contained_entities)
 				erbr = entity->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReferenceType>();
 			else
 				erbr.Clear();

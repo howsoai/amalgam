@@ -77,7 +77,7 @@ jobs:
           # Capture GDB output
           #gdb_output=$(gdb -batch -ex run -ex "bt" --args ./amalgam-mt-afmi amlg_code/full_test.amlg)
           cd /__w/amalgam/amalgam/out/build/amd64-release-linux
-          /usr/bin/ctest --debug --force-new-ctest-process -L smoke_test -j --schedule-random --output-on-failure --extra-verbose --output-log /__w/amalgam/amalgam/out/test/all_tests.log
+          /usr/bin/ctest --force-new-ctest-process -L smoke_test -j --schedule-random --output-on-failure --extra-verbose --output-log /__w/amalgam/amalgam/out/test/all_tests.log
           exit 0
           #echo "$gdb_output" | tail -n 150
 

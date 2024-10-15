@@ -367,7 +367,7 @@ void AssetManager::CreateEntity(Entity *entity)
 	{
 		AssetParameters ce_asset_params
 			= container_asset_params.CreateAssetParametersForContainedResourceByEntityId(entity->GetId());
-		StoreEntityToResource(entity, ce_asset_params, true, false);
+		StoreEntityToResource(entity, ce_asset_params, true, true, false);
 	}
 }
 

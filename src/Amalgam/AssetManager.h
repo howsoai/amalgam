@@ -124,11 +124,14 @@ public:
 		std::string default_random_seed, Interpreter *calling_interpreter, EntityExternalInterface::LoadEntityStatus &status);
 
 	//Stores an entity, including contained entities, etc. from the resource specified
-	// if persistent is true, then it will keep the resource updated based on any calls to UpdateEntity (will not make not persistent if was previously loaded as persistent)
+	// if update_persistence is true, then it will consider the persistent parameter, otherwise it is ignored
+	// if persistent is true, then it will keep the resource updated, if false it will clear persistence
+	// if store_contained_entities is true, then it will also write all contained entities
 	// if all_contained_entities is nullptr, then it will be populated, as read locks are necessary for entities in multithreading
 	//returns true if successful
 	template<typename EntityReferenceType = EntityReadReference>
-	bool StoreEntityToResource(Entity *entity, AssetParameters &asset_params, bool persistent,
+	bool StoreEntityToResource(Entity *entity, AssetParameters &asset_params,
+		bool update_persistence, bool persistent,
 		bool store_contained_entities = true,
 		Entity::EntityReferenceBufferReference<EntityReferenceType> *all_contained_entities = nullptr)
 	{
@@ -177,8 +180,6 @@ public:
 			StoreResource(&en_assoc, metadata_asset_params, &entity->evaluableNodeManager);
 		}
 
-		SetEntityPersistence(entity, persistent ? &asset_params : nullptr);
-
 		//store contained entities
 		if(entity->GetContainedEntities().size() > 0)
 		{
@@ -199,16 +200,22 @@ public:
 				//store any contained entities
 				for(auto contained_entity : entity->GetContainedEntities())
 				{
-					AssetParameters ce_asset_params = asset_params.CreateAssetParametersForContainedResourceByEntityId(contained_entity->GetId());
+					AssetParameters ce_asset_params
+						= asset_params.CreateAssetParametersForContainedResourceByEntityId(contained_entity->GetId());
 
 					//don't escape filename again because it's already escaped in this loop
-					bool stored_successfully = StoreEntityToResource(contained_entity, ce_asset_params, persistent, true, all_contained_entities);
+					bool stored_successfully = StoreEntityToResource(contained_entity, ce_asset_params,
+						update_persistence, persistent, true, all_contained_entities);
 
 					if(!stored_successfully)
 						return false;
 				}
 			}
 		}
+
+		//update after done using asset_params, just in case it is deleted
+		if(update_persistence)
+			SetEntityPersistence(entity, persistent ? &asset_params : nullptr);
 
 		return true;
 	}
@@ -229,34 +236,35 @@ public:
 		auto pe_entry = persistentEntities.find(entity);
 		if(pe_entry != end(persistentEntities))
 		{
+			AssetParameters *asset_params = pe_entry->second.get();
 			//if the entity is flattened, then need to find top level container entity
 			//that is persistent and store it out with all its contained entities
-			if(pe_entry->second->flatten)
+			if(asset_params->flatten)
 			{
-				Entity *container = entity->GetContainer();
-
 				while(true)
 				{
+					Entity *container = entity->GetContainer();
+
 					if(container == nullptr)
 					{
-						StoreEntityToResource(entity, *pe_entry->second, false, false, all_contained_entities);
+						StoreEntityToResource(entity, *asset_params, false, true, false, all_contained_entities);
 						break;
 					}
 
 					auto container_pe_entry = persistentEntities.find(container);
 					if(container_pe_entry == end(persistentEntities))
 					{
-						StoreEntityToResource(entity, *pe_entry->second, false, false, all_contained_entities);
+						StoreEntityToResource(entity, *asset_params, false, true, false, all_contained_entities);
 						break;
 					}
 
 					entity = container;
-					pe_entry = container_pe_entry;
+					asset_params = container_pe_entry->second.get();
 				}
 			}
 			else //just update the individual entity
 			{
-				StoreEntityToResource(entity, *pe_entry->second, false, false, all_contained_entities);
+				StoreEntityToResource(entity, *asset_params, false, true, false, all_contained_entities);
 			}
 		}
 	}
@@ -389,10 +397,9 @@ private:
 		}
 		else
 		{
-			//attempt to insert and if inserted, then construct the new entry
-			auto inserted = persistentEntities.emplace(entity, nullptr);
-			if(inserted.second)
-				inserted.first->second = std::make_unique<AssetParameters>(*asset_params);
+			//need to create a copy just in case it is the same location
+			auto new_asset_params = std::make_unique<AssetParameters>(*asset_params);
+			persistentEntities.insert_or_assign(entity, std::move(new_asset_params));
 		}
 	}
 
@@ -412,7 +419,7 @@ private:
 	void RemoveRootPermissions(Entity *entity);
 
 	//entities that need changes stored, and the resource paths to store them
-	FastHashMap<Entity *, std::unique_ptr<AssetParameters>> persistentEntities;
+	std::unordered_map<Entity *, std::unique_ptr<AssetParameters>> persistentEntities;
 
 	//entities that have root permissions
 	Entity::EntitySetType rootEntities;

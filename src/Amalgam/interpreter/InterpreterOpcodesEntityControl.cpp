@@ -768,9 +768,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 			file_type = file_type_temp;
 	}
 
+	bool update_persistence = false;
 	bool persistent = false;
 	if(ocn.size() > 3)
-		persistent = InterpretNodeIntoBoolValue(ocn[3]);
+	{
+		auto persistence_node = InterpretNodeForImmediateUse(ocn[3]);
+		if(!EvaluableNode::IsNull(persistence_node))
+		{
+			update_persistence = true;
+			persistent = EvaluableNode::IsTrue(persistence_node);
+		}
+		evaluableNodeManager->FreeNodeTreeIfPossible(persistence_node);
+	}
 
 	AssetManager::AssetParameters asset_params(path, file_type, true);
 	if(ocn.size() > 4)
@@ -792,7 +801,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 	if(source_entity == nullptr || source_entity == curEntity)
 		return EvaluableNodeReference::Null();
 
-	bool stored_successfully = asset_manager.StoreEntityToResource(source_entity, asset_params, persistent);
+	bool stored_successfully = asset_manager.StoreEntityToResource(source_entity, asset_params,
+		update_persistence, persistent);
 
 	return AllocReturn(stored_successfully, immediate_result);
 }

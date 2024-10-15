@@ -127,7 +127,7 @@ bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &clon
 	AddEntityBundle(cloned_handle, new EntityListenerBundle(entity, wl, pl));
 
 	if(persistent)
-		asset_manager.StoreEntityToResource(entity, asset_params, persistent);
+		asset_manager.StoreEntityToResource(entity, asset_params, true, persistent);
 
 	return true;
 }
@@ -152,7 +152,7 @@ void EntityExternalInterface::StoreEntity(std::string &handle, std::string &path
 
 	enm.FreeNodeTree(file_params);
 
-	asset_manager.StoreEntityToResource(entity, asset_params, persistent);
+	asset_manager.StoreEntityToResource(entity, asset_params, true, persistent);
 }
 
 void EntityExternalInterface::ExecuteEntity(std::string &handle, std::string &label)

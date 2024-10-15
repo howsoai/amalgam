@@ -81,7 +81,7 @@ AssetManager::AssetParameters::AssetParameters(std::string _resource, std::strin
 	}
 }
 
-void AssetManager::AssetParameters::SetParamsAndUpdateResources(EvaluableNode::AssocType &params)
+void AssetManager::AssetParameters::SetParams(EvaluableNode::AssocType &params)
 {
 	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_include_rand_seeds, includeRandSeeds);
 	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_escape_resource_name, escapeResourceName);
@@ -92,7 +92,10 @@ void AssetManager::AssetParameters::SetParamsAndUpdateResources(EvaluableNode::A
 	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_flatten, flatten);
 	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_parallel_create, parallelCreate);
 	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_execute_on_load, executeOnLoad);
+}
 
+void AssetManager::AssetParameters::UpdateResources()
+{
 	//get file path based on the file being stored
 	std::string path, file_base;
 	Platform_SeparatePathFileExtension(resource, path, file_base, extension);

@@ -88,8 +88,11 @@ public:
 			return new_params;
 		}
 
-		//sets the parameters and updates resources based on params
-		void SetParamsAndUpdateResources(EvaluableNode::AssocType &params);
+		//sets the parameters
+		void SetParams(EvaluableNode::AssocType &params);
+
+		//updates resources based on the parameters -- should be called after SetParams
+		void UpdateResources();
 
 		std::string resource;
 		std::string resourceBasePath;

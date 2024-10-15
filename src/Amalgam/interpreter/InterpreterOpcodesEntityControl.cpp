@@ -615,10 +615,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, bo
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[3]);
 
 		if(EvaluableNode::IsAssociativeArray(params))
-			asset_params.SetParamsAndUpdateResources(params->GetMappedChildNodesReference());
+			asset_params.SetParams(params->GetMappedChildNodesReference());
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
+	asset_params.UpdateResources();
 
 	EntityExternalInterface::LoadEntityStatus status;
 	return asset_manager.LoadResource(asset_params, evaluableNodeManager, status);
@@ -656,10 +657,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode 
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[4]);
 
 		if(EvaluableNode::IsAssociativeArray(params))
-			asset_params.SetParamsAndUpdateResources(params->GetMappedChildNodesReference());
+			asset_params.SetParams(params->GetMappedChildNodesReference());
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
+	asset_params.UpdateResources();
 
 	//get destination if applicable
 	EntityWriteReference destination_entity_parent;
@@ -733,10 +735,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, b
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[3]);
 		
 		if(EvaluableNode::IsAssociativeArray(params))
-			asset_params.SetParamsAndUpdateResources(params->GetMappedChildNodesReference());
+			asset_params.SetParams(params->GetMappedChildNodesReference());
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
+	asset_params.UpdateResources();
 
 	bool successful_save = asset_manager.StoreResource(to_store, asset_params, evaluableNodeManager);
 
@@ -775,10 +778,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[4]);
 
 		if(EvaluableNode::IsAssociativeArray(params))
-			asset_params.SetParamsAndUpdateResources(params->GetMappedChildNodesReference());
+			asset_params.SetParams(params->GetMappedChildNodesReference());
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
+	asset_params.UpdateResources();
 
 	//get the id of the source entity to store.  Don't need to keep the reference because it won't be used once the source entity pointer is looked up
 	//retrieve the entity after other parameters to minimize time in locks

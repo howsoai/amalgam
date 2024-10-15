@@ -48,7 +48,8 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(st
 	EvaluableNode *file_params = EvaluableNodeJSONTranslation::JsonToEvaluableNode(&temp_enm, json_file_params);
 
 	if(EvaluableNode::IsAssociativeArray(file_params))
-		asset_params.SetParamsAndUpdateResources(file_params->GetMappedChildNodesReference());
+		asset_params.SetParams(file_params->GetMappedChildNodesReference());
+	asset_params.UpdateResources();
 
 	Entity *entity = asset_manager.LoadEntityFromResource(asset_params, persistent, rand_seed, nullptr, status);
 
@@ -108,7 +109,8 @@ bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &clon
 	EvaluableNode *file_params = EvaluableNodeJSONTranslation::JsonToEvaluableNode(&enm, json_file_params);
 
 	if(EvaluableNode::IsAssociativeArray(file_params))
-		asset_params.SetParamsAndUpdateResources(file_params->GetMappedChildNodesReference());
+		asset_params.SetParams(file_params->GetMappedChildNodesReference());
+	asset_params.UpdateResources();
 
 	PrintListener *pl = nullptr;
 	std::vector<EntityWriteListener *> wl;
@@ -145,7 +147,8 @@ void EntityExternalInterface::StoreEntity(std::string &handle, std::string &path
 	EvaluableNode *file_params = EvaluableNodeJSONTranslation::JsonToEvaluableNode(&enm, json_file_params);
 
 	if(EvaluableNode::IsAssociativeArray(file_params))
-		asset_params.SetParamsAndUpdateResources(file_params->GetMappedChildNodesReference());
+		asset_params.SetParams(file_params->GetMappedChildNodesReference());
+	asset_params.UpdateResources();
 
 	enm.FreeNodeTree(file_params);
 

@@ -66,7 +66,6 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 				if(command_tokens.size() > 3)
 					persistent = command_tokens[3];
 
-				//TODO 21711: handle quotes in json
 				if(command_tokens.size() > 4)
 					json_payload = command_tokens[4];
 
@@ -234,7 +233,7 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 		}
 		else if(command == "#" || command == "")
 		{
-			// Commment or blank lines used in execution dumps.
+			// Comment or blank lines used in execution dumps.
 		}
 		else
 		{

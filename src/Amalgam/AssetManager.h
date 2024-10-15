@@ -380,7 +380,7 @@ private:
 	//assumes persistentEntitiesMutex is locked
 	inline void SetEntityPersistence(Entity *entity, AssetParameters *asset_params)
 	{
-		if(asset_params != nullptr)
+		if(asset_params == nullptr)
 		{
 			persistentEntities.erase(entity);
 		}

@@ -5,6 +5,16 @@
  (print "--Amalgam Version--\n")
  (print (system "version") "\n")
 
+ ;create directory for storing temporary output
+ (declare (assoc
+	rmdir "rmdir /s /q "
+	rmfile "del /s /q "
+	slash "\\"))
+ (if (!= (system "os") "Windows")
+	(assign (assoc rmdir "rm -r " rmfile "rm " slash "/"))
+ )
+ (system "system" (concat "mkdir amlg_code" slash "test_output"))
+
  (print "--system_time--\n")
  (declare (assoc start_time (system_time)))
 
@@ -2316,8 +2326,8 @@
  (print "Compression difference: [" (difference_entities "ModuleTest" "ModuleTestDecompressed") "]\n")
 
  (print "store to .json in amlg format\n")
- (store "amlg_code/test_output/module_test.json" (list (assoc a 3 b 4) (assoc c "c" d (null))) (false) "amlg")
- (print (load "amlg_code/test_output/module_test.json" (false) "amlg"))
+ (store "amlg_code/test_output/module_test.json" (list (assoc a 3 b 4) (assoc c "c" d (null))) "amlg")
+ (print (load "amlg_code/test_output/module_test.json" "amlg"))
 
  (print "store to .json normally\n")
  (store "amlg_code/test_output/module_test.json" (list (assoc a 3 b 4) (assoc c "c" d (null))))
@@ -4317,15 +4327,15 @@
  (print "concurrent entity writes successful: " (= (range 1 1000) (sort concurrent_ent_writes)) "\n")
 
  (print "--clean-up test files--\n")
- (declare (assoc rmdir "rmdir /s /q " rmfile "del /s /q " slash "\\"))
- (if (!= (system "os") "Windows")
-	(assign (assoc rmdir "rm -r " rmfile "rm " slash "/"))
- )
+ ;use variables from the start
+ (print (concat rmdir "amlg_code" slash "test_output") "\n")
  (system "system" (concat rmdir "amlg_code" slash "test_output"))
+ (print (concat rmdir "amlg_code" slash "persistent_tree_test_root") "\n")
  (system "system" (concat rmdir "amlg_code" slash "persistent_tree_test_root"))
+ (print (concat rmfile "amlg_code" slash "persist_module_test" slash "psm.mdam") "\n")
  (system "system" (concat rmfile "amlg_code" slash "persist_module_test" slash "psm.mdam"))
+ (print (concat rmfile "amlg_code" slash "persist_module_test.mdam") "\n")
  (system "system" (concat rmfile "amlg_code" slash "persist_module_test.mdam"))
- (system "system" (concat rmfile "amlg_code" slash "persistent_tree_test_leaf.mdam"))
 
  (print "--total execution time--\n")
  (print (- (system_time) start_time) "\n")

@@ -183,16 +183,8 @@ public:
 		//store contained entities
 		if(entity->GetContainedEntities().size() > 0)
 		{
-			std::error_code ec;
-			//create directory in case it doesn't exist
-			std::filesystem::create_directories(asset_params.resourceBasePath, ec);
-
-			//return that the directory could not be created
-			if(ec)
-			{
-				std::cerr << "Error creating directory: " << ec.message() << std::endl;
+			if(!EnsureEntityToResourceCanContainEntities(asset_params))
 				return false;
-			}
 
 			//only actually store the contained entities if directed
 			if(store_contained_entities)
@@ -412,6 +404,23 @@ private:
 			DeepClearEntityPersistenceRecurse(contained_entity);
 	}
 
+	//creates any directory required to contain entities for asset_params
+	inline bool EnsureEntityToResourceCanContainEntities(AssetParameters &asset_params)
+	{
+		std::error_code ec;
+		//create directory in case it doesn't exist
+		std::filesystem::create_directories(asset_params.resourceBasePath, ec);
+
+		//return that the directory could not be created
+		if(ec)
+		{
+			std::cerr << "Error creating directory: " << ec.message() << std::endl;
+			return false;
+		}
+
+		return true;
+	}
+
 	//recursively deletes persistent entities
 	void DestroyPersistentEntity(Entity *entity);
 
@@ -419,7 +428,7 @@ private:
 	void RemoveRootPermissions(Entity *entity);
 
 	//entities that need changes stored, and the resource paths to store them
-	std::unordered_map<Entity *, std::unique_ptr<AssetParameters>> persistentEntities;
+	FastHashMap<Entity *, std::unique_ptr<AssetParameters>> persistentEntities;
 
 	//entities that have root permissions
 	Entity::EntitySetType rootEntities;

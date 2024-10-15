@@ -602,17 +602,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, bo
 		return EvaluableNodeReference::Null();
 
 	std::string file_type = "";
-	if(ocn.size() > 2)
+	if(ocn.size() > 1)
 	{
-		auto [valid, file_type_temp] = InterpretNodeIntoStringValue(ocn[2]);
+		auto [valid, file_type_temp] = InterpretNodeIntoStringValue(ocn[1]);
 		if(valid)
 			file_type = file_type_temp;
 	}
 
 	AssetManager::AssetParameters asset_params(path, file_type, false);
-	if(ocn.size() > 3)
+	if(ocn.size() > 2)
 	{
-		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[3]);
+		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[2]);
 
 		if(EvaluableNode::IsAssociativeArray(params))
 			asset_params.SetParams(params->GetMappedChildNodesReference());

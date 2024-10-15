@@ -1635,7 +1635,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 
 				return retval;
 			}
-			else if (submatches)
+			else if(submatches)
 			{
 				EvaluableNodeReference retval(evaluableNodeManager->AllocNode(ENT_LIST), true);
 

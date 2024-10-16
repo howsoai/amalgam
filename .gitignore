@@ -1,6 +1,9 @@
 ## Use glob syntax
 syntax: glob
 
+## Local files
+/local
+
 ## Files created by build
 src/Amalgam/AmalgamVersion.h
 

@@ -78,10 +78,10 @@ std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t>
 		{
 			pt.originalSource = std::filesystem::canonical(p).string();
 		}
-		catch(std::filesystem::filesystem_error &e)
+		catch(...)
 		{
-			//file doesn't exist
-			pt.originalSource = e.what();
+			//file doesn't exist, or was some other form of resource, just use original
+			pt.originalSource = *original_source;
 		}
 	}
 

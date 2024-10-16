@@ -15,7 +15,7 @@ var data = [
 		"output" : "*",
 		"permissions" : "r",
 		"new value" : "new",
-		"description" : "Executes system command specified by command.  See system commands in later table.",
+		"description" : "Executes system command specified by command.  See the system commands table for further information.",
 		"example" : "(system \"exit\")"
 	},
 
@@ -1343,42 +1343,34 @@ var data = [
 	},
 
 	{
-		"parameter" : "load string file_path [bool escape_filename] [string file_type]",
+		"parameter" : "load string resource_path [string resource_type] [assoc params]",
 		"output" : "*",
 		"permissions" : "r",
-		"description" : "Loads the data specified by the resource in string.  Attempts to load the file type and parse it into appropriate data and evaluate to the corresponding code. The parameter escape_filename defaults to false, but if it is true, it will agressively escape filenames using only alphanumeric characters and the underscore, using underscore as an escape character.  If file_type is specified and not null, it will use the file_type specified instead of the extension of the file_path.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  Note that loading from a non-'.amlg' extension will only ever provide lists, assocs, numbers, and strings.",
+		"description" : "Loads the data specified by the resource in string.  Attempts to load the file type and parse it into appropriate data and evaluate to the corresponding code. The parameter escape_filename defaults to false, but if it is true, it will agressively escape filenames using only alphanumeric characters and the underscore, using underscore as an escape character.  If resource_type is specified and not null, it will use the resource_type specified instead of the extension of the resource_path.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  Note that loading from a non-'.amlg' extension will only ever provide lists, assocs, numbers, and strings.",
 		"example" : "(print (load \"my_directory/MyModule.amlg\"))"
 	},
 
 	{
-		"parameter" : "load_entity string file_path [id entity] [bool escape_filename] [bool escape_contained_filenames] [string file_type]",
+		"parameter" : "load_entity string resource_path [id entity] [string resource_type] [bool persistent] [assoc params]",
 		"output" : "id",
 		"permissions" : "r",
-		"description" : "Loads an entity specified by the resource in string.  Attempts to load the file type and parse it into appropriate data and store it in the entity specified by id, following the same id creation rules as create_entities, except that if no id is specified, it may default to a name based on the resource if available.  The parameter escape_filename defaults to false, but if it is true, it will agressively escape filenames using only alphanumeric characters and the underscore, using underscore as an escape character.  If escape_contained_filenames is true, which is its default, it will also escape contained entity filenames. If file_type is specified and not null, it will use the file_type specified instead of the extension of the file_path.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  Note that loading from a non-'.amlg' extension will only ever provide lists, assocs, numbers, and strings.",
+		"description" : "Loads an entity specified by the resource in string.  Attempts to load the file type and parse it into appropriate data and store it in the entity specified by id, following the same id creation rules as create_entities, except that if no id is specified, it may default to a name based on the resource if available.  If persistent is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  Options for the file I/O are specified as key-value pairs in params.  See File I/O for the file types and related params.",
 		"example" : "(load_entity \"my_directory/MyModule.amlg\" \"MyModule\")"
 	},
 
 	{
-		"parameter" : "load_persistent_entity string file_path [id entity] [bool escape_filename]",
-		"output" : "id",
-		"permissions" : "r",
-		"description" : "Loads an entity specified by the resource in string.  Attempts to load the file type and parse it into appropriate data and store it in the entity specified by id, following the same id creation rules as create_entities. Any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  The parameter escape_filename defaults to false, but if it is true, it will agressively escape filenames using only alphanumeric characters and the underscore, using underscore as an escape character.  This command will escape contained filenames.  The file type of a persisted entity must match the extension of the file of the main entity.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  Note that loading from a non-'.amlg' extension will only ever provide lists, assocs, numbers, and strings.\n\n<b>WARNING:</b> Loading the same file as a persistent entity in more than one place will overwrite the file each time either entity is altered, but changes will not be propogated between the entities.",
-		"example" : "(load_persistent_entity \"my_directory/MyModule.amlg\" \"MyModule\")"
-	},
-
-	{
-		"parameter" : "store string file_path * node [bool escape_filename] [string file_type] [assoc params]",
+		"parameter" : "store string resource_path * node [string resource_type] [assoc params]",
 		"output" : "bool",
 		"permissions" : "r",
-		"description" : "Stores the code specified by * to the resource in string. Returns true if successful, false if not. The parameter escape_filename defaults to false, but if it is true, it will agressively escape filenames using only alphanumeric characters and the underscore, using underscore as an escape character.   If file_type is specified and not null, it will use the file_type specified instead of the extension of the file_path.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  Note that loading from a non-'.amlg' extension will only ever provide lists, assocs, numbers, and strings.  If params is specified, it is an assoc that contains key-value pairs describing the format.  The key \"sort_keys\" can be used to specify a boolean value, if true, then it will sort the keys, otherwise the default behavior is to emit the keys based on memory layout.",
+		"description" : "Stores the code specified by * to the resource in string. Returns true if successful, false if not. If resource_type is specified and not null, it will use the resource_type specified instead of the extension of the resource_path.    Options for the file I/O are specified as key-value pairs in params.  See File I/O for the file types and related params.",
 		"example" : "(store \"my_directory/MyData.amlg\" (list 1 2 3))"
 	},
 
 	{
-		"parameter" : "store_entity string file_path id entity [bool escape_filename] [bool escape_contained_filenames] [string file_type] [assoc params]",
+		"parameter" : "store_entity string resource_path id entity [string resource_type] [bool persistent] [assoc params]",
 		"output" : "bool",
 		"permissions" : "r",
-		"description" : "Stores the entity specified by the id to the resource in string. Returns true if successful, false if not. The parameter escape_filename defaults to false, but if it is true, it will agressively escape filenames using only alphanumeric characters and the underscore, using underscore as an escape character.  If escape_contained_filenames is true, which is its default, it will also escape contained entity filenames.  If file_type is specified and not null, it will use the file_type specified instead of the extension of the file_path.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  Note that loading from a non-'.amlg' extension will only ever provide lists, assocs, numbers, and strings.  If params is specified, it is an assoc that contains key-value pairs describing the format.  The key \"sort_keys\" can be used to specify a boolean value, if true, then it will sort the keys, otherwise the default behavior is to emit the keys based on memory layout.  The key \"include_rand_seeds\" can be used when storing caml files to indicate whether random seeds will be stored, which defaults to true.  The key \"parallel_create\" can be used when storing caml files to indicate whether creating entities will be performed in parallel when the caml is loaded, which defaults to false.",
+		"description" : "Stores the entity specified by the id to the resource in string. Returns true if successful, false if not. If resource_type is specified and not null, it will use the resource_type specified instead of the extension of the resource_path.  If persistent is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  Options for the file I/O are specified as key-value pairs in params.  See File I/O for the file types and related params.",
 		"example" : "(store_entity \"my_directory/MyData.amlg\" \"MyData\")"
 	},
 

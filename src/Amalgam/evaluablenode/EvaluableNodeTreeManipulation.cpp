@@ -2091,7 +2091,6 @@ CompactHashMap<EvaluableNodeType, double> EvaluableNodeTreeManipulation::evaluab
 	{ENT_DESTROY_ENTITIES,								0.1},
 	{ENT_LOAD,											0.01},
 	{ENT_LOAD_ENTITY,									0.01},
-	{ENT_LOAD_PERSISTENT_ENTITY,						0.01},
 	{ENT_STORE,											0.01},
 	{ENT_STORE_ENTITY,									0.01},
 	{ENT_CONTAINS_ENTITY,								0.1},

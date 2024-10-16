@@ -85,7 +85,7 @@ std::vector<std::string> StringManipulation::SplitArgString(std::string &arg_str
 			{
 				if(arg_string[cur_pos] == '"')
 				{
-					if (cur_pos > 0 && arg_string[cur_pos - 1] == '\\')
+					if(cur_pos > 0 && arg_string[cur_pos - 1] == '\\')
 					{
 						//if quotation is backslashed, remove the backslash
 						cur_arg.pop_back();

@@ -229,7 +229,6 @@ enum EvaluableNodeType : uint8_t
 	ENT_DESTROY_ENTITIES,
 	ENT_LOAD,
 	ENT_LOAD_ENTITY,
-	ENT_LOAD_PERSISTENT_ENTITY,
 	ENT_STORE,
 	ENT_STORE_ENTITY,
 	ENT_CONTAINS_ENTITY,
@@ -419,7 +418,7 @@ constexpr OrderedChildNodeType GetInstructionOrderedChildNodeType(EvaluableNodeT
 	case ENT_GET_ENTITY_RAND_SEED:
 	case ENT_GET_ENTITY_ROOT_PERMISSION:								case ENT_SET_ENTITY_ROOT_PERMISSION:
 	case ENT_CLONE_ENTITIES:			case ENT_MOVE_ENTITIES:
-	case ENT_LOAD:						case ENT_LOAD_ENTITY:			case ENT_LOAD_PERSISTENT_ENTITY:
+	case ENT_LOAD:						case ENT_LOAD_ENTITY:
 	case ENT_STORE_ENTITY:				case ENT_STORE:
 	case ENT_CONTAINS_ENTITY:
 		return OCNT_POSITION;
@@ -536,7 +535,14 @@ enum EvaluableNodeBuiltInStringId
 
 	//file storage options
 	ENBISI_include_rand_seeds,
+	ENBISI_escape_resource_name,
+	ENBISI_escape_contained_resource_names,
+	ENBISI_transactional,
+	ENBISI_pretty_print,
+	//ENBISI_sort_keys -- covered in format below
+	ENBISI_flatten,
 	ENBISI_parallel_create,
+	ENBISI_execute_on_load,
 
 	//substr parameters
 	ENBISI_all,

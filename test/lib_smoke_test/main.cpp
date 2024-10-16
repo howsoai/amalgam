@@ -17,9 +17,11 @@ int main(int argc, char* argv[])
 	// Load+execute+delete entity:
 	char handle[] = "1";
 	char* file = (argc > 1) ? argv[1] : (char*)"test.amlg";
+	char file_type[] = "";
+	char json_file_params[] = "";
 	char write_log[] = "";
 	char print_log[] = "";
-	auto status = LoadEntity(handle, file, "", false, "", write_log, print_log);
+	auto status = LoadEntity(handle, file, file_type, false, json_file_params, write_log, print_log);
 	if(status.loaded)
 	{
 		char label[] = "test";

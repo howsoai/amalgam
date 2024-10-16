@@ -29,8 +29,9 @@ void EntityExternalInterface::LoadEntityStatus::SetStatus(bool loaded_in, std::s
 	version = std::move(version_in);
 }
 
-EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(std::string &handle, std::string &path, bool persistent, bool load_contained_entities,
-	bool escape_filename, bool escape_contained_filenames, std::string &write_log_filename, std::string &print_log_filename, std::string rand_seed)
+EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(std::string &handle, std::string &path,
+	std::string file_type, bool persistent, std::string_view json_file_params,
+	std::string &write_log_filename, std::string &print_log_filename, std::string rand_seed)
 {
 	LoadEntityStatus status;
 
@@ -41,9 +42,16 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(st
 		rand_seed = std::to_string(t);
 	}
 
-	std::string file_type = "";
-	Entity *entity = asset_manager.LoadEntityFromResourcePath(path, file_type, persistent, load_contained_entities,
-		escape_filename, escape_contained_filenames, rand_seed, nullptr, status);
+	AssetManager::AssetParameters asset_params(path, file_type, true);
+
+	EvaluableNodeManager temp_enm;
+	EvaluableNode *file_params = EvaluableNodeJSONTranslation::JsonToEvaluableNode(&temp_enm, json_file_params);
+
+	if(EvaluableNode::IsAssociativeArray(file_params))
+		asset_params.SetParams(file_params->GetMappedChildNodesReference());
+	asset_params.UpdateResources();
+
+	Entity *entity = asset_manager.LoadEntityFromResource(asset_params, persistent, rand_seed, nullptr, status);
 
 	if(!status.loaded)
 		return status;
@@ -82,7 +90,8 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::VerifyEntity(
 	return EntityExternalInterface::LoadEntityStatus(false, "", version);
 }
 
-bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &cloned_handle, std::string &path, bool persistent,
+bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &cloned_handle, std::string &path,
+	std::string file_type, bool persistent, std::string_view json_file_params,
 	std::string &write_log_filename, std::string &print_log_filename)
 {
 	auto bundle = FindEntityBundle(handle);
@@ -93,6 +102,15 @@ bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &clon
 		return false;
 
 	Entity *entity = new Entity(bundle->entity);
+
+	AssetManager::AssetParameters asset_params(path, file_type, true);
+
+	auto &enm = bundle->entity->evaluableNodeManager;
+	EvaluableNode *file_params = EvaluableNodeJSONTranslation::JsonToEvaluableNode(&enm, json_file_params);
+
+	if(EvaluableNode::IsAssociativeArray(file_params))
+		asset_params.SetParams(file_params->GetMappedChildNodesReference());
+	asset_params.UpdateResources();
 
 	PrintListener *pl = nullptr;
 	std::vector<EntityWriteListener *> wl;
@@ -109,20 +127,32 @@ bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &clon
 	AddEntityBundle(cloned_handle, new EntityListenerBundle(entity, wl, pl));
 
 	if(persistent)
-		StoreEntity(cloned_handle, path, true, true);
+		asset_manager.StoreEntityToResource(entity, asset_params, true, persistent);
 
 	return true;
 }
 
-void EntityExternalInterface::StoreEntity(std::string &handle, std::string &path, bool update_persistence_location, bool store_contained_entities)
+void EntityExternalInterface::StoreEntity(std::string &handle, std::string &path,
+	std::string file_type, bool persistent, std::string_view json_file_params)
 {
 	auto bundle = FindEntityBundle(handle);
 	if(bundle == nullptr || bundle->entity == nullptr)
 		return;
 
-	std::string file_type = "";
 	EntityReadReference entity(bundle->entity);
-	asset_manager.StoreEntityToResourcePath(entity, path, file_type, update_persistence_location, store_contained_entities, false, true, false);
+
+	AssetManager::AssetParameters asset_params(path, file_type, true);
+
+	auto &enm = bundle->entity->evaluableNodeManager;
+	EvaluableNode *file_params = EvaluableNodeJSONTranslation::JsonToEvaluableNode(&enm, json_file_params);
+
+	if(EvaluableNode::IsAssociativeArray(file_params))
+		asset_params.SetParams(file_params->GetMappedChildNodesReference());
+	asset_params.UpdateResources();
+
+	enm.FreeNodeTree(file_params);
+
+	asset_manager.StoreEntityToResource(entity, asset_params, true, persistent);
 }
 
 void EntityExternalInterface::ExecuteEntity(std::string &handle, std::string &label)

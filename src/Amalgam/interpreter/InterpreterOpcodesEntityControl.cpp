@@ -597,28 +597,35 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, bo
 	if(!asset_manager.DoesEntityHaveRootPermission(curEntity))
 		return EvaluableNodeReference::Null();
 
-	std::string resource_name = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
-	if(resource_name.empty())
+	std::string path = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
+	if(path.empty())
 		return EvaluableNodeReference::Null();
 
-	bool escape_filename = false;
-	if(ocn.size() >= 2)
-		escape_filename = InterpretNodeIntoBoolValue(ocn[1], false);
-
 	std::string file_type = "";
-	if(ocn.size() >= 3)
+	if(ocn.size() > 1)
 	{
-		auto [valid, file_type_temp] = InterpretNodeIntoStringValue(ocn[2]);
+		auto [valid, file_type_temp] = InterpretNodeIntoStringValue(ocn[1]);
 		if(valid)
 			file_type = file_type_temp;
 	}
 
+	AssetManager::AssetParameters asset_params(path, file_type, false);
+	if(ocn.size() > 2)
+	{
+		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[2]);
+
+		if(EvaluableNode::IsAssociativeArray(params))
+			asset_params.SetParams(params->GetMappedChildNodesReference());
+
+		evaluableNodeManager->FreeNodeTreeIfPossible(params);
+	}
+	asset_params.UpdateResources();
+
 	EntityExternalInterface::LoadEntityStatus status;
-	std::string resource_base_path;
-	return asset_manager.LoadResourcePath(resource_name, resource_base_path, file_type, evaluableNodeManager, escape_filename, status);
+	return asset_manager.LoadResource(asset_params, evaluableNodeManager, status);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSISTENT_ENTITY(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -628,9 +635,33 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSI
 	if(!asset_manager.DoesEntityHaveRootPermission(curEntity))
 		return EvaluableNodeReference::Null();
 
-	std::string resource_name = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
-	if(resource_name.empty())
+	std::string path = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
+	if(path.empty())
 		return EvaluableNodeReference::Null();
+
+	std::string file_type = "";
+	if(ocn.size() > 2)
+	{
+		auto [valid, file_type_temp] = InterpretNodeIntoStringValue(ocn[2]);
+		if(valid)
+			file_type = file_type_temp;
+	}
+
+	bool persistent = false;
+	if(ocn.size() > 3)
+		persistent = InterpretNodeIntoBoolValue(ocn[3]);
+
+	AssetManager::AssetParameters asset_params(path, file_type, true);
+	if(ocn.size() > 4)
+	{
+		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[4]);
+
+		if(EvaluableNode::IsAssociativeArray(params))
+			asset_params.SetParams(params->GetMappedChildNodesReference());
+
+		evaluableNodeManager->FreeNodeTreeIfPossible(params);
+	}
+	asset_params.UpdateResources();
 
 	//get destination if applicable
 	EntityWriteReference destination_entity_parent;
@@ -641,37 +672,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSI
 	if(destination_entity_parent == nullptr)
 		return EvaluableNodeReference::Null();
 
-	bool escape_filename = false;
-	if(ocn.size() >= 3)
-		escape_filename = InterpretNodeIntoBoolValue(ocn[2], false);
-
-	bool escape_contained_filenames = true;
-	if(ocn.size() >= 4)
-		escape_contained_filenames = InterpretNodeIntoBoolValue(ocn[3], true);
-
-	bool persistent = (en->GetType() == ENT_LOAD_PERSISTENT_ENTITY);
-	if(persistent)
-		escape_contained_filenames = true;
-
-	//persistent doesn't allow file_type
-	std::string file_type = "";
-	if(!persistent && ocn.size() >= 5)
-	{
-		auto [valid, file_type_temp] = InterpretNodeIntoStringValue(ocn[4]);
-		if(valid)
-			file_type = file_type_temp;
-	}
-
 	EntityExternalInterface::LoadEntityStatus status;
-	std::string random_seed = destination_entity_parent->CreateRandomStreamFromStringAndRand(resource_name);
+	std::string random_seed = destination_entity_parent->CreateRandomStreamFromStringAndRand(asset_params.resource);
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is no longer executing
 	memoryModificationLock.unlock();
 #endif
-	
-	Entity *loaded_entity = asset_manager.LoadEntityFromResourcePath(resource_name, file_type,
-		persistent, true, escape_filename, escape_contained_filenames, random_seed, this, status);
+
+	Entity *loaded_entity = asset_manager.LoadEntityFromResource(asset_params, persistent, random_seed, this, status);
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is executing again
@@ -705,45 +714,34 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, b
 	if(!asset_manager.DoesEntityHaveRootPermission(curEntity))
 		return EvaluableNodeReference::Null();
 
-	std::string resource_name = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
-	if(resource_name.empty())
+	std::string path = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
+	if(path.empty())
 		return EvaluableNodeReference::Null();
 
 	auto to_store = InterpretNodeForImmediateUse(ocn[1]);
 	auto node_stack = CreateOpcodeStackStateSaver(to_store);
 
-	bool escape_filename = false;
-	if(ocn.size() >= 3)
-		escape_filename = InterpretNodeIntoBoolValue(ocn[2], false);
-
 	std::string file_type = "";
-	if(ocn.size() >= 4)
+	if(ocn.size() > 2)
 	{
-		auto [valid, file_type_temp] = InterpretNodeIntoStringValue(ocn[3]);
+		auto [valid, file_type_temp] = InterpretNodeIntoStringValue(ocn[2]);
 		if(valid)
 			file_type = file_type_temp;
 	}
 
-	bool sort_keys = false;
-	if(ocn.size() >= 5)
+	AssetManager::AssetParameters asset_params(path, file_type, false);
+	if(ocn.size() > 3)
 	{
-		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[4]);
+		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[3]);
 		
 		if(EvaluableNode::IsAssociativeArray(params))
-		{
-			auto &mcn = params->GetMappedChildNodesReference();
-
-			auto found_sort_keys = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_sort_keys));
-			if(found_sort_keys != end(mcn))
-				sort_keys = EvaluableNode::IsTrue(found_sort_keys->second);
-		}
+			asset_params.SetParams(params->GetMappedChildNodesReference());
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
+	asset_params.UpdateResources();
 
-	std::string resource_base_path;
-	bool successful_save = asset_manager.StoreResourcePath(to_store,
-		resource_name, resource_base_path, file_type, evaluableNodeManager, escape_filename, sort_keys);
+	bool successful_save = asset_manager.StoreResource(to_store, asset_params, evaluableNodeManager);
 
 	return ReuseOrAllocReturn(to_store, successful_save, immediate_result);
 }
@@ -758,63 +756,53 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 	if(!asset_manager.DoesEntityHaveRootPermission(curEntity))
 		return EvaluableNodeReference::Null();
 
-	std::string resource_name = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
-	if(resource_name.empty())
+	std::string path = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
+	if(path.empty())
 		return EvaluableNodeReference::Null();
 
-	bool escape_filename = false;
-	if(ocn.size() >= 3)
-		escape_filename = InterpretNodeIntoBoolValue(ocn[2], false);
-
-	bool escape_contained_filenames = true;
-	if(ocn.size() >= 4)
-		escape_contained_filenames = InterpretNodeIntoBoolValue(ocn[3], true);
-
 	std::string file_type = "";
-	if(ocn.size() >= 5)
+	if(ocn.size() > 2)
 	{
-		auto [valid, file_type_temp] = InterpretNodeIntoStringValue(ocn[4]);
+		auto [valid, file_type_temp] = InterpretNodeIntoStringValue(ocn[2]);
 		if(valid)
 			file_type = file_type_temp;
 	}
 
-	bool sort_keys = false;
-	bool include_rand_seeds = true;
-	bool parallel_create = false;
-	if(ocn.size() >= 6)
+	bool update_persistence = false;
+	bool persistent = false;
+	if(ocn.size() > 3)
 	{
-		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[5]);
+		auto persistence_node = InterpretNodeForImmediateUse(ocn[3]);
+		if(!EvaluableNode::IsNull(persistence_node))
+		{
+			update_persistence = true;
+			persistent = EvaluableNode::IsTrue(persistence_node);
+		}
+		evaluableNodeManager->FreeNodeTreeIfPossible(persistence_node);
+	}
+
+	AssetManager::AssetParameters asset_params(path, file_type, true);
+	if(ocn.size() > 4)
+	{
+		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[4]);
 
 		if(EvaluableNode::IsAssociativeArray(params))
-		{
-			auto &mcn = params->GetMappedChildNodesReference();
-
-			auto found_sort_keys = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_sort_keys));
-			if(found_sort_keys != end(mcn))
-				sort_keys = EvaluableNode::IsTrue(found_sort_keys->second);
-
-			auto found_include_rand_seeds = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_include_rand_seeds));
-			if(found_include_rand_seeds != end(mcn))
-				include_rand_seeds = EvaluableNode::IsTrue(found_include_rand_seeds->second);
-
-			auto found_parallel_create = mcn.find(GetStringIdFromBuiltInStringId(ENBISI_parallel_create));
-			if(found_parallel_create != end(mcn))
-				parallel_create = EvaluableNode::IsTrue(found_parallel_create->second);
-		}
+			asset_params.SetParams(params->GetMappedChildNodesReference());
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
+	asset_params.UpdateResources();
 
 	//get the id of the source entity to store.  Don't need to keep the reference because it won't be used once the source entity pointer is looked up
 	//retrieve the entity after other parameters to minimize time in locks
 	// and prevent deadlock if one of the params accessed the entity
-	//StoreEntityToResourcePath will read lock all contained entities appropriately
+	//StoreEntityToResource will read lock all contained entities appropriately
 	EntityReadReference source_entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[1]);
 	if(source_entity == nullptr || source_entity == curEntity)
 		return EvaluableNodeReference::Null();
 
-	bool stored_successfully = asset_manager.StoreEntityToResourcePath(source_entity, resource_name, file_type,
-		false, true, escape_filename, escape_contained_filenames, sort_keys, include_rand_seeds, parallel_create);
+	bool stored_successfully = asset_manager.StoreEntityToResource(source_entity, asset_params,
+		update_persistence, persistent);
 
 	return AllocReturn(stored_successfully, immediate_result);
 }

@@ -61,29 +61,7 @@ jobs:
         run: cmake --build --preset $PRESET --
 
       - name: CMake Test
-        if: matrix.preset.arch != 'amd64'
         run: cmake --build --preset $PRESET --target test
-
-      - name: CMake Test (with GDB)
-        if: matrix.preset.arch == 'amd64'
-        run: |
-          # Install GDB
-          sudo apt-get install -y gdb
-          echo "GDB installation complete"
-          
-          # Don't immediately fail if GDB exits with a non-zero code
-          set +e
-
-          # Capture GDB output (timeout 3 hours)
-          gdb_output=$(gdb -batch -ex run -ex "bt" --args cmake --build --preset $PRESET --target test)
-
-          # Evaluate GDB exit code and exit this workflow accordingly
-          if echo "$gdb_output" | tail -n 100 | grep -q "exited normally"; then
-            exit 0
-          # Else, something failed, exit 1
-          else
-            exit 1
-          fi
 
       - name: Print/copy out.txt
         if: always()

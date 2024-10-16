@@ -65,6 +65,7 @@ jobs:
 
       - name: Print/copy out.txt
         if: always()
+        continue-on-error: true
         run: |
           tail -n 20 src/Amalgam/out.txt
           cp src/Amalgam/out.txt ./out/test/

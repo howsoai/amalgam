@@ -498,3 +498,90 @@ jobs:
           makeLatest: legacy
           artifacts: amalgam-*/amalgam-*.tar.gz
           artifactContentType: application/gzip
+
+  create-amalgam-lang-ts-branch:
+    if: inputs.build-type == 'release'
+    needs: ['release']
+    uses: "howsoai/.github/.github/workflows/create-branch.yml@main"
+    secrets: inherit
+    with:
+      branch: 'amalgam-${{ inputs.version }}-update'
+      repo: 'howsoai/amalgam-lang-ts'
+
+  update-amalgam-lang-ts:
+    if: inputs.build-type == 'release'
+    needs: ['create-amalgam-lang-ts-branch']
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+  
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.HOWSOAI_WORKFLOW_AUTOMATION_TOKEN }}
+          ref: 'amalgam-${{ inputs.version }}-update'
+          repository: 'howsoai/amalgam-lang-ts'
+
+      - name: Clean out src/webassembly
+        run: |
+          rm -rf ./src/webassembly
+          mkdir -p ./src/webassembly
+          touch ./src/webassembly/version.json
+
+      - name: Download Release WASM
+        uses: actions/download-artifact@v4
+        with:
+          name: amalgam-${{ inputs.version }}-release-unknown-wasm64
+
+      - name: Extract Release WASM
+        run: |
+          tar -xvf ./amalgam-${{ inputs.version }}-wasm64.tar.gz -C ./src/webassembly
+          rm -rf ./amalgam-${{ inputs.version }}-wasm64.tar.gz
+
+      - name: Download Debug WASM
+        uses: actions/download-artifact@v4
+        with:
+          name: amalgam-${{ inputs.version }}-debug-unknown-wasm64
+
+      - name: Extract Debug WASM
+        run: |
+          # These will be located in src/webassembly/debug
+          mkdir -p ./src/webassembly/debug
+          tar -xvf ./amalgam-${{ inputs.version }}-wasm64-debug.tar.gz -C ./src/webassembly/debug
+          rm -rf ./amalgam-${{ inputs.version }}-wasm64.tar.gz
+
+      - name: Set version.json
+        run: |
+          cd src/webassembly && ls -l
+          echo '{}' | jq --arg version "${{ inputs.version }}" '.dependencies.amalgam = $version' > version.json
+          cat version.json
+
+      - name: Commit and push changes
+        run: |
+          git pull
+          if [ -n "$(git status --porcelain)" ]; then
+            git config user.name "howso-automation"
+            git config user.email "support@howso.com"
+            git add --all :/
+            git commit -m "Automated Amalgam version bump"
+            git push
+          else
+            echo "No changes detected in the repository."
+            exit 1
+          fi
+
+  create-amalgam-lang-ts-pr:
+    if: inputs.build-type == 'release'
+    needs: ['update-amalgam-lang-ts']
+    uses: "howsoai/.github/.github/workflows/create-pr.yml@main"
+    secrets: inherit
+    permissions:
+      contents: write
+      pull-requests: write
+    with:
+      branch: 'amalgam-${{ inputs.version }}-update'
+      repo: 'howsoai/amalgam-lang-ts'
+      title: 'Automated version update: Amalgam ${{ inputs.version }}'
+      body: 'This action was performed by a bot. Please review carefully.'

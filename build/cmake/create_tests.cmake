@@ -6,6 +6,8 @@ enable_testing()
 
 # CTest args:
 set(CMAKE_CTEST_ARGUMENTS "-j" "--schedule-random" "--output-on-failure" "--extra-verbose" "--output-log" "${CMAKE_SOURCE_DIR}/out/test/all_tests.log")
+# Ensure tests are not run in parallel
+set(CTEST_PARALLEL_LEVEL 1)
 
 # Not all tests can be run on all platforms:
 if(IS_WASM)

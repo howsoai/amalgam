@@ -248,7 +248,6 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_DESTROY_ENTITIES, "destroy_entities");
 	EmplaceNodeTypeString(ENT_LOAD, "load");
 	EmplaceNodeTypeString(ENT_LOAD_ENTITY, "load_entity");
-	EmplaceNodeTypeString(ENT_LOAD_PERSISTENT_ENTITY, "load_persistent_entity");
 	EmplaceNodeTypeString(ENT_STORE, "store");
 	EmplaceNodeTypeString(ENT_STORE_ENTITY, "store_entity");
 	EmplaceNodeTypeString(ENT_CONTAINS_ENTITY, "contains_entity");
@@ -322,6 +321,12 @@ void StringInternPool::InitializeStaticStrings()
 	//file storage options
 	EmplaceStaticString(ENBISI_include_rand_seeds, "include_rand_seeds");
 	EmplaceStaticString(ENBISI_parallel_create, "parallel_create");
+	EmplaceStaticString(ENBISI_escape_resource_name, "escape_resource_name");
+	EmplaceStaticString(ENBISI_escape_contained_resource_names, "escape_contained_resource_names");
+	EmplaceStaticString(ENBISI_transactional, "transactional");
+	EmplaceStaticString(ENBISI_pretty_print, "pretty_print");
+	EmplaceStaticString(ENBISI_flatten, "flatten");
+	EmplaceStaticString(ENBISI_execute_on_load, "execute_on_load");
 
 	//substr parameters
 	EmplaceStaticString(ENBISI_all, "all");

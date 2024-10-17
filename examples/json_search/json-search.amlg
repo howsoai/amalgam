@@ -17,13 +17,13 @@
 		)
 	)
 	(declare (assoc source_data (load source_file)))
-			
+
 	(declare (assoc
 		edit_dist
 		(map (lambda
 				(let (assoc
-						cur_file (concat (target_value 1))
-						cur_data (load (target_value 1))
+						cur_file (concat (current_value 1))
+						cur_data (load (current_value 1))
 					)
 
 					(list cur_file (edit_distance source_data cur_data))
@@ -32,25 +32,25 @@
 			json_files
 		)
 	))
-	
+
 	;sort by edit distance
 	(assign (assoc edit_dist
-		(sort (lambda (- (get (target_value) 1) (get (target_value 1) 1) )) edit_dist)
+		(sort (lambda (- (get (current_value) 1) (get (current_value 1) 1) )) edit_dist)
 	))
-	
+
 	(print "*** exact matches:\n")
 	(map (lambda
-			(print (get (target_value) 0) "\n")
+			(print (get (current_value) 0) "\n")
 		)
-	
-		(filter (lambda (= (get (target_value) 1) 0)) edit_dist)
+
+		(filter (lambda (= (get (current_value) 1) 0)) edit_dist)
 	)
-	
+
 	(print "*** best nonexact matches:\n")
 	(map (lambda
-			(print (get (target_value) 0) "\n")
+			(print (get (current_value) 0) "\n")
 		)
-	
-		(trunc (filter (lambda (> (get (target_value) 1) 0)) edit_dist) 5)
+
+		(trunc (filter (lambda (> (get (current_value) 1) 0)) edit_dist) 5)
 	)
 )

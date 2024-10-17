@@ -1256,7 +1256,7 @@ protected:
 	EvaluableNodeReference InterpretNode_ENT_MOVE_ENTITIES(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_DESTROY_ENTITIES(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_LOAD(EvaluableNode *en, bool immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSISTENT_ENTITY(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_LOAD_ENTITY(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_STORE(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_STORE_ENTITY(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_CONTAINS_ENTITY(EvaluableNode *en, bool immediate_result);

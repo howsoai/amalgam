@@ -15,11 +15,10 @@ defaults:
     shell: bash
 
 jobs:
-
   build-linux:
     runs-on: ubuntu-20.04
     container:
-      image: ghcr.io/howsoai/amalgam-build-container-linux:1.0.0
+      image: ghcr.io/howsoai/amalgam-build-container-linux:2.0.8
       credentials:
         username: ${{ github.actor }}
         password: ${{ github.token }}
@@ -28,52 +27,68 @@ jobs:
         preset:
           - arch: amd64
             platform: linux
+            type: release
           - arch: arm64
             platform: linux
+            type: release
           - arch: arm64_8a
             platform: linux
+            type: release
           - arch: wasm64
             platform: unknown
+            type: release
+          - arch: wasm64
+            platform: unknown
+            type: debug
     permissions:
       contents: write
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set build preset
-      run: |
-        PRESET=$(echo ${{ matrix.preset.arch }}-release-${{ matrix.preset.platform }})
-        echo "PRESET=$(echo $PRESET)" >> $GITHUB_ENV
-        echo "Build preset: $PRESET"
+      - name: Set build preset
+        run: |
+          PRESET=$(echo ${{ matrix.preset.arch }}-${{ matrix.preset.type }}-${{ matrix.preset.platform }})
+          echo "PRESET=$(echo $PRESET)" >> $GITHUB_ENV
+          echo "Build preset: $PRESET"
+          # Print glibc version
+          ldd --version
 
-    - name: CMake Configure
-      run: AMALGAM_BUILD_VERSION=${{ inputs.version }} cmake --preset $PRESET
+      - name: CMake Configure
+        run: AMALGAM_BUILD_VERSION=${{ inputs.version }} cmake --preset $PRESET
 
-    - name: CMake Build
-      run: cmake --build --preset $PRESET -- --quiet
+      - name: CMake Build
+        run: cmake --build --preset $PRESET --
 
-    - name: CMake Test
-      run: cmake --build --preset $PRESET --target test
+      - name: CMake Test
+        run: cmake --build --preset $PRESET --target test
 
-    - name: Upload Test Results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}
-        path: ./out/test/*
+      - name: Print/copy out.txt
+        if: always()
+        continue-on-error: true
+        run: |
+          tail -n 20 src/Amalgam/out.txt
+          cp src/Amalgam/out.txt ./out/test/
+          
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.preset.type }}-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}
+          path: ./out/test/*
 
-    - name: CMake Install
-      run: cmake --build --preset $PRESET --target install
+      - name: CMake Install
+        run: cmake --build --preset $PRESET --target install
 
-    - name: CMake Package
-      run: cmake --build --preset $PRESET --target package
+      - name: CMake Package
+        run: cmake --build --preset $PRESET --target package
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: amalgam-${{ inputs.version }}-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}
-        path: ./out/package/amalgam-*.tar.gz
-        if-no-files-found: error
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: amalgam-${{ inputs.version }}-${{ matrix.preset.type }}-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}
+          path: ./out/package/amalgam-*.tar.gz
+          if-no-files-found: error
 
   build-macos:
     runs-on: macos-13
@@ -81,75 +96,75 @@ jobs:
       matrix:
         preset:
           - arch: amd64
-            build: release
+            type: release
             platform: macos
           - arch: arm64
-            build: release
+            type: release
             platform: macos
     permissions:
       contents: write
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - uses: actions/setup-python@v5
-      with:
-        python-version: '3.12'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-    - name: Set build preset
-      run: |
-        PRESET=$(echo ${{ matrix.preset.arch }}-release-${{ matrix.preset.platform }})
-        echo "PRESET=$(echo $PRESET)" >> $GITHUB_ENV
-        echo "Build preset: $PRESET"
+      - name: Set build preset
+        run: |
+          PRESET=$(echo ${{ matrix.preset.arch }}-${{ matrix.preset.type }}-${{ matrix.preset.platform }})
+          echo "PRESET=$(echo $PRESET)" >> $GITHUB_ENV
+          echo "Build preset: $PRESET"
 
-    - name: Install build dependencies
-      run: |
-        echo "Python version: $(python --version)"
-        echo "Brew version: $(brew --version)"
-        echo "Brew python installs: $(brew list | grep python)"
-        if [ "${{ matrix.preset.arch }}" = "arm64" ]; then
-          brew unlink python@3.11
-          brew unlink python@3.12
-          brew link --force --overwrite python@3.12
+      - name: Install build dependencies
+        run: |
+          echo "Python version: $(python --version)"
+          echo "Brew version: $(brew --version)"
+          echo "Brew python installs: $(brew list | grep python)"
+          if [ "${{ matrix.preset.arch }}" = "arm64" ]; then
+            brew unlink python@3.11
+            brew unlink python@3.12
+            brew link --force --overwrite python@3.12
 
-          brew cleanup -s
-          rm -rf `brew --cache`
-          brew fetch --force --bottle-tag=arm64_ventura libomp
-          brew install `brew --cache --bottle-tag=arm64_ventura libomp` || brew link --overwrite python@3.12
-        else
-          brew install libomp
-        fi
-        brew list --versions libomp
-        brew install ninja
+            brew cleanup -s
+            rm -rf `brew --cache`
+            brew fetch --force --bottle-tag=arm64_ventura libomp
+            brew install `brew --cache --bottle-tag=arm64_ventura libomp` || brew link --overwrite python@3.12
+          else
+            brew install libomp
+          fi
+          brew list --versions libomp
+          brew install ninja
 
-    - name: CMake Configure
-      run: AMALGAM_BUILD_VERSION=${{ inputs.version }} cmake --preset $PRESET
+      - name: CMake Configure
+        run: AMALGAM_BUILD_VERSION=${{ inputs.version }} cmake --preset $PRESET
 
-    - name: CMake Build
-      run: cmake --build --preset $PRESET -- --quiet
+      - name: CMake Build
+        run: cmake --build --preset $PRESET -- --quiet
 
-    - name: CMake Test
-      run: cmake --build --preset $PRESET --target test
+      - name: CMake Test
+        run: cmake --build --preset $PRESET --target test
 
-    - name: Upload Test Results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}
-        path: ./out/test/*
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.preset.type }}-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}
+          path: ./out/test/*
 
-    - name: CMake Install
-      run: cmake --build --preset $PRESET --target install
+      - name: CMake Install
+        run: cmake --build --preset $PRESET --target install
 
-    - name: CMake Package
-      run: cmake --build --preset $PRESET --target package
+      - name: CMake Package
+        run: cmake --build --preset $PRESET --target package
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: amalgam-${{ inputs.version }}-darwin-${{ matrix.preset.arch }}
-        path: ./out/package/amalgam-*.tar.gz
-        if-no-files-found: error
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: amalgam-${{ inputs.version }}-${{ matrix.preset.type }}-darwin-${{ matrix.preset.arch }}
+          path: ./out/package/amalgam-*.tar.gz
+          if-no-files-found: error
 
   build-windows:
     runs-on: windows-2022
@@ -157,90 +172,90 @@ jobs:
       matrix:
         preset:
           - arch: amd64
-            build: release
+            type: release
             platform: windows
     permissions:
       contents: write
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set build preset
-      run: |
-        PRESET=$(echo ${{ matrix.preset.arch }}-release-${{ matrix.preset.platform }})
-        echo "PRESET=$(echo $PRESET)" >> $GITHUB_ENV
-        echo "Build preset: $PRESET"
+      - name: Set build preset
+        run: |
+          PRESET=$(echo ${{ matrix.preset.arch }}-${{ matrix.preset.type }}-${{ matrix.preset.platform }})
+          echo "PRESET=$(echo $PRESET)" >> $GITHUB_ENV
+          echo "Build preset: $PRESET"
 
-    - name: Enable developer commandline tools
-      uses: ilammy/msvc-dev-cmd@v1
+      - name: Enable developer commandline tools
+        uses: ilammy/msvc-dev-cmd@v1
 
-    - name: Download tz data
-      shell: pwsh
-      run: ./build/powershell/Download-Tzdata.ps1
+      - name: Download tz data
+        shell: pwsh
+        run: ./build/powershell/Download-Tzdata.ps1
 
-    - name: Install build dependencies
-      run: |
-        max_retries=2
-        count=0
-        until choco upgrade ninja; do
-          ((count++))
-          echo "Failed to install Ninja (attempt $count of $max_retries)"
-          if [ "$count" -ge "$max_retries" ]; then
-            echo "Reached maximum number of retries"
-            exit 1
-          fi
-        done
+      - name: Install build dependencies
+        run: |
+          max_retries=2
+          count=0
+          until choco upgrade ninja; do
+            ((count++))
+            echo "Failed to install Ninja (attempt $count of $max_retries)"
+            if [ "$count" -ge "$max_retries" ]; then
+              echo "Reached maximum number of retries"
+              exit 1
+            fi
+          done
 
-    - name: CMake Configure
-      run: AMALGAM_BUILD_VERSION=${{ inputs.version }} cmake --preset $PRESET
+      - name: CMake Configure
+        run: AMALGAM_BUILD_VERSION=${{ inputs.version }} cmake --preset $PRESET
 
-    - name: CMake Build
-      run: cmake --build --preset $PRESET -- --quiet
+      - name: CMake Build
+        run: cmake --build --preset $PRESET -- --quiet
 
-    - name: CMake Test
-      run: cmake --build --preset $PRESET --target test
+      - name: CMake Test
+        run: cmake --build --preset $PRESET --target test
 
-    - name: Upload Test Results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}
-        path: ./out/test/*
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.preset.type }}-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}
+          path: ./out/test/*
 
-    - name: CMake Install
-      run: cmake --build --preset $PRESET --target install
+      - name: CMake Install
+        run: cmake --build --preset $PRESET --target install
 
-    - name: CMake Package
-      run: cmake --build --preset $PRESET --target package
+      - name: CMake Package
+        run: cmake --build --preset $PRESET --target package
 
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: amalgam-${{ inputs.version }}-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}
-        path: ./out/package/amalgam-*.tar.gz
-        if-no-files-found: error
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: amalgam-${{ inputs.version }}-${{ matrix.preset.type }}-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}
+          path: ./out/package/amalgam-*.tar.gz
+          if-no-files-found: error
 
   smoke-test-linux-amd64:
-    needs: ['build-linux']
-    runs-on: ubuntu-latest
+    needs: ["build-linux"]
+    runs-on: ubuntu-24.04
     steps:
-    - name: Download Artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: amalgam-${{ inputs.version }}-linux-amd64
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: amalgam-${{ inputs.version }}-release-linux-amd64
 
-    - name: Extract Amalgam
-      run: |
-        mkdir ./amalgam
-        tar -xvf ./amalgam-${{ inputs.version }}-linux-amd64.tar.gz -C ./amalgam
+      - name: Extract Amalgam
+        run: |
+          mkdir ./amalgam
+          tar -xvf ./amalgam-${{ inputs.version }}-linux-amd64.tar.gz -C ./amalgam
 
-    - name: Smoke test
-      run: |
-        set -e
-        cd ./amalgam/bin
-        for f in *; do
-          echo -n "$f: " && "./$f" --version
-        done
+      - name: Smoke test
+        run: |
+          set -e
+          cd ./amalgam/bin
+          for f in *; do
+            echo -n "$f: " && "./$f" --version
+          done
 
   smoke-test-linux-arm64:
     needs: ['build-linux']
@@ -249,7 +264,7 @@ jobs:
     - name: Download Artifact
       uses: actions/download-artifact@v4
       with:
-        name: amalgam-${{ inputs.version }}-linux-arm64
+        name: amalgam-${{ inputs.version }}-release-linux-arm64
 
     - name: Extract Amalgam
       run: |
@@ -276,7 +291,7 @@ jobs:
     - name: Download Artifact
       uses: actions/download-artifact@v4
       with:
-        name: amalgam-${{ inputs.version }}-linux-arm64_8a
+        name: amalgam-${{ inputs.version }}-release-linux-arm64_8a
 
     - name: Extract Amalgam
       run: |
@@ -299,144 +314,145 @@ jobs:
   # Uses GitHub default macos runner (amd64)
   # Note: these runners have the potential to not have AVX+ instructions so only run NoAVX binaries
   smoke-test-macos-amd64:
-    needs: ['build-macos']
+    needs: ["build-macos"]
     runs-on: macos-latest
     steps:
-    - name: Download Artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: amalgam-${{ inputs.version }}-darwin-amd64
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: amalgam-${{ inputs.version }}-release-darwin-amd64
 
-    - name: Extract Amalgam
-      run: |
-        mkdir ./amalgam
-        tar -xvf ./amalgam-${{ inputs.version }}-darwin-amd64.tar.gz -C ./amalgam
+      - name: Extract Amalgam
+        run: |
+          mkdir ./amalgam
+          tar -xvf ./amalgam-${{ inputs.version }}-darwin-amd64.tar.gz -C ./amalgam
 
-    - name: Smoke test
-      run: |
-        set -e
-        cd ./amalgam/bin
-        for f in *noavx*; do
-          echo -n "$f: " && "./$f" --version
-        done
+      - name: Smoke test
+        run: |
+          set -e
+          cd ./amalgam/bin
+          for f in *noavx*; do
+            echo -n "$f: " && "./$f" --version
+          done
 
   # Uses GitHub large macos runner (amd64)
   smoke-test-macos-amd64-large:
-    needs: ['build-macos']
+    needs: ["build-macos"]
     runs-on: macos-latest-large
     steps:
-    - name: Download Artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: amalgam-${{ inputs.version }}-darwin-amd64
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: amalgam-${{ inputs.version }}-release-darwin-amd64
 
-    - name: Extract Amalgam
-      run: |
-        mkdir ./amalgam
-        tar -xvf ./amalgam-${{ inputs.version }}-darwin-amd64.tar.gz -C ./amalgam
+      - name: Extract Amalgam
+        run: |
+          mkdir ./amalgam
+          tar -xvf ./amalgam-${{ inputs.version }}-darwin-amd64.tar.gz -C ./amalgam
 
-    - name: Smoke test
-      run: |
-        set -e
-        cd ./amalgam/bin
-        for f in *; do
-          echo -n "$f: " && "./$f" --version
-        done
+      - name: Smoke test
+        run: |
+          set -e
+          cd ./amalgam/bin
+          for f in *; do
+            echo -n "$f: " && "./$f" --version
+          done
 
   # Uses macOS arm64 xlarge runner (arm64) but execute amd64 binaries
   # Notes:
   #   1) this is supported by Apple through emulator Rossetta 2
   #   2) Rossetta 2 does support AVX+ instructions so only run noavx binaries
   smoke-test-macos-amd64-on-arm64:
-    needs: ['build-macos']
+    needs: ["build-macos"]
     runs-on: macos-latest-xlarge
     steps:
-    - name: Download Artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: amalgam-${{ inputs.version }}-darwin-amd64
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: amalgam-${{ inputs.version }}-release-darwin-amd64
 
-    - name: Extract Amalgam
-      run: |
-        mkdir ./amalgam
-        tar -xvf ./amalgam-${{ inputs.version }}-darwin-amd64.tar.gz -C ./amalgam
+      - name: Extract Amalgam
+        run: |
+          mkdir ./amalgam
+          tar -xvf ./amalgam-${{ inputs.version }}-darwin-amd64.tar.gz -C ./amalgam
 
-    - name: Smoke test
-      run: |
-        set -e
-        cd ./amalgam/bin
-        for f in *noavx*; do
-          echo -n "$f: " && "./$f" --version
-        done
+      - name: Smoke test
+        run: |
+          set -e
+          cd ./amalgam/bin
+          for f in *noavx*; do
+            echo -n "$f: " && "./$f" --version
+          done
 
   # Uses macOS arm64 xlarge runner (arm64)
   smoke-test-macos-arm64:
-    needs: ['build-macos']
+    needs: ["build-macos"]
     runs-on: macos-latest-xlarge
     steps:
-    - name: Download Artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: amalgam-${{ inputs.version }}-darwin-arm64
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: amalgam-${{ inputs.version }}-release-darwin-arm64
 
-    - name: Extract Amalgam
-      run: |
-        mkdir ./amalgam
-        tar -xvf ./amalgam-${{ inputs.version }}-darwin-arm64.tar.gz -C ./amalgam
+      - name: Extract Amalgam
+        run: |
+          mkdir ./amalgam
+          tar -xvf ./amalgam-${{ inputs.version }}-darwin-arm64.tar.gz -C ./amalgam
 
-    - name: Smoke test
-      run: |
-        set -e
-        cd ./amalgam/bin
-        for f in *; do
-          echo -n "$f: " && "./$f" --version
-        done
+      - name: Smoke test
+        run: |
+          set -e
+          cd ./amalgam/bin
+          for f in *; do
+            echo -n "$f: " && "./$f" --version
+          done
 
   smoke-test-windows-amd64:
-    needs: ['build-windows']
+    needs: ["build-windows"]
     runs-on: windows-latest
     steps:
-    - name: Download Artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: amalgam-${{ inputs.version }}-windows-amd64
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: amalgam-${{ inputs.version }}-release-windows-amd64
 
-    - name: Extract Amalgam
-      run: |
-        mkdir ./amalgam
-        tar -xvf ./amalgam-${{ inputs.version }}-windows-amd64.tar.gz -C ./amalgam
+      - name: Extract Amalgam
+        run: |
+          mkdir ./amalgam
+          tar -xvf ./amalgam-${{ inputs.version }}-windows-amd64.tar.gz -C ./amalgam
 
-    - name: Smoke test
-      run: |
-        set -e
-        cd ./amalgam/bin
-        for f in *; do
-          echo -n "$f: " && "./$f" --version
-        done
+      - name: Smoke test
+        run: |
+          set -e
+          cd ./amalgam/bin
+          for f in *; do
+            echo -n "$f: " && "./$f" --version
+          done
 
   smoke-test-wasm64:
-    needs: ['build-linux']
+    needs: ["build-linux"]
     runs-on: ubuntu-latest
     container: node:18-bullseye-slim
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Download Artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: amalgam-${{ inputs.version }}-unknown-wasm64
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: amalgam-${{ inputs.version }}-release-unknown-wasm64
 
-    - name: Extract Amalgam
-      run: |
-        mkdir ./amalgam
-        tar -xvf ./amalgam-${{ inputs.version }}-wasm64.tar.gz -C ./amalgam
+      - name: Extract Amalgam
+        run: |
+          mkdir ./amalgam
+          tar -xvf ./amalgam-${{ inputs.version }}-wasm64.tar.gz -C ./amalgam
 
-    - name: Smoke test
-      run: |
-        export AMALGAM_WASM_DIR=$(pwd)/amalgam/bin
-        cd test/wasm_test
-        npm install
-        npm run test
+      - name: Smoke test
+        run: |
+          export AMALGAM_WASM_DIR=$(pwd)/amalgam/bin
+          export AMALGAM_BASE_FILE=amalgam-st
+          cd test/wasm_test
+          npm install
+          npm run test
 
   generate-changelog:
     if: inputs.build-type == 'release'
@@ -468,18 +484,17 @@ jobs:
       - generate-changelog
     runs-on: ubuntu-latest
     steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
 
-    - name: Download Artifacts
-      uses: actions/download-artifact@v4
-
-    - name: Create Release
-      uses: ncipollo/release-action@v1
-      with:
-        tag: ${{ inputs.version }}
-        commit: ${{ github.sha }}
-        name: "Amalgam ${{ inputs.version }}"
-        artifactErrorsFailBuild: true
-        body: ${{ needs.generate-changelog.outputs.changelog }}
-        makeLatest: legacy
-        artifacts: amalgam-*/amalgam-*.tar.gz
-        artifactContentType: application/gzip
+      - name: Create Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ inputs.version }}
+          commit: ${{ github.sha }}
+          name: "Amalgam ${{ inputs.version }}"
+          artifactErrorsFailBuild: true
+          body: ${{ needs.generate-changelog.outputs.changelog }}
+          makeLatest: legacy
+          artifacts: amalgam-*/amalgam-*.tar.gz
+          artifactContentType: application/gzip

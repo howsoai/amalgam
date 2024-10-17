@@ -85,25 +85,17 @@ extern "C"
 	// api methods
 	// ************************************
 
-	LoadEntityStatus LoadEntity(char *handle, char *path, bool persistent, bool load_contained_entities,
-		bool escape_filename, bool escape_contained_filenames, char *write_log_filename, char *print_log_filename)
+	LoadEntityStatus LoadEntity(char *handle, char *path, char *file_type,
+		bool persistent, char *json_file_params, char *write_log_filename, char *print_log_filename)
 	{
 		std::string h(handle);
 		std::string p(path);
+		std::string ft(file_type);
+		std::string_view params(json_file_params);
 		std::string wlfname(write_log_filename);
 		std::string plfname(print_log_filename);
-		auto status = entint.LoadEntity(h, p, persistent, load_contained_entities, escape_filename, escape_contained_filenames, wlfname, plfname);
+		auto status = entint.LoadEntity(h, p, ft, persistent, params, wlfname, plfname);
 		return ConvertLoadStatusToCStatus(status);
-	}
-
-	bool LoadEntityLegacy(char *handle, char *path, bool persistent, bool load_contained_entities, char *write_log_filename, char *print_log_filename)
-	{
-		auto status = LoadEntity(handle, path, persistent, load_contained_entities, false, false, write_log_filename, print_log_filename);
-
-		delete[] status.message;
-		delete[] status.version;
-
-		return status.loaded;
 	}
 
 	LoadEntityStatus VerifyEntity(char *path)
@@ -113,22 +105,26 @@ extern "C"
 		return ConvertLoadStatusToCStatus(status);
 	}
 
-	bool CloneEntity(char *handle, char *clone_handle, char *path, bool persistent, char *write_log_filename, char *print_log_filename)
+	bool CloneEntity(char *handle, char *clone_handle, char *path,
+		char *file_type, bool persistent, char *json_file_params, char *write_log_filename, char *print_log_filename)
 	{
 		std::string h(handle);
 		std::string ch(clone_handle);
 		std::string p(path);
+		std::string ft(file_type);
+		std::string_view params(json_file_params);
 		std::string wlfname(write_log_filename);
 		std::string plfname(print_log_filename);
-		return entint.CloneEntity(h, ch, p, persistent, wlfname, plfname);
+		return entint.CloneEntity(h, ch, p, ft, persistent, params, wlfname, plfname);
 	}
 
-	void StoreEntity(char *handle, char *path, bool update_persistence_location, bool store_contained_entities)
+	void StoreEntity(char *handle, char *path, char *file_type, bool persistent, char *json_file_params)
 	{
 		std::string h(handle);
 		std::string p(path);
-
-		entint.StoreEntity(h, p, update_persistence_location, store_contained_entities);
+		std::string ft(file_type);
+		std::string_view params(json_file_params);
+		entint.StoreEntity(h, p, ft, persistent, params);
 	}
 
 	void SetJSONToLabel(char *handle, char *label, char *json)

@@ -633,8 +633,8 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, StringInternPoo
 	{
 		for(auto &wl : *write_listeners)
 			wl->LogCreateEntity(t);
-		asset_manager.CreateEntity(t);
 	}
+	asset_manager.CreateEntity(t);
 
 	return t->idStringId;
 }
@@ -700,8 +700,8 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, std::string id_
 	{
 		for(auto &wl : *write_listeners)
 			wl->LogCreateEntity(t);
-		asset_manager.CreateEntity(t);
 	}
+	asset_manager.CreateEntity(t);
 
 	return t->idStringId;
 }

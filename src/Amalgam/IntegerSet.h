@@ -805,7 +805,9 @@ public:
 	}
 
 	//removes id from hash set, does nothing if id does not exist in the hash
-	inline void erase(size_t id)
+	//if trim_back is true, then it will reduce the size of the storage if appropriate,
+	//but this may invalidate iterators, so it should not be set to true when iterating over this BitArrayIntegerSet
+	inline void erase(size_t id, bool trim_back = true)
 	{
 		if(id >= curMaxNumIndices)
 			return;
@@ -821,7 +823,8 @@ public:
 		bucket &= ~mask;
 		numElements--;
 
-		TrimBack();
+		if(trim_back)
+			TrimBack();
 	}
 
 	//Sets this to the BitArrayIntegerSet to the set that contains only elements that it contains that other does not contain

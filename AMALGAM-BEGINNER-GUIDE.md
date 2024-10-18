@@ -248,45 +248,29 @@ Use `(assign` to set previously declared variables.
 >     (declare (assoc x (list "a" "b" "c") )) ;does nothing because x has already been declared
 >     (assign (assoc x (list "a" "b" "c") )) ;sets variable x to a list of letters instead
 
-More examples with descriptions:
+Order of declaring matters:
 
-
-    (seq
-     ;a (declare (assoc will create an assoc of key -> value pairs where the values can be code itself.
-     ;note: the declaration can be treated as though it's done in parallel, so you CANNOT use values in the same declare to
-     ; calculate subsequent values like so:
-       (declare (assoc x 3 y 2 foo (* x y) ))
-       (print foo "\n") ;outputs 0 because foo has already been evaluated, and when it was, x and y were nulls
-    )
-
-    (seq
-     ;if you want to use declared values to make new values, you have to chain the declare statements like so:
-       (declare (assoc x 3 y 2))
-       (declare (assoc foo (* x y) )) ;the multiplication is evaluated right here so the result is stored in foo
-       (print foo) ;thus we get the expected result of 6 here
-    )
-
-
-    ;if we want foo to be a function, we need to make sure the code isn't evaluated right away, to do that we wrap it in a 'lambda'
-    (seq
-       (declare (assoc x 3 y 2))
-       (declare (assoc foo (lambda (* x y)) )) ;the multiplication is stored as the code itself, WITHOUT being evaluated
-
-       (print "foo: " foo "\n") ;thus this returns the unevaluated code for the multiplication that's stored into foo
-
-     ;now that the code in foo is not evaluated, to evaluate it we can 'call' it:
-       (print "calling foo: "
-         (call foo) ; this calls (evaluates) foo, which uses the values of x and y in the scope and thus returns a 6
-         "\n"
-       )
-
-     ;since the code in foo is not evaluated until we actually call it, we can pass in parameters for x and y and evaluate it with
-     ;those parameters
-       (print "calling foo w/ params: "
-         (call foo (assoc x 4 y 8))  ;and now we have what most developers would consider a 'function' or 'method'
-         "\n"
-       )
-    )
+>     (seq
+>         ;a (declare (assoc will create an assoc of key -> value pairs where the values can be code itself.
+>         ;note: the declaration can be treated as though it's done in parallel, so you CANNOT use values
+>         ;in the same declare to calculate subsequent values like so:
+>         (declare (assoc 
+>             x 3 
+>             y 2 
+>             foo (* x y)
+>         ))
+>         (print foo "\n") ;outputs (null) because when foo was evaluated, x and y were still undefined nulls
+>     )
+>     
+>     (seq
+>         ;if you want to use declared values to make new values, you have to chain the declare statements like so:
+>         (declare (assoc 
+>             x 3 
+>             y 2
+>         ))
+>         (declare (assoc foo (* x y) )) ;the multiplication is evaluated right here so the result is stored into foo
+>         (print foo) ;thus we get the expected result of 6 here
+>     )
 
 # Conditionals
 
@@ -340,8 +324,9 @@ as while loops containing an accum can be considerably slower and consume notabl
 >
 >
 >     ;Maps:
->     ;Maps serve the same purpose as loops, but in a more functional way.  Maps are also an easy and efficient way to iterate over a series of values that may not be a sequence
->     ;and are not guaranteed to execute in order (i.e., map may utilize parallel processing, especially if preceeded by ||)
+>     ;Maps serve the same purpose as loops, but in a more functional way.  Maps are also an easy and efficient
+>     ;way to iterate over a series of values that may not be a sequence but are not guaranteed to execute in order
+>     ;(i.e., map may utilize parallel processing, especially if preceeded by ||), but do guarantee ordered output.
 >     ; Print values from 1 to 10
 >     (map
 >         (lambda
@@ -352,6 +337,28 @@ as while loops containing an accum can be considerably slower and consume notabl
 
 
 # Functions
+
+>     ;if we want 'foo' to be a function, we need to make sure the code is not evaluated right away,
+>     ;to do that we wrap it in a (lambda)
+>     (seq
+>         (declare (assoc 
+>             x 3 
+>             y 2
+>         ))
+>         (declare (assoc foo (lambda (* x y)) )) ;the multiplication is stored as the code itself, WITHOUT being evaluated
+>     
+>         (print "foo: " foo "\n") ;thus this returns the unevaluated code for the multiplication that's stored into foo
+>     
+>         ;now that the code in foo is not evaluated, to evaluate it we can 'call' it:
+>         (print "calling foo: "
+>             (call foo) ; this calls/runs/evaluates 'foo', which uses x and y in the scope and thus returns a 6
+>         )
+>     
+>         ;since the code in foo is not evaluated until it is called it, we can pass in parameters for x and y
+>         (print "calling foo w/ params: "
+>             (call foo (assoc x 4 y 8))  ;and now we have what most developers would consider a 'function' or 'method'
+>         )
+>     )
 
 Functions in Amalgam *should* be implemented using labels to follow
 coding standards, but can be unlabeled variables as well.
@@ -373,12 +380,13 @@ coding standards, but can be unlabeled variables as well.
 
 Notes:
 
-`(lambda` means we're going to define a function (or any code) but we
-are not going to evaluate it. In this example, it stores the
-function/code itself into the variable.
-We pass in parameters to a function as an `(assoc` with the variables as
-the keys of that assoc.
+`(lambda` means we're going to define a function (or any code) but we are not going to evaluate it. 
+In this example, it stores the function/code itself into the variable. 
+We pass in parameters to a function as an `(assoc` with the variables as the keys of that assoc.
 `(call` evaluates/executes/runs the code inside the lambda.
+
+When declaring functions via labels (labels are explained in more detail below), wrap them in a 
+`(null` opcode to have the code declared but not evaluated:
 
 Functions with default parameters:
 
@@ -395,14 +403,18 @@ Functions with default parameters:
 >     //outputs: 18
 >
 >     ;Amalgam
->     #multiplyValuesInList
+>     ;method to multiply all the values in a list by themselves and some provided factor
+>     ;wrapped in a (null) to prevent this code from being evaluated during script execution but available to be call'ed.
+>     (null 
+>         #multiplyValuesInList
 >         (declare
 >             (assoc
->                 my_list (list 1)  ;specify the parameters and what the default values are
+>                 my_list [1]  ;specify the parameters and what the default values are
 >                 factor 2
 >             )
 >             (* (apply "*" my_list) factor)
 >         )
+>     )
 >
 >     (call multiplyValuesInList)
 >     ;;outputs: 2

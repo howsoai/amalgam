@@ -403,7 +403,7 @@ Functions with default parameters:
 >     //outputs: 18
 >
 >     ;Amalgam
->     ;method to multiple all the values in a list by themselves and some provided factor
+>     ;method to multiply all the values in a list by themselves and some provided factor
 >     ;wrapped in a (null) to prevent this code from being evaluated during script execution but available to be call'ed.
 >     (null 
 >         #multiplyValuesInList

@@ -242,8 +242,7 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 	&Interpreter::InterpretNode_ENT_MOVE_ENTITIES,													// ENT_MOVE_ENTITIES
 	&Interpreter::InterpretNode_ENT_DESTROY_ENTITIES,												// ENT_DESTROY_ENTITIES
 	&Interpreter::InterpretNode_ENT_LOAD,															// ENT_LOAD
-	&Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSISTENT_ENTITY,							// ENT_LOAD_ENTITY
-	&Interpreter::InterpretNode_ENT_LOAD_ENTITY_and_LOAD_PERSISTENT_ENTITY,							// ENT_LOAD_PERSIST
+	&Interpreter::InterpretNode_ENT_LOAD_ENTITY,													// ENT_LOAD_ENTITY
 	&Interpreter::InterpretNode_ENT_STORE,															// ENT_STORE
 	&Interpreter::InterpretNode_ENT_STORE_ENTITY,													// ENT_STORE_ENTITY
 	&Interpreter::InterpretNode_ENT_CONTAINS_ENTITY,												// ENT_CONTAINS_ENTITY

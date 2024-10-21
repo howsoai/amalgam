@@ -509,7 +509,8 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, EvaluableNode *r
 		FreeNode(new_token);
 		return nullptr;
 	}
-	else if(!parsing_assoc_key && StringManipulation::IsUtf8ArabicNumerals(cur_char) || cur_char == '-' || cur_char == '.')
+	else if(!parsing_assoc_key
+		&& (StringManipulation::IsUtf8ArabicNumerals(cur_char) || cur_char == '-' || cur_char == '.'))
 	{
 		size_t start_pos = pos;
 		SkipToEndOfIdentifier();

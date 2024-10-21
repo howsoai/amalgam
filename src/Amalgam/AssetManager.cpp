@@ -246,7 +246,6 @@ Entity *AssetManager::LoadEntityFromResource(AssetParameters &asset_params, bool
 		delete new_entity;
 		return nullptr;
 	}
-	new_entity->SetRoot(code, true);
 
 	if(asset_params.executeOnLoad)
 	{
@@ -254,7 +253,7 @@ Entity *AssetManager::LoadEntityFromResource(AssetParameters &asset_params, bool
 		args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_create_new_entity), new_entity->evaluableNodeManager.AllocNode(ENT_FALSE));
 		auto call_stack = Interpreter::ConvertArgsToCallStack(args, new_entity->evaluableNodeManager);
 
-		new_entity->Execute(StringInternPool::NOT_A_STRING_ID, call_stack, false, calling_interpreter);
+		new_entity->ExecuteCodeAsEntity(code, call_stack, calling_interpreter);
 		new_entity->evaluableNodeManager.FreeNode(call_stack->GetOrderedChildNodesReference()[0]);
 		new_entity->evaluableNodeManager.FreeNode(call_stack);
 
@@ -263,6 +262,8 @@ Entity *AssetManager::LoadEntityFromResource(AssetParameters &asset_params, bool
 
 		return new_entity;
 	}
+
+	new_entity->SetRoot(code, true);
 
 	if(asset_params.resourceType == FILE_EXTENSION_AMALGAM)
 	{

@@ -182,11 +182,25 @@ public:
 
 	~Entity();
 
-	//executes the entity on label_name (if empty string, then evaluates root node)
-	// returns the result from the execution
-	// if on_self is true, then it will be allowed to access private variables
+	//executes the code specified by code as if it were called on this entity using the specified call_stack
+	//note that code should be allocated from this entity
+	// calling_interpreter should be the interpreter that is calling this, if applicable
+	// write_listeners and print_listener will listen for any modifications to the entity and output as applicable
 	// if performance_constraints is not nullptr, then it will constrain performance and update performance_constraints
 	// if enm_lock is specified, it should be a lock on this entity's evaluableNodeManager.memoryModificationMutex
+	EvaluableNodeReference ExecuteCodeAsEntity(EvaluableNode *code,
+		EvaluableNode *call_stack, Interpreter *calling_interpreter = nullptr,
+		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
+		PerformanceConstraints *performance_constraints = nullptr
+#ifdef MULTITHREAD_SUPPORT
+		, Concurrency::ReadLock *enm_lock = nullptr
+#endif
+	);
+
+	//executes the entity on label_name (if empty string, then evaluates root node)
+	// returns the result from the execution
+	// if on_self is true, then it will be allowed to access private labels
+	//see ExecuteCodeAsEntity for further parameter details
 	EvaluableNodeReference Execute(StringInternPool::StringID label_sid,
 		EvaluableNode *call_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
@@ -194,7 +208,29 @@ public:
 	#ifdef MULTITHREAD_SUPPORT
 		, Concurrency::ReadLock *enm_lock = nullptr
 	#endif
-		);
+		)
+	{
+		if(!on_self && IsLabelPrivate(label_sid))
+			return EvaluableNodeReference::Null();
+
+		EvaluableNode *node_to_execute = nullptr;
+		if(label_sid == string_intern_pool.NOT_A_STRING_ID)	//if not specified, then use root
+			node_to_execute = evaluableNodeManager.GetRootNode();
+		else //get code at label
+		{
+			const auto &label = labelIndex.find(label_sid);
+
+			if(label != end(labelIndex))
+				node_to_execute = label->second;
+		}
+
+		return ExecuteCodeAsEntity(node_to_execute, call_stack, calling_interpreter,
+			write_listeners, print_listener, performance_constraints
+		#ifdef MULTITHREAD_SUPPORT
+			, enm_lock
+		#endif
+			);
+	}
 
 	//same as Execute but accepts a string for label name
 	inline EvaluableNodeReference Execute(std::string &label_name,

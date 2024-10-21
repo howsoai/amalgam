@@ -160,6 +160,9 @@ public:
 				asset_params, &entity->evaluableNodeManager);
 
 			entity->evaluableNodeManager.FreeNodeTreeIfPossible(flattened_entity);
+
+			if(update_persistence)
+				SetEntityPersistenceForFlattenedEntity(entity, persistent ? &asset_params : nullptr);
 			return all_stored_successfully;
 		}
 
@@ -393,6 +396,14 @@ private:
 			auto new_asset_params = std::make_unique<AssetParameters>(*asset_params);
 			persistentEntities.insert_or_assign(entity, std::move(new_asset_params));
 		}
+	}
+
+	//sets the persistence for the entity and everything within it
+	void SetEntityPersistenceForFlattenedEntity(Entity *entity, AssetParameters *asset_params)
+	{
+		SetEntityPersistence(entity, asset_params);
+		for(auto contained_entity : entity->GetContainedEntities())
+			SetEntityPersistenceForFlattenedEntity(contained_entity, asset_params);
 	}
 
 	//clears all entity persistence recursively, assumes persistentEntitiesMutex is locked before calling

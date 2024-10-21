@@ -417,10 +417,22 @@ std::string Parser::GetNextIdentifier(bool allow_leading_label_marks)
 	}
 }
 
-EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, EvaluableNode *new_token)
+EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, EvaluableNode *reuse_assoc_token_as_value)
 {
-	if(new_token == nullptr)
+	EvaluableNode *new_token = nullptr;
+	bool parsing_assoc_key = false;
+
+	if(reuse_assoc_token_as_value == nullptr)
+	{
 		new_token = evaluableNodeManager->AllocNode(ENT_NULL);
+		//if parsing an assoc but haven't been passed a value to reuse, it's a key
+		if(parent_node != nullptr && parent_node->IsAssociativeArray())
+			parsing_assoc_key = true;
+	}
+	else
+	{
+		new_token = reuse_assoc_token_as_value;
+	}
 
 	SkipWhitespaceAndAccumulateAttributes(new_token);
 	if(pos >= code->size())
@@ -497,7 +509,7 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, EvaluableNode *n
 		FreeNode(new_token);
 		return nullptr;
 	}
-	else if(StringManipulation::IsUtf8ArabicNumerals(cur_char) || cur_char == '-' || cur_char == '.')
+	else if(!parsing_assoc_key && StringManipulation::IsUtf8ArabicNumerals(cur_char) || cur_char == '-' || cur_char == '.')
 	{
 		size_t start_pos = pos;
 		SkipToEndOfIdentifier();

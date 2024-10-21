@@ -457,31 +457,17 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 	return std::make_pair(any_successful_assignment, all_successful_assignments);
 }
 
-EvaluableNodeReference Entity::Execute(StringInternPool::StringID label_sid,
-	EvaluableNode *call_stack, bool on_self, Interpreter *calling_interpreter,
+EvaluableNodeReference Entity::ExecuteCodeAsEntity(EvaluableNode *code,
+	EvaluableNode *call_stack, Interpreter *calling_interpreter,
 	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
 	PerformanceConstraints *performance_constraints
 #ifdef MULTITHREAD_SUPPORT
 	, Concurrency::ReadLock *enm_lock
 #endif
-	)
+)
 {
-	if(!on_self && IsLabelPrivate(label_sid))
-		return EvaluableNodeReference::Null();
-
-	EvaluableNode *node_to_execute = nullptr;
-	if(label_sid == string_intern_pool.NOT_A_STRING_ID)	//if not specified, then use root
-		node_to_execute = evaluableNodeManager.GetRootNode();
-	else //get code at label
-	{
-		const auto &label = labelIndex.find(label_sid);
-
-		if(label != end(labelIndex))
-			node_to_execute = label->second;
-	}
-
-	//if label not found or no code, can't do anything
-	if(node_to_execute == nullptr)
+	//no code, can't do anything
+	if(code == nullptr)
 		return EvaluableNodeReference::Null();
 
 	Interpreter interpreter(&evaluableNodeManager, randomStream.CreateOtherStreamViaRand(),
@@ -494,8 +480,8 @@ EvaluableNodeReference Entity::Execute(StringInternPool::StringID label_sid,
 		interpreter.memoryModificationLock = std::move(*enm_lock);
 #endif
 
-	EvaluableNodeReference retval = interpreter.ExecuteNode(node_to_execute, call_stack);
-	
+	EvaluableNodeReference retval = interpreter.ExecuteNode(code, call_stack);
+
 #ifdef MULTITHREAD_SUPPORT
 	if(enm_lock != nullptr)
 		*enm_lock = std::move(interpreter.memoryModificationLock);

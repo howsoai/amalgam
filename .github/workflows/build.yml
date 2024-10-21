@@ -538,6 +538,9 @@ jobs:
       - name: Extract Release WASM
         run: |
           tar -xvf ./amalgam-${{ inputs.version }}-wasm64.tar.gz -C ./src/webassembly
+          cp ./src/webassembly/bin/* ./src/webassembly/
+          rm -rf ./src/webassembly/bin
+          rm -rf ./src/webassembly/docs
           rm -rf ./amalgam-${{ inputs.version }}-wasm64.tar.gz
 
       - name: Download Debug WASM
@@ -547,10 +550,11 @@ jobs:
 
       - name: Extract Debug WASM
         run: |
-          # These will be located in src/webassembly/debug
-          mkdir -p ./src/webassembly/debug
-          tar -xvf ./amalgam-${{ inputs.version }}-wasm64-debug.tar.gz -C ./src/webassembly/debug
-          rm -rf ./amalgam-${{ inputs.version }}-wasm64.tar.gz
+          tar -xvf ./amalgam-${{ inputs.version }}-wasm64-debug.tar.gz -C ./src/webassembly
+          cp ./src/webassembly/bin/* ./src/webassembly/
+          rm -rf ./src/webassembly/bin
+          rm -rf ./src/webassembly/docs
+          rm -rf ./amalgam-${{ inputs.version }}-wasm64-debug.tar.gz
 
       - name: Set version.json
         run: |

@@ -238,6 +238,7 @@ Entity *AssetManager::LoadEntityFromResource(AssetParameters &asset_params, bool
 	std::string default_random_seed, Interpreter *calling_interpreter, EntityExternalInterface::LoadEntityStatus &status)
 {
 	Entity *new_entity = new Entity();
+	new_entity->SetRandomState(default_random_seed, true);
 
 	EvaluableNodeReference code = LoadResource(asset_params, &new_entity->evaluableNodeManager, status);
 	if(!status.loaded)
@@ -245,13 +246,10 @@ Entity *AssetManager::LoadEntityFromResource(AssetParameters &asset_params, bool
 		delete new_entity;
 		return nullptr;
 	}
+	new_entity->SetRoot(code, true);
 
-	new_entity->SetRandomState(default_random_seed, true);
-
-	if(asset_params.resourceType == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
+	if(asset_params.executeOnLoad)
 	{
-		new_entity->SetRoot(code, true);
-
 		EvaluableNodeReference args = EvaluableNodeReference(new_entity->evaluableNodeManager.AllocNode(ENT_ASSOC), true);
 		args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_create_new_entity), new_entity->evaluableNodeManager.AllocNode(ENT_FALSE));
 		auto call_stack = Interpreter::ConvertArgsToCallStack(args, new_entity->evaluableNodeManager);
@@ -259,10 +257,12 @@ Entity *AssetManager::LoadEntityFromResource(AssetParameters &asset_params, bool
 		new_entity->Execute(StringInternPool::NOT_A_STRING_ID, call_stack, false, calling_interpreter);
 		new_entity->evaluableNodeManager.FreeNode(call_stack->GetOrderedChildNodesReference()[0]);
 		new_entity->evaluableNodeManager.FreeNode(call_stack);
+
+		if(persistent)
+			SetEntityPersistenceForFlattenedEntity(new_entity, &asset_params);
+
 		return new_entity;
 	}
-
-	new_entity->SetRoot(code, true);
 
 	if(asset_params.resourceType == FILE_EXTENSION_AMALGAM)
 	{
@@ -284,8 +284,8 @@ Entity *AssetManager::LoadEntityFromResource(AssetParameters &asset_params, bool
 				EvaluableNode **version = metadata->GetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_version));
 				if(version != nullptr)
 				{
-					auto [tostr_success, version_str] = EvaluableNode::ToString(*version);
-					if(tostr_success)
+					auto [to_str_success, version_str] = EvaluableNode::ToString(*version);
+					if(to_str_success)
 					{
 						auto [error_message, success] = AssetManager::ValidateVersionAgainstAmalgam(version_str);
 						if(!success)
@@ -390,8 +390,8 @@ void AssetManager::SetRootPermission(Entity *entity, bool permission)
 
 std::pair<std::string, bool> AssetManager::ValidateVersionAgainstAmalgam(std::string &version)
 {
-	auto semver = StringManipulation::Split(version, '-'); //split on postfix
-	auto version_split = StringManipulation::Split(semver[0], '.'); //ignore postfix
+	auto sem_ver = StringManipulation::Split(version, '-'); //split on postfix
+	auto version_split = StringManipulation::Split(sem_ver[0], '.'); //ignore postfix
 	if(version_split.size() != 3)
 		return std::make_pair("Invalid version number", false);
 
@@ -400,8 +400,15 @@ std::pair<std::string, bool> AssetManager::ValidateVersionAgainstAmalgam(std::st
 	uint32_t patch = atoi(version_split[2].c_str());
 	auto dev_build = std::string(AMALGAM_VERSION_SUFFIX);
 	if(!dev_build.empty()
-			|| (AMALGAM_VERSION_MAJOR == 0 && AMALGAM_VERSION_MINOR == 0 && AMALGAM_VERSION_PATCH == 0))
+		|| (AMALGAM_VERSION_MAJOR == 0 && AMALGAM_VERSION_MINOR == 0 && AMALGAM_VERSION_PATCH == 0))
+	{
 		; // dev builds don't check versions
+	}
+	else if(major == 0 && minor == 0 && patch == 0)
+	{
+		std::string warn_msg = "Warning: parsing Amalgam generated from an unversioned debug build";
+		std::cerr << warn_msg << ", version=" << version << std::endl;
+	}
 	else if(
 		(major > AMALGAM_VERSION_MAJOR) ||
 		(major == AMALGAM_VERSION_MAJOR && minor > AMALGAM_VERSION_MINOR) ||

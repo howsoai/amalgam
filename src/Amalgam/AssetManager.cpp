@@ -404,7 +404,7 @@ std::pair<std::string, bool> AssetManager::ValidateVersionAgainstAmalgam(std::st
 	if(!dev_build.empty()
 		|| (AMALGAM_VERSION_MAJOR == 0 && AMALGAM_VERSION_MINOR == 0 && AMALGAM_VERSION_PATCH == 0))
 	{
-		; // dev builds don't check versions
+		// dev builds don't check versions
 	}
 	else if(major == 0 && minor == 0 && patch == 0)
 	{

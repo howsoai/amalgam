@@ -1180,11 +1180,6 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::CommonalityBe
 
 	auto [_, commonality] = CommonalityBetweenNodeTypesAndValues(n1, n2);
 
-	//if no labels, as is usually the case, then just address normal commonality
-	// and if the nodes are exactly equal
-	if(num_unique_labels == 0)
-		return MergeMetricResults(commonality, n1, n2, num_common_labels > 0, commonality == 1.0);
-
 	bool must_match = (num_unique_labels == 0 && num_common_labels > 0);
 	bool exact_match = (num_unique_labels == 0 && commonality == 1.0);
 	return MergeMetricResults(commonality + num_common_labels, n1, n2, must_match, exact_match);

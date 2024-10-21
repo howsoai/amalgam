@@ -135,7 +135,7 @@ EvaluableNodeReference AssetManager::LoadResource(AssetParameters &asset_params,
 				code.erase(0, 3);
 		}
 
-		auto [node, warnings, char_with_error] = Parser::Parse(code, enm, false, &asset_params.resource, debugSources);
+		auto [node, warnings, char_with_error] = Parser::Parse(code, enm, asset_params.transactional, &asset_params.resource, debugSources);
 		for(auto &w : warnings)
 			std::cerr << w << std::endl;
 		return node;
@@ -167,7 +167,8 @@ EvaluableNodeReference AssetManager::LoadResource(AssetParameters &asset_params,
 		if(strings.size() == 0)
 			return EvaluableNodeReference::Null();
 
-		auto [node, warnings, char_with_error] = Parser::Parse(strings[0], enm, false, &asset_params.resource, debugSources);
+		auto [node, warnings, char_with_error] = Parser::Parse(strings[0], enm, asset_params.transactional,
+			&asset_params.resource, debugSources);
 		for(auto &w : warnings)
 			std::cerr << w << std::endl;
 		return node;

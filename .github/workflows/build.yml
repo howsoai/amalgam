@@ -530,6 +530,10 @@ jobs:
           mkdir -p ./src/webassembly
           touch ./src/webassembly/version.json
 
+      - name: Update README
+        run: |
+          sed -i 's/Amalgam version: \[.*\](https:\/\/github\.com\/howsoai\/amalgam\/releases\/tag\/.*)/Amalgam version: \[${{ inputs.version }}\](https:\/\/github\.com\/howsoai\/amalgam\/releases\/tag\/${{ inputs.version }})/' README.md
+
       - name: Download Release WASM
         uses: actions/download-artifact@v4
         with:
@@ -561,6 +565,7 @@ jobs:
           cd src/webassembly && ls -l
           echo '{}' | jq --arg version "${{ inputs.version }}" '.dependencies.amalgam = $version' > version.json
           cat version.json
+          cd ../..
 
       - name: Commit and push changes
         run: |

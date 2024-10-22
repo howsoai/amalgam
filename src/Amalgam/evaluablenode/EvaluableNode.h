@@ -202,8 +202,8 @@ public:
 	}
 
 	//Evaluates the fraction of the labels of nodes that are the same, 1.0 if no labels on either
-	//num_common_labels and num_unique_labels are set to the appropriate number in common and number of labels that are unique when the two sets are merged
-	static void GetNodeCommonAndUniqueLabelCounts(EvaluableNode *n1, EvaluableNode *n2, size_t &num_common_labels, size_t &num_unique_labels);
+	//returns the number of followed by the number of unique labels if the two sets were merged
+	static std::pair<size_t, size_t> GetNodeCommonAndUniqueLabelCounts(EvaluableNode *n1, EvaluableNode *n2);
 
 	//Returns true if the immediate data structure of a is equal to b
 	static bool AreShallowEqual(EvaluableNode *a, EvaluableNode *b);

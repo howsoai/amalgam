@@ -71,9 +71,7 @@ inline StringInternPool::StringID MixStringValues(StringInternPool::StringID a, 
 
 bool EvaluableNodeTreeManipulation::NodesMergeMethod::AreMergeable(EvaluableNode *a, EvaluableNode *b)
 {
-	size_t num_common_labels;
-	size_t num_unique_labels;
-	EvaluableNode::GetNodeCommonAndUniqueLabelCounts(a, b, num_common_labels, num_unique_labels);
+	auto [num_common_labels, num_unique_labels] = EvaluableNode::GetNodeCommonAndUniqueLabelCounts(a, b);
 
 	auto [_, commonality] = CommonalityBetweenNodeTypesAndValues(a, b, true);
 
@@ -121,9 +119,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::NodesMixMethod::MergeValues(Evalua
 
 bool EvaluableNodeTreeManipulation::NodesMixMethod::AreMergeable(EvaluableNode *a, EvaluableNode *b)
 {
-	size_t num_common_labels;
-	size_t num_unique_labels;
-	EvaluableNode::GetNodeCommonAndUniqueLabelCounts(a, b, num_common_labels, num_unique_labels);
+	auto [num_common_labels, num_unique_labels] = EvaluableNode::GetNodeCommonAndUniqueLabelCounts(a, b);
 
 	auto [_, commonality] = CommonalityBetweenNodeTypesAndValues(a, b);
 
@@ -1180,18 +1176,13 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::CommonalityBe
 	if(n1 == nullptr || n2 == nullptr)
 		return MergeMetricResults(0.0, n1, n2, false, false);
 
-	size_t num_common_labels;
-	size_t num_unique_labels;
-	EvaluableNode::GetNodeCommonAndUniqueLabelCounts(n1, n2, num_common_labels, num_unique_labels);
+	auto [num_common_labels, num_unique_labels] = EvaluableNode::GetNodeCommonAndUniqueLabelCounts(n1, n2);
 
 	auto [_, commonality] = CommonalityBetweenNodeTypesAndValues(n1, n2);
 
-	//if no labels, as is usually the case, then just address normal commonality
-	// and if the nodes are exactly equal
-	if(num_unique_labels == 0)
-		return MergeMetricResults(commonality, n1, n2, false, commonality == 1.0);
-
-	return MergeMetricResults(commonality + num_common_labels, n1, n2, num_common_labels == num_unique_labels, commonality == 1.0);
+	bool must_match = (num_unique_labels == 0 && num_common_labels > 0);
+	bool exact_match = (num_unique_labels == 0 && commonality == 1.0);
+	return MergeMetricResults(commonality + num_common_labels, n1, n2, must_match, exact_match);
 }
 
 std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBetweenNodeTypesAndValues(

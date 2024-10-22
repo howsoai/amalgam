@@ -468,10 +468,6 @@ MergeMetricResults<Entity *> EntityManipulation::NumberOfSharedNodes(Entity *ent
 				best_match_found = true;
 				best_match_value = match_value;
 				best_match_key = e2c_id;
-
-				//don't need to check any more
-				if(match_value.mustMatch)
-					break;
 			}
 		}
 

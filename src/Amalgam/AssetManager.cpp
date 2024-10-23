@@ -248,7 +248,7 @@ Entity *AssetManager::LoadEntityFromResource(AssetParameters &asset_params, bool
 		return nullptr;
 	}
 
-	if(false)//asset_params.executeOnLoad)
+	if(asset_params.executeOnLoad)
 	{
 		EvaluableNodeReference args = EvaluableNodeReference(new_entity->evaluableNodeManager.AllocNode(ENT_ASSOC), true);
 		args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_create_new_entity), new_entity->evaluableNodeManager.AllocNode(ENT_FALSE));

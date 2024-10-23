@@ -969,7 +969,11 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 				}
 			}
 		}
+	}
 
+	//check again for commonality in case exact match was found by iterating via tree1 above
+	if(!commonality.exactMatch)
+	{
 		if(tree2_ordered_nodes_size > 0)
 		{
 			for(auto node : tree2->GetOrderedChildNodesReference())

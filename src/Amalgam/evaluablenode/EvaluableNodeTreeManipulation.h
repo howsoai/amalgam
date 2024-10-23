@@ -271,7 +271,7 @@ public:
 			if(a == b)
 				return MergeMetricResults(1.0, a, b);
 			else
-				return MergeMetricResults(0.0, a, b);
+				return MergeMetricResults(0.0, a, b, false, false);
 		}
 
 		virtual uint32_t MergeValues(uint32_t a, uint32_t b, bool must_merge = false)

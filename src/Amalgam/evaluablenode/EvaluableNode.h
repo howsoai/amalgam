@@ -332,10 +332,17 @@ public:
 		}
 	}
 
-	//returns true is node pointer e is nullptr or value of e has type ENT_NULL
+	//returns true if e is nullptr or value of e has type ENT_NULL
 	static __forceinline bool IsNull(EvaluableNode *e)
 	{
 		return (e == nullptr || e->GetType() == ENT_NULL);
+	}
+
+	//returns true if e is nullptr or value of e has type ENT_NULL and has no labels or child nodes
+	static __forceinline bool IsEmptyNull(EvaluableNode *e)
+	{
+		return (e == nullptr
+			|| (e->GetType() == ENT_NULL && e->GetNumChildNodes() == 0 && e->GetNumLabels() == 0));
 	}
 
 	//Converts the node to a number

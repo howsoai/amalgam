@@ -1191,7 +1191,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 	else if(container->GetType() == ENT_STRING && !EvaluableNode::IsNull(value))
 	{
 		//compute regular expression
-		std::string s = container->GetStringValue();
+		auto &s = container->GetStringValue();
 
 		std::string value_as_str = EvaluableNode::ToStringPreservingOpcodeType(value);
 

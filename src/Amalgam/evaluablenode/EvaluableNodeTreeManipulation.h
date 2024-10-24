@@ -271,7 +271,7 @@ public:
 			if(a == b)
 				return MergeMetricResults(1.0, a, b);
 			else
-				return MergeMetricResults(0.0, a, b);
+				return MergeMetricResults(0.0, a, b, false, false);
 		}
 
 		virtual uint32_t MergeValues(uint32_t a, uint32_t b, bool must_merge = false)
@@ -357,8 +357,8 @@ public:
 		if(sid1 == string_intern_pool.NOT_A_STRING_ID || sid2 == string_intern_pool.NOT_A_STRING_ID)
 			return 0.125;
 
-		auto s1 = string_intern_pool.GetStringFromID(sid1);
-		auto s2 = string_intern_pool.GetStringFromID(sid2);
+		auto &s1 = string_intern_pool.GetStringFromID(sid1);
+		auto &s2 = string_intern_pool.GetStringFromID(sid2);
 
 		size_t s1_len = 0;
 		size_t s2_len = 0;

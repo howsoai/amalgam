@@ -17,7 +17,7 @@ class MergeMetricResultsBase
 public:
 	//starts off with an exact match of nothing
 	constexpr MergeMetricResultsBase()
-		: commonality(0.0), mustMatch(false), exactMatch(false)
+		: commonality(0.0), mustMatch(false), exactMatch(true)
 	{	}
 
 	constexpr MergeMetricResultsBase(double _similarity, bool must_match = false, bool exact_match = true)

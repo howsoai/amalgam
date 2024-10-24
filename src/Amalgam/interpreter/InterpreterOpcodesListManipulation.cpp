@@ -78,7 +78,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, b
 			if(sid == string_intern_pool.NOT_A_STRING_ID  || sid == string_intern_pool.emptyStringId)
 				return AllocReturn(StringInternPool::NOT_A_STRING_ID, immediate_result);
 
-			std::string s = string_intern_pool.GetStringFromID(sid);
+			auto &s = string_intern_pool.GetStringFromID(sid);
 			size_t utf8_char_length = StringManipulation::GetUTF8CharacterLength(s, 0);
 			std::string substring = s.substr(0, utf8_char_length);
 			return ReuseOrAllocReturn(list, substring, immediate_result);
@@ -187,7 +187,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, bo
 			if(sid == string_intern_pool.NOT_A_STRING_ID  || sid == string_intern_pool.emptyStringId)
 				return AllocReturn(StringInternPool::NOT_A_STRING_ID, immediate_result);
 
-			std::string s = string_intern_pool.GetStringFromID(sid);
+			auto &s = string_intern_pool.GetStringFromID(sid);
 
 			//remove the first element(s)
 			size_t num_chars_to_drop = 0;
@@ -285,7 +285,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, bo
 			if(sid == string_intern_pool.NOT_A_STRING_ID || sid == string_intern_pool.emptyStringId)
 				return AllocReturn(StringInternPool::NOT_A_STRING_ID, immediate_result);
 
-			std::string s = string_intern_pool.GetStringFromID(sid);
+			auto &s = string_intern_pool.GetStringFromID(sid);
 
 			auto [utf8_char_start_offset, utf8_char_length] = StringManipulation::GetLastUTF8CharacterOffsetAndLength(s);
 
@@ -392,7 +392,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, b
 			if(sid == string_intern_pool.NOT_A_STRING_ID  || sid == string_intern_pool.emptyStringId)
 				return AllocReturn(StringInternPool::NOT_A_STRING_ID, immediate_result);
 
-			std::string s = string_intern_pool.GetStringFromID(sid);
+			auto &s = string_intern_pool.GetStringFromID(sid);
 
 			//remove the last element(s)
 			size_t num_chars_to_keep = 0;
@@ -536,7 +536,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SIZE(EvaluableNode *en, bo
 	{
 		if(cur->GetType() == ENT_STRING)
 		{
-			auto s = cur->GetStringValue();
+			auto &s = cur->GetStringValue();
 			size = StringManipulation::GetNumUTF8Characters(s);
 		}
 		else

@@ -1154,7 +1154,7 @@ protected:
 	//updates longestStringLength and indexWithLongestString based on parameters
 	inline void UpdateLongestString(StringInternPool::StringID sid, size_t index)
 	{
-		auto str = string_intern_pool.GetStringFromID(sid);
+		auto &str = string_intern_pool.GetStringFromID(sid);
 		size_t str_size = StringManipulation::GetUTF8CharacterLength(str);
 		if(str_size > longestStringLength)
 		{

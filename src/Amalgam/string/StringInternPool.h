@@ -56,9 +56,9 @@ public:
 	}
 
 	//translates the id to a string, empty string if it does not exist
-	//because a flat hash map is used as the storage container, it is possible that any allocation or deallocation
-	//may invalidate the location, so a copy must be made to return the value
-	inline const std::string GetStringFromID(StringID id)
+	//note that the reference is only valid as long as the string id is valid; if a string is needed
+	//after a reference is destroyed, the caller must make a copy first
+	inline const std::string &GetStringFromID(StringID id)
 	{
 		if(id == NOT_A_STRING_ID)
 			return EMPTY_STRING;

@@ -154,7 +154,7 @@ bool EvaluableNodeToJsonStringRecurse(EvaluableNode *en, std::string &json_str, 
 				else
 					first_cn = false;
 
-				auto str = string_intern_pool.GetStringFromID(cn_id);
+				auto &str = string_intern_pool.GetStringFromID(cn_id);
 				EscapeAndAppendStringToJsonString(str, json_str);
 
 				json_str += ':';
@@ -184,7 +184,7 @@ bool EvaluableNodeToJsonStringRecurse(EvaluableNode *en, std::string &json_str, 
 				if(i > 0)
 					json_str += ',';
 
-				auto str = string_intern_pool.GetStringFromID(key_sids[i]);
+				auto &str = string_intern_pool.GetStringFromID(key_sids[i]);
 				EscapeAndAppendStringToJsonString(str, json_str);
 
 				json_str += ':';
@@ -265,7 +265,7 @@ bool EvaluableNodeToJsonStringRecurse(EvaluableNode *en, std::string &json_str, 
 		}
 		else
 		{
-			auto str_value = en->GetStringValue();
+			auto &str_value = en->GetStringValue();
 			EscapeAndAppendStringToJsonString(str_value, json_str);
 		}
 	}

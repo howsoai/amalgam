@@ -672,7 +672,7 @@ void Interpreter::DebugCheckBreakpointsAndUpdateState(EvaluableNode *en, bool be
 			&& _interpreter_debug_data.breakLineFile.size() > 0)
 		{
 			//if it has a source, check against all of the source break points
-			std::string comment_str = en->GetCommentsString();
+			auto &comment_str = en->GetCommentsString();
 			if(comment_str.rfind(Parser::sourceCommentPrefix, 0) != std::string::npos)
 			{
 				for(auto &breakpoint_str : _interpreter_debug_data.breakLineFile)

@@ -527,7 +527,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 		}
 		else //need to parse the string
 		{
-			auto from_type_str = string_intern_pool.GetStringFromID(from_type);
+			auto &from_type_str = string_intern_pool.GetStringFromID(from_type);
 
 			//see if it starts with the date or time string
 			if(from_type_str.compare(0, date_string.size(), date_string) == 0)
@@ -844,7 +844,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 	}
 	else //need to parse the string
 	{
-		auto to_type_str = string_intern_pool.GetStringFromID(to_type);
+		auto &to_type_str = string_intern_pool.GetStringFromID(to_type);
 
 		//if it starts with the date or time string
 		if(to_type_str.compare(0, date_string.size(), date_string) == 0)
@@ -1480,7 +1480,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SUBSTR(EvaluableNode *en, 
 	{
 		//make a copy of the string so the node can be freed
 		//(if this is a performance cost found in profiling, it can be fixed with more logic)
-		std::string regex_str = substr_node->GetStringValue();
+		auto &regex_str = substr_node->GetStringValue();
 		evaluableNodeManager->FreeNodeTreeIfPossible(substr_node);
 
 		if(replace_string)

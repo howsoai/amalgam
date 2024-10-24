@@ -437,7 +437,7 @@ std::string AssetManager::GetEvaluableNodeSourceFromComments(EvaluableNode *en)
 	{
 		if(en->HasComments())
 		{
-			auto comment = en->GetCommentsString();
+			auto &comment = en->GetCommentsString();
 			auto first_line_end = comment.find('\n');
 			if(first_line_end == std::string::npos)
 				source = comment;

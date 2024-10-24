@@ -826,7 +826,7 @@ void Parser::AppendAssocKeyValuePair(UnparseData &upd, StringInternPool::StringI
 	}
 	else
 	{
-		auto key_str = string_intern_pool.GetStringFromID(key_sid);
+		auto &key_str = string_intern_pool.GetStringFromID(key_sid);
 
 		//surround in quotes only if needed
 		if(HasCharactersBeyondIdentifier(key_str))
@@ -928,7 +928,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 			{
 				upd.result.push_back('"');
 
-				auto s = tree->GetStringValue();
+				auto &s = tree->GetStringValue();
 				if(NeedsBackslashify(s))
 					upd.result.append(Backslashify(s));
 				else

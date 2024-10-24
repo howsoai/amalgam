@@ -367,7 +367,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableN
 			continue;
 		}
 
-		auto new_entity_id_string = string_intern_pool.GetStringFromID(new_entity_id);
+		auto &new_entity_id_string = string_intern_pool.GetStringFromID(new_entity_id);
 		std::string rand_state = entity_container->CreateRandomStreamFromStringAndRand(new_entity_id_string);
 
 		//create new entity

@@ -20,6 +20,37 @@ Parser::Parser()
 	charOffsetStartOfLastCompletedCode = std::numeric_limits<size_t>::max();
 }
 
+Parser::Parser(std::string_view code_string, EvaluableNodeManager *enm,
+	bool transactional_parse, std::string *original_source, bool debug_sources)
+{
+	code = code_string;
+	pos = 0;
+	lineNumber = 0;
+	lineStartPos = 0;
+	numOpenParenthesis = 0;
+
+	if(original_source != nullptr)
+	{
+		//convert source to minimal absolute path
+		std::filesystem::path p = *original_source;
+		try
+		{
+			originalSource = std::filesystem::canonical(p).string();
+		}
+		catch(...)
+		{
+			//file doesn't exist, or was some other form of resource, just use original
+			originalSource = *original_source;
+		}
+	}
+
+	debugSources = debug_sources;
+	topNode = nullptr;
+	evaluableNodeManager = enm;
+	transactionalParse = transactional_parse;
+	charOffsetStartOfLastCompletedCode = std::numeric_limits<size_t>::max();
+}
+
 std::string Parser::Backslashify(const std::string &s)
 {
 	if(s.size() == 0)
@@ -61,31 +92,10 @@ std::string Parser::Backslashify(const std::string &s)
 }
 
 std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t>
-	Parser::Parse(std::string &code_string,
+	Parser::Parse(std::string_view code_string,
 		EvaluableNodeManager *enm, bool transactional_parse,  std::string *original_source, bool debug_sources)
 {
-	Parser pt;
-	pt.code = &code_string;
-	pt.preevaluationNodes.clear();
-	pt.evaluableNodeManager = enm;
-	pt.transactionalParse = transactional_parse;
-
-	if(original_source != nullptr)
-	{
-		//convert source to minimal absolute path
-		std::filesystem::path p = *original_source;
-		try
-		{
-			pt.originalSource = std::filesystem::canonical(p).string();
-		}
-		catch(...)
-		{
-			//file doesn't exist, or was some other form of resource, just use original
-			pt.originalSource = *original_source;
-		}
-	}
-
-	pt.debugSources = debug_sources;
+	Parser pt(code_string, enm, transactional_parse, original_source, debug_sources);
 
 	pt.ParseCode();
 
@@ -94,6 +104,16 @@ std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t>
 	return std::make_tuple(EvaluableNodeReference(pt.topNode, true),
 		std::move(pt.warnings),
 		pt.charOffsetStartOfLastCompletedCode);
+}
+
+std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t> Parser::ParseFirstNode()
+{
+	//TODO 21358: implement this
+}
+
+std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t> Parser::ParseNextTransactionalBlock()
+{
+	//TODO 21358: implement this
 }
 
 std::string Parser::Unparse(EvaluableNode *tree, EvaluableNodeManager *enm,
@@ -221,12 +241,12 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 
 void Parser::SkipWhitespaceAndAccumulateAttributes(EvaluableNode *target)
 {
-	while(pos < code->size())
+	while(pos < code.size())
 	{
 		//eat any whitespace
-		if(size_t space_size = StringManipulation::IsUtf8Whitespace(*code, pos); space_size > 0)
+		if(size_t space_size = StringManipulation::IsUtf8Whitespace(code, pos); space_size > 0)
 		{
-			if(StringManipulation::IsUtf8Newline(*code, pos) > 0)
+			if(StringManipulation::IsUtf8Newline(code, pos) > 0)
 			{
 				lineNumber++;
 				lineStartPos = pos + space_size;
@@ -236,7 +256,7 @@ void Parser::SkipWhitespaceAndAccumulateAttributes(EvaluableNode *target)
 			continue;
 		}
 
-		auto cur_char = (*code)[pos];
+		auto cur_char = code[pos];
 
 		//if it's a label, grab the label
 		if(cur_char == '#')
@@ -256,9 +276,9 @@ void Parser::SkipWhitespaceAndAccumulateAttributes(EvaluableNode *target)
 
 			//add on characters until end of line
 			size_t start_pos = pos;
-			while(pos < code->size())
+			while(pos < code.size())
 			{
-				cur_char = (*code)[pos];
+				cur_char = code[pos];
 				if(cur_char != '\r' && cur_char != '\n')
 					pos++;
 				else
@@ -269,14 +289,14 @@ void Parser::SkipWhitespaceAndAccumulateAttributes(EvaluableNode *target)
 			//prepend the comment with newlines if there is already a comment on the node
 			if(target->GetCommentsStringId() != StringInternPool::NOT_A_STRING_ID)
 				cur_comment = "\r\n";
-			cur_comment.append(code->substr(start_pos, pos - start_pos));
+			cur_comment.append(code.substr(start_pos, pos - start_pos));
 
 			target->AppendComments(cur_comment);
 			continue;
 		}
 
 		//if it's a concurrent marker, set the property
-		if(cur_char == '|' && pos + 1 < code->size() && (*code)[pos + 1] == '|')
+		if(cur_char == '|' && pos + 1 < code.size() && code[pos + 1] == '|')
 		{
 			pos += 2;	//skip ||
 			target->SetConcurrency(true);
@@ -318,9 +338,9 @@ std::string Parser::ParseString()
 	pos++;
 
 	std::string s;
-	while(pos < code->size())
+	while(pos < code.size())
 	{
-		auto cur_char = (*code)[pos];
+		auto cur_char = code[pos];
 
 		if(cur_char == '"')
 			break;
@@ -333,9 +353,9 @@ std::string Parser::ParseString()
 		else //escaped character
 		{
 			pos++;
-			if(pos < code->size())
+			if(pos < code.size())
 			{
-				cur_char = (*code)[pos];
+				cur_char = code[pos];
 				switch(cur_char)
 				{
 				case '0':
@@ -371,19 +391,19 @@ void Parser::SkipToEndOfIdentifier(bool allow_leading_label_marks)
 	//eat any label marks
 	if(allow_leading_label_marks)
 	{
-		while(pos < code->size() && (*code)[pos] == '#')
+		while(pos < code.size() && code[pos] == '#')
 			pos++;
 	}
 
 	//eat all characters until one that indicates end of identifier
-	while(pos < code->size())
+	while(pos < code.size())
 	{
-		if(StringManipulation::IsUtf8Whitespace(*code, pos))
+		if(StringManipulation::IsUtf8Whitespace(code, pos))
 			break;
 
-		auto cur_char = (*code)[pos];
+		auto cur_char = code[pos];
 
-		if(cur_char == '\\' && pos + 1 < code->size())
+		if(cur_char == '\\' && pos + 1 < code.size())
 		{
 			pos += 2;
 			continue;
@@ -403,17 +423,17 @@ void Parser::SkipToEndOfIdentifier(bool allow_leading_label_marks)
 
 std::string Parser::GetNextIdentifier(bool allow_leading_label_marks)
 {
-	if(pos >= code->size())
+	if(pos >= code.size())
 		return std::string();
 
 	//if quoted string, then go until the next end quote
-	if((*code)[pos] == '"')
+	if(code[pos] == '"')
 		return ParseString();
 	else
 	{
 		size_t start_pos = pos;
 		SkipToEndOfIdentifier(allow_leading_label_marks);
-		return code->substr(start_pos, pos - start_pos);
+		return std::string(code.substr(start_pos, pos - start_pos));
 	}
 }
 
@@ -435,13 +455,13 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, EvaluableNode *r
 	}
 
 	SkipWhitespaceAndAccumulateAttributes(new_token);
-	if(pos >= code->size())
+	if(pos >= code.size())
 	{
 		FreeNode(new_token);
 		return nullptr;
 	}
 
-	auto cur_char = (*code)[pos];
+	auto cur_char = code[pos];
 
 	if(cur_char == '(' || cur_char == '[' || cur_char == '{') //identifier as command
 	{
@@ -452,7 +472,7 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, EvaluableNode *r
 		if(cur_char == '(')
 			SkipWhitespaceAndAccumulateAttributes(new_token);
 
-		if(pos >= code->size())
+		if(pos >= code.size())
 		{
 			FreeNode(new_token);
 			return nullptr;
@@ -514,7 +534,7 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, EvaluableNode *r
 	{
 		size_t start_pos = pos;
 		SkipToEndOfIdentifier();
-		std::string s = code->substr(start_pos, pos - start_pos);
+		std::string_view s = code.substr(start_pos, pos - start_pos);
 
 		//check for special values
 		double value = 0.0;
@@ -559,7 +579,7 @@ void Parser::ParseCode()
 	EvaluableNode *cur_node = nullptr;
 
 	//as long as code left
-	while(pos < code->size())
+	while(pos < code.size())
 	{
 		//if at the top level node and starting to parse a new structure,
 		//then all previous ones have completed and can mark this new position as a successful start
@@ -605,9 +625,9 @@ void Parser::ParseCode()
 				if(!IsEvaluableNodeTypeImmediate(n->GetType()))
 				{
 					SkipWhitespaceAndAccumulateAttributes(n);
-					if(pos <= code->size())
+					if(pos <= code.size())
 					{
-						auto cur_char = (*code)[pos];
+						auto cur_char = code[pos];
 						if(cur_char == ')')
 						{
 							pos++;

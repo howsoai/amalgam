@@ -7,12 +7,16 @@
 //system headers:
 #include <algorithm>
 #include <string>
+#include <string_view>
 #include <vector>
 
 class Parser
 {
 public:
 	Parser();
+
+	Parser(std::string_view code_string, EvaluableNodeManager *enm,
+		bool transactional_parse, std::string *original_source, bool debug_sources);
 
 	//returns true if the string needs to be backslashified
 	inline static bool NeedsBackslashify(const std::string &s)
@@ -106,8 +110,12 @@ public:
 	//if original_source is a valid string, it will emit any warnings to stderr
 	//if debug_sources is true, it will prepend each node with a comment indicating original source
 	static std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t>
-		Parse(std::string &code_string, EvaluableNodeManager *enm,
+		Parse(std::string_view code_string, EvaluableNodeManager *enm,
 		bool transactional_parse = false, std::string *original_source = nullptr, bool debug_sources = false);
+
+	//TODO 21358: implement these and use them when executeOnLoad and transactional
+	std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t> ParseFirstNode();
+	std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t> ParseNextTransactionalBlock();
 
 	//Returns a string that represents the tree
 	// if expanded_whitespace, will emit additional whitespace to make it easier to read
@@ -193,7 +201,7 @@ protected:
 
 	size_t GetCurrentCharacterNumberInLine()
 	{
-		std::string_view line_to_opcode(&(*code)[lineStartPos], pos - lineStartPos);
+		std::string_view line_to_opcode(code.data() + lineStartPos, pos - lineStartPos);
 		size_t char_number = StringManipulation::GetNumUTF8Characters(line_to_opcode);
 		return char_number + 1;
 	}
@@ -224,8 +232,8 @@ protected:
 	//resolves any nodes that require preevaluation (such as assocs or circular references)
 	void PreevaluateNodes();
 
-	//Pointer to code currently being parsed
-	std::string *code;
+	//string of the code currently being parsed
+	std::string_view code;
 
 	//Position of the code currently being parsed
 	size_t pos;

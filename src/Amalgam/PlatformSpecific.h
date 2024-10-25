@@ -146,10 +146,11 @@ inline std::pair<std::string, bool> Platform_OpenFileAsString(const std::string 
 //        not currently have a working implementation on any version.
 // note2: std::from_chars is more desireable than std::strtod because it is locale independent
 // TODO 15993: Reevaluate when moving to C++20
-inline std::pair<double, bool> Platform_StringToNumber(const std::string &s)
+template<typename StringType>
+inline std::pair<double, bool> Platform_StringToNumber(const StringType &s)
 {
 #ifdef OS_WINDOWS
-	const char *first_char = s.c_str();
+	const char *first_char = s.data();
 	const char *last_char = first_char + s.length();
 	double value = 0.0;
 	auto [ptr, ec] = std::from_chars(first_char, last_char, value);
@@ -158,7 +159,7 @@ inline std::pair<double, bool> Platform_StringToNumber(const std::string &s)
 		return std::make_pair(value, true);
 	return std::make_pair(0.0, false);
 #else
-	const char *start_pointer = s.c_str();
+	const char *start_pointer = s.data();
 	char *end_pointer = nullptr;
 	double value = strtod(start_pointer, &end_pointer);
 	//if didn't reach the end or grabbed nothing, then it's not a number

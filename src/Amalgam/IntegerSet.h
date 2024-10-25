@@ -478,11 +478,9 @@ public:
 
 		size_t sparser_end_integer = sparser_bais.GetEndInteger();
 		size_t sparser_num_buckets = (sparser_end_integer + 63) / 64;
-		size_t sparser_num_indices = sparser_bais.size();
 
 		size_t denser_end_integer = denser_bais.GetEndInteger();
 		size_t denser_num_buckets = (denser_end_integer + 63) / 64;
-		size_t denser_num_indices = denser_bais.size();
 
 		size_t end_index = std::min(up_to_index, sparser_end_integer);
 		end_index = std::min(end_index, denser_end_integer);

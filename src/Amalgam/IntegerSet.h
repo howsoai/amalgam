@@ -432,8 +432,10 @@ public:
 		size_t indices_per_bucket = num_indices / num_buckets;
 		if(indices_per_bucket >= 48)
 		{
+			//calculate last bucket in case less than total size
+			size_t end_buckets = (end_index + 63) / 64;
 			for(size_t bucket = 0, index = 0;
-				bucket < num_buckets; bucket++, index++)
+				bucket < end_buckets; bucket++, index++)
 			{
 				uint64_t bucket_bits = bitBucket[bucket];
 				for(size_t bit = 0; bit < 64; bit++)

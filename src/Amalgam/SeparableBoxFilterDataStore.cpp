@@ -1129,7 +1129,8 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			if(value_found != end(column->valueCodeSizeToIndices))
 			{
 				auto &entity_indices = *(value_found->second);
-				ComputeAndAccumulatePartialSums(r_dist_eval, entity_indices, query_feature_index, absolute_feature_index, high_accuracy);
+				ComputeAndAccumulatePartialSums(r_dist_eval, enabled_indices, entity_indices,
+					query_feature_index, absolute_feature_index, high_accuracy);
 			}
 		}
 		//else value_type == ENIVT_NULL and already covered above
@@ -1203,7 +1204,8 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		if(value_found != end(column->valueCodeSizeToIndices))
 		{
 			auto &entity_indices = *(value_found->second);
-			ComputeAndAccumulatePartialSums(r_dist_eval, entity_indices, query_feature_index, absolute_feature_index, high_accuracy);
+			ComputeAndAccumulatePartialSums(r_dist_eval, enabled_indices, entity_indices,
+				query_feature_index, absolute_feature_index, high_accuracy);
 		}
 
 		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)

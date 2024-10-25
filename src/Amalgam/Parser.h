@@ -166,8 +166,8 @@ protected:
 
 	//Returns a EvaluableNode containing the next token, null if none left in current context
 	// parent_node is primarily to check for errors or warnings
-	//if new_token is not nullptr, it will put the token in the EvaluableNode provided, otherwise will return a new one
-	EvaluableNode *GetNextToken(EvaluableNode *parent_node, EvaluableNode *new_token = nullptr);
+	//if reuse_assoc_token_as_value is not nullptr, it will put the token in the EvaluableNode provided, otherwise will return a new one
+	EvaluableNode *GetNextToken(EvaluableNode *parent_node, EvaluableNode *reuse_assoc_token_as_value = nullptr);
 
 	//deallocates the current node in case there is an early exit or error
 	void FreeNode(EvaluableNode *node);

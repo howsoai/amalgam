@@ -17,7 +17,7 @@ class MergeMetricResultsBase
 public:
 	//starts off with an exact match of nothing
 	constexpr MergeMetricResultsBase()
-		: commonality(0.0), mustMatch(false), exactMatch(false)
+		: commonality(0.0), mustMatch(false), exactMatch(true)
 	{	}
 
 	constexpr MergeMetricResultsBase(double _similarity, bool must_match = false, bool exact_match = true)
@@ -44,15 +44,13 @@ public:
 	// if require_nontrivial_match, then it requires at least one node or atomic value to be equal
 	constexpr bool IsBetterMatchThan(const MergeMetricResultsBase &mmr)
 	{
-		if(mmr.mustMatch)
-			return false;
-		if(mustMatch)
+		if(mustMatch && !mmr.mustMatch)
 			return true;
 
 		//if same amount of commonality, prefer exact matches
 		if(commonality == mmr.commonality)
 		{
-			if(mmr.exactMatch && !exactMatch)
+			if(!exactMatch && mmr.exactMatch)
 				return false;
 			if(exactMatch && !mmr.exactMatch)
 				return true;

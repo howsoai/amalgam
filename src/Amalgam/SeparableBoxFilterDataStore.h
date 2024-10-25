@@ -543,15 +543,32 @@ protected:
 		SortedIntegerSet &entity_indices, size_t query_feature_index, size_t absolute_feature_index, bool high_accuracy)
 	{
 		size_t num_entity_indices = entity_indices.size();
+		size_t max_index = num_entity_indices;
 
 		auto &partial_sums = parametersAndBuffers.partialSums;
 		const auto accum_location = partial_sums.GetAccumLocation(query_feature_index);
+		size_t max_element = partial_sums.numInstances;
+
+		auto &entity_indices_vector = entity_indices.GetIntegerVector();
+
+		//it's almost always faster to just accumulate an index than to check if it is a valid index
+		// and then only accumulate if it is valid
+		//however, indices beyond the range of partial_sums will cause an issue
+		//therefore, only trim back the end if needed, and trim back to the largest possible element id (max_element - 1)
+		if(entity_indices.GetEndInteger() >= max_element)
+		{
+			max_index = entity_indices.GetFirstIntegerVectorLocationGreaterThan(max_element - 1);
+			num_entity_indices = max_index - 1;
+		}
 
 		auto &column_data = columnData[absolute_feature_index];
 
 		//for each found element, accumulate associated partial sums
-		for(size_t entity_index : entity_indices)
+		#pragma omp parallel for schedule(static) if(max_index > 300)
+		for(int64_t i = 0; i < static_cast<int64_t>(max_index); i++)
 		{
+			const auto entity_index = entity_indices_vector[i];
+
 			//get value
 			auto other_value_type = column_data->GetIndexValueType(entity_index);
 			auto other_value = column_data->GetResolvedValue(other_value_type, GetValue(entity_index, absolute_feature_index));

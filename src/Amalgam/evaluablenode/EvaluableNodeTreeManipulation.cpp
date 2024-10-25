@@ -61,8 +61,8 @@ inline StringInternPool::StringID MixStringValues(StringInternPool::StringID a, 
 	if(b == StringInternPool::NOT_A_STRING_ID)
 		return string_intern_pool.CreateStringReference(a);
 	
-	auto a_str = string_intern_pool.GetStringFromID(a);
-	auto b_str = string_intern_pool.GetStringFromID(b);
+	auto &a_str = string_intern_pool.GetStringFromID(a);
+	auto &b_str = string_intern_pool.GetStringFromID(b);
 	std::string result = EvaluableNodeTreeManipulation::MixStrings(a_str, b_str,
 		random_stream, fraction_a, fraction_b);
 
@@ -71,9 +71,7 @@ inline StringInternPool::StringID MixStringValues(StringInternPool::StringID a, 
 
 bool EvaluableNodeTreeManipulation::NodesMergeMethod::AreMergeable(EvaluableNode *a, EvaluableNode *b)
 {
-	size_t num_common_labels;
-	size_t num_unique_labels;
-	EvaluableNode::GetNodeCommonAndUniqueLabelCounts(a, b, num_common_labels, num_unique_labels);
+	auto [num_common_labels, num_unique_labels] = EvaluableNode::GetNodeCommonAndUniqueLabelCounts(a, b);
 
 	auto [_, commonality] = CommonalityBetweenNodeTypesAndValues(a, b, true);
 
@@ -121,9 +119,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::NodesMixMethod::MergeValues(Evalua
 
 bool EvaluableNodeTreeManipulation::NodesMixMethod::AreMergeable(EvaluableNode *a, EvaluableNode *b)
 {
-	size_t num_common_labels;
-	size_t num_unique_labels;
-	EvaluableNode::GetNodeCommonAndUniqueLabelCounts(a, b, num_common_labels, num_unique_labels);
+	auto [num_common_labels, num_unique_labels] = EvaluableNode::GetNodeCommonAndUniqueLabelCounts(a, b);
 
 	auto [_, commonality] = CommonalityBetweenNodeTypesAndValues(a, b);
 
@@ -160,9 +156,9 @@ bool EvaluableNodeTreeManipulation::NodesMixMethod::AreMergeable(EvaluableNode *
 MergeMetricResults<std::string *> EvaluableNodeTreeManipulation::StringSequenceMergeMetric::MergeMetric(std::string *a, std::string *b)
 {
 	if(a == b || (a != nullptr && b != nullptr && *a == *b))
-		return MergeMetricResults(1.0, a, b);
+		return MergeMetricResults(1.0, a, b, false, true);
 	else
-		return MergeMetricResults(0.0, a, b);
+		return MergeMetricResults(0.0, a, b, false, false);
 }
 
 std::string *EvaluableNodeTreeManipulation::StringSequenceMergeMetric::MergeValues(std::string *a, std::string *b, bool must_merge)
@@ -703,10 +699,6 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 	if(tree1 == nullptr && tree2 == nullptr)
 		return MergeMetricResults(1.0, tree1, tree2, false, true);
 
-	//if one is null and the other isn't, then stop
-	if( (tree1 == nullptr && tree2 != nullptr) || (tree1 != nullptr && tree2 == nullptr) )
-		return MergeMetricResults(0.0, tree1, tree2, false, false);
-
 	//if the pair of nodes has already been computed, then just return the result
 	auto found = memoized.find(std::make_pair(tree1, tree2));
 	if(found != end(memoized))
@@ -736,14 +728,14 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 	size_t tree2_ordered_nodes_size = 0;
 	size_t tree2_mapped_nodes_size = 0;
 
-	if(tree1->IsAssociativeArray())
+	if(EvaluableNode::IsAssociativeArray(tree1))
 		tree1_mapped_nodes_size = tree1->GetMappedChildNodesReference().size();
-	else if(!tree1->IsImmediate())
+	else if(EvaluableNode::IsOrderedArray(tree1))
 		tree1_ordered_nodes_size = tree1->GetOrderedChildNodesReference().size();
 
-	if(tree2->IsAssociativeArray())
+	if(EvaluableNode::IsAssociativeArray(tree2))
 		tree2_mapped_nodes_size = tree2->GetMappedChildNodesReference().size();
-	else if(!tree2->IsImmediate())
+	else if(EvaluableNode::IsOrderedArray(tree2))
 		tree2_ordered_nodes_size = tree2->GetOrderedChildNodesReference().size();
 
 	if(tree1_ordered_nodes_size == 0 && tree2_ordered_nodes_size == 0
@@ -921,8 +913,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 
 		}
 	}
-	
-	if(tree1_mapped_nodes_size > 0 && tree2_mapped_nodes_size > 0)
+	else if(tree1_mapped_nodes_size > 0 && tree2_mapped_nodes_size > 0)
 	{
 		//use keys from first node
 		auto &tree_2_mcn = tree2->GetMappedChildNodesReference();
@@ -944,28 +935,62 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 		{
 			for(auto node : tree1->GetOrderedChildNodesReference())
 			{
-				auto sub_match = NumberOfSharedNodes(tree2, node, memoized, checked);
+				auto sub_match = NumberOfSharedNodes(node, tree2, memoized, checked);
+
+				//mark as nonexact match because had to traverse downward,
+				// but preserve whether was an exact match for early stopping
+				bool exact_match = sub_match.exactMatch;
+				sub_match.exactMatch = false;
 				if(sub_match > commonality)
+				{
 					commonality = sub_match;
+					memoized.emplace(std::make_pair(node, tree2), commonality);
+					if(exact_match)
+						break;
+				}
 			}
 		}
 		else if(tree1_mapped_nodes_size > 0)
 		{
 			for(auto &[node_id, node] : tree1->GetMappedChildNodesReference())
 			{
-				auto sub_match = NumberOfSharedNodes(tree2, node, memoized, checked);
+				auto sub_match = NumberOfSharedNodes(node, tree2, memoized, checked);
+
+				//mark as nonexact match because had to traverse downward,
+				// but preserve whether was an exact match for early stopping
+				bool exact_match = sub_match.exactMatch;
+				sub_match.exactMatch = false;
 				if(sub_match > commonality)
+				{
 					commonality = sub_match;
+					memoized.emplace(std::make_pair(node, tree2), commonality);
+					if(exact_match)
+						break;
+				}
 			}
 		}
+	}
 
+	//check again for commonality in case exact match was found by iterating via tree1 above
+	if(!commonality.exactMatch)
+	{
 		if(tree2_ordered_nodes_size > 0)
 		{
-			for(auto cn : tree2->GetOrderedChildNodesReference())
+			for(auto node : tree2->GetOrderedChildNodesReference())
 			{
-				auto sub_match = NumberOfSharedNodes(tree1, cn, memoized, checked);
+				auto sub_match = NumberOfSharedNodes(tree1, node, memoized, checked);
+
+				//mark as nonexact match because had to traverse downward,
+				// but preserve whether was an exact match for early stopping
+				bool exact_match = sub_match.exactMatch;
+				sub_match.exactMatch = false;
 				if(sub_match > commonality)
+				{
 					commonality = sub_match;
+					memoized.emplace(std::make_pair(tree1, node), commonality);
+					if(exact_match)
+						break;
+				}
 			}
 		}
 		else if(tree2_mapped_nodes_size > 0)
@@ -973,8 +998,18 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 			for(auto &[node_id, node] : tree2->GetMappedChildNodesReference())
 			{
 				auto sub_match = NumberOfSharedNodes(tree1, node, memoized, checked);
+
+				//mark as nonexact match because had to traverse downward,
+				// but preserve whether was an exact match for early stopping
+				bool exact_match = sub_match.exactMatch;
+				sub_match.exactMatch = false;
 				if(sub_match > commonality)
+				{
 					commonality = sub_match;
+					memoized.emplace(std::make_pair(tree1, node), commonality);
+					if(exact_match)
+						break;
+				}
 			}
 		}
 	}
@@ -1058,7 +1093,7 @@ bool EvaluableNodeTreeManipulation::CollectLabelIndexesFromTree(EvaluableNode *t
 	for(size_t i = 0; i < num_labels; i++)
 	{
 		auto label_sid = tree->GetLabelStringId(i);
-		auto label_name = string_intern_pool.GetStringFromID(label_sid);
+		auto &label_name = string_intern_pool.GetStringFromID(label_sid);
 
 		if(label_name.size() == 0)
 			continue;
@@ -1113,7 +1148,7 @@ bool EvaluableNodeTreeManipulation::CollectLabelIndexesFromTreeAndMakeLabelNorma
 	for(size_t i = 0; i < num_labels; i++)
 	{
 		auto label_sid = tree->GetLabelStringId(i);
-		auto label_name = string_intern_pool.GetStringFromID(label_sid);
+		auto &label_name = string_intern_pool.GetStringFromID(label_sid);
 
 		if(label_name.size() == 0)
 			continue;
@@ -1177,21 +1212,13 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::CommonalityBe
 	if(n1 == nullptr && n2 == nullptr)
 		return MergeMetricResults(1.0, n1, n2, false, true);
 
-	if(n1 == nullptr || n2 == nullptr)
-		return MergeMetricResults(0.0, n1, n2, false, false);
-
-	size_t num_common_labels;
-	size_t num_unique_labels;
-	EvaluableNode::GetNodeCommonAndUniqueLabelCounts(n1, n2, num_common_labels, num_unique_labels);
+	auto [num_common_labels, num_unique_labels] = EvaluableNode::GetNodeCommonAndUniqueLabelCounts(n1, n2);
 
 	auto [_, commonality] = CommonalityBetweenNodeTypesAndValues(n1, n2);
 
-	//if no labels, as is usually the case, then just address normal commonality
-	// and if the nodes are exactly equal
-	if(num_unique_labels == 0)
-		return MergeMetricResults(commonality, n1, n2, false, commonality == 1.0);
-
-	return MergeMetricResults(commonality + num_common_labels, n1, n2, num_common_labels == num_unique_labels, commonality == 1.0);
+	bool must_match = (num_unique_labels == 0 && num_common_labels > 0);
+	bool exact_match = (num_unique_labels == 0 && commonality == 1.0);
+	return MergeMetricResults(commonality + num_common_labels, n1, n2, must_match, exact_match);
 }
 
 std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBetweenNodeTypesAndValues(
@@ -1223,7 +1250,7 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 			double n2_value = n2->GetNumberValueReference();
 			return std::make_pair(n1, n1_value == n2_value ? 1.0 : 0.0);
 		}
-		if(n1_type == ENT_STRING)
+		if(n1_type == ENT_STRING || n1_type == ENT_SYMBOL)
 		{
 			auto n1_sid = n1->GetStringID();
 			auto n2_sid = n2->GetStringID();

@@ -108,12 +108,28 @@ std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t>
 
 std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t> Parser::ParseFirstNode()
 {
-	//TODO 21358: implement this
+	EvaluableNode *n = GetNextToken(nullptr);
+
+	return std::make_tuple(EvaluableNodeReference(n, true),
+		std::move(warnings),
+		charOffsetStartOfLastCompletedCode);
 }
 
 std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t> Parser::ParseNextTransactionalBlock()
 {
-	//TODO 21358: implement this
+	//clear open parenthesis as to not cause future warnings
+	numOpenParenthesis = 0;
+	topNode = nullptr;
+	preevaluationNodes.clear();
+	parentNodes.clear();
+
+	ParseCode();
+
+	PreevaluateNodes();
+
+	return std::make_tuple(EvaluableNodeReference(topNode, true),
+		std::move(warnings),
+		charOffsetStartOfLastCompletedCode);
 }
 
 std::string Parser::Unparse(EvaluableNode *tree, EvaluableNodeManager *enm,

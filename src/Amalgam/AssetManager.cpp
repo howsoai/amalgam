@@ -250,6 +250,7 @@ Entity *AssetManager::LoadEntityFromResource(AssetParameters &asset_params, bool
 
 	if(asset_params.executeOnLoad)
 	{
+		//TODO 21358: implement partial parsing via	ParseFirstNode, ParseNextTransactionalBlock, and ParsedAllTransactionalBlocks
 		EvaluableNodeReference args = EvaluableNodeReference(new_entity->evaluableNodeManager.AllocNode(ENT_ASSOC), true);
 		args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_create_new_entity), new_entity->evaluableNodeManager.AllocNode(ENT_FALSE));
 		auto call_stack = Interpreter::ConvertArgsToCallStack(args, new_entity->evaluableNodeManager);

@@ -113,9 +113,17 @@ public:
 		Parse(std::string_view code_string, EvaluableNodeManager *enm,
 		bool transactional_parse = false, std::string *original_source = nullptr, bool debug_sources = false);
 
-	//TODO 21358: implement these and use them when executeOnLoad and transactional
+	//like Parse, but applies on the current object and only returns the first node
 	std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t> ParseFirstNode();
+	
+	//intended to be called after ParseFirstNode, returns the next transaction block
 	std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t> ParseNextTransactionalBlock();
+
+	//returns true if at the end of the file
+	bool ParsedAllTransactionalBlocks()
+	{
+		return (pos + 1 >= code.size());
+	}
 
 	//Returns a string that represents the tree
 	// if expanded_whitespace, will emit additional whitespace to make it easier to read

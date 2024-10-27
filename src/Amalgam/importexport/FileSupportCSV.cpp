@@ -16,18 +16,8 @@ EvaluableNode *FileSupportCSV::Load(const std::string &resource_path, EvaluableN
 		return EvaluableNodeReference::Null();
 	}
 
+	StringManipulation::RemoveBOMFromUTF8String(data);
 	size_t file_size = data.size();
-
-	//check for byte order mark for UTF-8 that may optionally appear at the beginning of the file.
-	// If it is present, remove it.  No other encoding standards besides ascii and UTF-8 are currently permitted.
-	if(file_size >= 3)
-	{
-		if(static_cast<uint8_t>(data[0]) == 0xEF && static_cast<uint8_t>(data[1]) == 0xBB && static_cast<uint8_t>(data[2]) == 0xBF)
-		{
-			data.erase(0, 3);
-			file_size -= 3;
-		}
-	}
 
 	EvaluableNode *data_top_node = enm->AllocNode(ENT_LIST);
 

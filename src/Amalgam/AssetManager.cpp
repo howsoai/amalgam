@@ -127,13 +127,7 @@ EvaluableNodeReference AssetManager::LoadResource(AssetParameters &asset_params,
 			return EvaluableNodeReference::Null();
 		}
 
-		//check for byte order mark for UTF-8 that may optionally appear at the beginning of the file.
-		// If it is present, remove it.  No other encoding standards besides ascii and UTF-8 are currently permitted.
-		if(code.size() >= 3)
-		{
-			if(static_cast<uint8_t>(code[0]) == 0xEF && static_cast<uint8_t>(code[1]) == 0xBB && static_cast<uint8_t>(code[2]) == 0xBF)
-				code.erase(0, 3);
-		}
+		StringManipulation::RemoveBOMFromUTF8String(code);
 
 		auto [node, warnings, char_with_error] = Parser::Parse(code, enm, asset_params.transactional, &asset_params.resource, debugSources);
 		for(auto &w : warnings)
@@ -241,6 +235,12 @@ Entity *AssetManager::LoadEntityFromResource(AssetParameters &asset_params, bool
 	Entity *new_entity = new Entity();
 	new_entity->SetRandomState(default_random_seed, true);
 
+	if(asset_params.executeOnLoad && asset_params.transactional)
+	{
+		//TODO 21358: implement partial parsing via	ParseFirstNode, ParseNextTransactionalBlock, and ParsedAllTransactionalBlocks -- create method LoadResourceViaTransactionalExecution
+
+	}
+
 	EvaluableNodeReference code = LoadResource(asset_params, &new_entity->evaluableNodeManager, status);
 	if(!status.loaded)
 	{
@@ -250,12 +250,12 @@ Entity *AssetManager::LoadEntityFromResource(AssetParameters &asset_params, bool
 
 	if(asset_params.executeOnLoad)
 	{
-		//TODO 21358: implement partial parsing via	ParseFirstNode, ParseNextTransactionalBlock, and ParsedAllTransactionalBlocks
 		EvaluableNodeReference args = EvaluableNodeReference(new_entity->evaluableNodeManager.AllocNode(ENT_ASSOC), true);
 		args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_create_new_entity), new_entity->evaluableNodeManager.AllocNode(ENT_FALSE));
 		auto call_stack = Interpreter::ConvertArgsToCallStack(args, new_entity->evaluableNodeManager);
 
 		new_entity->ExecuteCodeAsEntity(code, call_stack, calling_interpreter);
+
 		new_entity->evaluableNodeManager.FreeNode(call_stack->GetOrderedChildNodesReference()[0]);
 		new_entity->evaluableNodeManager.FreeNode(call_stack);
 

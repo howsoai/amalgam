@@ -25,6 +25,20 @@ namespace StringManipulation
 	//to only contain the portion of the string after the removed section
 	std::vector<std::string> SplitArgString(std::string &arg_string, bool greedy = true);
 
+	//removes the byte order mark from a utf-8 string if present, returns true if found
+	inline bool RemoveBOMFromUTF8String(std::string &s)
+	{
+		if(s.size() >= 3)
+		{
+			if(static_cast<uint8_t>(s[0]) == 0xEF && static_cast<uint8_t>(s[1]) == 0xBB && static_cast<uint8_t>(s[2]) == 0xBF)
+			{
+				s.erase(0, 3);
+				return true;
+			}
+		}
+		return false;
+	}
+
 	//returns the number of bytes wide the character in position of string s is if it is whitespace,
 	// 0 if it is not whitespace
 	template<typename StringType>

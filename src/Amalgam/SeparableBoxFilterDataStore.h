@@ -540,7 +540,8 @@ protected:
 	//computes each partial sum and adds the term to the partial sums associated for each id in entity_indices for query_feature_index
 	//returns the number of entities indices accumulated
 	size_t ComputeAndAccumulatePartialSums(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
-		SortedIntegerSet &entity_indices, size_t query_feature_index, size_t absolute_feature_index, bool high_accuracy)
+		BitArrayIntegerSet &enabled_indices, SortedIntegerSet &entity_indices,
+		size_t query_feature_index, size_t absolute_feature_index, bool high_accuracy)
 	{
 		size_t num_entity_indices = entity_indices.size();
 		size_t max_index = num_entity_indices;
@@ -568,6 +569,8 @@ protected:
 		for(int64_t i = 0; i < static_cast<int64_t>(max_index); i++)
 		{
 			const auto entity_index = entity_indices_vector[i];
+			if(!enabled_indices.contains(entity_index))
+				continue;
 
 			//get value
 			auto other_value_type = column_data->GetIndexValueType(entity_index);
@@ -627,16 +630,22 @@ protected:
 			}
 		}
 
+		//return an estimate (upper bound) of the number accumulated
 		return num_entity_indices;
 	}
 
 	//adds term to the partial sums associated for each id in entity_indices for query_feature_index
 	//returns the number of entities indices accumulated
-	inline size_t AccumulatePartialSums(BitArrayIntegerSet &entity_indices, size_t query_feature_index, double term)
+	inline size_t AccumulatePartialSums(BitArrayIntegerSet &enabled_indices, BitArrayIntegerSet &entity_indices,
+		size_t query_feature_index, double term)
 	{
 		size_t num_entity_indices = entity_indices.size();
 		if(num_entity_indices == 0)
 			return 0;
+
+		//see if the extra logic overhead for performing an intersection is worth doing
+		//for the reduced cost of fewer memory writes
+		size_t num_enabled_indices = enabled_indices.size();
 
 		auto &partial_sums = parametersAndBuffers.partialSums;
 		const auto accum_location = partial_sums.GetAccumLocation(query_feature_index);
@@ -644,36 +653,57 @@ protected:
 
 		if(term != 0.0)
 		{
-			entity_indices.IterateOver(
-				[&partial_sums, &accum_location, term]
-				(size_t entity_index)
-				{
-					partial_sums.Accum(entity_index, accum_location, term);
-				},
-				max_element);
+			if(num_enabled_indices <= num_entity_indices / 8)
+				BitArrayIntegerSet::IterateOverIntersection(enabled_indices, entity_indices,
+					[&partial_sums, &accum_location, term]
+					(size_t entity_index)
+					{
+						partial_sums.Accum(entity_index, accum_location, term);
+					},
+					max_element);
+			else
+				entity_indices.IterateOver(
+					[&partial_sums, &accum_location, term]
+					(size_t entity_index)
+					{
+						partial_sums.Accum(entity_index, accum_location, term);
+					},
+					max_element);
 		}
 		else
 		{
-			entity_indices.IterateOver(
-				[&partial_sums, &accum_location]
-				(size_t entity_index)
-				{
-					partial_sums.AccumZero(entity_index, accum_location);
-				},
-				max_element);
+			if(num_enabled_indices <= num_entity_indices / 8)
+				BitArrayIntegerSet::IterateOverIntersection(enabled_indices, entity_indices,
+					[&partial_sums, &accum_location]
+					(size_t entity_index)
+					{
+						partial_sums.AccumZero(entity_index, accum_location);
+					},
+					max_element);
+			else
+				entity_indices.IterateOver(
+					[&partial_sums, &accum_location]
+					(size_t entity_index)
+					{
+						partial_sums.AccumZero(entity_index, accum_location);
+					},
+					max_element);
 		}
 
-		return entity_indices.size();
+		//return an estimate (upper bound) of the number accumulated
+		return std::min(enabled_indices.size(), entity_indices.size());
 	}
 
-	//adds term to the partial sums associated for each id in entity_indices for query_feature_index
+	//adds term to the partial sums associated for each id in both enabled_indices and entity_indices
+	// for query_feature_index
 	//returns the number of entities indices accumulated
-	inline size_t AccumulatePartialSums(EfficientIntegerSet &entity_indices, size_t query_feature_index, double term)
+	inline size_t AccumulatePartialSums(BitArrayIntegerSet &enabled_indices, EfficientIntegerSet &entity_indices,
+		size_t query_feature_index, double term)
 	{
 		if(entity_indices.IsSisContainer())
 			return AccumulatePartialSums(entity_indices.GetSisContainer(), query_feature_index, term);
 		else
-			return AccumulatePartialSums(entity_indices.GetBaisContainer(), query_feature_index, term);
+			return AccumulatePartialSums(enabled_indices, entity_indices.GetBaisContainer(), query_feature_index, term);
 	}
 
 	//accumulates the partial sums for the specified value

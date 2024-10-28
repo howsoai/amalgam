@@ -117,8 +117,6 @@ std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t> Parser::Par
 
 std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t> Parser::ParseNextTransactionalBlock()
 {
-	//clear open parenthesis as to not cause future warnings
-	numOpenParenthesis = 0;
 	topNode = nullptr;
 	preevaluationNodes.clear();
 	parentNodes.clear();
@@ -1283,7 +1281,12 @@ void Parser::PreevaluateNodes()
 	}
 
 	if(any_nodes_changed)
+	{
 		EvaluableNodeManager::UpdateFlagsForNodeTree(topNode);
+	}
 	else
-		EvaluableNodeManager::UpdateIdempotencyFlagsForNonCyclicNodeTree(topNode);
+	{
+		if(topNode != nullptr)
+			EvaluableNodeManager::UpdateIdempotencyFlagsForNonCyclicNodeTree(topNode);
+	}
 }

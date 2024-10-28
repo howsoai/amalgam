@@ -181,6 +181,93 @@ EvaluableNodeReference AssetManager::LoadResource(AssetParameters &asset_params,
 	}
 }
 
+bool AssetManager::LoadResourceViaTransactionalExecution(AssetParameters &asset_params, Entity *entity,
+	Interpreter *calling_interpreter, EntityExternalInterface::LoadEntityStatus &status)
+{
+	std::string code_string;
+	if(asset_params.resourceType == FILE_EXTENSION_AMALGAM)
+	{
+		bool code_success = false;
+		std::tie(code_string, code_success) = Platform_OpenFileAsString(asset_params.resource);
+		if(!code_success)
+		{
+			status.SetStatus(false, code_string);
+			if(asset_params.resourceType == FILE_EXTENSION_AMALGAM)
+				std::cerr << code_string << std::endl;
+			return false;
+		}
+	}
+	else if(asset_params.resourceType == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
+	{
+		BinaryData compressed_data;
+		auto [error_msg, version, success] = LoadFileToBuffer<BinaryData>(asset_params.resource, asset_params.resourceType, compressed_data);
+		if(!success)
+		{
+			status.SetStatus(false, error_msg, version);
+			return false;
+		}
+
+		OffsetIndex cur_offset = 0;
+		auto strings = DecompressStrings(compressed_data, cur_offset);
+		if(strings.size() == 0)
+			return false;
+
+		code_string = std::move(strings[0]);
+	}
+
+	StringManipulation::RemoveBOMFromUTF8String(code_string);
+
+	Parser parser(code_string, &entity->evaluableNodeManager, true, &asset_params.resource, debugSources);
+	auto [first_node, first_node_warnings, first_node_char_with_error] = parser.ParseFirstNode();
+	for(auto &w : first_node_warnings)
+		std::cerr << w << std::endl;
+
+	//make sure it's a valid executable type
+	if(EvaluableNode::IsNull(first_node) || !first_node->IsOrderedArray())
+		return false;
+
+	EvaluableNodeReference args = EvaluableNodeReference(entity->evaluableNodeManager.AllocNode(ENT_ASSOC), true);
+	args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_create_new_entity), entity->evaluableNodeManager.AllocNode(ENT_FALSE));
+	auto call_stack = Interpreter::ConvertArgsToCallStack(args, entity->evaluableNodeManager);
+
+	auto first_node_type = first_node->GetType();
+	if(first_node_type == ENT_LET || first_node_type == ENT_DECLARE)
+	{
+		auto [assoc_node, assoc_warnings, assoc_char_with_error] = parser.ParseNextTransactionalBlock();
+		for(auto &w : assoc_warnings)
+			std::cerr << w << std::endl;
+
+		if(!EvaluableNode::IsNull(first_node) && first_node->IsAssociativeArray())
+		{
+			if(first_node_type == ENT_LET)
+			{
+				call_stack->AppendOrderedChildNode(assoc_node);
+			}
+			else //first_node_type == ENT_DECLARE
+			{
+				first_node->AppendOrderedChildNode(assoc_node);
+				entity->ExecuteCodeAsEntity(first_node, call_stack, calling_interpreter);
+			}
+		}
+	}
+
+	entity->evaluableNodeManager.FreeNode(first_node);
+
+	while(!parser.ParsedAllTransactionalBlocks())
+	{
+		auto [node, warnings, char_with_error] = parser.ParseNextTransactionalBlock();
+		for(auto &w : warnings)
+			std::cerr << w << std::endl;
+
+		entity->ExecuteCodeAsEntity(node, call_stack, calling_interpreter);
+	}
+	
+	entity->evaluableNodeManager.FreeNode(call_stack->GetOrderedChildNodesReference()[0]);
+	entity->evaluableNodeManager.FreeNode(call_stack);
+
+	return true;
+}
+
 bool AssetManager::StoreResource(EvaluableNode *code, AssetParameters &asset_params, EvaluableNodeManager *enm)
 {
 	//store the entity based on file_type
@@ -237,8 +324,16 @@ Entity *AssetManager::LoadEntityFromResource(AssetParameters &asset_params, bool
 
 	if(asset_params.executeOnLoad && asset_params.transactional)
 	{
-		//TODO 21358: implement partial parsing via	ParseFirstNode, ParseNextTransactionalBlock, and ParsedAllTransactionalBlocks -- create method LoadResourceViaTransactionalExecution
+		if(!LoadResourceViaTransactionalExecution(asset_params, new_entity, calling_interpreter, status))
+		{
+			delete new_entity;
+			return nullptr;
+		}
 
+		if(persistent)
+			SetEntityPersistenceForFlattenedEntity(new_entity, &asset_params);
+
+		return new_entity;
 	}
 
 	EvaluableNodeReference code = LoadResource(asset_params, &new_entity->evaluableNodeManager, status);

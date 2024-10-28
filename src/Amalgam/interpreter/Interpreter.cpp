@@ -893,6 +893,8 @@ void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_const
 	if(perf_constraints == nullptr)
 		return;
 
+	perf_constraints->constraintsExceeded = false;
+
 	//handle execution steps
 	if(performanceConstraints != nullptr && performanceConstraints->ConstrainedExecutionSteps())
 	{
@@ -909,6 +911,7 @@ void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_const
 		{
 			perf_constraints->maxNumExecutionSteps = 1;
 			perf_constraints->curExecutionStep = 1;
+			perf_constraints->constraintsExceeded = true;
 		}
 	}
 
@@ -928,6 +931,7 @@ void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_const
 		else //out of resources, ensure nothing will run (can't use 0 for maxNumAllocatedNodes)
 		{
 			perf_constraints->maxNumAllocatedNodes = 1;
+			perf_constraints->constraintsExceeded = true;
 		}
 	}
 
@@ -958,6 +962,7 @@ void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_const
 		else //out of resources, ensure nothing will run (can't use 0 for maxOpcodeExecutionDepth)
 		{
 			perf_constraints->maxOpcodeExecutionDepth = 1;
+			perf_constraints->constraintsExceeded = true;
 		}
 	}
 
@@ -983,9 +988,14 @@ void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_const
 			erbr.Clear();
 
 			if(container_total_entities >= performanceConstraints->maxContainedEntities)
+			{
 				max_entities = 0;
+				perf_constraints->constraintsExceeded = true;
+			}
 			else
+			{
 				max_entities = performanceConstraints->maxContainedEntities - (container_total_entities - contained_total_entities);
+			}
 		}
 
 		perf_constraints->maxContainedEntities = std::min(perf_constraints->maxContainedEntities, max_entities);
@@ -1007,10 +1017,15 @@ void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_const
 		}
 
 		if(cur_depth >= max_depth)
+		{
 			perf_constraints->maxContainedEntityDepth = 0;
+			perf_constraints->constraintsExceeded = true;
+		}
 		else
+		{
 			perf_constraints->maxContainedEntityDepth = std::min(perf_constraints->maxContainedEntityDepth,
 				max_depth - cur_depth);
+		}
 	}
 
 	if(performanceConstraints != nullptr && performanceConstraints->maxEntityIdLength > 0)

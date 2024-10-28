@@ -503,9 +503,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	#endif
 		);
 
-	if(performanceConstraints != nullptr)
-		performanceConstraints->AccruePerformanceCounters(perf_constraints_ptr);
-
 	ce_enm.FreeNode(call_stack->GetOrderedChildNodesReference()[0]);
 	ce_enm.FreeNode(call_stack);
 
@@ -545,6 +542,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 
 	if(_label_profiling_enabled)
 		PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
+
+	if(performanceConstraints != nullptr)
+		performanceConstraints->AccruePerformanceCounters(perf_constraints_ptr);
+
+	if(perf_constraints_ptr != nullptr && perf_constraints_ptr->constraintsExceeded)
+		return EvaluableNodeReference::Null();
 
 	return result;
 }
@@ -619,9 +622,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	#endif
 		);
 
-	if(performanceConstraints != nullptr)
-		performanceConstraints->AccruePerformanceCounters(perf_constraints_ptr);
-
 	container->evaluableNodeManager.FreeNode(call_stack->GetOrderedChildNodesReference()[0]);
 	container->evaluableNodeManager.FreeNode(call_stack);
 
@@ -639,6 +639,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 
 	if(_label_profiling_enabled)
 		PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
+
+	if(performanceConstraints != nullptr)
+		performanceConstraints->AccruePerformanceCounters(perf_constraints_ptr);
+
+	if(perf_constraints_ptr != nullptr && perf_constraints_ptr->constraintsExceeded)
+		return EvaluableNodeReference::Null();
 
 	return copied_result;
 }

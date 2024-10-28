@@ -129,6 +129,9 @@ public:
 	//constrains the maximum length of an entity id (primarily to make sure it doesn't cause problems for file systems)
 	//If 0, then unlimited
 	size_t maxEntityIdLength;
+
+	//flag set to true if constraints have been exceeded
+	bool constraintsExceeded;
 };
 
 class Interpreter
@@ -1021,23 +1024,33 @@ protected:
 				performanceConstraints->curExecutionStep++;
 
 			if(performanceConstraints->curExecutionStep > performanceConstraints->maxNumExecutionSteps)
+			{
+				performanceConstraints->constraintsExceeded = true;
 				return true;
+			}
 		}
 
 		if(performanceConstraints->ConstrainedAllocatedNodes())
 		{
 			size_t cur_allocated_nodes = performanceConstraints->curNumAllocatedNodesAllocatedToEntities + evaluableNodeManager->GetNumberOfUsedNodes();
 			if(cur_allocated_nodes > performanceConstraints->maxNumAllocatedNodes)
+			{
+				performanceConstraints->constraintsExceeded = true;
 				return true;
+			}
 		}
 
 		if(performanceConstraints->ConstrainedOpcodeExecutionDepth())
 		{
 			if(opcodeStackNodes->size() > performanceConstraints->maxOpcodeExecutionDepth)
+			{
+				performanceConstraints->constraintsExceeded = true;
 				return true;
+			}
 		}
 
-		return false;
+		//return whether they have ever been exceeded
+		return performanceConstraints->constraintsExceeded;
 	}
 
 	//opcodes

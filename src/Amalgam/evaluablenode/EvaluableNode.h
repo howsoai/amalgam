@@ -1273,7 +1273,7 @@ public:
 				return value_if_null;
 
 			auto &str = string_intern_pool.GetStringFromID(nodeValue.stringID);
-			auto [value, success] = StringManipulation::StringToNumber(str);
+			auto [value, success] = Platform_StringToNumber(str);
 			if(success)
 				return value;
 			return value_if_null;

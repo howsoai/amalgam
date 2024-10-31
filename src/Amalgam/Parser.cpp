@@ -558,7 +558,7 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, EvaluableNode *r
 			value = -std::numeric_limits<double>::infinity();
 		else
 		{
-			auto [converted_value, success] = StringManipulation::StringToNumber(s);
+			auto [converted_value, success] = Platform_StringToNumber(s);
 			if(success)
 				value = converted_value;
 		}

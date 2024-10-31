@@ -58,7 +58,7 @@ namespace EntityQueryBuilder
 				double value = std::numeric_limits<double>::quiet_NaN();
 				if(cn.first != string_intern_pool.emptyStringId)
 				{
-					auto [number_value, success] = StringManipulation::StringToNumber(string_intern_pool.GetStringFromID(cn.first));
+					auto [number_value, success] = Platform_StringToNumber(string_intern_pool.GetStringFromID(cn.first));
 					if(success)
 						value = number_value;
 				}
@@ -125,7 +125,7 @@ namespace EntityQueryBuilder
 				double value = std::numeric_limits<double>::quiet_NaN();
 				if(cn.first != string_intern_pool.emptyStringId)
 				{
-					auto [number_value, success] = StringManipulation::StringToNumber(string_intern_pool.GetStringFromID(cn.first));
+					auto [number_value, success] = Platform_StringToNumber(string_intern_pool.GetStringFromID(cn.first));
 					if(success)
 						value = number_value;
 				}

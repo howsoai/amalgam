@@ -579,7 +579,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			number_value = static_cast<double>(int_number_value);
 		else if(use_string)
 		{
-			auto [converted_value, success] = StringManipulation::StringToNumber(string_value);
+			auto [converted_value, success] = Platform_StringToNumber(string_value);
 			if(success)
 				number_value = converted_value;
 		}

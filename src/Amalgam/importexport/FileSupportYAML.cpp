@@ -44,7 +44,7 @@ EvaluableNode *YamlToEvaluableNodeRecurse(EvaluableNodeManager *enm, ryml::Const
 
 	if(value.is_number())
 	{
-		auto [num, success] = StringManipulation::StringToNumber(value_string);
+		auto [num, success] = Platform_StringToNumber(value_string);
 		if(!success)
 			return nullptr;
 

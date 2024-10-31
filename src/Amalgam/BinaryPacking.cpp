@@ -207,7 +207,7 @@ public:
 
 		//keep a double-ended queue to traverse the tree, building up the codes for each part of the tree
 		std::deque<std::pair<HuffmanTree<uint8_t> *, std::vector<bool>>> remaining_nodes;
-		remaining_nodes.push_back(std::make_pair(huffmanTree, std::vector<bool>()));
+		remaining_nodes.emplace_back(huffmanTree, std::vector<bool>());
 
 		//while more tree to convert
 		while(!remaining_nodes.empty())
@@ -228,9 +228,9 @@ public:
 
 				//append a 0 for left, 1 for right
 				code.push_back(0);
-				remaining_nodes.push_back(std::make_pair(left, code));
+				remaining_nodes.emplace_back(left, code);
 				code_copy.push_back(1);
-				remaining_nodes.push_back(std::make_pair(right, code_copy));
+				remaining_nodes.emplace_back(right, code_copy);
 			}
 			else //leaf node
 			{

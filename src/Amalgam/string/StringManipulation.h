@@ -13,6 +13,20 @@ namespace StringManipulation
 	std::string NumberToString(double value);
 	std::string NumberToString(size_t value);
 
+	//converts the string to a double, and returns true if it was successful, false if not
+	template<typename StringType>
+	inline std::pair<double, bool> StringToNumber(const StringType &s)
+	{
+		const char *first_char = s.data();
+		const char *last_char = first_char + s.length();
+		double value = 0.0;
+		auto [ptr, ec] = std::from_chars(first_char, last_char, value);
+		//if there was no parse error and nothing left on string, then it's a number
+		if(ec == std::errc() && ptr == last_char)
+			return std::make_pair(value, true);
+		return std::make_pair(0.0, false);
+	}
+
 	//removes the first token from str and return the removed token
 	std::string RemoveFirstToken(std::string &str);
 

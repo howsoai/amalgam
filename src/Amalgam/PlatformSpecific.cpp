@@ -114,7 +114,7 @@ void Platform_GetFileNamesOfType(std::vector<std::string> &file_names, const std
 	WindowsUtf8WStringConversion conv;
 	auto wstring = conv.utf8_to_wstring(path_with_wildcard);
 
-	//retreive file names
+	//retrieve file names
 	WIN32_FIND_DATA find_data;
 	HANDLE find = FindFirstFile(wstring.c_str(), &find_data);
 	while(find != INVALID_HANDLE_VALUE)

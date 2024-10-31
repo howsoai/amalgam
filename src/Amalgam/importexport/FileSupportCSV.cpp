@@ -106,7 +106,7 @@ EvaluableNode *FileSupportCSV::Load(const std::string &resource_path, EvaluableN
 			EvaluableNode *element = nullptr;
 			if(value.size() > 0)
 			{
-				auto [float_value, success] = Platform_StringToNumber(value);
+				auto [float_value, success] = StringManipulation::StringToNumber(value);
 				if(success)
 					element = enm->AllocNode(float_value);
 				else

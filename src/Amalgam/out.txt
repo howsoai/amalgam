@@ -231,10 +231,10 @@ hello world: 12 and 2
 (print "hello")
 [(null) (null) .infinity -.infinity]
 
-{b 2 a 1 c ["alpha" "beta" "gamma"]}
+{a 1 b 2 c ["alpha" "beta" "gamma"]}
 {
-	b 2
 	a 1
+	b 2
 	c ["alpha" "beta" "gamma"]
 }
 
@@ -655,12 +655,12 @@ a
 	e 5
 	f 6
 }
-{c 3 e 5}
+{c 3 d 4}
 {
-	a 1
 	c 3
 	d 4
 	e 5
+	f 6
 }
 {
 	a 1
@@ -706,12 +706,12 @@ c
 	e 5
 	f 6
 }
-{c 3 e 5}
+{c 3 d 4}
 {
-	a 1
 	c 3
 	d 4
 	e 5
+	f 6
 }
 {
 	a 1
@@ -1062,7 +1062,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-["b" "a" "4" "c"]
+["a" "b" "4" "c"]
 [
 	0
 	1
@@ -1074,28 +1074,28 @@ abcdef
 	7
 ]
 --values--
+[1 "d" 2 3]
+[
+	"a"
+	1
+	"b"
+	2
+	"c"
+	3
+	4
+	"d"
+]
+[
+	"a"
+	1
+	"b"
+	2
+	"c"
+	3
+	4
+	"d"
+]
 [2 1 "d" 3]
-[
-	"a"
-	1
-	"b"
-	2
-	"c"
-	3
-	4
-	"d"
-]
-[
-	"a"
-	1
-	"b"
-	2
-	"c"
-	3
-	4
-	"d"
-]
-[2 "d" 1 3]
 [
 	1
 	2
@@ -1325,7 +1325,7 @@ current_index: 2
 		rmfile "del /s /q "
 		rwww 1
 		slash "\\"
-		start_time 1730408904.990816
+		start_time 1730419803.177727
 		www 1
 		x 12
 		zz 10
@@ -1371,7 +1371,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1730408904.990816
+	start_time 1730419803.177727
 	www 1
 	x 12
 	zz 10
@@ -1416,7 +1416,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1730408904.990816
+	start_time 1730419803.177727
 	www 1
 	x 12
 	zz 10
@@ -1560,11 +1560,11 @@ infinity test c or d: ["d" "d" "c" "d"]
 
 infinity test c or d: ["c" "d" @(get (target 2) 1) @(get (target 2) 0)]
 
-{a 34 b 43 c 23}
+{a 16 b 61 c 23}
 
 {a 30 b 50 c 20}
 
-["1" "2" "7"]
+["1" "3" "9"]
 
 --get_rand_seed--
 0RÊíõÿ'`¦!šc”lÿ
@@ -1664,12 +1664,12 @@ string
 22: [{"a":3,"b":4},{"c":"c","d":null}]
 23: b: 2
 a: 1
-d: 4
 e:
   - a
   - b
   - 
   - .inf
+d: 4
 c: 3
 
 24: a: 1
@@ -1683,7 +1683,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2024-10-31-17.08.25.0453540
+current date-time in epoch: 2024-10-31-20.10.03.2292550
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -1744,7 +1744,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelA #labelQ
+	labelA #labelQ #labelA
 		(lambda
 			#labelB (true)
 		)
@@ -1758,7 +1758,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelA #labelQ
+	labelA #labelQ #labelA
 		(lambda
 			#labelB (true)
 		)
@@ -2873,17 +2873,6 @@ _1651806471
 	##p
 	["_2325275497" "_2325275497" "_2973704165" "_2973704165"]
 )
-_2325275497
-(associate
-	"E"
-	3
-	"F"
-	4
-	"G"
-	5
-	"H"
-	6
-)
 _2973704165
 (associate
 	"e"
@@ -2893,6 +2882,17 @@ _2973704165
 	"g"
 	5
 	"h"
+	6
+)
+_2325275497
+(associate
+	"E"
+	3
+	"F"
+	4
+	"G"
+	5
+	"H"
 	6
 )
 --difference_entities--
@@ -3500,7 +3500,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1730408905.305521
+1730419803.505288
 (true)
 
 RootTest
@@ -4347,11 +4347,11 @@ cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
 155: 0.1 (null
 	##deg 0
 )
-190: 0.045454545454545456 (null
-	##deg 12
-)
 200: 0.05555555555555555 (null
 	##deg 8
+)
+190: 0.045454545454545456 (null
+	##deg 12
 )
 --contains_label--
 (true)
@@ -4853,4 +4853,4 @@ rmdir /s /q amlg_code\persistent_tree_test_root
 del /s /q amlg_code\persist_module_test\psm.mdam
 del /s /q amlg_code\persist_module_test.mdam
 --total execution time--
-2.2725489139556885
+2.1111810207366943

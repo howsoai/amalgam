@@ -548,7 +548,7 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, EvaluableNode *r
 	{
 		size_t start_pos = pos;
 		SkipToEndOfIdentifier();
-		std::string_view s = code.substr(start_pos, pos - start_pos);
+		std::string s(code.substr(start_pos, pos - start_pos));
 
 		//check for special values
 		double value = 0.0;

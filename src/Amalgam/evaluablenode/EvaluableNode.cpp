@@ -1115,13 +1115,13 @@ std::vector<std::string> EvaluableNode::GetCommentsSeparateLines()
 		if(prev < cur && full_comments[cur - 1] == '\r')
 			carriage_return_offset = 1;
 
-		comment_lines.push_back(full_comments.substr(prev, cur - prev - carriage_return_offset));
+		comment_lines.emplace_back(full_comments.substr(prev, cur - prev - carriage_return_offset));
 		prev = cur + 1;
 	}
 
 	//get whatever is left
 	if(prev < full_comments.size())
-		comment_lines.push_back(full_comments.substr(prev));
+		comment_lines.emplace_back(full_comments.substr(prev));
 
 	return comment_lines;
 }

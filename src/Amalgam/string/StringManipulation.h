@@ -25,9 +25,24 @@ namespace StringManipulation
 	//to only contain the portion of the string after the removed section
 	std::vector<std::string> SplitArgString(std::string &arg_string, bool greedy = true);
 
+	//removes the byte order mark from a utf-8 string if present, returns true if found
+	inline bool RemoveBOMFromUTF8String(std::string &s)
+	{
+		if(s.size() >= 3)
+		{
+			if(static_cast<uint8_t>(s[0]) == 0xEF && static_cast<uint8_t>(s[1]) == 0xBB && static_cast<uint8_t>(s[2]) == 0xBF)
+			{
+				s.erase(0, 3);
+				return true;
+			}
+		}
+		return false;
+	}
+
 	//returns the number of bytes wide the character in position of string s is if it is whitespace,
 	// 0 if it is not whitespace
-	inline size_t IsUtf8Whitespace(const std::string &s, size_t position)
+	template<typename StringType>
+	inline size_t IsUtf8Whitespace(const StringType &s, size_t position)
 	{
 		auto cur_char = s[position];
 		if(cur_char == '\t' || cur_char == '\n' || cur_char == '\v' || cur_char == '\f'
@@ -103,7 +118,8 @@ namespace StringManipulation
 
 	//returns the number of bytes wide the character in position of string s is if it is a newline,
 	// 0 if it is not a newline
-	inline size_t IsUtf8Newline(std::string &s, size_t position)
+	template<typename StringType>
+	inline size_t IsUtf8Newline(const StringType &s, size_t position)
 	{
 		auto cur_char = s[position];
 		//don't count carriage returns (\r) as new lines, since it just moves the cursor
@@ -127,7 +143,8 @@ namespace StringManipulation
 	}
 
 	//returns the length of the UTF-8 character in s starting at the specified offset
-	inline size_t GetUTF8CharacterLength(std::string_view s, size_t offset = 0)
+	template<typename StringType>
+	inline size_t GetUTF8CharacterLength(const StringType &s, size_t offset = 0)
 	{
 		if(offset >= s.size())
 			return 0;
@@ -158,7 +175,8 @@ namespace StringManipulation
 	}
 
 	//returns the number of UTF8 characters in the string
-	inline size_t GetNumUTF8Characters(std::string_view s)
+	template<typename StringType>
+	inline size_t GetNumUTF8Characters(const StringType &s)
 	{
 		size_t offset = 0;
 		size_t next_offset = 0;
@@ -175,7 +193,8 @@ namespace StringManipulation
 	}
 
 	//for s, finds the offset of the last utf8 character and its length
-	inline std::pair<size_t, size_t> GetLastUTF8CharacterOffsetAndLength(std::string_view s)
+	template<typename StringType>
+	inline std::pair<size_t, size_t> GetLastUTF8CharacterOffsetAndLength(const StringType &s)
 	{
 		//walk along the utf8 string until find the last character
 		size_t offset = 0;
@@ -196,7 +215,8 @@ namespace StringManipulation
 
 	//returns the offset of the nth utf8 character in the specified string
 	// if the string does not have that many characters, then it will return the size of the string
-	inline size_t GetNthUTF8CharacterOffset(std::string_view s, size_t nth)
+	template<typename StringType>
+	inline size_t GetNthUTF8CharacterOffset(const StringType &s, size_t nth)
 	{
 		size_t offset = 0;
 		for(size_t i = 0; i < nth; i++)
@@ -213,7 +233,8 @@ namespace StringManipulation
 
 	//returns the offset of the nth last utf8 character in the specified string
 	// if the string does not have that many characters, then it will return the size of the string
-	inline size_t GetNthLastUTF8CharacterOffset(std::string_view s, size_t nth)
+	template<typename StringType>
+	inline size_t GetNthLastUTF8CharacterOffset(const StringType &s, size_t nth)
 	{
 		size_t num_utf8_chars = GetNumUTF8Characters(s);
 
@@ -228,7 +249,8 @@ namespace StringManipulation
 	}
 
 	//expands the utf8 string s into each character in exploded
-	inline void ExplodeUTF8Characters(std::string_view s, std::vector<uint32_t> &exploded)
+	template<typename StringType>
+	inline void ExplodeUTF8Characters(const StringType &s, std::vector<uint32_t> &exploded)
 	{
 		exploded.clear();
 

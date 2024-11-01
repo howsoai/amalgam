@@ -569,9 +569,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	std::swap(memoryModificationLock, sandbox.memoryModificationLock);
 #endif
 
-	if(performanceConstraints != nullptr)
-		performanceConstraints->AccruePerformanceCounters(perf_constraints_ptr);
-
 	evaluableNodeManager->FreeNode(call_stack->GetOrderedChildNodesReference()[0]);
 	evaluableNodeManager->FreeNode(call_stack);
 
@@ -581,6 +578,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 
 	if(_label_profiling_enabled && function->GetNumLabels() > 0)
 		PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
+
+	if(performanceConstraints != nullptr)
+		performanceConstraints->AccruePerformanceCounters(perf_constraints_ptr);
+
+	if(perf_constraints_ptr != nullptr && perf_constraints_ptr->constraintsExceeded)
+		return EvaluableNodeReference::Null();
 
 	return result;
 }

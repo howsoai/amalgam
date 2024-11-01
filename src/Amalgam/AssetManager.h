@@ -114,6 +114,11 @@ public:
 	EvaluableNodeReference LoadResource(AssetParameters &asset_params, EvaluableNodeManager *enm,
 		EntityExternalInterface::LoadEntityStatus &status);
 
+	//loads the resource specified by asset_params into entity via transactional execution
+	//returns true on success
+	bool LoadResourceViaTransactionalExecution(AssetParameters &asset_params, Entity *entity,
+		Interpreter *calling_interpreter, EntityExternalInterface::LoadEntityStatus &status);
+
 	//Stores the code to the resource specified in asset_params
 	bool StoreResource(EvaluableNode *code, AssetParameters &asset_params, EvaluableNodeManager *enm);
 

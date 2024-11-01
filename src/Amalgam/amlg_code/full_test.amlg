@@ -2323,7 +2323,11 @@
 
  (store_entity "amlg_code/test_output/module_test_c.caml" "ModuleTest")
  (load_entity "amlg_code/test_output/module_test_c.caml" "ModuleTestDecompressed")
- (print "Compression difference: [" (difference_entities "ModuleTest" "ModuleTestDecompressed") "]\n")
+ (print "Compression difference: " (difference_entities "ModuleTest" "ModuleTestDecompressed") "\n")
+
+  (store_entity "amlg_code/test_output/module_test_c.amlg" "ModuleTest" (null) (false) {flatten (true) transactional (true) })
+ (load_entity "amlg_code/test_output/module_test_c.amlg" "ModuleTestTransactionLoaded"  (null) (false) {transactional (true) execute_on_load (true)})
+ (print "Compression difference: " (difference_entities "ModuleTest" "ModuleTestTransactionLoaded") "\n")
 
  (print "store to .json in amlg format\n")
  (store "amlg_code/test_output/module_test.json" (list (assoc a 3 b 4) (assoc c "c" d (null))) "amlg")

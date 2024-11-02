@@ -158,6 +158,7 @@ public:
 			&& (asset_params.resourceType == FILE_EXTENSION_AMALGAM
 				|| asset_params.resourceType == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE))
 		{
+			//TODO 22068: incorporate first_of_transactional_unparse parameter of Unparse and break apart flatten
 			EvaluableNodeReference flattened_entity = EntityManipulation::FlattenEntity(&entity->evaluableNodeManager,
 				entity, *all_contained_entities, asset_params.includeRandSeeds, asset_params.parallelCreate);
 

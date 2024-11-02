@@ -131,10 +131,12 @@ std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t> Parser::Par
 }
 
 std::string Parser::Unparse(EvaluableNode *tree, EvaluableNodeManager *enm,
-	bool expanded_whitespace, bool emit_attributes, bool sort_keys)
+	bool expanded_whitespace, bool emit_attributes, bool sort_keys,
+	bool first_of_transactional_unparse)
 {
 	UnparseData upd;
 	upd.enm = enm;
+	upd.topNodeIfTransactionUnparsing = (first_of_transactional_unparse ? tree : nullptr);
 	//if the top node needs cycle checks, then need to check all nodes in case there are
 	// multiple ways to get to one
 	upd.cycleFree = (tree == nullptr || !tree->GetNeedCycleCheck());
@@ -921,11 +923,6 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 		return;
 	}
 
-	//if already hit this node, then need to create code to rebuild the circular reference
-
-	//add to check for circular references
-	upd.parentNodes[tree] = parent;
-
 	if(upd.emitAttributes)
 	{
 		AppendComments(tree, indentation_depth, expanded_whitespace, upd.result);
@@ -1095,34 +1092,41 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 			}
 		}
 
-		//add closing parenthesis
-		if(expanded_whitespace)
+		if(tree != upd.topNodeIfTransactionUnparsing)
 		{
-			//indent if appropriate
-			if(recurse_expanded_whitespace)
+			//add closing parenthesis
+			if(expanded_whitespace)
 			{
-				for(size_t i = 0; i < indentation_depth; i++)
-					upd.result.push_back(indentationCharacter);
+				//indent if appropriate
+				if(recurse_expanded_whitespace)
+				{
+					for(size_t i = 0; i < indentation_depth; i++)
+						upd.result.push_back(indentationCharacter);
+				}
+
+				if(tree_type == ENT_LIST)
+					upd.result.push_back(']');
+				else if(tree_type == ENT_ASSOC)
+					upd.result.push_back('}');
+				else
+					upd.result.push_back(')');
+
+				upd.result.push_back('\r');
+				upd.result.push_back('\n');
 			}
-
-			if(tree_type == ENT_LIST)
-				upd.result.push_back(']');
-			else if(tree_type == ENT_ASSOC)
-				upd.result.push_back('}');
 			else
-				upd.result.push_back(')');
-
-			upd.result.push_back('\r');
-			upd.result.push_back('\n');
+			{
+				if(tree_type == ENT_LIST)
+					upd.result.push_back(']');
+				else if(tree_type == ENT_ASSOC)
+					upd.result.push_back('}');
+				else
+					upd.result.push_back(')');
+			}
 		}
-		else
+		else //end of opening transactional; emit a space to ensure things don't get improperly joined
 		{
-			if(tree_type == ENT_LIST)
-				upd.result.push_back(']');
-			else if(tree_type == ENT_ASSOC)
-				upd.result.push_back('}');
-			else
-				upd.result.push_back(')');
+			upd.result.push_back(' ');
 		}
 	}
 }

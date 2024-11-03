@@ -151,7 +151,7 @@ public:
 	{
 		EvaluableNode *declare_flatten = FlattenOnlyTopEntity(enm, entity,
 			include_rand_seeds, false);
-		bool cycle_free = !declare_flatten->GetNeedCycleCheck();
+		bool cycle_flags_need_update = declare_flatten->GetNeedCycleCheck();
 
 		//preallocate the assoc, set_entity_rand_seed, create and set_entity_rand_seed for each contained entity, then the return new_entity
 		if(!parallel_create)
@@ -178,6 +178,8 @@ public:
 			}
 
 			EvaluableNode *create_entity = FlattenOnlyOneContainedEntity(enm, cur_entity, entity, include_rand_seeds, false);
+			if(create_entity->GetNeedCycleCheck())
+				cycle_flags_need_update = true;
 
 			cur_entity_creation_list->AppendOrderedChildNode(create_entity);
 		}
@@ -186,7 +188,7 @@ public:
 		declare_flatten->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, GetStringIdFromBuiltInStringId(ENBISI_new_entity)));
 
 		//if anything isn't cycle free, then need to recompute everything
-		if(!cycle_free)
+		if(cycle_flags_need_update)
 			EvaluableNodeManager::UpdateFlagsForNodeTree(declare_flatten);
 
 		return EvaluableNodeReference(declare_flatten, true);

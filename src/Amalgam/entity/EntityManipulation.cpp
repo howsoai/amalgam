@@ -757,9 +757,9 @@ EvaluableNode *EntityManipulation::FlattenOnlyOneContainedEntity(EvaluableNodeMa
 	bool include_rand_seeds, bool ensure_en_flags_correct)
 {
 	//   (create_entities
-			//        (append new_entity *relative id*)
-			//        (lambda *entity code*)
-			//   )
+	//        (append new_entity *relative id*)
+	//        (lambda *entity code*)
+	//   )
 	EvaluableNode *create_entity = enm->AllocNode(ENT_CREATE_ENTITIES);
 
 	EvaluableNode *src_id_list = GetTraversalIDPathFromAToB(enm, from_entity, entity);

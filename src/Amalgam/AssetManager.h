@@ -128,6 +128,22 @@ public:
 	Entity *LoadEntityFromResource(AssetParameters &asset_params, bool persistent,
 		std::string default_random_seed, Interpreter *calling_interpreter, EntityExternalInterface::LoadEntityStatus &status);
 
+	template<typename EntityReferenceType = EntityReadReference>
+	bool FlattenAndStoreEntityToResource(Entity *entity, AssetParameters &asset_params,
+		Entity::EntityReferenceBufferReference<EntityReferenceType> &all_contained_entities)
+	{
+		//TODO 22068: incorporate first_of_transactional_unparse parameter of Unparse and break apart flatten
+		EvaluableNodeReference flattened_entity = EntityManipulation::FlattenEntity(&entity->evaluableNodeManager,
+			entity, all_contained_entities, asset_params.includeRandSeeds, asset_params.parallelCreate);
+
+		bool all_stored_successfully = StoreResource(flattened_entity,
+			asset_params, &entity->evaluableNodeManager);
+
+		entity->evaluableNodeManager.FreeNodeTreeIfPossible(flattened_entity);
+
+		return all_stored_successfully;
+	}
+
 	//Stores an entity, including contained entities, etc. from the resource specified
 	// if update_persistence is true, then it will consider the persistent parameter, otherwise it is ignored
 	// if persistent is true, then it will keep the resource updated, if false it will clear persistence
@@ -158,14 +174,7 @@ public:
 			&& (asset_params.resourceType == FILE_EXTENSION_AMALGAM
 				|| asset_params.resourceType == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE))
 		{
-			//TODO 22068: incorporate first_of_transactional_unparse parameter of Unparse and break apart flatten
-			EvaluableNodeReference flattened_entity = EntityManipulation::FlattenEntity(&entity->evaluableNodeManager,
-				entity, *all_contained_entities, asset_params.includeRandSeeds, asset_params.parallelCreate);
-
-			bool all_stored_successfully = StoreResource(flattened_entity,
-				asset_params, &entity->evaluableNodeManager);
-
-			entity->evaluableNodeManager.FreeNodeTreeIfPossible(flattened_entity);
+			bool all_stored_successfully = FlattenAndStoreEntityToResource(entity, asset_params, *all_contained_entities);
 
 			if(update_persistence)
 				SetEntityPersistenceForFlattenedEntity(entity, persistent ? &asset_params : nullptr);

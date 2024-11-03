@@ -365,7 +365,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		//specialized path for immediate result just getting the count
 		if(immediate_result)
 		{
-			auto list = InterpretNode(ocn[0], true);
+			auto list = InterpretNodeForImmediateUse(ocn[0]);
 			if(list == nullptr)
 				return EvaluableNodeReference::Null();
 
@@ -382,9 +382,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 			else if(list->IsOrderedArray())
 			{
 				auto &list_ocn = list->GetOrderedChildNodesReference();
-				for(size_t i = list_ocn.size(); i > 0; i--)
+				for(auto &cn : list_ocn)
 				{
-					if(!EvaluableNode::IsNull(list_ocn[i]))
+					if(!EvaluableNode::IsNull(cn))
 						num_elements_not_filtered++;
 				}
 			}

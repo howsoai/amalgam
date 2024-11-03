@@ -136,6 +136,10 @@ public:
 	static EvaluableNode *FlattenOnlyTopEntity(EvaluableNodeManager *enm, Entity *entity,
 		bool include_rand_seeds, bool ensure_en_flags_correct);
 
+	//like FlattenOnlyTopEntity, but for an entity contained somewhere in from_entity
+	static EvaluableNode *FlattenOnlyOneContainedEntity(EvaluableNodeManager *enm, Entity *entity, Entity *from_entity,
+		bool include_rand_seeds, bool ensure_en_flags_correct);
+
 	//flattens entity using enm to allocate code that can recreate it
 	// all_contained_entities must be populated via Entity::GetAllDeeplyContainedEntityReadReferencesGroupedByDepth
 	// if include_rand_seeds is true, it will emit code that includes them; otherwise it won't
@@ -173,40 +177,7 @@ public:
 				start_index_of_next_group = i + num_contained;
 			}
 
-			//   (create_entities
-			//        (append new_entity *relative id*)
-			//        (lambda *entity code*)
-			//   )
-			EvaluableNode *create_entity = enm->AllocNode(ENT_CREATE_ENTITIES);
-
-			EvaluableNode *src_id_list = GetTraversalIDPathFromAToB(enm, entity, cur_entity);
-			EvaluableNode *src_append = enm->AllocNode(ENT_APPEND);
-			src_append->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, GetStringIdFromBuiltInStringId(ENBISI_new_entity)));
-			src_append->AppendOrderedChildNode(src_id_list);
-			create_entity->AppendOrderedChildNode(src_append);
-
-			EvaluableNode *lambda_for_create = enm->AllocNode(ENT_LAMBDA);
-			create_entity->AppendOrderedChildNode(lambda_for_create);
-
-			EvaluableNodeReference contained_root_copy = cur_entity->GetRoot(enm, EvaluableNodeManager::ENMM_LABEL_ESCAPE_INCREMENT);
-			lambda_for_create->AppendOrderedChildNode(contained_root_copy);
-			if(contained_root_copy.GetNeedCycleCheck())
-				cycle_free = false;
-
-			if(include_rand_seeds)
-			{
-				//   (set_entity_rand_seed
-				//        (first ...create_entity... )
-				//        *rand seed string* )
-				EvaluableNode *set_rand_seed = enm->AllocNode(ENT_SET_ENTITY_RAND_SEED);
-				EvaluableNode *first = enm->AllocNode(ENT_FIRST);
-				set_rand_seed->AppendOrderedChildNode(first);
-				first->AppendOrderedChildNode(create_entity);
-				set_rand_seed->AppendOrderedChildNode(enm->AllocNode(ENT_STRING, cur_entity->GetRandomState()));
-
-				//replace the old create_entity with the one surrounded by setting rand seed
-				create_entity = set_rand_seed;
-			}
+			EvaluableNode *create_entity = FlattenOnlyOneContainedEntity(enm, cur_entity, entity, include_rand_seeds, false);
 
 			cur_entity_creation_list->AppendOrderedChildNode(create_entity);
 		}

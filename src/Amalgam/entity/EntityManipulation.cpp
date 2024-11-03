@@ -686,8 +686,6 @@ EvaluableNode *EntityManipulation::FlattenOnlyTopEntity(EvaluableNodeManager *en
 		//   )
 		// )
 
-	bool cycle_free = true;
-
 	// (declare (assoc new_entity (null) create_new_entity (true))
 	EvaluableNode *declare_flatten = enm->AllocNode(ENT_DECLARE);
 
@@ -707,8 +705,6 @@ EvaluableNode *EntityManipulation::FlattenOnlyTopEntity(EvaluableNodeManager *en
 
 	EvaluableNodeReference root_copy = entity->GetRoot(enm, EvaluableNodeManager::ENMM_LABEL_ESCAPE_INCREMENT);
 	lambda_for_create_root->AppendOrderedChildNode(root_copy);
-	if(root_copy.GetNeedCycleCheck())
-		cycle_free = false;
 
 	//   (if create_new_entity
 	EvaluableNode *if_create_new = enm->AllocNode(ENT_IF);
@@ -746,7 +742,7 @@ EvaluableNode *EntityManipulation::FlattenOnlyTopEntity(EvaluableNodeManager *en
 		declare_flatten->AppendOrderedChildNode(set_rand_seed_root);
 	}
 
-	if(!cycle_free)
+	if(root_copy.GetNeedCycleCheck())
 	{
 		if(ensure_en_flags_correct)
 			EvaluableNodeManager::UpdateFlagsForNodeTree(declare_flatten);
@@ -755,6 +751,53 @@ EvaluableNode *EntityManipulation::FlattenOnlyTopEntity(EvaluableNodeManager *en
 	}
 
 	return declare_flatten;
+}
+
+EvaluableNode *EntityManipulation::FlattenOnlyOneContainedEntity(EvaluableNodeManager *enm, Entity *entity, Entity *from_entity,
+	bool include_rand_seeds, bool ensure_en_flags_correct)
+{
+	//   (create_entities
+			//        (append new_entity *relative id*)
+			//        (lambda *entity code*)
+			//   )
+	EvaluableNode *create_entity = enm->AllocNode(ENT_CREATE_ENTITIES);
+
+	EvaluableNode *src_id_list = GetTraversalIDPathFromAToB(enm, from_entity, entity);
+	EvaluableNode *src_append = enm->AllocNode(ENT_APPEND);
+	src_append->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, GetStringIdFromBuiltInStringId(ENBISI_new_entity)));
+	src_append->AppendOrderedChildNode(src_id_list);
+	create_entity->AppendOrderedChildNode(src_append);
+
+	EvaluableNode *lambda_for_create = enm->AllocNode(ENT_LAMBDA);
+	create_entity->AppendOrderedChildNode(lambda_for_create);
+
+	EvaluableNodeReference contained_root_copy = entity->GetRoot(enm, EvaluableNodeManager::ENMM_LABEL_ESCAPE_INCREMENT);
+	lambda_for_create->AppendOrderedChildNode(contained_root_copy);
+
+	if(include_rand_seeds)
+	{
+		//   (set_entity_rand_seed
+		//        (first ...create_entity... )
+		//        *rand seed string* )
+		EvaluableNode *set_rand_seed = enm->AllocNode(ENT_SET_ENTITY_RAND_SEED);
+		EvaluableNode *first = enm->AllocNode(ENT_FIRST);
+		set_rand_seed->AppendOrderedChildNode(first);
+		first->AppendOrderedChildNode(create_entity);
+		set_rand_seed->AppendOrderedChildNode(enm->AllocNode(ENT_STRING, entity->GetRandomState()));
+
+		//replace the old create_entity with the one surrounded by setting rand seed
+		create_entity = set_rand_seed;
+	}
+
+	if(contained_root_copy.GetNeedCycleCheck())
+	{
+		if(ensure_en_flags_correct)
+			EvaluableNodeManager::UpdateFlagsForNodeTree(create_entity);
+		else //just set top node to inform whether it has cycles for future checks
+			create_entity->SetNeedCycleCheck(true);
+	}
+
+	return create_entity;
 }
 
 void EntityManipulation::SortEntitiesByID(std::vector<Entity *> &entities)

@@ -455,9 +455,7 @@ public:
 	template<typename T>
 	inline EvaluableNodeReference AllocReturn(T value, bool immediate_result)
 	{
-		if(immediate_result)
-			return EvaluableNodeReference(value);
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(value), true);
+		return evaluableNodeManager->AllocIfNotImmediate(value, immediate_result);
 	}
 
 	//like AllocReturn, but if immediate_result, then it will attempt to free candidate,

@@ -99,6 +99,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 
 		auto &contained_entities = source_entity->GetContainedEntities();
 
+		//if only looking for how many entities are contained, quickly exit
+		if(immediate_result)
+			return EvaluableNodeReference(static_cast<double>(contained_entities.size()));
+
 		//new list containing the contained entity ids to return
 		EvaluableNodeReference result(
 			evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_STRING, contained_entities.size()), true);
@@ -159,7 +163,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 	}
 
 	//perform query
-	auto result = EntityQueryCaches::GetEntitiesMatchingQuery(source_entity, conditionsBuffer, evaluableNodeManager, return_query_value);
+	auto result = EntityQueryCaches::GetEntitiesMatchingQuery(source_entity,
+		conditionsBuffer, evaluableNodeManager, return_query_value, immediate_result);
 
 	//free query_params after the query just in case query_params is the only place that a given string id exists,
 	//so the value isn't swapped out

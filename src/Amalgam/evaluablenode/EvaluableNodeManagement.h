@@ -469,6 +469,15 @@ public:
 		original = EvaluableNodeReference(copy, (copy->GetNumChildNodes() == 0));
 	}
 
+	//returns an EvaluableNodeReference for value, allocating if necessary based on if immediate result is needed
+	template<typename T>
+	inline EvaluableNodeReference AllocIfNotImmediate(T value, bool immediate_result)
+	{
+		if(immediate_result)
+			return EvaluableNodeReference(value);
+		return EvaluableNodeReference(AllocNode(value), true);
+	}
+
 	//attempts to reuse candidate if it is unique and change it into the specified type
 	//if candidate is not unique, then it allocates and returns a new node
 	inline EvaluableNodeReference ReuseOrAllocNode(EvaluableNodeReference candidate, EvaluableNodeType type)

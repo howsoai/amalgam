@@ -362,7 +362,37 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 
 	if(ocn.size() == 1)
 	{
-		//get list
+		//specialized path for immediate result just getting the count
+		if(immediate_result)
+		{
+			auto list = InterpretNode(ocn[0], true);
+			if(list == nullptr)
+				return EvaluableNodeReference::Null();
+
+			size_t num_elements_not_filtered = 0;
+			if(list->IsAssociativeArray())
+			{
+				auto &list_mcn = list->GetMappedChildNodesReference();
+				for(auto &[cn_id, cn] : list_mcn)
+				{
+					if(!EvaluableNode::IsNull(cn))
+						num_elements_not_filtered++;
+				}
+			}
+			else if(list->IsOrderedArray())
+			{
+				auto &list_ocn = list->GetOrderedChildNodesReference();
+				for(size_t i = list_ocn.size(); i > 0; i--)
+				{
+					if(!EvaluableNode::IsNull(list_ocn[i]))
+						num_elements_not_filtered++;
+				}
+			}
+
+			evaluableNodeManager->FreeNodeTreeIfPossible(list);
+			return EvaluableNodeReference(static_cast<double>(num_elements_not_filtered));
+		}
+
 		auto list = InterpretNode(ocn[0]);
 		if(list == nullptr)
 			return EvaluableNodeReference::Null();

@@ -957,12 +957,6 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 
 		switch(cond.queryType)
 		{
-		case ENT_QUERY_COUNT:
-			if(is_first)
-				return enm->AllocIfNotImmediate(static_cast<double>(container->GetNumContainedEntities()), immediate_result);
-			else
-				return enm->AllocIfNotImmediate(static_cast<double>(matching_ents.size()), immediate_result);
-
 		case ENT_QUERY_IN_ENTITY_LIST:
 		{
 			if(is_first)

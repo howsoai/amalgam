@@ -20,7 +20,6 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 		case ENT_QUERY_SELECT:
 		case ENT_QUERY_SAMPLE:
 		case ENT_QUERY_WEIGHTED_SAMPLE:
-		case ENT_QUERY_COUNT:
 			//it does not fail the condition here - needs to be checked elsewhere
 			return true;
 
@@ -429,15 +428,6 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		//swap samples vector with the matching_entities 
 		std::swap(matching_entities, samples);
 		return EvaluableNodeReference::Null();
-	}
-
-	case ENT_QUERY_COUNT:
-	{
-		//not useful unless computing
-		if(enm == nullptr)
-			return EvaluableNodeReference::Null();
-
-		return EvaluableNodeReference(enm->AllocNode(static_cast<double>(matching_entities.size())), true);
 	}
 
 	case ENT_QUERY_EXISTS:

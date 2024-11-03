@@ -255,7 +255,6 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_WEIGHTED_SAMPLE
 	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_IN_ENTITY_LIST
 	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_NOT_IN_ENTITY_LIST
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_COUNT
 	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_EXISTS
 	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_NOT_EXISTS
 	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_EQUALS

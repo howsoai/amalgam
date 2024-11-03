@@ -2,6 +2,7 @@
 
 //project headers:
 #include "AmalgamVersion.h"
+#include "BinaryPacking.h"
 #include "Entity.h"
 #include "EntityExternalInterface.h"
 #include "EntityManipulation.h"
@@ -133,13 +134,34 @@ public:
 		Entity::EntityReferenceBufferReference<EntityReferenceType> &all_contained_entities)
 	{
 		//TODO 22068: incorporate first_of_transactional_unparse parameter of Unparse and break apart flatten
-		EvaluableNodeReference flattened_entity = EntityManipulation::FlattenEntity(&entity->evaluableNodeManager,
+		EvaluableNodeReference code = EntityManipulation::FlattenEntity(&entity->evaluableNodeManager,
 			entity, all_contained_entities, asset_params.includeRandSeeds, asset_params.parallelCreate);
 
-		bool all_stored_successfully = StoreResource(flattened_entity,
-			asset_params, &entity->evaluableNodeManager);
+		std::string code_string = Parser::Unparse(code, &entity->evaluableNodeManager, asset_params.prettyPrint, true, asset_params.sortKeys);
+		entity->evaluableNodeManager.FreeNodeTreeIfPossible(code);
 
-		entity->evaluableNodeManager.FreeNodeTreeIfPossible(flattened_entity);
+		bool all_stored_successfully = false;
+
+		if(asset_params.resourceType == FILE_EXTENSION_AMALGAM || asset_params.resourceType == FILE_EXTENSION_AMLG_METADATA)
+		{
+			std::ofstream outf(asset_params.resource, std::ios::out | std::ios::binary);
+			if(outf.good())
+			{		
+				outf.write(code_string.c_str(), code_string.size());
+				outf.close();
+				all_stored_successfully = true;
+			}
+		}
+		else if(asset_params.resourceType == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
+		{
+			//transform into format needed for compression
+			CompactHashMap<std::string, size_t> string_map;
+			string_map[code_string] = 0;
+
+			//compress and store
+			BinaryData compressed_data = CompressStrings(string_map);
+			all_stored_successfully = StoreFileFromBuffer<BinaryData>(asset_params.resource, asset_params.resourceType, compressed_data);
+		}
 
 		return all_stored_successfully;
 	}

@@ -143,7 +143,7 @@ std::string Parser::Unparse(EvaluableNode *tree, EvaluableNodeManager *enm,
 	upd.preevaluationNeeded = false;
 	upd.emitAttributes = emit_attributes;
 	upd.sortKeys = sort_keys;
-	Unparse(upd, tree, nullptr, expanded_whitespace, starting_indendation, false);
+	Unparse(upd, tree, nullptr, expanded_whitespace, starting_indendation, starting_indendation > 0);
 	return upd.result;
 }
 

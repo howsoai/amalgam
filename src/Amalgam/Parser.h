@@ -136,6 +136,9 @@ public:
 		bool expanded_whitespace = true, bool emit_attributes = true, bool sort_keys = false,
 		bool first_of_transactional_unparse = false, size_t starting_indendation = 0);
 
+	//string to be appended after Unparse calls when the first one is called with first_of_transactional_unparse
+	inline static const std::string transactionTermination = ")";
+
 	//prefix used in the comments when attributing sources to EvaluableNodes
 	inline static const std::string sourceCommentPrefix = "src: ";
 

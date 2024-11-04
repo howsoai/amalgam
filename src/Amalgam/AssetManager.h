@@ -2,6 +2,7 @@
 
 //project headers:
 #include "AmalgamVersion.h"
+#include "BinaryPacking.h"
 #include "Entity.h"
 #include "EntityExternalInterface.h"
 #include "EntityManipulation.h"
@@ -128,6 +129,58 @@ public:
 	Entity *LoadEntityFromResource(AssetParameters &asset_params, bool persistent,
 		std::string default_random_seed, Interpreter *calling_interpreter, EntityExternalInterface::LoadEntityStatus &status);
 
+	//Flattens entity piece-by-piece in a manner to reduce memory when storing
+	template<typename EntityReferenceType = EntityReadReference>
+	bool FlattenAndStoreEntityToResource(Entity *entity, AssetParameters &asset_params,
+		Entity::EntityReferenceBufferReference<EntityReferenceType> &all_contained_entities)
+	{
+		EvaluableNode *top_entity_code = EntityManipulation::FlattenOnlyTopEntity(&entity->evaluableNodeManager,
+			entity, asset_params.includeRandSeeds, true);
+		std::string code_string = Parser::Unparse(top_entity_code, &entity->evaluableNodeManager,
+			asset_params.prettyPrint, true, asset_params.sortKeys, true);
+		entity->evaluableNodeManager.FreeNodeTree(top_entity_code);
+
+		//loop over contained entities, freeing resources after each entity
+		for(size_t i = 0; i < all_contained_entities->size(); i++)
+		{
+			auto &cur_entity = (*all_contained_entities)[i];
+			EvaluableNode *create_entity_code = EntityManipulation::FlattenOnlyOneContainedEntity(
+				&entity->evaluableNodeManager, cur_entity, entity, asset_params.includeRandSeeds, true);
+
+			code_string += Parser::Unparse(create_entity_code, &entity->evaluableNodeManager,
+				asset_params.prettyPrint, true, asset_params.sortKeys, false, 1);
+
+			entity->evaluableNodeManager.FreeNodeTree(create_entity_code);
+		}
+
+		code_string += Parser::transactionTermination;
+
+		bool all_stored_successfully = false;
+
+		if(asset_params.resourceType == FILE_EXTENSION_AMALGAM || asset_params.resourceType == FILE_EXTENSION_AMLG_METADATA)
+		{
+			std::ofstream outf(asset_params.resource, std::ios::out | std::ios::binary);
+			if(outf.good())
+			{		
+				outf.write(code_string.c_str(), code_string.size());
+				outf.close();
+				all_stored_successfully = true;
+			}
+		}
+		else if(asset_params.resourceType == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
+		{
+			//transform into format needed for compression
+			CompactHashMap<std::string, size_t> string_map;
+			string_map[code_string] = 0;
+
+			//compress and store
+			BinaryData compressed_data = CompressStrings(string_map);
+			all_stored_successfully = StoreFileFromBuffer<BinaryData>(asset_params.resource, asset_params.resourceType, compressed_data);
+		}
+
+		return all_stored_successfully;
+	}
+
 	//Stores an entity, including contained entities, etc. from the resource specified
 	// if update_persistence is true, then it will consider the persistent parameter, otherwise it is ignored
 	// if persistent is true, then it will keep the resource updated, if false it will clear persistence
@@ -158,13 +211,7 @@ public:
 			&& (asset_params.resourceType == FILE_EXTENSION_AMALGAM
 				|| asset_params.resourceType == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE))
 		{
-			EvaluableNodeReference flattened_entity = EntityManipulation::FlattenEntity(&entity->evaluableNodeManager,
-				entity, *all_contained_entities, asset_params.includeRandSeeds, asset_params.parallelCreate);
-
-			bool all_stored_successfully = StoreResource(flattened_entity,
-				asset_params, &entity->evaluableNodeManager);
-
-			entity->evaluableNodeManager.FreeNodeTreeIfPossible(flattened_entity);
+			bool all_stored_successfully = FlattenAndStoreEntityToResource(entity, asset_params, *all_contained_entities);
 
 			if(update_persistence)
 				SetEntityPersistenceForFlattenedEntity(entity, persistent ? &asset_params : nullptr);

@@ -255,7 +255,6 @@ void StringInternPool::InitializeStaticStrings()
 	//entity query
 	EmplaceNodeTypeString(ENT_CONTAINED_ENTITIES, "contained_entities");
 	EmplaceNodeTypeString(ENT_COMPUTE_ON_CONTAINED_ENTITIES, "compute_on_contained_entities");
-	EmplaceNodeTypeString(ENT_QUERY_COUNT, "query_count");
 	EmplaceNodeTypeString(ENT_QUERY_SELECT, "query_select");
 	EmplaceNodeTypeString(ENT_QUERY_SAMPLE, "query_sample");
 	EmplaceNodeTypeString(ENT_QUERY_WEIGHTED_SAMPLE, "query_weighted_sample");

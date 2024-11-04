@@ -2513,16 +2513,6 @@
     (query_not_in_entity_list (list "Child6" "Child7"))
   )))
 
-  (print "--query_count--\n")
-  (print (compute_on_contained_entities "TestContainerExec" (list
-  	(query_count)
-  )) "\n")
-
-  (print (compute_on_contained_entities "TestContainerExec" (list
-  	(query_not_exists "q")
-	(query_count)
-  )) "\n")
-
   (print "--query_exists--\n")
   (print (contained_entities "TestContainerExec" (list
   	(query_exists "q")

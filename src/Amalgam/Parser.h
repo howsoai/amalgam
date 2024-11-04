@@ -127,10 +127,17 @@ public:
 
 	//Returns a string that represents the tree
 	// if expanded_whitespace, will emit additional whitespace to make it easier to read
-	// if emit_attributes, then it will emit comments, labels, concurrency, preevaluations, etc.; if emit_attributes is false, then it will only emit values
+	// if emit_attributes, then it will emit comments, labels, concurrency, preevaluations, etc.;
+	//   if emit_attributes is false, then it will only emit values
 	// if sort_keys, then it will perform a sort on all unordered nodes
+	// if first_of_transactional_unparse, it will not emit the final closing parenthesis or appropriate other character
+	// starting_indentation indicates where it will start, in case there was other code prior to which it is being concatenated
 	static std::string Unparse(EvaluableNode *tree, EvaluableNodeManager *enm,
-		bool expanded_whitespace = true, bool emit_attributes = true, bool sort_keys = false);
+		bool expanded_whitespace = true, bool emit_attributes = true, bool sort_keys = false,
+		bool first_of_transactional_unparse = false, size_t starting_indendation = 0);
+
+	//string to be appended after Unparse calls when the first one is called with first_of_transactional_unparse
+	inline static const std::string transactionTermination = ")";
 
 	//prefix used in the comments when attributing sources to EvaluableNodes
 	inline static const std::string sourceCommentPrefix = "src: ";
@@ -148,6 +155,10 @@ protected:
 		EvaluableNode::ReferenceAssocType parentNodes;
 
 		EvaluableNodeManager *enm;
+
+		//if transactional unparsing, then this will be the top node
+		//if not, it will be nullptr
+		EvaluableNode *topNodeIfTransactionUnparsing;
 
 		//if true, then the tree is cycle free and don't need to keep track of potential circular references
 		bool cycleFree;

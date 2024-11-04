@@ -917,7 +917,8 @@ void EntityQueryCaches::GetMatchingEntitiesViaSamplingWithReplacement(EntityQuer
 }
 
 EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Entity *container,
-	std::vector<EntityQueryCondition> &conditions, EvaluableNodeManager *enm, bool return_query_value)
+	std::vector<EntityQueryCondition> &conditions, EvaluableNodeManager *enm,
+	bool return_query_value, bool immediate_result)
 {
 	//get the cache associated with this container
 	// use the first condition as an heuristic for building it if it doesn't exist
@@ -948,16 +949,14 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 
 		//if query_none, return results as empty list
 		if(cond.queryType == ENT_NULL)
+		{
+			if(immediate_result)
+				return EvaluableNodeReference(0.0);
 			return EvaluableNodeReference(enm->AllocNode(ENT_LIST), true);
+		}
 
 		switch(cond.queryType)
 		{
-		case ENT_QUERY_COUNT:
-			if(is_first)
-				return EvaluableNodeReference(enm->AllocNode(static_cast<double>(container->GetNumContainedEntities())), true);
-			else
-				return EvaluableNodeReference(enm->AllocNode(static_cast<double>(matching_ents.size())), true);
-
 		case ENT_QUERY_IN_ENTITY_LIST:
 		{
 			if(is_first)
@@ -1041,9 +1040,9 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 			entity_caches->GetMatchingEntities(&cond, matching_ents, compute_results, is_first, !is_last || !return_query_value);
 
 			if(compute_results.size() > 0)
-				return EvaluableNodeReference(enm->AllocNode(static_cast<double>(compute_results[0].distance)), true);
+				return enm->AllocIfNotImmediate(static_cast<double>(compute_results[0].distance), immediate_result);
 			else
-				return EvaluableNodeReference(enm->AllocNode(std::numeric_limits<double>::quiet_NaN()), true);
+				return EvaluableNodeReference::Null();
 		}
 
 		case ENT_QUERY_MODE:
@@ -1053,16 +1052,16 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 				entity_caches->GetMatchingEntities(&cond, matching_ents, compute_results, is_first, !is_last || !return_query_value);
 
 				if(compute_results.size() > 0)
-					return EvaluableNodeReference(enm->AllocNode(static_cast<double>(compute_results[0].distance)), true);
+					return enm->AllocIfNotImmediate(static_cast<double>(compute_results[0].distance), immediate_result);
 				else
-					return EvaluableNodeReference(enm->AllocNode(std::numeric_limits<double>::quiet_NaN()), true);
+					return EvaluableNodeReference::Null();
 			}
 			else if(cond.singleLabelType == ENIVT_STRING_ID)
 			{
 				StringInternPool::StringID mode = string_intern_pool.NOT_A_STRING_ID;
 
 				if(entity_caches->ComputeValueFromMatchingEntities(&cond, matching_ents, mode, is_first))
-					return EvaluableNodeReference(enm->AllocNode(ENT_STRING, mode), true);
+					return enm->AllocIfNotImmediate(mode, immediate_result);
 				else
 					return EvaluableNodeReference::Null();
 			}
@@ -1075,6 +1074,9 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 			{
 				FastHashMap<double, double, std::hash<double>, DoubleNanHashComparator> value_weights;
 				entity_caches->ComputeValuesFromMatchingEntities(&cond, matching_ents, value_weights, is_first);
+
+				if(immediate_result)
+					return EvaluableNodeReference(static_cast<double>(value_weights.size()));
 
 				EvaluableNode *assoc = enm->AllocNode(ENT_ASSOC);
 				assoc->ReserveMappedChildNodes(value_weights.size());
@@ -1092,6 +1094,9 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 			{
 				FastHashMap<StringInternPool::StringID, double> value_weights;
 				entity_caches->ComputeValuesFromMatchingEntities(&cond, matching_ents, value_weights, is_first);
+
+				if(immediate_result)
+					return EvaluableNodeReference(static_cast<double>(value_weights.size()));
 
 				EvaluableNode *assoc = enm->AllocNode(ENT_ASSOC);
 				assoc->ReserveMappedChildNodes(value_weights.size());
@@ -1238,7 +1243,12 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 
 	//if last query condition is query sample, return each sampled entity id which may include duplicates
 	if(last_query_type == ENT_QUERY_SAMPLE || last_query_type == ENT_QUERY_WEIGHTED_SAMPLE)
+	{
+		if(immediate_result)
+			return EvaluableNodeReference(static_cast<double>(indices_with_duplicates.size()));
+
 		return CreateListOfStringsIdsFromIteratorAndFunction(indices_with_duplicates, enm, entity_index_to_id);
+	}
 
 	//return data as appropriate
 	if(return_query_value && last_query != nullptr)
@@ -1252,12 +1262,18 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 			|| last_query_type == ENT_COMPUTE_ENTITY_CONVICTIONS
 			|| last_query_type == ENT_COMPUTE_ENTITY_KL_DIVERGENCES)
 		{
+			if(immediate_result)
+				return EvaluableNodeReference(static_cast<double>(compute_results.size()));
+
 			return EntityManipulation::ConvertResultsToEvaluableNodes<size_t>(compute_results,
 				enm, last_query->returnSortedList, last_query->additionalSortedListLabels,
 				[&contained_entities](auto entity_index) { return contained_entities[entity_index]; });
 		}
 		else //if there are no compute results, return an assoc of the requested labels for each entity
 		{
+			if(immediate_result)
+				return EvaluableNodeReference(static_cast<double>(matching_ents.size()));
+
 			//return assoc of distances if requested
 			EvaluableNode *query_return = enm->AllocNode(ENT_ASSOC);
 			query_return->ReserveMappedChildNodes(matching_ents.size());
@@ -1296,11 +1312,14 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 		}
 	}
 
+	if(immediate_result)
+		return EvaluableNodeReference(static_cast<double>(matching_ents.size()));
 	return CreateListOfStringsIdsFromIteratorAndFunction(matching_ents, enm, entity_index_to_id);
 }
 
 
-EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadReference &container, std::vector<EntityQueryCondition> &conditions, EvaluableNodeManager *enm, bool return_query_value)
+EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadReference &container,
+	std::vector<EntityQueryCondition> &conditions, EvaluableNodeManager *enm, bool return_query_value, bool immediate_result)
 {
 	if(_enable_SBF_datastore && CanUseQueryCaches(conditions))
 	{
@@ -1319,7 +1338,7 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 		#endif
 		}
 
-		return GetMatchingEntitiesFromQueryCaches(container, conditions, enm, return_query_value);
+		return GetMatchingEntitiesFromQueryCaches(container, conditions, enm, return_query_value, immediate_result);
 	}
 
 	if(container == nullptr)
@@ -1360,7 +1379,7 @@ EvaluableNodeReference EntityQueryCaches::GetEntitiesMatchingQuery(EntityReadRef
 			#endif
 			}
 
-			return GetMatchingEntitiesFromQueryCaches(container, conditions, enm, return_query_value);	
+			return GetMatchingEntitiesFromQueryCaches(container, conditions, enm, return_query_value, immediate_result);	
 		}
 
 		query_return_value = conditions[cond_index].GetMatchingEntities(container, matching_entities, first_condition, (return_query_value && last_condition) ? enm : nullptr);

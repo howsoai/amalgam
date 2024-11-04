@@ -1402,14 +1402,6 @@ var data = [
 	},
 
 	{
-		"parameter" : "query_count",
-		"output" : "query",
-		"new value" : "new",
-		"description" : "When used as a compute_on_contained_entities argument, counts the number of entities that match the criteria and returns the number.",
-		"example" : "(compute_on_contained_entities \"TestEntity\" (list\n  (query_count)\n))"
-	},
-
-	{
 		"parameter" : "query_select number num_to_select [number start_offset] [number random_seed]",
 		"output" : "query",
 		"new value" : "new",

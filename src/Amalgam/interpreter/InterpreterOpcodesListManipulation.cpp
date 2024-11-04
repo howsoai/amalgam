@@ -530,22 +530,36 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SIZE(EvaluableNode *en, bo
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	auto cur = InterpretNodeForImmediateUse(ocn[0]);
-	size_t size = 0;
-	if(cur != nullptr)
+	auto n = InterpretNodeForImmediateUse(ocn[0], true);
+
+	double size = 0;
+	if(n.IsImmediateValue())
 	{
-		if(cur->GetType() == ENT_STRING)
+		auto &value = n.GetValue();
+
+		if(value.nodeType == ENIVT_NUMBER)
+			size = value.nodeValue.number;
+		if(value.nodeType == ENIVT_STRING_ID)
+			size = static_cast<double>(StringManipulation::GetNumUTF8Characters(value.nodeValue.stringID->string));
+		else if(value.nodeType == ENIVT_CODE && value.nodeValue.code != nullptr)
+			size = static_cast<double>(value.nodeValue.code->GetNumChildNodes());
+
+		return AllocReturn(size, immediate_result);
+	}
+	else if(n != nullptr)
+	{
+		if(n->GetType() == ENT_STRING)
 		{
-			auto &s = cur->GetStringValue();
-			size = StringManipulation::GetNumUTF8Characters(s);
+			auto &s = n->GetStringValue();
+			size = static_cast<double>(StringManipulation::GetNumUTF8Characters(s));
 		}
 		else
 		{
-			size = cur->GetNumChildNodes();
+			size = static_cast<double>(n->GetNumChildNodes());
 		}
 	}
 
-	return ReuseOrAllocReturn(cur, static_cast<double>(size), immediate_result);
+	return ReuseOrAllocReturn(n, size, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, bool immediate_result)

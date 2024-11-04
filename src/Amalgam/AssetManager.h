@@ -129,16 +129,29 @@ public:
 	Entity *LoadEntityFromResource(AssetParameters &asset_params, bool persistent,
 		std::string default_random_seed, Interpreter *calling_interpreter, EntityExternalInterface::LoadEntityStatus &status);
 
+	//Flattens entity piece-by-piece in a manner to reduce memory when storing
 	template<typename EntityReferenceType = EntityReadReference>
 	bool FlattenAndStoreEntityToResource(Entity *entity, AssetParameters &asset_params,
 		Entity::EntityReferenceBufferReference<EntityReferenceType> &all_contained_entities)
 	{
-		//TODO 22068: incorporate first_of_transactional_unparse parameter of Unparse and break apart flatten
-		EvaluableNodeReference code = EntityManipulation::FlattenEntity(&entity->evaluableNodeManager,
-			entity, all_contained_entities, asset_params.includeRandSeeds, asset_params.parallelCreate);
+		EvaluableNode *top_entity_code = EntityManipulation::FlattenOnlyTopEntity(&entity->evaluableNodeManager,
+			entity, asset_params.includeRandSeeds, true);
+		std::string code_string = Parser::Unparse(top_entity_code, &entity->evaluableNodeManager,
+			asset_params.prettyPrint, true, asset_params.sortKeys, true);
+		entity->evaluableNodeManager.FreeNodeTree(top_entity_code);
 
-		std::string code_string = Parser::Unparse(code, &entity->evaluableNodeManager, asset_params.prettyPrint, true, asset_params.sortKeys);
-		entity->evaluableNodeManager.FreeNodeTreeIfPossible(code);
+		//loop over contained entities, freeing resources after each entity
+		for(size_t i = 0; i < all_contained_entities->size(); i++)
+		{
+			auto &cur_entity = (*all_contained_entities)[i];
+			EvaluableNode *create_entity_code = EntityManipulation::FlattenOnlyOneContainedEntity(
+				&entity->evaluableNodeManager, cur_entity, entity, asset_params.includeRandSeeds, true);
+
+			code_string += Parser::Unparse(create_entity_code, &entity->evaluableNodeManager,
+				asset_params.prettyPrint, true, asset_params.sortKeys, true, 1);
+
+			entity->evaluableNodeManager.FreeNodeTree(create_entity_code);
+		}
 
 		bool all_stored_successfully = false;
 

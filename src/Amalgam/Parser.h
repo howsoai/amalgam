@@ -131,9 +131,10 @@ public:
 	//   if emit_attributes is false, then it will only emit values
 	// if sort_keys, then it will perform a sort on all unordered nodes
 	// if first_of_transactional_unparse, it will not emit the final closing parenthesis or appropriate other character
+	// starting_indentation indicates where it will start, in case there was other code prior to which it is being concatenated
 	static std::string Unparse(EvaluableNode *tree, EvaluableNodeManager *enm,
 		bool expanded_whitespace = true, bool emit_attributes = true, bool sort_keys = false,
-		bool first_of_transactional_unparse = false);
+		bool first_of_transactional_unparse = false, size_t starting_indendation = 0);
 
 	//prefix used in the comments when attributing sources to EvaluableNodes
 	inline static const std::string sourceCommentPrefix = "src: ";

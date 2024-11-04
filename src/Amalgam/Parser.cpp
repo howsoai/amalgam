@@ -132,7 +132,7 @@ std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t> Parser::Par
 
 std::string Parser::Unparse(EvaluableNode *tree, EvaluableNodeManager *enm,
 	bool expanded_whitespace, bool emit_attributes, bool sort_keys,
-	bool first_of_transactional_unparse)
+	bool first_of_transactional_unparse, size_t starting_indendation)
 {
 	UnparseData upd;
 	upd.enm = enm;
@@ -143,7 +143,7 @@ std::string Parser::Unparse(EvaluableNode *tree, EvaluableNodeManager *enm,
 	upd.preevaluationNeeded = false;
 	upd.emitAttributes = emit_attributes;
 	upd.sortKeys = sort_keys;
-	Unparse(upd, tree, nullptr, expanded_whitespace, 0, false);
+	Unparse(upd, tree, nullptr, expanded_whitespace, starting_indendation, false);
 	return upd.result;
 }
 

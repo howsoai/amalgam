@@ -1041,7 +1041,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en,
 		auto &index_list_ocn = index_list->GetOrderedChildNodesReference();
 		size_t index = 0;
 		for(auto &[node_id, _] : container_mcn)
-			index_list_ocn[index++]->SetTypeViaStringIdValueWithReferenceHandoff(node_id);
+		{
+			if(Parser::DoesStringNeedUnparsingToKey(node_id->string))
+			{
+				evaluableNodeManager->FreeNode(index_list_ocn[index]);
+				EvaluableNodeReference key_node = Parser::ParseFromKeyString(node_id->string, evaluableNodeManager);
+				index_list_ocn[index++] = key_node;
+			}
+			else
+			{
+				index_list_ocn[index++]->SetTypeViaStringIdValueWithReferenceHandoff(node_id);
+			}
+		}
 	}
 	else if(container->IsOrderedArray())
 	{

@@ -137,7 +137,7 @@ public:
 		bool first_of_transactional_unparse = false, size_t starting_indendation = 0);
 
 	//transforms the code_string into evaluable nodes
-	static EvaluableNodeReference ParseToKeyString(const std::string &code_string, EvaluableNodeManager *enm);
+	static EvaluableNodeReference ParseFromKeyString(const std::string &code_string, EvaluableNodeManager *enm);
 
 	//transforms tree into a string value that will match if the evaluable node trees match
 	static std::string UnparseToKeyString(EvaluableNode *tree);

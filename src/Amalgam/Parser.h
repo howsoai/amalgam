@@ -145,7 +145,11 @@ public:
 	//like UnparseToKeyString, but for numbers only
 	static inline std::string UnparseNumberToKeyString(double number)
 	{
-		return '\0' + StringManipulation::NumberToString(number);
+		std::string unparsed = StringManipulation::NumberToString(number);;
+		std::string str;
+		str.assign(1, '\0');
+		str.insert(1, unparsed.data(), unparsed.size());
+		return str;
 	}
 
 	//returns true if string needs to be run through UnparseStringToKeyString
@@ -212,14 +216,13 @@ protected:
 
 	//Returns a EvaluableNode containing the next token, null if none left in current context
 	// parent_node is primarily to check for errors or warnings
-	//if reuse_assoc_token_as_value is not nullptr, it will put the token in the EvaluableNode provided, otherwise will return a new one
-	EvaluableNode *GetNextToken(EvaluableNode *parent_node, EvaluableNode *reuse_assoc_token_as_value = nullptr);
+	EvaluableNode *GetNextToken(EvaluableNode *parent_node, bool parsing_assoc_key = false);
 
 	//deallocates the current node in case there is an early exit or error
 	void FreeNode(EvaluableNode *node);
 
-	//Parses the next block of code into topNode
-	void ParseCode();
+	//Parses the next block of code and returns the top node
+	EvaluableNode *ParseCode(bool parsing_assoc_key = false);
 
 	//Prints out all comments for the respective node
 	static void AppendComments(EvaluableNode *n, size_t indentation_depth, bool pretty, std::string &to_append);
@@ -268,7 +271,7 @@ protected:
 	EvaluableNode *GetNodeFromRelativeCodePath(EvaluableNode *path);
 
 	//resolves any nodes that require preevaluation (such as assocs or circular references)
-	void PreevaluateNodes();
+	void PreevaluateNodes(EvaluableNode *top_node);
 
 	//string of the code currently being parsed
 	std::string_view code;
@@ -290,9 +293,6 @@ protected:
 
 	//if true, will prepend debug sources to node comments
 	bool debugSources;
-
-	//the top node of everything being parsed
-	EvaluableNode *topNode;
 
 	//contains a list of nodes that need to be preevaluated on parsing
 	std::vector<EvaluableNode *> preevaluationNodes;

@@ -16,7 +16,6 @@ Parser::Parser()
 	lineStartPos = 0;
 	numOpenParenthesis = 0;
 	originalSource = "";
-	topNode = nullptr;
 	charOffsetStartOfLastCompletedCode = std::numeric_limits<size_t>::max();
 }
 
@@ -45,7 +44,6 @@ Parser::Parser(std::string_view code_string, EvaluableNodeManager *enm,
 	}
 
 	debugSources = debug_sources;
-	topNode = nullptr;
 	evaluableNodeManager = enm;
 	transactionalParse = transactional_parse;
 	charOffsetStartOfLastCompletedCode = std::numeric_limits<size_t>::max();
@@ -97,11 +95,11 @@ std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t>
 {
 	Parser pt(code_string, enm, transactional_parse, original_source, debug_sources);
 
-	pt.ParseCode();
+	EvaluableNode *top_node = pt.ParseCode();
 
-	pt.PreevaluateNodes();
+	pt.PreevaluateNodes(top_node);
 
-	return std::make_tuple(EvaluableNodeReference(pt.topNode, true),
+	return std::make_tuple(EvaluableNodeReference(top_node, true),
 		std::move(pt.warnings),
 		pt.charOffsetStartOfLastCompletedCode);
 }
@@ -117,15 +115,14 @@ std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t> Parser::Par
 
 std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t> Parser::ParseNextTransactionalBlock()
 {
-	topNode = nullptr;
 	preevaluationNodes.clear();
 	parentNodes.clear();
 
-	ParseCode();
+	EvaluableNode *top_node = ParseCode();
 
-	PreevaluateNodes();
+	PreevaluateNodes(top_node);
 
-	return std::make_tuple(EvaluableNodeReference(topNode, true),
+	return std::make_tuple(EvaluableNodeReference(top_node, true),
 		std::move(warnings),
 		charOffsetStartOfLastCompletedCode);
 }
@@ -166,8 +163,11 @@ std::string Parser::UnparseToKeyString(EvaluableNode *tree)
 			return string_value;
 	}
 
-	//start with a zero to escape it
-	return "\0" + Parser::Unparse(tree, false, false, true);
+	std::string unparsed = Parser::Unparse(tree, false, false, true);
+	std::string str;
+	str.assign(1, '\0');
+	str.insert(1, unparsed.data(), unparsed.size());
+	return str;
 }
 
 EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseData &upd,
@@ -476,22 +476,9 @@ std::string Parser::GetNextIdentifier(bool allow_leading_label_marks)
 	}
 }
 
-EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, EvaluableNode *reuse_assoc_token_as_value)
+EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, bool parsing_assoc_key)
 {
-	EvaluableNode *new_token = nullptr;
-	bool parsing_assoc_key = false;
-
-	if(reuse_assoc_token_as_value == nullptr)
-	{
-		new_token = evaluableNodeManager->AllocNode(ENT_NULL);
-		//if parsing an assoc but haven't been passed a value to reuse, it's a key
-		if(parent_node != nullptr && parent_node->IsAssociativeArray())
-			parsing_assoc_key = true;
-	}
-	else
-	{
-		new_token = reuse_assoc_token_as_value;
-	}
+	EvaluableNode *new_token = evaluableNodeManager->AllocNode(ENT_NULL);
 
 	SkipWhitespaceAndAccumulateAttributes(new_token);
 	if(pos >= code.size())
@@ -559,7 +546,7 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, EvaluableNode *r
 		}
 		else if(cur_char == '}')
 		{
-			if(parent_node_type != ENT_ASSOC)
+			if(parent_node_type != ENT_ASSOC && !parsing_assoc_key)
 				EmitWarning("Mismatched }");
 		}
 
@@ -568,8 +555,7 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, EvaluableNode *r
 		FreeNode(new_token);
 		return nullptr;
 	}
-	else if(!parsing_assoc_key
-		&& (StringManipulation::IsUtf8ArabicNumerals(cur_char) || cur_char == '-' || cur_char == '.'))
+	else if(StringManipulation::IsUtf8ArabicNumerals(cur_char) || cur_char == '-' || cur_char == '.')
 	{
 		size_t start_pos = pos;
 		SkipToEndOfIdentifier();
@@ -613,8 +599,9 @@ void Parser::FreeNode(EvaluableNode *node)
 		preevaluationNodes.pop_back();
 }
 
-void Parser::ParseCode()
+EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 {
+	EvaluableNode *top_node = nullptr;
 	EvaluableNode *cur_node = nullptr;
 
 	//as long as code left
@@ -622,10 +609,33 @@ void Parser::ParseCode()
 	{
 		//if at the top level node and starting to parse a new structure,
 		//then all previous ones have completed and can mark this new position as a successful start
-		if(topNode != nullptr && cur_node == topNode)
+		if(top_node != nullptr && cur_node == top_node)
 			charOffsetStartOfLastCompletedCode = pos;
 
-		EvaluableNode *n = GetNextToken(cur_node);
+		EvaluableNode *key_node = nullptr;
+		if(cur_node != nullptr && cur_node->IsAssociativeArray())
+		{
+			key_node = ParseCode(true);
+			//if end of assoc
+			if(key_node == nullptr)
+			{
+				//nothing here at all
+				if(cur_node == nullptr)
+					break;
+
+				const auto &parent = parentNodes.find(cur_node);
+
+				//if no parent, then all finished
+				if(parent == end(parentNodes) || parent->second == nullptr)
+					break;
+
+				//jump up to the parent node
+				cur_node = parent->second;
+				continue;
+			}
+		}
+
+		EvaluableNode *n = GetNextToken(cur_node, parsing_assoc_key);
 
 		//if end of a list
 		if(n == nullptr)
@@ -647,9 +657,9 @@ void Parser::ParseCode()
 		else //got some token
 		{
 			//if it's the first token, then put it up top
-			if(topNode == nullptr)
+			if(top_node == nullptr)
 			{
-				topNode = n;
+				top_node = n;
 				cur_node = n;
 				continue;
 			}
@@ -660,46 +670,20 @@ void Parser::ParseCode()
 			}
 			else if(cur_node->IsAssociativeArray())
 			{
-				//if it's not an immediate value, then need to retrieve closing parenthesis
-				if(!IsEvaluableNodeTypeImmediate(n->GetType()))
-				{
-					SkipWhitespaceAndAccumulateAttributes(n);
-					if(pos <= code.size())
-					{
-						auto cur_char = code[pos];
-						if(cur_char == ')')
-						{
-							pos++;
-							numOpenParenthesis--;
-						}
-						else
-						{
-							EmitWarning("Missing )");
-						}
-					}
-					else //no more code
-					{
-						break;
-					}
-				}
-
-				if( (n->GetType() == ENT_STRING || n->GetType() == ENT_SYMBOL)
-					&& !DoesStringNeedUnparsingToKey(n->GetStringValue()))
+				if(key_node != nullptr && (key_node->GetType() == ENT_STRING || key_node->GetType() == ENT_SYMBOL)
+					&& !DoesStringNeedUnparsingToKey(key_node->GetStringValue()))
 				{
 					//n is the id, so need to get the next token
-					StringInternPool::StringID index_sid = EvaluableNode::ToStringIDTakingReferenceAndClearing(n);
+					StringInternPool::StringID index_sid = EvaluableNode::ToStringIDTakingReferenceAndClearing(key_node);
 
 					//reset the node type but continue to accumulate any attributes
-					n->SetType(ENT_NULL, evaluableNodeManager, false);
-					n = GetNextToken(cur_node, n);
 					cur_node->SetMappedChildNodeWithReferenceHandoff(index_sid, n, true);
 				}
 				else //need to unparse to key
 				{
-					std::string s = Parser::UnparseToKeyString(n);
-					evaluableNodeManager->FreeNodeTree(n);
+					std::string s = Parser::UnparseToKeyString(key_node);
+					//don't free the node to make sure it doesn't get picked up as an incorrect node in parent tree
 
-					n = GetNextToken(cur_node);
 					cur_node->SetMappedChildNode(s, n, true);
 				}
 
@@ -736,7 +720,7 @@ void Parser::ParseCode()
 			}
 		}
 
-		if(transactionalParse && warnings.size() > 0 && cur_node == topNode)
+		if(transactionalParse && warnings.size() > 0 && cur_node == top_node)
 			break;
 	}
 
@@ -748,24 +732,29 @@ void Parser::ParseCode()
 		//if anything went wrong with the last transaction, remove it
 		if(warnings.size() > 0 || numOpenParenthesis > 1)
 		{
-			if(EvaluableNode::IsOrderedArray(topNode))
+			if(EvaluableNode::IsOrderedArray(top_node))
 			{
-				auto &top_node_ocn = topNode->GetOrderedChildNodesReference();
+				auto &top_node_ocn = top_node->GetOrderedChildNodesReference();
 				top_node_ocn.pop_back();
 			}
 			else //nothing came through correctly
 			{
-				topNode = nullptr;
+				top_node = nullptr;
 			}
 		}
 	}
 
-	if(numOpenParenthesis > num_allowed_open_parens)
-		EmitWarning(StringManipulation::NumberToString(
-			static_cast<size_t>(numOpenParenthesis - num_allowed_open_parens)) + " missing closing parenthesis");
-	else if(numOpenParenthesis < 0)
-		EmitWarning(StringManipulation::NumberToString(static_cast<size_t>(-numOpenParenthesis))
-			+ " extra closing parenthesis");
+	if(!parsing_assoc_key)
+	{
+		if(numOpenParenthesis > num_allowed_open_parens)
+			EmitWarning(StringManipulation::NumberToString(
+				static_cast<size_t>(numOpenParenthesis - num_allowed_open_parens)) + " missing closing parenthesis");
+		else if(numOpenParenthesis < 0)
+			EmitWarning(StringManipulation::NumberToString(static_cast<size_t>(-numOpenParenthesis))
+				+ " extra closing parenthesis");
+	}
+
+	return cur_node;
 }
 
 void Parser::AppendComments(EvaluableNode *n, size_t indentation_depth, bool pretty, std::string &to_append)
@@ -1281,7 +1270,7 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 	return nullptr;
 }
 
-void Parser::PreevaluateNodes()
+void Parser::PreevaluateNodes(EvaluableNode *top_node)
 {
 	//only need to update flags if any nodes actually change
 	bool any_nodes_changed = false;
@@ -1331,11 +1320,11 @@ void Parser::PreevaluateNodes()
 
 	if(any_nodes_changed)
 	{
-		EvaluableNodeManager::UpdateFlagsForNodeTree(topNode);
+		EvaluableNodeManager::UpdateFlagsForNodeTree(top_node);
 	}
 	else
 	{
-		if(topNode != nullptr)
-			EvaluableNodeManager::UpdateIdempotencyFlagsForNonCyclicNodeTree(topNode);
+		if(top_node != nullptr)
+			EvaluableNodeManager::UpdateIdempotencyFlagsForNonCyclicNodeTree(top_node);
 	}
 }

@@ -1139,7 +1139,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 			{
 				for(auto &n : container->GetOrderedChildNodesReference())
 				{
-					std::string str_value = Parser::Unparse(n, evaluableNodeManager, false, false, true);
+					std::string str_value = Parser::UnparseToKeyString(n);
 					if(values_in_existence.emplace(str_value).second)
 						result->AppendOrderedChildNode(n);
 				}
@@ -1148,7 +1148,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 			{
 				for(auto &[_, cn] : container->GetMappedChildNodesReference())
 				{
-					std::string str_value = Parser::Unparse(cn, evaluableNodeManager, false, false, true);
+					std::string str_value = Parser::UnparseToKeyString(cn);
 					if(values_in_existence.emplace(str_value).second)
 						result->AppendOrderedChildNode(cn);
 				}

@@ -260,7 +260,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED(Evalu
 	if(seed_node != nullptr && seed_node->GetType() == ENT_STRING)
 		seed_string = seed_node->GetStringValue();
 	else
-		seed_string = Parser::Unparse(seed_node, evaluableNodeManager, false, false, true);
+		seed_string = Parser::Unparse(seed_node, evaluableNodeManager, false, true);
 	auto node_stack = CreateOpcodeStackStateSaver(seed_node);
 
 	//get the entity

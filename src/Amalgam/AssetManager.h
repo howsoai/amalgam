@@ -137,7 +137,7 @@ public:
 		EvaluableNode *top_entity_code = EntityManipulation::FlattenOnlyTopEntity(&entity->evaluableNodeManager,
 			entity, asset_params.includeRandSeeds, true);
 		std::string code_string = Parser::Unparse(top_entity_code, &entity->evaluableNodeManager,
-			asset_params.prettyPrint, true, asset_params.sortKeys, true);
+			asset_params.prettyPrint, asset_params.sortKeys, true);
 		entity->evaluableNodeManager.FreeNodeTree(top_entity_code);
 
 		//loop over contained entities, freeing resources after each entity
@@ -148,7 +148,7 @@ public:
 				&entity->evaluableNodeManager, cur_entity, entity, asset_params.includeRandSeeds, true);
 
 			code_string += Parser::Unparse(create_entity_code,
-				asset_params.prettyPrint, true, asset_params.sortKeys, false, 1);
+				asset_params.prettyPrint, asset_params.sortKeys, false, 1);
 
 			entity->evaluableNodeManager.FreeNodeTree(create_entity_code);
 		}

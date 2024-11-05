@@ -222,7 +222,7 @@ bool Entity::GetValueAtLabelAsString(StringInternPool::StringID label_sid, std::
 		return false;
 	}
 
-	value_out = Parser::Unparse(label->second, &evaluableNodeManager, false, true);
+	value_out = Parser::Unparse(label->second, false, true, true);
 	return true;
 }
 
@@ -894,7 +894,7 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, Evalu
 	{
 		if(write_listeners->size() > 0)
 		{
-			std::string new_code_string = Parser::Unparse(evaluableNodeManager.GetRootNode(), &evaluableNodeManager);
+			std::string new_code_string = Parser::Unparse(evaluableNodeManager.GetRootNode(), false, true);
 
 			for(auto &wl : *write_listeners)
 				wl->LogWriteToEntity(this, new_code_string);
@@ -999,7 +999,7 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 	{
 		if(write_listeners->size() > 0)
 		{
-			std::string new_code_string = Parser::Unparse(new_root, &evaluableNodeManager);
+			std::string new_code_string = Parser::Unparse(new_root, false, true);
 
 			for(auto &wl : *write_listeners)
 				wl->LogWriteToEntity(this, new_code_string);

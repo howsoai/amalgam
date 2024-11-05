@@ -299,7 +299,7 @@ PLATFORM_MAIN_CONSOLE
 				for(auto &[used_node, _] : nr.nodesReferenced)
 				{
 					std::cerr << "Item:" << std::endl;
-					std::cerr << Parser::Unparse(used_node, &entity->evaluableNodeManager);
+					std::cerr << Parser::Unparse(used_node);
 				}
 			}
 

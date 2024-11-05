@@ -1984,7 +1984,7 @@ std::pair<bool, std::string> EvaluableNodeImmediateValueWithType::GetValueAsStri
 	}
 
 	if(nodeType == ENIVT_CODE)
-		return std::make_pair(true, Parser::Unparse(nodeValue.code));
+		return std::make_pair(true, Parser::Unparse(nodeValue.code, false, true, true));
 
 	//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
 	return std::make_pair(false, "");

@@ -277,7 +277,7 @@ bool AssetManager::StoreResource(EvaluableNode *code, AssetParameters &asset_par
 		if(!outf.good())
 			return false;
 
-		std::string code_string = Parser::Unparse(code, enm, asset_params.prettyPrint, asset_params.sortKeys);
+		std::string code_string = Parser::Unparse(code, asset_params.prettyPrint, true, asset_params.sortKeys);
 		outf.write(code_string.c_str(), code_string.size());
 		outf.close();
 
@@ -297,7 +297,7 @@ bool AssetManager::StoreResource(EvaluableNode *code, AssetParameters &asset_par
 	}
 	else if(asset_params.resourceType == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 	{
-		std::string code_string = Parser::Unparse(code, enm, asset_params.prettyPrint, asset_params.sortKeys);
+		std::string code_string = Parser::Unparse(code, asset_params.prettyPrint, true, asset_params.sortKeys);
 
 		//transform into format needed for compression
 		CompactHashMap<std::string, size_t> string_map;

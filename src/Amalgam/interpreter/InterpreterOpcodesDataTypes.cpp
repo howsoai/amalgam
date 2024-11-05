@@ -611,7 +611,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 				EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_sort_keys, sort_keys);
 			}
 
-			string_value = Parser::Unparse(code_value, evaluableNodeManager, true, sort_keys);
+			string_value = Parser::Unparse(code_value, false, true, sort_keys);
 		}
 	}
 	else if(to_type == GetStringIdFromBuiltInStringId(ENBISI_Base16) || to_type == GetStringIdFromBuiltInStringId(ENBISI_Base64))
@@ -649,7 +649,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 
 		//if using code, just reuse string value
 		if(use_code)
-			string_value = Parser::Unparse(code_value, evaluableNodeManager, false, true);
+			string_value = Parser::Unparse(code_value, false, true, true);
 
 		if(to_type == GetStringIdFromBuiltInStringId(ENBISI_Base16))
 			string_value = StringManipulation::BinaryStringToBase16(string_value);
@@ -1803,7 +1803,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en, b
 		else if(DoesEvaluableNodeTypeUseNumberData(cur->GetType()))
 			s = EvaluableNode::NumberToString(cur->GetNumberValueReference());
 		else
-			s = Parser::Unparse(cur, evaluableNodeManager, true, true);
+			s = Parser::Unparse(cur, true, true, true);
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(cur);
 

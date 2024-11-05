@@ -344,7 +344,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNPARSE(EvaluableNode *en,
 		deterministic_order = InterpretNodeIntoBoolValue(ocn[2]);
 
 	auto tree = InterpretNodeForImmediateUse(ocn[0]);
-	std::string s = Parser::Unparse(tree, evaluableNodeManager, pretty, deterministic_order);
+	std::string s = Parser::Unparse(tree, pretty, true, deterministic_order);
 
 	return ReuseOrAllocReturn(tree, s, immediate_result);
 }
@@ -2106,7 +2106,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_RAND_SEED(EvaluableNod
 	if(seed_node != nullptr && seed_node->GetType() == ENT_STRING)
 		seed_string = seed_node->GetStringValue();
 	else
-		seed_string = Parser::Unparse(seed_node, evaluableNodeManager, false, true);
+		seed_string = Parser::Unparse(seed_node, false, false, true);
 
 	randomStream.SetState(seed_string);
 

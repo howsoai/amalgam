@@ -376,9 +376,9 @@ Entity *AssetManager::LoadEntityFromResource(AssetParameters &asset_params, bool
 			if(EvaluableNode::IsAssociativeArray(metadata))
 			{
 				EvaluableNode **seed = metadata->GetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_rand_seed));
-				if(seed != nullptr)
+				if(seed != nullptr && (*seed)->GetType() == ENT_STRING)
 				{
-					default_random_seed = EvaluableNode::ToStringPreservingOpcodeType(*seed);
+					default_random_seed = (*seed)->GetStringValue();
 					new_entity->SetRandomState(default_random_seed, true);
 				}
 

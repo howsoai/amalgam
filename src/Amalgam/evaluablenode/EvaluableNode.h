@@ -372,8 +372,8 @@ public:
 		return StringManipulation::NumberToString(value);
 	}
 
-	//converts the node to a string that represents the opcode
-	const static std::string ToStringPreservingOpcodeType(EvaluableNode *e);
+	//converts the node to a key string that can be used in assocs
+	static std::string ToKeyString(EvaluableNode *e);
 
 	//converts node to an existing string. If it doesn't exist or it's null, it returns NOT_A_STRING_ID
 	static StringInternPool::StringID ToStringIDIfExists(EvaluableNode *e);
@@ -778,7 +778,7 @@ public:
 			else if constexpr(std::is_same<T, double>::value)
 				value = EvaluableNode::ToNumber(found_value->second);
 			else if constexpr(std::is_same<T, std::string>::value)
-				value = EvaluableNode::ToStringPreservingOpcodeType(found_value->second);
+				value = EvaluableNode::ToKeyString(found_value->second);
 			else
 				value = found_value->second;
 		}

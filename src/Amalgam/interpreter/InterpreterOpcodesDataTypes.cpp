@@ -1807,7 +1807,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en, b
 			else if(DoesEvaluableNodeTypeUseNumberData(cur->GetType()))
 				s = EvaluableNode::NumberToString(cur->GetNumberValueReference());
 			else
-				s = EvaluableNode::ToStringPreservingOpcodeType(cur);
+				s = EvaluableNode::ToKeyString(cur);
 		}
 		else
 		{

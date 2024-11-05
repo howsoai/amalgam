@@ -1223,7 +1223,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 		//compute regular expression
 		auto &s = container->GetStringValue();
 
-		std::string value_as_str = EvaluableNode::ToStringPreservingOpcodeType(value);
+		std::string value_as_str = EvaluableNode::ToKeyString(value);
 
 		//use nosubs to prevent unnecessary memory allocations since this is just matching
 		std::regex rx;

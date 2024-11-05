@@ -981,7 +981,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 		switch(tree_type)
 		{
 		case ENT_NUMBER:
-			upd.result.append(EvaluableNode::ToKeyString(tree));
+			upd.result.append(StringManipulation::NumberToString(tree->GetNumberValueReference()));
 			break;
 		case ENT_STRING:
 		{

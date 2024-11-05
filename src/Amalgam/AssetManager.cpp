@@ -340,6 +340,7 @@ Entity *AssetManager::LoadEntityFromResource(AssetParameters &asset_params, bool
 	}
 
 	EvaluableNodeReference code = LoadResource(asset_params, &new_entity->evaluableNodeManager, status);
+
 	if(!status.loaded)
 	{
 		delete new_entity;

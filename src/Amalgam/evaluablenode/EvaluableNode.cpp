@@ -239,13 +239,13 @@ StringInternPool::StringID EvaluableNode::ToStringIDWithReference(EvaluableNode 
 	return string_intern_pool.CreateStringReference(str_value);
 }
 
-StringInternPool::StringID EvaluableNode::ToStringIDTakingReferenceAndClearing(EvaluableNode *e)
+StringInternPool::StringID EvaluableNode::ToStringIDTakingReferenceAndClearing(EvaluableNode *e, bool include_symbol)
 {
 	//null doesn't need a reference
 	if(IsNull(e))
 		return StringInternPool::NOT_A_STRING_ID;
 
-	if(e->GetType() == ENT_STRING)
+	if(e->GetType() == ENT_STRING || (include_symbol && e->GetType() == ENT_SYMBOL))
 	{
 		//clear the reference and return it
 		StringInternPool::StringID &sid_reference = e->GetStringIDReference();

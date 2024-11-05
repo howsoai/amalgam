@@ -636,6 +636,9 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 		}
 
 		EvaluableNode *n = GetNextToken(cur_node, parsing_assoc_key);
+		//early-out if already have key
+		if(parsing_assoc_key && (n == nullptr || n->IsImmediate()))
+			return n;
 
 		//if end of a list
 		if(n == nullptr)
@@ -674,7 +677,8 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 					&& !DoesStringNeedUnparsingToKey(key_node->GetStringValue()))
 				{
 					//n is the id, so need to get the next token
-					StringInternPool::StringID index_sid = EvaluableNode::ToStringIDTakingReferenceAndClearing(key_node);
+					StringInternPool::StringID index_sid
+						= EvaluableNode::ToStringIDTakingReferenceAndClearing(key_node, true);
 
 					//reset the node type but continue to accumulate any attributes
 					cur_node->SetMappedChildNodeWithReferenceHandoff(index_sid, n, true);
@@ -685,24 +689,6 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 					//don't free the node to make sure it doesn't get picked up as an incorrect node in parent tree
 
 					cur_node->SetMappedChildNode(s, n, true);
-				}
-
-				//handle case if uneven number of arguments
-				if(n == nullptr)
-				{
-					//nothing here at all
-					if(cur_node == nullptr)
-						break;
-
-					const auto &parent = parentNodes.find(cur_node);
-
-					//if no parent, then all finished
-					if(parent == end(parentNodes) || parent->second == nullptr)
-						break;
-
-					//jump up to the parent node
-					cur_node = parent->second;
-					continue;
 				}
 			}
 
@@ -754,7 +740,7 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 				+ " extra closing parenthesis");
 	}
 
-	return cur_node;
+	return top_node;
 }
 
 void Parser::AppendComments(EvaluableNode *n, size_t indentation_depth, bool pretty, std::string &to_append)

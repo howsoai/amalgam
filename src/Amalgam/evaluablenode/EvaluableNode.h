@@ -383,7 +383,8 @@ public:
 
 	//converts node to a string. Creates a reference to the string that must be destroyed, regardless of whether the string existed or not
 	// if e is a string, it will clear it and hand the reference to the caller
-	static StringInternPool::StringID ToStringIDTakingReferenceAndClearing(EvaluableNode *e);
+	//if include_symbol is true, then it will also apply to ENT_SYMBOL
+	static StringInternPool::StringID ToStringIDTakingReferenceAndClearing(EvaluableNode *e, bool include_symbol = false);
 
 	//returns the comments as a new string
 	static inline StringInternPool::StringID GetCommentsStringId(EvaluableNode *e)

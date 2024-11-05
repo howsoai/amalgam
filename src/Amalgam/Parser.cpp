@@ -146,20 +146,10 @@ std::string Parser::Unparse(EvaluableNode *tree,
 	return upd.result;
 }
 
-EvaluableNodeReference Parser::ParseToKeyString(const std::string &code_string, EvaluableNodeManager *enm)
-{
-	if(code_string.size() == 0 || code_string[0] != '\0')
-		return enm->AllocNode(ENT_STRING, code_string);
-
-	std::string_view escaped_string(&code_string[1], code_string.size() - 1);
-	auto [node, warnings, char_with_error] = Parser::Parse(escaped_string, enm);
-	return node;
-}
-
 std::string Parser::UnparseToKeyString(EvaluableNode *tree)
 {
 	//if just a regular string, return it
-	if(tree != nullptr && tree->GetType() == ENT_STRING)
+	if(tree != nullptr && (tree->GetType() == ENT_STRING || tree->GetType() == ENT_SYMBOL))
 	{
 		const auto &string_value = tree->GetStringValue();
 		if(string_value.size() > 0 && string_value[0] != '\0')
@@ -683,13 +673,25 @@ void Parser::ParseCode()
 					}
 				}
 
-				//n is the id, so need to get the next token
-				StringInternPool::StringID index_sid = EvaluableNode::ToStringIDTakingReferenceAndClearing(n);
+				if( (n->GetType() == ENT_STRING || n->GetType() == ENT_SYMBOL)
+					&& !DoesStringNeedUnparsingToKey(n->GetStringValue()))
+				{
+					//n is the id, so need to get the next token
+					StringInternPool::StringID index_sid = EvaluableNode::ToStringIDTakingReferenceAndClearing(n);
 
-				//reset the node type but continue to accumulate any attributes
-				n->SetType(ENT_NULL, evaluableNodeManager, false);
-				n = GetNextToken(cur_node, n);
-				cur_node->SetMappedChildNodeWithReferenceHandoff(index_sid, n, true);
+					//reset the node type but continue to accumulate any attributes
+					n->SetType(ENT_NULL, evaluableNodeManager, false);
+					n = GetNextToken(cur_node, n);
+					cur_node->SetMappedChildNodeWithReferenceHandoff(index_sid, n, true);
+				}
+				else //need to unparse to key
+				{
+					std::string s = Parser::UnparseToKeyString(n);
+					evaluableNodeManager->FreeNodeTree(n);
+
+					n = GetNextToken(cur_node);
+					cur_node->SetMappedChildNode(s, n, true);
+				}
 
 				//handle case if uneven number of arguments
 				if(n == nullptr)
@@ -887,16 +889,25 @@ void Parser::AppendAssocKeyValuePair(UnparseData &upd, StringInternPool::StringI
 	{
 		auto &key_str = string_intern_pool.GetStringFromID(key_sid);
 
-		//surround in quotes only if needed
-		if(HasCharactersBeyondIdentifier(key_str))
+		if(!Parser::DoesStringNeedUnparsingToKey(key_str))
 		{
-			upd.result.push_back('"');
-			upd.result.append(Backslashify(key_str));
-			upd.result.push_back('"');
+			//surround in quotes only if needed
+			if(HasCharactersBeyondIdentifier(key_str))
+			{
+				upd.result.push_back('"');
+				upd.result.append(Backslashify(key_str));
+				upd.result.push_back('"');
+			}
+			else
+			{
+				upd.result.append(key_str);
+			}
 		}
-		else
+		else //raw code
 		{
-			upd.result.append(key_str);
+			//skip the 0 character at the beginning
+			std::string_view code_string(key_str.data() + 1, key_str.size() - 1);
+			upd.result.append(code_string);
 		}
 	}
 

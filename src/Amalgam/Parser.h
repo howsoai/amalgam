@@ -148,25 +148,13 @@ public:
 		return '\0' + StringManipulation::NumberToString(number);
 	}
 
-	//returns true if sid needs to be run through UnparseStringToKeyString
-	static inline bool DoesStringIdNeedNeedUnparsingToKey(StringInternPool::StringID sid)
+	//returns true if string needs to be run through UnparseStringToKeyString
+	static inline bool DoesStringNeedUnparsingToKey(const std::string &s)
 	{
-		if(sid == StringInternPool::NOT_A_STRING_ID)
-			return false;
-
-		if(sid->string.size() == 0 || sid->string[0] != '\0')
+		if(s.size() == 0 || s[0] != '\0')
 			return false;
 
 		return true;
-	}
-
-	//like UnparseToKeyString, but for strings
-	static inline std::string UnparseStringToKeyString(const std::string &s)
-	{
-		if(s.size() == 0 || s[0] != 0)
-			return s;
-
-		return '\0' + s;
 	}
 
 	//string to be appended after Unparse calls when the first one is called with first_of_transactional_unparse

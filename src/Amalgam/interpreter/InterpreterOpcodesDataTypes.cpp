@@ -1797,22 +1797,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en, b
 
 		std::string s;
 		if(cur == nullptr)
-		{
 			s = "(null)";
-		}
-		else if(IsEvaluableNodeTypeImmediate(cur->GetType()))
-		{
-			if(DoesEvaluableNodeTypeUseStringData(cur->GetType()))
-				s = cur->GetStringValue();
-			else if(DoesEvaluableNodeTypeUseNumberData(cur->GetType()))
-				s = EvaluableNode::NumberToString(cur->GetNumberValueReference());
-			else
-				s = EvaluableNode::ToKeyString(cur);
-		}
+		if(DoesEvaluableNodeTypeUseStringData(cur->GetType()))
+			s = cur->GetStringValue();
+		else if(DoesEvaluableNodeTypeUseNumberData(cur->GetType()))
+			s = EvaluableNode::NumberToString(cur->GetNumberValueReference());
 		else
-		{
 			s = Parser::Unparse(cur, evaluableNodeManager, true, true, true);
-		}
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(cur);
 

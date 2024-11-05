@@ -168,7 +168,7 @@ std::string Parser::UnparseToKeyString(EvaluableNode *tree, EvaluableNodeManager
 	}
 
 	//start with a zero to escape it
-	return "\0" + Unparse(tree, enm, false, true, true);
+	return "\0" + Parser::Unparse(tree, enm, false, false, true);
 }
 
 EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseData &upd,
@@ -685,7 +685,8 @@ void Parser::ParseCode()
 				}
 
 				//n is the id, so need to get the next token
-				StringInternPool::StringID index_sid = EvaluableNode::ToStringIDTakingReferenceAndClearing(n);
+				StringInternPool::StringID index_sid
+					= EvaluableNode::ToStringIDTakingReferenceAndClearing(n, evaluableNodeManager);
 
 				//reset the node type but continue to accumulate any attributes
 				n->SetType(ENT_NULL, evaluableNodeManager, false);

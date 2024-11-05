@@ -3,6 +3,7 @@
 #include "EvaluableNodeTreeFunctions.h"
 #include "EvaluableNodeManagement.h"
 #include "FastMath.h"
+#include "Parser.h"
 #include "StringInternPool.h"
 
 //system headers:
@@ -210,6 +211,7 @@ double EvaluableNode::ToNumber(EvaluableNode *e, double value_if_null)
 
 const std::string EvaluableNode::ToStringPreservingOpcodeType(EvaluableNode *e)
 {
+	//TODO 22121: evaluate what to do with this method
 	if(e == nullptr)
 		return "null";
 
@@ -227,60 +229,52 @@ const std::string EvaluableNode::ToStringPreservingOpcodeType(EvaluableNode *e)
 	}
 }
 
-std::pair<bool, std::string> EvaluableNode::ToString(EvaluableNode *e)
+std::pair<bool, std::string> EvaluableNode::ToString(EvaluableNode *e, EvaluableNodeManager *enm)
 {
 	if(IsNull(e))
 		return std::make_pair(false, "(null)");
 
-	switch(e->GetType())
-	{
-	case ENT_NUMBER:
-		return std::make_pair(true, NumberToString(e->GetNumberValueReference()));
-
 	case ENT_STRING:
-	case ENT_SYMBOL:
 		return std::make_pair(true, e->GetStringValue());
 
-	default:
-		return std::make_pair(true, GetStringFromEvaluableNodeType(e->GetType()));
-	}
-
-	return std::make_pair(true, "");
+	return std::make_pair(true, Parser::UnparseToKeyString(e, enm));
 }
 
-StringInternPool::StringID EvaluableNode::ToStringIDIfExists(EvaluableNode *e)
+StringInternPool::StringID EvaluableNode::ToStringIDIfExists(EvaluableNode *e,
+	EvaluableNodeManager *enm)
 {
 	if(EvaluableNode::IsNull(e))
 		return StringInternPool::NOT_A_STRING_ID;
 
-	if((e->GetType() == ENT_STRING || e->GetType() == ENT_SYMBOL))
+	if(e->GetType() == ENT_STRING)
 		return e->GetStringIDReference();
 
-	//see if the string exists even if it is not stored as a StringID
-	const std::string str_value = ToStringPreservingOpcodeType(e);
+	std::string str_value = Parser::UnparseToKeyString(e, enm);
 	//will return empty string if not found
 	return string_intern_pool.GetIDFromString(str_value);
 }
 
-StringInternPool::StringID EvaluableNode::ToStringIDWithReference(EvaluableNode *e)
+StringInternPool::StringID EvaluableNode::ToStringIDWithReference(EvaluableNode *e,
+	EvaluableNodeManager *enm)
 {
 	if(EvaluableNode::IsNull(e))
 		return StringInternPool::NOT_A_STRING_ID;
 
-	if(e->GetType() == ENT_STRING || e->GetType() == ENT_SYMBOL)
+	if(e->GetType() == ENT_STRING)
 		return string_intern_pool.CreateStringReference(e->GetStringIDReference());
 
-	std::string stringified = ToStringPreservingOpcodeType(e);
-	return string_intern_pool.CreateStringReference(stringified);
+	std::string str_value = Parser::UnparseToKeyString(e, enm);
+	return string_intern_pool.CreateStringReference(str_value);
 }
 
-StringInternPool::StringID EvaluableNode::ToStringIDTakingReferenceAndClearing(EvaluableNode *e)
+StringInternPool::StringID EvaluableNode::ToStringIDTakingReferenceAndClearing(EvaluableNode *e,
+	EvaluableNodeManager *enm)
 {
 	//null doesn't need a reference
 	if(IsNull(e))
 		return StringInternPool::NOT_A_STRING_ID;
 
-	if(e->GetType() == ENT_STRING || e->GetType() == ENT_SYMBOL)
+	if(e->GetType() == ENT_STRING)
 	{
 		//clear the reference and return it
 		StringInternPool::StringID &sid_reference = e->GetStringIDReference();
@@ -289,8 +283,8 @@ StringInternPool::StringID EvaluableNode::ToStringIDTakingReferenceAndClearing(E
 		return sid_to_return;
 	}
 
-	std::string stringified = ToStringPreservingOpcodeType(e);
-	return string_intern_pool.CreateStringReference(stringified);
+	std::string str_value = Parser::UnparseToKeyString(e, enm);
+	return string_intern_pool.CreateStringReference(str_value);
 }
 
 void EvaluableNode::ConvertOrderedListToNumberedAssoc()
@@ -611,7 +605,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 	{
 		StringInternPool::StringID sid = string_intern_pool.emptyStringId;
 		if(attempt_to_preserve_immediate_value)
-			sid = EvaluableNode::ToStringIDWithReference(this);
+			sid = EvaluableNode::ToStringIDWithReference(this, enm);
 
 		if(sid == string_intern_pool.NOT_A_STRING_ID)
 		{
@@ -639,7 +633,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 			new_map.reserve((ocn.size() + 1) / 2);
 			for(size_t i = 0; i < ocn.size(); i += 2)
 			{
-				auto sid = ToStringIDWithReference(ocn[i]);
+				auto sid = ToStringIDWithReference(ocn[i], enm);
 
 				EvaluableNode *value = nullptr;
 				if(i + 1 < ocn.size())
@@ -1919,4 +1913,152 @@ size_t EvaluableNode::GetDeepSizeNoCycleRecurse(EvaluableNode *n)
 	}
 
 	return size;
+}
+
+void EvaluableNodeImmediateValueWithType::CopyValueFromEvaluableNode(EvaluableNode *en)
+{
+	if(en == nullptr)
+	{
+		nodeType = ENIVT_NULL;
+		nodeValue = EvaluableNodeImmediateValue(std::numeric_limits<double>::quiet_NaN());
+		return;
+	}
+
+	auto en_type = en->GetType();
+	if(en_type == ENT_NULL)
+	{
+		nodeType = ENIVT_NULL;
+		nodeValue = EvaluableNodeImmediateValue(std::numeric_limits<double>::quiet_NaN());
+		return;
+	}
+
+	if(en_type == ENT_NUMBER)
+	{
+		nodeType = ENIVT_NUMBER;
+		nodeValue = EvaluableNodeImmediateValue(en->GetNumberValueReference());
+		return;
+	}
+
+	if(en_type == ENT_STRING)
+	{
+		nodeType = ENIVT_STRING_ID;
+		nodeValue = EvaluableNodeImmediateValue(en->GetStringIDReference());
+		return;
+	}
+
+	nodeType = ENIVT_CODE;
+	nodeValue = EvaluableNodeImmediateValue(en);
+}
+
+bool EvaluableNodeImmediateValueWithType::GetValueAsBoolean()
+{
+	if(nodeType == ENIVT_NUMBER)
+	{
+		if(nodeValue.number == 0.0)
+			return false;
+		return true;
+	}
+
+	if(nodeType == ENIVT_STRING_ID)
+	{
+		if(nodeValue.stringID == string_intern_pool.NOT_A_STRING_ID
+			|| nodeValue.stringID == string_intern_pool.emptyStringId)
+			return false;
+		return true;
+	}
+
+	if(nodeType == ENIVT_CODE)
+		return EvaluableNode::IsTrue(nodeValue.code);
+
+	//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
+	return false;
+}
+
+double EvaluableNodeImmediateValueWithType::GetValueAsNumber(double value_if_null)
+{
+	if(nodeType == ENIVT_NUMBER)
+		return nodeValue.number;
+
+	if(nodeType == ENIVT_STRING_ID)
+	{
+		if(nodeValue.stringID == string_intern_pool.NOT_A_STRING_ID)
+			return value_if_null;
+
+		auto &str = string_intern_pool.GetStringFromID(nodeValue.stringID);
+		auto [value, success] = Platform_StringToNumber(str);
+		if(success)
+			return value;
+		return value_if_null;
+	}
+
+	if(nodeType == ENIVT_CODE)
+		return EvaluableNode::ToNumber(nodeValue.code);
+
+	//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
+	return value_if_null;
+}
+
+std::pair<bool, std::string> EvaluableNodeImmediateValueWithType::GetValueAsString()
+{
+	if(nodeType == ENIVT_NUMBER)
+		return std::make_pair(true, EvaluableNode::NumberToString(nodeValue.number));
+
+	if(nodeType == ENIVT_STRING_ID)
+	{
+		if(nodeValue.stringID == string_intern_pool.NOT_A_STRING_ID)
+			return std::make_pair(false, "");
+
+		auto &str = string_intern_pool.GetStringFromID(nodeValue.stringID);
+		return std::make_pair(true, str);
+	}
+
+	if(nodeType == ENIVT_CODE)
+		return std::make_pair(true, EvaluableNode::ToStringPreservingOpcodeType(nodeValue.code));
+
+	//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
+	return std::make_pair(false, "");
+}
+
+StringInternPool::StringID EvaluableNodeImmediateValueWithType::GetValueAsStringIDIfExists(EvaluableNodeManager *enm)
+{
+	if(nodeType == ENIVT_NUMBER)
+	{
+		std::string str_value = Parser::UnparseNumberToKeyString(nodeValue.number);
+		//will return empty string if not found
+		return string_intern_pool.GetIDFromString(str_value);
+	}
+
+	if(nodeType == ENIVT_STRING_ID)
+		return nodeValue.stringID;
+
+	if(nodeType == ENIVT_CODE)
+	{
+		std::string str_value = Parser::UnparseToKeyString(nodeValue.code, enm);
+		//will return empty string if not found
+		return string_intern_pool.GetIDFromString(str_value);
+	}
+
+	//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
+	return string_intern_pool.NOT_A_STRING_ID;
+}
+
+StringInternPool::StringID EvaluableNodeImmediateValueWithType::GetValueAsStringIDWithReference(EvaluableNodeManager *enm)
+{
+	if(nodeType == ENIVT_NUMBER)
+	{
+		std::string str_value = Parser::UnparseNumberToKeyString(nodeValue.number);
+		return string_intern_pool.CreateStringReference(str_value);
+	}
+
+	if(nodeType == ENIVT_STRING_ID)
+		return string_intern_pool.CreateStringReference(nodeValue.stringID);
+
+	if(nodeType == ENIVT_CODE)
+	{
+		std::string str_value = Parser::UnparseToKeyString(nodeValue.code, enm);
+		return string_intern_pool.CreateStringReference(str_value);
+	}
+
+	//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
+	return string_intern_pool.NOT_A_STRING_ID;
 }

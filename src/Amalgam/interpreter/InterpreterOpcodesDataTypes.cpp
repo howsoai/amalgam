@@ -973,9 +973,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_LABELS(EvaluableNode *
 				//obtain the label, reusing the sid reference if possible
 				StringInternPool::StringID label_sid = string_intern_pool.emptyStringId;
 				if(label_list.unique)
-					label_sid = EvaluableNode::ToStringIDTakingReferenceAndClearing(e);
+					label_sid = EvaluableNode::ToStringIDTakingReferenceAndClearing(e, evaluableNodeManager);
 				else
-					label_sid = EvaluableNode::ToStringIDWithReference(e);
+					label_sid = EvaluableNode::ToStringIDWithReference(e, evaluableNodeManager);
 
 				if(label_sid != string_intern_pool.NOT_A_STRING_ID)
 					source->AppendLabelStringId(label_sid, true);
@@ -1030,9 +1030,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP_LABELS(EvaluableNode *
 		//obtain the label, reusing the sid reference if possible
 		StringInternPool::StringID label_sid = string_intern_pool.emptyStringId;
 		if(label_list.unique)
-			label_sid = EvaluableNode::ToStringIDTakingReferenceAndClearing(label_list_ocn[i]);
+			label_sid = EvaluableNode::ToStringIDTakingReferenceAndClearing(label_list_ocn[i], evaluableNodeManager);
 		else
-			label_sid = EvaluableNode::ToStringIDWithReference(label_list_ocn[i]);
+			label_sid = EvaluableNode::ToStringIDWithReference(label_list_ocn[i], evaluableNodeManager);
 
 		retval_ocn[i]->AppendLabelStringId(label_sid, true);
 	}

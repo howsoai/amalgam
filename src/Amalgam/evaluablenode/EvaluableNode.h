@@ -376,17 +376,17 @@ public:
 	const static std::string ToStringPreservingOpcodeType(EvaluableNode *e);
 
 	//converts the node to a string, returning true if valid.  If it doesn't exist or it's null, it returns false
-	static std::pair<bool, std::string> ToString(EvaluableNode *e);
+	static std::pair<bool, std::string> ToString(EvaluableNode *e, EvaluableNodeManager *enm);
 
 	//converts node to an existing string. If it doesn't exist or it's null, it returns NOT_A_STRING_ID
-	static StringInternPool::StringID ToStringIDIfExists(EvaluableNode *e);
+	static StringInternPool::StringID ToStringIDIfExists(EvaluableNode *e, EvaluableNodeManager *enm);
 
 	//converts node to a string. Creates a reference to the string that must be destroyed, regardless of whether the string existed or not (if it did not exist, then it creates one)
-	static StringInternPool::StringID ToStringIDWithReference(EvaluableNode *e);
+	static StringInternPool::StringID ToStringIDWithReference(EvaluableNode *e, EvaluableNodeManager *enm);
 
 	//converts node to a string. Creates a reference to the string that must be destroyed, regardless of whether the string existed or not
 	// if e is a string, it will clear it and hand the reference to the caller
-	static StringInternPool::StringID ToStringIDTakingReferenceAndClearing(EvaluableNode *e);
+	static StringInternPool::StringID ToStringIDTakingReferenceAndClearing(EvaluableNode *e, EvaluableNodeManager *enm);
 
 	//returns the comments as a new string
 	static inline StringInternPool::StringID GetCommentsStringId(EvaluableNode *e)
@@ -1203,147 +1203,17 @@ public:
 	}
 
 	//copies the value from en and returns the EvaluableNodeConcreteValueType
-	void CopyValueFromEvaluableNode(EvaluableNode *en)
-	{
-		if(en == nullptr)
-		{
-			nodeType = ENIVT_NULL;
-			nodeValue = EvaluableNodeImmediateValue(std::numeric_limits<double>::quiet_NaN());
-			return;
-		}
+	void CopyValueFromEvaluableNode(EvaluableNode *en);
 
-		auto en_type = en->GetType();
-		if(en_type == ENT_NULL)
-		{
-			nodeType = ENIVT_NULL;
-			nodeValue = EvaluableNodeImmediateValue(std::numeric_limits<double>::quiet_NaN());
-			return;
-		}
+	bool GetValueAsBoolean();
 
-		if(en_type == ENT_NUMBER)
-		{
-			nodeType = ENIVT_NUMBER;
-			nodeValue = EvaluableNodeImmediateValue(en->GetNumberValueReference());
-			return;
-		}
+	double GetValueAsNumber(double value_if_null = std::numeric_limits<double>::quiet_NaN());
 
-		if(en_type == ENT_STRING)
-		{
-			nodeType = ENIVT_STRING_ID;
-			nodeValue = EvaluableNodeImmediateValue(en->GetStringIDReference());
-			return;
-		}
+	std::pair<bool, std::string> GetValueAsString();
 
-		nodeType = ENIVT_CODE;
-		nodeValue = EvaluableNodeImmediateValue(en);
-	}
+	StringInternPool::StringID GetValueAsStringIDIfExists(EvaluableNodeManager *enm);
 
-	bool GetValueAsBoolean()
-	{
-		if(nodeType == ENIVT_NUMBER)
-		{
-			if(nodeValue.number == 0.0)
-				return false;
-			return true;
-		}
-
-		if(nodeType == ENIVT_STRING_ID)
-		{
-			if(nodeValue.stringID == string_intern_pool.NOT_A_STRING_ID
-					|| nodeValue.stringID == string_intern_pool.emptyStringId)
-				return false;
-			return true;
-		}
-
-		if(nodeType == ENIVT_CODE)
-			return EvaluableNode::IsTrue(nodeValue.code);
-
-		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
-		return false;
-	}
-
-	double GetValueAsNumber(double value_if_null = std::numeric_limits<double>::quiet_NaN())
-	{
-		if(nodeType == ENIVT_NUMBER)
-			return nodeValue.number;
-
-		if(nodeType == ENIVT_STRING_ID)
-		{
-			if(nodeValue.stringID == string_intern_pool.NOT_A_STRING_ID)
-				return value_if_null;
-
-			auto &str = string_intern_pool.GetStringFromID(nodeValue.stringID);
-			auto [value, success] = Platform_StringToNumber(str);
-			if(success)
-				return value;
-			return value_if_null;
-		}
-
-		if(nodeType == ENIVT_CODE)
-			return EvaluableNode::ToNumber(nodeValue.code);
-
-		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
-		return value_if_null;
-	}
-
-	std::pair<bool, std::string> GetValueAsString()
-	{
-		if(nodeType == ENIVT_NUMBER)
-			return std::make_pair(true, EvaluableNode::NumberToString(nodeValue.number));
-
-		if(nodeType == ENIVT_STRING_ID)
-		{
-			if(nodeValue.stringID == string_intern_pool.NOT_A_STRING_ID)
-				return std::make_pair(false, "");
-
-			auto &str = string_intern_pool.GetStringFromID(nodeValue.stringID);
-			return std::make_pair(true, str);
-		}
-
-		if(nodeType == ENIVT_CODE)
-			return std::make_pair(true, EvaluableNode::ToStringPreservingOpcodeType(nodeValue.code));
-
-		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
-		return std::make_pair(false, "");
-	}
-
-	StringInternPool::StringID GetValueAsStringIDIfExists()
-	{
-		if(nodeType == ENIVT_NUMBER)
-		{
-			const std::string str_value = EvaluableNode::NumberToString(nodeValue.number);
-			//will return empty string if not found
-			return string_intern_pool.GetIDFromString(str_value);
-		}
-
-		if(nodeType == ENIVT_STRING_ID)
-			return nodeValue.stringID;
-
-		if(nodeType == ENIVT_CODE)
-			return EvaluableNode::ToStringIDIfExists(nodeValue.code);
-
-		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
-		return string_intern_pool.NOT_A_STRING_ID;
-	}
-
-	StringInternPool::StringID GetValueAsStringIDWithReference()
-	{
-		if(nodeType == ENIVT_NUMBER)
-		{
-			const std::string str_value = EvaluableNode::NumberToString(nodeValue.number);
-			//will return empty string if not found
-			return string_intern_pool.CreateStringReference(str_value);
-		}
-
-		if(nodeType == ENIVT_STRING_ID)
-			return string_intern_pool.CreateStringReference(nodeValue.stringID);
-
-		if(nodeType == ENIVT_CODE)
-			return EvaluableNode::ToStringIDWithReference(nodeValue.code);
-
-		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
-		return string_intern_pool.NOT_A_STRING_ID;
-	}
+	StringInternPool::StringID GetValueAsStringIDWithReference(EvaluableNodeManager *enm);
 
 	static inline bool AreEqual(EvaluableNodeImmediateValueWithType &a, EvaluableNodeImmediateValueWithType &b)
 	{

@@ -142,6 +142,33 @@ public:
 	//transforms tree into a string value that will match if the evaluable node trees match
 	static std::string UnparseToKeyString(EvaluableNode *tree, EvaluableNodeManager *enm);
 
+	//like UnparseToKeyString, but for numbers only
+	static inline std::string UnparseNumberToKeyString(double number)
+	{
+		return '\0' + StringManipulation::NumberToString(number);
+	}
+
+	//returns true if sid needs to be run through UnparseStringToKeyString
+	static inline bool DoesStringIdNeedNeedUnparsingToKey(StringInternPool::StringID sid)
+	{
+		if(sid == StringInternPool::NOT_A_STRING_ID)
+			return false;
+
+		if(sid->string.size() == 0 || sid->string[0] != '\0')
+			return false;
+
+		return true;
+	}
+
+	//like UnparseToKeyString, but for strings
+	static inline std::string UnparseStringToKeyString(const std::string &s)
+	{
+		if(s.size() == 0 || s[0] != 0)
+			return s;
+
+		return '\0' + s;
+	}
+
 	//string to be appended after Unparse calls when the first one is called with first_of_transactional_unparse
 	inline static const std::string transactionTermination = ")";
 

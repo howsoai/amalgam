@@ -398,7 +398,7 @@ public:
 
 	//stores buffer b (of type BufferType of elements BufferElementType) into the filename, returns true if successful, false if not
 	template<typename BufferType>
-	static bool StoreFileFromBuffer(const std::string &filename, std::string &file_type, BufferType &b)
+	static bool StoreFileFromBuffer(const std::string &filename, std::string &file_type, const BufferType &b)
 	{
 		std::ofstream f(filename, std::fstream::binary | std::fstream::out);
 		if(!f.good())
@@ -410,14 +410,14 @@ public:
 				return false;
 		}
 
-		f.write(reinterpret_cast<char *>(&b[0]), sizeof(char) * b.size());
+		f.write(reinterpret_cast<const char *>(&b[0]), sizeof(char) * b.size());
 		return true;
 	}
 
 	//validates given asset version against Amalgam version
 	//if successful: returns empty string and true
 	//if failure: returns error message and false
-	static std::pair<std::string, bool> ValidateVersionAgainstAmalgam(std::string &version);
+	static std::pair<std::string, bool> ValidateVersionAgainstAmalgam(const std::string &version);
 
 	//returns a string representing en's source, empty string if debugSources is false
 	std::string GetEvaluableNodeSourceFromComments(EvaluableNode *en);

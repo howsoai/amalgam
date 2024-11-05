@@ -229,17 +229,6 @@ const std::string EvaluableNode::ToStringPreservingOpcodeType(EvaluableNode *e)
 	}
 }
 
-std::pair<bool, std::string> EvaluableNode::ToString(EvaluableNode *e)
-{
-	if(IsNull(e))
-		return std::make_pair(false, "(null)");
-
-	if(e->GetType() == ENT_STRING)
-		return std::make_pair(true, e->GetStringValue());
-
-	return std::make_pair(true, Parser::UnparseToKeyString(e));
-}
-
 StringInternPool::StringID EvaluableNode::ToStringIDIfExists(EvaluableNode *e)
 {
 	if(EvaluableNode::IsNull(e))

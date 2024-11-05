@@ -479,14 +479,12 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		}
 		else if(value_destination_node->GetType() == ENT_STRING)
 		{
-			auto [cur_value_valid, cur_value] = EvaluableNode::ToString(value_destination_node);
-			auto [inc_value_valid, inc_value] = EvaluableNode::ToString(variable_value_node);
-
-			//string will default to invalid value -- only set if both strings are valid
-			if(cur_value_valid && inc_value_valid)
+			//concatenate a string only if it is a valid string
+			if(variable_value_node != nullptr && variable_value_node->GetType() == ENT_STRING)
 			{
 				value_destination_node->SetType(ENT_STRING, nullptr, false);
-				value_destination_node->SetStringValue(cur_value.append(inc_value));
+				std::string result = value_destination_node->GetStringValue() + variable_value_node->GetStringValue();
+				value_destination_node->SetStringValue(result);
 			}
 			else
 			{
@@ -566,14 +564,18 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 	}
 	else if(value_destination_node->GetType() == ENT_STRING)
 	{
-		auto [cur_value_valid, cur_value] = EvaluableNode::ToString(value_destination_node);
-		auto [inc_value_valid, inc_value] = EvaluableNode::ToString(variable_value_node);
-
-		//string will default to invalid value -- only set if both strings are valid
-		if(cur_value_valid && inc_value_valid)
-			value_destination_node.SetReference(enm->AllocNode(ENT_STRING, cur_value.append(inc_value)), true);
+		//concatenate a string only if it is a valid string
+		if(variable_value_node != nullptr && variable_value_node->GetType() == ENT_STRING)
+		{
+			value_destination_node->SetType(ENT_STRING, nullptr, false);
+			std::string result = value_destination_node->GetStringValue() + variable_value_node->GetStringValue();
+			value_destination_node->SetStringValue(result);
+			value_destination_node.SetReference(enm->AllocNode(ENT_STRING, result), true);
+		}
 		else
+		{
 			value_destination_node.SetReference(enm->AllocNode(ENT_NULL), true);
+		}
 	}
 	else //add ordered child node
 	{

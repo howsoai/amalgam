@@ -376,17 +376,17 @@ public:
 	const static std::string ToStringPreservingOpcodeType(EvaluableNode *e);
 
 	//converts the node to a string, returning true if valid.  If it doesn't exist or it's null, it returns false
-	static std::pair<bool, std::string> ToString(EvaluableNode *e, EvaluableNodeManager *enm);
+	static std::pair<bool, std::string> ToString(EvaluableNode *e);
 
 	//converts node to an existing string. If it doesn't exist or it's null, it returns NOT_A_STRING_ID
-	static StringInternPool::StringID ToStringIDIfExists(EvaluableNode *e, EvaluableNodeManager *enm);
+	static StringInternPool::StringID ToStringIDIfExists(EvaluableNode *e);
 
 	//converts node to a string. Creates a reference to the string that must be destroyed, regardless of whether the string existed or not (if it did not exist, then it creates one)
-	static StringInternPool::StringID ToStringIDWithReference(EvaluableNode *e, EvaluableNodeManager *enm);
+	static StringInternPool::StringID ToStringIDWithReference(EvaluableNode *e);
 
 	//converts node to a string. Creates a reference to the string that must be destroyed, regardless of whether the string existed or not
 	// if e is a string, it will clear it and hand the reference to the caller
-	static StringInternPool::StringID ToStringIDTakingReferenceAndClearing(EvaluableNode *e, EvaluableNodeManager *enm);
+	static StringInternPool::StringID ToStringIDTakingReferenceAndClearing(EvaluableNode *e);
 
 	//returns the comments as a new string
 	static inline StringInternPool::StringID GetCommentsStringId(EvaluableNode *e)
@@ -1211,9 +1211,9 @@ public:
 
 	std::pair<bool, std::string> GetValueAsString();
 
-	StringInternPool::StringID GetValueAsStringIDIfExists(EvaluableNodeManager *enm);
+	StringInternPool::StringID GetValueAsStringIDIfExists();
 
-	StringInternPool::StringID GetValueAsStringIDWithReference(EvaluableNodeManager *enm);
+	StringInternPool::StringID GetValueAsStringIDWithReference();
 
 	static inline bool AreEqual(EvaluableNodeImmediateValueWithType &a, EvaluableNodeImmediateValueWithType &b)
 	{

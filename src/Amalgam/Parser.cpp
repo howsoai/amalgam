@@ -130,12 +130,11 @@ std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t> Parser::Par
 		charOffsetStartOfLastCompletedCode);
 }
 
-std::string Parser::Unparse(EvaluableNode *tree, EvaluableNodeManager *enm,
+std::string Parser::Unparse(EvaluableNode *tree,
 	bool expanded_whitespace, bool emit_attributes, bool sort_keys,
 	bool first_of_transactional_unparse, size_t starting_indendation)
 {
 	UnparseData upd;
-	upd.enm = enm;
 	upd.topNodeIfTransactionUnparsing = (first_of_transactional_unparse ? tree : nullptr);
 	//if the top node needs cycle checks, then need to check all nodes in case there are
 	// multiple ways to get to one
@@ -157,7 +156,7 @@ EvaluableNodeReference Parser::ParseToKeyString(const std::string &code_string, 
 	return node;
 }
 
-std::string Parser::UnparseToKeyString(EvaluableNode *tree, EvaluableNodeManager *enm)
+std::string Parser::UnparseToKeyString(EvaluableNode *tree)
 {
 	//if just a regular string, return it
 	if(tree != nullptr && tree->GetType() == ENT_STRING)
@@ -168,11 +167,11 @@ std::string Parser::UnparseToKeyString(EvaluableNode *tree, EvaluableNodeManager
 	}
 
 	//start with a zero to escape it
-	return "\0" + Parser::Unparse(tree, enm, false, false, true);
+	return "\0" + Parser::Unparse(tree, false, false, true);
 }
 
 EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseData &upd,
-	EvaluableNode *shared_node, EvaluableNode *a_parent, EvaluableNode *b_parent)
+	EvaluableNodeManager &enm, EvaluableNode *shared_node, EvaluableNode *a_parent, EvaluableNode *b_parent)
 {
 	if(shared_node == nullptr || a_parent == nullptr || b_parent == nullptr)
 		return nullptr;
@@ -241,14 +240,14 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 				}
 			}
 
-			b_path_nodes.insert(begin(b_path_nodes), upd.enm->AllocNode(ENT_STRING, key_id));
+			b_path_nodes.insert(begin(b_path_nodes), enm.AllocNode(ENT_STRING, key_id));
 		}
 		else if(b_parent->IsOrderedArray())
 		{
 			auto &bp_ocn = b_parent->GetOrderedChildNodesReference();
 			const auto &found = std::find(begin(bp_ocn), end(bp_ocn), b);
 			auto index = std::distance(begin(bp_ocn), found);
-			b_path_nodes.insert(begin(b_path_nodes), upd.enm->AllocNode(static_cast<double>(index)));
+			b_path_nodes.insert(begin(b_path_nodes), enm.AllocNode(static_cast<double>(index)));
 		}
 		else //didn't work... odd/error condition
 		{
@@ -260,9 +259,9 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 	}
 
 	//build code to get the reference
-	EvaluableNode *target = upd.enm->AllocNode(ENT_TARGET);
+	EvaluableNode *target = enm.AllocNode(ENT_TARGET);
 	//need to include the get (below) in the depth, so add 1
-	target->AppendOrderedChildNode(upd.enm->AllocNode(static_cast<double>(a_ancestor_depth + 1)));
+	target->AppendOrderedChildNode(enm.AllocNode(static_cast<double>(a_ancestor_depth + 1)));
 
 	EvaluableNode *indices = nullptr;
 	if(b_path_nodes.size() == 0)
@@ -270,9 +269,9 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 	else if(b_path_nodes.size() == 1)
 		indices = b_path_nodes[0];
 	else
-		indices = upd.enm->AllocNode(b_path_nodes, false, true);
+		indices = enm.AllocNode(b_path_nodes, false, true);
 
-	EvaluableNode *get = upd.enm->AllocNode(ENT_GET);
+	EvaluableNode *get = enm.AllocNode(ENT_GET);
 	get->AppendOrderedChildNode(target);
 	get->AppendOrderedChildNode(indices);
 
@@ -685,8 +684,7 @@ void Parser::ParseCode()
 				}
 
 				//n is the id, so need to get the next token
-				StringInternPool::StringID index_sid
-					= EvaluableNode::ToStringIDTakingReferenceAndClearing(n, evaluableNodeManager);
+				StringInternPool::StringID index_sid = EvaluableNode::ToStringIDTakingReferenceAndClearing(n);
 
 				//reset the node type but continue to accumulate any attributes
 				n->SetType(ENT_NULL, evaluableNodeManager, false);
@@ -922,14 +920,15 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 		{
 			upd.preevaluationNeeded = true;
 
+			EvaluableNodeManager enm;
 			EvaluableNode *code_to_print = GetCodeForPathToSharedNodeFromParentAToParentB(upd,
-				tree, parent, dest_node_with_parent->second);
+				enm, tree, parent, dest_node_with_parent->second);
 			//unparse the path using a new set of parentNodes as to not pollute the one currently being unparsed
 			EvaluableNode::ReferenceAssocType references;
 			std::swap(upd.parentNodes, references);
 			Unparse(upd, code_to_print, nullptr, expanded_whitespace, indentation_depth, need_initial_indent);
 			std::swap(upd.parentNodes, references);	//put the old parentNodes back
-			upd.enm->FreeNodeTree(code_to_print);
+			enm.FreeNodeTree(code_to_print);
 
 			return;
 		}
@@ -1070,6 +1069,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 
 		if(tree->IsAssociativeArray())
 		{
+			//TODO 22121: update this for keys
 			auto &tree_mcn = tree->GetMappedChildNodesReference();
 			bool initial_space = (tree_type != ENT_LIST && tree_type != ENT_ASSOC);
 			if(!upd.sortKeys)

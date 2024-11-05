@@ -1282,7 +1282,7 @@ public:
 				if(dist_term_entry != end(feature_data.nominalStringDistanceTerms))
 					return dist_term_entry->second;
 
-				if(other_value.stringID == feature_data.targetValue.GetValueAsStringIDIfExists(evaluableNodeManager))
+				if(other_value.stringID == feature_data.targetValue.GetValueAsStringIDIfExists())
 					return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
 			}
 

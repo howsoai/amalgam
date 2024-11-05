@@ -1271,7 +1271,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 	{
 		if(container->IsAssociativeArray())
 		{
-			StringInternPool::StringID key_sid = indices.GetValue().GetValueAsStringIDIfExists(evaluableNodeManager);
+			StringInternPool::StringID key_sid = indices.GetValue().GetValueAsStringIDIfExists();
 			removed_node.SetReference(container->EraseMappedChildNode(key_sid));
 		}
 		else if(container->IsOrderedArray())
@@ -1304,7 +1304,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 		{
 			for(auto &cn : indices_ocn)
 			{
-				StringInternPool::StringID key_sid = EvaluableNode::ToStringIDIfExists(cn, evaluableNodeManager);
+				StringInternPool::StringID key_sid = EvaluableNode::ToStringIDIfExists(cn);
 				removed_node.SetReference(container->EraseMappedChildNode(key_sid));
 				evaluableNodeManager->FreeNodeTreeIfPossible(removed_node);
 			}
@@ -1378,7 +1378,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, bo
 	{
 		if(container->IsAssociativeArray())
 		{
-			StringInternPool::StringID key_sid = indices.GetValue().GetValueAsStringIDWithReference(evaluableNodeManager);
+			StringInternPool::StringID key_sid = indices.GetValue().GetValueAsStringIDWithReference();
 			auto &container_mcn = container->GetMappedChildNodesReference();
 		
 			//find what should be kept, or clear key_sid if not found
@@ -1449,7 +1449,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, bo
 
 			for(auto &cn : indices_ocn)
 			{
-				StringInternPool::StringID key_sid = EvaluableNode::ToStringIDIfExists(cn, evaluableNodeManager);
+				StringInternPool::StringID key_sid = EvaluableNode::ToStringIDIfExists(cn);
 
 				//if found, move it over to the new container
 				auto found_to_keep = container_mcn.find(key_sid);
@@ -1695,9 +1695,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, boo
 		//obtain the index, reusing the sid reference if possible
 		StringInternPool::StringID index_sid = string_intern_pool.emptyStringId;
 		if(index_list.unique)
-			index_sid = EvaluableNode::ToStringIDTakingReferenceAndClearing(index, evaluableNodeManager);
+			index_sid = EvaluableNode::ToStringIDTakingReferenceAndClearing(index);
 		else
-			index_sid = EvaluableNode::ToStringIDWithReference(index, evaluableNodeManager);
+			index_sid = EvaluableNode::ToStringIDWithReference(index);
 
 		//get value
 		EvaluableNode *value = nullptr;
@@ -1782,7 +1782,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, b
 	{
 		for(auto &index : index_list_ocn)
 		{
-			StringInternPool::StringID index_sid = EvaluableNode::ToStringIDIfExists(index, evaluableNodeManager);
+			StringInternPool::StringID index_sid = EvaluableNode::ToStringIDIfExists(index);
 
 			EvaluableNode **found = zipped->GetMappedChildNode(index_sid);
 			if(found != nullptr)

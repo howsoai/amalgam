@@ -132,7 +132,7 @@ public:
 	// if sort_keys, then it will perform a sort on all unordered nodes
 	// if first_of_transactional_unparse, it will not emit the final closing parenthesis or appropriate other character
 	// starting_indentation indicates where it will start, in case there was other code prior to which it is being concatenated
-	static std::string Unparse(EvaluableNode *tree, EvaluableNodeManager *enm,
+	static std::string Unparse(EvaluableNode *tree,
 		bool expanded_whitespace = true, bool emit_attributes = true, bool sort_keys = false,
 		bool first_of_transactional_unparse = false, size_t starting_indendation = 0);
 
@@ -140,7 +140,7 @@ public:
 	static EvaluableNodeReference ParseToKeyString(const std::string &code_string, EvaluableNodeManager *enm);
 
 	//transforms tree into a string value that will match if the evaluable node trees match
-	static std::string UnparseToKeyString(EvaluableNode *tree, EvaluableNodeManager *enm);
+	static std::string UnparseToKeyString(EvaluableNode *tree);
 
 	//like UnparseToKeyString, but for numbers only
 	static inline std::string UnparseNumberToKeyString(double number)
@@ -187,8 +187,6 @@ protected:
 		//parentNodes contains each reference as the key and the parent as the value
 		EvaluableNode::ReferenceAssocType parentNodes;
 
-		EvaluableNodeManager *enm;
-
 		//if transactional unparsing, then this will be the top node
 		//if not, it will be nullptr
 		EvaluableNode *topNodeIfTransactionUnparsing;
@@ -208,7 +206,7 @@ protected:
 
 	//Returns code that will get from location a to b.
 	static EvaluableNode *GetCodeForPathToSharedNodeFromParentAToParentB(UnparseData &upd,
-		EvaluableNode *shared_node, EvaluableNode *a_parent, EvaluableNode *b_parent);
+		EvaluableNodeManager &enm, EvaluableNode *shared_node, EvaluableNode *a_parent, EvaluableNode *b_parent);
 
 	//Skips whitespace and accumulates any attributes (e.g., labels, comments) on to target
 	void SkipWhitespaceAndAccumulateAttributes(EvaluableNode *target);

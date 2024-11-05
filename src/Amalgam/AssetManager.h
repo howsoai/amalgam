@@ -147,7 +147,7 @@ public:
 			EvaluableNode *create_entity_code = EntityManipulation::FlattenOnlyOneContainedEntity(
 				&entity->evaluableNodeManager, cur_entity, entity, asset_params.includeRandSeeds, true);
 
-			code_string += Parser::Unparse(create_entity_code, &entity->evaluableNodeManager,
+			code_string += Parser::Unparse(create_entity_code,
 				asset_params.prettyPrint, true, asset_params.sortKeys, false, 1);
 
 			entity->evaluableNodeManager.FreeNodeTree(create_entity_code);

@@ -637,8 +637,13 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 
 		EvaluableNode *n = GetNextToken(cur_node, parsing_assoc_key);
 		//early-out if already have key
-		if(parsing_assoc_key && (n == nullptr || n->IsImmediate()))
-			return n;
+		if(parsing_assoc_key)
+		{
+			if(n == nullptr)
+				return top_node;
+			if(n->IsImmediate())
+				return n;
+		}
 
 		//if end of a list
 		if(n == nullptr)
@@ -673,8 +678,9 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 			}
 			else if(cur_node->IsAssociativeArray())
 			{
-				if(key_node != nullptr && (key_node->GetType() == ENT_STRING || key_node->GetType() == ENT_SYMBOL)
-					&& !DoesStringNeedUnparsingToKey(key_node->GetStringValue()))
+				if(EvaluableNode::IsNull(key_node)
+					|| ((key_node->GetType() == ENT_STRING || key_node->GetType() == ENT_SYMBOL)
+						&& !DoesStringNeedUnparsingToKey(key_node->GetStringValue())))
 				{
 					//n is the id, so need to get the next token
 					StringInternPool::StringID index_sid

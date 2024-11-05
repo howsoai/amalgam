@@ -1389,6 +1389,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, bo
 	{
 		if(container->IsAssociativeArray())
 		{
+			//TODO 22121: need to make a to key id version of GetValueAsStringIDWithReference, and figure out where it needs to all go vs string version (at least remove)
 			StringInternPool::StringID key_sid = indices.GetValue().GetValueAsStringIDWithReference();
 			auto &container_mcn = container->GetMappedChildNodesReference();
 		

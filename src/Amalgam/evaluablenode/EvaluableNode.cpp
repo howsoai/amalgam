@@ -1983,6 +1983,9 @@ std::pair<bool, std::string> EvaluableNodeImmediateValueWithType::GetValueAsStri
 		return std::make_pair(true, str);
 	}
 
+	if(nodeType == ENIVT_CODE && nodeValue.code != nullptr && nodeValue.code->GetType() == ENT_STRING)
+		return std::make_pair(true, nodeValue.code->GetStringValue());
+
 	if(nodeType == ENIVT_CODE)
 		return std::make_pair(true, Parser::Unparse(nodeValue.code, false, true, true));
 
@@ -1995,6 +1998,9 @@ StringInternPool::StringID EvaluableNodeImmediateValueWithType::GetValueAsString
 	if(nodeType == ENIVT_STRING_ID)
 		return nodeValue.stringID;
 
+	if(nodeType == ENIVT_CODE && nodeValue.code != nullptr && nodeValue.code->GetType() == ENT_STRING)
+		return nodeValue.code->GetStringIDReference();
+
 	auto [valid, str_value] = GetValueAsString();
 	if(!valid)
 		return string_intern_pool.NOT_A_STRING_ID;
@@ -2006,6 +2012,9 @@ StringInternPool::StringID EvaluableNodeImmediateValueWithType::GetValueAsString
 {
 	if(nodeType == ENIVT_STRING_ID)
 		return string_intern_pool.CreateStringReference(nodeValue.stringID);
+
+	if(nodeType == ENIVT_CODE && nodeValue.code != nullptr && nodeValue.code->GetType() == ENT_STRING)
+		return string_intern_pool.CreateStringReference(nodeValue.code->GetStringIDReference());
 
 	auto [valid, str_value] = GetValueAsString();
 	if(!valid)

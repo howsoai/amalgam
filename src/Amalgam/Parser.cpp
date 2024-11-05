@@ -147,6 +147,30 @@ std::string Parser::Unparse(EvaluableNode *tree, EvaluableNodeManager *enm,
 	return upd.result;
 }
 
+EvaluableNodeReference Parser::ParseToKeyString(const std::string &code_string, EvaluableNodeManager *enm)
+{
+	if(code_string.size() == 0 || code_string[0] != '\0')
+		return enm->AllocNode(ENT_STRING, code_string);
+
+	std::string_view escaped_string(&code_string[1], code_string.size() - 1);
+	auto [node, warnings, char_with_error] = Parser::Parse(escaped_string, enm);
+	return node;
+}
+
+std::string Parser::UnparseToKeyString(EvaluableNode *tree, EvaluableNodeManager *enm)
+{
+	//if just a regular string, return it
+	if(tree != nullptr && tree->GetType() == ENT_STRING)
+	{
+		const auto &string_value = tree->GetStringValue();
+		if(string_value.size() > 0 && string_value[0] != '\0')
+			return string_value;
+	}
+
+	//start with a zero to escape it
+	return "\0" + Unparse(tree, enm, false, true, true);
+}
+
 EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseData &upd,
 	EvaluableNode *shared_node, EvaluableNode *a_parent, EvaluableNode *b_parent)
 {

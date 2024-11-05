@@ -136,6 +136,12 @@ public:
 		bool expanded_whitespace = true, bool emit_attributes = true, bool sort_keys = false,
 		bool first_of_transactional_unparse = false, size_t starting_indendation = 0);
 
+	//transforms the code_string into evaluable nodes
+	static EvaluableNodeReference ParseToKeyString(const std::string &code_string, EvaluableNodeManager *enm);
+
+	//transforms tree into a string value that will match if the evaluable node trees match
+	static std::string UnparseToKeyString(EvaluableNode *tree, EvaluableNodeManager *enm);
+
 	//string to be appended after Unparse calls when the first one is called with first_of_transactional_unparse
 	inline static const std::string transactionTermination = ")";
 

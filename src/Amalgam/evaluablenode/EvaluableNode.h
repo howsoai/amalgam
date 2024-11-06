@@ -362,29 +362,26 @@ public:
 	}
 
 	//Converts a number to a string in a consistent way that should be used for anything dealing with EvaluableNode
-	static __forceinline std::string NumberToString(double value)
-	{
-		return StringManipulation::NumberToString(value);
-	}
-
-	static __forceinline std::string NumberToString(size_t value)
-	{
-		return StringManipulation::NumberToString(value);
-	}
+	static std::string NumberToString(double value, bool key_string = false);
+	static std::string NumberToString(size_t value, bool key_string = false);
 
 	//converts the node to a key string that can be used in assocs
-	static std::string ToKeyString(EvaluableNode *e);
+	//if key_string is true, then it will generate a string used for comparing in assoc keys
+	static std::string ToString(EvaluableNode *e, bool key_string = false);
 
 	//converts node to an existing string. If it doesn't exist or it's null, it returns NOT_A_STRING_ID
-	static StringInternPool::StringID ToStringIDIfExists(EvaluableNode *e);
+	//if key_string is true, then it will generate a string used for comparing in assoc keys
+	static StringInternPool::StringID ToStringIDIfExists(EvaluableNode *e, bool key_string = false);
 
 	//converts node to a string. Creates a reference to the string that must be destroyed, regardless of whether the string existed or not (if it did not exist, then it creates one)
-	static StringInternPool::StringID ToStringIDWithReference(EvaluableNode *e);
+	//if key_string is true, then it will generate a string used for comparing in assoc keys
+	static StringInternPool::StringID ToStringIDWithReference(EvaluableNode *e, bool key_string = false);
 
 	//converts node to a string. Creates a reference to the string that must be destroyed, regardless of whether the string existed or not
 	// if e is a string, it will clear it and hand the reference to the caller
 	//if include_symbol is true, then it will also apply to ENT_SYMBOL
-	static StringInternPool::StringID ToStringIDTakingReferenceAndClearing(EvaluableNode *e, bool include_symbol = false);
+	//if key_string is true, then it will generate a string used for comparing in assoc keys
+	static StringInternPool::StringID ToStringIDTakingReferenceAndClearing(EvaluableNode *e, bool include_symbol = false, bool key_string = false);
 
 	//returns the comments as a new string
 	static inline StringInternPool::StringID GetCommentsStringId(EvaluableNode *e)
@@ -768,6 +765,7 @@ public:
 	EvaluableNode *EraseMappedChildNode(const StringInternPool::StringID sid);
 	void AppendMappedChildNodes(AssocType &mcn_to_append);
 
+	//TODO 22121: see if this needs a key_string parameter
 	template<typename T>
 	static void GetValueFromMappedChildNodesReference(EvaluableNode::AssocType &mcn, EvaluableNodeBuiltInStringId key, T &value)
 	{
@@ -779,7 +777,7 @@ public:
 			else if constexpr(std::is_same<T, double>::value)
 				value = EvaluableNode::ToNumber(found_value->second);
 			else if constexpr(std::is_same<T, std::string>::value)
-				value = EvaluableNode::ToKeyString(found_value->second);
+				value = EvaluableNode::ToString(found_value->second);
 			else
 				value = found_value->second;
 		}
@@ -1207,11 +1205,13 @@ public:
 
 	double GetValueAsNumber(double value_if_null = std::numeric_limits<double>::quiet_NaN());
 
-	std::pair<bool, std::string> GetValueAsString();
+	//TODO 22121: find all occurences of these and ensure key_string is used appropriately
 
-	StringInternPool::StringID GetValueAsStringIDIfExists();
+	std::pair<bool, std::string> GetValueAsString(bool key_string = false);
 
-	StringInternPool::StringID GetValueAsStringIDWithReference();
+	StringInternPool::StringID GetValueAsStringIDIfExists(bool key_string = false);
+
+	StringInternPool::StringID GetValueAsStringIDWithReference(bool key_string = false);
 
 	static inline bool AreEqual(EvaluableNodeImmediateValueWithType &a, EvaluableNodeImmediateValueWithType &b)
 	{

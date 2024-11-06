@@ -1147,7 +1147,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ENTROPY(EvaluableNode *en,
 				q_copied_values.reserve(p_num_elements);
 				for(size_t index = 0; index < p_num_elements; index++)
 				{
-					StringInternPool::StringID key_sid = EvaluableNode::ToStringIDIfExists((*p_values)[index]);
+					StringInternPool::StringID key_sid = EvaluableNode::ToStringIDIfExists((*p_values)[index], true);
 
 					EvaluableNode **found = q_node->GetMappedChildNode(key_sid);
 					if(found != nullptr)

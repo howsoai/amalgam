@@ -483,7 +483,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, 
 					for(size_t i = 0; i < new_elements_ocn.size(); i++, new_list_cur_index++)
 					{
 						//look for first index not used
-						std::string index_string = EvaluableNode::NumberToString(new_list_cur_index);
+						std::string index_string = EvaluableNode::NumberToString(new_list_cur_index, true);
 						EvaluableNode **found = new_list->GetMappedChildNode(index_string);
 						if(found != nullptr)
 						{
@@ -510,7 +510,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, 
 				//find the next unused index
 				std::string index_string;
 				do {
-					index_string = EvaluableNode::NumberToString(static_cast<size_t>(new_list_cur_index++));
+					index_string = EvaluableNode::NumberToString(new_list_cur_index++, true);
 				} while(new_list->GetMappedChildNode(index_string) != nullptr);
 
 				new_list->SetMappedChildNode(index_string, new_elements);

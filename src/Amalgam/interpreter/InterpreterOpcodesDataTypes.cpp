@@ -178,7 +178,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STRING(EvaluableNode *en, 
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, bool immediate_result)
 {
-	StringInternPool::StringID sid = EvaluableNode::ToStringIDIfExists(en);
+	StringInternPool::StringID sid = EvaluableNode::ToStringIDIfExists(en, true);
 	if(sid == StringInternPool::NOT_A_STRING_ID)
 		return EvaluableNodeReference::Null();
 

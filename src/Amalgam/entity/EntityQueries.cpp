@@ -646,7 +646,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 			std::string string_value;
 			for(auto &[value, weight] : value_weights)
 			{
-				string_value = EvaluableNode::NumberToString(value);
+				string_value = EvaluableNode::NumberToString(value, true);
 				assoc->SetMappedChildNode(string_value, enm->AllocNode(weight));
 			}
 

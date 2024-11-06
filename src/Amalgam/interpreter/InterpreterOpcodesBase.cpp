@@ -1133,7 +1133,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 	//get the value(s)
 	if(EvaluableNode::IsNull(to_lookup) || IsEvaluableNodeTypeImmediate(to_lookup->GetType()))
 	{
-		StringInternPool::StringID symbol_name_sid = EvaluableNode::ToStringIDIfExists(to_lookup);
+		StringInternPool::StringID symbol_name_sid = EvaluableNode::ToStringIDIfExists(to_lookup, true);
 		EvaluableNode* symbol_value = GetCallStackSymbol(symbol_name_sid);
 		evaluableNodeManager->FreeNodeTreeIfPossible(to_lookup);
 		return EvaluableNodeReference(symbol_value, false);
@@ -1162,7 +1162,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 		//overwrite values in the ordered
 		for(auto &cn : to_lookup->GetOrderedChildNodes())
 		{
-			StringInternPool::StringID symbol_name_sid = EvaluableNode::ToStringIDIfExists(cn);
+			StringInternPool::StringID symbol_name_sid = EvaluableNode::ToStringIDIfExists(cn, true);
 			if(symbol_name_sid == StringInternPool::NOT_A_STRING_ID)
 			{
 				cn = nullptr;

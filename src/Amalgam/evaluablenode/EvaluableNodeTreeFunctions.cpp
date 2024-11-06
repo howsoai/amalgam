@@ -333,7 +333,7 @@ EvaluableNode **GetRelativeEvaluableNodeFromTraversalPathList(EvaluableNode **so
 				if(!addr_empty)
 				{
 					//string must already exist if can't create anything
-					key_sid = EvaluableNode::ToStringIDIfExists(addr);
+					key_sid = EvaluableNode::ToStringIDIfExists(addr, true);
 					if(key_sid == StringInternPool::NOT_A_STRING_ID)
 					{
 						destination = nullptr;
@@ -353,7 +353,7 @@ EvaluableNode **GetRelativeEvaluableNodeFromTraversalPathList(EvaluableNode **so
 			}
 			else //create entry if it doesn't exist
 			{
-				auto key_sid = EvaluableNode::ToStringIDWithReference(addr);
+				auto key_sid = EvaluableNode::ToStringIDWithReference(addr, true);
 
 				//attempt to insert the new key
 				auto [inserted_key, inserted] = mcn.insert(std::make_pair(key_sid, nullptr));
@@ -466,7 +466,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 				auto &vvn_ocn = variable_value_node->GetOrderedChildNodes();
 				for(size_t i = 0; i + 1 < vvn_ocn.size(); i += 2)
 				{
-					StringInternPool::StringID key_sid = EvaluableNode::ToStringIDWithReference(vvn_ocn[i]);
+					StringInternPool::StringID key_sid = EvaluableNode::ToStringIDWithReference(vvn_ocn[i], true);
 					value_destination_node->SetMappedChildNodeWithReferenceHandoff(key_sid, vvn_ocn[i + 1]);
 				}
 			}
@@ -551,7 +551,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 			auto &vvn_ocn = variable_value_node->GetOrderedChildNodes();
 			for(size_t i = 0; i + 1 < vvn_ocn.size(); i += 2)
 			{
-				StringInternPool::StringID key_sid = EvaluableNode::ToStringIDWithReference(vvn_ocn[i]);
+				StringInternPool::StringID key_sid = EvaluableNode::ToStringIDWithReference(vvn_ocn[i], true);
 				new_list->SetMappedChildNodeWithReferenceHandoff(key_sid, vvn_ocn[i + 1]);
 			}
 		}

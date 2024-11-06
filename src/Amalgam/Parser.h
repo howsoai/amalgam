@@ -143,9 +143,10 @@ public:
 	static std::string UnparseToKeyString(EvaluableNode *tree);
 
 	//like UnparseToKeyString, but for numbers only
-	static inline std::string UnparseNumberToKeyString(double number)
+	template<typename NumberType>
+	static inline std::string UnparseNumberToKeyString(NumberType number)
 	{
-		std::string unparsed = StringManipulation::NumberToString(number);;
+		std::string unparsed = StringManipulation::NumberToString(number);
 		std::string str;
 		str.assign(1, '\0');
 		str.insert(1, unparsed.data(), unparsed.size());

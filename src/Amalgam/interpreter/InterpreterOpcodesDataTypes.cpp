@@ -927,10 +927,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ALL_LABELS(EvaluableNo
 
 	auto [label_sids_to_nodes, _] = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTree(n);
 
-	string_intern_pool.CreateStringReferences(label_sids_to_nodes, [](auto it) { return it.first; });
 	result->ReserveMappedChildNodes(label_sids_to_nodes.size());
 	for(auto &[node_id, node] : label_sids_to_nodes)
-		result->SetMappedChildNodeWithReferenceHandoff(node_id, node);
+		result->SetMappedChildNode(node_id, node);
 
 	//can't guarantee there weren't any cycles if more than one label
 	if(label_sids_to_nodes.size() > 1)

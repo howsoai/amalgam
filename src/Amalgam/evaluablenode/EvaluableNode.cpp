@@ -386,17 +386,13 @@ void EvaluableNode::InitializeType(EvaluableNode *n, bool copy_labels, bool copy
 	{
 		value.ConstructMappedChildNodes();
 		value.mappedChildNodes = n->GetMappedChildNodesReference();
-		string_intern_pool.CreateStringReferences(value.mappedChildNodes, [](auto n) { return n.first; });
 
-		//update idempotency
 		SetIsIdempotent(true);
-		for(auto &[_, cn] : value.mappedChildNodes)
+		for(auto &[sid, cn] : value.mappedChildNodes)
 		{
+			string_intern_pool.CreateStringReference(sid);
 			if(cn != nullptr && !cn->GetIsIdempotent())
-			{
 				SetIsIdempotent(false);
-				break;
-			}
 		}
 	}
 	else if(DoesEvaluableNodeTypeUseNumberData(type))
@@ -2013,11 +2009,11 @@ std::pair<bool, std::string> EvaluableNodeImmediateValueWithType::GetValueAsStri
 	if(nodeType == ENIVT_NUMBER)
 		return std::make_pair(true, EvaluableNode::NumberToString(nodeValue.number, true));
 
-	if(nodeType == ENIVT_CODE && nodeValue.code != nullptr && nodeValue.code->GetType() == ENT_STRING)
-		return std::make_pair(true, nodeValue.code->GetStringValue());
-
-	if(nodeType == ENIVT_CODE)
+	if(nodeType == ENIVT_CODE && !EvaluableNode::IsNull(nodeValue.code))
 	{
+		if(nodeValue.code != nullptr && nodeValue.code->GetType() == ENT_STRING)
+			return std::make_pair(true, nodeValue.code->GetStringValue());
+
 		if(key_string)
 			return std::make_pair(true, Parser::UnparseToKeyString(nodeValue.code));
 		else

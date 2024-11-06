@@ -525,8 +525,6 @@ public:
 		return retval;
 	}
 
-	//TODO 22121: add key_string bool to all of these and use where appropriate
-
 	//Calls InterpretNode on n, converts to std::string and stores in value to return, then cleans up any resources used
 	//returns a pair of bool, whether it was a valid string (and not NaS), and the string
 	std::pair<bool, std::string> InterpretNodeIntoStringValue(EvaluableNode *n, bool key_string = false);
@@ -535,7 +533,7 @@ public:
 	// but if n is null, it will return an empty string
 	inline std::string InterpretNodeIntoStringValueEmptyNull(EvaluableNode *n, bool key_string = false)
 	{
-		auto [valid, str] = InterpretNodeIntoStringValue(n);
+		auto [valid, str] = InterpretNodeIntoStringValue(n, key_string);
 		if(!valid)
 			return "";
 		return str;

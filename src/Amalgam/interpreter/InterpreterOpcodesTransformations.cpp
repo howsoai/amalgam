@@ -1611,7 +1611,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 		for(size_t i = 0; i < num_nodes; i += 2)
 		{
 			//get key
-			StringInternPool::StringID key_sid = InterpretNodeIntoStringIDValueWithReference(ocn[i]);
+			StringInternPool::StringID key_sid = InterpretNodeIntoStringIDValueWithReference(ocn[i], true);
 
 			SetTopCurrentIndexInConstructionStack(key_sid);
 

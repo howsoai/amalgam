@@ -130,9 +130,6 @@ EvaluableNodeReference AssetManager::LoadResource(AssetParameters &asset_params,
 		StringManipulation::RemoveBOMFromUTF8String(code);
 
 		auto [node, warnings, char_with_error] = Parser::Parse(code, enm, asset_params.transactional, &asset_params.resource, debugSources);
-
-		std::cout << Parser::Unparse(node);
-
 		for(auto &w : warnings)
 			std::cerr << w << std::endl;
 		return node;

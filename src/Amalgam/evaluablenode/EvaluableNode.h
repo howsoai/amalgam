@@ -1206,8 +1206,6 @@ public:
 
 	double GetValueAsNumber(double value_if_null = std::numeric_limits<double>::quiet_NaN());
 
-	//TODO 22121: find all occurences of these and ensure key_string is used appropriately
-
 	std::pair<bool, std::string> GetValueAsString(bool key_string = false);
 
 	StringInternPool::StringID GetValueAsStringIDIfExists(bool key_string = false);

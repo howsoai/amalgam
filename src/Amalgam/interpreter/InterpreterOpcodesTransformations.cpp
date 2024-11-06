@@ -1282,7 +1282,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 	{
 		if(container->IsAssociativeArray())
 		{
-			StringInternPool::StringID key_sid = indices.GetValue().GetValueAsStringIDIfExists();
+			StringInternPool::StringID key_sid = indices.GetValue().GetValueAsStringIDIfExists(true);
 			removed_node.SetReference(container->EraseMappedChildNode(key_sid));
 		}
 		else if(container->IsOrderedArray())
@@ -1389,7 +1389,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, bo
 	{
 		if(container->IsAssociativeArray())
 		{
-			StringInternPool::StringID key_sid = indices.GetValue().GetValueAsStringIDWithReference();
+			StringInternPool::StringID key_sid = indices.GetValue().GetValueAsStringIDWithReference(true);
 			auto &container_mcn = container->GetMappedChildNodesReference();
 		
 			//find what should be kept, or clear key_sid if not found

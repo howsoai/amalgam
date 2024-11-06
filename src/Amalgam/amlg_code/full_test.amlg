@@ -399,7 +399,7 @@
  (print (dot_product (list 0.5 0.25 0.25) (list 4 8 8)) "\n")
  (print (dot_product (associate "a" 0.5 "b" 0.25 "c" 0.25) (associate "a" 4 "b" 8 "c" 8)) "\n")
 
-  (print (dot_product (associate "0" 0.5 "1" 0.25 "2" 0.25) (list 4 8 8)) "\n")
+ (print (dot_product (associate 0 0.5 1 0.25 2 0.25) (list 4 8 8)) "\n")
 
  (print "--generalized_distance--\n")
  (print " 0 " (generalized_distance (null) (null) (null) (null) 0.01 (map 10000 (range 0 200)) ) "\n")
@@ -783,8 +783,8 @@
     (lambda
       (+ (get (current_value) 0) (get (current_value) 1) (get (current_value) 2))
     )
-    (associate "0" 0 "1" 1 "a" 3)
-    (associate "0" 1 "a" 4)
+    (associate 0 0 1 1 "a" 3)
+    (associate 0 1 "a" 4)
     (list 2 2 2 2)
   ))
 

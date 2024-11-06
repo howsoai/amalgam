@@ -228,8 +228,17 @@ std::string EvaluableNode::ToString(EvaluableNode *e, bool key_string)
 {
 	if(key_string)
 		return Parser::UnparseToKeyString(e);
-	else
-		return Parser::Unparse(e, true, true, true);
+
+	if(EvaluableNode::IsNull(e))
+		return "(null)";
+
+	if(e->GetType() == ENT_STRING)
+		return e->GetStringValue();
+
+	if(e->GetType() == ENT_NUMBER)
+		return StringManipulation::NumberToString(e->GetNumberValueReference());
+
+	return Parser::Unparse(e, true, true, true);
 }
 
 StringInternPool::StringID EvaluableNode::ToStringIDIfExists(EvaluableNode *e, bool key_string)

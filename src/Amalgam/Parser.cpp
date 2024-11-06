@@ -639,9 +639,12 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 		//early-out if already have key
 		if(parsing_assoc_key)
 		{
+			//already have completed the expression
 			if(n == nullptr)
 				return top_node;
-			if(n->IsImmediate())
+
+			//if it's a singular value
+			if(cur_node == nullptr && n->IsImmediate())
 				return n;
 		}
 

@@ -1007,6 +1007,23 @@
 
  (print (get (assoc (null) 3) (null)) "\n")
 
+ (let {
+			complex_assoc {
+				"4" "string"
+				4 "number"
+				[4] "list"
+				{4 4} "assoc"
+			}
+		}
+
+		(print (get complex_assoc 4) "\n")
+		(print (get complex_assoc "4") "\n")
+		;need to surround with list to not confuse with traversal path
+		(print (get complex_assoc [[4]]) "\n")
+		(print (get complex_assoc {4 4}) "\n")
+		(print (indices complex_assoc))
+ )
+
  (print "--set--\n")
  (print (set (associate "a" 1 "b" 2 "c" 3 4 "d") "e" 5))
  (print (set (list 0 1 2 3 4) 2 10))

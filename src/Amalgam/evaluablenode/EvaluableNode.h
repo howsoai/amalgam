@@ -765,7 +765,8 @@ public:
 	EvaluableNode *EraseMappedChildNode(const StringInternPool::StringID sid);
 	void AppendMappedChildNodes(AssocType &mcn_to_append);
 
-	//TODO 22121: see if this needs a key_string parameter
+	//helper function to obtain a typed value from mapped child nodes
+	//note that it can only be used on string key lookups, no code or numeric keys
 	template<typename T>
 	static void GetValueFromMappedChildNodesReference(EvaluableNode::AssocType &mcn, EvaluableNodeBuiltInStringId key, T &value)
 	{

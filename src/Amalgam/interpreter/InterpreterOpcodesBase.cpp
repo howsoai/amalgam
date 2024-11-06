@@ -1385,9 +1385,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_INDEX(EvaluableNod
 	}
 	else if(enivwt.nodeType == ENIVT_STRING_ID)
 	{
-		if(Parser::DoesStringNeedUnparsingToKey(enivwt.nodeValue.stringID->string))
+		if(enivwt.nodeValue.stringID == string_intern_pool.NOT_A_STRING_ID)
+			return EvaluableNodeReference::Null();
+		else if(Parser::DoesStringNeedUnparsingToKey(enivwt.nodeValue.stringID->string))
 			return Parser::ParseFromKeyString(enivwt.nodeValue.stringID->string, evaluableNodeManager);
-		return AllocReturn(enivwt.nodeValue.stringID, immediate_result);
+		else
+			return AllocReturn(enivwt.nodeValue.stringID, immediate_result);
 	}
 	else
 	{

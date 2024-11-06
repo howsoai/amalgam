@@ -652,14 +652,14 @@ a
 	b 2
 	c 3
 	d 4
-	f 6
+	e 5
 }
 {a 1 b 2}
 {
 	a 1
 	b 2
-	d 4
-	f 6
+	c 3
+	e 5
 }
 {
 	a 1
@@ -703,14 +703,14 @@ c
 	b 2
 	c 3
 	d 4
-	f 6
+	e 5
 }
 {a 1 b 2}
 {
 	a 1
 	b 2
-	d 4
-	f 6
+	c 3
+	e 5
 }
 {
 	a 1
@@ -1246,10 +1246,10 @@ string
 list
 assoc
 [
-	[4]
-	"4"
 	{4 4}
 	4
+	[4]
+	"4"
 ]
 --set--
 {
@@ -1334,7 +1334,7 @@ current_index: 2
 		rmfile "del /s /q "
 		rwww 1
 		slash "\\"
-		start_time 1730919629.818116
+		start_time 1730920629.711061
 		www 1
 		x 12
 		zz 10
@@ -1380,7 +1380,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1730919629.818116
+	start_time 1730920629.711061
 	www 1
 	x 12
 	zz 10
@@ -1425,7 +1425,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1730919629.818116
+	start_time 1730920629.711061
 	www 1
 	x 12
 	zz 10
@@ -1565,7 +1565,7 @@ b
 
 ["b" @(get (target 2) 0) @(get (target 2) 0) "a"]
 
-infinity test c or d: ["c" "c" "d" "c"]
+infinity test c or d: ["d" "d" "c" "d"]
 
 infinity test c or d: ["c" "d" @(get (target 2) 1) @(get (target 2) 0)]
 
@@ -1573,7 +1573,7 @@ infinity test c or d: ["c" "d" @(get (target 2) 1) @(get (target 2) 0)]
 
 {a 30 b 50 c 20}
 
-["4" "2" "3"]
+["6" "2" "3"]
 
 --get_rand_seed--
 0RÊíõÿ'`¦!šc”lÿ
@@ -1669,15 +1669,15 @@ string
 	{a 3 b 4}
 	{c "c"}
 ]
-21: [{"a":3,"b":4},{"c":"c","d":null}]
+21: [{"a":3,"b":4},{"d":null,"c":"c"}]
 22: [{"a":3,"b":4},{"c":"c","d":null}]
-23: e:
+23: d: 4
+e:
   - a
   - b
   - 
   - .inf
 c: 3
-d: 4
 a: 1
 b: 2
 
@@ -1692,7 +1692,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2024-11-06-14.00.29.8465240
+current date-time in epoch: 2024-11-06-14.17.09.9741810
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -1753,7 +1753,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelA #labelQ
+	labelA #labelQ #labelA
 		(lambda
 			#labelB (true)
 		)
@@ -1767,7 +1767,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelA #labelQ
+	labelA #labelQ #labelA
 		(lambda
 			#labelB (true)
 		)
@@ -2246,16 +2246,6 @@ decrypted: hello
 	{_ (null)}
 	(replace
 		_
-		[]
-		(lambda
-			{
-				a 2
-				g (get
-						(current_value 1)
-						"g"
-					)
-			}
-		)
 		["g"]
 		(lambda
 			[
@@ -2265,6 +2255,16 @@ decrypted: hello
 				)
 				4
 			]
+		)
+		[]
+		(lambda
+			{
+				a 2
+				g (get
+						(current_value 1)
+						"g"
+					)
+			}
 		)
 	)
 )
@@ -2859,18 +2859,16 @@ flatten restore with parallel
 19.264241099357605
 --intersect_entities--
 (associate "b" 4)
-MergeEntityChild1
-(associate "x" 3 "y" 4)
 MergeEntityChild2
 (associate "p" 3 "q" 4)
+MergeEntityChild1
+(associate "x" 3 "y" 4)
 _1651806471
 (associate "e" 3 "f" 4)
 _3130331116
 (associate "E" 3 "F" 4)
 --union_entities--
 (associate "b" 4 "a" 3 "c" 3)
-MergeEntityChild1
-(associate "x" 3 "y" 4 "z" 5)
 MergeEntityChild2
 (associate
 	"p"
@@ -2884,6 +2882,8 @@ MergeEntityChild2
 	"w"
 	7
 )
+MergeEntityChild1
+(associate "x" 3 "y" 4 "z" 5)
 _1651806471
 (associate
 	"e"
@@ -2910,17 +2910,6 @@ _3130331116
 	##p
 	["_2325275497" "_2325275497" "_2973704165" "_2973704165"]
 )
-_2325275497
-(associate
-	"E"
-	3
-	"F"
-	4
-	"G"
-	5
-	"H"
-	6
-)
 _2973704165
 (associate
 	"e"
@@ -2930,6 +2919,17 @@ _2973704165
 	"g"
 	5
 	"h"
+	6
+)
+_2325275497
+(associate
+	"E"
+	3
+	"F"
+	4
+	"G"
+	5
+	"H"
 	6
 )
 --difference_entities--
@@ -3260,8 +3260,14 @@ _3532185687
 						[]
 						(lambda
 							{
-								E 3
-								F 4
+								E (get
+										(current_value 1)
+										"E"
+									)
+								F (get
+										(current_value 1)
+										"F"
+									)
 								G 5
 								H 6
 							}
@@ -3286,7 +3292,16 @@ _3532185687
 						_
 						[]
 						(lambda
-							{e 3 f 4}
+							{
+								e (get
+										(current_value 1)
+										"e"
+									)
+								f (get
+										(current_value 1)
+										"f"
+									)
+							}
 						)
 					)
 				)
@@ -3318,7 +3333,89 @@ contained_entities new_entity: ["DiffEntityChild1" "OnlyIn2" "_3626604918" "_382
 difference between DiffEntity2 and new_entity:
 (declare
 	{_ (null) new_entity (null)}
-	(clone_entities _ new_entity)
+	(assign
+		"new_entity"
+		(first
+			(create_entities
+				new_entity
+				(call
+					(lambda
+						(declare
+							{_ (null)}
+							(replace _)
+						)
+					)
+					{
+						_ (retrieve_entity_root _)
+					}
+				)
+			)
+		)
+	)
+	(create_entities
+		(append new_entity "_3626604918")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{
+								E (null)
+								F (null)
+								G (get
+										(current_value 1)
+										"G"
+									)
+								H (get
+										(current_value 1)
+										"H"
+									)
+							}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_3626604918")
+					)
+			}
+		)
+	)
+	(create_entities
+		(append new_entity "_3823131681")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{e (null) f (null)}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_3823131681")
+					)
+			}
+		)
+	)
+	(clone_entities
+		(append _ "DiffEntityChild1")
+		(append new_entity "DiffEntityChild1")
+	)
+	(clone_entities
+		(append _ "OnlyIn2")
+		(append new_entity "OnlyIn2")
+	)
+	new_entity
 )
 (declare
 	{_ (null) new_entity (null)}
@@ -3539,8 +3636,6 @@ difference between DiffContainer and DiffEntity2:
 )
 --mix_entities--
 (associate "b" 4)
-MergeEntityChild1
-(associate "x" 3 "y" 4 "z" 5)
 MergeEntityChild2
 (associate
 	"p"
@@ -3551,7 +3646,11 @@ MergeEntityChild2
 	5
 	"v"
 	6
+	"w"
+	7
 )
+MergeEntityChild1
+(associate "x" 3 "y" 4 "z" 5)
 _1651806471
 (associate "e" 3 "f" 4 "h" 6)
 _3130331116
@@ -3634,7 +3733,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1730919629.918725
+1730920630.226098
 (true)
 
 RootTest
@@ -4475,14 +4574,14 @@ case conviction:{
 }
 cyclic feature nearest neighbors: {cyclic1 1 cyclic5 0.5}
 cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
+190: 0.045454545454545456 (null
+	##deg 12
+)
 155: 0.1 (null
 	##deg 0
 )
 200: 0.05555555555555555 (null
 	##deg 8
-)
-190: 0.045454545454545456 (null
-	##deg 12
 )
 --contains_label--
 (true)
@@ -4984,4 +5083,4 @@ rmdir /s /q amlg_code\persistent_tree_test_root
 del /s /q amlg_code\persist_module_test\psm.mdam
 del /s /q amlg_code\persist_module_test.mdam
 --total execution time--
-0.735090970993042
+1.234178066253662

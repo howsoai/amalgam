@@ -1038,7 +1038,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en,
 		size_t index = 0;
 		for(auto &[node_id, _] : container_mcn)
 		{
-			if(Parser::DoesStringNeedUnparsingToKey(node_id->string))
+			if(node_id == string_intern_pool.NOT_A_STRING_ID)
+			{
+				index_list_ocn[index++] = nullptr;
+			}
+			else if(Parser::DoesStringNeedUnparsingToKey(node_id->string))
 			{
 				evaluableNodeManager->FreeNode(index_list_ocn[index]);
 				EvaluableNodeReference key_node = Parser::ParseFromKeyString(node_id->string, evaluableNodeManager);
@@ -1046,7 +1050,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en,
 			}
 			else
 			{
-				index_list_ocn[index++]->SetTypeViaStringIdValueWithReferenceHandoff(string_intern_pool.CreateStringReference(node_id));
+				index_list_ocn[index++]->SetTypeViaStringIdValue(node_id);
 			}
 		}
 	}

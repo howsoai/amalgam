@@ -1278,10 +1278,6 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 			EvaluableNode *query_return = enm->AllocNode(ENT_ASSOC);
 			query_return->ReserveMappedChildNodes(matching_ents.size());
 
-			//create a string reference for each entity
-			string_intern_pool.CreateStringReferences(matching_ents,
-				[&contained_entities](auto entity_index) { return contained_entities[entity_index]->GetIdStringId(); });
-
 			auto &exist_labels = last_query->existLabels;
 
 			if(exist_labels.size() > 0)
@@ -1294,7 +1290,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 					//create assoc for values for each entity
 					EvaluableNode *entity_values = enm->AllocNode(ENT_ASSOC);
 					entity_values->ReserveMappedChildNodes(exist_labels.size());
-					query_return->SetMappedChildNodeWithReferenceHandoff(contained_entities[entity_index]->GetIdStringId(), entity_values);
+					query_return->SetMappedChildNode(contained_entities[entity_index]->GetIdStringId(), entity_values);
 
 					//get values
 					for(auto &label_sid : exist_labels)
@@ -1305,7 +1301,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 			{
 				//create a null for every entry, since nothing requested
 				for(const auto &entity_index : matching_ents)
-					query_return->SetMappedChildNodeWithReferenceHandoff(contained_entities[entity_index]->GetIdStringId(), nullptr);
+					query_return->SetMappedChildNode(contained_entities[entity_index]->GetIdStringId(), nullptr);
 			}
 
 			return EvaluableNodeReference(query_return, true);

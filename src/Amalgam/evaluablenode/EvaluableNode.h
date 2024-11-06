@@ -482,6 +482,20 @@ public:
 		}
 	}
 
+	//changes the type by setting it to the string id value specified
+	inline void SetTypeViaStringIdValue(StringInternPool::StringID v)
+	{
+		if(v == string_intern_pool.NOT_A_STRING_ID)
+		{
+			SetType(ENT_NULL, nullptr, false);
+		}
+		else
+		{
+			SetType(ENT_STRING, nullptr, false);
+			GetStringIDReference() = string_intern_pool.CreateStringReference(v);
+		}
+	}
+
 	//changes the type by setting it to the string id value specified, handing off the reference
 	inline void SetTypeViaStringIdValueWithReferenceHandoff(StringInternPool::StringID v)
 	{

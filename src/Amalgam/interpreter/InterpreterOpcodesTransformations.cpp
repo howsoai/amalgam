@@ -127,9 +127,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 			//and because iterators may be invalidated when the map is changed
 			auto &result_mcn = result->GetMappedChildNodesReference();
 			result_mcn.reserve(num_nodes);
-			string_intern_pool.CreateStringReferences(list_mcn, [](auto it) { return it.first; });
 			for(auto &[sid, cn] : list_mcn)
-				result_mcn.emplace(sid, nullptr);
+				result_mcn.emplace(string_intern_pool.CreateStringReference(sid), nullptr);
 
 		#ifdef MULTITHREAD_SUPPORT
 			if(en->GetConcurrency() && num_nodes > 1)

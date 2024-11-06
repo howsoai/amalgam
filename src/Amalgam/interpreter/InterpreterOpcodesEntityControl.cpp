@@ -102,7 +102,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 	params_list->ReserveMappedChildNodes(mcn.size());
 
 	//create the string references all at once and hand off
-	string_intern_pool.CreateStringReferences(mcn, [](auto it) { return it.first; });
 	for(auto &[cn_id, cn] : mcn)
 	{
 		//create list with comment and default value
@@ -113,7 +112,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 		param_info_ocn[1] = evaluableNodeManager->DeepAllocCopy(cn, EvaluableNodeManager::ENMM_REMOVE_ALL);
 
 		//add to the params
-		params_list->SetMappedChildNodeWithReferenceHandoff(cn_id, param_info);
+		params_list->SetMappedChildNode(cn_id, param_info);
 	}
 
 	return retval;

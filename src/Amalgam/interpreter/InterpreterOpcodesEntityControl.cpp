@@ -24,8 +24,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 	if(curEntity == nullptr)
 		return EvaluableNodeReference::Null();
 
-	//TODO 22121: there's an issue with this method
-
 	auto &ocn = en->GetOrderedChildNodes();
 
 	StringInternPool::StringID label_sid = StringInternPool::NOT_A_STRING_ID;

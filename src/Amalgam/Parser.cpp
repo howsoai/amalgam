@@ -678,6 +678,25 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 			}
 			else if(cur_node->IsAssociativeArray())
 			{
+				//transfer any attributes from key_node to n
+				if(key_node != nullptr)
+				{
+					if(key_node->HasComments())
+					{
+						std::string appended = key_node->GetCommentsString() + "\r\n" + n->GetCommentsString();
+						n->SetComments(appended);
+						key_node->ClearComments();
+					}
+
+					size_t num_key_node_labels = key_node->GetNumLabels();
+					if(num_key_node_labels > 0)
+					{
+						for(size_t i = 0; i < num_key_node_labels; i++)
+							n->AppendLabelStringId(key_node->GetLabelStringId(i));
+						key_node->ClearLabels();
+					}
+				}
+
 				if(EvaluableNode::IsNull(key_node)
 					|| ((key_node->GetType() == ENT_STRING || key_node->GetType() == ENT_SYMBOL)
 						&& !DoesStringNeedUnparsingToKey(key_node->GetStringValue())))

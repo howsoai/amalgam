@@ -1035,9 +1035,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en,
 		auto &container_mcn = container->GetMappedChildNodesReference();
 		index_list.SetReference(evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_STRING, container_mcn.size()));
 
-		//create all the string references at once for speed (especially multithreading)
-		string_intern_pool.CreateStringReferences(container_mcn, [](auto n) { return n.first; });
-
 		auto &index_list_ocn = index_list->GetOrderedChildNodesReference();
 		size_t index = 0;
 		for(auto &[node_id, _] : container_mcn)
@@ -1050,7 +1047,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en,
 			}
 			else
 			{
-				index_list_ocn[index++]->SetTypeViaStringIdValueWithReferenceHandoff(node_id);
+				index_list_ocn[index++]->SetTypeViaStringIdValueWithReferenceHandoff(string_intern_pool.CreateStringReference(node_id));
 			}
 		}
 	}

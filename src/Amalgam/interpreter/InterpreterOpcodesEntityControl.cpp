@@ -25,7 +25,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 		return EvaluableNodeReference::Null();
 
 	//TODO 22121: there's an issue with this method
-	//TODO 22121: string leak
 
 	auto &ocn = en->GetOrderedChildNodes();
 

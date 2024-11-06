@@ -950,18 +950,14 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 	if(new_root != previous_root)
 		evaluableNodeManager.SetRootNode(new_root);
 
-	//optimistically create references for the new labels, delete them if find collisions
-	string_intern_pool.CreateStringReferences(new_labels, [](auto l) { return l.first; });
-
 	//attempt to insert the new labels as long as there's no collision
 	for(auto &[label, value] : new_labels)
 	{
 		auto [new_entry, inserted] = labelIndex.emplace(label, value);
-		if(!inserted)
-		{
-			string_intern_pool.DestroyStringReference(label);
+		if(inserted)
+			string_intern_pool.CreateStringReference(label);
+		else
 			no_label_collisions = false;
-		}
 	}
 
 	EntityQueryCaches *container_caches = GetContainerQueryCaches();

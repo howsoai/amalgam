@@ -518,12 +518,12 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, bool 
 				if(value_exists)
 				{
 					if(command == "p")
-						std::cout << Parser::Unparse(node, false, true, true) << std::endl;
+						std::cout << Parser::Unparse(node, true, true, true) << std::endl;
 					else if(command == "pv")
-						std::cout << Parser::Unparse(node, false, false, true) << std::endl;
+						std::cout << Parser::Unparse(node, true, false, true) << std::endl;
 					else if(command == "pp")
 					{
-						std::string var_preview = Parser::Unparse(node, false, false, true);
+						std::string var_preview = Parser::Unparse(node, true, false, true);
 						if(var_preview.size() > 1023)
 							var_preview.resize(1023);
 						std::cout << var_preview << std::endl;

@@ -554,10 +554,24 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, EvaluableNode *r
 
 		//check for special values
 		double value = 0.0;
+		if(s == ".true")
+		{
+			new_token->SetTypeViaBool(true);
+			return new_token;
+		}
+		else if(s == ".false")
+		{
+			new_token->SetTypeViaBool(false);
+			return new_token;
+		}
 		if(s == ".infinity")
+		{
 			value = std::numeric_limits<double>::infinity();
+		}
 		else if(s == "-.infinity")
+		{
 			value = -std::numeric_limits<double>::infinity();
+		}
 		else
 		{
 			auto [converted_value, success] = Platform_StringToNumber(s);

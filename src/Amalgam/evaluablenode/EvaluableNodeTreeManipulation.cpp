@@ -1244,13 +1244,19 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 		if(n1_type != n2_type)
 			return std::make_pair(n1, 0.0);
 
-		if(n1_type == ENT_NUMBER)
+		if(n1_type == ENT_BOOL)
+		{
+			bool n1_value = n1->GetBoolValueReference();
+			bool n2_value = n2->GetBoolValueReference();
+			return std::make_pair(n1, n1_value == n2_value ? 1.0 : 0.0);
+		}
+		else if(n1_type == ENT_NUMBER)
 		{
 			double n1_value = n1->GetNumberValueReference();
 			double n2_value = n2->GetNumberValueReference();
 			return std::make_pair(n1, n1_value == n2_value ? 1.0 : 0.0);
 		}
-		if(n1_type == ENT_STRING || n1_type == ENT_SYMBOL)
+		else if(n1_type == ENT_STRING || n1_type == ENT_SYMBOL)
 		{
 			auto n1_sid = n1->GetStringID();
 			auto n2_sid = n2->GetStringID();
@@ -1315,40 +1321,47 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 		if(n2_type == ENT_ASSOC)				return std::make_pair(n2, 0.25);
 		break;
 
-	case ENT_TRUE:
-		if(n2_type == ENT_FALSE)				return std::make_pair(n1, 0.375);
-		if(n2_type == ENT_NUMBER || n2_type == ENT_NULL)
-		{
-			double n2_value = EvaluableNode::ToNumber(n2);
-			if(n2_value)
-				return std::make_pair(n2, 0.875);
-			return std::make_pair(n2, 0.125);
-		}
-		break;
+	case ENT_BOOL:
+	{
+		bool n1_value = n1->GetBoolValueReference();
 
-	case ENT_FALSE:
-		if(n2_type == ENT_TRUE)					return std::make_pair(n1, 0.375);
-		if(n2_type == ENT_NUMBER || n2_type == ENT_NULL)
-		{
-			double n2_value = EvaluableNode::ToNumber(n2);
-			if(n2_value == 0.0)
-				return std::make_pair(n2, 0.875);
-			if(FastIsNaN(n2_value))
-				return std::make_pair(n2, 0.5);
-			return std::make_pair(n2, 0.375);
-		}
-		break;
+		if(n2_type == ENT_NULL)
+			return std::make_pair(n2, n1_value ? 0.25 : 0.5);
 
-	case ENT_NULL:
-		if(n2_type == ENT_TRUE)					return std::make_pair(n1, 0.25);
-		if(n2_type == ENT_FALSE)				return std::make_pair(n1, 0.5);
+		if(n2_type == ENT_BOOL)
+		{
+			bool n2_value = n2->GetBoolValueReference();
+			return std::make_pair(n1, n1_value == n2_value ? 1.0 : 0.375);
+		}
 		if(n2_type == ENT_NUMBER)
 		{
-			double n2_value = EvaluableNode::ToNumber(n2);
+			double n2_value = n2->GetNumberValueReference();
+			bool n2_value_bool = (n2_value != 0);
+			return std::make_pair(n2, n1_value == n2_value_bool ? 0.875 : 0.125);
+		}
+		if(n2_type == ENT_STRING)
+		{
+			auto &n2_value = n2->GetStringValue();
+			bool n2_value_bool = (n2_value != "");
+			return std::make_pair(n2, n1_value == n2_value_bool ? 0.875 : 0.125);
+		}
+
+		break;
+	}
+
+	case ENT_NULL:
+		if(n2_type == ENT_BOOL)
+		{
+			bool n2_value = n2->GetBoolValueReference();
+			if(n2_value)
+				return std::make_pair(n1, 0.25);
+			return std::make_pair(n1, 0.5);
+		}
+		if(n2_type == ENT_NUMBER)
+		{
+			double n2_value = n2->GetNumberValueReference();
 			if(n2_value == 0.0)
 				return std::make_pair(n2, 0.5);
-			if(FastIsNaN(n2_value))
-				return std::make_pair(n2, 0.875);
 			return std::make_pair(n2, 0.375);
 		}
 		if(n2_type == ENT_SEQUENCE)			return std::make_pair(n1, 0.125);
@@ -1366,29 +1379,19 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 	{
 		double n1_value = n1->GetNumberValueReference();
 
-		if(n2_type == ENT_TRUE)
-		{
-			if(n1_value)
-				return std::make_pair(n2, 0.875);
-			return std::make_pair(n1, 0.375);
-		}
-
-		if(n2_type == ENT_FALSE)
-		{
-			if(n1_value == 0.0)
-				return std::make_pair(n1, 0.875);
-			if(FastIsNaN(n1_value))
-				return std::make_pair(n1, 0.5);
-			return std::make_pair(n1, 0.375);
-		}
-
 		if(n2_type == ENT_NULL)
 		{
 			if(n1_value == 0.0)
 				return std::make_pair(n1, 0.5);
-			if(FastIsNaN(n1_value))
-				return std::make_pair(n1, 0.875);
-			return std::make_pair(n1, 0.375);
+			return std::make_pair(n1, 0.125);
+		}
+
+		if(n2_type == ENT_BOOL)
+		{
+			bool n2_value = n2->GetBoolValueReference();
+			if(n1_value && n2_value)
+				return std::make_pair(n2, 0.875);
+			return std::make_pair(n1, 0.125);
 		}
 
 		if(n2_type == ENT_NUMBER)
@@ -1410,7 +1413,7 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 		}
 
 		if(n2_type == ENT_RAND)
-			return std::make_pair(n1, 0.25);
+			return std::make_pair(n1, 0.125);
 
 		//can't match with any other type
 		return std::make_pair(nullptr, 0.0);
@@ -2032,13 +2035,12 @@ CompactHashMap<EvaluableNodeType, double> EvaluableNodeTreeManipulation::evaluab
 	{ENT_TYPE_NEQUALS,									0.1},
 
 	//built-in constants and variables
-	{ENT_TRUE,											0.1},
-	{ENT_FALSE,											0.1},
 	{ENT_NULL,											0.75},
 
 	//data types
 	{ENT_LIST,											2.0},
 	{ENT_ASSOC,											3.0},
+	{ENT_BOOL,											2.0},
 	{ENT_NUMBER,										8.0},
 	{ENT_STRING,										4.0},
 	{ENT_SYMBOL,										10.0},

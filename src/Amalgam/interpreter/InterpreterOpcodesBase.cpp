@@ -210,11 +210,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 	}
 	else if(command == "debugging_info")
 	{
-		EvaluableNode *debugger_info = evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_FALSE, 2);
+		EvaluableNode *debugger_info = evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_BOOL, 2);
 		if(Interpreter::GetDebuggingState())
-			debugger_info->GetOrderedChildNodesReference()[0]->SetType(ENT_TRUE, evaluableNodeManager, false);
+			debugger_info->GetOrderedChildNodesReference()[0]->GetBoolValueReference() = true;
 		if(asset_manager.debugSources)
-			debugger_info->GetOrderedChildNodesReference()[1]->SetType(ENT_TRUE, evaluableNodeManager, false);
+			debugger_info->GetOrderedChildNodesReference()[1]->GetBoolValueReference() = true;
 
 		return EvaluableNodeReference(debugger_info, true);
 	}

@@ -10,6 +10,7 @@
 #include <cctype>
 #include <iomanip>
 
+bool EvaluableNode::falseBoolValue = false;
 double EvaluableNode::zeroNumberValue = 0.0;
 std::string EvaluableNode::emptyStringValue = "";
 EvaluableNode *EvaluableNode::emptyEvaluableNodeNullptr = nullptr;
@@ -111,12 +112,11 @@ bool EvaluableNode::IsTrue(EvaluableNode *n)
 		return false;
 
 	EvaluableNodeType node_type = n->GetType();
-	if(node_type == ENT_TRUE)
-		return true;
-	if(node_type == ENT_FALSE)
-		return false;
 	if(node_type == ENT_NULL)
 		return false;
+
+	if(DoesEvaluableNodeTypeUseBoolData(node_type))
+		return n->GetBoolValueReference();
 
 	if(DoesEvaluableNodeTypeUseNumberData(node_type))
 	{
@@ -183,10 +183,8 @@ double EvaluableNode::ToNumber(EvaluableNode *e, double value_if_null)
 
 	switch(e->GetType())
 	{
-		case ENT_TRUE:
-			return 1;
-		case ENT_FALSE:
-			return 0;
+		case ENT_BOOL:
+			return (e->GetBoolValueReference() ? 1 : 0);
 		case ENT_NULL:
 			return value_if_null;
 		case ENT_NUMBER:

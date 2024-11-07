@@ -399,18 +399,18 @@ public:
 
 	inline EvaluableNode *AllocNode(EvaluableNodeType type, StringRef &sir)
 	{	return AllocNode(type, static_cast<StringInternPool::StringID>(sir));	}
+
+	inline EvaluableNode *AllocNode(bool bool_value)
+	{
+		EvaluableNode *n = AllocUninitializedNode();
+		n->InitializeType(bool_value);
+		return n;
+	}
 	
 	inline EvaluableNode *AllocNode(double float_value)
 	{
 		EvaluableNode *n = AllocUninitializedNode();
 		n->InitializeType(float_value);
-		return n;
-	}
-
-	inline EvaluableNode *AllocNode(bool bool_value)
-	{
-		EvaluableNode *n = AllocUninitializedNode();
-		n->InitializeType(bool_value ? ENT_TRUE : ENT_FALSE);
 		return n;
 	}
 
@@ -513,6 +513,14 @@ public:
 		}
 	}
 
+	//like ReuseOrAllocNode but allocates an ENT_BOOL
+	inline EvaluableNodeReference ReuseOrAllocNode(EvaluableNodeReference candidate, bool value)
+	{
+		EvaluableNodeReference node = ReuseOrAllocNode(candidate, ENT_BOOL);
+		node->SetTypeViaBoolValue(value);
+		return node;
+	}
+
 	//like ReuseOrAllocNode but allocates an ENT_NUMBER
 	inline EvaluableNodeReference ReuseOrAllocNode(EvaluableNodeReference candidate, double value)
 	{
@@ -539,12 +547,6 @@ public:
 		return node;
 	}
 
-	//like ReuseOrAllocNode but allocates either ENT_TRUE or ENT_FALSE
-	inline EvaluableNodeReference ReuseOrAllocNode(EvaluableNodeReference candidate, bool value)
-	{
-		return ReuseOrAllocNode(candidate, value ? ENT_TRUE: ENT_FALSE);
-	}
-
 	//like ReuseOrAllocNode, but picks whichever node is reusable and frees the other if possible
 	//will try candidate_1 first
 	inline EvaluableNodeReference ReuseOrAllocOneOfNodes(
@@ -559,6 +561,16 @@ public:
 		//candidate_1 wasn't unique, so try for candidate 2
 		return ReuseOrAllocNode(candidate_2, type);
 	}
+
+	//like ReuseOrAllocOneOfNodes but allocates an ENT_BOOL
+	inline EvaluableNodeReference ReuseOrAllocOneOfNodes(
+		EvaluableNodeReference candidate_1, EvaluableNodeReference candidate_2, bool value)
+	{
+		EvaluableNodeReference node = ReuseOrAllocOneOfNodes(candidate_1, candidate_2, ENT_BOOL);
+		node->SetTypeViaBoolValue(value);
+		return node;
+	}
+
 
 	//like ReuseOrAllocOneOfNodes but allocates an ENT_NUMBER
 	inline EvaluableNodeReference ReuseOrAllocOneOfNodes(
@@ -587,13 +599,6 @@ public:
 		EvaluableNodeReference node = ReuseOrAllocOneOfNodes(candidate_1, candidate_2, ENT_STRING);
 		node->SetStringValue(value);
 		return node;
-	}
-
-	//like ReuseOrAllocOneOfNodes but allocates either ENT_TRUE or ENT_FALSE
-	inline EvaluableNodeReference ReuseOrAllocOneOfNodes(
-		EvaluableNodeReference candidate_1, EvaluableNodeReference candidate_2, bool value)
-	{
-		return ReuseOrAllocOneOfNodes(candidate_1, candidate_2, value ? ENT_TRUE : ENT_FALSE);
 	}
 
 	//Copies the data structure and everything underneath it, modifying labels as specified

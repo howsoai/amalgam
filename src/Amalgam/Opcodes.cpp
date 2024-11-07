@@ -164,8 +164,6 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_TYPE_NEQUALS, "!~");
 
 	//built-in constants and variables
-	EmplaceNodeTypeString(ENT_TRUE, "true");
-	EmplaceNodeTypeString(ENT_FALSE, "false");
 	EmplaceNodeTypeString(ENT_NULL, "null");
 
 	//data types
@@ -173,6 +171,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_ASSOC, "assoc");
 
 	//immediates - no associated keywords
+	EmplaceNodeTypeString(ENT_BOOL, "bool");
 	EmplaceNodeTypeString(ENT_NUMBER, "number");
 	EmplaceNodeTypeString(ENT_STRING, "string");
 	EmplaceNodeTypeString(ENT_SYMBOL, "symbol");
@@ -302,6 +301,8 @@ void StringInternPool::InitializeStaticStrings()
 	//end opcodes
 
 	//built-in common values
+	EmplaceStaticString(ENBISI_true, ".true");
+	EmplaceStaticString(ENBISI_false, ".false");
 	EmplaceStaticString(ENBISI_infinity, ".infinity");
 	EmplaceStaticString(ENBISI_neg_infinity, "-.infinity");
 	EmplaceStaticString(ENBISI_zero, "0");

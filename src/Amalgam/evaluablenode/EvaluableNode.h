@@ -141,6 +141,15 @@ public:
 		}
 	}
 
+	inline void InitializeType(bool bool_value)
+	{
+		attributes.allAttributes = 0;
+		type = ENT_BOOL;
+		attributes.individualAttribs.isIdempotent = true;
+		value.numberValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
+		value.boolValueContainer.boolValue = bool_value;
+	}
+
 	//initializes to ENT_UNINITIALIZED
 	//useful to mark a node in a hold state before it's ready so it isn't counted as ENT_DEALLOCATED
 	//but also such that the fields don't need to be initialized or cleared
@@ -322,9 +331,8 @@ public:
 
 		switch(e->GetType())
 		{
+		case ENT_BOOL:
 		case ENT_NUMBER:
-		case ENT_TRUE:
-		case ENT_FALSE:
 		case ENT_NULL:
 			return true;
 		default:
@@ -459,6 +467,23 @@ public:
 	// attempt_to_preserve_immediate_value should be set to false if the value will be immediately overwritten
 	void SetType(EvaluableNodeType new_type, EvaluableNodeManager *enm,
 		bool attempt_to_preserve_immediate_value);
+
+	//gets the value by reference
+	__forceinline bool &GetBoolValue()
+	{
+		if(DoesEvaluableNodeTypeUseBoolData(GetType()))
+			return GetBoolValueReference();
+
+		//none of the above, return an empty one
+		return falseBoolValue;
+	}
+
+	//changes the type by setting it to the number value specified
+	inline void SetTypeViaBoolValue(bool v)
+	{
+		SetType(ENT_BOOL, nullptr, false);
+		GetBoolValueReference() = v;
+	}
 
 	//sets up number value
 	void InitNumberValue();
@@ -796,6 +821,15 @@ public:
 	constexpr bool HasExtendedValue()
 	{	return attributes.individualAttribs.hasExtendedValue;	}
 
+	//assumes that the EvaluableNode is of type ENT_BOOL, and returns the value by reference
+	constexpr bool &GetBoolValueReference()
+	{
+		if(!HasExtendedValue())
+			return value.boolValueContainer.boolValue;
+		else
+			return value.extension.extendedValue->value.boolValueContainer.boolValue;
+	}
+
 	//assumes that the EvaluableNode is of type ENT_NUMBER, and returns the value by reference
 	constexpr double &GetNumberValueReference()
 	{
@@ -930,6 +964,16 @@ protected:
 			StringInternPool::StringID labelStringID;
 		} numberValueContainer;
 
+		//when type represents a bool, holds the corresponding value
+		struct EvaluableNodeValueBool
+		{
+			//bool value
+			bool boolValue;
+
+			//allow up to one label -- only used when not part of an extended value
+			StringInternPool::StringID labelStringID;
+		} boolValueContainer;
+
 		struct EvaluableNodeExtension
 		{
 			//pointer to store any extra data if EvaluableNode needs multiple fields
@@ -1005,6 +1049,7 @@ protected:
 	EvaluableNodeAttributesType attributes;
 
 	//values used to be able to return a reference
+	static bool falseBoolValue;
 	static double zeroNumberValue;
 	static std::string emptyStringValue;
 	static EvaluableNode *emptyEvaluableNodeNullptr;
@@ -1028,6 +1073,8 @@ enum EvaluableNodeImmediateValueType : uint8_t
 {
 	ENIVT_NOT_EXIST,			//there is nothing to even hold the data
 	ENIVT_NULL,					//no data being held
+	//TODO 22139: implement this value
+	ENIVT_BOOL,					//bool
 	ENIVT_NUMBER,				//number
 	ENIVT_STRING_ID,			//stringID
 	ENIVT_CODE,					//code (more general than any of the above)

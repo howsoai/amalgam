@@ -39,7 +39,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_AND(EvaluableNode *en, boo
 			cur = cn;
 
 			if(!EvaluableNode::IsTrue(cur))
-				return evaluableNodeManager->ReuseOrAllocNode(cur, ENT_FALSE);
+				return evaluableNodeManager->ReuseOrAllocNode(cur, false);
 		}
 
 		return cur;
@@ -92,7 +92,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OR(EvaluableNode *en, bool
 				return cur;
 		}
 
-		return evaluableNodeManager->ReuseOrAllocNode(cur, ENT_FALSE);
+		return evaluableNodeManager->ReuseOrAllocNode(cur, false);
 	}
 #endif
 
@@ -195,12 +195,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EQUAL(EvaluableNode *en, b
 			}
 
 			if(!EvaluableNode::AreDeepEqual(to_match, cur))
-				return evaluableNodeManager->ReuseOrAllocOneOfNodes(to_match, cur, ENT_FALSE);
+				return evaluableNodeManager->ReuseOrAllocOneOfNodes(to_match, cur, false);
 
 			evaluableNodeManager->FreeNodeTreeIfPossible(cur);
 		}
 
-		return evaluableNodeManager->ReuseOrAllocNode(to_match, ENT_TRUE);
+		return evaluableNodeManager->ReuseOrAllocNode(to_match, true);
 	}
 #endif
 
@@ -363,7 +363,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LESS_and_LEQUAL(EvaluableN
 
 	auto prev = InterpretNodeForImmediateUse(ocn[0]);
 	if(EvaluableNode::IsNull(prev))
-		return evaluableNodeManager->ReuseOrAllocNode(prev, ENT_FALSE);
+		return evaluableNodeManager->ReuseOrAllocNode(prev, false);
 
 	auto node_stack = CreateOpcodeStackStateSaver(prev);
 
@@ -439,7 +439,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GREATER_and_GEQUAL(Evaluab
 
 	auto prev = InterpretNodeForImmediateUse(ocn[0]);
 	if(EvaluableNode::IsNull(prev))
-		return evaluableNodeManager->ReuseOrAllocNode(prev, ENT_FALSE);
+		return evaluableNodeManager->ReuseOrAllocNode(prev, false);
 
 	auto node_stack = CreateOpcodeStackStateSaver(prev);
 

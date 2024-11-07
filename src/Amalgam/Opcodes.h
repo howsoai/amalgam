@@ -143,13 +143,12 @@ enum EvaluableNodeType : uint8_t
 	ENT_TYPE_NEQUALS,
 
 	//built-in constants and variables
-	ENT_TRUE,
-	ENT_FALSE,
 	ENT_NULL,
 
 	//data types
 	ENT_LIST,
 	ENT_ASSOC,
+	ENT_BOOL,
 	ENT_NUMBER,
 	ENT_STRING,
 	ENT_SYMBOL,
@@ -329,7 +328,6 @@ constexpr OrderedChildNodeType GetInstructionOrderedChildNodeType(EvaluableNodeT
 	case ENT_ZIP:					case ENT_UNZIP:
 	case ENT_LESS:					case ENT_LEQUAL:
 	case ENT_GREATER:				case ENT_GEQUAL:			case ENT_TYPE_EQUALS:		case ENT_TYPE_NEQUALS:
-	case ENT_TRUE:					case ENT_FALSE:
 	case ENT_LIST:
 	case ENT_CONCAT:
 	case ENT_PRINT:
@@ -395,7 +393,7 @@ constexpr OrderedChildNodeType GetInstructionOrderedChildNodeType(EvaluableNodeT
 	case ENT_VALUES:					case ENT_CONTAINS_INDEX:	case ENT_CONTAINS_VALUE:
 	case ENT_REMOVE:					case ENT_KEEP:
 	case ENT_NOT:
-	case ENT_NUMBER:					case ENT_STRING:
+	case ENT_BOOL:						case ENT_NUMBER:			case ENT_STRING:
 	case ENT_SYMBOL:
 	case ENT_GET_TYPE:					case ENT_GET_TYPE_STRING:	case ENT_SET_TYPE:			case ENT_FORMAT:
 	case ENT_GET_LABELS:				case ENT_GET_ALL_LABELS:	case ENT_SET_LABELS:		case ENT_ZIP_LABELS:
@@ -441,19 +439,25 @@ constexpr bool DoesInstructionUseAssocParameters(EvaluableNodeType t)
 //returns true if t is an immediate value
 constexpr bool IsEvaluableNodeTypeImmediate(EvaluableNodeType t)
 {
-	return (t == ENT_NUMBER || t == ENT_STRING || t == ENT_SYMBOL);
+	return (t == ENT_BOOL || t == ENT_NUMBER || t == ENT_STRING || t == ENT_SYMBOL);
 }
 
-//returns true if t uses string data
-constexpr bool DoesEvaluableNodeTypeUseStringData(EvaluableNodeType t)
+//returns true if t uses bool data
+constexpr bool DoesEvaluableNodeTypeUseBoolData(EvaluableNodeType t)
 {
-	return (t == ENT_STRING || t == ENT_SYMBOL);
+	return (t == ENT_BOOL);
 }
 
 //returns true if t uses number data
 constexpr bool DoesEvaluableNodeTypeUseNumberData(EvaluableNodeType t)
 {
 	return (t == ENT_NUMBER);
+}
+
+//returns true if t uses string data
+constexpr bool DoesEvaluableNodeTypeUseStringData(EvaluableNodeType t)
+{
+	return (t == ENT_STRING || t == ENT_SYMBOL);
 }
 
 //returns true if t uses association data
@@ -498,8 +502,7 @@ constexpr bool IsEvaluableNodeTypeQuery(EvaluableNodeType t)
 //returns true if t could potentially be idempotent
 constexpr bool IsEvaluableNodeTypePotentiallyIdempotent(EvaluableNodeType t)
 {
-	return (t == ENT_NUMBER || t == ENT_STRING
-		|| t == ENT_TRUE || t == ENT_FALSE
+	return (t == ENT_BOOL || t == ENT_NUMBER || t == ENT_STRING
 		|| t == ENT_NULL || t == ENT_LIST || t == ENT_ASSOC
 		|| t == ENT_CONCLUDE || t == ENT_RETURN
 		|| IsEvaluableNodeTypeQuery(t));
@@ -517,7 +520,9 @@ enum EvaluableNodeBuiltInStringId
 	//leave space for ENT_ opcodes, start at the end
 
 	//built-in common values
-	ENBISI_infinity = NUM_VALID_ENT_OPCODES + NUM_ENBISI_SPECIAL_STRING_IDS,
+	ENBISI_true = NUM_VALID_ENT_OPCODES + NUM_ENBISI_SPECIAL_STRING_IDS,
+	ENBISI_false,
+	ENBISI_infinity,
 	ENBISI_neg_infinity,
 	ENBISI_zero,
 	ENBISI_one,

@@ -26,16 +26,6 @@
 #include <regex>
 #include <utility>
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUE(EvaluableNode *en, bool immediate_result)
-{
-	return AllocReturn(true, immediate_result);
-}
-
-EvaluableNodeReference Interpreter::InterpretNode_ENT_FALSE(EvaluableNode *en, bool immediate_result)
-{
-	return AllocReturn(false, immediate_result);
-}
-
 EvaluableNodeReference Interpreter::InterpretNode_ENT_NULL(EvaluableNode *en, bool immediate_result)
 {
 	return EvaluableNodeReference::Null();
@@ -162,6 +152,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, b
 	}
 
 	return new_assoc;
+}
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_BOOL(EvaluableNode *en, bool immediate_result)
+{
+	//TODO 22139: finish this
+	double value = en->GetNumberValueReference();
+	return AllocReturn(value, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_NUMBER(EvaluableNode *en, bool immediate_result)

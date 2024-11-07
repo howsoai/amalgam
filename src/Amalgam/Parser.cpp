@@ -556,12 +556,12 @@ EvaluableNode *Parser::GetNextToken(EvaluableNode *parent_node, EvaluableNode *r
 		double value = 0.0;
 		if(s == ".true")
 		{
-			new_token->SetTypeViaBool(true);
+			new_token->SetTypeViaBoolValue(true);
 			return new_token;
 		}
 		else if(s == ".false")
 		{
-			new_token->SetTypeViaBool(false);
+			new_token->SetTypeViaBoolValue(false);
 			return new_token;
 		}
 		if(s == ".infinity")

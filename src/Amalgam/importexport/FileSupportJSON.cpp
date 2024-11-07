@@ -58,10 +58,7 @@ EvaluableNode *JsonToEvaluableNodeRecurse(EvaluableNodeManager *enm, simdjson::o
 
 	case simdjson::ondemand::json_type::boolean:
 	{
-		if(element.get_bool())
-			return enm->AllocNode(ENT_TRUE);
-		else
-			return enm->AllocNode(ENT_FALSE);
+		return enm->AllocNode(static_cast<bool>(element.get_bool()));
 	}
 
 	case simdjson::ondemand::json_type::null:
@@ -209,14 +206,9 @@ bool EvaluableNodeToJsonStringRecurse(EvaluableNode *en, std::string &json_str, 
 			json_str += "null";
 			return true;
 		}
-		else if(node_type == ENT_TRUE)
+		else if(node_type == ENT_BOOL)
 		{
-			json_str += "true";
-			return true;
-		}
-		else if(node_type == ENT_FALSE)
-		{
-			json_str += "false";
+			json_str += (en->GetBoolValueReference() ? "true" : "false");
 			return true;
 		}
 		else if(node_type != ENT_LIST)
@@ -297,10 +289,7 @@ EvaluableNode *EvaluableNodeJSONTranslation::JsonToEvaluableNode(EvaluableNodeMa
 
 			case simdjson::ondemand::json_type::boolean:
 			{
-				if(json_top_element.get_bool())
-					return enm->AllocNode(ENT_TRUE);
-				else
-					return enm->AllocNode(ENT_FALSE);
+				return enm->AllocNode(static_cast<bool>(json_top_element.get_bool()));
 			}
 
 			default:

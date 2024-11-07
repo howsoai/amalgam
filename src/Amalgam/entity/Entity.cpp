@@ -149,6 +149,31 @@ EvaluableNodeReference Entity::GetValueAtLabel(StringInternPool::StringID label_
 	return destination_temp_enm->DeepAllocCopy(retval, direct_get ? EvaluableNodeManager::ENMM_NO_CHANGE : EvaluableNodeManager::ENMM_REMOVE_ALL);
 }
 
+bool Entity::GetValueAtLabelAsBool(StringInternPool::StringID label_sid, bool &value_out, bool on_self)
+{
+	if(label_sid == string_intern_pool.NOT_A_STRING_ID)
+	{
+		value_out = false;
+		return false;
+	}
+
+	if(!on_self && IsLabelPrivate(label_sid))
+	{
+		value_out = false;
+		return false;
+	}
+
+	const auto &label = labelIndex.find(label_sid);
+	if(label == end(labelIndex))
+	{
+		value_out = false;
+		return false;
+	}
+
+	value_out = EvaluableNode::ToBool(label->second);
+	return true;
+}
+
 bool Entity::GetValueAtLabelAsNumber(StringInternPool::StringID label_sid, double &value_out, bool on_self)
 {
 	constexpr double value_if_not_found = std::numeric_limits<double>::quiet_NaN();

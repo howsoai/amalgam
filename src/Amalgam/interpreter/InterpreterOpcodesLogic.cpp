@@ -38,7 +38,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_AND(EvaluableNode *en, boo
 
 			cur = cn;
 
-			if(!EvaluableNode::IsTrue(cur))
+			if(!EvaluableNode::ToBool(cur))
 				return evaluableNodeManager->ReuseOrAllocNode(cur, false);
 		}
 
@@ -60,7 +60,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_AND(EvaluableNode *en, boo
 		}
 		else
 		{
-			if(!EvaluableNode::IsTrue(cur))
+			if(!EvaluableNode::ToBool(cur))
 				return ReuseOrAllocReturn(cur, false, immediate_result);
 		}
 	}
@@ -88,7 +88,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OR(EvaluableNode *en, bool
 			cur = cn;
 
 			//if it is a valid node and it is not zero, then return it
-			if(EvaluableNode::IsTrue(cur))
+			if(EvaluableNode::ToBool(cur))
 				return cur;
 		}
 
@@ -126,7 +126,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_XOR(EvaluableNode *en, boo
 		for(auto &cur : interpreted_nodes)
 		{
 			//if it's true, count it
-			if(EvaluableNode::IsTrue(cur))
+			if(EvaluableNode::ToBool(cur))
 				num_true++;
 
 			evaluableNodeManager->FreeNodeTreeIfPossible(cur);
@@ -165,7 +165,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT(EvaluableNode *en, boo
 	}
 	else
 	{
-		bool is_true = EvaluableNode::IsTrue(cur);
+		bool is_true = EvaluableNode::ToBool(cur);
 		return ReuseOrAllocReturn(cur, !is_true, immediate_result);
 	}	
 }

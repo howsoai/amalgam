@@ -20,6 +20,8 @@ public:
 	// align at 32-bits in order to play nice with data alignment where it is used
 	enum FeatureDifferenceType : uint32_t
 	{
+		//nominal based on bool equivalence
+		FDT_NOMINAL_BOOL,
 		//nominal based on numeric equivalence
 		FDT_NOMINAL_NUMERIC,
 		//nominal based on string equivalence
@@ -822,10 +824,14 @@ public:
 		if(a_type == ENIVT_NULL || b_type == ENIVT_NULL)
 			return std::numeric_limits<double>::quiet_NaN();
 
-		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC
+		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL
+			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC
 			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
 			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
 		{
+			if(a_type == ENIVT_BOOL && b_type == ENIVT_BOOL)
+				return (a.boolValue == b.boolValue ? 0.0 : 1.0);
+
 			if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)
 				return (a.number == b.number ? 0.0 : 1.0);
 
@@ -1070,6 +1076,9 @@ public:
 		EFDT_NUMERIC_INTERNED_PRECOMPUTED,
 		//continuous or nominal string precomputed, may contain nonnumeric data
 		EFDT_STRING_INTERNED_PRECOMPUTED,
+		//TODO 22139: implement where appropriate
+		//nominal compared to a bool value where nominals may not be symmetric
+		EFDT_NOMINAL_BOOL,
 		//nominal compared to a string value where nominals may not be symmetric
 		EFDT_NOMINAL_STRING,
 		//nominal compared to a number value where nominals may not be symmetric

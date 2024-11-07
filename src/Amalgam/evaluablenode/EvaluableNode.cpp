@@ -106,37 +106,6 @@ bool EvaluableNode::AreShallowEqual(EvaluableNode *a, EvaluableNode *b)
 	return true;
 }
 
-bool EvaluableNode::IsTrue(EvaluableNode *n)
-{
-	if(n == nullptr)
-		return false;
-
-	EvaluableNodeType node_type = n->GetType();
-	if(node_type == ENT_NULL)
-		return false;
-
-	if(DoesEvaluableNodeTypeUseBoolData(node_type))
-		return n->GetBoolValueReference();
-
-	if(DoesEvaluableNodeTypeUseNumberData(node_type))
-	{
-		double &num = n->GetNumberValueReference();
-		if(num == 0.0)
-			return false;
-		return true;
-	}
-
-	if(DoesEvaluableNodeTypeUseStringData(node_type))
-	{
-		auto sid = n->GetStringIDReference();
-		if(sid == string_intern_pool.NOT_A_STRING_ID || sid == string_intern_pool.emptyStringId)
-			return false;
-		return true;
-	}
-
-	return true;
-}
-
 int EvaluableNode::Compare(EvaluableNode *a, EvaluableNode *b)
 {
 	//try numerical comparison first
@@ -174,6 +143,37 @@ int EvaluableNode::Compare(EvaluableNode *a, EvaluableNode *b)
 	std::string a_str = EvaluableNode::ToStringPreservingOpcodeType(a);
 	std::string b_str = EvaluableNode::ToStringPreservingOpcodeType(b);
 	return StringManipulation::StringNaturalCompare(a_str, b_str);
+}
+
+bool EvaluableNode::ToBool(EvaluableNode *n)
+{
+	if(n == nullptr)
+		return false;
+
+	EvaluableNodeType node_type = n->GetType();
+	if(node_type == ENT_NULL)
+		return false;
+
+	if(DoesEvaluableNodeTypeUseBoolData(node_type))
+		return n->GetBoolValueReference();
+
+	if(DoesEvaluableNodeTypeUseNumberData(node_type))
+	{
+		double &num = n->GetNumberValueReference();
+		if(num == 0.0)
+			return false;
+		return true;
+	}
+
+	if(DoesEvaluableNodeTypeUseStringData(node_type))
+	{
+		auto sid = n->GetStringIDReference();
+		if(sid == string_intern_pool.NOT_A_STRING_ID || sid == string_intern_pool.emptyStringId)
+			return false;
+		return true;
+	}
+
+	return true;
 }
 
 double EvaluableNode::ToNumber(EvaluableNode *e, double value_if_null)

@@ -561,6 +561,7 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_accessing_entity,
 
 	//distance types
+	ENBISI_nominal_bool,
 	ENBISI_nominal_numeric,
 	ENBISI_nominal_string,
 	ENBISI_nominal_code,

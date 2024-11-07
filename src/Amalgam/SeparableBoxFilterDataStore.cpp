@@ -1192,6 +1192,10 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 		return r_dist_eval.ComputeDistanceTermNonNullNominalNextSmallest(nonmatch_dist_term, query_feature_index, high_accuracy);
 	}
+	else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL)
+	{
+		//TODO 22139: finish this
+	}
 	else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
 	{
@@ -1603,7 +1607,9 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 
 	if(feature_attribs.IsFeatureNominal() || complex_comparison)
 	{
-		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC)
+		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL)
+			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_BOOL;
+		else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC)
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMERIC;
 		else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING)
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_STRING;

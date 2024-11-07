@@ -254,9 +254,6 @@ public:
 		}
 	}
 
-	//Returns true if this node evaluates to true
-	static bool IsTrue(EvaluableNode *n);
-
 	//Returns true if the node is some form of associative array
 	__forceinline bool IsAssociativeArray()
 	{
@@ -345,6 +342,9 @@ public:
 	{
 		return (e == nullptr || e->GetType() == ENT_NULL);
 	}
+
+	//Returns true if this node evaluates to true
+	static bool ToBool(EvaluableNode *n);
 
 	//Converts the node to a number
 	//if null, then will return value_if_null
@@ -802,7 +802,7 @@ public:
 		if(found_value != end(mcn))
 		{
 			if constexpr(std::is_same<T, bool>::value)
-				value = EvaluableNode::IsTrue(found_value->second);
+				value = EvaluableNode::ToBool(found_value->second);
 			else if constexpr(std::is_same<T, double>::value)
 				value = EvaluableNode::ToNumber(found_value->second);
 			else if constexpr(std::is_same<T, std::string>::value)
@@ -1133,6 +1133,12 @@ union EvaluableNodeImmediateValue
 			return ENIVT_NULL;
 		}
 
+		if(en_type == ENT_BOOL)
+		{
+			boolValue = en->GetBoolValueReference();
+			return ENIVT_BOOL;
+		}
+
 		if(en_type == ENT_NUMBER)
 		{
 			number = en->GetNumberValueReference();
@@ -1184,6 +1190,7 @@ union EvaluableNodeImmediateValue
 		return stringID;
 	}
 
+	bool boolValue;
 	double number;
 	StringInternPool::StringID stringID;
 	EvaluableNode *code;
@@ -1303,7 +1310,7 @@ public:
 		}
 
 		if(nodeType == ENIVT_CODE)
-			return EvaluableNode::IsTrue(nodeValue.code);
+			return EvaluableNode::ToBool(nodeValue.code);
 
 		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
 		return false;

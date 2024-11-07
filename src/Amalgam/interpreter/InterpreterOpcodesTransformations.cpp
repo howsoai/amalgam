@@ -510,7 +510,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 				//filter by those child nodes that are true
 				for(size_t i = 0; i < num_nodes; i++)
 				{
-					if(EvaluableNode::IsTrue(evaluations[i]))
+					if(EvaluableNode::ToBool(evaluations[i]))
 						result_ocn.push_back(list_ocn[i]);
 
 					//only free nodes if the result is still unique, and it won't be if it was accessed
@@ -599,7 +599,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 				node_index = 0;
 				for(auto &[node_id, node] : list_mcn)
 				{
-					if(EvaluableNode::IsTrue(evaluations[node_index]))
+					if(EvaluableNode::ToBool(evaluations[node_index]))
 						result_list->SetMappedChildNode(node_id, node);
 
 					//only free nodes if the result is still unique, and it won't be if it was accessed

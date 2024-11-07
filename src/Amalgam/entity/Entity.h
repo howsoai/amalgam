@@ -305,9 +305,14 @@ public:
 		return (cur_value_it != end(labelIndex));
 	}
 
+	//Evaluates the specified label into a bool and puts the value in value_out.
+	//If the label exists, sets value_out to the value and returns true.
+	// Otherwise sets value_out to false and returns false
+	bool GetValueAtLabelAsBool(StringInternPool::StringID label_sid, bool &value_out, bool on_self = false);
+
 	//Evaluates the specified label into a number and puts the value in value_out.
 	//If the label exists, sets value_out to the value and returns true.
-	// Otherwise sets value_out to -NaN and returns false
+	// Otherwise sets value_out to NaN and returns false
 	bool GetValueAtLabelAsNumber(StringInternPool::StringID label_sid, double &value_out, bool on_self = false);
 
 	//Evaluates the specified label into a string and puts the value in value_out.

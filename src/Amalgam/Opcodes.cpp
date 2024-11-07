@@ -341,6 +341,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_accessing_entity, "accessing_entity");
 
 	//distance types
+	EmplaceStaticString(ENBISI_nominal_numeric, "nominal_bool");
 	EmplaceStaticString(ENBISI_nominal_numeric, "nominal_numeric");
 	EmplaceStaticString(ENBISI_nominal_string, "nominal_string");
 	EmplaceStaticString(ENBISI_nominal_code, "nominal_code");

@@ -134,7 +134,8 @@ namespace EntityQueryBuilder
 				PopulateFeatureDeviationNominalValueData(number_sdm.back().second, cn.second);
 			}
 		}
-		else if(feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
+		else if(feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL
+			|| feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
 			|| feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
 		{
 			string_sdm.reserve(mcn.size());
@@ -205,6 +206,7 @@ namespace EntityQueryBuilder
 					if(found)
 					{
 						StringInternPool::StringID feature_type_id = EvaluableNode::ToStringIDIfExists(en);
+						if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_bool))						feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL;
 						if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_numeric))					feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC;
 						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_string))				feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING;
 						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_code))					feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE;
@@ -226,6 +228,7 @@ namespace EntityQueryBuilder
 					//get attributes based on feature type
 					switch(dist_eval.featureAttribs[i].featureType)
 					{
+					case GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL:
 					case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC:
 					case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
 					case GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE:
@@ -258,6 +261,7 @@ namespace EntityQueryBuilder
 					//get deviations based on feature type
 					switch(dist_eval.featureAttribs[i].featureType)
 					{
+					case GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL:
 					case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC:
 					case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
 					case GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE:
@@ -506,7 +510,7 @@ namespace EntityQueryBuilder
 			if(ocn.size() > NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0)
 			{
 				EvaluableNode *list_param = ocn[NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0];
-				cur_condition->returnSortedList = EvaluableNode::IsTrue(list_param);
+				cur_condition->returnSortedList = EvaluableNode::ToBool(list_param);
 				if(!EvaluableNode::IsNull(list_param))
 				{
 					if(list_param->GetType() == ENT_STRING)
@@ -525,14 +529,14 @@ namespace EntityQueryBuilder
 		{
 			cur_condition->convictionOfRemoval = false;
 			if(ocn.size() > NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0)
-				cur_condition->convictionOfRemoval = EvaluableNode::IsTrue(ocn[NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0]);
+				cur_condition->convictionOfRemoval = EvaluableNode::ToBool(ocn[NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0]);
 
 			if(condition_type == ENT_COMPUTE_ENTITY_CONVICTIONS || condition_type == ENT_COMPUTE_ENTITY_KL_DIVERGENCES)
 			{
 				if(ocn.size() > NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 1)
 				{
 					EvaluableNode *list_param = ocn[NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 1];
-					cur_condition->returnSortedList = EvaluableNode::IsTrue(list_param);
+					cur_condition->returnSortedList = EvaluableNode::ToBool(list_param);
 					if(!EvaluableNode::IsNull(list_param))
 					{
 						if(list_param->GetType() == ENT_STRING)
@@ -781,7 +785,7 @@ namespace EntityQueryBuilder
 					cur_condition->maxToRetrieve = EvaluableNode::ToNumber(value);
 				}
 
-				if(ocn.size() <= 2 || EvaluableNode::IsTrue(ocn[2]))
+				if(ocn.size() <= 2 || EvaluableNode::ToBool(ocn[2]))
 					cur_condition->singleLabelType = ENIVT_NUMBER;
 				else
 					cur_condition->singleLabelType = ENIVT_STRING_ID;
@@ -846,7 +850,7 @@ namespace EntityQueryBuilder
 
 				cur_condition->includeZeroDifferences = true;
 				if(ocn.size() >= 3)
-					cur_condition->includeZeroDifferences = EvaluableNode::IsTrue(ocn[2]);
+					cur_condition->includeZeroDifferences = EvaluableNode::ToBool(ocn[2]);
 				break;
 
 			case ENT_QUERY_MAX_DIFFERENCE:
@@ -870,7 +874,7 @@ namespace EntityQueryBuilder
 
 				if(type == ENT_QUERY_MODE || type == ENT_QUERY_VALUE_MASSES)
 				{
-					if(ocn.size() <= 2 || EvaluableNode::IsTrue(ocn[2]))
+					if(ocn.size() <= 2 || EvaluableNode::ToBool(ocn[2]))
 						cur_condition->singleLabelType = ENIVT_NUMBER;
 					else
 						cur_condition->singleLabelType = ENIVT_STRING_ID;
@@ -912,11 +916,11 @@ namespace EntityQueryBuilder
 
 				cur_condition->calculateMoment = false;
 				if(ocn.size() >= 5)
-					cur_condition->calculateMoment = EvaluableNode::IsTrue(ocn[4]);
+					cur_condition->calculateMoment = EvaluableNode::ToBool(ocn[4]);
 
 				cur_condition->absoluteValue = false;
 				if(ocn.size() >= 6)
-					cur_condition->absoluteValue = EvaluableNode::IsTrue(ocn[5]);
+					cur_condition->absoluteValue = EvaluableNode::ToBool(ocn[5]);
 
 				break;
 			}

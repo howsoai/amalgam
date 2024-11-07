@@ -156,8 +156,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, b
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_BOOL(EvaluableNode *en, bool immediate_result)
 {
-	//TODO 22139: finish this
-	double value = en->GetNumberValueReference();
+	bool value = en->GetBoolValueReference();
 	return AllocReturn(value, immediate_result);
 }
 

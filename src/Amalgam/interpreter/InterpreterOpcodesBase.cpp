@@ -438,7 +438,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAMBDA(EvaluableNode *en, 
 	{
 		return EvaluableNodeReference::Null();
 	}
-	else if(ocn_size == 1 || !EvaluableNode::IsTrue(ocn[1]))
+	else if(ocn_size == 1 || !EvaluableNode::ToBool(ocn[1]))
 	{
 		//if only one parameter or second parameter isn't true, just return the result
 		return EvaluableNodeReference(ocn[0], false);

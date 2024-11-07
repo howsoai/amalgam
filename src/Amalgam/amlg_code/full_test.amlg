@@ -918,6 +918,11 @@
  (print (indices (associate "a" 1 "b" 2 "c" 3 4 "d")))
  (print (indices (list "a" 1 "b" 2 "c" 3 4 "d")))
 
+ ;these should all print lists of numbers
+ (print (indices (range 0 3)))
+ (print (indices (zip (range 0 3))))
+ (print (indices (zip (list 0 1 2 3))))
+
  (print "--values--\n")
  (print (values (associate "a" 1 "b" 2 "c" 3 4 "d")))
  (print (values (list "a" 1 "b" 2 "c" 3 4 "d")))

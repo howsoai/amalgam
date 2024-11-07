@@ -1706,7 +1706,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, boo
 		//obtain the index, reusing the sid reference if possible
 		StringInternPool::StringID index_sid = string_intern_pool.emptyStringId;
 		if(index_list.unique)
-			index_sid = EvaluableNode::ToStringIDTakingReferenceAndClearing(index, true);
+			index_sid = EvaluableNode::ToStringIDTakingReferenceAndClearing(index, false, true);
 		else
 			index_sid = EvaluableNode::ToStringIDWithReference(index, true);
 

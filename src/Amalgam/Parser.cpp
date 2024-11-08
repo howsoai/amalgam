@@ -164,6 +164,8 @@ std::string Parser::UnparseToKeyString(EvaluableNode *tree)
 	}
 
 	std::string unparsed = Parser::Unparse(tree, false, false, true);
+
+	//need to insert a \0 this way, otherwise certain string methods will skip the null terminator
 	std::string str;
 	str.assign(1, '\0');
 	str.insert(1, unparsed.data(), unparsed.size());

@@ -611,7 +611,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 				EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_sort_keys, sort_keys);
 			}
 
-			string_value = Parser::Unparse(code_value, false, true, sort_keys);
+			string_value = Parser::Unparse(code_value, false, false, sort_keys);
 		}
 	}
 	else if(to_type == GetStringIdFromBuiltInStringId(ENBISI_Base16) || to_type == GetStringIdFromBuiltInStringId(ENBISI_Base64))
@@ -649,7 +649,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 
 		//if using code, just reuse string value
 		if(use_code)
-			string_value = Parser::Unparse(code_value, false, true, true);
+			string_value = Parser::Unparse(code_value, false, false, true);
 
 		if(to_type == GetStringIdFromBuiltInStringId(ENBISI_Base16))
 			string_value = StringManipulation::BinaryStringToBase16(string_value);

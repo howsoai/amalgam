@@ -238,7 +238,7 @@ std::string EvaluableNode::ToString(EvaluableNode *e, bool key_string)
 	if(e->GetType() == ENT_NUMBER)
 		return StringManipulation::NumberToString(e->GetNumberValueReference());
 
-	return Parser::Unparse(e, false, true, true);
+	return Parser::Unparse(e, false, false, true);
 }
 
 StringInternPool::StringID EvaluableNode::ToStringIDIfExists(EvaluableNode *e, bool key_string)
@@ -2017,7 +2017,7 @@ std::pair<bool, std::string> EvaluableNodeImmediateValueWithType::GetValueAsStri
 		if(key_string)
 			return std::make_pair(true, Parser::UnparseToKeyString(nodeValue.code));
 		else
-			return std::make_pair(true, Parser::Unparse(nodeValue.code, false, true, true));
+			return std::make_pair(true, Parser::Unparse(nodeValue.code, false, false, true));
 	}
 
 	//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX

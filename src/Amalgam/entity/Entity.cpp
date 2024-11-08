@@ -222,7 +222,7 @@ bool Entity::GetValueAtLabelAsString(StringInternPool::StringID label_sid, std::
 		return false;
 	}
 
-	value_out = Parser::Unparse(label->second, false, true, true);
+	value_out = Parser::Unparse(label->second, false, false, true);
 	return true;
 }
 

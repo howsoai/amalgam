@@ -146,7 +146,7 @@ std::string Parser::Unparse(EvaluableNode *tree,
 EvaluableNodeReference Parser::ParseFromKeyString(const std::string &code_string, EvaluableNodeManager *enm)
 {
 	if(code_string.size() == 0 || code_string[0] != '\0')
-		return enm->AllocNode(ENT_STRING, code_string);
+		return EvaluableNodeReference(enm->AllocNode(ENT_STRING, code_string), true);
 
 	std::string_view escaped_string(&code_string[1], code_string.size() - 1);
 	auto [node, warnings, char_with_error] = Parser::Parse(escaped_string, enm);

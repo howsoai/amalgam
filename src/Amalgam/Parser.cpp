@@ -240,7 +240,7 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 				}
 			}
 
-			b_path_nodes.insert(begin(b_path_nodes), enm.AllocNode(ENT_STRING, key_id));
+			b_path_nodes.insert(begin(b_path_nodes), ParseFromKeyStringId(key_id, &enm));
 		}
 		else if(b_parent->IsOrderedArray())
 		{

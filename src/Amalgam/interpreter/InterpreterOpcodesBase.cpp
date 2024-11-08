@@ -1722,7 +1722,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, bo
 //given an assoc of StringID -> value representing the probability weight of each, and a random stream, it randomly selects from the assoc
 // if it can't find an appropriate probability, it returns an empty string
 // if normalize is true, then it will accumulate the probability and then normalize
-StringInternPool::StringID GetRandomWeightedKey(EvaluableNode::AssocType &assoc, RandomStream &rs, bool normalize)
+static StringInternPool::StringID GetRandomWeightedKey(EvaluableNode::AssocType &assoc, RandomStream &rs, bool normalize)
 {
 	double probability_target = rs.RandFull();
 	double accumulated_probability = 0.0;
@@ -1803,7 +1803,7 @@ StringInternPool::StringID GetRandomWeightedKey(EvaluableNode::AssocType &assoc,
 //given a vector of vector of the probability weight of each value as probability_nodes, and a random stream, it randomly selects by probability and returns the index
 // if it can't find an appropriate probability, it returns the size of the probabilities list
 // if normalize is true, then it will accumulate the probability and then normalize
-size_t GetRandomWeightedValueIndex(std::vector<EvaluableNode *> &probability_nodes, RandomStream &rs, bool normalize)
+static size_t GetRandomWeightedValueIndex(std::vector<EvaluableNode *> &probability_nodes, RandomStream &rs, bool normalize)
 {
 	double probability_target = rs.RandFull();
 	double accumulated_probability = 0.0;
@@ -1872,7 +1872,8 @@ size_t GetRandomWeightedValueIndex(std::vector<EvaluableNode *> &probability_nod
 
 //Generates an EvaluableNode containing a random value based on the random parameter param, using enm and random_stream
 // if any part of param is preserved in the return value, then can_free_param will be set to false, otherwise it will be left alone
-EvaluableNodeReference GenerateWeightedRandomValueBasedOnRandParam(EvaluableNodeReference param, EvaluableNodeManager *enm, RandomStream &random_stream, bool &can_free_param)
+static EvaluableNodeReference GenerateWeightedRandomValueBasedOnRandParam(EvaluableNodeReference param,
+	EvaluableNodeManager *enm, RandomStream &random_stream, bool &can_free_param)
 {
 	if(EvaluableNode::IsNull(param))
 		return EvaluableNodeReference::Null();
@@ -1897,7 +1898,7 @@ EvaluableNodeReference GenerateWeightedRandomValueBasedOnRandParam(EvaluableNode
 	if(mcn.size() > 0)
 	{
 		StringInternPool::StringID id_selected = GetRandomWeightedKey(mcn, random_stream, true);
-		return EvaluableNodeReference(enm->AllocNode(ENT_STRING, id_selected), true);
+		return Parser::ParseFromKeyStringId(id_selected, enm);
 	}
 
 	return EvaluableNodeReference::Null();
@@ -1942,7 +1943,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEIGHTED_RAND(EvaluableNod
 	if(!generate_list)
 	{
 		bool can_free_param = true;
-		EvaluableNodeReference rand_value = GenerateWeightedRandomValueBasedOnRandParam(param, evaluableNodeManager, randomStream, can_free_param);
+		EvaluableNodeReference rand_value = GenerateWeightedRandomValueBasedOnRandParam(param,
+			evaluableNodeManager, randomStream, can_free_param);
 
 		if(can_free_param)
 			evaluableNodeManager->FreeNodeTreeIfPossible(param);
@@ -1992,9 +1994,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEIGHTED_RAND(EvaluableNod
 			number_to_generate = std::min(number_to_generate, param->GetMappedChildNodesReference().size());
 
 			//want to generate multiple values, so return a list
-			EvaluableNodeReference retval(
-				evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_STRING, number_to_generate), true);
+			EvaluableNodeReference retval(evaluableNodeManager->AllocNode(ENT_LIST), true);
 			auto &retval_ocn = retval->GetOrderedChildNodesReference();
+			retval_ocn.reserve(number_to_generate);
 
 			//make a copy of all of the probabilities so they can be removed one at a time
 			EvaluableNode::AssocType assoc(param->GetMappedChildNodesReference());
@@ -2002,7 +2004,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEIGHTED_RAND(EvaluableNod
 			for(size_t i = 0; i < number_to_generate; i++)
 			{
 				StringInternPool::StringID selected_sid = GetRandomWeightedKey(assoc, randomStream, true);
-				retval_ocn[i]->SetStringID(selected_sid);
+				EvaluableNodeReference selected_value = Parser::ParseFromKeyStringId(selected_sid, evaluableNodeManager);
+				retval_ocn.push_back(selected_value);
+				retval.UpdatePropertiesBasedOnAttachedNode(selected_value);
 
 				//remove the element so it won't be reselected
 				assoc.erase(selected_sid);
@@ -2060,8 +2064,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEIGHTED_RAND(EvaluableNod
 			EvaluableNode::AssocType, EvaluableNodeAsDouble> wdrst(mcn, false);
 		for(size_t i = 0; i < number_to_generate; i++)
 		{
-			EvaluableNode *rand_value = evaluableNodeManager->AllocNode(ENT_STRING, wdrst.WeightedDiscreteRand(randomStream));
+			EvaluableNodeReference rand_value(Parser::ParseFromKeyStringId(wdrst.WeightedDiscreteRand(randomStream), evaluableNodeManager));
 			retval->AppendOrderedChildNode(rand_value);
+			retval.UpdatePropertiesBasedOnAttachedNode(rand_value);
 		}
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(param);

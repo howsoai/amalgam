@@ -1032,26 +1032,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en,
 	if(container->IsAssociativeArray())
 	{
 		auto &container_mcn = container->GetMappedChildNodesReference();
-		index_list.SetReference(evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_STRING, container_mcn.size()));
+		index_list.SetReference(evaluableNodeManager->AllocNode(ENT_LIST));
 
 		auto &index_list_ocn = index_list->GetOrderedChildNodesReference();
+		index_list_ocn.reserve(container_mcn.size());
 		size_t index = 0;
 		for(auto &[node_id, _] : container_mcn)
 		{
-			if(node_id == string_intern_pool.NOT_A_STRING_ID)
-			{
-				index_list_ocn[index++] = nullptr;
-			}
-			else if(Parser::DoesStringNeedUnparsingToKey(node_id->string))
-			{
-				evaluableNodeManager->FreeNode(index_list_ocn[index]);
-				EvaluableNodeReference key_node = Parser::ParseFromKeyString(node_id->string, evaluableNodeManager);
-				index_list_ocn[index++] = key_node;
-			}
-			else
-			{
-				index_list_ocn[index++]->SetTypeViaStringIdValue(node_id);
-			}
+			EvaluableNodeReference key_node = Parser::ParseFromKeyStringId(node_id, evaluableNodeManager);
+			index_list_ocn.push_back(key_node);
+			index_list.UpdatePropertiesBasedOnAttachedNode(key_node);
 		}
 	}
 	else if(container->IsOrderedArray())

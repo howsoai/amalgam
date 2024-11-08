@@ -140,12 +140,7 @@ public:
 	static EvaluableNodeReference ParseFromKeyString(const std::string &code_string, EvaluableNodeManager *enm);
 
 	//transforms the code_string_id into evaluable nodes
-	static inline EvaluableNodeReference ParseFromKeyStringId(StringInternPool::StringID code_string_id, EvaluableNodeManager *enm)
-	{
-		if(code_string_id == string_intern_pool.NOT_A_STRING_ID)
-			return EvaluableNodeReference::Null();
-		return ParseFromKeyString(code_string_id->string, enm);
-	}
+	static EvaluableNodeReference ParseFromKeyStringId(StringInternPool::StringID code_string_id, EvaluableNodeManager *enm);
 
 	//transforms tree into a string value that will match if the evaluable node trees match
 	static std::string UnparseToKeyString(EvaluableNode *tree);

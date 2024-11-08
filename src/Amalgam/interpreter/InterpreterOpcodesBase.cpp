@@ -1380,22 +1380,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_INDEX(EvaluableNod
 	//build the index node to return
 	EvaluableNodeImmediateValueWithType enivwt(constructionStackIndicesAndUniqueness[offset].index);
 	if(enivwt.nodeType == ENIVT_NUMBER)
-	{
 		return AllocReturn(enivwt.nodeValue.number, immediate_result);
-	}
 	else if(enivwt.nodeType == ENIVT_STRING_ID)
-	{
-		if(enivwt.nodeValue.stringID == string_intern_pool.NOT_A_STRING_ID)
-			return EvaluableNodeReference::Null();
-		else if(Parser::DoesStringNeedUnparsingToKey(enivwt.nodeValue.stringID->string))
-			return Parser::ParseFromKeyString(enivwt.nodeValue.stringID->string, evaluableNodeManager);
-		else
-			return AllocReturn(enivwt.nodeValue.stringID, immediate_result);
-	}
+		return Parser::ParseFromKeyStringId(enivwt.nodeValue.stringID, evaluableNodeManager);
 	else
-	{
 		return EvaluableNodeReference::Null();
-	}
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_VALUE(EvaluableNode *en, bool immediate_result)

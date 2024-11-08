@@ -153,6 +153,21 @@ EvaluableNodeReference Parser::ParseFromKeyString(const std::string &code_string
 	return node;
 }
 
+EvaluableNodeReference Parser::ParseFromKeyStringId(StringInternPool::StringID code_string_id,
+	EvaluableNodeManager *enm)
+{
+	if(code_string_id == string_intern_pool.NOT_A_STRING_ID)
+		return EvaluableNodeReference::Null();
+
+	std::string &code_string = code_string_id->string;
+	if(code_string.size() == 0 || code_string[0] != '\0')
+		return EvaluableNodeReference(enm->AllocNode(ENT_STRING, code_string_id), true);
+
+	std::string_view escaped_string(&code_string[1], code_string.size() - 1);
+	auto [node, warnings, char_with_error] = Parser::Parse(escaped_string, enm);
+	return node;
+}
+
 std::string Parser::UnparseToKeyString(EvaluableNode *tree)
 {
 	//if just a regular string, return it

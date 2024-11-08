@@ -238,7 +238,7 @@ std::string EvaluableNode::ToString(EvaluableNode *e, bool key_string)
 	if(e->GetType() == ENT_NUMBER)
 		return StringManipulation::NumberToString(e->GetNumberValueReference());
 
-	return Parser::Unparse(e, true, true, true);
+	return Parser::Unparse(e, false, true, true);
 }
 
 StringInternPool::StringID EvaluableNode::ToStringIDIfExists(EvaluableNode *e, bool key_string)

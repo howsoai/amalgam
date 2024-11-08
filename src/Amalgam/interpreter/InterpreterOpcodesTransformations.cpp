@@ -1036,7 +1036,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en,
 
 		auto &index_list_ocn = index_list->GetOrderedChildNodesReference();
 		index_list_ocn.reserve(container_mcn.size());
-		size_t index = 0;
 		for(auto &[node_id, _] : container_mcn)
 		{
 			EvaluableNodeReference key_node = Parser::ParseFromKeyStringId(node_id, evaluableNodeManager);

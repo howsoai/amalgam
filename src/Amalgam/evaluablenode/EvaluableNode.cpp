@@ -2007,7 +2007,7 @@ std::pair<bool, std::string> EvaluableNodeImmediateValueWithType::GetValueAsStri
 	}
 
 	if(nodeType == ENIVT_NUMBER)
-		return std::make_pair(true, EvaluableNode::NumberToString(nodeValue.number, true));
+		return std::make_pair(true, EvaluableNode::NumberToString(nodeValue.number, key_string));
 
 	if(nodeType == ENIVT_CODE && !EvaluableNode::IsNull(nodeValue.code))
 	{

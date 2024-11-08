@@ -655,6 +655,23 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 			if(cur_node == nullptr)
 				break;
 
+			//if key_node should be added to an associative array, but the node is nullptr, just add it
+			if(key_node != nullptr && cur_node->IsAssociativeArray())
+			{
+				if((key_node->GetType() == ENT_STRING || key_node->GetType() == ENT_SYMBOL)
+					&& !DoesStringNeedUnparsingToKey(key_node->GetStringValue()))
+				{
+					StringInternPool::StringID index_sid
+						= EvaluableNode::ToStringIDTakingReferenceAndClearing(key_node, true);
+					cur_node->SetMappedChildNodeWithReferenceHandoff(index_sid, nullptr, true);
+				}
+				else
+				{
+					std::string s = Parser::UnparseToKeyString(key_node);
+					cur_node->SetMappedChildNode(s, nullptr, true);
+				}
+			}
+
 			const auto &parent = parentNodes.find(cur_node);
 
 			//if no parent, then all finished
@@ -704,7 +721,6 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 					|| ((key_node->GetType() == ENT_STRING || key_node->GetType() == ENT_SYMBOL)
 						&& !DoesStringNeedUnparsingToKey(key_node->GetStringValue())))
 				{
-					//n is the id, so need to get the next token
 					StringInternPool::StringID index_sid
 						= EvaluableNode::ToStringIDTakingReferenceAndClearing(key_node, true);
 

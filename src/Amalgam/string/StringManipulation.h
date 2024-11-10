@@ -17,7 +17,7 @@ namespace StringManipulation
 	std::string RemoveFirstToken(std::string &str);
 
 	//splits a string by given delimiter
-	std::vector<std::string> Split(std::string &s, char delim = ' ');
+	std::vector<std::string> Split(const std::string &s, char delim = ' ');
 
 	//separates the argument string and returns an appropriate vector of strings
 	//if greedy is true, the returned vector contains the full list of arguments and arg_string is unmodified

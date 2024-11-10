@@ -193,13 +193,15 @@ EvaluableNode *EvaluableNodeTreeDifference::DifferenceTrees(EvaluableNodeManager
 			else
 			{
 				//build (get (current_value 1) ...)
-				EvaluableNode *retrieval = enm->AllocNode(ENT_GET);
+				EvaluableNodeReference retrieval(enm->AllocNode(ENT_GET), true);
 				replacement->SetMappedChildNode(cn_id, retrieval, true);
 				EvaluableNode *target = enm->AllocNode(ENT_CURRENT_VALUE);
 				target->AppendOrderedChildNode(enm->AllocNode(1.0));
 				retrieval->AppendOrderedChildNode(target);
 
-				retrieval->AppendOrderedChildNode(enm->AllocNode(ENT_STRING, cn_id));
+				EvaluableNodeReference key_node = Parser::ParseFromKeyStringId(cn_id, enm);
+				retrieval->AppendOrderedChildNode(key_node);
+				retrieval.UpdatePropertiesBasedOnAttachedNode(key_node);
 			}
 		}
 	}

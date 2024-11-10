@@ -178,7 +178,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STRING(EvaluableNode *en, 
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, bool immediate_result)
 {
-	StringInternPool::StringID sid = EvaluableNode::ToStringIDIfExists(en);
+	StringInternPool::StringID sid = en->GetStringIDReference();
 	if(sid == StringInternPool::NOT_A_STRING_ID)
 		return EvaluableNodeReference::Null();
 
@@ -611,7 +611,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 				EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_sort_keys, sort_keys);
 			}
 
-			string_value = Parser::Unparse(code_value, evaluableNodeManager, false, true, sort_keys);
+			string_value = Parser::Unparse(code_value, false, false, sort_keys);
 		}
 	}
 	else if(to_type == GetStringIdFromBuiltInStringId(ENBISI_Base16) || to_type == GetStringIdFromBuiltInStringId(ENBISI_Base64))
@@ -649,7 +649,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 
 		//if using code, just reuse string value
 		if(use_code)
-			string_value = Parser::Unparse(code_value, evaluableNodeManager, false);
+			string_value = Parser::Unparse(code_value, false, false, true);
 
 		if(to_type == GetStringIdFromBuiltInStringId(ENBISI_Base16))
 			string_value = StringManipulation::BinaryStringToBase16(string_value);
@@ -927,10 +927,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ALL_LABELS(EvaluableNo
 
 	auto [label_sids_to_nodes, _] = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTree(n);
 
-	string_intern_pool.CreateStringReferences(label_sids_to_nodes, [](auto it) { return it.first; });
 	result->ReserveMappedChildNodes(label_sids_to_nodes.size());
 	for(auto &[node_id, node] : label_sids_to_nodes)
-		result->SetMappedChildNodeWithReferenceHandoff(node_id, node);
+		result->SetMappedChildNode(node_id, node);
 
 	//can't guarantee there weren't any cycles if more than one label
 	if(label_sids_to_nodes.size() > 1)
@@ -1797,22 +1796,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en, b
 
 		std::string s;
 		if(cur == nullptr)
-		{
 			s = "(null)";
-		}
-		else if(IsEvaluableNodeTypeImmediate(cur->GetType()))
-		{
-			if(DoesEvaluableNodeTypeUseStringData(cur->GetType()))
-				s = cur->GetStringValue();
-			else if(DoesEvaluableNodeTypeUseNumberData(cur->GetType()))
-				s = EvaluableNode::NumberToString(cur->GetNumberValueReference());
-			else
-				s = EvaluableNode::ToStringPreservingOpcodeType(cur);
-		}
+		else if(DoesEvaluableNodeTypeUseStringData(cur->GetType()))
+			s = cur->GetStringValue();
+		else if(DoesEvaluableNodeTypeUseNumberData(cur->GetType()))
+			s = EvaluableNode::NumberToString(cur->GetNumberValueReference());
 		else
-		{
-			s = Parser::Unparse(cur, evaluableNodeManager, true, true, true);
-		}
+			s = Parser::Unparse(cur, true, true, true);
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(cur);
 

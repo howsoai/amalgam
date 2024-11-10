@@ -2,6 +2,7 @@
 
 //project headers:
 #include "EvaluableNode.h"
+#include "EvaluableNodeManagement.h"
 #include "EvaluableNodeTreeManipulation.h"
 #include "FastMath.h"
 
@@ -1086,8 +1087,9 @@ public:
 		: distEvaluator(nullptr)
 	{	}
 
-	inline RepeatedGeneralizedDistanceEvaluator(GeneralizedDistanceEvaluator *dist_evaluator)
-		: distEvaluator(dist_evaluator)
+	inline RepeatedGeneralizedDistanceEvaluator(GeneralizedDistanceEvaluator *dist_evaluator,
+		EvaluableNodeManager *enm)
+		: distEvaluator(dist_evaluator), evaluableNodeManager(enm)
 	{	}
 
 	//for the feature index, computes and stores the distance terms for nominal values
@@ -1443,4 +1445,7 @@ public:
 
 	//for each feature, precomputed distance terms for each interned value looked up by intern index
 	std::vector<FeatureData> featureData;
+
+	//node allocations in case unparsing is required
+	EvaluableNodeManager *evaluableNodeManager;
 };

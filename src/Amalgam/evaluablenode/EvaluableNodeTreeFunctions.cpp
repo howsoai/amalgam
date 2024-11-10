@@ -234,7 +234,7 @@ EvaluableNode *GetTraversalPathListFromAToB(EvaluableNodeManager *enm, Evaluable
 	if(a == nullptr || b == nullptr)
 		return nullptr;
 
-	EvaluableNode *path_list = enm->AllocNode(ENT_LIST);
+	EvaluableNodeReference path_list(enm->AllocNode(ENT_LIST), true);
 
 	//find a path from b back to a by way of parents
 	EvaluableNode::ReferenceSetType nodes_visited;
@@ -260,7 +260,9 @@ EvaluableNode *GetTraversalPathListFromAToB(EvaluableNodeManager *enm, Evaluable
 				}
 			}
 
-			path_list->AppendOrderedChildNode(enm->AllocNode(ENT_STRING, key_sid));
+			EvaluableNodeReference key_node = Parser::ParseFromKeyStringId(key_sid, enm);
+			path_list->AppendOrderedChildNode(key_node);
+			path_list.UpdatePropertiesBasedOnAttachedNode(key_node);
 		}
 		else if(b_ancestor_parent->IsOrderedArray())
 		{
@@ -333,7 +335,7 @@ EvaluableNode **GetRelativeEvaluableNodeFromTraversalPathList(EvaluableNode **so
 				if(!addr_empty)
 				{
 					//string must already exist if can't create anything
-					key_sid = EvaluableNode::ToStringIDIfExists(addr);
+					key_sid = EvaluableNode::ToStringIDIfExists(addr, true);
 					if(key_sid == StringInternPool::NOT_A_STRING_ID)
 					{
 						destination = nullptr;
@@ -353,7 +355,7 @@ EvaluableNode **GetRelativeEvaluableNodeFromTraversalPathList(EvaluableNode **so
 			}
 			else //create entry if it doesn't exist
 			{
-				auto key_sid = EvaluableNode::ToStringIDWithReference(addr);
+				auto key_sid = EvaluableNode::ToStringIDWithReference(addr, true);
 
 				//attempt to insert the new key
 				auto [inserted_key, inserted] = mcn.insert(std::make_pair(key_sid, nullptr));
@@ -466,7 +468,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 				auto &vvn_ocn = variable_value_node->GetOrderedChildNodes();
 				for(size_t i = 0; i + 1 < vvn_ocn.size(); i += 2)
 				{
-					StringInternPool::StringID key_sid = EvaluableNode::ToStringIDWithReference(vvn_ocn[i]);
+					StringInternPool::StringID key_sid = EvaluableNode::ToStringIDWithReference(vvn_ocn[i], true);
 					value_destination_node->SetMappedChildNodeWithReferenceHandoff(key_sid, vvn_ocn[i + 1]);
 				}
 			}
@@ -479,14 +481,12 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 		}
 		else if(value_destination_node->GetType() == ENT_STRING)
 		{
-			auto [cur_value_valid, cur_value] = EvaluableNode::ToString(value_destination_node);
-			auto [inc_value_valid, inc_value] = EvaluableNode::ToString(variable_value_node);
-
-			//string will default to invalid value -- only set if both strings are valid
-			if(cur_value_valid && inc_value_valid)
+			//concatenate a string only if it is a valid string
+			if(variable_value_node != nullptr && variable_value_node->GetType() == ENT_STRING)
 			{
 				value_destination_node->SetType(ENT_STRING, nullptr, false);
-				value_destination_node->SetStringValue(cur_value.append(inc_value));
+				std::string result = value_destination_node->GetStringValue() + variable_value_node->GetStringValue();
+				value_destination_node->SetStringValue(result);
 			}
 			else
 			{
@@ -505,8 +505,10 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 				
 				for(auto &[cn_id, cn] : variable_value_node->GetMappedChildNodesReference())
 				{
-					value_destination_node->AppendOrderedChildNode(enm->AllocNode(ENT_STRING, cn_id));
+					EvaluableNodeReference key_node = Parser::ParseFromKeyStringId(cn_id, enm);
+					value_destination_node->AppendOrderedChildNode(key_node);
 					value_destination_node->AppendOrderedChildNode(cn);
+					value_destination_node.UpdatePropertiesBasedOnAttachedNode(key_node);
 				}
 
 				enm->FreeNodeIfPossible(variable_value_node);
@@ -553,7 +555,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 			auto &vvn_ocn = variable_value_node->GetOrderedChildNodes();
 			for(size_t i = 0; i + 1 < vvn_ocn.size(); i += 2)
 			{
-				StringInternPool::StringID key_sid = EvaluableNode::ToStringIDWithReference(vvn_ocn[i]);
+				StringInternPool::StringID key_sid = EvaluableNode::ToStringIDWithReference(vvn_ocn[i], true);
 				new_list->SetMappedChildNodeWithReferenceHandoff(key_sid, vvn_ocn[i + 1]);
 			}
 		}
@@ -566,18 +568,22 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 	}
 	else if(value_destination_node->GetType() == ENT_STRING)
 	{
-		auto [cur_value_valid, cur_value] = EvaluableNode::ToString(value_destination_node);
-		auto [inc_value_valid, inc_value] = EvaluableNode::ToString(variable_value_node);
-
-		//string will default to invalid value -- only set if both strings are valid
-		if(cur_value_valid && inc_value_valid)
-			value_destination_node.SetReference(enm->AllocNode(ENT_STRING, cur_value.append(inc_value)), true);
+		//concatenate a string only if it is a valid string
+		if(variable_value_node != nullptr && variable_value_node->GetType() == ENT_STRING)
+		{
+			value_destination_node->SetType(ENT_STRING, nullptr, false);
+			std::string result = value_destination_node->GetStringValue() + variable_value_node->GetStringValue();
+			value_destination_node->SetStringValue(result);
+			value_destination_node.SetReference(enm->AllocNode(ENT_STRING, result), true);
+		}
 		else
+		{
 			value_destination_node.SetReference(enm->AllocNode(ENT_NULL), true);
+		}
 	}
 	else //add ordered child node
 	{
-		EvaluableNode *new_list = enm->AllocNode(value_destination_node);
+		EvaluableNodeReference new_list(enm->AllocNode(value_destination_node), true);
 		if(EvaluableNode::IsAssociativeArray(variable_value_node))
 		{
 			auto &vvn_mcn = variable_value_node->GetMappedChildNodesReference();
@@ -585,8 +591,10 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 			new_list->ReserveOrderedChildNodes(value_destination_node->GetOrderedChildNodes().size() + 2 * vvn_mcn.size());
 			for(auto &[cn_id, cn] : vvn_mcn)
 			{
-				new_list->AppendOrderedChildNode(enm->AllocNode(ENT_STRING, cn_id));
+				EvaluableNodeReference key_node = Parser::ParseFromKeyStringId(cn_id, enm);
+				new_list->AppendOrderedChildNode(key_node);
 				new_list->AppendOrderedChildNode(cn);
+				new_list.UpdatePropertiesBasedOnAttachedNode(key_node);
 			}
 
 			enm->FreeNodeIfPossible(variable_value_node);

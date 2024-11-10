@@ -259,7 +259,7 @@ public:
 	//Returns the code for the Entity in string form
 	inline std::string GetCodeAsString()
 	{
-		return Parser::Unparse(evaluableNodeManager.GetRootNode(), &evaluableNodeManager);
+		return Parser::Unparse(evaluableNodeManager.GetRootNode());
 	}
 
 	//Returns the root of the entity

@@ -127,9 +127,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 			//and because iterators may be invalidated when the map is changed
 			auto &result_mcn = result->GetMappedChildNodesReference();
 			result_mcn.reserve(num_nodes);
-			string_intern_pool.CreateStringReferences(list_mcn, [](auto it) { return it.first; });
 			for(auto &[sid, cn] : list_mcn)
-				result_mcn.emplace(sid, nullptr);
+				result_mcn.emplace(string_intern_pool.CreateStringReference(sid), nullptr);
 
 		#ifdef MULTITHREAD_SUPPORT
 			if(en->GetConcurrency() && num_nodes > 1)
@@ -287,7 +286,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 					}
 					else if(inputs[i]->IsAssociativeArray())
 					{
-						const std::string index_string = EvaluableNode::NumberToString(index);
+						const std::string index_string = EvaluableNode::NumberToString(index, true);
 						EvaluableNode **found = inputs[i]->GetMappedChildNode(index_string);
 						if(found != nullptr)
 							is_ocn[i] = *found;
@@ -301,7 +300,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 				SetTopCurrentValueInConstructionStack(input_slice);
 
 				EvaluableNodeReference element_result = InterpretNode(function);
-				std::string index_string = EvaluableNode::NumberToString(index);
+				std::string index_string = EvaluableNode::NumberToString(index, true);
 				result->SetMappedChildNode(index_string, element_result);
 
 				result.UpdatePropertiesBasedOnAttachedNode(element_result);
@@ -1033,15 +1032,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en,
 	if(container->IsAssociativeArray())
 	{
 		auto &container_mcn = container->GetMappedChildNodesReference();
-		index_list.SetReference(evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_STRING, container_mcn.size()));
-
-		//create all the string references at once for speed (especially multithreading)
-		string_intern_pool.CreateStringReferences(container_mcn, [](auto n) { return n.first; });
+		index_list.SetReference(evaluableNodeManager->AllocNode(ENT_LIST));
 
 		auto &index_list_ocn = index_list->GetOrderedChildNodesReference();
-		size_t index = 0;
+		index_list_ocn.reserve(container_mcn.size());
 		for(auto &[node_id, _] : container_mcn)
-			index_list_ocn[index++]->SetTypeViaStringIdValueWithReferenceHandoff(node_id);
+		{
+			EvaluableNodeReference key_node = Parser::ParseFromKeyStringId(node_id, evaluableNodeManager);
+			index_list_ocn.push_back(key_node);
+			index_list.UpdatePropertiesBasedOnAttachedNode(key_node);
+		}
 	}
 	else if(container->IsOrderedArray())
 	{
@@ -1128,7 +1128,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 			{
 				for(auto &n : container->GetOrderedChildNodesReference())
 				{
-					std::string str_value = Parser::Unparse(n, evaluableNodeManager, false, false, true);
+					std::string str_value = Parser::UnparseToKeyString(n);
 					if(values_in_existence.emplace(str_value).second)
 						result->AppendOrderedChildNode(n);
 				}
@@ -1137,7 +1137,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 			{
 				for(auto &[_, cn] : container->GetMappedChildNodesReference())
 				{
-					std::string str_value = Parser::Unparse(cn, evaluableNodeManager, false, false, true);
+					std::string str_value = Parser::UnparseToKeyString(cn);
 					if(values_in_existence.emplace(str_value).second)
 						result->AppendOrderedChildNode(cn);
 				}
@@ -1223,7 +1223,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 		//compute regular expression
 		auto &s = container->GetStringValue();
 
-		std::string value_as_str = EvaluableNode::ToStringPreservingOpcodeType(value);
+		std::string value_as_str = EvaluableNode::ToString(value);
 
 		//use nosubs to prevent unnecessary memory allocations since this is just matching
 		std::regex rx;
@@ -1271,7 +1271,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 	{
 		if(container->IsAssociativeArray())
 		{
-			StringInternPool::StringID key_sid = indices.GetValue().GetValueAsStringIDIfExists();
+			StringInternPool::StringID key_sid = indices.GetValue().GetValueAsStringIDIfExists(true);
 			removed_node.SetReference(container->EraseMappedChildNode(key_sid));
 		}
 		else if(container->IsOrderedArray())
@@ -1304,7 +1304,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 		{
 			for(auto &cn : indices_ocn)
 			{
-				StringInternPool::StringID key_sid = EvaluableNode::ToStringIDIfExists(cn);
+				StringInternPool::StringID key_sid = EvaluableNode::ToStringIDIfExists(cn, true);
 				removed_node.SetReference(container->EraseMappedChildNode(key_sid));
 				evaluableNodeManager->FreeNodeTreeIfPossible(removed_node);
 			}
@@ -1378,7 +1378,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, bo
 	{
 		if(container->IsAssociativeArray())
 		{
-			StringInternPool::StringID key_sid = indices.GetValue().GetValueAsStringIDWithReference();
+			StringInternPool::StringID key_sid = indices.GetValue().GetValueAsStringIDWithReference(true);
 			auto &container_mcn = container->GetMappedChildNodesReference();
 		
 			//find what should be kept, or clear key_sid if not found
@@ -1449,7 +1449,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, bo
 
 			for(auto &cn : indices_ocn)
 			{
-				StringInternPool::StringID key_sid = EvaluableNode::ToStringIDIfExists(cn);
+				StringInternPool::StringID key_sid = EvaluableNode::ToStringIDIfExists(cn, true);
 
 				//if found, move it over to the new container
 				auto found_to_keep = container_mcn.find(key_sid);
@@ -1600,7 +1600,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 		for(size_t i = 0; i < num_nodes; i += 2)
 		{
 			//get key
-			StringInternPool::StringID key_sid = InterpretNodeIntoStringIDValueWithReference(ocn[i]);
+			StringInternPool::StringID key_sid = InterpretNodeIntoStringIDValueWithReference(ocn[i], true);
 
 			SetTopCurrentIndexInConstructionStack(key_sid);
 
@@ -1695,9 +1695,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, boo
 		//obtain the index, reusing the sid reference if possible
 		StringInternPool::StringID index_sid = string_intern_pool.emptyStringId;
 		if(index_list.unique)
-			index_sid = EvaluableNode::ToStringIDTakingReferenceAndClearing(index);
+			index_sid = EvaluableNode::ToStringIDTakingReferenceAndClearing(index, false, true);
 		else
-			index_sid = EvaluableNode::ToStringIDWithReference(index);
+			index_sid = EvaluableNode::ToStringIDWithReference(index, true);
 
 		//get value
 		EvaluableNode *value = nullptr;
@@ -1782,7 +1782,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, b
 	{
 		for(auto &index : index_list_ocn)
 		{
-			StringInternPool::StringID index_sid = EvaluableNode::ToStringIDIfExists(index);
+			StringInternPool::StringID index_sid = EvaluableNode::ToStringIDIfExists(index, true);
 
 			EvaluableNode **found = zipped->GetMappedChildNode(index_sid);
 			if(found != nullptr)

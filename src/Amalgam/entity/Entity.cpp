@@ -222,7 +222,7 @@ bool Entity::GetValueAtLabelAsString(StringInternPool::StringID label_sid, std::
 		return false;
 	}
 
-	value_out = Parser::Unparse(label->second, &evaluableNodeManager, false, false);
+	value_out = Parser::Unparse(label->second, false, false, true);
 	return true;
 }
 
@@ -894,7 +894,7 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, Evalu
 	{
 		if(write_listeners->size() > 0)
 		{
-			std::string new_code_string = Parser::Unparse(evaluableNodeManager.GetRootNode(), &evaluableNodeManager);
+			std::string new_code_string = Parser::Unparse(evaluableNodeManager.GetRootNode(), false, true);
 
 			for(auto &wl : *write_listeners)
 				wl->LogWriteToEntity(this, new_code_string);
@@ -950,18 +950,14 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 	if(new_root != previous_root)
 		evaluableNodeManager.SetRootNode(new_root);
 
-	//optimistically create references for the new labels, delete them if find collisions
-	string_intern_pool.CreateStringReferences(new_labels, [](auto l) { return l.first; });
-
 	//attempt to insert the new labels as long as there's no collision
 	for(auto &[label, value] : new_labels)
 	{
 		auto [new_entry, inserted] = labelIndex.emplace(label, value);
-		if(!inserted)
-		{
-			string_intern_pool.DestroyStringReference(label);
+		if(inserted)
+			string_intern_pool.CreateStringReference(label);
+		else
 			no_label_collisions = false;
-		}
 	}
 
 	EntityQueryCaches *container_caches = GetContainerQueryCaches();
@@ -999,7 +995,7 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 	{
 		if(write_listeners->size() > 0)
 		{
-			std::string new_code_string = Parser::Unparse(new_root, &evaluableNodeManager);
+			std::string new_code_string = Parser::Unparse(new_root, false, true);
 
 			for(auto &wl : *write_listeners)
 				wl->LogWriteToEntity(this, new_code_string);

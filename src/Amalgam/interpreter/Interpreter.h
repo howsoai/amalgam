@@ -527,13 +527,13 @@ public:
 
 	//Calls InterpretNode on n, converts to std::string and stores in value to return, then cleans up any resources used
 	//returns a pair of bool, whether it was a valid string (and not NaS), and the string
-	std::pair<bool, std::string> InterpretNodeIntoStringValue(EvaluableNode *n);
+	std::pair<bool, std::string> InterpretNodeIntoStringValue(EvaluableNode *n, bool key_string = false);
 
 	//Calls InterpretNode on n, converts to std::string and stores in value to return, then cleans up any resources used
 	// but if n is null, it will return an empty string
-	inline std::string InterpretNodeIntoStringValueEmptyNull(EvaluableNode *n)
+	inline std::string InterpretNodeIntoStringValueEmptyNull(EvaluableNode *n, bool key_string = false)
 	{
-		auto [valid, str] = InterpretNodeIntoStringValue(n);
+		auto [valid, str] = InterpretNodeIntoStringValue(n, key_string);
 		if(!valid)
 			return "";
 		return str;
@@ -541,11 +541,11 @@ public:
 
 	//like InterpretNodeIntoStringValue, but returns the ID only if the string already exists,
 	// otherwise it returns NOT_A_STRING_ID
-	StringInternPool::StringID InterpretNodeIntoStringIDValueIfExists(EvaluableNode *n);
+	StringInternPool::StringID InterpretNodeIntoStringIDValueIfExists(EvaluableNode *n, bool key_string = false);
 
 	//like InterpretNodeIntoStringValue, but creates a reference to the string that must be destroyed,
 	// regardless of whether the string existed or not (if it did not exist, then it creates one)
-	StringInternPool::StringID InterpretNodeIntoStringIDValueWithReference(EvaluableNode *n);
+	StringInternPool::StringID InterpretNodeIntoStringIDValueWithReference(EvaluableNode *n, bool key_string = false);
 
 	//Calls InterpretNode on n, convers to a string, and makes sure that the node returned is
 	// new and unique so that it can be modified

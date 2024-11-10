@@ -523,7 +523,7 @@ EvaluableNode *Interpreter::GetCurrentCallStackContext()
 	return callStackNodes->back();
 }
 
-std::pair<bool, std::string> Interpreter::InterpretNodeIntoStringValue(EvaluableNode *n)
+std::pair<bool, std::string> Interpreter::InterpretNodeIntoStringValue(EvaluableNode *n, bool key_string)
 {
 	if(EvaluableNode::IsNull(n))
 		return std::make_pair(false, "");
@@ -535,13 +535,13 @@ std::pair<bool, std::string> Interpreter::InterpretNodeIntoStringValue(Evaluable
 	auto result = InterpretNodeForImmediateUse(n, true);
 	auto &result_value = result.GetValue();
 
-	auto [valid, str] = result_value.GetValueAsString();
+	auto [valid, str] = result_value.GetValueAsString(key_string);
 	evaluableNodeManager->FreeNodeTreeIfPossible(result);
 
 	return std::make_pair(valid, str);
 }
 
-StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueIfExists(EvaluableNode *n)
+StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueIfExists(EvaluableNode *n, bool key_string)
 {
 	//shortcut if the node has what is being asked
 	if(n != nullptr && n->GetType() == ENT_STRING)
@@ -550,13 +550,13 @@ StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueIfExists(E
 	auto result = InterpretNodeForImmediateUse(n, true);
 	auto &result_value = result.GetValue();
 
-	auto sid = result_value.GetValueAsStringIDIfExists();
+	auto sid = result_value.GetValueAsStringIDIfExists(key_string);
 	//ID already exists outside of this, so not expecting to keep this reference
 	evaluableNodeManager->FreeNodeTreeIfPossible(result);
 	return sid;
 }
 
-StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueWithReference(EvaluableNode *n)
+StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueWithReference(EvaluableNode *n, bool key_string)
 {
 	//shortcut if the node has what is being asked
 	if(n != nullptr && n->GetType() == ENT_STRING)
@@ -573,7 +573,7 @@ StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueWithRefere
 			return result_value.nodeValue.stringID;
 
 		//create new reference
-		return result_value.GetValueAsStringIDWithReference();
+		return result_value.GetValueAsStringIDWithReference(key_string);
 	}
 	else //not immediate
 	{
@@ -584,14 +584,14 @@ StringInternPool::StringID Interpreter::InterpretNodeIntoStringIDValueWithRefere
 			if(result != nullptr && result->GetType() == ENT_STRING)
 				result_sid = result->GetAndClearStringIDWithReference();
 			else
-				result_sid = EvaluableNode::ToStringIDWithReference(result);
+				result_sid = EvaluableNode::ToStringIDWithReference(result, key_string);
 
 			evaluableNodeManager->FreeNodeTree(result);
 			return result_sid;
 		}
 		else //not unique, so can't free
 		{
-			return EvaluableNode::ToStringIDWithReference(result);
+			return EvaluableNode::ToStringIDWithReference(result, key_string);
 		}
 	}
 }

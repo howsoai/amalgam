@@ -4,7 +4,7 @@
 
 StringInternPool string_intern_pool;
 
-static inline void EmplaceStaticString(EvaluableNodeBuiltInStringId bisid, const char *str)
+static inline void EmplaceStaticString(EvaluableNodeBuiltInStringId bisid, std::string str)
 {
 	auto sid = string_intern_pool.CreateStringReference(str);
 	string_intern_pool.staticStringsIndexToStringID[bisid] = sid;
@@ -306,7 +306,26 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_neg_infinity, "-.infinity");
 	EmplaceStaticString(ENBISI_zero, "0");
 	EmplaceStaticString(ENBISI_one, "1");
+	EmplaceStaticString(ENBISI_two, "2");
+	EmplaceStaticString(ENBISI_three, "3");
+	EmplaceStaticString(ENBISI_four, "4");
+	EmplaceStaticString(ENBISI_five, "5");
+	EmplaceStaticString(ENBISI_six, "6");
+	EmplaceStaticString(ENBISI_seven, "7");
+	EmplaceStaticString(ENBISI_eight, "8");
+	EmplaceStaticString(ENBISI_nine, "9");
 	EmplaceStaticString(ENBISI_neg_one, "-1");
+	EmplaceStaticString(ENBISI_zero_number_key, std::string("\0" "0", 2));
+	EmplaceStaticString(ENBISI_one_number_key, std::string("\0" "1", 2));
+	EmplaceStaticString(ENBISI_two_number_key, std::string("\0" "2", 2));
+	EmplaceStaticString(ENBISI_three_number_key, std::string("\0" "3", 2));
+	EmplaceStaticString(ENBISI_four_number_key, std::string("\0" "4", 2));
+	EmplaceStaticString(ENBISI_five_number_key, std::string("\0" "5", 2));
+	EmplaceStaticString(ENBISI_six_number_key, std::string("\0" "6", 2));
+	EmplaceStaticString(ENBISI_seven_number_key, std::string("\0" "7", 2));
+	EmplaceStaticString(ENBISI_eight_number_key, std::string("\0" "8", 2));
+	EmplaceStaticString(ENBISI_nine_number_key, std::string("\0" "9", 2));
+	EmplaceStaticString(ENBISI_neg_one_number_key, std::string("\0" "-1", 3));
 	EmplaceStaticString(ENBISI_empty_null, "(null)");
 	EmplaceStaticString(ENBISI_empty_list, "(list)");
 	EmplaceStaticString(ENBISI_empty_assoc, "(assoc)");

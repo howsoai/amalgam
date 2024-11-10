@@ -470,7 +470,7 @@ namespace EntityQueryBuilder
 		//set random seed
 		cur_condition->hasRandomStream = (ocn.size() > RANDOM_SEED && !EvaluableNode::IsNull(ocn[RANDOM_SEED]));
 		if(cur_condition->hasRandomStream)
-			cur_condition->randomStream.SetState(EvaluableNode::ToStringPreservingOpcodeType(ocn[RANDOM_SEED]));
+			cur_condition->randomStream.SetState(EvaluableNode::ToString(ocn[RANDOM_SEED]));
 		else
 			cur_condition->randomStream = rs.CreateOtherStreamViaRand();
 
@@ -667,7 +667,7 @@ namespace EntityQueryBuilder
 
 				cur_condition->hasRandomStream = (ocn.size() >= 3 && !EvaluableNode::IsNull(ocn[2]));
 				if(cur_condition->hasRandomStream)
-					cur_condition->randomStream.SetState(EvaluableNode::ToStringPreservingOpcodeType(ocn[2]));
+					cur_condition->randomStream.SetState(EvaluableNode::ToString(ocn[2]));
 				else
 					cur_condition->randomStream = rs.CreateOtherStreamViaRand();
 
@@ -678,7 +678,7 @@ namespace EntityQueryBuilder
 				cur_condition->maxToRetrieve = (ocn.size() > 0) ? EvaluableNode::ToNumber(ocn[0], 0.0) : 1;
 				cur_condition->hasRandomStream = (ocn.size() > 1 && !EvaluableNode::IsNull(ocn[1]));
 				if(cur_condition->hasRandomStream)
-					cur_condition->randomStream.SetState(EvaluableNode::ToStringPreservingOpcodeType(ocn[1]));
+					cur_condition->randomStream.SetState(EvaluableNode::ToString(ocn[1]));
 				else
 					cur_condition->randomStream = rs.CreateOtherStreamViaRand();
 			    break;
@@ -689,7 +689,7 @@ namespace EntityQueryBuilder
 				cur_condition->maxToRetrieve = (ocn.size() > 1) ? EvaluableNode::ToNumber(ocn[1], 0.0) : 1;
 				cur_condition->hasRandomStream = (ocn.size() > 2 && !EvaluableNode::IsNull(ocn[2]));
 				if(cur_condition->hasRandomStream)
-					cur_condition->randomStream.SetState(EvaluableNode::ToStringPreservingOpcodeType(ocn[2]));
+					cur_condition->randomStream.SetState(EvaluableNode::ToString(ocn[2]));
 				else
 					cur_condition->randomStream = rs.CreateOtherStreamViaRand();
 				break;

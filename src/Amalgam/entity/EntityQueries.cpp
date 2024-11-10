@@ -462,9 +462,8 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 
 			//get values
 			auto &exist_labels = existLabels;
-			string_intern_pool.CreateStringReferences(exist_labels);
 			for(auto label_sid : exist_labels)
-				entity_values->SetMappedChildNodeWithReferenceHandoff(label_sid, matching_entities[i]->GetValueAtLabel(label_sid, enm, false));
+				entity_values->SetMappedChildNode(label_sid, matching_entities[i]->GetValueAtLabel(label_sid, enm, false));
 		}
 
 		return EvaluableNodeReference(query_return, true);
@@ -646,7 +645,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 			std::string string_value;
 			for(auto &[value, weight] : value_weights)
 			{
-				string_value = EvaluableNode::NumberToString(value);
+				string_value = EvaluableNode::NumberToString(value, true);
 				assoc->SetMappedChildNode(string_value, enm->AllocNode(weight));
 			}
 

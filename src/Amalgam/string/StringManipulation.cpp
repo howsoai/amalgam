@@ -125,7 +125,7 @@ std::vector<std::string> StringManipulation::SplitArgString(std::string &arg_str
 	return args;
 }
 
-std::vector<std::string> StringManipulation::Split(std::string &s, char delim)
+std::vector<std::string> StringManipulation::Split(const std::string &s, char delim)
 {
 	std::vector<std::string> ret;
 	std::stringstream ss { s };

@@ -99,7 +99,7 @@ std::pair<std::string, std::string> StringifyNode(EvaluableNode *en, EvaluableNo
 	//if no comments, then can just print
 	if(en == nullptr || en->GetCommentsStringId() == string_intern_pool.NOT_A_STRING_ID)
 	{
-		std::string code_str = Parser::Unparse(en, enm, false, true, true);
+		std::string code_str = Parser::Unparse(en, false, true, true);
 		ClampSingleLineStringLength(code_str, max_num_chars);
 		return std::make_pair(std::string(), code_str);
 	}
@@ -118,7 +118,7 @@ std::pair<std::string, std::string> StringifyNode(EvaluableNode *en, EvaluableNo
 		//append with code
 		EvaluableNode en_without_comment(en);
 		en_without_comment.ClearComments();
-		std::string code_str = Parser::Unparse(&en_without_comment, enm, false, true, true);
+		std::string code_str = Parser::Unparse(&en_without_comment, false, true, true);
 		ClampSingleLineStringLength(code_str, max_num_chars);
 
 		return std::make_pair(comment_str, code_str);
@@ -518,12 +518,12 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, bool 
 				if(value_exists)
 				{
 					if(command == "p")
-						std::cout << Parser::Unparse(node, evaluableNodeManager, true, true, true) << std::endl;
+						std::cout << Parser::Unparse(node, true, true, true) << std::endl;
 					else if(command == "pv")
-						std::cout << Parser::Unparse(node, evaluableNodeManager, true, false, true) << std::endl;
+						std::cout << Parser::Unparse(node, true, false, true) << std::endl;
 					else if(command == "pp")
 					{
-						std::string var_preview = Parser::Unparse(node, evaluableNodeManager, true, false, true);
+						std::string var_preview = Parser::Unparse(node, true, false, true);
 						if(var_preview.size() > 1023)
 							var_preview.resize(1023);
 						std::cout << var_preview << std::endl;
@@ -539,7 +539,7 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, bool 
 				std::cerr << w << std::endl;
 
 			EvaluableNodeReference result = InterpretNodeForImmediateUse(node);
-			std::cout << Parser::Unparse(result, evaluableNodeManager, true, true, true) << std::endl;
+			std::cout << Parser::Unparse(result, true, true, true) << std::endl;
 			SetDebuggingState(true);
 		}
 		else if(command == "validate")

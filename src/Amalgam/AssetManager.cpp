@@ -277,7 +277,7 @@ bool AssetManager::StoreResource(EvaluableNode *code, AssetParameters &asset_par
 		if(!outf.good())
 			return false;
 
-		std::string code_string = Parser::Unparse(code, enm, asset_params.prettyPrint, true, asset_params.sortKeys);
+		std::string code_string = Parser::Unparse(code, asset_params.prettyPrint, true, asset_params.sortKeys);
 		outf.write(code_string.c_str(), code_string.size());
 		outf.close();
 
@@ -297,7 +297,7 @@ bool AssetManager::StoreResource(EvaluableNode *code, AssetParameters &asset_par
 	}
 	else if(asset_params.resourceType == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 	{
-		std::string code_string = Parser::Unparse(code, enm, asset_params.prettyPrint, true, asset_params.sortKeys);
+		std::string code_string = Parser::Unparse(code, asset_params.prettyPrint, true, asset_params.sortKeys);
 
 		//transform into format needed for compression
 		CompactHashMap<std::string, size_t> string_map;
@@ -309,7 +309,10 @@ bool AssetManager::StoreResource(EvaluableNode *code, AssetParameters &asset_par
 	}
 	else //binary string
 	{
-		std::string s = EvaluableNode::ToStringPreservingOpcodeType(code);
+		if(code == nullptr || code->GetType() != ENT_STRING)
+			return false;
+
+		const std::string &s = code->GetStringValue();
 		return StoreFileFromBuffer<std::string>(asset_params.resource, asset_params.resourceType, s);
 	}
 
@@ -337,6 +340,7 @@ Entity *AssetManager::LoadEntityFromResource(AssetParameters &asset_params, bool
 	}
 
 	EvaluableNodeReference code = LoadResource(asset_params, &new_entity->evaluableNodeManager, status);
+
 	if(!status.loaded)
 	{
 		delete new_entity;
@@ -373,25 +377,22 @@ Entity *AssetManager::LoadEntityFromResource(AssetParameters &asset_params, bool
 			if(EvaluableNode::IsAssociativeArray(metadata))
 			{
 				EvaluableNode **seed = metadata->GetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_rand_seed));
-				if(seed != nullptr)
+				if(seed != nullptr && (*seed)->GetType() == ENT_STRING)
 				{
-					default_random_seed = EvaluableNode::ToStringPreservingOpcodeType(*seed);
+					default_random_seed = (*seed)->GetStringValue();
 					new_entity->SetRandomState(default_random_seed, true);
 				}
 
 				EvaluableNode **version = metadata->GetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_version));
-				if(version != nullptr)
+				if(version != nullptr && (*version)->GetType() == ENT_STRING)
 				{
-					auto [to_str_success, version_str] = EvaluableNode::ToString(*version);
-					if(to_str_success)
+					const std::string &version_str = (*version)->GetStringValue();
+					auto [error_message, success] = AssetManager::ValidateVersionAgainstAmalgam(version_str);
+					if(!success)
 					{
-						auto [error_message, success] = AssetManager::ValidateVersionAgainstAmalgam(version_str);
-						if(!success)
-						{
-							status.SetStatus(false, error_message, version_str);
-							delete new_entity;
-							return nullptr;
-						}
+						status.SetStatus(false, error_message, version_str);
+						delete new_entity;
+						return nullptr;
 					}
 				}
 			}
@@ -486,7 +487,7 @@ void AssetManager::SetRootPermission(Entity *entity, bool permission)
 		rootEntities.erase(entity);
 }
 
-std::pair<std::string, bool> AssetManager::ValidateVersionAgainstAmalgam(std::string &version)
+std::pair<std::string, bool> AssetManager::ValidateVersionAgainstAmalgam(const std::string &version)
 {
 	auto sem_ver = StringManipulation::Split(version, '-'); //split on postfix
 	auto version_split = StringManipulation::Split(sem_ver[0], '.'); //ignore postfix

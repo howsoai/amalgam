@@ -362,31 +362,26 @@ public:
 	}
 
 	//Converts a number to a string in a consistent way that should be used for anything dealing with EvaluableNode
-	static __forceinline std::string NumberToString(double value)
-	{
-		return StringManipulation::NumberToString(value);
-	}
+	static std::string NumberToString(double value, bool key_string = false);
+	static std::string NumberToString(size_t value, bool key_string = false);
 
-	static __forceinline std::string NumberToString(size_t value)
-	{
-		return StringManipulation::NumberToString(value);
-	}
-
-	//converts the node to a string that represents the opcode
-	const static std::string ToStringPreservingOpcodeType(EvaluableNode *e);
-
-	//converts the node to a string, returning true if valid.  If it doesn't exist or it's null, it returns false
-	static std::pair<bool, std::string> ToString(EvaluableNode *e);
+	//converts the node to a key string that can be used in assocs
+	//if key_string is true, then it will generate a string used for comparing in assoc keys
+	static std::string ToString(EvaluableNode *e, bool key_string = false);
 
 	//converts node to an existing string. If it doesn't exist or it's null, it returns NOT_A_STRING_ID
-	static StringInternPool::StringID ToStringIDIfExists(EvaluableNode *e);
+	//if key_string is true, then it will generate a string used for comparing in assoc keys
+	static StringInternPool::StringID ToStringIDIfExists(EvaluableNode *e, bool key_string = false);
 
 	//converts node to a string. Creates a reference to the string that must be destroyed, regardless of whether the string existed or not (if it did not exist, then it creates one)
-	static StringInternPool::StringID ToStringIDWithReference(EvaluableNode *e);
+	//if key_string is true, then it will generate a string used for comparing in assoc keys
+	static StringInternPool::StringID ToStringIDWithReference(EvaluableNode *e, bool key_string = false);
 
 	//converts node to a string. Creates a reference to the string that must be destroyed, regardless of whether the string existed or not
 	// if e is a string, it will clear it and hand the reference to the caller
-	static StringInternPool::StringID ToStringIDTakingReferenceAndClearing(EvaluableNode *e);
+	//if include_symbol is true, then it will also apply to ENT_SYMBOL
+	//if key_string is true, then it will generate a string used for comparing in assoc keys
+	static StringInternPool::StringID ToStringIDTakingReferenceAndClearing(EvaluableNode *e, bool include_symbol = false, bool key_string = false);
 
 	//returns the comments as a new string
 	static inline StringInternPool::StringID GetCommentsStringId(EvaluableNode *e)
@@ -484,6 +479,20 @@ public:
 		{
 			SetType(ENT_NUMBER, nullptr, false);
 			GetNumberValueReference() = v;
+		}
+	}
+
+	//changes the type by setting it to the string id value specified
+	inline void SetTypeViaStringIdValue(StringInternPool::StringID v)
+	{
+		if(v == string_intern_pool.NOT_A_STRING_ID)
+		{
+			SetType(ENT_NULL, nullptr, false);
+		}
+		else
+		{
+			SetType(ENT_STRING, nullptr, false);
+			GetStringIDReference() = string_intern_pool.CreateStringReference(v);
 		}
 	}
 
@@ -770,6 +779,8 @@ public:
 	EvaluableNode *EraseMappedChildNode(const StringInternPool::StringID sid);
 	void AppendMappedChildNodes(AssocType &mcn_to_append);
 
+	//helper function to obtain a typed value from mapped child nodes
+	//note that it can only be used on string key lookups, no code or numeric keys
 	template<typename T>
 	static void GetValueFromMappedChildNodesReference(EvaluableNode::AssocType &mcn, EvaluableNodeBuiltInStringId key, T &value)
 	{
@@ -781,7 +792,7 @@ public:
 			else if constexpr(std::is_same<T, double>::value)
 				value = EvaluableNode::ToNumber(found_value->second);
 			else if constexpr(std::is_same<T, std::string>::value)
-				value = EvaluableNode::ToStringPreservingOpcodeType(found_value->second);
+				value = EvaluableNode::ToString(found_value->second);
 			else
 				value = found_value->second;
 		}
@@ -1203,147 +1214,17 @@ public:
 	}
 
 	//copies the value from en and returns the EvaluableNodeConcreteValueType
-	void CopyValueFromEvaluableNode(EvaluableNode *en)
-	{
-		if(en == nullptr)
-		{
-			nodeType = ENIVT_NULL;
-			nodeValue = EvaluableNodeImmediateValue(std::numeric_limits<double>::quiet_NaN());
-			return;
-		}
+	void CopyValueFromEvaluableNode(EvaluableNode *en);
 
-		auto en_type = en->GetType();
-		if(en_type == ENT_NULL)
-		{
-			nodeType = ENIVT_NULL;
-			nodeValue = EvaluableNodeImmediateValue(std::numeric_limits<double>::quiet_NaN());
-			return;
-		}
+	bool GetValueAsBoolean();
 
-		if(en_type == ENT_NUMBER)
-		{
-			nodeType = ENIVT_NUMBER;
-			nodeValue = EvaluableNodeImmediateValue(en->GetNumberValueReference());
-			return;
-		}
+	double GetValueAsNumber(double value_if_null = std::numeric_limits<double>::quiet_NaN());
 
-		if(en_type == ENT_STRING)
-		{
-			nodeType = ENIVT_STRING_ID;
-			nodeValue = EvaluableNodeImmediateValue(en->GetStringIDReference());
-			return;
-		}
+	std::pair<bool, std::string> GetValueAsString(bool key_string = false);
 
-		nodeType = ENIVT_CODE;
-		nodeValue = EvaluableNodeImmediateValue(en);
-	}
+	StringInternPool::StringID GetValueAsStringIDIfExists(bool key_string = false);
 
-	bool GetValueAsBoolean()
-	{
-		if(nodeType == ENIVT_NUMBER)
-		{
-			if(nodeValue.number == 0.0)
-				return false;
-			return true;
-		}
-
-		if(nodeType == ENIVT_STRING_ID)
-		{
-			if(nodeValue.stringID == string_intern_pool.NOT_A_STRING_ID
-					|| nodeValue.stringID == string_intern_pool.emptyStringId)
-				return false;
-			return true;
-		}
-
-		if(nodeType == ENIVT_CODE)
-			return EvaluableNode::IsTrue(nodeValue.code);
-
-		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
-		return false;
-	}
-
-	double GetValueAsNumber(double value_if_null = std::numeric_limits<double>::quiet_NaN())
-	{
-		if(nodeType == ENIVT_NUMBER)
-			return nodeValue.number;
-
-		if(nodeType == ENIVT_STRING_ID)
-		{
-			if(nodeValue.stringID == string_intern_pool.NOT_A_STRING_ID)
-				return value_if_null;
-
-			auto &str = string_intern_pool.GetStringFromID(nodeValue.stringID);
-			auto [value, success] = Platform_StringToNumber(str);
-			if(success)
-				return value;
-			return value_if_null;
-		}
-
-		if(nodeType == ENIVT_CODE)
-			return EvaluableNode::ToNumber(nodeValue.code);
-
-		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
-		return value_if_null;
-	}
-
-	std::pair<bool, std::string> GetValueAsString()
-	{
-		if(nodeType == ENIVT_NUMBER)
-			return std::make_pair(true, EvaluableNode::NumberToString(nodeValue.number));
-
-		if(nodeType == ENIVT_STRING_ID)
-		{
-			if(nodeValue.stringID == string_intern_pool.NOT_A_STRING_ID)
-				return std::make_pair(false, "");
-
-			auto &str = string_intern_pool.GetStringFromID(nodeValue.stringID);
-			return std::make_pair(true, str);
-		}
-
-		if(nodeType == ENIVT_CODE)
-			return std::make_pair(true, EvaluableNode::ToStringPreservingOpcodeType(nodeValue.code));
-
-		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
-		return std::make_pair(false, "");
-	}
-
-	StringInternPool::StringID GetValueAsStringIDIfExists()
-	{
-		if(nodeType == ENIVT_NUMBER)
-		{
-			const std::string str_value = EvaluableNode::NumberToString(nodeValue.number);
-			//will return empty string if not found
-			return string_intern_pool.GetIDFromString(str_value);
-		}
-
-		if(nodeType == ENIVT_STRING_ID)
-			return nodeValue.stringID;
-
-		if(nodeType == ENIVT_CODE)
-			return EvaluableNode::ToStringIDIfExists(nodeValue.code);
-
-		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
-		return string_intern_pool.NOT_A_STRING_ID;
-	}
-
-	StringInternPool::StringID GetValueAsStringIDWithReference()
-	{
-		if(nodeType == ENIVT_NUMBER)
-		{
-			const std::string str_value = EvaluableNode::NumberToString(nodeValue.number);
-			//will return empty string if not found
-			return string_intern_pool.CreateStringReference(str_value);
-		}
-
-		if(nodeType == ENIVT_STRING_ID)
-			return string_intern_pool.CreateStringReference(nodeValue.stringID);
-
-		if(nodeType == ENIVT_CODE)
-			return EvaluableNode::ToStringIDWithReference(nodeValue.code);
-
-		//nodeType is one of ENIVT_NOT_EXIST, ENIVT_NULL, ENIVT_NUMBER_INDIRECTION_INDEX
-		return string_intern_pool.NOT_A_STRING_ID;
-	}
+	StringInternPool::StringID GetValueAsStringIDWithReference(bool key_string = false);
 
 	static inline bool AreEqual(EvaluableNodeImmediateValueWithType &a, EvaluableNodeImmediateValueWithType &b)
 	{

@@ -1,11 +1,6 @@
 ﻿(seq
-	(print (parse
-		"(seq (+ 1 2) (+ (+ 3 4) 5))"
-	))
-
-	(print (parse
-		"(seq (+ 1 2) (+ (3 4) 5)"
-	))
-
-
+	(print {"Can't continue terminated series."})
+	;(declare {warnings {}})
+	;(accum (assoc warnings (assoc "Can't continue terminated series.") ))
+	;(print warnings)
 )

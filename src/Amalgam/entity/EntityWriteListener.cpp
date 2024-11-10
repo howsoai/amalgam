@@ -187,7 +187,7 @@ void EntityWriteListener::LogNewEntry(EvaluableNode *new_entry, bool flush)
 	if(logFile.is_open() && logFile.good())
 	{
 		//one extra indentation because already have the sequence
-		logFile << Parser::Unparse(new_entry, &listenerStorage, false) << "\r\n";
+		logFile << Parser::Unparse(new_entry, false, true, false) << "\r\n";
 		if(flush)
 			logFile.flush();
 	}

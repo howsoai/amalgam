@@ -100,7 +100,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 	params_list->ReserveMappedChildNodes(mcn.size());
 
 	//create the string references all at once and hand off
-	string_intern_pool.CreateStringReferences(mcn, [](auto it) { return it.first; });
 	for(auto &[cn_id, cn] : mcn)
 	{
 		//create list with comment and default value
@@ -111,7 +110,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 		param_info_ocn[1] = evaluableNodeManager->DeepAllocCopy(cn, EvaluableNodeManager::ENMM_REMOVE_ALL);
 
 		//add to the params
-		params_list->SetMappedChildNodeWithReferenceHandoff(cn_id, param_info);
+		params_list->SetMappedChildNode(cn_id, param_info);
 	}
 
 	return retval;
@@ -260,7 +259,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED(Evalu
 	if(seed_node != nullptr && seed_node->GetType() == ENT_STRING)
 		seed_string = seed_node->GetStringValue();
 	else
-		seed_string = Parser::Unparse(seed_node, evaluableNodeManager, false, false, true);
+		seed_string = Parser::Unparse(seed_node, false, false, true);
 	auto node_stack = CreateOpcodeStackStateSaver(seed_node);
 
 	//get the entity

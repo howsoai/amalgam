@@ -91,7 +91,7 @@ public:
 	//makes a new reference to the string specified, returning the ID
 	inline StringID CreateStringReference(const std::string &str)
 	{
-		if(str == "")
+		if(str.size() == 0)
 			return emptyStringId;
 
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)

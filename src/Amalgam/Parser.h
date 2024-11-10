@@ -132,9 +132,40 @@ public:
 	// if sort_keys, then it will perform a sort on all unordered nodes
 	// if first_of_transactional_unparse, it will not emit the final closing parenthesis or appropriate other character
 	// starting_indentation indicates where it will start, in case there was other code prior to which it is being concatenated
-	static std::string Unparse(EvaluableNode *tree, EvaluableNodeManager *enm,
+	static std::string Unparse(EvaluableNode *tree,
 		bool expanded_whitespace = true, bool emit_attributes = true, bool sort_keys = false,
 		bool first_of_transactional_unparse = false, size_t starting_indendation = 0);
+
+	//transforms the code_string into evaluable nodes
+	static EvaluableNodeReference ParseFromKeyString(const std::string &code_string, EvaluableNodeManager *enm);
+
+	//transforms the code_string_id into evaluable nodes
+	static EvaluableNodeReference ParseFromKeyStringId(StringInternPool::StringID code_string_id, EvaluableNodeManager *enm);
+
+	//transforms tree into a string value that will match if the evaluable node trees match
+	static std::string UnparseToKeyString(EvaluableNode *tree);
+
+	//like UnparseToKeyString, but for numbers only
+	template<typename NumberType>
+	static inline std::string UnparseNumberToKeyString(NumberType number)
+	{
+		std::string unparsed = StringManipulation::NumberToString(number);
+
+		//need to insert a \0 this way, otherwise certain string methods will skip the null terminator
+		std::string str;
+		str.assign(1, '\0');
+		str.insert(1, unparsed.data(), unparsed.size());
+		return str;
+	}
+
+	//returns true if string needs to be run through UnparseStringToKeyString
+	static inline bool DoesStringNeedUnparsingToKey(const std::string &s)
+	{
+		if(s.size() == 0 || s[0] != '\0')
+			return false;
+
+		return true;
+	}
 
 	//string to be appended after Unparse calls when the first one is called with first_of_transactional_unparse
 	inline static const std::string transactionTermination = ")";
@@ -153,8 +184,6 @@ protected:
 
 		//parentNodes contains each reference as the key and the parent as the value
 		EvaluableNode::ReferenceAssocType parentNodes;
-
-		EvaluableNodeManager *enm;
 
 		//if transactional unparsing, then this will be the top node
 		//if not, it will be nullptr
@@ -175,7 +204,7 @@ protected:
 
 	//Returns code that will get from location a to b.
 	static EvaluableNode *GetCodeForPathToSharedNodeFromParentAToParentB(UnparseData &upd,
-		EvaluableNode *shared_node, EvaluableNode *a_parent, EvaluableNode *b_parent);
+		EvaluableNodeManager &enm, EvaluableNode *shared_node, EvaluableNode *a_parent, EvaluableNode *b_parent);
 
 	//Skips whitespace and accumulates any attributes (e.g., labels, comments) on to target
 	void SkipWhitespaceAndAccumulateAttributes(EvaluableNode *target);
@@ -193,14 +222,13 @@ protected:
 
 	//Returns a EvaluableNode containing the next token, null if none left in current context
 	// parent_node is primarily to check for errors or warnings
-	//if reuse_assoc_token_as_value is not nullptr, it will put the token in the EvaluableNode provided, otherwise will return a new one
-	EvaluableNode *GetNextToken(EvaluableNode *parent_node, EvaluableNode *reuse_assoc_token_as_value = nullptr);
+	EvaluableNode *GetNextToken(EvaluableNode *parent_node, bool parsing_assoc_key = false);
 
 	//deallocates the current node in case there is an early exit or error
 	void FreeNode(EvaluableNode *node);
 
-	//Parses the next block of code into topNode
-	void ParseCode();
+	//Parses the next block of code and returns the top node
+	EvaluableNode *ParseCode(bool parsing_assoc_key = false);
 
 	//Prints out all comments for the respective node
 	static void AppendComments(EvaluableNode *n, size_t indentation_depth, bool pretty, std::string &to_append);
@@ -249,7 +277,7 @@ protected:
 	EvaluableNode *GetNodeFromRelativeCodePath(EvaluableNode *path);
 
 	//resolves any nodes that require preevaluation (such as assocs or circular references)
-	void PreevaluateNodes();
+	void PreevaluateNodes(EvaluableNode *top_node);
 
 	//string of the code currently being parsed
 	std::string_view code;
@@ -271,9 +299,6 @@ protected:
 
 	//if true, will prepend debug sources to node comments
 	bool debugSources;
-
-	//the top node of everything being parsed
-	EvaluableNode *topNode;
 
 	//contains a list of nodes that need to be preevaluated on parsing
 	std::vector<EvaluableNode *> preevaluationNodes;

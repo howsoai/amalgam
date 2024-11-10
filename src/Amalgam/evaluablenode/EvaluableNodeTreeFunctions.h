@@ -403,12 +403,10 @@ inline EvaluableNodeReference CreateAssocOfNumbersFromIteratorAndFunctions(IDVal
 	EvaluableNode *assoc = enm->AllocNode(ENT_ASSOC);
 	assoc->ReserveMappedChildNodes(id_value_container.size());
 
-	string_intern_pool.CreateStringReferences(id_value_container, get_string_id);
-
 	for(auto &id_value_iterator : id_value_container)
 	{
 		StringInternPool::StringID entity_sid = get_string_id(id_value_iterator);
-		assoc->SetMappedChildNodeWithReferenceHandoff(entity_sid, enm->AllocNode(get_number(id_value_iterator)));
+		assoc->SetMappedChildNode(entity_sid, enm->AllocNode(get_number(id_value_iterator)));
 	}
 
 	return EvaluableNodeReference(assoc, true);
@@ -438,11 +436,9 @@ inline EvaluableNodeReference CreateListOfStringsIdsFromIteratorAndFunction(Stri
 	EvaluableNode *list = enm->AllocListNodeWithOrderedChildNodes(ENT_STRING, string_container.size());
 	auto &ocn = list->GetOrderedChildNodesReference();
 
-	string_intern_pool.CreateStringReferences(string_container, get_string_id);
-
 	size_t index = 0;
 	for(auto string_element : string_container)
-		ocn[index++]->SetTypeViaStringIdValueWithReferenceHandoff(get_string_id(string_element));
+		ocn[index++]->SetTypeViaStringIdValue(get_string_id(string_element));
 
 	return EvaluableNodeReference(list, true);
 }

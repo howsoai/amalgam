@@ -692,7 +692,7 @@ EvaluableNode *EntityManipulation::FlattenOnlyTopEntity(EvaluableNodeManager *en
 	EvaluableNode *flatten_params = enm->AllocNode(ENT_ASSOC);
 	declare_flatten->AppendOrderedChildNode(flatten_params);
 	flatten_params->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_new_entity), nullptr);
-	flatten_params->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_create_new_entity), enm->AllocNode(ENT_TRUE));
+	flatten_params->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_create_new_entity), enm->AllocNode(true));
 
 	//   (let (assoc _ (lambda *entity code*))
 	EvaluableNode *let_entity_code = enm->AllocNode(ENT_LET);

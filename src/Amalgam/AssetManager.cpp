@@ -227,7 +227,7 @@ bool AssetManager::LoadResourceViaTransactionalExecution(AssetParameters &asset_
 		return false;
 
 	EvaluableNodeReference args = EvaluableNodeReference(entity->evaluableNodeManager.AllocNode(ENT_ASSOC), true);
-	args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_create_new_entity), entity->evaluableNodeManager.AllocNode(ENT_FALSE));
+	args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_create_new_entity), entity->evaluableNodeManager.AllocNode(false));
 	auto call_stack = Interpreter::ConvertArgsToCallStack(args, entity->evaluableNodeManager);
 
 	auto first_node_type = first_node->GetType();
@@ -350,7 +350,7 @@ Entity *AssetManager::LoadEntityFromResource(AssetParameters &asset_params, bool
 	if(asset_params.executeOnLoad)
 	{
 		EvaluableNodeReference args = EvaluableNodeReference(new_entity->evaluableNodeManager.AllocNode(ENT_ASSOC), true);
-		args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_create_new_entity), new_entity->evaluableNodeManager.AllocNode(ENT_FALSE));
+		args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_create_new_entity), new_entity->evaluableNodeManager.AllocNode(false));
 		auto call_stack = Interpreter::ConvertArgsToCallStack(args, new_entity->evaluableNodeManager);
 
 		new_entity->ExecuteCodeAsEntity(code, call_stack, calling_interpreter);

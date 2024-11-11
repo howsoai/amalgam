@@ -147,7 +147,7 @@ public:
 				&entity->evaluableNodeManager, cur_entity, entity, asset_params.includeRandSeeds, true);
 
 			code_string += Parser::Unparse(create_entity_code,
-				asset_params.prettyPrint, asset_params.sortKeys, false, 1);
+				asset_params.prettyPrint, true, asset_params.sortKeys, false, 1);
 
 			entity->evaluableNodeManager.FreeNodeTree(create_entity_code);
 		}

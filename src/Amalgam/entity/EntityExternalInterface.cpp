@@ -44,11 +44,15 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(st
 
 	AssetManager::AssetParameters asset_params(path, file_type, true);
 
-	EvaluableNodeManager temp_enm;
-	EvaluableNode *file_params = EvaluableNodeJSONTranslation::JsonToEvaluableNode(&temp_enm, json_file_params);
+	if(json_file_params.size() > 0)
+	{
+		EvaluableNodeManager temp_enm;
+		EvaluableNode *file_params = EvaluableNodeJSONTranslation::JsonToEvaluableNode(&temp_enm, json_file_params);
 
-	if(EvaluableNode::IsAssociativeArray(file_params))
-		asset_params.SetParams(file_params->GetMappedChildNodesReference());
+		if(EvaluableNode::IsAssociativeArray(file_params))
+			asset_params.SetParams(file_params->GetMappedChildNodesReference());
+	}
+
 	asset_params.UpdateResources();
 
 	Entity *entity = asset_manager.LoadEntityFromResource(asset_params, persistent, rand_seed, nullptr, status);
@@ -105,11 +109,15 @@ bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &clon
 
 	AssetManager::AssetParameters asset_params(path, file_type, true);
 
-	auto &enm = bundle->entity->evaluableNodeManager;
-	EvaluableNode *file_params = EvaluableNodeJSONTranslation::JsonToEvaluableNode(&enm, json_file_params);
+	if(json_file_params.size() > 0)
+	{
+		auto &enm = bundle->entity->evaluableNodeManager;
+		EvaluableNode *file_params = EvaluableNodeJSONTranslation::JsonToEvaluableNode(&enm, json_file_params);
 
-	if(EvaluableNode::IsAssociativeArray(file_params))
-		asset_params.SetParams(file_params->GetMappedChildNodesReference());
+		if(EvaluableNode::IsAssociativeArray(file_params))
+			asset_params.SetParams(file_params->GetMappedChildNodesReference());
+	}
+
 	asset_params.UpdateResources();
 
 	PrintListener *pl = nullptr;
@@ -143,14 +151,17 @@ void EntityExternalInterface::StoreEntity(std::string &handle, std::string &path
 
 	AssetManager::AssetParameters asset_params(path, file_type, true);
 
-	auto &enm = bundle->entity->evaluableNodeManager;
-	EvaluableNode *file_params = EvaluableNodeJSONTranslation::JsonToEvaluableNode(&enm, json_file_params);
+	if(json_file_params.size() > 0)
+	{
+		auto &enm = bundle->entity->evaluableNodeManager;
+		EvaluableNode *file_params = EvaluableNodeJSONTranslation::JsonToEvaluableNode(&enm, json_file_params);
 
-	if(EvaluableNode::IsAssociativeArray(file_params))
-		asset_params.SetParams(file_params->GetMappedChildNodesReference());
+		if(EvaluableNode::IsAssociativeArray(file_params))
+			asset_params.SetParams(file_params->GetMappedChildNodesReference());
+
+		enm.FreeNodeTree(file_params);
+	}
 	asset_params.UpdateResources();
-
-	enm.FreeNodeTree(file_params);
 
 	asset_manager.StoreEntityToResource(entity, asset_params, true, persistent);
 }

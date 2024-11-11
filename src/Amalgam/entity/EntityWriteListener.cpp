@@ -138,7 +138,7 @@ void EntityWriteListener::LogSetEntityRandomSeed(Entity *entity, const std::stri
 	new_set->AppendOrderedChildNode(listenerStorage.AllocNode(ENT_STRING, rand_seed));
 
 	if(!deep_set)
-		new_set->AppendOrderedChildNode(listenerStorage.AllocNode(ENT_FALSE));
+		new_set->AppendOrderedChildNode(listenerStorage.AllocNode(false));
 
 	LogNewEntry(new_set);
 }

@@ -489,6 +489,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is no longer executing
+
+	EvaluableNodeManager::ClearThreadLocalAllocationBuffer();
 	memoryModificationLock.unlock();
 #endif
 
@@ -608,6 +610,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is no longer executing
+	EvaluableNodeManager::ClearThreadLocalAllocationBuffer();
 	memoryModificationLock.unlock();
 #endif
 

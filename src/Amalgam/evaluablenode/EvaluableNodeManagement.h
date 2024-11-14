@@ -6,6 +6,7 @@
 
 //system headers:
 #include <memory>
+#include <unordered_set>
 
 //if the macro PEDANTIC_GARBAGE_COLLECTION is defined, then garbage collection will be performed
 //after every opcode, to help find and debug memory issues
@@ -1090,6 +1091,16 @@ public:
 	// EvaluableNodeManager and so garbage collection should not happening while memory is being modified
 	static Concurrency::ReadWriteMutex memoryModificationMutex;
 
+
+	// TODO: Make this private when done debugging
+	typedef std::vector<EvaluableNode*> TLab;
+	inline static thread_local TLab threadLocalAllocationBuffer;
+
+	static void ClearThreadLocalAllocationBuffer()
+	{
+		threadLocalAllocationBuffer.clear();
+	}
+
 protected:
 
 #else
@@ -1114,4 +1125,28 @@ protected:
 
 	//extra space to allocate when allocating
 	static const double allocExpansionFactor;
+
+private:
+
+	#ifdef MULTITHREAD_SUPPORT
+	static EvaluableNode* getNextNodeFromTLab()
+	{
+		if(threadLocalAllocationBuffer.size() > 0)
+		{
+			EvaluableNode* end = threadLocalAllocationBuffer[threadLocalAllocationBuffer.size()-1];
+			threadLocalAllocationBuffer.pop_back();
+			return end;
+		}
+		else
+		{
+			return NULL;
+		}
+
+	}
+
+	static const int tlabSize = 20;
+
+	#endif // MULTITHREAD_SUPPORT
+
+
 };

@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <iostream>
 
 #ifdef MULTITHREAD_SUPPORT
 Concurrency::ReadWriteMutex EvaluableNodeManager::memoryModificationMutex;
@@ -192,6 +193,8 @@ void EvaluableNodeManager::CollectGarbage()
 
 #ifdef MULTITHREAD_SUPPORT
 		
+	ClearThreadLocalAllocationBuffer();
+	
 	//free lock so can attempt to enter write lock to collect garbage
 	if(memory_modification_lock != nullptr)
 		memory_modification_lock->unlock();
@@ -256,24 +259,40 @@ void EvaluableNodeManager::FreeAllNodes()
 }
 
 EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
-{
-	size_t allocated_index = 0;
+{	
 #ifdef MULTITHREAD_SUPPORT
 	{
-		//attempt to allocate using an atomic without write locking
+		EvaluableNode* tlabNode = getNextNodeFromTLab();
+
+		std::cout << "!!!naricc_debug!!! EvaluableNodeManager::AllocUninitializedNode EvaluableNodeManager: " << this << " thread_id: " << std::this_thread::get_id() << " tlab: " << &threadLocalAllocationBuffer << std::endl;
+		//Fast Path; get node from thread local buffer
+		if (tlabNode) {
+			assert(nodes.size() > 0);
+			return tlabNode;
+		}
+
+		//slow path allocation; attempt to allocate using an atomic without write locking
 		Concurrency::ReadLock lock(managerAttributesMutex);
 
-		//attempt to allocate a node and make sure it's valid
-		allocated_index = firstUnusedNodeIndex++;
-		if(allocated_index < nodes.size())
-		{
-			if(nodes[allocated_index] == nullptr)
-				nodes[allocated_index] = new EvaluableNode();
+		//attempt to allocate enough nodes to refill thread local buffer
+		size_t first_index_to_allocate = firstUnusedNodeIndex.fetch_add(tlabSize);
+		size_t last_index_to_allocate = first_index_to_allocate + tlabSize;
 
-			return nodes[allocated_index];
+		if(last_index_to_allocate < nodes.size())
+		{
+			for (int i = first_index_to_allocate; i < last_index_to_allocate; i++)
+			{
+				if(nodes[i] == nullptr)
+					nodes[i] = new EvaluableNode();
+
+				threadLocalAllocationBuffer.push_back(nodes[i]);
+			}
+
+			return getNextNodeFromTLab();
 		}
-		//the node wasn't valid; put it back and do a write lock to allocate more
-		--firstUnusedNodeIndex;
+
+		//couldn't allocate enough valid nodes; reset index and allocate more
+		firstUnusedNodeIndex -= tlabSize;
 	}
 	//don't have enough nodes, so need to attempt a write lock to allocate more
 	Concurrency::WriteLock write_lock(managerAttributesMutex);
@@ -282,9 +301,9 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 	//already have the write lock, so don't need to worry about another thread stealing firstUnusedNodeIndex
 	//use the cached value for firstUnusedNodeIndex, allocated_index, to check if another thread has performed the allocation
 	//as other threads may have reduced firstUnusedNodeIndex, incurring more unnecessary write locks when a memory expansion is needed
-#else
-	allocated_index = firstUnusedNodeIndex;
+	
 #endif
+	size_t allocated_index = firstUnusedNodeIndex;
 
 	size_t num_nodes = nodes.size();
 	if(allocated_index < num_nodes && firstUnusedNodeIndex < num_nodes)

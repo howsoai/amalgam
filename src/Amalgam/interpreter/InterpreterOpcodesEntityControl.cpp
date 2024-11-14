@@ -664,6 +664,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode 
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is no longer executing
+	EvaluableNodeManager::ClearThreadLocalAllocationBuffer();
 	memoryModificationLock.unlock();
 #endif
 

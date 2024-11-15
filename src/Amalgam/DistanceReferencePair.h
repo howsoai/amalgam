@@ -1,5 +1,8 @@
 #pragma once
 
+//system headers:
+#include <cstddef>
+
 //used to manage pairs of distance and a reference
 // where operations take place more frequently via distance first, such that cache access is optimized
 // the default type is size_t for indices

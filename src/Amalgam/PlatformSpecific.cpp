@@ -6,6 +6,7 @@
 //system headers:
 #include <array>
 #include <cfenv>
+#include <cstring>
 #include <codecvt>
 #include <cstdio>
 

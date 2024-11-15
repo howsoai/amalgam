@@ -8,10 +8,8 @@
 #include "RandomStream.h"
 
 //system headers:
-#include <fstream>
 #include <string>
 #include <type_traits>
-#include <variant>
 #include <vector>
 
 //forward declarations:
@@ -109,38 +107,6 @@ public:
 	using EntityReferenceWithLock<Concurrency::WriteLock, Entity>::EntityReferenceWithLock;
 };
 
-//contains either a read or a write reference to an Entity
-class EntityReadOrWriteReference
-	: public EntityReferenceWithLock<std::variant<Concurrency::ReadLock, Concurrency::WriteLock>, Entity>
-{
-public:
-	EntityReadOrWriteReference()
-		: EntityReferenceWithLock<std::variant<Concurrency::ReadLock, Concurrency::WriteLock>, Entity>()
-	{	}
-
-	EntityReadOrWriteReference(EntityReadReference &&read_ref)
-	{
-		lock = std::move(read_ref.lock);
-	}
-
-	EntityReadOrWriteReference(EntityWriteReference &&write_ref)
-	{
-		lock = std::move(write_ref.lock);
-	}
-
-	EntityReadOrWriteReference &operator=(EntityReadReference &&read_ref)
-	{
-		lock = std::move(read_ref.lock);
-		return *this;
-	}
-
-	EntityReadOrWriteReference &operator=(EntityWriteReference &&write_ref)
-	{
-		lock = std::move(write_ref.lock);
-		return *this;
-	}
-};
-
 #else //not MULTITHREAD_SUPPORT
 
 //primary reference to be used when reading from an entity
@@ -152,13 +118,6 @@ public:
 
 //primary reference to be used when writing to an entity
 class EntityWriteReference : public EntityReference<Entity>
-{
-public:
-	using EntityReference<Entity>::EntityReference;
-};
-
-//contains either a read or a write reference to an Entity
-class EntityReadOrWriteReference : public EntityReference<Entity>
 {
 public:
 	using EntityReference<Entity>::EntityReference;

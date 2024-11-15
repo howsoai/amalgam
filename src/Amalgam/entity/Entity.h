@@ -11,6 +11,7 @@
 #include <fstream>
 #include <string>
 #include <type_traits>
+#include <variant>
 #include <vector>
 
 //forward declarations:
@@ -94,62 +95,76 @@ public:
 	LockType lock;
 };
 
-//acts as a reference to an Entity that can be treated as an Entity *
-// but also performs a read-lock on the container if multithreaded, and frees the read lock when goes out of scope
-//can't be a typedef due to the inability to do forward declarations, so have to include constructors
+//primary reference to be used when reading from an entity
 class EntityReadReference : public EntityReferenceWithLock<Concurrency::ReadLock, Entity>
 {
 public:
-	EntityReadReference() : EntityReferenceWithLock<Concurrency::ReadLock, Entity>()
-	{	}
-
-	EntityReadReference(Entity *e) : EntityReferenceWithLock<Concurrency::ReadLock, Entity>(e)
-	{	}
+	using EntityReferenceWithLock<Concurrency::ReadLock, Entity>::EntityReferenceWithLock;
 };
 
-//acts as a reference to an Entity that can be treated as an Entity *
-// but also performs a write-lock on the container if multithreaded, and frees the read lock when goes out of scope
-//can't be a typedef due to the inability to do forward declarations, so have to include constructors
+//primary reference to be used when writing to an entity
 class EntityWriteReference : public EntityReferenceWithLock<Concurrency::WriteLock, Entity>
 {
 public:
-	EntityWriteReference() : EntityReferenceWithLock<Concurrency::WriteLock, Entity>()
+	using EntityReferenceWithLock<Concurrency::WriteLock, Entity>::EntityReferenceWithLock;
+};
+
+//contains either a read or a write reference to an Entity
+class EntityReadOrWriteReference
+	: public EntityReferenceWithLock<std::variant<Concurrency::ReadLock, Concurrency::WriteLock>, Entity>
+{
+public:
+	EntityReadOrWriteReference()
+		: EntityReferenceWithLock<std::variant<Concurrency::ReadLock, Concurrency::WriteLock>, Entity>()
 	{	}
 
-	EntityWriteReference(Entity *e) : EntityReferenceWithLock<Concurrency::WriteLock, Entity>(e)
-	{	}
+	EntityReadOrWriteReference(EntityReadReference &&read_ref)
+	{
+		lock = std::move(read_ref.lock);
+	}
+
+	EntityReadOrWriteReference(EntityWriteReference &&write_ref)
+	{
+		lock = std::move(write_ref.lock);
+	}
+
+	EntityReadOrWriteReference &operator=(EntityReadReference &&read_ref)
+	{
+		lock = std::move(read_ref.lock);
+		return *this;
+	}
+
+	EntityReadOrWriteReference &operator=(EntityWriteReference &&write_ref)
+	{
+		lock = std::move(write_ref.lock);
+		return *this;
+	}
 };
 
 #else //not MULTITHREAD_SUPPORT
 
-//acts as a reference to an Entity that can be treated as an Entity *
-// but also performs a read-lock on the container if multithreaded, and frees the read lock when goes out of scope
-//can't be a typedef due to the inability to do forward declarations, so have to include constructors
+//primary reference to be used when reading from an entity
 class EntityReadReference : public EntityReference<Entity>
 {
 public:
-	EntityReadReference() : EntityReference<Entity>()
-	{	}
-
-	EntityReadReference(Entity *e) : EntityReference<Entity>(e)
-	{	}
+	using EntityReference<Entity>::EntityReference;
 };
 
-//acts as a reference to an Entity that can be treated as an Entity *
-// but also performs a write-lock on the container if multithreaded, and frees the read lock when goes out of scope
-//can't be a typedef due to the inability to do forward declarations, so have to include constructors
+//primary reference to be used when writing to an entity
 class EntityWriteReference : public EntityReference<Entity>
 {
 public:
-	EntityWriteReference() : EntityReference<Entity>()
-	{	}
+	using EntityReference<Entity>::EntityReference;
+};
 
-	EntityWriteReference(Entity *e) : EntityReference<Entity>(e)
-	{	}
+//contains either a read or a write reference to an Entity
+class EntityReadOrWriteReference : public EntityReference<Entity>
+{
+public:
+	using EntityReference<Entity>::EntityReference;
 };
 
 #endif
-
 
 //An Entity is a container of code/data consisting comprised of a graph of EvaluableNode.
 // They can contain other entities, can be queried and serialized.

@@ -1,9 +1,7 @@
 //project headers:
 #include "Interpreter.h"
 
-#include "AmalgamVersion.h"
 #include "AssetManager.h"
-#include "EntityManipulation.h"
 #include "EntityQueries.h"
 #include "EntityQueryBuilder.h"
 #include "EntityQueryCaches.h"
@@ -14,12 +12,6 @@
 #include "PerformanceProfiler.h"
 
 //system headers:
-#include <chrono>
-#include <cstdlib>
-#include <ctime>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
 #include <utility>
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_ENTITY(EvaluableNode *en, bool immediate_result)

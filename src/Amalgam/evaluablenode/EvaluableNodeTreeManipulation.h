@@ -8,10 +8,8 @@
 #include "WeightedDiscreteRandomStream.h"
 
 //system headers:
-#include <algorithm>
 #include <cmath>
 #include <string>
-#include <string_view>
 #include <vector>
 
 //forward declarations:

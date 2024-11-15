@@ -1,12 +1,10 @@
 #pragma once
 
 //project headers:
-#include "EvaluableNode.h"
 #include "HashMaps.h"
 
 //system headers:
-#include <ctime>
-#include <chrono>
+#include <string>
 
 namespace PerformanceProfiler
 {

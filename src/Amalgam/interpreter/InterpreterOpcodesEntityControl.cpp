@@ -3,21 +3,9 @@
 
 #include "AssetManager.h"
 #include "EntityExternalInterface.h"
-#include "EntityManipulation.h"
-#include "EntityQueries.h"
 #include "EvaluableNodeTreeFunctions.h"
-#include "EvaluableNodeTreeManipulation.h"
-#include "EvaluableNodeTreeDifference.h"
-#include "PerformanceProfiler.h"
 
 //system headers:
-#include <chrono>
-#include <cstdlib>
-#include <ctime>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <utility>
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(EvaluableNode *en, bool immediate_result)
 {
@@ -672,7 +660,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode 
 		return EvaluableNodeReference::Null();
 
 	EntityExternalInterface::LoadEntityStatus status;
-	std::string random_seed = destination_entity_parent->CreateRandomStreamFromStringAndRand(asset_params.resource);
+	std::string random_seed = destination_entity_parent->CreateRandomStreamFromStringAndRand(asset_params.resourcePath);
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is no longer executing

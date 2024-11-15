@@ -3,7 +3,6 @@
 #include "EvaluableNodeTreeFunctions.h"
 
 //system headers:
-#include <algorithm>
 
 EvaluableNode *EvaluableNodeTreeDifference::NodesMergeForDifferenceMethod::MergeValues(EvaluableNode *a, EvaluableNode *b, bool must_merge)
 {

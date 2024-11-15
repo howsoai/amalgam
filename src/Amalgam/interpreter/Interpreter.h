@@ -6,14 +6,10 @@
 #include "EvaluableNode.h"
 #include "EvaluableNodeManagement.h"
 #include "EvaluableNodeTreeFunctions.h"
-#include "FastMath.h"
-#include "Parser.h"
-#include "PerformanceProfiler.h"
 #include "PrintListener.h"
 #include "RandomStream.h"
 
 //system headers:
-#include <algorithm>
 #include <array>
 #include <cstdint>
 #include <string>

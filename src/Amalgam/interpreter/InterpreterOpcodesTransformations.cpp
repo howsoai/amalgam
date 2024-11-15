@@ -1,22 +1,10 @@
 //project headers:
 #include "Interpreter.h"
 
-#include "AmalgamVersion.h"
-#include "AssetManager.h"
-#include "EntityManipulation.h"
-#include "EntityQueries.h"
 #include "EvaluableNodeTreeFunctions.h"
-#include "EvaluableNodeTreeManipulation.h"
-#include "EvaluableNodeTreeDifference.h"
-#include "PerformanceProfiler.h"
 
 //system headers:
 #include <algorithm>
-#include <chrono>
-#include <cstdlib>
-#include <ctime>
-#include <fstream>
-#include <iomanip>
 #include <regex>
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_REWRITE(EvaluableNode *en, bool immediate_result)

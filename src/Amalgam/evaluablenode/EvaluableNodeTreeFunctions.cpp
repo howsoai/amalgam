@@ -4,8 +4,6 @@
 #include "Interpreter.h"
 
 //system headers:
-#include <algorithm>
-#include <cctype>
 #include <tuple>
 
 bool CustomEvaluableNodeComparator::operator()(EvaluableNode *a, EvaluableNode *b)

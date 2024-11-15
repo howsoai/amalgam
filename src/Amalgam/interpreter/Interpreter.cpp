@@ -1,23 +1,12 @@
 //project headers:
 #include "Interpreter.h"
 
-#include "AmalgamVersion.h"
-#include "AssetManager.h"
-#include "EntityManipulation.h"
 #include "EntityQueries.h"
 #include "EntityQueryBuilder.h"
-#include "EvaluableNodeTreeDifference.h"
 #include "EvaluableNodeTreeFunctions.h"
-#include "EvaluableNodeTreeManipulation.h"
 #include "StringInternPool.h"
 
 //system headers:
-#include <chrono>
-#include <cstdlib>
-#include <ctime>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
 #include <utility>
 
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)

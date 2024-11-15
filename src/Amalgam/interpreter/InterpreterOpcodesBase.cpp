@@ -5,22 +5,16 @@
 #include "AssetManager.h"
 #include "Concurrency.h"
 #include "Cryptography.h"
-#include "DateTimeFormat.h"
 #include "EntityManipulation.h"
-#include "EntityQueries.h"
 #include "EntityWriteListener.h"
 #include "EvaluableNodeManagement.h"
 #include "EvaluableNodeTreeFunctions.h"
 #include "PerformanceProfiler.h"
 
 //system headers:
-#include <array>
 #include <chrono>
-#include <cstdlib>
-#include <ctime>
 #include <fstream>
 #include <filesystem>
-#include <iomanip>
 #include <iostream>
 #include <limits>
 #include <utility>

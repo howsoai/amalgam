@@ -8,8 +8,6 @@
 
 //system headers:
 #include <algorithm>
-#include <cctype>
-#include <iomanip>
 
 bool EvaluableNode::falseBoolValue = false;
 double EvaluableNode::zeroNumberValue = 0.0;

@@ -4,7 +4,6 @@
 #include "murmurhash3/MurmurHash3.h"
 
 //system headers:
-#include <algorithm>
 #include <cstring>
 
 #define RANDOM_STATE_SIZE (sizeof(int64_t) * 2 + 1)

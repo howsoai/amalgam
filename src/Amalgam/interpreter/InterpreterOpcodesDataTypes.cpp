@@ -1,28 +1,15 @@
 //project headers:
 #include "Interpreter.h"
 
-#include "AmalgamVersion.h"
-#include "AssetManager.h"
 #include "Cryptography.h"
 #include "DateTimeFormat.h"
-#include "EvaluableNodeTreeFunctions.h"
 #include "EvaluableNodeTreeManipulation.h"
-#include "EvaluableNodeTreeDifference.h"
-#include "EntityManipulation.h"
-#include "EntityQueries.h"
 #include "EntityWriteListener.h"
 #include "FileSupportJSON.h"
 #include "FileSupportYAML.h"
-#include "PerformanceProfiler.h"
 #include "PlatformSpecific.h"
 
 //system headers:
-#include <chrono>
-#include <cstdlib>
-#include <ctime>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
 #include <regex>
 #include <utility>
 

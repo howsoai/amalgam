@@ -1,6 +1,4 @@
 //project headers:
-#include "FastMath.h"
-#include "PlatformSpecific.h"
 
 //system headers:
 #include <vector>

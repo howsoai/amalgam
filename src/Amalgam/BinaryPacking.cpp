@@ -2,7 +2,6 @@
 #include "BinaryPacking.h"
 
 //system headers:
-#include <algorithm>
 #include <array>
 #include <queue>
 

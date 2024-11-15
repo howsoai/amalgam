@@ -1,5 +1,6 @@
 //project headers:
 #include "Cryptography.h"
+#include "PlatformSpecific.h"
 
 //3rd party headers:
 extern "C" {

@@ -8,6 +8,9 @@
 #include <utility>
 #include <iostream>
 
+
+#define PEDANTIC_GARBAGE_COLLECTION
+
 #ifdef MULTITHREAD_SUPPORT
 Concurrency::ReadWriteMutex EvaluableNodeManager::memoryModificationMutex;
 #endif
@@ -277,7 +280,7 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 			for (int i = first_index_to_allocate; i < last_index_to_allocate; i++)
 			{
 				if(nodes[i] == nullptr)
-					nodes[i] = new EvaluableNode();
+					nodes[i] = new EvaluableNode(ENT_NULL);
 
 				threadLocalAllocationBuffer.push_back(nodes[i]);
 			}
@@ -287,6 +290,7 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 
 		//couldn't allocate enough valid nodes; reset index and allocate more
 		firstUnusedNodeIndex -= tlabSize;
+		ClearThreadLocalAllocationBuffer();
 	}
 	//don't have enough nodes, so need to attempt a write lock to allocate more
 	Concurrency::WriteLock write_lock(managerAttributesMutex);

@@ -10,7 +10,6 @@
 #include <codecvt>
 #include <cstdio>
 
-
 //perform universal initialization
 class PlatformSpecificStartup
 {

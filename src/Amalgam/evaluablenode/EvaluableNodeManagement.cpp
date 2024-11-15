@@ -262,9 +262,9 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 {	
 #ifdef MULTITHREAD_SUPPORT
 	{
-		EvaluableNode* tlabNode = getNextNodeFromTLab();
+		EvaluableNode* tlabNode = getNextNodeFromTLab(this);
 
-		std::cout << "!!!naricc_debug!!! EvaluableNodeManager::AllocUninitializedNode EvaluableNodeManager: " << this << " thread_id: " << std::this_thread::get_id() << " tlab: " << &threadLocalAllocationBuffer << std::endl;
+		// std::cout << "!!!naricc_debug!!! EvaluableNodeManager::AllocUninitializedNode EvaluableNodeManager: " << this << " thread_id: " << std::this_thread::get_id() << " tlab: " << &threadLocalAllocationBuffer << std::endl;
 		//Fast Path; get node from thread local buffer
 		if (tlabNode) {
 			assert(nodes.size() > 0);
@@ -288,7 +288,7 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 				threadLocalAllocationBuffer.push_back(nodes[i]);
 			}
 
-			return getNextNodeFromTLab();
+			return getNextNodeFromTLab(this);
 		}
 
 		//couldn't allocate enough valid nodes; reset index and allocate more

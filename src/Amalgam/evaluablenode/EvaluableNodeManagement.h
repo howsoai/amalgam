@@ -1129,9 +1129,11 @@ protected:
 private:
 
 	#ifdef MULTITHREAD_SUPPORT
-	static EvaluableNode* getNextNodeFromTLab()
+
+	static inline thread_local EvaluableNodeManager* lastEvaluableNode;
+	static EvaluableNode* getNextNodeFromTLab(EvaluableNodeManager* thisEvaluableNode)
 	{
-		if(threadLocalAllocationBuffer.size() > 0)
+		if(threadLocalAllocationBuffer.size() > 0 && thisEvaluableNode == lastEvaluableNode)
 		{
 			EvaluableNode* end = threadLocalAllocationBuffer[threadLocalAllocationBuffer.size()-1];
 			threadLocalAllocationBuffer.pop_back();
@@ -1139,6 +1141,10 @@ private:
 		}
 		else
 		{
+			if (lastEvaluableNode != thisEvaluableNode)
+				ClearThreadLocalAllocationBuffer();
+
+			lastEvaluableNode = thisEvaluableNode;
 			return NULL;
 		}
 

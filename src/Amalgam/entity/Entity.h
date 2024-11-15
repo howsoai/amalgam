@@ -8,9 +8,7 @@
 #include "RandomStream.h"
 
 //system headers:
-#include <ctime>
 #include <fstream>
-#include <functional>
 #include <string>
 #include <type_traits>
 #include <vector>

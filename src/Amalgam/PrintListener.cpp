@@ -1,6 +1,9 @@
 //project headers:
 #include "PrintListener.h"
 
+//system headers:
+#include <iostream>
+
 PrintListener::PrintListener(const std::string &filename, bool mirror_to_stdio)
 {
 	if(!filename.empty())

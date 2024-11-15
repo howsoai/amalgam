@@ -1,6 +1,10 @@
 //project headers:
-#include "PerformanceProfiler.h"
 #include "Concurrency.h"
+#include "PerformanceProfiler.h"
+
+//system headers:
+#include <iostream>
+#include <fstream>
 
 //if true, then will record profiling data
 bool PerformanceProfiler::_profiler_enabled;

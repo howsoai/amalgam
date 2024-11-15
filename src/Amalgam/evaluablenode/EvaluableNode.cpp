@@ -8,8 +8,6 @@
 
 //system headers:
 #include <algorithm>
-#include <cctype>
-#include <iomanip>
 
 double EvaluableNode::zeroNumberValue = 0.0;
 std::string EvaluableNode::emptyStringValue = "";

@@ -3,7 +3,6 @@
 #include "PerformanceProfiler.h"
 
 //system headers:
-#include <limits>
 #include <string>
 #include <vector>
 #include <utility>

@@ -12,7 +12,6 @@
 #include "PlatformSpecific.h"
 
 //system headers:
-#include <algorithm>
 #include <ctime>
 #include <fstream>
 #include <iostream>

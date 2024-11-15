@@ -3,15 +3,12 @@
 //project headers:
 #include "Conviction.h"
 #include "DistanceReferencePair.h"
-#include "EntityQueries.h"
 #include "EvaluableNode.h"
 #include "IntegerSet.h"
 #include "KnnCache.h"
 #include "SeparableBoxFilterDataStore.h"
 
 //system headers:
-#include <algorithm>
-#include <memory>
 #include <vector>
 
 //forward declarations:

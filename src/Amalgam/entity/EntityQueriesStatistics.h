@@ -4,7 +4,6 @@
 #include "FastMath.h"
 #include "DistanceReferencePair.h"
 #include "HashMaps.h"
-#include "Opcodes.h"
 #include "StringInternPool.h"
 
 //system headers:

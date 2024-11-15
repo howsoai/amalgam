@@ -3,21 +3,9 @@
 
 #include "AssetManager.h"
 #include "EntityExternalInterface.h"
-#include "EntityManipulation.h"
-#include "EntityQueries.h"
 #include "EvaluableNodeTreeFunctions.h"
-#include "EvaluableNodeTreeManipulation.h"
-#include "EvaluableNodeTreeDifference.h"
-#include "PerformanceProfiler.h"
 
 //system headers:
-#include <chrono>
-#include <cstdlib>
-#include <ctime>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <utility>
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(EvaluableNode *en, bool immediate_result)
 {

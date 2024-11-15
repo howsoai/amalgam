@@ -7,6 +7,7 @@
 #include "swiftdtoa/SwiftDtoa.h"
 
 //system headers:
+#include <algorithm>
 #include <sstream>
 #include <string>
 

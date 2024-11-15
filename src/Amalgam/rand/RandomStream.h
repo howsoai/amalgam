@@ -1,7 +1,7 @@
 #pragma once
 
 //project headers:
-#include "FastEMath.h"
+#include "FastMath.h"
 
 //system headers:
 #include <cmath>

@@ -39,9 +39,9 @@ public:
 	struct AssetParameters
 	{
 		//initializes defaults for AssetParameters -- should specify whether it is an entity
-		//_resource specifies the path.  if file_type is empty string, then it will
+		//resource_path specifies the path.  if file_type is empty string, then it will
 		//attempt to extract the file_type from the file extension on the resource
-		AssetParameters(std::string _resource, std::string file_type, bool is_entity);
+		AssetParameters(std::string resource_path, std::string file_type, bool is_entity);
 
 		//initializes in a way intended for contained entities for _resource_base_path, will inherit parameters
 		//but update with the new resource_base_path
@@ -49,7 +49,7 @@ public:
 		{
 			AssetParameters new_params(*this);
 			new_params.resourceBasePath = _resource_base_path;
-			new_params.resource = _resource_base_path + "." + extension;
+			new_params.resourcePath = _resource_base_path + "." + extension;
 
 			//since it is contained, overwrite escapeResourceName
 			new_params.escapeResourceName = escapeContainedResourceNames;
@@ -72,7 +72,7 @@ public:
 				new_params.resourceBasePath = resourceBasePath + "/" + entity_id;
 			}
 
-			new_params.resource = new_params.resourceBasePath + "." + extension;
+			new_params.resourcePath = new_params.resourceBasePath + "." + extension;
 
 			//since it is contained, overwrite escapeResourceName
 			new_params.escapeResourceName = escapeContainedResourceNames;
@@ -85,7 +85,7 @@ public:
 		{
 			AssetParameters new_params(*this);
 			new_params.resourceType = resource_type;
-			new_params.resource = resourceBasePath + "." + resource_type;
+			new_params.resourcePath = resourceBasePath + "." + resource_type;
 			return new_params;
 		}
 
@@ -95,7 +95,7 @@ public:
 		//updates resources based on the parameters -- should be called after SetParams
 		void UpdateResources();
 
-		std::string resource;
+		std::string resourcePath;
 		std::string resourceBasePath;
 		std::string resourceType;
 		std::string extension;
@@ -158,7 +158,7 @@ public:
 
 		if(asset_params.resourceType == FILE_EXTENSION_AMALGAM || asset_params.resourceType == FILE_EXTENSION_AMLG_METADATA)
 		{
-			std::ofstream outf(asset_params.resource, std::ios::out | std::ios::binary);
+			std::ofstream outf(asset_params.resourcePath, std::ios::out | std::ios::binary);
 			if(outf.good())
 			{		
 				outf.write(code_string.c_str(), code_string.size());
@@ -174,7 +174,7 @@ public:
 
 			//compress and store
 			BinaryData compressed_data = CompressStrings(string_map);
-			all_stored_successfully = StoreFileFromBuffer<BinaryData>(asset_params.resource, asset_params.resourceType, compressed_data);
+			all_stored_successfully = StoreFileFromBuffer<BinaryData>(asset_params.resourcePath, asset_params.resourceType, compressed_data);
 		}
 
 		return all_stored_successfully;

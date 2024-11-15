@@ -1,14 +1,11 @@
 #pragma once
 
 //project headers:
-#include "DistanceReferencePair.h"
 #include "Entity.h"
 #include "EvaluableNode.h"
 #include "GeneralizedDistance.h"
 
 //system headers:
-#include <algorithm>
-#include <functional>
 #include <list>
 #include <string>
 #include <utility>

@@ -1,6 +1,5 @@
 //project headers:
 #include "Concurrency.h"
-#include "PlatformSpecific.h"
 
 #if defined(MULTITHREAD_SUPPORT)
 ThreadPool Concurrency::threadPool;

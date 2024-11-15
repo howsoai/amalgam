@@ -5,9 +5,6 @@
 #include "StringInternPool.h"
 
 //system headers:
-#include <algorithm>
-#include <map>
-#include <string>
 #include <vector>
 
 //Contains the data from evaluating the goodness or commonality of merging two or more things,

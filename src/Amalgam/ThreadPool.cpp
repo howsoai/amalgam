@@ -2,7 +2,6 @@
 #include "ThreadPool.h"
 
 //system headers:
-#include <iostream>
 
 ThreadPool::ThreadPool(int32_t max_num_active_threads)
 {

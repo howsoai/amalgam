@@ -4,9 +4,7 @@
 #include "Concurrency.h"
 
 //system headers:
-#include <sstream>
 #include <fstream>
-#include <iostream>
 
 class PrintListener
 {

@@ -12,22 +12,21 @@
 #include "PlatformSpecific.h"
 
 //system headers:
-#include <algorithm>
 #include <ctime>
 #include <fstream>
 #include <iostream>
 
 AssetManager asset_manager;
 
-AssetManager::AssetParameters::AssetParameters(std::string _resource, std::string file_type, bool is_entity)
+AssetManager::AssetParameters::AssetParameters(std::string resource_path, std::string file_type, bool is_entity)
 {
-	resource = _resource;
+	resourcePath = resource_path;
 	resourceType = file_type;
 
 	if(resourceType == "")
 	{
 		std::string path, file_base;
-		Platform_SeparatePathFileExtension(resource, path, file_base, resourceType);
+		Platform_SeparatePathFileExtension(resourcePath, path, file_base, resourceType);
 	}
 
 	if(resourceType == FILE_EXTENSION_AMLG_METADATA || resourceType == FILE_EXTENSION_AMALGAM)
@@ -98,15 +97,15 @@ void AssetManager::AssetParameters::UpdateResources()
 {
 	//get file path based on the file being stored
 	std::string path, file_base;
-	Platform_SeparatePathFileExtension(resource, path, file_base, extension);
+	Platform_SeparatePathFileExtension(resourcePath, path, file_base, extension);
 
 	//escape the string if necessary, otherwise just use the regular one
 	if(escapeResourceName)
 	{
 		resourceBasePath = path + FilenameEscapeProcessor::SafeEscapeFilename(file_base);
-		resource = resourceBasePath + "." + extension;
+		resourcePath = resourceBasePath + "." + extension;
 	}
-	else //resource stays the same
+	else //resourcePath stays the same
 	{
 		resourceBasePath = path + file_base;
 	}
@@ -118,7 +117,7 @@ EvaluableNodeReference AssetManager::LoadResource(AssetParameters &asset_params,
 	//load this entity based on file_type
 	if(asset_params.resourceType == FILE_EXTENSION_AMALGAM || asset_params.resourceType == FILE_EXTENSION_AMLG_METADATA)
 	{
-		auto [code, code_success] = Platform_OpenFileAsString(asset_params.resource);
+		auto [code, code_success] = Platform_OpenFileAsString(asset_params.resourcePath);
 		if(!code_success)
 		{
 			status.SetStatus(false, code);
@@ -129,27 +128,27 @@ EvaluableNodeReference AssetManager::LoadResource(AssetParameters &asset_params,
 
 		StringManipulation::RemoveBOMFromUTF8String(code);
 
-		auto [node, warnings, char_with_error] = Parser::Parse(code, enm, asset_params.transactional, &asset_params.resource, debugSources);
+		auto [node, warnings, char_with_error] = Parser::Parse(code, enm, asset_params.transactional, &asset_params.resourcePath, debugSources);
 		for(auto &w : warnings)
 			std::cerr << w << std::endl;
 		return node;
 	}
 	else if(asset_params.resourceType == FILE_EXTENSION_JSON)
 	{
-		return EvaluableNodeReference(EvaluableNodeJSONTranslation::Load(asset_params.resource, enm, status), true);
+		return EvaluableNodeReference(EvaluableNodeJSONTranslation::Load(asset_params.resourcePath, enm, status), true);
 	}
 	else if(asset_params.resourceType == FILE_EXTENSION_YAML)
 	{
-		return EvaluableNodeReference(EvaluableNodeYAMLTranslation::Load(asset_params.resource, enm, status), true);
+		return EvaluableNodeReference(EvaluableNodeYAMLTranslation::Load(asset_params.resourcePath, enm, status), true);
 	}
 	else if(asset_params.resourceType == FILE_EXTENSION_CSV)
 	{
-		return EvaluableNodeReference(FileSupportCSV::Load(asset_params.resource, enm, status), true);
+		return EvaluableNodeReference(FileSupportCSV::Load(asset_params.resourcePath, enm, status), true);
 	}
 	else if(asset_params.resourceType == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 	{
 		BinaryData compressed_data;
-		auto [error_msg, version, success] = LoadFileToBuffer<BinaryData>(asset_params.resource, asset_params.resourceType, compressed_data);
+		auto [error_msg, version, success] = LoadFileToBuffer<BinaryData>(asset_params.resourcePath, asset_params.resourceType, compressed_data);
 		if(!success)
 		{
 			status.SetStatus(false, error_msg, version);
@@ -162,7 +161,7 @@ EvaluableNodeReference AssetManager::LoadResource(AssetParameters &asset_params,
 			return EvaluableNodeReference::Null();
 
 		auto [node, warnings, char_with_error] = Parser::Parse(strings[0], enm, asset_params.transactional,
-			&asset_params.resource, debugSources);
+			&asset_params.resourcePath, debugSources);
 		for(auto &w : warnings)
 			std::cerr << w << std::endl;
 		return node;
@@ -170,7 +169,7 @@ EvaluableNodeReference AssetManager::LoadResource(AssetParameters &asset_params,
 	else //just load the file as a string
 	{
 		std::string s;
-		auto [error_msg, version, success] = LoadFileToBuffer<std::string>(asset_params.resource, asset_params.resourceType, s);
+		auto [error_msg, version, success] = LoadFileToBuffer<std::string>(asset_params.resourcePath, asset_params.resourceType, s);
 		if(success)
 			return EvaluableNodeReference(enm->AllocNode(ENT_STRING, s), true);
 		else
@@ -188,7 +187,7 @@ bool AssetManager::LoadResourceViaTransactionalExecution(AssetParameters &asset_
 	if(asset_params.resourceType == FILE_EXTENSION_AMALGAM)
 	{
 		bool code_success = false;
-		std::tie(code_string, code_success) = Platform_OpenFileAsString(asset_params.resource);
+		std::tie(code_string, code_success) = Platform_OpenFileAsString(asset_params.resourcePath);
 		if(!code_success)
 		{
 			status.SetStatus(false, code_string);
@@ -200,7 +199,7 @@ bool AssetManager::LoadResourceViaTransactionalExecution(AssetParameters &asset_
 	else if(asset_params.resourceType == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 	{
 		BinaryData compressed_data;
-		auto [error_msg, version, success] = LoadFileToBuffer<BinaryData>(asset_params.resource, asset_params.resourceType, compressed_data);
+		auto [error_msg, version, success] = LoadFileToBuffer<BinaryData>(asset_params.resourcePath, asset_params.resourceType, compressed_data);
 		if(!success)
 		{
 			status.SetStatus(false, error_msg, version);
@@ -217,7 +216,7 @@ bool AssetManager::LoadResourceViaTransactionalExecution(AssetParameters &asset_
 
 	StringManipulation::RemoveBOMFromUTF8String(code_string);
 
-	Parser parser(code_string, &entity->evaluableNodeManager, true, &asset_params.resource, debugSources);
+	Parser parser(code_string, &entity->evaluableNodeManager, true, &asset_params.resourcePath, debugSources);
 	auto [first_node, first_node_warnings, first_node_char_with_error] = parser.ParseFirstNode();
 	for(auto &w : first_node_warnings)
 		std::cerr << w << std::endl;
@@ -273,7 +272,7 @@ bool AssetManager::StoreResource(EvaluableNode *code, AssetParameters &asset_par
 	//store the entity based on file_type
 	if(asset_params.resourceType == FILE_EXTENSION_AMALGAM || asset_params.resourceType == FILE_EXTENSION_AMLG_METADATA)
 	{
-		std::ofstream outf(asset_params.resource, std::ios::out | std::ios::binary);
+		std::ofstream outf(asset_params.resourcePath, std::ios::out | std::ios::binary);
 		if(!outf.good())
 			return false;
 
@@ -285,15 +284,15 @@ bool AssetManager::StoreResource(EvaluableNode *code, AssetParameters &asset_par
 	}
 	else if(asset_params.resourceType == FILE_EXTENSION_JSON)
 	{
-		return EvaluableNodeJSONTranslation::Store(code, asset_params.resource, enm, asset_params.sortKeys);
+		return EvaluableNodeJSONTranslation::Store(code, asset_params.resourcePath, enm, asset_params.sortKeys);
 	}
 	else if(asset_params.resourceType == FILE_EXTENSION_YAML)
 	{
-		return EvaluableNodeYAMLTranslation::Store(code, asset_params.resource, enm, asset_params.sortKeys);
+		return EvaluableNodeYAMLTranslation::Store(code, asset_params.resourcePath, enm, asset_params.sortKeys);
 	}
 	else if(asset_params.resourceType == FILE_EXTENSION_CSV)
 	{
-		return FileSupportCSV::Store(code, asset_params.resource, enm);
+		return FileSupportCSV::Store(code, asset_params.resourcePath, enm);
 	}
 	else if(asset_params.resourceType == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 	{
@@ -305,7 +304,7 @@ bool AssetManager::StoreResource(EvaluableNode *code, AssetParameters &asset_par
 
 		//compress and store
 		BinaryData compressed_data = CompressStrings(string_map);
-		return StoreFileFromBuffer<BinaryData>(asset_params.resource, asset_params.resourceType, compressed_data);
+		return StoreFileFromBuffer<BinaryData>(asset_params.resourcePath, asset_params.resourceType, compressed_data);
 	}
 	else //binary string
 	{
@@ -313,7 +312,7 @@ bool AssetManager::StoreResource(EvaluableNode *code, AssetParameters &asset_par
 			return false;
 
 		const std::string &s = code->GetStringValue();
-		return StoreFileFromBuffer<std::string>(asset_params.resource, asset_params.resourceType, s);
+		return StoreFileFromBuffer<std::string>(asset_params.resourcePath, asset_params.resourceType, s);
 	}
 
 	return false;
@@ -569,9 +568,9 @@ void AssetManager::DestroyPersistentEntity(Entity *entity)
 		std::error_code ec;
 
 		//delete files
-		std::filesystem::remove(asset_params.resource, ec);
+		std::filesystem::remove(asset_params.resourcePath, ec);
 		if(ec)
-			std::cerr << "Could not remove file: " << asset_params.resource << std::endl;
+			std::cerr << "Could not remove file: " << asset_params.resourcePath << std::endl;
 
 		if(asset_params.resourceType == FILE_EXTENSION_AMALGAM)
 			std::filesystem::remove(asset_params.resourceBasePath + "." + FILE_EXTENSION_AMLG_METADATA, ec);

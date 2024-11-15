@@ -2,7 +2,6 @@
 
 //project headers:
 #include "Entity.h"
-#include "EvaluableNodeTreeManipulation.h"
 #include "Merger.h"
 
 //Contains various classes and functions to manipulate entities

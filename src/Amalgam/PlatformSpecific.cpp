@@ -4,15 +4,11 @@
 #include "Concurrency.h"
 
 //system headers:
-#include <algorithm>
 #include <array>
-#include <cctype>
 #include <cfenv>
+#include <cstring>
 #include <codecvt>
 #include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <fstream>
 
 //perform universal initialization
 class PlatformSpecificStartup

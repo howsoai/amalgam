@@ -6,15 +6,8 @@
 #include "Opcodes.h"
 #include "PlatformSpecific.h"
 #include "StringInternPool.h"
-#include "StringManipulation.h"
 
 //system headers:
-#include <algorithm>
-#include <cmath>
-#include <cstdint>
-#include <cstdlib>
-#include <map>
-#include <set>
 #include <sstream>
 #include <string>
 #include <vector>

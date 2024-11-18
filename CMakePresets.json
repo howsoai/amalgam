@@ -123,6 +123,14 @@
       }
     },
     {
+      "name": "g++",
+      "hidden": true,
+      "description": "Sets g++ compiler",
+      "cacheVariables": {
+        "CMAKE_CXX_COMPILER": "g++"
+      }
+    },
+    {
       "name": "gcc",
       "hidden": true,
       "description": "Sets gcc compiler",
@@ -201,7 +209,26 @@
         "rhs": "Windows"
       }
     },
-
+    {
+      "name": "amd64-debug-linux-228",
+      "description": "g++ for amd64 (debug) for linux",
+      "inherits": [ "base", "linux", "amd64", "debug", "g++" ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "amd64-release-linux-228",
+      "description": "g++ for amd64 (release) for linux",
+      "inherits": [ "base", "linux", "amd64", "release", "g++" ],
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
     {
       "name": "amd64-debug-linux",
       "description": "gcc for amd64 (debug) for linux",
@@ -347,6 +374,16 @@
       "description": "linux amd64 release build"
     },
     {
+      "name": "amd64-debug-linux-228",
+      "configurePreset": "amd64-debug-linux-228",
+      "description": "linux glibc 2.28 amd64 debug build"
+    },
+    {
+      "name": "amd64-release-linux-228",
+      "configurePreset": "amd64-release-linux-228",
+      "description": "linux glibc 2.28 amd64 release build"
+    },
+    {
       "name": "arm64-debug-linux",
       "configurePreset": "arm64-debug-linux",
       "description": "linux arm64 debug build"
@@ -424,6 +461,18 @@
       "description": "linux amd64 debug tests",
       "inherits": "base",
       "configurePreset": "amd64-debug-linux"
+    },
+    {
+      "name": "amd64-release-linux-228",
+      "description": "linux glibc 2.28 amd64 release tests",
+      "inherits": "base",
+      "configurePreset": "amd64-release-linux-228"
+    },
+    {
+      "name": "amd64-debug-linux-228",
+      "description": "linux glibc 2.28 amd64 debug tests",
+      "inherits": "base",
+      "configurePreset": "amd64-debug-linux-228"
     },
     {
       "name": "arm64-release-linux",

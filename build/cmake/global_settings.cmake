@@ -101,6 +101,16 @@ if(IS_UNIX)
     endif()
 endif()
 
+# GLIBC_VERSION
+if(IS_UNIX)
+    set(GLIBC_VERSION "unknown")
+    execute_process(COMMAND bash "-c" "ldd --version | head -n1 | grep -oEe '([[:digit:]]).([[:digit:]]*)'"
+                    RESULT_VARIABLE LDD_RETURN_CODE
+                    OUTPUT_VARIABLE GLIBC_VERSION
+                    OUTPUT_STRIP_TRAILING_WHITESPACE
+                    )
+endif()
+
 # Exe ext for WASM:
 if(IS_WASM)
     set(CMAKE_EXECUTABLE_SUFFIX ".cjs")

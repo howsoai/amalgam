@@ -90,6 +90,69 @@ jobs:
           path: ./out/package/amalgam-*.tar.gz
           if-no-files-found: error
 
+  build-linux-228:
+    runs-on: ubuntu-20.04
+    container:
+      image: ghcr.io/howsoai/amalgam-build-container-linux-228:2.0.9
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ github.token }}
+    strategy:
+      matrix:
+        preset:
+          - arch: amd64
+            platform: linux
+            type: release
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set build preset
+        run: |
+          PRESET=$(echo ${{ matrix.preset.arch }}-${{ matrix.preset.type }}-${{ matrix.preset.platform }}-228)
+          echo "PRESET=$(echo $PRESET)" >> $GITHUB_ENV
+          echo "Build preset: $PRESET"
+          # Print glibc version
+          ldd --version
+
+      - name: CMake Configure
+        run: AMALGAM_BUILD_VERSION=${{ inputs.version }} cmake --preset $PRESET
+
+      - name: CMake Build
+        run: cmake --build --preset $PRESET --
+
+      - name: CMake Test
+        run: cmake --build --preset $PRESET --target test
+
+      - name: Print/copy out.txt
+        if: always()
+        continue-on-error: true
+        run: |
+          tail -n 20 src/Amalgam/out.txt
+          cp src/Amalgam/out.txt ./out/test/
+          
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.preset.type }}-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}-228
+          path: ./out/test/*
+
+      - name: CMake Install
+        run: cmake --build --preset $PRESET --target install
+
+      - name: CMake Package
+        run: cmake --build --preset $PRESET --target package
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: amalgam-${{ inputs.version }}-${{ matrix.preset.type }}-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}-228
+          path: ./out/package/amalgam-*.tar.gz
+          if-no-files-found: error
+
   build-macos:
     runs-on: macos-13
     strategy:

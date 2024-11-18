@@ -708,12 +708,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 	if(ocn_size == 0)
 		return EvaluableNodeReference::Null();
 
-	//get the current layer of the stack
-	EvaluableNode *scope = GetCurrentCallStackContext();
-	if(scope == nullptr)	//this shouldn't happen, but just in case it does
-		return EvaluableNodeReference::Null();
-	auto &scope_mcn = scope->GetMappedChildNodesReference();
-
 	//work on the node that is declaring the variables
 	EvaluableNode *required_vars_node = ocn[0];
 	if(required_vars_node != nullptr)
@@ -745,6 +739,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 				LockWithoutBlockingGarbageCollection(*callStackMutex, write_lock, required_vars);
 		#endif
 
+			//get the current layer of the stack
+			EvaluableNode *scope = GetCurrentCallStackContext();
+			if(scope == nullptr)	//this shouldn't happen, but just in case it does
+				return EvaluableNodeReference::Null();
+
 			if(!need_to_interpret)
 			{
 				//check each of the required variables and put into the stack if appropriate
@@ -762,6 +761,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 			}
 			else //need_to_interpret
 			{
+				auto &scope_mcn = scope->GetMappedChildNodesReference();
+
 				PushNewConstructionContext(required_vars, nullptr,
 					EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 

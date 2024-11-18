@@ -1101,6 +1101,7 @@ public:
 		threadLocalAllocationBuffer.clear();
 	}
 
+
 protected:
 
 #else
@@ -1123,10 +1124,10 @@ private:
 
 	#ifdef MULTITHREAD_SUPPORT
 
-	static inline thread_local EvaluableNodeManager* lastEvaluableNode;
-	static EvaluableNode* getNextNodeFromTLab(EvaluableNodeManager* thisEvaluableNode)
+	static inline thread_local EvaluableNodeManager* lastEvaluableNodeManager;
+	static EvaluableNode* getNextNodeFromTLab(EvaluableNodeManager* thisEvaluableNodeManager)
 	{
-		if(threadLocalAllocationBuffer.size() > 0 && thisEvaluableNode == lastEvaluableNode)
+		if(threadLocalAllocationBuffer.size() > 0 && thisEvaluableNodeManager == lastEvaluableNodeManager)
 		{
 			EvaluableNode* end = threadLocalAllocationBuffer[threadLocalAllocationBuffer.size()-1];
 			threadLocalAllocationBuffer.pop_back();
@@ -1134,13 +1135,26 @@ private:
 		}
 		else
 		{
-			if (lastEvaluableNode != thisEvaluableNode)
+			if (lastEvaluableNodeManager != thisEvaluableNodeManager)
 				ClearThreadLocalAllocationBuffer();
 
-			lastEvaluableNode = thisEvaluableNode;
+			lastEvaluableNodeManager = thisEvaluableNodeManager;
 			return NULL;
 		}
 
+	}
+
+	static void addToTLab(EvaluableNodeManager* thisEvaulableNodeManager, EvaluableNode* evaluableNode)
+	{
+		std::cout << "!!!naricc_debug!!! Addeding evaluabelNode to Tlab: " << evaluableNode << std::endl;
+
+		if(thisEvaulableNodeManager != lastEvaluableNodeManager)
+		{
+			threadLocalAllocationBuffer.clear();
+			lastEvaluableNodeManager = thisEvaulableNodeManager;
+		}
+
+		threadLocalAllocationBuffer.push_back(evaluableNode);
 	}
 
 	static const int tlabSize = 20;

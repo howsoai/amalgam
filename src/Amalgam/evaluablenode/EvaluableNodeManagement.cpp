@@ -9,7 +9,7 @@
 #include <iostream>
 
 
-#define PEDANTIC_GARBAGE_COLLECTION
+// #define PEDANTIC_GARBAGE_COLLECTION
 
 #ifdef MULTITHREAD_SUPPORT
 Concurrency::ReadWriteMutex EvaluableNodeManager::memoryModificationMutex;
@@ -282,7 +282,7 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 				if(nodes[i] == nullptr)
 					nodes[i] = new EvaluableNode(ENT_NULL);
 
-				threadLocalAllocationBuffer.push_back(nodes[i]);
+				addToTLab(this, nodes[i]);
 			}
 
 			return getNextNodeFromTLab(this);
@@ -458,6 +458,11 @@ void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree)
 	}
 
 	tree->Invalidate();
+
+#ifdef MULTITHREAD_SUPPORT
+	tree->InitializeType(ENT_NULL);
+	addToTLab(this, tree);
+#endif 
 }
 
 void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
@@ -497,12 +502,19 @@ void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
 		std::swap(ocn, tree_ocn);
 		tree->Invalidate();
 
+	
+
 		for(auto &e : ocn)
 		{
 			if(e != nullptr && !e->IsNodeDeallocated())
 				FreeNodeTreeWithCyclesRecurse(e);
 		}
 	}
+
+	#ifdef MULTITHREAD_SUPPORT
+	tree->InitializeType(ENT_NULL);
+	addToTLab(this, tree);
+	#endif 
 }
 
 void EvaluableNodeManager::ModifyLabels(EvaluableNode *n, EvaluableNodeMetadataModifier metadata_modifier)

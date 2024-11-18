@@ -114,20 +114,21 @@ public:
 	//entity from which the constraints are based
 	Entity *entityToConstrainFrom;
 
-	//constrains the maximum number of contained entities
+	//flag set to true if constraints have been exceeded
+	bool constraintsExceeded;
+
 	bool constrainMaxContainedEntities;
+	bool constrainMaxContainedEntityDepth;
+
+	//constrains the maximum number of contained entities
 	size_t maxContainedEntities;
 
 	//constrains how deep entities can be created
-	bool constrainMaxContainedEntityDepth;
 	size_t maxContainedEntityDepth;
 
 	//constrains the maximum length of an entity id (primarily to make sure it doesn't cause problems for file systems)
 	//If 0, then unlimited
 	size_t maxEntityIdLength;
-
-	//flag set to true if constraints have been exceeded
-	bool constraintsExceeded;
 };
 
 class Interpreter

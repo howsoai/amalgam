@@ -61,22 +61,28 @@ std::string Parser::Backslashify(const std::string &s)
 		switch(c)
 		{
 		case '\0':
-			b.append("\\0");
+			b.push_back('\\');
+			b.push_back('0');
 			break;
 		case '\\':
-			b.append("\\\\");
+			b.push_back('\\');
+			b.push_back('\\');
 			break;
 		case '"':
-			b.append("\\\"");
+			b.push_back('\\');
+			b.push_back('"');
 			break;
 		case '\t':
-			b.append("\\t");
+			b.push_back('\\');
+			b.push_back('t');
 			break;
 		case '\n':
-			b.append("\\n");
+			b.push_back('\\');
+			b.push_back('n');
 			break;
 		case '\r':
-			b.append("\\r");
+			b.push_back('\\');
+			b.push_back('r');
 			break;
 		default:
 			b.push_back(c);

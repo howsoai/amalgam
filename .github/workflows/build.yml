@@ -337,7 +337,7 @@ jobs:
       - name: Extract Amalgam
         run: |
           mkdir ./amalgam
-          tar -xvf ./amalgam-${{ inputs.version }}-linux-amd64-228.tar.gz -C ./amalgam
+          tar -xvf ./amalgam-${{ inputs.version }}-linux-amd64.tar.gz -C ./amalgam
 
       - name: Smoke test
         run: |

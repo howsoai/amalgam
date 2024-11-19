@@ -197,6 +197,8 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 	if(shared_node == nullptr || a_parent == nullptr || b_parent == nullptr)
 		return nullptr;
 
+	//TODO 22156: allocate from enm in a way that does not invalidate tlab (but does not increase the size of EvaluableNodeManager)
+
 	//find all parent nodes of a to find collision with parent node of b, along with depth counts
 	EvaluableNode::ReferenceCountType a_parent_nodes;
 	size_t a_ancestor_depth = 1;
@@ -989,7 +991,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 			std::swap(upd.parentNodes, references);
 			Unparse(upd, code_to_print, nullptr, expanded_whitespace, indentation_depth, need_initial_indent);
 			std::swap(upd.parentNodes, references);	//put the old parentNodes back
-			enm.FreeNodeTree(code_to_print);
+			//don't free code_to_print, but let enm's destructor clean it up
 
 			return;
 		}

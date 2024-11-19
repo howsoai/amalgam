@@ -743,7 +743,7 @@ public:
 	#endif
 
 		en->Invalidate();
-		ReclaimFreedNodesAtEnd();
+		AddNodeToTLab(en);
 	}
 
 	//attempts to free the node reference
@@ -759,7 +759,7 @@ public:
 		if(enr.unique && enr != nullptr && !enr->GetNeedCycleCheck())
 		{
 			enr->Invalidate();
-			ReclaimFreedNodesAtEnd();
+			AddNodeToTLab(enr);
 		}
 	}
 
@@ -779,6 +779,7 @@ public:
 		if(IsEvaluableNodeTypeImmediate(en->GetType()))
 		{
 			en->Invalidate();
+			AddNodeToTLab(en);
 		}
 		else if(!en->GetNeedCycleCheck())
 		{
@@ -794,8 +795,6 @@ public:
 		#endif
 			FreeNodeTreeWithCyclesRecurse(en);
 		}
-
-		ReclaimFreedNodesAtEnd();
 	}
 
 	//attempts to free the node reference
@@ -826,8 +825,6 @@ public:
 					FreeNodeTreeRecurse(e);
 			}
 		}
-
-		ReclaimFreedNodesAtEnd();
 	}
 
 	//retuns the nodes currently referenced, allocating if they don't exist
@@ -895,24 +892,6 @@ public:
 	//compacts allocated nodes so that the node pool can be used more efficiently
 	// and can improve reuse without calling the more expensive FreeAllNodesExceptReferencedNodes
 	void CompactAllocatedNodes();
-
-	//allows freed nodes at the end of nodes to be reallocated
-	inline void ReclaimFreedNodesAtEnd()
-	{
-	#ifndef MULTITHREAD_SUPPORT
-		//this cannot be used with multithreading because each thread will be using RecommendGarbageCollection
-		//to determine whether it should stay in garbage collection, and this can break the logic
-		//an alternative implementation would be to have a separate variable to indicate that everything should
-		//go into garbage collection, regardless of the current state of firstUnusedNodeIndex, but the extra
-		//overhead of that logic called for each opcode is not worth the gains of acquiring a write lock here
-		//and occasionally freeing a small bit of memory
-
-		//if any group of nodes on the top are ready to be cleaned up cheaply, do so
-		while(firstUnusedNodeIndex > 0 && nodes[firstUnusedNodeIndex - 1] != nullptr
-				&& nodes[firstUnusedNodeIndex - 1]->IsNodeDeallocated())
-			firstUnusedNodeIndex--;
-	#endif
-	}
 
 	//returns the number of nodes currently being used that have not been freed yet
 	__forceinline size_t GetNumberOfUsedNodes()
@@ -1107,7 +1086,7 @@ protected:
 	std::unique_ptr<NodesReferenced> nodesCurrentlyReferenced;
 
 public:
-	// TODO: Make this private when done debugging
+	// TODO 22156: Make this private when done debugging
 	typedef std::vector<EvaluableNode *> TLab;
 
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)

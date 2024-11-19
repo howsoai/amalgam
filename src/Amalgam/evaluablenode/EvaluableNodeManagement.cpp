@@ -476,6 +476,7 @@ void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
 		auto &tree_mcn = tree->GetMappedChildNodesReference();
 		std::swap(mcn, tree_mcn);
 		tree->Invalidate();
+		AddNodeToTLab(tree);
 
 		for(auto &[_, e] : mcn)
 		{
@@ -489,8 +490,6 @@ void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
 	else if(tree->IsImmediate())
 	{
 		tree->Invalidate();
-
-		tree->InitializeType(ENT_NULL);
 		AddNodeToTLab(tree);
 	}
 	else //ordered
@@ -501,8 +500,7 @@ void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
 		auto &tree_ocn = tree->GetOrderedChildNodesReference();
 		std::swap(ocn, tree_ocn);
 		tree->Invalidate();
-
-	
+		AddNodeToTLab(tree);
 
 		for(auto &e : ocn)
 		{
@@ -510,8 +508,6 @@ void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
 				FreeNodeTreeWithCyclesRecurse(e);
 		}
 	}
-
-
 }
 
 void EvaluableNodeManager::ModifyLabels(EvaluableNode *n, EvaluableNodeMetadataModifier metadata_modifier)

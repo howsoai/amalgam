@@ -146,6 +146,12 @@ jobs:
       - name: CMake Package
         run: cmake --build --preset $PRESET --target package
 
+      - name: Rename Package
+        run: |
+          # Necessary so that there are no naming conflicts between the two amd64 packages (GLIBC 2.28/2.29) at release time,
+          # where GitHub does not allow a distinct "artifact name"
+          mv ./out/package/amalgam-*.tar.gz ./out/package/amalgam-${{ inputs.version }}-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}-228.tar.gz
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:

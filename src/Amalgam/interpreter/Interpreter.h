@@ -753,6 +753,7 @@ protected:
 					result = result_ref;
 					resultsSaver.SetStackLocation(results_saver_location, result);
 
+					EvaluableNodeManager::ClearThreadLocalAllocationBuffer();
 					interpreter.memoryModificationLock.unlock();
 					taskSet.MarkTaskCompleted();
 				}
@@ -821,6 +822,7 @@ protected:
 							resultsSaver.SetStackLocation(results_saver_location, *result);
 					}
 
+					EvaluableNodeManager::ClearThreadLocalAllocationBuffer();
 					interpreter.memoryModificationLock.unlock();
 					taskSet.MarkTaskCompleted();
 				}
@@ -831,6 +833,7 @@ protected:
 		inline void EndConcurrency()
 		{
 			//allow other threads to perform garbage collection
+			EvaluableNodeManager::ClearThreadLocalAllocationBuffer();
 			parentInterpreter->memoryModificationLock.unlock();
 			taskSet.WaitForTasks(taskEnqueueLock);
 			parentInterpreter->memoryModificationLock.lock();

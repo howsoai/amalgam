@@ -235,8 +235,9 @@ PLATFORM_MAIN_CONSOLE
 	{
 		//run the standard amlg command line interface
 		EntityExternalInterface::LoadEntityStatus status;
-		AssetManager::AssetParameters asset_params(amlg_file_to_run, "", true);
-		std::string file_type = "";
+		AssetManager::AssetParametersRef asset_params
+			= std::make_shared<AssetManager::AssetParameters>(amlg_file_to_run, "", true);
+
 		Entity *entity = asset_manager.LoadEntityFromResource(asset_params, false, random_seed, nullptr, status);
 
 		if(!status.loaded)

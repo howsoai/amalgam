@@ -263,16 +263,16 @@ void EvaluableNodeManager::FreeAllNodes()
 
 EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 {	
+	EvaluableNode* tlabNode = getNextNodeFromTLab(this);
+	// std::cout << "!!!naricc_debug!!! EvaluableNodeManager::AllocUninitializedNode EvaluableNodeManager: " << this << " thread_id: " << std::this_thread::get_id() << " tlab: " << &threadLocalAllocationBuffer << std::endl;
+	//Fast Path; get node from thread local buffer
+	if (tlabNode) {
+		assert(nodes.size() > 0);
+		return tlabNode;
+	}
+
 #ifdef MULTITHREAD_SUPPORT
 	{
-		EvaluableNode* tlabNode = getNextNodeFromTLab(this);
-
-		// std::cout << "!!!naricc_debug!!! EvaluableNodeManager::AllocUninitializedNode EvaluableNodeManager: " << this << " thread_id: " << std::this_thread::get_id() << " tlab: " << &threadLocalAllocationBuffer << std::endl;
-		//Fast Path; get node from thread local buffer
-		if (tlabNode) {
-			assert(nodes.size() > 0);
-			return tlabNode;
-		}
 
 		//slow path allocation; attempt to allocate using an atomic without write locking
 		Concurrency::ReadLock lock(managerAttributesMutex);
@@ -465,10 +465,8 @@ void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree)
 
 	tree->Invalidate();
 
-#ifdef MULTITHREAD_SUPPORT
 	tree->InitializeType(ENT_NULL);
 	addToTLab(this, tree);
-#endif 
 }
 
 void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
@@ -498,6 +496,9 @@ void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
 	else if(tree->IsImmediate())
 	{
 		tree->Invalidate();
+
+		tree->InitializeType(ENT_NULL);
+		addToTLab(this, tree);
 	}
 	else //ordered
 	{
@@ -517,10 +518,7 @@ void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
 		}
 	}
 
-	#ifdef MULTITHREAD_SUPPORT
-	tree->InitializeType(ENT_NULL);
-	addToTLab(this, tree);
-	#endif 
+
 }
 
 void EvaluableNodeManager::ModifyLabels(EvaluableNode *n, EvaluableNodeMetadataModifier metadata_modifier)

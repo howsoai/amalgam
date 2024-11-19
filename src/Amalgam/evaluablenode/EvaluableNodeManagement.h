@@ -1080,10 +1080,6 @@ protected:
 	Concurrency::ReadWriteMutex managerAttributesMutex;
 
 	std::atomic<size_t> firstUnusedNodeIndex;
-#else
-	size_t firstUnusedNodeIndex;
-#endif
-
 
 public:
 	//global mutex to manage whether memory nodes are being modified
@@ -1095,18 +1091,11 @@ public:
 	// EvaluableNodeManager and so garbage collection should not happening while memory is being modified
 	static Concurrency::ReadWriteMutex memoryModificationMutex;
 
-
-	// TODO: Make this private when done debugging
-	typedef std::vector<EvaluableNode*> TLab;
-	inline static thread_local TLab threadLocalAllocationBuffer;
-
-	static void ClearThreadLocalAllocationBuffer()
-	{
-		threadLocalAllocationBuffer.clear();
-	}
-
-
 protected:
+
+#else
+	size_t firstUnusedNodeIndex;
+#endif
 
 	//nodes that have been allocated and may be in use
 	// all nodes in use are below firstUnusedNodeIndex, such that all above that index are free for use
@@ -1117,15 +1106,39 @@ protected:
 	//only allocated if needed
 	std::unique_ptr<NodesReferenced> nodesCurrentlyReferenced;
 
+public:
+	// TODO: Make this private when done debugging
+	typedef std::vector<EvaluableNode *> TLab;
+
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	thread_local
+#endif
+	inline static TLab threadLocalAllocationBuffer;
+
+	static void ClearThreadLocalAllocationBuffer()
+	{
+		threadLocalAllocationBuffer.clear();
+	}
+protected:
+
+	//buffer used for updating EvaluableNodeFlags, particularly UpdateFlagsForNodeTree
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	thread_local
+#endif
+		static EvaluableNode::ReferenceAssocType nodeToParentNodeCache;
+
+
 	//extra space to allocate when allocating
 	static const double allocExpansionFactor;
 
-private:
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	thread_local
+#endif
+	static inline EvaluableNodeManager *lastEvaluableNodeManager;
 
-	static inline thread_local EvaluableNodeManager* lastEvaluableNodeManager;
-	static EvaluableNode* getNextNodeFromTLab(EvaluableNodeManager* thisEvaluableNodeManager)
+	inline EvaluableNode *GetNextNodeFromTLab()
 	{
-		if(threadLocalAllocationBuffer.size() > 0 && thisEvaluableNodeManager == lastEvaluableNodeManager)
+		if(threadLocalAllocationBuffer.size() > 0 && this == lastEvaluableNodeManager)
 		{
 			EvaluableNode* end = threadLocalAllocationBuffer[threadLocalAllocationBuffer.size()-1];
 			threadLocalAllocationBuffer.pop_back();
@@ -1133,26 +1146,26 @@ private:
 		}
 		else
 		{
-			if (lastEvaluableNodeManager != thisEvaluableNodeManager)
+			if(lastEvaluableNodeManager != this)
 				ClearThreadLocalAllocationBuffer();
 
-			lastEvaluableNodeManager = thisEvaluableNodeManager;
-			return NULL;
+			lastEvaluableNodeManager = this;
+			return nullptr;
 		}
 
 	}
 
-	static void addToTLab(EvaluableNodeManager* thisEvaulableNodeManager, EvaluableNode* evaluableNode)
+	inline void AddNodeToTLab(EvaluableNode *en)
 	{
-		std::cout << "!!!naricc_debug!!! Addeding evaluabelNode to Tlab: " << evaluableNode << std::endl;
+		//std::cout << "!!!naricc_debug!!! Addeding evaluabelNode to Tlab: " << en << std::endl;
 
-		if(thisEvaulableNodeManager != lastEvaluableNodeManager)
+		if(this != lastEvaluableNodeManager)
 		{
 			threadLocalAllocationBuffer.clear();
-			lastEvaluableNodeManager = thisEvaulableNodeManager;
+			lastEvaluableNodeManager = this;
 		}
 
-		threadLocalAllocationBuffer.push_back(evaluableNode);
+		threadLocalAllocationBuffer.push_back(en);
 	}
 
 	static const int tlabSize = 20;

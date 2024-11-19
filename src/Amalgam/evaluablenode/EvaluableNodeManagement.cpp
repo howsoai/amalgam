@@ -257,13 +257,11 @@ void EvaluableNodeManager::FreeAllNodes()
 
 EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 {	
-	EvaluableNode* tlabNode = getNextNodeFromTLab(this);
+	EvaluableNode *tlab_node = GetNextNodeFromTLab();
 	// std::cout << "!!!naricc_debug!!! EvaluableNodeManager::AllocUninitializedNode EvaluableNodeManager: " << this << " thread_id: " << std::this_thread::get_id() << " tlab: " << &threadLocalAllocationBuffer << std::endl;
 	//Fast Path; get node from thread local buffer
-	if (tlabNode) {
-		assert(nodes.size() > 0);
-		return tlabNode;
-	}
+	if(tlab_node != nullptr)
+		return tlab_node;
 
 #ifdef MULTITHREAD_SUPPORT
 	{
@@ -277,15 +275,15 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 
 		if(last_index_to_allocate < nodes.size())
 		{
-			for (int i = first_index_to_allocate; i < last_index_to_allocate; i++)
+			for(size_t i = first_index_to_allocate; i < last_index_to_allocate; i++)
 			{
 				if(nodes[i] == nullptr)
-					nodes[i] = new EvaluableNode(ENT_NULL);
+					nodes[i] = new EvaluableNode(ENT_DEALLOCATED);
 
-				addToTLab(this, nodes[i]);
+				AddNodeToTLab(nodes[i]);
 			}
 
-			return getNextNodeFromTLab(this);
+			return GetNextNodeFromTLab();
 		}
 
 		//couldn't allocate enough valid nodes; reset index and allocate more
@@ -301,15 +299,16 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 	//as other threads may have reduced firstUnusedNodeIndex, incurring more unnecessary write locks when a memory expansion is needed
 	
 #endif
-	size_t allocated_index = firstUnusedNodeIndex;
+	//reduce accesses to the atomic variable for performance
+	size_t allocated_index = firstUnusedNodeIndex++;
 
 	size_t num_nodes = nodes.size();
-	if(allocated_index < num_nodes && firstUnusedNodeIndex < num_nodes)
+	if(allocated_index < num_nodes)
 	{
-		if(nodes[firstUnusedNodeIndex] == nullptr)
-			nodes[firstUnusedNodeIndex] = new EvaluableNode();
+		if(nodes[allocated_index] == nullptr)
+			nodes[allocated_index] = new EvaluableNode();
 
-		return nodes[firstUnusedNodeIndex++];
+		return nodes[allocated_index];
 	}
 
 	//ran out, so need another node; push a bunch on the heap so don't need to reallocate as often and slow down garbage collection
@@ -318,10 +317,10 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 	//fill new EvaluableNode slots with nullptr
 	nodes.resize(new_num_nodes, nullptr);
 
-	if(nodes[firstUnusedNodeIndex] == nullptr)
-		nodes[firstUnusedNodeIndex] = new EvaluableNode();
+	if(nodes[allocated_index] == nullptr)
+		nodes[allocated_index] = new EvaluableNode();
 
-	return nodes[firstUnusedNodeIndex++];
+	return nodes[allocated_index];
 }
 
 void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_unused_node_index)
@@ -460,7 +459,7 @@ void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree)
 	tree->Invalidate();
 
 	tree->InitializeType(ENT_NULL);
-	addToTLab(this, tree);
+	AddNodeToTLab(tree);
 }
 
 void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
@@ -492,7 +491,7 @@ void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
 		tree->Invalidate();
 
 		tree->InitializeType(ENT_NULL);
-		addToTLab(this, tree);
+		AddNodeToTLab(tree);
 	}
 	else //ordered
 	{

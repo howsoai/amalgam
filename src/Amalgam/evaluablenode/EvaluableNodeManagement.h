@@ -1080,6 +1080,10 @@ protected:
 	Concurrency::ReadWriteMutex managerAttributesMutex;
 
 	std::atomic<size_t> firstUnusedNodeIndex;
+#else
+	size_t firstUnusedNodeIndex;
+#endif
+
 
 public:
 	//global mutex to manage whether memory nodes are being modified
@@ -1104,10 +1108,6 @@ public:
 
 protected:
 
-#else
-	size_t firstUnusedNodeIndex;
-#endif
-
 	//nodes that have been allocated and may be in use
 	// all nodes in use are below firstUnusedNodeIndex, such that all above that index are free for use
 	// nodes cannot be nullptr for lower indices than firstUnusedNodeIndex
@@ -1121,8 +1121,6 @@ protected:
 	static const double allocExpansionFactor;
 
 private:
-
-	#ifdef MULTITHREAD_SUPPORT
 
 	static inline thread_local EvaluableNodeManager* lastEvaluableNodeManager;
 	static EvaluableNode* getNextNodeFromTLab(EvaluableNodeManager* thisEvaluableNodeManager)
@@ -1158,8 +1156,5 @@ private:
 	}
 
 	static const int tlabSize = 20;
-
-	#endif // MULTITHREAD_SUPPORT
-
 
 };

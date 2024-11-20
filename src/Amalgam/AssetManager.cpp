@@ -447,7 +447,7 @@ void AssetManager::CreateEntity(Entity *entity)
 		return;
 
 #ifdef MULTITHREAD_INTERFACE
-	Concurrency::ReadLock lock(persistentEntitiesMutex);
+	Concurrency::WriteLock lock(persistentEntitiesMutex);
 #endif
 
 	Entity *container = entity->GetContainer();
@@ -459,9 +459,8 @@ void AssetManager::CreateEntity(Entity *entity)
 	//if flattened, then just need to update it or the appropriate container
 	if(container_asset_params->flatten)
 	{
-		//TODO 21363: update this
 		UpdateEntity(container);
-		persistentEntities.emplace(entity, container_asset_params);
+		SetEntityPersistenceForFlattenedEntity(entity, container_asset_params);
 	}
 	else
 	{

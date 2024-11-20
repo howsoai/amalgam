@@ -11,12 +11,6 @@
 Concurrency::ReadWriteMutex EvaluableNodeManager::memoryModificationMutex;
 #endif
 
-
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-thread_local
-#endif
-EvaluableNode::ReferenceAssocType EvaluableNodeManager::nodeToParentNodeCache;
-
 const double EvaluableNodeManager::allocExpansionFactor = 1.5;
 
 EvaluableNodeManager::~EvaluableNodeManager()

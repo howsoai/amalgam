@@ -121,6 +121,7 @@ std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t> Parser::Par
 {
 	preevaluationNodes.clear();
 	parentNodes.clear();
+	parentNodes.shrink_to_fit();
 
 	EvaluableNode *top_node = ParseCode();
 

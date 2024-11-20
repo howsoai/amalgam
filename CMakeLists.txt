@@ -43,6 +43,7 @@ message(STATUS "Amalgam version full escaped : '${AMALGAM_VERSION_FULL_ESCAPED}'
 message(STATUS "Use object libs              : ${USE_OBJECT_LIBS}")
 message(STATUS "System name                  : ${CMAKE_SYSTEM_NAME}")
 message(STATUS "OS                           : ${OS}")
+message(STATUS "OS GLIBC Version             : ${GLIBC_VERSION}")
 message(STATUS "Target system version        : ${CMAKE_SYSTEM_VERSION}")
 if(IS_VISUALSTUDIO)
 message(STATUS "Target system version - VS   : ${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}")

@@ -35,16 +35,37 @@ public:
 		: defaultEntityExtension(FILE_EXTENSION_AMALGAM), debugSources(false), debugMinimal(false)
 	{	}
 
-	struct AssetParameters;
+	class AssetParameters;
 	using AssetParametersRef = std::shared_ptr<AssetParameters>;
 
 	//parameters that define how an asset is loaded and stored
-	struct AssetParameters
+	class AssetParameters
 	{
+	public:
 		//initializes defaults for AssetParameters -- should specify whether it is an entity
 		//resource_path specifies the path.  if file_type is empty string, then it will
 		//attempt to extract the file_type from the file extension on the resource
 		AssetParameters(std::string resource_path, std::string file_type, bool is_entity);
+
+		//copy constructor
+		AssetParameters(const AssetParameters &other)
+			: topEntity(other.topEntity),
+			writeListener(nullptr),
+			resourcePath(other.resourcePath),
+			resourceBasePath(other.resourceBasePath),
+			resourceType(other.resourceType),
+			extension(other.extension),
+			includeRandSeeds(other.includeRandSeeds),
+			escapeResourceName(other.escapeResourceName),
+			escapeContainedResourceNames(other.escapeContainedResourceNames),
+			transactional(other.transactional),
+			prettyPrint(other.prettyPrint),
+			sortKeys(other.sortKeys),
+			flatten(other.flatten),
+			parallelCreate(other.parallelCreate),
+			executeOnLoad(other.executeOnLoad)
+		{
+		}
 
 		//initializes in a way intended for contained entities for _resource_base_path, will inherit parameters
 		//but update with the new resource_base_path

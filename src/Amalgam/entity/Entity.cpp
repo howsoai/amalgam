@@ -819,7 +819,7 @@ void Entity::SetRandomState(const std::string &new_state, bool deep_set_seed,
 		for(auto &wl : *write_listeners)
 			wl->LogSetEntityRandomSeed(this, new_state, false);
 
-		asset_manager.UpdateEntity(this, all_contained_entities);
+		asset_manager.UpdateEntityRandomSeed(this, new_state, deep_set_seed, all_contained_entities);
 	}
 
 	if(deep_set_seed)
@@ -830,20 +830,18 @@ void Entity::SetRandomState(const std::string &new_state, bool deep_set_seed,
 	}
 }
 
-void Entity::SetRandomStream(const RandomStream &new_stream, std::vector<EntityWriteListener *> *write_listeners)
+void Entity::SetRandomStream(const RandomStream &new_stream, std::vector<EntityWriteListener *> *write_listeners,
+	Entity::EntityReferenceBufferReference<EntityWriteReference> *all_contained_entities)
 {
 	randomStream = new_stream;
 
 	if(write_listeners != nullptr)
 	{
-		if(write_listeners->size() > 0)
-		{
-			std::string new_state_string = randomStream.GetState();
-			for(auto &wl : *write_listeners)
-				wl->LogSetEntityRandomSeed(this, new_state_string, false);
-		}
+		std::string new_state = randomStream.GetState();
+		for(auto &wl : *write_listeners)
+			wl->LogSetEntityRandomSeed(this, new_state, false);
 
-		asset_manager.UpdateEntity(this);
+		asset_manager.UpdateEntityRandomSeed(this, new_state, false, all_contained_entities);
 	}
 }
 

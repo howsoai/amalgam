@@ -326,6 +326,7 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 
 	if(asset_params->executeOnLoad && asset_params->transactional)
 	{
+		asset_params->topEntity = new_entity;
 		if(!LoadResourceViaTransactionalExecution(asset_params.get(), new_entity, calling_interpreter, status))
 		{
 			delete new_entity;
@@ -348,6 +349,7 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 
 	if(asset_params->executeOnLoad)
 	{
+		asset_params->topEntity = new_entity;
 		EvaluableNodeReference args = EvaluableNodeReference(new_entity->evaluableNodeManager.AllocNode(ENT_ASSOC), true);
 		args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_create_new_entity), new_entity->evaluableNodeManager.AllocNode(false));
 		auto call_stack = Interpreter::ConvertArgsToCallStack(args, new_entity->evaluableNodeManager);
@@ -459,7 +461,9 @@ void AssetManager::CreateEntity(Entity *entity)
 	//if flattened, then just need to update it or the appropriate container
 	if(container_asset_params->flatten)
 	{
-		UpdateEntity(container);
+		if(container_asset_params->writeListener != nullptr)
+			container_asset_params->writeListener->LogCreateEntity(entity);
+
 		SetEntityPersistenceForFlattenedEntity(entity, container_asset_params);
 	}
 	else
@@ -467,7 +471,7 @@ void AssetManager::CreateEntity(Entity *entity)
 		AssetParametersRef ce_asset_params
 			= container_asset_params->CreateAssetParametersForContainedResourceByEntityId(entity->GetId());
 
-		EnsureEntityToResourceCanContainEntities(container_asset_params);
+		EnsureEntityToResourceCanContainEntities(container_asset_params.get());
 		StoreEntityToResource(entity, ce_asset_params, true, true, false);
 	}
 }
@@ -562,7 +566,8 @@ void AssetManager::DestroyPersistentEntity(Entity *entity)
 	//if flattened, then just need to update it or the appropriate container
 	if(asset_params->flatten)
 	{
-		UpdateEntity(entity);
+		if(asset_params->writeListener != nullptr)
+			asset_params->writeListener->LogDestroyEntity(entity);
 	}
 	else
 	{

@@ -630,7 +630,8 @@ public:
 
 	//sets (seeds) the current state of the random stream based on RandomStream
 	// write_listeners is optional, and if specified, will log the event
-	void SetRandomStream(const RandomStream &new_stream, std::vector<EntityWriteListener *> *write_listeners = nullptr);
+	void SetRandomStream(const RandomStream &new_stream, std::vector<EntityWriteListener *> *write_listeners = nullptr,
+		Entity::EntityReferenceBufferReference<EntityWriteReference> *all_contained_entities = nullptr);
 
 	//returns a random seed based on a random number consumed from the entity and seed_string parameter
 	std::string CreateRandomStreamFromStringAndRand(const std::string &seed_string);

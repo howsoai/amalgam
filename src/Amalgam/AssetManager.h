@@ -119,11 +119,10 @@ public:
 		//updates resources based on the parameters -- should be called after SetParams
 		void UpdateResources();
 
-		//TODO 21363: populate this
 		//top entity being stored or loaded
 		Entity *topEntity;
 
-		//TODO 21363: populate and use this
+		//TODO 22194: initialize this for store and load, and use as appropriate
 		//write listener if persistent flattened entity
 		std::unique_ptr<EntityWriteListener> writeListener;
 
@@ -172,9 +171,11 @@ public:
 
 	//Flattens entity piece-by-piece in a manner to reduce memory when storing
 	template<typename EntityReferenceType = EntityReadReference>
-	bool FlattenAndStoreEntityToResource(Entity *entity, AssetParametersRef &asset_params,
+	bool FlattenAndStoreEntityToResource(Entity *entity, AssetParameters *asset_params,
 		Entity::EntityReferenceBufferReference<EntityReferenceType> &all_contained_entities)
 	{
+		asset_params->topEntity = entity;
+
 		EvaluableNode *top_entity_code = EntityManipulation::FlattenOnlyTopEntity(&entity->evaluableNodeManager,
 			entity, asset_params->includeRandSeeds, true);
 		std::string code_string = Parser::Unparse(top_entity_code, asset_params->prettyPrint, true, asset_params->sortKeys, true);
@@ -251,7 +252,7 @@ public:
 			&& (asset_params->resourceType == FILE_EXTENSION_AMALGAM
 				|| asset_params->resourceType == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE))
 		{
-			bool all_stored_successfully = FlattenAndStoreEntityToResource(entity, asset_params, *all_contained_entities);
+			bool all_stored_successfully = FlattenAndStoreEntityToResource(entity, asset_params.get(), *all_contained_entities);
 
 			if(update_persistence)
 				SetEntityPersistenceForFlattenedEntity(entity, persistent ? asset_params : nullptr);
@@ -278,7 +279,7 @@ public:
 		//store contained entities
 		if(entity->GetContainedEntities().size() > 0)
 		{
-			if(!EnsureEntityToResourceCanContainEntities(asset_params))
+			if(!EnsureEntityToResourceCanContainEntities(asset_params.get()))
 				return false;
 
 			//only actually store the contained entities if directed
@@ -307,14 +308,11 @@ public:
 		return true;
 	}
 
-	//Indicates that the entity has been written to or updated, and so if the asset is persistent, the persistent copy should be updated
+	//indicates that the entity's random seed has been updated
 	template<typename EntityReferenceType = EntityReadReference>
-	void UpdateEntity(Entity *entity,
+	inline void UpdateEntityRandomSeed(Entity *entity, const std::string &rand_seed, bool deep_set,
 		Entity::EntityReferenceBufferReference<EntityReferenceType> *all_contained_entities = nullptr)
 	{
-		if(entity == nullptr)
-			return;
-
 	#ifdef MULTITHREAD_INTERFACE
 		Concurrency::ReadLock lock(persistentEntitiesMutex);
 	#endif
@@ -328,7 +326,35 @@ public:
 			//that is persistent and store it out with all its contained entities
 			if(asset_params->flatten)
 			{
-				//TODO 21363: implement this
+				if(asset_params->writeListener != nullptr)
+					asset_params->writeListener->LogSetEntityRandomSeed(entity, rand_seed, deep_set);
+			}
+			else //just update the individual entity
+			{
+				StoreEntityToResource(entity, asset_params, false, true, false, all_contained_entities);
+			}
+		}
+	}
+
+	//indicates that the entity has been written to or updated, and so if the asset is persistent, the persistent copy should be updated
+	template<typename EntityReferenceType = EntityReadReference>
+	void UpdateEntity(Entity *entity,
+		Entity::EntityReferenceBufferReference<EntityReferenceType> *all_contained_entities = nullptr)
+	{
+	#ifdef MULTITHREAD_INTERFACE
+		Concurrency::ReadLock lock(persistentEntitiesMutex);
+	#endif
+
+		//if persistent store only this entity, since only it is getting updated
+		auto pe_entry = persistentEntities.find(entity);
+		if(pe_entry != end(persistentEntities))
+		{
+			auto &asset_params = pe_entry->second;
+			//if the entity is flattened, then need to find top level container entity
+			//that is persistent and store it out with all its contained entities
+			if(asset_params->flatten)
+			{
+				//TODO 22194: implement this
 			}
 			else //just update the individual entity
 			{
@@ -353,33 +379,12 @@ public:
 	//sets the entity's root permission to permission
 	void SetRootPermission(Entity *entity, bool permission);
 
-	// Checks if this entity or one of its containers is persistent
-	inline bool IsEntityIndirectlyPersistent(Entity *entity)
-	{
-		Entity *cur = entity;
-
-	#ifdef MULTITHREAD_INTERFACE
-		Concurrency::ReadLock lock(persistentEntitiesMutex);
-	#endif
-
-		while(cur != nullptr)
-		{
-			if(persistentEntities.find(cur) != end(persistentEntities))
-				return true;
-		}
-
-		return false;
-	}
-
 	// Checks if this entity specifically has been loaded as persistent
 	inline bool IsEntityDirectlyPersistent(Entity *entity)
 	{	return persistentEntities.find(entity) != end(persistentEntities);	}
 
 	inline bool DoesEntityHaveRootPermission(Entity *entity)
 	{
-		if(entity == nullptr)
-			return false;
-
 	#ifdef MULTITHREAD_INTERFACE
 		Concurrency::ReadLock lock(rootEntitiesMutex);
 	#endif
@@ -466,7 +471,7 @@ private:
 	}
 
 	//sets the persistence for the entity and everything within it
-	void SetEntityPersistenceForFlattenedEntity(Entity *entity, AssetParametersRef asset_params)
+	void SetEntityPersistenceForFlattenedEntity(Entity *entity, AssetParametersRef &asset_params)
 	{
 		SetEntityPersistence(entity, asset_params);
 		for(auto contained_entity : entity->GetContainedEntities())
@@ -483,7 +488,7 @@ private:
 	}
 
 	//creates any directory required to contain entities for asset_params
-	inline bool EnsureEntityToResourceCanContainEntities(const AssetParametersRef &asset_params)
+	inline bool EnsureEntityToResourceCanContainEntities(AssetParameters *asset_params)
 	{
 		std::error_code ec;
 		//create directory in case it doesn't exist

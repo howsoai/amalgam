@@ -658,8 +658,8 @@ public:
 		if(tree == nullptr)
 			return;
 
-		nodeToParentNodeCache.clear();
-		UpdateFlagsForNodeTreeRecurse(tree, nullptr, nodeToParentNodeCache);
+		EvaluableNode::ReferenceAssocType node_to_parent_cache;
+		UpdateFlagsForNodeTreeRecurse(tree, nullptr, node_to_parent_cache);
 	}
 
 	//updates idempotency flags for tree and returns true if tree is idempotent
@@ -1104,13 +1104,6 @@ protected:
 	//keeps track of all of the nodes currently referenced by any resource or interpreter
 	//only allocated if needed
 	std::unique_ptr<NodesReferenced> nodesCurrentlyReferenced;
-
-	//buffer used for updating EvaluableNodeFlags, particularly UpdateFlagsForNodeTree
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	thread_local
-#endif
-		static EvaluableNode::ReferenceAssocType nodeToParentNodeCache;
-
 
 	//extra space to allocate when allocating
 	static const double allocExpansionFactor;

@@ -596,22 +596,21 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, bo
 			file_type = file_type_temp;
 	}
 
-	AssetManager::AssetParametersRef asset_params
-		= std::make_shared<AssetManager::AssetParameters>(path, file_type, false);
+	AssetManager::AssetParameters asset_params(path, file_type, false);
 
 	if(ocn.size() > 2)
 	{
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[2]);
 
 		if(EvaluableNode::IsAssociativeArray(params))
-			asset_params->SetParams(params->GetMappedChildNodesReference());
+			asset_params.SetParams(params->GetMappedChildNodesReference());
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
-	asset_params->UpdateResources();
+	asset_params.UpdateResources();
 
 	EntityExternalInterface::LoadEntityStatus status;
-	return asset_manager.LoadResource(asset_params, evaluableNodeManager, status);
+	return asset_manager.LoadResource(&asset_params, evaluableNodeManager, status);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode *en, bool immediate_result)
@@ -719,20 +718,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, b
 			file_type = file_type_temp;
 	}
 
-	AssetManager::AssetParametersRef asset_params
-		= std::make_shared<AssetManager::AssetParameters>(path, file_type, false);
+	AssetManager::AssetParameters asset_params(path, file_type, false);
 	if(ocn.size() > 3)
 	{
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[3]);
 		
 		if(EvaluableNode::IsAssociativeArray(params))
-			asset_params->SetParams(params->GetMappedChildNodesReference());
+			asset_params.SetParams(params->GetMappedChildNodesReference());
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
-	asset_params->UpdateResources();
+	asset_params.UpdateResources();
 
-	bool successful_save = asset_manager.StoreResource(to_store, asset_params, evaluableNodeManager);
+	bool successful_save = asset_manager.StoreResource(to_store, &asset_params, evaluableNodeManager);
 
 	return ReuseOrAllocReturn(to_store, successful_save, immediate_result);
 }

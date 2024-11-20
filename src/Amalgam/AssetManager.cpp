@@ -111,7 +111,7 @@ void AssetManager::AssetParameters::UpdateResources()
 	}
 }
 
-EvaluableNodeReference AssetManager::LoadResource(AssetParametersRef &asset_params, EvaluableNodeManager *enm,
+EvaluableNodeReference AssetManager::LoadResource(AssetParameters *asset_params, EvaluableNodeManager *enm,
 	EntityExternalInterface::LoadEntityStatus &status)
 {
 	//load this entity based on file_type
@@ -180,7 +180,7 @@ EvaluableNodeReference AssetManager::LoadResource(AssetParametersRef &asset_para
 	}
 }
 
-bool AssetManager::LoadResourceViaTransactionalExecution(AssetParametersRef &asset_params, Entity *entity,
+bool AssetManager::LoadResourceViaTransactionalExecution(AssetParameters *asset_params, Entity *entity,
 	Interpreter *calling_interpreter, EntityExternalInterface::LoadEntityStatus &status)
 {
 	std::string code_string;
@@ -267,7 +267,7 @@ bool AssetManager::LoadResourceViaTransactionalExecution(AssetParametersRef &ass
 	return true;
 }
 
-bool AssetManager::StoreResource(EvaluableNode *code, AssetParametersRef &asset_params, EvaluableNodeManager *enm)
+bool AssetManager::StoreResource(EvaluableNode *code, AssetParameters *asset_params, EvaluableNodeManager *enm)
 {
 	//store the entity based on file_type
 	if(asset_params->resourceType == FILE_EXTENSION_AMALGAM || asset_params->resourceType == FILE_EXTENSION_AMLG_METADATA)
@@ -326,7 +326,7 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 
 	if(asset_params->executeOnLoad && asset_params->transactional)
 	{
-		if(!LoadResourceViaTransactionalExecution(asset_params, new_entity, calling_interpreter, status))
+		if(!LoadResourceViaTransactionalExecution(asset_params.get(), new_entity, calling_interpreter, status))
 		{
 			delete new_entity;
 			return nullptr;
@@ -338,7 +338,7 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 		return new_entity;
 	}
 
-	EvaluableNodeReference code = LoadResource(asset_params, &new_entity->evaluableNodeManager, status);
+	EvaluableNodeReference code = LoadResource(asset_params.get(), &new_entity->evaluableNodeManager, status);
 
 	if(!status.loaded)
 	{
@@ -370,7 +370,7 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 		//load any metadata like random seed
 		AssetParametersRef metadata_asset_params = asset_params->CreateAssetParametersForAssociatedResource(FILE_EXTENSION_AMLG_METADATA);
 		EntityExternalInterface::LoadEntityStatus metadata_status;
-		EvaluableNodeReference metadata = LoadResource(metadata_asset_params, &new_entity->evaluableNodeManager, metadata_status);
+		EvaluableNodeReference metadata = LoadResource(metadata_asset_params.get(), &new_entity->evaluableNodeManager, metadata_status);
 		if(metadata_status.loaded)
 		{
 			if(EvaluableNode::IsAssociativeArray(metadata))

@@ -153,16 +153,16 @@ public:
 
 	//Returns the code to the corresponding entity specified by asset_params using enm
 	//Additionally returns the updated resource_base_path for the file, as well as the status
-	EvaluableNodeReference LoadResource(AssetParametersRef &asset_params, EvaluableNodeManager *enm,
+	EvaluableNodeReference LoadResource(AssetParameters *asset_params, EvaluableNodeManager *enm,
 		EntityExternalInterface::LoadEntityStatus &status);
 
 	//loads the resource specified by asset_params into entity via transactional execution
 	//returns true on success
-	bool LoadResourceViaTransactionalExecution(AssetParametersRef &asset_params, Entity *entity,
+	bool LoadResourceViaTransactionalExecution(AssetParameters *asset_params, Entity *entity,
 		Interpreter *calling_interpreter, EntityExternalInterface::LoadEntityStatus &status);
 
 	//Stores the code to the resource specified in asset_params
-	bool StoreResource(EvaluableNode *code, AssetParametersRef &asset_params, EvaluableNodeManager *enm);
+	bool StoreResource(EvaluableNode *code, AssetParameters *asset_params, EvaluableNodeManager *enm);
 
 	//Loads an entity, including contained entities, etc. from the resource specified
 	// if persistent is true, then it will keep the resource updated based on any calls to UpdateEntity
@@ -258,7 +258,7 @@ public:
 			return all_stored_successfully;
 		}
 
-		if(!StoreResource(entity->GetRoot(), asset_params, &entity->evaluableNodeManager))
+		if(!StoreResource(entity->GetRoot(), asset_params.get(), &entity->evaluableNodeManager))
 			return false;
 
 		if(asset_params->resourceType == FILE_EXTENSION_AMALGAM)
@@ -272,7 +272,7 @@ public:
 			en_assoc.SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_rand_seed), &en_rand_seed);
 			en_assoc.SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_version), &en_version);
 
-			StoreResource(&en_assoc, metadata_asset_params, &entity->evaluableNodeManager);
+			StoreResource(&en_assoc, metadata_asset_params.get(), &entity->evaluableNodeManager);
 		}
 
 		//store contained entities

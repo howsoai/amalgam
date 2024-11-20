@@ -659,6 +659,8 @@ public:
 			return;
 
 		nodeToParentNodeCache.clear();
+		//reduce size as the the nodeToParentNodeCache can be expensive to iterate over
+		nodeToParentNodeCache.shrink_to_fit();
 		UpdateFlagsForNodeTreeRecurse(tree, nullptr, nodeToParentNodeCache);
 	}
 

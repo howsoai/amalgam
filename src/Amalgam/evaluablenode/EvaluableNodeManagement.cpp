@@ -69,63 +69,79 @@ EvaluableNode *EvaluableNodeManager::AllocNode(EvaluableNode *original, Evaluabl
 	return n;
 }
 
+
+void InitializeListNode(EvaluableNode *node, EvaluableNode *parent, EvaluableNodeType childNodeType,  int nodeIndex, std::vector<EvaluableNode*> *ocn_buffer)
+{
+	if(nodeIndex == 0)
+	{
+		// parent
+		node->InitializeType(ENT_LIST);
+		std::vector<EvaluableNode *> *ocn_ptr = &node->GetOrderedChildNodesReference();
+		std::swap(*ocn_buffer, *ocn_ptr);
+	}
+	else
+	{
+		std::vector<EvaluableNode *> *ocn_ptr = &parent->GetOrderedChildNodesReference();
+		(*ocn_ptr)[nodeIndex-1] = node;
+		node->InitializeType(childNodeType);
+	}
+}
+
 EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(EvaluableNodeType child_node_type, size_t num_child_nodes)
 {
 	if(num_child_nodes == 0)
 		return AllocNode(ENT_LIST);
 
+	EvaluableNode* parent = nullptr;
+	// Allocate from TLab
+
+	size_t num_to_alloc = 1 + num_child_nodes;
 	size_t num_allocated = 0;
-	size_t num_to_alloc = num_child_nodes + 1;
 	size_t num_total_nodes_needed = 0;
 
-	EvaluableNode *retval = nullptr;
-
-	//start off allocating the parent node, then switch to child_node_type
-	EvaluableNodeType cur_type = ENT_LIST;
-
 	//ordered child nodes destination; preallocate outside of the lock (for performance) and swap in
-	std::vector<EvaluableNode *> *ocn_ptr = nullptr;
 	std::vector<EvaluableNode *> ocn_buffer;
 	ocn_buffer.resize(num_child_nodes);
 
-	//outer loop needed for multithreading, but doesn't hurt anything for single threading
+
 	while(num_allocated < num_to_alloc)
 	{
-		{
-		#ifdef MULTITHREAD_SUPPORT
-			//attempt to allocate as many as possible using an atomic without write locking
-			Concurrency::ReadLock lock(managerAttributesMutex);
-		#endif
+		EvaluableNode* newNode = nullptr;
 
-			for(; num_allocated < num_to_alloc; num_allocated++)
+		while ((newNode = GetNextNodeFromTLab()) && num_allocated < num_to_alloc)
+		{
+			if(parent == nullptr)
 			{
-				//attempt to allocate a node and make sure it's valid
+				parent = newNode;
+			}
+
+			InitializeListNode(newNode, parent, child_node_type, num_allocated, &ocn_buffer);
+			num_allocated++;
+		}
+
+		if (num_allocated >= num_to_alloc)
+		{
+			//we got enough nodes out of the tlab
+			return parent;
+		}
+
+
+		{
+			#ifdef MULTITHREAD_SUPPORT
+				Concurrency::ReadLock lock(managerAttributesMutex);
+			#endif
+
+			for(int num_added_to_tlab = 0; num_allocated + num_added_to_tlab < num_to_alloc; num_added_to_tlab++)
+			{
 				size_t allocated_index = firstUnusedNodeIndex++;
 				if(allocated_index < nodes.size())
 				{
-					if(nodes[allocated_index] != nullptr)
-						nodes[allocated_index]->InitializeType(cur_type);
-					else
-						nodes[allocated_index] = new EvaluableNode(cur_type);
-
-					//if first node, populate the parent node
-					if(num_allocated == 0)
+					if(nodes[allocated_index] == nullptr)
 					{
-						//prep parent node
-						retval = nodes[allocated_index];
-
-						//get the pointer to place child elements,
-						// but swap out the preallocated ordered child nodes
-						ocn_ptr = &retval->GetOrderedChildNodesReference();
-						std::swap(ocn_buffer, *ocn_ptr);
-
-						//advance type to child node type
-						cur_type = child_node_type;
+						nodes[allocated_index] = new EvaluableNode();
 					}
-					else //set the appropriate child node
-					{
-						(*ocn_ptr)[num_allocated - 1] = nodes[allocated_index];
-					}
+
+					AddNodeToTLab(nodes[allocated_index]);
 				}
 				else
 				{
@@ -133,36 +149,39 @@ EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(Evaluabl
 					--firstUnusedNodeIndex;
 					break;
 				}
+			
 			}
-
-			//if have allocated enough, just return
-			if(num_allocated == num_to_alloc)
-				return retval;
-
-			num_total_nodes_needed = firstUnusedNodeIndex + (num_to_alloc - num_allocated);
 		}
 
-	#ifdef MULTITHREAD_SUPPORT
-
-		//don't have enough nodes, so need to attempt a write lock to allocate more
-		Concurrency::WriteLock write_lock(managerAttributesMutex);
-
-		//try again after write lock to allocate a node in case another thread has performed the allocation
-		//already have the write lock, so don't need to worry about another thread stealing firstUnusedNodeIndex
-	#endif
-
-		//if don't currently have enough free nodes to meet the needs, then expand the allocation
-		if(nodes.size() <= num_total_nodes_needed)
+		if(num_allocated == num_to_alloc)
 		{
-			size_t new_num_nodes = static_cast<size_t>(allocExpansionFactor * num_total_nodes_needed) + 1;
+			assert(parent);
+			return parent;
+		}
 
-			//fill new EvaluableNode slots with nullptr
-			nodes.resize(new_num_nodes, nullptr);
+		{
+			#ifdef MULTITHREAD_SUPPORT
+			//don't have enough nodes, so need to attempt a write lock to allocate more
+			Concurrency::WriteLock write_lock(managerAttributesMutex);
+
+			//try again after write lock to allocate a node in case another thread has performed the allocation
+			//already have the write lock, so don't need to worry about another thread stealing firstUnusedNodeIndex
+			#endif
+
+			//if don't currently have enough free nodes to meet the needs, then expand the allocation
+			if(nodes.size() <= num_total_nodes_needed)
+			{
+				size_t new_num_nodes = static_cast<size_t>(allocExpansionFactor * num_total_nodes_needed) + 1;
+
+				//fill new EvaluableNode slots with nullptr
+				nodes.resize(new_num_nodes, nullptr);
+			}
 		}
 	}
 
-	//shouldn't make it here
-	return retval;
+	// unreachable 
+	assert(false);
+	return nullptr;
 }
 
 void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t previous_num_nodes)

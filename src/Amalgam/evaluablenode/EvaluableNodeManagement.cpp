@@ -10,6 +10,10 @@
 
 
 // #define PEDANTIC_GARBAGE_COLLECTION
+#include <iostream>
+
+
+// #define PEDANTIC_GARBAGE_COLLECTION
 
 #ifdef MULTITHREAD_SUPPORT
 Concurrency::ReadWriteMutex EvaluableNodeManager::memoryModificationMutex;
@@ -64,10 +68,9 @@ EvaluableNode *EvaluableNodeManager::AllocNode(EvaluableNode *original, Evaluabl
 }
 
 
-void InitializeListHeadOrNode(EvaluableNode *node, EvaluableNode *parent, EvaluableNodeType child_node_type,  int nodeIndex, std::vector<EvaluableNode*> *ocn_buffer)
+void InitializeListHeadOrNode(EvaluableNode *node, EvaluableNode *parent, EvaluableNodeType child_node_type,  size_t node_index, std::vector<EvaluableNode*> *ocn_buffer)
 {
-
-	if(nodeIndex == 0)
+	if(node_index == 0)
 	{
 		// parent
 		node->InitializeType(ENT_LIST);
@@ -78,7 +81,7 @@ void InitializeListHeadOrNode(EvaluableNode *node, EvaluableNode *parent, Evalua
 	{
 		// child node; initialize it and add it to the list items
 		std::vector<EvaluableNode *> *ocn_ptr = &parent->GetOrderedChildNodesReference();
-		(*ocn_ptr)[nodeIndex-1] = node;
+		(*ocn_ptr)[node_index-1] = node;
 		node->InitializeType(child_node_type);
 	}
 }
@@ -156,13 +159,10 @@ EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(Evaluabl
 			return parent;
 		}
 
-
 		{
 			#ifdef MULTITHREAD_SUPPORT
 			//don't have enough nodes, so need to attempt a write lock to allocate more
 			Concurrency::WriteLock write_lock(managerAttributesMutex);
-
-			num_total_nodes_needed = firstUnusedNodeIndex + (num_to_alloc - num_allocated);
 
 			//try again after write lock to allocate a node in case another thread has performed the allocation
 			//already have the write lock, so don't need to worry about another thread stealing firstUnusedNodeIndex

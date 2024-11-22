@@ -1136,7 +1136,7 @@ protected:
 
 	inline void AddNodeToTLab(EvaluableNode *en)
 	{
-		//std::cout << "!!!naricc_debug!!! Addeding evaluabelNode to Tlab: " << en << std::endl;
+		assert(en->IsNodeDeallocated());
 
 		if(this != lastEvaluableNodeManager)
 		{

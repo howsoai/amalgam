@@ -70,10 +70,9 @@ EvaluableNode *EvaluableNodeManager::AllocNode(EvaluableNode *original, Evaluabl
 }
 
 
-void InitializeListHeadOrNode(EvaluableNode *node, EvaluableNode *parent, EvaluableNodeType child_node_type,  int nodeIndex, std::vector<EvaluableNode*> *ocn_buffer)
+void InitializeListHeadOrNode(EvaluableNode *node, EvaluableNode *parent, EvaluableNodeType child_node_type,  size_t node_index, std::vector<EvaluableNode*> *ocn_buffer)
 {
-
-	if(nodeIndex == 0)
+	if(node_index == 0)
 	{
 		// parent
 		node->InitializeType(ENT_LIST);
@@ -84,7 +83,7 @@ void InitializeListHeadOrNode(EvaluableNode *node, EvaluableNode *parent, Evalua
 	{
 		// child node; initialize it and add it to the list items
 		std::vector<EvaluableNode *> *ocn_ptr = &parent->GetOrderedChildNodesReference();
-		(*ocn_ptr)[nodeIndex-1] = node;
+		(*ocn_ptr)[node_index-1] = node;
 		node->InitializeType(child_node_type);
 	}
 }

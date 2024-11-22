@@ -27,9 +27,10 @@ public:
 
 	void LogWriteLabelValueToEntity(Entity *entity, const StringInternPool::StringID label_name, EvaluableNode *value, bool direct_set);
 
-	//TODO 22194: update AssetManager to have a corresponding method, and be sure to include accum
-	//like LogWriteLabelValueToEntity but where the keys are the labels and the values correspond in the assoc specified by label_value_pairs
-	void LogWriteLabelValuesToEntity(Entity *entity, EvaluableNode *label_value_pairs, bool direct_set);
+	//like LogWriteLabelValueToEntity but where the keys are the labels and the values correspond
+	// in the assoc specified by label_value_pairs
+	void LogWriteLabelValuesToEntity(Entity *entity, EvaluableNode *label_value_pairs,
+		bool accum_values, bool direct_set);
 
 	//logs the new entity root, assuming it has already been set
 	void LogWriteToEntityRoot(Entity *entity);

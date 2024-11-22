@@ -434,9 +434,9 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 		if(write_listeners != nullptr)
 		{
 			for(auto &wl : *write_listeners)
-				wl->LogWriteLabelValuesToEntity(this, new_label_values, direct_set);
+				wl->LogWriteLabelValuesToEntity(this, new_label_values, accum_values, direct_set);
 		}
-		asset_manager.UpdateEntity(this);
+		asset_manager.UpdateEntityLabelValues(this, new_label_values, accum_values, direct_set);
 
 		if(num_new_nodes_allocated != nullptr)
 		{

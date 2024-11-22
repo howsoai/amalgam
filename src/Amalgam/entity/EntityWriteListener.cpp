@@ -70,7 +70,8 @@ void EntityWriteListener::LogWriteLabelValueToEntity(Entity *entity,
 	LogNewEntry(new_write);
 }
 
-void EntityWriteListener::LogWriteLabelValuesToEntity(Entity *entity, EvaluableNode *label_value_pairs, bool direct_set)
+void EntityWriteListener::LogWriteLabelValuesToEntity(Entity *entity,
+	EvaluableNode *label_value_pairs, bool accum_values, bool direct_set)
 {
 	//can only work with assoc arrays
 	if(!EvaluableNode::IsAssociativeArray(label_value_pairs))
@@ -80,13 +81,15 @@ void EntityWriteListener::LogWriteLabelValuesToEntity(Entity *entity, EvaluableN
 	Concurrency::SingleLock lock(mutex);
 #endif
 
-	EvaluableNode *new_write = BuildNewWriteOperation(direct_set ? ENT_DIRECT_ASSIGN_TO_ENTITIES : ENT_ASSIGN_TO_ENTITIES, entity);
+	auto node_type = ENT_ASSIGN_TO_ENTITIES;
+	if(accum_values)
+		node_type = ENT_ACCUM_TO_ENTITIES;
+	else if(direct_set)
+		node_type = ENT_DIRECT_ASSIGN_TO_ENTITIES;
+
+	EvaluableNode *new_write = BuildNewWriteOperation(node_type, entity);
 
 	EvaluableNode *assoc = listenerStorage.DeepAllocCopy(label_value_pairs, direct_set ? EvaluableNodeManager::ENMM_NO_CHANGE : EvaluableNodeManager::ENMM_REMOVE_ALL);
-	//just in case this node has a label left over, remove it
-	if(!direct_set)
-		assoc->ClearLabels();
-
 	new_write->AppendOrderedChildNode(assoc);
 
 	LogNewEntry(new_write);

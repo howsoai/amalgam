@@ -338,6 +338,35 @@ public:
 
 	//indicates that the entity's root has been updated
 	template<typename EntityReferenceType = EntityReadReference>
+	inline void UpdateEntityLabelValue(Entity *entity,
+		StringInternPool::StringID label_name, EvaluableNode *value, bool direct_set,
+		Entity::EntityReferenceBufferReference<EntityReferenceType> *all_contained_entities = nullptr)
+	{
+	#ifdef MULTITHREAD_INTERFACE
+		Concurrency::ReadLock lock(persistentEntitiesMutex);
+	#endif
+
+		//if persistent store only this entity, since only it is getting updated
+		auto pe_entry = persistentEntities.find(entity);
+		if(pe_entry != end(persistentEntities))
+		{
+			auto &asset_params = pe_entry->second;
+			//if the entity is flattened, then need to find top level container entity
+			//that is persistent and store it out with all its contained entities
+			if(asset_params->flatten)
+			{
+				if(asset_params->writeListener != nullptr)
+					asset_params->writeListener->LogWriteLabelValueToEntity(entity, label_name, value, direct_set);
+			}
+			else //just update the individual entity
+			{
+				StoreEntityToResource(entity, asset_params, false, true, false, all_contained_entities);
+			}
+		}
+	}
+
+	//indicates that the entity's root has been updated
+	template<typename EntityReferenceType = EntityReadReference>
 	inline void UpdateEntityRoot(Entity *entity,
 		Entity::EntityReferenceBufferReference<EntityReferenceType> *all_contained_entities = nullptr)
 	{

@@ -52,7 +52,8 @@ void EntityWriteListener::LogPrint(std::string &print_string)
 	LogNewEntry(new_print, false);
 }
 
-void EntityWriteListener::LogWriteValueToEntity(Entity *entity, EvaluableNode *value, const StringInternPool::StringID label_name, bool direct_set)
+void EntityWriteListener::LogWriteLabelValueToEntity(Entity *entity,
+	const StringInternPool::StringID label_name, EvaluableNode *value, bool direct_set)
 {
 #ifdef MULTITHREAD_SUPPORT
 	Concurrency::SingleLock lock(mutex);
@@ -69,7 +70,7 @@ void EntityWriteListener::LogWriteValueToEntity(Entity *entity, EvaluableNode *v
 	LogNewEntry(new_write);
 }
 
-void EntityWriteListener::LogWriteValuesToEntity(Entity *entity, EvaluableNode *label_value_pairs, bool direct_set)
+void EntityWriteListener::LogWriteLabelValuesToEntity(Entity *entity, EvaluableNode *label_value_pairs, bool direct_set)
 {
 	//can only work with assoc arrays
 	if(!EvaluableNode::IsAssociativeArray(label_value_pairs))

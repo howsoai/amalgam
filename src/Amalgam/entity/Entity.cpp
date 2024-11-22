@@ -351,12 +351,12 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 		if(container_caches != nullptr)
 			container_caches->UpdateAllEntityLabels(this, GetEntityIndexOfContainer());
 
-		asset_manager.UpdateEntity(this);
 		if(write_listeners != nullptr)
 		{
 			for(auto &wl : *write_listeners)
-				wl->LogWriteValueToEntity(this, new_value, label_sid, direct_set);
+				wl->LogWriteLabelValueToEntity(this, label_sid, new_value, direct_set);
 		}
+		asset_manager.UpdateEntityLabelValue(this, label_sid, new_value, direct_set);
 	}
 
 	return true;
@@ -434,7 +434,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 		if(write_listeners != nullptr)
 		{
 			for(auto &wl : *write_listeners)
-				wl->LogWriteValuesToEntity(this, new_label_values, direct_set);
+				wl->LogWriteLabelValuesToEntity(this, new_label_values, direct_set);
 		}
 		asset_manager.UpdateEntity(this);
 

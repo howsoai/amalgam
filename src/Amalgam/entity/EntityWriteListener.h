@@ -25,12 +25,11 @@ public:
 	// LogPrint does not flush to allow bulk processing
 	void LogPrint(std::string &print_string);
 
-	//TODO 22194: update AssetManager to have a corresponding method
-	void LogWriteValueToEntity(Entity *entity, EvaluableNode *value, const StringInternPool::StringID label_name, bool direct_set);
+	void LogWriteLabelValueToEntity(Entity *entity, const StringInternPool::StringID label_name, EvaluableNode *value, bool direct_set);
 
 	//TODO 22194: update AssetManager to have a corresponding method, and be sure to include accum
-	//like LogWriteValueToEntity but where the keys are the labels and the values correspond in the assoc specified by label_value_pairs
-	void LogWriteValuesToEntity(Entity *entity, EvaluableNode *label_value_pairs, bool direct_set);
+	//like LogWriteLabelValueToEntity but where the keys are the labels and the values correspond in the assoc specified by label_value_pairs
+	void LogWriteLabelValuesToEntity(Entity *entity, EvaluableNode *label_value_pairs, bool direct_set);
 
 	//logs the new entity root, assuming it has already been set
 	void LogWriteToEntityRoot(Entity *entity);

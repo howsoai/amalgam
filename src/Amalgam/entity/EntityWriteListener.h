@@ -28,12 +28,12 @@ public:
 	//TODO 22194: update AssetManager to have a corresponding method
 	void LogWriteValueToEntity(Entity *entity, EvaluableNode *value, const StringInternPool::StringID label_name, bool direct_set);
 
-	//TODO 22194: update AssetManager to have a corresponding method
+	//TODO 22194: update AssetManager to have a corresponding method, and be sure to include accum
 	//like LogWriteValueToEntity but where the keys are the labels and the values correspond in the assoc specified by label_value_pairs
 	void LogWriteValuesToEntity(Entity *entity, EvaluableNode *label_value_pairs, bool direct_set);
 
-	//TODO 22194: update AssetManager to have a corresponding method
-	void LogWriteToEntity(Entity *entity, const std::string &new_code);
+	//logs the new entity root, assuming it has already been set
+	void LogWriteToEntityRoot(Entity *entity);
 
 	void LogCreateEntity(Entity *new_entity);
 

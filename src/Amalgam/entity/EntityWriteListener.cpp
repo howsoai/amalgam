@@ -91,15 +91,16 @@ void EntityWriteListener::LogWriteValuesToEntity(Entity *entity, EvaluableNode *
 	LogNewEntry(new_write);
 }
 
-void EntityWriteListener::LogWriteToEntity(Entity *entity, const std::string &new_code)
+void EntityWriteListener::LogWriteToEntityRoot(Entity *entity)
 {
 #ifdef MULTITHREAD_SUPPORT
 	Concurrency::SingleLock lock(mutex);
 #endif
 
 	EvaluableNode *new_write = BuildNewWriteOperation(ENT_ASSIGN_ENTITY_ROOTS, entity);
+	EvaluableNode *new_root = entity->GetRoot(&listenerStorage, EvaluableNodeManager::ENMM_LABEL_ESCAPE_INCREMENT);
 
-	new_write->AppendOrderedChildNode(listenerStorage.AllocNode(ENT_STRING, new_code));
+	new_write->AppendOrderedChildNode(new_root);
 
 	LogNewEntry(new_write);
 }

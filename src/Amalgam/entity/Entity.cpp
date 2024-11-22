@@ -388,17 +388,10 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 	bool need_node_flags_updated = false;
 	auto &new_label_values_mcn = new_label_values->GetMappedChildNodesReference();
 
-	//write changes to write listeners first, as code below may invalidate portions of new_label_values
-	if(write_listeners != nullptr)
-	{
-		for(auto &wl : *write_listeners)
-			wl->LogWriteValuesToEntity(this, new_label_values, direct_set);
-	}
-
 	for(auto &[assignment_id, assignment] : new_label_values_mcn)
 	{
 		StringInternPool::StringID variable_sid = assignment_id;
-		EvaluableNodeReference variable_value_node(assignment, new_label_values.unique);
+		EvaluableNodeReference variable_value_node(assignment, false);
 
 		if(accum_values)
 		{
@@ -438,6 +431,11 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 				container_caches->UpdateEntityLabels(this, GetEntityIndexOfContainer(), new_label_values_mcn);
 		}
 
+		if(write_listeners != nullptr)
+		{
+			for(auto &wl : *write_listeners)
+				wl->LogWriteValuesToEntity(this, new_label_values, direct_set);
+		}
 		asset_manager.UpdateEntity(this);
 
 		if(num_new_nodes_allocated != nullptr)
@@ -892,13 +890,10 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, Evalu
 	{
 		if(write_listeners->size() > 0)
 		{
-			std::string new_code_string = Parser::Unparse(evaluableNodeManager.GetRootNode(), false, true);
-
 			for(auto &wl : *write_listeners)
-				wl->LogWriteToEntity(this, new_code_string);
+				wl->LogWriteToEntityRoot(this);
 		}
-
-		asset_manager.UpdateEntity(this);
+		asset_manager.UpdateEntityRoot(this);
 	}
 }
 
@@ -993,13 +988,10 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 	{
 		if(write_listeners->size() > 0)
 		{
-			std::string new_code_string = Parser::Unparse(new_root, false, true);
-
 			for(auto &wl : *write_listeners)
-				wl->LogWriteToEntity(this, new_code_string);
+				wl->LogWriteToEntityRoot(this);
 		}
-
-		asset_manager.UpdateEntity(this);
+		asset_manager.UpdateEntityRoot(this);
 	}
 
 #ifdef AMALGAM_MEMORY_INTEGRITY

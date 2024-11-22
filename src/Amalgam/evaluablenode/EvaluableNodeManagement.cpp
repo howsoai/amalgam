@@ -70,8 +70,9 @@ EvaluableNode *EvaluableNodeManager::AllocNode(EvaluableNode *original, Evaluabl
 }
 
 
-void InitializeListNode(EvaluableNode *node, EvaluableNode *parent, EvaluableNodeType childNodeType,  int nodeIndex, std::vector<EvaluableNode*> *ocn_buffer)
+void InitializeListHeadOrNode(EvaluableNode *node, EvaluableNode *parent, EvaluableNodeType child_node_type,  int nodeIndex, std::vector<EvaluableNode*> *ocn_buffer)
 {
+
 	if(nodeIndex == 0)
 	{
 		// parent
@@ -81,9 +82,10 @@ void InitializeListNode(EvaluableNode *node, EvaluableNode *parent, EvaluableNod
 	}
 	else
 	{
+		// child node; initialize it and add it to the list items
 		std::vector<EvaluableNode *> *ocn_ptr = &parent->GetOrderedChildNodesReference();
 		(*ocn_ptr)[nodeIndex-1] = node;
-		node->InitializeType(childNodeType);
+		node->InitializeType(child_node_type);
 	}
 }
 
@@ -115,18 +117,19 @@ EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(Evaluabl
 				parent = newNode;
 			}
 
-			InitializeListNode(newNode, parent, child_node_type, num_allocated, &ocn_buffer);
+			InitializeListHeadOrNode(newNode, parent, child_node_type, num_allocated, &ocn_buffer);
 			num_allocated++;
 		}
 
 		if (num_allocated >= num_to_alloc)
 		{
-			//we got enough nodes out of the tlab
+			//we got enough nodes out of the tlab; tryutn
 			return parent;
 		}
 
-
-		{
+		
+		
+		{ // Not enough nodes in TLab; add some.
 			#ifdef MULTITHREAD_SUPPORT
 				Concurrency::ReadLock lock(managerAttributesMutex);
 			#endif
@@ -138,7 +141,7 @@ EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(Evaluabl
 				{
 					if(nodes[allocated_index] == nullptr)
 					{
-						nodes[allocated_index] = new EvaluableNode();
+						nodes[allocated_index] = new EvaluableNode(ENT_DEALLOCATED);
 					}
 
 					AddNodeToTLab(nodes[allocated_index]);
@@ -283,7 +286,6 @@ void EvaluableNodeManager::FreeAllNodes()
 EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 {	
 	EvaluableNode *tlab_node = GetNextNodeFromTLab();
-	// std::cout << "!!!naricc_debug!!! EvaluableNodeManager::AllocUninitializedNode EvaluableNodeManager: " << this << " thread_id: " << std::this_thread::get_id() << " tlab: " << &threadLocalAllocationBuffer << std::endl;
 	//Fast Path; get node from thread local buffer
 	if(tlab_node != nullptr)
 		return tlab_node;
@@ -483,7 +485,7 @@ void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree)
 
 	tree->Invalidate();
 
-	tree->InitializeType(ENT_NULL);
+	tree->InitializeType(ENT_DEALLOCATED);
 	AddNodeToTLab(tree);
 }
 

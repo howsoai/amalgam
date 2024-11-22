@@ -156,10 +156,13 @@ EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(Evaluabl
 			return parent;
 		}
 
+
 		{
 			#ifdef MULTITHREAD_SUPPORT
 			//don't have enough nodes, so need to attempt a write lock to allocate more
 			Concurrency::WriteLock write_lock(managerAttributesMutex);
+
+			num_total_nodes_needed = firstUnusedNodeIndex + (num_to_alloc - num_allocated);
 
 			//try again after write lock to allocate a node in case another thread has performed the allocation
 			//already have the write lock, so don't need to worry about another thread stealing firstUnusedNodeIndex

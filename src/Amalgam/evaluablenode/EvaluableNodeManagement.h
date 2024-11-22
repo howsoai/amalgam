@@ -1121,6 +1121,8 @@ protected:
 		{
 			EvaluableNode* end = threadLocalAllocationBuffer[threadLocalAllocationBuffer.size()-1];
 			threadLocalAllocationBuffer.pop_back();
+
+			// std::cout << "!!!naricc_debug!!! GetNextNodeFromTLab: " << end << std::endl;
 			return end;
 		}
 		else
@@ -1137,6 +1139,8 @@ protected:
 	inline void AddNodeToTLab(EvaluableNode *en)
 	{
 		assert(en->IsNodeDeallocated());
+
+		// std::cout << "!!!naricc_debug!!! AddNodeToTLab " << en << std::endl;
 
 		if(this != lastEvaluableNodeManager)
 		{

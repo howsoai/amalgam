@@ -491,6 +491,7 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, bool immedi
 	EvaluableNodeType ent = en->GetType();
 	auto oc = _opcodes[ent];
 
+	// std::cout << "!!!naricc_debug!!! InterpretNode: en: " << en << " type: " << ((uint)en->GetType()) << " valid: " << en->IsNodeValid() << std::endl;
 	EvaluableNodeReference retval = (this->*oc)(en, immediate_result);
 
 #ifdef AMALGAM_MEMORY_INTEGRITY

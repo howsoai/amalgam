@@ -1646,7 +1646,7 @@ void EvaluableNode::Invalidate()
 			break;
 		case ENT_STRING:
 		case ENT_SYMBOL:
-			std::cout << "!!!naricc_debug!!!: Invalidate: " << value.stringValueContainer.stringID << " label: " <<  value.stringValueContainer.labelStringID << std::endl;
+			// std::cout << "!!!naricc_debug!!!: Invalidate: " << value.stringValueContainer.stringID << " label: " <<  value.stringValueContainer.labelStringID << std::endl;
 			string_intern_pool.DestroyStringReferences(value.stringValueContainer.stringID, value.stringValueContainer.labelStringID);
 			break;
 		case ENT_ASSOC:

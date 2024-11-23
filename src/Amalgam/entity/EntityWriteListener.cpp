@@ -2,7 +2,8 @@
 #include "EntityWriteListener.h"
 #include "EvaluableNodeTreeFunctions.h"
 
-EntityWriteListener::EntityWriteListener(Entity *listening_entity, bool retain_writes, const std::string &filename)
+EntityWriteListener::EntityWriteListener(Entity *listening_entity,
+	bool retain_writes, bool _pretty, bool sort_keys, const std::string &filename)
 {
 	listeningEntity = listening_entity;
 
@@ -10,12 +11,24 @@ EntityWriteListener::EntityWriteListener(Entity *listening_entity, bool retain_w
 		storedWrites = listenerStorage.AllocNode(ENT_SEQUENCE);
 	else
 		storedWrites = nullptr;
-	
+
+	pretty = _pretty;
+	sortKeys = sort_keys;
 	if(!filename.empty())
 	{
 		logFile.open(filename, std::ios::binary);
 		logFile << "(" << GetStringFromEvaluableNodeType(ENT_SEQUENCE) << "\r\n";
 	}
+}
+
+EntityWriteListener::EntityWriteListener(Entity *listening_entity,
+	bool _pretty, bool sort_keys, std::ofstream &transaction_file)
+{
+	listeningEntity = listening_entity;
+	storedWrites = nullptr;
+	pretty = _pretty;
+	sortKeys = sort_keys;
+	logFile = std::move(transaction_file);
 }
 
 EntityWriteListener::~EntityWriteListener()
@@ -191,8 +204,8 @@ void EntityWriteListener::LogNewEntry(EvaluableNode *new_entry, bool flush)
 {
 	if(logFile.is_open() && logFile.good())
 	{
-		//one extra indentation because already have the sequence
-		logFile << Parser::Unparse(new_entry, false, true, false) << "\r\n";
+		//one extra indentation if pretty because already have the seq or declare
+		logFile << Parser::Unparse(new_entry, pretty, true, sortKeys, false, pretty ? 1 : 0) << "\r\n";
 		if(flush)
 			logFile.flush();
 	}

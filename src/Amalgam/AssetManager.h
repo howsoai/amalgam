@@ -122,7 +122,6 @@ public:
 		//top entity being stored or loaded
 		Entity *topEntity;
 
-		//TODO 22194: initialize this for store and load, and use as appropriate
 		//write listener if persistent flattened entity
 		std::unique_ptr<EntityWriteListener> writeListener;
 
@@ -171,7 +170,7 @@ public:
 
 	//Flattens entity piece-by-piece in a manner to reduce memory when storing
 	template<typename EntityReferenceType = EntityReadReference>
-	bool FlattenAndStoreEntityToResource(Entity *entity, AssetParameters *asset_params,
+	bool FlattenAndStoreEntityToResource(Entity *entity, AssetParameters *asset_params, bool persistent,
 		Entity::EntityReferenceBufferReference<EntityReferenceType> &all_contained_entities)
 	{
 		asset_params->topEntity = entity;
@@ -198,7 +197,7 @@ public:
 
 		bool all_stored_successfully = false;
 
-		if(asset_params->resourceType == FILE_EXTENSION_AMALGAM || asset_params->resourceType == FILE_EXTENSION_AMLG_METADATA)
+		if(asset_params->resourceType == FILE_EXTENSION_AMALGAM)
 		{
 			std::ofstream outf(asset_params->resourcePath, std::ios::out | std::ios::binary);
 			if(outf.good())
@@ -207,6 +206,12 @@ public:
 				outf.close();
 				all_stored_successfully = true;
 			}
+
+			if(persistent)
+				asset_params->writeListener = std::make_unique<EntityWriteListener>(entity,
+					asset_params->prettyPrint, asset_params->sortKeys, outf);
+			else
+				asset_params->writeListener = nullptr;
 		}
 		else if(asset_params->resourceType == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 		{
@@ -252,11 +257,13 @@ public:
 			&& (asset_params->resourceType == FILE_EXTENSION_AMALGAM
 				|| asset_params->resourceType == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE))
 		{
-			bool all_stored_successfully = FlattenAndStoreEntityToResource(entity, asset_params.get(), *all_contained_entities);
+			bool store_successful = FlattenAndStoreEntityToResource(
+				entity, asset_params.get(), persistent, *all_contained_entities);
 
 			if(update_persistence)
 				SetEntityPersistenceForFlattenedEntity(entity, persistent ? asset_params : nullptr);
-			return all_stored_successfully;
+
+			return store_successful;
 		}
 
 		if(!StoreResource(entity->GetRoot(), asset_params.get(), &entity->evaluableNodeManager))

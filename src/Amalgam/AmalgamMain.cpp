@@ -259,7 +259,7 @@ PLATFORM_MAIN_CONSOLE
 
 		if(write_log_filename != "")
 		{
-			EntityWriteListener *write_log = new EntityWriteListener(entity, false, write_log_filename);
+			EntityWriteListener *write_log = new EntityWriteListener(entity, false, false, false, write_log_filename);
 			write_listeners.push_back(write_log);
 		}
 

@@ -71,7 +71,7 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(st
 
 	if(!write_log_filename.empty())
 	{
-		EntityWriteListener *write_log = new EntityWriteListener(entity, false, write_log_filename);
+		EntityWriteListener *write_log = new EntityWriteListener(entity, false, false, false, write_log_filename);
 		wl.push_back(write_log);
 	}
 
@@ -130,7 +130,7 @@ bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &clon
 
 	if(!write_log_filename.empty())
 	{
-		EntityWriteListener *write_log = new EntityWriteListener(entity, false, write_log_filename);
+		EntityWriteListener *write_log = new EntityWriteListener(entity, false, false, false, write_log_filename);
 		wl.push_back(write_log);
 	}
 

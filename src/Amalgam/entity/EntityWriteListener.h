@@ -15,8 +15,15 @@ public:
 	//stores all writes to entities as a seq of direct_assigns
 	//listening_entity is the entity to store the relative ids to
 	//if retain_writes is true, then the listener will store the writes, and GetWrites() will return the list of all writes accumulated
+	//if _pretty is true, then the listener will pretty print to filename
+	//if sort_keys is true, then the listener will print with keys sorted for assocs
 	//if filename is not empty, then it will attempt to open the file and log all writes to that file, and then flush the file stream
-	EntityWriteListener(Entity *listening_entity, bool retain_writes = false, const std::string &filename = std::string());
+	EntityWriteListener(Entity *listening_entity, bool retain_writes = false,
+		bool _pretty = false, bool sort_keys = false, const std::string &filename = std::string());
+
+	//stores all writes, appending them to transaction_file
+	EntityWriteListener(Entity *listening_entity,
+		bool _pretty, bool sort_keys, std::ofstream &transaction_file);
 
 	~EntityWriteListener();
 
@@ -69,4 +76,9 @@ protected:
 	//mutex for writing to make sure everything is written in the same order
 	Concurrency::SingleMutex mutex;
 #endif
+
+	//if true, will pretty print the logs
+	bool pretty;
+	//if true, will sort keys when printing
+	bool sortKeys;
 };

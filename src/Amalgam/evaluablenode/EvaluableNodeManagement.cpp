@@ -91,7 +91,7 @@ EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(Evaluabl
 	if(num_child_nodes == 0)
 		return AllocNode(ENT_LIST);
 
-	EvaluableNode* parent = nullptr;
+	EvaluableNode *parent = nullptr;
 	// Allocate from TLab
 
 	size_t num_to_alloc = 1 + num_child_nodes;
@@ -102,12 +102,11 @@ EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(Evaluabl
 	std::vector<EvaluableNode *> ocn_buffer;
 	ocn_buffer.resize(num_child_nodes);
 
-
 	while(num_allocated < num_to_alloc)
 	{
-		EvaluableNode* newNode = nullptr;
+		EvaluableNode *newNode = nullptr;
 
-		while ((newNode = GetNextNodeFromTLab()) && num_allocated < num_to_alloc)
+		while((newNode = GetNextNodeFromTLab()) && num_allocated < num_to_alloc)
 		{
 			if(parent == nullptr)
 			{
@@ -118,13 +117,11 @@ EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(Evaluabl
 			num_allocated++;
 		}
 
-		if (num_allocated >= num_to_alloc)
+		if(num_allocated >= num_to_alloc)
 		{
 			//we got enough nodes out of the tlab; tryutn
 			return parent;
 		}
-
-		
 		
 		{ // Not enough nodes in TLab; add some.
 			#ifdef MULTITHREAD_SUPPORT
@@ -215,9 +212,9 @@ void EvaluableNodeManager::CollectGarbage()
 		PerformanceProfiler::StartOperation(collect_garbage_string, GetNumberOfUsedNodes());
 	}
 
-#ifdef MULTITHREAD_SUPPORT
-		
 	ClearThreadLocalAllocationBuffer();
+
+#ifdef MULTITHREAD_SUPPORT
 	
 	//free lock so can attempt to enter write lock to collect garbage
 	if(memory_modification_lock != nullptr)

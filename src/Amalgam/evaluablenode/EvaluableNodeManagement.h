@@ -1119,7 +1119,7 @@ protected:
 	{
 		if(threadLocalAllocationBuffer.size() > 0 && this == lastEvaluableNodeManager)
 		{
-			EvaluableNode* end = threadLocalAllocationBuffer[threadLocalAllocationBuffer.size()-1];
+			EvaluableNode *end = threadLocalAllocationBuffer.back();
 			threadLocalAllocationBuffer.pop_back();
 			return end;
 		}

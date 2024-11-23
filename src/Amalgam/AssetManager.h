@@ -176,7 +176,7 @@ public:
 		asset_params->topEntity = entity;
 
 		EvaluableNode *top_entity_code = EntityManipulation::FlattenOnlyTopEntity(&entity->evaluableNodeManager,
-			entity, asset_params->includeRandSeeds, true);
+			entity, asset_params->includeRandSeeds, true, true);
 		std::string code_string = Parser::Unparse(top_entity_code, asset_params->prettyPrint, true, asset_params->sortKeys, true);
 		entity->evaluableNodeManager.FreeNodeTree(top_entity_code);
 

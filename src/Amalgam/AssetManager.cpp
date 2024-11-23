@@ -325,6 +325,7 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 	new_entity->SetRandomState(default_random_seed, true);
 
 	//TODO 22194: deal with persistent transactional entities, attempt to deal with flattened nontransactional -- just change defaults and make transactional?  does transactional only apply to load?
+	//TODO 22194: validate version on load if included
 
 	if(asset_params->executeOnLoad && asset_params->transactional)
 	{

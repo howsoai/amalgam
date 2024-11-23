@@ -1,4 +1,5 @@
 //project headers:
+#include "AmalgamVersion.h"
 #include "Entity.h"
 #include "EntityManipulation.h"
 #include "EvaluableNodeTreeDifference.h"
@@ -649,45 +650,51 @@ Entity *EntityManipulation::MutateEntity(Interpreter *interpreter, Entity *entit
 }
 
 EvaluableNode *EntityManipulation::FlattenOnlyTopEntity(EvaluableNodeManager *enm, Entity *entity,
-	bool include_rand_seeds, bool ensure_en_flags_correct)
+	bool include_rand_seeds, bool include_version, bool ensure_en_flags_correct)
 {
 	//////////
-		//build code to look like:
-		// (declare (assoc new_entity (null) create_new_entity (true))
-		//   (let (assoc _ (lambda *entity code*))
-		//     (if create_new_entity
-		//       (assign "new_entity" (first
-		//         (create_entities new_entity _)
-		//       ))
-		//       (assign_entity_roots new_entity _)
-		//     )
-		//   )
-		//
-		//   [if include_rand_seeds]
-		//   (set_entity_rand_seed
-		//          new_entity
-		//          *rand seed string* )
-		//
-		//   [for each contained entity specified by the list representing the relative location to new_entity]
-		//   [if parallel_create, will group these in ||(parallel ...) by container entity
-		//
-		//   [if include_rand_seeds]
-		//   (set_entity_rand_seed
-		//       (first
-		//   [always]
-		//           (create_entities
-		//                (append new_entity *relative id*)
-		//                (lambda *entity code*) )         
-		//                (append new_entity *relative id*)
-		//                *rand seed string* )
-		//   [if include_rand_seeds]
-		//       )
-		//       *rand seed string* )
-		//   )
-		// )
+	//build code to look like:
+	// (declare (assoc new_entity (null) create_new_entity (true))
+	//   (let (assoc _ (lambda *entity code*))
+	//     (if create_new_entity
+	//       (assign "new_entity" (first
+	//         (create_entities new_entity _)
+	//       ))
+	//       (assign_entity_roots new_entity _)
+	//     )
+	//   )
+	//
+	//   [if include_rand_seeds]
+	//   (set_entity_rand_seed
+	//          new_entity
+	//          *rand seed string* )
+	//
+	//   [for each contained entity specified by the list representing the relative location to new_entity]
+	//   [if parallel_create, will group these in ||(parallel ...) by container entity
+	//
+	//   [if include_rand_seeds]
+	//   (set_entity_rand_seed
+	//       (first
+	//   [always]
+	//           (create_entities
+	//                (append new_entity *relative id*)
+	//                (lambda *entity code*) )         
+	//                (append new_entity *relative id*)
+	//                *rand seed string* )
+	//   [if include_rand_seeds]
+	//       )
+	//       *rand seed string* )
+	//   )
+	// )
 
 	// (declare (assoc new_entity (null) create_new_entity (true))
 	EvaluableNode *declare_flatten = enm->AllocNode(ENT_DECLARE);
+
+	if(include_version)
+	{
+		std::string version_string = std::string("version ") + AMALGAM_VERSION_STRING;
+		declare_flatten->SetComments(version_string);
+	}
 
 	EvaluableNode *flatten_params = enm->AllocNode(ENT_ASSOC);
 	declare_flatten->AppendOrderedChildNode(flatten_params);

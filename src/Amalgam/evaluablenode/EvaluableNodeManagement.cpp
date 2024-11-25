@@ -8,13 +8,6 @@
 #include <utility>
 #include <iostream>
 
-
-// #define PEDANTIC_GARBAGE_COLLECTION
-#include <iostream>
-
-
-// #define PEDANTIC_GARBAGE_COLLECTION
-
 #ifdef MULTITHREAD_SUPPORT
 Concurrency::ReadWriteMutex EvaluableNodeManager::memoryModificationMutex;
 #endif
@@ -119,7 +112,7 @@ EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(Evaluabl
 
 		if(num_allocated >= num_to_alloc)
 		{
-			//we got enough nodes out of the tlab; tryutn
+			//we got enough nodes out of the tlab
 			return parent;
 		}
 		
@@ -128,7 +121,8 @@ EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(Evaluabl
 				Concurrency::ReadLock lock(managerAttributesMutex);
 			#endif
 
-			for(int num_added_to_tlab = 0; num_allocated + num_added_to_tlab < num_to_alloc; num_added_to_tlab++)
+			int num_added_to_tlab = 0;
+			for(; num_allocated + num_added_to_tlab < num_to_alloc; num_added_to_tlab++)
 			{
 				size_t allocated_index = firstUnusedNodeIndex++;
 				if(allocated_index < nodes.size())
@@ -146,16 +140,17 @@ EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(Evaluabl
 					--firstUnusedNodeIndex;
 					break;
 				}
-			
+			}
+
+			if( num_added_to_tlab + num_allocated >= num_allocated)
+			{
+				// We were able to add enough nodes to tlab; use them next time through the loop
+				continue;
 			}
 		}
 
-		if(num_allocated == num_to_alloc)
-		{
-			assert(parent);
-			return parent;
-		}
 
+		// There weren't enough free nodes available to fill the tlab; allocate more
 		num_total_nodes_needed = firstUnusedNodeIndex + (num_to_alloc - num_allocated);
 		{
 			#ifdef MULTITHREAD_SUPPORT

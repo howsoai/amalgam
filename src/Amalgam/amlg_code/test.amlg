@@ -1,6 +1,12 @@
 ﻿(seq
-	(print {"Can't continue terminated series."})
-	;(declare {warnings {}})
-	;(accum (assoc warnings (assoc "Can't continue terminated series.") ))
-	;(print warnings)
+	(create_entities "persist_transactions" (list 1 2 3 4))
+	(create_entities (list "persist_transactions" "child") (list 5 6 7))
+	(create_entities (list "persist_transactions" "child" "doublechild1") (lambda (list ##eight 8 ##nine 9)))
+	(create_entities (list "persist_transactions" "child" "doublechild3") (list 12 13))
+	(store_entity "amlg_code/test_output/persist_transactions.amlg" "persist_transactions" (null) (true) {flatten (true) transactional (true)})
+	(create_entities (list "persist_transactions" "child" "doublechild2") (list 10 11))
+	(destroy_entities (list "persist_transactions" "child" "doublechild3"))
+	(assign_to_entities (list "persist_transactions" "child" "doublechild1") {eight 88})
+
+	(print (flatten_entity "persist_transactions" (false) ))
 )

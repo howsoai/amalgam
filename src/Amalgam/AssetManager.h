@@ -193,25 +193,28 @@ public:
 			entity->evaluableNodeManager.FreeNodeTree(create_entity_code);
 		}
 
-		code_string += Parser::transactionTermination;
-
-		bool all_stored_successfully = false;
+		//if persistent, need to keep the file open for appends
+		if(!persistent)
+			code_string += Parser::transactionTermination;
 
 		if(asset_params->resourceType == FILE_EXTENSION_AMALGAM)
 		{
 			std::ofstream outf(asset_params->resourcePath, std::ios::out | std::ios::binary);
-			if(outf.good())
-			{		
-				outf.write(code_string.c_str(), code_string.size());
-				outf.close();
-				all_stored_successfully = true;
-			}
+			if(!outf.good())
+				return false;
 
+			outf.write(code_string.c_str(), code_string.size());
+			
 			if(persistent)
+			{
 				asset_params->writeListener = std::make_unique<EntityWriteListener>(entity,
 					asset_params->prettyPrint, asset_params->sortKeys, outf);
+			}
 			else
+			{
+				outf.close();
 				asset_params->writeListener = nullptr;
+			}
 		}
 		else if(asset_params->resourceType == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 		{
@@ -221,10 +224,11 @@ public:
 
 			//compress and store
 			BinaryData compressed_data = CompressStrings(string_map);
-			all_stored_successfully = StoreFileFromBuffer<BinaryData>(asset_params->resourcePath, asset_params->resourceType, compressed_data);
+			return StoreFileFromBuffer<BinaryData>(asset_params->resourcePath, asset_params->resourceType, compressed_data);
 		}
 
-		return all_stored_successfully;
+		//invalid format for flattening
+		return false;
 	}
 
 	//Stores an entity, including contained entities, etc. from the resource specified

@@ -142,7 +142,7 @@ EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(Evaluabl
 				}
 			}
 
-			if( num_added_to_tlab + num_allocated >= num_allocated)
+			if( num_added_to_tlab + num_allocated >= num_to_alloc)
 			{
 				// We were able to add enough nodes to tlab; use them next time through the loop
 				continue;

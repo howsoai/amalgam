@@ -926,8 +926,12 @@ public:
 	//sets the root node, implicitly defined as the first node in memory, to new_root
 	// note that new_root MUST have been allocated by this EvaluableNodeManager
 	//ensures that the new root node is kept and the old is released
+	//if new_root is nullptr, then it allocates its own ENT_NULL node
 	inline void SetRootNode(EvaluableNode *new_root)
 	{
+		if(new_root == nullptr)
+			new_root = AllocNode(ENT_NULL);
+
 	#ifdef MULTITHREAD_SUPPORT
 		//use WriteLock to be safe
 		Concurrency::WriteLock lock(managerAttributesMutex);

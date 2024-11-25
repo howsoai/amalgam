@@ -1090,15 +1090,7 @@ public:
 	{
 		threadLocalAllocationBuffer.clear();
 	}
-protected:
-
-	//buffer used for updating EvaluableNodeFlags, particularly UpdateFlagsForNodeTree
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	thread_local
-#endif
-		static EvaluableNode::ReferenceAssocType nodeToParentNodeCache;
-
-
+protected: 
 	//extra space to allocate when allocating
 	static const double allocExpansionFactor;
 

@@ -457,10 +457,10 @@ public:
 	inline bool DoesEntityHaveRootPermission(Entity *entity)
 	{
 	#ifdef MULTITHREAD_INTERFACE
-		Concurrency::ReadLock lock(rootEntitiesMutex);
+		Concurrency::ReadLock lock(entityPermissionsMutex);
 	#endif
 
-		return rootEntities.find(entity) != end(rootEntities);
+		return entityPermissions.find(entity) != end(entityPermissions);
 	}
 
 	//loads filename into the buffer specified by b (of type BufferType of elements BufferElementType)
@@ -585,11 +585,11 @@ private:
 	FastHashMap<Entity *, AssetParametersRef> persistentEntities;
 
 	//entities that have root permissions
-	Entity::EntitySetType rootEntities;
+	FastHashSet<Entity *> entityPermissions;
 
 #ifdef MULTITHREAD_INTERFACE
 	//mutexes for global data
 	Concurrency::ReadWriteMutex persistentEntitiesMutex;
-	Concurrency::ReadWriteMutex rootEntitiesMutex;
+	Concurrency::ReadWriteMutex entityPermissionsMutex;
 #endif
 };

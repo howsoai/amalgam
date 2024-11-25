@@ -494,13 +494,13 @@ void AssetManager::SetRootPermission(Entity *entity, bool permission)
 		return;
 
 #ifdef MULTITHREAD_INTERFACE
-	Concurrency::WriteLock lock(rootEntitiesMutex);
+	Concurrency::WriteLock lock(entityPermissionsMutex);
 #endif
 
 	if(permission)
-		rootEntities.insert(entity);
+		entityPermissions.insert(entity);
 	else
-		rootEntities.erase(entity);
+		entityPermissions.erase(entity);
 }
 
 std::pair<std::string, bool> AssetManager::ValidateVersionAgainstAmalgam(const std::string &version)

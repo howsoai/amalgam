@@ -137,9 +137,6 @@ public:
 	//StringID to index
 	using StringIdToIndexAssocType = FastHashMap<StringInternPool::StringID, size_t>;
 
-	//set of entities
-	using EntitySetType = FastHashSet<Entity *>;
-
 	Entity();
 
 	//create Entity from existing code, rand_state is the current state of the random number generator,

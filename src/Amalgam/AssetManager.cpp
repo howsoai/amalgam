@@ -324,8 +324,8 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 	Entity *new_entity = new Entity();
 	new_entity->SetRandomState(default_random_seed, true);
 
-	//TODO 22194: attempt to deal with flattened nontransactional -- just change defaults and make transactional?  does transactional only apply to load?  unify flatten & transactional?
-	//TODO 22194: validate version on load if included?  make parameter in flatten which validates?
+	//TODO 22194: enrich entity permissions
+	//TODO 22194: validate version on load if included: make parameter require_version_compatibility "57.0.2" in flatten, which validates, populate parameter when loading based on flag
 	//TODO 22194: test transactional persistence
 
 	if(asset_params->executeOnLoad && asset_params->transactional)

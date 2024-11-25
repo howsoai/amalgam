@@ -6,7 +6,6 @@
 #include <string>
 #include <vector>
 #include <utility>
-#include <iostream>
 
 #ifdef MULTITHREAD_SUPPORT
 Concurrency::ReadWriteMutex EvaluableNodeManager::memoryModificationMutex;
@@ -73,8 +72,8 @@ void InitializeListHeadOrNode(EvaluableNode *node, EvaluableNode *parent, Evalua
 	else
 	{
 		// child node; initialize it and add it to the list items
-		std::vector<EvaluableNode *> *ocn_ptr = &parent->GetOrderedChildNodesReference();
-		(*ocn_ptr)[node_index-1] = node;
+		auto &ocn = parent->GetOrderedChildNodesReference();
+		ocn[node_index-1] = node;
 		node->InitializeType(child_node_type);
 	}
 }
@@ -102,9 +101,7 @@ EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(Evaluabl
 		while((newNode = GetNextNodeFromTLab()) && num_allocated < num_to_alloc)
 		{
 			if(parent == nullptr)
-			{
 				parent = newNode;
-			}
 
 			InitializeListHeadOrNode(newNode, parent, child_node_type, num_allocated, &ocn_buffer);
 			num_allocated++;
@@ -128,9 +125,8 @@ EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(Evaluabl
 				if(allocated_index < nodes.size())
 				{
 					if(nodes[allocated_index] == nullptr)
-					{
 						nodes[allocated_index] = new EvaluableNode(ENT_DEALLOCATED);
-					}
+					
 
 					AddNodeToTLab(nodes[allocated_index]);
 				}
@@ -142,11 +138,9 @@ EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(Evaluabl
 				}
 			}
 
+			// If we added enough nodes to the tlab, use them in the next loop iteration
 			if( num_added_to_tlab + num_allocated >= num_to_alloc)
-			{
-				// We were able to add enough nodes to tlab; use them next time through the loop
 				continue;
-			}
 		}
 
 

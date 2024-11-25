@@ -984,6 +984,12 @@ public:
 	//when numNodesToRunGarbageCollection are allocated, then it is time to run garbage collection
 	size_t numNodesToRunGarbageCollection;
 
+	// Remove all EvaluableNodes from the thread local allocation buffer, leaving it empty.
+	inline static void ClearThreadLocalAllocationBuffer()
+	{
+		threadLocalAllocationBuffer.clear();
+	}
+
 protected:
 	//allocates an EvaluableNode of the respective memory type in the appropriate way
 	// returns an uninitialized EvaluableNode -- care must be taken to set fields properly
@@ -1084,21 +1090,21 @@ protected:
 	//only allocated if needed
 	std::unique_ptr<NodesReferenced> nodesCurrentlyReferenced;
 
-public:
-
-	static void ClearThreadLocalAllocationBuffer()
-	{
-		threadLocalAllocationBuffer.clear();
-	}
-protected: 
 	//extra space to allocate when allocating
 	static const double allocExpansionFactor;
 
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 	thread_local
 #endif
+
+	// We need to keep track of the the last EvaluableNodeManager that accessed 
+	// the thread local allocation buffer for a given thread. We do this so 
+	// a given thread local allocation buffer has only nodes associated with one manager.
+	// If a different manager accesses the buffer, we clear the buffer to maintain this invariant.
 	static inline EvaluableNodeManager *lastEvaluableNodeManager;
 
+	// Get a pointer to the next available node from the thread local allocation buffer.
+	// If the buffer is empty, returns null.
 	inline EvaluableNode *GetNextNodeFromTLab()
 	{
 		if(threadLocalAllocationBuffer.size() > 0 && this == lastEvaluableNodeManager)
@@ -1118,6 +1124,10 @@ protected:
 
 	}
 
+	// Adds a node to the thread local allocation buffer.
+	// If this is accessed by a different EvaluableNode manager than
+	// the last time it was called on this thread, it will clear the buffer
+	// before adding the node.
 	inline void AddNodeToTLab(EvaluableNode *en)
 	{
 		assert(en->IsNodeDeallocated());
@@ -1131,14 +1141,16 @@ protected:
 		threadLocalAllocationBuffer.push_back(en);
 	}
 
+private:
+
 	static const int tlabSize = 20;
 
-private:
 	typedef std::vector<EvaluableNode *> TLab;
 
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		thread_local
 	#endif
+		// This buffer holds EvaluableNode*'s reserved for allocation by a specific thread
 		inline static TLab threadLocalAllocationBuffer;
 
 };

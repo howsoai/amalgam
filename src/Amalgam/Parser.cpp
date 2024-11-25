@@ -199,8 +199,6 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 	if(shared_node == nullptr || a_parent == nullptr || b_parent == nullptr)
 		return nullptr;
 
-	//TODO 22156: allocate from enm in a way that does not invalidate tlab (but does not increase the size of EvaluableNodeManager)
-
 	//find all parent nodes of a to find collision with parent node of b, along with depth counts
 	EvaluableNode::ReferenceCountType a_parent_nodes;
 	size_t a_ancestor_depth = 1;

@@ -991,7 +991,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 			std::swap(upd.parentNodes, references);
 			Unparse(upd, code_to_print, nullptr, expanded_whitespace, indentation_depth, need_initial_indent);
 			std::swap(upd.parentNodes, references);	//put the old parentNodes back
-			enm.FreeNodeTree(code_to_print);
+			//don't free code_to_print, but let enm's destructor clean it up
 
 			return;
 		}

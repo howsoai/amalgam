@@ -742,7 +742,7 @@ public:
 	#endif
 
 		en->Invalidate();
-		ReclaimFreedNodesAtEnd();
+		AddNodeToTLab(en);
 	}
 
 	//attempts to free the node reference
@@ -758,7 +758,7 @@ public:
 		if(enr.unique && enr != nullptr && !enr->GetNeedCycleCheck())
 		{
 			enr->Invalidate();
-			ReclaimFreedNodesAtEnd();
+			AddNodeToTLab(enr);
 		}
 	}
 
@@ -778,6 +778,7 @@ public:
 		if(IsEvaluableNodeTypeImmediate(en->GetType()))
 		{
 			en->Invalidate();
+			AddNodeToTLab(en);
 		}
 		else if(!en->GetNeedCycleCheck())
 		{
@@ -793,8 +794,6 @@ public:
 		#endif
 			FreeNodeTreeWithCyclesRecurse(en);
 		}
-
-		ReclaimFreedNodesAtEnd();
 	}
 
 	//attempts to free the node reference
@@ -825,8 +824,6 @@ public:
 					FreeNodeTreeRecurse(e);
 			}
 		}
-
-		ReclaimFreedNodesAtEnd();
 	}
 
 	//retuns the nodes currently referenced, allocating if they don't exist
@@ -895,24 +892,6 @@ public:
 	// and can improve reuse without calling the more expensive FreeAllNodesExceptReferencedNodes
 	void CompactAllocatedNodes();
 
-	//allows freed nodes at the end of nodes to be reallocated
-	inline void ReclaimFreedNodesAtEnd()
-	{
-	#ifndef MULTITHREAD_SUPPORT
-		//this cannot be used with multithreading because each thread will be using RecommendGarbageCollection
-		//to determine whether it should stay in garbage collection, and this can break the logic
-		//an alternative implementation would be to have a separate variable to indicate that everything should
-		//go into garbage collection, regardless of the current state of firstUnusedNodeIndex, but the extra
-		//overhead of that logic called for each opcode is not worth the gains of acquiring a write lock here
-		//and occasionally freeing a small bit of memory
-
-		//if any group of nodes on the top are ready to be cleaned up cheaply, do so
-		while(firstUnusedNodeIndex > 0 && nodes[firstUnusedNodeIndex - 1] != nullptr
-				&& nodes[firstUnusedNodeIndex - 1]->IsNodeDeallocated())
-			firstUnusedNodeIndex--;
-	#endif
-	}
-
 	//returns the number of nodes currently being used that have not been freed yet
 	__forceinline size_t GetNumberOfUsedNodes()
 	{	return firstUnusedNodeIndex;		}
@@ -947,8 +926,12 @@ public:
 	//sets the root node, implicitly defined as the first node in memory, to new_root
 	// note that new_root MUST have been allocated by this EvaluableNodeManager
 	//ensures that the new root node is kept and the old is released
+	//if new_root is nullptr, then it allocates its own ENT_NULL node
 	inline void SetRootNode(EvaluableNode *new_root)
 	{
+		if(new_root == nullptr)
+			new_root = AllocNode(ENT_NULL);
+
 	#ifdef MULTITHREAD_SUPPORT
 		//use WriteLock to be safe
 		Concurrency::WriteLock lock(managerAttributesMutex);
@@ -1004,6 +987,12 @@ public:
 
 	//when numNodesToRunGarbageCollection are allocated, then it is time to run garbage collection
 	size_t numNodesToRunGarbageCollection;
+
+	// Remove all EvaluableNodes from the thread local allocation buffer, leaving it empty.
+	inline static void ClearThreadLocalAllocationBuffer()
+	{
+		threadLocalAllocationBuffer.clear();
+	}
 
 protected:
 	//allocates an EvaluableNode of the respective memory type in the appropriate way
@@ -1107,4 +1096,65 @@ protected:
 
 	//extra space to allocate when allocating
 	static const double allocExpansionFactor;
+
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	thread_local
+#endif
+
+	// We need to keep track of the the last EvaluableNodeManager that accessed 
+	// the thread local allocation buffer for a given thread. We do this so 
+	// a given thread local allocation buffer has only nodes associated with one manager.
+	// If a different manager accesses the buffer, we clear the buffer to maintain this invariant.
+	static inline EvaluableNodeManager *lastEvaluableNodeManager;
+
+	// Get a pointer to the next available node from the thread local allocation buffer.
+	// If the buffer is empty, returns null.
+	inline EvaluableNode *GetNextNodeFromTLab()
+	{
+		if(threadLocalAllocationBuffer.size() > 0 && this == lastEvaluableNodeManager)
+		{
+			EvaluableNode *end = threadLocalAllocationBuffer.back();
+			threadLocalAllocationBuffer.pop_back();
+			return end;
+		}
+		else
+		{
+			if(lastEvaluableNodeManager != this)
+				ClearThreadLocalAllocationBuffer();
+
+			lastEvaluableNodeManager = this;
+			return nullptr;
+		}
+
+	}
+
+	// Adds a node to the thread local allocation buffer.
+	// If this is accessed by a different EvaluableNode manager than
+	// the last time it was called on this thread, it will clear the buffer
+	// before adding the node.
+	inline void AddNodeToTLab(EvaluableNode *en)
+	{
+		assert(en->IsNodeDeallocated());
+
+		if(this != lastEvaluableNodeManager)
+		{
+			threadLocalAllocationBuffer.clear();
+			lastEvaluableNodeManager = this;
+		}
+
+		threadLocalAllocationBuffer.push_back(en);
+	}
+
+private:
+
+	static const int tlabSize = 20;
+
+	typedef std::vector<EvaluableNode *> TLab;
+
+	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+		thread_local
+	#endif
+		// This buffer holds EvaluableNode*'s reserved for allocation by a specific thread
+		inline static TLab threadLocalAllocationBuffer;
+
 };

@@ -654,6 +654,7 @@ EvaluableNode *EntityManipulation::FlattenOnlyTopEntity(EvaluableNodeManager *en
 {
 	//////////
 	//build code to look like:
+	// [;using version 0.0.0]
 	// (declare (assoc new_entity (null) create_new_entity (true))
 	//   (let (assoc _ (lambda *entity code*))
 	//     (if create_new_entity
@@ -692,7 +693,7 @@ EvaluableNode *EntityManipulation::FlattenOnlyTopEntity(EvaluableNodeManager *en
 
 	if(include_version)
 	{
-		std::string version_string = std::string("version ") + AMALGAM_VERSION_STRING;
+		std::string version_string = std::string("using version ") + AMALGAM_VERSION_STRING;
 		declare_flatten->SetComments(version_string);
 	}
 

@@ -324,8 +324,9 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 	Entity *new_entity = new Entity();
 	new_entity->SetRandomState(default_random_seed, true);
 
-	//TODO 22194: deal with persistent transactional entities, attempt to deal with flattened nontransactional -- just change defaults and make transactional?  does transactional only apply to load?
-	//TODO 22194: validate version on load if included
+	//TODO 22194: attempt to deal with flattened nontransactional -- just change defaults and make transactional?  does transactional only apply to load?  unify flatten & transactional?
+	//TODO 22194: validate version on load if included?  make parameter in flatten which validates?
+	//TODO 22194: test transactional persistence
 
 	if(asset_params->executeOnLoad && asset_params->transactional)
 	{
@@ -337,7 +338,15 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 		}
 
 		if(persistent)
-			SetEntityPersistenceForFlattenedEntity(new_entity, asset_params);
+		{
+			asset_params->flatten = true;
+			bool store_successful = StoreEntityToResource(new_entity, asset_params, true, true);
+			if(!store_successful)
+			{
+				delete new_entity;
+				return nullptr;
+			}
+		}
 
 		return new_entity;
 	}

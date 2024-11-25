@@ -1086,13 +1086,6 @@ protected:
 	std::unique_ptr<NodesReferenced> nodesCurrentlyReferenced;
 
 public:
-	// TODO 22156: Make this private when done debugging
-	typedef std::vector<EvaluableNode *> TLab;
-
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	thread_local
-#endif
-	inline static TLab threadLocalAllocationBuffer;
 
 	static void ClearThreadLocalAllocationBuffer()
 	{
@@ -1148,5 +1141,13 @@ protected:
 	}
 
 	static const int tlabSize = 20;
+
+private:
+	typedef std::vector<EvaluableNode *> TLab;
+
+	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+		thread_local
+	#endif
+		inline static TLab threadLocalAllocationBuffer;
 
 };

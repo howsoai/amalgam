@@ -395,6 +395,14 @@
  (print (min 0.5 1 7 9 -5) "\n")
  (print (min (null) 4 8) "\n")
 
+ (print "--index_max--")
+ (print (index_max .5 -12 3 5 7))
+ (print (index_max (null) 34  -66))
+
+ (print "--index_min--")
+ (print (index_min .5 -12 3 5 7))
+ (print (index_min (null) 34  -66))
+
  (print "--dot_product--\n")
  (print (dot_product (list 0.5 0.25 0.25) (list 4 8 8)) "\n")
  (print (dot_product (associate "a" 0.5 "b" 0.25 "c" 0.25) (associate "a" 4 "b" 8 "c" 8)) "\n")

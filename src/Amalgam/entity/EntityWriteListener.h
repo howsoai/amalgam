@@ -77,6 +77,8 @@ protected:
 	Concurrency::SingleMutex mutex;
 #endif
 
+	//the suffix to append to the file on close, if any
+	std::string fileSuffix;
 	//if true, will pretty print the logs
 	bool pretty;
 	//if true, will sort keys when printing

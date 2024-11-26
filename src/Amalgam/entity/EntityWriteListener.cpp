@@ -12,6 +12,7 @@ EntityWriteListener::EntityWriteListener(Entity *listening_entity,
 	else
 		storedWrites = nullptr;
 
+	fileSuffix = ")\r\n";
 	pretty = _pretty;
 	sortKeys = sort_keys;
 	if(!filename.empty())
@@ -26,6 +27,17 @@ EntityWriteListener::EntityWriteListener(Entity *listening_entity,
 {
 	listeningEntity = listening_entity;
 	storedWrites = nullptr;
+
+	auto new_entity_sid = GetStringIdFromBuiltInStringId(ENBISI_new_entity);
+	if(pretty)
+		fileSuffix = "\t";
+	fileSuffix += new_entity_sid->string;
+
+	if(pretty)
+		fileSuffix += "\r\n)\r\n";
+	else
+		fileSuffix += ")";
+
 	pretty = _pretty;
 	sortKeys = sort_keys;
 	logFile = std::move(transaction_file);
@@ -35,7 +47,7 @@ EntityWriteListener::~EntityWriteListener()
 {
 	if(logFile.is_open())
 	{
-		logFile << ")" << "\r\n";
+		logFile << fileSuffix;
 		logFile.close();
 	}
 }
@@ -205,7 +217,12 @@ void EntityWriteListener::LogNewEntry(EvaluableNode *new_entry, bool flush)
 	if(logFile.is_open() && logFile.good())
 	{
 		//one extra indentation if pretty because already have the seq or declare
-		logFile << Parser::Unparse(new_entry, pretty, true, sortKeys, false, pretty ? 1 : 0) << "\r\n";
+		logFile << Parser::Unparse(new_entry, pretty, true, sortKeys, false, pretty ? 1 : 0);
+
+		//append a new line if not already appended
+		if(!pretty)
+			logFile << "\r\n";
+
 		if(flush)
 			logFile.flush();
 	}

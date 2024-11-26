@@ -654,8 +654,15 @@ EvaluableNode *EntityManipulation::FlattenOnlyTopEntity(EvaluableNodeManager *en
 {
 	//////////
 	//build code to look like:
-	// [;using version 0.0.0]
-	// (declare (assoc new_entity (null) create_new_entity (true))
+	// (declare (assoc new_entity (null) create_new_entity (true) require_version_compatibility (false))
+	//   [(assign "amlg_version" "123.456.789")]
+	//   [(assign "version_check"  (system "is_version_compatible" amlg_version))]
+	//   [(if (not version_check) (conclude version_check))]
+	//
+	//   TODO 22194: work on this and improve it:
+	//   [(if (and require_version_compatibility (not (system "is_version_compatible" amlg_version)))
+	//      (conclude (null)
+	//
 	//   (let (assoc _ (lambda *entity code*))
 	//     (if create_new_entity
 	//       (assign "new_entity" (first
@@ -691,9 +698,9 @@ EvaluableNode *EntityManipulation::FlattenOnlyTopEntity(EvaluableNodeManager *en
 	// (declare (assoc new_entity (null) create_new_entity (true))
 	EvaluableNode *declare_flatten = enm->AllocNode(ENT_DECLARE);
 
-	//TODO 22194: change this (and also update comments above)
 	if(include_version)
 	{
+		//TODO 22194: update to reflect the optional opening code in the comment
 		std::string version_string = std::string("using version ") + AMALGAM_VERSION_STRING;
 		declare_flatten->SetComments(version_string);
 	}

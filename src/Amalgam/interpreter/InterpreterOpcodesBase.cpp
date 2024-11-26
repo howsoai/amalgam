@@ -146,6 +146,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 		std::string version_string = AMALGAM_VERSION_STRING;
 		return AllocReturn(version_string, immediate_result);
 	}
+	else if(command == "is_version_compatible" && permissions.individualPermissions.environment)
+	{
+		if(ocn.size() > 1)
+			return EvaluableNodeReference::Null();
+
+		std::string version_requested = InterpretNodeIntoStringValueEmptyNull(ocn[1]);
+		auto [error_message, success] = AssetManager::ValidateVersionAgainstAmalgam(version_requested);
+		EvaluableNode *result = evaluableNodeManager->AllocNode(success);
+		result->SetComments(error_message);
+		return EvaluableNodeReference(result, true);
+	}
 	else if(command == "est_mem_reserved" && permissions.individualPermissions.environment)
 	{
 		return AllocReturn(static_cast<double>(curEntity->GetEstimatedReservedDeepSizeInBytes()), immediate_result);

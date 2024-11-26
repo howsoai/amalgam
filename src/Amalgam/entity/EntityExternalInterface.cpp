@@ -61,7 +61,7 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(st
 	if(!status.loaded)
 		return status;
 
-	asset_manager.SetRootPermission(entity, true);
+	asset_manager.SetEntityPermissions(entity, EntityPermissions::AllPermissions());
 
 	PrintListener *pl = nullptr;
 	std::vector<EntityWriteListener *> wl;

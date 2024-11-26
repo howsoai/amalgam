@@ -448,19 +448,23 @@ public:
 	}
 
 	//sets the entity's root permission to permission
-	void SetRootPermission(Entity *entity, bool permission);
+	void SetEntityPermissions(Entity *entity, EntityPermissions permissions);
 
 	// Checks if this entity specifically has been loaded as persistent
 	inline bool IsEntityDirectlyPersistent(Entity *entity)
 	{	return persistentEntities.find(entity) != end(persistentEntities);	}
 
-	inline bool DoesEntityHaveRootPermission(Entity *entity)
+	inline EntityPermissions GetEntityPermissions(Entity *entity)
 	{
 	#ifdef MULTITHREAD_INTERFACE
 		Concurrency::ReadLock lock(entityPermissionsMutex);
 	#endif
 
-		return entityPermissions.find(entity) != end(entityPermissions);
+		auto found = entityPermissions.find(entity);
+		if(found == end(entityPermissions))
+			return EntityPermissions();
+
+		return found->second;
 	}
 
 	//loads filename into the buffer specified by b (of type BufferType of elements BufferElementType)
@@ -585,7 +589,7 @@ private:
 	FastHashMap<Entity *, AssetParametersRef> persistentEntities;
 
 	//entities that have root permissions
-	FastHashSet<Entity *> entityPermissions;
+	FastHashMap<Entity *, EntityPermissions> entityPermissions;
 
 #ifdef MULTITHREAD_INTERFACE
 	//mutexes for global data

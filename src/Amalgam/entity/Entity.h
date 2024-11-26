@@ -71,6 +71,44 @@ public:
 	EntityType *entity;
 };
 
+union EntityPermissions
+{
+	EntityPermissions()
+		: allPermissions(0)
+	{	}
+
+	inline static EntityPermissions AllPermissions()
+	{
+		EntityPermissions perm;
+		perm.individualPermissions.stdOut = true;
+		perm.individualPermissions.stdIn = true;
+		perm.individualPermissions.load = true;
+		perm.individualPermissions.store = true;
+		perm.individualPermissions.environment = true;
+		perm.individualPermissions.system = true;
+		return perm;
+	}
+
+	//quick way to initialize all permissions to 0
+	uint8_t allPermissions;
+	//for each permission, true if has permission
+	struct
+	{
+		//write to stdout
+		bool stdOut : 1;
+		//read from stdin
+		bool stdIn : 1;
+		//read from file system
+		bool load : 1;
+		//write to file system
+		bool store : 1;
+		//read from the environment
+		bool environment : 1;
+		//command the system
+		bool system : 1;
+	} individualPermissions;
+};
+
 #ifdef MULTITHREAD_SUPPORT
 
 //encapsulates EntityReference with a lock type

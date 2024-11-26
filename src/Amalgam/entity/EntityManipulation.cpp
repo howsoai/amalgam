@@ -691,6 +691,7 @@ EvaluableNode *EntityManipulation::FlattenOnlyTopEntity(EvaluableNodeManager *en
 	// (declare (assoc new_entity (null) create_new_entity (true))
 	EvaluableNode *declare_flatten = enm->AllocNode(ENT_DECLARE);
 
+	//TODO 22194: change this (and also update comments above)
 	if(include_version)
 	{
 		std::string version_string = std::string("using version ") + AMALGAM_VERSION_STRING;

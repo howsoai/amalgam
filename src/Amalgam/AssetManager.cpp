@@ -324,18 +324,25 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 	Entity *new_entity = new Entity();
 	new_entity->SetRandomState(default_random_seed, true);
 
-	//TODO 22194: enrich entity permissions
 	//TODO 22194: validate version on load if included: make parameter require_version_compatibility "57.0.2" in flatten, which validates, populate parameter when loading based on flag
 	//TODO 22194: test transactional persistence
 
 	if(asset_params->executeOnLoad && asset_params->transactional)
 	{
 		asset_params->topEntity = new_entity;
+
+		//set environment permissions to read version
+		EntityPermissions perm_env;
+		perm_env.individualPermissions.environment = true;
+		asset_manager.SetEntityPermissions(new_entity, perm_env);
+
 		if(!LoadResourceViaTransactionalExecution(asset_params.get(), new_entity, calling_interpreter, status))
 		{
 			delete new_entity;
 			return nullptr;
 		}
+
+		asset_manager.SetEntityPermissions(new_entity, EntityPermissions());
 
 		if(persistent)
 		{
@@ -362,6 +369,12 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 	if(asset_params->executeOnLoad)
 	{
 		asset_params->topEntity = new_entity;
+
+		//set environment permissions to read version
+		EntityPermissions perm_env;
+		perm_env.individualPermissions.environment = true;
+		asset_manager.SetEntityPermissions(new_entity, perm_env);
+
 		EvaluableNodeReference args = EvaluableNodeReference(new_entity->evaluableNodeManager.AllocNode(ENT_ASSOC), true);
 		args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_create_new_entity), new_entity->evaluableNodeManager.AllocNode(false));
 		auto call_stack = Interpreter::ConvertArgsToCallStack(args, new_entity->evaluableNodeManager);
@@ -370,6 +383,8 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 
 		new_entity->evaluableNodeManager.FreeNode(call_stack->GetOrderedChildNodesReference()[0]);
 		new_entity->evaluableNodeManager.FreeNode(call_stack);
+
+		asset_manager.SetEntityPermissions(new_entity, EntityPermissions());
 
 		if(persistent)
 			SetEntityPersistenceForFlattenedEntity(new_entity, asset_params);
@@ -488,7 +503,7 @@ void AssetManager::CreateEntity(Entity *entity)
 	}
 }
 
-void AssetManager::SetRootPermission(Entity *entity, bool permission)
+void AssetManager::SetEntityPermissions(Entity *entity, EntityPermissions permissions)
 {
 	if(entity == nullptr)
 		return;
@@ -497,8 +512,8 @@ void AssetManager::SetRootPermission(Entity *entity, bool permission)
 	Concurrency::WriteLock lock(entityPermissionsMutex);
 #endif
 
-	if(permission)
-		entityPermissions.insert(entity);
+	if(permissions.allPermissions != 0)
+		entityPermissions.emplace(entity, permissions);
 	else
 		entityPermissions.erase(entity);
 }
@@ -606,5 +621,5 @@ void AssetManager::RemoveRootPermissions(Entity *entity)
 	for(auto contained_entity : entity->GetContainedEntities())
 		RemoveRootPermissions(contained_entity);
 
-	SetRootPermission(entity, false);
+	SetEntityPermissions(entity, EntityPermissions());
 }

@@ -15,6 +15,9 @@ const double EvaluableNodeManager::allocExpansionFactor = 1.5;
 
 EvaluableNodeManager::~EvaluableNodeManager()
 {
+	if(lastEvaluableNodeManager == this)
+		ClearThreadLocalAllocationBuffer();
+
 #ifdef MULTITHREAD_SUPPORT
 	Concurrency::WriteLock lock(managerAttributesMutex);
 #endif
@@ -277,13 +280,12 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 
 #ifdef MULTITHREAD_SUPPORT
 	{
-
 		//slow path allocation; attempt to allocate using an atomic without write locking
 		Concurrency::ReadLock lock(managerAttributesMutex);
 
 		//attempt to allocate enough nodes to refill thread local buffer
-		size_t first_index_to_allocate = firstUnusedNodeIndex.fetch_add(tlabSize);
-		size_t last_index_to_allocate = first_index_to_allocate + tlabSize;
+		size_t first_index_to_allocate = firstUnusedNodeIndex.fetch_add(tlabBlockAllocationSize);
+		size_t last_index_to_allocate = first_index_to_allocate + tlabBlockAllocationSize;
 
 		if(last_index_to_allocate < nodes.size())
 		{
@@ -299,7 +301,7 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 		}
 
 		//couldn't allocate enough valid nodes; reset index and allocate more
-		firstUnusedNodeIndex -= tlabSize;
+		firstUnusedNodeIndex -= tlabBlockAllocationSize;
 		ClearThreadLocalAllocationBuffer();
 	}
 	//don't have enough nodes, so need to attempt a write lock to allocate more

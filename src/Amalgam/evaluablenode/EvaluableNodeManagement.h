@@ -1100,11 +1100,10 @@ protected:
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 	thread_local
 #endif
-
-	// We need to keep track of the the last EvaluableNodeManager that accessed 
-	// the thread local allocation buffer for a given thread. We do this so 
-	// a given thread local allocation buffer has only nodes associated with one manager.
-	// If a different manager accesses the buffer, we clear the buffer to maintain this invariant.
+	// Keeps track of the the last EvaluableNodeManager that accessed 
+	// the thread local allocation buffer for a each thread.
+	// A given thread local allocation buffer should only have nodes associated with one manager.
+	// If a different manager accesses the buffer, it is cleared to maintain this invariant.
 	static inline EvaluableNodeManager *lastEvaluableNodeManager;
 
 	// Get a pointer to the next available node from the thread local allocation buffer.
@@ -1125,7 +1124,6 @@ protected:
 			lastEvaluableNodeManager = this;
 			return nullptr;
 		}
-
 	}
 
 	// Adds a node to the thread local allocation buffer.
@@ -1134,7 +1132,9 @@ protected:
 	// before adding the node.
 	inline void AddNodeToTLab(EvaluableNode *en)
 	{
+	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 		assert(en->IsNodeDeallocated());
+	#endif
 
 		if(this != lastEvaluableNodeManager)
 		{
@@ -1147,14 +1147,13 @@ protected:
 
 private:
 
-	static const int tlabSize = 20;
-
-	typedef std::vector<EvaluableNode *> TLab;
+	//number of nodes to allocate at once for the thread local allocation buffer
+	static const int tlabBlockAllocationSize = 20;
 
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		thread_local
 	#endif
-		// This buffer holds EvaluableNode*'s reserved for allocation by a specific thread
-		inline static TLab threadLocalAllocationBuffer;
+		// Holds EvaluableNode*'s reserved for allocation by a specific thread
+		inline static std::vector<EvaluableNode *> threadLocalAllocationBuffer;
 
 };

@@ -87,6 +87,8 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::VerifyEntity(
 	if(!f.good())
 		return EntityExternalInterface::LoadEntityStatus(false, "Cannot open file", "");
 
+	//TODO 22194: for amlg files, use regex
+
 	size_t header_size = 0;
 	auto [error_string, version, success] = FileSupportCAML::ReadHeader(f, header_size);
 	if(!success)

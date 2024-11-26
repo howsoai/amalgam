@@ -260,6 +260,8 @@ bool AssetManager::LoadResourceViaTransactionalExecution(AssetParameters *asset_
 
 		entity->ExecuteCodeAsEntity(node, call_stack, calling_interpreter);
 	}
+
+	//TODO 22194: check version and err appropriately
 	
 	entity->evaluableNodeManager.FreeNode(call_stack->GetOrderedChildNodesReference()[0]);
 	entity->evaluableNodeManager.FreeNode(call_stack);
@@ -324,9 +326,6 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 	Entity *new_entity = new Entity();
 	new_entity->SetRandomState(default_random_seed, true);
 
-	//TODO 22194: validate version on load if included: make parameter require_version_compatibility "57.0.2" in flatten, which validates, populate parameter when loading based on flag
-	//TODO 22194: test transactional persistence
-
 	if(asset_params->executeOnLoad && asset_params->transactional)
 	{
 		asset_params->topEntity = new_entity;
@@ -380,6 +379,9 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 		auto call_stack = Interpreter::ConvertArgsToCallStack(args, new_entity->evaluableNodeManager);
 
 		new_entity->ExecuteCodeAsEntity(code, call_stack, calling_interpreter);
+
+		//TODO 22194: check version and err appropriately
+		//TODO 22194: test transactional persistence
 
 		new_entity->evaluableNodeManager.FreeNode(call_stack->GetOrderedChildNodesReference()[0]);
 		new_entity->evaluableNodeManager.FreeNode(call_stack);

@@ -146,7 +146,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 		std::string version_string = AMALGAM_VERSION_STRING;
 		return AllocReturn(version_string, immediate_result);
 	}
-	else if(command == "is_version_compatible" && permissions.individualPermissions.environment)
+	else if(command == "version_compatible" && permissions.individualPermissions.environment)
 	{
 		if(ocn.size() > 1)
 			return EvaluableNodeReference::Null();

@@ -570,6 +570,9 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI__,
 	ENBISI_create_new_entity,
 	ENBISI_new_entity,
+	ENBISI_require_version_compatibility,
+	ENBISI_amlg_version,
+	ENBISI_version_compatible,
 
 	//entity access parameters
 	ENBISI_accessing_entity,

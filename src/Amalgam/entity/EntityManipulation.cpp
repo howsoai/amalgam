@@ -656,12 +656,8 @@ EvaluableNode *EntityManipulation::FlattenOnlyTopEntity(EvaluableNodeManager *en
 	//build code to look like:
 	// (declare (assoc new_entity (null) create_new_entity (true) require_version_compatibility (false))
 	//   [(assign "amlg_version" "123.456.789")]
-	//   [(assign "version_check"  (system "is_version_compatible" amlg_version))]
-	//   [(if (not version_check) (conclude version_check))]
-	//
-	//   TODO 22194: work on this and improve it:
-	//   [(if (and require_version_compatibility (not (system "is_version_compatible" amlg_version)))
-	//      (conclude (null)
+	//   [(assign "version_compatible"  (system "version_compatible" amlg_version))]
+	//   [(if (and require_version_compatibility (not version_compatible)) (conclude version_compatible))]
 	//
 	//   (let (assoc _ (lambda *entity code*))
 	//     (if create_new_entity
@@ -695,20 +691,49 @@ EvaluableNode *EntityManipulation::FlattenOnlyTopEntity(EvaluableNodeManager *en
 	//   )
 	// )
 
-	// (declare (assoc new_entity (null) create_new_entity (true))
+	// (declare (assoc new_entity (null) create_new_entity (true) require_version_compatibility (false))
 	EvaluableNode *declare_flatten = enm->AllocNode(ENT_DECLARE);
-
-	if(include_version)
-	{
-		//TODO 22194: update to reflect the optional opening code in the comment
-		std::string version_string = std::string("using version ") + AMALGAM_VERSION_STRING;
-		declare_flatten->SetComments(version_string);
-	}
 
 	EvaluableNode *flatten_params = enm->AllocNode(ENT_ASSOC);
 	declare_flatten->AppendOrderedChildNode(flatten_params);
 	flatten_params->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_new_entity), nullptr);
 	flatten_params->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_create_new_entity), enm->AllocNode(true));
+	flatten_params->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_require_version_compatibility), enm->AllocNode(false));
+
+	if(include_version)
+	{
+		//   [(assign "amlg_version" "*version number*")]
+		EvaluableNode *assign_version = enm->AllocNode(ENT_ASSIGN);
+		assign_version->AppendOrderedChildNode(enm->AllocNode(ENT_STRING, GetStringIdFromBuiltInStringId(ENBISI_amlg_version)));
+		std::string version_string = AMALGAM_VERSION_STRING;
+		assign_version->AppendOrderedChildNode(enm->AllocNode(ENT_STRING, version_string));
+		declare_flatten->AppendOrderedChildNode(assign_version);
+
+		//   [(assign "version_compatible"  (system "is_version_compatible" amlg_version))]
+		EvaluableNode *assign_version_compatible = enm->AllocNode(ENT_ASSIGN);
+		assign_version_compatible->AppendOrderedChildNode(enm->AllocNode(ENT_STRING, GetStringIdFromBuiltInStringId(ENBISI_version_compatible)));
+
+		EvaluableNode *system_version_compat = enm->AllocNode(ENT_SYSTEM);
+		system_version_compat->AppendOrderedChildNode(enm->AllocNode(ENT_STRING, GetStringIdFromBuiltInStringId(ENBISI_version_compatible)));
+		system_version_compat->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, GetStringIdFromBuiltInStringId(ENBISI_amlg_version)));
+		assign_version_compatible->AppendOrderedChildNode(system_version_compat);
+
+		declare_flatten->AppendOrderedChildNode(assign_version_compatible);
+
+		//   [(if (and require_version_compatibility (not version_compatible)) (conclude version_compatible))]
+		EvaluableNode *if_require_compat = enm->AllocNode(ENT_IF);
+		EvaluableNode *and_req = enm->AllocNode(ENT_AND);
+		and_req->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, GetStringIdFromBuiltInStringId(ENBISI_require_version_compatibility)));
+		EvaluableNode *not_version_compatible = enm->AllocNode(ENT_NOT);
+		not_version_compatible->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, GetStringIdFromBuiltInStringId(ENBISI_version_compatible)));
+		and_req->AppendOrderedChildNode(not_version_compatible);
+		if_require_compat->AppendOrderedChildNode(and_req);
+		EvaluableNode *conclude = enm->AllocNode(ENT_CONCLUDE);
+		conclude->AppendOrderedChildNode(enm->AllocNode(ENT_SYMBOL, GetStringIdFromBuiltInStringId(ENBISI_version_compatible)));
+		if_require_compat->AppendOrderedChildNode(conclude);
+
+		declare_flatten->AppendOrderedChildNode(if_require_compat);
+	}
 
 	//   (let (assoc _ (lambda *entity code*))
 	EvaluableNode *let_entity_code = enm->AllocNode(ENT_LET);

@@ -19,7 +19,6 @@
 #define AMALGAM_FAST_MEMORY_INTEGRITY
 #endif
 
-
 //forward declarations:
 class EvaluableNodeManager;
 

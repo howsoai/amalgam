@@ -709,6 +709,7 @@ protected:
 				current_value, &result, results_saver_location]
 				{
 					EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
+					EvaluableNodeManager::ClearThreadLocalAllocationBuffer();
 
 					Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
 						parentInterpreter->writeListeners, parentInterpreter->printListener,
@@ -776,6 +777,7 @@ protected:
 				[this, rand_seed, node_to_execute, result, immediate_results, results_saver_location]
 				{
 					EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
+					EvaluableNodeManager::ClearThreadLocalAllocationBuffer();
 
 					Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
 						parentInterpreter->writeListeners, parentInterpreter->printListener,

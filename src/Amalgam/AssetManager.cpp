@@ -333,11 +333,7 @@ Entity *AssetManager::LoadEntityFromResource(AssetParameters &asset_params, bool
 		}
 
 		if(persistent)
-		{
-			delete new_entity;
-			return nullptr;
-		}
-			//SetEntityPersistenceForFlattenedEntity(new_entity, &asset_params);
+			SetEntityPersistenceForFlattenedEntity(new_entity, &asset_params);
 
 		return new_entity;
 	}
@@ -362,11 +358,7 @@ Entity *AssetManager::LoadEntityFromResource(AssetParameters &asset_params, bool
 		new_entity->evaluableNodeManager.FreeNode(call_stack);
 
 		if(persistent)
-		{
-			delete new_entity;
-			return nullptr;
-		}
-		//	SetEntityPersistenceForFlattenedEntity(new_entity, &asset_params);
+			SetEntityPersistenceForFlattenedEntity(new_entity, &asset_params);
 
 		return new_entity;
 	}

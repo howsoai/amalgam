@@ -97,6 +97,8 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 	&Interpreter::InterpretNode_ENT_ABS,															// ENT_ABS
 	&Interpreter::InterpretNode_ENT_MAX,															// ENT_MAX
 	&Interpreter::InterpretNode_ENT_MIN,															// ENT_MIN
+	&Interpreter::InterpretNode_ENT_INDEX_MAX,														// ENT_INDEX_MAX
+	&Interpreter::InterpretNode_ENT_INDEX_MIN,														// ENT_INDEX_MIN
 	&Interpreter::InterpretNode_ENT_DOT_PRODUCT,													// ENT_DOT_PRODUCT
 	&Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE,											// ENT_GENERALIZED_DISTANCE
 	&Interpreter::InterpretNode_ENT_ENTROPY,														// ENT_ENTROPY

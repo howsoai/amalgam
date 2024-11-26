@@ -804,6 +804,118 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIN(EvaluableNode *en, boo
 	return EvaluableNodeReference::Null();
 }
 
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MAX(EvaluableNode *en, bool immediate_result)
+{
+	auto &ocn = en->GetOrderedChildNodes();
+
+	if(ocn.size() == 0)
+		return EvaluableNodeReference::Null();
+
+	bool value_found = false;
+	double result_value = -std::numeric_limits<double>::infinity();
+
+#ifdef MULTITHREAD_SUPPORT
+	std::vector<EvaluableNodeReference> interpreted_nodes;
+	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes, true))
+	{
+
+		size_t max_index = 0;
+		for (size_t i = 0; i < interpreted_nodes.size(); i++)
+		{
+			//do the comparison and keep the greater
+			double cur_value = ConvertNodeIntoNumberValueAndFreeIfPossible(interpreted_nodes[i]);
+			if(cur_value > result_value)
+			{
+				value_found = true;
+				result_value = cur_value;
+				max_index = i;
+			}
+		}
+
+		if(value_found)
+			return AllocReturn(static_cast<double>(max_index), immediate_result);
+
+		return EvaluableNodeReference::Null();
+	}
+#endif
+
+	auto node_stack = CreateOpcodeStackStateSaver();
+
+	size_t max_index = 0;
+	// for(auto &cn : ocn)
+	for(size_t i = 0; i < ocn.size(); i++)
+	{
+
+		double cur_value = InterpretNodeIntoNumberValue(ocn[i]);
+		if(cur_value > result_value)
+		{
+			value_found = true;
+			result_value = cur_value;
+			max_index = i;
+		}
+	}
+
+	if(value_found)
+		return AllocReturn(static_cast<double>(max_index), immediate_result);;
+
+	return EvaluableNodeReference::Null();
+}
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MIN(EvaluableNode *en, bool immediate_result)
+{
+	auto &ocn = en->GetOrderedChildNodes();
+
+	if(ocn.size() == 0)
+		return EvaluableNodeReference::Null();
+
+	bool value_found = false;
+	double result_value = std::numeric_limits<double>::infinity();
+
+#ifdef MULTITHREAD_SUPPORT
+	std::vector<EvaluableNodeReference> interpreted_nodes;
+	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes, true))
+	{
+		size_t min_index;
+		for(size_t i = 0; i < interpreted_nodes.size(); i++)
+		{
+			//do the comparison and keep the greater
+			double cur_value = ConvertNodeIntoNumberValueAndFreeIfPossible(interpreted_nodes[i]);
+			if(cur_value < result_value)
+			{
+				value_found = true;
+				result_value = cur_value;
+				min_index = i;
+			}
+		}
+
+		if(value_found)
+			return AllocReturn(static_cast<double>(min_index), immediate_result);
+		return EvaluableNodeReference::Null();
+	}
+#endif
+
+	auto node_stack = CreateOpcodeStackStateSaver();
+
+	//for(auto &cn : ocn)
+	size_t min_index;
+	for (size_t i = 0; i < ocn.size(); i++)
+	{
+
+		auto cur_value = InterpretNodeIntoNumberValue(ocn[i]);
+		if(cur_value < result_value)
+		{
+			value_found = true;
+			result_value = cur_value;
+			min_index = i;
+		}
+	}
+
+	if(value_found)
+		return AllocReturn(static_cast<double>(min_index), immediate_result);
+	return EvaluableNodeReference::Null();
+}
+
 EvaluableNodeReference Interpreter::InterpretNode_ENT_DOT_PRODUCT(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();

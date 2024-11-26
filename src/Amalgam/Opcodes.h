@@ -91,6 +91,8 @@ enum EvaluableNodeType : uint8_t
 	ENT_ABS,
 	ENT_MAX,
 	ENT_MIN,
+	ENT_INDEX_MAX,
+	ENT_INDEX_MIN,
 	ENT_DOT_PRODUCT,
 	ENT_GENERALIZED_DISTANCE,
 	ENT_ENTROPY,
@@ -313,7 +315,7 @@ constexpr OrderedChildNodeType GetOpcodeOrderedChildNodeType(EvaluableNodeType t
 	case ENT_PARALLEL:
 	case ENT_ADD:
 	case ENT_MULTIPLY:
-	case ENT_MAX:					case ENT_MIN:
+	case ENT_MAX:					case ENT_MIN:				case ENT_INDEX_MAX:	case ENT_INDEX_MIN:
 	case ENT_AND:					case ENT_OR:				case ENT_XOR:
 	case ENT_EQUAL:					case ENT_NEQUAL:
 	case ENT_NULL:

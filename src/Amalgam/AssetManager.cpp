@@ -15,6 +15,7 @@
 #include <ctime>
 #include <fstream>
 #include <iostream>
+#include <regex>
 
 AssetManager asset_manager;
 
@@ -108,6 +109,106 @@ void AssetManager::AssetParameters::UpdateResources()
 	else //resourcePath stays the same
 	{
 		resourceBasePath = path + file_base;
+	}
+}
+
+//returns a pair of success followed by version number if a version can be found in an Amalgam metadata file
+static std::pair<bool, std::string> FindVersionStringInAmlgMetadata(std::ifstream &file)
+{
+	//read 200 bytes and null terminate
+	std::array<char, 201> buffer;
+	file.read(buffer.data(), 200);
+	buffer[200] = '\0';
+	std::string str(buffer.data(), 200);
+
+	//match on semantic version
+	std::regex pattern("version (\\d+\\.\\d+\\.\\d+(?:-\\w+\\.\\d+)?(?:-\\w+)?(?:\\+\\w+)?(?:\\.\\w+)?)");
+
+	std::smatch match;
+	if(std::regex_search(str, match, pattern))
+		return std::make_pair(true, match[1].str());
+	else
+		return std::make_pair(false, "");
+}
+
+//returns a pair of success followed by version number if a version can be found in an Amalgam execute on load file
+std::pair<bool, std::string> FindVersionStringInAmlgExecOnLoad(std::ifstream &file)
+{
+	//read 200 bytes and null terminate
+	std::array<char, 201> buffer;
+	file.read(buffer.data(), 200);
+	buffer[200] = '\0';
+	std::string str(buffer.data(), 200);
+
+	//match on semantic version
+	std::regex pattern("\"amlg_version\" \"(\\d+\\.\\d+\\.\\d+(?:-\\w+\\.\\d+)?(?:-\\w+)?(?:\\+\\w+)?(?:\\.\\w+)?)\"");
+
+	std::smatch match;
+	if(std::regex_search(str, match, pattern))
+		return std::make_pair(true, match[1].str());
+	else
+		return std::make_pair(false, "");
+}
+
+std::tuple<std::string, std::string, bool> AssetManager::GetFileStatus(std::string &resource_path)
+{
+	std::string path, file_base, extension;
+	Platform_SeparatePathFileExtension(resource_path, path, file_base, extension);
+
+	if(extension == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
+	{
+		std::ifstream f(path, std::fstream::binary | std::fstream::in);
+
+		if(!f.good())
+			return std::make_tuple("Cannot open file", "", false);
+
+		size_t header_size = 0;
+		auto [error_message, version, success] = FileSupportCAML::ReadHeader(f, header_size);
+		if(!success)
+			return std::make_tuple(error_message, version, false);
+
+		return std::make_tuple("", version, false);
+	}
+	else if(extension == FILE_EXTENSION_AMALGAM)
+	{
+		//make sure path can be opened
+		std::ifstream file(path, std::fstream::binary | std::fstream::in);
+		if(!file.good())
+			return std::make_tuple("Cannot open file", "", false);
+
+		//check metadata file
+		std::string metadata_path = path + file_base + FILE_EXTENSION_AMLG_METADATA;
+		std::ifstream metadata_file(path, std::fstream::binary | std::fstream::in);
+		if(metadata_file.good())
+		{
+			auto [version_found, version] = FindVersionStringInAmlgMetadata(metadata_file);
+			if(version_found)
+			{
+				auto [error_message, success] = AssetManager::ValidateVersionAgainstAmalgam(version);
+				if(success)
+					return std::make_tuple(error_message, version, true);
+			}
+		}
+
+		//try to find the version in the amalgam file itself
+		auto [version_found, version] = FindVersionStringInAmlgExecOnLoad(file);
+		if(version_found)
+		{
+			auto [error_message, success] = AssetManager::ValidateVersionAgainstAmalgam(version);
+			if(success)
+				return std::make_tuple(error_message, version, true);
+		}
+
+		//was able to open, but no version
+		return std::make_tuple("", "", true);
+	}
+	else
+	{
+		std::ifstream f(path, std::fstream::binary | std::fstream::in);
+		if(!f.good())
+			return std::make_tuple("Cannot open file", "", false);
+
+		return std::make_tuple("", "", true);
 	}
 }
 

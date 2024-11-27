@@ -149,6 +149,11 @@ public:
 		bool executeOnLoad;
 	};
 
+	//read status of the file from path
+	//if success: returns an empty string indicating no error, version of amlg, and true
+	//if failure: returns error message, version of amlg, and false
+	static std::tuple<std::string, std::string, bool> GetFileStatus(std::string &resource_path);
+
 	//Returns the code to the corresponding entity specified by asset_params using enm
 	//Additionally returns the updated resource_base_path for the file, as well as the status
 	EvaluableNodeReference LoadResource(AssetParameters *asset_params, EvaluableNodeManager *enm,

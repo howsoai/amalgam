@@ -82,15 +82,7 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(st
 
 EntityExternalInterface::LoadEntityStatus EntityExternalInterface::VerifyEntity(std::string &path)
 {
-	std::ifstream f(path, std::fstream::binary | std::fstream::in);
-
-	if(!f.good())
-		return EntityExternalInterface::LoadEntityStatus(false, "Cannot open file", "");
-
-	//TODO 22194: for amlg files, use regex
-
-	size_t header_size = 0;
-	auto [error_string, version, success] = FileSupportCAML::ReadHeader(f, header_size);
+	auto [error_string, version, success] = AssetManager::GetFileStatus(path);
 	if(!success)
 		return EntityExternalInterface::LoadEntityStatus(false, error_string, version);
 

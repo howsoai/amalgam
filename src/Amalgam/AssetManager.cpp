@@ -518,10 +518,10 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 					new_entity->SetRandomState(default_random_seed, true);
 				}
 
-				EvaluableNode **version = metadata->GetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_version));
-				if(version != nullptr && (*version)->GetType() == ENT_STRING)
+				EvaluableNode **version_node = metadata->GetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_version));
+				if(version_node != nullptr && (*version_node)->GetType() == ENT_STRING)
 				{
-					const std::string &version_str = (*version)->GetStringValue();
+					const std::string &version_str = (*version_node)->GetStringValue();
 					auto [error_message, success] = AssetManager::ValidateVersionAgainstAmalgam(version_str);
 					if(!success)
 					{

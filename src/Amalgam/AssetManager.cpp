@@ -281,8 +281,8 @@ EvaluableNodeReference AssetManager::LoadResource(AssetParameters *asset_params,
 	}
 }
 
-bool AssetManager::LoadResourceViaTransactionalExecution(AssetParameters *asset_params, Entity *entity,
-	Interpreter *calling_interpreter, EntityExternalInterface::LoadEntityStatus &status)
+EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransactionalExecution(
+	AssetParameters *asset_params, Entity *entity, Interpreter *calling_interpreter)
 {
 	std::string code_string;
 	if(asset_params->resourceType == FILE_EXTENSION_AMALGAM)
@@ -291,10 +291,9 @@ bool AssetManager::LoadResourceViaTransactionalExecution(AssetParameters *asset_
 		std::tie(code_string, code_success) = Platform_OpenFileAsString(asset_params->resourcePath);
 		if(!code_success)
 		{
-			status.SetStatus(false, code_string);
 			if(asset_params->resourceType == FILE_EXTENSION_AMALGAM)
 				std::cerr << code_string << std::endl;
-			return false;
+			return EntityExternalInterface::LoadEntityStatus(false, code_string);
 		}
 	}
 	else if(asset_params->resourceType == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
@@ -302,15 +301,12 @@ bool AssetManager::LoadResourceViaTransactionalExecution(AssetParameters *asset_
 		BinaryData compressed_data;
 		auto [error_msg, version, success] = LoadFileToBuffer<BinaryData>(asset_params->resourcePath, asset_params->resourceType, compressed_data);
 		if(!success)
-		{
-			status.SetStatus(false, error_msg, version);
-			return false;
-		}
+			return EntityExternalInterface::LoadEntityStatus(false, error_msg, version);
 
 		OffsetIndex cur_offset = 0;
 		auto strings = DecompressStrings(compressed_data, cur_offset);
 		if(strings.size() == 0)
-			return false;
+			return EntityExternalInterface::LoadEntityStatus(false, "No data found in file", version);
 
 		code_string = std::move(strings[0]);
 	}
@@ -324,7 +320,7 @@ bool AssetManager::LoadResourceViaTransactionalExecution(AssetParameters *asset_
 
 	//make sure it's a valid executable type
 	if(EvaluableNode::IsNull(first_node) || !first_node->IsOrderedArray())
-		return false;
+		return EntityExternalInterface::LoadEntityStatus(false, "No data found in file", "");
 
 	EvaluableNodeReference args = EvaluableNodeReference(entity->evaluableNodeManager.AllocNode(ENT_ASSOC), true);
 	args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_create_new_entity), entity->evaluableNodeManager.AllocNode(false));
@@ -362,12 +358,19 @@ bool AssetManager::LoadResourceViaTransactionalExecution(AssetParameters *asset_
 		entity->ExecuteCodeAsEntity(node, call_stack, calling_interpreter);
 	}
 
-	//TODO 22194: check version_compatible and err appropriately -- ensure true if not required.  set amlg_version in status
+	EntityExternalInterface::LoadEntityStatus load_status(true, "", "");
+	EvaluableNode **version_node = call_stack->GetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_amlg_version));
+	if(version_node != nullptr && *version_node != nullptr && (*version_node)->GetType() == ENT_STRING)
+	{
+		const std::string &version_string = (*version_node)->GetStringValue();
+		auto [error_message, success] = AssetManager::ValidateVersionAgainstAmalgam(version_string);
+		load_status.SetStatus(success, error_message, version_string);
+	}
 	
 	entity->evaluableNodeManager.FreeNode(call_stack->GetOrderedChildNodesReference()[0]);
 	entity->evaluableNodeManager.FreeNode(call_stack);
 
-	return true;
+	return load_status;
 }
 
 bool AssetManager::StoreResource(EvaluableNode *code, AssetParameters *asset_params, EvaluableNodeManager *enm)
@@ -436,7 +439,8 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 		perm_env.individualPermissions.environment = true;
 		asset_manager.SetEntityPermissions(new_entity, perm_env);
 
-		if(!LoadResourceViaTransactionalExecution(asset_params.get(), new_entity, calling_interpreter, status))
+		auto status = LoadResourceViaTransactionalExecution(asset_params.get(), new_entity, calling_interpreter);
+		if(!status.loaded)
 		{
 			delete new_entity;
 			return nullptr;

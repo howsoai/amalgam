@@ -362,7 +362,7 @@ bool AssetManager::LoadResourceViaTransactionalExecution(AssetParameters *asset_
 		entity->ExecuteCodeAsEntity(node, call_stack, calling_interpreter);
 	}
 
-	//TODO 22194: check version and err appropriately
+	//TODO 22194: check version_compatible and err appropriately -- ensure true if not required.  set amlg_version in status
 	
 	entity->evaluableNodeManager.FreeNode(call_stack->GetOrderedChildNodesReference()[0]);
 	entity->evaluableNodeManager.FreeNode(call_stack);
@@ -481,7 +481,7 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 
 		new_entity->ExecuteCodeAsEntity(code, call_stack, calling_interpreter);
 
-		//TODO 22194: check version and err appropriately
+		//TODO 22194: check version_compatible and err appropriately -- ensure true if not required. set amlg_version in status
 		//TODO 22194: test transactional persistence
 
 		new_entity->evaluableNodeManager.FreeNode(call_stack->GetOrderedChildNodesReference()[0]);

@@ -147,6 +147,7 @@ public:
 		bool flatten;
 		bool parallelCreate;
 		bool executeOnLoad;
+		bool requireVersionCompatibility;
 	};
 
 	//read status of the file from path

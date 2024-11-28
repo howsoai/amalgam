@@ -41,6 +41,7 @@ AssetManager::AssetParameters::AssetParameters(std::string resource_path, std::s
 		flatten = false;
 		parallelCreate = false;
 		executeOnLoad = false;
+		requireVersionCompatibility = true;
 	}
 	else if(resourceType == FILE_EXTENSION_JSON || resourceType == FILE_EXTENSION_YAML
 		|| resourceType == FILE_EXTENSION_CSV)
@@ -54,6 +55,7 @@ AssetManager::AssetParameters::AssetParameters(std::string resource_path, std::s
 		flatten = false;
 		parallelCreate = false;
 		executeOnLoad = false;
+		requireVersionCompatibility = false;
 	}
 	else if(resourceType == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 	{
@@ -66,6 +68,7 @@ AssetManager::AssetParameters::AssetParameters(std::string resource_path, std::s
 		flatten = is_entity;
 		parallelCreate = false;
 		executeOnLoad = is_entity;
+		requireVersionCompatibility = true;
 	}
 	else
 	{
@@ -78,6 +81,7 @@ AssetManager::AssetParameters::AssetParameters(std::string resource_path, std::s
 		flatten = is_entity;
 		parallelCreate = false;
 		executeOnLoad = is_entity;
+		requireVersionCompatibility = false;
 	}
 }
 
@@ -92,6 +96,7 @@ void AssetManager::AssetParameters::SetParams(EvaluableNode::AssocType &params)
 	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_flatten, flatten);
 	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_parallel_create, parallelCreate);
 	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_execute_on_load, executeOnLoad);
+	EvaluableNode::GetValueFromMappedChildNodesReference(params, ENBISI_require_version_compatibility, requireVersionCompatibility);
 }
 
 void AssetManager::AssetParameters::UpdateResources()
@@ -324,6 +329,8 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 
 	EvaluableNodeReference args = EvaluableNodeReference(entity->evaluableNodeManager.AllocNode(ENT_ASSOC), true);
 	args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_create_new_entity), entity->evaluableNodeManager.AllocNode(false));
+	args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_require_version_compatibility),
+		entity->evaluableNodeManager.AllocNode(asset_params->requireVersionCompatibility));
 	auto call_stack = Interpreter::ConvertArgsToCallStack(args, entity->evaluableNodeManager);
 
 	auto first_node_type = first_node->GetType();
@@ -439,7 +446,7 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 		perm_env.individualPermissions.environment = true;
 		asset_manager.SetEntityPermissions(new_entity, perm_env);
 
-		auto status = LoadResourceViaTransactionalExecution(asset_params.get(), new_entity, calling_interpreter);
+		status = LoadResourceViaTransactionalExecution(asset_params.get(), new_entity, calling_interpreter);
 		if(!status.loaded)
 		{
 			delete new_entity;
@@ -481,11 +488,13 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 
 		EvaluableNodeReference args = EvaluableNodeReference(new_entity->evaluableNodeManager.AllocNode(ENT_ASSOC), true);
 		args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_create_new_entity), new_entity->evaluableNodeManager.AllocNode(false));
+		args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_require_version_compatibility),
+			new_entity->evaluableNodeManager.AllocNode(asset_params->requireVersionCompatibility));
 		auto call_stack = Interpreter::ConvertArgsToCallStack(args, new_entity->evaluableNodeManager);
 
 		new_entity->ExecuteCodeAsEntity(code, call_stack, calling_interpreter);
 
-		//TODO 22194: check version_compatible and err appropriately -- ensure true if not required. set amlg_version in status
+		//TODO 22194: check version_compatible and err appropriately like code below
 		//TODO 22194: test transactional persistence
 
 		new_entity->evaluableNodeManager.FreeNode(call_stack->GetOrderedChildNodesReference()[0]);
@@ -525,9 +534,13 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 					auto [error_message, success] = AssetManager::ValidateVersionAgainstAmalgam(version_str);
 					if(!success)
 					{
-						status.SetStatus(false, error_message, version_str);
-						delete new_entity;
-						return nullptr;
+						//fail on mismatch if requireVersionCompatibility
+						status.SetStatus(asset_params->requireVersionCompatibility, error_message, version_str);
+						if(asset_params->requireVersionCompatibility)
+						{
+							delete new_entity;
+							return nullptr;
+						}
 					}
 				}
 			}

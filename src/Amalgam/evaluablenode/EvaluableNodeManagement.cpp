@@ -62,119 +62,6 @@ EvaluableNode *EvaluableNodeManager::AllocNode(EvaluableNode *original, Evaluabl
 	return n;
 }
 
-
-void InitializeListHeadOrNode(EvaluableNode *node, EvaluableNode *parent, EvaluableNodeType child_node_type,  size_t node_index, std::vector<EvaluableNode*> *ocn_buffer)
-{
-	if(node_index == 0)
-	{
-		// parent
-		node->InitializeType(ENT_LIST);
-		std::vector<EvaluableNode *> *ocn_ptr = &node->GetOrderedChildNodesReference();
-		std::swap(*ocn_buffer, *ocn_ptr);
-	}
-	else
-	{
-		// child node; initialize it and add it to the list items
-		auto &ocn = parent->GetOrderedChildNodesReference();
-		ocn[node_index-1] = node;
-		node->InitializeType(child_node_type);
-	}
-}
-
-EvaluableNode *EvaluableNodeManager::AllocListNodeWithOrderedChildNodes(EvaluableNodeType child_node_type, size_t num_child_nodes)
-{
-	if(num_child_nodes == 0)
-		return AllocNode(ENT_LIST);
-
-	EvaluableNode *parent = nullptr;
-	// Allocate from TLab
-
-	size_t num_to_alloc = 1 + num_child_nodes;
-	size_t num_allocated = 0;
-	size_t num_total_nodes_needed = 0;
-
-	//ordered child nodes destination; preallocate outside of the lock (for performance) and swap in
-	std::vector<EvaluableNode *> ocn_buffer;
-	ocn_buffer.resize(num_child_nodes);
-
-	while(num_allocated < num_to_alloc)
-	{
-		EvaluableNode *newNode = nullptr;
-
-		while((newNode = GetNextNodeFromTLab()) && num_allocated < num_to_alloc)
-		{
-			if(parent == nullptr)
-				parent = newNode;
-
-			InitializeListHeadOrNode(newNode, parent, child_node_type, num_allocated, &ocn_buffer);
-			num_allocated++;
-		}
-
-		if(num_allocated >= num_to_alloc)
-		{
-			//we got enough nodes out of the tlab
-			return parent;
-		}
-		
-		{ // Not enough nodes in TLab; add some.
-			#ifdef MULTITHREAD_SUPPORT
-				Concurrency::ReadLock lock(managerAttributesMutex);
-			#endif
-
-			int num_added_to_tlab = 0;
-			for(; num_allocated + num_added_to_tlab < num_to_alloc; num_added_to_tlab++)
-			{
-				size_t allocated_index = firstUnusedNodeIndex++;
-				if(allocated_index < nodes.size())
-				{
-					if(nodes[allocated_index] == nullptr)
-						nodes[allocated_index] = new EvaluableNode(ENT_DEALLOCATED);
-					
-
-					AddNodeToTLab(nodes[allocated_index]);
-				}
-				else
-				{
-					//the node wasn't valid; put it back and do a write lock to allocate more
-					--firstUnusedNodeIndex;
-					break;
-				}
-			}
-
-			// If we added enough nodes to the tlab, use them in the next loop iteration
-			if( num_added_to_tlab + num_allocated >= num_to_alloc)
-				continue;
-		}
-
-
-		// There weren't enough free nodes available to fill the tlab; allocate more
-		num_total_nodes_needed = firstUnusedNodeIndex + (num_to_alloc - num_allocated);
-		{
-			#ifdef MULTITHREAD_SUPPORT
-			//don't have enough nodes, so need to attempt a write lock to allocate more
-			Concurrency::WriteLock write_lock(managerAttributesMutex);
-
-			//try again after write lock to allocate a node in case another thread has performed the allocation
-			//already have the write lock, so don't need to worry about another thread stealing firstUnusedNodeIndex
-			#endif
-
-
-			//if don't currently have enough free nodes to meet the needs, then expand the allocation
-			if(nodes.size() <= num_total_nodes_needed)
-			{
-				size_t new_num_nodes = static_cast<size_t>(allocExpansionFactor * num_total_nodes_needed) + 1;
-
-				//fill new EvaluableNode slots with nullptr
-				nodes.resize(new_num_nodes, nullptr);
-			}
-		}
-	}
-
-	// unreachable 
-	assert(false);
-	return nullptr;
-}
-
 void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t previous_num_nodes)
 {
 	//scale down the number of nodes previously allocated, because there is always a chance that
@@ -297,12 +184,12 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 				AddNodeToTLab(nodes[i]);
 			}
 
+			lock.unlock();
 			return GetNextNodeFromTLab();
 		}
 
 		//couldn't allocate enough valid nodes; reset index and allocate more
 		firstUnusedNodeIndex -= tlabBlockAllocationSize;
-		ClearThreadLocalAllocationBuffer();
 	}
 	//don't have enough nodes, so need to attempt a write lock to allocate more
 	Concurrency::WriteLock write_lock(managerAttributesMutex);

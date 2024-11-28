@@ -194,10 +194,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 	else if(command == "sign_key_pair" && permissions.individualPermissions.system)
 	{
 		auto [public_key, secret_key] = GenerateSignatureKeyPair();
-		EvaluableNode *list = evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_STRING, 2);
+		EvaluableNode *list = evaluableNodeManager->AllocNode(ENT_LIST);
 		auto &list_ocn = list->GetOrderedChildNodesReference();
-		list_ocn[0]->SetStringValue(public_key);
-		list_ocn[1]->SetStringValue(secret_key);
+		list_ocn.resize(2);
+		list_ocn[0] = evaluableNodeManager->AllocNode(public_key);
+		list_ocn[1] = evaluableNodeManager->AllocNode(secret_key);
 
 		return EvaluableNodeReference(list, true);
 
@@ -205,20 +206,21 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 	else if(command == "encrypt_key_pair" && permissions.individualPermissions.system)
 	{
 		auto [public_key, secret_key] = GenerateEncryptionKeyPair();
-		EvaluableNode *list = evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_STRING, 2);
+		EvaluableNode *list = evaluableNodeManager->AllocNode(ENT_LIST);
 		auto &list_ocn = list->GetOrderedChildNodesReference();
-		list_ocn[0]->SetStringValue(public_key);
-		list_ocn[1]->SetStringValue(secret_key);
+		list_ocn.resize(2);
+		list_ocn[0] = evaluableNodeManager->AllocNode(public_key);
+		list_ocn[1] = evaluableNodeManager->AllocNode(secret_key);
 
 		return EvaluableNodeReference(list, true);
 	}
 	else if(command == "debugging_info" && permissions.individualPermissions.environment)
 	{
-		EvaluableNode *debugger_info = evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_FALSE, 2);
-		if(Interpreter::GetDebuggingState())
-			debugger_info->GetOrderedChildNodesReference()[0]->SetType(ENT_TRUE, evaluableNodeManager, false);
-		if(asset_manager.debugSources)
-			debugger_info->GetOrderedChildNodesReference()[1]->SetType(ENT_TRUE, evaluableNodeManager, false);
+		EvaluableNode *debugger_info = evaluableNodeManager->AllocNode(ENT_LIST);
+		auto &list_ocn = debugger_info->GetOrderedChildNodesReference();
+		list_ocn.resize(2);
+		list_ocn[0] = evaluableNodeManager->AllocNode(Interpreter::GetDebuggingState());
+		list_ocn[1] = evaluableNodeManager->AllocNode(asset_manager.debugSources);
 
 		return EvaluableNodeReference(debugger_info, true);
 	}
@@ -322,13 +324,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_PARSE(EvaluableNode *en, b
 	retval->ReserveOrderedChildNodes(2);
 	retval->AppendOrderedChildNode(node);
 
-	EvaluableNodeReference warning_list(
-		evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_STRING, warnings.size()), true);
+	EvaluableNodeReference warning_list(evaluableNodeManager->AllocNode(ENT_LIST), true);
 	retval->AppendOrderedChildNode(warning_list);
 
 	auto &list_ocn = warning_list->GetOrderedChildNodesReference();
+	list_ocn.resize(warnings.size());
 	for(size_t i = 0; i < warnings.size(); i++)
-		list_ocn[i]->SetStringValue(warnings[i]);
+		list_ocn[i] = evaluableNodeManager->AllocNode(ENT_STRING, warnings[i]);
 
 	return retval;
 }

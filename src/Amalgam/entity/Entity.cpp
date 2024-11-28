@@ -884,11 +884,8 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, Evalu
 	EvaluableNode *cur_root = GetRoot();
 	bool entity_previously_empty = (cur_root == nullptr || cur_root->GetNumChildNodes() == 0);
 
-	if(_code == nullptr)
-	{
-		evaluableNodeManager.SetRootNode(evaluableNodeManager.AllocNode(ENT_NULL));
-	}
-	else if(allocated_with_entity_enm && metadata_modifier == EvaluableNodeManager::ENMM_NO_CHANGE)
+	if(_code == nullptr
+		|| (allocated_with_entity_enm && metadata_modifier == EvaluableNodeManager::ENMM_NO_CHANGE))
 	{		
 		evaluableNodeManager.SetRootNode(_code);
 	}

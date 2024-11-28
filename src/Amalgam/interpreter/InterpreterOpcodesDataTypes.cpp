@@ -886,13 +886,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_LABELS(EvaluableNode *
 	size_t num_labels = n->GetNumLabels();
 
 	//make list of labels
-	EvaluableNodeReference result(evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_STRING, num_labels), true);
+	EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_LIST), true);
 	auto &result_ocn = result->GetOrderedChildNodesReference();
+	result_ocn.resize(num_labels);
 
 	//because labels can be stored in different ways, it is just easiest to iterate
 	// rather than to get a reference to each string id
 	for(size_t i = 0; i < num_labels; i++)
-		result_ocn[i]->SetStringID(n->GetLabelStringId(i));
+		result_ocn[i] = evaluableNodeManager->AllocNode(ENT_STRING, n->GetLabelStringId(i));
 
 	evaluableNodeManager->FreeNodeTreeIfPossible(n);
 	return result;

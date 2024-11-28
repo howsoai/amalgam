@@ -414,12 +414,13 @@ template<typename ValueContainer, typename GetNumberFunction>
 inline EvaluableNodeReference CreateListOfNumbersFromIteratorAndFunction(ValueContainer &value_container,
 	EvaluableNodeManager *enm, GetNumberFunction get_number)
 {
-	EvaluableNode *list = enm->AllocListNodeWithOrderedChildNodes(ENT_NUMBER, value_container.size());
+	EvaluableNode *list = enm->AllocNode(ENT_LIST);
 	auto &ocn = list->GetOrderedChildNodesReference();
+	ocn.resize(value_container.size());
 
 	size_t index = 0;
 	for(auto value_element : value_container)
-		ocn[index++]->SetTypeViaNumberValue(get_number(value_element));
+		ocn[index++] = enm->AllocNode(get_number(value_element));
 
 	return EvaluableNodeReference(list, true);
 }
@@ -430,12 +431,13 @@ template<typename StringContainer, typename GetStringFunction>
 inline EvaluableNodeReference CreateListOfStringsIdsFromIteratorAndFunction(StringContainer &string_container,
 	EvaluableNodeManager *enm, GetStringFunction get_string_id)
 {
-	EvaluableNode *list = enm->AllocListNodeWithOrderedChildNodes(ENT_STRING, string_container.size());
+	EvaluableNode *list = enm->AllocNode(ENT_LIST);
 	auto &ocn = list->GetOrderedChildNodesReference();
+	ocn.resize(string_container.size());
 
 	size_t index = 0;
 	for(auto string_element : string_container)
-		ocn[index++]->SetTypeViaStringIdValue(get_string_id(string_element));
+		ocn[index++] = enm->AllocNode(ENT_STRING, get_string_id(string_element));
 
 	return EvaluableNodeReference(list, true);
 }
@@ -446,12 +448,13 @@ template<typename StringContainer, typename GetStringFunction>
 inline EvaluableNodeReference CreateListOfStringsFromIteratorAndFunction(StringContainer &string_container,
 	EvaluableNodeManager *enm, GetStringFunction get_string)
 {
-	EvaluableNode *list = enm->AllocListNodeWithOrderedChildNodes(ENT_STRING, string_container.size());
+	EvaluableNode *list = enm->AllocNode(ENT_LIST);
 	auto &ocn = list->GetOrderedChildNodesReference();
+	ocn.resize(string_container.size());
 
 	size_t index = 0;
 	for(auto string_element : string_container)
-		ocn[index++]->SetStringValue(get_string(string_element));
+		ocn[index++] = enm->AllocNode(ENT_STRING, get_string(string_element));
 
 	return EvaluableNodeReference(list, true);
 }

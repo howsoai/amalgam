@@ -47,7 +47,7 @@ public:
 		if(s.empty())
 			return false;
 
-		if(s[0] == '.' || s[0] == '-')
+		if(s[0] == '.' || s[0] == '-' || StringManipulation::IsUtf8ArabicNumerals(s[0]))
 			return true;
 
 		bool in_label_initial_hashes = label;

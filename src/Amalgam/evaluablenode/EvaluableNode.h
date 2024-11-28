@@ -154,7 +154,7 @@ public:
 	inline void InitializeType(EvaluableNodeType _type)
 	{
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-		assert(IsEvaluableNodeTypeValid(_type));
+		assert(IsEvaluableNodeTypeValid(_type) || _type == ENT_DEALLOCATED);
 	#endif
 
 		type = _type;
@@ -179,6 +179,17 @@ public:
 			attributes.allAttributes = 0;
 			attributes.individualAttribs.isIdempotent = true;
 			value.ConstructMappedChildNodes();
+		}
+		else if(_type == ENT_DEALLOCATED)
+		{
+		#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+			//use a value that is more apparent that something went wrong
+			value.numberValueContainer.numberValue = std::numeric_limits<double>::quiet_NaN();
+		#else
+			value.numberValueContainer.numberValue = 0;
+		#endif
+
+			value.numberValueContainer.labelStringID = StringInternPool::NOT_A_STRING_ID;
 		}
 		else
 		{

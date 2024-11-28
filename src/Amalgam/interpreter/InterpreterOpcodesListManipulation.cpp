@@ -597,11 +597,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, b
 	//if no function, just return a list of numbers
 	if(index_of_start == 0)
 	{
-		EvaluableNodeReference range_list(evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_NUMBER, num_nodes), true);
+		EvaluableNodeReference range_list(evaluableNodeManager->AllocNode(ENT_LIST), true);
 
 		auto &range_list_ocn = range_list->GetOrderedChildNodesReference();
+		range_list_ocn.resize(num_nodes);
 		for(size_t i = 0; i < num_nodes; i++)
-			range_list_ocn[i]->SetTypeViaNumberValue(i * range_step_size + range_start);
+			range_list_ocn[i] = evaluableNodeManager->AllocNode(i * range_step_size + range_start);
 
 		return range_list;
 	}

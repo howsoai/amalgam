@@ -1034,11 +1034,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDICES(EvaluableNode *en,
 	else if(container->IsOrderedArray())
 	{
 		size_t num_ordered_nodes = container->GetOrderedChildNodesReference().size();
-		index_list.SetReference(evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_NUMBER, num_ordered_nodes));
+		index_list.SetReference(evaluableNodeManager->AllocNode(ENT_LIST));
 
 		auto &index_list_ocn = index_list->GetOrderedChildNodesReference();
+		index_list_ocn.resize(num_ordered_nodes);
 		for(size_t i = 0; i < num_ordered_nodes; i++)
-			index_list_ocn[i]->SetTypeViaNumberValue(static_cast<double>(i));
+			index_list_ocn[i] = evaluableNodeManager->AllocNode(static_cast<double>(i));
 	}
 	else //no child nodes, just alloc an empty list
 		index_list.SetReference(evaluableNodeManager->AllocNode(ENT_LIST));

@@ -96,13 +96,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 			return EvaluableNodeReference(static_cast<double>(contained_entities.size()));
 
 		//new list containing the contained entity ids to return
-		EvaluableNodeReference result(
-			evaluableNodeManager->AllocListNodeWithOrderedChildNodes(ENT_STRING, contained_entities.size()), true);
+		EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_LIST), true);
 		auto &result_ocn = result->GetOrderedChildNodesReference();
+		result_ocn.resize(contained_entities.size());
 
 		//create the string references all at once and hand off
 		for(size_t i = 0; i < contained_entities.size(); i++)
-			result_ocn[i]->SetTypeViaStringIdValue(contained_entities[i]->GetIdStringId());
+			result_ocn[i] = evaluableNodeManager->AllocNode(ENT_STRING, contained_entities[i]->GetIdStringId());
 
 		//if not using SBFDS, make sure always return in the same order for consistency, regardless of cashing, hashing, etc.
 		//if using SBFDS, then the order is assumed to not matter for other queries, so don't pay the cost of sorting here

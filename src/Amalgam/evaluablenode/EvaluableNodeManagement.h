@@ -442,10 +442,6 @@ public:
 		return n;
 	}
 
-	//allocates and returns a node of type ENT_LIST
-	// and allocates num_child_nodes child nodes initialized to child_node_type (with an appropriate default value)
-	EvaluableNode *AllocListNodeWithOrderedChildNodes(EvaluableNodeType child_node_type, size_t num_child_nodes);
-
 	//ways that labels can be modified when a new node is allocated
 	enum EvaluableNodeMetadataModifier
 	{
@@ -992,6 +988,8 @@ public:
 	inline static void ClearThreadLocalAllocationBuffer()
 	{
 		threadLocalAllocationBuffer.clear();
+		//set to null so nothing matches until more nodes are added
+		lastEvaluableNodeManager = nullptr;
 	}
 
 protected:
@@ -1112,16 +1110,17 @@ protected:
 	{
 		if(threadLocalAllocationBuffer.size() > 0 && this == lastEvaluableNodeManager)
 		{
-			EvaluableNode *end = threadLocalAllocationBuffer.back();
+			EvaluableNode *node = threadLocalAllocationBuffer.back();
 			threadLocalAllocationBuffer.pop_back();
-			return end;
+			return node;
 		}
 		else
 		{
 			if(lastEvaluableNodeManager != this)
 				ClearThreadLocalAllocationBuffer();
 
-			lastEvaluableNodeManager = this;
+			//set to null so nothing matches until more nodes are added
+			lastEvaluableNodeManager = nullptr;
 			return nullptr;
 		}
 	}
@@ -1155,5 +1154,4 @@ private:
 	#endif
 		// Holds EvaluableNode*'s reserved for allocation by a specific thread
 		inline static std::vector<EvaluableNode *> threadLocalAllocationBuffer;
-
 };

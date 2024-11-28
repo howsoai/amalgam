@@ -184,12 +184,12 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 				AddNodeToTLab(nodes[i]);
 			}
 
+			lock.unlock();
 			return GetNextNodeFromTLab();
 		}
 
 		//couldn't allocate enough valid nodes; reset index and allocate more
 		firstUnusedNodeIndex -= tlabBlockAllocationSize;
-		ClearThreadLocalAllocationBuffer();
 	}
 	//don't have enough nodes, so need to attempt a write lock to allocate more
 	Concurrency::WriteLock write_lock(managerAttributesMutex);

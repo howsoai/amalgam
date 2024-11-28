@@ -14,6 +14,7 @@
 
 //SBFDSColumnData class maintains a sorted linear and random access data collection
 //values with the same key are placed into the same bucket.  buckets are stored in sorted order by key
+//this is "indexing" as in database terminology, but otherwise "index" herein means a row identifier
 class SBFDSColumnData
 {
 public:
@@ -101,14 +102,14 @@ public:
 				size_entry->second = std::make_unique<SortedIntegerSet>();
 
 			//add the entity
-			size_entry->second->insert(index);
+			size_entry->second->InsertNewLargestInteger(index);
 
 			UpdateLargestCode(code_size, index);
 		}
 	}
 
 	//inserts indices assuming that they have been sorted by value,
-	// and that index_values are also sorted from smallest to largest
+	// and that index_values are also sorted from smallest to largest within each value
 	void AppendSortedNumberIndicesWithSortedIndices(std::vector<DistanceReferencePair<size_t>> &index_values)
 	{
 		if(index_values.size() == 0)
@@ -117,8 +118,11 @@ public:
 		//count unique values so only need to perform one allocation for the main list
 		size_t num_uniques = 1;
 		double prev_value = index_values[0].distance;
+		size_t maxIndex = 0;
 		for(size_t i = 1; i < index_values.size(); i++)
 		{
+			if(auto reference = index_values[i].reference; maxIndex < reference)
+				maxIndex = reference;
 			if(prev_value != index_values[i].distance)
 			{
 				num_uniques++;
@@ -127,7 +131,7 @@ public:
 		}
 
 		sortedNumberValueEntries.reserve(num_uniques);
-		numberIndices.ReserveNumIntegers(index_values.back().reference + 1);
+		numberIndices.ReserveNumIntegers(maxIndex + 1);
 
 		for(auto &index_value : index_values)
 		{
@@ -308,6 +312,7 @@ public:
 						std::make_unique<ValueEntry>(new_number_value));
 
 					InsertFirstIndexIntoNumberValueEntry(index, new_value_entry_index);
+					new_value_index = sortedNumberValueEntries[new_value_entry_index]->valueInternIndex;
 				}
 
 				if(internedNumberValues.valueInterningEnabled)
@@ -371,11 +376,16 @@ public:
 						}
 					}
 				}
-				else if(inserted) //shouldn't make it here, but ensure integrity just in case
+				else //shouldn't make it here, but ensure integrity just in case
 				{
 					assert(false);
-					new_id_entry->second = std::make_unique<ValueEntry>(new_sid_value);
-					InsertFirstIndexIntoStringIdValueEntry(index, new_id_entry);
+					if(inserted) {
+						new_id_entry->second = std::make_unique<ValueEntry>(new_sid_value);
+						InsertFirstIndexIntoStringIdValueEntry(index, new_id_entry);
+					}
+					else
+						new_id_entry->second->indicesWithValue.insert(index);
+
 					new_value_index = new_id_entry->second->valueInternIndex;
 				}
 
@@ -430,15 +440,16 @@ public:
 							valueCodeSizeToIndices.erase(old_size_entry);
 						}
 					}
-					else if(inserted) //shouldn't make it here, but ensure integrity just in case
+					else //shouldn't make it here, but ensure integrity just in case
 					{
 						assert(false);
-						new_size_entry->second = std::make_unique<SortedIntegerSet>();
+						if(inserted) {
+							new_size_entry->second = std::make_unique<SortedIntegerSet>();
+						}
 						new_size_entry->second->insert(index);
 					}
 				}
 
-				//update longest string as appropriate
 				//see if need to update largest code
 				if(index == indexWithLargestCode)
 					RecomputeLargestCode();
@@ -513,14 +524,15 @@ public:
 				assert(false);
 
 			auto &entities = id_entry->second->indicesWithValue;
-			entities.erase(index);
 
 			//if no more entries have the value, remove it
-			if(entities.size() == 0)
+			if(entities.size() <= 1)
 			{
 				internedStringIdValues.DeleteInternIndex(id_entry->second->valueInternIndex);
 				stringIdValueEntries.erase(id_entry);
 			}
+			else
+				entities.erase(index);
 
 			//see if need to compute new longest string
 			if(index == indexWithLongestString)
@@ -555,10 +567,11 @@ public:
 
 			//remove the entity
 			auto &entities = *(id_entry->second);
-			entities.erase(index);
 
-			if(entities.size() == 0)
+			if(entities.size() <= 1)
 				valueCodeSizeToIndices.erase(id_entry);
+			else
+				entities.erase(index);
 
 			//see if need to update largest code
 			if(index == indexWithLargestCode)
@@ -576,6 +589,7 @@ public:
 	{
 		ValueEntry *value_entry = sortedNumberValueEntries[value_index].get();
 
+		assert(value_entry->indicesWithValue.size() == 0);
 		value_entry->indicesWithValue.insert(index);
 		internedNumberValues.InsertValueEntry(value_entry, sortedNumberValueEntries.size());
 	}
@@ -587,6 +601,7 @@ public:
 	{
 		ValueEntry *value_entry = value_iter->second.get();
 
+		assert(value_entry->indicesWithValue.size() == 0);
 		value_entry->indicesWithValue.insert(index);
 		internedStringIdValues.InsertValueEntry(value_entry, stringIdValueEntries.size());
 	}
@@ -656,10 +671,12 @@ public:
 
 			//try to insert the value if not already there
 			auto [inserted_id_entry, inserted] = stringIdValueEntries.emplace(string_id, nullptr);
-			if(inserted)
+			if(inserted) {
 				inserted_id_entry->second = std::make_unique<ValueEntry>(string_id);
-
-			InsertFirstIndexIntoStringIdValueEntry(index, inserted_id_entry);
+				InsertFirstIndexIntoStringIdValueEntry(index, inserted_id_entry);
+			}
+			else
+				inserted_id_entry->second->indicesWithValue.insert(index);
 
 			UpdateLongestString(string_id, index);
 
@@ -699,42 +716,6 @@ public:
 			return stringIdIndices.size();
 
 		return numberIndices.size() + stringIdIndices.size() + codeIndices.size();
-	}
-
-	//returns the maximum difference between value and any other value for this column
-	//if empty, will return infinity
-	inline double GetMaxDifferenceTerm(GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs)
-	{
-		switch(feature_attribs.featureType)
-		{
-		case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC:
-		case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
-		case GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE:
-			return 1.0 - 1.0 / (numberIndices.size() + stringIdIndices.size() + codeIndices.size());
-
-		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC:
-			if(sortedNumberValueEntries.size() <= 1)
-				return 0.0;
-
-			return sortedNumberValueEntries.back()->value.number - sortedNumberValueEntries[0]->value.number;
-
-		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC:
-			//maximum is the other side of the cycle
-			return feature_attribs.typeAttributes.maxCyclicDifference / 2;
-
-		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING:
-			//the max difference is the worst case edit distance, of removing all the characters
-			// and then adding back in another of equal size but different
-			return static_cast<double>(longestStringLength * 2);
-
-		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE:
-			//the max difference is the worst case edit distance, of removing all the characters
-			// and then adding back in another of equal size but different
-			return static_cast<double>(largestCodeSize * 2);
-
-		default:
-			return std::numeric_limits<double>::infinity();
-		}
 	}
 
 	//returns the exact index of value
@@ -840,8 +821,10 @@ public:
 		}
 	}
 
-	//given a feature_id and a range [low, high], inserts all the elements with values of feature feature_id within specified range into out; does not clear out
-	//if the feature value is null, it will NOT be present in the search results, ie "x" != 3 will NOT include elements with x is null, even though null != 3
+	//given a range [low, high], inserts all the elements within specified range into out; does not clear out
+	//the range is inclusive of high for numbers, but exclusive for string ids!
+	//either but not both numerical bounds may be NaN to signify an infinity
+	//if between_values is false, find complementary set
 	void FindAllIndicesWithinRange(EvaluableNodeImmediateValueType value_type,
 		EvaluableNodeImmediateValue &low, EvaluableNodeImmediateValue &high, BitArrayIntegerSet &out, bool between_values = true)
 	{
@@ -864,7 +847,7 @@ public:
 				//modify range to include elements from or up to -/+inf
 				if(FastIsNaN(low_number)) //find all NaN values and all values up to max
 					low_number = -std::numeric_limits<double>::infinity(); //else include elements from -inf to high as well as NaN elements
-				else
+				else if(FastIsNaN(high_number))
 					high_number = std::numeric_limits<double>::infinity(); //include elements from low to +inf as well as NaN elements
 			}
 
@@ -884,6 +867,7 @@ public:
 				//if within range, and range has no length, just return indices in that one bucket
 				if(between_values)
 				{
+					assert(exact_index_found);
 					size_t index = value_index;
 					out.InsertInBatch(sortedNumberValueEntries[index]->indicesWithValue);
 				}
@@ -909,10 +893,6 @@ public:
 				//insert everything between the two indices
 				for(size_t i = start_index; i < end_index; i++)
 					out.InsertInBatch(sortedNumberValueEntries[i]->indicesWithValue);
-
-				//include end_index if value matches
-				if(end_index < sortedNumberValueEntries.size() && sortedNumberValueEntries[end_index]->value.number == high_number)
-					out.InsertInBatch(sortedNumberValueEntries[end_index]->indicesWithValue);
 			}
 			else //not between_values
 			{
@@ -928,6 +908,7 @@ public:
 		}
 		else if(value_type == ENIVT_STRING_ID)
 		{
+			//there are no ids for this column, so return no results
 			if(stringIdValueEntries.size() == 0)
 				return;
 

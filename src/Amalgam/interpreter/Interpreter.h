@@ -709,6 +709,7 @@ protected:
 				current_value, &result, results_saver_location]
 				{
 					EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
+					EvaluableNodeManager::ClearThreadLocalAllocationBuffer();
 
 					Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
 						parentInterpreter->writeListeners, parentInterpreter->printListener,
@@ -753,6 +754,7 @@ protected:
 					result = result_ref;
 					resultsSaver.SetStackLocation(results_saver_location, result);
 
+					EvaluableNodeManager::ClearThreadLocalAllocationBuffer();
 					interpreter.memoryModificationLock.unlock();
 					taskSet.MarkTaskCompleted();
 				}
@@ -775,6 +777,7 @@ protected:
 				[this, rand_seed, node_to_execute, result, immediate_results, results_saver_location]
 				{
 					EvaluableNodeManager *enm = parentInterpreter->evaluableNodeManager;
+					EvaluableNodeManager::ClearThreadLocalAllocationBuffer();
 
 					Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
 						parentInterpreter->writeListeners, parentInterpreter->printListener,
@@ -821,6 +824,7 @@ protected:
 							resultsSaver.SetStackLocation(results_saver_location, *result);
 					}
 
+					EvaluableNodeManager::ClearThreadLocalAllocationBuffer();
 					interpreter.memoryModificationLock.unlock();
 					taskSet.MarkTaskCompleted();
 				}
@@ -831,6 +835,7 @@ protected:
 		inline void EndConcurrency()
 		{
 			//allow other threads to perform garbage collection
+			EvaluableNodeManager::ClearThreadLocalAllocationBuffer();
 			parentInterpreter->memoryModificationLock.unlock();
 			taskSet.WaitForTasks(taskEnqueueLock);
 			parentInterpreter->memoryModificationLock.lock();

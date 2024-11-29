@@ -62,7 +62,7 @@ AssetManager::AssetParameters::AssetParameters(std::string resource_path, std::s
 		includeRandSeeds = is_entity;
 		escapeResourceName = false;
 		escapeContainedResourceNames = false;
-		transactional = false;
+		transactional = is_entity;
 		prettyPrint = false;
 		sortKeys = false;
 		flatten = is_entity;
@@ -365,6 +365,7 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 		entity->ExecuteCodeAsEntity(node, call_stack, calling_interpreter);
 	}
 
+	//check the version from the stack rather than return, since transactional files may be missing the last return
 	EntityExternalInterface::LoadEntityStatus load_status(true, "", "");
 	EvaluableNode **version_node = call_stack->GetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_amlg_version));
 	if(version_node != nullptr && *version_node != nullptr && (*version_node)->GetType() == ENT_STRING)
@@ -494,11 +495,20 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 
 		EvaluableNodeReference result = new_entity->ExecuteCodeAsEntity(code, call_stack, calling_interpreter);
 
+		//if returned null, return comment as the error
 		if(EvaluableNode::IsNull(result))
 		{
-			//TODO 22194: fail appropriately
-			//TODO 22194: test transactional persistence
-			//status.SetStatus(false, )
+			std::string error_string = "Error, null returned from executing loaded code.";
+			if(result != nullptr)
+			{
+				auto comment_str = result->GetCommentsStringId();
+				if(comment_str != string_intern_pool.NOT_A_STRING_ID)
+					error_string = comment_str->string;
+			}
+
+			status.SetStatus(false, error_string);
+			delete new_entity;
+			return nullptr;
 		}
 
 		new_entity->evaluableNodeManager.FreeNode(call_stack->GetOrderedChildNodesReference()[0]);
@@ -642,7 +652,8 @@ void AssetManager::SetEntityPermissions(Entity *entity, EntityPermissions permis
 		entityPermissions.erase(entity);
 }
 
-std::pair<std::string, bool> AssetManager::ValidateVersionAgainstAmalgam(const std::string &version)
+std::pair<std::string, bool> AssetManager::ValidateVersionAgainstAmalgam(const std::string &version,
+	bool print_warnings)
 {
 	auto sem_ver = StringManipulation::Split(version, '-'); //split on postfix
 	auto version_split = StringManipulation::Split(sem_ver[0], '.'); //ignore postfix
@@ -661,7 +672,8 @@ std::pair<std::string, bool> AssetManager::ValidateVersionAgainstAmalgam(const s
 	else if(major == 0 && minor == 0 && patch == 0)
 	{
 		std::string warn_msg = "Warning: parsing Amalgam generated from an unversioned debug build";
-		std::cerr << warn_msg << ", version=" << version << std::endl;
+		if(print_warnings)
+			std::cerr << warn_msg << ", version=" << version << std::endl;
 	}
 	else if(
 		(major > AMALGAM_VERSION_MAJOR) ||
@@ -669,13 +681,15 @@ std::pair<std::string, bool> AssetManager::ValidateVersionAgainstAmalgam(const s
 		(major == AMALGAM_VERSION_MAJOR && minor == AMALGAM_VERSION_MINOR && patch > AMALGAM_VERSION_PATCH))
 	{
 		std::string err_msg = "Parsing Amalgam that is more recent than the current version is not supported";
-		std::cerr << err_msg << ", version=" << version << std::endl;
+		if(print_warnings)
+			std::cerr << err_msg << ", version=" << version << std::endl;
 		return std::make_pair(err_msg, false);
 	}
 	else if(AMALGAM_VERSION_MAJOR > major)
 	{
 		std::string err_msg = "Parsing Amalgam that is older than the current major version is not supported";
-		std::cerr << err_msg << ", version=" << version << std::endl;
+		if(print_warnings)
+			std::cerr << err_msg << ", version=" << version << std::endl;
 		return std::make_pair(err_msg, false);
 	}
 
@@ -734,14 +748,13 @@ void AssetManager::DestroyPersistentEntity(Entity *entity)
 
 		//remove directory and all contents if it exists
 		std::filesystem::remove_all(asset_params->resourceBasePath, ec);
-
-		DeepClearEntityPersistenceRecurse(entity);
 	}
+
+	DeepClearEntityPersistenceRecurse(entity);
 }
 
 void AssetManager::RemoveRootPermissions(Entity *entity)
 {
-	//remove permissions on any contained entities
 	for(auto contained_entity : entity->GetContainedEntities())
 		RemoveRootPermissions(contained_entity);
 

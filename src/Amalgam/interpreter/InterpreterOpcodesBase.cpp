@@ -148,11 +148,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 	}
 	else if(command == "version_compatible" && permissions.individualPermissions.environment)
 	{
-		if(ocn.size() > 1)
+		if(ocn.size() < 2)
 			return EvaluableNodeReference::Null();
 
 		std::string version_requested = InterpretNodeIntoStringValueEmptyNull(ocn[1]);
-		auto [error_message, success] = AssetManager::ValidateVersionAgainstAmalgam(version_requested);
+		auto [error_message, success] = AssetManager::ValidateVersionAgainstAmalgam(version_requested, false);
 		EvaluableNode *result = evaluableNodeManager->AllocNode(success);
 		result->SetComments(error_message);
 		return EvaluableNodeReference(result, true);

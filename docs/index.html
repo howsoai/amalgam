@@ -413,9 +413,8 @@ function render() {
 <div class='td1'><span class="parameter">sort_keys<span></div><div class='td2'>If true, then any associative arrays will be sorted by keys.</div><br />
 <div class='td1'><span class="parameter">flatten<span></div><div class='td2'>If true, then will attempt to flatten all contained entities into one executable object and thus one file.</div><br />
 <div class='td1'><span class="parameter">parallel_create<span></div><div class='td2'>If true, will attempt use concurrency to store and load entities in parallel.</div><br />
-<div class='td1'><span class="parameter">execute_on_load<span></div><div class='td2'>If true, will execute the code upon load, which is required when entities are stored using flatten in order to create all of the entity structures.</div>
-<div class='td1'><span class="parameter">require_version_compatibility<span></div><div class='td2'>If true, will fail on a load if the version of Amalgam is not compatible with the file version.</div>
-<br />
+<div class='td1'><span class="parameter">execute_on_load<span></div><div class='td2'>If true, will execute the code upon load, which is required when entities are stored using flatten in order to create all of the entity structures.</div><br />
+<div class='td1'><span class="parameter">require_version_compatibility<span></div><div class='td2'>If true, will fail on a load if the version of Amalgam is not compatible with the file version.</div><br />
 
 	File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  Note that loading from a non-'.amlg' extension will only ever provide lists, assocs, numbers, and strings.
 	

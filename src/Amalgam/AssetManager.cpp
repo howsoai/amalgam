@@ -371,7 +371,7 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 	{
 		const std::string &version_string = (*version_node)->GetStringValue();
 		auto [error_message, success] = AssetManager::ValidateVersionAgainstAmalgam(version_string);
-		load_status.SetStatus(success, error_message, version_string);
+		load_status.SetStatus(success || !asset_params->requireVersionCompatibility, error_message, version_string);
 	}
 	
 	entity->evaluableNodeManager.FreeNode(call_stack->GetOrderedChildNodesReference()[0]);
@@ -492,10 +492,14 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 			new_entity->evaluableNodeManager.AllocNode(asset_params->requireVersionCompatibility));
 		auto call_stack = Interpreter::ConvertArgsToCallStack(args, new_entity->evaluableNodeManager);
 
-		new_entity->ExecuteCodeAsEntity(code, call_stack, calling_interpreter);
+		EvaluableNodeReference result = new_entity->ExecuteCodeAsEntity(code, call_stack, calling_interpreter);
 
-		//TODO 22194: check version_compatible and err appropriately like code below
-		//TODO 22194: test transactional persistence
+		if(EvaluableNode::IsNull(result))
+		{
+			//TODO 22194: fail appropriately
+			//TODO 22194: test transactional persistence
+			//status.SetStatus(false, )
+		}
 
 		new_entity->evaluableNodeManager.FreeNode(call_stack->GetOrderedChildNodesReference()[0]);
 		new_entity->evaluableNodeManager.FreeNode(call_stack);
@@ -535,7 +539,7 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 					if(!success)
 					{
 						//fail on mismatch if requireVersionCompatibility
-						status.SetStatus(asset_params->requireVersionCompatibility, error_message, version_str);
+						status.SetStatus(!asset_params->requireVersionCompatibility, error_message, version_str);
 						if(asset_params->requireVersionCompatibility)
 						{
 							delete new_entity;

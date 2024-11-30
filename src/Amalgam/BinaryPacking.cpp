@@ -247,7 +247,7 @@ public:
 		OffsetIndex cur_byte = 1;
 		OffsetIndex cur_bit = 0;
 
-		for(auto &c : uncompressed_data)
+		for(uint8_t c : uncompressed_data)
 		{
 			auto &value = valueCodes[c];
 			OffsetIndex num_bits_to_add = value.size();
@@ -310,12 +310,12 @@ public:
 	static std::array<uint8_t, NUM_UINT8_VALUES> GetByteFrequencies(std::string &str)
 	{
 		std::array<size_t, NUM_UINT8_VALUES> value_counts{};	//initialize to zero with value-initialization {}'s
-		for(auto &b : str)
+		for(uint8_t b : str)
 			value_counts[b]++;
 
 		//get maximal count for any value
 		size_t max_count = 0;
-		for(auto &v : value_counts)
+		for(auto v : value_counts)
 			max_count = std::max(max_count, v);
 
 		std::array<uint8_t, NUM_UINT8_VALUES> normalized_value_counts{};	//initialize to zero with value-initialization {}'s
@@ -398,7 +398,7 @@ std::string DecompressString(BinaryData &encoded_string_library, OffsetIndex &cu
 		//read encoded string
 		size_t encoded_strings_size = ParseCompactIndexToIndexAndAdvance(encoded_string_library, cur_offset);
 		//check if size past end of buffer
-		if(cur_offset + encoded_strings_size >= encoded_string_library.size())
+		if(cur_offset + encoded_strings_size > encoded_string_library.size())
 			return decompressed_string;
 		BinaryData encoded_strings(begin(encoded_string_library) + cur_offset, begin(encoded_string_library) + cur_offset + encoded_strings_size);
 		cur_offset += encoded_strings_size;

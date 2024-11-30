@@ -307,11 +307,9 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 			return EntityExternalInterface::LoadEntityStatus(false, error_msg, version);
 
 		OffsetIndex cur_offset = 0;
-		auto strings = DecompressString(compressed_data, cur_offset);
-		if(strings.size() == 0)
+		code_string = DecompressString(compressed_data, cur_offset);
+		if(code_string.size() == 0)
 			return EntityExternalInterface::LoadEntityStatus(false, "No data found in file", version);
-
-		code_string = std::move(strings[0]);
 	}
 
 	StringManipulation::RemoveBOMFromUTF8String(code_string);

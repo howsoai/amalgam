@@ -223,12 +223,9 @@ public:
 		}
 		else if(asset_params->resourceType == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 		{
-			//transform into format needed for compression
-			CompactHashMap<std::string, size_t> string_map;
-			string_map[code_string] = 0;
-
+			//TODO 21364: update this to allow the write listener to continue to append data
 			//compress and store
-			BinaryData compressed_data = CompressStrings(string_map);
+			BinaryData compressed_data = CompressString(code_string);
 			return StoreFileFromBuffer<BinaryData>(asset_params->resourcePath, asset_params->resourceType, compressed_data);
 		}
 

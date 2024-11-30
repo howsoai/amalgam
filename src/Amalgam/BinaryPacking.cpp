@@ -195,7 +195,7 @@ public:
 			delete huffmanTree;
 	}
 
-	inline BinaryData EncodeString(BinaryData &uncompressed_data)
+	inline BinaryData EncodeString(std::string &uncompressed_data)
 	{
 		//build lookup table from huffman_tree
 
@@ -278,11 +278,11 @@ public:
 		return compressed_data;
 	}
 
-	inline BinaryData DecodeString(BinaryData &compressed_data)
+	inline std::string DecodeString(BinaryData &compressed_data)
 	{
 		//need at least one byte to represent the number of extra bits and another byte of actual value
 		if(compressed_data.size() < 2)
-			return BinaryData();
+			return std::string();
 
 		//count out all the potentially available bits
 		OffsetIndex end_bit = 8 * compressed_data.size();
@@ -298,7 +298,7 @@ public:
 		OffsetIndex start_bit = 8;
 
 		//decompress the data
-		BinaryData uncompressed_data;
+		std::string uncompressed_data;
 		while(start_bit < end_bit)
 			uncompressed_data.push_back(huffmanTree->LookUpCode(compressed_data, start_bit, end_bit));
 
@@ -307,10 +307,10 @@ public:
 
 	//counts the number of bytes within bd for each value
 	//returns an array where each index represents each of the possible NUM_INT8_VALUES values, and the value at each is the number found
-	static std::array<uint8_t, NUM_UINT8_VALUES> GetByteFrequencies(BinaryData &bd)
+	static std::array<uint8_t, NUM_UINT8_VALUES> GetByteFrequencies(std::string &str)
 	{
 		std::array<size_t, NUM_UINT8_VALUES> value_counts{};	//initialize to zero with value-initialization {}'s
-		for(auto &b : bd)
+		for(auto &b : str)
 			value_counts[b]++;
 
 		//get maximal count for any value
@@ -333,35 +333,13 @@ public:
 	HuffmanTree<uint8_t> *huffmanTree;
 };
 
-BinaryData CompressStrings(CompactHashMap<std::string, size_t> &string_map)
+BinaryData CompressString(std::string &string_to_compress)
 {
-	//transform string map into vector and keep track of the total size
-	std::vector<std::string> strings(string_map.size());
-	size_t concatenated_strings_size = 0;
-	for(auto &[s, s_size] : string_map)
-	{
-		//make sure the index is valid before placing string in
-		if(s_size < strings.size())
-		{
-			strings[s_size] = s;
-			concatenated_strings_size += s.size();
-		}
-	}
-
-	//concatenate all strings
-	BinaryData concatenated_strings;
-	concatenated_strings.reserve(concatenated_strings_size);
-	for(auto &s : strings)
-		concatenated_strings.insert(end(concatenated_strings), begin(s), end(s));
-
 	BinaryData encoded_string_library;
 	encoded_string_library.reserve(2 * StringCodec::NUM_UINT8_VALUES);	//reserve enough to two entries for every value in the worst case; this will be expanded later
 
-	//////////
-	//compress the string
-
 	//create and store the frequency table for each possible byte value
-	auto byte_frequencies = StringCodec::GetByteFrequencies(concatenated_strings);
+	auto byte_frequencies = StringCodec::GetByteFrequencies(string_to_compress);
 	for(size_t i = 0; i < StringCodec::NUM_UINT8_VALUES; i++)
 	{
 		//write value
@@ -385,34 +363,19 @@ BinaryData CompressStrings(CompactHashMap<std::string, size_t> &string_map)
 
 	//compress string
 	StringCodec ssc(byte_frequencies);
-	BinaryData encoded_strings = ssc.EncodeString(concatenated_strings);
+	BinaryData encoded_strings = ssc.EncodeString(string_to_compress);
 
 	//write out compressed string
 	UnparseIndexToCompactIndexAndAppend(encoded_string_library, encoded_strings.size());
 	encoded_string_library.resize(encoded_string_library.size() + encoded_strings.size());
 	std::copy(begin(encoded_strings), end(encoded_strings), end(encoded_string_library) - encoded_strings.size());
 
-	//write out number of individual strings
-	UnparseIndexToCompactIndexAndAppend(encoded_string_library, strings.size());
-
-	//write out string offsets
-	size_t cur_string_end_offset = 0;
-	for(auto &s : strings)
-	{
-		cur_string_end_offset += s.size();
-		UnparseIndexToCompactIndexAndAppend(encoded_string_library, cur_string_end_offset);
-	}
-
 	return encoded_string_library;
 }
 
-std::vector<std::string> DecompressStrings(BinaryData &encoded_string_library, OffsetIndex &cur_offset)
+std::string DecompressString(BinaryData &encoded_string_library, OffsetIndex &cur_offset)
 {
-	//return value
-	std::vector<std::string> strings;
-
-	/////////
-	//decompress the string
+	std::string decompressed_string;
 
 	//read the frequency table for each possible byte value
 	std::array<uint8_t, StringCodec::NUM_UINT8_VALUES> byte_frequencies{};	//initialize to zeros
@@ -429,38 +392,22 @@ std::vector<std::string> DecompressStrings(BinaryData &encoded_string_library, O
 		}
 	}
 
-	//read encoded string
-	size_t encoded_strings_size = ParseCompactIndexToIndexAndAdvance(encoded_string_library, cur_offset);
-	//check if size past end of buffer
-	if(cur_offset + encoded_strings_size >= encoded_string_library.size())
-		return strings;
-	BinaryData encoded_strings(begin(encoded_string_library) + cur_offset, begin(encoded_string_library) + cur_offset + encoded_strings_size);
-	cur_offset += encoded_strings_size;
-
-	//decode compressed string buffer
-	StringCodec ssc(byte_frequencies);
-	BinaryData concatenated_strings = ssc.DecodeString(encoded_strings);
-
-	//read number of individual strings
-	size_t num_strings = ParseCompactIndexToIndexAndAdvance(encoded_string_library, cur_offset);
-	strings.resize(num_strings);
-
-	//read string offsets
-	size_t cur_string_start_offset = 0;
-	for(size_t i = 0; i < num_strings; i++)
+	//decompress and concatenate all compressed blocks
+	while(cur_offset < encoded_string_library.size())
 	{
-		//get the string end
-		size_t cur_string_end_offset = ParseCompactIndexToIndexAndAdvance(encoded_string_library, cur_offset);
+		//read encoded string
+		size_t encoded_strings_size = ParseCompactIndexToIndexAndAdvance(encoded_string_library, cur_offset);
+		//check if size past end of buffer
+		if(cur_offset + encoded_strings_size >= encoded_string_library.size())
+			return decompressed_string;
+		BinaryData encoded_strings(begin(encoded_string_library) + cur_offset, begin(encoded_string_library) + cur_offset + encoded_strings_size);
+		cur_offset += encoded_strings_size;
 
-		size_t max_copy_offset = end(concatenated_strings) - begin(concatenated_strings);
-		if(cur_string_end_offset > max_copy_offset)
-			cur_string_end_offset = max_copy_offset;
-
-		//copy over the string
-		strings[i].assign(begin(concatenated_strings) + cur_string_start_offset, begin(concatenated_strings) + cur_string_end_offset);
-
-		cur_string_start_offset = cur_string_end_offset;
+		//decode compressed string buffer
+		StringCodec ssc(byte_frequencies);
+		std::string cur_decoded = ssc.DecodeString(encoded_strings);
+		decompressed_string += cur_decoded;
 	}
-
-	return strings;
+	
+	return decompressed_string;
 }

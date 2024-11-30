@@ -262,11 +262,9 @@ EvaluableNodeReference AssetManager::LoadResource(AssetParameters *asset_params,
 		}
 
 		OffsetIndex cur_offset = 0;
-		auto strings = DecompressStrings(compressed_data, cur_offset);
-		if(strings.size() == 0)
-			return EvaluableNodeReference::Null();
+		std::string code_string = DecompressString(compressed_data, cur_offset);
 
-		auto [node, warnings, char_with_error] = Parser::Parse(strings[0], enm, asset_params->transactional,
+		auto [node, warnings, char_with_error] = Parser::Parse(code_string, enm, asset_params->transactional,
 			&asset_params->resourcePath, debugSources);
 		for(auto &w : warnings)
 			std::cerr << w << std::endl;
@@ -309,7 +307,7 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 			return EntityExternalInterface::LoadEntityStatus(false, error_msg, version);
 
 		OffsetIndex cur_offset = 0;
-		auto strings = DecompressStrings(compressed_data, cur_offset);
+		auto strings = DecompressString(compressed_data, cur_offset);
 		if(strings.size() == 0)
 			return EntityExternalInterface::LoadEntityStatus(false, "No data found in file", version);
 
@@ -411,13 +409,7 @@ bool AssetManager::StoreResource(EvaluableNode *code, AssetParameters *asset_par
 	else if(asset_params->resourceType == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 	{
 		std::string code_string = Parser::Unparse(code, asset_params->prettyPrint, true, asset_params->sortKeys);
-
-		//transform into format needed for compression
-		CompactHashMap<std::string, size_t> string_map;
-		string_map[code_string] = 0;
-
-		//compress and store
-		BinaryData compressed_data = CompressStrings(string_map);
+		BinaryData compressed_data = CompressString(code_string);
 		return StoreFileFromBuffer<BinaryData>(asset_params->resourcePath, asset_params->resourceType, compressed_data);
 	}
 	else //binary string

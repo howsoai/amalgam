@@ -549,7 +549,7 @@ private:
 	}
 
 	//sets the persistence for the entity and everything within it
-	void SetEntityPersistenceForFlattenedEntity(Entity *entity, AssetParametersRef &asset_params)
+	void SetEntityPersistenceForFlattenedEntity(Entity *entity, AssetParametersRef asset_params)
 	{
 		SetEntityPersistence(entity, asset_params);
 		for(auto contained_entity : entity->GetContainedEntities())

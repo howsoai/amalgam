@@ -303,6 +303,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_ROOT_PERMISSION
 		return EvaluableNodeReference::Null();
 
 	auto permissions = asset_manager.GetEntityPermissions(curEntity);
+	auto all_permissions = EntityPermissions::AllPermissions();
+	if(permissions.allPermissions != all_permissions.allPermissions)
+		return EvaluableNodeReference::Null();
 
 	bool set_all_permissions = InterpretNodeIntoBoolValue(ocn[1]);
 

@@ -261,8 +261,7 @@ EvaluableNodeReference AssetManager::LoadResource(AssetParameters *asset_params,
 			return EvaluableNodeReference::Null();
 		}
 
-		OffsetIndex cur_offset = 0;
-		std::string code_string = DecompressString(compressed_data, cur_offset);
+		std::string code_string = DecompressString(compressed_data);
 
 		auto [node, warnings, char_with_error] = Parser::Parse(code_string, enm, asset_params->transactional,
 			&asset_params->resourcePath, debugSources);
@@ -306,8 +305,7 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 		if(!success)
 			return EntityExternalInterface::LoadEntityStatus(false, error_msg, version);
 
-		OffsetIndex cur_offset = 0;
-		code_string = DecompressString(compressed_data, cur_offset);
+		code_string = DecompressString(compressed_data);
 		if(code_string.size() == 0)
 			return EntityExternalInterface::LoadEntityStatus(false, "No data found in file", version);
 	}

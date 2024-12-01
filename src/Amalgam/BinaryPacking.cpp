@@ -5,7 +5,7 @@
 #include <array>
 #include <queue>
 
-void UnparseIndexToCompactIndexAndAppend(BinaryData &bd_out, OffsetIndex oi)
+void UnparseIndexToCompactIndexAndAppend(BinaryData &bd_out, size_t oi)
 {
 	//start by stripping off the data of the least significant 7 bits
 	uint8_t cur_byte = (oi & 0x7F);
@@ -25,9 +25,9 @@ void UnparseIndexToCompactIndexAndAppend(BinaryData &bd_out, OffsetIndex oi)
 	bd_out.push_back(cur_byte);
 }
 
-OffsetIndex ParseCompactIndexToIndexAndAdvance(BinaryData &bd, OffsetIndex &bd_offset)
+size_t ParseCompactIndexToIndexAndAdvance(BinaryData &bd, size_t &bd_offset)
 {
-	OffsetIndex index = 0;
+	size_t index = 0;
 	for(int i = 0; bd_offset < bd.size(); i++, bd_offset++)
 	{
 		uint8_t cur_byte = bd[bd_offset];
@@ -41,7 +41,7 @@ OffsetIndex ParseCompactIndexToIndexAndAdvance(BinaryData &bd, OffsetIndex &bd_o
 		}
 
 		//put the 7 bits onto the index
-		index |= (static_cast<OffsetIndex>(cur_byte) << (7 * i));
+		index |= (static_cast<size_t>(cur_byte) << (7 * i));
 
 		if(last_byte)
 		{
@@ -128,12 +128,12 @@ public:
 
 	//looks up the next value in the tree based from the bit string in bd from start_index up until end_index
 	//increments start_index based on the length of the code consumed
-	inline value_type LookUpCode(BinaryData &bd, OffsetIndex &start_index, OffsetIndex end_index)
+	inline value_type LookUpCode(BinaryData &bd, size_t &start_index, size_t end_index)
 	{
 		auto node = this;
 
-		OffsetIndex cur_byte = (start_index / bitsPerValue);
-		OffsetIndex cur_bit = (start_index % bitsPerValue);
+		size_t cur_byte = (start_index / bitsPerValue);
+		size_t cur_bit = (start_index % bitsPerValue);
 
 		while(start_index < end_index)
 		{
@@ -243,14 +243,14 @@ public:
 		compressed_data.reserve(1 + uncompressed_data.size() / 4);
 
 		//the first byte stores the number of extra bits in the last byte, so skip it for encoding
-		OffsetIndex ending_bit = 8;
-		OffsetIndex cur_byte = 1;
-		OffsetIndex cur_bit = 0;
+		size_t ending_bit = 8;
+		size_t cur_byte = 1;
+		size_t cur_bit = 0;
 
 		for(uint8_t c : uncompressed_data)
 		{
 			auto &value = valueCodes[c];
-			OffsetIndex num_bits_to_add = value.size();
+			size_t num_bits_to_add = value.size();
 
 			//make sure there are enough bytes to hold everything
 			// if one extra bit, then need a full extra byte, so add 7 bits to round up
@@ -285,7 +285,7 @@ public:
 			return std::string();
 
 		//count out all the potentially available bits
-		OffsetIndex end_bit = 8 * compressed_data.size();
+		size_t end_bit = 8 * compressed_data.size();
 
 		//number of extra bits is stored in the first byte
 		if(compressed_data[0] != 0)
@@ -295,7 +295,7 @@ public:
 			end_bit += compressed_data[0];
 		}
 		//skip the first byte
-		OffsetIndex start_bit = 8;
+		size_t start_bit = 8;
 
 		//decompress the data
 		std::string uncompressed_data;
@@ -373,9 +373,10 @@ BinaryData CompressString(std::string &string_to_compress)
 	return encoded_string_library;
 }
 
-std::string DecompressString(BinaryData &encoded_string_library, OffsetIndex &cur_offset)
+std::string DecompressString(BinaryData &encoded_string_library)
 {
 	std::string decompressed_string;
+	size_t cur_offset = 0;
 
 	//read the frequency table for each possible byte value
 	std::array<uint8_t, StringCodec::NUM_UINT8_VALUES> byte_frequencies{};	//initialize to zeros

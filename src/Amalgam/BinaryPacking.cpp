@@ -15,7 +15,7 @@ HuffmanTree<value_type> *BuildTreeFromValueFrequencies(
 
 	//start by building the leaf nodes
 	std::priority_queue<HuffmanTree<value_type> *,
-		std::vector<HuffmanTree<value_type> *>, HuffmanTree<value_type>::Compare > alphabet_heap;
+		std::vector<HuffmanTree<value_type> *>, typename HuffmanTree<value_type>::Compare > alphabet_heap;
 
 	//create all the leaf nodes and add them to the priority queue
 	for(size_t i = 0; i < byte_frequencies.size(); i++)

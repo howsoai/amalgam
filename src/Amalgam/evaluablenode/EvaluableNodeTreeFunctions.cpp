@@ -243,7 +243,6 @@ EvaluableNode *GetTraversalPathListFromAToB(EvaluableNodeManager *enm, Evaluable
 		&& b_ancestor != a		//stop if it's the target
 		&& nodes_visited.insert(b_ancestor_parent).second == true) //make sure not visited yet
 	{
-
 		//find where the node matches
 		if(b_ancestor_parent->IsAssociativeArray())
 		{

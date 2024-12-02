@@ -660,14 +660,11 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 			new_ordered.reserve(2 * mcn.size());
 			for(auto &[cn_id, cn] : mcn)
 			{
-				//keep the reference from when it was an assoc
-				new_ordered.push_back(enm->AllocNodeWithReferenceHandoff(ENT_STRING, cn_id));
+				EvaluableNode *key = Parser::ParseFromKeyStringId(cn_id, enm);
+				new_ordered.push_back(key);
 				new_ordered.push_back(cn);
 			}
 
-			//clear the mapped nodes here, because don't want to free the references
-			// as they were handed off to the newly allocated ordered child nodes
-			mcn.clear();
 			InitOrderedChildNodes();
 			//swap for efficiency
 			swap(GetOrderedChildNodesReference(), new_ordered);

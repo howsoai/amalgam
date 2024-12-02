@@ -362,8 +362,8 @@ BinaryData CompressString(std::string &string_to_compress)
 	}
 
 	//compress string
-	StringCodec ssc(byte_frequencies);
-	BinaryData encoded_strings = ssc.EncodeString(string_to_compress);
+	StringCodec codec(byte_frequencies);
+	BinaryData encoded_strings = codec.EncodeString(string_to_compress);
 
 	//write out compressed string
 	UnparseIndexToCompactIndexAndAppend(encoded_string_library, encoded_strings.size());

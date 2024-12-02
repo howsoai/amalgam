@@ -123,8 +123,8 @@ static std::pair<bool, std::string> FindVersionStringInAmlgMetadata(std::ifstrea
 	//read 200 bytes and null terminate
 	std::array<char, 201> buffer;
 	file.read(buffer.data(), 200);
-	buffer[200] = '\0';
-	std::string str(buffer.data(), 200);
+	buffer[file.gcount()] = '\0';
+	std::string str(buffer.data());
 
 	//match on semantic version
 	std::regex pattern("version (\\d+\\.\\d+\\.\\d+(?:-\\w+\\.\\d+)?(?:-\\w+)?(?:\\+\\w+)?(?:\\.\\w+)?)");
@@ -142,8 +142,8 @@ std::pair<bool, std::string> FindVersionStringInAmlgExecOnLoad(std::ifstream &fi
 	//read 200 bytes and null terminate
 	std::array<char, 201> buffer;
 	file.read(buffer.data(), 200);
-	buffer[200] = '\0';
-	std::string str(buffer.data(), 200);
+	buffer[file.gcount()] = '\0';
+	std::string str(buffer.data());
 
 	//match on semantic version
 	std::regex pattern("\"amlg_version\" \"(\\d+\\.\\d+\\.\\d+(?:-\\w+\\.\\d+)?(?:-\\w+)?(?:\\+\\w+)?(?:\\.\\w+)?)\"");

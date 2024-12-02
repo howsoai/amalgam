@@ -7,6 +7,40 @@
 
 const static size_t NUM_UINT8_VALUES = std::numeric_limits<uint8_t>::max() + 1;
 
+template<typename value_type>
+HuffmanTree<value_type> *BuildTreeFromValueFrequencies(
+	std::array<value_type, std::numeric_limits<value_type>::max() + 1> &byte_frequencies)
+{
+	size_t cur_node_index = 0;
+
+	//start by building the leaf nodes
+	std::priority_queue<HuffmanTree<value_type> *,
+		std::vector<HuffmanTree<value_type> *>, HuffmanTree<value_type>::Compare > alphabet_heap;
+
+	//create all the leaf nodes and add them to the priority queue
+	for(size_t i = 0; i < byte_frequencies.size(); i++)
+	{
+		auto leaf = new HuffmanTree<value_type>(static_cast<value_type>(i), byte_frequencies[i], cur_node_index++);
+		alphabet_heap.push(leaf);
+	}
+
+	//Merge leaf nodes with lowest values until have just one at the top
+	HuffmanTree<value_type> *huffman_tree = nullptr;
+	while(alphabet_heap.size() > 1)
+	{
+		auto left = alphabet_heap.top();
+		alphabet_heap.pop();
+		auto right = alphabet_heap.top();
+		alphabet_heap.pop();
+
+		//since non-leaf nodes aren't used for encoding, just use the value 0
+		huffman_tree = new HuffmanTree<value_type>(0, left->valueFrequency + right->valueFrequency, cur_node_index++, left, right);
+		alphabet_heap.push(huffman_tree);
+	}
+
+	return huffman_tree;
+}
+
 void UnparseIndexToCompactIndexAndAppend(BinaryData &bd_out, size_t oi)
 {
 	//start by stripping off the data of the least significant 7 bits
@@ -219,7 +253,7 @@ std::pair<BinaryData, HuffmanTree<uint8_t> *> CompressString(std::string &string
 	}
 
 	//compress string
-	HuffmanTree<uint8_t> *huffman_tree = HuffmanTree<uint8_t>::BuildTreeFromValueFrequencies(byte_frequencies);
+	HuffmanTree<uint8_t> *huffman_tree = BuildTreeFromValueFrequencies<uint8_t>(byte_frequencies);
 	BinaryData encoded_string = EncodeStringFromHuffmanTree(string_to_compress, huffman_tree);
 
 	//write out compressed string
@@ -273,7 +307,7 @@ std::string DecompressString(BinaryData &encoded_string_library)
 		cur_offset += encoded_strings_size;
 
 		//decode compressed string buffer
-		HuffmanTree<uint8_t> *huffman_tree = HuffmanTree<uint8_t>::BuildTreeFromValueFrequencies(byte_frequencies);
+		HuffmanTree<uint8_t> *huffman_tree = BuildTreeFromValueFrequencies<uint8_t>(byte_frequencies);
 		std::string cur_decoded = DecodeStringFromHuffmanTree(encoded_strings, huffman_tree);
 		decompressed_string += cur_decoded;
 	}

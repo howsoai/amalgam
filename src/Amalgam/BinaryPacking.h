@@ -1,6 +1,7 @@
 #pragma once
 
 //system headers:
+#include <limits>
 #include <string>
 #include <utility>
 #include <vector>
@@ -18,7 +19,7 @@ public:
 	{
 	}
 
-	~HuffmanTree()
+	inline ~HuffmanTree()
 	{
 		delete left;
 		delete right;
@@ -26,39 +27,6 @@ public:
 
 	//number of bits per value based on the number of bytes long value_type is
 	static constexpr int bitsPerValue = 8 * sizeof(value_type);
-
-	static HuffmanTree<value_type> *BuildTreeFromValueFrequencies(
-		std::array<value_type, std::numeric_limits<value_type>::max() + 1> &byte_frequencies)
-	{
-		size_t cur_node_index = 0;
-
-		//start by building the leaf nodes
-		std::priority_queue<HuffmanTree<value_type> *,
-			std::vector<HuffmanTree<value_type> *>, HuffmanTree<value_type>::Compare > alphabet_heap;
-
-		//create all the leaf nodes and add them to the priority queue
-		for(size_t i = 0; i < byte_frequencies.size(); i++)
-		{
-			auto leaf = new HuffmanTree<value_type>(static_cast<value_type>(i), byte_frequencies[i], cur_node_index++);
-			alphabet_heap.push(leaf);
-		}
-
-		//Merge leaf nodes with lowest values until have just one at the top
-		HuffmanTree<value_type> *huffman_tree = nullptr;
-		while(alphabet_heap.size() > 1)
-		{
-			auto left = alphabet_heap.top();
-			alphabet_heap.pop();
-			auto right = alphabet_heap.top();
-			alphabet_heap.pop();
-
-			//since non-leaf nodes aren't used for encoding, just use the value 0
-			huffman_tree = new HuffmanTree<value_type>(0, left->valueFrequency + right->valueFrequency, cur_node_index++, left, right);
-			alphabet_heap.push(huffman_tree);
-		}
-
-		return huffman_tree;
-	}
 
 	//for sorting HuffmanTree nodes by frequency
 	class Compare

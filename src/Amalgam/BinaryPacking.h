@@ -2,6 +2,7 @@
 
 //system headers:
 #include <string>
+#include <utility>
 #include <vector>
 
 typedef std::vector<uint8_t> BinaryData;
@@ -129,27 +130,12 @@ public:
 	HuffmanTree<value_type> *right;
 };
 
-//class to compress and decompress bundles of strings
-class StringCodec
-{
-public:
+//compresses string_to_compress into BinaryData and returns the huffman tree to encode it
+//caller is responsible for deleting the huffman tree
+std::pair<BinaryData, HuffmanTree<uint8_t> *> CompressString(std::string &string_to_compress);
 
-	const static size_t NUM_UINT8_VALUES = std::numeric_limits<uint8_t>::max() + 1;
-
-	StringCodec(std::array<uint8_t, NUM_UINT8_VALUES> &byte_frequencies);
-
-	~StringCodec();
-
-	BinaryData EncodeString(std::string &uncompressed_data);
-
-	std::string DecodeString(BinaryData &compressed_data);
-
-	//Huffman tree to build and store between calls
-	HuffmanTree<uint8_t> *huffmanTree;
-};
-
-//given string_map, map of string to index, where the indices are of the range from 0 to string_map.size(), compresses the strings into BinaryData
-BinaryData CompressString(std::string &string_to_compress);
+//like CompressString, but uses a huffman_tree to generate a string that can be appended to a previous compressed string
+BinaryData CompressStringToAppend(std::string &string_to_compress, HuffmanTree<uint8_t> *huffman_tree);
 
 //given encoded_string returns the decompressed, decoded string
 std::string DecompressString(BinaryData &encoded_string);

@@ -220,13 +220,34 @@ public:
 				outf.close();
 				asset_params->writeListener = nullptr;
 			}
+
+			return true;
 		}
 		else if(asset_params->resourceType == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 		{
-			//TODO 21364: update this to allow the write listener to continue to append data
-			//compress and store
-			BinaryData compressed_data = CompressString(code_string);
-			return StoreFileFromBuffer<BinaryData>(asset_params->resourcePath, asset_params->resourceType, compressed_data);
+			std::ofstream outf(asset_params->resourcePath, std::ios::out | std::ios::binary);
+			if(!outf.good())
+				return false;
+
+			if(!FileSupportCAML::WriteHeader(outf))
+				return false;
+
+			auto [compressed_data, huffman_tree] = CompressString(code_string);
+			outf.write(reinterpret_cast<char *>(compressed_data.data()), compressed_data.size());
+
+			if(persistent)
+			{
+				asset_params->writeListener = std::make_unique<EntityWriteListener>(entity,
+					asset_params->prettyPrint, asset_params->sortKeys, outf, huffman_tree);
+			}
+			else
+			{
+				delete huffman_tree;
+				outf.close();
+				asset_params->writeListener = nullptr;
+			}
+
+			return true;
 		}
 
 		//invalid format for flattening

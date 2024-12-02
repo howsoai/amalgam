@@ -1,6 +1,7 @@
 #pragma once
 
 //project headers:
+#include "BinaryPacking.h"
 #include "Entity.h"
 
 //system headers:
@@ -22,8 +23,9 @@ public:
 		bool _pretty = false, bool sort_keys = false, const std::string &filename = std::string());
 
 	//stores all writes, appending them to transaction_file
+	//if huffman_tree is not null, the write listener will assume ownership of the memory and use it to compress output
 	EntityWriteListener(Entity *listening_entity,
-		bool _pretty, bool sort_keys, std::ofstream &transaction_file);
+		bool _pretty, bool sort_keys, std::ofstream &transaction_file, HuffmanTree<uint8_t> *huffman_tree = nullptr);
 
 	~EntityWriteListener();
 
@@ -71,6 +73,8 @@ protected:
 
 	EvaluableNode *storedWrites;
 	std::ofstream logFile;
+	//used for compressing output if not nullptr; this memory is managed by this listener and must be freed
+	HuffmanTree<uint8_t> *huffmanTree;
 
 #ifdef MULTITHREAD_SUPPORT
 	//mutex for writing to make sure everything is written in the same order

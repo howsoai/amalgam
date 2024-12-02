@@ -5,6 +5,8 @@
 #include <array>
 #include <queue>
 
+const static size_t NUM_UINT8_VALUES = std::numeric_limits<uint8_t>::max() + 1;
+
 void UnparseIndexToCompactIndexAndAppend(BinaryData &bd_out, size_t oi)
 {
 	//start by stripping off the data of the least significant 7 bits
@@ -54,19 +56,7 @@ size_t ParseCompactIndexToIndexAndAdvance(BinaryData &bd, size_t &bd_offset)
 	return index;
 }
 
-StringCodec::StringCodec(std::array<uint8_t, NUM_UINT8_VALUES> &byte_frequencies)
-{
-	//build the huffman_tree based on the byte frequencies
-	huffmanTree = HuffmanTree<uint8_t>::BuildTreeFromValueFrequencies(byte_frequencies);
-}
-
-StringCodec::~StringCodec()
-{
-	if(huffmanTree != nullptr)
-		delete huffmanTree;
-}
-
-BinaryData StringCodec::EncodeString(std::string &uncompressed_data)
+BinaryData EncodeStringFromHuffmanTree(std::string &uncompressed_data, HuffmanTree<uint8_t> *huffman_tree)
 {
 	//build lookup table from huffman_tree
 
@@ -77,7 +67,7 @@ BinaryData StringCodec::EncodeString(std::string &uncompressed_data)
 
 	//keep a double-ended queue to traverse the tree, building up the codes for each part of the tree
 	std::deque<std::pair<HuffmanTree<uint8_t> *, std::vector<bool>>> remaining_nodes;
-	remaining_nodes.emplace_back(huffmanTree, std::vector<bool>());
+	remaining_nodes.emplace_back(huffman_tree, std::vector<bool>());
 
 	//while more tree to convert
 	while(!remaining_nodes.empty())
@@ -149,7 +139,7 @@ BinaryData StringCodec::EncodeString(std::string &uncompressed_data)
 	return compressed_data;
 }
 
-std::string StringCodec::DecodeString(BinaryData &compressed_data)
+std::string DecodeStringFromHuffmanTree(BinaryData &compressed_data, HuffmanTree<uint8_t> *huffman_tree)
 {
 	//need at least one byte to represent the number of extra bits and another byte of actual value
 	if(compressed_data.size() < 2)
@@ -171,16 +161,16 @@ std::string StringCodec::DecodeString(BinaryData &compressed_data)
 	//decompress the data
 	std::string uncompressed_data;
 	while(start_bit < end_bit)
-		uncompressed_data.push_back(huffmanTree->LookUpCode(compressed_data, start_bit, end_bit));
+		uncompressed_data.push_back(huffman_tree->LookUpCode(compressed_data, start_bit, end_bit));
 
 	return uncompressed_data;
 }
 
 //counts the number of bytes within bd for each value
 //returns an array where each index represents each of the possible NUM_INT8_VALUES values, and the value at each is the number found
-static std::array<uint8_t, StringCodec::NUM_UINT8_VALUES> GetByteFrequencies(std::string &str)
+static std::array<uint8_t, NUM_UINT8_VALUES> GetByteFrequencies(std::string &str)
 {
-	std::array<size_t, StringCodec::NUM_UINT8_VALUES> value_counts{};	//initialize to zero with value-initialization {}'s
+	std::array<size_t, NUM_UINT8_VALUES> value_counts{};	//initialize to zero with value-initialization {}'s
 	for(uint8_t b : str)
 		value_counts[b]++;
 
@@ -189,8 +179,8 @@ static std::array<uint8_t, StringCodec::NUM_UINT8_VALUES> GetByteFrequencies(std
 	for(auto v : value_counts)
 		max_count = std::max(max_count, v);
 
-	std::array<uint8_t, StringCodec::NUM_UINT8_VALUES> normalized_value_counts{};	//initialize to zero with value-initialization {}'s
-	for(size_t i = 0; i < StringCodec::NUM_UINT8_VALUES; i++)
+	std::array<uint8_t, NUM_UINT8_VALUES> normalized_value_counts{};	//initialize to zero with value-initialization {}'s
+	for(size_t i = 0; i < NUM_UINT8_VALUES; i++)
 	{
 		if(value_counts[i] == 0)
 			continue;
@@ -200,44 +190,55 @@ static std::array<uint8_t, StringCodec::NUM_UINT8_VALUES> GetByteFrequencies(std
 	return normalized_value_counts;
 }
 
-BinaryData CompressString(std::string &string_to_compress)
+std::pair<BinaryData, HuffmanTree<uint8_t> *> CompressString(std::string &string_to_compress)
 {
-	BinaryData encoded_string_library;
-	encoded_string_library.reserve(2 * StringCodec::NUM_UINT8_VALUES);	//reserve enough to two entries for every value in the worst case; this will be expanded later
+	BinaryData encoded_string_with_header;
+	encoded_string_with_header.reserve(2 * NUM_UINT8_VALUES);	//reserve enough to two entries for every value in the worst case; this will be expanded later
 
 	//create and store the frequency table for each possible byte value
 	auto byte_frequencies = GetByteFrequencies(string_to_compress);
-	for(size_t i = 0; i < StringCodec::NUM_UINT8_VALUES; i++)
+	for(size_t i = 0; i < NUM_UINT8_VALUES; i++)
 	{
 		//write value
-		encoded_string_library.push_back(byte_frequencies[i]);
+		encoded_string_with_header.push_back(byte_frequencies[i]);
 
 		//if zero, then run-length encoding compress
 		if(byte_frequencies[i] == 0)
 		{
 			//count the number of additional zeros until next nonzero
 			uint8_t num_additional_zeros = 0;
-			while(i + 1 < StringCodec::NUM_UINT8_VALUES && byte_frequencies[i + 1] == 0)
+			while(i + 1 < NUM_UINT8_VALUES && byte_frequencies[i + 1] == 0)
 			{
 				num_additional_zeros++;
 				i++;
 			}
-			encoded_string_library.push_back(num_additional_zeros);
+			encoded_string_with_header.push_back(num_additional_zeros);
 			//next loop iteration will increment i and count the first zero
 			continue;
 		}
 	}
 
 	//compress string
-	StringCodec codec(byte_frequencies);
-	BinaryData encoded_strings = codec.EncodeString(string_to_compress);
+	HuffmanTree<uint8_t> *huffman_tree = HuffmanTree<uint8_t>::BuildTreeFromValueFrequencies(byte_frequencies);
+	BinaryData encoded_string = EncodeStringFromHuffmanTree(string_to_compress, huffman_tree);
 
 	//write out compressed string
-	UnparseIndexToCompactIndexAndAppend(encoded_string_library, encoded_strings.size());
-	encoded_string_library.resize(encoded_string_library.size() + encoded_strings.size());
-	std::copy(begin(encoded_strings), end(encoded_strings), end(encoded_string_library) - encoded_strings.size());
+	UnparseIndexToCompactIndexAndAppend(encoded_string_with_header, encoded_string.size());
+	encoded_string_with_header.resize(encoded_string_with_header.size() + encoded_string.size());
+	std::copy(begin(encoded_string), end(encoded_string), end(encoded_string_with_header) - encoded_string.size());
 
-	return encoded_string_library;
+	return std::make_pair(encoded_string_with_header, huffman_tree);
+}
+
+BinaryData CompressStringToAppend(std::string &string_to_compress, HuffmanTree<uint8_t> *huffman_tree)
+{
+	BinaryData encoded_string = EncodeStringFromHuffmanTree(string_to_compress, huffman_tree);
+
+	BinaryData encoded_string_with_header;
+	UnparseIndexToCompactIndexAndAppend(encoded_string_with_header, encoded_string.size());
+	encoded_string_with_header.resize(encoded_string_with_header.size() + encoded_string.size());
+	std::copy(begin(encoded_string), end(encoded_string), end(encoded_string_with_header) - encoded_string.size());
+	return encoded_string_with_header;
 }
 
 std::string DecompressString(BinaryData &encoded_string_library)
@@ -246,8 +247,8 @@ std::string DecompressString(BinaryData &encoded_string_library)
 	size_t cur_offset = 0;
 
 	//read the frequency table for each possible byte value
-	std::array<uint8_t, StringCodec::NUM_UINT8_VALUES> byte_frequencies{};	//initialize to zeros
-	for(size_t i = 0; i < StringCodec::NUM_UINT8_VALUES && cur_offset < encoded_string_library.size(); i++)
+	std::array<uint8_t, NUM_UINT8_VALUES> byte_frequencies{};	//initialize to zeros
+	for(size_t i = 0; i < NUM_UINT8_VALUES && cur_offset < encoded_string_library.size(); i++)
 	{
 		byte_frequencies[i] = encoded_string_library[cur_offset++];
 
@@ -255,7 +256,7 @@ std::string DecompressString(BinaryData &encoded_string_library)
 		if(byte_frequencies[i] == 0)
 		{
 			//fill in that many zeros, but don't write beyond buffer
-			for(uint8_t num_additional_zeros = encoded_string_library[cur_offset++]; num_additional_zeros > 0 && i < StringCodec::NUM_UINT8_VALUES; num_additional_zeros--, i++)
+			for(uint8_t num_additional_zeros = encoded_string_library[cur_offset++]; num_additional_zeros > 0 && i < NUM_UINT8_VALUES; num_additional_zeros--, i++)
 				byte_frequencies[i] = 0;
 		}
 	}
@@ -272,8 +273,8 @@ std::string DecompressString(BinaryData &encoded_string_library)
 		cur_offset += encoded_strings_size;
 
 		//decode compressed string buffer
-		StringCodec ssc(byte_frequencies);
-		std::string cur_decoded = ssc.DecodeString(encoded_strings);
+		HuffmanTree<uint8_t> *huffman_tree = HuffmanTree<uint8_t>::BuildTreeFromValueFrequencies(byte_frequencies);
+		std::string cur_decoded = DecodeStringFromHuffmanTree(encoded_strings, huffman_tree);
 		decompressed_string += cur_decoded;
 	}
 	

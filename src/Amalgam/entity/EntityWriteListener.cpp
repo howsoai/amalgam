@@ -20,10 +20,11 @@ EntityWriteListener::EntityWriteListener(Entity *listening_entity,
 		logFile.open(filename, std::ios::binary);
 		logFile << "(" << GetStringFromEvaluableNodeType(ENT_SEQUENCE) << "\r\n";
 	}
+	huffmanTree = nullptr;
 }
 
 EntityWriteListener::EntityWriteListener(Entity *listening_entity,
-	bool _pretty, bool sort_keys, std::ofstream &transaction_file)
+	bool _pretty, bool sort_keys, std::ofstream &transaction_file, HuffmanTree<uint8_t> *huffman_tree)
 {
 	listeningEntity = listening_entity;
 	storedWrites = nullptr;
@@ -41,13 +42,25 @@ EntityWriteListener::EntityWriteListener(Entity *listening_entity,
 	pretty = _pretty;
 	sortKeys = sort_keys;
 	logFile = std::move(transaction_file);
+
+	huffmanTree = huffman_tree;
 }
 
 EntityWriteListener::~EntityWriteListener()
 {
 	if(logFile.is_open())
 	{
-		logFile << fileSuffix;
+		if(huffmanTree == nullptr)
+		{
+			logFile << fileSuffix;
+		}
+		else
+		{
+			auto to_append = CompressStringToAppend(fileSuffix, huffmanTree);
+			logFile.write(reinterpret_cast<char *>(to_append.data()), to_append.size());
+
+			delete huffmanTree;
+		}
 		logFile.close();
 	}
 }
@@ -216,12 +229,27 @@ void EntityWriteListener::LogNewEntry(EvaluableNode *new_entry, bool flush)
 {
 	if(logFile.is_open() && logFile.good())
 	{
-		//one extra indentation if pretty because already have the seq or declare
-		logFile << Parser::Unparse(new_entry, pretty, true, sortKeys, false, pretty ? 1 : 0);
+		if(huffmanTree == nullptr)
+		{
+			//one extra indentation if pretty because already have the seq or declare
+			logFile << Parser::Unparse(new_entry, pretty, true, sortKeys, false, pretty ? 1 : 0);
 
-		//append a new line if not already appended
-		if(!pretty)
-			logFile << "\r\n";
+			//append a new line if not already appended
+			if(!pretty)
+				logFile << "\r\n";
+		}
+		else
+		{
+			//one extra indentation if pretty because already have the seq or declare
+			std::string new_code = Parser::Unparse(new_entry, pretty, true, sortKeys, false, pretty ? 1 : 0);
+
+			//append a new line if not already appended
+			if(!pretty)
+				new_code += "\r\n";
+
+			auto to_append = CompressStringToAppend(new_code, huffmanTree);
+			logFile.write(reinterpret_cast<char *>(to_append.data()), to_append.size());
+		}
 
 		if(flush)
 			logFile.flush();

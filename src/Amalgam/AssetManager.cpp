@@ -405,7 +405,8 @@ bool AssetManager::StoreResource(EvaluableNode *code, AssetParameters *asset_par
 	else if(asset_params->resourceType == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 	{
 		std::string code_string = Parser::Unparse(code, asset_params->prettyPrint, true, asset_params->sortKeys);
-		BinaryData compressed_data = CompressString(code_string);
+		auto [compressed_data, huffman_tree] = CompressString(code_string);
+		delete huffman_tree;
 		return StoreFileFromBuffer<BinaryData>(asset_params->resourcePath, asset_params->resourceType, compressed_data);
 	}
 	else //binary string

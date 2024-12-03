@@ -1077,7 +1077,6 @@ public:
 		EFDT_NUMERIC_INTERNED_PRECOMPUTED,
 		//continuous or nominal string precomputed, may contain nonnumeric data
 		EFDT_STRING_INTERNED_PRECOMPUTED,
-		//TODO 22139: implement where appropriate
 		//nominal compared to a bool value where nominals may not be symmetric
 		EFDT_NOMINAL_BOOL,
 		//nominal compared to a string value where nominals may not be symmetric

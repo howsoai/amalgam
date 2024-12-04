@@ -79,11 +79,7 @@ void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t previous_num_no
 	numNodesToRunGarbageCollection = std::max(max_from_allocation, std::max<size_t>(max_from_previous, max_from_current));
 }
 
-#ifdef MULTITHREAD_SUPPORT
-void EvaluableNodeManager::CollectGarbage(Concurrency::ReadLock *memory_modification_lock)
-#else
 void EvaluableNodeManager::CollectGarbage()
-#endif
 {
 	if(PerformanceProfiler::IsProfilingEnabled())
 	{
@@ -93,7 +89,24 @@ void EvaluableNodeManager::CollectGarbage()
 
 	ClearThreadLocalAllocationBuffer();
 
+	MarkAllReferencedNodesInUse(firstUnusedNodeIndex);
+
+	FreeAllNodesExceptReferencedNodes(firstUnusedNodeIndex);
+
+	if(PerformanceProfiler::IsProfilingEnabled())
+		PerformanceProfiler::EndOperation(GetNumberOfUsedNodes());
+}
+
 #ifdef MULTITHREAD_SUPPORT
+void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadLock *memory_modification_lock)
+{
+	if(PerformanceProfiler::IsProfilingEnabled())
+	{
+		static const std::string collect_garbage_string = ".collect_garbage";
+		PerformanceProfiler::StartOperation(collect_garbage_string, GetNumberOfUsedNodes());
+	}
+
+	ClearThreadLocalAllocationBuffer();
 	
 	//free lock so can attempt to enter write lock to collect garbage
 	if(memory_modification_lock != nullptr)
@@ -112,7 +125,6 @@ void EvaluableNodeManager::CollectGarbage()
 	{
 		if(RecommendGarbageCollection())
 		{
-#endif
 			size_t cur_first_unused_node_index = firstUnusedNodeIndex;
 			//clear firstUnusedNodeIndex to signal to other threads that they won't need to do garbage collection
 			firstUnusedNodeIndex = 0;
@@ -122,12 +134,9 @@ void EvaluableNodeManager::CollectGarbage()
 					&& nodes[cur_first_unused_node_index - 1]->IsNodeDeallocated())
 				cur_first_unused_node_index--;
 
-			//set to contain everything that is referenced
 			MarkAllReferencedNodesInUse(cur_first_unused_node_index);
 
 			FreeAllNodesExceptReferencedNodes(cur_first_unused_node_index);
-
-#ifdef MULTITHREAD_SUPPORT
 		}
 
 		//free the unique lock and reacquire the shared lock
@@ -136,11 +145,11 @@ void EvaluableNodeManager::CollectGarbage()
 
 	if(memory_modification_lock != nullptr)
 		memory_modification_lock->lock();
-#endif
 
 	if(PerformanceProfiler::IsProfilingEnabled())
 		PerformanceProfiler::EndOperation(GetNumberOfUsedNodes());
 }
+#endif
 
 void EvaluableNodeManager::FreeAllNodes()
 {

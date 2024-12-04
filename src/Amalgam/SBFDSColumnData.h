@@ -1198,6 +1198,9 @@ public:
 	//name of the column
 	StringInternPool::StringID stringId;
 
+	//for each index, stores the value
+	std::vector<EvaluableNodeImmediateValue> valueEntries;
+
 	//stores values in sorted order and the entities that have each value
 	std::vector<std::unique_ptr<ValueEntry>> sortedNumberValueEntries;
 

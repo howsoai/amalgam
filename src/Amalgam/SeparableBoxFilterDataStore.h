@@ -82,16 +82,10 @@ public:
 														max_diff, query_feature_index, high_accuracy);
 	}
 
-	//gets the matrix cell index for the specified index
-	__forceinline const size_t GetMatrixCellIndex(size_t entity_index)
-	{
-		return entity_index * columnData.size();
-	}
-
 	//returns the the element at index's value for the specified column at column_index, requires valid index
-	__forceinline EvaluableNodeImmediateValue &GetValue(size_t index, size_t column_index)
+	__forceinline EvaluableNodeImmediateValue &GetValue(size_t index, size_t absolute_feature_index)
 	{
-		return matrix[index * columnData.size() + column_index];
+		return columnData[absolute_feature_index]->valueEntries[index];
 	}
 
 	//returns the column index for the label_id, or maximum value if not found
@@ -520,12 +514,13 @@ protected:
 	//deletes/pops off the last row in the matrix cache
 	inline void DeleteLastRow()
 	{
-		if(matrix.size() == 0)
+		if(numEntities == 0)
 			return;
 
 		//truncate matrix cache
 		numEntities--;
-		matrix.resize(matrix.size() - columnData.size());
+		for(auto &cd : columnData)
+			cd->valueEntries.resize(numEntities);
 	}
 
 	//deletes the index and associated data
@@ -763,10 +758,7 @@ protected:
 	//returns the distance between two nodes while respecting the feature mask
 	inline double GetDistanceBetween(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		size_t radius_column_index, size_t other_index, bool high_accuracy)
-	{
-		const size_t matrix_base_position = other_index * columnData.size();
-
-		double dist_accum = 0.0;
+	{		double dist_accum = 0.0;
 		for(size_t i = 0; i < r_dist_eval.featureData.size(); i++)
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[i];
@@ -775,7 +767,7 @@ protected:
 			auto &column_data = columnData[column_index];
 
 			auto other_value_type = column_data->GetIndexValueType(other_index);
-			auto other_value = column_data->GetResolvedValue(other_value_type, matrix[matrix_base_position + column_index]);
+			auto other_value = column_data->GetResolvedValue(other_value_type, column_data->valueEntries[other_index]);
 			other_value_type = column_data->GetResolvedValueType(other_value_type);
 
 			dist_accum += r_dist_eval.ComputeDistanceTerm(other_value, other_value_type, i, high_accuracy);
@@ -788,7 +780,7 @@ protected:
 			auto &column_data = columnData[radius_column_index];
 			auto radius_value_type = column_data->GetIndexValueType(other_index);
 			if(radius_value_type == ENIVT_NUMBER || radius_value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
-				dist -= column_data->GetResolvedValue(radius_value_type, matrix[matrix_base_position + radius_column_index]).number;
+				dist -= column_data->GetResolvedValue(radius_value_type, column_data->valueEntries[other_index]).number;
 		}
 
 		return dist;
@@ -1070,9 +1062,6 @@ public:
 	
 	//map from label id to column index in the matrix
 	FastHashMap<StringInternPool::StringID, size_t> labelIdToColumnIndex;
-
-	//matrix of cases (rows) * features (columns)
-	std::vector<EvaluableNodeImmediateValue> matrix;
 
 	//the number of entities in the data store; all indices below this value are populated
 	size_t numEntities;

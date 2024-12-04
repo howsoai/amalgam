@@ -294,13 +294,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 				VerifyEvaluableNodeIntegrity();
 			#endif
 
-				//collect garbage, but not on current entity, save that for between instructions
-			#ifdef MULTITHREAD_SUPPORT
-				target_entity->CollectGarbage(&memoryModificationLock);
-			#else
-				target_entity->CollectGarbage();
-			#endif
-
+			target_entity->CollectGarbageWithEntityWriteReference();
+			
 			#ifdef AMALGAM_MEMORY_INTEGRITY
 				VerifyEvaluableNodeIntegrity();
 			#endif

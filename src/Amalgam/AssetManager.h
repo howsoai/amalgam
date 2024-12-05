@@ -269,6 +269,10 @@ public:
 		if(entity == nullptr)
 			return false;
 
+		//if clearing persistence, do it up front to flush and/or clear any files
+		if(update_persistence && !persistent)
+			SetEntityPersistenceForFlattenedEntity(entity, nullptr);
+
 		Entity::EntityReferenceBufferReference<EntityReferenceType> erbr;
 		if(all_contained_entities == nullptr)
 		{
@@ -287,8 +291,8 @@ public:
 			bool store_successful = FlattenAndStoreEntityToResource(
 				entity, asset_params.get(), persistent, *all_contained_entities);
 
-			if(update_persistence)
-				SetEntityPersistenceForFlattenedEntity(entity, persistent ? asset_params : nullptr);
+			if(update_persistence && persistent)
+				SetEntityPersistenceForFlattenedEntity(entity, asset_params);
 
 			return store_successful;
 		}
@@ -336,8 +340,8 @@ public:
 		}
 
 		//update after done using asset_params, just in case it is deleted
-		if(update_persistence)
-			SetEntityPersistence(entity, persistent ? asset_params : nullptr);
+		if(update_persistence && persistent)
+			SetEntityPersistenceForFlattenedEntity(entity, asset_params);
 
 		return true;
 	}

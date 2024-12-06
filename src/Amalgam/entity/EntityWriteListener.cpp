@@ -215,8 +215,12 @@ void EntityWriteListener::LogCreateEntityRecurse(Entity *new_entity)
 {
 	EvaluableNode *new_create = BuildNewWriteOperation(ENT_CREATE_ENTITIES, new_entity);
 
-	EvaluableNodeReference new_entity_root_copy = new_entity->GetRoot(&listenerStorage);
-	new_create->AppendOrderedChildNode(new_entity_root_copy);
+	EvaluableNode *lambda_for_create = listenerStorage.AllocNode(ENT_LAMBDA);
+	new_create->AppendOrderedChildNode(lambda_for_create);
+
+	EvaluableNodeReference new_entity_root_copy = new_entity->GetRoot(&listenerStorage,
+		EvaluableNodeManager::ENMM_LABEL_ESCAPE_INCREMENT);
+	lambda_for_create->AppendOrderedChildNode(new_entity_root_copy);
 
 	LogNewEntry(new_create);
 

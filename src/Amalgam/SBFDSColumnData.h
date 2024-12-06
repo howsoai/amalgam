@@ -63,6 +63,8 @@ public:
 	void InsertNextIndexValueExceptNumbers(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue &value,
 		size_t index, std::vector<DistanceReferencePair<size_t>> &entities_with_number_values)
 	{
+		valueEntries[index] = value;
+
 		if(value_type == ENIVT_NOT_EXIST)
 		{
 			invalidIndices.insert(index);

@@ -106,7 +106,7 @@ public:
 		return (labelIdToColumnIndex.count(label_id) > 0);
 	}
 
-	//populates the matrix with the label and builds column data
+	//populates the column with the label data
 	// assumes column data is empty
 	void BuildLabel(size_t column_index, const std::vector<Entity *> &entities);
 
@@ -127,7 +127,7 @@ public:
 		if(label_sids.size() == 0 || entities.size() == 0)
 			return;
 
-		//resize the matrix and populate column and label_id lookups
+		//resize the column data storage and populate column and label_id lookups
 		size_t num_columns_added = AddLabelsAsEmptyColumns(label_sids);
 
 		size_t num_columns = columnData.size();
@@ -511,20 +511,9 @@ protected:
 	}
 #endif
 
-	//deletes/pops off the last row in the matrix cache
-	inline void DeleteLastRow()
-	{
-		if(numEntities == 0)
-			return;
-
-		//truncate matrix cache
-		numEntities--;
-		for(auto &cd : columnData)
-			cd->valueEntries.resize(numEntities);
-	}
-
 	//deletes the index and associated data
-	void DeleteEntityIndexFromColumns(size_t entity_index);
+	//if it is the last entity and remove_last_entity is true, then it will truncate storage
+	void DeleteEntityIndexFromColumns(size_t entity_index, bool remove_last_entity = false);
 
 	//adds a new labels to the database
 	// assumes label_ids is not empty
@@ -1060,7 +1049,7 @@ public:
 #endif
 	static SBFDSParametersAndBuffers parametersAndBuffers;
 	
-	//map from label id to column index in the matrix
+	//map from label id to column index
 	FastHashMap<StringInternPool::StringID, size_t> labelIdToColumnIndex;
 
 	//the number of entities in the data store; all indices below this value are populated

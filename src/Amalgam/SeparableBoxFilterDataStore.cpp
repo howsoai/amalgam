@@ -22,7 +22,9 @@ void SeparableBoxFilterDataStore::BuildLabel(size_t column_index, const std::vec
 	//clear value interning if applied
 	column_data->ConvertNumberInternsToValues();
 
-	//populate matrix and get values
+	column_data->valueEntries.resize(entities.size());
+
+	//populate data
 	// maintaining the order of insertion of the entities from smallest to largest allows for better performance of the insertions
 	// and every function called here assumes that entities are inserted in increasing order
 	for(size_t entity_index = 0; entity_index < entities.size(); entity_index++)
@@ -30,7 +32,6 @@ void SeparableBoxFilterDataStore::BuildLabel(size_t column_index, const std::vec
 		EvaluableNodeImmediateValueType value_type;
 		EvaluableNodeImmediateValue value;
 		value_type = entities[entity_index]->GetValueAtLabelAsImmediateValue(label_id, value, is_label_accessible);
-		GetValue(entity_index, column_index) = value;
 
 		column_data->InsertNextIndexValueExceptNumbers(value_type, value, entity_index, entities_with_number_values);
 	}
@@ -192,8 +193,7 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 	// simply delete from column data, delete last row, and return
 	if(entity_index + 1 == GetNumInsertedEntities() && entity_index_to_reassign >= entity_index)
 	{
-		DeleteEntityIndexFromColumns(entity_index);
-		DeleteLastRow();
+		DeleteEntityIndexFromColumns(entity_index, true);
 
 	#ifdef SBFDS_VERIFICATION
 		VerifyAllEntitiesForAllColumns();
@@ -216,11 +216,6 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 	{
 		DeleteEntityIndexFromColumns(entity_index);
 
-		//fill with missing values
-		size_t starting_cell_index = GetMatrixCellIndex(entity_index);
-		for(size_t column_index = 0; column_index < columnData.size(); column_index++)
-			matrix[starting_cell_index + column_index].number = std::numeric_limits<double>::quiet_NaN();
-
 	#ifdef SBFDS_VERIFICATION
 		VerifyAllEntitiesForAllColumns();
 	#endif
@@ -242,11 +237,14 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 		columnData[column_index]->DeleteIndexValue(value_type_to_reassign, value_to_reassign, entity_index_to_reassign);
 	}
 
-	//truncate matrix cache if removing the last entry, either by moving the last entity or by directly removing the last
+	//truncate cache if removing the last entry, either by moving the last entity or by directly removing the last
 	if(entity_index_to_reassign + 1 == numEntities
-			|| (entity_index_to_reassign + 1 >= numEntities && entity_index + 1 == numEntities))
-		DeleteLastRow();
-
+		|| (entity_index_to_reassign + 1 >= numEntities && entity_index + 1 == numEntities))
+	{
+		for(size_t i = 0; i < columnData.size(); i++)
+			columnData[i]->valueEntries.pop_back();
+	}
+	
 	//clean up any labels that aren't relevant
 	RemoveAnyUnusedLabels();
 
@@ -921,14 +919,19 @@ void SeparableBoxFilterDataStore::VerifyAllEntitiesForColumn(size_t column_index
 }
 #endif
 
-void SeparableBoxFilterDataStore::DeleteEntityIndexFromColumns(size_t entity_index)
+void SeparableBoxFilterDataStore::DeleteEntityIndexFromColumns(size_t entity_index, bool remove_last_entity)
 {
 	for(size_t i = 0; i < columnData.size(); i++)
 	{
 		auto &column_data = columnData[i];
 		auto &feature_value = GetValue(entity_index, i);
 		auto feature_type = column_data->GetIndexValueType(entity_index);
-		columnData[i]->DeleteIndexValue(feature_type, feature_value, entity_index);
+		column_data->DeleteIndexValue(feature_type, feature_value, entity_index);
+
+		if(remove_last_entity)
+			column_data->valueEntries.pop_back();
+		else
+			column_data->valueEntries[entity_index] = std::numeric_limits<double>::quiet_NaN();
 	}
 }
 

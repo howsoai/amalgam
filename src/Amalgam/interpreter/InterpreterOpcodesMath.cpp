@@ -927,22 +927,22 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 
 	//get weights list if applicable
 	auto weights_node = InterpretNodeForImmediateUse(ocn[0]);
-	if(!EvaluableNode::IsNull(weights_node))
+	if(weights_node != nullptr)
 		node_stack.PushEvaluableNode(weights_node);
 
 	//get distance types if applicable
 	auto distance_types_node = InterpretNodeForImmediateUse(ocn[1]);
-	if(!EvaluableNode::IsNull(distance_types_node))
+	if(distance_types_node != nullptr)
 		node_stack.PushEvaluableNode(distance_types_node);
 
 	//get feature attributes if applicable
 	auto attributes_node = InterpretNodeForImmediateUse(ocn[2]);
-	if(!EvaluableNode::IsNull(attributes_node))
+	if(attributes_node != nullptr)
 		node_stack.PushEvaluableNode(attributes_node);
 
 	//get deviations if applicable
 	auto deviations_node = InterpretNodeForImmediateUse(ocn[3]);
-	if(!EvaluableNode::IsNull(deviations_node))
+	if(deviations_node != nullptr)
 		node_stack.PushEvaluableNode(deviations_node);
 
 	GeneralizedDistanceEvaluator dist_eval;
@@ -950,7 +950,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 
 	//get location
 	auto location_node = InterpretNodeForImmediateUse(ocn[5]);
-	if(!EvaluableNode::IsNull(location_node))
+	if(location_node != nullptr)
 		node_stack.PushEvaluableNode(location_node);
 
 	//get origin if applicable
@@ -958,7 +958,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 	if(ocn.size() > 6)
 	{
 		origin_node = InterpretNodeForImmediateUse(ocn[6]);
-		if(!EvaluableNode::IsNull(origin_node))
+		if(origin_node != nullptr)
 			node_stack.PushEvaluableNode(origin_node);
 	}
 

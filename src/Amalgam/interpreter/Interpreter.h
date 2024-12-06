@@ -208,7 +208,7 @@ public:
 		if(evaluableNodeManager->RecommendGarbageCollection())
 		{
 		#ifdef MULTITHREAD_SUPPORT
-			evaluableNodeManager->CollectGarbage(&memoryModificationLock);
+			evaluableNodeManager->CollectGarbageWithConcurrentAccess(&memoryModificationLock);
 		#else
 			evaluableNodeManager->CollectGarbage();
 		#endif

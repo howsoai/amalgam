@@ -128,7 +128,7 @@ public:
 			return;
 
 		//resize the matrix and populate column and label_id lookups
-		size_t num_columns_added = AddLabelsAsEmptyColumns(label_sids, entities.size());
+		size_t num_columns_added = AddLabelsAsEmptyColumns(label_sids);
 
 		size_t num_columns = columnData.size();
 		size_t num_previous_columns = columnData.size() - num_columns_added;
@@ -527,9 +527,9 @@ protected:
 	void DeleteEntityIndexFromColumns(size_t entity_index);
 
 	//adds a new labels to the database
-	// assumes label_ids is not empty and num_entities is nonzero
+	// assumes label_ids is not empty
 	//returns the number of new columns inserted
-	size_t AddLabelsAsEmptyColumns(std::vector<StringInternPool::StringID> &label_sids, size_t num_entities);
+	size_t AddLabelsAsEmptyColumns(std::vector<StringInternPool::StringID> &label_sids);
 
 	//computes each partial sum and adds the term to the partial sums associated for each id in entity_indices for query_feature_index
 	//returns the number of entities indices accumulated

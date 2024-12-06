@@ -602,17 +602,22 @@ public:
 	//inserts the value at id
 	//returns the value that should be used to reference the value, which may be an index
 	//depending on the state of the column data
-	EvaluableNodeImmediateValue InsertIndexValue(EvaluableNodeImmediateValueType value_type,
+	void InsertIndexValue(EvaluableNodeImmediateValueType value_type,
 		EvaluableNodeImmediateValue &value, size_t index)
 	{
+		if(index >= valueEntries.size())
+			valueEntries.resize(index + 1);
+
 		if(value_type == ENIVT_NOT_EXIST)
 		{
 			invalidIndices.insert(index);
 
 			if(internedNumberValues.valueInterningEnabled || internedStringIdValues.valueInterningEnabled)
-				return EvaluableNodeImmediateValue(ValueEntry::NULL_INDEX);
+				valueEntries[index] = EvaluableNodeImmediateValue(ValueEntry::NULL_INDEX);
 			else
-				return value;
+				valueEntries[index] = value;
+
+			return;
 		}
 
 		if(value_type == ENIVT_NULL)
@@ -620,9 +625,11 @@ public:
 			nullIndices.insert(index);
 
 			if(internedNumberValues.valueInterningEnabled || internedStringIdValues.valueInterningEnabled)
-				return EvaluableNodeImmediateValue(ValueEntry::NULL_INDEX);
+				valueEntries[index] = EvaluableNodeImmediateValue(ValueEntry::NULL_INDEX);
 			else
-				return value;
+				valueEntries[index] = value;
+
+			return;
 		}
 
 		if(value_type == ENIVT_NUMBER || value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
@@ -639,9 +646,11 @@ public:
 				sortedNumberValueEntries[value_index]->indicesWithValue.insert(index);
 
 				if(internedNumberValues.valueInterningEnabled)
-					return EvaluableNodeImmediateValue(sortedNumberValueEntries[value_index]->valueInternIndex);
+					valueEntries[index] = EvaluableNodeImmediateValue(sortedNumberValueEntries[value_index]->valueInternIndex);
 				else
-					return value;
+					valueEntries[index] = value;
+
+				return;
 			}
 
 			//insert new value in correct position
@@ -651,9 +660,11 @@ public:
 			InsertFirstIndexIntoNumberValueEntry(index, value_index);
 
 			if(internedNumberValues.valueInterningEnabled)
-				return sortedNumberValueEntries[value_index]->valueInternIndex;
+				valueEntries[index] = sortedNumberValueEntries[value_index]->valueInternIndex;
 			else
-				return value;
+				valueEntries[index] = value;
+
+			return;
 		}
 
 		if(value_type == ENIVT_STRING_ID || value_type == ENIVT_STRING_ID_INDIRECTION_INDEX)
@@ -672,9 +683,11 @@ public:
 			UpdateLongestString(string_id, index);
 
 			if(internedStringIdValues.valueInterningEnabled)
-				return inserted_id_entry->second->valueInternIndex;
+				valueEntries[index] = inserted_id_entry->second->valueInternIndex;
 			else
-				return value;
+				valueEntries[index] = value;
+
+			return;
 		}
 
 		//value_type == ENIVT_CODE
@@ -692,7 +705,7 @@ public:
 
 		UpdateLargestCode(code_size, index);
 
-		return value;
+		valueEntries[index] = value;
 	}
 
 	//returns the number of unique values in the column

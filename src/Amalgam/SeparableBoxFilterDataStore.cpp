@@ -160,19 +160,12 @@ void SeparableBoxFilterDataStore::AddEntity(Entity *entity, size_t entity_index)
 	VerifyAllEntitiesForAllColumns();
 #endif
 
-	size_t starting_cell_index = GetMatrixCellIndex(entity_index);
-
-	//fill with missing values, including any empty indices
-	matrix.resize(starting_cell_index + columnData.size());
-
-	//fill in matrix cells from entity
-	size_t cell_index = starting_cell_index;
-	for(size_t column_index = 0; column_index < columnData.size(); column_index++, cell_index++)
+	for(size_t column_index = 0; column_index < columnData.size(); column_index++)
 	{
 		EvaluableNodeImmediateValueType value_type;
 		EvaluableNodeImmediateValue value;
 		value_type = entity->GetValueAtLabelAsImmediateValue(columnData[column_index]->stringId, value);
-		matrix[cell_index] = columnData[column_index]->InsertIndexValue(value_type, value, entity_index);
+		columnData[column_index]->InsertIndexValue(value_type, value, entity_index);
 	}
 
 	//count this entity

@@ -195,11 +195,12 @@ public:
 	}
 
 	//moves index from being associated with key old_value to key new_value
-	//returns the value that should be used to reference the value, which may be an index
-	//depending on the state of the column data
-	EvaluableNodeImmediateValue ChangeIndexValue(EvaluableNodeImmediateValueType old_value_type, EvaluableNodeImmediateValue old_value,
-		EvaluableNodeImmediateValueType new_value_type, EvaluableNodeImmediateValue new_value, size_t index)
+	void ChangeIndexValue(EvaluableNodeImmediateValueType new_value_type,
+		EvaluableNodeImmediateValue new_value, size_t index)
 	{
+		EvaluableNodeImmediateValue old_value = valueEntries[index];
+		EvaluableNodeImmediateValueType old_value_type = GetIndexValueType(index);
+		
 		//if new one is invalid, can quickly delete or return
 		if(new_value_type == ENIVT_NOT_EXIST)
 		{
@@ -210,9 +211,11 @@ public:
 			}
 
 			if(internedNumberValues.valueInterningEnabled || internedStringIdValues.valueInterningEnabled)
-				return EvaluableNodeImmediateValue(ValueEntry::NULL_INDEX);
+				valueEntries[index] = EvaluableNodeImmediateValue(ValueEntry::NULL_INDEX);
 			else
-				return EvaluableNodeImmediateValue();
+				valueEntries[index] = EvaluableNodeImmediateValue();
+
+			return;
 		}
 
 		auto old_value_type_resolved = GetResolvedValueType(old_value_type);
@@ -226,14 +229,14 @@ public:
 		if(old_value_type_resolved == new_value_type_resolved)
 		{
 			if(old_value_type_resolved == ENIVT_NULL)
-				return old_value;
+				return;
 
 			if(old_value_type_resolved == ENIVT_NUMBER)
 			{
 				double old_number_value = old_value_resolved.number;
 				double new_number_value = new_value_resolved.number;
 				if(old_number_value == new_number_value)
-					return old_value;
+					return;
 
 				//if the value already exists, then put the index in the list
 				//but return the lower bound if not found so don't have to search a second time
@@ -311,9 +314,11 @@ public:
 				}
 
 				if(internedNumberValues.valueInterningEnabled)
-					return EvaluableNodeImmediateValue(new_value_index);
+					valueEntries[index] = EvaluableNodeImmediateValue(new_value_index);
 				else
-					return EvaluableNodeImmediateValue(new_value);
+					valueEntries[index] = EvaluableNodeImmediateValue(new_value);
+
+				return;
 			}
 
 			if(old_value_type_resolved == ENIVT_STRING_ID)
@@ -321,7 +326,7 @@ public:
 				StringInternPool::StringID old_sid_value = old_value_resolved.stringID;
 				StringInternPool::StringID new_sid_value = new_value_resolved.stringID;
 				if(old_sid_value == new_sid_value)
-					return old_value;
+					return;
 
 				//try to insert the new value if not already there
 				auto [new_id_entry, inserted] = stringIdValueEntries.emplace(new_sid_value, nullptr);
@@ -386,9 +391,11 @@ public:
 					UpdateLongestString(new_sid_value, index);
 
 				if(internedStringIdValues.valueInterningEnabled)
-					return EvaluableNodeImmediateValue(new_value_index);
+					valueEntries[index] = EvaluableNodeImmediateValue(new_value_index);
 				else
-					return EvaluableNodeImmediateValue(new_value);
+					valueEntries[index] = EvaluableNodeImmediateValue(new_value);
+				
+				return;
 			}
 
 			if(old_value_type_resolved == ENIVT_CODE)
@@ -396,7 +403,7 @@ public:
 				//only early exit if the pointers to the code are exactly the same,
 				// as equivalent code may be garbage collected
 				if(old_value.code == new_value.code)
-					return old_value;
+					return;
 
 				size_t old_code_size = EvaluableNode::GetDeepSize(old_value.code);
 				size_t new_code_size = EvaluableNode::GetDeepSize(new_value.code);
@@ -445,13 +452,14 @@ public:
 				else
 					UpdateLargestCode(new_code_size, index);
 
-				return new_value;
+				valueEntries[index] = new_value;
+				return;
 			}
 
 			if(old_value_type == ENIVT_NUMBER_INDIRECTION_INDEX || old_value_type == ENIVT_STRING_ID_INDIRECTION_INDEX)
 			{
 				if(old_value.indirectionIndex == new_value.indirectionIndex)
-					return old_value;
+					return;
 			}
 		}
 
@@ -459,7 +467,7 @@ public:
 		DeleteIndexValue(old_value_type_resolved, old_value_resolved, index);
 
 		//add index at new value bucket
-		return InsertIndexValue(new_value_type_resolved, new_value_resolved, index);
+		InsertIndexValue(new_value_type_resolved, new_value_resolved, index);
 	}
 
 	//deletes everything involving the value at the index

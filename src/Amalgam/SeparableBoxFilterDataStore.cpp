@@ -260,14 +260,11 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 	{
 		auto &column_data = columnData[column_index];
 
-		auto &val_to_overwrite = GetValue(entity_index, column_index);
-		auto type_to_overwrite = column_data->GetIndexValueType(entity_index);
-
 		auto &value_to_reassign = GetValue(entity_index_to_reassign, column_index);
 		auto value_type_to_reassign = column_data->GetIndexValueType(entity_index_to_reassign);
 
 		//change the destination to the value
-		val_to_overwrite = columnData[column_index]->ChangeIndexValue(type_to_overwrite, val_to_overwrite, value_type_to_reassign, value_to_reassign, entity_index);
+		columnData[column_index]->ChangeIndexValue(value_type_to_reassign, value_to_reassign, entity_index);
 
 		//remove the value where it is
 		columnData[column_index]->DeleteIndexValue(value_type_to_reassign, value_to_reassign, entity_index_to_reassign);
@@ -305,12 +302,7 @@ void SeparableBoxFilterDataStore::UpdateAllEntityLabels(Entity *entity, size_t e
 		EvaluableNodeImmediateValue value;
 		value_type = entity->GetValueAtLabelAsImmediateValue(columnData[column_index]->stringId, value);
 
-		//update the value
-		auto &value = column_data->valueEntries[entity_index];
-		auto previous_value_type = column_data->GetIndexValueType(entity_index);
-
-		//assign the matrix location to the updated value (which may be an index)
-		value = column_data->ChangeIndexValue(previous_value_type, value, value_type, value, entity_index);
+		column_data->ChangeIndexValue(value_type, value, entity_index);
 	}
 
 	//clean up any labels that aren't relevant
@@ -344,12 +336,7 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 	EvaluableNodeImmediateValue value;
 	value_type = entity->GetValueAtLabelAsImmediateValue(column_data->stringId, value);
 
-	//update the value
-	auto &matrix_value = GetValue(entity_index, column_index);
-	auto previous_value_type = column_data->GetIndexValueType(entity_index);
-	
-	//assign the matrix location to the updated value (which may be an index)
-	matrix_value = column_data->ChangeIndexValue(previous_value_type, matrix_value, value_type, value, entity_index);
+	column_data->ChangeIndexValue(value_type, value, entity_index);
 
 	//remove the label if no longer relevant
 	if(IsColumnIndexRemovable(column_index))

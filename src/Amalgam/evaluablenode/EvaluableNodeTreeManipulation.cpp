@@ -388,7 +388,8 @@ EvaluableNode *EvaluableNodeTreeManipulation::CreateGeneralizedNode(NodesMergeMe
 			return enm->AllocNode(n2);
 	}
 
-	auto [node, commonality] = EvaluableNodeTreeManipulation::CommonalityBetweenNodeTypesAndValues(n1, n2);
+	auto [node, commonality] = EvaluableNodeTreeManipulation::CommonalityBetweenNodeTypesAndValues(n1, n2,
+		mm->RequireExactMatches());
 
 	//if both are nullptr, nothing more to do
 	if(node == nullptr)
@@ -694,20 +695,20 @@ EvaluableNodeType EvaluableNodeTreeManipulation::GetRandomEvaluableNodeType(Rand
 }
 
 MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfSharedNodes(EvaluableNode *tree1, EvaluableNode *tree2,
-	MergeMetricResultsCache &memoized, EvaluableNode::ReferenceSetType *checked)
+	MergeMetricResultsParams &mmrp)
 {
 	if(tree1 == nullptr && tree2 == nullptr)
 		return MergeMetricResults(1.0, tree1, tree2, false, true);
 
 	//if the pair of nodes has already been computed, then just return the result
-	auto found = memoized.find(std::make_pair(tree1, tree2));
-	if(found != end(memoized))
+	auto found = mmrp.memoizedNodeMergePairs.find(std::make_pair(tree1, tree2));
+	if(found != end(mmrp.memoizedNodeMergePairs))
 		return found->second;
 
-	if(checked != nullptr)
+	if(mmrp.checked != nullptr)
 	{
 		//if either is already checked, then neither adds shared nodes
-		if(checked->find(tree1) != end(*checked) || checked->find(tree2) != end(*checked))
+		if(mmrp.checked->find(tree1) != end(*(mmrp.checked)) || mmrp.checked->find(tree2) != end(*(mmrp.checked)))
 			return MergeMetricResults(0.0, tree1, tree2, false, true);
 	}
 
@@ -715,12 +716,12 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 	if(tree1 == tree2)
 	{
 		MergeMetricResults results(static_cast<double>(EvaluableNode::GetDeepSize(tree1)), tree1, tree2, true, true);
-		memoized.emplace(std::make_pair(tree1, tree2), results);
+		mmrp.memoizedNodeMergePairs.emplace(std::make_pair(tree1, tree2), results);
 		return results;
 	}
 
 	//check current top nodes
-	auto commonality = CommonalityBetweenNodes(tree1, tree2);
+	auto commonality = CommonalityBetweenNodes(tree1, tree2, mmrp.requireExactMatches);
 
 	//see if can exit early, before inserting the nodes into the checked list and then removing them
 	size_t tree1_ordered_nodes_size = 0;
@@ -741,15 +742,15 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 	if(tree1_ordered_nodes_size == 0 && tree2_ordered_nodes_size == 0
 		&& tree1_mapped_nodes_size == 0 && tree2_mapped_nodes_size == 0)
 	{
-		memoized.emplace(std::make_pair(tree1, tree2), commonality);
+		mmrp.memoizedNodeMergePairs.emplace(std::make_pair(tree1, tree2), commonality);
 		return commonality;
 	}
 
-	if(checked != nullptr)
+	if(mmrp.checked != nullptr)
 	{
 		//remember that it has already checked when traversing tree, and then remove from checked at the end of the function
-		checked->insert(tree1);
-		checked->insert(tree2);
+		mmrp.checked->insert(tree1);
+		mmrp.checked->insert(tree2);
 	}
 
 	if(tree1_ordered_nodes_size > 0 && tree2_ordered_nodes_size > 0)
@@ -776,7 +777,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 				MergeMetricResults best_match_value(0.0, tree1, tree2, false, false);
 				for(size_t match_index = 0; match_index < a2.size(); match_index++)
 				{
-					auto match_value = NumberOfSharedNodes(a1_current, a2[match_index], memoized, checked);
+					auto match_value = NumberOfSharedNodes(a1_current, a2[match_index], mmrp);
 					if(!best_match_found || match_value > best_match_value)
 					{
 						best_match_found = true;
@@ -814,17 +815,17 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 			{
 				auto smallest_list_size = std::min(size1, size2);
 				if(smallest_list_size >= 1)
-					commonality += NumberOfSharedNodes(ocn1[0], ocn2[0], memoized, checked);
+					commonality += NumberOfSharedNodes(ocn1[0], ocn2[0], mmrp);
 
 				starting_index = 1;
 			}
 
 			FlatMatrix<MergeMetricResults<EvaluableNode *>> sequence_commonality;
 			ComputeSequenceCommonalityMatrix(sequence_commonality, ocn1, ocn2,
-				[&memoized, checked]
+				[&mmrp]
 				(EvaluableNode *a, EvaluableNode *b)
 				{
-					return EvaluableNodeTreeManipulation::NumberOfSharedNodes(a, b, memoized, checked);
+					return EvaluableNodeTreeManipulation::NumberOfSharedNodes(a, b, mmrp);
 				}, starting_index);
 
 			commonality += sequence_commonality.At(size1, size2);
@@ -842,7 +843,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 				auto smallest_list_size = std::min(a1.size(), a2.size());
 				if(smallest_list_size >= 1)
 				{
-					commonality += NumberOfSharedNodes(a1[0], a2[0], memoized, checked);
+					commonality += NumberOfSharedNodes(a1[0], a2[0], mmrp);
 
 					a1.erase(begin(a1));
 					a2.erase(begin(a2));
@@ -860,7 +861,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 
 				for(size_t match_index = 0; match_index < a2.size(); match_index += 2)
 				{
-					auto match_key = NumberOfSharedNodes(a1[0], a2[match_index], memoized, checked);
+					auto match_key = NumberOfSharedNodes(a1[0], a2[match_index], mmrp);
 
 					// key match dominates value match
 					if(!best_match_found || match_key > best_match_key)
@@ -871,7 +872,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 
 						//count the value node commonality as long as it exists and is nontrivial
 						if(match_key.IsNontrivialMatch() && a1.size() > 1 && a2.size() > match_index + 1)
-							best_match_value = NumberOfSharedNodes(a1[1], a2[match_index + 1], memoized, checked);
+							best_match_value = NumberOfSharedNodes(a1[1], a2[match_index + 1], mmrp);
 						else
 							best_match_value = MergeMetricResults<EvaluableNode *>(0.0, nullptr, nullptr, false, false);
 					}
@@ -906,7 +907,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 			//use size of smallest list
 			auto smallest_list_size = std::min(ocn1.size(), ocn2.size());
 			for(size_t i = 0; i < smallest_list_size; i++)
-				commonality += NumberOfSharedNodes(ocn1[i], ocn2[i], memoized, checked);
+				commonality += NumberOfSharedNodes(ocn1[i], ocn2[i], mmrp);
 
 			break;
 		}
@@ -924,7 +925,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 			if(other_node == end(tree_2_mcn))
 				continue;
 
-			commonality += NumberOfSharedNodes(node, other_node->second, memoized, checked);
+			commonality += NumberOfSharedNodes(node, other_node->second, mmrp);
 		}
 	}
 
@@ -935,7 +936,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 		{
 			for(auto node : tree1->GetOrderedChildNodesReference())
 			{
-				auto sub_match = NumberOfSharedNodes(node, tree2, memoized, checked);
+				auto sub_match = NumberOfSharedNodes(node, tree2, mmrp);
 
 				//mark as nonexact match because had to traverse downward,
 				// but preserve whether was an exact match for early stopping
@@ -944,7 +945,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 				if(sub_match > commonality)
 				{
 					commonality = sub_match;
-					memoized.emplace(std::make_pair(node, tree2), commonality);
+					mmrp.memoizedNodeMergePairs.emplace(std::make_pair(node, tree2), commonality);
 					if(exact_match)
 						break;
 				}
@@ -954,7 +955,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 		{
 			for(auto &[node_id, node] : tree1->GetMappedChildNodesReference())
 			{
-				auto sub_match = NumberOfSharedNodes(node, tree2, memoized, checked);
+				auto sub_match = NumberOfSharedNodes(node, tree2, mmrp);
 
 				//mark as nonexact match because had to traverse downward,
 				// but preserve whether was an exact match for early stopping
@@ -963,7 +964,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 				if(sub_match > commonality)
 				{
 					commonality = sub_match;
-					memoized.emplace(std::make_pair(node, tree2), commonality);
+					mmrp.memoizedNodeMergePairs.emplace(std::make_pair(node, tree2), commonality);
 					if(exact_match)
 						break;
 				}
@@ -978,7 +979,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 		{
 			for(auto node : tree2->GetOrderedChildNodesReference())
 			{
-				auto sub_match = NumberOfSharedNodes(tree1, node, memoized, checked);
+				auto sub_match = NumberOfSharedNodes(tree1, node, mmrp);
 
 				//mark as nonexact match because had to traverse downward,
 				// but preserve whether was an exact match for early stopping
@@ -987,7 +988,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 				if(sub_match > commonality)
 				{
 					commonality = sub_match;
-					memoized.emplace(std::make_pair(tree1, node), commonality);
+					mmrp.memoizedNodeMergePairs.emplace(std::make_pair(tree1, node), commonality);
 					if(exact_match)
 						break;
 				}
@@ -997,7 +998,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 		{
 			for(auto &[node_id, node] : tree2->GetMappedChildNodesReference())
 			{
-				auto sub_match = NumberOfSharedNodes(tree1, node, memoized, checked);
+				auto sub_match = NumberOfSharedNodes(tree1, node, mmrp);
 
 				//mark as nonexact match because had to traverse downward,
 				// but preserve whether was an exact match for early stopping
@@ -1006,7 +1007,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 				if(sub_match > commonality)
 				{
 					commonality = sub_match;
-					memoized.emplace(std::make_pair(tree1, node), commonality);
+					mmrp.memoizedNodeMergePairs.emplace(std::make_pair(tree1, node), commonality);
 					if(exact_match)
 						break;
 				}
@@ -1014,14 +1015,14 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 		}
 	}
 
-	if(checked != nullptr)
+	if(mmrp.checked != nullptr)
 	{
 		//remove from the checked list so don't block other traversals
-		checked->erase(tree1);
-		checked->erase(tree2);
+		mmrp.checked->erase(tree1);
+		mmrp.checked->erase(tree2);
 	}
 
-	memoized.emplace(std::make_pair(tree1, tree2), commonality);
+	mmrp.memoizedNodeMergePairs.emplace(std::make_pair(tree1, tree2), commonality);
 	return commonality;
 }
 
@@ -1207,14 +1208,15 @@ bool EvaluableNodeTreeManipulation::CollectLabelIndexesFromTreeAndMakeLabelNorma
 	return collected_all_label_values;
 }
 
-MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::CommonalityBetweenNodes(EvaluableNode *n1, EvaluableNode *n2)
+MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::CommonalityBetweenNodes(
+	EvaluableNode *n1, EvaluableNode *n2, bool require_exact_matches)
 {
 	if(n1 == nullptr && n2 == nullptr)
 		return MergeMetricResults(1.0, n1, n2, false, true);
 
 	auto [num_common_labels, num_unique_labels] = EvaluableNode::GetNodeCommonAndUniqueLabelCounts(n1, n2);
 
-	auto [_, commonality] = CommonalityBetweenNodeTypesAndValues(n1, n2);
+	auto [_, commonality] = CommonalityBetweenNodeTypesAndValues(n1, n2, require_exact_matches);
 
 	bool must_match = (num_unique_labels == 0 && num_common_labels > 0);
 	bool exact_match = (num_unique_labels == 0 && commonality == 1.0);
@@ -1222,7 +1224,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::CommonalityBe
 }
 
 std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBetweenNodeTypesAndValues(
-	EvaluableNode *n1, EvaluableNode *n2, bool require_exact_node_match)
+	EvaluableNode *n1, EvaluableNode *n2, bool require_exact_matches)
 {
 	bool n1_null = EvaluableNode::IsNull(n1);
 	bool n2_null = EvaluableNode::IsNull(n2);
@@ -1239,7 +1241,7 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 	auto n2_type = n2->GetType();
 
 	//can have much faster and lighter computations if only checking for exact matches
-	if(require_exact_node_match)
+	if(require_exact_matches)
 	{
 		if(n1_type != n2_type)
 			return std::make_pair(n1, 0.0);

@@ -132,17 +132,11 @@ void SeparableBoxFilterDataStore::RemoveColumnIndex(size_t column_index_to_remov
 
 	//will replace the values at index_to_remove with the values at index_to_move
 	size_t column_index_to_move = columnData.size() - 1;
-
 	StringInternPool::StringID label_id = columnData[column_index_to_remove]->stringId;
-
-	size_t num_columns = columnData.size();
 
 	//move data from the last column to the removed column if removing the label_id isn't the last column
 	if(column_index_to_remove != column_index_to_move)
 	{
-		for(size_t i = 0; i < numEntities; i++)
-			matrix[i * num_columns + column_index_to_remove] = matrix[i * num_columns + column_index_to_move];
-
 		//update column lookup
 		StringInternPool::StringID label_id_to_move = columnData[column_index_to_move]->stringId;
 		labelIdToColumnIndex[label_id_to_move] = column_index_to_remove;
@@ -154,21 +148,6 @@ void SeparableBoxFilterDataStore::RemoveColumnIndex(size_t column_index_to_remov
 	//remove the columnId lookup, reference, and column
 	labelIdToColumnIndex.erase(label_id);
 	columnData.pop_back();
-
-	//create new smaller container to hold the reduced data
-	std::vector<EvaluableNodeImmediateValue> old_matrix;
-	std::swap(old_matrix, matrix);
-
-	//if no columns left, then done
-	if(columnData.size() == 0)
-		return;
-
-	//move data over to new reduced copy of matrix
-	matrix.resize(columnData.size() * numEntities);
-	for(size_t i = 0; i < numEntities; i++)
-		std::memcpy(reinterpret_cast<void *>(&matrix[i * columnData.size()]),
-			reinterpret_cast<void *>(&old_matrix[i * (columnData.size() + 1)]),
-			sizeof(EvaluableNodeImmediateValue) * (columnData.size()));
 
 #ifdef SBFDS_VERIFICATION
 	VerifyAllEntitiesForAllColumns();

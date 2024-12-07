@@ -127,6 +127,8 @@ public:
 		if(label_sids.size() == 0 || entities.size() == 0)
 			return;
 
+		numEntities = std::max(numEntities, entities.size());
+
 		//resize the column data storage and populate column and label_id lookups
 		size_t num_columns_added = AddLabelsAsEmptyColumns(label_sids);
 

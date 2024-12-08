@@ -161,12 +161,12 @@ void SeparableBoxFilterDataStore::AddEntity(Entity *entity, size_t entity_index)
 	VerifyAllEntitiesForAllColumns();
 #endif
 
-	for(size_t column_index = 0; column_index < columnData.size(); column_index++)
+	for(auto &column_data : columnData)
 	{
 		EvaluableNodeImmediateValueType value_type;
 		EvaluableNodeImmediateValue value;
-		value_type = entity->GetValueAtLabelAsImmediateValue(columnData[column_index]->stringId, value);
-		columnData[column_index]->InsertIndexValue(value_type, value, entity_index);
+		value_type = entity->GetValueAtLabelAsImmediateValue(column_data->stringId, value);
+		column_data->InsertIndexValue(value_type, value, entity_index);
 	}
 
 	//count this entity
@@ -241,8 +241,8 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 	if(entity_index_to_reassign + 1 == numEntities
 		|| (entity_index_to_reassign + 1 >= numEntities && entity_index + 1 == numEntities))
 	{
-		for(size_t i = 0; i < columnData.size(); i++)
-			columnData[i]->valueEntries.pop_back();
+		for(auto &column_data : columnData)
+			column_data->valueEntries.pop_back();
 	}
 	
 	//clean up any labels that aren't relevant
@@ -264,13 +264,11 @@ void SeparableBoxFilterDataStore::UpdateAllEntityLabels(Entity *entity, size_t e
 	VerifyAllEntitiesForAllColumns();
 #endif
 
-	for(size_t column_index = 0; column_index < columnData.size(); column_index++)
+	for(auto &column_data : columnData)
 	{
-		auto &column_data = columnData[column_index];
-
 		EvaluableNodeImmediateValueType value_type;
 		EvaluableNodeImmediateValue value;
-		value_type = entity->GetValueAtLabelAsImmediateValue(columnData[column_index]->stringId, value);
+		value_type = entity->GetValueAtLabelAsImmediateValue(column_data->stringId, value);
 
 		column_data->ChangeIndexValue(value_type, value, entity_index);
 	}
@@ -295,7 +293,7 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 	if(column == end(labelIdToColumnIndex))
 		return;
 	size_t column_index = column->second;
-	auto &column_data = columnData[column_index];
+	auto column_data = columnData[column_index].get();
 
 #ifdef SBFDS_VERIFICATION
 	VerifyAllEntitiesForColumn(column_index);

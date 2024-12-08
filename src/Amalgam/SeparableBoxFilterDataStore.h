@@ -749,7 +749,8 @@ protected:
 	//returns the distance between two nodes while respecting the feature mask
 	inline double GetDistanceBetween(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		size_t radius_column_index, size_t other_index, bool high_accuracy)
-	{		double dist_accum = 0.0;
+	{
+		double dist_accum = 0.0;
 		for(size_t i = 0; i < r_dist_eval.featureData.size(); i++)
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[i];

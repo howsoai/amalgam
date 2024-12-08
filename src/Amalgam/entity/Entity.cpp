@@ -226,6 +226,7 @@ bool Entity::GetValueAtLabelAsString(StringInternPool::StringID label_sid, std::
 	return true;
 }
 
+//TODO 21799: change this to return EvaluableNodeImmediateValueWithType, update corresponding SBFDS methods
 EvaluableNodeImmediateValueType Entity::GetValueAtLabelAsImmediateValue(StringInternPool::StringID label_sid,
 	EvaluableNodeImmediateValue &value_out, bool on_self)
 {

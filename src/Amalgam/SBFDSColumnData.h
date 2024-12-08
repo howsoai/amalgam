@@ -1221,6 +1221,7 @@ public:
 	//name of the column
 	StringInternPool::StringID stringId;
 
+	//TODO 21799: wrap access in a method
 	//for each index, stores the value
 	std::vector<EvaluableNodeImmediateValue> valueEntries;
 

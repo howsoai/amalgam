@@ -243,6 +243,7 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 	{
 		for(auto &column_data : columnData)
 			column_data->valueEntries.pop_back();
+		numEntities--;
 	}
 	
 	//clean up any labels that aren't relevant
@@ -931,6 +932,9 @@ void SeparableBoxFilterDataStore::DeleteEntityIndexFromColumns(size_t entity_ind
 		else
 			column_data->valueEntries[entity_index] = std::numeric_limits<double>::quiet_NaN();
 	}
+
+	if(remove_last_entity)
+		numEntities--;
 }
 
 size_t SeparableBoxFilterDataStore::AddLabelsAsEmptyColumns(std::vector<StringInternPool::StringID> &label_sids)

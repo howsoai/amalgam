@@ -14,7 +14,6 @@
 //project headers:
 #include "Concurrency.h"
 #include "FastMath.h"
-#include "EntityQueriesStatistics.h"
 #include "EvaluableNode.h"
 #include "IntegerSet.h"
 #include "GeneralizedDistance.h"
@@ -22,9 +21,6 @@
 #include "SBFDSColumnData.h"
 
 //system headers:
-#include <bitset>
-#include <cfloat>
-#include <cmath>
 #include <cstdint>
 #include <limits>
 #include <vector>

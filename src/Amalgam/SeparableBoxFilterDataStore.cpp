@@ -29,11 +29,10 @@ void SeparableBoxFilterDataStore::BuildLabel(size_t column_index, const std::vec
 	// and every function called here assumes that entities are inserted in increasing order
 	for(size_t entity_index = 0; entity_index < entities.size(); entity_index++)
 	{
-		EvaluableNodeImmediateValueType value_type;
-		EvaluableNodeImmediateValue value;
-		value_type = entities[entity_index]->GetValueAtLabelAsImmediateValue(label_id, value, is_label_accessible);
+		auto value = entities[entity_index]->GetValueAtLabelAsImmediateValue(label_id, is_label_accessible);
 
-		column_data->InsertNextIndexValueExceptNumbers(value_type, value, entity_index, entities_with_number_values);
+		column_data->InsertNextIndexValueExceptNumbers(value.nodeType, value.nodeValue,
+			entity_index, entities_with_number_values);
 	}
 
 	//sort the number values for efficient insertion, but keep the entities in their order
@@ -163,10 +162,8 @@ void SeparableBoxFilterDataStore::AddEntity(Entity *entity, size_t entity_index)
 
 	for(auto &column_data : columnData)
 	{
-		EvaluableNodeImmediateValueType value_type;
-		EvaluableNodeImmediateValue value;
-		value_type = entity->GetValueAtLabelAsImmediateValue(column_data->stringId, value);
-		column_data->InsertIndexValue(value_type, value, entity_index);
+		auto value = entity->GetValueAtLabelAsImmediateValue(column_data->stringId);
+		column_data->InsertIndexValue(value.nodeType, value.nodeValue, entity_index);
 	}
 
 	//count this entity
@@ -267,11 +264,8 @@ void SeparableBoxFilterDataStore::UpdateAllEntityLabels(Entity *entity, size_t e
 
 	for(auto &column_data : columnData)
 	{
-		EvaluableNodeImmediateValueType value_type;
-		EvaluableNodeImmediateValue value;
-		value_type = entity->GetValueAtLabelAsImmediateValue(column_data->stringId, value);
-
-		column_data->ChangeIndexValue(value_type, value, entity_index);
+		auto value = entity->GetValueAtLabelAsImmediateValue(column_data->stringId);
+		column_data->ChangeIndexValue(value.nodeType, value.nodeValue, entity_index);
 	}
 
 	//clean up any labels that aren't relevant
@@ -301,11 +295,9 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 #endif
 
 	//get the new value
-	EvaluableNodeImmediateValueType value_type;
-	EvaluableNodeImmediateValue value;
-	value_type = entity->GetValueAtLabelAsImmediateValue(column_data->stringId, value);
+	auto value = entity->GetValueAtLabelAsImmediateValue(column_data->stringId);
 
-	column_data->ChangeIndexValue(value_type, value, entity_index);
+	column_data->ChangeIndexValue(value.nodeType, value.nodeValue, entity_index);
 
 	//remove the label if no longer relevant
 	if(IsColumnIndexRemovable(column_index))

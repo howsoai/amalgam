@@ -78,7 +78,7 @@ public:
 														max_diff, query_feature_index, high_accuracy);
 	}
 
-	//returns the the element at index's value for the specified column at column_index, requires valid index
+	//returns a reference to the element for index at absolute_feature_index, assuming both are valid values
 	__forceinline EvaluableNodeImmediateValue &GetValue(size_t index, size_t absolute_feature_index)
 	{
 		return columnData[absolute_feature_index]->valueEntries[index];

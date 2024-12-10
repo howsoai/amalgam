@@ -284,13 +284,28 @@ if 2
 7
 (null)
 
-11
+[11 {} (null)]
+
+[(null) {} "Execution step limit exceeded"]
+
+[11 {} (null)]
+
+[11 {} (null)]
+
+[11 {} (null)]
+
+[(null) {} "Execution depth exceeded"]
+
 (null)
-11
-11
-11
-(null)
-(null)
+
+[
+	(null)
+	{"Warning: undefined symbol x" 1 "Warning: undefined symbol y" 1}
+	(null)
+]
+
+[(null) {} "Execution depth exceeded"]
+
 --while--
 1
 2
@@ -4627,8 +4642,16 @@ execution limits tests
 ]
 --call_container--
 8
-8
-(null)
+[
+	[8 {} (null)]
+	{}
+	(null)
+]
+
+[(null) {} "Execution step limit exceeded"]
+
+[(null) {} "Execution step limit exceeded"]
+
 --circular, repeated, and preevaluated references--
 {a 1 b 2}
 (associate "a" 1 "b" 2)

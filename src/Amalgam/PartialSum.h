@@ -84,7 +84,7 @@ public:
 		numMaskBuckets = 1;
 	}
 
-	//resizes the buffer to accomodate the dimensions and instances specified and clears all data
+	//resizes the buffer to accommodate the dimensions and instances specified and clears all data
 	void ResizeAndClear(size_t num_dimensions, size_t num_instances)
 	{
 		numTerms = num_dimensions;

@@ -1,6 +1,7 @@
 //project headers:
 #include "Interpreter.h"
 
+#include "AssetManager.h"
 #include "Cryptography.h"
 #include "DateTimeFormat.h"
 #include "EvaluableNodeTreeManipulation.h"
@@ -194,10 +195,30 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 			return value;
 	}
 
-	//if didn't find it in the stack, try it in the labels
+	// if didn't find it in the stack, try it in the labels
 	EntityReadReference cur_entity_ref(curEntity);
 	if(cur_entity_ref != nullptr)
-		return cur_entity_ref->GetValueAtLabel(sid, nullptr, true, true);
+	{
+		std::pair<EvaluableNodeReference, bool> value_tuple = cur_entity_ref->GetValueAtLabel(sid, nullptr, true, true);
+
+		if(!value_tuple.second)
+		{
+			if(asset_manager.warnOnUndefined)
+				std::cerr << "Undefined symbol: " << sid->string << " " << en->GetCommentsString() << std::endl;
+
+			if(performanceConstraints != nullptr && performanceConstraints->collectWarnings)
+			{
+				if(performanceConstraints != nullptr)
+					performanceConstraints->addWarning(sid->string + " " + en->GetCommentsString());
+			}
+		}
+
+		return cur_entity_ref->GetValueAtLabel(sid, nullptr, true, true).first;
+	}
+
+
+	if (performanceConstraints != nullptr && performanceConstraints->collectWarnings)
+		performanceConstraints->addWarning(sid->string + " " + en->GetCommentsString());
 
 	return EvaluableNodeReference::Null();
 }

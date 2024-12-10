@@ -16,6 +16,7 @@
 #include <string>
 #include <type_traits>
 #include <vector>
+#include <unordered_set>
 
 //forward declarations:
 class EntityQueryCondition;
@@ -24,6 +25,8 @@ class EntityQueryCondition;
 class PerformanceConstraints
 {
 public:
+
+	enum class ViolationType { NoViolation, NodeAllocation, ExecutionStep, ExecutionDepth, ContainedEntitiesNumber, ContainedEntitiesDepth };
 
 	//if true, there is a limit to how long can utilize CPU
 	constexpr bool ConstrainedExecutionSteps()
@@ -130,6 +133,33 @@ public:
 	//constrains the maximum length of an entity id (primarily to make sure it doesn't cause problems for file systems)
 	//If 0, then unlimited
 	size_t maxEntityIdLength;
+
+	//If true, collectWarnings
+	bool collectWarnings;
+
+	
+	void addWarning(std::string warning)
+	{
+#ifdef MULTITHREAD_SUPPORT
+		Concurrency::WriteLock warningLock(warningMutex);
+#endif
+		warnings[warning]++;
+	}
+
+	FastHashMap<std::string, size_t> &GetWarnings()
+	{
+		return warnings;
+	}
+
+	ViolationType constraintViolation = ViolationType::NoViolation;
+
+	private: 
+#ifdef MULTITHREAD_SUPPORT
+	Concurrency::ReadWriteMutex warningMutex;
+#endif
+
+	//maps warnings to the count of their occurence 
+	FastHashMap<std::string, size_t> warnings;
 };
 
 class Interpreter
@@ -993,6 +1023,8 @@ protected:
 			if(performanceConstraints->curExecutionStep > performanceConstraints->maxNumExecutionSteps)
 			{
 				performanceConstraints->constraintsExceeded = true;
+
+				performanceConstraints->constraintViolation = PerformanceConstraints::ViolationType::ExecutionStep;
 				return true;
 			}
 		}
@@ -1003,6 +1035,7 @@ protected:
 			if(cur_allocated_nodes > performanceConstraints->maxNumAllocatedNodes)
 			{
 				performanceConstraints->constraintsExceeded = true;
+				performanceConstraints->constraintViolation = PerformanceConstraints::ViolationType::NodeAllocation;
 				return true;
 			}
 		}
@@ -1012,6 +1045,7 @@ protected:
 			if(opcodeStackNodes->size() > performanceConstraints->maxOpcodeExecutionDepth)
 			{
 				performanceConstraints->constraintsExceeded = true;
+				performanceConstraints->constraintViolation = PerformanceConstraints::ViolationType::ExecutionDepth;
 				return true;
 			}
 		}
@@ -1019,6 +1053,8 @@ protected:
 		//return whether they have ever been exceeded
 		return performanceConstraints->constraintsExceeded;
 	}
+
+	const EvaluableNodeReference BundleResultWithWarnings(EvaluableNodeReference result, PerformanceConstraints *perf_constraints_ptr);
 
 	//opcodes
 	//returns an EvaluableNode tree from evaluating the tree passed in (or nullptr) and associated properties in an EvaluableNodeReference
@@ -1413,7 +1449,7 @@ protected:
 		return EvaluableNodeReference::Null();
 	}
 
-  public:
+public:
 	//where to allocate new nodes
 	EvaluableNodeManager *evaluableNodeManager;
 

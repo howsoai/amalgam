@@ -356,9 +356,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 		EvaluableNodeReference value;
 		if(immediate_result)
 			value.SetReference(
-				target_entity->GetValueAtLabelAsImmediateValue(label_sid, target_entity == curEntity, evaluableNodeManager), true);
+				target_entity->GetValueAtLabelAsImmediateValue(label_sid, target_entity == curEntity, evaluableNodeManager).first, true);
 		else
-			value = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager, direct, target_entity == curEntity);
+			value = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager, direct, target_entity == curEntity).first;
+
 		evaluableNodeManager->FreeNodeTreeIfPossible(to_lookup);
 
 		return value;
@@ -378,7 +379,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 			cnr.SetReference(cn);
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);
 
-			EvaluableNodeReference value = target_entity->GetValueAtLabel(cn_id, evaluableNodeManager, direct, target_entity == curEntity);
+			auto [value, _] = target_entity->GetValueAtLabel(cn_id, evaluableNodeManager, direct, target_entity == curEntity);
 
 			cn = value;
 			to_lookup.UpdatePropertiesBasedOnAttachedNode(value, first_node);
@@ -405,7 +406,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 			cnr.SetReference(cn);
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);
 
-			EvaluableNodeReference value = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager, direct, target_entity == curEntity);
+			auto [value, _] = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager, direct, target_entity == curEntity);
 
 			cn = value;
 			to_lookup.UpdatePropertiesBasedOnAttachedNode(value, i == 0);
@@ -436,8 +437,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 
 	PerformanceConstraints perf_constraints;
 	PerformanceConstraints *perf_constraints_ptr = nullptr;
-	if(PopulatePerformanceConstraintsFromParams(ocn, 3, perf_constraints, true))
-		perf_constraints_ptr = &perf_constraints;
+	PopulatePerformanceConstraintsFromParams(ocn, 3, perf_constraints, true);
+		
+	perf_constraints_ptr = &perf_constraints;
 
 	//attempt to get arguments
 	EvaluableNodeReference args = EvaluableNodeReference::Null();
@@ -548,9 +550,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		performanceConstraints->AccruePerformanceCounters(perf_constraints_ptr);
 
 	if(perf_constraints_ptr != nullptr && perf_constraints_ptr->constraintsExceeded)
-		return EvaluableNodeReference::Null();
+	{
+		if(perf_constraints_ptr->collectWarnings)
+			return BundleResultWithWarnings(EvaluableNodeReference::Null(), perf_constraints_ptr);
+		else
+			return EvaluableNodeReference::Null();
+	}
 
-	return result;
+	if(perf_constraints_ptr != nullptr && perf_constraints_ptr->collectWarnings)
+		return BundleResultWithWarnings(result, perf_constraints_ptr);
+	else
+		return result;
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNode *en, bool immediate_result)
@@ -575,8 +585,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 
 	PerformanceConstraints perf_constraints;
 	PerformanceConstraints *perf_constraints_ptr = nullptr;
-	if(PopulatePerformanceConstraintsFromParams(ocn, 2, perf_constraints))
-		perf_constraints_ptr = &perf_constraints;
+	PopulatePerformanceConstraintsFromParams(ocn, 2, perf_constraints);
+	perf_constraints_ptr = &perf_constraints;
 
 	//attempt to get arguments
 	EvaluableNodeReference args = EvaluableNodeReference::Null();
@@ -645,7 +655,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 		performanceConstraints->AccruePerformanceCounters(perf_constraints_ptr);
 
 	if(perf_constraints_ptr != nullptr && perf_constraints_ptr->constraintsExceeded)
-		return EvaluableNodeReference::Null();
+	{
+		if(perf_constraints.collectWarnings)
+			return BundleResultWithWarnings(EvaluableNodeReference::Null(), perf_constraints_ptr);
+		else
+			return EvaluableNodeReference::Null();
+	}
 
-	return copied_result;
+	if(perf_constraints_ptr != nullptr && perf_constraints.collectWarnings)
+		return BundleResultWithWarnings(copied_result, perf_constraints_ptr);
+	else
+		return copied_result;
 }

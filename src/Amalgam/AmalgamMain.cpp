@@ -101,6 +101,7 @@ PLATFORM_MAIN_CONSOLE
 	bool debug_state = false;
 	bool debug_minimal = false;
 	bool debug_sources = false;
+	bool warn_on_undefined = true;
 	bool profile_opcodes = false;
 	bool profile_labels = false;
 	size_t profile_count = 0;
@@ -165,6 +166,8 @@ PLATFORM_MAIN_CONSOLE
 		}
 		else if(args[i] == "--debug-sources")
 			debug_sources = true;
+		else if (args[i] == "--no-warm-on-undefined")
+			warn_on_undefined = false;
 		else if(args[i] == "--nosbfds")
 			_enable_SBF_datastore = false;
 		else if(args[i] == "--trace")
@@ -207,6 +210,9 @@ PLATFORM_MAIN_CONSOLE
 
 	if(debug_sources)
 		asset_manager.debugSources = true;
+
+	if(warn_on_undefined)
+		asset_manager.warnOnUndefined = true;
 
 	if(debug_minimal)
 		asset_manager.debugMinimal = true;

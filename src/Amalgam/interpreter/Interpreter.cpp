@@ -829,8 +829,13 @@ bool Interpreter::PopulatePerformanceConstraintsFromParams(std::vector<Evaluable
 	perf_constraints.maxContainedEntityDepth = 0;
 	perf_constraints.maxEntityIdLength = 0;
 
+
+	size_t warning_override_offset = perf_constraint_param_offset + 3;
+
 	if(include_entity_constraints)
 	{
+		warning_override_offset += 3;
+
 		//populate maxContainedEntities
 		size_t max_contained_entities_offset = perf_constraint_param_offset + 3;
 		if(params.size() > max_contained_entities_offset)
@@ -873,6 +878,13 @@ bool Interpreter::PopulatePerformanceConstraintsFromParams(std::vector<Evaluable
 		}
 	}
 
+
+	//check if caller specifed override of the default warning collections behavior
+	if(params.size() > warning_override_offset)
+		perf_constraints.collectWarnings = InterpretNodeIntoBoolValue(params[warning_override_offset]);
+	else
+		perf_constraints.collectWarnings = true;
+
 	return any_constraints;
 }
 
@@ -900,6 +912,8 @@ void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_const
 			perf_constraints->maxNumExecutionSteps = 1;
 			perf_constraints->curExecutionStep = 1;
 			perf_constraints->constraintsExceeded = true;
+
+			perf_constraints->constraintViolation = PerformanceConstraints::ViolationType::ExecutionStep;
 		}
 	}
 
@@ -920,6 +934,8 @@ void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_const
 		{
 			perf_constraints->maxNumAllocatedNodes = 1;
 			perf_constraints->constraintsExceeded = true;
+
+			perf_constraints->constraintViolation = PerformanceConstraints::ViolationType::NodeAllocation;
 		}
 	}
 
@@ -951,6 +967,7 @@ void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_const
 		{
 			perf_constraints->maxOpcodeExecutionDepth = 1;
 			perf_constraints->constraintsExceeded = true;
+			perf_constraints->constraintViolation = PerformanceConstraints::ViolationType::ExecutionDepth;
 		}
 	}
 
@@ -979,6 +996,7 @@ void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_const
 			{
 				max_entities = 0;
 				perf_constraints->constraintsExceeded = true;
+				perf_constraints->constraintViolation = PerformanceConstraints::ViolationType::ContainedEntitiesDepth;
 			}
 			else
 			{
@@ -1008,6 +1026,7 @@ void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_const
 		{
 			perf_constraints->maxContainedEntityDepth = 0;
 			perf_constraints->constraintsExceeded = true;
+			perf_constraints->constraintViolation = PerformanceConstraints::ViolationType::ContainedEntitiesDepth;
 		}
 		else
 		{

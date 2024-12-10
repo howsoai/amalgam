@@ -543,10 +543,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	auto node_stack = CreateOpcodeStackStateSaver(function);
 
 	PerformanceConstraints perf_constraints;
-	PerformanceConstraints *perf_constraints_ptr = nullptr;
-	if(PopulatePerformanceConstraintsFromParams(ocn, 2, perf_constraints))
-		perf_constraints_ptr = &perf_constraints;
 
+	PopulatePerformanceConstraintsFromParams(ocn, 2, perf_constraints);
+	
 	if(_label_profiling_enabled && function->GetNumLabels() > 0)
 		PerformanceProfiler::StartOperation(function->GetLabel(0), evaluableNodeManager->GetNumberOfUsedNodes());
 
@@ -559,13 +558,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	EvaluableNodeReference scope_stack = ConvertArgsToScopeStack(args, *evaluableNodeManager);
 	node_stack.PushEvaluableNode(scope_stack);
 
-	PopulatePerformanceCounters(perf_constraints_ptr, nullptr);
+	PopulatePerformanceCounters(&perf_constraints, nullptr);
 
 	Interpreter sandbox(evaluableNodeManager, randomStream.CreateOtherStreamViaRand(),
-		writeListeners, printListener, perf_constraints_ptr, nullptr, this);
+		writeListeners, printListener, &perf_constraints, nullptr, this);
 
 #ifdef MULTITHREAD_SUPPORT
-	//everything at this point is referenced on stacks; allow the sandbox to trigger a garbage collect without this interpreter blocking
+	// everything at this point is referenced on stacks; allow the sandbox to trigger a garbage collect without this interpreter blocking
 	std::swap(memoryModificationLock, sandbox.memoryModificationLock);
 #endif
 
@@ -587,12 +586,77 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 		PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
 
 	if(performanceConstraints != nullptr)
-		performanceConstraints->AccruePerformanceCounters(perf_constraints_ptr);
+		performanceConstraints->AccruePerformanceCounters(&perf_constraints);
 
-	if(perf_constraints_ptr != nullptr && perf_constraints_ptr->constraintsExceeded)
-		return EvaluableNodeReference::Null();
+	if(perf_constraints.constraintsExceeded && perf_constraints.collectWarnings)
+	{
+		if(perf_constraints.collectWarnings)
+			return BundleResultWithWarnings(EvaluableNodeReference::Null(), &perf_constraints);
+		else
+			return EvaluableNodeReference::Null();
+	}
 
-	return result;
+	if(perf_constraints.collectWarnings)
+		return BundleResultWithWarnings(result, &perf_constraints);
+	else
+		return result;
+}
+
+static std::string ConstraintViolationToString(PerformanceConstraints::ViolationType violation)
+{
+
+	switch(violation)
+	{
+	case PerformanceConstraints::ViolationType::NoViolation:
+		return "";
+		break;
+	case PerformanceConstraints::ViolationType::ContainedEntitiesDepth:
+		return "Contained entities depth exceeded";
+		break;
+	case PerformanceConstraints::ViolationType::ContainedEntitiesNumber:
+		return "Contained entities number limit exceeded";
+		break;
+	case PerformanceConstraints::ViolationType::ExecutionDepth:
+		return "Execution depth exceeded";
+		break;
+	case PerformanceConstraints::ViolationType::ExecutionStep:
+		return "Execution step limit exceeded";
+		break;
+	case PerformanceConstraints::ViolationType::NodeAllocation:
+		return "Node allocation limit exceeded";
+		break;
+	default:
+		//cases should be exhaustive, so this is unreachable
+		assert(false);
+		break;
+	}
+
+	assert(false);
+	return ""; //unreachable
+}
+
+const EvaluableNodeReference Interpreter::BundleResultWithWarnings(EvaluableNodeReference result, PerformanceConstraints *perf_constraints)
+{
+	EvaluableNodeReference warning_assoc = CreateAssocOfNumbersFromIteratorAndFunctions(perf_constraints->GetWarnings(), [](std::pair<std::string, size_t> warning_count)
+																						{ return string_intern_pool.CreateStringReference(warning_count.first); }, [](std::pair<std::string, size_t> warning_count)
+																						{ return static_cast<double>(warning_count.second); }, evaluableNodeManager);
+
+	EvaluableNodeReference constraint_violation_string = EvaluableNodeReference(evaluableNodeManager->AllocNode(ConstraintViolationToString(perf_constraints->constraintViolation)), true);												
+
+	EvaluableNodeReference result_tuple(evaluableNodeManager->AllocNode(ENT_LIST), true);
+
+	auto &result_tuple_ocn = result_tuple->GetOrderedChildNodesReference();
+
+	result_tuple_ocn.reserve(3);
+	result_tuple_ocn.push_back(result);
+	result_tuple_ocn.push_back(warning_assoc);
+	result_tuple_ocn.push_back(constraint_violation_string);
+
+	result_tuple.UpdatePropertiesBasedOnAttachedNode(result, false);
+	result_tuple.UpdatePropertiesBasedOnAttachedNode(warning_assoc, true);
+	result_tuple.UpdatePropertiesBasedOnAttachedNode(constraint_violation_string, true);
+
+	return result_tuple;
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, bool immediate_result)

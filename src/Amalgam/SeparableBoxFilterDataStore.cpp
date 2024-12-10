@@ -26,7 +26,7 @@ void SeparableBoxFilterDataStore::BuildLabel(size_t column_index, const std::vec
 	// and every function called here assumes that entities are inserted in increasing order
 	for(size_t entity_index = 0; entity_index < entities.size(); entity_index++)
 	{
-		auto value = entities[entity_index]->GetValueAtLabelAsImmediateValue(label_id, is_label_accessible);
+		auto [value, found] = entities[entity_index]->GetValueAtLabelAsImmediateValue(label_id, is_label_accessible);
 		column_data->InsertNextIndexValueExceptNumbers(value.nodeType, value.nodeValue, entity_index);
 	}
 
@@ -152,7 +152,7 @@ void SeparableBoxFilterDataStore::AddEntity(Entity *entity, size_t entity_index)
 
 	for(auto &column_data : columnData)
 	{
-		auto value = entity->GetValueAtLabelAsImmediateValue(column_data->stringId);
+		auto [value, found] = entity->GetValueAtLabelAsImmediateValue(column_data->stringId);
 		column_data->InsertIndexValue(value.nodeType, value.nodeValue, entity_index);
 	}
 
@@ -254,7 +254,7 @@ void SeparableBoxFilterDataStore::UpdateAllEntityLabels(Entity *entity, size_t e
 
 	for(auto &column_data : columnData)
 	{
-		auto value = entity->GetValueAtLabelAsImmediateValue(column_data->stringId);
+		auto [value, found] = entity->GetValueAtLabelAsImmediateValue(column_data->stringId);
 		column_data->ChangeIndexValue(value.nodeType, value.nodeValue, entity_index);
 	}
 
@@ -285,7 +285,7 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 #endif
 
 	//get the new value
-	auto value = entity->GetValueAtLabelAsImmediateValue(column_data->stringId);
+	auto [value, found] = entity->GetValueAtLabelAsImmediateValue(column_data->stringId);
 
 	column_data->ChangeIndexValue(value.nodeType, value.nodeValue, entity_index);
 

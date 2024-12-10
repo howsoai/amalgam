@@ -673,16 +673,16 @@ public:
 		EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr);
 
-	//collects garbage on evaluableNodeManager
+	//collects garbage on evaluableNodeManager, assuming it has a write reference
 #ifdef MULTITHREAD_SUPPORT
-	//if multithreaded, then memory_modification_lock is the lock used for memoryModificationMutex
-	__forceinline void CollectGarbage(Concurrency::ReadLock *memory_modification_lock)
+	__forceinline void CollectGarbageWithEntityWriteReference()
 	{
-		if(evaluableNodeManager.RecommendGarbageCollection())
-			evaluableNodeManager.CollectGarbage(memory_modification_lock);
+		if(evaluableNodeManager.RecommendGarbageCollection()
+				&& !evaluableNodeManager.IsAnyNodeReferencedOtherThanRoot())
+			evaluableNodeManager.CollectGarbage();
 	}
 #else
-	__forceinline void CollectGarbage()
+	__forceinline void CollectGarbageWithEntityWriteReference()
 	{
 		if(evaluableNodeManager.RecommendGarbageCollection())
 			evaluableNodeManager.CollectGarbage();

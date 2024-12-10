@@ -197,11 +197,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_AC
 			}
 		}
 
-	#ifdef MULTITHREAD_SUPPORT
-		target_entity->CollectGarbage(&memoryModificationLock);
-	#else
-		target_entity->CollectGarbage();
-	#endif
+		target_entity->CollectGarbageWithEntityWriteReference();
 	}
 
 	return AllocReturn(all_assignments_successful, immediate_result);

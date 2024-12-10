@@ -724,12 +724,12 @@ public:
 	//updates the memory threshold when garbage collection will be next called
 	void UpdateGarbageCollectionTrigger(size_t previous_num_nodes = 0);
 
-	//runs heuristics and collects garbage
+	//collects garbage
+	void CollectGarbage();
+
 #ifdef MULTITHREAD_SUPPORT
 	//if multithreaded, then memory_modification_lock is the lock used for memoryModificationMutex if not nullptr
-	void CollectGarbage(Concurrency::ReadLock *memory_modification_lock);
-#else
-	void CollectGarbage();
+	void CollectGarbageWithConcurrentAccess(Concurrency::ReadLock *memory_modification_lock);
 #endif
 
 	//frees an EvaluableNode (must be owned by this EvaluableNodeManager)

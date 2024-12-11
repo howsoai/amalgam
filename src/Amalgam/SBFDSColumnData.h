@@ -693,12 +693,12 @@ public:
 	inline size_t GetNumUniqueValues(EvaluableNodeImmediateValueType value_type = ENIVT_NULL)
 	{
 		if(value_type == ENIVT_NUMBER)
-			return numberIndices.size();
+			return sortedNumberValueEntries.size();
 
 		if(value_type == ENIVT_STRING_ID)
-			return stringIdIndices.size();
+			return stringIdValueEntries.size();
 
-		return numberIndices.size() + stringIdIndices.size() + codeIndices.size();
+		return sortedNumberValueEntries.size() + stringIdIndices.size();
 	}
 
 	//returns the maximum difference between value and any other value for this column

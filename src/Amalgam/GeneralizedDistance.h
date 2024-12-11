@@ -1057,7 +1057,7 @@ public:
 	enum EffectiveFeatureDifferenceType : uint32_t
 	{
 		//everything that isn't initially populated shares the same value
-		//represented by precomputedRemainingIdenticalDistanceTerm
+		//represented by defaultNominalNonMatchDistanceTerm
 		EFDT_REMAINING_IDENTICAL_PRECOMPUTED,
 		//everything is precomputed from interned values that are looked up
 		EFDT_UNIVERSALLY_INTERNED_PRECOMPUTED,
@@ -1132,7 +1132,10 @@ public:
 				double default_deviation = deviations_for_value->second.defaultDeviation;
 				if(FastIsNaN(default_deviation))
 				{
-					deviations.defaultDeviation
+					feature_data.defaultNominalMatchDistanceTerm
+						= distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
+
+					feature_data.defaultNominalNonMatchDistanceTerm
 						= distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
 				}
 				else
@@ -1144,8 +1147,12 @@ public:
 					//divide the probability among the other classes
 					double prob_class_given_nonmatch = default_deviation / nonmatching_classes;
 
-					deviations.defaultDeviation
-						= distEvaluator->ComputeDistanceTermNominalNonmatchFromMatchProbabilities(
+					feature_data.defaultNominalMatchDistanceTerm =
+						distEvaluator->ComputeDistanceTermNominalMatchFromMatchProbabilities(
+							index, prob_class_given_match, high_accuracy);
+
+					feature_data.defaultNominalNonMatchDistanceTerm =
+						distEvaluator->ComputeDistanceTermNominalNonmatchFromMatchProbabilities(
 							index, prob_class_given_match, prob_class_given_nonmatch, high_accuracy);
 				}
 			}
@@ -1169,7 +1176,10 @@ public:
 				double default_deviation = deviations_for_sid->second.defaultDeviation;
 				if(FastIsNaN(default_deviation))
 				{
-					deviations.defaultDeviation
+					feature_data.defaultNominalMatchDistanceTerm
+						= distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
+
+					feature_data.defaultNominalNonMatchDistanceTerm
 						= distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
 				}
 				else
@@ -1181,7 +1191,11 @@ public:
 					//divide the probability among the other classes
 					double prob_class_given_nonmatch = default_deviation / nonmatching_classes;
 
-					deviations.defaultDeviation
+					feature_data.defaultNominalMatchDistanceTerm =
+						distEvaluator->ComputeDistanceTermNominalMatchFromMatchProbabilities(
+							index, prob_class_given_match, high_accuracy);
+
+					feature_data.defaultNominalNonMatchDistanceTerm
 						= distEvaluator->ComputeDistanceTermNominalNonmatchFromMatchProbabilities(
 							index, prob_class_given_match, prob_class_given_nonmatch, high_accuracy);
 				}
@@ -1274,7 +1288,7 @@ public:
 					return dist_term_entry->second;
 
 				if(other_value.number == feature_data.targetValue.GetValueAsNumber())
-					return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
+					return feature_data.defaultNominalMatchDistanceTerm;
 			}
 			else if(other_type == ENIVT_STRING_ID)
 			{
@@ -1283,7 +1297,7 @@ public:
 					return dist_term_entry->second;
 
 				if(other_value.stringID == feature_data.targetValue.GetValueAsStringIDIfExists())
-					return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
+					return feature_data.defaultNominalMatchDistanceTerm;
 			}
 
 			if(EvaluableNodeImmediateValue::IsNull(other_type, other_value))
@@ -1363,7 +1377,7 @@ public:
 	//returns the smallest nonmatching distance term regardless of value
 	__forceinline double ComputeDistanceTermNominalNonNullSmallestNonmatch(size_t index, bool high_accuracy)
 	{
-		double match_dist_term = distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
+		double match_dist_term = featureData[index].defaultNominalMatchDistanceTerm;
 		double smallest_nonmatch = ComputeDistanceTermNonNullNominalNextSmallest(match_dist_term, index, high_accuracy);
 
 		//if there is no such value, return infinite
@@ -1408,7 +1422,7 @@ public:
 		void Clear()
 		{
 			effectiveFeatureType = EFDT_CONTINUOUS_NUMERIC;
-			precomputedRemainingIdenticalDistanceTerm = 0.0;
+			defaultNominalNonMatchDistanceTerm = 0.0;
 			internedDistanceTerms.clear();
 			nominalStringDistanceTerms.clear();
 			nominalNumberDistanceTerms.clear();
@@ -1420,7 +1434,7 @@ public:
 		inline void SetPrecomputedRemainingIdenticalDistanceTerm(double dist_term)
 		{
 			effectiveFeatureType = EFDT_REMAINING_IDENTICAL_PRECOMPUTED;
-			precomputedRemainingIdenticalDistanceTerm = dist_term;
+			defaultNominalNonMatchDistanceTerm = dist_term;
 		}
 
 		//the effective comparison for the feature type, specialized for performance
@@ -1430,8 +1444,12 @@ public:
 		//target that the distance will be computed to
 		EvaluableNodeImmediateValueWithType targetValue;
 
-		//the distance term for EFDT_REMAINING_IDENTICAL_PRECOMPUTED
-		double precomputedRemainingIdenticalDistanceTerm;
+		//the default nominal matching distance term if a term is not in the distance term matrix
+		double defaultNominalMatchDistanceTerm;
+
+		//the default nominal nonmatching distance term if a term is not in the distance term matrix
+		//also used for EFDT_REMAINING_IDENTICAL_PRECOMPUTED
+		double defaultNominalNonMatchDistanceTerm;
 
 		std::vector<double> internedDistanceTerms;
 

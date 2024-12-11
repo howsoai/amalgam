@@ -156,10 +156,10 @@ namespace EntityQueryBuilder
 			//a list indicates that it is a pair of a sparse deviation matrix followed by a default deviation
 			//the default being for when the first value being compared is not found
 			auto &ocn = deviation_node->GetOrderedChildNodesReference();
-			if(ocn.size() > 1)
+			if(ocn.size() > 0)
 				PopulateFeatureDeviationNominalValuesMatrixData(feature_attribs, ocn[0]);
 
-			if(ocn.size() > 2)
+			if(ocn.size() > 1)
 				feature_attribs.deviation = EvaluableNode::ToNumber(ocn[1]);
 		}
 		else

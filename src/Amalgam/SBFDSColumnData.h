@@ -698,7 +698,10 @@ public:
 		if(value_type == ENIVT_STRING_ID)
 			return stringIdValueEntries.size();
 
-		return sortedNumberValueEntries.size() + stringIdIndices.size();
+		//add up unique number and string values,
+		// and use a heuristic for judging how many unique code values there are
+		return sortedNumberValueEntries.size() + stringIdIndices.size()
+			+ (valueCodeSizeToIndices.size() + codeIndices.size()) / 2;
 	}
 
 	//returns the maximum difference between value and any other value for this column

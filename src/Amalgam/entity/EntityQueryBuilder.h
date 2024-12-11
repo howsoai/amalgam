@@ -57,11 +57,7 @@ namespace EntityQueryBuilder
 			{
 				double value = std::numeric_limits<double>::quiet_NaN();
 				if(cn.first != string_intern_pool.emptyStringId)
-				{
-					auto [number_value, success] = Platform_StringToNumber(string_intern_pool.GetStringFromID(cn.first));
-					if(success)
-						value = number_value;
-				}
+					value = Parser::ParseNumberFromKeyStringId(cn.first);
 
 				ndd.emplace(value, EvaluableNode::ToNumber(cn.second));
 			}
@@ -124,11 +120,7 @@ namespace EntityQueryBuilder
 			{
 				double value = std::numeric_limits<double>::quiet_NaN();
 				if(cn.first != string_intern_pool.emptyStringId)
-				{
-					auto [number_value, success] = Platform_StringToNumber(string_intern_pool.GetStringFromID(cn.first));
-					if(success)
-						value = number_value;
-				}
+					value = Parser::ParseNumberFromKeyStringId(cn.first);
 
 				number_sdm.emplace(value);
 				PopulateFeatureDeviationNominalValueData(number_sdm.back().second, cn.second);

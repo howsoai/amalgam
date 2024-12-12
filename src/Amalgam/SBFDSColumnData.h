@@ -727,6 +727,12 @@ public:
 			+ (valueCodeSizeToIndices.size() + codeIndices.size()) / 2;
 	}
 
+	//returns the number of valid values (exist and not null) in the column
+	inline size_t GetNumValidDataElements()
+	{
+		return numberIndices.size() + stringIdIndices.size() + codeIndices.size();
+	}
+
 	//returns the maximum difference between value and any other value for this column
 	//if empty, will return infinity
 	inline double GetMaxDifferenceTerm(GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs)

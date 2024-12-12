@@ -1013,7 +1013,7 @@ public:
 			if(feature_attribs.IsFeatureNominal())
 			{
 				if(FastIsNaN(feature_attribs.typeAttributes.nominalCount))
-					feature_attribs.typeAttributes.nominalCount = static_cast<double>(column_data->GetNumUniqueValues());
+					feature_attribs.typeAttributes.nominalCount = static_cast<double>(column_data->GetNumValidDataElements());
 			}
 		}
 	}

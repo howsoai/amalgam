@@ -904,7 +904,7 @@ EvaluableNodeReference Interpreter::InterpretNode_IndexMinMaxList(EvaluableNode 
 EvaluableNodeReference Interpreter::InterpretNode_IndexMinMaxAssoc(EvaluableNode *assoc, bool (*compareFunc)(double, double), double compare_limit, bool immediate_result )
 {
 	EvaluableNode::AssocType  mapped_child_nodes = assoc->GetMappedChildNodesReference();
-	double result_value = compare_limit;
+	double candidate_value = compare_limit;
 	bool value_found = false;
 
 	StringInternPool::StringID max_key;
@@ -913,9 +913,9 @@ EvaluableNodeReference Interpreter::InterpretNode_IndexMinMaxAssoc(EvaluableNode
 	{
 		double cur_value = InterpretNodeIntoNumberValue(cur_child);
 
-		if(compareFunc(cur_value, result_value))
+		if(compareFunc(cur_value, candidate_value))
 		{
-			result_value = cur_value;
+			candidate_value = cur_value;
 			max_key = cur_key;
 			value_found = true;
 		}

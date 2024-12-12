@@ -1157,6 +1157,7 @@ public:
 						distEvaluator->ComputeDistanceTermNominalNonmatchFromMatchProbabilities(
 							index, prob_class_given_match, prob_class_given_nonmatch, high_accuracy);
 				}
+				return;
 			}
 		}
 		else if(feature_data.targetValue.nodeType == ENIVT_STRING_ID)
@@ -1203,8 +1204,16 @@ public:
 						= distEvaluator->ComputeDistanceTermNominalNonmatchFromMatchProbabilities(
 							index, prob_class_given_match, prob_class_given_nonmatch, high_accuracy);
 				}
+				return;
 			}
 		}
+
+		//made it here, so didn't find anything in the SDM.  use fallback for default nominal terms
+		feature_data.defaultNominalMatchDistanceTerm =
+			distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
+
+		feature_data.defaultNominalNonMatchDistanceTerm =
+			distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
 	}
 
 	//for the feature index, computes and stores the distance terms as measured from value to each interned value

@@ -1132,6 +1132,8 @@ public:
 				double default_deviation = deviations_for_value->second.defaultDeviation;
 				if(FastIsNaN(default_deviation))
 				{
+					deviations_for_value->second.defaultDeviation = feature_attributes.deviation;
+
 					feature_data.defaultNominalMatchDistanceTerm
 						= distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
 
@@ -1176,6 +1178,8 @@ public:
 				double default_deviation = deviations_for_sid->second.defaultDeviation;
 				if(FastIsNaN(default_deviation))
 				{
+					deviations_for_sid->second.defaultDeviation = feature_attributes.deviation;
+
 					feature_data.defaultNominalMatchDistanceTerm
 						= distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
 

@@ -804,7 +804,7 @@ protected:
 		switch(feature_data.effectiveFeatureType)
 		{
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_REMAINING_IDENTICAL_PRECOMPUTED:
-			return feature_data.defaultNominalNonMatchDistanceTerm;
+			return feature_data.precomputedRemainingIdenticalDistanceTerm;
 
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC:
 		{

@@ -1057,7 +1057,7 @@ public:
 	enum EffectiveFeatureDifferenceType : uint32_t
 	{
 		//everything that isn't initially populated shares the same value
-		//represented by defaultNominalNonMatchDistanceTerm
+		//represented by precomputedRemainingIdenticalDistanceTerm
 		EFDT_REMAINING_IDENTICAL_PRECOMPUTED,
 		//everything is precomputed from interned values that are looked up
 		EFDT_UNIVERSALLY_INTERNED_PRECOMPUTED,
@@ -1313,7 +1313,7 @@ public:
 			}
 			else
 			{
-				return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
+				return feature_data.defaultNominalNonMatchDistanceTerm;
 			}
 		}
 		else
@@ -1426,7 +1426,9 @@ public:
 		void Clear()
 		{
 			effectiveFeatureType = EFDT_CONTINUOUS_NUMERIC;
+			defaultNominalMatchDistanceTerm = 0.0;
 			defaultNominalNonMatchDistanceTerm = 0.0;
+			precomputedRemainingIdenticalDistanceTerm = 0.0;
 			internedDistanceTerms.clear();
 			nominalStringDistanceTerms.clear();
 			nominalNumberDistanceTerms.clear();
@@ -1438,7 +1440,7 @@ public:
 		inline void SetPrecomputedRemainingIdenticalDistanceTerm(double dist_term)
 		{
 			effectiveFeatureType = EFDT_REMAINING_IDENTICAL_PRECOMPUTED;
-			defaultNominalNonMatchDistanceTerm = dist_term;
+			precomputedRemainingIdenticalDistanceTerm = dist_term;
 		}
 
 		//the effective comparison for the feature type, specialized for performance
@@ -1452,8 +1454,10 @@ public:
 		double defaultNominalMatchDistanceTerm;
 
 		//the default nominal nonmatching distance term if a term is not in the distance term matrix
-		//also used for EFDT_REMAINING_IDENTICAL_PRECOMPUTED
 		double defaultNominalNonMatchDistanceTerm;
+
+		//the distance term for EFDT_REMAINING_IDENTICAL_PRECOMPUTED
+		double precomputedRemainingIdenticalDistanceTerm;
 
 		std::vector<double> internedDistanceTerms;
 

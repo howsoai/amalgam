@@ -3918,10 +3918,10 @@
 
 	(create_entities (list "DistanceTestContainer" "point2")
 		(lambda (null
-			##a 2
-			##b 1
+			##a 1.1
+			##b 2
 			##c 1
-			##d 120
+			##d 100
 			##e 1
 			##f 50.1
 		))

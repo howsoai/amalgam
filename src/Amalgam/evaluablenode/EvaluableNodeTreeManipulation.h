@@ -45,7 +45,12 @@ constexpr bool operator==(const std::pair<T *, T *> &a, const std::pair<T *, T *
 }
 
 //for caching pairs of EvaluableNode *'s into MergeMetricResults
-typedef FastHashMap<std::pair<EvaluableNode *, EvaluableNode *>, MergeMetricResults<EvaluableNode *>> MergeMetricResultsCache;
+struct MergeMetricResultsParams
+{
+	EvaluableNode::ReferenceSetType *checked;
+	FastHashMap<std::pair<EvaluableNode *, EvaluableNode *>, MergeMetricResults<EvaluableNode *>> memoizedNodeMergePairs;
+	bool requireExactMatches;
+};
 
 //returns a commonality measure of difference between numbers a and b in [0,1]
 //if the numbers are equal, returns 1, returns closer to 0 the less similar they are
@@ -122,15 +127,7 @@ public:
 
 		virtual MergeMetricResults<EvaluableNode *> MergeMetric(EvaluableNode *a, EvaluableNode *b)
 		{
-			if((a != nullptr && a->GetNeedCycleCheck()) || (b != nullptr && b->GetNeedCycleCheck()))
-			{
-				EvaluableNode::ReferenceSetType checked;
-				return NumberOfSharedNodes(a, b, memoizedMergeMetricResults, &checked);
-			}
-			else //don't need to check for cycles
-			{
-				return NumberOfSharedNodes(a, b, memoizedMergeMetricResults, nullptr);
-			}
+			return NumberOfSharedNodes(a, b, requireExactMatches);
 		}
 
 		virtual EvaluableNode *MergeValues(EvaluableNode *a, EvaluableNode *b, bool must_merge = false)
@@ -168,7 +165,6 @@ public:
 		bool keepAllOfBoth;
 		bool requireExactMatches;
 		EvaluableNode::ReferenceAssocType references;
-		MergeMetricResultsCache memoizedMergeMetricResults;
 	};
 
 	//functionality to mix nodes
@@ -422,9 +418,10 @@ public:
 	}
 
 	//computes the edit distance between the two trees
-	static double EditDistance(EvaluableNode *tree1, EvaluableNode *tree2)
+	// If require_exact_matches is true, then it will only compare nodes that match exactly
+	static double EditDistance(EvaluableNode *tree1, EvaluableNode *tree2, bool require_exact_matches = false)
 	{
-		auto shared_nodes = NumberOfSharedNodes(tree1, tree2);
+		auto shared_nodes = NumberOfSharedNodes(tree1, tree2, require_exact_matches);
 		size_t tree_1_size = EvaluableNode::GetDeepSize(tree1);
 		size_t tree_2_size = EvaluableNode::GetDeepSize(tree2);
 
@@ -433,25 +430,29 @@ public:
 	}
 
 	//Computes the total number of nodes in both trees that are equal
-	inline static MergeMetricResults<EvaluableNode *> NumberOfSharedNodes(EvaluableNode *tree1, EvaluableNode *tree2)
+	// If require_exact_matches is true, then it will only compare nodes that match exactly
+	inline static MergeMetricResults<EvaluableNode *> NumberOfSharedNodes(
+		EvaluableNode *tree1, EvaluableNode *tree2, bool require_exact_matches = false)
 	{
-		MergeMetricResultsCache memoized;
+		MergeMetricResultsParams mmrp;
+		mmrp.requireExactMatches = require_exact_matches;
 		if((tree1 != nullptr && tree1->GetNeedCycleCheck()) || (tree2 != nullptr && tree2->GetNeedCycleCheck()))
 		{
 			EvaluableNode::ReferenceSetType checked;
-			return NumberOfSharedNodes(tree1, tree2, memoized, &checked);
+			mmrp.checked = &checked;
+			return NumberOfSharedNodes(tree1, tree2, mmrp);
 		}
 		else //don't need to check for cycles
 		{
-			return NumberOfSharedNodes(tree1, tree2, memoized, nullptr);
+			mmrp.checked = nullptr;
+			return NumberOfSharedNodes(tree1, tree2, mmrp);
 		}
 	}
 
 	//Returns the total number of nodes in both trees that are equal, ignoring those in the checked set
 	// Assists the public function NumberOfSharedNodes
-	//if checked is nullptr, then it will not keep track of the nodes, which can be done if neither needs cycle checks
 	static MergeMetricResults<EvaluableNode *> NumberOfSharedNodes(EvaluableNode *tree1, EvaluableNode *tree2,
-		MergeMetricResultsCache &memoized, EvaluableNode::ReferenceSetType *checked);
+		MergeMetricResultsParams &mmrp);
 
 	//Recursively traverses tree, storing any nodes with labels into an index map, and returning the map,
 	// as well as a flag indicating true if it was able to just retrieve the labels, or false
@@ -543,16 +544,18 @@ protected:
 		EvaluableNode *replacement, EvaluableNode::ReferenceSetType &checked);
 
 	//Evaluates commonality metric between the two nodes passed in, including labels.  1.0 if identical, 0.0 if completely different, and some value between if similar
-	static MergeMetricResults<EvaluableNode *> CommonalityBetweenNodes(EvaluableNode *n1, EvaluableNode *n2);
+	// If require_exact_matches is true, then it will only return 1.0 or 0.0
+	static MergeMetricResults<EvaluableNode *> CommonalityBetweenNodes(
+		EvaluableNode *n1, EvaluableNode *n2, bool require_exact_matches = false);
 
 	//Evaluates the functional commonality between the types and immediate values of n1 and n2 (excluding labels, comments, etc.)
 	// Returns a pair: the first value is the more general of the two nodes and the second is a commonality value
 	// The more general of the two nodes will be the one whose type is more general
 	// The commonality metric will return 1.0 if identical, 0.0 if completely different, and some value between if similar
-	// If require_exact_node_match is true, then it will only return 1.0 or 0.0
+	// If require_exact_matches is true, then it will only return 1.0 or 0.0
 	//The EvaluableNode * returned should not be modified, nor should it be included in any data outside the scope of the caller
 	static std::pair<EvaluableNode *, double> CommonalityBetweenNodeTypesAndValues(
-							EvaluableNode *n1, EvaluableNode *n2, bool require_exact_node_match = false);
+							EvaluableNode *n1, EvaluableNode *n2, bool require_exact_matches = false);
 
 	//Mutates the current node n, changing its type or value, based on the mutation_rate
 	// strings contains a list of strings to likely choose from if mutating to a string value

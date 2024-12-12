@@ -63,7 +63,7 @@ public:
 			return EMPTY_STRING;
 
 	#ifdef STRING_INTERN_POOL_VALIDATION
-		ValidateStringIdExistance(id);
+		ValidateStringIdExistence(id);
 	#endif
 
 		return id->string;
@@ -73,7 +73,7 @@ public:
 	inline StringID GetIDFromString(const std::string &str)
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		Concurrency::ReadLock lock(sharedMutex);
+		Concurrency::SingleLock lock(mutex);
 	#endif
 
 		auto id_iter = stringToID.find(str);
@@ -82,7 +82,7 @@ public:
 
 		StringID id = id_iter->second.get();
 	#ifdef STRING_INTERN_POOL_VALIDATION
-		ValidateStringIdExistanceUnderLock(id);
+		ValidateStringIdExistenceUnderLock(id);
 	#endif
 		return id;
 	}
@@ -94,7 +94,7 @@ public:
 			return emptyStringId;
 
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		Concurrency::WriteLock lock(sharedMutex);
+		Concurrency::SingleLock lock(mutex);
 	#endif
 
 		//try to insert it as a new string
@@ -106,7 +106,7 @@ public:
 
 		StringID id = inserted.first->second.get();
 	#ifdef STRING_INTERN_POOL_VALIDATION
-		ValidateStringIdExistanceUnderLock(id);
+		ValidateStringIdExistenceUnderLock(id);
 	#endif
 		return id;
 	}
@@ -117,7 +117,7 @@ public:
 		if(id != NOT_A_STRING_ID)
 		{
 		#ifdef STRING_INTERN_POOL_VALIDATION
-			ValidateStringIdExistance(id);
+			ValidateStringIdExistence(id);
 		#endif
 			id->refCount++;
 		}
@@ -136,7 +136,7 @@ public:
 			if(id != NOT_A_STRING_ID)
 			{
 			#ifdef STRING_INTERN_POOL_VALIDATION
-				ValidateStringIdExistance(id);
+				ValidateStringIdExistence(id);
 			#endif
 				id->refCount++;
 			}
@@ -157,7 +157,7 @@ public:
 			if(id != NOT_A_STRING_ID)
 			{
 			#ifdef STRING_INTERN_POOL_VALIDATION
-				ValidateStringIdExistance(id);
+				ValidateStringIdExistence(id);
 			#endif
 				id->refCount += additional_reference_count;
 			}
@@ -177,7 +177,7 @@ public:
 			if(id != NOT_A_STRING_ID)
 			{
 			#ifdef STRING_INTERN_POOL_VALIDATION
-				ValidateStringIdExistance(id);
+				ValidateStringIdExistence(id);
 			#endif
 				id->refCount++;
 			}
@@ -190,14 +190,8 @@ public:
 		if(id == NOT_A_STRING_ID || id == emptyStringId)
 			return;
 
-		//get the reference count before decrement
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		//make sure have a read lock first so that the idToStringAndRefCount vector heap location doesn't change
-		Concurrency::ReadLock lock(sharedMutex);
-	#endif
-
 	#ifdef STRING_INTERN_POOL_VALIDATION
-		ValidateStringIdExistanceUnderLock(id);
+		ValidateStringIdExistence(id);
 	#endif
 
 		int64_t refcount = id->refCount--;
@@ -207,15 +201,13 @@ public:
 			return;
 
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		//this thread is about to free the reference, but need to acquire a write lock
-		// so, keep the reference alive by incrementing it *before* attempting the write lock
+		//this thread is about to free the reference, but need to acquire a lock
+		// so, keep the reference alive by incrementing it *before* attempting the lock
 		id->refCount++;
 
-		//grab a write lock
-		lock.unlock();
-		Concurrency::WriteLock write_lock(sharedMutex);
+		Concurrency::SingleLock lock(mutex);
 
-		//with the write lock, decrement reference count in case this string should stay active
+		//with the lock, decrement reference count in case this string should stay active
 		refcount = id->refCount--;
 
 		//if other references, then can't clear it
@@ -244,9 +236,6 @@ public:
 		// removal can be done after reference count decreases are done
 		bool ids_need_removal = false;
 
-		//only need a ReadLock because the count is atomic
-		Concurrency::ReadLock lock(sharedMutex);
-
 		for(auto r : references_container)
 		{
 			StringID id = get_string_id(r);
@@ -254,7 +243,7 @@ public:
 				continue;
 
 		#ifdef STRING_INTERN_POOL_VALIDATION
-			ValidateStringIdExistanceUnderLock(id);
+			ValidateStringIdExistence(id);
 		#endif
 
 			int64_t refcount = id->refCount--;
@@ -267,7 +256,7 @@ public:
 		if(!ids_need_removal)
 			return;
 
-		//need to remove at least one reference, so put all counts back while wait for write lock
+		//need to remove at least one reference, so put all counts back while wait for lock
 		for(auto r : references_container)
 		{
 			StringID id = get_string_id(r);
@@ -275,9 +264,7 @@ public:
 				id->refCount++;
 		}
 
-		//grab a write lock
-		lock.unlock();
-		Concurrency::WriteLock write_lock(sharedMutex);
+		Concurrency::SingleLock lock(mutex);
 
 		for(auto r : references_container)
 		{
@@ -286,7 +273,7 @@ public:
 				continue;
 
 		#ifdef STRING_INTERN_POOL_VALIDATION
-			ValidateStringIdExistanceUnderLock(id);
+			ValidateStringIdExistenceUnderLock(id);
 		#endif
 
 			//remove any that are the last reference
@@ -311,7 +298,7 @@ public:
 	inline size_t GetNumStringsInUse()
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		Concurrency::ReadLock lock(sharedMutex);
+		Concurrency::SingleLock lock(mutex);
 	#endif
 
 		return stringToID.size();
@@ -321,7 +308,7 @@ public:
 	inline size_t GetNumDynamicStringsInUse()
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		Concurrency::ReadLock lock(sharedMutex);
+		Concurrency::SingleLock lock(mutex);
 	#endif
 
 		return stringToID.size() - staticStringIDToIndex.size();
@@ -331,7 +318,7 @@ public:
 	inline std::vector<std::pair<std::string, int64_t>> GetDynamicStringsInUse()
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		Concurrency::ReadLock lock(sharedMutex);
+		Concurrency::SingleLock lock(mutex);
 	#endif
 
 		std::vector<std::pair<std::string, int64_t>> in_use;
@@ -346,19 +333,19 @@ public:
 	}
 
 	//validates the string id, throwing an assert if it is not valid
-	inline void ValidateStringIdExistance(StringID sid)
+	inline void ValidateStringIdExistence(StringID sid)
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		Concurrency::ReadLock lock(sharedMutex);
+		Concurrency::SingleLock lock(mutex);
 	#endif
-		ValidateStringIdExistanceUnderLock(sid);
+		ValidateStringIdExistenceUnderLock(sid);
 	}
 
 protected:
 
 	//validates the string id, throwing an assert if it is not valid
 	//requires being under a lock
-	inline void ValidateStringIdExistanceUnderLock(StringID sid)
+	inline void ValidateStringIdExistenceUnderLock(StringID sid)
 	{
 		if(sid == NOT_A_STRING_ID)
 			return;
@@ -381,7 +368,7 @@ protected:
 	void InitializeStaticStrings();
 
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	Concurrency::ReadWriteMutex sharedMutex;
+	Concurrency::SingleMutex mutex;
 #endif
 
 	//mapping from string to ID (index of idToRefCountAndString)
@@ -410,7 +397,7 @@ public:
 	inline StringRef(StringInternPool::StringID sid)
 	{
 	#ifdef STRING_INTERN_POOL_VALIDATION
-		string_intern_pool.ValidateStringIdExistance(sid);
+		string_intern_pool.ValidateStringIdExistence(sid);
 	#endif
 		id = string_intern_pool.CreateStringReference(sid);
 	}
@@ -419,7 +406,7 @@ public:
 	{
 		id = string_intern_pool.CreateStringReference(str);
 	#ifdef STRING_INTERN_POOL_VALIDATION
-		string_intern_pool.ValidateStringIdExistance(id);
+		string_intern_pool.ValidateStringIdExistence(id);
 	#endif
 	}
 
@@ -428,7 +415,7 @@ public:
 	{
 		id = string_intern_pool.CreateStringReference(sir.id);
 	#ifdef STRING_INTERN_POOL_VALIDATION
-		string_intern_pool.ValidateStringIdExistance(id);
+		string_intern_pool.ValidateStringIdExistence(id);
 	#endif
 	}
 
@@ -437,7 +424,7 @@ public:
 	{
 		id = sir.id;
 	#ifdef STRING_INTERN_POOL_VALIDATION
-		string_intern_pool.ValidateStringIdExistance(id);
+		string_intern_pool.ValidateStringIdExistence(id);
 	#endif
 		sir.id = nullptr;
 	}
@@ -465,7 +452,7 @@ public:
 			string_intern_pool.DestroyStringReference(id);
 			id = string_intern_pool.CreateStringReference(sir.id);
 		#ifdef STRING_INTERN_POOL_VALIDATION
-			string_intern_pool.ValidateStringIdExistance(id);
+			string_intern_pool.ValidateStringIdExistence(id);
 		#endif
 		}
 		return *this;
@@ -487,7 +474,7 @@ public:
 	inline void SetIDAndCreateReference(StringInternPool::StringID sid)
 	{
 	#ifdef STRING_INTERN_POOL_VALIDATION
-		string_intern_pool.ValidateStringIdExistance(sid);
+		string_intern_pool.ValidateStringIdExistence(sid);
 	#endif
 
 		//if changing id, need to delete previous
@@ -505,7 +492,7 @@ public:
 	inline void SetIDWithReferenceHandoff(StringInternPool::StringID sid)
 	{
 	#ifdef STRING_INTERN_POOL_VALIDATION
-		string_intern_pool.ValidateStringIdExistance(sid);
+		string_intern_pool.ValidateStringIdExistence(sid);
 	#endif
 		
 		//if the ids are different, then need to delete old

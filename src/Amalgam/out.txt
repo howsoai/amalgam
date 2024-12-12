@@ -230,11 +230,11 @@ hello world: 12 and 2
 (print "hello")
 [(null) (null) .infinity -.infinity]
 
-{b 2 c ["alpha" "beta" "gamma"] a 1}
+{c ["alpha" "beta" "gamma"] a 1 b 2}
 {
-	b 2
 	c ["alpha" "beta" "gamma"]
 	a 1
+	b 2
 }
 
 (apply "6")
@@ -632,7 +632,7 @@ abcdef
 0.14384103622589045
 --first--
 4
-2
+1
 1
 0
 a
@@ -649,17 +649,17 @@ a
 []
 {
 	a 1
-	c 3
+	b 2
 	d 4
 	e 5
 	f 6
 }
-{a 1 f 6}
+{b 2 d 4}
 {
 	a 1
+	b 2
 	d 4
 	e 5
-	f 6
 }
 {
 	a 1
@@ -683,7 +683,7 @@ abcdef
 
 --last--
 this
-2
+1
 1
 0
 c
@@ -700,17 +700,17 @@ c
 []
 {
 	a 1
-	c 3
+	b 2
 	d 4
 	e 5
 	f 6
 }
-{a 1 f 6}
+{b 2 d 4}
 {
 	a 1
+	b 2
 	d 4
 	e 5
-	f 6
 }
 {
 	a 1
@@ -1061,7 +1061,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-["b" "c" 4 "a"]
+["c" 4 "a" "b"]
 [
 	0
 	1
@@ -1073,10 +1073,10 @@ abcdef
 	7
 ]
 [0 1 2 3]
-[3 1 2 0]
-[3 1 2 0]
+[1 2 0 3]
+[1 2 0 3]
 --values--
-[2 3 "d" 1]
+[3 "d" 1 2]
 [
 	"a"
 	1
@@ -1097,7 +1097,7 @@ abcdef
 	4
 	"d"
 ]
-[2 "d" 3 1]
+[3 "d" 1 2]
 [
 	1
 	2
@@ -1249,10 +1249,10 @@ string
 list
 assoc
 [
-	{4 4}
+	"4"
 	4
 	[4]
-	"4"
+	{4 4}
 ]
 --set--
 {
@@ -1337,7 +1337,7 @@ current_index: 2
 		rmfile "del /s /q "
 		rwww 1
 		slash "\\"
-		start_time 1733114148.979311
+		start_time 1734044169.011015
 		www 1
 		x 12
 		zz 10
@@ -1383,7 +1383,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1733114148.979311
+	start_time 1734044169.011015
 	www 1
 	x 12
 	zz 10
@@ -1428,7 +1428,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1733114148.979311
+	start_time 1734044169.011015
 	www 1
 	x 12
 	zz 10
@@ -1560,8 +1560,8 @@ true
 [15.147298145412242 2.8707229850232165 1.1842755192409848 26.133999503489054]
 
 --weighted_rand--
-a
-["b" "b" "b" "b"]
+b
+["b" "a" "b" "b"]
 
 b
 ["b" @(get (target 2) 0) "a" @(get (target 2) 2)]
@@ -1572,11 +1572,11 @@ infinity test c or d: ["c" "c" "d" "c"]
 
 infinity test c or d: ["c" "d" @(get (target 2) 1) @(get (target 2) 0)]
 
-{a 23 b 43 c 34}
+{a 34 b 50 c 16}
 
 {a 30 b 50 c 20}
 
-[7 2 3]
+[4 3 2]
 
 --get_rand_seed--
 0RÊíõÿ'`¦!šc”lÿ
@@ -1622,8 +1622,8 @@ infinity test c or d: ["c" "d" @(get (target 2) 1) @(get (target 2) 0)]
 string
 --set_type--
 (- 3 4)
-["b" 3 "a" 4]
-["b" 3 "a" 4]
+["a" 4 "b" 3]
+["a" 4 "b" 3]
 {a 4 b 3}
 8.7
 (parallel
@@ -1672,17 +1672,17 @@ string
 	{a 3 b 4}
 	{c "c"}
 ]
-21: [{"b":4,"a":3},{"c":"c","d":null}]
+21: [{"a":3,"b":4},{"c":"c","d":null}]
 22: [{"a":3,"b":4},{"c":"c","d":null}]
-23: b: 2
-c: 3
+23: c: 3
+a: 1
 e:
   - a
   - b
   - 
   - .inf
+b: 2
 d: 4
-a: 1
 
 24: a: 1
 b: 2
@@ -1695,7 +1695,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2024-12-01-23.35.49.0483590
+current date-time in epoch: 2024-12-12-17.56.09.0724860
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -2093,8 +2093,8 @@ decrypted: hello
 	1
 	(associate "b" 4 "a" 3 "c" 3)
 ]
-[3 4 2]
-[3 2 4 3]
+[3 2 4]
+[2 3 2 4]
 [
 	
 	;comment 1
@@ -2105,18 +2105,18 @@ decrypted: hello
 	
 	;comment x
 	2
-	4
 	3
-	6
 	5
-	8
 	7
-	10
 	9
-	12
 	11
-	14
 	13
+	4
+	6
+	8
+	10
+	12
+	14
 ]
 [
 	[1 2 3]
@@ -2906,18 +2906,7 @@ _3130331116
 )
 (parallel
 	##p
-	["_2325275497" "_2325275497" "_2973704165" "_2973704165"]
-)
-_2973704165
-(associate
-	"e"
-	3
-	"f"
-	4
-	"g"
-	5
-	"h"
-	6
+	["_2325275497" "_2973704165" "_2325275497" "_2973704165"]
 )
 _2325275497
 (associate
@@ -2928,6 +2917,17 @@ _2325275497
 	"G"
 	5
 	"H"
+	6
+)
+_2973704165
+(associate
+	"e"
+	3
+	"f"
+	4
+	"g"
+	5
+	"h"
 	6
 )
 --difference_entities--
@@ -3632,7 +3632,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1733114149.392563
+1734044169.446899
 (true)
 
 RootTest
@@ -4486,11 +4486,11 @@ cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
 190: 0.045454545454545456 (null
 	##deg 12
 )
-200: 0.05555555555555555 (null
-	##deg 8
-)
 155: 0.1 (null
 	##deg 0
+)
+200: 0.05555555555555555 (null
+	##deg 8
 )
 --contains_label--
 (true)
@@ -4992,4 +4992,4 @@ rmdir /s /q amlg_code\persistent_tree_test_root
 del /s /q amlg_code\persist_module_test\psm.mdam
 del /s /q amlg_code\persist_module_test.mdam
 --total execution time--
-2.220142126083374
+2.024484157562256

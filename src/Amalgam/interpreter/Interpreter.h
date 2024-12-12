@@ -1276,6 +1276,10 @@ protected:
 	//a stack (list) of the current nodes being executed
 	std::vector<EvaluableNode *> *opcodeStackNodes;
 
+
+	EvaluableNodeReference InterpretNode_IndexMinMaxAssoc(EvaluableNode *assoc, bool (*CompareFunc)(double, double), double compare_limit, bool immediate_result);
+	EvaluableNodeReference InterpretNode_IndexMinMaxList(EvaluableNode *en, bool (*CompareFunc)(double, double), double compare_limit, bool immediate_result);
+
 public:
 	//where to allocate new nodes
 	EvaluableNodeManager *evaluableNodeManager;

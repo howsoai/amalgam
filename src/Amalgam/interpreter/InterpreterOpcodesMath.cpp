@@ -7,6 +7,7 @@
 #include <cstdlib>
 
 #include <utility>
+#include <EvaluableNode.h>
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ADD(EvaluableNode *en, bool immediate_result)
 {
@@ -804,6 +805,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIN(EvaluableNode *en, boo
 	return EvaluableNodeReference::Null();
 }
 
+static bool lessThanCompareFunc(double x, double y)
+{
+	return x < y;
+}
+
+static bool greaterThanCompareFunc(double x, double y)
+{
+	return x > y;
+}
+
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MAX(EvaluableNode *en, bool immediate_result)
 {
@@ -812,8 +823,36 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MAX(EvaluableNode *e
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
+	
+	if(ocn[0]->GetType() == ENT_ASSOC)
+		return InterpretNode_IndexMinMaxAssoc(ocn[0], &greaterThanCompareFunc, -std::numeric_limits<double>::infinity(), immediate_result);
+	else
+		return InterpretNode_IndexMinMaxList(en, &greaterThanCompareFunc, -std::numeric_limits<double>::infinity(), immediate_result);
+}
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MIN(EvaluableNode *en, bool immediate_result)
+{
+	auto &ocn = en->GetOrderedChildNodes();
+
+	if(ocn.size() == 0)
+		return EvaluableNodeReference::Null();
+
+	
+	if(ocn[0]->GetType() == ENT_ASSOC)
+		return InterpretNode_IndexMinMaxAssoc(ocn[0], &lessThanCompareFunc, std::numeric_limits<double>::infinity(), immediate_result);
+	else
+		return InterpretNode_IndexMinMaxList(en, &lessThanCompareFunc, std::numeric_limits<double>::infinity(), immediate_result);
+}
+
+EvaluableNodeReference Interpreter::InterpretNode_IndexMinMaxList(EvaluableNode *en, bool (*compareFunc)(double, double), double compare_limit, bool immediate_result)
+{
+	auto &ocn = en->GetOrderedChildNodes();
+
+	if(ocn.size() == 0)
+		return EvaluableNodeReference::Null();
+
 	bool value_found = false;
-	double result_value = -std::numeric_limits<double>::infinity();
+	double result_value = compare_limit;
 
 #ifdef MULTITHREAD_SUPPORT
 	std::vector<EvaluableNodeReference> interpreted_nodes;
@@ -825,7 +864,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MAX(EvaluableNode *e
 		{
 			//do the comparison and keep the greater
 			double cur_value = ConvertNodeIntoNumberValueAndFreeIfPossible(interpreted_nodes[i]);
-			if(cur_value > result_value)
+			if(compareFunc(cur_value, result_value))
 			{
 				value_found = true;
 				result_value = cur_value;
@@ -862,57 +901,29 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MAX(EvaluableNode *e
 	return EvaluableNodeReference::Null();
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MIN(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_IndexMinMaxAssoc(EvaluableNode *assoc, bool (*compareFunc)(double, double), double compare_limit, bool immediate_result )
 {
-	auto &ocn = en->GetOrderedChildNodes();
-
-	if(ocn.size() == 0)
-		return EvaluableNodeReference::Null();
-
+	EvaluableNode::AssocType  mapped_child_nodes = assoc->GetMappedChildNodesReference();
+	double result_value = compare_limit;
 	bool value_found = false;
-	double result_value = std::numeric_limits<double>::infinity();
 
-#ifdef MULTITHREAD_SUPPORT
-	std::vector<EvaluableNodeReference> interpreted_nodes;
-	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes, true))
+	StringInternPool::StringID max_key;
+
+	for (auto [cur_key, cur_child]: mapped_child_nodes)
 	{
-		size_t min_index;
-		for(size_t i = 0; i < interpreted_nodes.size(); i++)
+		double cur_value = InterpretNodeIntoNumberValue(cur_child);
+
+		if(compareFunc(cur_value, result_value))
 		{
-			//do the comparison and keep the greater
-			double cur_value = ConvertNodeIntoNumberValueAndFreeIfPossible(interpreted_nodes[i]);
-			if(cur_value < result_value)
-			{
-				value_found = true;
-				result_value = cur_value;
-				min_index = i;
-			}
-		}
-
-		if(value_found)
-			return AllocReturn(static_cast<double>(min_index), immediate_result);
-		return EvaluableNodeReference::Null();
-	}
-#endif
-
-	auto node_stack = CreateOpcodeStackStateSaver();
-
-	//for(auto &cn : ocn)
-	size_t min_index;
-	for (size_t i = 0; i < ocn.size(); i++)
-	{
-
-		auto cur_value = InterpretNodeIntoNumberValue(ocn[i]);
-		if(cur_value < result_value)
-		{
-			value_found = true;
 			result_value = cur_value;
-			min_index = i;
+			max_key = cur_key;
+			value_found = true;
 		}
 	}
 
 	if(value_found)
-		return AllocReturn(static_cast<double>(min_index), immediate_result);
+		return  AllocReturn(max_key, false);
+
 	return EvaluableNodeReference::Null();
 }
 

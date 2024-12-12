@@ -334,7 +334,7 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 		for(auto &w : assoc_warnings)
 			std::cerr << w << std::endl;
 
-		if(!EvaluableNode::IsNull(first_node) && first_node->IsAssociativeArray())
+		if(!EvaluableNode::IsNull(assoc_node) && assoc_node->IsAssociativeArray())
 		{
 			if(first_node_type == ENT_LET)
 			{
@@ -721,13 +721,27 @@ void AssetManager::DestroyPersistentEntity(Entity *entity)
 	if(asset_params->flatten)
 	{
 		if(asset_params->writeListener != nullptr)
-			asset_params->writeListener->LogDestroyEntity(entity);
+		{
+			if(asset_params->topEntity == entity)
+			{
+				asset_params->writeListener.reset();
+
+				//delete file
+				std::error_code ec;
+				std::filesystem::remove(asset_params->resourcePath, ec);
+				if(ec)
+					std::cerr << "Could not remove file: " << asset_params->resourcePath << std::endl;
+			}
+			else
+			{
+				asset_params->writeListener->LogDestroyEntity(entity);
+			}
+		}
 	}
 	else
 	{
-		std::error_code ec;
-
 		//delete files
+		std::error_code ec;
 		std::filesystem::remove(asset_params->resourcePath, ec);
 		if(ec)
 			std::cerr << "Could not remove file: " << asset_params->resourcePath << std::endl;

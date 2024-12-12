@@ -269,10 +269,6 @@ public:
 		if(entity == nullptr)
 			return false;
 
-		//if clearing persistence, do it up front to flush and/or clear any files
-		if(update_persistence && !persistent)
-			SetEntityPersistenceForFlattenedEntity(entity, nullptr);
-
 		Entity::EntityReferenceBufferReference<EntityReferenceType> erbr;
 		if(all_contained_entities == nullptr)
 		{
@@ -288,6 +284,19 @@ public:
 			&& (asset_params->resourceType == FILE_EXTENSION_AMALGAM
 				|| asset_params->resourceType == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE))
 		{
+			//if updating persistence or persistence, do it up front to flush and/or clear any files
+			if(update_persistence || persistent)
+			{
+				//if not updating, but currently persistent, need to restore at the end
+				if(!update_persistence && persistentEntities.find(entity) != end(persistentEntities))
+				{
+					update_persistence = true;
+					persistent = true;
+				}
+
+				DeepClearEntityPersistenceRecurse(entity);
+			}
+
 			bool store_successful = FlattenAndStoreEntityToResource(
 				entity, asset_params.get(), persistent, *all_contained_entities);
 
@@ -340,8 +349,8 @@ public:
 		}
 
 		//update after done using asset_params, just in case it is deleted
-		if(update_persistence && persistent)
-			SetEntityPersistenceForFlattenedEntity(entity, asset_params);
+		if(update_persistence)
+			SetEntityPersistence(entity, persistent ? asset_params : nullptr);
 
 		return true;
 	}

@@ -693,11 +693,20 @@ public:
 	inline size_t GetNumUniqueValues(EvaluableNodeImmediateValueType value_type = ENIVT_NULL)
 	{
 		if(value_type == ENIVT_NUMBER)
-			return numberIndices.size();
+			return sortedNumberValueEntries.size();
 
 		if(value_type == ENIVT_STRING_ID)
-			return stringIdIndices.size();
+			return stringIdValueEntries.size();
 
+		//add up unique number and string values,
+		// and use a heuristic for judging how many unique code values there are
+		return sortedNumberValueEntries.size() + stringIdIndices.size()
+			+ (valueCodeSizeToIndices.size() + codeIndices.size()) / 2;
+	}
+
+	//returns the number of valid values (exist and not null) in the column
+	inline size_t GetNumValidDataElements()
+	{
 		return numberIndices.size() + stringIdIndices.size() + codeIndices.size();
 	}
 

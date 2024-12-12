@@ -174,6 +174,24 @@ EvaluableNodeReference Parser::ParseFromKeyStringId(StringInternPool::StringID c
 	return node;
 }
 
+double Parser::ParseNumberFromKeyStringId(StringInternPool::StringID code_string_id)
+{
+	if(code_string_id == string_intern_pool.NOT_A_STRING_ID)
+		return std::numeric_limits<double>::quiet_NaN();
+
+	std::string &code_string = code_string_id->string;
+	if(code_string.size() == 0 || code_string[0] != '\0')
+		return std::numeric_limits<double>::quiet_NaN();
+
+	std::string_view escaped_string(&code_string[1], code_string.size() - 1);
+
+	auto [number_value, success] = Platform_StringToNumber(escaped_string);
+	if(!success)
+		return std::numeric_limits<double>::quiet_NaN();
+
+	return number_value;
+}
+
 std::string Parser::UnparseToKeyString(EvaluableNode *tree)
 {
 	//if just a regular string, return it

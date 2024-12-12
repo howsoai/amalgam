@@ -57,11 +57,7 @@ namespace EntityQueryBuilder
 			{
 				double value = std::numeric_limits<double>::quiet_NaN();
 				if(cn.first != string_intern_pool.emptyStringId)
-				{
-					auto [number_value, success] = Platform_StringToNumber(string_intern_pool.GetStringFromID(cn.first));
-					if(success)
-						value = number_value;
-				}
+					value = Parser::ParseNumberFromKeyStringId(cn.first);
 
 				ndd.emplace(value, EvaluableNode::ToNumber(cn.second));
 			}
@@ -124,11 +120,7 @@ namespace EntityQueryBuilder
 			{
 				double value = std::numeric_limits<double>::quiet_NaN();
 				if(cn.first != string_intern_pool.emptyStringId)
-				{
-					auto [number_value, success] = Platform_StringToNumber(string_intern_pool.GetStringFromID(cn.first));
-					if(success)
-						value = number_value;
-				}
+					value = Parser::ParseNumberFromKeyStringId(cn.first);
 
 				number_sdm.emplace(value);
 				PopulateFeatureDeviationNominalValueData(number_sdm.back().second, cn.second);
@@ -165,10 +157,10 @@ namespace EntityQueryBuilder
 			//a list indicates that it is a pair of a sparse deviation matrix followed by a default deviation
 			//the default being for when the first value being compared is not found
 			auto &ocn = deviation_node->GetOrderedChildNodesReference();
-			if(ocn.size() > 1)
+			if(ocn.size() > 0)
 				PopulateFeatureDeviationNominalValuesMatrixData(feature_attribs, ocn[0]);
 
-			if(ocn.size() > 2)
+			if(ocn.size() > 1)
 				feature_attribs.deviation = EvaluableNode::ToNumber(ocn[1]);
 		}
 		else

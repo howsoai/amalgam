@@ -1298,7 +1298,7 @@ protected:
 		}
 
 		if(value_found)
-			return  AllocReturn(max_key, false);
+			return  Parser::ParseFromKeyString(max_key->string, evaluableNodeManager);
 
 		return EvaluableNodeReference::Null();
 	}
@@ -1320,7 +1320,7 @@ protected:
 		{
 
 			size_t max_index = 0;
-			for (size_t i = 0; i < interpreted_nodes.size(); i++)
+			for(size_t i = 0; i < interpreted_nodes.size(); i++)
 			{
 				//do the comparison and keep the greater
 				double cur_value = ConvertNodeIntoNumberValueAndFreeIfPossible(interpreted_nodes[i]);
@@ -1342,7 +1342,6 @@ protected:
 		auto node_stack = CreateOpcodeStackStateSaver();
 
 		size_t max_index = 0;
-		// for(auto &cn : ocn)
 		for(size_t i = 0; i < ocn.size(); i++)
 		{
 

@@ -1,13 +1,12 @@
 //project headers:
 #include "Interpreter.h"
-
+#include "EvaluableNode.h"
 #include "EntityQueryBuilder.h"
 
 //system headers:
 #include <cstdlib>
 
 #include <utility>
-#include <EvaluableNode.h>
 #include <functional>
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ADD(EvaluableNode *en, bool immediate_result)
@@ -824,7 +823,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MIN(EvaluableNode *e
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
-	if(ocn.size() == 0)
+	if(ocn.size() == 0 || ocn[0] == nullptr)
 		return EvaluableNodeReference::Null();
 
 	if(ocn[0]->GetType() == ENT_ASSOC)

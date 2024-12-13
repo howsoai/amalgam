@@ -1346,7 +1346,7 @@ protected:
 		{
 
 			double cur_value = InterpretNodeIntoNumberValue(ocn[i]);
-			if(cur_value > result_value)
+			if(compare(cur_value, result_value))
 			{
 				value_found = true;
 				result_value = cur_value;

@@ -1276,9 +1276,91 @@ protected:
 	//a stack (list) of the current nodes being executed
 	std::vector<EvaluableNode *> *opcodeStackNodes;
 
+	template <typename Compare>
+	EvaluableNodeReference InterpretNode_IndexMinMaxAssoc(EvaluableNode *assoc, Compare compare, double compare_limit, bool immediate_result )
+	{
+		EvaluableNode::AssocType  mapped_child_nodes = assoc->GetMappedChildNodesReference();
+		double candidate_value = compare_limit;
+		bool value_found = false;
 
-	EvaluableNodeReference InterpretNode_IndexMinMaxAssoc(EvaluableNode *assoc, bool (*CompareFunc)(double, double), double compare_limit, bool immediate_result);
-	EvaluableNodeReference InterpretNode_IndexMinMaxList(EvaluableNode *en, bool (*CompareFunc)(double, double), double compare_limit, bool immediate_result);
+		StringInternPool::StringID max_key;
+
+		for (auto [cur_key, cur_child]: mapped_child_nodes)
+		{
+			double cur_value = InterpretNodeIntoNumberValue(cur_child);
+
+			if(compare(cur_value, candidate_value))
+			{
+				candidate_value = cur_value;
+				max_key = cur_key;
+				value_found = true;
+			}
+		}
+
+		if(value_found)
+			return  AllocReturn(max_key, false);
+
+		return EvaluableNodeReference::Null();
+	}
+
+	template <typename Compare>
+	EvaluableNodeReference InterpretNode_IndexMinMaxList(EvaluableNode *en, Compare compare, double compare_limit, bool immediate_result)
+	{
+		auto &ocn = en->GetOrderedChildNodes();
+
+		if(ocn.size() == 0)
+			return EvaluableNodeReference::Null();
+
+		bool value_found = false;
+		double result_value = compare_limit;
+
+	#ifdef MULTITHREAD_SUPPORT
+		std::vector<EvaluableNodeReference> interpreted_nodes;
+		if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes, true))
+		{
+
+			size_t max_index = 0;
+			for (size_t i = 0; i < interpreted_nodes.size(); i++)
+			{
+				//do the comparison and keep the greater
+				double cur_value = ConvertNodeIntoNumberValueAndFreeIfPossible(interpreted_nodes[i]);
+				if(compare(cur_value, result_value))
+				{
+					value_found = true;
+					result_value = cur_value;
+					max_index = i;
+				}
+			}
+
+			if(value_found)
+				return AllocReturn(static_cast<double>(max_index), immediate_result);
+
+			return EvaluableNodeReference::Null();
+		}
+	#endif
+
+		auto node_stack = CreateOpcodeStackStateSaver();
+
+		size_t max_index = 0;
+		// for(auto &cn : ocn)
+		for(size_t i = 0; i < ocn.size(); i++)
+		{
+
+			double cur_value = InterpretNodeIntoNumberValue(ocn[i]);
+			if(cur_value > result_value)
+			{
+				value_found = true;
+				result_value = cur_value;
+				max_index = i;
+			}
+		}
+
+		if(value_found)
+			return AllocReturn(static_cast<double>(max_index), immediate_result);;
+
+		return EvaluableNodeReference::Null();
+	}
+
 
 public:
 	//where to allocate new nodes

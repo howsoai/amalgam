@@ -506,7 +506,20 @@ var data = [
 		"description" : "minimum of all of the numbers",
 		"example" : "(print (min 0.5 1 7 9 -5))"
 	},
-
+	{
+		"parameter" : "index_max list|assoc",
+		"output" : "index|key",
+		"concurrency" : true,
+		"description" : "the list index or assoc key mapped to the maximum value",
+		"example" : "(print (index_max 0.5 1 7 9 -5))"
+	},
+	{
+		"parameter" : "index_min list|assoc",
+		"output" : "index|key",
+		"concurrency" : true,
+		"description" : "the list index or assoc key mapped to the minimum value",
+		"example" : "(print (index_min 0.5 1 7 9 -5))"
+	},
 	{
 		"parameter" : "dot_product list|assoc x1 list|assoc x2",
 		"output" : "number",

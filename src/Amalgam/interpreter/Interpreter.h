@@ -1285,7 +1285,7 @@ protected:
 
 		StringInternPool::StringID max_key;
 
-		for (auto [cur_key, cur_child]: mapped_child_nodes)
+		for(auto [cur_key, cur_child]: mapped_child_nodes)
 		{
 			double cur_value = InterpretNodeIntoNumberValue(cur_child);
 

@@ -1344,7 +1344,6 @@ protected:
 		size_t max_index = 0;
 		for(size_t i = 0; i < ocn.size(); i++)
 		{
-
 			double cur_value = InterpretNodeIntoNumberValue(ocn[i]);
 			if(compare(cur_value, result_value))
 			{

@@ -1318,7 +1318,6 @@ protected:
 		std::vector<EvaluableNodeReference> interpreted_nodes;
 		if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes, true))
 		{
-
 			size_t max_index = 0;
 			for(size_t i = 0; i < interpreted_nodes.size(); i++)
 			{

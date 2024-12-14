@@ -1277,7 +1277,7 @@ protected:
 	std::vector<EvaluableNode *> *opcodeStackNodes;
 
 	template <typename Compare>
-	EvaluableNodeReference InterpretNode_IndexMinMaxAssoc(EvaluableNode *assoc, Compare compare, double compare_limit, bool immediate_result )
+	EvaluableNodeReference InterpretNode_IndexMinMaxAssoc(EvaluableNode *assoc, Compare compare, double compare_limit, bool immediate_result)
 	{
 		EvaluableNode::AssocType  mapped_child_nodes = assoc->GetMappedChildNodesReference();
 		double candidate_value = compare_limit;

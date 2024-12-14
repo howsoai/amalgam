@@ -809,10 +809,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MAX(EvaluableNode *e
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
-	if(ocn.size() == 0)
+	if(ocn.size() == 0 || ocn[0] == nullptr)
 		return EvaluableNodeReference::Null();
 
-	
 	if(ocn[0]->GetType() == ENT_ASSOC)
 		return InterpretNode_IndexMinMaxAssoc(ocn[0], std::greater(), -std::numeric_limits<double>::infinity(), immediate_result);
 	else

@@ -58,6 +58,7 @@ public:
 	bool SetJSONToLabel(std::string &handle, std::string &label, std::string_view json);
 	std::string GetJSONFromLabel(std::string &handle, std::string &label);
 	std::string ExecuteEntityJSON(std::string &handle, std::string &label, std::string_view json);
+	std::string EvalOnEntity(const std::string &handle, const std::string &amlg);
 
 protected:
 
@@ -171,7 +172,7 @@ protected:
 	};
 
 	//looks up the bundle and returns it, will return nullptr if not found
-	inline EntityListenerBundleReadReference FindEntityBundle(std::string &handle)
+	inline EntityListenerBundleReadReference FindEntityBundle(const std::string &handle)
 	{
 	#ifdef MULTITHREAD_INTERFACE
 		Concurrency::ReadLock read_lock(mutex);

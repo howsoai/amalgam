@@ -257,6 +257,39 @@ std::string EntityExternalInterface::ExecuteEntityJSON(std::string &handle, std:
 	return (converted ? result : string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID));
 }
 
+std::string EntityExternalInterface::EvalOnEntity(const std::string &handle, const std::string &amlg)
+{
+	auto bundle = FindEntityBundle(handle);
+	if(bundle == nullptr)
+		return "";
+
+	EvaluableNodeManager &enm = bundle->entity->evaluableNodeManager;
+#ifdef MULTITHREAD_SUPPORT
+	//lock memory before allocating call stack
+	Concurrency::ReadLock enm_lock(enm.memoryModificationMutex);
+#endif
+
+	auto [code, warnings, offset] = Parser::Parse(amlg, &enm);
+	if(code == nullptr)
+		return "";
+
+	auto call_stack = Interpreter::ConvertArgsToCallStack(EvaluableNodeReference::Null(), enm);
+
+	EvaluableNodeReference returned_value = bundle->entity->ExecuteCodeAsEntity(code, call_stack, nullptr,
+		&bundle->writeListeners, bundle->printListener, nullptr
+#ifdef MULTITHREAD_SUPPORT
+		, &enm_lock
+#endif
+	);
+
+	enm.FreeNode(call_stack);
+	enm.FreeNodeTreeIfPossible(code);
+
+	auto [result, converted] = EvaluableNodeJSONTranslation::EvaluableNodeToJson(returned_value);
+	enm.FreeNodeTreeIfPossible(returned_value);
+	return (converted ? result : string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID));
+}
+
 bool EntityExternalInterface::EntityListenerBundle::SetEntityValueAtLabel(std::string &label_name, EvaluableNodeReference new_value)
 {
 	StringInternPool::StringID label_sid = string_intern_pool.GetIDFromString(label_name);

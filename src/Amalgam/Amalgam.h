@@ -60,6 +60,8 @@ extern "C"
 	AMALGAM_EXPORT wchar_t *ExecuteEntityJsonPtrWide(char *handle, char *label, char *json);
 	AMALGAM_EXPORT char *ExecuteEntityJsonPtr(char *handle, char *label, char *json);
 
+	AMALGAM_EXPORT char *EvalOnEntity(char *handle, char *amlg);
+
 	AMALGAM_EXPORT wchar_t *GetVersionStringWide();
 	AMALGAM_EXPORT char *GetVersionString();
 

@@ -22,13 +22,21 @@ int main(int argc, char* argv[])
 	char write_log[] = "";
 	char print_log[] = "";
 	auto status = LoadEntity(handle, file, file_type, false, json_file_params, write_log, print_log);
-	if(status.loaded)
+	if(!status.loaded)
+		return 1;
+
+	int retval = 0;
+	char label[] = "test";
+	ExecuteEntity(handle, label);
+
+	std::string amlg("(size (contained_entities))");
+	std::string result = EvalOnEntity(handle, amlg.data());
+	if(result != std::string("24"))
 	{
-		char label[] = "test";
-		ExecuteEntity(handle, label);
-		DestroyEntity(handle);
-		return 0;
+		std::cerr << "EvalOnEntity produced " << result << " but expected 24";
+		retval = 1;
 	}
 
-	return 1;
+	DestroyEntity(handle);
+	return retval;
 }

@@ -1163,7 +1163,7 @@ class EvaluableNodeImmediateValueWithType
 {
 public:
 	constexpr EvaluableNodeImmediateValueWithType()
-		: nodeType(ENIVT_NULL)
+		: nodeType(ENIVT_NULL), nodeValue(std::numeric_limits<double>::quiet_NaN())
 	{	}
 
 	__forceinline EvaluableNodeImmediateValueWithType(EvaluableNodeImmediateValue node_value,

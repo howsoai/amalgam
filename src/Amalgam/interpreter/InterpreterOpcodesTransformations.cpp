@@ -768,7 +768,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en, 
 
 	EvaluableNodeReference previous_result = EvaluableNodeReference::Null();
 
-	PushNewConstructionContext(nullptr, list, EvaluableNodeImmediateValueWithType(), nullptr, previous_result);
+	PushNewConstructionContext(list, nullptr, EvaluableNodeImmediateValueWithType(), nullptr, previous_result);
 
 	if(list->IsAssociativeArray())
 	{
@@ -779,7 +779,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en, 
 			//grab a value if first one
 			if(first_node)
 			{
-				//can't make any guarantees about the first term because function may retrieve it
+				//inform that the first result is not unique; if no side effects and unique result, can free all at once
 				previous_result = EvaluableNodeReference(n, false);
 				first_node = false;
 				continue;
@@ -794,7 +794,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en, 
 	else if(list->GetOrderedChildNodes().size() >= 1)
 	{
 		auto &list_ocn = list->GetOrderedChildNodes();
-		//can't make any guarantees about the first term because function may retrieve it
+		//inform that the first result is not unique; if no side effects and unique result, can free all at once
 		previous_result = EvaluableNodeReference(list_ocn[0], false);
 
 		//iterate over list
@@ -807,7 +807,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REDUCE(EvaluableNode *en, 
 		}
 	}
 
-	PopConstructionContextAndGetExecutionSideEffectFlag();
+	bool side_effects = PopConstructionContextAndGetExecutionSideEffectFlag();
+	if(previous_result.unique && !side_effects)
+		evaluableNodeManager->FreeNodeTreeIfPossible(list);
 
 	return previous_result;
 }

@@ -515,7 +515,7 @@ var data = [
 		"output" : "*",
 		"new value" : "conditional",
 		"new target scope": true,
-		"description" : "For each element in the collection after the first one, it evaluates function with a new target scope on the stack where current_value accesses each of the elements from the collection, current_index accesses the list or assoc index, target accesses the original list or assoc, and previous_result accesses the previously reduced result. If the collection is empty, null is returned. if the collection is of size one, the single element is returned.",
+		"description" : "For each element in the collection after the first one, it evaluates function with a new scope on the stack where current_value accesses each of the elements from the collection, current_index accesses the list or assoc index and previous_result accesses the previously reduced result. If the collection is empty, null is returned. if the collection is of size one, the single element is returned.",
 		"example" : "(print (reduce (lambda (* (previous_result) (current_value))) (list 1 2 3 4)))"
 	},
 

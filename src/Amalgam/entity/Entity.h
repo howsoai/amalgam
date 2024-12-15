@@ -297,14 +297,16 @@ public:
 	// Otherwise sets value_out to empty string and returns false
 	bool GetValueAtLabelAsString(StringInternPool::StringID label_sid, std::string &value_out, bool on_self = false);
 
-	//Evaluates the specified label into a EvaluableNodeImmediateValue and puts the value in value_out returns the ValueType
-	EvaluableNodeImmediateValueType GetValueAtLabelAsImmediateValue(StringInternPool::StringID label_sid,
-		EvaluableNodeImmediateValue &value_out, bool on_self = false);
+	//Evaluates the specified label into a EvaluableNodeImmediateValueWithType
+	EvaluableNodeImmediateValueWithType GetValueAtLabelAsImmediateValue(
+		StringInternPool::StringID label_sid, bool on_self = false);
 
-	//Iterates over all of the labels, calling GetValueAtLabel for each, and passing the label sid and the node to the user specified function func
+	//Iterates over all of the labels, calling GetValueAtLabel for each,
+	// and passing the label sid and the node to the user specified function func
 	template<typename LabelFunc>
 	inline void IterateFunctionOverLabels(LabelFunc func,
-											EvaluableNodeManager *destination_temp_enm = nullptr, bool direct_get = false, bool on_self = false)
+		EvaluableNodeManager *destination_temp_enm = nullptr,
+		bool direct_get = false, bool on_self = false)
 	{
 		for(auto &[label_id, _] : labelIndex)
 		{

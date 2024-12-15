@@ -31,6 +31,7 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 	std::string input;
 	std::string handle;
 	std::string label;
+	std::string amlg;
 	std::string clone_handle;
 	std::string command;
 	std::string path;
@@ -187,6 +188,12 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 			label = StringManipulation::RemoveFirstToken(input);
 			json_payload = input;  // json data
 			response = entint.ExecuteEntityJSON(handle, label, json_payload);
+		}
+		else if(command == "EVAL_ON_ENTITY")
+		{
+			handle = StringManipulation::RemoveFirstToken(input);
+			amlg = StringManipulation::RemoveFirstToken(input);
+			response = entint.EvalOnEntity(handle, amlg);
 		}
 		else if(command == "SET_RANDOM_SEED")
 		{

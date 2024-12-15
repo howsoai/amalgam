@@ -251,23 +251,19 @@ bool Entity::GetValueAtLabelAsString(StringInternPool::StringID label_sid, std::
 	return true;
 }
 
-EvaluableNodeImmediateValueType Entity::GetValueAtLabelAsImmediateValue(StringInternPool::StringID label_sid,
-	EvaluableNodeImmediateValue &value_out, bool on_self)
+EvaluableNodeImmediateValueWithType Entity::GetValueAtLabelAsImmediateValue(StringInternPool::StringID label_sid,
+	bool on_self)
 {
 	if(!on_self && IsLabelPrivate(label_sid))
-	{
-		value_out.number = std::numeric_limits<double>::quiet_NaN();
-		return ENIVT_NOT_EXIST;
-	}
+		return EvaluableNodeImmediateValueWithType(std::numeric_limits<double>::quiet_NaN(), ENIVT_NOT_EXIST);
 
 	const auto &label = labelIndex.find(label_sid);
 	if(label == end(labelIndex))
-	{
-		value_out.number = std::numeric_limits<double>::quiet_NaN();
-		return ENIVT_NOT_EXIST;
-	}
+		return EvaluableNodeImmediateValueWithType(std::numeric_limits<double>::quiet_NaN(), ENIVT_NOT_EXIST);
 
-	return value_out.CopyValueFromEvaluableNode(label->second);
+	EvaluableNodeImmediateValueWithType retval;
+	retval.CopyValueFromEvaluableNode(label->second);
+	return retval;
 }
 
 bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNodeReference &new_value, bool direct_set,

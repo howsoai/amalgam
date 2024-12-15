@@ -202,6 +202,14 @@ extern "C"
 		entint.ExecuteEntity(h, l);
 	}
 
+	char *EvalOnEntity(char *handle, char *amlg)
+	{
+		std::string h(handle);
+		std::string a(amlg);
+		std::string ret = entint.EvalOnEntity(h, a);
+		return StringToCharPtr(ret);
+	}
+
 	void DestroyEntity(char *handle)
 	{
 		std::string h(handle);

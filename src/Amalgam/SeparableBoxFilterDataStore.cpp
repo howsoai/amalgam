@@ -22,17 +22,17 @@ void SeparableBoxFilterDataStore::BuildLabel(size_t column_index, const std::vec
 	//clear value interning if applied
 	column_data->ConvertNumberInternsToValues();
 
-	//populate matrix and get values
+	column_data->valueEntries.resize(entities.size());
+
+	//populate data
 	// maintaining the order of insertion of the entities from smallest to largest allows for better performance of the insertions
 	// and every function called here assumes that entities are inserted in increasing order
 	for(size_t entity_index = 0; entity_index < entities.size(); entity_index++)
 	{
-		EvaluableNodeImmediateValueType value_type;
-		EvaluableNodeImmediateValue value;
-		value_type = entities[entity_index]->GetValueAtLabelAsImmediateValue(label_id, value, is_label_accessible);
-		GetValue(entity_index, column_index) = value;
+		auto value = entities[entity_index]->GetValueAtLabelAsImmediateValue(label_id, is_label_accessible);
 
-		column_data->InsertNextIndexValueExceptNumbers(value_type, value, entity_index, entities_with_number_values);
+		column_data->InsertNextIndexValueExceptNumbers(value.nodeType, value.nodeValue,
+			entity_index, entities_with_number_values);
 	}
 
 	//sort the number values for efficient insertion, but keep the entities in their order
@@ -132,17 +132,11 @@ void SeparableBoxFilterDataStore::RemoveColumnIndex(size_t column_index_to_remov
 
 	//will replace the values at index_to_remove with the values at index_to_move
 	size_t column_index_to_move = columnData.size() - 1;
-
 	StringInternPool::StringID label_id = columnData[column_index_to_remove]->stringId;
-
-	size_t num_columns = columnData.size();
 
 	//move data from the last column to the removed column if removing the label_id isn't the last column
 	if(column_index_to_remove != column_index_to_move)
 	{
-		for(size_t i = 0; i < numEntities; i++)
-			matrix[i * num_columns + column_index_to_remove] = matrix[i * num_columns + column_index_to_move];
-
 		//update column lookup
 		StringInternPool::StringID label_id_to_move = columnData[column_index_to_move]->stringId;
 		labelIdToColumnIndex[label_id_to_move] = column_index_to_remove;
@@ -155,21 +149,6 @@ void SeparableBoxFilterDataStore::RemoveColumnIndex(size_t column_index_to_remov
 	labelIdToColumnIndex.erase(label_id);
 	columnData.pop_back();
 
-	//create new smaller container to hold the reduced data
-	std::vector<EvaluableNodeImmediateValue> old_matrix;
-	std::swap(old_matrix, matrix);
-
-	//if no columns left, then done
-	if(columnData.size() == 0)
-		return;
-
-	//move data over to new reduced copy of matrix
-	matrix.resize(columnData.size() * numEntities);
-	for(size_t i = 0; i < numEntities; i++)
-		std::memcpy(reinterpret_cast<void *>(&matrix[i * columnData.size()]),
-			reinterpret_cast<void *>(&old_matrix[i * (columnData.size() + 1)]),
-			sizeof(EvaluableNodeImmediateValue) * (columnData.size()));
-
 #ifdef SBFDS_VERIFICATION
 	VerifyAllEntitiesForAllColumns();
 #endif
@@ -181,19 +160,10 @@ void SeparableBoxFilterDataStore::AddEntity(Entity *entity, size_t entity_index)
 	VerifyAllEntitiesForAllColumns();
 #endif
 
-	size_t starting_cell_index = GetMatrixCellIndex(entity_index);
-
-	//fill with missing values, including any empty indices
-	matrix.resize(starting_cell_index + columnData.size());
-
-	//fill in matrix cells from entity
-	size_t cell_index = starting_cell_index;
-	for(size_t column_index = 0; column_index < columnData.size(); column_index++, cell_index++)
+	for(auto &column_data : columnData)
 	{
-		EvaluableNodeImmediateValueType value_type;
-		EvaluableNodeImmediateValue value;
-		value_type = entity->GetValueAtLabelAsImmediateValue(columnData[column_index]->stringId, value);
-		matrix[cell_index] = columnData[column_index]->InsertIndexValue(value_type, value, entity_index);
+		auto value = entity->GetValueAtLabelAsImmediateValue(column_data->stringId);
+		column_data->InsertIndexValue(value.nodeType, value.nodeValue, entity_index);
 	}
 
 	//count this entity
@@ -220,8 +190,7 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 	// simply delete from column data, delete last row, and return
 	if(entity_index + 1 == GetNumInsertedEntities() && entity_index_to_reassign >= entity_index)
 	{
-		DeleteEntityIndexFromColumns(entity_index);
-		DeleteLastRow();
+		DeleteEntityIndexFromColumns(entity_index, true);
 
 	#ifdef SBFDS_VERIFICATION
 		VerifyAllEntitiesForAllColumns();
@@ -244,11 +213,6 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 	{
 		DeleteEntityIndexFromColumns(entity_index);
 
-		//fill with missing values
-		size_t starting_cell_index = GetMatrixCellIndex(entity_index);
-		for(size_t column_index = 0; column_index < columnData.size(); column_index++)
-			matrix[starting_cell_index + column_index].number = std::numeric_limits<double>::quiet_NaN();
-
 	#ifdef SBFDS_VERIFICATION
 		VerifyAllEntitiesForAllColumns();
 	#endif
@@ -260,24 +224,25 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 	{
 		auto &column_data = columnData[column_index];
 
-		auto &val_to_overwrite = GetValue(entity_index, column_index);
-		auto type_to_overwrite = column_data->GetIndexValueType(entity_index);
-
 		auto &value_to_reassign = GetValue(entity_index_to_reassign, column_index);
 		auto value_type_to_reassign = column_data->GetIndexValueType(entity_index_to_reassign);
 
 		//change the destination to the value
-		val_to_overwrite = columnData[column_index]->ChangeIndexValue(type_to_overwrite, val_to_overwrite, value_type_to_reassign, value_to_reassign, entity_index);
+		columnData[column_index]->ChangeIndexValue(value_type_to_reassign, value_to_reassign, entity_index);
 
 		//remove the value where it is
 		columnData[column_index]->DeleteIndexValue(value_type_to_reassign, value_to_reassign, entity_index_to_reassign);
 	}
 
-	//truncate matrix cache if removing the last entry, either by moving the last entity or by directly removing the last
+	//truncate cache if removing the last entry, either by moving the last entity or by directly removing the last
 	if(entity_index_to_reassign + 1 == numEntities
-			|| (entity_index_to_reassign + 1 >= numEntities && entity_index + 1 == numEntities))
-		DeleteLastRow();
-
+		|| (entity_index_to_reassign + 1 >= numEntities && entity_index + 1 == numEntities))
+	{
+		for(auto &column_data : columnData)
+			column_data->valueEntries.pop_back();
+		numEntities--;
+	}
+	
 	//clean up any labels that aren't relevant
 	RemoveAnyUnusedLabels();
 
@@ -297,23 +262,10 @@ void SeparableBoxFilterDataStore::UpdateAllEntityLabels(Entity *entity, size_t e
 	VerifyAllEntitiesForAllColumns();
 #endif
 
-	size_t matrix_index = GetMatrixCellIndex(entity_index);
-	for(size_t column_index = 0; column_index < columnData.size(); column_index++)
+	for(auto &column_data : columnData)
 	{
-		auto &column_data = columnData[column_index];
-
-		EvaluableNodeImmediateValueType value_type;
-		EvaluableNodeImmediateValue value;
-		value_type = entity->GetValueAtLabelAsImmediateValue(columnData[column_index]->stringId, value);
-
-		//update the value
-		auto &matrix_value = matrix[matrix_index];
-		auto previous_value_type = column_data->GetIndexValueType(entity_index);
-
-		//assign the matrix location to the updated value (which may be an index)
-		matrix_value = column_data->ChangeIndexValue(previous_value_type, matrix_value, value_type, value, entity_index);
-
-		matrix_index++;
+		auto value = entity->GetValueAtLabelAsImmediateValue(column_data->stringId);
+		column_data->ChangeIndexValue(value.nodeType, value.nodeValue, entity_index);
 	}
 
 	//clean up any labels that aren't relevant
@@ -336,23 +288,16 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 	if(column == end(labelIdToColumnIndex))
 		return;
 	size_t column_index = column->second;
-	auto &column_data = columnData[column_index];
+	auto column_data = columnData[column_index].get();
 
 #ifdef SBFDS_VERIFICATION
 	VerifyAllEntitiesForColumn(column_index);
 #endif
 
 	//get the new value
-	EvaluableNodeImmediateValueType value_type;
-	EvaluableNodeImmediateValue value;
-	value_type = entity->GetValueAtLabelAsImmediateValue(column_data->stringId, value);
+	auto value = entity->GetValueAtLabelAsImmediateValue(column_data->stringId);
 
-	//update the value
-	auto &matrix_value = GetValue(entity_index, column_index);
-	auto previous_value_type = column_data->GetIndexValueType(entity_index);
-	
-	//assign the matrix location to the updated value (which may be an index)
-	matrix_value = column_data->ChangeIndexValue(previous_value_type, matrix_value, value_type, value, entity_index);
+	column_data->ChangeIndexValue(value.nodeType, value.nodeValue, entity_index);
 
 	//remove the label if no longer relevant
 	if(IsColumnIndexRemovable(column_index))
@@ -545,7 +490,6 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 	size_t num_enabled_features = dist_eval.featureAttribs.size();
 
 	//build target
-	const size_t matrix_index_base = search_index * columnData.size();
 	r_dist_eval.featureData.resize(num_enabled_features);
 	for(size_t i = 0; i < num_enabled_features; i++)
 	{
@@ -558,7 +502,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 
 		auto value_type = column_data->GetIndexValueType(search_index);
 		//overwrite value in case of value interning
-		auto value = column_data->GetResolvedValue(value_type, matrix[matrix_index_base + column_index]);
+		auto value = column_data->GetResolvedValue(value_type, GetValue(search_index, column_index));
 		value_type = column_data->GetResolvedValueType(value_type);
 
 		PopulateTargetValueAndLabelIndex(r_dist_eval, i, value, value_type);
@@ -966,20 +910,27 @@ void SeparableBoxFilterDataStore::VerifyAllEntitiesForColumn(size_t column_index
 }
 #endif
 
-void SeparableBoxFilterDataStore::DeleteEntityIndexFromColumns(size_t entity_index)
+void SeparableBoxFilterDataStore::DeleteEntityIndexFromColumns(size_t entity_index, bool remove_last_entity)
 {
 	for(size_t i = 0; i < columnData.size(); i++)
 	{
 		auto &column_data = columnData[i];
 		auto &feature_value = GetValue(entity_index, i);
 		auto feature_type = column_data->GetIndexValueType(entity_index);
-		columnData[i]->DeleteIndexValue(feature_type, feature_value, entity_index);
+		column_data->DeleteIndexValue(feature_type, feature_value, entity_index);
+
+		if(remove_last_entity)
+			column_data->valueEntries.pop_back();
+		else
+			column_data->valueEntries[entity_index] = std::numeric_limits<double>::quiet_NaN();
 	}
+
+	if(remove_last_entity)
+		numEntities--;
 }
 
-size_t SeparableBoxFilterDataStore::AddLabelsAsEmptyColumns(std::vector<StringInternPool::StringID> &label_sids, size_t num_entities)
+size_t SeparableBoxFilterDataStore::AddLabelsAsEmptyColumns(std::vector<StringInternPool::StringID> &label_sids)
 {
-	size_t num_existing_columns = columnData.size();
 	size_t num_inserted_columns = 0;
 
 	//create columns for the labels, don't count any that already exist
@@ -989,33 +940,10 @@ size_t SeparableBoxFilterDataStore::AddLabelsAsEmptyColumns(std::vector<StringIn
 		if(inserted)
 		{
 			columnData.emplace_back(std::make_unique<SBFDSColumnData>(label_id));
+			columnData.back()->valueEntries.resize(numEntities);
 			num_inserted_columns++;
 		}
 	}
-
-	//if nothing has been populated, then just create an empty matrix
-	if(matrix.size() == 0)
-	{
-		numEntities = num_entities;
-		matrix.resize(columnData.size() * numEntities);
-		return num_inserted_columns;
-	}
-
-	//expand the matrix to add the empty columns
-	std::vector<EvaluableNodeImmediateValue> old_matrix;
-	std::swap(old_matrix, matrix); //swap data pointers to free old memory
-	matrix.resize(columnData.size() * numEntities);
-
-	size_t num_columns_new = columnData.size();
-
-	//copy over existing data in blocks per entity
-	for(size_t i = 0; i < num_entities; i++)
-		std::memcpy(reinterpret_cast<void *>(&matrix[i * num_columns_new]),
-			reinterpret_cast<void *>(&old_matrix[i * num_existing_columns]),
-			sizeof(EvaluableNodeImmediateValue) * num_existing_columns);
-
-	//update the number of entities
-	numEntities = num_entities;
 
 	return num_inserted_columns;
 }

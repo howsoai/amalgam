@@ -50,15 +50,15 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 			{
 				auto &[label_id, compare_value] = singleLabels[i];
 				auto compare_type = valueTypes[i];
+				EvaluableNodeImmediateValueWithType compare(compare_value, compare_type);
 
-				EvaluableNodeImmediateValue value;
-				auto value_type = e->GetValueAtLabelAsImmediateValue(label_id, value);
+				auto value = e->GetValueAtLabelAsImmediateValue(label_id);
 
 				//needs to exist
-				if(value_type == ENIVT_NOT_EXIST)
+				if(value.nodeType == ENIVT_NOT_EXIST)
 					return false;
 
-				if(!EvaluableNodeImmediateValue::AreEqual(compare_type, compare_value, value_type, value))
+				if(!EvaluableNodeImmediateValueWithType::AreEqual(compare, value))
 					return false;
 			}
 			return true;
@@ -68,15 +68,15 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 			{
 				auto &[label_id, compare_value] = singleLabels[i];
 				auto compare_type = valueTypes[i];
+				EvaluableNodeImmediateValueWithType compare(compare_value, compare_type);
 
-				EvaluableNodeImmediateValue value;
-				auto value_type = e->GetValueAtLabelAsImmediateValue(label_id, value);
+				auto value = e->GetValueAtLabelAsImmediateValue(label_id);
 
 				//needs to exist
-				if(value_type == ENIVT_NOT_EXIST)
+				if(value.nodeType == ENIVT_NOT_EXIST)
 					return false;
 
-				if(EvaluableNodeImmediateValue::AreEqual(compare_type, compare_value, value_type, value))
+				if(EvaluableNodeImmediateValueWithType::AreEqual(compare, value))
 					return false;
 			}
 			return true;
@@ -135,19 +135,14 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 
 		case ENT_QUERY_AMONG:
 		{
-			EvaluableNodeImmediateValue value;
-			auto value_type = e->GetValueAtLabelAsImmediateValue(singleLabel, value);
+			auto value = e->GetValueAtLabelAsImmediateValue(singleLabel);
 
-			if(value_type == ENIVT_NOT_EXIST)
+			if(value.nodeType == ENIVT_NOT_EXIST)
 				return false;
 			
 			for(size_t i = 0; i < valueToCompare.size(); i++)
 			{
-				//make sure same type
-				if(value_type != valueTypes[i])
-					return false;
-
-				if(EvaluableNodeImmediateValue::AreEqual(value_type, value, valueTypes[i], valueToCompare[i]))
+				if(EvaluableNodeImmediateValue::AreEqual(value.nodeType, value.nodeValue, valueTypes[i], valueToCompare[i]))
 					return true;
 			}
 
@@ -156,19 +151,18 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 
 		case ENT_QUERY_NOT_AMONG:
 		{
-			EvaluableNodeImmediateValue value;
-			auto value_type = e->GetValueAtLabelAsImmediateValue(singleLabel, value);
+			auto value = e->GetValueAtLabelAsImmediateValue(singleLabel);
 
-			if(value_type == ENIVT_NOT_EXIST)
+			if(value.nodeType == ENIVT_NOT_EXIST)
 				return false;
 
 			for(size_t i = 0; i < valueToCompare.size(); i++)
 			{
 				//make sure same type
-				if(value_type != valueTypes[i])
+				if(value.nodeType != valueTypes[i])
 					return false;
 
-				if(EvaluableNodeImmediateValue::AreEqual(value_type, value, valueTypes[i], valueToCompare[i]))
+				if(EvaluableNodeImmediateValue::AreEqual(value.nodeType, value.nodeValue, valueTypes[i], valueToCompare[i]))
 					return false;
 			}
 
@@ -193,7 +187,9 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 			std::vector<EvaluableNodeImmediateValueType> position_types(positionLabels.size());
 			for(size_t i = 0; i < positionLabels.size(); i++)
 			{
-				position_types[i] = e->GetValueAtLabelAsImmediateValue(positionLabels[i], position[i]);
+				auto value = e->GetValueAtLabelAsImmediateValue(positionLabels[i]);
+				position_types[i] = value.nodeType;
+				position[i] = value.nodeValue;
 				if(position_types[i] == ENIVT_NOT_EXIST)
 					return false;
 			}
@@ -244,7 +240,9 @@ double EntityQueryCondition::GetConditionDistanceMeasure(Entity *e, bool high_ac
 	std::vector<EvaluableNodeImmediateValueType> position_types(positionLabels.size());
 	for(size_t i = 0; i < positionLabels.size(); i++)
 	{
-		position_types[i] = e->GetValueAtLabelAsImmediateValue(positionLabels[i], position[i]);
+		auto value = e->GetValueAtLabelAsImmediateValue(positionLabels[i]);
+		position_types[i] = value.nodeType;
+		position[i] = value.nodeValue;
 		if(position_types[i] == ENIVT_NOT_EXIST)
 			return std::numeric_limits<double>::quiet_NaN();
 	}
@@ -480,11 +478,10 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 			if(matching_entities[i] == nullptr)
 				continue;
 
-			EvaluableNodeImmediateValue value;
-			auto value_type = matching_entities[i]->GetValueAtLabelAsImmediateValue(singleLabel, value);
+			auto value = matching_entities[i]->GetValueAtLabelAsImmediateValue(singleLabel);
 
-			if(value_type == singleLabelType)
-				entity_values.push_back(std::make_pair(matching_entities[i], value));
+			if(value.nodeType == singleLabelType)
+				entity_values.push_back(std::make_pair(matching_entities[i], value.nodeValue));
 		}
 
 		//sort entities by value

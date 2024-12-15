@@ -14,7 +14,6 @@
 //project headers:
 #include "Concurrency.h"
 #include "FastMath.h"
-#include "EntityQueriesStatistics.h"
 #include "EvaluableNode.h"
 #include "IntegerSet.h"
 #include "GeneralizedDistance.h"
@@ -22,9 +21,6 @@
 #include "SBFDSColumnData.h"
 
 //system headers:
-#include <bitset>
-#include <cfloat>
-#include <cmath>
 #include <cstdint>
 #include <limits>
 #include <vector>
@@ -82,16 +78,10 @@ public:
 														max_diff, query_feature_index, high_accuracy);
 	}
 
-	//gets the matrix cell index for the specified index
-	__forceinline const size_t GetMatrixCellIndex(size_t entity_index)
+	//returns a reference to the element for index at absolute_feature_index, assuming both are valid values
+	__forceinline EvaluableNodeImmediateValue &GetValue(size_t index, size_t absolute_feature_index)
 	{
-		return entity_index * columnData.size();
-	}
-
-	//returns the the element at index's value for the specified column at column_index, requires valid index
-	__forceinline EvaluableNodeImmediateValue &GetValue(size_t index, size_t column_index)
-	{
-		return matrix[index * columnData.size() + column_index];
+		return columnData[absolute_feature_index]->valueEntries[index];
 	}
 
 	//returns the column index for the label_id, or maximum value if not found
@@ -112,7 +102,7 @@ public:
 		return (labelIdToColumnIndex.count(label_id) > 0);
 	}
 
-	//populates the matrix with the label and builds column data
+	//populates the column with the label data
 	// assumes column data is empty
 	void BuildLabel(size_t column_index, const std::vector<Entity *> &entities);
 
@@ -133,8 +123,10 @@ public:
 		if(label_sids.size() == 0 || entities.size() == 0)
 			return;
 
-		//resize the matrix and populate column and label_id lookups
-		size_t num_columns_added = AddLabelsAsEmptyColumns(label_sids, entities.size());
+		numEntities = std::max(numEntities, entities.size());
+
+		//resize the column data storage and populate column and label_id lookups
+		size_t num_columns_added = AddLabelsAsEmptyColumns(label_sids);
 
 		size_t num_columns = columnData.size();
 		size_t num_previous_columns = columnData.size() - num_columns_added;
@@ -517,24 +509,14 @@ protected:
 	}
 #endif
 
-	//deletes/pops off the last row in the matrix cache
-	inline void DeleteLastRow()
-	{
-		if(matrix.size() == 0)
-			return;
-
-		//truncate matrix cache
-		numEntities--;
-		matrix.resize(matrix.size() - columnData.size());
-	}
-
 	//deletes the index and associated data
-	void DeleteEntityIndexFromColumns(size_t entity_index);
+	//if it is the last entity and remove_last_entity is true, then it will truncate storage
+	void DeleteEntityIndexFromColumns(size_t entity_index, bool remove_last_entity = false);
 
 	//adds a new labels to the database
-	// assumes label_ids is not empty and num_entities is nonzero
+	// assumes label_ids is not empty
 	//returns the number of new columns inserted
-	size_t AddLabelsAsEmptyColumns(std::vector<StringInternPool::StringID> &label_sids, size_t num_entities);
+	size_t AddLabelsAsEmptyColumns(std::vector<StringInternPool::StringID> &label_sids);
 
 	//computes each partial sum and adds the term to the partial sums associated for each id in entity_indices for query_feature_index
 	//returns the number of entities indices accumulated
@@ -764,8 +746,6 @@ protected:
 	inline double GetDistanceBetween(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		size_t radius_column_index, size_t other_index, bool high_accuracy)
 	{
-		const size_t matrix_base_position = other_index * columnData.size();
-
 		double dist_accum = 0.0;
 		for(size_t i = 0; i < r_dist_eval.featureData.size(); i++)
 		{
@@ -775,7 +755,7 @@ protected:
 			auto &column_data = columnData[column_index];
 
 			auto other_value_type = column_data->GetIndexValueType(other_index);
-			auto other_value = column_data->GetResolvedValue(other_value_type, matrix[matrix_base_position + column_index]);
+			auto other_value = column_data->GetResolvedValue(other_value_type, column_data->valueEntries[other_index]);
 			other_value_type = column_data->GetResolvedValueType(other_value_type);
 
 			dist_accum += r_dist_eval.ComputeDistanceTerm(other_value, other_value_type, i, high_accuracy);
@@ -788,7 +768,7 @@ protected:
 			auto &column_data = columnData[radius_column_index];
 			auto radius_value_type = column_data->GetIndexValueType(other_index);
 			if(radius_value_type == ENIVT_NUMBER || radius_value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
-				dist -= column_data->GetResolvedValue(radius_value_type, matrix[matrix_base_position + radius_column_index]).number;
+				dist -= column_data->GetResolvedValue(radius_value_type, column_data->valueEntries[other_index]).number;
 		}
 
 		return dist;
@@ -1068,11 +1048,8 @@ public:
 #endif
 	static SBFDSParametersAndBuffers parametersAndBuffers;
 	
-	//map from label id to column index in the matrix
+	//map from label id to column index
 	FastHashMap<StringInternPool::StringID, size_t> labelIdToColumnIndex;
-
-	//matrix of cases (rows) * features (columns)
-	std::vector<EvaluableNodeImmediateValue> matrix;
 
 	//the number of entities in the data store; all indices below this value are populated
 	size_t numEntities;

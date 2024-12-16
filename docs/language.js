@@ -511,14 +511,14 @@ var data = [
 		"output" : "*",
 		"concurrency" : true,
 		"description" : "the list index or assoc key mapped to the maximum value",
-		"example" : "(print (index_max 0.5 1 7 9 -5))"
+		"example" : "(print (index_max 0.5 1 7 9 -5))\n(print (index_max (list 0.5 1 7 9 -5) ))\n(print (index_max (assoc 1 0.5 2 1 3 7)))"
 	},
 	{
 		"parameter" : "index_min *",
 		"output" : "*",
 		"concurrency" : true,
 		"description" : "the list index or assoc key mapped to the minimum value",
-		"example" : "(print (index_min 0.5 1 7 9 -5))"
+		"example" : "(print (index_min 0.5 1 7 9 -5))\n(print (index_min (list 0.5 1 7 9 -5) ))\n(print (index_min (assoc 1 0.5 2 1 3 7)))"
 	},
 	{
 		"parameter" : "dot_product list|assoc x1 list|assoc x2",

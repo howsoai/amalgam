@@ -1308,7 +1308,7 @@ protected:
 	{
 		auto &ocn = en->GetOrderedChildNodes();
 
-		if(ocn.size() == 0)
+		if(ocn == nullptr || ocn.size() == 0)
 			return EvaluableNodeReference::Null();
 
 		bool value_found = false;

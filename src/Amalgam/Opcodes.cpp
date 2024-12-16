@@ -354,6 +354,9 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI__, "_");
 	EmplaceStaticString(ENBISI_create_new_entity, "create_new_entity");
 	EmplaceStaticString(ENBISI_new_entity, "new_entity");
+	EmplaceStaticString(ENBISI_require_version_compatibility, "require_version_compatibility");
+	EmplaceStaticString(ENBISI_amlg_version, "amlg_version");
+	EmplaceStaticString(ENBISI_version_compatible, "version_compatible");
 
 	//entity access parameters
 	EmplaceStaticString(ENBISI_accessing_entity, "accessing_entity");

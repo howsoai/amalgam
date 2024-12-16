@@ -336,12 +336,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FLATTEN_ENTITY(EvaluableNo
 	if(ocn.size() > 2)
 		parallel_create = InterpretNodeIntoBoolValue(ocn[2]);
 
+	bool include_version = false;
+	if(ocn.size() > 3)
+		include_version = InterpretNodeIntoBoolValue(ocn[3]);
+
 	EntityReadReference entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
 	if(entity == nullptr)
 		return EvaluableNodeReference::Null();
 
 	auto erbr = entity->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>();
-	return EntityManipulation::FlattenEntity(evaluableNodeManager, entity, erbr, include_rand_seeds, parallel_create);
+	return EntityManipulation::FlattenEntity(evaluableNodeManager, entity, erbr,
+		include_rand_seeds, parallel_create, include_version);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MUTATE_ENTITY(EvaluableNode *en, bool immediate_result)

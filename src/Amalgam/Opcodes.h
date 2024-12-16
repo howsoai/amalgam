@@ -48,7 +48,6 @@ enum EvaluableNodeType : uint8_t
 
 	//simulation and operations
 	ENT_RAND,
-	ENT_WEIGHTED_RAND,
 	ENT_GET_RAND_SEED,
 	ENT_SET_RAND_SEED,
 	ENT_SYSTEM_TIME,
@@ -375,7 +374,7 @@ constexpr OrderedChildNodeType GetInstructionOrderedChildNodeType(EvaluableNodeT
 	case ENT_GET:
 	case ENT_TARGET:					case ENT_CURRENT_INDEX:		case ENT_CURRENT_VALUE:		case ENT_PREVIOUS_RESULT:
 	case ENT_OPCODE_STACK:				case ENT_STACK:				case ENT_ARGS:
-	case ENT_RAND:						case ENT_WEIGHTED_RAND:		case ENT_GET_RAND_SEED:		case ENT_SET_RAND_SEED:
+	case ENT_RAND:						case ENT_GET_RAND_SEED:		case ENT_SET_RAND_SEED:
 	case ENT_SYSTEM_TIME:
 	case ENT_GET_DIGITS:				case ENT_SET_DIGITS:
 	case ENT_FLOOR:						case ENT_CEILING:			case ENT_ROUND:

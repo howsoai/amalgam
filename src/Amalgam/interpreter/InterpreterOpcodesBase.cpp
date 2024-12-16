@@ -1554,157 +1554,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ARGS(EvaluableNode *en, bo
 		return EvaluableNodeReference::Null();
 }
 
-//Generates an EvaluableNode containing a random value based on the random parameter param, using enm and random_stream
-// if any part of param is preserved in the return value, then can_free_param will be set to false, otherwise it will be left alone
-EvaluableNodeReference GenerateRandomValueBasedOnRandParam(EvaluableNodeReference param, Interpreter *interpreter,
-	RandomStream &random_stream, bool &can_free_param, bool immediate_result)
-{
-	if(EvaluableNode::IsNull(param))
-		return interpreter->AllocReturn(random_stream.RandFull(), immediate_result);
-
-	auto &ocn = param->GetOrderedChildNodes();
-	if(ocn.size() > 0)
-	{
-		size_t selection = random_stream.RandSize(ocn.size());
-		can_free_param = false;
-		return EvaluableNodeReference(ocn[selection], param.unique);
-	}
-
-	if(DoesEvaluableNodeTypeUseNumberData(param->GetType()))
-	{
-		double value = random_stream.RandFull() * param->GetNumberValueReference();
-		return interpreter->AllocReturn(value, immediate_result);
-	}
-
-	return EvaluableNodeReference::Null();
-}
-
-EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, bool immediate_result)
-{
-	auto &ocn = en->GetOrderedChildNodes();
-
-	if(ocn.size() == 0)
-	{
-		double r = randomStream.RandFull();
-		return AllocReturn(r, immediate_result);
-	}
-
-	//get number to generate
-	bool generate_list = false;
-	size_t number_to_generate = 1;
-	if(ocn.size() >= 2)
-	{
-		double num_value = InterpretNodeIntoNumberValue(ocn[1]);
-		if(FastIsNaN(num_value) || num_value < 0)
-			return EvaluableNodeReference::Null();
-		number_to_generate = static_cast<size_t>(num_value);
-		generate_list = true;
-		//because generating a list, can no longer return an immediate
-		immediate_result = false;
-	}
-	//make sure not eating up too much memory
-	if(ConstrainedAllocatedNodes())
-	{
-		if(performanceConstraints->WouldNewAllocatedNodesExceedConstraint(
-				evaluableNodeManager->GetNumberOfUsedNodes() + number_to_generate))
-			return EvaluableNodeReference::Null();
-	}
-
-	//get whether it needs to be unique
-	bool generate_unique_values = false;
-	if(ocn.size() >= 3)
-		generate_unique_values = InterpretNodeIntoBoolValue(ocn[2]);
-
-	//get random param
-	auto param = InterpretNodeForImmediateUse(ocn[0]);
-
-	if(!generate_list)
-	{
-		bool can_free_param = true;
-		EvaluableNodeReference rand_value = GenerateRandomValueBasedOnRandParam(param,
-			this, randomStream, can_free_param, immediate_result);
-
-		if(can_free_param)
-			evaluableNodeManager->FreeNodeTreeIfPossible(param);
-		else
-			evaluableNodeManager->FreeNodeIfPossible(param);
-		return rand_value;
-	}
-
-	if(generate_unique_values && param != nullptr && param->GetOrderedChildNodes().size() > 0)
-	{
-		//clamp to the maximum number that can possibly be generated
-		size_t num_elements = param->GetOrderedChildNodes().size();
-		number_to_generate = std::min(number_to_generate, num_elements);
-
-		//want to generate multiple values, so return a list
-		//try to reuse param if can so don't need to allocate more memory
-		EvaluableNodeReference retval;
-		if(param.unique)
-		{
-			retval = param;
-		}
-		else
-		{
-			retval = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
-			retval->SetOrderedChildNodes(param->GetOrderedChildNodesReference(),
-				param->GetNeedCycleCheck(), param->GetIsIdempotent());
-
-			retval.UpdatePropertiesBasedOnAttachedNode(param, true);
-		}
-
-		//shuffle ordered child nodes
-		auto &retval_ocn = retval->GetOrderedChildNodesReference();
-		for(size_t i = 0; i < number_to_generate; i++)
-		{
-			size_t to_swap_with = randomStream.RandSize(num_elements);
-			std::swap(retval_ocn[i], retval_ocn[to_swap_with]);
-		}
-
-		//free unneeded nodes that weren't part of the shuffle
-		if(param.unique && !param->GetNeedCycleCheck())
-		{
-			for(size_t i = number_to_generate; i < num_elements; i++)
-				evaluableNodeManager->FreeNodeTree(retval_ocn[i]);
-		}
-
-		//get rid of unneeded extra nodes
-		retval->SetOrderedChildNodesSize(number_to_generate);
-		retval->ReleaseOrderedChildNodesExtraMemory();
-
-		return retval;
-	}
-
-	//want to generate multiple values, so return a list
-	EvaluableNodeReference retval(evaluableNodeManager->AllocNode(ENT_LIST), true);
-
-	//just generate a list of values with replacement; either generate_unique_values was not set or the distribution "always" generates unique values
-	retval->ReserveOrderedChildNodes(number_to_generate);
-
-	//just get a bunch of random values with replacement
-	bool can_free_param = true;
-	for(size_t i = 0; i < number_to_generate; i++)
-	{
-		EvaluableNodeReference rand_value = GenerateRandomValueBasedOnRandParam(param,
-			this, randomStream, can_free_param, immediate_result);
-		retval->AppendOrderedChildNode(rand_value);
-		retval.UpdatePropertiesBasedOnAttachedNode(rand_value, i == 0);
-	}
-
-	if(can_free_param)
-	{
-		evaluableNodeManager->FreeNodeTreeIfPossible(param);
-	}
-	else
-	{
-		//if used the parameters, a parameter might be used more than once
-		retval->SetNeedCycleCheck(true);
-		evaluableNodeManager->FreeNodeIfPossible(param);
-	}
-
-	return retval;
-}
-
 //given an assoc of StringID -> value representing the probability weight of each, and a random stream, it randomly selects from the assoc
 // if it can't find an appropriate probability, it returns an empty string
 // if normalize is true, then it will accumulate the probability and then normalize
@@ -1786,116 +1635,48 @@ static StringInternPool::StringID GetRandomWeightedKey(EvaluableNode::AssocType 
 	return StringInternPool::NOT_A_STRING_ID;
 }
 
-//given a vector of vector of the probability weight of each value as probability_nodes, and a random stream, it randomly selects by probability and returns the index
-// if it can't find an appropriate probability, it returns the size of the probabilities list
-// if normalize is true, then it will accumulate the probability and then normalize
-static size_t GetRandomWeightedValueIndex(std::vector<EvaluableNode *> &probability_nodes, RandomStream &rs, bool normalize)
-{
-	double probability_target = rs.RandFull();
-	double accumulated_probability = 0.0;
-	double total_probability = 1.0;
-
-	if(normalize)
-	{
-		total_probability = 0;
-		for(auto pn : probability_nodes)
-			total_probability += std::max(0.0, EvaluableNode::ToNumber(pn, 0.0));
-
-		//if no probabilities, just choose uniformly
-		if(total_probability <= 0.0)
-			return static_cast<size_t>(probability_nodes.size() * probability_target);
-
-		if(total_probability == std::numeric_limits<double>::infinity())
-		{
-			//start over, count infinities
-			size_t inf_count = 0;
-			for(auto pn : probability_nodes)
-			{
-				if(EvaluableNode::ToNumber(pn, 0.0) == std::numeric_limits<double>::infinity())
-					inf_count++;
-			}
-
-			//get the infinity to use
-			inf_count = static_cast<size_t>(inf_count * probability_target);
-
-			//count down until the infinite pair is found
-			for(size_t index = 0; index < probability_nodes.size(); index++)
-			{
-				if(EvaluableNode::ToNumber(probability_nodes[index], 0.0) == std::numeric_limits<double>::infinity())
-				{
-					if(inf_count == 0)
-						return index;
-					inf_count--;
-				}
-			}
-
-			//shouldn't make it here
-			return probability_nodes.size();
-		}
-	}
-
-	for(size_t index = 0; index < probability_nodes.size(); index++)
-	{
-		accumulated_probability += (EvaluableNode::ToNumber(probability_nodes[index], 0.0) / total_probability);
-		if(probability_target < accumulated_probability)
-			return index;
-	}
-
-	//probability mass didn't add up, just grab the first one with a probability greater than zero
-	for(size_t index = 0; index < probability_nodes.size(); index++)
-	{
-		//make sure don't go past the end of the probability nodes
-		if(index >= probability_nodes.size())
-			break;
-
-		if(EvaluableNode::ToNumber(probability_nodes[index], 0.0) > 0)
-			return index;
-	}
-
-	//nothing valid to return
-	return probability_nodes.size();
-}
-
 //Generates an EvaluableNode containing a random value based on the random parameter param, using enm and random_stream
 // if any part of param is preserved in the return value, then can_free_param will be set to false, otherwise it will be left alone
-static EvaluableNodeReference GenerateWeightedRandomValueBasedOnRandParam(EvaluableNodeReference param,
-	EvaluableNodeManager *enm, RandomStream &random_stream, bool &can_free_param)
+EvaluableNodeReference GenerateRandomValueBasedOnRandParam(EvaluableNodeReference param, Interpreter *interpreter,
+	RandomStream &random_stream, bool &can_free_param, bool immediate_result)
 {
 	if(EvaluableNode::IsNull(param))
-		return EvaluableNodeReference::Null();
+		return interpreter->AllocReturn(random_stream.RandFull(), immediate_result);
 
-	auto &ocn = param->GetOrderedChildNodes();
-	//need to have a value and probability list
-	if(ocn.size() >= 2)
+	if(param->GetNumChildNodes() > 0)
 	{
-		if(EvaluableNode::IsNull(ocn[0]) || EvaluableNode::IsNull(ocn[1]))
-			return EvaluableNodeReference::Null();
-
-		can_free_param = false;
-		size_t index = GetRandomWeightedValueIndex(ocn[1]->GetOrderedChildNodes(), random_stream, true);
-		auto &value_ocn = ocn[0]->GetOrderedChildNodes();
-		if(index < value_ocn.size())
-			return EvaluableNodeReference(value_ocn[index], param.unique);
-
-		return EvaluableNodeReference::Null();
+		if(param->IsAssociativeArray())
+		{
+			StringInternPool::StringID id_selected = GetRandomWeightedKey(param->GetMappedChildNodesReference(),
+				random_stream, true);
+			return Parser::ParseFromKeyStringId(id_selected, interpreter->evaluableNodeManager);
+		}
+		else if(param->IsOrderedArray())
+		{
+			auto &ocn = param->GetOrderedChildNodesReference();
+			size_t selection = random_stream.RandSize(ocn.size());
+			can_free_param = false;
+			return EvaluableNodeReference(ocn[selection], param.unique);
+		}
 	}
-
-	auto &mcn = param->GetMappedChildNodes();
-	if(mcn.size() > 0)
+	else if(DoesEvaluableNodeTypeUseNumberData(param->GetType()))
 	{
-		StringInternPool::StringID id_selected = GetRandomWeightedKey(mcn, random_stream, true);
-		return Parser::ParseFromKeyStringId(id_selected, enm);
+		double value = random_stream.RandFull() * param->GetNumberValueReference();
+		return interpreter->AllocReturn(value, immediate_result);
 	}
 
 	return EvaluableNodeReference::Null();
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_WEIGHTED_RAND(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
 	if(ocn.size() == 0)
-		return EvaluableNodeReference::Null();
+	{
+		double r = randomStream.RandFull();
+		return AllocReturn(r, immediate_result);
+	}
 
 	//get number to generate
 	bool generate_list = false;
@@ -1923,14 +1704,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEIGHTED_RAND(EvaluableNod
 	if(ocn.size() >= 3)
 		generate_unique_values = InterpretNodeIntoBoolValue(ocn[2]);
 
-	//get weighted random param
+	//get random param
 	auto param = InterpretNodeForImmediateUse(ocn[0]);
 
+	//if generating a single value
 	if(!generate_list)
 	{
 		bool can_free_param = true;
-		EvaluableNodeReference rand_value = GenerateWeightedRandomValueBasedOnRandParam(param,
-			evaluableNodeManager, randomStream, can_free_param);
+		EvaluableNodeReference rand_value = GenerateRandomValueBasedOnRandParam(param,
+				this, randomStream, can_free_param, immediate_result);
 
 		if(can_free_param)
 			evaluableNodeManager->FreeNodeTreeIfPossible(param);
@@ -1939,46 +1721,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEIGHTED_RAND(EvaluableNod
 		return rand_value;
 	}
 
-	if(generate_unique_values)
+	if(generate_unique_values && !EvaluableNode::IsNull(param) && param->GetNumChildNodes() > 0)
 	{
-		auto &param_ocn = param->GetOrderedChildNodes();
-		if(param_ocn.size() > 0)
+		//clamp to the maximum number that can possibly be generated
+		size_t num_elements = (param == nullptr ? 0 : param->GetNumChildNodes());
+		number_to_generate = std::min(number_to_generate, num_elements);
+
+		if(param->IsAssociativeArray())
 		{
-			EvaluableNodeReference retval(evaluableNodeManager->AllocNode(ENT_LIST), true);
-
-			if(param_ocn.size() < 2 || EvaluableNode::IsNull(param_ocn[0]) || EvaluableNode::IsNull(param_ocn[1]))
-				return retval;
-
-			//clamp to the maximum number that can possibly be generated
-			number_to_generate = std::min(number_to_generate, param_ocn.size());
-			retval->ReserveOrderedChildNodes(number_to_generate);
-
-			//make a copy of all of the values and probabilities so they can be removed one at a time
-			std::vector<EvaluableNode *> values(param_ocn[0]->GetOrderedChildNodes());
-			std::vector<EvaluableNode *> probabilities(param_ocn[1]->GetOrderedChildNodes());
-
-			for(size_t i = 0; i < number_to_generate; i++)
-			{
-				size_t index = GetRandomWeightedValueIndex(probabilities, randomStream, true);
-				if(index >= values.size())
-					break;
-
-				retval->AppendOrderedChildNode(values[index]);
-				retval.UpdatePropertiesBasedOnAttachedNode(param, i == 0);
-
-				//remove the element so it won't be reselected
-				values.erase(begin(values) + index);
-				probabilities.erase(begin(probabilities) + index);
-			}
-
-			evaluableNodeManager->FreeNodeIfPossible(param);
-			return retval;
-		}
-		else if(param->GetMappedChildNodes().size() > 0)
-		{
-			//clamp to the maximum number that can possibly be generated
-			number_to_generate = std::min(number_to_generate, param->GetMappedChildNodesReference().size());
-
 			//want to generate multiple values, so return a list
 			EvaluableNodeReference retval(evaluableNodeManager->AllocNode(ENT_LIST), true);
 			auto &retval_ocn = retval->GetOrderedChildNodesReference();
@@ -2002,70 +1752,78 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WEIGHTED_RAND(EvaluableNod
 			return retval;
 		}
 
-		return EvaluableNodeReference::Null();
-	}
-
-	//just generate a list of values with replacement; either generate_unique_values was not set or the distribution "always" generates unique values
-	EvaluableNodeReference retval(evaluableNodeManager->AllocNode(ENT_LIST), true);
-	retval->ReserveOrderedChildNodes(number_to_generate);
-
-	auto &param_ocn = param->GetOrderedChildNodes();
-	//if generating many values with weighted probabilities, use fast method
-	if(param_ocn.size() > 0 && (number_to_generate > 10 || (number_to_generate > 3 && param_ocn.size() > 200)))
-	{
-		if(param_ocn.size() < 2 || EvaluableNode::IsNull(param_ocn[0]) || EvaluableNode::IsNull(param_ocn[1]))
+		//want to generate multiple values, so return a list
+		//try to reuse param if can so don't need to allocate more memory
+		EvaluableNodeReference retval;
+		if(param.unique)
 		{
-			evaluableNodeManager->FreeNodeIfPossible(param);
-			return retval;
+			retval = param;
+		}
+		else
+		{
+			retval = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
+			retval->SetOrderedChildNodes(param->GetOrderedChildNodesReference(),
+				param->GetNeedCycleCheck(), param->GetIsIdempotent());
+
+			retval.UpdatePropertiesBasedOnAttachedNode(param, true);
 		}
 
-		auto &probabilities_ocn = param_ocn[1]->GetOrderedChildNodes();
-		std::vector<double> probabilities;
-		probabilities.reserve(probabilities_ocn.size());
-		for(auto pn : probabilities_ocn)
-			probabilities.push_back(EvaluableNode::ToNumber(pn));
-
-		auto &values_ocn = param_ocn[0]->GetOrderedChildNodes();
-
-		WeightedDiscreteRandomStreamTransform<EvaluableNode *> wdrst(values_ocn, probabilities, true);
+		//shuffle ordered child nodes
+		auto &retval_ocn = retval->GetOrderedChildNodesReference();
 		for(size_t i = 0; i < number_to_generate; i++)
 		{
-			EvaluableNode *rand_value = wdrst.WeightedDiscreteRand(randomStream);
-			retval->AppendOrderedChildNode(rand_value);
+			size_t to_swap_with = randomStream.RandSize(num_elements);
+			std::swap(retval_ocn[i], retval_ocn[to_swap_with]);
 		}
 
-		retval.unique = param.unique;
-		retval->SetNeedCycleCheck(true);
+		//free unneeded nodes that weren't part of the shuffle
+		if(param.unique && !param->GetNeedCycleCheck())
+		{
+			for(size_t i = number_to_generate; i < num_elements; i++)
+				evaluableNodeManager->FreeNodeTree(retval_ocn[i]);
+		}
 
-		evaluableNodeManager->FreeNodeIfPossible(param);
+		//get rid of unneeded extra nodes
+		retval->SetOrderedChildNodesSize(number_to_generate);
+		retval->ReleaseOrderedChildNodesExtraMemory();
 
 		return retval;
 	}
 
-	auto &mcn = param->GetMappedChildNodes();
-	//if generating many values with weighted probabilities, use fast method
-	if(mcn.size() > 0 && (number_to_generate > 10 || (number_to_generate > 3 && mcn.size() > 200)))
+	//want to generate multiple values, so return a list
+	EvaluableNodeReference retval(evaluableNodeManager->AllocNode(ENT_LIST), true);
+
+	//just generate a list of values with replacement; either generate_unique_values was not set or the distribution "always" generates unique values
+	retval->ReserveOrderedChildNodes(number_to_generate);
+
+	bool can_free_param = true;
+
+	//get information to determine which mechanism to use to generate
+	size_t num_weighted_values = 0;
+	if(param != nullptr && param->IsAssociativeArray())
+		num_weighted_values = param->GetMappedChildNodesReference().size();
+
+	if(num_weighted_values > 0
+		&& (number_to_generate > 10 || (number_to_generate > 3 && num_weighted_values > 200)))
 	{
+		//use fast repeated generation technique
 		WeightedDiscreteRandomStreamTransform<StringInternPool::StringID,
-			EvaluableNode::AssocType, EvaluableNodeAsDouble> wdrst(mcn, false);
+			EvaluableNode::AssocType, EvaluableNodeAsDouble> wdrst(param->GetMappedChildNodesReference(), false);
 		for(size_t i = 0; i < number_to_generate; i++)
 		{
 			EvaluableNodeReference rand_value(Parser::ParseFromKeyStringId(wdrst.WeightedDiscreteRand(randomStream), evaluableNodeManager));
 			retval->AppendOrderedChildNode(rand_value);
-			retval.UpdatePropertiesBasedOnAttachedNode(rand_value);
 		}
-
-		evaluableNodeManager->FreeNodeTreeIfPossible(param);
-		return retval;
 	}
-
-	//just get a bunch of random values with replacement
-	bool can_free_param = true;
-	for(size_t i = 0; i < number_to_generate; i++)
+	else //perform simple generation
 	{
-		EvaluableNodeReference rand_value = GenerateWeightedRandomValueBasedOnRandParam(param, evaluableNodeManager, randomStream, can_free_param);
-		retval->AppendOrderedChildNode(rand_value);
-		retval.UpdatePropertiesBasedOnAttachedNode(rand_value, i == 0);
+		for(size_t i = 0; i < number_to_generate; i++)
+		{
+			EvaluableNodeReference rand_value = GenerateRandomValueBasedOnRandParam(param,
+				this, randomStream, can_free_param, immediate_result);
+			retval->AppendOrderedChildNode(rand_value);
+			retval.UpdatePropertiesBasedOnAttachedNode(rand_value, i == 0);
+		}
 	}
 
 	if(can_free_param)

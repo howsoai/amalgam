@@ -69,7 +69,6 @@ void StringInternPool::InitializeStaticStrings()
 
 	//simulation and operations
 	EmplaceNodeTypeString(ENT_RAND, "rand");
-	EmplaceNodeTypeString(ENT_WEIGHTED_RAND, "weighted_rand");
 	EmplaceNodeTypeString(ENT_GET_RAND_SEED, "get_rand_seed");
 	EmplaceNodeTypeString(ENT_SET_RAND_SEED, "set_rand_seed");
 	EmplaceNodeTypeString(ENT_SYSTEM_TIME, "system_time");

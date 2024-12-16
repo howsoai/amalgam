@@ -58,7 +58,6 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 
 	//simulation and operations
 	&Interpreter::InterpretNode_ENT_RAND,															// ENT_RAND
-	&Interpreter::InterpretNode_ENT_WEIGHTED_RAND,													// ENT_WEIGHTED_RAND
 	&Interpreter::InterpretNode_ENT_GET_RAND_SEED,													// ENT_GET_RAND_SEED
 	&Interpreter::InterpretNode_ENT_SET_RAND_SEED,													// ENT_SET_RAND_SEED
 	&Interpreter::InterpretNode_ENT_SYSTEM_TIME,													// ENT_SYSTEM_TIME

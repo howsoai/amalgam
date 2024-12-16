@@ -1940,7 +1940,6 @@ CompactHashMap<EvaluableNodeType, double> EvaluableNodeTreeManipulation::evaluab
 
 	//simulation and operations
 	{ENT_RAND,											0.4},
-	{ENT_WEIGHTED_RAND,									0.02},
 	{ENT_GET_RAND_SEED,									0.02},
 	{ENT_SET_RAND_SEED,									0.02},
 	{ENT_SYSTEM_TIME,									0.01},

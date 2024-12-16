@@ -897,8 +897,8 @@ void EntityQueryCaches::GetMatchingEntitiesViaSamplingWithReplacement(EntityQuer
 
 			if(update_matching_entities)
 				matching_entities.insert(eid);
-			else
-				entity_indices_sampled.push_back(eid);
+
+			entity_indices_sampled.push_back(eid);
 		}
 	}
 	else //sampling a bunch, better to precompute and use faster method
@@ -913,8 +913,8 @@ void EntityQueryCaches::GetMatchingEntitiesViaSamplingWithReplacement(EntityQuer
 
 			if(update_matching_entities)
 				matching_entities.insert(eid);
-			else
-				entity_indices_sampled.push_back(eid);
+
+			entity_indices_sampled.push_back(eid);
 		}
 	}
 }
@@ -1150,12 +1150,12 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 						selected_id = matching_ents.GetNthElement(cond.randomStream.RandSize(num_entities));
 
 					//keep track if necessary
-					if(!update_matching_ents)
+					if(update_matching_ents)
 						temp.insert(selected_id);
 					indices_with_duplicates.push_back(selected_id);
 				}
 
-				if(!update_matching_ents)
+				if(update_matching_ents)
 					matching_ents = temp;
 			}
 

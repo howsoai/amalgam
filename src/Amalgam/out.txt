@@ -156,7 +156,6 @@ hello world: 12 and 2
 	query_select 0.2
 	query_sum 0.2
 	query_value_masses 0.2
-	query_weighted_sample 0.2
 	query_within_generalized_distance 0.2
 	rand 0.4
 	range 0.5
@@ -229,10 +228,10 @@ hello world: 12 and 2
 (print "hello")
 [(null) (null) .infinity -.infinity]
 
-{a 1 c ["alpha" "beta" "gamma"] b 2}
+{c ["alpha" "beta" "gamma"] a 1 b 2}
 {
-	a 1
 	c ["alpha" "beta" "gamma"]
+	a 1
 	b 2
 }
 
@@ -631,7 +630,7 @@ abcdef
 0.14384103622589045
 --first--
 4
-1
+2
 1
 0
 a
@@ -647,17 +646,17 @@ a
 [1 2 3 4 5 6]
 []
 {
+	a 1
 	b 2
-	c 3
 	d 4
 	e 5
 	f 6
 }
-{b 2 f 6}
+{d 4 e 5}
 {
 	b 2
-	c 3
 	d 4
+	e 5
 	f 6
 }
 {
@@ -682,7 +681,7 @@ abcdef
 
 --last--
 this
-1
+2
 1
 0
 c
@@ -698,17 +697,17 @@ c
 [1 2 3 4 5 6]
 []
 {
+	a 1
 	b 2
-	c 3
 	d 4
 	e 5
 	f 6
 }
-{b 2 f 6}
+{d 4 e 5}
 {
 	b 2
-	c 3
 	d 4
+	e 5
 	f 6
 }
 {
@@ -1060,7 +1059,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-[4 "a" "c" "b"]
+["c" 4 "a" "b"]
 [
 	0
 	1
@@ -1072,10 +1071,10 @@ abcdef
 	7
 ]
 [0 1 2 3]
-[1 2 3 0]
-[1 2 3 0]
+[3 0 2 1]
+[3 0 2 1]
 --values--
-["d" 1 3 2]
+[3 "d" 1 2]
 [
 	"a"
 	1
@@ -1096,7 +1095,7 @@ abcdef
 	4
 	"d"
 ]
-[1 "d" 3 2]
+["d" 3 1 2]
 [
 	1
 	2
@@ -1248,10 +1247,10 @@ string
 list
 assoc
 [
-	"4"
+	[4]
 	4
 	{4 4}
-	[4]
+	"4"
 ]
 --set--
 {
@@ -1336,7 +1335,7 @@ current_index: 2
 		rmfile "del /s /q "
 		rwww 1
 		slash "\\"
-		start_time 1734316483.409619
+		start_time 1734360132.523841
 		www 1
 		x 12
 		zz 10
@@ -1382,7 +1381,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1734316483.409619
+	start_time 1734360132.523841
 	www 1
 	x 12
 	zz 10
@@ -1427,7 +1426,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1734316483.409619
+	start_time 1734360132.523841
 	www 1
 	x 12
 	zz 10
@@ -1558,31 +1557,31 @@ true
 
 [15.147298145412242 2.8707229850232165 1.1842755192409848 26.133999503489054]
 
-b
+a
 [
-	"b"
-	"a"
-	"b"
-	"a"
-	"b"
 	"a"
 	"b"
 	"b"
 	"b"
 	"a"
-	"a"
 	"b"
 	"b"
 	"a"
 	"b"
-	"a"
+	"b"
+	"b"
+	"b"
+	"b"
+	"b"
+	"b"
+	"b"
 ]
 
-infinity test c or d: ["d" "d" "c" "c"]
+infinity test c or d: ["c" "c" "d" "d"]
 
-{a 16 b 50 c 34}
+{a 34 b 50 c 16}
 
-[1 6 3]
+[6 1 7]
 
 --get_rand_seed--
 ü—õæš§I`¦!šc”lÿ
@@ -1628,8 +1627,8 @@ infinity test c or d: ["d" "d" "c" "c"]
 string
 --set_type--
 (- 3 4)
-["a" 4 "b" 3]
-["a" 4 "b" 3]
+["b" 3 "a" 4]
+["b" 3 "a" 4]
 {a 4 b 3}
 8.7
 (parallel
@@ -1678,17 +1677,17 @@ string
 	{a 3 b 4}
 	{c "c"}
 ]
-21: [{"a":3,"b":4},{"d":null,"c":"c"}]
+21: [{"a":3,"b":4},{"c":"c","d":null}]
 22: [{"a":3,"b":4},{"c":"c","d":null}]
-23: a: 1
+23: c: 3
+a: 1
+b: 2
 e:
   - a
   - b
   - 
   - .inf
 d: 4
-c: 3
-b: 2
 
 24: a: 1
 b: 2
@@ -1701,7 +1700,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2024-12-15-21.34.43.4700600
+current date-time in epoch: 2024-12-16-09.42.12.5807800
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -1981,27 +1980,27 @@ decrypted: hello
 --mutate--
 [
 	1
-	(=)
-	(query_weighted_sample)
-	#a -8.116855141414584
+	(get)
+	"a"
+	4.430080833324215
 	5
-	6
+	(sort)
 	7
-	(associate)
+	8
 	9
-	#b 10
+	(=)
 	11
-	12
+	(declare)
 	13
-	14
-	(associate (query_max) 1 b 2)
+	b
+	(associate)
 ]
 [
 	(+)
 	2
-	(*)
-	(+)
-	(associate)
+	3
+	4
+	(associate "alpha" 5 "beta" 6)
 	(associate
 		"nest"
 		(associate (-) [])
@@ -2794,56 +2793,57 @@ flatten restore with parallel
 --mutate_entity--
 [
 	1
-	"b"
+	2.0629881708090316
 	3
-	4
+	"b"
 	5
-	6
-	(query_less_or_equal_to)
-	(>)
-	(size)
-	10
-	11
-	12
-	[]
-	(trunc)
-	(associate "a" (return) "b" 2)
-]
-
-[
-	(query_mode)
-	2
-	(append)
-	4
-	"a"
-	(set)
-	7
-	7.642933634079031
-	(zip_labels)
-	(not)
 	b
-	(set)
-	13
-	(mix_labels)
-	(associate "a" (query_weighted_sample) (rand) (query_not_between))
-]
-
-[
-	(-)
-	(+)
-	(+)
-	4
-	5
-	6
 	7
 	8
 	9
+	10
+	(remove)
+	(max)
+	13
+	14
+	(get)
+]
+
+[
+	(accum)
+	-0.23190034392242342
+	a
+	##a -0.14348774991375074
+	(size)
+	6
+	(filter)
+	a
+	9
+	10
+	{}
+	(filter)
+	(range)
+	(query_within_generalized_distance)
+	(associate "a" (map) (range) 2)
+]
+
+[
 	(*)
+	2
+	3
+	4
+	(-)
+	6
+	7
+	8
+	(*)
+	10
 	11
 	12
+	(-)
+	(*)
+	(associate (*) (*) (+) 2)
 	(+)
-	14
-	(associate)
 ]
 
 --commonality_entities--
@@ -2903,17 +2903,6 @@ _1651806471
 	##p
 	["_2325275497" "_2973704165" "_2325275497" "_2973704165"]
 )
-_2325275497
-(associate
-	"E"
-	3
-	"F"
-	4
-	"G"
-	5
-	"H"
-	6
-)
 _2973704165
 (associate
 	"e"
@@ -2923,6 +2912,17 @@ _2973704165
 	"g"
 	5
 	"h"
+	6
+)
+_2325275497
+(associate
+	"E"
+	3
+	"F"
+	4
+	"G"
+	5
+	"H"
 	6
 )
 --difference_entities--
@@ -3253,8 +3253,14 @@ _3532185687
 						[]
 						(lambda
 							{
-								E 3
-								F 4
+								E (get
+										(current_value 1)
+										"E"
+									)
+								F (get
+										(current_value 1)
+										"F"
+									)
 								G 5
 								H 6
 							}
@@ -3279,7 +3285,16 @@ _3532185687
 						_
 						[]
 						(lambda
-							{e 3 f 4}
+							{
+								e (get
+										(current_value 1)
+										"e"
+									)
+								f (get
+										(current_value 1)
+										"f"
+									)
+							}
 						)
 					)
 				)
@@ -3311,7 +3326,89 @@ contained_entities new_entity: ["DiffEntityChild1" "OnlyIn2" "_3626604918" "_382
 difference between DiffEntity2 and new_entity:
 (declare
 	{_ (null) new_entity (null)}
-	(clone_entities _ new_entity)
+	(assign
+		"new_entity"
+		(first
+			(create_entities
+				new_entity
+				(call
+					(lambda
+						(declare
+							{_ (null)}
+							(replace _)
+						)
+					)
+					{
+						_ (retrieve_entity_root _)
+					}
+				)
+			)
+		)
+	)
+	(create_entities
+		(append new_entity "_3626604918")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{
+								E (null)
+								F (null)
+								G (get
+										(current_value 1)
+										"G"
+									)
+								H (get
+										(current_value 1)
+										"H"
+									)
+							}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_3626604918")
+					)
+			}
+		)
+	)
+	(create_entities
+		(append new_entity "_3823131681")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{e (null) f (null)}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_3823131681")
+					)
+			}
+		)
+	)
+	(clone_entities
+		(append _ "DiffEntityChild1")
+		(append new_entity "DiffEntityChild1")
+	)
+	(clone_entities
+		(append _ "OnlyIn2")
+		(append new_entity "OnlyIn2")
+	)
+	new_entity
 )
 (declare
 	{_ (null) new_entity (null)}
@@ -3379,8 +3476,14 @@ difference between DiffEntity2 and new_entity:
 						[]
 						(lambda
 							{
-								E 3
-								F 4
+								E (get
+										(current_value 1)
+										"E"
+									)
+								F (get
+										(current_value 1)
+										"F"
+									)
 								G 5
 								H 6
 							}
@@ -3405,7 +3508,16 @@ difference between DiffEntity2 and new_entity:
 						_
 						[]
 						(lambda
-							{e 3 f 4}
+							{
+								e (get
+										(current_value 1)
+										"e"
+									)
+								f (get
+										(current_value 1)
+										"f"
+									)
+							}
 						)
 					)
 				)
@@ -3431,25 +3543,107 @@ contained_entities new_entity: ["OnlyIn2" "_1985995361" "_2783372341" "DiffEntit
 difference between DiffContainer and DiffEntity2:
 (declare
 	{_ (null) new_entity (null)}
-	(clone_entities _ new_entity)
+	(assign
+		"new_entity"
+		(first
+			(create_entities
+				new_entity
+				(call
+					(lambda
+						(declare
+							{_ (null)}
+							(replace _)
+						)
+					)
+					{
+						_ (retrieve_entity_root _)
+					}
+				)
+			)
+		)
+	)
+	(create_entities
+		(append new_entity "_1985995361")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{
+								E (null)
+								F (null)
+								G (get
+										(current_value 1)
+										"G"
+									)
+								H (get
+										(current_value 1)
+										"H"
+									)
+							}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_1985995361")
+					)
+			}
+		)
+	)
+	(create_entities
+		(append new_entity "_2783372341")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{e (null) f (null)}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_2783372341")
+					)
+			}
+		)
+	)
+	(clone_entities
+		(append _ "OnlyIn2")
+		(append new_entity "OnlyIn2")
+	)
+	(clone_entities
+		(append _ "DiffEntityChild1")
+		(append new_entity "DiffEntityChild1")
+	)
+	new_entity
 )
 --mix_entities--
-(associate "b" 4 "a" 3)
+(associate "b" 4 "c" 3)
 MergeEntityChild1
 (associate "x" 3 "y" 4)
 MergeEntityChild2
-(associate "p" 3 "q" 4 "u" 5)
-_3130331116
 (associate
-	"E"
+	"p"
 	3
-	"F"
+	"q"
 	4
-	"G"
-	5
-	"H"
+	"v"
 	6
+	"w"
+	7
 )
+_3130331116
+(associate "E" 3 "F" 4 "H" 6)
 _1651806471
 (associate
 	"e"
@@ -3539,7 +3733,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1734316483.599899
+1734360132.912395
 (true)
 
 RootTest
@@ -3947,60 +4141,60 @@ store to .json normally
 ["Child1" "Child5"]
 ["Child3" "Child4"]
 ["Child6" "Child7"]
-["Child1" "Child5" "Child6" "Child7"]
-["Child1" "Child3" "Child5" "Child7"]
+["Child2" "Child4" "Child5" "Child6"]
+["Child3" "Child4" "Child5" "Child6"]
 ["Child4" "Child6"]
 --query_sample--
 ["Child1"]
-["Child3" "Child5"]
-["Child1"]
-["Child1"]
---query_weighted_sample--
+["Child5" "Child4"]
+["Child6"]
+["Child3"]
+with weights
 ["Child2"]
-["Child1"]
+["Child2"]
 [
+	"Child6"
 	"Child2"
-	"Child1"
 	"Child2"
-	"Child1"
-	"Child1"
-	"Child2"
-	"Child1"
-	"Child1"
+	"Child3"
 	"Child1"
 	"Child2"
+	"Child2"
+	"Child2"
+	"Child3"
+	"Child4"
 	"Child1"
 	"Child2"
-	"Child1"
-	"Child1"
-	"Child1"
-	"Child1"
 	"Child2"
+	"Child6"
 	"Child1"
 	"Child1"
 	"Child2"
+	"Child2"
+	"Child2"
+	"Child1"
 ]
 [
 	"Child2"
-	"Child1"
-	"Child1"
-	"Child1"
+	"Child2"
 	"Child2"
 	"Child2"
 	"Child1"
 	"Child2"
+	"Child1"
 	"Child2"
+	"Child2"
+	"Child2"
+	"Child1"
+	"Child1"
+	"Child1"
+	"Child1"
 	"Child2"
 	"Child5"
 	"Child1"
+	"Child4"
 	"Child1"
 	"Child2"
-	"Child1"
-	"Child2"
-	"Child2"
-	"Child1"
-	"Child5"
-	"Child1"
 ]
 [
 	"Child2"
@@ -4008,13 +4202,13 @@ store to .json normally
 	"Child2"
 	"Child2"
 	"Child2"
-	"Child2"
+	"Child6"
 	"Child2"
 	"Child2"
 	"Child2"
 	"Child2"
 ]
-["Child2" "Child4"]
+["Child2"]
 --query_in_entity_list--
 ["Child6" "Child7"]
 --query_not_in_entity_list--
@@ -4059,23 +4253,23 @@ cascading query_not_in_entity_list: ["Child6" "Child7"]
 unweighted query: {
 	Child1 4
 	Child2 1
-	Child3 100
+	Child4 100
 	Child6 2
 	Child7 10
 }
 weighted query: {
 	Child1 1.8
 	Child2 0.45
-	Child3 2
+	Child4 2
 	Child6 0.04
 	Child7 0.2
 }
 weighted query list of lists: [
-	["Child6" "Child7" "Child2" "Child1" "Child4"]
+	["Child6" "Child7" "Child2" "Child1" "Child3"]
 	[0.04 0.2 0.45 1.8 2]
 ]
 weighted query list of lists: [
-	["Child2" "Child6" "Child1" "Child7" "Child3"]
+	["Child2" "Child6" "Child1" "Child7" "Child4"]
 	[1 2 4 10 100]
 	[-1 2 4 10 100]
 ]
@@ -4380,14 +4574,14 @@ case conviction:{
 }
 cyclic feature nearest neighbors: {cyclic1 1 cyclic5 0.5}
 cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
+200: 0.05555555555555555 (null
+	##deg 8
+)
 155: 0.1 (null
 	##deg 0
 )
 190: 0.045454545454545456 (null
 	##deg 12
-)
-200: 0.05555555555555555 (null
-	##deg 8
 )
 --contains_label--
 (true)
@@ -4651,7 +4845,7 @@ cyclic lookup test 2:
 ["hello" "!"]
 {a1 1.4142135623730951 a2 2 a3 1.4142135623730951}
 {a1 1.4142135623730951 a3 1.4142135623730951}
-{a3 1.4142135623730951}
+{a1 1.4142135623730951}
 {a1 5.0990195135927845 a2 2 a3 5.0990195135927845}
 {a1 1 a3 1 a4 0}
 --accuracy tests--
@@ -4663,13 +4857,13 @@ distance symmetry tests
 [
 	[
 		"B"
+		"F"
+		"A"
 		"D"
 		"I"
 		"C"
-		"F"
-		"A"
+		"J"
 		"G"
-		"H"
 	]
 	[
 		0
@@ -4685,13 +4879,13 @@ distance symmetry tests
 [
 	[
 		"B"
-		"I"
 		"F"
+		"C"
+		"I"
 		"A"
 		"D"
-		"C"
-		"G"
 		"H"
+		"G"
 	]
 	[
 		0
@@ -4889,4 +5083,4 @@ rmdir /s /q amlg_code\persistent_tree_test_root
 del /s /q amlg_code\persist_module_test\psm.mdam
 del /s /q amlg_code\persist_module_test.mdam
 --total execution time--
-1.1351850032806396
+2.0860910415649414

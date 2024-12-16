@@ -45,7 +45,7 @@ var data = [
 	{
 		"parameter" : "if [bool condition1] [code then1] [bool condition2] [code then2] ... [bool conditionN] [code thenN] [code else]",
 		"output" : "*",
-		"description" : "If the condition1 bool is true, then it will evaluate to the then1 argument.  Otherwise condition2 will be checked, repeating for every pair.  If there is an odd number of parameters, the last is the final 'else', and will be evaluated as that if all conditions are false.",
+		"description" : "If the condition1 bool is true, then it will evaluate to the then1 argument.  Otherwise condition2 will be checked, repeating for every pair.  If there is an odd number of parameters, the last is the final 'else', and will be evaluated as that if all conditions are false.  If there is an even number of parameters and none are true, then evaluates to null.",
 		"example" : "(if (null) (print \"nothing\") 0 (print \"nothing\") (print \"hello\") )"
 	},
 

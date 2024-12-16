@@ -5,9 +5,8 @@
 
 //system headers:
 #include <cstdlib>
-
-#include <utility>
 #include <functional>
+#include <utility>
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ADD(EvaluableNode *en, bool immediate_result)
 {

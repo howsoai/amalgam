@@ -136,6 +136,15 @@ public:
 				&& nominalStringSparseDeviationMatrix.size() == 0);
 		}
 
+		//returns the number of entries in the sparse deviation matrix
+		__forceinline size_t GetNumDeviationEntries()
+		{
+			if(!IsFeatureNominal())
+				return 0;
+
+			return nominalNumberSparseDeviationMatrix.size() + nominalStringSparseDeviationMatrix.size();
+		}
+
 		//the type of comparison for each feature
 		// this type is 32-bit aligned to make sure the whole structure is aligned
 		FeatureDifferenceType featureType;
@@ -441,7 +450,8 @@ public:
 
 				//exclude deviation values from number of classes since they are accounted for
 				double nonmatching_classes = featureAttribs[index].typeAttributes.nominalCount - deviations.size();
-				if(nonmatching_classes < 1)
+				//ensure not NaN and at least 1
+				if(!(nonmatching_classes >= 1.0))
 					nonmatching_classes = 1;
 
 				auto match_deviation_it = deviations.find(a.number);
@@ -466,7 +476,8 @@ public:
 
 				//exclude deviation values from number of classes since they are accounted for
 				double nonmatching_classes = featureAttribs[index].typeAttributes.nominalCount - deviations.size();
-				if(nonmatching_classes < 1)
+				//ensure not NaN and at least 1
+				if(!(nonmatching_classes >= 1.0))
 					nonmatching_classes = 1;
 
 				auto match_deviation_it = deviations.find(a.stringID);
@@ -603,9 +614,11 @@ public:
 		auto &feature_attribs = featureAttribs[index];
 
 		//assume one nonmatching class in existence if not specified
-		double nonmatching_classes = 1;
-		if(featureAttribs[index].typeAttributes.nominalCount > 1)
-			nonmatching_classes = featureAttribs[index].typeAttributes.nominalCount - 1;
+		double nonmatching_classes = featureAttribs[index].typeAttributes.nominalCount
+			- feature_attribs.GetNumDeviationEntries();
+		//ensure not NaN and at least 1
+		if(!(nonmatching_classes >= 1.0))
+			nonmatching_classes = 1;
 
 		double deviation = 0.0;
 		if(DoesFeatureHaveDeviation(index))
@@ -618,7 +631,8 @@ public:
 		//divide the probability among the other classes
 		double prob_class_given_nonmatch = deviation / nonmatching_classes;
 
-		return ComputeDistanceTermNominalNonmatchFromMatchProbabilities(index, prob_class_given_match, prob_class_given_nonmatch, high_accuracy);
+		return ComputeDistanceTermNominalNonmatchFromMatchProbabilities(index,
+			prob_class_given_match, prob_class_given_nonmatch, high_accuracy);
 	}
 
 	//computes the distance term for an unknown-unknown
@@ -971,7 +985,7 @@ protected:
 				if(DoesFeatureHaveDeviation(i))
 				{
 					constexpr double smallest_delta = 1e-100;
-					if(feature_attribs.typeAttributes.nominalCount == 1 && feature_attribs.deviation < smallest_delta)
+					if(feature_attribs.typeAttributes.nominalCount <= 1 && feature_attribs.deviation < smallest_delta)
 						feature_attribs.deviation = smallest_delta;
 				}
 
@@ -1125,7 +1139,8 @@ public:
 
 				//exclude deviation values from number of classes since they are accounted for
 				double nonmatching_classes = feature_attributes.typeAttributes.nominalCount - deviations.size();
-				if(nonmatching_classes < 1)
+				//ensure not NaN and at least 1
+				if(!(nonmatching_classes >= 1.0))
 					nonmatching_classes = 1;
 
 				for(auto &[value, deviation] : deviations)
@@ -1178,7 +1193,8 @@ public:
 
 				//exclude deviation values from number of classes since they are accounted for,
 				double nonmatching_classes = feature_attributes.typeAttributes.nominalCount - deviations.size();
-				if(nonmatching_classes < 1)
+				//ensure not NaN and at least 1
+				if(!(nonmatching_classes >= 1.0))
 					nonmatching_classes = 1;
 
 				for(auto &[sid, deviation] : deviations)

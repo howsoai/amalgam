@@ -1304,11 +1304,10 @@ protected:
 	}
 
 	template <typename Compare>
-	EvaluableNodeReference GetIndexMinMaxFromList(EvaluableNode *en, Compare compare, double compare_limit, bool immediate_result)
+	EvaluableNodeReference GetIndexMinMaxFromList(EvaluableNode *en, std::vector<EvaluableNode*> &orderedChildNodes, Compare compare, double compare_limit, bool immediate_result)
 	{
-		auto &ocn = en->GetOrderedChildNodes();
 
-		if(ocn == nullptr || ocn.size() == 0)
+		if(orderedChildNodes.size() == 0)
 			return EvaluableNodeReference::Null();
 
 		bool value_found = false;
@@ -1316,7 +1315,7 @@ protected:
 
 	#ifdef MULTITHREAD_SUPPORT
 		std::vector<EvaluableNodeReference> interpreted_nodes;
-		if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes, true))
+		if(InterpretEvaluableNodesConcurrently(en, orderedChildNodes, interpreted_nodes, true))
 		{
 			size_t max_index = 0;
 			for(size_t i = 0; i < interpreted_nodes.size(); i++)
@@ -1341,9 +1340,9 @@ protected:
 		auto node_stack = CreateOpcodeStackStateSaver();
 
 		size_t max_index = 0;
-		for(size_t i = 0; i < ocn.size(); i++)
+		for(size_t i = 0; i < orderedChildNodes.size(); i++)
 		{
-			double cur_value = InterpretNodeIntoNumberValue(ocn[i]);
+			double cur_value = InterpretNodeIntoNumberValue(orderedChildNodes[i]);
 			if(compare(cur_value, result_value))
 			{
 				value_found = true;

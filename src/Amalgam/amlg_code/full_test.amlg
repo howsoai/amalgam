@@ -397,11 +397,13 @@
 
  (print "--index_max--\n")
  (print (index_max .5 -12 3 5 7) "\n")
+ (print (index_max (list 1 2 3)) "\n")
  (print (index_max (null) 34  -66) "\n")q
  (print (index_max (assoc  1 2 "tomato" 4444 3 5) ) "\n")
 
  (print "--index_min--\n")
  (print (index_min .5 -12 3 5 7) "\n")
+ (print (index_min (list 1 2 3)) "\n")
  (print (index_min (null) 34  -66) "\n")
  (print (index_min (assoc  1 2 "tomato" 4444 3 5) ) "\n")
 

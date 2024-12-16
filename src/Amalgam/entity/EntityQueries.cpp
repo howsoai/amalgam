@@ -368,10 +368,9 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 			entity_weights.reserve(num_to_sample);
 
 			//retrieve and accumulate weights
-			for(size_t i = 0; i < matching_entities.size(); i++)
+			for(Entity *e : matching_entities)
 			{
 				double value;
-				Entity *e = matching_entities[i];
 				if(e != nullptr && e->GetValueAtLabelAsNumber(singleLabel, value))
 				{
 					if(FastIsNaN(value))

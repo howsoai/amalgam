@@ -430,11 +430,6 @@ public:
 				: feature_attribs.nominalSymmetricNonMatchDistanceTerm.GetValue(high_accuracy);
 		}
 
-		//assume one nonmatching class in existence if not specified
-		double nonmatching_classes = 1;
-		if(featureAttribs[index].typeAttributes.nominalCount > 1)
-			nonmatching_classes = featureAttribs[index].typeAttributes.nominalCount - 1;
-
 		double prob_class_given_match = std::numeric_limits<double>::quiet_NaN();
 		double prob_class_given_nonmatch = std::numeric_limits<double>::quiet_NaN();
 		if(a_type == ENIVT_NUMBER && feature_attribs.nominalNumberSparseDeviationMatrix.size() > 0)
@@ -442,19 +437,24 @@ public:
 			auto a_deviations_it = feature_attribs.nominalNumberSparseDeviationMatrix.find(a.number);
 			if(a_deviations_it != std::end(feature_attribs.nominalNumberSparseDeviationMatrix))
 			{
-				auto &ndd = a_deviations_it->second;
+				auto &deviations = a_deviations_it->second;
 
-				auto match_deviation_it = ndd.find(a.number);
-				if(match_deviation_it != end(ndd))
+				//exclude deviation values from number of classes since they are accounted for
+				double nonmatching_classes = featureAttribs[index].typeAttributes.nominalCount - deviations.size();
+				if(nonmatching_classes < 1)
+					nonmatching_classes = 1;
+
+				auto match_deviation_it = deviations.find(a.number);
+				if(match_deviation_it != end(deviations))
 					prob_class_given_match = 1 - match_deviation_it->second;
 				else
-					prob_class_given_match = 1 - ndd.defaultDeviation;					
+					prob_class_given_match = 1 - deviations.defaultDeviation;					
 
-				auto nonmatch_deviation_it = ndd.find(b.number);
-				if(nonmatch_deviation_it != end(ndd))
+				auto nonmatch_deviation_it = deviations.find(b.number);
+				if(nonmatch_deviation_it != end(deviations))
 					prob_class_given_nonmatch = 1 - nonmatch_deviation_it->second;
 				else
-					prob_class_given_nonmatch = (1 - ndd.defaultDeviation) / nonmatching_classes;
+					prob_class_given_nonmatch = (1 - deviations.defaultDeviation) / nonmatching_classes;
 			}
 		}
 		else if(a_type == ENIVT_STRING_ID && feature_attribs.nominalStringSparseDeviationMatrix.size() > 0)
@@ -462,19 +462,24 @@ public:
 			auto a_deviations_it = feature_attribs.nominalStringSparseDeviationMatrix.find(a.stringID);
 			if(a_deviations_it != std::end(feature_attribs.nominalStringSparseDeviationMatrix))
 			{
-				auto &ndd = a_deviations_it->second;
+				auto &deviations = a_deviations_it->second;
 
-				auto match_deviation_it = ndd.find(a.stringID);
-				if(match_deviation_it != end(ndd))
+				//exclude deviation values from number of classes since they are accounted for
+				double nonmatching_classes = featureAttribs[index].typeAttributes.nominalCount - deviations.size();
+				if(nonmatching_classes < 1)
+					nonmatching_classes = 1;
+
+				auto match_deviation_it = deviations.find(a.stringID);
+				if(match_deviation_it != end(deviations))
 					prob_class_given_match = 1 - match_deviation_it->second;
 				else
-					prob_class_given_match = 1 - ndd.defaultDeviation;
+					prob_class_given_match = 1 - deviations.defaultDeviation;
 
-				auto nonmatch_deviation_it = ndd.find(b.stringID);
-				if(nonmatch_deviation_it != end(ndd))
+				auto nonmatch_deviation_it = deviations.find(b.stringID);
+				if(nonmatch_deviation_it != end(deviations))
 					prob_class_given_nonmatch = 1 - nonmatch_deviation_it->second;
 				else
-					prob_class_given_nonmatch = (1 - ndd.defaultDeviation) / nonmatching_classes;
+					prob_class_given_nonmatch = (1 - deviations.defaultDeviation) / nonmatching_classes;
 			}
 		}
 
@@ -1104,11 +1109,6 @@ public:
 		auto &feature_attributes = distEvaluator->featureAttribs[index];
 		auto &feature_data = featureData[index];
 
-		//assume one nonmatching class in existence if not specified
-		double nonmatching_classes = 1;
-		if(feature_attributes.typeAttributes.nominalCount > 1)
-			nonmatching_classes = feature_attributes.typeAttributes.nominalCount - 1;
-
 		//since most of the computations will be using approximate if it is needed,
 		//only set to high accuracy if not using approximate
 		feature_data.precomputedNominalDistanceTermsHighAccuracy = high_accuracy;
@@ -1122,6 +1122,12 @@ public:
 			if(deviations_for_value != end(sdm))
 			{
 				auto &deviations = deviations_for_value->second;
+
+				//exclude deviation values from number of classes since they are accounted for
+				double nonmatching_classes = feature_attributes.typeAttributes.nominalCount - deviations.size();
+				if(nonmatching_classes < 1)
+					nonmatching_classes = 1;
+
 				for(auto &[value, deviation] : deviations)
 				{
 					double dist_term = distEvaluator->ComputeDistanceTermNominal(target_value,
@@ -1169,6 +1175,13 @@ public:
 			if(deviations_for_sid != end(sdm))
 			{
 				auto &deviations = deviations_for_sid->second;
+
+				//exclude deviation values from number of classes since they are accounted for,
+				//but assume a max-ent chance that there exists an unobserved class
+				double nonmatching_classes = feature_attributes.typeAttributes.nominalCount - deviations.size() + 0.5;
+				if(nonmatching_classes < 1)
+					nonmatching_classes = 1;
+
 				for(auto &[sid, deviation] : deviations)
 				{
 					double dist_term = distEvaluator->ComputeDistanceTermNominal(target_sid,

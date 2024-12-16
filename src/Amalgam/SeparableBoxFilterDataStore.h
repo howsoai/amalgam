@@ -1012,8 +1012,9 @@ public:
 
 			if(feature_attribs.IsFeatureNominal())
 			{
-				if(FastIsNaN(feature_attribs.typeAttributes.nominalCount))
-					feature_attribs.typeAttributes.nominalCount = static_cast<double>(column_data->GetNumValidDataElements());
+				//account for the probability that at least one class has not been seen
+				if(FastIsNaN(feature_attribs.typeAttributes.nominalCount) || feature_attribs.typeAttributes.nominalCount < 1)
+					feature_attribs.typeAttributes.nominalCount = static_cast<double>(column_data->GetNumUniqueValues()) + 0.5;
 			}
 		}
 	}

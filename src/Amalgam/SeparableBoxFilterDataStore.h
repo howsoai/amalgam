@@ -1012,7 +1012,7 @@ public:
 
 			if(feature_attribs.IsFeatureNominal())
 			{
-				//account for the probability that at least one class has not been seen
+				//account for the max-ent probability that at least one class has not been seen via adding 0.5
 				if(FastIsNaN(feature_attribs.typeAttributes.nominalCount) || feature_attribs.typeAttributes.nominalCount < 1)
 					feature_attribs.typeAttributes.nominalCount = static_cast<double>(column_data->GetNumUniqueValues()) + 0.5;
 			}

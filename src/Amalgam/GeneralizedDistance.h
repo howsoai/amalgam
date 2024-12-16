@@ -447,7 +447,7 @@ public:
 				auto match_deviation_it = deviations.find(a.number);
 				if(match_deviation_it != end(deviations))
 					prob_class_given_match = 1 - match_deviation_it->second;
-				else
+				else //only happens if the predicted class is not found, which means everything is the same probability
 					prob_class_given_match = 1 - deviations.defaultDeviation;					
 
 				auto nonmatch_deviation_it = deviations.find(b.number);
@@ -472,7 +472,7 @@ public:
 				auto match_deviation_it = deviations.find(a.stringID);
 				if(match_deviation_it != end(deviations))
 					prob_class_given_match = 1 - match_deviation_it->second;
-				else
+				else //only happens if the predicted class is not found, which means everything is the same probability
 					prob_class_given_match = 1 - deviations.defaultDeviation;
 
 				auto nonmatch_deviation_it = deviations.find(b.stringID);
@@ -1177,8 +1177,7 @@ public:
 				auto &deviations = deviations_for_sid->second;
 
 				//exclude deviation values from number of classes since they are accounted for,
-				//but assume a max-ent chance that there exists an unobserved class
-				double nonmatching_classes = feature_attributes.typeAttributes.nominalCount - deviations.size() + 0.5;
+				double nonmatching_classes = feature_attributes.typeAttributes.nominalCount - deviations.size();
 				if(nonmatching_classes < 1)
 					nonmatching_classes = 1;
 

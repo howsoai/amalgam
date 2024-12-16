@@ -2128,7 +2128,6 @@ CompactHashMap<EvaluableNodeType, double> EvaluableNodeTreeManipulation::evaluab
 	{ENT_COMPUTE_ON_CONTAINED_ENTITIES,					0.3},
 	{ENT_QUERY_SELECT,									0.2},
 	{ENT_QUERY_SAMPLE,									0.2},
-	{ENT_QUERY_WEIGHTED_SAMPLE,							0.2},
 	{ENT_QUERY_IN_ENTITY_LIST,							0.2},
 	{ENT_QUERY_NOT_IN_ENTITY_LIST,						0.2},
 	{ENT_QUERY_EXISTS,									0.2},

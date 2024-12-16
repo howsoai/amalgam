@@ -1403,19 +1403,11 @@ var data = [
 	},
 
 	{
-		"parameter" : "query_sample number num_to_select [number random_seed]",
+		"parameter" : "query_sample number num_to_select [string weight_label_name] [number random_seed]",
 		"output" : "query",
 		"new value" : "new",
-		"description" : "When used as a query argument, selects a random sample of num_to_select entities sorted by entity_id with replacement. If random_seed is specified, then it will select num_to_select entities randomly from the list based on the random seed. If random_seed is not specified then the subsequent calls will return the same sample of entities.",
-		"example" : "(contained_entities \"TestEntity\" (list\n  (query_sample 4 (rand))\n))"
-	},
-
-	{
-		"parameter" : "query_weighted_sample string weight_label_name number num_to_select [number random_seed]",
-		"output" : "query",
-		"new value" : "new",
-		"description" : "When used as a query argument, selects a random sample of num_to_select entities sorted by entity_id with replacement. It will use weight_label_name as the feature containing the weights for the sampling, which will be normalized prior to sampling.  Non-numbers and negative infinite values will be ignored, and if there are any infinite values, those will be selected from uniformly.  If random_seed is specified, then it will select num_to_select entities randomly from the list based on the random seed. If random_seed is not specified then the subsequent calls will return the same sample of entities.",
-		"example" : "(contained_entities \"TestEntity\" (list\n  (query_weighted_sample \"weight\" 4 (rand))\n))"
+		"description" : "When used as a query argument, selects a random sample of num_to_select entities sorted by entity_id with replacement. If weight_label_name is specified and not null, it will use weight_label_name as the feature containing the weights for the sampling, which will be normalized prior to sampling.  Non-numbers and negative infinite values for weights will be ignored, and if there are any infinite values, those will be selected from uniformly.  If random_seed is specified, then it will select num_to_select entities randomly from the list based on the random seed. If random_seed is not specified then the subsequent calls will return the same sample of entities.",
+		"example" : "(contained_entities \"TestEntity\" (list\n  (query_sample 4 (rand))\n))\n(contained_entities \"TestEntity\" (list\n  (query_sample 4 \"weight\" (rand))\n))"
 	},
 
 	{

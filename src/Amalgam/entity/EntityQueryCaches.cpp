@@ -96,7 +96,7 @@ void EntityQueryCaches::EnsureLabelsAreCached(EntityQueryCondition *cond)
 			break;
 		}
 
-		case ENT_QUERY_WEIGHTED_SAMPLE:
+		case ENT_QUERY_SAMPLE:
 		case ENT_QUERY_AMONG:
 		case ENT_QUERY_NOT_AMONG:
 		case ENT_QUERY_MIN:
@@ -104,8 +104,11 @@ void EntityQueryCaches::EnsureLabelsAreCached(EntityQueryCondition *cond)
 		case ENT_QUERY_MIN_DIFFERENCE:
 		case ENT_QUERY_MAX_DIFFERENCE:
 		{
-			if(!DoesHaveLabel(cond->singleLabel))
-				labels_to_add.push_back(cond->singleLabel);
+			if(cond->singleLabel != StringInternPool::NOT_A_STRING_ID)
+			{
+				if(!DoesHaveLabel(cond->singleLabel))
+					labels_to_add.push_back(cond->singleLabel);
+			}
 
 			break;
 		}
@@ -1112,48 +1115,50 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 
 		case ENT_QUERY_SAMPLE:
 		{
-			size_t num_entities;
-			if(is_first)
-				num_entities = container->GetNumContainedEntities();
-			else
-				num_entities = matching_ents.size();
-
-			//if matching_ents is empty, there is nothing to select from
-			if(num_entities == 0)
-				break;
-
-			size_t num_to_sample = static_cast<size_t>(cond.maxToRetrieve);
-
 			bool update_matching_ents = (!is_last || !return_query_value);
 
-			BitArrayIntegerSet &temp = entity_caches->buffers.tempMatchingEntityIndices;
-			if(update_matching_ents)
-				temp.clear();
-
-			for(size_t i = 0; i < num_to_sample; i++)
+			if(cond.singleLabel != string_intern_pool.NOT_A_STRING_ID)
 			{
-				//get a random id out of all valid ones
-				size_t selected_id;
+				entity_caches->GetMatchingEntitiesViaSamplingWithReplacement(&cond,
+					matching_ents, indices_with_duplicates, is_first, update_matching_ents);
+			}
+			else
+			{
+				size_t num_entities;
 				if(is_first)
-					selected_id = cond.randomStream.RandSize(num_entities);
+					num_entities = container->GetNumContainedEntities();
 				else
-					selected_id = matching_ents.GetNthElement(cond.randomStream.RandSize(num_entities));
+					num_entities = matching_ents.size();
 
-				//keep track if necessary
+				//if matching_ents is empty, there is nothing to select from
+				if(num_entities == 0)
+					break;
+
+				size_t num_to_sample = static_cast<size_t>(cond.maxToRetrieve);
+
+				BitArrayIntegerSet &temp = entity_caches->buffers.tempMatchingEntityIndices;
+				if(update_matching_ents)
+					temp.clear();
+
+				for(size_t i = 0; i < num_to_sample; i++)
+				{
+					//get a random id out of all valid ones
+					size_t selected_id;
+					if(is_first)
+						selected_id = cond.randomStream.RandSize(num_entities);
+					else
+						selected_id = matching_ents.GetNthElement(cond.randomStream.RandSize(num_entities));
+
+					//keep track if necessary
+					if(!update_matching_ents)
+						temp.insert(selected_id);
+					indices_with_duplicates.push_back(selected_id);
+				}
+
 				if(!update_matching_ents)
-					temp.insert(selected_id);
-				indices_with_duplicates.push_back(selected_id);
+					matching_ents = temp;
 			}
 
-			if(!update_matching_ents)
-				matching_ents = temp;
-
-			break;
-		}
-
-		case ENT_QUERY_WEIGHTED_SAMPLE:
-		{
-			entity_caches->GetMatchingEntitiesViaSamplingWithReplacement(&cond, matching_ents, indices_with_duplicates, is_first, !is_last);
 			break;
 		}
 
@@ -1242,7 +1247,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 	const auto entity_index_to_id = [container](size_t entity_index) { return container->GetContainedEntityIdFromIndex(entity_index); };
 
 	//if last query condition is query sample, return each sampled entity id which may include duplicates
-	if(last_query_type == ENT_QUERY_SAMPLE || last_query_type == ENT_QUERY_WEIGHTED_SAMPLE)
+	if(last_query_type == ENT_QUERY_SAMPLE)
 	{
 		if(immediate_result)
 			return EvaluableNodeReference(static_cast<double>(indices_with_duplicates.size()));

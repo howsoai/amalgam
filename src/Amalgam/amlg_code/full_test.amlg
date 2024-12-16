@@ -2480,38 +2480,38 @@
 
 
  (print (contained_entities "TestContainerExec" (list
-  (query_sample 1 (rand) )
+  (query_sample 1 (null) (rand) )
  )))
 
  (print (contained_entities "TestContainerExec" (list
-  (query_sample 1 (null) )
+  (query_sample 1 (null) (null) )
  )))
 
- (print "--query_weighted_sample--\n")
+ (print "with weights\n")
 
  (print (contained_entities "TestContainerExec" (list
-   (query_weighted_sample "weight")
+   (query_sample 1 "weight")
   )))
  
  (print (contained_entities "TestContainerExec" (list
-  (query_weighted_sample "weight")
+  (query_sample 1 "weight")
  )))
  
  (print (contained_entities "TestContainerExec" (list
-  (query_weighted_sample "weight" 20 (rand) )
+  (query_sample 20 "weight" (rand) )
  )))
  
  (print (contained_entities "TestContainerExec" (list
-  (query_weighted_sample "weight" 20 (null) )
+  (query_sample 20 "weight" (null) )
  )))
 
  (print (contained_entities "TestContainerExec" (list
   (query_not_in_entity_list (list "Child1"))
-  (query_weighted_sample "weight" 10 (rand) )
+  (query_sample 10 "weight" (rand) )
  )))
 
  (print (contained_entities "TestContainerExec" (list
-  (query_weighted_sample "weight" 10 (rand) )
+  (query_sample 10 "weight" (rand) )
   (query_not_in_entity_list (list "Child1"))
  )))
 

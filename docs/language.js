@@ -1158,11 +1158,11 @@ var data = [
 	},
 
 	{
-		"parameter" : "flatten_entity id entity [bool include_rand_seeds] [bool parallel_create]",
+		"parameter" : "flatten_entity id entity [bool include_rand_seeds] [bool parallel_create] [bool include_version]",
 		"output" : "*",
 		"permissions" : "e",
 		"new value" : "new",
-		"description" : "Evaluates to code that, if called, would completely reproduce the entity specified by id, as well as all contained entities.  If include_rand_seeds is true, its default, it will include all entities' random seeds.  If parallel_create is true, then the creates will be performed with parallel markers as appropriate for each group of contained entities.  The code returned accepts two parameters, create_new_entity, which defaults to true, and new_entity, which defaults to null.  If create_new_entity is true, then it will create a new entity with id specified by new_entity, where null will create an unnamed entity.  If create_new_entity is false, then it will overwrite the current entity's code and create all contained entities.",
+		"description" : "Evaluates to code that, if called, would completely reproduce the entity specified by id, as well as all contained entities.  If include_rand_seeds is true, its default, it will include all entities' random seeds.  If parallel_create is true, then the creates will be performed with parallel markers as appropriate for each group of contained entities.  If include_version is true, it will include a comment on the top node that is the current version of the Amalgam interpreter, which can be used for validating interoperability when loading code.  The code returned accepts two parameters, create_new_entity, which defaults to true, and new_entity, which defaults to null.  If create_new_entity is true, then it will create a new entity with id specified by new_entity, where null will create an unnamed entity.  If create_new_entity is false, then it will overwrite the current entity's code and create all contained entities.",
 		"example" : "(create_entities \"FlattenTest\" (lambda\n  (parallel ##a (rand) )\n))\n(let (assoc fe (flatten_entity \"FlattenTest\"))\n  (print fe)\n  (print (flatten_entity (call fe)))\n  (print (difference_entities \"FlattenTest\" (call fe)))\n (call fe (assoc create_new_entity (false) new_entity \"new_entity_name\")) \n)"
 	},
 

@@ -235,14 +235,15 @@ PLATFORM_MAIN_CONSOLE
 	{
 		//run the standard amlg command line interface
 		EntityExternalInterface::LoadEntityStatus status;
-		AssetManager::AssetParameters asset_params(amlg_file_to_run, "", true);
-		std::string file_type = "";
+		AssetManager::AssetParametersRef asset_params
+			= std::make_shared<AssetManager::AssetParameters>(amlg_file_to_run, "", true);
+
 		Entity *entity = asset_manager.LoadEntityFromResource(asset_params, false, random_seed, nullptr, status);
 
 		if(!status.loaded)
 			return 1;
 
-		asset_manager.SetRootPermission(entity, true);
+		asset_manager.SetEntityPermissions(entity, EntityPermissions::AllPermissions());
 
 		PrintListener *print_listener = nullptr;
 		std::vector<EntityWriteListener *> write_listeners;
@@ -258,7 +259,7 @@ PLATFORM_MAIN_CONSOLE
 
 		if(write_log_filename != "")
 		{
-			EntityWriteListener *write_log = new EntityWriteListener(entity, false, write_log_filename);
+			EntityWriteListener *write_log = new EntityWriteListener(entity, false, false, false, write_log_filename);
 			write_listeners.push_back(write_log);
 		}
 

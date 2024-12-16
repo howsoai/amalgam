@@ -97,7 +97,6 @@ std::tuple<std::string, std::string, bool> FileSupportCAML::ReadHeader(std::ifst
 			return std::make_tuple(error_message, version, false);
 	}
 	
-
 	return std::make_tuple("", version, true);
 }
 

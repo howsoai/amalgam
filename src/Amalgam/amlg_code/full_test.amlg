@@ -2291,6 +2291,36 @@
  (print "loaded from file:\n" (retrieve_entity_root "escaped_label" 1))
  (print "retrieved: " (retrieve_from_entity "escaped_label" ".#blah") "\n")
 
+ (print "Complex persistent store with amlg file")
+
+ (create_entities "persist_transactions" (list 1 2 3 4))
+ (create_entities (list "persist_transactions" "child") (list 5 6 7))
+ (create_entities (list "persist_transactions" "child" "doublechild1") (lambda (list ##eight 8 ##nine 9)))
+ (create_entities (list "persist_transactions" "child" "doublechild3") (list 12 13))
+ (store_entity "amlg_code/test_output/persist_transactions.amlg" "persist_transactions" (null) (true) {flatten (true) transactional (true)})
+ (create_entities (list "persist_transactions" "child" "doublechild2") (list 10 11))
+ (destroy_entities (list "persist_transactions" "child" "doublechild3"))
+ (assign_to_entities (list "persist_transactions" "child" "doublechild1") {eight 88})
+ 
+ (load_entity "amlg_code/test_output/persist_transactions.amlg" "persist_transactions_copy" (null) (false) {execute_on_load (true) transactional (true) require_version_compatibility (true)})
+ (print (difference_entities "persist_transactions_copy" "persist_transactions") "\n")
+ (destroy_entities "persist_transactions_copy" "persist_transactions")
+
+ (print "Complex persistent store with caml file")
+
+ (create_entities "persist_transactions" (list 1 2 3 4))
+ (create_entities (list "persist_transactions" "child") (list 5 6 7))
+ (create_entities (list "persist_transactions" "child" "doublechild1") (lambda (list ##eight 8 ##nine 9)))
+ (create_entities (list "persist_transactions" "child" "doublechild3") (list 12 13))
+ (store_entity "amlg_code/test_output/persist_transactions.caml" "persist_transactions" (null) (true) {flatten (true) transactional (true)})
+ (create_entities (list "persist_transactions" "child" "doublechild2") (list 10 11))
+ (destroy_entities (list "persist_transactions" "child" "doublechild3"))
+ (assign_to_entities (list "persist_transactions" "child" "doublechild1") {eight 88})
+ 
+ (load_entity "amlg_code/test_output/persist_transactions.caml" "persist_transactions_copy" (null) (false) {execute_on_load (true) transactional (true) require_version_compatibility (true)})
+ (print (difference_entities "persist_transactions_copy" "persist_transactions") "\n")
+ (destroy_entities "persist_transactions_copy" "persist_transactions")
+
  (print "--store other file formats---\n")
  (store "amlg_code/test_output/text_store_test.txt" "This is text!")
  (print "[" (load "amlg_code/test_output/text_store_test.txt") "]\n")

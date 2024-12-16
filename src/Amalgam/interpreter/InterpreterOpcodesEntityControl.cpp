@@ -276,7 +276,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_ROOT_PERMISSION
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
-	if(!asset_manager.DoesEntityHaveRootPermission(curEntity))
+	auto permissions = asset_manager.GetEntityPermissions(curEntity);
+	auto all_permissions = EntityPermissions::AllPermissions();
+	if(permissions.allPermissions != all_permissions.allPermissions)
 		return EvaluableNodeReference::Null();
 
 	EntityReadReference entity;
@@ -285,7 +287,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_ROOT_PERMISSION
 	else
 		entity = EntityReadReference(curEntity);
 
-	return AllocReturn(asset_manager.DoesEntityHaveRootPermission(entity), immediate_result);
+	auto entity_permissions = asset_manager.GetEntityPermissions(entity);
+	return AllocReturn(entity_permissions.allPermissions == all_permissions.allPermissions, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_ROOT_PERMISSION(EvaluableNode *en, bool immediate_result)
@@ -295,16 +298,21 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_ROOT_PERMISSION
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	if(!asset_manager.DoesEntityHaveRootPermission(curEntity))
+	auto permissions = asset_manager.GetEntityPermissions(curEntity);
+	auto all_permissions = EntityPermissions::AllPermissions();
+	if(permissions.allPermissions != all_permissions.allPermissions)
 		return EvaluableNodeReference::Null();
 
-	bool permission = InterpretNodeIntoBoolValue(ocn[1]);
+	bool set_all_permissions = InterpretNodeIntoBoolValue(ocn[1]);
 
 	//get the id of the entity
 	auto id_node = InterpretNode(ocn[0]);
 	EntityWriteReference entity = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityWriteReference>(curEntity, id_node);
 
-	asset_manager.SetRootPermission(entity, permission);
+	if(set_all_permissions)
+		asset_manager.SetEntityPermissions(entity, EntityPermissions::AllPermissions());
+	else
+		asset_manager.SetEntityPermissions(entity, EntityPermissions());
 
 	return id_node;
 }
@@ -577,7 +585,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, bo
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
 
-	if(!asset_manager.DoesEntityHaveRootPermission(curEntity))
+	auto permissions = asset_manager.GetEntityPermissions(curEntity);
+	if(!permissions.individualPermissions.load)
 		return EvaluableNodeReference::Null();
 
 	std::string path = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
@@ -593,6 +602,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, bo
 	}
 
 	AssetManager::AssetParameters asset_params(path, file_type, false);
+
 	if(ocn.size() > 2)
 	{
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[2]);
@@ -605,7 +615,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, bo
 	asset_params.UpdateResources();
 
 	EntityExternalInterface::LoadEntityStatus status;
-	return asset_manager.LoadResource(asset_params, evaluableNodeManager, status);
+	return asset_manager.LoadResource(&asset_params, evaluableNodeManager, status);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode *en, bool immediate_result)
@@ -615,7 +625,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode 
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
 
-	if(!asset_manager.DoesEntityHaveRootPermission(curEntity))
+	auto permissions = asset_manager.GetEntityPermissions(curEntity);
+	if(!permissions.individualPermissions.load)
 		return EvaluableNodeReference::Null();
 
 	std::string path = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
@@ -634,17 +645,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode 
 	if(ocn.size() > 3)
 		persistent = InterpretNodeIntoBoolValue(ocn[3]);
 
-	AssetManager::AssetParameters asset_params(path, file_type, true);
+	AssetManager::AssetParametersRef asset_params
+		= std::make_shared<AssetManager::AssetParameters>(path, file_type, true);
 	if(ocn.size() > 4)
 	{
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[4]);
 
 		if(EvaluableNode::IsAssociativeArray(params))
-			asset_params.SetParams(params->GetMappedChildNodesReference());
+			asset_params->SetParams(params->GetMappedChildNodesReference());
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
-	asset_params.UpdateResources();
+	asset_params->UpdateResources();
 
 	//get destination if applicable
 	EntityWriteReference destination_entity_parent;
@@ -656,7 +668,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode 
 		return EvaluableNodeReference::Null();
 
 	EntityExternalInterface::LoadEntityStatus status;
-	std::string random_seed = destination_entity_parent->CreateRandomStreamFromStringAndRand(asset_params.resourcePath);
+	std::string random_seed = destination_entity_parent->CreateRandomStreamFromStringAndRand(asset_params->resourcePath);
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is no longer executing
@@ -694,7 +706,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, b
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	if(!asset_manager.DoesEntityHaveRootPermission(curEntity))
+	auto permissions = asset_manager.GetEntityPermissions(curEntity);
+	if(!permissions.individualPermissions.store)
 		return EvaluableNodeReference::Null();
 
 	std::string path = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
@@ -724,7 +737,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, b
 	}
 	asset_params.UpdateResources();
 
-	bool successful_save = asset_manager.StoreResource(to_store, asset_params, evaluableNodeManager);
+	bool successful_save = asset_manager.StoreResource(to_store, &asset_params, evaluableNodeManager);
 
 	return ReuseOrAllocReturn(to_store, successful_save, immediate_result);
 }
@@ -736,7 +749,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	if(!asset_manager.DoesEntityHaveRootPermission(curEntity))
+	auto permissions = asset_manager.GetEntityPermissions(curEntity);
+	if(!permissions.individualPermissions.store)
 		return EvaluableNodeReference::Null();
 
 	std::string path = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
@@ -764,17 +778,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 		evaluableNodeManager->FreeNodeTreeIfPossible(persistence_node);
 	}
 
-	AssetManager::AssetParameters asset_params(path, file_type, true);
+	AssetManager::AssetParametersRef asset_params
+		= std::make_shared<AssetManager::AssetParameters>(path, file_type, true);
 	if(ocn.size() > 4)
 	{
 		EvaluableNodeReference params = InterpretNodeForImmediateUse(ocn[4]);
 
 		if(EvaluableNode::IsAssociativeArray(params))
-			asset_params.SetParams(params->GetMappedChildNodesReference());
+			asset_params->SetParams(params->GetMappedChildNodesReference());
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(params);
 	}
-	asset_params.UpdateResources();
+	asset_params->UpdateResources();
 
 	//get the id of the source entity to store.  Don't need to keep the reference because it won't be used once the source entity pointer is looked up
 	//retrieve the entity after other parameters to minimize time in locks

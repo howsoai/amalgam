@@ -1,0 +1,24 @@
+; An entity that's a trivial counter.
+(null
+    #!value
+    0
+
+    #initialize
+    (assign_to_entities (assoc !value 0))
+
+    #get_value
+    (retrieve_from_entity "!value")
+
+    #increment
+    (seq
+        (accum_to_entities (assoc !value 1))
+        (call get_value)
+    )
+
+    #add
+    (declare
+      (assoc count 1)
+      (accum_to_entities (assoc !value count))
+      (call get_value)
+    )
+)

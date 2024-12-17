@@ -1398,7 +1398,6 @@ protected:
 		return EvaluableNodeReference::Null();
 	}
 
-
 public:
 	//where to allocate new nodes
 	EvaluableNodeManager *evaluableNodeManager;

@@ -656,12 +656,12 @@ namespace EntityQueryBuilder
 		{
 			case ENT_QUERY_SELECT:
 			{
-				cur_condition->maxToRetrieve = (ocn.size() >= 1) ? EvaluableNode::ToNumber(ocn[0], 0.0) : 0;
+				cur_condition->maxToRetrieve = (ocn.size() > 0) ? EvaluableNode::ToNumber(ocn[0], 0.0) : 0;
 
-				cur_condition->hasStartOffset = (ocn.size() >= 2);
+				cur_condition->hasStartOffset = (ocn.size() > 1);
 				cur_condition->startOffset = cur_condition->hasStartOffset ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[1], 0.0)) : 0;
 
-				cur_condition->hasRandomStream = (ocn.size() >= 3 && !EvaluableNode::IsNull(ocn[2]));
+				cur_condition->hasRandomStream = (ocn.size() > 2 && !EvaluableNode::IsNull(ocn[2]));
 				if(cur_condition->hasRandomStream)
 					cur_condition->randomStream.SetState(EvaluableNode::ToString(ocn[2]));
 				else
@@ -672,23 +672,14 @@ namespace EntityQueryBuilder
 			case ENT_QUERY_SAMPLE:
 			{
 				cur_condition->maxToRetrieve = (ocn.size() > 0) ? EvaluableNode::ToNumber(ocn[0], 0.0) : 1;
-				cur_condition->hasRandomStream = (ocn.size() > 1 && !EvaluableNode::IsNull(ocn[1]));
-				if(cur_condition->hasRandomStream)
-					cur_condition->randomStream.SetState(EvaluableNode::ToString(ocn[1]));
-				else
-					cur_condition->randomStream = rs.CreateOtherStreamViaRand();
-			    break;
-			}
-			case ENT_QUERY_WEIGHTED_SAMPLE:
-			{
-				cur_condition->singleLabel = (ocn.size() > 0) ? EvaluableNode::ToStringIDIfExists(ocn[0]) : StringInternPool::NOT_A_STRING_ID;
-				cur_condition->maxToRetrieve = (ocn.size() > 1) ? EvaluableNode::ToNumber(ocn[1], 0.0) : 1;
+				cur_condition->singleLabel = (ocn.size() > 1) ? EvaluableNode::ToStringIDIfExists(ocn[1]) : StringInternPool::NOT_A_STRING_ID;
+
 				cur_condition->hasRandomStream = (ocn.size() > 2 && !EvaluableNode::IsNull(ocn[2]));
 				if(cur_condition->hasRandomStream)
 					cur_condition->randomStream.SetState(EvaluableNode::ToString(ocn[2]));
 				else
 					cur_condition->randomStream = rs.CreateOtherStreamViaRand();
-				break;
+			    break;
 			}
 			case ENT_QUERY_IN_ENTITY_LIST:
 			case ENT_QUERY_NOT_IN_ENTITY_LIST:

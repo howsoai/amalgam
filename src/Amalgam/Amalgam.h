@@ -24,6 +24,13 @@ extern "C"
 		char *version;
 	};
 
+	//output from ExecuteEntityJsonPtrLogged
+	struct ResultWithLog
+	{
+		char *json;
+		char *log;
+	};
+
 	//loads the entity specified into handle
 	AMALGAM_EXPORT LoadEntityStatus LoadEntity(char *handle, char *path, char *file_type,
 		bool persistent, char *json_file_params, char *write_log_filename, char *print_log_filename);
@@ -59,6 +66,7 @@ extern "C"
 
 	AMALGAM_EXPORT wchar_t *ExecuteEntityJsonPtrWide(char *handle, char *label, char *json);
 	AMALGAM_EXPORT char *ExecuteEntityJsonPtr(char *handle, char *label, char *json);
+	AMALGAM_EXPORT ResultWithLog ExecuteEntityJsonPtrLogged(char *handle, char *label, char *json);
 
 	AMALGAM_EXPORT char *EvalOnEntity(char *handle, char *amlg);
 

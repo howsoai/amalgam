@@ -2,7 +2,8 @@
 #include "EntityWriteListener.h"
 #include "EvaluableNodeTreeFunctions.h"
 
-EntityWriteListener::EntityWriteListener(Entity *listening_entity, bool retain_writes, const std::string &filename)
+EntityWriteListener::EntityWriteListener(Entity *listening_entity,
+	bool retain_writes, bool _pretty, bool sort_keys, const std::string &filename)
 {
 	listeningEntity = listening_entity;
 
@@ -10,19 +11,56 @@ EntityWriteListener::EntityWriteListener(Entity *listening_entity, bool retain_w
 		storedWrites = listenerStorage.AllocNode(ENT_SEQUENCE);
 	else
 		storedWrites = nullptr;
-	
+
+	fileSuffix = ")\r\n";
+	pretty = _pretty;
+	sortKeys = sort_keys;
 	if(!filename.empty())
 	{
 		logFile.open(filename, std::ios::binary);
 		logFile << "(" << GetStringFromEvaluableNodeType(ENT_SEQUENCE) << "\r\n";
 	}
+	huffmanTree = nullptr;
+}
+
+EntityWriteListener::EntityWriteListener(Entity *listening_entity,
+	bool _pretty, bool sort_keys, std::ofstream &transaction_file, HuffmanTree<uint8_t> *huffman_tree)
+{
+	listeningEntity = listening_entity;
+	storedWrites = nullptr;
+
+	auto new_entity_sid = GetStringIdFromBuiltInStringId(ENBISI_new_entity);
+	if(pretty)
+		fileSuffix = "\t";
+	fileSuffix += new_entity_sid->string;
+
+	if(pretty)
+		fileSuffix += "\r\n)\r\n";
+	else
+		fileSuffix += ")";
+
+	pretty = _pretty;
+	sortKeys = sort_keys;
+	logFile = std::move(transaction_file);
+
+	huffmanTree = huffman_tree;
 }
 
 EntityWriteListener::~EntityWriteListener()
 {
 	if(logFile.is_open())
 	{
-		logFile << ")" << "\r\n";
+		if(huffmanTree == nullptr)
+		{
+			logFile << fileSuffix;
+		}
+		else
+		{
+			auto to_append = CompressStringToAppend(fileSuffix, huffmanTree);
+			logFile.write(reinterpret_cast<char *>(to_append.data()), to_append.size());
+
+			delete huffmanTree;
+		}
 		logFile.close();
 	}
 }
@@ -52,7 +90,8 @@ void EntityWriteListener::LogPrint(std::string &print_string)
 	LogNewEntry(new_print, false);
 }
 
-void EntityWriteListener::LogWriteValueToEntity(Entity *entity, EvaluableNode *value, const StringInternPool::StringID label_name, bool direct_set)
+void EntityWriteListener::LogWriteLabelValueToEntity(Entity *entity,
+	const StringInternPool::StringID label_name, EvaluableNode *value, bool direct_set)
 {
 #ifdef MULTITHREAD_SUPPORT
 	Concurrency::SingleLock lock(mutex);
@@ -69,7 +108,8 @@ void EntityWriteListener::LogWriteValueToEntity(Entity *entity, EvaluableNode *v
 	LogNewEntry(new_write);
 }
 
-void EntityWriteListener::LogWriteValuesToEntity(Entity *entity, EvaluableNode *label_value_pairs, bool direct_set)
+void EntityWriteListener::LogWriteLabelValuesToEntity(Entity *entity,
+	EvaluableNode *label_value_pairs, bool accum_values, bool direct_set)
 {
 	//can only work with assoc arrays
 	if(!EvaluableNode::IsAssociativeArray(label_value_pairs))
@@ -79,27 +119,30 @@ void EntityWriteListener::LogWriteValuesToEntity(Entity *entity, EvaluableNode *
 	Concurrency::SingleLock lock(mutex);
 #endif
 
-	EvaluableNode *new_write = BuildNewWriteOperation(direct_set ? ENT_DIRECT_ASSIGN_TO_ENTITIES : ENT_ASSIGN_TO_ENTITIES, entity);
+	auto node_type = ENT_ASSIGN_TO_ENTITIES;
+	if(accum_values)
+		node_type = ENT_ACCUM_TO_ENTITIES;
+	else if(direct_set)
+		node_type = ENT_DIRECT_ASSIGN_TO_ENTITIES;
+
+	EvaluableNode *new_write = BuildNewWriteOperation(node_type, entity);
 
 	EvaluableNode *assoc = listenerStorage.DeepAllocCopy(label_value_pairs, direct_set ? EvaluableNodeManager::ENMM_NO_CHANGE : EvaluableNodeManager::ENMM_REMOVE_ALL);
-	//just in case this node has a label left over, remove it
-	if(!direct_set)
-		assoc->ClearLabels();
-
 	new_write->AppendOrderedChildNode(assoc);
 
 	LogNewEntry(new_write);
 }
 
-void EntityWriteListener::LogWriteToEntity(Entity *entity, const std::string &new_code)
+void EntityWriteListener::LogWriteToEntityRoot(Entity *entity)
 {
 #ifdef MULTITHREAD_SUPPORT
 	Concurrency::SingleLock lock(mutex);
 #endif
 
 	EvaluableNode *new_write = BuildNewWriteOperation(ENT_ASSIGN_ENTITY_ROOTS, entity);
+	EvaluableNode *new_root = entity->GetRoot(&listenerStorage, EvaluableNodeManager::ENMM_LABEL_ESCAPE_INCREMENT);
 
-	new_write->AppendOrderedChildNode(listenerStorage.AllocNode(ENT_STRING, new_code));
+	new_write->AppendOrderedChildNode(new_root);
 
 	LogNewEntry(new_write);
 }
@@ -172,8 +215,12 @@ void EntityWriteListener::LogCreateEntityRecurse(Entity *new_entity)
 {
 	EvaluableNode *new_create = BuildNewWriteOperation(ENT_CREATE_ENTITIES, new_entity);
 
-	EvaluableNodeReference new_entity_root_copy = new_entity->GetRoot(&listenerStorage);
-	new_create->AppendOrderedChildNode(new_entity_root_copy);
+	EvaluableNode *lambda_for_create = listenerStorage.AllocNode(ENT_LAMBDA);
+	new_create->AppendOrderedChildNode(lambda_for_create);
+
+	EvaluableNodeReference new_entity_root_copy = new_entity->GetRoot(&listenerStorage,
+		EvaluableNodeManager::ENMM_LABEL_ESCAPE_INCREMENT);
+	lambda_for_create->AppendOrderedChildNode(new_entity_root_copy);
 
 	LogNewEntry(new_create);
 
@@ -186,8 +233,28 @@ void EntityWriteListener::LogNewEntry(EvaluableNode *new_entry, bool flush)
 {
 	if(logFile.is_open() && logFile.good())
 	{
-		//one extra indentation because already have the sequence
-		logFile << Parser::Unparse(new_entry, false, true, false) << "\r\n";
+		if(huffmanTree == nullptr)
+		{
+			//one extra indentation if pretty because already have the seq or declare
+			logFile << Parser::Unparse(new_entry, pretty, true, sortKeys, false, pretty ? 1 : 0);
+
+			//append a new line if not already appended
+			if(!pretty)
+				logFile << "\r\n";
+		}
+		else
+		{
+			//one extra indentation if pretty because already have the seq or declare
+			std::string new_code = Parser::Unparse(new_entry, pretty, true, sortKeys, false, pretty ? 1 : 0);
+
+			//append a new line if not already appended
+			if(!pretty)
+				new_code += "\r\n";
+
+			auto to_append = CompressStringToAppend(new_code, huffmanTree);
+			logFile.write(reinterpret_cast<char *>(to_append.data()), to_append.size());
+		}
+
 		if(flush)
 			logFile.flush();
 	}

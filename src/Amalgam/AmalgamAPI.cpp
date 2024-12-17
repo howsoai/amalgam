@@ -194,6 +194,18 @@ extern "C"
 		return StringToCharPtr(ret);
 	}
 
+	ResultWithLog ExecuteEntityJsonPtrLogged(char *handle, char *label, char *json)
+	{
+		std::string h(handle);
+		std::string l(label);
+		std::string_view j(json);
+		std::pair<std::string, std::string> ret = entint.ExecuteEntityJSONLogged(h, l, j);
+		ResultWithLog rwl;
+		rwl.json = StringToCharPtr(ret.first);
+		rwl.log = StringToCharPtr(ret.second);
+		return rwl;
+	}
+
 	void ExecuteEntity(char *handle, char *label)
 	{
 		std::string h(handle);

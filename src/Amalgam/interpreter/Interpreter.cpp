@@ -58,7 +58,6 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 
 	//simulation and operations
 	&Interpreter::InterpretNode_ENT_RAND,															// ENT_RAND
-	&Interpreter::InterpretNode_ENT_WEIGHTED_RAND,													// ENT_WEIGHTED_RAND
 	&Interpreter::InterpretNode_ENT_GET_RAND_SEED,													// ENT_GET_RAND_SEED
 	&Interpreter::InterpretNode_ENT_SET_RAND_SEED,													// ENT_SET_RAND_SEED
 	&Interpreter::InterpretNode_ENT_SYSTEM_TIME,													// ENT_SYSTEM_TIME
@@ -240,7 +239,6 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 	&Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COMPUTE_ON_CONTAINED_ENTITIES,			// ENT_COMPUTE_ON_CONTAINED_ENTITIES
 	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_SELECT
 	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_SAMPLE
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_WEIGHTED_SAMPLE
 	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_IN_ENTITY_LIST
 	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_NOT_IN_ENTITY_LIST
 	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_EXISTS

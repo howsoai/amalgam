@@ -19,7 +19,6 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 
 		case ENT_QUERY_SELECT:
 		case ENT_QUERY_SAMPLE:
-		case ENT_QUERY_WEIGHTED_SAMPLE:
 			//it does not fail the condition here - needs to be checked elsewhere
 			return true;
 
@@ -352,75 +351,52 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		else //just use a random seed
 			random_stream.SetState("12345");
 
-		//select num_to_select entities and save them in the sample vector
-		for(size_t i = 0; i < num_to_sample; i++)
+		if(singleLabel == StringInternPool::NOT_A_STRING_ID)
 		{
-			size_t index_to_swap = randomStream.RandSize(num_entities);
-			Entity *selected = matching_entities[index_to_swap];
-			samples.emplace_back(selected);
-		}
-
-		//swap samples vector with the matching_entities 
-		std::swap(matching_entities, samples);
-		return EvaluableNodeReference::Null();
-	}
-
-	case ENT_QUERY_WEIGHTED_SAMPLE:
-	{
-		size_t num_entities = matching_entities.size();
-		size_t num_to_sample = static_cast<size_t>(maxToRetrieve);
-		auto weight_label_id = singleLabel;
-
-		if(num_entities == 0 || num_to_sample == 0)
-		{
-			matching_entities.clear();
-			return EvaluableNodeReference::Null();
-		}
-
-		//retrieve weights
-		std::vector<double> entity_weights;
-		entity_weights.reserve(num_to_sample);
-
-		//retrieve and accumulate weights
-		for(size_t i = 0; i < matching_entities.size(); i++)
-		{
-			double value;
-			Entity *e = matching_entities[i];
-			if(e != nullptr && e->GetValueAtLabelAsNumber(weight_label_id, value))
-			{
-				if(FastIsNaN(value))
-					value = 0.0;
-
-				entity_weights.push_back(value);
-			}
-			else
-			{
-				entity_weights.push_back(0.0);
-			}
-		}
-
-		//obtain random stream either from the condition or use a default one
-		RandomStream random_stream;
-		if(hasRandomStream)
-			random_stream = randomStream.CreateOtherStreamViaRand();
-		else //just use a random seed
-			random_stream.SetState("12345");
-
-		std::vector<Entity *> samples;
-		samples.reserve(num_to_sample);
-
-		//if just one sample, brute-force it
-		if(num_to_sample == 1)
-		{
-			size_t selected_index = WeightedDiscreteRandomSample(entity_weights, random_stream, true);
-			Entity *selected = matching_entities[selected_index];
-			samples.emplace_back(selected);
-		}
-		else //build temporary cache and query
-		{
-			WeightedDiscreteRandomStreamTransform<Entity *> wdrst(matching_entities, entity_weights, true);
+			//select num_to_select entities and save them in the sample vector
 			for(size_t i = 0; i < num_to_sample; i++)
-				samples.emplace_back(wdrst.WeightedDiscreteRand(random_stream));
+			{
+				size_t index_to_swap = randomStream.RandSize(num_entities);
+				Entity *selected = matching_entities[index_to_swap];
+				samples.emplace_back(selected);
+			}
+		}
+		else //weighted
+		{
+			//retrieve weights
+			std::vector<double> entity_weights;
+			entity_weights.reserve(num_to_sample);
+
+			//retrieve and accumulate weights
+			for(Entity *e : matching_entities)
+			{
+				double value;
+				if(e != nullptr && e->GetValueAtLabelAsNumber(singleLabel, value))
+				{
+					if(FastIsNaN(value))
+						value = 0.0;
+
+					entity_weights.push_back(value);
+				}
+				else
+				{
+					entity_weights.push_back(0.0);
+				}
+			}
+
+			//if just one sample, brute-force it
+			if(num_to_sample == 1)
+			{
+				size_t selected_index = WeightedDiscreteRandomSample(entity_weights, random_stream, true);
+				Entity *selected = matching_entities[selected_index];
+				samples.emplace_back(selected);
+			}
+			else //build temporary cache and query
+			{
+				WeightedDiscreteRandomStreamTransform<Entity *> wdrst(matching_entities, entity_weights, true);
+				for(size_t i = 0; i < num_to_sample; i++)
+					samples.emplace_back(wdrst.WeightedDiscreteRand(random_stream));
+			}
 		}
 
 		//swap samples vector with the matching_entities 

@@ -189,6 +189,14 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 			json_payload = input;  // json data
 			response = entint.ExecuteEntityJSON(handle, label, json_payload);
 		}
+		else if(command == "EXECUTE_ENTITY_JSON_LOGGED")
+		{
+			handle = StringManipulation::RemoveFirstToken(input);
+			label = StringManipulation::RemoveFirstToken(input);
+			json_payload = input;  // json data
+			auto [json_response, log] = entint.ExecuteEntityJSONLogged(handle, label, json_payload);
+			response = json_response + "\n# " + log;
+		}
 		else if(command == "EVAL_ON_ENTITY")
 		{
 			handle = StringManipulation::RemoveFirstToken(input);
@@ -205,6 +213,19 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 		else if(command == "VERSION")
 		{
 			response = AMALGAM_VERSION_STRING;
+		}
+		else if(command == "VERIFY_ENTITY")
+		{
+			std::vector<std::string> command_tokens = StringManipulation::SplitArgString(input);
+			if(command_tokens.size() >= 1)
+			{
+				auto status = entint.VerifyEntity(command_tokens[0]);
+				response = status.loaded ? SUCCESS_RESPONSE : FAILURE_RESPONSE;
+			}
+			else
+			{
+				response = FAILURE_RESPONSE;
+			}
 		}
 		else if(command == "GET_MAX_NUM_THREADS")
 		{

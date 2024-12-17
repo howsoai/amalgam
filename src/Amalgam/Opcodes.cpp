@@ -69,7 +69,6 @@ void StringInternPool::InitializeStaticStrings()
 
 	//simulation and operations
 	EmplaceNodeTypeString(ENT_RAND, "rand");
-	EmplaceNodeTypeString(ENT_WEIGHTED_RAND, "weighted_rand");
 	EmplaceNodeTypeString(ENT_GET_RAND_SEED, "get_rand_seed");
 	EmplaceNodeTypeString(ENT_SET_RAND_SEED, "set_rand_seed");
 	EmplaceNodeTypeString(ENT_SYSTEM_TIME, "system_time");
@@ -256,7 +255,6 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_COMPUTE_ON_CONTAINED_ENTITIES, "compute_on_contained_entities");
 	EmplaceNodeTypeString(ENT_QUERY_SELECT, "query_select");
 	EmplaceNodeTypeString(ENT_QUERY_SAMPLE, "query_sample");
-	EmplaceNodeTypeString(ENT_QUERY_WEIGHTED_SAMPLE, "query_weighted_sample");
 	EmplaceNodeTypeString(ENT_QUERY_IN_ENTITY_LIST, "query_in_entity_list");
 	EmplaceNodeTypeString(ENT_QUERY_NOT_IN_ENTITY_LIST, "query_not_in_entity_list");
 	EmplaceNodeTypeString(ENT_QUERY_EXISTS, "query_exists");
@@ -355,6 +353,9 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI__, "_");
 	EmplaceStaticString(ENBISI_create_new_entity, "create_new_entity");
 	EmplaceStaticString(ENBISI_new_entity, "new_entity");
+	EmplaceStaticString(ENBISI_require_version_compatibility, "require_version_compatibility");
+	EmplaceStaticString(ENBISI_amlg_version, "amlg_version");
+	EmplaceStaticString(ENBISI_version_compatible, "version_compatible");
 
 	//entity access parameters
 	EmplaceStaticString(ENBISI_accessing_entity, "accessing_entity");

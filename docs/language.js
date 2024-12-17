@@ -508,16 +508,16 @@ var data = [
 	},
 	{
 		"parameter" : "index_max [number x1] [number x2] [number x3] ... [number xN] | (assoc ...) | (list ...)",
-		"output" : "*",
+		"output" : "[*]",
 		"concurrency" : true,
-		"description" : "the index of of the argument with the greatest value, or the key associated with the greatest value in an assoc, or the index of the greatest value in a list",
+		"description" : "a list of the indices of the argument with the greatest value, or the keys associated with the greatest value in an assoc, or the indices of the greatest value in a list",
 		"example" : "(print (index_max 0.5 1 7 9 -5))\n(print (index_max (list 0.5 1 7 9 -5) ))\n(print (index_max (assoc 1 0.5 2 1 3 7)))"
 	},
 	{
 		"parameter" : "index_min [number x1] [number x2] [number x3] ... [number xN] | (assoc ...) | (list ...)",
-		"output" : "*",
+		"output" : "[*]",
 		"concurrency" : true,
-		"description" : "the index of of the argument with the least value, or the key associated with the least value in an assoc, or the index of the least value in a list",
+		"description" : "a list of the indices of of the arguments with the least value, or the keys associated with the least value in an assoc, or the indices of the least value in a list",
 		"example" : "(print (index_min 0.5 1 7 9 -5))\n(print (index_min (list 0.5 1 7 9 -5) ))\n(print (index_min (assoc 1 0.5 2 1 3 7)))"
 	},
 	{

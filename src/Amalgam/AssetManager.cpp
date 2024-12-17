@@ -162,7 +162,7 @@ std::tuple<std::string, std::string, bool> AssetManager::GetFileStatus(std::stri
 
 	if(extension == FILE_EXTENSION_COMPRESSED_AMALGAM_CODE)
 	{
-		std::ifstream f(path, std::fstream::binary | std::fstream::in);
+		std::ifstream f(resource_path, std::fstream::binary | std::fstream::in);
 
 		if(!f.good())
 			return std::make_tuple("Cannot open file", "", false);
@@ -177,7 +177,7 @@ std::tuple<std::string, std::string, bool> AssetManager::GetFileStatus(std::stri
 	else if(extension == FILE_EXTENSION_AMALGAM)
 	{
 		//make sure path can be opened
-		std::ifstream file(path, std::fstream::binary | std::fstream::in);
+		std::ifstream file(resource_path, std::fstream::binary | std::fstream::in);
 		if(!file.good())
 			return std::make_tuple("Cannot open file", "", false);
 
@@ -209,7 +209,7 @@ std::tuple<std::string, std::string, bool> AssetManager::GetFileStatus(std::stri
 	}
 	else
 	{
-		std::ifstream f(path, std::fstream::binary | std::fstream::in);
+		std::ifstream f(resource_path, std::fstream::binary | std::fstream::in);
 		if(!f.good())
 			return std::make_tuple("Cannot open file", "", false);
 

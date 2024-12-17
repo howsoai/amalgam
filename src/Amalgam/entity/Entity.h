@@ -240,7 +240,7 @@ public:
 	}
 
 	//same as Execute but accepts a string for label name
-	inline EvaluableNodeReference Execute(std::string &label_name,
+	inline EvaluableNodeReference Execute(const std::string &label_name,
 		EvaluableNode *call_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
 		PerformanceConstraints *performance_constraints = nullptr

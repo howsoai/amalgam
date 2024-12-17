@@ -1306,7 +1306,6 @@ protected:
 	template <typename Compare>
 	EvaluableNodeReference GetIndexMinMaxFromList(EvaluableNode *en, std::vector<EvaluableNode*> &orderedChildNodes, Compare compare, double compare_limit, bool immediate_result)
 	{
-
 		if(orderedChildNodes.size() == 0)
 			return EvaluableNodeReference::Null();
 

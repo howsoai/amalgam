@@ -570,15 +570,15 @@ abcdef
 -5
 4
 --index_max--
-4
-2
-1
-tomato
+[4]
+[2 5]
+[1]
+["tomato"]
 --index_min--
-1
-0
-2
-1
+[1]
+[0 1 4]
+[2]
+[1]
 --dot_product--
 6
 6

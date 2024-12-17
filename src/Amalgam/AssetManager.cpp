@@ -172,7 +172,7 @@ std::tuple<std::string, std::string, bool> AssetManager::GetFileStatus(std::stri
 		if(!success)
 			return std::make_tuple(error_message, version, false);
 
-		return std::make_tuple("", version, false);
+		return std::make_tuple("", version, true);
 	}
 	else if(extension == FILE_EXTENSION_AMALGAM)
 	{

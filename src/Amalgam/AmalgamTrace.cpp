@@ -212,7 +212,7 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 			if(command_tokens.size() >= 1)
 			{
 				auto status = entint.VerifyEntity(command_tokens[0]);
-				response = (status.message.size() == 0) ? SUCCESS_RESPONSE : FAILURE_RESPONSE;
+				response = status.loaded ? SUCCESS_RESPONSE : FAILURE_RESPONSE;
 			}
 			else
 			{

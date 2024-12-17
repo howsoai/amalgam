@@ -487,7 +487,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	memoryModificationLock.unlock();
 #endif
 
-	EvaluableNodeReference result = called_entity->Execute(entity_label_sid,
+	EvaluableNodeReference result = called_entity->Execute(StringInternPool::StringID(entity_label_sid),
 		call_stack, called_entity == curEntity, this, cur_write_listeners, printListener, perf_constraints_ptr
 	#ifdef MULTITHREAD_SUPPORT
 		, &enm_lock

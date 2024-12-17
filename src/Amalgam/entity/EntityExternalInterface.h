@@ -58,6 +58,7 @@ public:
 	bool SetJSONToLabel(std::string &handle, std::string &label, std::string_view json);
 	std::string GetJSONFromLabel(std::string &handle, std::string &label);
 	std::string ExecuteEntityJSON(std::string &handle, std::string &label, std::string_view json);
+	std::pair<std::string, std::string> ExecuteEntityJSONLogged(const std::string &handle, const std::string &label, std::string_view json);
 	std::string EvalOnEntity(const std::string &handle, const std::string &amlg);
 
 protected:

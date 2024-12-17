@@ -69,7 +69,7 @@ foreach(TEST_TARGET ${ALL_SHAREDLIB_TARGETS})
 
     # Create test exe:
     set(TEST_EXE_NAME "${TEST_TARGET}-tester")
-    set(TEST_SOURCES "test/lib_smoke_test/main.cpp" "test/lib_smoke_test/test.amlg")
+    set(TEST_SOURCES "test/lib_smoke_test/main.cpp" "test/lib_smoke_test/test.amlg" "test/lib_smoke_test/counter.amlg")
     source_group(TREE ${CMAKE_SOURCE_DIR} FILES ${TEST_SOURCES})
     add_executable(${TEST_EXE_NAME} ${TEST_SOURCES})
     set_target_properties(${TEST_EXE_NAME} PROPERTIES FOLDER "Testing")
@@ -78,10 +78,9 @@ foreach(TEST_TARGET ${ALL_SHAREDLIB_TARGETS})
     # Test for test exe:
     set(TEST_NAME "Lib.SmokeTest.${TEST_EXE_NAME}")
     add_test(NAME ${TEST_NAME}
-        COMMAND ${TEST_RUNNER} "$<TARGET_FILE:${TEST_EXE_NAME}>" test.amlg
+        COMMAND ${TEST_RUNNER} "$<TARGET_FILE:${TEST_EXE_NAME}>"
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/test/lib_smoke_test
     )
-    set_tests_properties(${TEST_NAME} PROPERTIES PASS_REGULAR_EXPRESSION "${AMALGAM_VERSION_FULL_ESCAPED}")
     list(APPEND ALL_TEST_TARGETS ${TEST_NAME})
 
 endforeach()

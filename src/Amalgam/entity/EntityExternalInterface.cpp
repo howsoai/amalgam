@@ -86,7 +86,7 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::VerifyEntity(
 	if(!success)
 		return EntityExternalInterface::LoadEntityStatus(false, error_string, version);
 
-	return EntityExternalInterface::LoadEntityStatus(false, "", version);
+	return EntityExternalInterface::LoadEntityStatus(true, "", version);
 }
 
 bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &cloned_handle, std::string &path,

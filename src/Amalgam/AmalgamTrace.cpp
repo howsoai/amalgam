@@ -206,6 +206,19 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 		{
 			response = AMALGAM_VERSION_STRING;
 		}
+		else if(command == "VERIFY_ENTITY")
+		{
+			std::vector<std::string> command_tokens = StringManipulation::SplitArgString(input);
+			if(command_tokens.size() >= 1)
+			{
+				auto status = entint.VerifyEntity(command_tokens[0]);
+				response = status.loaded ? SUCCESS_RESPONSE : FAILURE_RESPONSE;
+			}
+			else
+			{
+				response = FAILURE_RESPONSE;
+			}
+		}
 		else if(command == "GET_MAX_NUM_THREADS")
 		{
 		#if defined(MULTITHREAD_SUPPORT)

@@ -587,6 +587,7 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_continuous_code,
 
 	//distance parameter values
+	ENBISI_surprisal,
 	ENBISI_surprisal_to_prob,
 
 	//numerical precision types

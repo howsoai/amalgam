@@ -712,19 +712,25 @@ public:
 	//holds parameters and transforms distances and surprisals
 	//EntityReference is the type of reference to an entity, and entity_reference is the reference itself
 	//index is the element number as sorted by smallest distance, where 0 is the entity with the smallest distance
-	//if surprisal_to_probability is true, it will transform surprisal to probability
-	//if surprisal_to_probability is false, distance_weight_exponent is the exponent each distance is raised to
+	//if compute_surprisal is true, it will transform via surprisal,
+	// and if surprisal_to_probability is true, it will convert to probability
+	//if compute_surprisal  is false, distance_weight_exponent is the exponent each distance is raised to
 	//has_weight, if set, will use get_weight, taking in a function of an entity reference and a reference to an output
 	// double to set the weight, and should return true if the entity has a weight, false if not
 	template<typename EntityReference>
 	class DistanceTransform
 	{
 	public:
-		constexpr DistanceTransform(bool surprisal_to_probability, double distance_weight_exponent,
+		constexpr DistanceTransform(bool compute_surprisal, bool surprisal_to_probability,
+			double distance_weight_exponent,
 			bool has_weight, std::function<bool(EntityReference, double &)> get_weight)
 		{
 			distanceWeightExponent = distance_weight_exponent;
-			transformSuprisalToProb = surprisal_to_probability;
+			computeSurprisal = compute_surprisal;
+			//TODO 22427: update every part of computeSurprisal with surprisalToProbability where appropriate
+			//TODO 22427: add tests to full_test.amlg
+			//TODO 22427: update documentation
+			surprisalToProbability = surprisal_to_probability;
 			hasWeight = has_weight;
 			getEntityWeightFunction = get_weight;
 		}
@@ -742,7 +748,7 @@ public:
 		//get_distance_ref returns a reference as a pointer to the location of the distance in the EntityDistancePairContainer
 		inline void TransformDistances(std::vector<DistanceReferencePair<EntityReference>> &entity_distance_pair_container, bool sort_results)
 		{
-			if(transformSuprisalToProb)
+			if(computeSurprisal)
 			{
 				//convert to surprisal
 				for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
@@ -826,7 +832,7 @@ public:
 			if(sort_results)
 			{
 				//if distance, sort by smallest first
-				if(!transformSuprisalToProb && distanceWeightExponent > 0)
+				if(!computeSurprisal && distanceWeightExponent > 0)
 				{
 					std::sort(begin(entity_distance_pair_container), end(entity_distance_pair_container),
 						[](auto a, auto b) {return a.distance < b.distance; }
@@ -847,7 +853,7 @@ public:
 			EntityDistancePairIterator entity_distance_pair_container_begin,
 			EntityDistancePairIterator entity_distance_pair_container_end)
 		{
-			if(transformSuprisalToProb)
+			if(computeSurprisal)
 			{
 				//need to weight by the logical OR of all probability masses
 				// this is complex to compute if done as P(A or B) = P(A) + P(B) - P(A and B),
@@ -987,11 +993,14 @@ public:
 		}
 
 		//exponent by which to scale the distances
-		//only applicable when transformSuprisalToProb is false
+		//only applicable when computeSurprisal is false
 		double distanceWeightExponent;
 
-		//if true, the values will be transformed from surprisal to probability; if false, will perform a distance transform
-		bool transformSuprisalToProb;
+		//if true, the values will be calculated as surprisals, if false, will perform a distance transform
+		bool computeSurprisal;
+
+		//if true and computeSurprisal is true, the results will be transformed from surprisal to probability
+		bool surprisalToProbability;
 
 		//if hasWeight is true, then will call getEntityWeightFunction and apply the respective entity weight to each distance
 		bool hasWeight;

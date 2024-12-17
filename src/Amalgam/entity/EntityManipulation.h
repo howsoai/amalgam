@@ -129,11 +129,12 @@ public:
 	//flattens only the top entity using enm to allocate code that can recreate it;
 	// this is the first step of flattening an entity, and contained entities can be concatenated
 	// if include_rand_seeds is true, it will emit code that includes them; otherwise it won't
+	// if include_version is true, it will include the current amalgam version on the top node
 	//if ensure_en_flags_correct is false, then it may save compute if an update pass will be done later
 	//it will set the top node's cycle check flag to the appropriate value, so if the result contains a cycle
 	//that can be determined by the top node
 	static EvaluableNode *FlattenOnlyTopEntity(EvaluableNodeManager *enm, Entity *entity,
-		bool include_rand_seeds, bool ensure_en_flags_correct);
+		bool include_rand_seeds, bool include_version, bool ensure_en_flags_correct);
 
 	//like FlattenOnlyTopEntity, but for an entity contained somewhere in from_entity
 	static EvaluableNode *FlattenOnlyOneContainedEntity(EvaluableNodeManager *enm, Entity *entity, Entity *from_entity,
@@ -143,13 +144,14 @@ public:
 	// all_contained_entities must be populated via Entity::GetAllDeeplyContainedEntityReadReferencesGroupedByDepth
 	// if include_rand_seeds is true, it will emit code that includes them; otherwise it won't
 	// if parallel_create is true, it will emit slightly more complex code that creates entities in parallel
+	// if include_version is true, it will include the current amalgam version on the top node
 	template<typename EntityReferenceType>
 	static EvaluableNodeReference FlattenEntity(EvaluableNodeManager *enm, Entity *entity,
 		Entity::EntityReferenceBufferReference<EntityReferenceType> &all_contained_entities,
-		bool include_rand_seeds, bool parallel_create)
+		bool include_rand_seeds, bool parallel_create, bool include_version)
 	{
 		EvaluableNode *declare_flatten = FlattenOnlyTopEntity(enm, entity,
-			include_rand_seeds, false);
+			include_rand_seeds, include_version, false);
 		bool cycle_flags_need_update = declare_flatten->GetNeedCycleCheck();
 
 		//preallocate the assoc, set_entity_rand_seed, create and set_entity_rand_seed for each contained entity, then the return new_entity

@@ -48,7 +48,6 @@ enum EvaluableNodeType : uint8_t
 
 	//simulation and operations
 	ENT_RAND,
-	ENT_WEIGHTED_RAND,
 	ENT_GET_RAND_SEED,
 	ENT_SET_RAND_SEED,
 	ENT_SYSTEM_TIME,
@@ -238,7 +237,6 @@ enum EvaluableNodeType : uint8_t
 	ENT_COMPUTE_ON_CONTAINED_ENTITIES,
 	ENT_QUERY_SELECT,
 	ENT_QUERY_SAMPLE,
-	ENT_QUERY_WEIGHTED_SAMPLE,
 	ENT_QUERY_IN_ENTITY_LIST,
 	ENT_QUERY_NOT_IN_ENTITY_LIST,
 	ENT_QUERY_EXISTS,
@@ -337,7 +335,7 @@ constexpr OrderedChildNodeType GetInstructionOrderedChildNodeType(EvaluableNodeT
 	case ENT_SET_ENTITY_RAND_SEED:
 	case ENT_CREATE_ENTITIES:
 	case ENT_CONTAINED_ENTITIES:	case ENT_COMPUTE_ON_CONTAINED_ENTITIES:
-	case ENT_QUERY_SELECT:			case ENT_QUERY_SAMPLE:									case ENT_QUERY_WEIGHTED_SAMPLE:
+	case ENT_QUERY_SELECT:			case ENT_QUERY_SAMPLE:
 	case ENT_QUERY_IN_ENTITY_LIST:	case ENT_QUERY_NOT_IN_ENTITY_LIST:
 	case ENT_QUERY_EXISTS:			case ENT_QUERY_NOT_EXISTS:
 	case ENT_QUERY_EQUALS:			case ENT_QUERY_NOT_EQUALS:
@@ -375,7 +373,7 @@ constexpr OrderedChildNodeType GetInstructionOrderedChildNodeType(EvaluableNodeT
 	case ENT_GET:
 	case ENT_TARGET:					case ENT_CURRENT_INDEX:		case ENT_CURRENT_VALUE:		case ENT_PREVIOUS_RESULT:
 	case ENT_OPCODE_STACK:				case ENT_STACK:				case ENT_ARGS:
-	case ENT_RAND:						case ENT_WEIGHTED_RAND:		case ENT_GET_RAND_SEED:		case ENT_SET_RAND_SEED:
+	case ENT_RAND:						case ENT_GET_RAND_SEED:		case ENT_SET_RAND_SEED:
 	case ENT_SYSTEM_TIME:
 	case ENT_GET_DIGITS:				case ENT_SET_DIGITS:
 	case ENT_FLOOR:						case ENT_CEILING:			case ENT_ROUND:
@@ -482,7 +480,7 @@ constexpr bool DoesEvaluableNodeTypeCreateScope(EvaluableNodeType t)
 constexpr bool IsEvaluableNodeTypeQuery(EvaluableNodeType t)
 {
 	return (t == ENT_QUERY_SELECT || t == ENT_QUERY_IN_ENTITY_LIST || t == ENT_QUERY_NOT_IN_ENTITY_LIST
-		|| t == ENT_QUERY_SAMPLE || t == ENT_QUERY_WEIGHTED_SAMPLE || t == ENT_QUERY_EXISTS || t == ENT_QUERY_NOT_EXISTS
+		|| t == ENT_QUERY_SAMPLE || t == ENT_QUERY_EXISTS || t == ENT_QUERY_NOT_EXISTS
 		|| t == ENT_QUERY_EQUALS || t == ENT_QUERY_NOT_EQUALS
 		|| t == ENT_QUERY_BETWEEN || t == ENT_QUERY_NOT_BETWEEN || t == ENT_QUERY_AMONG || t == ENT_QUERY_NOT_AMONG
 		|| t == ENT_QUERY_MAX || t == ENT_QUERY_MIN || t == ENT_QUERY_SUM || t == ENT_QUERY_MODE
@@ -570,6 +568,9 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI__,
 	ENBISI_create_new_entity,
 	ENBISI_new_entity,
+	ENBISI_require_version_compatibility,
+	ENBISI_amlg_version,
+	ENBISI_version_compatible,
 
 	//entity access parameters
 	ENBISI_accessing_entity,

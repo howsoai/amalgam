@@ -71,6 +71,44 @@ public:
 	EntityType *entity;
 };
 
+union EntityPermissions
+{
+	EntityPermissions()
+		: allPermissions(0)
+	{	}
+
+	inline static EntityPermissions AllPermissions()
+	{
+		EntityPermissions perm;
+		perm.individualPermissions.stdOut = true;
+		perm.individualPermissions.stdIn = true;
+		perm.individualPermissions.load = true;
+		perm.individualPermissions.store = true;
+		perm.individualPermissions.environment = true;
+		perm.individualPermissions.system = true;
+		return perm;
+	}
+
+	//quick way to initialize all permissions to 0
+	uint8_t allPermissions;
+	//for each permission, true if has permission
+	struct
+	{
+		//write to stdout
+		bool stdOut : 1;
+		//read from stdin
+		bool stdIn : 1;
+		//read from file system
+		bool load : 1;
+		//write to file system
+		bool store : 1;
+		//read from the environment
+		bool environment : 1;
+		//command the system
+		bool system : 1;
+	} individualPermissions;
+};
+
 #ifdef MULTITHREAD_SUPPORT
 
 //encapsulates EntityReference with a lock type
@@ -137,9 +175,6 @@ public:
 	//StringID to index
 	using StringIdToIndexAssocType = FastHashMap<StringInternPool::StringID, size_t>;
 
-	//set of entities
-	using EntitySetType = FastHashSet<Entity *>;
-
 	Entity();
 
 	//create Entity from existing code, rand_state is the current state of the random number generator,
@@ -205,7 +240,7 @@ public:
 	}
 
 	//same as Execute but accepts a string for label name
-	inline EvaluableNodeReference Execute(std::string &label_name,
+	inline EvaluableNodeReference Execute(const std::string &label_name,
 		EvaluableNode *call_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
 		PerformanceConstraints *performance_constraints = nullptr
@@ -632,7 +667,8 @@ public:
 
 	//sets (seeds) the current state of the random stream based on RandomStream
 	// write_listeners is optional, and if specified, will log the event
-	void SetRandomStream(const RandomStream &new_stream, std::vector<EntityWriteListener *> *write_listeners = nullptr);
+	void SetRandomStream(const RandomStream &new_stream, std::vector<EntityWriteListener *> *write_listeners = nullptr,
+		Entity::EntityReferenceBufferReference<EntityWriteReference> *all_contained_entities = nullptr);
 
 	//returns a random seed based on a random number consumed from the entity and seed_string parameter
 	std::string CreateRandomStreamFromStringAndRand(const std::string &seed_string);

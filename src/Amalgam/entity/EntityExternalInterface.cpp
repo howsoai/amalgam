@@ -42,7 +42,8 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(st
 		rand_seed = std::to_string(t);
 	}
 
-	AssetManager::AssetParameters asset_params(path, file_type, true);
+	AssetManager::AssetParametersRef asset_params
+		= std::make_shared<AssetManager::AssetParameters>(path, file_type, true);
 
 	if(json_file_params.size() > 0)
 	{
@@ -50,17 +51,17 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(st
 		EvaluableNode *file_params = EvaluableNodeJSONTranslation::JsonToEvaluableNode(&temp_enm, json_file_params);
 
 		if(EvaluableNode::IsAssociativeArray(file_params))
-			asset_params.SetParams(file_params->GetMappedChildNodesReference());
+			asset_params->SetParams(file_params->GetMappedChildNodesReference());
 	}
 
-	asset_params.UpdateResources();
+	asset_params->UpdateResources();
 
 	Entity *entity = asset_manager.LoadEntityFromResource(asset_params, persistent, rand_seed, nullptr, status);
 
 	if(!status.loaded)
 		return status;
 
-	asset_manager.SetRootPermission(entity, true);
+	asset_manager.SetEntityPermissions(entity, EntityPermissions::AllPermissions());
 
 	PrintListener *pl = nullptr;
 	std::vector<EntityWriteListener *> wl;
@@ -70,7 +71,7 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(st
 
 	if(!write_log_filename.empty())
 	{
-		EntityWriteListener *write_log = new EntityWriteListener(entity, false, write_log_filename);
+		EntityWriteListener *write_log = new EntityWriteListener(entity, false, false, false, write_log_filename);
 		wl.push_back(write_log);
 	}
 
@@ -81,17 +82,11 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(st
 
 EntityExternalInterface::LoadEntityStatus EntityExternalInterface::VerifyEntity(std::string &path)
 {
-	std::ifstream f(path, std::fstream::binary | std::fstream::in);
-
-	if(!f.good())
-		return EntityExternalInterface::LoadEntityStatus(false, "Cannot open file", "");
-
-	size_t header_size = 0;
-	auto [error_string, version, success] = FileSupportCAML::ReadHeader(f, header_size);
+	auto [error_string, version, success] = AssetManager::GetFileStatus(path);
 	if(!success)
 		return EntityExternalInterface::LoadEntityStatus(false, error_string, version);
 
-	return EntityExternalInterface::LoadEntityStatus(false, "", version);
+	return EntityExternalInterface::LoadEntityStatus(true, "", version);
 }
 
 bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &cloned_handle, std::string &path,
@@ -107,7 +102,8 @@ bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &clon
 
 	Entity *entity = new Entity(bundle->entity);
 
-	AssetManager::AssetParameters asset_params(path, file_type, true);
+	AssetManager::AssetParametersRef asset_params
+		= std::make_shared<AssetManager::AssetParameters>(path, file_type, true);
 
 	if(json_file_params.size() > 0)
 	{
@@ -115,10 +111,10 @@ bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &clon
 		EvaluableNode *file_params = EvaluableNodeJSONTranslation::JsonToEvaluableNode(&enm, json_file_params);
 
 		if(EvaluableNode::IsAssociativeArray(file_params))
-			asset_params.SetParams(file_params->GetMappedChildNodesReference());
+			asset_params->SetParams(file_params->GetMappedChildNodesReference());
 	}
 
-	asset_params.UpdateResources();
+	asset_params->UpdateResources();
 
 	PrintListener *pl = nullptr;
 	std::vector<EntityWriteListener *> wl;
@@ -128,7 +124,7 @@ bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &clon
 
 	if(!write_log_filename.empty())
 	{
-		EntityWriteListener *write_log = new EntityWriteListener(entity, false, write_log_filename);
+		EntityWriteListener *write_log = new EntityWriteListener(entity, false, false, false, write_log_filename);
 		wl.push_back(write_log);
 	}
 
@@ -149,7 +145,8 @@ void EntityExternalInterface::StoreEntity(std::string &handle, std::string &path
 
 	EntityReadReference entity(bundle->entity);
 
-	AssetManager::AssetParameters asset_params(path, file_type, true);
+	AssetManager::AssetParametersRef asset_params
+		= std::make_shared<AssetManager::AssetParameters>(path, file_type, true);
 
 	if(json_file_params.size() > 0)
 	{
@@ -157,11 +154,11 @@ void EntityExternalInterface::StoreEntity(std::string &handle, std::string &path
 		EvaluableNode *file_params = EvaluableNodeJSONTranslation::JsonToEvaluableNode(&enm, json_file_params);
 
 		if(EvaluableNode::IsAssociativeArray(file_params))
-			asset_params.SetParams(file_params->GetMappedChildNodesReference());
+			asset_params->SetParams(file_params->GetMappedChildNodesReference());
 
 		enm.FreeNodeTree(file_params);
 	}
-	asset_params.UpdateResources();
+	asset_params->UpdateResources();
 
 	asset_manager.StoreEntityToResource(entity, asset_params, true, persistent);
 }
@@ -258,6 +255,43 @@ std::string EntityExternalInterface::ExecuteEntityJSON(std::string &handle, std:
 	auto [result, converted] = EvaluableNodeJSONTranslation::EvaluableNodeToJson(returned_value);
 	enm.FreeNodeTreeIfPossible(returned_value);
 	return (converted ? result : string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID));
+}
+
+std::pair<std::string, std::string> EntityExternalInterface::ExecuteEntityJSONLogged(const std::string &handle, const std::string &label, std::string_view json)
+{
+	auto bundle = FindEntityBundle(handle);
+	if(bundle == nullptr)
+		return std::pair("", "");
+	
+	EntityWriteListener logger(bundle->entity, true);
+	std::vector<EntityWriteListener *> listeners(bundle->writeListeners);
+	listeners.push_back(&logger);
+
+	EvaluableNodeManager &enm = bundle->entity->evaluableNodeManager;
+#ifdef MULTITHREAD_SUPPORT
+	//lock memory before allocating call stack
+	Concurrency::ReadLock enm_lock(enm.memoryModificationMutex);
+#endif
+	EvaluableNodeReference args = EvaluableNodeReference(EvaluableNodeJSONTranslation::JsonToEvaluableNode(&enm, json), true);
+
+	auto call_stack = Interpreter::ConvertArgsToCallStack(args, enm);
+
+	EvaluableNodeReference returned_value = bundle->entity->Execute(label, call_stack, false, nullptr,
+		&listeners, bundle->printListener, nullptr
+#ifdef MULTITHREAD_SUPPORT
+		, &enm_lock
+#endif
+	);
+	enm.FreeNode(call_stack->GetOrderedChildNodesReference()[0]);
+	enm.FreeNode(call_stack);
+
+	auto [result, converted] = EvaluableNodeJSONTranslation::EvaluableNodeToJson(returned_value);
+	enm.FreeNodeTreeIfPossible(returned_value);
+	std::string json_out = converted ? result : string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID);
+
+	std::string log = Parser::Unparse(logger.GetWrites(), false, false);
+
+	return std::pair(json_out, log);
 }
 
 std::string EntityExternalInterface::EvalOnEntity(const std::string &handle, const std::string &amlg)

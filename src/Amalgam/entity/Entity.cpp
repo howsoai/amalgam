@@ -352,12 +352,12 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 		if(container_caches != nullptr)
 			container_caches->UpdateAllEntityLabels(this, GetEntityIndexOfContainer());
 
-		asset_manager.UpdateEntity(this);
 		if(write_listeners != nullptr)
 		{
 			for(auto &wl : *write_listeners)
-				wl->LogWriteValueToEntity(this, new_value, label_sid, direct_set);
+				wl->LogWriteLabelValueToEntity(this, label_sid, new_value, direct_set);
 		}
+		asset_manager.UpdateEntityLabelValue(this, label_sid, new_value, direct_set);
 	}
 
 	return true;
@@ -389,17 +389,10 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 	bool need_node_flags_updated = false;
 	auto &new_label_values_mcn = new_label_values->GetMappedChildNodesReference();
 
-	//write changes to write listeners first, as code below may invalidate portions of new_label_values
-	if(write_listeners != nullptr)
-	{
-		for(auto &wl : *write_listeners)
-			wl->LogWriteValuesToEntity(this, new_label_values, direct_set);
-	}
-
 	for(auto &[assignment_id, assignment] : new_label_values_mcn)
 	{
 		StringInternPool::StringID variable_sid = assignment_id;
-		EvaluableNodeReference variable_value_node(assignment, new_label_values.unique);
+		EvaluableNodeReference variable_value_node(assignment, false);
 
 		if(accum_values)
 		{
@@ -439,7 +432,12 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 				container_caches->UpdateEntityLabels(this, GetEntityIndexOfContainer(), new_label_values_mcn);
 		}
 
-		asset_manager.UpdateEntity(this);
+		if(write_listeners != nullptr)
+		{
+			for(auto &wl : *write_listeners)
+				wl->LogWriteLabelValuesToEntity(this, new_label_values, accum_values, direct_set);
+		}
+		asset_manager.UpdateEntityLabelValues(this, new_label_values, accum_values, direct_set);
 
 		if(num_new_nodes_allocated != nullptr)
 		{
@@ -820,7 +818,7 @@ void Entity::SetRandomState(const std::string &new_state, bool deep_set_seed,
 		for(auto &wl : *write_listeners)
 			wl->LogSetEntityRandomSeed(this, new_state, false);
 
-		asset_manager.UpdateEntity(this, all_contained_entities);
+		asset_manager.UpdateEntityRandomSeed(this, new_state, deep_set_seed, all_contained_entities);
 	}
 
 	if(deep_set_seed)
@@ -831,20 +829,18 @@ void Entity::SetRandomState(const std::string &new_state, bool deep_set_seed,
 	}
 }
 
-void Entity::SetRandomStream(const RandomStream &new_stream, std::vector<EntityWriteListener *> *write_listeners)
+void Entity::SetRandomStream(const RandomStream &new_stream, std::vector<EntityWriteListener *> *write_listeners,
+	Entity::EntityReferenceBufferReference<EntityWriteReference> *all_contained_entities)
 {
 	randomStream = new_stream;
 
 	if(write_listeners != nullptr)
 	{
-		if(write_listeners->size() > 0)
-		{
-			std::string new_state_string = randomStream.GetState();
-			for(auto &wl : *write_listeners)
-				wl->LogSetEntityRandomSeed(this, new_state_string, false);
-		}
+		std::string new_state = randomStream.GetState();
+		for(auto &wl : *write_listeners)
+			wl->LogSetEntityRandomSeed(this, new_state, false);
 
-		asset_manager.UpdateEntity(this);
+		asset_manager.UpdateEntityRandomSeed(this, new_state, false, all_contained_entities);
 	}
 }
 
@@ -892,13 +888,10 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, Evalu
 	{
 		if(write_listeners->size() > 0)
 		{
-			std::string new_code_string = Parser::Unparse(evaluableNodeManager.GetRootNode(), false, true);
-
 			for(auto &wl : *write_listeners)
-				wl->LogWriteToEntity(this, new_code_string);
+				wl->LogWriteToEntityRoot(this);
 		}
-
-		asset_manager.UpdateEntity(this);
+		asset_manager.UpdateEntityRoot(this);
 	}
 }
 
@@ -993,13 +986,10 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 	{
 		if(write_listeners->size() > 0)
 		{
-			std::string new_code_string = Parser::Unparse(new_root, false, true);
-
 			for(auto &wl : *write_listeners)
-				wl->LogWriteToEntity(this, new_code_string);
+				wl->LogWriteToEntityRoot(this);
 		}
-
-		asset_manager.UpdateEntity(this);
+		asset_manager.UpdateEntityRoot(this);
 	}
 
 #ifdef AMALGAM_MEMORY_INTEGRITY

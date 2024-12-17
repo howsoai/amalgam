@@ -737,7 +737,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAX(EvaluableNode *en, boo
 		}
 
 		if(value_found)
-			return AllocReturn(result_value, immediate_result);;
+			return AllocReturn(result_value, immediate_result);
 		return EvaluableNodeReference::Null();
 	}
 #endif
@@ -754,7 +754,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAX(EvaluableNode *en, boo
 	}
 
 	if(value_found)
-		return AllocReturn(result_value, immediate_result);;
+		return AllocReturn(result_value, immediate_result);
 	return EvaluableNodeReference::Null();
 }
 
@@ -784,7 +784,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIN(EvaluableNode *en, boo
 		}
 
 		if(value_found)
-			return AllocReturn(result_value, immediate_result);;
+			return AllocReturn(result_value, immediate_result);
 		return EvaluableNodeReference::Null();
 	}
 #endif

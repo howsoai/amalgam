@@ -183,7 +183,7 @@ public:
 		{
 		public:
 			inline SparseNominalDeviationValues()
-				: defaultDeviation(0.0)
+				: defaultDeviation(std::numeric_limits<double>::quiet_NaN())
 			{	}
 
 			double defaultDeviation;
@@ -1272,7 +1272,7 @@ public:
 		if(feature_data.targetValue.IsNull())
 		{
 			//first entry is unknown-unknown distance
-			feature_data.internedDistanceTerms[0] = feature_attribs.unknownToUnknownDistanceTerm.GetValue(high_accuracy_interned_values);;
+			feature_data.internedDistanceTerms[0] = feature_attribs.unknownToUnknownDistanceTerm.GetValue(high_accuracy_interned_values);
 			
 			double k_to_unk = feature_attribs.knownToUnknownDistanceTerm.GetValue(high_accuracy_interned_values);
 			for(size_t i = 1; i < feature_data.internedDistanceTerms.size(); i++)

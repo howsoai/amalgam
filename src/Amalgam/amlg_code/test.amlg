@@ -1,14 +1,36 @@
 ﻿(seq
- (create_entities "persist_transactions" (list 1 2 3 4))
- (create_entities (list "persist_transactions" "child") (list 5 6 7))
- (create_entities (list "persist_transactions" "child" "doublechild1") (lambda (list ##eight 8 ##nine 9)))
- (create_entities (list "persist_transactions" "child" "doublechild3") (list 12 13))
- (store_entity "amlg_code/test_output/persist_transactions.caml" "persist_transactions" (null) (true) {flatten (true) transactional (true)})
- (create_entities (list "persist_transactions" "child" "doublechild2") (list 10 11))
- (destroy_entities (list "persist_transactions" "child" "doublechild3"))
- (assign_to_entities (list "persist_transactions" "child" "doublechild1") {eight 88})
+    (declare (assoc
+        deviations_sdm
+            {
+                "Bit 1" [
+                            [
+                                {
+                                    0 [
+                                            {0 0.1  1 0.9}
+                                           ; 0.98
+                                        ]
+                                    1 [
+                                            {0 0.8  1 0.2}
+                                            0.95
+                                        ]
+                                }
+                                0.3  ;larger = smaller dist
+                            ]
+                        ]
+            }
+    ))
  
- (load_entity "amlg_code/test_output/persist_transactions.caml" "persist_transactions_copy" (null) (false) {execute_on_load (true) transactional (true) require_version_compatibility (true)})
- (print (difference_entities "persist_transactions_copy" "persist_transactions") "\n")
- (destroy_entities "persist_transactions_copy" "persist_transactions")
+    (print
+        (generalized_distance
+            { "Bit 1" 1 "Bit 2" 1  } ; weights
+            { "Bit 1" "nominal_numeric" "Bit 2" "nominal_numeric"  }
+            (null)   ; query_feature_attributes_map
+            deviations_sdm
+            1 ;p
+            [0]
+            [3]
+            ["Bit 1"]
+            (true) ;surprisal
+        )
+    )
 )

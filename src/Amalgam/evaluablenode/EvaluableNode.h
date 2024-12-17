@@ -670,9 +670,9 @@ public:
 	__forceinline std::vector<EvaluableNode *> &GetOrderedChildNodes()
 	{
 		if(IsOrderedArray())
-			return GetOrderedChildNodesReference();
+			return GetOrderedChildNodesReference ();
 
-		return emptyOrderedChildNodes;
+	return emptyOrderedChildNodes;
 	}
 
 	//using ordered or mapped child nodes as appropriate, transforms into numeric values and passes into store_value
@@ -886,8 +886,7 @@ public:
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		Concurrency::SingleLock lock(debugWatchMutex);
 	#endif
-		if(debugWatch.find(en) != end(debugWatch))
-		{
+		if(debugWatch.find(en) != end(debugWatch)) {
 			assert(false);
 		}
 	}

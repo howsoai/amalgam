@@ -1276,6 +1276,20 @@ protected:
 	//a stack (list) of the current nodes being executed
 	std::vector<EvaluableNode *> *opcodeStackNodes;
 
+	EvaluableNodeReference IndexVectorToList(std::vector<size_t> indices, EvaluableNodeManager* evaluabNodeManager, bool immediate_result)
+	{
+		EvaluableNodeReference index_list;
+		index_list.SetReference(evaluableNodeManager->AllocNode(ENT_LIST));
+		std::vector<EvaluableNode*>& index_list_ocn = index_list->GetOrderedChildNodesReference();
+
+		for (double index: indices)
+		{
+			index_list_ocn.push_back(AllocReturn(static_cast<double>(index), immediate_result));
+		}
+
+		return index_list;
+	}
+
 	template <typename Compare>
 	EvaluableNodeReference GetIndexMinMaxFromAssoc(EvaluableNode *assoc, Compare compare, double compare_limit, bool immediate_result)
 	{
@@ -1283,22 +1297,38 @@ protected:
 		double candidate_value = compare_limit;
 		bool value_found = false;
 
-		StringInternPool::StringID max_key;
+		std::vector<StringInternPool::StringID> max_keys;
 
 		for(auto [cur_key, cur_child]: mapped_child_nodes)
 		{
 			double cur_value = InterpretNodeIntoNumberValue(cur_child);
 
-			if(compare(cur_value, candidate_value))
+			if(cur_value == candidate_value)
 			{
+				max_keys.push_back(cur_key);
+			}
+			else if(compare(cur_value, candidate_value))
+			{
+				max_keys.clear();
 				candidate_value = cur_value;
-				max_key = cur_key;
+				max_keys.push_back(cur_key);
 				value_found = true;
 			}
 		}
 
 		if(value_found)
-			return  Parser::ParseFromKeyString(max_key->string, evaluableNodeManager);
+		{
+			EvaluableNodeReference index_list;
+			index_list.SetReference(evaluableNodeManager->AllocNode(ENT_LIST));
+			auto &index_list_ocn = index_list->GetOrderedChildNodesReference();
+
+			for(StringInternPool::StringID max_key: max_keys)
+			{
+				index_list_ocn.push_back( Parser::ParseFromKeyString(max_key->string, evaluableNodeManager));
+			}
+
+			return index_list;
+		}
 
 		return EvaluableNodeReference::Null();
 	}
@@ -1316,21 +1346,26 @@ protected:
 		std::vector<EvaluableNodeReference> interpreted_nodes;
 		if(InterpretEvaluableNodesConcurrently(en, orderedChildNodes, interpreted_nodes, true))
 		{
-			size_t max_index = 0;
+			std::vector<size_t> max_indices;
 			for(size_t i = 0; i < interpreted_nodes.size(); i++)
 			{
 				//do the comparison and keep the greater
 				double cur_value = ConvertNodeIntoNumberValueAndFreeIfPossible(interpreted_nodes[i]);
-				if(compare(cur_value, result_value))
+				if(cur_value == result_value)
 				{
+					max_indices.push_back(i);
+				}
+				else if(compare(cur_value, result_value))
+				{
+					max_indices.clear();
 					value_found = true;
 					result_value = cur_value;
-					max_index = i;
+					max_indices.push_back(i);
 				}
 			}
 
 			if(value_found)
-				return AllocReturn(static_cast<double>(max_index), immediate_result);
+				return IndexVectorToList(max_indices, evaluableNodeManager, immediate_result);
 
 			return EvaluableNodeReference::Null();
 		}
@@ -1338,20 +1373,27 @@ protected:
 
 		auto node_stack = CreateOpcodeStackStateSaver();
 
-		size_t max_index = 0;
+		std::vector<size_t> max_indices;
 		for(size_t i = 0; i < orderedChildNodes.size(); i++)
 		{
 			double cur_value = InterpretNodeIntoNumberValue(orderedChildNodes[i]);
-			if(compare(cur_value, result_value))
+
+			if(cur_value == result_value)
 			{
+				max_indices.push_back(i);
+			}
+			else if(compare(cur_value, result_value))
+			{
+				max_indices.clear();
+
 				value_found = true;
 				result_value = cur_value;
-				max_index = i;
+				max_indices.push_back(i);
 			}
 		}
 
 		if(value_found)
-			return AllocReturn(static_cast<double>(max_index), immediate_result);;
+			return IndexVectorToList(max_indices, evaluableNodeManager, immediate_result);
 
 		return EvaluableNodeReference::Null();
 	}

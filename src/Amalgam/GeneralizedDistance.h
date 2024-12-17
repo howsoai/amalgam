@@ -1170,12 +1170,12 @@ public:
 					//divide the probability among the other classes
 					double prob_class_given_nonmatch = default_deviation / nonmatching_classes;
 
-					feature_data.defaultNominalMatchDistanceTerm =
-						distEvaluator->ComputeDistanceTermNominalMatchFromMatchProbabilities(
+					feature_data.defaultNominalMatchDistanceTerm
+						= distEvaluator->ComputeDistanceTermNominalMatchFromMatchProbabilities(
 							index, prob_class_given_match, high_accuracy);
 
-					feature_data.defaultNominalNonMatchDistanceTerm =
-						distEvaluator->ComputeDistanceTermNominalNonmatchFromMatchProbabilities(
+					feature_data.defaultNominalNonMatchDistanceTerm
+						= distEvaluator->ComputeDistanceTermNominalNonmatchFromMatchProbabilities(
 							index, prob_class_given_match, prob_class_given_nonmatch, high_accuracy);
 				}
 				return;
@@ -1224,8 +1224,8 @@ public:
 					//divide the probability among the other classes
 					double prob_class_given_nonmatch = default_deviation / nonmatching_classes;
 
-					feature_data.defaultNominalMatchDistanceTerm =
-						distEvaluator->ComputeDistanceTermNominalMatchFromMatchProbabilities(
+					feature_data.defaultNominalMatchDistanceTerm
+						= distEvaluator->ComputeDistanceTermNominalMatchFromMatchProbabilities(
 							index, prob_class_given_match, high_accuracy);
 
 					feature_data.defaultNominalNonMatchDistanceTerm

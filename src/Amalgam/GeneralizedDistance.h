@@ -379,14 +379,6 @@ public:
 		return featureAttribs[feature_index].IsFeatureSymmetricNominal();
 	}
 
-	//returns true if a known to unknown distance term would be less than or same as an exact match
-	// based on the difference versus deviation
-	__forceinline bool IsKnownToUnknownDistanceLessThanOrEqualToExactMatch(size_t feature_index)
-	{
-		auto &feature_attribs = featureAttribs[feature_index];
-		return (feature_attribs.knownToUnknownDistanceTerm.deviation <= feature_attribs.deviation);
-	}
-
 	//computes the exponentiation of d to 1/p
 	__forceinline double InverseExponentiateDistance(double d, bool high_accuracy)
 	{
@@ -1143,23 +1135,23 @@ public:
 				if(!(nonmatching_classes >= 1.0))
 					nonmatching_classes = 1;
 
+				double smallest_dist_term = std::numeric_limits<double>::infinity();
 				for(auto &[value, deviation] : deviations)
 				{
 					double dist_term = distEvaluator->ComputeDistanceTermNominal(target_value,
 						value, ENIVT_NUMBER, ENIVT_NUMBER, index, high_accuracy);
 					feature_data.nominalNumberDistanceTerms.emplace(value, dist_term);
+
+					if(dist_term < smallest_dist_term)
+						smallest_dist_term = dist_term;
 				}
 
 				double default_deviation = deviations_for_value->second.defaultDeviation;
 				if(FastIsNaN(default_deviation))
 				{
-					deviations_for_value->second.defaultDeviation = feature_attributes.deviation;
-
-					feature_data.defaultNominalMatchDistanceTerm
-						= distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
-
+					feature_data.defaultNominalMatchDistanceTerm = smallest_dist_term;
 					feature_data.defaultNominalNonMatchDistanceTerm
-						= distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
+						= feature_attributes.knownToUnknownDistanceTerm.GetValue(high_accuracy);
 				}
 				else
 				{
@@ -1197,23 +1189,23 @@ public:
 				if(!(nonmatching_classes >= 1.0))
 					nonmatching_classes = 1;
 
+				double smallest_dist_term = std::numeric_limits<double>::infinity();
 				for(auto &[sid, deviation] : deviations)
 				{
 					double dist_term = distEvaluator->ComputeDistanceTermNominal(target_sid,
 						sid, ENIVT_NUMBER, ENIVT_NUMBER, index, high_accuracy);
 					feature_data.nominalStringDistanceTerms.emplace(sid, dist_term);
+
+					if(dist_term < smallest_dist_term)
+						smallest_dist_term = dist_term;
 				}
 
 				double default_deviation = deviations_for_sid->second.defaultDeviation;
 				if(FastIsNaN(default_deviation))
 				{
-					deviations_for_sid->second.defaultDeviation = feature_attributes.deviation;
-
-					feature_data.defaultNominalMatchDistanceTerm
-						= distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
-
+					feature_data.defaultNominalMatchDistanceTerm = smallest_dist_term;
 					feature_data.defaultNominalNonMatchDistanceTerm
-						= distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
+						= feature_attributes.knownToUnknownDistanceTerm.GetValue(high_accuracy);
 				}
 				else
 				{
@@ -1237,11 +1229,11 @@ public:
 		}
 
 		//made it here, so didn't find anything in the SDM.  use fallback for default nominal terms
-		feature_data.defaultNominalMatchDistanceTerm =
-			distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
+		feature_data.defaultNominalMatchDistanceTerm
+			= distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
 
-		feature_data.defaultNominalNonMatchDistanceTerm =
-			distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
+		feature_data.defaultNominalNonMatchDistanceTerm
+			= distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
 	}
 
 	//for the feature index, computes and stores the distance terms as measured from value to each interned value
@@ -1412,20 +1404,68 @@ public:
 			}
 		}
 
-		return distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
+		//use defaultNominalNonMatchDistanceTerm if it isn't NaN and less than next_smallest_dist_term
+		if(feature_data.defaultNominalNonMatchDistanceTerm < next_smallest_dist_term
+				&& feature_data.defaultNominalNonMatchDistanceTerm > compared_dist_term)
+			next_smallest_dist_term = feature_data.defaultNominalNonMatchDistanceTerm;
+
+		//if found a distance term, return it, as that means there was a corresponding entry in the SDM
+		if(next_smallest_dist_term < std::numeric_limits<double>::infinity())
+			return next_smallest_dist_term;
+
+		//use symmetric if smaller
+		double symmetric_dist_term = distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
+		if(symmetric_dist_term > compared_dist_term && symmetric_dist_term < next_smallest_dist_term)
+			next_smallest_dist_term = symmetric_dist_term;
+
+		return next_smallest_dist_term;
 	}
 
 	//returns the smallest nonmatching distance term regardless of value
 	__forceinline double ComputeDistanceTermNominalNonNullSmallestNonmatch(size_t index, bool high_accuracy)
 	{
-		double match_dist_term = featureData[index].defaultNominalMatchDistanceTerm;
-		double smallest_nonmatch = ComputeDistanceTermNonNullNominalNextSmallest(match_dist_term, index, high_accuracy);
+		double next_smallest_dist_term = std::numeric_limits<double>::infinity();
 
-		//if there is no such value, return infinite
-		if(smallest_nonmatch == match_dist_term)
-			return std::numeric_limits<double>::infinity();
+		auto &feature_data = featureData[index];
+		if(feature_data.targetValue.nodeType == ENIVT_STRING_ID)
+		{
+			auto value_sid = feature_data.targetValue.GetValueAsStringIDIfExists();
+			for(auto &entry : feature_data.nominalStringDistanceTerms)
+			{
+				if(entry.first != value_sid)
+				{
+					if(entry.second < next_smallest_dist_term)
+						next_smallest_dist_term = entry.second;
+				}
+			}
+		}
+		else if(feature_data.targetValue.nodeType == ENIVT_NUMBER)
+		{
+			double value_number = feature_data.targetValue.GetValueAsNumber();
+			for(auto &entry : feature_data.nominalNumberDistanceTerms)
+			{
+				if(entry.second != value_number)
+				{
+					if(entry.second < next_smallest_dist_term)
+						next_smallest_dist_term = entry.second;
+				}
+			}
+		}
 
-		return smallest_nonmatch;
+		//use defaultNominalNonMatchDistanceTerm if it isn't NaN and less than next_smallest_dist_term
+		if(feature_data.defaultNominalNonMatchDistanceTerm < next_smallest_dist_term)
+			next_smallest_dist_term = feature_data.defaultNominalNonMatchDistanceTerm;
+
+		//if found a distance term, return it, as that means there was a corresponding entry in the SDM
+		if(next_smallest_dist_term < std::numeric_limits<double>::infinity())
+			return next_smallest_dist_term;
+
+		//use symmetric if smaller
+		double symmetric_dist_term = distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
+		if(symmetric_dist_term < next_smallest_dist_term)
+			next_smallest_dist_term = symmetric_dist_term;
+
+		return next_smallest_dist_term;
 	}
 
 	//computes the inner term of the Minkowski norm summation

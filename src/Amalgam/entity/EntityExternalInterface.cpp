@@ -86,7 +86,7 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::VerifyEntity(
 	if(!success)
 		return EntityExternalInterface::LoadEntityStatus(false, error_string, version);
 
-	return EntityExternalInterface::LoadEntityStatus(false, "", version);
+	return EntityExternalInterface::LoadEntityStatus(true, "", version);
 }
 
 bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &cloned_handle, std::string &path,
@@ -255,6 +255,43 @@ std::string EntityExternalInterface::ExecuteEntityJSON(std::string &handle, std:
 	auto [result, converted] = EvaluableNodeJSONTranslation::EvaluableNodeToJson(returned_value);
 	enm.FreeNodeTreeIfPossible(returned_value);
 	return (converted ? result : string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID));
+}
+
+std::pair<std::string, std::string> EntityExternalInterface::ExecuteEntityJSONLogged(const std::string &handle, const std::string &label, std::string_view json)
+{
+	auto bundle = FindEntityBundle(handle);
+	if(bundle == nullptr)
+		return std::pair("", "");
+	
+	EntityWriteListener logger(bundle->entity, true);
+	std::vector<EntityWriteListener *> listeners(bundle->writeListeners);
+	listeners.push_back(&logger);
+
+	EvaluableNodeManager &enm = bundle->entity->evaluableNodeManager;
+#ifdef MULTITHREAD_SUPPORT
+	//lock memory before allocating call stack
+	Concurrency::ReadLock enm_lock(enm.memoryModificationMutex);
+#endif
+	EvaluableNodeReference args = EvaluableNodeReference(EvaluableNodeJSONTranslation::JsonToEvaluableNode(&enm, json), true);
+
+	auto call_stack = Interpreter::ConvertArgsToCallStack(args, enm);
+
+	EvaluableNodeReference returned_value = bundle->entity->Execute(label, call_stack, false, nullptr,
+		&listeners, bundle->printListener, nullptr
+#ifdef MULTITHREAD_SUPPORT
+		, &enm_lock
+#endif
+	);
+	enm.FreeNode(call_stack->GetOrderedChildNodesReference()[0]);
+	enm.FreeNode(call_stack);
+
+	auto [result, converted] = EvaluableNodeJSONTranslation::EvaluableNodeToJson(returned_value);
+	enm.FreeNodeTreeIfPossible(returned_value);
+	std::string json_out = converted ? result : string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID);
+
+	std::string log = Parser::Unparse(logger.GetWrites(), false, false);
+
+	return std::pair(json_out, log);
 }
 
 std::string EntityExternalInterface::EvalOnEntity(const std::string &handle, const std::string &amlg)

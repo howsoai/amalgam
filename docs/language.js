@@ -45,7 +45,7 @@ var data = [
 	{
 		"parameter" : "if [bool condition1] [code then1] [bool condition2] [code then2] ... [bool conditionN] [code thenN] [code else]",
 		"output" : "*",
-		"description" : "If the condition1 bool is true, then it will evaluate to the then1 argument.  Otherwise condition2 will be checked, repeating for every pair.  If there is an odd number of parameters, the last is the final 'else', and will be evaluated as that if all conditions are false.",
+		"description" : "If the condition1 bool is true, then it will evaluate to the then1 argument.  Otherwise condition2 will be checked, repeating for every pair.  If there is an odd number of parameters, the last is the final 'else', and will be evaluated as that if all conditions are false.  If there is an even number of parameters and none are true, then evaluates to null.",
 		"example" : "(if (null) (print \"nothing\") 0 (print \"nothing\") (print \"hello\") )"
 	},
 
@@ -506,7 +506,7 @@ var data = [
 		"parameter" : "weave [* function] list|immediate values1 [list|immediate values2] [list|immediate values3]...",
 		"output" : "list",
 		"new target scope": true,
-		"description" : "Interleaves the values lists optionally by applying a function.  If only values1 is passed in, then it evaluates to values1. If values1 and values2 are passed in, or, if more values are passed in but function is null, it interleaves the two lists out to whichever list is longer, filling in the remainder with null, and if any value is an immediate, then it will repeat the immediate value.  If the function is specified and not nulll, it pushes a new target scope onto the stack, so that current_value accesses a list of elements to be woven together from the list, and current_index accesses the list or assoc index, with target representing the original list or assoc.  The function should evaluate to a list, and weave will evaluate to a concatenated list of all of the lists that the function evaluated to.",
+		"description" : "Interleaves the values lists optionally by applying a function.  If only values1 is passed in, then it evaluates to values1. If values1 and values2 are passed in, or, if more values are passed in but function is null, it interleaves the two lists out to whichever list is longer, filling in the remainder with null, and if any value is an immediate, then it will repeat the immediate value.  If the function is specified and not nulll, it pushes a new target scope onto the stack, so that current_value accesses a list of elements to be woven together from the list, and current_index accesses the list or assoc index, with target representing the resulting list or assoc.  The function should evaluate to a list, and weave will evaluate to a concatenated list of all of the lists that the function evaluated to.",
 		"example" : "(print (weave (list 1 3 5) (list 2 4 6)) \"\\n\")\n(print (weave (lambda (list (apply \"min\" (current_value) ) ) (list 1 3 4 5 5 6) (list 2 2 3 4 6 7) )\"\\n\")\n(print (weave (lambda (if (<= (get (current_value) 0) 4) (list (apply \"min\" (current_value 1)) ) (current_value)) ) (list 1 3 4 5 5 6) (list 2 2 3 4 6 7) )\"\\n\")\n(print (weave (null) (list 2 4 6) (null) ) \"\\n\")"
 	},
 
@@ -515,7 +515,7 @@ var data = [
 		"output" : "*",
 		"new value" : "conditional",
 		"new target scope": true,
-		"description" : "For each element in the collection after the first one, it evaluates function with a new target scope on the stack where current_value accesses each of the elements from the collection, current_index accesses the list or assoc index, target accesses the original list or assoc, and previous_result accesses the previously reduced result. If the collection is empty, null is returned. if the collection is of size one, the single element is returned.",
+		"description" : "For each element in the collection after the first one, it evaluates function with a new scope on the stack where current_value accesses each of the elements from the collection, current_index accesses the list or assoc index and previous_result accesses the previously reduced result. If the collection is empty, null is returned. if the collection is of size one, the single element is returned.",
 		"example" : "(print (reduce (lambda (* (previous_result) (current_value))) (list 1 2 3 4)))"
 	},
 
@@ -540,7 +540,7 @@ var data = [
 		"output" : "list",
 		"new value" : "partial",
 		"new target scope": true,
-		"description" : "Returns a new list containing the list with its elements sorted in increasing order.  Numerical values come before strings, and code will be evaluated as the representative strings.  If function is specified and not null, it pushes a pair of new target scope onto the stack, so that current_value accesses a list of elements to from the list, and current_index accesses the list or assoc index if it is not already reduced, with target representing the original list or assoc, and evaluates function. The function should return a number, positive if \"(current_value)\" is greater, negative if \"(current_value 1)\" is greater, 0 if equal.  If k is specified in addition to function, then it will only return the k smallest values sorted in order, or, if k is negative, it will ignore the negative sign and return the highest k values.",
+		"description" : "Returns a new list containing the list with its elements sorted in increasing order.  Numerical values come before strings, and code will be evaluated as the representative strings.  If function is specified and not null, it pushes a pair of new scope onto the stack with (current_value) and (current_value 1) accessesing a pair of elements from the list, and evaluates function. The function should return a number, positive if \"(current_value)\" is greater, negative if \"(current_value 1)\" is greater, 0 if equal.  If k is specified in addition to function, then it will only return the k smallest values sorted in order, or, if k is negative, it will ignore the negative sign and return the highest k values.",
 		"example" : "(print (sort (list 4 9 3 5 1)))\n(print (sort (list \"n\" \"b\" \"hello\" 4 1 3.2 (list 1 2 3))))\n(print (sort (list 1 \"1x\" \"10\" 20 \"z2\" \"z10\" \"z100\")))\n(print (sort (lambda (- (current_value) (current_value 1))) (list 4 9 3 5 1)))"
 	},
 
@@ -548,7 +548,7 @@ var data = [
 		"parameter" : "indices list|assoc a",
 		"output" : "list of string|number",
 		"new value" : "new",
-		"description" : "Evaluates to the list of strings or numbers that comprise the indices or indexes for the list or associative list.  It is guaranteed that the opcodes indices and values (assuming the parameter only_unique_values is not true) will evaluate and return elements in the same order when given the same node.",
+		"description" : "Evaluates to the list of strings or numbers that comprise the indices for the list or associative list.  It is guaranteed that the opcodes indices and values (assuming the parameter only_unique_values is not true) will evaluate and return elements in the same order when given the same node.",
 		"example" : "(print (indices (assoc \"a\" 1 \"b\" 2 \"c\" 3 4 \"d\")))\n(print (indices (list \"a\" 1 \"b\" 2 \"c\" 3 4 \"d\")))"
 	},
 
@@ -645,7 +645,7 @@ var data = [
 	{
 		"parameter" : "target [number stack_distance]",
 		"output" : "*",
-		"description" : "Evaluates to the current node that is being iterated over, or the base code of a set or replace that is being created.  If a number is specified, it climbs back up the target stack that many levels.  Useful for seralizing graph data structures or looking up data during iteration.",
+		"description" : "Evaluates to the current node that is being iterated over, or the base code of a set or replace that is being created.  If stack_distance is specified, it climbs back up the target stack that many levels.  Useful for seralizing graph data structures or looking up data during iteration.",
 		"example" : ";prints the list of what has been created before its return value is included in the list\n(list 1 2 3 (print (target)) 4)\n (let (assoc moveref (list 0 (list 7 8) (get (target 0) 1) ) )\n  (assign (assoc moveref (set moveref 1 1)))\n  (print moveref)\n)"
 	},
 
@@ -653,21 +653,21 @@ var data = [
 		"parameter" : "current_index [number stack_distance]",
 		"output" : "*",
 		"new value" : "new",
-		"description" : "Like target, but evaluates to the index of the current node being iterated on within target.",
+		"description" : "Evaluates to the index of the current node being iterated on within the current target.  If stack_distance is specified, it climbs back up the target stack that many levels.",
 		"example" : "(list 1 2 3 (print (current_index)) 4)"
 	},
 
 	{
 		"parameter" : "current_value [number stack_distance]",
 		"output" : "*",
-		"description" : "Like target, but evaluates to the current node being iterated on within target.",
+		"description" : "Evaluates to the current node being iterated on within the current target.  If stack_distance is specified, it climbs back up the target stack that many levels.",
 		"example" : "(list 1 2 3 (print (current_value)) 4)"
 	},
 	
 	{
 		"parameter" : "previous_result [number stack_distance] [bool copy]",
 		"output" : "*",
-		"description" : "Like target, but evaluates to the resulting node of the previous iteration for applicable opcodes. If copy is true, then a copy of the resulting node of the previous iteration is returned, otherwise the result of the previous iteration is returned directly and consumed.",
+		"description" : "Evaluates to the resulting node of the previous iteration for applicable opcodes. If stack_distance is specified, it climbs back up the target stack that many levels.  If copy is true, then a copy of the resulting node of the previous iteration is returned, otherwise the result of the previous iteration is returned directly and consumed.",
 		"example" : "(while (< (target_index) 3) (print (previous_result)) (target_index))"
 	},
 	
@@ -799,18 +799,11 @@ var data = [
 	},
 
 	{
-		"parameter" : "rand [list|number range] [number number_to_generate] [bool unique]",
+		"parameter" : "rand [list|assoc|number range] [number number_to_generate] [bool unique]",
 		"output" : "*",
 		"new value" : "conditional, new if range is not a list",
-		"description" : "With no parameters, evaluates to a random number between 0.0 and 1.0.  Each entity has its own random stream, and if called from a sandbox, then it uses a new stream without interrupting the stream of the calling entity. If the parameter is a list, it will uniformly randomly choose and evaluate to one element of the list. If number, it will evaluate to a value greater than or equal to zero and less than the number specified.  If  number_to_generate is specified, it will generate a list of multiple values (even if  number_to_generate is 1).  If unique is true (it defaults to false), then it will only return unique values, the same as selecting from the list or assoc without replacement.",
+		"description" : "Generates random values based on its parameters.  The random values are drawn from a random stream specific to each execution flow for each entity.  With no range, evaluates to a random number between 0.0 and 1.0.  If range is a list, it will uniformly randomly choose and evaluate to one element of the list.  If range is a number, it will evaluate to a value greater than or equal to zero and less than the number specified.  If range is an assoc, then it will randomly evaluate to one of the keys using the values as the weights for the probabilities.  If  number_to_generate is specified, it will generate a list of multiple values (even if number_to_generate is 1).  If unique is true (it defaults to false), then it will only return unique values, the same as selecting from the list or assoc without replacement.  Note that if unique only applies to list and assoc ranges.  If unique is true and there are not enough values in a list or assoc, it will only generate the number of elements in range.",
 		"example" : "(print (rand))\n(print (rand 50))\n(print (rand (list 1 2 4 5 7)))\n(print (rand (range 0 10) 10 (true)) \"\\n\")"
-	},
-
-	{
-		"parameter" : "weighted_rand [list of lists|assoc weighted_values] [number number_to_generate] [bool unique]",
-		"output" : "*",
-		"description" : "Each entity has its own random stream, and if called from a sandbox, then it uses a new stream without interrupting the stream of the calling entity. If the parameter is a list, it will uniformly randomly choose and evaluate to one element of the list. If an assoc, then it will randomly evaluate to one of the keys using the values as the weights for the probabilities.  Nulls and negative numbers are treated as zero.  Infinities are normalized as to only select from infinities in the list.  If all values are 0, then they are normalized to having the same weight. If a list of lists, it will use the first list as a list of values and the second list as a list of weights and otherwise work like it would for an assoc.  If  number_to_generate is specified, it will generate a list of multiple values (even if  number_to_generate is 1).  If unique is true (it defaults to false), then it will only return unique values, the same as selecting from the list or assoc without replacement.",
-		"example" : "(print (rand (list (list 1 2 4 5 7) (list 0.2 0.2 0.1 0.1 0.4))))\n(print (rand (assoc \"a\" 1 \"b\" 3))\n(print (rand (assoc \"a\" .25 \"b\" .75)) \"\\n\")\n(print (rand (assoc \"a\" .25 \"b\" .75) 4) \"\\n\")\n(print (rand (range 0 10) 10 (true)) \"\\n\")"
 	},
 
 	{
@@ -818,7 +811,7 @@ var data = [
 		"output" : "string",
 		"permissions" : "",
 		"new value" : "new",
-		"description" : "Evaluates to a string representing the current state of the random number generator used for the rand command for the entity specified by id.",
+		"description" : "Evaluates to a string representing the current state of the random number generator.",
 		"example" : "(print (get_rand_seed) \"\\n\")"
 	},
 
@@ -1410,19 +1403,11 @@ var data = [
 	},
 
 	{
-		"parameter" : "query_sample number num_to_select [number random_seed]",
+		"parameter" : "query_sample number num_to_select [string weight_label_name] [number random_seed]",
 		"output" : "query",
 		"new value" : "new",
-		"description" : "When used as a query argument, selects a random sample of num_to_select entities sorted by entity_id with replacement. If random_seed is specified, then it will select num_to_select entities randomly from the list based on the random seed. If random_seed is not specified then the subsequent calls will return the same sample of entities.",
-		"example" : "(contained_entities \"TestEntity\" (list\n  (query_sample 4 (rand))\n))"
-	},
-
-	{
-		"parameter" : "query_weighted_sample string weight_label_name number num_to_select [number random_seed]",
-		"output" : "query",
-		"new value" : "new",
-		"description" : "When used as a query argument, selects a random sample of num_to_select entities sorted by entity_id with replacement. It will use weight_label_name as the feature containing the weights for the sampling, which will be normalized prior to sampling.  Non-numbers and negative infinite values will be ignored, and if there are any infinite values, those will be selected from uniformly.  If random_seed is specified, then it will select num_to_select entities randomly from the list based on the random seed. If random_seed is not specified then the subsequent calls will return the same sample of entities.",
-		"example" : "(contained_entities \"TestEntity\" (list\n  (query_weighted_sample \"weight\" 4 (rand))\n))"
+		"description" : "When used as a query argument, selects a random sample of num_to_select entities sorted by entity_id with replacement. If weight_label_name is specified and not null, it will use weight_label_name as the feature containing the weights for the sampling, which will be normalized prior to sampling.  Non-numbers and negative infinite values for weights will be ignored, and if there are any infinite values, those will be selected from uniformly.  If random_seed is specified, then it will select num_to_select entities randomly from the list based on the random seed. If random_seed is not specified then the subsequent calls will return the same sample of entities.",
+		"example" : "(contained_entities \"TestEntity\" (list\n  (query_sample 4 (rand))\n))\n(contained_entities \"TestEntity\" (list\n  (query_sample 4 \"weight\" (rand))\n))"
 	},
 
 	{

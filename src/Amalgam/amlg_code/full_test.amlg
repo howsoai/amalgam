@@ -1163,26 +1163,17 @@
 
  (print (rand 50 4) "\n")
 
- (print "--weighted_rand--\n")
- (print (weighted_rand (associate "a" .25 "b" .75)) "\n")
- (print (weighted_rand (associate "a" .25 "b" .75) 4) "\n")
+ (print (rand (associate "a" .25 "b" .75)) "\n")
+ (print (rand (associate "a" .25 "b" .75) 16) "\n")
 
- (print (weighted_rand (list (list "a" "b") (list .25 .75))  ) "\n")
- (print (weighted_rand (list (list "a" "b") (list .25 .75)) 4) "\n")
- (print (weighted_rand (list (list "a" "b") (list 0 0)) 4 ) "\n" )
-
- (print "infinity test c or d: " (weighted_rand (associate "a" .25 "b" .75 "c" .infinity "d" .infinity) 4) "\n")
- (print "infinity test c or d: " (weighted_rand (list (list "a" "b" "c" "d") (list .25 .75 .infinity .infinity)) 4) "\n")
+ (print "infinity test c or d: " (rand (associate "a" .25 "b" .75 "c" .infinity "d" .infinity) 4) "\n")
 
  ;these should come out somewhere near the correct proportions
- (print (zip (lambda (+ (current_value 1) (current_value))) (weighted_rand (associate "a" .25 "b" .5 "c" .25) 100) 1) "\n")
-
-  ;these should come out somewhere near the correct proportions
- (print (zip (lambda (+ (current_value 1) (current_value))) (weighted_rand (list (list "a" "b" "c") (list .25 .5 .25)) 100) 1) "\n")
+ (print (zip (lambda (+ (current_value 1) (current_value))) (rand (associate "a" .25 "b" .5 "c" .25) 100) 1) "\n")
 
  ;these should be weighted toward smaller numbers
  (print
-	(weighted_rand
+	(rand
 		(zip
 			(range 1 10)
 			(map (lambda
@@ -2519,38 +2510,38 @@
 
 
  (print (contained_entities "TestContainerExec" (list
-  (query_sample 1 (rand) )
+  (query_sample 1 (null) (rand) )
  )))
 
  (print (contained_entities "TestContainerExec" (list
-  (query_sample 1 (null) )
+  (query_sample 1 (null) (null) )
  )))
 
- (print "--query_weighted_sample--\n")
+ (print "with weights\n")
 
  (print (contained_entities "TestContainerExec" (list
-   (query_weighted_sample "weight")
+   (query_sample 1 "weight")
   )))
  
  (print (contained_entities "TestContainerExec" (list
-  (query_weighted_sample "weight")
+  (query_sample 1 "weight")
  )))
  
  (print (contained_entities "TestContainerExec" (list
-  (query_weighted_sample "weight" 20 (rand) )
+  (query_sample 20 "weight" (rand) )
  )))
  
  (print (contained_entities "TestContainerExec" (list
-  (query_weighted_sample "weight" 20 (null) )
+  (query_sample 20 "weight" (null) )
  )))
 
  (print (contained_entities "TestContainerExec" (list
   (query_not_in_entity_list (list "Child1"))
-  (query_weighted_sample "weight" 10 (rand) )
+  (query_sample 10 "weight" (rand) )
  )))
 
  (print (contained_entities "TestContainerExec" (list
-  (query_weighted_sample "weight" 10 (rand) )
+  (query_sample 10 "weight" (rand) )
   (query_not_in_entity_list (list "Child1"))
  )))
 

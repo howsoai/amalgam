@@ -1184,7 +1184,6 @@ protected:
 
 	//simulation and operations
 	EvaluableNodeReference InterpretNode_ENT_RAND(EvaluableNode *en, bool immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_WEIGHTED_RAND(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_GET_RAND_SEED(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_SET_RAND_SEED(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_SYSTEM_TIME(EvaluableNode *en, bool immediate_result);

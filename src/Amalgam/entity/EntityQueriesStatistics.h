@@ -727,9 +727,6 @@ public:
 		{
 			distanceWeightExponent = distance_weight_exponent;
 			computeSurprisal = compute_surprisal;
-			//TODO 22427: update every part of computeSurprisal with surprisalToProbability where appropriate
-			//TODO 22427: add tests to full_test.amlg
-			//TODO 22427: update documentation
 			surprisalToProbability = surprisal_to_probability;
 			hasWeight = has_weight;
 			getEntityWeightFunction = get_weight;
@@ -750,32 +747,52 @@ public:
 		{
 			if(computeSurprisal)
 			{
-				//convert to surprisal
-				for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
-					iter->distance = std::exp(-iter->distance);
-
-				if(hasWeight)
+				if(surprisalToProbability)
 				{
-					//if weighted, need to weight by the logical OR of all probability masses
-					// this is complex to compute if done as P(A or B) = P(A) + P(B) - P(A and B),
-					//but is much more simple if computed as P(A or B) = 1 - ( (1 - P(A)) and (1 - P(B)))
-					//the latter is a multiplication, lending itself to raising to the power of the weight
-					//e.g., a weight of 2 is (1 - P(A))^2
+					//convert to probability
 					for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
+						iter->distance = std::exp(-iter->distance);
+
+					if(hasWeight)
 					{
-						double weight = 1.0;
-						//if has a weight and not 1 (since 1 is fast)
-						if(getEntityWeightFunction(iter->reference, weight) && weight != 1.0)
+						//if weighted, need to weight by the logical OR of all probability masses
+						// this is complex to compute if done as P(A or B) = P(A) + P(B) - P(A and B),
+						//but is much more simple if computed as P(A or B) = 1 - ( (1 - P(A)) and (1 - P(B)))
+						//the latter is a multiplication, lending itself to raising to the power of the weight
+						//e.g., a weight of 2 is (1 - P(A))^2
+						for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
 						{
-							if(weight != 0.0)
+							double weight = 1.0;
+							//if has a weight and not 1 (since 1 is fast)
+							if(getEntityWeightFunction(iter->reference, weight) && weight != 1.0)
 							{
-								double prob_not_same = 1.0 - iter->distance;
-								double weighted_prob_not_same = std::pow(prob_not_same, weight);
-								iter->distance = 1.0 - weighted_prob_not_same;
+								if(weight != 0.0)
+								{
+									double prob_not_same = 1.0 - iter->distance;
+									double weighted_prob_not_same = std::pow(prob_not_same, weight);
+									iter->distance = 1.0 - weighted_prob_not_same;
+								}
+								else //weight of 0.0
+								{
+									iter->distance = 0.0;
+								}
 							}
-							else //weight of 0.0
+						}
+					}
+				}
+				else //keep in surprisal space
+				{
+					if(hasWeight)
+					{
+						for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
+						{
+							double weight = 1.0;
+							if(getEntityWeightFunction(iter->reference, weight))
 							{
-								iter->distance = 0.0;
+								if(weight != 0.0)
+									iter->distance *= weight;
+								else //0 or NaN
+									iter->distance = 0.0;
 							}
 						}
 					}
@@ -822,7 +839,7 @@ public:
 						{
 							if(weight != 0.0)
 								iter->distance *= weight;
-							else
+							else //0 or NaN
 								iter->distance = 0.0;
 						}
 					}
@@ -831,17 +848,18 @@ public:
 
 			if(sort_results)
 			{
-				//if distance, sort by smallest first
-				if(!computeSurprisal && distanceWeightExponent > 0)
-				{
-					std::sort(begin(entity_distance_pair_container), end(entity_distance_pair_container),
-						[](auto a, auto b) {return a.distance < b.distance; }
-					);
-				}
-				else //inverse distance, sort by largest first
+				//if probability values or inverse distance, sort largest first
+				if((computeSurprisal && surprisalToProbability)
+					|| distanceWeightExponent <= 0)
 				{
 					std::sort(begin(entity_distance_pair_container), end(entity_distance_pair_container),
 						[](auto a, auto b) {return a.distance > b.distance; }
+					);
+				}
+				else //surprisal or regular distance, sort by smallest first
+				{
+					std::sort(begin(entity_distance_pair_container), end(entity_distance_pair_container),
+						[](auto a, auto b) {return a.distance < b.distance; }
 					);
 				}
 			}
@@ -855,6 +873,10 @@ public:
 		{
 			if(computeSurprisal)
 			{
+				//TODO 22427: this with surprisalToProbability as appropriate
+				//TODO 22427: add tests to full_test.amlg
+				//TODO 22427: update documentation
+
 				//need to weight by the logical OR of all probability masses
 				// this is complex to compute if done as P(A or B) = P(A) + P(B) - P(A and B),
 				//but is much more simple if computed as P(A or B) = 1 - ( (1 - P(A)) and (1 - P(B)))

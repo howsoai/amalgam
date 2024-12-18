@@ -749,7 +749,7 @@ public:
 			{
 				if(surprisalToProbability)
 				{
-					//convert to probability
+					//convert surprisal to probability
 					for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
 						iter->distance = std::exp(-iter->distance);
 
@@ -887,7 +887,7 @@ public:
 
 				if(hasWeight)
 				{
-					//convert to surprisal
+					//convert surprisal to probability
 					for(auto iter = entity_distance_pair_container_begin; iter != entity_distance_pair_container_end; ++iter)
 					{
 						double prob_same = std::exp(-iter->distance);
@@ -907,7 +907,7 @@ public:
 				}
 				else //!hasWeight
 				{
-					//convert to surprisal
+					//convert surprisal to probability
 					for(auto iter = entity_distance_pair_container_begin; iter != entity_distance_pair_container_end; ++iter)
 					{
 						double prob_same = std::exp(-iter->distance);

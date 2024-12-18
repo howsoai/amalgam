@@ -1282,7 +1282,7 @@ protected:
 		index_list.SetReference(evaluableNodeManager->AllocNode(ENT_LIST));
 		std::vector<EvaluableNode*>& index_list_ocn = index_list->GetOrderedChildNodesReference();
 
-		for (double index: indices)
+		for (size_t index: indices)
 		{
 			index_list_ocn.push_back(AllocReturn(static_cast<double>(index), immediate_result));
 		}

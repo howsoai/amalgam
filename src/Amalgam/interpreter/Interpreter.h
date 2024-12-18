@@ -1276,6 +1276,8 @@ protected:
 	//a stack (list) of the current nodes being executed
 	std::vector<EvaluableNode *> *opcodeStackNodes;
 
+	EvaluableNodeReference ConstructListWithZero();
+
 	EvaluableNodeReference IndexVectorToList(std::vector<size_t> indices, EvaluableNodeManager* evaluabNodeManager, bool immediate_result)
 	{
 		EvaluableNodeReference index_list;

@@ -749,10 +749,44 @@ public:
 			{
 				if(surprisalToProbability)
 				{
-					//convert surprisal to probability
-					for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
-						iter->distance = std::exp(-iter->distance);
-
+					if(!hasWeight)
+					{
+						for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
+							iter->distance = std::exp(-iter->distance);
+					}
+					else //hasWeight
+					{
+						//if weighted, need to weight by the logical OR of all probability masses
+						// this is complex to compute if done as P(A or B) = P(A) + P(B) - P(A and B),
+						//but is much more simple if computed as P(A or B) = 1 - ( (1 - P(A)) and (1 - P(B)))
+						//the latter is a multiplication, lending itself to raising to the power of the weight
+						//e.g., a weight of 2 is (1 - P(A))^2
+						for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
+						{
+							double weight = 1.0;
+							//if has a weight and not 1 (since 1 is fast)
+							if(getEntityWeightFunction(iter->reference, weight) && weight != 1.0)
+							{
+								if(weight != 0.0)
+								{
+									double prob_not_same = 1.0 - std::exp(-iter->distance);
+									double weighted_prob_not_same = std::pow(prob_not_same, weight);
+									iter->distance = 1.0 - weighted_prob_not_same;
+								}
+								else //weight of 0.0
+								{
+									iter->distance = 0.0;
+								}
+							}
+							else //use weight of 1
+							{
+								iter->distance = std::exp(-iter->distance);
+							}
+						}
+					}
+				}
+				else //keep in surprisal space
+				{
 					if(hasWeight)
 					{
 						//if weighted, need to weight by the logical OR of all probability masses
@@ -768,33 +802,17 @@ public:
 							{
 								if(weight != 0.0)
 								{
-									double prob_not_same = 1.0 - iter->distance;
+									double prob_not_same = 1.0 - std::exp(-iter->distance);
 									double weighted_prob_not_same = std::pow(prob_not_same, weight);
-									iter->distance = 1.0 - weighted_prob_not_same;
+									double weighted_prob_same = 1.0 - weighted_prob_not_same;
+									iter->distance = -std::log(weighted_prob_same);
 								}
 								else //weight of 0.0
 								{
-									iter->distance = 0.0;
+									iter->distance = std::numeric_limits<double>::infinity();
 								}
 							}
-						}
-					}
-				}
-				else //keep in surprisal space
-				{
-					if(hasWeight)
-					{
-						//TODO 22427: may need to convert to probability and then back -- investigate and check surprisal transforms tests in full_test
-						for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
-						{
-							double weight = 1.0;
-							if(getEntityWeightFunction(iter->reference, weight))
-							{
-								if(weight != 0.0)
-									iter->distance *= weight;
-								else //0 or NaN
-									iter->distance = 0.0;
-							}
+							//else leave value in surprisal with weight of 1
 						}
 					}
 				}

@@ -732,6 +732,23 @@ public:
 			getEntityWeightFunction = get_weight;
 		}
 
+		__forceinline double ConvertSurprisalToProbability(double surprisal)
+		{
+			return std::exp(-surprisal);
+		}
+
+		__forceinline double ConvertSurprisalToProbability(double surprisal, double weight)
+		{
+			//if weighted, need to weight by the logical OR of all probability masses
+			// this is complex to compute if done as P(A or B) = P(A) + P(B) - P(A and B),
+			//but is much more simple if computed as P(A or B) = 1 - ( (1 - P(A)) and (1 - P(B)))
+			//the latter is a multiplication, lending itself to raising to the power of the weight
+			//e.g., a weight of 2 is (1 - P(A))^2
+			double prob_not_same = 1.0 - std::exp(-surprisal);
+			double weighted_prob_not_same = std::pow(prob_not_same, weight);
+			return 1.0 - weighted_prob_not_same;
+		}
+
 		//transforms distances with regard to distance weight exponents, harmonic series, and entity weights as specified by parameters,
 		// transforming and updating the distances in entity_distance_pair_container in place
 		//EntityDistancePairContainer is the container for the entity-distance pairs, and EntityReference is the reference to the entity
@@ -752,15 +769,10 @@ public:
 					if(!hasWeight)
 					{
 						for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
-							iter->distance = std::exp(-iter->distance);
+							iter->distance = ConvertSurprisalToProbability(iter->distance);
 					}
 					else //hasWeight
 					{
-						//if weighted, need to weight by the logical OR of all probability masses
-						// this is complex to compute if done as P(A or B) = P(A) + P(B) - P(A and B),
-						//but is much more simple if computed as P(A or B) = 1 - ( (1 - P(A)) and (1 - P(B)))
-						//the latter is a multiplication, lending itself to raising to the power of the weight
-						//e.g., a weight of 2 is (1 - P(A))^2
 						for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
 						{
 							double weight = 1.0;
@@ -768,19 +780,13 @@ public:
 							if(getEntityWeightFunction(iter->reference, weight) && weight != 1.0)
 							{
 								if(weight != 0.0)
-								{
-									double prob_not_same = 1.0 - std::exp(-iter->distance);
-									double weighted_prob_not_same = std::pow(prob_not_same, weight);
-									iter->distance = 1.0 - weighted_prob_not_same;
-								}
+									iter->distance = ConvertSurprisalToProbability(iter->distance, weight);
 								else //weight of 0.0
-								{
 									iter->distance = 0.0;
-								}
 							}
 							else //use weight of 1
 							{
-								iter->distance = std::exp(-iter->distance);
+								iter->distance = ConvertSurprisalToProbability(iter->distance);
 							}
 						}
 					}
@@ -789,11 +795,6 @@ public:
 				{
 					if(hasWeight)
 					{
-						//if weighted, need to weight by the logical OR of all probability masses
-						// this is complex to compute if done as P(A or B) = P(A) + P(B) - P(A and B),
-						//but is much more simple if computed as P(A or B) = 1 - ( (1 - P(A)) and (1 - P(B)))
-						//the latter is a multiplication, lending itself to raising to the power of the weight
-						//e.g., a weight of 2 is (1 - P(A))^2
 						for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
 						{
 							double weight = 1.0;
@@ -802,9 +803,7 @@ public:
 							{
 								if(weight != 0.0)
 								{
-									double prob_not_same = 1.0 - std::exp(-iter->distance);
-									double weighted_prob_not_same = std::pow(prob_not_same, weight);
-									double weighted_prob_same = 1.0 - weighted_prob_not_same;
+									double weighted_prob_same = ConvertSurprisalToProbability(iter->distance, weight);
 									iter->distance = -std::log(weighted_prob_same);
 								}
 								else //weight of 0.0
@@ -892,50 +891,49 @@ public:
 		{
 			if(computeSurprisal)
 			{
-				//TODO 22427: this with surprisalToProbability as appropriate
-				//TODO 22427: add conviction tests to full_test.amlg
-				//TODO 22427: update documentation
-
-				//need to weight by the logical OR of all probability masses
-				// this is complex to compute if done as P(A or B) = P(A) + P(B) - P(A and B),
-				//but is much more simple if computed as P(A or B) = 1 - ( (1 - P(A)) and (1 - P(B)))
-				//the latter is a multiplication, additionally lending itself to raising to the power of the weight
-				//e.g., a weight of 2 is (1 - P(A))^2
-				double prob_none_same = 1.0;
-
 				if(hasWeight)
 				{
-					//convert surprisal to probability
+					double total_probability = 0.0;
+					double accumulated_surprisal = 0.0;
 					for(auto iter = entity_distance_pair_container_begin; iter != entity_distance_pair_container_end; ++iter)
 					{
-						double prob_same = std::exp(-iter->distance);
-						double prob_not_same = 1.0 - prob_same;
-
 						double weight = 1.0;
+						double surprisal = iter->distance;
+						//if has a weight and not 1 (since 1 is fast)
 						if(getEntityWeightFunction(iter->reference, weight) && weight != 1.0)
 						{
-							if(weight == 0.0)
+							if(weight != 0.0)
+							{
+								double weighted_prob_same = ConvertSurprisalToProbability(surprisal, weight);
+								surprisal = -std::log(weighted_prob_same);
+							}
+							else //weight of 0.0
+							{
 								continue;
-
-							prob_not_same = std::pow(prob_not_same, weight);
+							}
 						}
-						
-						prob_none_same *= prob_not_same;
+						//else leave value in surprisal with weight of 1
+
+						double prob_same = ConvertSurprisalToProbability(surprisal);
+						total_probability += prob_same;
+						accumulated_surprisal += prob_same * surprisal;
 					}
+					//normalize
+					return accumulated_surprisal / total_probability;
 				}
 				else //!hasWeight
 				{
-					//convert surprisal to probability
+					double total_probability = 0.0;
+					double accumulated_surprisal = 0.0;
 					for(auto iter = entity_distance_pair_container_begin; iter != entity_distance_pair_container_end; ++iter)
 					{
-						double prob_same = std::exp(-iter->distance);
-						double prob_not_same = 1.0 - prob_same;
-						prob_none_same *= prob_not_same;
+						double prob_same = ConvertSurprisalToProbability(iter->distance);
+						total_probability += prob_same;
+						accumulated_surprisal += prob_same * iter->distance;
 					}
+					//normalize
+					return accumulated_surprisal / total_probability;
 				}
-
-				double any_prob_same = 1 - prob_none_same;
-				return -std::log(any_prob_same);
 			}
 			else //distance transform
 			{

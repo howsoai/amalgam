@@ -784,6 +784,7 @@ public:
 				{
 					if(hasWeight)
 					{
+						//TODO 22427: may need to convert to probability and then back -- investigate and check surprisal transforms tests in full_test
 						for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
 						{
 							double weight = 1.0;
@@ -874,7 +875,7 @@ public:
 			if(computeSurprisal)
 			{
 				//TODO 22427: this with surprisalToProbability as appropriate
-				//TODO 22427: add tests to full_test.amlg
+				//TODO 22427: add conviction tests to full_test.amlg
 				//TODO 22427: update documentation
 
 				//need to weight by the logical OR of all probability masses

@@ -1344,8 +1344,10 @@ protected:
 		bool value_found = false;
 		double result_value = compare_limit;
 
-	#ifdef MULTITHREAD_SUPPORT
 		std::vector<EvaluableNodeReference> interpreted_nodes;
+
+	#ifdef MULTITHREAD_SUPPORT
+	
 		if(InterpretEvaluableNodesConcurrently(en, orderedChildNodes, interpreted_nodes, true))
 		{
 			std::vector<size_t> max_indices;
@@ -1375,7 +1377,6 @@ protected:
 
 		auto node_stack = CreateOpcodeStackStateSaver();
 
-		std::vector<size_t> max_indices;
 		for(size_t i = 0; i < orderedChildNodes.size(); i++)
 		{
 			double cur_value = InterpretNodeIntoNumberValue(orderedChildNodes[i]);

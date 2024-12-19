@@ -1274,7 +1274,7 @@ void EvaluableNode::AppendOrderedChildNodes(const std::vector<EvaluableNode *> &
 	if(!IsOrderedArray())
 		return;
 
-	auto &ocn = GetOrderedChildNodesReference ();
+	auto &ocn = GetOrderedChildNodesReference();
 	ocn.insert(end(ocn), begin(ocn_to_append), end(ocn_to_append));
 
 	//if cycles, propagate upward

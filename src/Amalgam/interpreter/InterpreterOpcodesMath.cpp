@@ -1,7 +1,7 @@
 //project headers:
-#include "Interpreter.h"
 #include "EvaluableNode.h"
 #include "EntityQueryBuilder.h"
+#include "Interpreter.h"
 
 //system headers:
 #include <cstdlib>

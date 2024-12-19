@@ -1326,7 +1326,9 @@ protected:
 
 			for(StringInternPool::StringID max_key: max_keys)
 			{
-				index_list_ocn.push_back( Parser::ParseFromKeyString(max_key->string, evaluableNodeManager));
+				EvaluableNodeReference parsedKey = Parser::ParseFromKeyString(max_key->string, evaluableNodeManager);
+				index_list.UpdatePropertiesBasedOnAttachedNode(parsedKey);
+				index_list_ocn.push_back(parsedKey);
 			}
 
 			return index_list;
@@ -1343,14 +1345,14 @@ protected:
 
 		bool value_found = false;
 		double result_value = compare_limit;
-
-		std::vector<EvaluableNodeReference> interpreted_nodes;
-
+		std::vector<size_t> max_indices;
+		
 	#ifdef MULTITHREAD_SUPPORT
-	
+		std::vector<EvaluableNodeReference> interpreted_nodes;
 		if(InterpretEvaluableNodesConcurrently(en, orderedChildNodes, interpreted_nodes, true))
 		{
-			std::vector<size_t> max_indices;
+
+
 			for(size_t i = 0; i < interpreted_nodes.size(); i++)
 			{
 				//do the comparison and keep the greater

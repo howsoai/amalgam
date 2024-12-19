@@ -253,7 +253,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 
 			auto get_weight = sbfds.GetNumberValueFromEntityIndexFunction(weight_column);
 			EntityQueriesStatistics::DistanceTransform<size_t> distance_transform(cond->distEvaluator.computeSurprisal,
-				cond->distanceWeightExponent, use_entity_weights, get_weight);
+				cond->distEvaluator.transformSurprisalToProb, cond->distanceWeightExponent, use_entity_weights, get_weight);
 
 			//if first, need to populate with all entities
 			if(is_first)

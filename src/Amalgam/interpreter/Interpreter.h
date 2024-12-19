@@ -1276,9 +1276,9 @@ protected:
 	//a stack (list) of the current nodes being executed
 	std::vector<EvaluableNode *> *opcodeStackNodes;
 
-	EvaluableNodeReference ConstructListWithZero();
+	void InterpretAllOrderedChildNodes(EvaluableNode *en, std::vector<EvaluableNodeReference>& interpreted_nodes, bool immediate_result);
 
-	EvaluableNodeReference IndexVectorToList(std::vector<size_t> indices, EvaluableNodeManager* evaluabNodeManager, bool immediate_result)
+	EvaluableNodeReference IndexVectorToList(std::vector<size_t> indices, EvaluableNodeManager* evaluableNodeManager, bool immediate_result)
 	{
 		EvaluableNodeReference index_list;
 		index_list.SetReference(evaluableNodeManager->AllocNode(ENT_LIST));
@@ -1293,9 +1293,9 @@ protected:
 	}
 
 	template <typename Compare>
-	EvaluableNodeReference GetIndexMinMaxFromAssoc(EvaluableNode *assoc, Compare compare, double compare_limit, bool immediate_result)
+	EvaluableNodeReference GetIndexMinMaxFromAssoc(EvaluableNodeReference interpreted_assoc, Compare compare, double compare_limit, bool immediate_result)
 	{
-		EvaluableNode::AssocType  mapped_child_nodes = assoc->GetMappedChildNodesReference();
+		EvaluableNode::AssocType  mapped_child_nodes = interpreted_assoc->GetMappedChildNodesReference();
 		double candidate_value = compare_limit;
 		bool value_found = false;
 
@@ -1347,36 +1347,6 @@ protected:
 		double result_value = compare_limit;
 		std::vector<size_t> max_indices;
 		
-	#ifdef MULTITHREAD_SUPPORT
-		std::vector<EvaluableNodeReference> interpreted_nodes;
-		if(InterpretEvaluableNodesConcurrently(en, orderedChildNodes, interpreted_nodes, true))
-		{
-
-
-			for(size_t i = 0; i < interpreted_nodes.size(); i++)
-			{
-				//do the comparison and keep the greater
-				double cur_value = ConvertNodeIntoNumberValueAndFreeIfPossible(interpreted_nodes[i]);
-				if(cur_value == result_value)
-				{
-					max_indices.push_back(i);
-				}
-				else if(compare(cur_value, result_value))
-				{
-					max_indices.clear();
-					value_found = true;
-					result_value = cur_value;
-					max_indices.push_back(i);
-				}
-			}
-
-			if(value_found)
-				return IndexVectorToList(max_indices, evaluableNodeManager, immediate_result);
-
-			return EvaluableNodeReference::Null();
-		}
-	#endif
-
 		auto node_stack = CreateOpcodeStackStateSaver();
 
 		for(size_t i = 0; i < orderedChildNodes.size(); i++)

@@ -4259,6 +4259,29 @@
     ))
   "\n" )
 
+  ;should be:
+	;(list "vert0" "vert1" "vert2" "vert3")
+	(print "surprisals: "
+	(compute_on_contained_entities "SurprisalTransformContainer" (list
+        (query_nearest_generalized_distance
+            4 ; k
+			(list "x")
+            (list 0)
+            (null) ; context_weights
+            (list "continuous_numeric") ; types
+            (null) ; attributes
+            (list 0.25) ; context_deviations
+            1 ; p_parameter
+			"surprisal" ; distance transform
+			(null) ; weight
+            (rand)
+			(null)
+			"precise"
+			(true)
+        )
+    ))
+  "\n" )
+
   ;should be
   ;(list "vert0" "vert2" "vert3" "vert1")
   (print "weighted probabilities: "
@@ -4278,6 +4301,29 @@
 			(null)
 			"precise"
 			.true
+        )
+    ))
+  "\n" )
+
+  ;should be
+  ;(list "vert0" "vert2" "vert3" "vert1")
+  (print "weighted surprisals: "
+	(compute_on_contained_entities "SurprisalTransformContainer" (list
+        (query_nearest_generalized_distance
+            4 ; k
+			(list "x")
+            (list 0)
+            (null) ; context_weights
+            (list "continuous_numeric") ; types
+            (null) ; attributes
+            (list 0.25) ; context_deviations
+            1 ; p_parameter
+			"surprisal" ; distance transform
+			"weight" ; weight
+            (rand)
+			(null)
+			"precise"
+			(true)
         )
     ))
   "\n" )

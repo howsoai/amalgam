@@ -371,6 +371,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_continuous_code, "continuous_code");
 
 	//distance parameter values
+	EmplaceStaticString(ENBISI_surprisal, "surprisal");
 	EmplaceStaticString(ENBISI_surprisal_to_prob, "surprisal_to_prob");
 
 	//numerical precision types

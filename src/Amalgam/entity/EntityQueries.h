@@ -79,7 +79,7 @@ public:
 	double maxToRetrieve;
 
 	//distance weight exponent for distance queries (takes distance and raises it to the respective exponent) when returning distances
-	//only applicable when transformSuprisalToProb is false
+	//only applicable when computeSurprisal is false
 	double distanceWeightExponent;
 
 	//if ENT_QUERY_SELECT has a start offset

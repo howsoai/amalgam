@@ -1039,6 +1039,9 @@ public:
 	//the exponentiation
 	bool computeSurprisal;
 
+	//if true and computeSurprisal is true, will convert surprisals to probability
+	bool transformSurprisalToProb;
+
 	//if true, then all computations should be performed with high accuracy
 	bool highAccuracyDistances;
 	//if true, then estimates should be computed with low accuracy, but final results with high accuracy
@@ -1149,12 +1152,12 @@ public:
 					//divide the probability among the other classes
 					double prob_class_given_nonmatch = default_deviation / nonmatching_classes;
 
-					feature_data.defaultNominalMatchDistanceTerm =
-						distEvaluator->ComputeDistanceTermNominalMatchFromMatchProbabilities(
+					feature_data.defaultNominalMatchDistanceTerm
+						= distEvaluator->ComputeDistanceTermNominalMatchFromMatchProbabilities(
 							index, prob_class_given_match, high_accuracy);
 
-					feature_data.defaultNominalNonMatchDistanceTerm =
-						distEvaluator->ComputeDistanceTermNominalNonmatchFromMatchProbabilities(
+					feature_data.defaultNominalNonMatchDistanceTerm
+						= distEvaluator->ComputeDistanceTermNominalNonmatchFromMatchProbabilities(
 							index, prob_class_given_match, prob_class_given_nonmatch, high_accuracy);
 				}
 				return;
@@ -1196,8 +1199,8 @@ public:
 					//divide the probability among the other classes
 					double prob_class_given_nonmatch = default_deviation / nonmatching_classes;
 
-					feature_data.defaultNominalMatchDistanceTerm =
-						distEvaluator->ComputeDistanceTermNominalMatchFromMatchProbabilities(
+					feature_data.defaultNominalMatchDistanceTerm
+						= distEvaluator->ComputeDistanceTermNominalMatchFromMatchProbabilities(
 							index, prob_class_given_match, high_accuracy);
 
 					feature_data.defaultNominalNonMatchDistanceTerm
@@ -1209,11 +1212,11 @@ public:
 		}
 
 		//made it here, so didn't find anything in the SDM.  use fallback for default nominal terms
-		feature_data.defaultNominalMatchDistanceTerm =
-			distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
+		feature_data.defaultNominalMatchDistanceTerm
+			= distEvaluator->ComputeDistanceTermNominalUniversallySymmetricExactMatch(index, high_accuracy);
 
-		feature_data.defaultNominalNonMatchDistanceTerm =
-			distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
+		feature_data.defaultNominalNonMatchDistanceTerm
+			= distEvaluator->ComputeDistanceTermNominalUniversallySymmetricNonMatch(index, high_accuracy);
 	}
 
 	//for the feature index, computes and stores the distance terms as measured from value to each interned value
@@ -1244,7 +1247,7 @@ public:
 		if(feature_data.targetValue.IsNull())
 		{
 			//first entry is unknown-unknown distance
-			feature_data.internedDistanceTerms[0] = feature_attribs.unknownToUnknownDistanceTerm.GetValue(high_accuracy_interned_values);;
+			feature_data.internedDistanceTerms[0] = feature_attribs.unknownToUnknownDistanceTerm.GetValue(high_accuracy_interned_values);
 			
 			double k_to_unk = feature_attribs.knownToUnknownDistanceTerm.GetValue(high_accuracy_interned_values);
 			for(size_t i = 1; i < feature_data.internedDistanceTerms.size(); i++)

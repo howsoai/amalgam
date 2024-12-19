@@ -988,16 +988,16 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 				AccumulatePartialSums(enabled_indices, known_unknown_indices, query_feature_index, known_unknown_term);
 			}
 
-			double larget_term_not_computed = std::max(known_unknown_term, unknown_unknown_term);
+			double largest_term_not_computed = std::max(known_unknown_term, unknown_unknown_term);
 			//if the largest term not computed is zero, then have computed everything,
 			// so set the remaining value to infinity to push this term off sorting of uncomputed distances
 			// and make search more efficient
-			if(larget_term_not_computed == 0.0)
-				larget_term_not_computed = std::numeric_limits<double>::infinity();
+			if(largest_term_not_computed == 0.0)
+				largest_term_not_computed = std::numeric_limits<double>::infinity();
 
 			//make computing the rest more efficient
-			feature_data.SetPrecomputedRemainingIdenticalDistanceTerm(larget_term_not_computed);
-			return larget_term_not_computed;
+			feature_data.SetPrecomputedRemainingIdenticalDistanceTerm(largest_term_not_computed);
+			return largest_term_not_computed;
 		}
 		else //nonsymmetric nominal -- need to compute
 		{
@@ -1086,7 +1086,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTermsString(accumulated_term, query_feature_index, high_accuracy,
 			[this, &value, &r_dist_eval, &column, query_feature_index, high_accuracy](StringInternPool::StringID sid)
 			{
-				//don't want to double-accumulate the found value
+				//don't want to double-accumulate the exact match
 				if(sid != value.nodeValue.stringID)
 					AccumulatePartialSumsForNominalStringIdValueIfExists(
 						r_dist_eval, value.nodeValue.stringID, query_feature_index, *column, high_accuracy);
@@ -1112,7 +1112,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTermsNumeric(accumulated_term, query_feature_index, high_accuracy,
 			[this, &value, &r_dist_eval, &column, query_feature_index, high_accuracy](double number_value)
 			{
-				//don't want to double-accumulate the found value
+				//don't want to double-accumulate the exact match
 				if(!EqualIncludingNaN(number_value, value.nodeValue.number))
 					AccumulatePartialSumsForNominalNumberValueIfExists(
 						r_dist_eval, value.nodeValue.number, query_feature_index, *column, high_accuracy);

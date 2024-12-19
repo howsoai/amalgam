@@ -1050,6 +1050,9 @@ public:
 	//the exponentiation
 	bool computeSurprisal;
 
+	//if true and computeSurprisal is true, will convert surprisals to probability
+	bool transformSurprisalToProb;
+
 	//if true, then all computations should be performed with high accuracy
 	bool highAccuracyDistances;
 	//if true, then estimates should be computed with low accuracy, but final results with high accuracy

@@ -670,9 +670,9 @@ public:
 	__forceinline std::vector<EvaluableNode *> &GetOrderedChildNodes()
 	{
 		if(IsOrderedArray())
-			return GetOrderedChildNodesReference ();
+			return GetOrderedChildNodesReference();
 
-	return emptyOrderedChildNodes;
+		return emptyOrderedChildNodes;
 	}
 
 	//using ordered or mapped child nodes as appropriate, transforms into numeric values and passes into store_value

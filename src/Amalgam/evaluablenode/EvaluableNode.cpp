@@ -1282,7 +1282,7 @@ void EvaluableNode::AppendOrderedChildNodes(const std::vector<EvaluableNode *> &
 	{
 		if(cn != nullptr && cn->GetNeedCycleCheck())
 		{
-		SetNeedCycleCheck(true);
+			SetNeedCycleCheck(true);
 			break;
 		}
 	}

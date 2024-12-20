@@ -804,20 +804,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIN(EvaluableNode *en, boo
 	return EvaluableNodeReference::Null();
 }
 
-void Interpreter::InterpretAllOrderedChildNodes(EvaluableNode *en, std::vector<EvaluableNodeReference>& interpreted_nodes, bool immediate_result)
-{
-	std::vector<EvaluableNode*>& ocn = en->GetOrderedChildNodesReference();
-
-#ifdef MULTITHREAD_SUPPORT
-	if(InterpretEvaluableNodesConcurrently(en, ocn, interpreted_nodes, immediate_result))
-		return;
-#endif
-
-	for(size_t i = 0; i < ocn.size(); i++)
-		interpreted_nodes.push_back(InterpretNode(ocn[i], immediate_result));
-		
-}
-
 EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MAX(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();

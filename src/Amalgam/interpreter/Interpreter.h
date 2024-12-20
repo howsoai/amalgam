@@ -1276,8 +1276,6 @@ protected:
 	//a stack (list) of the current nodes being executed
 	std::vector<EvaluableNode *> *opcodeStackNodes;
 
-	void InterpretAllOrderedChildNodes(EvaluableNode *en, std::vector<EvaluableNodeReference>& interpreted_nodes, bool immediate_result);
-
 	EvaluableNodeReference IndexVectorToList(std::vector<size_t>& indices, EvaluableNodeManager *evaluableNodeManager, bool immediate_result)
 	{
 		EvaluableNodeReference index_list(evaluableNodeManager->AllocNode(ENT_LIST), false);

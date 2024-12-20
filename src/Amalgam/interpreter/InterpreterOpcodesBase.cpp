@@ -605,7 +605,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, b
 
 	PushNewConstructionContext(nullptr, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 
-	auto node_stack = CreateOpcodeStackStateSaver();
 	size_t loop_iteration = 0;
 	for(;;)
 	{

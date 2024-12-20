@@ -474,6 +474,7 @@ public:
 		return EvaluableNodeReference(AllocNode(value), true);
 	}
 
+	//TODO 22451: remove Reuse* and evaluate performance
 	//attempts to reuse candidate if it is unique and change it into the specified type
 	//if candidate is not unique, then it allocates and returns a new node
 	inline EvaluableNodeReference ReuseOrAllocNode(EvaluableNodeReference candidate, EvaluableNodeType type)

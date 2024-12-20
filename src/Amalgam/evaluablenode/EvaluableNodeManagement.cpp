@@ -382,9 +382,7 @@ void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
 	{
 		//pull the mapped child nodes out of the tree before invalidating it
 		//need to invalidate before call child nodes to prevent infinite recursion loop
-		EvaluableNode::AssocType mcn;
-		auto &tree_mcn = tree->GetMappedChildNodesReference();
-		std::swap(mcn, tree_mcn);
+		EvaluableNode::AssocType mcn = std::move(tree->GetMappedChildNodesReference());
 		tree->Invalidate();
 		AddNodeToTLab(tree);
 
@@ -406,9 +404,7 @@ void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
 	{
 		//pull the ordered child nodes out of the tree before invalidating it
 		//need to invalidate before call child nodes to prevent infinite recursion loop
-		std::vector<EvaluableNode *> ocn;
-		auto &tree_ocn = tree->GetOrderedChildNodesReference();
-		std::swap(ocn, tree_ocn);
+		std::vector<EvaluableNode *> ocn = std::move(tree->GetOrderedChildNodesReference());
 		tree->Invalidate();
 		AddNodeToTLab(tree);
 

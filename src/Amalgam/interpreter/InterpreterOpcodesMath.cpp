@@ -742,7 +742,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAX(EvaluableNode *en, boo
 	}
 #endif
 
-	auto node_stack = CreateOpcodeStackStateSaver();
 	for(auto &cn : ocn)
 	{
 		double cur_value = InterpretNodeIntoNumberValue(cn);
@@ -789,7 +788,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIN(EvaluableNode *en, boo
 	}
 #endif
 
-	auto node_stack = CreateOpcodeStackStateSaver();
 	for(auto &cn : ocn)
 	{
 		auto cur_value = InterpretNodeIntoNumberValue(cn);

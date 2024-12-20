@@ -825,17 +825,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MAX(EvaluableNode *e
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	std::vector<EvaluableNodeReference> interpreted_child_nodes;
-	InterpretAllOrderedChildNodes(en, interpreted_child_nodes, immediate_result);
+	EvaluableNodeReference ocn_zero = InterpretNode(ocn[0]);
 
-	EvaluableNodeReference ocn_zero = interpreted_child_nodes[0];
-
-	if(ocn_zero != nullptr && ocn_zero->GetType() == ENT_ASSOC && interpreted_child_nodes.size() == 1)
+	if(ocn_zero != nullptr && ocn_zero->GetType() == ENT_ASSOC && ocn.size() == 1)
 		return GetIndexMinMaxFromAssoc(ocn_zero, std::greater(), -std::numeric_limits<double>::infinity(), immediate_result);
-	else if(ocn_zero != nullptr && ocn_zero->GetType() == ENT_LIST && interpreted_child_nodes.size() == 1)
-		return GetIndexMinMaxFromList(ocn_zero, ocn_zero->GetOrderedChildNodesReference(), std::greater(), -std::numeric_limits<double>::infinity(), immediate_result);
+	else if(ocn_zero != nullptr && ocn_zero->GetType() == ENT_LIST && ocn.size() == 1)
+		return GetIndexMinMaxFromList(ocn_zero, std::greater(), -std::numeric_limits<double>::infinity(), immediate_result);
 	else
-		return GetIndexMinMaxFromList(en, ocn, std::greater(), -std::numeric_limits<double>::infinity(), immediate_result);
+		return GetIndexMinMaxFromList(en, std::greater(), -std::numeric_limits<double>::infinity(), immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MIN(EvaluableNode *en, bool immediate_result)
@@ -845,17 +842,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MIN(EvaluableNode *e
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	std::vector<EvaluableNodeReference> interpreted_child_nodes;
-	InterpretAllOrderedChildNodes(en, interpreted_child_nodes, immediate_result);
+	EvaluableNodeReference ocn_zero = InterpretNode(ocn[0]);
 
-	EvaluableNodeReference ocn_zero = interpreted_child_nodes[0];
-
-	if(ocn_zero != nullptr && ocn_zero->GetType() == ENT_ASSOC && interpreted_child_nodes.size() == 1)
+	if(ocn_zero != nullptr && ocn_zero->GetType() == ENT_ASSOC && ocn.size() == 1)
 		return GetIndexMinMaxFromAssoc(ocn_zero, std::less(), std::numeric_limits<double>::infinity(), immediate_result);
-	else if(ocn_zero != nullptr && ocn_zero->GetType() == ENT_LIST && interpreted_child_nodes.size() == 1)
-		return GetIndexMinMaxFromList(ocn_zero, ocn_zero->GetOrderedChildNodesReference(), std::less(), std::numeric_limits<double>::infinity(), immediate_result);
+	else if(ocn_zero != nullptr && ocn_zero->GetType() == ENT_LIST && ocn.size() == 1)
+		return GetIndexMinMaxFromList(ocn_zero, std::less(), std::numeric_limits<double>::infinity(), immediate_result);
 	else
-		return GetIndexMinMaxFromList(en, ocn, std::less(), std::numeric_limits<double>::infinity(), immediate_result);
+		return GetIndexMinMaxFromList(en, std::less(), std::numeric_limits<double>::infinity(), immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_DOT_PRODUCT(EvaluableNode *en, bool immediate_result)

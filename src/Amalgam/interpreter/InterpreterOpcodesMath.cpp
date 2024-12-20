@@ -811,7 +811,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MAX(EvaluableNode *e
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	EvaluableNodeReference ocn_zero = InterpretNode(ocn[0], immediate_result);
+	EvaluableNodeReference ocn_zero = InterpretNode(ocn[0], true);
 
 	EvaluableNodeReference result;
 	if(ocn_zero != nullptr && ocn_zero->GetType() == ENT_ASSOC && ocn.size() == 1)
@@ -832,7 +832,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MIN(EvaluableNode *e
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	EvaluableNodeReference ocn_zero = InterpretNode(ocn[0], immediate_result);
+	EvaluableNodeReference ocn_zero = InterpretNode(ocn[0], true);
 
 	EvaluableNodeReference result;
 	if(ocn_zero != nullptr && ocn_zero->GetType() == ENT_ASSOC && ocn.size() == 1)

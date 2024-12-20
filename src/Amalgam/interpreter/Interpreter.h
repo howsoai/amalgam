@@ -1293,7 +1293,7 @@ protected:
 	template <typename Compare>
 	EvaluableNodeReference GetIndexMinMaxFromAssoc(EvaluableNodeReference interpreted_assoc, Compare compare, double compare_limit, bool immediate_result)
 	{
-		EvaluableNode::AssocType mapped_child_nodes = interpreted_assoc->GetMappedChildNodesReference();
+		auto& mapped_child_nodes = interpreted_assoc->GetMappedChildNodesReference();
 		double candidate_value = compare_limit;
 		bool value_found = false;
 

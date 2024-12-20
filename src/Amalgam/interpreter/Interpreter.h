@@ -1436,8 +1436,6 @@ protected:
 		}
 #else
 
-		auto node_stack = CreateOpcodeStackStateSaver();
-
 		for(size_t i = 1; i < orderedChildNodes.size(); i++)
 		{
 			double cur_value = InterpretNodeIntoNumberValue(orderedChildNodes[i]);

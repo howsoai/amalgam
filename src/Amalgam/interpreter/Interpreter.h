@@ -1279,7 +1279,7 @@ protected:
 	EvaluableNodeReference IndexVectorToList(std::vector<size_t> &indices, EvaluableNodeManager *evaluableNodeManager, bool immediate_result)
 	{
 		EvaluableNodeReference index_list(evaluableNodeManager->AllocNode(ENT_LIST), false);
-		std::vector<EvaluableNode *> &index_list_ocn = index_list->GetOrderedChildNodesReference();
+		auto &index_list_ocn = index_list->GetOrderedChildNodesReference();
 		index_list_ocn.reserve(size(indices));
 
 		for(size_t index : indices)

@@ -1320,7 +1320,7 @@ protected:
 
 		if(value_found)
 		{
-			EvaluableNodeReference index_list(max_keys);
+			EvaluableNodeReference index_list;
 			index_list.SetReference(evaluableNodeManager->AllocNode(ENT_LIST));
 			auto &index_list_ocn = index_list->GetOrderedChildNodesReference();
 

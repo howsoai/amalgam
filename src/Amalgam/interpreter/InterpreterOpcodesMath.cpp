@@ -712,9 +712,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ABS(EvaluableNode *en, boo
 		[](double value) {	return std::abs(value);	});
 }
 
-
-
-
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MAX(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();

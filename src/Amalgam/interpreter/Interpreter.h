@@ -1278,13 +1278,14 @@ protected:
 
 	void InterpretAllOrderedChildNodes(EvaluableNode *en, std::vector<EvaluableNodeReference>& interpreted_nodes, bool immediate_result);
 
-	EvaluableNodeReference IndexVectorToList(std::vector<size_t> indices, EvaluableNodeManager* evaluableNodeManager, bool immediate_result)
+	EvaluableNodeReference IndexVectorToList(std::vector<size_t> indices, EvaluableNodeManager *evaluableNodeManager, bool immediate_result)
 	{
 		EvaluableNodeReference index_list;
 		index_list.SetReference(evaluableNodeManager->AllocNode(ENT_LIST));
-		std::vector<EvaluableNode*>& index_list_ocn = index_list->GetOrderedChildNodesReference();
+		std::vector<EvaluableNode *> &index_list_ocn = index_list->GetOrderedChildNodesReference();
+		index_list_ocn.reserve(size(indices));
 
-		for (size_t index: indices)
+		for(size_t index : indices)
 		{
 			index_list_ocn.push_back(AllocReturn(static_cast<double>(index), immediate_result));
 		}
@@ -1295,13 +1296,13 @@ protected:
 	template <typename Compare>
 	EvaluableNodeReference GetIndexMinMaxFromAssoc(EvaluableNodeReference interpreted_assoc, Compare compare, double compare_limit, bool immediate_result)
 	{
-		EvaluableNode::AssocType  mapped_child_nodes = interpreted_assoc->GetMappedChildNodesReference();
+		EvaluableNode::AssocType mapped_child_nodes = interpreted_assoc->GetMappedChildNodesReference();
 		double candidate_value = compare_limit;
 		bool value_found = false;
 
 		std::vector<StringInternPool::StringID> max_keys;
 
-		for(auto [cur_key, cur_child]: mapped_child_nodes)
+		for(auto [cur_key, cur_child] : mapped_child_nodes)
 		{
 			double cur_value = InterpretNodeIntoNumberValue(cur_child);
 
@@ -1323,8 +1324,9 @@ protected:
 			EvaluableNodeReference index_list;
 			index_list.SetReference(evaluableNodeManager->AllocNode(ENT_LIST));
 			auto &index_list_ocn = index_list->GetOrderedChildNodesReference();
+			index_list_ocn.reserve(max_keys.size());
 
-			for(StringInternPool::StringID max_key: max_keys)
+			for(StringInternPool::StringID max_key : max_keys)
 			{
 				EvaluableNodeReference parsedKey = Parser::ParseFromKeyString(max_key->string, evaluableNodeManager);
 				index_list.UpdatePropertiesBasedOnAttachedNode(parsedKey);

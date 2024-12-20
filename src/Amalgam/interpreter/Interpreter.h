@@ -1318,8 +1318,7 @@ protected:
 
 		if(value_found)
 		{
-			EvaluableNodeReference index_list;
-			index_list.SetReference(evaluableNodeManager->AllocNode(ENT_LIST));
+			EvaluableNodeReference index_list(evaluableNodeManager->AllocNode(ENT_LIST));
 			auto &index_list_ocn = index_list->GetOrderedChildNodesReference();
 			index_list_ocn.reserve(max_keys.size());
 

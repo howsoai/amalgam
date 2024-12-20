@@ -811,8 +811,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MAX(EvaluableNode *e
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	auto node_stack = CreateOpcodeStackStateSaver();
-	EvaluableNodeReference ocn_zero = InterpretNode(ocn[0], true);
+	EvaluableNodeReference ocn_zero = InterpretNodeForImmediateUse(ocn[0]);
+	auto node_stack = CreateOpcodeStackStateSaver(ocn_zero);
 
 	EvaluableNodeReference result;
 	if(ocn_zero != nullptr && ocn_zero->GetType() == ENT_ASSOC && ocn.size() == 1)
@@ -833,9 +833,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MIN(EvaluableNode *e
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	
-	auto node_stack = CreateOpcodeStackStateSaver();
-	EvaluableNodeReference ocn_zero = InterpretNode(ocn[0], true);
+	EvaluableNodeReference ocn_zero = InterpretNodeForImmediateUse(ocn[0]);
+	auto node_stack = CreateOpcodeStackStateSaver(ocn_zero);
 
 	EvaluableNodeReference result;
 	if(ocn_zero != nullptr && ocn_zero->GetType() == ENT_ASSOC && ocn.size() == 1)

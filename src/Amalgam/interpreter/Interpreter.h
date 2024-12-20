@@ -1376,9 +1376,6 @@ protected:
 			return EvaluableNodeReference::Null();
 		}
 #endif
-
-		auto node_stack = CreateOpcodeStackStateSaver();
-
 		for(size_t i = 0; i < orderedChildNodes.size(); i++)
 		{
 			double cur_value = InterpretNodeIntoNumberValue(orderedChildNodes[i]);

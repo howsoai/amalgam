@@ -1406,7 +1406,6 @@ protected:
 	template <typename Compare>
 	EvaluableNodeReference GetIndexMinMaxFromRemainingArgList(EvaluableNode *en, Compare compare, double compare_limit, bool immediate_result)
 	{
-		bool value_found = false;
 		double result_value = compare_limit;
 		std::vector<size_t> max_indices;
 
@@ -1433,19 +1432,12 @@ protected:
 				}
 				else if(compare(cur_value, result_value))
 				{
-					max_indices.clear();
-					value_found = true;
 					result_value = cur_value;
 					max_indices.push_back(i);
 				}
 			}
-
-			if(value_found)
-				return IndexVectorToList(max_indices, evaluableNodeManager, immediate_result);
-
-			return EvaluableNodeReference::Null();
 		}
-#endif
+#else
 
 		auto node_stack = CreateOpcodeStackStateSaver();
 
@@ -1460,17 +1452,13 @@ protected:
 			else if(compare(cur_value, result_value))
 			{
 				max_indices.clear();
-
-				value_found = true;
 				result_value = cur_value;
 				max_indices.push_back(i);
 			}
 		}
+#endif
 
-		if(value_found)
-			return IndexVectorToList(max_indices, evaluableNodeManager, immediate_result);
-
-		return EvaluableNodeReference::Null();
+		return IndexVectorToList(max_indices, evaluableNodeManager, immediate_result);
 	}
 
   public:

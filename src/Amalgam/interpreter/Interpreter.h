@@ -1320,7 +1320,7 @@ protected:
 
 		if(value_found)
 		{
-			EvaluableNodeReference index_list;
+			EvaluableNodeReference index_list(max_keys);
 			index_list.SetReference(evaluableNodeManager->AllocNode(ENT_LIST));
 			auto &index_list_ocn = index_list->GetOrderedChildNodesReference();
 
@@ -1338,7 +1338,7 @@ protected:
 	}
 
 	template <typename Compare>
-	EvaluableNodeReference GetIndexMinMaxFromList(EvaluableNode *en, std::vector<EvaluableNode*> &orderedChildNodes, Compare compare, double compare_limit, bool immediate_result)
+	EvaluableNodeReference GetIndexMinMaxFromList(EvaluableNode *en, std::vector<EvaluableNode *> &orderedChildNodes, Compare compare, double compare_limit, bool immediate_result)
 	{
 		if(orderedChildNodes.size() == 0)
 			return EvaluableNodeReference::Null();
@@ -1346,7 +1346,7 @@ protected:
 		bool value_found = false;
 		double result_value = compare_limit;
 		std::vector<size_t> max_indices;
-		
+
 		auto node_stack = CreateOpcodeStackStateSaver();
 
 		for(size_t i = 0; i < orderedChildNodes.size(); i++)

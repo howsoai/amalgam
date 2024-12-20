@@ -880,18 +880,19 @@ public:
 		debugWatch.erase(en);
 	}
 
-	//returns true if the EvaluableNode is in the debug watch
+	// returns true if the EvaluableNode is in the debug watch
 	static inline void AssertIfInDebugWatch(EvaluableNode *en)
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		Concurrency::SingleLock lock(debugWatchMutex);
 	#endif
-		if(debugWatch.find(en) != end(debugWatch)) {
+		if(debugWatch.find(en) != end(debugWatch))
+		{
 			assert(false);
 		}
 	}
 
-protected:
+  protected:
 
 	//align to the nearest 2-bytes to minimize alignment issues but reduce the overall memory footprint
 	// while maintaining some alignment

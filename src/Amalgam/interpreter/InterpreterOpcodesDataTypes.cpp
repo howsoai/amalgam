@@ -573,7 +573,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 		else if(use_code)
 			number_value = EvaluableNode::ToNumber(code_value);
 
-		return ReuseOrAllocOneOfReturn(to_params, code_value, number_value, immediate_result);
+		evaluableNodeManager->FreeNodeTreeIfPossible(to_params);
+		evaluableNodeManager->FreeNodeTreeIfPossible(code_value);
+		return AllocReturn(number_value, immediate_result);
 	}
 	else if(to_type == GetStringIdFromBuiltInStringId(ENBISI_code))
 	{
@@ -872,9 +874,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 		}
 	}
 
+	evaluableNodeManager->FreeNodeTreeIfPossible(to_params);
+	evaluableNodeManager->FreeNodeTreeIfPossible(code_value);
 	if(!valid_string_value)
-		return ReuseOrAllocReturn(to_params, string_intern_pool.NOT_A_STRING_ID, immediate_result);
-	return ReuseOrAllocOneOfReturn(to_params, code_value, string_value, immediate_result);
+		return AllocReturn(string_intern_pool.NOT_A_STRING_ID, immediate_result);
+	return AllocReturn(string_value, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_LABELS(EvaluableNode *en, bool immediate_result)
@@ -1040,7 +1044,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_COMMENTS(EvaluableNode
 		return EvaluableNodeReference::Null();
 
 	StringInternPool::StringID comments_sid = n->GetCommentsStringId();
-	return ReuseOrAllocReturn(n, comments_sid, immediate_result);
+	evaluableNodeManager->FreeNodeTreeIfPossible(n);
+	return AllocReturn(comments_sid, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_COMMENTS(EvaluableNode *en, bool immediate_result)
@@ -1821,7 +1826,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TOTAL_SIZE(EvaluableNode *
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	auto cur = InterpretNodeForImmediateUse(ocn[0]);
-	double total_size = static_cast<double>(EvaluableNode::GetDeepSize(cur));
-	return ReuseOrAllocReturn(cur, total_size, immediate_result);
+	auto n = InterpretNodeForImmediateUse(ocn[0]);
+	double total_size = static_cast<double>(EvaluableNode::GetDeepSize(n));
+	evaluableNodeManager->FreeNodeTreeIfPossible(n);
+
+	return AllocReturn(total_size, immediate_result);
 }

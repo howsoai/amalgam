@@ -84,6 +84,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 					concurrency_manager.EndConcurrency();
 
 					concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(result);
+					if(result.unique && !concurrency_manager.HadSideEffects())
+						evaluableNodeManager->FreeNodeTreeIfPossible(list);
+
 					return result;
 				}
 			}
@@ -147,6 +150,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 					concurrency_manager.EndConcurrency();
 
 					concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(result);
+					if(result.unique && !concurrency_manager.HadSideEffects())
+						evaluableNodeManager->FreeNodeTreeIfPossible(list);
+
 					return result;
 				}
 			}
@@ -173,9 +179,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
 				result.unique = false;
 		}
+
+		//result will be marked if not unique if there were any side effects
+		if(result.unique)
+			evaluableNodeManager->FreeNodeTreeIfPossible(list);
 	}
 	else //multiple inputs
 	{
+		//TODO 22451: attempt to free original list(s) when possible
+
 		EvaluableNode *inputs_list_node = evaluableNodeManager->AllocNode(ENT_LIST);
 		//set to need cycle check because don't know what will be attached
 		inputs_list_node->SetNeedCycleCheck(true);

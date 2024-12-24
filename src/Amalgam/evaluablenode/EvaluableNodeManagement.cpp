@@ -373,8 +373,6 @@ void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree)
 	}
 
 	tree->Invalidate();
-
-	tree->InitializeType(ENT_DEALLOCATED);
 	AddNodeToTLAB(tree);
 }
 
@@ -479,37 +477,6 @@ void EvaluableNodeManager::ModifyLabels(EvaluableNode *n, EvaluableNodeMetadataM
 				label = label.substr(1);
 
 			n->AppendLabel(label);
-		}
-	}
-}
-
-void EvaluableNodeManager::CompactAllocatedNodes()
-{
-#ifdef MULTITHREAD_SUPPORT
-	Concurrency::WriteLock write_lock(managerAttributesMutex);
-#endif
-
-	size_t lowest_known_unused_index = firstUnusedNodeIndex;	//store any unused nodes here
-
-	//start with a clean slate, and swap everything in use into the in-use region
-	firstUnusedNodeIndex = 0;
-
-	//just in case empty
-	if(nodes.size() == 0)
-		return;
-
-	while(firstUnusedNodeIndex < lowest_known_unused_index)
-	{
-		if(nodes[firstUnusedNodeIndex] != nullptr && !nodes[firstUnusedNodeIndex]->IsNodeDeallocated())
-			firstUnusedNodeIndex++;
-		else
-		{
-			//see if out of things to free; if so exit early
-			if(lowest_known_unused_index == 0)
-				break;
-
-			//put the node up at the edge of unused memory, grab the next lowest node and pull it down to increase density
-			std::swap(nodes[firstUnusedNodeIndex], nodes[--lowest_known_unused_index]);
 		}
 	}
 }

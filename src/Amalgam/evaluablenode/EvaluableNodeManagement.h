@@ -664,12 +664,6 @@ public:
 		}
 		else //more costly cyclic free
 		{
-		#ifdef MULTITHREAD_SUPPORT
-			//need to acquire a read lock, because if any node is reclaimed or compacted while this free is taking place,
-			// and another thread allocates it, then this cyclic free could accidentally free a node that was freed and
-			// reclaimed by another thread
-			Concurrency::ReadLock lock(managerAttributesMutex);
-		#endif
 			FreeNodeTreeWithCyclesRecurse(en);
 		}
 	}
@@ -765,10 +759,6 @@ public:
 		for(EvaluableNode *en : nodes)
 			nr.FreeNodeReference(en);
 	}
-
-	//compacts allocated nodes so that the node pool can be used more efficiently
-	// and can improve reuse without calling the more expensive FreeAllNodesExceptReferencedNodes
-	void CompactAllocatedNodes();
 
 	//returns the number of nodes currently being used that have not been freed yet
 	__forceinline size_t GetNumberOfUsedNodes()

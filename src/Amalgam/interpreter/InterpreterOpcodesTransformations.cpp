@@ -102,7 +102,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 
 				EvaluableNodeReference element_result = InterpretNode(function);
 				result_ocn[i] = element_result;
-				result.UpdatePropertiesBasedOnAttachedNode(element_result);
+				result.UpdatePropertiesBasedOnAttachedNode(element_result, i == 0);
 			}
 
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
@@ -160,6 +160,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 
 			PushNewConstructionContext(list, result, EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 
+			bool first_node = true;
 			for(auto &[result_id, result_node] : result_mcn)
 			{
 				SetTopCurrentIndexInConstructionStack(result_id);
@@ -173,7 +174,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 				//in order to keep the node properties to be updated below
 				EvaluableNodeReference element_result = InterpretNode(function);
 				result_node = element_result;
-				result.UpdatePropertiesBasedOnAttachedNode(element_result);
+				result.UpdatePropertiesBasedOnAttachedNode(element_result, first_node);
+				first_node = false;
 			}
 
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
@@ -186,8 +188,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 	}
 	else //multiple inputs
 	{
-		//TODO 22451: either evaluate coming up with new arguments for map OR attempt to free original list(s) when possible
-
 		EvaluableNode *inputs_list_node = evaluableNodeManager->AllocNode(ENT_LIST);
 		//set to need cycle check because don't know what will be attached
 		inputs_list_node->SetNeedCycleCheck(true);
@@ -255,7 +255,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 
 				EvaluableNodeReference element_result = InterpretNode(function);
 				result->GetOrderedChildNodes()[index] = element_result;
-				result.UpdatePropertiesBasedOnAttachedNode(element_result);
+				result.UpdatePropertiesBasedOnAttachedNode(element_result, index == 0);
 			}
 
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
@@ -1618,7 +1618,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 
 			//handoff the reference from index_value to the assoc
 			new_assoc->SetMappedChildNodeWithReferenceHandoff(key_sid, value);
-			new_assoc.UpdatePropertiesBasedOnAttachedNode(value);
+			new_assoc.UpdatePropertiesBasedOnAttachedNode(value, i == 0);
 		}
 
 		if(PopConstructionContextAndGetExecutionSideEffectFlag())
@@ -1781,19 +1781,24 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, b
 
 	auto &index_list_ocn = index_list->GetOrderedChildNodes();
 	result.UpdatePropertiesBasedOnAttachedNode(zipped, true);
+	size_t num_indices = index_list_ocn.size();
+	//can't guarantee cycle free since an index could be duplicated
+	if(num_indices > 1)
+		result.SetNeedCycleCheck(true);
 
 	auto &result_ocn = result->GetOrderedChildNodesReference();
-	result_ocn.reserve(index_list_ocn.size());
+	result_ocn.reserve(num_indices);
 
 	if(EvaluableNode::IsAssociativeArray(zipped))
 	{
+		auto &zipped_mcn = zipped->GetMappedChildNodesReference();
 		for(auto &index : index_list_ocn)
 		{
 			StringInternPool::StringID index_sid = EvaluableNode::ToStringIDIfExists(index, true);
 
-			EvaluableNode **found = zipped->GetMappedChildNode(index_sid);
-			if(found != nullptr)
-				result_ocn.push_back(*found);
+			auto found_index = zipped_mcn.find(index_sid);
+			if(found_index != end(zipped_mcn))
+				result_ocn.push_back(found_index->second);
 			else
 				result_ocn.push_back(nullptr);
 		}

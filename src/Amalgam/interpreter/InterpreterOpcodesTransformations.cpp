@@ -186,7 +186,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 	}
 	else //multiple inputs
 	{
-		//TODO 22451: attempt to free original list(s) when possible
+		//TODO 22451: either evaluate coming up with new arguments for map OR attempt to free original list(s) when possible
 
 		EvaluableNode *inputs_list_node = evaluableNodeManager->AllocNode(ENT_LIST);
 		//set to need cycle check because don't know what will be attached
@@ -1752,6 +1752,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ZIP(EvaluableNode *en, boo
 
 	//the index list has been converted to strings, so therefore can be freed
 	evaluableNodeManager->FreeNodeTreeIfPossible(index_list);
+
+	//TODO 22451: see if can free value_list tree based on side effects
+	//TODO 22451: evaluate whether side effects make result.unique not true, and where else it could be updated
 
 	if(free_value_list_node)
 		evaluableNodeManager->FreeNodeIfPossible(value_list);

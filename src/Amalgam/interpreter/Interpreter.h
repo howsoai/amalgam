@@ -455,40 +455,6 @@ public:
 		return evaluableNodeManager->AllocIfNotImmediate(value, immediate_result);
 	}
 
-	//like AllocReturn, but if immediate_result, then it will attempt to free candidate,
-	//and if not immediate_result, will attempt to reuse candidate
-	template<typename T>
-	inline EvaluableNodeReference ReuseOrAllocReturn(EvaluableNodeReference candidate, T value, bool immediate_result)
-	{
-		if(immediate_result)
-		{
-			//need to allocate the result first just in case candidate is the only location of an interned value
-			EvaluableNodeReference result(value);
-			evaluableNodeManager->FreeNodeTreeIfPossible(candidate);
-			return result;
-		}
-
-		return evaluableNodeManager->ReuseOrAllocNode(candidate, value);
-	}
-
-	//like ReuseOrAllocReturn, but if immediate_result, then it will attempt to free both candidates,
-	//and if not immediate_result, will attempt to reuse one of the candidates and free the other
-	template<typename T>
-	inline EvaluableNodeReference ReuseOrAllocOneOfReturn(
-		EvaluableNodeReference candidate_1, EvaluableNodeReference candidate_2, T value, bool immediate_result)
-	{
-		if(immediate_result)
-		{
-			//need to allocate the result first just in case one of the candidates is the only location of an interned value
-			EvaluableNodeReference result(value);
-			evaluableNodeManager->FreeNodeTreeIfPossible(candidate_1);
-			evaluableNodeManager->FreeNodeTreeIfPossible(candidate_2);
-			return result;
-		}
-
-		return evaluableNodeManager->ReuseOrAllocOneOfNodes(candidate_1, candidate_2, value);
-	}
-
 	//converts enr into a number and frees
 	double ConvertNodeIntoNumberValueAndFreeIfPossible(EvaluableNodeReference &enr)
 	{

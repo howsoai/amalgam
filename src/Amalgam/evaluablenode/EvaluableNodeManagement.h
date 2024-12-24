@@ -620,7 +620,7 @@ public:
 	#endif
 
 		en->Invalidate();
-		AddNodeToTLab(en);
+		AddNodeToTLAB(en);
 	}
 
 	//attempts to free the node reference
@@ -636,7 +636,7 @@ public:
 		if(enr.unique && enr != nullptr && !enr->GetNeedCycleCheck())
 		{
 			enr->Invalidate();
-			AddNodeToTLab(enr);
+			AddNodeToTLAB(enr);
 		}
 	}
 
@@ -656,7 +656,7 @@ public:
 		if(IsEvaluableNodeTypeImmediate(en->GetType()))
 		{
 			en->Invalidate();
-			AddNodeToTLab(en);
+			AddNodeToTLAB(en);
 		}
 		else if(!en->GetNeedCycleCheck())
 		{
@@ -988,7 +988,7 @@ protected:
 
 	// Get a pointer to the next available node from the thread local allocation buffer.
 	// If the buffer is empty, returns null.
-	inline EvaluableNode *GetNextNodeFromTLab()
+	inline EvaluableNode *GetNextNodeFromTLAB()
 	{
 		if(threadLocalAllocationBuffer.size() > 0 && this == lastEvaluableNodeManager)
 		{
@@ -1011,7 +1011,7 @@ protected:
 	// If this is accessed by a different EvaluableNode manager than
 	// the last time it was called on this thread, it will clear the buffer
 	// before adding the node.
-	inline void AddNodeToTLab(EvaluableNode *en)
+	inline void AddNodeToTLAB(EvaluableNode *en)
 	{
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 		assert(en->IsNodeDeallocated());

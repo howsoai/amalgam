@@ -833,6 +833,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, b
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
+	//TODO 22414: evaluate type_node first, then based on type node may be able to not make a copy for immediate types, or free others -- may need method(s) to determine if opcode creates new value and has no side effects
+
 	//get the target
 	auto source = InterpretNode(ocn[1]);
 	if(source == nullptr)
@@ -844,14 +846,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, b
 
 	//get the type to set
 	EvaluableNodeType new_type = ENT_NULL;
-	auto type_node = InterpretNodeForImmediateUse(ocn[0]);
+	//can't interpret for immediate use in case the node has child nodes that will be prepended
+	auto type_node = InterpretNode(ocn[0]);
 	if(!EvaluableNode::IsNull(type_node))
 	{
 		if(type_node->GetType() == ENT_STRING)
 		{
 			auto new_type_sid = type_node->GetStringIDReference();
 			new_type = GetEvaluableNodeTypeFromStringId(new_type_sid);
-			evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
 			if(!IsEvaluableNodeTypeValid(new_type))
 				return EvaluableNodeReference::Null();
 
@@ -865,19 +867,22 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, b
 			//set the type before possibly inserting any new child nodes
 			source->SetType(new_type, evaluableNodeManager, true);
 
-			//see if need to prepend anything to the source before changing type
-			if(type_node_ocn.size() == 0)
-				evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
-			else if(source->IsOrderedArray())
+			//prepend any params
+			if(source->IsOrderedArray())
 			{
 				//prepend the parameters of source
 				auto &source_ocn = source->GetOrderedChildNodesReference();
 				source_ocn.insert(
 					begin(source_ocn), begin(type_node_ocn), end(type_node_ocn));
 				source.UpdatePropertiesBasedOnAttachedNode(type_node);
+
+				//can transfer ownership of the nodes, so can be freed below
+				if(type_node.unique && !type_node->GetNeedCycleCheck())
+					type_node_ocn.clear();
 			}
 		}
 	}
+	evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
 
 	//apply the new type, using whether or not it was a unique reference,
 	//passing through whether an immediate_result is desired

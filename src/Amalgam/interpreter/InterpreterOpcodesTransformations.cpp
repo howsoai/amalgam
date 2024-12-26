@@ -843,7 +843,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, b
 
 	auto node_stack = CreateOpcodeStackStateSaver(type_node);
 
-	//TODO 22414: make sure EnsureNodeIsModifiable works on nullptr in other parts of the code
 	//TODO 22414: based on type node may be able to not make a copy for immediate types, or free others -- may need method(s) to determine if opcode creates new value and has no side effects
 
 	//get the target

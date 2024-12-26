@@ -833,7 +833,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, b
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	//TODO 22414: evaluate type_node first, then based on type node may be able to not make a copy for immediate types, or free others -- may need method(s) to determine if opcode creates new value and has no side effects
+	//can't interpret for immediate use in case the node has child nodes that will be prepended
+	auto type_node = InterpretNode(ocn[0]);
+	if(EvaluableNode::IsNull(type_node))
+	{
+		evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
+		return EvaluableNodeReference::Null();
+	}
+
+	auto node_stack = CreateOpcodeStackStateSaver(type_node);
+
+	//TODO 22414: make sure EnsureNodeIsModifiable works on nullptr in other parts of the code
+	//TODO 22414: based on type node may be able to not make a copy for immediate types, or free others -- may need method(s) to determine if opcode creates new value and has no side effects
 
 	//get the target
 	auto source = InterpretNode(ocn[1]);
@@ -842,44 +853,37 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, b
 
 	evaluableNodeManager->EnsureNodeIsModifiable(source);
 
-	auto node_stack = CreateOpcodeStackStateSaver(source);
-
 	//get the type to set
 	EvaluableNodeType new_type = ENT_NULL;
-	//can't interpret for immediate use in case the node has child nodes that will be prepended
-	auto type_node = InterpretNode(ocn[0]);
-	if(!EvaluableNode::IsNull(type_node))
+	if(type_node->GetType() == ENT_STRING)
 	{
-		if(type_node->GetType() == ENT_STRING)
+		auto new_type_sid = type_node->GetStringIDReference();
+		new_type = GetEvaluableNodeTypeFromStringId(new_type_sid);
+		if(!IsEvaluableNodeTypeValid(new_type))
+			return EvaluableNodeReference::Null();
+
+		source->SetType(new_type, evaluableNodeManager, true);
+	}
+	else
+	{
+		new_type = type_node->GetType();
+		auto &type_node_ocn = type_node->GetOrderedChildNodes();
+
+		//set the type before possibly inserting any new child nodes
+		source->SetType(new_type, evaluableNodeManager, true);
+
+		//prepend any params
+		if(source->IsOrderedArray())
 		{
-			auto new_type_sid = type_node->GetStringIDReference();
-			new_type = GetEvaluableNodeTypeFromStringId(new_type_sid);
-			if(!IsEvaluableNodeTypeValid(new_type))
-				return EvaluableNodeReference::Null();
+			//prepend the parameters of source
+			auto &source_ocn = source->GetOrderedChildNodesReference();
+			source_ocn.insert(
+				begin(source_ocn), begin(type_node_ocn), end(type_node_ocn));
+			source.UpdatePropertiesBasedOnAttachedNode(type_node);
 
-			source->SetType(new_type, evaluableNodeManager, true);
-		}
-		else
-		{
-			new_type = type_node->GetType();
-			auto &type_node_ocn = type_node->GetOrderedChildNodes();
-
-			//set the type before possibly inserting any new child nodes
-			source->SetType(new_type, evaluableNodeManager, true);
-
-			//prepend any params
-			if(source->IsOrderedArray())
-			{
-				//prepend the parameters of source
-				auto &source_ocn = source->GetOrderedChildNodesReference();
-				source_ocn.insert(
-					begin(source_ocn), begin(type_node_ocn), end(type_node_ocn));
-				source.UpdatePropertiesBasedOnAttachedNode(type_node);
-
-				//can transfer ownership of the nodes, so can be freed below
-				if(type_node.unique && !type_node->GetNeedCycleCheck())
-					type_node_ocn.clear();
-			}
+			//can transfer ownership of the nodes, so can be freed below
+			if(type_node.unique && !type_node->GetNeedCycleCheck())
+				type_node_ocn.clear();
 		}
 	}
 	evaluableNodeManager->FreeNodeTreeIfPossible(type_node);

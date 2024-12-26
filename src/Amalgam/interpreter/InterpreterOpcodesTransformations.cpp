@@ -843,7 +843,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, b
 
 	auto node_stack = CreateOpcodeStackStateSaver(type_node);
 
-	//TODO 22414: based on type node, and its other params, may be able to not make a copy for immediate types, or free others -- may need method(s) to determine if opcode creates new value and has no side effects
+	//TODO 22414: based on type node, and its other params, may be able to not make a copy for immediate types, or free others
+	// use DoesOpcodeHaveSideEffects() and may need method(s) to determine if opcode creates new value
 
 	//get the target
 	auto source = InterpretNode(ocn[1]);

@@ -428,7 +428,15 @@ constexpr OrderedChildNodeType GetOpcodeOrderedChildNodeType(EvaluableNodeType t
 //returns true if the opcode modifies things outside of its return
 constexpr bool DoesOpcodeHaveSideEffects(EvaluableNodeType t)
 {
-	//TODO 22414: populate this
+	return (t == ENT_SYSTEM || t == ENT_CALL || t == ENT_DECLARE || t == ENT_ASSIGN || t == ENT_ACCUM
+		|| t == ENT_PREVIOUS_RESULT || t == ENT_RAND || t == ENT_SET_RAND_SEED || t == ENT_PRINT
+		|| t == ENT_INTERSECT_ENTITIES || t == ENT_UNION_ENTITIES || t == ENT_MIX_ENTITIES
+		|| t == ENT_ASSIGN_ENTITY_ROOTS || t == ENT_ACCUM_ENTITY_ROOTS || t == ENT_SET_ENTITY_RAND_SEED
+		|| t == ENT_SET_ENTITY_ROOT_PERMISSION || t == ENT_CREATE_ENTITIES || t == ENT_CLONE_ENTITIES
+		|| t == ENT_MOVE_ENTITIES || t == ENT_DESTROY_ENTITIES || t == ENT_LOAD_ENTITY || t == ENT_STORE
+		|| t == ENT_STORE_ENTITY || t == ENT_ASSIGN_TO_ENTITIES || t == ENT_DIRECT_ASSIGN_TO_ENTITIES
+		|| t == ENT_ACCUM_TO_ENTITIES || t == ENT_CALL_ENTITY || t == ENT_CALL_ENTITY_GET_CHANGES
+		|| t == ENT_CALL_CONTAINER);
 }
 
 constexpr bool IsEvaluableNodeTypeValid(EvaluableNodeType t)

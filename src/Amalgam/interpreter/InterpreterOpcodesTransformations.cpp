@@ -844,7 +844,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, b
 	auto node_stack = CreateOpcodeStackStateSaver(type_node);
 
 	//TODO 22414: based on type node, and its other params, may be able to not make a copy for immediate types, or free others
-	// use DoesOpcodeHaveSideEffects() and may need method(s) to determine if opcode creates new value
+	// use DoesOpcodeHaveSideEffects() and GetOpcodeOrderedChildNodeType() to determine if source can be freed
 
 	//get the target
 	auto source = InterpretNode(ocn[1]);
@@ -887,6 +887,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, b
 		}
 	}
 	evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
+	node_stack.PopEvaluableNode();
 
 	//apply the new type, using whether or not it was a unique reference,
 	//passing through whether an immediate_result is desired

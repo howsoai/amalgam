@@ -144,6 +144,113 @@ var data = [
 		"description" : "If string specified, gets the value on the stack specified by the string. If list specified, returns a list of the values on the stack specified by each element of the list interpreted as a string. If assoc specified, returns an assoc with the indices of the assoc which was passed in with the values being the appropriate values on the stack for each index.",
 		"example" : "(retrieve \"my_variable\")\n(assign (assoc rwww 1 raaa 2))\n(print (retrieve \"rwww\"))\n(print (retrieve (list \"rwww\" \"raaa\")))\n(print (retrieve (zip (list \"rwww\" \"raaa\") null)))\n"
 	},
+	
+	{
+		"parameter" : "get * data [number index|string index|list walk_path_1] [number index|string index|list walk_path_2] ...",
+		"output" : "*",
+		"description" : "Evaluates to data as traversed by the set of values specified by the second parameter, which can be any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values.  If multiple walk paths are specified, then get returns a list, where each element in the list is the respective element retrieved by the respective walk path. If the walk path continues past the data structure, it will return a (null).",
+		"example" : "(print (get (list 1 2 3)))\n(print (get (list 4 9.2 \"this\") 1))\n(print (get (assoc \"a\" 1 \"b\" 2 \"c\" 3 4 \"d\") \"c\"))\n(print (get (list 0 1 2 3 (list 0 1 2 (assoc \"a\" 1))) (list 4 3 \"a\")))\n (print (get (list 4 9.2 \"this\") 1 2) \"\\n\")"
+	},
+
+	{
+		"parameter" : "set * data [number index1|string index1|list walk_path1] [* new_value1] [number index2|string index2|list walk_path2] [* new_value2] ...",
+		"output" : "*",
+		"new value" : "new",
+		"description" : "Performs a deep copy on data (a copy of all data structures referenced by it and its references), then looks at the remaining parameters as pairs.  For each pair, the first is any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values. new_value1 to new_valueN represent a value that will be used to replace  whatever is in the location the preceeding location parameter specifies. If a particular location does not exist, it will be created assuming the most generic type that will support the index (as a null, list, or assoc); however, it will not change the type of immediate values to an assoc or list. Note that the target operation will evaluate to the new copy of data, which is the base of the newly constructed data; this is useful for creating circular references.",
+		"example" : "(print (set (list 1 2 3 4) 2 7))\n(print (set\n  (list (assoc \"a\" 1))\n    (list 2) 1\n    (list 1) (get (target) 0)))"
+	},
+
+	{
+		"parameter" : "replace * data [number index1|string index1|list walk_path1] [* function1] [number index2|string index2|list walk_path2] [* function2] ...",
+		"output" : "*",
+		"new value" : "new",
+		"new target scope": true,
+		"description" : "Performs a deep copy on data (a copy of all data structures referenced by it and its references), then looks at the remaining parameters as pairs.  For each pair, the first is any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values. function1 to functionN represent a function that will be used to replace in place of whatever is in the location, and will be passed the current node in (current_value).  The function does not need to be a function and can just be a constant (which it will be evaluated as).  If a particular location does not exist, it will be created assuming the most generic type that will support the index (as a null, list, or assoc). Note that the target operation will evaluate to the new copy of data, which is the base of the newly constructed data; this is useful for creating circular references.",
+		"example" : "(print (replace (list (assoc \"a\" 13)) ))\n(print (replace\n    (list (assoc \"a\" 1))\n	   (list 2) 1\n	   (list 0) (list 4 5 6)))\n\n(print (replace\n    (list (assoc \"a\" 1))\n	   (list 0) (lambda (set (current_value) \"b\" 2))\n ))"
+	},
+
+	{
+		"parameter" : "target [number stack_distance]",
+		"output" : "*",
+		"description" : "Evaluates to the current node that is being iterated over, or the base code of a set or replace that is being created.  If stack_distance is specified, it climbs back up the target stack that many levels.  Useful for seralizing graph data structures or looking up data during iteration.",
+		"example" : ";prints the list of what has been created before its return value is included in the list\n(list 1 2 3 (print (target)) 4)\n (let (assoc moveref (list 0 (list 7 8) (get (target 0) 1) ) )\n  (assign (assoc moveref (set moveref 1 1)))\n  (print moveref)\n)"
+	},
+
+	{
+		"parameter" : "current_index [number stack_distance]",
+		"output" : "*",
+		"new value" : "new",
+		"description" : "Evaluates to the index of the current node being iterated on within the current target.  If stack_distance is specified, it climbs back up the target stack that many levels.",
+		"example" : "(list 1 2 3 (print (current_index)) 4)"
+	},
+
+	{
+		"parameter" : "current_value [number stack_distance]",
+		"output" : "*",
+		"description" : "Evaluates to the current node being iterated on within the current target.  If stack_distance is specified, it climbs back up the target stack that many levels.",
+		"example" : "(list 1 2 3 (print (current_value)) 4)"
+	},
+	
+	{
+		"parameter" : "previous_result [number stack_distance] [bool copy]",
+		"output" : "*",
+		"description" : "Evaluates to the resulting node of the previous iteration for applicable opcodes. If stack_distance is specified, it climbs back up the target stack that many levels.  If copy is true, then a copy of the resulting node of the previous iteration is returned, otherwise the result of the previous iteration is returned directly and consumed.",
+		"example" : "(while (< (target_index) 3) (print (previous_result)) (target_index))"
+	},
+	
+	{
+		"parameter" : "opcode_stack [number stack_distance] [bool no_child_nodes]",
+		"output" : "list of *",
+		"description" : "Evaluates to the list of opcodes that make up the call stack or a single opcode within the call stack. If stack_distance is specified, then a copy of the node at that specified depth is returned, otherwise the list of all opcodes in opcode stack are returned. Negative values for stack_distance specify the depth from the top of the stack and positive values specify the depth from the bottom. If no_child_nodes is true, then only the root node(s) are returned, otherwise the returned node(s) are deep-copied.",
+		"example" : "(print (opcode_stack))"
+	},
+
+	{
+		"parameter" : "stack",
+		"output" : "list of assoc",
+		"description" : "Evaluates to the current execution context, also known as the scope stack, containing all of the variables for each layer of the stack.",
+		"example" : "(print (stack))"
+	},
+
+	{
+		"parameter" : "args [number stack_distance]",
+		"output" : "assoc",
+		"description" : "Evaluates to the top context of the stack, the current execution context, or scope stack, known as the arguments. If number is specified, then it evaluates to the context that many layers up the stack.",
+		"example" : "(let (assoc \"bbb\" 3)\n  (print (args))\n)"
+	},
+	
+	{
+		"parameter" : "rand [list|assoc|number range] [number number_to_generate] [bool unique]",
+		"output" : "*",
+		"new value" : "conditional",
+		"description" : "Generates random values based on its parameters.  The random values are drawn from a random stream specific to each execution flow for each entity.  With no range, evaluates to a random number between 0.0 and 1.0.  If range is a list, it will uniformly randomly choose and evaluate to one element of the list.  If range is a number, it will evaluate to a value greater than or equal to zero and less than the number specified.  If range is an assoc, then it will randomly evaluate to one of the keys using the values as the weights for the probabilities.  If  number_to_generate is specified, it will generate a list of multiple values (even if number_to_generate is 1).  If unique is true (it defaults to false), then it will only return unique values, the same as selecting from the list or assoc without replacement.  Note that if unique only applies to list and assoc ranges.  If unique is true and there are not enough values in a list or assoc, it will only generate the number of elements in range.",
+		"example" : "(print (rand))\n(print (rand 50))\n(print (rand (list 1 2 4 5 7)))\n(print (rand (range 0 10) 10 (true)) \"\\n\")"
+	},
+
+	{
+		"parameter" : "get_rand_seed",
+		"output" : "string",
+		"permissions" : "",
+		"new value" : "new",
+		"description" : "Evaluates to a string representing the current state of the random number generator.",
+		"example" : "(print (get_rand_seed) \"\\n\")"
+	},
+
+	{
+		"parameter" : "set_rand_seed * node",
+		"output" : "string",
+		"permissions" : "",
+		"description" : "Sets the random number seed and state for the current random number stream without affecting any entity.  If node is already a string in the proper format output by get_entity_rand_seed, then it will set the random generator to that current state, picking up where the previous state left off.  If it is anything else, it uses the value as a random seed to start the genrator.",
+		"example" : " (declare (assoc cur_seed (get_rand_seed)))\n (print (rand) \"\\n\")\n (set_rand_seed cur_seed)\n (print (rand) \"\\n\")"
+	},
+
+	{
+		"parameter" : "system_time",
+		"output" : "number",
+		"permissions" : "r",
+		"description" : "Evaluates to the current system time since epoch in seconds (including fractions of seconds).",
+		"example" : "(print (system_time))"
+	},
 
 	{
 		"parameter" : "+ [number x1] [number x2] ... [number xN]",
@@ -385,6 +492,7 @@ var data = [
 	{
 		"parameter" : "max [number x1] [number x2] ... [number xN]",
 		"output" : "number",
+		"new value" : "new",
 		"concurrency" : true,
 		"description" : "maximum of all of the numbers",
 		"example" : "(print (max 0.5 1 7 9 -5))"
@@ -393,6 +501,7 @@ var data = [
 	{
 		"parameter" : "min [number x1] [number x2] ... [number xN]",
 		"output" : "number",
+		"new value" : "new",
 		"concurrency" : true,
 		"description" : "minimum of all of the numbers",
 		"example" : "(print (min 0.5 1 7 9 -5))"
@@ -401,6 +510,7 @@ var data = [
 	{
 		"parameter" : "dot_product list|assoc x1 list|assoc x2",
 		"output" : "number",
+		"new value" : "new",
 		"description" : "Evaluates to the sum of all element-wise products of x1 and x2.",
 		"example" : "(print (dot_product (list 0.5 0.25 0.25) (list 4 8 8)))"
 	},
@@ -408,6 +518,7 @@ var data = [
 	{
 		"parameter" : "generalized_distance list|assoc|number weights list|assoc distance_types list|assoc attributes list|assoc|number deviations number p_value list|assoc|* vector1 [list|assoc|* vector2] [list value_names] [bool surprisal_space]",
 		"output" : "number",
+		"new value" : "new",
 		"description" : "Computes the generalized norm between vector1 and vector2 (or an equivalent zero vector if unspecified) with parameter specified by the p_value (2 being Euclidian distance), using the numerical distance or edit distance as appropriate.  The parameter value_names, if specified as a list of the names of the values, will transform via unzipping any assoc into a list for the respective parameter in the order of the value_names, or if a number will use the number repeatedly for every element.  weights is a list of dimension weights to use for the query, each value mapping to its respective element in the vectors.  If weights is null, then it will assume that the weights are 1 and additionally will ignore null values for the vectors instead of treating them as unknown differences.  The parameter distance_types is either a list strings or an assoc of strings indicating the type of distance for each feature.  Allowed values are \"nominal_numeric\", \"nominal_string\", \"nominal_code\", \"continuous_numeric\", \"continuous_numeric_cyclic\", \"continuous_string\", and \"continuous_code\".  Nominals evaluate whether the two values are the same and continuous evaluates the difference between the two values.  The numeric, string, or code modifier specifies how the difference is measured, and cyclic means it is a difference that wraps around.  \nFor attributes, the particular distance_types specifies what particular attributes are expected.  For a nominal distance_type, a number indicates the nominal count, whereas null will infer from the values given.  Cyclic requires a single value, which is the upper bound of the difference for the cycle range (e.g., if the value is 360, then the supremum difference between two values will be 360, leading 1 and 359 to have a difference of 2).\n  Deviations are used during distance calculation to specify uncertainty per-element, the minimum difference between two values prior to exponentiation.  Specifying null as a deviation is equivalent to setting each deviation to 0.  Each deviation for each feature can be a single value or a list.  If it is a single value, that value is used as the deviation and differences and deviations for null values will automatically computed from the data based on the maximum difference.  If a deviation is provided as a list, then the first value is the deviation, the second value is the difference to use when one of the values being compared is null, and the third value is the difference to use when both of the values are null.  If the third value is omitted, it will use the second value for both.  If both of the null values are omitted, then it will compute the maximum difference and use that for both.  For nominal types, the value for each feature can be a numeric deviation, an assoc, or a list.  If the value is an assoc it specifies deviation information, where each key of the assoc is the nominal value, and each value of the assoc can be a numeric deviation value, a list, or an assoc, with the list specifying either an assoc followed optionally by the default deviation.  This inner assoc, regardless of whether it is in a list, maps the value to each actual value's deviation.   If any vector value is null or any of the differences between vector1 and vector2 evaluate to null, then it will compute a corresponding maximum distance value based on the properties of the feature.  If surprisal space is true, which defaults to false, it will perform all computations in surprisal space.",
 		"example" : "(print (generalized_distance 0.01 (null) (null) (list null (list 0 360)) (list 0.5 0.0) (list 0 2 3) (list 1 2 3)))\n(print (generalized_distance 0.01 (list 0.25 0.25 0.5) (null) (null) (null) (list 1 2 3) (list 0 2 3) ))\n(generalized_distance 1 (list 0.3333 0.3333 0.3333) (list 5 0) (null) (null) (list 1 2 3) (list 10 2 10) )"
 	},
@@ -415,6 +526,7 @@ var data = [
 	{
 		"parameter" : "entropy list|assoc|number p [list|assoc|number q] [number p_exponent] [number q_exponent]",
 		"output" : "number",
+		"new value" : "new",
 		"description" : "Computes a form of entropy on the specified vectors using nats (natural log, not bits) in the form of -sum p_i ln (p_i^pexponent * q_i^q_exponent).  For both p and q, if p or q is a list of numbers, then it will treat each entry as being the probability of that element.  If it is an associative array, then elements with matching keys will be matched.  If p or q a number then it will use that value in place of each element.  If p or q is null or not specified, it will be calculated as the reciprocol of the size of the other element (p_i would be 1/|q| or q_i would be 1/|p|).  If either p_exponent or q_exponent is 0, then that exponent will be ignored.  Shannon entropy can be computed by ignoring the q parameters, setting p_exponent to 1 and q_exponent to 0. KL-divergence can be computed by providing both p and q and setting p_exponent to -1 and q_exponent to 1.  Cross-entorpy can be computed by setting p_exponent to 0 and q_exponent to 1.",
 		"example" : "(entropy (list 0.5 0.5))\n(entropy (list 0.5 0.5) (list 0.25 0.75) 1 -1)\n(entropy 0.5 (list 0.25 0.75) 1 -1)\n(entropy 0.5 (list 0.25 0.75) 0 1)"
 	},
@@ -513,7 +625,6 @@ var data = [
 	{
 		"parameter" : "reduce * function list|assoc collection",
 		"output" : "*",
-		"new value" : "conditional",
 		"new target scope": true,
 		"description" : "For each element in the collection after the first one, it evaluates function with a new scope on the stack where current_value accesses each of the elements from the collection, current_index accesses the list or assoc index and previous_result accesses the previously reduced result. If the collection is empty, null is returned. if the collection is of size one, the single element is returned.",
 		"example" : "(print (reduce (lambda (* (previous_result) (current_value))) (list 1 2 3 4)))"
@@ -555,6 +666,7 @@ var data = [
 	{
 		"parameter" : "values list|assoc a [bool only_unique_values]",
 		"output" : "list of *",
+		"new value" : "partial",
 		"description" : "Evaluates to the list of entities that comprise the values for the list or associative list. For a list, it evaluates to itself.  If only_unique_values is true (defaults to false), then it will filter out any duplicate values and only return those that are unique (preserving order of first appearance).  If only_unique_values is not true, then it is guaranteed that the opcodes indices and values will evaluate and return elements in the same order when given the same node.",
 		"example" : "(print (values (assoc \"a\" 1 \"b\" 2 \"c\" 3 4 \"d\")))\n(print (values (list \"a\" 1 \"b\" 2 \"c\" 3 4 \"d\")))"
 	},
@@ -616,80 +728,6 @@ var data = [
 		"new value" : "partial",
 		"description" : "Evaluates to a new list, using the indices list to look up each value from the values list or assoc, in the same order as each index is specified in indices.",
 		"example" : "(print (unzip (assoc \"a\" 1 \"b\" 2 \"c\" 3) (list \"a\" \"b\")))\n(print (unzip (list 1 2 3) (list 0 -1 1)))"
-	},
-
-	{
-		"parameter" : "get * data [number index|string index|list walk_path_1] [number index|string index|list walk_path_2] ...",
-		"output" : "*",
-		"description" : "Evaluates to data as traversed by the set of values specified by the second parameter, which can be any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values.  If multiple walk paths are specified, then get returns a list, where each element in the list is the respective element retrieved by the respective walk path. If the walk path continues past the data structure, it will return a (null).",
-		"example" : "(print (get (list 1 2 3)))\n(print (get (list 4 9.2 \"this\") 1))\n(print (get (assoc \"a\" 1 \"b\" 2 \"c\" 3 4 \"d\") \"c\"))\n(print (get (list 0 1 2 3 (list 0 1 2 (assoc \"a\" 1))) (list 4 3 \"a\")))\n (print (get (list 4 9.2 \"this\") 1 2) \"\\n\")"
-	},
-
-	{
-		"parameter" : "set * data [number index1|string index1|list walk_path1] [* new_value1] [number index2|string index2|list walk_path2] [* new_value2] ...",
-		"output" : "*",
-		"new value" : "new",
-		"description" : "Performs a deep copy on data (a copy of all data structures referenced by it and its references), then looks at the remaining parameters as pairs.  For each pair, the first is any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values. new_value1 to new_valueN represent a value that will be used to replace  whatever is in the location the preceeding location parameter specifies. If a particular location does not exist, it will be created assuming the most generic type that will support the index (as a null, list, or assoc); however, it will not change the type of immediate values to an assoc or list. Note that the target operation will evaluate to the new copy of data, which is the base of the newly constructed data; this is useful for creating circular references.",
-		"example" : "(print (set (list 1 2 3 4) 2 7))\n(print (set\n  (list (assoc \"a\" 1))\n    (list 2) 1\n    (list 1) (get (target) 0)))"
-	},
-
-	{
-		"parameter" : "replace * data [number index1|string index1|list walk_path1] [* function1] [number index2|string index2|list walk_path2] [* function2] ...",
-		"output" : "*",
-		"new value" : "new",
-		"new target scope": true,
-		"description" : "Performs a deep copy on data (a copy of all data structures referenced by it and its references), then looks at the remaining parameters as pairs.  For each pair, the first is any of: a number, representing an index, with negative numbers representing backward traversal from the end of the list; a string, representing the index; or a list, representing a way to walk into the structure as the aforementioned values. function1 to functionN represent a function that will be used to replace in place of whatever is in the location, and will be passed the current node in (current_value).  The function does not need to be a function and can just be a constant (which it will be evaluated as).  If a particular location does not exist, it will be created assuming the most generic type that will support the index (as a null, list, or assoc). Note that the target operation will evaluate to the new copy of data, which is the base of the newly constructed data; this is useful for creating circular references.",
-		"example" : "(print (replace (list (assoc \"a\" 13)) ))\n(print (replace\n    (list (assoc \"a\" 1))\n	   (list 2) 1\n	   (list 0) (list 4 5 6)))\n\n(print (replace\n    (list (assoc \"a\" 1))\n	   (list 0) (lambda (set (current_value) \"b\" 2))\n ))"
-	},
-
-	{
-		"parameter" : "target [number stack_distance]",
-		"output" : "*",
-		"description" : "Evaluates to the current node that is being iterated over, or the base code of a set or replace that is being created.  If stack_distance is specified, it climbs back up the target stack that many levels.  Useful for seralizing graph data structures or looking up data during iteration.",
-		"example" : ";prints the list of what has been created before its return value is included in the list\n(list 1 2 3 (print (target)) 4)\n (let (assoc moveref (list 0 (list 7 8) (get (target 0) 1) ) )\n  (assign (assoc moveref (set moveref 1 1)))\n  (print moveref)\n)"
-	},
-
-	{
-		"parameter" : "current_index [number stack_distance]",
-		"output" : "*",
-		"new value" : "new",
-		"description" : "Evaluates to the index of the current node being iterated on within the current target.  If stack_distance is specified, it climbs back up the target stack that many levels.",
-		"example" : "(list 1 2 3 (print (current_index)) 4)"
-	},
-
-	{
-		"parameter" : "current_value [number stack_distance]",
-		"output" : "*",
-		"description" : "Evaluates to the current node being iterated on within the current target.  If stack_distance is specified, it climbs back up the target stack that many levels.",
-		"example" : "(list 1 2 3 (print (current_value)) 4)"
-	},
-	
-	{
-		"parameter" : "previous_result [number stack_distance] [bool copy]",
-		"output" : "*",
-		"description" : "Evaluates to the resulting node of the previous iteration for applicable opcodes. If stack_distance is specified, it climbs back up the target stack that many levels.  If copy is true, then a copy of the resulting node of the previous iteration is returned, otherwise the result of the previous iteration is returned directly and consumed.",
-		"example" : "(while (< (target_index) 3) (print (previous_result)) (target_index))"
-	},
-	
-	{
-		"parameter" : "opcode_stack [number stack_distance] [bool no_child_nodes]",
-		"output" : "list of *",
-		"description" : "Evaluates to the list of opcodes that make up the call stack or a single opcode within the call stack. If stack_distance is specified, then a copy of the node at that specified depth is returned, otherwise the list of all opcodes in opcode stack are returned. Negative values for stack_distance specify the depth from the top of the stack and positive values specify the depth from the bottom. If no_child_nodes is true, then only the root node(s) are returned, otherwise the returned node(s) are deep-copied.",
-		"example" : "(print (opcode_stack))"
-	},
-
-	{
-		"parameter" : "stack",
-		"output" : "list of assoc",
-		"description" : "Evaluates to the current execution context, also known as the scope stack, containing all of the variables for each layer of the stack.",
-		"example" : "(print (stack))"
-	},
-
-	{
-		"parameter" : "args [number stack_distance]",
-		"output" : "assoc",
-		"description" : "Evaluates to the top context of the stack, the current execution context, or scope stack, known as the arguments. If number is specified, then it evaluates to the context that many layers up the stack.",
-		"example" : "(let (assoc \"bbb\" 3)\n  (print (args))\n)"
 	},
 
 	{
@@ -799,39 +837,6 @@ var data = [
 	},
 
 	{
-		"parameter" : "rand [list|assoc|number range] [number number_to_generate] [bool unique]",
-		"output" : "*",
-		"new value" : "conditional, new if range is not a list",
-		"description" : "Generates random values based on its parameters.  The random values are drawn from a random stream specific to each execution flow for each entity.  With no range, evaluates to a random number between 0.0 and 1.0.  If range is a list, it will uniformly randomly choose and evaluate to one element of the list.  If range is a number, it will evaluate to a value greater than or equal to zero and less than the number specified.  If range is an assoc, then it will randomly evaluate to one of the keys using the values as the weights for the probabilities.  If  number_to_generate is specified, it will generate a list of multiple values (even if number_to_generate is 1).  If unique is true (it defaults to false), then it will only return unique values, the same as selecting from the list or assoc without replacement.  Note that if unique only applies to list and assoc ranges.  If unique is true and there are not enough values in a list or assoc, it will only generate the number of elements in range.",
-		"example" : "(print (rand))\n(print (rand 50))\n(print (rand (list 1 2 4 5 7)))\n(print (rand (range 0 10) 10 (true)) \"\\n\")"
-	},
-
-	{
-		"parameter" : "get_rand_seed",
-		"output" : "string",
-		"permissions" : "",
-		"new value" : "new",
-		"description" : "Evaluates to a string representing the current state of the random number generator.",
-		"example" : "(print (get_rand_seed) \"\\n\")"
-	},
-
-	{
-		"parameter" : "set_rand_seed * node",
-		"output" : "string",
-		"permissions" : "",
-		"description" : "Sets the random number seed and state for the current random number stream without affecting any entity.  If node is already a string in the proper format output by get_entity_rand_seed, then it will set the random generator to that current state, picking up where the previous state left off.  If it is anything else, it uses the value as a random seed to start the genrator.",
-		"example" : " (declare (assoc cur_seed (get_rand_seed)))\n (print (rand) \"\\n\")\n (set_rand_seed cur_seed)\n (print (rand) \"\\n\")"
-	},
-
-	{
-		"parameter" : "system_time",
-		"output" : "number",
-		"permissions" : "r",
-		"description" : "Evaluates to the current system time since epoch in seconds (including fractions of seconds).",
-		"example" : "(print (system_time))"
-	},
-
-	{
 		"parameter" : "true",
 		"output" : "immediate 1",
 		"new value" : "new",
@@ -877,6 +882,7 @@ var data = [
 	{
 		"parameter" : "[number]",
 		"output" : "number",
+		"new value" : "new",
 		"description" : "A 64-bit floating point value",
 		"example" : "4\n2.22228"
 	},
@@ -884,6 +890,7 @@ var data = [
 	{
 		"parameter" : "[string]",
 		"output" : "number",
+		"new value" : "new",
 		"description" : "A string.",
 		"example" : "\"hello\""
 	},
@@ -938,6 +945,7 @@ var data = [
 	{
 		"parameter" : "get_all_labels * node",
 		"output" : "assoc",
+		"new value" : "new",
 		"description" : "Returns an associative list of the labels for the node of code and everything underneath it, where the index is the label and the value is the reference to *.",
 		"example" : "(print (get_all_labels (lambda (#label21 print \"hello world: \" (* #label-number-22 3 4) #label23 \" and \" (* 1 2) )) ))\n(print (get_all_labels (lambda\n  ( #labelA #labelQ * #labelB\n    (+ 1 #labelA 3) 2))))"
 	},
@@ -993,7 +1001,7 @@ var data = [
 	{
 		"parameter" : "get_value * node",
 		"output" : "*",
-		"new value" : "partial",
+		"new value" : "new",
 		"description" : "Returns just the value portion of node (no labels or comments). Will evaluate to a copy of the value if it is not a unique reference, making it useful to ensure that the copy of the data is unique.",
 		"example" : "(print (get_value\n  ;this is a comment\n  (lambda ;comment too\n    #withalabel (true))))"
 	},
@@ -1285,7 +1293,8 @@ var data = [
 
 	{
 		"parameter" : "get_entity_root_permission [id entity]",
-		"output" : "number",
+		"output" : "bool",
+		"new value" : "new",
 		"permissions" : "r",
 		"description" : "Returns true if the entity has root permissions, false if not.  Will return null if the caller is not root.",
 		"example" : " (create_entities \"RootTest\" (lambda (print (system_time)) ))\n(print (get_entity_root_permission \"RootTest\"))"
@@ -1294,6 +1303,7 @@ var data = [
 	{
 		"parameter" : "set_entity_root_permission id entity bool permission",
 		"output" : "id",
+		"new value" : "new",
 		"permissions" : "r",
 		"description" : "Sets the root permission on the entity specified by id.  If bool is true, then it grants permissions, if it is false, then it removes them.  Returns the id of the entity.  Can only be called by an entity with root permissions.",
 		"example" : "(create_entities \"RootTest\" (lambda (print (system_time)) ))\n(set_entity_root_permission \"RootTest\" (true))\n(call_entity \"RootTest\")"
@@ -1338,6 +1348,7 @@ var data = [
 	{
 		"parameter" : "load string resource_path [string resource_type] [assoc params]",
 		"output" : "*",
+		"new value" : "new",
 		"permissions" : "r",
 		"description" : "Loads the data specified by the resource in string.  Attempts to load the file type and parse it into appropriate data and evaluate to the corresponding code. The parameter escape_filename defaults to false, but if it is true, it will agressively escape filenames using only alphanumeric characters and the underscore, using underscore as an escape character.  If resource_type is specified and not null, it will use the resource_type specified instead of the extension of the resource_path.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  Note that loading from a non-'.amlg' extension will only ever provide lists, assocs, numbers, and strings.",
 		"example" : "(print (load \"my_directory/MyModule.amlg\"))"
@@ -1346,6 +1357,7 @@ var data = [
 	{
 		"parameter" : "load_entity string resource_path [id entity] [string resource_type] [bool persistent] [assoc params]",
 		"output" : "id",
+		"new value" : "new",
 		"permissions" : "r",
 		"description" : "Loads an entity specified by the resource in string.  Attempts to load the file type and parse it into appropriate data and store it in the entity specified by id, following the same id creation rules as create_entities, except that if no id is specified, it may default to a name based on the resource if available.  If persistent is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  Options for the file I/O are specified as key-value pairs in params.  See File I/O for the file types and related params.",
 		"example" : "(load_entity \"my_directory/MyModule.amlg\" \"MyModule\")"
@@ -1354,6 +1366,7 @@ var data = [
 	{
 		"parameter" : "store string resource_path * node [string resource_type] [assoc params]",
 		"output" : "bool",
+		"new value" : "new",
 		"permissions" : "r",
 		"description" : "Stores the code specified by * to the resource in string. Returns true if successful, false if not. If resource_type is specified and not null, it will use the resource_type specified instead of the extension of the resource_path.    Options for the file I/O are specified as key-value pairs in params.  See File I/O for the file types and related params.",
 		"example" : "(store \"my_directory/MyData.amlg\" (list 1 2 3))"
@@ -1362,6 +1375,7 @@ var data = [
 	{
 		"parameter" : "store_entity string resource_path id entity [string resource_type] [bool persistent] [assoc params]",
 		"output" : "bool",
+		"new value" : "new",
 		"permissions" : "r",
 		"description" : "Stores the entity specified by the id to the resource in string. Returns true if successful, false if not. If resource_type is specified and not null, it will use the resource_type specified instead of the extension of the resource_path.  If persistent is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  Options for the file I/O are specified as key-value pairs in params.  See File I/O for the file types and related params.",
 		"example" : "(store_entity \"my_directory/MyData.amlg\" \"MyData\")"
@@ -1380,7 +1394,7 @@ var data = [
 		"parameter" : "contained_entities [id containing_entity] [list conditions]",
 		"output" : "list of string",
 		"permissions" : "e",
-		"new value" : "new",
+		"new value" : "conditional",
 		"description" : "Returns a list of strings of ids of entities contained in the entity specified by id or current entity if id is ommitted.  The optional list is a conjunction of conditions that are required in order for a contained entity to be returned.  The conditions are all of the commands that begin with query_.",
 		"example" : "(create_entities (list \"TestEntity\" \"Child\")\n  (lambda (null ##TargetLabel 3))\n) \n\n (contained_entities \"TestEntity\" (list\n  (query_exists \"TargetLabel\")\n)) \n\n ; For more examples see the individual entries for each query."
 	},
@@ -1389,7 +1403,7 @@ var data = [
 		"parameter" : "compute_on_contained_entities [id containing_entity] [list conditions]",
 		"output" : "*",
 		"permissions" : "e",
-		"new value" : "new",
+		"new value" : "conditional",
 		"description" : "Performs queries like contained_entities but returns a value or set of values appropriate for the last query in conditions.  The parameter conditions is a conjunction of conditions that are required in order for the final query to be evaluated.  Each entity in the list is a query.  The conditions are all of the commands that begin with query_.  If the last query does not return anything, then it will just return the matching entities.",
 		"example" : "(create_entities (list \"TestEntity\" \"Child\")\n  (lambda (null ##TargetLabel 3))\n) \n\n (compute_on_contained_entities \"TestEntity\" (list\n  (query_exists \"TargetLabel\")\n)) \n\n ; For more examples see the individual entries for each query."
 	},
@@ -1397,7 +1411,7 @@ var data = [
 	{
 		"parameter" : "query_select number num_to_select [number start_offset] [number random_seed]",
 		"output" : "query",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "When used as a query argument, selects num_to_select entities sorted by entity id.  If start_offset is specified, then it will return num_to_select starting that far in, and subsequent calls can be used to get all entities in batches.  If random_seed is specified, then it will select num_to_select entities randomly from the list based on the random seed.  If random_seed is specified and start_offset is null, then it will not guarantee a position in the order for subsequent calls that specify start_offset, and will execute more quickly.",
 		"example" : "(contained_entities \"TestEntity\" (list\n  (query_select 4 (null) (rand))\n))"
 	},
@@ -1405,7 +1419,7 @@ var data = [
 	{
 		"parameter" : "query_sample number num_to_select [string weight_label_name] [number random_seed]",
 		"output" : "query",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "When used as a query argument, selects a random sample of num_to_select entities sorted by entity_id with replacement. If weight_label_name is specified and not null, it will use weight_label_name as the feature containing the weights for the sampling, which will be normalized prior to sampling.  Non-numbers and negative infinite values for weights will be ignored, and if there are any infinite values, those will be selected from uniformly.  If random_seed is specified, then it will select num_to_select entities randomly from the list based on the random seed. If random_seed is not specified then the subsequent calls will return the same sample of entities.",
 		"example" : "(contained_entities \"TestEntity\" (list\n  (query_sample 4 (rand))\n))\n(contained_entities \"TestEntity\" (list\n  (query_sample 4 \"weight\" (rand))\n))"
 	},
@@ -1413,7 +1427,7 @@ var data = [
 	{
 		"parameter" : "query_in_entity_list list list_of_entity_ids",
 		"output" : "query",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "When used as a query argument, selects only the entities in list_of_entity_ids.  It can be used to filter results before doing subsequent queries.",
 		"example" : "(contained_entities \"TestEntity\" (list\n  (query_in_entity_list (list \"Entity1\" \"Entity2\"))\n))"
 	},
@@ -1421,7 +1435,7 @@ var data = [
 	{
 		"parameter" : "query_not_in_entity_list list list_of_entity_ids",
 		"output" : "query",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "When used as a query argument, filters out the entities in list_of_entity_ids.  It can be used to filter results before doing subsequent queries.",
 		"example" : "(contained_entities \"TestEntity\" (list\n  (query_not_in_entity_list (list \"Entity1\" \"Entity2\"))\n))"
 	},
@@ -1429,7 +1443,7 @@ var data = [
 	{
 		"parameter" : "query_exists string label_name",
 		"output" : "query",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "When used as a query argument, selects entities which have the named label.  If called last with compute_on_contained_entities, then it returns an assoc of entity ids, where each value is an assoc of corresponding label names and values.",
 		"example" : "(contained_entities \"TestEntity\" (list\n  (query_exists \"TargetLabel\")\n))"
 	},
@@ -1437,7 +1451,7 @@ var data = [
 	{
 		"parameter" : "query_not_exists string label_name",
 		"output" : "query",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "When used as a query argument, selects entities which do not have the named label.",
 		"example" : "(contained_entities \"TestEntity\" (list\n  (query_not_exists \"TargetLabel\")\n))"
 	},
@@ -1445,7 +1459,7 @@ var data = [
 	{
 		"parameter" : "query_equals string label_name * node_value",
 		"output" : "query",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "When used as a query argument, selects entities for which the specified label is equal to the specified *.",
 		"example" : "(contained_entities \"TestEntity\" (list\n  (query_equals \"TargetLabel\" 3)\n))"
 	},
@@ -1453,7 +1467,7 @@ var data = [
 	{
 		"parameter" : "query_not_equals string label_name * node_value",
 		"output" : "query",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "When used as a query argument, selects entities for which the specified label is not equal to the specified *.",
 		"example" : "(contained_entities \"TestEntity\" (list\n  (query_not_equals \"TargetLabel\" 3)\n))"
 	},
@@ -1461,7 +1475,7 @@ var data = [
 	{
 		"parameter" : "query_between string label_name * lower_bound * upper_bound",
 		"output" : "query",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "When used as a query argument, selects entities for which the specified label has a value between the specified lower_bound an upper_bound.",
 		"example" : "(contained_entities \"TestEntity\" (list\n  (query_between \"TargetLabel\" 2 5)\n)) \n\n (contained_entities \"TestEntity\" (list\n  (query_between \"x\" -4 5)\n  (query_between \"y\" -4 0)\n))"
 	},
@@ -1469,7 +1483,7 @@ var data = [
 	{
 		"parameter" : "query_not_between string label_name * lower_bound * upper_bound",
 		"output" : "query",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "When used as a query argument, selects entities for which the specified label has a value outside the specified lower_bound an upper_bound.",
 		"example" : "(contained_entities \"TestEntity\" (list\n  (query_not_between \"TargetLabel\" 2 5)\n)) \n\n (contained_entities \"TestEntity\" (list\n  (query_not_between \"x\" -4 5)\n  (query_not_between \"y\" -4 0)\n))"
 	},
@@ -1477,7 +1491,7 @@ var data = [
 	{
 		"parameter" : "query_among string label_name list values",
 		"output" : "query",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "When used as a query argument, selects entities for which the specified label has one of the values specified in values.",
 		"example" : "(contained_entities \"TestEntity\" (list\n  (query_among \"TargetLabel\" (2 5))\n)) \n\n (contained_entities \"TestEntity\" (list\n  (query_among \"x\" (list -4 5))\n  (query_among \"y\" (list -4 0))\n))"
 	},
@@ -1485,7 +1499,7 @@ var data = [
 	{
 		"parameter" : "query_not_among string label_name list values",
 		"output" : "query",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "When used as a query argument, selects entities for which the specified label does not have one of the values specified in values.",
 		"example" : "(contained_entities \"TestEntity\" (list\n  (query_not_among \"TargetLabel\" (2 5))\n)) \n\n (contained_entities \"TestEntity\" (list\n  (query_not_among \"x\" (list -4 5))\n  (query_not_among \"y\" (list -4 0))\n))"
 	},
@@ -1493,7 +1507,7 @@ var data = [
 	{
 		"parameter" : "query_max string label_name [number entities_returned] [bool numeric]",
 		"output" : "query",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "When used as a query argument, selects a number of entities with the highest values in the specified label.  If entities_returned is specified, it will return that many entities, otherwise will return 1.  If numeric is true, its default value, then it only considers numeric values; if false, will consider all types.",
 		"example" : "(contained_entities \"TestEntity\" (list\n  (query_max \"TargetLabel\" 3)\n))"
 	},
@@ -1501,7 +1515,7 @@ var data = [
 	{
 		"parameter" : "query_min string label_name [number entities_returned] [bool numeric]",
 		"output" : "query",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "When used as a query argument, selects a number of entities with the lowest values in the specified label.  If entities_returned is specified, it will return that many entities, otherwise will return 1.  If numeric is true, its default value, then it only considers numeric values; if false, will consider all types.",
 		"example" : "(contained_entities \"TestEntity\" (list\n  (query_min \"TargetLabel\" 3)\n))"
 	},
@@ -1509,7 +1523,7 @@ var data = [
 	{
 		"parameter" : "query_sum string label_name [string weight_label_name]",
 		"output" : "query",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "When used as a query argument, returns the sum of all entities over the specified label.  If weight_label_name is specified, it will find the weighted sum, which is the same as a dot product.",
 		"example" : "(compute_on_contained_entities \"TestEntity\" (list\n (query_sum \"TargetLabel\")\n))"
 	},
@@ -1517,7 +1531,7 @@ var data = [
 	{
 		"parameter" : "query_mode string label_name [string weight_label_name] [bool numeric]",
 		"output" : "query",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "When used as a query argument, finds the statistical mode of label_name for numerical data.  If weight_label_name is specified, it will find the weighted mode.  If numeric is true, its default, then it will treat all values as numeric, otherwise it will treat them all as strings.  If numeric and no numeric mode exists, it will return (null), but if string and no string mode exists, it will return null.",
 		"example" : "(compute_on_contained_entities \"TestEntity\" (list\n (query_mode \"TargetLabel\")\n))"
 	},
@@ -1525,7 +1539,7 @@ var data = [
 	{
 		"parameter" : "query_quantile string label_name [number q] [string weight_label_name]",
 		"output" : "query",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "When used as a query argument, finds the statistical quantile of label_name for numerical data, using q as the parameter to the quantile (default 0.5, median).  If weight_label_name is specified, it will find the weighted quantile, otherwise weight is 1.",
 		"example" : "(compute_on_contained_entities \"TestEntity\" (list\n (query_quantile \"TargetLabel\" 0.75)\n))"
 	},
@@ -1533,7 +1547,7 @@ var data = [
 	{
 		"parameter" : "query_generalized_mean string label_name number p [string weight_label_name] [number center] [bool calculate_moment] [bool absolute_value]",
 		"output" : "query",
-		"new value" : "new",
+		"new value" : "partial",
 		"description": "When used as a query argument, computes the generalized mean over the label_name for numeric data, using p as the parameter to the generalized mean.  If weight_label_name is specified, it will compute a weighted mean, normalizing the values of contained by weight_label_name. If center is specified, calculations will use that as central point, default is 0.0. If calculate_moment is true, results will not be raised to 1/p for p>=1. If absolute_value is true, the first order mean (p=1) will take the absolute value.",
 		"example" : "(compute_on_contained_entities \"TestEntity\" (list\n (query_generalized_mean \"TargetLabel\" 0.5)\n))"
 	},
@@ -1541,7 +1555,7 @@ var data = [
 	{
 		"parameter" : "query_min_difference string label_name [number cyclic_range] [bool include_zero_difference]",
 		"output" : "query",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "When used as a query argument, finds the smallest difference between any two values for the specified label. If cyclic_range is null, the default value, then it will assume the values are not cyclic; if it is a number, then it will assume the range is from 0 to cyclic_range.  If include_zero_difference is true, its default value, then it will return 0 if the smallest gap between any two numbers is 0; if false, it will return the smallest nonzero value.",
 		"example" : "(compute_on_contained_entities \"TestEntity\" (list\n (query_min_difference \"TargetLabel\")\n))"
 	},
@@ -1549,7 +1563,7 @@ var data = [
 	{
 		"parameter" : "query_max_difference string label_name [number cyclic_range]",
 		"output" : "query",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "When used as a query argument, finds the largest difference between any two values for the specified label. If cyclic_range is null, the default value, then it will assume the values are not cyclic; if it is a number, then it will assume the range is from 0 to cyclic_range.",
 		"example" : "(compute_on_contained_entities \"TestEntity\" (list\n (query_max_difference \"TargetLabel\")\n))"
 	},
@@ -1557,7 +1571,7 @@ var data = [
 	{
 		"parameter" : "query_value_masses string label_name [string weight_label_name] [bool numeric]",
 		"output" : "query",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "When used as a query argument, computes the counts for each value of the label and returns an assoc with the keys being the label values and the values being the counts or weights of the values.  If weight_label_name is specified, then it will accumulate that weight for each value, otherwise it will use a weight of 1 for each yielding a count.  If numeric is true, its default, then it will treat all values as numeric, otherwise it will treat them all as strings.",
 		"example" : "(compute_on_contained_entities \"TestEntity\" (list\n (query_value_masses \"TargetLabel\")\n))"
 	},
@@ -1565,7 +1579,7 @@ var data = [
 	{
 		"parameter" : "query_less_or_equal_to string label_name * max_value",
 		"output" : "query",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "When used as a query argument, selects entities with a value in the specified label less than or equal to the specified *.",
 		"example" : "(contained_entities \"TestEntity\" (list\n (query_less_or_equal_to \"TargetLabel\" 3)\n))"
 	},
@@ -1573,7 +1587,7 @@ var data = [
 	{
 		"parameter" : "query_greater_or_equal_to string label_name * min_value",
 		"output" : "query",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "When used as a query argument, selects entities with a value in the specified label greater than or equal to the specified *.",
 		"example" : "(contained_entities \"TestEntity\" (list\n  (query_greater_or_equal_to \"TargetLabel\" 3)\n))"
 	},
@@ -1581,7 +1595,7 @@ var data = [
 	{
 		"parameter" : "query_within_generalized_distance number max_distance list axis_labels list axis_values list|assoc|number weights list|assoc distance_types list|assoc attributes list|assoc|number deviations [number p_value] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list]",
 		"output" : "query",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "When used as a query argument, selects entities which represent a point within a certain generalized norm to a given point. axis_labels specifies the names of the coordinate axes (as labels on the target entity), and axis_values the specifies the corresponding values for the point to test from. p_value is the generalized norm parameter. weights is a list or assoc of dimension weights to use for the query, each value mapping to its respective element in the vectors.  If weights is null, then it will assume that the weights are 1 and additionally will ignore null values for the vectors instead of treating them as unknown differences.  The parameter distance_types is either a list strings or an assoc of strings indicating the type of distance for each feature.  Allowed values are \"nominal_numeric\", \"nominal_string\", \"nominal_code\", \"continuous_numeric\", \"continuous_numeric_cyclic\", \"continuous_string\", and \"continuous_code\".  Nominals evaluate whether the two values are the same and continuous evaluates the difference between the two values.  The numeric, string, or code modifier specifies how the difference is measured, and cyclic means it is a difference that wraps around.  For attributes, the particular distance_types specifies what is expected.  For a nominal distance_type, a number indicates the nominal count, whereas null will infer from the values available.  For continuous, a null means unbounded where distance for a null will be computed automatically from the relevant data; a single number indicates the difference between a value and a null, a specified uncertainty.  Cyclic requires either a single value or a list of two values; a list of two values indicates that the first value, the lower bound, will wrap around to the upper bound, the second value specified; if only a single number is provided instead of a list, then it will assume that number for the upper bound and 0 for the lower bound.  For the string distance type, the value specified can be a number indicating the maximum possible string length, inferred if null is provided.  For code, the value specified can be a number indicating the maximum number of nodes in the code (including labels), inferred if null is provided.  Deviations contains numbers that are used during the distance calculation, per-element, prior to exponentiation.  Specifying null as deviations is equivalent to setting each deviation to 0. max_distance is the maximum distance allowed. The optional radius_label parameter represents the label name of the radius of the entity (if the radius is within the distance, the entity is selected). The optional numerical_precision represents one of three values: \"precise\", which computes every distance with high numerical precision, \"fast\", which computes every distance with lower but faster numerical precison, and \"recompute_precise\", which computes distances quickly with lower precision but then recomputes any distance values that will be returned with higher precision. If called last with compute_on_contained_entities, then it returns an assoc of the entity ids with their distances.  If these distances are returned, then a transform may be applied to them based on distance_transform.  If distance_transform is \"surprisal_to_prob\" then distances will be calculated as surprisals and will be transformed back into probabilities before being returned.  If distance_transform is a number or omitted, which will default to 1.0, then it will be treated as a distance weight exponent, and will be applied to each distance as distance^distance_weight_exponent.  If entity_weight_label_name is specified, it will multiply the resulting value for each entity (after distance_weight_exponent, etc. have been applied) by the value in the label of entity_weight_label_name. If output_sorted_list is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if output_sorted_list is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether distance_weight_exponent is positive or negative respectively). If output_sorted_list is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity. If output_sorted_list is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.",
 		"example" : "(contained_entities \"TestContainerExec\" (list\n  (query_within_generalized_distance 60 (list \"x\" \"y\") (list 0.0 0.0) (null) (null) (null) (null) 0.5 1 (null) \"random seed 1234\" \"radius\")\n))"
 	},
@@ -1589,7 +1603,7 @@ var data = [
 	{
 		"parameter" : "query_nearest_generalized_distance number entities_returned list axis_labels list axis_values list|assoc weights list|assoc distance_types list|assoc attributes list|assoc deviations [number p_value] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list]",
 		"output" : "query",
-		"new value" : "new",
+		"new value" : "partial",
 		"description" : "When used as a query argument, selects the closest entities which represent a point within a certain generalized norm to a given point. axis_labels specifies the names of the coordinate axes (as labels on the target entity), and axis_values the specifies the corresponding values for the point to test from. p_value is the generalized norm parameter. weights is a list or assoc of dimension weights to use for the query, each value mapping to its respective element in the vectors.  If weights is null, then it will assume that the weights are 1 and additionally will ignore null values for the vectors instead of treating them as unknown differences.  The parameter distance_types is either a list strings or an assoc of strings indicating the type of distance for each feature.  Allowed values are \"nominal_numeric\", \"nominal_string\", \"nominal_code\", \"continuous_numeric\", \"continuous_numeric_cyclic\", \"continuous_string\", and \"continuous_code\".  Nominals evaluate whether the two values are the same and continuous evaluates the difference between the two values.  The numeric, string, or code modifier specifies how the difference is measured, and cyclic means it is a difference that wraps around.  \nFor attributes, the particular distance_types specifies what particular attributes are expected.  For a nominal distance_type, a number indicates the nominal count, whereas null will infer from the values given.  Cyclic requires a single value, which is the upper bound of the difference for the cycle range (e.g., if the value is 360, then the supremum difference between two values will be 360, leading 1 and 359 to have a difference of 2).\n  Deviations are used during distance calculation to specify uncertainty per-element, the minimum difference between two values prior to exponentiation.  Specifying null as a deviation is equivalent to setting each deviation to 0, unless distance_transform is \"surprisal_to_prob\", in which case it will attempt to infer a deviation.  Each deviation for each feature can be a single value or a list.  If it is a single value, that value is used as the deviation and differences and deviations for null values will automatically computed from the data based on the maximum difference.  If a deviation is provided as a list, then the first value is the deviation, the second value is the difference to use when one of the values being compared is null, and the third value is the difference to use when both of the values are null.  If the third value is omitted, it will use the second value for both.  If both of the null values are omitted, then it will compute the maximum difference and use that for both.  For nominal types, the value for each feature can be a numeric deviation, an assoc, or a list.  If the value is an assoc it specifies deviation information, where each key of the assoc is the nominal value, and each value of the assoc can be a numeric deviation value, a list, or an assoc, with the list specifying either an assoc followed optionally by the default deviation.  This inner assoc, regardless of whether it is in a list, maps the value to each actual value's deviation.  entities_returned specifies the number of entities to return. The optional radius_label parameter represents the label name of the radius of the entity (if the radius is within the distance, the entity is selected). The optional numerical_precision represents one of three values: \"precise\", which computes every distance with high numerical precision, \"fast\", which computes every distance with lower but faster numerical precison, and \"recompute_precise\", which computes distances quickly with lower precision but then recomputes any distance values that will be returned with higher precision.  If called last with compute_on_contained_entities, then it returns an assoc of the entity ids with their distances.  If these distances are returned, then a transform may be applied to them based on distance_transform.  If distance_transform is \"surprisal_to_prob\" then distances will be calculated as surprisals and will be transformed back into probabilities before being returned.  If distance_transform is a number or omitted, which will default to 1.0, then it will be treated as a distance weight exponent, and will be applied to each distance as distance^distance_weight_exponent.  If entity_weight_label_name is specified, it will multiply the resulting value for each entity (after distance_weight_exponent, etc. have been applied) by the value in the label of entity_weight_label_name. If output_sorted_list is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if output_sorted_list is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether distance_weight_exponent is positive or negative respectively).  If output_sorted_list is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity. If output_sorted_list is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity. If output_sorted_list is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.",
 		"example" : "(contained_entities \"TestContainerExec\" (list\n  (query_nearest_generalized_distance (list \"x\" \"y\") (list 0.0 0.0) 0.5 (list 0.25 0.75) (list 5 0) (list null (list 0 360)) (list 0.5 0.0) 10 \"radius\")\n))\n(contained_entities \"TestContainerExec\" (list\n  (query_nearest_generalized_distance (list \"x\" \"y\") (list 0.0 0.0) 0.5 (null) (null) 10 \"radius\")\n))"
 	},
@@ -1597,7 +1611,7 @@ var data = [
 	{
 		"parameter" : "compute_entity_convictions number entities_returned list feature_labels list entity_ids_to_compute list|assoc weights list|assoc distance_types list|assoc attributes list|assoc deviations [number p_value] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [bool conviction_of_removal] [* output_sorted_list]",
 		"output" : "query",
-		"new value" : "new",
+		"new value" : "partial",
 		"concurrency" : true,
 		"description" : "When used as a query argument, computes the case conviction for every case given in case_ids_to_compute with respect to *all* cases in the contained entities set input during a query.  If case_ids_to_compute is null/emptylist, case conviction is computed for all cases.  feature_labels specifies the names of the features to consider the during computation. p_value is the generalized norm parameter.  If weights is null, then it will assume that the weights are 1 and additionally will ignore null values for the vectors instead of treating them as unknown differences.  The parameter distance_types is either a list strings or an assoc of strings indicating the type of distance for each feature.  Allowed values are \"nominal_numeric\", \"nominal_string\", \"nominal_code\", \"continuous_numeric\", \"continuous_numeric_cyclic\", \"continuous_string\", and \"continuous_code\".  Nominals evaluate whether the two values are the same and continuous evaluates the difference between the two values.  The numeric, string, or code modifier specifies how the difference is measured, and cyclic means it is a difference that wraps around.  \nFor attributes, the particular distance_types specifies what particular attributes are expected.  For a nominal distance_type, a number indicates the nominal count, whereas null will infer from the values given.  Cyclic requires a single value, which is the upper bound of the difference for the cycle range (e.g., if the value is 360, then the supremum difference between two values will be 360, leading 1 and 359 to have a difference of 2).\n  Deviations are used during distance calculation to specify uncertainty per-element, the minimum difference between two values prior to exponentiation.  Specifying null as a deviation is equivalent to setting each deviation to 0, unless distance_transform is \"surprisal\" or \"surprisal_to_prob\", in which case it will attempt to infer a deviation.  Each deviation for each feature can be a single value or a list.  If it is a single value, that value is used as the deviation and differences and deviations for null values will automatically computed from the data based on the maximum difference.  If a deviation is provided as a list, then the first value is the deviation, the second value is the difference to use when one of the values being compared is null, and the third value is the difference to use when both of the values are null.  If the third value is omitted, it will use the second value for both.  If both of the null values are omitted, then it will compute the maximum difference and use that for both.  For nominal types, the value for each feature can be a numeric deviation, an assoc, or a list.  If the value is an assoc it specifies deviation information, where each key of the assoc is the nominal value, and each value of the assoc can be a numeric deviation value, a list, or an assoc, with the list specifying either an assoc followed optionally by the default deviation.  This inner assoc, regardless of whether it is in a list, maps the value to each actual value's deviation.  entities_returned specifies the number of entities to return. The optional radius_label parameter represents the label name of the radius of the entity (if the radius is within the distance, the entity is selected). The optional numerical_precision represents one of three values: \"precise\", which computes every distance with high numerical precision, \"fast\", which computes every distance with lower but faster numerical precison, and \"recompute_precise\", which computes distances quickly with lower precision but then recomputes any distance values that will be returned with higher precision.  If called last with compute_on_contained_entities, then it returns an assoc of the entity ids with their convictions.  A transform will be applied to these distances based on distance_transform.  If distance_transform is \"surprisal\" then distances will be calculated as surprisals.  If distance_transform is \"surprisal_to_prob\" then distances will be calculated as surprisals and will be transformed back into probabilities for aggregating, and then transformed back to surprisals.  If distance_transform is a number or omitted, which will default to 1.0, then it will be used as a parameter for a generalized mean (e.g., -1 yields the harmonic mean) to average the distances.  If entity_weight_label_name is specified, it will multiply the resulting value for each entity (after distance_weight_exponent, etc. have been applied) by the value in the label of entity_weight_label_name. If conviction_of_removal is true, then it will compute the conviction as if the entities specified by entity_ids_to_compute were removed; if false (the default), then will compute the conviction as if those entities were added or included. If output_sorted_list is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if output_sorted_list is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether distance_weight_exponent is positive or negative respectively).  If output_sorted_list is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity. If output_sorted_list is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.",
 		"example" : "(compute_on_contained_entities \"TestContainerExec\" (list\n  (compute_entity_convictions (list \"feature_1\" \"feature_2\") (list entity_id_1 entity_id_2 entity_id 3) 1.0 (list 0.25 0.75) (list 5 0) (list null (list 0 360)) (list 0.5 0.0) 10 \"radius\")\n))\n(compute_on_contained_entities \"TestContainerExec\" (list\n  (compute_entity_convictions (list \"x\" \"y\") (null) 2.0 (null) (null) 10 \"radius\")\n))"
@@ -1606,7 +1620,7 @@ var data = [
 	{
 		"parameter" : "compute_entity_group_kl_divergence number entities_returned list feature_labels list entity_ids_to_compute list|assoc weights list|assoc distance_types list|assoc attributes list|assoc deviations [number p_value] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [bool conviction_of_removal]",
 		"output" : "query",
-		"new value" : "new",
+		"new value" : "partial",
 		"concurrency" : true,
 		"description" : "When used as a query argument, computes the case kl divergence for every case given in case_ids_to_compute as a group with respect to *all* cases in the contained entities set input during a query.  If case_ids_to_compute is null/emptylist, case conviction is computed for all cases.  feature_labels specifies the names of the features to consider the during computation. p_value is the generalized norm parameter.  If weights is null, then it will assume that the weights are 1 and additionally will ignore null values for the vectors instead of treating them as unknown differences.  The parameter distance_types is either a list strings or an assoc of strings indicating the type of distance for each feature.  Allowed values are \"nominal_numeric\", \"nominal_string\", \"nominal_code\", \"continuous_numeric\", \"continuous_numeric_cyclic\", \"continuous_string\", and \"continuous_code\".  Nominals evaluate whether the two values are the same and continuous evaluates the difference between the two values.  The numeric, string, or code modifier specifies how the difference is measured, and cyclic means it is a difference that wraps around.  \nFor attributes, the particular distance_types specifies what particular attributes are expected.  For a nominal distance_type, a number indicates the nominal count, whereas null will infer from the values given.  Cyclic requires a single value, which is the upper bound of the difference for the cycle range (e.g., if the value is 360, then the supremum difference between two values will be 360, leading 1 and 359 to have a difference of 2).\n  Deviations are used during distance calculation to specify uncertainty per-element, the minimum difference between two values prior to exponentiation.  Specifying null as a deviation is equivalent to setting each deviation to 0, unless distance_transform is \"surprisal\" or \"surprisal_to_prob\", in which case it will attempt to infer a deviation.  Each deviation for each feature can be a single value or a list.  If it is a single value, that value is used as the deviation and differences and deviations for null values will automatically computed from the data based on the maximum difference.  If a deviation is provided as a list, then the first value is the deviation, the second value is the difference to use when one of the values being compared is null, and the third value is the difference to use when both of the values are null.  If the third value is omitted, it will use the second value for both.  If both of the null values are omitted, then it will compute the maximum difference and use that for both.  For nominal types, the value for each feature can be a numeric deviation, an assoc, or a list.  If the value is an assoc it specifies deviation information, where each key of the assoc is the nominal value, and each value of the assoc can be a numeric deviation value, a list, or an assoc, with the list specifying either an assoc followed optionally by the default deviation.  This inner assoc, regardless of whether it is in a list, maps the value to each actual value's deviation.  entities_returned specifies the number of entities to return. The optional radius_label parameter represents the label name of the radius of the entity (if the radius is within the distance, the entity is selected). The optional numerical_precision represents one of three values: \"precise\", which computes every distance with high numerical precision, \"fast\", which computes every distance with lower but faster numerical precison, and \"recompute_precise\", which computes distances quickly with lower precision but then recomputes any distance values that will be returned with higher precision.  If called last with compute_on_contained_entities, then it returns an assoc of the entity ids with their convictions.  A transform will be applied to these distances based on distance_transform.  If distance_transform is \"surprisal\" then distances will be calculated as surprisals.  If distance_transform is \"surprisal_to_prob\" then distances will be calculated as surprisals and will be transformed back into probabilities for aggregating, and then transformed back to surprisals.  If distance_transform is a number or omitted, which will default to 1.0, then it will be used as a parameter for a generalized mean (e.g., -1 yields the harmonic mean) to average the distances.  If entity_weight_label_name is specified, it will multiply the resulting value for each entity (after distance_weight_exponent, etc. have been applied) by the value in the label of entity_weight_label_name. If conviction_of_removal is true, then it will compute the conviction as if the entities specified by entity_ids_to_compute were removed; if false (the default), then will compute the conviction as if those entities were added or included.",
 		"example" : "(compute_on_contained_entities \"TestContainerExec\" (list\n  (compute_entity_group_kl_divergence (list \"feature_1\" \"feature_2\") (list entity_id_1 entity_id_2 entity_id 3) 1.0 (list 0.25 0.75) (list 5 0) (list null (list 0 360)) (list 0.5 0.0) 10 \"radius\")\n))\n(compute_on_contained_entities \"TestContainerExec\" (list\n  (compute_entity_group_kl_divergence (list \"x\" \"y\") (null) 2.0 (null) (null) 10 \"radius\")\n))"
@@ -1615,7 +1629,7 @@ var data = [
 	{
 		"parameter" : "compute_entity_distance_contributions number entities_returned list feature_labels list entity_ids_to_compute list|assoc weights list|assoc list|assoc distance_types list|assoc attributes list|assoc deviations [number p_value] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [* output_sorted_list]",
 		"output" : "query",
-		"new value" : "new",
+		"new value" : "partial",
 		"concurrency" : true,
 		"description" : "When used as a query argument, computes the case conviction for every case given in case_ids_to_compute with respect to *all* cases in the contained entities set input during a query.  If case_ids_to_compute is null/emptylist, case conviction is computed for all cases.  feature_labels specifies the names of the features to consider the during computation. p_value is the generalized norm parameter.  If weights is null, then it will assume that the weights are 1 and additionally will ignore null values for the vectors instead of treating them as unknown differences.  The parameter distance_types is either a list strings or an assoc of strings indicating the type of distance for each feature.  Allowed values are \"nominal_numeric\", \"nominal_string\", \"nominal_code\", \"continuous_numeric\", \"continuous_numeric_cyclic\", \"continuous_string\", and \"continuous_code\".  Nominals evaluate whether the two values are the same and continuous evaluates the difference between the two values.  The numeric, string, or code modifier specifies how the difference is measured, and cyclic means it is a difference that wraps around.  \nFor attributes, the particular distance_types specifies what particular attributes are expected.  For a nominal distance_type, a number indicates the nominal count, whereas null will infer from the values given.  Cyclic requires a single value, which is the upper bound of the difference for the cycle range (e.g., if the value is 360, then the supremum difference between two values will be 360, leading 1 and 359 to have a difference of 2).\n  Deviations are used during distance calculation to specify uncertainty per-element, the minimum difference between two values prior to exponentiation.  Specifying null as a deviation is equivalent to setting each deviation to 0, unless distance_transform is \"surprisal\" or \"surprisal_to_prob\", in which case it will attempt to infer a deviation.  Each deviation for each feature can be a single value or a list.  If it is a single value, that value is used as the deviation and differences and deviations for null values will automatically computed from the data based on the maximum difference.  If a deviation is provided as a list, then the first value is the deviation, the second value is the difference to use when one of the values being compared is null, and the third value is the difference to use when both of the values are null.  If the third value is omitted, it will use the second value for both.  If both of the null values are omitted, then it will compute the maximum difference and use that for both.  For nominal types, the value for each feature can be a numeric deviation, an assoc, or a list.  If the value is an assoc it specifies deviation information, where each key of the assoc is the nominal value, and each value of the assoc can be a numeric deviation value, a list, or an assoc, with the list specifying either an assoc followed optionally by the default deviation.  This inner assoc, regardless of whether it is in a list, maps the value to each actual value's deviation.  entities_returned specifies the number of entities to return. The optional radius_label parameter represents the label name of the radius of the entity (if the radius is within the distance, the entity is selected). The optional numerical_precision represents one of three values: \"precise\", which computes every distance with high numerical precision, \"fast\", which computes every distance with lower but faster numerical precison, and \"recompute_precise\", which computes distances quickly with lower precision but then recomputes any distance values that will be returned with higher precision.  If called last with compute_on_contained_entities, then it returns an assoc of the entity ids with their convictions.  A transform will be applied to these distances based on distance_transform.  If distance_transform is \"surprisal\" then distances will be calculated as surprisals.  If distance_transform is \"surprisal_to_prob\" then distances will be calculated as surprisals and will be transformed back into probabilities for aggregating, and then transformed back to surprisals.  If distance_transform is a number or omitted, which will default to 1.0, then it will be used as a parameter for a generalized mean (e.g., -1 yields the harmonic mean) to average the distances.  If entity_weight_label_name is specified, it will multiply the resulting value for each entity (after distance_weight_exponent, etc. have been applied) by the value in the label of entity_weight_label_name. If output_sorted_list is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if output_sorted_list is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether distance_weight_exponent is positive or negative respectively).  If output_sorted_list is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity. If output_sorted_list is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.",
 		"example" : "(compute_on_contained_entities \"TestContainerExec\" (list\n  (compute_entity_distance_contributions (list \"feature_1\" \"feature_2\") (list entity_id_1 entity_id_2 entity_id 3) 1.0 (list 0.25 0.75) (list 5 0) (list null (list 0 360)) (list 0.5 0.0) 10 \"radius\")\n))\n(compute_on_contained_entities \"TestContainerExec\" (list\n  (compute_entity_distance_contributions (list \"x\" \"y\") (null) 2.0 (null) (null) 10 \"radius\")\n))"
@@ -1624,7 +1638,7 @@ var data = [
 	{
 		"parameter" : "compute_entity_kl_divergences number entities_returned list feature_labels list entity_ids_to_compute list|assoc weights list|assoc distance_types list|assoc attributes list|assoc deviations [number p_value] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [bool conviction_of_removal] [* output_sorted_list]",
 		"output" : "query",
-		"new value" : "new",
+		"new value" : "partial",
 		"concurrency" : true,
 		"description" : "When used as a query argument, computes the case conviction for every case given in case_ids_to_compute with respect to *all* cases in the contained entities set input during a query.  If case_ids_to_compute is null/emptylist, case conviction is computed for all cases.  feature_labels specifies the names of the features to consider the during computation. p_value is the generalized norm parameter.  If weights is null, then it will assume that the weights are 1 and additionally will ignore null values for the vectors instead of treating them as unknown differences.  The parameter distance_types is either a list strings or an assoc of strings indicating the type of distance for each feature.  Allowed values are \"nominal_numeric\", \"nominal_string\", \"nominal_code\", \"continuous_numeric\", \"continuous_numeric_cyclic\", \"continuous_string\", and \"continuous_code\".  Nominals evaluate whether the two values are the same and continuous evaluates the difference between the two values.  The numeric, string, or code modifier specifies how the difference is measured, and cyclic means it is a difference that wraps around.  \nFor attributes, the particular distance_types specifies what particular attributes are expected.  For a nominal distance_type, a number indicates the nominal count, whereas null will infer from the values given.  Cyclic requires a single value, which is the upper bound of the difference for the cycle range (e.g., if the value is 360, then the supremum difference between two values will be 360, leading 1 and 359 to have a difference of 2).\n  Deviations are used during distance calculation to specify uncertainty per-element, the minimum difference between two values prior to exponentiation.  Specifying null as a deviation is equivalent to setting each deviation to 0, unless distance_transform is \"surprisal\" or \"surprisal_to_prob\", in which case it will attempt to infer a deviation.  Each deviation for each feature can be a single value or a list.  If it is a single value, that value is used as the deviation and differences and deviations for null values will automatically computed from the data based on the maximum difference.  If a deviation is provided as a list, then the first value is the deviation, the second value is the difference to use when one of the values being compared is null, and the third value is the difference to use when both of the values are null.  If the third value is omitted, it will use the second value for both.  If both of the null values are omitted, then it will compute the maximum difference and use that for both.  For nominal types, the value for each feature can be a numeric deviation, an assoc, or a list.  If the value is an assoc it specifies deviation information, where each key of the assoc is the nominal value, and each value of the assoc can be a numeric deviation value, a list, or an assoc, with the list specifying either an assoc followed optionally by the default deviation.  This inner assoc, regardless of whether it is in a list, maps the value to each actual value's deviation.  entities_returned specifies the number of entities to return. The optional radius_label parameter represents the label name of the radius of the entity (if the radius is within the distance, the entity is selected). The optional numerical_precision represents one of three values: \"precise\", which computes every distance with high numerical precision, \"fast\", which computes every distance with lower but faster numerical precison, and \"recompute_precise\", which computes distances quickly with lower precision but then recomputes any distance values that will be returned with higher precision.  If called last with compute_on_contained_entities, then it returns an assoc of the entity ids with their convictions.  A transform will be applied to these distances based on distance_transform.  If distance_transform is \"surprisal\" then distances will be calculated as surprisals.  If distance_transform is \"surprisal_to_prob\" then distances will be calculated as surprisals and will be transformed back into probabilities for aggregating, and then transformed back to surprisals.  If distance_transform is a number or omitted, which will default to 1.0, then it will be used as a parameter for a generalized mean (e.g., -1 yields the harmonic mean) to average the distances.  If entity_weight_label_name is specified, it will multiply the resulting value for each entity (after distance_weight_exponent, etc. have been applied) by the value in the label of entity_weight_label_name. If conviction_of_removal is true, then it will compute the conviction as if the entities specified by entity_ids_to_compute were removed; if false (the default), then will compute the conviction as if those entities were added or included. If output_sorted_list is not specified or is false, then it will return an assoc of entity string id as the key with the distance as the value; if output_sorted_list is true, then it will return a list of lists, where the first list is the entity ids and the second list contains the corresponding distances, where both lists are in sorted order starting with the closest or most important (based on whether distance_weight_exponent is positive or negative respectively).  If output_sorted_list is a string, then it will additionally return a list where the values correspond to the values of the labels for each respective entity. If output_sorted_list is a list of strings, then it will additionally return a list of values for each of the label values for each respective entity.",
 		"example" : "(compute_on_contained_entities \"TestContainerExec\" (list\n  (compute_entity_kl_divergences (list \"feature_1\" \"feature_2\") (list entity_id_1 entity_id_2 entity_id 3) 1.0 (list 0.25 0.75) (list 5 0) (list null (list 0 360)) (list 0.5 0.0) 10 \"radius\")\n))\n(compute_on_contained_entities \"TestContainerExec\" (list\n  (compute_entity_kl_divergences (list \"x\" \"y\") (null) 2.0 (null) (null) 10 \"radius\")\n))"

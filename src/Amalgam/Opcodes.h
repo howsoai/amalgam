@@ -306,7 +306,7 @@ enum OrderedChildNodeType
 };
 
 //returns the type of structure that the ordered child nodes have for a given t
-constexpr OrderedChildNodeType GetInstructionOrderedChildNodeType(EvaluableNodeType t)
+constexpr OrderedChildNodeType GetOpcodeOrderedChildNodeType(EvaluableNodeType t)
 {
 	switch(t)
 	{
@@ -425,15 +425,21 @@ constexpr OrderedChildNodeType GetInstructionOrderedChildNodeType(EvaluableNodeT
 	}
 }
 
+//returns true if the opcode modifies things outside of its return
+constexpr bool DoesOpcodeHaveSideEffects(EvaluableNodeType t)
+{
+	//TODO 22414: populate this
+}
+
 constexpr bool IsEvaluableNodeTypeValid(EvaluableNodeType t)
 {
 	return (t < NUM_VALID_ENT_OPCODES);
 }
 
-//returns true if the instruction uses an associative array as parameters. If false, then a regular kind of list
-constexpr bool DoesInstructionUseAssocParameters(EvaluableNodeType t)
+//returns true if the opcode uses an associative array as parameters. If false, then a regular kind of list
+constexpr bool DoesOpcodeUseAssocParameters(EvaluableNodeType t)
 {
-	return GetInstructionOrderedChildNodeType(t) == OCNT_PAIRED;
+	return GetOpcodeOrderedChildNodeType(t) == OCNT_PAIRED;
 }
 
 //returns true if t is an immediate value

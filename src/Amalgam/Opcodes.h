@@ -450,7 +450,7 @@ enum OpcodeNewValueReturnType
 };
 
 //returns whether the opcode returns a new value
-constexpr OpcodeNewValueReturnType GetOpcodeNewValue(EvaluableNodeType t)
+constexpr OpcodeNewValueReturnType GetOpcodeNewValueReturnType(EvaluableNodeType t)
 {
 	switch(t)
 	{
@@ -458,7 +458,6 @@ constexpr OpcodeNewValueReturnType GetOpcodeNewValue(EvaluableNodeType t)
 	case ENT_SET:	case ENT_REPLACE:	case ENT_OPCODE_STACK:	case ENT_STACK:
 	case ENT_GET_RAND_SEED:
 	case ENT_SYSTEM_TIME:
-
 	case ENT_ADD:	case ENT_SUBTRACT:	case ENT_MULTIPLY:	case ENT_DIVIDE:
 	case ENT_MODULUS:	case ENT_GET_DIGITS:	case ENT_SET_DIGITS:	case ENT_FLOOR:
 	case ENT_CEILING:	case ENT_ROUND:	case ENT_EXPONENT:	case ENT_LOG:	case ENT_SIN:
@@ -486,7 +485,6 @@ constexpr OpcodeNewValueReturnType GetOpcodeNewValue(EvaluableNodeType t)
 	case ENT_EXPLODE:	case ENT_SPLIT:	case ENT_SUBSTR:	case ENT_CONCAT:
 	case ENT_CRYPTO_SIGN:	case ENT_CRYPTO_SIGN_VERIFY:	case ENT_ENCRYPT:
 	case ENT_DECRYPT:
-
 	case ENT_TOTAL_SIZE:	case ENT_MUTATE:	case ENT_COMMONALITY:
 	case ENT_EDIT_DISTANCE:	case ENT_INTERSECT:	case ENT_UNION:	case ENT_DIFFERENCE:
 	case ENT_MIX:	case ENT_MIX_LABELS:	case ENT_TOTAL_ENTITY_SIZE:
@@ -555,7 +553,6 @@ constexpr OpcodeNewValueReturnType GetOpcodeNewValue(EvaluableNodeType t)
 	case ENT_PARALLEL:
 	case ENT_ASSIGN:	case ENT_ACCUM:
 	case ENT_PRINT:
-
 		return ONVRT_NULL;
 
 	default:

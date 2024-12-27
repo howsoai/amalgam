@@ -841,41 +841,49 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, b
 		return EvaluableNodeReference::Null();
 	}
 
-	auto node_stack = CreateOpcodeStackStateSaver(type_node);
-
-	//TODO 22414: based on type node, and its other params, may be able to not make a copy for immediate types, or free others
-	// use DoesOpcodeHaveSideEffects() and GetOpcodeOrderedChildNodeType() to determine if source can be freed
-
-	//get the target
-	auto source = InterpretNode(ocn[1]);
-	if(source == nullptr)
-		source.SetReference(evaluableNodeManager->AllocNode(ENT_NULL));
-
-	evaluableNodeManager->EnsureNodeIsModifiable(source);
-
 	//get the type to set
 	EvaluableNodeType new_type = ENT_NULL;
 	if(type_node->GetType() == ENT_STRING)
 	{
 		auto new_type_sid = type_node->GetStringIDReference();
 		new_type = GetEvaluableNodeTypeFromStringId(new_type_sid);
-		if(!IsEvaluableNodeTypeValid(new_type))
-			return EvaluableNodeReference::Null();
-
-		source->SetType(new_type, evaluableNodeManager, true);
 	}
 	else
 	{
 		new_type = type_node->GetType();
+	}
+
+	if(!IsEvaluableNodeTypeValid(new_type))
+	{
+		evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
+		return EvaluableNodeReference::Null();
+	}
+
+	auto node_stack = CreateOpcodeStackStateSaver(type_node);
+
+	//if new_type doesn't affect anything and always creates a new value, then
+	//don't need to maintain source (can be interpreted as immediate) and can free it
+	bool transient_source_node = (!DoesOpcodeHaveSideEffects(new_type)
+		&& GetOpcodeNewValueReturnType(new_type) == ONVRT_NEW_VALUE);
+	EvaluableNodeReference source;
+
+	if(transient_source_node)
+		source = InterpretNodeForImmediateUse(ocn[1]);
+	else
+		source = InterpretNode(ocn[1]);
+
+	//change source type
+	if(source == nullptr)
+		source.SetReference(evaluableNodeManager->AllocNode(ENT_NULL));
+	evaluableNodeManager->EnsureNodeIsModifiable(source);
+	source->SetType(new_type, evaluableNodeManager, true);
+
+	//prepend any params
+	if(source->IsOrderedArray())
+	{
 		auto &type_node_ocn = type_node->GetOrderedChildNodes();
-
-		//set the type before possibly inserting any new child nodes
-		source->SetType(new_type, evaluableNodeManager, true);
-
-		//prepend any params
-		if(source->IsOrderedArray())
+		if(type_node_ocn.size() > 0)
 		{
-			//prepend the parameters of source
 			auto &source_ocn = source->GetOrderedChildNodesReference();
 			source_ocn.insert(
 				begin(source_ocn), begin(type_node_ocn), end(type_node_ocn));
@@ -892,6 +900,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, b
 	//apply the new type, using whether or not it was a unique reference,
 	//passing through whether an immediate_result is desired
 	EvaluableNodeReference result = InterpretNode(source, immediate_result);
+
+	if(transient_source_node)
+		evaluableNodeManager->FreeNodeTreeIfPossible(source);
 
 	return result;
 }

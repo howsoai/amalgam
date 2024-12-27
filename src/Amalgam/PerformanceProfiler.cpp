@@ -324,6 +324,32 @@ std::pair<int64_t, int64_t> PerformanceProfiler::GetTotalAndPositiveMemoryIncrea
 	return std::make_pair(total_mem_increase, positive_mem_increase);
 }
 
+//TODO 22414: finish generalizing this
+/*
+template<typename ValueType, typename CounterMapType>
+std::vector<std::pair<std::string, ValueType>> GetPerformanceStat(CountermapType &counters)
+{
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	Concurrency::SingleLock lock(performance_profiler_mutex);
+#endif
+
+	//copy to proper data structure
+	std::vector<std::pair<std::string, ValueType>> results;
+	results.reserve(counters.size());
+
+	for(auto &[s, value] : counters)
+
+
+
+		results.push_back(std::make_pair(s, value.numCalls));
+
+	//sort high to low
+	std::sort(begin(results), end(results),
+		[](std::pair<std::string, ValueType> a, std::pair<std::string, ValueType> b) -> bool
+		{	return (a.second) > (b.second);	});
+	return results;
+}*/
+
 std::vector<std::pair<std::string, size_t>> PerformanceProfiler::GetNumCallsByType()
 {
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)

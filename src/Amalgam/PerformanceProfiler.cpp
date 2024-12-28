@@ -325,219 +325,107 @@ std::pair<int64_t, int64_t> PerformanceProfiler::GetTotalAndPositiveMemoryIncrea
 }
 
 //TODO 22414: finish generalizing this
-/*
-template<typename ValueType, typename CounterMapType>
-std::vector<std::pair<std::string, ValueType>> GetPerformanceStat(CountermapType &counters)
+
+template<typename StatValueType, typename CounterValueType, typename CounterMapType>
+inline std::vector<std::pair<std::string, StatValueType>> GetPerformanceStat(CounterMapType &counters,
+	std::function<StatValueType(CounterValueType &)> counter_function)
 {
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 	Concurrency::SingleLock lock(performance_profiler_mutex);
 #endif
 
 	//copy to proper data structure
-	std::vector<std::pair<std::string, ValueType>> results;
+	std::vector<std::pair<std::string, StatValueType>> results;
 	results.reserve(counters.size());
 
 	for(auto &[s, value] : counters)
-
-
-
-		results.push_back(std::make_pair(s, value.numCalls));
+		results.emplace_back(s, counter_function(value));
 
 	//sort high to low
 	std::sort(begin(results), end(results),
-		[](std::pair<std::string, ValueType> a, std::pair<std::string, ValueType> b) -> bool
+		[](std::pair<std::string, StatValueType> a, std::pair<std::string, StatValueType> b) -> bool
 		{	return (a.second) > (b.second);	});
 	return results;
-}*/
+}
 
 std::vector<std::pair<std::string, size_t>> PerformanceProfiler::GetNumCallsByType()
 {
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	Concurrency::SingleLock lock(performance_profiler_mutex);
-#endif
-
-	//copy to proper data structure
-	std::vector<std::pair<std::string, size_t>> results;
-	results.reserve(_profiler_counters.size());
-	for(auto &[s, value] : _profiler_counters)
-		results.push_back(std::make_pair(s, value.numCalls));
-	
-	//sort high to low
-	std::sort(begin(results), end(results),
-			  [](std::pair<std::string, size_t> a, std::pair<std::string, size_t> b) -> bool
-			  {	return (a.second) > (b.second);	});
-	return results;
+	return GetPerformanceStat<size_t, PerformanceCounters>(_profiler_counters,
+		[](auto &counter_values) {
+			return counter_values.numCalls;
+		});
 }
 
 std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByTotalTimeExclusive()
 {
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	Concurrency::SingleLock lock(performance_profiler_mutex);
-#endif
-
-	//copy to proper data structure
-	std::vector<std::pair<std::string, double>> results;
-	results.reserve(_profiler_counters.size());
-	for(auto &[s, value] : _profiler_counters)
-		results.push_back(std::make_pair(static_cast<std::string>(s), value.totalTimeExclusive));
-	
-	//sort high to low
-	std::sort(begin(results), end(results),
-			  [](std::pair<std::string, double> a, std::pair<std::string, double> b) -> bool
-			  {	return (a.second) > (b.second);	});
-	return results;
+	return GetPerformanceStat<double, PerformanceCounters>(_profiler_counters,
+		[](auto &counter_values) {
+			return counter_values.totalTimeExclusive;
+		});
 }
 
 std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByAveTimeExclusive()
 {
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	Concurrency::SingleLock lock(performance_profiler_mutex);
-#endif
-
-	//copy to proper data structure
-	std::vector<std::pair<std::string, double>> results;
-	results.reserve(_profiler_counters.size());
-	for(auto &[s, value] : _profiler_counters)
-		results.push_back(std::make_pair(static_cast<std::string>(s), value.totalTimeExclusive / value.numCalls));
-	
-	//sort high to low
-	std::sort(begin(results), end(results),
-			  [](std::pair<std::string, double> a, std::pair<std::string, double> b) -> bool
-			  {	return (a.second) > (b.second);	});
-	return results;
+	return GetPerformanceStat<double, PerformanceCounters>(_profiler_counters,
+		[](auto &counter_values) {
+			return counter_values.totalTimeExclusive / counter_values.numCalls;
+		});
 }
 
 
 std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByTotalTimeInclusive()
 {
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	Concurrency::SingleLock lock(performance_profiler_mutex);
-#endif
-
-	//copy to proper data structure
-	std::vector<std::pair<std::string, double>> results;
-	results.reserve(_profiler_counters.size());
-	for(auto &[s, value] : _profiler_counters)
-		results.push_back(std::make_pair(static_cast<std::string>(s), value.totalTimeInclusive));
-
-	//sort high to low
-	std::sort(begin(results), end(results),
-		[](std::pair<std::string, double> a, std::pair<std::string, double> b) -> bool
-		{	return (a.second) > (b.second);	});
-	return results;
+	return GetPerformanceStat<double, PerformanceCounters>(_profiler_counters,
+		[](auto &counter_values) {
+			return counter_values.totalTimeInclusive;
+		});
 }
 
 std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByAveTimeInclusive()
 {
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	Concurrency::SingleLock lock(performance_profiler_mutex);
-#endif
-
-	//copy to proper data structure
-	std::vector<std::pair<std::string, double>> results;
-	results.reserve(_profiler_counters.size());
-	for(auto &[s, value] : _profiler_counters)
-		results.push_back(std::make_pair(static_cast<std::string>(s), value.totalTimeInclusive / value.numCalls));
-
-	//sort high to low
-	std::sort(begin(results), end(results),
-		[](std::pair<std::string, double> a, std::pair<std::string, double> b) -> bool
-		{	return (a.second) > (b.second);	});
-	return results;
+	return GetPerformanceStat<double, PerformanceCounters>(_profiler_counters,
+		[](auto &counter_values) {
+			return counter_values.totalTimeInclusive / counter_values.numCalls;
+		});
 }
 
 std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByTotalMemoryIncreaseExclusive()
 {
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	Concurrency::SingleLock lock(performance_profiler_mutex);
-#endif
-
-	//copy to proper data structure
-	std::vector<std::pair<std::string, double>> results;
-	results.reserve(_profiler_counters.size());
-	for(auto &[s, value] : _profiler_counters)
-		results.push_back(std::make_pair(static_cast<std::string>(s), static_cast<double>(value.totalMemChangeExclusive)));
-
-	//sort high to low
-	std::sort(begin(results), end(results),
-		[](std::pair<std::string, double> a, std::pair<std::string, double> b) -> bool
-	{	return (a.second) > (b.second);	});
-	return results;
+	return GetPerformanceStat<double, PerformanceCounters>(_profiler_counters,
+		[](auto &counter_values) {
+			return static_cast<double>(counter_values.totalMemChangeExclusive);
+		});
 }
 
 std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByAveMemoryIncreaseExclusive()
 {
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	Concurrency::SingleLock lock(performance_profiler_mutex);
-#endif
-
-	//copy to proper data structure
-	std::vector<std::pair<std::string, double>> results;
-	results.reserve(_profiler_counters.size());
-	for(auto &[s, value] : _profiler_counters)
-		results.push_back(std::make_pair(static_cast<std::string>(s), static_cast<double>(value.totalMemChangeExclusive) / value.numCalls));
-
-	//sort high to low
-	std::sort(begin(results), end(results),
-		[](std::pair<std::string, double> a, std::pair<std::string, double> b) -> bool
-	{	return (a.second) > (b.second);	});
-	return results;
+	return GetPerformanceStat<double, PerformanceCounters>(_profiler_counters,
+		[](auto &counter_values) {
+			return static_cast<double>(counter_values.totalMemChangeExclusive) / counter_values.numCalls;
+		});
 }
 
 std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByTotalMemoryIncreaseInclusive()
 {
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	Concurrency::SingleLock lock(performance_profiler_mutex);
-#endif
-
-	//copy to proper data structure
-	std::vector<std::pair<std::string, double>> results;
-	results.reserve(_profiler_counters.size());
-	for(auto &[s, value] : _profiler_counters)
-		results.push_back(std::make_pair(static_cast<std::string>(s), static_cast<double>(value.totalMemChangeInclusive)));
-
-	//sort high to low
-	std::sort(begin(results), end(results),
-		[](std::pair<std::string, double> a, std::pair<std::string, double> b) -> bool
-		{	return (a.second) > (b.second);	});
-	return results;
+	return GetPerformanceStat<double, PerformanceCounters>(_profiler_counters,
+		[](auto &counter_values) {
+			return static_cast<double>(counter_values.totalMemChangeExclusive);
+		});
 }
 
 std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByAveMemoryIncreaseInclusive()
 {
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	Concurrency::SingleLock lock(performance_profiler_mutex);
-#endif
-
-	//copy to proper data structure
-	std::vector<std::pair<std::string, double>> results;
-	results.reserve(_profiler_counters.size());
-	for(auto &[s, value] : _profiler_counters)
-		results.push_back(std::make_pair(static_cast<std::string>(s), static_cast<double>(value.totalMemChangeInclusive) / value.numCalls));
-
-	//sort high to low
-	std::sort(begin(results), end(results),
-		[](std::pair<std::string, double> a, std::pair<std::string, double> b) -> bool
-		{	return (a.second) > (b.second);	});
-	return results;
+	return GetPerformanceStat<double, PerformanceCounters>(_profiler_counters,
+		[](auto &counter_values) {
+			return static_cast<double>(counter_values.totalMemChangeInclusive) / counter_values.numCalls;
+		});
 }
 
 std::vector<std::pair<std::string, size_t>> PerformanceProfiler::GetPerformanceCounterResultsSortedByCount(
 	FastHashMap<std::string, size_t> &counters)
 {
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	Concurrency::SingleLock lock(performance_profiler_mutex);
-#endif
-
-	//copy to proper data structure
-	std::vector<std::pair<std::string, size_t>> results;
-	results.reserve(counters.size());
-	for(auto &[s, value] : counters)
-		results.push_back(std::make_pair(static_cast<std::string>(s), static_cast<size_t>(value)));
-
-	//sort high to low
-	std::sort(begin(results), end(results),
-		[](std::pair<std::string, size_t> a, std::pair<std::string, size_t> b) -> bool
-		{	return (a.second) > (b.second);	});
-	return results;
+	return GetPerformanceStat<size_t, size_t>(counters,
+		[](auto &value) {
+			return value;
+		});
 }

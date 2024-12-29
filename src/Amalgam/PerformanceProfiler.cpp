@@ -23,7 +23,6 @@ struct PerformanceCounters
 	int64_t totalMemChangeInclusive;
 
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	//TODO 22414: return and print these values
 	double elapsedTimeExclusive;
 	double elapsedTimeInclusive;
 #endif
@@ -190,6 +189,22 @@ void PerformanceProfiler::PrintProfilingInformation(std::string outfile_name, si
 		out_dest << longest_total_time_inclusive[i].first << ": " << longest_total_time_inclusive[i].second << std::endl;
 	out_dest << std::endl;
 
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	out_dest << "------------------------------------------------------" << std::endl;
+	out_dest << "Operations that contributed the longest total exclusive elapsed time (accumulated time divided by active thread count) (s): " << std::endl;
+	auto longest_total_elapsed_time_exclusive = PerformanceProfiler::GetNumCallsByTotalElapsedTimeExclusive();
+	for(size_t i = 0; i < max_print_count && i < longest_total_elapsed_time_exclusive.size(); i++)
+		out_dest << longest_total_elapsed_time_exclusive[i].first << ": " << longest_total_elapsed_time_exclusive[i].second << std::endl;
+	out_dest << std::endl;
+
+	out_dest << "------------------------------------------------------" << std::endl;
+	out_dest << "Operations that contributed the longest total inclusive elapsed time (accumulated time divided by active thread count) (s): " << std::endl;
+	auto longest_total_elapsed_time_inclusive = PerformanceProfiler::GetNumCallsByTotalElapsedTimeInclusive();
+	for(size_t i = 0; i < max_print_count && i < longest_total_elapsed_time_inclusive.size(); i++)
+		out_dest << longest_total_elapsed_time_inclusive[i].first << ": " << longest_total_elapsed_time_inclusive[i].second << std::endl;
+	out_dest << std::endl;
+#endif
+
 	out_dest << "------------------------------------------------------" << std::endl;
 	out_dest << "Operations called the most number of times: " << std::endl;
 	auto most_calls = PerformanceProfiler::GetNumCallsByType();
@@ -210,6 +225,22 @@ void PerformanceProfiler::PrintProfilingInformation(std::string outfile_name, si
 	for(size_t i = 0; i < max_print_count && i < longest_ave_time_inclusive.size(); i++)
 		out_dest << longest_ave_time_inclusive[i].first << ": " << longest_ave_time_inclusive[i].second << std::endl;
 	out_dest << std::endl;
+
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	out_dest << "------------------------------------------------------" << std::endl;
+	out_dest << "Operations that contributed the longest average exclusive elapsed time (average time divided by active thread count) (s): " << std::endl;
+	auto longest_ave_elapsed_time_exclusive = PerformanceProfiler::GetNumCallsByAveElapsedTimeExclusive();
+	for(size_t i = 0; i < max_print_count && i < longest_ave_elapsed_time_exclusive.size(); i++)
+		out_dest << longest_ave_elapsed_time_exclusive[i].first << ": " << longest_ave_elapsed_time_exclusive[i].second << std::endl;
+	out_dest << std::endl;
+
+	out_dest << "------------------------------------------------------" << std::endl;
+	out_dest << "Operations that contributed the longest average inclusive elapsed time (average time divided by active thread count) (s): " << std::endl;
+	auto longest_ave_elapsed_time_inclusive = PerformanceProfiler::GetNumCallsByAveElapsedTimeInclusive();
+	for(size_t i = 0; i < max_print_count && i < longest_ave_elapsed_time_inclusive.size(); i++)
+		out_dest << longest_ave_elapsed_time_inclusive[i].first << ": " << longest_ave_elapsed_time_inclusive[i].second << std::endl;
+	out_dest << std::endl;
+#endif
 
 	out_dest << "------------------------------------------------------" << std::endl;
 	out_dest << "Operations that increased the memory usage the most in total exclusive (nodes): " << std::endl;
@@ -324,8 +355,6 @@ std::pair<int64_t, int64_t> PerformanceProfiler::GetTotalAndPositiveMemoryIncrea
 	return std::make_pair(total_mem_increase, positive_mem_increase);
 }
 
-//TODO 22414: finish generalizing this
-
 template<typename StatValueType, typename CounterValueType, typename CounterMapType>
 inline std::vector<std::pair<std::string, StatValueType>> GetPerformanceStat(CounterMapType &counters,
 	std::function<StatValueType(CounterValueType &)> counter_function)
@@ -388,6 +417,40 @@ std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByAv
 			return counter_values.totalTimeInclusive / counter_values.numCalls;
 		});
 }
+
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByTotalElapsedTimeExclusive()
+{
+	return GetPerformanceStat<double, PerformanceCounters>(_profiler_counters,
+		[](auto &counter_values) {
+			return counter_values.elapsedTimeExclusive;
+		});
+}
+
+std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByAveElapsedTimeExclusive()
+{
+	return GetPerformanceStat<double, PerformanceCounters>(_profiler_counters,
+		[](auto &counter_values) {
+			return counter_values.elapsedTimeExclusive / counter_values.numCalls;
+		});
+}
+
+std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByTotalElapsedTimeInclusive()
+{
+	return GetPerformanceStat<double, PerformanceCounters>(_profiler_counters,
+		[](auto &counter_values) {
+			return counter_values.elapsedTimeInclusive;
+		});
+}
+
+std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByAveElapsedTimeInclusive()
+{
+	return GetPerformanceStat<double, PerformanceCounters>(_profiler_counters,
+		[](auto &counter_values) {
+			return counter_values.elapsedTimeInclusive / counter_values.numCalls;
+		});
+}
+#endif
 
 std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByTotalMemoryIncreaseExclusive()
 {

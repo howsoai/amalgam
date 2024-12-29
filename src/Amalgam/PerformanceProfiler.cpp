@@ -22,7 +22,7 @@ struct PerformanceCounters
 	double totalTimeInclusive;
 	int64_t totalMemChangeInclusive;
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	double elapsedTimeExclusive;
 	double elapsedTimeInclusive;
 #endif
@@ -99,7 +99,7 @@ void PerformanceProfiler::EndOperation(int64_t memory_use = 0)
 		perf_counter.totalTimeInclusive += total_operation_time_inclusive;
 		perf_counter.totalMemChangeInclusive += total_operation_memory_inclusive;
 
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	#if defined(MULTITHREAD_SUPPORT)
 		auto num_active_threads = Concurrency::threadPool.GetNumActiveThreads()
 			+ Concurrency::urgentThreadPool.GetNumActiveThreads();
 		perf_counter.elapsedTimeExclusive += total_operation_time_exclusive / num_active_threads;
@@ -189,7 +189,7 @@ void PerformanceProfiler::PrintProfilingInformation(std::string outfile_name, si
 		out_dest << longest_total_time_inclusive[i].first << ": " << longest_total_time_inclusive[i].second << std::endl;
 	out_dest << std::endl;
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	out_dest << "------------------------------------------------------" << std::endl;
 	out_dest << "Operations that contributed the longest total exclusive elapsed time (accumulated time divided by active thread count) (s): " << std::endl;
 	auto longest_total_elapsed_time_exclusive = PerformanceProfiler::GetNumCallsByTotalElapsedTimeExclusive();
@@ -226,7 +226,7 @@ void PerformanceProfiler::PrintProfilingInformation(std::string outfile_name, si
 		out_dest << longest_ave_time_inclusive[i].first << ": " << longest_ave_time_inclusive[i].second << std::endl;
 	out_dest << std::endl;
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	out_dest << "------------------------------------------------------" << std::endl;
 	out_dest << "Operations that contributed the longest average exclusive elapsed time (average time divided by active thread count) (s): " << std::endl;
 	auto longest_ave_elapsed_time_exclusive = PerformanceProfiler::GetNumCallsByAveElapsedTimeExclusive();
@@ -294,7 +294,7 @@ void PerformanceProfiler::PrintProfilingInformation(std::string outfile_name, si
 	}
 	out_dest << std::endl;
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	out_dest << "------------------------------------------------------" << std::endl;
 	out_dest << "Variable assignments that had the most lock contention: " << std::endl;
 	auto most_lock_contention = PerformanceProfiler::GetPerformanceCounterResultsSortedByCount(_lock_contention_counters);
@@ -418,7 +418,7 @@ std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByAv
 		});
 }
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 std::vector<std::pair<std::string, double>> PerformanceProfiler::GetNumCallsByTotalElapsedTimeExclusive()
 {
 	return GetPerformanceStat<double, PerformanceCounters>(_profiler_counters,

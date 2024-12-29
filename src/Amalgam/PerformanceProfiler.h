@@ -55,7 +55,7 @@ namespace PerformanceProfiler
 	std::vector<std::pair<std::string, double>> GetNumCallsByTotalTimeInclusive();
 	std::vector<std::pair<std::string, double>> GetNumCallsByAveTimeInclusive();
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+#if defined(MULTITHREAD_SUPPORT)
 	std::vector<std::pair<std::string, double>> GetNumCallsByTotalElapsedTimeExclusive();
 	std::vector<std::pair<std::string, double>> GetNumCallsByAveElapsedTimeExclusive();
 

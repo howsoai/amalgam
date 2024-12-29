@@ -242,7 +242,12 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 
 		//could not find a common ancestor, so error out
 		if(b == nullptr)
+		{
+		#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+			assert(false);
+		#endif
 			return nullptr;
+		}
 
 		//each kind of child nodes
 		if(b_parent->IsAssociativeArray())
@@ -292,6 +297,9 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 		}
 		else //didn't work... odd/error condition
 		{
+		#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+			assert(false);
+		#endif
 			return nullptr;
 		}
 

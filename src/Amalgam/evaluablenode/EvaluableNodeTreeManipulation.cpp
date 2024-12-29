@@ -591,7 +591,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 	//see if both trees have ordered child nodes
 	if(tree1_ordered_childs->size() > 0 || tree2_ordered_childs->size() > 0)
 	{
-		auto iocnt = GetInstructionOrderedChildNodeType(generalized_node->GetType());
+		auto iocnt = GetOpcodeOrderedChildNodeType(generalized_node->GetType());
 		switch(iocnt)
 		{
 		case OCNT_UNORDERED:
@@ -755,7 +755,7 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 
 	if(tree1_ordered_nodes_size > 0 && tree2_ordered_nodes_size > 0)
 	{
-		auto iocnt = GetInstructionOrderedChildNodeType(tree1->GetType());
+		auto iocnt = GetOpcodeOrderedChildNodeType(tree1->GetType());
 
 		//if there's only one node in each, then just use OCNT_POSITION because
 		// it's more efficient and the pairing doesn't matter
@@ -1456,7 +1456,7 @@ std::pair<EvaluableNode *, double> EvaluableNodeTreeManipulation::CommonalityBet
 		return std::make_pair(n1, 0.25);
 		
 	//see if compatible opcode ordering
-	if(GetInstructionOrderedChildNodeType(n1_type) == GetInstructionOrderedChildNodeType(n2_type))
+	if(GetOpcodeOrderedChildNodeType(n1_type) == GetOpcodeOrderedChildNodeType(n2_type))
 		return std::make_pair(n1, 0.125);
 		
 	return std::make_pair(nullptr, 0.0);

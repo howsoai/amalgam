@@ -390,10 +390,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 		evaluableNodeManager->EnsureNodeIsModifiable(to_lookup);
 
 		//overwrite values in the ordered
-		auto &ocn = to_lookup->GetOrderedChildNodes();
-		for(size_t i = 0; i < ocn.size(); i++)
+		auto &lookup_ocn = to_lookup->GetOrderedChildNodes();
+		for(size_t i = 0; i < lookup_ocn.size(); i++)
 		{
-			auto &cn = ocn[i];
+			auto &cn = lookup_ocn[i];
 			StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(cn);
 
 			//if there are values passed in, free them to be clobbered

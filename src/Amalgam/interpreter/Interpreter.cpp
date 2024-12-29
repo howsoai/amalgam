@@ -731,13 +731,15 @@ EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference fun
 		{
 			PushNewConstructionContext(nullptr, cur_node, EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 
+			bool first_node = true;
 			for(auto &[e_id, e] : cur_node->GetMappedChildNodesReference())
 			{
 				SetTopCurrentIndexInConstructionStack(e_id);
 				SetTopCurrentValueInConstructionStack(e);
 				auto new_e = RewriteByFunction(function, e, original_node_to_new_node);
 
-				cur_node.UpdatePropertiesBasedOnAttachedNode(new_e);
+				cur_node.UpdatePropertiesBasedOnAttachedNode(new_e, first_node);
+				first_node = false;
 				e = new_e;
 			}
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
@@ -755,7 +757,7 @@ EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference fun
 					SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
 					SetTopCurrentValueInConstructionStack(ocn[i]);
 					auto new_e = RewriteByFunction(function, ocn[i], original_node_to_new_node);
-					cur_node.UpdatePropertiesBasedOnAttachedNode(new_e);
+					cur_node.UpdatePropertiesBasedOnAttachedNode(new_e, i == 0);
 					ocn[i] = new_e;
 				}
 

@@ -84,6 +84,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 					concurrency_manager.EndConcurrency();
 
 					concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(result);
+					if(result.unique && !concurrency_manager.HadSideEffects())
+						evaluableNodeManager->FreeNodeTreeIfPossible(list);
+
 					return result;
 				}
 			}
@@ -99,7 +102,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 
 				EvaluableNodeReference element_result = InterpretNode(function);
 				result_ocn[i] = element_result;
-				result.UpdatePropertiesBasedOnAttachedNode(element_result);
+				result.UpdatePropertiesBasedOnAttachedNode(element_result, i == 0);
 			}
 
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
@@ -147,6 +150,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 					concurrency_manager.EndConcurrency();
 
 					concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(result);
+					if(result.unique && !concurrency_manager.HadSideEffects())
+						evaluableNodeManager->FreeNodeTreeIfPossible(list);
+
 					return result;
 				}
 			}
@@ -154,6 +160,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 
 			PushNewConstructionContext(list, result, EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 
+			bool first_node = true;
 			for(auto &[result_id, result_node] : result_mcn)
 			{
 				SetTopCurrentIndexInConstructionStack(result_id);
@@ -167,12 +174,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 				//in order to keep the node properties to be updated below
 				EvaluableNodeReference element_result = InterpretNode(function);
 				result_node = element_result;
-				result.UpdatePropertiesBasedOnAttachedNode(element_result);
+				result.UpdatePropertiesBasedOnAttachedNode(element_result, first_node);
+				first_node = false;
 			}
 
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
 				result.unique = false;
 		}
+
+		//result will be marked if not unique if there were any side effects
+		if(result.unique)
+			evaluableNodeManager->FreeNodeTreeIfPossible(list);
 	}
 	else //multiple inputs
 	{
@@ -243,7 +255,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 
 				EvaluableNodeReference element_result = InterpretNode(function);
 				result->GetOrderedChildNodes()[index] = element_result;
-				result.UpdatePropertiesBasedOnAttachedNode(element_result);
+				result.UpdatePropertiesBasedOnAttachedNode(element_result, index == 0);
 			}
 
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
@@ -821,55 +833,76 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPLY(EvaluableNode *en, b
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	//get the target
-	auto source = InterpretNode(ocn[1]);
-	if(source == nullptr)
-		source.SetReference(evaluableNodeManager->AllocNode(ENT_NULL));
-
-	evaluableNodeManager->EnsureNodeIsModifiable(source);
-
-	auto node_stack = CreateOpcodeStackStateSaver(source);
+	//can't interpret for immediate use in case the node has child nodes that will be prepended
+	auto type_node = InterpretNode(ocn[0]);
+	if(EvaluableNode::IsNull(type_node))
+	{
+		evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
+		return EvaluableNodeReference::Null();
+	}
 
 	//get the type to set
 	EvaluableNodeType new_type = ENT_NULL;
-	auto type_node = InterpretNodeForImmediateUse(ocn[0]);
-	if(!EvaluableNode::IsNull(type_node))
+	if(type_node->GetType() == ENT_STRING)
 	{
-		if(type_node->GetType() == ENT_STRING)
+		auto new_type_sid = type_node->GetStringIDReference();
+		new_type = GetEvaluableNodeTypeFromStringId(new_type_sid);
+	}
+	else
+	{
+		new_type = type_node->GetType();
+	}
+
+	if(!IsEvaluableNodeTypeValid(new_type))
+	{
+		evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
+		return EvaluableNodeReference::Null();
+	}
+
+	auto node_stack = CreateOpcodeStackStateSaver(type_node);
+
+	//if new_type doesn't affect anything and always creates a new value, then
+	//don't need to maintain source (can be interpreted as immediate) and can free it
+	bool transient_source_node = (!DoesOpcodeHaveSideEffects(new_type)
+		&& GetOpcodeNewValueReturnType(new_type) == ONVRT_NEW_VALUE);
+	EvaluableNodeReference source;
+
+	if(transient_source_node)
+		source = InterpretNodeForImmediateUse(ocn[1]);
+	else
+		source = InterpretNode(ocn[1]);
+
+	//change source type
+	if(source == nullptr)
+		source.SetReference(evaluableNodeManager->AllocNode(ENT_NULL));
+	evaluableNodeManager->EnsureNodeIsModifiable(source);
+	source->SetType(new_type, evaluableNodeManager, true);
+
+	//prepend any params
+	if(source->IsOrderedArray())
+	{
+		auto &type_node_ocn = type_node->GetOrderedChildNodes();
+		if(type_node_ocn.size() > 0)
 		{
-			auto new_type_sid = type_node->GetStringIDReference();
-			new_type = GetEvaluableNodeTypeFromStringId(new_type_sid);
-			evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
-			if(!IsEvaluableNodeTypeValid(new_type))
-				return EvaluableNodeReference::Null();
+			auto &source_ocn = source->GetOrderedChildNodesReference();
+			source_ocn.insert(
+				begin(source_ocn), begin(type_node_ocn), end(type_node_ocn));
+			source.UpdatePropertiesBasedOnAttachedNode(type_node);
 
-			source->SetType(new_type, evaluableNodeManager, true);
-		}
-		else
-		{
-			new_type = type_node->GetType();
-			auto &type_node_ocn = type_node->GetOrderedChildNodes();
-
-			//set the type before possibly inserting any new child nodes
-			source->SetType(new_type, evaluableNodeManager, true);
-
-			//see if need to prepend anything to the source before changing type
-			if(type_node_ocn.size() == 0)
-				evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
-			else if(source->IsOrderedArray())
-			{
-				//prepend the parameters of source
-				auto &source_ocn = source->GetOrderedChildNodesReference();
-				source_ocn.insert(
-					begin(source_ocn), begin(type_node_ocn), end(type_node_ocn));
-				source.UpdatePropertiesBasedOnAttachedNode(type_node);
-			}
+			//can transfer ownership of the nodes, so can be freed below
+			if(type_node.unique && !type_node->GetNeedCycleCheck())
+				type_node_ocn.clear();
 		}
 	}
+	evaluableNodeManager->FreeNodeTreeIfPossible(type_node);
+	node_stack.PopEvaluableNode();
 
 	//apply the new type, using whether or not it was a unique reference,
 	//passing through whether an immediate_result is desired
 	EvaluableNodeReference result = InterpretNode(source, immediate_result);
+
+	if(transient_source_node)
+		evaluableNodeManager->FreeNodeTreeIfPossible(source);
 
 	return result;
 }
@@ -1163,7 +1196,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_INDEX(EvaluableNo
 	EvaluableNode **target = TraverseToDestinationFromTraversalPathList(&container.GetReference(), index, false);
 	bool found = (target != nullptr);
 
-	return ReuseOrAllocOneOfReturn(index, container, found, immediate_result);
+	evaluableNodeManager->FreeNodeTreeIfPossible(index);
+	evaluableNodeManager->FreeNodeTreeIfPossible(container);
+	return AllocReturn(found, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNode *en, bool immediate_result)
@@ -1231,7 +1266,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 			found = true;
 	}
 
-	return ReuseOrAllocOneOfReturn(value, container, found, immediate_result);
+	evaluableNodeManager->FreeNodeTreeIfPossible(value);
+	evaluableNodeManager->FreeNodeTreeIfPossible(container);
+	return AllocReturn(found, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, bool immediate_result)
@@ -1602,7 +1639,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOCIATE(EvaluableNode *e
 
 			//handoff the reference from index_value to the assoc
 			new_assoc->SetMappedChildNodeWithReferenceHandoff(key_sid, value);
-			new_assoc.UpdatePropertiesBasedOnAttachedNode(value);
+			new_assoc.UpdatePropertiesBasedOnAttachedNode(value, i == 0);
 		}
 
 		if(PopConstructionContextAndGetExecutionSideEffectFlag())
@@ -1765,19 +1802,24 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNZIP(EvaluableNode *en, b
 
 	auto &index_list_ocn = index_list->GetOrderedChildNodes();
 	result.UpdatePropertiesBasedOnAttachedNode(zipped, true);
+	size_t num_indices = index_list_ocn.size();
+	//can't guarantee cycle free since an index could be duplicated
+	if(num_indices > 1)
+		result.SetNeedCycleCheck(true);
 
 	auto &result_ocn = result->GetOrderedChildNodesReference();
-	result_ocn.reserve(index_list_ocn.size());
+	result_ocn.reserve(num_indices);
 
 	if(EvaluableNode::IsAssociativeArray(zipped))
 	{
+		auto &zipped_mcn = zipped->GetMappedChildNodesReference();
 		for(auto &index : index_list_ocn)
 		{
 			StringInternPool::StringID index_sid = EvaluableNode::ToStringIDIfExists(index, true);
 
-			EvaluableNode **found = zipped->GetMappedChildNode(index_sid);
-			if(found != nullptr)
-				result_ocn.push_back(*found);
+			auto found_index = zipped_mcn.find(index_sid);
+			if(found_index != end(zipped_mcn))
+				result_ocn.push_back(found_index->second);
 			else
 				result_ocn.push_back(nullptr);
 		}

@@ -692,11 +692,11 @@ protected:
 	inline double AccumulatePartialSumsForNominalNumberValueIfExists(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		double value, size_t query_feature_index, SBFDSColumnData &column, bool high_accuracy)
 	{
-		auto [value_index, exact_index_found] = column.FindExactIndexForValue(value);
-		if(exact_index_found)
+		auto &value_entry = column.sortedNumberValueEntries.find(value);
+		if(value_entry != end(column.sortedNumberValueEntries))
 		{
 			double term = r_dist_eval.ComputeDistanceTermNominal(value, ENIVT_NUMBER, query_feature_index, high_accuracy);
-			AccumulatePartialSums(column.sortedNumberValueEntries[value_index]->indicesWithValue, query_feature_index, term);
+			AccumulatePartialSums(value_entry->second.indicesWithValue, query_feature_index, term);
 			return term;
 		}
 

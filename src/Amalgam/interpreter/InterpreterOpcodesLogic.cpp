@@ -23,7 +23,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_AND(EvaluableNode *en, boo
 			cur = cn;
 
 			if(!EvaluableNode::ToBool(cur))
-				return evaluableNodeManager->ReuseOrAllocNode(cur, false);
+			{
+				evaluableNodeManager->FreeNodeTreeIfPossible(cur);
+				return AllocReturn(false, immediate_result);
+			}
 		}
 
 		return cur;
@@ -45,7 +48,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_AND(EvaluableNode *en, boo
 		else
 		{
 			if(!EvaluableNode::ToBool(cur))
-				return ReuseOrAllocReturn(cur, false, immediate_result);
+			{
+				evaluableNodeManager->FreeNodeTreeIfPossible(cur);
+				return AllocReturn(false, immediate_result);
+			}
 		}
 	}
 
@@ -76,7 +82,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OR(EvaluableNode *en, bool
 				return cur;
 		}
 
-		return evaluableNodeManager->ReuseOrAllocNode(cur, false);
+		evaluableNodeManager->FreeNodeTreeIfPossible(cur);
+		return AllocReturn(false, immediate_result);
 	}
 #endif
 
@@ -91,7 +98,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OR(EvaluableNode *en, bool
 			return cur;
 	}
 
-	return ReuseOrAllocReturn(cur, false, immediate_result);
+	evaluableNodeManager->FreeNodeTreeIfPossible(cur);
+	return AllocReturn(false, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_XOR(EvaluableNode *en, bool immediate_result)
@@ -150,7 +158,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT(EvaluableNode *en, boo
 	else
 	{
 		bool is_true = EvaluableNode::ToBool(cur);
-		return ReuseOrAllocReturn(cur, !is_true, immediate_result);
+		evaluableNodeManager->FreeNodeTreeIfPossible(cur);
+		return AllocReturn(!is_true, immediate_result);
 	}	
 }
 
@@ -179,12 +188,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EQUAL(EvaluableNode *en, b
 			}
 
 			if(!EvaluableNode::AreDeepEqual(to_match, cur))
-				return evaluableNodeManager->ReuseOrAllocOneOfNodes(to_match, cur, false);
+			{
+				evaluableNodeManager->FreeNodeTreeIfPossible(to_match);
+				evaluableNodeManager->FreeNodeTreeIfPossible(cur);
+				return AllocReturn(false, immediate_result);
+			}
 
 			evaluableNodeManager->FreeNodeTreeIfPossible(cur);
 		}
 
-		return evaluableNodeManager->ReuseOrAllocNode(to_match, true);
+		evaluableNodeManager->FreeNodeTreeIfPossible(to_match);
+		return AllocReturn(false, immediate_result);
 	}
 #endif
 
@@ -204,12 +218,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_EQUAL(EvaluableNode *en, b
 		}
 
 		if(!EvaluableNode::AreDeepEqual(to_match, cur))
-			return ReuseOrAllocOneOfReturn(to_match, cur, false, immediate_result);
+		{
+			evaluableNodeManager->FreeNodeTreeIfPossible(to_match);
+			evaluableNodeManager->FreeNodeTreeIfPossible(cur);
+			return AllocReturn(false, immediate_result);
+		}
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(cur);
 	}
 
-	return ReuseOrAllocReturn(to_match, true, immediate_result);
+	evaluableNodeManager->FreeNodeTreeIfPossible(to_match);
+	return AllocReturn(true, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_NEQUAL(EvaluableNode *en, bool immediate_result)
@@ -257,7 +276,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NEQUAL(EvaluableNode *en, 
 		EvaluableNodeReference b = InterpretNodeForImmediateUse(ocn[1]);
 
 		bool a_b_not_equal = (!EvaluableNode::AreDeepEqual(a, b));
-		return ReuseOrAllocOneOfReturn(a, b, a_b_not_equal, immediate_result);
+		evaluableNodeManager->FreeNodeTreeIfPossible(a);
+		evaluableNodeManager->FreeNodeTreeIfPossible(b);
+		return AllocReturn(a_b_not_equal, immediate_result);
 	}
 
 	auto node_stack = CreateOpcodeStackStateSaver();
@@ -347,7 +368,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LESS_and_LEQUAL(EvaluableN
 
 	auto prev = InterpretNodeForImmediateUse(ocn[0]);
 	if(EvaluableNode::IsNull(prev))
-		return evaluableNodeManager->ReuseOrAllocNode(prev, false);
+	{
+		evaluableNodeManager->FreeNodeTreeIfPossible(prev);
+		return AllocReturn(false, immediate_result);
+	}
 
 	auto node_stack = CreateOpcodeStackStateSaver(prev);
 
@@ -357,8 +381,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LESS_and_LEQUAL(EvaluableN
 		auto cur = InterpretNodeForImmediateUse(ocn[i]);
 
 		if(EvaluableNode::IsNull(cur)
-				|| !EvaluableNode::IsLessThan(prev, cur, en->GetType() == ENT_LEQUAL))
-			return ReuseOrAllocOneOfReturn(prev, cur, false, immediate_result);
+			|| !EvaluableNode::IsLessThan(prev, cur, en->GetType() == ENT_LEQUAL))
+		{
+			evaluableNodeManager->FreeNodeTreeIfPossible(prev);
+			evaluableNodeManager->FreeNodeTreeIfPossible(cur);
+			return AllocReturn(false, immediate_result);
+		}
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(prev);
 		prev = cur;
@@ -368,7 +396,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LESS_and_LEQUAL(EvaluableN
 	}
 
 	//nothing is out of order
-	return ReuseOrAllocReturn(prev, true, immediate_result);
+	evaluableNodeManager->FreeNodeTreeIfPossible(prev);
+	return AllocReturn(true, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GREATER_and_GEQUAL(EvaluableNode *en, bool immediate_result)
@@ -423,7 +452,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GREATER_and_GEQUAL(Evaluab
 
 	auto prev = InterpretNodeForImmediateUse(ocn[0]);
 	if(EvaluableNode::IsNull(prev))
-		return evaluableNodeManager->ReuseOrAllocNode(prev, false);
+	{
+		evaluableNodeManager->FreeNodeTreeIfPossible(prev);
+		return AllocReturn(false, immediate_result);
+	}
 
 	auto node_stack = CreateOpcodeStackStateSaver(prev);
 
@@ -433,8 +465,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GREATER_and_GEQUAL(Evaluab
 		auto cur = InterpretNodeForImmediateUse(ocn[i]);
 
 		if(EvaluableNode::IsNull(cur)
-				|| !EvaluableNode::IsLessThan(cur, prev, en->GetType() == ENT_GEQUAL))
-			return ReuseOrAllocOneOfReturn(prev, cur, false, immediate_result);
+			|| !EvaluableNode::IsLessThan(cur, prev, en->GetType() == ENT_GEQUAL))
+		{
+			evaluableNodeManager->FreeNodeTreeIfPossible(prev);
+			evaluableNodeManager->FreeNodeTreeIfPossible(cur);
+			return AllocReturn(false, immediate_result);
+		}
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(prev);
 		prev = cur;
@@ -444,7 +480,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GREATER_and_GEQUAL(Evaluab
 	}
 
 	//nothing is out of order
-	return ReuseOrAllocReturn(prev, true, immediate_result);
+	evaluableNodeManager->FreeNodeTreeIfPossible(prev);
+	return AllocReturn(true, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TYPE_EQUALS(EvaluableNode *en, bool immediate_result)
@@ -479,12 +516,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TYPE_EQUALS(EvaluableNode 
 				cur_type = cur->GetType();
 
 			if(cur_type != to_match_type)
-				return ReuseOrAllocOneOfReturn(to_match, cur, false, immediate_result);
+			{
+				evaluableNodeManager->FreeNodeTreeIfPossible(to_match);
+				evaluableNodeManager->FreeNodeTreeIfPossible(cur);
+				return AllocReturn(false, immediate_result);
+			}
 
 			evaluableNodeManager->FreeNodeTreeIfPossible(cur);
 		}
 
-		return ReuseOrAllocReturn(to_match, true, immediate_result);
+		evaluableNodeManager->FreeNodeTreeIfPossible(to_match);
+		return AllocReturn(true, immediate_result);
 	}
 #endif
 
@@ -510,12 +552,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TYPE_EQUALS(EvaluableNode 
 			cur_type = cur->GetType();
 
 		if(cur_type != to_match_type)
-			return ReuseOrAllocOneOfReturn(to_match, cur, false, immediate_result);
+		{
+			evaluableNodeManager->FreeNodeTreeIfPossible(to_match);
+			evaluableNodeManager->FreeNodeTreeIfPossible(cur);
+			return AllocReturn(false, immediate_result);
+		}
 
 		evaluableNodeManager->FreeNodeTreeIfPossible(cur);
 	}
 
-	return ReuseOrAllocReturn(to_match, true, immediate_result);
+	evaluableNodeManager->FreeNodeTreeIfPossible(to_match);
+	return AllocReturn(true, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TYPE_NEQUALS(EvaluableNode *en, bool immediate_result)
@@ -539,7 +586,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TYPE_NEQUALS(EvaluableNode
 		if(b != nullptr)
 			b_type = b->GetType();
 
-		return ReuseOrAllocOneOfReturn(a, b, a_type != b_type, immediate_result);
+		evaluableNodeManager->FreeNodeTreeIfPossible(a);
+		evaluableNodeManager->FreeNodeTreeIfPossible(b);
+		return AllocReturn(a_type != b_type, immediate_result);
 	}
 
 	std::vector<EvaluableNodeReference> values(ocn.size());

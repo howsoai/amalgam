@@ -364,7 +364,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 
 		evaluableNodeManager->EnsureNodeIsModifiable(to_lookup);
 
-		//overwrite values in the ordered 
+		//overwrite values in the ordered
+		bool first_node = true;
 		for(auto &[cn_id, cn] : to_lookup->GetMappedChildNodesReference())
 		{
 			//if there are values passed in, free them to be clobbered
@@ -374,7 +375,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 			EvaluableNodeReference value = target_entity->GetValueAtLabel(cn_id, evaluableNodeManager, direct, target_entity == curEntity);
 
 			cn = value;
-			to_lookup.UpdatePropertiesBasedOnAttachedNode(value);
+			to_lookup.UpdatePropertiesBasedOnAttachedNode(value, first_node);
+			first_node = false;
 		}
 
 		return to_lookup;
@@ -387,8 +389,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 		evaluableNodeManager->EnsureNodeIsModifiable(to_lookup);
 
 		//overwrite values in the ordered
-		for(auto &cn : to_lookup->GetOrderedChildNodes())
+		auto &lookup_ocn = to_lookup->GetOrderedChildNodes();
+		for(size_t i = 0; i < lookup_ocn.size(); i++)
 		{
+			auto &cn = lookup_ocn[i];
 			StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(cn);
 
 			//if there are values passed in, free them to be clobbered
@@ -398,7 +402,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 			EvaluableNodeReference value = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager, direct, target_entity == curEntity);
 
 			cn = value;
-			to_lookup.UpdatePropertiesBasedOnAttachedNode(value);
+			to_lookup.UpdatePropertiesBasedOnAttachedNode(value, i == 0);
 		}
 
 		return to_lookup;

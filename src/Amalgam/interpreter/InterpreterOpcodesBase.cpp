@@ -351,8 +351,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_UNPARSE(EvaluableNode *en,
 
 	auto tree = InterpretNodeForImmediateUse(ocn[0]);
 	std::string s = Parser::Unparse(tree, pretty, true, deterministic_order);
+	evaluableNodeManager->FreeNodeTreeIfPossible(tree);
 
-	return ReuseOrAllocReturn(tree, s, immediate_result);
+	return AllocReturn(s, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_IF(EvaluableNode *en, bool immediate_result)
@@ -605,7 +606,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_WHILE(EvaluableNode *en, b
 
 	PushNewConstructionContext(nullptr, nullptr, EvaluableNodeImmediateValueWithType(0.0), nullptr);
 
-	auto node_stack = CreateOpcodeStackStateSaver();
 	size_t loop_iteration = 0;
 	for(;;)
 	{
@@ -1752,7 +1752,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, bo
 				StringInternPool::StringID selected_sid = GetRandomWeightedKey(assoc, randomStream, true);
 				EvaluableNodeReference selected_value = Parser::ParseFromKeyStringId(selected_sid, evaluableNodeManager);
 				retval_ocn.push_back(selected_value);
-				retval.UpdatePropertiesBasedOnAttachedNode(selected_value);
+				retval.UpdatePropertiesBasedOnAttachedNode(selected_value, i == 0);
 
 				//remove the element so it won't be reselected
 				assoc.erase(selected_sid);

@@ -738,8 +738,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, b
 	asset_params.UpdateResources();
 
 	bool successful_save = asset_manager.StoreResource(to_store, &asset_params, evaluableNodeManager);
+	evaluableNodeManager->FreeNodeTreeIfPossible(to_store);
 
-	return ReuseOrAllocReturn(to_store, successful_save, immediate_result);
+	return AllocReturn(successful_save, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode *en, bool immediate_result)

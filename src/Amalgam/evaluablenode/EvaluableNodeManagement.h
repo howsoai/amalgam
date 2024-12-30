@@ -60,11 +60,11 @@ public:
 	}
 
 	//when attached a child node, make sure that this node reflects the same properties
-	//if first_attachment_to_unique_node is true, then it will not call SetNeedCycleCheck(true)
+	//if first_attachment is true, then it will not call SetNeedCycleCheck(true) unless the attached node has the flag
 	//if the attached is not unique. Note that this parameter should not be set to true
 	//if the node can be accessed in any other way, such as the construction stack
 	void UpdatePropertiesBasedOnAttachedNode(EvaluableNodeReference &attached,
-		bool first_attachment_to_unique_node = false)
+		bool first_attachment = false)
 	{
 		if(attached.value.nodeValue.code == nullptr)
 			return;
@@ -74,7 +74,7 @@ public:
 			unique = false;
 
 			//first attachment doesn't need to automatically require a cycle check
-			if(first_attachment_to_unique_node)
+			if(first_attachment)
 			{
 				if(attached.value.nodeValue.code->GetNeedCycleCheck())
 					value.nodeValue.code->SetNeedCycleCheck(true);
@@ -406,7 +406,7 @@ public:
 		n->InitializeType(bool_value);
 		return n;
 	}
-	
+
 	inline EvaluableNode *AllocNode(double float_value)
 	{
 		EvaluableNode *n = AllocUninitializedNode();
@@ -472,129 +472,6 @@ public:
 		if(immediate_result)
 			return EvaluableNodeReference(value);
 		return EvaluableNodeReference(AllocNode(value), true);
-	}
-
-	//attempts to reuse candidate if it is unique and change it into the specified type
-	//if candidate is not unique, then it allocates and returns a new node
-	inline EvaluableNodeReference ReuseOrAllocNode(EvaluableNodeReference candidate, EvaluableNodeType type)
-	{
-		//if not cyclic, can attempt to free all child nodes
-		//if cyclic, don't try, in case a child node points back to candidate
-		if(candidate.unique && candidate != nullptr && !candidate->GetNeedCycleCheck())
-		{
-			if(candidate->IsAssociativeArray())
-			{
-				for(auto &[_, e] : candidate->GetMappedChildNodesReference())
-				{
-					if(e != nullptr)
-						FreeNodeTreeRecurse(e);
-				}
-			}
-			else if(!candidate->IsImmediate())
-			{
-				for(auto &e : candidate->GetOrderedChildNodesReference())
-				{
-					if(e != nullptr)
-						FreeNodeTreeRecurse(e);
-				}
-			}
-
-			candidate->Invalidate();
-			candidate->InitializeType(type);
-			return candidate;
-		}
-		else
-		{
-			return EvaluableNodeReference(AllocNode(type), true);
-		}
-	}
-
-	//like ReuseOrAllocNode but allocates an ENT_BOOL
-	inline EvaluableNodeReference ReuseOrAllocNode(EvaluableNodeReference candidate, bool value)
-	{
-		EvaluableNodeReference node = ReuseOrAllocNode(candidate, ENT_BOOL);
-		node->SetTypeViaBoolValue(value);
-		return node;
-	}
-
-	//like ReuseOrAllocNode but allocates an ENT_NUMBER
-	inline EvaluableNodeReference ReuseOrAllocNode(EvaluableNodeReference candidate, double value)
-	{
-		EvaluableNodeReference node = ReuseOrAllocNode(candidate, ENT_NUMBER);
-		node->SetTypeViaNumberValue(value);
-		return node;
-	}
-
-	//like ReuseOrAllocNode but allocates an ENT_STRING
-	inline EvaluableNodeReference ReuseOrAllocNode(EvaluableNodeReference candidate, StringInternPool::StringID value)
-	{
-		//perform a handoff in case candidate is the only value
-		string_intern_pool.CreateStringReference(value);
-		EvaluableNodeReference node = ReuseOrAllocNode(candidate, ENT_STRING);
-		node->SetTypeViaStringIdValueWithReferenceHandoff(value);
-		return node;
-	}
-
-	//like ReuseOrAllocNode but allocates an ENT_STRING
-	inline EvaluableNodeReference ReuseOrAllocNode(EvaluableNodeReference candidate, const std::string &value)
-	{
-		EvaluableNodeReference node = ReuseOrAllocNode(candidate, ENT_STRING);
-		node->SetStringValue(value);
-		return node;
-	}
-
-	//like ReuseOrAllocNode, but picks whichever node is reusable and frees the other if possible
-	//will try candidate_1 first
-	inline EvaluableNodeReference ReuseOrAllocOneOfNodes(
-		EvaluableNodeReference candidate_1, EvaluableNodeReference candidate_2, EvaluableNodeType type)
-	{
-		if(candidate_1.unique && candidate_1 != nullptr)
-		{
-			FreeNodeTreeIfPossible(candidate_2);
-			return ReuseOrAllocNode(candidate_1, type);
-		}
-
-		//candidate_1 wasn't unique, so try for candidate 2
-		return ReuseOrAllocNode(candidate_2, type);
-	}
-
-	//like ReuseOrAllocOneOfNodes but allocates an ENT_BOOL
-	inline EvaluableNodeReference ReuseOrAllocOneOfNodes(
-		EvaluableNodeReference candidate_1, EvaluableNodeReference candidate_2, bool value)
-	{
-		EvaluableNodeReference node = ReuseOrAllocOneOfNodes(candidate_1, candidate_2, ENT_BOOL);
-		node->SetTypeViaBoolValue(value);
-		return node;
-	}
-
-
-	//like ReuseOrAllocOneOfNodes but allocates an ENT_NUMBER
-	inline EvaluableNodeReference ReuseOrAllocOneOfNodes(
-		EvaluableNodeReference candidate_1, EvaluableNodeReference candidate_2, double value)
-	{
-		EvaluableNodeReference node = ReuseOrAllocOneOfNodes(candidate_1, candidate_2, ENT_NUMBER);
-		node->SetTypeViaNumberValue(value);
-		return node;
-	}
-
-	//like ReuseOrAllocOneOfNodes but allocates an ENT_STRING
-	inline EvaluableNodeReference ReuseOrAllocOneOfNodes(
-		EvaluableNodeReference candidate_1, EvaluableNodeReference candidate_2, StringInternPool::StringID value)
-	{
-		//perform a handoff in case one of the candidates is the only value
-		string_intern_pool.CreateStringReference(value);
-		EvaluableNodeReference node = ReuseOrAllocOneOfNodes(candidate_1, candidate_2, ENT_STRING);
-		node->SetTypeViaStringIdValueWithReferenceHandoff(value);
-		return node;
-	}
-
-	//like ReuseOrAllocOneOfNodes but allocates an ENT_STRING
-	inline EvaluableNodeReference ReuseOrAllocOneOfNodes(
-		EvaluableNodeReference candidate_1, EvaluableNodeReference candidate_2, const std::string &value)
-	{
-		EvaluableNodeReference node = ReuseOrAllocOneOfNodes(candidate_1, candidate_2, ENT_STRING);
-		node->SetStringValue(value);
-		return node;
 	}
 
 	//Copies the data structure and everything underneath it, modifying labels as specified
@@ -743,7 +620,7 @@ public:
 	#endif
 
 		en->Invalidate();
-		AddNodeToTLab(en);
+		AddNodeToTLAB(en);
 	}
 
 	//attempts to free the node reference
@@ -759,7 +636,7 @@ public:
 		if(enr.unique && enr != nullptr && !enr->GetNeedCycleCheck())
 		{
 			enr->Invalidate();
-			AddNodeToTLab(enr);
+			AddNodeToTLAB(enr);
 		}
 	}
 
@@ -779,7 +656,7 @@ public:
 		if(IsEvaluableNodeTypeImmediate(en->GetType()))
 		{
 			en->Invalidate();
-			AddNodeToTLab(en);
+			AddNodeToTLAB(en);
 		}
 		else if(!en->GetNeedCycleCheck())
 		{
@@ -787,12 +664,6 @@ public:
 		}
 		else //more costly cyclic free
 		{
-		#ifdef MULTITHREAD_SUPPORT
-			//need to acquire a read lock, because if any node is reclaimed or compacted while this free is taking place,
-			// and another thread allocates it, then this cyclic free could accidentally free a node that was freed and
-			// reclaimed by another thread
-			Concurrency::ReadLock lock(managerAttributesMutex);
-		#endif
 			FreeNodeTreeWithCyclesRecurse(en);
 		}
 	}
@@ -888,10 +759,6 @@ public:
 		for(EvaluableNode *en : nodes)
 			nr.FreeNodeReference(en);
 	}
-
-	//compacts allocated nodes so that the node pool can be used more efficiently
-	// and can improve reuse without calling the more expensive FreeAllNodesExceptReferencedNodes
-	void CompactAllocatedNodes();
 
 	//returns the number of nodes currently being used that have not been freed yet
 	__forceinline size_t GetNumberOfUsedNodes()
@@ -1111,7 +978,7 @@ protected:
 
 	// Get a pointer to the next available node from the thread local allocation buffer.
 	// If the buffer is empty, returns null.
-	inline EvaluableNode *GetNextNodeFromTLab()
+	inline EvaluableNode *GetNextNodeFromTLAB()
 	{
 		if(threadLocalAllocationBuffer.size() > 0 && this == lastEvaluableNodeManager)
 		{
@@ -1134,7 +1001,7 @@ protected:
 	// If this is accessed by a different EvaluableNode manager than
 	// the last time it was called on this thread, it will clear the buffer
 	// before adding the node.
-	inline void AddNodeToTLab(EvaluableNode *en)
+	inline void AddNodeToTLAB(EvaluableNode *en)
 	{
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 		assert(en->IsNodeDeallocated());

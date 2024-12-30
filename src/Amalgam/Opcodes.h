@@ -472,7 +472,7 @@ constexpr OpcodeNewValueReturnType GetOpcodeNewValueReturnType(EvaluableNodeType
 	case ENT_XOR:	case ENT_NOT:
 	case ENT_EQUAL:	case ENT_NEQUAL:	case ENT_LESS:	case ENT_LEQUAL:
 	case ENT_GREATER:	case ENT_GEQUAL:	case ENT_TYPE_EQUALS:
-	case ENT_TYPE_NEQUALS:	case ENT_TRUE:	case ENT_FALSE:	case ENT_NULL:
+	case ENT_TYPE_NEQUALS:	case ENT_NULL:	case ENT_BOOL:
 	case ENT_NUMBER:	case ENT_STRING:
 	case ENT_GET_TYPE:	case ENT_GET_TYPE_STRING:
 	case ENT_FORMAT:

@@ -35,6 +35,8 @@ void SeparableBoxFilterDataStore::BuildLabel(size_t column_index, const std::vec
 			entity_index, entities_with_number_values);
 	}
 
+	//TODO 22454: remove this logic and entitiesWithValuesBuffer
+
 	//sort the number values for efficient insertion, but keep the entities in their order
 	std::stable_sort(begin(entities_with_number_values), end(entities_with_number_values));
 

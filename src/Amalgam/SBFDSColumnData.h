@@ -140,6 +140,7 @@ public:
 			{
 				auto new_entry_pair = sortedNumberValueEntries.emplace(index_value.distance, index_value.distance);
 				last_entry = new_entry_pair.first;
+				previous_value = index_value.distance;
 			}
 
 			last_entry->second.indicesWithValue.InsertNewLargestInteger(index_value.reference);
@@ -255,14 +256,6 @@ public:
 				size_t new_value_index = 0;
 				if(old_value_entry != end(sortedNumberValueEntries))
 				{
-					new_value_entry->second.indicesWithValue.insert(index);
-
-					//if new value didn't exist exists, insert it properly
-					if(!new_value_entry_emplacement.second)
-						internedNumberValues.InsertValueEntry(new_value_entry->second, sortedNumberValueEntries.size());
-
-					new_value_index = new_value_entry->second.valueInternIndex;
-
 					//if there are multiple entries for this number, just remove the id from the old value
 					if(old_value_entry->second.indicesWithValue.size() > 1)
 					{
@@ -273,6 +266,14 @@ public:
 						internedNumberValues.DeleteInternIndex(old_value_entry->second.valueInternIndex);
 						sortedNumberValueEntries.erase(old_value_entry);
 					}
+
+					new_value_entry->second.indicesWithValue.insert(index);
+
+					//if new value didn't exist exists, insert it properly
+					if(new_value_entry_emplacement.second)
+						internedNumberValues.InsertValueEntry(new_value_entry->second, sortedNumberValueEntries.size());
+
+					new_value_index = new_value_entry->second.valueInternIndex;
 				}
 				else //shouldn't make it here, but ensure integrity just in case
 				{

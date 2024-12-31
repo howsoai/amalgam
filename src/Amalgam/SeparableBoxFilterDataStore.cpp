@@ -307,9 +307,6 @@ void SeparableBoxFilterDataStore::UpdateEntityLabel(Entity *entity, size_t entit
 	else
 		OptimizeColumn(column_index);
 
-#ifdef SBFDS_VERIFICATION
-	VerifyAllEntitiesForColumn(column_index);
-#endif
 }
 
 //populates distances_out with all entities and their distances that have a distance to target less than max_dist
@@ -865,12 +862,12 @@ void SeparableBoxFilterDataStore::VerifyAllEntitiesForColumn(size_t column_index
 		if(column_data->internedNumberValues.valueInterningEnabled)
 		{
 			auto &interns = column_data->internedNumberValues;
-			assert(value_entry->valueInternIndex < interns.internedIndexToValue.size());
-			assert(!FastIsNaN(interns.internedIndexToValue[value_entry->valueInternIndex]));
+			assert(value_entry.second.valueInternIndex < interns.internedIndexToValue.size());
+			assert(!FastIsNaN(interns.internedIndexToValue[value_entry.second.valueInternIndex]));
 		}
 
 		//ensure all entity ids are not out of range
-		for(auto entity_index : value_entry->indicesWithValue)
+		for(auto entity_index : value_entry.second.indicesWithValue)
 			assert(entity_index < numEntities);
 	}
 

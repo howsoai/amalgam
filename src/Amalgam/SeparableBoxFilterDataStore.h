@@ -692,7 +692,7 @@ protected:
 	inline double AccumulatePartialSumsForNominalNumberValueIfExists(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		double value, size_t query_feature_index, SBFDSColumnData &column, bool high_accuracy)
 	{
-		auto &value_entry = column.sortedNumberValueEntries.find(value);
+		auto value_entry = column.sortedNumberValueEntries.find(value);
 		if(value_entry != end(column.sortedNumberValueEntries))
 		{
 			double term = r_dist_eval.ComputeDistanceTermNominal(value, ENIVT_NUMBER, query_feature_index, high_accuracy);

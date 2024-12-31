@@ -936,7 +936,7 @@ public:
 			if(find_max)
 			{
 				//can't use a range-based for efficiently because going in reverse order
-				for(auto &value_entry = sortedNumberValueEntries.rbegin();
+				for(auto value_entry = sortedNumberValueEntries.rbegin();
 					value_entry != sortedNumberValueEntries.rend(); ++value_entry)
 				{
 					//add each index to the out indices and optionally output compute results
@@ -1036,7 +1036,7 @@ public:
 	#ifdef DISABLE_SBFDS_VALUE_INTERNING
 		return true;
 	#endif
-		//TODO 22454: revisit this logic based on scale of data and number of operations needed (experiment w/ asteroid data set)
+		//TODO 22454: revisit this logic based on scale of data and number of operations needed and if can replace SIS data storage for entity-values (experiment w/ asteroid data set)
 
 		//use heuristic of sqrt number of values compared to num unique values
 		// (but computed with a multiply instead of sqrt)

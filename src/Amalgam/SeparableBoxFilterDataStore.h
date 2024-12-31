@@ -52,8 +52,6 @@ public:
 		//used when needing to accum entities with nulls
 		BitArrayIntegerSet nullAccumSet;
 
-		std::vector<DistanceReferencePair<size_t>> entitiesWithValues;
-
 		FlexiblePriorityQueue<CountDistanceReferencePair<size_t>> potentialGoodMatches;
 		StochasticTieBreakingPriorityQueue<DistanceReferencePair<size_t>> sortedResults;
 

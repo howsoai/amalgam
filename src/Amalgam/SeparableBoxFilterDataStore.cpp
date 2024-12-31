@@ -16,9 +16,6 @@ void SeparableBoxFilterDataStore::BuildLabel(size_t column_index, const std::vec
 	//can just inform entity to get on self for performance
 	bool is_label_accessible = !Entity::IsLabelPrivate(label_id);
 
-	auto &entities_with_number_values = parametersAndBuffers.entitiesWithValues;
-	entities_with_number_values.clear();
-
 	//clear value interning if applied
 	column_data->ConvertNumberInternsToValues();
 
@@ -30,17 +27,8 @@ void SeparableBoxFilterDataStore::BuildLabel(size_t column_index, const std::vec
 	for(size_t entity_index = 0; entity_index < entities.size(); entity_index++)
 	{
 		auto value = entities[entity_index]->GetValueAtLabelAsImmediateValue(label_id, is_label_accessible);
-
-		column_data->InsertNextIndexValueExceptNumbers(value.nodeType, value.nodeValue,
-			entity_index, entities_with_number_values);
+		column_data->InsertNextIndexValueExceptNumbers(value.nodeType, value.nodeValue, entity_index);
 	}
-
-	//TODO 22454: remove this logic and entitiesWithValuesBuffer
-
-	//sort the number values for efficient insertion, but keep the entities in their order
-	std::stable_sort(begin(entities_with_number_values), end(entities_with_number_values));
-
-	column_data->AppendSortedNumberIndicesWithSortedIndices(entities_with_number_values);
 
 	OptimizeColumn(column_index);
 

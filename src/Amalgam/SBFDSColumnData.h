@@ -46,6 +46,7 @@ public:
 		{	}
 
 		EvaluableNodeImmediateValue value;
+		//TODO 22454: attempt changing this to EfficientIntegerSet
 		SortedIntegerSet indicesWithValue;
 		size_t valueInternIndex;
 	};
@@ -58,10 +59,8 @@ public:
 
 	//like InsertIndexValue, but used only for building the column data from an empty column
 	//this function must be called on each index in ascending order; for example, index 2 must be called after index 1
-	//inserts number values in entities_with_number_values
-	//AppendSortedNumberIndicesWithSortedIndices should be called after all indices are inserted
-	void InsertNextIndexValueExceptNumbers(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue &value,
-		size_t index, std::vector<DistanceReferencePair<size_t>> &entities_with_number_values)
+	void InsertNextIndexValueExceptNumbers(EvaluableNodeImmediateValueType value_type,
+		EvaluableNodeImmediateValue &value, size_t index)
 	{
 		valueEntries[index] = value;
 
@@ -76,7 +75,10 @@ public:
 		else if(value_type == ENIVT_NUMBER)
 		{
 			numberIndices.insert(index);
-			entities_with_number_values.emplace_back(value.number, index);
+
+			auto new_entry_emplacement = sortedNumberValueEntries.try_emplace(value.number, value.number);
+			auto &value_entry_iter = new_entry_emplacement.first;
+			value_entry_iter->second.indicesWithValue.InsertNewLargestInteger(index);
 		}
 		else if(value_type == ENIVT_STRING_ID)
 		{
@@ -106,45 +108,6 @@ public:
 			size_entry->second->insert(index);
 
 			UpdateLargestCode(code_size, index);
-		}
-	}
-
-	//inserts indices assuming that they have been sorted by value,
-	// and that index_values are also sorted from smallest to largest
-	void AppendSortedNumberIndicesWithSortedIndices(std::vector<DistanceReferencePair<size_t>> &index_values)
-	{
-		if(index_values.size() == 0)
-			return;
-
-		//count unique values so only need to perform one allocation for the main list
-		size_t num_uniques = 1;
-		double prev_value = index_values[0].distance;
-		for(size_t i = 1; i < index_values.size(); i++)
-		{
-			if(prev_value != index_values[i].distance)
-			{
-				num_uniques++;
-				prev_value = index_values[i].distance;
-			}
-		}
-
-		numberIndices.ReserveNumIntegers(index_values.back().reference + 1);
-
-		double previous_value = std::numeric_limits<double>::quiet_NaN();
-		auto last_entry = end(sortedNumberValueEntries);
-		for(auto &index_value : index_values)
-		{
-			//if don't have the right bucket, then need to create one
-			//put the not outside of the equals, since the first value will be NaN
-			if(last_entry == end(sortedNumberValueEntries) || !(previous_value == index_value.distance))
-			{
-				auto new_entry_pair = sortedNumberValueEntries.emplace(index_value.distance, index_value.distance);
-				last_entry = new_entry_pair.first;
-				previous_value = index_value.distance;
-			}
-
-			last_entry->second.indicesWithValue.InsertNewLargestInteger(index_value.reference);
-			numberIndices.insert(index_value.reference);
 		}
 	}
 

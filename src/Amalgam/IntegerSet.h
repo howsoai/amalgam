@@ -1864,6 +1864,8 @@ protected:
 	{
 		//add 1 to round up to make it less likely to flip back and forth between types
 		size_t num_bais_elements_required = ((max_element + BitArrayIntegerSet::numBitsPerBucket - 1) / BitArrayIntegerSet::numBitsPerBucket) + 1;
+
+		//TODO 22454: revisit this heuristic, try 1.5, 1.1, 1, make generic across both methods
 		//use a heuristic of 2 values per bais bucket, since some operations are faster when can just iterate over a list
 		return (num_elements > 2 * num_bais_elements_required);
 	}

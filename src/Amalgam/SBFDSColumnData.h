@@ -1002,6 +1002,7 @@ public:
 	#endif
 		//TODO 22454: revisit this logic based on scale of data and number of operations needed and if can replace SIS data storage for entity-values (experiment w/ asteroid data set)
 		//try: 0.8 * numberIndices.size() ^ 0.65, revert when 1.5x above that number of values, and make a general function
+		//and/or try current value times 1.5 via * 3 / 2 to keep as integer
 
 		//use heuristic of sqrt number of values compared to num unique values
 		// (but computed with a multiply instead of sqrt)

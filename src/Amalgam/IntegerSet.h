@@ -1868,7 +1868,8 @@ protected:
 
 		//TODO 22454: revisit this heuristic, try 1.5, 1.1, 1, make generic across both methods
 		//use a heuristic of 2 values per bais bucket, since some operations are faster when can just iterate over a list
-		return (num_elements > 2 * num_bais_elements_required);
+		//return (num_elements > 2 * num_bais_elements_required);
+		return (num_elements > 3 * num_bais_elements_required);
 	}
 
 	//returns true if it would be more efficient to convert from bais to sis
@@ -1878,7 +1879,8 @@ protected:
 		//round this down (don't take ceil) to make it less likely to flip back and forth between types
 		size_t num_bais_elements_required = (max_element + BitArrayIntegerSet::numBitsPerBucket - 1) / BitArrayIntegerSet::numBitsPerBucket;
 		//use a heuristic of 2 values per bais bucket, since some operations are faster when can just iterate over a list
-		return (2 * num_bais_elements_required > num_elements);
+		//return (2 * num_bais_elements_required > num_elements);
+		return (3 * num_bais_elements_required > num_elements);
 	}
 
 	//converts data storage to bais; assumes it is already sis

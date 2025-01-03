@@ -627,7 +627,10 @@ public:
 	__forceinline void FreeNodeIfPossible(EvaluableNodeReference &enr)
 	{
 		if(enr.IsImmediateValue())
+		{
 			enr.FreeImmediateResources();
+			return;
+		}
 
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 		assert(enr == nullptr || enr->IsNodeValid());
@@ -864,6 +867,22 @@ public:
 		lastEvaluableNodeManager = nullptr;
 	}
 
+	//returns true if this EvaluableNodeManager is assigned to the thread local allocation buffer
+	inline bool IsAssignedToTLAB()
+	{
+		return (this == lastEvaluableNodeManager);
+	}
+
+	//assigns this EvaluableNodeManager to the thread local allocation buffer
+	inline void AssignToTLAB()
+	{
+		if(!IsAssignedToTLAB())
+		{
+			threadLocalAllocationBuffer.clear();
+			lastEvaluableNodeManager = this;
+		}
+	}
+
 protected:
 	//allocates an EvaluableNode of the respective memory type in the appropriate way
 	// returns an uninitialized EvaluableNode -- care must be taken to set fields properly
@@ -967,34 +986,17 @@ protected:
 	//extra space to allocate when allocating
 	static const double allocExpansionFactor;
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	thread_local
-#endif
-	// Keeps track of the the last EvaluableNodeManager that accessed 
-	// the thread local allocation buffer for a each thread.
-	// A given thread local allocation buffer should only have nodes associated with one manager.
-	// If a different manager accesses the buffer, it is cleared to maintain this invariant.
-	static inline EvaluableNodeManager *lastEvaluableNodeManager;
-
 	// Get a pointer to the next available node from the thread local allocation buffer.
 	// If the buffer is empty, returns null.
 	inline EvaluableNode *GetNextNodeFromTLAB()
 	{
-		if(threadLocalAllocationBuffer.size() > 0 && this == lastEvaluableNodeManager)
+		if(threadLocalAllocationBuffer.size() > 0 && IsAssignedToTLAB())
 		{
 			EvaluableNode *node = threadLocalAllocationBuffer.back();
 			threadLocalAllocationBuffer.pop_back();
 			return node;
 		}
-		else
-		{
-			if(lastEvaluableNodeManager != this)
-				ClearThreadLocalAllocationBuffer();
-
-			//set to null so nothing matches until more nodes are added
-			lastEvaluableNodeManager = nullptr;
-			return nullptr;
-		}
+		return nullptr;
 	}
 
 	// Adds a node to the thread local allocation buffer.
@@ -1007,13 +1009,8 @@ protected:
 		assert(en->IsNodeDeallocated());
 	#endif
 
-		if(this != lastEvaluableNodeManager)
-		{
-			threadLocalAllocationBuffer.clear();
-			lastEvaluableNodeManager = this;
-		}
-
-		threadLocalAllocationBuffer.push_back(en);
+		if(IsAssignedToTLAB())
+			threadLocalAllocationBuffer.push_back(en);
 	}
 
 private:
@@ -1021,9 +1018,23 @@ private:
 	//number of nodes to allocate at once for the thread local allocation buffer
 	static const int tlabBlockAllocationSize = 20;
 
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		thread_local
-	#endif
-		// Holds EvaluableNode*'s reserved for allocation by a specific thread
-		inline static std::vector<EvaluableNode *> threadLocalAllocationBuffer;
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	thread_local
+#endif
+		// Keeps track of the the last EvaluableNodeManager that accessed 
+		// the thread local allocation buffer for a each thread.
+		// A given thread local allocation buffer should only have nodes associated with one manager.
+		// If a different manager accesses the buffer, it is cleared to maintain this invariant.
+		static EvaluableNodeManager *lastEvaluableNodeManager;
+
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	thread_local
+#endif
+	// Holds EvaluableNode*'s reserved for allocation by a specific thread
+	static std::vector<EvaluableNode *> threadLocalAllocationBuffer;
+
+	inline static Concurrency::SingleMutex tlabCountMutex;
+	inline static std::atomic<size_t> tlabSize = 0;
+	inline static std::atomic<size_t> tlabSizeCount = 0;
+	inline static std::atomic<double> rollingAveTlabSize = 0.0;
 };

@@ -506,6 +506,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	memoryModificationLock.lock();
 #endif
 
+	evaluableNodeManager->AssignToTLAB();
+
 	//call opcodes should consume the outer return opcode if there is one
 	if(result.IsNonNullNodeReference() && result->GetType() == ENT_RETURN)
 		result = RemoveTopConcludeOrReturnNode(result, &called_entity->evaluableNodeManager);
@@ -591,6 +593,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	Concurrency::ReadLock enm_lock(container->evaluableNodeManager.memoryModificationMutex);
 	container.lock.unlock();
 #endif
+
+	evaluableNodeManager->AssignToTLAB();
 
 	//copy arguments to container, free args from this entity
 	EvaluableNodeReference called_entity_args = container->evaluableNodeManager.DeepAllocCopy(args);

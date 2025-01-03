@@ -13,6 +13,16 @@ Concurrency::ReadWriteMutex EvaluableNodeManager::memoryModificationMutex;
 
 const double EvaluableNodeManager::allocExpansionFactor = 1.5;
 
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+thread_local
+#endif
+	EvaluableNodeManager *EvaluableNodeManager::lastEvaluableNodeManager = nullptr;
+
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+thread_local
+#endif
+	std::vector<EvaluableNode *> EvaluableNodeManager::threadLocalAllocationBuffer;
+
 EvaluableNodeManager::~EvaluableNodeManager()
 {
 	if(lastEvaluableNodeManager == this)
@@ -171,8 +181,68 @@ void EvaluableNodeManager::FreeAllNodes()
 }
 
 EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
-{	
+{
+	if(!IsAssignedToTLAB())
+	{
+		//attempt to allocate enough nodes to refill thread local allocation buffer
+	#ifdef MULTITHREAD_SUPPORT
+		Concurrency::ReadLock read_lock(managerAttributesMutex);
+
+		size_t index_to_allocate = firstUnusedNodeIndex.fetch_add(1);
+	#else
+		size_t index_to_allocate = firstUnusedNodeIndex;
+		firstUnusedNodeIndex += 1;
+	#endif
+
+		if(index_to_allocate < nodes.size())
+		{
+			if(nodes[index_to_allocate] == nullptr)
+				nodes[index_to_allocate] = new EvaluableNode(ENT_DEALLOCATED);
+
+			return nodes[index_to_allocate];
+		}
+	
+	#ifdef MULTITHREAD_SUPPORT
+		read_lock.unlock();
+
+		//don't have enough nodes, so need to attempt a write lock to allocate more
+		Concurrency::WriteLock write_lock(managerAttributesMutex);
+	#endif
+
+		size_t num_nodes = nodes.size();
+		if(index_to_allocate >= num_nodes)
+		{
+			//ran out, so need another node; push a bunch on the heap so don't need to reallocate as often and slow down garbage collection
+			 //preallocate additional resources, making sure to at least add one block
+			size_t new_num_nodes = static_cast<size_t>(allocExpansionFactor * num_nodes) + tlabBlockAllocationSize;
+
+			//fill new EvaluableNode slots with nullptr
+			nodes.resize(new_num_nodes, nullptr);
+		}
+
+		if(nodes[index_to_allocate] == nullptr)
+			nodes[index_to_allocate] = new EvaluableNode(ENT_DEALLOCATED);
+		return nodes[index_to_allocate];
+	}
+
 	EvaluableNode *tlab_node = GetNextNodeFromTLAB();
+
+	//TODO 22458: remove this
+	{
+		Concurrency::SingleLock lock(tlabCountMutex);
+	
+		tlabSize += threadLocalAllocationBuffer.size();
+		tlabSizeCount++;
+	
+		rollingAveTlabSize = .98 * rollingAveTlabSize + .02 * threadLocalAllocationBuffer.size();
+	
+		if(tlabSizeCount % 1000 == 0)
+		{
+			double ave_size = static_cast<double>(tlabSize) / tlabSizeCount;
+			std::cout << "ave tlab size: " << ave_size << std::endl;
+		}
+	}
+
 	//Fast Path; get node from thread local buffer
 	if(tlab_node != nullptr)
 		return tlab_node;

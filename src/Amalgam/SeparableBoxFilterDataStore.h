@@ -52,8 +52,6 @@ public:
 		//used when needing to accum entities with nulls
 		BitArrayIntegerSet nullAccumSet;
 
-		std::vector<DistanceReferencePair<size_t>> entitiesWithValues;
-
 		FlexiblePriorityQueue<CountDistanceReferencePair<size_t>> potentialGoodMatches;
 		StochasticTieBreakingPriorityQueue<DistanceReferencePair<size_t>> sortedResults;
 
@@ -677,6 +675,17 @@ protected:
 
 	//adds term to the partial sums associated for each id in both enabled_indices and entity_indices
 	// for query_feature_index
+	//since it is generally slower to check enabled_indices with a SortedIntegerSet, the parameter is just ignored
+	//and this method is here just to make type changes in the code easy
+	//returns the number of entities indices accumulated
+	inline size_t AccumulatePartialSums(BitArrayIntegerSet &enabled_indices, SortedIntegerSet &entity_indices,
+		size_t query_feature_index, double term)
+	{
+		return AccumulatePartialSums(entity_indices, query_feature_index, term);
+	}
+
+	//adds term to the partial sums associated for each id in both enabled_indices and entity_indices
+	// for query_feature_index
 	//returns the number of entities indices accumulated
 	inline size_t AccumulatePartialSums(BitArrayIntegerSet &enabled_indices, EfficientIntegerSet &entity_indices,
 		size_t query_feature_index, double term)
@@ -689,14 +698,15 @@ protected:
 
 	//accumulates the partial sums for the specified value
 	// returns the distance term evaluated, or 0.0 if value was not found
-	inline double AccumulatePartialSumsForNominalNumberValueIfExists(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+	inline double AccumulatePartialSumsForNominalNumberValueIfExists(
+		RepeatedGeneralizedDistanceEvaluator &r_dist_eval, BitArrayIntegerSet &enabled_indices,
 		double value, size_t query_feature_index, SBFDSColumnData &column, bool high_accuracy)
 	{
-		auto [value_index, exact_index_found] = column.FindExactIndexForValue(value);
-		if(exact_index_found)
+		auto value_entry = column.sortedNumberValueEntries.find(value);
+		if(value_entry != end(column.sortedNumberValueEntries))
 		{
 			double term = r_dist_eval.ComputeDistanceTermNominal(value, ENIVT_NUMBER, query_feature_index, high_accuracy);
-			AccumulatePartialSums(column.sortedNumberValueEntries[value_index]->indicesWithValue, query_feature_index, term);
+			AccumulatePartialSums(enabled_indices, value_entry->second.indicesWithValue, query_feature_index, term);
 			return term;
 		}
 
@@ -705,14 +715,15 @@ protected:
 
 	//accumulates the partial sums for the specified value
 	// returns the distance term evaluated, or 0.0 if value was not found
-	inline double AccumulatePartialSumsForNominalStringIdValueIfExists(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+	inline double AccumulatePartialSumsForNominalStringIdValueIfExists(
+		RepeatedGeneralizedDistanceEvaluator &r_dist_eval, BitArrayIntegerSet &enabled_indices,
 		StringInternPool::StringID value, size_t query_feature_index, SBFDSColumnData &column, bool high_accuracy)
 	{
 		auto value_found = column.stringIdValueEntries.find(value);
 		if(value_found != end(column.stringIdValueEntries))
 		{
 			double term = r_dist_eval.ComputeDistanceTermNominal(value, ENIVT_STRING_ID, query_feature_index, high_accuracy);
-			AccumulatePartialSums(value_found->second->indicesWithValue, query_feature_index, term);
+			AccumulatePartialSums(enabled_indices, value_found->second->indicesWithValue, query_feature_index, term);
 			return term;
 		}
 

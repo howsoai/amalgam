@@ -125,7 +125,6 @@ public:
 	{
 		size_t bucket_offset = bucketStride * partial_sum_index;
 		buffer[bucket_offset].sum += value;
-
 		buffer[bucket_offset + accum_location.first].mask |= accum_location.second;
 	}
 
@@ -135,7 +134,6 @@ public:
 	__forceinline void AccumZero(size_t partial_sum_index, const std::pair<size_t, size_t> accum_location)
 	{
 		size_t bucket_offset = bucketStride * partial_sum_index;
-
 		buffer[bucket_offset + accum_location.first].mask |= accum_location.second;
 	}
 

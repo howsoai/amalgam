@@ -1048,6 +1048,25 @@ protected:
 	EvaluableNodeReference InterpretNode_ENT_ASSIGN_and_ACCUM(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_RETRIEVE(EvaluableNode *en, bool immediate_result);
 
+	//retrieval
+	EvaluableNodeReference InterpretNode_ENT_GET(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_SET_and_REPLACE(EvaluableNode *en, bool immediate_result);
+
+	//stack and node manipulation
+	EvaluableNodeReference InterpretNode_ENT_TARGET(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_CURRENT_INDEX(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_CURRENT_VALUE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_PREVIOUS_RESULT(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_OPCODE_STACK(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_STACK(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_ARGS(EvaluableNode *en, bool immediate_result);
+
+	//simulation and operations
+	EvaluableNodeReference InterpretNode_ENT_RAND(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_GET_RAND_SEED(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_SET_RAND_SEED(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_SYSTEM_TIME(EvaluableNode *en, bool immediate_result);
+
 	//base math
 	EvaluableNodeReference InterpretNode_ENT_ADD(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_SUBTRACT(EvaluableNode *en, bool immediate_result);
@@ -1121,19 +1140,6 @@ protected:
 	EvaluableNodeReference InterpretNode_ENT_ZIP(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_UNZIP(EvaluableNode *en, bool immediate_result);
 
-	//retrieval
-	EvaluableNodeReference InterpretNode_ENT_GET(EvaluableNode *en, bool immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_SET_and_REPLACE(EvaluableNode *en, bool immediate_result);
-
-	//stack and node manipulation
-	EvaluableNodeReference InterpretNode_ENT_TARGET(EvaluableNode *en, bool immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_CURRENT_INDEX(EvaluableNode *en, bool immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_CURRENT_VALUE(EvaluableNode *en, bool immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_PREVIOUS_RESULT(EvaluableNode *en, bool immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_OPCODE_STACK(EvaluableNode *en, bool immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_STACK(EvaluableNode *en, bool immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_ARGS(EvaluableNode *en, bool immediate_result);
-
 	//logic
 	EvaluableNodeReference InterpretNode_ENT_AND(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_OR(EvaluableNode *en, bool immediate_result);
@@ -1147,12 +1153,6 @@ protected:
 	EvaluableNodeReference InterpretNode_ENT_GREATER_and_GEQUAL(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_TYPE_EQUALS(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_TYPE_NEQUALS(EvaluableNode *en, bool immediate_result);
-
-	//simulation and operations
-	EvaluableNodeReference InterpretNode_ENT_RAND(EvaluableNode *en, bool immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_GET_RAND_SEED(EvaluableNode *en, bool immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_SET_RAND_SEED(EvaluableNode *en, bool immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_SYSTEM_TIME(EvaluableNode *en, bool immediate_result);
 
 	//built-in constants and variables
 	EvaluableNodeReference InterpretNode_ENT_TRUE(EvaluableNode *en, bool immediate_result);

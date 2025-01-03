@@ -825,6 +825,10 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 
 	bool is_idempotent = (IsEvaluableNodeTypePotentiallyIdempotent(tree->GetType()) && (tree->GetNumLabels() == 0));
 	tree->SetIsIdempotent(is_idempotent);
+
+#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+	assert(tree->IsNodeValid());
+#endif
 	
 	if(tree->IsAssociativeArray())
 	{

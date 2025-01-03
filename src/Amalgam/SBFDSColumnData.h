@@ -559,7 +559,7 @@ public:
 
 			double number_value = GetResolvedValue(value_type, value).number;
 
-			auto [value_entry_iter, inserted] = sortedNumberValueEntries.emplace(value.number, value.number);
+			auto [value_entry_iter, inserted] = sortedNumberValueEntries.emplace(number_value, number_value);
 			auto &value_entry = value_entry_iter->second;
 			if(!inserted)
 			{

@@ -75,8 +75,8 @@ public:
 		{
 			numberIndices.insert(index);
 
-			auto &[value_entry, inserted] = sortedNumberValueEntries.try_emplace(value.number, value.number);
-			value_entry->second.indicesWithValue.InsertNewLargestInteger(index);
+			auto [value_entry_iter, inserted] = sortedNumberValueEntries.try_emplace(value.number, value.number);
+			value_entry_iter->second.indicesWithValue.InsertNewLargestInteger(index);
 		}
 		else if(value_type == ENIVT_STRING_ID)
 		{
@@ -210,7 +210,8 @@ public:
 				//if the value already exists, then put the index in the list
 				//but return the lower bound if not found so don't have to search a second time
 				//need to search the old value before inserting, as FindExactIndexForValue is fragile a placeholder empty entry
-				auto &[new_value_entry, inserted] = sortedNumberValueEntries.try_emplace(new_number_value, new_number_value);
+				auto [new_value_entry_iter, inserted] = sortedNumberValueEntries.try_emplace(new_number_value, new_number_value);
+				auto &new_value_entry = new_value_entry_iter->second;
 				auto old_value_entry = sortedNumberValueEntries.find(old_number_value);
 
 				size_t new_value_index = 0;
@@ -227,19 +228,19 @@ public:
 						sortedNumberValueEntries.erase(old_value_entry);
 					}
 
-					new_value_entry->second.indicesWithValue.insert(index);
+					new_value_entry.indicesWithValue.insert(index);
 
 					//if new value didn't exist exists, insert it properly
 					if(inserted)
-						internedNumberValues.InsertValueEntry(new_value_entry->second, sortedNumberValueEntries.size());
+						internedNumberValues.InsertValueEntry(new_value_entry, sortedNumberValueEntries.size());
 
-					new_value_index = new_value_entry->second.valueInternIndex;
+					new_value_index = new_value_entry.valueInternIndex;
 				}
 				else //shouldn't make it here, but ensure integrity just in case
 				{
 					assert(false);
-					new_value_entry->second.indicesWithValue.insert(index);
-					internedNumberValues.InsertValueEntry(new_value_entry->second, sortedNumberValueEntries.size());
+					new_value_entry.indicesWithValue.insert(index);
+					internedNumberValues.InsertValueEntry(new_value_entry, sortedNumberValueEntries.size());
 				}
 
 				if(internedNumberValues.valueInterningEnabled)
@@ -558,25 +559,26 @@ public:
 
 			double number_value = GetResolvedValue(value_type, value).number;
 
-			auto &[value_entry, inserted] = sortedNumberValueEntries.try_emplace(number_value, number_value);
+			auto [value_entry_iter, inserted] = sortedNumberValueEntries.try_emplace(number_value, number_value);
+			auto &value_entry = value_entry_iter->second;
 			if(!inserted)
 			{
-				value_entry->second.indicesWithValue.insert(index);
+				value_entry.indicesWithValue.insert(index);
 
 				if(internedNumberValues.valueInterningEnabled)
-					valueEntries[index] = EvaluableNodeImmediateValue(value_entry->second.valueInternIndex);
+					valueEntries[index] = EvaluableNodeImmediateValue(value_entry.valueInternIndex);
 				else
 					valueEntries[index] = value;
 
 				return;
 			}
 
-			value_entry->second.indicesWithValue.insert(index);
+			value_entry.indicesWithValue.insert(index);
 
 			if(internedNumberValues.valueInterningEnabled)
 			{
-				internedNumberValues.InsertValueEntry(value_entry->second, sortedNumberValueEntries.size());
-				valueEntries[index] = value_entry->second.valueInternIndex;
+				internedNumberValues.InsertValueEntry(value_entry, sortedNumberValueEntries.size());
+				valueEntries[index] = value_entry.valueInternIndex;
 			}
 			else
 			{

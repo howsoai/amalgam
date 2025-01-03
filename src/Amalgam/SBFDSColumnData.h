@@ -75,7 +75,8 @@ public:
 		{
 			numberIndices.insert(index);
 
-			auto [value_entry_iter, inserted] = sortedNumberValueEntries.emplace(value.number, value.number);
+			//use insert instead of try_emplace as older versions of GCC (e.g. 10.5) won't compile otherwise
+			auto [value_entry_iter, inserted] = sortedNumberValueEntries.insert(std::make_pair(value.number, value.number));
 			value_entry_iter->second.indicesWithValue.InsertNewLargestInteger(index);
 		}
 		else if(value_type == ENIVT_STRING_ID)
@@ -210,7 +211,8 @@ public:
 				//if the value already exists, then put the index in the list
 				//but return the lower bound if not found so don't have to search a second time
 				//need to search the old value before inserting, as FindExactIndexForValue is fragile a placeholder empty entry
-				auto [new_value_entry_iter, inserted] = sortedNumberValueEntries.emplace(new_number_value, new_number_value);
+				//use insert instead of try_emplace as older versions of GCC (e.g. 10.5) won't compile otherwise
+				auto [new_value_entry_iter, inserted] = sortedNumberValueEntries.insert(std::make_pair(new_number_value, new_number_value));
 				auto &new_value_entry = new_value_entry_iter->second;
 				auto old_value_entry = sortedNumberValueEntries.find(old_number_value);
 
@@ -559,7 +561,8 @@ public:
 
 			double number_value = GetResolvedValue(value_type, value).number;
 
-			auto [value_entry_iter, inserted] = sortedNumberValueEntries.emplace(number_value, number_value);
+			//use insert instead of try_emplace as older versions of GCC (e.g. 10.5) won't compile otherwise
+			auto [value_entry_iter, inserted] = sortedNumberValueEntries.insert(std::make_pair(number_value, number_value));
 			auto &value_entry = value_entry_iter->second;
 			if(!inserted)
 			{

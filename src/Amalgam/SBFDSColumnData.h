@@ -75,8 +75,7 @@ public:
 		{
 			numberIndices.insert(index);
 
-			std::pair<const double, ValueEntry> pair_to_insert(value.number, value.number);
-			auto [value_entry_iter, inserted] = sortedNumberValueEntries.insert(std::move(pair_to_insert));
+			auto [value_entry_iter, inserted] = sortedNumberValueEntries.insert(std::make_pair(value.number, value.number));
 			value_entry_iter->second.indicesWithValue.InsertNewLargestInteger(index);
 		}
 		else if(value_type == ENIVT_STRING_ID)
@@ -211,8 +210,7 @@ public:
 				//if the value already exists, then put the index in the list
 				//but return the lower bound if not found so don't have to search a second time
 				//need to search the old value before inserting, as FindExactIndexForValue is fragile a placeholder empty entry
-				std::pair<const double, ValueEntry> pair_to_insert(new_number_value, new_number_value);
-				auto [new_value_entry_iter, inserted] = sortedNumberValueEntries.insert(std::move(pair_to_insert));
+				auto [new_value_entry_iter, inserted] = sortedNumberValueEntries.insert(std::make_pair(new_number_value, new_number_value));
 				auto &new_value_entry = new_value_entry_iter->second;
 				auto old_value_entry = sortedNumberValueEntries.find(old_number_value);
 
@@ -561,8 +559,7 @@ public:
 
 			double number_value = GetResolvedValue(value_type, value).number;
 
-			std::pair<const double, ValueEntry> pair_to_insert(number_value, number_value);
-			auto [value_entry_iter, inserted] = sortedNumberValueEntries.insert(std::move(pair_to_insert));
+			auto [value_entry_iter, inserted] = sortedNumberValueEntries.insert(std::make_pair(number_value, number_value));
 			auto &value_entry = value_entry_iter->second;
 			if(!inserted)
 			{

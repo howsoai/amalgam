@@ -2,6 +2,7 @@
 
 //system headers:
 #include <limits>
+#include <stdint.h>
 #include <string>
 #include <utility>
 #include <vector>

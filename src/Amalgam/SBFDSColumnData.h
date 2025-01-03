@@ -46,7 +46,6 @@ public:
 		{	}
 
 		EvaluableNodeImmediateValue value;
-		//TODO 22454: attempt changing this to EfficientIntegerSet
 		SortedIntegerSet indicesWithValue;
 		size_t valueInternIndex;
 	};
@@ -993,7 +992,6 @@ public:
 		size_t num_unique_values = sortedNumberValueEntries.size();
 
 		return (num_unique_values * num_unique_values <= num_indices);
-		//return (3 * num_unique_values * num_unique_values / 2 <= num_indices);
 	}
 
 	//returns true if switching to number values would be expected to yield better results
@@ -1010,17 +1008,12 @@ public:
 		if(num_indices < 90)
 			return true;
 
-		//TODO 22454: revisit this logic based on scale of data and number of operations needed and if can replace SIS data storage for entity-values (experiment w/ asteroid data set)
-		//try: 0.8 * numberIndices.size() ^ 0.65, revert when 1.5x above that number of values, and make a general function
-		//and/or try current value times 1.5 via * 3 / 2 to keep as integer
-
 		//use heuristic of sqrt number of values compared to num unique values
 		// (but computed with a multiply instead of sqrt)
 		//round up to reduce flipping back and forth
 		size_t num_unique_values = sortedNumberValueEntries.size();
 
 		return (num_unique_values * num_unique_values > num_indices - num_unique_values);
-		//return (3 * num_unique_values * num_unique_values / 2 > num_indices - num_unique_values);
 	}
 
 	//returns true if switching to StringId interning would be expected to yield better results
@@ -1042,7 +1035,6 @@ public:
 		size_t num_unique_values = stringIdValueEntries.size();
 
 		return (num_unique_values * num_unique_values <= num_indices);
-		//return (3 * num_unique_values * num_unique_values / 2 <= num_indices);
 	}
 
 	//returns true if switching to StringID values would be expected to yield better results
@@ -1065,7 +1057,6 @@ public:
 		size_t num_unique_values = stringIdValueEntries.size();
 
 		return (num_unique_values * num_unique_values > num_indices - num_unique_values);
-		//return (3 * num_unique_values * num_unique_values / 2 > num_indices - num_unique_values);
 	}
 
 	//clears number intern caches and changes state to not perform interning for numbers

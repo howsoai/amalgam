@@ -434,8 +434,7 @@ public:
 			//calculate last bucket in case less than total size
 			size_t end_buckets = (end_index + 63) / 64;
 			size_t index = 0;
-			for(size_t bucket = 0, index = 0;
-				bucket < end_buckets; bucket++)
+			for(size_t bucket = 0, index = 0; bucket < end_buckets; bucket++)
 			{
 				uint64_t bucket_bits = bitBucket[bucket];
 				for(size_t bit = 0; bit < 64; bit++, index++)
@@ -1866,9 +1865,7 @@ protected:
 		//add 1 to round up to make it less likely to flip back and forth between types
 		size_t num_bais_elements_required = ((max_element + BitArrayIntegerSet::numBitsPerBucket - 1) / BitArrayIntegerSet::numBitsPerBucket) + 1;
 
-		//TODO 22454: revisit this heuristic, try 1.5, 1.1, 1, make generic across both methods
-		//use a heuristic of 2 values per bais bucket, since some operations are faster when can just iterate over a list
-		//return (num_elements > 2 * num_bais_elements_required);
+		//use a heuristic of 3 values per bais bucket, since some operations are faster when can just iterate over a list
 		return (num_elements > 3 * num_bais_elements_required);
 	}
 
@@ -1878,8 +1875,7 @@ protected:
 	{
 		//round this down (don't take ceil) to make it less likely to flip back and forth between types
 		size_t num_bais_elements_required = (max_element + BitArrayIntegerSet::numBitsPerBucket - 1) / BitArrayIntegerSet::numBitsPerBucket;
-		//use a heuristic of 2 values per bais bucket, since some operations are faster when can just iterate over a list
-		//return (2 * num_bais_elements_required > num_elements);
+		//use a heuristic of 3 values per bais bucket, since some operations are faster when can just iterate over a list
 		return (3 * num_bais_elements_required > num_elements);
 	}
 

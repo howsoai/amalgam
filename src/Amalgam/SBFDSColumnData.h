@@ -75,7 +75,7 @@ public:
 		{
 			numberIndices.insert(index);
 
-			auto [value_entry, inserted] = sortedNumberValueEntries.try_emplace(value.number, value.number);
+			auto &[value_entry, inserted] = sortedNumberValueEntries.try_emplace(value.number, value.number);
 			value_entry->second.indicesWithValue.InsertNewLargestInteger(index);
 		}
 		else if(value_type == ENIVT_STRING_ID)
@@ -210,7 +210,7 @@ public:
 				//if the value already exists, then put the index in the list
 				//but return the lower bound if not found so don't have to search a second time
 				//need to search the old value before inserting, as FindExactIndexForValue is fragile a placeholder empty entry
-				auto [new_value_entry, inserted] = sortedNumberValueEntries.try_emplace(new_number_value, new_number_value);
+				auto &[new_value_entry, inserted] = sortedNumberValueEntries.try_emplace(new_number_value, new_number_value);
 				auto old_value_entry = sortedNumberValueEntries.find(old_number_value);
 
 				size_t new_value_index = 0;
@@ -558,7 +558,7 @@ public:
 
 			double number_value = GetResolvedValue(value_type, value).number;
 
-			auto [value_entry, inserted] = sortedNumberValueEntries.try_emplace(number_value, number_value);
+			auto &[value_entry, inserted] = sortedNumberValueEntries.try_emplace(number_value, number_value);
 			if(!inserted)
 			{
 				value_entry->second.indicesWithValue.insert(index);

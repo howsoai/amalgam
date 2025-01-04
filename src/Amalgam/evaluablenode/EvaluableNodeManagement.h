@@ -627,7 +627,10 @@ public:
 	__forceinline void FreeNodeIfPossible(EvaluableNodeReference &enr)
 	{
 		if(enr.IsImmediateValue())
+		{
 			enr.FreeImmediateResources();
+			return;
+		}
 
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 		assert(enr == nullptr || enr->IsNodeValid());

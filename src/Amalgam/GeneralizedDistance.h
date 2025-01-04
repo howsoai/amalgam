@@ -972,7 +972,7 @@ protected:
 				if(DoesFeatureHaveDeviation(i))
 				{
 					constexpr double smallest_delta = 1e-100;
-					if(feature_attribs.typeAttributes.nominalCount == 1 && feature_attribs.deviation < smallest_delta)
+					if(feature_attribs.typeAttributes.nominalCount <= 1 && feature_attribs.deviation < smallest_delta)
 						feature_attribs.deviation = smallest_delta;
 				}
 

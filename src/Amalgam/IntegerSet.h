@@ -431,11 +431,26 @@ public:
 		size_t indices_per_bucket = num_indices / num_buckets;
 		if(indices_per_bucket >= 48)
 		{
+			size_t last_full_bucket = end_index / 64;
+			size_t index = 0;
+
 			//increment index in the inner loop
-			for(size_t bucket = 0, index = 0; index < end_index; bucket++)
+			for(size_t bucket = 0; bucket < last_full_bucket; bucket++)
 			{
 				uint64_t bucket_bits = bitBucket[bucket];
 				for(size_t bit = 0; bit < 64; bit++, index++)
+				{
+					uint64_t mask = (1ULL << bit);
+					if(bucket_bits & mask)
+						func(index);
+				}
+			}
+
+			//iterate over any left in the last partial bucket
+			if(index < end_index)
+			{
+				uint64_t bucket_bits = bitBucket[last_full_bucket];
+				for(size_t bit = 0; index < end_index; bit++, index++)
 				{
 					uint64_t mask = (1ULL << bit);
 					if(bucket_bits & mask)

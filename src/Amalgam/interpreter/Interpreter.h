@@ -1276,20 +1276,6 @@ protected:
 	//a stack (list) of the current nodes being executed
 	std::vector<EvaluableNode *> *opcodeStackNodes;
 
-	EvaluableNodeReference IndexVectorToList(std::vector<size_t> &indices, EvaluableNodeManager *evaluableNodeManager, bool immediate_result)
-	{
-		EvaluableNodeReference index_list(evaluableNodeManager->AllocNode(ENT_LIST), false);
-		auto &index_list_ocn = index_list->GetOrderedChildNodesReference();
-		index_list_ocn.reserve(size(indices));
-
-		for(size_t index : indices)
-		{
-			index_list_ocn.push_back(AllocReturn(static_cast<double>(index), immediate_result));
-		}
-
-		return index_list;
-	}
-
 	template <typename Compare>
 	EvaluableNodeReference GetIndexMinMaxFromAssoc(EvaluableNodeReference interpreted_assoc, Compare compare, double compare_limit, bool immediate_result)
 	{
@@ -1301,7 +1287,7 @@ protected:
 
 		for(auto [cur_key, cur_child] : mapped_child_nodes)
 		{
-			double cur_value = InterpretNodeIntoNumberValue(cur_child);
+			double cur_value = EvaluableNode::ToNumber(cur_child);
 
 			if(cur_value == candidate_value)
 			{
@@ -1347,37 +1333,9 @@ protected:
 		if(orderedChildNodes.size() == 0)
 			return EvaluableNodeReference::Null();
 
-#ifdef MULTITHREAD_SUPPORT
-		std::vector<EvaluableNodeReference> interpreted_nodes;
-		if(InterpretEvaluableNodesConcurrently(en, orderedChildNodes, interpreted_nodes, true))
-		{
-
-			for(size_t i = 0; i < interpreted_nodes.size(); i++)
-			{
-				// do the comparison and keep the greater
-				double cur_value = ConvertNodeIntoNumberValueAndFreeIfPossible(interpreted_nodes[i]);
-				if(cur_value == result_value)
-				{
-					max_indices.push_back(i);
-				}
-				else if(compare(cur_value, result_value))
-				{
-					max_indices.clear();
-					value_found = true;
-					result_value = cur_value;
-					max_indices.push_back(i);
-				}
-			}
-
-			if(value_found)
-				return IndexVectorToList(max_indices, evaluableNodeManager, immediate_result);
-
-			return EvaluableNodeReference::Null();
-		}
-#endif
 		for(size_t i = 0; i < orderedChildNodes.size(); i++)
 		{
-			double cur_value = InterpretNodeIntoNumberValue(orderedChildNodes[i]);
+			double cur_value = EvaluableNode::ToNumber(orderedChildNodes[i]);
 
 			if(cur_value == result_value)
 			{
@@ -1394,7 +1352,7 @@ protected:
 		}
 
 		if(value_found)
-			return IndexVectorToList(max_indices, evaluableNodeManager, immediate_result);
+			return CreateListOfNumbersFromIteratorAndFunction(max_indices, evaluableNodeManager, [](auto val) { return static_cast<double>(val); });
 
 		return EvaluableNodeReference::Null();
 	}
@@ -1413,31 +1371,9 @@ protected:
 		if(orderedChildNodes.size() == 0)
 			return EvaluableNodeReference::Null();
 
-#ifdef MULTITHREAD_SUPPORT
-		std::vector<EvaluableNodeReference> interpreted_nodes;
-		if(InterpretEvaluableNodesConcurrently(en, orderedChildNodes, interpreted_nodes, true))
-		{
-
-			for(size_t i = 1; i < interpreted_nodes.size(); i++)
-			{
-				// do the comparison and keep the greater
-				double cur_value = ConvertNodeIntoNumberValueAndFreeIfPossible(interpreted_nodes[i]);
-				if(cur_value == result_value)
-				{
-					max_indices.push_back(i);
-				}
-				else if(compare(cur_value, result_value))
-				{
-					result_value = cur_value;
-					max_indices.push_back(i);
-				}
-			}
-		}
-#else
-
 		for(size_t i = 1; i < orderedChildNodes.size(); i++)
 		{
-			double cur_value = InterpretNodeIntoNumberValue(orderedChildNodes[i]);
+			double cur_value = EvaluableNode::ToNumber(orderedChildNodes[i]);
 
 			if(cur_value == result_value)
 			{
@@ -1450,9 +1386,8 @@ protected:
 				max_indices.push_back(i);
 			}
 		}
-#endif
 
-		return IndexVectorToList(max_indices, evaluableNodeManager, immediate_result);
+		return CreateListOfNumbersFromIteratorAndFunction(max_indices, evaluableNodeManager, [](size_t val) { return static_cast<double>(val); });
 	}
 
   public:

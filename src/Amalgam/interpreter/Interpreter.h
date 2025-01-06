@@ -1279,7 +1279,7 @@ protected:
 	template <typename Compare>
 	EvaluableNodeReference GetIndexMinMaxFromAssoc(EvaluableNodeReference interpreted_assoc, Compare compare, double compare_limit, bool immediate_result)
 	{
-		auto& mapped_child_nodes = interpreted_assoc->GetMappedChildNodesReference();
+		auto &mapped_child_nodes = interpreted_assoc->GetMappedChildNodesReference();
 		double candidate_value = compare_limit;
 		bool value_found = false;
 
@@ -1352,7 +1352,8 @@ protected:
 		}
 
 		if(value_found)
-			return CreateListOfNumbersFromIteratorAndFunction(max_indices, evaluableNodeManager, [](auto val) { return static_cast<double>(val); });
+			return CreateListOfNumbersFromIteratorAndFunction(max_indices, evaluableNodeManager, [](auto val)
+															  { return static_cast<double>(val); });
 
 		return EvaluableNodeReference::Null();
 	}
@@ -1387,7 +1388,8 @@ protected:
 			}
 		}
 
-		return CreateListOfNumbersFromIteratorAndFunction(max_indices, evaluableNodeManager, [](size_t val) { return static_cast<double>(val); });
+		return CreateListOfNumbersFromIteratorAndFunction(max_indices, evaluableNodeManager, [](size_t val)
+														  { return static_cast<double>(val); });
 	}
 
   public:

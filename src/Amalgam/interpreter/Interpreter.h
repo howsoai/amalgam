@@ -11,6 +11,7 @@
 
 //system headers:
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <string>
 #include <type_traits>
@@ -1374,7 +1375,7 @@ protected:
 
 		// First node has already been interpreted
 		double candidate_zero = EvaluableNode::ToNumber(orderedChildNodes[0]);
-		if(!isnan(candidate_zero))
+		if(!std::isnan(candidate_zero))
 		{
 			max_indices.push_back(0);
 			value_found = true;

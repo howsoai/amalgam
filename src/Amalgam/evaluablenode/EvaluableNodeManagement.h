@@ -7,7 +7,6 @@
 //system headers:
 #include <memory>
 
-#define PEDANTIC_GARBAGE_COLLECTION
 //if the macro PEDANTIC_GARBAGE_COLLECTION is defined, then garbage collection will be performed
 //after every opcode, to help find and debug memory issues
 

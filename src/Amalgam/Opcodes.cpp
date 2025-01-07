@@ -112,6 +112,8 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_ABS, "abs");
 	EmplaceNodeTypeString(ENT_MAX, "max");
 	EmplaceNodeTypeString(ENT_MIN, "min");
+	EmplaceNodeTypeString(ENT_INDEX_MAX, "index_max");
+	EmplaceNodeTypeString(ENT_INDEX_MIN, "index_min");
 	EmplaceNodeTypeString(ENT_GENERALIZED_DISTANCE, "generalized_distance");
 	EmplaceNodeTypeString(ENT_DOT_PRODUCT, "dot_product");
 	EmplaceNodeTypeString(ENT_ENTROPY, "entropy");

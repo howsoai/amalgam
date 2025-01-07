@@ -1292,6 +1292,7 @@ protected:
 			if(cur_value == candidate_value)
 			{
 				max_keys.push_back(cur_key);
+				value_found = true;
 			}
 			else if(compare(cur_value, candidate_value))
 			{
@@ -1340,6 +1341,7 @@ protected:
 			if(cur_value == result_value)
 			{
 				max_indices.push_back(i);
+				value_found = true;
 			}
 			else if(compare(cur_value, result_value))
 			{
@@ -1363,33 +1365,36 @@ protected:
 	{
 		double result_value = compare_limit;
 		std::vector<size_t> max_indices;
-
-		// If this method is called, we have already Intepreted the first arugment
-		max_indices.push_back(0);
+		bool value_found = false;
 
 		auto &orderedChildNodes = en->GetOrderedChildNodesReference();
 
 		if(orderedChildNodes.size() == 0)
 			return EvaluableNodeReference::Null();
 
-		for(size_t i = 1; i < orderedChildNodes.size(); i++)
+		for(size_t i = 0; i < orderedChildNodes.size(); i++)
 		{
 			double cur_value = EvaluableNode::ToNumber(orderedChildNodes[i]);
 
 			if(cur_value == result_value)
 			{
 				max_indices.push_back(i);
+				value_found = true;
 			}
 			else if(compare(cur_value, result_value))
 			{
 				max_indices.clear();
 				result_value = cur_value;
 				max_indices.push_back(i);
+				value_found = true;
 			}
 		}
 
-		return CreateListOfNumbersFromIteratorAndFunction(max_indices, evaluableNodeManager, [](size_t val)
-														  { return static_cast<double>(val); });
+		if(value_found)
+			return CreateListOfNumbersFromIteratorAndFunction(max_indices, evaluableNodeManager, [](size_t val)
+															  { return static_cast<double>(val); });
+
+		return EvaluableNodeReference::Null();
 	}
 
   public:

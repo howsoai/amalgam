@@ -820,7 +820,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MAX(EvaluableNode *e
 	else if(ocn_zero != nullptr && ocn_zero->GetType() == ENT_LIST && ocn.size() == 1)
 		result = GetIndexMinMaxFromList(ocn_zero, std::greater(), -std::numeric_limits<double>::infinity(), immediate_result);
 	else
-		return GetIndexMinMaxFromRemainingArgList(en, std::greater(), ConvertNodeIntoNumberValueAndFreeIfPossible(ocn_zero), immediate_result);
+		return GetIndexMinMaxFromRemainingArgList(en, std::greater(), -std::numeric_limits<double>::infinity(), immediate_result);
 
 	evaluableNodeManager->FreeNodeTreeIfPossible(ocn_zero);
 	return result;
@@ -842,7 +842,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MIN(EvaluableNode *e
 	else if(ocn_zero != nullptr && ocn_zero->GetType() == ENT_LIST && ocn.size() == 1)
 		result = GetIndexMinMaxFromList(ocn_zero, std::less(), std::numeric_limits<double>::infinity(), immediate_result);
 	else
-		return GetIndexMinMaxFromRemainingArgList(en, std::less(), ConvertNodeIntoNumberValueAndFreeIfPossible(ocn_zero), immediate_result);
+		return GetIndexMinMaxFromRemainingArgList(en, std::less(), std::numeric_limits<double>::infinity(), immediate_result);
 
 	evaluableNodeManager->FreeNodeTreeIfPossible(ocn_zero);
 	return result;

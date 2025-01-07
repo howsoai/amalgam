@@ -466,7 +466,7 @@ constexpr OpcodeNewValueReturnType GetOpcodeNewValueReturnType(EvaluableNodeType
 	case ENT_ASIN:	case ENT_COS:	case ENT_ACOS:	case ENT_TAN:	case ENT_ATAN:
 	case ENT_SINH:	case ENT_ASINH:	case ENT_COSH:	case ENT_ACOSH:	case ENT_TANH:
 	case ENT_ATANH:	case ENT_ERF:	case ENT_TGAMMA:	case ENT_LGAMMA:	case ENT_SQRT:
-	case ENT_POW:	case ENT_ABS:	case ENT_MAX:	case ENT_MIN:	case ENT_DOT_PRODUCT:
+	case ENT_POW:	case ENT_ABS:	case ENT_MAX:	case ENT_INDEX_MAX: case ENT_INDEX_MIN: case ENT_MIN: case ENT_DOT_PRODUCT:
 	case ENT_GENERALIZED_DISTANCE:	case ENT_ENTROPY:
 	case ENT_SIZE:
 	case ENT_REWRITE:

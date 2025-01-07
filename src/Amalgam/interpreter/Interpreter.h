@@ -1293,6 +1293,8 @@ protected:
 			if(cur_value == candidate_value)
 			{
 				max_keys.push_back(cur_key);
+				// If all child nodes are the max/min value, we never fall into the other case.
+				// So we need to set value_found here.
 				value_found = true;
 			}
 			else if(compare(cur_value, candidate_value))
@@ -1342,6 +1344,8 @@ protected:
 			if(cur_value == result_value)
 			{
 				max_indices.push_back(i);
+				// If all child nodes are the max/min value, we never fall into the other case.
+				// So we need to set value_found here.
 				value_found = true;
 			}
 			else if(compare(cur_value, result_value))
@@ -1389,6 +1393,8 @@ protected:
 			if(cur_value == result_value)
 			{
 				max_indices.push_back(i);
+				// If all child nodes are the max/min value, we never fall into the other case.
+				// So we need to set value_found here.
 				value_found = true;
 			}
 			else if(compare(cur_value, result_value))

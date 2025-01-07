@@ -1406,7 +1406,7 @@ protected:
 
 			if(value_found)
 				return CreateListOfNumbersFromIteratorAndFunction(max_indices, evaluableNodeManager, [](size_t val)
-															  { return static_cast<double>(val); });
+																  { return static_cast<double>(val); });
 
 			return EvaluableNodeReference::Null();
 		}

@@ -1375,7 +1375,7 @@ protected:
 
 		// First node has already been interpreted and thus needs different handling
 		double candidate_zero = EvaluableNode::ToNumber(orderedChildNodes[0]);
-		if(!std::isnan(candidate_zero))
+		if(!FastIsNaN(candidate_zero))
 		{
 			max_indices.push_back(0);
 			value_found = true;

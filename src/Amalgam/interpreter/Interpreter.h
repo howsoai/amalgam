@@ -1373,7 +1373,7 @@ protected:
 		if(orderedChildNodes.size() == 0)
 			return EvaluableNodeReference::Null();
 
-		// First node has already been interpreted
+		// First node has already been interpreted and thus needs different handling
 		double candidate_zero = EvaluableNode::ToNumber(orderedChildNodes[0]);
 		if(!std::isnan(candidate_zero))
 		{
@@ -1381,37 +1381,6 @@ protected:
 			value_found = true;
 			result_value = candidate_zero;
 		}
-
-#ifdef MULTITHREAD_SUPPORT
-		std::vector<EvaluableNodeReference> interpreted_nodes;
-		if(InterpretEvaluableNodesConcurrently(en, orderedChildNodes, interpreted_nodes, true))
-		{
-			for(size_t i = 1; i < interpreted_nodes.size(); i++)
-			{
-				// do the comparison and keep the greater
-				double cur_value = EvaluableNode::ToNumber(interpreted_nodes[i]);
-
-				if(cur_value == result_value)
-				{
-					value_found = true;
-					max_indices.push_back(i);
-				}
-				else if(compare(cur_value, result_value))
-				{
-					max_indices.clear();
-					value_found = true;
-					result_value = cur_value;
-					max_indices.push_back(i);
-				}
-			}
-
-			if(value_found)
-				return CreateListOfNumbersFromIteratorAndFunction(max_indices, evaluableNodeManager, [](size_t val)
-																  { return static_cast<double>(val); });
-
-			return EvaluableNodeReference::Null();
-		}
-#endif
 
 		for(size_t i = 1; i < orderedChildNodes.size(); i++)
 		{

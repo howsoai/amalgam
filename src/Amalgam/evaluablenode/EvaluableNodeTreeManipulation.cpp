@@ -1983,6 +1983,8 @@ CompactHashMap<EvaluableNodeType, double> EvaluableNodeTreeManipulation::evaluab
 	{ENT_ABS,											0.4},
 	{ENT_MAX,											0.4},
 	{ENT_MIN,											0.4},
+	{ENT_INDEX_MAX,										0.2},
+	{ENT_INDEX_MIN,										0.2},
 	{ENT_DOT_PRODUCT,									0.2},
 	{ENT_GENERALIZED_DISTANCE,							0.15},
 

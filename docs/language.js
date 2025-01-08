@@ -506,7 +506,20 @@ var data = [
 		"description" : "minimum of all of the numbers",
 		"example" : "(print (min 0.5 1 7 9 -5))"
 	},
-
+	{
+		"parameter" : "index_max [number x1] [number x2] [number x3] ... [number xN] | (assoc ...) | (list ...)",
+		"output" : "[*]",
+		"concurrency" : true,
+		"description" : "If given multiple arguments, returns a list of the indices of the arguments with the maximum value. If given a single argument that is an assoc returns the a list of keys associated with the maximum values. If given a single argument that is a list, returns a list of list indices with the maximum value.",
+		"example" : "(print (index_max 0.5 1 7 9 -5))\n(print (index_max (list 0.5 1 7 9 -5) ))\n(print (index_max (assoc 1 0.5 2 1 3 7)))"
+	},
+	{
+		"parameter" : "index_min [number x1] [number x2] [number x3] ... [number xN] | (assoc ...) | (list ...)",
+		"output" : "[*]",
+		"concurrency" : true,
+		"description" : "If given multiple arguments, returns a list of the indices of the arguments with the minimum value. If given a single argument that is an assoc returns the a list of keys associated with the minimum values. If given a single argument that is a list, returns a list of list indices with the minimum value.",
+		"example" : "(print (index_min 0.5 1 7 9 -5))\n(print (index_min (list 0.5 1 7 9 -5) ))\n(print (index_min (assoc 1 0.5 2 1 3 7)))"
+	},
 	{
 		"parameter" : "dot_product list|assoc x1 list|assoc x2",
 		"output" : "number",

@@ -1,0 +1,35 @@
+; An entity that contains some number of named counters in a sub-entity.
+(null
+    #!id
+    ""
+
+    #initialize
+    (assign_to_entities
+        (assoc
+            !id (first (create_entities (lambda (list))))
+        )
+    )
+
+    #get_value
+    (declare
+        (assoc
+            counter "x"
+            id (retrieve_from_entity "!id")
+        )
+        (retrieve_from_entity id counter)
+    )
+
+    #add
+    (declare
+        (assoc
+            counter "x"
+            count 1
+            id (retrieve_from_entity "!id")
+        )
+        (if (contains_label id counter)
+            (accum_to_entities id (associate counter count))
+            (accum_entity_roots id (list (set_labels count (list counter))))
+        )
+        (retrieve_from_entity id counter)
+    )
+)

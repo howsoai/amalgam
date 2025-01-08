@@ -60,11 +60,11 @@ public:
 	}
 
 	//when attached a child node, make sure that this node reflects the same properties
-	//if first_attachment is true, then it will not call SetNeedCycleCheck(true) unless the attached node has the flag
-	//if the attached is not unique. Note that this parameter should not be set to true
+	//if first_attachment_and_not_construction_stack_node is true, then it will not call SetNeedCycleCheck(true)
+	// unless the attached node also needs cycle check.  Note that this parameter should not be set to true
 	//if the node can be accessed in any other way, such as the construction stack
 	void UpdatePropertiesBasedOnAttachedNode(EvaluableNodeReference &attached,
-		bool first_attachment = false)
+		bool first_attachment_and_not_construction_stack_node = false)
 	{
 		if(attached.value.nodeValue.code == nullptr)
 			return;
@@ -74,7 +74,7 @@ public:
 			unique = false;
 
 			//first attachment doesn't need to automatically require a cycle check
-			if(first_attachment)
+			if(first_attachment_and_not_construction_stack_node)
 			{
 				if(attached.value.nodeValue.code->GetNeedCycleCheck())
 					value.nodeValue.code->SetNeedCycleCheck(true);

@@ -1480,13 +1480,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OPCODE_STACK(EvaluableNode
 			EvaluableNodeReference stack_top_holder(evaluableNodeManager->AllocNode(ENT_LIST), true);
 			auto &sth_ocn = stack_top_holder->GetOrderedChildNodesReference();
 			sth_ocn.reserve(opcodeStackNodes->size());
+			bool first_node = true;
 			for(auto iter = begin(*opcodeStackNodes); iter != end(*opcodeStackNodes); ++iter)
 			{
 				EvaluableNode *cur_node = *iter;
 				EvaluableNodeReference new_node(evaluableNodeManager->AllocNode(cur_node->GetType()), true);
 				new_node->CopyMetadataFrom(cur_node);
 				sth_ocn.push_back(new_node);
-				stack_top_holder.UpdatePropertiesBasedOnAttachedNode(new_node);
+				stack_top_holder.UpdatePropertiesBasedOnAttachedNode(new_node, first_node);
+				first_node = false;
 			}
 			return stack_top_holder;
 		}

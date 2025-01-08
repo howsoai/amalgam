@@ -395,10 +395,22 @@
  (print (min 0.5 1 7 9 -5) "\n")
  (print (min (null) 4 8) "\n")
 
+ (print "--index_max--\n")
+ (print (index_max .5 -12 3 5 7))
+ (print (index_max (list 1 1 3 2 1 3)))
+ (print (index_max (null) 34  -66))
+ (print (index_max (null) (null) (null)) "\n")
+ (print (index_max (assoc  1 2 "tomato" 4444 3 5) ))
+
+ (print "--index_min--\n")
+ (print (index_min .5 -12 3 5 7))
+ (print (index_min (list 1 1 3 2 1 3)))
+ (print (index_min (null) 34  -66))
+ (print (index_min (assoc  1 2 "tomato" 4444 3 5) ))
+
  (print "--dot_product--\n")
  (print (dot_product (list 0.5 0.25 0.25) (list 4 8 8)) "\n")
  (print (dot_product (associate "a" 0.5 "b" 0.25 "c" 0.25) (associate "a" 4 "b" 8 "c" 8)) "\n")
-
  (print (dot_product (associate 0 0.5 1 0.25 2 0.25) (list 4 8 8)) "\n")
 
  (print "--generalized_distance--\n")

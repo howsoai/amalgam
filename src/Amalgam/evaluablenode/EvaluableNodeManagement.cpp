@@ -228,20 +228,20 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 	EvaluableNode *tlab_node = GetNextNodeFromTLAB();
 
 	//TODO 22458: remove this
-	{
-		Concurrency::SingleLock lock(tlabCountMutex);
-	
-		tlabSize += threadLocalAllocationBuffer.size();
-		tlabSizeCount++;
-	
-		rollingAveTlabSize = .98 * rollingAveTlabSize + .02 * threadLocalAllocationBuffer.size();
-	
-		if(tlabSizeCount % 1000 == 0)
-		{
-			double ave_size = static_cast<double>(tlabSize) / tlabSizeCount;
-			std::cout << "ave tlab size: " << ave_size << std::endl;
-		}
-	}
+	//{
+	//	Concurrency::SingleLock lock(tlabCountMutex);
+	//
+	//	tlabSize += threadLocalAllocationBuffer.size();
+	//	tlabSizeCount++;
+	//
+	//	rollingAveTlabSize = .98 * rollingAveTlabSize + .02 * threadLocalAllocationBuffer.size();
+	//
+	//	if(tlabSizeCount % 1000 == 0)
+	//	{
+	//		double ave_size = static_cast<double>(tlabSize) / tlabSizeCount;
+	//		std::cout << "ave tlab size: " << ave_size << std::endl;
+	//	}
+	//}
 
 	//Fast Path; get node from thread local buffer
 	if(tlab_node != nullptr)

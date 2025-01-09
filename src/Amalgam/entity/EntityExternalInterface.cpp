@@ -289,7 +289,7 @@ std::pair<std::string, std::string> EntityExternalInterface::ExecuteEntityJSONLo
 	enm.FreeNodeTreeIfPossible(returned_value);
 	std::string json_out = converted ? result : string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID);
 
-	std::string log = Parser::Unparse(logger.GetWrites(), false, false);
+	std::string log = Parser::Unparse(logger.GetWrites(), false);
 
 	return std::pair(json_out, log);
 }

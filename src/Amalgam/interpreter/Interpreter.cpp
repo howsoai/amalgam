@@ -689,6 +689,8 @@ std::pair<EntityWriteReference, StringRef> Interpreter::InterpretNodeIntoDestina
 
 EvaluableNode **Interpreter::TraverseToDestinationFromTraversalPathList(EvaluableNode **source, EvaluableNodeReference &tpl, bool create_destination_if_necessary)
 {
+	//TODO 22518: change this to take in an EvaluableNodeReference for tpl that can be immediate, perform appropriate logic, and also change any callers to allow immediates
+
 	EvaluableNode **address_list;
 	//default list length to 1
 	size_t address_list_length = 1;

@@ -344,6 +344,7 @@ std::pair<EntityReferenceType, EntityReferenceType>
 TraverseToEntityReferenceAndContainerViaEvaluableNodeIDPath(
 	Entity *from_entity, EvaluableNode *id_path, StringRef *dest_sid_ref = nullptr)
 {
+	//TODO 22518: change this to take in an EvaluableNodeReference that can be immediate, perform appropriate logic, and also change any callers to allow immediates
 	EvaluableNodeIDPathTraverser traverser(id_path, dest_sid_ref);
 	auto [entity, container]
 		= TraverseToEntityReferenceAndContainerViaEvaluableNodeIDPath<EntityReferenceType>(

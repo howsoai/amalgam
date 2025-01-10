@@ -1392,7 +1392,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_INDEX(EvaluableNod
 	}
 	else if(enivwt.nodeType == ENIVT_STRING_ID)
 	{
-		//TODO 22518: investigate if this is being used sufficiently in workflows, especially ablation workflows
 		if(immediate_result)
 		{
 			//parse into key, which may be the same StringID if not escaped and desired to be in an immediate format

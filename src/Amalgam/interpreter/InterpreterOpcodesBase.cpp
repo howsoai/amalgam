@@ -1387,11 +1387,24 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_INDEX(EvaluableNod
 	//build the index node to return
 	EvaluableNodeImmediateValueWithType enivwt(constructionStackIndicesAndUniqueness[offset].index);
 	if(enivwt.nodeType == ENIVT_NUMBER)
+	{
 		return AllocReturn(enivwt.nodeValue.number, immediate_result);
+	}
 	else if(enivwt.nodeType == ENIVT_STRING_ID)
+	{
+		//TODO 22518: investigate if this is being used sufficiently in workflows, especially ablation workflows
+		if(immediate_result)
+		{
+			//parse into key, which may be the same StringID if not escaped and desired to be in an immediate format
+			auto cur_index_sid = Parser::ParseFromKeyStringIdToStringIdWithReference(enivwt.nodeValue.stringID);
+			return EvaluableNodeReference(cur_index_sid, true);
+		}
 		return Parser::ParseFromKeyStringId(enivwt.nodeValue.stringID, evaluableNodeManager);
+	}
 	else
+	{
 		return EvaluableNodeReference::Null();
+	}
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CURRENT_VALUE(EvaluableNode *en, bool immediate_result)

@@ -198,6 +198,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_AC
 		}
 
 		target_entity->CollectGarbageWithEntityWriteReference();
+
+		evaluableNodeManager->FreeNodeTreeIfPossible(new_code);
 	}
 
 	return AllocReturn(all_assignments_successful, immediate_result);

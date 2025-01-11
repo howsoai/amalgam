@@ -342,8 +342,18 @@ inline EntityReferenceType TraverseToExistingEntityReferenceViaEvaluableNodeIDPa
 template<typename EntityReferenceType>
 std::pair<EntityReferenceType, EntityReferenceType>
 TraverseToEntityReferenceAndContainerViaEvaluableNodeIDPath(
-	Entity *from_entity, EvaluableNode *id_path, StringRef *dest_sid_ref = nullptr)
+	Entity *from_entity, EvaluableNodeReference &id_path, StringRef *dest_sid_ref = nullptr)
 {
+	//if(id_path.IsImmediateValue())
+	//{
+	//	auto sid = id_path.GetValueAsStringIDWithReference();
+	//	if(sid == string_intern_pool.NOT_A_STRING_ID)
+	//		return std::make_pair(EntityReferenceType(nullptr), EntityReferenceType(nullptr));
+	//
+	//
+	//	//TODO 22518: finish this
+	//}
+
 	//TODO 22518: change this to take in an EvaluableNodeReference that can be immediate, perform appropriate logic, and also change any callers to allow immediates
 	EvaluableNodeIDPathTraverser traverser(id_path, dest_sid_ref);
 	auto [entity, container]

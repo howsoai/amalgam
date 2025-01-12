@@ -139,6 +139,9 @@ public:
 	//transforms the code_string_id into evaluable nodes
 	static EvaluableNodeReference ParseFromKeyStringId(StringInternPool::StringID code_string_id, EvaluableNodeManager *enm);
 
+	//transforms the code_string_id into a StringId with reference
+	static StringInternPool::StringID ParseFromKeyStringIdToStringIdWithReference(StringInternPool::StringID code_string_id);
+
 	//transforms the code_string_id into a number
 	static double ParseNumberFromKeyStringId(StringInternPool::StringID code_string_id);
 

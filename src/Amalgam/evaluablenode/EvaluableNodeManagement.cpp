@@ -74,19 +74,25 @@ EvaluableNode *EvaluableNodeManager::AllocNode(EvaluableNode *original, Evaluabl
 
 void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t previous_num_nodes)
 {
-	//scale down the number of nodes previously allocated, because there is always a chance that
-	//a large allocation goes beyond that size and so the memory keeps growing
-	//by using a fraction less than 1, it reduces the chances of a slow memory increase
-	size_t max_from_previous = static_cast<size_t>(0.99609375 * previous_num_nodes);
-
-	//at least use what's already been allocated
-	size_t max_from_allocation = static_cast<size_t>(nodes.size() / allocExpansionFactor);
-
 	//assume at least a factor larger than the base memory usage for the entity
 	//add 1 for good measure and to make sure the smallest size isn't zero
-	size_t max_from_current = static_cast<size_t>(3 * (1 + GetNumberOfUsedNodes()));
+	size_t max_from_current = 3 * GetNumberOfUsedNodes() + 1;
 
-	numNodesToRunGarbageCollection = std::max(max_from_allocation, std::max<size_t>(max_from_previous, max_from_current));
+	size_t cur_num_nodes = GetNumberOfUsedNodes();
+	if(numNodesToRunGarbageCollection > cur_num_nodes)
+	{
+		//scale down the number of nodes previously allocated, because there is always a chance that
+		//a large allocation goes beyond that size and so the memory keeps growing
+		//by using a fraction less than 1, it reduces the chances of a slow memory increase
+		size_t diff_from_current = (numNodesToRunGarbageCollection - cur_num_nodes);
+		size_t max_from_previous = cur_num_nodes + static_cast<size_t>(.9 * diff_from_current);
+
+		numNodesToRunGarbageCollection = std::max<size_t>(max_from_previous, max_from_current);
+	}
+	else
+	{
+		numNodesToRunGarbageCollection = max_from_current;
+	}
 }
 
 void EvaluableNodeManager::CollectGarbage()

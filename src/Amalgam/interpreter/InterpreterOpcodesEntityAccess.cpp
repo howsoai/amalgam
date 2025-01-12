@@ -300,11 +300,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 			#endif
 			}
 		}
+		//clear write lock as soon as possible
+		target_entity = EntityWriteReference();
 
-		//if assigning to a different entity and it was unique, it can be cleared
-		if(target_entity != curEntity && assigned_vars.unique)
+		//if assigning to a different entity, it can be cleared
+		if(target_entity != curEntity)
 		{
-			target_entity = EntityWriteReference();
 			node_stack.PopEvaluableNode();
 			evaluableNodeManager->FreeNodeTreeIfPossible(assigned_vars);
 		}

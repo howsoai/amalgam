@@ -197,7 +197,21 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_AC
 			}
 		}
 
-		target_entity->CollectGarbageWithEntityWriteReference();
+		if(target_entity != curEntity)
+		{
+			//don't need to set side effects because the data was copied, not directly assigned
+		#ifdef AMALGAM_MEMORY_INTEGRITY
+			VerifyEvaluableNodeIntegrity();
+		#endif
+
+			target_entity->CollectGarbageWithEntityWriteReference();
+
+		#ifdef AMALGAM_MEMORY_INTEGRITY
+			VerifyEvaluableNodeIntegrity();
+		#endif
+		}
+
+		evaluableNodeManager->FreeNodeTreeIfPossible(new_code);
 	}
 
 	return AllocReturn(all_assignments_successful, immediate_result);

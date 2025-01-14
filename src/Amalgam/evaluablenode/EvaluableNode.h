@@ -1218,7 +1218,8 @@ public:
 	}
 
 	//copies the value from en and returns the EvaluableNodeConcreteValueType
-	void CopyValueFromEvaluableNode(EvaluableNode *en);
+	//if enm is not nullptr, then it will make a copy of any code or string ids
+	void CopyValueFromEvaluableNode(EvaluableNode *en, EvaluableNodeManager *enm = nullptr);
 
 	bool GetValueAsBoolean();
 

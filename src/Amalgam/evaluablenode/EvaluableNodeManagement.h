@@ -177,6 +177,12 @@ public:
 		unique = _unique;
 	}
 
+	__forceinline void SetReference(const EvaluableNodeImmediateValueWithType &enimvwt, bool _unique)
+	{
+		value = enimvwt;
+		unique = _unique;
+	}
+
 	//returns true if it is an immediate value stored in this EvaluableNodeReference
 	__forceinline bool IsImmediateValue()
 	{

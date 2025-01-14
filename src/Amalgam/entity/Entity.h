@@ -328,8 +328,9 @@ public:
 	bool GetValueAtLabelAsString(StringInternPool::StringID label_sid, std::string &value_out, bool on_self = false);
 
 	//Evaluates the specified label into a EvaluableNodeImmediateValueWithType
+	//if destination_temp_enm is not null and code is needed, it will make a copy
 	EvaluableNodeImmediateValueWithType GetValueAtLabelAsImmediateValue(
-		StringInternPool::StringID label_sid, bool on_self = false);
+		StringInternPool::StringID label_sid, bool on_self = false, EvaluableNodeManager *destination_temp_enm = nullptr);
 
 	//Iterates over all of the labels, calling GetValueAtLabel for each,
 	// and passing the label sid and the node to the user specified function func

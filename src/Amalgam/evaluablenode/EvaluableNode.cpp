@@ -1907,7 +1907,7 @@ size_t EvaluableNode::GetDeepSizeNoCycleRecurse(EvaluableNode *n)
 	return size;
 }
 
-void EvaluableNodeImmediateValueWithType::CopyValueFromEvaluableNode(EvaluableNode *en)
+void EvaluableNodeImmediateValueWithType::CopyValueFromEvaluableNode(EvaluableNode *en, EvaluableNodeManager *enm)
 {
 	if(en == nullptr)
 	{
@@ -1935,11 +1935,19 @@ void EvaluableNodeImmediateValueWithType::CopyValueFromEvaluableNode(EvaluableNo
 	{
 		nodeType = ENIVT_STRING_ID;
 		nodeValue = EvaluableNodeImmediateValue(en->GetStringIDReference());
+		
+		//create copy
+		if(enm != nullptr)
+			string_intern_pool.CreateStringReference(nodeValue.stringID);
+
 		return;
 	}
 
 	nodeType = ENIVT_CODE;
-	nodeValue = EvaluableNodeImmediateValue(en);
+	if(enm == nullptr)
+		nodeValue = EvaluableNodeImmediateValue(en);
+	else
+		nodeValue.code = enm->DeepAllocCopy(en, EvaluableNodeManager::ENMM_REMOVE_ALL);
 }
 
 bool EvaluableNodeImmediateValueWithType::GetValueAsBoolean()

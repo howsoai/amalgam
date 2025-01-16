@@ -1314,7 +1314,7 @@ protected:
 
 			for(StringInternPool::StringID max_key : max_keys)
 			{
-				EvaluableNodeReference parsedKey = Parser::ParseFromKeyString(max_key->string, evaluableNodeManager);
+				EvaluableNodeReference parsedKey = Parser::ParseFromKeyStringId(max_key, evaluableNodeManager);
 				index_list.UpdatePropertiesBasedOnAttachedNode(parsedKey);
 				index_list_ocn.push_back(parsedKey);
 			}

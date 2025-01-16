@@ -149,16 +149,6 @@ std::string Parser::Unparse(EvaluableNode *tree,
 	return upd.result;
 }
 
-EvaluableNodeReference Parser::ParseFromKeyString(const std::string &code_string, EvaluableNodeManager *enm)
-{
-	if(code_string.size() == 0 || code_string[0] != '\0')
-		return EvaluableNodeReference(enm->AllocNode(ENT_STRING, code_string), true);
-
-	std::string_view escaped_string(&code_string[1], code_string.size() - 1);
-	auto [node, warnings, char_with_error] = Parser::Parse(escaped_string, enm);
-	return node;
-}
-
 EvaluableNodeReference Parser::ParseFromKeyStringId(StringInternPool::StringID code_string_id,
 	EvaluableNodeManager *enm)
 {
@@ -172,6 +162,19 @@ EvaluableNodeReference Parser::ParseFromKeyStringId(StringInternPool::StringID c
 	std::string_view escaped_string(&code_string[1], code_string.size() - 1);
 	auto [node, warnings, char_with_error] = Parser::Parse(escaped_string, enm);
 	return node;
+}
+
+StringInternPool::StringID Parser::ParseFromKeyStringIdToStringIdWithReference(StringInternPool::StringID code_string_id)
+{
+	if(code_string_id == string_intern_pool.NOT_A_STRING_ID)
+		return string_intern_pool.NOT_A_STRING_ID;
+
+	std::string &code_string = code_string_id->string;
+	if(code_string.size() == 0 || code_string[0] != '\0')
+		return string_intern_pool.CreateStringReference(code_string_id);
+
+	std::string escaped_string(&code_string[1], code_string.size() - 1);
+	return string_intern_pool.CreateStringReference(escaped_string);
 }
 
 double Parser::ParseNumberFromKeyStringId(StringInternPool::StringID code_string_id)

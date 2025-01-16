@@ -300,11 +300,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 			#endif
 			}
 		}
+		//clear write lock as soon as possible
+		target_entity = EntityWriteReference();
 
-		//if assigning to a different entity and it was unique, it can be cleared
-		if(target_entity != curEntity && assigned_vars.unique)
+		//if assigning to a different entity, it can be cleared
+		if(target_entity != curEntity)
 		{
-			target_entity = EntityWriteReference();
 			node_stack.PopEvaluableNode();
 			evaluableNodeManager->FreeNodeTreeIfPossible(assigned_vars);
 		}
@@ -352,7 +353,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 	if(to_lookup == nullptr || to_lookup->IsImmediate())
 	{
 		StringInternPool::StringID label_sid = EvaluableNode::ToStringIDIfExists(to_lookup);
-		EvaluableNodeReference value = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager, direct, target_entity == curEntity);
+		EvaluableNodeReference value;
+		if(immediate_result)
+			value.SetReference(
+				target_entity->GetValueAtLabelAsImmediateValue(label_sid, target_entity == curEntity, evaluableNodeManager), true);
+		else
+			value = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager, direct, target_entity == curEntity);
 		evaluableNodeManager->FreeNodeTreeIfPossible(to_lookup);
 
 		return value;

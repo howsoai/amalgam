@@ -136,11 +136,11 @@ public:
 		bool expanded_whitespace = true, bool emit_attributes = true, bool sort_keys = false,
 		bool first_of_transactional_unparse = false, size_t starting_indendation = 0);
 
-	//transforms the code_string into evaluable nodes
-	static EvaluableNodeReference ParseFromKeyString(const std::string &code_string, EvaluableNodeManager *enm);
-
 	//transforms the code_string_id into evaluable nodes
 	static EvaluableNodeReference ParseFromKeyStringId(StringInternPool::StringID code_string_id, EvaluableNodeManager *enm);
+
+	//transforms the code_string_id into a StringId with reference
+	static StringInternPool::StringID ParseFromKeyStringIdToStringIdWithReference(StringInternPool::StringID code_string_id);
 
 	//transforms the code_string_id into a number
 	static double ParseNumberFromKeyStringId(StringInternPool::StringID code_string_id);

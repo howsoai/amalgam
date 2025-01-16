@@ -38,8 +38,8 @@ foreach(TEST_TARGET ${ALL_APP_TARGETS})
     message(STATUS "TEST_TARGET: ${TEST_TARGET}")
 
     # GLIBC 2.28 version doesn't need to test all targets
-    if(${GLIBC_VERSION} STREQUAL "2.28")
-        if(${TEST_TARGET} NOT STREQUAL "amalgam-mt-app" AND ${TEST_TARGET} NOT STREQUAL "amalgam-st-app") 
+    if("${GLIBC_VERSION}" STREQUAL "2.28")
+        if(NOT "${TEST_TARGET}" STREQUAL "amalgam-mt-app" AND NOT "${TEST_TARGET}" STREQUAL "amalgam-st-app") 
             continue()
         endif()
     endif()

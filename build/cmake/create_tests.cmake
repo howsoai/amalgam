@@ -34,6 +34,16 @@ set(ALL_TEST_TARGETS)
 set(TEST_OUTPUT_LOG_BASE "${CMAKE_INSTALL_PREFIX}/../../test")
 foreach(TEST_TARGET ${ALL_APP_TARGETS})
 
+    message(STATUS "GLIBC version: ${GLIBC_VERSION}")
+    message(STATUS "TEST_TARGET: ${TEST_TARGET}")
+
+    # GLIBC 2.28 version doesn't need to test all targets
+    if(${GLIBC_VERSION} STREQUAL "2.28")
+        if(${TEST_TARGET} NOT STREQUAL "amalgam-mt-app" AND ${TEST_TARGET} NOT STREQUAL "amalgam-st-app") 
+            continue()
+        endif()
+    endif()
+
     # No args test:
     set(TEST_NAME "App.NoArgs.${TEST_TARGET}_noargs")
     set(TEST_OUTPUT_LOG "${TEST_OUTPUT_LOG_BASE}/out.${TEST_NAME}.txt")

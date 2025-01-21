@@ -68,7 +68,7 @@ void PerformanceProfiler::StartOperation(const std::string &t, int64_t memory_us
 
 void PerformanceProfiler::EndOperation(int64_t memory_use = 0)
 {
-	//get and remove data from call stack
+	//get and remove data from scope stack
 	auto type_and_time_and_mem = instructionStackTypeAndStartTimeAndMemUse.back();
 	auto operation_type = type_and_time_and_mem.first;
 	auto counters = type_and_time_and_mem.second;

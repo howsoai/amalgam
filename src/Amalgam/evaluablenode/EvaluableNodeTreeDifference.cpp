@@ -214,7 +214,7 @@ void EvaluableNodeTreeDifference::FindParentReferences(EvaluableNode *tree, Eval
 		return;
 	
 	//attempt to record the reference, but if already processed, skip
-	if(references_with_parents.insert(std::make_pair(tree, parent)).second == false)
+	if(references_with_parents.emplace(tree, parent).second == false)
 		return;
 
 	for(auto &cn : tree->GetOrderedChildNodes())
@@ -230,7 +230,7 @@ void EvaluableNodeTreeDifference::FindTopNodesExcluded(EvaluableNode *tree, Eval
 		return;
 
 	//attempt to record the reference, but if already processed, skip (also prevents infinite recursion in graph structures)
-	if(references_with_parents.insert(std::make_pair(tree, parent)).second == false)
+	if(references_with_parents.emplace(tree, parent).second == false)
 		return;
 	
 	//if included, traverse tree, if not, insert as top excluded node

@@ -166,26 +166,26 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 		return EvaluableNodeReference::Null();
 
 #ifdef MULTITHREAD_SUPPORT
-	if(callStackMutex != nullptr)
+	if(scopeStackMutex != nullptr)
 	{
 		//first check unique
-		size_t call_stack_index = 0;
-		EvaluableNode **value_ptr = GetCallStackSymbolLocation(sid, call_stack_index, true, false);
+		size_t scope_stack_index = 0;
+		EvaluableNode **value_ptr = GetScopeStackSymbolLocation(sid, scope_stack_index, true, false);
 		if(value_ptr != nullptr)
 			return EvaluableNodeReference(*value_ptr, false);
 
 		Concurrency::ReadLock lock;
-		LockWithoutBlockingGarbageCollection(*callStackMutex, lock);
+		LockWithoutBlockingGarbageCollection(*scopeStackMutex, lock);
 
 		//now check shared
-		value_ptr = GetCallStackSymbolLocation(sid, call_stack_index, false, true);
+		value_ptr = GetScopeStackSymbolLocation(sid, scope_stack_index, false, true);
 		if(value_ptr != nullptr)
 			return EvaluableNodeReference(*value_ptr, false);
 	}
 	else //no multithreading currently happening
 #endif
 	{
-		EvaluableNodeReference value(GetCallStackSymbol(sid), false);
+		EvaluableNodeReference value(GetScopeStackSymbol(sid), false);
 		if(value != nullptr)
 			return value;
 	}

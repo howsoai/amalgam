@@ -62,7 +62,7 @@ struct InterpreterDebugData
 	//will run until it reaches the next occurrence of this opcode, then it will clear it
 	EvaluableNodeType runUntilOpcodeType = ENT_NOT_A_BUILT_IN_TYPE;
 
-	//will run until this opcode is reached.  should only be used for opcodes that are preserved in the `
+	//will run until this opcode is reached.  should only be used for opcodes that are preserved in the scope stack
 	EvaluableNode *runUntilOpcode = nullptr;
 
 	//will run until the scope stack size is this value

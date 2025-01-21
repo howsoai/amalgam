@@ -216,7 +216,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 		return cur_entity_ref->GetValueAtLabel(sid, nullptr, true, true).first;
 	}
 
-
 	if (performanceConstraints != nullptr && performanceConstraints->collectWarnings)
 		performanceConstraints->addWarning(sid->string + " " + en->GetCommentsString());
 

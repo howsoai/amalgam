@@ -861,7 +861,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	if(num_params < 1)
 		return EvaluableNodeReference::Null();
 
-	//make sure there's at least an copeStack to use
+	//make sure there's at least a scopeStack to use
 	if(scopeStackNodes->size() < 1)
 		return EvaluableNodeReference::Null();
 

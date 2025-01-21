@@ -380,8 +380,10 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 					found = value_found.second;
 				}
 				else
+				{
 					found = false;
-
+				}
+				
 				if(found)
 				{
 					if(FastIsNaN(value))

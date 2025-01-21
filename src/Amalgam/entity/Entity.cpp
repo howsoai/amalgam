@@ -154,20 +154,14 @@ std::pair<double, bool> Entity::GetValueAtLabelAsNumber(StringInternPool::String
 	constexpr double value_if_not_found = std::numeric_limits<double>::quiet_NaN();
 
 	if(label_sid == string_intern_pool.NOT_A_STRING_ID)
-	{
 		return std::pair(value_if_not_found, false);
-	}
 
 	if(!on_self && IsLabelPrivate(label_sid))
-	{
 		return std::pair(value_if_not_found, false);
-	}
 
 	const auto &label = labelIndex.find(label_sid);
 	if(label == end(labelIndex))
-	{
 		return std::pair(value_if_not_found, false);
-	}
 
 	return(std::pair(EvaluableNode::ToNumber(label->second), true));
 }

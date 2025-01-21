@@ -137,7 +137,6 @@ public:
 	//If true, collectWarnings
 	bool collectWarnings;
 
-	
 	void addWarning(std::string warning)
 	{
 #ifdef MULTITHREAD_SUPPORT

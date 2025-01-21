@@ -166,7 +166,7 @@ PLATFORM_MAIN_CONSOLE
 		}
 		else if(args[i] == "--debug-sources")
 			debug_sources = true;
-		else if (args[i] == "--no-warm-on-undefined")
+		else if(args[i] == "--no-warm-on-undefined")
 			warn_on_undefined = false;
 		else if(args[i] == "--nosbfds")
 			_enable_SBF_datastore = false;

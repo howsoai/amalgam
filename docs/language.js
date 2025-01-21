@@ -1292,7 +1292,7 @@ var data = [
 		"output" : "string",
 		"permissions" : "e",
 		"new value" : "new",
-		"description" : "Evaluates to a string representing the current state of the random number generator for the entity specified by id used for seeding the random streams of any calls to the entity. ",
+		"description" : "Evaluates to a string representing the current state of the random number generator for the entity specified by id used for seeding the random streams of any calls to the entity.",
 		"example" : "(create_entities \"RandTest\" (lambda\n  (null ##a (rand) )\n  ))\n(print (call_entity \"RandTest\" \"a\"))\n(print (get_entity_rand_seed \"RandTest\"))\n"
 	},
 

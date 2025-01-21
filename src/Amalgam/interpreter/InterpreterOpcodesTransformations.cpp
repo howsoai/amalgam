@@ -1431,7 +1431,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, bo
 			//put to_keep back in (have the string reference from above)
 			container->ClearMappedChildNodes();
 			if(key_sid != string_intern_pool.NOT_A_STRING_ID)
-				container_mcn.insert(std::make_pair(key_sid, to_keep));
+				container_mcn.emplace(key_sid, to_keep);
 		}
 		else if(container->IsOrderedArray())
 		{
@@ -1481,7 +1481,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, bo
 				auto found_to_keep = container_mcn.find(key_sid);
 				if(found_to_keep != end(container_mcn))
 				{
-					new_container.insert(std::make_pair(found_to_keep->first, found_to_keep->second));
+					new_container.emplace(found_to_keep->first, found_to_keep->second);
 					container_mcn.erase(found_to_keep);
 				}
 			}

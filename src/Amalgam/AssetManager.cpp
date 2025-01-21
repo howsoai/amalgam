@@ -325,7 +325,7 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 	args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_create_new_entity), entity->evaluableNodeManager.AllocNode(false));
 	args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_require_version_compatibility),
 		entity->evaluableNodeManager.AllocNode(asset_params->requireVersionCompatibility));
-	auto call_stack = Interpreter::ConvertArgsToCallStack(args, entity->evaluableNodeManager);
+	auto scope_stack = Interpreter::ConvertArgsToScopeStack(args, entity->evaluableNodeManager);
 
 	auto first_node_type = first_node->GetType();
 	if(first_node_type == ENT_LET || first_node_type == ENT_DECLARE)
@@ -338,12 +338,12 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 		{
 			if(first_node_type == ENT_LET)
 			{
-				call_stack->AppendOrderedChildNode(assoc_node);
+				scope_stack->AppendOrderedChildNode(assoc_node);
 			}
 			else //first_node_type == ENT_DECLARE
 			{
 				first_node->AppendOrderedChildNode(assoc_node);
-				entity->ExecuteCodeAsEntity(first_node, call_stack, calling_interpreter);
+				entity->ExecuteCodeAsEntity(first_node, scope_stack, calling_interpreter);
 			}
 		}
 	}
@@ -356,12 +356,12 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 		for(auto &w : warnings)
 			std::cerr << w << std::endl;
 
-		entity->ExecuteCodeAsEntity(node, call_stack, calling_interpreter);
+		entity->ExecuteCodeAsEntity(node, scope_stack, calling_interpreter);
 	}
 
 	//check the version from the stack rather than return, since transactional files may be missing the last return
 	EntityExternalInterface::LoadEntityStatus load_status(true, "", "");
-	EvaluableNode **version_node = call_stack->GetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_amlg_version));
+	EvaluableNode **version_node = scope_stack->GetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_amlg_version));
 	if(version_node != nullptr && *version_node != nullptr && (*version_node)->GetType() == ENT_STRING)
 	{
 		const std::string &version_string = (*version_node)->GetStringValue();
@@ -369,8 +369,8 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 		load_status.SetStatus(success || !asset_params->requireVersionCompatibility, error_message, version_string);
 	}
 	
-	entity->evaluableNodeManager.FreeNode(call_stack->GetOrderedChildNodesReference()[0]);
-	entity->evaluableNodeManager.FreeNode(call_stack);
+	entity->evaluableNodeManager.FreeNode(scope_stack->GetOrderedChildNodesReference()[0]);
+	entity->evaluableNodeManager.FreeNode(scope_stack);
 
 	return load_status;
 }
@@ -480,9 +480,9 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 		args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_create_new_entity), new_entity->evaluableNodeManager.AllocNode(false));
 		args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_require_version_compatibility),
 			new_entity->evaluableNodeManager.AllocNode(asset_params->requireVersionCompatibility));
-		auto call_stack = Interpreter::ConvertArgsToCallStack(args, new_entity->evaluableNodeManager);
+		auto scope_stack = Interpreter::ConvertArgsToScopeStack(args, new_entity->evaluableNodeManager);
 
-		EvaluableNodeReference result = new_entity->ExecuteCodeAsEntity(code, call_stack, calling_interpreter);
+		EvaluableNodeReference result = new_entity->ExecuteCodeAsEntity(code, scope_stack, calling_interpreter);
 
 		//if returned null, return comment as the error
 		if(EvaluableNode::IsNull(result))
@@ -500,8 +500,8 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 			return nullptr;
 		}
 
-		new_entity->evaluableNodeManager.FreeNode(call_stack->GetOrderedChildNodesReference()[0]);
-		new_entity->evaluableNodeManager.FreeNode(call_stack);
+		new_entity->evaluableNodeManager.FreeNode(scope_stack->GetOrderedChildNodesReference()[0]);
+		new_entity->evaluableNodeManager.FreeNode(scope_stack);
 
 		asset_manager.SetEntityPermissions(new_entity, EntityPermissions());
 

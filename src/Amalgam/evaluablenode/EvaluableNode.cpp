@@ -635,7 +635,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 					value = ocn[i + 1];
 
 				//try to insert, but drop reference if couldn't
-				if(!new_map.insert(std::make_pair(sid, value)).second)
+				if(!new_map.emplace(sid, value).second)
 					string_intern_pool.DestroyStringReference(sid);
 			}
 
@@ -1329,7 +1329,7 @@ EvaluableNode **EvaluableNode::GetOrCreateMappedChildNode(const std::string &id)
 	//create a reference in case it doesn't exist yet
 	StringInternPool::StringID sid = string_intern_pool.CreateStringReference(id);
 
-	auto [inserted_node, inserted] = mcn.insert(std::make_pair(sid, nullptr));
+	auto [inserted_node, inserted] = mcn.emplace(sid, nullptr);
 
 	//if the node was not inserted, then don't need the reference created
 	if(!inserted)
@@ -1342,7 +1342,7 @@ EvaluableNode **EvaluableNode::GetOrCreateMappedChildNode(const std::string &id)
 EvaluableNode **EvaluableNode::GetOrCreateMappedChildNode(const StringInternPool::StringID sid)
 {
 	auto &mcn = GetMappedChildNodesReference();
-	auto [inserted_node, inserted] = mcn.insert(std::make_pair(sid, nullptr));
+	auto [inserted_node, inserted] = mcn.emplace(sid, nullptr);
 
 	//if the node was inserted, then create a reference
 	if(inserted)
@@ -1388,7 +1388,7 @@ std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const std::s
 	StringInternPool::StringID sid = string_intern_pool.CreateStringReference(id);
 
 	//try to insert; if fail, then need to remove extra reference and update node
-	auto [inserted_node, inserted] = mcn.insert(std::make_pair(sid, node));
+	auto [inserted_node, inserted] = mcn.emplace(sid, node);
 	if(!inserted)
 	{
 		string_intern_pool.DestroyStringReference(sid);
@@ -1420,7 +1420,7 @@ std::pair<bool, EvaluableNode **> EvaluableNode::SetMappedChildNode(const String
 
 	auto &mcn = GetMappedChildNodesReference();
 
-	auto [inserted_node, inserted] = mcn.insert(std::make_pair(sid, node));
+	auto [inserted_node, inserted] = mcn.emplace(sid, node);
 
 	if(inserted)
 		string_intern_pool.CreateStringReference(sid); //create string reference if pair was successfully set/added
@@ -1458,7 +1458,7 @@ bool EvaluableNode::SetMappedChildNodeWithReferenceHandoff(const StringInternPoo
 
 	auto &mcn = GetMappedChildNodesReference();
 
-	auto [inserted_node, inserted] = mcn.insert(std::make_pair(sid, node));
+	auto [inserted_node, inserted] = mcn.emplace(sid, node);
 
 	if(!inserted)
 	{
@@ -1526,7 +1526,7 @@ void EvaluableNode::AppendMappedChildNodes(AssocType &mcn_to_append)
 	//insert everything
 	for(auto &[n_id, n] : mcn_to_append)
 	{
-		auto [inserted_node, inserted] = mcn.insert(std::make_pair(n_id, n));
+		auto [inserted_node, inserted] = mcn.emplace(n_id, n);
 
 		if(inserted)
 			string_intern_pool.CreateStringReference(n_id); //create string reference if pair was successfully set/added
@@ -1715,7 +1715,7 @@ bool EvaluableNode::AreDeepEqualGivenShallowEqual(EvaluableNode *a, EvaluableNod
 	if(checked != nullptr)
 	{
 		//try to record this as a new pair that is checked
-		auto [inserted_entry, inserted] = checked->insert(std::make_pair(a, b));
+		auto [inserted_entry, inserted] = checked->emplace(a, b);
 
 		//if the entry for a already exists
 		if(!inserted)

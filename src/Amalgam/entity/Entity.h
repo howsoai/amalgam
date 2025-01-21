@@ -189,14 +189,14 @@ public:
 
 	~Entity();
 
-	//executes the code specified by code as if it were called on this entity using the specified call_stack
+	//executes the code specified by code as if it were called on this entity using the specified scope_stack
 	//note that code should be allocated from this entity
 	// calling_interpreter should be the interpreter that is calling this, if applicable
 	// write_listeners and print_listener will listen for any modifications to the entity and output as applicable
 	// if performance_constraints is not nullptr, then it will constrain performance and update performance_constraints
 	// if enm_lock is specified, it should be a lock on this entity's evaluableNodeManager.memoryModificationMutex
 	EvaluableNodeReference ExecuteCodeAsEntity(EvaluableNode *code,
-		EvaluableNode *call_stack, Interpreter *calling_interpreter = nullptr,
+		EvaluableNode *scope_stack, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
 		PerformanceConstraints *performance_constraints = nullptr
 #ifdef MULTITHREAD_SUPPORT
@@ -209,7 +209,7 @@ public:
 	// if on_self is true, then it will be allowed to access private labels
 	//see ExecuteCodeAsEntity for further parameter details
 	EvaluableNodeReference Execute(StringInternPool::StringID label_sid,
-		EvaluableNode *call_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
+		EvaluableNode *scope_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
 		PerformanceConstraints *performance_constraints = nullptr
 	#ifdef MULTITHREAD_SUPPORT
@@ -231,7 +231,7 @@ public:
 				node_to_execute = label->second;
 		}
 
-		return ExecuteCodeAsEntity(node_to_execute, call_stack, calling_interpreter,
+		return ExecuteCodeAsEntity(node_to_execute, scope_stack, calling_interpreter,
 			write_listeners, print_listener, performance_constraints
 		#ifdef MULTITHREAD_SUPPORT
 			, enm_lock
@@ -241,7 +241,7 @@ public:
 
 	//same as Execute but accepts a string for label name
 	inline EvaluableNodeReference Execute(const std::string &label_name,
-		EvaluableNode *call_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
+		EvaluableNode *scope_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
 		PerformanceConstraints *performance_constraints = nullptr
 	#ifdef MULTITHREAD_SUPPORT
@@ -250,7 +250,7 @@ public:
 		)
 	{
 		StringInternPool::StringID label_sid = string_intern_pool.GetIDFromString(label_name);
-		return Execute(label_sid, call_stack, on_self, calling_interpreter,
+		return Execute(label_sid, scope_stack, on_self, calling_interpreter,
 			write_listeners, print_listener, performance_constraints
 		#ifdef MULTITHREAD_SUPPORT
 			, enm_lock

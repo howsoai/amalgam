@@ -329,7 +329,7 @@ public:
 				return;
 
 			//attempt to put in value 1 for the reference
-			auto [inserted_entry, inserted] = nodesReferenced.insert(std::make_pair(en, 1));
+			auto [inserted_entry, inserted] = nodesReferenced.emplace(en, 1);
 
 			//if couldn't insert because already referenced, then increment
 			if(!inserted)

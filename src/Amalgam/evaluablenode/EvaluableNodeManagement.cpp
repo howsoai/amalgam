@@ -613,7 +613,7 @@ void EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(EvaluableNod
 std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopy(EvaluableNode *tree, DeepAllocCopyParams &dacp)
 {
 	//attempt to insert a new reference for this node, start with null
-	auto [inserted_copy, inserted] = dacp.references->insert(std::make_pair(tree, nullptr));
+	auto [inserted_copy, inserted] = dacp.references->emplace(tree, nullptr);
 
 	//can't insert, so already have a copy
 	// need to indicate that it has a cycle

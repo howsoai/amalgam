@@ -355,7 +355,7 @@ EvaluableNode **GetRelativeEvaluableNodeFromTraversalPathList(EvaluableNode **so
 				auto key_sid = EvaluableNode::ToStringIDWithReference(addr, true);
 
 				//attempt to insert the new key
-				auto [inserted_key, inserted] = mcn.insert(std::make_pair(key_sid, nullptr));
+				auto [inserted_key, inserted] = mcn.emplace(key_sid, nullptr);
 
 				//if not inserted, then destroy the reference
 				if(!inserted)

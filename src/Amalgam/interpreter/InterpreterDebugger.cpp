@@ -62,11 +62,11 @@ struct InterpreterDebugData
 	//will run until it reaches the next occurrence of this opcode, then it will clear it
 	EvaluableNodeType runUntilOpcodeType = ENT_NOT_A_BUILT_IN_TYPE;
 
-	//will run until this opcode is reached.  should only be used for opcodes that are preserved in the call stack
+	//will run until this opcode is reached.  should only be used for opcodes that are preserved in the `
 	EvaluableNode *runUntilOpcode = nullptr;
 
-	//will run until the call stack size is this value
-	size_t runUntilCallStackSize = 0;
+	//will run until the scope stack size is this value
+	size_t runUntilScopeStackSize = 0;
 
 #ifdef MULTITHREAD_SUPPORT
 	//only one debugger can set this at a time
@@ -305,8 +305,8 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, bool 
 			}
 			else if(command == "fc")
 			{
-				if(callStackNodes->size() > 0)
-					_interpreter_debug_data.runUntilCallStackSize = callStackNodes->size() - 1;
+				if(scopeStackNodes->size() > 0)
+					_interpreter_debug_data.runUntilScopeStackSize = scopeStackNodes->size() - 1;
 			}
 			else if(command == "ul")
 			{
@@ -419,8 +419,8 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, bool 
 			for(EvaluableNode *csn : *constructionStackNodes)
 				PrintStackNode(csn, evaluableNodeManager);
 
-			std::cout << "Call stack:" << std::endl;
-			for(EvaluableNode *csn : *callStackNodes)
+			std::cout << "scope stack:" << std::endl;
+			for(EvaluableNode *csn : *scopeStackNodes)
 				PrintStackNode(csn, evaluableNodeManager);
 
 			std::cout << "Opcode stack:" << std::endl;
@@ -471,9 +471,9 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, bool 
 		{
 			//find symbol by walking up the stack; each layer must be an assoc
 			//count down from the top, and use (i - 1) below to make this loop one-based instead of having to wrap around
-			for(auto i = callStackNodes->size(); i > 0; i--)
+			for(auto i = scopeStackNodes->size(); i > 0; i--)
 			{
-				EvaluableNode *cur_context = (*callStackNodes)[i - 1];
+				EvaluableNode *cur_context = (*scopeStackNodes)[i - 1];
 
 				//see if this level of the stack contains the symbol
 				auto &mcn = cur_context->GetMappedChildNodesReference();
@@ -493,8 +493,8 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, bool 
 				EvaluableNode *node = nullptr;
 				bool value_exists = true;
 
-				size_t call_stack_index = 0;
-				EvaluableNode **en_ptr = GetCallStackSymbolLocation(sid, call_stack_index);
+				size_t scope_stack_index = 0;
+				EvaluableNode **en_ptr = GetScopeStackSymbolLocation(sid, scope_stack_index);
 				if(en_ptr != nullptr)
 				{
 					node = *en_ptr;
@@ -655,9 +655,9 @@ void Interpreter::DebugCheckBreakpointsAndUpdateState(EvaluableNode *en, bool be
 			_interpreter_debug_data.EnableInteractiveMode();
 		}
 
-		if(_interpreter_debug_data.runUntilCallStackSize == callStackNodes->size())
+		if(_interpreter_debug_data.runUntilScopeStackSize == scopeStackNodes->size())
 		{
-			_interpreter_debug_data.runUntilCallStackSize = 0;
+			_interpreter_debug_data.runUntilScopeStackSize = 0;
 			_interpreter_debug_data.EnableInteractiveMode();
 		}
 

@@ -923,7 +923,7 @@ size_t SeparableBoxFilterDataStore::AddLabelsAsEmptyColumns(std::vector<StringIn
 	//create columns for the labels, don't count any that already exist
 	for(auto label_id : label_sids)
 	{
-		auto [_, inserted] = labelIdToColumnIndex.insert(std::make_pair(label_id, columnData.size()));
+		auto [_, inserted] = labelIdToColumnIndex.emplace(label_id, columnData.size());
 		if(inserted)
 		{
 			columnData.emplace_back(std::make_unique<SBFDSColumnData>(label_id));

@@ -624,9 +624,7 @@ static std::string ConstraintViolationToString(InterpreterConstraints::Violation
 EvaluableNodeReference Interpreter::BundleResultWithWarningsIfNeeded(EvaluableNodeReference result, InterpreterConstraints *interpreter_constraints)
 {
 	if(interpreter_constraints == nullptr || !interpreter_constraints->collectWarnings)
-	{
 		return result;
-	}
 	
 	EvaluableNodeReference warning_assoc = CreateAssocOfNumbersFromIteratorAndFunctions(interpreter_constraints->warnings, [](std::pair<std::string, size_t> warning_count)
 																						{ return string_intern_pool.CreateStringReference(warning_count.first); }, [](std::pair<std::string, size_t> warning_count)

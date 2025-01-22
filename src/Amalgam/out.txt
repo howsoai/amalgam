@@ -281,13 +281,8 @@ if 2
 	(+ 1 2)
 )
 --call_sandboxed--
-[7 {} ""]
-
-[
-	(null)
-	{"x " 1}
-	""
-]
+7
+(null)
 
 [11 {} ""]
 
@@ -4583,65 +4578,52 @@ cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
 	##x 4
 	##y 5
 )
-[3 {} ""]
+3
 [
-	[
-		"Child1"
-		"Child2"
-		"Child3"
-		"Child4"
-		"Child5"
-		"Child6"
-		"Child7"
-	]
-	{}
-	""
+	"Child1"
+	"Child2"
+	"Child3"
+	"Child4"
+	"Child5"
+	"Child6"
+	"Child7"
 ]
-[6 {} ""]
+6
 execution limits tests
 88
 --call_entity_get_changes--
 4
 6
 [
-	[
-		(true)
-		(seq
-			(create_entities
-				["CEGCTest" "Contained"]
-				(lambda
-					(null
-						##a 4
-						##b 6
-					)
+	(true)
+	(seq
+		(create_entities
+			["CEGCTest" "Contained"]
+			(lambda
+				(null
+					##a 4
+					##b 6
 				)
 			)
-			(print "4\r\n")
-			(assign_to_entities
-				["CEGCTest" "Contained"]
-				{a 6 b 10}
-			)
-			(print "6\r\n")
-			(set_entity_rand_seed
-				["CEGCTest" "Contained"]
-				"bbbb"
-				(false)
-			)
-			(destroy_entities
-				["CEGCTest" "Contained"]
-			)
 		)
-	]
-	{}
-	""
+		(print "4\r\n")
+		(assign_to_entities
+			["CEGCTest" "Contained"]
+			{a 6 b 10}
+		)
+		(print "6\r\n")
+		(set_entity_rand_seed
+			["CEGCTest" "Contained"]
+			"bbbb"
+			(false)
+		)
+		(destroy_entities
+			["CEGCTest" "Contained"]
+		)
+	)
 ]
 --call_container--
-[
-	[8 {} ""]
-	{}
-	""
-]
-
+6
 [
 	[8 {} ""]
 	{}

@@ -211,8 +211,7 @@ PLATFORM_MAIN_CONSOLE
 	if(debug_sources)
 		asset_manager.debugSources = true;
 
-	if(warn_on_undefined)
-		asset_manager.warnOnUndefined = true;
+	asset_manager.warnOnUndefined = warn_on_undefined;
 
 	if(debug_minimal)
 		asset_manager.debugMinimal = true;

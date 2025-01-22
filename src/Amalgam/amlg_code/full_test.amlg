@@ -81,6 +81,8 @@
 
  (print (call_sandboxed (lambda (+ (+ y 4) 4)) (null) (null) (null) 1 (false)) "\n")
 
+ (print (call_sandboxed (lambda (+ x y)) (assoc) 10000) "\n")
+
 (print (call_sandboxed
 	(lambda
 		(call_sandboxed

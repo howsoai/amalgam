@@ -1056,7 +1056,7 @@ protected:
 		return interpreterConstraints->constraintsExceeded;
 	}
 
-	const EvaluableNodeReference BundleResultWithWarningsIfNeeded(EvaluableNodeReference result, InterpreterConstraints *interpreter_constraints_ptr);
+	EvaluableNodeReference BundleResultWithWarningsIfNeeded(EvaluableNodeReference result, InterpreterConstraints *interpreter_constraints_ptr);
 
 	//opcodes
 	//returns an EvaluableNode tree from evaluating the tree passed in (or nullptr) and associated properties in an EvaluableNodeReference

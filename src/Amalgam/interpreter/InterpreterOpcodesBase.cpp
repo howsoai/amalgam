@@ -629,7 +629,7 @@ static std::string ConstraintViolationToString(InterpreterConstraints::Violation
 	return ""; //unreachable
 }
 
-const EvaluableNodeReference Interpreter::BundleResultWithWarningsIfNeeded(EvaluableNodeReference result, InterpreterConstraints *interpreter_constraints)
+EvaluableNodeReference Interpreter::BundleResultWithWarningsIfNeeded(EvaluableNodeReference result, InterpreterConstraints *interpreter_constraints)
 {
 	if(interpreter_constraints == nullptr || !interpreter_constraints->collectWarnings)
 	{

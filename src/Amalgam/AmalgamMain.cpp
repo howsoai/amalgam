@@ -66,8 +66,9 @@ Options:
 
     --debug-sources  When specified, prepends all node comments with the source of the node when applicable
 
-	--no-warn-on-undefined When specified, the amalgam will not emit warnings for undefined variables
-	
+	--no-warn-on-undefined 
+					 When specified, the amalgam will not emit warnings for undefined variables
+
     --nosbfds        Disables the sbfds acceleration, which is generally preferred in the heuristics
 
     --trace          Uses commands via stdio to act as if it were being called as a library

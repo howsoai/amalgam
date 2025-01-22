@@ -24,11 +24,18 @@ class EntityQueryCondition;
 class PerformanceConstraints
 {
 public:
+  enum class ViolationType
+  {
+	  NoViolation,
+	  NodeAllocation,
+	  ExecutionStep,
+	  ExecutionDepth,
+	  ContainedEntitiesNumber,
+	  ContainedEntitiesDepth
+  };
 
-	enum class ViolationType { NoViolation, NodeAllocation, ExecutionStep, ExecutionDepth, ContainedEntitiesNumber, ContainedEntitiesDepth };
-
-	void AddWarning(std::string &&warning)
-	{
+  void AddWarning(std::string &&warning)
+  {
 #ifdef MULTITHREAD_SUPPORT
 		Concurrency::WriteLock warningLock(warningMutex);
 #endif

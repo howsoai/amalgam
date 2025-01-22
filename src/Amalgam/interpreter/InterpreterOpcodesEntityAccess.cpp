@@ -435,8 +435,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		PerformanceProfiler::StartOperation(string_intern_pool.GetStringFromID(entity_label_sid),
 			evaluableNodeManager->GetNumberOfUsedNodes());
 
-	PerformanceConstraints perf_constraints;
-	PerformanceConstraints *perf_constraints_ptr = nullptr;
+	InterpreterConstraints perf_constraints;
+	InterpreterConstraints *perf_constraints_ptr = nullptr;
 	if(PopulatePerformanceConstraintsFromParams(ocn, 3, perf_constraints, true))
 		perf_constraints_ptr = &perf_constraints;
 
@@ -575,8 +575,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 		PerformanceProfiler::StartOperation(string_intern_pool.GetStringFromID(container_label_sid),
 			evaluableNodeManager->GetNumberOfUsedNodes());
 
-	PerformanceConstraints perf_constraints;
-	PerformanceConstraints *perf_constraints_ptr = nullptr;
+	InterpreterConstraints perf_constraints;
+	InterpreterConstraints *perf_constraints_ptr = nullptr;
 	if(PopulatePerformanceConstraintsFromParams(ocn, 2, perf_constraints))
 		perf_constraints_ptr = &perf_constraints;
 

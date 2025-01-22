@@ -21,7 +21,7 @@
 class EntityQueryCondition;
 
 //Manages performance constraints and accompanying performance counters
-class PerformanceConstraints
+class InterpreterConstraints
 {
 public:
   enum class ViolationType
@@ -100,7 +100,7 @@ public:
 	}
 
 	//accrues performance counters into the current object from perf_constraints
-	__forceinline void AccruePerformanceCounters(PerformanceConstraints *perf_constraints)
+	__forceinline void AccruePerformanceCounters(InterpreterConstraints *perf_constraints)
 	{
 		if(perf_constraints == nullptr)
 			return;
@@ -152,20 +152,16 @@ public:
 	//If true, collectWarnings
 	bool collectWarnings;
 
-	FastHashMap<std::string, size_t> &GetWarnings()
-	{
-		return warnings;
-	}
-
 	ViolationType constraintViolation;
+
+	//maps warnings to the count of their occurrence 
+	FastHashMap<std::string, size_t> warnings;
 
 	private: 
 #ifdef MULTITHREAD_SUPPORT
 	Concurrency::ReadWriteMutex warningMutex;
 #endif
 
-	//maps warnings to the count of their occurence 
-	FastHashMap<std::string, size_t> warnings;
 };
 
 class Interpreter
@@ -192,7 +188,7 @@ public:
 	// if performance_constraints is not nullptr, then it will limit execution appropriately
 	Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 		std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
-		PerformanceConstraints *performance_constraints,
+		InterpreterConstraints *performance_constraints,
 		Entity *t, Interpreter *calling_interpreter);
 
 	~Interpreter()
@@ -652,10 +648,10 @@ protected:
 	//returns true if there are any performance constraints, false if not
 	//if include_entity_constraints is true, it will include constraints regarding entities
 	bool PopulatePerformanceConstraintsFromParams(std::vector<EvaluableNode *> &params,
-		size_t perf_constraint_param_offset, PerformanceConstraints &perf_constraints, bool include_entity_constraints = false);
+		size_t perf_constraint_param_offset, InterpreterConstraints &perf_constraints, bool include_entity_constraints = false);
 
 	//if perf_constraints is not null, populates the counters representing the current state of the interpreter
-	void PopulatePerformanceCounters(PerformanceConstraints *perf_constraints, Entity *entity_to_constrain_from);
+	void PopulatePerformanceCounters(InterpreterConstraints *perf_constraints, Entity *entity_to_constrain_from);
 
 #ifdef MULTITHREAD_SUPPORT
 
@@ -1030,7 +1026,7 @@ protected:
 			{
 				performanceConstraints->constraintsExceeded = true;
 
-				performanceConstraints->constraintViolation = PerformanceConstraints::ViolationType::ExecutionStep;
+				performanceConstraints->constraintViolation = InterpreterConstraints::ViolationType::ExecutionStep;
 				return true;
 			}
 		}
@@ -1041,7 +1037,7 @@ protected:
 			if(cur_allocated_nodes > performanceConstraints->maxNumAllocatedNodes)
 			{
 				performanceConstraints->constraintsExceeded = true;
-				performanceConstraints->constraintViolation = PerformanceConstraints::ViolationType::NodeAllocation;
+				performanceConstraints->constraintViolation = InterpreterConstraints::ViolationType::NodeAllocation;
 				return true;
 			}
 		}
@@ -1051,7 +1047,7 @@ protected:
 			if(opcodeStackNodes->size() > performanceConstraints->maxOpcodeExecutionDepth)
 			{
 				performanceConstraints->constraintsExceeded = true;
-				performanceConstraints->constraintViolation = PerformanceConstraints::ViolationType::ExecutionDepth;
+				performanceConstraints->constraintViolation = InterpreterConstraints::ViolationType::ExecutionDepth;
 				return true;
 			}
 		}
@@ -1060,7 +1056,7 @@ protected:
 		return performanceConstraints->constraintsExceeded;
 	}
 
-	const EvaluableNodeReference BundleResultWithWarningsIfNeeded(EvaluableNodeReference result, PerformanceConstraints *perf_constraints_ptr);
+	const EvaluableNodeReference BundleResultWithWarningsIfNeeded(EvaluableNodeReference result, InterpreterConstraints *perf_constraints_ptr);
 
 	//opcodes
 	//returns an EvaluableNode tree from evaluating the tree passed in (or nullptr) and associated properties in an EvaluableNodeReference
@@ -1314,7 +1310,7 @@ protected:
 	void VerifyEvaluableNodeIntegrity();
 
 	//if not nullptr, then contains the respective constraints on performance
-	PerformanceConstraints *performanceConstraints;
+	InterpreterConstraints *performanceConstraints;
 
 	//a stack (list) of the current nodes being executed
 	std::vector<EvaluableNode *> *opcodeStackNodes;

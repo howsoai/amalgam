@@ -542,8 +542,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 
 	auto node_stack = CreateOpcodeStackStateSaver(function);
 
-	PerformanceConstraints perf_constraints;
-	PerformanceConstraints *perf_constraints_ptr = nullptr;
+	InterpreterConstraints perf_constraints;
+	InterpreterConstraints *perf_constraints_ptr = nullptr;
 
 	if(PopulatePerformanceConstraintsFromParams(ocn, 2, perf_constraints))
 		perf_constraints_ptr = &perf_constraints;
@@ -596,27 +596,27 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	return BundleResultWithWarningsIfNeeded(result, perf_constraints_ptr);
 }
 
-static std::string ConstraintViolationToString(PerformanceConstraints::ViolationType violation)
+static std::string ConstraintViolationToString(InterpreterConstraints::ViolationType violation)
 {
 
 	switch(violation)
 	{
-	case PerformanceConstraints::ViolationType::NoViolation:
+	case InterpreterConstraints::ViolationType::NoViolation:
 		return "";
 		break;
-	case PerformanceConstraints::ViolationType::ContainedEntitiesDepth:
+	case InterpreterConstraints::ViolationType::ContainedEntitiesDepth:
 		return "Contained entities depth exceeded";
 		break;
-	case PerformanceConstraints::ViolationType::ContainedEntitiesNumber:
+	case InterpreterConstraints::ViolationType::ContainedEntitiesNumber:
 		return "Contained entities number limit exceeded";
 		break;
-	case PerformanceConstraints::ViolationType::ExecutionDepth:
+	case InterpreterConstraints::ViolationType::ExecutionDepth:
 		return "Execution depth exceeded";
 		break;
-	case PerformanceConstraints::ViolationType::ExecutionStep:
+	case InterpreterConstraints::ViolationType::ExecutionStep:
 		return "Execution step limit exceeded";
 		break;
-	case PerformanceConstraints::ViolationType::NodeAllocation:
+	case InterpreterConstraints::ViolationType::NodeAllocation:
 		return "Node allocation limit exceeded";
 		break;
 	default:
@@ -629,7 +629,7 @@ static std::string ConstraintViolationToString(PerformanceConstraints::Violation
 	return ""; //unreachable
 }
 
-const EvaluableNodeReference Interpreter::BundleResultWithWarningsIfNeeded(EvaluableNodeReference result, PerformanceConstraints *perf_constraints)
+const EvaluableNodeReference Interpreter::BundleResultWithWarningsIfNeeded(EvaluableNodeReference result, InterpreterConstraints *perf_constraints)
 {
 	if(perf_constraints == nullptr || !perf_constraints->collectWarnings)
 	{

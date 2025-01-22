@@ -19,7 +19,7 @@ class EntityWriteListener;
 class EvaluableNode;
 class EvaluableNodeManagement;
 class Interpreter;
-class PerformanceConstraints;
+class InterpreterConstraints;
 class PrintListener;
 
 //base class for accessing an entity via a reference
@@ -198,7 +198,7 @@ public:
 	EvaluableNodeReference ExecuteCodeAsEntity(EvaluableNode *code,
 		EvaluableNode *scope_stack, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
-		PerformanceConstraints *performance_constraints = nullptr
+		InterpreterConstraints *performance_constraints = nullptr
 #ifdef MULTITHREAD_SUPPORT
 		, Concurrency::ReadLock *enm_lock = nullptr
 #endif
@@ -211,7 +211,7 @@ public:
 	EvaluableNodeReference Execute(StringInternPool::StringID label_sid,
 		EvaluableNode *scope_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
-		PerformanceConstraints *performance_constraints = nullptr
+		InterpreterConstraints *performance_constraints = nullptr
 	#ifdef MULTITHREAD_SUPPORT
 		, Concurrency::ReadLock *enm_lock = nullptr
 	#endif
@@ -243,7 +243,7 @@ public:
 	inline EvaluableNodeReference Execute(const std::string &label_name,
 		EvaluableNode *scope_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
-		PerformanceConstraints *performance_constraints = nullptr
+		InterpreterConstraints *performance_constraints = nullptr
 	#ifdef MULTITHREAD_SUPPORT
 		, Concurrency::ReadLock *enm_lock = nullptr
 	#endif

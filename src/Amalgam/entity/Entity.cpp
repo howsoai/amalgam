@@ -404,7 +404,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 EvaluableNodeReference Entity::ExecuteCodeAsEntity(EvaluableNode *code,
 	EvaluableNode *scope_stack, Interpreter *calling_interpreter,
 	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
-	PerformanceConstraints *performance_constraints
+	InterpreterConstraints *performance_constraints
 #ifdef MULTITHREAD_SUPPORT
 	, Concurrency::ReadLock *enm_lock
 #endif

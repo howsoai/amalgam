@@ -294,7 +294,7 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 
 Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
-	PerformanceConstraints *performance_constraints, Entity *t, Interpreter *calling_interpreter)
+	InterpreterConstraints *performance_constraints, Entity *t, Interpreter *calling_interpreter)
 {
 	performanceConstraints = performance_constraints;
 
@@ -772,12 +772,12 @@ EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference fun
 }
 
 bool Interpreter::PopulatePerformanceConstraintsFromParams(std::vector<EvaluableNode *> &params,
-	size_t perf_constraint_param_offset, PerformanceConstraints &perf_constraints, bool include_entity_constraints)
+	size_t perf_constraint_param_offset, InterpreterConstraints &perf_constraints, bool include_entity_constraints)
 {
 	//start with constraints if there are already performance constraints
 	bool any_constraints = (performanceConstraints != nullptr);
 
-	perf_constraints.constraintViolation = PerformanceConstraints::ViolationType::NoViolation;
+	perf_constraints.constraintViolation = InterpreterConstraints::ViolationType::NoViolation;
 
 	//for each of the three parameters below, values of zero indicate no limit
 
@@ -890,7 +890,7 @@ bool Interpreter::PopulatePerformanceConstraintsFromParams(std::vector<Evaluable
 	return any_constraints;
 }
 
-void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_constraints, Entity *entity_to_constrain_from)
+void Interpreter::PopulatePerformanceCounters(InterpreterConstraints *perf_constraints, Entity *entity_to_constrain_from)
 {
 	if(perf_constraints == nullptr)
 		return;
@@ -914,7 +914,7 @@ void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_const
 			perf_constraints->maxNumExecutionSteps = 1;
 			perf_constraints->curExecutionStep = 1;
 			perf_constraints->constraintsExceeded = true;
-			perf_constraints->constraintViolation = PerformanceConstraints::ViolationType::ExecutionStep;
+			perf_constraints->constraintViolation = InterpreterConstraints::ViolationType::ExecutionStep;
 		}
 	}
 
@@ -935,7 +935,7 @@ void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_const
 		{
 			perf_constraints->maxNumAllocatedNodes = 1;
 			perf_constraints->constraintsExceeded = true;
-			perf_constraints->constraintViolation = PerformanceConstraints::ViolationType::NodeAllocation;
+			perf_constraints->constraintViolation = InterpreterConstraints::ViolationType::NodeAllocation;
 		}
 	}
 
@@ -967,7 +967,7 @@ void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_const
 		{
 			perf_constraints->maxOpcodeExecutionDepth = 1;
 			perf_constraints->constraintsExceeded = true;
-			perf_constraints->constraintViolation = PerformanceConstraints::ViolationType::ExecutionDepth;
+			perf_constraints->constraintViolation = InterpreterConstraints::ViolationType::ExecutionDepth;
 		}
 	}
 
@@ -996,7 +996,7 @@ void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_const
 			{
 				max_entities = 0;
 				perf_constraints->constraintsExceeded = true;
-				perf_constraints->constraintViolation = PerformanceConstraints::ViolationType::ContainedEntitiesDepth;
+				perf_constraints->constraintViolation = InterpreterConstraints::ViolationType::ContainedEntitiesDepth;
 			}
 			else
 			{
@@ -1026,7 +1026,7 @@ void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_const
 		{
 			perf_constraints->maxContainedEntityDepth = 0;
 			perf_constraints->constraintsExceeded = true;
-			perf_constraints->constraintViolation = PerformanceConstraints::ViolationType::ContainedEntitiesDepth;
+			perf_constraints->constraintViolation = InterpreterConstraints::ViolationType::ContainedEntitiesDepth;
 		}
 		else
 		{

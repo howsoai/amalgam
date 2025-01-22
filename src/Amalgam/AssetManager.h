@@ -32,7 +32,7 @@ class AssetManager
 {
 public:
 	AssetManager()
-		: defaultEntityExtension(FILE_EXTENSION_AMALGAM), debugSources(false), debugMinimal(false)
+		: defaultEntityExtension(FILE_EXTENSION_AMALGAM), debugSources(false), debugMinimal(false), warnOnUndefined(false)
 	{	}
 
 	class AssetParameters;

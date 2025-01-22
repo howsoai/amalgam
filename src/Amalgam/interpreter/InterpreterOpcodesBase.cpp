@@ -651,9 +651,9 @@ EvaluableNodeReference Interpreter::BundleResultWithWarningsIfNeeded(EvaluableNo
 	result_tuple_ocn.push_back(warning_assoc);
 	result_tuple_ocn.push_back(constraint_violation_string);
 
-	result_tuple.UpdatePropertiesBasedOnAttachedNode(result, false);
-	result_tuple.UpdatePropertiesBasedOnAttachedNode(warning_assoc, true);
-	result_tuple.UpdatePropertiesBasedOnAttachedNode(constraint_violation_string, true);
+	result_tuple.UpdatePropertiesBasedOnAttachedNode(result);
+	result_tuple.UpdatePropertiesBasedOnAttachedNode(warning_assoc);
+	result_tuple.UpdatePropertiesBasedOnAttachedNode(constraint_violation_string);
 
 	return result_tuple;
 }

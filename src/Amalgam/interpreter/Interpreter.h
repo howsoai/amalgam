@@ -1025,7 +1025,6 @@ protected:
 			if(interpreterConstraints->curExecutionStep > interpreterConstraints->maxNumExecutionSteps)
 			{
 				interpreterConstraints->constraintsExceeded = true;
-
 				interpreterConstraints->constraintViolation = InterpreterConstraints::ViolationType::ExecutionStep;
 				return true;
 			}

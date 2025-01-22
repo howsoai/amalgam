@@ -885,7 +885,7 @@ bool Interpreter::PopulatePerformanceConstraintsFromParams(std::vector<Evaluable
 	if(params.size() > warning_override_offset)
 		perf_constraints.collectWarnings = InterpretNodeIntoBoolValue(params[warning_override_offset]);
 	else
-		perf_constraints.collectWarnings = true;
+		perf_constraints.collectWarnings = any_constraints;
 
 	return any_constraints;
 }

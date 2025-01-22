@@ -630,9 +630,8 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 			(size_t i, double &weight_value)
 			{
 				auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsNumber(weightLabel);
-
 				weight_value = ret_val;
-
+				
 				return found;
 			};
 

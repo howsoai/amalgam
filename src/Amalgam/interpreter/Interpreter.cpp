@@ -914,7 +914,6 @@ void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_const
 			perf_constraints->maxNumExecutionSteps = 1;
 			perf_constraints->curExecutionStep = 1;
 			perf_constraints->constraintsExceeded = true;
-
 			perf_constraints->constraintViolation = PerformanceConstraints::ViolationType::ExecutionStep;
 		}
 	}
@@ -936,7 +935,6 @@ void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_const
 		{
 			perf_constraints->maxNumAllocatedNodes = 1;
 			perf_constraints->constraintsExceeded = true;
-
 			perf_constraints->constraintViolation = PerformanceConstraints::ViolationType::NodeAllocation;
 		}
 	}

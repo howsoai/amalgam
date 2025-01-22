@@ -777,6 +777,8 @@ bool Interpreter::PopulatePerformanceConstraintsFromParams(std::vector<Evaluable
 	//start with constraints if there are already performance constraints
 	bool any_constraints = (performanceConstraints != nullptr);
 
+	perf_constraints.constraintViolation = PerformanceConstraints::ViolationType::NoViolation;
+
 	//for each of the three parameters below, values of zero indicate no limit
 
 	//populate maxNumExecutionSteps

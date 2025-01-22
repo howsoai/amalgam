@@ -16,7 +16,6 @@
 #include <string>
 #include <type_traits>
 #include <vector>
-#include <unordered_set>
 
 //forward declarations:
 class EntityQueryCondition;
@@ -27,6 +26,14 @@ class PerformanceConstraints
 public:
 
 	enum class ViolationType { NoViolation, NodeAllocation, ExecutionStep, ExecutionDepth, ContainedEntitiesNumber, ContainedEntitiesDepth };
+
+	void AddWarning(std::string warning)
+	{
+#ifdef MULTITHREAD_SUPPORT
+		Concurrency::WriteLock warningLock(warningMutex);
+#endif
+		warnings[warning]++;
+	}
 
 	//if true, there is a limit to how long can utilize CPU
 	constexpr bool ConstrainedExecutionSteps()
@@ -137,20 +144,12 @@ public:
 	//If true, collectWarnings
 	bool collectWarnings;
 
-	void addWarning(std::string warning)
-	{
-#ifdef MULTITHREAD_SUPPORT
-		Concurrency::WriteLock warningLock(warningMutex);
-#endif
-		warnings[warning]++;
-	}
-
 	FastHashMap<std::string, size_t> &GetWarnings()
 	{
 		return warnings;
 	}
 
-	ViolationType constraintViolation = ViolationType::NoViolation;
+	ViolationType constraintViolation;
 
 	private: 
 #ifdef MULTITHREAD_SUPPORT

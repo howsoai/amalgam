@@ -199,9 +199,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 	EntityReadReference cur_entity_ref(curEntity);
 	if(cur_entity_ref != nullptr)
 	{
-		std::pair<EvaluableNodeReference, bool> value_tuple = cur_entity_ref->GetValueAtLabel(sid, nullptr, true, true);
+		auto [value, found] = cur_entity_ref->GetValueAtLabel(sid, nullptr, true, true);
 
-		if(!value_tuple.second)
+		if(!found)
 		{
 			if(asset_manager.warnOnUndefined)
 				std::cerr << "Undefined symbol: " << sid->string << " " << en->GetCommentsString() << std::endl;
@@ -209,15 +209,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 			if(performanceConstraints != nullptr && performanceConstraints->collectWarnings)
 			{
 				if(performanceConstraints != nullptr)
-					performanceConstraints->addWarning(sid->string + " " + en->GetCommentsString());
+					performanceConstraints->AddWarning(sid->string + " " + en->GetCommentsString());
 			}
 		}
 
-		return cur_entity_ref->GetValueAtLabel(sid, nullptr, true, true).first;
+		return value;
 	}
 
-	if (performanceConstraints != nullptr && performanceConstraints->collectWarnings)
-		performanceConstraints->addWarning(sid->string + " " + en->GetCommentsString());
+	if(performanceConstraints != nullptr && performanceConstraints->collectWarnings)
+		performanceConstraints->AddWarning(sid->string + " " + en->GetCommentsString());
 
 	return EvaluableNodeReference::Null();
 }

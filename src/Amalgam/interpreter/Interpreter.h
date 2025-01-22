@@ -34,6 +34,7 @@ public:
 	  ContainedEntitiesDepth
   };
 
+  //Adds the string specified by warning to the list of warnings. Takes warning as an rvalue reference.
   void AddWarning(std::string &&warning)
   {
 #ifdef MULTITHREAD_SUPPORT

@@ -543,8 +543,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	auto node_stack = CreateOpcodeStackStateSaver(function);
 
 	PerformanceConstraints perf_constraints;
+	PerformanceConstraints *perf_constraints_ptr = nullptr;
 
-	PopulatePerformanceConstraintsFromParams(ocn, 2, perf_constraints);
+	if(PopulatePerformanceConstraintsFromParams(ocn, 2, perf_constraints))
+		perf_constraints_ptr = &perf_constraints;
 	
 	if(_label_profiling_enabled && function->GetNumLabels() > 0)
 		PerformanceProfiler::StartOperation(function->GetLabel(0), evaluableNodeManager->GetNumberOfUsedNodes());
@@ -558,7 +560,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	EvaluableNodeReference scope_stack = ConvertArgsToScopeStack(args, *evaluableNodeManager);
 	node_stack.PushEvaluableNode(scope_stack);
 
-	PopulatePerformanceCounters(&perf_constraints, nullptr);
+	PopulatePerformanceCounters(perf_constraints_ptr, nullptr);
 
 	Interpreter sandbox(evaluableNodeManager, randomStream.CreateOtherStreamViaRand(),
 		writeListeners, printListener, &perf_constraints, nullptr, this);
@@ -586,20 +588,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 		PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
 
 	if(performanceConstraints != nullptr)
-		performanceConstraints->AccruePerformanceCounters(&perf_constraints);
+		performanceConstraints->AccruePerformanceCounters(perf_constraints_ptr);
 
 	if(perf_constraints.constraintsExceeded && perf_constraints.collectWarnings)
-	{
-		if(perf_constraints.collectWarnings)
-			return BundleResultWithWarnings(EvaluableNodeReference::Null(), &perf_constraints);
-		else
-			return EvaluableNodeReference::Null();
-	}
+		return BundleResultWithWarningsIfNeeded(EvaluableNodeReference::Null(), perf_constraints_ptr);
 
-	if(perf_constraints.collectWarnings)
-		return BundleResultWithWarnings(result, &perf_constraints);
-	else
-		return result;
+	return BundleResultWithWarningsIfNeeded(result, perf_constraints_ptr);
 }
 
 static std::string ConstraintViolationToString(PerformanceConstraints::ViolationType violation)
@@ -635,8 +629,13 @@ static std::string ConstraintViolationToString(PerformanceConstraints::Violation
 	return ""; //unreachable
 }
 
-const EvaluableNodeReference Interpreter::BundleResultWithWarnings(EvaluableNodeReference result, PerformanceConstraints *perf_constraints)
+const EvaluableNodeReference Interpreter::BundleResultWithWarningsIfNeeded(EvaluableNodeReference result, PerformanceConstraints *perf_constraints)
 {
+	if(perf_constraints == nullptr || !perf_constraints->collectWarnings)
+	{
+		return result;
+	}
+	
 	EvaluableNodeReference warning_assoc = CreateAssocOfNumbersFromIteratorAndFunctions(perf_constraints->GetWarnings(), [](std::pair<std::string, size_t> warning_count)
 																						{ return string_intern_pool.CreateStringReference(warning_count.first); }, [](std::pair<std::string, size_t> warning_count)
 																						{ return static_cast<double>(warning_count.second); }, evaluableNodeManager);

@@ -437,9 +437,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 
 	PerformanceConstraints perf_constraints;
 	PerformanceConstraints *perf_constraints_ptr = nullptr;
-	PopulatePerformanceConstraintsFromParams(ocn, 3, perf_constraints, true);
-		
-	perf_constraints_ptr = &perf_constraints;
+	if(PopulatePerformanceConstraintsFromParams(ocn, 3, perf_constraints, true))
+		perf_constraints_ptr = &perf_constraints;
 
 	//attempt to get arguments
 	EvaluableNodeReference args = EvaluableNodeReference::Null();
@@ -550,17 +549,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		performanceConstraints->AccruePerformanceCounters(perf_constraints_ptr);
 
 	if(perf_constraints_ptr != nullptr && perf_constraints_ptr->constraintsExceeded)
-	{
-		if(perf_constraints_ptr->collectWarnings)
-			return BundleResultWithWarnings(EvaluableNodeReference::Null(), perf_constraints_ptr);
-		else
-			return EvaluableNodeReference::Null();
-	}
+			return BundleResultWithWarningsIfNeeded(EvaluableNodeReference::Null(), perf_constraints_ptr);
 
-	if(perf_constraints_ptr != nullptr && perf_constraints_ptr->collectWarnings)
-		return BundleResultWithWarnings(result, perf_constraints_ptr);
-	else
-		return result;
+	return BundleResultWithWarningsIfNeeded(result, perf_constraints_ptr);
+
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNode *en, bool immediate_result)
@@ -585,8 +577,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 
 	PerformanceConstraints perf_constraints;
 	PerformanceConstraints *perf_constraints_ptr = nullptr;
-	PopulatePerformanceConstraintsFromParams(ocn, 2, perf_constraints);
-	perf_constraints_ptr = &perf_constraints;
+	if(PopulatePerformanceConstraintsFromParams(ocn, 2, perf_constraints))
+		perf_constraints_ptr = &perf_constraints;
 
 	//attempt to get arguments
 	EvaluableNodeReference args = EvaluableNodeReference::Null();
@@ -655,15 +647,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 		performanceConstraints->AccruePerformanceCounters(perf_constraints_ptr);
 
 	if(perf_constraints_ptr != nullptr && perf_constraints_ptr->constraintsExceeded)
-	{
-		if(perf_constraints.collectWarnings)
-			return BundleResultWithWarnings(EvaluableNodeReference::Null(), perf_constraints_ptr);
-		else
-			return EvaluableNodeReference::Null();
-	}
+		return BundleResultWithWarningsIfNeeded(EvaluableNodeReference::Null(), perf_constraints_ptr);
 
-	if(perf_constraints_ptr != nullptr && perf_constraints.collectWarnings)
-		return BundleResultWithWarnings(copied_result, perf_constraints_ptr);
-	else
-		return copied_result;
+	return BundleResultWithWarningsIfNeeded(copied_result, perf_constraints_ptr);
 }

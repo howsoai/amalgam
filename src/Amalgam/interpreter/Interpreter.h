@@ -1052,7 +1052,7 @@ protected:
 		return performanceConstraints->constraintsExceeded;
 	}
 
-	const EvaluableNodeReference BundleResultWithWarnings(EvaluableNodeReference result, PerformanceConstraints *perf_constraints_ptr);
+	const EvaluableNodeReference BundleResultWithWarningsIfNeeded(EvaluableNodeReference result, PerformanceConstraints *perf_constraints_ptr);
 
 	//opcodes
 	//returns an EvaluableNode tree from evaluating the tree passed in (or nullptr) and associated properties in an EvaluableNodeReference

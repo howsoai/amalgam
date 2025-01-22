@@ -598,31 +598,23 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 
 static std::string ConstraintViolationToString(InterpreterConstraints::ViolationType violation)
 {
-
 	switch(violation)
 	{
 	case InterpreterConstraints::ViolationType::NoViolation:
 		return "";
-		break;
 	case InterpreterConstraints::ViolationType::ContainedEntitiesDepth:
 		return "Contained entities depth exceeded";
-		break;
 	case InterpreterConstraints::ViolationType::ContainedEntitiesNumber:
 		return "Contained entities number limit exceeded";
-		break;
 	case InterpreterConstraints::ViolationType::ExecutionDepth:
 		return "Execution depth exceeded";
-		break;
 	case InterpreterConstraints::ViolationType::ExecutionStep:
 		return "Execution step limit exceeded";
-		break;
 	case InterpreterConstraints::ViolationType::NodeAllocation:
 		return "Node allocation limit exceeded";
-		break;
 	default:
 		//cases should be exhaustive, so this is unreachable
 		assert(false);
-		break;
 	}
 
 	assert(false);

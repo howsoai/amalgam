@@ -206,18 +206,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 			if(asset_manager.warnOnUndefined)
 				std::cerr << "Undefined symbol: " << sid->string << " " << en->GetCommentsString() << std::endl;
 
-			if(performanceConstraints != nullptr && performanceConstraints->collectWarnings)
+			if(interpreterConstraints != nullptr && interpreterConstraints->collectWarnings)
 			{
-				if(performanceConstraints != nullptr)
-					performanceConstraints->AddWarning(sid->string + " " + en->GetCommentsString());
+				if(interpreterConstraints != nullptr)
+					interpreterConstraints->AddWarning(sid->string + " " + en->GetCommentsString());
 			}
 		}
 
 		return value;
 	}
 
-	if(performanceConstraints != nullptr && performanceConstraints->collectWarnings)
-		performanceConstraints->AddWarning(sid->string + " " + en->GetCommentsString());
+	if(interpreterConstraints != nullptr && interpreterConstraints->collectWarnings)
+		interpreterConstraints->AddWarning(sid->string + " " + en->GetCommentsString());
 
 	return EvaluableNodeReference::Null();
 }

@@ -375,15 +375,13 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 
 				if(e != nullptr)
 				{
-					auto value_found = e->GetValueAtLabelAsNumber(singleLabel);
-					value = value_found.first;
-					found = value_found.second;
+					std::tie(value, found) = e->GetValueAtLabelAsNumber(singleLabel);
 				}
 				else
 				{
 					found = false;
 				}
-				
+
 				if(found)
 				{
 					if(FastIsNaN(value))

@@ -300,9 +300,10 @@ if 2
 
 [
 	(null)
-	{"x " 1 "y " 1}
+	{"Warning: undefined symbol x" 1 "Warning: undefined symbol y" 1}
 	""
 ]
+
 
 [(null) {} "Execution depth exceeded"]
 

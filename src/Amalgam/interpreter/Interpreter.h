@@ -25,21 +25,21 @@ class InterpreterConstraints
 {
 public:
   enum class ViolationType
-  {
-	  NoViolation,
-	  NodeAllocation,
-	  ExecutionStep,
-	  ExecutionDepth,
-	  ContainedEntitiesNumber,
-	  ContainedEntitiesDepth
-  };
+  	{
+		NoViolation,
+		NodeAllocation,
+		ExecutionStep,
+		ExecutionDepth,
+		ContainedEntitiesNumber,
+		ContainedEntitiesDepth
+	};
 
   //Adds the string specified by warning to the list of warnings. Takes warning as an rvalue reference.
-  void AddWarning(std::string &&warning)
-  {
-#ifdef MULTITHREAD_SUPPORT
+	void AddWarning(std::string &&warning)
+	{
+	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::WriteLock warningLock(warningMutex);
-#endif
+	#endif
 		warnings[warning]++;
 	}
 
@@ -185,10 +185,10 @@ public:
 
 	//Creates a new interpreter to run code and to store labels.
 	// If no entity is specified via nullptr, then it will run sandboxed
-	// if performance_constraints is not nullptr, then it will limit execution appropriately
+	// if interpreter_constraints is not nullptr, then it will limit execution appropriately
 	Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 		std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
-		InterpreterConstraints *performance_constraints,
+		InterpreterConstraints *interpreter_constraints,
 		Entity *t, Interpreter *calling_interpreter);
 
 	~Interpreter()

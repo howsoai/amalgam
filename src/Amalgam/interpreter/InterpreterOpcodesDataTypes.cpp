@@ -204,37 +204,31 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 
 		if(!found)
 		{
-			std::stringstream warning_stream;
-
-			warning_stream << "Warning: undefined symbol " << sid->string;
-
-			if(asset_manager.debugSources)
-				warning_stream << " " << en->GetCommentsString();
-
-			if(asset_manager.warnOnUndefined)
-				std::cerr << warning_stream.str() << std::endl;
-
-			if(interpreterConstraints != nullptr && interpreterConstraints->collectWarnings)
-			{
-				if(interpreterConstraints != nullptr)
-					interpreterConstraints->AddWarning(warning_stream.str());
-			}
+			EmitOrLogWarningIfNeeded(sid, en);
 		}
 
 		return value;
 	}
 
-	if(interpreterConstraints != nullptr && interpreterConstraints->collectWarnings)
-	{
-		std::stringstream warning_stream;
-		warning_stream << "Warning: undefined symbol " << sid->string;
-
-		if(asset_manager.debugSources)
-			warning_stream << " at " << en->GetCommentsString();
-
-		interpreterConstraints->AddWarning(warning_stream.str());
-	}
+	EmitOrLogWarningIfNeeded(sid, en);
+	
 	return EvaluableNodeReference::Null();
+}
+
+void Interpreter::EmitOrLogWarningIfNeeded(StringInternPool::StringID sid, EvaluableNode *en)
+{
+	std::stringstream warning_stream;
+
+	warning_stream << "Warning: undefined symbol " << sid->string;
+
+	if(asset_manager.debugSources)
+		warning_stream << " " << en->GetCommentsString();
+
+	if(asset_manager.warnOnUndefined)
+		std::cerr << warning_stream.str() << std::endl;
+
+	if(interpreterConstraints != nullptr && interpreterConstraints->collectWarnings)
+		interpreterConstraints->AddWarning(warning_stream.str());
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE(EvaluableNode *en, bool immediate_result)

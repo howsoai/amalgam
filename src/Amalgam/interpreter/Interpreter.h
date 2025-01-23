@@ -1206,6 +1206,16 @@ protected:
 	EvaluableNodeReference InterpretNode_ENT_STRING(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_SYMBOL(EvaluableNode *en, bool immediate_result);
 
+	void EmitOrLogWarningIfNeeded(StringInternPool::StringID sid, EvaluableNode *en);
+
+	void BuildWarning(std::__1::stringstream &warning_stream, StringInternPool::StringID sid, EvaluableNode *en);
+
+	void BuildWarning(std::__1::stringstream &warning_stream, EvaluableNode *en);
+
+	void HandleWarning(StringInternPool::StringID sid, EvaluableNode *en);
+
+	void NewFunction(StringInternPool::StringID sid, EvaluableNode *en);
+
 	//node types
 	EvaluableNodeReference InterpretNode_ENT_GET_TYPE(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_GET_TYPE_STRING(EvaluableNode *en, bool immediate_result);

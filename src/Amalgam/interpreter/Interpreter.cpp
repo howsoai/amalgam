@@ -883,10 +883,15 @@ bool Interpreter::PopulateInterpreterConstraintsFromParams(std::vector<Evaluable
 
 	//check if caller specifed override of the default warning collections behavior
 	if(params.size() > warning_override_offset)
-		interpreter_constraints.collectWarnings = InterpretNodeIntoBoolValue(params[warning_override_offset]);
+	{
+		interpreter_constraints.collectWarnings = InterpretNodeIntoBoolValue(params[warning_override_offset], any_constraints);
+		any_constraints = true;
+	}
 	else
+	{
 		interpreter_constraints.collectWarnings = any_constraints;
-
+	}
+	
 	return any_constraints;
 }
 

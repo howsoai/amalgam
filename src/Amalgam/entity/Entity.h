@@ -193,12 +193,12 @@ public:
 	//note that code should be allocated from this entity
 	// calling_interpreter should be the interpreter that is calling this, if applicable
 	// write_listeners and print_listener will listen for any modifications to the entity and output as applicable
-	// if performance_constraints is not nullptr, then it will constrain performance and update performance_constraints
+	// if interpreter_constraints is not nullptr, then it will constrain performance and update interpreter_constraints
 	// if enm_lock is specified, it should be a lock on this entity's evaluableNodeManager.memoryModificationMutex
 	EvaluableNodeReference ExecuteCodeAsEntity(EvaluableNode *code,
 		EvaluableNode *scope_stack, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
-		InterpreterConstraints *performance_constraints = nullptr
+		InterpreterConstraints *interpreter_constraints = nullptr
 #ifdef MULTITHREAD_SUPPORT
 		, Concurrency::ReadLock *enm_lock = nullptr
 #endif
@@ -211,7 +211,7 @@ public:
 	EvaluableNodeReference Execute(StringInternPool::StringID label_sid,
 		EvaluableNode *scope_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
-		InterpreterConstraints *performance_constraints = nullptr
+		InterpreterConstraints *interpreter_constraints = nullptr
 	#ifdef MULTITHREAD_SUPPORT
 		, Concurrency::ReadLock *enm_lock = nullptr
 	#endif
@@ -232,7 +232,7 @@ public:
 		}
 
 		return ExecuteCodeAsEntity(node_to_execute, scope_stack, calling_interpreter,
-			write_listeners, print_listener, performance_constraints
+			write_listeners, print_listener, interpreter_constraints
 		#ifdef MULTITHREAD_SUPPORT
 			, enm_lock
 		#endif
@@ -243,7 +243,7 @@ public:
 	inline EvaluableNodeReference Execute(const std::string &label_name,
 		EvaluableNode *scope_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
-		InterpreterConstraints *performance_constraints = nullptr
+		InterpreterConstraints *interpreter_constraints = nullptr
 	#ifdef MULTITHREAD_SUPPORT
 		, Concurrency::ReadLock *enm_lock = nullptr
 	#endif
@@ -251,7 +251,7 @@ public:
 	{
 		StringInternPool::StringID label_sid = string_intern_pool.GetIDFromString(label_name);
 		return Execute(label_sid, scope_stack, on_self, calling_interpreter,
-			write_listeners, print_listener, performance_constraints
+			write_listeners, print_listener, interpreter_constraints
 		#ifdef MULTITHREAD_SUPPORT
 			, enm_lock
 		#endif

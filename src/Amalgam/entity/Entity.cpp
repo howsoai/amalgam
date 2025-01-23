@@ -404,7 +404,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 EvaluableNodeReference Entity::ExecuteCodeAsEntity(EvaluableNode *code,
 	EvaluableNode *scope_stack, Interpreter *calling_interpreter,
 	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
-	InterpreterConstraints *performance_constraints
+	InterpreterConstraints *interpreter_constraints
 #ifdef MULTITHREAD_SUPPORT
 	, Concurrency::ReadLock *enm_lock
 #endif
@@ -415,7 +415,7 @@ EvaluableNodeReference Entity::ExecuteCodeAsEntity(EvaluableNode *code,
 		return EvaluableNodeReference::Null();
 
 	Interpreter interpreter(&evaluableNodeManager, randomStream.CreateOtherStreamViaRand(),
-		write_listeners, print_listener, performance_constraints, this, calling_interpreter);
+		write_listeners, print_listener, interpreter_constraints, this, calling_interpreter);
 
 #ifdef MULTITHREAD_SUPPORT
 	if(enm_lock == nullptr)

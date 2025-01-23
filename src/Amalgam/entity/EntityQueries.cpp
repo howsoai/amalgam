@@ -374,13 +374,9 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 				double found;
 
 				if(e != nullptr)
-				{
 					std::tie(value, found) = e->GetValueAtLabelAsNumber(singleLabel);
-				}
 				else
-				{
 					found = false;
-				}
 
 				if(found)
 				{
@@ -631,7 +627,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 			{
 				auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsNumber(weightLabel);
 				weight_value = ret_val;
-				
+
 				return found;
 			};
 

@@ -774,7 +774,7 @@ EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference fun
 bool Interpreter::PopulateInterpreterConstraintsFromParams(std::vector<EvaluableNode *> &params,
 	size_t perf_constraint_param_offset, InterpreterConstraints &interpreter_constraints, bool include_entity_constraints)
 {
-	//start with constraints if there are already performance constraints
+	//start with constraints if there are already interpreter constraints
 	bool any_constraints = (interpreterConstraints != nullptr);
 
 	interpreter_constraints.constraintViolation = InterpreterConstraints::ViolationType::NoViolation;

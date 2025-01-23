@@ -12,6 +12,7 @@
 
 //system headers:
 #include <regex>
+#include <sstream>
 #include <utility>
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUE(EvaluableNode *en, bool immediate_result)
@@ -203,13 +204,20 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 
 		if(!found)
 		{
+			std::stringstream warning_stream;
+
+			warning_stream << "Warning: undefined symbol " << sid->string;
+
+			if(asset_manager.debugSources)
+				warning_stream << " " << en->GetCommentsString();
+
 			if(asset_manager.warnOnUndefined)
-				std::cerr << "Undefined symbol: " << sid->string << " " << en->GetCommentsString() << std::endl;
+				std::cerr << warning_stream.str() << std::endl;
 
 			if(interpreterConstraints != nullptr && interpreterConstraints->collectWarnings)
 			{
 				if(interpreterConstraints != nullptr)
-					interpreterConstraints->AddWarning(sid->string + " " + en->GetCommentsString());
+					interpreterConstraints->AddWarning(warning_stream.str());
 			}
 		}
 
@@ -217,8 +225,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 	}
 
 	if(interpreterConstraints != nullptr && interpreterConstraints->collectWarnings)
-		interpreterConstraints->AddWarning(sid->string + " " + en->GetCommentsString());
+	{
+		std::stringstream warning_stream;
+		warning_stream << "Warning: undefined symbol " << sid->string;
 
+		if(asset_manager.debugSources)
+			warning_stream << " at " << en->GetCommentsString();
+
+		interpreterConstraints->AddWarning(warning_stream.str());
+	}
 	return EvaluableNodeReference::Null();
 }
 

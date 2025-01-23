@@ -1054,8 +1054,10 @@ protected:
 		//return whether they have ever been exceeded
 		return interpreterConstraints->constraintsExceeded;
 	}
-
+	
 	EvaluableNodeReference BundleResultWithWarningsIfNeeded(EvaluableNodeReference result, InterpreterConstraints *interpreter_constraints_ptr);
+
+	void EmitOrLogWarningIfNeeded(StringInternPool::StringID sid, EvaluableNode *en);
 
 	//opcodes
 	//returns an EvaluableNode tree from evaluating the tree passed in (or nullptr) and associated properties in an EvaluableNodeReference
@@ -1206,16 +1208,6 @@ protected:
 	EvaluableNodeReference InterpretNode_ENT_STRING(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_SYMBOL(EvaluableNode *en, bool immediate_result);
 
-	void EmitOrLogWarningIfNeeded(StringInternPool::StringID sid, EvaluableNode *en);
-
-	void BuildWarning(std::__1::stringstream &warning_stream, StringInternPool::StringID sid, EvaluableNode *en);
-
-	void BuildWarning(std::__1::stringstream &warning_stream, EvaluableNode *en);
-
-	void HandleWarning(StringInternPool::StringID sid, EvaluableNode *en);
-
-	void NewFunction(StringInternPool::StringID sid, EvaluableNode *en);
-
 	//node types
 	EvaluableNodeReference InterpretNode_ENT_GET_TYPE(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_GET_TYPE_STRING(EvaluableNode *en, bool immediate_result);
@@ -1323,6 +1315,8 @@ protected:
 
 	//a stack (list) of the current nodes being executed
 	std::vector<EvaluableNode *> *opcodeStackNodes;
+
+
 
 	template <typename Compare>
 	EvaluableNodeReference GetIndexMinMaxFromAssoc(EvaluableNodeReference interpreted_assoc, Compare compare, double compare_limit, bool immediate_result)

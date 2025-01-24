@@ -24,7 +24,7 @@ class EntityQueryCondition;
 class InterpreterConstraints
 {
 public:
-  enum class ViolationType
+	enum class ViolationType
   	{
 		NoViolation,
 		NodeAllocation,

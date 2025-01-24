@@ -284,15 +284,15 @@ if 2
 7
 (null)
 
-[11 {} ""]
+[11 {} (null)]
 
 [(null) {} "Execution step limit exceeded"]
 
-[11 {} ""]
+[11 {} (null)]
 
-[11 {} ""]
+[11 {} (null)]
 
-[11 {} ""]
+[11 {} (null)]
 
 [(null) {} "Execution depth exceeded"]
 
@@ -301,9 +301,8 @@ if 2
 [
 	(null)
 	{"Warning: undefined symbol x" 1 "Warning: undefined symbol y" 1}
-	""
+	(null)
 ]
-
 
 [(null) {} "Execution depth exceeded"]
 
@@ -4630,11 +4629,11 @@ execution limits tests
 	)
 ]
 --call_container--
-6
+8
 [
-	[8 {} ""]
+	[8 {} (null)]
 	{}
-	""
+	(null)
 ]
 
 [(null) {} "Execution step limit exceeded"]

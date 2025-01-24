@@ -596,22 +596,22 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	return BundleResultWithWarningsIfNeeded(result, interpreter_constraints_ptr);
 }
 
-static std::string ConstraintViolationToString(InterpreterConstraints::ViolationType violation)
+static EvaluableNodeReference ConstraintViolationToString(InterpreterConstraints::ViolationType violation, EvaluableNodeManager *evaluable_node_manager)
 {
 	switch(violation)
 	{
 	case InterpreterConstraints::ViolationType::NoViolation:
-		return "";
+		return EvaluableNodeReference::Null();
 	case InterpreterConstraints::ViolationType::ContainedEntitiesDepth:
-		return "Contained entities depth exceeded";
+		return EvaluableNodeReference(evaluable_node_manager->AllocNode(std::string("Contained entities depth exceeded")), true);
 	case InterpreterConstraints::ViolationType::ContainedEntitiesNumber:
-		return "Contained entities number limit exceeded";
+		return EvaluableNodeReference(evaluable_node_manager->AllocNode(std::string("Contained entities number l)imit exceeded")), true);
 	case InterpreterConstraints::ViolationType::ExecutionDepth:
-		return "Execution depth exceeded";
+		return EvaluableNodeReference(evaluable_node_manager->AllocNode(std::string("Execution depth exceeded")), true);
 	case InterpreterConstraints::ViolationType::ExecutionStep:
-		return "Execution step limit exceeded";
+		return EvaluableNodeReference(evaluable_node_manager->AllocNode(std::string("Execution step limit exceeded")), true);
 	case InterpreterConstraints::ViolationType::NodeAllocation:
-		return "Node allocation limit exceeded";
+		return EvaluableNodeReference(evaluable_node_manager->AllocNode(std::string("Node allocation limit exceeded")), true);
 	default:
 		//cases should be exhaustive, so this is unreachable
 		assert(false);
@@ -630,7 +630,7 @@ EvaluableNodeReference Interpreter::BundleResultWithWarningsIfNeeded(EvaluableNo
 																						{ return string_intern_pool.CreateStringReference(warning_count.first); }, [](std::pair<std::string, size_t> warning_count)
 																						{ return static_cast<double>(warning_count.second); }, evaluableNodeManager);
 
-	EvaluableNodeReference constraint_violation_string = EvaluableNodeReference(evaluableNodeManager->AllocNode(ConstraintViolationToString(interpreter_constraints->constraintViolation)), true);												
+	EvaluableNodeReference constraint_violation_string = ConstraintViolationToString(interpreter_constraints->constraintViolation, evaluableNodeManager);												
 
 	EvaluableNodeReference result_tuple(evaluableNodeManager->AllocNode(ENT_LIST), true);
 

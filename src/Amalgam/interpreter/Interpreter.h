@@ -157,7 +157,7 @@ public:
 	//maps warnings to the count of their occurrence 
 	FastHashMap<std::string, size_t> warnings;
 
-	private: 
+private: 
 #ifdef MULTITHREAD_SUPPORT
 	Concurrency::ReadWriteMutex warningMutex;
 #endif

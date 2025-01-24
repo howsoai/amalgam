@@ -1316,8 +1316,6 @@ protected:
 	//a stack (list) of the current nodes being executed
 	std::vector<EvaluableNode *> *opcodeStackNodes;
 
-
-
 	template <typename Compare>
 	EvaluableNodeReference GetIndexMinMaxFromAssoc(EvaluableNodeReference interpreted_assoc, Compare compare, double compare_limit, bool immediate_result)
 	{

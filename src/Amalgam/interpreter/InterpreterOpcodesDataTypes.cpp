@@ -12,7 +12,6 @@
 
 //system headers:
 #include <regex>
-#include <sstream>
 #include <utility>
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUE(EvaluableNode *en, bool immediate_result)
@@ -211,24 +210,24 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 	}
 
 	EmitOrLogWarningIfNeeded(sid, en);
-	
+
 	return EvaluableNodeReference::Null();
 }
 
 void Interpreter::EmitOrLogWarningIfNeeded(StringInternPool::StringID sid, EvaluableNode *en)
 {
-	std::stringstream warning_stream;
+	std::string warning = "";
 
-	warning_stream << "Warning: undefined symbol " << sid->string;
+	warning.append("Warning: undefined symbol " + sid->string);
 
 	if(asset_manager.debugSources)
-		warning_stream << " " << en->GetCommentsString();
+		warning.append( " " + en->GetCommentsString());
 
 	if(asset_manager.warnOnUndefined)
-		std::cerr << warning_stream.str() << std::endl;
+		std::cerr << warning << std::endl;
 
 	if(interpreterConstraints != nullptr && interpreterConstraints->collectWarnings)
-		interpreterConstraints->AddWarning(warning_stream.str());
+		interpreterConstraints->AddWarning(std::move(warning));
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE(EvaluableNode *en, bool immediate_result)

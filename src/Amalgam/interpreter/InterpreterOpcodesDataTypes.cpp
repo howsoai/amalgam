@@ -202,9 +202,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 		auto [value, found] = cur_entity_ref->GetValueAtLabel(sid, nullptr, true, true);
 
 		if(!found)
-		{
 			EmitOrLogWarningIfNeeded(sid, en);
-		}
 
 		return value;
 	}

@@ -223,11 +223,16 @@ void Interpreter::EmitOrLogWarningIfNeeded(StringInternPool::StringID sid, Evalu
 	if(asset_manager.debugSources)
 		warning.append( " " + en->GetCommentsString());
 
-	if(asset_manager.warnOnUndefined)
-		std::cerr << warning << std::endl;
 
 	if(interpreterConstraints != nullptr && interpreterConstraints->collectWarnings)
-		interpreterConstraints->AddWarning(std::move(warning));
+	{
+		if(interpreterConstraints->collectWarnings)
+			interpreterConstraints->AddWarning(std::move(warning));
+	}
+	else if(asset_manager.warnOnUndefined)
+	{
+		std::cerr << warning << std::endl;
+	}
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_TYPE(EvaluableNode *en, bool immediate_result)

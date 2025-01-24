@@ -295,7 +295,7 @@ public:
 	// If direct_get is true, then it will return values with all labels
 	// If on_self is true, then it will be allowed to access private variables
 	// If batch_call is true, then it assumes it will be called in a batch of updates and will not perform any cleanup or synchronization
-	std::pair<EvaluableNodeReference, bool>  GetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNodeManager *destination_temp_enm, bool direct_get,
+	std::pair<EvaluableNodeReference, bool> GetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNodeManager *destination_temp_enm, bool direct_get,
 		bool on_self = false, bool batch_call = false);
 
 	//same as GetValueAtLabel but accepts a string for label_name

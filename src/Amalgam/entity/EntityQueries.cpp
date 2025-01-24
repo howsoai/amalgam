@@ -633,7 +633,6 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 
 			auto value_weights = EntityQueriesStatistics::ValueMassesNumber<size_t>(0, matching_entities.size(), matching_entities.size(),
 																					get_value, weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight);
-
 			EvaluableNode *assoc = enm->AllocNode(ENT_ASSOC);
 			assoc->ReserveMappedChildNodes(value_weights.size());
 

@@ -219,8 +219,7 @@ void Interpreter::EmitOrLogWarningIfNeeded(StringInternPool::StringID sid, Evalu
 	warning.append("Warning: undefined symbol " + sid->string);
 
 	if(asset_manager.debugSources)
-		warning.append( " " + en->GetCommentsString());
-
+		warning.append(" " + en->GetCommentsString());
 
 	if(interpreterConstraints != nullptr && interpreterConstraints->collectWarnings)
 	{

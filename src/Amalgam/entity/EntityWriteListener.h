@@ -41,8 +41,11 @@ public:
 	void LogWriteLabelValuesToEntity(Entity *entity, EvaluableNode *label_value_pairs,
 		bool accum_values, bool direct_set);
 
-	//logs the new entity root, assuming it has already been set
+	//logs the new entity root, assuming it has already been set. 
 	void LogWriteToEntityRoot(Entity *entity);
+
+	//logs accum to the entity root
+	void LogEntityAccumRoot(Entity *entity, EvaluableNodeReference accum_code);
 
 	void LogCreateEntity(Entity *new_entity);
 

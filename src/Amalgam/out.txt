@@ -1597,7 +1597,7 @@ infinity test c or d: ["c" "c" "d" "d"]
 [1 3 4]
 
 --get_rand_seed--
-ü—õæš§I`¦!šc”lÿ
+ï¿½ï¿½ï¿½æš§I`ï¿½!ï¿½cï¿½lï¿½
 --set_rand_seed--
 0.3458744430299684
 0.5141404672826732
@@ -1853,27 +1853,27 @@ comment too
 	"e"
 	"f"
 	"g"
-	"ï"
-	"¬"
-	"—"
-	"ê"
-	"­"
-	"–"
-	"Ï"
-	"¡"
+	"ï¿½"
+	"ï¿½"
+	"ï¿½"
+	"ï¿½"
+	"ï¿½"
+	"ï¿½"
+	"ï¿½"
+	"ï¿½"
 ]
 [
 	"ab"
 	"cd"
 	"ef"
-	"gï"
-	"¬—"
-	"ê­"
-	"–Ï"
-	"¡"
+	"gï¿½"
+	"ï¿½ï¿½"
+	"ï¿½"
+	"ï¿½ï¿½"
+	"ï¿½"
 ]
-["abc" "def" "gï¬" "—ê­" "–Ï¡"]
-["abcd" "efgï" "¬—ê­" "–Ï¡"]
+["abc" "def" "gï¿½" "ï¿½ï¿½" "ï¿½Ï¡"]
+["abcd" "efgï¿½" "ï¿½ï¿½ï¿½" "ï¿½Ï¡"]
 --split--
 ["hello world"]
 ["hello" "world"]
@@ -1927,11 +1927,11 @@ h[e]ll[o] w[o]rld
 h[e]ll[o] world
 abcdefgï¬—ê­–Ï¡
 bcdefgï¬—ê­–Ï¡
-bcdefgï¬—ê­
+bcdefgï¬—ï¿½
 bcdefgï¬—ê­–Ï¡
 bcdefgï¬—ê­–
 gï¬—ê­–
-­–Ï
+ï¿½ï¿½ï¿½
 axdefgï¬—ê­–Ï¡
 --concat--
 hello world
@@ -2565,7 +2565,7 @@ abcdoxyz
 87
 --flatten_entity--
 0.40971200496539806
-iûÛAŽ;@Vëó¬OV-ÿ
+iï¿½ï¿½Aï¿½;@Vï¿½ï¿½OV-ï¿½
 0.7136950384635786
 0.7136950384635786
 0.6522822782263927
@@ -2592,7 +2592,7 @@ flatten restore with seeds test
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "»¶Â£=ô€mVëó¬OV-ÿ")
+	(set_entity_rand_seed new_entity "ï¿½ï¿½Â£=ï¿½mVï¿½ï¿½OV-ï¿½")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -2604,7 +2604,7 @@ flatten restore with seeds test
 				)
 			)
 		)
-		"‡aE&K\"Øà¸Õ(X&€\0ÿ"
+		"ï¿½aE&K\"ï¿½ï¿½ï¿½(X&ï¿½\0ï¿½"
 	)
 	new_entity
 )
@@ -2629,7 +2629,7 @@ flatten restore with seeds test
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "M:ù÷püVVëó¬OV-ÿ")
+	(set_entity_rand_seed new_entity "ï¿½M:ï¿½ï¿½pï¿½VVï¿½ï¿½OV-ï¿½")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -2641,7 +2641,7 @@ flatten restore with seeds test
 				)
 			)
 		)
-		"‡aE&K\"Øà¸Õ(X&€\0ÿ"
+		"ï¿½aE&K\"ï¿½ï¿½ï¿½(X&ï¿½\0ï¿½"
 	)
 	new_entity
 )
@@ -2702,7 +2702,7 @@ flatten restore without seeds test
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "{'ÔI¢ÑùÜÌCÓ­Ìÿ")
+	(set_entity_rand_seed new_entity "{'ï¿½Iï¿½ï¿½ï¿½ï¿½ï¿½Cï¿½ï¿½ï¿½ï¿½")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -2714,7 +2714,7 @@ flatten restore without seeds test
 				)
 			)
 		)
-		"í5š¥ºz^\rãFä/ VQÿ"
+		"ï¿½5ï¿½ï¿½ï¿½z^\rï¿½Fï¿½/ï¿½Vï¿½Qï¿½"
 	)
 	new_entity
 )
@@ -2744,7 +2744,7 @@ flatten restore with parallel
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "»¶Â£=ô€mVëó¬OV-ÿ")
+	(set_entity_rand_seed new_entity "ï¿½ï¿½Â£=ï¿½mVï¿½ï¿½OV-ï¿½")
 	||(parallel
 		(set_entity_rand_seed
 			(first
@@ -2757,7 +2757,7 @@ flatten restore with parallel
 					)
 				)
 			)
-			"‡aE&K\"Øà¸Õ(X&€\0ÿ"
+			"ï¿½aE&K\"ï¿½ï¿½ï¿½(X&ï¿½\0ï¿½"
 		)
 	)
 	new_entity
@@ -2783,7 +2783,7 @@ flatten restore with parallel
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "M:ù÷püVVëó¬OV-ÿ")
+	(set_entity_rand_seed new_entity "ï¿½M:ï¿½ï¿½pï¿½VVï¿½ï¿½OV-ï¿½")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -2795,7 +2795,7 @@ flatten restore with parallel
 				)
 			)
 		)
-		"‡aE&K\"Øà¸Õ(X&€\0ÿ"
+		"ï¿½aE&K\"ï¿½ï¿½ï¿½(X&ï¿½\0ï¿½"
 	)
 	new_entity
 )
@@ -3625,9 +3625,9 @@ this is a fully described entity
 	#c 3
 )
 --get_entity_rand_seed--
-3„yàrœ>ƒ89012345ÿ
+3ï¿½yï¿½rï¿½>ï¿½89012345ï¿½
 0.812564396753873
-aâÿdx€)5®iDÿ
+aï¿½ï¿½dxï¿½)5ï¿½iDï¿½
 --set_entity_rand_seed--
 0.21086495653466275
 0.21086495653466275
@@ -3824,7 +3824,7 @@ hello
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "þ¢X¿~wb¢ô3æ©‚ºÿ")
+	(set_entity_rand_seed new_entity "ï¿½ï¿½Xï¿½~wbï¿½ï¿½3ï¿½ï¿½ï¿½ï¿½ï¿½")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3838,7 +3838,7 @@ hello
 				)
 			)
 		)
-		"DA3¬ðí0ŸW^v½haÍ&ÿ"
+		"DA3ï¿½ï¿½ï¿½0ï¿½W^vï¿½haï¿½&ï¿½"
 	)
 	(set_entity_rand_seed
 		(first
@@ -3853,7 +3853,7 @@ hello
 				)
 			)
 		)
-		"= ÝûÆ\0F†yf×@)‹¬ÿ"
+		"= ï¿½ï¿½ï¿½\0Fï¿½yfï¿½@)ï¿½ï¿½ï¿½"
 	)
 	new_entity
 )
@@ -3881,7 +3881,7 @@ persistent loads
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "1a2Ø.²³W«w¸ˆæÿ")
+	(set_entity_rand_seed new_entity "1a2ï¿½.ï¿½ï¿½Wï¿½wï¿½ï¿½ï¿½ï¿½ï¿½")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3891,7 +3891,7 @@ persistent loads
 				)
 			)
 		)
-		"ˆ-ìO[¿ë3yC“Å’ŒÑÿ"
+		"ï¿½-ï¿½O[ï¿½ï¿½3yCï¿½Å’ï¿½ï¿½ï¿½"
 	)
 	(set_entity_rand_seed
 		(first
@@ -3906,7 +3906,7 @@ persistent loads
 				)
 			)
 		)
-		"&Ì$Ü´@nÏ>ƒ\"ëFNÿ"
+		"&ï¿½$Ü´@nï¿½>ï¿½\"ï¿½ï¿½FNï¿½"
 	)
 	new_entity
 )
@@ -3933,7 +3933,7 @@ persistent loads
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "1a2Ø.²³W«w¸ˆæÿ")
+	(set_entity_rand_seed new_entity "1a2ï¿½.ï¿½ï¿½Wï¿½wï¿½ï¿½ï¿½ï¿½ï¿½")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3947,7 +3947,7 @@ persistent loads
 				)
 			)
 		)
-		"&Ì$Ü´@nÏ>ƒ\"ëFNÿ"
+		"&ï¿½$Ü´@nï¿½>ï¿½\"ï¿½ï¿½FNï¿½"
 	)
 	new_entity
 )
@@ -4608,6 +4608,16 @@ execution limits tests
 			"bbbb"
 			(false)
 		)
+		(accum_to_entities
+			["CEGCTest" "Contained"]
+			{b 12}
+		)
+		(accum_entity_roots
+			["CEGCTest" "Contained"]
+			[
+				#a 14
+			]
+		)
 		(destroy_entities
 			["CEGCTest" "Contained"]
 		)
@@ -4683,7 +4693,7 @@ entity cyclic test:
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "ß‰‡$Ot3»FNÜŽ5ÿ")
+	(set_entity_rand_seed new_entity "ß‰ï¿½$Ot3ï¿½FNÜŽ5ï¿½")
 	new_entity
 )
 3
@@ -4713,7 +4723,7 @@ entity cyclic test:
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "ß‰‡$Ot3»FNÜŽ5ÿ")
+	(set_entity_rand_seed new_entity "ß‰ï¿½$Ot3ï¿½FNÜŽ5ï¿½")
 	new_entity
 )
 cyclic lookup test:

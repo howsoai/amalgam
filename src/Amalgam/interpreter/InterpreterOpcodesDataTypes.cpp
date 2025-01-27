@@ -218,9 +218,20 @@ void Interpreter::EmitOrLogWarningIfNeeded(StringInternPool::StringID sid, Evalu
 
 	warning.append("Warning: undefined symbol " + sid->string);
 
-	if(asset_manager.debugSources)
-		warning.append(" " + en->GetCommentsString());
+	if(asset_manager.debugSources && en->HasComments())
+	{
+		std::string comment_string = en->GetCommentsString();
+		size_t newline_index = comment_string.find("\n");
 
+		std::string comment_string_first_line;
+
+		if(newline_index != std::string::npos)
+			comment_string_first_line = comment_string.substr(0, newline_index + 1);
+		else
+			comment_string_first_line = comment_string;
+
+		warning.append(" at " + comment_string_first_line);
+	}
 	if(interpreterConstraints != nullptr)
 	{
 		if(interpreterConstraints->collectWarnings)

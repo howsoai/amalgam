@@ -232,6 +232,7 @@ void Interpreter::EmitOrLogWarningIfNeeded(StringInternPool::StringID sid, Evalu
 
 		warning.append(" at " + comment_string_first_line);
 	}
+
 	if(interpreterConstraints != nullptr)
 	{
 		if(interpreterConstraints->collectWarnings)

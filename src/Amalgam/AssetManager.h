@@ -492,6 +492,9 @@ public:
 
 	inline EntityPermissions GetEntityPermissions(Entity *entity)
 	{
+		if(entity == nullptr)
+			return EntityPermissions();
+			
 	#ifdef MULTITHREAD_INTERFACE
 		Concurrency::ReadLock lock(entityPermissionsMutex);
 	#endif

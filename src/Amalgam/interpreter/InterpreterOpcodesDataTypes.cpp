@@ -221,14 +221,16 @@ void Interpreter::EmitOrLogWarningIfNeeded(StringInternPool::StringID sid, Evalu
 	if(asset_manager.debugSources)
 		warning.append(" " + en->GetCommentsString());
 
-	if(interpreterConstraints != nullptr && interpreterConstraints->collectWarnings)
+	if(interpreterConstraints != nullptr)
 	{
 		if(interpreterConstraints->collectWarnings)
 			interpreterConstraints->AddWarning(std::move(warning));
 	}
 	else if(asset_manager.warnOnUndefined)
 	{
-		std::cerr << warning << std::endl;
+		EntityPermissions entity_permissions = asset_manager.GetEntityPermissions(curEntity);
+		if(entity_permissions.individualPermissions.stdOut)
+			std::cerr << warning << std::endl;
 	}
 }
 

@@ -83,7 +83,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 
 		return AllocReturn(input, immediate_result);
 	}
-	else if(command == "printline" && ocn.size() > 1 && permissions.individualPermissions.stdOut)
+	else if(command == "printline" && ocn.size() > 1 && permissions.individualPermissions.stdOutAndStdErr)
 	{
 		std::string output = InterpretNodeIntoStringValueEmptyNull(ocn[1]);
 		printListener->LogPrint(output);
@@ -248,7 +248,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 		std::string built_in_data_s(reinterpret_cast<char *>(&built_in_data[0]), sizeof(built_in_data));
 		return AllocReturn(built_in_data_s, immediate_result);
 	}
-	else if(permissions.individualPermissions.stdOut)
+	else if(permissions.individualPermissions.stdOutAndStdErr)
 	{
 		std::cerr << "Invalid system opcode command \"" << command << "\" invoked" << std::endl;
 	}

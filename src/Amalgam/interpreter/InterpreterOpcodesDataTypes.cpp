@@ -229,7 +229,7 @@ void Interpreter::EmitOrLogWarningIfNeeded(StringInternPool::StringID sid, Evalu
 	else if(asset_manager.warnOnUndefined)
 	{
 		EntityPermissions entity_permissions = asset_manager.GetEntityPermissions(curEntity);
-		if(entity_permissions.individualPermissions.stdOut)
+		if(entity_permissions.individualPermissions.stdOutAndStdErr)
 			std::cerr << warning << std::endl;
 	}
 }

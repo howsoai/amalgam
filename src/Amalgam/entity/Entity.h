@@ -80,7 +80,7 @@ union EntityPermissions
 	inline static EntityPermissions AllPermissions()
 	{
 		EntityPermissions perm;
-		perm.individualPermissions.stdOut = true;
+		perm.individualPermissions.stdOutAndStdErr = true;
 		perm.individualPermissions.stdIn = true;
 		perm.individualPermissions.load = true;
 		perm.individualPermissions.store = true;
@@ -94,8 +94,8 @@ union EntityPermissions
 	//for each permission, true if has permission
 	struct
 	{
-		//write to stdout
-		bool stdOut : 1;
+		//write to stdout and stderr
+		bool stdOutAndStdErr : 1;
 		//read from stdin
 		bool stdIn : 1;
 		//read from file system

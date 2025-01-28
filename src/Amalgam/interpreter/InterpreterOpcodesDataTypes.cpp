@@ -202,17 +202,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 		auto [value, found] = cur_entity_ref->GetValueAtLabel(sid, nullptr, true, true);
 
 		if(!found)
-			EmitOrLogWarningIfNeeded(sid, en);
+			EmitOrLogUndefinedVariableWarningIfNeeded(sid, en);
 
 		return value;
 	}
 
-	EmitOrLogWarningIfNeeded(sid, en);
+	EmitOrLogUndefinedVariableWarningIfNeeded(sid, en);
 
 	return EvaluableNodeReference::Null();
 }
 
-void Interpreter::EmitOrLogWarningIfNeeded(StringInternPool::StringID sid, EvaluableNode *en)
+void Interpreter::EmitOrLogUndefinedVariableWarningIfNeeded(StringInternPool::StringID sid, EvaluableNode *en)
 {
 	std::string warning = "";
 

@@ -516,8 +516,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, bo
 	//call the code
 	auto result = InterpretNode(function, immediate_result);
 
-	//all finished with new context, but can't free it in case returning something
-	PopScopeStack();
+	PopScopeStack(result.unique);
 
 	//call opcodes should consume the outer return opcode if there is one
 	if(result.IsNonNullNodeReference() && result->GetType() == ENT_RETURN)
@@ -690,12 +689,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, boo
 			auto result_type = result->GetType();
 			if(result_type == ENT_CONCLUDE)
 			{
-				PopScopeStack();
+				PopScopeStack(result.unique);
 				return RemoveTopConcludeOrReturnNode(result, evaluableNodeManager);
 			}
 			else if(result_type == ENT_RETURN)
 			{
-				PopScopeStack();
+				PopScopeStack(result.unique);
 				return result;
 			}
 		}
@@ -709,7 +708,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, boo
 	}
 
 	//all finished with new context, but can't free it in case returning something
-	PopScopeStack();
+	PopScopeStack(result.unique);
 	return result;
 }
 
@@ -865,7 +864,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	if(scopeStackNodes->size() < 1)
 		return EvaluableNodeReference::Null();
 
-	auto [any_constructions, initial_side_effect] = SetSideEffectsFlagsInConstructionStack();
+	auto [any_constructions, initial_side_effect] = SetSideEffectsFlags();
 	if(_opcode_profiling_enabled && any_constructions)
 	{
 		std::string variable_location = asset_manager.GetEvaluableNodeSourceFromComments(en);

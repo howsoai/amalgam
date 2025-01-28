@@ -1060,11 +1060,11 @@ protected:
 	EvaluableNodeReference BundleResultWithWarningsIfNeeded(EvaluableNodeReference result, InterpreterConstraints *interpreter_constraints);
 
 
-	//Creates a warning string for the undefined symbol represented by sid.
+	//Creates a warning string for the undefined symbol represented by not_found_variable_sid.
 	//If interpreterConstraints is not null, and collect Warnings is true, this warning will be added to warnings.
 	//Otherwise, if asset_manager.warnOnUndefined is true, and curEntity has permission to write to stderr,
 	//the warning will be printed to stderr.
-	void EmitOrLogUndefinedVariableWarningIfNeeded(StringInternPool::StringID sid, EvaluableNode *en);
+	void EmitOrLogUndefinedVariableWarningIfNeeded(StringInternPool::StringID not_found_variable_sid, EvaluableNode *en);
 
 	//opcodes
 	//returns an EvaluableNode tree from evaluating the tree passed in (or nullptr) and associated properties in an EvaluableNodeReference

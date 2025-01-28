@@ -212,11 +212,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 	return EvaluableNodeReference::Null();
 }
 
-void Interpreter::EmitOrLogUndefinedVariableWarningIfNeeded(StringInternPool::StringID sid, EvaluableNode *en)
+void Interpreter::EmitOrLogUndefinedVariableWarningIfNeeded(StringInternPool::StringID not_found_variable_sid, EvaluableNode *en)
 {
 	std::string warning = "";
 
-	warning.append("Warning: undefined symbol " + sid->string);
+	warning.append("Warning: undefined symbol " + not_found_variable_sid->string);
 
 	if(asset_manager.debugSources && en->HasComments())
 	{

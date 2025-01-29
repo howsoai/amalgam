@@ -826,6 +826,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 		}
 	}
 
+	//TODO 22613: need to set side effects if any declare is inserted
+
 	//used to store the result or clear if possible
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
 

@@ -10,6 +10,7 @@
 #include "RandomStream.h"
 
 //system headers:
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
@@ -236,13 +237,20 @@ public:
 		new_context->SetNeedCycleCheck(true);
 
 		scopeStackNodes->push_back(new_context);
+		scopeStackFreeable.push_back(new_context.unique);
 	}
 
 	//pops the top context off the stack
-	__forceinline void PopScopeStack()
+	//if returning_unique_value, then can potentially free the whole scope
+	__forceinline void PopScopeStack(bool returning_unique_value)
 	{
-		evaluableNodeManager->FreeNode(scopeStackNodes->back());
+		if(returning_unique_value && scopeStackFreeable.back())
+			evaluableNodeManager->FreeNodeTree(scopeStackNodes->back());
+		else
+			evaluableNodeManager->FreeNode(scopeStackNodes->back());
+
 		scopeStackNodes->pop_back();
+		scopeStackFreeable.pop_back();
 	}
 
 	//pushes a new construction context on the stack, which is assumed to not be nullptr
@@ -371,9 +379,9 @@ public:
 	}
 
 	//should be called by any opcode that has side effects setting memory, such as assignment, accumulation, etc.
-	//returns a pair of booleans, where the first value is true if there are any constructions,
+	//returns a pair of booleans, where the first value is true if there are any constructions
 	// and the second is true if it set at least one flag (i.e., it was the first time doing so)
-	inline std::pair<bool, bool> SetSideEffectsFlagsInConstructionStack()
+	inline std::pair<bool, bool> SetSideEffectsFlags()
 	{
 		bool any_constructions = (constructionStackIndicesAndUniqueness.size() > 0);
 		bool any_set = false;
@@ -387,6 +395,9 @@ public:
 			constructionStackIndicesAndUniqueness[index].executionSideEffects = true;
 			any_set = true;
 		}
+
+		//indicate scope stack is not freeable
+		std::fill(begin(scopeStackFreeable), end(scopeStackFreeable), false);
 
 		return std::make_pair(any_constructions, any_set);
 	}
@@ -809,7 +820,7 @@ protected:
 
 			//propagate side effects back up
 			if(resultsSideEffect)
-				parentInterpreter->SetSideEffectsFlagsInConstructionStack();
+				parentInterpreter->SetSideEffectsFlags();
 		}
 
 		//updates the aggregated result reference's properties based on all of the child nodes
@@ -1427,6 +1438,9 @@ protected:
 
 	//the scope stack is comprised of the variable contexts
 	std::vector<EvaluableNode *> *scopeStackNodes;
+
+	//vector corresponding to scopeStackNodes, each entry is true if there was a side effect
+	std::vector<bool> scopeStackFreeable;
 
 	//the current construction stack, containing an interleaved array of nodes
 	std::vector<EvaluableNode *> *constructionStackNodes;

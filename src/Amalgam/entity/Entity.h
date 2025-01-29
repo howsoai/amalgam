@@ -894,23 +894,27 @@ protected:
 		EntityRelationships *relationships;
 	};
 
-	//current list of all labels and where they are in the code
-	EvaluableNode::AssocType labelIndex;
-
-	//the random stream associated with this Entity
-	RandomStream randomStream;
-
-	//structure to compactly store parent and contained entities
-	EntityRelationshipsReference entityRelationships;
-
-	//id of the string of the string ID used to address Entity given by container Entity
-	//Each entity has an ID, which is a string.  Since each string is stored in the StringInternPool and referenced by a StringId, this is the entity's id stored by the stringId thus the idStringId.
-	StringInternPool::StringID idStringId;
-
 #ifdef MULTITHREAD_SUPPORT
 	//mutex for operations that may edit or modify the entity's properties and attributes
 	Concurrency::ReadWriteMutex mutex;
 #endif
+
+	//current list of all labels and where they are in the code
+	EvaluableNode::AssocType labelIndex;
+
+	//if true, then the entity has contained entities and will use the relationships reference of entityRelationships
+	//note this is located after labelIndex because labelIndex is of a size that does not align tightly
+	bool hasContainedEntities;
+
+	//structure to compactly store parent and contained entities
+	EntityRelationshipsReference entityRelationships;
+
+	//the random stream associated with this Entity
+	RandomStream randomStream;
+
+	//id of the string of the string ID used to address Entity given by container Entity
+	//Each entity has an ID, which is a string.  Since each string is stored in the StringInternPool and referenced by a StringId, this is the entity's id stored by the stringId thus the idStringId.
+	StringInternPool::StringID idStringId;
 
 	//buffer to store read locks for deep locking entities
 	//one per thread to save memory on Interpreter objects
@@ -925,9 +929,6 @@ protected:
 	thread_local
 #endif
 	static std::vector<EntityWriteReference> entityWriteReferenceBuffer;
-
-	//if true, then the entity has contained entities and will use the relationships reference of entityRelationships
-	bool hasContainedEntities;
 
 	//container for when there are no contained entities but need to iterate over them
 	static std::vector<Entity *> emptyContainedEntities;

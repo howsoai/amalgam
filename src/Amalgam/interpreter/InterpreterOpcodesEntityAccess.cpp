@@ -278,7 +278,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 
 			if(target_entity == curEntity)
 			{
-				auto [any_constructions, initial_side_effect] = SetSideEffectsFlagsInConstructionStack();
+				auto [any_constructions, initial_side_effect] = SetSideEffectsFlags();
 				if(_opcode_profiling_enabled && any_constructions)
 				{
 					std::string variable_location = asset_manager.GetEvaluableNodeSourceFromComments(en);

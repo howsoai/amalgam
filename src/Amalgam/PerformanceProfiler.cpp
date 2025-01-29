@@ -3,6 +3,7 @@
 #include "PerformanceProfiler.h"
 
 //system headers:
+#include <algorithm>
 #include <chrono>
 #include <iostream>
 #include <fstream>

@@ -516,8 +516,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, bo
 	//call the code
 	auto result = InterpretNode(function, immediate_result);
 
-	//all finished with new context, but can't free it in case returning something
-	PopScopeStack();
+	PopScopeStack(result.unique);
 
 	//call opcodes should consume the outer return opcode if there is one
 	if(result.IsNonNullNodeReference() && result->GetType() == ENT_RETURN)
@@ -690,12 +689,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, boo
 			auto result_type = result->GetType();
 			if(result_type == ENT_CONCLUDE)
 			{
-				PopScopeStack();
+				PopScopeStack(result.unique);
 				return RemoveTopConcludeOrReturnNode(result, evaluableNodeManager);
 			}
 			else if(result_type == ENT_RETURN)
 			{
-				PopScopeStack();
+				PopScopeStack(result.unique);
 				return result;
 			}
 		}
@@ -709,7 +708,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, boo
 	}
 
 	//all finished with new context, but can't free it in case returning something
-	PopScopeStack();
+	PopScopeStack(result.unique);
 	return result;
 }
 
@@ -722,6 +721,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 
 	//work on the node that is declaring the variables
 	EvaluableNode *required_vars_node = ocn[0];
+	bool any_assignments = false;
 	if(required_vars_node != nullptr)
 	{
 		//transform into variables if possible
@@ -762,7 +762,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 				for(auto &[cn_id, cn] : required_vars->GetMappedChildNodesReference())
 				{
 					auto [inserted, node_ptr] = scope->SetMappedChildNode(cn_id, cn, false);
-					if(!inserted)
+					if(inserted)
+					{
+						any_assignments = true;
+					}
+					else
 					{
 						//if it can't insert the new variable because it already exists,
 						// then try to free the default / new value that was attempted to be assigned
@@ -784,7 +788,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 					if(cn == nullptr || cn->GetIsIdempotent())
 					{
 						auto [inserted, node_ptr] = scope->SetMappedChildNode(cn_id, cn, false);
-						if(!inserted)
+						if(inserted)
+						{
+							any_assignments = true;
+						}
+						else
 						{
 							//if it can't insert the new variable because it already exists,
 							// then try to free the default / new value that was attempted to be assigned
@@ -799,6 +807,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 						//may be used in the declare
 						if(scope_mcn.find(cn_id) != end(scope_mcn))
 							continue;
+
+						any_assignments = true;
 
 					#ifdef MULTITHREAD_SUPPORT
 						//unlock before interpreting
@@ -824,6 +834,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 
 			//free the vars / assoc node
 			evaluableNodeManager->FreeNodeIfPossible(required_vars);
+		}
+	}
+
+	if(any_assignments)
+	{
+		auto [any_constructions, initial_side_effect] = SetSideEffectsFlags();
+		if(_opcode_profiling_enabled && any_constructions)
+		{
+			std::string variable_location = asset_manager.GetEvaluableNodeSourceFromComments(en);
+			PerformanceProfiler::AccumulateTotalSideEffectMemoryWrites(variable_location);
+			if(initial_side_effect)
+				PerformanceProfiler::AccumulateInitialSideEffectMemoryWrites(variable_location);
 		}
 	}
 
@@ -865,7 +887,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	if(scopeStackNodes->size() < 1)
 		return EvaluableNodeReference::Null();
 
-	auto [any_constructions, initial_side_effect] = SetSideEffectsFlagsInConstructionStack();
+	auto [any_constructions, initial_side_effect] = SetSideEffectsFlags();
 	if(_opcode_profiling_enabled && any_constructions)
 	{
 		std::string variable_location = asset_manager.GetEvaluableNodeSourceFromComments(en);

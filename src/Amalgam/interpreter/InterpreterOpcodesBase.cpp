@@ -721,6 +721,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 
 	//work on the node that is declaring the variables
 	EvaluableNode *required_vars_node = ocn[0];
+	bool any_assignments = false;
 	if(required_vars_node != nullptr)
 	{
 		//transform into variables if possible
@@ -761,7 +762,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 				for(auto &[cn_id, cn] : required_vars->GetMappedChildNodesReference())
 				{
 					auto [inserted, node_ptr] = scope->SetMappedChildNode(cn_id, cn, false);
-					if(!inserted)
+					if(inserted)
+					{
+						any_assignments = true;
+					}
+					else
 					{
 						//if it can't insert the new variable because it already exists,
 						// then try to free the default / new value that was attempted to be assigned
@@ -783,7 +788,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 					if(cn == nullptr || cn->GetIsIdempotent())
 					{
 						auto [inserted, node_ptr] = scope->SetMappedChildNode(cn_id, cn, false);
-						if(!inserted)
+						if(inserted)
+						{
+							any_assignments = true;
+						}
+						else
 						{
 							//if it can't insert the new variable because it already exists,
 							// then try to free the default / new value that was attempted to be assigned
@@ -798,6 +807,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 						//may be used in the declare
 						if(scope_mcn.find(cn_id) != end(scope_mcn))
 							continue;
+
+						any_assignments = true;
 
 					#ifdef MULTITHREAD_SUPPORT
 						//unlock before interpreting
@@ -826,7 +837,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 		}
 	}
 
-	//TODO 22613: need to set side effects if any declare is inserted
+	if(any_assignments)
+	{
+		auto [any_constructions, initial_side_effect] = SetSideEffectsFlags();
+		if(_opcode_profiling_enabled && any_constructions)
+		{
+			std::string variable_location = asset_manager.GetEvaluableNodeSourceFromComments(en);
+			PerformanceProfiler::AccumulateTotalSideEffectMemoryWrites(variable_location);
+			if(initial_side_effect)
+				PerformanceProfiler::AccumulateInitialSideEffectMemoryWrites(variable_location);
+		}
+	}
 
 	//used to store the result or clear if possible
 	EvaluableNodeReference result = EvaluableNodeReference::Null();

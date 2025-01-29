@@ -140,7 +140,9 @@ static void loadAndEval(TestResult &test_result)
 }
 
 static std::string handle("handle");
+static std::string handle2("handle2");
 static std::string filename("counter.amlg");
+static std::string filename2("counter2.amlg");
 static std::string empty("");
 static std::string initialize("initialize");
 static std::string add("add");
@@ -160,7 +162,8 @@ static void initializeCounter(TestResult &test_result)
 	}
 }
 
-static void executeEntityJsonWithValue(TestResult &test_result) {
+static void executeEntityJsonWithValue(TestResult &test_result)
+{
     LoadEntityStatus status = LoadEntity(handle.data(), filename.data(), empty.data(), false, empty.data(), empty.data(), empty.data());
 	test_result.require("LoadEntity", status.loaded);
 	if(test_result)
@@ -173,7 +176,8 @@ static void executeEntityJsonWithValue(TestResult &test_result) {
 	}
 }
 
-static void executeEntityJsonLogged(TestResult &test_result) {
+static void executeEntityJsonLogged(TestResult &test_result)
+{
     LoadEntityStatus status = LoadEntity(handle.data(), filename.data(), empty.data(), false, empty.data(), empty.data(), empty.data());
 	test_result.require("LoadEntity", status.loaded);
 	if(test_result)
@@ -188,7 +192,8 @@ static void executeEntityJsonLogged(TestResult &test_result) {
 	}
 }
 
-static void executeEntityJsonLoggedUpdating(TestResult &test_result) {
+static void executeEntityJsonLoggedUpdating(TestResult &test_result)
+{
     LoadEntityStatus status = LoadEntity(handle.data(), filename.data(), empty.data(), false, empty.data(), empty.data(), empty.data());
 	test_result.require("LoadEntity", status.loaded);
 	if(test_result)
@@ -207,7 +212,8 @@ static void executeEntityJsonLoggedUpdating(TestResult &test_result) {
 	}
 }
 
-static void executeEntityJsonLoggedRoundTrip(TestResult &test_result) {
+static void executeEntityJsonLoggedRoundTrip(TestResult &test_result)
+{
     LoadEntityStatus status = LoadEntity(handle.data(), filename.data(), empty.data(), false, empty.data(), empty.data(), empty.data());
 	test_result.require("LoadEntity", status.loaded);
 	if(test_result)
@@ -229,7 +235,8 @@ static void executeEntityJsonLoggedRoundTrip(TestResult &test_result) {
 	}
 }
 
-static void executeEntityJsonLoggedTwice(TestResult &test_result) {
+static void executeEntityJsonLoggedTwice(TestResult &test_result)
+{
     LoadEntityStatus status = LoadEntity(handle.data(), filename.data(), empty.data(), false, empty.data(), empty.data(), empty.data());
 	test_result.require("LoadEntity", status.loaded);
 	if(test_result)
@@ -255,6 +262,53 @@ static void executeEntityJsonLoggedTwice(TestResult &test_result) {
 		EvalOnEntity(handle.data(), result2.log);
 		ApiString gotten(ExecuteEntityJsonPtr(handle.data(), get_value.data(), empty.data()));
 		test_result.check("ExecuteEntityJsonPtr get_value", gotten, "2");
+	}
+}
+
+static void executeCounter2(TestResult &test_result)
+{
+    LoadEntityStatus status = LoadEntity(handle.data(), filename2.data(), empty.data(), false, empty.data(), empty.data(), empty.data());
+	test_result.require("LoadEntity", status.loaded);
+	if(test_result)
+	{
+		LoadedEntity loaded_entity(handle);
+		ExecuteEntity(handle.data(), initialize.data());
+
+		std::string json("{}");
+		ApiString result(ExecuteEntityJsonPtr(handle.data(), add.data(), json.data()));
+		test_result.check("ExecuteEntityJsonPtr add", result, "1");
+
+		std::string json2("{\"counter\":\"y\"}");
+		ApiString result2(ExecuteEntityJsonPtr(handle.data(), get_value.data(), json2.data()));
+		test_result.check("ExecuteEntityJsonPtr get_value y", result2, "null");
+	}
+}
+
+static void executeCounter2Logged(TestResult &test_result)
+{
+	// This is actually a test for a specific case of accum_entity_roots, via
+	// ExecuteEntityJsonPtrLogged(), that needs to preserve labels.
+    LoadEntityStatus status = LoadEntity(handle.data(), filename2.data(), empty.data(), false, empty.data(), empty.data(), empty.data());
+	test_result.require("LoadEntity", status.loaded);
+	if(test_result)
+	{
+		LoadedEntity loaded_entity(handle);
+		ExecuteEntity(handle.data(), initialize.data());
+
+		// Clone the entity, then execute "add" there.
+		// Of note this accum_entity_roots, adding a label.
+		bool cloned = CloneEntity(handle.data(), handle2.data(), empty.data(), empty.data(), false, empty.data(), empty.data(), empty.data());
+		test_result.require("CloneEntity", cloned);
+
+		ResultWithLog result = ExecuteEntityJsonPtrLogged(handle2.data(), add.data(), empty.data());
+		ApiString json1(result.json);
+		ApiString log1(result.log);
+		test_result.check("ExecuteEntityJsonPtrLogged add", json1, "1");
+
+		EvalOnEntity(handle.data(), result.log);
+
+		std::string json2 = ExecuteEntityJsonPtr(handle.data(), get_value.data(), empty.data());
+		test_result.check("ExecuteEntityJsonPtr get_value", json2, "1");
 	}
 }
 
@@ -293,6 +347,8 @@ int main(int argc, char* argv[])
 	suite.run("executeEntityJsonLoggedUpdating", executeEntityJsonLoggedUpdating);
 	suite.run("executeEntityJsonLoggedRoundTrip", executeEntityJsonLoggedRoundTrip);
 	suite.run("executeEntityJsonLoggedTwice", executeEntityJsonLoggedTwice);
+	suite.run("executeCounter2", executeCounter2);
+	suite.run("executeCounter2Logged", executeCounter2Logged);
 
 	return suite ? 0 : 1;
 }

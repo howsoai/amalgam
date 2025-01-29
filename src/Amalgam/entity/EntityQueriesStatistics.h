@@ -72,7 +72,7 @@ public:
 				double value = 0.0;
 				if(get_value(i, value))
 				{
-					auto [inserted_value, inserted] = value_weights.insert(std::make_pair(value, 1.0));
+					auto [inserted_value, inserted] = value_weights.emplace(value, 1.0);
 					if(!inserted)
 						inserted_value->second += 1.0;
 				}
@@ -88,7 +88,7 @@ public:
 					double weight_value = 1.0;
 					get_weight(i, weight_value);
 
-					auto [inserted_value, inserted] = value_weights.insert(std::make_pair(value, weight_value));
+					auto [inserted_value, inserted] = value_weights.emplace(value, weight_value);
 					if(!inserted)
 						inserted_value->second += weight_value;
 				}
@@ -127,7 +127,7 @@ public:
 				StringInternPool::StringID value = string_intern_pool.NOT_A_STRING_ID;
 				if(get_value(i, value))
 				{
-					auto [inserted_value, inserted] = value_weights.insert(std::make_pair(value, 1.0));
+					auto [inserted_value, inserted] = value_weights.emplace(value, 1.0);
 					if(!inserted)
 						inserted_value->second += 1.0;
 				}
@@ -143,7 +143,7 @@ public:
 					double weight_value = 1.0;
 					get_weight(i, weight_value);
 					
-					auto [inserted_value, inserted] = value_weights.insert(std::make_pair(value, weight_value));
+					auto [inserted_value, inserted] = value_weights.emplace(value, weight_value);
 					if(!inserted)
 						inserted_value->second += weight_value;
 				}
@@ -186,7 +186,7 @@ public:
 				double value = 0.0;
 				if(get_value(i, value))
 				{
-					auto [inserted_value, inserted] = value_masses.insert(std::make_pair(value, 1.0));
+					auto [inserted_value, inserted] = value_masses.emplace(value, 1.0);
 					if(!inserted)
 						inserted_value->second += 1.0;
 				}
@@ -202,7 +202,7 @@ public:
 					double weight_value = 1.0;
 					get_weight(i, weight_value);
 
-					auto [inserted_value, inserted] = value_masses.insert(std::make_pair(value, weight_value));
+					auto [inserted_value, inserted] = value_masses.emplace(value, weight_value);
 					if(!inserted)
 						inserted_value->second += weight_value;
 				}
@@ -231,7 +231,7 @@ public:
 				StringInternPool::StringID value;
 				if(get_value(i, value))
 				{
-					auto [inserted_value, inserted] = value_masses.insert(std::make_pair(value, 1.0));
+					auto [inserted_value, inserted] = value_masses.emplace(value, 1.0);
 					if(!inserted)
 						inserted_value->second += 1.0;
 				}
@@ -247,7 +247,7 @@ public:
 					double weight_value = 1.0;
 					get_weight(i, weight_value);
 
-					auto [inserted_value, inserted] = value_masses.insert(std::make_pair(value, weight_value));
+					auto [inserted_value, inserted] = value_masses.emplace(value, weight_value);
 					if(!inserted)
 						inserted_value->second += weight_value;
 				}

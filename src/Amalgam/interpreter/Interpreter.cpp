@@ -97,6 +97,8 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 	&Interpreter::InterpretNode_ENT_ABS,															// ENT_ABS
 	&Interpreter::InterpretNode_ENT_MAX,															// ENT_MAX
 	&Interpreter::InterpretNode_ENT_MIN,															// ENT_MIN
+	&Interpreter::InterpretNode_ENT_INDEX_MAX,														// ENT_INDEX_MAX
+	&Interpreter::InterpretNode_ENT_INDEX_MIN,														// ENT_INDEX_MIN
 	&Interpreter::InterpretNode_ENT_DOT_PRODUCT,													// ENT_DOT_PRODUCT
 	&Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE,											// ENT_GENERALIZED_DISTANCE
 	&Interpreter::InterpretNode_ENT_ENTROPY,														// ENT_ENTROPY
@@ -302,7 +304,7 @@ Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 	writeListeners = write_listeners;
 	printListener = print_listener;
 
-	callStackNodes = nullptr;
+	scopeStackNodes = nullptr;
 	opcodeStackNodes = nullptr;
 	constructionStackNodes = nullptr;
 
@@ -311,13 +313,13 @@ Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 
 #ifdef MULTITHREAD_SUPPORT
 EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
-	EvaluableNode *call_stack, EvaluableNode *opcode_stack,
+	EvaluableNode *scope_stack, EvaluableNode *opcode_stack,
 	EvaluableNode *construction_stack,
 	std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices,
-	Concurrency::ReadWriteMutex *call_stack_write_mutex, bool immediate_result)
+	Concurrency::ReadWriteMutex *scope_stack_write_mutex, bool immediate_result)
 #else
 EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
-	EvaluableNode *call_stack, EvaluableNode *opcode_stack,
+	EvaluableNode *scope_stack, EvaluableNode *opcode_stack,
 	EvaluableNode *construction_stack,
 	std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices,
 	bool immediate_result)
@@ -325,24 +327,24 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 {
 
 #ifdef MULTITHREAD_SUPPORT
-	if(call_stack == nullptr)
-		callStackUniqueAccessStartingDepth = 0;
+	if(scope_stack == nullptr)
+		scopeStackUniqueAccessStartingDepth = 0;
 	else
-		callStackUniqueAccessStartingDepth = call_stack->GetOrderedChildNodes().size();
+		scopeStackUniqueAccessStartingDepth = scope_stack->GetOrderedChildNodes().size();
 
-	callStackMutex = call_stack_write_mutex;
+	scopeStackMutex = scope_stack_write_mutex;
 #endif
 
-	//use specified or create new callStack
-	if(call_stack == nullptr)
+	//use specified or create new scopeStack
+	if(scope_stack == nullptr)
 	{
 		//create list of associative lists, and populate it with the top of the stack
-		call_stack = evaluableNodeManager->AllocNode(ENT_LIST);
-		call_stack->SetNeedCycleCheck(true);
+		scope_stack = evaluableNodeManager->AllocNode(ENT_LIST);
+		scope_stack->SetNeedCycleCheck(true);
 
 		EvaluableNode *new_context_entry = evaluableNodeManager->AllocNode(ENT_ASSOC);
 		new_context_entry->SetNeedCycleCheck(true);
-		call_stack->AppendOrderedChildNode(new_context_entry);
+		scope_stack->AppendOrderedChildNode(new_context_entry);
 	}
 
 	if(opcode_stack == nullptr)
@@ -357,7 +359,7 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 		construction_stack->SetNeedCycleCheck(true);
 	}
 
-	callStackNodes = &call_stack->GetOrderedChildNodes();
+	scopeStackNodes = &scope_stack->GetOrderedChildNodes();
 	opcodeStackNodes = &opcode_stack->GetOrderedChildNodes();
 	constructionStackNodes = &construction_stack->GetOrderedChildNodes();
 
@@ -365,16 +367,16 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 		constructionStackIndicesAndUniqueness = *construction_stack_indices;
 	
 	//keep these references as long as the interpreter is around
-	evaluableNodeManager->KeepNodeReferences(call_stack, opcode_stack, construction_stack);
+	evaluableNodeManager->KeepNodeReferences(scope_stack, opcode_stack, construction_stack);
 
 	auto retval = InterpretNode(en, immediate_result);
 
-	evaluableNodeManager->FreeNodeReferences(call_stack, opcode_stack, construction_stack);
+	evaluableNodeManager->FreeNodeReferences(scope_stack, opcode_stack, construction_stack);
 
 	return retval;
 }
 
-EvaluableNodeReference Interpreter::ConvertArgsToCallStack(EvaluableNodeReference args, EvaluableNodeManager &enm)
+EvaluableNodeReference Interpreter::ConvertArgsToScopeStack(EvaluableNodeReference args, EvaluableNodeManager &enm)
 {
 	//ensure have arguments
 	if(args == nullptr)
@@ -390,32 +392,32 @@ EvaluableNodeReference Interpreter::ConvertArgsToCallStack(EvaluableNodeReferenc
 		args.SetReference(enm.AllocNode(args, EvaluableNodeManager::ENMM_REMOVE_ALL));
 	}
 	
-	EvaluableNode *call_stack = enm.AllocNode(ENT_LIST);
-	call_stack->AppendOrderedChildNode(args);
+	EvaluableNode *scope_stack = enm.AllocNode(ENT_LIST);
+	scope_stack->AppendOrderedChildNode(args);
 
-	call_stack->SetNeedCycleCheck(true);
+	scope_stack->SetNeedCycleCheck(true);
 	args->SetNeedCycleCheck(true);
 
-	return EvaluableNodeReference(call_stack, args.unique);
+	return EvaluableNodeReference(scope_stack, args.unique);
 }
 
-EvaluableNode **Interpreter::GetCallStackSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &call_stack_index
+EvaluableNode **Interpreter::GetScopeStackSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &scope_stack_index
 #ifdef MULTITHREAD_SUPPORT
 	, bool include_unique_access, bool include_shared_access
 #endif
 	)
 {
 #ifdef MULTITHREAD_SUPPORT
-	size_t highest_index = (include_unique_access ? callStackNodes->size() : callStackUniqueAccessStartingDepth);
-	size_t lowest_index = (include_shared_access ? 0 : callStackUniqueAccessStartingDepth);
+	size_t highest_index = (include_unique_access ? scopeStackNodes->size() : scopeStackUniqueAccessStartingDepth);
+	size_t lowest_index = (include_shared_access ? 0 : scopeStackUniqueAccessStartingDepth);
 #else
-	size_t highest_index = callStackNodes->size();
+	size_t highest_index = scopeStackNodes->size();
 	size_t lowest_index = 0;
 #endif
 	//find symbol by walking up the stack; each layer must be an assoc
-	for(call_stack_index = highest_index; call_stack_index > lowest_index; call_stack_index--)
+	for(scope_stack_index = highest_index; scope_stack_index > lowest_index; scope_stack_index--)
 	{
-		EvaluableNode *cur_context = (*callStackNodes)[call_stack_index - 1];
+		EvaluableNode *cur_context = (*scopeStackNodes)[scope_stack_index - 1];
 
 		//see if this level of the stack contains the symbol
 		auto &mcn = cur_context->GetMappedChildNodesReference();
@@ -423,23 +425,23 @@ EvaluableNode **Interpreter::GetCallStackSymbolLocation(const StringInternPool::
 		if(found != end(mcn))
 		{
 			//subtract one here to match the subtraction above
-			call_stack_index--;
+			scope_stack_index--;
 
 			return &found->second;
 		}
 	}
 
 	//didn't find it anywhere, so default it to the current top of the stack
-	call_stack_index = callStackNodes->size() - 1;
+	scope_stack_index = scopeStackNodes->size() - 1;
 	return nullptr;
 }
 
-EvaluableNode **Interpreter::GetOrCreateCallStackSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &call_stack_index)
+EvaluableNode **Interpreter::GetOrCreateScopeStackSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &scope_stack_index)
 {
 	//find appropriate context for symbol by walking up the stack
-	for(call_stack_index = callStackNodes->size(); call_stack_index > 0; call_stack_index--)
+	for(scope_stack_index = scopeStackNodes->size(); scope_stack_index > 0; scope_stack_index--)
 	{
-		EvaluableNode *cur_context = (*callStackNodes)[call_stack_index - 1];
+		EvaluableNode *cur_context = (*scopeStackNodes)[scope_stack_index - 1];
 
 		//see if this level of the stack contains the symbol
 		auto &mcn = cur_context->GetMappedChildNodesReference();
@@ -447,15 +449,15 @@ EvaluableNode **Interpreter::GetOrCreateCallStackSymbolLocation(const StringInte
 		if(found != end(mcn))
 		{
 			//subtract one here to match the subtraction above
-			call_stack_index--;
+			scope_stack_index--;
 
 			return &found->second;
 		}
 	}
 
 	//didn't find it anywhere, so default it to the current top of the stack and create it
-	call_stack_index = callStackNodes->size() - 1;
-	EvaluableNode *context_to_use = (*callStackNodes)[call_stack_index];
+	scope_stack_index = scopeStackNodes->size() - 1;
+	EvaluableNode *context_to_use = (*scopeStackNodes)[scope_stack_index];
 	return context_to_use->GetOrCreateMappedChildNode(symbol_sid);
 }
 
@@ -501,13 +503,13 @@ EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, bool immedi
 	return retval;
 }
 
-EvaluableNode *Interpreter::GetCurrentCallStackContext()
+EvaluableNode *Interpreter::GetCurrentScopeStackContext()
 {
 	//this should not happen, but just in case
-	if(callStackNodes->size() < 1)
+	if(scopeStackNodes->size() < 1)
 		return nullptr;
 
-	return callStackNodes->back();
+	return scopeStackNodes->back();
 }
 
 std::pair<bool, std::string> Interpreter::InterpretNodeIntoStringValue(EvaluableNode *n, bool key_string)
@@ -731,15 +733,13 @@ EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference fun
 		{
 			PushNewConstructionContext(nullptr, cur_node, EvaluableNodeImmediateValueWithType(StringInternPool::NOT_A_STRING_ID), nullptr);
 
-			bool first_node = true;
 			for(auto &[e_id, e] : cur_node->GetMappedChildNodesReference())
 			{
 				SetTopCurrentIndexInConstructionStack(e_id);
 				SetTopCurrentValueInConstructionStack(e);
 				auto new_e = RewriteByFunction(function, e, original_node_to_new_node);
 
-				cur_node.UpdatePropertiesBasedOnAttachedNode(new_e, first_node);
-				first_node = false;
+				cur_node.UpdatePropertiesBasedOnAttachedNode(new_e);
 				e = new_e;
 			}
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
@@ -757,7 +757,7 @@ EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference fun
 					SetTopCurrentIndexInConstructionStack(static_cast<double>(i));
 					SetTopCurrentValueInConstructionStack(ocn[i]);
 					auto new_e = RewriteByFunction(function, ocn[i], original_node_to_new_node);
-					cur_node.UpdatePropertiesBasedOnAttachedNode(new_e, i == 0);
+					cur_node.UpdatePropertiesBasedOnAttachedNode(new_e);
 					ocn[i] = new_e;
 				}
 

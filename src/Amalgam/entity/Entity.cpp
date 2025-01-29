@@ -227,7 +227,7 @@ bool Entity::GetValueAtLabelAsString(StringInternPool::StringID label_sid, std::
 }
 
 EvaluableNodeImmediateValueWithType Entity::GetValueAtLabelAsImmediateValue(StringInternPool::StringID label_sid,
-	bool on_self)
+	bool on_self, EvaluableNodeManager *destination_temp_enm)
 {
 	if(!on_self && IsLabelPrivate(label_sid))
 		return EvaluableNodeImmediateValueWithType(std::numeric_limits<double>::quiet_NaN(), ENIVT_NOT_EXIST);
@@ -237,7 +237,7 @@ EvaluableNodeImmediateValueWithType Entity::GetValueAtLabelAsImmediateValue(Stri
 		return EvaluableNodeImmediateValueWithType(std::numeric_limits<double>::quiet_NaN(), ENIVT_NOT_EXIST);
 
 	EvaluableNodeImmediateValueWithType retval;
-	retval.CopyValueFromEvaluableNode(label->second);
+	retval.CopyValueFromEvaluableNode(label->second, destination_temp_enm);
 	return retval;
 }
 
@@ -447,7 +447,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 }
 
 EvaluableNodeReference Entity::ExecuteCodeAsEntity(EvaluableNode *code,
-	EvaluableNode *call_stack, Interpreter *calling_interpreter,
+	EvaluableNode *scope_stack, Interpreter *calling_interpreter,
 	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
 	PerformanceConstraints *performance_constraints
 #ifdef MULTITHREAD_SUPPORT
@@ -469,7 +469,7 @@ EvaluableNodeReference Entity::ExecuteCodeAsEntity(EvaluableNode *code,
 		interpreter.memoryModificationLock = std::move(*enm_lock);
 #endif
 
-	EvaluableNodeReference retval = interpreter.ExecuteNode(code, call_stack);
+	EvaluableNodeReference retval = interpreter.ExecuteNode(code, scope_stack);
 
 #ifdef MULTITHREAD_SUPPORT
 	if(enm_lock != nullptr)
@@ -576,7 +576,7 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, StringInternPoo
 			t->idStringId = string_intern_pool.CreateStringReference(new_id);
 			
 			//if not currently in use, then use it and stop searching
-			if(id_to_index_lookup.insert(std::make_pair(t->idStringId, t_index)).second == true)
+			if(id_to_index_lookup.emplace(t->idStringId, t_index).second == true)
 				break;
 
 			//couldn't add it, so must already be in use.  Free and make another
@@ -586,7 +586,7 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, StringInternPoo
 	else
 	{
 		//attempt to insert, or return empty string if fail
-		if(id_to_index_lookup.insert(std::make_pair(id_sid, t_index)).second == false)
+		if(id_to_index_lookup.emplace(id_sid, t_index).second == false)
 			return StringInternPool::NOT_A_STRING_ID;
 
 		t->idStringId = string_intern_pool.CreateStringReference(id_sid);
@@ -640,7 +640,7 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, std::string id_
 			t->idStringId = string_intern_pool.CreateStringReference(id_string);
 
 			//if the string is currently in use, but not in this entity then use it and stop searching
-			if(id_to_index_lookup.insert(std::make_pair(t->idStringId, t_index)).second == true)
+			if(id_to_index_lookup.emplace(t->idStringId, t_index).second == true)
 				break;
 
 			//couldn't add it, so must already be in use.  Free and make another
@@ -652,7 +652,7 @@ StringInternPool::StringID Entity::AddContainedEntity(Entity *t, std::string id_
 		t->idStringId = string_intern_pool.CreateStringReference(id_string);
 
 		//attempt to insert, or return empty string if fail
-		if(id_to_index_lookup.insert(std::make_pair(t->idStringId, t_index)).second == false)
+		if(id_to_index_lookup.emplace(t->idStringId, t_index).second == false)
 		{
 			string_intern_pool.DestroyStringReference(t->idStringId);
 			return StringInternPool::NOT_A_STRING_ID;

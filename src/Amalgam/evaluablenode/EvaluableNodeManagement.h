@@ -60,11 +60,11 @@ public:
 	}
 
 	//when attached a child node, make sure that this node reflects the same properties
-	//if first_attachment is true, then it will not call SetNeedCycleCheck(true) unless the attached node has the flag
-	//if the attached is not unique. Note that this parameter should not be set to true
+	//if first_attachment_and_not_construction_stack_node is true, then it will not call SetNeedCycleCheck(true)
+	// unless the attached node also needs cycle check.  Note that this parameter should not be set to true
 	//if the node can be accessed in any other way, such as the construction stack
 	void UpdatePropertiesBasedOnAttachedNode(EvaluableNodeReference &attached,
-		bool first_attachment = false)
+		bool first_attachment_and_not_construction_stack_node = false)
 	{
 		if(attached.value.nodeValue.code == nullptr)
 			return;
@@ -74,7 +74,7 @@ public:
 			unique = false;
 
 			//first attachment doesn't need to automatically require a cycle check
-			if(first_attachment)
+			if(first_attachment_and_not_construction_stack_node)
 			{
 				if(attached.value.nodeValue.code->GetNeedCycleCheck())
 					value.nodeValue.code->SetNeedCycleCheck(true);
@@ -174,6 +174,12 @@ public:
 	__forceinline void SetReference(EvaluableNode *_reference, bool _unique)
 	{
 		value = _reference;
+		unique = _unique;
+	}
+
+	__forceinline void SetReference(const EvaluableNodeImmediateValueWithType &enimvwt, bool _unique)
+	{
+		value = enimvwt;
 		unique = _unique;
 	}
 
@@ -323,7 +329,7 @@ public:
 				return;
 
 			//attempt to put in value 1 for the reference
-			auto [inserted_entry, inserted] = nodesReferenced.insert(std::make_pair(en, 1));
+			auto [inserted_entry, inserted] = nodesReferenced.emplace(en, 1);
 
 			//if couldn't insert because already referenced, then increment
 			if(!inserted)
@@ -627,7 +633,10 @@ public:
 	__forceinline void FreeNodeIfPossible(EvaluableNodeReference &enr)
 	{
 		if(enr.IsImmediateValue())
+		{
 			enr.FreeImmediateResources();
+			return;
+		}
 
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 		assert(enr == nullptr || enr->IsNodeValid());

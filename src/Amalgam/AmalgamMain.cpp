@@ -264,16 +264,16 @@ PLATFORM_MAIN_CONSOLE
 		}
 
 		//transform args into args variable
-		EvaluableNode *call_stack = entity->evaluableNodeManager.AllocNode(ENT_LIST);
+		EvaluableNode *scope_stack = entity->evaluableNodeManager.AllocNode(ENT_LIST);
 		EvaluableNode *args_node = entity->evaluableNodeManager.AllocNode(ENT_ASSOC);
-		call_stack->AppendOrderedChildNode(args_node);
+		scope_stack->AppendOrderedChildNode(args_node);
 
 		//top-level stack variable holding argv
 		args_node->SetMappedChildNode("argv", CreateListOfStringsFromIteratorAndFunction(passthrough_params,
 			&entity->evaluableNodeManager, [](auto s) { return s; }));
 
 		//set need cycle check because things may be assigned
-		call_stack->SetNeedCycleCheck(true);
+		scope_stack->SetNeedCycleCheck(true);
 		args_node->SetNeedCycleCheck(true);
 
 		//top-level stack variable holding path to interpreter
@@ -282,7 +282,7 @@ PLATFORM_MAIN_CONSOLE
 		args_node->SetMappedChildNode("interpreter", interpreter_node);
 
 		//execute the entity
-		entity->Execute(StringInternPool::NOT_A_STRING_ID, call_stack, false, nullptr,
+		entity->Execute(StringInternPool::NOT_A_STRING_ID, scope_stack, false, nullptr,
 			&write_listeners, print_listener);
 
 		int return_val = 0;

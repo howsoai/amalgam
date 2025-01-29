@@ -11,6 +11,7 @@
 
 //system headers:
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <string>
 #include <type_traits>
@@ -163,21 +164,21 @@ public:
 
 	//Executes the current Entity that this Interpreter is contained by
 	// sets up all of the stack and contextual structures, then calls InterpretNode on en
-	//if call_stack, opcode_stack, or construction_stack are nullptr, it will start with a new one
+	//if scope_stack, opcode_stack, or construction_stack are nullptr, it will start with a new one
 	//note that construction_stack and construction_stack_indices should be specified together and should be the same length
 	//if immediate_result is true, then the returned value may be immediate
 #ifdef MULTITHREAD_SUPPORT
 	//if run multithreaded, then for performance reasons, it is optimal to have one of each stack per thread
-	// and call_stack_write_mutex is the mutex needed to lock for writing
+	// and scope_stack_write_mutex is the mutex needed to lock for writing
 	EvaluableNodeReference ExecuteNode(EvaluableNode *en,
-		EvaluableNode *call_stack = nullptr, EvaluableNode *opcode_stack = nullptr,
+		EvaluableNode *scope_stack = nullptr, EvaluableNode *opcode_stack = nullptr,
 		EvaluableNode *construction_stack = nullptr,
 		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices = nullptr,
-		Concurrency::ReadWriteMutex *call_stack_write_mutex = nullptr,
+		Concurrency::ReadWriteMutex *scope_stack_write_mutex = nullptr,
 		bool immediate_result = false);
 #else
 	EvaluableNodeReference ExecuteNode(EvaluableNode *en,
-		EvaluableNode *call_stack = nullptr, EvaluableNode *opcode_stack = nullptr,
+		EvaluableNode *scope_stack = nullptr, EvaluableNode *opcode_stack = nullptr,
 		EvaluableNode *construction_stack = nullptr,
 		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices = nullptr,
 		bool immediate_result = false);
@@ -216,8 +217,8 @@ public:
 	}
 
 	//pushes new_context on the stack; new_context should be a unique associative array,
-	// but if not, it will attempt to put an appropriate unique associative array on callStackNodes
-	__forceinline void PushNewCallStack(EvaluableNodeReference new_context)
+	// but if not, it will attempt to put an appropriate unique associative array on scopeStackNodes
+	__forceinline void PushNewScopeStack(EvaluableNodeReference new_context)
 	{
 		//make sure unique assoc
 		if(EvaluableNode::IsAssociativeArray(new_context))
@@ -234,14 +235,14 @@ public:
 		//just in case a variable is added which needs cycle checks
 		new_context->SetNeedCycleCheck(true);
 
-		callStackNodes->push_back(new_context);
+		scopeStackNodes->push_back(new_context);
 	}
 
 	//pops the top context off the stack
-	__forceinline void PopCallStack()
+	__forceinline void PopScopeStack()
 	{
-		evaluableNodeManager->FreeNode(callStackNodes->back());
-		callStackNodes->pop_back();
+		evaluableNodeManager->FreeNode(scopeStackNodes->back());
+		scopeStackNodes->pop_back();
 	}
 
 	//pushes a new construction context on the stack, which is assumed to not be nullptr
@@ -392,26 +393,26 @@ public:
 
 	//Makes sure that args is an active associative array is proper for context, meaning initialized assoc and a unique reference.
 	// Will allocate a new node appropriately if it is not
-	//Then wraps the args on a list which will form the call stack and returns that
+	//Then wraps the args on a list which will form the scope stack and returns that
 	//ensures that args is still a valid EvaluableNodeReference after the call
-	static EvaluableNodeReference ConvertArgsToCallStack(EvaluableNodeReference args, EvaluableNodeManager &enm);
+	static EvaluableNodeReference ConvertArgsToScopeStack(EvaluableNodeReference args, EvaluableNodeManager &enm);
 
 	//finds a pointer to the location of the symbol's pointer to value in the top of the context stack and returns a pointer to the location of the symbol's pointer to value,
 	// nullptr if it does not exist
-	// also sets call_stack_index to the level in the call stack that it was found
-	//if include_unique_access is true, then it will cover the top of the stack to callStackUniqueAccessStartingDepth
-	//if include_shared_access is true, then it will cover the bottom of the stack from callStackUniqueAccessStartingDepth to 0
-	EvaluableNode **GetCallStackSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &call_stack_index
+	// also sets scope_stack_index to the level in the scope stack that it was found
+	//if include_unique_access is true, then it will cover the top of the stack to scopeStackUniqueAccessStartingDepth
+	//if include_shared_access is true, then it will cover the bottom of the stack from scopeStackUniqueAccessStartingDepth to 0
+	EvaluableNode **GetScopeStackSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &scope_stack_index
 #ifdef MULTITHREAD_SUPPORT
 		, bool include_unique_access = true, bool include_shared_access = true
 #endif
 	);
 
-	//like the other type of GetCallStackSymbolLocation, but returns the EvaluableNode pointer instead of a pointer-to-a-pointer
-	__forceinline EvaluableNode *GetCallStackSymbol(const StringInternPool::StringID symbol_sid)
+	//like the other type of GetScopeStackSymbolLocation, but returns the EvaluableNode pointer instead of a pointer-to-a-pointer
+	__forceinline EvaluableNode *GetScopeStackSymbol(const StringInternPool::StringID symbol_sid)
 	{
-		size_t call_stack_index = 0;
-		EvaluableNode **en_ptr = GetCallStackSymbolLocation(symbol_sid, call_stack_index);
+		size_t scope_stack_index = 0;
+		EvaluableNode **en_ptr = GetScopeStackSymbolLocation(symbol_sid, scope_stack_index);
 		if(en_ptr == nullptr)
 			return nullptr;
 
@@ -419,13 +420,13 @@ public:
 	}
 
 	//finds a pointer to the location of the symbol's pointer to value or creates the symbol in the top of the context stack and returns a pointer to the location of the symbol's pointer to value
-	// also sets call_stack_index to the level in the call stack that it was found
-	EvaluableNode **GetOrCreateCallStackSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &call_stack_index);
+	// also sets scope_stack_index to the level in the scope stack that it was found
+	EvaluableNode **GetOrCreateScopeStackSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &scope_stack_index);
 
-	//returns the current call stack index
-	__forceinline size_t GetCallStackDepth()
+	//returns the current scope stack index
+	__forceinline size_t GetScopeStackDepth()
 	{
-		return callStackNodes->size() - 1;
+		return scopeStackNodes->size() - 1;
 	}
 
 	//creates a stack state saver for the interpreterNodeStack, which will be restored back to its previous condition when this object is destructed
@@ -445,8 +446,8 @@ public:
 	//if immediate_result is true, it will not allocate a node
 	EvaluableNodeReference InterpretNode(EvaluableNode *en, bool immediate_result = false);
 
-	//returns the current call stack context, nullptr if none
-	EvaluableNode *GetCurrentCallStackContext();
+	//returns the current scope stack context, nullptr if none
+	EvaluableNode *GetCurrentScopeStackContext();
 
 	//returns an EvaluableNodeReference for value, allocating if necessary based on if immediate result is needed
 	template<typename T>
@@ -690,12 +691,12 @@ protected:
 						csiau, target_origin, target, current_index, current_value, EvaluableNodeReference::Null());
 
 					auto result_ref = interpreter.ExecuteNode(node_to_execute,
-						enm->AllocNode(*parentInterpreter->callStackNodes),
+						enm->AllocNode(*parentInterpreter->scopeStackNodes),
 						enm->AllocNode(begin(*parentInterpreter->opcodeStackNodes),
 							begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset),
 						construction_stack,
 						&csiau,
-						GetCallStackMutex());
+						GetScopeStackMutex());
 
 					if(interpreter.PopConstructionContextAndGetExecutionSideEffectFlag())
 					{
@@ -753,12 +754,12 @@ protected:
 
 					std::vector<ConstructionStackIndexAndPreviousResultUniqueness> csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
 					auto result_ref = interpreter.ExecuteNode(node_to_execute,
-						enm->AllocNode(*parentInterpreter->callStackNodes),
+						enm->AllocNode(*parentInterpreter->scopeStackNodes),
 						enm->AllocNode(begin(*parentInterpreter->opcodeStackNodes),
 							begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset),
 						enm->AllocNode(*parentInterpreter->constructionStackNodes),
 						&csiau,
-						GetCallStackMutex(), immediate_results);
+						GetScopeStackMutex(), immediate_results);
 
 					if(interpreter.DoesConstructionStackHaveExecutionSideEffects())
 						resultsSideEffect = true;
@@ -829,23 +830,23 @@ protected:
 			return resultsSideEffect;
 		}
 
-		//returns the relevant write mutex for the call stack
-		constexpr Concurrency::ReadWriteMutex *GetCallStackMutex()
+		//returns the relevant write mutex for the scope stack
+		constexpr Concurrency::ReadWriteMutex *GetScopeStackMutex()
 		{
 			//if there is one currently in use, use it
-			if(parentInterpreter->callStackMutex != nullptr)
-				return parentInterpreter->callStackMutex;
+			if(parentInterpreter->scopeStackMutex != nullptr)
+				return parentInterpreter->scopeStackMutex;
 
 			//start a new one
-			return &callStackMutex;
+			return &scopeStackMutex;
 		}
 
 	protected:
 		//random seed for each task, the size of numTasks
 		std::vector<RandomStream> randomSeeds;
 
-		//mutex to allow only one thread to write to a call stack symbol at once
-		Concurrency::ReadWriteMutex callStackMutex;
+		//mutex to allow only one thread to write to a scope stack symbol at once
+		Concurrency::ReadWriteMutex scopeStackMutex;
 
 		//a barrier to wait for the tasks being run
 		ThreadPool::CountableTaskSet taskSet;
@@ -899,7 +900,7 @@ protected:
 	inline void LockWithoutBlockingGarbageCollection(
 		Concurrency::ReadWriteMutex &mutex, LockType &lock, EvaluableNode *en_to_preserve = nullptr)
 	{
-		lock = LockType(*callStackMutex, std::defer_lock);
+		lock = LockType(*scopeStackMutex, std::defer_lock);
 		//if there is lock contention, but one is blocking for garbage collection,
 		// keep checking until it can get the lock
 		if(en_to_preserve)
@@ -930,7 +931,7 @@ protected:
 				return false;
 
 		#ifdef MULTITHREAD_SUPPORT
-			if(cur_interpreter->callStackUniqueAccessStartingDepth > 0)
+			if(cur_interpreter->scopeStackUniqueAccessStartingDepth > 0)
 				return false;
 		#endif
 		}
@@ -1106,6 +1107,8 @@ protected:
 	EvaluableNodeReference InterpretNode_ENT_ABS(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_MAX(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_MIN(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_INDEX_MAX(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_INDEX_MIN(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_DOT_PRODUCT(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_GENERALIZED_DISTANCE(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_ENTROPY(EvaluableNode *en, bool immediate_result);
@@ -1274,7 +1277,143 @@ protected:
 	//a stack (list) of the current nodes being executed
 	std::vector<EvaluableNode *> *opcodeStackNodes;
 
-public:
+	template <typename Compare>
+	EvaluableNodeReference GetIndexMinMaxFromAssoc(EvaluableNodeReference interpreted_assoc, Compare compare, double compare_limit, bool immediate_result)
+	{
+		auto &mapped_child_nodes = interpreted_assoc->GetMappedChildNodesReference();
+		double candidate_value = compare_limit;
+		bool value_found = false;
+
+		std::vector<StringInternPool::StringID> max_keys;
+
+		for(auto [cur_key, cur_child] : mapped_child_nodes)
+		{
+			double cur_value = EvaluableNode::ToNumber(cur_child);
+
+			if(cur_value == candidate_value)
+			{
+				max_keys.push_back(cur_key);
+				// If all child nodes are the max/min value, we never fall into the other case.
+				// So we need to set value_found here.
+				value_found = true;
+			}
+			else if(compare(cur_value, candidate_value))
+			{
+				max_keys.clear();
+				candidate_value = cur_value;
+				max_keys.push_back(cur_key);
+				value_found = true;
+			}
+		}
+
+		if(value_found)
+		{
+			EvaluableNodeReference index_list(evaluableNodeManager->AllocNode(ENT_LIST), false);
+			auto &index_list_ocn = index_list->GetOrderedChildNodesReference();
+			index_list_ocn.reserve(max_keys.size());
+
+			for(StringInternPool::StringID max_key : max_keys)
+			{
+				EvaluableNodeReference parsedKey = Parser::ParseFromKeyStringId(max_key, evaluableNodeManager);
+				index_list.UpdatePropertiesBasedOnAttachedNode(parsedKey);
+				index_list_ocn.push_back(parsedKey);
+			}
+
+			return index_list;
+		}
+
+		return EvaluableNodeReference::Null();
+	}
+
+	template <typename Compare>
+	EvaluableNodeReference GetIndexMinMaxFromList(EvaluableNode *en, Compare compare, double compare_limit, bool immediate_result)
+	{
+		bool value_found = false;
+		double result_value = compare_limit;
+		std::vector<size_t> max_indices;
+
+		auto &orderedChildNodes = en->GetOrderedChildNodesReference();
+
+		if(orderedChildNodes.size() == 0)
+			return EvaluableNodeReference::Null();
+
+		for(size_t i = 0; i < orderedChildNodes.size(); i++)
+		{
+			double cur_value = EvaluableNode::ToNumber(orderedChildNodes[i]);
+
+			if(cur_value == result_value)
+			{
+				max_indices.push_back(i);
+				// If all child nodes are the max/min value, we never fall into the other case.
+				// So we need to set value_found here.
+				value_found = true;
+			}
+			else if(compare(cur_value, result_value))
+			{
+				max_indices.clear();
+
+				value_found = true;
+				result_value = cur_value;
+				max_indices.push_back(i);
+			}
+		}
+
+		if(value_found)
+			return CreateListOfNumbersFromIteratorAndFunction(max_indices, evaluableNodeManager, [](auto val)
+															  { return static_cast<double>(val); });
+
+		return EvaluableNodeReference::Null();
+	}
+
+	template <typename Compare>
+	EvaluableNodeReference GetIndexMinMaxFromRemainingArgList(EvaluableNode *en, Compare compare, double compare_limit, bool immediate_result)
+	{
+		double result_value = compare_limit;
+		std::vector<size_t> max_indices;
+		bool value_found = false;
+
+		auto &orderedChildNodes = en->GetOrderedChildNodesReference();
+
+		if(orderedChildNodes.size() == 0)
+			return EvaluableNodeReference::Null();
+
+		// First node has already been interpreted and thus needs different handling
+		double candidate_zero = EvaluableNode::ToNumber(orderedChildNodes[0]);
+		if(!FastIsNaN(candidate_zero))
+		{
+			max_indices.push_back(0);
+			value_found = true;
+			result_value = candidate_zero;
+		}
+
+		for(size_t i = 1; i < orderedChildNodes.size(); i++)
+		{
+			double cur_value = InterpretNodeIntoNumberValue(orderedChildNodes[i]);
+
+			if(cur_value == result_value)
+			{
+				max_indices.push_back(i);
+				// If all child nodes are the max/min value, we never fall into the other case.
+				// So we need to set value_found here.
+				value_found = true;
+			}
+			else if(compare(cur_value, result_value))
+			{
+				max_indices.clear();
+				result_value = cur_value;
+				max_indices.push_back(i);
+				value_found = true;
+			}
+		}
+
+		if(value_found)
+			return CreateListOfNumbersFromIteratorAndFunction(max_indices, evaluableNodeManager, [](size_t val)
+															  { return static_cast<double>(val); });
+
+		return EvaluableNodeReference::Null();
+	}
+
+  public:
 	//where to allocate new nodes
 	EvaluableNodeManager *evaluableNodeManager;
 
@@ -1286,8 +1425,8 @@ public:
 
 protected:
 
-	//the call stack is comprised of the variable contexts
-	std::vector<EvaluableNode *> *callStackNodes;
+	//the scope stack is comprised of the variable contexts
+	std::vector<EvaluableNode *> *scopeStackNodes;
 
 	//the current construction stack, containing an interleaved array of nodes
 	std::vector<EvaluableNode *> *constructionStackNodes;
@@ -1317,11 +1456,11 @@ public:
 
 protected:
 
-	//the depth of the call stack where multiple threads may modify the same variables
-	size_t callStackUniqueAccessStartingDepth;
+	//the depth of the scope stack where multiple threads may modify the same variables
+	size_t scopeStackUniqueAccessStartingDepth;
 
-	//pointer to a mutex for writing to shared variables below callStackUniqueAccessStartingDepth
-	Concurrency::ReadWriteMutex *callStackMutex;
+	//pointer to a mutex for writing to shared variables below scopeStackUniqueAccessStartingDepth
+	Concurrency::ReadWriteMutex *scopeStackMutex;
 
 #endif
 

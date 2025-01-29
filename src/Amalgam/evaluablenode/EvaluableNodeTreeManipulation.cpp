@@ -749,8 +749,8 @@ MergeMetricResults<EvaluableNode *> EvaluableNodeTreeManipulation::NumberOfShare
 	if(mmrp.checked != nullptr)
 	{
 		//remember that it has already checked when traversing tree, and then remove from checked at the end of the function
-		mmrp.checked->insert(tree1);
-		mmrp.checked->insert(tree2);
+		mmrp.checked->emplace(tree1);
+		mmrp.checked->emplace(tree2);
 	}
 
 	if(tree1_ordered_nodes_size > 0 && tree2_ordered_nodes_size > 0)
@@ -1085,7 +1085,7 @@ bool EvaluableNodeTreeManipulation::DoesTreeContainLabels(EvaluableNode *en, Eva
 bool EvaluableNodeTreeManipulation::CollectLabelIndexesFromTree(EvaluableNode *tree, EvaluableNode::LabelsAssocType &index, EvaluableNode::ReferenceSetType *checked)
 {
 	//attempt to insert, but if has already been checked and in checked list (circular code), then return false
-	if(checked != nullptr && checked->insert(tree).second == false)
+	if(checked != nullptr && checked->emplace(tree).second == false)
 		return false;
 
 	bool collected_all_label_values = true;
@@ -1104,7 +1104,7 @@ bool EvaluableNodeTreeManipulation::CollectLabelIndexesFromTree(EvaluableNode *t
 			continue;
 
 		//attempt to put the label in the index
-		auto [_, inserted] = index.insert(std::make_pair(label_sid, tree));
+		auto [_, inserted] = index.emplace(label_sid, tree);
 		collected_all_label_values = inserted;
 	}
 
@@ -1159,7 +1159,7 @@ bool EvaluableNodeTreeManipulation::CollectLabelIndexesFromTreeAndMakeLabelNorma
 			continue;
 
 		//attempt to put the label in the index
-		const auto &[inserted_value, inserted] = index.insert(std::make_pair(label_sid, tree));
+		const auto &[inserted_value, inserted] = index.emplace(label_sid, tree);
 		
 		//if label already exists
 		if(!inserted)
@@ -1983,6 +1983,8 @@ CompactHashMap<EvaluableNodeType, double> EvaluableNodeTreeManipulation::evaluab
 	{ENT_ABS,											0.4},
 	{ENT_MAX,											0.4},
 	{ENT_MIN,											0.4},
+	{ENT_INDEX_MAX,										0.2},
+	{ENT_INDEX_MIN,										0.2},
 	{ENT_DOT_PRODUCT,									0.2},
 	{ENT_GENERALIZED_DISTANCE,							0.15},
 

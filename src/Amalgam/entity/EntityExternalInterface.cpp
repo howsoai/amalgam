@@ -235,22 +235,22 @@ std::string EntityExternalInterface::ExecuteEntityJSON(std::string &handle, std:
 
 	EvaluableNodeManager &enm = bundle->entity->evaluableNodeManager;
 #ifdef MULTITHREAD_SUPPORT
-	//lock memory before allocating call stack
+	//lock memory before allocating scope stack
 	Concurrency::ReadLock enm_lock(enm.memoryModificationMutex);
 #endif
 	EvaluableNodeReference args = EvaluableNodeReference(EvaluableNodeJSONTranslation::JsonToEvaluableNode(&enm, json), true);
 
-	auto call_stack = Interpreter::ConvertArgsToCallStack(args, enm);
+	auto scope_stack = Interpreter::ConvertArgsToScopeStack(args, enm);
 
-	EvaluableNodeReference returned_value = bundle->entity->Execute(label, call_stack, false, nullptr,
+	EvaluableNodeReference returned_value = bundle->entity->Execute(label, scope_stack, false, nullptr,
 		&bundle->writeListeners, bundle->printListener, nullptr
 #ifdef MULTITHREAD_SUPPORT
 		, &enm_lock
 #endif
 	);
 
-	enm.FreeNode(call_stack->GetOrderedChildNodesReference()[0]);
-	enm.FreeNode(call_stack);
+	enm.FreeNode(scope_stack->GetOrderedChildNodesReference()[0]);
+	enm.FreeNode(scope_stack);
 
 	auto [result, converted] = EvaluableNodeJSONTranslation::EvaluableNodeToJson(returned_value);
 	enm.FreeNodeTreeIfPossible(returned_value);
@@ -269,27 +269,27 @@ std::pair<std::string, std::string> EntityExternalInterface::ExecuteEntityJSONLo
 
 	EvaluableNodeManager &enm = bundle->entity->evaluableNodeManager;
 #ifdef MULTITHREAD_SUPPORT
-	//lock memory before allocating call stack
+	//lock memory before allocating scope stack
 	Concurrency::ReadLock enm_lock(enm.memoryModificationMutex);
 #endif
 	EvaluableNodeReference args = EvaluableNodeReference(EvaluableNodeJSONTranslation::JsonToEvaluableNode(&enm, json), true);
 
-	auto call_stack = Interpreter::ConvertArgsToCallStack(args, enm);
+	auto scope_stack = Interpreter::ConvertArgsToScopeStack(args, enm);
 
-	EvaluableNodeReference returned_value = bundle->entity->Execute(label, call_stack, false, nullptr,
+	EvaluableNodeReference returned_value = bundle->entity->Execute(label, scope_stack, false, nullptr,
 		&listeners, bundle->printListener, nullptr
 #ifdef MULTITHREAD_SUPPORT
 		, &enm_lock
 #endif
 	);
-	enm.FreeNode(call_stack->GetOrderedChildNodesReference()[0]);
-	enm.FreeNode(call_stack);
+	enm.FreeNode(scope_stack->GetOrderedChildNodesReference()[0]);
+	enm.FreeNode(scope_stack);
 
 	auto [result, converted] = EvaluableNodeJSONTranslation::EvaluableNodeToJson(returned_value);
 	enm.FreeNodeTreeIfPossible(returned_value);
 	std::string json_out = converted ? result : string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID);
 
-	std::string log = Parser::Unparse(logger.GetWrites(), false, false);
+	std::string log = Parser::Unparse(logger.GetWrites(), false);
 
 	return std::pair(json_out, log);
 }
@@ -302,7 +302,7 @@ std::string EntityExternalInterface::EvalOnEntity(const std::string &handle, con
 
 	EvaluableNodeManager &enm = bundle->entity->evaluableNodeManager;
 #ifdef MULTITHREAD_SUPPORT
-	//lock memory before allocating call stack
+	//lock memory before allocating scope stack
 	Concurrency::ReadLock enm_lock(enm.memoryModificationMutex);
 #endif
 
@@ -310,16 +310,16 @@ std::string EntityExternalInterface::EvalOnEntity(const std::string &handle, con
 	if(code == nullptr)
 		return "";
 
-	auto call_stack = Interpreter::ConvertArgsToCallStack(EvaluableNodeReference::Null(), enm);
+	auto scope_stack = Interpreter::ConvertArgsToScopeStack(EvaluableNodeReference::Null(), enm);
 
-	EvaluableNodeReference returned_value = bundle->entity->ExecuteCodeAsEntity(code, call_stack, nullptr,
+	EvaluableNodeReference returned_value = bundle->entity->ExecuteCodeAsEntity(code, scope_stack, nullptr,
 		&bundle->writeListeners, bundle->printListener, nullptr
 #ifdef MULTITHREAD_SUPPORT
 		, &enm_lock
 #endif
 	);
 
-	enm.FreeNode(call_stack);
+	enm.FreeNode(scope_stack);
 	enm.FreeNodeTreeIfPossible(code);
 
 	auto [result, converted] = EvaluableNodeJSONTranslation::EvaluableNodeToJson(returned_value);

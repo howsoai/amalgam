@@ -51,7 +51,7 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 				auto compare_type = valueTypes[i];
 				EvaluableNodeImmediateValueWithType compare(compare_value, compare_type);
 
-				auto value = e->GetValueAtLabelAsImmediateValue(label_id);
+				auto [value, found] = e->GetValueAtLabelAsImmediateValue(label_id);
 
 				//needs to exist
 				if(value.nodeType == ENIVT_NOT_EXIST)
@@ -69,7 +69,7 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 				auto compare_type = valueTypes[i];
 				EvaluableNodeImmediateValueWithType compare(compare_value, compare_type);
 
-				auto value = e->GetValueAtLabelAsImmediateValue(label_id);
+				auto [value, found] = e->GetValueAtLabelAsImmediateValue(label_id);
 
 				//needs to exist
 				if(value.nodeType == ENIVT_NOT_EXIST)
@@ -87,8 +87,8 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 
 				if(valueTypes[i] == ENIVT_NUMBER)
 				{
-					double value;
-					if(!e->GetValueAtLabelAsNumber(label_id, value))
+					auto [value, found] = e->GetValueAtLabelAsNumber(label_id);
+					if(!found)
 						return false;
 
 					if(value < range.first.number || range.second.number < value)
@@ -96,8 +96,8 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 				}
 				else if(valueTypes[i] == ENIVT_STRING_ID)
 				{
-					StringInternPool::StringID value;
-					if(!e->GetValueAtLabelAsStringId(label_id, value))
+					auto [value, found] = e->GetValueAtLabelAsStringId(label_id);
+					if(!found)
 						return false;
 
 					if(StringNaturalCompare(value, range.first.stringID) <= 0 || StringNaturalCompare(range.second.stringID, value) <= 0)
@@ -113,8 +113,8 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 
 				if(valueTypes[i] == ENIVT_NUMBER)
 				{
-					double value;
-					if(!e->GetValueAtLabelAsNumber(label_id, value))
+					auto [value, found] = e->GetValueAtLabelAsNumber(label_id);
+					if(!found)
 						return false;
 
 					if(value >= range.first.number && range.second.number >= value)
@@ -122,8 +122,8 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 				}
 				else if(valueTypes[i] == ENIVT_STRING_ID)
 				{
-					StringInternPool::StringID value;
-					if(!e->GetValueAtLabelAsStringId(label_id, value))
+					auto [value, found] = e->GetValueAtLabelAsStringId(label_id);
+					if(!found)
 						return false;
 
 					if(StringNaturalCompare(value, range.first.stringID) > 0 && StringNaturalCompare(range.second.stringID, value) > 0)
@@ -134,7 +134,7 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 
 		case ENT_QUERY_AMONG:
 		{
-			auto value = e->GetValueAtLabelAsImmediateValue(singleLabel);
+			auto [value,found] = e->GetValueAtLabelAsImmediateValue(singleLabel);
 
 			if(value.nodeType == ENIVT_NOT_EXIST)
 				return false;
@@ -150,7 +150,7 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 
 		case ENT_QUERY_NOT_AMONG:
 		{
-			auto value = e->GetValueAtLabelAsImmediateValue(singleLabel);
+			auto [value, found] = e->GetValueAtLabelAsImmediateValue(singleLabel);
 
 			if(value.nodeType == ENIVT_NOT_EXIST)
 				return false;
@@ -186,7 +186,7 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 			std::vector<EvaluableNodeImmediateValueType> position_types(positionLabels.size());
 			for(size_t i = 0; i < positionLabels.size(); i++)
 			{
-				auto value = e->GetValueAtLabelAsImmediateValue(positionLabels[i]);
+				auto [value, found] = e->GetValueAtLabelAsImmediateValue(positionLabels[i]);
 				position_types[i] = value.nodeType;
 				position[i] = value.nodeValue;
 				if(position_types[i] == ENIVT_NOT_EXIST)
@@ -196,8 +196,8 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 			double radius = 0.0;
 			if(singleLabel != StringInternPool::NOT_A_STRING_ID)
 			{
-				double value;
-				if(e->GetValueAtLabelAsNumber(singleLabel, value))
+				auto [value, found] = e->GetValueAtLabelAsNumber(singleLabel);
+				if(found)
 					radius = value;
 			}
 
@@ -239,7 +239,7 @@ double EntityQueryCondition::GetConditionDistanceMeasure(Entity *e, bool high_ac
 	std::vector<EvaluableNodeImmediateValueType> position_types(positionLabels.size());
 	for(size_t i = 0; i < positionLabels.size(); i++)
 	{
-		auto value = e->GetValueAtLabelAsImmediateValue(positionLabels[i]);
+		auto [value, found] = e->GetValueAtLabelAsImmediateValue(positionLabels[i]);
 		position_types[i] = value.nodeType;
 		position[i] = value.nodeValue;
 		if(position_types[i] == ENIVT_NOT_EXIST)
@@ -249,8 +249,8 @@ double EntityQueryCondition::GetConditionDistanceMeasure(Entity *e, bool high_ac
 	double radius = 0.0;
 	if(singleLabel != StringInternPool::NOT_A_STRING_ID)
 	{
-		double value;
-		if(e->GetValueAtLabelAsNumber(singleLabel, value))
+		auto [value, found] = e->GetValueAtLabelAsNumber(singleLabel);
+		if(found)
 			radius = value;
 	}
 		
@@ -371,7 +371,14 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 			for(Entity *e : matching_entities)
 			{
 				double value;
-				if(e != nullptr && e->GetValueAtLabelAsNumber(singleLabel, value))
+				double found;
+
+				if(e != nullptr)
+					std::tie(value, found) = e->GetValueAtLabelAsNumber(singleLabel);
+				else
+					found = false;
+
+				if(found)
 				{
 					if(FastIsNaN(value))
 						value = 0.0;
@@ -437,7 +444,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 			//get values
 			auto &exist_labels = existLabels;
 			for(auto label_sid : exist_labels)
-				entity_values->SetMappedChildNode(label_sid, matching_entities[i]->GetValueAtLabel(label_sid, enm, false));
+				entity_values->SetMappedChildNode(label_sid, matching_entities[i]->GetValueAtLabel(label_sid, enm, false).first);
 		}
 
 		return EvaluableNodeReference(query_return, true);
@@ -454,7 +461,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 			if(matching_entities[i] == nullptr)
 				continue;
 
-			auto value = matching_entities[i]->GetValueAtLabelAsImmediateValue(singleLabel);
+			auto [value, found] = matching_entities[i]->GetValueAtLabelAsImmediateValue(singleLabel);
 
 			if(value.nodeType == singleLabelType)
 				entity_values.push_back(std::make_pair(matching_entities[i], value.nodeValue));
@@ -518,13 +525,19 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		auto get_value = [matching_entities, this]
 		(size_t i, double &value)
 		{
-			return matching_entities[i]->GetValueAtLabelAsNumber(singleLabel, value);
+			auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsNumber(singleLabel);
+			value = ret_val;
+
+			return found;
 		};
 
 		auto get_weight = [matching_entities, this]
 		(size_t i, double &weight_value)
 		{
-			return matching_entities[i]->GetValueAtLabelAsNumber(weightLabel, weight_value);
+			auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsNumber(weightLabel, weight_value);
+			weight_value = ret_val;
+
+			return found;
 		};
 
 		switch(queryType)
@@ -548,7 +561,10 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 				auto get_string_value = [matching_entities, this]
 				(size_t i, StringInternPool::StringID &value)
 				{
-					return matching_entities[i]->GetValueAtLabelAsStringId(singleLabel, value);
+					auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsStringId(singleLabel, value);
+					value = ret_val;
+
+					return found;
 				};
 
 				auto [found, mode_id] = EntityQueriesStatistics::ModeStringId<size_t>(
@@ -600,18 +616,23 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 			auto get_value = [matching_entities, this]
 			(size_t i, double &value)
 			{
-				return matching_entities[i]->GetValueAtLabelAsNumber(singleLabel, value);
+				auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsNumber(singleLabel);
+				value = ret_val;
+
+				return found;
 			};
 
 			auto get_weight = [matching_entities, this]
 			(size_t i, double &weight_value)
 			{
-				return matching_entities[i]->GetValueAtLabelAsNumber(weightLabel, weight_value);
+				auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsNumber(weightLabel);
+				weight_value = ret_val;
+
+				return found;
 			};
 
 			auto value_weights = EntityQueriesStatistics::ValueMassesNumber<size_t>(0, matching_entities.size(), matching_entities.size(),
-				get_value, weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight);
-
+																					get_value, weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight);
 			EvaluableNode *assoc = enm->AllocNode(ENT_ASSOC);
 			assoc->ReserveMappedChildNodes(value_weights.size());
 
@@ -629,13 +650,21 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 			auto get_value = [matching_entities, this]
 			(size_t i, StringInternPool::StringID &value)
 			{
-				return matching_entities[i]->GetValueAtLabelAsStringId(singleLabel, value);
+				auto [ret_value, found] = matching_entities[i]->GetValueAtLabelAsStringId(singleLabel);
+
+				value = ret_value;
+
+				return found;
 			};
 
 			auto get_weight = [matching_entities, this]
 			(size_t i, double &weight_value)
 			{
-				return matching_entities[i]->GetValueAtLabelAsNumber(weightLabel, weight_value);
+				auto [ret_value, found] = matching_entities[i]->GetValueAtLabelAsNumber(weightLabel, weight_value);
+
+				weight_value = ret_value;
+
+				return found;
 			};
 
 			auto value_weights = EntityQueriesStatistics::ValueMassesStringId<size_t>(0, matching_entities.size(), matching_entities.size(), get_value,
@@ -699,10 +728,20 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 				it.distance = GetConditionDistanceMeasure(it.reference, true);
 		}
 
+		auto weightFunction = [this]
+							  (Entity *e, double &weight_value)
+							   {
+								 	auto [ret_val, found] = e->GetValueAtLabelAsNumber(weightLabel, weight_value);
+
+									weight_value = ret_val;
+
+									return found;
+							   }; 
+
 		//transform distances as appropriate
 		EntityQueriesStatistics::DistanceTransform<Entity *> distance_transform(distEvaluator.computeSurprisal,
 			distEvaluator.transformSurprisalToProb, distanceWeightExponent, weightLabel != StringInternPool::NOT_A_STRING_ID,
-			[this](Entity *e, double &weight_value) { return e->GetValueAtLabelAsNumber(weightLabel, weight_value); });
+			weightFunction);
 
 		distance_transform.TransformDistances(entity_values, returnSortedList);
 
@@ -736,10 +775,19 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		for(size_t i = 0; i < matching_entities.size(); i++)
 			entity_values.push_back(DistanceReferencePair<Entity *>(GetConditionDistanceMeasure(matching_entities[i], high_accuracy), matching_entities[i]));
 
+
+		auto weight_function = [this]
+							   (Entity *e, double &weight_value)
+							   {
+									auto [ret_val, found] = e->GetValueAtLabelAsNumber(weightLabel, weight_value);
+									weight_value = ret_val;
+
+									return found;
+							   };
+
 		//transform distances as appropriate
 		EntityQueriesStatistics::DistanceTransform<Entity *> distance_transform(distEvaluator.computeSurprisal,
-			distEvaluator.transformSurprisalToProb, distanceWeightExponent, weightLabel != StringInternPool::NOT_A_STRING_ID,
-			[this](Entity *e, double &weight_value) { return e->GetValueAtLabelAsNumber(weightLabel, weight_value); });
+			distEvaluator.transformSurprisalToProb, distanceWeightExponent, weightLabel != StringInternPool::NOT_A_STRING_ID, weight_function);
 
 		distance_transform.TransformDistances(entity_values, returnSortedList);
 

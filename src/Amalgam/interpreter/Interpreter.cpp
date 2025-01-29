@@ -294,9 +294,9 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 
 Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
-	PerformanceConstraints *performance_constraints, Entity *t, Interpreter *calling_interpreter)
+	InterpreterConstraints *interpreter_constraints, Entity *t, Interpreter *calling_interpreter)
 {
-	performanceConstraints = performance_constraints;
+	interpreterConstraints = interpreter_constraints;
 
 	randomStream = rand_stream;
 	curEntity = t;
@@ -707,7 +707,7 @@ EvaluableNode **Interpreter::TraverseToDestinationFromTraversalPathList(Evaluabl
 
 	size_t max_num_nodes = 0;
 	if(ConstrainedAllocatedNodes())
-		max_num_nodes = performanceConstraints->GetRemainingNumAllocatedNodes(evaluableNodeManager->GetNumberOfUsedNodes());
+		max_num_nodes = interpreterConstraints->GetRemainingNumAllocatedNodes(evaluableNodeManager->GetNumberOfUsedNodes());
 
 	EvaluableNode **destination = GetRelativeEvaluableNodeFromTraversalPathList(source, address_list, address_list_length, create_destination_if_necessary ? evaluableNodeManager : nullptr, max_num_nodes);
 
@@ -771,17 +771,19 @@ EvaluableNodeReference Interpreter::RewriteByFunction(EvaluableNodeReference fun
 	return InterpretNode(function);
 }
 
-bool Interpreter::PopulatePerformanceConstraintsFromParams(std::vector<EvaluableNode *> &params,
-	size_t perf_constraint_param_offset, PerformanceConstraints &perf_constraints, bool include_entity_constraints)
+bool Interpreter::PopulateInterpreterConstraintsFromParams(std::vector<EvaluableNode *> &params,
+	size_t perf_constraint_param_offset, InterpreterConstraints &interpreter_constraints, bool include_entity_constraints)
 {
-	//start with constraints if there are already performance constraints
-	bool any_constraints = (performanceConstraints != nullptr);
+	//start with constraints if there are already interpreter constraints
+	bool any_constraints = (interpreterConstraints != nullptr);
+
+	interpreter_constraints.constraintViolation = InterpreterConstraints::ViolationType::NoViolation;
 
 	//for each of the three parameters below, values of zero indicate no limit
 
 	//populate maxNumExecutionSteps
-	perf_constraints.curExecutionStep = 0;
-	perf_constraints.maxNumExecutionSteps = 0;
+	interpreter_constraints.curExecutionStep = 0;
+	interpreter_constraints.maxNumExecutionSteps = 0;
 	size_t execution_steps_offset = perf_constraint_param_offset + 0;
 	if(params.size() > execution_steps_offset)
 	{
@@ -789,14 +791,14 @@ bool Interpreter::PopulatePerformanceConstraintsFromParams(std::vector<Evaluable
 		//nan will fail, so don't need a separate nan check
 		if(value >= 1.0)
 		{
-			perf_constraints.maxNumExecutionSteps = static_cast<ExecutionCycleCount>(value);
+			interpreter_constraints.maxNumExecutionSteps = static_cast<ExecutionCycleCount>(value);
 			any_constraints = true;
 		}
 	}
 
 	//populate maxNumAllocatedNodes
-	perf_constraints.curNumAllocatedNodesAllocatedToEntities = 0;
-	perf_constraints.maxNumAllocatedNodes = 0;
+	interpreter_constraints.curNumAllocatedNodesAllocatedToEntities = 0;
+	interpreter_constraints.maxNumAllocatedNodes = 0;
 	size_t max_num_allocated_nodes_offset = perf_constraint_param_offset + 1;
 	if(params.size() > max_num_allocated_nodes_offset)
 	{
@@ -804,12 +806,12 @@ bool Interpreter::PopulatePerformanceConstraintsFromParams(std::vector<Evaluable
 		//nan will fail, so don't need a separate nan check
 		if(value >= 1.0)
 		{
-			perf_constraints.maxNumAllocatedNodes = static_cast<ExecutionCycleCount>(value);
+			interpreter_constraints.maxNumAllocatedNodes = static_cast<ExecutionCycleCount>(value);
 			any_constraints = true;
 		}
 	}
 	//populate maxOpcodeExecutionDepth
-	perf_constraints.maxOpcodeExecutionDepth = 0;
+	interpreter_constraints.maxOpcodeExecutionDepth = 0;
 	size_t max_opcode_execution_depth_offset = perf_constraint_param_offset + 2;
 	if(params.size() > max_opcode_execution_depth_offset)
 	{
@@ -817,20 +819,25 @@ bool Interpreter::PopulatePerformanceConstraintsFromParams(std::vector<Evaluable
 		//nan will fail, so don't need a separate nan check
 		if(value >= 1.0)
 		{
-			perf_constraints.maxOpcodeExecutionDepth = static_cast<ExecutionCycleCount>(value);
+			interpreter_constraints.maxOpcodeExecutionDepth = static_cast<ExecutionCycleCount>(value);
 			any_constraints = true;
 		}
 	}
 
-	perf_constraints.entityToConstrainFrom = nullptr;
-	perf_constraints.constrainMaxContainedEntities = false;
-	perf_constraints.maxContainedEntities = 0;
-	perf_constraints.constrainMaxContainedEntityDepth = false;
-	perf_constraints.maxContainedEntityDepth = 0;
-	perf_constraints.maxEntityIdLength = 0;
+	interpreter_constraints.entityToConstrainFrom = nullptr;
+	interpreter_constraints.constrainMaxContainedEntities = false;
+	interpreter_constraints.maxContainedEntities = 0;
+	interpreter_constraints.constrainMaxContainedEntityDepth = false;
+	interpreter_constraints.maxContainedEntityDepth = 0;
+	interpreter_constraints.maxEntityIdLength = 0;
+
+
+	size_t warning_override_offset = perf_constraint_param_offset + 3;
 
 	if(include_entity_constraints)
 	{
+		warning_override_offset += 3;
+
 		//populate maxContainedEntities
 		size_t max_contained_entities_offset = perf_constraint_param_offset + 3;
 		if(params.size() > max_contained_entities_offset)
@@ -839,8 +846,8 @@ bool Interpreter::PopulatePerformanceConstraintsFromParams(std::vector<Evaluable
 			//nan will fail, so don't need a separate nan check
 			if(value >= 0.0)
 			{
-				perf_constraints.constrainMaxContainedEntities = true;
-				perf_constraints.maxContainedEntities = static_cast<ExecutionCycleCount>(value);
+				interpreter_constraints.constrainMaxContainedEntities = true;
+				interpreter_constraints.maxContainedEntities = static_cast<ExecutionCycleCount>(value);
 				any_constraints = true;
 			}
 		}
@@ -853,8 +860,8 @@ bool Interpreter::PopulatePerformanceConstraintsFromParams(std::vector<Evaluable
 			//nan will fail, so don't need a separate nan check
 			if(value >= 0.0)
 			{
-				perf_constraints.constrainMaxContainedEntityDepth = true;
-				perf_constraints.maxContainedEntityDepth = static_cast<ExecutionCycleCount>(value);
+				interpreter_constraints.constrainMaxContainedEntityDepth = true;
+				interpreter_constraints.maxContainedEntityDepth = static_cast<ExecutionCycleCount>(value);
 				any_constraints = true;
 			}
 		}
@@ -867,162 +874,179 @@ bool Interpreter::PopulatePerformanceConstraintsFromParams(std::vector<Evaluable
 			//nan will fail, so don't need a separate nan check
 			if(value >= 1.0)
 			{
-				perf_constraints.maxEntityIdLength = static_cast<ExecutionCycleCount>(value);
+				interpreter_constraints.maxEntityIdLength = static_cast<ExecutionCycleCount>(value);
 				any_constraints = true;
 			}
 		}
 	}
 
+
+	//check if caller specifed override of the default warning collections behavior
+	if(params.size() > warning_override_offset)
+	{
+		interpreter_constraints.collectWarnings = InterpretNodeIntoBoolValue(params[warning_override_offset], any_constraints);
+		any_constraints |= interpreter_constraints.collectWarnings;
+	}
+	else
+	{
+		interpreter_constraints.collectWarnings = any_constraints;
+	}
+	
 	return any_constraints;
 }
 
-void Interpreter::PopulatePerformanceCounters(PerformanceConstraints *perf_constraints, Entity *entity_to_constrain_from)
+void Interpreter::PopulatePerformanceCounters(InterpreterConstraints *interpreter_constraints, Entity *entity_to_constrain_from)
 {
-	if(perf_constraints == nullptr)
+	if(interpreter_constraints == nullptr)
 		return;
 
-	perf_constraints->constraintsExceeded = false;
+	interpreter_constraints->constraintsExceeded = false;
 
 	//handle execution steps
-	if(performanceConstraints != nullptr && performanceConstraints->ConstrainedExecutionSteps())
+	if(interpreterConstraints != nullptr && interpreterConstraints->ConstrainedExecutionSteps())
 	{
-		ExecutionCycleCount remaining_steps = performanceConstraints->GetRemainingNumExecutionSteps();
+		ExecutionCycleCount remaining_steps = interpreterConstraints->GetRemainingNumExecutionSteps();
 		if(remaining_steps > 0)
 		{
-			if(perf_constraints->ConstrainedExecutionSteps())
-				perf_constraints->maxNumExecutionSteps = std::min(
-					perf_constraints->maxNumExecutionSteps, remaining_steps);
+			if(interpreter_constraints->ConstrainedExecutionSteps())
+				interpreter_constraints->maxNumExecutionSteps = std::min(
+					interpreter_constraints->maxNumExecutionSteps, remaining_steps);
 			else
-				perf_constraints->maxNumExecutionSteps = remaining_steps;
+				interpreter_constraints->maxNumExecutionSteps = remaining_steps;
 		}
 		else //out of resources, ensure nothing will run (can't use 0 for maxNumExecutionSteps)
 		{
-			perf_constraints->maxNumExecutionSteps = 1;
-			perf_constraints->curExecutionStep = 1;
-			perf_constraints->constraintsExceeded = true;
+			interpreter_constraints->maxNumExecutionSteps = 1;
+			interpreter_constraints->curExecutionStep = 1;
+			interpreter_constraints->constraintsExceeded = true;
+			interpreter_constraints->constraintViolation = InterpreterConstraints::ViolationType::ExecutionStep;
 		}
 	}
 
 	//handle allocated nodes
-	if(performanceConstraints != nullptr && performanceConstraints->ConstrainedAllocatedNodes())
+	if(interpreterConstraints != nullptr && interpreterConstraints->ConstrainedAllocatedNodes())
 	{
-		size_t remaining_allocs = performanceConstraints->GetRemainingNumAllocatedNodes(
+		size_t remaining_allocs = interpreterConstraints->GetRemainingNumAllocatedNodes(
 			evaluableNodeManager->GetNumberOfUsedNodes());
 		if(remaining_allocs > 0)
 		{
-			if(perf_constraints->ConstrainedAllocatedNodes())
-				perf_constraints->maxNumAllocatedNodes = std::min(
-					perf_constraints->maxNumAllocatedNodes, remaining_allocs);
+			if(interpreter_constraints->ConstrainedAllocatedNodes())
+				interpreter_constraints->maxNumAllocatedNodes = std::min(
+					interpreter_constraints->maxNumAllocatedNodes, remaining_allocs);
 			else
-				perf_constraints->maxNumAllocatedNodes = remaining_allocs;
+				interpreter_constraints->maxNumAllocatedNodes = remaining_allocs;
 		}
 		else //out of resources, ensure nothing will run (can't use 0 for maxNumAllocatedNodes)
 		{
-			perf_constraints->maxNumAllocatedNodes = 1;
-			perf_constraints->constraintsExceeded = true;
+			interpreter_constraints->maxNumAllocatedNodes = 1;
+			interpreter_constraints->constraintsExceeded = true;
+			interpreter_constraints->constraintViolation = InterpreterConstraints::ViolationType::NodeAllocation;
 		}
 	}
 
-	if(perf_constraints->ConstrainedAllocatedNodes())
+	if(interpreter_constraints->ConstrainedAllocatedNodes())
 	{
 	#ifdef MULTITHREAD_SUPPORT
 		//if multiple threads, the other threads could be eating into this
-		perf_constraints->maxNumAllocatedNodes *= Concurrency::threadPool.GetNumActiveThreads();
+		interpreter_constraints->maxNumAllocatedNodes *= Concurrency::threadPool.GetNumActiveThreads();
 	#endif
 
 		//offset the max appropriately
-		perf_constraints->maxNumAllocatedNodes += evaluableNodeManager->GetNumberOfUsedNodes();
+		interpreter_constraints->maxNumAllocatedNodes += evaluableNodeManager->GetNumberOfUsedNodes();
 	}
 
 	//handle opcode execution depth
-	if(performanceConstraints != nullptr && performanceConstraints->ConstrainedOpcodeExecutionDepth())
+	if(interpreterConstraints != nullptr && interpreterConstraints->ConstrainedOpcodeExecutionDepth())
 	{
-		size_t remaining_depth = performanceConstraints->GetRemainingOpcodeExecutionDepth(
+		size_t remaining_depth = interpreterConstraints->GetRemainingOpcodeExecutionDepth(
 			opcodeStackNodes->size());
 		if(remaining_depth > 0)
 		{
-			if(perf_constraints->ConstrainedOpcodeExecutionDepth())
-				perf_constraints->maxOpcodeExecutionDepth = std::min(
-					perf_constraints->maxOpcodeExecutionDepth, remaining_depth);
+			if(interpreter_constraints->ConstrainedOpcodeExecutionDepth())
+				interpreter_constraints->maxOpcodeExecutionDepth = std::min(
+					interpreter_constraints->maxOpcodeExecutionDepth, remaining_depth);
 			else
-				perf_constraints->maxOpcodeExecutionDepth = remaining_depth;
+				interpreter_constraints->maxOpcodeExecutionDepth = remaining_depth;
 		}
 		else //out of resources, ensure nothing will run (can't use 0 for maxOpcodeExecutionDepth)
 		{
-			perf_constraints->maxOpcodeExecutionDepth = 1;
-			perf_constraints->constraintsExceeded = true;
+			interpreter_constraints->maxOpcodeExecutionDepth = 1;
+			interpreter_constraints->constraintsExceeded = true;
+			interpreter_constraints->constraintViolation = InterpreterConstraints::ViolationType::ExecutionDepth;
 		}
 	}
 
 	if(entity_to_constrain_from == nullptr)
 		return;
 
-	perf_constraints->entityToConstrainFrom = entity_to_constrain_from;
+	interpreter_constraints->entityToConstrainFrom = entity_to_constrain_from;
 
-	if(performanceConstraints != nullptr && performanceConstraints->constrainMaxContainedEntities
-		&& performanceConstraints->entityToConstrainFrom != nullptr)
+	if(interpreterConstraints != nullptr && interpreterConstraints->constrainMaxContainedEntities
+		&& interpreterConstraints->entityToConstrainFrom != nullptr)
 	{
-		perf_constraints->constrainMaxContainedEntities = true;
+		interpreter_constraints->constrainMaxContainedEntities = true;
 
 		//if calling a contained entity, figure out how many this one can create
-		size_t max_entities = performanceConstraints->maxContainedEntities;
-		if(performanceConstraints->entityToConstrainFrom->DoesDeepContainEntity(perf_constraints->entityToConstrainFrom))
+		size_t max_entities = interpreterConstraints->maxContainedEntities;
+		if(interpreterConstraints->entityToConstrainFrom->DoesDeepContainEntity(interpreter_constraints->entityToConstrainFrom))
 		{
-			auto erbr = performanceConstraints->entityToConstrainFrom->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>();
+			auto erbr = interpreterConstraints->entityToConstrainFrom->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>();
 			size_t container_total_entities = erbr->size();
 			erbr.Clear();
-			erbr = perf_constraints->entityToConstrainFrom->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>();
+			erbr = interpreter_constraints->entityToConstrainFrom->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>();
 			size_t contained_total_entities = erbr->size();
 			erbr.Clear();
 
-			if(container_total_entities >= performanceConstraints->maxContainedEntities)
+			if(container_total_entities >= interpreterConstraints->maxContainedEntities)
 			{
 				max_entities = 0;
-				perf_constraints->constraintsExceeded = true;
+				interpreter_constraints->constraintsExceeded = true;
+				interpreter_constraints->constraintViolation = InterpreterConstraints::ViolationType::ContainedEntitiesDepth;
 			}
 			else
 			{
-				max_entities = performanceConstraints->maxContainedEntities - (container_total_entities - contained_total_entities);
+				max_entities = interpreterConstraints->maxContainedEntities - (container_total_entities - contained_total_entities);
 			}
 		}
 
-		perf_constraints->maxContainedEntities = std::min(perf_constraints->maxContainedEntities, max_entities);
+		interpreter_constraints->maxContainedEntities = std::min(interpreter_constraints->maxContainedEntities, max_entities);
 	}
 
-	if(performanceConstraints != nullptr && performanceConstraints->constrainMaxContainedEntityDepth
-		&& performanceConstraints->entityToConstrainFrom != nullptr)
+	if(interpreterConstraints != nullptr && interpreterConstraints->constrainMaxContainedEntityDepth
+		&& interpreterConstraints->entityToConstrainFrom != nullptr)
 	{
-		perf_constraints->constrainMaxContainedEntityDepth = true;
+		interpreter_constraints->constrainMaxContainedEntityDepth = true;
 
-		size_t max_depth = performanceConstraints->maxContainedEntityDepth;
+		size_t max_depth = interpreterConstraints->maxContainedEntityDepth;
 		size_t cur_depth = 0;
-		if(performanceConstraints->entityToConstrainFrom->DoesDeepContainEntity(perf_constraints->entityToConstrainFrom))
+		if(interpreterConstraints->entityToConstrainFrom->DoesDeepContainEntity(interpreter_constraints->entityToConstrainFrom))
 		{
-			for(Entity *cur_entity = perf_constraints->entityToConstrainFrom;
-					cur_entity != performanceConstraints->entityToConstrainFrom;
+			for(Entity *cur_entity = interpreter_constraints->entityToConstrainFrom;
+					cur_entity != interpreterConstraints->entityToConstrainFrom;
 					cur_entity = cur_entity->GetContainer())
 				cur_depth++;
 		}
 
 		if(cur_depth >= max_depth)
 		{
-			perf_constraints->maxContainedEntityDepth = 0;
-			perf_constraints->constraintsExceeded = true;
+			interpreter_constraints->maxContainedEntityDepth = 0;
+			interpreter_constraints->constraintsExceeded = true;
+			interpreter_constraints->constraintViolation = InterpreterConstraints::ViolationType::ContainedEntitiesDepth;
 		}
 		else
 		{
-			perf_constraints->maxContainedEntityDepth = std::min(perf_constraints->maxContainedEntityDepth,
+			interpreter_constraints->maxContainedEntityDepth = std::min(interpreter_constraints->maxContainedEntityDepth,
 				max_depth - cur_depth);
 		}
 	}
 
-	if(performanceConstraints != nullptr && performanceConstraints->maxEntityIdLength > 0)
+	if(interpreterConstraints != nullptr && interpreterConstraints->maxEntityIdLength > 0)
 	{
-		if(perf_constraints->maxEntityIdLength > 0)
-			perf_constraints->maxEntityIdLength = std::min(perf_constraints->maxEntityIdLength,
-				performanceConstraints->maxEntityIdLength);
+		if(interpreter_constraints->maxEntityIdLength > 0)
+			interpreter_constraints->maxEntityIdLength = std::min(interpreter_constraints->maxEntityIdLength,
+				interpreterConstraints->maxEntityIdLength);
 		else
-			perf_constraints->maxNumAllocatedNodes = performanceConstraints->maxEntityIdLength;
+			interpreter_constraints->maxNumAllocatedNodes = interpreterConstraints->maxEntityIdLength;
 	}
 }
 

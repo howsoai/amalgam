@@ -22,9 +22,27 @@
 class EntityQueryCondition;
 
 //Manages performance constraints and accompanying performance counters
-class PerformanceConstraints
+class InterpreterConstraints
 {
 public:
+	enum class ViolationType
+  	{
+		NoViolation,
+		NodeAllocation,
+		ExecutionStep,
+		ExecutionDepth,
+		ContainedEntitiesNumber,
+		ContainedEntitiesDepth
+	};
+
+  //Adds the string specified by warning to the list of warnings. Takes warning as an rvalue reference.
+	void AddWarning(std::string &&warning)
+	{
+	#ifdef MULTITHREAD_SUPPORT
+		Concurrency::WriteLock warningLock(warningMutex);
+	#endif
+		warnings[warning]++;
+	}
 
 	//if true, there is a limit to how long can utilize CPU
 	constexpr bool ConstrainedExecutionSteps()
@@ -82,14 +100,14 @@ public:
 			return 0;
 	}
 
-	//accrues performance counters into the current object from perf_constraints
-	__forceinline void AccruePerformanceCounters(PerformanceConstraints *perf_constraints)
+	//accrues performance counters into the current object from interpreter_constraints
+	__forceinline void AccruePerformanceCounters(InterpreterConstraints *interpreter_constraints)
 	{
-		if(perf_constraints == nullptr)
+		if(interpreter_constraints == nullptr)
 			return;
 
-		curExecutionStep += perf_constraints->curExecutionStep;
-		curNumAllocatedNodesAllocatedToEntities += perf_constraints->curNumAllocatedNodesAllocatedToEntities;
+		curExecutionStep += interpreter_constraints->curExecutionStep;
+		curNumAllocatedNodesAllocatedToEntities += interpreter_constraints->curNumAllocatedNodesAllocatedToEntities;
 	}
 
 	//current execution step - number of nodes executed
@@ -131,6 +149,20 @@ public:
 	//constrains the maximum length of an entity id (primarily to make sure it doesn't cause problems for file systems)
 	//If 0, then unlimited
 	size_t maxEntityIdLength;
+
+	//If true, collectWarnings
+	bool collectWarnings;
+
+	ViolationType constraintViolation;
+
+	//maps warnings to the count of their occurrence 
+	FastHashMap<std::string, size_t> warnings;
+
+private: 
+#ifdef MULTITHREAD_SUPPORT
+	Concurrency::ReadWriteMutex warningMutex;
+#endif
+
 };
 
 class Interpreter
@@ -154,10 +186,10 @@ public:
 
 	//Creates a new interpreter to run code and to store labels.
 	// If no entity is specified via nullptr, then it will run sandboxed
-	// if performance_constraints is not nullptr, then it will limit execution appropriately
+	// if interpreter_constraints is not nullptr, then it will limit execution appropriately
 	Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 		std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
-		PerformanceConstraints *performance_constraints,
+		InterpreterConstraints *interpreter_constraints,
 		Entity *t, Interpreter *calling_interpreter);
 
 	~Interpreter()
@@ -622,15 +654,15 @@ protected:
 	EvaluableNodeReference RewriteByFunction(EvaluableNodeReference function,
 		EvaluableNode *tree, FastHashMap<EvaluableNode *, EvaluableNode *> &original_node_to_new_node);
 
-	//populates perf_constraints from params starting at the offset perf_constraint_param_offset,
+	//populates interpreter_constraints from params starting at the offset perf_constraint_param_offset,
 	// in the order of execution cycles, maximum memory, maximum stack depth
 	//returns true if there are any performance constraints, false if not
 	//if include_entity_constraints is true, it will include constraints regarding entities
-	bool PopulatePerformanceConstraintsFromParams(std::vector<EvaluableNode *> &params,
-		size_t perf_constraint_param_offset, PerformanceConstraints &perf_constraints, bool include_entity_constraints = false);
+	bool PopulateInterpreterConstraintsFromParams(std::vector<EvaluableNode *> &params,
+		size_t perf_constraint_param_offset, InterpreterConstraints &interpreter_constraints, bool include_entity_constraints = false);
 
-	//if perf_constraints is not null, populates the counters representing the current state of the interpreter
-	void PopulatePerformanceCounters(PerformanceConstraints *perf_constraints, Entity *entity_to_constrain_from);
+	//if interpreter_constraints is not null, populates the counters representing the current state of the interpreter
+	void PopulatePerformanceCounters(InterpreterConstraints *interpreter_constraints, Entity *entity_to_constrain_from);
 
 #ifdef MULTITHREAD_SUPPORT
 
@@ -691,7 +723,7 @@ protected:
 
 					Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
 						parentInterpreter->writeListeners, parentInterpreter->printListener,
-						parentInterpreter->performanceConstraints, parentInterpreter->curEntity, parentInterpreter);
+						parentInterpreter->interpreterConstraints, parentInterpreter->curEntity, parentInterpreter);
 
 					interpreter.memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
 
@@ -759,7 +791,7 @@ protected:
 
 					Interpreter interpreter(parentInterpreter->evaluableNodeManager, rand_seed,
 						parentInterpreter->writeListeners, parentInterpreter->printListener,
-						parentInterpreter->performanceConstraints, parentInterpreter->curEntity, parentInterpreter);
+						parentInterpreter->interpreterConstraints, parentInterpreter->curEntity, parentInterpreter);
 
 					interpreter.memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
 
@@ -953,37 +985,37 @@ protected:
 	//if true, no limit on how much memory can utilize
 	constexpr bool ConstrainedAllocatedNodes()
 	{
-		return (performanceConstraints != nullptr && performanceConstraints->ConstrainedAllocatedNodes());
+		return (interpreterConstraints != nullptr && interpreterConstraints->ConstrainedAllocatedNodes());
 	}
 
 	//returns true if it can create a new entity given the constraints
 	__forceinline bool CanCreateNewEntityFromConstraints(Entity *destination_container, StringInternPool::StringID entity_id,
 		size_t total_num_new_entities = 1)
 	{
-		if(performanceConstraints == nullptr)
+		if(interpreterConstraints == nullptr)
 			return true;
 
-		if(performanceConstraints->maxEntityIdLength > 0
-				&& string_intern_pool.GetStringFromID(entity_id).size() > performanceConstraints->maxEntityIdLength)
+		if(interpreterConstraints->maxEntityIdLength > 0
+				&& string_intern_pool.GetStringFromID(entity_id).size() > interpreterConstraints->maxEntityIdLength)
 			return false;
 
 		//exit early if don't need to lock all contained entities
-		if(!performanceConstraints->constrainMaxContainedEntities && !performanceConstraints->constrainMaxContainedEntityDepth)
+		if(!interpreterConstraints->constrainMaxContainedEntities && !interpreterConstraints->constrainMaxContainedEntityDepth)
 			return true;
 
 		auto erbr
-			= performanceConstraints->entityToConstrainFrom->GetAllDeeplyContainedEntityReferencesGroupedByDepth<
+			= interpreterConstraints->entityToConstrainFrom->GetAllDeeplyContainedEntityReferencesGroupedByDepth<
 			EntityReadReference>(true, destination_container);
 
-		if(performanceConstraints->constrainMaxContainedEntities)
+		if(interpreterConstraints->constrainMaxContainedEntities)
 		{
-			if(erbr->size() + total_num_new_entities > performanceConstraints->maxContainedEntities)
+			if(erbr->size() + total_num_new_entities > interpreterConstraints->maxContainedEntities)
 				return false;
 		}
 
-		if(performanceConstraints->constrainMaxContainedEntityDepth)
+		if(interpreterConstraints->constrainMaxContainedEntityDepth)
 		{
-			if(1 + erbr.maxEntityPathDepth > performanceConstraints->maxContainedEntityDepth)
+			if(1 + erbr.maxEntityPathDepth > interpreterConstraints->maxContainedEntityDepth)
 				return false;
 		}
 
@@ -993,43 +1025,57 @@ protected:
 	//returns true if there's a max number of execution steps or nodes and at least one is exhausted
 	__forceinline bool AreExecutionResourcesExhausted(bool increment_performance_counters = false)
 	{
-		if(performanceConstraints == nullptr)
+		if(interpreterConstraints == nullptr)
 			return false;
 
-		if(performanceConstraints->ConstrainedExecutionSteps())
+		if(interpreterConstraints->ConstrainedExecutionSteps())
 		{
 			if(increment_performance_counters)
-				performanceConstraints->curExecutionStep++;
+				interpreterConstraints->curExecutionStep++;
 
-			if(performanceConstraints->curExecutionStep > performanceConstraints->maxNumExecutionSteps)
+			if(interpreterConstraints->curExecutionStep > interpreterConstraints->maxNumExecutionSteps)
 			{
-				performanceConstraints->constraintsExceeded = true;
+				interpreterConstraints->constraintsExceeded = true;
+				interpreterConstraints->constraintViolation = InterpreterConstraints::ViolationType::ExecutionStep;
 				return true;
 			}
 		}
 
-		if(performanceConstraints->ConstrainedAllocatedNodes())
+		if(interpreterConstraints->ConstrainedAllocatedNodes())
 		{
-			size_t cur_allocated_nodes = performanceConstraints->curNumAllocatedNodesAllocatedToEntities + evaluableNodeManager->GetNumberOfUsedNodes();
-			if(cur_allocated_nodes > performanceConstraints->maxNumAllocatedNodes)
+			size_t cur_allocated_nodes = interpreterConstraints->curNumAllocatedNodesAllocatedToEntities + evaluableNodeManager->GetNumberOfUsedNodes();
+			if(cur_allocated_nodes > interpreterConstraints->maxNumAllocatedNodes)
 			{
-				performanceConstraints->constraintsExceeded = true;
+				interpreterConstraints->constraintsExceeded = true;
+				interpreterConstraints->constraintViolation = InterpreterConstraints::ViolationType::NodeAllocation;
 				return true;
 			}
 		}
 
-		if(performanceConstraints->ConstrainedOpcodeExecutionDepth())
+		if(interpreterConstraints->ConstrainedOpcodeExecutionDepth())
 		{
-			if(opcodeStackNodes->size() > performanceConstraints->maxOpcodeExecutionDepth)
+			if(opcodeStackNodes->size() > interpreterConstraints->maxOpcodeExecutionDepth)
 			{
-				performanceConstraints->constraintsExceeded = true;
+				interpreterConstraints->constraintsExceeded = true;
+				interpreterConstraints->constraintViolation = InterpreterConstraints::ViolationType::ExecutionDepth;
 				return true;
 			}
 		}
 
 		//return whether they have ever been exceeded
-		return performanceConstraints->constraintsExceeded;
+		return interpreterConstraints->constraintsExceeded;
 	}
+	
+	//If interpreter_constraints is non-null, and interpreter_constraints->collect warnings is true,
+	//creates a tuple with result, a list of all warnings, and constraint violations. Otherwise, it returns result.
+	EvaluableNodeReference BundleResultWithWarningsIfNeeded(EvaluableNodeReference result, InterpreterConstraints *interpreter_constraints);
+
+
+	//Creates a warning string for the undefined symbol represented by not_found_variable_sid.
+	//If interpreterConstraints is not null, and collect Warnings is true, this warning will be added to warnings.
+	//Otherwise, if asset_manager.warnOnUndefined is true, and curEntity has permission to write to stderr,
+	//the warning will be printed to stderr.
+	void EmitOrLogUndefinedVariableWarningIfNeeded(StringInternPool::StringID not_found_variable_sid, EvaluableNode *en);
 
 	//opcodes
 	//returns an EvaluableNode tree from evaluating the tree passed in (or nullptr) and associated properties in an EvaluableNodeReference
@@ -1283,7 +1329,7 @@ protected:
 	void VerifyEvaluableNodeIntegrity();
 
 	//if not nullptr, then contains the respective constraints on performance
-	PerformanceConstraints *performanceConstraints;
+	InterpreterConstraints *interpreterConstraints;
 
 	//a stack (list) of the current nodes being executed
 	std::vector<EvaluableNode *> *opcodeStackNodes;
@@ -1424,7 +1470,7 @@ protected:
 		return EvaluableNodeReference::Null();
 	}
 
-  public:
+public:
 	//where to allocate new nodes
 	EvaluableNodeManager *evaluableNodeManager;
 

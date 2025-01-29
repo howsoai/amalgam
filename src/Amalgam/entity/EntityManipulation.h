@@ -229,7 +229,7 @@ public:
 				for(size_t i = 0; i < results.size(); i++)
 				{
 					Entity *entity = get_entity(results[i].reference);
-					list_ocn[i] = entity->GetValueAtLabel(label, enm, false);
+					list_ocn[i] = entity->GetValueAtLabel(label, enm, false).first;
 
 					//update cycle checks and idempotency
 					if(list_ocn[i] != nullptr)

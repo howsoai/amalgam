@@ -54,7 +54,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 		return retval;
 	}
 
-	auto label_value = target_entity->GetValueAtLabel(label_sid, nullptr, true);
+	auto label_value = target_entity->GetValueAtLabel(label_sid, nullptr, true).first;
 	if(label_value == nullptr)
 		return EvaluableNodeReference::Null();
 
@@ -178,7 +178,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_AC
 			
 			//accumulate new node usage
 			if(ConstrainedAllocatedNodes())
-				performanceConstraints->curNumAllocatedNodesAllocatedToEntities += EvaluableNode::GetDeepSize(new_code);
+				interpreterConstraints->curNumAllocatedNodesAllocatedToEntities += EvaluableNode::GetDeepSize(new_code);
 		}
 		else
 		{
@@ -193,7 +193,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_AC
 				size_t cur_size = target_entity->GetSizeInNodes();
 				//don't get credit for freeing memory, but do count toward memory consumed
 				if(cur_size > prev_size)
-					performanceConstraints->curNumAllocatedNodesAllocatedToEntities += cur_size - prev_size;
+					interpreterConstraints->curNumAllocatedNodesAllocatedToEntities += cur_size - prev_size;
 			}
 		}
 
@@ -380,7 +380,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableN
 
 		//accumulate usage
 		if(ConstrainedAllocatedNodes())
-			performanceConstraints->curNumAllocatedNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
+			interpreterConstraints->curNumAllocatedNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
 
 		entity_container->AddContainedEntityViaReference(new_entity, new_entity_id, writeListeners);
 
@@ -448,7 +448,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CLONE_ENTITIES(EvaluableNo
 
 		//accumulate usage
 		if(ConstrainedAllocatedNodes())
-			performanceConstraints->curNumAllocatedNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
+			interpreterConstraints->curNumAllocatedNodesAllocatedToEntities += new_entity->GetDeepSizeInNodes();
 
 		destination_entity_parent->AddContainedEntityViaReference(new_entity, new_entity_id, writeListeners);
 
@@ -584,7 +584,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DESTROY_ENTITIES(Evaluable
 
 		//accumulate usage -- gain back freed resources
 		if(ConstrainedAllocatedNodes())
-			performanceConstraints->curNumAllocatedNodesAllocatedToEntities -= entity->GetDeepSizeInNodes();
+			interpreterConstraints->curNumAllocatedNodesAllocatedToEntities -= entity->GetDeepSizeInNodes();
 
 		delete entity;
 	}
@@ -702,7 +702,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode 
 
 	//accumulate usage
 	if(ConstrainedAllocatedNodes())
-		performanceConstraints->curNumAllocatedNodesAllocatedToEntities += loaded_entity->GetDeepSizeInNodes();
+		interpreterConstraints->curNumAllocatedNodesAllocatedToEntities += loaded_entity->GetDeepSizeInNodes();
 
 	//put it in the destination
 	destination_entity_parent->AddContainedEntityViaReference(loaded_entity, new_entity_id, writeListeners);

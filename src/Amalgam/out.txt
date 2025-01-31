@@ -4614,9 +4614,11 @@ execution limits tests
 		)
 		(accum_entity_roots
 			["CEGCTest" "Contained"]
-			[
-				#a 14
-			]
+			(lambda
+				[
+					#a 14
+				]
+			)
 		)
 		(destroy_entities
 			["CEGCTest" "Contained"]

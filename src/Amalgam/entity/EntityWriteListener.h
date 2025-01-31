@@ -44,6 +44,9 @@ public:
 	//logs the new entity root, assuming it has already been set
 	void LogWriteToEntityRoot(Entity *entity);
 
+	//logs accum to the entity root
+	void LogEntityAccumRoot(Entity *entity, EvaluableNodeReference accum_code);
+
 	void LogCreateEntity(Entity *new_entity);
 
 	void LogDestroyEntity(Entity *destroyed_entity);

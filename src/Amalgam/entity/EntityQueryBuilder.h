@@ -345,6 +345,10 @@ namespace EntityQueryBuilder
 		}
 		else //infinite range query, use param as number to find (top_k)
 		{
+			//TODO 13225: set minToRetrieve and numToRetrieveMinIncrementalProbability based on type
+			//TODO 13225: update documentation
+			//TODO 13225: implement this throughout
+			//TODO 13225: implement tests
 			cur_condition->maxToRetrieve = static_cast<size_t>(EvaluableNode::ToNumber(ocn[MAX_TO_FIND_OR_MAX_DISTANCE], 1));
 			cur_condition->maxDistance = std::numeric_limits<double>::infinity();
 		}

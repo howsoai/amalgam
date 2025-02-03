@@ -75,8 +75,14 @@ public:
 	//maximum distance between valueToCompare and the entity
 	double maxDistance;
 
-	//maximum number of entities to retrieve (based on queryType)
+	//maximum number of entities to attempt to retrieve (based on queryType)
 	size_t maxToRetrieve;
+
+	//minimum number of entities to attempt to retrieve
+	size_t minToRetrieve;
+
+	//incremental probability where, if the next entity is below this threshold, don't retrieve more
+	double numToRetrieveMinIncrementalProbability;
 
 	//distance weight exponent for distance queries (takes distance and raises it to the respective exponent) when returning distances
 	//only applicable when computeSurprisal is false

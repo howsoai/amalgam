@@ -338,16 +338,14 @@ namespace EntityQueryBuilder
 		//set maximum distance and max number of results (top_k) to find
 		if(condition_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE) //maximum distance to search within
 		{
-			cur_condition->maxToRetrieve = std::numeric_limits<double>::infinity();
+			cur_condition->maxToRetrieve = std::numeric_limits<size_t>::max();
 			cur_condition->maxDistance = EvaluableNode::ToNumber(ocn[MAX_TO_FIND_OR_MAX_DISTANCE]);
 			if(FastIsNaN(cur_condition->maxDistance))
 				cur_condition->maxDistance = 0;
 		}
 		else //infinite range query, use param as number to find (top_k)
 		{
-			cur_condition->maxToRetrieve = EvaluableNode::ToNumber(ocn[MAX_TO_FIND_OR_MAX_DISTANCE]);
-			if(FastIsNaN(cur_condition->maxToRetrieve))
-				cur_condition->maxToRetrieve = 0;
+			cur_condition->maxToRetrieve = static_cast<size_t>(EvaluableNode::ToNumber(ocn[MAX_TO_FIND_OR_MAX_DISTANCE], 1));
 			cur_condition->maxDistance = std::numeric_limits<double>::infinity();
 		}
 
@@ -664,10 +662,10 @@ namespace EntityQueryBuilder
 		{
 			case ENT_QUERY_SELECT:
 			{
-				cur_condition->maxToRetrieve = (ocn.size() > 0) ? EvaluableNode::ToNumber(ocn[0], 0.0) : 0;
+				cur_condition->maxToRetrieve = (ocn.size() > 0) ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[0], 1)) : 0;
 
 				cur_condition->hasStartOffset = (ocn.size() > 1);
-				cur_condition->startOffset = cur_condition->hasStartOffset ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[1], 0.0)) : 0;
+				cur_condition->startOffset = cur_condition->hasStartOffset ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[1], 1)) : 0;
 
 				cur_condition->hasRandomStream = (ocn.size() > 2 && !EvaluableNode::IsNull(ocn[2]));
 				if(cur_condition->hasRandomStream)
@@ -679,7 +677,7 @@ namespace EntityQueryBuilder
 			}
 			case ENT_QUERY_SAMPLE:
 			{
-				cur_condition->maxToRetrieve = (ocn.size() > 0) ? EvaluableNode::ToNumber(ocn[0], 0.0) : 1;
+				cur_condition->maxToRetrieve = (ocn.size() > 0) ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[0], 1)) : 1;
 				cur_condition->singleLabel = (ocn.size() > 1) ? EvaluableNode::ToStringIDIfExists(ocn[1]) : StringInternPool::NOT_A_STRING_ID;
 
 				cur_condition->hasRandomStream = (ocn.size() > 2 && !EvaluableNode::IsNull(ocn[2]));
@@ -773,7 +771,7 @@ namespace EntityQueryBuilder
 				if(ocn.size() >= 2)
 				{
 					EvaluableNode *value = ocn[1];
-					cur_condition->maxToRetrieve = EvaluableNode::ToNumber(value);
+					cur_condition->maxToRetrieve = static_cast<size_t>(EvaluableNode::ToNumber(value, 1));
 				}
 
 				if(ocn.size() <= 2 || EvaluableNode::IsTrue(ocn[2]))

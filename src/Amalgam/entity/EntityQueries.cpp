@@ -291,7 +291,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		EntityManipulation::SortEntitiesByID(matching_entities);
 
 		size_t start_offset = std::min(matching_entities.size(), startOffset);
-		size_t num_to_select = std::min(matching_entities.size() - start_offset, static_cast<size_t>(maxToRetrieve));
+		size_t num_to_select = std::min(matching_entities.size() - start_offset, maxToRetrieve);
 
 		if(num_to_select == 0)
 		{
@@ -333,7 +333,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 	case ENT_QUERY_SAMPLE:
 	{
 		size_t num_entities = matching_entities.size();
-		size_t num_to_sample = static_cast<size_t>(maxToRetrieve);
+		size_t num_to_sample = maxToRetrieve;
 
 		if(num_entities == 0 || num_to_sample == 0)
 		{
@@ -493,7 +493,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		}
 
 		//delete elements beyond the number to keep
-		size_t num_to_keep = std::min(static_cast<size_t>(maxToRetrieve), entity_values.size());
+		size_t num_to_keep = std::min(maxToRetrieve, entity_values.size());
 		entity_values.erase(begin(entity_values) + num_to_keep, end(entity_values));
 
 		//only copy over entities to keep
@@ -655,7 +655,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 
 	case ENT_QUERY_NEAREST_GENERALIZED_DISTANCE:
 	{
-		size_t num_to_keep = std::min(static_cast<size_t>(maxToRetrieve), matching_entities.size());
+		size_t num_to_keep = std::min(maxToRetrieve, matching_entities.size());
 
 		distEvaluator.InitializeParametersAndFeatureParams();
 

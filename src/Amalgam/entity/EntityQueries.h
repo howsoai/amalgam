@@ -76,7 +76,7 @@ public:
 	double maxDistance;
 
 	//maximum number of entities to retrieve (based on queryType)
-	double maxToRetrieve;
+	size_t maxToRetrieve;
 
 	//distance weight exponent for distance queries (takes distance and raises it to the respective exponent) when returning distances
 	//only applicable when computeSurprisal is false

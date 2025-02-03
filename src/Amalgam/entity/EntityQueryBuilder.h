@@ -336,9 +336,11 @@ namespace EntityQueryBuilder
 		cur_condition->useConcurrency = cn->GetConcurrency();
 
 		//set maximum distance and max number of results (top_k) to find
+		cur_condition->maxToRetrieve = std::numeric_limits<size_t>::max();
+		cur_condition->minToRetrieve = std::numeric_limits<size_t>::max();
+		cur_condition->numToRetrieveMinIncrementalProbability = 0.0;
 		if(condition_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE) //maximum distance to search within
 		{
-			cur_condition->maxToRetrieve = std::numeric_limits<size_t>::max();
 			cur_condition->maxDistance = EvaluableNode::ToNumber(ocn[MAX_TO_FIND_OR_MAX_DISTANCE]);
 			if(FastIsNaN(cur_condition->maxDistance))
 				cur_condition->maxDistance = 0;

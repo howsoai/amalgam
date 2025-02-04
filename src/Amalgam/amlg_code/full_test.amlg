@@ -3544,6 +3544,8 @@
 		  (assign_to_entities "Contained" (assoc a 6 b 10) )
 		  (print (unparse (retrieve_from_entity "Contained" "a") .true .true))
 		  (set_entity_rand_seed "Contained" "bbbb")
+		  (accum_to_entities "Contained" (assoc b 12) )
+		  (accum_entity_roots "Contained" (list (set_labels 14 (list "a"))))
 		  (destroy_entities "Contained")
 	  )
 	)

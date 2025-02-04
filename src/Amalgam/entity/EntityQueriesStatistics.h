@@ -721,6 +721,8 @@ public:
 	class DistanceTransform
 	{
 	public:
+		//TODO 13225: pass in condition minToRetrieve, maxToRetrieve, numToRetrieveMinIncrementalProbability, implement appropriate logic
+		//TODO 13225: implement tests
 		constexpr DistanceTransform(bool compute_surprisal, bool surprisal_to_probability,
 			double distance_weight_exponent,
 			bool has_weight, std::function<bool(EntityReference, double &)> get_weight)

@@ -383,9 +383,6 @@ namespace EntityQueryBuilder
 
 				if(cur_condition->maxToRetrieve < cur_condition->minToRetrieve)
 					cur_condition->minToRetrieve = cur_condition->maxToRetrieve;
-
-				//TODO 13225: implement this throughout
-				//TODO 13225: implement tests
 			}
 			else //single value for k
 			{

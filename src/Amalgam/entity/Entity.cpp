@@ -934,6 +934,16 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 			node_flags_need_update = true;
 	}
 
+	if(write_listeners != nullptr)
+	{
+		if(write_listeners->size() > 0)
+		{
+			for(auto &wl : *write_listeners)
+				wl->LogEntityAccumRoot(this, accum_code);
+		}
+		asset_manager.UpdateEntityRoot(this);
+	}
+
 	//accum, but can't treat as unique in case any other thread is accessing the data
 	EvaluableNodeReference new_root = AccumulateEvaluableNodeIntoEvaluableNode(
 		EvaluableNodeReference(previous_root, false), accum_code, &evaluableNodeManager);
@@ -980,16 +990,6 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 
 		if(container_caches != nullptr)
 			container_caches->UpdateAllEntityLabels(this, GetEntityIndexOfContainer());
-	}
-
-	if(write_listeners != nullptr)
-	{
-		if(write_listeners->size() > 0)
-		{
-			for(auto &wl : *write_listeners)
-				wl->LogWriteToEntityRoot(this);
-		}
-		asset_manager.UpdateEntityRoot(this);
 	}
 
 #ifdef AMALGAM_MEMORY_INTEGRITY

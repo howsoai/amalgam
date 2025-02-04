@@ -347,12 +347,51 @@ namespace EntityQueryBuilder
 		}
 		else //infinite range query, use param as number to find (top_k)
 		{
-			//TODO 13225: set minToRetrieve and numToRetrieveMinIncrementalProbability based on type
-			//TODO 13225: update documentation
-			//TODO 13225: implement this throughout
-			//TODO 13225: implement tests
-			cur_condition->maxToRetrieve = static_cast<size_t>(EvaluableNode::ToNumber(ocn[MAX_TO_FIND_OR_MAX_DISTANCE], 1));
-			cur_condition->maxDistance = std::numeric_limits<double>::infinity();
+			EvaluableNode *top_k_node = ocn[MAX_TO_FIND_OR_MAX_DISTANCE];
+			if(EvaluableNode::IsOrderedArray(top_k_node))
+			{
+				auto &top_k_ocn = top_k_node->GetOrderedChildNodesReference();
+				size_t num_params = top_k_ocn.size();
+				//retrieve all the parameters from the list, clamping as appropriate
+				if(num_params >= 1)
+				{
+					double min_inc_prob = EvaluableNode::ToNumber(top_k_ocn[0], 0.0);
+					cur_condition->numToRetrieveMinIncrementalProbability = std::max(0.0, min_inc_prob);
+
+					if(num_params >= 2)
+					{
+						double min_to_retrieve = EvaluableNode::ToNumber(top_k_ocn[1], std::numeric_limits<double>::infinity());
+						min_to_retrieve = std::max(0.0, min_to_retrieve);
+						if(min_to_retrieve < std::numeric_limits<size_t>::max())
+							cur_condition->minToRetrieve = static_cast<size_t>(min_to_retrieve);
+
+						if(num_params >= 3)
+						{
+							double max_to_retrieve = EvaluableNode::ToNumber(top_k_ocn[2], std::numeric_limits<double>::infinity());
+							max_to_retrieve = std::max(0.0, max_to_retrieve);
+							if(max_to_retrieve < std::numeric_limits<size_t>::max())
+								cur_condition->maxToRetrieve = static_cast<size_t>(max_to_retrieve);
+						}
+					}
+				}
+
+				//if all percentages are the same, that will yield the most number of entities kept
+				//so round up the reciprocal of this number to find the maximum number of entities that can be kept
+				double max_by_percent = std::ceil(1 / cur_condition->numToRetrieveMinIncrementalProbability);
+				if(max_by_percent < cur_condition->maxToRetrieve)
+					cur_condition->maxToRetrieve = static_cast<size_t>(max_by_percent);
+
+				if(cur_condition->maxToRetrieve < cur_condition->minToRetrieve)
+					cur_condition->minToRetrieve = cur_condition->maxToRetrieve;
+
+				//TODO 13225: implement this throughout
+				//TODO 13225: implement tests
+			}
+			else //single value for k
+			{
+				cur_condition->maxToRetrieve = static_cast<size_t>(EvaluableNode::ToNumber(top_k_node, 1));
+				cur_condition->maxDistance = std::numeric_limits<double>::infinity();
+			}
 		}
 
 		//set position labels

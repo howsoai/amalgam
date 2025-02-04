@@ -138,11 +138,23 @@ void EntityWriteListener::LogWriteToEntityRoot(Entity *entity)
 #ifdef MULTITHREAD_SUPPORT
 	Concurrency::SingleLock lock(mutex);
 #endif
-
 	EvaluableNode *new_write = BuildNewWriteOperation(ENT_ASSIGN_ENTITY_ROOTS, entity);
 	EvaluableNode *new_root = entity->GetRoot(&listenerStorage, EvaluableNodeManager::ENMM_LABEL_ESCAPE_INCREMENT);
 	EvaluableNode *new_lambda = listenerStorage.AllocNode(EvaluableNodeType::ENT_LAMBDA);
 	new_lambda->AppendOrderedChildNode(new_root);
+	new_write->AppendOrderedChildNode(new_lambda);
+
+	LogNewEntry(new_write);
+}
+
+void EntityWriteListener::LogEntityAccumRoot(Entity *entity, EvaluableNodeReference accum_code)
+{
+#ifdef MULTITHREAD_SUPPORT
+	Concurrency::SingleLock lock(mutex);
+#endif
+	EvaluableNode *new_write = BuildNewWriteOperation(ENT_ACCUM_ENTITY_ROOTS, entity);
+	EvaluableNode *new_lambda = listenerStorage.AllocNode(EvaluableNodeType::ENT_LAMBDA);
+	new_lambda->AppendOrderedChildNode(listenerStorage.DeepAllocCopy(accum_code));
 	new_write->AppendOrderedChildNode(new_lambda);
 
 	LogNewEntry(new_write);

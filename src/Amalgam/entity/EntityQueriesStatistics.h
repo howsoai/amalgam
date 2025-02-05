@@ -725,11 +725,28 @@ public:
 		//TODO 13225: implement tests
 		constexpr DistanceTransform(bool compute_surprisal, bool surprisal_to_probability,
 			double distance_weight_exponent,
-			bool has_weight, std::function<bool(EntityReference, double &)> get_weight)
+			size_t min_to_retrieve, size_t max_to_retrieve, double num_to_retrieve_min_increment_prob,
+			bool has_weight, double min_weight, std::function<bool(EntityReference, double &)> get_weight)
 		{
 			distanceWeightExponent = distance_weight_exponent;
 			computeSurprisal = compute_surprisal;
 			surprisalToProbability = surprisal_to_probability;
+
+			minToRetrieve = min_to_retrieve;
+			maxmaxToRetrieve = max_to_retrieve;
+			numToRetrieveMinIncrementalProbability = num_to_retrieve_min_increment_prob;
+
+			//TODO 13225: decide whether need min_weight and how to use -- cut off top k cases by weight or by position?
+
+			//if all percentages are the same, that will yield the most number of entities kept
+			//so round up the reciprocal of this number to find the maximum number of entities that can be kept
+			double max_by_percent = std::ceil(1 / numToRetrieveMinIncrementalProbability);
+			if(max_by_percent < cur_condition->maxToRetrieve)
+				cur_condition->maxToRetrieve = static_cast<size_t>(max_by_percent);
+
+			if(cur_condition->maxToRetrieve < cur_condition->minToRetrieve)
+				cur_condition->minToRetrieve = cur_condition->maxToRetrieve;
+
 			hasWeight = has_weight;
 			getEntityWeightFunction = get_weight;
 		}
@@ -1042,6 +1059,15 @@ public:
 
 		//if true and computeSurprisal is true, the results will be transformed from surprisal to probability
 		bool surprisalToProbability;
+
+		//maximum number of entities to attempt to retrieve (based on queryType)
+		size_t maxToRetrieve;
+
+		//minimum number of entities to attempt to retrieve
+		size_t minToRetrieve;
+
+		//incremental probability where, if the next entity is below this threshold, don't retrieve more
+		double numToRetrieveMinIncrementalProbability;
 
 		//if hasWeight is true, then will call getEntityWeightFunction and apply the respective entity weight to each distance
 		bool hasWeight;

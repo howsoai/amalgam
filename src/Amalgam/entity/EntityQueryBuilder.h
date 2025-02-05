@@ -374,17 +374,6 @@ namespace EntityQueryBuilder
 						}
 					}
 				}
-
-				//TODO 13225: need to compute these below elsewhere in the SBFDS because need to take into account weights -- if weight feature, use the smallest value
-
-				//if all percentages are the same, that will yield the most number of entities kept
-				//so round up the reciprocal of this number to find the maximum number of entities that can be kept
-				double max_by_percent = std::ceil(1 / cur_condition->numToRetrieveMinIncrementalProbability);
-				if(max_by_percent < cur_condition->maxToRetrieve)
-					cur_condition->maxToRetrieve = static_cast<size_t>(max_by_percent);
-
-				if(cur_condition->maxToRetrieve < cur_condition->minToRetrieve)
-					cur_condition->minToRetrieve = cur_condition->maxToRetrieve;
 			}
 			else //single value for k
 			{

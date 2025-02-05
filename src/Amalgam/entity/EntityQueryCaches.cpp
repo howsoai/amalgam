@@ -248,12 +248,18 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 			//get entity (case) weighting if applicable
 			bool use_entity_weights = (cond->weightLabel != StringInternPool::NOT_A_STRING_ID);
 			size_t weight_column = std::numeric_limits<size_t>::max();
+			double min_weight = 1.0;
 			if(use_entity_weights)
+			{
 				weight_column = sbfds.GetColumnIndexFromLabelId(cond->weightLabel);
+				min_weight = sbfds.GetMinValueForColumnAsWeight(weight_column);
+			}
 
 			auto get_weight = sbfds.GetNumberValueFromEntityIndexFunction(weight_column);
 			EntityQueriesStatistics::DistanceTransform<size_t> distance_transform(cond->distEvaluator.computeSurprisal,
-				cond->distEvaluator.transformSurprisalToProb, cond->distanceWeightExponent, use_entity_weights, get_weight);
+				cond->distEvaluator.transformSurprisalToProb, cond->distanceWeightExponent,
+				cond->minToRetrieve, cond->maxToRetrieve, cond->numToRetrieveMinIncrementalProbability,
+				use_entity_weights, min_weight, get_weight);
 
 			//if first, need to populate with all entities
 			if(is_first)
@@ -320,6 +326,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				}
 				else if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE)
 				{
+
 					sbfds.FindNearestEntities(cond->distEvaluator, cond->positionLabels, cond->valueToCompare, cond->valueTypes,
 						cond->maxToRetrieve, cond->singleLabel, cond->exclusionEntityIndex, matching_entities,
 						compute_results, cond->randomStream.CreateOtherStreamViaRand());

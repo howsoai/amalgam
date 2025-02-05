@@ -734,12 +734,12 @@ public:
 			getEntityWeightFunction = get_weight;
 		}
 
-		__forceinline double ConvertSurprisalToProbability(double surprisal)
+		__forceinline static double ConvertSurprisalToProbability(double surprisal)
 		{
 			return std::exp(-surprisal);
 		}
 
-		__forceinline double ConvertSurprisalToProbability(double surprisal, double weight)
+		__forceinline static double ConvertSurprisalToProbability(double surprisal, double weight)
 		{
 			//if weighted, need to weight by the logical OR of all probability masses
 			// this is complex to compute if done as P(A or B) = P(A) + P(B) - P(A and B),

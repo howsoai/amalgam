@@ -733,19 +733,18 @@ public:
 			surprisalToProbability = surprisal_to_probability;
 
 			minToRetrieve = min_to_retrieve;
-			maxmaxToRetrieve = max_to_retrieve;
+			maxToRetrieve = max_to_retrieve;
 			numToRetrieveMinIncrementalProbability = num_to_retrieve_min_increment_prob;
-
-			//TODO 13225: decide whether need min_weight and how to use -- cut off top k cases by weight or by position?
 
 			//if all percentages are the same, that will yield the most number of entities kept
 			//so round up the reciprocal of this number to find the maximum number of entities that can be kept
-			double max_by_prob = std::ceil(1 / numToRetrieveMinIncrementalProbability);
-			if(max_by_prob < cur_condition->maxToRetrieve)
-				cur_condition->maxToRetrieve = static_cast<size_t>(max_by_prob);
+			double smallest_possible_prob_mass = std::min(1.0, min_weight) * numToRetrieveMinIncrementalProbability;
+			size_t max_by_prob = static_cast<size_t>(std::ceil(1 / smallest_possible_prob_mass));
+			if(max_by_prob < maxToRetrieve)
+				maxToRetrieve = max_by_prob;
 
-			if(cur_condition->maxToRetrieve < cur_condition->minToRetrieve)
-				cur_condition->minToRetrieve = cur_condition->maxToRetrieve;
+			if(maxToRetrieve < minToRetrieve)
+				minToRetrieve = maxToRetrieve;
 
 			hasWeight = has_weight;
 			getEntityWeightFunction = get_weight;

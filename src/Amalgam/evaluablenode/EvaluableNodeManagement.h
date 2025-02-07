@@ -929,10 +929,10 @@ protected:
 	//sets or clears all referenced nodes' in use flags
 	//if set_in_use is true, then it will set the value, if false, it will clear the value
 	//note that tree cannot be nullptr and it should already be inserted into the references prior to calling
-	static void MarkAllReferencedNodesInUseRecurse(EvaluableNode *tree);
+	static void MarkAllReferencedNodesInUse(EvaluableNode *tree);
 
 #ifdef MULTITHREAD_SUPPORT
-	static void MarkAllReferencedNodesInUseRecurseConcurrent(EvaluableNode *tree);
+	static void MarkAllReferencedNodesInUseConcurrent(EvaluableNode *tree);
 #endif
 
 	//helper method for ValidateEvaluableNodeTreeMemoryIntegrity

@@ -268,7 +268,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 					while(highest_possibly_unfreed_node > lowest_known_unused_index)
 					{
 						auto &cur_node_ptr = nodes[--highest_possibly_unfreed_node];
-						if(cur_node_ptr != nullptr && !cur_node_ptr->IsNodeDeallocated())
+						if(!cur_node_ptr->IsNodeDeallocated())
 							cur_node_ptr->Invalidate();
 					}
 
@@ -285,13 +285,14 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 		);
 
 		//organize nodes above lowest_known_unused_index that are unused
+		//don't need to check nodes if they are nullptr because if it has been used, it won't be nullptr
 		while(first_unused_node_index_temp < lowest_known_unused_index)
 		{
 			//nodes can't be nullptr below firstUnusedNodeIndex
 			auto &cur_node_ptr = nodes[first_unused_node_index_temp];
 
 			//if the node has been found on this iteration, then clear it as counted so it's clean for next garbage collection
-			if(cur_node_ptr != nullptr && cur_node_ptr->GetKnownToBeInUse())
+			if(cur_node_ptr->GetKnownToBeInUse())
 			{
 				cur_node_ptr->SetKnownToBeInUse(false);
 				first_unused_node_index_temp++;
@@ -322,13 +323,15 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 #endif
 
 	size_t lowest_known_unused_index = cur_first_unused_node_index;
+	//organize nodes above lowest_known_unused_index that are unused
+	//don't need to check nodes if they are nullptr because if it has been used, it won't be nullptr
 	while(first_unused_node_index_temp < lowest_known_unused_index)
 	{
 		//nodes can't be nullptr below firstUnusedNodeIndex
 		auto &cur_node_ptr = nodes[first_unused_node_index_temp];
 
 		//if the node has been found on this iteration, then clear it as counted so it's clean for next garbage collection
-		if(cur_node_ptr != nullptr && cur_node_ptr->GetKnownToBeInUse())
+		if(cur_node_ptr->GetKnownToBeInUse())
 		{
 			cur_node_ptr->SetKnownToBeInUse(false);
 			first_unused_node_index_temp++;
@@ -336,7 +339,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 		else //collect the node
 		{
 			//free any extra memory used, since this node is no longer needed
-			if(cur_node_ptr != nullptr && !cur_node_ptr->IsNodeDeallocated())
+			if(!cur_node_ptr->IsNodeDeallocated())
 				cur_node_ptr->Invalidate();
 
 			//see if out of things to free; if so exit early
@@ -744,7 +747,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 			Concurrency::urgentThreadPool.EnqueueTask(
 				[root_node, &task_set]
 				{
-					MarkAllReferencedNodesInUseRecurseConcurrent(root_node);
+					MarkAllReferencedNodesInUseConcurrent(root_node);
 					task_set.MarkTaskCompleted();
 				}
 			);
@@ -766,7 +769,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 				Concurrency::urgentThreadPool.EnqueueTask(
 					[en, &task_set]
 					{
-						MarkAllReferencedNodesInUseRecurseConcurrent(en);
+						MarkAllReferencedNodesInUseConcurrent(en);
 						task_set.MarkTaskCompleted();
 					}
 				);
@@ -784,14 +787,14 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 
 	//check for null or insertion before calling recursion to minimize number of branches (slight performance improvement)
 	if(root_node != nullptr && !root_node->GetKnownToBeInUse())
-		MarkAllReferencedNodesInUseRecurse(root_node);
+		MarkAllReferencedNodesInUse(root_node);
 
 	for(auto &[t, _] : nr.nodesReferenced)
 	{
 		if(t == nullptr || t->GetKnownToBeInUse())
 			continue;
 
-		MarkAllReferencedNodesInUseRecurse(t);
+		MarkAllReferencedNodesInUse(t);
 	}
 }
 
@@ -893,59 +896,95 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 	}
 }
 
-void EvaluableNodeManager::MarkAllReferencedNodesInUseRecurse(EvaluableNode *tree)
+void EvaluableNodeManager::MarkAllReferencedNodesInUse(EvaluableNode *tree)
 {
-#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
-	assert(tree->IsNodeValid());
-#endif
+	if(tree == nullptr)
+		return;
 
-	//if entering this function, then the node hasn't been marked yet
 	tree->SetKnownToBeInUse(true);
+	auto &node_stack = threadLocalAllocationBuffer;
+	node_stack.push_back(tree);
 
-	auto type = tree->GetType();
-	if(DoesEvaluableNodeTypeUseOrderedData(type))
+	while(!node_stack.empty())
 	{
-		for(auto &e : tree->GetOrderedChildNodesReference())
+		auto *node = node_stack.back();
+	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+		assert(node->IsNodeValid());
+	#endif
+		node_stack.pop_back();
+
+		auto type = node->GetType();
+		if(DoesEvaluableNodeTypeUseOrderedData(type))
 		{
-			if(e != nullptr && !e->GetKnownToBeInUse())
-				MarkAllReferencedNodesInUseRecurse(e);
+			for(auto &cn : node->GetOrderedChildNodesReference())
+			{
+				if(cn != nullptr && !cn->GetKnownToBeInUse())
+				{
+					cn->SetKnownToBeInUse(true);
+					node_stack.push_back(cn);
+				}
+			}
 		}
-	}
-	else if(DoesEvaluableNodeTypeUseAssocData(type))
-	{
-		for(auto &[_, e] : tree->GetMappedChildNodesReference())
+		else if(DoesEvaluableNodeTypeUseAssocData(type))
 		{
-			if(e != nullptr && !e->GetKnownToBeInUse())
-				MarkAllReferencedNodesInUseRecurse(e);
+			for(auto &[_, cn] : node->GetMappedChildNodesReference())
+			{
+				if(cn != nullptr && !cn->GetKnownToBeInUse())
+				{
+					cn->SetKnownToBeInUse(true);
+					node_stack.push_back(cn);
+				}
+			}
 		}
 	}
 }
 
 #ifdef MULTITHREAD_SUPPORT
-void EvaluableNodeManager::MarkAllReferencedNodesInUseRecurseConcurrent(EvaluableNode *tree)
+void EvaluableNodeManager::MarkAllReferencedNodesInUseConcurrent(EvaluableNode *tree)
 {
+	if(tree == nullptr)
+		return;
+
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 	assert(tree->IsNodeValid());
 #endif
 
-	//if entering this function, then the node hasn't been marked yet
-	tree->SetKnownToBeInUseAtomic(true);
+	tree->SetKnownToBeInUse(true);
+	//because marking occurs during garbage collection and threadLocalAllocationBuffer
+	// is cleared, can reuse that buffer as the local stack to eliminate the overhead of recursion
+	auto &node_stack = threadLocalAllocationBuffer;
+	node_stack.push_back(tree);
 
-	auto type = tree->GetType();
-	if(DoesEvaluableNodeTypeUseOrderedData(type))
+	while(!node_stack.empty())
 	{
-		for(auto &e : tree->GetOrderedChildNodesReference())
+		auto *node = node_stack.back();
+	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+		assert(node->IsNodeValid());
+	#endif
+		node_stack.pop_back();
+
+		auto type = node->GetType();
+		if(DoesEvaluableNodeTypeUseOrderedData(type))
 		{
-			if(e != nullptr && !e->GetKnownToBeInUseAtomic())
-				MarkAllReferencedNodesInUseRecurseConcurrent(e);
+			for(auto &cn : node->GetOrderedChildNodesReference())
+			{
+				if(cn != nullptr && !cn->GetKnownToBeInUseAtomic())
+				{
+					cn->SetKnownToBeInUse(true);
+					node_stack.push_back(cn);
+				}
+			}
 		}
-	}
-	else if(DoesEvaluableNodeTypeUseAssocData(type))
-	{
-		for(auto &[_, e] : tree->GetMappedChildNodesReference())
+		else if(DoesEvaluableNodeTypeUseAssocData(type))
 		{
-			if(e != nullptr && !e->GetKnownToBeInUseAtomic())
-				MarkAllReferencedNodesInUseRecurseConcurrent(e);
+			for(auto &[_, cn] : node->GetMappedChildNodesReference())
+			{
+				if(cn != nullptr && !cn->GetKnownToBeInUseAtomic())
+				{
+					cn->SetKnownToBeInUse(true);
+					node_stack.push_back(cn);
+				}
+			}
 		}
 	}
 }

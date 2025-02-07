@@ -1030,9 +1030,11 @@ private:
 	//number of nodes to allocate at once for the thread local allocation buffer
 	static const int tlabBlockAllocationSize = 20;
 
-	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		thread_local
-	#endif
-		// Holds EvaluableNode*'s reserved for allocation by a specific thread
+	//holds pointers to EvaluableNode's reserved for allocation by a specific thread
+	//during garbage collection, these buffers need to be cleared because memory may be rearranged or reassigned
+	//this also means that garbage collection processes may reuse this buffer as long as it is cleared
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	thread_local
+#endif
 		inline static std::vector<EvaluableNode *> threadLocalAllocationBuffer;
 };

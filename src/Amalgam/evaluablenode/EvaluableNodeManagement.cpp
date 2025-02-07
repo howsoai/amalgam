@@ -949,7 +949,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUseConcurrent(EvaluableNode *
 	assert(tree->IsNodeValid());
 #endif
 
-	tree->SetKnownToBeInUse(true);
+	tree->SetKnownToBeInUseAtomic(true);
 	//because marking occurs during garbage collection and threadLocalAllocationBuffer
 	// is cleared, can reuse that buffer as the local stack to eliminate the overhead of recursion
 	auto &node_stack = threadLocalAllocationBuffer;
@@ -970,7 +970,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUseConcurrent(EvaluableNode *
 			{
 				if(cn != nullptr && !cn->GetKnownToBeInUseAtomic())
 				{
-					cn->SetKnownToBeInUse(true);
+					cn->SetKnownToBeInUseAtomic(true);
 					node_stack.push_back(cn);
 				}
 			}
@@ -981,7 +981,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUseConcurrent(EvaluableNode *
 			{
 				if(cn != nullptr && !cn->GetKnownToBeInUseAtomic())
 				{
-					cn->SetKnownToBeInUse(true);
+					cn->SetKnownToBeInUseAtomic(true);
 					node_stack.push_back(cn);
 				}
 			}

@@ -721,8 +721,6 @@ public:
 	class DistanceTransform
 	{
 	public:
-		//TODO 13225: pass in condition minToRetrieve, maxToRetrieve, numToRetrieveMinIncrementalProbability, implement appropriate logic
-		//TODO 13225: implement tests
 		constexpr DistanceTransform(bool compute_surprisal, bool surprisal_to_probability,
 			double distance_weight_exponent,
 			size_t min_to_retrieve, size_t max_to_retrieve, double num_to_retrieve_min_increment_prob,
@@ -780,31 +778,92 @@ public:
 		//get_distance_ref returns a reference as a pointer to the location of the distance in the EntityDistancePairContainer
 		inline void TransformDistances(std::vector<DistanceReferencePair<EntityReference>> &entity_distance_pair_container, bool sort_results)
 		{
+			//TODO 13225: implement appropriate dynamic k logic here and in TransformDistancesToExpectedValue
+			//TODO 13225: implement tests
+			bool clamp_top_k = (minToRetrieve < maxToRetrieve || numToRetrieveMinIncrementalProbability > 0.0);
+
 			if(computeSurprisal)
 			{
 				if(surprisalToProbability)
 				{
 					if(!hasWeight)
 					{
-						for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
-							iter->distance = ConvertSurprisalToProbability(iter->distance);
+						if(clamp_top_k)
+						{
+							//always keep the first entity
+							double total_prob = ConvertSurprisalToProbability(entity_distance_pair_container[0].distance);
+							entity_distance_pair_container[0].distance = total_prob;
+							size_t cur_k = 1;
+
+							size_t max_k = entity_distance_pair_container.size();
+							for(; cur_k < cur_k; cur_k++)
+							{
+								double cur_prob = ConvertSurprisalToProbability(entity_distance_pair_container[cur_k].distance);
+								total_prob += cur_prob;
+								if(cur_prob / total_prob < numToRetrieveMinIncrementalProbability)
+									break;
+
+								entity_distance_pair_container[cur_k].distance = cur_prob;
+							}
+
+							entity_distance_pair_container.resize(cur_k);
+						}
+						else
+						{
+							for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
+								iter->distance = ConvertSurprisalToProbability(iter->distance);
+						}
 					}
 					else //hasWeight
 					{
-						for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
+						if(clamp_top_k)
 						{
-							double weight = 1.0;
-							//if has a weight and not 1 (since 1 is fast)
-							if(getEntityWeightFunction(iter->reference, weight) && weight != 1.0)
+							//always keep the first entity
+							double total_prob = ConvertSurprisalToProbability(entity_distance_pair_container[0].distance);
+							entity_distance_pair_container[0].distance = total_prob;
+							size_t cur_k = 1;
+
+							size_t max_k = entity_distance_pair_container.size();
+							for(; cur_k < cur_k; cur_k++)
 							{
-								if(weight != 0.0)
-									iter->distance = ConvertSurprisalToProbability(iter->distance, weight);
-								else //weight of 0.0
-									iter->distance = 0.0;
+								double cur_prob = ConvertSurprisalToProbability(entity_distance_pair_container[cur_k].distance);
+								//count the current case as having a probability mass of 1
+								if(cur_prob / (cur_prob + total_prob) < numToRetrieveMinIncrementalProbability)
+									break;
+
+								//adjust cur_prob by weight, defaulting to 1
+								double weight = 1.0;
+								//if has a weight and not 1 (since 1 is fast)
+								if(getEntityWeightFunction(entity_distance_pair_container[cur_k].reference, weight) && weight != 1.0)
+								{
+									if(weight != 0.0)
+										cur_prob *= weight;
+									else //weight of 0.0
+										cur_prob = 0.0;
+								}
+
+								entity_distance_pair_container[cur_k].distance = cur_prob;
 							}
-							else //use weight of 1
+
+							entity_distance_pair_container.resize(cur_k);
+						}
+						else
+						{
+							for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
 							{
-								iter->distance = ConvertSurprisalToProbability(iter->distance);
+								double weight = 1.0;
+								//if has a weight and not 1 (since 1 is fast)
+								if(getEntityWeightFunction(iter->reference, weight) && weight != 1.0)
+								{
+									if(weight != 0.0)
+										iter->distance = ConvertSurprisalToProbability(iter->distance, weight);
+									else //weight of 0.0
+										iter->distance = 0.0;
+								}
+								else //use weight of 1
+								{
+									iter->distance = ConvertSurprisalToProbability(iter->distance);
+								}
 							}
 						}
 					}

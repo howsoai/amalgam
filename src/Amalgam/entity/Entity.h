@@ -325,7 +325,7 @@ public:
 	//Evaluates the specified label into a string and puts the value in value_out.
 	//If the label exists, sets value_out to the value and returns true.
 	// Otherwise sets value_out to empty string and returns false
-	std::pair<std::string,bool> GetValueAtLabelAsString(StringInternPool::StringID label_sid,  bool on_self = false);
+	std::pair<std::string, bool> GetValueAtLabelAsString(StringInternPool::StringID label_sid,  bool on_self = false);
 
 	//Evaluates the specified label into a EvaluableNodeImmediateValueWithType
 	//if destination_temp_enm is not null and code is needed, it will make a copy

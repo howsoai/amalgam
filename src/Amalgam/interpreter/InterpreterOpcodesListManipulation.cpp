@@ -601,7 +601,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, b
 	//make sure not eating up too much memory
 	if(ConstrainedAllocatedNodes())
 	{
-		if(performanceConstraints->WouldNewAllocatedNodesExceedConstraint(
+		if(interpreterConstraints->WouldNewAllocatedNodesExceedConstraint(
 				evaluableNodeManager->GetNumberOfUsedNodes() + num_nodes))
 		return EvaluableNodeReference::Null();
 	}

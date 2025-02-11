@@ -19,7 +19,7 @@ class EntityWriteListener;
 class EvaluableNode;
 class EvaluableNodeManagement;
 class Interpreter;
-class PerformanceConstraints;
+class InterpreterConstraints;
 class PrintListener;
 
 //base class for accessing an entity via a reference
@@ -80,7 +80,7 @@ union EntityPermissions
 	inline static EntityPermissions AllPermissions()
 	{
 		EntityPermissions perm;
-		perm.individualPermissions.stdOut = true;
+		perm.individualPermissions.stdOutAndStdErr = true;
 		perm.individualPermissions.stdIn = true;
 		perm.individualPermissions.load = true;
 		perm.individualPermissions.store = true;
@@ -94,8 +94,8 @@ union EntityPermissions
 	//for each permission, true if has permission
 	struct
 	{
-		//write to stdout
-		bool stdOut : 1;
+		//write to stdout and stderr
+		bool stdOutAndStdErr : 1;
 		//read from stdin
 		bool stdIn : 1;
 		//read from file system
@@ -193,12 +193,12 @@ public:
 	//note that code should be allocated from this entity
 	// calling_interpreter should be the interpreter that is calling this, if applicable
 	// write_listeners and print_listener will listen for any modifications to the entity and output as applicable
-	// if performance_constraints is not nullptr, then it will constrain performance and update performance_constraints
+	// if interpreter_constraints is not nullptr, then it will constrain performance and update interpreter_constraints
 	// if enm_lock is specified, it should be a lock on this entity's evaluableNodeManager.memoryModificationMutex
 	EvaluableNodeReference ExecuteCodeAsEntity(EvaluableNode *code,
 		EvaluableNode *scope_stack, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
-		PerformanceConstraints *performance_constraints = nullptr
+		InterpreterConstraints *interpreter_constraints = nullptr
 #ifdef MULTITHREAD_SUPPORT
 		, Concurrency::ReadLock *enm_lock = nullptr
 #endif
@@ -211,7 +211,7 @@ public:
 	EvaluableNodeReference Execute(StringInternPool::StringID label_sid,
 		EvaluableNode *scope_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
-		PerformanceConstraints *performance_constraints = nullptr
+		InterpreterConstraints *interpreter_constraints = nullptr
 	#ifdef MULTITHREAD_SUPPORT
 		, Concurrency::ReadLock *enm_lock = nullptr
 	#endif
@@ -232,7 +232,7 @@ public:
 		}
 
 		return ExecuteCodeAsEntity(node_to_execute, scope_stack, calling_interpreter,
-			write_listeners, print_listener, performance_constraints
+			write_listeners, print_listener, interpreter_constraints
 		#ifdef MULTITHREAD_SUPPORT
 			, enm_lock
 		#endif
@@ -243,7 +243,7 @@ public:
 	inline EvaluableNodeReference Execute(const std::string &label_name,
 		EvaluableNode *scope_stack, bool on_self = false, Interpreter *calling_interpreter = nullptr,
 		std::vector<EntityWriteListener *> *write_listeners = nullptr, PrintListener *print_listener = nullptr,
-		PerformanceConstraints *performance_constraints = nullptr
+		InterpreterConstraints *interpreter_constraints = nullptr
 	#ifdef MULTITHREAD_SUPPORT
 		, Concurrency::ReadLock *enm_lock = nullptr
 	#endif
@@ -251,7 +251,7 @@ public:
 	{
 		StringInternPool::StringID label_sid = string_intern_pool.GetIDFromString(label_name);
 		return Execute(label_sid, scope_stack, on_self, calling_interpreter,
-			write_listeners, print_listener, performance_constraints
+			write_listeners, print_listener, interpreter_constraints
 		#ifdef MULTITHREAD_SUPPORT
 			, enm_lock
 		#endif
@@ -295,11 +295,11 @@ public:
 	// If direct_get is true, then it will return values with all labels
 	// If on_self is true, then it will be allowed to access private variables
 	// If batch_call is true, then it assumes it will be called in a batch of updates and will not perform any cleanup or synchronization
-	EvaluableNodeReference GetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNodeManager *destination_temp_enm, bool direct_get,
+	std::pair<EvaluableNodeReference, bool> GetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNodeManager *destination_temp_enm, bool direct_get,
 		bool on_self = false, bool batch_call = false);
 
 	//same as GetValueAtLabel but accepts a string for label_name
-	inline EvaluableNodeReference GetValueAtLabel(const std::string &label_name, EvaluableNodeManager *destination_temp_enm, bool direct_get, bool on_self = false)
+	inline std::pair<EvaluableNodeReference, bool> GetValueAtLabel(const std::string &label_name, EvaluableNodeManager *destination_temp_enm, bool direct_get, bool on_self = false)
 	{
 		StringInternPool::StringID label_sid = string_intern_pool.GetIDFromString(label_name);
 		return GetValueAtLabel(label_sid, destination_temp_enm, direct_get, on_self);
@@ -315,26 +315,26 @@ public:
 	//Evaluates the specified label into a bool and puts the value in value_out.
 	//If the label exists, sets value_out to the value and returns true.
 	// Otherwise sets value_out to false and returns false
-	bool GetValueAtLabelAsBool(StringInternPool::StringID label_sid, bool &value_out, bool on_self = false);
+	std::pair<bool, bool> GetValueAtLabelAsBool(StringInternPool::StringID label_sid, bool on_self = false);
 
 	//Evaluates the specified label into a number and puts the value in value_out.
 	//If the label exists, sets value_out to the value and returns true.
 	// Otherwise sets value_out to NaN and returns false
-	bool GetValueAtLabelAsNumber(StringInternPool::StringID label_sid, double &value_out, bool on_self = false);
+	std::pair<double, bool> GetValueAtLabelAsNumber(StringInternPool::StringID label_sid, bool on_self = false);
 
 	//Evaluates the specified label into a string and puts the value in value_out.
 	//If the label exists, sets value_out to the value and returns true.
 	// Otherwise sets value_out to empty string and returns false
-	bool GetValueAtLabelAsStringId(StringInternPool::StringID label_sid, StringInternPool::StringID &value_out, bool on_self = false);
+	std::pair<StringInternPool::StringID, bool> GetValueAtLabelAsStringId(StringInternPool::StringID label_sid, bool on_self = false);
 
 	//Evaluates the specified label into a string and puts the value in value_out.
 	//If the label exists, sets value_out to the value and returns true.
 	// Otherwise sets value_out to empty string and returns false
-	bool GetValueAtLabelAsString(StringInternPool::StringID label_sid, std::string &value_out, bool on_self = false);
+	std::pair<std::string,bool> GetValueAtLabelAsString(StringInternPool::StringID label_sid,  bool on_self = false);
 
 	//Evaluates the specified label into a EvaluableNodeImmediateValueWithType
 	//if destination_temp_enm is not null and code is needed, it will make a copy
-	EvaluableNodeImmediateValueWithType GetValueAtLabelAsImmediateValue(
+	std::pair<EvaluableNodeImmediateValueWithType, bool> GetValueAtLabelAsImmediateValue(
 		StringInternPool::StringID label_sid, bool on_self = false, EvaluableNodeManager *destination_temp_enm = nullptr);
 
 	//Iterates over all of the labels, calling GetValueAtLabel for each,
@@ -346,7 +346,7 @@ public:
 	{
 		for(auto &[label_id, _] : labelIndex)
 		{
-			EvaluableNode *node = GetValueAtLabel(label_id, destination_temp_enm, direct_get, on_self, true);
+			EvaluableNode *node = GetValueAtLabel(label_id, destination_temp_enm, direct_get, on_self, true).first;
 			if(node != nullptr)
 				func(label_id, node);
 		}

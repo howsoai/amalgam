@@ -354,7 +354,7 @@ jobs:
 
   smoke-test-linux-arm64:
     needs: ['build-linux']
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
     - name: Download Artifact
       uses: actions/download-artifact@v4
@@ -367,17 +367,13 @@ jobs:
         tar -xvf ./amalgam-${{ inputs.version }}-linux-arm64.tar.gz -C ./amalgam
 
     - name: Smoke test
-      uses: pguyot/arm-runner-action@v2
-      with:
-        base_image: raspios_lite_arm64:latest
-        cpu: cortex-a8
-        commands: |
-          set -e
-          PATH=$PATH:/usr/aarch64-linux-gnu
-          cd ./amalgam/bin
-          for f in *; do
-            echo -n "$f: " && "./$f" --version
-          done
+      run: |
+        set -e
+        PATH=$PATH:/usr/aarch64-linux-gnu
+        cd ./amalgam/bin
+        for f in *; do
+          echo -n "$f: " && "./$f" --version
+        done
 
   smoke-test-linux-arm64_8a:
     needs: ['build-linux']

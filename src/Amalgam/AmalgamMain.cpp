@@ -66,6 +66,9 @@ Options:
 
     --debug-sources  When specified, prepends all node comments with the source of the node when applicable
 
+    --warn-on-undefined
+                     When specified, amalgam will emit warnings for undefined variables
+
     --nosbfds        Disables the sbfds acceleration, which is generally preferred in the heuristics
 
     --trace          Uses commands via stdio to act as if it were being called as a library
@@ -101,6 +104,7 @@ PLATFORM_MAIN_CONSOLE
 	bool debug_state = false;
 	bool debug_minimal = false;
 	bool debug_sources = false;
+	bool warn_on_undefined = false;
 	bool profile_opcodes = false;
 	bool profile_labels = false;
 	size_t profile_count = 0;
@@ -165,6 +169,8 @@ PLATFORM_MAIN_CONSOLE
 		}
 		else if(args[i] == "--debug-sources")
 			debug_sources = true;
+		else if(args[i] == "--warn-on-undefined")
+			warn_on_undefined = true;
 		else if(args[i] == "--nosbfds")
 			_enable_SBF_datastore = false;
 		else if(args[i] == "--trace")
@@ -207,6 +213,8 @@ PLATFORM_MAIN_CONSOLE
 
 	if(debug_sources)
 		asset_manager.debugSources = true;
+
+	asset_manager.warnOnUndefined = warn_on_undefined;
 
 	if(debug_minimal)
 		asset_manager.debugMinimal = true;

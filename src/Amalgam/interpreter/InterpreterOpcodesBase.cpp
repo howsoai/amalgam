@@ -625,9 +625,10 @@ EvaluableNodeReference Interpreter::BundleResultWithWarningsIfNeeded(EvaluableNo
 	if(interpreter_constraints == nullptr || !interpreter_constraints->collectWarnings)
 		return result;
 	
-	EvaluableNodeReference warning_assoc = CreateAssocOfNumbersFromIteratorAndFunctions(interpreter_constraints->warnings, [](std::pair<std::string, size_t> warning_count)
-																						{ return string_intern_pool.CreateStringReference(warning_count.first); }, [](std::pair<std::string, size_t> warning_count)
-																						{ return static_cast<double>(warning_count.second); }, evaluableNodeManager);
+	EvaluableNodeReference warning_assoc = CreateAssocOfNumbersFromIteratorAndFunctions(
+		interpreter_constraints->warnings, [](std::pair<std::string, size_t> warning_count)
+		{ return warning_count.first; }, [](std::pair<std::string, size_t> warning_count)
+		{ return static_cast<double>(warning_count.second); }, evaluableNodeManager);
 
 	EvaluableNodeReference constraint_violation_string = ConstraintViolationToString(interpreter_constraints->constraintViolation, evaluableNodeManager);												
 

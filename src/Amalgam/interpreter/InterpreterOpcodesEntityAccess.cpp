@@ -274,7 +274,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 		if(any_success)
 		{
 			if(ConstrainedAllocatedNodes())
-				performanceConstraints->curNumAllocatedNodesAllocatedToEntities += num_new_nodes_allocated;
+				interpreterConstraints->curNumAllocatedNodesAllocatedToEntities += num_new_nodes_allocated;
 
 			if(target_entity == curEntity)
 			{
@@ -356,9 +356,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 		EvaluableNodeReference value;
 		if(immediate_result)
 			value.SetReference(
-				target_entity->GetValueAtLabelAsImmediateValue(label_sid, target_entity == curEntity, evaluableNodeManager), true);
+				target_entity->GetValueAtLabelAsImmediateValue(label_sid, target_entity == curEntity, evaluableNodeManager).first, true);
 		else
-			value = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager, direct, target_entity == curEntity);
+			value = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager, direct, target_entity == curEntity).first;
+
 		evaluableNodeManager->FreeNodeTreeIfPossible(to_lookup);
 
 		return value;
@@ -378,7 +379,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 			cnr.SetReference(cn);
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);
 
-			EvaluableNodeReference value = target_entity->GetValueAtLabel(cn_id, evaluableNodeManager, direct, target_entity == curEntity);
+			auto [value, _] = target_entity->GetValueAtLabel(cn_id, evaluableNodeManager, direct, target_entity == curEntity);
 
 			cn = value;
 			to_lookup.UpdatePropertiesBasedOnAttachedNode(value, first_node);
@@ -405,7 +406,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE_FROM_ENTITY_and_D
 			cnr.SetReference(cn);
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);
 
-			EvaluableNodeReference value = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager, direct, target_entity == curEntity);
+			auto [value, _] = target_entity->GetValueAtLabel(label_sid, evaluableNodeManager, direct, target_entity == curEntity);
 
 			cn = value;
 			to_lookup.UpdatePropertiesBasedOnAttachedNode(value, i == 0);
@@ -434,10 +435,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		PerformanceProfiler::StartOperation(string_intern_pool.GetStringFromID(entity_label_sid),
 			evaluableNodeManager->GetNumberOfUsedNodes());
 
-	PerformanceConstraints perf_constraints;
-	PerformanceConstraints *perf_constraints_ptr = nullptr;
-	if(PopulatePerformanceConstraintsFromParams(ocn, 3, perf_constraints, true))
-		perf_constraints_ptr = &perf_constraints;
+	InterpreterConstraints interpreter_constraints;
+	InterpreterConstraints *interpreter_constraints_ptr = nullptr;
+	if(PopulateInterpreterConstraintsFromParams(ocn, 3, interpreter_constraints, true))
+		interpreter_constraints_ptr = &interpreter_constraints;
 
 	//attempt to get arguments
 	EvaluableNodeReference args = EvaluableNodeReference::Null();
@@ -490,7 +491,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		scope_stack = ConvertArgsToScopeStack(called_entity_args, ce_enm);
 	}
 
-	PopulatePerformanceCounters(perf_constraints_ptr, called_entity);
+	PopulatePerformanceCounters(interpreter_constraints_ptr, called_entity);
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is no longer executing
@@ -498,7 +499,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 #endif
 
 	EvaluableNodeReference result = called_entity->Execute(StringInternPool::StringID(entity_label_sid),
-		scope_stack, called_entity == curEntity, this, cur_write_listeners, printListener, perf_constraints_ptr
+		scope_stack, called_entity == curEntity, this, cur_write_listeners, printListener, interpreter_constraints_ptr
 	#ifdef MULTITHREAD_SUPPORT
 		, &enm_lock
 	#endif
@@ -546,13 +547,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	if(_label_profiling_enabled)
 		PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
 
-	if(performanceConstraints != nullptr)
-		performanceConstraints->AccruePerformanceCounters(perf_constraints_ptr);
+	if(interpreterConstraints != nullptr)
+		interpreterConstraints->AccruePerformanceCounters(interpreter_constraints_ptr);
 
-	if(perf_constraints_ptr != nullptr && perf_constraints_ptr->constraintsExceeded)
-		return EvaluableNodeReference::Null();
+	if(interpreter_constraints_ptr != nullptr && interpreter_constraints_ptr->constraintsExceeded)
+			return BundleResultWithWarningsIfNeeded(EvaluableNodeReference::Null(), interpreter_constraints_ptr);
 
-	return result;
+	return BundleResultWithWarningsIfNeeded(result, interpreter_constraints_ptr);
+
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNode *en, bool immediate_result)
@@ -575,10 +577,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 		PerformanceProfiler::StartOperation(string_intern_pool.GetStringFromID(container_label_sid),
 			evaluableNodeManager->GetNumberOfUsedNodes());
 
-	PerformanceConstraints perf_constraints;
-	PerformanceConstraints *perf_constraints_ptr = nullptr;
-	if(PopulatePerformanceConstraintsFromParams(ocn, 2, perf_constraints))
-		perf_constraints_ptr = &perf_constraints;
+	InterpreterConstraints interpreter_constraints;
+	InterpreterConstraints *interpreter_constraints_ptr = nullptr;
+	if(PopulateInterpreterConstraintsFromParams(ocn, 2, interpreter_constraints))
+		interpreter_constraints_ptr = &interpreter_constraints;
 
 	//attempt to get arguments
 	EvaluableNodeReference args = EvaluableNodeReference::Null();
@@ -613,7 +615,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	scope_stack_args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_accessing_entity),
 		container->evaluableNodeManager.AllocNode(ENT_STRING, cur_entity_sid));
 
-	PopulatePerformanceCounters(perf_constraints_ptr, container);
+	PopulatePerformanceCounters(interpreter_constraints_ptr, container);
 
 #ifdef MULTITHREAD_SUPPORT
 	//this interpreter is no longer executing
@@ -621,7 +623,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 #endif
 
 	EvaluableNodeReference result = container->Execute(container_label_sid,
-		scope_stack, false, this, writeListeners, printListener, perf_constraints_ptr
+		scope_stack, false, this, writeListeners, printListener, interpreter_constraints_ptr
 	#ifdef MULTITHREAD_SUPPORT
 		, &enm_lock
 	#endif
@@ -645,11 +647,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	if(_label_profiling_enabled)
 		PerformanceProfiler::EndOperation(evaluableNodeManager->GetNumberOfUsedNodes());
 
-	if(performanceConstraints != nullptr)
-		performanceConstraints->AccruePerformanceCounters(perf_constraints_ptr);
+	if(interpreterConstraints != nullptr)
+		interpreterConstraints->AccruePerformanceCounters(interpreter_constraints_ptr);
 
-	if(perf_constraints_ptr != nullptr && perf_constraints_ptr->constraintsExceeded)
-		return EvaluableNodeReference::Null();
+	if(interpreter_constraints_ptr != nullptr && interpreter_constraints_ptr->constraintsExceeded)
+		return BundleResultWithWarningsIfNeeded(EvaluableNodeReference::Null(), interpreter_constraints_ptr);
 
-	return copied_result;
+	return BundleResultWithWarningsIfNeeded(copied_result, interpreter_constraints_ptr);
 }

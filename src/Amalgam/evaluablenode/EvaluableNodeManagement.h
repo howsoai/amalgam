@@ -945,10 +945,10 @@ protected:
 	//sets or clears all referenced nodes' in use flags
 	//if set_in_use is true, then it will set the value, if false, it will clear the value
 	//note that tree cannot be nullptr and it should already be inserted into the references prior to calling
-	static void MarkAllReferencedNodesInUseRecurse(EvaluableNode *tree);
+	static void MarkAllReferencedNodesInUse(EvaluableNode *tree);
 
 #ifdef MULTITHREAD_SUPPORT
-	static void MarkAllReferencedNodesInUseRecurseConcurrent(EvaluableNode *tree);
+	static void MarkAllReferencedNodesInUseConcurrent(EvaluableNode *tree);
 #endif
 
 	//helper method for ValidateEvaluableNodeTreeMemoryIntegrity
@@ -1033,14 +1033,16 @@ private:
 		// If a different manager accesses the buffer, it is cleared to maintain this invariant.
 		static EvaluableNodeManager *lastEvaluableNodeManager;
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	thread_local
-#endif
-	// Holds EvaluableNode*'s reserved for allocation by a specific thread
-	static std::vector<EvaluableNode *> threadLocalAllocationBuffer;
-
 	inline static Concurrency::SingleMutex tlabCountMutex;
 	inline static std::atomic<size_t> tlabSize = 0;
 	inline static std::atomic<size_t> tlabSizeCount = 0;
 	inline static std::atomic<double> rollingAveTlabSize = 0.0;
+
+	//holds pointers to EvaluableNode's reserved for allocation by a specific thread
+	//during garbage collection, these buffers need to be cleared because memory may be rearranged or reassigned
+	//this also means that garbage collection processes may reuse this buffer as long as it is cleared
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	thread_local
+#endif
+		static std::vector<EvaluableNode *> threadLocalAllocationBuffer;
 };

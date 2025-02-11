@@ -515,7 +515,7 @@ public:
 		return InterpretNode(n, immediate_result);
 	}
 
-	//computes a unary numeric function on the given node
+	//computes a unary numeric function on the given node, returns a null ENR if n interprets as (null)
 	__forceinline EvaluableNodeReference InterpretNodeUnaryNumericOperation(EvaluableNode *n, bool immediate_result,
 		std::function<double(double)> func)
 	{
@@ -526,6 +526,8 @@ public:
 		}
 
 		auto retval = InterpretNodeIntoUniqueNumberValueOrNullEvaluableNode(n);
+		if(retval->GetType() == ENT_NULL)
+			return retval;
 		double value = retval->GetNumberValue();
 		double result = func(value);
 		retval->SetTypeViaNumberValue(result);

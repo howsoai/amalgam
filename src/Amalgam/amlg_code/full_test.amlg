@@ -79,6 +79,10 @@
  (print (call_sandboxed (lambda (+ (+ y 4) 4)) (assoc y 3) (null) (null) 3) "\n")
  (print (call_sandboxed (lambda (+ (+ y 4) 4)) (assoc y 3) (null) (null) 1) "\n")
 
+ (print (call_sandboxed (lambda (+ (+ y 4) 4)) (null) (null) (null) 1 (false)) "\n")
+
+ (print (call_sandboxed (lambda (+ x y)) (assoc) 10000) "\n")
+
 (print (call_sandboxed
 	(lambda
 		(call_sandboxed
@@ -3559,6 +3563,7 @@
  (print (call_entity "TestContainerExec" "d" (assoc x 5)) "\n")
  (print (call_entity "TestContainerExec" "d" (assoc x 5) 30 30) "\n")
  (print (call_entity "TestContainerExec" "d" (assoc x 5) 1 1) "\n")
+ (print (call_entity "TestContainerExec" "d" (assoc x 5) 1 1 1 1 1 (false)) "\n")
 
  (print "--circular, repeated, and preevaluated references--\n")
 

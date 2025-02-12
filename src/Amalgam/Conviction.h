@@ -10,7 +10,7 @@
 #include <numeric>
 
 //manages all types of processing related to conviction
-template<typename KnnCache, typename EntityReference, typename EntityReferenceSet>
+template<typename EntityReference, typename EntityReferenceSet>
 class ConvictionProcessor
 {
 public:

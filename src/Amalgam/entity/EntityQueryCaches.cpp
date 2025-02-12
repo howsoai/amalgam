@@ -390,10 +390,10 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				}
 
 			#ifdef MULTITHREAD_SUPPORT
-				ConvictionProcessor<KnnCache, size_t, BitArrayIntegerSet> conviction_processor(buffers.convictionBuffers,
+				ConvictionProcessor<size_t, BitArrayIntegerSet> conviction_processor(buffers.convictionBuffers,
 					buffers.knnCache, distance_transform, cond->maxToRetrieve, cond->singleLabel, cond->useConcurrency);
 			#else
-				ConvictionProcessor<KnnCache, size_t, BitArrayIntegerSet> conviction_processor(buffers.convictionBuffers,
+				ConvictionProcessor<size_t, BitArrayIntegerSet> conviction_processor(buffers.convictionBuffers,
 					buffers.knnCache, distance_transform, cond->maxToRetrieve, cond->singleLabel);
 			#endif
 				buffers.knnCache.ResetCache(sbfds, matching_entities, cond->distEvaluator, cond->positionLabels, cond->singleLabel);

@@ -165,7 +165,7 @@ public:
 		KnnCache knnCache;
 
 		//for conviction calculations
-		ConvictionProcessor<KnnCache, size_t, BitArrayIntegerSet>::ConvictionProcessorBuffers convictionBuffers;
+		ConvictionProcessor<size_t, BitArrayIntegerSet>::ConvictionProcessorBuffers convictionBuffers;
 	};
 
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)

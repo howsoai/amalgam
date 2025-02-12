@@ -783,8 +783,7 @@ public:
 		inline void TransformDistances(std::vector<DistanceReferencePair<EntityReference>> &entity_distance_pair_container,
 			TransformFunc transform_func)
 		{
-			bool clamp_top_k = (minToRetrieve < maxToRetrieve || numToRetrieveMinIncrementalProbability > 0.0);
-			if(clamp_top_k)
+			if(minToRetrieve < maxToRetrieve || numToRetrieveMinIncrementalProbability > 0.0)
 			{
 				//TODO 13225: document this method better
 
@@ -842,61 +841,59 @@ public:
 					{
 						TransformDistances(entity_distance_pair_container,
 							[this](auto iter)
-							{
-								double prob = ConvertSurprisalToProbability(iter->distance);
-								return std::make_tuple(prob, prob, 1.0);
-							});
+						{
+							double prob = ConvertSurprisalToProbability(iter->distance);
+							return std::make_tuple(prob, prob, 1.0);
+						});
 					}
 					else //hasWeight
 					{
 						TransformDistances(entity_distance_pair_container,
 							[this](auto iter)
-							{
-								double prob = ConvertSurprisalToProbability(iter->distance);
-
-								double weight = 1.0;
-								//if has a weight and not 1 (since 1 is fast)
-								if(getEntityWeightFunction(iter->reference, weight) && weight != 1.0)
-								{
-									if(weight != 0.0)
-										prob = WeightProbability(prob, weight);
-									else //weight of 0.0
-										prob = 0.0;
-								}
-
-								return std::make_tuple(prob, prob, weight);
-							});
-					}
-
-					//TODO 13225: finish using the templatized TransformDistances here down
-				}
-				else //keep in surprisal space
-				{
-					if(hasWeight)
-					{
-						for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
 						{
+							double prob = ConvertSurprisalToProbability(iter->distance);
+
 							double weight = 1.0;
 							//if has a weight and not 1 (since 1 is fast)
 							if(getEntityWeightFunction(iter->reference, weight) && weight != 1.0)
 							{
 								if(weight != 0.0)
-								{
-									double weighted_prob_same = ConvertSurprisalToProbability(iter->distance, weight);
-									iter->distance = -std::log(weighted_prob_same);
-								}
+									prob = WeightProbability(prob, weight);
 								else //weight of 0.0
-								{
-									iter->distance = std::numeric_limits<double>::infinity();
-								}
+									prob = 0.0;
 							}
-							//else leave value in surprisal with weight of 1
-						}
+
+							return std::make_tuple(prob, prob, weight);
+						});
+					}
+				}
+				else //keep in surprisal space
+				{
+					if(hasWeight)
+					{
+						TransformDistances(entity_distance_pair_container,
+							[this](auto iter)
+						{
+							double prob = ConvertSurprisalToProbability(iter->distance);
+
+							double weight = 1.0;
+							//if has a weight and not 1 (since 1 is fast)
+							if(getEntityWeightFunction(iter->reference, weight) && weight != 1.0)
+							{
+								if(weight != 0.0)
+									prob = WeightProbability(prob, weight);
+								else //weight of 0.0
+									prob = 0.0;
+							}
+
+							return std::make_tuple(iter->distance, prob, weight);
+						});
 					}
 				}
 			}
 			else //distance transform
 			{
+				//TODO 13225: finish using the templatized TransformDistances here down
 				if(distanceWeightExponent == -1)
 				{
 					for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)

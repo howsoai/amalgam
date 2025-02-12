@@ -715,6 +715,10 @@ public:
 	//if compute_surprisal is true, it will transform via surprisal,
 	// and if surprisal_to_probability is true, it will convert to probability
 	//if compute_surprisal  is false, distance_weight_exponent is the exponent each distance is raised to
+	//uses min_to_retrieve and max_to_retrieve to determine how many entities to keep, stopping when the first
+	// entity's marginal probability falls below the num_to_retrieve_min_increment_prob threshold
+	////if expand_to_first_nonzero_distance is true, it will expand k so that at least one non-zero distance is returned
+	// or return until all entities are included
 	//has_weight, if set, will use get_weight, taking in a function of an entity reference and a reference to an output
 	// double to set the weight, and should return true if the entity has a weight, false if not
 	template<typename EntityReference>
@@ -723,7 +727,8 @@ public:
 	public:
 		constexpr DistanceTransform(bool compute_surprisal, bool surprisal_to_probability,
 			double distance_weight_exponent,
-			size_t min_to_retrieve, size_t max_to_retrieve, double num_to_retrieve_min_increment_prob,
+			size_t min_to_retrieve, size_t max_to_retrieve,
+			double num_to_retrieve_min_increment_prob, bool expand_to_first_nonzero_distance,
 			bool has_weight, double min_weight, std::function<bool(EntityReference, double &)> get_weight)
 		{
 			distanceWeightExponent = distance_weight_exponent;
@@ -733,6 +738,7 @@ public:
 			minToRetrieve = min_to_retrieve;
 			maxToRetrieve = max_to_retrieve;
 			numToRetrieveMinIncrementalProbability = num_to_retrieve_min_increment_prob;
+			expandToFirstNonzeroDistance = expand_to_first_nonzero_distance;
 
 			//if all percentages are the same, that will yield the most number of entities kept
 			//so round up the reciprocal of this number to find the maximum number of entities that can be kept
@@ -778,7 +784,7 @@ public:
 		//get_distance_ref returns a reference as a pointer to the location of the distance in the EntityDistancePairContainer
 		inline void TransformDistances(std::vector<DistanceReferencePair<EntityReference>> &entity_distance_pair_container, bool sort_results)
 		{
-			//TODO 13225: implement appropriate dynamic k logic here and in TransformDistancesToExpectedValue
+			//TODO 13225: implement appropriate dynamic k logic here and in TransformDistancesToExpectedValue, use expandToFirstNonzeroDistance
 			//TODO 13225: implement tests
 			bool clamp_top_k = (minToRetrieve < maxToRetrieve || numToRetrieveMinIncrementalProbability > 0.0);
 
@@ -1118,14 +1124,20 @@ public:
 		//if true and computeSurprisal is true, the results will be transformed from surprisal to probability
 		bool surprisalToProbability;
 
-		//maximum number of entities to attempt to retrieve (based on queryType)
+		//maximum number of entities to attempt to retrieve (based on queryType),
+		// but can be overridden by expandToFirstNonzeroDistance
 		size_t maxToRetrieve;
 
 		//minimum number of entities to attempt to retrieve
 		size_t minToRetrieve;
 
-		//incremental probability where, if the next entity is below this threshold, don't retrieve more
+		//incremental probability where, if the next entity is below this threshold, don't retrieve more,
+		// but can be overridden by expandToFirstNonzeroDistance
 		double numToRetrieveMinIncrementalProbability;
+
+		//if expandToFirstNonzeroDistance is true, it will expand k so that at least one non-zero distance is returned
+		// or return until all entities are included
+		bool expandToFirstNonzeroDistance;
 
 		//if hasWeight is true, then will call getEntityWeightFunction and apply the respective entity weight to each distance
 		bool hasWeight;

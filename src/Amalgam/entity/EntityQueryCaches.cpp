@@ -255,10 +255,14 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				min_weight = sbfds.GetMinValueForColumnAsWeight(weight_column);
 			}
 
+			bool expand_to_first_nonzero_distance = (cond->queryType != ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
+				&& cond->queryType != ENT_QUERY_NEAREST_GENERALIZED_DISTANCE);
+
 			auto get_weight = sbfds.GetNumberValueFromEntityIndexFunction(weight_column);
 			EntityQueriesStatistics::DistanceTransform<size_t> distance_transform(cond->distEvaluator.computeSurprisal,
 				cond->distEvaluator.transformSurprisalToProb, cond->distanceWeightExponent,
 				cond->minToRetrieve, cond->maxToRetrieve, cond->numToRetrieveMinIncrementalProbability,
+				expand_to_first_nonzero_distance,
 				use_entity_weights, min_weight, get_weight);
 
 			//if first, need to populate with all entities
@@ -386,10 +390,10 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				}
 
 			#ifdef MULTITHREAD_SUPPORT
-				ConvictionProcessor<KnnNonZeroDistanceQuerySBFCache, size_t, BitArrayIntegerSet> conviction_processor(buffers.convictionBuffers,
+				ConvictionProcessor<KnnCache, size_t, BitArrayIntegerSet> conviction_processor(buffers.convictionBuffers,
 					buffers.knnCache, distance_transform, cond->maxToRetrieve, cond->singleLabel, cond->useConcurrency);
 			#else
-				ConvictionProcessor<KnnNonZeroDistanceQuerySBFCache, size_t, BitArrayIntegerSet> conviction_processor(buffers.convictionBuffers,
+				ConvictionProcessor<KnnCache, size_t, BitArrayIntegerSet> conviction_processor(buffers.convictionBuffers,
 					buffers.knnCache, distance_transform, cond->maxToRetrieve, cond->singleLabel);
 			#endif
 				buffers.knnCache.ResetCache(sbfds, matching_entities, cond->distEvaluator, cond->positionLabels, cond->singleLabel);

@@ -162,10 +162,10 @@ public:
 		std::vector<std::pair<double,double>> pairDoubleVector;
 
 		//nearest neighbors cache
-		KnnNonZeroDistanceQuerySBFCache knnCache;
+		KnnCache knnCache;
 
 		//for conviction calculations
-		ConvictionProcessor<KnnNonZeroDistanceQuerySBFCache, size_t, BitArrayIntegerSet>::ConvictionProcessorBuffers convictionBuffers;
+		ConvictionProcessor<KnnCache, size_t, BitArrayIntegerSet>::ConvictionProcessorBuffers convictionBuffers;
 	};
 
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)

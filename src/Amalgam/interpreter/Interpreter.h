@@ -526,8 +526,6 @@ public:
 		}
 
 		auto retval = InterpretNodeIntoUniqueNumberValueOrNullEvaluableNode(n);
-		if(retval->GetType() == ENT_NULL)
-			return retval;
 		double value = retval->GetNumberValue();
 		double result = func(value);
 		retval->SetTypeViaNumberValue(result);

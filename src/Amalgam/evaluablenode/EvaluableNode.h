@@ -469,7 +469,7 @@ public:
 			return GetNumberValueReference();
 
 		//none of the above, return an empty one
-		return zeroNumberValue;
+		return nanNumberValue;
 	}
 
 	//changes the type by setting it to the number value specified
@@ -1020,7 +1020,7 @@ protected:
 	EvaluableNodeAttributesType attributes;
 
 	//values used to be able to return a reference
-	static double zeroNumberValue;
+	static double nanNumberValue;
 	static std::string emptyStringValue;
 	static EvaluableNode *emptyEvaluableNodeNullptr;
 	static std::vector<std::string> emptyStringVector;

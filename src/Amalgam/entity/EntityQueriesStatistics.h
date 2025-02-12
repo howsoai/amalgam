@@ -771,6 +771,39 @@ public:
 			return 1.0 - weighted_prob_not_same;
 		}
 
+		template<typename TransformFunc>
+		inline void TransformDistances(std::vector<DistanceReferencePair<EntityReference>> &entity_distance_pair_container,
+			TransformFunc transform_func)
+		{
+			bool clamp_top_k = (minToRetrieve < maxToRetrieve || numToRetrieveMinIncrementalProbability > 0.0);
+			if(clamp_top_k)
+			{
+				//TODO 13225: document this method
+				//TODO 13225: need a different way to handle weights -- maybe have return tuple of weight and prob?
+				double total_prob = transform_func(&entity_distance_pair_container[0]);
+				entity_distance_pair_container[0].distance = total_prob;
+				size_t cur_k = 1;
+
+				size_t max_k = entity_distance_pair_container.size();
+				for(; cur_k < cur_k; cur_k++)
+				{
+					double cur_prob = transform_func(&entity_distance_pair_container[cur_k]);
+					total_prob += cur_prob;
+					if(cur_prob / total_prob < numToRetrieveMinIncrementalProbability)
+						break;
+
+					entity_distance_pair_container[cur_k].distance = cur_prob;
+				}
+
+				entity_distance_pair_container.resize(cur_k);
+			}
+			else
+			{
+				for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
+					iter->distance = transform_func(iter);
+			}
+		}
+
 		//transforms distances with regard to distance weight exponents, harmonic series, and entity weights as specified by parameters,
 		// transforming and updating the distances in entity_distance_pair_container in place
 		//EntityDistancePairContainer is the container for the entity-distance pairs, and EntityReference is the reference to the entity
@@ -786,93 +819,38 @@ public:
 		{
 			//TODO 13225: implement appropriate dynamic k logic here and in TransformDistancesToExpectedValue, use expandToFirstNonzeroDistance
 			//TODO 13225: implement tests
-			bool clamp_top_k = (minToRetrieve < maxToRetrieve || numToRetrieveMinIncrementalProbability > 0.0);
-
+		
 			if(computeSurprisal)
 			{
 				if(surprisalToProbability)
 				{
 					if(!hasWeight)
 					{
-						if(clamp_top_k)
-						{
-							//always keep the first entity
-							double total_prob = ConvertSurprisalToProbability(entity_distance_pair_container[0].distance);
-							entity_distance_pair_container[0].distance = total_prob;
-							size_t cur_k = 1;
-
-							size_t max_k = entity_distance_pair_container.size();
-							for(; cur_k < cur_k; cur_k++)
-							{
-								double cur_prob = ConvertSurprisalToProbability(entity_distance_pair_container[cur_k].distance);
-								total_prob += cur_prob;
-								if(cur_prob / total_prob < numToRetrieveMinIncrementalProbability)
-									break;
-
-								entity_distance_pair_container[cur_k].distance = cur_prob;
-							}
-
-							entity_distance_pair_container.resize(cur_k);
-						}
-						else
-						{
-							for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
-								iter->distance = ConvertSurprisalToProbability(iter->distance);
-						}
+						TransformDistances(entity_distance_pair_container,
+							[this](auto iter) { return ConvertSurprisalToProbability(iter->distance); });
 					}
 					else //hasWeight
 					{
-						if(clamp_top_k)
-						{
-							//always keep the first entity
-							double total_prob = ConvertSurprisalToProbability(entity_distance_pair_container[0].distance);
-							entity_distance_pair_container[0].distance = total_prob;
-							size_t cur_k = 1;
-
-							size_t max_k = entity_distance_pair_container.size();
-							for(; cur_k < cur_k; cur_k++)
-							{
-								double cur_prob = ConvertSurprisalToProbability(entity_distance_pair_container[cur_k].distance);
-								//count the current case as having a probability mass of 1
-								if(cur_prob / (cur_prob + total_prob) < numToRetrieveMinIncrementalProbability)
-									break;
-
-								//adjust cur_prob by weight, defaulting to 1
-								double weight = 1.0;
-								//if has a weight and not 1 (since 1 is fast)
-								if(getEntityWeightFunction(entity_distance_pair_container[cur_k].reference, weight) && weight != 1.0)
-								{
-									if(weight != 0.0)
-										cur_prob *= weight;
-									else //weight of 0.0
-										cur_prob = 0.0;
-								}
-
-								entity_distance_pair_container[cur_k].distance = cur_prob;
-							}
-
-							entity_distance_pair_container.resize(cur_k);
-						}
-						else
-						{
-							for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
+						TransformDistances(entity_distance_pair_container,
+							[this](auto iter)
 							{
 								double weight = 1.0;
 								//if has a weight and not 1 (since 1 is fast)
 								if(getEntityWeightFunction(iter->reference, weight) && weight != 1.0)
 								{
 									if(weight != 0.0)
-										iter->distance = ConvertSurprisalToProbability(iter->distance, weight);
+										return ConvertSurprisalToProbability(iter->distance, weight);
 									else //weight of 0.0
-										iter->distance = 0.0;
+										return 0.0;
 								}
 								else //use weight of 1
 								{
-									iter->distance = ConvertSurprisalToProbability(iter->distance);
+									return ConvertSurprisalToProbability(iter->distance);
 								}
-							}
-						}
+							});
 					}
+
+					//TODO 13225: finish using the templatized TransformDistances here down
 				}
 				else //keep in surprisal space
 				{

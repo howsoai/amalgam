@@ -222,7 +222,7 @@ std::string EntityExternalInterface::GetJSONFromLabel(std::string &handle, std::
 	if(bundle == nullptr)
 		return "";
 
-	EvaluableNode *label_val = bundle->entity->GetValueAtLabel(label, nullptr, false);
+	EvaluableNode *label_val = bundle->entity->GetValueAtLabel(label, nullptr, false).first;
 	auto [result, converted] = EvaluableNodeJSONTranslation::EvaluableNodeToJson(label_val);
 	return (converted ? result : string_intern_pool.GetStringFromID(string_intern_pool.NOT_A_STRING_ID));
 }

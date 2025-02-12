@@ -32,7 +32,7 @@ class AssetManager
 {
 public:
 	AssetManager()
-		: defaultEntityExtension(FILE_EXTENSION_AMALGAM), debugSources(false), debugMinimal(false)
+		: defaultEntityExtension(FILE_EXTENSION_AMALGAM), debugSources(false), warnOnUndefined(false), debugMinimal(false)
 	{	}
 
 	class AssetParameters;
@@ -492,6 +492,9 @@ public:
 
 	inline EntityPermissions GetEntityPermissions(Entity *entity)
 	{
+		if(entity == nullptr)
+			return EntityPermissions();
+			
 	#ifdef MULTITHREAD_INTERFACE
 		Concurrency::ReadLock lock(entityPermissionsMutex);
 	#endif
@@ -565,6 +568,10 @@ public:
 
 	//if true, will enable debugging the sources of loading nodes
 	bool debugSources;
+
+	//if true, the interpreter will print warnings on undefined variables to standard error.
+	//If debugSources is true these warnings will (additionally) contain debug source information.
+	bool warnOnUndefined;
 
 	//if true, will exclude current position details when stepping
 	bool debugMinimal;

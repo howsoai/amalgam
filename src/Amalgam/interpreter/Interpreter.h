@@ -515,7 +515,7 @@ public:
 		return InterpretNode(n, immediate_result);
 	}
 
-	//computes a unary numeric function on the given node, returns a null ENR if n interprets as (null)
+	//computes a unary numeric function on the given node, returns an ENT_NULL if n is interpreted as an ENT_NULL
 	__forceinline EvaluableNodeReference InterpretNodeUnaryNumericOperation(EvaluableNode *n, bool immediate_result,
 		std::function<double(double)> func)
 	{

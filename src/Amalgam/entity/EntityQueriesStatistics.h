@@ -797,15 +797,18 @@ public:
 				entity_distance_pair_container[0].distance = first_value;
 				size_t cur_k = 1;
 
-				//TODO 13225: need to make a separate special loop for expandToFirstNonzeroDistance, ensuring there's at least one nonzero value
+				bool need_nonzero_distance = expandToFirstNonzeroDistance;
 				size_t max_k = entity_distance_pair_container.size();
 				for(; cur_k < cur_k; cur_k++)
 				{
 					auto [value, prob, prob_mass] = transform_func(&entity_distance_pair_container[cur_k]);
 
-					//if below probability threshold, make sure it's 
-					if(prob / (total_prob + 1.0) < numToRetrieveMinIncrementalProbability)
+					//if don't still need a nonzero distance, then stop if below probability threshold
+					if(!need_nonzero_distance && prob / (total_prob + 1.0) < numToRetrieveMinIncrementalProbability)
 						break;
+
+					//if have a nonzero distance, then record that one has been obtained
+					need_nonzero_distance &= (entity_distance_pair_container[cur_k].distance != 0);
 
 					total_prob += prob_mass;
 
@@ -814,7 +817,7 @@ public:
 
 				entity_distance_pair_container.resize(cur_k);
 			}
-			else
+			else //just transform all of the elements
 			{
 				for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
 				{

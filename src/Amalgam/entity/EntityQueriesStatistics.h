@@ -898,13 +898,41 @@ public:
 				//TODO 13225: finish using the templatized TransformDistances here down
 				if(distanceWeightExponent == -1)
 				{
-					for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
-						iter->distance = 1.0 / iter->distance;
+					TransformDistances(entity_distance_pair_container,
+						[this](auto iter)
+					{
+						double prob = 1.0 / iter->distance;
+						if(!hasWeight)
+							return std::make_tuple(prob, prob, 1.0);
+
+						double weight = 1.0;
+						//if has a weight and not 1 (since 1 is fast)
+						if(getEntityWeightFunction(iter->reference, weight) && weight != 1.0)
+							prob *= weight;
+
+						return std::make_tuple(prob, prob, weight);
+					});
 				}
 				else if(distanceWeightExponent == 0)
 				{
-					for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
-						iter->distance = 1.0;
+					TransformDistances(entity_distance_pair_container,
+						[this](auto iter)
+					{
+						double prob = 1.0;
+						if(!hasWeight)
+							return std::make_tuple(prob, prob, 1.0);
+
+						double weight = 1.0;
+						//if has a weight and not 1 (since 1 is fast)
+						if(getEntityWeightFunction(iter->reference, weight) && weight != 1.0)
+							prob *= weight;
+
+						return std::make_tuple(prob, prob, weight);
+					});
+				}
+				else if(distanceWeightExponent == 1)
+				{
+
 				}
 				else if(distanceWeightExponent != 1)
 				{
@@ -926,7 +954,7 @@ public:
 				}
 				//else distanceWeightExponent == 1, which means just leave it
 
-				if(hasWeight)
+				if(hasWeight && distanceWeightExponent != -1 && distanceWeightExponent != 0)
 				{
 					for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
 					{

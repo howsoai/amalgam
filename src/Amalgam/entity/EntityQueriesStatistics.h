@@ -897,7 +897,6 @@ public:
 			}
 			else //distance transform
 			{
-				//TODO 13225: finish using the templatized TransformDistances here down
 				if(distanceWeightExponent == -1)
 				{
 					TransformDistances(entity_distance_pair_container,
@@ -944,6 +943,7 @@ public:
 						return std::make_tuple(iter->distance, prob, weighted_prob);
 					});
 				}
+				//TODO 13225: finish using the templatized TransformDistances here down
 				else if(distanceWeightExponent != 1)
 				{
 					if(distanceWeightExponent >= 0)
@@ -978,150 +978,6 @@ public:
 					}
 				}
 			}
-
-			/*TODO 13225: there's at least one notable bug in this code
-			else //distance transform
-			{
-				if(distanceWeightExponent == -1)
-				{
-					if(!hasWeight)
-					{
-						TransformDistances(entity_distance_pair_container,
-								[this](auto iter)
-						{
-							double prob = 1.0 / iter->distance;
-							return std::make_tuple(prob, prob, 1.0);
-						});
-					}
-					else //hasWeight
-					{
-						TransformDistances(entity_distance_pair_container,
-							[this](auto iter)
-						{
-							double prob = 1.0 / iter->distance;
-
-							double weight = 1.0;
-							//if has a weight and not 1 (since 1 is fast)
-							if(getEntityWeightFunction(iter->reference, weight) && weight != 1.0)
-							{
-								if(weight != 0.0)
-									prob = WeightProbability(prob, weight);
-								else //weight of 0.0
-									prob = 0.0;
-							}
-
-							return std::make_tuple(prob, prob, weight);
-						});
-					}
-				}
-				else if(distanceWeightExponent == 0)
-				{
-					if(!hasWeight)
-					{
-						TransformDistances(entity_distance_pair_container,
-								[this](auto iter)
-						{
-							return std::make_tuple(1.0, 1.0, 1.0);
-						});
-					}
-					else //hasWeight
-					{
-						TransformDistances(entity_distance_pair_container,
-							[this](auto iter)
-						{
-							double prob = 1.0 / iter->distance;
-
-							double weight = 1.0;
-							getEntityWeightFunction(iter->reference, weight);
-
-							return std::make_tuple(weight, 1.0, weight);
-						});
-					}
-				}
-				else if(distanceWeightExponent != 1)
-				{
-					if(distanceWeightExponent >= 0)
-					{
-						if(!hasWeight)
-						{
-							//use a negative of the distanceWeightExponent for the probability threshold
-							TransformDistances(entity_distance_pair_container,
-								[this](auto iter)
-							{
-								double value = std::pow(iter->distance, distanceWeightExponent);
-								double prob = std::pow(iter->distance, -distanceWeightExponent);
-								return std::make_tuple(value, prob, 1.0);
-							});
-						}
-						else
-						{
-							TransformDistances(entity_distance_pair_container,
-							[this](auto iter)
-							{
-								double value = std::pow(iter->distance, distanceWeightExponent);
-								double prob = std::pow(iter->distance, -distanceWeightExponent);
-
-								double weight = 1.0;
-								getEntityWeightFunction(iter->reference, weight);
-
-								return std::make_tuple(value * weight, prob, weight);
-							});
-						}
-					}
-					else //negative distanceWeightExponent, need special handling for zero distances to prevent NaN
-					{
-						if(!hasWeight)
-						{
-							TransformDistances(entity_distance_pair_container,
-								[this](auto iter)
-							{
-								if(iter->distance == 0.0)
-									return std::make_tuple(std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity(), 1.0);
-
-								double prob = std::pow(iter->distance, distanceWeightExponent);
-								return std::make_tuple(prob, prob, 1.0);
-							});
-						}
-						else
-						{
-							TransformDistances(entity_distance_pair_container,
-							[this](auto iter)
-							{
-								double prob = std::pow(iter->distance, distanceWeightExponent);
-
-								double weight = 1.0;
-								getEntityWeightFunction(iter->reference, weight);
-
-								return std::make_tuple(prob * weight, prob, weight);
-							});
-						}
-					}
-				}
-				else //distanceWeightExponent == 1
-				{
-					if(hasWeight)
-					{
-						TransformDistances(entity_distance_pair_container,
-							[this](auto iter)
-						{
-							double prob = 1.0 / iter->distance;
-
-							double weight = 1.0;
-							//if has a weight and not 1 (since 1 is fast)
-							if(getEntityWeightFunction(iter->reference, weight) && weight != 1.0)
-							{
-								if(weight != 0.0)
-									prob = WeightProbability(prob, weight);
-								else //weight of 0.0
-									prob = 0.0;
-							}
-
-							return std::make_tuple(iter->distance * weight, prob, weight);
-						});
-					}
-				}
-			}
-			*/
 
 			if(sort_results)
 			{

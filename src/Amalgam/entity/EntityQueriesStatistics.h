@@ -938,33 +938,21 @@ public:
 
 						double weight = 1.0;
 						getEntityWeightFunction(iter->reference, weight);
-						double weighted_prob = weight * prob;
 
-						return std::make_tuple(iter->distance, prob, weighted_prob);
+						return std::make_tuple(weight * iter->distance, prob, weight * prob);
 					});
 				}
 				//TODO 13225: finish using the templatized TransformDistances here down
 				else if(distanceWeightExponent != 1)
 				{
-					if(distanceWeightExponent >= 0)
+					for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
 					{
-						for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
+						if(iter->distance == 0.0)
+							iter->distance = std::numeric_limits<double>::infinity();
+						else
 							iter->distance = std::pow(iter->distance, distanceWeightExponent);
 					}
-					else //need special handling for zero distances to prevent NaN
-					{
-						for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
-						{
-							if(iter->distance == 0.0)
-								iter->distance = std::numeric_limits<double>::infinity();
-							else
-								iter->distance = std::pow(iter->distance, distanceWeightExponent);
-						}
-					}
-				}
 
-				if(hasWeight && distanceWeightExponent != -1 && distanceWeightExponent != 0 && distanceWeightExponent != 1)
-				{
 					for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
 					{
 						double weight = 1.0;

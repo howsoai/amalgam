@@ -526,15 +526,15 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		(size_t i, double &value)
 		{
 			auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsNumber(singleLabel);
-			value = ret_val;
-
+			if(found)
+				value = ret_val;
 			return found;
 		};
 
 		auto get_weight = [matching_entities, this]
 		(size_t i, double &weight_value)
 		{
-			auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsNumber(weightLabel, weight_value);
+			auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsNumber(weightLabel);
 			weight_value = ret_val;
 
 			return found;
@@ -651,19 +651,16 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 			(size_t i, StringInternPool::StringID &value)
 			{
 				auto [ret_value, found] = matching_entities[i]->GetValueAtLabelAsStringId(singleLabel);
-
 				value = ret_value;
-
 				return found;
 			};
 
 			auto get_weight = [matching_entities, this]
 			(size_t i, double &weight_value)
 			{
-				auto [ret_value, found] = matching_entities[i]->GetValueAtLabelAsNumber(weightLabel, weight_value);
-
-				weight_value = ret_value;
-
+				auto [ret_value, found] = matching_entities[i]->GetValueAtLabelAsNumber(weightLabel);
+				if(found)
+					weight_value = ret_value;
 				return found;
 			};
 
@@ -728,20 +725,18 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 				it.distance = GetConditionDistanceMeasure(it.reference, true);
 		}
 
-		auto weightFunction = [this]
-							  (Entity *e, double &weight_value)
+		auto weight_function = [this](Entity *e, double &weight_value)
 							   {
-								 	auto [ret_val, found] = e->GetValueAtLabelAsNumber(weightLabel, weight_value);
-
-									weight_value = ret_val;
-
+								 	auto [ret_val, found] = e->GetValueAtLabelAsNumber(weightLabel);
+									if(found)
+										weight_value = ret_val;
 									return found;
 							   }; 
 
 		//transform distances as appropriate
 		EntityQueriesStatistics::DistanceTransform<Entity *> distance_transform(distEvaluator.computeSurprisal,
 			distEvaluator.transformSurprisalToProb, distanceWeightExponent, weightLabel != StringInternPool::NOT_A_STRING_ID,
-			weightFunction);
+			weight_function);
 
 		distance_transform.TransformDistances(entity_values, returnSortedList);
 
@@ -779,9 +774,9 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		auto weight_function = [this]
 							   (Entity *e, double &weight_value)
 							   {
-									auto [ret_val, found] = e->GetValueAtLabelAsNumber(weightLabel, weight_value);
-									weight_value = ret_val;
-
+									auto [ret_val, found] = e->GetValueAtLabelAsNumber(weightLabel);
+									if(found)
+										weight_value = ret_val;
 									return found;
 							   };
 

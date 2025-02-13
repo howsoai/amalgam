@@ -797,11 +797,13 @@ public:
 				entity_distance_pair_container[0].distance = first_value;
 				size_t cur_k = 1;
 
+				//TODO 13225: need to make a separate special loop for expandToFirstNonzeroDistance, ensuring there's at least one nonzero value
 				size_t max_k = entity_distance_pair_container.size();
 				for(; cur_k < cur_k; cur_k++)
 				{
 					auto [value, prob, prob_mass] = transform_func(&entity_distance_pair_container[cur_k]);
 
+					//if below probability threshold, make sure it's 
 					if(prob / (total_prob + 1.0) < numToRetrieveMinIncrementalProbability)
 						break;
 

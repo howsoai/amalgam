@@ -785,7 +785,7 @@ public:
 		//transforms distances given TransformFunc, which should return a triple of the following 3
 		// values: resulting value, probability, probability_mass
 		template<typename TransformFunc>
-		inline void TransformDistances(std::vector<DistanceReferencePair<EntityReference>> &entity_distance_pair_container,
+		__forceinline void TransformDistances(std::vector<DistanceReferencePair<EntityReference>> &entity_distance_pair_container,
 			TransformFunc transform_func)
 		{
 			if(minToRetrieve < maxToRetrieve || numToRetrieveMinIncrementalProbability > 0.0)

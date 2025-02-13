@@ -942,28 +942,41 @@ public:
 						return std::make_tuple(weight * iter->distance, prob, weight * prob);
 					});
 				}
-				//TODO 13225: finish using the templatized TransformDistances here down
-				else if(distanceWeightExponent != 1)
+				else if(distanceWeightExponent > 0)
 				{
-					for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
+					TransformDistances(entity_distance_pair_container,
+						[this](auto iter)
 					{
-						if(iter->distance == 0.0)
-							iter->distance = std::numeric_limits<double>::infinity();
-						else
-							iter->distance = std::pow(iter->distance, distanceWeightExponent);
-					}
+						double prob = (iter->distance == 0 ? std::numeric_limits<double>::infinity()
+							: std::pow(iter->distance, -distanceWeightExponent));
 
-					for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
-					{
+						if(!hasWeight)
+							return std::make_tuple(iter->distance, prob, 1.0);
+
 						double weight = 1.0;
-						if(getEntityWeightFunction(iter->reference, weight))
-						{
-							if(weight != 0.0)
-								iter->distance *= weight;
-							else //0 or NaN
-								iter->distance = 0.0;
-						}
-					}
+						getEntityWeightFunction(iter->reference, weight);
+
+						double value = weight * std::pow(iter->distance, distanceWeightExponent);
+						return std::make_tuple(value, prob, weight * prob);
+					});
+				}
+				else //distanceWeightExponent < 0
+				{
+					TransformDistances(entity_distance_pair_container,
+						[this](auto iter)
+					{
+						double prob = (iter->distance == 0 ? std::numeric_limits<double>::infinity()
+							: std::pow(iter->distance, distanceWeightExponent));
+
+						if(!hasWeight)
+							return std::make_tuple(iter->distance, prob, 1.0);
+
+						double weight = 1.0;
+						getEntityWeightFunction(iter->reference, weight);
+						double weighted_prob = prob * weight;
+
+						return std::make_tuple(weighted_prob, prob, weighted_prob);
+					});
 				}
 			}
 
@@ -992,6 +1005,7 @@ public:
 			EntityDistancePairIterator entity_distance_pair_container_begin,
 			EntityDistancePairIterator entity_distance_pair_container_end)
 		{
+			//TODO 13225: update this for dynamic k
 			if(computeSurprisal)
 			{
 				if(hasWeight)

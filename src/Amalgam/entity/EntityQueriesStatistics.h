@@ -851,17 +851,18 @@ public:
 						if(!hasWeight)
 							return std::make_tuple(prob, prob, 1.0);
 
+						double weighted_prob = prob;
 						double weight = 1.0;
 						//if has a weight and not 1 (since 1 is fast)
 						if(getEntityWeightFunction(iter->reference, weight) && weight != 1.0)
 						{
 							if(weight != 0.0)
-								prob = WeightProbability(prob, weight);
+								weighted_prob = WeightProbability(prob, weight);
 							else //weight of 0.0
-								prob = 0.0;
+								weighted_prob = 0.0;
 						}
 
-						return std::make_tuple(prob, prob, weight);
+						return std::make_tuple(weighted_prob, prob, weighted_prob);
 					});
 				}
 				else //keep in surprisal space
@@ -874,14 +875,15 @@ public:
 						if(!hasWeight)
 							return std::make_tuple(surprisal, prob, 1.0);
 
+						double weighted_prob = prob;
 						double weight = 1.0;
 						//if has a weight and not 1 (since 1 is fast)
 						if(getEntityWeightFunction(iter->reference, weight) && weight != 1.0)
 						{
 							if(weight != 0.0)
 							{
-								prob = WeightProbability(prob, weight);
-								surprisal = ConvertProbabilityToSurprisal(prob);
+								weighted_prob = WeightProbability(prob, weight);
+								surprisal = ConvertProbabilityToSurprisal(weighted_prob);
 							}
 							else //weight of 0.0
 							{
@@ -889,7 +891,7 @@ public:
 							}
 						}
 
-						return std::make_tuple(surprisal, prob, weight);
+						return std::make_tuple(surprisal, prob, weighted_prob);
 					});
 				}
 			}
@@ -906,11 +908,10 @@ public:
 							return std::make_tuple(prob, prob, 1.0);
 
 						double weight = 1.0;
-						//if has a weight and not 1 (since 1 is fast)
-						if(getEntityWeightFunction(iter->reference, weight) && weight != 1.0)
-							prob *= weight;
+						getEntityWeightFunction(iter->reference, weight);
+						double weighted_prob = prob * weight;
 
-						return std::make_tuple(prob, prob, weight);
+						return std::make_tuple(weighted_prob, prob, weighted_prob);
 					});
 				}
 				else if(distanceWeightExponent == 0)
@@ -918,21 +919,30 @@ public:
 					TransformDistances(entity_distance_pair_container,
 						[this](auto iter)
 					{
-						double prob = 1.0;
 						if(!hasWeight)
-							return std::make_tuple(prob, prob, 1.0);
+							return std::make_tuple(1.0, 1.0, 1.0);
 
 						double weight = 1.0;
-						//if has a weight and not 1 (since 1 is fast)
-						if(getEntityWeightFunction(iter->reference, weight) && weight != 1.0)
-							prob *= weight;
+						getEntityWeightFunction(iter->reference, weight);
 
-						return std::make_tuple(prob, prob, weight);
+						return std::make_tuple(weight, 1.0, weight);
 					});
 				}
 				else if(distanceWeightExponent == 1)
 				{
+					TransformDistances(entity_distance_pair_container,
+						[this](auto iter)
+					{
+						double prob = 1.0 / iter->distance;
+						if(!hasWeight)
+							return std::make_tuple(iter->distance, prob, 1.0);
 
+						double weight = 1.0;
+						getEntityWeightFunction(iter->reference, weight);
+						double weighted_prob = weight * prob;
+
+						return std::make_tuple(iter->distance, prob, weighted_prob);
+					});
 				}
 				else if(distanceWeightExponent != 1)
 				{
@@ -952,9 +962,8 @@ public:
 						}
 					}
 				}
-				//else distanceWeightExponent == 1, which means just leave it
 
-				if(hasWeight && distanceWeightExponent != -1 && distanceWeightExponent != 0)
+				if(hasWeight && distanceWeightExponent != -1 && distanceWeightExponent != 0 && distanceWeightExponent != 1)
 				{
 					for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
 					{

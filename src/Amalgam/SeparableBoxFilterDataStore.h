@@ -1037,8 +1037,14 @@ public:
 
 			if(feature_attribs.IsFeatureNominal())
 			{
-				if(FastIsNaN(feature_attribs.typeAttributes.nominalCount))
-					feature_attribs.typeAttributes.nominalCount = static_cast<double>(column_data->GetNumValidDataElements());
+				//if nominal count is not specified, compute from the existing data
+				if(FastIsNaN(feature_attribs.typeAttributes.nominalCount) || feature_attribs.typeAttributes.nominalCount < 1)
+				{
+					//account for the max-ent probability that there's a 50% chance that the next record observed will be a new class
+					double num_potential_unseen_classes = 1 / (column_data->GetNumValidDataElements() + 0.5);
+					feature_attribs.typeAttributes.nominalCount
+						= static_cast<double>(column_data->GetNumUniqueValues()) + num_potential_unseen_classes;
+				}
 			}
 		}
 	}

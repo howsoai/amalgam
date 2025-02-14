@@ -736,10 +736,11 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		//transform distances as appropriate
 		EntityQueriesStatistics::DistanceTransform<Entity *> distance_transform(distEvaluator.computeSurprisal,
 			distEvaluator.transformSurprisalToProb, distanceWeightExponent,
-			minToRetrieve, maxToRetrieve, numToRetrieveMinIncrementalProbability, false,
+			minToRetrieve, maxToRetrieve, numToRetrieveMinIncrementalProbability,
 			weightLabel != StringInternPool::NOT_A_STRING_ID, 0.0, weight_function);
 
-		distance_transform.TransformDistances(entity_values, returnSortedList);
+		num_to_keep = distance_transform.TransformDistances(begin(entity_values), end(entity_values), returnSortedList);
+		entity_values.resize(num_to_keep);
 
 		return EntityManipulation::ConvertResultsToEvaluableNodes<Entity *>(entity_values,
 			enm, returnSortedList, additionalSortedListLabels, [](auto entity) { return entity;  });
@@ -784,10 +785,11 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		//transform distances as appropriate
 		EntityQueriesStatistics::DistanceTransform<Entity *> distance_transform(distEvaluator.computeSurprisal,
 			distEvaluator.transformSurprisalToProb, distanceWeightExponent,
-			minToRetrieve, maxToRetrieve, numToRetrieveMinIncrementalProbability, false,
+			minToRetrieve, maxToRetrieve, numToRetrieveMinIncrementalProbability,
 			weightLabel != StringInternPool::NOT_A_STRING_ID, 0.0, weight_function);
 
-		distance_transform.TransformDistances(entity_values, returnSortedList);
+		size_t num_to_keep = distance_transform.TransformDistances(begin(entity_values), end(entity_values), returnSortedList);
+		entity_values.resize(num_to_keep);
 
 		return EntityManipulation::ConvertResultsToEvaluableNodes<Entity *>(entity_values,
 			enm, returnSortedList, additionalSortedListLabels, [](auto entity) { return entity;  });

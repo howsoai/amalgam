@@ -717,8 +717,6 @@ public:
 	//if compute_surprisal  is false, distance_weight_exponent is the exponent each distance is raised to
 	//uses min_to_retrieve and max_to_retrieve to determine how many entities to keep, stopping when the first
 	// entity's marginal probability falls below the num_to_retrieve_min_increment_prob threshold
-	////if expand_to_first_nonzero_distance is true, it will expand k so that at least one non-zero distance is returned
-	// or return until all entities are included
 	//has_weight, if set, will use get_weight, taking in a function of an entity reference and a reference to an output
 	// double to set the weight, and should return true if the entity has a weight, false if not
 	template<typename EntityReference>
@@ -728,7 +726,7 @@ public:
 		constexpr DistanceTransform(bool compute_surprisal, bool surprisal_to_probability,
 			double distance_weight_exponent,
 			size_t min_to_retrieve, size_t max_to_retrieve,
-			double num_to_retrieve_min_increment_prob, bool expand_to_first_nonzero_distance,
+			double num_to_retrieve_min_increment_prob,
 			bool has_weight, double min_weight, std::function<bool(EntityReference, double &)> get_weight)
 		{
 			distanceWeightExponent = distance_weight_exponent;
@@ -738,7 +736,6 @@ public:
 			minToRetrieve = min_to_retrieve;
 			maxToRetrieve = max_to_retrieve;
 			numToRetrieveMinIncrementalProbability = num_to_retrieve_min_increment_prob;
-			expandToFirstNonzeroDistance = expand_to_first_nonzero_distance;
 
 			//if all percentages are the same, that will yield the most number of entities kept
 			//so round up the reciprocal of this number to find the maximum number of entities that can be kept
@@ -782,51 +779,54 @@ public:
 			return WeightProbability(prob, weight);
 		}
 
-		//transforms distances given transform_func, which should return a triple of the following 3
-		// values: resulting value, probability, probability_mass
+		//transforms distances given transform_func, which should return a triple of the following 4
+		// values: resulting value, probability of being the same, probability mass of value, weight of entity
 		//calls result_func for each iteration
-		template<typename TransformFunc, typename ResultFunc>
-		__forceinline void SelectBandwidthFromDistanceTransforms(
-			std::vector<DistanceReferencePair<EntityReference>> &entity_distance_pair_container,
+		//returns the number of entities to keep
+		template<typename EntityDistancePairIterator, typename TransformFunc, typename ResultFunc>
+		__forceinline size_t SelectBandwidthFromDistanceTransforms(
+			EntityDistancePairIterator entity_distance_pair_container_begin,
+			EntityDistancePairIterator entity_distance_pair_container_end,
 			TransformFunc transform_func, ResultFunc result_func)
 		{
+			size_t max_k = std::distance(entity_distance_pair_container_begin, entity_distance_pair_container_end);
+
 			if(minToRetrieve < maxToRetrieve || numToRetrieveMinIncrementalProbability > 0.0)
 			{
-				auto [first_value, first_prob, first_prob_mass] = transform_func(&entity_distance_pair_container[0]);
+				auto [first_value, first_prob, first_prob_mass, weight] = transform_func(entity_distance_pair_container_begin);
 				double total_prob = first_prob_mass;
-				entity_distance_pair_container[0].distance = first_value;
+				entity_distance_pair_container_begin->distance = first_value;
 				size_t cur_k = 1;
 
-				bool need_nonzero_distance = expandToFirstNonzeroDistance;
-				size_t max_k = entity_distance_pair_container.size();
-				for(; cur_k < cur_k; cur_k++)
+				for(; cur_k < max_k; cur_k++)
 				{
-					auto [value, prob, prob_mass] = transform_func(&entity_distance_pair_container[cur_k]);
+					auto [value, prob_same, prob_mass, weight] = transform_func(entity_distance_pair_container_begin + cur_k);
 
-					//if don't still need a nonzero distance, then stop if below probability threshold
-					if(!need_nonzero_distance && prob / (total_prob + 1.0) < numToRetrieveMinIncrementalProbability)
+					//stop if below probability threshold
+					if(prob_same / (total_prob + 1.0) < numToRetrieveMinIncrementalProbability)
 						break;
 
-					//if have a nonzero distance, then record that one has been obtained
-					need_nonzero_distance &= (entity_distance_pair_container[cur_k].distance != 0);
+					total_prob += prob_same * prob_mass;
 
-					total_prob += prob_mass;
-
-					result_func(entity_distance_pair_container[cur_k], value, prob, prob_mass);
+					result_func(entity_distance_pair_container_begin + cur_k, value, prob_same, prob_mass, weight);
 				}
 
-				entity_distance_pair_container.resize(cur_k);
+				return cur_k;
 			}
 			else //just transform all of the elements
 			{
-				for(auto iter = begin(entity_distance_pair_container); iter != end(entity_distance_pair_container); ++iter)
+				for(auto iter = entity_distance_pair_container_begin; iter != entity_distance_pair_container_end; ++iter)
 				{
-					auto [value, prob, prob_mass] = transform_func(iter);
-					result_func(*iter, value, prob, prob_mass);
+					auto [value, prob_same, prob_mass, weight] = transform_func(iter);
+					result_func(iter, value, prob_same, prob_mass, weight);
 				}
+
+				return max_k;
 			}
 		}
 
+		//TODO 13225: update this comment
+		//TODO 13225: reduce params to result_func
 		//transforms distances with regard to distance weight exponents, harmonic series, and entity weights as specified by parameters,
 		// transforming and updating the distances in entity_distance_pair_container in place
 		//EntityDistancePairContainer is the container for the entity-distance pairs, and EntityReference is the reference to the entity
@@ -838,155 +838,167 @@ public:
 		// from smallest to largest if distance_weight_exponent is positive, largest to smallest otherwise
 		//get_entity returns the EntityReference for an iterator of EntityDistancePairContainer
 		//get_distance_ref returns a reference as a pointer to the location of the distance in the EntityDistancePairContainer
-		template<typename ResultFunc>
-		__forceinline void TransformDistancesWithBandwidthSelectionAndResultFunction(
-			std::vector<DistanceReferencePair<EntityReference>> &entity_distance_pair_container,
+		template<typename EntityDistancePairIterator, typename ResultFunc>
+		__forceinline size_t TransformDistancesWithBandwidthSelectionAndResultFunction(
+			EntityDistancePairIterator entity_distance_pair_container_begin,
+			EntityDistancePairIterator entity_distance_pair_container_end,
 			ResultFunc result_func)
 		{
 			//TODO 13225: test this and see if there is a way to clean it up
 			//TODO 13225: implement tests
-		
+
+			size_t num_to_keep = 0;
 			if(computeSurprisal)
 			{
 				if(surprisalToProbability)
 				{
-					SelectBandwidthFromDistanceTransforms(entity_distance_pair_container,
+					num_to_keep = SelectBandwidthFromDistanceTransforms(
+						entity_distance_pair_container_begin, entity_distance_pair_container_end,
 						[this](auto iter)
-					{
-						double prob = ConvertSurprisalToProbability(iter->distance);
-						if(!hasWeight)
-							return std::make_tuple(prob, prob, 1.0);
-
-						double weighted_prob = prob;
-						double weight = 1.0;
-						//if has a weight and not 1 (since 1 is fast)
-						if(getEntityWeightFunction(iter->reference, weight) && weight != 1.0)
 						{
-							if(weight != 0.0)
-								weighted_prob = WeightProbability(prob, weight);
-							else //weight of 0.0
-								weighted_prob = 0.0;
-						}
+							double prob = ConvertSurprisalToProbability(iter->distance);
+							if(!hasWeight)
+								return std::make_tuple(prob, prob, prob, 1.0);
 
-						return std::make_tuple(weighted_prob, prob, weighted_prob);
-					}, result_func);
+							double weighted_prob = prob;
+							double weight = 1.0;
+							//if has a weight and not 1 (since 1 is fast)
+							if(getEntityWeightFunction(iter->reference, weight) && weight != 1.0)
+							{
+								if(weight != 0.0)
+									weighted_prob = WeightProbability(prob, weight);
+								else //weight of 0.0
+									weighted_prob = 0.0;
+							}
+
+							return std::make_tuple(weighted_prob, prob, weighted_prob, weight);
+						}, result_func);
 				}
 				else //keep in surprisal space
 				{
-					SelectBandwidthFromDistanceTransforms(entity_distance_pair_container,
+					num_to_keep = SelectBandwidthFromDistanceTransforms(
+						entity_distance_pair_container_begin, entity_distance_pair_container_end,
 						[this](auto iter)
-					{
-						double surprisal = iter->distance;
-						double prob = ConvertSurprisalToProbability(surprisal);
-						if(!hasWeight)
-							return std::make_tuple(surprisal, prob, 1.0);
-
-						double weighted_prob = prob;
-						double weight = 1.0;
-						//if has a weight and not 1 (since 1 is fast)
-						if(getEntityWeightFunction(iter->reference, weight) && weight != 1.0)
 						{
-							if(weight != 0.0)
-							{
-								weighted_prob = WeightProbability(prob, weight);
-								surprisal = ConvertProbabilityToSurprisal(weighted_prob);
-							}
-							else //weight of 0.0
-							{
-								surprisal = std::numeric_limits<double>::infinity();
-							}
-						}
+							double surprisal = iter->distance;
+							double prob = ConvertSurprisalToProbability(surprisal);
+							if(!hasWeight)
+								return std::make_tuple(surprisal, prob, prob, 1.0);
 
-						return std::make_tuple(surprisal, prob, weighted_prob);
-					}, result_func);
+							double weighted_prob = prob;
+							double weight = 1.0;
+							//if has a weight and not 1 (since 1 is fast)
+							if(getEntityWeightFunction(iter->reference, weight) && weight != 1.0)
+							{
+								if(weight != 0.0)
+								{
+									weighted_prob = WeightProbability(prob, weight);
+									surprisal = ConvertProbabilityToSurprisal(weighted_prob);
+								}
+								else //weight of 0.0
+								{
+									surprisal = std::numeric_limits<double>::infinity();
+								}
+							}
+
+							return std::make_tuple(surprisal, prob, weighted_prob, weight);
+						}, result_func);
 				}
 			}
 			else //distance transform
 			{
 				if(distanceWeightExponent == -1)
 				{
-					SelectBandwidthFromDistanceTransforms(entity_distance_pair_container,
+					num_to_keep = SelectBandwidthFromDistanceTransforms(
+						entity_distance_pair_container_begin, entity_distance_pair_container_end,
 						[this](auto iter)
-					{
-						double prob = 1.0 / iter->distance;
-						if(!hasWeight)
-							return std::make_tuple(prob, prob, 1.0);
+						{
+							double prob = 1.0 / iter->distance;
+							if(!hasWeight)
+								return std::make_tuple(prob, prob, prob, 1.0);
 
-						double weight = 1.0;
-						getEntityWeightFunction(iter->reference, weight);
-						double weighted_prob = prob * weight;
+							double weight = 1.0;
+							getEntityWeightFunction(iter->reference, weight);
+							double weighted_prob = prob * weight;
 
-						return std::make_tuple(weighted_prob, prob, weighted_prob);
-					}, result_func);
+							return std::make_tuple(weighted_prob, prob, weighted_prob, weight);
+						}, result_func);
 				}
 				else if(distanceWeightExponent == 0)
 				{
-					SelectBandwidthFromDistanceTransforms(entity_distance_pair_container,
+					num_to_keep = SelectBandwidthFromDistanceTransforms(
+						entity_distance_pair_container_begin, entity_distance_pair_container_end,
 						[this](auto iter)
-					{
-						if(!hasWeight)
-							return std::make_tuple(1.0, 1.0, 1.0);
+						{
+							if(!hasWeight)
+								return std::make_tuple(1.0, 1.0, 1.0, 1.0);
 
-						double weight = 1.0;
-						getEntityWeightFunction(iter->reference, weight);
+							double weight = 1.0;
+							getEntityWeightFunction(iter->reference, weight);
 
-						return std::make_tuple(weight, 1.0, weight);
-					}, result_func);
+							return std::make_tuple(weight, 1.0, weight, weight);
+						}, result_func);
 				}
 				else if(distanceWeightExponent == 1)
 				{
-					SelectBandwidthFromDistanceTransforms(entity_distance_pair_container,
+					num_to_keep = SelectBandwidthFromDistanceTransforms(
+						entity_distance_pair_container_begin, entity_distance_pair_container_end,
 						[this](auto iter)
-					{
-						double prob = 1.0 / iter->distance;
-						if(!hasWeight)
-							return std::make_tuple(iter->distance, prob, 1.0);
+						{
+							double prob = 1.0 / iter->distance;
+							if(!hasWeight)
+								return std::make_tuple(iter->distance, prob, prob, 1.0);
 
-						double weight = 1.0;
-						getEntityWeightFunction(iter->reference, weight);
+							double weight = 1.0;
+							getEntityWeightFunction(iter->reference, weight);
 
-						return std::make_tuple(weight * iter->distance, prob, weight * prob);
-					}, result_func);
+							return std::make_tuple(weight * iter->distance, prob, weight * prob, weight);
+						}, result_func);
 				}
 				else if(distanceWeightExponent > 0)
 				{
-					SelectBandwidthFromDistanceTransforms(entity_distance_pair_container,
+					num_to_keep = SelectBandwidthFromDistanceTransforms(
+						entity_distance_pair_container_begin, entity_distance_pair_container_end,
 						[this](auto iter)
-					{
-						double prob = (iter->distance == 0 ? std::numeric_limits<double>::infinity()
-							: std::pow(iter->distance, -distanceWeightExponent));
+						{
+							double prob = (iter->distance == 0 ? std::numeric_limits<double>::infinity()
+								: std::pow(iter->distance, -distanceWeightExponent));
 
-						if(!hasWeight)
-							return std::make_tuple(iter->distance, prob, 1.0);
+							if(!hasWeight)
+								return std::make_tuple(iter->distance, prob, prob, 1.0);
 
-						double weight = 1.0;
-						getEntityWeightFunction(iter->reference, weight);
+							double weight = 1.0;
+							getEntityWeightFunction(iter->reference, weight);
 
-						double value = weight * std::pow(iter->distance, distanceWeightExponent);
-						return std::make_tuple(value, prob, weight * prob);
-					}, result_func);
+							double value = weight * std::pow(iter->distance, distanceWeightExponent);
+							return std::make_tuple(value, prob, weight * prob, weight);
+						}, result_func);
 				}
 				else //distanceWeightExponent < 0
 				{
-					SelectBandwidthFromDistanceTransforms(entity_distance_pair_container,
+					num_to_keep = SelectBandwidthFromDistanceTransforms(
+						entity_distance_pair_container_begin, entity_distance_pair_container_end,
 						[this](auto iter)
-					{
-						double prob = (iter->distance == 0 ? std::numeric_limits<double>::infinity()
-							: std::pow(iter->distance, distanceWeightExponent));
+						{
+							double prob = (iter->distance == 0 ? std::numeric_limits<double>::infinity()
+								: std::pow(iter->distance, distanceWeightExponent));
 
-						if(!hasWeight)
-							return std::make_tuple(iter->distance, prob, 1.0);
+							if(!hasWeight)
+								return std::make_tuple(iter->distance, prob, prob, 1.0);
 
-						double weight = 1.0;
-						getEntityWeightFunction(iter->reference, weight);
-						double weighted_prob = prob * weight;
+							double weight = 1.0;
+							getEntityWeightFunction(iter->reference, weight);
+							double weighted_prob = prob * weight;
 
-						return std::make_tuple(weighted_prob, prob, weighted_prob);
-					}, result_func);
+							return std::make_tuple(weighted_prob, prob, weighted_prob, weight);
+						}, result_func);
 				}
 			}
+
+			return num_to_keep;
 		}
 
+		//TODO 13225: update this text
 		//transforms distances with regard to distance weight exponents, harmonic series, and entity weights as specified by parameters,
 		// transforming and updating the distances in entity_distance_pair_container in place
 		//EntityDistancePairContainer is the container for the entity-distance pairs, and EntityReference is the reference to the entity
@@ -998,13 +1010,16 @@ public:
 		// from smallest to largest if distance_weight_exponent is positive, largest to smallest otherwise
 		//get_entity returns the EntityReference for an iterator of EntityDistancePairContainer
 		//get_distance_ref returns a reference as a pointer to the location of the distance in the EntityDistancePairContainer
-		inline void TransformDistances(std::vector<DistanceReferencePair<EntityReference>> &entity_distance_pair_container, bool sort_results)
+		template<typename EntityDistancePairIterator>
+		inline size_t TransformDistances(EntityDistancePairIterator entity_distance_pair_container_begin,
+			EntityDistancePairIterator entity_distance_pair_container_end, bool sort_results)
 		{
-			TransformDistancesWithBandwidthSelectionAndResultFunction(entity_distance_pair_container,
-				[](auto &ed_pair, double value, double prob, double prob_mass)
-			{
-				ed_pair.distance = value;
-			});
+			size_t num_kept = TransformDistancesWithBandwidthSelectionAndResultFunction(
+				entity_distance_pair_container_begin, entity_distance_pair_container_end,
+				[](auto &ed_pair, double value, double prob, double prob_mass, double weight)
+				{
+					ed_pair->distance = value;
+				});
 
 			if(sort_results)
 			{
@@ -1012,17 +1027,19 @@ public:
 				if((computeSurprisal && surprisalToProbability)
 					|| distanceWeightExponent <= 0)
 				{
-					std::sort(begin(entity_distance_pair_container), end(entity_distance_pair_container),
+					std::sort(entity_distance_pair_container_begin, entity_distance_pair_container_begin + num_kept,
 						[](auto a, auto b) {return a.distance > b.distance; }
 					);
 				}
 				else //surprisal or regular distance, sort by smallest first
 				{
-					std::sort(begin(entity_distance_pair_container), end(entity_distance_pair_container),
+					std::sort(entity_distance_pair_container_begin, entity_distance_pair_container_begin + num_kept,
 						[](auto a, auto b) {return a.distance < b.distance; }
 					);
 				}
 			}
+
+			return num_kept;
 		}
 
 		//like TransformDistances but returns the appropriate expected value
@@ -1031,81 +1048,74 @@ public:
 			EntityDistancePairIterator entity_distance_pair_container_begin,
 			EntityDistancePairIterator entity_distance_pair_container_end)
 		{
-			//TODO 13225: update this for dynamic k
 			if(computeSurprisal)
 			{
-				if(hasWeight)
-				{
-					double total_probability = 0.0;
-					double accumulated_surprisal = 0.0;
-					for(auto iter = entity_distance_pair_container_begin; iter != entity_distance_pair_container_end; ++iter)
-					{
-						double weight = 1.0;
-						double surprisal = iter->distance;
-						//if has a weight and not 1 (since 1 is fast)
-						if(getEntityWeightFunction(iter->reference, weight) && weight != 1.0)
-						{
-							if(weight != 0.0)
-							{
-								double weighted_prob_same = ConvertSurprisalToProbability(surprisal, weight);
-								surprisal = -std::log(weighted_prob_same);
-							}
-							else //weight of 0.0
-							{
-								continue;
-							}
-						}
-						//else leave value in surprisal with weight of 1
+				double total_probability = 0.0;
+				double accumulated_value = 0.0;
 
-						double prob_same = ConvertSurprisalToProbability(surprisal);
-						total_probability += prob_same;
-						accumulated_surprisal += prob_same * surprisal;
-					}
-					//normalize
-					return accumulated_surprisal / total_probability;
-				}
-				else //!hasWeight
-				{
-					double total_probability = 0.0;
-					double accumulated_surprisal = 0.0;
-					for(auto iter = entity_distance_pair_container_begin; iter != entity_distance_pair_container_end; ++iter)
+				TransformDistancesWithBandwidthSelectionAndResultFunction(
+					entity_distance_pair_container_begin, entity_distance_pair_container_end,
+					[&total_probability, &accumulated_value](auto &ed_pair, double value, double prob,
+						double prob_mass, double weight)
 					{
-						double prob_same = ConvertSurprisalToProbability(iter->distance);
-						total_probability += prob_same;
-						accumulated_surprisal += prob_same * iter->distance;
-					}
-					//normalize
-					return accumulated_surprisal / total_probability;
-				}
+						total_probability += weight;
+						accumulated_value += value;
+					});
+
+				//normalize
+				return accumulated_value / total_probability;
 			}
 			else //distance transform
 			{
-				if(hasWeight)
+				if(distanceWeightExponent != 0.0)
 				{
-					return GeneralizedMean<typename std::vector<DistanceReferencePair<EntityReference>>::iterator>(
-						entity_distance_pair_container_begin,
-						entity_distance_pair_container_end,
-						[](typename std::vector<DistanceReferencePair<EntityReference>>::iterator iter, double &value)
-						{ value = iter->distance; return true; },
-						true,
-						[this](typename std::vector<DistanceReferencePair<EntityReference>>::iterator iter, double &weight)
-						{ return getEntityWeightFunction(iter->reference, weight); },
-						distanceWeightExponent);
+					double total_probability = 0.0;
+					double accumulated_value = 0.0;
+
+					TransformDistancesWithBandwidthSelectionAndResultFunction(
+						entity_distance_pair_container_begin, entity_distance_pair_container_end,
+						[&total_probability, &accumulated_value](auto &ed_pair, double value, double prob,
+							double prob_mass, double weight)
+						{
+							total_probability += weight;
+							accumulated_value += value;
+						});
+
+					//normalize
+					double ave = accumulated_value / total_probability;
+					if(distanceWeightExponent == 1)
+						return ave;
+
+					if(distanceWeightExponent == -1)
+						return 1 / ave;
+
+					return std::pow(ave, 1 / distanceWeightExponent);
 				}
-				else
+				else //distanceWeightExponent == 0.0
 				{
-					return GeneralizedMean<typename std::vector<DistanceReferencePair<EntityReference>>::iterator>(
-						entity_distance_pair_container_begin,
-						entity_distance_pair_container_end,
-						[](typename std::vector<DistanceReferencePair<EntityReference>>::iterator iter, double &value)
-						{ value = iter->distance; return true; },
-						false,
-						[](typename std::vector<DistanceReferencePair<EntityReference>>::iterator iter, double &weight)
-						{ return false; },
-						distanceWeightExponent);
+					double total_probability = 0.0;
+					double accumulated_value = 0.0;
+
+					//temporarily set to 1 to get the values back, then reset
+					distanceWeightExponent = 1.0;
+
+					TransformDistancesWithBandwidthSelectionAndResultFunction(
+						entity_distance_pair_container_begin, entity_distance_pair_container_end,
+						[&total_probability, &accumulated_value](auto &ed_pair, double value, double prob,
+							double prob_mass, double weight)
+						{
+							total_probability += weight;
+							if(weight == 1)
+								accumulated_value *= value;
+							else
+								accumulated_value *= std::pow(value, prob_mass);
+						});
+
+					distanceWeightExponent = 0.0;
+
+					return std::pow(accumulated_value, 1.0 / total_probability);
 				}
 			}
-
 		}
 
 		//Computes the distance contribution as a type of generalized mean with special handling for distances of zero
@@ -1185,19 +1195,13 @@ public:
 		bool surprisalToProbability;
 
 		//maximum number of entities to attempt to retrieve (based on queryType),
-		// but can be overridden by expandToFirstNonzeroDistance
 		size_t maxToRetrieve;
 
 		//minimum number of entities to attempt to retrieve
 		size_t minToRetrieve;
 
 		//incremental probability where, if the next entity is below this threshold, don't retrieve more,
-		// but can be overridden by expandToFirstNonzeroDistance
 		double numToRetrieveMinIncrementalProbability;
-
-		//if expandToFirstNonzeroDistance is true, it will expand k so that at least one non-zero distance is returned
-		// or return until all entities are included
-		bool expandToFirstNonzeroDistance;
 
 		//if hasWeight is true, then will call getEntityWeightFunction and apply the respective entity weight to each distance
 		bool hasWeight;

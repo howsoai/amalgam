@@ -255,14 +255,10 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				min_weight = sbfds.GetMinValueForColumnAsWeight(weight_column);
 			}
 
-			bool expand_to_first_nonzero_distance = (cond->queryType != ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
-				&& cond->queryType != ENT_QUERY_NEAREST_GENERALIZED_DISTANCE);
-
 			auto get_weight = sbfds.GetNumberValueFromEntityIndexFunction(weight_column);
 			EntityQueriesStatistics::DistanceTransform<size_t> distance_transform(cond->distEvaluator.computeSurprisal,
 				cond->distEvaluator.transformSurprisalToProb, cond->distanceWeightExponent,
 				cond->minToRetrieve, cond->maxToRetrieve, cond->numToRetrieveMinIncrementalProbability,
-				expand_to_first_nonzero_distance,
 				use_entity_weights, min_weight, get_weight);
 
 			//if first, need to populate with all entities
@@ -341,7 +337,9 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 						cond->maxDistance, cond->singleLabel, matching_entities, compute_results);
 				}
 
-				distance_transform.TransformDistances(compute_results, cond->returnSortedList);
+				size_t num_to_keep = distance_transform.TransformDistances(
+					begin(compute_results), end(compute_results), cond->returnSortedList);
+				compute_results.resize(num_to_keep);
 
 				//populate matching_entities if needed
 				if(update_matching_entities)

@@ -779,10 +779,13 @@ public:
 			return WeightProbability(prob, weight);
 		}
 
+	protected:
 		//transforms distances given transform_func, which should return a triple of the following 4
 		// values: resulting value, probability of being the same, probability mass of value, weight of entity
+		//selects the bandwidth from the transformed values and returns the number of entities to keep,
+		// which may be less than the total
 		//calls result_func for each iteration, which accepts two parameters, the resulting value and the weight of entity
-		//returns the number of entities to keep
+		// so that this method can be used flexibly for map and reduce purposes
 		template<typename EntityDistancePairIterator, typename TransformFunc, typename ResultFunc>
 		__forceinline size_t SelectBandwidthFromDistanceTransforms(
 			EntityDistancePairIterator entity_distance_pair_container_begin,
@@ -825,26 +828,15 @@ public:
 			}
 		}
 
-		//TODO 13225: update this comment
-		//transforms distances with regard to distance weight exponents, harmonic series, and entity weights as specified by parameters,
-		// transforming and updating the distances in entity_distance_pair_container in place
-		//EntityDistancePairContainer is the container for the entity-distance pairs, and EntityReference is the reference to the entity
-		//entity_distance_pair_container is the iterable container of the entity-distance pairs
-		//distance_weight_exponent is the exponent each distance is raised to
-		//has_weight, if set, will use get_weight, taking in a function of an entity reference and a reference to an output double to set the weight,
-		// and should return true if the entity has a weight, false if not
-		//sort_results, if set, will sort the results appropriately for the distance_weight_exponent,
-		// from smallest to largest if distance_weight_exponent is positive, largest to smallest otherwise
-		//get_entity returns the EntityReference for an iterator of EntityDistancePairContainer
-		//get_distance_ref returns a reference as a pointer to the location of the distance in the EntityDistancePairContainer
+		//transforms distances based on how this object has been parameterized
+		//calls result_func for each iteration, which accepts two parameters, the resulting value and the weight of entity
+		// so that this method can be used flexibly for map and reduce purposes
 		template<typename EntityDistancePairIterator, typename ResultFunc>
 		__forceinline size_t TransformDistancesWithBandwidthSelectionAndResultFunction(
 			EntityDistancePairIterator entity_distance_pair_container_begin,
 			EntityDistancePairIterator entity_distance_pair_container_end,
 			ResultFunc result_func)
 		{
-			//TODO 13225: implement tests
-
 			size_t num_to_keep = 0;
 			if(computeSurprisal)
 			{
@@ -996,7 +988,9 @@ public:
 			return num_to_keep;
 		}
 
+	public:
 		//TODO 13225: update this text
+		//TODO 13225: implement tests
 		//transforms distances with regard to distance weight exponents, harmonic series, and entity weights as specified by parameters,
 		// transforming and updating the distances in entity_distance_pair_container in place
 		//EntityDistancePairContainer is the container for the entity-distance pairs, and EntityReference is the reference to the entity
@@ -1014,24 +1008,26 @@ public:
 		{
 			size_t num_kept = TransformDistancesWithBandwidthSelectionAndResultFunction(
 				entity_distance_pair_container_begin, entity_distance_pair_container_end,
-				[](auto &ed_pair, double value, double weight)
+				[](auto ed_pair, double value, double weight)
 				{
 					ed_pair->distance = value;
 				});
 
 			if(sort_results)
 			{
+				//some compilers' interpretations of std::sort require a copy of the iterator that can be modified
+				auto begin_iter = entity_distance_pair_container_begin;
 				//if probability values or inverse distance, sort largest first
 				if((computeSurprisal && surprisalToProbability)
 					|| distanceWeightExponent <= 0)
 				{
-					std::sort(entity_distance_pair_container_begin, entity_distance_pair_container_begin + num_kept,
+					std::sort(begin_iter, begin_iter + num_kept,
 						[](auto a, auto b) {return a.distance > b.distance; }
 					);
 				}
 				else //surprisal or regular distance, sort by smallest first
 				{
-					std::sort(entity_distance_pair_container_begin, entity_distance_pair_container_begin + num_kept,
+					std::sort(begin_iter, begin_iter + num_kept,
 						[](auto a, auto b) {return a.distance < b.distance; }
 					);
 				}
@@ -1053,7 +1049,7 @@ public:
 
 				TransformDistancesWithBandwidthSelectionAndResultFunction(
 					entity_distance_pair_container_begin, entity_distance_pair_container_end,
-					[&total_probability, &accumulated_value](auto &ed_pair, double value, double weight)
+					[&total_probability, &accumulated_value](auto ed_pair, double value, double weight)
 					{
 						//in information theory, zero weights cancel out infinities, so skip if zero
 						if(weight != 0.0)
@@ -1075,7 +1071,7 @@ public:
 
 					TransformDistancesWithBandwidthSelectionAndResultFunction(
 						entity_distance_pair_container_begin, entity_distance_pair_container_end,
-						[&total_probability, &accumulated_value](auto &ed_pair, double value, double weight)
+						[&total_probability, &accumulated_value](auto ed_pair, double value, double weight)
 						{
 							total_probability += weight;
 							accumulated_value += value;
@@ -1101,7 +1097,7 @@ public:
 
 					TransformDistancesWithBandwidthSelectionAndResultFunction(
 						entity_distance_pair_container_begin, entity_distance_pair_container_end,
-						[&total_probability, &accumulated_value](auto &ed_pair, double value, double weight)
+						[&total_probability, &accumulated_value](auto ed_pair, double value, double weight)
 						{
 							total_probability += weight;
 							if(weight == 1)

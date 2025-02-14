@@ -362,14 +362,14 @@ namespace EntityQueryBuilder
 					{
 						double min_to_retrieve = EvaluableNode::ToNumber(top_k_ocn[1], std::numeric_limits<double>::infinity());
 						min_to_retrieve = std::max(0.0, min_to_retrieve);
-						if(min_to_retrieve < std::numeric_limits<size_t>::max())
+						if(min_to_retrieve < static_cast<double>(std::numeric_limits<size_t>::max()))
 							cur_condition->minToRetrieve = static_cast<size_t>(min_to_retrieve);
 
 						if(num_params >= 3)
 						{
 							double max_to_retrieve = EvaluableNode::ToNumber(top_k_ocn[2], std::numeric_limits<double>::infinity());
 							max_to_retrieve = std::max(0.0, max_to_retrieve);
-							if(max_to_retrieve < std::numeric_limits<size_t>::max())
+							if(max_to_retrieve < static_cast<double>(std::numeric_limits<size_t>::max()))
 								cur_condition->maxToRetrieve = static_cast<size_t>(max_to_retrieve);
 						}
 					}

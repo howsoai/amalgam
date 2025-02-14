@@ -781,7 +781,7 @@ public:
 
 		//transforms distances given transform_func, which should return a triple of the following 4
 		// values: resulting value, probability of being the same, probability mass of value, weight of entity
-		//calls result_func for each iteration
+		//calls result_func for each iteration, which accepts two parameters, the resulting value and the weight of entity
 		//returns the number of entities to keep
 		template<typename EntityDistancePairIterator, typename TransformFunc, typename ResultFunc>
 		__forceinline size_t SelectBandwidthFromDistanceTransforms(
@@ -808,7 +808,7 @@ public:
 
 					total_prob += prob_same * prob_mass;
 
-					result_func(entity_distance_pair_container_begin + cur_k, value, prob_same, prob_mass, weight);
+					result_func(entity_distance_pair_container_begin + cur_k, value, weight);
 				}
 
 				return cur_k;
@@ -818,7 +818,7 @@ public:
 				for(auto iter = entity_distance_pair_container_begin; iter != entity_distance_pair_container_end; ++iter)
 				{
 					auto [value, prob_same, prob_mass, weight] = transform_func(iter);
-					result_func(iter, value, prob_same, prob_mass, weight);
+					result_func(iter, value, weight);
 				}
 
 				return max_k;
@@ -826,7 +826,6 @@ public:
 		}
 
 		//TODO 13225: update this comment
-		//TODO 13225: reduce params to result_func
 		//transforms distances with regard to distance weight exponents, harmonic series, and entity weights as specified by parameters,
 		// transforming and updating the distances in entity_distance_pair_container in place
 		//EntityDistancePairContainer is the container for the entity-distance pairs, and EntityReference is the reference to the entity
@@ -844,7 +843,6 @@ public:
 			EntityDistancePairIterator entity_distance_pair_container_end,
 			ResultFunc result_func)
 		{
-			//TODO 13225: test this and see if there is a way to clean it up
 			//TODO 13225: implement tests
 
 			size_t num_to_keep = 0;
@@ -1016,7 +1014,7 @@ public:
 		{
 			size_t num_kept = TransformDistancesWithBandwidthSelectionAndResultFunction(
 				entity_distance_pair_container_begin, entity_distance_pair_container_end,
-				[](auto &ed_pair, double value, double prob, double prob_mass, double weight)
+				[](auto &ed_pair, double value, double weight)
 				{
 					ed_pair->distance = value;
 				});
@@ -1055,8 +1053,7 @@ public:
 
 				TransformDistancesWithBandwidthSelectionAndResultFunction(
 					entity_distance_pair_container_begin, entity_distance_pair_container_end,
-					[&total_probability, &accumulated_value](auto &ed_pair, double value, double prob,
-						double prob_mass, double weight)
+					[&total_probability, &accumulated_value](auto &ed_pair, double value, double weight)
 					{
 						//in information theory, zero weights cancel out infinities, so skip if zero
 						if(weight != 0.0)
@@ -1078,8 +1075,7 @@ public:
 
 					TransformDistancesWithBandwidthSelectionAndResultFunction(
 						entity_distance_pair_container_begin, entity_distance_pair_container_end,
-						[&total_probability, &accumulated_value](auto &ed_pair, double value, double prob,
-							double prob_mass, double weight)
+						[&total_probability, &accumulated_value](auto &ed_pair, double value, double weight)
 						{
 							total_probability += weight;
 							accumulated_value += value;
@@ -1105,19 +1101,18 @@ public:
 
 					TransformDistancesWithBandwidthSelectionAndResultFunction(
 						entity_distance_pair_container_begin, entity_distance_pair_container_end,
-						[&total_probability, &accumulated_value](auto &ed_pair, double value, double prob,
-							double prob_mass, double weight)
+						[&total_probability, &accumulated_value](auto &ed_pair, double value, double weight)
 						{
 							total_probability += weight;
 							if(weight == 1)
 								accumulated_value *= value;
 							else
-								accumulated_value *= std::pow(value, prob_mass);
+								accumulated_value *= std::pow(value, weight);
 						});
 
 					distanceWeightExponent = 0.0;
 
-					return std::pow(accumulated_value, 1.0 / total_probability);
+					return std::pow(accumulated_value, 1 / total_probability);
 				}
 			}
 		}

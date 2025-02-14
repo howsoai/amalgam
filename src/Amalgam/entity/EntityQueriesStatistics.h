@@ -773,12 +773,6 @@ public:
 			return 1.0 - weighted_prob_not_same;
 		}
 
-		__forceinline static double ConvertSurprisalToProbability(double surprisal, double weight)
-		{
-			double prob = ConvertSurprisalToProbability(surprisal);
-			return WeightProbability(prob, weight);
-		}
-
 	protected:
 		//transforms distances given transform_func, which should return a triple of the following 4
 		// values: resulting value, probability of being the same, probability mass of value, weight of entity
@@ -919,6 +913,22 @@ public:
 							return std::make_tuple(weighted_prob, prob, weighted_prob, weight);
 						}, result_func);
 				}
+				else if(distanceWeightExponent == 1)
+				{
+					num_to_keep = SelectBandwidthFromDistanceTransforms(
+						entity_distance_pair_container_begin, entity_distance_pair_container_end,
+						[this](auto iter)
+					{
+						double prob = 1.0 / iter->distance;
+						if(!hasWeight)
+							return std::make_tuple(iter->distance, prob, prob, 1.0);
+
+						double weight = 1.0;
+						getEntityWeightFunction(iter->reference, weight);
+
+						return std::make_tuple(weight * iter->distance, prob, weight * prob, weight);
+					}, result_func);
+				}
 				else if(distanceWeightExponent == 0)
 				{
 					num_to_keep = SelectBandwidthFromDistanceTransforms(
@@ -932,22 +942,6 @@ public:
 							getEntityWeightFunction(iter->reference, weight);
 
 							return std::make_tuple(weight, 1.0, weight, weight);
-						}, result_func);
-				}
-				else if(distanceWeightExponent == 1)
-				{
-					num_to_keep = SelectBandwidthFromDistanceTransforms(
-						entity_distance_pair_container_begin, entity_distance_pair_container_end,
-						[this](auto iter)
-						{
-							double prob = 1.0 / iter->distance;
-							if(!hasWeight)
-								return std::make_tuple(iter->distance, prob, prob, 1.0);
-
-							double weight = 1.0;
-							getEntityWeightFunction(iter->reference, weight);
-
-							return std::make_tuple(weight * iter->distance, prob, weight * prob, weight);
 						}, result_func);
 				}
 				else if(distanceWeightExponent > 0)

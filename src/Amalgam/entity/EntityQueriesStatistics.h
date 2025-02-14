@@ -779,7 +779,8 @@ public:
 		//selects the bandwidth from the transformed values and returns the number of entities to keep,
 		// which may be less than the total
 		//calls result_func for each iteration, which accepts two parameters, the resulting value and the weight of entity
-		// so that this method can be used flexibly for map and reduce purposes
+		// so that this method can be used flexibly for map and reduce purposes,
+		// writing out transformations or accumulating the results
 		template<typename EntityDistancePairIterator, typename TransformFunc, typename ResultFunc>
 		__forceinline size_t SelectBandwidthFromDistanceTransforms(
 			EntityDistancePairIterator entity_distance_pair_container_begin,
@@ -827,6 +828,7 @@ public:
 		//transforms distances based on how this object has been parameterized
 		//calls result_func for each iteration, which accepts two parameters, the resulting value and the weight of entity
 		// so that this method can be used flexibly for map and reduce purposes
+		// writing out transformations or accumulating the results
 		//selects the bandwidth from the transformed values and returns the number of entities to keep,
 		// which may be less than the total
 		template<typename EntityDistancePairIterator, typename ResultFunc>
@@ -919,6 +921,8 @@ public:
 						entity_distance_pair_container_begin, entity_distance_pair_container_end,
 						[this](auto iter)
 					{
+						//positive distanceWeightExponent values still need to compute the corresponding reciprocal
+						// in order to assess statistical bandwidth
 						double prob = 1.0 / iter->distance;
 						if(!hasWeight)
 							return std::make_tuple(iter->distance, prob, prob, 1.0);
@@ -950,6 +954,8 @@ public:
 						entity_distance_pair_container_begin, entity_distance_pair_container_end,
 						[this](auto iter)
 						{
+							//positive distanceWeightExponent values still need to compute the corresponding reciprocal
+							// in order to assess statistical bandwidth
 							double prob = (iter->distance == 0 ? std::numeric_limits<double>::infinity()
 								: std::pow(iter->distance, -distanceWeightExponent));
 

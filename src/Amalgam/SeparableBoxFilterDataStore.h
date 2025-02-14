@@ -402,6 +402,20 @@ public:
 		return columnData[column_index]->GetNumUniqueValues(value_type);
 	}
 
+	//treating column_index as a weight column, returns the minimum weight value
+	inline double GetMinValueForColumnAsWeight(size_t column_index)
+	{
+		if(column_index >= columnData.size())
+			return 1.0;
+
+		auto &sorted_number_value_entries = columnData[column_index]->sortedNumberValueEntries;
+		if(sorted_number_value_entries.size() == 0)
+			return 1.0;
+
+		//must return at least zero
+		return std::max(0.0, begin(sorted_number_value_entries)->first);
+	}
+
 	//returns a function that will take in an entity index iterator and reference to a double to store the value and return true if the value is found
 	// assumes and requires column_index is a valid column (not a feature_id)
 	template<typename Iter>

@@ -8,11 +8,10 @@
 #include <vector>
 
 //caches nearest neighbor results for every entity in the provided data structure
-// will attempt to find nonzero distances whenever possible and will expand the search out as far as it can in its attempt
-class KnnNonZeroDistanceQuerySBFCache
+class KnnCache
 {
 public:
-	KnnNonZeroDistanceQuerySBFCache()
+	KnnCache()
 	{
 		sbfDataStore = nullptr;
 	}
@@ -33,11 +32,12 @@ public:
 	}
 
 	//gets the nearest neighbors to the index and caches them
-	//this may expand k so that at least one non-zero distance is returned - if that is not possible then it will return all entities
+	//if expand_to_first_nonzero_distance is true, it will expand k so that at least one non-zero distance is returned
+	// or return until all entities are included
 #ifdef MULTITHREAD_SUPPORT
-	void PreCacheAllKnn(size_t top_k, bool run_concurrently)
+	void PreCacheAllKnn(size_t top_k, bool expand_to_first_nonzero_distance, bool run_concurrently)
 #else
-	void PreCacheAllKnn(size_t top_k)
+	void PreCacheAllKnn(size_t top_k, bool expand_to_first_nonzero_distance)
 #endif
 	{
 
@@ -54,11 +54,10 @@ public:
 					if(top_k > cachedNeighbors[index].size())
 					{
 						Concurrency::threadPool.BatchEnqueueTask(
-							[this, index, top_k, &task_set]
+							[this, index, top_k, expand_to_first_nonzero_distance, &task_set]
 							{
-								// could have knn cache constructor take in dist params and just get top_k from there, so don't need to pass it in everywhere
 								sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator, *positionLabelIds, index,
-									top_k, radiusLabelId, *relevantIndices, true, cachedNeighbors[index]);
+									top_k, radiusLabelId, *relevantIndices, expand_to_first_nonzero_distance, cachedNeighbors[index]);
 								task_set.MarkTaskCompleted();
 							}
 						);
@@ -79,7 +78,7 @@ public:
 			{
 				cachedNeighbors[index].clear();
 				sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator,
-					*positionLabelIds, index, top_k, radiusLabelId, *relevantIndices, true, cachedNeighbors[index]);
+					*positionLabelIds, index, top_k, radiusLabelId, *relevantIndices, expand_to_first_nonzero_distance, cachedNeighbors[index]);
 			}
 		}
 	}
@@ -97,8 +96,10 @@ public:
 	}
 
 	//gets the top_k nearest neighbor results of entities for the given index, excluding the additional_holdout_index, sets out to the results
-	//this may expand k so that at least one non-zero distance is returned - if that is not possible then it will return all entities
-	void GetKnn(size_t index, size_t top_k, std::vector<DistanceReferencePair<size_t>> &out,
+	//if expand_to_first_nonzero_distance is true, it will expand k so that at least one non-zero distance is returned
+	// or return until all entities are included
+	void GetKnn(size_t index, size_t top_k, bool expand_to_first_nonzero_distance,
+		std::vector<DistanceReferencePair<size_t>> &out,
 		size_t additional_holdout_index = std::numeric_limits<size_t>::max())
 	{
 		for(auto &neighbor : cachedNeighbors[index])
@@ -116,11 +117,13 @@ public:
 		//there were not enough results for this search, just do a new search
 		out.clear();
 		sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator,
-			*positionLabelIds, index, top_k, radiusLabelId, *relevantIndices, true, out, additional_holdout_index);
+			*positionLabelIds, index, top_k, radiusLabelId, *relevantIndices,
+			expand_to_first_nonzero_distance, out, additional_holdout_index);
 	}
 
 	//like the other GetKnn, but only considers from_indices
-	void GetKnn(size_t index, size_t top_k, std::vector<DistanceReferencePair<size_t>> &out, BitArrayIntegerSet &from_indices)
+	void GetKnn(size_t index, size_t top_k, bool expand_to_first_nonzero_distance,
+		std::vector<DistanceReferencePair<size_t>> &out, BitArrayIntegerSet &from_indices)
 	{
 		for(auto &neighbor : cachedNeighbors[index])
 		{
@@ -136,7 +139,7 @@ public:
 		//there were not enough results for this search, just do a new search
 		out.clear();
 		sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator,
-			*positionLabelIds, index, top_k, radiusLabelId, from_indices, true, out);
+			*positionLabelIds, index, top_k, radiusLabelId, from_indices, expand_to_first_nonzero_distance, out);
 	}
 
 	//returns a pointer to the relevant indices of the cache

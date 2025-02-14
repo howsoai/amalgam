@@ -831,6 +831,8 @@ public:
 		//transforms distances based on how this object has been parameterized
 		//calls result_func for each iteration, which accepts two parameters, the resulting value and the weight of entity
 		// so that this method can be used flexibly for map and reduce purposes
+		//selects the bandwidth from the transformed values and returns the number of entities to keep,
+		// which may be less than the total
 		template<typename EntityDistancePairIterator, typename ResultFunc>
 		__forceinline size_t TransformDistancesWithBandwidthSelectionAndResultFunction(
 			EntityDistancePairIterator entity_distance_pair_container_begin,
@@ -989,19 +991,9 @@ public:
 		}
 
 	public:
-		//TODO 13225: update this text
-		//TODO 13225: implement tests
-		//transforms distances with regard to distance weight exponents, harmonic series, and entity weights as specified by parameters,
-		// transforming and updating the distances in entity_distance_pair_container in place
-		//EntityDistancePairContainer is the container for the entity-distance pairs, and EntityReference is the reference to the entity
-		//entity_distance_pair_container is the iterable container of the entity-distance pairs
-		//distance_weight_exponent is the exponent each distance is raised to
-		//has_weight, if set, will use get_weight, taking in a function of an entity reference and a reference to an output double to set the weight,
-		// and should return true if the entity has a weight, false if not
-		//sort_results, if set, will sort the results appropriately for the distance_weight_exponent,
-		// from smallest to largest if distance_weight_exponent is positive, largest to smallest otherwise
-		//get_entity returns the EntityReference for an iterator of EntityDistancePairContainer
-		//get_distance_ref returns a reference as a pointer to the location of the distance in the EntityDistancePairContainer
+		//transforms distances based on how this object has been parameterized, modifying the values in place
+		//selects the bandwidth from the transformed values and returns the number of entities to keep,
+		// which may be less than the total
 		template<typename EntityDistancePairIterator>
 		inline size_t TransformDistances(EntityDistancePairIterator entity_distance_pair_container_begin,
 			EntityDistancePairIterator entity_distance_pair_container_end, bool sort_results)

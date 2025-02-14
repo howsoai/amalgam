@@ -1058,8 +1058,12 @@ public:
 					[&total_probability, &accumulated_value](auto &ed_pair, double value, double prob,
 						double prob_mass, double weight)
 					{
-						total_probability += weight;
-						accumulated_value += value;
+						//in information theory, zero weights cancel out infinities, so skip if zero
+						if(weight != 0.0)
+						{
+							total_probability += weight;
+							accumulated_value += value;
+						}
 					});
 
 				//normalize

@@ -4353,14 +4353,12 @@
 	(null ##x 0 ##weight 1)
 	) )
 
-  ;should be approx 2.123
   (print "surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list
-	(compute_entity_distance_contributions 4 (list "x") (list "testvert") (null) (null) (null) (list 0.25) 1 "surprisal_to_prob" (null) "fixed_seed" (null) "precise")
+	(compute_entity_distance_contributions 4 (list "x") (list "testvert") (null) (null) (null) (list 0.25) 1 "surprisal" (null) "fixed_seed" (null) "precise")
   )))
 
-  ;should be approx 2.123
   (print "weighted surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list
-	(compute_entity_distance_contributions 4 (list "x") (list "testvert") (null) (null) (null) (list 0.25) 1 "surprisal_to_prob" "weight" "fixed_seed" (null) "precise")
+	(compute_entity_distance_contributions 4 (list "x") (list "testvert") (null) (null) (null) (list 0.25) 1 "surprisal" "weight" "fixed_seed" (null) "precise")
   )))
 
  (print "--concurrency tests--\n")

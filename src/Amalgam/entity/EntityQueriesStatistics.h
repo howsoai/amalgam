@@ -796,7 +796,9 @@ public:
 
 			if(minToRetrieve < maxToRetrieve || numToRetrieveMinIncrementalProbability > 0.0)
 			{
-				auto [first_value, first_prob, first_prob_mass, weight] = transform_func(entity_distance_pair_container_begin);
+				auto [first_value, first_prob, first_prob_mass, first_weight] = transform_func(entity_distance_pair_container_begin);
+				result_func(entity_distance_pair_container_begin, first_value, first_weight);
+
 				double total_prob = first_prob_mass;
 				entity_distance_pair_container_begin->distance = first_value;
 				size_t cur_k = 1;
@@ -806,7 +808,7 @@ public:
 					auto [value, prob_same, prob_mass, weight] = transform_func(entity_distance_pair_container_begin + cur_k);
 
 					//stop if below probability threshold
-					if(prob_same / (total_prob + 1.0) < numToRetrieveMinIncrementalProbability)
+					if(prob_same / total_prob < numToRetrieveMinIncrementalProbability)
 						break;
 
 					total_prob += prob_same * prob_mass;
@@ -889,7 +891,8 @@ public:
 								}
 								else //weight of 0.0
 								{
-									surprisal = std::numeric_limits<double>::infinity();
+									//in information theory, zero weights cancel out infinities, so skip if zero
+									surprisal = 0.0;
 								}
 							}
 

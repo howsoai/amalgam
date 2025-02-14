@@ -230,10 +230,10 @@ hello world: 12 and 2
 (print "hello")
 [(null) (null) .infinity -.infinity]
 
-{c ["alpha" "beta" "gamma"] a 1 b 2}
+{a 1 c ["alpha" "beta" "gamma"] b 2}
 {
-	c ["alpha" "beta" "gamma"]
 	a 1
+	c ["alpha" "beta" "gamma"]
 	b 2
 }
 
@@ -680,12 +680,12 @@ a
 	d 4
 	e 5
 }
-{b 2 e 5}
+{b 2 c 3}
 {
 	a 1
 	b 2
+	c 3
 	d 4
-	e 5
 }
 {
 	a 1
@@ -731,12 +731,12 @@ c
 	d 4
 	e 5
 }
-{b 2 e 5}
+{b 2 c 3}
 {
 	a 1
 	b 2
+	c 3
 	d 4
-	e 5
 }
 {
 	a 1
@@ -1087,7 +1087,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-["c" "a" 4 "b"]
+[4 "a" "c" "b"]
 [
 	0
 	1
@@ -1099,10 +1099,10 @@ abcdef
 	7
 ]
 [0 1 2 3]
-[2 3 0 1]
-[2 3 0 1]
+[3 0 2 1]
+[3 0 2 1]
 --values--
-[3 1 "d" 2]
+["d" 1 3 2]
 [
 	"a"
 	1
@@ -1123,7 +1123,7 @@ abcdef
 	4
 	"d"
 ]
-[3 1 2 "d"]
+["d" 1 3 2]
 [
 	1
 	2
@@ -1275,10 +1275,10 @@ string
 list
 assoc
 [
+	4
+	{4 4}
 	[4]
 	"4"
-	{4 4}
-	4
 ]
 --set--
 {
@@ -1363,7 +1363,7 @@ current_index: 2
 		rmfile "del /s /q "
 		rwww 1
 		slash "\\"
-		start_time 1739300218.4499
+		start_time 1739503299.734452
 		www 1
 		x 12
 		zz 10
@@ -1409,7 +1409,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1739300218.4499
+	start_time 1739503299.734452
 	www 1
 	x 12
 	zz 10
@@ -1454,7 +1454,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1739300218.4499
+	start_time 1739503299.734452
 	www 1
 	x 12
 	zz 10
@@ -1605,11 +1605,11 @@ b
 	"b"
 ]
 
-infinity test c or d: ["d" "d" "c" "c"]
+infinity test c or d: ["c" "c" "d" "d"]
 
-{a 35 b 49 c 16}
+{a 16 b 49 c 35}
 
-[1 9 5]
+[1 5 8]
 
 --get_rand_seed--
 Ú◊c`ç`¶!öcîlˇ
@@ -1705,17 +1705,17 @@ string
 	{a 3 b 4}
 	{c "c"}
 ]
-21: [{"a":3,"b":4},{"c":"c","d":null}]
+21: [{"a":3,"b":4},{"d":null,"c":"c"}]
 22: [{"a":3,"b":4},{"c":"c","d":null}]
-23: c: 3
-a: 1
-d: 4
-b: 2
-e:
+23: e:
   - a
   - b
   - 
   - .inf
+d: 4
+a: 1
+c: 3
+b: 2
 
 24: a: 1
 b: 2
@@ -1728,7 +1728,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2025-02-11-13.56.58.5293190
+current date-time in epoch: 2025-02-13-22.21.39.8002890
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -1789,7 +1789,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelA #labelQ
+	labelA #labelQ #labelA
 		(lambda
 			#labelB (true)
 		)
@@ -1803,7 +1803,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelA #labelQ
+	labelA #labelQ #labelA
 		(lambda
 			#labelB (true)
 		)
@@ -2902,17 +2902,6 @@ _3130331116
 	##p
 	["_2325275497" "_2973704165" "_2325275497" "_2973704165"]
 )
-_2973704165
-(associate
-	"e"
-	3
-	"f"
-	4
-	"g"
-	5
-	"h"
-	6
-)
 _2325275497
 (associate
 	"E"
@@ -2922,6 +2911,17 @@ _2325275497
 	"G"
 	5
 	"H"
+	6
+)
+_2973704165
+(associate
+	"e"
+	3
+	"f"
+	4
+	"g"
+	5
+	"h"
 	6
 )
 --difference_entities--
@@ -3475,14 +3475,8 @@ difference between DiffEntity2 and new_entity:
 						[]
 						(lambda
 							{
-								E (get
-										(current_value 1)
-										"E"
-									)
-								F (get
-										(current_value 1)
-										"F"
-									)
+								E 3
+								F 4
 								G 5
 								H 6
 							}
@@ -3507,16 +3501,7 @@ difference between DiffEntity2 and new_entity:
 						_
 						[]
 						(lambda
-							{
-								e (get
-										(current_value 1)
-										"e"
-									)
-								f (get
-										(current_value 1)
-										"f"
-									)
-							}
+							{e 3 f 4}
 						)
 					)
 				)
@@ -3542,89 +3527,7 @@ contained_entities new_entity: ["OnlyIn2" "_1985995361" "_2783372341" "DiffEntit
 difference between DiffContainer and DiffEntity2:
 (declare
 	{_ (null) new_entity (null)}
-	(assign
-		"new_entity"
-		(first
-			(create_entities
-				new_entity
-				(call
-					(lambda
-						(declare
-							{_ (null)}
-							(replace _)
-						)
-					)
-					{
-						_ (retrieve_entity_root _)
-					}
-				)
-			)
-		)
-	)
-	(create_entities
-		(append new_entity "_1985995361")
-		(call
-			(lambda
-				(declare
-					{_ (null)}
-					(replace
-						_
-						[]
-						(lambda
-							{
-								E (null)
-								F (null)
-								G (get
-										(current_value 1)
-										"G"
-									)
-								H (get
-										(current_value 1)
-										"H"
-									)
-							}
-						)
-					)
-				)
-			)
-			{
-				_ (retrieve_entity_root
-						(append _ "_1985995361")
-					)
-			}
-		)
-	)
-	(create_entities
-		(append new_entity "_2783372341")
-		(call
-			(lambda
-				(declare
-					{_ (null)}
-					(replace
-						_
-						[]
-						(lambda
-							{e (null) f (null)}
-						)
-					)
-				)
-			)
-			{
-				_ (retrieve_entity_root
-						(append _ "_2783372341")
-					)
-			}
-		)
-	)
-	(clone_entities
-		(append _ "OnlyIn2")
-		(append new_entity "OnlyIn2")
-	)
-	(clone_entities
-		(append _ "DiffEntityChild1")
-		(append new_entity "DiffEntityChild1")
-	)
-	new_entity
+	(clone_entities _ new_entity)
 )
 --mix_entities--
 (associate "b" 4 "c" 3)
@@ -3714,7 +3617,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1739300218.959294
+1739503300.163292
 (true)
 
 RootTest
@@ -4132,8 +4035,8 @@ store to .json normally
 ["Child1" "Child5"]
 ["Child3" "Child4"]
 ["Child6" "Child7"]
-["Child1" "Child3" "Child4" "Child6"]
-["Child2" "Child3" "Child6" "Child7"]
+["Child1" "Child3" "Child5" "Child6"]
+["Child2" "Child4" "Child6" "Child7"]
 ["Child4" "Child6"]
 --query_sample--
 ["Child6"]
@@ -5029,12 +4932,22 @@ weighted probabilities: [
 ]
 
 weighted surprisals: [
-	["vert0" "vert2" "vert3" "vert1"]
-	[9.806912668719297 14.50000106908416 18.500000023703265 .infinity]
+	["vert1" "vert0" "vert2" "vert3"]
+	[0 9.806912668719297 14.50000106908416 18.500000023703265]
 ]
 
-surprisal contribution: {testvert 10.5376696245683}
-weighted surprisal contribution: {testvert 9.850941226785304}
+probabilities with dynamic selection: [
+	["vert0" "vert1" "vert2"]
+	[2.7535180455541748e-05 2.7535180455541748e-05 5.043471233780792e-07]
+]
+surprisals with dynamic selection: [
+	["vert0" "vert1" "vert2"]
+	[10.50004608159265 10.50004608159265 14.50000106908416]
+]
+surprisal contribution: {testvert 13.500023313993182}
+surprisal contribution: {testvert 10.50004608159265}
+weighted surprisal contribution: {testvert 10.70172844037668}
+weighted surprisal contribution: {testvert 4.903456334359649}
 --concurrency tests--
 hello
 hello
@@ -5106,4 +5019,4 @@ rmdir /s /q amlg_code\persistent_tree_test_root
 del /s /q amlg_code\persist_module_test\psm.mdam
 del /s /q amlg_code\persist_module_test.mdam
 --total execution time--
-2.734853982925415
+1.9893579483032227

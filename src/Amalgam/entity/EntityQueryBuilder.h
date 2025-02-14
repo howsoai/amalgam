@@ -336,19 +336,50 @@ namespace EntityQueryBuilder
 		cur_condition->useConcurrency = cn->GetConcurrency();
 
 		//set maximum distance and max number of results (top_k) to find
+		cur_condition->maxToRetrieve = std::numeric_limits<size_t>::max();
+		cur_condition->minToRetrieve = std::numeric_limits<size_t>::max();
+		cur_condition->numToRetrieveMinIncrementalProbability = 0.0;
 		if(condition_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE) //maximum distance to search within
 		{
-			cur_condition->maxToRetrieve = std::numeric_limits<double>::infinity();
 			cur_condition->maxDistance = EvaluableNode::ToNumber(ocn[MAX_TO_FIND_OR_MAX_DISTANCE]);
 			if(FastIsNaN(cur_condition->maxDistance))
 				cur_condition->maxDistance = 0;
 		}
 		else //infinite range query, use param as number to find (top_k)
 		{
-			cur_condition->maxToRetrieve = EvaluableNode::ToNumber(ocn[MAX_TO_FIND_OR_MAX_DISTANCE]);
-			if(FastIsNaN(cur_condition->maxToRetrieve))
-				cur_condition->maxToRetrieve = 0;
-			cur_condition->maxDistance = std::numeric_limits<double>::infinity();
+			EvaluableNode *top_k_node = ocn[MAX_TO_FIND_OR_MAX_DISTANCE];
+			if(EvaluableNode::IsOrderedArray(top_k_node))
+			{
+				auto &top_k_ocn = top_k_node->GetOrderedChildNodesReference();
+				size_t num_params = top_k_ocn.size();
+				//retrieve all the parameters from the list, clamping as appropriate
+				if(num_params >= 1)
+				{
+					double min_inc_prob = EvaluableNode::ToNumber(top_k_ocn[0], 0.0);
+					cur_condition->numToRetrieveMinIncrementalProbability = std::max(0.0, min_inc_prob);
+
+					if(num_params >= 2)
+					{
+						double min_to_retrieve = EvaluableNode::ToNumber(top_k_ocn[1], std::numeric_limits<double>::infinity());
+						min_to_retrieve = std::max(0.0, min_to_retrieve);
+						if(min_to_retrieve < static_cast<double>(std::numeric_limits<size_t>::max()))
+							cur_condition->minToRetrieve = static_cast<size_t>(min_to_retrieve);
+
+						if(num_params >= 3)
+						{
+							double max_to_retrieve = EvaluableNode::ToNumber(top_k_ocn[2], std::numeric_limits<double>::infinity());
+							max_to_retrieve = std::max(0.0, max_to_retrieve);
+							if(max_to_retrieve < static_cast<double>(std::numeric_limits<size_t>::max()))
+								cur_condition->maxToRetrieve = static_cast<size_t>(max_to_retrieve);
+						}
+					}
+				}
+			}
+			else //single value for k
+			{
+				cur_condition->maxToRetrieve = static_cast<size_t>(EvaluableNode::ToNumber(top_k_node, 1));
+				cur_condition->maxDistance = std::numeric_limits<double>::infinity();
+			}
 		}
 
 		//set position labels
@@ -664,10 +695,10 @@ namespace EntityQueryBuilder
 		{
 			case ENT_QUERY_SELECT:
 			{
-				cur_condition->maxToRetrieve = (ocn.size() > 0) ? EvaluableNode::ToNumber(ocn[0], 0.0) : 0;
+				cur_condition->maxToRetrieve = (ocn.size() > 0) ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[0], 1)) : 0;
 
 				cur_condition->hasStartOffset = (ocn.size() > 1);
-				cur_condition->startOffset = cur_condition->hasStartOffset ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[1], 0.0)) : 0;
+				cur_condition->startOffset = cur_condition->hasStartOffset ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[1], 1)) : 0;
 
 				cur_condition->hasRandomStream = (ocn.size() > 2 && !EvaluableNode::IsNull(ocn[2]));
 				if(cur_condition->hasRandomStream)
@@ -679,7 +710,7 @@ namespace EntityQueryBuilder
 			}
 			case ENT_QUERY_SAMPLE:
 			{
-				cur_condition->maxToRetrieve = (ocn.size() > 0) ? EvaluableNode::ToNumber(ocn[0], 0.0) : 1;
+				cur_condition->maxToRetrieve = (ocn.size() > 0) ? static_cast<size_t>(EvaluableNode::ToNumber(ocn[0], 1)) : 1;
 				cur_condition->singleLabel = (ocn.size() > 1) ? EvaluableNode::ToStringIDIfExists(ocn[1]) : StringInternPool::NOT_A_STRING_ID;
 
 				cur_condition->hasRandomStream = (ocn.size() > 2 && !EvaluableNode::IsNull(ocn[2]));
@@ -773,7 +804,7 @@ namespace EntityQueryBuilder
 				if(ocn.size() >= 2)
 				{
 					EvaluableNode *value = ocn[1];
-					cur_condition->maxToRetrieve = EvaluableNode::ToNumber(value);
+					cur_condition->maxToRetrieve = static_cast<size_t>(EvaluableNode::ToNumber(value, 1));
 				}
 
 				if(ocn.size() <= 2 || EvaluableNode::IsTrue(ocn[2]))

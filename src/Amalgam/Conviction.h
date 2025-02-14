@@ -10,7 +10,7 @@
 #include <numeric>
 
 //manages all types of processing related to conviction
-template<typename KnnCache, typename EntityReference, typename EntityReferenceSet>
+template<typename EntityReference, typename EntityReferenceSet>
 class ConvictionProcessor
 {
 public:
@@ -51,7 +51,8 @@ public:
 	{
 		//fetch the knn results from the cache
 		buffers->neighbors.clear();
-		knnCache->GetKnn(entity_reference, numNearestNeighbors, buffers->neighbors, additional_holdout_reference);
+		knnCache->GetKnn(entity_reference, numNearestNeighbors, true,
+			buffers->neighbors, additional_holdout_reference);
 
 		return distanceTransform->ComputeDistanceContribution(buffers->neighbors, entity_reference);
 	}
@@ -61,7 +62,7 @@ public:
 	{
 		//fetch the knn results from the cache
 		buffers->neighbors.clear();
-		knnCache->GetKnn(entity_reference, numNearestNeighbors, buffers->neighbors, included_entities);
+		knnCache->GetKnn(entity_reference, numNearestNeighbors, true, buffers->neighbors, included_entities);
 
 		return distanceTransform->ComputeDistanceContribution(buffers->neighbors, entity_reference);
 	}
@@ -97,7 +98,7 @@ public:
 	#ifdef MULTITHREAD_SUPPORT
 		//only cache concurrently if computing for all entities
 		if(runConcurrently && (entities_to_compute == nullptr || entities_to_compute->size() == knnCache->GetNumRelevantEntities()))
-			knnCache->PreCacheAllKnn(numNearestNeighbors, true);
+			knnCache->PreCacheAllKnn(numNearestNeighbors, true, true);
 	#endif
 
 		double contribs_sum_out = 0.0;
@@ -212,9 +213,9 @@ public:
 	{
 		//prime the cache
 	#ifdef MULTITHREAD_SUPPORT
-		knnCache->PreCacheAllKnn(numNearestNeighbors + 1, runConcurrently);
+		knnCache->PreCacheAllKnn(numNearestNeighbors + 1, true, runConcurrently);
 	#else
-		knnCache->PreCacheAllKnn(numNearestNeighbors + 1);
+		knnCache->PreCacheAllKnn(numNearestNeighbors + 1, true);
 	#endif
 
 		//find base distance contributions
@@ -362,9 +363,9 @@ public:
 		//prime cache; get double the number of numNearestNeighbors in attempt to reduce the number of queries needed
 		// other heuristics other than 2x may be considered, and the effectiveness of the heuristic entirely will depend on the overlap between the two case groups
 	#ifdef MULTITHREAD_SUPPORT
-		knnCache->PreCacheAllKnn(numNearestNeighbors * 2, runConcurrently);
+		knnCache->PreCacheAllKnn(numNearestNeighbors * 2, true, runConcurrently);
 	#else
-		knnCache->PreCacheAllKnn(numNearestNeighbors * 2);
+		knnCache->PreCacheAllKnn(numNearestNeighbors * 2, true);
 	#endif
 
 		//compute the resulting combined model distance contributions (reuse buffer)

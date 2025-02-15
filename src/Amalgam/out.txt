@@ -626,7 +626,7 @@ abcdef
 21 2.6664
 22 2.6664
 23 1.9997999999999998
-24 91.82415
+24 92.58165
 25 2.2360679796198744
 26 2.23606797749979
 27 3.0000000031604355
@@ -642,13 +642,13 @@ abcdef
 36 0
 37 0
 38 1.6766764161830636
-39 2.197224577336219
+39 3.58351893845611
 40 4.966335099422683
 41 0
-42 2.0114247563889367
-43 1.3862943611198906
-44 2.4849066497880004
-45 2.4849066497880004
+42 0.9128124677208268
+43 2.0794415416798357
+44 1.3862943611198906
+45 1.3862943611198906
 --entropy--
 0.6931471805599453
 0.14384103622589045
@@ -674,18 +674,18 @@ a
 [1 2 3 4 5 6]
 []
 {
-	a 1
 	b 2
 	c 3
 	d 4
 	e 5
+	f 6
 }
 {b 2 c 3}
 {
-	a 1
 	b 2
 	c 3
 	d 4
+	e 5
 }
 {
 	a 1
@@ -725,18 +725,18 @@ c
 [1 2 3 4 5 6]
 []
 {
-	a 1
 	b 2
 	c 3
 	d 4
 	e 5
+	f 6
 }
 {b 2 c 3}
 {
-	a 1
 	b 2
 	c 3
 	d 4
+	e 5
 }
 {
 	a 1
@@ -1087,7 +1087,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-[4 "a" "c" "b"]
+["a" 4 "c" "b"]
 [
 	0
 	1
@@ -1099,10 +1099,10 @@ abcdef
 	7
 ]
 [0 1 2 3]
-[3 0 2 1]
-[3 0 2 1]
+[1 0 2 3]
+[1 0 2 3]
 --values--
-["d" 1 3 2]
+[1 "d" 3 2]
 [
 	"a"
 	1
@@ -1123,7 +1123,7 @@ abcdef
 	4
 	"d"
 ]
-["d" 1 3 2]
+[1 "d" 3 2]
 [
 	1
 	2
@@ -1277,8 +1277,8 @@ assoc
 [
 	4
 	{4 4}
-	[4]
 	"4"
+	[4]
 ]
 --set--
 {
@@ -1363,7 +1363,7 @@ current_index: 2
 		rmfile "del /s /q "
 		rwww 1
 		slash "\\"
-		start_time 1739503299.734452
+		start_time 1739648695.508361
 		www 1
 		x 12
 		zz 10
@@ -1409,7 +1409,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1739503299.734452
+	start_time 1739648695.508361
 	www 1
 	x 12
 	zz 10
@@ -1454,7 +1454,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1739503299.734452
+	start_time 1739648695.508361
 	www 1
 	x 12
 	zz 10
@@ -1605,11 +1605,11 @@ b
 	"b"
 ]
 
-infinity test c or d: ["c" "c" "d" "d"]
+infinity test c or d: ["d" "d" "c" "c"]
 
 {a 16 b 49 c 35}
 
-[1 5 8]
+[2 3 6]
 
 --get_rand_seed--
 Ú◊c`ç`¶!öcîlˇ
@@ -1707,13 +1707,13 @@ string
 ]
 21: [{"a":3,"b":4},{"d":null,"c":"c"}]
 22: [{"a":3,"b":4},{"c":"c","d":null}]
-23: e:
+23: a: 1
+e:
   - a
   - b
   - 
   - .inf
 d: 4
-a: 1
 c: 3
 b: 2
 
@@ -1728,7 +1728,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2025-02-13-22.21.39.8002890
+current date-time in epoch: 2025-02-15-14.44.55.5805710
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -3475,8 +3475,14 @@ difference between DiffEntity2 and new_entity:
 						[]
 						(lambda
 							{
-								E 3
-								F 4
+								E (get
+										(current_value 1)
+										"E"
+									)
+								F (get
+										(current_value 1)
+										"F"
+									)
 								G 5
 								H 6
 							}
@@ -3501,7 +3507,16 @@ difference between DiffEntity2 and new_entity:
 						_
 						[]
 						(lambda
-							{e 3 f 4}
+							{
+								e (get
+										(current_value 1)
+										"e"
+									)
+								f (get
+										(current_value 1)
+										"f"
+									)
+							}
 						)
 					)
 				)
@@ -3527,7 +3542,89 @@ contained_entities new_entity: ["OnlyIn2" "_1985995361" "_2783372341" "DiffEntit
 difference between DiffContainer and DiffEntity2:
 (declare
 	{_ (null) new_entity (null)}
-	(clone_entities _ new_entity)
+	(assign
+		"new_entity"
+		(first
+			(create_entities
+				new_entity
+				(call
+					(lambda
+						(declare
+							{_ (null)}
+							(replace _)
+						)
+					)
+					{
+						_ (retrieve_entity_root _)
+					}
+				)
+			)
+		)
+	)
+	(create_entities
+		(append new_entity "_1985995361")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{
+								E (null)
+								F (null)
+								G (get
+										(current_value 1)
+										"G"
+									)
+								H (get
+										(current_value 1)
+										"H"
+									)
+							}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_1985995361")
+					)
+			}
+		)
+	)
+	(create_entities
+		(append new_entity "_2783372341")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{e (null) f (null)}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_2783372341")
+					)
+			}
+		)
+	)
+	(clone_entities
+		(append _ "OnlyIn2")
+		(append new_entity "OnlyIn2")
+	)
+	(clone_entities
+		(append _ "DiffEntityChild1")
+		(append new_entity "DiffEntityChild1")
+	)
+	new_entity
 )
 --mix_entities--
 (associate "b" 4 "c" 3)
@@ -3617,7 +3714,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1739503300.163292
+1739648695.890641
 (true)
 
 RootTest
@@ -4468,14 +4565,14 @@ case conviction:{
 }
 cyclic feature nearest neighbors: {cyclic1 1 cyclic5 0.5}
 cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
-190: 0.045454545454545456 (null
-	##deg 12
-)
 155: 0.1 (null
 	##deg 0
 )
 200: 0.05555555555555555 (null
 	##deg 8
+)
+190: 0.045454545454545456 (null
+	##deg 12
 )
 --contains_label--
 (true)
@@ -4765,10 +4862,10 @@ cyclic lookup test 2:
 {a1 5.0990195135927845 a2 2 a3 5.0990195135927845}
 {a1 1 a3 1 a4 0}
 --accuracy tests--
-1036.1581794564518
-24.769501899470985
-4.3464184709105573e-45
-{point1 1036.1581794564518 point2 978.5569789822398 point3 1036.1581794564518}
+1036.161432549831
+24.769602909571994
+4.3468579669914953e-45
+{point1 1036.161432549831 point2 984.280895893261 point3 1036.161432549831}
 distance symmetry tests
 [
 	[
@@ -5019,4 +5116,4 @@ rmdir /s /q amlg_code\persistent_tree_test_root
 del /s /q amlg_code\persist_module_test\psm.mdam
 del /s /q amlg_code\persist_module_test.mdam
 --total execution time--
-1.9893579483032227
+2.1297919750213623

@@ -1,80 +1,36 @@
 ﻿(seq
-
-
- (create_entities "TestContainerExec"
-	(lambda (parallel
-    ##^a 3
-	##b (contained_entities)
-	##c (+ x 1)
-	##d (call_entity "Child5" "q" (assoc x x))
-	##!e 12
-	##x 4
-	##y 5
-	))
- )
- (create_entities (list "TestContainerExec" "Child1")
-	(lambda (parallel
-	##x 3
-	##y 4
-	##!e 7
-	##weight 0.45
-	##weight_eq 1
-	))
- )
- (create_entities (list "TestContainerExec" "Child2")
-	(lambda (parallel
-	##x -1
-	##y -1
-	##weight 0.45
-	##weight_eq 1
-	))
- )
- (create_entities (list "TestContainerExec" "Child3")
-	(lambda (parallel
-	##x 100
-	##y 100
-	##weight 0.02
-	##weight_eq 1
-	))
- )
- (create_entities (list "TestContainerExec" "Child4")
-	(lambda (parallel
-	##x 100
-	##y 100
-	##radius 400
-	##weight 0.02
-	##weight_eq 1
-	))
- )
- (create_entities (list "TestContainerExec" "Child5")
-	(lambda (parallel
-	##p 3
-	##q (+ x (call_container "^a"))
-	##bar "crunchy"
-	##weight 0.02
-	##weight_eq 1
-	))
-	)
- (create_entities (list "TestContainerExec" "Child6")
-	(lambda (parallel
-	##x 1
-	##y 2
-	##bar "not crunchy"
-	##weight 0.02
-	##weight_eq 1
-	))
- )
- (create_entities (list "TestContainerExec" "Child7")
-	(lambda (parallel
-	##x 0
-	##y 10
-	##weight 0.02
-	##weight_eq 1
-	))
- )
-
-(print (contained_entities "TestContainerExec" (list
-   (query_sample 1 "weight")
-  )))
-
- )
+    (declare (assoc
+        deviations_sdm
+            {
+                "Bit 1" [
+                            [
+                                {
+                                    0 [
+                                            {0 0.1  1 0.9}
+                                           ; 0.98
+                                        ]
+                                    1 [
+                                            {0 0.8  1 0.2}
+                                            0.95
+                                        ]
+                                }
+                                0.3  ;larger = smaller dist
+                            ]
+                        ]
+            }
+    ))
+ 
+    (print
+        (generalized_distance
+            { "Bit 1" 1 "Bit 2" 1  } ; weights
+            { "Bit 1" "nominal_numeric" "Bit 2" "nominal_numeric"  }
+            (null)   ; query_feature_attributes_map
+            deviations_sdm
+            1 ;p
+            [0]
+            [3]
+            ["Bit 1"]
+            (true) ;surprisal
+        )
+    )
+)

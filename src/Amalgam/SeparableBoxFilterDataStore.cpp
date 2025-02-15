@@ -1008,24 +1008,12 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 					AccumulatePartialSumsForNominalStringIdValueIfExists(r_dist_eval, enabled_indices, sid, query_feature_index, *column, high_accuracy);
 				});
 
-			return r_dist_eval.ComputeDistanceTermNonNullNominalNextSmallest(unknown_unknown_term, query_feature_index, high_accuracy);;
+			return r_dist_eval.ComputeDistanceTermNonNullNominalNextSmallest(unknown_unknown_term, query_feature_index, high_accuracy);
 		}
 	}
 
-	bool is_feature_symmetric_nominal = r_dist_eval.distEvaluator->IsFeatureSymmetricNominal(query_feature_index);
-
-	//if made it here, then the value itself is not a null, so only need to consider unknown to known distances
-	//need to accumulate nulls if it's a symmetric nominal feature, because then there's only one value left,
-	//or if the nulls are closer than an exact match
-	if(is_feature_symmetric_nominal
-		|| r_dist_eval.distEvaluator->IsKnownToUnknownDistanceLessThanOrEqualToExactMatch(query_feature_index))
-	{
-		double known_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
-		AccumulatePartialSums(enabled_indices, column->nullIndices, query_feature_index, known_unknown_term);
-	}
-
-	//if nominal, only need to compute the exact match
-	if(is_feature_symmetric_nominal)
+	//if symmetric nominal, only need to compute the exact match
+	if(r_dist_eval.distEvaluator->IsFeatureSymmetricNominal(query_feature_index))
 	{
 		if(value.nodeType == ENIVT_NUMBER)
 		{
@@ -1390,6 +1378,20 @@ void SeparableBoxFilterDataStore::PopulateInitialPartialSums(RepeatedGeneralized
 			num_enabled_features > 1, high_accuracy,
 			i, enabled_indices);
 
+		//if value isn't null, may need to populate non-null values
+		if(!r_dist_eval.featureData[i].targetValue.IsNull())
+		{
+			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[i];
+			//if the value is not a null, need to accumulate null distance terms if it's a symmetric nominal feature,
+			// because then there's only one value left, or if the nulls are closer than what has already been considered
+			if(r_dist_eval.distEvaluator->IsFeatureSymmetricNominal(i)
+				|| feature_attribs.knownToUnknownDistanceTerm.deviation <= next_closest_distance)
+			{
+				double known_unknown_term = r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(i, high_accuracy);
+				AccumulatePartialSums(enabled_indices, columnData[feature_attribs.featureIndex]->nullIndices, i, known_unknown_term);
+			}
+		}
+
 		min_unpopulated_distances[i] = next_closest_distance;
 	}
 	std::sort(begin(min_unpopulated_distances), end(min_unpopulated_distances));
@@ -1503,6 +1505,9 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 	feature_data.Clear();
 	feature_data.targetValue = EvaluableNodeImmediateValueWithType(position_value, position_value_type);
 
+	if(feature_attribs.IsFeatureNominal())
+		r_dist_eval.ComputeAndStoreNominalDistanceTerms(query_feature_index);
+
 	bool complex_comparison = (feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE);
@@ -1551,9 +1556,6 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING;
 		else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE;
-
-		if(feature_attribs.IsFeatureNominal())
-			r_dist_eval.ComputeAndStoreNominalDistanceTerms(query_feature_index);
 	}
 	else // feature_type is some form of continuous numeric
 	{

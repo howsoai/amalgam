@@ -774,11 +774,13 @@ public:
 		}
 
 	protected:
-		//transforms distances given transform_func, which should return a triple of the following 4
-		// values: resulting value, probability of being the same, probability mass of value, weight of entity
+		//transforms distances given transform_func, which should return a tuple of the following
+		// values: resulting weighted value, resulting unweighted value, probability of being the same,
+		// probability mass of value, and weight of entity
 		//selects the bandwidth from the transformed values and returns the number of entities to keep,
 		// which may be less than the total
-		//calls result_func for each iteration, which accepts two parameters, the resulting value and the weight of entity
+		//calls result_func for each iteration, which accepts three parameters:
+		// the weighted resulting value, the unweighted resulting value, and the weight of entity
 		// so that this method can be used flexibly for map and reduce purposes,
 		// writing out transformations or accumulating the results
 		template<typename EntityDistancePairIterator, typename TransformFunc, typename ResultFunc>
@@ -791,16 +793,16 @@ public:
 
 			if(minToRetrieve < maxToRetrieve || numToRetrieveMinIncrementalProbability > 0.0)
 			{
-				auto [first_value, first_prob, first_prob_mass, first_weight] = transform_func(entity_distance_pair_container_begin);
-				result_func(entity_distance_pair_container_begin, first_value, first_weight);
+				auto [first_weighted_value, first_unweighted_value, first_prob, first_prob_mass, first_weight]
+					= transform_func(entity_distance_pair_container_begin);
+				result_func(entity_distance_pair_container_begin, first_weighted_value, first_unweighted_value, first_weight);
 
 				double total_prob = first_prob_mass;
-				entity_distance_pair_container_begin->distance = first_value;
 				size_t cur_k = 1;
-
 				for(; cur_k < max_k; cur_k++)
 				{
-					auto [value, prob_same, prob_mass, weight] = transform_func(entity_distance_pair_container_begin + cur_k);
+					auto [weighted_value, unweighted_value, prob_same, prob_mass, weight]
+						= transform_func(entity_distance_pair_container_begin + cur_k);
 
 					//stop if below probability threshold
 					if(prob_same / total_prob < numToRetrieveMinIncrementalProbability)
@@ -808,7 +810,7 @@ public:
 
 					total_prob += prob_same * prob_mass;
 
-					result_func(entity_distance_pair_container_begin + cur_k, value, weight);
+					result_func(entity_distance_pair_container_begin + cur_k, weighted_value, unweighted_value, weight);
 				}
 
 				return cur_k;
@@ -817,8 +819,8 @@ public:
 			{
 				for(auto iter = entity_distance_pair_container_begin; iter != entity_distance_pair_container_end; ++iter)
 				{
-					auto [value, prob_same, prob_mass, weight] = transform_func(iter);
-					result_func(iter, value, weight);
+					auto [weighted_value, unweighted_value, prob_same, prob_mass, weight] = transform_func(iter);
+					result_func(iter, weighted_value, unweighted_value, weight);
 				}
 
 				return max_k;
@@ -826,7 +828,8 @@ public:
 		}
 
 		//transforms distances based on how this object has been parameterized
-		//calls result_func for each iteration, which accepts two parameters, the resulting value and the weight of entity
+		//calls result_func for each iteration, which accepts three parameters:
+		// the weighted resulting value, the unweighted resulting value, and the weight of entity
 		// so that this method can be used flexibly for map and reduce purposes
 		// writing out transformations or accumulating the results
 		//selects the bandwidth from the transformed values and returns the number of entities to keep,
@@ -848,7 +851,7 @@ public:
 						{
 							double prob = ConvertSurprisalToProbability(iter->distance);
 							if(!hasWeight)
-								return std::make_tuple(prob, prob, prob, 1.0);
+								return std::make_tuple(prob, prob, prob, prob, 1.0);
 
 							double weighted_prob = prob;
 							double weight = 1.0;
@@ -861,7 +864,7 @@ public:
 									weighted_prob = 0.0;
 							}
 
-							return std::make_tuple(weighted_prob, prob, weighted_prob, weight);
+							return std::make_tuple(weighted_prob, prob, prob, weighted_prob, weight);
 						}, result_func);
 				}
 				else //keep in surprisal space
@@ -871,9 +874,10 @@ public:
 						[this](auto iter)
 						{
 							double surprisal = iter->distance;
+							double weighted_surprisal = surprisal;
 							double prob = ConvertSurprisalToProbability(surprisal);
 							if(!hasWeight)
-								return std::make_tuple(surprisal, prob, prob, 1.0);
+								return std::make_tuple(surprisal, surprisal, prob, prob, 1.0);
 
 							double weighted_prob = prob;
 							double weight = 1.0;
@@ -883,16 +887,16 @@ public:
 								if(weight != 0.0)
 								{
 									weighted_prob = WeightProbability(prob, weight);
-									surprisal = ConvertProbabilityToSurprisal(weighted_prob);
+									weighted_surprisal = ConvertProbabilityToSurprisal(weighted_prob);
 								}
 								else //weight of 0.0
 								{
 									//in information theory, zero weights cancel out infinities, so skip if zero
-									surprisal = 0.0;
+									weighted_surprisal = 0.0;
 								}
 							}
 
-							return std::make_tuple(surprisal, prob, weighted_prob, weight);
+							return std::make_tuple(weighted_surprisal, surprisal, prob, weighted_prob, weight);
 						}, result_func);
 				}
 			}
@@ -906,13 +910,13 @@ public:
 						{
 							double prob = 1.0 / iter->distance;
 							if(!hasWeight)
-								return std::make_tuple(prob, prob, prob, 1.0);
+								return std::make_tuple(prob, prob, prob, prob, 1.0);
 
 							double weight = 1.0;
 							getEntityWeightFunction(iter->reference, weight);
 							double weighted_prob = prob * weight;
 
-							return std::make_tuple(weighted_prob, prob, weighted_prob, weight);
+							return std::make_tuple(weighted_prob, prob, prob, weighted_prob, weight);
 						}, result_func);
 				}
 				else if(distanceWeightExponent == 1)
@@ -925,12 +929,12 @@ public:
 						// in order to assess statistical bandwidth
 						double prob = 1.0 / iter->distance;
 						if(!hasWeight)
-							return std::make_tuple(iter->distance, prob, prob, 1.0);
+							return std::make_tuple(iter->distance, iter->distance, prob, prob, 1.0);
 
 						double weight = 1.0;
 						getEntityWeightFunction(iter->reference, weight);
 
-						return std::make_tuple(weight * iter->distance, prob, weight * prob, weight);
+						return std::make_tuple(weight * iter->distance, iter->distance, prob, weight * prob, weight);
 					}, result_func);
 				}
 				else if(distanceWeightExponent == 0)
@@ -940,12 +944,12 @@ public:
 						[this](auto iter)
 						{
 							if(!hasWeight)
-								return std::make_tuple(1.0, 1.0, 1.0, 1.0);
+								return std::make_tuple(1.0, 1.0, 1.0, 1.0, 1.0);
 
 							double weight = 1.0;
 							getEntityWeightFunction(iter->reference, weight);
 
-							return std::make_tuple(weight, 1.0, weight, weight);
+							return std::make_tuple(weight, 1.0, 1.0, weight, weight);
 						}, result_func);
 				}
 				else if(distanceWeightExponent > 0)
@@ -960,13 +964,13 @@ public:
 								: std::pow(iter->distance, -distanceWeightExponent));
 
 							if(!hasWeight)
-								return std::make_tuple(iter->distance, prob, prob, 1.0);
+								return std::make_tuple(iter->distance, iter->distance, prob, prob, 1.0);
 
 							double weight = 1.0;
 							getEntityWeightFunction(iter->reference, weight);
 
-							double value = weight * std::pow(iter->distance, distanceWeightExponent);
-							return std::make_tuple(value, prob, weight * prob, weight);
+							double value = std::pow(iter->distance, distanceWeightExponent);
+							return std::make_tuple(weight * value, value, prob, weight * prob, weight);
 						}, result_func);
 				}
 				else //distanceWeightExponent < 0
@@ -979,13 +983,13 @@ public:
 								: std::pow(iter->distance, distanceWeightExponent));
 
 							if(!hasWeight)
-								return std::make_tuple(iter->distance, prob, prob, 1.0);
+								return std::make_tuple(iter->distance, iter->distance, prob, prob, 1.0);
 
 							double weight = 1.0;
 							getEntityWeightFunction(iter->reference, weight);
 							double weighted_prob = prob * weight;
 
-							return std::make_tuple(weighted_prob, prob, weighted_prob, weight);
+							return std::make_tuple(weighted_prob, prob, prob, weighted_prob, weight);
 						}, result_func);
 				}
 			}
@@ -1003,9 +1007,9 @@ public:
 		{
 			size_t num_kept = TransformDistancesWithBandwidthSelectionAndResultFunction(
 				entity_distance_pair_container_begin, entity_distance_pair_container_end,
-				[](auto ed_pair, double value, double weight)
+				[](auto ed_pair, double weighted_value, double unweighted_value, double weight)
 				{
-					ed_pair->distance = value;
+					ed_pair->distance = weighted_value;
 				});
 
 			if(sort_results)
@@ -1041,21 +1045,33 @@ public:
 			{
 				double total_probability = 0.0;
 				double accumulated_value = 0.0;
+				//collect smallest value in case of numeric underflow; can approximate by using the smallest value
+				double smallest_value = std::numeric_limits<double>::infinity();
 
 				TransformDistancesWithBandwidthSelectionAndResultFunction(
 					entity_distance_pair_container_begin, entity_distance_pair_container_end,
-					[&total_probability, &accumulated_value](auto ed_pair, double value, double weight)
+					[&total_probability, &accumulated_value, &smallest_value](auto ed_pair,
+						double weighted_value, double unweighted_value, double weight)
 					{
 						//in information theory, zero weights cancel out infinities, so skip if zero
 						if(weight != 0.0)
 						{
 							total_probability += weight;
-							accumulated_value += value;
+							accumulated_value += weighted_value;
+
+							//TODO need to get unweighted value and compare -- in case of prob that's not here
+							//compare the unweighted value in case of underflow
+							if(unweighted_value < smallest_value)
+								smallest_value = unweighted_value;
 						}
 					});
 
-				//normalize
-				return accumulated_value / total_probability;
+				double normalized_value = accumulated_value / total_probability;
+				if(normalized_value > 0)
+					return normalized_value;
+
+				//if had underflow, approximate by selecting the smallest value
+				return smallest_value;
 			}
 			else //distance transform
 			{
@@ -1066,10 +1082,11 @@ public:
 
 					TransformDistancesWithBandwidthSelectionAndResultFunction(
 						entity_distance_pair_container_begin, entity_distance_pair_container_end,
-						[&total_probability, &accumulated_value](auto ed_pair, double value, double weight)
+						[&total_probability, &accumulated_value](auto ed_pair,
+							double weighted_value, double unweighted_value, double weight)
 						{
 							total_probability += weight;
-							accumulated_value += value;
+							accumulated_value += weighted_value;
 						});
 
 					//normalize
@@ -1092,13 +1109,14 @@ public:
 
 					TransformDistancesWithBandwidthSelectionAndResultFunction(
 						entity_distance_pair_container_begin, entity_distance_pair_container_end,
-						[&total_probability, &accumulated_value](auto ed_pair, double value, double weight)
+						[&total_probability, &accumulated_value](auto ed_pair,
+							double weighted_value, double unweighted_value, double weight)
 						{
 							total_probability += weight;
 							if(weight == 1)
-								accumulated_value *= value;
+								accumulated_value *= unweighted_value;
 							else
-								accumulated_value *= std::pow(value, weight);
+								accumulated_value *= std::pow(unweighted_value, weight);
 						});
 
 					distanceWeightExponent = 0.0;

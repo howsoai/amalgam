@@ -230,10 +230,10 @@ hello world: 12 and 2
 (print "hello")
 [(null) (null) .infinity -.infinity]
 
-{b 2 a 1 c ["alpha" "beta" "gamma"]}
+{a 1 b 2 c ["alpha" "beta" "gamma"]}
 {
-	b 2
 	a 1
+	b 2
 	c ["alpha" "beta" "gamma"]
 }
 
@@ -658,7 +658,7 @@ abcdef
 0.14384103622589045
 --first--
 4
-2
+1
 1
 0
 a
@@ -674,17 +674,17 @@ a
 [1 2 3 4 5 6]
 []
 {
-	a 1
 	b 2
 	c 3
 	d 4
+	e 5
 	f 6
 }
-{c 3 f 6}
+{d 4 e 5}
 {
-	a 1
 	c 3
 	d 4
+	e 5
 	f 6
 }
 {
@@ -709,7 +709,7 @@ abcdef
 
 --last--
 this
-2
+1
 1
 0
 c
@@ -725,17 +725,17 @@ c
 [1 2 3 4 5 6]
 []
 {
-	a 1
 	b 2
 	c 3
 	d 4
+	e 5
 	f 6
 }
-{c 3 f 6}
+{d 4 e 5}
 {
-	a 1
 	c 3
 	d 4
+	e 5
 	f 6
 }
 {
@@ -1087,7 +1087,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-["b" 4 "a" "c"]
+["a" "b" "c" 4]
 [
 	0
 	1
@@ -1099,10 +1099,10 @@ abcdef
 	7
 ]
 [0 1 2 3]
-[3 2 1 0]
-[3 2 1 0]
+[2 3 0 1]
+[2 3 0 1]
 --values--
-[2 "d" 1 3]
+[1 2 3 "d"]
 [
 	"a"
 	1
@@ -1123,7 +1123,7 @@ abcdef
 	4
 	"d"
 ]
-[1 2 "d" 3]
+[1 "d" 2 3]
 [
 	1
 	2
@@ -1276,9 +1276,9 @@ list
 assoc
 [
 	[4]
-	{4 4}
-	"4"
 	4
+	"4"
+	{4 4}
 ]
 --set--
 {
@@ -1363,7 +1363,7 @@ current_index: 2
 		rmfile "del /s /q "
 		rwww 1
 		slash "\\"
-		start_time 1739754476.465766
+		start_time 1739754830.288259
 		www 1
 		x 12
 		zz 10
@@ -1409,7 +1409,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1739754476.465766
+	start_time 1739754830.288259
 	www 1
 	x 12
 	zz 10
@@ -1454,7 +1454,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1739754476.465766
+	start_time 1739754830.288259
 	www 1
 	x 12
 	zz 10
@@ -1588,28 +1588,28 @@ true
 b
 [
 	"b"
-	"a"
-	"b"
-	"b"
-	"b"
-	"b"
-	"b"
-	"b"
-	"b"
 	"b"
 	"b"
 	"a"
 	"a"
+	"b"
+	"b"
 	"a"
 	"b"
 	"a"
+	"b"
+	"b"
+	"b"
+	"b"
+	"b"
+	"b"
 ]
 
 infinity test c or d: ["c" "c" "d" "d"]
 
-{a 35 b 44 c 21}
+{a 16 b 63 c 21}
 
-[1 7 10]
+[1 7 6]
 
 --get_rand_seed--
 Ú◊c`ç`¶!öcîlˇ
@@ -1655,8 +1655,8 @@ infinity test c or d: ["c" "c" "d" "d"]
 string
 --set_type--
 (- 3 4)
-["b" 3 "a" 4]
-["b" 3 "a" 4]
+["a" 4 "b" 3]
+["a" 4 "b" 3]
 {a 4 b 3}
 8.7
 (parallel
@@ -1705,17 +1705,17 @@ string
 	{a 3 b 4}
 	{c "c"}
 ]
-21: [{"b":4,"a":3},{"d":null,"c":"c"}]
+21: [{"a":3,"b":4},{"c":"c","d":null}]
 22: [{"a":3,"b":4},{"c":"c","d":null}]
-23: e:
+23: a: 1
+b: 2
+c: 3
+d: 4
+e:
   - a
   - b
   - 
   - .inf
-b: 2
-d: 4
-a: 1
-c: 3
 
 24: a: 1
 b: 2
@@ -1728,7 +1728,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2025-02-16-20.07.56.7240780
+current date-time in epoch: 2025-02-16-20.13.50.9351700
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -1789,7 +1789,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelA #labelQ
+	labelA #labelQ #labelA
 		(lambda
 			#labelB (true)
 		)
@@ -1803,7 +1803,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelA #labelQ
+	labelA #labelQ #labelA
 		(lambda
 			#labelB (true)
 		)
@@ -2902,17 +2902,6 @@ _1651806471
 	##p
 	["_2325275497" "_2973704165" "_2325275497" "_2973704165"]
 )
-_2973704165
-(associate
-	"e"
-	3
-	"f"
-	4
-	"g"
-	5
-	"h"
-	6
-)
 _2325275497
 (associate
 	"E"
@@ -2922,6 +2911,17 @@ _2325275497
 	"G"
 	5
 	"H"
+	6
+)
+_2973704165
+(associate
+	"e"
+	3
+	"f"
+	4
+	"g"
+	5
+	"h"
 	6
 )
 --difference_entities--
@@ -3475,8 +3475,14 @@ difference between DiffEntity2 and new_entity:
 						[]
 						(lambda
 							{
-								E 3
-								F 4
+								E (get
+										(current_value 1)
+										"E"
+									)
+								F (get
+										(current_value 1)
+										"F"
+									)
 								G 5
 								H 6
 							}
@@ -3501,7 +3507,16 @@ difference between DiffEntity2 and new_entity:
 						_
 						[]
 						(lambda
-							{e 3 f 4}
+							{
+								e (get
+										(current_value 1)
+										"e"
+									)
+								f (get
+										(current_value 1)
+										"f"
+									)
+							}
 						)
 					)
 				)
@@ -3527,7 +3542,89 @@ contained_entities new_entity: ["OnlyIn2" "_1985995361" "_2783372341" "DiffEntit
 difference between DiffContainer and DiffEntity2:
 (declare
 	{_ (null) new_entity (null)}
-	(clone_entities _ new_entity)
+	(assign
+		"new_entity"
+		(first
+			(create_entities
+				new_entity
+				(call
+					(lambda
+						(declare
+							{_ (null)}
+							(replace _)
+						)
+					)
+					{
+						_ (retrieve_entity_root _)
+					}
+				)
+			)
+		)
+	)
+	(create_entities
+		(append new_entity "_1985995361")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{
+								E (null)
+								F (null)
+								G (get
+										(current_value 1)
+										"G"
+									)
+								H (get
+										(current_value 1)
+										"H"
+									)
+							}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_1985995361")
+					)
+			}
+		)
+	)
+	(create_entities
+		(append new_entity "_2783372341")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{e (null) f (null)}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_2783372341")
+					)
+			}
+		)
+	)
+	(clone_entities
+		(append _ "OnlyIn2")
+		(append new_entity "OnlyIn2")
+	)
+	(clone_entities
+		(append _ "DiffEntityChild1")
+		(append new_entity "DiffEntityChild1")
+	)
+	new_entity
 )
 --mix_entities--
 (associate "b" 4 "c" 3)
@@ -3628,7 +3725,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1739754476.914623
+1739754831.116115
 (true)
 
 RootTest
@@ -4479,14 +4576,14 @@ case conviction:{
 }
 cyclic feature nearest neighbors: {cyclic1 1 cyclic5 0.5}
 cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
-190: 0.045454545454545456 (null
-	##deg 12
-)
 155: 0.1 (null
 	##deg 0
 )
 200: 0.05555555555555555 (null
 	##deg 8
+)
+190: 0.045454545454545456 (null
+	##deg 12
 )
 --contains_label--
 (true)
@@ -5030,4 +5127,4 @@ rmdir /s /q amlg_code\persistent_tree_test_root
 del /s /q amlg_code\persist_module_test\psm.mdam
 del /s /q amlg_code\persist_module_test.mdam
 --total execution time--
-1.177922010421753
+1.8216688632965088

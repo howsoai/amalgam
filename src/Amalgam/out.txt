@@ -230,11 +230,11 @@ hello world: 12 and 2
 (print "hello")
 [(null) (null) .infinity -.infinity]
 
-{a 1 c ["alpha" "beta" "gamma"] b 2}
+{b 2 a 1 c ["alpha" "beta" "gamma"]}
 {
+	b 2
 	a 1
 	c ["alpha" "beta" "gamma"]
-	b 2
 }
 
 (apply "6")
@@ -626,7 +626,7 @@ abcdef
 21 2.6664
 22 2.6664
 23 1.9997999999999998
-24 91.82415
+24 92.58165
 25 2.2360679796198744
 26 2.23606797749979
 27 3.0000000031604355
@@ -642,13 +642,13 @@ abcdef
 36 0
 37 0
 38 1.6766764161830636
-39 2.197224577336219
+39 3.58351893845611
 40 4.966335099422683
 41 0
-42 2.0114247563889367
-43 1.3862943611198906
-44 2.4849066497880004
-45 2.4849066497880004
+42 0.9128124677208268
+43 2.0794415416798357
+44 1.3862943611198906
+45 1.3862943611198906
 --entropy--
 0.6931471805599453
 0.14384103622589045
@@ -658,7 +658,7 @@ abcdef
 0.14384103622589045
 --first--
 4
-1
+2
 1
 0
 a
@@ -678,14 +678,14 @@ a
 	b 2
 	c 3
 	d 4
-	e 5
+	f 6
 }
-{b 2 c 3}
+{c 3 f 6}
 {
 	a 1
-	b 2
 	c 3
 	d 4
+	f 6
 }
 {
 	a 1
@@ -709,7 +709,7 @@ abcdef
 
 --last--
 this
-1
+2
 1
 0
 c
@@ -729,14 +729,14 @@ c
 	b 2
 	c 3
 	d 4
-	e 5
+	f 6
 }
-{b 2 c 3}
+{c 3 f 6}
 {
 	a 1
-	b 2
 	c 3
 	d 4
+	f 6
 }
 {
 	a 1
@@ -1087,7 +1087,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-[4 "a" "c" "b"]
+["b" 4 "a" "c"]
 [
 	0
 	1
@@ -1099,10 +1099,10 @@ abcdef
 	7
 ]
 [0 1 2 3]
-[3 0 2 1]
-[3 0 2 1]
+[3 2 1 0]
+[3 2 1 0]
 --values--
-["d" 1 3 2]
+[2 "d" 1 3]
 [
 	"a"
 	1
@@ -1123,7 +1123,7 @@ abcdef
 	4
 	"d"
 ]
-["d" 1 3 2]
+[1 2 "d" 3]
 [
 	1
 	2
@@ -1275,10 +1275,10 @@ string
 list
 assoc
 [
-	4
-	{4 4}
 	[4]
+	{4 4}
 	"4"
+	4
 ]
 --set--
 {
@@ -1344,7 +1344,7 @@ current_index: 2
 				8
 			]
 		accum_string "abcdef"
-		argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+		argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 		bar (declare
 				{x 6}
 				(+ x 2)
@@ -1357,13 +1357,13 @@ current_index: 2
 				A {B 2}
 				B 2
 			}
-		interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+		interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rmdir "rmdir /s /q "
 		rmfile "del /s /q "
 		rwww 1
 		slash "\\"
-		start_time 1739503299.734452
+		start_time 1739754476.465766
 		www 1
 		x 12
 		zz 10
@@ -1390,7 +1390,7 @@ current_index: 2
 			8
 		]
 	accum_string "abcdef"
-	argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+	argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 	bar (declare
 			{x 6}
 			(+ x 2)
@@ -1403,13 +1403,13 @@ current_index: 2
 			A {B 2}
 			B 2
 		}
-	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rmdir "rmdir /s /q "
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1739503299.734452
+	start_time 1739754476.465766
 	www 1
 	x 12
 	zz 10
@@ -1435,7 +1435,7 @@ current_index: 2
 			8
 		]
 	accum_string "abcdef"
-	argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+	argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 	bar (declare
 			{x 6}
 			(+ x 2)
@@ -1448,13 +1448,13 @@ current_index: 2
 			A {B 2}
 			B 2
 		}
-	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rmdir "rmdir /s /q "
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1739503299.734452
+	start_time 1739754476.465766
 	www 1
 	x 12
 	zz 10
@@ -1588,14 +1588,6 @@ true
 b
 [
 	"b"
-	"b"
-	"b"
-	"a"
-	"a"
-	"b"
-	"b"
-	"a"
-	"b"
 	"a"
 	"b"
 	"b"
@@ -1603,13 +1595,21 @@ b
 	"b"
 	"b"
 	"b"
+	"b"
+	"b"
+	"b"
+	"a"
+	"a"
+	"a"
+	"b"
+	"a"
 ]
 
 infinity test c or d: ["c" "c" "d" "d"]
 
-{a 16 b 49 c 35}
+{a 35 b 44 c 21}
 
-[1 5 8]
+[1 7 10]
 
 --get_rand_seed--
 Ú◊c`ç`¶!öcîlˇ
@@ -1655,8 +1655,8 @@ infinity test c or d: ["c" "c" "d" "d"]
 string
 --set_type--
 (- 3 4)
-["a" 4 "b" 3]
-["a" 4 "b" 3]
+["b" 3 "a" 4]
+["b" 3 "a" 4]
 {a 4 b 3}
 8.7
 (parallel
@@ -1705,17 +1705,17 @@ string
 	{a 3 b 4}
 	{c "c"}
 ]
-21: [{"a":3,"b":4},{"d":null,"c":"c"}]
+21: [{"b":4,"a":3},{"d":null,"c":"c"}]
 22: [{"a":3,"b":4},{"c":"c","d":null}]
 23: e:
   - a
   - b
   - 
   - .inf
+b: 2
 d: 4
 a: 1
 c: 3
-b: 2
 
 24: a: 1
 b: 2
@@ -1728,7 +1728,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2025-02-13-22.21.39.8002890
+current date-time in epoch: 2025-02-16-20.07.56.7240780
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -1789,7 +1789,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelQ #labelA
+	labelA #labelA #labelQ
 		(lambda
 			#labelB (true)
 		)
@@ -1803,7 +1803,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelQ #labelA
+	labelA #labelA #labelQ
 		(lambda
 			#labelB (true)
 		)
@@ -2851,16 +2851,18 @@ flatten restore with parallel
 19.264241099357605
 --intersect_entities--
 (associate "b" 4)
-MergeEntityChild2
-(associate "p" 3 "q" 4)
 MergeEntityChild1
 (associate "x" 3 "y" 4)
-_1651806471
-(associate "e" 3 "f" 4)
+MergeEntityChild2
+(associate "p" 3 "q" 4)
 _3130331116
 (associate "E" 3 "F" 4)
+_1651806471
+(associate "e" 3 "f" 4)
 --union_entities--
 (associate "b" 4 "a" 3 "c" 3)
+MergeEntityChild1
+(associate "x" 3 "y" 4 "z" 5)
 MergeEntityChild2
 (associate
 	"p"
@@ -2874,19 +2876,6 @@ MergeEntityChild2
 	"w"
 	7
 )
-MergeEntityChild1
-(associate "x" 3 "y" 4 "z" 5)
-_1651806471
-(associate
-	"e"
-	3
-	"f"
-	4
-	"g"
-	5
-	"h"
-	6
-)
 _3130331116
 (associate
 	"E"
@@ -2898,20 +2887,20 @@ _3130331116
 	"H"
 	6
 )
+_1651806471
+(associate
+	"e"
+	3
+	"f"
+	4
+	"g"
+	5
+	"h"
+	6
+)
 (parallel
 	##p
 	["_2325275497" "_2973704165" "_2325275497" "_2973704165"]
-)
-_2325275497
-(associate
-	"E"
-	3
-	"F"
-	4
-	"G"
-	5
-	"H"
-	6
 )
 _2973704165
 (associate
@@ -2922,6 +2911,17 @@ _2973704165
 	"g"
 	5
 	"h"
+	6
+)
+_2325275497
+(associate
+	"E"
+	3
+	"F"
+	4
+	"G"
+	5
+	"H"
 	6
 )
 --difference_entities--
@@ -3531,14 +3531,25 @@ difference between DiffContainer and DiffEntity2:
 )
 --mix_entities--
 (associate "b" 4 "c" 3)
-MergeEntityChild2
-(associate "p" 3 "q" 4 "w" 7)
 MergeEntityChild1
-(associate "x" 3 "y" 4 "z" 5)
-_1651806471
-(associate "e" 3 "f" 4)
+(associate "x" 3 "y" 4)
+MergeEntityChild2
+(associate
+	"p"
+	3
+	"q"
+	4
+	"u"
+	5
+	"v"
+	6
+	"w"
+	7
+)
 _3130331116
-(associate "E" 3 "F" 4 "H" 6)
+(associate "E" 3 "F" 4)
+_1651806471
+(associate "e" 3 "f" 4 "h" 6)
 --get_entity_comments--
 Full test
 This is a suite of unit tests.
@@ -3617,7 +3628,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1739503300.163292
+1739754476.914623
 (true)
 
 RootTest
@@ -4765,10 +4776,10 @@ cyclic lookup test 2:
 {a1 5.0990195135927845 a2 2 a3 5.0990195135927845}
 {a1 1 a3 1 a4 0}
 --accuracy tests--
-1036.1581794564518
-24.769501899470985
-4.3464184709105573e-45
-{point1 1036.1581794564518 point2 978.5569789822398 point3 1036.1581794564518}
+1036.161432549831
+24.769602909571994
+4.3468579669914953e-45
+{point1 1036.161432549831 point2 984.280895893261 point3 1036.161432549831}
 distance symmetry tests
 [
 	[
@@ -5019,4 +5030,4 @@ rmdir /s /q amlg_code\persistent_tree_test_root
 del /s /q amlg_code\persist_module_test\psm.mdam
 del /s /q amlg_code\persist_module_test.mdam
 --total execution time--
-1.9893579483032227
+1.177922010421753

@@ -804,8 +804,8 @@ public:
 					auto [weighted_value, unweighted_value, prob_same, prob_mass, weight]
 						= transform_func(entity_distance_pair_container_begin + cur_k);
 
-					//stop if below probability threshold
-					if(prob_same / total_prob < numToRetrieveMinIncrementalProbability)
+					//stop if have enough entities and below probability threshold
+					if(cur_k >= minToRetrieve && prob_same / total_prob < numToRetrieveMinIncrementalProbability)
 						break;
 
 					total_prob += prob_same * prob_mass;

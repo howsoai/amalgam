@@ -230,11 +230,11 @@ hello world: 12 and 2
 (print "hello")
 [(null) (null) .infinity -.infinity]
 
-{a 1 c ["alpha" "beta" "gamma"] b 2}
+{a 1 b 2 c ["alpha" "beta" "gamma"]}
 {
 	a 1
-	c ["alpha" "beta" "gamma"]
 	b 2
+	c ["alpha" "beta" "gamma"]
 }
 
 (apply "6")
@@ -680,12 +680,12 @@ a
 	e 5
 	f 6
 }
-{b 2 c 3}
+{d 4 e 5}
 {
-	b 2
 	c 3
 	d 4
 	e 5
+	f 6
 }
 {
 	a 1
@@ -731,12 +731,12 @@ c
 	e 5
 	f 6
 }
-{b 2 c 3}
+{d 4 e 5}
 {
-	b 2
 	c 3
 	d 4
 	e 5
+	f 6
 }
 {
 	a 1
@@ -1087,7 +1087,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-["a" 4 "c" "b"]
+["a" "b" "c" 4]
 [
 	0
 	1
@@ -1099,10 +1099,10 @@ abcdef
 	7
 ]
 [0 1 2 3]
-[1 0 2 3]
-[1 0 2 3]
+[2 3 0 1]
+[2 3 0 1]
 --values--
-[1 "d" 3 2]
+[1 2 3 "d"]
 [
 	"a"
 	1
@@ -1123,7 +1123,7 @@ abcdef
 	4
 	"d"
 ]
-[1 "d" 3 2]
+[1 "d" 2 3]
 [
 	1
 	2
@@ -1275,10 +1275,10 @@ string
 list
 assoc
 [
-	4
-	{4 4}
-	"4"
 	[4]
+	4
+	"4"
+	{4 4}
 ]
 --set--
 {
@@ -1344,7 +1344,7 @@ current_index: 2
 				8
 			]
 		accum_string "abcdef"
-		argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+		argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 		bar (declare
 				{x 6}
 				(+ x 2)
@@ -1357,13 +1357,13 @@ current_index: 2
 				A {B 2}
 				B 2
 			}
-		interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+		interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rmdir "rmdir /s /q "
 		rmfile "del /s /q "
 		rwww 1
 		slash "\\"
-		start_time 1739648695.508361
+		start_time 1739754830.288259
 		www 1
 		x 12
 		zz 10
@@ -1390,7 +1390,7 @@ current_index: 2
 			8
 		]
 	accum_string "abcdef"
-	argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+	argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 	bar (declare
 			{x 6}
 			(+ x 2)
@@ -1403,13 +1403,13 @@ current_index: 2
 			A {B 2}
 			B 2
 		}
-	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rmdir "rmdir /s /q "
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1739648695.508361
+	start_time 1739754830.288259
 	www 1
 	x 12
 	zz 10
@@ -1435,7 +1435,7 @@ current_index: 2
 			8
 		]
 	accum_string "abcdef"
-	argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+	argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 	bar (declare
 			{x 6}
 			(+ x 2)
@@ -1448,13 +1448,13 @@ current_index: 2
 			A {B 2}
 			B 2
 		}
-	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rmdir "rmdir /s /q "
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1739648695.508361
+	start_time 1739754830.288259
 	www 1
 	x 12
 	zz 10
@@ -1605,11 +1605,11 @@ b
 	"b"
 ]
 
-infinity test c or d: ["d" "d" "c" "c"]
+infinity test c or d: ["c" "c" "d" "d"]
 
-{a 16 b 49 c 35}
+{a 16 b 63 c 21}
 
-[2 3 6]
+[1 7 6]
 
 --get_rand_seed--
 Ú◊c`ç`¶!öcîlˇ
@@ -1705,17 +1705,17 @@ string
 	{a 3 b 4}
 	{c "c"}
 ]
-21: [{"a":3,"b":4},{"d":null,"c":"c"}]
+21: [{"a":3,"b":4},{"c":"c","d":null}]
 22: [{"a":3,"b":4},{"c":"c","d":null}]
 23: a: 1
+b: 2
+c: 3
+d: 4
 e:
   - a
   - b
   - 
   - .inf
-d: 4
-c: 3
-b: 2
 
 24: a: 1
 b: 2
@@ -1728,7 +1728,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2025-02-15-14.44.55.5805710
+current date-time in epoch: 2025-02-16-20.13.50.9351700
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -2851,16 +2851,18 @@ flatten restore with parallel
 19.264241099357605
 --intersect_entities--
 (associate "b" 4)
-MergeEntityChild2
-(associate "p" 3 "q" 4)
 MergeEntityChild1
 (associate "x" 3 "y" 4)
-_1651806471
-(associate "e" 3 "f" 4)
+MergeEntityChild2
+(associate "p" 3 "q" 4)
 _3130331116
 (associate "E" 3 "F" 4)
+_1651806471
+(associate "e" 3 "f" 4)
 --union_entities--
 (associate "b" 4 "a" 3 "c" 3)
+MergeEntityChild1
+(associate "x" 3 "y" 4 "z" 5)
 MergeEntityChild2
 (associate
 	"p"
@@ -2874,19 +2876,6 @@ MergeEntityChild2
 	"w"
 	7
 )
-MergeEntityChild1
-(associate "x" 3 "y" 4 "z" 5)
-_1651806471
-(associate
-	"e"
-	3
-	"f"
-	4
-	"g"
-	5
-	"h"
-	6
-)
 _3130331116
 (associate
 	"E"
@@ -2896,6 +2885,17 @@ _3130331116
 	"G"
 	5
 	"H"
+	6
+)
+_1651806471
+(associate
+	"e"
+	3
+	"f"
+	4
+	"g"
+	5
+	"h"
 	6
 )
 (parallel
@@ -3628,14 +3628,25 @@ difference between DiffContainer and DiffEntity2:
 )
 --mix_entities--
 (associate "b" 4 "c" 3)
-MergeEntityChild2
-(associate "p" 3 "q" 4 "w" 7)
 MergeEntityChild1
-(associate "x" 3 "y" 4 "z" 5)
-_1651806471
-(associate "e" 3 "f" 4)
+(associate "x" 3 "y" 4)
+MergeEntityChild2
+(associate
+	"p"
+	3
+	"q"
+	4
+	"u"
+	5
+	"v"
+	6
+	"w"
+	7
+)
 _3130331116
-(associate "E" 3 "F" 4 "H" 6)
+(associate "E" 3 "F" 4)
+_1651806471
+(associate "e" 3 "f" 4 "h" 6)
 --get_entity_comments--
 Full test
 This is a suite of unit tests.
@@ -3714,7 +3725,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1739648695.890641
+1739754831.116115
 (true)
 
 RootTest
@@ -5116,4 +5127,4 @@ rmdir /s /q amlg_code\persistent_tree_test_root
 del /s /q amlg_code\persist_module_test\psm.mdam
 del /s /q amlg_code\persist_module_test.mdam
 --total execution time--
-2.1297919750213623
+1.8216688632965088

@@ -95,7 +95,8 @@ public:
 	public:
 		inline FeatureAttributes()
 			: featureType(FDT_CONTINUOUS_NUMERIC),
-			featureIndex(std::numeric_limits<size_t>::max()), weight(1.0), deviation(0.0), deviationReciprocal(0.0),
+			featureIndex(std::numeric_limits<size_t>::max()), weight(1.0), deviation(0.0),
+			deviationReciprocal(0.0), deviationReciprocalNegative(0.0), deviationTimesThree(0.0),
 			unknownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
 			knownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN())
 		{
@@ -173,8 +174,10 @@ public:
 		//mean absolute error of predicting the value
 		//if sparse deviation values are specified, this is the average value
 		double deviation;
-		//cached reciprocal for speed
+		//cached computations from deviations for speed
 		double deviationReciprocal;
+		double deviationReciprocalNegative;
+		double deviationTimesThree;
 
 		//contains the deviations for a given nominal value for each other nominal value
 		//if the nominal value is not found, then the attribute defaultDeviation should be used
@@ -250,7 +253,7 @@ public:
 	#ifdef DISTANCE_USE_LAPLACE_LK_METRIC
 		if(high_accuracy)
 		{
-			diff += std::exp(-diff / deviation) * (3 * deviation + diff) * 0.5;
+			diff += std::exp(-diff / deviation) * (feature_attribs.deviationTimesThree + diff) * 0.5;
 			if(!surprisal_transform)
 			{
 				return diff;
@@ -272,8 +275,8 @@ public:
 			//cast to float before taking the exponent since it's faster than a double, and because if the
 			//difference divided by the deviation exceeds the single precision floating point range,
 			//it will just set the term to zero, which is appropriate
-			double deviation_reciprocal = feature_attribs.deviationReciprocal;
-			diff += std::exp(static_cast<float>(-diff * deviation_reciprocal)) * (3 * deviation + diff) * 0.5;
+			diff += std::exp(static_cast<float>(diff * feature_attribs.deviationReciprocalNegative))
+				* (feature_attribs.deviationTimesThree + diff) * 0.5;
 			if(!surprisal_transform)
 			{
 				return diff;
@@ -281,7 +284,7 @@ public:
 			else //surprisal_transform
 			{
 				//multiplying by the reciprocal is lower accuracy due to rounding differences but faster
-				double difference = (diff * deviation_reciprocal) - s_surprisal_of_laplace;
+				double difference = (diff * feature_attribs.deviationReciprocal) - s_surprisal_of_laplace;
 
 				//it is possible that the subtraction misses the least significant bit in the mantissa
 				//due to numerical precision, returning a negative number, which causes issues, so clamp above zero
@@ -995,7 +998,11 @@ protected:
 			}
 
 			if(DoesFeatureHaveDeviation(i))
+			{
 				feature_attribs.deviationReciprocal = 1.0 / feature_attribs.deviation;
+				feature_attribs.deviationReciprocalNegative = -feature_attribs.deviationReciprocal;
+				feature_attribs.deviationTimesThree = 3.0 * feature_attribs.deviation;
+			}
 
 			//compute unknownToUnknownDistanceTerm
 			if(compute_accurate)

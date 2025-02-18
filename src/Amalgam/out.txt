@@ -284,13 +284,28 @@ if 2
 7
 (null)
 
-11
+[11 {} (null)]
+
+[(null) {} "Execution step limit exceeded"]
+
+[11 {} (null)]
+
+[11 {} (null)]
+
+[11 {} (null)]
+
+[(null) {} "Execution depth exceeded"]
+
 (null)
-11
-11
-11
-(null)
-(null)
+
+[
+	(null)
+	{"Warning: undefined symbol x" 1 "Warning: undefined symbol y" 1}
+	(null)
+]
+
+[(null) {} "Execution depth exceeded"]
+
 --while--
 1
 2
@@ -611,7 +626,7 @@ abcdef
 21 2.6664
 22 2.6664
 23 1.9997999999999998
-24 91.82415
+24 92.58165
 25 2.2360679796198744
 26 2.23606797749979
 27 3.0000000031604355
@@ -627,13 +642,13 @@ abcdef
 36 0
 37 0
 38 1.6766764161830636
-39 2.197224577336219
+39 3.58351893845611
 40 4.966335099422683
 41 0
-42 2.0114247563889367
-43 1.3862943611198906
-44 2.4849066497880004
-45 2.4849066497880004
+42 0.9128124677208268
+43 2.0794415416798357
+44 1.3862943611198906
+45 1.3862943611198906
 --entropy--
 0.6931471805599453
 0.14384103622589045
@@ -659,18 +674,18 @@ a
 [1 2 3 4 5 6]
 []
 {
-	a 1
 	b 2
 	c 3
 	d 4
+	e 5
 	f 6
 }
-{b 2 d 4}
+{b 2 c 3}
 {
 	b 2
 	c 3
 	d 4
-	f 6
+	e 5
 }
 {
 	a 1
@@ -710,18 +725,18 @@ c
 [1 2 3 4 5 6]
 []
 {
-	a 1
 	b 2
 	c 3
 	d 4
+	e 5
 	f 6
 }
-{b 2 d 4}
+{b 2 c 3}
 {
 	b 2
 	c 3
 	d 4
-	f 6
+	e 5
 }
 {
 	a 1
@@ -1028,17 +1043,17 @@ abcdef
 ]
 [1 3 4 5 9]
 [
-	1
-	2
-	9
-	3
-	0
-	4
-	5
 	8
-	7
-	10
+	0
+	3
+	1
 	6
+	4
+	2
+	10
+	5
+	7
+	9
 ]
 [
 	"2020-06-08 lunes 11.32.36"
@@ -1084,8 +1099,8 @@ abcdef
 	7
 ]
 [0 1 2 3]
-[3 0 2 1]
-[3 0 2 1]
+[1 0 2 3]
+[1 0 2 3]
 --values--
 [1 "d" 3 2]
 [
@@ -1260,10 +1275,10 @@ string
 list
 assoc
 [
-	"4"
-	{4 4}
-	[4]
 	4
+	{4 4}
+	"4"
+	[4]
 ]
 --set--
 {
@@ -1329,7 +1344,7 @@ current_index: 2
 				8
 			]
 		accum_string "abcdef"
-		argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+		argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 		bar (declare
 				{x 6}
 				(+ x 2)
@@ -1342,13 +1357,13 @@ current_index: 2
 				A {B 2}
 				B 2
 			}
-		interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+		interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rmdir "rmdir /s /q "
 		rmfile "del /s /q "
 		rwww 1
 		slash "\\"
-		start_time 1736274643.820992
+		start_time 1739648695.508361
 		www 1
 		x 12
 		zz 10
@@ -1375,7 +1390,7 @@ current_index: 2
 			8
 		]
 	accum_string "abcdef"
-	argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+	argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 	bar (declare
 			{x 6}
 			(+ x 2)
@@ -1388,13 +1403,13 @@ current_index: 2
 			A {B 2}
 			B 2
 		}
-	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rmdir "rmdir /s /q "
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1736274643.820992
+	start_time 1739648695.508361
 	www 1
 	x 12
 	zz 10
@@ -1420,7 +1435,7 @@ current_index: 2
 			8
 		]
 	accum_string "abcdef"
-	argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+	argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 	bar (declare
 			{x 6}
 			(+ x 2)
@@ -1433,13 +1448,13 @@ current_index: 2
 			A {B 2}
 			B 2
 		}
-	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rmdir "rmdir /s /q "
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1736274643.820992
+	start_time 1739648695.508361
 	www 1
 	x 12
 	zz 10
@@ -1546,39 +1561,33 @@ true
 (true)
 
 --rand--
-0.3085212072078084
-0.8108604140462151
-36.53852784176681
-7
-7
+0.32679944517626835
+0.23324893208638653
+42.88088086785004
+4
+0
 []
 
-[9]
+[3]
 
 [
-	8
+	10
 	6
+	7
+	4
+	8
+	3
 	1
+	2
 	9
 	5
-	0
-	3
-	4
-	7
-	2
 ]
 
-[15.147298145412242 2.8707229850232165 1.1842755192409848 26.133999503489054]
+[2.182732804819337 12.871002267174664 26.62931341377634 45.839574859389906]
 
 b
 [
 	"b"
-	"a"
-	"b"
-	"a"
-	"b"
-	"a"
-	"b"
 	"b"
 	"b"
 	"a"
@@ -1588,21 +1597,27 @@ b
 	"a"
 	"b"
 	"a"
+	"b"
+	"b"
+	"b"
+	"b"
+	"b"
+	"b"
 ]
 
-infinity test c or d: ["c" "c" "d" "d"]
+infinity test c or d: ["d" "d" "c" "c"]
 
-{a 16 b 50 c 34}
+{a 16 b 49 c 35}
 
-[1 3 4]
+[2 3 6]
 
 --get_rand_seed--
-ÔøΩÔøΩÔøΩÊößI`ÔøΩ!ÔøΩcÔøΩlÔøΩ
+Ú◊c`ç`¶!öcîlˇ
 --set_rand_seed--
-0.3458744430299684
-0.5141404672826732
-0.3458744430299684
-0.5141404672826732
+0.15402451517049143
+0.33713051132903293
+0.15402451517049143
+0.33713051132903293
 --true--
 (true)
 
@@ -1690,17 +1705,17 @@ string
 	{a 3 b 4}
 	{c "c"}
 ]
-21: [{"a":3,"b":4},{"c":"c","d":null}]
+21: [{"a":3,"b":4},{"d":null,"c":"c"}]
 22: [{"a":3,"b":4},{"c":"c","d":null}]
-23: e:
+23: a: 1
+e:
   - a
   - b
   - 
   - .inf
-a: 1
+d: 4
 c: 3
 b: 2
-d: 4
 
 24: a: 1
 b: 2
@@ -1713,7 +1728,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2025-01-07-13.30.44.3625340
+current date-time in epoch: 2025-02-15-14.44.55.5805710
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -1774,7 +1789,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelA #labelQ
+	labelA #labelQ #labelA
 		(lambda
 			#labelB (true)
 		)
@@ -1788,7 +1803,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelA #labelQ
+	labelA #labelQ #labelA
 		(lambda
 			#labelB (true)
 		)
@@ -1853,27 +1868,27 @@ comment too
 	"e"
 	"f"
 	"g"
-	"ÔøΩ"
-	"ÔøΩ"
-	"ÔøΩ"
-	"ÔøΩ"
-	"ÔøΩ"
-	"ÔøΩ"
-	"ÔøΩ"
-	"ÔøΩ"
+	"Ô"
+	"¨"
+	"ó"
+	"Í"
+	"≠"
+	"ñ"
+	"œ"
+	"°"
 ]
 [
 	"ab"
 	"cd"
 	"ef"
-	"gÔøΩ"
-	"ÔøΩÔøΩ"
-	"ÔøΩ"
-	"ÔøΩÔøΩ"
-	"ÔøΩ"
+	"gÔ"
+	"¨ó"
+	"Í≠"
+	"ñœ"
+	"°"
 ]
-["abc" "def" "gÔøΩ" "ÔøΩÔøΩ" "ÔøΩœ°"]
-["abcd" "efgÔøΩ" "ÔøΩÔøΩÔøΩ" "ÔøΩœ°"]
+["abc" "def" "gÔ¨" "óÍ≠" "ñœ°"]
+["abcd" "efgÔ" "¨óÍ≠" "ñœ°"]
 --split--
 ["hello world"]
 ["hello" "world"]
@@ -1927,11 +1942,11 @@ h[e]ll[o] w[o]rld
 h[e]ll[o] world
 abcdefgÔ¨óÍ≠ñœ°
 bcdefgÔ¨óÍ≠ñœ°
-bcdefgÔ¨óÔøΩ
+bcdefgÔ¨óÍ≠
 bcdefgÔ¨óÍ≠ñœ°
 bcdefgÔ¨óÍ≠ñ
 gÔ¨óÍ≠ñ
-ÔøΩÔøΩÔøΩ
+≠ñœ
 axdefgÔ¨óÍ≠ñœ°
 --concat--
 hello world
@@ -1991,34 +2006,21 @@ decrypted: hello
 --total_size--
 10
 --mutate--
+(associate "a" 1 "b" 2)
 [
 	1
-	(let)
-	(query_min_difference)
-	(while)
-	5
-	6
-	7
-	(log)
-	9
-	(let)
-	11
-	12
-	13
-	14
-	(associate b 1 (contains_label) 2)
-]
-[
-	(+)
 	2
-	(*)
-	(+)
-	(associate)
+	3
+	4
+	(associate "alpha" (*) "beta" 6)
 	(associate
 		"nest"
-		(associate (-) [])
+		(associate
+			(+)
+			[(-) 8 (+)]
+		)
 		"end"
-		[10 11 (+)]
+		[10 11 (*)]
 	)
 ]
 --commonality--
@@ -2259,16 +2261,6 @@ decrypted: hello
 	{_ (null)}
 	(replace
 		_
-		[]
-		(lambda
-			{
-				a 2
-				g (get
-						(current_value 1)
-						"g"
-					)
-			}
-		)
 		["g"]
 		(lambda
 			[
@@ -2278,6 +2270,16 @@ decrypted: hello
 				)
 				4
 			]
+		)
+		[]
+		(lambda
+			{
+				a 2
+				g (get
+						(current_value 1)
+						"g"
+					)
+			}
 		)
 	)
 )
@@ -2454,10 +2456,10 @@ decrypted: hello
 ]
 --mix--
 [
-	1
 	2
+	3.5
 	5.5
-	7.5
+	7
 	9.5
 	11.5
 	13.5
@@ -2469,38 +2471,38 @@ decrypted: hello
 	;comment 3
 	;comment 4
 	1
-	3.5
+	4
+	3
 	5.5
 	8
+	7
 	9.5
 	11.5
-	13
+	13.5
 ]
 [
 	1
-	2.5
+	5
+	2
 	(associate "a" 3 "b" 4)
 	(lambda
 		(if
-			false
+			true
 			1
 			(parallel
 				(get_entity_comments)
 				1
-				(lambda
-					(print
-						[2 9]
-					)
-				)
+				(lambda (print))
 			)
 		)
 	)
+	[5]
 ]
 [
 	1
 	5
 	2.5
-	(associate "a" 3 "b" 4)
+	(associate "a" 3)
 	(lambda
 		(if
 			true
@@ -2512,36 +2514,21 @@ decrypted: hello
 						[2 9]
 					)
 				)
+				1
 			)
 		)
 	)
+	[6]
 ]
-[
-	(true)
-	3.5
-	5.5
-	7.5
-	9.5
-	11.5
-	13.5
-]
-[
-	4
-	3
-	6
-	5
-	8
-	7
-	11
-	13
-]
-4
+[3.5 5.5 7.5 9.5 11.5 13.5]
+[(true) 2 4 7 9 11]
 1
+4
 2.5
 2.5
-abcdexyz
 abcexyz
-abcdoxyz
+abcemxyz
+abcdxyz
 --mix_labels--
 [
 	1
@@ -2565,7 +2552,7 @@ abcdoxyz
 87
 --flatten_entity--
 0.40971200496539806
-iÔøΩÔøΩAÔøΩ;@VÔøΩÔøΩOV-ÔøΩ
+i˚€Aé;@VÎÛ¨OV-ˇ
 0.7136950384635786
 0.7136950384635786
 0.6522822782263927
@@ -2592,7 +2579,7 @@ flatten restore with seeds test
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "ÔøΩÔøΩ¬£=ÔøΩmVÔøΩÔøΩOV-ÔøΩ")
+	(set_entity_rand_seed new_entity "ª∂¬£=ÙÄmVÎÛ¨OV-ˇ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -2604,7 +2591,7 @@ flatten restore with seeds test
 				)
 			)
 		)
-		"ÔøΩaE&K\"ÔøΩÔøΩÔøΩ(X&ÔøΩ\0ÔøΩ"
+		"áaE&K\"ÿ‡∏’(X&Ä\0ˇ"
 	)
 	new_entity
 )
@@ -2629,7 +2616,7 @@ flatten restore with seeds test
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "ÔøΩM:ÔøΩÔøΩpÔøΩVVÔøΩÔøΩOV-ÔøΩ")
+	(set_entity_rand_seed new_entity "çM:˘˜p¸VVÎÛ¨OV-ˇ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -2641,7 +2628,7 @@ flatten restore with seeds test
 				)
 			)
 		)
-		"ÔøΩaE&K\"ÔøΩÔøΩÔøΩ(X&ÔøΩ\0ÔøΩ"
+		"áaE&K\"ÿ‡∏’(X&Ä\0ˇ"
 	)
 	new_entity
 )
@@ -2702,7 +2689,7 @@ flatten restore without seeds test
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "{'ÔøΩIÔøΩÔøΩÔøΩÔøΩÔøΩCÔøΩÔøΩÔøΩÔøΩ")
+	(set_entity_rand_seed new_entity "{'‘I¢—˘‹ÃC”≠Ãˇ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -2714,7 +2701,7 @@ flatten restore without seeds test
 				)
 			)
 		)
-		"ÔøΩ5ÔøΩÔøΩÔøΩz^\rÔøΩFÔøΩ/ÔøΩVÔøΩQÔøΩ"
+		"Ì5ö•∫z^\r„F‰/†VÅQˇ"
 	)
 	new_entity
 )
@@ -2744,7 +2731,7 @@ flatten restore with parallel
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "ÔøΩÔøΩ¬£=ÔøΩmVÔøΩÔøΩOV-ÔøΩ")
+	(set_entity_rand_seed new_entity "ª∂¬£=ÙÄmVÎÛ¨OV-ˇ")
 	||(parallel
 		(set_entity_rand_seed
 			(first
@@ -2757,7 +2744,7 @@ flatten restore with parallel
 					)
 				)
 			)
-			"ÔøΩaE&K\"ÔøΩÔøΩÔøΩ(X&ÔøΩ\0ÔøΩ"
+			"áaE&K\"ÿ‡∏’(X&Ä\0ˇ"
 		)
 	)
 	new_entity
@@ -2783,7 +2770,7 @@ flatten restore with parallel
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "ÔøΩM:ÔøΩÔøΩpÔøΩVVÔøΩÔøΩOV-ÔøΩ")
+	(set_entity_rand_seed new_entity "çM:˘˜p¸VVÎÛ¨OV-ˇ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -2795,7 +2782,7 @@ flatten restore with parallel
 				)
 			)
 		)
-		"ÔøΩaE&K\"ÔøΩÔøΩÔøΩ(X&ÔøΩ\0ÔøΩ"
+		"áaE&K\"ÿ‡∏’(X&Ä\0ˇ"
 	)
 	new_entity
 )
@@ -2804,58 +2791,58 @@ flatten restore with parallel
 	(clone_entities _ new_entity)
 )
 --mutate_entity--
-[
+(exp
 	1
-	(round)
-	3
-	4
+	b
+	2
+	(set)
 	5
 	6
-	7
+	(query_between)
 	8
-	(lambda)
-	(+)
-	(if)
-	12
-	13
-	14
-	(associate)
-]
-
-[
-	1
-	(query_select)
-	3
-	4
-	5
-	(mix_entities)
-	7
-	(map)
-	{}
-	11
-	##5a -22
-	"a"
-	13
-	14
-	(associate "a" (call) (null) 2)
-]
-
-[
-	1
-	(*)
-	(+)
-	4
-	(+)
-	6
-	7
-	(-)
-	(-)
+	(query_value_masses)
 	10
 	11
-	(+)
+	12
 	13
-	(-)
+	(declare)
+	(associate "a" 1 "b" 2)
+)
+
+[
+	1
+	2
+	(reduce)
+	3.5707832589044
+	(xor)
+	(>)
+	##9tB73bf 7
+	[]
+	9
+	6
+	2.103727716134725
+	12
+	13
+	6.92416878352693
 	(associate)
+]
+
+[
+	(+)
+	(+)
+	(+)
+	4
+	5
+	(-)
+	(*)
+	8
+	(+)
+	10
+	(-)
+	(+)
+	(+)
+	14
+	(associate "a" 1 "b" 2)
 ]
 
 --commonality_entities--
@@ -2864,18 +2851,16 @@ flatten restore with parallel
 19.264241099357605
 --intersect_entities--
 (associate "b" 4)
-MergeEntityChild1
-(associate "x" 3 "y" 4)
 MergeEntityChild2
 (associate "p" 3 "q" 4)
-_3130331116
-(associate "E" 3 "F" 4)
+MergeEntityChild1
+(associate "x" 3 "y" 4)
 _1651806471
 (associate "e" 3 "f" 4)
+_3130331116
+(associate "E" 3 "F" 4)
 --union_entities--
 (associate "b" 4 "a" 3 "c" 3)
-MergeEntityChild1
-(associate "x" 3 "y" 4 "z" 5)
 MergeEntityChild2
 (associate
 	"p"
@@ -2889,17 +2874,8 @@ MergeEntityChild2
 	"w"
 	7
 )
-_3130331116
-(associate
-	"E"
-	3
-	"F"
-	4
-	"G"
-	5
-	"H"
-	6
-)
+MergeEntityChild1
+(associate "x" 3 "y" 4 "z" 5)
 _1651806471
 (associate
 	"e"
@@ -2909,6 +2885,17 @@ _1651806471
 	"g"
 	5
 	"h"
+	6
+)
+_3130331116
+(associate
+	"E"
+	3
+	"F"
+	4
+	"G"
+	5
+	"H"
 	6
 )
 (parallel
@@ -3265,8 +3252,14 @@ _3532185687
 						[]
 						(lambda
 							{
-								E 3
-								F 4
+								E (get
+										(current_value 1)
+										"E"
+									)
+								F (get
+										(current_value 1)
+										"F"
+									)
 								G 5
 								H 6
 							}
@@ -3291,7 +3284,16 @@ _3532185687
 						_
 						[]
 						(lambda
-							{e 3 f 4}
+							{
+								e (get
+										(current_value 1)
+										"e"
+									)
+								f (get
+										(current_value 1)
+										"f"
+									)
+							}
 						)
 					)
 				)
@@ -3323,7 +3325,89 @@ contained_entities new_entity: ["DiffEntityChild1" "OnlyIn2" "_3626604918" "_382
 difference between DiffEntity2 and new_entity:
 (declare
 	{_ (null) new_entity (null)}
-	(clone_entities _ new_entity)
+	(assign
+		"new_entity"
+		(first
+			(create_entities
+				new_entity
+				(call
+					(lambda
+						(declare
+							{_ (null)}
+							(replace _)
+						)
+					)
+					{
+						_ (retrieve_entity_root _)
+					}
+				)
+			)
+		)
+	)
+	(create_entities
+		(append new_entity "_3626604918")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{
+								E (null)
+								F (null)
+								G (get
+										(current_value 1)
+										"G"
+									)
+								H (get
+										(current_value 1)
+										"H"
+									)
+							}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_3626604918")
+					)
+			}
+		)
+	)
+	(create_entities
+		(append new_entity "_3823131681")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{e (null) f (null)}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_3823131681")
+					)
+			}
+		)
+	)
+	(clone_entities
+		(append _ "DiffEntityChild1")
+		(append new_entity "DiffEntityChild1")
+	)
+	(clone_entities
+		(append _ "OnlyIn2")
+		(append new_entity "OnlyIn2")
+	)
+	new_entity
 )
 (declare
 	{_ (null) new_entity (null)}
@@ -3543,24 +3627,15 @@ difference between DiffContainer and DiffEntity2:
 	new_entity
 )
 --mix_entities--
-(associate "b" 4 "a" 3 "c" 3)
-MergeEntityChild1
-(associate "x" 3 "y" 4)
+(associate "b" 4 "c" 3)
 MergeEntityChild2
-(associate "p" 3 "q" 4)
+(associate "p" 3 "q" 4 "w" 7)
+MergeEntityChild1
+(associate "x" 3 "y" 4 "z" 5)
+_1651806471
+(associate "e" 3 "f" 4)
 _3130331116
 (associate "E" 3 "F" 4 "H" 6)
-_1651806471
-(associate
-	"e"
-	3
-	"f"
-	4
-	"g"
-	5
-	"h"
-	6
-)
 --get_entity_comments--
 Full test
 This is a suite of unit tests.
@@ -3625,9 +3700,9 @@ this is a fully described entity
 	#c 3
 )
 --get_entity_rand_seed--
-3ÔøΩyÔøΩrÔøΩ>ÔøΩ89012345ÔøΩ
+3Ñy‡rú>É89012345ˇ
 0.812564396753873
-aÔøΩÔøΩdxÔøΩ)5ÔøΩiDÔøΩ
+a‚ˇdxÄ)5ÆiDˇ
 --set_entity_rand_seed--
 0.21086495653466275
 0.21086495653466275
@@ -3639,7 +3714,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1736274644.591581
+1739648695.890641
 (true)
 
 RootTest
@@ -3824,7 +3899,7 @@ hello
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "ÔøΩÔøΩXÔøΩ~wbÔøΩÔøΩ3ÔøΩÔøΩÔøΩÔøΩÔøΩ")
+	(set_entity_rand_seed new_entity "˛¢Xø~wb¢Ù3Ê©Ç∫ˇ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3838,7 +3913,7 @@ hello
 				)
 			)
 		)
-		"DA3ÔøΩÔøΩÔøΩ0ÔøΩW^vÔøΩhaÔøΩ&ÔøΩ"
+		"DA3¨Ì0üW^vΩhaÕ&ˇ"
 	)
 	(set_entity_rand_seed
 		(first
@@ -3853,7 +3928,7 @@ hello
 				)
 			)
 		)
-		"= ÔøΩÔøΩÔøΩ\0FÔøΩyfÔøΩ@)ÔøΩÔøΩÔøΩ"
+		"= ›˚∆\0FÜyf◊@)ã¨ˇ"
 	)
 	new_entity
 )
@@ -3881,7 +3956,7 @@ persistent loads
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "1a2ÔøΩ.ÔøΩÔøΩWÔøΩwÔøΩÔøΩÔøΩÔøΩÔøΩ")
+	(set_entity_rand_seed new_entity "1a2ÿ.≤≥W´w∏àÊùˇ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3891,7 +3966,7 @@ persistent loads
 				)
 			)
 		)
-		"ÔøΩ-ÔøΩO[ÔøΩÔøΩ3yCÔøΩ≈íÔøΩÔøΩÔøΩ"
+		"à-ÏO[øÎ3yCì≈íå—ˇ"
 	)
 	(set_entity_rand_seed
 		(first
@@ -3906,7 +3981,7 @@ persistent loads
 				)
 			)
 		)
-		"&ÔøΩ$‹¥@nÔøΩ>ÔøΩ\"ÔøΩÔøΩFNÔøΩ"
+		"&Ã$‹¥@nœ>É\"êÎFNˇ"
 	)
 	new_entity
 )
@@ -3933,7 +4008,7 @@ persistent loads
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "1a2ÔøΩ.ÔøΩÔøΩWÔøΩwÔøΩÔøΩÔøΩÔøΩÔøΩ")
+	(set_entity_rand_seed new_entity "1a2ÿ.≤≥W´w∏àÊùˇ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3947,7 +4022,7 @@ persistent loads
 				)
 			)
 		)
-		"&ÔøΩ$‹¥@nÔøΩ>ÔøΩ\"ÔøΩÔøΩFNÔøΩ"
+		"&Ã$‹¥@nœ>É\"êÎFNˇ"
 	)
 	new_entity
 )
@@ -4057,74 +4132,74 @@ store to .json normally
 ["Child1" "Child5"]
 ["Child3" "Child4"]
 ["Child6" "Child7"]
-["Child2" "Child3" "Child6" "Child7"]
-["Child2" "Child3" "Child6" "Child7"]
+["Child1" "Child3" "Child5" "Child6"]
+["Child2" "Child4" "Child6" "Child7"]
 ["Child4" "Child6"]
 --query_sample--
 ["Child6"]
-["Child1" "Child7"]
+["Child1" "Child4"]
 ["Child4"]
 ["Child1"]
 with weights
 ["Child1"]
-["Child1"]
+["Child2"]
 [
+	"Child2"
+	"Child2"
+	"Child3"
 	"Child1"
+	"Child2"
+	"Child2"
+	"Child2"
+	"Child2"
+	"Child2"
+	"Child1"
+	"Child2"
+	"Child2"
+	"Child1"
+	"Child1"
+	"Child2"
+	"Child2"
+	"Child1"
+	"Child1"
+	"Child1"
+	"Child1"
+]
+[
+	"Child2"
+	"Child2"
+	"Child2"
+	"Child1"
+	"Child1"
+	"Child1"
+	"Child2"
+	"Child5"
 	"Child4"
+	"Child2"
+	"Child2"
 	"Child2"
 	"Child1"
 	"Child5"
 	"Child1"
 	"Child2"
-	"Child1"
-	"Child1"
-	"Child2"
-	"Child1"
-	"Child7"
-	"Child2"
-	"Child4"
-	"Child2"
-	"Child5"
-	"Child1"
-	"Child1"
-	"Child1"
-	"Child1"
-]
-[
 	"Child2"
 	"Child1"
 	"Child2"
-	"Child2"
-	"Child1"
-	"Child1"
-	"Child2"
-	"Child2"
-	"Child2"
-	"Child2"
-	"Child1"
-	"Child1"
-	"Child2"
-	"Child1"
-	"Child1"
-	"Child2"
-	"Child2"
-	"Child1"
-	"Child1"
 	"Child1"
 ]
 [
 	"Child2"
 	"Child2"
-	"Child2"
-	"Child2"
-	"Child2"
-	"Child6"
-	"Child2"
 	"Child4"
 	"Child2"
 	"Child2"
+	"Child2"
+	"Child2"
+	"Child2"
+	"Child2"
+	"Child2"
 ]
-["Child2" "Child3" "Child5"]
+["Child2" "Child6"]
 --query_in_entity_list--
 ["Child6" "Child7"]
 --query_not_in_entity_list--
@@ -4176,7 +4251,7 @@ unweighted query: {
 weighted query: {
 	Child1 1.8
 	Child2 0.45
-	Child3 2
+	Child4 2
 	Child6 0.04
 	Child7 0.2
 }
@@ -4190,7 +4265,7 @@ weighted query list of lists: [
 	[-1 2 4 10 100]
 ]
 weighted query list of lists with multiple values: [
-	["Child2" "Child6" "Child1" "Child7" "Child3"]
+	["Child2" "Child6" "Child1" "Child7" "Child4"]
 	[1 2 4 10 100]
 	[-1 2 4 10 100]
 	[-1 1 3 0 100]
@@ -4490,14 +4565,14 @@ case conviction:{
 }
 cyclic feature nearest neighbors: {cyclic1 1 cyclic5 0.5}
 cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
+155: 0.1 (null
+	##deg 0
+)
 200: 0.05555555555555555 (null
 	##deg 8
 )
 190: 0.045454545454545456 (null
 	##deg 12
-)
-155: 0.1 (null
-	##deg 0
 )
 --contains_label--
 (true)
@@ -4627,8 +4702,16 @@ execution limits tests
 ]
 --call_container--
 8
-8
-(null)
+[
+	[8 {} (null)]
+	{}
+	(null)
+]
+
+[(null) {} "Execution step limit exceeded"]
+
+[(null) {} "Execution step limit exceeded"]
+
 --circular, repeated, and preevaluated references--
 {a 1 b 2}
 (associate "a" 1 "b" 2)
@@ -4695,7 +4778,7 @@ entity cyclic test:
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "ﬂâÔøΩ$Ot3ÔøΩFN‹é5ÔøΩ")
+	(set_entity_rand_seed new_entity "ﬂâá$Ot3ªFN‹é5ˇ")
 	new_entity
 )
 3
@@ -4725,7 +4808,7 @@ entity cyclic test:
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "ﬂâÔøΩ$Ot3ÔøΩFN‹é5ÔøΩ")
+	(set_entity_rand_seed new_entity "ﬂâá$Ot3ªFN‹é5ˇ")
 	new_entity
 )
 cyclic lookup test:
@@ -4779,21 +4862,21 @@ cyclic lookup test 2:
 {a1 5.0990195135927845 a2 2 a3 5.0990195135927845}
 {a1 1 a3 1 a4 0}
 --accuracy tests--
-1036.1581794564518
-24.769501899470985
-4.3464184709105573e-45
-{point1 1036.1581794564518 point2 978.5569789822398 point3 1036.1581794564518}
+1036.161432549831
+24.769602909571994
+4.3468579669914953e-45
+{point1 1036.161432549831 point2 984.280895893261 point3 1036.161432549831}
 distance symmetry tests
 [
 	[
 		"B"
-		"I"
+		"A"
 		"C"
 		"D"
 		"F"
-		"A"
-		"J"
-		"G"
+		"I"
+		"H"
+		"E"
 	]
 	[
 		0
@@ -4809,13 +4892,13 @@ distance symmetry tests
 [
 	[
 		"B"
-		"I"
 		"F"
-		"A"
-		"C"
 		"D"
+		"C"
+		"I"
+		"A"
+		"H"
 		"J"
-		"E"
 	]
 	[
 		0
@@ -4946,12 +5029,22 @@ weighted probabilities: [
 ]
 
 weighted surprisals: [
-	["vert0" "vert2" "vert3" "vert1"]
-	[9.806912668719297 14.50000106908416 18.500000023703265 .infinity]
+	["vert1" "vert0" "vert2" "vert3"]
+	[0 9.806912668719297 14.50000106908416 18.500000023703265]
 ]
 
-surprisal contribution: {testvert 10.5376696245683}
-weighted surprisal contribution: {testvert 9.850941226785304}
+probabilities with dynamic selection: [
+	["vert0" "vert1" "vert2"]
+	[2.7535180455541748e-05 2.7535180455541748e-05 5.043471233780792e-07]
+]
+surprisals with dynamic selection: [
+	["vert0" "vert1" "vert2"]
+	[10.50004608159265 10.50004608159265 14.50000106908416]
+]
+surprisal contribution: {testvert 13.500023313993182}
+surprisal contribution: {testvert 10.50004608159265}
+weighted surprisal contribution: {testvert 10.70172844037668}
+weighted surprisal contribution: {testvert 4.903456334359649}
 --concurrency tests--
 hello
 hello
@@ -5023,4 +5116,4 @@ rmdir /s /q amlg_code\persistent_tree_test_root
 del /s /q amlg_code\persist_module_test\psm.mdam
 del /s /q amlg_code\persist_module_test.mdam
 --total execution time--
-1.6643218994140625
+2.1297919750213623

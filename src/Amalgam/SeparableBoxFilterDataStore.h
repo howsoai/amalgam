@@ -402,6 +402,20 @@ public:
 		return columnData[column_index]->GetNumUniqueValues(value_type);
 	}
 
+	//treating column_index as a weight column, returns the minimum weight value
+	inline double GetMinValueForColumnAsWeight(size_t column_index)
+	{
+		if(column_index >= columnData.size())
+			return 1.0;
+
+		auto &sorted_number_value_entries = columnData[column_index]->sortedNumberValueEntries;
+		if(sorted_number_value_entries.size() == 0)
+			return 1.0;
+
+		//must return at least zero
+		return std::max(0.0, begin(sorted_number_value_entries)->first);
+	}
+
 	//returns a function that will take in an entity index iterator and reference to a double to store the value and return true if the value is found
 	// assumes and requires column_index is a valid column (not a feature_id)
 	template<typename Iter>
@@ -1023,8 +1037,14 @@ public:
 
 			if(feature_attribs.IsFeatureNominal())
 			{
-				if(FastIsNaN(feature_attribs.typeAttributes.nominalCount))
-					feature_attribs.typeAttributes.nominalCount = static_cast<double>(column_data->GetNumValidDataElements());
+				//if nominal count is not specified, compute from the existing data
+				if(FastIsNaN(feature_attribs.typeAttributes.nominalCount) || feature_attribs.typeAttributes.nominalCount < 1)
+				{
+					//account for the max-ent probability that there's a 50% chance that the next record observed will be a new class
+					double num_potential_unseen_classes = 1 / (column_data->GetNumValidDataElements() + 0.5);
+					feature_attribs.typeAttributes.nominalCount
+						= static_cast<double>(column_data->GetNumUniqueValues()) + num_potential_unseen_classes;
+				}
 			}
 		}
 	}

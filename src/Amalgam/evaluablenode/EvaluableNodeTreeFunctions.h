@@ -391,18 +391,19 @@ EvaluableNode **GetRelativeEvaluableNodeFromTraversalPathList(EvaluableNode **so
 // will free the top node of variable_value_node if possible; e.g., if appending a list, to a list, will free the second list if possible
 EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeReference value_destination_node, EvaluableNodeReference variable_value_node, EvaluableNodeManager *enm);
 
-//using enm, builds an assoc from id_value_container using get_string_id and get_number to get the id and number of each entry
-//note that get_string_id will be called twice and will be called under locks in multithreading, so it should be a very simple function
-template<typename IDValueContainer, typename IDFunction, typename ValueFunction>
+//using enm, builds an assoc from id_value_container using get_string and get_number to get the id and number of each entry
+//note that get_string can either return a std::string or a StringInternPool::StringId, and that the references will be created
+//by this method
+template<typename IDValueContainer, typename StringFunction, typename ValueFunction>
 inline EvaluableNodeReference CreateAssocOfNumbersFromIteratorAndFunctions(IDValueContainer &id_value_container,
-	IDFunction get_string_id, ValueFunction get_number, EvaluableNodeManager *enm)
+	StringFunction get_string, ValueFunction get_number, EvaluableNodeManager *enm)
 {
 	EvaluableNode *assoc = enm->AllocNode(ENT_ASSOC);
 	assoc->ReserveMappedChildNodes(id_value_container.size());
 
 	for(auto &id_value_iterator : id_value_container)
 	{
-		StringInternPool::StringID entity_sid = get_string_id(id_value_iterator);
+		auto entity_sid = get_string(id_value_iterator);
 		assoc->SetMappedChildNode(entity_sid, enm->AllocNode(get_number(id_value_iterator)));
 	}
 

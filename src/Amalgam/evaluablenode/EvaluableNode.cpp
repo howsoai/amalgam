@@ -9,7 +9,7 @@
 //system headers:
 #include <algorithm>
 
-double EvaluableNode::zeroNumberValue = 0.0;
+double EvaluableNode::nanNumberValue = std::numeric_limits<double>::quiet_NaN();
 std::string EvaluableNode::emptyStringValue = "";
 EvaluableNode *EvaluableNode::emptyEvaluableNodeNullptr = nullptr;
 std::vector<std::string> EvaluableNode::emptyStringVector;

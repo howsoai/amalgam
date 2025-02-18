@@ -79,6 +79,10 @@
  (print (call_sandboxed (lambda (+ (+ y 4) 4)) (assoc y 3) (null) (null) 3) "\n")
  (print (call_sandboxed (lambda (+ (+ y 4) 4)) (assoc y 3) (null) (null) 1) "\n")
 
+ (print (call_sandboxed (lambda (+ (+ y 4) 4)) (null) (null) (null) 1 (false)) "\n")
+
+ (print (call_sandboxed (lambda (+ x y)) (assoc) 10000) "\n")
+
 (print (call_sandboxed
 	(lambda
 		(call_sandboxed
@@ -3559,6 +3563,7 @@
  (print (call_entity "TestContainerExec" "d" (assoc x 5)) "\n")
  (print (call_entity "TestContainerExec" "d" (assoc x 5) 30 30) "\n")
  (print (call_entity "TestContainerExec" "d" (assoc x 5) 1 1) "\n")
+ (print (call_entity "TestContainerExec" "d" (assoc x 5) 1 1 1 1 1 (false)) "\n")
 
  (print "--circular, repeated, and preevaluated references--\n")
 
@@ -4344,18 +4349,68 @@
     ))
   "\n" )
 
+  	;(list "vert0" "vert1" "vert2")
+	(print "probabilities with dynamic selection: "
+	(compute_on_contained_entities "SurprisalTransformContainer" (list
+        (query_nearest_generalized_distance
+            (list 0.01 1 20) ; k
+			(list "x")
+            (list 0)
+            (null) ; context_weights
+            (list "continuous_numeric") ; types
+            (null) ; attributes
+            (list 0.25) ; context_deviations
+            1 ; p_parameter
+			"surprisal_to_prob" ; distance transform
+			(null) ; weight
+            (rand)
+			(null)
+			"precise"
+			(true)
+        )
+    ))
+	)
+
+	;(list "vert0" "vert1" "vert2")
+	(print "surprisals with dynamic selection: "
+	(compute_on_contained_entities "SurprisalTransformContainer" (list
+        (query_nearest_generalized_distance
+            (list 0.01 1 20) ; k
+			(list "x")
+            (list 0)
+            (null) ; context_weights
+            (list "continuous_numeric") ; types
+            (null) ; attributes
+            (list 0.25) ; context_deviations
+            1 ; p_parameter
+			"surprisal" ; distance transform
+			(null) ; weight
+            (rand)
+			(null)
+			"precise"
+			(true)
+        )
+    ))
+	)
+
   (create_entities (list "SurprisalTransformContainer" "testvert") (lambda
 	(null ##x 0 ##weight 1)
 	) )
 
-  ;should be approx 2.123
   (print "surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list
-	(compute_entity_distance_contributions 4 (list "x") (list "testvert") (null) (null) (null) (list 0.25) 1 "surprisal_to_prob" (null) "fixed_seed" (null) "precise")
+	(compute_entity_distance_contributions 4 (list "x") (list "testvert") (null) (null) (null) (list 0.25) 1 "surprisal" (null) "fixed_seed" (null) "precise")
   )))
 
-  ;should be approx 2.123
+  (print "surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list
+	(compute_entity_distance_contributions (list 0.05 1 20) (list "x") (list "testvert") (null) (null) (null) (list 0.25) 1 "surprisal" (null) "fixed_seed" (null) "precise")
+  )))
+
   (print "weighted surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list
-	(compute_entity_distance_contributions 4 (list "x") (list "testvert") (null) (null) (null) (list 0.25) 1 "surprisal_to_prob" "weight" "fixed_seed" (null) "precise")
+	(compute_entity_distance_contributions 4 (list "x") (list "testvert") (null) (null) (null) (list 0.25) 1 "surprisal" "weight" "fixed_seed" (null) "precise")
+  )))
+
+  (print "weighted surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list
+	(compute_entity_distance_contributions (list 0.05 1 20) (list "x") (list "testvert") (null) (null) (null) (list 0.25) 1 "surprisal" "weight" "fixed_seed" (null) "precise")
   )))
 
  (print "--concurrency tests--\n")

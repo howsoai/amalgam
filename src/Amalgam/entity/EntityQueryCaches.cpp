@@ -248,12 +248,18 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 			//get entity (case) weighting if applicable
 			bool use_entity_weights = (cond->weightLabel != StringInternPool::NOT_A_STRING_ID);
 			size_t weight_column = std::numeric_limits<size_t>::max();
+			double min_weight = 1.0;
 			if(use_entity_weights)
+			{
 				weight_column = sbfds.GetColumnIndexFromLabelId(cond->weightLabel);
+				min_weight = sbfds.GetMinValueForColumnAsWeight(weight_column);
+			}
 
 			auto get_weight = sbfds.GetNumberValueFromEntityIndexFunction(weight_column);
 			EntityQueriesStatistics::DistanceTransform<size_t> distance_transform(cond->distEvaluator.computeSurprisal,
-				cond->distEvaluator.transformSurprisalToProb, cond->distanceWeightExponent, use_entity_weights, get_weight);
+				cond->distEvaluator.transformSurprisalToProb, cond->distanceWeightExponent,
+				cond->minToRetrieve, cond->maxToRetrieve, cond->numToRetrieveMinIncrementalProbability,
+				use_entity_weights, min_weight, get_weight);
 
 			//if first, need to populate with all entities
 			if(is_first)
@@ -309,7 +315,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 					auto rand_stream = cond->randomStream.CreateOtherStreamViaRand();
 
 					//insert each case and compute to zero distance because the distance because weight was zero to get here
-					size_t num_to_retrieve = std::min(static_cast<size_t>(cond->maxToRetrieve), temp.size());
+					size_t num_to_retrieve = std::min(cond->maxToRetrieve, temp.size());
 					for(size_t i = 0; i < num_to_retrieve; i++)
 					{
 						size_t rand_index = temp.GetRandomElement(rand_stream);
@@ -321,7 +327,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				else if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE)
 				{
 					sbfds.FindNearestEntities(cond->distEvaluator, cond->positionLabels, cond->valueToCompare, cond->valueTypes,
-						static_cast<size_t>(cond->maxToRetrieve), cond->singleLabel, cond->exclusionEntityIndex, matching_entities,
+						cond->maxToRetrieve, cond->singleLabel, cond->exclusionEntityIndex, matching_entities,
 						compute_results, cond->randomStream.CreateOtherStreamViaRand());
 				}
 				else //ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
@@ -330,7 +336,9 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 						cond->maxDistance, cond->singleLabel, matching_entities, compute_results);
 				}
 
-				distance_transform.TransformDistances(compute_results, cond->returnSortedList);
+				size_t num_to_keep = distance_transform.TransformDistances(
+					begin(compute_results), end(compute_results), cond->returnSortedList);
+				compute_results.resize(num_to_keep);
 
 				//populate matching_entities if needed
 				if(update_matching_entities)
@@ -379,11 +387,11 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				}
 
 			#ifdef MULTITHREAD_SUPPORT
-				ConvictionProcessor<KnnNonZeroDistanceQuerySBFCache, size_t, BitArrayIntegerSet> conviction_processor(buffers.convictionBuffers,
-					buffers.knnCache, distance_transform, static_cast<size_t>(cond->maxToRetrieve), cond->singleLabel, cond->useConcurrency);
+				ConvictionProcessor<size_t, BitArrayIntegerSet> conviction_processor(buffers.convictionBuffers,
+					buffers.knnCache, distance_transform, cond->maxToRetrieve, cond->singleLabel, cond->useConcurrency);
 			#else
-				ConvictionProcessor<KnnNonZeroDistanceQuerySBFCache, size_t, BitArrayIntegerSet> conviction_processor(buffers.convictionBuffers,
-					buffers.knnCache, distance_transform, static_cast<size_t>(cond->maxToRetrieve), cond->singleLabel);
+				ConvictionProcessor<size_t, BitArrayIntegerSet> conviction_processor(buffers.convictionBuffers,
+					buffers.knnCache, distance_transform, cond->maxToRetrieve, cond->singleLabel);
 			#endif
 				buffers.knnCache.ResetCache(sbfds, matching_entities, cond->distEvaluator, cond->positionLabels, cond->singleLabel);
 
@@ -530,11 +538,9 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 		case ENT_QUERY_MIN:
 		case ENT_QUERY_MAX:
 		{
-			size_t max_to_retrieve = static_cast<size_t>(cond->maxToRetrieve);
-
 			if(is_first)
 			{
-				sbfds.FindMinMax(cond->singleLabel, cond->singleLabelType, max_to_retrieve,
+				sbfds.FindMinMax(cond->singleLabel, cond->singleLabelType, cond->maxToRetrieve,
 									(cond->queryType == ENT_QUERY_MAX), nullptr, matching_entities);
 			}
 			else
@@ -543,7 +549,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				BitArrayIntegerSet &temp = buffers.tempMatchingEntityIndices;
 				temp = matching_entities;
 				matching_entities.clear();
-				sbfds.FindMinMax(cond->singleLabel, cond->singleLabelType, max_to_retrieve,
+				sbfds.FindMinMax(cond->singleLabel, cond->singleLabelType, cond->maxToRetrieve,
 									(cond->queryType == ENT_QUERY_MAX), &temp, matching_entities);
 			}
 			break;
@@ -867,7 +873,7 @@ void EntityQueryCaches::GetMatchingEntitiesViaSamplingWithReplacement(EntityQuer
 	EnsureLabelsAreCached(cond);
 #endif
 
-	size_t num_to_sample = static_cast<size_t>(cond->maxToRetrieve);
+	size_t num_to_sample = cond->maxToRetrieve;
 
 	auto &probabilities = EntityQueryCaches::buffers.doubleVector;
 	auto &entity_indices = EntityQueryCaches::buffers.entityIndices;
@@ -1134,7 +1140,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 				if(num_entities == 0)
 					break;
 
-				size_t num_to_sample = static_cast<size_t>(cond.maxToRetrieve);
+				size_t num_to_sample = cond.maxToRetrieve;
 
 				BitArrayIntegerSet &temp = entity_caches->buffers.tempMatchingEntityIndices;
 				if(update_matching_ents)
@@ -1164,8 +1170,8 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 
 		case ENT_QUERY_SELECT:
 		{
-			size_t num_to_select = static_cast<size_t>(cond.maxToRetrieve);
-			size_t offset = cond.hasStartOffset ? static_cast<size_t>(cond.startOffset) : 0; //offset to start selecting from, maintains the order given a random seed
+			size_t num_to_select = cond.maxToRetrieve;
+			size_t offset = cond.hasStartOffset ? cond.startOffset : 0; //offset to start selecting from, maintains the order given a random seed
 
 			size_t num_entities;
 			if(is_first)
@@ -1299,7 +1305,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 
 					//get values
 					for(auto &label_sid : exist_labels)
-						entity_values->SetMappedChildNodeWithReferenceHandoff(label_sid, contained_entities[entity_index]->GetValueAtLabel(label_sid, enm, false));
+						entity_values->SetMappedChildNodeWithReferenceHandoff(label_sid, contained_entities[entity_index]->GetValueAtLabel(label_sid, enm, false).first);
 				}
 			}
 			else //no exist_labels

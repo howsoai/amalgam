@@ -4,6 +4,9 @@
 #include "PerformanceProfiler.h"
 #include "StringManipulation.h"
 
+//system headers:
+#include <tuple>
+
 //makes an array of all the same value
 template<typename T, size_t N>
 constexpr std::array<T, N> make_array_of_duplicate_values(T value)
@@ -507,8 +510,9 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, bool 
 						value_exists = false;
 					}
 
-					node = curEntity->GetValueAtLabel(sid, nullptr, true, true);
-					if(node == nullptr)
+					bool found = false;
+					std::tie(node, found) = curEntity->GetValueAtLabel(sid, nullptr, true, true);
+					if(!found)
 					{
 						std::cout << "Variable " << input << " does not exist on the stack or as a label in the current entity." << std::endl;
 						value_exists = false;

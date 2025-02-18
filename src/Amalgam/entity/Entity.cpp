@@ -124,126 +124,80 @@ Entity::~Entity()
 	string_intern_pool.DestroyStringReferences(labelIndex, [](auto l) { return l.first; });
 }
 
-EvaluableNodeReference Entity::GetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNodeManager *destination_temp_enm, bool direct_get, bool on_self, bool batch_call)
+std::pair<EvaluableNodeReference, bool> Entity::GetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNodeManager *destination_temp_enm, bool direct_get, bool on_self, bool batch_call)
 {
 	if(label_sid == string_intern_pool.NOT_A_STRING_ID)
-		return EvaluableNodeReference::Null();
+		return std::pair(EvaluableNodeReference::Null(), true);
 
 	if(!on_self && IsLabelPrivate(label_sid))
-		return EvaluableNodeReference::Null();
+		return std::pair(EvaluableNodeReference::Null(), true);
 
 	const auto &label = labelIndex.find(label_sid);
 
 	if(label == end(labelIndex))
-		return EvaluableNodeReference::Null();
+		return std::pair(EvaluableNodeReference::Null(), false);
 
 	if(label->second == nullptr)
-		return EvaluableNodeReference::Null();
+		return std::pair(EvaluableNodeReference::Null(), true);
 
 	EvaluableNodeReference retval(label->second, false);
 
 	//if didn't give a valid destination, just return what we have
 	if(destination_temp_enm == nullptr)
-		return retval;
+		return std::pair(retval, true);
 
 	//if just directly retrieving, return the reference
 	if(direct_get && destination_temp_enm == &evaluableNodeManager)
-		return retval;
+		return std::pair(retval, true);
 
-	return destination_temp_enm->DeepAllocCopy(retval, direct_get
-		? EvaluableNodeManager::ENMM_NO_CHANGE : EvaluableNodeManager::ENMM_REMOVE_ALL);
+	return std::pair(destination_temp_enm->DeepAllocCopy(retval, direct_get ? EvaluableNodeManager::ENMM_NO_CHANGE : EvaluableNodeManager::ENMM_REMOVE_ALL), true);
 }
 
-bool Entity::GetValueAtLabelAsNumber(StringInternPool::StringID label_sid, double &value_out, bool on_self)
+std::pair<double, bool> Entity::GetValueAtLabelAsNumber(StringInternPool::StringID label_sid, bool on_self)
 {
 	constexpr double value_if_not_found = std::numeric_limits<double>::quiet_NaN();
 
 	if(label_sid == string_intern_pool.NOT_A_STRING_ID)
-	{
-		value_out = value_if_not_found;
-		return false;
-	}
+		return std::pair(value_if_not_found, false);
 
 	if(!on_self && IsLabelPrivate(label_sid))
-	{
-		value_out = value_if_not_found;
-		return false;
-	}
+		return std::pair(value_if_not_found, false);
 
 	const auto &label = labelIndex.find(label_sid);
 	if(label == end(labelIndex))
-	{
-		value_out = value_if_not_found;
-		return false;
-	}
+		return std::pair(value_if_not_found, false);
 
-	value_out = EvaluableNode::ToNumber(label->second);
-	return true;
+	return(std::pair(EvaluableNode::ToNumber(label->second), true));
 }
 
-bool Entity::GetValueAtLabelAsStringId(StringInternPool::StringID label_sid, StringInternPool::StringID &value_out, bool on_self)
+std::pair<StringInternPool::StringID, bool> Entity::GetValueAtLabelAsStringId(StringInternPool::StringID label_sid, bool on_self)
 {
 	if(label_sid == string_intern_pool.NOT_A_STRING_ID)
-	{
-		value_out = StringInternPool::NOT_A_STRING_ID;
-		return false;
-	}
+		return std::pair(StringInternPool::NOT_A_STRING_ID, false);
 
 	if(!on_self && IsLabelPrivate(label_sid))
-	{
-		value_out = StringInternPool::NOT_A_STRING_ID;
-		return false;
-	}
+		return std::pair(StringInternPool::NOT_A_STRING_ID, false);
 
 	const auto &label = labelIndex.find(label_sid);
 	if(label == end(labelIndex))
-	{
-		value_out = StringInternPool::NOT_A_STRING_ID;
-		return false;
-	}
-
-	value_out = EvaluableNode::ToStringIDIfExists(label->second);
-	return true;
+		return std::pair(StringInternPool::NOT_A_STRING_ID, false);
+	
+	return std::pair(EvaluableNode::ToStringIDIfExists(label->second), true);
 }
 
-bool Entity::GetValueAtLabelAsString(StringInternPool::StringID label_sid, std::string &value_out, bool on_self)
-{
-	if(label_sid == string_intern_pool.NOT_A_STRING_ID)
-	{
-		value_out = "";
-		return false;
-	}
-
-	if(!on_self && IsLabelPrivate(label_sid))
-	{
-		value_out = "";
-		return false;
-	}
-
-	const auto &label = labelIndex.find(label_sid);
-	if(label == end(labelIndex))
-	{
-		value_out = "";
-		return false;
-	}
-
-	value_out = Parser::Unparse(label->second, false, false, true);
-	return true;
-}
-
-EvaluableNodeImmediateValueWithType Entity::GetValueAtLabelAsImmediateValue(StringInternPool::StringID label_sid,
+std::pair<EvaluableNodeImmediateValueWithType, bool> Entity::GetValueAtLabelAsImmediateValue(StringInternPool::StringID label_sid,
 	bool on_self, EvaluableNodeManager *destination_temp_enm)
 {
 	if(!on_self && IsLabelPrivate(label_sid))
-		return EvaluableNodeImmediateValueWithType(std::numeric_limits<double>::quiet_NaN(), ENIVT_NOT_EXIST);
+		return std::pair(EvaluableNodeImmediateValueWithType(std::numeric_limits<double>::quiet_NaN(), ENIVT_NOT_EXIST), false);
 
 	const auto &label = labelIndex.find(label_sid);
 	if(label == end(labelIndex))
-		return EvaluableNodeImmediateValueWithType(std::numeric_limits<double>::quiet_NaN(), ENIVT_NOT_EXIST);
+		return std::pair(EvaluableNodeImmediateValueWithType(std::numeric_limits<double>::quiet_NaN(), ENIVT_NOT_EXIST), false);
 
 	EvaluableNodeImmediateValueWithType retval;
 	retval.CopyValueFromEvaluableNode(label->second, destination_temp_enm);
-	return retval;
+	return std::pair(retval, true);
 }
 
 bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNodeReference &new_value, bool direct_set,
@@ -398,7 +352,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 		{
 			//need to make a copy in case it is modified, so pass in evaluableNodeManager
 			EvaluableNodeReference value_destination_node(
-				GetValueAtLabel(variable_sid, &evaluableNodeManager, true, true, true),
+				GetValueAtLabel(variable_sid, &evaluableNodeManager, true, true, true).first,
 				true);
 			//can't assign to a label if it doesn't exist
 			if(value_destination_node == nullptr)
@@ -454,7 +408,7 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 EvaluableNodeReference Entity::ExecuteCodeAsEntity(EvaluableNode *code,
 	EvaluableNode *scope_stack, Interpreter *calling_interpreter,
 	std::vector<EntityWriteListener *> *write_listeners, PrintListener *print_listener,
-	PerformanceConstraints *performance_constraints
+	InterpreterConstraints *interpreter_constraints
 #ifdef MULTITHREAD_SUPPORT
 	, Concurrency::ReadLock *enm_lock
 #endif
@@ -465,7 +419,7 @@ EvaluableNodeReference Entity::ExecuteCodeAsEntity(EvaluableNode *code,
 		return EvaluableNodeReference::Null();
 
 	Interpreter interpreter(&evaluableNodeManager, randomStream.CreateOtherStreamViaRand(),
-		write_listeners, print_listener, performance_constraints, this, calling_interpreter);
+		write_listeners, print_listener, interpreter_constraints, this, calling_interpreter);
 
 #ifdef MULTITHREAD_SUPPORT
 	if(enm_lock == nullptr)

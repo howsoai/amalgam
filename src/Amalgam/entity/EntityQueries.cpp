@@ -725,12 +725,12 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 				it.distance = GetConditionDistanceMeasure(it.reference, true);
 		}
 
-		auto weight_function = [this](Entity *e, double &weight_value)
+		auto weight_function = [this](Entity *e)
 							   {
-								 	auto [ret_val, found] = e->GetValueAtLabelAsNumber(weightLabel);
+								 	auto [weight, found] = e->GetValueAtLabelAsNumber(weightLabel);
 									if(found)
-										weight_value = ret_val;
-									return found;
+										return weight;
+									return 1.0;
 							   }; 
 
 		//transform distances as appropriate
@@ -774,12 +774,12 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 
 
 		auto weight_function = [this]
-							   (Entity *e, double &weight_value)
+							   (Entity *e)
 							   {
-									auto [ret_val, found] = e->GetValueAtLabelAsNumber(weightLabel);
+									auto [weight, found] = e->GetValueAtLabelAsNumber(weightLabel);
 									if(found)
-										weight_value = ret_val;
-									return found;
+										return weight;
+									return 1.0;
 							   };
 
 		//transform distances as appropriate

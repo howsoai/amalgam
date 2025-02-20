@@ -439,24 +439,23 @@ public:
 
 	//returns a function that will take in an entity index and reference to a double to store the value and return true if the value is found
 	// assumes and requires column_index is a valid column (not a feature_id)
-	inline std::function<bool(size_t, double &)> GetNumberValueFromEntityIndexFunction(size_t column_index)
+	inline std::function<double(size_t)> GetNumberValueFromEntityIndexFunction(size_t column_index)
 	{
-		//if invalid column_index, then always return false
+		//if invalid column_index, then always return 1.0
 		if(column_index >= columnData.size())
-			return [](size_t i, double &value) { return false; };
+			return [](size_t i) { return 1.0; };
 
 		auto column_data = columnData[column_index].get();
 		auto number_indices_ptr = &column_data->numberIndices;
 		auto value_type = column_data->GetUnresolvedValueType(ENIVT_NUMBER);
 
 		return [&, number_indices_ptr, column_index, column_data, value_type]
-			(size_t i, double &value)
+			(size_t i)
 			{
 				if(!number_indices_ptr->contains(i))
-					return false;
+					return 1.0;
 
-				value = column_data->GetResolvedValue(value_type, GetValue(i, column_index)).number;
-				return true;
+				return column_data->GetResolvedValue(value_type, GetValue(i, column_index)).number;
 			};
 	}
 

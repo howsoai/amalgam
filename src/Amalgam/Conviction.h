@@ -54,13 +54,7 @@ public:
 		knnCache->GetKnn(entity_reference, numNearestNeighbors, true,
 			buffers->neighbors, additional_holdout_reference);
 
-		double entity_weight = 1.0;
-		if(distanceTransform->getEntityWeightFunction(entity_reference, entity_weight))
-		{
-			if(entity_weight == 0)
-				return 0.0;
-		}
-
+		double entity_weight = distanceTransform->getEntityWeightFunction(entity_reference);
 		return distanceTransform->ComputeDistanceContribution(buffers->neighbors, entity_weight);
 	}
 
@@ -71,13 +65,7 @@ public:
 		buffers->neighbors.clear();
 		knnCache->GetKnn(entity_reference, numNearestNeighbors, true, buffers->neighbors, included_entities);
 
-		double entity_weight = 1.0;
-		if(distanceTransform->getEntityWeightFunction(entity_reference, entity_weight))
-		{
-			if(entity_weight == 0)
-				return 0.0;
-		}
-
+		double entity_weight = distanceTransform->getEntityWeightFunction(entity_reference);
 		return distanceTransform->ComputeDistanceContribution(buffers->neighbors, entity_weight);
 	}
 

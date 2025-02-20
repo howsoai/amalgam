@@ -1009,21 +1009,51 @@ public:
 		{
 			if(computeSurprisal)
 			{
+				double total_entity_weight = 0.0;
 				double total_probability = 0.0;
 				double accumulated_value = 0.0;
+				//collect smallest value in case of numeric underflow; can approximate by using the smallest value
+				double min_value = std::numeric_limits<double>::infinity();
 				
 				TransformDistancesWithBandwidthSelectionAndResultFunction(
 					entity_distance_pair_container_begin, entity_distance_pair_container_end,
-					[&total_probability, &accumulated_value](auto ed_pair,
+					[&total_entity_weight, &total_probability, &accumulated_value, &min_value](auto ed_pair,
 						double weighted_value, double unweighted_value, double prob_mass, double weight)
 					{
-						//in information theory, zero weights cancel out infinities, so skip if zero
 						if(weight != 0.0)
 						{
-							total_probability += prob_mass;
-							accumulated_value += prob_mass * unweighted_value;
+							total_entity_weight += weight;
+
+							//in information theory, zero weights cancel out infinities, so skip if zero
+							if(prob_mass != 0)
+							{
+								total_probability += prob_mass;
+								accumulated_value += prob_mass * unweighted_value;
+							}
+
+							//compare the unweighted value in case of underflow
+							if(unweighted_value < min_value)
+								min_value = unweighted_value;
 						}
 					});
+
+				//if no evidence, no information, thus infinite surprisal
+				if(total_entity_weight == 0.0)
+				{
+					if(surprisalToProbability)
+						return 0.0;
+					else
+						return std::numeric_limits<double>::infinity();
+				}	
+
+				//evidence, but underflow, use minimum surprisal, since the others have underflowed
+				if(total_probability == 0.0)
+				{
+					if(surprisalToProbability)
+						return 0.0;
+					else
+						return min_value;
+				}
 
 				return accumulated_value / total_probability;
 			}

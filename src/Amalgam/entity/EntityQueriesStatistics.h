@@ -1111,10 +1111,10 @@ public:
 		}
 
 		//Computes the distance contribution as a type of generalized mean with special handling for distances of zero
-		// entity is the entity that the distance contribution is being performed on, and entity_distance_pair_container are the distances to
-		// its nearest entities
+		// entity_distance_pair_container are the distances to its nearest entities,
+		// and entity_weight is the weight of the entity for which this distance contribution is being computed
 		// the functions get_entity and get_distance_ref return the entity and reference to the distance for an iterator of entity_distance_pair_container
-		double ComputeDistanceContribution(std::vector<DistanceReferencePair<EntityReference>> &entity_distance_pair_container, EntityReference entity)
+		double ComputeDistanceContribution(std::vector<DistanceReferencePair<EntityReference>> &entity_distance_pair_container, double entity_weight)
 		{
 			double distance_contribution = 0.0;
 			//there's at least one entity in question
@@ -1163,17 +1163,11 @@ public:
 			if(FastIsNaN(distance_contribution))
 				return 0.0;
 
-			double entity_weight = 1.0;
-			if(getEntityWeightFunction(entity, entity_weight))
-			{
-				if(entity_weight != 0)
-					distance_contribution *= entity_weight;
-				else
-					return 0.0;
-			}
-
 			//split the distance contribution among the identical entities
-			return distance_contribution * entity_weight / (weight_of_identical_entities + entity_weight);
+			double fraction_per_identical_entity = entity_weight / (weight_of_identical_entities + entity_weight);
+
+			//return the distance contribution modified by weights and identical entities
+			return entity_weight * distance_contribution * fraction_per_identical_entity;
 		}
 
 		//exponent by which to scale the distances

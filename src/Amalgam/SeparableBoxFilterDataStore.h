@@ -597,10 +597,10 @@ protected:
 		// and then only accumulate if it is valid
 		//however, indices beyond the range of partial_sums will cause an issue
 		//therefore, only trim back the end if needed, and trim back to the largest possible element id (max_element - 1)
-		if(entity_indices.GetEndInteger() >= max_element)
+		if(entity_indices.GetEndInteger() > max_element)
 		{
 			max_index = entity_indices.GetFirstIntegerVectorLocationGreaterThan(max_element - 1);
-			num_entity_indices = max_index - 1;
+			num_entity_indices = max_index;
 		}
 
 		//for each found element, accumulate associated partial sums, or if zero, just mark that it's accumulated

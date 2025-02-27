@@ -1152,10 +1152,10 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 	double term = 0.0;
 	if(value_entry_iter->first == value.nodeValue.number)
-		term = r_dist_eval.distEvaluator->ComputeDistanceTermContinuousExactMatch(query_feature_index, high_accuracy);
+		term = ComputeDistanceTermContinuousExactMatch(r_dist_eval, value_entry_iter->second, query_feature_index, high_accuracy);
 	else
-		term = r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonNullRegular(
-			value.nodeValue.number - value_entry_iter->first, query_feature_index, high_accuracy);
+		term = ComputeDistanceTermContinuousNonNullRegular(r_dist_eval,
+			value.nodeValue.number, value_entry_iter->second, query_feature_index, high_accuracy);
 
 	size_t num_entities_computed = AccumulatePartialSums(enabled_indices, value_entry_iter->second.indicesWithValue, query_feature_index, term);
 
@@ -1318,7 +1318,8 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 				break;
 		}
 
-		term = r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonNullRegular(next_closest_diff, query_feature_index, high_accuracy);
+		term = ComputeDistanceTermContinuousNonNullRegular(r_dist_eval,
+			value.nodeValue.number, next_closest_iter->second, query_feature_index, high_accuracy);
 		num_entities_computed += AccumulatePartialSums(enabled_indices, next_closest_iter->second.indicesWithValue, query_feature_index, term);
 
 		//track the rate of change of difference

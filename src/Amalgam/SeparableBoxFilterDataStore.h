@@ -800,7 +800,6 @@ protected:
 	}
 
 	//computes the distance term for the entity, query_feature_index, and feature_type,
-	// where the value does not match any in the SBFDS
 	//assumes that null values have already been taken care of for nominals
 	__forceinline double ComputeDistanceTermNonMatch(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		size_t entity_index, size_t query_feature_index, bool high_accuracy)
@@ -913,6 +912,33 @@ protected:
 			return r_dist_eval.ComputeDistanceTerm(other_value, other_value_type, query_feature_index, high_accuracy);
 		}
 		}
+	}
+
+	//computes the distance term for value_entry, query_feature_index, and feature_type,
+	__forceinline double ComputeDistanceTermContinuousNonNullRegular(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+		double target_value, SBFDSColumnData::ValueEntry &value_entry, size_t query_feature_index, bool high_accuracy)
+	{
+		auto &feature_data = r_dist_eval.featureData[query_feature_index];
+		if(feature_data.effectiveFeatureType == RepeatedGeneralizedDistanceEvaluator::EFDT_UNIVERSALLY_INTERNED_PRECOMPUTED
+				|| feature_data.effectiveFeatureType == RepeatedGeneralizedDistanceEvaluator::EFDT_NUMERIC_INTERNED_PRECOMPUTED)
+			return r_dist_eval.ComputeDistanceTermInternedPrecomputed(
+				value_entry.valueInternIndex, query_feature_index);
+
+		double diff = target_value - value_entry.value.number;
+		return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonNullRegular(diff, query_feature_index, high_accuracy);
+	}
+
+	//computes the inner term for a non-nominal with an exact match of values
+	__forceinline double ComputeDistanceTermContinuousExactMatch(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+		SBFDSColumnData::ValueEntry &value_entry, size_t query_feature_index, bool high_accuracy)
+	{
+		auto &feature_data = r_dist_eval.featureData[query_feature_index];
+		if(feature_data.effectiveFeatureType == RepeatedGeneralizedDistanceEvaluator::EFDT_UNIVERSALLY_INTERNED_PRECOMPUTED
+				|| feature_data.effectiveFeatureType == RepeatedGeneralizedDistanceEvaluator::EFDT_NUMERIC_INTERNED_PRECOMPUTED)
+			return r_dist_eval.ComputeDistanceTermInternedPrecomputed(
+				value_entry.valueInternIndex, query_feature_index);
+
+		return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousExactMatch(query_feature_index, high_accuracy);
 	}
 
 	//given an estimate of distance that uses best_possible_feature_distance filled in for any features not computed,

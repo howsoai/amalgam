@@ -437,7 +437,6 @@ namespace EntityQueryBuilder
 				}
 			}
 		}
-		//else don't bother parsing this, it instead contains the cases to compute case conviction for
 
 		size_t num_elements = cur_condition->positionLabels.size();
 

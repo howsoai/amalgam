@@ -174,38 +174,6 @@ public:
 		priorityQueue.emplace(val, randomStream.RandUInt32());
 	}
 
-	//like Push but keeps only max_size elements
-	inline void PushAndOnlyKeepSize(const T &val, size_t max_size)
-	{
-		//always push if need more
-		if(priorityQueue.size() < max_size)
-		{
-			priorityQueue.emplace(val, randomStream.RandUInt32());
-			return;
-		}
-
-		auto &top = priorityQueue.top();
-		if(val < top.first)
-		{
-			//better, so exchange it
-			priorityQueue.pop();
-			priorityQueue.emplace(val, randomStream.RandUInt32());
-		}
-		else if(val == top.first)
-		{
-			//good enough to consider for top, check random
-			uint32_t r = randomStream.RandUInt32();
-
-			//if won the random selection, then push it on the stack
-			if(r < top.second)
-			{
-				priorityQueue.pop();
-				priorityQueue.emplace(val, r);
-			}
-		}
-		//otherwise don't need to do anything, val is not better than the worst on the stack
-	}
-
 	//like PushAndOnlyKeepSize, but keeps the current size of the priority queue
 	//requires that there is at least one element in the priority queue
 	//returns the top element after the push and pop has been completed
@@ -268,4 +236,33 @@ protected:
 
 	FlexiblePriorityQueue<std::pair<T, uint32_t>, PriorityQueueContainerType, StochasticTieBreakingComparator> priorityQueue;
 	RandomStream randomStream;
+};
+
+//TODO 22953: document this class
+template<typename T>
+class StochasticTieBreakingPriorityQueueRequireNonZeroValue
+	: public StochasticTieBreakingPriorityQueue<T>
+{
+public:
+
+	inline const T &PushAndPop(const T &val)
+	{
+		if(val != 0)
+			return StochasticTieBreakingPriorityQueue::PushAndPop(val);
+
+		Push(val);
+
+		//make copy of the top and pop it
+		auto top_value = Top();
+		Pop();
+
+		//if the next largest size is zero, then need to put the non-zero value back in sorted_results
+		if(Top() == 0)
+		{
+			Push(top_value);
+			return top_value;
+		}
+
+		return Top();
+	}
 };

@@ -70,6 +70,12 @@ public:
 		return std::make_pair(GetBucketForIndex(dimension_index), GetBucketBitForIndex(dimension_index));
 	}
 
+	//returns a pointer to the buffer for the first bucket location for the given partial_sum_index
+	__forceinline size_t *GetFirstBucketLocationForIndex(size_t partial_sum_index)
+	{
+		return &buffer[bucketStride * partial_sum_index + 1].mask;
+	}
+
 	//accumulates the specified value into the value specified by partial_sum_index
 	// for the accum_location provided by GetAccumLocation
 	__forceinline void Accum(size_t partial_sum_index, const std::pair<size_t, size_t> accum_location, double value)

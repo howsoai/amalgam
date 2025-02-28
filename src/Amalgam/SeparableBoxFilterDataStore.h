@@ -952,11 +952,12 @@ protected:
 		double distance = partial_sums.GetSum(entity_index);
 
 		size_t query_feature_index = 0;
+		size_t *cur_partial_sum_bitmask_bucket = partial_sums.GetFirstBucketLocationForIndex(entity_index);
 		for(size_t partial_sums_bucket_index = 0; partial_sums_bucket_index < partial_sums.numMaskBuckets; partial_sums_bucket_index++)
 		{
-			size_t partial_sums_bucket = partial_sums.buffer[partial_sums_bucket_index].mask;
+			size_t partial_sums_bucket = *(cur_partial_sum_bitmask_bucket++);
 			for(size_t bucket_feature_index = 0, bitmask = 1;
-				bucket_feature_index < 64;
+				bucket_feature_index < 64 && query_feature_index < num_target_labels;
 				bucket_feature_index++, query_feature_index++, bitmask << 1)
 			{
 				if(partial_sums_bucket_index & bitmask)
@@ -994,7 +995,8 @@ protected:
 			return std::make_pair(false, distance);
 
 		size_t query_feature_index = 0;
-		size_t first_partial_sums_bucket = partial_sums.buffer[0].mask;
+		size_t *cur_partial_sum_bitmask_bucket = partial_sums.GetFirstBucketLocationForIndex(entity_index);
+		size_t first_partial_sums_bucket = *cur_partial_sum_bitmask_bucket;
 		for(size_t bitmask = 1; query_feature_index < 64; query_feature_index++, bitmask << 1)
 		{
 			if(first_partial_sums_bucket & bitmask)
@@ -1014,7 +1016,9 @@ protected:
 
 		for(size_t partial_sums_bucket_index = 1; partial_sums_bucket_index < partial_sums.numMaskBuckets; partial_sums_bucket_index++)
 		{
-			size_t partial_sums_bucket = partial_sums.buffer[partial_sums_bucket_index].mask;
+			//advance at the start since already computed previous one
+			cur_partial_sum_bitmask_bucket++;
+			size_t partial_sums_bucket = *cur_partial_sum_bitmask_bucket;
 			for(size_t bucket_feature_index = 0, bitmask = 1;
 				bucket_feature_index < 64;
 				bucket_feature_index++, query_feature_index++, bitmask << 1)

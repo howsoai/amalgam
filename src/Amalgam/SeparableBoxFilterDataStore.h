@@ -953,14 +953,17 @@ protected:
 
 		size_t query_feature_index = 0;
 		size_t *cur_partial_sum_bitmask_bucket = partial_sums.GetFirstBucketLocationForIndex(entity_index);
-		for(size_t partial_sums_bucket_index = 0; partial_sums_bucket_index < partial_sums.numMaskBuckets; partial_sums_bucket_index++)
+		size_t *last_partial_sum_bitmask_bucket = cur_partial_sum_bitmask_bucket + partial_sums.numMaskBuckets;
+		for(; cur_partial_sum_bitmask_bucket < last_partial_sum_bitmask_bucket; cur_partial_sum_bitmask_bucket++)
 		{
-			size_t partial_sums_bucket = *(cur_partial_sum_bitmask_bucket++);
-			for(size_t bucket_feature_index = 0, bitmask = 1;
-				bucket_feature_index < 64 && query_feature_index < num_target_labels;
-				bucket_feature_index++, query_feature_index++, bitmask << 1)
+			size_t partial_sums_bucket = *cur_partial_sum_bitmask_bucket;
+
+			//for performance and avoid another counter,
+			// use the fact that when the bitmask is shifted off, the bitmask will be zero
+			for(size_t bitmask = 1; bitmask != 0 && query_feature_index < num_target_labels;
+				query_feature_index++, bitmask <<= 1)
 			{
-				if(partial_sums_bucket_index & bitmask)
+				if(partial_sums_bucket & bitmask)
 					continue;
 
 				distance += ComputeDistanceTermNonMatch(r_dist_eval, entity_index, query_feature_index, high_accuracy);
@@ -996,34 +999,16 @@ protected:
 
 		size_t query_feature_index = 0;
 		size_t *cur_partial_sum_bitmask_bucket = partial_sums.GetFirstBucketLocationForIndex(entity_index);
-		size_t first_partial_sums_bucket = *cur_partial_sum_bitmask_bucket;
-		for(size_t bitmask = 1; query_feature_index < 64; query_feature_index++, bitmask << 1)
+		size_t *last_partial_sum_bitmask_bucket = cur_partial_sum_bitmask_bucket + partial_sums.numMaskBuckets;
+		for(; cur_partial_sum_bitmask_bucket < last_partial_sum_bitmask_bucket; cur_partial_sum_bitmask_bucket++)
 		{
-			if(first_partial_sums_bucket & bitmask)
-				continue;
-
-			//remove distance already added and reduce num_uncalculated_partial_sum_features
-			distance -= min_unpopulated_distances[--num_uncalculated_features];
-
-			distance += ComputeDistanceTermNonMatch(r_dist_eval, entity_index, query_feature_index, high_accuracy);
-
-			//break out of the loop before the iterator is incremented to save a few cycles
-			//do this via logic to minimize the number of branches
-			bool unacceptable_distance = (distance > reject_distance);
-			if(unacceptable_distance || num_uncalculated_features == 0)
-				return std::make_pair(!unacceptable_distance, distance);
-		}
-
-		for(size_t partial_sums_bucket_index = 1; partial_sums_bucket_index < partial_sums.numMaskBuckets; partial_sums_bucket_index++)
-		{
-			//advance at the start since already computed previous one
-			cur_partial_sum_bitmask_bucket++;
 			size_t partial_sums_bucket = *cur_partial_sum_bitmask_bucket;
-			for(size_t bucket_feature_index = 0, bitmask = 1;
-				bucket_feature_index < 64;
-				bucket_feature_index++, query_feature_index++, bitmask << 1)
+
+			//for performance and avoid another counter,
+			// use the fact that when the bitmask is shifted off, the bitmask will be zero
+			for(size_t bitmask = 1; bitmask != 0; query_feature_index++, bitmask <<= 1)
 			{
-				if(partial_sums_bucket_index & bitmask)
+				if(partial_sums_bucket & bitmask)
 					continue;
 
 				//remove distance already added and reduce num_uncalculated_partial_sum_features

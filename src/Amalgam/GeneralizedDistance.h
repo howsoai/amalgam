@@ -249,10 +249,10 @@ public:
 	__forceinline double ComputeDifferenceWithDeviation(double diff, size_t feature_index, bool surprisal_transform, bool high_accuracy)
 	{
 		auto &feature_attribs = featureAttribs[feature_index];
-		double deviation = feature_attribs.deviation;
 	#ifdef DISTANCE_USE_LAPLACE_LK_METRIC
 		if(high_accuracy)
 		{
+			double deviation = feature_attribs.deviation;
 			diff += std::exp(-diff / deviation) * (feature_attribs.deviationTimesThree + diff) * 0.5;
 			if(!surprisal_transform)
 			{
@@ -264,9 +264,7 @@ public:
 
 				//it is possible that the subtraction misses the least significant bit in the mantissa
 				//due to numerical precision, returning a negative number, which causes issues, so clamp above zero
-				if(difference >= 0)
-					return difference;
-				return 0.0;
+				return std::max(0.0, difference);
 			}
 		}
 		else //!high_accuracy
@@ -277,6 +275,7 @@ public:
 			//it will just set the term to zero, which is appropriate
 			diff += std::exp(static_cast<float>(diff * feature_attribs.deviationReciprocalNegative))
 				* (feature_attribs.deviationTimesThree + diff) * 0.5;
+
 			if(!surprisal_transform)
 			{
 				return diff;
@@ -288,9 +287,7 @@ public:
 
 				//it is possible that the subtraction misses the least significant bit in the mantissa
 				//due to numerical precision, returning a negative number, which causes issues, so clamp above zero
-				if(difference >= 0)
-					return difference;
-				return 0.0;
+				return std::max(0.0, difference);
 			}
 		}
 	#else
@@ -309,9 +306,7 @@ public:
 
 				//it is possible that the subtraction misses the least significant bit in the mantissa
 				//due to numerical precision, returning a negative number, which causes issues, so clamp above zero
-				if(difference >= 0)
-					return difference;
-				return 0.0;
+				return std::max(0.0, difference);
 			}
 		}
 		else //!high_accuracy
@@ -333,9 +328,7 @@ public:
 
 				//it is possible that the subtraction misses the least significant bit in the mantissa
 				//due to numerical precision, returning a negative number, which causes issues, so clamp above zero
-				if(difference >= 0)
-					return difference;
-				return 0.0;
+				return std::max(0.0, difference);
 			}
 		}
 	#endif

@@ -951,13 +951,19 @@ protected:
 		//calculate full non-exponentiated Minkowski distance to the target
 		double distance = partial_sums.GetSum(entity_index);
 
-		for(auto it = partial_sums.BeginPartialSumIndex(entity_index); *it < num_target_labels; ++it)
+		size_t query_feature_index = 0;
+		for(size_t partial_sums_bucket_index = 0; partial_sums_bucket_index < partial_sums.numMaskBuckets; partial_sums_bucket_index++)
 		{
-			if(it.IsIndexComputed())
-				continue;
+			size_t partial_sums_bucket = partial_sums.buffer[partial_sums_bucket_index].mask;
+			for(size_t bucket_feature_index = 0, bitmask = 1;
+				bucket_feature_index < 64;
+				bucket_feature_index++, query_feature_index++, bitmask << 1)
+			{
+				if(partial_sums_bucket_index & bitmask)
+					continue;
 
-			size_t query_feature_index = *it;
-			distance += ComputeDistanceTermNonMatch(r_dist_eval, entity_index, query_feature_index, high_accuracy);
+				distance += ComputeDistanceTermNonMatch(r_dist_eval, entity_index, query_feature_index, high_accuracy);
+			}
 		}
 
 		return distance;
@@ -987,16 +993,16 @@ protected:
 		if(distance > reject_distance)
 			return std::make_pair(false, distance);
 
-		//use infinite loop with exit at the end to remove need for extra iterator increment
-		for(auto it = partial_sums.BeginPartialSumIndex(entity_index); true; ++it)
+		size_t query_feature_index = 0;
+		size_t first_partial_sums_bucket = partial_sums.buffer[0].mask;
+		for(size_t bitmask = 1; query_feature_index < 64; query_feature_index++, bitmask << 1)
 		{
-			if(it.IsIndexComputed())
+			if(first_partial_sums_bucket & bitmask)
 				continue;
 
 			//remove distance already added and reduce num_uncalculated_partial_sum_features
 			distance -= min_unpopulated_distances[--num_uncalculated_features];
 
-			const size_t query_feature_index = *it;
 			distance += ComputeDistanceTermNonMatch(r_dist_eval, entity_index, query_feature_index, high_accuracy);
 
 			//break out of the loop before the iterator is incremented to save a few cycles
@@ -1004,6 +1010,29 @@ protected:
 			bool unacceptable_distance = (distance > reject_distance);
 			if(unacceptable_distance || num_uncalculated_features == 0)
 				return std::make_pair(!unacceptable_distance, distance);
+		}
+
+		for(size_t partial_sums_bucket_index = 1; partial_sums_bucket_index < partial_sums.numMaskBuckets; partial_sums_bucket_index++)
+		{
+			size_t partial_sums_bucket = partial_sums.buffer[partial_sums_bucket_index].mask;
+			for(size_t bucket_feature_index = 0, bitmask = 1;
+				bucket_feature_index < 64;
+				bucket_feature_index++, query_feature_index++, bitmask << 1)
+			{
+				if(partial_sums_bucket_index & bitmask)
+					continue;
+
+				//remove distance already added and reduce num_uncalculated_partial_sum_features
+				distance -= min_unpopulated_distances[--num_uncalculated_features];
+
+				distance += ComputeDistanceTermNonMatch(r_dist_eval, entity_index, query_feature_index, high_accuracy);
+
+				//break out of the loop before the iterator is incremented to save a few cycles
+				//do this via logic to minimize the number of branches
+				bool unacceptable_distance = (distance > reject_distance);
+				if(unacceptable_distance || num_uncalculated_features == 0)
+					return std::make_pair(!unacceptable_distance, distance);
+			}
 		}
 
 		//shouldn't make it here

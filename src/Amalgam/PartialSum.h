@@ -24,55 +24,6 @@ public:
 	//defined to keep compatibility with stl containers
 	using value_type = size_t;
 
-	//iterator for walking along which partial sums have been filled in
-	struct Iterator
-	{
-		__forceinline Iterator(size_t _index, size_t _bit, SumOrMaskBucket *value_location)
-			: index(_index), valueLocation(value_location)
-		{	}
-
-		__forceinline Iterator operator =(const Iterator &other)
-		{
-			index = other.index;
-			valueLocation = other.valueLocation;
-			return *this;
-		}
-
-		__forceinline bool operator ==(const Iterator &other)
-		{
-			return index == other.index;
-		}
-
-		__forceinline bool operator !=(const Iterator &other)
-		{
-			return index != other.index;
-		}
-
-		__forceinline Iterator &operator ++()
-		{
-			index++;
-			return *this;
-		}
-
-		//dereference operator
-		__forceinline size_t operator *()
-		{
-			return index;
-		}
-
-		//returns true if current bit is set
-		__forceinline bool IsIndexComputed()
-		{
-			size_t bit = (index % 64);
-			size_t offset = (index / 64);
-			return ( (valueLocation + offset)->mask & (1ULL << bit));
-		}
-
-		size_t index;
-
-		//pointer to current value
-		SumOrMaskBucket *valueLocation;
-	};
 
 	//clears all data in the collection
 	void clear()
@@ -177,13 +128,6 @@ public:
 	{
 		size_t bucket_offset = bucketStride * partial_sum_index;
 		buffer[bucket_offset].sum = value;
-	}
-
-	//returns an iterator for partial_sum_index
-	__forceinline Iterator BeginPartialSumIndex(size_t partial_sum_index)
-	{
-		size_t offset = bucketStride * partial_sum_index + 1;
-		return Iterator(0, 0, &buffer[offset]);
 	}
 
 	//returns true if the term of the sum at partial_sum_index and term_index has been accumulated yet, else false

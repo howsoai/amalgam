@@ -2,6 +2,9 @@
 #include "Entity.h"
 #include "SeparableBoxFilterDataStore.h"
 
+//system headers
+#include <limits>
+
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 thread_local
 #endif
@@ -566,11 +569,14 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 
 	//cache kth smallest distance to target search node
 	double worst_candidate_distance = std::numeric_limits<double>::infinity();
+	//assume there's an error in each addition and subtraction
+	double distance_threshold_to_consider_zero = 2
+		* static_cast<double>(num_enabled_features) * std::numeric_limits<double>::epsilon();
 	if(sorted_results.Size() == top_k)
 	{
 		double top_distance = sorted_results.Top().distance;
 		//don't clamp top distance if we're expanding and only have 0 distances
-		if(! (expand_to_first_nonzero_distance && top_distance == 0.0) )
+		if(! (expand_to_first_nonzero_distance && top_distance <= distance_threshold_to_consider_zero) )
 			worst_candidate_distance = top_distance;
 	}
 
@@ -589,7 +595,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 			{
 				double top_distance = sorted_results.Top().distance;
 				//don't clamp top distance if we're expanding and only have 0 distances
-				if(!(expand_to_first_nonzero_distance && top_distance == 0.0))
+				if(!(expand_to_first_nonzero_distance && top_distance <= distance_threshold_to_consider_zero))
 					worst_candidate_distance = top_distance;
 			}
 
@@ -605,7 +611,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 			continue;
 
 		//if not expanding and pushing a zero distance onto the stack, then push and pop a value onto the stack
-		if(!(expand_to_first_nonzero_distance && distance == 0.0))
+		if(!(expand_to_first_nonzero_distance && distance <= distance_threshold_to_consider_zero))
 			worst_candidate_distance = sorted_results.PushAndPop(DistanceReferencePair(distance, entity_index)).distance;
 		else //adding a zero and need to expand beyond zeros
 		{
@@ -617,7 +623,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 			sorted_results.Pop();
 
 			//if the next largest size is zero, then need to put the non-zero value back in sorted_results
-			if(sorted_results.Size() > 0 && sorted_results.Top().distance == 0)
+			if(sorted_results.Size() > 0 && sorted_results.Top().distance <= distance_threshold_to_consider_zero)
 				sorted_results.Push(drp);
 		}
 	}

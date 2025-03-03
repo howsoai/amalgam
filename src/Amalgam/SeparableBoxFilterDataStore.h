@@ -53,7 +53,7 @@ public:
 		BitArrayIntegerSet nullAccumSet;
 
 		FlexiblePriorityQueue<CountDistanceReferencePair<size_t>> potentialGoodMatches;
-		StochasticTieBreakingPriorityQueue<DistanceReferencePair<size_t>> sortedResults;
+		StochasticTieBreakingPriorityQueue<DistanceReferencePair<size_t>, double> sortedResults;
 
 		//cache of nearest neighbors from previous query
 		std::vector<size_t> previousQueryNearestNeighbors;

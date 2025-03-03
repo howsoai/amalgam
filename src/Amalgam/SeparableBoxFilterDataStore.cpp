@@ -532,9 +532,10 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 
 	//reuse, clear, and set up sorted_results
 	auto &sorted_results = parametersAndBuffers.sortedResults;
-	sorted_results.clear();
-	sorted_results.SetStream(rand_stream);
-	sorted_results.Reserve(top_k);
+	//assume there's an error in each addition and subtraction
+	double distance_threshold_to_consider_zero = 2
+		* static_cast<double>(num_enabled_features) * std::numeric_limits<double>::epsilon();
+	sorted_results.Reset(rand_stream.CreateOtherStreamViaRand(), top_k, distance_threshold_to_consider_zero);
 
 	//parse the sparse inline hash of good match nodes directly into the compacted vector of good matches
 	while(potential_good_matches.size() > 0)
@@ -569,9 +570,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 
 	//cache kth smallest distance to target search node
 	double worst_candidate_distance = std::numeric_limits<double>::infinity();
-	//assume there's an error in each addition and subtraction
-	double distance_threshold_to_consider_zero = 2
-		* static_cast<double>(num_enabled_features) * std::numeric_limits<double>::epsilon();
+	
 	if(sorted_results.Size() == top_k)
 	{
 		double top_distance = sorted_results.Top().distance;
@@ -609,6 +608,8 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 
 		if(!accept)
 			continue;
+
+		//TODO 22953: use PushAndPopToThreshold here, and update any logic that compares to distance_threshold_to_consider_zero to use an appropriate method
 
 		//if not expanding and pushing a zero distance onto the stack, then push and pop a value onto the stack
 		if(!(expand_to_first_nonzero_distance && distance <= distance_threshold_to_consider_zero))
@@ -694,9 +695,10 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 
 	//reuse, clear, and set up sorted_results
 	auto &sorted_results = parametersAndBuffers.sortedResults;
-	sorted_results.clear();
-	sorted_results.SetStream(rand_stream.CreateOtherStreamViaRand());
-	sorted_results.Reserve(top_k);
+	//assume there's an error in each addition and subtraction
+	double distance_threshold_to_consider_zero = 2
+		* static_cast<double>(num_enabled_features) * std::numeric_limits<double>::epsilon();
+	sorted_results.Reset(rand_stream.CreateOtherStreamViaRand(), top_k, distance_threshold_to_consider_zero);
 
 	//parse the sparse inline hash of good match nodes directly into the compacted vector of good matches
 	while(potential_good_matches.size() > 0)

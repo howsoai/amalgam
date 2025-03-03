@@ -115,14 +115,14 @@ public:
 };
 
 //Priority queue that, when receiving values of equal priority, will randomize the order they are stored and popped off the queue
-//Requires the type T to have both the < and == operators
+//Requires the type QueueElementType to have both the < and == operators
 //The constructor requires a seed
-template<typename T>
+template<typename QueueElementType, typename ComparisonValueType>
 class StochasticTieBreakingPriorityQueue
 {
 public:
 
-	typedef std::vector<std::pair<T, uint32_t>> PriorityQueueContainerType;
+	typedef std::vector<std::pair<QueueElementType, uint32_t>> PriorityQueueContainerType;
 
 	StochasticTieBreakingPriorityQueue() : 
 		priorityQueue(StochasticTieBreakingComparator())
@@ -147,10 +147,9 @@ public:
 		randomStream = stream;
 	}
 
-	//these functions mimic their respective std::priority_queue functions
-	__forceinline size_t Size()
+	__forceinline void SetIncludeAllThreshold(ComparisonValueType threshold)
 	{
-		return priorityQueue.size();
+		includeAllThreshold = threshold;
 	}
 
 	__forceinline void Reserve(size_t reserve_size)
@@ -164,20 +163,35 @@ public:
 		priorityQueue.clear();
 	}
 
-	__forceinline const T &Top() const
+	//resets the object, as well as the same effect of calling all appropriate the setters
+	inline void Reset(RandomStream stream, size_t reserve_size, ComparisonValueType threshold)
+	{
+		SetStream(stream);
+		clear();
+		Reserve(reserve_size);
+		SetIncludeAllThreshold(threshold);
+	}
+
+	//these functions mimic their respective std::priority_queue functions
+	__forceinline size_t Size()
+	{
+		return priorityQueue.size();
+	}
+
+	__forceinline const QueueElementType &Top() const
 	{
 		return priorityQueue.top().first;
 	}
 
-	__forceinline void Push(const T &val)
+	__forceinline void Push(const QueueElementType &val)
 	{
 		priorityQueue.emplace(val, randomStream.RandUInt32());
 	}
 
-	//like PushAndOnlyKeepSize, but keeps the current size of the priority queue
+	//like Push, but retains the current size of the priority queue
 	//requires that there is at least one element in the priority queue
 	//returns the top element after the push and pop has been completed
-	inline const T &PushAndPop(const T &val)
+	inline const QueueElementType &PushAndPop(const QueueElementType &val)
 	{
 		auto &top = priorityQueue.top();
 		if(val < top.first)
@@ -210,6 +224,28 @@ public:
 		return top.first;
 	}
 
+	//like PushAndPop, except will keep all values up to the specified threshold
+	inline const QueueElementType &PushAndPopToThreshold(const QueueElementType &val)
+	{
+		if(val > includeAllThreshold)
+			return PushAndPop(val);
+
+		Push(val);
+
+		//make copy of the top and pop it
+		auto top_value = Top();
+		Pop();
+
+		//if the next largest size is zero, then need to put the non-zero value back in sorted_results
+		if(Top() <= includeAllThreshold)
+		{
+			Push(top_value);
+			return top_value;
+		}
+
+		return Top();
+	}
+
 	__forceinline void Pop()
 	{
 		priorityQueue.pop();
@@ -226,7 +262,7 @@ protected:
 	class StochasticTieBreakingComparator
 	{
 	public:
-		constexpr bool operator()(const std::pair<T, uint32_t> &a, const std::pair<T, uint32_t> &b)
+		constexpr bool operator()(const std::pair<QueueElementType, uint32_t> &a, const std::pair<QueueElementType, uint32_t> &b)
 		{
 			if(a.first == b.first)
 				return a.second < b.second;
@@ -234,35 +270,10 @@ protected:
 		}
 	};
 
-	FlexiblePriorityQueue<std::pair<T, uint32_t>, PriorityQueueContainerType, StochasticTieBreakingComparator> priorityQueue;
+	FlexiblePriorityQueue<std::pair<QueueElementType, uint32_t>, PriorityQueueContainerType, StochasticTieBreakingComparator> priorityQueue;
+
+	//threshold below which all elements should be kept by PushAndPopToThreshold
+	ComparisonValueType includeAllThreshold;
+
 	RandomStream randomStream;
-};
-
-//TODO 22953: document this class
-template<typename T>
-class StochasticTieBreakingPriorityQueueRequireNonZeroValue
-	: public StochasticTieBreakingPriorityQueue<T>
-{
-public:
-
-	inline const T &PushAndPop(const T &val)
-	{
-		if(val != 0)
-			return StochasticTieBreakingPriorityQueue::PushAndPop(val);
-
-		Push(val);
-
-		//make copy of the top and pop it
-		auto top_value = Top();
-		Pop();
-
-		//if the next largest size is zero, then need to put the non-zero value back in sorted_results
-		if(Top() == 0)
-		{
-			Push(top_value);
-			return top_value;
-		}
-
-		return Top();
-	}
 };

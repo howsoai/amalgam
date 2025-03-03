@@ -782,6 +782,10 @@ public:
 
 			if(minToRetrieve < maxToRetrieve || numToRetrieveMinIncrementalProbability > 0.0)
 			{
+				//if no elements, just return zero
+				if(entity_distance_pair_container_begin == entity_distance_pair_container_end)
+					return 0;
+				
 				auto [first_weighted_value, first_unweighted_value, first_prob, first_prob_mass, first_weight]
 					= transform_func(entity_distance_pair_container_begin);
 				result_func(entity_distance_pair_container_begin, first_weighted_value, first_unweighted_value, first_prob_mass, first_weight);

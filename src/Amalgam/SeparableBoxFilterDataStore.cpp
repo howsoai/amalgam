@@ -543,31 +543,32 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 	//have already gone through all records looking for top_k, if don't have top_k, then have exhausted search
 	if(sorted_results.Size() == top_k)
 	{
-		double worst_candidate_distance = std::numeric_limits<double>::infinity();
+		double worst_candidate_distance = sorted_results.Top().distance;
+		if(expand_to_first_nonzero_distance && !sorted_results.TopMeetsThreshold())
+		{
+			for(size_t entity_index = 0; entity_index < end_index; entity_index++)
+			{
+				//don't need to check maximum index, because already checked in loop
+				if(!enabled_indices.ContainsWithoutMaximumIndexCheck(entity_index))
+					continue;
 
-		double top_distance = sorted_results.Top().distance;
-		//don't clamp top distance if we're expanding and only have 0 distances
-		if(!(expand_to_first_nonzero_distance && top_distance <= distance_threshold_to_consider_zero))
-			worst_candidate_distance = top_distance;
+				enabled_indices.erase(entity_index);
+
+				double distance = ResolveDistanceToNonMatchTargetValues(r_dist_eval,
+						partial_sums, entity_index, num_enabled_features, high_accuracy);
+				sorted_results.Push(DistanceReferencePair(distance, entity_index));
+
+				if(sorted_results.TopMeetsThreshold())
+				{
+					worst_candidate_distance = sorted_results.Top().distance;
+					break;
+				}
+			}
+		}
 
 		//execute window query, with dynamically shrinking bounds
 		for(const size_t entity_index : enabled_indices)
 		{
-			//if still accepting new candidates because found only zero distances
-			if(worst_candidate_distance == std::numeric_limits<double>::infinity())
-			{
-				double distance = ResolveDistanceToNonMatchTargetValues(r_dist_eval,
-					partial_sums, entity_index, num_enabled_features, high_accuracy);
-				sorted_results.Push(DistanceReferencePair(distance, entity_index));
-
-				double cur_top_distance = sorted_results.Top().distance;
-				//don't clamp top distance if we're expanding and only have 0 distances
-				if(!(expand_to_first_nonzero_distance && cur_top_distance <= distance_threshold_to_consider_zero))
-					worst_candidate_distance = cur_top_distance;
-
-				continue;
-			}
-
 			//already have enough elements, but see if this one is good enough
 			auto [accept, distance] = ResolveDistanceToNonMatchTargetValuesUnlessRejected(r_dist_eval,
 				partial_sums, entity_index, min_distance_by_unpopulated_count, num_enabled_features,
@@ -730,8 +731,7 @@ void SeparableBoxFilterDataStore::FindNearestEntitiesPositionHelper(RepeatedGene
 			#pragma omp for schedule(static)
 			for(int64_t entity_index = 0; entity_index < static_cast<int64_t>(end_index); entity_index++)
 			{
-				//don't need to check maximum index, because already checked in loop
-				if(!enabled_indices.ContainsWithoutMaximumIndexCheck(entity_index))
+				if(!enabled_indices.EraseAndRetrieve(entity_index))
 					continue;
 
 				auto [accept, distance] = ResolveDistanceToNonMatchTargetValuesUnlessRejected(r_dist_eval,

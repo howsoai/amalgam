@@ -183,6 +183,12 @@ public:
 		return priorityQueue.top().first;
 	}
 
+	__forceinline const bool TopMeetsThreshold() const
+	{
+		auto &top = Top();
+		return (top > includeAllThreshold);
+	}
+
 	__forceinline void Push(const QueueElementType &val)
 	{
 		priorityQueue.emplace(val, randomStream.RandUInt32());
@@ -196,7 +202,7 @@ public:
 	{
 		if constexpr(expand_to_include_all_threshold)
 		{
-			if(val < includeAllThreshold)
+			if(val <= includeAllThreshold)
 			{
 				Push(val);
 

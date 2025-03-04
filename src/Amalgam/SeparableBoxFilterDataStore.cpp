@@ -483,7 +483,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 	size_t radius_column_index = GetColumnIndexFromLabelId(radius_label);
 
 	//if num enabled indices < top_k, return sorted distances
-	if(GetNumInsertedEntities() <= top_k || enabled_indices.size() <= top_k)
+	if(enabled_indices.size() <= top_k)
 		return FindAllValidElementDistances(r_dist_eval, radius_column_index, enabled_indices, distances_out, rand_stream);
 	
 	size_t end_index = enabled_indices.GetEndInteger();

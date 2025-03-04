@@ -498,12 +498,19 @@ public:
 		std::vector<DistanceReferencePair<size_t>> &distances_out,
 		size_t ignore_index = std::numeric_limits<size_t>::max(), RandomStream rand_stream = RandomStream())
 	{
+		//make a copy of the entities so that the list can be modified
+		BitArrayIntegerSet &possible_knn_indices = parametersAndBuffers.nullAccumSet;
+		possible_knn_indices = enabled_indices;
+
+		//remove search_index so it doesn't find itself
+		possible_knn_indices.erase(search_index);
+
 		if(expand_to_first_nonzero_distance)
 			FindNearestEntities<true>(dist_eval, position_label_sids, search_index, top_k,
-				radius_label, enabled_indices, distances_out, ignore_index, rand_stream);
+				radius_label, possible_knn_indices, distances_out, ignore_index, rand_stream);
 		else
 			FindNearestEntities<true>(dist_eval, position_label_sids, search_index, top_k,
-				radius_label, enabled_indices, distances_out, ignore_index, rand_stream);
+				radius_label, possible_knn_indices, distances_out, ignore_index, rand_stream);
 	}
 	
 	//Finds the nearest neighbors

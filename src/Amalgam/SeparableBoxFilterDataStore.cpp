@@ -578,10 +578,8 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 			if(!accept)
 				continue;
 
-			if constexpr(expand_to_first_nonzero_distance)
-				worst_candidate_distance = sorted_results.PushAndPopToThreshold(DistanceReferencePair(distance, entity_index)).distance;
-			else
-				worst_candidate_distance = sorted_results.PushAndPop(DistanceReferencePair(distance, entity_index)).distance;
+			worst_candidate_distance = sorted_results.PushAndPop<expand_to_first_nonzero_distance>(
+				DistanceReferencePair(distance, entity_index)).distance;
 		}
 
 	} // sorted_results.Size() == top_k

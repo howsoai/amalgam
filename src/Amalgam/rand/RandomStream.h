@@ -191,8 +191,31 @@ public:
 	//like Push, but retains the current size of the priority queue
 	//requires that there is at least one element in the priority queue
 	//returns the top element after the push and pop has been completed
-	__forceinline const QueueElementType &PushAndPop(const QueueElementType &val)
+	template<bool expand_to_include_all_threshold = false>
+	__forceinline const QueueElementType PushAndPop(const QueueElementType &val)
 	{
+		if constexpr(expand_to_include_all_threshold)
+		{
+			if(val < includeAllThreshold)
+			{
+				Push(val);
+
+				//make copy of the top and pop it
+				auto top_value = Top();
+				Pop();
+
+				//if the next largest size is zero, then need to put the non-zero value back in sorted_results
+				if(Top() <= includeAllThreshold)
+				{
+					Push(top_value);
+					return top_value;
+				}
+
+				return Top();
+			}
+		}
+		//not expanding to include threshold all below
+
 		auto &top = priorityQueue.top();
 		if(val < top.first)
 		{
@@ -222,28 +245,6 @@ public:
 		//otherwise don't need to do anything, val is not better than the worst on the stack
 
 		return top.first;
-	}
-
-	//like PushAndPop, except will keep all values up to the specified threshold
-	__forceinline const QueueElementType PushAndPopToThreshold(const QueueElementType &val)
-	{
-		if(val > includeAllThreshold)
-			return PushAndPop(val);
-
-		Push(val);
-
-		//make copy of the top and pop it
-		auto top_value = Top();
-		Pop();
-
-		//if the next largest size is zero, then need to put the non-zero value back in sorted_results
-		if(Top() <= includeAllThreshold)
-		{
-			Push(top_value);
-			return top_value;
-		}
-
-		return Top();
 	}
 
 	__forceinline void Pop()

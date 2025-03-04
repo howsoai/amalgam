@@ -566,52 +566,53 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 		possible_knn_indices.erase(random_index);
 	}
 
-	//cache kth smallest distance to target search node
-	double worst_candidate_distance = std::numeric_limits<double>::infinity();
-	
+	//have already gone through all records looking for top_k, if don't have top_k, then have exhausted search
 	if(sorted_results.Size() == top_k)
 	{
+		double worst_candidate_distance = std::numeric_limits<double>::infinity();
+
 		double top_distance = sorted_results.Top().distance;
 		//don't clamp top distance if we're expanding and only have 0 distances
-		if(! (expand_to_first_nonzero_distance && top_distance <= distance_threshold_to_consider_zero) )
+		if(!(expand_to_first_nonzero_distance && top_distance <= distance_threshold_to_consider_zero))
 			worst_candidate_distance = top_distance;
-	}
 
-	//execute window query, with dynamically shrinking bounds
-	for(const size_t entity_index : possible_knn_indices)
-	{
-		//if still accepting new candidates because found only zero distances
-		if(worst_candidate_distance == std::numeric_limits<double>::infinity())
+		//execute window query, with dynamically shrinking bounds
+		for(const size_t entity_index : possible_knn_indices)
 		{
-			double distance = ResolveDistanceToNonMatchTargetValues(r_dist_eval,
-				partial_sums, entity_index, num_enabled_features, high_accuracy);
-			sorted_results.Push(DistanceReferencePair(distance, entity_index));
-
-			//if full, update worst_candidate_distance
-			if(sorted_results.Size() >= top_k)
+			//if still accepting new candidates because found only zero distances
+			if(worst_candidate_distance == std::numeric_limits<double>::infinity())
 			{
-				double top_distance = sorted_results.Top().distance;
-				//don't clamp top distance if we're expanding and only have 0 distances
-				if(!(expand_to_first_nonzero_distance && top_distance <= distance_threshold_to_consider_zero))
-					worst_candidate_distance = top_distance;
+				double distance = ResolveDistanceToNonMatchTargetValues(r_dist_eval,
+					partial_sums, entity_index, num_enabled_features, high_accuracy);
+				sorted_results.Push(DistanceReferencePair(distance, entity_index));
+
+				//if full, update worst_candidate_distance
+				if(sorted_results.Size() >= top_k)
+				{
+					double cur_top_distance = sorted_results.Top().distance;
+					//don't clamp top distance if we're expanding and only have 0 distances
+					if(!(expand_to_first_nonzero_distance && cur_top_distance <= distance_threshold_to_consider_zero))
+						worst_candidate_distance = cur_top_distance;
+				}
+
+				continue;
 			}
 
-			continue;
+			//already have enough elements, but see if this one is good enough
+			auto [accept, distance] = ResolveDistanceToNonMatchTargetValues(r_dist_eval,
+				partial_sums, entity_index, min_distance_by_unpopulated_count, num_enabled_features,
+				worst_candidate_distance, min_unpopulated_distances, high_accuracy);
+
+			if(!accept)
+				continue;
+
+			if(expand_to_first_nonzero_distance)
+				worst_candidate_distance = sorted_results.PushAndPopToThreshold(DistanceReferencePair(distance, entity_index)).distance;
+			else
+				worst_candidate_distance = sorted_results.PushAndPop(DistanceReferencePair(distance, entity_index)).distance;
 		}
 
-		//already have enough elements, but see if this one is good enough
-		auto [accept, distance] = ResolveDistanceToNonMatchTargetValues(r_dist_eval,
-			partial_sums, entity_index, min_distance_by_unpopulated_count, num_enabled_features,
-			worst_candidate_distance, min_unpopulated_distances, high_accuracy);
-
-		if(!accept)
-			continue;
-
-		if(expand_to_first_nonzero_distance)
-			worst_candidate_distance = sorted_results.PushAndPopToThreshold(DistanceReferencePair(distance, entity_index)).distance;
-		else
-			worst_candidate_distance = sorted_results.PushAndPop(DistanceReferencePair(distance, entity_index)).distance;
-	}
+	} // sorted_results.Size() == top_k
 
 	//return k nearest -- don't need to clear because the values will be clobbered
 	distances_out.resize(sorted_results.Size());

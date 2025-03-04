@@ -599,22 +599,18 @@ template void SeparableBoxFilterDataStore::FindNearestEntities<false>(RepeatedGe
 	size_t top_k, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
 	std::vector<DistanceReferencePair<size_t>> &distances_out, size_t ignore_index, RandomStream rand_stream);
 
-void SeparableBoxFilterDataStore::FindNearestEntitiesToPosition(GeneralizedDistanceEvaluator &dist_eval,
+void SeparableBoxFilterDataStore::FindNearestEntitiesPositionHelper(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 	std::vector<StringInternPool::StringID> &position_label_sids, std::vector<EvaluableNodeImmediateValue> &position_values,
 	std::vector<EvaluableNodeImmediateValueType> &position_value_types,
 	size_t top_k, StringInternPool::StringID radius_label, size_t ignore_entity_index,
 	BitArrayIntegerSet &enabled_indices, std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream)
 {
+	//TODO 22953: fold this into FindNearestEntities
+	auto &dist_eval = *r_dist_eval.distEvaluator;
 	if(top_k == 0 || GetNumInsertedEntities() == 0 || dist_eval.featureAttribs.size() == 0)
 		return;
 
-	auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
-	r_dist_eval.distEvaluator = &dist_eval;
-
 	size_t num_enabled_features = dist_eval.featureAttribs.size();
-
-	//look up these data structures upfront for performance
-	PopulateTargetValuesAndLabelIndices(r_dist_eval, position_label_sids, position_values, position_value_types);
 
 	enabled_indices.erase(ignore_entity_index);
 

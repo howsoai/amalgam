@@ -588,14 +588,10 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 					partial_sums, entity_index, num_enabled_features, high_accuracy);
 				sorted_results.Push(DistanceReferencePair(distance, entity_index));
 
-				//if full, update worst_candidate_distance
-				if(sorted_results.Size() >= top_k)
-				{
-					double cur_top_distance = sorted_results.Top().distance;
-					//don't clamp top distance if we're expanding and only have 0 distances
-					if(!(expand_to_first_nonzero_distance && cur_top_distance <= distance_threshold_to_consider_zero))
-						worst_candidate_distance = cur_top_distance;
-				}
+				double cur_top_distance = sorted_results.Top().distance;
+				//don't clamp top distance if we're expanding and only have 0 distances
+				if(!(expand_to_first_nonzero_distance && cur_top_distance <= distance_threshold_to_consider_zero))
+					worst_candidate_distance = cur_top_distance;
 
 				continue;
 			}

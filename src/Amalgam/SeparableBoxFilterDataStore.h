@@ -492,21 +492,40 @@ public:
 	// if expand_to_first_nonzero_distance is set, then it will expand top_k until it it finds the first nonzero distance or until it includes all enabled indices 
 	//will not modify enabled_indices, but instead will make a copy for any modifications
 	//assumes that enabled_indices only contains indices that have valid values for all the features
-	void FindEntitiesNearestToIndexedEntity(GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
+	inline void FindEntitiesNearestToIndexedEntity(GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
 		size_t search_index, size_t top_k, StringInternPool::StringID radius_label,
 		BitArrayIntegerSet &enabled_indices, bool expand_to_first_nonzero_distance,
 		std::vector<DistanceReferencePair<size_t>> &distances_out,
-		size_t ignore_index = std::numeric_limits<size_t>::max(), RandomStream rand_stream = RandomStream());
+		size_t ignore_index = std::numeric_limits<size_t>::max(), RandomStream rand_stream = RandomStream())
+	{
+		if(expand_to_first_nonzero_distance)
+			FindNearestEntities<true>(dist_eval, position_label_sids, search_index, top_k,
+				radius_label, enabled_indices, distances_out, ignore_index, rand_stream);
+		else
+			FindNearestEntities<true>(dist_eval, position_label_sids, search_index, top_k,
+				radius_label, enabled_indices, distances_out, ignore_index, rand_stream);
+	}
 	
 	//Finds the nearest neighbors
 	//enabled_indices is the set of entities to find from, and will be modified
 	//assumes that enabled_indices only contains indices that have valid values for all the features
-	void FindNearestEntities(GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
+	void FindNearestEntitiesToPosition(GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
 		std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types,
 		size_t top_k, StringInternPool::StringID radius_label, size_t ignore_entity_index, BitArrayIntegerSet &enabled_indices,
 		std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream = RandomStream());
 
 protected:
+
+	//Finds the top_k nearest neighbors results to the entity at search_index.
+	// if expand_to_first_nonzero_distance is set, then it will expand top_k until it it finds the first nonzero distance or until it includes all enabled indices 
+	//will not modify enabled_indices, but instead will make a copy for any modifications
+	//assumes that enabled_indices only contains indices that have valid values for all the features
+	template<bool expand_to_first_nonzero_distance>
+	void FindNearestEntities(GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
+		size_t search_index, size_t top_k, StringInternPool::StringID radius_label,
+		BitArrayIntegerSet &enabled_indices,
+		std::vector<DistanceReferencePair<size_t>> &distances_out,
+		size_t ignore_index = std::numeric_limits<size_t>::max(), RandomStream rand_stream = RandomStream());
 
 #ifdef SBFDS_VERIFICATION
 	//used for debugging to make sure all entities are valid

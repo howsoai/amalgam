@@ -540,8 +540,6 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 		sorted_results.Push(DistanceReferencePair(distance, random_index));
 	}
 
-	auto &previous_nn_cache = parametersAndBuffers.previousQueryNearestNeighbors;
-
 	//have already gone through all records looking for top_k, if don't have top_k, then have exhausted search
 	if(sorted_results.Size() == top_k)
 	{
@@ -587,16 +585,17 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 	ConvertSortedDistanceSumsToDistancesAndCacheResults(sorted_results, r_dist_eval, radius_column_index, distances_out);
 }
 
-template void SeparableBoxFilterDataStore::FindNearestEntities<true>(RepeatedGeneralizedDistanceEvaluator &dist_eval,
+template void SeparableBoxFilterDataStore::FindNearestEntities<true>(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 	std::vector<StringInternPool::StringID> &position_label_sids, size_t search_index,
 	size_t top_k, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
 	std::vector<DistanceReferencePair<size_t>> &distances_out, size_t ignore_index, RandomStream rand_stream);
 
-template void SeparableBoxFilterDataStore::FindNearestEntities<false>(RepeatedGeneralizedDistanceEvaluator &dist_eval,
+template void SeparableBoxFilterDataStore::FindNearestEntities<false>(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 	std::vector<StringInternPool::StringID> &position_label_sids, size_t search_index,
 	size_t top_k, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
 	std::vector<DistanceReferencePair<size_t>> &distances_out, size_t ignore_index, RandomStream rand_stream);
 
+template<bool expand_to_first_nonzero_distance>
 void SeparableBoxFilterDataStore::FindNearestEntitiesPositionHelper(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 	std::vector<StringInternPool::StringID> &position_label_sids, std::vector<EvaluableNodeImmediateValue> &position_values,
 	std::vector<EvaluableNodeImmediateValueType> &position_value_types,
@@ -671,14 +670,13 @@ void SeparableBoxFilterDataStore::FindNearestEntitiesPositionHelper(RepeatedGene
 		sorted_results.Push(DistanceReferencePair(distance, random_index));
 	}
 
-	auto &previous_nn_cache = parametersAndBuffers.previousQueryNearestNeighbors;
-
 	//have already gone through all records looking for top_k, if don't have top_k, then have exhausted search
 	if(sorted_results.Size() == top_k)
 	{
 		double worst_candidate_distance = sorted_results.Top().distance;
 		if(num_enabled_features > 1)
 		{
+			auto &previous_nn_cache = parametersAndBuffers.previousQueryNearestNeighbors;
 			for(size_t entity_index : previous_nn_cache)
 			{
 				//only get its distance if it is enabled,
@@ -691,7 +689,8 @@ void SeparableBoxFilterDataStore::FindNearestEntitiesPositionHelper(RepeatedGene
 					worst_candidate_distance, min_unpopulated_distances, high_accuracy);
 
 				if(accept)
-					worst_candidate_distance = sorted_results.PushAndPop(DistanceReferencePair(distance, entity_index)).distance;
+					worst_candidate_distance = sorted_results.PushAndPop<expand_to_first_nonzero_distance>(
+						DistanceReferencePair(distance, entity_index)).distance;
 			}
 		}
 
@@ -764,6 +763,18 @@ void SeparableBoxFilterDataStore::FindNearestEntitiesPositionHelper(RepeatedGene
 
 	ConvertSortedDistanceSumsToDistancesAndCacheResults(sorted_results, r_dist_eval, radius_column_index, distances_out);
 }
+
+template void SeparableBoxFilterDataStore::FindNearestEntitiesPositionHelper<true>(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+	std::vector<StringInternPool::StringID> &position_label_sids, std::vector<EvaluableNodeImmediateValue> &position_values,
+	std::vector<EvaluableNodeImmediateValueType> &position_value_types,
+	size_t top_k, StringInternPool::StringID radius_label, size_t ignore_entity_index,
+	BitArrayIntegerSet &enabled_indices, std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream);
+
+template void SeparableBoxFilterDataStore::FindNearestEntitiesPositionHelper<false>(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+	std::vector<StringInternPool::StringID> &position_label_sids, std::vector<EvaluableNodeImmediateValue> &position_values,
+	std::vector<EvaluableNodeImmediateValueType> &position_value_types,
+	size_t top_k, StringInternPool::StringID radius_label, size_t ignore_entity_index,
+	BitArrayIntegerSet &enabled_indices, std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream);
 
 #ifdef SBFDS_VERIFICATION
 void SeparableBoxFilterDataStore::VerifyAllEntitiesForColumn(size_t column_index)

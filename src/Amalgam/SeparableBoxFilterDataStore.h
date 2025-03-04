@@ -549,7 +549,7 @@ public:
 
 		PopulateTargetValuesAndLabelIndices(r_dist_eval, position_label_sids, position_values, position_value_types);
 
-		FindNearestEntitiesPositionHelper(r_dist_eval, position_label_sids, position_values,
+		FindNearestEntitiesPositionHelper<false>(r_dist_eval, position_label_sids, position_values,
 			position_value_types, top_k, radius_label, ignore_entity_index,
 			enabled_indices, distances_out, rand_stream);
 	}
@@ -570,6 +570,7 @@ protected:
 	//Finds the nearest neighbors
 	//enabled_indices is the set of entities to find from, and will be modified
 	//assumes that enabled_indices only contains indices that have valid values for all the features
+	template<bool expand_to_first_nonzero_distance>
 	void FindNearestEntitiesPositionHelper(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		std::vector<StringInternPool::StringID> &position_label_sids,
 		std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types,

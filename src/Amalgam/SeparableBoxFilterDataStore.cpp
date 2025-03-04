@@ -498,8 +498,6 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 		PopulateTargetValueAndLabelIndex(r_dist_eval, i, value, value_type);
 	}
 
-	bool high_accuracy = dist_eval.highAccuracyDistances;
-
 	//make a copy of the entities so that the list can be modified
 	BitArrayIntegerSet &possible_knn_indices = parametersAndBuffers.nullAccumSet;
 	possible_knn_indices = enabled_indices;
@@ -515,6 +513,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 		return FindAllValidElementDistances(r_dist_eval, radius_column_index, possible_knn_indices, distances_out, rand_stream);
 	
 	size_t end_index = possible_knn_indices.GetEndInteger();
+	bool high_accuracy = dist_eval.highAccuracyDistances;
 
 	//reuse the appropriate partial_sums_buffer buffer
 	auto &partial_sums = parametersAndBuffers.partialSums;
@@ -541,21 +540,20 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 	while(potential_good_matches.size() > 0)
 	{
 		size_t entity_index = potential_good_matches.top().reference;
+		potential_good_matches.pop();
+
+		//skip this entity in the next loops
+		possible_knn_indices.erase(entity_index);
 
 		//insert random selection into results heap
 		double distance = ResolveDistanceToNonMatchTargetValues(r_dist_eval,
 			partial_sums, entity_index, num_enabled_features, high_accuracy);
 		sorted_results.Push(DistanceReferencePair(distance, entity_index));
-
-		//skip this entity in the next loops
-		possible_knn_indices.erase(entity_index);
-		
-		potential_good_matches.pop();
 	}
 
 	//if we did not find K results (search failed), we must populate the remaining K cases/results to search from another way
 	//we will randomly select additional nodes to fill K results.  random to prevent bias/patterns
-	while(sorted_results.Size() < top_k && possible_knn_indices.size() > 0)
+	while(sorted_results.Size() < top_k)
 	{
 		//get a random index that is still potentially in the knn (neither rejected nor already in the results)
 		size_t random_index = possible_knn_indices.GetRandomElement(rand_stream);
@@ -649,6 +647,8 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 	auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
 	r_dist_eval.distEvaluator = &dist_eval;
 
+	size_t num_enabled_features = dist_eval.featureAttribs.size();
+
 	//look up these data structures upfront for performance
 	PopulateTargetValuesAndLabelIndices(r_dist_eval, position_label_sids, position_values, position_value_types);
 
@@ -660,9 +660,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 	if(enabled_indices.size() <= top_k)
 		return FindAllValidElementDistances(r_dist_eval, radius_column_index, enabled_indices, distances_out, rand_stream);
 
-	//one past the maximum entity index to be considered
 	size_t end_index = enabled_indices.GetEndInteger();
-	size_t num_enabled_features = dist_eval.featureAttribs.size();
 	bool high_accuracy = dist_eval.highAccuracyDistances;
 
 	//reuse the appropriate partial_sums_buffer buffer

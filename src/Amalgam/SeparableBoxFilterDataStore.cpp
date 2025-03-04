@@ -612,31 +612,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 
 	} // sorted_results.Size() == top_k
 
-	//return and cache k nearest -- don't need to clear because the values will be clobbered
-	size_t num_results = sorted_results.Size();
-	distances_out.resize(num_results);
-	previous_nn_cache.resize(num_results);
-	//need to recompute distances in several circumstances, including if radius is computed,
-	// as the intermediate result may be negative and yield an incorrect result otherwise
-	bool need_recompute_distances = ((dist_eval.recomputeAccurateDistances && !dist_eval.highAccuracyDistances)
-			|| radius_column_index < columnData.size());
-	high_accuracy = (dist_eval.recomputeAccurateDistances || dist_eval.highAccuracyDistances);
-
-	while(sorted_results.Size() > 0)
-	{
-		auto &drp = sorted_results.Top();
-		double distance;
-		if(!need_recompute_distances)
-			distance = dist_eval.InverseExponentiateDistance(drp.distance, high_accuracy);
-		else
-			distance = GetDistanceBetween(r_dist_eval, radius_column_index, drp.reference, high_accuracy);
-
-		size_t output_index = sorted_results.Size() - 1;
-		distances_out[output_index] = DistanceReferencePair(distance, drp.reference);
-		previous_nn_cache[output_index] = drp.reference;
-
-		sorted_results.Pop();
-	}
+	ConvertSortedDistanceSumsToDistancesAndCacheResults(sorted_results, r_dist_eval, radius_column_index, distances_out);
 }
 
 void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluator &dist_eval,
@@ -808,31 +784,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 
 	} // sorted_results.Size() == top_k
 
-	//return and cache k nearest -- don't need to clear because the values will be clobbered
-	size_t num_results = sorted_results.Size();
-	distances_out.resize(num_results);
-	previous_nn_cache.resize(num_results);
-	//need to recompute distances in several circumstances, including if radius is computed,
-	// as the intermediate result may be negative and yield an incorrect result otherwise
-	bool need_recompute_distances = ((dist_eval.recomputeAccurateDistances && !dist_eval.highAccuracyDistances)
-			|| radius_column_index < columnData.size());
-	high_accuracy = (dist_eval.recomputeAccurateDistances || dist_eval.highAccuracyDistances);
-
-	while(sorted_results.Size() > 0)
-	{
-		auto &drp = sorted_results.Top();
-		double distance;
-		if(!need_recompute_distances)
-			distance = dist_eval.InverseExponentiateDistance(drp.distance, high_accuracy);
-		else
-			distance = GetDistanceBetween(r_dist_eval, radius_column_index, drp.reference, high_accuracy);
-
-		size_t output_index = sorted_results.Size() - 1;
-		distances_out[output_index] = DistanceReferencePair(distance, drp.reference);
-		previous_nn_cache[output_index] = drp.reference;
-
-		sorted_results.Pop();
-	}
+	ConvertSortedDistanceSumsToDistancesAndCacheResults(sorted_results, r_dist_eval, radius_column_index, distances_out);
 }
 
 #ifdef SBFDS_VERIFICATION

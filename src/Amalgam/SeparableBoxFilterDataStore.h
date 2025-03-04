@@ -798,6 +798,46 @@ protected:
 		return dist;
 	}
 
+	//converts the sorted distance term sums in sorted_results into distances (or surprisals)
+	//based on r_dist_eval and radius_column_index and stores the results in distances_out
+	//also updates previousQueryNearestNeighbors based on these results
+	inline void ConvertSortedDistanceSumsToDistancesAndCacheResults(
+		StochasticTieBreakingPriorityQueue<DistanceReferencePair<size_t>, double> &sorted_results,
+		RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+		size_t radius_column_index,
+		std::vector<DistanceReferencePair<size_t>> &distances_out)
+	{
+		auto &dist_eval = *r_dist_eval.distEvaluator;
+
+		//return and cache k nearest -- don't need to clear because the values will be clobbered
+		size_t num_results = sorted_results.Size();
+		distances_out.resize(num_results);
+
+		auto &previous_nn_cache = parametersAndBuffers.previousQueryNearestNeighbors;
+		previous_nn_cache.resize(num_results);
+		//need to recompute distances in several circumstances, including if radius is computed,
+		// as the intermediate result may be negative and yield an incorrect result otherwise
+		bool need_recompute_distances = ((dist_eval.recomputeAccurateDistances && !dist_eval.highAccuracyDistances)
+				|| radius_column_index < columnData.size());
+		bool high_accuracy = (dist_eval.recomputeAccurateDistances || dist_eval.highAccuracyDistances);
+
+		while(sorted_results.Size() > 0)
+		{
+			auto &drp = sorted_results.Top();
+			double distance;
+			if(!need_recompute_distances)
+				distance = dist_eval.InverseExponentiateDistance(drp.distance, high_accuracy);
+			else
+				distance = GetDistanceBetween(r_dist_eval, radius_column_index, drp.reference, high_accuracy);
+
+			size_t output_index = sorted_results.Size() - 1;
+			distances_out[output_index] = DistanceReferencePair(distance, drp.reference);
+			previous_nn_cache[output_index] = drp.reference;
+
+			sorted_results.Pop();
+		}
+	}
+
 	//computes the distance term for the entity, query_feature_index, and feature_type,
 	//assumes that null values have already been taken care of for nominals
 	__forceinline double ComputeDistanceTermNonMatch(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,

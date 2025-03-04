@@ -571,7 +571,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 			}
 
 			//already have enough elements, but see if this one is good enough
-			auto [accept, distance] = ResolveDistanceToNonMatchTargetValues(r_dist_eval,
+			auto [accept, distance] = ResolveDistanceToNonMatchTargetValuesUnlessRejected(r_dist_eval,
 				partial_sums, entity_index, min_distance_by_unpopulated_count, num_enabled_features,
 				worst_candidate_distance, min_unpopulated_distances, high_accuracy);
 
@@ -688,7 +688,7 @@ void SeparableBoxFilterDataStore::FindNearestEntitiesPositionHelper(RepeatedGene
 				if(!enabled_indices.EraseAndRetrieve(entity_index))
 					continue;
 
-				auto [accept, distance] = ResolveDistanceToNonMatchTargetValues(r_dist_eval, partial_sums,
+				auto [accept, distance] = ResolveDistanceToNonMatchTargetValuesUnlessRejected(r_dist_eval, partial_sums,
 					entity_index, min_distance_by_unpopulated_count, num_enabled_features,
 					worst_candidate_distance, min_unpopulated_distances, high_accuracy);
 
@@ -737,7 +737,7 @@ void SeparableBoxFilterDataStore::FindNearestEntitiesPositionHelper(RepeatedGene
 				if(!enabled_indices.ContainsWithoutMaximumIndexCheck(entity_index))
 					continue;
 
-				auto [accept, distance] = ResolveDistanceToNonMatchTargetValues(r_dist_eval,
+				auto [accept, distance] = ResolveDistanceToNonMatchTargetValuesUnlessRejected(r_dist_eval,
 					partial_sums, entity_index, min_distance_by_unpopulated_count, num_enabled_features,
 					worst_candidate_distance, min_unpopulated_distances, high_accuracy);
 

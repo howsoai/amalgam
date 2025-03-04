@@ -558,13 +558,15 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 		//get a random index that is still potentially in the knn (neither rejected nor already in the results)
 		size_t random_index = possible_knn_indices.GetRandomElement(rand_stream);
 
+		//skip this entity in the next loops
+		possible_knn_indices.erase(random_index);
+
 		double distance = ResolveDistanceToNonMatchTargetValues(r_dist_eval,
 			partial_sums, random_index, num_enabled_features, high_accuracy);
 		sorted_results.Push(DistanceReferencePair(distance, random_index));
-
-		//skip this entity in the next loops
-		possible_knn_indices.erase(random_index);
 	}
+
+	auto &previous_nn_cache = parametersAndBuffers.previousQueryNearestNeighbors;
 
 	//have already gone through all records looking for top_k, if don't have top_k, then have exhausted search
 	if(sorted_results.Size() == top_k)
@@ -614,24 +616,29 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 
 	} // sorted_results.Size() == top_k
 
-	//return k nearest -- don't need to clear because the values will be clobbered
-	distances_out.resize(sorted_results.Size());
+	//return and cache k nearest -- don't need to clear because the values will be clobbered
+	size_t num_results = sorted_results.Size();
+	distances_out.resize(num_results);
+	previous_nn_cache.resize(num_results);
 	//need to recompute distances in several circumstances, including if radius is computed,
 	// as the intermediate result may be negative and yield an incorrect result otherwise
 	bool need_recompute_distances = ((dist_eval.recomputeAccurateDistances && !dist_eval.highAccuracyDistances)
-		|| radius_column_index < columnData.size());
+			|| radius_column_index < columnData.size());
 	high_accuracy = (dist_eval.recomputeAccurateDistances || dist_eval.highAccuracyDistances);
 
 	while(sorted_results.Size() > 0)
-	{	
+	{
 		auto &drp = sorted_results.Top();
 		double distance;
 		if(!need_recompute_distances)
 			distance = dist_eval.InverseExponentiateDistance(drp.distance, high_accuracy);
 		else
-			distance = GetDistanceBetween(r_dist_eval, radius_column_index, drp.reference, true);
+			distance = GetDistanceBetween(r_dist_eval, radius_column_index, drp.reference, high_accuracy);
 
-		distances_out[sorted_results.Size() - 1] = DistanceReferencePair(distance, drp.reference);
+		size_t output_index = sorted_results.Size() - 1;
+		distances_out[output_index] = DistanceReferencePair(distance, drp.reference);
+		previous_nn_cache[output_index] = drp.reference;
+
 		sorted_results.Pop();
 	}
 }

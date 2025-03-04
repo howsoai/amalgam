@@ -191,7 +191,7 @@ public:
 	//like Push, but retains the current size of the priority queue
 	//requires that there is at least one element in the priority queue
 	//returns the top element after the push and pop has been completed
-	inline const QueueElementType &PushAndPop(const QueueElementType &val)
+	__forceinline const QueueElementType &PushAndPop(const QueueElementType &val)
 	{
 		auto &top = priorityQueue.top();
 		if(val < top.first)
@@ -225,7 +225,7 @@ public:
 	}
 
 	//like PushAndPop, except will keep all values up to the specified threshold
-	inline const QueueElementType &PushAndPopToThreshold(const QueueElementType &val)
+	__forceinline const QueueElementType PushAndPopToThreshold(const QueueElementType &val)
 	{
 		if(val > includeAllThreshold)
 			return PushAndPop(val);

@@ -609,24 +609,10 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 		if(!accept)
 			continue;
 
-		//TODO 22953: use PushAndPopToThreshold here, and update any logic that compares to distance_threshold_to_consider_zero to use an appropriate method
-
-		//if not expanding and pushing a zero distance onto the stack, then push and pop a value onto the stack
-		if(!(expand_to_first_nonzero_distance && distance <= distance_threshold_to_consider_zero))
+		if(expand_to_first_nonzero_distance)
+			worst_candidate_distance = sorted_results.PushAndPopToThreshold(DistanceReferencePair(distance, entity_index)).distance;
+		else
 			worst_candidate_distance = sorted_results.PushAndPop(DistanceReferencePair(distance, entity_index)).distance;
-		else //adding a zero and need to expand beyond zeros
-		{
-			//add the zero
-			sorted_results.Push(DistanceReferencePair(distance, entity_index));
-
-			//make copy of the top and pop it
-			DistanceReferencePair drp = sorted_results.Top();
-			sorted_results.Pop();
-
-			//if the next largest size is zero, then need to put the non-zero value back in sorted_results
-			if(sorted_results.Size() > 0 && sorted_results.Top().distance <= distance_threshold_to_consider_zero)
-				sorted_results.Push(drp);
-		}
 	}
 
 	//return k nearest -- don't need to clear because the values will be clobbered
@@ -638,7 +624,7 @@ void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(Generalized
 	high_accuracy = (dist_eval.recomputeAccurateDistances || dist_eval.highAccuracyDistances);
 
 	while(sorted_results.Size() > 0)
-	{
+	{	
 		auto &drp = sorted_results.Top();
 		double distance;
 		if(!need_recompute_distances)

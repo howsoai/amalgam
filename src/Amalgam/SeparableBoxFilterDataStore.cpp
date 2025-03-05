@@ -612,20 +612,20 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 		if(need_enabled_indices_recount)
 			enabled_indices.UpdateNumElements();
 
-		//execute window query, with dynamically shrinking bounds
-		for(const size_t entity_index : enabled_indices)
+		enabled_indices.IterateOver(
+			[this, &r_dist_eval, &partial_sums, &min_distance_by_unpopulated_count, num_enabled_features,
+			&worst_candidate_distance, &min_unpopulated_distances, high_accuracy, &sorted_results](size_t entity_index)
 		{
 			//already have enough elements, but see if this one is good enough
 			auto [accept, distance] = ResolveDistanceToNonMatchTargetValuesUnlessRejected(r_dist_eval,
 				partial_sums, entity_index, min_distance_by_unpopulated_count, num_enabled_features,
 				worst_candidate_distance, min_unpopulated_distances, high_accuracy);
 
-			if(!accept)
-				continue;
-
-			worst_candidate_distance = sorted_results.PushAndPop<expand_to_first_nonzero_distance>(
-				DistanceReferencePair(distance, entity_index)).distance;
+			if(accept)
+				worst_candidate_distance = sorted_results.PushAndPop<expand_to_first_nonzero_distance>(
+					DistanceReferencePair(distance, entity_index)).distance;
 		}
+		);
 
 	} // sorted_results.Size() == top_k
 

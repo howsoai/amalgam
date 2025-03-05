@@ -421,6 +421,9 @@ public:
 	inline void IterateOver(IntegerFunction func, size_t up_to_index = std::numeric_limits<size_t>::max())
 	{
 		size_t end_integer = GetEndInteger();
+		if(end_integer == 0)
+			return;
+
 		size_t num_buckets = (end_integer + 63) / 64;
 		size_t num_indices = size();
 		size_t end_index = std::min(up_to_index, end_integer);

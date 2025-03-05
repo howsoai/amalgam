@@ -586,6 +586,32 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 			}
 		}
 
+		//check to see if any features can have nulls quickly removed because it would push it past worst_candidate_distance
+		bool need_enabled_indices_recount = false;
+		for(size_t i = 0; i < num_enabled_features; i++)
+		{
+			//if the target_value is a null, unknown-unknown differences have already been accounted for
+			//since they are partial matches
+			auto &feature_data = r_dist_eval.featureData[i];
+			if(feature_data.targetValue.IsNull())
+				continue;
+
+			if(dist_eval.ComputeDistanceTermKnownToUnknown(i, high_accuracy) > worst_candidate_distance)
+			{
+				size_t column_index = dist_eval.featureAttribs[i].featureIndex;
+				auto &column = columnData[column_index];
+				auto &null_indices = column->nullIndices;
+				//make sure there's enough nulls to justify running through all of enabled_indices
+				if(null_indices.size() > 20)
+				{
+					null_indices.EraseInBatchFrom(enabled_indices);
+					need_enabled_indices_recount = true;
+				}
+			}
+		}
+		if(need_enabled_indices_recount)
+			enabled_indices.UpdateNumElements();
+
 		//execute window query, with dynamically shrinking bounds
 		for(const size_t entity_index : enabled_indices)
 		{

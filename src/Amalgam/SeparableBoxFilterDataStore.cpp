@@ -374,7 +374,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 
 				//remove entity if its distance is already greater than the max_dist
 				if(!(distances[entity_index] <= max_dist_exponentiated)) //false for NaN indices as well so they will be removed
-					enabled_indices.erase(entity_index);
+					enabled_indices.erase(entity_index, false);
 			}
 
 			continue;
@@ -404,7 +404,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 
 						//remove entity if its distance is already greater than the max_dist, won't ever become NaN here (would already have been removed from indices)
 						if(!(distances[entity_index] <= max_dist_exponentiated)) //false for NaN indices as well so they will be removed
-							enabled_indices.erase(entity_index);
+							enabled_indices.erase(entity_index, false);
 					}
 				}
 
@@ -420,7 +420,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 
 					//remove entity if its distance is already greater than the max_dist
 					if(!(distances[entity_index] <= max_dist_exponentiated)) //false for NaN indices as well so they will be removed
-						enabled_indices.erase(entity_index);
+						enabled_indices.erase(entity_index, false);
 				}
 
 				continue;

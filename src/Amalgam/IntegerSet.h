@@ -409,11 +409,11 @@ public:
 	//returns bit 0 of the lowest bucket that is not populated
 	__forceinline Iterator end()
 	{
-		//get the last bucket with the 0th bit
-		size_t bucket = bitBucket.size();
-		size_t bit = 0;
+		if(numElements == 0)
+			return Iterator(this, 0, 0);
 
-		return Iterator(this, bucket, bit);
+		//get the last bucket with the 0th bit
+		return Iterator(this, bitBucket.size(), 0);
 	}
 
 	//iterates over all of the integers as efficiently as possible, passing them into func
@@ -550,7 +550,7 @@ public:
 		bucket = 0;
 		bit = 0;
 
-		if(bitBucket.size() == 0)
+		if(numElements == 0)
 			return;
 
 		//if the first isn't set, then find the next

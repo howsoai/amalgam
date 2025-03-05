@@ -1159,7 +1159,12 @@ public:
 				else
 				{
 					//find probability that the correct class was selected
-					double prob_class_given_match = 1 - default_deviation;
+					double prob_class_given_match = default_deviation;
+
+					//if self_deviation exists, it should be the smallest value in the row and result in the higher probability given match
+					auto self_deviation_iter = deviations.find(target_value);
+					if(self_deviation_iter != end(deviations))
+						prob_class_given_match = 1 - self_deviation_iter->second;
 
 					//find the probability that any other class besides the correct class was selected
 					//divide the probability among the other classes
@@ -1213,7 +1218,12 @@ public:
 				else
 				{
 					//find probability that the correct class was selected
-					double prob_class_given_match = 1 - default_deviation;
+					double prob_class_given_match = default_deviation;
+
+					//if self_deviation exists, it should be the smallest value in the row and result in the higher probability given match
+					auto self_deviation_iter = deviations.find(target_sid);
+					if(self_deviation_iter != end(deviations))
+						prob_class_given_match = 1 - self_deviation_iter->second;
 
 					//find the probability that any other class besides the correct class was selected
 					//divide the probability among the other classes

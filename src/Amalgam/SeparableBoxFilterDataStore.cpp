@@ -566,6 +566,26 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 			}
 		}
 
+		if(num_enabled_features > 1)
+		{
+			auto &previous_nn_cache = parametersAndBuffers.previousQueryNearestNeighbors;
+			for(size_t entity_index : previous_nn_cache)
+			{
+				//only get its distance if it is enabled,
+				//but erase to skip this entity in the next loop
+				if(!enabled_indices.EraseAndRetrieve(entity_index))
+					continue;
+
+				auto [accept, distance] = ResolveDistanceToNonMatchTargetValuesUnlessRejected(r_dist_eval, partial_sums,
+					entity_index, min_distance_by_unpopulated_count, num_enabled_features,
+					worst_candidate_distance, min_unpopulated_distances, high_accuracy);
+
+				if(accept)
+					worst_candidate_distance = sorted_results.PushAndPop<expand_to_first_nonzero_distance>(
+						DistanceReferencePair(distance, entity_index)).distance;
+			}
+		}
+
 		//execute window query, with dynamically shrinking bounds
 		for(const size_t entity_index : enabled_indices)
 		{

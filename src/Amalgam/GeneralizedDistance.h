@@ -452,7 +452,7 @@ public:
 				if(nonmatch_deviation_it != end(deviations))
 					prob_class_given_nonmatch = 1 - nonmatch_deviation_it->second;
 				else
-					prob_class_given_nonmatch = deviations.defaultDeviation / nonmatching_classes;
+					prob_class_given_nonmatch = (1 - deviations.defaultDeviation) / nonmatching_classes;
 			}
 		}
 		else if(a_type == ENIVT_STRING_ID && feature_attribs.nominalStringSparseDeviationMatrix.size() > 0)
@@ -478,7 +478,7 @@ public:
 				if(nonmatch_deviation_it != end(deviations))
 					prob_class_given_nonmatch = 1 - nonmatch_deviation_it->second;
 				else
-					prob_class_given_nonmatch = deviations.defaultDeviation / nonmatching_classes;
+					prob_class_given_nonmatch = (1 - deviations.defaultDeviation) / nonmatching_classes;
 			}
 		}
 
@@ -1169,7 +1169,7 @@ public:
 
 					//find the probability that any other class besides the correct class was selected
 					//divide the probability among the other classes
-					double prob_class_given_nonmatch = default_deviation / nonmatching_classes;
+					double prob_class_given_nonmatch = (1 - default_deviation) / nonmatching_classes;
 
 					feature_data.defaultNominalMatchDistanceTerm
 						= distEvaluator->ComputeDistanceTermNominalMatchFromMatchProbabilities(
@@ -1229,7 +1229,7 @@ public:
 
 					//find the probability that any other class besides the correct class was selected
 					//divide the probability among the other classes
-					double prob_class_given_nonmatch = default_deviation / nonmatching_classes;
+					double prob_class_given_nonmatch = (1 - default_deviation) / nonmatching_classes;
 
 					feature_data.defaultNominalMatchDistanceTerm
 						= distEvaluator->ComputeDistanceTermNominalMatchFromMatchProbabilities(

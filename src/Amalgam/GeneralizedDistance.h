@@ -1159,7 +1159,8 @@ public:
 				else
 				{
 					//find probability that the correct class was selected
-					double prob_class_given_match = default_deviation;
+					//set it to the low value of 1 - default_devation for the row, assuming the self deviation doesn't exist
+					double prob_class_given_match = 1 - default_deviation;
 
 					//if self_deviation exists, it should be the smallest value in the row and result in the higher probability given match
 					auto self_deviation_iter = deviations.find(target_value);
@@ -1218,7 +1219,8 @@ public:
 				else
 				{
 					//find probability that the correct class was selected
-					double prob_class_given_match = default_deviation;
+					//set it to the low value of 1 - default_devation for the row, assuming the self deviation doesn't exist
+					double prob_class_given_match = 1 - default_deviation;
 
 					//if self_deviation exists, it should be the smallest value in the row and result in the higher probability given match
 					auto self_deviation_iter = deviations.find(target_sid);

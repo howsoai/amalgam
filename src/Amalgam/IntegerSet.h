@@ -430,11 +430,15 @@ public:
 		end_index = std::min(up_to_index, end_index);
 
 	#if defined(_OPENMP)
-		#pragma omp for schedule(static)
-		for(int64_t index = 0; index < static_cast<int64_t>(end_index); index++)
+		if(parallelize_if_possible)
 		{
-			if(ContainsWithoutMaximumIndexCheck(index))
-				func(index);
+			#pragma omp for schedule(static)
+			for(int64_t index = 0; index < static_cast<int64_t>(end_index); index++)
+			{
+				if(ContainsWithoutMaximumIndexCheck(index))
+					func(index);
+			}
+			return;
 		}
 	#endif
 

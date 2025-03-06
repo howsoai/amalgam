@@ -612,20 +612,38 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 		if(need_enabled_indices_recount)
 			enabled_indices.UpdateNumElements();
 
-		enabled_indices.IterateOver(
-			[this, &r_dist_eval, &partial_sums, &min_distance_by_unpopulated_count, num_enabled_features,
-			&worst_candidate_distance, &min_unpopulated_distances, high_accuracy, &sorted_results](size_t entity_index)
+		#pragma omp parallel shared(worst_candidate_distance) if(end_index > 200)
 		{
-			//already have enough elements, but see if this one is good enough
-			auto [accept, distance] = ResolveDistanceToNonMatchTargetValuesUnlessRejected(r_dist_eval,
-				partial_sums, entity_index, min_distance_by_unpopulated_count, num_enabled_features,
-				worst_candidate_distance, min_unpopulated_distances, high_accuracy);
+			enabled_indices.IterateOver(
+				[this, &r_dist_eval, &partial_sums, &min_distance_by_unpopulated_count, num_enabled_features,
+				&worst_candidate_distance, &min_unpopulated_distances, high_accuracy, &sorted_results](size_t entity_index)
+			{
+				//already have enough elements, but see if this one is good enough
+				auto [accept, distance] = ResolveDistanceToNonMatchTargetValuesUnlessRejected(r_dist_eval,
+					partial_sums, entity_index, min_distance_by_unpopulated_count, num_enabled_features,
+					worst_candidate_distance, min_unpopulated_distances, high_accuracy);
 
-			if(accept)
-				worst_candidate_distance = sorted_results.PushAndPop<expand_to_first_nonzero_distance>(
-					DistanceReferencePair(distance, entity_index)).distance;
+				if(!accept)
+					return;
+
+			#ifdef _OPENMP
+			#pragma omp critical
+				{
+					//need to check again after going into critical section
+					if(distance <= worst_candidate_distance)
+					{
+					#endif
+
+						worst_candidate_distance = sorted_results.PushAndPop<expand_to_first_nonzero_distance>(
+							DistanceReferencePair(distance, entity_index)).distance;
+
+			#ifdef _OPENMP
+					}
+				}
+			#endif
+			}, true
+			);
 		}
-		);
 
 	} // sorted_results.Size() == top_k
 

@@ -315,7 +315,8 @@ function render() {
 	<div class='td1'>assoc</div><div class='td3'>a map of data types to other entities of key-value pairs, where the keys are strings</div><br>
 	<div class='td1'>code</div><div class='td3'>tree of code</div><br>
 	<div class='td1'>*</div><div class='td3'>whatever type is evaluated</div><br>
-	<div class='td1'>id</div><div class='td3'>either a string or a list of strings representing the sequential ids when traversing the child entities.  <br>For example, <span class='ex code'>(list "my_library" "my_object" "my_subobject")</span> would address my_subobject in my_object in "my_library"</div><br>
+	<div class='td1'>id</div><div class='td3'>a string representing the id of a child entity that is an immediate child of the current entity.<br>  If it is an underscore followed by a number, then it is considered "unnamed" and thus will be matched and compared against other unnamed entities.</div><br>
+	<div class='td1'>id_path</div><div class='td3'>either a string or a list of strings representing the sequential ids when traversing the child entities to address entities other than just immediate child entities.  <br>For example, <span class='ex code'>(list "my_library" "my_object" "my_subobject")</span> would address my_subobject in my_object in "my_library"</div><br>
 	<p>
 	Comparisons and sorting on any strings are done in "natural order", meaning that 1x comes before 10, and m20x comes after m2a
 	<p>

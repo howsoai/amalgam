@@ -439,24 +439,23 @@ public:
 
 	//returns a function that will take in an entity index and reference to a double to store the value and return true if the value is found
 	// assumes and requires column_index is a valid column (not a feature_id)
-	inline std::function<bool(size_t, double &)> GetNumberValueFromEntityIndexFunction(size_t column_index)
+	inline std::function<double(size_t)> GetNumberValueFromEntityIndexFunction(size_t column_index)
 	{
-		//if invalid column_index, then always return false
+		//if invalid column_index, then always return 1.0
 		if(column_index >= columnData.size())
-			return [](size_t i, double &value) { return false; };
+			return [](size_t i) { return 1.0; };
 
 		auto column_data = columnData[column_index].get();
 		auto number_indices_ptr = &column_data->numberIndices;
 		auto value_type = column_data->GetUnresolvedValueType(ENIVT_NUMBER);
 
 		return [&, number_indices_ptr, column_index, column_data, value_type]
-			(size_t i, double &value)
+			(size_t i)
 			{
 				if(!number_indices_ptr->contains(i))
-					return false;
+					return 1.0;
 
-				value = column_data->GetResolvedValue(value_type, GetValue(i, column_index)).number;
-				return true;
+				return column_data->GetResolvedValue(value_type, GetValue(i, column_index)).number;
 			};
 	}
 
@@ -597,10 +596,10 @@ protected:
 		// and then only accumulate if it is valid
 		//however, indices beyond the range of partial_sums will cause an issue
 		//therefore, only trim back the end if needed, and trim back to the largest possible element id (max_element - 1)
-		if(entity_indices.GetEndInteger() >= max_element)
+		if(entity_indices.GetEndInteger() > max_element)
 		{
 			max_index = entity_indices.GetFirstIntegerVectorLocationGreaterThan(max_element - 1);
-			num_entity_indices = max_index - 1;
+			num_entity_indices = max_index;
 		}
 
 		//for each found element, accumulate associated partial sums, or if zero, just mark that it's accumulated
@@ -800,7 +799,6 @@ protected:
 	}
 
 	//computes the distance term for the entity, query_feature_index, and feature_type,
-	// where the value does not match any in the SBFDS
 	//assumes that null values have already been taken care of for nominals
 	__forceinline double ComputeDistanceTermNonMatch(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		size_t entity_index, size_t query_feature_index, bool high_accuracy)
@@ -913,6 +911,33 @@ protected:
 			return r_dist_eval.ComputeDistanceTerm(other_value, other_value_type, query_feature_index, high_accuracy);
 		}
 		}
+	}
+
+	//computes the distance term for value_entry, query_feature_index, and feature_type,
+	__forceinline double ComputeDistanceTermContinuousNonNullRegular(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+		double target_value, SBFDSColumnData::ValueEntry &value_entry, size_t query_feature_index, bool high_accuracy)
+	{
+		auto &feature_data = r_dist_eval.featureData[query_feature_index];
+		if(feature_data.effectiveFeatureType == RepeatedGeneralizedDistanceEvaluator::EFDT_UNIVERSALLY_INTERNED_PRECOMPUTED
+				|| feature_data.effectiveFeatureType == RepeatedGeneralizedDistanceEvaluator::EFDT_NUMERIC_INTERNED_PRECOMPUTED)
+			return r_dist_eval.ComputeDistanceTermInternedPrecomputed(
+				value_entry.valueInternIndex, query_feature_index);
+
+		double diff = target_value - value_entry.value.number;
+		return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonNullRegular(diff, query_feature_index, high_accuracy);
+	}
+
+	//computes the inner term for a non-nominal with an exact match of values
+	__forceinline double ComputeDistanceTermContinuousExactMatch(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+		SBFDSColumnData::ValueEntry &value_entry, size_t query_feature_index, bool high_accuracy)
+	{
+		auto &feature_data = r_dist_eval.featureData[query_feature_index];
+		if(feature_data.effectiveFeatureType == RepeatedGeneralizedDistanceEvaluator::EFDT_UNIVERSALLY_INTERNED_PRECOMPUTED
+				|| feature_data.effectiveFeatureType == RepeatedGeneralizedDistanceEvaluator::EFDT_NUMERIC_INTERNED_PRECOMPUTED)
+			return r_dist_eval.ComputeDistanceTermInternedPrecomputed(
+				value_entry.valueInternIndex, query_feature_index);
+
+		return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousExactMatch(query_feature_index, high_accuracy);
 	}
 
 	//given an estimate of distance that uses best_possible_feature_distance filled in for any features not computed,

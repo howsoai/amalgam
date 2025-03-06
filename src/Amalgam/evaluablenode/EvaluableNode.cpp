@@ -180,7 +180,13 @@ double EvaluableNode::ToNumber(EvaluableNode *e, double value_if_null)
 	if(e == nullptr)
 		return value_if_null;
 
-	switch(e->GetType())
+	auto e_type = e->GetType();
+
+	//check the most common case first
+	if(e_type == ENT_NUMBER)
+		return e->GetNumberValueReference();
+
+	switch(e_type)
 	{
 		case ENT_TRUE:
 			return 1;
@@ -188,8 +194,6 @@ double EvaluableNode::ToNumber(EvaluableNode *e, double value_if_null)
 			return 0;
 		case ENT_NULL:
 			return value_if_null;
-		case ENT_NUMBER:
-			return e->GetNumberValueReference();
 		case ENT_STRING:
 		case ENT_SYMBOL:
 		{

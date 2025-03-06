@@ -612,19 +612,23 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 		if(need_enabled_indices_recount)
 			enabled_indices.UpdateNumElements();
 
+		//pick up where left off, already have top_k in sorted_results or are out of entities
 		#pragma omp parallel shared(worst_candidate_distance) if(end_index > 200)
 		{
-			enabled_indices.IterateOver(
-				[this, &r_dist_eval, &partial_sums, &min_distance_by_unpopulated_count, num_enabled_features,
-				&worst_candidate_distance, &min_unpopulated_distances, high_accuracy, &sorted_results](size_t entity_index)
+			//iterate over all indices
+			#pragma omp for schedule(static)
+			for(int64_t entity_index = 0; entity_index < static_cast<int64_t>(end_index); entity_index++)
 			{
-				//already have enough elements, but see if this one is good enough
+				//don't need to check maximum index, because already checked in loop
+				if(!enabled_indices.ContainsWithoutMaximumIndexCheck(entity_index))
+					continue;
+
 				auto [accept, distance] = ResolveDistanceToNonMatchTargetValuesUnlessRejected(r_dist_eval,
 					partial_sums, entity_index, min_distance_by_unpopulated_count, num_enabled_features,
 					worst_candidate_distance, min_unpopulated_distances, high_accuracy);
 
 				if(!accept)
-					return;
+					continue;
 
 			#ifdef _OPENMP
 			#pragma omp critical
@@ -633,17 +637,17 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 					if(distance <= worst_candidate_distance)
 					{
 					#endif
-
+						//computed the actual distance here, attempt to insert into final sorted results
 						worst_candidate_distance = sorted_results.PushAndPop<expand_to_first_nonzero_distance>(
-							DistanceReferencePair(distance, entity_index)).distance;
+							DistanceReferencePair<size_t>(distance, entity_index)).distance;
 
-			#ifdef _OPENMP
+					#ifdef _OPENMP
 					}
 				}
 			#endif
-			}, true
-			);
-		}
+
+			} //for partialSums instances
+		}  //#pragma omp parallel
 
 	} // sorted_results.Size() == top_k
 

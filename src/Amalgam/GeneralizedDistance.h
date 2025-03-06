@@ -608,16 +608,16 @@ public:
 		if(!(nonmatching_classes >= 1.0))
 			nonmatching_classes = 1;
 
-		double deviation = 0.0;
+		double match_deviation = 0.0;
 		if(DoesFeatureHaveDeviation(index))
-			deviation = feature_attribs.deviation;
+			match_deviation = feature_attribs.deviation;
 
 		//find probability that the correct class was selected
-		double prob_class_given_match = 1 - deviation;
+		double prob_class_given_match = 1 - match_deviation;
 
 		//find the probability that any other class besides the correct class was selected
 		//divide the probability among the other classes
-		double prob_class_given_nonmatch = deviation / nonmatching_classes;
+		double prob_class_given_nonmatch = match_deviation / nonmatching_classes;
 
 		return ComputeDistanceTermNominalNonmatchFromMatchProbabilities(index,
 			prob_class_given_match, prob_class_given_nonmatch, high_accuracy);
@@ -1149,8 +1149,8 @@ public:
 						smallest_dist_term = dist_term;
 				}
 
-				double default_deviation = deviations_for_value->second.defaultDeviation;
-				if(FastIsNaN(default_deviation))
+				double default_mismatch_deviation = deviations_for_value->second.defaultDeviation;
+				if(FastIsNaN(default_mismatch_deviation))
 				{
 					feature_data.defaultNominalMatchDistanceTerm = smallest_dist_term;
 					feature_data.defaultNominalNonMatchDistanceTerm
@@ -1160,7 +1160,7 @@ public:
 				{
 					//find probability that the correct class was selected
 					//set it to the low value of 1 - default_devation for the row, assuming the self deviation doesn't exist
-					double prob_class_given_match = 1 - default_deviation;
+					double prob_class_given_match = 1 - default_mismatch_deviation;
 
 					//if self_deviation exists, it should be the smallest value in the row and result in the higher probability given match
 					auto self_deviation_iter = deviations.find(target_value);
@@ -1169,7 +1169,7 @@ public:
 
 					//find the probability that any other class besides the correct class was selected
 					//divide the probability among the other classes
-					double prob_class_given_nonmatch = (1 - default_deviation) / nonmatching_classes;
+					double prob_class_given_nonmatch = (1 - default_mismatch_deviation) / nonmatching_classes;
 
 					feature_data.defaultNominalMatchDistanceTerm
 						= distEvaluator->ComputeDistanceTermNominalMatchFromMatchProbabilities(
@@ -1209,8 +1209,8 @@ public:
 						smallest_dist_term = dist_term;
 				}
 
-				double default_deviation = deviations_for_sid->second.defaultDeviation;
-				if(FastIsNaN(default_deviation))
+				double default_mismatch_deviation = deviations_for_sid->second.defaultDeviation;
+				if(FastIsNaN(default_mismatch_deviation))
 				{
 					feature_data.defaultNominalMatchDistanceTerm = smallest_dist_term;
 					feature_data.defaultNominalNonMatchDistanceTerm
@@ -1220,7 +1220,7 @@ public:
 				{
 					//find probability that the correct class was selected
 					//set it to the low value of 1 - default_devation for the row, assuming the self deviation doesn't exist
-					double prob_class_given_match = 1 - default_deviation;
+					double prob_class_given_match = 1 - default_mismatch_deviation;
 
 					//if self_deviation exists, it should be the smallest value in the row and result in the higher probability given match
 					auto self_deviation_iter = deviations.find(target_sid);
@@ -1229,7 +1229,7 @@ public:
 
 					//find the probability that any other class besides the correct class was selected
 					//divide the probability among the other classes
-					double prob_class_given_nonmatch = (1 - default_deviation) / nonmatching_classes;
+					double prob_class_given_nonmatch = (1 - default_mismatch_deviation) / nonmatching_classes;
 
 					feature_data.defaultNominalMatchDistanceTerm
 						= distEvaluator->ComputeDistanceTermNominalMatchFromMatchProbabilities(

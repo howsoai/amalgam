@@ -251,10 +251,10 @@ public:
 	__forceinline double ComputeDifferenceWithDeviation(double diff, size_t feature_index, bool surprisal_transform, bool high_accuracy)
 	{
 		auto &feature_attribs = featureAttribs[feature_index];
-		double deviation = feature_attribs.deviation;
 	#ifdef DISTANCE_USE_LAPLACE_LK_METRIC
 		if(high_accuracy)
 		{
+			double deviation = feature_attribs.deviation;
 			diff += std::exp(-diff / deviation) * (feature_attribs.deviationTimesThree + diff) * 0.5;
 			if(!surprisal_transform)
 			{
@@ -266,9 +266,7 @@ public:
 
 				//it is possible that the subtraction misses the least significant bit in the mantissa
 				//due to numerical precision, returning a negative number, which causes issues, so clamp above zero
-				if(difference >= 0)
-					return difference;
-				return 0.0;
+				return std::max(0.0, difference);
 			}
 		}
 		else //!high_accuracy
@@ -279,6 +277,7 @@ public:
 			//it will just set the term to zero, which is appropriate
 			diff += std::exp(static_cast<float>(diff * feature_attribs.deviationReciprocalNegative))
 				* (feature_attribs.deviationTimesThree + diff) * 0.5;
+
 			if(!surprisal_transform)
 			{
 				return diff;
@@ -290,9 +289,7 @@ public:
 
 				//it is possible that the subtraction misses the least significant bit in the mantissa
 				//due to numerical precision, returning a negative number, which causes issues, so clamp above zero
-				if(difference >= 0)
-					return difference;
-				return 0.0;
+				return std::max(0.0, difference);
 			}
 		}
 	#else
@@ -311,9 +308,7 @@ public:
 
 				//it is possible that the subtraction misses the least significant bit in the mantissa
 				//due to numerical precision, returning a negative number, which causes issues, so clamp above zero
-				if(difference >= 0)
-					return difference;
-				return 0.0;
+				return std::max(0.0, difference);
 			}
 		}
 		else //!high_accuracy
@@ -335,9 +330,7 @@ public:
 
 				//it is possible that the subtraction misses the least significant bit in the mantissa
 				//due to numerical precision, returning a negative number, which causes issues, so clamp above zero
-				if(difference >= 0)
-					return difference;
-				return 0.0;
+				return std::max(0.0, difference);
 			}
 		}
 	#endif
@@ -617,16 +610,16 @@ public:
 		if(!(nonmatching_classes >= 1.0))
 			nonmatching_classes = 1;
 
-		double deviation = 0.0;
+		double match_deviation = 0.0;
 		if(DoesFeatureHaveDeviation(index))
-			deviation = feature_attribs.deviation;
+			match_deviation = feature_attribs.deviation;
 
 		//find probability that the correct class was selected
-		double prob_class_given_match = 1 - deviation;
+		double prob_class_given_match = 1 - match_deviation;
 
 		//find the probability that any other class besides the correct class was selected
 		//divide the probability among the other classes
-		double prob_class_given_nonmatch = deviation / nonmatching_classes;
+		double prob_class_given_nonmatch = match_deviation / nonmatching_classes;
 
 		return ComputeDistanceTermNominalNonmatchFromMatchProbabilities(index,
 			prob_class_given_match, prob_class_given_nonmatch, high_accuracy);
@@ -1164,8 +1157,8 @@ public:
 						smallest_dist_term = dist_term;
 				}
 
-				double default_deviation = deviations_for_value->second.defaultDeviation;
-				if(FastIsNaN(default_deviation))
+				double default_mismatch_deviation = deviations_for_value->second.defaultDeviation;
+				if(FastIsNaN(default_mismatch_deviation))
 				{
 					feature_data.defaultNominalMatchDistanceTerm = smallest_dist_term;
 					feature_data.defaultNominalNonMatchDistanceTerm
@@ -1174,11 +1167,17 @@ public:
 				else
 				{
 					//find probability that the correct class was selected
-					double prob_class_given_match = 1 - default_deviation;
+					//set it to the low value of 1 - default_devation for the row, assuming the self deviation doesn't exist
+					double prob_class_given_match = 1 - default_mismatch_deviation;
+
+					//if self_deviation exists, it should be the smallest value in the row and result in the higher probability given match
+					auto self_deviation_iter = deviations.find(target_value);
+					if(self_deviation_iter != end(deviations))
+						prob_class_given_match = 1 - self_deviation_iter->second;
 
 					//find the probability that any other class besides the correct class was selected
 					//divide the probability among the other classes
-					double prob_class_given_nonmatch = default_deviation / nonmatching_classes;
+					double prob_class_given_nonmatch = (1 - default_mismatch_deviation) / nonmatching_classes;
 
 					feature_data.defaultNominalMatchDistanceTerm
 						= distEvaluator->ComputeDistanceTermNominalMatchFromMatchProbabilities(
@@ -1218,8 +1217,8 @@ public:
 						smallest_dist_term = dist_term;
 				}
 
-				double default_deviation = deviations_for_sid->second.defaultDeviation;
-				if(FastIsNaN(default_deviation))
+				double default_mismatch_deviation = deviations_for_sid->second.defaultDeviation;
+				if(FastIsNaN(default_mismatch_deviation))
 				{
 					feature_data.defaultNominalMatchDistanceTerm = smallest_dist_term;
 					feature_data.defaultNominalNonMatchDistanceTerm
@@ -1228,11 +1227,17 @@ public:
 				else
 				{
 					//find probability that the correct class was selected
-					double prob_class_given_match = 1 - default_deviation;
+					//set it to the low value of 1 - default_devation for the row, assuming the self deviation doesn't exist
+					double prob_class_given_match = 1 - default_mismatch_deviation;
+
+					//if self_deviation exists, it should be the smallest value in the row and result in the higher probability given match
+					auto self_deviation_iter = deviations.find(target_sid);
+					if(self_deviation_iter != end(deviations))
+						prob_class_given_match = 1 - self_deviation_iter->second;
 
 					//find the probability that any other class besides the correct class was selected
 					//divide the probability among the other classes
-					double prob_class_given_nonmatch = default_deviation / nonmatching_classes;
+					double prob_class_given_nonmatch = (1 - default_mismatch_deviation) / nonmatching_classes;
 
 					feature_data.defaultNominalMatchDistanceTerm
 						= distEvaluator->ComputeDistanceTermNominalMatchFromMatchProbabilities(

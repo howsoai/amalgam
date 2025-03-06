@@ -54,7 +54,8 @@ public:
 		knnCache->GetKnn(entity_reference, numNearestNeighbors, true,
 			buffers->neighbors, additional_holdout_reference);
 
-		return distanceTransform->ComputeDistanceContribution(buffers->neighbors, entity_reference);
+		double entity_weight = distanceTransform->getEntityWeightFunction(entity_reference);
+		return distanceTransform->ComputeDistanceContribution(buffers->neighbors, entity_weight);
 	}
 
 	//Like the other ComputeDistanceContribution, but only includes included_entities
@@ -64,7 +65,8 @@ public:
 		buffers->neighbors.clear();
 		knnCache->GetKnn(entity_reference, numNearestNeighbors, true, buffers->neighbors, included_entities);
 
-		return distanceTransform->ComputeDistanceContribution(buffers->neighbors, entity_reference);
+		double entity_weight = distanceTransform->getEntityWeightFunction(entity_reference);
+		return distanceTransform->ComputeDistanceContribution(buffers->neighbors, entity_weight);
 	}
 
 	//Computes the Distance Contributions for each entity specified in entities_to_compute

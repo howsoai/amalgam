@@ -529,10 +529,10 @@ public:
 		possible_knn_indices.erase(search_index);
 
 		if(expand_to_first_nonzero_distance)
-			FindNearestEntities<true>(r_dist_eval, position_label_sids, search_index, top_k,
+			FindNearestEntities<true>(r_dist_eval, position_label_sids, top_k,
 				radius_label, possible_knn_indices, distances_out, ignore_index, rand_stream);
 		else
-			FindNearestEntities<true>(r_dist_eval, position_label_sids, search_index, top_k,
+			FindNearestEntities<true>(r_dist_eval, position_label_sids, top_k,
 				radius_label, possible_knn_indices, distances_out, ignore_index, rand_stream);
 	}
 	
@@ -549,9 +549,8 @@ public:
 
 		PopulateTargetValuesAndLabelIndices(r_dist_eval, position_label_sids, position_values, position_value_types);
 
-		FindNearestEntitiesPositionHelper<false>(r_dist_eval, position_label_sids, position_values,
-			position_value_types, top_k, radius_label, ignore_entity_index,
-			enabled_indices, distances_out, rand_stream);
+		FindNearestEntities<false>(r_dist_eval, position_label_sids, top_k,
+			radius_label, enabled_indices, distances_out, ignore_entity_index, rand_stream);
 	}
 
 protected:
@@ -562,20 +561,10 @@ protected:
 	//assumes that enabled_indices only contains indices that have valid values for all the features
 	template<bool expand_to_first_nonzero_distance>
 	void FindNearestEntities(RepeatedGeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
-		size_t search_index, size_t top_k, StringInternPool::StringID radius_label,
+		size_t top_k, StringInternPool::StringID radius_label,
 		BitArrayIntegerSet &enabled_indices,
 		std::vector<DistanceReferencePair<size_t>> &distances_out,
 		size_t ignore_index = std::numeric_limits<size_t>::max(), RandomStream rand_stream = RandomStream());
-
-	//Finds the nearest neighbors
-	//enabled_indices is the set of entities to find from, and will be modified
-	//assumes that enabled_indices only contains indices that have valid values for all the features
-	template<bool expand_to_first_nonzero_distance>
-	void FindNearestEntitiesPositionHelper(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
-		std::vector<StringInternPool::StringID> &position_label_sids,
-		std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types,
-		size_t top_k, StringInternPool::StringID radius_label, size_t ignore_entity_index, BitArrayIntegerSet &enabled_indices,
-		std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream = RandomStream());
 
 #ifdef SBFDS_VERIFICATION
 	//used for debugging to make sure all entities are valid

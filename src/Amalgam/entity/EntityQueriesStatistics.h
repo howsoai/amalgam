@@ -742,9 +742,14 @@ public:
 			//if all percentages are the same, that will yield the most number of entities kept
 			//so round up the reciprocal of this number to find the maximum number of entities that can be kept
 			double smallest_possible_prob_mass = std::min(1.0, min_weight) * numToRetrieveMinIncrementalProbability;
-			size_t max_by_prob = static_cast<size_t>(std::ceil(1 / smallest_possible_prob_mass));
-			if(max_by_prob < maxToRetrieve)
-				maxToRetrieve = max_by_prob;
+			double max_by_prob = std::ceil(1 / smallest_possible_prob_mass);
+			//need to compare to valid values in floating point because some compilers treat static casts differently
+			if(max_by_prob > 0.0 && max_by_prob <= std::numeric_limits<size_t>::max())
+			{
+				size_t max_by_prob_int = static_cast<size_t>(max_by_prob);
+				if(max_by_prob < maxToRetrieve)
+					maxToRetrieve = max_by_prob_int;
+			}
 
 			if(maxToRetrieve < minToRetrieve)
 				minToRetrieve = maxToRetrieve;

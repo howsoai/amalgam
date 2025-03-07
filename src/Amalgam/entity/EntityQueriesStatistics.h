@@ -799,33 +799,34 @@ public:
 				result_func(entity_distance_pair_container_begin, first_weighted_value, first_unweighted_value, first_prob_mass, first_weight);
 
 				double total_prob = first_prob_mass;
-				size_t cur_k = 1;
-				for(; cur_k < max_k; cur_k++)
+				size_t main_k = 1;
+				for(; main_k < max_k; main_k++)
 				{
 					auto [weighted_value, unweighted_value, prob_same, prob_mass, weight]
-						= transform_func(entity_distance_pair_container_begin + cur_k);
+						= transform_func(entity_distance_pair_container_begin + main_k);
 
 					//stop if have enough entities and below probability threshold
-					if(cur_k >= minToRetrieve && prob_same / total_prob < numToRetrieveMinIncrementalProbability)
+					if(main_k >= minToRetrieve && prob_same / total_prob < numToRetrieveMinIncrementalProbability)
 						break;
 
 					total_prob += prob_same * prob_mass;
 
-					result_func(entity_distance_pair_container_begin + cur_k, weighted_value, unweighted_value, prob_mass, weight);
+					result_func(entity_distance_pair_container_begin + main_k, weighted_value, unweighted_value, prob_mass, weight);
 				}
 
 				//pull on any extra cases
-				for(size_t i = 0; i < extraToRetrieve; i++)
+				size_t extra_k = 0;
+				for(; extra_k < extraToRetrieve && main_k + extra_k < max_k; extra_k++)
 				{
 					auto [weighted_value, unweighted_value, prob_same, prob_mass, weight]
-						= transform_func(entity_distance_pair_container_begin + cur_k + i);
+						= transform_func(entity_distance_pair_container_begin + main_k + extra_k);
 
 					total_prob += prob_same * prob_mass;
 
-					result_func(entity_distance_pair_container_begin + cur_k + i, weighted_value, unweighted_value, prob_mass, weight);
+					result_func(entity_distance_pair_container_begin + main_k + extra_k, weighted_value, unweighted_value, prob_mass, weight);
 				}
 
-				return cur_k + extraToRetrieve;
+				return main_k + extra_k;
 			}
 			else //just transform all of the elements
 			{

@@ -53,7 +53,7 @@ public:
 		BitArrayIntegerSet nullAccumSet;
 
 		FlexiblePriorityQueue<CountDistanceReferencePair<size_t>> potentialGoodMatches;
-		StochasticTieBreakingPriorityQueue<DistanceReferencePair<size_t>> sortedResults;
+		StochasticTieBreakingPriorityQueue<DistanceReferencePair<size_t>, double> sortedResults;
 
 		//cache of nearest neighbors from previous query
 		std::vector<size_t> previousQueryNearestNeighbors;
@@ -483,7 +483,7 @@ public:
 	//populates distances_out with all entities and their distances that have a distance to target less than max_dist
 	//if enabled_indices is not nullptr, intersects with the enabled_indices set.
 	//assumes that enabled_indices only contains indices that have valid values for all the features
-	void FindEntitiesWithinDistance(GeneralizedDistanceEvaluator &r_dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
+	void FindEntitiesWithinDistance(GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
 		std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types,
 		double max_dist, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
 		std::vector<DistanceReferencePair<size_t>> &distances_out);
@@ -492,21 +492,79 @@ public:
 	// if expand_to_first_nonzero_distance is set, then it will expand top_k until it it finds the first nonzero distance or until it includes all enabled indices 
 	//will not modify enabled_indices, but instead will make a copy for any modifications
 	//assumes that enabled_indices only contains indices that have valid values for all the features
-	void FindEntitiesNearestToIndexedEntity(GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
+	inline void FindEntitiesNearestToIndexedEntity(GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
 		size_t search_index, size_t top_k, StringInternPool::StringID radius_label,
 		BitArrayIntegerSet &enabled_indices, bool expand_to_first_nonzero_distance,
 		std::vector<DistanceReferencePair<size_t>> &distances_out,
-		size_t ignore_index = std::numeric_limits<size_t>::max(), RandomStream rand_stream = RandomStream());
+		size_t ignore_index = std::numeric_limits<size_t>::max(), RandomStream rand_stream = RandomStream())
+	{
+		auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
+		r_dist_eval.distEvaluator = &dist_eval;
+
+		//build target
+		size_t num_enabled_features = dist_eval.featureAttribs.size();
+		r_dist_eval.featureData.resize(num_enabled_features);
+		for(size_t i = 0; i < num_enabled_features; i++)
+		{
+			auto found = labelIdToColumnIndex.find(position_label_sids[i]);
+			if(found == end(labelIdToColumnIndex))
+				continue;
+
+			size_t column_index = found->second;
+			auto &column_data = columnData[column_index];
+
+			auto value_type = column_data->GetIndexValueType(search_index);
+			//overwrite value in case of value interning
+			auto value = column_data->GetResolvedValue(value_type, GetValue(search_index, column_index));
+			value_type = column_data->GetResolvedValueType(value_type);
+
+			PopulateTargetValueAndLabelIndex(r_dist_eval, i, value, value_type);
+		}
+
+		//make a copy of the entities so that the list can be modified
+		BitArrayIntegerSet &possible_knn_indices = parametersAndBuffers.nullAccumSet;
+		possible_knn_indices = enabled_indices;
+
+		//remove search_index so it doesn't find itself
+		possible_knn_indices.erase(search_index);
+
+		if(expand_to_first_nonzero_distance)
+			FindNearestEntities<true>(r_dist_eval, position_label_sids, top_k,
+				radius_label, possible_knn_indices, distances_out, ignore_index, rand_stream);
+		else
+			FindNearestEntities<false>(r_dist_eval, position_label_sids, top_k,
+				radius_label, possible_knn_indices, distances_out, ignore_index, rand_stream);
+	}
 	
 	//Finds the nearest neighbors
 	//enabled_indices is the set of entities to find from, and will be modified
 	//assumes that enabled_indices only contains indices that have valid values for all the features
-	void FindNearestEntities(GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
+	void FindNearestEntitiesToPosition(GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
 		std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types,
 		size_t top_k, StringInternPool::StringID radius_label, size_t ignore_entity_index, BitArrayIntegerSet &enabled_indices,
-		std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream = RandomStream());
+		std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream = RandomStream())
+	{
+		auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
+		r_dist_eval.distEvaluator = &dist_eval;
+
+		PopulateTargetValuesAndLabelIndices(r_dist_eval, position_label_sids, position_values, position_value_types);
+
+		FindNearestEntities<false>(r_dist_eval, position_label_sids, top_k,
+			radius_label, enabled_indices, distances_out, ignore_entity_index, rand_stream);
+	}
 
 protected:
+
+	//Finds the top_k nearest neighbors results to the entity at search_index.
+	// if expand_to_first_nonzero_distance is set, then it will expand top_k until it it finds the first nonzero distance or until it includes all enabled indices 
+	//will not modify enabled_indices, but instead will make a copy for any modifications
+	//assumes that enabled_indices only contains indices that have valid values for all the features
+	template<bool expand_to_first_nonzero_distance>
+	void FindNearestEntities(RepeatedGeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
+		size_t top_k, StringInternPool::StringID radius_label,
+		BitArrayIntegerSet &enabled_indices,
+		std::vector<DistanceReferencePair<size_t>> &distances_out,
+		size_t ignore_index = std::numeric_limits<size_t>::max(), RandomStream rand_stream = RandomStream());
 
 #ifdef SBFDS_VERIFICATION
 	//used for debugging to make sure all entities are valid
@@ -798,6 +856,46 @@ protected:
 		return dist;
 	}
 
+	//converts the sorted distance term sums in sorted_results into distances (or surprisals)
+	//based on r_dist_eval and radius_column_index and stores the results in distances_out
+	//also updates previousQueryNearestNeighbors based on these results
+	inline void ConvertSortedDistanceSumsToDistancesAndCacheResults(
+		StochasticTieBreakingPriorityQueue<DistanceReferencePair<size_t>, double> &sorted_results,
+		RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+		size_t radius_column_index,
+		std::vector<DistanceReferencePair<size_t>> &distances_out)
+	{
+		auto &dist_eval = *r_dist_eval.distEvaluator;
+
+		//return and cache k nearest -- don't need to clear because the values will be clobbered
+		size_t num_results = sorted_results.Size();
+		distances_out.resize(num_results);
+
+		auto &previous_nn_cache = parametersAndBuffers.previousQueryNearestNeighbors;
+		previous_nn_cache.resize(num_results);
+		//need to recompute distances in several circumstances, including if radius is computed,
+		// as the intermediate result may be negative and yield an incorrect result otherwise
+		bool need_recompute_distances = ((dist_eval.recomputeAccurateDistances && !dist_eval.highAccuracyDistances)
+				|| radius_column_index < columnData.size());
+		bool high_accuracy = (dist_eval.recomputeAccurateDistances || dist_eval.highAccuracyDistances);
+
+		while(sorted_results.Size() > 0)
+		{
+			auto &drp = sorted_results.Top();
+			double distance;
+			if(!need_recompute_distances)
+				distance = dist_eval.InverseExponentiateDistance(drp.distance, high_accuracy);
+			else
+				distance = GetDistanceBetween(r_dist_eval, radius_column_index, drp.reference, high_accuracy);
+
+			size_t output_index = sorted_results.Size() - 1;
+			distances_out[output_index] = DistanceReferencePair(distance, drp.reference);
+			previous_nn_cache[output_index] = drp.reference;
+
+			sorted_results.Pop();
+		}
+	}
+
 	//computes the distance term for the entity, query_feature_index, and feature_type,
 	//assumes that null values have already been taken care of for nominals
 	__forceinline double ComputeDistanceTermNonMatch(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
@@ -968,7 +1066,7 @@ protected:
 	// if reject_distance is infinite, then it will just complete the distance terms
 	//returns a pair of a boolean and the distance.  if the boolean is true, then the distance is less than or equal to the reject distance
 	//assumes that all features that are exact matches have already been computed
-	__forceinline std::pair<bool, double> ResolveDistanceToNonMatchTargetValues(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+	__forceinline std::pair<bool, double> ResolveDistanceToNonMatchTargetValuesUnlessRejected(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		PartialSumCollection &partial_sums, size_t entity_index, std::vector<double> &min_distance_by_unpopulated_count, size_t num_features,
 		double reject_distance, std::vector<double> &min_unpopulated_distances, bool high_accuracy)
 	{

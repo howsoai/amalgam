@@ -918,12 +918,7 @@ protected:
 
 	//performs a deep copy on tree when tree is guaranteed to have no reference cycles
 	// assumes tree is NOT nullptr
-#ifndef _OPENMP
 	EvaluableNode *NonCycleDeepAllocCopy(EvaluableNode *tree, EvaluableNodeMetadataModifier metadata_modifier);
-#else
-	//keep track of whether there's a top level parallelization
-	EvaluableNode *NonCycleDeepAllocCopy(EvaluableNode *tree, EvaluableNodeMetadataModifier metadata_modifier, bool parallelize = true);
-#endif
 
 	//recursive helper function for ModifyLabelsForNodeTree
 	//assumes tree is not nullptr

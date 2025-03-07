@@ -608,11 +608,7 @@ std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopy(EvaluableNo
 	return std::make_pair(copy, copy->GetNeedCycleCheck());
 }
 
-#ifdef _OPENMP
-EvaluableNode *EvaluableNodeManager::NonCycleDeepAllocCopy(EvaluableNode *tree, EvaluableNodeMetadataModifier metadata_modifier, bool parallelize)
-#else
 EvaluableNode *EvaluableNodeManager::NonCycleDeepAllocCopy(EvaluableNode *tree, EvaluableNodeMetadataModifier metadata_modifier)
-#endif
 {
 	EvaluableNode *copy = nullptr;
 	#pragma omp critical
@@ -631,20 +627,14 @@ EvaluableNode *EvaluableNodeManager::NonCycleDeepAllocCopy(EvaluableNode *tree, 
 				continue;
 
 			//replace item in list with copy
-		#ifdef _OPENMP
-			s = NonCycleDeepAllocCopy(n, metadata_modifier, parallelize);
-		#else
 			s = NonCycleDeepAllocCopy(n, metadata_modifier);
-		#endif
 		}
 	}
 	else if(!copy->IsImmediate())
 	{
 		//for any ordered children, copy and update
 		auto &copy_ocn = copy->GetOrderedChildNodesReference();
-
-		#pragma omp parallel for schedule(static) if(parallelize && copy->GetOrderedChildNodes().size() > 16)
-		for(int64_t i = 0; i < static_cast<int64_t>(copy_ocn.size()); i++)
+		for(size_t i = 0; i < copy_ocn.size(); i++)
 		{
 			//get current item in list
 			EvaluableNode *n = copy_ocn[i];
@@ -652,11 +642,7 @@ EvaluableNode *EvaluableNodeManager::NonCycleDeepAllocCopy(EvaluableNode *tree, 
 				continue;
 
 			//replace current item in list with copy
-		#ifdef _OPENMP
-			copy_ocn[i] = NonCycleDeepAllocCopy(n, metadata_modifier, parallelize);
-		#else
 			copy_ocn[i] = NonCycleDeepAllocCopy(n, metadata_modifier);
-		#endif
 		}
 	}
 

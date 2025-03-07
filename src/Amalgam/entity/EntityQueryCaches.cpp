@@ -258,7 +258,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 			auto get_weight = sbfds.GetNumberValueFromEntityIndexFunction(weight_column);
 			EntityQueriesStatistics::DistanceTransform<size_t> distance_transform(cond->distEvaluator.computeSurprisal,
 				cond->distEvaluator.transformSurprisalToProb, cond->distanceWeightExponent,
-				cond->minToRetrieve, cond->maxToRetrieve, cond->numToRetrieveMinIncrementalProbability,
+				cond->minToRetrieve, cond->maxToRetrieve, cond->numToRetrieveMinIncrementalProbability, cond->extraToRetrieve,
 				use_entity_weights, min_weight, get_weight);
 
 			//if first, need to populate with all entities
@@ -327,7 +327,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				else if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE)
 				{
 					sbfds.FindNearestEntitiesToPosition(cond->distEvaluator, cond->positionLabels, cond->valueToCompare, cond->valueTypes,
-						cond->maxToRetrieve, cond->singleLabel, cond->exclusionEntityIndex, matching_entities,
+						distance_transform.GetNumToRetrieve(), cond->singleLabel, cond->exclusionEntityIndex, matching_entities,
 						compute_results, cond->randomStream.CreateOtherStreamViaRand());
 				}
 				else //ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
@@ -388,10 +388,10 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 
 			#ifdef MULTITHREAD_SUPPORT
 				ConvictionProcessor<size_t, BitArrayIntegerSet> conviction_processor(buffers.convictionBuffers,
-					buffers.knnCache, distance_transform, cond->maxToRetrieve, cond->singleLabel, cond->useConcurrency);
+					buffers.knnCache, distance_transform, distance_transform.GetNumToRetrieve(), cond->singleLabel, cond->useConcurrency);
 			#else
 				ConvictionProcessor<size_t, BitArrayIntegerSet> conviction_processor(buffers.convictionBuffers,
-					buffers.knnCache, distance_transform, cond->maxToRetrieve, cond->singleLabel);
+					buffers.knnCache, distance_transform, distance_transform.GetNumToRetrieve(), cond->singleLabel);
 			#endif
 				buffers.knnCache.ResetCache(sbfds, matching_entities, cond->distEvaluator, cond->positionLabels, cond->singleLabel);
 

@@ -727,6 +727,7 @@ public:
 			double distance_weight_exponent,
 			size_t min_to_retrieve, size_t max_to_retrieve,
 			double num_to_retrieve_min_increment_prob,
+			size_t extra_to_retrieve,
 			bool has_weight, double min_weight, std::function<double(EntityReference)> get_weight)
 		{
 			distanceWeightExponent = distance_weight_exponent;
@@ -736,6 +737,7 @@ public:
 			minToRetrieve = min_to_retrieve;
 			maxToRetrieve = max_to_retrieve;
 			numToRetrieveMinIncrementalProbability = num_to_retrieve_min_increment_prob;
+			extraToRetrieve = extra_to_retrieve;
 
 			//if all percentages are the same, that will yield the most number of entities kept
 			//so round up the reciprocal of this number to find the maximum number of entities that can be kept
@@ -759,6 +761,12 @@ public:
 		__forceinline static double ConvertSurprisalToProbability(double surprisal)
 		{
 			return std::exp(-surprisal);
+		}
+
+		//returns the number of entities to retrieve to satisfy requirements for the parameters
+		inline size_t GetNumToRetrieve()
+		{
+			return maxToRetrieve + extraToRetrieve;
 		}
 
 	protected:
@@ -806,7 +814,18 @@ public:
 					result_func(entity_distance_pair_container_begin + cur_k, weighted_value, unweighted_value, prob_mass, weight);
 				}
 
-				return cur_k;
+				//pull on any extra cases
+				for(size_t i = 0; i < extraToRetrieve; i++)
+				{
+					auto [weighted_value, unweighted_value, prob_same, prob_mass, weight]
+						= transform_func(entity_distance_pair_container_begin + cur_k + i);
+
+					total_prob += prob_same * prob_mass;
+
+					result_func(entity_distance_pair_container_begin + cur_k + i, weighted_value, unweighted_value, prob_mass, weight);
+				}
+
+				return cur_k + extraToRetrieve;
 			}
 			else //just transform all of the elements
 			{
@@ -1166,6 +1185,11 @@ public:
 			return entity_weight * distance_contribution * fraction_per_identical_entity;
 		}
 
+		//return the entity weight for the entity reference if it exists, 1.0 if it does not
+		std::function<double(EntityReference)> getEntityWeightFunction;
+
+protected:
+
 		//exponent by which to scale the distances
 		//only applicable when computeSurprisal is false
 		double distanceWeightExponent;
@@ -1185,9 +1209,10 @@ public:
 		//incremental probability where, if the next entity is below this threshold, don't retrieve more,
 		double numToRetrieveMinIncrementalProbability;
 
+		//number of entities to attempt to retrieve after any constraints
+		size_t extraToRetrieve;
+
 		//if hasWeight is true, then will call getEntityWeightFunction and apply the respective entity weight to each distance
 		bool hasWeight;
-		//return the entity weight for the entity reference if it exists, 1.0 if it does not
-		std::function<double(EntityReference)> getEntityWeightFunction;
 	};
 };

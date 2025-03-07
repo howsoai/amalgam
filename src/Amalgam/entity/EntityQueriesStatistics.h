@@ -744,7 +744,7 @@ public:
 			double smallest_possible_prob_mass = std::min(1.0, min_weight) * numToRetrieveMinIncrementalProbability;
 			double max_by_prob = std::ceil(1 / smallest_possible_prob_mass);
 			//need to compare to valid values in floating point because some compilers treat static casts differently
-			if(max_by_prob > 0.0 && max_by_prob <= std::numeric_limits<size_t>::max())
+			if(max_by_prob > 0.0 && max_by_prob <= static_cast<double>(std::numeric_limits<size_t>::max()))
 			{
 				size_t max_by_prob_int = static_cast<size_t>(max_by_prob);
 				if(max_by_prob_int < maxToRetrieve)

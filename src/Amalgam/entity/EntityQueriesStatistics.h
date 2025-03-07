@@ -747,7 +747,7 @@ public:
 			if(max_by_prob > 0.0 && max_by_prob <= std::numeric_limits<size_t>::max())
 			{
 				size_t max_by_prob_int = static_cast<size_t>(max_by_prob);
-				if(max_by_prob < maxToRetrieve)
+				if(max_by_prob_int < maxToRetrieve)
 					maxToRetrieve = max_by_prob_int;
 			}
 

@@ -718,7 +718,7 @@ protected:
 					{
 						partial_sums.Accum(entity_index, accum_location, term);
 					},
-					false, max_element);
+					max_element);
 		}
 		else
 		{
@@ -737,7 +737,7 @@ protected:
 					{
 						partial_sums.AccumZero(entity_index, accum_location);
 					},
-					false, max_element);
+					max_element);
 		}
 
 		//return an estimate (upper bound) of the number accumulated

@@ -418,8 +418,7 @@ public:
 
 	//iterates over all of the integers as efficiently as possible, passing them into func
 	template<typename IntegerFunction>
-	inline void IterateOver(IntegerFunction func, bool parallelize_if_possible = false,
-		size_t up_to_index = std::numeric_limits<size_t>::max())
+	inline void IterateOver(IntegerFunction func, size_t up_to_index = std::numeric_limits<size_t>::max())
 	{
 		size_t end_index = GetEndInteger();
 		if(end_index == 0)
@@ -428,19 +427,6 @@ public:
 		size_t num_buckets = (end_index + 63) / 64;
 		size_t num_indices = size();
 		end_index = std::min(up_to_index, end_index);
-
-	#if defined(_OPENMP)
-		if(parallelize_if_possible)
-		{
-			#pragma omp for schedule(static)
-			for(int64_t index = 0; index < static_cast<int64_t>(end_index); index++)
-			{
-				if(ContainsWithoutMaximumIndexCheck(index))
-					func(index);
-			}
-			return;
-		}
-	#endif
 
 		//there are three loops optimized for different densities, high, medium high, and sparse
 		//the heuristics have been tuned by performance testing across a couple of CPU architectures

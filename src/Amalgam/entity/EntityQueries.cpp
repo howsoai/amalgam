@@ -686,7 +686,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		distEvaluator.InitializeParametersAndFeatureParams();
 
 		//get values for each entity
-		StochasticTieBreakingPriorityQueue<DistanceReferencePair<Entity *>> nearest_entities(randomStream.CreateOtherStreamViaRand());
+		StochasticTieBreakingPriorityQueue<DistanceReferencePair<Entity *>, double> nearest_entities(randomStream.CreateOtherStreamViaRand());
 		for(size_t i = 0; i < matching_entities.size(); i++)
 		{
 			double value = GetConditionDistanceMeasure(matching_entities[i], distEvaluator.highAccuracyDistances);

@@ -532,7 +532,7 @@ public:
 			FindNearestEntities<true>(r_dist_eval, position_label_sids, top_k,
 				radius_label, possible_knn_indices, distances_out, ignore_index, rand_stream);
 		else
-			FindNearestEntities<true>(r_dist_eval, position_label_sids, top_k,
+			FindNearestEntities<false>(r_dist_eval, position_label_sids, top_k,
 				radius_label, possible_knn_indices, distances_out, ignore_index, rand_stream);
 	}
 	

@@ -442,8 +442,6 @@ public:
 		}
 	#endif
 
-		//TODO 22953: profile this and make sure this is still the best logic, as the 2nd branch was previously in find nearest k
-
 		//there are three loops optimized for different densities, high, medium high, and sparse
 		//the heuristics have been tuned by performance testing across a couple of CPU architectures
 		//and different data sets

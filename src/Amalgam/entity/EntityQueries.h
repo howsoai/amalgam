@@ -84,6 +84,9 @@ public:
 	//incremental probability where, if the next entity is below this threshold, don't retrieve more
 	double numToRetrieveMinIncrementalProbability;
 
+	//number of entities to attempt to retrieve after any constraints
+	size_t extraToRetrieve;
+
 	//distance weight exponent for distance queries (takes distance and raises it to the respective exponent) when returning distances
 	//only applicable when computeSurprisal is false
 	double distanceWeightExponent;

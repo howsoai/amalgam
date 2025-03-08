@@ -339,6 +339,7 @@ namespace EntityQueryBuilder
 		cur_condition->maxToRetrieve = std::numeric_limits<size_t>::max();
 		cur_condition->minToRetrieve = std::numeric_limits<size_t>::max();
 		cur_condition->numToRetrieveMinIncrementalProbability = 0.0;
+		cur_condition->extraToRetrieve = 0;
 		if(condition_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE) //maximum distance to search within
 		{
 			cur_condition->maxDistance = EvaluableNode::ToNumber(ocn[MAX_TO_FIND_OR_MAX_DISTANCE]);
@@ -371,6 +372,14 @@ namespace EntityQueryBuilder
 							max_to_retrieve = std::max(0.0, max_to_retrieve);
 							if(max_to_retrieve < static_cast<double>(std::numeric_limits<size_t>::max()))
 								cur_condition->maxToRetrieve = static_cast<size_t>(max_to_retrieve);
+
+							if(num_params >= 4)
+							{
+								double extra_to_retrieve = EvaluableNode::ToNumber(top_k_ocn[3], 0.0);
+								extra_to_retrieve = std::max(0.0, extra_to_retrieve);
+								if(extra_to_retrieve < static_cast<double>(std::numeric_limits<size_t>::max()))
+									cur_condition->extraToRetrieve = static_cast<size_t>(extra_to_retrieve);
+							}
 						}
 					}
 				}

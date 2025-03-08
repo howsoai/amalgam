@@ -23,14 +23,49 @@ public:
 		return distance < drp.distance;
 	}
 
+	constexpr bool operator <(const double &value) const
+	{
+		return distance < value;
+	}
+
 	constexpr bool operator <=(const DistanceReferencePair<ReferenceType> &drp) const
 	{
 		return distance <= drp.distance;
 	}
 
+	constexpr bool operator <=(const double &value) const
+	{
+		return distance <= value;
+	}
+
+	constexpr bool operator >(const DistanceReferencePair<ReferenceType> &drp) const
+	{
+		return distance > drp.distance;
+	}
+
+	constexpr bool operator >(const double &value) const
+	{
+		return distance > value;
+	}
+
+	constexpr bool operator >=(const DistanceReferencePair<ReferenceType> &drp) const
+	{
+		return distance >= drp.distance;
+	}
+
+	constexpr bool operator >=(const double &value) const
+	{
+		return distance >= value;
+	}
+
 	constexpr bool operator ==(const DistanceReferencePair<ReferenceType> &drp) const
 	{
 		return distance == drp.distance;
+	}
+
+	constexpr bool operator ==(const double &value) const
+	{
+		return distance == value;
 	}
 
 	constexpr bool SameReference(const DistanceReferencePair<ReferenceType> &drp) const

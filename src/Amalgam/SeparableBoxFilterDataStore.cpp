@@ -2,6 +2,9 @@
 #include "Entity.h"
 #include "SeparableBoxFilterDataStore.h"
 
+//system headers
+#include <limits>
+
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 thread_local
 #endif
@@ -371,7 +374,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 
 				//remove entity if its distance is already greater than the max_dist
 				if(!(distances[entity_index] <= max_dist_exponentiated)) //false for NaN indices as well so they will be removed
-					enabled_indices.erase(entity_index);
+					enabled_indices.erase(entity_index, false);
 			}
 
 			continue;
@@ -401,7 +404,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 
 						//remove entity if its distance is already greater than the max_dist, won't ever become NaN here (would already have been removed from indices)
 						if(!(distances[entity_index] <= max_dist_exponentiated)) //false for NaN indices as well so they will be removed
-							enabled_indices.erase(entity_index);
+							enabled_indices.erase(entity_index, false);
 					}
 				}
 
@@ -417,7 +420,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 
 					//remove entity if its distance is already greater than the max_dist
 					if(!(distances[entity_index] <= max_dist_exponentiated)) //false for NaN indices as well so they will be removed
-						enabled_indices.erase(entity_index);
+						enabled_indices.erase(entity_index, false);
 				}
 
 				continue;
@@ -463,213 +466,27 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 	}
 }
 
-void SeparableBoxFilterDataStore::FindEntitiesNearestToIndexedEntity(GeneralizedDistanceEvaluator &dist_eval,
-	std::vector<StringInternPool::StringID> &position_label_sids, size_t search_index,
+template<bool expand_to_first_nonzero_distance>
+void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+	std::vector<StringInternPool::StringID> &position_label_sids,
 	size_t top_k, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
-	bool expand_to_first_nonzero_distance, std::vector<DistanceReferencePair<size_t>> &distances_out, size_t ignore_index, RandomStream rand_stream)
+	std::vector<DistanceReferencePair<size_t>> &distances_out, size_t ignore_index, RandomStream rand_stream)
 {
+	auto &dist_eval = *r_dist_eval.distEvaluator;
 	if(top_k == 0 || GetNumInsertedEntities() == 0 || dist_eval.featureAttribs.size() == 0)
 		return;
-
-	auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
-	r_dist_eval.distEvaluator = &dist_eval;
 
 	size_t num_enabled_features = dist_eval.featureAttribs.size();
 
-	//build target
-	r_dist_eval.featureData.resize(num_enabled_features);
-	for(size_t i = 0; i < num_enabled_features; i++)
-	{
-		auto found = labelIdToColumnIndex.find(position_label_sids[i]);
-		if(found == end(labelIdToColumnIndex))
-			continue;
-		
-		size_t column_index = found->second;
-		auto &column_data = columnData[column_index];
-
-		auto value_type = column_data->GetIndexValueType(search_index);
-		//overwrite value in case of value interning
-		auto value = column_data->GetResolvedValue(value_type, GetValue(search_index, column_index));
-		value_type = column_data->GetResolvedValueType(value_type);
-
-		PopulateTargetValueAndLabelIndex(r_dist_eval, i, value, value_type);
-	}
-
-	bool high_accuracy = dist_eval.highAccuracyDistances;
-
-	//make a copy of the entities so that the list can be modified
-	BitArrayIntegerSet &possible_knn_indices = parametersAndBuffers.nullAccumSet;
-	possible_knn_indices = enabled_indices;
-
-	//remove search_index and ignore_index
-	possible_knn_indices.erase(search_index);
-	possible_knn_indices.erase(ignore_index);
-
-	size_t radius_column_index = GetColumnIndexFromLabelId(radius_label);
-
-	//if num enabled indices < top_k, return sorted distances
-	if(GetNumInsertedEntities() <= top_k || possible_knn_indices.size() <= top_k)
-		return FindAllValidElementDistances(r_dist_eval, radius_column_index, possible_knn_indices, distances_out, rand_stream);
-	
-	size_t end_index = possible_knn_indices.GetEndInteger();
-
-	//reuse the appropriate partial_sums_buffer buffer
-	auto &partial_sums = parametersAndBuffers.partialSums;
-	partial_sums.ResizeAndClear(num_enabled_features, end_index);
-
-	//calculate the partial sums for the cases that best match for each feature
-	// and populate the vectors of smallest possible distances that haven't been computed yet
-	auto &min_unpopulated_distances = parametersAndBuffers.minUnpopulatedDistances;
-	auto &min_distance_by_unpopulated_count = parametersAndBuffers.minDistanceByUnpopulatedCount;
-	PopulateInitialPartialSums(r_dist_eval, top_k, radius_column_index, high_accuracy,
-		possible_knn_indices, min_unpopulated_distances, min_distance_by_unpopulated_count);
-	
-	auto &potential_good_matches = parametersAndBuffers.potentialGoodMatches;
-	PopulatePotentialGoodMatches(potential_good_matches, possible_knn_indices, partial_sums, top_k);
-
-	//reuse, clear, and set up sorted_results
-	auto &sorted_results = parametersAndBuffers.sortedResults;
-	sorted_results.clear();
-	sorted_results.SetStream(rand_stream);
-	sorted_results.Reserve(top_k);
-
-	//parse the sparse inline hash of good match nodes directly into the compacted vector of good matches
-	while(potential_good_matches.size() > 0)
-	{
-		size_t entity_index = potential_good_matches.top().reference;
-
-		//insert random selection into results heap
-		double distance = ResolveDistanceToNonMatchTargetValues(r_dist_eval,
-			partial_sums, entity_index, num_enabled_features, high_accuracy);
-		sorted_results.Push(DistanceReferencePair(distance, entity_index));
-
-		//skip this entity in the next loops
-		possible_knn_indices.erase(entity_index);
-		
-		potential_good_matches.pop();
-	}
-
-	//if we did not find K results (search failed), we must populate the remaining K cases/results to search from another way
-	//we will randomly select additional nodes to fill K results.  random to prevent bias/patterns
-	while(sorted_results.Size() < top_k && possible_knn_indices.size() > 0)
-	{
-		//get a random index that is still potentially in the knn (neither rejected nor already in the results)
-		size_t random_index = possible_knn_indices.GetRandomElement(rand_stream);
-
-		double distance = ResolveDistanceToNonMatchTargetValues(r_dist_eval,
-			partial_sums, random_index, num_enabled_features, high_accuracy);
-		sorted_results.Push(DistanceReferencePair(distance, random_index));
-
-		//skip this entity in the next loops
-		possible_knn_indices.erase(random_index);
-	}
-
-	//cache kth smallest distance to target search node
-	double worst_candidate_distance = std::numeric_limits<double>::infinity();
-	if(sorted_results.Size() == top_k)
-	{
-		double top_distance = sorted_results.Top().distance;
-		//don't clamp top distance if we're expanding and only have 0 distances
-		if(! (expand_to_first_nonzero_distance && top_distance == 0.0) )
-			worst_candidate_distance = top_distance;
-	}
-
-	//execute window query, with dynamically shrinking bounds
-	for(const size_t entity_index : possible_knn_indices)
-	{
-		//if still accepting new candidates because found only zero distances
-		if(worst_candidate_distance == std::numeric_limits<double>::infinity())
-		{
-			double distance = ResolveDistanceToNonMatchTargetValues(r_dist_eval,
-				partial_sums, entity_index, num_enabled_features, high_accuracy);
-			sorted_results.Push(DistanceReferencePair(distance, entity_index));
-
-			//if full, update worst_candidate_distance
-			if(sorted_results.Size() >= top_k)
-			{
-				double top_distance = sorted_results.Top().distance;
-				//don't clamp top distance if we're expanding and only have 0 distances
-				if(!(expand_to_first_nonzero_distance && top_distance == 0.0))
-					worst_candidate_distance = top_distance;
-			}
-
-			continue;
-		}
-
-		//already have enough elements, but see if this one is good enough
-		auto [accept, distance] = ResolveDistanceToNonMatchTargetValues(r_dist_eval,
-			partial_sums, entity_index, min_distance_by_unpopulated_count, num_enabled_features,
-			worst_candidate_distance, min_unpopulated_distances, high_accuracy);
-
-		if(!accept)
-			continue;
-
-		//if not expanding and pushing a zero distance onto the stack, then push and pop a value onto the stack
-		if(!(expand_to_first_nonzero_distance && distance == 0.0))
-			worst_candidate_distance = sorted_results.PushAndPop(DistanceReferencePair(distance, entity_index)).distance;
-		else //adding a zero and need to expand beyond zeros
-		{
-			//add the zero
-			sorted_results.Push(DistanceReferencePair(distance, entity_index));
-
-			//make copy of the top and pop it
-			DistanceReferencePair drp = sorted_results.Top();
-			sorted_results.Pop();
-
-			//if the next largest size is zero, then need to put the non-zero value back in sorted_results
-			if(sorted_results.Size() > 0 && sorted_results.Top().distance == 0)
-				sorted_results.Push(drp);
-		}
-	}
-
-	//return k nearest -- don't need to clear because the values will be clobbered
-	distances_out.resize(sorted_results.Size());
-	//need to recompute distances in several circumstances, including if radius is computed,
-	// as the intermediate result may be negative and yield an incorrect result otherwise
-	bool need_recompute_distances = ((dist_eval.recomputeAccurateDistances && !dist_eval.highAccuracyDistances)
-		|| radius_column_index < columnData.size());
-	high_accuracy = (dist_eval.recomputeAccurateDistances || dist_eval.highAccuracyDistances);
-
-	while(sorted_results.Size() > 0)
-	{
-		auto &drp = sorted_results.Top();
-		double distance;
-		if(!need_recompute_distances)
-			distance = dist_eval.InverseExponentiateDistance(drp.distance, high_accuracy);
-		else
-			distance = GetDistanceBetween(r_dist_eval, radius_column_index, drp.reference, true);
-
-		distances_out[sorted_results.Size() - 1] = DistanceReferencePair(distance, drp.reference);
-		sorted_results.Pop();
-	}
-}
-
-void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluator &dist_eval,
-	std::vector<StringInternPool::StringID> &position_label_sids, std::vector<EvaluableNodeImmediateValue> &position_values,
-	std::vector<EvaluableNodeImmediateValueType> &position_value_types,
-	size_t top_k, StringInternPool::StringID radius_label, size_t ignore_entity_index,
-	BitArrayIntegerSet &enabled_indices, std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream)
-{
-	if(top_k == 0 || GetNumInsertedEntities() == 0 || dist_eval.featureAttribs.size() == 0)
-		return;
-
-	auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
-	r_dist_eval.distEvaluator = &dist_eval;
-
-	//look up these data structures upfront for performance
-	PopulateTargetValuesAndLabelIndices(r_dist_eval, position_label_sids, position_values, position_value_types);
-
-	enabled_indices.erase(ignore_entity_index);
+	enabled_indices.erase(ignore_index);
 
 	size_t radius_column_index = GetColumnIndexFromLabelId(radius_label);
 
 	//if num enabled indices < top_k, return sorted distances
 	if(enabled_indices.size() <= top_k)
 		return FindAllValidElementDistances(r_dist_eval, radius_column_index, enabled_indices, distances_out, rand_stream);
-
-	//one past the maximum entity index to be considered
+	
 	size_t end_index = enabled_indices.GetEndInteger();
-	size_t num_enabled_features = dist_eval.featureAttribs.size();
 	bool high_accuracy = dist_eval.highAccuracyDistances;
 
 	//reuse the appropriate partial_sums_buffer buffer
@@ -682,53 +499,75 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 	auto &min_distance_by_unpopulated_count = parametersAndBuffers.minDistanceByUnpopulatedCount;
 	PopulateInitialPartialSums(r_dist_eval, top_k, radius_column_index, high_accuracy,
 		enabled_indices, min_unpopulated_distances, min_distance_by_unpopulated_count);
-
+	
 	auto &potential_good_matches = parametersAndBuffers.potentialGoodMatches;
 	PopulatePotentialGoodMatches(potential_good_matches, enabled_indices, partial_sums, top_k);
 
 	//reuse, clear, and set up sorted_results
 	auto &sorted_results = parametersAndBuffers.sortedResults;
-	sorted_results.clear();
-	sorted_results.SetStream(rand_stream.CreateOtherStreamViaRand());
-	sorted_results.Reserve(top_k);
+	//assume there's an error in each addition and subtraction
+	double distance_threshold_to_consider_zero = std::numeric_limits<double>::epsilon();
+	sorted_results.Reset(rand_stream.CreateOtherStreamViaRand(), top_k, distance_threshold_to_consider_zero);
 
 	//parse the sparse inline hash of good match nodes directly into the compacted vector of good matches
 	while(potential_good_matches.size() > 0)
 	{
-		size_t good_match_index = potential_good_matches.top().reference;
+		size_t entity_index = potential_good_matches.top().reference;
 		potential_good_matches.pop();
 
 		//skip this entity in the next loops
-		enabled_indices.erase(good_match_index);
+		enabled_indices.erase(entity_index);
 
+		//insert random selection into results heap
 		double distance = ResolveDistanceToNonMatchTargetValues(r_dist_eval,
-			partial_sums, good_match_index, num_enabled_features, high_accuracy);
-		sorted_results.Push(DistanceReferencePair(distance, good_match_index));
+			partial_sums, entity_index, num_enabled_features, high_accuracy);
+		sorted_results.Push(DistanceReferencePair(distance, entity_index));
 	}
 
-	//if we did not find top_k results (search failed), attempt to randomly fill the top k with random results
-	// to remove biases that might slow down performance
+	//if we did not find K results (search failed), we must populate the remaining K cases/results to search from another way
+	//we will randomly select additional nodes to fill K results.  random to prevent bias/patterns
 	while(sorted_results.Size() < top_k)
 	{
-		//find a random case index
+		//get a random index that is still potentially in the knn (neither rejected nor already in the results)
 		size_t random_index = enabled_indices.GetRandomElement(rand_stream);
 
 		//skip this entity in the next loops
 		enabled_indices.erase(random_index);
-				
+
 		double distance = ResolveDistanceToNonMatchTargetValues(r_dist_eval,
 			partial_sums, random_index, num_enabled_features, high_accuracy);
 		sorted_results.Push(DistanceReferencePair(distance, random_index));
 	}
 
-	auto &previous_nn_cache = parametersAndBuffers.previousQueryNearestNeighbors;
-
 	//have already gone through all records looking for top_k, if don't have top_k, then have exhausted search
 	if(sorted_results.Size() == top_k)
 	{
 		double worst_candidate_distance = sorted_results.Top().distance;
+		if(expand_to_first_nonzero_distance && !sorted_results.TopMeetsThreshold())
+		{
+			for(size_t entity_index = 0; entity_index < end_index; entity_index++)
+			{
+				//don't need to check maximum index, because already checked in loop
+				if(!enabled_indices.ContainsWithoutMaximumIndexCheck(entity_index))
+					continue;
+
+				enabled_indices.erase(entity_index);
+
+				double distance = ResolveDistanceToNonMatchTargetValues(r_dist_eval,
+						partial_sums, entity_index, num_enabled_features, high_accuracy);
+				sorted_results.Push(DistanceReferencePair(distance, entity_index));
+
+				if(sorted_results.TopMeetsThreshold())
+				{
+					worst_candidate_distance = sorted_results.Top().distance;
+					break;
+				}
+			}
+		}
+
 		if(num_enabled_features > 1)
 		{
+			auto &previous_nn_cache = parametersAndBuffers.previousQueryNearestNeighbors;
 			for(size_t entity_index : previous_nn_cache)
 			{
 				//only get its distance if it is enabled,
@@ -736,12 +575,13 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 				if(!enabled_indices.EraseAndRetrieve(entity_index))
 					continue;
 
-				auto [accept, distance] = ResolveDistanceToNonMatchTargetValues(r_dist_eval, partial_sums,
+				auto [accept, distance] = ResolveDistanceToNonMatchTargetValuesUnlessRejected(r_dist_eval, partial_sums,
 					entity_index, min_distance_by_unpopulated_count, num_enabled_features,
 					worst_candidate_distance, min_unpopulated_distances, high_accuracy);
 
 				if(accept)
-					worst_candidate_distance = sorted_results.PushAndPop(DistanceReferencePair(distance, entity_index)).distance;
+					worst_candidate_distance = sorted_results.PushAndPop<expand_to_first_nonzero_distance>(
+						DistanceReferencePair(distance, entity_index)).distance;
 			}
 		}
 
@@ -754,7 +594,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 			auto &feature_data = r_dist_eval.featureData[i];
 			if(feature_data.targetValue.IsNull())
 				continue;
-			
+
 			if(dist_eval.ComputeDistanceTermKnownToUnknown(i, high_accuracy) > worst_candidate_distance)
 			{
 				size_t column_index = dist_eval.featureAttribs[i].featureIndex;
@@ -771,9 +611,6 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 		if(need_enabled_indices_recount)
 			enabled_indices.UpdateNumElements();
 
-		//if have removed some from the end, reduce the range
-		end_index = enabled_indices.GetEndInteger();
-
 		//pick up where left off, already have top_k in sorted_results or are out of entities
 		#pragma omp parallel shared(worst_candidate_distance) if(end_index > 200)
 		{
@@ -785,7 +622,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 				if(!enabled_indices.ContainsWithoutMaximumIndexCheck(entity_index))
 					continue;
 
-				auto [accept, distance] = ResolveDistanceToNonMatchTargetValues(r_dist_eval,
+				auto [accept, distance] = ResolveDistanceToNonMatchTargetValuesUnlessRejected(r_dist_eval,
 					partial_sums, entity_index, min_distance_by_unpopulated_count, num_enabled_features,
 					worst_candidate_distance, min_unpopulated_distances, high_accuracy);
 
@@ -793,51 +630,38 @@ void SeparableBoxFilterDataStore::FindNearestEntities(GeneralizedDistanceEvaluat
 					continue;
 
 			#ifdef _OPENMP
-				#pragma omp critical
+			#pragma omp critical
 				{
 					//need to check again after going into critical section
 					if(distance <= worst_candidate_distance)
 					{
-			#endif
+					#endif
 						//computed the actual distance here, attempt to insert into final sorted results
-						worst_candidate_distance = sorted_results.PushAndPop(DistanceReferencePair<size_t>(distance, entity_index)).distance;
+						worst_candidate_distance = sorted_results.PushAndPop<expand_to_first_nonzero_distance>(
+							DistanceReferencePair<size_t>(distance, entity_index)).distance;
 
-			#ifdef _OPENMP
+					#ifdef _OPENMP
 					}
 				}
 			#endif
-		
+
 			} //for partialSums instances
 		}  //#pragma omp parallel
 
 	} // sorted_results.Size() == top_k
 
-	//return and cache k nearest -- don't need to clear because the values will be clobbered
-	size_t num_results = sorted_results.Size();
-	distances_out.resize(num_results);
-	previous_nn_cache.resize(num_results);
-	//need to recompute distances in several circumstances, including if radius is computed,
-	// as the intermediate result may be negative and yield an incorrect result otherwise
-	bool need_recompute_distances = ((dist_eval.recomputeAccurateDistances && !dist_eval.highAccuracyDistances)
-			|| radius_column_index < columnData.size());
-	high_accuracy = (dist_eval.recomputeAccurateDistances || dist_eval.highAccuracyDistances);
-
-	while(sorted_results.Size() > 0)
-	{
-		auto &drp = sorted_results.Top();
-		double distance;
-		if(!need_recompute_distances)
-			distance = dist_eval.InverseExponentiateDistance(drp.distance, high_accuracy);
-		else
-			distance = GetDistanceBetween(r_dist_eval, radius_column_index, drp.reference, high_accuracy);
-
-		size_t output_index = sorted_results.Size() - 1;
-		distances_out[output_index] = DistanceReferencePair(distance, drp.reference);
-		previous_nn_cache[output_index] = drp.reference;
-
-		sorted_results.Pop();
-	}
+	ConvertSortedDistanceSumsToDistancesAndCacheResults(sorted_results, r_dist_eval, radius_column_index, distances_out);
 }
+
+template void SeparableBoxFilterDataStore::FindNearestEntities<true>(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+	std::vector<StringInternPool::StringID> &position_label_sids,
+	size_t top_k, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
+	std::vector<DistanceReferencePair<size_t>> &distances_out, size_t ignore_index, RandomStream rand_stream);
+
+template void SeparableBoxFilterDataStore::FindNearestEntities<false>(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
+	std::vector<StringInternPool::StringID> &position_label_sids,
+	size_t top_k, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
+	std::vector<DistanceReferencePair<size_t>> &distances_out, size_t ignore_index, RandomStream rand_stream);
 
 #ifdef SBFDS_VERIFICATION
 void SeparableBoxFilterDataStore::VerifyAllEntitiesForColumn(size_t column_index)
@@ -1156,10 +980,10 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 	double term = 0.0;
 	if(value_entry_iter->first == value.nodeValue.number)
-		term = r_dist_eval.distEvaluator->ComputeDistanceTermContinuousExactMatch(query_feature_index, high_accuracy);
+		term = ComputeDistanceTermContinuousExactMatch(r_dist_eval, value_entry_iter->second, query_feature_index, high_accuracy);
 	else
-		term = r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonNullRegular(
-			value.nodeValue.number - value_entry_iter->first, query_feature_index, high_accuracy);
+		term = ComputeDistanceTermContinuousNonNullRegular(r_dist_eval,
+			value.nodeValue.number, value_entry_iter->second, query_feature_index, high_accuracy);
 
 	size_t num_entities_computed = AccumulatePartialSums(enabled_indices, value_entry_iter->second.indicesWithValue, query_feature_index, term);
 
@@ -1322,7 +1146,8 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 				break;
 		}
 
-		term = r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonNullRegular(next_closest_diff, query_feature_index, high_accuracy);
+		term = ComputeDistanceTermContinuousNonNullRegular(r_dist_eval,
+			value.nodeValue.number, next_closest_iter->second, query_feature_index, high_accuracy);
 		num_entities_computed += AccumulatePartialSums(enabled_indices, next_closest_iter->second.indicesWithValue, query_feature_index, term);
 
 		//track the rate of change of difference

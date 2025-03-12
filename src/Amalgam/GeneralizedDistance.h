@@ -446,7 +446,7 @@ public:
 				if(match_deviation_it != end(deviations))
 					prob_class_given_match = 1 - match_deviation_it->second;
 				else //only happens if the predicted class is not found, which means everything is the same probability
-					prob_class_given_match = 1 - deviations.defaultDeviation;					
+					prob_class_given_match = 1 - deviations.defaultDeviation;
 
 				auto nonmatch_deviation_it = deviations.find(b.number);
 				if(nonmatch_deviation_it != end(deviations))

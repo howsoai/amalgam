@@ -243,6 +243,10 @@ public:
 	static constexpr double s_surprisal_of_laplace = 1.5;
 	static constexpr double s_surprisal_of_gaussian = 1.1283791670955126;
 
+	//to ensure that the subtractions that should be zero are zero, round to zero if within the machine epsilon
+	static constexpr double s_surprisal_of_laplace_epsilon = s_surprisal_of_laplace * std::numeric_limits<double>::epsilon();
+	static constexpr double s_surprisal_of_gaussian_epsilon = s_surprisal_of_gaussian * std::numeric_limits<double>::epsilon();
+
 	//computes the Lukaszyk–Karmowski metric deviation component for the Minkowski distance equation given the feature difference and feature deviation
 	// and adds the deviation to diff. assumes deviation is nonnegative
 	//if surprisal_transform is true, then it will transform the result into surprisal space and remove the appropriate assumption of uncertainty
@@ -264,9 +268,11 @@ public:
 			{
 				double difference = (diff / deviation) - s_surprisal_of_laplace;
 
-				//it is possible that the subtraction misses the least significant bit in the mantissa
-				//due to numerical precision, returning a negative number, which causes issues, so clamp above zero
-				return std::max(0.0, difference);
+				//it is possible that the subtraction misses the least significant bit in the mantissa due
+				//to numerical precision, returning a negative number, which causes issues, so clamp to zero if below
+				if(difference > s_surprisal_of_laplace_epsilon)
+					return difference;
+				return 0;
 			}
 		}
 		else //!high_accuracy
@@ -287,9 +293,11 @@ public:
 				//multiplying by the reciprocal is lower accuracy due to rounding differences but faster
 				double difference = (diff * feature_attribs.deviationReciprocal) - s_surprisal_of_laplace;
 
-				//it is possible that the subtraction misses the least significant bit in the mantissa
-				//due to numerical precision, returning a negative number, which causes issues, so clamp above zero
-				return std::max(0.0, difference);
+				//it is possible that the subtraction misses the least significant bit in the mantissa due
+				//to numerical precision, returning a negative number, which causes issues, so clamp to zero if below
+				if(difference > s_surprisal_of_laplace_epsilon)
+					return difference;
+				return 0;
 			}
 		}
 	#else
@@ -306,9 +314,11 @@ public:
 			{
 				double difference = (diff / deviation) - s_surprisal_of_gaussian;
 
-				//it is possible that the subtraction misses the least significant bit in the mantissa
-				//due to numerical precision, returning a negative number, which causes issues, so clamp above zero
-				return std::max(0.0, difference);
+				//it is possible that the subtraction misses the least significant bit in the mantissa due
+				//to numerical precision, returning a negative number, which causes issues, so clamp to zero if below
+				if(difference > s_surprisal_of_gaussian_epsilon)
+					return difference;
+				return 0;
 			}
 		}
 		else //!high_accuracy
@@ -328,9 +338,11 @@ public:
 				//multiplying by the reciprocal is lower accuracy due to rounding differences but faster
 				double difference = (diff * feature_attribs.deviationReciprocal) - s_surprisal_of_gaussian_approx;
 
-				//it is possible that the subtraction misses the least significant bit in the mantissa
-				//due to numerical precision, returning a negative number, which causes issues, so clamp above zero
-				return std::max(0.0, difference);
+				//it is possible that the subtraction misses the least significant bit in the mantissa due
+				//to numerical precision, returning a negative number, which causes issues, so clamp to zero if below
+				if(difference > s_surprisal_of_gaussian_epsilon)
+					return difference;
+				return 0;
 			}
 		}
 	#endif
@@ -448,7 +460,7 @@ public:
 				if(match_deviation_it != end(deviations))
 					prob_class_given_match = 1 - match_deviation_it->second;
 				else //only happens if the predicted class is not found, which means everything is the same probability
-					prob_class_given_match = 1 - deviations.defaultDeviation;					
+					prob_class_given_match = 1 - deviations.defaultDeviation;
 
 				auto nonmatch_deviation_it = deviations.find(b.number);
 				if(nonmatch_deviation_it != end(deviations))
@@ -577,6 +589,11 @@ public:
 				//the surprisal of the class matching on a different value is the difference between
 				//how surprised it would be given a nonmatch but without the surprisal given a match
 				dist_term_base = surprisal_class_given_nonmatch - surprisal_class_given_match;
+
+				//it is possible that the subtraction misses the least significant bit in the mantissa due
+				//to numerical precision, returning a negative number, which causes issues, so clamp to zero if below
+				if(dist_term_base <= std::numeric_limits<double>::epsilon() * surprisal_class_given_nonmatch)
+					return 0.0;
 			}
 		}
 		else

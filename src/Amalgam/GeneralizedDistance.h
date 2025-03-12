@@ -243,7 +243,7 @@ public:
 
 	//to ensure that the subtractions that should be zero are zero, round to zero if within the machine epsilon
 	static constexpr double s_surprisal_of_laplace_epsilon = s_surprisal_of_laplace * std::numeric_limits<double>::epsilon();
-	static constexpr double s_surprisal_of_gaussian_epsilon = s_surprisal_of_laplace * std::numeric_limits<double>::epsilon();
+	static constexpr double s_surprisal_of_gaussian_epsilon = s_surprisal_of_gaussian * std::numeric_limits<double>::epsilon();
 
 	//computes the Lukaszyk–Karmowski metric deviation component for the Minkowski distance equation given the feature difference and feature deviation
 	// and adds the deviation to diff. assumes deviation is nonnegative

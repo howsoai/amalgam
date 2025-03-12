@@ -590,7 +590,7 @@ public:
 
 				//it is possible that the subtraction misses the least significant bit in the mantissa due
 				//to numerical precision, returning a negative number, which causes issues, so clamp to zero if below
-				if(dist_term_base <= std::numeric_limits<double>::epsilon() * surprisal_class_given_match)
+				if(dist_term_base <= std::numeric_limits<double>::epsilon() * surprisal_class_given_nonmatch)
 					return 0.0;
 			}
 		}

@@ -31,24 +31,27 @@ public:
 		cachedNeighbors.resize(sbfDataStore->GetNumInsertedEntities());
 	}
 
-	//gets the nearest neighbors to the index and caches them
+	//gets the nearest neighbors to the index and caches them for each of entities_to_compute
+	// if entities_to_compute is nullptr, then it will compute over relevant_indices passed in to the constructor
 	//if expand_to_first_nonzero_distance is true, it will expand k so that at least one non-zero distance is returned
 	// or return until all entities are included
 #ifdef MULTITHREAD_SUPPORT
-	void PreCacheAllKnn(size_t top_k, bool expand_to_first_nonzero_distance, bool run_concurrently)
+	void PreCacheKnn(BitArrayIntegerSet *entities_to_compute, size_t top_k, bool expand_to_first_nonzero_distance, bool run_concurrently)
 #else
-	void PreCacheAllKnn(size_t top_k, bool expand_to_first_nonzero_distance)
+	void PreCacheKnn(BitArrayIntegerSet *entities_to_compute, size_t top_k, bool expand_to_first_nonzero_distance)
 #endif
 	{
+		if(entities_to_compute == nullptr)
+			entities_to_compute = relevantIndices;
 
 	#ifdef MULTITHREAD_SUPPORT
-		if(run_concurrently && relevantIndices->size() > 1)
+		if(run_concurrently && entities_to_compute->size() > 1)
 		{
 			auto enqueue_task_lock = Concurrency::threadPool.AcquireTaskLock();
 			if(Concurrency::threadPool.AreThreadsAvailable())
 			{
-				auto task_set = Concurrency::threadPool.CreateCountableTaskSet(relevantIndices->size());
-				for(auto index : *relevantIndices)
+				auto task_set = Concurrency::threadPool.CreateCountableTaskSet(entities_to_compute->size());
+				for(auto index : *entities_to_compute)
 				{
 					//fill in cache entry if it is not sufficient
 					if(top_k > cachedNeighbors[index].size())
@@ -71,7 +74,7 @@ public:
 		//not running concurrently
 	#endif
 
-		for(auto index : *relevantIndices)
+		for(auto index : *entities_to_compute)
 		{
 			//fill in cache entry if it is not sufficient
 			if(top_k > cachedNeighbors[index].size())

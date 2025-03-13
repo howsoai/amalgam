@@ -44,47 +44,18 @@ public:
 		if(entities_to_compute == nullptr)
 			entities_to_compute = relevantIndices;
 
-	#ifdef MULTITHREAD_SUPPORT
-		if(run_concurrently && entities_to_compute->size() > 1)
-		{
-			auto enqueue_task_lock = Concurrency::threadPool.AcquireTaskLock();
-			if(Concurrency::threadPool.AreThreadsAvailable())
-			{
-				auto task_set = Concurrency::threadPool.CreateCountableTaskSet(entities_to_compute->size());
-				for(auto index : *entities_to_compute)
-				{
-					//fill in cache entry if it is not sufficient
-					if(top_k > cachedNeighbors[index].size())
-					{
-						cachedNeighbors[index].clear();
-						Concurrency::threadPool.BatchEnqueueTask(
-							[this, index, top_k, expand_to_first_nonzero_distance, &task_set]
-							{
-								sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator, *positionLabelIds, index,
-									top_k, radiusLabelId, *relevantIndices, expand_to_first_nonzero_distance, cachedNeighbors[index]);
-								task_set.MarkTaskCompleted();
-							}
-						);
-					}
-				}
-
-				task_set.WaitForTasks(&enqueue_task_lock);
-				return;
-			}
-		}
-		//not running concurrently
-	#endif
-
-		for(auto index : *entities_to_compute)
-		{
-			//fill in cache entry if it is not sufficient
-			if(top_k > cachedNeighbors[index].size())
+		IterateOverConcurrentlyIfPossible(*entities_to_compute,
+			[this, top_k, expand_to_first_nonzero_distance](auto index)
 			{
 				cachedNeighbors[index].clear();
 				sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator,
 					*positionLabelIds, index, top_k, radiusLabelId, *relevantIndices, expand_to_first_nonzero_distance, cachedNeighbors[index]);
 			}
-		}
+		#ifdef MULTITHREAD_SUPPORT
+			,
+			run_concurrently
+		#endif
+			);
 	}
 
 	//returns true if the cached entities nearest to index contain other_index within top_k

@@ -88,33 +88,30 @@ namespace Concurrency
 };
 #endif
 
-//TODO: finish this and integrate everywhere applicable
+//TODO: finish this and integrate everywhere applicable, including breaking out distance contributions without using a buffer
 //iterates over every element in container, passing it into func, as long as
 //the container's size is bigger than 1 and run_concurrently is true
-template<typename ContainerType, typename ConditionFunctionType, typename ExecuteFunctionType>
-inline void IterateOverConcurrentlyIfPossible(ContainerType container,
-	ConditionFunctionType condition_func, ExecuteFunctionType exec_func,
-	bool run_concurrently, bool urgent = false)
+template<typename ContainerType, typename FunctionType>
+inline void IterateOverConcurrentlyIfPossible(ContainerType &container, FunctionType func,
+	bool run_concurrently = false, bool urgent = false)
 {
 #ifdef MULTITHREAD_SUPPORT
 	if(run_concurrently && container.size() > 1)
 	{
-		auto enqueue_task_lock = Concurrency::threadPool.AcquireTaskLock();
-		if(Concurrency::threadPool.AreThreadsAvailable())
+		auto &thread_pool = (urgent ? Concurrency::urgentThreadPool : Concurrency::threadPool);
+		auto enqueue_task_lock = thread_pool.AcquireTaskLock();
+		if(thread_pool.AreThreadsAvailable())
 		{
-			auto task_set = Concurrency::threadPool.CreateCountableTaskSet(entities_to_compute->size());
-			for(auto &value : container)
+			auto task_set = thread_pool.CreateCountableTaskSet(container.size());
+			for(auto value : container)
 			{
-				if(condition_func(value))
+				thread_pool.BatchEnqueueTask(
+					[value, &func, &task_set]
 				{
-					Concurrency::threadPool.BatchEnqueueTask(
-						[&value, &task_set]
-					{
-						func(value);
-						task_set.MarkTaskCompleted();
-					}
-					);
+					func(value);
+					task_set.MarkTaskCompleted();
 				}
+				);
 			}
 
 			task_set.WaitForTasks(&enqueue_task_lock);
@@ -124,9 +121,6 @@ inline void IterateOverConcurrentlyIfPossible(ContainerType container,
 	//not running concurrently
 #endif
 
-	for(auto &value : container)
-	{
-		if(condition_func(value))
-			func(value);
-	}
+	for(auto value : container)
+		func(value);
 }

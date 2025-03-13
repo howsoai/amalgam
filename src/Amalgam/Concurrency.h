@@ -87,3 +87,46 @@ namespace Concurrency
 #endif
 };
 #endif
+
+//TODO: finish this and integrate everywhere applicable
+//iterates over every element in container, passing it into func, as long as
+//the container's size is bigger than 1 and run_concurrently is true
+template<typename ContainerType, typename ConditionFunctionType, typename ExecuteFunctionType>
+inline void IterateOverConcurrentlyIfPossible(ContainerType container,
+	ConditionFunctionType condition_func, ExecuteFunctionType exec_func,
+	bool run_concurrently, bool urgent = false)
+{
+#ifdef MULTITHREAD_SUPPORT
+	if(run_concurrently && container.size() > 1)
+	{
+		auto enqueue_task_lock = Concurrency::threadPool.AcquireTaskLock();
+		if(Concurrency::threadPool.AreThreadsAvailable())
+		{
+			auto task_set = Concurrency::threadPool.CreateCountableTaskSet(entities_to_compute->size());
+			for(auto &value : container)
+			{
+				if(condition_func(value))
+				{
+					Concurrency::threadPool.BatchEnqueueTask(
+						[&value, &task_set]
+					{
+						func(value);
+						task_set.MarkTaskCompleted();
+					}
+					);
+				}
+			}
+
+			task_set.WaitForTasks(&enqueue_task_lock);
+			return;
+		}
+	}
+	//not running concurrently
+#endif
+
+	for(auto &value : container)
+	{
+		if(condition_func(value))
+			func(value);
+	}
+}

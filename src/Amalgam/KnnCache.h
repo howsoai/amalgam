@@ -56,6 +56,7 @@ public:
 					//fill in cache entry if it is not sufficient
 					if(top_k > cachedNeighbors[index].size())
 					{
+						cachedNeighbors[index].clear();
 						Concurrency::threadPool.BatchEnqueueTask(
 							[this, index, top_k, expand_to_first_nonzero_distance, &task_set]
 							{

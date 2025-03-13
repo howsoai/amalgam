@@ -528,7 +528,7 @@ public:
 	}
 
 	//stores a buffer reference of entity references and cleans up the references when it goes out of scope
-	template <typename EntityReferenceType>
+	template<typename EntityReferenceType>
 	class EntityReferenceBufferReference
 	{
 	public:

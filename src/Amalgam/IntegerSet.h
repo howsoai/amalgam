@@ -19,7 +19,7 @@ public:
 	SortedIntegerSet()
 	{	}
 
-	template <typename Collection>
+	template<typename Collection>
 	SortedIntegerSet(const Collection &other)
 	{
 		integers.reserve(other.size());
@@ -121,7 +121,7 @@ public:
 
 	//inserts all elements in collection
 	//assumes that the elements are not in this set, but does not assume elements are sorted
-	template <typename Collection>
+	template<typename Collection>
 	__forceinline void insert(Collection &other)
 	{
 		for(const size_t element : other)
@@ -131,7 +131,7 @@ public:
 	//inserts all elements in collection
 	//assumes that the elements are not in this set, but does not assume elements are sorted
 	//functionally identical to insert
-	template <typename Collection>
+	template<typename Collection>
 	__forceinline void InsertInBatch(Collection &other)
 	{
 		for(const size_t element : other)
@@ -140,7 +140,7 @@ public:
 
 	//inserts all elements in collection
 	//assumes that the elements are not in this set and that the elements are sorted
-	template <typename Collection>
+	template<typename Collection>
 	__forceinline void InsertNewSortedIntegers(Collection &other)
 	{
 		integers.reserve(other.size());
@@ -816,7 +816,7 @@ public:
 	}
 
 	//inserts all elements in collection
-	template <typename Collection>
+	template<typename Collection>
 	__forceinline void insert(Collection &other)
 	{
 		for(const size_t element : other)
@@ -869,7 +869,7 @@ public:
 	}
 
 	//inserts all elements in collection
-	template <typename Collection>
+	template<typename Collection>
 	__forceinline void InsertInBatch(Collection &other)
 	{
 		for(const size_t element : other)
@@ -923,7 +923,7 @@ public:
 	}
 
 	//erases all elements in collection
-	template <typename Collection>
+	template<typename Collection>
 	__forceinline void EraseInBatch(Collection &collection)
 	{
 		for(const size_t id : collection)
@@ -952,7 +952,7 @@ public:
 	}
 
 	//erases all elements in collection
-	template <typename Collection>
+	template<typename Collection>
 	__forceinline void erase(Collection &other)
 	{
 		for(auto i : other)
@@ -1541,7 +1541,7 @@ public:
 	}
 
 	//inserts all elements in collection
-	template <typename Collection>
+	template<typename Collection>
 	__forceinline void InsertInBatch(Collection &other)
 	{
 		if(isSisContainer)

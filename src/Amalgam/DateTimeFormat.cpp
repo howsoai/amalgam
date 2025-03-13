@@ -158,7 +158,7 @@ inline bool ConstrainDateTimeStringToValidFormat(std::string &s)
 
 //finds a vector of time zones corresponding to the abbreviation
 // from https://github.com/HowardHinnant/date/wiki/Examples-and-Recipes#convert_by_timezone_abbreviation
-template <class Duration>
+template<class Duration>
 std::vector<date::zoned_time<std::common_type_t<Duration, std::chrono::seconds>>> FindZonesByAbbrev(date::sys_time<Duration> tp, const std::string &abbrev)
 {
 	using namespace std::chrono;
@@ -277,7 +277,7 @@ double GetNumSecondsSinceEpochFromDateTimeString(const std::string &datetime_str
 // templated so it will properly cast the TimepointType and round to the appropriate number of digits
 // locale is not specified as constant or passed reference because this function may modify the string
 //  and needs to call the copy constructor
-template <typename TimepointType>
+template<typename TimepointType>
 std::string ConvertZonedDateTimeToString(TimepointType datetime, const std::string &format, std::string locale, const date::time_zone *tz)
 {
 	auto zoned_dt = date::make_zoned(tz, datetime);

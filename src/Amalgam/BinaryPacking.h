@@ -10,7 +10,7 @@
 typedef std::vector<uint8_t> BinaryData;
 
 //Huffman Encoding implementation for compressing and decompressing data
-template <typename value_type>
+template<typename value_type>
 class HuffmanTree
 {
 public:

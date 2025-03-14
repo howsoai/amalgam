@@ -94,15 +94,27 @@ public:
 		}
 	}
 
-	//like ComputeDistanceContributions, but doesn't use contribs_sum_out and will run in parallel if applicable
-	inline void PrecacheAndComputeDistanceContributions(EntityReferenceSet *entities_to_compute, std::vector<double> &contribs_out)
+	//computes distance contributions without caching over entities_to_compute
+	inline void ComputeDistanceContributionsWithoutCache(EntityReferenceSet *entities_to_compute, std::vector<double> &contribs_out)
 	{
-	#ifdef MULTITHREAD_SUPPORT
-		knnCache->PreCacheKnn(entities_to_compute, numNearestNeighbors, true, true);
-	#endif
+		if(entities_to_compute == nullptr)
+			entities_to_compute = knnCache->GetRelevantEntities();
 
-		double contribs_sum_out = 0.0;
-		ComputeDistanceContributions(entities_to_compute, contribs_out, contribs_sum_out);
+		//TODO: make sure using a thread local buffer for each of buffers -- perhaps knncache has access to the buffers and can call GetBuffer on SBFDS?
+		IterateOverConcurrentlyIfPossible(*entities_to_compute,
+			[this, &contribs_out](auto index)
+			{
+				buffers->neighbors.clear();
+				knnCache->GetKnnWithoutCache(index, numNearestNeighbors, true, buffers->neighbors);
+
+				double entity_weight = distanceTransform->getEntityWeightFunction(index);
+				contribs_out[index] = distanceTransform->ComputeDistanceContribution(buffers->neighbors, entity_weight);
+			}
+		#ifdef MULTITHREAD_SUPPORT
+				,
+				true
+		#endif
+		);
 	}
 
 	//Like ComputeDistanceContributions, but will populate contribs_out with a value for each of the included_entities, and will set any relevant entity

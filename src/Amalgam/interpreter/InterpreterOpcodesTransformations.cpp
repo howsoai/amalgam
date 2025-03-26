@@ -1116,6 +1116,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 			for(auto &[_, cn] : container->GetMappedChildNodesReference())
 				result->AppendOrderedChildNode(cn);
 		}
+
+		//just in case there are duplicated values, ensure cycle check is propagated
+		if(container->GetNeedCycleCheck())
+			result->GetNeedCycleCheck();
 	}
 	else //only_unique_values
 	{
@@ -1166,6 +1170,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 			}
 
 		}
+
+		//shouldn't have duplicated values, so don't need a cycle check on the top node
 	}
 
 	//the container itself isn't needed

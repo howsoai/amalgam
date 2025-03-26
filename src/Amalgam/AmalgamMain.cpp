@@ -337,7 +337,6 @@ PLATFORM_MAIN_CONSOLE
 			entity->VerifyEvaluableNodeIntegrityAndAllContainedEntities();
 		#endif
 
-			asset_manager.DestroyEntity(entity);
 			delete entity;
 
 			auto num_strings_used = string_intern_pool.GetNumDynamicStringsInUse();

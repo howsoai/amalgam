@@ -1000,6 +1000,10 @@ void Parser::AppendAssocKeyValuePair(UnparseData &upd, StringInternPool::StringI
 
 void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *parent, bool expanded_whitespace, size_t indentation_depth, bool need_initial_indent)
 {
+#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
+	assert(!(upd.cycleFree && tree != nullptr && tree->GetNeedCycleCheck()));
+#endif
+
 	//if need to check for circular references,
 	// can skip if nullptr, as the code below this will handle nullptr and apply appropriate spacing
 	if(!upd.cycleFree && tree != nullptr)

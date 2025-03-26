@@ -101,6 +101,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 		params_list->SetMappedChildNode(cn_id, param_info);
 	}
 
+	//ensure flags are updated since the node was already attached
+	retval.UpdatePropertiesBasedOnAttachedNode(params_list);
+
 	return retval;
 }
 

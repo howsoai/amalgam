@@ -128,6 +128,7 @@ EvaluableNode *EvaluableNodeTreeDifference::DifferenceTrees(EvaluableNodeManager
 			continue;
 		//make a copy and make sure labels are escaped, then clear any child node lists
 		// which will make sure there is a lower chance of reallocation when adding child nodes
+		//mapped child nodes will be overwritten
 		EvaluableNode *replacement = enm->AllocNode(tree2_node, EvaluableNodeManager::ENMM_LABEL_ESCAPE_INCREMENT);
 		replacement->ClearOrderedChildNodes();
 
@@ -204,6 +205,9 @@ EvaluableNode *EvaluableNodeTreeDifference::DifferenceTrees(EvaluableNodeManager
 			}
 		}
 	}
+
+	//because it is possible that tree1 and tree2 have a node in common, we always need to update flags
+	EvaluableNodeManager::UpdateFlagsForNodeTree(difference_function);
 
 	return difference_function;
 }

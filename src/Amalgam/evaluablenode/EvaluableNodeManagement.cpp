@@ -174,6 +174,8 @@ void EvaluableNodeManager::FreeAllNodes()
 	firstUnusedNodeIndex = 0;
 	
 	UpdateGarbageCollectionTrigger(original_num_nodes);
+
+	ClearThreadLocalAllocationBuffer();
 }
 
 EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()

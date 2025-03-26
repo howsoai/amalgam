@@ -274,7 +274,8 @@ void Platform_Sleep(std::chrono::microseconds sleep_time_usec)
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE) || defined(_OPENMP)
 	std::this_thread::sleep_for(sleep_time_usec);
 #elif defined(OS_WINDOWS)
-	Sleep(std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time_usec).count());
+	auto sleep_time = std::chrono::duration_cast<std::chrono::milliseconds>(sleep_time_usec).count();
+	Sleep(static_cast<DWORD>(sleep_time));
 #else
 	usleep(sleep_time_usec.count());
 #endif

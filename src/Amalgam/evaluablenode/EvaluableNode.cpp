@@ -356,7 +356,7 @@ bool EvaluableNode::IsNodeValid()
 		if(sid == string_intern_pool.NOT_A_STRING_ID)
 			return true;
 
-		return (sid->string.size() < max_size);
+		return (sid->string.size() < 2000000000);
 	}
 	else //ordered
 	{

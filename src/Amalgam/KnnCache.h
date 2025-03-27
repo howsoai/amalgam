@@ -154,7 +154,7 @@ public:
 		return relevantIndices->size();
 	}
 
-private:
+protected:
 	//cache of nearest neighbor results.  The index of cache is the entity, and the corresponding vector are its nearest neighbors.
 	std::vector<std::vector<DistanceReferencePair<size_t>>> cachedNeighbors;
 

@@ -1333,7 +1333,7 @@ protected:
 	//a stack (list) of the current nodes being executed
 	std::vector<EvaluableNode *> *opcodeStackNodes;
 
-	template <typename Compare>
+	template<typename Compare>
 	EvaluableNodeReference GetIndexMinMaxFromAssoc(EvaluableNodeReference interpreted_assoc, Compare compare, double compare_limit, bool immediate_result)
 	{
 		auto &mapped_child_nodes = interpreted_assoc->GetMappedChildNodesReference();
@@ -1381,7 +1381,7 @@ protected:
 		return EvaluableNodeReference::Null();
 	}
 
-	template <typename Compare>
+	template<typename Compare>
 	EvaluableNodeReference GetIndexMinMaxFromList(EvaluableNode *en, Compare compare, double compare_limit, bool immediate_result)
 	{
 		bool value_found = false;
@@ -1421,7 +1421,7 @@ protected:
 		return EvaluableNodeReference::Null();
 	}
 
-	template <typename Compare>
+	template<typename Compare>
 	EvaluableNodeReference GetIndexMinMaxFromRemainingArgList(EvaluableNode *en, Compare compare, double compare_limit, bool immediate_result)
 	{
 		double result_value = compare_limit;

@@ -30,7 +30,7 @@ inline double FastExp(double x)
 	return val * EXP_TABLE[offset];
 }
 
-template <class To, class From>
+template<class To, class From>
 inline To bit_cast(const From &src)
 {
 	To dst;

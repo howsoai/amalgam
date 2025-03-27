@@ -188,6 +188,47 @@
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
+// src/c4/version.hpp
+// https://github.com/biojppm/c4core/src/c4/version.hpp
+//--------------------------------------------------------------------------------
+//********************************************************************************
+
+#ifndef _C4_VERSION_HPP_
+#define _C4_VERSION_HPP_
+
+/** @file version.hpp */
+
+#define C4CORE_VERSION "0.2.5"
+#define C4CORE_VERSION_MAJOR 0
+#define C4CORE_VERSION_MINOR 2
+#define C4CORE_VERSION_PATCH 5
+
+// amalgamate: removed include of
+// https://github.com/biojppm/c4core/src/c4/export.hpp
+//#include <c4/export.hpp>
+#if !defined(C4_EXPORT_HPP_) && !defined(_C4_EXPORT_HPP_)
+#error "amalgamate: file c4/export.hpp must have been included at this point"
+#endif /* C4_EXPORT_HPP_ */
+
+
+namespace c4 {
+
+C4CORE_EXPORT const char* version();
+C4CORE_EXPORT int version_major();
+C4CORE_EXPORT int version_minor();
+C4CORE_EXPORT int version_patch();
+
+} // namespace c4
+
+#endif /* _C4_VERSION_HPP_ */
+
+
+// (end https://github.com/biojppm/c4core/src/c4/version.hpp)
+
+
+
+//********************************************************************************
+//--------------------------------------------------------------------------------
 // src/c4/preprocessor.hpp
 // https://github.com/biojppm/c4core/src/c4/preprocessor.hpp
 //--------------------------------------------------------------------------------
@@ -397,7 +438,7 @@ C4_FOR_EACH(PRN_STRUCT_OFFSETS, a, b, c);
 // see also https://sourceforge.net/p/predef/wiki/Architectures/
 // see also https://sourceforge.net/p/predef/wiki/Endianness/
 // see also https://github.com/googlesamples/android-ndk/blob/android-mk/hello-jni/jni/hello-jni.c
-// see http://code.qt.io/cgit/qt/qtbase.git/tree/src/corelib/global/qprocessordetection.h
+// see also http://code.qt.io/cgit/qt/qtbase.git/tree/src/corelib/global/qprocessordetection.h
 
 #ifdef __ORDER_LITTLE_ENDIAN__
 #   define _C4EL __ORDER_LITTLE_ENDIAN__
@@ -412,7 +453,11 @@ C4_FOR_EACH(PRN_STRUCT_OFFSETS, a, b, c);
 #endif
 
 // mixed byte order (eg, PowerPC or ia64)
-#define _C4EM 1111
+#define _C4EM 1111 // NOLINT
+
+
+// NOTE: to find defined macros in a platform,
+// g++ <flags> -dM -E - </dev/null | sort
 
 #if defined(__x86_64) || defined(__x86_64__) || defined(__amd64) || defined(_M_X64)
 #    define C4_CPU_X86_64
@@ -450,11 +495,15 @@ C4_FOR_EACH(PRN_STRUCT_OFFSETS, a, b, c);
         || defined(__ARM_ARCH_6M__) || defined(__ARM_ARCH_6KZ__) \
         || (defined(__TARGET_ARCH_ARM) && __TARGET_ARCH_ARM >= 6)
 #           define C4_CPU_ARMV6
-#       elif defined(__ARM_ARCH_5TEJ__) \
+#       elif (defined(__ARM_ARCH) && __ARM_ARCH == 5) \
+        || defined(__ARM_ARCH_5TEJ__) \
         || defined(__ARM_ARCH_5TE__) \
+        || defined(__ARM_ARCH_5T__) \
         || (defined(__TARGET_ARCH_ARM) && __TARGET_ARCH_ARM >= 5)
 #           define C4_CPU_ARMV5
-#       elif defined(__ARM_ARCH_4T__) \
+#       elif (defined(__ARM_ARCH) && __ARM_ARCH == 4) \
+        || defined(__ARM_ARCH_4T__) \
+        || defined(__ARM_ARCH_4__) \
         || (defined(__TARGET_ARCH_ARM) && __TARGET_ARCH_ARM >= 4)
 #           define C4_CPU_ARMV4
 #       else
@@ -534,6 +583,44 @@ C4_FOR_EACH(PRN_STRUCT_OFFSETS, a, b, c);
 #       define C4_WORDSIZE 4
 #   endif
 #   define C4_BYTE_ORDER _C4EL
+
+#elif defined(__mips__) || defined(_mips) || defined(mips)
+#   if defined(__mips)
+#       if __mips == 64
+#           define C4_CPU_MIPS64
+#           define C4_WORDSIZE 8
+#       elif __mips == 32
+#           define C4_CPU_MIPS32
+#           define C4_WORDSIZE 4
+#       endif
+#   elif defined(__arch64__) || (defined(__SIZE_WIDTH__) && __SIZE_WIDTH__ == 64) || (defined(__LP64__) && __LP64__)
+#       define C4_CPU_MIPS64
+#       define C4_WORDSIZE 8
+#   elif defined(__arch32__) || (defined(__SIZE_WIDTH__) && __SIZE_WIDTH__ == 32) || (defined(__LP32__) && __LP32__)
+#       define C4_CPU_MIPS32
+#       define C4_WORDSIZE 4
+#   else
+#       error "unknown mips architecture"
+#   endif
+#   if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#       define C4_BYTE_ORDER _C4EB
+#   elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#       define C4_BYTE_ORDER _C4EL
+#   else
+#       error "unknown mips endianness"
+#   endif
+
+#elif defined(__sparc__) || defined(__sparc) || defined(sparc)
+#   if defined(__arch64__) || (defined(__SIZE_WIDTH__) && __SIZE_WIDTH__ == 64) || (defined(__LP64__) && __LP64__)
+#       define C4_CPU_SPARC64
+#       define C4_WORDSIZE 8
+#   elif defined(__arch32__) || (defined(__SIZE_WIDTH__) && __SIZE_WIDTH__ == 32) || (defined(__LP32__) && __LP32__)
+#       define C4_CPU_SPARC32
+#       define C4_WORDSIZE 4
+#   else
+#       error "unknown sparc architecture"
+#   endif
+#   define C4_BYTE_ORDER _C4EB
 
 #elif defined(SWIG)
 #   error "please define CPU architecture macros when compiling with swig"
@@ -1147,7 +1234,7 @@ namespace detail {
 #ifdef __GNUC__
 #   define C4_DONT_OPTIMIZE(var) c4::detail::dont_optimize(var)
 template< class T >
-C4_ALWAYS_INLINE void dont_optimize(T const& value) { asm volatile("" : : "g"(value) : "memory"); }
+C4_ALWAYS_INLINE void dont_optimize(T const& value) { asm volatile("" : : "g"(value) : "memory"); } // NOLINT
 #else
 #   define C4_DONT_OPTIMIZE(var) c4::detail::use_char_pointer(reinterpret_cast< const char* >(&var))
 void use_char_pointer(char const volatile*);
@@ -1215,6 +1302,8 @@ void use_char_pointer(char const volatile*);
  * @ingroup basic_headers */
 
 /** @defgroup types Type utilities */
+
+// NOLINTBEGIN(bugprone-macro-parentheses)
 
 namespace c4 {
 
@@ -1313,17 +1402,17 @@ using fastcref = typename std::conditional<c4::cref_uses_val<T>::value, T, T con
 //--------------------------------------------------
 
 /** Just what its name says. Useful sometimes as a default empty policy class. */
-struct EmptyStruct
+struct EmptyStruct // NOLINT
 {
-    template<class... T> EmptyStruct(T && ...){}
+    template<class... T> EmptyStruct(T && ...){} // NOLINT
 };
 
 /** Just what its name says. Useful sometimes as a default policy class to
  * be inherited from. */
-struct EmptyStructVirtual
+struct EmptyStructVirtual // NOLINT
 {
     virtual ~EmptyStructVirtual() = default;
-    template<class... T> EmptyStructVirtual(T && ...){}
+    template<class... T> EmptyStructVirtual(T && ...){} // NOLINT
 };
 
 
@@ -1358,7 +1447,7 @@ struct Padded : public T
     using T::T;
     using T::operator=;
     Padded(T const& val) : T(val) {}
-    Padded(T && val) : T(val) {}
+    Padded(T && val) : T(std::forward<T>(val)) {} // NOLINT
     char ___c4padspace___[BytesToPadAtEnd];
 };
 #pragma pack(pop)
@@ -1369,7 +1458,7 @@ struct Padded<T, 0> : public T
     using T::T;
     using T::operator=;
     Padded(T const& val) : T(val) {}
-    Padded(T && val) : T(val) {}
+    Padded(T && val) : T(std::forward<T>(val)) {} // NOLINT
 };
 
 /** make T have a size which is at least Min bytes */
@@ -1699,6 +1788,8 @@ using index_sequence_for = make_index_sequence<sizeof...(_Tp)>;
 
 } // namespace c4
 
+// NOLINTEND(bugprone-macro-parentheses)
+
 #endif /* _C4_TYPES_HPP_ */
 
 
@@ -1845,9 +1936,10 @@ using index_sequence_for = make_index_sequence<sizeof...(_Tp)>;
 extern "C" {
 #endif
 
-#define DEBUG_BREAK_USE_TRAP_INSTRUCTION 1
-#define DEBUG_BREAK_USE_BULTIN_TRAP      2
-#define DEBUG_BREAK_USE_SIGTRAP          3
+#define DEBUG_BREAK_USE_TRAP_INSTRUCTION  1
+#define DEBUG_BREAK_USE_BUILTIN_TRAP      2
+#define DEBUG_BREAK_USE_SIGTRAP           3
+#define DEBUG_BREAK_USE_BUILTIN_DEBUGTRAP 4
 
 #if defined(__i386__) || defined(__x86_64__)
 	#define DEBUG_BREAK_IMPL DEBUG_BREAK_USE_TRAP_INSTRUCTION
@@ -1900,7 +1992,7 @@ __inline__ static void trap_instruction(void)
 	 * Same problem and workaround as Thumb mode */
 }
 #elif defined(__aarch64__) && defined(__APPLE__)
-	#define DEBUG_BREAK_IMPL DEBUG_BREAK_USE_BULTIN_DEBUGTRAP
+	#define DEBUG_BREAK_IMPL DEBUG_BREAK_USE_BUILTIN_DEBUGTRAP
 #elif defined(__aarch64__)
 	#define DEBUG_BREAK_IMPL DEBUG_BREAK_USE_TRAP_INSTRUCTION
 __attribute__((always_inline))
@@ -1951,13 +2043,13 @@ __inline__ static void debug_break(void)
 {
 	trap_instruction();
 }
-#elif DEBUG_BREAK_IMPL == DEBUG_BREAK_USE_BULTIN_DEBUGTRAP
+#elif DEBUG_BREAK_IMPL == DEBUG_BREAK_USE_BUILTIN_DEBUGTRAP
 __attribute__((always_inline))
 __inline__ static void debug_break(void)
 {
 	__builtin_debugtrap();
 }
-#elif DEBUG_BREAK_IMPL == DEBUG_BREAK_USE_BULTIN_TRAP
+#elif DEBUG_BREAK_IMPL == DEBUG_BREAK_USE_BUILTIN_TRAP
 __attribute__((always_inline))
 __inline__ static void debug_break(void)
 {
@@ -2065,6 +2157,7 @@ struct fail_type__ {};
 #else
 #   ifdef __clang__
 #       pragma clang diagnostic push
+#       pragma clang diagnostic ignored "-Wundef"
 #       if !defined(__APPLE_CC__)
 #           if __clang_major__ >= 10
 #               pragma clang diagnostic ignored "-Wgnu-inline-cpp-without-extern" // debugbreak/debugbreak.h:50:16: error: 'gnu_inline' attribute without 'extern' in C++ treated as externally available, this changed in Clang 10 [-Werror,-Wgnu-inline-cpp-without-extern]
@@ -2075,6 +2168,8 @@ struct fail_type__ {};
 #           endif
 #       endif
 #   elif defined(__GNUC__)
+#       pragma GCC diagnostic push
+#       pragma GCC diagnostic ignored "-Wundef"
 #   endif
 // amalgamate: removed include of
 // https://github.com/biojppm/c4core/src/c4/ext/debugbreak/debugbreak.h
@@ -2087,6 +2182,7 @@ struct fail_type__ {};
 #   ifdef __clang__
 #       pragma clang diagnostic pop
 #   elif defined(__GNUC__)
+#       pragma GCC diagnostic pop
 #   endif
 #endif
 
@@ -2122,17 +2218,17 @@ namespace c4 {
 typedef enum : uint32_t {
     /** when an error happens and the debugger is attached, call C4_DEBUG_BREAK().
      * Without effect otherwise. */
-    ON_ERROR_DEBUGBREAK = 0x01 << 0,
+    ON_ERROR_DEBUGBREAK = 0x01u << 0u,
     /** when an error happens log a message. */
-    ON_ERROR_LOG = 0x01 << 1,
+    ON_ERROR_LOG = 0x01u << 1u,
     /** when an error happens invoke a callback if it was set with
      * set_error_callback(). */
-    ON_ERROR_CALLBACK = 0x01 << 2,
+    ON_ERROR_CALLBACK = 0x01u << 2u,
     /** when an error happens call std::terminate(). */
-    ON_ERROR_ABORT = 0x01 << 3,
+    ON_ERROR_ABORT = 0x01u << 3u,
     /** when an error happens and exceptions are enabled throw an exception.
      * Without effect otherwise. */
-    ON_ERROR_THROW = 0x01 << 4,
+    ON_ERROR_THROW = 0x01u << 4u,
     /** the default flags. */
     ON_ERROR_DEFAULTS = ON_ERROR_DEBUGBREAK|ON_ERROR_LOG|ON_ERROR_CALLBACK|ON_ERROR_ABORT
 } ErrorFlags_e;
@@ -2148,7 +2244,7 @@ C4CORE_EXPORT error_callback_type get_error_callback();
 
 //-----------------------------------------------------------------------------
 /** RAII class controling the error settings inside a scope. */
-struct ScopedErrorSettings
+struct ScopedErrorSettings // NOLINT(cppcoreguidelines-special-member-functions,hicpp-special-member-functions)
 {
     error_flags m_flags;
     error_callback_type m_callback;
@@ -2506,6 +2602,8 @@ struct srcloc
 
 
 /** @file memory_util.hpp Some memory utilities. */
+
+// NOLINTBEGIN(google-runtime-int)
 
 namespace c4 {
 
@@ -3178,8 +3276,8 @@ struct tight_pair<First, Second, tpc_same_empty> : public First
 
     C4_ALWAYS_INLINE C4_CONSTEXPR14 First      & first ()       { return static_cast<First      &>(*this); }
     C4_ALWAYS_INLINE C4_CONSTEXPR14 First const& first () const { return static_cast<First const&>(*this); }
-    C4_ALWAYS_INLINE C4_CONSTEXPR14 Second      & second()       { return reinterpret_cast<Second      &>(*this); }
-    C4_ALWAYS_INLINE C4_CONSTEXPR14 Second const& second() const { return reinterpret_cast<Second const&>(*this); }
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 Second      & second()       { return reinterpret_cast<Second      &>(*this); } // NOLINT
+    C4_ALWAYS_INLINE C4_CONSTEXPR14 Second const& second() const { return reinterpret_cast<Second const&>(*this); } // NOLINT
 };
 
 template<class First, class Second>
@@ -3256,6 +3354,8 @@ using tight_pair = detail::tight_pair<First, Second, detail::tpc_which_case<Firs
 C4_SUPPRESS_WARNING_GCC_CLANG_POP
 
 } // namespace c4
+
+// NOLINTEND(google-runtime-int)
 
 #endif /* _C4_MEMORY_UTIL_HPP_ */
 
@@ -3399,10 +3499,10 @@ arealloc_pfn get_arealloc();
 
 /** C++17-style memory_resource base class. See http://en.cppreference.com/w/cpp/experimental/memory_resource
  * @ingroup memory_resources */
-struct MemoryResource
+struct MemoryResource // NOLINT(*-member-functions)
 {
     const char *name = nullptr;
-    virtual ~MemoryResource() {}
+    virtual ~MemoryResource() = default;
 
     void* allocate(size_t sz, size_t alignment=alignof(max_align_t), void *hint=nullptr)
     {
@@ -3455,28 +3555,27 @@ C4_ALWAYS_INLINE void set_memory_resource(MemoryResource* mr)
 /** A c4::aalloc-based memory resource. Thread-safe if the implementation
  * called by c4::aalloc() is safe.
  * @ingroup memory_resources */
-struct MemoryResourceMalloc : public MemoryResource
+struct MemoryResourceMalloc : public MemoryResource // NOLINT(*-member-functions)
 {
 
     MemoryResourceMalloc() { name = "malloc"; }
-    virtual ~MemoryResourceMalloc() override {}
 
 protected:
 
-    virtual void* do_allocate(size_t sz, size_t alignment, void *hint) override
+    void* do_allocate(size_t sz, size_t alignment, void *hint) override
     {
         C4_UNUSED(hint);
         return c4::aalloc(sz, alignment);
     }
 
-    virtual void  do_deallocate(void* ptr, size_t sz, size_t alignment) override
+    void do_deallocate(void* ptr, size_t sz, size_t alignment) override
     {
         C4_UNUSED(sz);
         C4_UNUSED(alignment);
         c4::afree(ptr);
     }
 
-    virtual void* do_reallocate(void* ptr, size_t oldsz, size_t newsz, size_t alignment) override
+    void* do_reallocate(void* ptr, size_t oldsz, size_t newsz, size_t alignment) override
     {
         return c4::arealloc(ptr, oldsz, newsz, alignment);
     }
@@ -3524,19 +3623,19 @@ private:
 
 protected:
 
-    virtual void* do_allocate(size_t sz, size_t alignment, void* hint) override
+    void* do_allocate(size_t sz, size_t alignment, void* hint) override
     {
         return m_local->allocate(sz, alignment, hint);
     }
 
-    virtual void* do_reallocate(void* ptr, size_t oldsz, size_t newsz, size_t alignment) override
+    void* do_reallocate(void* ptr, size_t oldsz, size_t newsz, size_t alignment) override
     {
         return m_local->reallocate(ptr, oldsz, newsz, alignment);
     }
 
-    virtual void do_deallocate(void* ptr, size_t sz, size_t alignment) override
+    void do_deallocate(void* ptr, size_t sz, size_t alignment) override
     {
-        return m_local->deallocate(ptr, sz, alignment);
+        m_local->deallocate(ptr, sz, alignment);
     }
 };
 
@@ -3558,7 +3657,7 @@ public:
     /** initialize with borrowed memory */
     _MemoryResourceSingleChunk(void *mem, size_t sz) : _MemoryResourceSingleChunk() { acquire(mem, sz); }
 
-    virtual ~_MemoryResourceSingleChunk() override { release(); }
+    ~_MemoryResourceSingleChunk() override { release(); }
 
 public:
 
@@ -3602,7 +3701,7 @@ public:
  * malloc/free take place.
  *
  * @ingroup memory_resources */
-struct MemoryResourceLinear : public detail::_MemoryResourceSingleChunk
+struct MemoryResourceLinear : public detail::_MemoryResourceSingleChunk // NOLINT(*-member-functions)
 {
 
     C4_NO_COPY_OR_MOVE(MemoryResourceLinear);
@@ -3613,9 +3712,9 @@ public:
 
 protected:
 
-    virtual void* do_allocate(size_t sz, size_t alignment, void *hint) override;
-    virtual void  do_deallocate(void* ptr, size_t sz, size_t alignment) override;
-    virtual void* do_reallocate(void* ptr, size_t oldsz, size_t newsz, size_t alignment) override;
+    void* do_allocate(size_t sz, size_t alignment, void *hint) override;
+    void  do_deallocate(void* ptr, size_t sz, size_t alignment) override;
+    void* do_reallocate(void* ptr, size_t oldsz, size_t newsz, size_t alignment) override;
 };
 
 
@@ -3624,7 +3723,7 @@ protected:
 //-----------------------------------------------------------------------------
 /** provides a stack-type malloc-based memory resource.
  * @ingroup memory_resources */
-struct MemoryResourceStack : public detail::_MemoryResourceSingleChunk
+struct MemoryResourceStack : public detail::_MemoryResourceSingleChunk // NOLINT(*-member-functions)
 {
 
     C4_NO_COPY_OR_MOVE(MemoryResourceStack);
@@ -3635,9 +3734,9 @@ public:
 
 protected:
 
-    virtual void* do_allocate(size_t sz, size_t alignment, void *hint) override;
-    virtual void  do_deallocate(void* ptr, size_t sz, size_t alignment) override;
-    virtual void* do_reallocate(void* ptr, size_t oldsz, size_t newsz, size_t alignment) override;
+    void* do_allocate(size_t sz, size_t alignment, void *hint) override;
+    void  do_deallocate(void* ptr, size_t sz, size_t alignment) override;
+    void* do_reallocate(void* ptr, size_t oldsz, size_t newsz, size_t alignment) override;
 };
 
 
@@ -3650,15 +3749,10 @@ protected:
 template<size_t N>
 struct MemoryResourceLinearArr : public MemoryResourceLinear
 {
-    #ifdef _MSC_VER
-    #pragma warning(push)
-    #pragma warning(disable: 4324) // structure was padded due to alignment specifier
-    #endif
+    C4_SUPPRESS_WARNING_MSVC_WITH_PUSH(4324) // structure was padded due to alignment specifier
     alignas(alignof(max_align_t)) char m_arr[N];
-    #ifdef _MSC_VER
-    #pragma warning(pop)
-    #endif
-    MemoryResourceLinearArr() : MemoryResourceLinear(m_arr, N) { name = "linear_arr"; }
+    C4_SUPPRESS_WARNING_MSVC_POP
+    MemoryResourceLinearArr() : MemoryResourceLinear(m_arr, N) { name = "linear_arr"; } // NOLINT
 };
 
 
@@ -3778,25 +3872,25 @@ public:
 
 protected:
 
-    MemoryResource *m_resource;
-    AllocationCounts m_counts;
+    MemoryResource *m_resource; // NOLINT
+    AllocationCounts m_counts; // NOLINT
 
 protected:
 
-    virtual void* do_allocate(size_t sz, size_t alignment, void * /*hint*/) override
+    void* do_allocate(size_t sz, size_t alignment, void * /*hint*/) override
     {
         void *ptr = m_resource->allocate(sz, alignment);
         m_counts.add_counts(ptr, sz);
         return ptr;
     }
 
-    virtual void  do_deallocate(void* ptr, size_t sz, size_t alignment) override
+    void  do_deallocate(void* ptr, size_t sz, size_t alignment) override
     {
         m_counts.rem_counts(ptr, sz);
         m_resource->deallocate(ptr, sz, alignment);
     }
 
-    virtual void* do_reallocate(void* ptr, size_t oldsz, size_t newsz, size_t alignment) override
+    void* do_reallocate(void* ptr, size_t oldsz, size_t newsz, size_t alignment) override
     {
         m_counts.rem_counts(ptr, oldsz);
         void* nptr = m_resource->reallocate(ptr, oldsz, newsz, alignment);
@@ -3809,7 +3903,7 @@ protected:
 //-----------------------------------------------------------------------------
 /** RAII class which binds a memory resource with a scope duration.
  * @ingroup memory_resources */
-struct ScopedMemoryResource
+struct ScopedMemoryResource // NOLINT(*-member-functions)
 {
     MemoryResource *m_original;
 
@@ -3830,7 +3924,7 @@ struct ScopedMemoryResource
 /** RAII class which counts allocations and frees inside a scope. Can
  * optionally set also the memory resource to be used.
  * @ingroup memory_resources */
-struct ScopedMemoryResourceCounts
+struct ScopedMemoryResourceCounts // NOLINT(*-member-functions)
 {
     MemoryResourceCounts mr;
 
@@ -3952,7 +4046,7 @@ inline void construct(U* ptr, Args&&... args)
     new ((void*)ptr) U(std::forward<Args>(args)...);
 }
 template<class U, class I, class ...Args>
-inline void construct_n(U* ptr, I n, Args&&... args)
+inline void construct_n(U* ptr, I n, Args&&... args) // NOLINT
 {
     for(I i = 0; i < n; ++i)
     {
@@ -4427,7 +4521,7 @@ public:
     MemRes() : m_resource(get_memory_resource()) {}
     MemRes(MemoryResource* r) noexcept : m_resource(r ? r : get_memory_resource()) {}
 
-    inline MemoryResource* resource() const { return m_resource; }
+    MemoryResource* resource() const { return m_resource; }
 
 private:
 
@@ -4442,10 +4536,10 @@ class MemResGlobal
 {
 public:
 
-    MemResGlobal() {}
+    MemResGlobal() = default;
     MemResGlobal(MemoryResource* r) noexcept { C4_UNUSED(r); C4_ASSERT(r == get_memory_resource()); }
 
-    inline MemoryResource* resource() const { return get_memory_resource(); }
+    static MemoryResource* resource() { return get_memory_resource(); }
 };
 
 
@@ -4555,7 +4649,7 @@ struct detail::_AllocatorUtil : public MemRes
  * @param MemResProvider
  * @ingroup allocators */
 template<class T, class MemResProvider=MemResGlobal>
-class Allocator : public detail::_AllocatorUtil<MemResProvider>
+class Allocator : public detail::_AllocatorUtil<MemResProvider> // NOLINT(*-member-functions)
 {
 public:
 
@@ -4607,7 +4701,7 @@ public:
     Allocator(Allocator const&) = default;
     Allocator(Allocator     &&) = default;
 
-    Allocator& operator= (Allocator const&) = default; // WTF? why? @see http://en.cppreference.com/w/cpp/memory/polymorphic_allocator
+    Allocator& operator= (Allocator const&) = default; // why? @see http://en.cppreference.com/w/cpp/memory/polymorphic_allocator
     Allocator& operator= (Allocator     &&) = default;
 
     /** returns a default-constructed polymorphic allocator object
@@ -4647,7 +4741,7 @@ public:
 
 /** @ingroup allocators */
 template<class T, size_t N=16, size_t Alignment=alignof(T), class MemResProvider=MemResGlobal>
-class SmallAllocator : public detail::_AllocatorUtil<MemResProvider>
+class SmallAllocator : public detail::_AllocatorUtil<MemResProvider> // NOLINT(*-member-functions)
 {
     static_assert(Alignment >= alignof(T), "invalid alignment");
 
@@ -4965,7 +5059,7 @@ public:
 
     C4_CONSTEXPR14 void update(const void *const data, const size_t size) noexcept
     {
-        auto cdata = static_cast<const unsigned char *>(data);
+        auto const* cdata = static_cast<const unsigned char *>(data);
         auto acc = this->state_;
         for(size_t i = 0; i < size; ++i)
         {
@@ -5158,6 +5252,8 @@ template<class T> struct is_blob_type<blob_<T>> : std::integral_constant<bool, t
 template<class T> struct is_blob_value_type : std::integral_constant<bool, (std::is_fundamental<T>::value || std::is_trivially_copyable<T>::value)> {};
 } // namespace
 
+// NOLINTBEGIN(cppcoreguidelines-special-member-functions,hicpp-special-member-functions)
+
 template<class T>
 struct blob_
 {
@@ -5177,22 +5273,24 @@ public:
     C4_ALWAYS_INLINE blob_& operator=(blob_     && that) noexcept = default;
     C4_ALWAYS_INLINE blob_& operator=(blob_ const& that) noexcept = default;
 
-    template<class U, class=typename std::enable_if<std::is_const<T>::value && std::is_same<typename std::add_const<U>::type, T>::value, U>::type> C4_ALWAYS_INLINE blob_(blob_<U> const& that) noexcept : buf(that.buf), len(that.len) {}
-    template<class U, class=typename std::enable_if<std::is_const<T>::value && std::is_same<typename std::add_const<U>::type, T>::value, U>::type> C4_ALWAYS_INLINE blob_(blob_<U>     && that) noexcept : buf(that.buf), len(that.len) {}
-    template<class U, class=typename std::enable_if<std::is_const<T>::value && std::is_same<typename std::add_const<U>::type, T>::value, U>::type> C4_ALWAYS_INLINE blob_& operator=(blob_<U>     && that) noexcept { buf = that.buf; len = that.len; }
-    template<class U, class=typename std::enable_if<std::is_const<T>::value && std::is_same<typename std::add_const<U>::type, T>::value, U>::type> C4_ALWAYS_INLINE blob_& operator=(blob_<U> const& that) noexcept { buf = that.buf; len = that.len; }
+    template<class U, class=typename std::enable_if<std::is_const<T>::value && std::is_same<typename std::add_const<U>::type, T>::value, U>::type> C4_ALWAYS_INLINE blob_(blob_<U> const& that) noexcept : buf(that.buf), len(that.len) {} // NOLINT
+    template<class U, class=typename std::enable_if<std::is_const<T>::value && std::is_same<typename std::add_const<U>::type, T>::value, U>::type> C4_ALWAYS_INLINE blob_(blob_<U>     && that) noexcept : buf(that.buf), len(that.len) {} // NOLINT
+    template<class U, class=typename std::enable_if<std::is_const<T>::value && std::is_same<typename std::add_const<U>::type, T>::value, U>::type> C4_ALWAYS_INLINE blob_& operator=(blob_<U>     && that) noexcept { buf = that.buf; len = that.len; } // NOLINT
+    template<class U, class=typename std::enable_if<std::is_const<T>::value && std::is_same<typename std::add_const<U>::type, T>::value, U>::type> C4_ALWAYS_INLINE blob_& operator=(blob_<U> const& that) noexcept { buf = that.buf; len = that.len; } // NOLINT
 
-    C4_ALWAYS_INLINE blob_(void       *ptr, size_t n) noexcept : buf(reinterpret_cast<T*>(ptr)), len(n) {}
-    C4_ALWAYS_INLINE blob_(void const *ptr, size_t n) noexcept : buf(reinterpret_cast<T*>(ptr)), len(n) {}
+    C4_ALWAYS_INLINE blob_(void       *ptr, size_t n) noexcept : buf(reinterpret_cast<T*>(ptr)), len(n) {} // NOLINT
+    C4_ALWAYS_INLINE blob_(void const *ptr, size_t n) noexcept : buf(reinterpret_cast<T*>(ptr)), len(n) {} // NOLINT
 
     #define _C4_REQUIRE_BLOBTYPE(ty) class=typename std::enable_if<((!detail::is_blob_type<ty>::value) && (detail::is_blob_value_type<ty>::value)), T>::type
-    template<class U, _C4_REQUIRE_BLOBTYPE(U)> C4_ALWAYS_INLINE blob_(U &var) noexcept : buf(reinterpret_cast<T*>(&var)), len(sizeof(U)) {}
-    template<class U, _C4_REQUIRE_BLOBTYPE(U)> C4_ALWAYS_INLINE blob_(U *ptr, size_t n) noexcept : buf(reinterpret_cast<T*>(ptr)), len(sizeof(U) * n) { C4_ASSERT(is_aligned(ptr)); }
-    template<class U, _C4_REQUIRE_BLOBTYPE(U)> C4_ALWAYS_INLINE blob_& operator= (U &var) noexcept { buf = reinterpret_cast<T*>(&var); len = sizeof(U); return *this; }
-    template<class U, size_t N, _C4_REQUIRE_BLOBTYPE(U)> C4_ALWAYS_INLINE blob_(U (&arr)[N]) noexcept : buf(reinterpret_cast<T*>(arr)), len(sizeof(U) * N) {}
-    template<class U, size_t N, _C4_REQUIRE_BLOBTYPE(U)> C4_ALWAYS_INLINE blob_& operator= (U (&arr)[N]) noexcept { buf = reinterpret_cast<T*>(arr); len = sizeof(U) * N; return *this; }
+    template<class U, _C4_REQUIRE_BLOBTYPE(U)> C4_ALWAYS_INLINE blob_(U &var) noexcept : buf(reinterpret_cast<T*>(&var)), len(sizeof(U)) {} // NOLINT
+    template<class U, _C4_REQUIRE_BLOBTYPE(U)> C4_ALWAYS_INLINE blob_(U *ptr, size_t n) noexcept : buf(reinterpret_cast<T*>(ptr)), len(sizeof(U) * n) { C4_ASSERT(is_aligned(ptr)); } // NOLINT
+    template<class U, _C4_REQUIRE_BLOBTYPE(U)> C4_ALWAYS_INLINE blob_& operator= (U &var) noexcept { buf = reinterpret_cast<T*>(&var); len = sizeof(U); return *this; } // NOLINT
+    template<class U, size_t N, _C4_REQUIRE_BLOBTYPE(U)> C4_ALWAYS_INLINE blob_(U (&arr)[N]) noexcept : buf(reinterpret_cast<T*>(arr)), len(sizeof(U) * N) {} // NOLINT
+    template<class U, size_t N, _C4_REQUIRE_BLOBTYPE(U)> C4_ALWAYS_INLINE blob_& operator= (U (&arr)[N]) noexcept { buf = reinterpret_cast<T*>(arr); len = sizeof(U) * N; return *this; } // NOLINT
     #undef _C4_REQUIRE_BLOBTYPE
 };
+
+// NOLINTEND(cppcoreguidelines-special-member-functions,hicpp-special-member-functions)
 
 /** an immutable binary blob */
 using cblob = blob_<cbyte>;
@@ -5343,12 +5441,9 @@ static inline void _do_reverse(C *C4_RESTRICT first, C *C4_RESTRICT last)
  * @see a [quickstart
  * sample](https://rapidyaml.readthedocs.io/latest/doxygen/group__doc__quickstart.html#ga43e253da0692c13967019446809c1113)
  * in rapidyaml's documentation.
- *
- * @see @ref substr and @ref to_substr()
- * @see @ref csubstr and @ref to_csubstr()
  */
 template<class C>
-struct C4CORE_EXPORT basic_substring
+struct C4CORE_EXPORT basic_substring // NOLINT(cppcoreguidelines-special-member-functions,hicpp-special-member-functions)
 {
 public:
 
@@ -5806,11 +5901,11 @@ public:
     /** @name Lookup methods */
     /** @{ */
 
-    inline size_t find(const C c, size_t start_pos=0) const
+    size_t find(const C c, size_t start_pos=0) const
     {
         return first_of(c, start_pos);
     }
-    inline size_t find(ro_substr pattern, size_t start_pos=0) const
+    size_t find(ro_substr pattern, size_t start_pos=0) const
     {
         C4_ASSERT(start_pos == npos || (start_pos >= 0 && start_pos <= len));
         if(len < pattern.len) return npos;
@@ -5837,7 +5932,7 @@ public:
 public:
 
     /** count the number of occurrences of c */
-    inline size_t count(const C c, size_t pos=0) const
+    size_t count(const C c, size_t pos=0) const
     {
         C4_ASSERT(pos >= 0 && pos <= len);
         size_t num = 0;
@@ -5851,7 +5946,7 @@ public:
     }
 
     /** count the number of occurrences of s */
-    inline size_t count(ro_substr c, size_t pos=0) const
+    size_t count(ro_substr c, size_t pos=0) const
     {
         C4_ASSERT(pos >= 0 && pos <= len);
         size_t num = 0;
@@ -5865,14 +5960,14 @@ public:
     }
 
     /** get the substr consisting of the first occurrence of @p c after @p pos, or an empty substr if none occurs */
-    inline basic_substring select(const C c, size_t pos=0) const
+    basic_substring select(const C c, size_t pos=0) const
     {
         pos = find(c, pos);
         return pos != npos ? sub(pos, 1) : basic_substring();
     }
 
     /** get the substr consisting of the first occurrence of @p pattern after @p pos, or an empty substr if none occurs */
-    inline basic_substring select(ro_substr pattern, size_t pos=0) const
+    basic_substring select(ro_substr pattern, size_t pos=0) const
     {
         pos = find(pattern, pos);
         return pos != npos ? sub(pos, pattern.len) : basic_substring();
@@ -5884,7 +5979,7 @@ public:
     {
         size_t which;
         size_t pos;
-        inline operator bool() const { return which != NONE && pos != npos; }
+        operator bool() const { return which != NONE && pos != npos; }
     };
 
     first_of_any_result first_of_any(ro_substr s0, ro_substr s1) const
@@ -6583,12 +6678,12 @@ public:
             else if(c == '.')
             {
                 ++pos;
-                goto fractional_part_dec;
+                goto fractional_part_dec; // NOLINT
             }
             else if(c == 'e' || c == 'E')
             {
                 ++pos;
-                goto power_part_dec;
+                goto power_part_dec; // NOLINT
             }
             else if(_is_delim_char(c))
             {
@@ -6617,7 +6712,7 @@ public:
             else if(c == 'e' || c == 'E')
             {
                 ++pos;
-                goto power_part_dec;
+                goto power_part_dec; // NOLINT
             }
             else if(_is_delim_char(c))
             {
@@ -6670,12 +6765,12 @@ public:
             else if(c == '.')
             {
                 ++pos;
-                goto fractional_part_hex;
+                goto fractional_part_hex; // NOLINT
             }
             else if(c == 'p' || c == 'P')
             {
                 ++pos;
-                goto power_part_hex;
+                goto power_part_hex; // NOLINT
             }
             else if(_is_delim_char(c))
             {
@@ -6704,7 +6799,7 @@ public:
             else if(c == 'p' || c == 'P')
             {
                 ++pos;
-                goto power_part_hex;
+                goto power_part_hex; // NOLINT
             }
             else if(_is_delim_char(c))
             {
@@ -6760,12 +6855,12 @@ public:
             else if(c == '.')
             {
                 ++pos;
-                goto fractional_part_bin;
+                goto fractional_part_bin; // NOLINT
             }
             else if(c == 'p' || c == 'P')
             {
                 ++pos;
-                goto power_part_bin;
+                goto power_part_bin; // NOLINT
             }
             else if(_is_delim_char(c))
             {
@@ -6794,7 +6889,7 @@ public:
             else if(c == 'p' || c == 'P')
             {
                 ++pos;
-                goto power_part_bin;
+                goto power_part_bin; // NOLINT
             }
             else if(_is_delim_char(c))
             {
@@ -6850,12 +6945,12 @@ public:
             else if(c == '.')
             {
                 ++pos;
-                goto fractional_part_oct;
+                goto fractional_part_oct; // NOLINT
             }
             else if(c == 'p' || c == 'P')
             {
                 ++pos;
-                goto power_part_oct;
+                goto power_part_oct; // NOLINT
             }
             else if(_is_delim_char(c))
             {
@@ -6884,7 +6979,7 @@ public:
             else if(c == 'p' || c == 'P')
             {
                 ++pos;
-                goto power_part_oct;
+                goto power_part_oct; // NOLINT
             }
             else if(_is_delim_char(c))
             {
@@ -6990,7 +7085,7 @@ private:
             }
 
             split_iterator_impl& operator++ () { _tick(); return *this; }
-            split_iterator_impl  operator++ (int) { split_iterator_impl it = *this; _tick(); return it; }
+            split_iterator_impl  operator++ (int) { split_iterator_impl it = *this; _tick(); return it; } // NOLINT
 
             basic_substring& operator*  () { return  m_str; }
             basic_substring* operator-> () { return &m_str; }
@@ -7345,7 +7440,7 @@ public:
     C4_REQUIRE_RW(basic_substring) erase_range(size_t first, size_t last)
     {
         C4_ASSERT(first <= last);
-        return erase(first, static_cast<size_t>(last-first));
+        return erase(first, static_cast<size_t>(last-first)); // NOLINT
     }
 
     /** erase a part of the string.
@@ -7598,8 +7693,13 @@ inline OStream& operator<< (OStream& os, basic_substring<C> s)
 #   pragma GCC diagnostic push
 #   pragma GCC diagnostic ignored "-Wnarrowing"
 #   pragma GCC diagnostic ignored "-Wconversion"
+#   pragma GCC diagnostic ignored "-Wsign-conversion"
 #   pragma GCC diagnostic ignored "-Wuseless-cast"
 #   pragma GCC diagnostic ignored "-Wold-style-cast"
+#   pragma GCC diagnostic ignored "-Warray-bounds"
+#   if __GNUC__ >= 5
+#       pragma GCC diagnostic ignored "-Wshift-count-overflow"
+#   endif
 #endif
 
 // fast_float by Daniel Lemire
@@ -7616,14 +7716,15 @@ inline OStream& operator<< (OStream& os, basic_substring<C> s)
 // with contributions from Jan Pharago
 // with contributions from Maya Warrier
 // with contributions from Taha Khokhar
+// with contributions from Anders Dalvander
 //
 //
 // MIT License Notice
 //
 //    MIT License
-//    
+//
 //    Copyright (c) 2021 The fast_float authors
-//    
+//
 //    Permission is hereby granted, free of charge, to any
 //    person obtaining a copy of this software and associated
 //    documentation files (the "Software"), to deal in the
@@ -7633,11 +7734,11 @@ inline OStream& operator<< (OStream& os, basic_substring<C> s)
 //    the Software, and to permit persons to whom the Software
 //    is furnished to do so, subject to the following
 //    conditions:
-//    
+//
 //    The above copyright notice and this permission notice
 //    shall be included in all copies or substantial portions
 //    of the Software.
-//    
+//
 //    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
 //    ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
 //    TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
@@ -7659,7 +7760,7 @@ inline OStream& operator<< (OStream& os, basic_substring<C> s)
 #endif
 
 // Testing for https://wg21.link/N3652, adopted in C++14
-#if __cpp_constexpr >= 201304
+#if defined(__cpp_constexpr) && __cpp_constexpr >= 201304
 #define FASTFLOAT_CONSTEXPR14 constexpr
 #else
 #define FASTFLOAT_CONSTEXPR14
@@ -7671,21 +7772,28 @@ inline OStream& operator<< (OStream& os, basic_substring<C> s)
 #define FASTFLOAT_HAS_BIT_CAST 0
 #endif
 
-#if defined(__cpp_lib_is_constant_evaluated) && __cpp_lib_is_constant_evaluated >= 201811L
+#if defined(__cpp_lib_is_constant_evaluated) &&                                \
+    __cpp_lib_is_constant_evaluated >= 201811L
 #define FASTFLOAT_HAS_IS_CONSTANT_EVALUATED 1
 #else
 #define FASTFLOAT_HAS_IS_CONSTANT_EVALUATED 0
 #endif
 
 // Testing for relevant C++20 constexpr library features
-#if FASTFLOAT_HAS_IS_CONSTANT_EVALUATED \
-    && FASTFLOAT_HAS_BIT_CAST \
-    && __cpp_lib_constexpr_algorithms >= 201806L /*For std::copy and std::fill*/
+#if FASTFLOAT_HAS_IS_CONSTANT_EVALUATED && FASTFLOAT_HAS_BIT_CAST &&           \
+    defined(__cpp_lib_constexpr_algorithms) &&                                 \
+    __cpp_lib_constexpr_algorithms >= 201806L /*For std::copy and std::fill*/
 #define FASTFLOAT_CONSTEXPR20 constexpr
 #define FASTFLOAT_IS_CONSTEXPR 1
 #else
 #define FASTFLOAT_CONSTEXPR20
 #define FASTFLOAT_IS_CONSTEXPR 0
+#endif
+
+#if __cplusplus >= 201703L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
+#define FASTFLOAT_DETAIL_MUST_DEFINE_CONSTEXPR_VARIABLE 0
+#else
+#define FASTFLOAT_DETAIL_MUST_DEFINE_CONSTEXPR_VARIABLE 1
 #endif
 
 #endif // FASTFLOAT_CONSTEXPR_FEATURE_DETECT_H
@@ -7700,85 +7808,113 @@ inline OStream& operator<< (OStream& os, basic_substring<C> s)
 //included above:
 //#include <cstring>
 //included above:
+//#include <limits>
+//included above:
 //#include <type_traits>
 #include <system_error>
 #ifdef __has_include
-  #if __has_include(<stdfloat>) && (__cplusplus > 202002L || _MSVC_LANG > 202002L)
-    #include <stdfloat>
-  #endif
+#if __has_include(<stdfloat>) && (__cplusplus > 202002L || (defined(_MSVC_LANG) && (_MSVC_LANG > 202002L)))
+#include <stdfloat>
 #endif
+#endif
+
+#define FASTFLOAT_VERSION_MAJOR 8
+#define FASTFLOAT_VERSION_MINOR 0
+#define FASTFLOAT_VERSION_PATCH 0
+
+#define FASTFLOAT_STRINGIZE_IMPL(x) #x
+#define FASTFLOAT_STRINGIZE(x) FASTFLOAT_STRINGIZE_IMPL(x)
+
+#define FASTFLOAT_VERSION_STR                                                  \
+  FASTFLOAT_STRINGIZE(FASTFLOAT_VERSION_MAJOR)                                 \
+  "." FASTFLOAT_STRINGIZE(FASTFLOAT_VERSION_MINOR) "." FASTFLOAT_STRINGIZE(    \
+      FASTFLOAT_VERSION_PATCH)
+
+#define FASTFLOAT_VERSION                                                      \
+  (FASTFLOAT_VERSION_MAJOR * 10000 + FASTFLOAT_VERSION_MINOR * 100 +           \
+   FASTFLOAT_VERSION_PATCH)
 
 namespace fast_float {
 
-#define FASTFLOAT_JSONFMT (1 << 5)
-#define FASTFLOAT_FORTRANFMT (1 << 6)
+enum class chars_format : uint64_t;
 
-enum chars_format {
+namespace detail {
+constexpr chars_format basic_json_fmt = chars_format(1 << 5);
+constexpr chars_format basic_fortran_fmt = chars_format(1 << 6);
+} // namespace detail
+
+enum class chars_format : uint64_t {
   scientific = 1 << 0,
   fixed = 1 << 2,
   hex = 1 << 3,
   no_infnan = 1 << 4,
   // RFC 8259: https://datatracker.ietf.org/doc/html/rfc8259#section-6
-  json = FASTFLOAT_JSONFMT | fixed | scientific | no_infnan,
+  json = uint64_t(detail::basic_json_fmt) | fixed | scientific | no_infnan,
   // Extension of RFC 8259 where, e.g., "inf" and "nan" are allowed.
-  json_or_infnan = FASTFLOAT_JSONFMT | fixed | scientific,
-  fortran = FASTFLOAT_FORTRANFMT | fixed | scientific,
-  general = fixed | scientific
+  json_or_infnan = uint64_t(detail::basic_json_fmt) | fixed | scientific,
+  fortran = uint64_t(detail::basic_fortran_fmt) | fixed | scientific,
+  general = fixed | scientific,
+  allow_leading_plus = 1 << 7,
+  skip_white_space = 1 << 8,
 };
 
-template <typename UC>
-struct from_chars_result_t {
-  UC const* ptr;
+template <typename UC> struct from_chars_result_t {
+  UC const *ptr;
   std::errc ec;
 };
+
 using from_chars_result = from_chars_result_t<char>;
 
-template <typename UC>
-struct parse_options_t {
+template <typename UC> struct parse_options_t {
   constexpr explicit parse_options_t(chars_format fmt = chars_format::general,
-    UC dot = UC('.'))
-    : format(fmt), decimal_point(dot) {}
+                                     UC dot = UC('.'), int b = 10)
+      : format(fmt), decimal_point(dot), base(b) {}
 
   /** Which number formats are accepted */
   chars_format format;
   /** The character used as decimal point */
   UC decimal_point;
+  /** The base used for integers */
+  int base;
 };
+
 using parse_options = parse_options_t<char>;
 
-}
+} // namespace fast_float
 
 #if FASTFLOAT_HAS_BIT_CAST
 #include <bit>
 #endif
 
-#if (defined(__x86_64) || defined(__x86_64__) || defined(_M_X64)   \
-       || defined(__amd64) || defined(__aarch64__) || defined(_M_ARM64) \
-       || defined(__MINGW64__)                                          \
-       || defined(__s390x__)                                            \
-       || (defined(__ppc64__) || defined(__PPC64__) || defined(__ppc64le__) || defined(__PPC64LE__)) \
-       || defined(__loongarch64) )
+#if (defined(__x86_64) || defined(__x86_64__) || defined(_M_X64) ||            \
+     defined(__amd64) || defined(__aarch64__) || defined(_M_ARM64) ||          \
+     defined(__MINGW64__) || defined(__s390x__) ||                             \
+     (defined(__ppc64__) || defined(__PPC64__) || defined(__ppc64le__) ||      \
+      defined(__PPC64LE__)) ||                                                 \
+     defined(__loongarch64))
 #define FASTFLOAT_64BIT 1
-#elif (defined(__i386) || defined(__i386__) || defined(_M_IX86)   \
-     || defined(__arm__) || defined(_M_ARM) || defined(__ppc__)   \
-     || defined(__MINGW32__) || defined(__EMSCRIPTEN__))
+#elif (defined(__i386) || defined(__i386__) || defined(_M_IX86) ||             \
+       defined(__arm__) || defined(_M_ARM) || defined(__ppc__) ||              \
+       defined(__MINGW32__) || defined(__EMSCRIPTEN__))
 #define FASTFLOAT_32BIT 1
 #else
   // Need to check incrementally, since SIZE_MAX is a size_t, avoid overflow.
-  // We can never tell the register width, but the SIZE_MAX is a good approximation.
-  // UINTPTR_MAX and INTPTR_MAX are optional, so avoid them for max portability.
-  #if SIZE_MAX == 0xffff
-    #error Unknown platform (16-bit, unsupported)
-  #elif SIZE_MAX == 0xffffffff
-    #define FASTFLOAT_32BIT 1
-  #elif SIZE_MAX == 0xffffffffffffffff
-    #define FASTFLOAT_64BIT 1
-  #else
-    #error Unknown platform (not 32-bit, not 64-bit?)
-  #endif
+// We can never tell the register width, but the SIZE_MAX is a good
+// approximation. UINTPTR_MAX and INTPTR_MAX are optional, so avoid them for max
+// portability.
+#if SIZE_MAX == 0xffff
+#error Unknown platform (16-bit, unsupported)
+#elif SIZE_MAX == 0xffffffff
+#define FASTFLOAT_32BIT 1
+#elif SIZE_MAX == 0xffffffffffffffff
+#define FASTFLOAT_64BIT 1
+#else
+#error Unknown platform (not 32-bit, not 64-bit?)
+#endif
 #endif
 
-#if ((defined(_WIN32) || defined(_WIN64)) && !defined(__clang__))
+#if ((defined(_WIN32) || defined(_WIN64)) && !defined(__clang__)) ||           \
+    (defined(_M_ARM64) && !defined(__MINGW32__))
 //included above:
 //#include <intrin.h>
 #endif
@@ -7823,9 +7959,9 @@ using parse_options = parse_options_t<char>;
 #endif
 #endif
 
-#if defined(__SSE2__) || \
-  (defined(FASTFLOAT_VISUAL_STUDIO) && \
-    (defined(_M_AMD64) || defined(_M_X64) || (defined(_M_IX86_FP) && _M_IX86_FP == 2)))
+#if defined(__SSE2__) || (defined(FASTFLOAT_VISUAL_STUDIO) &&                  \
+                          (defined(_M_AMD64) || defined(_M_X64) ||             \
+                           (defined(_M_IX86_FP) && _M_IX86_FP == 2)))
 #define FASTFLOAT_SSE2 1
 #endif
 
@@ -7839,21 +7975,18 @@ using parse_options = parse_options_t<char>;
 
 #if defined(__GNUC__)
 // disable -Wcast-align=strict (GCC only)
-#define FASTFLOAT_SIMD_DISABLE_WARNINGS \
-  _Pragma("GCC diagnostic push") \
-  _Pragma("GCC diagnostic ignored \"-Wcast-align\"")
+#define FASTFLOAT_SIMD_DISABLE_WARNINGS                                        \
+  _Pragma("GCC diagnostic push")                                               \
+      _Pragma("GCC diagnostic ignored \"-Wcast-align\"")
 #else
 #define FASTFLOAT_SIMD_DISABLE_WARNINGS
 #endif
 
 #if defined(__GNUC__)
-#define FASTFLOAT_SIMD_RESTORE_WARNINGS \
-  _Pragma("GCC diagnostic pop")
+#define FASTFLOAT_SIMD_RESTORE_WARNINGS _Pragma("GCC diagnostic pop")
 #else
 #define FASTFLOAT_SIMD_RESTORE_WARNINGS
 #endif
-
-
 
 #ifdef FASTFLOAT_VISUAL_STUDIO
 #define fastfloat_really_inline __forceinline
@@ -7862,18 +7995,24 @@ using parse_options = parse_options_t<char>;
 #endif
 
 #ifndef FASTFLOAT_ASSERT
-#define FASTFLOAT_ASSERT(x)  { ((void)(x)); }
+#define FASTFLOAT_ASSERT(x)                                                    \
+  { ((void)(x)); }
 #endif
 
 #ifndef FASTFLOAT_DEBUG_ASSERT
-#define FASTFLOAT_DEBUG_ASSERT(x) { ((void)(x)); }
+#define FASTFLOAT_DEBUG_ASSERT(x)                                              \
+  { ((void)(x)); }
 #endif
 
 // rust style `try!()` macro, or `?` operator
-#define FASTFLOAT_TRY(x) { if (!(x)) return false; }
+#define FASTFLOAT_TRY(x)                                                       \
+  {                                                                            \
+    if (!(x))                                                                  \
+      return false;                                                            \
+  }
 
-#define FASTFLOAT_ENABLE_IF(...) typename std::enable_if<(__VA_ARGS__), int>::type
-
+#define FASTFLOAT_ENABLE_IF(...)                                               \
+  typename std::enable_if<(__VA_ARGS__), int>::type
 
 namespace fast_float {
 
@@ -7886,35 +8025,58 @@ fastfloat_really_inline constexpr bool cpp20_and_in_constexpr() {
 }
 
 template <typename T>
-fastfloat_really_inline constexpr bool is_supported_float_type() {
-  return std::is_same<T, float>::value || std::is_same<T, double>::value
-#if __STDCPP_FLOAT32_T__
-    || std::is_same<T, std::float32_t>::value
+struct is_supported_float_type
+    : std::integral_constant<
+          bool, std::is_same<T, double>::value || std::is_same<T, float>::value
+#ifdef __STDCPP_FLOAT64_T__
+                    || std::is_same<T, std::float64_t>::value
 #endif
-#if __STDCPP_FLOAT64_T__
-    || std::is_same<T, std::float64_t>::value
+#ifdef __STDCPP_FLOAT32_T__
+                    || std::is_same<T, std::float32_t>::value
 #endif
-  ;
-}
+#ifdef __STDCPP_FLOAT16_T__
+                    || std::is_same<T, std::float16_t>::value
+#endif
+#ifdef __STDCPP_BFLOAT16_T__
+                    || std::is_same<T, std::bfloat16_t>::value
+#endif
+          > {
+};
+
+template <typename T>
+using equiv_uint_t = typename std::conditional<
+    sizeof(T) == 1, uint8_t,
+    typename std::conditional<
+        sizeof(T) == 2, uint16_t,
+        typename std::conditional<sizeof(T) == 4, uint32_t,
+                                  uint64_t>::type>::type>::type;
+
+template <typename T> struct is_supported_integer_type : std::is_integral<T> {};
 
 template <typename UC>
-fastfloat_really_inline constexpr bool is_supported_char_type() {
-  return
-    std::is_same<UC, char>::value ||
-    std::is_same<UC, wchar_t>::value ||
-    std::is_same<UC, char16_t>::value ||
-    std::is_same<UC, char32_t>::value;
-}
+struct is_supported_char_type
+    : std::integral_constant<bool, std::is_same<UC, char>::value ||
+                                       std::is_same<UC, wchar_t>::value ||
+                                       std::is_same<UC, char16_t>::value ||
+                                       std::is_same<UC, char32_t>::value
+#ifdef __cpp_char8_t
+                                       || std::is_same<UC, char8_t>::value
+#endif
+                             > {
+};
 
 // Compares two ASCII strings in a case insensitive manner.
 template <typename UC>
 inline FASTFLOAT_CONSTEXPR14 bool
-fastfloat_strncasecmp(UC const * input1, UC const * input2, size_t length) {
-  char running_diff{0};
+fastfloat_strncasecmp(UC const *actual_mixedcase, UC const *expected_lowercase,
+                      size_t length) {
   for (size_t i = 0; i < length; ++i) {
-    running_diff |= (char(input1[i]) ^ char(input2[i]));
+    UC const actual = actual_mixedcase[i];
+    if ((actual < 256 ? actual | 32 : actual) != expected_lowercase[i]) {
+      return false;
+    }
   }
-  return (running_diff == 0) || (running_diff == 32);
+  return true;
 }
 
 #ifndef FLT_EVAL_METHOD
@@ -7922,18 +8084,17 @@ fastfloat_strncasecmp(UC const * input1, UC const * input2, size_t length) {
 #endif
 
 // a pointer and a length to a contiguous block of memory
-template <typename T>
-struct span {
-  const T* ptr;
+template <typename T> struct span {
+  T const *ptr;
   size_t length;
-  constexpr span(const T* _ptr, size_t _length) : ptr(_ptr), length(_length) {}
+
+  constexpr span(T const *_ptr, size_t _length) : ptr(_ptr), length(_length) {}
+
   constexpr span() : ptr(nullptr), length(0) {}
 
-  constexpr size_t len() const noexcept {
-    return length;
-  }
+  constexpr size_t len() const noexcept { return length; }
 
-  FASTFLOAT_CONSTEXPR14 const T& operator[](size_t index) const noexcept {
+  FASTFLOAT_CONSTEXPR14 const T &operator[](size_t index) const noexcept {
     FASTFLOAT_DEBUG_ASSERT(index < length);
     return ptr[index];
   }
@@ -7942,39 +8103,58 @@ struct span {
 struct value128 {
   uint64_t low;
   uint64_t high;
+
   constexpr value128(uint64_t _low, uint64_t _high) : low(_low), high(_high) {}
+
   constexpr value128() : low(0), high(0) {}
 };
 
 /* Helper C++14 constexpr generic implementation of leading_zeroes */
-fastfloat_really_inline FASTFLOAT_CONSTEXPR14
-int leading_zeroes_generic(uint64_t input_num, int last_bit = 0) {
-    if(input_num & uint64_t(0xffffffff00000000)) { input_num >>= 32; last_bit |= 32; }
-    if(input_num & uint64_t(        0xffff0000)) { input_num >>= 16; last_bit |= 16; }
-    if(input_num & uint64_t(            0xff00)) { input_num >>=  8; last_bit |=  8; }
-    if(input_num & uint64_t(              0xf0)) { input_num >>=  4; last_bit |=  4; }
-    if(input_num & uint64_t(               0xc)) { input_num >>=  2; last_bit |=  2; }
-    if(input_num & uint64_t(               0x2)) { /* input_num >>=  1; */ last_bit |=  1; }
-    return 63 - last_bit;
+fastfloat_really_inline FASTFLOAT_CONSTEXPR14 int
+leading_zeroes_generic(uint64_t input_num, int last_bit = 0) {
+  if (input_num & uint64_t(0xffffffff00000000)) {
+    input_num >>= 32;
+    last_bit |= 32;
+  }
+  if (input_num & uint64_t(0xffff0000)) {
+    input_num >>= 16;
+    last_bit |= 16;
+  }
+  if (input_num & uint64_t(0xff00)) {
+    input_num >>= 8;
+    last_bit |= 8;
+  }
+  if (input_num & uint64_t(0xf0)) {
+    input_num >>= 4;
+    last_bit |= 4;
+  }
+  if (input_num & uint64_t(0xc)) {
+    input_num >>= 2;
+    last_bit |= 2;
+  }
+  if (input_num & uint64_t(0x2)) { /* input_num >>=  1; */
+    last_bit |= 1;
+  }
+  return 63 - last_bit;
 }
 
 /* result might be undefined when input_num is zero */
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-int leading_zeroes(uint64_t input_num) {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 int
+leading_zeroes(uint64_t input_num) {
   assert(input_num > 0);
   if (cpp20_and_in_constexpr()) {
     return leading_zeroes_generic(input_num);
   }
 #ifdef FASTFLOAT_VISUAL_STUDIO
-  #if defined(_M_X64) || defined(_M_ARM64)
+#if defined(_M_X64) || defined(_M_ARM64)
   unsigned long leading_zero = 0;
   // Search the mask data from most significant bit (MSB)
   // to least significant bit (LSB) for a set bit (1).
   _BitScanReverse64(&leading_zero, input_num);
   return (int)(63 - leading_zero);
-  #else
+#else
   return leading_zeroes_generic(input_num);
-  #endif
+#endif
 #else
   return __builtin_clzll(input_num);
 #endif
@@ -7982,11 +8162,11 @@ int leading_zeroes(uint64_t input_num) {
 
 // slow emulation routine for 32-bit
 fastfloat_really_inline constexpr uint64_t emulu(uint32_t x, uint32_t y) {
-    return x * (uint64_t)y;
+  return x * (uint64_t)y;
 }
 
-fastfloat_really_inline FASTFLOAT_CONSTEXPR14
-uint64_t umul128_generic(uint64_t ab, uint64_t cd, uint64_t *hi) {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR14 uint64_t
+umul128_generic(uint64_t ab, uint64_t cd, uint64_t *hi) {
   uint64_t ad = emulu((uint32_t)(ab >> 32), (uint32_t)cd);
   uint64_t bd = emulu((uint32_t)ab, (uint32_t)cd);
   uint64_t adbc = ad + emulu((uint32_t)ab, (uint32_t)(cd >> 32));
@@ -8001,18 +8181,18 @@ uint64_t umul128_generic(uint64_t ab, uint64_t cd, uint64_t *hi) {
 
 // slow emulation routine for 32-bit
 #if !defined(__MINGW64__)
-fastfloat_really_inline FASTFLOAT_CONSTEXPR14
-uint64_t _umul128(uint64_t ab, uint64_t cd, uint64_t *hi) {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR14 uint64_t _umul128(uint64_t ab,
+                                                                uint64_t cd,
+                                                                uint64_t *hi) {
   return umul128_generic(ab, cd, hi);
 }
 #endif // !__MINGW64__
 
 #endif // FASTFLOAT_32BIT
 
-
 // compute 64-bit a*b
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-value128 full_multiplication(uint64_t a, uint64_t b) {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 value128
+full_multiplication(uint64_t a, uint64_t b) {
   if (cpp20_and_in_constexpr()) {
     value128 answer;
     answer.low = umul128_generic(a, b, &answer.high);
@@ -8024,7 +8204,8 @@ value128 full_multiplication(uint64_t a, uint64_t b) {
   // But MinGW on ARM64 doesn't have native support for 64-bit multiplications
   answer.high = __umulh(a, b);
   answer.low = a * b;
-#elif defined(FASTFLOAT_32BIT) || (defined(_WIN64) && !defined(__clang__))
+#elif defined(FASTFLOAT_32BIT) ||                                              \
+    (defined(_WIN64) && !defined(__clang__) && !defined(_M_ARM64))
   answer.low = _umul128(a, b, &answer.high); // _umul128 not available on ARM64
 #elif defined(FASTFLOAT_64BIT) && defined(__SIZEOF_INT128__)
   __uint128_t r = ((__uint128_t)a) * b;
@@ -8040,10 +8221,12 @@ struct adjusted_mantissa {
   uint64_t mantissa{0};
   int32_t power2{0}; // a negative value indicates an invalid result
   adjusted_mantissa() = default;
-  constexpr bool operator==(const adjusted_mantissa &o) const {
+
+  constexpr bool operator==(adjusted_mantissa const &o) const {
     return mantissa == o.mantissa && power2 == o.power2;
   }
-  constexpr bool operator!=(const adjusted_mantissa &o) const {
+
+  constexpr bool operator!=(adjusted_mantissa const &o) const {
     return mantissa != o.mantissa || power2 != o.power2;
   }
 };
@@ -8054,65 +8237,75 @@ constexpr static int32_t invalid_am_bias = -0x8000;
 // used for binary_format_lookup_tables<T>::max_mantissa
 constexpr uint64_t constant_55555 = 5 * 5 * 5 * 5 * 5;
 
-template <typename T, typename U = void>
-struct binary_format_lookup_tables;
+template <typename T, typename U = void> struct binary_format_lookup_tables;
 
 template <typename T> struct binary_format : binary_format_lookup_tables<T> {
-  using equiv_uint = typename std::conditional<sizeof(T) == 4, uint32_t, uint64_t>::type;
+  using equiv_uint = equiv_uint_t<T>;
 
-  static inline constexpr int mantissa_explicit_bits();
-  static inline constexpr int minimum_exponent();
-  static inline constexpr int infinite_power();
-  static inline constexpr int sign_index();
-  static inline constexpr int min_exponent_fast_path(); // used when fegetround() == FE_TONEAREST
-  static inline constexpr int max_exponent_fast_path();
-  static inline constexpr int max_exponent_round_to_even();
-  static inline constexpr int min_exponent_round_to_even();
-  static inline constexpr uint64_t max_mantissa_fast_path(int64_t power);
-  static inline constexpr uint64_t max_mantissa_fast_path(); // used when fegetround() == FE_TONEAREST
-  static inline constexpr int largest_power_of_ten();
-  static inline constexpr int smallest_power_of_ten();
-  static inline constexpr T exact_power_of_ten(int64_t power);
-  static inline constexpr size_t max_digits();
-  static inline constexpr equiv_uint exponent_mask();
-  static inline constexpr equiv_uint mantissa_mask();
-  static inline constexpr equiv_uint hidden_bit_mask();
+  static constexpr int mantissa_explicit_bits();
+  static constexpr int minimum_exponent();
+  static constexpr int infinite_power();
+  static constexpr int sign_index();
+  static constexpr int
+  min_exponent_fast_path(); // used when fegetround() == FE_TONEAREST
+  static constexpr int max_exponent_fast_path();
+  static constexpr int max_exponent_round_to_even();
+  static constexpr int min_exponent_round_to_even();
+  static constexpr uint64_t max_mantissa_fast_path(int64_t power);
+  static constexpr uint64_t
+  max_mantissa_fast_path(); // used when fegetround() == FE_TONEAREST
+  static constexpr int largest_power_of_ten();
+  static constexpr int smallest_power_of_ten();
+  static constexpr T exact_power_of_ten(int64_t power);
+  static constexpr size_t max_digits();
+  static constexpr equiv_uint exponent_mask();
+  static constexpr equiv_uint mantissa_mask();
+  static constexpr equiv_uint hidden_bit_mask();
 };
 
-template <typename U>
-struct binary_format_lookup_tables<double, U> {
+template <typename U> struct binary_format_lookup_tables<double, U> {
   static constexpr double powers_of_ten[] = {
       1e0,  1e1,  1e2,  1e3,  1e4,  1e5,  1e6,  1e7,  1e8,  1e9,  1e10, 1e11,
       1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19, 1e20, 1e21, 1e22};
 
   // Largest integer value v so that (5**index * v) <= 1<<53.
-  // 0x10000000000000 == 1 << 53
+  // 0x20000000000000 == 1 << 53
   static constexpr uint64_t max_mantissa[] = {
-      0x10000000000000,
-      0x10000000000000 / 5,
-      0x10000000000000 / (5 * 5),
-      0x10000000000000 / (5 * 5 * 5),
-      0x10000000000000 / (5 * 5 * 5 * 5),
-      0x10000000000000 / (constant_55555),
-      0x10000000000000 / (constant_55555 * 5),
-      0x10000000000000 / (constant_55555 * 5 * 5),
-      0x10000000000000 / (constant_55555 * 5 * 5 * 5),
-      0x10000000000000 / (constant_55555 * 5 * 5 * 5 * 5),
-      0x10000000000000 / (constant_55555 * constant_55555),
-      0x10000000000000 / (constant_55555 * constant_55555 * 5),
-      0x10000000000000 / (constant_55555 * constant_55555 * 5 * 5),
-      0x10000000000000 / (constant_55555 * constant_55555 * 5 * 5 * 5),
-      0x10000000000000 / (constant_55555 * constant_55555 * constant_55555),
-      0x10000000000000 / (constant_55555 * constant_55555 * constant_55555 * 5),
-      0x10000000000000 / (constant_55555 * constant_55555 * constant_55555 * 5 * 5),
-      0x10000000000000 / (constant_55555 * constant_55555 * constant_55555 * 5 * 5 * 5),
-      0x10000000000000 / (constant_55555 * constant_55555 * constant_55555 * 5 * 5 * 5 * 5),
-      0x10000000000000 / (constant_55555 * constant_55555 * constant_55555 * constant_55555),
-      0x10000000000000 / (constant_55555 * constant_55555 * constant_55555 * constant_55555 * 5),
-      0x10000000000000 / (constant_55555 * constant_55555 * constant_55555 * constant_55555 * 5 * 5),
-      0x10000000000000 / (constant_55555 * constant_55555 * constant_55555 * constant_55555 * 5 * 5 * 5),
-      0x10000000000000 / (constant_55555 * constant_55555 * constant_55555 * constant_55555 * 5 * 5 * 5 * 5)};
+      0x20000000000000,
+      0x20000000000000 / 5,
+      0x20000000000000 / (5 * 5),
+      0x20000000000000 / (5 * 5 * 5),
+      0x20000000000000 / (5 * 5 * 5 * 5),
+      0x20000000000000 / (constant_55555),
+      0x20000000000000 / (constant_55555 * 5),
+      0x20000000000000 / (constant_55555 * 5 * 5),
+      0x20000000000000 / (constant_55555 * 5 * 5 * 5),
+      0x20000000000000 / (constant_55555 * 5 * 5 * 5 * 5),
+      0x20000000000000 / (constant_55555 * constant_55555),
+      0x20000000000000 / (constant_55555 * constant_55555 * 5),
+      0x20000000000000 / (constant_55555 * constant_55555 * 5 * 5),
+      0x20000000000000 / (constant_55555 * constant_55555 * 5 * 5 * 5),
+      0x20000000000000 / (constant_55555 * constant_55555 * constant_55555),
+      0x20000000000000 / (constant_55555 * constant_55555 * constant_55555 * 5),
+      0x20000000000000 /
+          (constant_55555 * constant_55555 * constant_55555 * 5 * 5),
+      0x20000000000000 /
+          (constant_55555 * constant_55555 * constant_55555 * 5 * 5 * 5),
+      0x20000000000000 /
+          (constant_55555 * constant_55555 * constant_55555 * 5 * 5 * 5 * 5),
+      0x20000000000000 /
+          (constant_55555 * constant_55555 * constant_55555 * constant_55555),
+      0x20000000000000 / (constant_55555 * constant_55555 * constant_55555 *
+                          constant_55555 * 5),
+      0x20000000000000 / (constant_55555 * constant_55555 * constant_55555 *
+                          constant_55555 * 5 * 5),
+      0x20000000000000 / (constant_55555 * constant_55555 * constant_55555 *
+                          constant_55555 * 5 * 5 * 5),
+      0x20000000000000 / (constant_55555 * constant_55555 * constant_55555 *
+                          constant_55555 * 5 * 5 * 5 * 5)};
 };
+
+#if FASTFLOAT_DETAIL_MUST_DEFINE_CONSTEXPR_VARIABLE
 
 template <typename U>
 constexpr double binary_format_lookup_tables<double, U>::powers_of_ten[];
@@ -8120,27 +8313,30 @@ constexpr double binary_format_lookup_tables<double, U>::powers_of_ten[];
 template <typename U>
 constexpr uint64_t binary_format_lookup_tables<double, U>::max_mantissa[];
 
-template <typename U>
-struct binary_format_lookup_tables<float, U> {
+#endif
+
+template <typename U> struct binary_format_lookup_tables<float, U> {
   static constexpr float powers_of_ten[] = {1e0f, 1e1f, 1e2f, 1e3f, 1e4f, 1e5f,
-                                     1e6f, 1e7f, 1e8f, 1e9f, 1e10f};
+                                            1e6f, 1e7f, 1e8f, 1e9f, 1e10f};
 
   // Largest integer value v so that (5**index * v) <= 1<<24.
   // 0x1000000 == 1<<24
   static constexpr uint64_t max_mantissa[] = {
-        0x1000000,
-        0x1000000 / 5,
-        0x1000000 / (5 * 5),
-        0x1000000 / (5 * 5 * 5),
-        0x1000000 / (5 * 5 * 5 * 5),
-        0x1000000 / (constant_55555),
-        0x1000000 / (constant_55555 * 5),
-        0x1000000 / (constant_55555 * 5 * 5),
-        0x1000000 / (constant_55555 * 5 * 5 * 5),
-        0x1000000 / (constant_55555 * 5 * 5 * 5 * 5),
-        0x1000000 / (constant_55555 * constant_55555),
-        0x1000000 / (constant_55555 * constant_55555 * 5)};
+      0x1000000,
+      0x1000000 / 5,
+      0x1000000 / (5 * 5),
+      0x1000000 / (5 * 5 * 5),
+      0x1000000 / (5 * 5 * 5 * 5),
+      0x1000000 / (constant_55555),
+      0x1000000 / (constant_55555 * 5),
+      0x1000000 / (constant_55555 * 5 * 5),
+      0x1000000 / (constant_55555 * 5 * 5 * 5),
+      0x1000000 / (constant_55555 * 5 * 5 * 5 * 5),
+      0x1000000 / (constant_55555 * constant_55555),
+      0x1000000 / (constant_55555 * constant_55555 * 5)};
 };
+
+#if FASTFLOAT_DETAIL_MUST_DEFINE_CONSTEXPR_VARIABLE
 
 template <typename U>
 constexpr float binary_format_lookup_tables<float, U>::powers_of_ten[];
@@ -8148,7 +8344,10 @@ constexpr float binary_format_lookup_tables<float, U>::powers_of_ten[];
 template <typename U>
 constexpr uint64_t binary_format_lookup_tables<float, U>::max_mantissa[];
 
-template <> inline constexpr int binary_format<double>::min_exponent_fast_path() {
+#endif
+
+template <>
+inline constexpr int binary_format<double>::min_exponent_fast_path() {
 #if (FLT_EVAL_METHOD != 1) && (FLT_EVAL_METHOD != 0)
   return 0;
 #else
@@ -8156,7 +8355,8 @@ template <> inline constexpr int binary_format<double>::min_exponent_fast_path()
 #endif
 }
 
-template <> inline constexpr int binary_format<float>::min_exponent_fast_path() {
+template <>
+inline constexpr int binary_format<float>::min_exponent_fast_path() {
 #if (FLT_EVAL_METHOD != 1) && (FLT_EVAL_METHOD != 0)
   return 0;
 #else
@@ -8164,32 +8364,40 @@ template <> inline constexpr int binary_format<float>::min_exponent_fast_path() 
 #endif
 }
 
-template <> inline constexpr int binary_format<double>::mantissa_explicit_bits() {
+template <>
+inline constexpr int binary_format<double>::mantissa_explicit_bits() {
   return 52;
 }
-template <> inline constexpr int binary_format<float>::mantissa_explicit_bits() {
+
+template <>
+inline constexpr int binary_format<float>::mantissa_explicit_bits() {
   return 23;
 }
 
-template <> inline constexpr int binary_format<double>::max_exponent_round_to_even() {
+template <>
+inline constexpr int binary_format<double>::max_exponent_round_to_even() {
   return 23;
 }
 
-template <> inline constexpr int binary_format<float>::max_exponent_round_to_even() {
+template <>
+inline constexpr int binary_format<float>::max_exponent_round_to_even() {
   return 10;
 }
 
-template <> inline constexpr int binary_format<double>::min_exponent_round_to_even() {
+template <>
+inline constexpr int binary_format<double>::min_exponent_round_to_even() {
   return -4;
 }
 
-template <> inline constexpr int binary_format<float>::min_exponent_round_to_even() {
+template <>
+inline constexpr int binary_format<float>::min_exponent_round_to_even() {
   return -17;
 }
 
 template <> inline constexpr int binary_format<double>::minimum_exponent() {
   return -1023;
 }
+
 template <> inline constexpr int binary_format<float>::minimum_exponent() {
   return -127;
 }
@@ -8197,34 +8405,301 @@ template <> inline constexpr int binary_format<float>::minimum_exponent() {
 template <> inline constexpr int binary_format<double>::infinite_power() {
   return 0x7FF;
 }
+
 template <> inline constexpr int binary_format<float>::infinite_power() {
   return 0xFF;
 }
 
-template <> inline constexpr int binary_format<double>::sign_index() { return 63; }
-template <> inline constexpr int binary_format<float>::sign_index() { return 31; }
+template <> inline constexpr int binary_format<double>::sign_index() {
+  return 63;
+}
 
-template <> inline constexpr int binary_format<double>::max_exponent_fast_path() {
+template <> inline constexpr int binary_format<float>::sign_index() {
+  return 31;
+}
+
+template <>
+inline constexpr int binary_format<double>::max_exponent_fast_path() {
   return 22;
 }
-template <> inline constexpr int binary_format<float>::max_exponent_fast_path() {
+
+template <>
+inline constexpr int binary_format<float>::max_exponent_fast_path() {
   return 10;
 }
 
-template <> inline constexpr uint64_t binary_format<double>::max_mantissa_fast_path() {
+template <>
+inline constexpr uint64_t binary_format<double>::max_mantissa_fast_path() {
   return uint64_t(2) << mantissa_explicit_bits();
 }
-template <> inline constexpr uint64_t binary_format<double>::max_mantissa_fast_path(int64_t power) {
+
+template <>
+inline constexpr uint64_t binary_format<float>::max_mantissa_fast_path() {
+  return uint64_t(2) << mantissa_explicit_bits();
+}
+
+// credit: Jakub Jelínek
+#ifdef __STDCPP_FLOAT16_T__
+template <typename U> struct binary_format_lookup_tables<std::float16_t, U> {
+  static constexpr std::float16_t powers_of_ten[] = {1e0f16, 1e1f16, 1e2f16,
+                                                     1e3f16, 1e4f16};
+
+  // Largest integer value v so that (5**index * v) <= 1<<11.
+  // 0x800 == 1<<11
+  static constexpr uint64_t max_mantissa[] = {0x800,
+                                              0x800 / 5,
+                                              0x800 / (5 * 5),
+                                              0x800 / (5 * 5 * 5),
+                                              0x800 / (5 * 5 * 5 * 5),
+                                              0x800 / (constant_55555)};
+};
+
+#if FASTFLOAT_DETAIL_MUST_DEFINE_CONSTEXPR_VARIABLE
+
+template <typename U>
+constexpr std::float16_t
+    binary_format_lookup_tables<std::float16_t, U>::powers_of_ten[];
+
+template <typename U>
+constexpr uint64_t
+    binary_format_lookup_tables<std::float16_t, U>::max_mantissa[];
+
+#endif
+
+template <>
+inline constexpr std::float16_t
+binary_format<std::float16_t>::exact_power_of_ten(int64_t power) {
+  // Work around clang bug https://godbolt.org/z/zedh7rrhc
+  return (void)powers_of_ten[0], powers_of_ten[power];
+}
+
+template <>
+inline constexpr binary_format<std::float16_t>::equiv_uint
+binary_format<std::float16_t>::exponent_mask() {
+  return 0x7C00;
+}
+
+template <>
+inline constexpr binary_format<std::float16_t>::equiv_uint
+binary_format<std::float16_t>::mantissa_mask() {
+  return 0x03FF;
+}
+
+template <>
+inline constexpr binary_format<std::float16_t>::equiv_uint
+binary_format<std::float16_t>::hidden_bit_mask() {
+  return 0x0400;
+}
+
+template <>
+inline constexpr int binary_format<std::float16_t>::max_exponent_fast_path() {
+  return 4;
+}
+
+template <>
+inline constexpr int binary_format<std::float16_t>::mantissa_explicit_bits() {
+  return 10;
+}
+
+template <>
+inline constexpr uint64_t
+binary_format<std::float16_t>::max_mantissa_fast_path() {
+  return uint64_t(2) << mantissa_explicit_bits();
+}
+
+template <>
+inline constexpr uint64_t
+binary_format<std::float16_t>::max_mantissa_fast_path(int64_t power) {
+  // caller is responsible to ensure that
+  // power >= 0 && power <= 4
+  //
+  // Work around clang bug https://godbolt.org/z/zedh7rrhc
+  return (void)max_mantissa[0], max_mantissa[power];
+}
+
+template <>
+inline constexpr int binary_format<std::float16_t>::min_exponent_fast_path() {
+  return 0;
+}
+
+template <>
+inline constexpr int
+binary_format<std::float16_t>::max_exponent_round_to_even() {
+  return 5;
+}
+
+template <>
+inline constexpr int
+binary_format<std::float16_t>::min_exponent_round_to_even() {
+  return -22;
+}
+
+template <>
+inline constexpr int binary_format<std::float16_t>::minimum_exponent() {
+  return -15;
+}
+
+template <>
+inline constexpr int binary_format<std::float16_t>::infinite_power() {
+  return 0x1F;
+}
+
+template <> inline constexpr int binary_format<std::float16_t>::sign_index() {
+  return 15;
+}
+
+template <>
+inline constexpr int binary_format<std::float16_t>::largest_power_of_ten() {
+  return 4;
+}
+
+template <>
+inline constexpr int binary_format<std::float16_t>::smallest_power_of_ten() {
+  return -27;
+}
+
+template <>
+inline constexpr size_t binary_format<std::float16_t>::max_digits() {
+  return 22;
+}
+#endif // __STDCPP_FLOAT16_T__
+
+// credit: Jakub Jelínek
+#ifdef __STDCPP_BFLOAT16_T__
+template <typename U> struct binary_format_lookup_tables<std::bfloat16_t, U> {
+  static constexpr std::bfloat16_t powers_of_ten[] = {1e0bf16, 1e1bf16, 1e2bf16,
+                                                      1e3bf16};
+
+  // Largest integer value v so that (5**index * v) <= 1<<8.
+  // 0x100 == 1<<8
+  static constexpr uint64_t max_mantissa[] = {0x100, 0x100 / 5, 0x100 / (5 * 5),
+                                              0x100 / (5 * 5 * 5),
+                                              0x100 / (5 * 5 * 5 * 5)};
+};
+
+#if FASTFLOAT_DETAIL_MUST_DEFINE_CONSTEXPR_VARIABLE
+
+template <typename U>
+constexpr std::bfloat16_t
+    binary_format_lookup_tables<std::bfloat16_t, U>::powers_of_ten[];
+
+template <typename U>
+constexpr uint64_t
+    binary_format_lookup_tables<std::bfloat16_t, U>::max_mantissa[];
+
+#endif
+
+template <>
+inline constexpr std::bfloat16_t
+binary_format<std::bfloat16_t>::exact_power_of_ten(int64_t power) {
+  // Work around clang bug https://godbolt.org/z/zedh7rrhc
+  return (void)powers_of_ten[0], powers_of_ten[power];
+}
+
+template <>
+inline constexpr int binary_format<std::bfloat16_t>::max_exponent_fast_path() {
+  return 3;
+}
+
+template <>
+inline constexpr binary_format<std::bfloat16_t>::equiv_uint
+binary_format<std::bfloat16_t>::exponent_mask() {
+  return 0x7F80;
+}
+
+template <>
+inline constexpr binary_format<std::bfloat16_t>::equiv_uint
+binary_format<std::bfloat16_t>::mantissa_mask() {
+  return 0x007F;
+}
+
+template <>
+inline constexpr binary_format<std::bfloat16_t>::equiv_uint
+binary_format<std::bfloat16_t>::hidden_bit_mask() {
+  return 0x0080;
+}
+
+template <>
+inline constexpr int binary_format<std::bfloat16_t>::mantissa_explicit_bits() {
+  return 7;
+}
+
+template <>
+inline constexpr uint64_t
+binary_format<std::bfloat16_t>::max_mantissa_fast_path() {
+  return uint64_t(2) << mantissa_explicit_bits();
+}
+
+template <>
+inline constexpr uint64_t
+binary_format<std::bfloat16_t>::max_mantissa_fast_path(int64_t power) {
+  // caller is responsible to ensure that
+  // power >= 0 && power <= 3
+  //
+  // Work around clang bug https://godbolt.org/z/zedh7rrhc
+  return (void)max_mantissa[0], max_mantissa[power];
+}
+
+template <>
+inline constexpr int binary_format<std::bfloat16_t>::min_exponent_fast_path() {
+  return 0;
+}
+
+template <>
+inline constexpr int
+binary_format<std::bfloat16_t>::max_exponent_round_to_even() {
+  return 3;
+}
+
+template <>
+inline constexpr int
+binary_format<std::bfloat16_t>::min_exponent_round_to_even() {
+  return -24;
+}
+
+template <>
+inline constexpr int binary_format<std::bfloat16_t>::minimum_exponent() {
+  return -127;
+}
+
+template <>
+inline constexpr int binary_format<std::bfloat16_t>::infinite_power() {
+  return 0xFF;
+}
+
+template <> inline constexpr int binary_format<std::bfloat16_t>::sign_index() {
+  return 15;
+}
+
+template <>
+inline constexpr int binary_format<std::bfloat16_t>::largest_power_of_ten() {
+  return 38;
+}
+
+template <>
+inline constexpr int binary_format<std::bfloat16_t>::smallest_power_of_ten() {
+  return -60;
+}
+
+template <>
+inline constexpr size_t binary_format<std::bfloat16_t>::max_digits() {
+  return 98;
+}
+#endif // __STDCPP_BFLOAT16_T__
+
+template <>
+inline constexpr uint64_t
+binary_format<double>::max_mantissa_fast_path(int64_t power) {
   // caller is responsible to ensure that
   // power >= 0 && power <= 22
   //
   // Work around clang bug https://godbolt.org/z/zedh7rrhc
   return (void)max_mantissa[0], max_mantissa[power];
 }
-template <> inline constexpr uint64_t binary_format<float>::max_mantissa_fast_path() {
-  return uint64_t(2) << mantissa_explicit_bits();
-}
-template <> inline constexpr uint64_t binary_format<float>::max_mantissa_fast_path(int64_t power) {
+
+template <>
+inline constexpr uint64_t
+binary_format<float>::max_mantissa_fast_path(int64_t power) {
   // caller is responsible to ensure that
   // power >= 0 && power <= 10
   //
@@ -8233,23 +8708,23 @@ template <> inline constexpr uint64_t binary_format<float>::max_mantissa_fast_pa
 }
 
 template <>
-inline constexpr double binary_format<double>::exact_power_of_ten(int64_t power) {
+inline constexpr double
+binary_format<double>::exact_power_of_ten(int64_t power) {
   // Work around clang bug https://godbolt.org/z/zedh7rrhc
   return (void)powers_of_ten[0], powers_of_ten[power];
 }
+
 template <>
 inline constexpr float binary_format<float>::exact_power_of_ten(int64_t power) {
   // Work around clang bug https://godbolt.org/z/zedh7rrhc
   return (void)powers_of_ten[0], powers_of_ten[power];
 }
 
-
-template <>
-inline constexpr int binary_format<double>::largest_power_of_ten() {
+template <> inline constexpr int binary_format<double>::largest_power_of_ten() {
   return 308;
 }
-template <>
-inline constexpr int binary_format<float>::largest_power_of_ten() {
+
+template <> inline constexpr int binary_format<float>::largest_power_of_ten() {
   return 38;
 }
 
@@ -8257,52 +8732,64 @@ template <>
 inline constexpr int binary_format<double>::smallest_power_of_ten() {
   return -342;
 }
-template <>
-inline constexpr int binary_format<float>::smallest_power_of_ten() {
+
+template <> inline constexpr int binary_format<float>::smallest_power_of_ten() {
   return -64;
 }
 
 template <> inline constexpr size_t binary_format<double>::max_digits() {
   return 769;
 }
+
 template <> inline constexpr size_t binary_format<float>::max_digits() {
   return 114;
 }
 
-template <> inline constexpr binary_format<float>::equiv_uint
-    binary_format<float>::exponent_mask() {
+template <>
+inline constexpr binary_format<float>::equiv_uint
+binary_format<float>::exponent_mask() {
   return 0x7F800000;
 }
-template <> inline constexpr binary_format<double>::equiv_uint
-    binary_format<double>::exponent_mask() {
+
+template <>
+inline constexpr binary_format<double>::equiv_uint
+binary_format<double>::exponent_mask() {
   return 0x7FF0000000000000;
 }
 
-template <> inline constexpr binary_format<float>::equiv_uint
-    binary_format<float>::mantissa_mask() {
+template <>
+inline constexpr binary_format<float>::equiv_uint
+binary_format<float>::mantissa_mask() {
   return 0x007FFFFF;
 }
-template <> inline constexpr binary_format<double>::equiv_uint
-    binary_format<double>::mantissa_mask() {
+
+template <>
+inline constexpr binary_format<double>::equiv_uint
+binary_format<double>::mantissa_mask() {
   return 0x000FFFFFFFFFFFFF;
 }
 
-template <> inline constexpr binary_format<float>::equiv_uint
-    binary_format<float>::hidden_bit_mask() {
+template <>
+inline constexpr binary_format<float>::equiv_uint
+binary_format<float>::hidden_bit_mask() {
   return 0x00800000;
 }
-template <> inline constexpr binary_format<double>::equiv_uint
-    binary_format<double>::hidden_bit_mask() {
+
+template <>
+inline constexpr binary_format<double>::equiv_uint
+binary_format<double>::hidden_bit_mask() {
   return 0x0010000000000000;
 }
 
-template<typename T>
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-void to_float(bool negative, adjusted_mantissa am, T &value) {
-  using fastfloat_uint = typename binary_format<T>::equiv_uint;
-  fastfloat_uint word = (fastfloat_uint)am.mantissa;
-  word |= fastfloat_uint(am.power2) << binary_format<T>::mantissa_explicit_bits();
-  word |= fastfloat_uint(negative) << binary_format<T>::sign_index();
+template <typename T>
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 void
+to_float(bool negative, adjusted_mantissa am, T &value) {
+  using equiv_uint = equiv_uint_t<T>;
+  equiv_uint word = equiv_uint(am.mantissa);
+  word = equiv_uint(word | equiv_uint(am.power2)
+                               << binary_format<T>::mantissa_explicit_bits());
+  word =
+      equiv_uint(word | equiv_uint(negative) << binary_format<T>::sign_index());
 #if FASTFLOAT_HAS_BIT_CAST
   value = std::bit_cast<T>(word);
 #else
@@ -8310,152 +8797,247 @@ void to_float(bool negative, adjusted_mantissa am, T &value) {
 #endif
 }
 
-#ifdef FASTFLOAT_SKIP_WHITE_SPACE // disabled by default
-template <typename = void>
-struct space_lut {
+template <typename = void> struct space_lut {
   static constexpr bool value[] = {
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 };
 
-template <typename T>
-constexpr bool space_lut<T>::value[];
+#if FASTFLOAT_DETAIL_MUST_DEFINE_CONSTEXPR_VARIABLE
 
-inline constexpr bool is_space(uint8_t c) { return space_lut<>::value[c]; }
+template <typename T> constexpr bool space_lut<T>::value[];
+
 #endif
 
-template<typename UC>
-static constexpr uint64_t int_cmp_zeros()
-{
-    static_assert((sizeof(UC) == 1) || (sizeof(UC) == 2) || (sizeof(UC) == 4), "Unsupported character size");
-    return (sizeof(UC) == 1) ? 0x3030303030303030 : (sizeof(UC) == 2) ? (uint64_t(UC('0')) << 48 | uint64_t(UC('0')) << 32 | uint64_t(UC('0')) << 16 | UC('0')) : (uint64_t(UC('0')) << 32 | UC('0'));
-}
-template<typename UC>
-static constexpr int int_cmp_len()
-{
-    return sizeof(uint64_t) / sizeof(UC);
-}
-template<typename UC>
-static constexpr UC const * str_const_nan()
-{
-    return nullptr;
-}
-template<>
-constexpr char const * str_const_nan<char>()
-{
-    return "nan";
-}
-template<>
-constexpr wchar_t const * str_const_nan<wchar_t>()
-{
-    return L"nan";
-}
-template<>
-constexpr char16_t const * str_const_nan<char16_t>()
-{
-    return u"nan";
-}
-template<>
-constexpr char32_t const * str_const_nan<char32_t>()
-{
-    return U"nan";
-}
-template<typename UC>
-static constexpr UC const * str_const_inf()
-{
-    return nullptr;
-}
-template<>
-constexpr char const * str_const_inf<char>()
-{
-    return "infinity";
-}
-template<>
-constexpr wchar_t const * str_const_inf<wchar_t>()
-{
-    return L"infinity";
-}
-template<>
-constexpr char16_t const * str_const_inf<char16_t>()
-{
-    return u"infinity";
-}
-template<>
-constexpr char32_t const * str_const_inf<char32_t>()
-{
-    return U"infinity";
+template <typename UC> constexpr bool is_space(UC c) {
+  return c < 256 && space_lut<>::value[uint8_t(c)];
 }
 
+template <typename UC> static constexpr uint64_t int_cmp_zeros() {
+  static_assert((sizeof(UC) == 1) || (sizeof(UC) == 2) || (sizeof(UC) == 4),
+                "Unsupported character size");
+  return (sizeof(UC) == 1) ? 0x3030303030303030
+         : (sizeof(UC) == 2)
+             ? (uint64_t(UC('0')) << 48 | uint64_t(UC('0')) << 32 |
+                uint64_t(UC('0')) << 16 | UC('0'))
+             : (uint64_t(UC('0')) << 32 | UC('0'));
+}
 
-template <typename = void>
-struct int_luts {
+template <typename UC> static constexpr int int_cmp_len() {
+  return sizeof(uint64_t) / sizeof(UC);
+}
+
+template <typename UC> constexpr UC const *str_const_nan();
+
+template <> constexpr char const *str_const_nan<char>() { return "nan"; }
+
+template <> constexpr wchar_t const *str_const_nan<wchar_t>() { return L"nan"; }
+
+template <> constexpr char16_t const *str_const_nan<char16_t>() {
+  return u"nan";
+}
+
+template <> constexpr char32_t const *str_const_nan<char32_t>() {
+  return U"nan";
+}
+
+#ifdef __cpp_char8_t
+template <> constexpr char8_t const *str_const_nan<char8_t>() {
+  return u8"nan";
+}
+#endif
+
+template <typename UC> constexpr UC const *str_const_inf();
+
+template <> constexpr char const *str_const_inf<char>() { return "infinity"; }
+
+template <> constexpr wchar_t const *str_const_inf<wchar_t>() {
+  return L"infinity";
+}
+
+template <> constexpr char16_t const *str_const_inf<char16_t>() {
+  return u"infinity";
+}
+
+template <> constexpr char32_t const *str_const_inf<char32_t>() {
+  return U"infinity";
+}
+
+#ifdef __cpp_char8_t
+template <> constexpr char8_t const *str_const_inf<char8_t>() {
+  return u8"infinity";
+}
+#endif
+
+template <typename = void> struct int_luts {
   static constexpr uint8_t chdigit[] = {
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 255, 255, 255, 255, 255, 255,
-    255, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-    25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 255, 255, 255, 255, 255,
-    255, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
-    25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
-  };
+      255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   255, 255,
+      255, 255, 255, 255, 255, 10,  11,  12,  13,  14,  15,  16,  17,  18,  19,
+      20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,  32,  33,  34,
+      35,  255, 255, 255, 255, 255, 255, 10,  11,  12,  13,  14,  15,  16,  17,
+      18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,  32,
+      33,  34,  35,  255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+      255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+      255};
 
   static constexpr size_t maxdigits_u64[] = {
-    64, 41, 32, 28, 25, 23, 22, 21,
-    20, 19, 18, 18, 17, 17, 16, 16,
-    16, 16, 15, 15, 15, 15, 14, 14,
-    14, 14, 14, 14, 14, 13, 13, 13,
-    13, 13, 13
-  };
+      64, 41, 32, 28, 25, 23, 22, 21, 20, 19, 18, 18, 17, 17, 16, 16, 16, 16,
+      15, 15, 15, 15, 14, 14, 14, 14, 14, 14, 14, 13, 13, 13, 13, 13, 13};
 
   static constexpr uint64_t min_safe_u64[] = {
-    9223372036854775808ull, 12157665459056928801ull, 4611686018427387904, 7450580596923828125, 4738381338321616896,
-    3909821048582988049, 9223372036854775808ull, 12157665459056928801ull, 10000000000000000000ull, 5559917313492231481,
-    2218611106740436992, 8650415919381337933, 2177953337809371136, 6568408355712890625, 1152921504606846976, 
-    2862423051509815793, 6746640616477458432, 15181127029874798299ull, 1638400000000000000, 3243919932521508681,
-    6221821273427820544, 11592836324538749809ull, 876488338465357824, 1490116119384765625, 2481152873203736576,
-    4052555153018976267, 6502111422497947648, 10260628712958602189ull, 15943230000000000000ull, 787662783788549761,
-    1152921504606846976, 1667889514952984961, 2386420683693101056, 3379220508056640625, 4738381338321616896
-  };
+      9223372036854775808ull,  12157665459056928801ull, 4611686018427387904,
+      7450580596923828125,     4738381338321616896,     3909821048582988049,
+      9223372036854775808ull,  12157665459056928801ull, 10000000000000000000ull,
+      5559917313492231481,     2218611106740436992,     8650415919381337933,
+      2177953337809371136,     6568408355712890625,     1152921504606846976,
+      2862423051509815793,     6746640616477458432,     15181127029874798299ull,
+      1638400000000000000,     3243919932521508681,     6221821273427820544,
+      11592836324538749809ull, 876488338465357824,      1490116119384765625,
+      2481152873203736576,     4052555153018976267,     6502111422497947648,
+      10260628712958602189ull, 15943230000000000000ull, 787662783788549761,
+      1152921504606846976,     1667889514952984961,     2386420683693101056,
+      3379220508056640625,     4738381338321616896};
 };
 
-template <typename T>
-constexpr uint8_t int_luts<T>::chdigit[];
+#if FASTFLOAT_DETAIL_MUST_DEFINE_CONSTEXPR_VARIABLE
 
-template <typename T>
-constexpr size_t int_luts<T>::maxdigits_u64[];
+template <typename T> constexpr uint8_t int_luts<T>::chdigit[];
 
-template <typename T>
-constexpr uint64_t int_luts<T>::min_safe_u64[];
+template <typename T> constexpr size_t int_luts<T>::maxdigits_u64[];
+
+template <typename T> constexpr uint64_t int_luts<T>::min_safe_u64[];
+
+#endif
 
 template <typename UC>
-fastfloat_really_inline
-constexpr uint8_t ch_to_digit(UC c) { return int_luts<>::chdigit[static_cast<unsigned char>(c)]; }
+fastfloat_really_inline constexpr uint8_t ch_to_digit(UC c) {
+  return int_luts<>::chdigit[static_cast<unsigned char>(c)];
+}
 
-fastfloat_really_inline
-constexpr size_t max_digits_u64(int base) { return int_luts<>::maxdigits_u64[base - 2]; }
+fastfloat_really_inline constexpr size_t max_digits_u64(int base) {
+  return int_luts<>::maxdigits_u64[base - 2];
+}
 
 // If a u64 is exactly max_digits_u64() in length, this is
-// the value below which it has definitely overflowed. 
-fastfloat_really_inline
-constexpr uint64_t min_safe_u64(int base) { return int_luts<>::min_safe_u64[base - 2]; }
+// the value below which it has definitely overflowed.
+fastfloat_really_inline constexpr uint64_t min_safe_u64(int base) {
+  return int_luts<>::min_safe_u64[base - 2];
+}
+
+static_assert(std::is_same<equiv_uint_t<double>, uint64_t>::value,
+              "equiv_uint should be uint64_t for double");
+static_assert(std::numeric_limits<double>::is_iec559,
+              "double must fulfill the requirements of IEC 559 (IEEE 754)");
+
+static_assert(std::is_same<equiv_uint_t<float>, uint32_t>::value,
+              "equiv_uint should be uint32_t for float");
+static_assert(std::numeric_limits<float>::is_iec559,
+              "float must fulfill the requirements of IEC 559 (IEEE 754)");
+
+#ifdef __STDCPP_FLOAT64_T__
+static_assert(std::is_same<equiv_uint_t<std::float64_t>, uint64_t>::value,
+              "equiv_uint should be uint64_t for std::float64_t");
+static_assert(
+    std::numeric_limits<std::float64_t>::is_iec559,
+    "std::float64_t must fulfill the requirements of IEC 559 (IEEE 754)");
+#endif // __STDCPP_FLOAT64_T__
+
+#ifdef __STDCPP_FLOAT32_T__
+static_assert(std::is_same<equiv_uint_t<std::float32_t>, uint32_t>::value,
+              "equiv_uint should be uint32_t for std::float32_t");
+static_assert(
+    std::numeric_limits<std::float32_t>::is_iec559,
+    "std::float32_t must fulfill the requirements of IEC 559 (IEEE 754)");
+#endif // __STDCPP_FLOAT32_T__
+
+#ifdef __STDCPP_FLOAT16_T__
+static_assert(
+    std::is_same<binary_format<std::float16_t>::equiv_uint, uint16_t>::value,
+    "equiv_uint should be uint16_t for std::float16_t");
+static_assert(
+    std::numeric_limits<std::float16_t>::is_iec559,
+    "std::float16_t must fulfill the requirements of IEC 559 (IEEE 754)");
+#endif // __STDCPP_FLOAT16_T__
+
+#ifdef __STDCPP_BFLOAT16_T__
+static_assert(
+    std::is_same<binary_format<std::bfloat16_t>::equiv_uint, uint16_t>::value,
+    "equiv_uint should be uint16_t for std::bfloat16_t");
+static_assert(
+    std::numeric_limits<std::bfloat16_t>::is_iec559,
+    "std::bfloat16_t must fulfill the requirements of IEC 559 (IEEE 754)");
+#endif // __STDCPP_BFLOAT16_T__
+
+constexpr chars_format operator~(chars_format rhs) noexcept {
+  using int_type = std::underlying_type<chars_format>::type;
+  return static_cast<chars_format>(~static_cast<int_type>(rhs));
+}
+
+constexpr chars_format operator&(chars_format lhs, chars_format rhs) noexcept {
+  using int_type = std::underlying_type<chars_format>::type;
+  return static_cast<chars_format>(static_cast<int_type>(lhs) &
+                                   static_cast<int_type>(rhs));
+}
+
+constexpr chars_format operator|(chars_format lhs, chars_format rhs) noexcept {
+  using int_type = std::underlying_type<chars_format>::type;
+  return static_cast<chars_format>(static_cast<int_type>(lhs) |
+                                   static_cast<int_type>(rhs));
+}
+
+constexpr chars_format operator^(chars_format lhs, chars_format rhs) noexcept {
+  using int_type = std::underlying_type<chars_format>::type;
+  return static_cast<chars_format>(static_cast<int_type>(lhs) ^
+                                   static_cast<int_type>(rhs));
+}
+
+fastfloat_really_inline FASTFLOAT_CONSTEXPR14 chars_format &
+operator&=(chars_format &lhs, chars_format rhs) noexcept {
+  return lhs = (lhs & rhs);
+}
+
+fastfloat_really_inline FASTFLOAT_CONSTEXPR14 chars_format &
+operator|=(chars_format &lhs, chars_format rhs) noexcept {
+  return lhs = (lhs | rhs);
+}
+
+fastfloat_really_inline FASTFLOAT_CONSTEXPR14 chars_format &
+operator^=(chars_format &lhs, chars_format rhs) noexcept {
+  return lhs = (lhs ^ rhs);
+}
+
+namespace detail {
+// adjust for deprecated feature macros
+constexpr chars_format adjust_for_feature_macros(chars_format fmt) {
+  return fmt
+#ifdef FASTFLOAT_ALLOWS_LEADING_PLUS
+         | chars_format::allow_leading_plus
+#endif
+#ifdef FASTFLOAT_SKIP_WHITE_SPACE
+         | chars_format::skip_white_space
+#endif
+      ;
+}
+} // namespace detail
 
 } // namespace fast_float
 
@@ -8468,44 +9050,55 @@ constexpr uint64_t min_safe_u64(int base) { return int_luts<>::min_safe_u64[base
 
 namespace fast_float {
 /**
- * This function parses the character sequence [first,last) for a number. It parses floating-point numbers expecting
- * a locale-indepent format equivalent to what is used by std::strtod in the default ("C") locale.
- * The resulting floating-point value is the closest floating-point values (using either float or double),
- * using the "round to even" convention for values that would otherwise fall right in-between two values.
- * That is, we provide exact parsing according to the IEEE standard.
+ * This function parses the character sequence [first,last) for a number. It
+ * parses floating-point numbers expecting a locale-indepent format equivalent
+ * to what is used by std::strtod in the default ("C") locale. The resulting
+ * floating-point value is the closest floating-point values (using either float
+ * or double), using the "round to even" convention for values that would
+ * otherwise fall right in-between two values. That is, we provide exact parsing
+ * according to the IEEE standard.
  *
- * Given a successful parse, the pointer (`ptr`) in the returned value is set to point right after the
- * parsed number, and the `value` referenced is set to the parsed value. In case of error, the returned
- * `ec` contains a representative error, otherwise the default (`std::errc()`) value is stored.
+ * Given a successful parse, the pointer (`ptr`) in the returned value is set to
+ * point right after the parsed number, and the `value` referenced is set to the
+ * parsed value. In case of error, the returned `ec` contains a representative
+ * error, otherwise the default (`std::errc()`) value is stored.
  *
- * The implementation does not throw and does not allocate memory (e.g., with `new` or `malloc`).
+ * The implementation does not throw and does not allocate memory (e.g., with
+ * `new` or `malloc`).
  *
- * Like the C++17 standard, the `fast_float::from_chars` functions take an optional last argument of
- * the type `fast_float::chars_format`. It is a bitset value: we check whether
- * `fmt & fast_float::chars_format::fixed` and `fmt & fast_float::chars_format::scientific` are set
- * to determine whether we allow the fixed point and scientific notation respectively.
- * The default is  `fast_float::chars_format::general` which allows both `fixed` and `scientific`.
+ * Like the C++17 standard, the `fast_float::from_chars` functions take an
+ * optional last argument of the type `fast_float::chars_format`. It is a bitset
+ * value: we check whether `fmt & fast_float::chars_format::fixed` and `fmt &
+ * fast_float::chars_format::scientific` are set to determine whether we allow
+ * the fixed point and scientific notation respectively. The default is
+ * `fast_float::chars_format::general` which allows both `fixed` and
+ * `scientific`.
  */
-template<typename T, typename UC = char, typename = FASTFLOAT_ENABLE_IF(is_supported_float_type<T>())>
-FASTFLOAT_CONSTEXPR20
-from_chars_result_t<UC> from_chars(UC const * first, UC const * last,
-                             T &value, chars_format fmt = chars_format::general)  noexcept;
+template <typename T, typename UC = char,
+          typename = FASTFLOAT_ENABLE_IF(is_supported_float_type<T>::value)>
+FASTFLOAT_CONSTEXPR20 from_chars_result_t<UC>
+from_chars(UC const *first, UC const *last, T &value,
+           chars_format fmt = chars_format::general) noexcept;
 
 /**
  * Like from_chars, but accepts an `options` argument to govern number parsing.
+ * Both for floating-point types and integer types.
  */
-template<typename T, typename UC = char>
-FASTFLOAT_CONSTEXPR20
-from_chars_result_t<UC> from_chars_advanced(UC const * first, UC const * last,
-                                      T &value, parse_options_t<UC> options)  noexcept;
+template <typename T, typename UC = char>
+FASTFLOAT_CONSTEXPR20 from_chars_result_t<UC>
+from_chars_advanced(UC const *first, UC const *last, T &value,
+                    parse_options_t<UC> options) noexcept;
+
 /**
-* from_chars for integer types.
-*/
-template <typename T, typename UC = char, typename = FASTFLOAT_ENABLE_IF(!is_supported_float_type<T>())>
-FASTFLOAT_CONSTEXPR20
-from_chars_result_t<UC> from_chars(UC const * first, UC const * last, T& value, int base = 10) noexcept;
+ * from_chars for integer types.
+ */
+template <typename T, typename UC = char,
+          typename = FASTFLOAT_ENABLE_IF(is_supported_integer_type<T>::value)>
+FASTFLOAT_CONSTEXPR20 from_chars_result_t<UC>
+from_chars(UC const *first, UC const *last, T &value, int base = 10) noexcept;
 
 } // namespace fast_float
+
 #endif // FASTFLOAT_FAST_FLOAT_H
 
 #ifndef FASTFLOAT_ASCII_NUMBER_H
@@ -8534,8 +9127,7 @@ from_chars_result_t<UC> from_chars(UC const * first, UC const * last, T& value, 
 
 namespace fast_float {
 
-template <typename UC>
-fastfloat_really_inline constexpr bool has_simd_opt() {
+template <typename UC> fastfloat_really_inline constexpr bool has_simd_opt() {
 #ifdef FASTFLOAT_HAS_SIMD
   return std::is_same<UC, char16_t>::value;
 #else
@@ -8551,24 +9143,20 @@ fastfloat_really_inline constexpr bool is_integer(UC c) noexcept {
 }
 
 fastfloat_really_inline constexpr uint64_t byteswap(uint64_t val) {
-  return (val & 0xFF00000000000000) >> 56
-    | (val & 0x00FF000000000000) >> 40
-    | (val & 0x0000FF0000000000) >> 24
-    | (val & 0x000000FF00000000) >> 8
-    | (val & 0x00000000FF000000) << 8
-    | (val & 0x0000000000FF0000) << 24
-    | (val & 0x000000000000FF00) << 40
-    | (val & 0x00000000000000FF) << 56;
+  return (val & 0xFF00000000000000) >> 56 | (val & 0x00FF000000000000) >> 40 |
+         (val & 0x0000FF0000000000) >> 24 | (val & 0x000000FF00000000) >> 8 |
+         (val & 0x00000000FF000000) << 8 | (val & 0x0000000000FF0000) << 24 |
+         (val & 0x000000000000FF00) << 40 | (val & 0x00000000000000FF) << 56;
 }
 
 // Read 8 UC into a u64. Truncates UC if not char.
 template <typename UC>
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-uint64_t read8_to_u64(const UC *chars) {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 uint64_t
+read8_to_u64(UC const *chars) {
   if (cpp20_and_in_constexpr() || !std::is_same<UC, char>::value) {
     uint64_t val = 0;
-    for(int i = 0; i < 8; ++i) {
-      val |= uint64_t(uint8_t(*chars)) << (i*8);
+    for (int i = 0; i < 8; ++i) {
+      val |= uint64_t(uint8_t(*chars)) << (i * 8);
       ++chars;
     }
     return val;
@@ -8584,44 +9172,41 @@ uint64_t read8_to_u64(const UC *chars) {
 
 #ifdef FASTFLOAT_SSE2
 
-fastfloat_really_inline
-uint64_t simd_read8_to_u64(const __m128i data) {
-FASTFLOAT_SIMD_DISABLE_WARNINGS
-  const __m128i packed = _mm_packus_epi16(data, data);
+fastfloat_really_inline uint64_t simd_read8_to_u64(__m128i const data) {
+  FASTFLOAT_SIMD_DISABLE_WARNINGS
+  __m128i const packed = _mm_packus_epi16(data, data);
 #ifdef FASTFLOAT_64BIT
   return uint64_t(_mm_cvtsi128_si64(packed));
 #else
   uint64_t value;
   // Visual Studio + older versions of GCC don't support _mm_storeu_si64
-  _mm_storel_epi64(reinterpret_cast<__m128i*>(&value), packed);
+  _mm_storel_epi64(reinterpret_cast<__m128i *>(&value), packed);
   return value;
 #endif
-FASTFLOAT_SIMD_RESTORE_WARNINGS
+  FASTFLOAT_SIMD_RESTORE_WARNINGS
 }
 
-fastfloat_really_inline
-uint64_t simd_read8_to_u64(const char16_t* chars) {
-FASTFLOAT_SIMD_DISABLE_WARNINGS
-  return simd_read8_to_u64(_mm_loadu_si128(reinterpret_cast<const __m128i*>(chars)));
-FASTFLOAT_SIMD_RESTORE_WARNINGS
+fastfloat_really_inline uint64_t simd_read8_to_u64(char16_t const *chars) {
+  FASTFLOAT_SIMD_DISABLE_WARNINGS
+  return simd_read8_to_u64(
+      _mm_loadu_si128(reinterpret_cast<__m128i const *>(chars)));
+  FASTFLOAT_SIMD_RESTORE_WARNINGS
 }
 
 #elif defined(FASTFLOAT_NEON)
 
-
-fastfloat_really_inline
-uint64_t simd_read8_to_u64(const uint16x8_t data) {
-FASTFLOAT_SIMD_DISABLE_WARNINGS
+fastfloat_really_inline uint64_t simd_read8_to_u64(uint16x8_t const data) {
+  FASTFLOAT_SIMD_DISABLE_WARNINGS
   uint8x8_t utf8_packed = vmovn_u16(data);
   return vget_lane_u64(vreinterpret_u64_u8(utf8_packed), 0);
-FASTFLOAT_SIMD_RESTORE_WARNINGS
+  FASTFLOAT_SIMD_RESTORE_WARNINGS
 }
 
-fastfloat_really_inline
-uint64_t simd_read8_to_u64(const char16_t* chars) {
-FASTFLOAT_SIMD_DISABLE_WARNINGS
-  return simd_read8_to_u64(vld1q_u16(reinterpret_cast<const uint16_t*>(chars)));
-FASTFLOAT_SIMD_RESTORE_WARNINGS
+fastfloat_really_inline uint64_t simd_read8_to_u64(char16_t const *chars) {
+  FASTFLOAT_SIMD_DISABLE_WARNINGS
+  return simd_read8_to_u64(
+      vld1q_u16(reinterpret_cast<uint16_t const *>(chars)));
+  FASTFLOAT_SIMD_RESTORE_WARNINGS
 }
 
 #endif // FASTFLOAT_SSE2
@@ -8633,83 +9218,84 @@ template <typename UC>
 template <typename UC, FASTFLOAT_ENABLE_IF(!has_simd_opt<UC>()) = 0>
 #endif
 // dummy for compile
-uint64_t simd_read8_to_u64(UC const*) {
+uint64_t simd_read8_to_u64(UC const *) {
   return 0;
 }
 
 // credit  @aqrit
-fastfloat_really_inline FASTFLOAT_CONSTEXPR14
-uint32_t parse_eight_digits_unrolled(uint64_t val) {
-  const uint64_t mask = 0x000000FF000000FF;
-  const uint64_t mul1 = 0x000F424000000064; // 100 + (1000000ULL << 32)
-  const uint64_t mul2 = 0x0000271000000001; // 1 + (10000ULL << 32)
+fastfloat_really_inline FASTFLOAT_CONSTEXPR14 uint32_t
+parse_eight_digits_unrolled(uint64_t val) {
+  uint64_t const mask = 0x000000FF000000FF;
+  uint64_t const mul1 = 0x000F424000000064; // 100 + (1000000ULL << 32)
+  uint64_t const mul2 = 0x0000271000000001; // 1 + (10000ULL << 32)
   val -= 0x3030303030303030;
   val = (val * 10) + (val >> 8); // val = (val * 2561) >> 8;
   val = (((val & mask) * mul1) + (((val >> 16) & mask) * mul2)) >> 32;
   return uint32_t(val);
 }
 
-
 // Call this if chars are definitely 8 digits.
 template <typename UC>
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-uint32_t parse_eight_digits_unrolled(UC const * chars)  noexcept {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 uint32_t
+parse_eight_digits_unrolled(UC const *chars) noexcept {
   if (cpp20_and_in_constexpr() || !has_simd_opt<UC>()) {
     return parse_eight_digits_unrolled(read8_to_u64(chars)); // truncation okay
   }
   return parse_eight_digits_unrolled(simd_read8_to_u64(chars));
 }
 
-
 // credit @aqrit
-fastfloat_really_inline constexpr bool is_made_of_eight_digits_fast(uint64_t val)  noexcept {
+fastfloat_really_inline constexpr bool
+is_made_of_eight_digits_fast(uint64_t val) noexcept {
   return !((((val + 0x4646464646464646) | (val - 0x3030303030303030)) &
-     0x8080808080808080));
+            0x8080808080808080));
 }
-
 
 #ifdef FASTFLOAT_HAS_SIMD
 
 // Call this if chars might not be 8 digits.
-// Using this style (instead of is_made_of_eight_digits_fast() then parse_eight_digits_unrolled())
-// ensures we don't load SIMD registers twice.
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-bool simd_parse_if_eight_digits_unrolled(const char16_t* chars, uint64_t& i) noexcept {
+// Using this style (instead of is_made_of_eight_digits_fast() then
+// parse_eight_digits_unrolled()) ensures we don't load SIMD registers twice.
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 bool
+simd_parse_if_eight_digits_unrolled(char16_t const *chars,
+                                    uint64_t &i) noexcept {
   if (cpp20_and_in_constexpr()) {
     return false;
-  }   
+  }
 #ifdef FASTFLOAT_SSE2
-FASTFLOAT_SIMD_DISABLE_WARNINGS
-  const __m128i data = _mm_loadu_si128(reinterpret_cast<const __m128i*>(chars));
+  FASTFLOAT_SIMD_DISABLE_WARNINGS
+  __m128i const data =
+      _mm_loadu_si128(reinterpret_cast<__m128i const *>(chars));
 
   // (x - '0') <= 9
   // http://0x80.pl/articles/simd-parsing-int-sequences.html
-  const __m128i t0 = _mm_add_epi16(data, _mm_set1_epi16(32720));
-  const __m128i t1 = _mm_cmpgt_epi16(t0, _mm_set1_epi16(-32759));
+  __m128i const t0 = _mm_add_epi16(data, _mm_set1_epi16(32720));
+  __m128i const t1 = _mm_cmpgt_epi16(t0, _mm_set1_epi16(-32759));
 
   if (_mm_movemask_epi8(t1) == 0) {
     i = i * 100000000 + parse_eight_digits_unrolled(simd_read8_to_u64(data));
     return true;
-  }
-  else return false;
-FASTFLOAT_SIMD_RESTORE_WARNINGS
+  } else
+    return false;
+  FASTFLOAT_SIMD_RESTORE_WARNINGS
 #elif defined(FASTFLOAT_NEON)
-FASTFLOAT_SIMD_DISABLE_WARNINGS
-  const uint16x8_t data = vld1q_u16(reinterpret_cast<const uint16_t*>(chars));
-  
+  FASTFLOAT_SIMD_DISABLE_WARNINGS
+  uint16x8_t const data = vld1q_u16(reinterpret_cast<uint16_t const *>(chars));
+
   // (x - '0') <= 9
   // http://0x80.pl/articles/simd-parsing-int-sequences.html
-  const uint16x8_t t0 = vsubq_u16(data, vmovq_n_u16('0'));
-  const uint16x8_t mask = vcltq_u16(t0, vmovq_n_u16('9' - '0' + 1));
+  uint16x8_t const t0 = vsubq_u16(data, vmovq_n_u16('0'));
+  uint16x8_t const mask = vcltq_u16(t0, vmovq_n_u16('9' - '0' + 1));
 
   if (vminvq_u16(mask) == 0xFFFF) {
     i = i * 100000000 + parse_eight_digits_unrolled(simd_read8_to_u64(data));
     return true;
-  }
-  else return false;
-FASTFLOAT_SIMD_RESTORE_WARNINGS
+  } else
+    return false;
+  FASTFLOAT_SIMD_RESTORE_WARNINGS
 #else
-  (void)chars; (void)i;
+  (void)chars;
+  (void)i;
   return false;
 #endif // FASTFLOAT_SSE2
 }
@@ -8723,79 +9309,119 @@ template <typename UC>
 template <typename UC, FASTFLOAT_ENABLE_IF(!has_simd_opt<UC>()) = 0>
 #endif
 // dummy for compile
-bool simd_parse_if_eight_digits_unrolled(UC const*, uint64_t&) {
+bool simd_parse_if_eight_digits_unrolled(UC const *, uint64_t &) {
   return 0;
 }
 
-
 template <typename UC, FASTFLOAT_ENABLE_IF(!std::is_same<UC, char>::value) = 0>
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-void loop_parse_if_eight_digits(const UC*& p, const UC* const pend, uint64_t& i) {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 void
+loop_parse_if_eight_digits(UC const *&p, UC const *const pend, uint64_t &i) {
   if (!has_simd_opt<UC>()) {
     return;
   }
-  while ((std::distance(p, pend) >= 8) && simd_parse_if_eight_digits_unrolled(p, i)) { // in rare cases, this will overflow, but that's ok
+  while ((std::distance(p, pend) >= 8) &&
+         simd_parse_if_eight_digits_unrolled(
+             p, i)) { // in rare cases, this will overflow, but that's ok
     p += 8;
   }
 }
 
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-void loop_parse_if_eight_digits(const char*& p, const char* const pend, uint64_t& i) {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 void
+loop_parse_if_eight_digits(char const *&p, char const *const pend,
+                           uint64_t &i) {
   // optimizes better than parse_if_eight_digits_unrolled() for UC = char.
-  while ((std::distance(p, pend) >= 8) && is_made_of_eight_digits_fast(read8_to_u64(p))) {
-    i = i * 100000000 + parse_eight_digits_unrolled(read8_to_u64(p)); // in rare cases, this will overflow, but that's ok
+  while ((std::distance(p, pend) >= 8) &&
+         is_made_of_eight_digits_fast(read8_to_u64(p))) {
+    i = i * 100000000 +
+        parse_eight_digits_unrolled(read8_to_u64(
+            p)); // in rare cases, this will overflow, but that's ok
     p += 8;
   }
 }
 
-template <typename UC>
-struct parsed_number_string_t {
+enum class parse_error {
+  no_error,
+  // [JSON-only] The minus sign must be followed by an integer.
+  missing_integer_after_sign,
+  // A sign must be followed by an integer or dot.
+  missing_integer_or_dot_after_sign,
+  // [JSON-only] The integer part must not have leading zeros.
+  leading_zeros_in_integer_part,
+  // [JSON-only] The integer part must have at least one digit.
+  no_digits_in_integer_part,
+  // [JSON-only] If there is a decimal point, there must be digits in the
+  // fractional part.
+  no_digits_in_fractional_part,
+  // The mantissa must have at least one digit.
+  no_digits_in_mantissa,
+  // Scientific notation requires an exponential part.
+  missing_exponential_part,
+};
+
+template <typename UC> struct parsed_number_string_t {
   int64_t exponent{0};
   uint64_t mantissa{0};
-  UC const * lastmatch{nullptr};
+  UC const *lastmatch{nullptr};
   bool negative{false};
   bool valid{false};
   bool too_many_digits{false};
   // contains the range of the significant digits
-  span<const UC> integer{};  // non-nullable
-  span<const UC> fraction{}; // nullable
+  span<UC const> integer{};  // non-nullable
+  span<UC const> fraction{}; // nullable
+  parse_error error{parse_error::no_error};
 };
 
-using byte_span = span<const char>;
+using byte_span = span<char const>;
 using parsed_number_string = parsed_number_string_t<char>;
+
+template <typename UC>
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 parsed_number_string_t<UC>
+report_parse_error(UC const *p, parse_error error) {
+  parsed_number_string_t<UC> answer;
+  answer.valid = false;
+  answer.lastmatch = p;
+  answer.error = error;
+  return answer;
+}
 
 // Assuming that you use no more than 19 digits, this will
 // parse an ASCII string.
 template <typename UC>
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-parsed_number_string_t<UC> parse_number_string(UC const *p, UC const * pend, parse_options_t<UC> options) noexcept {
-  chars_format const fmt = options.format;
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 parsed_number_string_t<UC>
+parse_number_string(UC const *p, UC const *pend,
+                    parse_options_t<UC> options) noexcept {
+  chars_format const fmt = detail::adjust_for_feature_macros(options.format);
   UC const decimal_point = options.decimal_point;
 
   parsed_number_string_t<UC> answer;
   answer.valid = false;
   answer.too_many_digits = false;
+  // assume p < pend, so dereference without checks;
   answer.negative = (*p == UC('-'));
-#ifdef FASTFLOAT_ALLOWS_LEADING_PLUS // disabled by default
-  if ((*p == UC('-')) || (!(fmt & FASTFLOAT_JSONFMT) && *p == UC('+'))) {
-#else
-  if (*p == UC('-')) { // C++17 20.19.3.(7.1) explicitly forbids '+' sign here
-#endif
+  // C++17 20.19.3.(7.1) explicitly forbids '+' sign here
+  if ((*p == UC('-')) ||
+      (uint64_t(fmt & chars_format::allow_leading_plus) &&
+       !uint64_t(fmt & detail::basic_json_fmt) && *p == UC('+'))) {
     ++p;
     if (p == pend) {
-      return answer;
+      return report_parse_error<UC>(
+          p, parse_error::missing_integer_or_dot_after_sign);
     }
-    if (fmt & FASTFLOAT_JSONFMT) {
+    if (uint64_t(fmt & detail::basic_json_fmt)) {
       if (!is_integer(*p)) { // a sign must be followed by an integer
-        return answer;
-      }    
+        return report_parse_error<UC>(p,
+                                      parse_error::missing_integer_after_sign);
+      }
     } else {
-      if (!is_integer(*p) && (*p != decimal_point)) { // a sign must be followed by an integer or the dot
-        return answer;
+      if (!is_integer(*p) &&
+          (*p !=
+           decimal_point)) { // a sign must be followed by an integer or the dot
+        return report_parse_error<UC>(
+            p, parse_error::missing_integer_or_dot_after_sign);
       }
     }
   }
-  UC const * const start_digits = p;
+  UC const *const start_digits = p;
 
   uint64_t i = 0; // an unsigned int avoids signed overflows (which are bad)
 
@@ -8803,24 +9429,29 @@ parsed_number_string_t<UC> parse_number_string(UC const *p, UC const * pend, par
     // a multiplication by 10 is cheaper than an arbitrary integer
     // multiplication
     i = 10 * i +
-        uint64_t(*p - UC('0')); // might overflow, we will handle the overflow later
+        uint64_t(*p -
+                 UC('0')); // might overflow, we will handle the overflow later
     ++p;
   }
-  UC const * const end_of_integer_part = p;
+  UC const *const end_of_integer_part = p;
   int64_t digit_count = int64_t(end_of_integer_part - start_digits);
-  answer.integer = span<const UC>(start_digits, size_t(digit_count));
-  if (fmt & FASTFLOAT_JSONFMT) {
+  answer.integer = span<UC const>(start_digits, size_t(digit_count));
+  if (uint64_t(fmt & detail::basic_json_fmt)) {
     // at least 1 digit in integer part, without leading zeros
-    if (digit_count == 0 || (start_digits[0] == UC('0') && digit_count > 1)) {
-      return answer;
+    if (digit_count == 0) {
+      return report_parse_error<UC>(p, parse_error::no_digits_in_integer_part);
+    }
+    if ((start_digits[0] == UC('0') && digit_count > 1)) {
+      return report_parse_error<UC>(start_digits,
+                                    parse_error::leading_zeros_in_integer_part);
     }
   }
 
   int64_t exponent = 0;
-  const bool has_decimal_point = (p != pend) && (*p == decimal_point);
+  bool const has_decimal_point = (p != pend) && (*p == decimal_point);
   if (has_decimal_point) {
     ++p;
-    UC const * before = p;
+    UC const *before = p;
     // can occur at most twice without overflowing, but let it occur more, since
     // for integers with many digits, digit parsing is the primary bottleneck.
     loop_parse_if_eight_digits(p, pend, i);
@@ -8831,41 +9462,45 @@ parsed_number_string_t<UC> parse_number_string(UC const *p, UC const * pend, par
       i = i * 10 + digit; // in rare cases, this will overflow, but that's ok
     }
     exponent = before - p;
-    answer.fraction = span<const UC>(before, size_t(p - before));
+    answer.fraction = span<UC const>(before, size_t(p - before));
     digit_count -= exponent;
   }
-  if (fmt & FASTFLOAT_JSONFMT) {
+  if (uint64_t(fmt & detail::basic_json_fmt)) {
     // at least 1 digit in fractional part
     if (has_decimal_point && exponent == 0) {
-      return answer;
+      return report_parse_error<UC>(p,
+                                    parse_error::no_digits_in_fractional_part);
     }
-  } 
-  else if (digit_count == 0) { // we must have encountered at least one integer!
-    return answer;
+  } else if (digit_count ==
+             0) { // we must have encountered at least one integer!
+    return report_parse_error<UC>(p, parse_error::no_digits_in_mantissa);
   }
-  int64_t exp_number = 0;            // explicit exponential part
-  if ( ((fmt & chars_format::scientific) &&
-        (p != pend) &&
-        ((UC('e') == *p) || (UC('E') == *p)))
-       ||
-       ((fmt & FASTFLOAT_FORTRANFMT) &&
-        (p != pend) &&
-        ((UC('+') == *p) || (UC('-') == *p) || (UC('d') == *p) || (UC('D') == *p)))) {
-    UC const * location_of_e = p;
-    if ((UC('e') == *p) || (UC('E') == *p) || (UC('d') == *p) || (UC('D') == *p)) {
+  int64_t exp_number = 0; // explicit exponential part
+  if ((uint64_t(fmt & chars_format::scientific) && (p != pend) &&
+       ((UC('e') == *p) || (UC('E') == *p))) ||
+      (uint64_t(fmt & detail::basic_fortran_fmt) && (p != pend) &&
+       ((UC('+') == *p) || (UC('-') == *p) || (UC('d') == *p) ||
+        (UC('D') == *p)))) {
+    UC const *location_of_e = p;
+    if ((UC('e') == *p) || (UC('E') == *p) || (UC('d') == *p) ||
+        (UC('D') == *p)) {
       ++p;
     }
     bool neg_exp = false;
     if ((p != pend) && (UC('-') == *p)) {
       neg_exp = true;
       ++p;
-    } else if ((p != pend) && (UC('+') == *p)) { // '+' on exponent is allowed by C++17 20.19.3.(7.1)
+    } else if ((p != pend) &&
+               (UC('+') ==
+                *p)) { // '+' on exponent is allowed by C++17 20.19.3.(7.1)
       ++p;
     }
     if ((p == pend) || !is_integer(*p)) {
-      if(!(fmt & chars_format::fixed)) {
-        // We are in error.
-        return answer;
+      if (!uint64_t(fmt & chars_format::fixed)) {
+        // The exponential part is invalid for scientific notation, so it must
+        // be a trailing token for fixed notation. However, fixed notation is
+        // disabled, so report a scientific notation error.
+        return report_parse_error<UC>(p, parse_error::missing_exponential_part);
       }
       // Otherwise, we will be ignoring the 'e'.
       p = location_of_e;
@@ -8877,12 +9512,17 @@ parsed_number_string_t<UC> parse_number_string(UC const *p, UC const * pend, par
         }
         ++p;
       }
-      if(neg_exp) { exp_number = - exp_number; }
+      if (neg_exp) {
+        exp_number = -exp_number;
+      }
       exponent += exp_number;
     }
   } else {
     // If it scientific and not fixed, we have to bail out.
-    if((fmt & chars_format::scientific) && !(fmt & chars_format::fixed)) { return answer; }
+    if (uint64_t(fmt & chars_format::scientific) &&
+        !uint64_t(fmt & chars_format::fixed)) {
+      return report_parse_error<UC>(p, parse_error::missing_exponential_part);
+    }
   }
   answer.lastmatch = p;
   answer.valid = true;
@@ -8897,9 +9537,11 @@ parsed_number_string_t<UC> parse_number_string(UC const *p, UC const * pend, par
     // We have to handle the case where we have 0.0000somenumber.
     // We need to be mindful of the case where we only have zeroes...
     // E.g., 0.000000000...000.
-    UC const * start = start_digits;
+    UC const *start = start_digits;
     while ((start != pend) && (*start == UC('0') || *start == decimal_point)) {
-      if(*start == UC('0')) { digit_count --; }
+      if (*start == UC('0')) {
+        digit_count--;
+      }
       start++;
     }
 
@@ -8910,18 +9552,17 @@ parsed_number_string_t<UC> parse_number_string(UC const *p, UC const * pend, par
       // pre-tokenized spans from above.
       i = 0;
       p = answer.integer.ptr;
-      UC const* int_end = p + answer.integer.len();
-      const uint64_t minimal_nineteen_digit_integer{ 1000000000000000000 };
+      UC const *int_end = p + answer.integer.len();
+      uint64_t const minimal_nineteen_digit_integer{1000000000000000000};
       while ((i < minimal_nineteen_digit_integer) && (p != int_end)) {
         i = i * 10 + uint64_t(*p - UC('0'));
         ++p;
       }
       if (i >= minimal_nineteen_digit_integer) { // We have a big integers
         exponent = end_of_integer_part - p + exp_number;
-      }
-      else { // We have a value with a fractional component.
+      } else { // We have a value with a fractional component.
         p = answer.fraction.ptr;
-        UC const* frac_end = p + answer.fraction.len();
+        UC const *frac_end = p + answer.fraction.len();
         while ((i < minimal_nineteen_digit_integer) && (p != frac_end)) {
           i = i * 10 + uint64_t(*p - UC('0'));
           ++p;
@@ -8937,35 +9578,43 @@ parsed_number_string_t<UC> parse_number_string(UC const *p, UC const * pend, par
 }
 
 template <typename T, typename UC>
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-from_chars_result_t<UC> parse_int_string(UC const* p, UC const* pend, T& value, int base) {
-  from_chars_result_t<UC> answer;
-  
-  UC const* const first = p;
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 from_chars_result_t<UC>
+parse_int_string(UC const *p, UC const *pend, T &value,
+                 parse_options_t<UC> options) {
+  chars_format const fmt = detail::adjust_for_feature_macros(options.format);
+  int const base = options.base;
 
-  bool negative = (*p == UC('-'));
+  from_chars_result_t<UC> answer;
+
+  UC const *const first = p;
+
+  bool const negative = (*p == UC('-'));
+#ifdef FASTFLOAT_VISUAL_STUDIO
+#pragma warning(push)
+#pragma warning(disable : 4127)
+#endif
   if (!std::is_signed<T>::value && negative) {
+#ifdef FASTFLOAT_VISUAL_STUDIO
+#pragma warning(pop)
+#endif
     answer.ec = std::errc::invalid_argument;
     answer.ptr = first;
     return answer;
   }
-#ifdef FASTFLOAT_ALLOWS_LEADING_PLUS // disabled by default
-  if ((*p == UC('-')) || (*p == UC('+'))) {
-#else
-  if (*p == UC('-')) {
-#endif
+  if ((*p == UC('-')) ||
+      (uint64_t(fmt & chars_format::allow_leading_plus) && (*p == UC('+')))) {
     ++p;
   }
 
-  UC const* const start_num = p;
+  UC const *const start_num = p;
 
-  while (p!= pend && *p == UC('0')) {
-    ++p; 
+  while (p != pend && *p == UC('0')) {
+    ++p;
   }
 
-  const bool has_leading_zeros = p > start_num;
+  bool const has_leading_zeros = p > start_num;
 
-  UC const* const start_digits = p;
+  UC const *const start_digits = p;
 
   uint64_t i = 0;
   if (base == 10) {
@@ -8977,9 +9626,9 @@ from_chars_result_t<UC> parse_int_string(UC const* p, UC const* pend, T& value, 
       break;
     }
     i = uint64_t(base) * i + digit; // might overflow, check this later
-    p++; 
+    p++;
   }
-  
+
   size_t digit_count = size_t(p - start_digits);
 
   if (digit_count == 0) {
@@ -8987,12 +9636,11 @@ from_chars_result_t<UC> parse_int_string(UC const* p, UC const* pend, T& value, 
       value = 0;
       answer.ec = std::errc();
       answer.ptr = p;
-    }
-    else {
+    } else {
       answer.ec = std::errc::invalid_argument;
       answer.ptr = first;
     }
-    return answer; 
+    return answer;
   }
 
   answer.ptr = p;
@@ -9003,7 +9651,8 @@ from_chars_result_t<UC> parse_int_string(UC const* p, UC const* pend, T& value, 
     answer.ec = std::errc::result_out_of_range;
     return answer;
   }
-  // this check can be eliminated for all other types, but they will all require a max_digits(base) equivalent
+  // this check can be eliminated for all other types, but they will all require
+  // a max_digits(base) equivalent
   if (digit_count == max_digits && i < min_safe_u64(base)) {
     answer.ec = std::errc::result_out_of_range;
     return answer;
@@ -9020,18 +9669,22 @@ from_chars_result_t<UC> parse_int_string(UC const* p, UC const* pend, T& value, 
   if (negative) {
 #ifdef FASTFLOAT_VISUAL_STUDIO
 #pragma warning(push)
-#pragma warning(disable: 4146) 
+#pragma warning(disable : 4146)
 #endif
     // this weird workaround is required because:
-    // - converting unsigned to signed when its value is greater than signed max is UB pre-C++23.
+    // - converting unsigned to signed when its value is greater than signed max
+    // is UB pre-C++23.
     // - reinterpret_casting (~i + 1) would work, but it is not constexpr
-    // this is always optimized into a neg instruction (note: T is an integer type)
-    value = T(-std::numeric_limits<T>::max() - T(i - uint64_t(std::numeric_limits<T>::max())));
+    // this is always optimized into a neg instruction (note: T is an integer
+    // type)
+    value = T(-std::numeric_limits<T>::max() -
+              T(i - uint64_t(std::numeric_limits<T>::max())));
 #ifdef FASTFLOAT_VISUAL_STUDIO
 #pragma warning(pop)
 #endif
+  } else {
+    value = T(i);
   }
-  else { value = T(i); }
 
   answer.ec = std::errc();
   return answer;
@@ -9073,669 +9726,677 @@ namespace fast_float {
  * infinite in binary64 so we never need to worry about powers
  * of 5 greater than 308.
  */
-template <class unused = void>
-struct powers_template {
+template <class unused = void> struct powers_template {
 
-constexpr static int smallest_power_of_five = binary_format<double>::smallest_power_of_ten();
-constexpr static int largest_power_of_five = binary_format<double>::largest_power_of_ten();
-constexpr static int number_of_entries = 2 * (largest_power_of_five - smallest_power_of_five + 1);
-// Powers of five from 5^-342 all the way to 5^308 rounded toward one.
-constexpr static uint64_t power_of_five_128[number_of_entries] = {
-    0xeef453d6923bd65a,0x113faa2906a13b3f,
-    0x9558b4661b6565f8,0x4ac7ca59a424c507,
-    0xbaaee17fa23ebf76,0x5d79bcf00d2df649,
-    0xe95a99df8ace6f53,0xf4d82c2c107973dc,
-    0x91d8a02bb6c10594,0x79071b9b8a4be869,
-    0xb64ec836a47146f9,0x9748e2826cdee284,
-    0xe3e27a444d8d98b7,0xfd1b1b2308169b25,
-    0x8e6d8c6ab0787f72,0xfe30f0f5e50e20f7,
-    0xb208ef855c969f4f,0xbdbd2d335e51a935,
-    0xde8b2b66b3bc4723,0xad2c788035e61382,
-    0x8b16fb203055ac76,0x4c3bcb5021afcc31,
-    0xaddcb9e83c6b1793,0xdf4abe242a1bbf3d,
-    0xd953e8624b85dd78,0xd71d6dad34a2af0d,
-    0x87d4713d6f33aa6b,0x8672648c40e5ad68,
-    0xa9c98d8ccb009506,0x680efdaf511f18c2,
-    0xd43bf0effdc0ba48,0x212bd1b2566def2,
-    0x84a57695fe98746d,0x14bb630f7604b57,
-    0xa5ced43b7e3e9188,0x419ea3bd35385e2d,
-    0xcf42894a5dce35ea,0x52064cac828675b9,
-    0x818995ce7aa0e1b2,0x7343efebd1940993,
-    0xa1ebfb4219491a1f,0x1014ebe6c5f90bf8,
-    0xca66fa129f9b60a6,0xd41a26e077774ef6,
-    0xfd00b897478238d0,0x8920b098955522b4,
-    0x9e20735e8cb16382,0x55b46e5f5d5535b0,
-    0xc5a890362fddbc62,0xeb2189f734aa831d,
-    0xf712b443bbd52b7b,0xa5e9ec7501d523e4,
-    0x9a6bb0aa55653b2d,0x47b233c92125366e,
-    0xc1069cd4eabe89f8,0x999ec0bb696e840a,
-    0xf148440a256e2c76,0xc00670ea43ca250d,
-    0x96cd2a865764dbca,0x380406926a5e5728,
-    0xbc807527ed3e12bc,0xc605083704f5ecf2,
-    0xeba09271e88d976b,0xf7864a44c633682e,
-    0x93445b8731587ea3,0x7ab3ee6afbe0211d,
-    0xb8157268fdae9e4c,0x5960ea05bad82964,
-    0xe61acf033d1a45df,0x6fb92487298e33bd,
-    0x8fd0c16206306bab,0xa5d3b6d479f8e056,
-    0xb3c4f1ba87bc8696,0x8f48a4899877186c,
-    0xe0b62e2929aba83c,0x331acdabfe94de87,
-    0x8c71dcd9ba0b4925,0x9ff0c08b7f1d0b14,
-    0xaf8e5410288e1b6f,0x7ecf0ae5ee44dd9,
-    0xdb71e91432b1a24a,0xc9e82cd9f69d6150,
-    0x892731ac9faf056e,0xbe311c083a225cd2,
-    0xab70fe17c79ac6ca,0x6dbd630a48aaf406,
-    0xd64d3d9db981787d,0x92cbbccdad5b108,
-    0x85f0468293f0eb4e,0x25bbf56008c58ea5,
-    0xa76c582338ed2621,0xaf2af2b80af6f24e,
-    0xd1476e2c07286faa,0x1af5af660db4aee1,
-    0x82cca4db847945ca,0x50d98d9fc890ed4d,
-    0xa37fce126597973c,0xe50ff107bab528a0,
-    0xcc5fc196fefd7d0c,0x1e53ed49a96272c8,
-    0xff77b1fcbebcdc4f,0x25e8e89c13bb0f7a,
-    0x9faacf3df73609b1,0x77b191618c54e9ac,
-    0xc795830d75038c1d,0xd59df5b9ef6a2417,
-    0xf97ae3d0d2446f25,0x4b0573286b44ad1d,
-    0x9becce62836ac577,0x4ee367f9430aec32,
-    0xc2e801fb244576d5,0x229c41f793cda73f,
-    0xf3a20279ed56d48a,0x6b43527578c1110f,
-    0x9845418c345644d6,0x830a13896b78aaa9,
-    0xbe5691ef416bd60c,0x23cc986bc656d553,
-    0xedec366b11c6cb8f,0x2cbfbe86b7ec8aa8,
-    0x94b3a202eb1c3f39,0x7bf7d71432f3d6a9,
-    0xb9e08a83a5e34f07,0xdaf5ccd93fb0cc53,
-    0xe858ad248f5c22c9,0xd1b3400f8f9cff68,
-    0x91376c36d99995be,0x23100809b9c21fa1,
-    0xb58547448ffffb2d,0xabd40a0c2832a78a,
-    0xe2e69915b3fff9f9,0x16c90c8f323f516c,
-    0x8dd01fad907ffc3b,0xae3da7d97f6792e3,
-    0xb1442798f49ffb4a,0x99cd11cfdf41779c,
-    0xdd95317f31c7fa1d,0x40405643d711d583,
-    0x8a7d3eef7f1cfc52,0x482835ea666b2572,
-    0xad1c8eab5ee43b66,0xda3243650005eecf,
-    0xd863b256369d4a40,0x90bed43e40076a82,
-    0x873e4f75e2224e68,0x5a7744a6e804a291,
-    0xa90de3535aaae202,0x711515d0a205cb36,
-    0xd3515c2831559a83,0xd5a5b44ca873e03,
-    0x8412d9991ed58091,0xe858790afe9486c2,
-    0xa5178fff668ae0b6,0x626e974dbe39a872,
-    0xce5d73ff402d98e3,0xfb0a3d212dc8128f,
-    0x80fa687f881c7f8e,0x7ce66634bc9d0b99,
-    0xa139029f6a239f72,0x1c1fffc1ebc44e80,
-    0xc987434744ac874e,0xa327ffb266b56220,
-    0xfbe9141915d7a922,0x4bf1ff9f0062baa8,
-    0x9d71ac8fada6c9b5,0x6f773fc3603db4a9,
-    0xc4ce17b399107c22,0xcb550fb4384d21d3,
-    0xf6019da07f549b2b,0x7e2a53a146606a48,
-    0x99c102844f94e0fb,0x2eda7444cbfc426d,
-    0xc0314325637a1939,0xfa911155fefb5308,
-    0xf03d93eebc589f88,0x793555ab7eba27ca,
-    0x96267c7535b763b5,0x4bc1558b2f3458de,
-    0xbbb01b9283253ca2,0x9eb1aaedfb016f16,
-    0xea9c227723ee8bcb,0x465e15a979c1cadc,
-    0x92a1958a7675175f,0xbfacd89ec191ec9,
-    0xb749faed14125d36,0xcef980ec671f667b,
-    0xe51c79a85916f484,0x82b7e12780e7401a,
-    0x8f31cc0937ae58d2,0xd1b2ecb8b0908810,
-    0xb2fe3f0b8599ef07,0x861fa7e6dcb4aa15,
-    0xdfbdcece67006ac9,0x67a791e093e1d49a,
-    0x8bd6a141006042bd,0xe0c8bb2c5c6d24e0,
-    0xaecc49914078536d,0x58fae9f773886e18,
-    0xda7f5bf590966848,0xaf39a475506a899e,
-    0x888f99797a5e012d,0x6d8406c952429603,
-    0xaab37fd7d8f58178,0xc8e5087ba6d33b83,
-    0xd5605fcdcf32e1d6,0xfb1e4a9a90880a64,
-    0x855c3be0a17fcd26,0x5cf2eea09a55067f,
-    0xa6b34ad8c9dfc06f,0xf42faa48c0ea481e,
-    0xd0601d8efc57b08b,0xf13b94daf124da26,
-    0x823c12795db6ce57,0x76c53d08d6b70858,
-    0xa2cb1717b52481ed,0x54768c4b0c64ca6e,
-    0xcb7ddcdda26da268,0xa9942f5dcf7dfd09,
-    0xfe5d54150b090b02,0xd3f93b35435d7c4c,
-    0x9efa548d26e5a6e1,0xc47bc5014a1a6daf,
-    0xc6b8e9b0709f109a,0x359ab6419ca1091b,
-    0xf867241c8cc6d4c0,0xc30163d203c94b62,
-    0x9b407691d7fc44f8,0x79e0de63425dcf1d,
-    0xc21094364dfb5636,0x985915fc12f542e4,
-    0xf294b943e17a2bc4,0x3e6f5b7b17b2939d,
-    0x979cf3ca6cec5b5a,0xa705992ceecf9c42,
-    0xbd8430bd08277231,0x50c6ff782a838353,
-    0xece53cec4a314ebd,0xa4f8bf5635246428,
-    0x940f4613ae5ed136,0x871b7795e136be99,
-    0xb913179899f68584,0x28e2557b59846e3f,
-    0xe757dd7ec07426e5,0x331aeada2fe589cf,
-    0x9096ea6f3848984f,0x3ff0d2c85def7621,
-    0xb4bca50b065abe63,0xfed077a756b53a9,
-    0xe1ebce4dc7f16dfb,0xd3e8495912c62894,
-    0x8d3360f09cf6e4bd,0x64712dd7abbbd95c,
-    0xb080392cc4349dec,0xbd8d794d96aacfb3,
-    0xdca04777f541c567,0xecf0d7a0fc5583a0,
-    0x89e42caaf9491b60,0xf41686c49db57244,
-    0xac5d37d5b79b6239,0x311c2875c522ced5,
-    0xd77485cb25823ac7,0x7d633293366b828b,
-    0x86a8d39ef77164bc,0xae5dff9c02033197,
-    0xa8530886b54dbdeb,0xd9f57f830283fdfc,
-    0xd267caa862a12d66,0xd072df63c324fd7b,
-    0x8380dea93da4bc60,0x4247cb9e59f71e6d,
-    0xa46116538d0deb78,0x52d9be85f074e608,
-    0xcd795be870516656,0x67902e276c921f8b,
-    0x806bd9714632dff6,0xba1cd8a3db53b6,
-    0xa086cfcd97bf97f3,0x80e8a40eccd228a4,
-    0xc8a883c0fdaf7df0,0x6122cd128006b2cd,
-    0xfad2a4b13d1b5d6c,0x796b805720085f81,
-    0x9cc3a6eec6311a63,0xcbe3303674053bb0,
-    0xc3f490aa77bd60fc,0xbedbfc4411068a9c,
-    0xf4f1b4d515acb93b,0xee92fb5515482d44,
-    0x991711052d8bf3c5,0x751bdd152d4d1c4a,
-    0xbf5cd54678eef0b6,0xd262d45a78a0635d,
-    0xef340a98172aace4,0x86fb897116c87c34,
-    0x9580869f0e7aac0e,0xd45d35e6ae3d4da0,
-    0xbae0a846d2195712,0x8974836059cca109,
-    0xe998d258869facd7,0x2bd1a438703fc94b,
-    0x91ff83775423cc06,0x7b6306a34627ddcf,
-    0xb67f6455292cbf08,0x1a3bc84c17b1d542,
-    0xe41f3d6a7377eeca,0x20caba5f1d9e4a93,
-    0x8e938662882af53e,0x547eb47b7282ee9c,
-    0xb23867fb2a35b28d,0xe99e619a4f23aa43,
-    0xdec681f9f4c31f31,0x6405fa00e2ec94d4,
-    0x8b3c113c38f9f37e,0xde83bc408dd3dd04,
-    0xae0b158b4738705e,0x9624ab50b148d445,
-    0xd98ddaee19068c76,0x3badd624dd9b0957,
-    0x87f8a8d4cfa417c9,0xe54ca5d70a80e5d6,
-    0xa9f6d30a038d1dbc,0x5e9fcf4ccd211f4c,
-    0xd47487cc8470652b,0x7647c3200069671f,
-    0x84c8d4dfd2c63f3b,0x29ecd9f40041e073,
-    0xa5fb0a17c777cf09,0xf468107100525890,
-    0xcf79cc9db955c2cc,0x7182148d4066eeb4,
-    0x81ac1fe293d599bf,0xc6f14cd848405530,
-    0xa21727db38cb002f,0xb8ada00e5a506a7c,
-    0xca9cf1d206fdc03b,0xa6d90811f0e4851c,
-    0xfd442e4688bd304a,0x908f4a166d1da663,
-    0x9e4a9cec15763e2e,0x9a598e4e043287fe,
-    0xc5dd44271ad3cdba,0x40eff1e1853f29fd,
-    0xf7549530e188c128,0xd12bee59e68ef47c,
-    0x9a94dd3e8cf578b9,0x82bb74f8301958ce,
-    0xc13a148e3032d6e7,0xe36a52363c1faf01,
-    0xf18899b1bc3f8ca1,0xdc44e6c3cb279ac1,
-    0x96f5600f15a7b7e5,0x29ab103a5ef8c0b9,
-    0xbcb2b812db11a5de,0x7415d448f6b6f0e7,
-    0xebdf661791d60f56,0x111b495b3464ad21,
-    0x936b9fcebb25c995,0xcab10dd900beec34,
-    0xb84687c269ef3bfb,0x3d5d514f40eea742,
-    0xe65829b3046b0afa,0xcb4a5a3112a5112,
-    0x8ff71a0fe2c2e6dc,0x47f0e785eaba72ab,
-    0xb3f4e093db73a093,0x59ed216765690f56,
-    0xe0f218b8d25088b8,0x306869c13ec3532c,
-    0x8c974f7383725573,0x1e414218c73a13fb,
-    0xafbd2350644eeacf,0xe5d1929ef90898fa,
-    0xdbac6c247d62a583,0xdf45f746b74abf39,
-    0x894bc396ce5da772,0x6b8bba8c328eb783,
-    0xab9eb47c81f5114f,0x66ea92f3f326564,
-    0xd686619ba27255a2,0xc80a537b0efefebd,
-    0x8613fd0145877585,0xbd06742ce95f5f36,
-    0xa798fc4196e952e7,0x2c48113823b73704,
-    0xd17f3b51fca3a7a0,0xf75a15862ca504c5,
-    0x82ef85133de648c4,0x9a984d73dbe722fb,
-    0xa3ab66580d5fdaf5,0xc13e60d0d2e0ebba,
-    0xcc963fee10b7d1b3,0x318df905079926a8,
-    0xffbbcfe994e5c61f,0xfdf17746497f7052,
-    0x9fd561f1fd0f9bd3,0xfeb6ea8bedefa633,
-    0xc7caba6e7c5382c8,0xfe64a52ee96b8fc0,
-    0xf9bd690a1b68637b,0x3dfdce7aa3c673b0,
-    0x9c1661a651213e2d,0x6bea10ca65c084e,
-    0xc31bfa0fe5698db8,0x486e494fcff30a62,
-    0xf3e2f893dec3f126,0x5a89dba3c3efccfa,
-    0x986ddb5c6b3a76b7,0xf89629465a75e01c,
-    0xbe89523386091465,0xf6bbb397f1135823,
-    0xee2ba6c0678b597f,0x746aa07ded582e2c,
-    0x94db483840b717ef,0xa8c2a44eb4571cdc,
-    0xba121a4650e4ddeb,0x92f34d62616ce413,
-    0xe896a0d7e51e1566,0x77b020baf9c81d17,
-    0x915e2486ef32cd60,0xace1474dc1d122e,
-    0xb5b5ada8aaff80b8,0xd819992132456ba,
-    0xe3231912d5bf60e6,0x10e1fff697ed6c69,
-    0x8df5efabc5979c8f,0xca8d3ffa1ef463c1,
-    0xb1736b96b6fd83b3,0xbd308ff8a6b17cb2,
-    0xddd0467c64bce4a0,0xac7cb3f6d05ddbde,
-    0x8aa22c0dbef60ee4,0x6bcdf07a423aa96b,
-    0xad4ab7112eb3929d,0x86c16c98d2c953c6,
-    0xd89d64d57a607744,0xe871c7bf077ba8b7,
-    0x87625f056c7c4a8b,0x11471cd764ad4972,
-    0xa93af6c6c79b5d2d,0xd598e40d3dd89bcf,
-    0xd389b47879823479,0x4aff1d108d4ec2c3,
-    0x843610cb4bf160cb,0xcedf722a585139ba,
-    0xa54394fe1eedb8fe,0xc2974eb4ee658828,
-    0xce947a3da6a9273e,0x733d226229feea32,
-    0x811ccc668829b887,0x806357d5a3f525f,
-    0xa163ff802a3426a8,0xca07c2dcb0cf26f7,
-    0xc9bcff6034c13052,0xfc89b393dd02f0b5,
-    0xfc2c3f3841f17c67,0xbbac2078d443ace2,
-    0x9d9ba7832936edc0,0xd54b944b84aa4c0d,
-    0xc5029163f384a931,0xa9e795e65d4df11,
-    0xf64335bcf065d37d,0x4d4617b5ff4a16d5,
-    0x99ea0196163fa42e,0x504bced1bf8e4e45,
-    0xc06481fb9bcf8d39,0xe45ec2862f71e1d6,
-    0xf07da27a82c37088,0x5d767327bb4e5a4c,
-    0x964e858c91ba2655,0x3a6a07f8d510f86f,
-    0xbbe226efb628afea,0x890489f70a55368b,
-    0xeadab0aba3b2dbe5,0x2b45ac74ccea842e,
-    0x92c8ae6b464fc96f,0x3b0b8bc90012929d,
-    0xb77ada0617e3bbcb,0x9ce6ebb40173744,
-    0xe55990879ddcaabd,0xcc420a6a101d0515,
-    0x8f57fa54c2a9eab6,0x9fa946824a12232d,
-    0xb32df8e9f3546564,0x47939822dc96abf9,
-    0xdff9772470297ebd,0x59787e2b93bc56f7,
-    0x8bfbea76c619ef36,0x57eb4edb3c55b65a,
-    0xaefae51477a06b03,0xede622920b6b23f1,
-    0xdab99e59958885c4,0xe95fab368e45eced,
-    0x88b402f7fd75539b,0x11dbcb0218ebb414,
-    0xaae103b5fcd2a881,0xd652bdc29f26a119,
-    0xd59944a37c0752a2,0x4be76d3346f0495f,
-    0x857fcae62d8493a5,0x6f70a4400c562ddb,
-    0xa6dfbd9fb8e5b88e,0xcb4ccd500f6bb952,
-    0xd097ad07a71f26b2,0x7e2000a41346a7a7,
-    0x825ecc24c873782f,0x8ed400668c0c28c8,
-    0xa2f67f2dfa90563b,0x728900802f0f32fa,
-    0xcbb41ef979346bca,0x4f2b40a03ad2ffb9,
-    0xfea126b7d78186bc,0xe2f610c84987bfa8,
-    0x9f24b832e6b0f436,0xdd9ca7d2df4d7c9,
-    0xc6ede63fa05d3143,0x91503d1c79720dbb,
-    0xf8a95fcf88747d94,0x75a44c6397ce912a,
-    0x9b69dbe1b548ce7c,0xc986afbe3ee11aba,
-    0xc24452da229b021b,0xfbe85badce996168,
-    0xf2d56790ab41c2a2,0xfae27299423fb9c3,
-    0x97c560ba6b0919a5,0xdccd879fc967d41a,
-    0xbdb6b8e905cb600f,0x5400e987bbc1c920,
-    0xed246723473e3813,0x290123e9aab23b68,
-    0x9436c0760c86e30b,0xf9a0b6720aaf6521,
-    0xb94470938fa89bce,0xf808e40e8d5b3e69,
-    0xe7958cb87392c2c2,0xb60b1d1230b20e04,
-    0x90bd77f3483bb9b9,0xb1c6f22b5e6f48c2,
-    0xb4ecd5f01a4aa828,0x1e38aeb6360b1af3,
-    0xe2280b6c20dd5232,0x25c6da63c38de1b0,
-    0x8d590723948a535f,0x579c487e5a38ad0e,
-    0xb0af48ec79ace837,0x2d835a9df0c6d851,
-    0xdcdb1b2798182244,0xf8e431456cf88e65,
-    0x8a08f0f8bf0f156b,0x1b8e9ecb641b58ff,
-    0xac8b2d36eed2dac5,0xe272467e3d222f3f,
-    0xd7adf884aa879177,0x5b0ed81dcc6abb0f,
-    0x86ccbb52ea94baea,0x98e947129fc2b4e9,
-    0xa87fea27a539e9a5,0x3f2398d747b36224,
-    0xd29fe4b18e88640e,0x8eec7f0d19a03aad,
-    0x83a3eeeef9153e89,0x1953cf68300424ac,
-    0xa48ceaaab75a8e2b,0x5fa8c3423c052dd7,
-    0xcdb02555653131b6,0x3792f412cb06794d,
-    0x808e17555f3ebf11,0xe2bbd88bbee40bd0,
-    0xa0b19d2ab70e6ed6,0x5b6aceaeae9d0ec4,
-    0xc8de047564d20a8b,0xf245825a5a445275,
-    0xfb158592be068d2e,0xeed6e2f0f0d56712,
-    0x9ced737bb6c4183d,0x55464dd69685606b,
-    0xc428d05aa4751e4c,0xaa97e14c3c26b886,
-    0xf53304714d9265df,0xd53dd99f4b3066a8,
-    0x993fe2c6d07b7fab,0xe546a8038efe4029,
-    0xbf8fdb78849a5f96,0xde98520472bdd033,
-    0xef73d256a5c0f77c,0x963e66858f6d4440,
-    0x95a8637627989aad,0xdde7001379a44aa8,
-    0xbb127c53b17ec159,0x5560c018580d5d52,
-    0xe9d71b689dde71af,0xaab8f01e6e10b4a6,
-    0x9226712162ab070d,0xcab3961304ca70e8,
-    0xb6b00d69bb55c8d1,0x3d607b97c5fd0d22,
-    0xe45c10c42a2b3b05,0x8cb89a7db77c506a,
-    0x8eb98a7a9a5b04e3,0x77f3608e92adb242,
-    0xb267ed1940f1c61c,0x55f038b237591ed3,
-    0xdf01e85f912e37a3,0x6b6c46dec52f6688,
-    0x8b61313bbabce2c6,0x2323ac4b3b3da015,
-    0xae397d8aa96c1b77,0xabec975e0a0d081a,
-    0xd9c7dced53c72255,0x96e7bd358c904a21,
-    0x881cea14545c7575,0x7e50d64177da2e54,
-    0xaa242499697392d2,0xdde50bd1d5d0b9e9,
-    0xd4ad2dbfc3d07787,0x955e4ec64b44e864,
-    0x84ec3c97da624ab4,0xbd5af13bef0b113e,
-    0xa6274bbdd0fadd61,0xecb1ad8aeacdd58e,
-    0xcfb11ead453994ba,0x67de18eda5814af2,
-    0x81ceb32c4b43fcf4,0x80eacf948770ced7,
-    0xa2425ff75e14fc31,0xa1258379a94d028d,
-    0xcad2f7f5359a3b3e,0x96ee45813a04330,
-    0xfd87b5f28300ca0d,0x8bca9d6e188853fc,
-    0x9e74d1b791e07e48,0x775ea264cf55347e,
-    0xc612062576589dda,0x95364afe032a819e,
-    0xf79687aed3eec551,0x3a83ddbd83f52205,
-    0x9abe14cd44753b52,0xc4926a9672793543,
-    0xc16d9a0095928a27,0x75b7053c0f178294,
-    0xf1c90080baf72cb1,0x5324c68b12dd6339,
-    0x971da05074da7bee,0xd3f6fc16ebca5e04,
-    0xbce5086492111aea,0x88f4bb1ca6bcf585,
-    0xec1e4a7db69561a5,0x2b31e9e3d06c32e6,
-    0x9392ee8e921d5d07,0x3aff322e62439fd0,
-    0xb877aa3236a4b449,0x9befeb9fad487c3,
-    0xe69594bec44de15b,0x4c2ebe687989a9b4,
-    0x901d7cf73ab0acd9,0xf9d37014bf60a11,
-    0xb424dc35095cd80f,0x538484c19ef38c95,
-    0xe12e13424bb40e13,0x2865a5f206b06fba,
-    0x8cbccc096f5088cb,0xf93f87b7442e45d4,
-    0xafebff0bcb24aafe,0xf78f69a51539d749,
-    0xdbe6fecebdedd5be,0xb573440e5a884d1c,
-    0x89705f4136b4a597,0x31680a88f8953031,
-    0xabcc77118461cefc,0xfdc20d2b36ba7c3e,
-    0xd6bf94d5e57a42bc,0x3d32907604691b4d,
-    0x8637bd05af6c69b5,0xa63f9a49c2c1b110,
-    0xa7c5ac471b478423,0xfcf80dc33721d54,
-    0xd1b71758e219652b,0xd3c36113404ea4a9,
-    0x83126e978d4fdf3b,0x645a1cac083126ea,
-    0xa3d70a3d70a3d70a,0x3d70a3d70a3d70a4,
-    0xcccccccccccccccc,0xcccccccccccccccd,
-    0x8000000000000000,0x0,
-    0xa000000000000000,0x0,
-    0xc800000000000000,0x0,
-    0xfa00000000000000,0x0,
-    0x9c40000000000000,0x0,
-    0xc350000000000000,0x0,
-    0xf424000000000000,0x0,
-    0x9896800000000000,0x0,
-    0xbebc200000000000,0x0,
-    0xee6b280000000000,0x0,
-    0x9502f90000000000,0x0,
-    0xba43b74000000000,0x0,
-    0xe8d4a51000000000,0x0,
-    0x9184e72a00000000,0x0,
-    0xb5e620f480000000,0x0,
-    0xe35fa931a0000000,0x0,
-    0x8e1bc9bf04000000,0x0,
-    0xb1a2bc2ec5000000,0x0,
-    0xde0b6b3a76400000,0x0,
-    0x8ac7230489e80000,0x0,
-    0xad78ebc5ac620000,0x0,
-    0xd8d726b7177a8000,0x0,
-    0x878678326eac9000,0x0,
-    0xa968163f0a57b400,0x0,
-    0xd3c21bcecceda100,0x0,
-    0x84595161401484a0,0x0,
-    0xa56fa5b99019a5c8,0x0,
-    0xcecb8f27f4200f3a,0x0,
-    0x813f3978f8940984,0x4000000000000000,
-    0xa18f07d736b90be5,0x5000000000000000,
-    0xc9f2c9cd04674ede,0xa400000000000000,
-    0xfc6f7c4045812296,0x4d00000000000000,
-    0x9dc5ada82b70b59d,0xf020000000000000,
-    0xc5371912364ce305,0x6c28000000000000,
-    0xf684df56c3e01bc6,0xc732000000000000,
-    0x9a130b963a6c115c,0x3c7f400000000000,
-    0xc097ce7bc90715b3,0x4b9f100000000000,
-    0xf0bdc21abb48db20,0x1e86d40000000000,
-    0x96769950b50d88f4,0x1314448000000000,
-    0xbc143fa4e250eb31,0x17d955a000000000,
-    0xeb194f8e1ae525fd,0x5dcfab0800000000,
-    0x92efd1b8d0cf37be,0x5aa1cae500000000,
-    0xb7abc627050305ad,0xf14a3d9e40000000,
-    0xe596b7b0c643c719,0x6d9ccd05d0000000,
-    0x8f7e32ce7bea5c6f,0xe4820023a2000000,
-    0xb35dbf821ae4f38b,0xdda2802c8a800000,
-    0xe0352f62a19e306e,0xd50b2037ad200000,
-    0x8c213d9da502de45,0x4526f422cc340000,
-    0xaf298d050e4395d6,0x9670b12b7f410000,
-    0xdaf3f04651d47b4c,0x3c0cdd765f114000,
-    0x88d8762bf324cd0f,0xa5880a69fb6ac800,
-    0xab0e93b6efee0053,0x8eea0d047a457a00,
-    0xd5d238a4abe98068,0x72a4904598d6d880,
-    0x85a36366eb71f041,0x47a6da2b7f864750,
-    0xa70c3c40a64e6c51,0x999090b65f67d924,
-    0xd0cf4b50cfe20765,0xfff4b4e3f741cf6d,
-    0x82818f1281ed449f,0xbff8f10e7a8921a4,
-    0xa321f2d7226895c7,0xaff72d52192b6a0d,
-    0xcbea6f8ceb02bb39,0x9bf4f8a69f764490,
-    0xfee50b7025c36a08,0x2f236d04753d5b4,
-    0x9f4f2726179a2245,0x1d762422c946590,
-    0xc722f0ef9d80aad6,0x424d3ad2b7b97ef5,
-    0xf8ebad2b84e0d58b,0xd2e0898765a7deb2,
-    0x9b934c3b330c8577,0x63cc55f49f88eb2f,
-    0xc2781f49ffcfa6d5,0x3cbf6b71c76b25fb,
-    0xf316271c7fc3908a,0x8bef464e3945ef7a,
-    0x97edd871cfda3a56,0x97758bf0e3cbb5ac,
-    0xbde94e8e43d0c8ec,0x3d52eeed1cbea317,
-    0xed63a231d4c4fb27,0x4ca7aaa863ee4bdd,
-    0x945e455f24fb1cf8,0x8fe8caa93e74ef6a,
-    0xb975d6b6ee39e436,0xb3e2fd538e122b44,
-    0xe7d34c64a9c85d44,0x60dbbca87196b616,
-    0x90e40fbeea1d3a4a,0xbc8955e946fe31cd,
-    0xb51d13aea4a488dd,0x6babab6398bdbe41,
-    0xe264589a4dcdab14,0xc696963c7eed2dd1,
-    0x8d7eb76070a08aec,0xfc1e1de5cf543ca2,
-    0xb0de65388cc8ada8,0x3b25a55f43294bcb,
-    0xdd15fe86affad912,0x49ef0eb713f39ebe,
-    0x8a2dbf142dfcc7ab,0x6e3569326c784337,
-    0xacb92ed9397bf996,0x49c2c37f07965404,
-    0xd7e77a8f87daf7fb,0xdc33745ec97be906,
-    0x86f0ac99b4e8dafd,0x69a028bb3ded71a3,
-    0xa8acd7c0222311bc,0xc40832ea0d68ce0c,
-    0xd2d80db02aabd62b,0xf50a3fa490c30190,
-    0x83c7088e1aab65db,0x792667c6da79e0fa,
-    0xa4b8cab1a1563f52,0x577001b891185938,
-    0xcde6fd5e09abcf26,0xed4c0226b55e6f86,
-    0x80b05e5ac60b6178,0x544f8158315b05b4,
-    0xa0dc75f1778e39d6,0x696361ae3db1c721,
-    0xc913936dd571c84c,0x3bc3a19cd1e38e9,
-    0xfb5878494ace3a5f,0x4ab48a04065c723,
-    0x9d174b2dcec0e47b,0x62eb0d64283f9c76,
-    0xc45d1df942711d9a,0x3ba5d0bd324f8394,
-    0xf5746577930d6500,0xca8f44ec7ee36479,
-    0x9968bf6abbe85f20,0x7e998b13cf4e1ecb,
-    0xbfc2ef456ae276e8,0x9e3fedd8c321a67e,
-    0xefb3ab16c59b14a2,0xc5cfe94ef3ea101e,
-    0x95d04aee3b80ece5,0xbba1f1d158724a12,
-    0xbb445da9ca61281f,0x2a8a6e45ae8edc97,
-    0xea1575143cf97226,0xf52d09d71a3293bd,
-    0x924d692ca61be758,0x593c2626705f9c56,
-    0xb6e0c377cfa2e12e,0x6f8b2fb00c77836c,
-    0xe498f455c38b997a,0xb6dfb9c0f956447,
-    0x8edf98b59a373fec,0x4724bd4189bd5eac,
-    0xb2977ee300c50fe7,0x58edec91ec2cb657,
-    0xdf3d5e9bc0f653e1,0x2f2967b66737e3ed,
-    0x8b865b215899f46c,0xbd79e0d20082ee74,
-    0xae67f1e9aec07187,0xecd8590680a3aa11,
-    0xda01ee641a708de9,0xe80e6f4820cc9495,
-    0x884134fe908658b2,0x3109058d147fdcdd,
-    0xaa51823e34a7eede,0xbd4b46f0599fd415,
-    0xd4e5e2cdc1d1ea96,0x6c9e18ac7007c91a,
-    0x850fadc09923329e,0x3e2cf6bc604ddb0,
-    0xa6539930bf6bff45,0x84db8346b786151c,
-    0xcfe87f7cef46ff16,0xe612641865679a63,
-    0x81f14fae158c5f6e,0x4fcb7e8f3f60c07e,
-    0xa26da3999aef7749,0xe3be5e330f38f09d,
-    0xcb090c8001ab551c,0x5cadf5bfd3072cc5,
-    0xfdcb4fa002162a63,0x73d9732fc7c8f7f6,
-    0x9e9f11c4014dda7e,0x2867e7fddcdd9afa,
-    0xc646d63501a1511d,0xb281e1fd541501b8,
-    0xf7d88bc24209a565,0x1f225a7ca91a4226,
-    0x9ae757596946075f,0x3375788de9b06958,
-    0xc1a12d2fc3978937,0x52d6b1641c83ae,
-    0xf209787bb47d6b84,0xc0678c5dbd23a49a,
-    0x9745eb4d50ce6332,0xf840b7ba963646e0,
-    0xbd176620a501fbff,0xb650e5a93bc3d898,
-    0xec5d3fa8ce427aff,0xa3e51f138ab4cebe,
-    0x93ba47c980e98cdf,0xc66f336c36b10137,
-    0xb8a8d9bbe123f017,0xb80b0047445d4184,
-    0xe6d3102ad96cec1d,0xa60dc059157491e5,
-    0x9043ea1ac7e41392,0x87c89837ad68db2f,
-    0xb454e4a179dd1877,0x29babe4598c311fb,
-    0xe16a1dc9d8545e94,0xf4296dd6fef3d67a,
-    0x8ce2529e2734bb1d,0x1899e4a65f58660c,
-    0xb01ae745b101e9e4,0x5ec05dcff72e7f8f,
-    0xdc21a1171d42645d,0x76707543f4fa1f73,
-    0x899504ae72497eba,0x6a06494a791c53a8,
-    0xabfa45da0edbde69,0x487db9d17636892,
-    0xd6f8d7509292d603,0x45a9d2845d3c42b6,
-    0x865b86925b9bc5c2,0xb8a2392ba45a9b2,
-    0xa7f26836f282b732,0x8e6cac7768d7141e,
-    0xd1ef0244af2364ff,0x3207d795430cd926,
-    0x8335616aed761f1f,0x7f44e6bd49e807b8,
-    0xa402b9c5a8d3a6e7,0x5f16206c9c6209a6,
-    0xcd036837130890a1,0x36dba887c37a8c0f,
-    0x802221226be55a64,0xc2494954da2c9789,
-    0xa02aa96b06deb0fd,0xf2db9baa10b7bd6c,
-    0xc83553c5c8965d3d,0x6f92829494e5acc7,
-    0xfa42a8b73abbf48c,0xcb772339ba1f17f9,
-    0x9c69a97284b578d7,0xff2a760414536efb,
-    0xc38413cf25e2d70d,0xfef5138519684aba,
-    0xf46518c2ef5b8cd1,0x7eb258665fc25d69,
-    0x98bf2f79d5993802,0xef2f773ffbd97a61,
-    0xbeeefb584aff8603,0xaafb550ffacfd8fa,
-    0xeeaaba2e5dbf6784,0x95ba2a53f983cf38,
-    0x952ab45cfa97a0b2,0xdd945a747bf26183,
-    0xba756174393d88df,0x94f971119aeef9e4,
-    0xe912b9d1478ceb17,0x7a37cd5601aab85d,
-    0x91abb422ccb812ee,0xac62e055c10ab33a,
-    0xb616a12b7fe617aa,0x577b986b314d6009,
-    0xe39c49765fdf9d94,0xed5a7e85fda0b80b,
-    0x8e41ade9fbebc27d,0x14588f13be847307,
-    0xb1d219647ae6b31c,0x596eb2d8ae258fc8,
-    0xde469fbd99a05fe3,0x6fca5f8ed9aef3bb,
-    0x8aec23d680043bee,0x25de7bb9480d5854,
-    0xada72ccc20054ae9,0xaf561aa79a10ae6a,
-    0xd910f7ff28069da4,0x1b2ba1518094da04,
-    0x87aa9aff79042286,0x90fb44d2f05d0842,
-    0xa99541bf57452b28,0x353a1607ac744a53,
-    0xd3fa922f2d1675f2,0x42889b8997915ce8,
-    0x847c9b5d7c2e09b7,0x69956135febada11,
-    0xa59bc234db398c25,0x43fab9837e699095,
-    0xcf02b2c21207ef2e,0x94f967e45e03f4bb,
-    0x8161afb94b44f57d,0x1d1be0eebac278f5,
-    0xa1ba1ba79e1632dc,0x6462d92a69731732,
-    0xca28a291859bbf93,0x7d7b8f7503cfdcfe,
-    0xfcb2cb35e702af78,0x5cda735244c3d43e,
-    0x9defbf01b061adab,0x3a0888136afa64a7,
-    0xc56baec21c7a1916,0x88aaa1845b8fdd0,
-    0xf6c69a72a3989f5b,0x8aad549e57273d45,
-    0x9a3c2087a63f6399,0x36ac54e2f678864b,
-    0xc0cb28a98fcf3c7f,0x84576a1bb416a7dd,
-    0xf0fdf2d3f3c30b9f,0x656d44a2a11c51d5,
-    0x969eb7c47859e743,0x9f644ae5a4b1b325,
-    0xbc4665b596706114,0x873d5d9f0dde1fee,
-    0xeb57ff22fc0c7959,0xa90cb506d155a7ea,
-    0x9316ff75dd87cbd8,0x9a7f12442d588f2,
-    0xb7dcbf5354e9bece,0xc11ed6d538aeb2f,
-    0xe5d3ef282a242e81,0x8f1668c8a86da5fa,
-    0x8fa475791a569d10,0xf96e017d694487bc,
-    0xb38d92d760ec4455,0x37c981dcc395a9ac,
-    0xe070f78d3927556a,0x85bbe253f47b1417,
-    0x8c469ab843b89562,0x93956d7478ccec8e,
-    0xaf58416654a6babb,0x387ac8d1970027b2,
-    0xdb2e51bfe9d0696a,0x6997b05fcc0319e,
-    0x88fcf317f22241e2,0x441fece3bdf81f03,
-    0xab3c2fddeeaad25a,0xd527e81cad7626c3,
-    0xd60b3bd56a5586f1,0x8a71e223d8d3b074,
-    0x85c7056562757456,0xf6872d5667844e49,
-    0xa738c6bebb12d16c,0xb428f8ac016561db,
-    0xd106f86e69d785c7,0xe13336d701beba52,
-    0x82a45b450226b39c,0xecc0024661173473,
-    0xa34d721642b06084,0x27f002d7f95d0190,
-    0xcc20ce9bd35c78a5,0x31ec038df7b441f4,
-    0xff290242c83396ce,0x7e67047175a15271,
-    0x9f79a169bd203e41,0xf0062c6e984d386,
-    0xc75809c42c684dd1,0x52c07b78a3e60868,
-    0xf92e0c3537826145,0xa7709a56ccdf8a82,
-    0x9bbcc7a142b17ccb,0x88a66076400bb691,
-    0xc2abf989935ddbfe,0x6acff893d00ea435,
-    0xf356f7ebf83552fe,0x583f6b8c4124d43,
-    0x98165af37b2153de,0xc3727a337a8b704a,
-    0xbe1bf1b059e9a8d6,0x744f18c0592e4c5c,
-    0xeda2ee1c7064130c,0x1162def06f79df73,
-    0x9485d4d1c63e8be7,0x8addcb5645ac2ba8,
-    0xb9a74a0637ce2ee1,0x6d953e2bd7173692,
-    0xe8111c87c5c1ba99,0xc8fa8db6ccdd0437,
-    0x910ab1d4db9914a0,0x1d9c9892400a22a2,
-    0xb54d5e4a127f59c8,0x2503beb6d00cab4b,
-    0xe2a0b5dc971f303a,0x2e44ae64840fd61d,
-    0x8da471a9de737e24,0x5ceaecfed289e5d2,
-    0xb10d8e1456105dad,0x7425a83e872c5f47,
-    0xdd50f1996b947518,0xd12f124e28f77719,
-    0x8a5296ffe33cc92f,0x82bd6b70d99aaa6f,
-    0xace73cbfdc0bfb7b,0x636cc64d1001550b,
-    0xd8210befd30efa5a,0x3c47f7e05401aa4e,
-    0x8714a775e3e95c78,0x65acfaec34810a71,
-    0xa8d9d1535ce3b396,0x7f1839a741a14d0d,
-    0xd31045a8341ca07c,0x1ede48111209a050,
-    0x83ea2b892091e44d,0x934aed0aab460432,
-    0xa4e4b66b68b65d60,0xf81da84d5617853f,
-    0xce1de40642e3f4b9,0x36251260ab9d668e,
-    0x80d2ae83e9ce78f3,0xc1d72b7c6b426019,
-    0xa1075a24e4421730,0xb24cf65b8612f81f,
-    0xc94930ae1d529cfc,0xdee033f26797b627,
-    0xfb9b7cd9a4a7443c,0x169840ef017da3b1,
-    0x9d412e0806e88aa5,0x8e1f289560ee864e,
-    0xc491798a08a2ad4e,0xf1a6f2bab92a27e2,
-    0xf5b5d7ec8acb58a2,0xae10af696774b1db,
-    0x9991a6f3d6bf1765,0xacca6da1e0a8ef29,
-    0xbff610b0cc6edd3f,0x17fd090a58d32af3,
-    0xeff394dcff8a948e,0xddfc4b4cef07f5b0,
-    0x95f83d0a1fb69cd9,0x4abdaf101564f98e,
-    0xbb764c4ca7a4440f,0x9d6d1ad41abe37f1,
-    0xea53df5fd18d5513,0x84c86189216dc5ed,
-    0x92746b9be2f8552c,0x32fd3cf5b4e49bb4,
-    0xb7118682dbb66a77,0x3fbc8c33221dc2a1,
-    0xe4d5e82392a40515,0xfabaf3feaa5334a,
-    0x8f05b1163ba6832d,0x29cb4d87f2a7400e,
-    0xb2c71d5bca9023f8,0x743e20e9ef511012,
-    0xdf78e4b2bd342cf6,0x914da9246b255416,
-    0x8bab8eefb6409c1a,0x1ad089b6c2f7548e,
-    0xae9672aba3d0c320,0xa184ac2473b529b1,
-    0xda3c0f568cc4f3e8,0xc9e5d72d90a2741e,
-    0x8865899617fb1871,0x7e2fa67c7a658892,
-    0xaa7eebfb9df9de8d,0xddbb901b98feeab7,
-    0xd51ea6fa85785631,0x552a74227f3ea565,
-    0x8533285c936b35de,0xd53a88958f87275f,
-    0xa67ff273b8460356,0x8a892abaf368f137,
-    0xd01fef10a657842c,0x2d2b7569b0432d85,
-    0x8213f56a67f6b29b,0x9c3b29620e29fc73,
-    0xa298f2c501f45f42,0x8349f3ba91b47b8f,
-    0xcb3f2f7642717713,0x241c70a936219a73,
-    0xfe0efb53d30dd4d7,0xed238cd383aa0110,
-    0x9ec95d1463e8a506,0xf4363804324a40aa,
-    0xc67bb4597ce2ce48,0xb143c6053edcd0d5,
-    0xf81aa16fdc1b81da,0xdd94b7868e94050a,
-    0x9b10a4e5e9913128,0xca7cf2b4191c8326,
-    0xc1d4ce1f63f57d72,0xfd1c2f611f63a3f0,
-    0xf24a01a73cf2dccf,0xbc633b39673c8cec,
-    0x976e41088617ca01,0xd5be0503e085d813,
-    0xbd49d14aa79dbc82,0x4b2d8644d8a74e18,
-    0xec9c459d51852ba2,0xddf8e7d60ed1219e,
-    0x93e1ab8252f33b45,0xcabb90e5c942b503,
-    0xb8da1662e7b00a17,0x3d6a751f3b936243,
-    0xe7109bfba19c0c9d,0xcc512670a783ad4,
-    0x906a617d450187e2,0x27fb2b80668b24c5,
-    0xb484f9dc9641e9da,0xb1f9f660802dedf6,
-    0xe1a63853bbd26451,0x5e7873f8a0396973,
-    0x8d07e33455637eb2,0xdb0b487b6423e1e8,
-    0xb049dc016abc5e5f,0x91ce1a9a3d2cda62,
-    0xdc5c5301c56b75f7,0x7641a140cc7810fb,
-    0x89b9b3e11b6329ba,0xa9e904c87fcb0a9d,
-    0xac2820d9623bf429,0x546345fa9fbdcd44,
-    0xd732290fbacaf133,0xa97c177947ad4095,
-    0x867f59a9d4bed6c0,0x49ed8eabcccc485d,
-    0xa81f301449ee8c70,0x5c68f256bfff5a74,
-    0xd226fc195c6a2f8c,0x73832eec6fff3111,
-    0x83585d8fd9c25db7,0xc831fd53c5ff7eab,
-    0xa42e74f3d032f525,0xba3e7ca8b77f5e55,
-    0xcd3a1230c43fb26f,0x28ce1bd2e55f35eb,
-    0x80444b5e7aa7cf85,0x7980d163cf5b81b3,
-    0xa0555e361951c366,0xd7e105bcc332621f,
-    0xc86ab5c39fa63440,0x8dd9472bf3fefaa7,
-    0xfa856334878fc150,0xb14f98f6f0feb951,
-    0x9c935e00d4b9d8d2,0x6ed1bf9a569f33d3,
-    0xc3b8358109e84f07,0xa862f80ec4700c8,
-    0xf4a642e14c6262c8,0xcd27bb612758c0fa,
-    0x98e7e9cccfbd7dbd,0x8038d51cb897789c,
-    0xbf21e44003acdd2c,0xe0470a63e6bd56c3,
-    0xeeea5d5004981478,0x1858ccfce06cac74,
-    0x95527a5202df0ccb,0xf37801e0c43ebc8,
-    0xbaa718e68396cffd,0xd30560258f54e6ba,
-    0xe950df20247c83fd,0x47c6b82ef32a2069,
-    0x91d28b7416cdd27e,0x4cdc331d57fa5441,
-    0xb6472e511c81471d,0xe0133fe4adf8e952,
-    0xe3d8f9e563a198e5,0x58180fddd97723a6,
-    0x8e679c2f5e44ff8f,0x570f09eaa7ea7648,};
+  constexpr static int smallest_power_of_five =
+      binary_format<double>::smallest_power_of_ten();
+  constexpr static int largest_power_of_five =
+      binary_format<double>::largest_power_of_ten();
+  constexpr static int number_of_entries =
+      2 * (largest_power_of_five - smallest_power_of_five + 1);
+  // Powers of five from 5^-342 all the way to 5^308 rounded toward one.
+  constexpr static uint64_t power_of_five_128[number_of_entries] = {
+      0xeef453d6923bd65a, 0x113faa2906a13b3f,
+      0x9558b4661b6565f8, 0x4ac7ca59a424c507,
+      0xbaaee17fa23ebf76, 0x5d79bcf00d2df649,
+      0xe95a99df8ace6f53, 0xf4d82c2c107973dc,
+      0x91d8a02bb6c10594, 0x79071b9b8a4be869,
+      0xb64ec836a47146f9, 0x9748e2826cdee284,
+      0xe3e27a444d8d98b7, 0xfd1b1b2308169b25,
+      0x8e6d8c6ab0787f72, 0xfe30f0f5e50e20f7,
+      0xb208ef855c969f4f, 0xbdbd2d335e51a935,
+      0xde8b2b66b3bc4723, 0xad2c788035e61382,
+      0x8b16fb203055ac76, 0x4c3bcb5021afcc31,
+      0xaddcb9e83c6b1793, 0xdf4abe242a1bbf3d,
+      0xd953e8624b85dd78, 0xd71d6dad34a2af0d,
+      0x87d4713d6f33aa6b, 0x8672648c40e5ad68,
+      0xa9c98d8ccb009506, 0x680efdaf511f18c2,
+      0xd43bf0effdc0ba48, 0x212bd1b2566def2,
+      0x84a57695fe98746d, 0x14bb630f7604b57,
+      0xa5ced43b7e3e9188, 0x419ea3bd35385e2d,
+      0xcf42894a5dce35ea, 0x52064cac828675b9,
+      0x818995ce7aa0e1b2, 0x7343efebd1940993,
+      0xa1ebfb4219491a1f, 0x1014ebe6c5f90bf8,
+      0xca66fa129f9b60a6, 0xd41a26e077774ef6,
+      0xfd00b897478238d0, 0x8920b098955522b4,
+      0x9e20735e8cb16382, 0x55b46e5f5d5535b0,
+      0xc5a890362fddbc62, 0xeb2189f734aa831d,
+      0xf712b443bbd52b7b, 0xa5e9ec7501d523e4,
+      0x9a6bb0aa55653b2d, 0x47b233c92125366e,
+      0xc1069cd4eabe89f8, 0x999ec0bb696e840a,
+      0xf148440a256e2c76, 0xc00670ea43ca250d,
+      0x96cd2a865764dbca, 0x380406926a5e5728,
+      0xbc807527ed3e12bc, 0xc605083704f5ecf2,
+      0xeba09271e88d976b, 0xf7864a44c633682e,
+      0x93445b8731587ea3, 0x7ab3ee6afbe0211d,
+      0xb8157268fdae9e4c, 0x5960ea05bad82964,
+      0xe61acf033d1a45df, 0x6fb92487298e33bd,
+      0x8fd0c16206306bab, 0xa5d3b6d479f8e056,
+      0xb3c4f1ba87bc8696, 0x8f48a4899877186c,
+      0xe0b62e2929aba83c, 0x331acdabfe94de87,
+      0x8c71dcd9ba0b4925, 0x9ff0c08b7f1d0b14,
+      0xaf8e5410288e1b6f, 0x7ecf0ae5ee44dd9,
+      0xdb71e91432b1a24a, 0xc9e82cd9f69d6150,
+      0x892731ac9faf056e, 0xbe311c083a225cd2,
+      0xab70fe17c79ac6ca, 0x6dbd630a48aaf406,
+      0xd64d3d9db981787d, 0x92cbbccdad5b108,
+      0x85f0468293f0eb4e, 0x25bbf56008c58ea5,
+      0xa76c582338ed2621, 0xaf2af2b80af6f24e,
+      0xd1476e2c07286faa, 0x1af5af660db4aee1,
+      0x82cca4db847945ca, 0x50d98d9fc890ed4d,
+      0xa37fce126597973c, 0xe50ff107bab528a0,
+      0xcc5fc196fefd7d0c, 0x1e53ed49a96272c8,
+      0xff77b1fcbebcdc4f, 0x25e8e89c13bb0f7a,
+      0x9faacf3df73609b1, 0x77b191618c54e9ac,
+      0xc795830d75038c1d, 0xd59df5b9ef6a2417,
+      0xf97ae3d0d2446f25, 0x4b0573286b44ad1d,
+      0x9becce62836ac577, 0x4ee367f9430aec32,
+      0xc2e801fb244576d5, 0x229c41f793cda73f,
+      0xf3a20279ed56d48a, 0x6b43527578c1110f,
+      0x9845418c345644d6, 0x830a13896b78aaa9,
+      0xbe5691ef416bd60c, 0x23cc986bc656d553,
+      0xedec366b11c6cb8f, 0x2cbfbe86b7ec8aa8,
+      0x94b3a202eb1c3f39, 0x7bf7d71432f3d6a9,
+      0xb9e08a83a5e34f07, 0xdaf5ccd93fb0cc53,
+      0xe858ad248f5c22c9, 0xd1b3400f8f9cff68,
+      0x91376c36d99995be, 0x23100809b9c21fa1,
+      0xb58547448ffffb2d, 0xabd40a0c2832a78a,
+      0xe2e69915b3fff9f9, 0x16c90c8f323f516c,
+      0x8dd01fad907ffc3b, 0xae3da7d97f6792e3,
+      0xb1442798f49ffb4a, 0x99cd11cfdf41779c,
+      0xdd95317f31c7fa1d, 0x40405643d711d583,
+      0x8a7d3eef7f1cfc52, 0x482835ea666b2572,
+      0xad1c8eab5ee43b66, 0xda3243650005eecf,
+      0xd863b256369d4a40, 0x90bed43e40076a82,
+      0x873e4f75e2224e68, 0x5a7744a6e804a291,
+      0xa90de3535aaae202, 0x711515d0a205cb36,
+      0xd3515c2831559a83, 0xd5a5b44ca873e03,
+      0x8412d9991ed58091, 0xe858790afe9486c2,
+      0xa5178fff668ae0b6, 0x626e974dbe39a872,
+      0xce5d73ff402d98e3, 0xfb0a3d212dc8128f,
+      0x80fa687f881c7f8e, 0x7ce66634bc9d0b99,
+      0xa139029f6a239f72, 0x1c1fffc1ebc44e80,
+      0xc987434744ac874e, 0xa327ffb266b56220,
+      0xfbe9141915d7a922, 0x4bf1ff9f0062baa8,
+      0x9d71ac8fada6c9b5, 0x6f773fc3603db4a9,
+      0xc4ce17b399107c22, 0xcb550fb4384d21d3,
+      0xf6019da07f549b2b, 0x7e2a53a146606a48,
+      0x99c102844f94e0fb, 0x2eda7444cbfc426d,
+      0xc0314325637a1939, 0xfa911155fefb5308,
+      0xf03d93eebc589f88, 0x793555ab7eba27ca,
+      0x96267c7535b763b5, 0x4bc1558b2f3458de,
+      0xbbb01b9283253ca2, 0x9eb1aaedfb016f16,
+      0xea9c227723ee8bcb, 0x465e15a979c1cadc,
+      0x92a1958a7675175f, 0xbfacd89ec191ec9,
+      0xb749faed14125d36, 0xcef980ec671f667b,
+      0xe51c79a85916f484, 0x82b7e12780e7401a,
+      0x8f31cc0937ae58d2, 0xd1b2ecb8b0908810,
+      0xb2fe3f0b8599ef07, 0x861fa7e6dcb4aa15,
+      0xdfbdcece67006ac9, 0x67a791e093e1d49a,
+      0x8bd6a141006042bd, 0xe0c8bb2c5c6d24e0,
+      0xaecc49914078536d, 0x58fae9f773886e18,
+      0xda7f5bf590966848, 0xaf39a475506a899e,
+      0x888f99797a5e012d, 0x6d8406c952429603,
+      0xaab37fd7d8f58178, 0xc8e5087ba6d33b83,
+      0xd5605fcdcf32e1d6, 0xfb1e4a9a90880a64,
+      0x855c3be0a17fcd26, 0x5cf2eea09a55067f,
+      0xa6b34ad8c9dfc06f, 0xf42faa48c0ea481e,
+      0xd0601d8efc57b08b, 0xf13b94daf124da26,
+      0x823c12795db6ce57, 0x76c53d08d6b70858,
+      0xa2cb1717b52481ed, 0x54768c4b0c64ca6e,
+      0xcb7ddcdda26da268, 0xa9942f5dcf7dfd09,
+      0xfe5d54150b090b02, 0xd3f93b35435d7c4c,
+      0x9efa548d26e5a6e1, 0xc47bc5014a1a6daf,
+      0xc6b8e9b0709f109a, 0x359ab6419ca1091b,
+      0xf867241c8cc6d4c0, 0xc30163d203c94b62,
+      0x9b407691d7fc44f8, 0x79e0de63425dcf1d,
+      0xc21094364dfb5636, 0x985915fc12f542e4,
+      0xf294b943e17a2bc4, 0x3e6f5b7b17b2939d,
+      0x979cf3ca6cec5b5a, 0xa705992ceecf9c42,
+      0xbd8430bd08277231, 0x50c6ff782a838353,
+      0xece53cec4a314ebd, 0xa4f8bf5635246428,
+      0x940f4613ae5ed136, 0x871b7795e136be99,
+      0xb913179899f68584, 0x28e2557b59846e3f,
+      0xe757dd7ec07426e5, 0x331aeada2fe589cf,
+      0x9096ea6f3848984f, 0x3ff0d2c85def7621,
+      0xb4bca50b065abe63, 0xfed077a756b53a9,
+      0xe1ebce4dc7f16dfb, 0xd3e8495912c62894,
+      0x8d3360f09cf6e4bd, 0x64712dd7abbbd95c,
+      0xb080392cc4349dec, 0xbd8d794d96aacfb3,
+      0xdca04777f541c567, 0xecf0d7a0fc5583a0,
+      0x89e42caaf9491b60, 0xf41686c49db57244,
+      0xac5d37d5b79b6239, 0x311c2875c522ced5,
+      0xd77485cb25823ac7, 0x7d633293366b828b,
+      0x86a8d39ef77164bc, 0xae5dff9c02033197,
+      0xa8530886b54dbdeb, 0xd9f57f830283fdfc,
+      0xd267caa862a12d66, 0xd072df63c324fd7b,
+      0x8380dea93da4bc60, 0x4247cb9e59f71e6d,
+      0xa46116538d0deb78, 0x52d9be85f074e608,
+      0xcd795be870516656, 0x67902e276c921f8b,
+      0x806bd9714632dff6, 0xba1cd8a3db53b6,
+      0xa086cfcd97bf97f3, 0x80e8a40eccd228a4,
+      0xc8a883c0fdaf7df0, 0x6122cd128006b2cd,
+      0xfad2a4b13d1b5d6c, 0x796b805720085f81,
+      0x9cc3a6eec6311a63, 0xcbe3303674053bb0,
+      0xc3f490aa77bd60fc, 0xbedbfc4411068a9c,
+      0xf4f1b4d515acb93b, 0xee92fb5515482d44,
+      0x991711052d8bf3c5, 0x751bdd152d4d1c4a,
+      0xbf5cd54678eef0b6, 0xd262d45a78a0635d,
+      0xef340a98172aace4, 0x86fb897116c87c34,
+      0x9580869f0e7aac0e, 0xd45d35e6ae3d4da0,
+      0xbae0a846d2195712, 0x8974836059cca109,
+      0xe998d258869facd7, 0x2bd1a438703fc94b,
+      0x91ff83775423cc06, 0x7b6306a34627ddcf,
+      0xb67f6455292cbf08, 0x1a3bc84c17b1d542,
+      0xe41f3d6a7377eeca, 0x20caba5f1d9e4a93,
+      0x8e938662882af53e, 0x547eb47b7282ee9c,
+      0xb23867fb2a35b28d, 0xe99e619a4f23aa43,
+      0xdec681f9f4c31f31, 0x6405fa00e2ec94d4,
+      0x8b3c113c38f9f37e, 0xde83bc408dd3dd04,
+      0xae0b158b4738705e, 0x9624ab50b148d445,
+      0xd98ddaee19068c76, 0x3badd624dd9b0957,
+      0x87f8a8d4cfa417c9, 0xe54ca5d70a80e5d6,
+      0xa9f6d30a038d1dbc, 0x5e9fcf4ccd211f4c,
+      0xd47487cc8470652b, 0x7647c3200069671f,
+      0x84c8d4dfd2c63f3b, 0x29ecd9f40041e073,
+      0xa5fb0a17c777cf09, 0xf468107100525890,
+      0xcf79cc9db955c2cc, 0x7182148d4066eeb4,
+      0x81ac1fe293d599bf, 0xc6f14cd848405530,
+      0xa21727db38cb002f, 0xb8ada00e5a506a7c,
+      0xca9cf1d206fdc03b, 0xa6d90811f0e4851c,
+      0xfd442e4688bd304a, 0x908f4a166d1da663,
+      0x9e4a9cec15763e2e, 0x9a598e4e043287fe,
+      0xc5dd44271ad3cdba, 0x40eff1e1853f29fd,
+      0xf7549530e188c128, 0xd12bee59e68ef47c,
+      0x9a94dd3e8cf578b9, 0x82bb74f8301958ce,
+      0xc13a148e3032d6e7, 0xe36a52363c1faf01,
+      0xf18899b1bc3f8ca1, 0xdc44e6c3cb279ac1,
+      0x96f5600f15a7b7e5, 0x29ab103a5ef8c0b9,
+      0xbcb2b812db11a5de, 0x7415d448f6b6f0e7,
+      0xebdf661791d60f56, 0x111b495b3464ad21,
+      0x936b9fcebb25c995, 0xcab10dd900beec34,
+      0xb84687c269ef3bfb, 0x3d5d514f40eea742,
+      0xe65829b3046b0afa, 0xcb4a5a3112a5112,
+      0x8ff71a0fe2c2e6dc, 0x47f0e785eaba72ab,
+      0xb3f4e093db73a093, 0x59ed216765690f56,
+      0xe0f218b8d25088b8, 0x306869c13ec3532c,
+      0x8c974f7383725573, 0x1e414218c73a13fb,
+      0xafbd2350644eeacf, 0xe5d1929ef90898fa,
+      0xdbac6c247d62a583, 0xdf45f746b74abf39,
+      0x894bc396ce5da772, 0x6b8bba8c328eb783,
+      0xab9eb47c81f5114f, 0x66ea92f3f326564,
+      0xd686619ba27255a2, 0xc80a537b0efefebd,
+      0x8613fd0145877585, 0xbd06742ce95f5f36,
+      0xa798fc4196e952e7, 0x2c48113823b73704,
+      0xd17f3b51fca3a7a0, 0xf75a15862ca504c5,
+      0x82ef85133de648c4, 0x9a984d73dbe722fb,
+      0xa3ab66580d5fdaf5, 0xc13e60d0d2e0ebba,
+      0xcc963fee10b7d1b3, 0x318df905079926a8,
+      0xffbbcfe994e5c61f, 0xfdf17746497f7052,
+      0x9fd561f1fd0f9bd3, 0xfeb6ea8bedefa633,
+      0xc7caba6e7c5382c8, 0xfe64a52ee96b8fc0,
+      0xf9bd690a1b68637b, 0x3dfdce7aa3c673b0,
+      0x9c1661a651213e2d, 0x6bea10ca65c084e,
+      0xc31bfa0fe5698db8, 0x486e494fcff30a62,
+      0xf3e2f893dec3f126, 0x5a89dba3c3efccfa,
+      0x986ddb5c6b3a76b7, 0xf89629465a75e01c,
+      0xbe89523386091465, 0xf6bbb397f1135823,
+      0xee2ba6c0678b597f, 0x746aa07ded582e2c,
+      0x94db483840b717ef, 0xa8c2a44eb4571cdc,
+      0xba121a4650e4ddeb, 0x92f34d62616ce413,
+      0xe896a0d7e51e1566, 0x77b020baf9c81d17,
+      0x915e2486ef32cd60, 0xace1474dc1d122e,
+      0xb5b5ada8aaff80b8, 0xd819992132456ba,
+      0xe3231912d5bf60e6, 0x10e1fff697ed6c69,
+      0x8df5efabc5979c8f, 0xca8d3ffa1ef463c1,
+      0xb1736b96b6fd83b3, 0xbd308ff8a6b17cb2,
+      0xddd0467c64bce4a0, 0xac7cb3f6d05ddbde,
+      0x8aa22c0dbef60ee4, 0x6bcdf07a423aa96b,
+      0xad4ab7112eb3929d, 0x86c16c98d2c953c6,
+      0xd89d64d57a607744, 0xe871c7bf077ba8b7,
+      0x87625f056c7c4a8b, 0x11471cd764ad4972,
+      0xa93af6c6c79b5d2d, 0xd598e40d3dd89bcf,
+      0xd389b47879823479, 0x4aff1d108d4ec2c3,
+      0x843610cb4bf160cb, 0xcedf722a585139ba,
+      0xa54394fe1eedb8fe, 0xc2974eb4ee658828,
+      0xce947a3da6a9273e, 0x733d226229feea32,
+      0x811ccc668829b887, 0x806357d5a3f525f,
+      0xa163ff802a3426a8, 0xca07c2dcb0cf26f7,
+      0xc9bcff6034c13052, 0xfc89b393dd02f0b5,
+      0xfc2c3f3841f17c67, 0xbbac2078d443ace2,
+      0x9d9ba7832936edc0, 0xd54b944b84aa4c0d,
+      0xc5029163f384a931, 0xa9e795e65d4df11,
+      0xf64335bcf065d37d, 0x4d4617b5ff4a16d5,
+      0x99ea0196163fa42e, 0x504bced1bf8e4e45,
+      0xc06481fb9bcf8d39, 0xe45ec2862f71e1d6,
+      0xf07da27a82c37088, 0x5d767327bb4e5a4c,
+      0x964e858c91ba2655, 0x3a6a07f8d510f86f,
+      0xbbe226efb628afea, 0x890489f70a55368b,
+      0xeadab0aba3b2dbe5, 0x2b45ac74ccea842e,
+      0x92c8ae6b464fc96f, 0x3b0b8bc90012929d,
+      0xb77ada0617e3bbcb, 0x9ce6ebb40173744,
+      0xe55990879ddcaabd, 0xcc420a6a101d0515,
+      0x8f57fa54c2a9eab6, 0x9fa946824a12232d,
+      0xb32df8e9f3546564, 0x47939822dc96abf9,
+      0xdff9772470297ebd, 0x59787e2b93bc56f7,
+      0x8bfbea76c619ef36, 0x57eb4edb3c55b65a,
+      0xaefae51477a06b03, 0xede622920b6b23f1,
+      0xdab99e59958885c4, 0xe95fab368e45eced,
+      0x88b402f7fd75539b, 0x11dbcb0218ebb414,
+      0xaae103b5fcd2a881, 0xd652bdc29f26a119,
+      0xd59944a37c0752a2, 0x4be76d3346f0495f,
+      0x857fcae62d8493a5, 0x6f70a4400c562ddb,
+      0xa6dfbd9fb8e5b88e, 0xcb4ccd500f6bb952,
+      0xd097ad07a71f26b2, 0x7e2000a41346a7a7,
+      0x825ecc24c873782f, 0x8ed400668c0c28c8,
+      0xa2f67f2dfa90563b, 0x728900802f0f32fa,
+      0xcbb41ef979346bca, 0x4f2b40a03ad2ffb9,
+      0xfea126b7d78186bc, 0xe2f610c84987bfa8,
+      0x9f24b832e6b0f436, 0xdd9ca7d2df4d7c9,
+      0xc6ede63fa05d3143, 0x91503d1c79720dbb,
+      0xf8a95fcf88747d94, 0x75a44c6397ce912a,
+      0x9b69dbe1b548ce7c, 0xc986afbe3ee11aba,
+      0xc24452da229b021b, 0xfbe85badce996168,
+      0xf2d56790ab41c2a2, 0xfae27299423fb9c3,
+      0x97c560ba6b0919a5, 0xdccd879fc967d41a,
+      0xbdb6b8e905cb600f, 0x5400e987bbc1c920,
+      0xed246723473e3813, 0x290123e9aab23b68,
+      0x9436c0760c86e30b, 0xf9a0b6720aaf6521,
+      0xb94470938fa89bce, 0xf808e40e8d5b3e69,
+      0xe7958cb87392c2c2, 0xb60b1d1230b20e04,
+      0x90bd77f3483bb9b9, 0xb1c6f22b5e6f48c2,
+      0xb4ecd5f01a4aa828, 0x1e38aeb6360b1af3,
+      0xe2280b6c20dd5232, 0x25c6da63c38de1b0,
+      0x8d590723948a535f, 0x579c487e5a38ad0e,
+      0xb0af48ec79ace837, 0x2d835a9df0c6d851,
+      0xdcdb1b2798182244, 0xf8e431456cf88e65,
+      0x8a08f0f8bf0f156b, 0x1b8e9ecb641b58ff,
+      0xac8b2d36eed2dac5, 0xe272467e3d222f3f,
+      0xd7adf884aa879177, 0x5b0ed81dcc6abb0f,
+      0x86ccbb52ea94baea, 0x98e947129fc2b4e9,
+      0xa87fea27a539e9a5, 0x3f2398d747b36224,
+      0xd29fe4b18e88640e, 0x8eec7f0d19a03aad,
+      0x83a3eeeef9153e89, 0x1953cf68300424ac,
+      0xa48ceaaab75a8e2b, 0x5fa8c3423c052dd7,
+      0xcdb02555653131b6, 0x3792f412cb06794d,
+      0x808e17555f3ebf11, 0xe2bbd88bbee40bd0,
+      0xa0b19d2ab70e6ed6, 0x5b6aceaeae9d0ec4,
+      0xc8de047564d20a8b, 0xf245825a5a445275,
+      0xfb158592be068d2e, 0xeed6e2f0f0d56712,
+      0x9ced737bb6c4183d, 0x55464dd69685606b,
+      0xc428d05aa4751e4c, 0xaa97e14c3c26b886,
+      0xf53304714d9265df, 0xd53dd99f4b3066a8,
+      0x993fe2c6d07b7fab, 0xe546a8038efe4029,
+      0xbf8fdb78849a5f96, 0xde98520472bdd033,
+      0xef73d256a5c0f77c, 0x963e66858f6d4440,
+      0x95a8637627989aad, 0xdde7001379a44aa8,
+      0xbb127c53b17ec159, 0x5560c018580d5d52,
+      0xe9d71b689dde71af, 0xaab8f01e6e10b4a6,
+      0x9226712162ab070d, 0xcab3961304ca70e8,
+      0xb6b00d69bb55c8d1, 0x3d607b97c5fd0d22,
+      0xe45c10c42a2b3b05, 0x8cb89a7db77c506a,
+      0x8eb98a7a9a5b04e3, 0x77f3608e92adb242,
+      0xb267ed1940f1c61c, 0x55f038b237591ed3,
+      0xdf01e85f912e37a3, 0x6b6c46dec52f6688,
+      0x8b61313bbabce2c6, 0x2323ac4b3b3da015,
+      0xae397d8aa96c1b77, 0xabec975e0a0d081a,
+      0xd9c7dced53c72255, 0x96e7bd358c904a21,
+      0x881cea14545c7575, 0x7e50d64177da2e54,
+      0xaa242499697392d2, 0xdde50bd1d5d0b9e9,
+      0xd4ad2dbfc3d07787, 0x955e4ec64b44e864,
+      0x84ec3c97da624ab4, 0xbd5af13bef0b113e,
+      0xa6274bbdd0fadd61, 0xecb1ad8aeacdd58e,
+      0xcfb11ead453994ba, 0x67de18eda5814af2,
+      0x81ceb32c4b43fcf4, 0x80eacf948770ced7,
+      0xa2425ff75e14fc31, 0xa1258379a94d028d,
+      0xcad2f7f5359a3b3e, 0x96ee45813a04330,
+      0xfd87b5f28300ca0d, 0x8bca9d6e188853fc,
+      0x9e74d1b791e07e48, 0x775ea264cf55347e,
+      0xc612062576589dda, 0x95364afe032a819e,
+      0xf79687aed3eec551, 0x3a83ddbd83f52205,
+      0x9abe14cd44753b52, 0xc4926a9672793543,
+      0xc16d9a0095928a27, 0x75b7053c0f178294,
+      0xf1c90080baf72cb1, 0x5324c68b12dd6339,
+      0x971da05074da7bee, 0xd3f6fc16ebca5e04,
+      0xbce5086492111aea, 0x88f4bb1ca6bcf585,
+      0xec1e4a7db69561a5, 0x2b31e9e3d06c32e6,
+      0x9392ee8e921d5d07, 0x3aff322e62439fd0,
+      0xb877aa3236a4b449, 0x9befeb9fad487c3,
+      0xe69594bec44de15b, 0x4c2ebe687989a9b4,
+      0x901d7cf73ab0acd9, 0xf9d37014bf60a11,
+      0xb424dc35095cd80f, 0x538484c19ef38c95,
+      0xe12e13424bb40e13, 0x2865a5f206b06fba,
+      0x8cbccc096f5088cb, 0xf93f87b7442e45d4,
+      0xafebff0bcb24aafe, 0xf78f69a51539d749,
+      0xdbe6fecebdedd5be, 0xb573440e5a884d1c,
+      0x89705f4136b4a597, 0x31680a88f8953031,
+      0xabcc77118461cefc, 0xfdc20d2b36ba7c3e,
+      0xd6bf94d5e57a42bc, 0x3d32907604691b4d,
+      0x8637bd05af6c69b5, 0xa63f9a49c2c1b110,
+      0xa7c5ac471b478423, 0xfcf80dc33721d54,
+      0xd1b71758e219652b, 0xd3c36113404ea4a9,
+      0x83126e978d4fdf3b, 0x645a1cac083126ea,
+      0xa3d70a3d70a3d70a, 0x3d70a3d70a3d70a4,
+      0xcccccccccccccccc, 0xcccccccccccccccd,
+      0x8000000000000000, 0x0,
+      0xa000000000000000, 0x0,
+      0xc800000000000000, 0x0,
+      0xfa00000000000000, 0x0,
+      0x9c40000000000000, 0x0,
+      0xc350000000000000, 0x0,
+      0xf424000000000000, 0x0,
+      0x9896800000000000, 0x0,
+      0xbebc200000000000, 0x0,
+      0xee6b280000000000, 0x0,
+      0x9502f90000000000, 0x0,
+      0xba43b74000000000, 0x0,
+      0xe8d4a51000000000, 0x0,
+      0x9184e72a00000000, 0x0,
+      0xb5e620f480000000, 0x0,
+      0xe35fa931a0000000, 0x0,
+      0x8e1bc9bf04000000, 0x0,
+      0xb1a2bc2ec5000000, 0x0,
+      0xde0b6b3a76400000, 0x0,
+      0x8ac7230489e80000, 0x0,
+      0xad78ebc5ac620000, 0x0,
+      0xd8d726b7177a8000, 0x0,
+      0x878678326eac9000, 0x0,
+      0xa968163f0a57b400, 0x0,
+      0xd3c21bcecceda100, 0x0,
+      0x84595161401484a0, 0x0,
+      0xa56fa5b99019a5c8, 0x0,
+      0xcecb8f27f4200f3a, 0x0,
+      0x813f3978f8940984, 0x4000000000000000,
+      0xa18f07d736b90be5, 0x5000000000000000,
+      0xc9f2c9cd04674ede, 0xa400000000000000,
+      0xfc6f7c4045812296, 0x4d00000000000000,
+      0x9dc5ada82b70b59d, 0xf020000000000000,
+      0xc5371912364ce305, 0x6c28000000000000,
+      0xf684df56c3e01bc6, 0xc732000000000000,
+      0x9a130b963a6c115c, 0x3c7f400000000000,
+      0xc097ce7bc90715b3, 0x4b9f100000000000,
+      0xf0bdc21abb48db20, 0x1e86d40000000000,
+      0x96769950b50d88f4, 0x1314448000000000,
+      0xbc143fa4e250eb31, 0x17d955a000000000,
+      0xeb194f8e1ae525fd, 0x5dcfab0800000000,
+      0x92efd1b8d0cf37be, 0x5aa1cae500000000,
+      0xb7abc627050305ad, 0xf14a3d9e40000000,
+      0xe596b7b0c643c719, 0x6d9ccd05d0000000,
+      0x8f7e32ce7bea5c6f, 0xe4820023a2000000,
+      0xb35dbf821ae4f38b, 0xdda2802c8a800000,
+      0xe0352f62a19e306e, 0xd50b2037ad200000,
+      0x8c213d9da502de45, 0x4526f422cc340000,
+      0xaf298d050e4395d6, 0x9670b12b7f410000,
+      0xdaf3f04651d47b4c, 0x3c0cdd765f114000,
+      0x88d8762bf324cd0f, 0xa5880a69fb6ac800,
+      0xab0e93b6efee0053, 0x8eea0d047a457a00,
+      0xd5d238a4abe98068, 0x72a4904598d6d880,
+      0x85a36366eb71f041, 0x47a6da2b7f864750,
+      0xa70c3c40a64e6c51, 0x999090b65f67d924,
+      0xd0cf4b50cfe20765, 0xfff4b4e3f741cf6d,
+      0x82818f1281ed449f, 0xbff8f10e7a8921a4,
+      0xa321f2d7226895c7, 0xaff72d52192b6a0d,
+      0xcbea6f8ceb02bb39, 0x9bf4f8a69f764490,
+      0xfee50b7025c36a08, 0x2f236d04753d5b4,
+      0x9f4f2726179a2245, 0x1d762422c946590,
+      0xc722f0ef9d80aad6, 0x424d3ad2b7b97ef5,
+      0xf8ebad2b84e0d58b, 0xd2e0898765a7deb2,
+      0x9b934c3b330c8577, 0x63cc55f49f88eb2f,
+      0xc2781f49ffcfa6d5, 0x3cbf6b71c76b25fb,
+      0xf316271c7fc3908a, 0x8bef464e3945ef7a,
+      0x97edd871cfda3a56, 0x97758bf0e3cbb5ac,
+      0xbde94e8e43d0c8ec, 0x3d52eeed1cbea317,
+      0xed63a231d4c4fb27, 0x4ca7aaa863ee4bdd,
+      0x945e455f24fb1cf8, 0x8fe8caa93e74ef6a,
+      0xb975d6b6ee39e436, 0xb3e2fd538e122b44,
+      0xe7d34c64a9c85d44, 0x60dbbca87196b616,
+      0x90e40fbeea1d3a4a, 0xbc8955e946fe31cd,
+      0xb51d13aea4a488dd, 0x6babab6398bdbe41,
+      0xe264589a4dcdab14, 0xc696963c7eed2dd1,
+      0x8d7eb76070a08aec, 0xfc1e1de5cf543ca2,
+      0xb0de65388cc8ada8, 0x3b25a55f43294bcb,
+      0xdd15fe86affad912, 0x49ef0eb713f39ebe,
+      0x8a2dbf142dfcc7ab, 0x6e3569326c784337,
+      0xacb92ed9397bf996, 0x49c2c37f07965404,
+      0xd7e77a8f87daf7fb, 0xdc33745ec97be906,
+      0x86f0ac99b4e8dafd, 0x69a028bb3ded71a3,
+      0xa8acd7c0222311bc, 0xc40832ea0d68ce0c,
+      0xd2d80db02aabd62b, 0xf50a3fa490c30190,
+      0x83c7088e1aab65db, 0x792667c6da79e0fa,
+      0xa4b8cab1a1563f52, 0x577001b891185938,
+      0xcde6fd5e09abcf26, 0xed4c0226b55e6f86,
+      0x80b05e5ac60b6178, 0x544f8158315b05b4,
+      0xa0dc75f1778e39d6, 0x696361ae3db1c721,
+      0xc913936dd571c84c, 0x3bc3a19cd1e38e9,
+      0xfb5878494ace3a5f, 0x4ab48a04065c723,
+      0x9d174b2dcec0e47b, 0x62eb0d64283f9c76,
+      0xc45d1df942711d9a, 0x3ba5d0bd324f8394,
+      0xf5746577930d6500, 0xca8f44ec7ee36479,
+      0x9968bf6abbe85f20, 0x7e998b13cf4e1ecb,
+      0xbfc2ef456ae276e8, 0x9e3fedd8c321a67e,
+      0xefb3ab16c59b14a2, 0xc5cfe94ef3ea101e,
+      0x95d04aee3b80ece5, 0xbba1f1d158724a12,
+      0xbb445da9ca61281f, 0x2a8a6e45ae8edc97,
+      0xea1575143cf97226, 0xf52d09d71a3293bd,
+      0x924d692ca61be758, 0x593c2626705f9c56,
+      0xb6e0c377cfa2e12e, 0x6f8b2fb00c77836c,
+      0xe498f455c38b997a, 0xb6dfb9c0f956447,
+      0x8edf98b59a373fec, 0x4724bd4189bd5eac,
+      0xb2977ee300c50fe7, 0x58edec91ec2cb657,
+      0xdf3d5e9bc0f653e1, 0x2f2967b66737e3ed,
+      0x8b865b215899f46c, 0xbd79e0d20082ee74,
+      0xae67f1e9aec07187, 0xecd8590680a3aa11,
+      0xda01ee641a708de9, 0xe80e6f4820cc9495,
+      0x884134fe908658b2, 0x3109058d147fdcdd,
+      0xaa51823e34a7eede, 0xbd4b46f0599fd415,
+      0xd4e5e2cdc1d1ea96, 0x6c9e18ac7007c91a,
+      0x850fadc09923329e, 0x3e2cf6bc604ddb0,
+      0xa6539930bf6bff45, 0x84db8346b786151c,
+      0xcfe87f7cef46ff16, 0xe612641865679a63,
+      0x81f14fae158c5f6e, 0x4fcb7e8f3f60c07e,
+      0xa26da3999aef7749, 0xe3be5e330f38f09d,
+      0xcb090c8001ab551c, 0x5cadf5bfd3072cc5,
+      0xfdcb4fa002162a63, 0x73d9732fc7c8f7f6,
+      0x9e9f11c4014dda7e, 0x2867e7fddcdd9afa,
+      0xc646d63501a1511d, 0xb281e1fd541501b8,
+      0xf7d88bc24209a565, 0x1f225a7ca91a4226,
+      0x9ae757596946075f, 0x3375788de9b06958,
+      0xc1a12d2fc3978937, 0x52d6b1641c83ae,
+      0xf209787bb47d6b84, 0xc0678c5dbd23a49a,
+      0x9745eb4d50ce6332, 0xf840b7ba963646e0,
+      0xbd176620a501fbff, 0xb650e5a93bc3d898,
+      0xec5d3fa8ce427aff, 0xa3e51f138ab4cebe,
+      0x93ba47c980e98cdf, 0xc66f336c36b10137,
+      0xb8a8d9bbe123f017, 0xb80b0047445d4184,
+      0xe6d3102ad96cec1d, 0xa60dc059157491e5,
+      0x9043ea1ac7e41392, 0x87c89837ad68db2f,
+      0xb454e4a179dd1877, 0x29babe4598c311fb,
+      0xe16a1dc9d8545e94, 0xf4296dd6fef3d67a,
+      0x8ce2529e2734bb1d, 0x1899e4a65f58660c,
+      0xb01ae745b101e9e4, 0x5ec05dcff72e7f8f,
+      0xdc21a1171d42645d, 0x76707543f4fa1f73,
+      0x899504ae72497eba, 0x6a06494a791c53a8,
+      0xabfa45da0edbde69, 0x487db9d17636892,
+      0xd6f8d7509292d603, 0x45a9d2845d3c42b6,
+      0x865b86925b9bc5c2, 0xb8a2392ba45a9b2,
+      0xa7f26836f282b732, 0x8e6cac7768d7141e,
+      0xd1ef0244af2364ff, 0x3207d795430cd926,
+      0x8335616aed761f1f, 0x7f44e6bd49e807b8,
+      0xa402b9c5a8d3a6e7, 0x5f16206c9c6209a6,
+      0xcd036837130890a1, 0x36dba887c37a8c0f,
+      0x802221226be55a64, 0xc2494954da2c9789,
+      0xa02aa96b06deb0fd, 0xf2db9baa10b7bd6c,
+      0xc83553c5c8965d3d, 0x6f92829494e5acc7,
+      0xfa42a8b73abbf48c, 0xcb772339ba1f17f9,
+      0x9c69a97284b578d7, 0xff2a760414536efb,
+      0xc38413cf25e2d70d, 0xfef5138519684aba,
+      0xf46518c2ef5b8cd1, 0x7eb258665fc25d69,
+      0x98bf2f79d5993802, 0xef2f773ffbd97a61,
+      0xbeeefb584aff8603, 0xaafb550ffacfd8fa,
+      0xeeaaba2e5dbf6784, 0x95ba2a53f983cf38,
+      0x952ab45cfa97a0b2, 0xdd945a747bf26183,
+      0xba756174393d88df, 0x94f971119aeef9e4,
+      0xe912b9d1478ceb17, 0x7a37cd5601aab85d,
+      0x91abb422ccb812ee, 0xac62e055c10ab33a,
+      0xb616a12b7fe617aa, 0x577b986b314d6009,
+      0xe39c49765fdf9d94, 0xed5a7e85fda0b80b,
+      0x8e41ade9fbebc27d, 0x14588f13be847307,
+      0xb1d219647ae6b31c, 0x596eb2d8ae258fc8,
+      0xde469fbd99a05fe3, 0x6fca5f8ed9aef3bb,
+      0x8aec23d680043bee, 0x25de7bb9480d5854,
+      0xada72ccc20054ae9, 0xaf561aa79a10ae6a,
+      0xd910f7ff28069da4, 0x1b2ba1518094da04,
+      0x87aa9aff79042286, 0x90fb44d2f05d0842,
+      0xa99541bf57452b28, 0x353a1607ac744a53,
+      0xd3fa922f2d1675f2, 0x42889b8997915ce8,
+      0x847c9b5d7c2e09b7, 0x69956135febada11,
+      0xa59bc234db398c25, 0x43fab9837e699095,
+      0xcf02b2c21207ef2e, 0x94f967e45e03f4bb,
+      0x8161afb94b44f57d, 0x1d1be0eebac278f5,
+      0xa1ba1ba79e1632dc, 0x6462d92a69731732,
+      0xca28a291859bbf93, 0x7d7b8f7503cfdcfe,
+      0xfcb2cb35e702af78, 0x5cda735244c3d43e,
+      0x9defbf01b061adab, 0x3a0888136afa64a7,
+      0xc56baec21c7a1916, 0x88aaa1845b8fdd0,
+      0xf6c69a72a3989f5b, 0x8aad549e57273d45,
+      0x9a3c2087a63f6399, 0x36ac54e2f678864b,
+      0xc0cb28a98fcf3c7f, 0x84576a1bb416a7dd,
+      0xf0fdf2d3f3c30b9f, 0x656d44a2a11c51d5,
+      0x969eb7c47859e743, 0x9f644ae5a4b1b325,
+      0xbc4665b596706114, 0x873d5d9f0dde1fee,
+      0xeb57ff22fc0c7959, 0xa90cb506d155a7ea,
+      0x9316ff75dd87cbd8, 0x9a7f12442d588f2,
+      0xb7dcbf5354e9bece, 0xc11ed6d538aeb2f,
+      0xe5d3ef282a242e81, 0x8f1668c8a86da5fa,
+      0x8fa475791a569d10, 0xf96e017d694487bc,
+      0xb38d92d760ec4455, 0x37c981dcc395a9ac,
+      0xe070f78d3927556a, 0x85bbe253f47b1417,
+      0x8c469ab843b89562, 0x93956d7478ccec8e,
+      0xaf58416654a6babb, 0x387ac8d1970027b2,
+      0xdb2e51bfe9d0696a, 0x6997b05fcc0319e,
+      0x88fcf317f22241e2, 0x441fece3bdf81f03,
+      0xab3c2fddeeaad25a, 0xd527e81cad7626c3,
+      0xd60b3bd56a5586f1, 0x8a71e223d8d3b074,
+      0x85c7056562757456, 0xf6872d5667844e49,
+      0xa738c6bebb12d16c, 0xb428f8ac016561db,
+      0xd106f86e69d785c7, 0xe13336d701beba52,
+      0x82a45b450226b39c, 0xecc0024661173473,
+      0xa34d721642b06084, 0x27f002d7f95d0190,
+      0xcc20ce9bd35c78a5, 0x31ec038df7b441f4,
+      0xff290242c83396ce, 0x7e67047175a15271,
+      0x9f79a169bd203e41, 0xf0062c6e984d386,
+      0xc75809c42c684dd1, 0x52c07b78a3e60868,
+      0xf92e0c3537826145, 0xa7709a56ccdf8a82,
+      0x9bbcc7a142b17ccb, 0x88a66076400bb691,
+      0xc2abf989935ddbfe, 0x6acff893d00ea435,
+      0xf356f7ebf83552fe, 0x583f6b8c4124d43,
+      0x98165af37b2153de, 0xc3727a337a8b704a,
+      0xbe1bf1b059e9a8d6, 0x744f18c0592e4c5c,
+      0xeda2ee1c7064130c, 0x1162def06f79df73,
+      0x9485d4d1c63e8be7, 0x8addcb5645ac2ba8,
+      0xb9a74a0637ce2ee1, 0x6d953e2bd7173692,
+      0xe8111c87c5c1ba99, 0xc8fa8db6ccdd0437,
+      0x910ab1d4db9914a0, 0x1d9c9892400a22a2,
+      0xb54d5e4a127f59c8, 0x2503beb6d00cab4b,
+      0xe2a0b5dc971f303a, 0x2e44ae64840fd61d,
+      0x8da471a9de737e24, 0x5ceaecfed289e5d2,
+      0xb10d8e1456105dad, 0x7425a83e872c5f47,
+      0xdd50f1996b947518, 0xd12f124e28f77719,
+      0x8a5296ffe33cc92f, 0x82bd6b70d99aaa6f,
+      0xace73cbfdc0bfb7b, 0x636cc64d1001550b,
+      0xd8210befd30efa5a, 0x3c47f7e05401aa4e,
+      0x8714a775e3e95c78, 0x65acfaec34810a71,
+      0xa8d9d1535ce3b396, 0x7f1839a741a14d0d,
+      0xd31045a8341ca07c, 0x1ede48111209a050,
+      0x83ea2b892091e44d, 0x934aed0aab460432,
+      0xa4e4b66b68b65d60, 0xf81da84d5617853f,
+      0xce1de40642e3f4b9, 0x36251260ab9d668e,
+      0x80d2ae83e9ce78f3, 0xc1d72b7c6b426019,
+      0xa1075a24e4421730, 0xb24cf65b8612f81f,
+      0xc94930ae1d529cfc, 0xdee033f26797b627,
+      0xfb9b7cd9a4a7443c, 0x169840ef017da3b1,
+      0x9d412e0806e88aa5, 0x8e1f289560ee864e,
+      0xc491798a08a2ad4e, 0xf1a6f2bab92a27e2,
+      0xf5b5d7ec8acb58a2, 0xae10af696774b1db,
+      0x9991a6f3d6bf1765, 0xacca6da1e0a8ef29,
+      0xbff610b0cc6edd3f, 0x17fd090a58d32af3,
+      0xeff394dcff8a948e, 0xddfc4b4cef07f5b0,
+      0x95f83d0a1fb69cd9, 0x4abdaf101564f98e,
+      0xbb764c4ca7a4440f, 0x9d6d1ad41abe37f1,
+      0xea53df5fd18d5513, 0x84c86189216dc5ed,
+      0x92746b9be2f8552c, 0x32fd3cf5b4e49bb4,
+      0xb7118682dbb66a77, 0x3fbc8c33221dc2a1,
+      0xe4d5e82392a40515, 0xfabaf3feaa5334a,
+      0x8f05b1163ba6832d, 0x29cb4d87f2a7400e,
+      0xb2c71d5bca9023f8, 0x743e20e9ef511012,
+      0xdf78e4b2bd342cf6, 0x914da9246b255416,
+      0x8bab8eefb6409c1a, 0x1ad089b6c2f7548e,
+      0xae9672aba3d0c320, 0xa184ac2473b529b1,
+      0xda3c0f568cc4f3e8, 0xc9e5d72d90a2741e,
+      0x8865899617fb1871, 0x7e2fa67c7a658892,
+      0xaa7eebfb9df9de8d, 0xddbb901b98feeab7,
+      0xd51ea6fa85785631, 0x552a74227f3ea565,
+      0x8533285c936b35de, 0xd53a88958f87275f,
+      0xa67ff273b8460356, 0x8a892abaf368f137,
+      0xd01fef10a657842c, 0x2d2b7569b0432d85,
+      0x8213f56a67f6b29b, 0x9c3b29620e29fc73,
+      0xa298f2c501f45f42, 0x8349f3ba91b47b8f,
+      0xcb3f2f7642717713, 0x241c70a936219a73,
+      0xfe0efb53d30dd4d7, 0xed238cd383aa0110,
+      0x9ec95d1463e8a506, 0xf4363804324a40aa,
+      0xc67bb4597ce2ce48, 0xb143c6053edcd0d5,
+      0xf81aa16fdc1b81da, 0xdd94b7868e94050a,
+      0x9b10a4e5e9913128, 0xca7cf2b4191c8326,
+      0xc1d4ce1f63f57d72, 0xfd1c2f611f63a3f0,
+      0xf24a01a73cf2dccf, 0xbc633b39673c8cec,
+      0x976e41088617ca01, 0xd5be0503e085d813,
+      0xbd49d14aa79dbc82, 0x4b2d8644d8a74e18,
+      0xec9c459d51852ba2, 0xddf8e7d60ed1219e,
+      0x93e1ab8252f33b45, 0xcabb90e5c942b503,
+      0xb8da1662e7b00a17, 0x3d6a751f3b936243,
+      0xe7109bfba19c0c9d, 0xcc512670a783ad4,
+      0x906a617d450187e2, 0x27fb2b80668b24c5,
+      0xb484f9dc9641e9da, 0xb1f9f660802dedf6,
+      0xe1a63853bbd26451, 0x5e7873f8a0396973,
+      0x8d07e33455637eb2, 0xdb0b487b6423e1e8,
+      0xb049dc016abc5e5f, 0x91ce1a9a3d2cda62,
+      0xdc5c5301c56b75f7, 0x7641a140cc7810fb,
+      0x89b9b3e11b6329ba, 0xa9e904c87fcb0a9d,
+      0xac2820d9623bf429, 0x546345fa9fbdcd44,
+      0xd732290fbacaf133, 0xa97c177947ad4095,
+      0x867f59a9d4bed6c0, 0x49ed8eabcccc485d,
+      0xa81f301449ee8c70, 0x5c68f256bfff5a74,
+      0xd226fc195c6a2f8c, 0x73832eec6fff3111,
+      0x83585d8fd9c25db7, 0xc831fd53c5ff7eab,
+      0xa42e74f3d032f525, 0xba3e7ca8b77f5e55,
+      0xcd3a1230c43fb26f, 0x28ce1bd2e55f35eb,
+      0x80444b5e7aa7cf85, 0x7980d163cf5b81b3,
+      0xa0555e361951c366, 0xd7e105bcc332621f,
+      0xc86ab5c39fa63440, 0x8dd9472bf3fefaa7,
+      0xfa856334878fc150, 0xb14f98f6f0feb951,
+      0x9c935e00d4b9d8d2, 0x6ed1bf9a569f33d3,
+      0xc3b8358109e84f07, 0xa862f80ec4700c8,
+      0xf4a642e14c6262c8, 0xcd27bb612758c0fa,
+      0x98e7e9cccfbd7dbd, 0x8038d51cb897789c,
+      0xbf21e44003acdd2c, 0xe0470a63e6bd56c3,
+      0xeeea5d5004981478, 0x1858ccfce06cac74,
+      0x95527a5202df0ccb, 0xf37801e0c43ebc8,
+      0xbaa718e68396cffd, 0xd30560258f54e6ba,
+      0xe950df20247c83fd, 0x47c6b82ef32a2069,
+      0x91d28b7416cdd27e, 0x4cdc331d57fa5441,
+      0xb6472e511c81471d, 0xe0133fe4adf8e952,
+      0xe3d8f9e563a198e5, 0x58180fddd97723a6,
+      0x8e679c2f5e44ff8f, 0x570f09eaa7ea7648,
+  };
 };
 
+#if FASTFLOAT_DETAIL_MUST_DEFINE_CONSTEXPR_VARIABLE
+
 template <class unused>
-constexpr uint64_t powers_template<unused>::power_of_five_128[number_of_entries];
+constexpr uint64_t
+    powers_template<unused>::power_of_five_128[number_of_entries];
+
+#endif
 
 using powers = powers_template<>;
 
@@ -9758,27 +10419,34 @@ using powers = powers_template<>;
 
 namespace fast_float {
 
-// This will compute or rather approximate w * 5**q and return a pair of 64-bit words approximating
-// the result, with the "high" part corresponding to the most significant bits and the
-// low part corresponding to the least significant bits.
+// This will compute or rather approximate w * 5**q and return a pair of 64-bit
+// words approximating the result, with the "high" part corresponding to the
+// most significant bits and the low part corresponding to the least significant
+// bits.
 //
 template <int bit_precision>
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-value128 compute_product_approximation(int64_t q, uint64_t w) {
-  const int index = 2 * int(q - powers::smallest_power_of_five);
-  // For small values of q, e.g., q in [0,27], the answer is always exact because
-  // The line value128 firstproduct = full_multiplication(w, power_of_five_128[index]);
-  // gives the exact answer.
-  value128 firstproduct = full_multiplication(w, powers::power_of_five_128[index]);
-  static_assert((bit_precision >= 0) && (bit_precision <= 64), " precision should  be in (0,64]");
-  constexpr uint64_t precision_mask = (bit_precision < 64) ?
-               (uint64_t(0xFFFFFFFFFFFFFFFF) >> bit_precision)
-               : uint64_t(0xFFFFFFFFFFFFFFFF);
-  if((firstproduct.high & precision_mask) == precision_mask) { // could further guard with  (lower + w < lower)
-    // regarding the second product, we only need secondproduct.high, but our expectation is that the compiler will optimize this extra work away if needed.
-    value128 secondproduct = full_multiplication(w, powers::power_of_five_128[index + 1]);
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 value128
+compute_product_approximation(int64_t q, uint64_t w) {
+  int const index = 2 * int(q - powers::smallest_power_of_five);
+  // For small values of q, e.g., q in [0,27], the answer is always exact
+  // because The line value128 firstproduct = full_multiplication(w,
+  // power_of_five_128[index]); gives the exact answer.
+  value128 firstproduct =
+      full_multiplication(w, powers::power_of_five_128[index]);
+  static_assert((bit_precision >= 0) && (bit_precision <= 64),
+                " precision should  be in (0,64]");
+  constexpr uint64_t precision_mask =
+      (bit_precision < 64) ? (uint64_t(0xFFFFFFFFFFFFFFFF) >> bit_precision)
+                           : uint64_t(0xFFFFFFFFFFFFFFFF);
+  if ((firstproduct.high & precision_mask) ==
+      precision_mask) { // could further guard with  (lower + w < lower)
+    // regarding the second product, we only need secondproduct.high, but our
+    // expectation is that the compiler will optimize this extra work away if
+    // needed.
+    value128 secondproduct =
+        full_multiplication(w, powers::power_of_five_128[index + 1]);
     firstproduct.low += secondproduct.high;
-    if(secondproduct.high > firstproduct.low) {
+    if (secondproduct.high > firstproduct.low) {
       firstproduct.high++;
     }
   }
@@ -9801,43 +10469,45 @@ namespace detail {
  * where
  *   p = log(5**-q)/log(2) = -q * log(5)/log(2)
  */
-  constexpr fastfloat_really_inline int32_t power(int32_t q)  noexcept  {
-    return (((152170 + 65536) * q) >> 16) + 63;
-  }
+constexpr fastfloat_really_inline int32_t power(int32_t q) noexcept {
+  return (((152170 + 65536) * q) >> 16) + 63;
+}
 } // namespace detail
 
 // create an adjusted mantissa, biased by the invalid power2
 // for significant digits already multiplied by 10 ** q.
 template <typename binary>
-fastfloat_really_inline FASTFLOAT_CONSTEXPR14
-adjusted_mantissa compute_error_scaled(int64_t q, uint64_t w, int lz) noexcept  {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR14 adjusted_mantissa
+compute_error_scaled(int64_t q, uint64_t w, int lz) noexcept {
   int hilz = int(w >> 63) ^ 1;
   adjusted_mantissa answer;
   answer.mantissa = w << hilz;
   int bias = binary::mantissa_explicit_bits() - binary::minimum_exponent();
-  answer.power2 = int32_t(detail::power(int32_t(q)) + bias - hilz - lz - 62 + invalid_am_bias);
+  answer.power2 = int32_t(detail::power(int32_t(q)) + bias - hilz - lz - 62 +
+                          invalid_am_bias);
   return answer;
 }
 
 // w * 10 ** q, without rounding the representation up.
 // the power2 in the exponent will be adjusted by invalid_am_bias.
 template <typename binary>
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-adjusted_mantissa compute_error(int64_t q, uint64_t w)  noexcept  {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 adjusted_mantissa
+compute_error(int64_t q, uint64_t w) noexcept {
   int lz = leading_zeroes(w);
   w <<= lz;
-  value128 product = compute_product_approximation<binary::mantissa_explicit_bits() + 3>(q, w);
+  value128 product =
+      compute_product_approximation<binary::mantissa_explicit_bits() + 3>(q, w);
   return compute_error_scaled<binary>(q, product.high, lz);
 }
 
-// w * 10 ** q
-// The returned value should be a valid ieee64 number that simply need to be packed.
-// However, in some very rare cases, the computation will fail. In such cases, we
-// return an adjusted_mantissa with a negative power of 2: the caller should recompute
-// in such cases.
+// Computers w * 10 ** q.
+// The returned value should be a valid number that simply needs to be
+// packed. However, in some very rare cases, the computation will fail. In such
+// cases, we return an adjusted_mantissa with a negative power of 2: the caller
+// should recompute in such cases.
 template <typename binary>
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-adjusted_mantissa compute_float(int64_t q, uint64_t w)  noexcept  {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 adjusted_mantissa
+compute_float(int64_t q, uint64_t w) noexcept {
   adjusted_mantissa answer;
   if ((w == 0) || (q < binary::smallest_power_of_ten())) {
     answer.power2 = 0;
@@ -9851,7 +10521,8 @@ adjusted_mantissa compute_float(int64_t q, uint64_t w)  noexcept  {
     answer.mantissa = 0;
     return answer;
   }
-  // At this point in time q is in [powers::smallest_power_of_five, powers::largest_power_of_five].
+  // At this point in time q is in [powers::smallest_power_of_five,
+  // powers::largest_power_of_five].
 
   // We want the most significant bit of i to be 1. Shift if needed.
   int lz = leading_zeroes(w);
@@ -9860,27 +10531,32 @@ adjusted_mantissa compute_float(int64_t q, uint64_t w)  noexcept  {
   // The required precision is binary::mantissa_explicit_bits() + 3 because
   // 1. We need the implicit bit
   // 2. We need an extra bit for rounding purposes
-  // 3. We might lose a bit due to the "upperbit" routine (result too small, requiring a shift)
+  // 3. We might lose a bit due to the "upperbit" routine (result too small,
+  // requiring a shift)
 
-  value128 product = compute_product_approximation<binary::mantissa_explicit_bits() + 3>(q, w);
+  value128 product =
+      compute_product_approximation<binary::mantissa_explicit_bits() + 3>(q, w);
   // The computed 'product' is always sufficient.
   // Mathematical proof:
-  // Noble Mushtak and Daniel Lemire, Fast Number Parsing Without Fallback (to appear)
-  // See script/mushtak_lemire.py
+  // Noble Mushtak and Daniel Lemire, Fast Number Parsing Without Fallback (to
+  // appear) See script/mushtak_lemire.py
 
-  // The "compute_product_approximation" function can be slightly slower than a branchless approach:
-  // value128 product = compute_product(q, w);
-  // but in practice, we can win big with the compute_product_approximation if its additional branch
-  // is easily predicted. Which is best is data specific.
+  // The "compute_product_approximation" function can be slightly slower than a
+  // branchless approach: value128 product = compute_product(q, w); but in
+  // practice, we can win big with the compute_product_approximation if its
+  // additional branch is easily predicted. Which is best is data specific.
   int upperbit = int(product.high >> 63);
   int shift = upperbit + 64 - binary::mantissa_explicit_bits() - 3;
 
   answer.mantissa = product.high >> shift;
 
-  answer.power2 = int32_t(detail::power(int32_t(q)) + upperbit - lz - binary::minimum_exponent());
+  answer.power2 = int32_t(detail::power(int32_t(q)) + upperbit - lz -
+                          binary::minimum_exponent());
   if (answer.power2 <= 0) { // we have a subnormal?
     // Here have that answer.power2 <= 0 so -answer.power2 >= 0
-    if(-answer.power2 + 1 >= 64) { // if we have more than 64 bits below the minimum exponent, you have a zero for sure.
+    if (-answer.power2 + 1 >=
+        64) { // if we have more than 64 bits below the minimum exponent, you
+              // have a zero for sure.
       answer.power2 = 0;
       answer.mantissa = 0;
       // result should be zero
@@ -9889,7 +10565,8 @@ adjusted_mantissa compute_float(int64_t q, uint64_t w)  noexcept  {
     // next line is safe because -answer.power2 + 1 < 64
     answer.mantissa >>= -answer.power2 + 1;
     // Thankfully, we can't have both "round-to-even" and subnormals because
-    // "round-to-even" only occurs for powers close to 0.
+    // "round-to-even" only occurs for powers close to 0 in the 32-bit and
+    // and 64-bit case (with no more than 19 digits).
     answer.mantissa += (answer.mantissa & 1); // round up
     answer.mantissa >>= 1;
     // There is a weird scenario where we don't have a subnormal but just.
@@ -9899,20 +10576,26 @@ adjusted_mantissa compute_float(int64_t q, uint64_t w)  noexcept  {
     // up 0x3fffffffffffff x 2^-1023-53  and once we do, we are no longer
     // subnormal, but we can only know this after rounding.
     // So we only declare a subnormal if we are smaller than the threshold.
-    answer.power2 = (answer.mantissa < (uint64_t(1) << binary::mantissa_explicit_bits())) ? 0 : 1;
+    answer.power2 =
+        (answer.mantissa < (uint64_t(1) << binary::mantissa_explicit_bits()))
+            ? 0
+            : 1;
     return answer;
   }
 
   // usually, we round *up*, but if we fall right in between and and we have an
   // even basis, we need to round down
   // We are only concerned with the cases where 5**q fits in single 64-bit word.
-  if ((product.low <= 1) &&  (q >= binary::min_exponent_round_to_even()) && (q <= binary::max_exponent_round_to_even()) &&
-      ((answer.mantissa & 3) == 1) ) { // we may fall between two floats!
+  if ((product.low <= 1) && (q >= binary::min_exponent_round_to_even()) &&
+      (q <= binary::max_exponent_round_to_even()) &&
+      ((answer.mantissa & 3) == 1)) { // we may fall between two floats!
     // To be in-between two floats we need that in doing
-    //   answer.mantissa = product.high >> (upperbit + 64 - binary::mantissa_explicit_bits() - 3);
-    // ... we dropped out only zeroes. But if this happened, then we can go back!!!
-    if((answer.mantissa  << shift) ==  product.high) {
-      answer.mantissa &= ~uint64_t(1);          // flip it so that we do not round up
+    //   answer.mantissa = product.high >> (upperbit + 64 -
+    //   binary::mantissa_explicit_bits() - 3);
+    // ... we dropped out only zeroes. But if this happened, then we can go
+    // back!!!
+    if ((answer.mantissa << shift) == product.high) {
+      answer.mantissa &= ~uint64_t(1); // flip it so that we do not round up
     }
   }
 
@@ -9976,15 +10659,14 @@ constexpr size_t bigint_limbs = bigint_bits / limb_bits;
 
 // vector-like type that is allocated on the stack. the entire
 // buffer is pre-allocated, and only the length changes.
-template <uint16_t size>
-struct stackvec {
+template <uint16_t size> struct stackvec {
   limb data[size];
   // we never need more than 150 limbs
   uint16_t length{0};
 
   stackvec() = default;
-  stackvec(const stackvec &) = delete;
-  stackvec &operator=(const stackvec &) = delete;
+  stackvec(stackvec const &) = delete;
+  stackvec &operator=(stackvec const &) = delete;
   stackvec(stackvec &&) = delete;
   stackvec &operator=(stackvec &&other) = delete;
 
@@ -9993,16 +10675,18 @@ struct stackvec {
     FASTFLOAT_ASSERT(try_extend(s));
   }
 
-  FASTFLOAT_CONSTEXPR14 limb& operator[](size_t index) noexcept {
+  FASTFLOAT_CONSTEXPR14 limb &operator[](size_t index) noexcept {
     FASTFLOAT_DEBUG_ASSERT(index < length);
     return data[index];
   }
-  FASTFLOAT_CONSTEXPR14 const limb& operator[](size_t index) const noexcept {
+
+  FASTFLOAT_CONSTEXPR14 const limb &operator[](size_t index) const noexcept {
     FASTFLOAT_DEBUG_ASSERT(index < length);
     return data[index];
   }
+
   // index from the end of the container
-  FASTFLOAT_CONSTEXPR14 const limb& rindex(size_t index) const noexcept {
+  FASTFLOAT_CONSTEXPR14 const limb &rindex(size_t index) const noexcept {
     FASTFLOAT_DEBUG_ASSERT(index < length);
     size_t rindex = length - index - 1;
     return data[rindex];
@@ -10012,20 +10696,19 @@ struct stackvec {
   FASTFLOAT_CONSTEXPR14 void set_len(size_t len) noexcept {
     length = uint16_t(len);
   }
-  constexpr size_t len() const noexcept {
-    return length;
-  }
-  constexpr bool is_empty() const noexcept {
-    return length == 0;
-  }
-  constexpr size_t capacity() const noexcept {
-    return size;
-  }
+
+  constexpr size_t len() const noexcept { return length; }
+
+  constexpr bool is_empty() const noexcept { return length == 0; }
+
+  constexpr size_t capacity() const noexcept { return size; }
+
   // append item to vector, without bounds checking
   FASTFLOAT_CONSTEXPR14 void push_unchecked(limb value) noexcept {
     data[length] = value;
     length++;
   }
+
   // append item to vector, returning if item was added
   FASTFLOAT_CONSTEXPR14 bool try_push(limb value) noexcept {
     if (len() < capacity()) {
@@ -10035,12 +10718,14 @@ struct stackvec {
       return false;
     }
   }
+
   // add items to the vector, from a span, without bounds checking
   FASTFLOAT_CONSTEXPR20 void extend_unchecked(limb_span s) noexcept {
-    limb* ptr = data + length;
+    limb *ptr = data + length;
     std::copy_n(s.ptr, s.len(), ptr);
     set_len(len() + s.len());
   }
+
   // try to add items to the vector, returning if items were added
   FASTFLOAT_CONSTEXPR20 bool try_extend(limb_span s) noexcept {
     if (len() + s.len() <= capacity()) {
@@ -10050,6 +10735,7 @@ struct stackvec {
       return false;
     }
   }
+
   // resize the vector, without bounds checking
   // if the new size is longer than the vector, assign value to each
   // appended item.
@@ -10057,14 +10743,15 @@ struct stackvec {
   void resize_unchecked(size_t new_len, limb value) noexcept {
     if (new_len > len()) {
       size_t count = new_len - len();
-      limb* first = data + len();
-      limb* last = first + count;
+      limb *first = data + len();
+      limb *last = first + count;
       ::std::fill(first, last, value);
       set_len(new_len);
     } else {
       set_len(new_len);
     }
   }
+
   // try to resize the vector, returning if the vector was resized.
   FASTFLOAT_CONSTEXPR20 bool try_resize(size_t new_len, limb value) noexcept {
     if (new_len > capacity()) {
@@ -10074,6 +10761,7 @@ struct stackvec {
       return true;
     }
   }
+
   // check if any limbs are non-zero after the given index.
   // this needs to be done in reverse order, since the index
   // is relative to the most significant limbs.
@@ -10086,6 +10774,7 @@ struct stackvec {
     }
     return false;
   }
+
   // normalize the big integer, so most-significant zero limbs are removed.
   FASTFLOAT_CONSTEXPR14 void normalize() noexcept {
     while (len() > 0 && rindex(0) == 0) {
@@ -10094,21 +10783,21 @@ struct stackvec {
   }
 };
 
-fastfloat_really_inline FASTFLOAT_CONSTEXPR14
-uint64_t empty_hi64(bool& truncated) noexcept {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR14 uint64_t
+empty_hi64(bool &truncated) noexcept {
   truncated = false;
   return 0;
 }
 
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-uint64_t uint64_hi64(uint64_t r0, bool& truncated) noexcept {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 uint64_t
+uint64_hi64(uint64_t r0, bool &truncated) noexcept {
   truncated = false;
   int shl = leading_zeroes(r0);
   return r0 << shl;
 }
 
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-uint64_t uint64_hi64(uint64_t r0, uint64_t r1, bool& truncated) noexcept {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 uint64_t
+uint64_hi64(uint64_t r0, uint64_t r1, bool &truncated) noexcept {
   int shl = leading_zeroes(r0);
   if (shl == 0) {
     truncated = r1 != 0;
@@ -10120,20 +10809,20 @@ uint64_t uint64_hi64(uint64_t r0, uint64_t r1, bool& truncated) noexcept {
   }
 }
 
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-uint64_t uint32_hi64(uint32_t r0, bool& truncated) noexcept {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 uint64_t
+uint32_hi64(uint32_t r0, bool &truncated) noexcept {
   return uint64_hi64(r0, truncated);
 }
 
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-uint64_t uint32_hi64(uint32_t r0, uint32_t r1, bool& truncated) noexcept {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 uint64_t
+uint32_hi64(uint32_t r0, uint32_t r1, bool &truncated) noexcept {
   uint64_t x0 = r0;
   uint64_t x1 = r1;
   return uint64_hi64((x0 << 32) | x1, truncated);
 }
 
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-uint64_t uint32_hi64(uint32_t r0, uint32_t r1, uint32_t r2, bool& truncated) noexcept {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 uint64_t
+uint32_hi64(uint32_t r0, uint32_t r1, uint32_t r2, bool &truncated) noexcept {
   uint64_t x0 = r0;
   uint64_t x1 = r1;
   uint64_t x2 = r2;
@@ -10144,17 +10833,17 @@ uint64_t uint32_hi64(uint32_t r0, uint32_t r1, uint32_t r2, bool& truncated) noe
 // we want an efficient operation. for msvc, where
 // we don't have built-in intrinsics, this is still
 // pretty fast.
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-limb scalar_add(limb x, limb y, bool& overflow) noexcept {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 limb
+scalar_add(limb x, limb y, bool &overflow) noexcept {
   limb z;
 // gcc and clang
 #if defined(__has_builtin)
-  #if __has_builtin(__builtin_add_overflow)
-    if (!cpp20_and_in_constexpr()) {
-      overflow = __builtin_add_overflow(x, y, &z);
-      return z;
-    }
-  #endif
+#if __has_builtin(__builtin_add_overflow)
+  if (!cpp20_and_in_constexpr()) {
+    overflow = __builtin_add_overflow(x, y, &z);
+    return z;
+  }
+#endif
 #endif
 
   // generic, this still optimizes correctly on MSVC.
@@ -10164,24 +10853,24 @@ limb scalar_add(limb x, limb y, bool& overflow) noexcept {
 }
 
 // multiply two small integers, getting both the high and low bits.
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-limb scalar_mul(limb x, limb y, limb& carry) noexcept {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 limb
+scalar_mul(limb x, limb y, limb &carry) noexcept {
 #ifdef FASTFLOAT_64BIT_LIMB
-  #if defined(__SIZEOF_INT128__)
+#if defined(__SIZEOF_INT128__)
   // GCC and clang both define it as an extension.
   __uint128_t z = __uint128_t(x) * __uint128_t(y) + __uint128_t(carry);
   carry = limb(z >> limb_bits);
   return limb(z);
-  #else
+#else
   // fallback, no native 128-bit integer multiplication with carry.
   // on msvc, this optimizes identically, somehow.
   value128 z = full_multiplication(x, y);
   bool overflow;
   z.low = scalar_add(z.low, carry, overflow);
-  z.high += uint64_t(overflow);  // cannot overflow
+  z.high += uint64_t(overflow); // cannot overflow
   carry = z.high;
   return z.low;
-  #endif
+#endif
 #else
   uint64_t z = uint64_t(x) * uint64_t(y) + uint64_t(carry);
   carry = limb(z >> limb_bits);
@@ -10192,8 +10881,8 @@ limb scalar_mul(limb x, limb y, limb& carry) noexcept {
 // add scalar value to bigint starting from offset.
 // used in grade school multiplication
 template <uint16_t size>
-inline FASTFLOAT_CONSTEXPR20
-bool small_add_from(stackvec<size>& vec, limb y, size_t start) noexcept {
+inline FASTFLOAT_CONSTEXPR20 bool small_add_from(stackvec<size> &vec, limb y,
+                                                 size_t start) noexcept {
   size_t index = start;
   limb carry = y;
   bool overflow;
@@ -10210,15 +10899,15 @@ bool small_add_from(stackvec<size>& vec, limb y, size_t start) noexcept {
 
 // add scalar value to bigint.
 template <uint16_t size>
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-bool small_add(stackvec<size>& vec, limb y) noexcept {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 bool
+small_add(stackvec<size> &vec, limb y) noexcept {
   return small_add_from(vec, y, 0);
 }
 
 // multiply bigint by scalar value.
 template <uint16_t size>
-inline FASTFLOAT_CONSTEXPR20
-bool small_mul(stackvec<size>& vec, limb y) noexcept {
+inline FASTFLOAT_CONSTEXPR20 bool small_mul(stackvec<size> &vec,
+                                            limb y) noexcept {
   limb carry = 0;
   for (size_t index = 0; index < vec.len(); index++) {
     vec[index] = scalar_mul(vec[index], y, carry);
@@ -10232,12 +10921,12 @@ bool small_mul(stackvec<size>& vec, limb y) noexcept {
 // add bigint to bigint starting from index.
 // used in grade school multiplication
 template <uint16_t size>
-FASTFLOAT_CONSTEXPR20
-bool large_add_from(stackvec<size>& x, limb_span y, size_t start) noexcept {
+FASTFLOAT_CONSTEXPR20 bool large_add_from(stackvec<size> &x, limb_span y,
+                                          size_t start) noexcept {
   // the effective x buffer is from `xstart..x.len()`, so exit early
   // if we can't get that current range.
   if (x.len() < start || y.len() > x.len() - start) {
-      FASTFLOAT_TRY(x.try_resize(y.len() + start, 0));
+    FASTFLOAT_TRY(x.try_resize(y.len() + start, 0));
   }
 
   bool carry = false;
@@ -10263,15 +10952,14 @@ bool large_add_from(stackvec<size>& x, limb_span y, size_t start) noexcept {
 
 // add bigint to bigint.
 template <uint16_t size>
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-bool large_add_from(stackvec<size>& x, limb_span y) noexcept {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 bool
+large_add_from(stackvec<size> &x, limb_span y) noexcept {
   return large_add_from(x, y, 0);
 }
 
 // grade-school multiplication algorithm
 template <uint16_t size>
-FASTFLOAT_CONSTEXPR20
-bool long_mul(stackvec<size>& x, limb_span y) noexcept {
+FASTFLOAT_CONSTEXPR20 bool long_mul(stackvec<size> &x, limb_span y) noexcept {
   limb_span xs = limb_span(x.data, x.len());
   stackvec<size> z(xs);
   limb_span zs = limb_span(z.data, z.len());
@@ -10299,8 +10987,7 @@ bool long_mul(stackvec<size>& x, limb_span y) noexcept {
 
 // grade-school multiplication algorithm
 template <uint16_t size>
-FASTFLOAT_CONSTEXPR20
-bool large_mul(stackvec<size>& x, limb_span y) noexcept {
+FASTFLOAT_CONSTEXPR20 bool large_mul(stackvec<size> &x, limb_span y) noexcept {
   if (y.len() == 1) {
     FASTFLOAT_TRY(small_mul(x, y[0]));
   } else {
@@ -10309,36 +10996,58 @@ bool large_mul(stackvec<size>& x, limb_span y) noexcept {
   return true;
 }
 
-template <typename = void>
-struct pow5_tables {
+template <typename = void> struct pow5_tables {
   static constexpr uint32_t large_step = 135;
   static constexpr uint64_t small_power_of_5[] = {
-    1UL, 5UL, 25UL, 125UL, 625UL, 3125UL, 15625UL, 78125UL, 390625UL,
-    1953125UL, 9765625UL, 48828125UL, 244140625UL, 1220703125UL,
-    6103515625UL, 30517578125UL, 152587890625UL, 762939453125UL,
-    3814697265625UL, 19073486328125UL, 95367431640625UL, 476837158203125UL,
-    2384185791015625UL, 11920928955078125UL, 59604644775390625UL,
-    298023223876953125UL, 1490116119384765625UL, 7450580596923828125UL,
+      1UL,
+      5UL,
+      25UL,
+      125UL,
+      625UL,
+      3125UL,
+      15625UL,
+      78125UL,
+      390625UL,
+      1953125UL,
+      9765625UL,
+      48828125UL,
+      244140625UL,
+      1220703125UL,
+      6103515625UL,
+      30517578125UL,
+      152587890625UL,
+      762939453125UL,
+      3814697265625UL,
+      19073486328125UL,
+      95367431640625UL,
+      476837158203125UL,
+      2384185791015625UL,
+      11920928955078125UL,
+      59604644775390625UL,
+      298023223876953125UL,
+      1490116119384765625UL,
+      7450580596923828125UL,
   };
 #ifdef FASTFLOAT_64BIT_LIMB
   constexpr static limb large_power_of_5[] = {
-    1414648277510068013UL, 9180637584431281687UL, 4539964771860779200UL,
-    10482974169319127550UL, 198276706040285095UL};
+      1414648277510068013UL, 9180637584431281687UL, 4539964771860779200UL,
+      10482974169319127550UL, 198276706040285095UL};
 #else
   constexpr static limb large_power_of_5[] = {
-    4279965485U, 329373468U, 4020270615U, 2137533757U, 4287402176U,
-    1057042919U, 1071430142U, 2440757623U, 381945767U, 46164893U};
+      4279965485U, 329373468U,  4020270615U, 2137533757U, 4287402176U,
+      1057042919U, 1071430142U, 2440757623U, 381945767U,  46164893U};
 #endif
 };
 
-template <typename T>
-constexpr uint32_t pow5_tables<T>::large_step;
+#if FASTFLOAT_DETAIL_MUST_DEFINE_CONSTEXPR_VARIABLE
 
-template <typename T>
-constexpr uint64_t pow5_tables<T>::small_power_of_5[];
+template <typename T> constexpr uint32_t pow5_tables<T>::large_step;
 
-template <typename T>
-constexpr limb pow5_tables<T>::large_power_of_5[];
+template <typename T> constexpr uint64_t pow5_tables<T>::small_power_of_5[];
+
+template <typename T> constexpr limb pow5_tables<T>::large_power_of_5[];
+
+#endif
 
 // big integer type. implements a small subset of big integer
 // arithmetic, using simple algorithms since asymptotically
@@ -10348,13 +11057,14 @@ struct bigint : pow5_tables<> {
   // storage of the limbs, in little-endian order.
   stackvec<bigint_limbs> vec;
 
-  FASTFLOAT_CONSTEXPR20 bigint(): vec() {}
-  bigint(const bigint &) = delete;
-  bigint &operator=(const bigint &) = delete;
+  FASTFLOAT_CONSTEXPR20 bigint() : vec() {}
+
+  bigint(bigint const &) = delete;
+  bigint &operator=(bigint const &) = delete;
   bigint(bigint &&) = delete;
   bigint &operator=(bigint &&other) = delete;
 
-  FASTFLOAT_CONSTEXPR20 bigint(uint64_t value): vec() {
+  FASTFLOAT_CONSTEXPR20 bigint(uint64_t value) : vec() {
 #ifdef FASTFLOAT_64BIT_LIMB
     vec.push_unchecked(value);
 #else
@@ -10366,7 +11076,7 @@ struct bigint : pow5_tables<> {
 
   // get the high 64 bits from the vector, and if bits were truncated.
   // this is to get the significant digits for the float.
-  FASTFLOAT_CONSTEXPR20 uint64_t hi64(bool& truncated) const noexcept {
+  FASTFLOAT_CONSTEXPR20 uint64_t hi64(bool &truncated) const noexcept {
 #ifdef FASTFLOAT_64BIT_LIMB
     if (vec.len() == 0) {
       return empty_hi64(truncated);
@@ -10385,7 +11095,8 @@ struct bigint : pow5_tables<> {
     } else if (vec.len() == 2) {
       return uint32_hi64(vec.rindex(0), vec.rindex(1), truncated);
     } else {
-      uint64_t result = uint32_hi64(vec.rindex(0), vec.rindex(1), vec.rindex(2), truncated);
+      uint64_t result =
+          uint32_hi64(vec.rindex(0), vec.rindex(1), vec.rindex(2), truncated);
       truncated |= vec.nonzero(3);
       return result;
     }
@@ -10398,7 +11109,7 @@ struct bigint : pow5_tables<> {
   // positive, this is larger, otherwise they are equal.
   // the limbs are stored in little-endian order, so we
   // must compare the limbs in ever order.
-  FASTFLOAT_CONSTEXPR20 int compare(const bigint& other) const noexcept {
+  FASTFLOAT_CONSTEXPR20 int compare(bigint const &other) const noexcept {
     if (vec.len() > other.vec.len()) {
       return 1;
     } else if (vec.len() < other.vec.len()) {
@@ -10451,12 +11162,12 @@ struct bigint : pow5_tables<> {
       return false;
     } else if (!vec.is_empty()) {
       // move limbs
-      limb* dst = vec.data + n;
-      const limb* src = vec.data;
+      limb *dst = vec.data + n;
+      limb const *src = vec.data;
       std::copy_backward(src, src + vec.len(), dst + vec.len());
       // fill in empty limbs
-      limb* first = vec.data;
-      limb* last = first + n;
+      limb *first = vec.data;
+      limb *last = first + n;
       ::std::fill(first, last, 0);
       vec.set_len(n + vec.len());
       return true;
@@ -10499,18 +11210,12 @@ struct bigint : pow5_tables<> {
     return int(limb_bits * vec.len()) - lz;
   }
 
-  FASTFLOAT_CONSTEXPR20 bool mul(limb y) noexcept {
-    return small_mul(vec, y);
-  }
+  FASTFLOAT_CONSTEXPR20 bool mul(limb y) noexcept { return small_mul(vec, y); }
 
-  FASTFLOAT_CONSTEXPR20 bool add(limb y) noexcept {
-    return small_add(vec, y);
-  }
+  FASTFLOAT_CONSTEXPR20 bool add(limb y) noexcept { return small_add(vec, y); }
 
   // multiply as if by 2 raised to a power.
-  FASTFLOAT_CONSTEXPR20 bool pow2(uint32_t exp) noexcept {
-    return shl(exp);
-  }
+  FASTFLOAT_CONSTEXPR20 bool pow2(uint32_t exp) noexcept { return shl(exp); }
 
   // multiply as if by 5 raised to a power.
   FASTFLOAT_CONSTEXPR20 bool pow5(uint32_t exp) noexcept {
@@ -10536,9 +11241,8 @@ struct bigint : pow5_tables<> {
       // Work around clang bug https://godbolt.org/z/zedh7rrhc
       // This is similar to https://github.com/llvm/llvm-project/issues/47746,
       // except the workaround described there don't work here
-      FASTFLOAT_TRY(
-        small_mul(vec, limb(((void)small_power_of_5[0], small_power_of_5[exp])))
-      );
+      FASTFLOAT_TRY(small_mul(
+          vec, limb(((void)small_power_of_5[0], small_power_of_5[exp]))));
     }
 
     return true;
@@ -10571,19 +11275,34 @@ struct bigint : pow5_tables<> {
 namespace fast_float {
 
 // 1e0 to 1e19
-constexpr static uint64_t powers_of_ten_uint64[] = {
-    1UL, 10UL, 100UL, 1000UL, 10000UL, 100000UL, 1000000UL, 10000000UL, 100000000UL,
-    1000000000UL, 10000000000UL, 100000000000UL, 1000000000000UL, 10000000000000UL,
-    100000000000000UL, 1000000000000000UL, 10000000000000000UL, 100000000000000000UL,
-    1000000000000000000UL, 10000000000000000000UL};
+constexpr static uint64_t powers_of_ten_uint64[] = {1UL,
+                                                    10UL,
+                                                    100UL,
+                                                    1000UL,
+                                                    10000UL,
+                                                    100000UL,
+                                                    1000000UL,
+                                                    10000000UL,
+                                                    100000000UL,
+                                                    1000000000UL,
+                                                    10000000000UL,
+                                                    100000000000UL,
+                                                    1000000000000UL,
+                                                    10000000000000UL,
+                                                    100000000000000UL,
+                                                    1000000000000000UL,
+                                                    10000000000000000UL,
+                                                    100000000000000000UL,
+                                                    1000000000000000000UL,
+                                                    10000000000000000000UL};
 
 // calculate the exponent, in scientific notation, of the number.
 // this algorithm is not even close to optimized, but it has no practical
 // effect on performance: in order to have a faster algorithm, we'd need
 // to slow down performance for faster algorithms, and this is still fast.
 template <typename UC>
-fastfloat_really_inline FASTFLOAT_CONSTEXPR14
-int32_t scientific_exponent(parsed_number_string_t<UC> & num) noexcept {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR14 int32_t
+scientific_exponent(parsed_number_string_t<UC> &num) noexcept {
   uint64_t mantissa = num.mantissa;
   int32_t exponent = int32_t(num.exponent);
   while (mantissa >= 10000) {
@@ -10603,15 +11322,16 @@ int32_t scientific_exponent(parsed_number_string_t<UC> & num) noexcept {
 
 // this converts a native floating-point number to an extended-precision float.
 template <typename T>
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-adjusted_mantissa to_extended(T value) noexcept {
-  using equiv_uint = typename binary_format<T>::equiv_uint;
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 adjusted_mantissa
+to_extended(T value) noexcept {
+  using equiv_uint = equiv_uint_t<T>;
   constexpr equiv_uint exponent_mask = binary_format<T>::exponent_mask();
   constexpr equiv_uint mantissa_mask = binary_format<T>::mantissa_mask();
   constexpr equiv_uint hidden_bit_mask = binary_format<T>::hidden_bit_mask();
 
   adjusted_mantissa am;
-  int32_t bias = binary_format<T>::mantissa_explicit_bits() - binary_format<T>::minimum_exponent();
+  int32_t bias = binary_format<T>::mantissa_explicit_bits() -
+                 binary_format<T>::minimum_exponent();
   equiv_uint bits;
 #if FASTFLOAT_HAS_BIT_CAST
   bits = std::bit_cast<equiv_uint>(value);
@@ -10624,7 +11344,8 @@ adjusted_mantissa to_extended(T value) noexcept {
     am.mantissa = bits & mantissa_mask;
   } else {
     // normal
-    am.power2 = int32_t((bits & exponent_mask) >> binary_format<T>::mantissa_explicit_bits());
+    am.power2 = int32_t((bits & exponent_mask) >>
+                        binary_format<T>::mantissa_explicit_bits());
     am.power2 -= bias;
     am.mantissa = (bits & mantissa_mask) | hidden_bit_mask;
   }
@@ -10636,8 +11357,8 @@ adjusted_mantissa to_extended(T value) noexcept {
 // we are given a native float that represents b, so we need to adjust it
 // halfway between b and b+u.
 template <typename T>
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-adjusted_mantissa to_extended_halfway(T value) noexcept {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 adjusted_mantissa
+to_extended_halfway(T value) noexcept {
   adjusted_mantissa am = to_extended(value);
   am.mantissa <<= 1;
   am.mantissa += 1;
@@ -10647,15 +11368,18 @@ adjusted_mantissa to_extended_halfway(T value) noexcept {
 
 // round an extended-precision float to the nearest machine float.
 template <typename T, typename callback>
-fastfloat_really_inline FASTFLOAT_CONSTEXPR14
-void round(adjusted_mantissa& am, callback cb) noexcept {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR14 void round(adjusted_mantissa &am,
+                                                         callback cb) noexcept {
   int32_t mantissa_shift = 64 - binary_format<T>::mantissa_explicit_bits() - 1;
   if (-am.power2 >= mantissa_shift) {
     // have a denormal float
     int32_t shift = -am.power2 + 1;
     cb(am, std::min<int32_t>(shift, 64));
     // check for round-up: if rounding-nearest carried us to the hidden bit.
-    am.power2 = (am.mantissa < (uint64_t(1) << binary_format<T>::mantissa_explicit_bits())) ? 0 : 1;
+    am.power2 = (am.mantissa <
+                 (uint64_t(1) << binary_format<T>::mantissa_explicit_bits()))
+                    ? 0
+                    : 1;
     return;
   }
 
@@ -10663,7 +11387,8 @@ void round(adjusted_mantissa& am, callback cb) noexcept {
   cb(am, mantissa_shift);
 
   // check for carry
-  if (am.mantissa >= (uint64_t(2) << binary_format<T>::mantissa_explicit_bits())) {
+  if (am.mantissa >=
+      (uint64_t(2) << binary_format<T>::mantissa_explicit_bits())) {
     am.mantissa = (uint64_t(1) << binary_format<T>::mantissa_explicit_bits());
     am.power2++;
   }
@@ -10677,16 +11402,11 @@ void round(adjusted_mantissa& am, callback cb) noexcept {
 }
 
 template <typename callback>
-fastfloat_really_inline FASTFLOAT_CONSTEXPR14
-void round_nearest_tie_even(adjusted_mantissa& am, int32_t shift, callback cb) noexcept {
-  const uint64_t mask
-  = (shift == 64)
-    ? UINT64_MAX
-    : (uint64_t(1) << shift) - 1;
-  const uint64_t halfway
-  = (shift == 0)
-    ? 0
-    : uint64_t(1) << (shift - 1);
+fastfloat_really_inline FASTFLOAT_CONSTEXPR14 void
+round_nearest_tie_even(adjusted_mantissa &am, int32_t shift,
+                       callback cb) noexcept {
+  uint64_t const mask = (shift == 64) ? UINT64_MAX : (uint64_t(1) << shift) - 1;
+  uint64_t const halfway = (shift == 0) ? 0 : uint64_t(1) << (shift - 1);
   uint64_t truncated_bits = am.mantissa & mask;
   bool is_above = truncated_bits > halfway;
   bool is_halfway = truncated_bits == halfway;
@@ -10703,8 +11423,8 @@ void round_nearest_tie_even(adjusted_mantissa& am, int32_t shift, callback cb) n
   am.mantissa += uint64_t(cb(is_odd, is_halfway, is_above));
 }
 
-fastfloat_really_inline FASTFLOAT_CONSTEXPR14
-void round_down(adjusted_mantissa& am, int32_t shift) noexcept {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR14 void
+round_down(adjusted_mantissa &am, int32_t shift) noexcept {
   if (shift == 64) {
     am.mantissa = 0;
   } else {
@@ -10712,11 +11432,13 @@ void round_down(adjusted_mantissa& am, int32_t shift) noexcept {
   }
   am.power2 += shift;
 }
+
 template <typename UC>
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-void skip_zeros(UC const * & first, UC const * last) noexcept {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 void
+skip_zeros(UC const *&first, UC const *last) noexcept {
   uint64_t val;
-  while (!cpp20_and_in_constexpr() && std::distance(first, last) >= int_cmp_len<UC>()) {
+  while (!cpp20_and_in_constexpr() &&
+         std::distance(first, last) >= int_cmp_len<UC>()) {
     ::memcpy(&val, first, sizeof(uint64_t));
     if (val != int_cmp_zeros<UC>()) {
       break;
@@ -10734,11 +11456,12 @@ void skip_zeros(UC const * & first, UC const * last) noexcept {
 // determine if any non-zero digits were truncated.
 // all characters must be valid digits.
 template <typename UC>
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-bool is_truncated(UC const * first, UC const * last) noexcept {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 bool
+is_truncated(UC const *first, UC const *last) noexcept {
   // do 8-bit optimizations, can just compare to 8 literal 0s.
   uint64_t val;
-  while (!cpp20_and_in_constexpr() && std::distance(first, last) >= int_cmp_len<UC>()) {
+  while (!cpp20_and_in_constexpr() &&
+         std::distance(first, last) >= int_cmp_len<UC>()) {
     ::memcpy(&val, first, sizeof(uint64_t));
     if (val != int_cmp_zeros<UC>()) {
       return true;
@@ -10753,16 +11476,17 @@ bool is_truncated(UC const * first, UC const * last) noexcept {
   }
   return false;
 }
+
 template <typename UC>
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-bool is_truncated(span<const UC> s) noexcept {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 bool
+is_truncated(span<UC const> s) noexcept {
   return is_truncated(s.ptr, s.ptr + s.len());
 }
 
-
 template <typename UC>
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-void parse_eight_digits(const UC*& p, limb& value, size_t& counter, size_t& count) noexcept {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 void
+parse_eight_digits(UC const *&p, limb &value, size_t &counter,
+                   size_t &count) noexcept {
   value = value * 100000000 + parse_eight_digits_unrolled(p);
   p += 8;
   counter += 8;
@@ -10770,22 +11494,23 @@ void parse_eight_digits(const UC*& p, limb& value, size_t& counter, size_t& coun
 }
 
 template <typename UC>
-fastfloat_really_inline FASTFLOAT_CONSTEXPR14
-void parse_one_digit(UC const *& p, limb& value, size_t& counter, size_t& count) noexcept {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR14 void
+parse_one_digit(UC const *&p, limb &value, size_t &counter,
+                size_t &count) noexcept {
   value = value * 10 + limb(*p - UC('0'));
   p++;
   counter++;
   count++;
 }
 
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-void add_native(bigint& big, limb power, limb value) noexcept {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 void
+add_native(bigint &big, limb power, limb value) noexcept {
   big.mul(power);
   big.add(value);
 }
 
-fastfloat_really_inline FASTFLOAT_CONSTEXPR20
-void round_up_bigint(bigint& big, size_t& count) noexcept {
+fastfloat_really_inline FASTFLOAT_CONSTEXPR20 void
+round_up_bigint(bigint &big, size_t &count) noexcept {
   // need to round-up the digits, but need to avoid rounding
   // ....9999 to ...10000, which could cause a false halfway point.
   add_native(big, 10, 1);
@@ -10794,8 +11519,9 @@ void round_up_bigint(bigint& big, size_t& count) noexcept {
 
 // parse the significant digits into a big integer
 template <typename UC>
-inline FASTFLOAT_CONSTEXPR20
-void parse_mantissa(bigint& result, parsed_number_string_t<UC>& num, size_t max_digits, size_t& digits) noexcept {
+inline FASTFLOAT_CONSTEXPR20 void
+parse_mantissa(bigint &result, parsed_number_string_t<UC> &num,
+               size_t max_digits, size_t &digits) noexcept {
   // try to minimize the number of big integer and scalar multiplication.
   // therefore, try to parse 8 digits at a time, and multiply by the largest
   // scalar value (9 or 19 digits) for each step.
@@ -10809,12 +11535,13 @@ void parse_mantissa(bigint& result, parsed_number_string_t<UC>& num, size_t max_
 #endif
 
   // process all integer digits.
-  UC const * p = num.integer.ptr;
-  UC const * pend = p + num.integer.len();
+  UC const *p = num.integer.ptr;
+  UC const *pend = p + num.integer.len();
   skip_zeros(p, pend);
   // process all digits, in increments of step per loop
   while (p != pend) {
-    while ((std::distance(p, pend) >= 8) && (step - counter >= 8) && (max_digits - digits >= 8)) {
+    while ((std::distance(p, pend) >= 8) && (step - counter >= 8) &&
+           (max_digits - digits >= 8)) {
       parse_eight_digits(p, value, counter, digits);
     }
     while (counter < step && p != pend && digits < max_digits) {
@@ -10847,7 +11574,8 @@ void parse_mantissa(bigint& result, parsed_number_string_t<UC>& num, size_t max_
     }
     // process all digits, in increments of step per loop
     while (p != pend) {
-      while ((std::distance(p, pend) >= 8) && (step - counter >= 8) && (max_digits - digits >= 8)) {
+      while ((std::distance(p, pend) >= 8) && (step - counter >= 8) &&
+             (max_digits - digits >= 8)) {
         parse_eight_digits(p, value, counter, digits);
       }
       while (counter < step && p != pend && digits < max_digits) {
@@ -10875,19 +11603,23 @@ void parse_mantissa(bigint& result, parsed_number_string_t<UC>& num, size_t max_
 }
 
 template <typename T>
-inline FASTFLOAT_CONSTEXPR20
-adjusted_mantissa positive_digit_comp(bigint& bigmant, int32_t exponent) noexcept {
+inline FASTFLOAT_CONSTEXPR20 adjusted_mantissa
+positive_digit_comp(bigint &bigmant, int32_t exponent) noexcept {
   FASTFLOAT_ASSERT(bigmant.pow10(uint32_t(exponent)));
   adjusted_mantissa answer;
   bool truncated;
   answer.mantissa = bigmant.hi64(truncated);
-  int bias = binary_format<T>::mantissa_explicit_bits() - binary_format<T>::minimum_exponent();
+  int bias = binary_format<T>::mantissa_explicit_bits() -
+             binary_format<T>::minimum_exponent();
   answer.power2 = bigmant.bit_length() - 64 + bias;
 
-  round<T>(answer, [truncated](adjusted_mantissa& a, int32_t shift) {
-    round_nearest_tie_even(a, shift, [truncated](bool is_odd, bool is_halfway, bool is_above) -> bool {
-      return is_above || (is_halfway && truncated) || (is_odd && is_halfway);
-    });
+  round<T>(answer, [truncated](adjusted_mantissa &a, int32_t shift) {
+    round_nearest_tie_even(
+        a, shift,
+        [truncated](bool is_odd, bool is_halfway, bool is_above) -> bool {
+          return is_above || (is_halfway && truncated) ||
+                 (is_odd && is_halfway);
+        });
   });
 
   return answer;
@@ -10899,15 +11631,17 @@ adjusted_mantissa positive_digit_comp(bigint& bigmant, int32_t exponent) noexcep
 // we then need to scale by `2^(f- e)`, and then the two significant digits
 // are of the same magnitude.
 template <typename T>
-inline FASTFLOAT_CONSTEXPR20
-adjusted_mantissa negative_digit_comp(bigint& bigmant, adjusted_mantissa am, int32_t exponent) noexcept {
-  bigint& real_digits = bigmant;
+inline FASTFLOAT_CONSTEXPR20 adjusted_mantissa negative_digit_comp(
+    bigint &bigmant, adjusted_mantissa am, int32_t exponent) noexcept {
+  bigint &real_digits = bigmant;
   int32_t real_exp = exponent;
 
   // get the value of `b`, rounded down, and get a bigint representation of b+h
   adjusted_mantissa am_b = am;
-  // gcc7 buf: use a lambda to remove the noexcept qualifier bug with -Wnoexcept-type.
-  round<T>(am_b, [](adjusted_mantissa&a, int32_t shift) { round_down(a, shift); });
+  // gcc7 buf: use a lambda to remove the noexcept qualifier bug with
+  // -Wnoexcept-type.
+  round<T>(am_b,
+           [](adjusted_mantissa &a, int32_t shift) { round_down(a, shift); });
   T b;
   to_float(false, am_b, b);
   adjusted_mantissa theor = to_extended_halfway(b);
@@ -10929,18 +11663,19 @@ adjusted_mantissa negative_digit_comp(bigint& bigmant, adjusted_mantissa am, int
   // compare digits, and use it to director rounding
   int ord = real_digits.compare(theor_digits);
   adjusted_mantissa answer = am;
-  round<T>(answer, [ord](adjusted_mantissa& a, int32_t shift) {
-    round_nearest_tie_even(a, shift, [ord](bool is_odd, bool _, bool __) -> bool {
-      (void)_;  // not needed, since we've done our comparison
-      (void)__; // not needed, since we've done our comparison
-      if (ord > 0) {
-        return true;
-      } else if (ord < 0) {
-        return false;
-      } else {
-        return is_odd;
-      }
-    });
+  round<T>(answer, [ord](adjusted_mantissa &a, int32_t shift) {
+    round_nearest_tie_even(
+        a, shift, [ord](bool is_odd, bool _, bool __) -> bool {
+          (void)_;  // not needed, since we've done our comparison
+          (void)__; // not needed, since we've done our comparison
+          if (ord > 0) {
+            return true;
+          } else if (ord < 0) {
+            return false;
+          } else {
+            return is_odd;
+          }
+        });
   });
 
   return answer;
@@ -10960,8 +11695,8 @@ adjusted_mantissa negative_digit_comp(bigint& bigmant, adjusted_mantissa am, int
 // the actual digits. we then compare the big integer representations
 // of both, and use that to direct rounding.
 template <typename T, typename UC>
-inline FASTFLOAT_CONSTEXPR20
-adjusted_mantissa digit_comp(parsed_number_string_t<UC>& num, adjusted_mantissa am) noexcept {
+inline FASTFLOAT_CONSTEXPR20 adjusted_mantissa
+digit_comp(parsed_number_string_t<UC> &num, adjusted_mantissa am) noexcept {
   // remove the invalid exponent bias
   am.power2 -= invalid_am_bias;
 
@@ -10995,8 +11730,8 @@ adjusted_mantissa digit_comp(parsed_number_string_t<UC>& num, adjusted_mantissa 
 //#include <limits>
 //included above:
 //#include <system_error>
-namespace fast_float {
 
+namespace fast_float {
 
 namespace detail {
 /**
@@ -11005,45 +11740,49 @@ namespace detail {
  * strings a null-free and fixed.
  **/
 template <typename T, typename UC>
-from_chars_result_t<UC> FASTFLOAT_CONSTEXPR14
-parse_infnan(UC const * first, UC const * last, T &value)  noexcept  {
+from_chars_result_t<UC>
+    FASTFLOAT_CONSTEXPR14 parse_infnan(UC const *first, UC const *last,
+                                       T &value, chars_format fmt) noexcept {
   from_chars_result_t<UC> answer{};
   answer.ptr = first;
   answer.ec = std::errc(); // be optimistic
-  bool minusSign = false;
-  if (*first == UC('-')) { // assume first < last, so dereference without checks; C++17 20.19.3.(7.1) explicitly forbids '+' here
-      minusSign = true;
-      ++first;
+  // assume first < last, so dereference without checks;
+  bool const minusSign = (*first == UC('-'));
+  // C++17 20.19.3.(7.1) explicitly forbids '+' sign here
+  if ((*first == UC('-')) ||
+      (uint64_t(fmt & chars_format::allow_leading_plus) &&
+       (*first == UC('+')))) {
+    ++first;
   }
-#ifdef FASTFLOAT_ALLOWS_LEADING_PLUS // disabled by default
-  if (*first == UC('+')) {
-      ++first;
-  }
-#endif
   if (last - first >= 3) {
     if (fastfloat_strncasecmp(first, str_const_nan<UC>(), 3)) {
       answer.ptr = (first += 3);
-      value = minusSign ? -std::numeric_limits<T>::quiet_NaN() : std::numeric_limits<T>::quiet_NaN();
-      // Check for possible nan(n-char-seq-opt), C++17 20.19.3.7, C11 7.20.1.3.3. At least MSVC produces nan(ind) and nan(snan).
-      if(first != last && *first == UC('(')) {
-        for(UC const * ptr = first + 1; ptr != last; ++ptr) {
+      value = minusSign ? -std::numeric_limits<T>::quiet_NaN()
+                        : std::numeric_limits<T>::quiet_NaN();
+      // Check for possible nan(n-char-seq-opt), C++17 20.19.3.7,
+      // C11 7.20.1.3.3. At least MSVC produces nan(ind) and nan(snan).
+      if (first != last && *first == UC('(')) {
+        for (UC const *ptr = first + 1; ptr != last; ++ptr) {
           if (*ptr == UC(')')) {
             answer.ptr = ptr + 1; // valid nan(n-char-seq-opt)
             break;
-          }
-          else if(!((UC('a') <= *ptr && *ptr <= UC('z')) || (UC('A') <= *ptr && *ptr <= UC('Z')) || (UC('0') <= *ptr && *ptr <= UC('9')) || *ptr == UC('_')))
+          } else if (!((UC('a') <= *ptr && *ptr <= UC('z')) ||
+                       (UC('A') <= *ptr && *ptr <= UC('Z')) ||
+                       (UC('0') <= *ptr && *ptr <= UC('9')) || *ptr == UC('_')))
             break; // forbidden char, not nan(n-char-seq-opt)
         }
       }
       return answer;
     }
     if (fastfloat_strncasecmp(first, str_const_inf<UC>(), 3)) {
-      if ((last - first >= 8) && fastfloat_strncasecmp(first + 3, str_const_inf<UC>() + 3, 5)) {
+      if ((last - first >= 8) &&
+          fastfloat_strncasecmp(first + 3, str_const_inf<UC>() + 3, 5)) {
         answer.ptr = first + 8;
       } else {
         answer.ptr = first + 3;
       }
-      value = minusSign ? -std::numeric_limits<T>::infinity() : std::numeric_limits<T>::infinity();
+      value = minusSign ? -std::numeric_limits<T>::infinity()
+                        : std::numeric_limits<T>::infinity();
       return answer;
     }
   }
@@ -11071,73 +11810,71 @@ fastfloat_really_inline bool rounds_to_nearest() noexcept {
   // However, it is expected to be much faster than the fegetround()
   // function call.
   //
-  // The volatile keywoard prevents the compiler from computing the function
+  // The volatile keyword prevents the compiler from computing the function
   // at compile-time.
-  // There might be other ways to prevent compile-time optimizations (e.g., asm).
-  // The value does not need to be std::numeric_limits<float>::min(), any small
-  // value so that 1 + x should round to 1 would do (after accounting for excess
-  // precision, as in 387 instructions).
-  static volatile float fmin = std::numeric_limits<float>::min();
+  // There might be other ways to prevent compile-time optimizations (e.g.,
+  // asm). The value does not need to be std::numeric_limits<float>::min(), any
+  // small value so that 1 + x should round to 1 would do (after accounting for
+  // excess precision, as in 387 instructions).
+  static float volatile fmin = std::numeric_limits<float>::min();
   float fmini = fmin; // we copy it so that it gets loaded at most once.
-  //
-  // Explanation:
-  // Only when fegetround() == FE_TONEAREST do we have that
-  // fmin + 1.0f == 1.0f - fmin.
-  //
-  // FE_UPWARD:
-  //  fmin + 1.0f > 1
-  //  1.0f - fmin == 1
-  //
-  // FE_DOWNWARD or  FE_TOWARDZERO:
-  //  fmin + 1.0f == 1
-  //  1.0f - fmin < 1
-  //
-  // Note: This may fail to be accurate if fast-math has been
-  // enabled, as rounding conventions may not apply.
-  #ifdef FASTFLOAT_VISUAL_STUDIO
-  #   pragma warning(push)
-  //  todo: is there a VS warning?
-  //  see https://stackoverflow.com/questions/46079446/is-there-a-warning-for-floating-point-equality-checking-in-visual-studio-2013
-  #elif defined(__clang__)
-  #   pragma clang diagnostic push
-  #   pragma clang diagnostic ignored "-Wfloat-equal"
-  #elif defined(__GNUC__)
-  #   pragma GCC diagnostic push
-  #   pragma GCC diagnostic ignored "-Wfloat-equal"
-  #endif
+//
+// Explanation:
+// Only when fegetround() == FE_TONEAREST do we have that
+// fmin + 1.0f == 1.0f - fmin.
+//
+// FE_UPWARD:
+//  fmin + 1.0f > 1
+//  1.0f - fmin == 1
+//
+// FE_DOWNWARD or  FE_TOWARDZERO:
+//  fmin + 1.0f == 1
+//  1.0f - fmin < 1
+//
+// Note: This may fail to be accurate if fast-math has been
+// enabled, as rounding conventions may not apply.
+#ifdef FASTFLOAT_VISUAL_STUDIO
+#pragma warning(push)
+//  todo: is there a VS warning?
+//  see
+//  https://stackoverflow.com/questions/46079446/is-there-a-warning-for-floating-point-equality-checking-in-visual-studio-2013
+#elif defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
   return (fmini + 1.0f == 1.0f - fmini);
-  #ifdef FASTFLOAT_VISUAL_STUDIO
-  #   pragma warning(pop)
-  #elif defined(__clang__)
-  #   pragma clang diagnostic pop
-  #elif defined(__GNUC__)
-  #   pragma GCC diagnostic pop
-  #endif
+#ifdef FASTFLOAT_VISUAL_STUDIO
+#pragma warning(pop)
+#elif defined(__clang__)
+#pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 }
 
 } // namespace detail
 
-template <typename T>
-struct from_chars_caller
-{
+template <typename T> struct from_chars_caller {
   template <typename UC>
-  FASTFLOAT_CONSTEXPR20
-  static from_chars_result_t<UC> call(UC const * first, UC const * last,
-                                      T &value, parse_options_t<UC> options)  noexcept {
+  FASTFLOAT_CONSTEXPR20 static from_chars_result_t<UC>
+  call(UC const *first, UC const *last, T &value,
+       parse_options_t<UC> options) noexcept {
     return from_chars_advanced(first, last, value, options);
   }
 };
 
-#if __STDCPP_FLOAT32_T__ == 1
-template <>
-struct from_chars_caller<std::float32_t>
-{
+#ifdef __STDCPP_FLOAT32_T__
+template <> struct from_chars_caller<std::float32_t> {
   template <typename UC>
-  FASTFLOAT_CONSTEXPR20
-  static from_chars_result_t<UC> call(UC const * first, UC const * last,
-                                      std::float32_t &value, parse_options_t<UC> options) noexcept{
-    // if std::float32_t is defined, and we are in C++23 mode; macro set for float32; 
-    // set value to float due to equivalence between float and float32_t
+  FASTFLOAT_CONSTEXPR20 static from_chars_result_t<UC>
+  call(UC const *first, UC const *last, std::float32_t &value,
+       parse_options_t<UC> options) noexcept {
+    // if std::float32_t is defined, and we are in C++23 mode; macro set for
+    // float32; set value to float due to equivalence between float and
+    // float32_t
     float val;
     auto ret = from_chars_advanced(first, last, val, options);
     value = val;
@@ -11146,16 +11883,15 @@ struct from_chars_caller<std::float32_t>
 };
 #endif
 
-#if __STDCPP_FLOAT64_T__ == 1
-template <>
-struct from_chars_caller<std::float64_t>
-{
+#ifdef __STDCPP_FLOAT64_T__
+template <> struct from_chars_caller<std::float64_t> {
   template <typename UC>
-  FASTFLOAT_CONSTEXPR20
-  static from_chars_result_t<UC> call(UC const * first, UC const * last,
-                                      std::float64_t &value, parse_options_t<UC> options) noexcept{
-    // if std::float64_t is defined, and we are in C++23 mode; macro set for float64;
-    // set value as double due to equivalence between double and float64_t
+  FASTFLOAT_CONSTEXPR20 static from_chars_result_t<UC>
+  call(UC const *first, UC const *last, std::float64_t &value,
+       parse_options_t<UC> options) noexcept {
+    // if std::float64_t is defined, and we are in C++23 mode; macro set for
+    // float64; set value as double due to equivalence between double and
+    // float64_t
     double val;
     auto ret = from_chars_advanced(first, last, val, options);
     value = val;
@@ -11164,26 +11900,27 @@ struct from_chars_caller<std::float64_t>
 };
 #endif
 
-
-template<typename T, typename UC, typename>
-FASTFLOAT_CONSTEXPR20
-from_chars_result_t<UC> from_chars(UC const * first, UC const * last,
-                             T &value, chars_format fmt /*= chars_format::general*/)  noexcept  {
-  return from_chars_caller<T>::call(first, last, value, parse_options_t<UC>(fmt));
+template <typename T, typename UC, typename>
+FASTFLOAT_CONSTEXPR20 from_chars_result_t<UC>
+from_chars(UC const *first, UC const *last, T &value,
+           chars_format fmt /*= chars_format::general*/) noexcept {
+  return from_chars_caller<T>::call(first, last, value,
+                                    parse_options_t<UC>(fmt));
 }
 
 /**
- * This function overload takes parsed_number_string_t structure that is created and populated
- * either by from_chars_advanced function taking chars range and parsing options
- * or other parsing custom function implemented by user.
+ * This function overload takes parsed_number_string_t structure that is created
+ * and populated either by from_chars_advanced function taking chars range and
+ * parsing options or other parsing custom function implemented by user.
  */
-template<typename T, typename UC>
-FASTFLOAT_CONSTEXPR20
-from_chars_result_t<UC> from_chars_advanced(parsed_number_string_t<UC>& pns,
-                                      T &value)  noexcept  {
+template <typename T, typename UC>
+FASTFLOAT_CONSTEXPR20 from_chars_result_t<UC>
+from_chars_advanced(parsed_number_string_t<UC> &pns, T &value) noexcept {
 
-  static_assert (is_supported_float_type<T>(), "only some floating-point types are supported");
-  static_assert (is_supported_char_type<UC>(), "only char, wchar_t, char16_t and char32_t are supported");
+  static_assert(is_supported_float_type<T>::value,
+                "only some floating-point types are supported");
+  static_assert(is_supported_char_type<UC>::value,
+                "only char, wchar_t, char16_t and char32_t are supported");
 
   from_chars_result_t<UC> answer;
 
@@ -11192,9 +11929,11 @@ from_chars_result_t<UC> from_chars_advanced(parsed_number_string_t<UC>& pns,
   // The implementation of the Clinger's fast path is convoluted because
   // we want round-to-nearest in all cases, irrespective of the rounding mode
   // selected on the thread.
-  // We proceed optimistically, assuming that detail::rounds_to_nearest() returns
-  // true.
-  if (binary_format<T>::min_exponent_fast_path() <= pns.exponent && pns.exponent <= binary_format<T>::max_exponent_fast_path() && !pns.too_many_digits) {
+  // We proceed optimistically, assuming that detail::rounds_to_nearest()
+  // returns true.
+  if (binary_format<T>::min_exponent_fast_path() <= pns.exponent &&
+      pns.exponent <= binary_format<T>::max_exponent_fast_path() &&
+      !pns.too_many_digits) {
     // Unfortunately, the conventional Clinger's fast path is only possible
     // when the system rounds to the nearest float.
     //
@@ -11202,77 +11941,98 @@ from_chars_result_t<UC> from_chars_advanced(parsed_number_string_t<UC>& pns,
     // We could check it first (before the previous branch), but
     // there might be performance advantages at having the check
     // be last.
-    if(!cpp20_and_in_constexpr() && detail::rounds_to_nearest())  {
+    if (!cpp20_and_in_constexpr() && detail::rounds_to_nearest()) {
       // We have that fegetround() == FE_TONEAREST.
       // Next is Clinger's fast path.
-      if (pns.mantissa <=binary_format<T>::max_mantissa_fast_path()) {
+      if (pns.mantissa <= binary_format<T>::max_mantissa_fast_path()) {
         value = T(pns.mantissa);
-        if (pns.exponent < 0) { value = value / binary_format<T>::exact_power_of_ten(-pns.exponent); }
-        else { value = value * binary_format<T>::exact_power_of_ten(pns.exponent); }
-        if (pns.negative) { value = -value; }
+        if (pns.exponent < 0) {
+          value = value / binary_format<T>::exact_power_of_ten(-pns.exponent);
+        } else {
+          value = value * binary_format<T>::exact_power_of_ten(pns.exponent);
+        }
+        if (pns.negative) {
+          value = -value;
+        }
         return answer;
       }
     } else {
       // We do not have that fegetround() == FE_TONEAREST.
-      // Next is a modified Clinger's fast path, inspired by Jakub Jelínek's proposal
-      if (pns.exponent >= 0 && pns.mantissa <=binary_format<T>::max_mantissa_fast_path(pns.exponent)) {
+      // Next is a modified Clinger's fast path, inspired by Jakub Jelínek's
+      // proposal
+      if (pns.exponent >= 0 &&
+          pns.mantissa <=
+              binary_format<T>::max_mantissa_fast_path(pns.exponent)) {
 #if defined(__clang__) || defined(FASTFLOAT_32BIT)
         // Clang may map 0 to -0.0 when fegetround() == FE_DOWNWARD
-        if(pns.mantissa == 0) {
+        if (pns.mantissa == 0) {
           value = pns.negative ? T(-0.) : T(0.);
           return answer;
         }
 #endif
-        value = T(pns.mantissa) * binary_format<T>::exact_power_of_ten(pns.exponent);
-        if (pns.negative) { value = -value; }
+        value = T(pns.mantissa) *
+                binary_format<T>::exact_power_of_ten(pns.exponent);
+        if (pns.negative) {
+          value = -value;
+        }
         return answer;
       }
     }
   }
-  adjusted_mantissa am = compute_float<binary_format<T>>(pns.exponent, pns.mantissa);
-  if(pns.too_many_digits && am.power2 >= 0) {
-    if(am != compute_float<binary_format<T>>(pns.exponent, pns.mantissa + 1)) {
+  adjusted_mantissa am =
+      compute_float<binary_format<T>>(pns.exponent, pns.mantissa);
+  if (pns.too_many_digits && am.power2 >= 0) {
+    if (am != compute_float<binary_format<T>>(pns.exponent, pns.mantissa + 1)) {
       am = compute_error<binary_format<T>>(pns.exponent, pns.mantissa);
     }
   }
-  // If we called compute_float<binary_format<T>>(pns.exponent, pns.mantissa) and we have an invalid power (am.power2 < 0),
-  // then we need to go the long way around again. This is very uncommon.
-  if(am.power2 < 0) { am = digit_comp<T>(pns, am); }
+  // If we called compute_float<binary_format<T>>(pns.exponent, pns.mantissa)
+  // and we have an invalid power (am.power2 < 0), then we need to go the long
+  // way around again. This is very uncommon.
+  if (am.power2 < 0) {
+    am = digit_comp<T>(pns, am);
+  }
   to_float(pns.negative, am, value);
   // Test for over/underflow.
-  if ((pns.mantissa != 0 && am.mantissa == 0 && am.power2 == 0) || am.power2 == binary_format<T>::infinite_power()) {
+  if ((pns.mantissa != 0 && am.mantissa == 0 && am.power2 == 0) ||
+      am.power2 == binary_format<T>::infinite_power()) {
     answer.ec = std::errc::result_out_of_range;
   }
   return answer;
 }
 
-template<typename T, typename UC>
-FASTFLOAT_CONSTEXPR20
-from_chars_result_t<UC> from_chars_advanced(UC const * first, UC const * last,
-                                      T &value, parse_options_t<UC> options)  noexcept  {
+template <typename T, typename UC>
+FASTFLOAT_CONSTEXPR20 from_chars_result_t<UC>
+from_chars_float_advanced(UC const *first, UC const *last, T &value,
+                          parse_options_t<UC> options) noexcept {
 
-  static_assert (is_supported_float_type<T>(), "only some floating-point types are supported");
-  static_assert (is_supported_char_type<UC>(), "only char, wchar_t, char16_t and char32_t are supported");
+  static_assert(is_supported_float_type<T>::value,
+                "only some floating-point types are supported");
+  static_assert(is_supported_char_type<UC>::value,
+                "only char, wchar_t, char16_t and char32_t are supported");
+
+  chars_format const fmt = detail::adjust_for_feature_macros(options.format);
 
   from_chars_result_t<UC> answer;
-#ifdef FASTFLOAT_SKIP_WHITE_SPACE  // disabled by default
-  while ((first != last) && fast_float::is_space(uint8_t(*first))) {
-    first++;
+  if (uint64_t(fmt & chars_format::skip_white_space)) {
+    while ((first != last) && fast_float::is_space(*first)) {
+      first++;
+    }
   }
-#endif
   if (first == last) {
     answer.ec = std::errc::invalid_argument;
     answer.ptr = first;
     return answer;
   }
-  parsed_number_string_t<UC> pns = parse_number_string<UC>(first, last, options);
+  parsed_number_string_t<UC> pns =
+      parse_number_string<UC>(first, last, options);
   if (!pns.valid) {
-    if (options.format & chars_format::no_infnan) {
+    if (uint64_t(fmt & chars_format::no_infnan)) {
       answer.ec = std::errc::invalid_argument;
       answer.ptr = first;
       return answer;
     } else {
-      return detail::parse_infnan(first, last, value);
+      return detail::parse_infnan(first, last, value, fmt);
     }
   }
 
@@ -11280,24 +12040,78 @@ from_chars_result_t<UC> from_chars_advanced(UC const * first, UC const * last,
   return from_chars_advanced(pns, value);
 }
 
-
 template <typename T, typename UC, typename>
-FASTFLOAT_CONSTEXPR20
-from_chars_result_t<UC> from_chars(UC const* first, UC const* last, T& value, int base) noexcept {
-  static_assert (is_supported_char_type<UC>(), "only char, wchar_t, char16_t and char32_t are supported");
+FASTFLOAT_CONSTEXPR20 from_chars_result_t<UC>
+from_chars(UC const *first, UC const *last, T &value, int base) noexcept {
+
+  static_assert(is_supported_integer_type<T>::value,
+                "only integer types are supported");
+  static_assert(is_supported_char_type<UC>::value,
+                "only char, wchar_t, char16_t and char32_t are supported");
+
+  parse_options_t<UC> options;
+  options.base = base;
+  return from_chars_advanced(first, last, value, options);
+}
+
+template <typename T, typename UC>
+FASTFLOAT_CONSTEXPR20 from_chars_result_t<UC>
+from_chars_int_advanced(UC const *first, UC const *last, T &value,
+                        parse_options_t<UC> options) noexcept {
+
+  static_assert(is_supported_integer_type<T>::value,
+                "only integer types are supported");
+  static_assert(is_supported_char_type<UC>::value,
+                "only char, wchar_t, char16_t and char32_t are supported");
+
+  chars_format const fmt = detail::adjust_for_feature_macros(options.format);
+  int const base = options.base;
 
   from_chars_result_t<UC> answer;
-#ifdef FASTFLOAT_SKIP_WHITE_SPACE  // disabled by default
-  while ((first != last) && fast_float::is_space(uint8_t(*first))) {
-    first++;
+  if (uint64_t(fmt & chars_format::skip_white_space)) {
+    while ((first != last) && fast_float::is_space(*first)) {
+      first++;
+    }
   }
-#endif
   if (first == last || base < 2 || base > 36) {
     answer.ec = std::errc::invalid_argument;
     answer.ptr = first;
     return answer;
   }
-  return parse_int_string(first, last, value, base);
+
+  return parse_int_string(first, last, value, options);
+}
+
+template <size_t TypeIx> struct from_chars_advanced_caller {
+  static_assert(TypeIx > 0, "unsupported type");
+};
+
+template <> struct from_chars_advanced_caller<1> {
+  template <typename T, typename UC>
+  FASTFLOAT_CONSTEXPR20 static from_chars_result_t<UC>
+  call(UC const *first, UC const *last, T &value,
+       parse_options_t<UC> options) noexcept {
+    return from_chars_float_advanced(first, last, value, options);
+  }
+};
+
+template <> struct from_chars_advanced_caller<2> {
+  template <typename T, typename UC>
+  FASTFLOAT_CONSTEXPR20 static from_chars_result_t<UC>
+  call(UC const *first, UC const *last, T &value,
+       parse_options_t<UC> options) noexcept {
+    return from_chars_int_advanced(first, last, value, options);
+  }
+};
+
+template <typename T, typename UC>
+FASTFLOAT_CONSTEXPR20 from_chars_result_t<UC>
+from_chars_advanced(UC const *first, UC const *last, T &value,
+                    parse_options_t<UC> options) noexcept {
+  return from_chars_advanced_caller<
+      size_t(is_supported_float_type<T>::value) +
+      2 * size_t(is_supported_integer_type<T>::value)>::call(first, last, value,
+                                                             options);
 }
 
 } // namespace fast_float
@@ -11333,6 +12147,8 @@ from_chars_result_t<UC> from_chars(UC const* first, UC const* last, T& value, in
 
 //included above:
 //#include <cstddef>
+
+// NOLINTBEGIN(cert-dcl58-cpp)
 
 // forward declarations for std::vector
 #if defined(__GLIBCXX__) || defined(__GLIBCPP__) || defined(_MSC_VER)
@@ -11397,6 +12213,8 @@ template<class Alloc> size_t to_chars(c4::substr buf, std::vector<char, Alloc> c
 template<class Alloc> bool from_chars(c4::csubstr buf, std::vector<char, Alloc> * s);
 
 } // namespace c4
+
+// NOLINTEND(cert-dcl58-cpp)
 
 #endif // _C4_STD_VECTOR_FWD_HPP_
 
@@ -11639,11 +12457,6 @@ bool from_chars(c4::csubstr buf, std::string * s);
 #       define C4CORE_HAVE_FAST_FLOAT 1
 #   endif
 #   if C4CORE_HAVE_FAST_FLOAT
-        C4_SUPPRESS_WARNING_GCC_WITH_PUSH("-Wsign-conversion")
-        C4_SUPPRESS_WARNING_GCC("-Warray-bounds")
-#       if defined(__GNUC__) && __GNUC__ >= 5
-            C4_SUPPRESS_WARNING_GCC("-Wshift-count-overflow")
-#       endif
 // amalgamate: removed include of
 // https://github.com/biojppm/c4core/src/c4/ext/fast_float.hpp
 //#       include "c4/ext/fast_float.hpp"
@@ -11651,7 +12464,6 @@ bool from_chars(c4::csubstr buf, std::string * s);
 #error "amalgamate: file c4/ext/fast_float.hpp must have been included at this point"
 #endif /* C4_EXT_FAST_FLOAT_HPP_ */
 
-        C4_SUPPRESS_WARNING_GCC_POP
 #   endif
 #elif (C4_CPP >= 17)
 #   define C4CORE_HAVE_FAST_FLOAT 0
@@ -11693,15 +12505,13 @@ bool from_chars(c4::csubstr buf, std::string * s);
 #endif
 
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && !defined(__clang__)
 #   pragma warning(push)
 #   pragma warning(disable: 4996) // snprintf/scanf: this function or variable may be unsafe
 #   if C4_MSVC_VERSION != C4_MSVC_VERSION_2017
 #       pragma warning(disable: 4800) //'int': forcing value to bool 'true' or 'false' (performance warning)
 #   endif
-#endif
-
-#if defined(__clang__)
+#elif defined(__clang__)
 #   pragma clang diagnostic push
 #   pragma clang diagnostic ignored "-Wtautological-constant-out-of-range-compare"
 #   pragma clang diagnostic ignored "-Wformat-nonliteral"
@@ -11727,6 +12537,7 @@ bool from_chars(c4::csubstr buf, std::string * s);
 #define C4_NO_UBSAN_IOVRFLW
 #endif
 
+// NOLINTBEGIN(hicpp-signed-bitwise)
 
 namespace c4 {
 
@@ -11735,11 +12546,11 @@ namespace c4 {
  * Lightweight, very fast generic type-safe wrappers for converting
  * individual values to/from strings. These are the main generic
  * functions:
- *   - @ref doc_to_chars and its alias @ref doc_xtoa: implemented by calling @ref itoa()/@ref utoa()/@ref ftoa()/@ref dtoa() (or generically @ref xtoa())
- *   - @ref doc_from_chars and its alias @ref doc_atox: implemented by calling @ref atoi()/@ref atou()/@ref atof()/@ref atod() (or generically @ref atox())
+ *   - @ref doc_to_chars and its alias @ref xtoa(): implemented by calling @ref itoa() / @ref utoa() / @ref ftoa() / @ref dtoa() (or generically @ref xtoa())
+ *   - @ref doc_from_chars and its alias @ref atox(): implemented by calling @ref atoi() / @ref atou() / @ref atof() / @ref atod() (or generically @ref atox())
  *   - @ref to_chars_sub()
  *   - @ref from_chars_first()
- *   - @ref xtoa()/@ref atox() are implemented in terms @ref write_dec()/@ref read_dec() et al (see @ref doc_write/@ref doc_read())
+ *   - @ref xtoa() and @ref atox() are implemented in terms of @ref write_dec() / @ref read_dec() et al (see @ref doc_write / @ref doc_read())
  *
  * And also some modest brag is in order: these functions are really
  * fast: faster even than C++17 `std::to_chars()` and
@@ -11832,7 +12643,7 @@ struct is_fixed_length
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__clang__)
 #   pragma warning(push)
 #elif defined(__clang__)
 #   pragma clang diagnostic push
@@ -11968,7 +12779,7 @@ template<> struct charconv_digits_<4u, false> // uint32_t
     static constexpr csubstr max_value_dec() noexcept { return csubstr("4294967295"); }
     static constexpr bool is_oct_overflow(csubstr str) noexcept { return !((str.len < 11) || (str.len == 11 && str[0] <= '3')); }
 };
-template<> struct charconv_digits_<8u, true> // int32_t
+template<> struct charconv_digits_<8u, true> // int64_t
 {
     enum : size_t {
         maxdigits_bin       = 1 + 2 + 64, // len=67: -9223372036854775808 -0b1000000000000000000000000000000000000000000000000000000000000000
@@ -11987,7 +12798,7 @@ template<> struct charconv_digits_<8u, true> // int32_t
     static constexpr csubstr max_value_dec() noexcept { return csubstr("9223372036854775807"); }
     static constexpr bool    is_oct_overflow(csubstr str) noexcept { return !((str.len < 22)); }
 };
-template<> struct charconv_digits_<8u, false>
+template<> struct charconv_digits_<8u, false> // uint64_t
 {
     enum : size_t {
         maxdigits_bin       = 2 + 64, // len=66: 18446744073709551615 0b1111111111111111111111111111111111111111111111111111111111111111
@@ -12136,24 +12947,25 @@ C4_CONSTEXPR14 C4_ALWAYS_INLINE unsigned digits_oct(T v_) noexcept
     // TODO: is there a better way?
     C4_STATIC_ASSERT(std::is_integral<T>::value);
     C4_ASSERT(v_ >= 0);
-    using U = typename
-        std::conditional<sizeof(T) <= sizeof(unsigned),
-                         unsigned,
-                         typename std::make_unsigned<T>::type>::type;
-    U v = (U) v_;  // safe because we require v_ >= 0
-    unsigned __n = 1;
-    const unsigned __b2 = 64u;
-    const unsigned __b3 = __b2 * 8u;
-    const unsigned long __b4 = __b3 * 8u;
+    using U = typename std::conditional<sizeof(T) <= sizeof(unsigned),
+                                        unsigned,
+                                        typename std::make_unsigned<T>::type>::type;
+    U v = (U) v_;  // safe because we require v_ >= 0 // NOLINT
+    uint32_t __n = 1;
+    enum : U {
+        __b2 = 64u,
+        __b3 = 64u * 8u,
+        __b4 = 64u * 8u * 8u,
+    };
     while(true)
 	{
         if(v < 8u)
             return __n;
-        if(v < __b2)
+        else if(v < __b2)
             return __n + 1;
-        if(v < __b3)
+        else if(v < __b3)
             return __n + 2;
-        if(v < __b4)
+        else if(v < __b4)
             return __n + 3;
         v /= (U) __b4;
         __n += 4;
@@ -12208,7 +13020,7 @@ void write_dec_unchecked(substr buf, T v, unsigned digits_v) noexcept
     {
         T quo = v;
         quo /= T(100);
-        const auto num = (v - quo * T(100)) << 1u;
+        const auto num = (v - quo * T(100)) << 1u; // NOLINT
         v = quo;
         buf.str[--digits_v] = detail::digits0099[num + 1];
         buf.str[--digits_v] = detail::digits0099[num];
@@ -12373,15 +13185,18 @@ template<class T, NumberWriter<T> writer>
 size_t write_num_digits(substr buf, T v, size_t num_digits) noexcept
 {
     C4_STATIC_ASSERT(std::is_integral<T>::value);
-    size_t ret = writer(buf, v);
+    const size_t ret = writer(buf, v);
     if(ret >= num_digits)
         return ret;
     else if(ret >= buf.len || num_digits > buf.len)
         return num_digits;
     C4_ASSERT(num_digits >= ret);
-    size_t delta = static_cast<size_t>(num_digits - ret);
-    memmove(buf.str + delta, buf.str, ret);
-    memset(buf.str, '0', delta);
+    const size_t delta = static_cast<size_t>(num_digits - ret); // NOLINT
+    C4_ASSERT(ret + delta <= buf.len);
+    if(ret)
+        memmove(buf.str + delta, buf.str, ret);
+    if(delta)
+        memset(buf.str, '0', delta);
     return num_digits;
 }
 } // namespace detail
@@ -12576,7 +13391,9 @@ C4_SUPPRESS_WARNING_GCC_WITH_PUSH("-Wswitch-default")
 namespace detail {
 inline size_t _itoa2buf(substr buf, size_t pos, csubstr val) noexcept
 {
+    C4_ASSERT(pos < buf.len);
     C4_ASSERT(pos + val.len <= buf.len);
+    C4_ASSERT(val.len > 0);
     memcpy(buf.str + pos, val.str, val.len);
     return pos + val.len;
 }
@@ -12604,7 +13421,7 @@ C4_NO_INLINE size_t _itoa2buf(substr buf, I radix) noexcept
     size_t pos = 0;
     if(C4_LIKELY(buf.len > 0))
         buf.str[pos++] = '-';
-    switch(radix)
+    switch(radix) // NOLINT(hicpp-multiway-paths-covered)
     {
     case I(10):
         if(C4_UNLIKELY(buf.len < digits_type::maxdigits_dec))
@@ -12643,7 +13460,7 @@ C4_NO_INLINE size_t _itoa2buf(substr buf, I radix, size_t num_digits) noexcept
     size_t needed_digits = 0;
     if(C4_LIKELY(buf.len > 0))
         buf.str[pos++] = '-';
-    switch(radix)
+    switch(radix) // NOLINT(hicpp-multiway-paths-covered)
     {
     case I(10):
         // add 1 to account for -
@@ -12708,7 +13525,7 @@ C4_ALWAYS_INLINE size_t itoa(substr buf, T v) noexcept
     }
     // when T is the min value (eg i8: -128), negating it
     // will overflow, so treat the min as a special case
-    else if(C4_LIKELY(v != std::numeric_limits<T>::min()))
+    if(C4_LIKELY(v != std::numeric_limits<T>::min()))
     {
         v = -v;
         unsigned digits = digits_dec(v);
@@ -12751,7 +13568,7 @@ C4_ALWAYS_INLINE size_t itoa(substr buf, T v, T radix) noexcept
             ++pos;
         }
         unsigned digits = 0;
-        switch(radix)
+        switch(radix) // NOLINT(hicpp-multiway-paths-covered)
         {
         case T(10):
             digits = digits_dec(v);
@@ -12828,7 +13645,7 @@ C4_ALWAYS_INLINE size_t itoa(substr buf, T v, T radix, size_t num_digits) noexce
             ++pos;
         }
         unsigned total_digits = 0;
-        switch(radix)
+        switch(radix) // NOLINT(hicpp-multiway-paths-covered)
         {
         case T(10):
             total_digits = digits_dec(v);
@@ -12913,7 +13730,7 @@ C4_ALWAYS_INLINE size_t utoa(substr buf, T v, T radix) noexcept
     C4_STATIC_ASSERT(std::is_unsigned<T>::value);
     C4_ASSERT(radix == 10 || radix == 16 || radix == 2 || radix == 8);
     unsigned digits = 0;
-    switch(radix)
+    switch(radix) // NOLINT(hicpp-multiway-paths-covered)
     {
     case T(10):
         digits = digits_dec(v);
@@ -12968,7 +13785,7 @@ C4_ALWAYS_INLINE size_t utoa(substr buf, T v, T radix, size_t num_digits) noexce
     C4_STATIC_ASSERT(std::is_unsigned<T>::value);
     C4_ASSERT(radix == 10 || radix == 16 || radix == 2 || radix == 8);
     unsigned total_digits = 0;
-    switch(radix)
+    switch(radix) // NOLINT(hicpp-multiway-paths-covered)
     {
     case T(10):
         total_digits = digits_dec(v);
@@ -13192,7 +14009,7 @@ C4_ALWAYS_INLINE size_t atou_first(csubstr str, T *v)
 
 /** @} */
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__clang__)
 #   pragma warning(pop)
 #elif defined(__clang__)
 #   pragma clang diagnostic pop
@@ -13209,19 +14026,16 @@ C4_ALWAYS_INLINE size_t atou_first(csubstr str, T *v)
 namespace detail {
 inline bool check_overflow(csubstr str, csubstr limit) noexcept
 {
-    if(str.len == limit.len)
-    {
-        for(size_t i = 0; i < limit.len; ++i)
-        {
-            if(str[i] < limit[i])
-                return false;
-            else if(str[i] > limit[i])
-                return true;
-        }
-        return false;
-    }
-    else
+    if(str.len != limit.len)
         return str.len > limit.len;
+    for(size_t i = 0; i < limit.len; ++i)
+    {
+        if(str[i] < limit[i])
+            return false;
+        else if(str[i] > limit[i])
+            return true;
+    }
+    return false;
 }
 } // namespace detail
 /** @endcond */
@@ -13305,7 +14119,7 @@ auto overflows(csubstr str) noexcept
  * @see doc_overflow_checked for format specifiers to enforce no-overflow reads
  */
 template<class T>
-auto overflows(csubstr str)
+auto overflows(csubstr str) noexcept
     -> typename std::enable_if<std::is_signed<T>::value, bool>::type
 {
     C4_STATIC_ASSERT(std::is_integral<T>::value);
@@ -13353,7 +14167,9 @@ auto overflows(csubstr str)
             }
         }
         else
+        {
             return detail::check_overflow(str.sub(1), detail::charconv_digits<T>::min_value_dec());
+        }
     }
     else if(str.str[0] == '0')
     {
@@ -13396,7 +14212,9 @@ auto overflows(csubstr str)
         }
     }
     else
+    {
         return detail::check_overflow(str, detail::charconv_digits<T>::max_value_dec());
+    }
 }
 
 /** @} */
@@ -13580,7 +14398,7 @@ C4_ALWAYS_INLINE bool scan_rhex(csubstr s, T *C4_RESTRICT val) noexcept
         else if(c == 'p' || c == 'P')
         {
             ++pos;
-            goto power; // no mantissa given, jump to power
+            goto power; // no mantissa given, jump to power // NOLINT
         }
         else
         {
@@ -13590,7 +14408,7 @@ C4_ALWAYS_INLINE bool scan_rhex(csubstr s, T *C4_RESTRICT val) noexcept
     // mantissa
     {
         // 0.0625 == 1/16 == value of first digit after the comma
-        for(T digit = T(0.0625); pos < s.len; ++pos, digit /= T(16))
+        for(T digit = T(0.0625); pos < s.len; ++pos, digit /= T(16)) // NOLINT
         {
             const char c = s.str[pos];
             if(c >= '0' && c <= '9')
@@ -13602,7 +14420,7 @@ C4_ALWAYS_INLINE bool scan_rhex(csubstr s, T *C4_RESTRICT val) noexcept
             else if(c == 'p' || c == 'P')
             {
                 ++pos;
-                goto power; // mantissa finished, jump to power
+                goto power; // mantissa finished, jump to power // NOLINT
             }
             else
             {
@@ -13820,8 +14638,8 @@ inline size_t atod_first(csubstr str, double * C4_RESTRICT v) noexcept
 /** @cond dev */
 // on some platforms, (unsigned) int and (unsigned) long
 // are not any of the fixed length types above
-#define _C4_IF_NOT_FIXED_LENGTH_I(T, ty) C4_ALWAYS_INLINE typename std::enable_if<std::  is_signed<T>::value && !is_fixed_length<T>::value_i, ty>
-#define _C4_IF_NOT_FIXED_LENGTH_U(T, ty) C4_ALWAYS_INLINE typename std::enable_if<std::is_unsigned<T>::value && !is_fixed_length<T>::value_u, ty>
+#define _C4_IF_NOT_FIXED_LENGTH_I(T, ty) typename std::enable_if<std::  is_signed<T>::value && !is_fixed_length<T>::value_i, ty>
+#define _C4_IF_NOT_FIXED_LENGTH_U(T, ty) typename std::enable_if<std::is_unsigned<T>::value && !is_fixed_length<T>::value_u, ty>
 /** @endcond*/
 
 
@@ -13863,8 +14681,8 @@ C4_ALWAYS_INLINE size_t xtoa(substr s,  int64_t v,  int64_t radix, size_t num_di
 C4_ALWAYS_INLINE size_t xtoa(substr s,  float v, int precision, RealFormat_e formatting=FTOA_FLEX) noexcept { return ftoa(s, v, precision, formatting); }
 C4_ALWAYS_INLINE size_t xtoa(substr s, double v, int precision, RealFormat_e formatting=FTOA_FLEX) noexcept { return dtoa(s, v, precision, formatting); }
 
-template <class T> _C4_IF_NOT_FIXED_LENGTH_I(T, size_t)::type xtoa(substr buf, T v) noexcept { return itoa(buf, v); }
-template <class T> _C4_IF_NOT_FIXED_LENGTH_U(T, size_t)::type xtoa(substr buf, T v) noexcept { return write_dec(buf, v); }
+template <class T> C4_ALWAYS_INLINE auto xtoa(substr buf, T v) noexcept -> _C4_IF_NOT_FIXED_LENGTH_I(T, size_t)::type { return itoa(buf, v); }
+template <class T> C4_ALWAYS_INLINE auto xtoa(substr buf, T v) noexcept -> _C4_IF_NOT_FIXED_LENGTH_U(T, size_t)::type { return write_dec(buf, v); }
 template <class T>
 C4_ALWAYS_INLINE size_t xtoa(substr s, T *v) noexcept { return itoa(s, (intptr_t)v, (intptr_t)16); }
 
@@ -13888,8 +14706,8 @@ C4_ALWAYS_INLINE bool atox(csubstr s,  int64_t *C4_RESTRICT v) noexcept { return
 C4_ALWAYS_INLINE bool atox(csubstr s,    float *C4_RESTRICT v) noexcept { return atof(s, v); }
 C4_ALWAYS_INLINE bool atox(csubstr s,   double *C4_RESTRICT v) noexcept { return atod(s, v); }
 
-template <class T> _C4_IF_NOT_FIXED_LENGTH_I(T, bool  )::type atox(csubstr buf, T *C4_RESTRICT v) noexcept { return atoi(buf, v); }
-template <class T> _C4_IF_NOT_FIXED_LENGTH_U(T, bool  )::type atox(csubstr buf, T *C4_RESTRICT v) noexcept { return atou(buf, v); }
+template <class T> C4_ALWAYS_INLINE auto atox(csubstr buf, T *C4_RESTRICT v) noexcept -> _C4_IF_NOT_FIXED_LENGTH_I(T, bool)::type { return atoi(buf, v); }
+template <class T> C4_ALWAYS_INLINE auto atox(csubstr buf, T *C4_RESTRICT v) noexcept -> _C4_IF_NOT_FIXED_LENGTH_U(T, bool)::type { return atou(buf, v); }
 template <class T>
 C4_ALWAYS_INLINE bool atox(csubstr s, T **v) noexcept { intptr_t tmp; bool ret = atox(s, &tmp); if(ret) { *v = (T*)tmp; } return ret; }
 
@@ -13928,8 +14746,8 @@ C4_ALWAYS_INLINE size_t to_chars(substr buf,  int64_t v) noexcept { return itoa(
 C4_ALWAYS_INLINE size_t to_chars(substr buf,    float v) noexcept { return ftoa(buf, v); }
 C4_ALWAYS_INLINE size_t to_chars(substr buf,   double v) noexcept { return dtoa(buf, v); }
 
-template <class T> _C4_IF_NOT_FIXED_LENGTH_I(T, size_t)::type to_chars(substr buf, T v) noexcept { return itoa(buf, v); }
-template <class T> _C4_IF_NOT_FIXED_LENGTH_U(T, size_t)::type to_chars(substr buf, T v) noexcept { return write_dec(buf, v); }
+template <class T> C4_ALWAYS_INLINE auto to_chars(substr buf, T v) noexcept -> _C4_IF_NOT_FIXED_LENGTH_I(T, size_t)::type { return itoa(buf, v); }
+template <class T> C4_ALWAYS_INLINE auto to_chars(substr buf, T v) noexcept -> _C4_IF_NOT_FIXED_LENGTH_U(T, size_t)::type { return write_dec(buf, v); }
 template <class T>
 C4_ALWAYS_INLINE size_t to_chars(substr s, T *v) noexcept { return itoa(s, (intptr_t)v, (intptr_t)16); }
 
@@ -13963,8 +14781,8 @@ C4_ALWAYS_INLINE bool from_chars(csubstr buf,  int64_t *C4_RESTRICT v) noexcept 
 C4_ALWAYS_INLINE bool from_chars(csubstr buf,    float *C4_RESTRICT v) noexcept { return atof(buf, v); }
 C4_ALWAYS_INLINE bool from_chars(csubstr buf,   double *C4_RESTRICT v) noexcept { return atod(buf, v); }
 
-template <class T> _C4_IF_NOT_FIXED_LENGTH_I(T, bool  )::type from_chars(csubstr buf, T *C4_RESTRICT v) noexcept { return atoi(buf, v); }
-template <class T> _C4_IF_NOT_FIXED_LENGTH_U(T, bool  )::type from_chars(csubstr buf, T *C4_RESTRICT v) noexcept { return atou(buf, v); }
+template <class T> C4_ALWAYS_INLINE auto from_chars(csubstr buf, T *C4_RESTRICT v) noexcept -> _C4_IF_NOT_FIXED_LENGTH_I(T, bool)::type { return atoi(buf, v); }
+template <class T> C4_ALWAYS_INLINE auto from_chars(csubstr buf, T *C4_RESTRICT v) noexcept -> _C4_IF_NOT_FIXED_LENGTH_U(T, bool)::type { return atou(buf, v); }
 template <class T>
 C4_ALWAYS_INLINE bool from_chars(csubstr buf, T **v) noexcept { intptr_t tmp; bool ret = from_chars(buf, &tmp); if(ret) { *v = (T*)tmp; } return ret; }
 
@@ -13991,8 +14809,8 @@ C4_ALWAYS_INLINE size_t from_chars_first(csubstr buf,  int64_t *C4_RESTRICT v) n
 C4_ALWAYS_INLINE size_t from_chars_first(csubstr buf,    float *C4_RESTRICT v) noexcept { return atof_first(buf, v); }
 C4_ALWAYS_INLINE size_t from_chars_first(csubstr buf,   double *C4_RESTRICT v) noexcept { return atod_first(buf, v); }
 
-template <class T> _C4_IF_NOT_FIXED_LENGTH_I(T, size_t)::type from_chars_first(csubstr buf, T *C4_RESTRICT v) noexcept { return atoi_first(buf, v); }
-template <class T> _C4_IF_NOT_FIXED_LENGTH_U(T, size_t)::type from_chars_first(csubstr buf, T *C4_RESTRICT v) noexcept { return atou_first(buf, v); }
+template <class T> C4_ALWAYS_INLINE auto from_chars_first(csubstr buf, T *C4_RESTRICT v) noexcept -> _C4_IF_NOT_FIXED_LENGTH_I(T, size_t)::type { return atoi_first(buf, v); }
+template <class T> C4_ALWAYS_INLINE auto from_chars_first(csubstr buf, T *C4_RESTRICT v) noexcept -> _C4_IF_NOT_FIXED_LENGTH_U(T, size_t)::type { return atou_first(buf, v); }
 template <class T>
 C4_ALWAYS_INLINE size_t from_chars_first(csubstr buf, T **v) noexcept { intptr_t tmp; bool ret = from_chars_first(buf, &tmp); if(ret) { *v = (T*)tmp; } return ret; }
 
@@ -14249,11 +15067,11 @@ inline size_t to_chars(substr buf, const char * C4_RESTRICT v) noexcept
 
 } // namespace c4
 
-#ifdef _MSC_VER
-#   pragma warning(pop)
-#endif
+// NOLINTEND(hicpp-signed-bitwise)
 
-#if defined(__clang__)
+#if defined(_MSC_VER) && !defined(__clang__)
+#   pragma warning(pop)
+#elif defined(__clang__)
 #   pragma clang diagnostic pop
 #elif defined(__GNUC__)
 #   pragma GCC diagnostic pop
@@ -14295,10 +15113,67 @@ inline size_t to_chars(substr buf, const char * C4_RESTRICT v) noexcept
 //included above:
 //#include <stdint.h>
 
+/** @file utf.hpp utilities for UTF and Byte Order Mark */
+
 namespace c4 {
 
-substr decode_code_point(substr out, csubstr code_point);
-size_t decode_code_point(uint8_t *C4_RESTRICT buf, size_t buflen, const uint32_t code);
+/** @defgroup doc_utf UTF utilities
+ * @{ */
+
+
+/** skip the Byte Order Mark, or get the full string if there is Byte Order Mark.
+ * @see Implements the Byte Order Marks as described in https://en.wikipedia.org/wiki/Byte_order_mark#Byte-order_marks_by_encoding */
+C4CORE_EXPORT substr skip_bom(substr s);
+/** skip the Byte Order Mark, or get the full string if there is Byte Order Mark
+ * @see Implements the Byte Order Marks as described in https://en.wikipedia.org/wiki/Byte_order_mark#Byte-order_marks_by_encoding */
+C4CORE_EXPORT csubstr skip_bom(csubstr s);
+
+
+/** get the Byte Order Mark, or an empty string if there is no Byte Order Mark
+ * @see Implements the Byte Order Marks as described in https://en.wikipedia.org/wiki/Byte_order_mark#Byte-order_marks_by_encoding */
+C4CORE_EXPORT substr get_bom(substr s);
+/** get the Byte Order Mark, or an empty string if there is no Byte Order Mark
+ * @see Implements the Byte Order Marks as described in https://en.wikipedia.org/wiki/Byte_order_mark#Byte-order_marks_by_encoding */
+C4CORE_EXPORT csubstr get_bom(csubstr s);
+
+
+/** return the position of the first character not belonging to the
+ * Byte Order Mark, or 0 if there is no Byte Order Mark.
+ * @see Implements the Byte Order Marks as described in https://en.wikipedia.org/wiki/Byte_order_mark#Byte-order_marks_by_encoding */
+C4CORE_EXPORT size_t first_non_bom(csubstr s);
+
+
+/** decode the given @p code_point, writing into the output string in
+ * @p out.
+ *
+ * @param out the output string. must have at least 4 bytes (this is
+ * asserted), and must not have a null string.
+ *
+ * @param code_point: must have length in ]0,8], and must not begin
+ * with any of `U+`,`\\x`,`\\u,`\\U`,`0` (asserted)
+ *
+ * @return the part of @p out that was written, which will always be
+ * at most 4 bytes.
+ */
+C4CORE_EXPORT substr decode_code_point(substr out, csubstr code_point);
+
+/** decode the given @p code point, writing into the output string @p
+ * buf, of size @p buflen
+ *
+ * @param buf the output string. must have at least 4 bytes (this is
+ * asserted), and must not be null
+ *
+ * @param buflen the length of the output string. must be at least 4
+ *
+ * @param code: the code point must have length in ]0,8], and must not begin
+ * with any of `U+`,`\\x`,`\\u,`\\U`,`0` (asserted)
+ *
+ * @return the part of @p out that was written, which will always be
+ * at most 4 bytes.
+ */
+size_t decode_code_point(uint8_t *C4_RESTRICT buf, size_t buflen, uint32_t code);
+
+/** @} */
 
 } // namespace c4
 
@@ -14338,7 +15213,7 @@ size_t decode_code_point(uint8_t *C4_RESTRICT buf, size_t buflen, const uint32_t
 
 
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(__clang__)
 #   pragma warning(push)
 #   if C4_MSVC_VERSION != C4_MSVC_VERSION_2017
 #       pragma warning(disable: 4800) // forcing value to bool 'true' or 'false' (performance warning)
@@ -14350,6 +15225,7 @@ size_t decode_code_point(uint8_t *C4_RESTRICT buf, size_t buflen, const uint32_t
 #   pragma GCC diagnostic push
 #   pragma GCC diagnostic ignored "-Wuseless-cast"
 #endif
+// NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast,*avoid-goto*)
 
 /** @defgroup doc_format_utils Format utilities
  *
@@ -15306,7 +16182,6 @@ inline CharOwningContainer catseprs(Sep const& C4_RESTRICT sep, Args const& C4_R
  * the result. The buffer is appended to.
  *
  * @return a csubstr of the appended part
- * @ingroup formatting_functions
  * @ingroup doc_catsep */
 template<class CharOwningContainer, class Sep, class... Args>
 inline csubstr catseprs_append(CharOwningContainer * C4_RESTRICT cont, Sep const& C4_RESTRICT sep, Args const& C4_RESTRICT ...args)
@@ -15358,7 +16233,6 @@ inline CharOwningContainer formatrs(csubstr fmt, Args const& C4_RESTRICT ...args
  * arguments, resizing the container as needed to contain the
  * result. The buffer is appended to.
  * @return the region newly appended to the original container
- * @ingroup formatting_functions
  * @ingroup doc_format */
 template<class CharOwningContainer, class... Args>
 inline csubstr formatrs_append(CharOwningContainer * C4_RESTRICT cont, csubstr fmt, Args const& C4_RESTRICT ...args)
@@ -15377,6 +16251,7 @@ retry:
 
 } // namespace c4
 
+// NOLINTEND(cppcoreguidelines-pro-type-reinterpret-cast,*avoid-goto*)
 #ifdef _MSC_VER
 #   pragma warning(pop)
 #elif defined(__clang__)
@@ -15410,6 +16285,23 @@ retry:
 #endif /* C4_SUBSTR_HPP_ */
 
 
+/** @file dump.hpp This file provides functions to dump several
+ * arguments as strings to a user-provided function sink, for example
+ * to implement a type-safe printf()-like function (where the sink
+ * would just be a plain call to putchars()). The function sink can be
+ * passed either by dynamic dispatching or by static dispatching (as a
+ * template argument). There are analogs to @ref c4::cat() (@ref
+ * c4::cat_dump() and @ref c4::cat_dump_resume()), @ref c4::catsep()
+ * (@ref catsetp_dump() and @ref catsep_dump_resume()) and @ref
+ * c4::format() (@ref c4::format_dump() and @ref
+ * c4::format_dump_resume()). The analogs have two types: immediate
+ * and resuming. An analog of immediate type cannot be retried when
+ * the work buffer is too small; this means that successful dumps in
+ * the first (successful) arguments will be dumped again in the
+ * subsequent attempt to call. An analog of resuming type will only
+ * ever dump as-yet-undumped arguments, through the use of @ref
+ * DumpResults return type. */
+
 namespace c4 {
 
 C4_SUPPRESS_WARNING_GCC_CLANG_WITH_PUSH("-Wold-style-cast")
@@ -15418,70 +16310,182 @@ C4_SUPPRESS_WARNING_GCC_CLANG_WITH_PUSH("-Wold-style-cast")
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-/** type of the function to dump characters */
-using DumperPfn = void (*)(csubstr buf);
+
+/** @defgroup dump_building_blocks Basic building blocks for dumping.
+ *
+ * The basic building block: given an argument and a
+ * buffer, serialize the argument to the buffer using @ref
+ * c4::to_chars(), and dump the buffer to the provided sink
+ * function. When the argument is a string, no serialization is
+ * performed, and the argument is dumped directly to the sink.
+ *
+ * @{ */
 
 
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
+/** Type of the function to be used as the sink. This function
+ * receives as its argument the string with characters to send to the
+ * sink.
+ *
+ * @warning the string passed to the sink may have zero length. If the
+ * user sink uses memcpy(), the call to memcpy() should be defended
+ * with a check for zero length (calling memcpy with zero length is
+ * undefined behavior).
+ * */
+using SinkPfn = void (*)(csubstr str);
 
-template<DumperPfn dumpfn, class Arg>
-inline size_t dump(substr buf, Arg const& a)
+
+/** a traits class to use in SFINAE with @ref c4::dump() to select if
+ * a type is treated as string type (which is dumped directly to the
+ * sink, using to_csubstr()), or if the type is treated as a value,
+ * which is first serialized to a buffer using to_chars(), and then
+ * the serialization serialized as */
+template<class T> struct dump_directly : public std::false_type {};
+template<> struct dump_directly<csubstr> : public std::true_type {};
+template<> struct dump_directly< substr> : public std::true_type {};
+template<> struct dump_directly<const char*> : public std::true_type {};
+template<> struct dump_directly<      char*> : public std::true_type {};
+template<size_t N> struct dump_directly<const char (&)[N]> : public std::true_type {};
+template<size_t N> struct dump_directly<      char (&)[N]> : public std::true_type {};
+template<size_t N> struct dump_directly<const char[N]> : public std::true_type {};
+template<size_t N> struct dump_directly<      char[N]> : public std::true_type {};
+
+
+/** Dump a string-type object to the (statically dispatched) sink. The
+ * string is dumped directly, without any intermediate serialization.
+ *
+ * @return the number of bytes needed to serialize the string-type
+ * object, which is always 0 because there is no serialization
+ *
+ * @note the argument is considered a value when @ref
+ * dump_directly<Arg> is a false type, which is the default. To enable
+ * the argument to be treated as a string type, which is dumped
+ * directly to the sink without intermediate serialization, define
+ * dump_directly<T> to a true type.
+ *
+ * @warning the string passed to the sink may have zero length. If the
+ * user sink uses memcpy(), the call to memcpy() should be defended
+ * with a check for zero length (calling memcpy with zero length is
+ * undefined behavior).
+ *
+ * @see dump_directly<T>
+ */
+template<SinkPfn sinkfn, class Arg>
+inline auto dump(substr buf, Arg const& a)
+    -> typename std::enable_if<dump_directly<Arg>::value, size_t>::type
 {
-    size_t sz = to_chars(buf, a); // need to serialize to the buffer
+    C4_ASSERT(!buf.overlaps(a));
+    C4_UNUSED(buf);
+    // dump directly, no need to serialize to the buffer
+    sinkfn(to_csubstr(a));
+    return 0; // no space was used in the buffer
+}
+/** Dump a string-type object to the (dynamically dispatched)
+ * sink. The string is dumped directly, without any intermediate
+ * serialization to the buffer.
+ *
+ * @return the number of bytes needed to serialize the string-type
+ * object, which is always 0 because there is no serialization
+ *
+ * @note the argument is considered a value when @ref
+ * dump_directly<Arg> is a false type, which is the default. To enable
+ * the argument to be treated as a string type, which is dumped
+ * directly to the sink without intermediate serialization, define
+ * dump_directly<T> to a true type.
+ *
+ * @warning the string passed to the sink may have zero length. If the
+ * user sink uses memcpy(), the call to memcpy() should be defended
+ * with a check for zero length (calling memcpy with zero length is
+ * undefined behavior).
+ *
+ * @see dump_directly<T>
+ * */
+template<class SinkFn, class Arg>
+inline auto dump(SinkFn &&sinkfn, substr buf, Arg const& a)
+    -> typename std::enable_if<dump_directly<Arg>::value, size_t>::type
+{
+    C4_UNUSED(buf);
+    C4_ASSERT(!buf.overlaps(a));
+    // dump directly, no need to serialize to the buffer
+    std::forward<SinkFn>(sinkfn)(to_csubstr(a));
+    return 0; // no space was used in the buffer
+}
+
+
+/** Dump a value to the sink. Given an argument @p a and a buffer @p
+ * buf, serialize the argument to the buffer using @ref to_chars(),
+ * and then dump the buffer to the (statically dispatched) sink
+ * function passed as the template argument. If the buffer is too
+ * small to serialize the argument, the sink function is not called.
+ *
+ * @note the argument is considered a value when @ref
+ * dump_directly<Arg> is a false type, which is the default. To enable
+ * the argument to be treated as a string type, which is dumped
+ * directly to the sink without intermediate serialization, define
+ * dump_directly<T> to a true type.
+ *
+ * @see dump_directly<T>
+ *
+ * @return the number of characters required to serialize the
+ * argument. */
+template<SinkPfn sinkfn, class Arg>
+inline auto dump(substr buf, Arg const& a)
+    -> typename std::enable_if<!dump_directly<Arg>::value, size_t>::type
+{
+    // serialize to the buffer
+    const size_t sz = to_chars(buf, a);
+    // dump the buffer to the sink
     if(C4_LIKELY(sz <= buf.len))
-        dumpfn(buf.first(sz));
+    {
+        // NOTE: don't do this:
+        //sinkfn(buf.first(sz));
+        // ... but do this instead:
+        sinkfn({buf.str, sz});
+        // ... this is needed because Release builds for armv5 and
+        // armv6 were failing for the first call, with the wrong
+        // buffer being passed into the function (!)
+    }
+    return sz;
+}
+/** Dump a value to the sink. Given an argument @p a and a buffer @p
+ * buf, serialize the argument to the buffer using @ref
+ * c4::to_chars(), and then dump the buffer to the (dynamically
+ * dispatched) sink function, passed as @p sinkfn. If the buffer is too
+ * small to serialize the argument, the sink function is not called.
+ *
+ * @note the argument is considered a value when @ref
+ * dump_directly<Arg> is a false type, which is the default. To enable
+ * the argument to be treated as a string type, which is dumped
+ * directly to the sink without intermediate serialization, define
+ * dump_directly<T> to a true type.
+ *
+ * @see @ref dump_directly<T>
+ *
+ * @return the number of characters required to serialize the
+ * argument. */
+template<class SinkFn, class Arg>
+inline auto dump(SinkFn &&sinkfn, substr buf, Arg const& a)
+    -> typename std::enable_if<!dump_directly<Arg>::value, size_t>::type
+{
+    // serialize to the buffer
+    const size_t sz = to_chars(buf, a);
+    // dump the buffer to the sink
+    if(C4_LIKELY(sz <= buf.len))
+    {
+        // NOTE: don't do this:
+        //std::forward<SinkFn>(sinkfn)(buf.first(sz));
+        // ... but do this instead:
+        std::forward<SinkFn>(sinkfn)({buf.str, sz});
+        // ... this is needed because Release builds for armv5 and
+        // armv6 were failing for the first call, with the wrong
+        // buffer being passed into the function (!)
+    }
     return sz;
 }
 
-template<class DumperFn, class Arg>
-inline size_t dump(DumperFn &&dumpfn, substr buf, Arg const& a)
-{
-    size_t sz = to_chars(buf, a); // need to serialize to the buffer
-    if(C4_LIKELY(sz <= buf.len))
-        dumpfn(buf.first(sz));
-    return sz;
-}
 
-template<DumperPfn dumpfn>
-inline size_t dump(substr buf, csubstr a)
-{
-    if(buf.len)
-        dumpfn(a); // dump directly, no need to serialize to the buffer
-    return 0; // no space was used in the buffer
-}
-
-template<class DumperFn>
-inline size_t dump(DumperFn &&dumpfn, substr buf, csubstr a)
-{
-    if(buf.len)
-        dumpfn(a); // dump directly, no need to serialize to the buffer
-    return 0; // no space was used in the buffer
-}
-
-template<DumperPfn dumpfn, size_t N>
-inline size_t dump(substr buf, const char (&a)[N])
-{
-    if(buf.len)
-        dumpfn(csubstr(a)); // dump directly, no need to serialize to the buffer
-    return 0; // no space was used in the buffer
-}
-
-template<class DumperFn, size_t N>
-inline size_t dump(DumperFn &&dumpfn, substr buf, const char (&a)[N])
-{
-    if(buf.len)
-        dumpfn(csubstr(a)); // dump directly, no need to serialize to the buffer
-    return 0; // no space was used in the buffer
-}
-
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-
-/** */
+/** An opaque type used by resumeable dump functions like @ref
+ * cat_dump_resume(), @ref catsep_dump_resume() or @ref
+ * format_dump_resume(). */
 struct DumpResults
 {
     enum : size_t { noarg = (size_t)-1 };
@@ -15492,46 +16496,92 @@ struct DumpResults
     size_t argfail() const { return lastok + 1; }
 };
 
+/** @} */
+
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+
+
+/** @defgroup cat_dump Dump several arguments to a sink,
+ * concatenated. This is the analog to @ref c4::cat(), with the
+ * significant difference that each argument is immediately sent to
+ * the sink (resulting in multiple calls to the sink function, once
+ * per argument), whereas equivalent usage of c4::cat() would first
+ * serialize all the arguments to the buffer, and then call the sink
+ * once at the end. As a consequence, the size needed for the buffer
+ * is only the maximum of the size needed for the arguments, whereas
+ * with c4::cat(), the size needed for the buffer would be the sum of
+ * the size needed for the arguments. When the size of dump
+ *
+ * @{ */
 
 /// @cond dev
 // terminates the variadic recursion
-template<class DumperFn>
-size_t cat_dump(DumperFn &&, substr)
+template<class SinkFn>
+size_t cat_dump(SinkFn &&, substr) // NOLINT
 {
     return 0;
 }
 
 // terminates the variadic recursion
-template<DumperPfn dumpfn>
-size_t cat_dump(substr)
+template<SinkPfn sinkfn>
+size_t cat_dump(substr) // NOLINT
 {
     return 0;
 }
 /// @endcond
 
-/** take the function pointer as a function argument */
-template<class DumperFn, class Arg, class... Args>
-size_t cat_dump(DumperFn &&dumpfn, substr buf, Arg const& C4_RESTRICT a, Args const& C4_RESTRICT ...more)
+
+/** Dump several arguments to the (dynamically dispatched) sink
+ * function, as if through c4::cat(). For each argument, @ref dump()
+ * is called with the buffer and sink. If any of the arguments is too
+ * large for the buffer, no subsequent argument is sent to the sink,
+ * (but all the arguments are still processed to compute the size
+ * required for the buffer). This function can be safely called with an
+ * empty buffer.
+ *
+ * @return the size required for the buffer, which is the maximum size
+ * across all arguments
+ *
+ * @note subsequent calls with the same set of arguments will dump
+ * again the first successful arguments. If each argument must only be
+ * sent once to the sink (for example with printf-like behavior), use
+ * instead @ref cat_dump_resume(). */
+template<class SinkFn, class Arg, class... Args>
+size_t cat_dump(SinkFn &&sinkfn, substr buf, Arg const& a, Args const& ...more)
 {
-    size_t size_for_a = dump(dumpfn, buf, a);
+    const size_t size_for_a = dump(std::forward<SinkFn>(sinkfn), buf, a);
     if(C4_UNLIKELY(size_for_a > buf.len))
-        buf = buf.first(0); // ensure no more calls
-    size_t size_for_more = cat_dump(dumpfn, buf, more...);
+        buf.len = 0; // ensure no more calls to the sink
+    const size_t size_for_more = cat_dump(std::forward<SinkFn>(sinkfn), buf, more...);
     return size_for_more > size_for_a ? size_for_more : size_for_a;
 }
 
-/** take the function pointer as a template argument */
-template<DumperPfn dumpfn,class Arg, class... Args>
-size_t cat_dump(substr buf, Arg const& C4_RESTRICT a, Args const& C4_RESTRICT ...more)
+
+/** Dump several arguments to the (statically dispatched) sink
+ * function, as if through c4::cat(). For each argument, @ref dump()
+ * is called with the buffer and sink. If any of the arguments is too
+ * large for the buffer, no subsequent argument is sent to the sink,
+ * (but all the arguments are still processed to compute the size
+ * required for the buffer). This function can be safely called with an
+ * empty buffer.
+ *
+ * @return the size required for the buffer, which is the maximum size
+ * across all arguments
+ *
+ * @note subsequent calls with the same set of arguments will dump
+ * again the first successful arguments. If each argument must only be
+ * sent once to the sink (for example with printf-like behavior), use
+ * instead @ref cat_dump_resume(). */
+template<SinkPfn sinkfn, class Arg, class... Args>
+size_t cat_dump(substr buf, Arg const& a, Args const& ...more)
 {
-    size_t size_for_a = dump<dumpfn>(buf, a);
-    if(C4_LIKELY(size_for_a > buf.len))
-        buf = buf.first(0); // ensure no more calls
-    size_t size_for_more = cat_dump<dumpfn>(buf, more...);
+    const size_t size_for_a = dump<sinkfn>(buf, a);
+    if(C4_UNLIKELY(size_for_a > buf.len))
+        buf.len = 0; // ensure no more calls to the sink
+    const size_t size_for_more = cat_dump<sinkfn>(buf, more...);
     return size_for_more > size_for_a ? size_for_more : size_for_a;
 }
 
@@ -15544,77 +16594,78 @@ size_t cat_dump(substr buf, Arg const& C4_RESTRICT a, Args const& C4_RESTRICT ..
 namespace detail {
 
 // terminates the variadic recursion
-template<DumperPfn dumpfn, class Arg>
-DumpResults cat_dump_resume(size_t currarg, DumpResults results, substr buf, Arg const& C4_RESTRICT a)
+template<SinkPfn sinkfn>
+C4_ALWAYS_INLINE DumpResults cat_dump_resume(size_t, DumpResults results, substr)
 {
-    if(C4_LIKELY(results.write_arg(currarg)))
-    {
-        size_t sz = dump<dumpfn>(buf, a);  // yield to the specialized function
-        if(currarg == results.lastok + 1 && sz <= buf.len)
-            results.lastok = currarg;
-        results.bufsize = sz > results.bufsize ? sz : results.bufsize;
-    }
     return results;
 }
 
 // terminates the variadic recursion
-template<class DumperFn, class Arg>
-DumpResults cat_dump_resume(size_t currarg, DumperFn &&dumpfn, DumpResults results, substr buf, Arg const& C4_RESTRICT a)
+template<class SinkFn>
+C4_ALWAYS_INLINE DumpResults cat_dump_resume(size_t, SinkFn &&, DumpResults results, substr) // NOLINT
+{
+    return results;
+}
+
+template<SinkPfn sinkfn, class Arg, class... Args>
+DumpResults cat_dump_resume(size_t currarg, DumpResults results, substr buf, Arg const& C4_RESTRICT a, Args const& ...more)
 {
     if(C4_LIKELY(results.write_arg(currarg)))
     {
-        size_t sz = dump(dumpfn, buf, a);  // yield to the specialized function
+        size_t sz = dump<sinkfn>(buf, a);  // yield to the specialized function
         if(currarg == results.lastok + 1 && sz <= buf.len)
             results.lastok = currarg;
         results.bufsize = sz > results.bufsize ? sz : results.bufsize;
     }
-    return results;
+    return detail::cat_dump_resume<sinkfn>(currarg + 1u, results, buf, more...);
 }
 
-template<DumperPfn dumpfn, class Arg, class... Args>
-DumpResults cat_dump_resume(size_t currarg, DumpResults results, substr buf, Arg const& C4_RESTRICT a, Args const& C4_RESTRICT ...more)
+template<class SinkFn, class Arg, class... Args>
+DumpResults cat_dump_resume(size_t currarg, SinkFn &&sinkfn, DumpResults results, substr buf, Arg const& C4_RESTRICT a, Args const& ...more)
 {
-    results = detail::cat_dump_resume<dumpfn>(currarg, results, buf, a);
-    return detail::cat_dump_resume<dumpfn>(currarg + 1u, results, buf, more...);
-}
-
-template<class DumperFn, class Arg, class... Args>
-DumpResults cat_dump_resume(size_t currarg, DumperFn &&dumpfn, DumpResults results, substr buf, Arg const& C4_RESTRICT a, Args const& C4_RESTRICT ...more)
-{
-    results = detail::cat_dump_resume(currarg, dumpfn, results, buf, a);
-    return detail::cat_dump_resume(currarg + 1u, dumpfn, results, buf, more...);
+    if(C4_LIKELY(results.write_arg(currarg)))
+    {
+        size_t sz = dump(std::forward<SinkFn>(sinkfn), buf, a);  // yield to the specialized function
+        if(currarg == results.lastok + 1 && sz <= buf.len)
+            results.lastok = currarg;
+        results.bufsize = sz > results.bufsize ? sz : results.bufsize;
+    }
+    return detail::cat_dump_resume(currarg + 1u, std::forward<SinkFn>(sinkfn), results, buf, more...);
 }
 } // namespace detail
 /// @endcond
 
 
-template<DumperPfn dumpfn, class Arg, class... Args>
-C4_ALWAYS_INLINE DumpResults cat_dump_resume(DumpResults results, substr buf, Arg const& C4_RESTRICT a, Args const& C4_RESTRICT ...more)
+template<SinkPfn sinkfn, class Arg, class... Args>
+C4_ALWAYS_INLINE DumpResults cat_dump_resume(substr buf, Arg const& C4_RESTRICT a, Args const& ...more)
+{
+    return detail::cat_dump_resume<sinkfn>(0u, DumpResults{}, buf, a, more...);
+}
+
+template<class SinkFn, class Arg, class... Args>
+C4_ALWAYS_INLINE DumpResults cat_dump_resume(SinkFn &&sinkfn, substr buf, Arg const& C4_RESTRICT a, Args const& ...more)
+{
+    return detail::cat_dump_resume(0u, std::forward<SinkFn>(sinkfn), DumpResults{}, buf, a, more...);
+}
+
+
+template<SinkPfn sinkfn, class Arg, class... Args>
+C4_ALWAYS_INLINE DumpResults cat_dump_resume(DumpResults results, substr buf, Arg const& C4_RESTRICT a, Args const& ...more)
 {
     if(results.bufsize > buf.len)
         return results;
-    return detail::cat_dump_resume<dumpfn>(0u, results, buf, a, more...);
+    return detail::cat_dump_resume<sinkfn>(0u, results, buf, a, more...);
 }
 
-template<class DumperFn, class Arg, class... Args>
-C4_ALWAYS_INLINE DumpResults cat_dump_resume(DumperFn &&dumpfn, DumpResults results, substr buf, Arg const& C4_RESTRICT a, Args const& C4_RESTRICT ...more)
+template<class SinkFn, class Arg, class... Args>
+C4_ALWAYS_INLINE DumpResults cat_dump_resume(SinkFn &&sinkfn, DumpResults results, substr buf, Arg const& C4_RESTRICT a, Args const& ...more)
 {
     if(results.bufsize > buf.len)
         return results;
-    return detail::cat_dump_resume(0u, dumpfn, results, buf, a, more...);
+    return detail::cat_dump_resume(0u, std::forward<SinkFn>(sinkfn), results, buf, a, more...);
 }
 
-template<DumperPfn dumpfn, class Arg, class... Args>
-C4_ALWAYS_INLINE DumpResults cat_dump_resume(substr buf, Arg const& C4_RESTRICT a, Args const& C4_RESTRICT ...more)
-{
-    return detail::cat_dump_resume<dumpfn>(0u, DumpResults{}, buf, a, more...);
-}
-
-template<class DumperFn, class Arg, class... Args>
-C4_ALWAYS_INLINE DumpResults cat_dump_resume(DumperFn &&dumpfn, substr buf, Arg const& C4_RESTRICT a, Args const& C4_RESTRICT ...more)
-{
-    return detail::cat_dump_resume(0u, dumpfn, DumpResults{}, buf, a, more...);
-}
+/** @} */
 
 
 //-----------------------------------------------------------------------------
@@ -15623,53 +16674,53 @@ C4_ALWAYS_INLINE DumpResults cat_dump_resume(DumperFn &&dumpfn, substr buf, Arg 
 
 /// @cond dev
 // terminate the recursion
-template<class DumperFn, class Sep>
-size_t catsep_dump(DumperFn &&, substr, Sep const& C4_RESTRICT)
+template<class SinkFn, class Sep>
+size_t catsep_dump(SinkFn &&, substr, Sep const& C4_RESTRICT) // NOLINT
 {
     return 0;
 }
 
 // terminate the recursion
-template<DumperPfn dumpfn, class Sep>
-size_t catsep_dump(substr, Sep const& C4_RESTRICT)
+template<SinkPfn sinkfn, class Sep>
+size_t catsep_dump(substr, Sep const& C4_RESTRICT) // NOLINT
 {
     return 0;
 }
 /// @endcond
 
 /** take the function pointer as a function argument */
-template<class DumperFn, class Sep, class Arg, class... Args>
-size_t catsep_dump(DumperFn &&dumpfn, substr buf, Sep const& C4_RESTRICT sep, Arg const& C4_RESTRICT a, Args const& C4_RESTRICT ...more)
+template<class SinkFn, class Sep, class Arg, class... Args>
+size_t catsep_dump(SinkFn &&sinkfn, substr buf, Sep const& sep, Arg const& a, Args const& ...more)
 {
-    size_t sz = dump(dumpfn, buf, a);
+    size_t sz = dump(std::forward<SinkFn>(sinkfn), buf, a);
     if(C4_UNLIKELY(sz > buf.len))
-        buf = buf.first(0); // ensure no more calls
+        buf.len = 0; // ensure no more calls
     if C4_IF_CONSTEXPR (sizeof...(more) > 0)
     {
-        size_t szsep = dump(dumpfn, buf, sep);
+        size_t szsep = dump(std::forward<SinkFn>(sinkfn), buf, sep);
         if(C4_UNLIKELY(szsep > buf.len))
-            buf = buf.first(0); // ensure no more calls
+            buf.len = 0; // ensure no more calls
         sz = sz > szsep ? sz : szsep;
     }
-    size_t size_for_more = catsep_dump(dumpfn, buf, sep, more...);
+    size_t size_for_more = catsep_dump(std::forward<SinkFn>(sinkfn), buf, sep, more...);
     return size_for_more > sz ? size_for_more : sz;
 }
 
 /** take the function pointer as a template argument */
-template<DumperPfn dumpfn, class Sep, class Arg, class... Args>
-size_t catsep_dump(substr buf, Sep const& C4_RESTRICT sep, Arg const& C4_RESTRICT a, Args const& C4_RESTRICT ...more)
+template<SinkPfn sinkfn, class Sep, class Arg, class... Args>
+size_t catsep_dump(substr buf, Sep const& sep, Arg const& a, Args const& ...more)
 {
-    size_t sz = dump<dumpfn>(buf, a);
+    size_t sz = dump<sinkfn>(buf, a);
     if(C4_UNLIKELY(sz > buf.len))
-        buf = buf.first(0); // ensure no more calls
+        buf.len = 0; // ensure no more calls
     if C4_IF_CONSTEXPR (sizeof...(more) > 0)
     {
-        size_t szsep = dump<dumpfn>(buf, sep);
+        size_t szsep = dump<sinkfn>(buf, sep);
         if(C4_UNLIKELY(szsep > buf.len))
-            buf = buf.first(0); // ensure no more calls
+            buf.len = 0; // ensure no more calls
         sz = sz > szsep ? sz : szsep;
     }
-    size_t size_for_more = catsep_dump<dumpfn>(buf, sep, more...);
+    size_t size_for_more = catsep_dump<sinkfn>(buf, sep, more...);
     return size_for_more > sz ? size_for_more : sz;
 }
 
@@ -15680,12 +16731,12 @@ size_t catsep_dump(substr buf, Sep const& C4_RESTRICT sep, Arg const& C4_RESTRIC
 
 /// @cond dev
 namespace detail {
-template<DumperPfn dumpfn, class Arg>
-void catsep_dump_resume_(size_t currarg, DumpResults *C4_RESTRICT results, substr *C4_RESTRICT buf, Arg const& C4_RESTRICT a)
+template<SinkPfn sinkfn, class Arg>
+void catsep_dump_resume_(size_t currarg, DumpResults *C4_RESTRICT results, substr *buf, Arg const& a)
 {
     if(C4_LIKELY(results->write_arg(currarg)))
     {
-        size_t sz = dump<dumpfn>(*buf, a);
+        size_t sz = dump<sinkfn>(*buf, a);
         results->bufsize = sz > results->bufsize ? sz : results->bufsize;
         if(C4_LIKELY(sz <= buf->len))
             results->lastok = currarg;
@@ -15694,12 +16745,12 @@ void catsep_dump_resume_(size_t currarg, DumpResults *C4_RESTRICT results, subst
     }
 }
 
-template<class DumperFn, class Arg>
-void catsep_dump_resume_(size_t currarg, DumperFn &&dumpfn, DumpResults *C4_RESTRICT results, substr *C4_RESTRICT buf, Arg const& C4_RESTRICT a)
+template<class SinkFn, class Arg>
+void catsep_dump_resume_(size_t currarg, SinkFn &&sinkfn, DumpResults *C4_RESTRICT results, substr *C4_RESTRICT buf, Arg const& C4_RESTRICT a)
 {
     if(C4_LIKELY(results->write_arg(currarg)))
     {
-        size_t sz = dump(dumpfn, *buf, a);
+        size_t sz = dump(std::forward<SinkFn>(sinkfn), *buf, a);
         results->bufsize = sz > results->bufsize ? sz : results->bufsize;
         if(C4_LIKELY(sz <= buf->len))
             results->lastok = currarg;
@@ -15708,64 +16759,65 @@ void catsep_dump_resume_(size_t currarg, DumperFn &&dumpfn, DumpResults *C4_REST
     }
 }
 
-template<DumperPfn dumpfn, class Sep, class Arg>
-C4_ALWAYS_INLINE void catsep_dump_resume(size_t currarg, DumpResults *C4_RESTRICT results, substr *C4_RESTRICT buf, Sep const& C4_RESTRICT, Arg const& C4_RESTRICT a)
+template<SinkPfn sinkfn, class Sep, class Arg>
+C4_ALWAYS_INLINE void catsep_dump_resume(size_t currarg, DumpResults *C4_RESTRICT results, substr *C4_RESTRICT buf, Sep const&, Arg const& a)
 {
-    detail::catsep_dump_resume_<dumpfn>(currarg, results, buf, a);
+    detail::catsep_dump_resume_<sinkfn>(currarg, results, buf, a);
 }
 
-template<class DumperFn, class Sep, class Arg>
-C4_ALWAYS_INLINE void catsep_dump_resume(size_t currarg, DumperFn &&dumpfn, DumpResults *C4_RESTRICT results, substr *C4_RESTRICT buf, Sep const& C4_RESTRICT, Arg const& C4_RESTRICT a)
+template<class SinkFn, class Sep, class Arg>
+C4_ALWAYS_INLINE void catsep_dump_resume(size_t currarg, SinkFn &&sinkfn, DumpResults *C4_RESTRICT results, substr *C4_RESTRICT buf, Sep const&, Arg const& a)
 {
-    detail::catsep_dump_resume_(currarg, dumpfn, results, buf, a);
+    detail::catsep_dump_resume_(currarg, std::forward<SinkFn>(sinkfn), results, buf, a);
 }
 
-template<DumperPfn dumpfn, class Sep, class Arg, class... Args>
-C4_ALWAYS_INLINE void catsep_dump_resume(size_t currarg, DumpResults *C4_RESTRICT results, substr *C4_RESTRICT buf, Sep const& C4_RESTRICT sep, Arg const& C4_RESTRICT a, Args const& C4_RESTRICT ...more)
+template<SinkPfn sinkfn, class Sep, class Arg, class... Args>
+C4_ALWAYS_INLINE void catsep_dump_resume(size_t currarg, DumpResults *C4_RESTRICT results, substr *C4_RESTRICT buf, Sep const& sep, Arg const& a, Args const& ...more)
 {
-    detail::catsep_dump_resume_<dumpfn>(currarg     , results, buf, a);
-    detail::catsep_dump_resume_<dumpfn>(currarg + 1u, results, buf, sep);
-    detail::catsep_dump_resume <dumpfn>(currarg + 2u, results, buf, sep, more...);
+    detail::catsep_dump_resume_<sinkfn>(currarg     , results, buf, a);
+    detail::catsep_dump_resume_<sinkfn>(currarg + 1u, results, buf, sep);
+    detail::catsep_dump_resume <sinkfn>(currarg + 2u, results, buf, sep, more...);
 }
 
-template<class DumperFn, class Sep, class Arg, class... Args>
-C4_ALWAYS_INLINE void catsep_dump_resume(size_t currarg, DumperFn &&dumpfn, DumpResults *C4_RESTRICT results, substr *C4_RESTRICT buf, Sep const& C4_RESTRICT sep, Arg const& C4_RESTRICT a, Args const& C4_RESTRICT ...more)
+template<class SinkFn, class Sep, class Arg, class... Args>
+C4_ALWAYS_INLINE void catsep_dump_resume(size_t currarg, SinkFn &&sinkfn, DumpResults *C4_RESTRICT results, substr *C4_RESTRICT buf, Sep const& sep, Arg const& a, Args const& ...more)
 {
-    detail::catsep_dump_resume_(currarg     , dumpfn, results, buf, a);
-    detail::catsep_dump_resume_(currarg + 1u, dumpfn, results, buf, sep);
-    detail::catsep_dump_resume (currarg + 2u, dumpfn, results, buf, sep, more...);
+    detail::catsep_dump_resume_(currarg     , std::forward<SinkFn>(sinkfn), results, buf, a);
+    detail::catsep_dump_resume_(currarg + 1u, std::forward<SinkFn>(sinkfn), results, buf, sep);
+    detail::catsep_dump_resume (currarg + 2u, std::forward<SinkFn>(sinkfn), results, buf, sep, more...);
 }
 } // namespace detail
 /// @endcond
 
 
-template<DumperPfn dumpfn, class Sep, class... Args>
-C4_ALWAYS_INLINE DumpResults catsep_dump_resume(DumpResults results, substr buf, Sep const& C4_RESTRICT sep, Args const& C4_RESTRICT ...more)
-{
-    detail::catsep_dump_resume<dumpfn>(0u, &results, &buf, sep, more...);
-    return results;
-}
-
-template<class DumperFn, class Sep, class... Args>
-C4_ALWAYS_INLINE DumpResults catsep_dump_resume(DumperFn &&dumpfn, DumpResults results, substr buf, Sep const& C4_RESTRICT sep, Args const& C4_RESTRICT ...more)
-{
-    detail::catsep_dump_resume(0u, dumpfn, &results, &buf, sep, more...);
-    return results;
-}
-
-template<DumperPfn dumpfn, class Sep, class... Args>
-C4_ALWAYS_INLINE DumpResults catsep_dump_resume(substr buf, Sep const& C4_RESTRICT sep, Args const& C4_RESTRICT ...more)
+template<SinkPfn sinkfn, class Sep, class... Args>
+C4_ALWAYS_INLINE DumpResults catsep_dump_resume(substr buf, Sep const& sep, Args const& ...args)
 {
     DumpResults results;
-    detail::catsep_dump_resume<dumpfn>(0u, &results, &buf, sep, more...);
+    detail::catsep_dump_resume<sinkfn>(0u, &results, &buf, sep, args...);
     return results;
 }
 
-template<class DumperFn, class Sep, class... Args>
-C4_ALWAYS_INLINE DumpResults catsep_dump_resume(DumperFn &&dumpfn, substr buf, Sep const& C4_RESTRICT sep, Args const& C4_RESTRICT ...more)
+template<class SinkFn, class Sep, class... Args>
+C4_ALWAYS_INLINE DumpResults catsep_dump_resume(SinkFn &&sinkfn, substr buf, Sep const& sep, Args const& ...args)
 {
     DumpResults results;
-    detail::catsep_dump_resume(0u, dumpfn, &results, &buf, sep, more...);
+    detail::catsep_dump_resume(0u, std::forward<SinkFn>(sinkfn), &results, &buf, sep, args...);
+    return results;
+}
+
+
+template<SinkPfn sinkfn, class Sep, class... Args>
+C4_ALWAYS_INLINE DumpResults catsep_dump_resume(DumpResults results, substr buf, Sep const& sep, Args const& ...args)
+{
+    detail::catsep_dump_resume<sinkfn>(0u, &results, &buf, sep, args...);
+    return results;
+}
+
+template<class SinkFn, class Sep, class... Args>
+C4_ALWAYS_INLINE DumpResults catsep_dump_resume(SinkFn &&sinkfn, DumpResults results, substr buf, Sep const& sep, Args const& ...args)
+{
+    detail::catsep_dump_resume(0u, std::forward<SinkFn>(sinkfn), &results, &buf, sep, args...);
     return results;
 }
 
@@ -15775,75 +16827,98 @@ C4_ALWAYS_INLINE DumpResults catsep_dump_resume(DumperFn &&dumpfn, substr buf, S
 //-----------------------------------------------------------------------------
 
 /// @cond dev
-
-/** take the function pointer as a function argument */
-template<class DumperFn>
-C4_ALWAYS_INLINE size_t format_dump(DumperFn &&dumpfn, substr buf, csubstr fmt)
+namespace detail {
+// terminate the recursion
+C4_ALWAYS_INLINE size_t _format_dump_compute_size()
 {
-    // we can dump without using buf
-    // but we'll only dump if the buffer is ok
-    if(C4_LIKELY(buf.len > 0 && fmt.len))
-        dumpfn(fmt);
     return 0u;
 }
+template<class T>
+C4_ALWAYS_INLINE auto _format_dump_compute_size(T const&)
+    -> typename std::enable_if<dump_directly<T>::value, size_t>::type
+{
+    return 0u; // no buffer needed
+}
+template<class T>
+C4_ALWAYS_INLINE auto _format_dump_compute_size(T const& v)
+    -> typename std::enable_if<!dump_directly<T>::value, size_t>::type
+{
+    return to_chars({}, v);
+}
+template<class Arg, class... Args>
+size_t _format_dump_compute_size(Arg const& a, Args const& ...more)
+{
+    const size_t sz = _format_dump_compute_size(a); // don't call to_chars() directly
+    const size_t rest = _format_dump_compute_size(more...);
+    return sz > rest ? sz : rest;
+}
+} // namespace detail
 
+// terminate the recursion
+template<class SinkFn>
+C4_ALWAYS_INLINE size_t format_dump(SinkFn &&sinkfn, substr, csubstr fmt)
+{
+    // we can dump without using buf, so no need to check it
+    std::forward<SinkFn>(sinkfn)(fmt);
+    return 0u;
+}
+// terminate the recursion
 /** take the function pointer as a template argument */
-template<DumperPfn dumpfn>
-C4_ALWAYS_INLINE size_t format_dump(substr buf, csubstr fmt)
+template<SinkPfn sinkfn>
+C4_ALWAYS_INLINE size_t format_dump(substr, csubstr fmt)
 {
-    // we can dump without using buf
-    // but we'll only dump if the buffer is ok
-    if(C4_LIKELY(buf.len > 0 && fmt.len > 0))
-        dumpfn(fmt);
+    // we can dump without using buf, so no need to check it
+    sinkfn(fmt);
     return 0u;
 }
-
 /// @endcond
 
 
 /** take the function pointer as a function argument */
-template<class DumperFn, class Arg, class... Args>
-C4_NO_INLINE size_t format_dump(DumperFn &&dumpfn, substr buf, csubstr fmt, Arg const& C4_RESTRICT a, Args const& C4_RESTRICT ...more)
+template<class SinkFn, class Arg, class... Args>
+C4_NO_INLINE size_t format_dump(SinkFn &&sinkfn, substr buf, csubstr fmt, Arg const& a, Args const& ...more)
 {
     // we can dump without using buf
     // but we'll only dump if the buffer is ok
     size_t pos = fmt.find("{}"); // @todo use _find_fmt()
     if(C4_UNLIKELY(pos == csubstr::npos))
     {
-        if(C4_LIKELY(buf.len > 0 && fmt.len > 0))
-            dumpfn(fmt);
+        std::forward<SinkFn>(sinkfn)(fmt);
         return 0u;
     }
-    if(C4_LIKELY(buf.len > 0 && pos > 0))
-        dumpfn(fmt.first(pos)); // we can dump without using buf
+    std::forward<SinkFn>(sinkfn)(fmt.first(pos)); // we can dump without using buf
     fmt = fmt.sub(pos + 2); // skip {} do this before assigning to pos again
-    pos = dump(dumpfn, buf, a);
-    if(C4_UNLIKELY(pos > buf.len))
-        buf.len = 0; // ensure no more calls to dump
-    size_t size_for_more = format_dump(dumpfn, buf, fmt, more...);
+    pos = dump(std::forward<SinkFn>(sinkfn), buf, a); // reuse pos to get needed_size
+    // dump no more if the buffer was exhausted
+    size_t size_for_more;
+    if(C4_LIKELY(pos <= buf.len))
+        size_for_more = format_dump(std::forward<SinkFn>(sinkfn), buf, fmt, more...);
+    else
+        size_for_more = detail::_format_dump_compute_size(more...);
     return size_for_more > pos ? size_for_more : pos;
 }
 
 /** take the function pointer as a template argument */
-template<DumperPfn dumpfn, class Arg, class... Args>
-C4_NO_INLINE size_t format_dump(substr buf, csubstr fmt, Arg const& C4_RESTRICT a, Args const& C4_RESTRICT ...more)
+template<SinkPfn sinkfn, class Arg, class... Args>
+C4_NO_INLINE size_t format_dump(substr buf, csubstr fmt, Arg const& C4_RESTRICT a, Args const& ...more)
 {
     // we can dump without using buf
     // but we'll only dump if the buffer is ok
     size_t pos = fmt.find("{}"); // @todo use _find_fmt()
     if(C4_UNLIKELY(pos == csubstr::npos))
     {
-        if(C4_LIKELY(buf.len > 0 && fmt.len > 0))
-            dumpfn(fmt);
+        sinkfn(fmt);
         return 0u;
     }
-    if(C4_LIKELY(buf.len > 0 && pos > 0))
-        dumpfn(fmt.first(pos)); // we can dump without using buf
+    sinkfn(fmt.first(pos)); // we can dump without using buf
     fmt = fmt.sub(pos + 2); // skip {} do this before assigning to pos again
-    pos = dump<dumpfn>(buf, a);
-    if(C4_UNLIKELY(pos > buf.len))
-        buf.len = 0; // ensure no more calls to dump
-    size_t size_for_more = format_dump<dumpfn>(buf, fmt, more...);
+    pos = dump<sinkfn>(buf, a); // reuse pos to get needed_size
+    // dump no more if the buffer was exhausted
+    size_t size_for_more;
+    if(C4_LIKELY(pos <= buf.len))
+        size_for_more = format_dump<sinkfn>(buf, fmt, more...);
+    else
+        size_for_more = detail::_format_dump_compute_size(more...);
     return size_for_more > pos ? size_for_more : pos;
 }
 
@@ -15854,136 +16929,147 @@ C4_NO_INLINE size_t format_dump(substr buf, csubstr fmt, Arg const& C4_RESTRICT 
 
 /// @cond dev
 namespace detail {
-
-template<DumperPfn dumpfn>
-DumpResults format_dump_resume(size_t currarg, DumpResults results, substr buf, csubstr fmt)
+// terminate the recursion
+template<SinkPfn sinkfn>
+DumpResults format_dump_resume(size_t currarg, DumpResults results, substr, csubstr fmt)
 {
-    // we can dump without using buf
-    // but we'll only dump if the buffer is ok
-    if(C4_LIKELY(buf.len > 0))
+    if(C4_LIKELY(results.write_arg(currarg)))
     {
-        dumpfn(fmt);
+        // we can dump without using buf
+        sinkfn(fmt);
         results.lastok = currarg;
     }
     return results;
 }
 
-template<class DumperFn>
-DumpResults format_dump_resume(size_t currarg, DumperFn &&dumpfn, DumpResults results, substr buf, csubstr fmt)
+// terminate the recursion
+template<class SinkFn>
+DumpResults format_dump_resume(size_t currarg, SinkFn &&sinkfn, DumpResults results, substr, csubstr fmt)
 {
-    // we can dump without using buf
-    // but we'll only dump if the buffer is ok
-    if(C4_LIKELY(buf.len > 0))
+    if(C4_LIKELY(results.write_arg(currarg)))
     {
-        dumpfn(fmt);
+        // we can dump without using buf
+        std::forward<SinkFn>(sinkfn)(fmt);
         results.lastok = currarg;
     }
     return results;
 }
 
-template<DumperPfn dumpfn, class Arg, class... Args>
-DumpResults format_dump_resume(size_t currarg, DumpResults results, substr buf, csubstr fmt, Arg const& C4_RESTRICT a, Args const& C4_RESTRICT ...more)
+template<SinkPfn sinkfn, class Arg, class... Args>
+DumpResults format_dump_resume(size_t currarg, DumpResults results, substr buf, csubstr fmt, Arg const& a, Args const& ...more)
 {
     // we need to process the format even if we're not
     // going to print the first arguments because we're resuming
-    size_t pos = fmt.find("{}"); // @todo use _find_fmt()
-    // we can dump without using buf
-    // but we'll only dump if the buffer is ok
-    if(C4_LIKELY(results.write_arg(currarg)))
+    const size_t pos = fmt.find("{}"); // @todo use _find_fmt()
+    if(C4_LIKELY(pos != csubstr::npos))
     {
-        if(C4_UNLIKELY(pos == csubstr::npos))
+        if(C4_LIKELY(results.write_arg(currarg)))
         {
-            if(C4_LIKELY(buf.len > 0))
-            {
-                results.lastok = currarg;
-                dumpfn(fmt);
-            }
-            return results;
-        }
-        if(C4_LIKELY(buf.len > 0))
-        {
+            sinkfn(fmt.first(pos));
             results.lastok = currarg;
-            dumpfn(fmt.first(pos));
+        }
+        if(C4_LIKELY(results.write_arg(currarg + 1u)))
+        {
+            const size_t len = dump<sinkfn>(buf, a);
+            results.bufsize = len > results.bufsize ? len : results.bufsize;
+            if(C4_LIKELY(len <= buf.len))
+            {
+                results.lastok = currarg + 1u;
+            }
+            else
+            {
+                const size_t rest = _format_dump_compute_size(more...);
+                results.bufsize = rest > results.bufsize ? rest : results.bufsize;
+                return results;
+            }
         }
     }
-    fmt = fmt.sub(pos + 2);
-    if(C4_LIKELY(results.write_arg(currarg + 1)))
+    else
     {
-        pos = dump<dumpfn>(buf, a);
-        results.bufsize = pos > results.bufsize ? pos : results.bufsize;
-        if(C4_LIKELY(pos <= buf.len))
-            results.lastok = currarg + 1;
-        else
-            buf.len = 0;
+        if(C4_LIKELY(results.write_arg(currarg)))
+        {
+            sinkfn(fmt);
+            results.lastok = currarg;
+        }
+        return results;
     }
-    return detail::format_dump_resume<dumpfn>(currarg + 2u, results, buf, fmt, more...);
+    // NOTE: sparc64 had trouble with reassignment to fmt, and
+    // was passing the original fmt to the recursion:
+    //fmt = fmt.sub(pos + 2); // DONT!
+    return detail::format_dump_resume<sinkfn>(currarg + 2u, results, buf, fmt.sub(pos + 2), more...);
 }
+
+
+template<class SinkFn, class Arg, class... Args>
+DumpResults format_dump_resume(size_t currarg, SinkFn &&sinkfn, DumpResults results, substr buf, csubstr fmt, Arg const& a, Args const& ...more)
+{
+    // we need to process the format even if we're not
+    // going to print the first arguments because we're resuming
+    const size_t pos = fmt.find("{}"); // @todo use _find_fmt()
+    if(C4_LIKELY(pos != csubstr::npos))
+    {
+        if(C4_LIKELY(results.write_arg(currarg)))
+        {
+            std::forward<SinkFn>(sinkfn)(fmt.first(pos));
+            results.lastok = currarg;
+        }
+        if(C4_LIKELY(results.write_arg(currarg + 1u)))
+        {
+            const size_t len = dump(std::forward<SinkFn>(sinkfn), buf, a);
+            results.bufsize = len > results.bufsize ? len : results.bufsize;
+            if(C4_LIKELY(len <= buf.len))
+            {
+                results.lastok = currarg + 1u;
+            }
+            else
+            {
+                const size_t rest = _format_dump_compute_size(more...);
+                results.bufsize = rest > results.bufsize ? rest : results.bufsize;
+                return results;
+            }
+        }
+    }
+    else
+    {
+        if(C4_LIKELY(results.write_arg(currarg)))
+        {
+            std::forward<SinkFn>(sinkfn)(fmt);
+            results.lastok = currarg;
+        }
+        return results;
+    }
+    // NOTE: sparc64 had trouble with reassignment to fmt, and
+    // was passing the original fmt to the recursion:
+    //fmt = fmt.sub(pos + 2); // DONT!
+    return detail::format_dump_resume(currarg + 2u, std::forward<SinkFn>(sinkfn), results, buf, fmt.sub(pos + 2), more...);
+}
+} // namespace detail
 /// @endcond
 
 
-template<class DumperFn, class Arg, class... Args>
-DumpResults format_dump_resume(size_t currarg, DumperFn &&dumpfn, DumpResults results, substr buf, csubstr fmt, Arg const& C4_RESTRICT a, Args const& C4_RESTRICT ...more)
+template<SinkPfn sinkfn, class... Args>
+C4_ALWAYS_INLINE DumpResults format_dump_resume(substr buf, csubstr fmt, Args const& ...args)
 {
-    // we need to process the format even if we're not
-    // going to print the first arguments because we're resuming
-    size_t pos = fmt.find("{}"); // @todo use _find_fmt()
-    // we can dump without using buf
-    // but we'll only dump if the buffer is ok
-    if(C4_LIKELY(results.write_arg(currarg)))
-    {
-        if(C4_UNLIKELY(pos == csubstr::npos))
-        {
-            if(C4_LIKELY(buf.len > 0))
-            {
-                results.lastok = currarg;
-                dumpfn(fmt);
-            }
-            return results;
-        }
-        if(C4_LIKELY(buf.len > 0))
-        {
-            results.lastok = currarg;
-            dumpfn(fmt.first(pos));
-        }
-    }
-    fmt = fmt.sub(pos + 2);
-    if(C4_LIKELY(results.write_arg(currarg + 1)))
-    {
-        pos = dump(dumpfn, buf, a);
-        results.bufsize = pos > results.bufsize ? pos : results.bufsize;
-        if(C4_LIKELY(pos <= buf.len))
-            results.lastok = currarg + 1;
-        else
-            buf.len = 0;
-    }
-    return detail::format_dump_resume(currarg + 2u, dumpfn, results, buf, fmt, more...);
-}
-} // namespace detail
-
-
-template<DumperPfn dumpfn, class... Args>
-C4_ALWAYS_INLINE DumpResults format_dump_resume(DumpResults results, substr buf, csubstr fmt, Args const& C4_RESTRICT ...more)
-{
-    return detail::format_dump_resume<dumpfn>(0u, results, buf, fmt, more...);
+    return detail::format_dump_resume<sinkfn>(0u, DumpResults{}, buf, fmt, args...);
 }
 
-template<class DumperFn, class... Args>
-C4_ALWAYS_INLINE DumpResults format_dump_resume(DumperFn &&dumpfn, DumpResults results, substr buf, csubstr fmt, Args const& C4_RESTRICT ...more)
+template<class SinkFn, class... Args>
+C4_ALWAYS_INLINE DumpResults format_dump_resume(SinkFn &&sinkfn, substr buf, csubstr fmt, Args const& ...args)
 {
-    return detail::format_dump_resume(0u, dumpfn, results, buf, fmt, more...);
+    return detail::format_dump_resume(0u, std::forward<SinkFn>(sinkfn), DumpResults{}, buf, fmt, args...);
 }
 
 
-template<DumperPfn dumpfn, class... Args>
-C4_ALWAYS_INLINE DumpResults format_dump_resume(substr buf, csubstr fmt, Args const& C4_RESTRICT ...more)
+template<SinkPfn sinkfn, class... Args>
+C4_ALWAYS_INLINE DumpResults format_dump_resume(DumpResults results, substr buf, csubstr fmt, Args const& ...args)
 {
-    return detail::format_dump_resume<dumpfn>(0u, DumpResults{}, buf, fmt, more...);
+    return detail::format_dump_resume<sinkfn>(0u, results, buf, fmt, args...);
 }
 
-template<class DumperFn, class... Args>
-C4_ALWAYS_INLINE DumpResults format_dump_resume(DumperFn &&dumpfn, substr buf, csubstr fmt, Args const& C4_RESTRICT ...more)
+template<class SinkFn, class... Args>
+C4_ALWAYS_INLINE DumpResults format_dump_resume(SinkFn &&sinkfn, DumpResults results, substr buf, csubstr fmt, Args const& ...args)
 {
-    return detail::format_dump_resume(0u, dumpfn, DumpResults{}, buf, fmt, more...);
+    return detail::format_dump_resume(0u, std::forward<SinkFn>(sinkfn), results, buf, fmt, args...);
 }
 
 C4_SUPPRESS_WARNING_GCC_CLANG_POP
@@ -16015,6 +17101,8 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #error "amalgamate: file c4/error.hpp must have been included at this point"
 #endif /* C4_ERROR_HPP_ */
 
+//included above:
+//#include <cstddef>
 //included above:
 //#include <string.h>
 
@@ -16091,7 +17179,7 @@ public:
 private:
 
     Sym const* m_symbols;
-    size_t const m_num;
+    size_t const m_num; // NOLINT(*avoid-const*)
 
 };
 
@@ -16419,31 +17507,31 @@ bm2stream(Stream &s, Enum value, EnumOffsetType offst=EOFFS_PFX)
  * buffer. This macro simplifies the code for bm2str().
  * @todo improve performance by writing from the end and moving only once. */
 #define _c4prependchars(code, num)                                      \
-    if(str && (pos + num <= sz))                                        \
+    if(str && (pos + (num) <= sz))                                      \
     {                                                                   \
         /* move the current string to the right */                      \
-        memmove(str + num, str, pos);                                   \
+        memmove(str + (num), str, pos);                                 \
         /* now write in the beginning of the string */                  \
         code;                                                           \
     }                                                                   \
     else if(str && sz)                                                  \
     {                                                                   \
         C4_ERROR("cannot write to string pos=%d num=%d sz=%d",          \
-                 (int)pos, (int)num, (int)sz);                          \
+                 (int)pos, (int)(num), (int)sz);                        \
     }                                                                   \
     pos += num
 
 /* Execute `code` if the `num` of characters is available in the str
  * buffer. This macro simplifies the code for bm2str(). */
 #define _c4appendchars(code, num)                                       \
-    if(str && (pos + num <= sz))                                        \
+    if(str && (pos + (num) <= sz))                                      \
     {                                                                   \
         code;                                                           \
     }                                                                   \
     else if(str && sz)                                                  \
     {                                                                   \
         C4_ERROR("cannot write to string pos=%d num=%d sz=%d",          \
-                 (int)pos, (int)num, (int)sz);                          \
+                 (int)pos, (int)(num), (int)sz);                        \
     }                                                                   \
     pos += num
 
@@ -16702,6 +17790,7 @@ typename std::underlying_type<Enum>::type str2bm(const char *str)
 namespace c4 {
 
 C4_SUPPRESS_WARNING_GCC_CLANG_WITH_PUSH("-Wold-style-cast")
+// NOLINTBEGIN(misc-confusable-identifiers)
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -16890,7 +17979,10 @@ public:
 #undef _c4csz
 };
 
+
 //-----------------------------------------------------------------------------
+// NOLINTBEGIN(*-redundant-inline*)
+
 template<class T, class Il, class Ir, class _Impll, class _Implr>
 inline constexpr bool operator==
 (
@@ -16958,13 +18050,15 @@ inline constexpr bool operator>=
     return ! (l < r);
 }
 
+// NOLINTEND(*-redundant-inline*)
+
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 /** A non-owning span of elements contiguously stored in memory. */
 template<class T, class I=C4_SIZE_TYPE>
-class span : public span_crtp<T, I, span<T, I>>
+class span : public span_crtp<T, I, span<T, I>> // NOLINT(*-special-member-functions)
 {
     friend class span_crtp<T, I, span<T, I>>;
 
@@ -17041,7 +18135,7 @@ template<class T, class I=C4_SIZE_TYPE> using cspan = span<const T, I>;
  */
 
 template<class T, class I=C4_SIZE_TYPE>
-class spanrs : public span_crtp<T, I, spanrs<T, I>>
+class spanrs : public span_crtp<T, I, spanrs<T, I>> // NOLINT(*-special-member-functions)
 {
     friend class span_crtp<T, I, spanrs<T, I>>;
 
@@ -17124,7 +18218,7 @@ template<class T, class I=C4_SIZE_TYPE> using cspanrs = spanrs<const T, I>;
  * can always be recovered by calling original().
  */
 template<class T, class I=C4_SIZE_TYPE>
-class spanrsl : public span_crtp<T, I, spanrsl<T, I>>
+class spanrsl : public span_crtp<T, I, spanrsl<T, I>> // NOLINT(*-special-member-functions)
 {
     friend class span_crtp<T, I, spanrsl<T, I>>;
 
@@ -17201,6 +18295,8 @@ public:
     }
 };
 template<class T, class I=C4_SIZE_TYPE> using cspanrsl = spanrsl<const T, I>;
+
+// NOLINTEND(misc-confusable-identifiers)
 
 C4_SUPPRESS_WARNING_GCC_CLANG_POP
 
@@ -17572,7 +18668,7 @@ C4_ALWAYS_INLINE c4::substr to_substr(std::string &s) noexcept
     #error this function will have undefined behavior
     #endif
     // since c++11 it is legal to call s[s.size()].
-    return c4::substr(&s[0], s.size());
+    return c4::substr(&s[0], s.size()); // NOLINT(readability-container-data-pointer)
 }
 
 /** get a readonly view to an existing std::string.
@@ -17586,7 +18682,7 @@ C4_ALWAYS_INLINE c4::csubstr to_csubstr(std::string const& s) noexcept
     #error this function will have undefined behavior
     #endif
     // since c++11 it is legal to call s[s.size()].
-    return c4::csubstr(&s[0], s.size());
+    return c4::csubstr(&s[0], s.size()); // NOLINT(readability-container-data-pointer)
 }
 
 //-----------------------------------------------------------------------------
@@ -17635,7 +18731,7 @@ inline bool from_chars(c4::csubstr buf, std::string * s)
     if(buf.len)
     {
         C4_ASSERT(buf.str != nullptr);
-        memcpy(&(*s)[0], buf.str, buf.len);
+        memcpy(&(*s)[0], buf.str, buf.len); // NOLINT(readability-container-data-pointer)
     }
     return true;
 }
@@ -17838,7 +18934,7 @@ inline bool from_chars(c4::csubstr buf, std::vector<char, Alloc> * s)
     // see https://github.com/biojppm/rapidyaml/pull/264#issuecomment-1262133637
     if(buf.len > 0)
     {
-        memcpy(&(*s)[0], buf.str, buf.len);
+        memcpy(&(*s)[0], buf.str, buf.len); // NOLINT(readability-container-data-pointer)
     }
     return true;
 }
@@ -18648,6 +19744,53 @@ private:
 
 //********************************************************************************
 //--------------------------------------------------------------------------------
+// src/c4/version.cpp
+// https://github.com/biojppm/c4core/src/c4/version.cpp
+//--------------------------------------------------------------------------------
+//********************************************************************************
+
+#ifdef C4CORE_SINGLE_HDR_DEFINE_NOW
+// amalgamate: removed include of
+// https://github.com/biojppm/c4core/src/c4/version.hpp
+//#include "c4/version.hpp"
+#if !defined(C4_VERSION_HPP_) && !defined(_C4_VERSION_HPP_)
+#error "amalgamate: file c4/version.hpp must have been included at this point"
+#endif /* C4_VERSION_HPP_ */
+
+
+namespace c4 {
+
+const char* version()
+{
+  return C4CORE_VERSION;
+}
+
+int version_major()
+{
+  return C4CORE_VERSION_MAJOR;
+}
+
+int version_minor()
+{
+  return C4CORE_VERSION_MINOR;
+}
+
+int version_patch()
+{
+  return C4CORE_VERSION_PATCH;
+}
+
+} // namespace c4
+
+#endif /* C4CORE_SINGLE_HDR_DEFINE_NOW */
+
+
+// (end https://github.com/biojppm/c4core/src/c4/version.cpp)
+
+
+
+//********************************************************************************
+//--------------------------------------------------------------------------------
 // src/c4/language.cpp
 // https://github.com/biojppm/c4core/src/c4/language.cpp
 //--------------------------------------------------------------------------------
@@ -18720,7 +19863,7 @@ size_t to_chars(substr buf, fmt::const_raw_wrapper r)
 {
     void * vptr = buf.str;
     size_t space = buf.len;
-    auto ptr = (decltype(buf.str)) std::align(r.alignment, r.len, vptr, space);
+    char * ptr = (char*) std::align(r.alignment, r.len, vptr, space);
     if(ptr == nullptr)
     {
         // if it was not possible to align, return a conservative estimate
@@ -18743,7 +19886,7 @@ bool from_chars(csubstr buf, fmt::raw_wrapper *r)
     void * vptr = (void*)buf.str;
     C4_SUPPRESS_WARNING_GCC_POP
     size_t space = buf.len;
-    auto ptr = (decltype(buf.str)) std::align(r->alignment, r->len, vptr, space);
+    char * ptr = (char*) std::align(r->alignment, r->len, vptr, space);
     C4_CHECK(ptr != nullptr);
     C4_CHECK(ptr >= buf.begin() && ptr <= buf.end());
     C4_SUPPRESS_WARNING_GCC_PUSH
@@ -18812,7 +19955,7 @@ void mem_repeat(void* dest, void const* pattern, size_t pattern_size, size_t num
     while(begin + 2*n < end)
     {
         ::memcpy(begin + n, begin, n);
-        n <<= 1; // double n
+        n <<= 1u; // double n
     }
     // copy the missing part
     if(begin + n < end)
@@ -19263,8 +20406,9 @@ C4_SUPPRESS_WARNING_GCC_CLANG_WITH_PUSH("-Wold-style-cast")
 
 size_t decode_code_point(uint8_t *C4_RESTRICT buf, size_t buflen, const uint32_t code)
 {
-    C4_UNUSED(buflen);
+    C4_ASSERT(buf);
     C4_ASSERT(buflen >= 4);
+    C4_UNUSED(buflen);
     if (code <= UINT32_C(0x7f))
     {
         buf[0] = (uint8_t)code;
@@ -19272,23 +20416,23 @@ size_t decode_code_point(uint8_t *C4_RESTRICT buf, size_t buflen, const uint32_t
     }
     else if(code <= UINT32_C(0x7ff))
     {
-        buf[0] = (uint8_t)(UINT32_C(0xc0) | (code >> 6));             /* 110xxxxx */
+        buf[0] = (uint8_t)(UINT32_C(0xc0) | (code >> 6u));            /* 110xxxxx */
         buf[1] = (uint8_t)(UINT32_C(0x80) | (code & UINT32_C(0x3f))); /* 10xxxxxx */
         return 2u;
     }
     else if(code <= UINT32_C(0xffff))
     {
-        buf[0] = (uint8_t)(UINT32_C(0xe0) | ((code >> 12)));                  /* 1110xxxx */
-        buf[1] = (uint8_t)(UINT32_C(0x80) | ((code >>  6) & UINT32_C(0x3f))); /* 10xxxxxx */
-        buf[2] = (uint8_t)(UINT32_C(0x80) | ((code      ) & UINT32_C(0x3f))); /* 10xxxxxx */
+        buf[0] = (uint8_t)(UINT32_C(0xe0) | ((code >> 12u)));                  /* 1110xxxx */
+        buf[1] = (uint8_t)(UINT32_C(0x80) | ((code >>  6u) & UINT32_C(0x3f))); /* 10xxxxxx */
+        buf[2] = (uint8_t)(UINT32_C(0x80) | ((code       ) & UINT32_C(0x3f))); /* 10xxxxxx */
         return 3u;
     }
     else if(code <= UINT32_C(0x10ffff))
     {
-        buf[0] = (uint8_t)(UINT32_C(0xf0) | ((code >> 18)));                  /* 11110xxx */
-        buf[1] = (uint8_t)(UINT32_C(0x80) | ((code >> 12) & UINT32_C(0x3f))); /* 10xxxxxx */
-        buf[2] = (uint8_t)(UINT32_C(0x80) | ((code >>  6) & UINT32_C(0x3f))); /* 10xxxxxx */
-        buf[3] = (uint8_t)(UINT32_C(0x80) | ((code      ) & UINT32_C(0x3f))); /* 10xxxxxx */
+        buf[0] = (uint8_t)(UINT32_C(0xf0) | ((code >> 18u)));                  /* 11110xxx */
+        buf[1] = (uint8_t)(UINT32_C(0x80) | ((code >> 12u) & UINT32_C(0x3f))); /* 10xxxxxx */
+        buf[2] = (uint8_t)(UINT32_C(0x80) | ((code >>  6u) & UINT32_C(0x3f))); /* 10xxxxxx */
+        buf[3] = (uint8_t)(UINT32_C(0x80) | ((code       ) & UINT32_C(0x3f))); /* 10xxxxxx */
         return 4u;
     }
     return 0;
@@ -19309,6 +20453,59 @@ substr decode_code_point(substr out, csubstr code_point)
     size_t ret = decode_code_point((uint8_t*)out.str, out.len, code_point_val);
     C4_ASSERT(ret <= 4);
     return out.first(ret);
+}
+
+size_t first_non_bom(csubstr s)
+{
+    #define c4check2_(s, c0, c1)         ((s).len >= 2) && (((s).str[0] == (c0)) && ((s).str[1] == (c1)))
+    #define c4check3_(s, c0, c1, c2)     ((s).len >= 3) && (((s).str[0] == (c0)) && ((s).str[1] == (c1)) && ((s).str[2] == (c2)))
+    #define c4check4_(s, c0, c1, c2, c3) ((s).len >= 4) && (((s).str[0] == (c0)) && ((s).str[1] == (c1)) && ((s).str[2] == (c2)) && ((s).str[3] == (c3)))
+    // see https://en.wikipedia.org/wiki/Byte_order_mark#Byte-order_marks_by_encoding
+    if(s.len < 2u)
+        return false;
+    else if(c4check3_(s, '\xef', '\xbb', '\xbf')) // UTF-8
+        return 3u;
+    else if(c4check4_(s, '\x00', '\x00', '\xfe', '\xff')) // UTF-32BE
+        return 4u;
+    else if(c4check4_(s, '\xff', '\xfe', '\x00', '\x00')) // UTF-32LE
+        return 4u;
+    else if(c4check2_(s, '\xfe', '\xff')) // UTF-16BE
+        return 2u;
+    else if(c4check2_(s, '\xff', '\xfe')) // UTF-16BE
+        return 2u;
+    else if(c4check3_(s, '\x2b', '\x2f', '\x76')) // UTF-7
+        return 3u;
+    else if(c4check3_(s, '\xf7', '\x64', '\x4c')) // UTF-1
+        return 3u;
+    else if(c4check4_(s, '\xdd', '\x73', '\x66', '\x73')) // UTF-EBCDIC
+        return 4u;
+    else if(c4check3_(s, '\x0e', '\xfe', '\xff')) // SCSU
+        return 3u;
+    else if(c4check3_(s, '\xfb', '\xee', '\x28')) // BOCU-1
+        return 3u;
+    else if(c4check4_(s, '\x84', '\x31', '\x95', '\x33')) // GB18030
+        return 4u;
+    return 0u;
+    #undef c4check2_
+    #undef c4check3_
+    #undef c4check4_
+}
+
+substr get_bom(substr s)
+{
+    return s.first(first_non_bom(s));
+}
+csubstr get_bom(csubstr s)
+{
+    return s.first(first_non_bom(s));
+}
+substr skip_bom(substr s)
+{
+    return s.sub(first_non_bom(s));
+}
+csubstr skip_bom(csubstr s)
+{
+    return s.sub(first_non_bom(s));
 }
 
 C4_SUPPRESS_WARNING_GCC_CLANG_POP
@@ -19344,10 +20541,13 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 #   pragma clang diagnostic ignored "-Wold-style-cast"
 #elif defined(__GNUC__)
 #   pragma GCC diagnostic push
+#   pragma GCC diagnostic ignored "-Wuseless-cast"
 #   pragma GCC diagnostic ignored "-Wchar-subscripts"
 #   pragma GCC diagnostic ignored "-Wtype-limits"
 #   pragma GCC diagnostic ignored "-Wold-style-cast"
 #endif
+
+// NOLINTBEGIN(bugprone-signed-char-misuse,cert-str34-c,hicpp-signed-bitwise)
 
 namespace c4 {
 
@@ -19416,7 +20616,7 @@ void base64_test_tables()
     for(size_t i = 0; i < C4_COUNTOF(detail::base64_sextet_to_char_); ++i)
     {
         char s2c = base64_sextet_to_char_[i];
-        char c2s = base64_char_to_sextet_[(int)s2c];
+        char c2s = base64_char_to_sextet_[(unsigned)s2c];
         C4_CHECK((size_t)c2s == i);
     }
     for(size_t i = 0; i < C4_COUNTOF(detail::base64_char_to_sextet_); ++i)
@@ -19424,7 +20624,7 @@ void base64_test_tables()
         char c2s = base64_char_to_sextet_[i];
         if(c2s == char(-1))
             continue;
-        char s2c = base64_sextet_to_char_[(int)c2s];
+        char s2c = base64_sextet_to_char_[(unsigned)c2s];
         C4_CHECK((size_t)s2c == i);
     }
 }
@@ -19434,7 +20634,7 @@ void base64_test_tables()
 
 bool base64_valid(csubstr encoded)
 {
-    if(encoded.len & 3u) // (encoded.len % 4u)
+    if((encoded.len & size_t(3u)) != size_t(0)) // (encoded.len % 4u)
         return false;
     for(const char c : encoded)
     {
@@ -19497,7 +20697,7 @@ size_t base64_decode(csubstr encoded, blob data)
     #define c4append_(c) { if(wpos < data.len) { data.buf[wpos] = static_cast<c4::byte>(c); } ++wpos; }
     #define c4appendval_(c, shift)\
     {\
-        C4_XASSERT(c >= 0);\
+        C4_XASSERT((c) >= 0);\
         C4_XASSERT(size_t(c) < sizeof(detail::base64_char_to_sextet_));\
         val |= static_cast<uint32_t>(detail::base64_char_to_sextet_[(c)]) << ((shift) * 6);\
     }
@@ -19551,6 +20751,8 @@ size_t base64_decode(csubstr encoded, blob data)
 }
 
 } // namespace c4
+
+// NOLINTEND(bugprone-signed-char-misuse,cert-str34-c,hicpp-signed-bitwise)
 
 #ifdef __clang__
 #    pragma clang diagnostic pop
@@ -19794,9 +20996,9 @@ size_t base64_decode(csubstr encoded, blob data)
 //included above:
 //#include <stdarg.h>
 
-#define C4_LOGF_ERR(...) fprintf(stderr, __VA_ARGS__); fflush(stderr)
-#define C4_LOGF_WARN(...) fprintf(stderr, __VA_ARGS__); fflush(stderr)
-#define C4_LOGP(msg, ...) printf(msg)
+#define C4_LOGF_ERR(...) (void)fprintf(stderr, __VA_ARGS__); (void)fflush(stderr)
+#define C4_LOGF_WARN(...) (void)fprintf(stderr, __VA_ARGS__); (void)fflush(stderr)
+#define C4_LOGP(msg, ...) (void)printf(msg)
 
 #if defined(C4_XBOX) || (defined(C4_WIN) && defined(C4_MSVC))
 // amalgamate: removed include of
@@ -19839,6 +21041,7 @@ size_t base64_decode(csubstr encoded, blob data)
 #   pragma GCC diagnostic ignored "-Wformat-nonliteral"
 #   pragma GCC diagnostic ignored "-Wold-style-cast"
 #endif
+// NOLINTBEGIN(*use-anonymous-namespace*,cert-dcl50-cpp)
 
 
 //-----------------------------------------------------------------------------
@@ -19880,7 +21083,7 @@ void handle_error(srcloc where, const char *fmt, ...)
     {
         va_list args;
         va_start(args, fmt);
-        int ilen = vsnprintf(buf, sizeof(buf), fmt, args); // ss.vprintf(fmt, args);
+        int ilen = vsnprintf(buf, sizeof(buf), fmt, args); // NOLINT(clang-analyzer-valist.Uninitialized)
         va_end(args);
         msglen = ilen >= 0 && ilen < (int)sizeof(buf) ? static_cast<size_t>(ilen) : sizeof(buf)-1;
     }
@@ -19929,7 +21132,11 @@ void handle_warning(srcloc where, const char *fmt, ...)
     va_list args;
     char buf[1024];
     va_start(args, fmt);
-    vsnprintf(buf, sizeof(buf), fmt, args);
+    int ret = vsnprintf(buf, sizeof(buf), fmt, args); // NOLINT(clang-analyzer-valist.Uninitialized)
+    if(ret+1 > (int)sizeof(buf))
+        buf[sizeof(buf) - 1] = '\0'; // truncate
+    else if(ret < 0)
+        buf[0] = '\0'; // output/format error
     va_end(args);
     C4_LOGF_WARN("\n");
 #if defined(C4_ERROR_SHOWS_FILELINE) && defined(C4_ERROR_SHOWS_FUNC)
@@ -19958,30 +21165,21 @@ bool is_debugger_attached()
         //! @see http://stackoverflow.com/questions/3596781/how-to-detect-if-the-current-process-is-being-run-by-gdb
         //! (this answer: http://stackoverflow.com/a/24969863/3968589 )
         char buf[1024] = "";
-        int status_fd = open("/proc/self/status", O_RDONLY);
+        int status_fd = open("/proc/self/status", O_RDONLY); // NOLINT
         if (status_fd == -1)
+            return false;
+        ssize_t num_read = ::read(status_fd, buf, sizeof(buf));
+        if (num_read > 0)
         {
-            return 0;
+            static const char TracerPid[] = "TracerPid:";
+            char *tracer_pid;
+            if(num_read < 1024)
+                buf[num_read] = 0;
+            tracer_pid = strstr(buf, TracerPid);
+            if(tracer_pid)
+                first_call_result = !!::atoi(tracer_pid + sizeof(TracerPid) - 1); // NOLINT
         }
-        else
-        {
-            ssize_t num_read = ::read(status_fd, buf, sizeof(buf));
-            if (num_read > 0)
-            {
-                static const char TracerPid[] = "TracerPid:";
-                char *tracer_pid;
-                if(num_read < 1024)
-                {
-                    buf[num_read] = 0;
-                }
-                tracer_pid = strstr(buf, TracerPid);
-                if (tracer_pid)
-                {
-                    first_call_result = !!::atoi(tracer_pid + sizeof(TracerPid) - 1);
-                }
-            }
-            close(status_fd);
-        }
+        close(status_fd);
         C4_SUPPRESS_WARNING_GCC_POP
     }
     return first_call_result;
@@ -20027,6 +21225,7 @@ bool is_debugger_attached()
 
 } // namespace c4
 
+// NOLINTEND(*use-anonymous-namespace*,cert-dcl50-cpp)
 
 #ifdef __clang__
 #   pragma clang diagnostic pop
@@ -20127,10 +21326,10 @@ using Parser = ParseEngine<EventHandlerTree>;
 
 /** @file version.hpp */
 
-#define RYML_VERSION "0.7.2"
+#define RYML_VERSION "0.8.0"
 #define RYML_VERSION_MAJOR 0
-#define RYML_VERSION_MINOR 7
-#define RYML_VERSION_PATCH 2
+#define RYML_VERSION_MINOR 8
+#define RYML_VERSION_PATCH 0
 
 // amalgamate: removed include of
 // https://github.com/biojppm/rapidyaml/src/c4/substr.hpp
@@ -20187,6 +21386,13 @@ RYML_EXPORT int version_patch();
 #endif /* C4_SUBSTR_HPP_ */
 
 // amalgamate: removed include of
+// https://github.com/biojppm/rapidyaml/src/c4/charconv.hpp
+//#include <c4/charconv.hpp>
+#if !defined(C4_CHARCONV_HPP_) && !defined(_C4_CHARCONV_HPP_)
+#error "amalgamate: file c4/charconv.hpp must have been included at this point"
+#endif /* C4_CHARCONV_HPP_ */
+
+// amalgamate: removed include of
 // https://github.com/biojppm/rapidyaml/src/c4/dump.hpp
 //#include <c4/dump.hpp>
 #if !defined(C4_DUMP_HPP_) && !defined(_C4_DUMP_HPP_)
@@ -20201,7 +21407,7 @@ RYML_EXPORT int version_patch();
 #endif /* C4_YML_EXPORT_HPP_ */
 
 
-#if defined(C4_MSVC) || defined(C4_MINGW) || defined(_MSC_VER)
+#if defined(C4_MSVC) || defined(C4_MINGW)
 //included above:
 //#include <malloc.h>
 #else
@@ -20498,7 +21704,7 @@ struct RYML_EXPORT Location
     csubstr name;
 
     operator bool () const { return !name.empty() || line != 0 || offset != 0 || col != 0; }
-    operator LineCol const& () const { return reinterpret_cast<LineCol const&>(*this); }
+    operator LineCol const& () const { return reinterpret_cast<LineCol const&>(*this); } // NOLINT
 
     Location() = default;
     Location(                         size_t l, size_t c) : offset( ), line(l), col(c), name( ) {}
@@ -20575,7 +21781,7 @@ struct RYML_EXPORT Callbacks
     /** Construct an object with the default callbacks. If
      * @ref RYML_NO_DEFAULT_CALLBACKS is defined, the object will have null
      * members.*/
-    Callbacks();
+    Callbacks() noexcept;
 
     /** Construct an object with the given callbacks.
      *
@@ -20611,6 +21817,20 @@ struct RYML_EXPORT Callbacks
 
 
 /** @} */
+
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+typedef enum {
+    NOBOM,
+    UTF8,
+    UTF16LE,
+    UTF16BE,
+    UTF32LE,
+    UTF32BE,
+} Encoding_e;
 
 
 //-----------------------------------------------------------------------------
@@ -20670,7 +21890,6 @@ do                                                                      \
     } while(0)
 
 
-
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -20693,7 +21912,7 @@ struct FilterResult
 {
     C4_ALWAYS_INLINE bool valid() const noexcept { return str.str != nullptr; }
     C4_ALWAYS_INLINE size_t required_len() const noexcept { return str.len; }
-    C4_ALWAYS_INLINE csubstr get() { RYML_ASSERT(valid()); return str; }
+    C4_ALWAYS_INLINE csubstr get() const { RYML_ASSERT(valid()); return str; }
     csubstr str;
 };
 /** Abstracts the fact that a scalar filter result may not fit in the
@@ -20702,7 +21921,7 @@ struct FilterResultExtending
 {
     C4_ALWAYS_INLINE bool valid() const noexcept { return str.str != nullptr; }
     C4_ALWAYS_INLINE size_t required_len() const noexcept { return reqlen; }
-    C4_ALWAYS_INLINE csubstr get() { RYML_ASSERT(valid()); return str; }
+    C4_ALWAYS_INLINE csubstr get() const { RYML_ASSERT(valid()); return str; }
     csubstr str;
     size_t reqlen;
 };
@@ -20718,7 +21937,7 @@ namespace detail {
 template<int8_t signedval, uint8_t unsignedval>
 struct _charconstant_t
     : public std::conditional<std::is_signed<char>::value,
-                              std::integral_constant<int8_t, signedval>,
+                              std::integral_constant<int8_t, static_cast<int8_t>(unsignedval)>,
                               std::integral_constant<uint8_t, unsignedval>>::type
 {};
 #define _RYML_CHCONST(signedval, unsignedval) ::c4::yml::detail::_charconstant_t<INT8_C(signedval), UINT8_C(unsignedval)>::value
@@ -20761,7 +21980,7 @@ struct _SubstrWriter
     //! get the part written so far
     csubstr curr() const { return pos <= buf.len ? buf.first(pos) : buf; }
     //! get the part that is still free to write to (the remainder)
-    substr rem() { return pos < buf.len ? buf.sub(pos) : buf.last(0); }
+    substr rem() const { return pos < buf.len ? buf.sub(pos) : buf.last(0); }
 
     size_t advance(size_t more) { pos += more; return pos; }
 };
@@ -20886,9 +22105,9 @@ using type_bits = uint32_t;
 
 /** a bit mask for marking node types and styles */
 typedef enum : type_bits {
-    #define __(v) (type_bits(1) << v) // a convenience define, undefined below
+    #define __(v) (type_bits(1) << v) // a convenience define, undefined below // NOLINT
     NOTYPE  = 0,         ///< no node type or style is set
-    KEY     = __(0),     ///< is member of a map, must have non-empty key
+    KEY     = __(0),     ///< is member of a map
     VAL     = __(1),     ///< a scalar: has a scalar (ie string) value, possibly empty. must be a leaf node, and cannot be MAP or SEQ
     MAP     = __(2),     ///< a map: a parent of KEYVAL/KEYSEQ/KEYMAP nodes
     SEQ     = __(3),     ///< a seq: a parent of VAL/SEQ/MAP nodes
@@ -20900,28 +22119,30 @@ typedef enum : type_bits {
     VALANCH = __(9),     ///< the val has an &anchor
     KEYTAG  = __(10),    ///< the key has a tag
     VALTAG  = __(11),    ///< the val has a tag
-    _TYMASK = __(12)-1,  ///< all the bits up to here
+    KEYNIL  = __(12),    ///< the key is null (eg `{ : b}` results in a null key)
+    VALNIL  = __(13),    ///< the val is null (eg `{a : }` results in a null val)
+    _TYMASK = __(14)-1,  ///< all the bits up to here
     //
     // unfiltered flags:
     //
-    KEY_UNFILT  = __(12), ///< the key scalar was left unfiltered; the parser was set not to filter. @see ParserOptions
-    VAL_UNFILT  = __(13), ///< the val scalar was left unfiltered; the parser was set not to filter. @see ParserOptions
+    KEY_UNFILT  = __(14), ///< the key scalar was left unfiltered; the parser was set not to filter. @see ParserOptions
+    VAL_UNFILT  = __(15), ///< the val scalar was left unfiltered; the parser was set not to filter. @see ParserOptions
     //
     // style flags:
     //
-    FLOW_SL     = __(14), ///< mark container with single-line flow style (seqs as '[val1,val2], maps as '{key: val,key2: val2}')
-    FLOW_ML     = __(15), ///< (NOT IMPLEMENTED, work in progress) mark container with multi-line flow style (seqs as '[\n  val1,\n  val2\n], maps as '{\n  key: val,\n  key2: val2\n}')
-    BLOCK       = __(16), ///< mark container with block style (seqs as '- val\n', maps as 'key: val')
-    KEY_LITERAL = __(17), ///< mark key scalar as multiline, block literal |
-    VAL_LITERAL = __(18), ///< mark val scalar as multiline, block literal |
-    KEY_FOLDED  = __(19), ///< mark key scalar as multiline, block folded >
-    VAL_FOLDED  = __(20), ///< mark val scalar as multiline, block folded >
-    KEY_SQUO    = __(21), ///< mark key scalar as single quoted '
-    VAL_SQUO    = __(22), ///< mark val scalar as single quoted '
-    KEY_DQUO    = __(23), ///< mark key scalar as double quoted "
-    VAL_DQUO    = __(24), ///< mark val scalar as double quoted "
-    KEY_PLAIN   = __(25), ///< mark key scalar as plain scalar (unquoted, even when multiline)
-    VAL_PLAIN   = __(26), ///< mark val scalar as plain scalar (unquoted, even when multiline)
+    FLOW_SL     = __(16), ///< mark container with single-line flow style (seqs as '[val1,val2], maps as '{key: val,key2: val2}')
+    FLOW_ML     = __(17), ///< (NOT IMPLEMENTED, work in progress) mark container with multi-line flow style (seqs as '[\n  val1,\n  val2\n], maps as '{\n  key: val,\n  key2: val2\n}')
+    BLOCK       = __(18), ///< mark container with block style (seqs as '- val\n', maps as 'key: val')
+    KEY_LITERAL = __(19), ///< mark key scalar as multiline, block literal |
+    VAL_LITERAL = __(20), ///< mark val scalar as multiline, block literal |
+    KEY_FOLDED  = __(21), ///< mark key scalar as multiline, block folded >
+    VAL_FOLDED  = __(22), ///< mark val scalar as multiline, block folded >
+    KEY_SQUO    = __(23), ///< mark key scalar as single quoted '
+    VAL_SQUO    = __(24), ///< mark val scalar as single quoted '
+    KEY_DQUO    = __(25), ///< mark key scalar as double quoted "
+    VAL_DQUO    = __(26), ///< mark val scalar as double quoted "
+    KEY_PLAIN   = __(27), ///< mark key scalar as plain scalar (unquoted, even when multiline)
+    VAL_PLAIN   = __(28), ///< mark val scalar as plain scalar (unquoted, even when multiline)
     //
     // type combination masks:
     //
@@ -21027,6 +22248,8 @@ public:
     C4_ALWAYS_INLINE bool has_val()           const noexcept { return (type & VAL) != 0; }
     C4_ALWAYS_INLINE bool is_val()            const noexcept { return (type & KEYVAL) == VAL; }
     C4_ALWAYS_INLINE bool is_keyval()         const noexcept { return (type & KEYVAL) == KEYVAL; }
+    C4_ALWAYS_INLINE bool key_is_null()       const noexcept { return (type & KEYNIL) != 0; }
+    C4_ALWAYS_INLINE bool val_is_null()       const noexcept { return (type & VALNIL) != 0; }
     C4_ALWAYS_INLINE bool has_key_tag()       const noexcept { return (type & KEYTAG) != 0; }
     C4_ALWAYS_INLINE bool has_val_tag()       const noexcept { return (type & VALTAG) != 0; }
     C4_ALWAYS_INLINE bool has_key_anchor()    const noexcept { return (type & KEYANCH) != 0; }
@@ -21204,9 +22427,9 @@ RYML_EXPORT bool is_custom_tag(csubstr tag);
 
 struct RYML_EXPORT TagDirective
 {
-    /** Eg `!e!` in `%TAG !e! tag:example.com,2000:app/` */
+    /** Eg <pre>!e!</pre> in <pre>%TAG !e! tag:example.com,2000:app/</pre> */
     csubstr handle;
-    /** Eg `tag:example.com,2000:app/` in `%TAG !e! tag:example.com,2000:app/` */
+    /** Eg <pre>tag:example.com,2000:app/</pre> in <pre>%TAG !e! tag:example.com,2000:app/</pre> */
     csubstr prefix;
     /** The next node to which this tag directive applies */
     id_type next_node_id;
@@ -21326,57 +22549,16 @@ C4_SUPPRESS_WARNING_GCC("-Wtype-limits")
 namespace c4 {
 namespace yml {
 
-/** encode a floating point value to a string. */
-template<class T>
-size_t to_chars_float(substr buf, T val)
-{
-    C4_SUPPRESS_WARNING_GCC_CLANG_WITH_PUSH("-Wfloat-equal");
-    static_assert(std::is_floating_point<T>::value, "must be floating point");
-    if(C4_UNLIKELY(std::isnan(val)))
-        return to_chars(buf, csubstr(".nan"));
-    else if(C4_UNLIKELY(val == std::numeric_limits<T>::infinity()))
-        return to_chars(buf, csubstr(".inf"));
-    else if(C4_UNLIKELY(val == -std::numeric_limits<T>::infinity()))
-        return to_chars(buf, csubstr("-.inf"));
-    return to_chars(buf, val);
-    C4_SUPPRESS_WARNING_GCC_CLANG_POP
-}
+template<class T> inline auto read(Tree const* C4_RESTRICT tree, id_type id, T *v) -> typename std::enable_if<!std::is_arithmetic<T>::value, bool>::type;
+template<class T> inline auto read(Tree const* C4_RESTRICT tree, id_type id, T *v) -> typename std::enable_if<std::is_arithmetic<T>::value && !std::is_floating_point<T>::value, bool>::type;
+template<class T> inline auto read(Tree const* C4_RESTRICT tree, id_type id, T *v) -> typename std::enable_if<std::is_floating_point<T>::value, bool>::type;
 
+template<class T> inline auto readkey(Tree const* C4_RESTRICT tree, id_type id, T *v) -> typename std::enable_if<!std::is_arithmetic<T>::value, bool>::type;
+template<class T> inline auto readkey(Tree const* C4_RESTRICT tree, id_type id, T *v) -> typename std::enable_if<std::is_arithmetic<T>::value && !std::is_floating_point<T>::value, bool>::type;
+template<class T> inline auto readkey(Tree const* C4_RESTRICT tree, id_type id, T *v) -> typename std::enable_if<std::is_floating_point<T>::value, bool>::type;
 
-/** decode a floating point from string. Accepts special values: .nan,
- * .inf, -.inf */
-template<class T>
-bool from_chars_float(csubstr buf, T *C4_RESTRICT val)
-{
-    static_assert(std::is_floating_point<T>::value, "must be floating point");
-    if(C4_LIKELY(from_chars(buf, val)))
-    {
-        return true;
-    }
-    else if(C4_UNLIKELY(buf.begins_with('+')))
-    {
-        return from_chars(buf.sub(1), val);
-    }
-    else if(C4_UNLIKELY(buf == ".nan" || buf == ".NaN" || buf == ".NAN"))
-    {
-        *val = std::numeric_limits<T>::quiet_NaN();
-        return true;
-    }
-    else if(C4_UNLIKELY(buf == ".inf" || buf == ".Inf" || buf == ".INF"))
-    {
-        *val = std::numeric_limits<T>::infinity();
-        return true;
-    }
-    else if(C4_UNLIKELY(buf == "-.inf" || buf == "-.Inf" || buf == "-.INF"))
-    {
-        *val = -std::numeric_limits<T>::infinity();
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
+template<class T> size_t to_chars_float(substr buf, T val);
+template<class T> bool from_chars_float(csubstr buf, T *C4_RESTRICT val);
 
 
 //-----------------------------------------------------------------------------
@@ -21399,17 +22581,17 @@ struct NodeScalar
 public:
 
     /// initialize as an empty scalar
-    inline NodeScalar() noexcept : tag(), scalar(), anchor() {}
+    NodeScalar() noexcept : tag(), scalar(), anchor() {} // NOLINT
 
     /// initialize as an untagged scalar
     template<size_t N>
-    inline NodeScalar(const char (&s)[N]) noexcept : tag(), scalar(s), anchor() {}
-    inline NodeScalar(csubstr      s    ) noexcept : tag(), scalar(s), anchor() {}
+    NodeScalar(const char (&s)[N]) noexcept : tag(), scalar(s), anchor() {}
+    NodeScalar(csubstr      s    ) noexcept : tag(), scalar(s), anchor() {}
 
     /// initialize as a tagged scalar
     template<size_t N, size_t M>
-    inline NodeScalar(const char (&t)[N], const char (&s)[N]) noexcept : tag(t), scalar(s), anchor() {}
-    inline NodeScalar(csubstr      t    , csubstr      s    ) noexcept : tag(t), scalar(s), anchor() {}
+    NodeScalar(const char (&t)[N], const char (&s)[N]) noexcept : tag(t), scalar(s), anchor() {}
+    NodeScalar(csubstr      t    , csubstr      s    ) noexcept : tag(t), scalar(s), anchor() {}
 
 public:
 
@@ -21545,7 +22727,7 @@ public:
     Tree(Tree     && that) noexcept;
 
     Tree& operator= (Tree const& that);
-    Tree& operator= (Tree     && that) RYML_NOEXCEPT;
+    Tree& operator= (Tree     && that) noexcept;
 
     /** @} */
 
@@ -21560,13 +22742,13 @@ public:
      * @note does NOT clear the arena
      * @see clear_arena() */
     void clear();
-    inline void clear_arena() { m_arena_pos = 0; }
+    void clear_arena() { m_arena_pos = 0; }
 
-    inline bool   empty() const { return m_size == 0; }
+    bool empty() const { return m_size == 0; }
 
-    inline id_type size() const { return m_size; }
-    inline id_type capacity() const { return m_cap; }
-    inline id_type slack() const { RYML_ASSERT(m_cap >= m_size); return m_cap - m_size; }
+    id_type size() const { return m_size; }
+    id_type capacity() const { return m_cap; }
+    id_type slack() const { RYML_ASSERT(m_cap >= m_size); return m_cap - m_size; }
 
     Callbacks const& callbacks() const { return m_callbacks; }
     void callbacks(Callbacks const& cb) { m_callbacks = cb; }
@@ -21590,7 +22772,7 @@ public:
 
     //! get a pointer to a node's NodeData.
     //! i can be NONE, in which case a nullptr is returned
-    inline NodeData *get(id_type node)
+    NodeData *get(id_type node) // NOLINT(readability-make-member-function-const)
     {
         if(node == NONE)
             return nullptr;
@@ -21599,7 +22781,7 @@ public:
     }
     //! get a pointer to a node's NodeData.
     //! i can be NONE, in which case a nullptr is returned.
-    inline NodeData const *get(id_type node) const
+    NodeData const *get(id_type node) const
     {
         if(node == NONE)
             return nullptr;
@@ -21609,10 +22791,10 @@ public:
 
     //! An if-less form of get() that demands a valid node index.
     //! This function is implementation only; use at your own risk.
-    inline NodeData       * _p(id_type node)       { _RYML_CB_ASSERT(m_callbacks, node != NONE && node >= 0 && node < m_cap); return m_buf + node; }
+    NodeData       * _p(id_type node)       { _RYML_CB_ASSERT(m_callbacks, node != NONE && node >= 0 && node < m_cap); return m_buf + node; } // NOLINT(readability-make-member-function-const)
     //! An if-less form of get() that demands a valid node index.
     //! This function is implementation only; use at your own risk.
-    inline NodeData const * _p(id_type node) const { _RYML_CB_ASSERT(m_callbacks, node != NONE && node >= 0 && node < m_cap); return m_buf + node; }
+    NodeData const * _p(id_type node) const { _RYML_CB_ASSERT(m_callbacks, node != NONE && node >= 0 && node < m_cap); return m_buf + node; }
 
     //! Get the id of the root node
     id_type root_id()       { if(m_cap == 0) { reserve(16); } _RYML_CB_ASSERT(m_callbacks, m_cap > 0 && m_size > 0); return 0; }
@@ -21714,14 +22896,14 @@ public:
     /** true when the node has an anchor named a */
     C4_ALWAYS_INLINE bool has_anchor(id_type node, csubstr a) const { return _p(node)->m_key.anchor == a || _p(node)->m_val.anchor == a; }
 
-    /** true if the node key does not have any KEYQUO flags, and its scalar verifies scalar_is_null().
-     * @warning the node must verify .has_key() (asserted) (ie must be a member of a map)
+    /** true if the node key is empty, or its scalar verifies @ref scalar_is_null().
+     * @warning the node must verify @ref Tree::has_key() (asserted) (ie must be a member of a map)
      * @see https://github.com/biojppm/rapidyaml/issues/413 */
-    C4_ALWAYS_INLINE bool key_is_null(id_type node) const { _RYML_CB_ASSERT(m_callbacks, has_key(node)); NodeData const* C4_RESTRICT n = _p(node); return !n->m_type.is_key_quoted() && scalar_is_null(n->m_key.scalar); }
-    /** true if the node key does not have any VALQUO flags, and its scalar verifies scalar_is_null().
-     * @warning the node must verify .has_val() (asserted) (ie must be a scalar / must not be a container)
+    C4_ALWAYS_INLINE bool key_is_null(id_type node) const { _RYML_CB_ASSERT(m_callbacks, has_key(node)); NodeData const* C4_RESTRICT n = _p(node); return !n->m_type.is_key_quoted() && (n->m_type.key_is_null() || scalar_is_null(n->m_key.scalar)); }
+    /** true if the node val is empty, or its scalar verifies @ref scalar_is_null().
+     * @warning the node must verify @ref Tree::has_val() (asserted) (ie must be a scalar / must not be a container)
      * @see https://github.com/biojppm/rapidyaml/issues/413 */
-    C4_ALWAYS_INLINE bool val_is_null(id_type node) const { _RYML_CB_ASSERT(m_callbacks, has_val(node)); NodeData const* C4_RESTRICT n = _p(node); return !n->m_type.is_val_quoted() && scalar_is_null(n->m_val.scalar); }
+    C4_ALWAYS_INLINE bool val_is_null(id_type node) const { _RYML_CB_ASSERT(m_callbacks, has_val(node)); NodeData const* C4_RESTRICT n = _p(node); return !n->m_type.is_val_quoted() && (n->m_type.val_is_null() || scalar_is_null(n->m_val.scalar)); }
 
     /// true if the key was a scalar requiring filtering and was left
     /// unfiltered during the parsing (see ParserOptions)
@@ -21772,7 +22954,7 @@ public:
         return false;
     }
 
-    RYML_DEPRECATED("use has_other_siblings()") bool has_siblings(id_type /*node*/) const { return true; }
+    RYML_DEPRECATED("use has_other_siblings()") static bool has_siblings(id_type /*node*/) { return true; }
 
     /** @} */
 
@@ -22001,7 +23183,7 @@ public:
 public:
 
     /** remove an entire branch at once: ie remove the children and the node itself */
-    inline void remove(id_type node)
+    void remove(id_type node)
     {
         remove_children(node);
         _release(node);
@@ -22111,16 +23293,16 @@ public:
     /** get the current size of the tree's internal arena */
     RYML_DEPRECATED("use arena_size() instead") size_t arena_pos() const { return m_arena_pos; }
     /** get the current size of the tree's internal arena */
-    inline size_t arena_size() const { return m_arena_pos; }
+    size_t arena_size() const { return m_arena_pos; }
     /** get the current capacity of the tree's internal arena */
-    inline size_t arena_capacity() const { return m_arena.len; }
+    size_t arena_capacity() const { return m_arena.len; }
     /** get the current slack of the tree's internal arena */
-    inline size_t arena_slack() const { _RYML_CB_ASSERT(m_callbacks, m_arena.len >= m_arena_pos); return m_arena.len - m_arena_pos; }
+    size_t arena_slack() const { _RYML_CB_ASSERT(m_callbacks, m_arena.len >= m_arena_pos); return m_arena.len - m_arena_pos; }
 
     /** get the current arena */
     csubstr arena() const { return m_arena.first(m_arena_pos); }
     /** get the current arena */
-    substr arena() { return m_arena.first(m_arena_pos); }
+    substr arena() { return m_arena.first(m_arena_pos); } // NOLINT(readability-make-member-function-const)
 
     /** return true if the given substring is part of the tree's string arena */
     bool in_arena(csubstr s) const
@@ -22135,12 +23317,12 @@ public:
      * existing arena, and thus change the contents of individual
      * nodes, and thus cost O(numnodes)+O(arenasize). To avoid this
      * cost, ensure that the arena is reserved to an appropriate size
-     * using .reserve_arena()
+     * using @ref Tree::reserve_arena().
      *
      * @see alloc_arena() */
     template<class T>
-    typename std::enable_if<std::is_floating_point<T>::value, csubstr>::type
-    to_arena(T const& C4_RESTRICT a)
+    auto to_arena(T const& C4_RESTRICT a)
+        -> typename std::enable_if<std::is_floating_point<T>::value, csubstr>::type
     {
         substr rem(m_arena.sub(m_arena_pos));
         size_t num = to_chars_float(rem, a);
@@ -22161,12 +23343,12 @@ public:
      * existing arena, and thus change the contents of individual
      * nodes, and thus cost O(numnodes)+O(arenasize). To avoid this
      * cost, ensure that the arena is reserved to an appropriate size
-     * using .reserve_arena()
+     * using @ref Tree::reserve_arena().
      *
      * @see alloc_arena() */
     template<class T>
-    typename std::enable_if<!std::is_floating_point<T>::value, csubstr>::type
-    to_arena(T const& C4_RESTRICT a)
+    auto to_arena(T const& C4_RESTRICT a)
+        -> typename std::enable_if<!std::is_floating_point<T>::value, csubstr>::type
     {
         substr rem(m_arena.sub(m_arena_pos));
         size_t num = to_chars(rem, a);
@@ -22187,7 +23369,7 @@ public:
      * existing arena, and thus change the contents of individual
      * nodes, and thus cost O(numnodes)+O(arenasize). To avoid this
      * cost, ensure that the arena is reserved to an appropriate size
-     * using .reserve_arena()
+     * using @ref Tree::reserve_arena().
      *
      * @see alloc_arena() */
     csubstr to_arena(csubstr a)
@@ -22225,7 +23407,7 @@ public:
     {
         return to_arena(to_csubstr(s));
     }
-    C4_ALWAYS_INLINE csubstr to_arena(std::nullptr_t)
+    C4_ALWAYS_INLINE static csubstr to_arena(std::nullptr_t)
     {
         return csubstr{};
     }
@@ -22237,9 +23419,11 @@ public:
      * existing arena, and thus change the contents of individual
      * nodes, and thus cost O(numnodes)+O(arenasize). To avoid this
      * cost, ensure that the arena is reserved to an appropriate size
-     * using .reserve_arena()
+     * before using @ref Tree::reserve_arena()
      *
-     * @see alloc_arena() */
+     * @see reserve_arena()
+     * @see alloc_arena()
+     */
     substr copy_to_arena(csubstr s)
     {
         substr cp = alloc_arena(s.len);
@@ -22248,7 +23432,7 @@ public:
         #if (!defined(__clang__)) && (defined(__GNUC__) && __GNUC__ >= 10)
         C4_SUPPRESS_WARNING_GCC_PUSH
         C4_SUPPRESS_WARNING_GCC("-Wstringop-overflow=") // no need for terminating \0
-        C4_SUPPRESS_WARNING_GCC( "-Wrestrict") // there's an assert to ensure no violation of restrict behavior
+        C4_SUPPRESS_WARNING_GCC("-Wrestrict") // there's an assert to ensure no violation of restrict behavior
         #endif
         if(s.len)
             memcpy(cp.str, s.str, s.len);
@@ -22342,7 +23526,7 @@ public:
         size_t  path_pos;
         csubstr path;
 
-        inline operator bool() const { return target != NONE; }
+        operator bool() const { return target != NONE; }
 
         lookup_result() : target(NONE), closest(NONE), path_pos(0), path() {}
         lookup_result(csubstr path_, id_type start) : target(NONE), closest(start), path_pos(0), path(path_) {}
@@ -22378,7 +23562,7 @@ private:
         NodeType type;
         _lookup_path_token() : value(), type() {}
         _lookup_path_token(csubstr v, NodeType t) : value(v), type(t) {}
-        inline operator bool() const { return type != NOTYPE; }
+        operator bool() const { return type != NOTYPE; }
         bool is_index() const { return value.begins_with('[') && value.ends_with(']'); }
     };
 
@@ -22390,7 +23574,7 @@ private:
     id_type _next_node       (lookup_result *r, _lookup_path_token *parent) const;
     id_type _next_node_modify(lookup_result *r, _lookup_path_token *parent);
 
-    void   _advance(lookup_result *r, size_t more) const;
+    static void _advance(lookup_result *r, size_t more);
 
     _lookup_path_token _next_token(lookup_result *r, _lookup_path_token const& parent) const;
 
@@ -22412,7 +23596,7 @@ public:
     #else
     void _check_next_flags(id_type node, type_bits f)
     {
-        auto n = _p(node);
+        NodeData *n = _p(node);
         type_bits o = n->m_type; // old
         C4_UNUSED(o);
         if(f & MAP)
@@ -22443,14 +23627,14 @@ public:
     }
     #endif
 
-    inline void _set_flags(id_type node, NodeType_e f) { _check_next_flags(node, f); _p(node)->m_type = f; }
-    inline void _set_flags(id_type node, type_bits  f) { _check_next_flags(node, f); _p(node)->m_type = f; }
+    void _set_flags(id_type node, NodeType_e f) { _check_next_flags(node, f); _p(node)->m_type = f; }
+    void _set_flags(id_type node, type_bits  f) { _check_next_flags(node, f); _p(node)->m_type = f; }
 
-    inline void _add_flags(id_type node, NodeType_e f) { NodeData *d = _p(node); type_bits fb = f |  d->m_type; _check_next_flags(node, fb); d->m_type = (NodeType_e) fb; }
-    inline void _add_flags(id_type node, type_bits  f) { NodeData *d = _p(node);                f |= d->m_type; _check_next_flags(node,  f); d->m_type = f; }
+    void _add_flags(id_type node, NodeType_e f) { NodeData *d = _p(node); type_bits fb = f |  d->m_type; _check_next_flags(node, fb); d->m_type = (NodeType_e) fb; }
+    void _add_flags(id_type node, type_bits  f) { NodeData *d = _p(node);                f |= d->m_type; _check_next_flags(node,  f); d->m_type = f; }
 
-    inline void _rem_flags(id_type node, NodeType_e f) { NodeData *d = _p(node); type_bits fb = d->m_type & ~f; _check_next_flags(node, fb); d->m_type = (NodeType_e) fb; }
-    inline void _rem_flags(id_type node, type_bits  f) { NodeData *d = _p(node);            f = d->m_type & ~f; _check_next_flags(node,  f); d->m_type = f; }
+    void _rem_flags(id_type node, NodeType_e f) { NodeData *d = _p(node); type_bits fb = d->m_type & ~f; _check_next_flags(node, fb); d->m_type = (NodeType_e) fb; }
+    void _rem_flags(id_type node, type_bits  f) { NodeData *d = _p(node);            f = d->m_type & ~f; _check_next_flags(node,  f); d->m_type = f; }
 
     void _set_key(id_type node, csubstr key, type_bits more_flags=0)
     {
@@ -22541,12 +23725,12 @@ public:
     void _swap_hierarchy(id_type n_, id_type m_);
     void _copy_hierarchy(id_type dst_, id_type src_);
 
-    inline void _copy_props(id_type dst_, id_type src_)
+    void _copy_props(id_type dst_, id_type src_)
     {
         _copy_props(dst_, this, src_);
     }
 
-    inline void _copy_props_wo_key(id_type dst_, id_type src_)
+    void _copy_props_wo_key(id_type dst_, id_type src_)
     {
         _copy_props_wo_key(dst_, this, src_);
     }
@@ -22585,12 +23769,12 @@ public:
         dst.m_val  = src.m_val;
     }
 
-    inline void _clear_type(id_type node)
+    void _clear_type(id_type node)
     {
         _p(node)->m_type = NOTYPE;
     }
 
-    inline void _clear(id_type node)
+    void _clear(id_type node)
     {
         auto *C4_RESTRICT n = _p(node);
         n->m_type = NOTYPE;
@@ -22601,13 +23785,13 @@ public:
         n->m_last_child = NONE;
     }
 
-    inline void _clear_key(id_type node)
+    void _clear_key(id_type node)
     {
         _p(node)->m_key.clear();
         _rem_flags(node, KEY);
     }
 
-    inline void _clear_val(id_type node)
+    void _clear_val(id_type node)
     {
         _p(node)->m_val.clear();
         _rem_flags(node, VAL);
@@ -22651,7 +23835,213 @@ public:
 
 };
 
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+/** @defgroup doc_serialization_helpers Serialization helpers
+ *
+ * @{
+ */
+
+
+// NON-ARITHMETIC -------------------------------------------------------------
+
+/** convert the val of a scalar node to a particular non-arithmetic
+ * non-float type, by forwarding its val to @ref from_chars<T>(). The
+ * full string is used.
+ * @return false if the conversion failed, or if the key was empty and unquoted */
+template<class T>
+inline auto read(Tree const* C4_RESTRICT tree, id_type id, T *v)
+    -> typename std::enable_if<!std::is_arithmetic<T>::value, bool>::type
+{
+    return C4_LIKELY(!(tree->type(id) & VALNIL)) ? from_chars(tree->val(id), v) : false;
+}
+
+/** convert the key of a node to a particular non-arithmetic
+ * non-float type, by forwarding its key to @ref from_chars<T>(). The
+ * full string is used.
+ * @return false if the conversion failed, or if the key was empty and unquoted */
+template<class T>
+inline auto readkey(Tree const* C4_RESTRICT tree, id_type id, T *v)
+    -> typename std::enable_if<!std::is_arithmetic<T>::value, bool>::type
+{
+    return C4_LIKELY(!(tree->type(id) & KEYNIL)) ? from_chars(tree->key(id), v) : false;
+}
+
+
+// INTEGRAL, NOT FLOATING -------------------------------------------------------------
+
+/** convert the val of a scalar node to a particular arithmetic
+ * integral non-float type, by forwarding its val to @ref
+ * from_chars<T>(). The full string is used.
+ *
+ * @return false if the conversion failed */
+template<class T>
+inline auto read(Tree const* C4_RESTRICT tree, id_type id, T *v)
+    -> typename std::enable_if<std::is_arithmetic<T>::value && !std::is_floating_point<T>::value, bool>::type
+{
+    using U = typename std::remove_cv<T>::type;
+    enum { ischar = std::is_same<char, U>::value || std::is_same<signed char, U>::value || std::is_same<unsigned char, U>::value };
+    csubstr val = tree->val(id);
+    NodeType ty = tree->type(id);
+    if(C4_UNLIKELY((ty & VALNIL) || val.empty()))
+        return false;
+    // quote integral numbers if they have a leading 0
+    // https://github.com/biojppm/rapidyaml/issues/291
+    char first = val[0];
+    if(ty.is_val_quoted() && (first != '0' && !ischar))
+        return false;
+    else if(first == '+')
+        val = val.sub(1);
+    return from_chars(val, v);
+}
+
+/** convert the key of a node to a particular arithmetic
+ * integral non-float type, by forwarding its val to @ref
+ * from_chars<T>(). The full string is used.
+ *
+ * @return false if the conversion failed */
+template<class T>
+inline auto readkey(Tree const* C4_RESTRICT tree, id_type id, T *v)
+    -> typename std::enable_if<std::is_arithmetic<T>::value && !std::is_floating_point<T>::value, bool>::type
+{
+    using U = typename std::remove_cv<T>::type;
+    enum { ischar = std::is_same<char, U>::value || std::is_same<signed char, U>::value || std::is_same<unsigned char, U>::value };
+    csubstr key = tree->key(id);
+    NodeType ty = tree->type(id);
+    if((ty & KEYNIL) || key.empty())
+        return false;
+    // quote integral numbers if they have a leading 0
+    // https://github.com/biojppm/rapidyaml/issues/291
+    char first = key[0];
+    if(ty.is_key_quoted() && (first != '0' && !ischar))
+        return false;
+    else if(first == '+')
+        key = key.sub(1);
+    return from_chars(key, v);
+}
+
+
+// FLOATING -------------------------------------------------------------
+
+/** encode a floating point value to a string. */
+template<class T>
+size_t to_chars_float(substr buf, T val)
+{
+    static_assert(std::is_floating_point<T>::value, "must be floating point");
+    C4_SUPPRESS_WARNING_GCC_CLANG_WITH_PUSH("-Wfloat-equal");
+    if(C4_UNLIKELY(std::isnan(val)))
+        return to_chars(buf, csubstr(".nan"));
+    else if(C4_UNLIKELY(val == std::numeric_limits<T>::infinity()))
+        return to_chars(buf, csubstr(".inf"));
+    else if(C4_UNLIKELY(val == -std::numeric_limits<T>::infinity()))
+        return to_chars(buf, csubstr("-.inf"));
+    return to_chars(buf, val);
+    C4_SUPPRESS_WARNING_GCC_CLANG_POP
+}
+
+
+/** decode a floating point from string. Accepts special values: .nan,
+ * .inf, -.inf */
+template<class T>
+bool from_chars_float(csubstr buf, T *C4_RESTRICT val)
+{
+    static_assert(std::is_floating_point<T>::value, "must be floating point");
+    if(buf.begins_with('+'))
+    {
+        buf = buf.sub(1);
+    }
+    if(C4_LIKELY(from_chars(buf, val)))
+    {
+        return true;
+    }
+    else if(C4_UNLIKELY(buf == ".nan" || buf == ".NaN" || buf == ".NAN"))
+    {
+        *val = std::numeric_limits<T>::quiet_NaN();
+        return true;
+    }
+    else if(C4_UNLIKELY(buf == ".inf" || buf == ".Inf" || buf == ".INF"))
+    {
+        *val = std::numeric_limits<T>::infinity();
+        return true;
+    }
+    else if(C4_UNLIKELY(buf == "-.inf" || buf == "-.Inf" || buf == "-.INF"))
+    {
+        *val = -std::numeric_limits<T>::infinity();
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+/** convert the val of a scalar node to a floating point type, by
+ * forwarding its val to @ref from_chars_float<T>().
+ *
+ * @return false if the conversion failed
+ *
+ * @warning Unlike non-floating types, only the leading part of the
+ * string that may constitute a number is processed. This happens
+ * because the float parsing is delegated to fast_float, which is
+ * implemented that way. Consequently, for example, all of `"34"`,
+ * `"34 "` `"34hg"` `"34 gh"` will be read as 34. If you are not sure
+ * about the contents of the data, you can use
+ * csubstr::first_real_span() to check before calling `>>`, for
+ * example like this:
+ *
+ * ```cpp
+ * csubstr val = node.val();
+ * if(val.first_real_span() == val)
+ *     node >> v;
+ * else
+ *     ERROR("not a real")
+ * ```
+ */
+template<class T>
+typename std::enable_if<std::is_floating_point<T>::value, bool>::type
+inline read(Tree const* C4_RESTRICT tree, id_type id, T *v)
+{
+    csubstr val = tree->val(id);
+    return C4_LIKELY(!val.empty()) ? from_chars_float(val, v) : false;
+}
+
+/** convert the key of a scalar node to a floating point type, by
+ * forwarding its key to @ref from_chars_float<T>().
+ *
+ * @return false if the conversion failed
+ *
+ * @warning Unlike non-floating types, only the leading part of the
+ * string that may constitute a number is processed. This happens
+ * because the float parsing is delegated to fast_float, which is
+ * implemented that way. Consequently, for example, all of `"34"`,
+ * `"34 "` `"34hg"` `"34 gh"` will be read as 34. If you are not sure
+ * about the contents of the data, you can use
+ * csubstr::first_real_span() to check before calling `>>`, for
+ * example like this:
+ *
+ * ```cpp
+ * csubstr key = node.key();
+ * if(key.first_real_span() == key)
+ *     node >> v;
+ * else
+ *     ERROR("not a real")
+ * ```
+ */
+template<class T>
+typename std::enable_if<std::is_floating_point<T>::value, bool>::type
+inline readkey(Tree const* C4_RESTRICT tree, id_type id, T *v)
+{
+    csubstr key = tree->key(id);
+    return C4_LIKELY(!key.empty()) ? from_chars_float(key, v) : false;
+}
+
 /** @} */
+
+/** @} */
+
 
 } // namespace yml
 } // namespace c4
@@ -22726,7 +24116,7 @@ namespace yml {
  *
  * @{
  */
-template<class K> struct Key { K & k; };
+template<class K> struct Key { K & k; }; // NOLINT
 template<> struct Key<fmt::const_base64_wrapper> { fmt::const_base64_wrapper wrapper; };
 template<> struct Key<fmt::base64_wrapper> { fmt::base64_wrapper wrapper; };
 
@@ -22734,15 +24124,13 @@ template<class K> C4_ALWAYS_INLINE Key<K> key(K & k) { return Key<K>{k}; }
 C4_ALWAYS_INLINE Key<fmt::const_base64_wrapper> key(fmt::const_base64_wrapper w) { return {w}; }
 C4_ALWAYS_INLINE Key<fmt::base64_wrapper> key(fmt::base64_wrapper w) { return {w}; }
 
+
 template<class T> void write(NodeRef *n, T const& v);
 
-template<class T>
-typename std::enable_if< ! std::is_floating_point<T>::value, bool>::type
-read(NodeRef const& n, T *v);
-
-template<class T>
-typename std::enable_if<   std::is_floating_point<T>::value, bool>::type
-read(NodeRef const& n, T *v);
+template<class T> inline bool read(ConstNodeRef const& C4_RESTRICT n, T *v);
+template<class T> inline bool read(NodeRef const& C4_RESTRICT n, T *v);
+template<class T> inline bool readkey(ConstNodeRef const& C4_RESTRICT n, T *v);
+template<class T> inline bool readkey(NodeRef const& C4_RESTRICT n, T *v);
 
 /** @} */
 
@@ -22791,11 +24179,11 @@ struct children_view_
 
     n_iterator b, e;
 
-    inline children_view_(n_iterator const& C4_RESTRICT b_,
+    children_view_(n_iterator const& C4_RESTRICT b_,
                           n_iterator const& C4_RESTRICT e_) : b(b_), e(e_) {}
 
-    inline n_iterator begin() const { return b; }
-    inline n_iterator end  () const { return e; }
+    n_iterator begin() const { return b; }
+    n_iterator end  () const { return e; }
 };
 
 template<class NodeRefType, class Visitor>
@@ -23018,8 +24406,7 @@ public:
 
     template<class U=Impl>
     C4_ALWAYS_INLINE auto doc(id_type i) RYML_NOEXCEPT -> _C4_IF_MUTABLE(Impl) { RYML_ASSERT(tree_); return {tree__, tree__->doc(i)}; } /**< Forward to @ref Tree::doc(). Node must be readable. */
-    /** succeeds even when the node may have invalid or seed id */
-    C4_ALWAYS_INLINE ConstImpl doc(id_type i) const RYML_NOEXCEPT { RYML_ASSERT(tree_); return {tree_, tree_->doc(i)}; }                /**< Forward to @ref Tree::doc(). Node must be readable. */
+    C4_ALWAYS_INLINE ConstImpl doc(id_type i) const RYML_NOEXCEPT { RYML_ASSERT(tree_); return {tree_, tree_->doc(i)}; }                /**< Forward to @ref Tree::doc(). Node must be readable. succeeds even when the node may have invalid or seed id */
 
     template<class U=Impl>
     C4_ALWAYS_INLINE auto parent() RYML_NOEXCEPT -> _C4_IF_MUTABLE(Impl) { _C4RR(); return {tree__, tree__->parent(id__)}; } /**< Forward to @ref Tree::parent(). Node must be readable. */
@@ -23323,41 +24710,10 @@ public:
     ConstImpl const& operator>> (Key<T> v) const
     {
         _C4RR();
-        if(key().empty() || ! from_chars(key(), &v.k))
+        if( ! readkey((ConstImpl const&)*this, &v.k))
             _RYML_CB_ERR(tree_->m_callbacks, "could not deserialize key");
         return *((ConstImpl const*)this);
     }
-
-    /** deserialize the node's key as base64. lightweight wrapper over @ref deserialize_key() */
-    ConstImpl const& operator>> (Key<fmt::base64_wrapper> w) const
-    {
-        deserialize_key(w.wrapper);
-        return *((ConstImpl const*)this);
-    }
-
-    /** deserialize the node's val as base64. lightweight wrapper over @ref deserialize_val() */
-    ConstImpl const& operator>> (fmt::base64_wrapper w) const
-    {
-        deserialize_val(w);
-        return *((ConstImpl const*)this);
-    }
-
-    /** decode the base64-encoded key and assign the
-     * decoded blob to the given buffer/
-     * @return the size of base64-decoded blob */
-    size_t deserialize_key(fmt::base64_wrapper v) const
-    {
-        _C4RR();
-        return from_chars(key(), &v);
-    }
-    /** decode the base64-encoded key and assign the
-     * decoded blob to the given buffer/
-     * @return the size of base64-decoded blob */
-    size_t deserialize_val(fmt::base64_wrapper v) const
-    {
-        _C4RR();
-        return from_chars(val(), &v);
-    };
 
     /** look for a child by name, if it exists assign to var. return
      * true if the child existed. */
@@ -23391,6 +24747,42 @@ public:
             return false;
         }
     }
+
+    /** @name deserialization_base64 */
+    /** @{ */
+
+    /** deserialize the node's key as base64. lightweight wrapper over @ref deserialize_key() */
+    ConstImpl const& operator>> (Key<fmt::base64_wrapper> w) const
+    {
+        deserialize_key(w.wrapper);
+        return *((ConstImpl const*)this);
+    }
+
+    /** deserialize the node's val as base64. lightweight wrapper over @ref deserialize_val() */
+    ConstImpl const& operator>> (fmt::base64_wrapper w) const
+    {
+        deserialize_val(w);
+        return *((ConstImpl const*)this);
+    }
+
+    /** decode the base64-encoded key and assign the
+     * decoded blob to the given buffer/
+     * @return the size of base64-decoded blob */
+    size_t deserialize_key(fmt::base64_wrapper v) const
+    {
+        _C4RR();
+        return from_chars(key(), &v);
+    }
+    /** decode the base64-encoded key and assign the
+     * decoded blob to the given buffer/
+     * @return the size of base64-decoded blob */
+    size_t deserialize_val(fmt::base64_wrapper v) const
+    {
+        _C4RR();
+        return from_chars(val(), &v);
+    };
+
+    /** @} */
 
     /** @} */
 
@@ -23522,7 +24914,7 @@ public:
  *
  * @warning The lifetime of the tree must be larger than that of this
  * object. It is up to the user to ensure that this happens. */
-class RYML_EXPORT ConstNodeRef : public detail::RoNodeMethods<ConstNodeRef, ConstNodeRef>
+class RYML_EXPORT ConstNodeRef : public detail::RoNodeMethods<ConstNodeRef, ConstNodeRef> // NOLINT
 {
 public:
 
@@ -23550,8 +24942,8 @@ public:
     ConstNodeRef(ConstNodeRef const&) noexcept = default;
     ConstNodeRef(ConstNodeRef     &&) noexcept = default;
 
-    ConstNodeRef(NodeRef const&) noexcept;
-    ConstNodeRef(NodeRef     &&) noexcept;
+    inline ConstNodeRef(NodeRef const&) noexcept;
+    inline ConstNodeRef(NodeRef     &&) noexcept;
 
     /** @} */
 
@@ -23625,6 +25017,8 @@ public:
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
+// NOLINTBEGIN(cppcoreguidelines-c-copy-assignment-signature,misc-unconventional-assign-operator)
+
 /** A reference to a node in an existing yaml tree, offering a more
  * convenient API than the index-based API used in the tree.
  *
@@ -23661,7 +25055,7 @@ public:
  * @warning The lifetime of the tree must be larger than that of this
  * object. It is up to the user to ensure that this happens.
  */
-class RYML_EXPORT NodeRef : public detail::RoNodeMethods<NodeRef, ConstNodeRef>
+class RYML_EXPORT NodeRef : public detail::RoNodeMethods<NodeRef, ConstNodeRef> // NOLINT
 {
 public:
 
@@ -23710,7 +25104,7 @@ public:
     NodeRef(Tree *t, id_type id, csubstr  seed_key) noexcept : m_tree(t), m_id(id), m_seed(seed_key) {}
     NodeRef(std::nullptr_t) noexcept : m_tree(nullptr), m_id(NONE), m_seed() {}
 
-    inline void _clear_seed() noexcept { /*do the following manually or an assert is triggered: */ m_seed.str = nullptr; m_seed.len = npos; }
+    void _clear_seed() noexcept { /*do the following manually or an assert is triggered: */ m_seed.str = nullptr; m_seed.len = npos; }
 
     /** @} */
 
@@ -23733,11 +25127,11 @@ public:
      * @{ */
 
     /** true if the object is not referring to any existing or seed node. @see the doc for @ref NodeRef */
-    inline bool invalid() const noexcept { return m_tree == nullptr || m_id == NONE; }
+    bool invalid() const noexcept { return m_tree == nullptr || m_id == NONE; }
     /** true if the object is not invalid and in seed state. @see the doc for @ref NodeRef */
-    inline bool is_seed() const noexcept { return (m_tree != NULL && m_id != NONE) && (m_seed.str != nullptr || m_seed.len != (size_t)NONE); }
+    bool is_seed() const noexcept { return (m_tree != nullptr && m_id != NONE) && (m_seed.str != nullptr || m_seed.len != (size_t)NONE); }
     /** true if the object is not invalid and not in seed state. @see the doc for @ref NodeRef */
-    inline bool readable() const noexcept { return (m_tree != NULL && m_id != NONE) && (m_seed.str == nullptr && m_seed.len == (size_t)NONE); }
+    bool readable() const noexcept { return (m_tree != nullptr && m_id != NONE) && (m_seed.str == nullptr && m_seed.len == (size_t)NONE); }
 
     RYML_DEPRECATED("use one of readable(), is_seed() or !invalid()") inline bool valid() const { return m_tree != nullptr && m_id != NONE; }
 
@@ -23766,10 +25160,10 @@ public:
         }
         return false;
     }
-    inline bool operator!= (NodeRef const& that) const { return ! this->operator==(that); }
+    bool operator!= (NodeRef const& that) const { return ! this->operator==(that); }
 
-    inline bool operator== (ConstNodeRef const& that) const { return m_tree == that.m_tree && m_id == that.m_id && !is_seed(); }
-    inline bool operator!= (ConstNodeRef const& that) const { return ! this->operator==(that); }
+    bool operator== (ConstNodeRef const& that) const { return m_tree == that.m_tree && m_id == that.m_id && !is_seed(); }
+    bool operator!= (ConstNodeRef const& that) const { return ! this->operator==(that); }
 
     /** @cond dev */
     RYML_DEPRECATED("use !readable()") bool operator== (std::nullptr_t) const { return m_tree == nullptr || m_id == NONE || is_seed(); }
@@ -23816,7 +25210,7 @@ public:
 
 public:
 
-    inline void clear()
+    void clear()
     {
         if(is_seed())
             return;
@@ -23824,65 +25218,65 @@ public:
         m_tree->_clear(m_id);
     }
 
-    inline void clear_key()
+    void clear_key()
     {
         if(is_seed())
             return;
         m_tree->_clear_key(m_id);
     }
 
-    inline void clear_val()
+    void clear_val()
     {
         if(is_seed())
             return;
         m_tree->_clear_val(m_id);
     }
 
-    inline void clear_children()
+    void clear_children()
     {
         if(is_seed())
             return;
         m_tree->remove_children(m_id);
     }
 
-    inline void operator= (NodeType_e t)
+    void operator= (NodeType_e t)
     {
         _apply_seed();
         m_tree->_add_flags(m_id, t);
     }
 
-    inline void operator|= (NodeType_e t)
+    void operator|= (NodeType_e t)
     {
         _apply_seed();
         m_tree->_add_flags(m_id, t);
     }
 
-    inline void operator= (NodeInit const& v)
+    void operator= (NodeInit const& v)
     {
         _apply_seed();
         _apply(v);
     }
 
-    inline void operator= (NodeScalar const& v)
+    void operator= (NodeScalar const& v)
     {
         _apply_seed();
         _apply(v);
     }
 
-    inline void operator= (std::nullptr_t)
+    void operator= (std::nullptr_t)
     {
         _apply_seed();
         _apply(csubstr{});
     }
 
-    inline void operator= (csubstr v)
+    void operator= (csubstr v)
     {
         _apply_seed();
         _apply(v);
     }
 
     template<size_t N>
-    inline void operator= (const char (&v)[N])
+    void operator= (const char (&v)[N])
     {
         _apply_seed();
         csubstr sv;
@@ -23899,7 +25293,7 @@ public:
 
     /** serialize a variable to the arena */
     template<class T>
-    inline csubstr to_arena(T const& C4_RESTRICT s)
+    csubstr to_arena(T const& C4_RESTRICT s)
     {
         RYML_ASSERT(m_tree); // no need for valid or readable
         return m_tree->to_arena(s);
@@ -23945,7 +25339,7 @@ public:
     size_t set_val_serialized(fmt::const_base64_wrapper w);
 
     /** serialize a variable, then assign the result to the node's val */
-    inline NodeRef& operator<< (csubstr s)
+    NodeRef& operator<< (csubstr s)
     {
         // this overload is needed to prevent ambiguity (there's also
         // operator<< for writing a substr to a stream)
@@ -23956,7 +25350,7 @@ public:
     }
 
     template<class T>
-    inline NodeRef& operator<< (T const& C4_RESTRICT v)
+    NodeRef& operator<< (T const& C4_RESTRICT v)
     {
         _apply_seed();
         write(this, v);
@@ -23965,7 +25359,7 @@ public:
 
     /** serialize a variable, then assign the result to the node's key */
     template<class T>
-    inline NodeRef& operator<< (Key<const T> const& C4_RESTRICT v)
+    NodeRef& operator<< (Key<const T> const& C4_RESTRICT v)
     {
         _apply_seed();
         set_key_serialized(v.k);
@@ -23974,7 +25368,7 @@ public:
 
     /** serialize a variable, then assign the result to the node's key */
     template<class T>
-    inline NodeRef& operator<< (Key<T> const& C4_RESTRICT v)
+    NodeRef& operator<< (Key<T> const& C4_RESTRICT v)
     {
         _apply_seed();
         set_key_serialized(v.k);
@@ -24020,17 +25414,17 @@ private:
         }
     }
 
-    inline void _apply(csubstr v)
+    void _apply(csubstr v)
     {
         m_tree->_set_val(m_id, v);
     }
 
-    inline void _apply(NodeScalar const& v)
+    void _apply(NodeScalar const& v)
     {
         m_tree->_set_val(m_id, v);
     }
 
-    inline void _apply(NodeInit const& i)
+    void _apply(NodeInit const& i)
     {
         m_tree->_set(m_id, i);
     }
@@ -24040,7 +25434,7 @@ public:
     /** @name modification of hierarchy */
     /** @{ */
 
-    inline NodeRef insert_child(NodeRef after)
+    NodeRef insert_child(NodeRef after)
     {
         _C4RR();
         _RYML_CB_ASSERT(m_tree->m_callbacks, after.m_tree == m_tree);
@@ -24048,7 +25442,7 @@ public:
         return r;
     }
 
-    inline NodeRef insert_child(NodeInit const& i, NodeRef after)
+    NodeRef insert_child(NodeInit const& i, NodeRef after)
     {
         _C4RR();
         _RYML_CB_ASSERT(m_tree->m_callbacks, after.m_tree == m_tree);
@@ -24057,14 +25451,14 @@ public:
         return r;
     }
 
-    inline NodeRef prepend_child()
+    NodeRef prepend_child()
     {
         _C4RR();
         NodeRef r(m_tree, m_tree->insert_child(m_id, NONE));
         return r;
     }
 
-    inline NodeRef prepend_child(NodeInit const& i)
+    NodeRef prepend_child(NodeInit const& i)
     {
         _C4RR();
         NodeRef r(m_tree, m_tree->insert_child(m_id, NONE));
@@ -24072,14 +25466,14 @@ public:
         return r;
     }
 
-    inline NodeRef append_child()
+    NodeRef append_child()
     {
         _C4RR();
         NodeRef r(m_tree, m_tree->append_child(m_id));
         return r;
     }
 
-    inline NodeRef append_child(NodeInit const& i)
+    NodeRef append_child(NodeInit const& i)
     {
         _C4RR();
         NodeRef r(m_tree, m_tree->append_child(m_id));
@@ -24087,7 +25481,7 @@ public:
         return r;
     }
 
-    inline NodeRef insert_sibling(ConstNodeRef const& after)
+    NodeRef insert_sibling(ConstNodeRef const& after)
     {
         _C4RR();
         _RYML_CB_ASSERT(m_tree->m_callbacks, after.m_tree == m_tree);
@@ -24095,7 +25489,7 @@ public:
         return r;
     }
 
-    inline NodeRef insert_sibling(NodeInit const& i, ConstNodeRef const& after)
+    NodeRef insert_sibling(NodeInit const& i, ConstNodeRef const& after)
     {
         _C4RR();
         _RYML_CB_ASSERT(m_tree->m_callbacks, after.m_tree == m_tree);
@@ -24104,14 +25498,14 @@ public:
         return r;
     }
 
-    inline NodeRef prepend_sibling()
+    NodeRef prepend_sibling()
     {
         _C4RR();
         NodeRef r(m_tree, m_tree->prepend_sibling(m_id));
         return r;
     }
 
-    inline NodeRef prepend_sibling(NodeInit const& i)
+    NodeRef prepend_sibling(NodeInit const& i)
     {
         _C4RR();
         NodeRef r(m_tree, m_tree->prepend_sibling(m_id));
@@ -24119,14 +25513,14 @@ public:
         return r;
     }
 
-    inline NodeRef append_sibling()
+    NodeRef append_sibling()
     {
         _C4RR();
         NodeRef r(m_tree, m_tree->append_sibling(m_id));
         return r;
     }
 
-    inline NodeRef append_sibling(NodeInit const& i)
+    NodeRef append_sibling(NodeInit const& i)
     {
         _C4RR();
         NodeRef r(m_tree, m_tree->append_sibling(m_id));
@@ -24136,7 +25530,7 @@ public:
 
 public:
 
-    inline void remove_child(NodeRef & child)
+    void remove_child(NodeRef & child)
     {
         _C4RR();
         _RYML_CB_ASSERT(m_tree->m_callbacks, has_child(child));
@@ -24146,7 +25540,7 @@ public:
     }
 
     //! remove the nth child of this node
-    inline void remove_child(id_type pos)
+    void remove_child(id_type pos)
     {
         _C4RR();
         _RYML_CB_ASSERT(m_tree->m_callbacks, pos >= 0 && pos < num_children());
@@ -24156,7 +25550,7 @@ public:
     }
 
     //! remove a child by name
-    inline void remove_child(csubstr key)
+    void remove_child(csubstr key)
     {
         _C4RR();
         id_type child = m_tree->find_child(m_id, key);
@@ -24170,7 +25564,7 @@ public:
      * @p after. To move to the first position in the parent, simply
      * pass an empty or default-constructed reference like this:
      * `n.move({})`. */
-    inline void move(ConstNodeRef const& after)
+    void move(ConstNodeRef const& after)
     {
         _C4RR();
         m_tree->move(m_id, after.m_id);
@@ -24180,7 +25574,7 @@ public:
      * different tree), placing it after @p after. When the
      * destination parent is in a new tree, then this node's tree
      * pointer is reset to the tree of the parent node. */
-    inline void move(NodeRef const& parent, ConstNodeRef const& after)
+    void move(NodeRef const& parent, ConstNodeRef const& after)
     {
         _C4RR();
         if(parent.m_tree == m_tree)
@@ -24198,7 +25592,7 @@ public:
      * place it after the node @p after. To place into the first
      * position of the parent, simply pass an empty or
      * default-constructed reference like this: `n.move({})`. */
-    inline NodeRef duplicate(ConstNodeRef const& after) const
+    NodeRef duplicate(ConstNodeRef const& after) const
     {
         _C4RR();
         _RYML_CB_ASSERT(m_tree->m_callbacks, m_tree == after.m_tree || after.m_id == NONE);
@@ -24212,7 +25606,7 @@ public:
      * @p after. To place into the first position of the parent,
      * simply pass an empty or default-constructed reference like
      * this: `n.move({})`. */
-    inline NodeRef duplicate(NodeRef const& parent, ConstNodeRef const& after) const
+    NodeRef duplicate(NodeRef const& parent, ConstNodeRef const& after) const
     {
         _C4RR();
         _RYML_CB_ASSERT(m_tree->m_callbacks, parent.m_tree == after.m_tree || after.m_id == NONE);
@@ -24230,7 +25624,7 @@ public:
         }
     }
 
-    inline void duplicate_children(NodeRef const& parent, ConstNodeRef const& after) const
+    void duplicate_children(NodeRef const& parent, ConstNodeRef const& after) const
     {
         _C4RR();
         _RYML_CB_ASSERT(m_tree->m_callbacks, parent.m_tree == after.m_tree);
@@ -24250,6 +25644,8 @@ public:
 #undef _C4RID
 };
 
+// NOLINTEND(cppcoreguidelines-c-copy-assignment-signature,misc-unconventional-assign-operator)
+
 
 //-----------------------------------------------------------------------------
 
@@ -24259,7 +25655,7 @@ inline ConstNodeRef::ConstNodeRef(NodeRef const& that) noexcept
 {
 }
 
-inline ConstNodeRef::ConstNodeRef(NodeRef && that) noexcept
+inline ConstNodeRef::ConstNodeRef(NodeRef && that) noexcept // NOLINT
     : m_tree(that.m_tree)
     , m_id(!that.is_seed() ? that.id() : (id_type)NONE)
 {
@@ -24273,7 +25669,7 @@ inline ConstNodeRef& ConstNodeRef::operator= (NodeRef const& that) noexcept
     return *this;
 }
 
-inline ConstNodeRef& ConstNodeRef::operator= (NodeRef && that) noexcept
+inline ConstNodeRef& ConstNodeRef::operator= (NodeRef && that) noexcept // NOLINT
 {
     m_tree = (that.m_tree);
     m_id = (!that.is_seed() ? that.id() : (id_type)NONE);
@@ -24289,117 +25685,33 @@ inline ConstNodeRef& ConstNodeRef::operator= (NodeRef && that) noexcept
  */
 
 template<class T>
-inline void write(NodeRef *n, T const& v)
+C4_ALWAYS_INLINE void write(NodeRef *n, T const& v)
 {
     n->set_val_serialized(v);
 }
 
-namespace detail {
-// SFINAE overloads for skipping leading + which cannot be read by the charconv functions
 template<class T>
-C4_ALWAYS_INLINE auto read_skip_plus(csubstr val, T *v)
-    -> typename std::enable_if<std::is_arithmetic<T>::value, bool>::type
+C4_ALWAYS_INLINE bool read(ConstNodeRef const& C4_RESTRICT n, T *v)
 {
-    if(val.begins_with('+'))
-        val = val.sub(1);
-    return from_chars(val, v);
-}
-template<class T>
-C4_ALWAYS_INLINE auto read_skip_plus(csubstr val, T *v)
-    -> typename std::enable_if< ! std::is_arithmetic<T>::value, bool>::type
-{
-    return from_chars(val, v);
-}
-} // namespace detail
-
-/** convert the val of a scalar node to a particular type, by
- * forwarding its val to @ref from_chars<T>(). The full string is
- * used.
- * @return false if the conversion failed */
-template<class T>
-inline auto read(NodeRef const& n, T *v)
-    -> typename std::enable_if< ! std::is_floating_point<T>::value, bool>::type
-{
-    csubstr val = n.val();
-    if(val.empty())
-        return false;
-    return detail::read_skip_plus(val, v);
-}
-/** convert the val of a scalar node to a particular type, by
- * forwarding its val to @ref from_chars<T>(). The full string is
- * used.
- * @return false if the conversion failed */
-template<class T>
-inline auto read(ConstNodeRef const& n, T *v)
-    -> typename std::enable_if< ! std::is_floating_point<T>::value, bool>::type
-{
-    csubstr val = n.val();
-    if(val.empty())
-        return false;
-    return detail::read_skip_plus(val, v);
+    return read(n.m_tree, n.m_id, v);
 }
 
-/** convert the val of a scalar node to a floating point type, by
- * forwarding its val to @ref from_chars_float<T>().
- *
- * @return false if the conversion failed
- *
- * @warning Unlike non-floating types, only the leading part of the
- * string that may constitute a number is processed. This happens
- * because the float parsing is delegated to fast_float, which is
- * implemented that way. Consequently, for example, all of `"34"`,
- * `"34 "` `"34hg"` `"34 gh"` will be read as 34. If you are not sure
- * about the contents of the data, you can use
- * csubstr::first_real_span() to check before calling `>>`, for
- * example like this:
- *
- * ```cpp
- * csubstr val = node.val();
- * if(val.first_real_span() == val)
- *     node >> v;
- * else
- *     ERROR("not a real")
- * ```
- */
 template<class T>
-typename std::enable_if<std::is_floating_point<T>::value, bool>::type
-inline read(NodeRef const& n, T *v)
+C4_ALWAYS_INLINE bool read(NodeRef const& C4_RESTRICT n, T *v)
 {
-    csubstr val = n.val();
-    if(val.empty())
-        return false;
-    return from_chars_float(val, v);
+    return read(n.tree(), n.id(), v);
 }
-/** convert the val of a scalar node to a floating point type, by
- * forwarding its val to @ref from_chars_float<T>().
- *
- * @return false if the conversion failed
- *
- * @warning Unlike non-floating types, only the leading part of the
- * string that may constitute a number is processed. This happens
- * because the float parsing is delegated to fast_float, which is
- * implemented that way. Consequently, for example, all of `"34"`,
- * `"34 "` `"34hg"` `"34 gh"` will be read as 34. If you are not sure
- * about the contents of the data, you can use
- * csubstr::first_real_span() to check before calling `>>`, for
- * example like this:
- *
- * ```cpp
- * csubstr val = node.val();
- * if(val.first_real_span() == val)
- *     node >> v;
- * else
- *     ERROR("not a real")
- * ```
- */
+
 template<class T>
-typename std::enable_if<std::is_floating_point<T>::value, bool>::type
-inline read(ConstNodeRef const& n, T *v)
+C4_ALWAYS_INLINE bool readkey(ConstNodeRef const& C4_RESTRICT n, T *v)
 {
-    csubstr val = n.val();
-    if(val.empty())
-        return false;
-    return from_chars_float(val, v);
+    return readkey(n.m_tree, n.m_id, v);
+}
+
+template<class T>
+C4_ALWAYS_INLINE bool readkey(NodeRef const& C4_RESTRICT n, T *v)
+{
+    return readkey(n.tree(), n.id(), v);
 }
 
 /** @} */
@@ -24478,7 +25790,7 @@ struct WriterFile
 
     WriterFile(FILE *f = nullptr) : m_file(f ? f : stdout), m_pos(0) {}
 
-    inline substr _get(bool /*error_on_excess*/)
+    substr _get(bool /*error_on_excess*/) const
     {
         substr sp;
         sp.str = nullptr;
@@ -24487,41 +25799,32 @@ struct WriterFile
     }
 
     template<size_t N>
-    inline void _do_write(const char (&a)[N])
+    void _do_write(const char (&a)[N])
     {
-        fwrite(a, sizeof(char), N - 1, m_file);
+        (void)fwrite(a, sizeof(char), N - 1, m_file);
         m_pos += N - 1;
     }
 
-    inline void _do_write(csubstr sp)
+    void _do_write(csubstr sp)
     {
-        #if defined(__clang__)
-        #   pragma clang diagnostic push
-        #   pragma GCC diagnostic ignored "-Wsign-conversion"
-        #elif defined(__GNUC__)
-        #   pragma GCC diagnostic push
-        #   pragma GCC diagnostic ignored "-Wsign-conversion"
-        #endif
-        if(sp.empty()) return;
-        fwrite(sp.str, sizeof(csubstr::char_type), sp.len, m_file);
+        C4_SUPPRESS_WARNING_GCC_CLANG_WITH_PUSH("-Wsign-conversion")
+        if(sp.empty())
+            return;
+        (void)fwrite(sp.str, sizeof(csubstr::char_type), sp.len, m_file);
         m_pos += sp.len;
-        #if defined(__clang__)
-        #   pragma clang diagnostic pop
-        #elif defined(__GNUC__)
-        #   pragma GCC diagnostic pop
-        #endif
+        C4_SUPPRESS_WARNING_GCC_CLANG_POP
     }
 
-    inline void _do_write(const char c)
+    void _do_write(const char c)
     {
-        fputc(c, m_file);
+        (void)fputc(c, m_file);
         ++m_pos;
     }
 
-    inline void _do_write(const char c, size_t num_times)
+    void _do_write(const char c, size_t num_times)
     {
         for(size_t i = 0; i < num_times; ++i)
-            fputc(c, m_file);
+            (void)fputc(c, m_file);
         m_pos += num_times;
     }
 };
@@ -24534,12 +25837,12 @@ struct WriterFile
 template<class OStream>
 struct WriterOStream
 {
-    OStream& m_stream;
+    OStream* m_stream;
     size_t   m_pos;
 
-    WriterOStream(OStream &s) : m_stream(s), m_pos(0) {}
+    WriterOStream(OStream &s) : m_stream(&s), m_pos(0) {}
 
-    inline substr _get(bool /*error_on_excess*/)
+    substr _get(bool /*error_on_excess*/) const
     {
         substr sp;
         sp.str = nullptr;
@@ -24548,41 +25851,32 @@ struct WriterOStream
     }
 
     template<size_t N>
-    inline void _do_write(const char (&a)[N])
+    void _do_write(const char (&a)[N])
     {
-        m_stream.write(a, N - 1);
+        m_stream->write(a, N - 1);
         m_pos += N - 1;
     }
 
-    inline void _do_write(csubstr sp)
+    void _do_write(csubstr sp)
     {
-        #if defined(__clang__)
-        #   pragma clang diagnostic push
-        #   pragma GCC diagnostic ignored "-Wsign-conversion"
-        #elif defined(__GNUC__)
-        #   pragma GCC diagnostic push
-        #   pragma GCC diagnostic ignored "-Wsign-conversion"
-        #endif
-        if(sp.empty()) return;
-        m_stream.write(sp.str, sp.len);
+        C4_SUPPRESS_WARNING_GCC_CLANG_WITH_PUSH("-Wsign-conversion")
+        if(sp.empty())
+            return;
+        m_stream->write(sp.str, sp.len);
         m_pos += sp.len;
-        #if defined(__clang__)
-        #   pragma clang diagnostic pop
-        #elif defined(__GNUC__)
-        #   pragma GCC diagnostic pop
-        #endif
+        C4_SUPPRESS_WARNING_GCC_CLANG_POP
     }
 
-    inline void _do_write(const char c)
+    void _do_write(const char c)
     {
-        m_stream.put(c);
+        m_stream->put(c);
         ++m_pos;
     }
 
-    inline void _do_write(const char c, size_t num_times)
+    void _do_write(const char c, size_t num_times)
     {
         for(size_t i = 0; i < num_times; ++i)
-            m_stream.put(c);
+            m_stream->put(c);
         m_pos += num_times;
     }
 };
@@ -24599,16 +25893,12 @@ struct WriterBuf
 
     WriterBuf(substr sp) : m_buf(sp), m_pos(0) {}
 
-    inline substr _get(bool error_on_excess)
+    substr _get(bool error_on_excess) const
     {
         if(m_pos <= m_buf.len)
-        {
             return m_buf.first(m_pos);
-        }
-        if(error_on_excess)
-        {
+        else if(error_on_excess)
             c4::yml::error("not enough space in the given buffer");
-        }
         substr sp;
         sp.str = nullptr;
         sp.len = m_pos;
@@ -24616,35 +25906,32 @@ struct WriterBuf
     }
 
     template<size_t N>
-    inline void _do_write(const char (&a)[N])
+    void _do_write(const char (&a)[N])
     {
         RYML_ASSERT( ! m_buf.overlaps(a));
         if(m_pos + N-1 <= m_buf.len)
-        {
             memcpy(&(m_buf[m_pos]), a, N-1);
-        }
         m_pos += N-1;
     }
 
-    inline void _do_write(csubstr sp)
+    void _do_write(csubstr sp)
     {
-        if(sp.empty()) return;
+        if(sp.empty())
+            return;
         RYML_ASSERT( ! sp.overlaps(m_buf));
         if(m_pos + sp.len <= m_buf.len)
-        {
             memcpy(&(m_buf[m_pos]), sp.str, sp.len);
-        }
         m_pos += sp.len;
     }
 
-    inline void _do_write(const char c)
+    void _do_write(const char c)
     {
         if(m_pos + 1 <= m_buf.len)
             m_buf[m_pos] = c;
         ++m_pos;
     }
 
-    inline void _do_write(const char c, size_t num_times)
+    void _do_write(const char c, size_t num_times)
     {
         if(m_pos + num_times <= m_buf.len)
             for(size_t i = 0; i < num_times; ++i)
@@ -24691,19 +25978,15 @@ struct WriterBuf
 //-----------------------------------------------------------------------------
 // some debugging scaffolds
 
-#if defined(_MSC_VER)
-#   pragma warning(push)
-#   pragma warning(disable: 4068/*unknown pragma*/)
-#endif
+// NOLINTBEGIN(*)
+C4_SUPPRESS_WARNING_GCC_CLANG_PUSH
+C4_SUPPRESS_WARNING_MSVC_PUSH
+C4_SUPPRESS_WARNING_MSVC(4068/*unknown pragma*/)
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunknown-pragmas"
-//#pragma GCC diagnostic ignored "-Wpragma-system-header-outside-header"
 #pragma GCC system_header
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Werror"
-#pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
+C4_SUPPRESS_WARNING_GCC("-Wunknown-pragmas")
+C4_SUPPRESS_WARNING_CLANG("-Wgnu-zero-variadic-macro-arguments")
+// NOLINTEND(*)
 
 
 #ifndef RYML_DBG
@@ -24761,7 +26044,7 @@ inline void _dbg_dumper(csubstr s)
 inline substr _dbg_buf() noexcept
 {
     static char writebuf[2048];
-    return writebuf;
+    return substr{writebuf, sizeof(writebuf)}; // g++-5 has trouble with return writebuf;
 }
 template<class ...Args>
 C4_NO_INLINE void _dbg_printf(c4::csubstr fmt, Args const& ...args)
@@ -24773,7 +26056,7 @@ C4_NO_INLINE void _dbg_printf(c4::csubstr fmt, Args const& ...args)
         C4_CHECK(needed_size <= buf.len);
     }
 }
-inline void __c4presc(const char *s, size_t len, bool keep_newlines=false)
+inline C4_NO_INLINE void __c4presc(const char *s, size_t len, bool keep_newlines=false)
 {
     RYML_ASSERT(s || !len);
     size_t prev = 0;
@@ -24829,12 +26112,8 @@ inline void __c4presc(csubstr s, bool keep_newlines=false)
 
 #endif // RYML_DBG
 
-#pragma clang diagnostic pop
-#pragma GCC diagnostic pop
-
-#if defined(_MSC_VER)
-#   pragma warning(pop)
-#endif
+C4_SUPPRESS_WARNING_GCC_CLANG_POP
+C4_SUPPRESS_WARNING_MSVC_POP
 
 #endif /* _C4_YML_DETAIL_PARSER_DBG_HPP_ */
 
@@ -24929,9 +26208,9 @@ typedef enum {
 struct EmitOptions
 {
     typedef enum : uint32_t {
-        DEFAULT_FLAGS = 0,
-        JSON_ERR_ON_TAG = 1 << 0,
-        JSON_ERR_ON_ANCHOR = 1 << 1,
+        DEFAULT_FLAGS = 0u,
+        JSON_ERR_ON_TAG = 1u << 0u,
+        JSON_ERR_ON_ANCHOR = 1u << 1u,
         _JSON_ERR_MASK = JSON_ERR_ON_TAG|JSON_ERR_ON_ANCHOR,
     } EmitOptionFlags_e;
 
@@ -25326,7 +26605,6 @@ inline OStream& operator<< (OStream& s, as_yaml const& y)
  * @param id the node where to start emitting.
  * @param opts emit options.
  * @param buf the output buffer.
- * @param opts emit options.
  * @param error_on_excess Raise an error if the space in the buffer is insufficient.
  * @return a substr trimmed to the result in the output buffer. If the buffer is
  * insufficient (when error_on_excess is false), the string pointer of the
@@ -25347,7 +26625,6 @@ inline substr emit_yaml(Tree const& t, id_type id, substr buf, bool error_on_exc
  * @param id the node where to start emitting.
  * @param opts emit options.
  * @param buf the output buffer.
- * @param opts emit options.
  * @param error_on_excess Raise an error if the space in the buffer is insufficient.
  * @return a substr trimmed to the result in the output buffer. If the buffer is
  * insufficient (when error_on_excess is false), the string pointer of the
@@ -25369,6 +26646,7 @@ inline substr emit_json(Tree const& t, id_type id, substr buf, bool error_on_exc
 
 /** (1) emit YAML to the given buffer. Return a substr trimmed to the emitted YAML.
  * @param t the tree; will be emitted from the root node.
+ * @param opts emit options.
  * @param buf the output buffer.
  * @param error_on_excess Raise an error if the space in the buffer is insufficient.
  * @return a substr trimmed to the result in the output buffer. If the buffer is
@@ -25387,6 +26665,7 @@ inline substr emit_yaml(Tree const& t, substr buf, bool error_on_excess=true)
 }
 /** (1) emit JSON to the given buffer. Return a substr trimmed to the emitted JSON.
  * @param t the tree; will be emitted from the root node.
+ * @param opts emit options.
  * @param buf the output buffer.
  * @param error_on_excess Raise an error if the space in the buffer is insufficient.
  * @return a substr trimmed to the result in the output buffer. If the buffer is
@@ -25752,7 +27031,7 @@ C4_SUPPRESS_WARNING_GCC_CLANG_POP
 
 // amalgamate: removed include of
 // https://github.com/biojppm/rapidyaml/src/c4/yml/emit.def.hpp
-//#include "c4/yml/emit.def.hpp"
+//#include "c4/yml/emit.def.hpp" // NOLINT
 #if !defined(C4_YML_EMIT_DEF_HPP_) && !defined(_C4_YML_EMIT_DEF_HPP_)
 #error "amalgamate: file c4/yml/emit.def.hpp must have been included at this point"
 #endif /* C4_YML_EMIT_DEF_HPP_ */
@@ -25933,18 +27212,19 @@ void Emitter<Writer>::_emit_yaml(id_type id)
 template<class Writer>
 void Emitter<Writer>::_write_doc(id_type id)
 {
-    RYML_ASSERT(m_tree->is_doc(id));
-    RYML_ASSERT(!m_tree->has_key(id));
+    const NodeType ty = m_tree->type(id);
+    RYML_ASSERT(ty.is_doc());
+    RYML_ASSERT(!ty.has_key());
     if(!m_tree->is_root(id))
     {
         RYML_ASSERT(m_tree->is_stream(m_tree->parent(id)));
         this->Writer::_do_write("---");
     }
     //
-    if(!m_tree->has_val(id)) // this is more frequent
+    if(!ty.has_val()) // this is more frequent
     {
-        const bool tag = m_tree->has_val_tag(id);
-        const bool anchor = m_tree->has_val_anchor(id);
+        const bool tag = ty.has_val_tag();
+        const bool anchor = ty.has_val_anchor();
         if(!tag && !anchor)
         {
             ;
@@ -25985,20 +27265,20 @@ void Emitter<Writer>::_write_doc(id_type id)
     }
     else // docval
     {
-        _RYML_CB_ASSERT(m_tree->callbacks(), m_tree->has_val(id));
+        _RYML_CB_ASSERT(m_tree->callbacks(), ty.has_val());
         // some plain scalars such as '...' and '---' must not
         // appear at 0-indentation
         const csubstr val = m_tree->val(id);
         const bool preceded_by_3_dashes = !m_tree->is_root(id);
-        const type_bits style_marks = m_tree->type(id) & (KEY_STYLE|VAL_STYLE);
-        const bool is_plain = m_tree->type(id).is_val_plain();
+        const type_bits style_marks = ty & VAL_STYLE;
+        const bool is_plain = ty.is_val_plain();
         const bool is_ambiguous = (is_plain || !style_marks)
             && ((val.begins_with("...") || val.begins_with("---"))
                 ||
                 (val.find('\n') != npos));
         if(preceded_by_3_dashes)
         {
-            if(val.len == 0 && !m_tree->has_val_anchor(id) && !m_tree->has_val_tag(id))
+            if(is_plain && val.len == 0 && !ty.has_val_anchor() && !ty.has_val_tag())
             {
                 this->Writer::_do_write('\n');
                 return;
@@ -26393,7 +27673,7 @@ void Emitter<Writer>::_write(NodeScalar const& C4_RESTRICT sc, NodeType flags, i
     }
 
     // ensure the style flags only have one of KEY or VAL
-    _RYML_CB_ASSERT(m_tree->callbacks(), ((flags & SCALAR_STYLE) == 0) || (((flags&KEY_STYLE) == 0) != ((flags&VAL_STYLE) == 0)));
+    _RYML_CB_ASSERT(m_tree->callbacks(), ((flags & SCALAR_STYLE) == 0) || (((flags & KEY_STYLE) == 0) != ((flags & VAL_STYLE) == 0)));
     type_bits style_marks = flags & SCALAR_STYLE;
     if(!style_marks)
         style_marks = scalar_style_choose(sc.scalar);
@@ -26503,7 +27783,7 @@ again:
         _rymlindent_nextline();
         this->Writer::_do_write(s.range(i, pos));
         i = pos;
-        goto again;
+        goto again; // NOLINT
     }
     // consume the newlines after the indented block
     // to prevent them from being escaped
@@ -26563,7 +27843,10 @@ void Emitter<Writer>::_write_scalar_literal(csubstr s, id_type ilevel, bool expl
     for(size_t i = !is_newline_only; i < numnewlines_at_end; ++i)
         this->Writer::_do_write('\n');
     if(explicit_key)
+    {
         this->Writer::_do_write('\n');
+        this->_indent(ilevel);
+    }
 }
 
 template<class Writer>
@@ -26641,7 +27924,10 @@ void Emitter<Writer>::_write_scalar_folded(csubstr s, id_type ilevel, bool expli
     for(size_t i = !is_newline_only; i < numnewlines_at_end; ++i)
         this->Writer::_do_write('\n');
     if(explicit_key)
+    {
         this->Writer::_do_write('\n');
+        this->_indent(ilevel);
+    }
 }
 
 template<class Writer>
@@ -26684,7 +27970,7 @@ void Emitter<Writer>::_write_scalar_dquo(csubstr s, id_type ilevel)
     for(size_t i = 0; i < s.len; ++i)
     {
         const char curr = s.str[i];
-        switch(curr)
+        switch(curr) // NOLINT
         {
         case '"':
         case '\\':
@@ -26948,9 +28234,12 @@ public:
 
     stack& operator= (stack const& that) RYML_NOEXCEPT
     {
-        _cb(that.m_callbacks);
-        resize(that.m_size);
-        _cp(&that);
+        if(&that != this)
+        {
+            _cb(that.m_callbacks);
+            resize(that.m_size);
+            _cp(&that);
+        }
         return *this;
     }
 
@@ -27261,7 +28550,7 @@ struct FilterProcessorSrcDst
     C4_ALWAYS_INLINE void skip() noexcept { ++rpos; }
     C4_ALWAYS_INLINE void skip(size_t num) noexcept { rpos += num; }
 
-    C4_ALWAYS_INLINE void set_at(size_t pos, char c) noexcept
+    C4_ALWAYS_INLINE void set_at(size_t pos, char c) noexcept // NOLINT(readability-make-member-function-const)
     {
         RYML_ASSERT(pos < wpos);
         dst.str[pos] = c;
@@ -27734,6 +29023,8 @@ struct FilterProcessorInplaceMidExtending
 
 #endif
 
+// NOLINTBEGIN(hicpp-signed-bitwise)
+
 namespace c4 {
 namespace yml {
 
@@ -27793,6 +29084,9 @@ struct LineContents
             ++e;
         RYML_ASSERT(e >= offset);
         const substr stripped_ = buf.range(offset, e);
+        #if defined(__GNUC__) && __GNUC__ == 11
+        C4_DONT_OPTIMIZE(stripped_);
+        #endif
         // advance pos to include the first line ending
         if(e < buf.len && buf.str[e] == '\r')
             ++e;
@@ -27931,6 +29225,8 @@ static_assert(std::is_standard_layout<ParserState>::value, "ParserState not stan
 } // namespace yml
 } // namespace c4
 
+// NOLINTEND(hicpp-signed-bitwise)
+
 #endif /* _C4_YML_PARSER_STATE_HPP_ */
 
 
@@ -27955,6 +29251,16 @@ static_assert(std::is_standard_layout<ParserState>::value, "ParserState not stan
 #if !defined(C4_YML_DETAIL_STACK_HPP_) && !defined(_C4_YML_DETAIL_STACK_HPP_)
 #error "amalgamate: file c4/yml/detail/stack.hpp must have been included at this point"
 #endif /* C4_YML_DETAIL_STACK_HPP_ */
+
+#endif
+
+#ifndef _C4_YML_NODE_TYPE_HPP_
+// amalgamate: removed include of
+// https://github.com/biojppm/rapidyaml/src/c4/yml/node_type.hpp
+//#include "c4/yml/node_type.hpp"
+#if !defined(C4_YML_NODE_TYPE_HPP_) && !defined(_C4_YML_NODE_TYPE_HPP_)
+#error "amalgamate: file c4/yml/node_type.hpp must have been included at this point"
+#endif /* C4_YML_NODE_TYPE_HPP_ */
 
 #endif
 
@@ -27989,6 +29295,8 @@ static_assert(std::is_standard_layout<ParserState>::value, "ParserState not stan
 
 #endif
 #endif
+
+// NOLINTBEGIN(hicpp-signed-bitwise)
 
 namespace c4 {
 namespace yml {
@@ -28154,6 +29462,8 @@ protected:
 } // namespace yml
 } // namespace c4
 
+// NOLINTEND(hicpp-signed-bitwise)
+
 #endif /* _C4_YML_EVENT_HANDLER_STACK_HPP_ */
 
 
@@ -28192,6 +29502,7 @@ protected:
 #endif
 
 C4_SUPPRESS_WARNING_MSVC_WITH_PUSH(4702) // unreachable code
+// NOLINTBEGIN(hicpp-signed-bitwise)
 
 namespace c4 {
 namespace yml {
@@ -28228,7 +29539,7 @@ public:
     size_t m_num_directives;
     bool m_yaml_directive;
 
-    #if RYML_DBG
+    #ifdef RYML_DBG
     #define _enable_(bits) _enable__<bits>(); _c4dbgpf("node[{}]: enable {}", m_curr->node_id, #bits)
     #define _disable_(bits) _disable__<bits>(); _c4dbgpf("node[{}]: disable {}", m_curr->node_id, #bits)
     #else
@@ -28541,15 +29852,28 @@ public:
     /** @{ */
 
 
+    C4_ALWAYS_INLINE void set_key_scalar_plain_empty() noexcept
+    {
+        _c4dbgpf("node[{}]: set key scalar plain as empty", m_curr->node_id);
+        m_curr->tr_data->m_key.scalar = {};
+        _enable_(KEY|KEY_PLAIN|KEYNIL);
+    }
+    C4_ALWAYS_INLINE void set_val_scalar_plain_empty() noexcept
+    {
+        _c4dbgpf("node[{}]: set val scalar plain as empty", m_curr->node_id);
+        m_curr->tr_data->m_val.scalar = {};
+        _enable_(VAL|VAL_PLAIN|VALNIL);
+    }
+
     C4_ALWAYS_INLINE void set_key_scalar_plain(csubstr scalar) noexcept
     {
-        _c4dbgpf("node[{}]: set key scalar plain: [{}]~~~{}~~~ ({})", m_curr->node_id, scalar.len, scalar, reinterpret_cast<void const*>(scalar.str));
+        _c4dbgpf("node[{}]: set key scalar plain: [{}]~~~{}~~~", m_curr->node_id, scalar.len, scalar);
         m_curr->tr_data->m_key.scalar = scalar;
         _enable_(KEY|KEY_PLAIN);
     }
     C4_ALWAYS_INLINE void set_val_scalar_plain(csubstr scalar) noexcept
     {
-        _c4dbgpf("node[{}]: set val scalar plain: [{}]~~~{}~~~ ({})", m_curr->node_id, scalar.len, scalar, reinterpret_cast<void const*>(scalar.str));
+        _c4dbgpf("node[{}]: set val scalar plain: [{}]~~~{}~~~", m_curr->node_id, scalar.len, scalar);
         m_curr->tr_data->m_val.scalar = scalar;
         _enable_(VAL|VAL_PLAIN);
     }
@@ -28557,13 +29881,13 @@ public:
 
     C4_ALWAYS_INLINE void set_key_scalar_dquoted(csubstr scalar) noexcept
     {
-        _c4dbgpf("node[{}]: set key scalar dquot: [{}]~~~{}~~~ ({})", m_curr->node_id, scalar.len, scalar, reinterpret_cast<void const*>(scalar.str));
+        _c4dbgpf("node[{}]: set key scalar dquot: [{}]~~~{}~~~", m_curr->node_id, scalar.len, scalar);
         m_curr->tr_data->m_key.scalar = scalar;
         _enable_(KEY|KEY_DQUO);
     }
     C4_ALWAYS_INLINE void set_val_scalar_dquoted(csubstr scalar) noexcept
     {
-        _c4dbgpf("node[{}]: set val scalar dquot: [{}]~~~{}~~~ ({})", m_curr->node_id, scalar.len, scalar, reinterpret_cast<void const*>(scalar.str));
+        _c4dbgpf("node[{}]: set val scalar dquot: [{}]~~~{}~~~", m_curr->node_id, scalar.len, scalar);
         m_curr->tr_data->m_val.scalar = scalar;
         _enable_(VAL|VAL_DQUO);
     }
@@ -28571,13 +29895,13 @@ public:
 
     C4_ALWAYS_INLINE void set_key_scalar_squoted(csubstr scalar) noexcept
     {
-        _c4dbgpf("node[{}]: set key scalar squot: [{}]~~~{}~~~ ({})", m_curr->node_id, scalar.len, scalar, reinterpret_cast<void const*>(scalar.str));
+        _c4dbgpf("node[{}]: set key scalar squot: [{}]~~~{}~~~", m_curr->node_id, scalar.len, scalar);
         m_curr->tr_data->m_key.scalar = scalar;
         _enable_(KEY|KEY_SQUO);
     }
     C4_ALWAYS_INLINE void set_val_scalar_squoted(csubstr scalar) noexcept
     {
-        _c4dbgpf("node[{}]: set val scalar squot: [{}]~~~{}~~~ ({})", m_curr->node_id, scalar.len, scalar, reinterpret_cast<void const*>(scalar.str));
+        _c4dbgpf("node[{}]: set val scalar squot: [{}]~~~{}~~~", m_curr->node_id, scalar.len, scalar);
         m_curr->tr_data->m_val.scalar = scalar;
         _enable_(VAL|VAL_SQUO);
     }
@@ -28585,13 +29909,13 @@ public:
 
     C4_ALWAYS_INLINE void set_key_scalar_literal(csubstr scalar) noexcept
     {
-        _c4dbgpf("node[{}]: set key scalar literal: [{}]~~~{}~~~ ({})", m_curr->node_id, scalar.len, scalar, reinterpret_cast<void const*>(scalar.str));
+        _c4dbgpf("node[{}]: set key scalar literal: [{}]~~~{}~~~", m_curr->node_id, scalar.len, scalar);
         m_curr->tr_data->m_key.scalar = scalar;
         _enable_(KEY|KEY_LITERAL);
     }
     C4_ALWAYS_INLINE void set_val_scalar_literal(csubstr scalar) noexcept
     {
-        _c4dbgpf("node[{}]: set val scalar literal: [{}]~~~{}~~~ ({})", m_curr->node_id, scalar.len, scalar, reinterpret_cast<void const*>(scalar.str));
+        _c4dbgpf("node[{}]: set val scalar literal: [{}]~~~{}~~~", m_curr->node_id, scalar.len, scalar);
         m_curr->tr_data->m_val.scalar = scalar;
         _enable_(VAL|VAL_LITERAL);
     }
@@ -28599,13 +29923,13 @@ public:
 
     C4_ALWAYS_INLINE void set_key_scalar_folded(csubstr scalar) noexcept
     {
-        _c4dbgpf("node[{}]: set key scalar folded: [{}]~~~{}~~~ ({})", m_curr->node_id, scalar.len, scalar, reinterpret_cast<void const*>(scalar.str));
+        _c4dbgpf("node[{}]: set key scalar folded: [{}]~~~{}~~~", m_curr->node_id, scalar.len, scalar);
         m_curr->tr_data->m_key.scalar = scalar;
         _enable_(KEY|KEY_FOLDED);
     }
     C4_ALWAYS_INLINE void set_val_scalar_folded(csubstr scalar) noexcept
     {
-        _c4dbgpf("node[{}]: set val scalar folded: [{}]~~~{}~~~ ({})", m_curr->node_id, scalar.len, scalar, reinterpret_cast<void const*>(scalar.str));
+        _c4dbgpf("node[{}]: set val scalar folded: [{}]~~~{}~~~", m_curr->node_id, scalar.len, scalar);
         m_curr->tr_data->m_val.scalar = scalar;
         _enable_(VAL|VAL_FOLDED);
     }
@@ -28845,7 +30169,7 @@ public:
 
 public:
 
-    C4_ALWAYS_INLINE void _set_state_(state *C4_RESTRICT s, id_type id) noexcept
+    C4_ALWAYS_INLINE void _set_state_(state *C4_RESTRICT s, id_type id) const noexcept
     {
         s->node_id = id;
         s->tr_data = m_tree->_p(id);
@@ -28892,7 +30216,7 @@ public:
     {
         _c4dbgp("remove speculative node");
         _RYML_CB_ASSERT(m_stack.m_callbacks, m_tree);
-        _RYML_CB_ASSERT(m_tree->callbacks(), m_tree->size() > 0);
+        _RYML_CB_ASSERT(m_tree->callbacks(), !m_tree->empty());
         const id_type last_added = m_tree->size() - 1;
         if(m_tree->has_parent(last_added))
             if(m_tree->_p(last_added)->m_type == NOTYPE)
@@ -28902,7 +30226,7 @@ public:
     void _remove_speculative_with_parent()
     {
         _RYML_CB_ASSERT(m_stack.m_callbacks, m_tree);
-        _RYML_CB_ASSERT(m_tree->callbacks(), m_tree->size() > 0);
+        _RYML_CB_ASSERT(m_tree->callbacks(), !m_tree->empty());
         const id_type last_added = m_tree->size() - 1;
         _RYML_CB_ASSERT(m_tree->callbacks(), m_tree->has_parent(last_added));
         if(m_tree->_p(last_added)->m_type == NOTYPE)
@@ -28931,6 +30255,7 @@ public:
 } // namespace yml
 } // namespace c4
 
+// NOLINTEND(hicpp-signed-bitwise)
 C4_SUPPRESS_WARNING_MSVC_POP
 
 #endif /* _C4_YML_EVENT_HANDLER_TREE_HPP_ */
@@ -28976,6 +30301,7 @@ C4_SUPPRESS_WARNING_MSVC_POP
 #   pragma warning(disable: 4251/*needs to have dll-interface to be used by clients of struct*/)
 #endif
 
+// NOLINTBEGIN(hicpp-signed-bitwise)
 
 namespace c4 {
 namespace yml {
@@ -29175,8 +30501,8 @@ struct RYML_EXPORT ParserOptions
 private:
 
     typedef enum : uint32_t {
-        SCALAR_FILTERING = (1u << 0),
-        LOCATIONS = (1u << 1),
+        SCALAR_FILTERING = (1u << 0u),
+        LOCATIONS = (1u << 1u),
         DEFAULTS = SCALAR_FILTERING,
     } Flags_e;
 
@@ -29263,9 +30589,9 @@ public:
     ParseEngine(EventHandler *evt_handler, ParserOptions opts={});
     ~ParseEngine();
 
-    ParseEngine(ParseEngine &&);
+    ParseEngine(ParseEngine &&) noexcept;
     ParseEngine(ParseEngine const&);
-    ParseEngine& operator=(ParseEngine &&);
+    ParseEngine& operator=(ParseEngine &&) noexcept;
     ParseEngine& operator=(ParseEngine const&);
 
     /** @} */
@@ -29325,6 +30651,10 @@ public:
 
     /** Get the latest YAML buffer parsed by this object. */
     csubstr source() const { return m_buf; }
+
+    /** Get the encoding of the latest YAML buffer parsed by this object.
+     * If no encoding was specified, UTF8 is assumed as per the YAML standard. */
+    Encoding_e encoding() const { return m_encoding != NOBOM ? m_encoding : UTF8; }
 
     id_type stack_capacity() const { RYML_ASSERT(m_evt_handler); return m_evt_handler->m_stack.capacity(); }
     size_t locations_capacity() const { return m_newline_offsets_capacity; }
@@ -29589,7 +30919,7 @@ private:
     void   _scan_line();
     substr _peek_next_line(size_t pos=npos) const;
 
-    inline bool _at_line_begin() const
+    bool _at_line_begin() const
     {
         return m_evt_handler->m_curr->line_contents.rem.begin() == m_evt_handler->m_curr->line_contents.full.begin();
     }
@@ -29674,6 +31004,8 @@ private:
     void _handle_annotations_and_indentation_after_start_mapblck(size_t key_indentation, size_t key_line);
     size_t _select_indentation_from_annotations(size_t val_indentation, size_t val_line);
     void _handle_directive(csubstr rem);
+    bool _handle_bom();
+    void _handle_bom(Encoding_e enc);
 
     void _check_tag(csubstr tag);
 
@@ -29687,7 +31019,7 @@ private:
 public:
 
     /** @cond dev */
-    EventHandler *C4_RESTRICT m_evt_handler;
+    EventHandler *C4_RESTRICT m_evt_handler; // NOLINT
     /** @endcond */
 
 private:
@@ -29697,6 +31029,8 @@ private:
 
     bool m_was_inside_qmrk;
     bool m_doc_empty = true;
+
+    Encoding_e m_encoding = UTF8;
 
 private:
 
@@ -29725,12 +31059,14 @@ RYML_EXPORT C4_NO_INLINE size_t _find_last_newline_and_larger_indentation(csubst
  * resulting number of nodes, notably if the YAML uses implicit
  * maps as flow seq members as in `[these: are, individual:
  * maps]`. */
-RYML_EXPORT id_type estimate_tree_capacity(csubstr src);
+RYML_EXPORT id_type estimate_tree_capacity(csubstr src); // NOLINT(readability-redundant-declaration)
 
 /** @} */
 
 } // namespace yml
 } // namespace c4
+
+// NOLINTEND(hicpp-signed-bitwise)
 
 #if defined(_MSC_VER)
 #   pragma warning(pop)
@@ -29986,7 +31322,7 @@ class Tree;
 class NodeRef;
 template<class EventHandler> class ParseEngine;
 struct EventHandlerTree;
-RYML_EXPORT id_type estimate_tree_capacity(csubstr src);
+RYML_EXPORT id_type estimate_tree_capacity(csubstr src); // NOLINT
 
 
 /** @addtogroup doc_parse
@@ -29995,9 +31331,11 @@ RYML_EXPORT id_type estimate_tree_capacity(csubstr src);
 /** This is the main ryml parser, where the parser events are handled
  * to create a ryml tree.
  *
- * @warning Because the ryml @ref Tree does not accept containers as
- * keys, this class cannot successfully parse YAML source with this
- * feature. See @ref ParseEngine for more details.
+ * @warning This class cannot parse YAML where there are container
+ * keys. This is not a limitation of the @ref ParseEngine, but of the
+ * @ref EventHandlerTree, which is present because the @ref Tree does
+ * not accept containers as keys. However, the @ref ParseEngine *can*
+ * parse container keys; consult its documentation for more details.
  *
  * @see ParserOptions
  * @see ParseEngine
@@ -30010,12 +31348,12 @@ using Parser = RYML_EXPORT ParseEngine<EventHandlerTree>;
 
 /** @defgroup doc_parse_in_place__with_existing_parser Parse in place with existing parser
  *
- * @brief parse a mutable YAML source buffer. Scalars requiring
- * filtering are mutated in place (except in the rare cases where the
- * filtered scalar is longer than the original scalar, or where
- * filtering was disabled before the call). These overloads accept an
- * existing parser object, and provide the opportunity to use special
- * parser options.
+ * @brief parse a mutable YAML source buffer (re)using an existing
+ * parser. Scalars requiring filtering are mutated in place (except in
+ * the rare cases where the filtered scalar is longer than the
+ * original scalar, or where filtering was disabled before the
+ * call). These overloads accept an existing parser object, and
+ * provide the opportunity to use special parser options.
  *
  * @see ParserOptions
  *
@@ -30025,27 +31363,27 @@ using Parser = RYML_EXPORT ParseEngine<EventHandlerTree>;
 // this is vertically aligned to highlight the parameter differences.
 
 RYML_EXPORT void parse_in_place(Parser *parser, csubstr filename, substr yaml, Tree *t, id_type node_id); /**< (1) parse YAML into an existing tree node.
-                                                                                                          *
-                                                                                                          * The filename will be used in any error messages
-                                                                                                          * arising during the parse. The callbacks in the
-                                                                                                          * tree are kept, and used to allocate
-                                                                                                          * the tree members, if any allocation is required. */
+                                                                                                           *
+                                                                                                           * The filename will be used in any error messages
+                                                                                                           * arising during the parse. The callbacks in the
+                                                                                                           * tree are kept, and used to allocate
+                                                                                                           * the tree members, if any allocation is required. */
 RYML_EXPORT void parse_in_place(Parser *parser,                   substr yaml, Tree *t, id_type node_id); /**< (2) like (1) but no filename will be reported */
-RYML_EXPORT void parse_in_place(Parser *parser, csubstr filename, substr yaml, Tree *t                 ); /**< (3) parse YAML into an existing tree, into its root node.
-                                                                                                          *
-                                                                                                          * The filename will be used in any error messages
-                                                                                                          * arising during the parse. The callbacks in the
-                                                                                                          * tree are kept, and used to allocate
-                                                                                                          * the tree members, if any allocation is required. */
+RYML_EXPORT void parse_in_place(Parser *parser, csubstr filename, substr yaml, Tree *t                 ); /**< (3) parse YAML into the root node of an existing tree.
+                                                                                                           *
+                                                                                                           * The filename will be used in any error messages
+                                                                                                           * arising during the parse. The callbacks in the
+                                                                                                           * tree are kept, and used to allocate
+                                                                                                           * the tree members, if any allocation is required. */
 RYML_EXPORT void parse_in_place(Parser *parser,                   substr yaml, Tree *t                 ); /**< (4) like (3) but no filename will be reported */
 RYML_EXPORT void parse_in_place(Parser *parser, csubstr filename, substr yaml, NodeRef node            ); /**< (5) like (1) but the node is given as a NodeRef */
 RYML_EXPORT void parse_in_place(Parser *parser,                   substr yaml, NodeRef node            ); /**< (6) like (5) but no filename will be reported */
 RYML_EXPORT Tree parse_in_place(Parser *parser, csubstr filename, substr yaml                          ); /**< (7) create a new tree, and parse YAML into its root node.
-                                                                                                          *
-                                                                                                          * The filename will be used in any error messages
-                                                                                                          * arising during the parse. The tree is created with
-                                                                                                          * the callbacks currently in the parser.
-                                                                                                          */
+                                                                                                           *
+                                                                                                           * The filename will be used in any error messages
+                                                                                                           * arising during the parse. The tree is created with
+                                                                                                           * the callbacks currently in the parser.
+                                                                                                           */
 RYML_EXPORT Tree parse_in_place(Parser *parser,                   substr yaml                          ); /**< (8) like (7) but no filename will be reported */
 
 
@@ -30262,6 +31600,7 @@ RYML_EXPORT void parse_json_in_arena(                  csubstr json, NodeRef nod
 RYML_EXPORT Tree parse_json_in_arena(csubstr filename, csubstr json                          ); ///< (7) create a new tree, and parse JSON into its root node.
 RYML_EXPORT Tree parse_json_in_arena(                  csubstr json                          ); ///< (8) like (7) but no filename will be reported
 
+
 /* READ THE DEPRECATION NOTE!
  *
  * All of the functions below are intentionally left undefined, to
@@ -30339,16 +31678,17 @@ void write(c4::yml::NodeRef *n, std::map<K, V, Less, Alloc> const& m)
     }
 }
 
+/** read the node members, assigning into the existing map. If a key
+ * is already present in the map, then its value will be
+ * move-assigned. */
 template<class K, class V, class Less, class Alloc>
 bool read(c4::yml::ConstNodeRef const& n, std::map<K, V, Less, Alloc> * m)
 {
-    K k{};
-    V v{};
     for(auto const& C4_RESTRICT ch : n)
     {
+        K k{};
         ch >> c4::yml::key(k);
-        ch >> v;
-        m->emplace(std::make_pair(std::move(k), std::move(v)));
+        ch >> (*m)[k];
     }
     return true;
 }
@@ -30434,6 +31774,7 @@ void write(c4::yml::NodeRef *n, std::vector<V, Alloc> const& vec)
         n->append_child() << v;
 }
 
+/** read the node members, overwriting existing vector entries. */
 template<class V, class Alloc>
 bool read(c4::yml::ConstNodeRef const& n, std::vector<V, Alloc> *vec)
 {
@@ -30446,7 +31787,8 @@ bool read(c4::yml::ConstNodeRef const& n, std::vector<V, Alloc> *vec)
     return true;
 }
 
-/** specialization: std::vector<bool> uses std::vector<bool>::reference as
+/** read the node members, overwriting existing vector entries.
+ * specialization: std::vector<bool> uses std::vector<bool>::reference as
  * the return value of its operator[]. */
 template<class Alloc>
 bool read(c4::yml::ConstNodeRef const& n, std::vector<bool, Alloc> *vec)
@@ -30610,20 +31952,20 @@ void report_error_impl(const char* msg, size_t length, Location loc, FILE *f)
         {
             // this is more portable than using fprintf("%.*s:") which
             // is not available in some embedded platforms
-            fwrite(loc.name.str, 1, loc.name.len, f);
-            fputc(':', f);
+            fwrite(loc.name.str, 1, loc.name.len, f); // NOLINT
+            fputc(':', f); // NOLINT
         }
-        fprintf(f, "%zu:", loc.line);
+        fprintf(f, "%zu:", loc.line); // NOLINT
         if(loc.col)
-            fprintf(f, "%zu:", loc.col);
+            fprintf(f, "%zu:", loc.col); // NOLINT
         if(loc.offset)
-            fprintf(f, " (%zuB):", loc.offset);
-        fputc(' ', f);
+            fprintf(f, " (%zuB):", loc.offset); // NOLINT
+        fputc(' ', f); // NOLINT
     }
     RYML_ASSERT(!csubstr(msg, length).ends_with('\0'));
-    fwrite(msg, 1, length, f);
-    fputc('\n', f);
-    fflush(f);
+    fwrite(msg, 1, length, f); // NOLINT
+    fputc('\n', f); // NOLINT
+    fflush(f); // NOLINT
 }
 
 [[noreturn]] void error_impl(const char* msg, size_t length, Location loc, void * /*user_data*/)
@@ -30656,7 +31998,7 @@ void free_impl(void *mem, size_t /*length*/, void * /*user_data*/)
 
 
 
-Callbacks::Callbacks()
+Callbacks::Callbacks() noexcept
     :
     m_user_data(nullptr),
     #ifndef RYML_NO_DEFAULT_CALLBACKS
@@ -30818,7 +32160,7 @@ csubstr NodeType::type_str(substr buf, NodeType_e flags) noexcept
 
     #define _prflag(fl, txt)                                    \
     do {                                                        \
-        if((flags & fl) == (fl))                                \
+        if((flags & (fl)) == (fl))                              \
         {                                                       \
             if(gotone)                                          \
             {                                                   \
@@ -30831,7 +32173,7 @@ csubstr NodeType::type_str(substr buf, NodeType_e flags) noexcept
                 memcpy(buf.str + pos, fltxt.str, fltxt.len);    \
             pos += fltxt.len;                                   \
             gotone = true;                                      \
-            flags = (flags & ~fl); /*remove the flag*/          \
+            flags = (flags & ~(fl)); /*remove the flag*/        \
         }                                                       \
     } while(0)
 
@@ -30839,6 +32181,7 @@ csubstr NodeType::type_str(substr buf, NodeType_e flags) noexcept
     _prflag(DOC, "DOC");
     // key properties
     _prflag(KEY, "KEY");
+    _prflag(KEYNIL, "KNIL");
     _prflag(KEYTAG, "KTAG");
     _prflag(KEYANCH, "KANCH");
     _prflag(KEYREF, "KREF");
@@ -30850,6 +32193,7 @@ csubstr NodeType::type_str(substr buf, NodeType_e flags) noexcept
     _prflag(KEY_UNFILT, "KUNFILT");
     // val properties
     _prflag(VAL, "VAL");
+    _prflag(VALNIL, "VNIL");
     _prflag(VALTAG, "VTAG");
     _prflag(VALANCH, "VANCH");
     _prflag(VALREF, "VREF");
@@ -31228,7 +32572,7 @@ bool TagDirective::create_from_str(csubstr directive_, Tree *tree)
         _RYML_CB_ERR(tree->callbacks(), "invalid tag directive");
     }
     next_node_id = tree->size();
-    if(tree->size() > 0)
+    if(!tree->empty())
     {
         const id_type prev = tree->size() - 1;
         if(tree->is_root(prev) && tree->type(prev) != NOTYPE && !tree->is_stream(prev))
@@ -31475,9 +32819,12 @@ Tree::Tree(Tree const& that) : Tree(that.m_callbacks)
 
 Tree& Tree::operator= (Tree const& that)
 {
-    _free();
-    m_callbacks = that.m_callbacks;
-    _copy(that);
+    if(&that != this)
+    {
+        _free();
+        m_callbacks = that.m_callbacks;
+        _copy(that);
+    }
     return *this;
 }
 
@@ -31486,11 +32833,14 @@ Tree::Tree(Tree && that) noexcept : Tree(that.m_callbacks)
     _move(that);
 }
 
-Tree& Tree::operator= (Tree && that) RYML_NOEXCEPT
+Tree& Tree::operator= (Tree && that) noexcept
 {
-    _free();
-    m_callbacks = that.m_callbacks;
-    _move(that);
+    if(&that != this)
+    {
+        _free();
+        m_callbacks = that.m_callbacks;
+        _move(that);
+    }
     return *this;
 }
 
@@ -31869,6 +33219,7 @@ void Tree::_rem_hierarchy(id_type i)
 }
 
 //-----------------------------------------------------------------------------
+/** @cond dev */
 id_type Tree::_do_reorder(id_type *node, id_type count)
 {
     // swap this node if it's not in place
@@ -31888,6 +33239,7 @@ id_type Tree::_do_reorder(id_type *node, id_type count)
     }
     return count;
 }
+/** @endcond */
 
 void Tree::reorder()
 {
@@ -31897,6 +33249,7 @@ void Tree::reorder()
 
 
 //-----------------------------------------------------------------------------
+/** @cond dev */
 void Tree::_swap(id_type n_, id_type m_)
 {
     _RYML_CB_ASSERT(m_callbacks, (parent(n_) != NONE) || type(n_) == NOTYPE);
@@ -32128,6 +33481,7 @@ void Tree::_swap_props(id_type n_, id_type m_)
     std::swap(n.m_key, m.m_key);
     std::swap(n.m_val, m.m_val);
 }
+/** @endcond */
 
 //-----------------------------------------------------------------------------
 void Tree::move(id_type node, id_type after)
@@ -32827,7 +34181,7 @@ csubstr Tree::lookup_result::unresolved() const
     return path.sub(path_pos);
 }
 
-void Tree::_advance(lookup_result *r, size_t more) const
+void Tree::_advance(lookup_result *r, size_t more)
 {
     r->path_pos += more;
     if(r->path.sub(r->path_pos).begins_with('.'))
@@ -33121,7 +34475,7 @@ Tree::_lookup_path_token Tree::_next_token(lookup_result *r, _lookup_path_token 
 }
 
 
-} // namespace ryml
+} // namespace yml
 } // namespace c4
 
 
@@ -33173,13 +34527,6 @@ C4_SUPPRESS_WARNING_MSVC_POP
 #error "amalgamate: file c4/utf.hpp must have been included at this point"
 #endif /* C4_UTF_HPP_ */
 
-// amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/dump.hpp
-//#include <c4/dump.hpp>
-#if !defined(C4_DUMP_HPP_) && !defined(_C4_DUMP_HPP_)
-#error "amalgamate: file c4/dump.hpp must have been included at this point"
-#endif /* C4_DUMP_HPP_ */
-
 
 //included above:
 //#include <ctype.h>
@@ -33199,6 +34546,13 @@ C4_SUPPRESS_WARNING_MSVC_POP
 #endif /* C4_YML_FILTER_PROCESSOR_HPP_ */
 
 #ifdef RYML_DBG
+// amalgamate: removed include of
+// https://github.com/biojppm/rapidyaml/src/c4/dump.hpp
+//#include <c4/dump.hpp>
+#if !defined(C4_DUMP_HPP_) && !defined(_C4_DUMP_HPP_)
+#error "amalgamate: file c4/dump.hpp must have been included at this point"
+#endif /* C4_DUMP_HPP_ */
+
 // amalgamate: removed include of
 // https://github.com/biojppm/rapidyaml/src/c4/yml/detail/print.hpp
 //#include "c4/yml/detail/print.hpp"
@@ -33249,10 +34603,12 @@ C4_SUPPRESS_WARNING_MSVC_POP
 #   endif
 #endif
 
+// NOLINTBEGIN(hicpp-signed-bitwise,cppcoreguidelines-avoid-goto,hicpp-avoid-goto,hicpp-multiway-paths-covered)
+
 namespace c4 {
 namespace yml {
 
-namespace {
+namespace { // NOLINT
 
 C4_HOT C4_ALWAYS_INLINE bool _is_blck_token(csubstr s) noexcept
 {
@@ -33292,6 +34648,14 @@ inline bool _is_doc_token(csubstr s) noexcept
     //
     // The current version does not suffer this problem, but it may
     // appear again.
+    //
+    //
+    // UPDATE. The problem appeared again in gcc12 and gcc13 with -Os
+    // (but not any other optimization level, nor any other compiler
+    // or version), because the assignment to s is being hoisted out
+    // of the loop which calls this function. Then the length doesn't
+    // enter the s.len >= 3 when it should. Adding a
+    // C4_DONT_OPTIMIZE(var) makes the problem go away.
     //
     if(s.len >= 3)
     {
@@ -33444,6 +34808,9 @@ ParseEngine<EventHandler>::ParseEngine(EventHandler *evt_handler, ParserOptions 
     , m_evt_handler(evt_handler)
     , m_pending_anchors()
     , m_pending_tags()
+    , m_was_inside_qmrk(false)
+    , m_doc_empty(false)
+    , m_encoding(NOBOM)
     , m_newline_offsets()
     , m_newline_offsets_size(0)
     , m_newline_offsets_capacity(0)
@@ -33453,13 +34820,16 @@ ParseEngine<EventHandler>::ParseEngine(EventHandler *evt_handler, ParserOptions 
 }
 
 template<class EventHandler>
-ParseEngine<EventHandler>::ParseEngine(ParseEngine &&that)
+ParseEngine<EventHandler>::ParseEngine(ParseEngine &&that) noexcept
     : m_options(that.m_options)
     , m_file(that.m_file)
     , m_buf(that.m_buf)
     , m_evt_handler(that.m_evt_handler)
     , m_pending_anchors(that.m_pending_anchors)
     , m_pending_tags(that.m_pending_tags)
+    , m_was_inside_qmrk(false)
+    , m_doc_empty(false)
+    , m_encoding(NOBOM)
     , m_newline_offsets(that.m_newline_offsets)
     , m_newline_offsets_size(that.m_newline_offsets_size)
     , m_newline_offsets_capacity(that.m_newline_offsets_capacity)
@@ -33476,6 +34846,9 @@ ParseEngine<EventHandler>::ParseEngine(ParseEngine const& that)
     , m_evt_handler(that.m_evt_handler)
     , m_pending_anchors(that.m_pending_anchors)
     , m_pending_tags(that.m_pending_tags)
+    , m_was_inside_qmrk(false)
+    , m_doc_empty(false)
+    , m_encoding(NOBOM)
     , m_newline_offsets()
     , m_newline_offsets_size()
     , m_newline_offsets_capacity()
@@ -33491,7 +34864,7 @@ ParseEngine<EventHandler>::ParseEngine(ParseEngine const& that)
 }
 
 template<class EventHandler>
-ParseEngine<EventHandler>& ParseEngine<EventHandler>::operator=(ParseEngine &&that)
+ParseEngine<EventHandler>& ParseEngine<EventHandler>::operator=(ParseEngine &&that) noexcept
 {
     _free();
     m_options = (that.m_options);
@@ -33500,6 +34873,9 @@ ParseEngine<EventHandler>& ParseEngine<EventHandler>::operator=(ParseEngine &&th
     m_evt_handler = that.m_evt_handler;
     m_pending_anchors = that.m_pending_anchors;
     m_pending_tags = that.m_pending_tags;
+    m_was_inside_qmrk = that.m_was_inside_qmrk;
+    m_doc_empty = that.m_doc_empty;
+    m_encoding = that.m_encoding;
     m_newline_offsets = (that.m_newline_offsets);
     m_newline_offsets_size = (that.m_newline_offsets_size);
     m_newline_offsets_capacity = (that.m_newline_offsets_capacity);
@@ -33511,20 +34887,26 @@ ParseEngine<EventHandler>& ParseEngine<EventHandler>::operator=(ParseEngine &&th
 template<class EventHandler>
 ParseEngine<EventHandler>& ParseEngine<EventHandler>::operator=(ParseEngine const& that)
 {
-    _free();
-    m_options = (that.m_options);
-    m_file = (that.m_file);
-    m_buf = (that.m_buf);
-    m_evt_handler = that.m_evt_handler;
-    m_pending_anchors = that.m_pending_anchors;
-    m_pending_tags = that.m_pending_tags;
-    if(that.m_newline_offsets_capacity > m_newline_offsets_capacity)
-        _resize_locations(that.m_newline_offsets_capacity);
-    _RYML_CB_CHECK(m_evt_handler->m_stack.m_callbacks, m_newline_offsets_capacity >= that.m_newline_offsets_capacity);
-    _RYML_CB_CHECK(m_evt_handler->m_stack.m_callbacks, m_newline_offsets_capacity >= that.m_newline_offsets_size);
-    memcpy(m_newline_offsets, that.m_newline_offsets, that.m_newline_offsets_size * sizeof(size_t));
-    m_newline_offsets_size = that.m_newline_offsets_size;
-    m_newline_offsets_buf = that.m_newline_offsets_buf;
+    if(&that != this)
+    {
+        _free();
+        m_options = (that.m_options);
+        m_file = (that.m_file);
+        m_buf = (that.m_buf);
+        m_evt_handler = that.m_evt_handler;
+        m_pending_anchors = that.m_pending_anchors;
+        m_pending_tags = that.m_pending_tags;
+        m_was_inside_qmrk = that.m_was_inside_qmrk;
+        m_doc_empty = that.m_doc_empty;
+        m_encoding = that.m_encoding;
+        if(that.m_newline_offsets_capacity > m_newline_offsets_capacity)
+            _resize_locations(that.m_newline_offsets_capacity);
+        _RYML_CB_CHECK(m_evt_handler->m_stack.m_callbacks, m_newline_offsets_capacity >= that.m_newline_offsets_capacity);
+        _RYML_CB_CHECK(m_evt_handler->m_stack.m_callbacks, m_newline_offsets_capacity >= that.m_newline_offsets_size);
+        memcpy(m_newline_offsets, that.m_newline_offsets, that.m_newline_offsets_size * sizeof(size_t));
+        m_newline_offsets_size = that.m_newline_offsets_size;
+        m_newline_offsets_buf = that.m_newline_offsets_buf;
+    }
     return *this;
 }
 
@@ -33537,6 +34919,9 @@ void ParseEngine<EventHandler>::_clr()
     m_evt_handler = {};
     m_pending_anchors = {};
     m_pending_tags = {};
+    m_was_inside_qmrk = false;
+    m_doc_empty = true;
+    m_encoding = NOBOM;
     m_newline_offsets = {};
     m_newline_offsets_size = {};
     m_newline_offsets_capacity = {};
@@ -33552,7 +34937,7 @@ void ParseEngine<EventHandler>::_free()
         m_newline_offsets = nullptr;
         m_newline_offsets_size = 0u;
         m_newline_offsets_capacity = 0u;
-        m_newline_offsets_buf = 0u;
+        m_newline_offsets_buf = nullptr;
     }
 }
 
@@ -33564,11 +34949,13 @@ void ParseEngine<EventHandler>::_reset()
 {
     m_pending_anchors = {};
     m_pending_tags = {};
+    m_doc_empty = true;
+    m_was_inside_qmrk = false;
+    m_encoding = NOBOM;
     if(m_options.locations())
     {
         _prepare_locations();
     }
-    m_was_inside_qmrk = false;
 }
 
 
@@ -33578,9 +34965,9 @@ template<class EventHandler>
 void ParseEngine<EventHandler>::_relocate_arena(csubstr prev_arena, substr next_arena)
 {
     #define _ryml_relocate(s)                                   \
-    if(s.is_sub(prev_arena))                                    \
+    if((s).is_sub(prev_arena))                                  \
     {                                                           \
-        s.str = next_arena.str + (s.str - prev_arena.str);      \
+        (s).str = next_arena.str + ((s).str - prev_arena.str);  \
     }
     _ryml_relocate(m_buf);
     _ryml_relocate(m_newline_offsets_buf);
@@ -33613,33 +35000,33 @@ void ParseEngine<EventHandler>::_fmt_msg(DumpFn &&dumpfn) const
         size_t offs = 3u + to_chars(substr{}, st->pos.line) + to_chars(substr{}, st->pos.col);
         if(m_file.len)
         {
-            detail::_dump(dumpfn, "{}:", m_file);
+            detail::_dump(std::forward<DumpFn>(dumpfn), "{}:", m_file);
             offs += m_file.len + 1;
         }
-        detail::_dump(dumpfn, "{}:{}: ", st->pos.line, st->pos.col);
+        detail::_dump(std::forward<DumpFn>(dumpfn), "{}:{}: ", st->pos.line, st->pos.col);
         csubstr maybe_full_content = (contents.len < 80u ? contents : contents.first(80u));
         csubstr maybe_ellipsis = (contents.len < 80u ? csubstr{} : csubstr("..."));
-        detail::_dump(dumpfn, "{}{}  (size={})\n", maybe_full_content, maybe_ellipsis, contents.len);
+        detail::_dump(std::forward<DumpFn>(dumpfn), "{}{}  (size={})\n", maybe_full_content, maybe_ellipsis, contents.len);
         // highlight the remaining portion of the previous line
         size_t firstcol = (size_t)(lc.rem.begin() - lc.full.begin());
         size_t lastcol = firstcol + lc.rem.len;
         for(size_t i = 0; i < offs + firstcol; ++i)
-            dumpfn(" ");
-        dumpfn("^");
+            std::forward<DumpFn>(dumpfn)(" ");
+        std::forward<DumpFn>(dumpfn)("^");
         for(size_t i = 1, e = (lc.rem.len < 80u ? lc.rem.len : 80u); i < e; ++i)
-            dumpfn("~");
-        detail::_dump(dumpfn, "{}  (cols {}-{})\n", maybe_ellipsis, firstcol+1, lastcol+1);
+            std::forward<DumpFn>(dumpfn)("~");
+        detail::_dump(std::forward<DumpFn>(dumpfn), "{}  (cols {}-{})\n", maybe_ellipsis, firstcol+1, lastcol+1);
     }
     else
     {
-        dumpfn("\n");
+        std::forward<DumpFn>(dumpfn)("\n");
     }
 
 #ifdef RYML_DBG
     // next line: print the state flags
     {
         char flagbuf_[128];
-        detail::_dump(dumpfn, "top state: {}\n", detail::_parser_flags_to_str(flagbuf_, m_evt_handler->m_curr->flags));
+        detail::_dump(std::forward<DumpFn>(dumpfn), "top state: {}\n", detail::_parser_flags_to_str(flagbuf_, m_evt_handler->m_curr->flags));
     }
 #endif
 }
@@ -34219,7 +35606,7 @@ ended_scalar:
 
     _c4dbgpf("scalar was [{}]~~~{}~~~", sc->scalar.len, sc->scalar);
 
-    return true;
+    return sc->scalar.len > 0u;
 }
 
 template<class EventHandler>
@@ -34689,15 +36076,15 @@ void ParseEngine<EventHandler>::_end_map_blck()
     {
         _c4dbgp("mapblck: set missing val");
         _handle_annotations_before_blck_val_scalar();
-        m_evt_handler->set_val_scalar_plain({});
+        m_evt_handler->set_val_scalar_plain_empty();
     }
     else if(has_any(QMRK))
     {
         _c4dbgp("mapblck: set missing keyval");
         _handle_annotations_before_blck_key_scalar();
-        m_evt_handler->set_key_scalar_plain({});
+        m_evt_handler->set_key_scalar_plain_empty();
         _handle_annotations_before_blck_val_scalar();
-        m_evt_handler->set_val_scalar_plain({});
+        m_evt_handler->set_val_scalar_plain_empty();
     }
     m_evt_handler->end_map();
 }
@@ -34709,7 +36096,7 @@ void ParseEngine<EventHandler>::_end_seq_blck()
     {
         _c4dbgp("seqblck: set missing val");
         _handle_annotations_before_blck_val_scalar();
-        m_evt_handler->set_val_scalar_plain({});
+        m_evt_handler->set_val_scalar_plain_empty();
     }
     m_evt_handler->end_seq();
 }
@@ -34774,7 +36161,7 @@ void ParseEngine<EventHandler>::_end2_doc()
     if(m_doc_empty)
     {
         _c4dbgp("doc was empty; add empty val");
-        m_evt_handler->set_val_scalar_plain({});
+        m_evt_handler->set_val_scalar_plain_empty();
     }
     m_evt_handler->end_doc();
 }
@@ -34786,7 +36173,7 @@ void ParseEngine<EventHandler>::_end2_doc_expl()
     if(m_doc_empty)
     {
         _c4dbgp("doc: no children; add empty val");
-        m_evt_handler->set_val_scalar_plain({});
+        m_evt_handler->set_val_scalar_plain_empty();
     }
     m_evt_handler->end_doc_expl();
 }
@@ -34873,7 +36260,7 @@ void ParseEngine<EventHandler>::_end_stream()
             {
                 m_evt_handler->begin_doc();
                 _handle_annotations_before_blck_val_scalar();
-                m_evt_handler->set_val_scalar_plain({});
+                m_evt_handler->set_val_scalar_plain_empty();
                 m_evt_handler->end_doc();
             }
         }
@@ -35126,6 +36513,9 @@ typename ParseEngine<EventHandler>::ScannedScalar ParseEngine<EventHandler>::_sc
     while( ! _finished_file())
     {
         const csubstr line = m_evt_handler->m_curr->line_contents.rem;
+        #if defined(__GNUC__) && __GNUC__ == 11
+        C4_DONT_OPTIMIZE(line); // prevent erroneous hoist of the assignment out of the loop
+        #endif
         bool line_is_blank = true;
         _c4dbgpf("scanning double quoted scalar @ line[{}]:  line='{}'", m_evt_handler->m_curr->pos.line, line);
         for(size_t i = 0; i < line.len; ++i)
@@ -35275,6 +36665,9 @@ void ParseEngine<EventHandler>::_scan_block(ScannedBlock *C4_RESTRICT sb, size_t
     {
         // peek next line, but do not advance immediately
         lc.reset_with_next_line(m_buf, m_evt_handler->m_curr->pos.offset);
+        #if defined(__GNUC__) && (__GNUC__ == 12 || __GNUC__ == 13)
+        C4_DONT_OPTIMIZE(lc.rem);
+        #endif
         _c4dbgpf("blck: peeking at [{}]~~~{}~~~", lc.stripped.len, lc.stripped);
         // evaluate termination conditions
         if(indentation != npos)
@@ -35419,6 +36812,7 @@ void ParseEngine<EventHandler>::_scan_block(ScannedBlock *C4_RESTRICT sb, size_t
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+/** @cond dev */
 
 // a debugging scaffold:
 #if 0
@@ -37238,17 +38632,16 @@ bool ParseEngine<EventHandler>::_locations_dirty() const
 template<class EventHandler>
 void ParseEngine<EventHandler>::_handle_flow_skip_whitespace()
 {
+    // don't assign to csubstr rem: otherwise, gcc12,13,14 -O3 -m32 misbuilds
     if(m_evt_handler->m_curr->line_contents.rem.len > 0)
     {
-        csubstr rem = m_evt_handler->m_curr->line_contents.rem;
-        if(rem.str[0] == ' ' || rem.str[0] == '\t')
+        if(m_evt_handler->m_curr->line_contents.rem.str[0] == ' ' || m_evt_handler->m_curr->line_contents.rem.str[0] == '\t')
         {
-            _c4dbgpf("starts with whitespace: '{}'", _c4prc(rem.str[0]));
+            _c4dbgpf("starts with whitespace: '{}'", _c4prc(m_evt_handler->m_curr->line_contents.rem.str[0]));
             _skipchars(" \t");
-            rem = m_evt_handler->m_curr->line_contents.rem;
         }
         // comments
-        if(rem.begins_with('#'))
+        if(m_evt_handler->m_curr->line_contents.rem.begins_with('#'))
         {
             _c4dbgpf("it's a comment: {}", m_evt_handler->m_curr->line_contents.rem);
             _line_progressed(m_evt_handler->m_curr->line_contents.rem.len);
@@ -37264,7 +38657,7 @@ template<class EventHandler>
 void ParseEngine<EventHandler>::_add_annotation(Annotation *C4_RESTRICT dst, csubstr str, size_t indentation, size_t line)
 {
     _c4dbgpf("store annotation[{}]: '{}' indentation={} line={}", dst->num_entries, str, indentation, line);
-    if(C4_UNLIKELY(dst->num_entries >= C4_COUNTOF(dst->annotations)))
+    if(C4_UNLIKELY(dst->num_entries >= C4_COUNTOF(dst->annotations))) // NOLINT(bugprone-sizeof-expression)
         _c4err("too many annotations");
     dst->annotations[dst->num_entries].str = str;
     dst->annotations[dst->num_entries].indentation = indentation;
@@ -37521,6 +38914,72 @@ void ParseEngine<EventHandler>::_handle_directive(csubstr rem)
         m_evt_handler->add_directive(trimmed);
         _line_progressed(pos);
         _skip_comment();
+    }
+}
+
+template<class EventHandler>
+bool ParseEngine<EventHandler>::_handle_bom()
+{
+    const csubstr rem = m_evt_handler->m_curr->line_contents.rem;
+    if(rem.len)
+    {
+        const csubstr rest = rem.sub(1);
+        // https://yaml.org/spec/1.2.2/#52-character-encodings
+        #define _rymlisascii(c) ((c) > '\0' && (c) <= '\x7f') // is the character ASCII?
+        if(rem.begins_with({"\x00\x00\xfe\xff", 4}) || (rem.begins_with({"\x00\x00\x00", 3}) && rem.len >= 4u && _rymlisascii(rem.str[3])))
+        {
+            _c4dbgp("byte order mark: UTF32BE");
+            _handle_bom(UTF32BE);
+            _line_progressed(4);
+            return true;
+        }
+        else if(rem.begins_with("\xff\xfe\x00\x00") || (rest.begins_with({"\x00\x00\x00", 3}) && rem.len >= 4u && _rymlisascii(rem.str[0])))
+        {
+            _c4dbgp("byte order mark: UTF32LE");
+            _handle_bom(UTF32LE);
+            _line_progressed(4);
+            return true;
+        }
+        else if(rem.begins_with("\xfe\xff") || (rem.begins_with('\x00') && rem.len >= 2u && _rymlisascii(rem.str[1])))
+        {
+            _c4dbgp("byte order mark: UTF16BE");
+            _handle_bom(UTF16BE);
+            _line_progressed(2);
+            return true;
+        }
+        else if(rem.begins_with("\xff\xfe") || (rest.begins_with('\x00') && rem.len >= 2u && _rymlisascii(rem.str[0])))
+        {
+            _c4dbgp("byte order mark: UTF16LE");
+            _handle_bom(UTF16LE);
+            _line_progressed(2);
+            return true;
+        }
+        else if(rem.begins_with("\xef\xbb\xbf"))
+        {
+            _c4dbgp("byte order mark: UTF8");
+            _handle_bom(UTF8);
+            _line_progressed(3);
+            return true;
+        }
+        #undef _rymlisascii
+    }
+    return false;
+}
+
+template<class EventHandler>
+void ParseEngine<EventHandler>::_handle_bom(Encoding_e enc)
+{
+    if(m_encoding == NOBOM)
+    {
+        const bool is_beginning_of_file = m_evt_handler->m_curr->line_contents.rem.str == m_buf.str;
+        if(enc == UTF8 || is_beginning_of_file)
+            m_encoding = enc;
+        else
+            _c4err("non-UTF8 byte order mark can appear only at the beginning of the file");
+    }
+    else if(enc != m_encoding)
+    {
+        _c4err("byte order mark can only be set once");
     }
 }
 
@@ -37908,7 +39367,7 @@ seqimap_start:
         else if(first == ',' || first == ']')
         {
             _c4dbgp("seqimap[RVAL]: finish without val.");
-            m_evt_handler->set_val_scalar_plain({});
+            m_evt_handler->set_val_scalar_plain_empty();
             m_evt_handler->end_map();
             goto seqimap_finish;
         }
@@ -38010,8 +39469,8 @@ seqimap_start:
         else if(first == ',' || first == ']')
         {
             _c4dbgp("seqimap[QMRK]: finish without key.");
-            m_evt_handler->set_key_scalar_plain({});
-            m_evt_handler->set_val_scalar_plain({});
+            m_evt_handler->set_key_scalar_plain_empty();
+            m_evt_handler->set_val_scalar_plain_empty();
             m_evt_handler->end_map();
             goto seqimap_finish;
         }
@@ -38051,7 +39510,7 @@ seqimap_start:
         else if(first == ',' || first == ']')
         {
             _c4dbgp("seqimap[RKCL]: found ','. finish without val");
-            m_evt_handler->set_val_scalar_plain({});
+            m_evt_handler->set_val_scalar_plain_empty();
             m_evt_handler->end_map();
             goto seqimap_finish;
         }
@@ -38099,14 +39558,14 @@ seqflow_start:
     _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->indref != npos);
 
     _handle_flow_skip_whitespace();
-    csubstr rem = m_evt_handler->m_curr->line_contents.rem;
-    if(!rem.len)
+    // don't assign to csubstr rem: otherwise, gcc12,13,14 -O3 -m32 misbuilds
+    if(!m_evt_handler->m_curr->line_contents.rem.len)
         goto seqflow_again;
 
     if(has_any(RVAL))
     {
         _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RNXT));
-        const char first = rem.str[0];
+        const char first = m_evt_handler->m_curr->line_contents.rem.str[0];
         ScannedScalar sc;
         if(first == '\'')
         {
@@ -38173,7 +39632,7 @@ seqflow_start:
             if(_maybe_scan_following_comma())
             {
                 _c4dbgp("seqflow[RVAL]: empty scalar!");
-                m_evt_handler->set_val_scalar_plain({});
+                m_evt_handler->set_val_scalar_plain_empty();
                 m_evt_handler->add_sibling();
             }
         }
@@ -38186,7 +39645,7 @@ seqflow_start:
             if(_maybe_scan_following_comma())
             {
                 _c4dbgp("seqflow[RVAL]: empty scalar!");
-                m_evt_handler->set_val_scalar_plain({});
+                m_evt_handler->set_val_scalar_plain_empty();
                 m_evt_handler->add_sibling();
             }
         }
@@ -38196,7 +39655,7 @@ seqflow_start:
             addrem_flags(RNXT, RVAL);
             m_evt_handler->begin_map_val_flow();
             _set_indentation(m_evt_handler->m_parent->indref);
-            m_evt_handler->set_key_scalar_plain({});
+            m_evt_handler->set_key_scalar_plain_empty();
             addrem_flags(RSEQIMAP|RVAL, RSEQ|RNXT);
             _line_progressed(1);
             goto seqflow_finish;
@@ -38222,7 +39681,7 @@ seqflow_start:
     {
         _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RNXT));
         _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_none(RVAL));
-        const char first = rem.str[0];
+        const char first = m_evt_handler->m_curr->line_contents.rem.str[0];
         if(first == ',')
         {
             _c4dbgp("seqflow[RNXT]: expect next val");
@@ -38335,10 +39794,18 @@ mapflow_start:
         else if(first == ':')
         {
             _c4dbgp("mapflow[RKEY]: setting empty key");
-            m_evt_handler->set_key_scalar_plain({});
+            m_evt_handler->set_key_scalar_plain_empty();
             addrem_flags(RVAL, RKEY|QMRK);
             _line_progressed(1);
             _maybe_skip_whitespace_tokens();
+        }
+        else if(first == ',')
+        {
+            _c4dbgp("mapflow[RKEY]: empty key+val!");
+            m_evt_handler->set_key_scalar_plain_empty();
+            m_evt_handler->set_val_scalar_plain_empty();
+            addrem_flags(RNXT, RKEY|QMRK);
+            // keep going in this function
         }
         else if(first == '}') // this happens on a trailing comma like ", }"
         {
@@ -38416,7 +39883,7 @@ mapflow_start:
         {
             _c4dbgp("mapflow[RKCL]: end with missing val!");
             addrem_flags(RVAL, RKCL);
-            m_evt_handler->set_val_scalar_plain({});
+            m_evt_handler->set_val_scalar_plain_empty();
             m_evt_handler->end_map();
             _line_progressed(1);
             goto mapflow_finish;
@@ -38424,7 +39891,7 @@ mapflow_start:
         else if(first == ',')
         {
             _c4dbgp("mapflow[RKCL]: got comma. val is missing");
-            m_evt_handler->set_val_scalar_plain({});
+            m_evt_handler->set_val_scalar_plain_empty();
             m_evt_handler->add_sibling();
             addrem_flags(RKEY, RKCL);
             _line_progressed(1);
@@ -38490,10 +39957,17 @@ mapflow_start:
         else if(first == '}')
         {
             _c4dbgp("mapflow[RVAL]: end!");
-            m_evt_handler->set_val_scalar_plain({});
+            m_evt_handler->set_val_scalar_plain_empty();
             m_evt_handler->end_map();
             _line_progressed(1);
             goto mapflow_finish;
+        }
+        else if(first == ',')
+        {
+            _c4dbgp("mapflow[RVAL]: empty val!");
+            m_evt_handler->set_val_scalar_plain_empty();
+            addrem_flags(RNXT, RVAL);
+            // keep going in this function
         }
         else if(first == '*')
         {
@@ -38582,7 +40056,7 @@ mapflow_start:
         else if(first == ':')
         {
             _c4dbgp("mapflow[QMRK]: setting empty key");
-            m_evt_handler->set_key_scalar_plain({});
+            m_evt_handler->set_key_scalar_plain_empty();
             addrem_flags(RVAL, QMRK);
             _line_progressed(1);
             _maybe_skip_whitespace_tokens();
@@ -38590,11 +40064,18 @@ mapflow_start:
         else if(first == '}') // this happens on a trailing comma like ", }"
         {
             _c4dbgp("mapflow[QMRK]: end!");
-            m_evt_handler->set_key_scalar_plain({});
-            m_evt_handler->set_val_scalar_plain({});
+            m_evt_handler->set_key_scalar_plain_empty();
+            m_evt_handler->set_val_scalar_plain_empty();
             m_evt_handler->end_map();
             _line_progressed(1);
             goto mapflow_finish;
+        }
+        else if(first == ',')
+        {
+            _c4dbgp("mapflow[QMRK]: empty key+val!");
+            m_evt_handler->set_key_scalar_plain_empty();
+            m_evt_handler->set_val_scalar_plain_empty();
+            addrem_flags(RNXT, QMRK);
         }
         else if(first == '&')
         {
@@ -38848,7 +40329,7 @@ seqblck_start:
                 else if(m_evt_handler->m_parent && m_evt_handler->m_parent->indref == startindent && has_any(RMAP|BLCK, m_evt_handler->m_parent))
                 {
                     _c4dbgp("seqblck[RVAL]: empty val + end indentless seq + set key");
-                    m_evt_handler->set_val_scalar_plain({});
+                    m_evt_handler->set_val_scalar_plain_empty();
                     m_evt_handler->end_seq();
                     m_evt_handler->add_sibling();
                     csubstr maybe_filtered = _maybe_filter_key_scalar_plain(sc, m_evt_handler->m_curr->indref);  // KEY!
@@ -38890,7 +40371,7 @@ seqblck_start:
             {
                 _c4dbgp("seqblck[RVAL]: prev val was empty");
                 _handle_annotations_before_blck_val_scalar();
-                m_evt_handler->set_val_scalar_plain({});
+                m_evt_handler->set_val_scalar_plain_empty();
                 // keep in RVAL, but for the next sibling
                 m_evt_handler->add_sibling();
             }
@@ -38915,7 +40396,7 @@ seqblck_start:
             _handle_annotations_before_start_mapblck(startline);
             m_evt_handler->begin_map_val_block();
             _handle_annotations_and_indentation_after_start_mapblck(startindent, startline);
-            m_evt_handler->set_key_scalar_plain({});
+            m_evt_handler->set_key_scalar_plain_empty();
             addrem_flags(RMAP|RVAL, RSEQ|RNXT);
             _line_progressed(1);
             _maybe_skip_whitespace_tokens();
@@ -38987,43 +40468,63 @@ seqblck_start:
         // handle indentation
         //
         _c4dbgpf("seqblck[RNXT]: indref={} indentation={}", m_evt_handler->m_curr->indref, m_evt_handler->m_curr->line_contents.indentation);
-        if(C4_UNLIKELY(!_at_line_begin()))
-            _c4err("parse error");
-        if(m_evt_handler->m_curr->indentation_ge())
+        if(C4_LIKELY(_at_line_begin()))
         {
-            _c4dbgpf("seqblck[RNXT]: skip {} from indref", m_evt_handler->m_curr->indref);
-            _line_progressed(m_evt_handler->m_curr->indref);
-            _maybe_skip_whitespace_tokens();
-            rem = m_evt_handler->m_curr->line_contents.rem;
-            if(!rem.len)
-                goto seqblck_again;
-        }
-        else if(m_evt_handler->m_curr->indentation_lt())
-        {
-            _c4dbgp("seqblck[RNXT]: smaller indentation!");
-            _handle_indentation_pop_from_block_seq();
-            if(has_all(RSEQ|BLCK))
+            _c4dbgp("seqblck[RNXT]: at line begin");
+            if(m_evt_handler->m_curr->indentation_ge())
             {
-                _c4dbgp("seqblck[RNXT]: still seqblck!");
-                _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RNXT));
-                _line_progressed(m_evt_handler->m_curr->line_contents.indentation);
+                _c4dbgpf("seqblck[RNXT]: skip {} from indref", m_evt_handler->m_curr->indref);
+                _line_progressed(m_evt_handler->m_curr->indref);
+                _maybe_skip_whitespace_tokens();
                 rem = m_evt_handler->m_curr->line_contents.rem;
                 if(!rem.len)
                     goto seqblck_again;
             }
-            else
+            else if(m_evt_handler->m_curr->indentation_lt())
             {
-                _c4dbgp("seqblck[RNXT]: no longer seqblck!");
-                goto seqblck_finish;
+                _c4dbgp("seqblck[RNXT]: smaller indentation!");
+                _handle_indentation_pop_from_block_seq();
+                if(has_all(RSEQ|BLCK))
+                {
+                    _c4dbgp("seqblck[RNXT]: still seqblck!");
+                    _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RNXT));
+                    _line_progressed(m_evt_handler->m_curr->line_contents.indentation);
+                    rem = m_evt_handler->m_curr->line_contents.rem;
+                    if(!rem.len)
+                        goto seqblck_again;
+                }
+                else
+                {
+                    _c4dbgp("seqblck[RNXT]: no longer seqblck!");
+                    goto seqblck_finish;
+                }
+            }
+            else if(m_evt_handler->m_curr->line_contents.indentation == npos)
+            {
+                _c4dbgpf("seqblck[RNXT]: blank line, len={}", m_evt_handler->m_curr->line_contents.rem);
+                _line_progressed(m_evt_handler->m_curr->line_contents.rem.len);
+                rem = m_evt_handler->m_curr->line_contents.rem;
+                if(!rem.len)
+                    goto seqblck_again;
             }
         }
-        else if(m_evt_handler->m_curr->line_contents.indentation == npos)
+        else
         {
-            _c4dbgpf("seqblck[RNXT]: blank line, len={}", m_evt_handler->m_curr->line_contents.rem);
-            _line_progressed(m_evt_handler->m_curr->line_contents.rem.len);
-            rem = m_evt_handler->m_curr->line_contents.rem;
-            if(!rem.len)
-                goto seqblck_again;
+            _c4dbgp("seqblck[RNXT]: NOT at line begin");
+            if(!rem.begins_with_any(" \t"))
+            {
+                _c4err("parse error");
+            }
+            else
+            {
+                _skipchars(" \t");
+                rem = m_evt_handler->m_curr->line_contents.rem;
+                if(!rem.len)
+                {
+                    _c4dbgp("seqblck[RNXT]: again");
+                    goto seqblck_again;
+                }
+            }
         }
         //
         // now handle the tokens
@@ -39262,7 +40763,7 @@ mapblck_start:
         {
             _c4dbgp("mapblck[RKEY]: setting empty key");
             _handle_annotations_before_blck_key_scalar();
-            m_evt_handler->set_key_scalar_plain({});
+            m_evt_handler->set_key_scalar_plain_empty();
             addrem_flags(RVAL, RKEY);
             _line_progressed(1);
             _maybe_skip_whitespace_tokens();
@@ -39398,7 +40899,7 @@ mapblck_start:
         {
             _c4dbgp("mapblck[RKCL]: got '?'. val was empty");
             _RYML_CB_CHECK(m_evt_handler->m_stack.m_callbacks, m_was_inside_qmrk);
-            m_evt_handler->set_val_scalar_plain({});
+            m_evt_handler->set_val_scalar_plain_empty();
             m_evt_handler->add_sibling();
             addrem_flags(QMRK, RKCL);
             _line_progressed(1);
@@ -39440,7 +40941,7 @@ mapblck_start:
         {
             _RYML_CB_CHECK(m_evt_handler->m_stack.m_callbacks, m_evt_handler->m_curr->indentation_eq());
             _c4dbgp("mapblck[RKCL]: missing :");
-            m_evt_handler->set_val_scalar_plain({});
+            m_evt_handler->set_val_scalar_plain_empty();
             m_evt_handler->add_sibling();
             m_was_inside_qmrk = false;
             addrem_flags(RKEY, RKCL);
@@ -39581,7 +41082,7 @@ mapblck_start:
                 else
                 {
                     _c4dbgp("mapblck[RVAL]: prev val empty+this is a key");
-                    m_evt_handler->set_val_scalar_plain({});
+                    m_evt_handler->set_val_scalar_plain_empty();
                     m_evt_handler->add_sibling();
                     csubstr maybe_filtered = _maybe_filter_key_scalar_squot(sc); // KEY!
                     m_evt_handler->set_key_scalar_squoted(maybe_filtered);
@@ -39621,7 +41122,7 @@ mapblck_start:
                 else
                 {
                     _c4dbgp("mapblck[RVAL]: prev val empty+this is a key");
-                    m_evt_handler->set_val_scalar_plain({});
+                    m_evt_handler->set_val_scalar_plain_empty();
                     m_evt_handler->add_sibling();
                     csubstr maybe_filtered = _maybe_filter_key_scalar_dquot(sc); // KEY!
                     m_evt_handler->set_key_scalar_dquoted(maybe_filtered);
@@ -39683,7 +41184,7 @@ mapblck_start:
                 {
                     _c4dbgp("mapblck[RVAL]: prev val empty+this is a key");
                     _handle_annotations_before_blck_val_scalar();
-                    m_evt_handler->set_val_scalar_plain({});
+                    m_evt_handler->set_val_scalar_plain_empty();
                     m_evt_handler->add_sibling();
                     csubstr maybe_filtered = _maybe_filter_key_scalar_plain(sc, m_evt_handler->m_curr->indref); // KEY!
                     m_evt_handler->set_key_scalar_plain(maybe_filtered);
@@ -39726,7 +41227,7 @@ mapblck_start:
             addrem_flags(RNXT, RVAL);
             _handle_annotations_before_blck_val_scalar();
             m_evt_handler->begin_seq_val_flow();
-            addrem_flags(RSEQ|FLOW|RVAL, RMAP|BLCK|RNXT|BLCK);
+            addrem_flags(RSEQ|FLOW|RVAL, RMAP|BLCK|RNXT);
             _set_indentation(m_evt_handler->m_curr->indref + 1u);
             _line_progressed(1);
             goto mapblck_finish;
@@ -39785,7 +41286,7 @@ mapblck_start:
             if(startindent == m_evt_handler->m_curr->indref)
             {
                 _c4dbgp("mapblck[RVAL]: anchor for next key. val is missing!");
-                m_evt_handler->set_val_scalar_plain({});
+                m_evt_handler->set_val_scalar_plain_empty();
                 m_evt_handler->add_sibling();
                 addrem_flags(RKEY, RVAL);
             }
@@ -39801,7 +41302,7 @@ mapblck_start:
             {
                 _c4dbgp("mapblck[RVAL]: tag for next key. val is missing!");
                 _handle_annotations_before_blck_val_scalar();
-                m_evt_handler->set_val_scalar_plain({});
+                m_evt_handler->set_val_scalar_plain_empty();
                 m_evt_handler->add_sibling();
                 addrem_flags(RKEY, RVAL);
             }
@@ -39815,7 +41316,7 @@ mapblck_start:
             {
                 _c4dbgp("mapblck[RVAL]: got '?'. val was empty");
                 _handle_annotations_before_blck_val_scalar();
-                m_evt_handler->set_val_scalar_plain({});
+                m_evt_handler->set_val_scalar_plain_empty();
                 m_evt_handler->add_sibling();
                 addrem_flags(QMRK, RVAL);
             }
@@ -39842,9 +41343,9 @@ mapblck_start:
             if(startindent == m_evt_handler->m_curr->indref)
             {
                 _c4dbgp("mapblck[RVAL]: got ':'. val was empty, next key as well");
-                m_evt_handler->set_val_scalar_plain({});
+                m_evt_handler->set_val_scalar_plain_empty();
                 m_evt_handler->add_sibling();
-                m_evt_handler->set_key_scalar_plain({});
+                m_evt_handler->set_key_scalar_plain_empty();
                 _line_progressed(1);
                 _maybe_skip_whitespace_tokens();
                 goto mapblck_again;
@@ -39921,6 +41422,24 @@ mapblck_start:
                 else
                 {
                     goto mapblck_finish;
+                }
+            }
+        }
+        else
+        {
+            _c4dbgp("mapblck[RNXT]: NOT at line begin");
+            if(!rem.begins_with_any(" \t"))
+            {
+                _c4err("parse error");
+            }
+            else
+            {
+                _skipchars(" \t");
+                rem = m_evt_handler->m_curr->line_contents.rem;
+                if(!rem.len)
+                {
+                    _c4dbgp("seqblck[RNXT]: again");
+                    goto mapblck_again;
                 }
             }
         }
@@ -40118,7 +41637,7 @@ mapblck_start:
                 _c4dbgp("mapblck[QMRK]: empty key");
                 addrem_flags(RVAL, QMRK);
                 _handle_annotations_before_blck_key_scalar();
-                m_evt_handler->set_key_scalar_plain({});
+                m_evt_handler->set_key_scalar_plain_empty();
                 _line_progressed(1);
                 _maybe_skip_whitespace_tokens();
             }
@@ -40129,7 +41648,7 @@ mapblck_start:
                 _handle_annotations_before_start_mapblck_as_key();
                 m_evt_handler->begin_map_key_block();
                 _handle_annotations_and_indentation_after_start_mapblck(startindent, startline);
-                m_evt_handler->set_key_scalar_plain({});
+                m_evt_handler->set_key_scalar_plain_empty();
                 _line_progressed(1);
                 _maybe_skip_whitespace_tokens();
                 _set_indentation(startindent);
@@ -40218,8 +41737,8 @@ mapblck_start:
         else if(first == '?')
         {
             _c4dbgp("mapblck[QMRK]: another QMRK '?'");
-            m_evt_handler->set_key_scalar_plain({});
-            m_evt_handler->set_val_scalar_plain({});
+            m_evt_handler->set_key_scalar_plain_empty();
+            m_evt_handler->set_val_scalar_plain_empty();
             m_evt_handler->add_sibling();
             _line_progressed(1);
         }
@@ -40315,6 +41834,10 @@ void ParseEngine<EventHandler>::_handle_unk_json()
         _set_indentation(m_evt_handler->m_curr->line_contents.current_col(rem));
         _line_progressed(1);
     }
+    else if(_handle_bom())
+    {
+        _c4dbgp("byte order mark");
+    }
     else
     {
         _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks,  ! has_any(SSCL));
@@ -40401,8 +41924,15 @@ void ParseEngine<EventHandler>::_handle_unk()
 
     if(m_evt_handler->m_curr->line_contents.indentation == 0u && _at_line_begin())
     {
-        const char first = rem.str[0];
         _c4dbgp("rtop: zero indent + at line begin");
+        if(_handle_bom())
+        {
+            _c4dbgp("byte order mark!");
+            rem = m_evt_handler->m_curr->line_contents.rem;
+            if(!rem.len)
+                return;
+        }
+        const char first = rem.str[0];
         if(first == '-')
         {
             _c4dbgp("rtop: suspecting doc");
@@ -40541,7 +42071,7 @@ void ParseEngine<EventHandler>::_handle_unk()
             _maybe_begin_doc();
             _handle_annotations_before_blck_val_scalar();
             m_evt_handler->begin_map_val_block();
-            m_evt_handler->set_key_scalar_plain({});
+            m_evt_handler->set_key_scalar_plain_empty();
             m_doc_empty = false;
             _save_indentation();
         }
@@ -40844,7 +42374,7 @@ C4_COLD void ParseEngine<EventHandler>::_handle_usty()
             add_flags(RNXT);
             _handle_annotations_before_blck_val_scalar();
             m_evt_handler->_push();
-            m_evt_handler->set_key_scalar_plain({});
+            m_evt_handler->set_key_scalar_plain_empty();
             addrem_flags(RMAP|BLCK|RVAL, RNXT|USTY);
             _save_indentation();
             _line_progressed(1);
@@ -41036,7 +42566,7 @@ C4_COLD void ParseEngine<EventHandler>::_handle_usty()
             add_flags(RNXT);
             _handle_annotations_before_blck_val_scalar();
             m_evt_handler->begin_map_val_block();
-            m_evt_handler->set_key_scalar_plain({});
+            m_evt_handler->set_key_scalar_plain_empty();
             addrem_flags(RMAP|BLCK|RVAL, RNXT|USTY);
             _save_indentation();
             _line_progressed(1);
@@ -41314,9 +42844,12 @@ void ParseEngine<EventHandler>::parse_in_place_ev(csubstr filename, substr src)
     _end_stream();
     m_evt_handler->finish_parse();
 }
+/** @endcond */
 
 } // namespace yml
 } // namespace c4
+
+// NOLINTEND(hicpp-signed-bitwise,cppcoreguidelines-avoid-goto,hicpp-avoid-goto,hicpp-multiway-paths-covered)
 
 #undef _c4dbgnextline
 
@@ -41386,6 +42919,8 @@ void ParseEngine<EventHandler>::parse_in_place_ev(csubstr filename, substr src)
 
 namespace c4 {
 namespace yml {
+
+/** @cond dev */
 
 id_type ReferenceResolver::count_anchors_and_refs_(id_type n)
 {
@@ -41666,6 +43201,7 @@ void ReferenceResolver::resolve(Tree *t_)
     _c4dbgp("resolving references: finished");
 }
 
+/** @endcond */
 
 } // namespace ryml
 } // namespace c4
@@ -41776,74 +43312,74 @@ Tree parse_in_place(Parser *parser,                   substr yaml               
 // this is vertically aligned to highlight the parameter differences.
 void parse_in_place(csubstr filename, substr yaml, Tree *t, id_type node_id) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); parse_in_place(&parser, filename, yaml, t, node_id); }
 void parse_in_place(                  substr yaml, Tree *t, id_type node_id) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); parse_in_place(&parser, {}      , yaml, t, node_id); }
-void parse_in_place(csubstr filename, substr yaml, Tree *t                ) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); parse_in_place(&parser, filename, yaml, t, t->root_id()); }
-void parse_in_place(                  substr yaml, Tree *t                ) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); parse_in_place(&parser, {}      , yaml, t, t->root_id()); }
-void parse_in_place(csubstr filename, substr yaml, NodeRef node           ) { RYML_CHECK(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler); parse_in_place(&parser, filename, yaml, node.tree(), node.id()); }
-void parse_in_place(                  substr yaml, NodeRef node           ) { RYML_CHECK(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler); parse_in_place(&parser, {}      , yaml, node.tree(), node.id()); }
-Tree parse_in_place(csubstr filename, substr yaml                         ) { Parser::handler_type event_handler; Parser parser(&event_handler); Tree tree(parser.callbacks()); parse_in_place(&parser, filename, yaml, &tree, tree.root_id()); return tree; }
-Tree parse_in_place(                  substr yaml                         ) { Parser::handler_type event_handler; Parser parser(&event_handler); Tree tree(parser.callbacks()); parse_in_place(&parser, {}      , yaml, &tree, tree.root_id()); return tree; }
+void parse_in_place(csubstr filename, substr yaml, Tree *t                 ) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); parse_in_place(&parser, filename, yaml, t, t->root_id()); }
+void parse_in_place(                  substr yaml, Tree *t                 ) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); parse_in_place(&parser, {}      , yaml, t, t->root_id()); }
+void parse_in_place(csubstr filename, substr yaml, NodeRef node            ) { RYML_CHECK(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler); parse_in_place(&parser, filename, yaml, node.tree(), node.id()); }
+void parse_in_place(                  substr yaml, NodeRef node            ) { RYML_CHECK(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler); parse_in_place(&parser, {}      , yaml, node.tree(), node.id()); }
+Tree parse_in_place(csubstr filename, substr yaml                          ) { Parser::handler_type event_handler; Parser parser(&event_handler); Tree tree(parser.callbacks()); parse_in_place(&parser, filename, yaml, &tree, tree.root_id()); return tree; }
+Tree parse_in_place(                  substr yaml                          ) { Parser::handler_type event_handler; Parser parser(&event_handler); Tree tree(parser.callbacks()); parse_in_place(&parser, {}      , yaml, &tree, tree.root_id()); return tree; }
 
 
 // this is vertically aligned to highlight the parameter differences.
 void parse_json_in_place(Parser *parser,                   substr json, Tree *t, id_type node_id) { parse_json_in_place(parser, {}, json, t, node_id); }
-void parse_json_in_place(Parser *parser, csubstr filename, substr json, Tree *t                ) { RYML_CHECK(t); parse_json_in_place(parser, filename, json, t, t->root_id()); }
-void parse_json_in_place(Parser *parser,                   substr json, Tree *t                ) { RYML_CHECK(t); parse_json_in_place(parser, {}      , json, t, t->root_id()); }
-void parse_json_in_place(Parser *parser, csubstr filename, substr json, NodeRef node           ) { RYML_CHECK(!node.invalid()); parse_json_in_place(parser, filename, json, node.tree(), node.id()); }
-void parse_json_in_place(Parser *parser,                   substr json, NodeRef node           ) { RYML_CHECK(!node.invalid()); parse_json_in_place(parser, {}      , json, node.tree(), node.id()); }
-Tree parse_json_in_place(Parser *parser, csubstr filename, substr json                         ) { RYML_CHECK(parser); RYML_CHECK(parser->m_evt_handler); Tree tree(parser->callbacks()); parse_json_in_place(parser, filename, json, &tree, tree.root_id()); return tree; }
-Tree parse_json_in_place(Parser *parser,                   substr json                         ) { RYML_CHECK(parser); RYML_CHECK(parser->m_evt_handler); Tree tree(parser->callbacks()); parse_json_in_place(parser, {}      , json, &tree, tree.root_id()); return tree; }
+void parse_json_in_place(Parser *parser, csubstr filename, substr json, Tree *t                 ) { RYML_CHECK(t); parse_json_in_place(parser, filename, json, t, t->root_id()); }
+void parse_json_in_place(Parser *parser,                   substr json, Tree *t                 ) { RYML_CHECK(t); parse_json_in_place(parser, {}      , json, t, t->root_id()); }
+void parse_json_in_place(Parser *parser, csubstr filename, substr json, NodeRef node            ) { RYML_CHECK(!node.invalid()); parse_json_in_place(parser, filename, json, node.tree(), node.id()); }
+void parse_json_in_place(Parser *parser,                   substr json, NodeRef node            ) { RYML_CHECK(!node.invalid()); parse_json_in_place(parser, {}      , json, node.tree(), node.id()); }
+Tree parse_json_in_place(Parser *parser, csubstr filename, substr json                          ) { RYML_CHECK(parser); RYML_CHECK(parser->m_evt_handler); Tree tree(parser->callbacks()); parse_json_in_place(parser, filename, json, &tree, tree.root_id()); return tree; }
+Tree parse_json_in_place(Parser *parser,                   substr json                          ) { RYML_CHECK(parser); RYML_CHECK(parser->m_evt_handler); Tree tree(parser->callbacks()); parse_json_in_place(parser, {}      , json, &tree, tree.root_id()); return tree; }
 
 // this is vertically aligned to highlight the parameter differences.
 void parse_json_in_place(csubstr filename, substr json, Tree *t, id_type node_id) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); parse_json_in_place(&parser, filename, json, t, node_id); }
 void parse_json_in_place(                  substr json, Tree *t, id_type node_id) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); parse_json_in_place(&parser, {}      , json, t, node_id); }
-void parse_json_in_place(csubstr filename, substr json, Tree *t                ) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); parse_json_in_place(&parser, filename, json, t, t->root_id()); }
-void parse_json_in_place(                  substr json, Tree *t                ) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); parse_json_in_place(&parser, {}      , json, t, t->root_id()); }
-void parse_json_in_place(csubstr filename, substr json, NodeRef node           ) { RYML_CHECK(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler); parse_json_in_place(&parser, filename, json, node.tree(), node.id()); }
-void parse_json_in_place(                  substr json, NodeRef node           ) { RYML_CHECK(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler); parse_json_in_place(&parser, {}      , json, node.tree(), node.id()); }
-Tree parse_json_in_place(csubstr filename, substr json                         ) { Parser::handler_type event_handler; Parser parser(&event_handler); Tree tree(parser.callbacks()); parse_json_in_place(&parser, filename, json, &tree, tree.root_id()); return tree; }
-Tree parse_json_in_place(                  substr json                         ) { Parser::handler_type event_handler; Parser parser(&event_handler); Tree tree(parser.callbacks()); parse_json_in_place(&parser, {}      , json, &tree, tree.root_id()); return tree; }
+void parse_json_in_place(csubstr filename, substr json, Tree *t                 ) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); parse_json_in_place(&parser, filename, json, t, t->root_id()); }
+void parse_json_in_place(                  substr json, Tree *t                 ) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); parse_json_in_place(&parser, {}      , json, t, t->root_id()); }
+void parse_json_in_place(csubstr filename, substr json, NodeRef node            ) { RYML_CHECK(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler); parse_json_in_place(&parser, filename, json, node.tree(), node.id()); }
+void parse_json_in_place(                  substr json, NodeRef node            ) { RYML_CHECK(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler); parse_json_in_place(&parser, {}      , json, node.tree(), node.id()); }
+Tree parse_json_in_place(csubstr filename, substr json                          ) { Parser::handler_type event_handler; Parser parser(&event_handler); Tree tree(parser.callbacks()); parse_json_in_place(&parser, filename, json, &tree, tree.root_id()); return tree; }
+Tree parse_json_in_place(                  substr json                          ) { Parser::handler_type event_handler; Parser parser(&event_handler); Tree tree(parser.callbacks()); parse_json_in_place(&parser, {}      , json, &tree, tree.root_id()); return tree; }
 
 
 // this is vertically aligned to highlight the parameter differences.
 void parse_in_arena(Parser *parser, csubstr filename, csubstr yaml, Tree *t, id_type node_id) { RYML_CHECK(t); substr src = t->copy_to_arena(yaml); parse_in_place(parser, filename, src, t, node_id); }
 void parse_in_arena(Parser *parser,                   csubstr yaml, Tree *t, id_type node_id) { RYML_CHECK(t); substr src = t->copy_to_arena(yaml); parse_in_place(parser, {}      , src, t, node_id); }
-void parse_in_arena(Parser *parser, csubstr filename, csubstr yaml, Tree *t                ) { RYML_CHECK(t); substr src = t->copy_to_arena(yaml); parse_in_place(parser, filename, src, t, t->root_id()); }
-void parse_in_arena(Parser *parser,                   csubstr yaml, Tree *t                ) { RYML_CHECK(t); substr src = t->copy_to_arena(yaml); parse_in_place(parser, {}      , src, t, t->root_id()); }
-void parse_in_arena(Parser *parser, csubstr filename, csubstr yaml, NodeRef node           ) { RYML_CHECK(!node.invalid()); substr src = node.tree()->copy_to_arena(yaml); parse_in_place(parser, filename, src, node.tree(), node.id()); }
-void parse_in_arena(Parser *parser,                   csubstr yaml, NodeRef node           ) { RYML_CHECK(!node.invalid()); substr src = node.tree()->copy_to_arena(yaml); parse_in_place(parser, {}      , src, node.tree(), node.id()); }
-Tree parse_in_arena(Parser *parser, csubstr filename, csubstr yaml                         ) { RYML_CHECK(parser); RYML_CHECK(parser->m_evt_handler); Tree tree(parser->callbacks()); substr src = tree.copy_to_arena(yaml); parse_in_place(parser, filename, src, &tree, tree.root_id()); return tree; }
-Tree parse_in_arena(Parser *parser,                   csubstr yaml                         ) { RYML_CHECK(parser); RYML_CHECK(parser->m_evt_handler); Tree tree(parser->callbacks()); substr src = tree.copy_to_arena(yaml); parse_in_place(parser, {}      , src, &tree, tree.root_id()); return tree; }
+void parse_in_arena(Parser *parser, csubstr filename, csubstr yaml, Tree *t                 ) { RYML_CHECK(t); substr src = t->copy_to_arena(yaml); parse_in_place(parser, filename, src, t, t->root_id()); }
+void parse_in_arena(Parser *parser,                   csubstr yaml, Tree *t                 ) { RYML_CHECK(t); substr src = t->copy_to_arena(yaml); parse_in_place(parser, {}      , src, t, t->root_id()); }
+void parse_in_arena(Parser *parser, csubstr filename, csubstr yaml, NodeRef node            ) { RYML_CHECK(!node.invalid()); substr src = node.tree()->copy_to_arena(yaml); parse_in_place(parser, filename, src, node.tree(), node.id()); }
+void parse_in_arena(Parser *parser,                   csubstr yaml, NodeRef node            ) { RYML_CHECK(!node.invalid()); substr src = node.tree()->copy_to_arena(yaml); parse_in_place(parser, {}      , src, node.tree(), node.id()); }
+Tree parse_in_arena(Parser *parser, csubstr filename, csubstr yaml                          ) { RYML_CHECK(parser); RYML_CHECK(parser->m_evt_handler); Tree tree(parser->callbacks()); substr src = tree.copy_to_arena(yaml); parse_in_place(parser, filename, src, &tree, tree.root_id()); return tree; }
+Tree parse_in_arena(Parser *parser,                   csubstr yaml                          ) { RYML_CHECK(parser); RYML_CHECK(parser->m_evt_handler); Tree tree(parser->callbacks()); substr src = tree.copy_to_arena(yaml); parse_in_place(parser, {}      , src, &tree, tree.root_id()); return tree; }
 
 // this is vertically aligned to highlight the parameter differences.
 void parse_in_arena(csubstr filename, csubstr yaml, Tree *t, id_type node_id) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); substr src = t->copy_to_arena(yaml); parse_in_place(&parser, filename, src, t, node_id); }
 void parse_in_arena(                  csubstr yaml, Tree *t, id_type node_id) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); substr src = t->copy_to_arena(yaml); parse_in_place(&parser, {}      , src, t, node_id); }
-void parse_in_arena(csubstr filename, csubstr yaml, Tree *t                ) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); substr src = t->copy_to_arena(yaml); parse_in_place(&parser, filename, src, t, t->root_id()); }
-void parse_in_arena(                  csubstr yaml, Tree *t                ) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); substr src = t->copy_to_arena(yaml); parse_in_place(&parser, {}      , src, t, t->root_id()); }
-void parse_in_arena(csubstr filename, csubstr yaml, NodeRef node           ) { RYML_CHECK(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler); substr src = node.tree()->copy_to_arena(yaml); parse_in_place(&parser, filename, src, node.tree(), node.id()); }
-void parse_in_arena(                  csubstr yaml, NodeRef node           ) { RYML_CHECK(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler); substr src = node.tree()->copy_to_arena(yaml); parse_in_place(&parser, {}      , src, node.tree(), node.id()); }
-Tree parse_in_arena(csubstr filename, csubstr yaml                         ) { Parser::handler_type event_handler; Parser parser(&event_handler); Tree tree(parser.callbacks()); substr src = tree.copy_to_arena(yaml); parse_in_place(&parser, filename, src, &tree, tree.root_id()); return tree; }
-Tree parse_in_arena(                  csubstr yaml                         ) { Parser::handler_type event_handler; Parser parser(&event_handler); Tree tree(parser.callbacks()); substr src = tree.copy_to_arena(yaml); parse_in_place(&parser, {}      , src, &tree, tree.root_id()); return tree; }
+void parse_in_arena(csubstr filename, csubstr yaml, Tree *t                 ) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); substr src = t->copy_to_arena(yaml); parse_in_place(&parser, filename, src, t, t->root_id()); }
+void parse_in_arena(                  csubstr yaml, Tree *t                 ) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); substr src = t->copy_to_arena(yaml); parse_in_place(&parser, {}      , src, t, t->root_id()); }
+void parse_in_arena(csubstr filename, csubstr yaml, NodeRef node            ) { RYML_CHECK(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler); substr src = node.tree()->copy_to_arena(yaml); parse_in_place(&parser, filename, src, node.tree(), node.id()); }
+void parse_in_arena(                  csubstr yaml, NodeRef node            ) { RYML_CHECK(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler); substr src = node.tree()->copy_to_arena(yaml); parse_in_place(&parser, {}      , src, node.tree(), node.id()); }
+Tree parse_in_arena(csubstr filename, csubstr yaml                          ) { Parser::handler_type event_handler; Parser parser(&event_handler); Tree tree(parser.callbacks()); substr src = tree.copy_to_arena(yaml); parse_in_place(&parser, filename, src, &tree, tree.root_id()); return tree; }
+Tree parse_in_arena(                  csubstr yaml                          ) { Parser::handler_type event_handler; Parser parser(&event_handler); Tree tree(parser.callbacks()); substr src = tree.copy_to_arena(yaml); parse_in_place(&parser, {}      , src, &tree, tree.root_id()); return tree; }
 
 
 // this is vertically aligned to highlight the parameter differences.
 void parse_json_in_arena(Parser *parser, csubstr filename, csubstr json, Tree *t, id_type node_id) { RYML_CHECK(t); substr src = t->copy_to_arena(json); parse_json_in_place(parser, filename, src, t, node_id); }
 void parse_json_in_arena(Parser *parser,                   csubstr json, Tree *t, id_type node_id) { RYML_CHECK(t); substr src = t->copy_to_arena(json); parse_json_in_place(parser, {}      , src, t, node_id); }
-void parse_json_in_arena(Parser *parser, csubstr filename, csubstr json, Tree *t                ) { RYML_CHECK(t); substr src = t->copy_to_arena(json); parse_json_in_place(parser, filename, src, t, t->root_id()); }
-void parse_json_in_arena(Parser *parser,                   csubstr json, Tree *t                ) { RYML_CHECK(t); substr src = t->copy_to_arena(json); parse_json_in_place(parser, {}      , src, t, t->root_id()); }
-void parse_json_in_arena(Parser *parser, csubstr filename, csubstr json, NodeRef node           ) { RYML_CHECK(!node.invalid()); substr src = node.tree()->copy_to_arena(json); parse_json_in_place(parser, filename, src, node.tree(), node.id()); }
-void parse_json_in_arena(Parser *parser,                   csubstr json, NodeRef node           ) { RYML_CHECK(!node.invalid()); substr src = node.tree()->copy_to_arena(json); parse_json_in_place(parser, {}      , src, node.tree(), node.id()); }
-Tree parse_json_in_arena(Parser *parser, csubstr filename, csubstr json                         ) { RYML_CHECK(parser); RYML_CHECK(parser->m_evt_handler); Tree tree(parser->callbacks()); substr src = tree.copy_to_arena(json); parse_json_in_place(parser, filename, src, &tree, tree.root_id()); return tree; }
-Tree parse_json_in_arena(Parser *parser,                   csubstr json                         ) { RYML_CHECK(parser); RYML_CHECK(parser->m_evt_handler); Tree tree(parser->callbacks()); substr src = tree.copy_to_arena(json); parse_json_in_place(parser, {}      , src, &tree, tree.root_id()); return tree; }
+void parse_json_in_arena(Parser *parser, csubstr filename, csubstr json, Tree *t                 ) { RYML_CHECK(t); substr src = t->copy_to_arena(json); parse_json_in_place(parser, filename, src, t, t->root_id()); }
+void parse_json_in_arena(Parser *parser,                   csubstr json, Tree *t                 ) { RYML_CHECK(t); substr src = t->copy_to_arena(json); parse_json_in_place(parser, {}      , src, t, t->root_id()); }
+void parse_json_in_arena(Parser *parser, csubstr filename, csubstr json, NodeRef node            ) { RYML_CHECK(!node.invalid()); substr src = node.tree()->copy_to_arena(json); parse_json_in_place(parser, filename, src, node.tree(), node.id()); }
+void parse_json_in_arena(Parser *parser,                   csubstr json, NodeRef node            ) { RYML_CHECK(!node.invalid()); substr src = node.tree()->copy_to_arena(json); parse_json_in_place(parser, {}      , src, node.tree(), node.id()); }
+Tree parse_json_in_arena(Parser *parser, csubstr filename, csubstr json                          ) { RYML_CHECK(parser); RYML_CHECK(parser->m_evt_handler); Tree tree(parser->callbacks()); substr src = tree.copy_to_arena(json); parse_json_in_place(parser, filename, src, &tree, tree.root_id()); return tree; }
+Tree parse_json_in_arena(Parser *parser,                   csubstr json                          ) { RYML_CHECK(parser); RYML_CHECK(parser->m_evt_handler); Tree tree(parser->callbacks()); substr src = tree.copy_to_arena(json); parse_json_in_place(parser, {}      , src, &tree, tree.root_id()); return tree; }
 
 // this is vertically aligned to highlight the parameter differences.
 void parse_json_in_arena(csubstr filename, csubstr json, Tree *t, id_type node_id) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); substr src = t->copy_to_arena(json); parse_json_in_place(&parser, filename, src, t, node_id); }
 void parse_json_in_arena(                  csubstr json, Tree *t, id_type node_id) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); substr src = t->copy_to_arena(json); parse_json_in_place(&parser, {}      , src, t, node_id); }
-void parse_json_in_arena(csubstr filename, csubstr json, Tree *t                ) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); substr src = t->copy_to_arena(json); parse_json_in_place(&parser, filename, src, t, t->root_id()); }
-void parse_json_in_arena(                  csubstr json, Tree *t                ) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); substr src = t->copy_to_arena(json); parse_json_in_place(&parser, {}      , src, t, t->root_id()); }
-void parse_json_in_arena(csubstr filename, csubstr json, NodeRef node           ) { RYML_CHECK(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler); substr src = node.tree()->copy_to_arena(json); parse_json_in_place(&parser, filename, src, node.tree(), node.id()); }
-void parse_json_in_arena(                  csubstr json, NodeRef node           ) { RYML_CHECK(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler); substr src = node.tree()->copy_to_arena(json); parse_json_in_place(&parser, {}      , src, node.tree(), node.id()); }
-Tree parse_json_in_arena(csubstr filename, csubstr json                         ) { Parser::handler_type event_handler; Parser parser(&event_handler); Tree tree(parser.callbacks()); substr src = tree.copy_to_arena(json); parse_json_in_place(&parser, filename, src, &tree, tree.root_id()); return tree; }
-Tree parse_json_in_arena(                  csubstr json                         ) { Parser::handler_type event_handler; Parser parser(&event_handler); Tree tree(parser.callbacks()); substr src = tree.copy_to_arena(json); parse_json_in_place(&parser, {}      , src, &tree, tree.root_id()); return tree; }
+void parse_json_in_arena(csubstr filename, csubstr json, Tree *t                 ) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); substr src = t->copy_to_arena(json); parse_json_in_place(&parser, filename, src, t, t->root_id()); }
+void parse_json_in_arena(                  csubstr json, Tree *t                 ) { RYML_CHECK(t); Parser::handler_type event_handler(t->callbacks()); Parser parser(&event_handler); substr src = t->copy_to_arena(json); parse_json_in_place(&parser, {}      , src, t, t->root_id()); }
+void parse_json_in_arena(csubstr filename, csubstr json, NodeRef node            ) { RYML_CHECK(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler); substr src = node.tree()->copy_to_arena(json); parse_json_in_place(&parser, filename, src, node.tree(), node.id()); }
+void parse_json_in_arena(                  csubstr json, NodeRef node            ) { RYML_CHECK(!node.invalid()); Parser::handler_type event_handler(node.tree()->callbacks()); Parser parser(&event_handler); substr src = node.tree()->copy_to_arena(json); parse_json_in_place(&parser, {}      , src, node.tree(), node.id()); }
+Tree parse_json_in_arena(csubstr filename, csubstr json                          ) { Parser::handler_type event_handler; Parser parser(&event_handler); Tree tree(parser.callbacks()); substr src = tree.copy_to_arena(json); parse_json_in_place(&parser, filename, src, &tree, tree.root_id()); return tree; }
+Tree parse_json_in_arena(                  csubstr json                          ) { Parser::handler_type event_handler; Parser parser(&event_handler); Tree tree(parser.callbacks()); substr src = tree.copy_to_arena(json); parse_json_in_place(&parser, {}      , src, &tree, tree.root_id()); return tree; }
 
 
 RYML_EXPORT C4_NO_INLINE size_t _find_last_newline_and_larger_indentation(csubstr s, size_t indentation) noexcept
@@ -41982,7 +43518,7 @@ C4_ALWAYS_INLINE bool _is_idchar(char c)
         || (c == '_' || c == '-' || c == '~' || c == '$');
 }
 
-typedef enum { kReadPending = 0, kKeyPending = 1, kValPending = 2 } _ppstate;
+enum _ppstate : int { kReadPending = 0, kKeyPending = 1, kValPending = 2 };
 C4_ALWAYS_INLINE _ppstate _next(_ppstate s)
 {
     int n = (int)s + 1;
@@ -42124,7 +43660,7 @@ inline void check_invariants(Tree const& t, id_type node)
 {
     if(node == NONE)
     {
-        if(t.size() == 0) return;
+        if(t.empty()) return;
         node = t.root_id();
     }
 

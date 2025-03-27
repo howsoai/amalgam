@@ -72,7 +72,7 @@ public:
 	}
 
 	//implement the map version of emplace, but allow for use of default constructor for the value
-	template <class... Args>
+	template<class... Args>
 	inline auto emplace(K key, Args&&... args)
 	{
 		if constexpr(sizeof...(Args) == 0)

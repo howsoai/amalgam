@@ -418,7 +418,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				}
 				else //ENT_COMPUTE_ENTITY_DISTANCE_CONTRIBUTIONS
 				{
-					conviction_processor.ComputeDistanceContributions(ents_to_compute_ptr, results_buffer);
+					conviction_processor.ComputeDistanceContributionsWithoutCache(ents_to_compute_ptr, results_buffer);
 				}
 
 				//clear compute_results as it may have been used for intermediate results

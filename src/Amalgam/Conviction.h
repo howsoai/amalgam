@@ -94,8 +94,8 @@ public:
 		}
 	}
 
-	//like ComputeDistanceContributions, but doesn't use contribs_sum_out and will run in parallel if applicable
-	inline void ComputeDistanceContributions(EntityReferenceSet *entities_to_compute, std::vector<double> &contribs_out)
+	//computes distance contributions without caching over entities_to_compute
+	inline void ComputeDistanceContributionsWithoutCache(EntityReferenceSet *entities_to_compute, std::vector<double> &contribs_out)
 	{
 	#ifdef MULTITHREAD_SUPPORT
 		//only cache concurrently if computing for all entities
@@ -192,21 +192,6 @@ public:
 		}
 	}
 
-	//populates probabilities_out with the distance probabilities given the distance contributions
-	static inline void ConvertDistanceContributionsToProbabilities(const std::vector<double> &contributions, const double contribution_sum, std::vector<double> &probabilities_out)
-	{
-		probabilities_out.reserve(contributions.size());
-		if(contribution_sum != 0)
-		{
-			for(const double &contrib : contributions)
-				probabilities_out.push_back(contrib / contribution_sum);
-		}
-		else //if contrib_sum == 0, then each contrib must be 0
-		{
-			probabilities_out.resize(contributions.size(), 0.0);
-		}
-	}
-
 	//Computes the case KL divergence or conviction for each case in entities_to_compute
 	//if normalize_convictions is false, it will return the kl divergences, if true, it will return the convictions
 	//if conviction_of_removal is true, then it will compute the conviction as if the entities not in base_group_entities were removed,
@@ -227,7 +212,17 @@ public:
 
 		//convert base distance contributions to probabilities
 		buffers->baseDistanceProbabilities.clear();
-		ConvertDistanceContributionsToProbabilities(buffers->baseDistanceContributions, contrib_sum, buffers->baseDistanceProbabilities);
+		buffers->baseDistanceProbabilities.reserve(buffers->baseDistanceContributions.size());
+
+		if(contrib_sum != 0)
+		{
+			for(const double &contrib : buffers->baseDistanceContributions)
+				buffers->baseDistanceProbabilities.push_back(contrib / contrib_sum);
+		}
+		else //if contrib_sum == 0, then each contrib must be 0
+		{
+			buffers->baseDistanceProbabilities.resize(buffers->baseDistanceContributions.size(), 0.0);
+		}
 
 		//cache constants for expected values
 		const size_t num_relevant_entities = knnCache->GetNumRelevantEntities();

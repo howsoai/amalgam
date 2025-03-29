@@ -18,6 +18,12 @@ thread_local
 #endif
 EntityQueryCaches::QueryCachesBuffers EntityQueryCaches::buffers;
 
+
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+thread_local
+#endif
+ConvictionProcessor<size_t, BitArrayIntegerSet>::ConvictionProcessorBuffers ConvictionProcessor<size_t, BitArrayIntegerSet>::buffers;
+
 bool EntityQueryCaches::DoesCachedConditionMatch(EntityQueryCondition *cond, bool last_condition)
 {
 	EvaluableNodeType qt = cond->queryType;
@@ -387,8 +393,8 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				}
 
 			#ifdef MULTITHREAD_SUPPORT
-				ConvictionProcessor<size_t, BitArrayIntegerSet> conviction_processor(buffers.convictionBuffers,
-					buffers.knnCache, distance_transform, distance_transform.GetNumToRetrieve(), cond->singleLabel, cond->useConcurrency);
+				ConvictionProcessor<size_t, BitArrayIntegerSet> conviction_processor(buffers.knnCache,
+					distance_transform, distance_transform.GetNumToRetrieve(), cond->singleLabel, cond->useConcurrency);
 			#else
 				ConvictionProcessor<size_t, BitArrayIntegerSet> conviction_processor(buffers.convictionBuffers,
 					buffers.knnCache, distance_transform, distance_transform.GetNumToRetrieve(), cond->singleLabel);

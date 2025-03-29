@@ -24,16 +24,15 @@ public:
 	};
 
 #ifdef MULTITHREAD_SUPPORT
-	ConvictionProcessor(ConvictionProcessorBuffers &_buffers, KnnCache &cache,
+	ConvictionProcessor(KnnCache &cache,
 		EntityQueriesStatistics::DistanceTransform<EntityReference> &distance_transform, size_t num_nearest_neighbors,
 		StringInternPool::StringID radius_label, bool run_concurrently)
 #else
-	ConvictionProcessor(ConvictionProcessorBuffers &_buffers, KnnCache &cache,
+	ConvictionProcessor(KnnCache &cache,
 		EntityQueriesStatistics::DistanceTransform<EntityReference> &distance_transform, size_t num_nearest_neighbors,
 		StringInternPool::StringID radius_label)
 #endif
 	{
-		buffers = &_buffers;
 		knnCache = &cache;
 		distanceTransform = &distance_transform;
 		numNearestNeighbors = num_nearest_neighbors;
@@ -50,23 +49,23 @@ public:
 		EntityReference additional_holdout_reference = DistanceReferencePair<EntityReference>::InvalidReference())
 	{
 		//fetch the knn results from the cache
-		buffers->neighbors.clear();
+		buffers.neighbors.clear();
 		knnCache->GetKnn(entity_reference, numNearestNeighbors, true,
-			buffers->neighbors, additional_holdout_reference);
+			buffers.neighbors, additional_holdout_reference);
 
 		double entity_weight = distanceTransform->getEntityWeightFunction(entity_reference);
-		return distanceTransform->ComputeDistanceContribution(buffers->neighbors, entity_weight);
+		return distanceTransform->ComputeDistanceContribution(buffers.neighbors, entity_weight);
 	}
 
 	//Like the other ComputeDistanceContribution, but only includes included_entities
 	inline double ComputeDistanceContribution(EntityReference entity_reference, EntityReferenceSet &included_entities)
 	{
 		//fetch the knn results from the cache
-		buffers->neighbors.clear();
-		knnCache->GetKnn(entity_reference, numNearestNeighbors, true, buffers->neighbors, included_entities);
+		buffers.neighbors.clear();
+		knnCache->GetKnn(entity_reference, numNearestNeighbors, true, buffers.neighbors, included_entities);
 
 		double entity_weight = distanceTransform->getEntityWeightFunction(entity_reference);
-		return distanceTransform->ComputeDistanceContribution(buffers->neighbors, entity_weight);
+		return distanceTransform->ComputeDistanceContribution(buffers.neighbors, entity_weight);
 	}
 
 	//Computes the Distance Contributions for each entity specified in entities_to_compute
@@ -75,7 +74,7 @@ public:
 	//sets contribs_sum_out to the sum of all distance contributions of entities in entities_to_compute and also, if not nullptr, in the cache.
 	inline void ComputeDistanceContributions(EntityReferenceSet *entities_to_compute, std::vector<double> &contribs_out, double &contribs_sum_out)
 	{
-		buffers->neighbors.reserve(numNearestNeighbors + 1);
+		buffers.neighbors.reserve(numNearestNeighbors + 1);
 		contribs_sum_out = 0.0;
 	
 		if(entities_to_compute == nullptr)
@@ -105,11 +104,11 @@ public:
 		IterateOverConcurrentlyIfPossible(*entities_to_compute,
 			[this, &contribs_out](auto index)
 			{
-				buffers->neighbors.clear();
-				knnCache->GetKnnWithoutCache(index, numNearestNeighbors, true, buffers->neighbors);
+				buffers.neighbors.clear();
+				knnCache->GetKnnWithoutCache(index, numNearestNeighbors, true, buffers.neighbors);
 
 				double entity_weight = distanceTransform->getEntityWeightFunction(index);
-				contribs_out[index] = distanceTransform->ComputeDistanceContribution(buffers->neighbors, entity_weight);
+				contribs_out[index] = distanceTransform->ComputeDistanceContribution(buffers.neighbors, entity_weight);
 			}
 		#ifdef MULTITHREAD_SUPPORT
 				,
@@ -133,7 +132,7 @@ public:
 	inline void ComputeDistanceContributionsFromEntities(EntityReferenceSet &included_entities, double excluded_entity_distance_contribution_value,
 		std::vector<double> &contribs_out, double &contribs_sum_out)
 	{
-		buffers->neighbors.reserve(numNearestNeighbors + 1);
+		buffers.neighbors.reserve(numNearestNeighbors + 1);
 		contribs_sum_out = 0.0;
 
 		//compute distance contribution for each entity in entities_to_compute
@@ -228,21 +227,21 @@ public:
 
 		//find base distance contributions
 		double contrib_sum = 0.0;
-		buffers->baseDistanceContributions.clear();
-		ComputeDistanceContributions(nullptr, buffers->baseDistanceContributions, contrib_sum);
+		buffers.baseDistanceContributions.clear();
+		ComputeDistanceContributions(nullptr, buffers.baseDistanceContributions, contrib_sum);
 
 		//convert base distance contributions to probabilities
-		buffers->baseDistanceProbabilities.clear();
-		buffers->baseDistanceProbabilities.reserve(buffers->baseDistanceContributions.size());
+		buffers.baseDistanceProbabilities.clear();
+		buffers.baseDistanceProbabilities.reserve(buffers.baseDistanceContributions.size());
 
 		if(contrib_sum != 0)
 		{
-			for(const double &contrib : buffers->baseDistanceContributions)
-				buffers->baseDistanceProbabilities.push_back(contrib / contrib_sum);
+			for(const double &contrib : buffers.baseDistanceContributions)
+				buffers.baseDistanceProbabilities.push_back(contrib / contrib_sum);
 		}
 		else //if contrib_sum == 0, then each contrib must be 0
 		{
-			buffers->baseDistanceProbabilities.resize(buffers->baseDistanceContributions.size(), 0.0);
+			buffers.baseDistanceProbabilities.resize(buffers.baseDistanceContributions.size(), 0.0);
 		}
 
 		//cache constants for expected values
@@ -253,7 +252,7 @@ public:
 		const double updated_contrib_to_contrib_scale_inverse = num_relevant_entities / (contrib_sum * (num_relevant_entities - 1));
 
 		//for measuring kl divergence, only need to measure those entities that have a value that is different
-		auto &updated_distance_contribs = buffers->updatedDistanceContribs;
+		auto &updated_distance_contribs = buffers.updatedDistanceContribs;
 		convictions_out.clear();
 		convictions_out.reserve(num_relevant_entities);
 		double kl_sum = 0.0;
@@ -267,9 +266,9 @@ public:
 			//compute distance contributions of the entities whose dcs will be changed by the removal of entity_reference
 			updated_distance_contribs.clear();
 			double updated_contrib_sum = 0.0;
-			buffers->neighbors.clear();
-			UpdateDistanceContributionsWithHoldout(entity_reference, 1.0 / num_relevant_entities, buffers->baseDistanceContributions, contrib_sum,
-				buffers->updatedDistanceContribs, updated_contrib_sum);
+			buffers.neighbors.clear();
+			UpdateDistanceContributionsWithHoldout(entity_reference, 1.0 / num_relevant_entities, buffers.baseDistanceContributions, contrib_sum,
+				buffers.updatedDistanceContribs, updated_contrib_sum);
 
 			//convert updated_distance_contribs to probabilities
 			//convert via the updated contribution sum and multiply by the probability mass of everything that isn't the holdout
@@ -305,12 +304,12 @@ public:
 			double kld_scaled;
 			if(conviction_of_removal)
 			{
-				kld_updated = PartialKullbackLeiblerDivergenceFromIndices(buffers->baseDistanceProbabilities, updated_distance_contribs);
+				kld_updated = PartialKullbackLeiblerDivergenceFromIndices(buffers.baseDistanceProbabilities, updated_distance_contribs);
 
 				//need to find unchanged distance contribution relative to the total in order to find the total probability mass
 				double total_distance_contribution_unchanged = contrib_sum;
 				for(auto &dc : updated_distance_contribs)
-					total_distance_contribution_unchanged -= buffers->baseDistanceContributions[dc.reference];
+					total_distance_contribution_unchanged -= buffers.baseDistanceContributions[dc.reference];
 
 				double total_probability_mass_changed = (total_distance_contribution_unchanged / contrib_sum);
 
@@ -318,7 +317,7 @@ public:
 			}
 			else
 			{
-				kld_updated = PartialKullbackLeiblerDivergenceFromIndices(updated_distance_contribs, buffers->baseDistanceProbabilities);
+				kld_updated = PartialKullbackLeiblerDivergenceFromIndices(updated_distance_contribs, buffers.baseDistanceProbabilities);
 
 				//since the updated distance contribs have already been converted to probabilities, can just use them directly
 				double total_updated_probability_mass_changed = 1.0;
@@ -387,13 +386,13 @@ public:
 	#endif
 
 		//compute the resulting combined model distance contributions (reuse buffer)
-		std::vector<double> &combined_model_distance_contribs = buffers->baseDistanceContributions;
+		std::vector<double> &combined_model_distance_contribs = buffers.baseDistanceContributions;
 		combined_model_distance_contribs.clear();
 		double contrib_sum = 0.0;
 		ComputeDistanceContributions(nullptr, combined_model_distance_contribs, contrib_sum);
 
 		//compute scaled distance contributions of only the base model (only from base_group_entities) (reuse buffer)
-		std::vector<double> &scaled_base_distance_contribs = buffers->baseDistanceProbabilities;
+		std::vector<double> &scaled_base_distance_contribs = buffers.baseDistanceProbabilities;
 		scaled_base_distance_contribs.clear();
 		double scaled_base_contrib_sum;
 
@@ -439,11 +438,15 @@ public:
 		//radius label if applicable
 		StringInternPool::StringID radiusLabel;
 
-		//reusable memory buffers
-		ConvictionProcessorBuffers *buffers;
-
 	#ifdef MULTITHREAD_SUPPORT
 		//if true, attempt to run with concurrency
 		bool runConcurrently;
 	#endif
+
+		//for multithreading, there should be one of these per thread
+	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+		thread_local
+	#endif
+			//buffers that can be used for less memory churn (per-thread if multithreaded)
+			static ConvictionProcessorBuffers buffers;
 };

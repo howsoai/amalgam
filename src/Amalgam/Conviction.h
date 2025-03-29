@@ -97,10 +97,31 @@ public:
 	//computes distance contributions without caching over entities_to_compute
 	inline void ComputeDistanceContributionsWithoutCache(EntityReferenceSet *entities_to_compute, std::vector<double> &contribs_out)
 	{
+		if(entities_to_compute == nullptr)
+			entities_to_compute = knnCache->GetRelevantEntities();
+
+		//TODO 23110: use block below once fix thread local buffer use
+		/*
+		IterateOverConcurrentlyIfPossible(*entities_to_compute,
+			[this, &contribs_out](auto index)
+			{
+				buffers->neighbors.clear();
+				knnCache->GetKnnWithoutCache(index, numNearestNeighbors, true, buffers->neighbors);
+
+				double entity_weight = distanceTransform->getEntityWeightFunction(index);
+				contribs_out[index] = distanceTransform->ComputeDistanceContribution(buffers->neighbors, entity_weight);
+			}
+		#ifdef MULTITHREAD_SUPPORT
+				,
+				true
+		#endif
+		);
+
+		*/
+
 	#ifdef MULTITHREAD_SUPPORT
-		//only cache concurrently if computing for all entities
-		if(runConcurrently && (entities_to_compute == nullptr || entities_to_compute->size() == knnCache->GetNumRelevantEntities()))
-			knnCache->PreCacheAllKnn(numNearestNeighbors, true, true);
+		if(runConcurrently)
+			knnCache->PreCacheKnn(entities_to_compute, numNearestNeighbors, true, true);
 	#endif
 
 		double contribs_sum_out = 0.0;
@@ -200,9 +221,9 @@ public:
 	{
 		//prime the cache
 	#ifdef MULTITHREAD_SUPPORT
-		knnCache->PreCacheAllKnn(numNearestNeighbors + 1, true, runConcurrently);
+		knnCache->PreCacheKnn(nullptr, numNearestNeighbors + 1, true, runConcurrently);
 	#else
-		knnCache->PreCacheAllKnn(numNearestNeighbors + 1, true);
+		knnCache->PreCacheKnn(nullptr, numNearestNeighbors + 1, true);
 	#endif
 
 		//find base distance contributions
@@ -360,9 +381,9 @@ public:
 		//prime cache; get double the number of numNearestNeighbors in attempt to reduce the number of queries needed
 		// other heuristics other than 2x may be considered, and the effectiveness of the heuristic entirely will depend on the overlap between the two case groups
 	#ifdef MULTITHREAD_SUPPORT
-		knnCache->PreCacheAllKnn(numNearestNeighbors * 2, true, runConcurrently);
+		knnCache->PreCacheKnn(nullptr, numNearestNeighbors * 2, true, runConcurrently);
 	#else
-		knnCache->PreCacheAllKnn(numNearestNeighbors * 2, true);
+		knnCache->PreCacheKnn(nullptr, numNearestNeighbors * 2, true);
 	#endif
 
 		//compute the resulting combined model distance contributions (reuse buffer)

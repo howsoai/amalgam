@@ -31,56 +31,31 @@ public:
 		cachedNeighbors.resize(sbfDataStore->GetNumInsertedEntities());
 	}
 
-	//gets the nearest neighbors to the index and caches them
+	//gets the nearest neighbors to the index and caches them for each of entities_to_compute
+	// if entities_to_compute is nullptr, then it will compute over relevant_indices passed in to the constructor
 	//if expand_to_first_nonzero_distance is true, it will expand k so that at least one non-zero distance is returned
 	// or return until all entities are included
 #ifdef MULTITHREAD_SUPPORT
-	void PreCacheAllKnn(size_t top_k, bool expand_to_first_nonzero_distance, bool run_concurrently)
+	void PreCacheKnn(BitArrayIntegerSet *entities_to_compute, size_t top_k, bool expand_to_first_nonzero_distance, bool run_concurrently)
 #else
-	void PreCacheAllKnn(size_t top_k, bool expand_to_first_nonzero_distance)
+	void PreCacheKnn(BitArrayIntegerSet *entities_to_compute, size_t top_k, bool expand_to_first_nonzero_distance)
 #endif
 	{
+		if(entities_to_compute == nullptr)
+			entities_to_compute = relevantIndices;
 
-	#ifdef MULTITHREAD_SUPPORT
-		if(run_concurrently && relevantIndices->size() > 1)
-		{
-			auto enqueue_task_lock = Concurrency::threadPool.AcquireTaskLock();
-			if(Concurrency::threadPool.AreThreadsAvailable())
-			{
-				auto task_set = Concurrency::threadPool.CreateCountableTaskSet(relevantIndices->size());
-				for(auto index : *relevantIndices)
-				{
-					//fill in cache entry if it is not sufficient
-					if(top_k > cachedNeighbors[index].size())
-					{
-						Concurrency::threadPool.BatchEnqueueTask(
-							[this, index, top_k, expand_to_first_nonzero_distance, &task_set]
-							{
-								sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator, *positionLabelIds, index,
-									top_k, radiusLabelId, *relevantIndices, expand_to_first_nonzero_distance, cachedNeighbors[index]);
-								task_set.MarkTaskCompleted();
-							}
-						);
-					}
-				}
-
-				task_set.WaitForTasks(&enqueue_task_lock);
-				return;
-			}
-		}
-		//not running concurrently
-	#endif
-
-		for(auto index : *relevantIndices)
-		{
-			//fill in cache entry if it is not sufficient
-			if(top_k > cachedNeighbors[index].size())
+		IterateOverConcurrentlyIfPossible(*entities_to_compute,
+			[this, top_k, expand_to_first_nonzero_distance](auto index)
 			{
 				cachedNeighbors[index].clear();
 				sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator,
 					*positionLabelIds, index, top_k, radiusLabelId, *relevantIndices, expand_to_first_nonzero_distance, cachedNeighbors[index]);
 			}
-		}
+		#ifdef MULTITHREAD_SUPPORT
+			,
+			run_concurrently
+		#endif
+			);
 	}
 
 	//returns true if the cached entities nearest to index contain other_index within top_k
@@ -93,6 +68,20 @@ public:
 		}
 
 		return false;
+	}
+
+	//gets the top_k nearest neighbor results of entities for the given index, excluding the additional_holdout_index, sets out to the results
+	//if expand_to_first_nonzero_distance is true, it will expand k so that at least one non-zero distance is returned
+	// or return until all entities are included
+	//but does not use cache
+	void GetKnnWithoutCache(size_t index, size_t top_k, bool expand_to_first_nonzero_distance,
+		std::vector<DistanceReferencePair<size_t>> &out,
+		size_t additional_holdout_index = std::numeric_limits<size_t>::max())
+	{
+		out.clear();
+		sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator,
+			*positionLabelIds, index, top_k, radiusLabelId, *relevantIndices,
+			expand_to_first_nonzero_distance, out, additional_holdout_index);
 	}
 
 	//gets the top_k nearest neighbor results of entities for the given index, excluding the additional_holdout_index, sets out to the results

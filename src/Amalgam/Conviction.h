@@ -81,7 +81,7 @@ public:
 			entities_to_compute = knnCache->GetRelevantEntities();
 	
 		//compute distance contribution for each entity in entities_to_compute
-		contribs_out.resize(entities_to_compute->size());
+		contribs_out.resize(entities_to_compute->GetEndInteger());
 		size_t out_index = 0;
 		for(auto entity_reference : *entities_to_compute)
 		{
@@ -101,10 +101,10 @@ public:
 
 		//TODO 23110: use block below once fix thread local buffer use
 		/*
+		contribs_out.resize(entities_to_compute->GetEndInteger());
 		IterateOverConcurrentlyIfPossible(*entities_to_compute,
 			[this, &contribs_out](auto index)
 			{
-				buffers.neighbors.clear();
 				knnCache->GetKnnWithoutCache(index, numNearestNeighbors, true, buffers.neighbors);
 
 				double entity_weight = distanceTransform->getEntityWeightFunction(index);
@@ -112,11 +112,11 @@ public:
 			}
 		#ifdef MULTITHREAD_SUPPORT
 				,
-				true
+				false
 		#endif
 		);
-
-		*/
+		return;
+		//*/
 
 	#ifdef MULTITHREAD_SUPPORT
 		if(runConcurrently)

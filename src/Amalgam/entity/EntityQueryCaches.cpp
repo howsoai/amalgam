@@ -396,8 +396,8 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				ConvictionProcessor<size_t, BitArrayIntegerSet> conviction_processor(buffers.knnCache,
 					distance_transform, distance_transform.GetNumToRetrieve(), cond->singleLabel, cond->useConcurrency);
 			#else
-				ConvictionProcessor<size_t, BitArrayIntegerSet> conviction_processor(buffers.convictionBuffers,
-					buffers.knnCache, distance_transform, distance_transform.GetNumToRetrieve(), cond->singleLabel);
+				ConvictionProcessor<size_t, BitArrayIntegerSet> conviction_processor(buffers.knnCache,
+					distance_transform, distance_transform.GetNumToRetrieve(), cond->singleLabel);
 			#endif
 				buffers.knnCache.ResetCache(sbfds, matching_entities, cond->distEvaluator, cond->positionLabels, cond->singleLabel);
 

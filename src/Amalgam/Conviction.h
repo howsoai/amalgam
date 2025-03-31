@@ -215,21 +215,23 @@ public:
 
 		//find base distance contributions
 		double contrib_sum = 0.0;
-		buffers.baseDistanceContributions.clear();
-		ComputeDistanceContributions(nullptr, buffers.baseDistanceContributions, contrib_sum);
+		auto &base_dist_contribs = buffers.baseDistanceContributions;
+		base_dist_contribs.clear();
+		ComputeDistanceContributions(nullptr, base_dist_contribs, contrib_sum);
 
 		//convert base distance contributions to probabilities
-		buffers.baseDistanceProbabilities.clear();
-		buffers.baseDistanceProbabilities.reserve(buffers.baseDistanceContributions.size());
+		auto &base_dist_probs = buffers.baseDistanceProbabilities;
+		base_dist_probs.clear();
+		base_dist_probs.reserve(base_dist_contribs.size());
 
 		if(contrib_sum != 0)
 		{
-			for(const double &contrib : buffers.baseDistanceContributions)
-				buffers.baseDistanceProbabilities.push_back(contrib / contrib_sum);
+			for(const double &contrib : base_dist_contribs)
+				base_dist_probs.push_back(contrib / contrib_sum);
 		}
 		else //if contrib_sum == 0, then each contrib must be 0
 		{
-			buffers.baseDistanceProbabilities.resize(buffers.baseDistanceContributions.size(), 0.0);
+			base_dist_probs.resize(base_dist_contribs.size(), 0.0);
 		}
 
 		//cache constants for expected values
@@ -241,86 +243,90 @@ public:
 
 		//for measuring kl divergence, only need to measure those entities that have a value that is different
 		convictions_out.clear();
-		convictions_out.resize(num_relevant_entities);
+		convictions_out.resize(entities_to_compute.size());
 
 		//compute the scaled distance contributions and sums when any 1 case is removed from the model
 		//note that the kl_divergence for every non-scaled set is 0, so the sum will not change except for when a case is actually removed from the model
-		size_t distance_contribution_index = 0;
-		for(auto entity_reference : entities_to_compute)
-		{
-			//compute distance contributions of the entities whose dcs will be changed by the removal of entity_reference
-			auto &updated_distance_contribs = buffers.updatedDistanceContribs;
-			updated_distance_contribs.clear();
-			double updated_contrib_sum = 0.0;
-			buffers.neighbors.clear();
-			UpdateDistanceContributionsWithHoldout(entity_reference, 1.0 / num_relevant_entities, buffers.baseDistanceContributions, contrib_sum,
-				buffers.updatedDistanceContribs, updated_contrib_sum);
-
-			//convert updated_distance_contribs to probabilities
-			//convert via the updated contribution sum and multiply by the probability mass of everything that isn't the holdout
-			//multiplying a non-held out distance contribution by this value converts it into a probability
-			double updated_dc_to_probability = probability_mass_of_non_holdouts / updated_contrib_sum;
-
-			//convert updated distance contribution into a probability as appropriate
-			for(auto &dc : updated_distance_contribs)
+		IterateOverConcurrentlyIfPossible(entities_to_compute,
+			[this, &convictions_out, &num_relevant_entities, &contrib_sum, &probability_mass_of_non_holdouts,
+				&updated_contrib_to_contrib_scale_inverse, &conviction_of_removal, &base_dist_contribs, &base_dist_probs]
+			(auto convictions_out_index, auto entity_reference)
 			{
-				//the knockout case was already already assigned the probability
-				if(dc.reference != distance_contribution_index)
-					dc.distance *= updated_dc_to_probability;
-			}
+				//compute distance contributions of the entities whose dcs will be changed by the removal of entity_reference
+				auto &updated_distance_contribs = buffers.updatedDistanceContribs;
+				updated_distance_contribs.clear();
+				double updated_contrib_sum = 0.0;
+				buffers.neighbors.clear();
+				UpdateDistanceContributionsWithHoldout(entity_reference, 1.0 / num_relevant_entities, base_dist_contribs, contrib_sum,
+					buffers.updatedDistanceContribs, updated_contrib_sum);
 
-			//compute KL divergence for the values which have different neighbor lists
+				//convert updated_distance_contribs to probabilities
+				//convert via the updated contribution sum and multiply by the probability mass of everything that isn't the holdout
+				//multiplying a non-held out distance contribution by this value converts it into a probability
+				double updated_dc_to_probability = probability_mass_of_non_holdouts / updated_contrib_sum;
 
-			//need to compute the KL divergence for the cases that don't have different neighbor lists but are only scaled
-			//for conviction_of_removal, this can be computed as
-			//d_KL = sum_i -base_distance_probabilities[i] * log( base_distance_probabilities[i] / new_probabilities[i])
-			//but because we know new_probabilities[i] = base_distance_probabilities[i] * dc_update_scale we can rewrite this as:
-			// d_KL = sum_i -base_distance_probabilities[i] * log( 1 / dc_update_scale) )
-			//the logarithm doesn't change and can be pulled out of the sum (pulling out the reciprocal as -1) to be:
-			// d_KL = log( dc_update_scale) ) * sum_i base_distance_probabilities[i]
-			//but because we've already computed the kl divergence for the updated_distance_contribs (changed neighbor sets),
-			// we only want to compute d_KL for those that just need to be scaled
-			//for the opposite, the conviction of adding the case, we just flip p and q in the kl divergence:
-			// d_KL = sum_i -new_probabilities[i] * log( new_probabilities[i] / base_distance_probabilities[i] )
-			//thus (note the negative sign due to the reciprocal of dc_update_scale):
-			// d_KL = sum_i -new_probabilities[i] * log( dc_update_scale) )
-			double dc_update_scale = updated_contrib_sum * updated_contrib_to_contrib_scale_inverse;
-
-			double kld_updated;
-			double kld_scaled;
-			if(conviction_of_removal)
-			{
-				kld_updated = PartialKullbackLeiblerDivergenceFromIndices(buffers.baseDistanceProbabilities, updated_distance_contribs);
-
-				//need to find unchanged distance contribution relative to the total in order to find the total probability mass
-				double total_distance_contribution_unchanged = contrib_sum;
+				//convert updated distance contribution into a probability as appropriate
 				for(auto &dc : updated_distance_contribs)
-					total_distance_contribution_unchanged -= buffers.baseDistanceContributions[dc.reference];
+				{
+					//the knockout case was already already assigned the probability
+					if(dc.reference != entity_reference)
+						dc.distance *= updated_dc_to_probability;
+				}
 
-				double total_probability_mass_changed = (total_distance_contribution_unchanged / contrib_sum);
+				//compute KL divergence for the values which have different neighbor lists
 
-				kld_scaled = total_probability_mass_changed * std::log(dc_update_scale);
+				//need to compute the KL divergence for the cases that don't have different neighbor lists but are only scaled
+				//for conviction_of_removal, this can be computed as
+				//d_KL = sum_i -base_distance_probabilities[i] * log( base_distance_probabilities[i] / new_probabilities[i])
+				//but because we know new_probabilities[i] = base_distance_probabilities[i] * dc_update_scale we can rewrite this as:
+				// d_KL = sum_i -base_distance_probabilities[i] * log( 1 / dc_update_scale) )
+				//the logarithm doesn't change and can be pulled out of the sum (pulling out the reciprocal as -1) to be:
+				// d_KL = log( dc_update_scale) ) * sum_i base_distance_probabilities[i]
+				//but because we've already computed the kl divergence for the updated_distance_contribs (changed neighbor sets),
+				// we only want to compute d_KL for those that just need to be scaled
+				//for the opposite, the conviction of adding the case, we just flip p and q in the kl divergence:
+				// d_KL = sum_i -new_probabilities[i] * log( new_probabilities[i] / base_distance_probabilities[i] )
+				//thus (note the negative sign due to the reciprocal of dc_update_scale):
+				// d_KL = sum_i -new_probabilities[i] * log( dc_update_scale) )
+				double dc_update_scale = updated_contrib_sum * updated_contrib_to_contrib_scale_inverse;
+
+				double kld_updated;
+				double kld_scaled;
+				if(conviction_of_removal)
+				{
+					kld_updated = PartialKullbackLeiblerDivergenceFromIndices(base_dist_probs, updated_distance_contribs);
+
+					//need to find unchanged distance contribution relative to the total in order to find the total probability mass
+					double total_distance_contribution_unchanged = contrib_sum;
+					for(auto &dc : updated_distance_contribs)
+						total_distance_contribution_unchanged -= base_dist_contribs[dc.reference];
+
+					double total_probability_mass_changed = (total_distance_contribution_unchanged / contrib_sum);
+
+					kld_scaled = total_probability_mass_changed * std::log(dc_update_scale);
+				}
+				else
+				{
+					kld_updated = PartialKullbackLeiblerDivergenceFromIndices(updated_distance_contribs, base_dist_probs);
+
+					//since the updated distance contribs have already been converted to probabilities, can just use them directly
+					double total_updated_probability_mass_changed = 1.0;
+					for(auto &dc : updated_distance_contribs)
+						total_updated_probability_mass_changed -= dc.distance;
+
+					//negative sign due to the reciprocal of dc_update_scale
+					kld_scaled = -total_updated_probability_mass_changed * std::log(dc_update_scale);
+				}
+
+				double kld_total = kld_updated + kld_scaled;
+				//only store values greater than zero
+				if(kld_total >= 0.0)
+					convictions_out[convictions_out_index] = kld_total;
 			}
-			else
-			{
-				kld_updated = PartialKullbackLeiblerDivergenceFromIndices(updated_distance_contribs, buffers.baseDistanceProbabilities);
-
-				//since the updated distance contribs have already been converted to probabilities, can just use them directly
-				double total_updated_probability_mass_changed = 1.0;
-				for(auto &dc : updated_distance_contribs)
-					total_updated_probability_mass_changed -= dc.distance;
-
-				//negative sign due to the reciprocal of dc_update_scale
-				kld_scaled = -total_updated_probability_mass_changed * std::log(dc_update_scale);
-			}
-
-			double kld_total = kld_updated + kld_scaled;
-			//only store values greater than zero
-			if(kld_total >= 0.0)
-				convictions_out[distance_contribution_index] = kld_total;
-		
-			distance_contribution_index++;
-		}
+		#ifdef MULTITHREAD_SUPPORT
+			, runConcurrently
+		#endif
+		);
 
 		bool has_zero_kl = false;
 		double kl_sum = 0.0;

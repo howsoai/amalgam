@@ -89,12 +89,13 @@ namespace Concurrency
 #endif
 
 //TODO: finish this and integrate everywhere applicable, including breaking out distance contributions without using a buffer
-//iterates over every element in container, passing it into func, as long as
+//iterates over every element in container, passing the element along with the index into func, as long as
 //the container's size is bigger than 1 and run_concurrently is true
 template<typename ContainerType, typename FunctionType>
 inline void IterateOverConcurrentlyIfPossible(ContainerType &container, FunctionType func,
 	bool run_concurrently = false, bool urgent = false)
 {
+	size_t index = 0;
 #ifdef MULTITHREAD_SUPPORT
 	if(run_concurrently && container.size() > 1)
 	{
@@ -106,12 +107,14 @@ inline void IterateOverConcurrentlyIfPossible(ContainerType &container, Function
 			for(auto value : container)
 			{
 				thread_pool.BatchEnqueueTask(
-					[value, &func, &task_set]
+					[index, value, &func, &task_set]
 				{
-					func(value);
+					func(index, value);
 					task_set.MarkTaskCompleted();
 				}
 				);
+
+				index++;
 			}
 
 			task_set.WaitForTasks(&enqueue_task_lock);
@@ -122,5 +125,8 @@ inline void IterateOverConcurrentlyIfPossible(ContainerType &container, Function
 #endif
 
 	for(auto value : container)
-		func(value);
+	{
+		func(index, value);
+		index++;
+	}
 }

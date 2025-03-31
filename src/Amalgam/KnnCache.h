@@ -45,11 +45,11 @@ public:
 			entities_to_compute = relevantIndices;
 
 		IterateOverConcurrentlyIfPossible(*entities_to_compute,
-			[this, top_k, expand_to_first_nonzero_distance](auto index)
+			[this, top_k, expand_to_first_nonzero_distance](auto index, auto entity)
 			{
 				cachedNeighbors[index].clear();
 				sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator,
-					*positionLabelIds, index, top_k, radiusLabelId, *relevantIndices, expand_to_first_nonzero_distance, cachedNeighbors[index]);
+					*positionLabelIds, entity, top_k, radiusLabelId, *relevantIndices, expand_to_first_nonzero_distance, cachedNeighbors[index]);
 			}
 		#ifdef MULTITHREAD_SUPPORT
 			,

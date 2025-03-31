@@ -81,7 +81,7 @@ public:
 			entities_to_compute = knnCache->GetRelevantEntities();
 	
 		//compute distance contribution for each entity in entities_to_compute
-		contribs_out.resize(entities_to_compute->GetEndInteger());
+		contribs_out.resize(entities_to_compute->size());
 		size_t out_index = 0;
 		for(auto entity_reference : *entities_to_compute)
 		{
@@ -99,15 +99,15 @@ public:
 		if(entities_to_compute == nullptr)
 			entities_to_compute = knnCache->GetRelevantEntities();
 
-		//TODO 23110: use block below once fix thread local buffer use
-		/*
-		contribs_out.resize(entities_to_compute->GetEndInteger());
+		//TODO 23110: use block below once fix thread local buffer use -- need relative index in addition to entity index?
+		//*
+		contribs_out.resize(entities_to_compute->size());
 		IterateOverConcurrentlyIfPossible(*entities_to_compute,
-			[this, &contribs_out](auto index)
+			[this, &contribs_out](auto index, auto entity)
 			{
-				knnCache->GetKnnWithoutCache(index, numNearestNeighbors, true, buffers.neighbors);
+				knnCache->GetKnnWithoutCache(entity, numNearestNeighbors, true, buffers.neighbors);
 
-				double entity_weight = distanceTransform->getEntityWeightFunction(index);
+				double entity_weight = distanceTransform->getEntityWeightFunction(entity);
 				contribs_out[index] = distanceTransform->ComputeDistanceContribution(buffers.neighbors, entity_weight);
 			}
 		#ifdef MULTITHREAD_SUPPORT

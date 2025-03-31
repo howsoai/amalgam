@@ -74,23 +74,22 @@ public:
 	//sets contribs_sum_out to the sum of all distance contributions of entities in entities_to_compute and also, if not nullptr, in the cache.
 	inline void ComputeDistanceContributions(EntityReferenceSet *entities_to_compute, std::vector<double> &contribs_out, double &contribs_sum_out)
 	{
-		buffers.neighbors.reserve(numNearestNeighbors + 1);
-		contribs_sum_out = 0.0;
-	
 		if(entities_to_compute == nullptr)
 			entities_to_compute = knnCache->GetRelevantEntities();
 	
 		//compute distance contribution for each entity in entities_to_compute
 		contribs_out.resize(entities_to_compute->size());
-		size_t out_index = 0;
-		for(auto entity_reference : *entities_to_compute)
-		{
-			double contrib = ComputeDistanceContribution(entity_reference);
-	
-			//push back distance contribution, add sub sum to global sum
-			contribs_sum_out += contrib;
-			contribs_out[out_index++] = contrib;
-		}
+		IterateOverConcurrentlyIfPossible(*entities_to_compute,
+			[this, &contribs_out](auto index, auto entity)
+			{
+				contribs_out[index] = ComputeDistanceContribution(entity);
+			}
+		#ifdef MULTITHREAD_SUPPORT
+			, runConcurrently
+		#endif
+		);
+
+		contribs_sum_out = std::accumulate(begin(contribs_out), end(contribs_out), 0.0);
 	}
 
 	//computes distance contributions without caching over entities_to_compute
@@ -109,8 +108,7 @@ public:
 				contribs_out[index] = distanceTransform->ComputeDistanceContribution(buffers.neighbors, entity_weight);
 			}
 		#ifdef MULTITHREAD_SUPPORT
-				,
-				runConcurrently
+			, runConcurrently
 		#endif
 		);
 	}
@@ -120,27 +118,29 @@ public:
 	inline void ComputeDistanceContributionsFromEntities(EntityReferenceSet &included_entities, double excluded_entity_distance_contribution_value,
 		std::vector<double> &contribs_out, double &contribs_sum_out)
 	{
-		buffers.neighbors.reserve(numNearestNeighbors + 1);
-		contribs_sum_out = 0.0;
-
 		//compute distance contribution for each entity in entities_to_compute
 		contribs_out.resize(knnCache->GetNumRelevantEntities());
-		size_t out_index = 0;
-		for(auto entity_reference : *knnCache->GetRelevantEntities())
-		{
-			//skip entities not specified in included_entities, instead store the expected probability value of 1/n
-			if(!included_entities.contains(entity_reference))
+		IterateOverConcurrentlyIfPossible(*knnCache->GetRelevantEntities(),
+			[this, &contribs_out, &included_entities, excluded_entity_distance_contribution_value](auto index, auto entity)
 			{
-				contribs_out[out_index++] = excluded_entity_distance_contribution_value;
-				//continue to the next entity without updating the contributions sum
-				continue;
+				//skip entities not specified in included_entities
+				if(!included_entities.contains(entity))
+					contribs_out[index] = std::numeric_limits<double>::quiet_NaN();
+				else
+					contribs_out[index] = ComputeDistanceContribution(entity, included_entities);
 			}
+		#ifdef MULTITHREAD_SUPPORT
+			, runConcurrently
+		#endif
+		);
 
-			double contrib = ComputeDistanceContribution(entity_reference, included_entities);
-
-			//push back distance contribution, add sub sum to global sum
-			contribs_sum_out += contrib;
-			contribs_out[out_index++] = contrib;
+		contribs_sum_out = 0.0;
+		for(auto &contrib : contribs_out)
+		{
+			if(FastIsNaN(contrib))
+				contrib = excluded_entity_distance_contribution_value;
+			else
+				contribs_sum_out += contrib;
 		}
 	}
 

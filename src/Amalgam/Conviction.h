@@ -240,11 +240,8 @@ public:
 		const double updated_contrib_to_contrib_scale_inverse = num_relevant_entities / (contrib_sum * (num_relevant_entities - 1));
 
 		//for measuring kl divergence, only need to measure those entities that have a value that is different
-		auto &updated_distance_contribs = buffers.updatedDistanceContribs;
 		convictions_out.clear();
-		convictions_out.reserve(num_relevant_entities);
-		double kl_sum = 0.0;
-		bool has_zero_kl = false; //flag will be set to true if there are any convictions that are 0, used later to prevent division by 0
+		convictions_out.resize(num_relevant_entities);
 
 		//compute the scaled distance contributions and sums when any 1 case is removed from the model
 		//note that the kl_divergence for every non-scaled set is 0, so the sum will not change except for when a case is actually removed from the model
@@ -252,6 +249,7 @@ public:
 		for(auto entity_reference : entities_to_compute)
 		{
 			//compute distance contributions of the entities whose dcs will be changed by the removal of entity_reference
+			auto &updated_distance_contribs = buffers.updatedDistanceContribs;
 			updated_distance_contribs.clear();
 			double updated_contrib_sum = 0.0;
 			buffers.neighbors.clear();
@@ -317,18 +315,22 @@ public:
 			}
 
 			double kld_total = kld_updated + kld_scaled;
-
-			//can't be negative, so clamp to zero
+			//only store values greater than zero
 			if(kld_total >= 0.0)
-				kl_sum += kld_total;
-			else
-			{
-				kld_total = 0.0;
-				has_zero_kl = true;
-			}
-
-			convictions_out.push_back(kld_total);
+				convictions_out[distance_contribution_index] = kld_total;
+		
 			distance_contribution_index++;
+		}
+
+		bool has_zero_kl = false;
+		double kl_sum = 0.0;
+		for(auto &conviction : convictions_out)
+		{
+			//can't be negative, so clamp to zero
+			if(conviction > 0.0)
+				kl_sum += conviction;
+			else
+				has_zero_kl = true;
 		}
 
 		//average

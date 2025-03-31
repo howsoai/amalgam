@@ -99,8 +99,6 @@ public:
 		if(entities_to_compute == nullptr)
 			entities_to_compute = knnCache->GetRelevantEntities();
 
-		//TODO 23110: use block below once fix thread local buffer use -- need relative index in addition to entity index?
-		//*
 		contribs_out.resize(entities_to_compute->size());
 		IterateOverConcurrentlyIfPossible(*entities_to_compute,
 			[this, &contribs_out](auto index, auto entity)
@@ -112,19 +110,9 @@ public:
 			}
 		#ifdef MULTITHREAD_SUPPORT
 				,
-				false
+				runConcurrently
 		#endif
 		);
-		return;
-		//*/
-
-	#ifdef MULTITHREAD_SUPPORT
-		if(runConcurrently)
-			knnCache->PreCacheKnn(entities_to_compute, numNearestNeighbors, true, true);
-	#endif
-
-		double contribs_sum_out = 0.0;
-		ComputeDistanceContributions(entities_to_compute, contribs_out, contribs_sum_out);
 	}
 
 	//Like ComputeDistanceContributions, but will populate contribs_out with a value for each of the included_entities, and will set any relevant entity

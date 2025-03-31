@@ -47,9 +47,9 @@ public:
 		IterateOverConcurrentlyIfPossible(*entities_to_compute,
 			[this, top_k, expand_to_first_nonzero_distance](auto index, auto entity)
 			{
-				cachedNeighbors[index].clear();
+				cachedNeighbors[entity].clear();
 				sbfDataStore->FindEntitiesNearestToIndexedEntity(*distEvaluator,
-					*positionLabelIds, entity, top_k, radiusLabelId, *relevantIndices, expand_to_first_nonzero_distance, cachedNeighbors[index]);
+					*positionLabelIds, entity, top_k, radiusLabelId, *relevantIndices, expand_to_first_nonzero_distance, cachedNeighbors[entity]);
 			}
 		#ifdef MULTITHREAD_SUPPORT
 			,

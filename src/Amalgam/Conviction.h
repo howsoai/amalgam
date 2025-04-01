@@ -269,7 +269,7 @@ public:
 				for(auto &dc : updated_distance_contribs)
 				{
 					//the knockout case was already already assigned the probability
-					if(dc.reference != entity_reference)
+					if(dc.reference != convictions_out_index)
 						dc.distance *= updated_dc_to_probability;
 				}
 

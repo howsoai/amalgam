@@ -59,11 +59,12 @@ public:
 	}
 
 	//returns true if the cached entities nearest to index contain other_index within top_k
-	bool DoesCachedKnnContainEntity(size_t index, size_t other_index, size_t top_k)
+	inline bool DoesCachedKnnContainEntity(size_t index, size_t other_index, size_t top_k)
 	{
-		for(size_t i = 0; i < top_k && i < cachedNeighbors[index].size(); i++)
+		auto &cache_for_index = cachedNeighbors[index];
+		for(size_t i = 0; i < top_k && i < cache_for_index.size(); i++)
 		{
-			if(cachedNeighbors[index][i].reference == other_index)
+			if(cache_for_index[i].reference == other_index)
 				return true;
 		}
 

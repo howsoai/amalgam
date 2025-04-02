@@ -28,6 +28,8 @@
 
 //system headers:
 #include <atomic>
+#include <cstddef>
+#include <cstdint>
 #include <mutex>
 #include <shared_mutex>
 #include <thread>
@@ -88,7 +90,6 @@ namespace Concurrency
 };
 #endif
 
-//TODO: finish this and integrate everywhere applicable, including breaking out distance contributions without using a buffer
 //iterates over every element in container, passing the element along with the index into func, as long as
 //the container's size is bigger than 1 and run_concurrently is true
 template<typename ContainerType, typename FunctionType>

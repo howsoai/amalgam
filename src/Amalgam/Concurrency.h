@@ -24,12 +24,14 @@
 	#endif
 #endif
 
+//system headers:
+#include <cstddef>
+#include <cstdint>
+
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE) || defined(_OPENMP)
 
 //system headers:
 #include <atomic>
-#include <cstddef>
-#include <cstdint>
 #include <mutex>
 #include <shared_mutex>
 #include <thread>

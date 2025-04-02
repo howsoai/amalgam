@@ -163,9 +163,6 @@ public:
 
 		//nearest neighbors cache
 		KnnCache knnCache;
-
-		//for conviction calculations
-		ConvictionProcessor<size_t, BitArrayIntegerSet>::ConvictionProcessorBuffers convictionBuffers;
 	};
 
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)

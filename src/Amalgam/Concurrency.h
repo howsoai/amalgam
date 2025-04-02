@@ -24,6 +24,10 @@
 	#endif
 #endif
 
+//system headers:
+#include <cstddef>
+#include <cstdint>
+
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE) || defined(_OPENMP)
 
 //system headers:
@@ -87,3 +91,45 @@ namespace Concurrency
 #endif
 };
 #endif
+
+//iterates over every element in container, passing the element along with the index into func, as long as
+//the container's size is bigger than 1 and run_concurrently is true
+template<typename ContainerType, typename FunctionType>
+inline void IterateOverConcurrentlyIfPossible(ContainerType &container, FunctionType func,
+	bool run_concurrently = false, bool urgent = false)
+{
+	size_t index = 0;
+#ifdef MULTITHREAD_SUPPORT
+	if(run_concurrently && container.size() > 1)
+	{
+		auto &thread_pool = (urgent ? Concurrency::urgentThreadPool : Concurrency::threadPool);
+		auto enqueue_task_lock = thread_pool.AcquireTaskLock();
+		if(thread_pool.AreThreadsAvailable())
+		{
+			auto task_set = thread_pool.CreateCountableTaskSet(container.size());
+			for(auto value : container)
+			{
+				thread_pool.BatchEnqueueTask(
+					[index, value, &func, &task_set]
+				{
+					func(index, value);
+					task_set.MarkTaskCompleted();
+				}
+				);
+
+				index++;
+			}
+
+			task_set.WaitForTasks(&enqueue_task_lock);
+			return;
+		}
+	}
+	//not running concurrently
+#endif
+
+	for(auto value : container)
+	{
+		func(index, value);
+		index++;
+	}
+}

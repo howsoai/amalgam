@@ -10,9 +10,10 @@
 #include <numeric>
 
 //manages all types of processing related to conviction
-template<typename EntityReference, typename EntityReferenceSet>
 class ConvictionProcessor
 {
+	using EntityReference = size_t;
+	using EntityReferenceSet = BitArrayIntegerSet;
 public:
 	//buffers to be reused for less memory churn
 	struct ConvictionProcessorBuffers

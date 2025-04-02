@@ -12,11 +12,15 @@
 #include "StringInternPool.h"
 #include "WeightedDiscreteRandomStream.h"
 
-
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 thread_local
 #endif
 EntityQueryCaches::QueryCachesBuffers EntityQueryCaches::buffers;
+
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+thread_local
+#endif
+ConvictionProcessor::ConvictionProcessorBuffers ConvictionProcessor::buffers;
 
 bool EntityQueryCaches::DoesCachedConditionMatch(EntityQueryCondition *cond, bool last_condition)
 {
@@ -387,11 +391,11 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				}
 
 			#ifdef MULTITHREAD_SUPPORT
-				ConvictionProcessor<size_t, BitArrayIntegerSet> conviction_processor(buffers.convictionBuffers,
-					buffers.knnCache, distance_transform, distance_transform.GetNumToRetrieve(), cond->singleLabel, cond->useConcurrency);
+				ConvictionProcessor conviction_processor(buffers.knnCache,
+					distance_transform, distance_transform.GetNumToRetrieve(), cond->singleLabel, cond->useConcurrency);
 			#else
-				ConvictionProcessor<size_t, BitArrayIntegerSet> conviction_processor(buffers.convictionBuffers,
-					buffers.knnCache, distance_transform, distance_transform.GetNumToRetrieve(), cond->singleLabel);
+				ConvictionProcessor conviction_processor(buffers.knnCache,
+					distance_transform, distance_transform.GetNumToRetrieve(), cond->singleLabel);
 			#endif
 				buffers.knnCache.ResetCache(sbfds, matching_entities, cond->distEvaluator, cond->positionLabels, cond->singleLabel);
 
@@ -418,7 +422,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				}
 				else //ENT_COMPUTE_ENTITY_DISTANCE_CONTRIBUTIONS
 				{
-					conviction_processor.ComputeDistanceContributions(ents_to_compute_ptr, results_buffer);
+					conviction_processor.ComputeDistanceContributionsWithoutCache(ents_to_compute_ptr, results_buffer);
 				}
 
 				//clear compute_results as it may have been used for intermediate results

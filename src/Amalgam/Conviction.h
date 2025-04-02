@@ -122,7 +122,7 @@ public:
 		//compute distance contribution for each entity in entities_to_compute
 		contribs_out.resize(knnCache->GetNumRelevantEntities());
 		IterateOverConcurrentlyIfPossible(*knnCache->GetRelevantEntities(),
-			[this, &contribs_out, &included_entities, excluded_entity_distance_contribution_value](auto index, auto entity)
+			[this, &contribs_out, &included_entities](auto index, auto entity)
 			{
 				//skip entities not specified in included_entities
 				if(!included_entities.contains(entity))

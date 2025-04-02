@@ -12,17 +12,15 @@
 #include "StringInternPool.h"
 #include "WeightedDiscreteRandomStream.h"
 
-
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 thread_local
 #endif
 EntityQueryCaches::QueryCachesBuffers EntityQueryCaches::buffers;
 
-
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 thread_local
 #endif
-ConvictionProcessor<size_t, BitArrayIntegerSet>::ConvictionProcessorBuffers ConvictionProcessor<size_t, BitArrayIntegerSet>::buffers;
+typename ConvictionProcessor<size_t, BitArrayIntegerSet>::ConvictionProcessorBuffers ConvictionProcessor<size_t, BitArrayIntegerSet>::buffers;
 
 bool EntityQueryCaches::DoesCachedConditionMatch(EntityQueryCondition *cond, bool last_condition)
 {

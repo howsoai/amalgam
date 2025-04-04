@@ -230,11 +230,11 @@ hello world: 12 and 2
 (print "hello")
 [(null) (null) .infinity -.infinity]
 
-{b 2 a 1 c ["alpha" "beta" "gamma"]}
+{a 1 c ["alpha" "beta" "gamma"] b 2}
 {
-	b 2
 	a 1
 	c ["alpha" "beta" "gamma"]
+	b 2
 }
 
 (apply "6")
@@ -674,7 +674,7 @@ a
 [1 2 3 4 5 6]
 []
 {
-	a 1
+	b 2
 	c 3
 	d 4
 	e 5
@@ -682,7 +682,7 @@ a
 }
 {e 5 f 6}
 {
-	c 3
+	b 2
 	d 4
 	e 5
 	f 6
@@ -725,7 +725,7 @@ c
 [1 2 3 4 5 6]
 []
 {
-	a 1
+	b 2
 	c 3
 	d 4
 	e 5
@@ -733,7 +733,7 @@ c
 }
 {e 5 f 6}
 {
-	c 3
+	b 2
 	d 4
 	e 5
 	f 6
@@ -1087,7 +1087,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-["b" "a" "c" 4]
+["a" "c" "b" 4]
 [
 	0
 	1
@@ -1099,10 +1099,10 @@ abcdef
 	7
 ]
 [0 1 2 3]
-[2 3 0 1]
-[2 3 0 1]
+[3 1 0 2]
+[3 1 0 2]
 --values--
-[2 1 3 "d"]
+[1 3 2 "d"]
 [
 	"a"
 	1
@@ -1123,7 +1123,7 @@ abcdef
 	4
 	"d"
 ]
-[2 1 3 "d"]
+[1 3 "d" 2]
 [
 	1
 	2
@@ -1276,9 +1276,9 @@ list
 assoc
 [
 	[4]
-	"4"
 	{4 4}
 	4
+	"4"
 ]
 --set--
 {
@@ -1363,7 +1363,7 @@ current_index: 2
 		rmfile "del /s /q "
 		rwww 1
 		slash "\\"
-		start_time 1741381252.293125
+		start_time 1743790710.166532
 		www 1
 		x 12
 		zz 10
@@ -1409,7 +1409,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1741381252.293125
+	start_time 1743790710.166532
 	www 1
 	x 12
 	zz 10
@@ -1454,7 +1454,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1741381252.293125
+	start_time 1743790710.166532
 	www 1
 	x 12
 	zz 10
@@ -1605,11 +1605,11 @@ b
 	"b"
 ]
 
-infinity test c or d: ["d" "d" "c" "c"]
+infinity test c or d: ["c" "c" "d" "d"]
 
-{a 35 b 44 c 21}
+{a 16 b 49 c 35}
 
-[1 5 9]
+[2 4 5]
 
 --get_rand_seed--
 ò×c``¦!šc”lÿ
@@ -1705,17 +1705,17 @@ string
 	{a 3 b 4}
 	{c "c"}
 ]
-21: [{"b":4,"a":3},{"c":"c","d":null}]
+21: [{"a":3,"b":4},{"c":"c","d":null}]
 22: [{"a":3,"b":4},{"c":"c","d":null}]
-23: b: 2
-a: 1
-c: 3
+23: a: 1
 d: 4
+c: 3
 e:
   - a
   - b
   - 
   - .inf
+b: 2
 
 24: a: 1
 b: 2
@@ -1728,7 +1728,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2025-03-07-16.00.52.7283070
+current date-time in epoch: 2025-04-04-14.18.30.7418710
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -1789,7 +1789,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelQ #labelA
+	labelA #labelA #labelQ
 		(lambda
 			#labelB (true)
 		)
@@ -1803,7 +1803,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelQ #labelA
+	labelA #labelA #labelQ
 		(lambda
 			#labelB (true)
 		)
@@ -2851,16 +2851,18 @@ flatten restore with parallel
 19.264241099357605
 --intersect_entities--
 (associate "b" 4)
-MergeEntityChild2
-(associate "p" 3 "q" 4)
 MergeEntityChild1
 (associate "x" 3 "y" 4)
+MergeEntityChild2
+(associate "p" 3 "q" 4)
 _1651806471
 (associate "e" 3 "f" 4)
 _3130331116
 (associate "E" 3 "F" 4)
 --union_entities--
 (associate "b" 4 "a" 3 "c" 3)
+MergeEntityChild1
+(associate "x" 3 "y" 4 "z" 5)
 MergeEntityChild2
 (associate
 	"p"
@@ -2874,8 +2876,6 @@ MergeEntityChild2
 	"w"
 	7
 )
-MergeEntityChild1
-(associate "x" 3 "y" 4 "z" 5)
 _1651806471
 (associate
 	"e"
@@ -2902,17 +2902,6 @@ _3130331116
 	##p
 	["_2325275497" "_2973704165" "_2325275497" "_2973704165"]
 )
-_2973704165
-(associate
-	"e"
-	3
-	"f"
-	4
-	"g"
-	5
-	"h"
-	6
-)
 _2325275497
 (associate
 	"E"
@@ -2922,6 +2911,17 @@ _2325275497
 	"G"
 	5
 	"H"
+	6
+)
+_2973704165
+(associate
+	"e"
+	3
+	"f"
+	4
+	"g"
+	5
+	"h"
 	6
 )
 --difference_entities--
@@ -3531,10 +3531,21 @@ difference between DiffContainer and DiffEntity2:
 )
 --mix_entities--
 (associate "b" 4 "c" 3)
-MergeEntityChild2
-(associate "p" 3 "q" 4 "w" 7)
 MergeEntityChild1
-(associate "x" 3 "y" 4 "z" 5)
+(associate "x" 3 "y" 4)
+MergeEntityChild2
+(associate
+	"p"
+	3
+	"q"
+	4
+	"u"
+	5
+	"v"
+	6
+	"w"
+	7
+)
 _1651806471
 (associate "e" 3 "f" 4)
 _3130331116
@@ -3617,7 +3628,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1741381253.281907
+1743790711.10782
 (true)
 
 RootTest
@@ -3859,7 +3870,7 @@ persistent loads
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "1a2Ø.²³W«w¸ˆæÿ")
+	(set_entity_rand_seed new_entity "Fşôì°.G!W«w¸ˆæÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -3869,7 +3880,7 @@ persistent loads
 				)
 			)
 		)
-		"ˆ-ìO[¿ë3yC“Å’ŒÑÿ"
+		"3Æ‚`ÈÏşŒ¬ÑÀ+|†eàÿ"
 	)
 	(set_entity_rand_seed
 		(first
@@ -3911,7 +3922,7 @@ persistent loads
 			(assign_entity_roots new_entity _)
 		)
 	)
-	(set_entity_rand_seed new_entity "1a2Ø.²³W«w¸ˆæÿ")
+	(set_entity_rand_seed new_entity "Fşôì°.G!W«w¸ˆæÿ")
 	(set_entity_rand_seed
 		(first
 			(create_entities
@@ -4471,11 +4482,11 @@ cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
 200: 0.05555555555555555 (null
 	##deg 8
 )
-155: 0.1 (null
-	##deg 0
-)
 190: 0.045454545454545456 (null
 	##deg 12
+)
+155: 0.1 (null
+	##deg 0
 )
 --contains_label--
 (true)
@@ -4937,16 +4948,16 @@ weighted surprisals: [
 ]
 
 probabilities with dynamic selection: [
-	["vert0" "vert1" "vert2"]
-	[2.7535180455541748e-05 2.7535180455541748e-05 5.043471233780792e-07]
+	["vert0" "vert1"]
+	[2.7535180455541748e-05 2.7535180455541748e-05]
+]
+surprisals with dynamic selection: [
+	["vert0" "vert1"]
+	[10.50004608159265 10.50004608159265]
 ]
 surprisals with dynamic selection: [
 	["vert0" "vert1" "vert2"]
 	[10.50004608159265 10.50004608159265 14.50000106908416]
-]
-surprisals with dynamic selection: [
-	["vert0" "vert1" "vert2" "vert3"]
-	[10.50004608159265 10.50004608159265 14.50000106908416 18.500000023703265]
 ]
 surprisal contribution: {testvert 10.5376696245683}
 surprisal contribution: {testvert 10.50004608159265}
@@ -5023,4 +5034,4 @@ rmdir /s /q amlg_code\persistent_tree_test_root
 del /s /q amlg_code\persist_module_test\psm.mdam
 del /s /q amlg_code\persist_module_test.mdam
 --total execution time--
-2.4738101959228516
+2.204612970352173

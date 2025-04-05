@@ -799,7 +799,7 @@ public:
 				if(entity_distance_pair_container_begin == entity_distance_pair_container_end)
 					return 0;
 				
-				auto [first_weighted_value, first_unweighted_value, first_prob, first_prob_mass, first_weight]
+				auto [first_weighted_value, first_unweighted_value, first_prob_same, first_prob_mass, first_weight]
 					= transform_func(entity_distance_pair_container_begin);
 				result_func(entity_distance_pair_container_begin, first_weighted_value, first_unweighted_value, first_prob_mass, first_weight);
 
@@ -814,7 +814,7 @@ public:
 					if(main_k >= minToRetrieve && prob_same / total_prob < numToRetrieveMinIncrementalProbability)
 						break;
 
-					total_prob += prob_same * prob_mass;
+					total_prob += prob_mass;
 
 					result_func(entity_distance_pair_container_begin + main_k, weighted_value, unweighted_value, prob_mass, weight);
 				}
@@ -826,7 +826,7 @@ public:
 					auto [weighted_value, unweighted_value, prob_same, prob_mass, weight]
 						= transform_func(entity_distance_pair_container_begin + main_k + extra_k);
 
-					total_prob += prob_same * prob_mass;
+					total_prob += prob_mass;
 
 					result_func(entity_distance_pair_container_begin + main_k + extra_k, weighted_value, unweighted_value, prob_mass, weight);
 				}

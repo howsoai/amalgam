@@ -369,19 +369,27 @@ int StringManipulation::StringNaturalCompare(const std::string &a, const std::st
 		//skip over spaces
 		while(a_index < a.size() && std::isspace(static_cast<unsigned char>(a[a_index])))
 			a_index++;
-		//treat as if zero terminated string
-		if(a_index < a.size())
-			a_value = a[a_index];
-		else
-			a_value = '\0';
-
+		
 		//skip over spaces
 		while(b_index < b.size() && std::isspace(static_cast<unsigned char>(b[b_index])))
 			b_index++;
-		if(b_index < b.size())
-			b_value = b[b_index];
-		else
-			b_value = '\0';
+
+		if(a_index >= a.size())
+		{
+			//if both are out of characters and made it here, then equal
+			if(b_index >= b.size())
+				return 0;
+
+			//a is out, so it is first
+			return -1;
+		}
+
+		//b is out, so it is first
+		if(b_index >= b.size())
+			return +1;
+
+		a_value = a[a_index];
+		b_value = b[b_index];			
 
 		//check for group of digits
 		if(StringManipulation::IsUtf8ArabicNumerals(a_value)
@@ -400,10 +408,6 @@ int StringManipulation::StringNaturalCompare(const std::string &a, const std::st
 			//if made it here, then the numbers were equal; move on to the next character
 			continue;
 		}
-
-		//if strings are identical from a natural sorting perspective, then use regular compare to make sure order consistency is preserved
-		if(a_value == '\0' && b_value == '\0')
-			return a.compare(b);
 
 		if(a_value < b_value)
 			return -1;

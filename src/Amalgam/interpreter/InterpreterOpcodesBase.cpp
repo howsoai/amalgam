@@ -1872,8 +1872,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, bo
 		auto &retval_ocn = retval->GetOrderedChildNodesReference();
 		for(size_t i = 0; i < number_to_generate; i++)
 		{
-			size_t to_swap_with = randomStream.RandSize(num_elements);
-			std::swap(retval_ocn[i], retval_ocn[to_swap_with]);
+			//make sure to only shuffle things that haven't been shuffled before,
+			//otherwise bias toward lower elements
+			size_t to_swap_with = randomStream.RandSize(num_elements - i);
+			std::swap(retval_ocn[i], retval_ocn[i + to_swap_with]);
 		}
 
 		//free unneeded nodes that weren't part of the shuffle

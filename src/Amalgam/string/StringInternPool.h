@@ -205,7 +205,7 @@ public:
 		Concurrency::SingleLock lock(mutex);
 
 		//if other references, then can't clear it, and ensure that only one thread destroys it
-		if(id->refCount > 0)
+		if(id->refCount != 0)
 			return;
 	#endif
 

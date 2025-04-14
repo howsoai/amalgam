@@ -37,7 +37,7 @@ public:
 	EvaluableNodeType queryType;
 
 	//label vector used for existence queries
-	//**also aliased and used for the list of entity IDs to compute conviction for when type is ENT_COMPUTE_ENTITY_CONVICTIONS
+	//**also aliased and used for the list of entity IDs to compute conviction for when type is ENT_QUERY_ENTITY_CONVICTIONS
 	std::vector<StringInternPool::StringID> existLabels;
 
 	//vector used to describe the types of each label or value

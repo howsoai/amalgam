@@ -37,10 +37,10 @@ namespace EntityQueryBuilder
 
 	constexpr bool DoesDistanceQueryUseEntitiesInsteadOfPosition(EvaluableNodeType type)
 	{
-		return (type == ENT_COMPUTE_ENTITY_CONVICTIONS
-			|| type == ENT_COMPUTE_ENTITY_GROUP_KL_DIVERGENCE
-			|| type == ENT_COMPUTE_ENTITY_DISTANCE_CONTRIBUTIONS
-			|| type == ENT_COMPUTE_ENTITY_KL_DIVERGENCES);
+		return (type == ENT_QUERY_ENTITY_CONVICTIONS
+			|| type == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
+			|| type == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
+			|| type == ENT_QUERY_ENTITY_KL_DIVERGENCES);
 	}
 
 	//populates deviation data for a given nominal value
@@ -544,7 +544,7 @@ namespace EntityQueryBuilder
 		
 		cur_condition->returnSortedList = false;
 		cur_condition->additionalSortedListLabels.clear();
-		if(condition_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE || condition_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || condition_type == ENT_COMPUTE_ENTITY_DISTANCE_CONTRIBUTIONS)
+		if(condition_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE || condition_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || condition_type == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS)
 		{
 			if(ocn.size() > NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0)
 			{
@@ -564,13 +564,13 @@ namespace EntityQueryBuilder
 				}
 			}
 		}
-		else if(condition_type == ENT_COMPUTE_ENTITY_CONVICTIONS || condition_type == ENT_COMPUTE_ENTITY_GROUP_KL_DIVERGENCE || condition_type == ENT_COMPUTE_ENTITY_KL_DIVERGENCES)
+		else if(condition_type == ENT_QUERY_ENTITY_CONVICTIONS || condition_type == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE || condition_type == ENT_QUERY_ENTITY_KL_DIVERGENCES)
 		{
 			cur_condition->convictionOfRemoval = false;
 			if(ocn.size() > NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0)
 				cur_condition->convictionOfRemoval = EvaluableNode::IsTrue(ocn[NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0]);
 
-			if(condition_type == ENT_COMPUTE_ENTITY_CONVICTIONS || condition_type == ENT_COMPUTE_ENTITY_KL_DIVERGENCES)
+			if(condition_type == ENT_QUERY_ENTITY_CONVICTIONS || condition_type == ENT_QUERY_ENTITY_KL_DIVERGENCES)
 			{
 				if(ocn.size() > NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 1)
 				{

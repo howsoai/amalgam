@@ -267,10 +267,10 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
 
 	//aggregate analysis query Functions
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_COMPUTE_ENTITY_CONVICTIONS
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_COMPUTE_ENTITY_GROUP_KL_DIVERGENCE
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_COMPUTE_ENTITY_DISTANCE_CONTRIBUTIONS
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_COMPUTE_ENTITY_KL_DIVERGENCES
+	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_ENTITY_CONVICTIONS
+	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
+	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
+	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_ENTITY_KL_DIVERGENCES
 
 	//entity access
 	&Interpreter::InterpretNode_ENT_CONTAINS_LABEL,													// ENT_CONTAINS_LABEL

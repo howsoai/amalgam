@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#define STRING_INTERN_POOL_VALIDATION
 //if STRING_INTERN_POOL_VALIDATION is defined, it will validate
 //every string reference, at the cost of performance
 
@@ -201,17 +202,10 @@ public:
 			return;
 
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		//this thread is about to free the reference, but need to acquire a lock
-		// so, keep the reference alive by incrementing it *before* attempting the lock
-		id->refCount++;
-
 		Concurrency::SingleLock lock(mutex);
 
-		//with the lock, decrement reference count in case this string should stay active
-		refcount = id->refCount--;
-
-		//if other references, then can't clear it
-		if(refcount > 1)
+		//if other references, then can't clear it, and ensure that only one thread destroys it
+		if(id->refCount > 0)
 			return;
 	#endif
 
@@ -248,21 +242,12 @@ public:
 
 			int64_t refcount = id->refCount--;
 
-			//if extra references, just return, but if it is 1, then it will try to clear
-			if(refcount <= 1)
+			if(refcount == 1)
 				ids_need_removal = true;
 		}
 
 		if(!ids_need_removal)
 			return;
-
-		//need to remove at least one reference, so put all counts back while wait for lock
-		for(auto r : references_container)
-		{
-			StringID id = get_string_id(r);
-			if(id != NOT_A_STRING_ID && id != emptyStringId)
-				id->refCount++;
-		}
 
 		Concurrency::SingleLock lock(mutex);
 
@@ -277,9 +262,7 @@ public:
 		#endif
 
 			//remove any that are the last reference
-			int64_t refcount = id->refCount--;
-
-			if(refcount <= 1)
+			if(id->refCount == 0)
 				stringToID.erase(id->string);
 		}
 

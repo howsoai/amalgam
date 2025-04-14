@@ -11,7 +11,6 @@
 #include <string>
 #include <vector>
 
-#define STRING_INTERN_POOL_VALIDATION
 //if STRING_INTERN_POOL_VALIDATION is defined, it will validate
 //every string reference, at the cost of performance
 
@@ -195,18 +194,22 @@ public:
 		ValidateStringIdExistence(id);
 	#endif
 
-		int64_t refcount = id->refCount--;
-
 		//if other references, then can't clear it; signed, so it won't wrap around
-		if(refcount > 1)
+		if(id->refCount > 1)
+		{
+			id->refCount--;
 			return;
+		}
 
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		Concurrency::SingleLock lock(mutex);
 
 		//if other references, then can't clear it, and ensure that only one thread destroys it
-		if(id->refCount != 0)
+		if(id->refCount > 1)
+		{
+			id->refCount--;
 			return;
+		}
 	#endif
 
 		stringToID.erase(id->string);
@@ -229,41 +232,53 @@ public:
 		//as it goes through, if any id needs removal, will set this to true so that
 		// removal can be done after reference count decreases are done
 		bool ids_need_removal = false;
-
 		for(auto r : references_container)
 		{
 			StringID id = get_string_id(r);
 			if(id == NOT_A_STRING_ID || id == emptyStringId)
 				continue;
 
-		#ifdef STRING_INTERN_POOL_VALIDATION
-			ValidateStringIdExistence(id);
-		#endif
-
-			int64_t refcount = id->refCount--;
-
-			if(refcount == 1)
+			if(id->refCount == 1)
+			{
 				ids_need_removal = true;
+				break;
+			}
 		}
 
 		if(!ids_need_removal)
-			return;
-
-		Concurrency::SingleLock lock(mutex);
-
-		for(auto r : references_container)
 		{
-			StringID id = get_string_id(r);
-			if(id == NOT_A_STRING_ID || id == emptyStringId)
-				continue;
+			for(auto r : references_container)
+			{
+				StringID id = get_string_id(r);
+				if(id == NOT_A_STRING_ID || id == emptyStringId)
+					continue;
 
-		#ifdef STRING_INTERN_POOL_VALIDATION
-			ValidateStringIdExistenceUnderLock(id);
-		#endif
+			#ifdef STRING_INTERN_POOL_VALIDATION
+				ValidateStringIdExistence(id);
+			#endif
 
-			//remove any that are the last reference
-			if(id->refCount == 0)
-				stringToID.erase(id->string);
+				id->refCount--;
+			}
+		}
+		else
+		{
+			Concurrency::SingleLock lock(mutex);
+
+			for(auto r : references_container)
+			{
+				StringID id = get_string_id(r);
+				if(id == NOT_A_STRING_ID || id == emptyStringId)
+					continue;
+
+			#ifdef STRING_INTERN_POOL_VALIDATION
+				ValidateStringIdExistenceUnderLock(id);
+			#endif
+
+				int64_t ref_count = id->refCount--;
+				//remove any that are the last reference
+				if(ref_count == 1)
+					stringToID.erase(id->string);
+			}
 		}
 
 	#endif

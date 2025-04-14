@@ -8,7 +8,6 @@
 // ska::flat_hash is best for performance, but eats a bit of memory
 // ska::bytell_hash is good for compact memory and almost as fast as ska::flat_hash (should be used for things that need to be fairly fast but are not accessed as frequently, where minimizing memory is more important)
 
-#define USE_STL_HASH_MAPS
 #ifdef USE_STL_HASH_MAPS
 
 #include <functional>

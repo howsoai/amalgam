@@ -541,7 +541,8 @@ namespace EntityQueryBuilder
 			}
 			//don't need to do anything for np_sid == ENBISI_recompute_precise because it's default
 		}
-		
+
+		//TODO 23320: update to include ENT_QUERY_DISTANCE_CONTRIBUTIONS
 		cur_condition->returnSortedList = false;
 		cur_condition->additionalSortedListLabels.clear();
 		if(condition_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE || condition_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || condition_type == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS)

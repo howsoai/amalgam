@@ -231,7 +231,6 @@ public:
 		stringToID.erase(id->string);
 	}
 
-
 	//creates new references from the references container and function
 	template<typename ReferencesContainer,
 		typename GetStringIdFunction = StringID(StringID)>

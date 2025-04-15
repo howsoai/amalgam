@@ -3227,6 +3227,9 @@
     (query_within_generalized_distance 2 (list "x" "y") (list 0.0 0.0) (null) (null) (null) (null) 1 1 (null) "random seed 1234" "radius")
  )))
 
+(print "--query_distance_contributions--\n")
+;TODO 23320: add tests for query_distance_contributions
+
 (print "--query_entity_convictions--\n")
 
  (create_entities "entity1" (lambda

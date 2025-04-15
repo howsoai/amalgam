@@ -209,11 +209,26 @@ public:
 		}
 
 		Concurrency::SingleLock lock(mutex);
+
+		//retry decrementing in case it has been modified by another thread
+		while(true)
+		{
+			int64_t ref_count = id->refCount.load();
+			if(ref_count <= 1)
+				break;
+
+			//if can decrement, return
+			if(std::atomic_compare_exchange_weak(&id->refCount, &ref_count, ref_count - 1))
+				return;
+		}
+	#else
+		//remove any that aren't the last reference
+		id->refCount--;
+		if(id->refCount > 0)
+			return;
 	#endif
 		
-		//remove any that are the last reference
-		if(id->refCount == 1)
-			stringToID.erase(id->string);
+		stringToID.erase(id->string);
 	}
 
 

@@ -2018,7 +2018,7 @@ void Interpreter::VerifyEvaluableNodeIntegrity()
 	{
 		auto &nr = evaluableNodeManager->GetNodesReferenced();
 	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::SingleLock lock(nr.mutex);
+		Concurrency::Lock lock(nr.mutex);
 	#endif
 		for(auto &[en, _] : nr.nodesReferenced)
 			EvaluableNodeManager::ValidateEvaluableNodeTreeMemoryIntegrity(en, nullptr, false);

@@ -732,7 +732,7 @@ public:
 	{
 		NodesReferenced &nr = GetNodesReferenced();
 	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::SingleLock lock(nr.mutex);
+		Concurrency::Lock lock(nr.mutex);
 	#endif
 
 		for(EvaluableNode *en : { nodes... })
@@ -747,7 +747,7 @@ public:
 	{
 		NodesReferenced &nr = GetNodesReferenced();
 	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::SingleLock lock(nr.mutex);
+		Concurrency::Lock lock(nr.mutex);
 	#endif
 
 		for(EvaluableNode *en : { nodes... })
@@ -762,7 +762,7 @@ public:
 	{
 		NodesReferenced &nr = GetNodesReferenced();
 	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::SingleLock lock(nr.mutex);
+		Concurrency::Lock lock(nr.mutex);
 	#endif
 
 		for(EvaluableNode *en : nodes)
@@ -780,7 +780,7 @@ public:
 	{
 		NodesReferenced &nr = GetNodesReferenced();
 	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::SingleLock lock(nr.mutex);
+		Concurrency::Lock lock(nr.mutex);
 	#endif
 
 		return nr.nodesReferenced.size();
@@ -835,7 +835,7 @@ public:
 		NodesReferenced &nr = GetNodesReferenced();
 
 	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::SingleLock lock(nr.mutex);
+		Concurrency::Lock lock(nr.mutex);
 	#endif
 
 		size_t num_nodes_currently_referenced = nr.nodesReferenced.size();

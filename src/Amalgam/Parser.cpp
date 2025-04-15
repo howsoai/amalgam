@@ -122,7 +122,9 @@ std::tuple<EvaluableNodeReference, std::vector<std::string>, size_t> Parser::Par
 	preevaluationNodes.clear();
 	parentNodes.clear();
 	//since the type of parentNodes can be expensive to iterate over, reduce the size
+#ifndef USE_STL_HASH_MAPS
 	parentNodes.shrink_to_fit();
+#endif
 
 	EvaluableNode *top_node = ParseCode();
 

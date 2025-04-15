@@ -194,25 +194,14 @@ public:
 		ValidateStringIdExistence(id);
 	#endif
 
-		//if other references, then can't clear it; signed, so it won't wrap around
-		if(id->refCount > 1)
-		{
-			id->refCount--;
-			return;
-		}
-
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		Concurrency::SingleLock lock(mutex);
-
-		//if other references, then can't clear it, and ensure that only one thread destroys it
-		if(id->refCount > 1)
-		{
-			id->refCount--;
-			return;
-		}
 	#endif
 
-		stringToID.erase(id->string);
+		int64_t ref_count = id->refCount--;
+		//remove any that are the last reference
+		if(ref_count == 1)
+			stringToID.erase(id->string);
 	}
 
 
@@ -229,58 +218,23 @@ public:
 		if(references_container.size() == 0)
 			return;
 
-		//as it goes through, if any id needs removal, will set this to true so that
-		// removal can be done after reference count decreases are done
-		bool ids_need_removal = false;
+		Concurrency::SingleLock lock(mutex);
+		
 		for(auto r : references_container)
 		{
 			StringID id = get_string_id(r);
 			if(id == NOT_A_STRING_ID || id == emptyStringId)
 				continue;
 
-			if(id->refCount == 1)
-			{
-				ids_need_removal = true;
-				break;
-			}
+		#ifdef STRING_INTERN_POOL_VALIDATION
+			ValidateStringIdExistence(id);
+		#endif
+
+			int64_t ref_count = id->refCount--;
+			//remove any that are the last reference
+			if(ref_count == 1)
+				stringToID.erase(id->string);
 		}
-
-		if(!ids_need_removal)
-		{
-			for(auto r : references_container)
-			{
-				StringID id = get_string_id(r);
-				if(id == NOT_A_STRING_ID || id == emptyStringId)
-					continue;
-
-			#ifdef STRING_INTERN_POOL_VALIDATION
-				ValidateStringIdExistence(id);
-			#endif
-
-				id->refCount--;
-			}
-		}
-		else
-		{
-			Concurrency::SingleLock lock(mutex);
-
-			for(auto r : references_container)
-			{
-				StringID id = get_string_id(r);
-				if(id == NOT_A_STRING_ID || id == emptyStringId)
-					continue;
-
-			#ifdef STRING_INTERN_POOL_VALIDATION
-				ValidateStringIdExistenceUnderLock(id);
-			#endif
-
-				int64_t ref_count = id->refCount--;
-				//remove any that are the last reference
-				if(ref_count == 1)
-					stringToID.erase(id->string);
-			}
-		}
-
 	#endif
 	}
 

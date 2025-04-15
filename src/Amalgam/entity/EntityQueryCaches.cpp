@@ -303,7 +303,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 			sbfds.PopulateGeneralizedDistanceEvaluatorFromColumnData(cond->distEvaluator, cond->positionLabels);
 			cond->distEvaluator.InitializeParametersAndFeatureParams();
 
-			//TODO 23320: update with ENT_QUERY_DISTANCE_CONTRIBUTIONS
+			//TODO 23320: update with ENT_QUERY_DISTANCE_CONTRIBUTIONS to use positionsToCompare
 
 			if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || cond->queryType == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)
 			{

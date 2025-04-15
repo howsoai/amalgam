@@ -55,6 +55,9 @@ public:
 	//the labels corresponding to positionLabels when appropriate
 	std::vector<EvaluableNodeImmediateValue> valueToCompare;
 
+	//when initialized, points to an OrderedChildNodes vector of the values to compare
+	std::vector<EvaluableNode *> *positionsToCompare;
+
 	GeneralizedDistanceEvaluator distEvaluator;
 
 	//a single standalone label in the query

@@ -398,7 +398,6 @@ namespace EntityQueryBuilder
 			}
 		}
 
-		//TODO 23320: add ENT_QUERY_DISTANCE_CONTRIBUTIONS here
 		//select based on type for position or entities
 		if(condition_type == ENT_QUERY_ENTITY_CONVICTIONS
 			|| condition_type == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
@@ -413,6 +412,16 @@ namespace EntityQueryBuilder
 				for(auto &entity_en : entities_ocn)
 					cur_condition->existLabels.push_back(EvaluableNode::ToStringIDIfExists(entity_en));
 			}
+		}
+		else if(condition_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS)
+		{
+			EvaluableNode *positions = ocn[POSITION];
+			if(!EvaluableNode::IsOrderedArray(positions))
+			{
+				cur_condition->queryType = ENT_NULL;
+				return;
+			}
+			cur_condition->positionsToCompare = &positions->GetOrderedChildNodesReference();
 		}
 		else
 		{

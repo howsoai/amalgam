@@ -414,9 +414,9 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 
 				if(cond->queryType == ENT_QUERY_DISTANCE_CONTRIBUTIONS)
 				{
-					//TODO 23320: finish, use positionsToCompare
+					conviction_processor.ComputeDistanceContributionsOnPositions(*cond->positionsToCompare, results_buffer);
 				}
-				if(cond->queryType == ENT_QUERY_ENTITY_CONVICTIONS)
+				else if(cond->queryType == ENT_QUERY_ENTITY_CONVICTIONS)
 				{
 					conviction_processor.ComputeCaseKLDivergences(*ents_to_compute_ptr, results_buffer, true, cond->convictionOfRemoval);
 				}

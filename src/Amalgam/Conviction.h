@@ -114,6 +114,28 @@ public:
 		);
 	}
 
+	inline void ComputeDistanceContributionsOnPositions(std::vector<EvaluableNode *> &positions_to_compare, std::vector<double> &contribs_out)
+	{
+		contribs_out.resize(positions_to_compare.size());
+
+		//TODO 23320: finish this method
+		/*
+		//get sbfds from knnCache auto &sbfds = knnCache->s
+		IterateOverConcurrentlyIfPossible(positions_to_compare,
+			[this, &contribs_out](auto index, auto &position)
+		{
+
+			knnCache->GetKnnWithoutCache(entity, numNearestNeighbors, true, buffers.neighbors);
+
+			double entity_weight = distanceTransform->getEntityWeightFunction(entity);
+			contribs_out[index] = distanceTransform->ComputeDistanceContribution(buffers.neighbors, entity_weight);
+		}
+	#ifdef MULTITHREAD_SUPPORT
+			, runConcurrently
+	#endif
+		);*/
+	}
+
 	//Like ComputeDistanceContributions, but will populate contribs_out with a value for each of the included_entities, and will set any relevant entity
 	// in the cache but only in included_entities to excluded_entity_distance_contribution_value, which will not be included in the contribs_sum_out
 	inline void ComputeDistanceContributionsFromEntities(EntityReferenceSet &included_entities, double excluded_entity_distance_contribution_value,

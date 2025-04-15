@@ -303,8 +303,6 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 			sbfds.PopulateGeneralizedDistanceEvaluatorFromColumnData(cond->distEvaluator, cond->positionLabels);
 			cond->distEvaluator.InitializeParametersAndFeatureParams();
 
-			//TODO 23320: update with ENT_QUERY_DISTANCE_CONTRIBUTIONS to use positionsToCompare
-
 			if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || cond->queryType == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE)
 			{
 				//labels and values must have the same size
@@ -357,42 +355,49 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 						matching_entities.insert(it.reference);
 				}
 			}
-			else //cond->queryType ==  ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS or ENT_QUERY_ENTITY_CONVICTIONS or ENT_QUERY_ENTITY_KL_DIVERGENCES or ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
+			else //cond->queryType in ENT_QUERY_DISTANCE_CONTRIBUTIONS, ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS,
+				//ENT_QUERY_ENTITY_CONVICTIONS, ENT_QUERY_ENTITY_KL_DIVERGENCES, ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
 			{
 				BitArrayIntegerSet *ents_to_compute_ptr = nullptr; //if nullptr, compute is done on all entities in the cache
 
-				if(cond->existLabels.size() != 0) //if subset is specified, set ents_to_compute_ptr to set of ents_to_compute
+				if(cond->queryType == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
+					|| cond->queryType == ENT_QUERY_ENTITY_CONVICTIONS
+					|| cond->queryType == ENT_QUERY_ENTITY_KL_DIVERGENCES
+					|| cond->queryType == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE)
 				{
-					ents_to_compute_ptr = &buffers.tempMatchingEntityIndices;
-					ents_to_compute_ptr->clear();
-
-					if(cond->queryType == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE)
+					if(cond->existLabels.size() != 0) //if subset is specified, set ents_to_compute_ptr to set of ents_to_compute
 					{
-						//determine the base entities by everything not in the list
-						*ents_to_compute_ptr = matching_entities;
+						ents_to_compute_ptr = &buffers.tempMatchingEntityIndices;
+						ents_to_compute_ptr->clear();
 
-						for(auto entity_sid : cond->existLabels)
+						if(cond->queryType == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE)
 						{
-							size_t entity_index = container->GetContainedEntityIndex(entity_sid);
-							ents_to_compute_ptr->erase(entity_index);
+							//determine the base entities by everything not in the list
+							*ents_to_compute_ptr = matching_entities;
+
+							for(auto entity_sid : cond->existLabels)
+							{
+								size_t entity_index = container->GetContainedEntityIndex(entity_sid);
+								ents_to_compute_ptr->erase(entity_index);
+							}
+						}
+						else
+						{
+							for(auto entity_sid : cond->existLabels)
+							{
+								size_t entity_index = container->GetContainedEntityIndex(entity_sid);
+								if(entity_index != std::numeric_limits<size_t>::max())
+									ents_to_compute_ptr->insert(entity_index);
+							}
+
+							//make sure everything asked to be computed is in the base set of entities
+							ents_to_compute_ptr->Intersect(matching_entities);
 						}
 					}
-					else
+					else //compute on all
 					{
-						for(auto entity_sid : cond->existLabels)
-						{
-							size_t entity_index = container->GetContainedEntityIndex(entity_sid);
-							if(entity_index != std::numeric_limits<size_t>::max())
-								ents_to_compute_ptr->insert(entity_index);
-						}
-
-						//make sure everything asked to be computed is in the base set of entities
-						ents_to_compute_ptr->Intersect(matching_entities);
+						ents_to_compute_ptr = &matching_entities;
 					}
-				}
-				else //compute on all
-				{
-					ents_to_compute_ptr = &matching_entities;
 				}
 
 			#ifdef MULTITHREAD_SUPPORT
@@ -407,6 +412,10 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				auto &results_buffer = buffers.doubleVector;
 				results_buffer.clear();
 
+				if(cond->queryType == ENT_QUERY_DISTANCE_CONTRIBUTIONS)
+				{
+					//TODO 23320: finish, use positionsToCompare
+				}
 				if(cond->queryType == ENT_QUERY_ENTITY_CONVICTIONS)
 				{
 					conviction_processor.ComputeCaseKLDivergences(*ents_to_compute_ptr, results_buffer, true, cond->convictionOfRemoval);

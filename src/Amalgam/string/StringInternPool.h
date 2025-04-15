@@ -26,9 +26,9 @@ public:
 	{	}
 
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	std::atomic<int64_t> refCount;
+	std::atomic<size_t> refCount;
 #else
-	int64_t refCount;
+	size_t refCount;
 #endif
 	std::string string;
 };
@@ -73,7 +73,7 @@ public:
 	inline StringID GetIDFromString(const std::string &str)
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		Concurrency::SingleLock lock(mutex);
+		Concurrency::Lock lock(mutex);
 	#endif
 
 		auto id_iter = stringToID.find(str);
@@ -94,7 +94,7 @@ public:
 			return emptyStringId;
 
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		Concurrency::SingleLock lock(mutex);
+		Concurrency::Lock lock(mutex);
 	#endif
 
 		//try to insert it as a new string
@@ -112,6 +112,7 @@ public:
 	}
 
 	//makes a new reference to the string id specified, returning the id passed in
+	//note that this assumes that the caller guarantees that the id will exist for the duration of this call
 	inline StringID CreateStringReference(StringID id)
 	{
 		if(id != NOT_A_STRING_ID)
@@ -125,6 +126,7 @@ public:
 	}
 
 	//creates new references from the references container and function
+	//note that this assumes that the caller guarantees that the ids will exist for the duration of this call
 	template<typename ReferencesContainer,
 		typename GetStringIdFunction = StringID(StringID)>
 	inline void CreateStringReferences(ReferencesContainer &references_container,
@@ -145,6 +147,7 @@ public:
 
 	//creates additional_reference_count new references from the references container and function
 	// specialized for size_t indexed containers, where the index is desired
+	//note that this assumes that the caller guarantees that the ids will exist for the duration of this call
 	template<typename ReferencesContainer,
 		typename GetStringIdFunction = StringID(StringID)>
 	inline void CreateMultipleStringReferences(ReferencesContainer &references_container,
@@ -166,6 +169,7 @@ public:
 
 	//creates new references from the references container and function
 	// specialized for size_t indexed containers, where the index is desired
+	//note that this assumes that the caller guarantees that the ids will exist for the duration of this call
 	template<typename ReferencesContainer,
 		typename GetStringIdFunction = StringID(StringID)>
 	inline void CreateStringReferencesByIndex(ReferencesContainer &references_container,
@@ -194,30 +198,32 @@ public:
 		ValidateStringIdExistence(id);
 	#endif
 
-		int64_t refcount = id->refCount--;
-
-		//if other references, then can't clear it; signed, so it won't wrap around
-		if(refcount > 1)
-			return;
-
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		//this thread is about to free the reference, but need to acquire a lock
-		// so, keep the reference alive by incrementing it *before* attempting the lock
-		id->refCount++;
+		//refCount must be decremented in an atomic fashion, but if down to the last reference,
+		//then don't want to decrement outside of a lock.  This is because if this thread decremented
+		//refCount, then another thread could acquire the lock, create a reference, then acquire the
+		// lock and delete a reference, and now a double delete will occur.  
+		while(true)
+		{
+			size_t ref_count = id->refCount.load();
+			if(ref_count <= 1)
+				break;
 
-		Concurrency::SingleLock lock(mutex);
+			//if can decrement, return
+			if(std::atomic_compare_exchange_weak(&id->refCount, &ref_count, ref_count - 1))
+				return;
+		}
 
-		//with the lock, decrement reference count in case this string should stay active
-		refcount = id->refCount--;
-
-		//if other references, then can't clear it
-		if(refcount > 1)
-			return;
+		Concurrency::Lock lock(mutex);
 	#endif
 
+		//remove any that aren't the last reference
+		size_t ref_count = id->refCount--;
+		if(ref_count > 1)
+			return;
+		
 		stringToID.erase(id->string);
 	}
-
 
 	//creates new references from the references container and function
 	template<typename ReferencesContainer,
@@ -225,65 +231,8 @@ public:
 	inline void DestroyStringReferences(ReferencesContainer &references_container,
 		GetStringIdFunction get_string_id = [](auto sid) { return sid;  })
 	{
-	#if !defined(MULTITHREAD_SUPPORT) && !defined(MULTITHREAD_INTERFACE)
 		for(auto r : references_container)
 			DestroyStringReference(get_string_id(r));
-	#else
-		if(references_container.size() == 0)
-			return;
-
-		//as it goes through, if any id needs removal, will set this to true so that
-		// removal can be done after reference count decreases are done
-		bool ids_need_removal = false;
-
-		for(auto r : references_container)
-		{
-			StringID id = get_string_id(r);
-			if(id == NOT_A_STRING_ID || id == emptyStringId)
-				continue;
-
-		#ifdef STRING_INTERN_POOL_VALIDATION
-			ValidateStringIdExistence(id);
-		#endif
-
-			int64_t refcount = id->refCount--;
-
-			//if extra references, just return, but if it is 1, then it will try to clear
-			if(refcount <= 1)
-				ids_need_removal = true;
-		}
-
-		if(!ids_need_removal)
-			return;
-
-		//need to remove at least one reference, so put all counts back while wait for lock
-		for(auto r : references_container)
-		{
-			StringID id = get_string_id(r);
-			if(id != NOT_A_STRING_ID && id != emptyStringId)
-				id->refCount++;
-		}
-
-		Concurrency::SingleLock lock(mutex);
-
-		for(auto r : references_container)
-		{
-			StringID id = get_string_id(r);
-			if(id == NOT_A_STRING_ID || id == emptyStringId)
-				continue;
-
-		#ifdef STRING_INTERN_POOL_VALIDATION
-			ValidateStringIdExistenceUnderLock(id);
-		#endif
-
-			//remove any that are the last reference
-			int64_t refcount = id->refCount--;
-
-			if(refcount <= 1)
-				stringToID.erase(id->string);
-		}
-
-	#endif
 	}
 
 	//destroys 2 StringReferences
@@ -298,7 +247,7 @@ public:
 	inline size_t GetNumStringsInUse()
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		Concurrency::SingleLock lock(mutex);
+		Concurrency::Lock lock(mutex);
 	#endif
 
 		return stringToID.size();
@@ -308,20 +257,20 @@ public:
 	inline size_t GetNumDynamicStringsInUse()
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		Concurrency::SingleLock lock(mutex);
+		Concurrency::Lock lock(mutex);
 	#endif
 
 		return stringToID.size() - staticStringIDToIndex.size();
 	}
 
 	//returns a vector of all the strings still in use.  Intended for debugging.
-	inline std::vector<std::pair<std::string, int64_t>> GetDynamicStringsInUse()
+	inline std::vector<std::pair<std::string, size_t>> GetDynamicStringsInUse()
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		Concurrency::SingleLock lock(mutex);
+		Concurrency::Lock lock(mutex);
 	#endif
 
-		std::vector<std::pair<std::string, int64_t>> in_use;
+		std::vector<std::pair<std::string, size_t>> in_use;
 		for(auto &[str, sisd] : stringToID)
 		{
 			StringID sid(sisd.get());
@@ -336,7 +285,7 @@ public:
 	inline void ValidateStringIdExistence(StringID sid)
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		Concurrency::SingleLock lock(mutex);
+		Concurrency::Lock lock(mutex);
 	#endif
 		ValidateStringIdExistenceUnderLock(sid);
 	}

@@ -42,6 +42,9 @@ namespace Concurrency
 	//standard mutex for singular access
 	typedef std::mutex SingleMutex;
 
+	//standard lock for singular access and performance
+	typedef std::lock_guard<SingleMutex> Lock;
+
 	//standard lock for singular access
 	typedef std::unique_lock<SingleMutex> SingleLock;
 

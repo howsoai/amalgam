@@ -68,7 +68,7 @@ EntityWriteListener::~EntityWriteListener()
 void EntityWriteListener::LogSystemCall(EvaluableNode *params)
 {
 #ifdef MULTITHREAD_SUPPORT
-	Concurrency::SingleLock lock(mutex);
+	Concurrency::Lock lock(mutex);
 #endif
 
 	EvaluableNode *new_sys_call = listenerStorage.AllocNode(ENT_SYSTEM);
@@ -80,7 +80,7 @@ void EntityWriteListener::LogSystemCall(EvaluableNode *params)
 void EntityWriteListener::LogPrint(std::string &print_string)
 {
 #ifdef MULTITHREAD_SUPPORT
-	Concurrency::SingleLock lock(mutex);
+	Concurrency::Lock lock(mutex);
 #endif
 
 	EvaluableNode *new_print = listenerStorage.AllocNode(ENT_PRINT);
@@ -94,7 +94,7 @@ void EntityWriteListener::LogWriteLabelValueToEntity(Entity *entity,
 	const StringInternPool::StringID label_name, EvaluableNode *value, bool direct_set)
 {
 #ifdef MULTITHREAD_SUPPORT
-	Concurrency::SingleLock lock(mutex);
+	Concurrency::Lock lock(mutex);
 #endif
 
 	EvaluableNode *new_write = BuildNewWriteOperation(direct_set ? ENT_DIRECT_ASSIGN_TO_ENTITIES : ENT_ASSIGN_TO_ENTITIES, entity);
@@ -116,7 +116,7 @@ void EntityWriteListener::LogWriteLabelValuesToEntity(Entity *entity,
 		return;
 
 #ifdef MULTITHREAD_SUPPORT
-	Concurrency::SingleLock lock(mutex);
+	Concurrency::Lock lock(mutex);
 #endif
 
 	auto node_type = ENT_ASSIGN_TO_ENTITIES;
@@ -136,7 +136,7 @@ void EntityWriteListener::LogWriteLabelValuesToEntity(Entity *entity,
 void EntityWriteListener::LogWriteToEntityRoot(Entity *entity)
 {
 #ifdef MULTITHREAD_SUPPORT
-	Concurrency::SingleLock lock(mutex);
+	Concurrency::Lock lock(mutex);
 #endif
 	EvaluableNode *new_write = BuildNewWriteOperation(ENT_ASSIGN_ENTITY_ROOTS, entity);
 	EvaluableNode *new_root = entity->GetRoot(&listenerStorage, EvaluableNodeManager::ENMM_LABEL_ESCAPE_INCREMENT);
@@ -150,7 +150,7 @@ void EntityWriteListener::LogWriteToEntityRoot(Entity *entity)
 void EntityWriteListener::LogEntityAccumRoot(Entity *entity, EvaluableNodeReference accum_code)
 {
 #ifdef MULTITHREAD_SUPPORT
-	Concurrency::SingleLock lock(mutex);
+	Concurrency::Lock lock(mutex);
 #endif
 	EvaluableNode *new_write = BuildNewWriteOperation(ENT_ACCUM_ENTITY_ROOTS, entity);
 	EvaluableNode *new_lambda = listenerStorage.AllocNode(EvaluableNodeType::ENT_LAMBDA);
@@ -166,7 +166,7 @@ void EntityWriteListener::LogCreateEntity(Entity *new_entity)
 		return;
 
 #ifdef MULTITHREAD_SUPPORT
-	Concurrency::SingleLock lock(mutex);
+	Concurrency::Lock lock(mutex);
 #endif
 
 	LogCreateEntityRecurse(new_entity);
@@ -175,7 +175,7 @@ void EntityWriteListener::LogCreateEntity(Entity *new_entity)
 void EntityWriteListener::LogDestroyEntity(Entity *destroyed_entity)
 {
 #ifdef MULTITHREAD_SUPPORT
-	Concurrency::SingleLock lock(mutex);
+	Concurrency::Lock lock(mutex);
 #endif
 
 	EvaluableNode *new_destroy = BuildNewWriteOperation(ENT_DESTROY_ENTITIES, destroyed_entity);
@@ -186,7 +186,7 @@ void EntityWriteListener::LogDestroyEntity(Entity *destroyed_entity)
 void EntityWriteListener::LogSetEntityRandomSeed(Entity *entity, const std::string &rand_seed, bool deep_set)
 {
 #ifdef MULTITHREAD_SUPPORT
-	Concurrency::SingleLock lock(mutex);
+	Concurrency::Lock lock(mutex);
 #endif
 
 	EvaluableNode *new_set = BuildNewWriteOperation(ENT_SET_ENTITY_RAND_SEED, entity);
@@ -202,7 +202,7 @@ void EntityWriteListener::LogSetEntityRandomSeed(Entity *entity, const std::stri
 void EntityWriteListener::FlushLogFile()
 {
 #ifdef MULTITHREAD_SUPPORT
-	Concurrency::SingleLock lock(mutex);
+	Concurrency::Lock lock(mutex);
 #endif
 
 	if(logFile.is_open() && logFile.good())

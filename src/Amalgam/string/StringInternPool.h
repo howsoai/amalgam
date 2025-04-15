@@ -73,7 +73,7 @@ public:
 	inline StringID GetIDFromString(const std::string &str)
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		Concurrency::SingleLock lock(mutex);
+		Concurrency::Lock lock(mutex);
 	#endif
 
 		auto id_iter = stringToID.find(str);
@@ -94,7 +94,7 @@ public:
 			return emptyStringId;
 
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		Concurrency::SingleLock lock(mutex);
+		Concurrency::Lock lock(mutex);
 	#endif
 
 		//try to insert it as a new string
@@ -208,7 +208,7 @@ public:
 				return;
 		}
 
-		Concurrency::SingleLock lock(mutex);
+		Concurrency::Lock lock(mutex);
 
 		//retry decrementing in case it has been modified by another thread
 		while(true)
@@ -254,7 +254,7 @@ public:
 	inline size_t GetNumStringsInUse()
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		Concurrency::SingleLock lock(mutex);
+		Concurrency::Lock lock(mutex);
 	#endif
 
 		return stringToID.size();
@@ -264,7 +264,7 @@ public:
 	inline size_t GetNumDynamicStringsInUse()
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		Concurrency::SingleLock lock(mutex);
+		Concurrency::Lock lock(mutex);
 	#endif
 
 		return stringToID.size() - staticStringIDToIndex.size();
@@ -274,7 +274,7 @@ public:
 	inline std::vector<std::pair<std::string, int64_t>> GetDynamicStringsInUse()
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		Concurrency::SingleLock lock(mutex);
+		Concurrency::Lock lock(mutex);
 	#endif
 
 		std::vector<std::pair<std::string, int64_t>> in_use;
@@ -292,7 +292,7 @@ public:
 	inline void ValidateStringIdExistence(StringID sid)
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		Concurrency::SingleLock lock(mutex);
+		Concurrency::Lock lock(mutex);
 	#endif
 		ValidateStringIdExistenceUnderLock(sid);
 	}

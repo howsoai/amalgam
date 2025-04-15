@@ -26,9 +26,9 @@ public:
 	{	}
 
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	std::atomic<int64_t> refCount;
+	std::atomic<size_t> refCount;
 #else
-	int64_t refCount;
+	size_t refCount;
 #endif
 	std::string string;
 };
@@ -112,6 +112,7 @@ public:
 	}
 
 	//makes a new reference to the string id specified, returning the id passed in
+	//note that this assumes that the caller guarantees that the id will exist for the duration of this call
 	inline StringID CreateStringReference(StringID id)
 	{
 		if(id != NOT_A_STRING_ID)
@@ -125,6 +126,7 @@ public:
 	}
 
 	//creates new references from the references container and function
+	//note that this assumes that the caller guarantees that the ids will exist for the duration of this call
 	template<typename ReferencesContainer,
 		typename GetStringIdFunction = StringID(StringID)>
 	inline void CreateStringReferences(ReferencesContainer &references_container,
@@ -145,6 +147,7 @@ public:
 
 	//creates additional_reference_count new references from the references container and function
 	// specialized for size_t indexed containers, where the index is desired
+	//note that this assumes that the caller guarantees that the ids will exist for the duration of this call
 	template<typename ReferencesContainer,
 		typename GetStringIdFunction = StringID(StringID)>
 	inline void CreateMultipleStringReferences(ReferencesContainer &references_container,
@@ -166,6 +169,7 @@ public:
 
 	//creates new references from the references container and function
 	// specialized for size_t indexed containers, where the index is desired
+	//note that this assumes that the caller guarantees that the ids will exist for the duration of this call
 	template<typename ReferencesContainer,
 		typename GetStringIdFunction = StringID(StringID)>
 	inline void CreateStringReferencesByIndex(ReferencesContainer &references_container,
@@ -195,11 +199,13 @@ public:
 	#endif
 
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		//decrement the counter in an atomic fashion
-		//but if down to the last reference, then need to acquire a lock
+		//refCount must be decremented in an atomic fashion, but if down to the last reference,
+		//then don't want to decrement outside of a lock.  This is because if this thread decremented
+		//refCount, then another thread could acquire the lock, create a reference, then acquire the
+		// lock and delete a reference, and now a double delete will occur.  
 		while(true)
 		{
-			int64_t ref_count = id->refCount.load();
+			size_t ref_count = id->refCount.load();
 			if(ref_count <= 1)
 				break;
 
@@ -209,24 +215,12 @@ public:
 		}
 
 		Concurrency::Lock lock(mutex);
-
-		//retry decrementing in case it has been modified by another thread
-		while(true)
-		{
-			int64_t ref_count = id->refCount.load();
-			if(ref_count <= 1)
-				break;
-
-			//if can decrement, return
-			if(std::atomic_compare_exchange_weak(&id->refCount, &ref_count, ref_count - 1))
-				return;
-		}
-	#else
-		//remove any that aren't the last reference
-		id->refCount--;
-		if(id->refCount > 0)
-			return;
 	#endif
+
+		//remove any that aren't the last reference
+		size_t ref_count = id->refCount--;
+		if(ref_count > 1)
+			return;
 		
 		stringToID.erase(id->string);
 	}
@@ -270,13 +264,13 @@ public:
 	}
 
 	//returns a vector of all the strings still in use.  Intended for debugging.
-	inline std::vector<std::pair<std::string, int64_t>> GetDynamicStringsInUse()
+	inline std::vector<std::pair<std::string, size_t>> GetDynamicStringsInUse()
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		Concurrency::Lock lock(mutex);
 	#endif
 
-		std::vector<std::pair<std::string, int64_t>> in_use;
+		std::vector<std::pair<std::string, size_t>> in_use;
 		for(auto &[str, sisd] : stringToID)
 		{
 			StringID sid(sisd.get());

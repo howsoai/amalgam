@@ -35,14 +35,6 @@ namespace EntityQueryBuilder
 		NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS //always last - do not add after this
 	};
 
-	constexpr bool DoesDistanceQueryUseEntitiesInsteadOfPosition(EvaluableNodeType type)
-	{
-		return (type == ENT_QUERY_ENTITY_CONVICTIONS
-			|| type == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
-			|| type == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
-			|| type == ENT_QUERY_ENTITY_KL_DIVERGENCES);
-	}
-
 	//populates deviation data for a given nominal value
 	//assumes that value_deviation_assoc is a valid pointer to an assoc
 	template<typename NominalDeviationValuesType>
@@ -406,8 +398,12 @@ namespace EntityQueryBuilder
 			}
 		}
 
+		//TODO 23320: add ENT_QUERY_DISTANCE_CONTRIBUTIONS here
 		//select based on type for position or entities
-		if(DoesDistanceQueryUseEntitiesInsteadOfPosition(condition_type))
+		if(condition_type == ENT_QUERY_ENTITY_CONVICTIONS
+			|| condition_type == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
+			|| condition_type == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
+			|| condition_type == ENT_QUERY_ENTITY_KL_DIVERGENCES)
 		{
 			EvaluableNode *entities = ocn[POSITION];
 			if(EvaluableNode::IsOrderedArray(entities))
@@ -542,10 +538,12 @@ namespace EntityQueryBuilder
 			//don't need to do anything for np_sid == ENBISI_recompute_precise because it's default
 		}
 
-		//TODO 23320: update to include ENT_QUERY_DISTANCE_CONTRIBUTIONS
 		cur_condition->returnSortedList = false;
 		cur_condition->additionalSortedListLabels.clear();
-		if(condition_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE || condition_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || condition_type == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS)
+		if(condition_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
+			|| condition_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
+			|| condition_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS
+			|| condition_type == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS)
 		{
 			if(ocn.size() > NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0)
 			{
@@ -565,7 +563,9 @@ namespace EntityQueryBuilder
 				}
 			}
 		}
-		else if(condition_type == ENT_QUERY_ENTITY_CONVICTIONS || condition_type == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE || condition_type == ENT_QUERY_ENTITY_KL_DIVERGENCES)
+		else if(condition_type == ENT_QUERY_ENTITY_CONVICTIONS
+			|| condition_type == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
+			|| condition_type == ENT_QUERY_ENTITY_KL_DIVERGENCES)
 		{
 			cur_condition->convictionOfRemoval = false;
 			if(ocn.size() > NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0)

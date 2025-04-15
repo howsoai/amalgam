@@ -1621,6 +1621,8 @@ var data = [
 		"example" : "(contained_entities \"TestContainerExec\" (list\n  (query_nearest_generalized_distance (list \"x\" \"y\") (list 0.0 0.0) 0.5 (list 0.25 0.75) (list 5 0) (list null (list 0 360)) (list 0.5 0.0) 10 \"radius\")\n))\n(contained_entities \"TestContainerExec\" (list\n  (query_nearest_generalized_distance (list \"x\" \"y\") (list 0.0 0.0) 0.5 (null) (null) 10 \"radius\")\n))"
 	},
 
+		//TODO 23320: update to include query_distance_contributions
+
 	{
 		"parameter" : "query_entity_convictions list|number entities_returned list feature_labels list entity_ids_to_compute list|assoc weights list|assoc distance_types list|assoc attributes list|assoc deviations [number p_value] [string|number distance_transform] [string entity_weight_label_name] [number random_seed] [string radius_label] [string numerical_precision] [bool conviction_of_removal] [* output_sorted_list]",
 		"output" : "query",

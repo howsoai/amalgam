@@ -164,7 +164,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 	return result;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_QUERY_opcodes(EvaluableNode *en, bool immediate_result)
 {
 	//use stack to lock it in place, but copy it back to temporary before returning
 	EvaluableNodeReference query_command(evaluableNodeManager->AllocNode(en->GetType()), true);

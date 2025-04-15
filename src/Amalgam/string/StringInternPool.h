@@ -195,12 +195,24 @@ public:
 	#endif
 
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+		//decrement the counter in an atomic fashion
+		//but if down to the last reference, then need to acquire a lock
+		while(true)
+		{
+			int64_t ref_count = id->refCount.load();
+			if(ref_count <= 1)
+				break;
+
+			//if can decrement, return
+			if(std::atomic_compare_exchange_weak(&id->refCount, &ref_count, ref_count - 1))
+				return;
+		}
+
 		Concurrency::SingleLock lock(mutex);
 	#endif
-
-		int64_t ref_count = id->refCount--;
+		
 		//remove any that are the last reference
-		if(ref_count == 1)
+		if(id->refCount == 1)
 			stringToID.erase(id->string);
 	}
 
@@ -211,31 +223,8 @@ public:
 	inline void DestroyStringReferences(ReferencesContainer &references_container,
 		GetStringIdFunction get_string_id = [](auto sid) { return sid;  })
 	{
-	#if !defined(MULTITHREAD_SUPPORT) && !defined(MULTITHREAD_INTERFACE)
 		for(auto r : references_container)
 			DestroyStringReference(get_string_id(r));
-	#else
-		if(references_container.size() == 0)
-			return;
-
-		Concurrency::SingleLock lock(mutex);
-		
-		for(auto r : references_container)
-		{
-			StringID id = get_string_id(r);
-			if(id == NOT_A_STRING_ID || id == emptyStringId)
-				continue;
-
-		#ifdef STRING_INTERN_POOL_VALIDATION
-			ValidateStringIdExistence(id);
-		#endif
-
-			int64_t ref_count = id->refCount--;
-			//remove any that are the last reference
-			if(ref_count == 1)
-				stringToID.erase(id->string);
-		}
-	#endif
 	}
 
 	//destroys 2 StringReferences

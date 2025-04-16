@@ -1250,6 +1250,8 @@ public:
 inline void CopyOrderedChildNodesToImmediateValuesAndTypes(std::vector<EvaluableNode *> &ocn,
 	std::vector<EvaluableNodeImmediateValue> &values, std::vector<EvaluableNodeImmediateValueType> &value_types)
 {
+	values.clear();
+	value_types.clear();
 	values.reserve(ocn.size());
 	value_types.reserve(ocn.size());
 	for(EvaluableNode *en : ocn)

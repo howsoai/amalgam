@@ -101,7 +101,7 @@ public:
 
 		sbfDataStore->FindNearestEntitiesToPosition(*distEvaluator,
 			*positionLabelIds, values, value_types, top_k, radiusLabelId,
-			additional_holdout_index, *relevantIndices, out);
+			additional_holdout_index, *relevantIndices, expand_to_first_nonzero_distance, out);
 	}
 
 	//gets the top_k nearest neighbor results of entities for the given index, excluding the additional_holdout_index, sets out to the results

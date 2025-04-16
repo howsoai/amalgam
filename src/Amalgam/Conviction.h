@@ -175,7 +175,7 @@ public:
 					buffers.positionValues, buffers.positionValueTypes);
 
 			knnCache->GetKnnWithoutCache(buffers.positionValues, buffers.positionValueTypes,
-				numNearestNeighbors, false, buffers.neighbors);
+				numNearestNeighbors, true, buffers.neighbors);
 			contribs_out[index] = distanceTransform->ComputeDistanceContribution(buffers.neighbors, 1.0);
 		}
 	#ifdef MULTITHREAD_SUPPORT

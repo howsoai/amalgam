@@ -334,7 +334,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				else if(cond->queryType == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE)
 				{
 					sbfds.FindNearestEntitiesToPosition(cond->distEvaluator, cond->positionLabels, cond->valueToCompare, cond->valueTypes,
-						distance_transform.GetNumToRetrieve(), cond->singleLabel, cond->exclusionEntityIndex, matching_entities,
+						distance_transform.GetNumToRetrieve(), cond->singleLabel, cond->exclusionEntityIndex, matching_entities, false,
 						compute_results, cond->randomStream.CreateOtherStreamViaRand());
 				}
 				else //ENT_QUERY_WITHIN_GENERALIZED_DISTANCE

@@ -22,6 +22,8 @@ public:
 		std::vector<DistanceReferencePair<size_t>> updatedDistanceContribs;
 		std::vector<double> baseDistanceContributions;
 		std::vector<double> baseDistanceProbabilities;
+		std::vector<EvaluableNodeImmediateValueType> valueTypes;
+		std::vector<EvaluableNodeImmediateValue> valueToCompare;
 	};
 
 #ifdef MULTITHREAD_SUPPORT
@@ -126,7 +128,8 @@ public:
 				return;
 			}
 			auto &position_values = position->GetOrderedChildNodesReference();
-		
+
+			//TODO 23320: finish this
 			knnCache->GetKnnWithoutCache(position_values, numNearestNeighbors, false, buffers.neighbors);
 			contribs_out[index] = distanceTransform->ComputeDistanceContribution(buffers.neighbors, 1.0);
 		}

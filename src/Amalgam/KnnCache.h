@@ -85,6 +85,20 @@ public:
 			expand_to_first_nonzero_distance, out, additional_holdout_index);
 	}
 
+	//gets the top_k nearest neighbor results of entities for the given position, sets out to the results
+	//if expand_to_first_nonzero_distance is true, it will expand k so that at least one non-zero distance is returned
+	// or return until all entities are included
+	//but does not use cache
+	void GetKnnWithoutCache(std::vector<EvaluableNode *> &position_values, size_t top_k, bool expand_to_first_nonzero_distance,
+		std::vector<DistanceReferencePair<size_t>> &out)
+	{
+		out.clear();
+		//TODO 23320: finish this method
+		//sbfDataStore->FindNearestEntitiesToPosition(*distEvaluator,
+		//	*positionLabelIds, index, top_k, radiusLabelId, *relevantIndices,
+		//	expand_to_first_nonzero_distance, out, additional_holdout_index);
+	}
+
 	//gets the top_k nearest neighbor results of entities for the given index, excluding the additional_holdout_index, sets out to the results
 	//if expand_to_first_nonzero_distance is true, it will expand k so that at least one non-zero distance is returned
 	// or return until all entities are included

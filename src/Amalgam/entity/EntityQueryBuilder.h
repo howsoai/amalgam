@@ -429,16 +429,8 @@ namespace EntityQueryBuilder
 			EvaluableNode *position = ocn[POSITION];
 			if(EvaluableNode::IsOrderedArray(position) && (position->GetNumChildNodes() == cur_condition->positionLabels.size()))
 			{
-				auto &position_ocn = position->GetOrderedChildNodesReference();
-				cur_condition->valueToCompare.reserve(position_ocn.size());
-				cur_condition->valueTypes.reserve(position_ocn.size());
-				for(auto &pos_en : position_ocn)
-				{
-					EvaluableNodeImmediateValue imm_val;
-					auto value_type = imm_val.CopyValueFromEvaluableNode(pos_en);
-					cur_condition->valueTypes.push_back(value_type);
-					cur_condition->valueToCompare.push_back(imm_val);
-				}
+				CopyOrderedChildNodesToImmediateValuesAndTypes(position->GetOrderedChildNodesReference(),
+					cur_condition->valueToCompare, cur_condition->valueTypes);
 			}
 			else // no positions given, default to nulls for each label
 			{
@@ -790,15 +782,8 @@ namespace EntityQueryBuilder
 				cur_condition->singleLabel = label_sid;
 
 				//already checked for nullptr above
-				auto &values_ocn = ocn[1]->GetOrderedChildNodes();
-				for(auto value_node : values_ocn)
-				{
-					EvaluableNodeImmediateValue value;
-					auto value_type = value.CopyValueFromEvaluableNode(value_node);
-					cur_condition->valueToCompare.push_back(value);
-					cur_condition->valueTypes.push_back(value_type);
-				}
-
+				CopyOrderedChildNodesToImmediateValuesAndTypes(ocn[1]->GetOrderedChildNodes(),
+					cur_condition->valueToCompare, cur_condition->valueTypes);
 				break;
 			}
 

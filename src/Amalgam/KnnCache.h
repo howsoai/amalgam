@@ -94,6 +94,11 @@ public:
 		std::vector<DistanceReferencePair<size_t>> &out, size_t additional_holdout_index = std::numeric_limits<size_t>::max())
 	{
 		out.clear();
+		//make sure the containers are all the same size
+		size_t num_position_labels = positionLabelIds->size();
+		values.resize(num_position_labels);
+		value_types.resize(num_position_labels, ENIVT_NULL);
+
 		sbfDataStore->FindNearestEntitiesToPosition(*distEvaluator,
 			*positionLabelIds, values, value_types, top_k, radiusLabelId,
 			additional_holdout_index, *relevantIndices, out);

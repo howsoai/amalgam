@@ -1285,10 +1285,16 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 	{
 		auto &contained_entities = container->GetContainedEntities();
 
-		//if the query type uses compute results
-		if(last_query_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
+		if(last_query_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS)
+		{
+			if(immediate_result)
+				return EvaluableNodeReference(static_cast<double>(compute_results.size()));
+
+			return CreateListOfNumbersFromIteratorAndFunction(compute_results, enm,
+				[](auto &result) { return result.distance; });
+		}
+		else if(last_query_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
 			|| last_query_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
-			|| last_query_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS
 			|| last_query_type == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
 			|| last_query_type == ENT_QUERY_ENTITY_CONVICTIONS
 			|| last_query_type == ENT_QUERY_ENTITY_KL_DIVERGENCES)

@@ -3228,7 +3228,10 @@
  )))
 
 (print "--query_distance_contributions--\n")
-;TODO 23320: add tests for query_distance_contributions
+
+(print (compute_on_contained_entities (list
+  (query_distance_contributions 2 (list "x" "y") [[1 2]] (null) (null) (null) (null) 2 -1 (null) "random seed 1234")
+ )))
 
 (print "--query_entity_convictions--\n")
 
@@ -4417,6 +4420,22 @@
         )
     ))
 	)
+
+     (print "surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list
+	(query_distance_contributions 4 (list "x") [[0]] (null) (null) (null) (list 0.25) 1 "surprisal" (null) "fixed_seed" (null) "precise")
+  )))
+
+  (print "surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list
+	(query_distance_contributions (list 0.05 1 20) (list "x") [[0]] (null) (null) (null) (list 0.25) 1 "surprisal" (null) "fixed_seed" (null) "precise")
+  )))
+
+  (print "weighted surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list
+	(query_distance_contributions 4 (list "x") [[0]] (null) (null) (null) (list 0.25) 1 "surprisal" "weight" "fixed_seed" (null) "precise")
+  )))
+
+  (print "weighted surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list
+	(query_distance_contributions (list 0.05 1 20) (list "x") [[0]] (null) (null) (null) (list 0.25) 1 "surprisal" "weight" "fixed_seed" (null) "precise")
+  )))
 
   (create_entities (list "SurprisalTransformContainer" "testvert") (lambda
 	(null ##x 0 ##weight 1)

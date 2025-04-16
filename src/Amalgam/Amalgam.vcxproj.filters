@@ -227,9 +227,6 @@
     <ClInclude Include="KnnCache.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ConvictionUtil.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="DistanceReferencePair.h">
       <Filter>Header Files</Filter>
     </ClInclude>

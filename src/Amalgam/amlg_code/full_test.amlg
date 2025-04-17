@@ -3227,7 +3227,13 @@
     (query_within_generalized_distance 2 (list "x" "y") (list 0.0 0.0) (null) (null) (null) (null) 1 1 (null) "random seed 1234" "radius")
  )))
 
-(print "--compute_entity_convictions--\n")
+(print "--query_distance_contributions--\n")
+
+(print (compute_on_contained_entities (list
+  (query_distance_contributions 2 (list "x" "y") [[1 2]] (null) (null) (null) (null) 2 -1 (null) "random seed 1234")
+ )))
+
+(print "--query_entity_convictions--\n")
 
  (create_entities "entity1" (lambda
  	(parallel ##alpha 3 ##b 0.17 ##c 1)
@@ -3276,34 +3282,34 @@
 
  (print "case convictions:\n" (compute_on_contained_entities (list
  (query_exists "alpha")
- (compute_entity_convictions 2 (list "alpha" "b" "c") (null) (null) (list 0 0 1) (null) (null) 0.5)
+ (query_entity_convictions 2 (list "alpha" "b" "c") (null) (null) (list 0 0 1) (null) (null) 0.5)
  )))
 
  (print "case convictions:\n" (compute_on_contained_entities (list
-  (compute_entity_convictions 2 (list "alpha" "b" "c") (null) (null) (list 0 0 1) (null) (null) 0.1)
+  (query_entity_convictions 2 (list "alpha" "b" "c") (null) (null) (list 0 0 1) (null) (null) 0.1)
  )))
 
  (print "case convictions unweighted:\n" (compute_on_contained_entities (list
-  (compute_entity_convictions 2 (list "alpha" "b" "c") (null) (null) (list 0 0 1) (null) (null) 2 -1 (null) 1 (null) "fast")
+  (query_entity_convictions 2 (list "alpha" "b" "c") (null) (null) (list 0 0 1) (null) (null) 2 -1 (null) 1 (null) "fast")
  )))
 
  (print "case convictions weighted by object (with erroneously long nominal):\n" (compute_on_contained_entities (list
-  (compute_entity_convictions 2 (list "x" "y") (null) (null) (list 0 0 1) (null) (null) 1 1 "object")
+  (query_entity_convictions 2 (list "x" "y") (null) (null) (list 0 0 1) (null) (null) 1 1 "object")
  )))
 
  (print "case convictions x exists before:\n" (compute_on_contained_entities (list
   (query_exists "x")
-  (compute_entity_convictions 1 (list "alpha" "b" "c") (null) (null) (list 0 0 1) (null) (null) 2.0)
+  (query_entity_convictions 1 (list "alpha" "b" "c") (null) (null) (list 0 0 1) (null) (null) 2.0)
  )))
 
  (print "case convictions x exists after:\n" (compute_on_contained_entities (list
-  (compute_entity_convictions 1 (list "alpha" "b" "c") (null) (null) (list 0 0 1) (null) (null) 2.0)
+  (query_entity_convictions 1 (list "alpha" "b" "c") (null) (null) (list 0 0 1) (null) (null) 2.0)
   (query_exists "x")
  )))
 
  (print "case convictions object = 1:\n" (compute_on_contained_entities (list
   (query_equals "object" 1)
-  (compute_entity_convictions 2 (list "x" "y") (null) (null) (null) (null) (null) 2)
+  (query_entity_convictions 2 (list "x" "y") (null) (null) (null) (null) (null) 2)
  )))
 
 (assign (assoc obj1_verts
@@ -3321,46 +3327,46 @@
 
  (print "case convictions on a subset:\n" (compute_on_contained_entities (list
      (query_equals "object" 1)
-  (compute_entity_convictions 2 (list "x" "y") obj1_verts (null) (null) (null) (null) 2 1 (null) "random seed 1234")
+  (query_entity_convictions 2 (list "x" "y") obj1_verts (null) (null) (null) (null) 2 1 (null) "random seed 1234")
  )))
 
- (print "--compute_entity_group_kl_divergence--\n")
+ (print "--query_entity_group_kl_divergence--\n")
 
  (print (compute_on_contained_entities (list
   (query_exists "object")
-  (compute_entity_group_kl_divergence 2 (list "x" "y") obj2_verts (null) (null) (null) (null) 2 -1 (null) "random seed 1234")
+  (query_entity_group_kl_divergence 2 (list "x" "y") obj2_verts (null) (null) (null) (null) 2 -1 (null) "random seed 1234")
  )) "\n")
 
-  (print "--compute_entity_distance_contributions--\n")
+  (print "--query_entity_distance_contributions--\n")
 
  (print (compute_on_contained_entities (list
-  (compute_entity_distance_contributions 2 (list "x" "y") (null) (null) (null) (null) (null) 2 -1 (null) "random seed 1234")
+  (query_entity_distance_contributions 2 (list "x" "y") (null) (null) (null) (null) (null) 2 -1 (null) "random seed 1234")
  )))
 
  (print "(these values should match the values of the subset of these keys in the previous assoc):\n" (compute_on_contained_entities (list
-  (compute_entity_distance_contributions 2 (list "x" "y") (list "vert0" "vert1" "vert2") (null) (null) (null) (null) 2 -1)
+  (query_entity_distance_contributions 2 (list "x" "y") (list "vert0" "vert1" "vert2") (null) (null) (null) (null) 2 -1)
  )))
  
  (print (compute_on_contained_entities (list
   (query_exists "object")
-  (compute_entity_distance_contributions 2 (list "x" "y") (null) (null) (null) (null) (null) 2 -1 (null) "random seed 1234")
+  (query_entity_distance_contributions 2 (list "x" "y") (null) (null) (null) (null) (null) 2 -1 (null) "random seed 1234")
  )))
 
  (print "(these values should match the values of the subset of these keys in the previous assoc):\n" (compute_on_contained_entities (list
   (query_exists "object")
-  (compute_entity_distance_contributions 2 (list "x" "y") obj2_verts (null) (null) (null) (null) 2 -1 (null) "random seed 1234")
+  (query_entity_distance_contributions 2 (list "x" "y") obj2_verts (null) (null) (null) (null) 2 -1 (null) "random seed 1234")
  )))
 
- (print "--compute_entity_kl_divergences--\n")
+ (print "--query_entity_kl_divergences--\n")
 
  (print (compute_on_contained_entities (list
   (query_exists "object")
-  (compute_entity_kl_divergences 2 (list "x" "y") (null) (null) (null) (null) (null) 2 -1 (null) "random seed 1234")
+  (query_entity_kl_divergences 2 (list "x" "y") (null) (null) (null) (null) (null) 2 -1 (null) "random seed 1234")
  )))
 
  (print "(these values should match the values of the subset of these keys in the previous assoc):" (compute_on_contained_entities (list
   (query_exists "object")
-  (compute_entity_kl_divergences 2 (list "x" "y") obj1_verts (null) (null) (null) (null) 2 -1 (null) "random seed 1234")
+  (query_entity_kl_divergences 2 (list "x" "y") obj1_verts (null) (null) (null) (null) 2 -1 (null) "random seed 1234")
  )))
 
  (print "additional conviction calculations:\n" )
@@ -3371,7 +3377,7 @@
 			"x" 0.5
 		)
 		(query_not_exists "vert_to_remove")
-  (compute_entity_convictions 1 (list "x" "y") (null) (null) (null) (null) (null) 2 -1 (null) "random seed 1234")
+  (query_entity_convictions 1 (list "x" "y") (null) (null) (null) (null) (null) 2 -1 (null) "random seed 1234")
  )))
 
  (print "case conviction:" (compute_on_contained_entities (list
@@ -3380,7 +3386,7 @@
    "x" 0.5
   )
   (query_not_exists "vert_to_remove")
-  (compute_entity_convictions 2 (list "x" "y") (null) (null) (null) (null) (null) 2 -1 (null) "random seed 1234")
+  (query_entity_convictions 2 (list "x" "y") (null) (null) (null) (null) (null) 2 -1 (null) "random seed 1234")
  )))
 
  (print "cyclic feature nearest neighbors: " )
@@ -4144,71 +4150,71 @@
 
   (print "distance contributions\n")
   (print "dc: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (compute_entity_distance_contributions 1 (list "x" "y") (null) (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise" (true))
+  (query_entity_distance_contributions 1 (list "x" "y") (null) (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise" (true))
  )))
 
   (print "weighted dc: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (compute_entity_distance_contributions 1 (list "x" "y") (null) (null) (null) (null) (null) 2.0 -1 "weight" "fixed_seed" (null) "recompute_precise")
+  (query_entity_distance_contributions 1 (list "x" "y") (null) (null) (null) (null) (null) 2.0 -1 "weight" "fixed_seed" (null) "recompute_precise")
  )))
  
  (print "removal conviction\n")
 
  (print "kl: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (compute_entity_kl_divergences  1 (list "x" "y") (null) (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise" (true))
+  (query_entity_kl_divergences  1 (list "x" "y") (null) (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise" (true))
  )))
 
  (print "weighted kl: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (compute_entity_kl_divergences  1 (list "x" "y") (null) (null) (null) (null) (null) 2.0 -1 "weight" "fixed_seed" (null) "recompute_precise" (true))
+  (query_entity_kl_divergences  1 (list "x" "y") (null) (null) (null) (null) (null) 2.0 -1 "weight" "fixed_seed" (null) "recompute_precise" (true))
  )))
 
   (print "convictions: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (compute_entity_convictions 1 (list "x" "y") (null) (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise" (true))
+  (query_entity_convictions 1 (list "x" "y") (null) (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise" (true))
  )))
 
  (print "further parameterized convictions: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (compute_entity_convictions 1 (list "x" "y") (list "vert0" "vert1" "vert2" "vert3") (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise" (true))
+  (query_entity_convictions 1 (list "x" "y") (list "vert0" "vert1" "vert2" "vert3") (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise" (true))
  )))
 
   (print "weighted convictions: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (compute_entity_convictions 1 (list "x" "y") (null) (null) (null) (null) (null) 2.0 -1 "weight" "fixed_seed" (null) "recompute_precise" (true))
+  (query_entity_convictions 1 (list "x" "y") (null) (null) (null) (null) (null) 2.0 -1 "weight" "fixed_seed" (null) "recompute_precise" (true))
  )))
 
  (print "group kl divergence: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (compute_entity_group_kl_divergence 1 (list "x" "y") (list "vert1") (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise" (true))
+  (query_entity_group_kl_divergence 1 (list "x" "y") (list "vert1") (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise" (true))
  )) "\n") 
 
   (print "weighted group kl divergence: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (compute_entity_group_kl_divergence 1 (list "x" "y") (list "vert1") (null) (null) (null) (null) 2.0 -1 "weight" "fixed_seed" (null) "recompute_precise" (true))
+  (query_entity_group_kl_divergence 1 (list "x" "y") (list "vert1") (null) (null) (null) (null) 2.0 -1 "weight" "fixed_seed" (null) "recompute_precise" (true))
  )) "\n") 
 
   (print "addition conviction\n")
  
   (print "kl: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (compute_entity_kl_divergences  1 (list "x" "y") (null) (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise" (false))
+  (query_entity_kl_divergences  1 (list "x" "y") (null) (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise" (false))
  )))
 
  (print "weighted kl: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (compute_entity_kl_divergences  1 (list "x" "y") (null) (null) (null) (null) (null) 2.0 -1 "weight" "fixed_seed" (null) "recompute_precise" (false))
+  (query_entity_kl_divergences  1 (list "x" "y") (null) (null) (null) (null) (null) 2.0 -1 "weight" "fixed_seed" (null) "recompute_precise" (false))
  )))
 
   (print "convictions: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (compute_entity_convictions 1 (list "x" "y") (null) (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise" (false))
+  (query_entity_convictions 1 (list "x" "y") (null) (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise" (false))
  )))
 
  (print "further parameterized convictions: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (compute_entity_convictions 1 (list "x" "y") (list "vert0" "vert1" "vert2" "vert3") (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise" (false))
+  (query_entity_convictions 1 (list "x" "y") (list "vert0" "vert1" "vert2" "vert3") (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise" (false))
  )))
 
   (print "weighted convictions: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (compute_entity_convictions 1 (list "x" "y") (null) (null) (null) (null) (null) 2.0 -1 "weight" "fixed_seed" (null) "recompute_precise" (false))
+  (query_entity_convictions 1 (list "x" "y") (null) (null) (null) (null) (null) 2.0 -1 "weight" "fixed_seed" (null) "recompute_precise" (false))
  )))
 
  (print "group kl divergence: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (compute_entity_group_kl_divergence 1 (list "x" "y") (list "vert1") (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise" (false))
+  (query_entity_group_kl_divergence 1 (list "x" "y") (list "vert1") (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise" (false))
  )) "\n") 
 
   (print "weighted group kl divergence: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (compute_entity_group_kl_divergence 1 (list "x" "y") (list "vert1") (null) (null) (null) (null) 2.0 -1 "weight" "fixed_seed" (null) "recompute_precise" (false))
+  (query_entity_group_kl_divergence 1 (list "x" "y") (list "vert1") (null) (null) (null) (null) 2.0 -1 "weight" "fixed_seed" (null) "recompute_precise" (false))
  )) "\n") 
 
  (print "adding a case\n")
@@ -4218,23 +4224,23 @@
  ) )
  
    (print "noncyclic KL: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-   (compute_entity_kl_divergences 1 (list "x" "y") (null) (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise")
+   (query_entity_kl_divergences 1 (list "x" "y") (null) (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise")
  )))
  
   (print "noncyclic group kl divergence: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-   (compute_entity_group_kl_divergence 1 (list "x" "y") (list "vert4") (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise")
+   (query_entity_group_kl_divergence 1 (list "x" "y") (list "vert4") (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise")
  )) "\n")
 
    (print "cyclic KL: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-   (compute_entity_kl_divergences 1 (list "x" "y") (null) (null) (list "continuous_numeric_cyclic" "continuous_numeric") (list 3.5 (null)) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise")
+   (query_entity_kl_divergences 1 (list "x" "y") (null) (null) (list "continuous_numeric_cyclic" "continuous_numeric") (list 3.5 (null)) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise")
  )))
 
   (print "cyclic conviction: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-   (compute_entity_convictions 1 (list "x" "y") (null) (null) (list "continuous_numeric_cyclic" "continuous_numeric") (list 3.5 (null)) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise")
+   (query_entity_convictions 1 (list "x" "y") (null) (null) (list "continuous_numeric_cyclic" "continuous_numeric") (list 3.5 (null)) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise")
  )))
 
  (print "cyclic group kl divergence: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-   (compute_entity_group_kl_divergence 1 (list "x" "y") (list "vert4") (null) (list "continuous_numeric_cyclic" "continuous_numeric") (list 3.5 (null)) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise")
+   (query_entity_group_kl_divergence 1 (list "x" "y") (list "vert4") (null) (list "continuous_numeric_cyclic" "continuous_numeric") (list 3.5 (null)) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise")
  )) "\n")
 
  (print "surprisal transforms\n")
@@ -4415,24 +4421,40 @@
     ))
 	)
 
+     (print "surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list
+	(query_distance_contributions 4 (list "x") [[0]] (null) (null) (null) (list 0.25) 1 "surprisal" (null) "fixed_seed" (null) "precise")
+  )))
+
+  (print "surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list
+	(query_distance_contributions (list 0.05 1 20) (list "x") [[0]] (null) (null) (null) (list 0.25) 1 "surprisal" (null) "fixed_seed" (null) "precise")
+  )))
+
+  (print "weighted surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list
+	(query_distance_contributions 4 (list "x") [[0]] (null) (null) (null) (list 0.25) 1 "surprisal" "weight" "fixed_seed" (null) "precise")
+  )))
+
+  (print "weighted surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list
+	(query_distance_contributions (list 0.05 1 20) (list "x") [[0]] (null) (null) (null) (list 0.25) 1 "surprisal" "weight" "fixed_seed" (null) "precise")
+  )))
+
   (create_entities (list "SurprisalTransformContainer" "testvert") (lambda
 	(null ##x 0 ##weight 1)
 	) )
 
   (print "surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list
-	(compute_entity_distance_contributions 4 (list "x") (list "testvert") (null) (null) (null) (list 0.25) 1 "surprisal" (null) "fixed_seed" (null) "precise")
+	(query_entity_distance_contributions 4 (list "x") (list "testvert") (null) (null) (null) (list 0.25) 1 "surprisal" (null) "fixed_seed" (null) "precise")
   )))
 
   (print "surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list
-	(compute_entity_distance_contributions (list 0.05 1 20) (list "x") (list "testvert") (null) (null) (null) (list 0.25) 1 "surprisal" (null) "fixed_seed" (null) "precise")
+	(query_entity_distance_contributions (list 0.05 1 20) (list "x") (list "testvert") (null) (null) (null) (list 0.25) 1 "surprisal" (null) "fixed_seed" (null) "precise")
   )))
 
   (print "weighted surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list
-	(compute_entity_distance_contributions 4 (list "x") (list "testvert") (null) (null) (null) (list 0.25) 1 "surprisal" "weight" "fixed_seed" (null) "precise")
+	(query_entity_distance_contributions 4 (list "x") (list "testvert") (null) (null) (null) (list 0.25) 1 "surprisal" "weight" "fixed_seed" (null) "precise")
   )))
 
   (print "weighted surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list
-	(compute_entity_distance_contributions (list 0.05 1 20) (list "x") (list "testvert") (null) (null) (null) (list 0.25) 1 "surprisal" "weight" "fixed_seed" (null) "precise")
+	(query_entity_distance_contributions (list 0.05 1 20) (list "x") (list "testvert") (null) (null) (null) (list 0.25) 1 "surprisal" "weight" "fixed_seed" (null) "precise")
   )))
 
  (print "--concurrency tests--\n")

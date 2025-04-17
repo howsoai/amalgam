@@ -124,10 +124,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 		{
 			case ENT_QUERY_WITHIN_GENERALIZED_DISTANCE:
 			case ENT_QUERY_NEAREST_GENERALIZED_DISTANCE:
-			case ENT_COMPUTE_ENTITY_CONVICTIONS:
-			case ENT_COMPUTE_ENTITY_GROUP_KL_DIVERGENCE:
-			case ENT_COMPUTE_ENTITY_DISTANCE_CONTRIBUTIONS:
-			case ENT_COMPUTE_ENTITY_KL_DIVERGENCES:
+			case ENT_QUERY_DISTANCE_CONTRIBUTIONS:
+			case ENT_QUERY_ENTITY_CONVICTIONS:
+			case ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE:
+			case ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS:
+			case ENT_QUERY_ENTITY_KL_DIVERGENCES:
 				EntityQueryBuilder::BuildDistanceCondition(cn, type, conditionsBuffer, randomStream);
 				break;
 
@@ -163,7 +164,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 	return result;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_QUERY_opcodes(EvaluableNode *en, bool immediate_result)
 {
 	//use stack to lock it in place, but copy it back to temporary before returning
 	EvaluableNodeReference query_command(evaluableNodeManager->AllocNode(en->GetType()), true);

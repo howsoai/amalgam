@@ -541,7 +541,8 @@ public:
 	//assumes that enabled_indices only contains indices that have valid values for all the features
 	void FindNearestEntitiesToPosition(GeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
 		std::vector<EvaluableNodeImmediateValue> &position_values, std::vector<EvaluableNodeImmediateValueType> &position_value_types,
-		size_t top_k, StringInternPool::StringID radius_label, size_t ignore_entity_index, BitArrayIntegerSet &enabled_indices,
+		size_t top_k, StringInternPool::StringID radius_label, size_t ignore_entity_index,
+		BitArrayIntegerSet &enabled_indices, bool expand_to_first_nonzero_distance,
 		std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream = RandomStream())
 	{
 		auto &r_dist_eval = parametersAndBuffers.rDistEvaluator;
@@ -549,8 +550,12 @@ public:
 
 		PopulateTargetValuesAndLabelIndices(r_dist_eval, position_label_sids, position_values, position_value_types);
 
-		FindNearestEntities<false>(r_dist_eval, position_label_sids, top_k,
-			radius_label, enabled_indices, distances_out, ignore_entity_index, rand_stream);
+		if(expand_to_first_nonzero_distance)
+			FindNearestEntities<true>(r_dist_eval, position_label_sids, top_k,
+				radius_label, enabled_indices, distances_out, ignore_entity_index, rand_stream);
+		else
+			FindNearestEntities<false>(r_dist_eval, position_label_sids, top_k,
+				radius_label, enabled_indices, distances_out, ignore_entity_index, rand_stream);
 	}
 
 protected:

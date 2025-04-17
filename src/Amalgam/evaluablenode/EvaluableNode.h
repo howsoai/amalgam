@@ -1245,3 +1245,20 @@ public:
 	EvaluableNodeImmediateValueType nodeType;
 	EvaluableNodeImmediateValue nodeValue;
 };
+
+//copies ocn into immediate values and value_types
+inline void CopyOrderedChildNodesToImmediateValuesAndTypes(std::vector<EvaluableNode *> &ocn,
+	std::vector<EvaluableNodeImmediateValue> &values, std::vector<EvaluableNodeImmediateValueType> &value_types)
+{
+	values.clear();
+	value_types.clear();
+	values.reserve(ocn.size());
+	value_types.reserve(ocn.size());
+	for(EvaluableNode *en : ocn)
+	{
+		EvaluableNodeImmediateValue imm_val;
+		auto value_type = imm_val.CopyValueFromEvaluableNode(en);
+		value_types.push_back(value_type);
+		values.push_back(imm_val);
+	}
+}

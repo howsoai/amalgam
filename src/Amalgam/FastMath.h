@@ -1,9 +1,10 @@
 #pragma once
 
 //system headers:
-#include <limits>
+#include <cmath>
 #include <cstdint>
 #include <cstdlib>
+#include <limits>
 
 #if !defined(_MSC_VER)
 #define __forceinline __attribute__((always_inline)) inline

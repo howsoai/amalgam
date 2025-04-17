@@ -35,14 +35,6 @@ namespace EntityQueryBuilder
 		NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS //always last - do not add after this
 	};
 
-	constexpr bool DoesDistanceQueryUseEntitiesInsteadOfPosition(EvaluableNodeType type)
-	{
-		return (type == ENT_COMPUTE_ENTITY_CONVICTIONS
-			|| type == ENT_COMPUTE_ENTITY_GROUP_KL_DIVERGENCE
-			|| type == ENT_COMPUTE_ENTITY_DISTANCE_CONTRIBUTIONS
-			|| type == ENT_COMPUTE_ENTITY_KL_DIVERGENCES);
-	}
-
 	//populates deviation data for a given nominal value
 	//assumes that value_deviation_assoc is a valid pointer to an assoc
 	template<typename NominalDeviationValuesType>
@@ -411,7 +403,10 @@ namespace EntityQueryBuilder
 		}
 
 		//select based on type for position or entities
-		if(DoesDistanceQueryUseEntitiesInsteadOfPosition(condition_type))
+		if(condition_type == ENT_QUERY_ENTITY_CONVICTIONS
+			|| condition_type == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
+			|| condition_type == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
+			|| condition_type == ENT_QUERY_ENTITY_KL_DIVERGENCES)
 		{
 			EvaluableNode *entities = ocn[POSITION];
 			if(EvaluableNode::IsOrderedArray(entities))
@@ -422,22 +417,24 @@ namespace EntityQueryBuilder
 					cur_condition->existLabels.push_back(EvaluableNode::ToStringIDIfExists(entity_en));
 			}
 		}
+		else if(condition_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS)
+		{
+			EvaluableNode *positions = ocn[POSITION];
+			if(!EvaluableNode::IsOrderedArray(positions))
+			{
+				cur_condition->queryType = ENT_NULL;
+				return;
+			}
+			cur_condition->positionsToCompare = &positions->GetOrderedChildNodesReference();
+		}
 		else
 		{
 			//set position
 			EvaluableNode *position = ocn[POSITION];
 			if(EvaluableNode::IsOrderedArray(position) && (position->GetNumChildNodes() == cur_condition->positionLabels.size()))
 			{
-				auto &position_ocn = position->GetOrderedChildNodesReference();
-				cur_condition->valueToCompare.reserve(position_ocn.size());
-				cur_condition->valueTypes.reserve(position_ocn.size());
-				for(auto &pos_en : position_ocn)
-				{
-					EvaluableNodeImmediateValue imm_val;
-					auto value_type = imm_val.CopyValueFromEvaluableNode(pos_en);
-					cur_condition->valueTypes.push_back(value_type);
-					cur_condition->valueToCompare.push_back(imm_val);
-				}
+				CopyOrderedChildNodesToImmediateValuesAndTypes(position->GetOrderedChildNodesReference(),
+					cur_condition->valueToCompare, cur_condition->valueTypes);
 			}
 			else // no positions given, default to nulls for each label
 			{
@@ -545,10 +542,13 @@ namespace EntityQueryBuilder
 			}
 			//don't need to do anything for np_sid == ENBISI_recompute_precise because it's default
 		}
-		
+
 		cur_condition->returnSortedList = false;
 		cur_condition->additionalSortedListLabels.clear();
-		if(condition_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE || condition_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE || condition_type == ENT_COMPUTE_ENTITY_DISTANCE_CONTRIBUTIONS)
+		if(condition_type == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
+			|| condition_type == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
+			|| condition_type == ENT_QUERY_DISTANCE_CONTRIBUTIONS
+			|| condition_type == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS)
 		{
 			if(ocn.size() > NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0)
 			{
@@ -568,13 +568,15 @@ namespace EntityQueryBuilder
 				}
 			}
 		}
-		else if(condition_type == ENT_COMPUTE_ENTITY_CONVICTIONS || condition_type == ENT_COMPUTE_ENTITY_GROUP_KL_DIVERGENCE || condition_type == ENT_COMPUTE_ENTITY_KL_DIVERGENCES)
+		else if(condition_type == ENT_QUERY_ENTITY_CONVICTIONS
+			|| condition_type == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
+			|| condition_type == ENT_QUERY_ENTITY_KL_DIVERGENCES)
 		{
 			cur_condition->convictionOfRemoval = false;
 			if(ocn.size() > NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0)
 				cur_condition->convictionOfRemoval = EvaluableNode::ToBool(ocn[NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 0]);
 
-			if(condition_type == ENT_COMPUTE_ENTITY_CONVICTIONS || condition_type == ENT_COMPUTE_ENTITY_KL_DIVERGENCES)
+			if(condition_type == ENT_QUERY_ENTITY_CONVICTIONS || condition_type == ENT_QUERY_ENTITY_KL_DIVERGENCES)
 			{
 				if(ocn.size() > NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS + 1)
 				{
@@ -784,15 +786,8 @@ namespace EntityQueryBuilder
 				cur_condition->singleLabel = label_sid;
 
 				//already checked for nullptr above
-				auto &values_ocn = ocn[1]->GetOrderedChildNodes();
-				for(auto value_node : values_ocn)
-				{
-					EvaluableNodeImmediateValue value;
-					auto value_type = value.CopyValueFromEvaluableNode(value_node);
-					cur_condition->valueToCompare.push_back(value);
-					cur_condition->valueTypes.push_back(value_type);
-				}
-
+				CopyOrderedChildNodesToImmediateValuesAndTypes(ocn[1]->GetOrderedChildNodes(),
+					cur_condition->valueToCompare, cur_condition->valueTypes);
 				break;
 			}
 

@@ -212,10 +212,11 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 			//it does not fail the condition here - needs to be checked elsewhere
 			return true;
 
-		case ENT_COMPUTE_ENTITY_CONVICTIONS:
-		case ENT_COMPUTE_ENTITY_KL_DIVERGENCES:
-		case ENT_COMPUTE_ENTITY_GROUP_KL_DIVERGENCE:
-		case ENT_COMPUTE_ENTITY_DISTANCE_CONTRIBUTIONS:
+		case ENT_QUERY_DISTANCE_CONTRIBUTIONS:
+		case ENT_QUERY_ENTITY_CONVICTIONS:
+		case ENT_QUERY_ENTITY_KL_DIVERGENCES:
+		case ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE:
+		case ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS:
 			return false;
 
 		default:

@@ -280,12 +280,11 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_QUERY_GREATER_OR_EQUAL_TO, "query_greater_or_equal_to");
 	EmplaceNodeTypeString(ENT_QUERY_WITHIN_GENERALIZED_DISTANCE, "query_within_generalized_distance");
 	EmplaceNodeTypeString(ENT_QUERY_NEAREST_GENERALIZED_DISTANCE, "query_nearest_generalized_distance");
-
-	//compute queries
-	EmplaceNodeTypeString(ENT_COMPUTE_ENTITY_CONVICTIONS, "compute_entity_convictions");
-	EmplaceNodeTypeString(ENT_COMPUTE_ENTITY_GROUP_KL_DIVERGENCE, "compute_entity_group_kl_divergence");
-	EmplaceNodeTypeString(ENT_COMPUTE_ENTITY_DISTANCE_CONTRIBUTIONS, "compute_entity_distance_contributions");
-	EmplaceNodeTypeString(ENT_COMPUTE_ENTITY_KL_DIVERGENCES, "compute_entity_kl_divergences");
+	EmplaceNodeTypeString(ENT_QUERY_DISTANCE_CONTRIBUTIONS, "query_distance_contributions");
+	EmplaceNodeTypeString(ENT_QUERY_ENTITY_CONVICTIONS, "query_entity_convictions");
+	EmplaceNodeTypeString(ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE, "query_entity_group_kl_divergence");
+	EmplaceNodeTypeString(ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS, "query_entity_distance_contributions");
+	EmplaceNodeTypeString(ENT_QUERY_ENTITY_KL_DIVERGENCES, "query_entity_kl_divergences");
 
 	//entity access
 	EmplaceNodeTypeString(ENT_CONTAINS_LABEL, "contains_label");

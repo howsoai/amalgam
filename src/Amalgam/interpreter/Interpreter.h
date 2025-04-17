@@ -1305,7 +1305,7 @@ protected:
 
 	//entity query
 	EvaluableNodeReference InterpretNode_ENT_CONTAINED_ENTITIES_and_COMPUTE_ON_CONTAINED_ENTITIES(EvaluableNode *en, bool immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_QUERY_and_COMPUTE_opcodes(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_QUERY_opcodes(EvaluableNode *en, bool immediate_result);
 
 	//entity access
 	EvaluableNodeReference InterpretNode_ENT_CONTAINS_LABEL(EvaluableNode *en, bool immediate_result);

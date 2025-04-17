@@ -240,37 +240,36 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 	//entity query
 	&Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COMPUTE_ON_CONTAINED_ENTITIES,			// ENT_CONTAINED_ENTITIES
 	&Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COMPUTE_ON_CONTAINED_ENTITIES,			// ENT_COMPUTE_ON_CONTAINED_ENTITIES
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_SELECT
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_SAMPLE
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_IN_ENTITY_LIST
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_NOT_IN_ENTITY_LIST
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_EXISTS
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_NOT_EXISTS
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_EQUALS
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_NOT_EQUALS
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_BETWEEN
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_NOT_BETWEEN
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_AMONG
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_NOT_AMONG
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_MAX
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_MIN
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_SUM
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_MODE
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_QUANTILE
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_GENERALIZED_MEAN
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_MIN_DIFFERENCE
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_MAX_DIFFERENCE
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_VALUE_MASSES
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_GREATER_OR_EQUAL_TO
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_LESS_OR_EQUAL_TO
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
-
-	//aggregate analysis query Functions
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_COMPUTE_ENTITY_CONVICTIONS
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_COMPUTE_ENTITY_GROUP_KL_DIVERGENCE
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_COMPUTE_ENTITY_DISTANCE_CONTRIBUTIONS
-	&Interpreter::InterpretNode_ENT_QUERY_and_COMPUTE_opcodes,										// ENT_COMPUTE_ENTITY_KL_DIVERGENCES
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_SELECT
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_SAMPLE
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_IN_ENTITY_LIST
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_NOT_IN_ENTITY_LIST
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_EXISTS
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_NOT_EXISTS
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_EQUALS
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_NOT_EQUALS
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_BETWEEN
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_NOT_BETWEEN
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_AMONG
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_NOT_AMONG
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_MAX
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_MIN
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_SUM
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_MODE
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_QUANTILE
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_GENERALIZED_MEAN
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_MIN_DIFFERENCE
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_MAX_DIFFERENCE
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_VALUE_MASSES
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_GREATER_OR_EQUAL_TO
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_LESS_OR_EQUAL_TO
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_WITHIN_GENERALIZED_DISTANCE
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_DISTANCE_CONTRIBUTIONS
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_ENTITY_CONVICTIONS
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
+	&Interpreter::InterpretNode_ENT_QUERY_opcodes,													// ENT_QUERY_ENTITY_KL_DIVERGENCES
 
 	//entity access
 	&Interpreter::InterpretNode_ENT_CONTAINS_LABEL,													// ENT_CONTAINS_LABEL

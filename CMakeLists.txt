@@ -116,7 +116,6 @@ set(COMMON_SOURCE
     src/Amalgam/BinaryPacking.cpp
     src/Amalgam/BinaryPacking.h
     src/Amalgam/Conviction.h
-    src/Amalgam/ConvictionUtil.h
     src/Amalgam/Cryptography.cpp
     src/Amalgam/Cryptography.h
     src/Amalgam/DateTimeFormat.cpp

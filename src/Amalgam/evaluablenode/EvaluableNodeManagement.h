@@ -248,7 +248,7 @@ public:
 		//perform a memcpy because it's a union, to be safe; the compiler should optimize this out
 		value = enr.value;
 		unique = enr.unique;
-
+		uniqueUnreferencedTopNode = enr.uniqueUnreferencedTopNode;
 		return *this;
 	}
 
@@ -488,7 +488,7 @@ public:
 	inline void EnsureNodeIsModifiable(EvaluableNodeReference &original,
 		EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE)
 	{
-		if(original.unique)
+		if(original.uniqueUnreferencedTopNode)
 			return;
 
 		EvaluableNode *copy = AllocNode(original.GetReference(), metadata_modifier);
@@ -709,6 +709,8 @@ public:
 			enr.FreeImmediateResources();
 		else if(enr.unique)
 			FreeNodeTree(enr);
+		else if(enr.uniqueUnreferencedTopNode)
+			FreeNode(enr);
 	}
 
 	//just frees the child nodes of tree, but not tree itself; assumes no cycles

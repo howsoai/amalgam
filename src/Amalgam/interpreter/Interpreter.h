@@ -174,6 +174,7 @@ public:
 	//and prevent any part of the construction stack from being unique
 	struct ConstructionStackIndexAndPreviousResultUniqueness
 	{
+		//TODO 23497: investigate if should add uniqueUnreferencedTopNode to this structure
 		inline ConstructionStackIndexAndPreviousResultUniqueness(EvaluableNodeImmediateValueWithType _index,
 			bool _unique, bool execution_side_effects = false)
 			: index(_index), unique(_unique), executionSideEffects(execution_side_effects)
@@ -676,6 +677,7 @@ protected:
 			ThreadPool::TaskLock &task_enqueue_lock)
 			: taskSet(&Concurrency::threadPool, num_tasks)
 		{
+			//TODO 23497: add uniqueUnreferencedTopNode here
 			resultsUnique = true;
 			resultsNeedCycleCheck = false;
 			resultsIdempotent = true;

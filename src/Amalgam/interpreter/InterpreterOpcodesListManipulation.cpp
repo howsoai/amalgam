@@ -659,7 +659,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RANGE(EvaluableNode *en, b
 	}
 
 	if(PopConstructionContextAndGetExecutionSideEffectFlag())
+	{
 		result.unique = false;
+		result.uniqueUnreferencedTopNode = false;
+	}
 
 	return result;
 }

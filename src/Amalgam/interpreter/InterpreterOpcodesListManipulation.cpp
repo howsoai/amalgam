@@ -26,9 +26,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, b
 			{
 				for(size_t i = 1; i < list_ocn.size(); i++)
 					evaluableNodeManager->FreeNodeTree(list_ocn[i]);
-
-				evaluableNodeManager->FreeNode(list);
 			}
+			evaluableNodeManager->FreeNodeIfPossible(list);
 			return first;
 		}
 	}
@@ -48,10 +47,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FIRST(EvaluableNode *en, b
 					if(cn != first_en)
 						evaluableNodeManager->FreeNodeTree(cn);
 				}
-
-				evaluableNodeManager->FreeNode(list);
 			}
-
+			evaluableNodeManager->FreeNodeIfPossible(list);
 			return EvaluableNodeReference(first_en, list.unique);
 		}
 	}
@@ -110,7 +107,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, bo
 	{
 		if(list->GetOrderedChildNodesReference().size() > 0)
 		{
-			if(!list.unique)
+			if(!list.uniqueUnreferencedTopNode)
 			{
 				//make a copy so can edit node
 				evaluableNodeManager->EnsureNodeIsModifiable(list);
@@ -141,7 +138,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, bo
 	{
 		if(list->GetMappedChildNodesReference().size() > 0)
 		{
-			if(!list.unique)
+			if(!list.uniqueUnreferencedTopNode)
 			{
 				//make a copy so can edit node
 				evaluableNodeManager->EnsureNodeIsModifiable(list);
@@ -238,9 +235,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, bo
 			{
 				for(size_t i = 0; i < list_ocn.size() - 1; i++)
 					evaluableNodeManager->FreeNodeTree(list_ocn[i]);
-
-				evaluableNodeManager->FreeNode(list);
 			}
+			evaluableNodeManager->FreeNodeIfPossible(list);
 			return last;
 		}
 	}
@@ -260,10 +256,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LAST(EvaluableNode *en, bo
 					if(cn != last_en)
 						evaluableNodeManager->FreeNodeTree(cn);
 				}
-
-				evaluableNodeManager->FreeNode(list);
 			}
-
+			evaluableNodeManager->FreeNodeIfPossible(list);
 			return EvaluableNodeReference(last_en, list.unique);
 		}
 	}
@@ -321,7 +315,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, b
 
 	if(list->IsOrderedArray())
 	{
-		if(!list.unique)
+		if(!list.uniqueUnreferencedTopNode)
 		{
 			//make a copy so can edit node
 			evaluableNodeManager->EnsureNodeIsModifiable(list);
@@ -352,7 +346,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, b
 	}
 	else if(list->IsAssociativeArray())
 	{
-		if(!list.unique)
+		if(!list.uniqueUnreferencedTopNode)
 		{
 			//make a copy so can edit node
 			evaluableNodeManager->EnsureNodeIsModifiable(list);

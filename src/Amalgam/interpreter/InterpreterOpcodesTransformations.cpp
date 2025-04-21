@@ -82,7 +82,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MAP(EvaluableNode *en, boo
 							list_ocn[node_index], result_ocn[node_index]);
 
 					concurrency_manager.EndConcurrency();
-
+					//TODO 23497: revisit these sorts of structures to see if can free the list node at least
 					concurrency_manager.UpdateResultEvaluableNodePropertiesBasedOnNewChildNodes(result);
 					if(result.unique && !concurrency_manager.HadSideEffects())
 						evaluableNodeManager->FreeNodeTreeIfPossible(list);
@@ -1177,7 +1177,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 	//the container itself isn't needed
 	evaluableNodeManager->FreeNodeIfPossible(container);
 
-	return EvaluableNodeReference(result, container.unique);
+	return EvaluableNodeReference(result, container.unique, true);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_INDEX(EvaluableNode *en, bool immediate_result)

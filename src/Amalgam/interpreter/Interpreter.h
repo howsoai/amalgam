@@ -174,14 +174,14 @@ public:
 	//and prevent any part of the construction stack from being unique
 	struct ConstructionStackIndexAndPreviousResultUniqueness
 	{
-		//TODO 23497: investigate if should add uniqueUnreferencedTopNode to this structure
 		inline ConstructionStackIndexAndPreviousResultUniqueness(EvaluableNodeImmediateValueWithType _index,
-			bool _unique, bool execution_side_effects = false)
-			: index(_index), unique(_unique), executionSideEffects(execution_side_effects)
+			bool _unique, bool top_node_unique)
+			: index(_index), unique(_unique), uniqueUnreferencedTopNode(top_node_unique), executionSideEffects(false)
 		{	}
 
 		EvaluableNodeImmediateValueWithType index;
 		bool unique;
+		bool uniqueUnreferencedTopNode;
 		bool executionSideEffects;
 	};
 
@@ -303,7 +303,7 @@ public:
 		stack_nodes[new_size + constructionStackOffsetCurrentValue] = current_value;
 		stack_nodes[new_size + constructionStackOffsetPreviousResult] = previous_result;
 
-		stack_node_indices.emplace_back(current_index, previous_result.unique);
+		stack_node_indices.emplace_back(current_index, previous_result.unique, previous_result.uniqueUnreferencedTopNode);
 	}
 
 	//pushes a new construction context on the stack
@@ -374,6 +374,7 @@ public:
 	{
 		(*constructionStackNodes)[constructionStackNodes->size() + constructionStackOffsetPreviousResult] = previous_result;
 		constructionStackIndicesAndUniqueness.back().unique = previous_result.unique;
+		constructionStackIndicesAndUniqueness.back().uniqueUnreferencedTopNode = previous_result.uniqueUnreferencedTopNode;
 	}
 
 	//gets the previous_result node for the reference at depth on the construction stack
@@ -382,6 +383,8 @@ public:
 	{
 		size_t uniqueness_offset = constructionStackIndicesAndUniqueness.size() - depth - 1;
 		bool previous_result_unique = constructionStackIndicesAndUniqueness[uniqueness_offset].unique;
+		bool previous_result_unique_top_node
+			= constructionStackIndicesAndUniqueness[uniqueness_offset].uniqueUnreferencedTopNode;
 
 		//clear previous result
 		size_t prev_result_offset = constructionStackNodes->size()
@@ -390,7 +393,7 @@ public:
 		EvaluableNode *previous_result = nullptr;
 		std::swap(previous_result, previous_result_loc);
 
-		return EvaluableNodeReference(previous_result, previous_result_unique);
+		return EvaluableNodeReference(previous_result, previous_result_unique, previous_result_unique_top_node);
 	}
 
 	//deep copies the previous_result node for the reference at depth on the construction stack
@@ -408,7 +411,10 @@ public:
 	inline void RemoveUniquenessFromPreviousResultsInConstructionStack()
 	{
 		for(auto &entry : constructionStackIndicesAndUniqueness)
+		{
 			entry.unique = false;
+			entry.uniqueUnreferencedTopNode = false;
+		}
 	}
 
 	//should be called by any opcode that has side effects setting memory, such as assignment, accumulation, etc.
@@ -677,8 +683,8 @@ protected:
 			ThreadPool::TaskLock &task_enqueue_lock)
 			: taskSet(&Concurrency::threadPool, num_tasks)
 		{
-			//TODO 23497: add uniqueUnreferencedTopNode here
 			resultsUnique = true;
+			resultsUniqueUnreferencedTopNode = true;
 			resultsNeedCycleCheck = false;
 			resultsIdempotent = true;
 
@@ -747,6 +753,7 @@ protected:
 					{
 						resultsSideEffect = true;
 						resultsUnique = false;
+						resultsUniqueUnreferencedTopNode = false;
 					}
 
 					if(result_ref.unique)
@@ -863,6 +870,9 @@ protected:
 			if(!resultsUnique)
 				new_result.unique = false;
 
+			if(!resultsUniqueUnreferencedTopNode)
+				new_result.uniqueUnreferencedTopNode = false;
+
 			new_result.SetNeedCycleCheck(resultsNeedCycleCheck);
 
 			if(!resultsIdempotent)
@@ -904,6 +914,9 @@ protected:
 
 		//if true, indicates all results are unique
 		std::atomic_bool resultsUnique;
+
+		//if true, indicates the result top node is unique
+		std::atomic_bool resultsUniqueUnreferencedTopNode;
 
 		//if false, indicates all results are cycle free
 		std::atomic_bool resultsNeedCycleCheck;

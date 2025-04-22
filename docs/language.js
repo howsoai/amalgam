@@ -360,6 +360,14 @@ var data = [
 		"description" : "sine",
 		"example" : "(print (sin 0.5))"
 	},
+	
+	{
+		"parameter" : "asin number length",
+		"output" : "number",
+		"new value" : "new",
+		"description" : "Arc sine (inverse sine)",
+		"example" : "(print (sin 0.5))"
+	},
 
 	{
 		"parameter" : "cos number theta",
@@ -370,10 +378,10 @@ var data = [
 	},
 
 	{
-		"parameter" : "acos number theta",
+		"parameter" : "acos number length",
 		"output" : "number",
 		"new value" : "new",
-		"description" : "inverse cosine",
+		"description" : "Arc cosine (inverse cosine)",
 		"example" : "(print (acos 0.5))"
 	},
 
@@ -386,15 +394,15 @@ var data = [
 	},
 
 	{
-		"parameter" : "atan number theta [number divisor]",
+		"parameter" : "atan number num [number divisor]",
 		"output" : "number",
 		"new value" : "new",
-		"description" : "Inverse tangent.  If two numbers are provided, then it evaluates atan theta/divisor.",
+		"description" : "Arc tangent (inverse tangent).  If two numbers are provided, then it evaluates atan num/divisor.",
 		"example" : "(print (atan 0.5))\n(print (atan 0.5 0.5))"
 	},
 
 	{
-		"parameter" : "sinh number theta",
+		"parameter" : "sinh number z",
 		"output" : "number",
 		"new value" : "new",
 		"description" : "hyperbolic sine",
@@ -402,7 +410,7 @@ var data = [
 	},
 
 	{
-		"parameter" : "asinh number theta",
+		"parameter" : "asinh number x",
 		"output" : "number",
 		"new value" : "new",
 		"description" : "area hyperbolic sine",
@@ -410,7 +418,7 @@ var data = [
 	},
 
 	{
-		"parameter" : "cosh number theta",
+		"parameter" : "cosh number z",
 		"output" : "number",
 		"new value" : "new",
 		"description" : "hyperbolic cosine",
@@ -418,7 +426,7 @@ var data = [
 	},
 
 	{
-		"parameter" : "acosh number theta",
+		"parameter" : "acosh number x",
 		"output" : "number",
 		"new value" : "new",
 		"description" : "area hyperbolic cosine",
@@ -426,7 +434,7 @@ var data = [
 	},
 
 	{
-		"parameter" : "tanh number theta",
+		"parameter" : "tanh number z",
 		"output" : "number",
 		"new value" : "new",
 		"description" : "hyperbolic tangent",
@@ -434,7 +442,7 @@ var data = [
 	},
 
 	{
-		"parameter" : "atanh number theta",
+		"parameter" : "atanh number x",
 		"output" : "number",
 		"new value" : "new",
 		"description" : "area hyperbolic tanh",

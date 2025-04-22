@@ -32,7 +32,7 @@ public:
 	{}
 
 	constexpr EvaluableNodeReference(const EvaluableNodeReference &inr)
-		: value(inr.value), unique(inr.unique), uniqueUnreferencedTopNode(inr.unique)
+		: value(inr.value), unique(inr.unique), uniqueUnreferencedTopNode(inr.uniqueUnreferencedTopNode)
 	{	}
 
 	__forceinline EvaluableNodeReference(bool value)
@@ -667,7 +667,8 @@ public:
 		assert(enr == nullptr || enr->IsNodeValid());
 	#endif
 
-		if(enr.unique && enr != nullptr && !enr->GetNeedCycleCheck())
+		if( (enr.unique || enr.uniqueUnreferencedTopNode)
+			&& enr != nullptr && !enr->GetNeedCycleCheck())
 		{
 			enr->Invalidate();
 			AddNodeToTLAB(enr);

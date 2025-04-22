@@ -956,9 +956,6 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 
 void EvaluableNodeManager::MarkAllReferencedNodesInUse(EvaluableNode *tree)
 {
-	if(tree == nullptr)
-		return;
-
 	tree->SetKnownToBeInUse(true);
 	auto &node_stack = threadLocalAllocationBuffer;
 	node_stack.push_back(tree);
@@ -1000,9 +997,6 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(EvaluableNode *tree)
 #ifdef MULTITHREAD_SUPPORT
 void EvaluableNodeManager::MarkAllReferencedNodesInUseConcurrent(EvaluableNode *tree)
 {
-	if(tree == nullptr)
-		return;
-
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 	assert(tree->IsNodeValid());
 #endif

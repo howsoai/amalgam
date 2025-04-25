@@ -466,7 +466,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 	}
 }
 
-template<bool expand_to_first_nonzero_distance, bool pvalue_1>
+template<bool expand_to_first_nonzero_distance, bool compute_surprisal>
 void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 	std::vector<StringInternPool::StringID> &position_label_sids,
 	size_t top_k, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
@@ -484,7 +484,8 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 
 	//if num enabled indices < top_k, return sorted distances
 	if(enabled_indices.size() <= top_k)
-		return FindAllValidElementDistances(r_dist_eval, radius_column_index, enabled_indices, distances_out, rand_stream);
+		return FindAllValidElementDistances<compute_surprisal>(r_dist_eval,
+			radius_column_index, enabled_indices, distances_out, rand_stream);
 	
 	size_t end_index = enabled_indices.GetEndInteger();
 	bool high_accuracy = dist_eval.highAccuracyDistances;
@@ -518,7 +519,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 		enabled_indices.erase(entity_index);
 
 		//insert random selection into results heap
-		double distance = ResolveDistanceToNonMatchTargetValues<pvalue_1>(r_dist_eval,
+		double distance = ResolveDistanceToNonMatchTargetValues<compute_surprisal>(r_dist_eval,
 			partial_sums, entity_index, num_enabled_features, high_accuracy);
 		sorted_results.Push(DistanceReferencePair(distance, entity_index));
 	}
@@ -533,7 +534,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 		//skip this entity in the next loops
 		enabled_indices.erase(random_index);
 
-		double distance = ResolveDistanceToNonMatchTargetValues<pvalue_1>(r_dist_eval,
+		double distance = ResolveDistanceToNonMatchTargetValues<compute_surprisal>(r_dist_eval,
 			partial_sums, random_index, num_enabled_features, high_accuracy);
 		sorted_results.Push(DistanceReferencePair(distance, random_index));
 	}
@@ -552,7 +553,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 
 				enabled_indices.erase(entity_index);
 
-				double distance = ResolveDistanceToNonMatchTargetValues<pvalue_1>(r_dist_eval,
+				double distance = ResolveDistanceToNonMatchTargetValues<compute_surprisal>(r_dist_eval,
 						partial_sums, entity_index, num_enabled_features, high_accuracy);
 				sorted_results.Push(DistanceReferencePair(distance, entity_index));
 
@@ -574,7 +575,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 				if(!enabled_indices.EraseAndRetrieve(entity_index))
 					continue;
 
-				auto [accept, distance] = ResolveDistanceToNonMatchTargetValuesUnlessRejected<pvalue_1>(r_dist_eval, partial_sums,
+				auto [accept, distance] = ResolveDistanceToNonMatchTargetValuesUnlessRejected<compute_surprisal>(r_dist_eval, partial_sums,
 					entity_index, min_distance_by_unpopulated_count, num_enabled_features,
 					worst_candidate_distance, min_unpopulated_distances, high_accuracy);
 
@@ -621,7 +622,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 				if(!enabled_indices.ContainsWithoutMaximumIndexCheck(entity_index))
 					continue;
 
-				auto [accept, distance] = ResolveDistanceToNonMatchTargetValuesUnlessRejected<pvalue_1>(r_dist_eval,
+				auto [accept, distance] = ResolveDistanceToNonMatchTargetValuesUnlessRejected<compute_surprisal>(r_dist_eval,
 					partial_sums, entity_index, min_distance_by_unpopulated_count, num_enabled_features,
 					worst_candidate_distance, min_unpopulated_distances, high_accuracy);
 
@@ -649,7 +650,7 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 
 	} // sorted_results.Size() == top_k
 
-	ConvertSortedDistanceSumsToDistancesAndCacheResults(sorted_results, r_dist_eval, radius_column_index, distances_out);
+	ConvertSortedDistanceSumsToDistancesAndCacheResults<compute_surprisal>(sorted_results, r_dist_eval, radius_column_index, distances_out);
 }
 
 template void SeparableBoxFilterDataStore::FindNearestEntities<true, true>(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,

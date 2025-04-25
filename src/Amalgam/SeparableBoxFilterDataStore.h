@@ -530,7 +530,7 @@ public:
 
 		if(expand_to_first_nonzero_distance)
 		{
-			if(r_dist_eval.distEvaluator->pValue == 1.0)
+			if(r_dist_eval.distEvaluator->computeSurprisal)
 				FindNearestEntities<true, true>(r_dist_eval, position_label_sids, top_k,
 					radius_label, possible_knn_indices, distances_out, ignore_index, rand_stream);
 			else
@@ -539,7 +539,7 @@ public:
 		}
 		else
 		{
-			if(r_dist_eval.distEvaluator->pValue == 1.0)
+			if(r_dist_eval.distEvaluator->computeSurprisal)
 				FindNearestEntities<false, true>(r_dist_eval, position_label_sids, top_k,
 					radius_label, possible_knn_indices, distances_out, ignore_index, rand_stream);
 			else
@@ -564,7 +564,7 @@ public:
 
 		if(expand_to_first_nonzero_distance)
 		{
-			if(r_dist_eval.distEvaluator->pValue == 1.0)
+			if(r_dist_eval.distEvaluator->computeSurprisal)
 				FindNearestEntities<true, true>(r_dist_eval, position_label_sids, top_k,
 					radius_label, enabled_indices, distances_out, ignore_entity_index, rand_stream);
 			else
@@ -573,7 +573,7 @@ public:
 		}
 		else
 		{
-			if(r_dist_eval.distEvaluator->pValue == 1.0)
+			if(r_dist_eval.distEvaluator->computeSurprisal)
 				FindNearestEntities<false, true>(r_dist_eval, position_label_sids, top_k,
 					radius_label, enabled_indices, distances_out, ignore_entity_index, rand_stream);
 			else
@@ -588,8 +588,8 @@ protected:
 	// if expand_to_first_nonzero_distance is set, then it will expand top_k until it it finds the first nonzero distance or until it includes all enabled indices 
 	//will not modify enabled_indices, but instead will make a copy for any modifications
 	//assumes that enabled_indices only contains indices that have valid values for all the features
-	//if pvalue_1 is true, it will use a faster execution path
-	template<bool expand_to_first_nonzero_distance, bool pvalue_1>
+	//if compute_surprisal is true, it will use a faster execution path
+	template<bool expand_to_first_nonzero_distance, bool compute_surprisal>
 	void FindNearestEntities(RepeatedGeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
 		size_t top_k, StringInternPool::StringID radius_label,
 		BitArrayIntegerSet &enabled_indices,
@@ -855,6 +855,8 @@ protected:
 		BitArrayIntegerSet &enabled_indices, PartialSumCollection &partial_sums, size_t top_k);
 
 	//returns the distance between two nodes while respecting the feature mask
+	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
+	template<bool compute_surprisal = false>
 	inline double GetDistanceBetween(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		size_t radius_column_index, size_t other_index, bool high_accuracy)
 	{
@@ -870,10 +872,10 @@ protected:
 			auto other_value = column_data->GetResolvedValue(other_value_type, column_data->valueEntries[other_index]);
 			other_value_type = column_data->GetResolvedValueType(other_value_type);
 
-			dist_accum += r_dist_eval.ComputeDistanceTerm(other_value, other_value_type, i, high_accuracy);
+			dist_accum += r_dist_eval.ComputeDistanceTerm<compute_surprisal>(other_value, other_value_type, i, high_accuracy);
 		}
 
-		double dist = r_dist_eval.distEvaluator->InverseExponentiateDistance(dist_accum, high_accuracy);
+		double dist = r_dist_eval.distEvaluator->InverseExponentiateDistance<compute_surprisal>(dist_accum, high_accuracy);
 
 		if(radius_column_index < columnData.size())
 		{
@@ -889,6 +891,8 @@ protected:
 	//converts the sorted distance term sums in sorted_results into distances (or surprisals)
 	//based on r_dist_eval and radius_column_index and stores the results in distances_out
 	//also updates previousQueryNearestNeighbors based on these results
+	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
+	template<bool compute_surprisal = false>
 	inline void ConvertSortedDistanceSumsToDistancesAndCacheResults(
 		StochasticTieBreakingPriorityQueue<DistanceReferencePair<size_t>, double> &sorted_results,
 		RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
@@ -914,9 +918,9 @@ protected:
 			auto &drp = sorted_results.Top();
 			double distance;
 			if(!need_recompute_distances)
-				distance = dist_eval.InverseExponentiateDistance(drp.distance, high_accuracy);
+				distance = dist_eval.InverseExponentiateDistance<compute_surprisal>(drp.distance, high_accuracy);
 			else
-				distance = GetDistanceBetween(r_dist_eval, radius_column_index, drp.reference, high_accuracy);
+				distance = GetDistanceBetween<compute_surprisal>(r_dist_eval, radius_column_index, drp.reference, high_accuracy);
 
 			size_t output_index = sorted_results.Size() - 1;
 			distances_out[output_index] = DistanceReferencePair(distance, drp.reference);
@@ -928,8 +932,8 @@ protected:
 
 	//computes the distance term for the entity, query_feature_index, and feature_type,
 	//assumes that null values have already been taken care of for nominals
-	//if pvalue_1 is true, then it will use a faster code path
-	template<bool pvalue_1 = false>
+	//if compute_surprisal is true, then it will use a faster code path
+	template<bool compute_surprisal = false>
 	__forceinline double ComputeDistanceTermNonMatch(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		size_t entity_index, size_t query_feature_index, bool high_accuracy)
 	{
@@ -942,7 +946,7 @@ protected:
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC:
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
-			return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicOneNonNullRegular<pvalue_1>(
+			return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicOneNonNullRegular<compute_surprisal>(
 				feature_data.targetValue.nodeValue.number - GetValue(entity_index, feature_attribs.featureIndex).number,
 				query_feature_index, high_accuracy);
 		}
@@ -959,7 +963,7 @@ protected:
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 			auto &column_data = columnData[feature_attribs.featureIndex];
 			if(column_data->numberIndices.contains(entity_index))
-				return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicOneNonNullRegular<pvalue_1>(
+				return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicOneNonNullRegular<compute_surprisal>(
 					feature_data.targetValue.nodeValue.number - GetValue(entity_index, feature_attribs.featureIndex).number,
 					query_feature_index, high_accuracy);
 			else
@@ -971,7 +975,7 @@ protected:
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 			auto &column_data = columnData[feature_attribs.featureIndex];
 			if(column_data->numberIndices.contains(entity_index))
-				return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousOneNonNullRegular<pvalue_1>(
+				return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousOneNonNullRegular<compute_surprisal>(
 					feature_data.targetValue.nodeValue.number - GetValue(entity_index, feature_attribs.featureIndex).number,
 					query_feature_index, high_accuracy);
 			else
@@ -1038,7 +1042,7 @@ protected:
 			auto other_value = column_data->GetResolvedValue(other_value_type, GetValue(entity_index, feature_attribs.featureIndex));
 			other_value_type = column_data->GetResolvedValueType(other_value_type);
 
-			return r_dist_eval.ComputeDistanceTerm<pvalue_1>(other_value, other_value_type, query_feature_index, high_accuracy);
+			return r_dist_eval.ComputeDistanceTerm<compute_surprisal>(other_value, other_value_type, query_feature_index, high_accuracy);
 		}
 		}
 	}
@@ -1074,8 +1078,8 @@ protected:
 	// this function iterates over the partial sums indices, replacing each uncomputed feature with the actual distance for that feature
 	//returns the distance
 	//assumes that all features that are exact matches have already been computed
-	//if pvalue_1 is true, it will use a faster execution path
-	template<bool pvalue_1 = false>
+	//if compute_surprisal is true, it will use a faster execution path
+	template<bool compute_surprisal = false>
 	__forceinline double ResolveDistanceToNonMatchTargetValues(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		PartialSumCollection &partial_sums, size_t entity_index, size_t num_target_labels, bool high_accuracy)
 	{
@@ -1088,7 +1092,7 @@ protected:
 				continue;
 
 			size_t query_feature_index = *it;
-			distance += ComputeDistanceTermNonMatch<pvalue_1>(r_dist_eval, entity_index, query_feature_index, high_accuracy);
+			distance += ComputeDistanceTermNonMatch<compute_surprisal>(r_dist_eval, entity_index, query_feature_index, high_accuracy);
 		}
 
 		return distance;
@@ -1100,8 +1104,8 @@ protected:
 	// if reject_distance is infinite, then it will just complete the distance terms
 	//returns a pair of a boolean and the distance.  if the boolean is true, then the distance is less than or equal to the reject distance
 	//assumes that all features that are exact matches have already been computed
-	//if pvalue_1 is true, it will use a faster execution path
-	template<bool pvalue_1 = false>
+	//if compute_surprisal is true, it will use a faster execution path
+	template<bool compute_surprisal = false>
 	__forceinline std::pair<bool, double> ResolveDistanceToNonMatchTargetValuesUnlessRejected(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		PartialSumCollection &partial_sums, size_t entity_index, std::vector<double> &min_distance_by_unpopulated_count, size_t num_features,
 		double reject_distance, std::vector<double> &min_unpopulated_distances, bool high_accuracy)
@@ -1130,7 +1134,7 @@ protected:
 			distance -= min_unpopulated_distances[--num_uncalculated_features];
 
 			const size_t query_feature_index = *it;
-			distance += ComputeDistanceTermNonMatch<pvalue_1>(r_dist_eval, entity_index, query_feature_index, high_accuracy);
+			distance += ComputeDistanceTermNonMatch<compute_surprisal>(r_dist_eval, entity_index, query_feature_index, high_accuracy);
 
 			//break out of the loop before the iterator is incremented to save a few cycles
 			//do this via logic to minimize the number of branches
@@ -1210,6 +1214,8 @@ public:
 
 	//returns all elements in the database that yield valid distances along with their sorted distances to the values for entity
 	// at target_index, optionally limits results count to k
+	//if compute_surprisal is true, it will compute surprisal and use a faster execution path
+	template<bool compute_surprisal = false>
 	inline void FindAllValidElementDistances(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		size_t radius_column_index, BitArrayIntegerSet &valid_indices,
 		std::vector<DistanceReferencePair<size_t>> &distances_out, RandomStream rand_stream)
@@ -1222,7 +1228,7 @@ public:
 
 		for(auto index : valid_indices)
 		{
-			double distance = GetDistanceBetween(r_dist_eval, radius_column_index, index, high_accuracy);
+			double distance = GetDistanceBetween<compute_surprisal>(r_dist_eval, radius_column_index, index, high_accuracy);
 			distances_out.emplace_back(distance, index);
 		}
 

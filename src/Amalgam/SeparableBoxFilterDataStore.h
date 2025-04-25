@@ -529,11 +529,23 @@ public:
 		possible_knn_indices.erase(search_index);
 
 		if(expand_to_first_nonzero_distance)
-			FindNearestEntities<true>(r_dist_eval, position_label_sids, top_k,
-				radius_label, possible_knn_indices, distances_out, ignore_index, rand_stream);
+		{
+			if(r_dist_eval.distEvaluator->pValue == 1.0)
+				FindNearestEntities<true, true>(r_dist_eval, position_label_sids, top_k,
+					radius_label, possible_knn_indices, distances_out, ignore_index, rand_stream);
+			else
+				FindNearestEntities<true, false>(r_dist_eval, position_label_sids, top_k,
+					radius_label, possible_knn_indices, distances_out, ignore_index, rand_stream);
+		}
 		else
-			FindNearestEntities<false>(r_dist_eval, position_label_sids, top_k,
-				radius_label, possible_knn_indices, distances_out, ignore_index, rand_stream);
+		{
+			if(r_dist_eval.distEvaluator->pValue == 1.0)
+				FindNearestEntities<false, true>(r_dist_eval, position_label_sids, top_k,
+					radius_label, possible_knn_indices, distances_out, ignore_index, rand_stream);
+			else
+				FindNearestEntities<false, false>(r_dist_eval, position_label_sids, top_k,
+					radius_label, possible_knn_indices, distances_out, ignore_index, rand_stream);
+		}
 	}
 	
 	//Finds the nearest neighbors
@@ -551,11 +563,23 @@ public:
 		PopulateTargetValuesAndLabelIndices(r_dist_eval, position_label_sids, position_values, position_value_types);
 
 		if(expand_to_first_nonzero_distance)
-			FindNearestEntities<true>(r_dist_eval, position_label_sids, top_k,
-				radius_label, enabled_indices, distances_out, ignore_entity_index, rand_stream);
+		{
+			if(r_dist_eval.distEvaluator->pValue == 1.0)
+				FindNearestEntities<true, true>(r_dist_eval, position_label_sids, top_k,
+					radius_label, enabled_indices, distances_out, ignore_entity_index, rand_stream);
+			else
+				FindNearestEntities<true, false>(r_dist_eval, position_label_sids, top_k,
+					radius_label, enabled_indices, distances_out, ignore_entity_index, rand_stream);
+		}
 		else
-			FindNearestEntities<false>(r_dist_eval, position_label_sids, top_k,
-				radius_label, enabled_indices, distances_out, ignore_entity_index, rand_stream);
+		{
+			if(r_dist_eval.distEvaluator->pValue == 1.0)
+				FindNearestEntities<false, true>(r_dist_eval, position_label_sids, top_k,
+					radius_label, enabled_indices, distances_out, ignore_entity_index, rand_stream);
+			else
+				FindNearestEntities<false, false>(r_dist_eval, position_label_sids, top_k,
+					radius_label, enabled_indices, distances_out, ignore_entity_index, rand_stream);
+		}
 	}
 
 protected:
@@ -564,7 +588,8 @@ protected:
 	// if expand_to_first_nonzero_distance is set, then it will expand top_k until it it finds the first nonzero distance or until it includes all enabled indices 
 	//will not modify enabled_indices, but instead will make a copy for any modifications
 	//assumes that enabled_indices only contains indices that have valid values for all the features
-	template<bool expand_to_first_nonzero_distance>
+	//if pvalue_1 is true, it will use a faster execution path
+	template<bool expand_to_first_nonzero_distance, bool pvalue_1>
 	void FindNearestEntities(RepeatedGeneralizedDistanceEvaluator &dist_eval, std::vector<StringInternPool::StringID> &position_label_sids,
 		size_t top_k, StringInternPool::StringID radius_label,
 		BitArrayIntegerSet &enabled_indices,
@@ -903,6 +928,8 @@ protected:
 
 	//computes the distance term for the entity, query_feature_index, and feature_type,
 	//assumes that null values have already been taken care of for nominals
+	//if pvalue_1 is true, then it will use a faster code path
+	template<bool pvalue_1 = false>
 	__forceinline double ComputeDistanceTermNonMatch(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		size_t entity_index, size_t query_feature_index, bool high_accuracy)
 	{
@@ -915,7 +942,7 @@ protected:
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC:
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
-			return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicOneNonNullRegular(
+			return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicOneNonNullRegular<pvalue_1>(
 				feature_data.targetValue.nodeValue.number - GetValue(entity_index, feature_attribs.featureIndex).number,
 				query_feature_index, high_accuracy);
 		}
@@ -932,7 +959,7 @@ protected:
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 			auto &column_data = columnData[feature_attribs.featureIndex];
 			if(column_data->numberIndices.contains(entity_index))
-				return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicOneNonNullRegular(
+				return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicOneNonNullRegular<pvalue_1>(
 					feature_data.targetValue.nodeValue.number - GetValue(entity_index, feature_attribs.featureIndex).number,
 					query_feature_index, high_accuracy);
 			else
@@ -944,7 +971,7 @@ protected:
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 			auto &column_data = columnData[feature_attribs.featureIndex];
 			if(column_data->numberIndices.contains(entity_index))
-				return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousOneNonNullRegular(
+				return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousOneNonNullRegular<pvalue_1>(
 					feature_data.targetValue.nodeValue.number - GetValue(entity_index, feature_attribs.featureIndex).number,
 					query_feature_index, high_accuracy);
 			else
@@ -1011,7 +1038,7 @@ protected:
 			auto other_value = column_data->GetResolvedValue(other_value_type, GetValue(entity_index, feature_attribs.featureIndex));
 			other_value_type = column_data->GetResolvedValueType(other_value_type);
 
-			return r_dist_eval.ComputeDistanceTerm(other_value, other_value_type, query_feature_index, high_accuracy);
+			return r_dist_eval.ComputeDistanceTerm<pvalue_1>(other_value, other_value_type, query_feature_index, high_accuracy);
 		}
 		}
 	}
@@ -1047,6 +1074,8 @@ protected:
 	// this function iterates over the partial sums indices, replacing each uncomputed feature with the actual distance for that feature
 	//returns the distance
 	//assumes that all features that are exact matches have already been computed
+	//if pvalue_1 is true, it will use a faster execution path
+	template<bool pvalue_1 = false>
 	__forceinline double ResolveDistanceToNonMatchTargetValues(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		PartialSumCollection &partial_sums, size_t entity_index, size_t num_target_labels, bool high_accuracy)
 	{
@@ -1059,7 +1088,7 @@ protected:
 				continue;
 
 			size_t query_feature_index = *it;
-			distance += ComputeDistanceTermNonMatch(r_dist_eval, entity_index, query_feature_index, high_accuracy);
+			distance += ComputeDistanceTermNonMatch<pvalue_1>(r_dist_eval, entity_index, query_feature_index, high_accuracy);
 		}
 
 		return distance;
@@ -1071,6 +1100,8 @@ protected:
 	// if reject_distance is infinite, then it will just complete the distance terms
 	//returns a pair of a boolean and the distance.  if the boolean is true, then the distance is less than or equal to the reject distance
 	//assumes that all features that are exact matches have already been computed
+	//if pvalue_1 is true, it will use a faster execution path
+	template<bool pvalue_1 = false>
 	__forceinline std::pair<bool, double> ResolveDistanceToNonMatchTargetValuesUnlessRejected(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		PartialSumCollection &partial_sums, size_t entity_index, std::vector<double> &min_distance_by_unpopulated_count, size_t num_features,
 		double reject_distance, std::vector<double> &min_unpopulated_distances, bool high_accuracy)
@@ -1099,7 +1130,7 @@ protected:
 			distance -= min_unpopulated_distances[--num_uncalculated_features];
 
 			const size_t query_feature_index = *it;
-			distance += ComputeDistanceTermNonMatch(r_dist_eval, entity_index, query_feature_index, high_accuracy);
+			distance += ComputeDistanceTermNonMatch<pvalue_1>(r_dist_eval, entity_index, query_feature_index, high_accuracy);
 
 			//break out of the loop before the iterator is incremented to save a few cycles
 			//do this via logic to minimize the number of branches

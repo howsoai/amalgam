@@ -403,8 +403,13 @@ public:
 	}
 
 	//computes the exponentiation of d to p
+	//if pvalue_1 is true, it will use a faster execution path
+	template<bool pvalue_1 = false>
 	__forceinline double ExponentiateDifferenceTerm(double d, bool high_accuracy)
 	{
+		if constexpr(pvalue_1)
+			return d;
+
 		if(pValue == 1)
 			return d;
 
@@ -653,6 +658,8 @@ public:
 	}
 
 	//computes the inner term for a non-nominal with an exact match of values
+	//if pvalue_1 is true, it will use a faster execution path
+	template<bool pvalue_1 = false>
 	__forceinline double ComputeDistanceTermContinuousExactMatch(size_t index, bool high_accuracy)
 	{
 		if(!DoesFeatureHaveDeviation(index) || computeSurprisal)
@@ -662,7 +669,7 @@ public:
 		double diff = ComputeDifferenceWithDeviation(0.0, index, false, high_accuracy);
 		
 		//exponentiate and return with weight
-		return ExponentiateDifferenceTerm(diff, high_accuracy) * featureAttribs[index].weight;
+		return ExponentiateDifferenceTerm<pvalue_1>(diff, high_accuracy) * featureAttribs[index].weight;
 	}
 
 	//computes the base of the difference between two continuous values without exponentiation
@@ -697,36 +704,44 @@ public:
 
 	//computes the distance term for a non-nominal (e.g., continuous) for p non-zero and non-infinite with no nulls
 	// diff can be negative
+	//if pvalue_1 is true, it will use a faster execution path
+	template<bool pvalue_1 = false>
 	__forceinline double ComputeDistanceTermContinuousNonNullRegular(double diff, size_t index, bool high_accuracy)
 	{
 		diff = ComputeDifferenceTermBaseContinuous(diff, index, high_accuracy);
 
 		//exponentiate and return with weight
-		return ExponentiateDifferenceTerm(diff, high_accuracy) * featureAttribs[index].weight;
+		return ExponentiateDifferenceTerm<pvalue_1>(diff, high_accuracy) * featureAttribs[index].weight;
 	}
 
 	//computes the distance term for a non-nominal (e.g., continuous) for p non-zero and non-infinite with max of one null
 	// diff can be negative
+	//if pvalue_1 is true, it will use a faster execution path
+	template<bool pvalue_1 = false>
 	__forceinline double ComputeDistanceTermContinuousOneNonNullRegular(double diff, size_t index, bool high_accuracy)
 	{
 		diff = ComputeDifferenceTermBaseContinuous(diff, index, high_accuracy);
 
 		//exponentiate and return with weight
-		return ExponentiateDifferenceTerm(diff, high_accuracy) * featureAttribs[index].weight;
+		return ExponentiateDifferenceTerm<pvalue_1>(diff, high_accuracy) * featureAttribs[index].weight;
 	}
 
 	//computes the distance term for a non-nominal (e.g., continuous) for p non-zero and non-infinite that isn't cyclic with no nulls
 	// diff can be negative
+	//if pvalue_1 is true, it will use a faster execution path
+	template<bool pvalue_1 = false>
 	__forceinline double ComputeDistanceTermContinuousNonCyclicNonNullRegular(double diff, size_t index, bool high_accuracy)
 	{
 		diff = ComputeDifferenceTermBaseContinuousNonCyclic(diff, index, high_accuracy);
 
 		//exponentiate and return with weight
-		return ExponentiateDifferenceTerm(diff, high_accuracy) * featureAttribs[index].weight;
+		return ExponentiateDifferenceTerm<pvalue_1>(diff, high_accuracy) * featureAttribs[index].weight;
 	}
 
 	//computes the distance term for a non-nominal (e.g., continuous) for p non-zero and non-infinite that isn't cyclic with max of one null
 	// diff can be negative
+	//if pvalue_1 is true, it will use a faster execution path
+	template<bool pvalue_1 = false>
 	__forceinline double ComputeDistanceTermContinuousNonCyclicOneNonNullRegular(double diff, size_t index, bool high_accuracy)
 	{
 		if(FastIsNaN(diff))
@@ -735,7 +750,7 @@ public:
 		diff = ComputeDifferenceTermBaseContinuousNonCyclic(diff, index, high_accuracy);
 
 		//exponentiate and return with weight
-		return ExponentiateDifferenceTerm(diff, high_accuracy) * featureAttribs[index].weight;
+		return ExponentiateDifferenceTerm<pvalue_1>(diff, high_accuracy) * featureAttribs[index].weight;
 	}
 
 	//computes the inner term of the Minkowski norm summation for a single index for p=0
@@ -1501,6 +1516,8 @@ public:
 	}
 
 	//computes the inner term of the Minkowski norm summation
+	//if pvalue_1 is true, it will use a faster execution path
+	template<bool pvalue_1 = false>
 	__forceinline double ComputeDistanceTerm(EvaluableNodeImmediateValue other_value,
 		EvaluableNodeImmediateValueType other_type, size_t index, bool high_accuracy)
 	{
@@ -1517,7 +1534,7 @@ public:
 			return distEvaluator->LookupNullDistanceTerm(feature_data.targetValue.nodeValue, other_value,
 				feature_data.targetValue.nodeType, other_type, index, high_accuracy);
 
-		return distEvaluator->ComputeDistanceTermContinuousNonNullRegular(diff, index, high_accuracy);
+		return distEvaluator->ComputeDistanceTermContinuousNonNullRegular<pvalue_1>(diff, index, high_accuracy);
 	}
 
 	//pointer to a valid, populated GeneralizedDistanceEvaluator

@@ -883,7 +883,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 					}
 				}
 				if(PopConstructionContextAndGetExecutionSideEffectFlag())
+				{
 					required_vars.unique = false;
+					required_vars.uniqueUnreferencedTopNode = false;
+				}
 			}
 
 			//free the vars / assoc node
@@ -994,7 +997,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 				PushNewConstructionContext(assigned_vars, assigned_vars, EvaluableNodeImmediateValueWithType(variable_sid), nullptr);
 				variable_value_node = InterpretNode(cn);
 				if(PopConstructionContextAndGetExecutionSideEffectFlag())
+				{
 					assigned_vars.unique = false;
+					assigned_vars.uniqueUnreferencedTopNode = false;
+				}
 			}
 
 			//retrieve the symbol
@@ -1390,7 +1396,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_and_REPLACE(EvaluableN
 			EvaluableNodeReference new_value = InterpretNodeForImmediateUse(function);
 
 			if(PopConstructionContextAndGetExecutionSideEffectFlag())
+			{
 				result.unique = false;
+				result.uniqueUnreferencedTopNode = false;
+			}
 
 			node_stack.PopEvaluableNode();
 

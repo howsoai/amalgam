@@ -20,33 +20,37 @@ class EvaluableNodeReference
 {
 public:
 	constexpr EvaluableNodeReference()
-		: value(), unique(true)
+		: value(), unique(true), uniqueUnreferencedTopNode(true)
 	{	}
 
 	constexpr EvaluableNodeReference(EvaluableNode *_reference, bool _unique)
-		: value(_reference), unique(_unique)
+		: value(_reference), unique(_unique), uniqueUnreferencedTopNode(_unique)
 	{	}
 
+	constexpr EvaluableNodeReference(EvaluableNode *_reference, bool _unique, bool top_node_unique)
+		: value(_reference), unique(_unique), uniqueUnreferencedTopNode(top_node_unique)
+	{}
+
 	constexpr EvaluableNodeReference(const EvaluableNodeReference &inr)
-		: value(inr.value), unique(inr.unique)
+		: value(inr.value), unique(inr.unique), uniqueUnreferencedTopNode(inr.uniqueUnreferencedTopNode)
 	{	}
 
 	__forceinline EvaluableNodeReference(bool value)
-		: value(value), unique(true)
+		: value(value), unique(true), uniqueUnreferencedTopNode(true)
 	{	}
 
 	__forceinline EvaluableNodeReference(double value)
-		: value(value), unique(true)
+		: value(value), unique(true), uniqueUnreferencedTopNode(true)
 	{	}
 
 	//if reference_handoff is true, it will assume ownership rather than creating a new reference
 	__forceinline EvaluableNodeReference(StringInternPool::StringID string_id, bool reference_handoff = false)
 		: value(reference_handoff ? string_id : string_intern_pool.CreateStringReference(string_id)),
-		unique(true)
+		unique(true), uniqueUnreferencedTopNode(true)
 	{	}
 
 	__forceinline EvaluableNodeReference(const std::string &str)
-		: value(string_intern_pool.CreateStringReference(str)), unique(true)
+		: value(string_intern_pool.CreateStringReference(str)), unique(true), uniqueUnreferencedTopNode(true)
 	{	}
 
 	//frees resources associated with immediate values
@@ -175,12 +179,30 @@ public:
 	{
 		value = _reference;
 		unique = _unique;
+		uniqueUnreferencedTopNode = _unique;
+	}
+
+	__forceinline void SetReference(EvaluableNode *_reference,
+		bool _unique, bool unique_unreferenced_top_node)
+	{
+		value = _reference;
+		unique = _unique;
+		uniqueUnreferencedTopNode = unique_unreferenced_top_node;
 	}
 
 	__forceinline void SetReference(const EvaluableNodeImmediateValueWithType &enimvwt, bool _unique)
 	{
 		value = enimvwt;
 		unique = _unique;
+		uniqueUnreferencedTopNode = _unique;
+	}
+
+	__forceinline void SetReference(const EvaluableNodeImmediateValueWithType &enimvwt,
+		bool _unique, bool unique_unreferenced_top_node)
+	{
+		value = enimvwt;
+		unique = _unique;
+		uniqueUnreferencedTopNode = unique_unreferenced_top_node;
 	}
 
 	//returns true if it is an immediate value stored in this EvaluableNodeReference
@@ -226,7 +248,7 @@ public:
 		//perform a memcpy because it's a union, to be safe; the compiler should optimize this out
 		value = enr.value;
 		unique = enr.unique;
-
+		uniqueUnreferencedTopNode = enr.uniqueUnreferencedTopNode;
 		return *this;
 	}
 
@@ -236,8 +258,11 @@ protected:
 
 public:
 
-	//this is the only reference to the result
+	//true if this is the only reference to the result
 	bool unique;
+
+	//true if this is the only reference to the top node, including no child nodes referencing it
+	bool uniqueUnreferencedTopNode;
 };
 
 
@@ -463,12 +488,12 @@ public:
 	inline void EnsureNodeIsModifiable(EvaluableNodeReference &original,
 		EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE)
 	{
-		if(original.unique)
+		if(original.uniqueUnreferencedTopNode)
 			return;
 
 		EvaluableNode *copy = AllocNode(original.GetReference(), metadata_modifier);
 		//the copy will only be unique if there are no child nodes
-		original = EvaluableNodeReference(copy, (copy->GetNumChildNodes() == 0));
+		original = EvaluableNodeReference(copy, (copy->GetNumChildNodes() == 0), true);
 	}
 
 	//returns an EvaluableNodeReference for value, allocating if necessary based on if immediate result is needed
@@ -642,7 +667,8 @@ public:
 		assert(enr == nullptr || enr->IsNodeValid());
 	#endif
 
-		if(enr.unique && enr != nullptr && !enr->GetNeedCycleCheck())
+		if( (enr.unique || enr.uniqueUnreferencedTopNode)
+			&& enr != nullptr && !enr->GetNeedCycleCheck())
 		{
 			enr->Invalidate();
 			AddNodeToTLAB(enr);
@@ -684,6 +710,8 @@ public:
 			enr.FreeImmediateResources();
 		else if(enr.unique)
 			FreeNodeTree(enr);
+		else if(enr.uniqueUnreferencedTopNode)
+			FreeNode(enr);
 	}
 
 	//just frees the child nodes of tree, but not tree itself; assumes no cycles

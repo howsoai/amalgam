@@ -16,15 +16,11 @@
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUE(EvaluableNode *en, bool immediate_result)
 {
-	if(!en->HasMetadata())
-		return EvaluableNodeReference(en, false);
 	return AllocReturn(true, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_FALSE(EvaluableNode *en, bool immediate_result)
 {
-	if(!en->HasMetadata())
-		return EvaluableNodeReference(en, false);
 	return AllocReturn(false, immediate_result);
 }
 
@@ -35,13 +31,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NULL(EvaluableNode *en, bo
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST(EvaluableNode *en, bool immediate_result)
 {
-	//if idempotent, can ether return itself or copy
+	//if idempotent, can just return a copy without any metadata
 	if(en->GetIsIdempotent())
-	{
-		if(!en->HasMetadata())
-			return EvaluableNodeReference(en, false);
 		return evaluableNodeManager->DeepAllocCopy(en, EvaluableNodeManager::ENMM_REMOVE_ALL);
-	}
 
 	EvaluableNodeReference new_list(evaluableNodeManager->AllocNode(ENT_LIST), true);
 
@@ -103,13 +95,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST(EvaluableNode *en, bo
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, bool immediate_result)
 {
-	//if idempotent, can ether return itself or copy
+	//if idempotent, can just return a copy without any metadata
 	if(en->GetIsIdempotent())
-	{
-		if(!en->HasMetadata())
-			return EvaluableNodeReference(en, false);
 		return evaluableNodeManager->DeepAllocCopy(en, EvaluableNodeManager::ENMM_REMOVE_ALL);
-	}
 
 	//create a new assoc from the previous
 	EvaluableNodeReference new_assoc(evaluableNodeManager->AllocNode(en, EvaluableNodeManager::ENMM_REMOVE_ALL), true);
@@ -172,18 +160,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, b
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_NUMBER(EvaluableNode *en, bool immediate_result)
 {
-	if(!en->HasMetadata())
-		return EvaluableNodeReference(en, false);
-
 	double value = en->GetNumberValueReference();
 	return AllocReturn(value, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_STRING(EvaluableNode *en, bool immediate_result)
 {
-	if(!en->HasMetadata())
-		return EvaluableNodeReference(en, false);
-
 	StringInternPool::StringID value = en->GetStringIDReference();
 	return AllocReturn(value, immediate_result);
 }

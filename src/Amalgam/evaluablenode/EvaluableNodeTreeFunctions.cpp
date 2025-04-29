@@ -439,7 +439,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 	bool result_idempotent = (value_destination_node->GetIsIdempotent() && (variable_value_node == nullptr || variable_value_node->GetIsIdempotent()));
 
 	//if the value is unique, then can just edit in place
-	if(value_destination_node.unique)
+	if(value_destination_node.uniqueUnreferencedTopNode)
 	{
 		if(value_destination_node->GetType() == ENT_NUMBER)
 		{
@@ -559,7 +559,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 
 		enm->FreeNodeIfPossible(variable_value_node);
 
-		value_destination_node.SetReference(new_list, result_unique);
+		value_destination_node.SetReference(new_list, result_unique, true);
 		value_destination_node->SetNeedCycleCheck(result_need_cycle_check);
 		value_destination_node->SetIsIdempotent(result_idempotent);
 	}
@@ -609,7 +609,7 @@ EvaluableNodeReference AccumulateEvaluableNodeIntoEvaluableNode(EvaluableNodeRef
 			new_list->AppendOrderedChildNode(variable_value_node);
 		}
 
-		value_destination_node.SetReference(new_list, result_unique);
+		value_destination_node.SetReference(new_list, result_unique, true);
 		value_destination_node->SetNeedCycleCheck(result_need_cycle_check);
 		value_destination_node->SetIsIdempotent(result_idempotent);
 	}

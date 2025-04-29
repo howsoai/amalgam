@@ -224,6 +224,7 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 
 		//since it's not setting on self, another entity owns the data so it isn't unique to this entity
 		new_value.unique = false;
+		new_value.uniqueUnreferencedTopNode = false;
 	}
 
 	auto current_node = labelIndex.find(label_sid);
@@ -262,6 +263,7 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 			destination->CopyValueFrom(new_value);
 		}
 		//the value is being used in the entity, so no longer unique if it was before
+		//however, the top node may still be unique, so leave it alone
 		new_value.unique = false;
 	}
 	else //direct set
@@ -281,7 +283,9 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 			new_value = EvaluableNodeReference(evaluableNodeManager.AllocNode(ENT_NULL), true);
 		}
 		//the value is being used in the entity, so no longer unique if it was before
+		//the top node was placed in the entity so it is no longer unique
 		new_value.unique = false;
+		new_value.uniqueUnreferencedTopNode = false;
 
 		//update the index
 		labelIndex[label_sid] = new_value;
@@ -338,7 +342,10 @@ std::pair<bool, bool> Entity::SetValuesAtLabels(EvaluableNodeReference new_label
 
 	//if it's not setting on self, another entity owns the data so it isn't unique to this entity
 	if(!on_self)
+	{
 		new_label_values.unique = false;
+		new_label_values.uniqueUnreferencedTopNode = false;
+	}
 
 	if(copy_entity)
 		SetRoot(GetRoot(), false);

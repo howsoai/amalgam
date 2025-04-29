@@ -704,17 +704,13 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 		}
 
 		EvaluableNode *n = GetNextToken(cur_node, parsing_assoc_key);
-		//early-out if already have key
-		if(parsing_assoc_key)
-		{
-			//already have completed the expression
-			if(n == nullptr)
-				return top_node;
 
-			//if it's a singular value
-			if(cur_node == nullptr && n->IsImmediate())
-				return n;
-		}
+		//early out if parsing an assoc key and the key is an immediate value
+		// because don't need to parse closing parenthesis or other symbol
+		if(parsing_assoc_key
+				&& cur_node == nullptr
+				&& n != nullptr && n->IsImmediate())
+			return n;
 
 		//if end of a list
 		if(n == nullptr)

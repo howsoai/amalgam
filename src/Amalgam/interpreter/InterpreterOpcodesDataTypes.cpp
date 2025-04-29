@@ -74,7 +74,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LIST(EvaluableNode *en, bo
 		}
 
 		if(PopConstructionContextAndGetExecutionSideEffectFlag())
+		{
 			new_list.unique = false;
+			new_list.uniqueUnreferencedTopNode = false;
+		}
 	}
 
 	return new_list;
@@ -136,7 +139,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSOC(EvaluableNode *en, b
 		}
 
 		if(PopConstructionContextAndGetExecutionSideEffectFlag())
+		{
 			new_assoc.unique = false;
+			new_assoc.uniqueUnreferencedTopNode = false;
+		}
 	}
 
 	return new_assoc;
@@ -959,7 +965,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ALL_LABELS(EvaluableNo
 	if(ocn.size() > 0)
 		n = InterpretNodeForImmediateUse(ocn[0]);
 
-	EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_ASSOC), n.unique);
+	EvaluableNodeReference result(evaluableNodeManager->AllocNode(ENT_ASSOC), n.unique, true);
 
 	auto [label_sids_to_nodes, _] = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTree(n);
 
@@ -1099,10 +1105,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_COMMENTS(EvaluableNode
 		return EvaluableNodeReference::Null();
 
 	auto source = InterpretNode(ocn[0]);
-	if(source == nullptr)
-		source = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_NULL), true);
-	if(!source.unique)
-		source.SetReference(evaluableNodeManager->AllocNode(source));
+	evaluableNodeManager->EnsureNodeIsModifiable(source);
 
 	auto node_stack = CreateOpcodeStackStateSaver(source);
 

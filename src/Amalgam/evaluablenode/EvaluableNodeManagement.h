@@ -488,7 +488,7 @@ public:
 	inline void EnsureNodeIsModifiable(EvaluableNodeReference &original,
 		EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE)
 	{
-		if(original.uniqueUnreferencedTopNode)
+		if(original.uniqueUnreferencedTopNode && original != nullptr)
 			return;
 
 		EvaluableNode *copy = AllocNode(original.GetReference(), metadata_modifier);

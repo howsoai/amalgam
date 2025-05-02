@@ -776,12 +776,12 @@ protected:
 	// returns the distance term evaluated, or 0.0 if value was not found
 	inline double AccumulatePartialSumsForNominalNumberValueIfExists(
 		RepeatedGeneralizedDistanceEvaluator &r_dist_eval, BitArrayIntegerSet &enabled_indices,
-		double value, size_t query_feature_index, SBFDSColumnData &column, bool high_accuracy)
+		double value, size_t query_feature_index, SBFDSColumnData &column)
 	{
 		auto value_entry = column.sortedNumberValueEntries.find(value);
 		if(value_entry != end(column.sortedNumberValueEntries))
 		{
-			double term = r_dist_eval.ComputeDistanceTermNominal(value, ENIVT_NUMBER, query_feature_index, high_accuracy);
+			double term = r_dist_eval.ComputeDistanceTermNominal(value, ENIVT_NUMBER, query_feature_index);
 			AccumulatePartialSums(enabled_indices, value_entry->second.indicesWithValue, query_feature_index, term);
 			return term;
 		}
@@ -793,12 +793,12 @@ protected:
 	// returns the distance term evaluated, or 0.0 if value was not found
 	inline double AccumulatePartialSumsForNominalStringIdValueIfExists(
 		RepeatedGeneralizedDistanceEvaluator &r_dist_eval, BitArrayIntegerSet &enabled_indices,
-		StringInternPool::StringID value, size_t query_feature_index, SBFDSColumnData &column, bool high_accuracy)
+		StringInternPool::StringID value, size_t query_feature_index, SBFDSColumnData &column)
 	{
 		auto value_found = column.stringIdValueEntries.find(value);
 		if(value_found != end(column.stringIdValueEntries))
 		{
-			double term = r_dist_eval.ComputeDistanceTermNominal(value, ENIVT_STRING_ID, query_feature_index, high_accuracy);
+			double term = r_dist_eval.ComputeDistanceTermNominal(value, ENIVT_STRING_ID, query_feature_index);
 			AccumulatePartialSums(enabled_indices, value_found->second->indicesWithValue, query_feature_index, term);
 			return term;
 		}
@@ -936,7 +936,7 @@ protected:
 					feature_data.targetValue.nodeValue.number - GetValue(entity_index, feature_attribs.featureIndex).number,
 					query_feature_index, high_accuracy);
 			else
-				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
+				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
 		}
 
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_CYCLIC:
@@ -948,7 +948,7 @@ protected:
 					feature_data.targetValue.nodeValue.number - GetValue(entity_index, feature_attribs.featureIndex).number,
 					query_feature_index, high_accuracy);
 			else
-				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
+				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
 		}
 
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_NUMERIC_INTERNED_PRECOMPUTED:
@@ -959,7 +959,7 @@ protected:
 				return r_dist_eval.ComputeDistanceTermInternedPrecomputed(
 					GetValue(entity_index, feature_attribs.featureIndex).indirectionIndex, query_feature_index);
 			else
-				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
+				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
 		}
 
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_STRING_INTERNED_PRECOMPUTED:
@@ -970,7 +970,7 @@ protected:
 				return r_dist_eval.ComputeDistanceTermInternedPrecomputed(
 					GetValue(entity_index, feature_attribs.featureIndex).indirectionIndex, query_feature_index);
 			else
-				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index, high_accuracy);
+				return r_dist_eval.distEvaluator->ComputeDistanceTermKnownToUnknown(query_feature_index);
 		}
 
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_STRING:
@@ -980,10 +980,10 @@ protected:
 			if(column_data->stringIdIndices.contains(entity_index))
 				return r_dist_eval.ComputeDistanceTermNominal(
 					GetValue(entity_index, feature_attribs.featureIndex).stringID, ENIVT_STRING_ID,
-					query_feature_index, high_accuracy);
+					query_feature_index);
 			else
 				return r_dist_eval.ComputeDistanceTermNominal(string_intern_pool.emptyStringId, ENIVT_STRING_ID,
-					query_feature_index, high_accuracy);
+					query_feature_index);
 		}
 
 		case RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMERIC:
@@ -993,10 +993,10 @@ protected:
 			if(column_data->numberIndices.contains(entity_index))
 				return r_dist_eval.ComputeDistanceTermNominal(
 					GetValue(entity_index, feature_attribs.featureIndex).number, ENIVT_NUMBER,
-					query_feature_index, high_accuracy);
+					query_feature_index);
 			else
 				return r_dist_eval.ComputeDistanceTermNominal(0.0, ENIVT_NUMBER,
-					query_feature_index, high_accuracy);
+					query_feature_index);
 		}
 
 		default:

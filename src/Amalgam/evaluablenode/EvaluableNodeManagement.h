@@ -660,6 +660,7 @@ public:
 				break;
 
 			delete nodes[i];
+			nodes[i] = nullptr;
 		}
 
 		size_t new_size = std::min(nodes.size(), static_cast<size_t>(firstUnusedNodeIndex * allocExpansionFactor));

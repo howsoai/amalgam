@@ -30,7 +30,7 @@ var data = [
 		"parameter" : "reclaim_resources [id_path entity] [bool apply_to_all_contained_entities] [bool clear_query_caches] [bool collect_garbage] [bool force_free_memory] ",
 		"output" : "*",
 		"permissions" : "r",
-		"description" : "Frees resources of the specified types on entity, which is the current entity if null, and will include all contained entities if apply_to_all_contained_entities is true, which defaults to false.  The parameter clear_query_caches will remove the query caches, which will make it faster to add, remove, or edit contained entities, but the cache will be rebuilt once a query is called.  The parameter collect_garbage will perform garbage collection on the entity, and if force_free_memory is true, it will reallocate memory buffers to their current size, after garbage collection if both are specified.",
+		"description" : "Frees resources of the specified types on entity, which is the current entity if null, and will include all contained entities if apply_to_all_contained_entities is true, which defaults to false, though the opcode will be unable to complete if there are concurrent threads running on any of the contained entities.  The parameter clear_query_caches will remove the query caches, which will make it faster to add, remove, or edit contained entities, but the cache will be rebuilt once a query is called.  The parameter collect_garbage will perform garbage collection on the entity, and if force_free_memory is true, it will reallocate memory buffers to their current size, after garbage collection if both are specified.",
 		"example" : "(reclaim_resources (null) (true) (false) (true) (false))"
 	},
 

@@ -475,12 +475,17 @@ public:
 	}
 
 	//clears any query caches if they exist
+	//when calling this, must ensure that there is a write lock on the entity or that nothing can execute on it
 	inline void ClearQueryCaches()
 	{
 		if(hasContainedEntities && entityRelationships.relationships->queryCaches)
 		{
 		#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+			//obtain a write lock and immediately release it to make sure there aren't any operations
+			//waiting to complete. don't need to worry about new operations as they will not be able
+			//to start with a write lock on this entity
 			Concurrency::WriteLock write_lock(entityRelationships.relationships->queryCaches->mutex);
+			write_lock.release();
 		#endif
 
 			entityRelationships.relationships->queryCaches.reset();

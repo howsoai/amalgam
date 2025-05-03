@@ -632,6 +632,12 @@ public:
 	//updates the memory threshold when garbage collection will be next called
 	void UpdateGarbageCollectionTrigger(size_t previous_num_nodes = 0);
 
+	//changes the garbage collection trigger so that the next call to RecommendGarbageCollection will be true
+	inline void UpdateGarbageCollectionTriggerForImmediateCollection()
+	{
+		numNodesToRunGarbageCollection = GetNumberOfUsedNodes();
+	}
+
 	//collects garbage
 	void CollectGarbage();
 
@@ -639,6 +645,27 @@ public:
 	//if multithreaded, then memory_modification_lock is the lock used for memoryModificationMutex if not nullptr
 	void CollectGarbageWithConcurrentAccess(Concurrency::ReadLock *memory_modification_lock);
 #endif
+
+	//frees any extra EvaluableNodes and shrinks memory to be appropriate for current use
+	inline void ShrinkMemoryToCurrentUtilization()
+	{
+	#ifdef MULTITHREAD_SUPPORT
+		Concurrency::WriteLock write_lock(managerAttributesMutex);
+	#endif
+
+		for(size_t i = firstUnusedNodeIndex + 1; i < nodes.size(); i++)
+		{
+			//break at first empty slot
+			if(nodes[i] == nullptr)
+				break;
+
+			delete nodes[i];
+		}
+
+		size_t new_size = std::min(nodes.size(), static_cast<size_t>(firstUnusedNodeIndex * allocExpansionFactor));
+		nodes.resize(new_size);
+		nodes.shrink_to_fit();
+	}
 
 	//frees an EvaluableNode (must be owned by this EvaluableNodeManager)
 	inline void FreeNode(EvaluableNode *en)

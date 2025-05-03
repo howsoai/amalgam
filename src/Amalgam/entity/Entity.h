@@ -85,6 +85,7 @@ union EntityPermissions
 		perm.individualPermissions.load = true;
 		perm.individualPermissions.store = true;
 		perm.individualPermissions.environment = true;
+		perm.individualPermissions.alterPerformance = true;
 		perm.individualPermissions.system = true;
 		return perm;
 	}
@@ -104,6 +105,8 @@ union EntityPermissions
 		bool store : 1;
 		//read from the environment
 		bool environment : 1;
+		//alter performance characteristics
+		bool alterPerformance : 1;
 		//command the system
 		bool system : 1;
 	} individualPermissions;
@@ -474,8 +477,14 @@ public:
 	//clears any query caches if they exist
 	inline void ClearQueryCaches()
 	{
-		if(hasContainedEntities)
+		if(hasContainedEntities && entityRelationships.relationships->queryCaches)
+		{
+		#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+			Concurrency::WriteLock write_lock(entityRelationships.relationships->queryCaches->mutex);
+		#endif
+
 			entityRelationships.relationships->queryCaches.reset();
+		}
 	}
 
 	//creates a cache if it does not exist

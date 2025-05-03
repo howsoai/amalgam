@@ -732,6 +732,22 @@ public:
 	}
 #endif
 
+	//reclaims resources as requested by parameters; assumes there is a write lock on this entity
+	inline void ReclaimResources(bool clear_query_caches, bool collect_garbage, bool force_free_memory)
+	{
+		if(clear_query_caches)
+			ClearQueryCaches();
+
+		if(collect_garbage)
+		{
+			evaluableNodeManager.UpdateGarbageCollectionTriggerForImmediateCollection();
+			CollectGarbageWithEntityWriteReference();
+		}
+
+		if(force_free_memory)
+			evaluableNodeManager.ShrinkMemoryToCurrentUtilization();
+	}
+
 	//returns true if the label can be queried upon
 	static inline bool IsLabelValidAndPublic(StringInternPool::StringID label_sid)
 	{

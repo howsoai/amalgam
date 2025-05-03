@@ -329,17 +329,20 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RECLAIM_RESOURCES(Evaluabl
 	else
 		target_entity = EntityWriteReference(curEntity);
 
-	if(clear_query_caches)
-		target_entity->ClearQueryCaches();
-
-	if(collect_garbage)
+	if(apply_to_all_contained_entities)
 	{
-		target_entity->evaluableNodeManager.UpdateGarbageCollectionTriggerForImmediateCollection();
-		target_entity->CollectGarbageWithEntityWriteReference();
-	}
+		//lock all entities
+		auto contained_entities = target_entity->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityWriteReference>();
+		if(contained_entities == nullptr)
+			return EvaluableNodeReference::Null();
 
-	if(force_free_memory)
-		target_entity->evaluableNodeManager.ShrinkMemoryToCurrentUtilization();
+		for(auto &e : *contained_entities)
+			e->ReclaimResources(clear_query_caches, collect_garbage, force_free_memory);
+	}
+	else
+	{
+		target_entity->ReclaimResources(clear_query_caches, collect_garbage, force_free_memory);
+	}	
 
 	return EvaluableNodeReference::Null();
 }

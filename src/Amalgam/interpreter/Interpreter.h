@@ -1100,6 +1100,7 @@ protected:
 	//built-in / system specific
 	EvaluableNodeReference InterpretNode_ENT_SYSTEM(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_GET_DEFAULTS(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_RECLAIM_RESOURCES(EvaluableNode *en, bool immediate_result);
 
 	//parsing
 	EvaluableNodeReference InterpretNode_ENT_PARSE(EvaluableNode *en, bool immediate_result);

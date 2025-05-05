@@ -3686,6 +3686,10 @@
 
 	(print mymap)
 
+(print "--reclaim_resources--\n")
+
+(reclaim_resources (null) (true) (true) (true) (true) )
+
  (print "--null equality tests--\n")
 
  (print "(= (null) (null)): " (= (null) (null)) "\n")

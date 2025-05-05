@@ -9,6 +9,7 @@ enum EvaluableNodeType : uint8_t
 	//built-in / system specific
 	ENT_SYSTEM,
 	ENT_GET_DEFAULTS,
+	ENT_RECLAIM_RESOURCES,
 
 	//parsing
 	ENT_PARSE,
@@ -322,6 +323,7 @@ constexpr OrderedChildNodeType GetOpcodeOrderedChildNodeType(EvaluableNodeType t
 
 	case ENT_SYSTEM:
 	case ENT_GET_DEFAULTS:
+	case ENT_RECLAIM_RESOURCES:
 	case ENT_SEQUENCE:
 	case ENT_APPEND:				case ENT_FILTER:			case ENT_SORT:
 	case ENT_ZIP:					case ENT_UNZIP:
@@ -454,7 +456,8 @@ constexpr OpcodeNewValueReturnType GetOpcodeNewValueReturnType(EvaluableNodeType
 {
 	switch(t)
 	{
-	case ENT_SYSTEM:	case ENT_GET_DEFAULTS:	case ENT_PARSE:	case ENT_UNPARSE:
+	case ENT_SYSTEM:	case ENT_GET_DEFAULTS:	case ENT_RECLAIM_RESOURCES:
+	case ENT_PARSE:	case ENT_UNPARSE:
 	case ENT_SET:	case ENT_REPLACE:	case ENT_OPCODE_STACK:	case ENT_STACK:
 	case ENT_GET_RAND_SEED:
 	case ENT_SYSTEM_TIME:

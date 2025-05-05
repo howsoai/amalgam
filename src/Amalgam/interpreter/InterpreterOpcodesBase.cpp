@@ -230,7 +230,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 		double max_num_threads = static_cast<double>(Concurrency::GetMaxNumThreads());
 		return AllocReturn(max_num_threads, immediate_result);
 	}
-	else if(command == "set_max_num_threads" && ocn.size() > 1 && permissions.individualPermissions.system)
+	else if(command == "set_max_num_threads" && ocn.size() > 1 && permissions.individualPermissions.alterPerformance)
 	{
 		double max_num_threads_raw = InterpretNodeIntoNumberValue(ocn[1]);
 		size_t max_num_threads = 0;
@@ -292,6 +292,57 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_DEFAULTS(EvaluableNode
 
 		return EvaluableNodeReference(out_node, true);
 	}
+
+	return EvaluableNodeReference::Null();
+}
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_RECLAIM_RESOURCES(EvaluableNode *en, bool immediate_result)
+{
+	auto &ocn = en->GetOrderedChildNodes();
+	if(ocn.size() == 0)
+		return EvaluableNodeReference::Null();
+
+	auto permissions = asset_manager.GetEntityPermissions(curEntity);
+	if(!permissions.individualPermissions.alterPerformance)
+		return EvaluableNodeReference::Null();
+
+	bool apply_to_all_contained_entities = false;
+	if(ocn.size() > 1)
+		apply_to_all_contained_entities = InterpretNodeIntoBoolValue(ocn[1]);
+
+	bool clear_query_caches = true;
+	if(ocn.size() > 2)
+		clear_query_caches = InterpretNodeIntoBoolValue(ocn[2]);
+
+	bool collect_garbage = true;
+	if(ocn.size() > 3)
+		collect_garbage = InterpretNodeIntoBoolValue(ocn[3]);
+
+	bool force_free_memory = false;
+	if(ocn.size() > 4)
+		force_free_memory = InterpretNodeIntoBoolValue(ocn[4]);
+
+	//get the entity last to reduce time under lock
+	EntityWriteReference target_entity;
+	if(ocn.size() > 1)
+		target_entity = InterpretNodeIntoRelativeSourceEntityWriteReference(ocn[0]);
+	else
+		target_entity = EntityWriteReference(curEntity);
+
+	if(apply_to_all_contained_entities)
+	{
+		//lock all entities
+		auto contained_entities = target_entity->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityWriteReference>();
+		if(contained_entities == nullptr)
+			return EvaluableNodeReference::Null();
+
+		for(auto &e : *contained_entities)
+			e->ReclaimResources(clear_query_caches, collect_garbage, force_free_memory);
+	}
+	else
+	{
+		target_entity->ReclaimResources(clear_query_caches, collect_garbage, force_free_memory);
+	}	
 
 	return EvaluableNodeReference::Null();
 }

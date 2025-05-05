@@ -85,6 +85,7 @@ union EntityPermissions
 		perm.individualPermissions.load = true;
 		perm.individualPermissions.store = true;
 		perm.individualPermissions.environment = true;
+		perm.individualPermissions.alterPerformance = true;
 		perm.individualPermissions.system = true;
 		return perm;
 	}
@@ -104,6 +105,8 @@ union EntityPermissions
 		bool store : 1;
 		//read from the environment
 		bool environment : 1;
+		//alter performance characteristics
+		bool alterPerformance : 1;
 		//command the system
 		bool system : 1;
 	} individualPermissions;
@@ -472,10 +475,21 @@ public:
 	}
 
 	//clears any query caches if they exist
+	//when calling this, must ensure that there is a write lock on the entity or that nothing can execute on it
 	inline void ClearQueryCaches()
 	{
-		if(hasContainedEntities)
+		if(hasContainedEntities && entityRelationships.relationships->queryCaches)
+		{
+		#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+			//obtain a write lock and immediately release it to make sure there aren't any operations
+			//waiting to complete. don't need to worry about new operations as they will not be able
+			//to start with a write lock on this entity
+			Concurrency::WriteLock write_lock(entityRelationships.relationships->queryCaches->mutex);
+			write_lock.release();
+		#endif
+
 			entityRelationships.relationships->queryCaches.reset();
+		}
 	}
 
 	//creates a cache if it does not exist
@@ -722,6 +736,22 @@ public:
 			evaluableNodeManager.CollectGarbage();
 	}
 #endif
+
+	//reclaims resources as requested by parameters; assumes there is a write lock on this entity
+	inline void ReclaimResources(bool clear_query_caches, bool collect_garbage, bool force_free_memory)
+	{
+		if(clear_query_caches)
+			ClearQueryCaches();
+
+		if(collect_garbage)
+		{
+			evaluableNodeManager.UpdateGarbageCollectionTriggerForImmediateCollection();
+			CollectGarbageWithEntityWriteReference();
+		}
+
+		if(force_free_memory)
+			evaluableNodeManager.ShrinkMemoryToCurrentUtilization();
+	}
 
 	//returns true if the label can be queried upon
 	static inline bool IsLabelValidAndPublic(StringInternPool::StringID label_sid)

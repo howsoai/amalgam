@@ -162,6 +162,7 @@ hello world: 12 and 2
 	query_within_generalized_distance 0.2
 	rand 0.4
 	range 0.5
+	reclaim_resources 0.01
 	reduce 0.7
 	remove 0.5
 	replace 0.1
@@ -231,11 +232,11 @@ hello world: 12 and 2
 (print "hello")
 [(null) (null) .infinity -.infinity]
 
-{a 1 c ["alpha" "beta" "gamma"] b 2}
+{a 1 b 2 c ["alpha" "beta" "gamma"]}
 {
 	a 1
-	c ["alpha" "beta" "gamma"]
 	b 2
+	c ["alpha" "beta" "gamma"]
 }
 
 (apply "6")
@@ -675,17 +676,17 @@ a
 [1 2 3 4 5 6]
 []
 {
-	a 1
 	b 2
 	c 3
 	d 4
+	e 5
 	f 6
 }
-{b 2 c 3}
+{c 3 e 5}
 {
-	b 2
 	c 3
 	d 4
+	e 5
 	f 6
 }
 {
@@ -726,17 +727,17 @@ c
 [1 2 3 4 5 6]
 []
 {
-	a 1
 	b 2
 	c 3
 	d 4
+	e 5
 	f 6
 }
-{b 2 c 3}
+{c 3 e 5}
 {
-	b 2
 	c 3
 	d 4
+	e 5
 	f 6
 }
 {
@@ -1088,7 +1089,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-["a" "c" 4 "b"]
+["a" 4 "b" "c"]
 [
 	0
 	1
@@ -1100,10 +1101,10 @@ abcdef
 	7
 ]
 [0 1 2 3]
-[3 2 1 0]
-[3 2 1 0]
+[0 2 3 1]
+[0 2 3 1]
 --values--
-[1 3 "d" 2]
+[1 "d" 2 3]
 [
 	"a"
 	1
@@ -1124,7 +1125,7 @@ abcdef
 	4
 	"d"
 ]
-[1 3 "d" 2]
+[1 "d" 2 3]
 [
 	1
 	2
@@ -1276,10 +1277,10 @@ string
 list
 assoc
 [
-	[4]
+	4
 	"4"
 	{4 4}
-	4
+	[4]
 ]
 --set--
 {
@@ -1345,7 +1346,7 @@ current_index: 2
 				8
 			]
 		accum_string "abcdef"
-		argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+		argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 		bar (declare
 				{x 6}
 				(+ x 2)
@@ -1358,13 +1359,13 @@ current_index: 2
 				A {B 2}
 				B 2
 			}
-		interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+		interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rmdir "rmdir /s /q "
 		rmfile "del /s /q "
 		rwww 1
 		slash "\\"
-		start_time 1744840706.064263
+		start_time 1746280191.475414
 		www 1
 		x 12
 		zz 10
@@ -1391,7 +1392,7 @@ current_index: 2
 			8
 		]
 	accum_string "abcdef"
-	argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+	argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 	bar (declare
 			{x 6}
 			(+ x 2)
@@ -1404,13 +1405,13 @@ current_index: 2
 			A {B 2}
 			B 2
 		}
-	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rmdir "rmdir /s /q "
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1744840706.064263
+	start_time 1746280191.475414
 	www 1
 	x 12
 	zz 10
@@ -1436,7 +1437,7 @@ current_index: 2
 			8
 		]
 	accum_string "abcdef"
-	argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+	argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 	bar (declare
 			{x 6}
 			(+ x 2)
@@ -1449,13 +1450,13 @@ current_index: 2
 			A {B 2}
 			B 2
 		}
-	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rmdir "rmdir /s /q "
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1744840706.064263
+	start_time 1746280191.475414
 	www 1
 	x 12
 	zz 10
@@ -1608,9 +1609,9 @@ b
 
 infinity test c or d: ["c" "c" "d" "d"]
 
-{a 16 b 49 c 35}
+{a 16 b 63 c 21}
 
-[1 9 5]
+[2 10 3]
 
 --get_rand_seed--
 ò×c``¦!šc”lÿ
@@ -1708,15 +1709,15 @@ string
 ]
 21: [{"a":3,"b":4},{"d":null,"c":"c"}]
 22: [{"a":3,"b":4},{"c":"c","d":null}]
-23: e:
+23: a: 1
+b: 2
+d: 4
+e:
   - a
   - b
   - 
   - .inf
-a: 1
-d: 4
 c: 3
-b: 2
 
 24: a: 1
 b: 2
@@ -1729,7 +1730,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2025-04-16-17.58.26.4117810
+current date-time in epoch: 2025-05-03-09.49.51.5190440
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -2007,34 +2008,21 @@ decrypted: hello
 --total_size--
 10
 --mutate--
-(contains_value
-	a
+(associate (move_entities) (edit_distance) "b" (accum_to_entities))
+[
+	1
 	2
 	3
 	4
-	(~)
-	6
-	(!=)
-	8
-	9
-	10
-	11
-	12
-	(query_exists)
-	14
-	(intersect)
-)
-[
-	(+)
-	2
-	(*)
-	(+)
 	(associate)
 	(associate
-		"nest"
-		(associate (-) [])
+		(+)
+		(associate
+			"count"
+			[7 8]
+		)
 		"end"
-		[10 11 (+)]
+		[10 11 12]
 	)
 ]
 --commonality--
@@ -2470,8 +2458,8 @@ decrypted: hello
 ]
 --mix--
 [
-	1
 	2
+	3
 	5.5
 	7.5
 	9.5
@@ -2487,30 +2475,29 @@ decrypted: hello
 	1
 	3.5
 	5.5
-	8
+	7.5
 	9.5
-	11.5
-	13
+	12
+	11
+	13.5
 ]
 [
 	1
+	5
 	2.5
 	(associate "a" 3 "b" 4)
 	(lambda
 		(if
-			false
+			true
 			1
 			(parallel
 				(get_entity_comments)
 				1
-				(lambda
-					(print
-						[2 9]
-					)
-				)
+				(lambda (null))
 			)
 		)
 	)
+	[5]
 ]
 [
 	1
@@ -2523,17 +2510,15 @@ decrypted: hello
 			1
 			(seq
 				(get_entity_comments)
-				(lambda
-					(print
-						[2 9]
-					)
-				)
+				(lambda (null))
+				1
 			)
 		)
 	)
+	[5 6]
 ]
 [
-	(true)
+	2
 	3.5
 	5.5
 	7.5
@@ -2542,22 +2527,21 @@ decrypted: hello
 	13.5
 ]
 [
+	(true)
+	2
 	4
-	3
 	6
-	5
-	8
-	7
+	12
 	11
-	13
+	14
 ]
-4
 1
 2.5
 2.5
-abcdexyz
-abcexyz
-abcdoxyz
+2.5
+abceomxyz
+abcomxyz
+abcomxyz
 --mix_labels--
 [
 	1
@@ -2821,58 +2805,57 @@ flatten restore with parallel
 )
 --mutate_entity--
 [
-	1
-	(cos)
+	(lambda)
+	a
 	3
-	4
+	(min)
 	5
-	6
-	7
+	(if)
+	(associate "a" 1 "b" (get))
 	8
-	(query_equals)
-	(>)
-	"a"
-	12
-	(declare)
-	a
-	29
-]
-
-[
-	##b 11
-	(get)
-	##W61 -1
-	(map)
-	5
-	6
-	7
-	a
-	16
+	9
 	10
-	(rewrite)
-	(size)
-	1
-	(call_container)
-	(associate "a" (max) (compute_on_contained_entities) (map))
+	11
+	12
+	##a 15.67609391594335
 ]
 
+##b
 [
-	(-)
-	(+)
-	(+)
-	4
+	1
+	(call_entity)
+	3
+	-1.8824835561737272
 	5
-	6
+	(index_min)
 	7
 	8
+	(log)
+	10
+	(contains_index)
+	12
+	13
+	2.704792777887504
+	(associate "a" {} "b" a)
+]
+
+(+
+	1
+	(+)
+	(*)
+	(*)
+	5
+	6
+	(+)
+	(-)
 	9
 	(*)
 	11
-	12
 	(+)
-	14
-	(associate)
-]
+	(*)
+	(-)
+	(associate "a" 1 "b" 2)
+)
 
 --commonality_entities--
 73.3678794503212
@@ -2884,10 +2867,10 @@ MergeEntityChild1
 (associate "x" 3 "y" 4)
 MergeEntityChild2
 (associate "p" 3 "q" 4)
-_1651806471
-(associate "e" 3 "f" 4)
 _3130331116
 (associate "E" 3 "F" 4)
+_1651806471
+(associate "e" 3 "f" 4)
 --union_entities--
 (associate "b" 4 "a" 3 "c" 3)
 MergeEntityChild1
@@ -2905,17 +2888,6 @@ MergeEntityChild2
 	"w"
 	7
 )
-_1651806471
-(associate
-	"e"
-	3
-	"f"
-	4
-	"g"
-	5
-	"h"
-	6
-)
 _3130331116
 (associate
 	"E"
@@ -2927,11 +2899,7 @@ _3130331116
 	"H"
 	6
 )
-(parallel
-	##p
-	["_2325275497" "_2973704165" "_2325275497" "_2973704165"]
-)
-_2973704165
+_1651806471
 (associate
 	"e"
 	3
@@ -2942,6 +2910,10 @@ _2973704165
 	"h"
 	6
 )
+(parallel
+	##p
+	["_2325275497" "_2973704165" "_2325275497" "_2973704165"]
+)
 _2325275497
 (associate
 	"E"
@@ -2951,6 +2923,17 @@ _2325275497
 	"G"
 	5
 	"H"
+	6
+)
+_2973704165
+(associate
+	"e"
+	3
+	"f"
+	4
+	"g"
+	5
+	"h"
 	6
 )
 --difference_entities--
@@ -3462,33 +3445,24 @@ difference between DiffContainer and DiffEntity2:
 	(clone_entities _ new_entity)
 )
 --mix_entities--
-(associate "b" 4 "a" 3)
+(associate "b" 4 "c" 3)
 MergeEntityChild1
-(associate "x" 3 "y" 4)
+(associate "x" 3 "y" 4 "z" 5)
 MergeEntityChild2
-(associate "p" 3 "q" 4 "u" 5)
-_1651806471
 (associate
-	"e"
+	"p"
 	3
-	"f"
+	"q"
 	4
-	"g"
+	"u"
 	5
-	"h"
+	"v"
 	6
 )
 _3130331116
-(associate
-	"E"
-	3
-	"F"
-	4
-	"G"
-	5
-	"H"
-	6
-)
+(associate "E" 3 "F" 4 "G" 5)
+_1651806471
+(associate "e" 3 "f" 4)
 --get_entity_comments--
 Full test
 This is a suite of unit tests.
@@ -3567,7 +3541,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1744840706.808861
+1746280191.627266
 (true)
 
 RootTest
@@ -3985,25 +3959,22 @@ store to .json normally
 ["Child1" "Child5"]
 ["Child3" "Child4"]
 ["Child6" "Child7"]
-["Child1" "Child3" "Child5" "Child6"]
-["Child3" "Child4" "Child5" "Child7"]
+["Child2" "Child3" "Child5" "Child6"]
+["Child2" "Child3" "Child5" "Child7"]
 ["Child4" "Child6"]
 --query_sample--
-["Child1"]
-["Child3" "Child5"]
-["Child1"]
-["Child1"]
+["Child6"]
+["Child3" "Child7"]
+["Child6"]
+["Child4"]
 with weights
-["Child2"]
 ["Child1"]
+["Child7"]
 [
-	"Child2"
-	"Child1"
-	"Child2"
 	"Child1"
 	"Child1"
 	"Child2"
-	"Child1"
+	"Child2"
 	"Child1"
 	"Child1"
 	"Child2"
@@ -4012,33 +3983,36 @@ with weights
 	"Child1"
 	"Child1"
 	"Child1"
-	"Child1"
 	"Child2"
 	"Child1"
 	"Child1"
 	"Child2"
+	"Child2"
+	"Child2"
+	"Child1"
+	"Child1"
 ]
 [
+	"Child6"
 	"Child2"
+	"Child4"
 	"Child1"
 	"Child1"
-	"Child1"
-	"Child2"
-	"Child2"
-	"Child1"
-	"Child2"
-	"Child2"
-	"Child2"
-	"Child5"
-	"Child1"
-	"Child1"
-	"Child2"
-	"Child1"
-	"Child2"
-	"Child2"
 	"Child1"
 	"Child5"
 	"Child1"
+	"Child7"
+	"Child2"
+	"Child1"
+	"Child2"
+	"Child1"
+	"Child2"
+	"Child1"
+	"Child1"
+	"Child1"
+	"Child2"
+	"Child4"
+	"Child1"
 ]
 [
 	"Child2"
@@ -4049,10 +4023,10 @@ with weights
 	"Child2"
 	"Child2"
 	"Child2"
-	"Child2"
+	"Child6"
 	"Child2"
 ]
-["Child2" "Child4"]
+["Child2"]
 --query_in_entity_list--
 ["Child6" "Child7"]
 --query_not_in_entity_list--
@@ -4109,7 +4083,7 @@ weighted query: {
 	Child7 10
 }
 weighted query list of lists: [
-	["Child2" "Child6" "Child1" "Child7" "Child4"]
+	["Child2" "Child6" "Child1" "Child7" "Child3"]
 	[1 2 4 10 100]
 ]
 weighted query list of lists: [
@@ -4423,11 +4397,11 @@ cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
 190: 0.045454545454545456 (null
 	##deg 12
 )
-155: 0.1 (null
-	##deg 0
-)
 200: 0.05555555555555555 (null
 	##deg 8
+)
+155: 0.1 (null
+	##deg 0
 )
 --contains_label--
 (true)
@@ -4688,6 +4662,7 @@ cyclic lookup test 2:
 				}
 		}
 }
+--reclaim_resources--
 --null equality tests--
 (= (null) (null)): (true)
 
@@ -4713,7 +4688,7 @@ cyclic lookup test 2:
 ["hello" "!"]
 {a1 1.4142135623730951 a2 2 a3 1.4142135623730951}
 {a1 1.4142135623730951 a3 1.4142135623730951}
-{a3 1.4142135623730951}
+{a1 1.4142135623730951}
 {a1 5.0990195135927845 a2 2 a3 5.0990195135927845}
 {a1 1 a3 1 a4 0}
 --accuracy tests--
@@ -4726,12 +4701,12 @@ distance symmetry tests
 	[
 		"B"
 		"D"
-		"I"
 		"C"
-		"F"
+		"I"
 		"A"
-		"G"
+		"F"
 		"H"
+		"J"
 	]
 	[
 		0
@@ -4747,13 +4722,13 @@ distance symmetry tests
 [
 	[
 		"B"
-		"I"
-		"F"
-		"A"
 		"D"
+		"I"
+		"A"
+		"F"
 		"C"
-		"G"
 		"H"
+		"J"
 	]
 	[
 		0
@@ -4979,4 +4954,4 @@ rmdir /s /q amlg_code\persistent_tree_test_root
 del /s /q amlg_code\persist_module_test\psm.mdam
 del /s /q amlg_code\persist_module_test.mdam
 --total execution time--
-1.6213879585266113
+1.255059003829956

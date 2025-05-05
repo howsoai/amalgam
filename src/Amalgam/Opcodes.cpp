@@ -30,6 +30,7 @@ void StringInternPool::InitializeStaticStrings()
 	//built-in / system specific
 	EmplaceNodeTypeString(ENT_SYSTEM, "system");
 	EmplaceNodeTypeString(ENT_GET_DEFAULTS, "get_defaults");
+	EmplaceNodeTypeString(ENT_RECLAIM_RESOURCES, "reclaim_resources");
 
 	//parsing
 	EmplaceNodeTypeString(ENT_PARSE, "parse");

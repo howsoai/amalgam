@@ -408,11 +408,8 @@ public:
 			{
 				auto &deviations = a_deviations_it->second;
 
-				//exclude deviation values from number of classes since they are accounted for
-				double nonmatching_classes = featureAttribs[index].typeAttributes.nominalCount - deviations.size();
-				//ensure not NaN and at least 1
-				if(!(nonmatching_classes >= 1.0))
-					nonmatching_classes = 1;
+				double nonmatching_classes = GetNonmatchingNominalClassCount(index,
+					std::max(static_cast<size_t>(1), deviations.size()));
 
 				auto match_deviation_it = deviations.find(a.number);
 				if(match_deviation_it != end(deviations))
@@ -434,11 +431,8 @@ public:
 			{
 				auto &deviations = a_deviations_it->second;
 
-				//exclude deviation values from number of classes since they are accounted for
-				double nonmatching_classes = featureAttribs[index].typeAttributes.nominalCount - deviations.size();
-				//ensure not NaN and at least 1
-				if(!(nonmatching_classes >= 1.0))
-					nonmatching_classes = 1;
+				double nonmatching_classes = GetNonmatchingNominalClassCount(index,
+					std::max(static_cast<size_t>(1), deviations.size()));
 
 				auto match_deviation_it = deviations.find(a.stringID);
 				if(match_deviation_it != end(deviations))
@@ -504,18 +498,76 @@ public:
 	}
 
 	//returns the maximum difference
-	inline double GetMaximumDifference(size_t index)
+	// if theoretical_max_dist is true, then it will include what is known beyond the feature attributes
+	inline double GetMaximumDifference(size_t index, bool theoretical_max_dist = true)
 	{
 		if(IsFeatureNominal(index))
-			return 1.0;
+		{
+			if(!DoesFeatureHaveDeviation(index))
+				return 1.0;
+
+			auto &feature_attributes = featureAttribs[index];
+			double smallest_deviation = feature_attributes.deviation;
+
+			auto &numbers_sdm = feature_attributes.nominalNumberSparseDeviationMatrix;
+			for(auto &sdm_row : numbers_sdm)
+			{
+				for(auto &sdm_value : sdm_row.second)
+				{
+					if(sdm_value.second < smallest_deviation)
+						smallest_deviation = sdm_value.second;
+				}
+
+				if(sdm_row.second.defaultDeviation < smallest_deviation)
+					smallest_deviation = sdm_row.second.defaultDeviation;
+			}
+
+			auto &strings_sdm = feature_attributes.nominalStringSparseDeviationMatrix;
+			for(auto &sdm_row : strings_sdm)
+			{
+				for(auto &sdm_value : sdm_row.second)
+				{
+					if(sdm_value.second < smallest_deviation)
+						smallest_deviation = sdm_value.second;
+				}
+
+				if(sdm_row.second.defaultDeviation < smallest_deviation)
+					smallest_deviation = sdm_row.second.defaultDeviation;
+			}
+
+			//find the probability that any other class besides the correct class was selected
+			//divide the probability among the other classes
+			double prob_class_given_nonmatch = smallest_deviation / GetNonmatchingNominalClassCount(index);
+			
+			return 1.0 - prob_class_given_nonmatch;
+		}
 
 		if(IsFeatureCyclic(index))
 			return featureAttribs[index].typeAttributes.maxCyclicDifference / 2;
+
+		//if not theoretical, then not known
+		if(!theoretical_max_dist)
+			return 0.0;
 
 		if(featureAttribs[index].weight > 0)
 			return std::numeric_limits<double>::infinity();
 		else
 			return -std::numeric_limits<double>::infinity();
+	}
+
+	//returns the number of nominal classes that don't have a match to either
+	//the current class or within the number of deviations
+	//if classes are accounted for, e.g., via deviations, then that number of classes should be excluded via
+	// num_classes_accounted_for
+	inline double GetNonmatchingNominalClassCount(size_t index, size_t num_classes_accounted_for = 0)
+	{
+		double nonmatching_classes = featureAttribs[index].typeAttributes.nominalCount
+			- static_cast<double>(num_classes_accounted_for);
+
+		//ensure not NaN and at least 1
+		if(nonmatching_classes >= 1.0)
+			return nonmatching_classes;
+		return 1.0;
 	}
 
 	//returns the base of the distance term for nominal comparisons for a match
@@ -578,12 +630,8 @@ public:
 	{
 		auto &feature_attribs = featureAttribs[index];
 
-		//assume one nonmatching class in existence if not specified
-		double nonmatching_classes = featureAttribs[index].typeAttributes.nominalCount
-			- feature_attribs.GetNumDeviationEntries();
-		//ensure not NaN and at least 1
-		if(!(nonmatching_classes >= 1.0))
-			nonmatching_classes = 1;
+		double nonmatching_classes = GetNonmatchingNominalClassCount(index,
+			std::max(static_cast<size_t>(1), feature_attribs.GetNumDeviationEntries()));
 
 		double match_deviation = 0.0;
 		if(DoesFeatureHaveDeviation(index))
@@ -1073,11 +1121,8 @@ public:
 			{
 				auto &deviations = deviations_for_value->second;
 
-				//exclude deviation values from number of classes since they are accounted for
-				double nonmatching_classes = feature_attributes.typeAttributes.nominalCount - deviations.size();
-				//ensure not NaN and at least 1
-				if(!(nonmatching_classes >= 1.0))
-					nonmatching_classes = 1;
+				double nonmatching_classes = distEvaluator->GetNonmatchingNominalClassCount(index,
+					std::max(static_cast<size_t>(1), deviations.size()));
 
 				double smallest_dist_term = std::numeric_limits<double>::infinity();
 				for(auto &[value, deviation] : deviations)
@@ -1133,11 +1178,8 @@ public:
 			{
 				auto &deviations = deviations_for_sid->second;
 
-				//exclude deviation values from number of classes since they are accounted for,
-				double nonmatching_classes = feature_attributes.typeAttributes.nominalCount - deviations.size();
-				//ensure not NaN and at least 1
-				if(!(nonmatching_classes >= 1.0))
-					nonmatching_classes = 1;
+				double nonmatching_classes = distEvaluator->GetNonmatchingNominalClassCount(index,
+					std::max(static_cast<size_t>(1), deviations.size()));
 
 				double smallest_dist_term = std::numeric_limits<double>::infinity();
 				for(auto &[sid, deviation] : deviations)

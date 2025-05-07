@@ -1149,20 +1149,6 @@ public:
 			feature_attribs.featureIndex = column->second;
 			auto &column_data = columnData[feature_attribs.featureIndex];
 
-			//if either known or unknown to unknown is missing, need to compute difference
-			// and store it where it is needed
-			double unknown_distance_deviation = 0.0;
-			if(FastIsNaN(feature_attribs.knownToUnknownDistanceTerm.deviation)
-				|| FastIsNaN(feature_attribs.unknownToUnknownDistanceTerm.deviation))
-			{
-				unknown_distance_deviation = column_data->GetMaxDifferenceTerm(feature_attribs);
-
-				if(FastIsNaN(feature_attribs.knownToUnknownDistanceTerm.deviation))
-					feature_attribs.knownToUnknownDistanceTerm.deviation = unknown_distance_deviation;
-				if(FastIsNaN(feature_attribs.unknownToUnknownDistanceTerm.deviation))
-					feature_attribs.unknownToUnknownDistanceTerm.deviation = unknown_distance_deviation;
-			}
-
 			if(feature_attribs.IsFeatureNominal())
 			{
 				//if nominal count is not specified, compute from the existing data
@@ -1173,6 +1159,21 @@ public:
 					feature_attribs.typeAttributes.nominalCount
 						= static_cast<double>(column_data->GetNumUniqueValues()) + num_potential_unseen_classes;
 				}
+			}
+
+			//if either known or unknown to unknown is missing, need to compute difference
+			// and store it where it is needed
+			double unknown_distance_deviation = 0.0;
+			if(FastIsNaN(feature_attribs.knownToUnknownDistanceTerm.deviation)
+				|| FastIsNaN(feature_attribs.unknownToUnknownDistanceTerm.deviation))
+			{
+				unknown_distance_deviation = std::max(column_data->GetMaxDifferenceTerm(feature_attribs),
+													dist_eval.GetMaximumDifference(query_feature_index, false));
+
+				if(FastIsNaN(feature_attribs.knownToUnknownDistanceTerm.deviation))
+					feature_attribs.knownToUnknownDistanceTerm.deviation = unknown_distance_deviation;
+				if(FastIsNaN(feature_attribs.unknownToUnknownDistanceTerm.deviation))
+					feature_attribs.unknownToUnknownDistanceTerm.deviation = unknown_distance_deviation;
 			}
 		}
 	}

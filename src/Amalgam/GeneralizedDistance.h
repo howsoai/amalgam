@@ -1339,7 +1339,10 @@ public:
 		}
 		else
 		{
-			return feature_data.defaultNominalNonMatchDistanceTerm;
+			if(feature_data.targetValue.IsNull())
+				return distEvaluator->ComputeDistanceTermKnownToUnknown(index);
+			else
+				return feature_data.defaultNominalNonMatchDistanceTerm;
 		}
 	}
 

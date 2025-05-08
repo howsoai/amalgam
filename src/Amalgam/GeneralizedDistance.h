@@ -983,9 +983,6 @@ protected:
 	//computes and caches symmetric nominal and uncertainty distance terms
 	inline void ComputeAndStoreCommonDistanceTerms()
 	{
-		bool compute_accurate = NeedToPrecomputeAccurate();
-		bool compute_approximate = NeedToPrecomputeApproximate();
-
 		for(size_t i = 0; i < featureAttribs.size(); i++)
 		{
 			auto &feature_attribs = featureAttribs[i];

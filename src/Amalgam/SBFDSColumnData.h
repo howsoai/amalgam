@@ -640,9 +640,14 @@ public:
 		if(value_type == ENIVT_STRING_ID)
 			return stringIdValueEntries.size();
 
+		//if there are any null values, count that as one
+		size_t null_count = 0;
+		if(nullIndices.size() > 0)
+			null_count = 1;
+
 		//add up unique number and string values,
 		// and use a heuristic for judging how many unique code values there are
-		return sortedNumberValueEntries.size() + stringIdIndices.size()
+		return null_count + sortedNumberValueEntries.size() + stringIdIndices.size()
 			+ (valueCodeSizeToIndices.size() + codeIndices.size()) / 2;
 	}
 
@@ -654,14 +659,14 @@ public:
 
 	//returns the maximum difference between value and any other value for this column
 	//if empty, will return infinity
-	inline double GetMaxDifferenceTerm(GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs)
+	inline double GetMaxDifference(GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs)
 	{
 		switch(feature_attribs.featureType)
 		{
 		case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC:
 		case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
 		case GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE:
-			return 1.0 - 1.0 / GetNumValidDataElements();
+			return 1.0 - 1.0 / (std::max<size_t>(1, GetNumValidDataElements()) + 0.5);
 
 		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC:
 			if(sortedNumberValueEntries.size() <= 1)

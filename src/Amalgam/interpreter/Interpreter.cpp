@@ -325,6 +325,7 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	bool immediate_result)
 #endif
 {
+	evaluableNodeManager->AssignToTLAB();
 
 #ifdef MULTITHREAD_SUPPORT
 	if(scope_stack == nullptr)

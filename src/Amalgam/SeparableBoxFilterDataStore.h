@@ -70,7 +70,7 @@ public:
 	inline double GetMaxDistanceTermForContinuousFeature(RepeatedGeneralizedDistanceEvaluator &r_dist_eval,
 		size_t query_feature_index, size_t absolute_feature_index, bool high_accuracy)
 	{
-		double max_diff = columnData[absolute_feature_index]->GetMaxDifferenceTerm(
+		double max_diff = columnData[absolute_feature_index]->GetMaxDifference(
 														r_dist_eval.distEvaluator->featureAttribs[query_feature_index]);
 		return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonNullRegular(
 														max_diff, query_feature_index, high_accuracy);
@@ -1167,7 +1167,7 @@ public:
 			if(FastIsNaN(feature_attribs.knownToUnknownDistanceTerm.deviation)
 				|| FastIsNaN(feature_attribs.unknownToUnknownDistanceTerm.deviation))
 			{
-				unknown_distance_deviation = std::max(column_data->GetMaxDifferenceTerm(feature_attribs),
+				unknown_distance_deviation = std::max(column_data->GetMaxDifference(feature_attribs),
 													dist_eval.GetMaximumDifference(query_feature_index, false));
 
 				if(FastIsNaN(feature_attribs.knownToUnknownDistanceTerm.deviation))

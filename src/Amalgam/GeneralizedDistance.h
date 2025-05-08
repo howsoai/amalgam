@@ -409,7 +409,7 @@ public:
 				auto &deviations = a_deviations_it->second;
 
 				double nonmatching_classes = GetNonmatchingNominalClassCount(index,
-					std::max(static_cast<size_t>(1), deviations.size()));
+					std::max<size_t>(1, deviations.size()));
 
 				auto match_deviation_it = deviations.find(a.number);
 				if(match_deviation_it != end(deviations))
@@ -432,7 +432,7 @@ public:
 				auto &deviations = a_deviations_it->second;
 
 				double nonmatching_classes = GetNonmatchingNominalClassCount(index,
-					std::max(static_cast<size_t>(1), deviations.size()));
+					std::max<size_t>(1, deviations.size()));
 
 				auto match_deviation_it = deviations.find(a.stringID);
 				if(match_deviation_it != end(deviations))
@@ -631,7 +631,7 @@ public:
 		auto &feature_attribs = featureAttribs[index];
 
 		double nonmatching_classes = GetNonmatchingNominalClassCount(index,
-			std::max(static_cast<size_t>(1), feature_attribs.GetNumDeviationEntries()));
+			std::max<size_t>(1, feature_attribs.GetNumDeviationEntries()));
 
 		double match_deviation = 0.0;
 		if(DoesFeatureHaveDeviation(index))
@@ -1119,7 +1119,7 @@ public:
 				auto &deviations = deviations_for_value->second;
 
 				double nonmatching_classes = distEvaluator->GetNonmatchingNominalClassCount(index,
-					std::max(static_cast<size_t>(1), deviations.size()));
+					std::max<size_t>(1, deviations.size()));
 
 				double smallest_dist_term = std::numeric_limits<double>::infinity();
 				for(auto &[value, deviation] : deviations)
@@ -1176,7 +1176,7 @@ public:
 				auto &deviations = deviations_for_sid->second;
 
 				double nonmatching_classes = distEvaluator->GetNonmatchingNominalClassCount(index,
-					std::max(static_cast<size_t>(1), deviations.size()));
+					std::max<size_t>(1, deviations.size()));
 
 				double smallest_dist_term = std::numeric_limits<double>::infinity();
 				for(auto &[sid, deviation] : deviations)

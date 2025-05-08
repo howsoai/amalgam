@@ -232,11 +232,11 @@ hello world: 12 and 2
 (print "hello")
 [(null) (null) .infinity -.infinity]
 
-{a 1 c ["alpha" "beta" "gamma"] b 2}
+{c ["alpha" "beta" "gamma"] b 2 a 1}
 {
-	a 1
 	c ["alpha" "beta" "gamma"]
 	b 2
+	a 1
 }
 
 (apply "6")
@@ -660,7 +660,7 @@ abcdef
 0.14384103622589045
 --first--
 4
-1
+2
 1
 0
 a
@@ -679,15 +679,15 @@ a
 	a 1
 	b 2
 	c 3
+	d 4
 	e 5
-	f 6
 }
-{b 2 f 6}
+{d 4 e 5}
 {
+	a 1
 	b 2
-	c 3
+	d 4
 	e 5
-	f 6
 }
 {
 	a 1
@@ -711,7 +711,7 @@ abcdef
 
 --last--
 this
-1
+2
 1
 0
 c
@@ -730,15 +730,15 @@ c
 	a 1
 	b 2
 	c 3
+	d 4
 	e 5
-	f 6
 }
-{b 2 f 6}
+{d 4 e 5}
 {
+	a 1
 	b 2
-	c 3
+	d 4
 	e 5
-	f 6
 }
 {
 	a 1
@@ -1089,7 +1089,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-["a" 4 "c" "b"]
+[4 "c" "b" "a"]
 [
 	0
 	1
@@ -1101,10 +1101,10 @@ abcdef
 	7
 ]
 [0 1 2 3]
-[2 3 1 0]
-[2 3 1 0]
+[1 2 0 3]
+[1 2 0 3]
 --values--
-[1 "d" 3 2]
+["d" 3 2 1]
 [
 	"a"
 	1
@@ -1125,7 +1125,7 @@ abcdef
 	4
 	"d"
 ]
-[1 "d" 3 2]
+["d" 3 2 1]
 [
 	1
 	2
@@ -1277,10 +1277,10 @@ string
 list
 assoc
 [
-	"4"
-	4
-	{4 4}
 	[4]
+	4
+	"4"
+	{4 4}
 ]
 --set--
 {
@@ -1365,7 +1365,7 @@ current_index: 2
 		rmfile "del /s /q "
 		rwww 1
 		slash "\\"
-		start_time 1746718756.206137
+		start_time 1746724552.662376
 		www 1
 		x 12
 		zz 10
@@ -1411,7 +1411,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1746718756.206137
+	start_time 1746724552.662376
 	www 1
 	x 12
 	zz 10
@@ -1456,7 +1456,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1746718756.206137
+	start_time 1746724552.662376
 	www 1
 	x 12
 	zz 10
@@ -1590,14 +1590,6 @@ true
 b
 [
 	"b"
-	"b"
-	"b"
-	"a"
-	"a"
-	"b"
-	"b"
-	"a"
-	"b"
 	"a"
 	"b"
 	"b"
@@ -1605,13 +1597,21 @@ b
 	"b"
 	"b"
 	"b"
+	"b"
+	"b"
+	"b"
+	"a"
+	"a"
+	"a"
+	"b"
+	"a"
 ]
 
-infinity test c or d: ["c" "c" "d" "d"]
+infinity test c or d: ["d" "d" "c" "c"]
 
-{a 16 b 49 c 35}
+{a 21 b 63 c 16}
 
-[1 6 8]
+[2 3 5]
 
 --get_rand_seed--
 Ú◊c`ç`¶!öcîlˇ
@@ -1657,8 +1657,8 @@ infinity test c or d: ["c" "c" "d" "d"]
 string
 --set_type--
 (- 3 4)
-["a" 4 "b" 3]
-["a" 4 "b" 3]
+["b" 3 "a" 4]
+["b" 3 "a" 4]
 {a 4 b 3}
 8.7
 (parallel
@@ -1707,17 +1707,17 @@ string
 	{a 3 b 4}
 	{c "c"}
 ]
-21: [{"a":3,"b":4},{"d":null,"c":"c"}]
+21: [{"b":4,"a":3},{"c":"c","d":null}]
 22: [{"a":3,"b":4},{"c":"c","d":null}]
-23: d: 4
+23: c: 3
+b: 2
 a: 1
-c: 3
 e:
   - a
   - b
   - 
   - .inf
-b: 2
+d: 4
 
 24: a: 1
 b: 2
@@ -1730,7 +1730,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2025-05-08-11.39.16.2693800
+current date-time in epoch: 2025-05-08-13.15.52.7054950
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -1791,7 +1791,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelQ #labelA
+	labelA #labelA #labelQ
 		(lambda
 			#labelB (true)
 		)
@@ -1805,7 +1805,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelQ #labelA
+	labelA #labelA #labelQ
 		(lambda
 			#labelB (true)
 		)
@@ -2863,18 +2863,16 @@ flatten restore with parallel
 19.264241099357605
 --intersect_entities--
 (associate "b" 4)
-MergeEntityChild1
-(associate "x" 3 "y" 4)
 MergeEntityChild2
 (associate "p" 3 "q" 4)
+MergeEntityChild1
+(associate "x" 3 "y" 4)
 _3130331116
 (associate "E" 3 "F" 4)
 _1651806471
 (associate "e" 3 "f" 4)
 --union_entities--
 (associate "b" 4 "a" 3 "c" 3)
-MergeEntityChild1
-(associate "x" 3 "y" 4 "z" 5)
 MergeEntityChild2
 (associate
 	"p"
@@ -2888,6 +2886,8 @@ MergeEntityChild2
 	"w"
 	7
 )
+MergeEntityChild1
+(associate "x" 3 "y" 4 "z" 5)
 _3130331116
 (associate
 	"E"
@@ -2914,17 +2914,6 @@ _1651806471
 	##p
 	["_2325275497" "_2973704165" "_2325275497" "_2973704165"]
 )
-_2325275497
-(associate
-	"E"
-	3
-	"F"
-	4
-	"G"
-	5
-	"H"
-	6
-)
 _2973704165
 (associate
 	"e"
@@ -2934,6 +2923,17 @@ _2973704165
 	"g"
 	5
 	"h"
+	6
+)
+_2325275497
+(associate
+	"E"
+	3
+	"F"
+	4
+	"G"
+	5
+	"H"
 	6
 )
 --difference_entities--
@@ -3264,14 +3264,8 @@ _3532185687
 						[]
 						(lambda
 							{
-								E (get
-										(current_value 1)
-										"E"
-									)
-								F (get
-										(current_value 1)
-										"F"
-									)
+								E 3
+								F 4
 								G 5
 								H 6
 							}
@@ -3296,16 +3290,7 @@ _3532185687
 						_
 						[]
 						(lambda
-							{
-								e (get
-										(current_value 1)
-										"e"
-									)
-								f (get
-										(current_value 1)
-										"f"
-									)
-							}
+							{e 3 f 4}
 						)
 					)
 				)
@@ -3337,89 +3322,7 @@ contained_entities new_entity: ["DiffEntityChild1" "OnlyIn2" "_3626604918" "_382
 difference between DiffEntity2 and new_entity:
 (declare
 	{_ (null) new_entity (null)}
-	(assign
-		"new_entity"
-		(first
-			(create_entities
-				new_entity
-				(call
-					(lambda
-						(declare
-							{_ (null)}
-							(replace _)
-						)
-					)
-					{
-						_ (retrieve_entity_root _)
-					}
-				)
-			)
-		)
-	)
-	(create_entities
-		(append new_entity "_3626604918")
-		(call
-			(lambda
-				(declare
-					{_ (null)}
-					(replace
-						_
-						[]
-						(lambda
-							{
-								E (null)
-								F (null)
-								G (get
-										(current_value 1)
-										"G"
-									)
-								H (get
-										(current_value 1)
-										"H"
-									)
-							}
-						)
-					)
-				)
-			)
-			{
-				_ (retrieve_entity_root
-						(append _ "_3626604918")
-					)
-			}
-		)
-	)
-	(create_entities
-		(append new_entity "_3823131681")
-		(call
-			(lambda
-				(declare
-					{_ (null)}
-					(replace
-						_
-						[]
-						(lambda
-							{e (null) f (null)}
-						)
-					)
-				)
-			)
-			{
-				_ (retrieve_entity_root
-						(append _ "_3823131681")
-					)
-			}
-		)
-	)
-	(clone_entities
-		(append _ "DiffEntityChild1")
-		(append new_entity "DiffEntityChild1")
-	)
-	(clone_entities
-		(append _ "OnlyIn2")
-		(append new_entity "OnlyIn2")
-	)
-	new_entity
+	(clone_entities _ new_entity)
 )
 (declare
 	{_ (null) new_entity (null)}
@@ -3640,8 +3543,6 @@ difference between DiffContainer and DiffEntity2:
 )
 --mix_entities--
 (associate "b" 4 "c" 3)
-MergeEntityChild1
-(associate "x" 3 "y" 4 "z" 5)
 MergeEntityChild2
 (associate
 	"p"
@@ -3652,7 +3553,11 @@ MergeEntityChild2
 	5
 	"v"
 	6
+	"w"
+	7
 )
+MergeEntityChild1
+(associate "x" 3 "y" 4 "z" 5)
 _3130331116
 (associate "E" 3 "F" 4 "G" 5)
 _1651806471
@@ -3735,7 +3640,7 @@ deep sets
 
 --set_entity_root_permission--
 RootTest
-1746718756.851795
+1746724553.001076
 (true)
 
 RootTest
@@ -4588,11 +4493,11 @@ case conviction:{
 }
 cyclic feature nearest neighbors: {cyclic1 1 cyclic5 0.5}
 cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
-190: 0.045454545454545456 (null
-	##deg 12
-)
 155: 0.1 (null
 	##deg 0
+)
+190: 0.045454545454545456 (null
+	##deg 12
 )
 200: 0.05555555555555555 (null
 	##deg 8
@@ -5148,4 +5053,4 @@ rmdir /s /q amlg_code\persistent_tree_test_root
 del /s /q amlg_code\persist_module_test\psm.mdam
 del /s /q amlg_code\persist_module_test.mdam
 --total execution time--
-2.0095150470733643
+1.9838430881500244

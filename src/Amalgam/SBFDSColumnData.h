@@ -659,14 +659,14 @@ public:
 
 	//returns the maximum difference between value and any other value for this column
 	//if empty, will return infinity
-	inline double GetMaxDifferenceTerm(GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs)
+	inline double GetMaxDifference(GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs)
 	{
 		switch(feature_attribs.featureType)
 		{
 		case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC:
 		case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
 		case GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE:
-			return 1.0 - 1.0 / (GetNumValidDataElements() + 0.5);
+			return 1.0 - 1.0 / (std::max<size_t>(1, GetNumValidDataElements()) + 0.5);
 
 		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC:
 			if(sortedNumberValueEntries.size() <= 1)

@@ -607,8 +607,12 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 				}
 			}
 		}
+
 		if(need_enabled_indices_recount)
 			enabled_indices.UpdateNumElements();
+
+		//re-fetch last index just in case enabled_indices was modified anywhere above
+		end_index = enabled_indices.GetEndInteger();
 
 		//pick up where left off, already have top_k in sorted_results or are out of entities
 		#pragma omp parallel shared(worst_candidate_distance) if(end_index > 200)

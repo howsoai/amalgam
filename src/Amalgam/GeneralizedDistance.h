@@ -229,18 +229,20 @@ public:
 	//if surprisal_transform is true, then it will transform the result into surprisal space and remove the appropriate assumption of uncertainty
 	// for Laplace, the Laplace distribution has 1 nat worth of information, but additionally, there is a 50/50 chance that the
 	// difference is within the mean absolute error, yielding an overcounting of an additional 1/2 nat.  So the total reduction is 1.5 nats
-	//if fast_approx_deviation is true, then it will use an approximation based on a constant
-	__forceinline double ComputeDifferenceWithDeviation(double diff, size_t feature_index, bool surprisal_transform,
-		bool fast_approx_deviation, bool high_accuracy)
+	__forceinline double ComputeDifferenceWithDeviation(double diff, size_t feature_index, bool surprisal_transform, bool high_accuracy)
 	{
 		auto &feature_attribs = featureAttribs[feature_index];
 
 	#ifdef DISTANCE_USE_LAPLACE_LK_METRIC
 		if(!high_accuracy)
 		{
-			if(fast_approx_deviation)
+			if(feature_attribs.fastApproxDeviation)
 			{
 				diff += s_deviation_expansion_lk_offset;
+
+				double comparison = std::exp(static_cast<float>(diff * feature_attribs.deviationReciprocalNegative))
+					* (feature_attribs.deviationTimesThree + diff) * 0.5;
+				int m = 3;
 			}
 			else
 			{
@@ -697,7 +699,7 @@ public:
 			return 0.0;
 
 		//apply deviations -- if computeSurprisal, will be caught above and always return 0.0
-		double diff = ComputeDifferenceWithDeviation(0.0, index, false, false, high_accuracy);
+		double diff = ComputeDifferenceWithDeviation(0.0, index, false, high_accuracy);
 		
 		//exponentiate and return with weight
 		return ExponentiateDifferenceTerm(diff, high_accuracy) * featureAttribs[index].weight;
@@ -715,8 +717,7 @@ public:
 
 		//apply deviations
 		if(DoesFeatureHaveDeviation(index))
-			return ComputeDifferenceWithDeviation(diff, index, computeSurprisal,
-				featureAttribs[index].fastApproxDeviation, high_accuracy);
+			return ComputeDifferenceWithDeviation(diff, index, computeSurprisal, high_accuracy);
 		else
 			return diff;
 	}
@@ -729,8 +730,7 @@ public:
 
 		//apply deviations
 		if(DoesFeatureHaveDeviation(index))
-			return ComputeDifferenceWithDeviation(diff, index, computeSurprisal,
-				featureAttribs[index].fastApproxDeviation, high_accuracy);
+			return ComputeDifferenceWithDeviation(diff, index, computeSurprisal, high_accuracy);
 		else
 			return diff;
 	}

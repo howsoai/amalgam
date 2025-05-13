@@ -54,7 +54,7 @@ public:
 	{
 	public:
 		inline FeatureAttributes()
-			: featureType(FDT_CONTINUOUS_NUMERIC),
+			: featureType(FDT_CONTINUOUS_NUMERIC), fastApproxDeviation(false),
 			featureIndex(std::numeric_limits<size_t>::max()), weight(1.0), deviation(0.0),
 			deviationReciprocal(0.0), deviationReciprocalNegative(0.0), deviationTimesThree(0.0),
 			unknownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
@@ -109,6 +109,10 @@ public:
 		//the type of comparison for each feature
 		// this type is 32-bit aligned to make sure the whole structure is aligned
 		FeatureDifferenceType featureType;
+
+		//if true and not highAccuracyDistances, will perform a shortcut surprisal computation skipping computation
+		// of Lukaszyk–Karmowski difference calculations and using a constant instead
+		bool fastApproxDeviation;
 
 		//index of the in an external location
 		size_t featureIndex;
@@ -192,17 +196,6 @@ public:
 	// so 0.5^5 should catch ~97% of the values
 	static constexpr double s_deviation_expansion = 5.0;
 
-	//offset of the lk factor based on s_deviation_expansion, compute via the following code.
-	//TODO: when change to C++20, can make ComputeDifferenceWithDeviation constexpr and can run at compile time
-	// GeneralizedDistanceEvaluator dist_eval;
-	// dist_eval.featureAttribs.resize(1);
-	// dist_eval.featureAttribs[0].deviation = 1;
-	// dist_eval.InitializeParametersAndFeatureParams();
-	// double d = dist_eval.ComputeDifferenceWithDeviation(GeneralizedDistanceEvaluator::s_deviation_expansion, 0, true, true);
-	// d -= GeneralizedDistanceEvaluator::s_deviation_expansion - GeneralizedDistanceEvaluator::s_surprisal_of_laplace;
-	// std::cout << StringManipulation::NumberToString(d) << std::endl;
-	static constexpr double s_deviation_expansion_lk_offset = 0.02695178799634146;
-
 	// 2/sqrt(pi) = 2.0 / std::sqrt(3.141592653589793238462643383279502884L);
 	static constexpr double s_two_over_sqrt_pi = 1.12837916709551257390;
 
@@ -220,16 +213,62 @@ public:
 	static constexpr double s_surprisal_of_laplace_epsilon = s_surprisal_of_laplace * std::numeric_limits<double>::epsilon();
 	static constexpr double s_surprisal_of_gaussian_epsilon = s_surprisal_of_gaussian * std::numeric_limits<double>::epsilon();
 
+	//offset of the lk factor based on s_deviation_expansion, compute via the following code.
+	//TODO: when change to C++20, can make ComputeDifferenceWithDeviation constexpr and can run at compile time
+	// GeneralizedDistanceEvaluator dist_eval;
+	// dist_eval.featureAttribs.resize(1);
+	// dist_eval.featureAttribs[0].deviation = 1;
+	// dist_eval.InitializeParametersAndFeatureParams();
+	// double d = dist_eval.ComputeDifferenceWithDeviation(GeneralizedDistanceEvaluator::s_deviation_expansion, 0, true, true);
+	// d -= GeneralizedDistanceEvaluator::s_deviation_expansion - GeneralizedDistanceEvaluator::s_surprisal_of_laplace;
+	// std::cout << StringManipulation::NumberToString(d) << std::endl;
+	static constexpr double s_deviation_expansion_lk_offset = 0.02695178799634146;
+
 	//computes the Lukaszyk–Karmowski metric deviation component for the Minkowski distance equation given the feature difference and feature deviation
 	// and adds the deviation to diff. assumes deviation is nonnegative
 	//if surprisal_transform is true, then it will transform the result into surprisal space and remove the appropriate assumption of uncertainty
 	// for Laplace, the Laplace distribution has 1 nat worth of information, but additionally, there is a 50/50 chance that the
 	// difference is within the mean absolute error, yielding an overcounting of an additional 1/2 nat.  So the total reduction is 1.5 nats
-	__forceinline double ComputeDifferenceWithDeviation(double diff, size_t feature_index, bool surprisal_transform, bool high_accuracy)
+	//if fast_approx_deviation is true, then it will use an approximation based on a constant
+	__forceinline double ComputeDifferenceWithDeviation(double diff, size_t feature_index, bool surprisal_transform,
+		bool fast_approx_deviation, bool high_accuracy)
 	{
 		auto &feature_attribs = featureAttribs[feature_index];
+
 	#ifdef DISTANCE_USE_LAPLACE_LK_METRIC
-		if(high_accuracy)
+		if(!high_accuracy)
+		{
+			if(fast_approx_deviation)
+			{
+				diff += s_deviation_expansion_lk_offset;
+			}
+			else
+			{
+				//multiplying by the reciprocal is lower accuracy due to rounding differences but faster
+				//cast to float before taking the exponent since it's faster than a double, and because if the
+				//difference divided by the deviation exceeds the single precision floating point range,
+				//it will just set the term to zero, which is appropriate
+				diff += std::exp(static_cast<float>(diff * feature_attribs.deviationReciprocalNegative))
+					* (feature_attribs.deviationTimesThree + diff) * 0.5;
+			}
+
+			if(!surprisal_transform)
+			{
+				return diff;
+			}
+			else //surprisal_transform
+			{
+				//multiplying by the reciprocal is lower accuracy due to rounding differences but faster
+				double difference = (diff * feature_attribs.deviationReciprocal) - s_surprisal_of_laplace;
+
+				//it is possible that the subtraction misses the least significant bit in the mantissa due
+				//to numerical precision, returning a negative number, which causes issues, so clamp to zero if below
+				if(difference > s_surprisal_of_laplace_epsilon)
+					return difference;
+				return 0;
+			}
+		}
+		else //high_accuracy
 		{
 			double deviation = feature_attribs.deviation;
 			diff += std::exp(-diff / deviation) * (feature_attribs.deviationTimesThree + diff) * 0.5;
@@ -248,31 +287,7 @@ public:
 				return 0;
 			}
 		}
-		else //!high_accuracy
-		{
-			//multiplying by the reciprocal is lower accuracy due to rounding differences but faster
-			//cast to float before taking the exponent since it's faster than a double, and because if the
-			//difference divided by the deviation exceeds the single precision floating point range,
-			//it will just set the term to zero, which is appropriate
-			diff += std::exp(static_cast<float>(diff * feature_attribs.deviationReciprocalNegative))
-				* (feature_attribs.deviationTimesThree + diff) * 0.5;
 
-			if(!surprisal_transform)
-			{
-				return diff;
-			}
-			else //surprisal_transform
-			{
-				//multiplying by the reciprocal is lower accuracy due to rounding differences but faster
-				double difference = (diff * feature_attribs.deviationReciprocal) - s_surprisal_of_laplace;
-
-				//it is possible that the subtraction misses the least significant bit in the mantissa due
-				//to numerical precision, returning a negative number, which causes issues, so clamp to zero if below
-				if(difference > s_surprisal_of_laplace_epsilon)
-					return difference;
-				return 0;
-			}
-		}
 	#else
 		const double term = diff / (2.0 * deviation); //diff / (2*sigma)
 		if(high_accuracy)
@@ -682,7 +697,7 @@ public:
 			return 0.0;
 
 		//apply deviations -- if computeSurprisal, will be caught above and always return 0.0
-		double diff = ComputeDifferenceWithDeviation(0.0, index, false, high_accuracy);
+		double diff = ComputeDifferenceWithDeviation(0.0, index, false, false, high_accuracy);
 		
 		//exponentiate and return with weight
 		return ExponentiateDifferenceTerm(diff, high_accuracy) * featureAttribs[index].weight;
@@ -700,7 +715,8 @@ public:
 
 		//apply deviations
 		if(DoesFeatureHaveDeviation(index))
-			return ComputeDifferenceWithDeviation(diff, index, computeSurprisal, high_accuracy);
+			return ComputeDifferenceWithDeviation(diff, index, computeSurprisal,
+				featureAttribs[index].fastApproxDeviation, high_accuracy);
 		else
 			return diff;
 	}
@@ -713,7 +729,8 @@ public:
 
 		//apply deviations
 		if(DoesFeatureHaveDeviation(index))
-			return ComputeDifferenceWithDeviation(diff, index, computeSurprisal, high_accuracy);
+			return ComputeDifferenceWithDeviation(diff, index, computeSurprisal,
+				featureAttribs[index].fastApproxDeviation, high_accuracy);
 		else
 			return diff;
 	}

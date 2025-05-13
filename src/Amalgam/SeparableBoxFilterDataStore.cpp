@@ -1135,7 +1135,13 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			// of the likely values of nearest neighbors
 			if(r_dist_eval.distEvaluator->DoesFeatureHaveDeviation(query_feature_index)
 				&& next_closest_diff < GeneralizedDistanceEvaluator::s_deviation_expansion * feature_attribs.deviation)
+			{
 				should_continue = true;
+
+				//exceeded the deviation expansion, so can enable fast surprisal computation
+				if(r_dist_eval.distEvaluator->computeSurprisal)
+					r_dist_eval.distEvaluator->featureAttribs[query_feature_index].fastApproxDeviation = true;
+			}
 
 			if(!should_continue)
 				break;

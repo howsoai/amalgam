@@ -239,10 +239,6 @@ public:
 			if(feature_attribs.fastApproxDeviation)
 			{
 				diff += s_deviation_expansion_lk_offset;
-
-				double comparison = std::exp(static_cast<float>(diff * feature_attribs.deviationReciprocalNegative))
-					* (feature_attribs.deviationTimesThree + diff) * 0.5;
-				int m = 3;
 			}
 			else
 			{

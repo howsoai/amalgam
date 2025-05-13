@@ -188,6 +188,21 @@ public:
 		ComputeAndStoreCommonDistanceTerms();
 	}
 
+	//going out n deviations is likely to only miss 0.5^s_deviation_expansion
+	// so 0.5^5 should catch ~97% of the values
+	static constexpr double s_deviation_expansion = 5.0;
+
+	//offset of the lk factor based on s_deviation_expansion, compute via the following code.
+	//TODO: when change to C++20, can make ComputeDifferenceWithDeviation constexpr and can run at compile time
+	// GeneralizedDistanceEvaluator dist_eval;
+	// dist_eval.featureAttribs.resize(1);
+	// dist_eval.featureAttribs[0].deviation = 1;
+	// dist_eval.InitializeParametersAndFeatureParams();
+	// double d = dist_eval.ComputeDifferenceWithDeviation(GeneralizedDistanceEvaluator::s_deviation_expansion, 0, true, true);
+	// d -= GeneralizedDistanceEvaluator::s_deviation_expansion - GeneralizedDistanceEvaluator::s_surprisal_of_laplace;
+	// std::cout << StringManipulation::NumberToString(d) << std::endl;
+	static constexpr double s_deviation_expansion_lk_offset = 0.02695178799634146;
+
 	// 2/sqrt(pi) = 2.0 / std::sqrt(3.141592653589793238462643383279502884L);
 	static constexpr double s_two_over_sqrt_pi = 1.12837916709551257390;
 

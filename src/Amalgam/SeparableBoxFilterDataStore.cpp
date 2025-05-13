@@ -1131,10 +1131,10 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			if(diff_delta >= largest_diff_delta / 2 && potential_entities >= 2)
 				should_continue = true;
 
-			//going out n deviations is likely to only miss 0.5^n of the likely values of nearest neighbors
-			// so 0.5^5 should catch ~97% of the values
+			//going out n deviations is likely to only miss 0.5^GeneralizedDistanceEvaluator::s_deviation_expansion
+			// of the likely values of nearest neighbors
 			if(r_dist_eval.distEvaluator->DoesFeatureHaveDeviation(query_feature_index)
-				&& next_closest_diff < 5 * feature_attribs.deviation)
+				&& next_closest_diff < GeneralizedDistanceEvaluator::s_deviation_expansion * feature_attribs.deviation)
 				should_continue = true;
 
 			if(!should_continue)

@@ -579,7 +579,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 				{
 					auto &mcn = from_params->GetMappedChildNodesReference();
 					EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_locale, locale);
-					EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_timezone, timezone);
+					EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_time_zone, timezone);
 				}
 
 				use_number = true;
@@ -898,7 +898,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FORMAT(EvaluableNode *en, 
 			{
 				auto &mcn = to_params->GetMappedChildNodesReference();
 				EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_locale, locale);
-				EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_timezone, timezone);
+				EvaluableNode::GetValueFromMappedChildNodesReference(mcn, ENBISI_time_zone, timezone);
 			}
 
 			double num_secs_from_epoch = 0.0;

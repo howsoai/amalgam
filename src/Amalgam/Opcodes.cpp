@@ -409,7 +409,7 @@ void StringInternPool::InitializeStaticStrings()
 	//format opcode params
 	EmplaceStaticString(ENBISI_sort_keys, "sort_keys");
 	EmplaceStaticString(ENBISI_locale, "locale");
-	EmplaceStaticString(ENBISI_timezone, "timezone");
+	EmplaceStaticString(ENBISI_time_zone, "time_zone");
 
 	//mutate opcode mutation types
 	EmplaceStaticString(ENBISI_change_type, "change_type");

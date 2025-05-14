@@ -250,11 +250,7 @@ public:
 					* (feature_attribs.deviationTimesThree + diff) * 0.5;
 			}
 
-			if(!surprisal_transform)
-			{
-				return diff;
-			}
-			else //surprisal_transform
+			if(surprisal_transform)
 			{
 				//multiplying by the reciprocal is lower accuracy due to rounding differences but faster
 				double difference = (diff * feature_attribs.deviationReciprocal) - s_surprisal_of_laplace;
@@ -265,16 +261,16 @@ public:
 					return difference;
 				return 0;
 			}
+			else //!surprisal_transform
+			{
+				return diff;
+			}
 		}
 		else //high_accuracy
 		{
 			double deviation = feature_attribs.deviation;
 			diff += std::exp(-diff / deviation) * (feature_attribs.deviationTimesThree + diff) * 0.5;
-			if(!surprisal_transform)
-			{
-				return diff;
-			}
-			else //surprisal_transform
+			if(surprisal_transform)
 			{
 				double difference = (diff / deviation) - s_surprisal_of_laplace;
 
@@ -284,6 +280,10 @@ public:
 					return difference;
 				return 0;
 			}
+			else //!surprisal_transform
+			{
+				return diff;
+			}
 		}
 
 	#else
@@ -292,11 +292,7 @@ public:
 		{
 			//2*sigma*(e^(-1*(diff^2)/((2*simga)^2)))/sqrt(pi) - diff*erfc(diff/(2*sigma))
 			diff += s_two_over_sqrt_pi * deviation * std::exp(-term * term) - diff * std::erfc(term);
-			if(!surprisal_transform)
-			{
-				return diff;
-			}
-			else
+			if(surprisal_transform)
 			{
 				double difference = (diff / deviation) - s_surprisal_of_gaussian;
 
@@ -305,6 +301,10 @@ public:
 				if(difference > s_surprisal_of_gaussian_epsilon)
 					return difference;
 				return 0;
+			}
+			else
+			{
+				return diff;
 			}
 		}
 		else //!high_accuracy
@@ -315,11 +315,7 @@ public:
 			//it will just set the term to zero, which is appropriate
 			//2*sigma*(e^(-1*(diff^2)/((2*simga)^2)))/sqrt(pi) - diff*erfc(diff/(2*sigma))
 			diff += s_two_over_sqrt_pi * deviation * std::exp(static_cast<float>(-term * term)) - diff * std::erfc(term);
-			if(!surprisal_transform)
-			{
-				return diff;
-			}
-			else
+			if(surprisal_transform)
 			{
 				//multiplying by the reciprocal is lower accuracy due to rounding differences but faster
 				double difference = (diff * feature_attribs.deviationReciprocal) - s_surprisal_of_gaussian_approx;
@@ -329,6 +325,10 @@ public:
 				if(difference > s_surprisal_of_gaussian_epsilon)
 					return difference;
 				return 0;
+			}
+			else
+			{
+				return diff;
 			}
 		}
 	#endif

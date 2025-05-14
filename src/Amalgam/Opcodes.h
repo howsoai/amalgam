@@ -770,7 +770,7 @@ enum EvaluableNodeBuiltInStringId
 	//format opcode params
 	ENBISI_sort_keys,
 	ENBISI_locale,
-	ENBISI_timezone,
+	ENBISI_time_zone,
 
 	//mutate opcode mutation types
 	ENBISI_change_type,

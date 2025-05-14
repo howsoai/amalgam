@@ -607,8 +607,12 @@ void SeparableBoxFilterDataStore::FindNearestEntities(RepeatedGeneralizedDistanc
 				}
 			}
 		}
+
 		if(need_enabled_indices_recount)
 			enabled_indices.UpdateNumElements();
+
+		//re-fetch last index just in case enabled_indices was modified anywhere above
+		end_index = enabled_indices.GetEndInteger();
 
 		//pick up where left off, already have top_k in sorted_results or are out of entities
 		#pragma omp parallel shared(worst_candidate_distance) if(end_index > 200)
@@ -1135,11 +1139,18 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			if(diff_delta >= largest_diff_delta / 2 && potential_entities >= 2)
 				should_continue = true;
 
-			//going out n deviations is likely to only miss 0.5^n of the likely values of nearest neighbors
-			// so 0.5^5 should catch ~97% of the values
+			//going out n deviations is likely to only miss 0.5^GeneralizedDistanceEvaluator::s_deviation_expansion
+			// of the likely values of nearest neighbors
 			if(r_dist_eval.distEvaluator->DoesFeatureHaveDeviation(query_feature_index)
-				&& next_closest_diff < 5 * feature_attribs.deviation)
+				&& next_closest_diff < GeneralizedDistanceEvaluator::s_deviation_expansion * feature_attribs.deviation)
+			{
 				should_continue = true;
+			}
+			else //exceeded the deviation expansion, so can enable fast surprisal computation
+			{	
+				if(r_dist_eval.distEvaluator->computeSurprisal)
+					r_dist_eval.distEvaluator->featureAttribs[query_feature_index].fastApproxDeviation = true;
+			}
 
 			if(!should_continue)
 				break;

@@ -213,7 +213,13 @@ public:
 	static constexpr double s_surprisal_of_laplace_epsilon = s_surprisal_of_laplace * std::numeric_limits<double>::epsilon();
 	static constexpr double s_surprisal_of_gaussian_epsilon = s_surprisal_of_gaussian * std::numeric_limits<double>::epsilon();
 
-	//offset of the lk factor based on s_deviation_expansion, compute via the following code.
+	//As the values become more dissimilar, the Lukaszyk–Karmowski (LK) metric deviation component asymptotically
+	// converges to zero.  This metric is can be costly to compute relative to other operations.  So instead we
+	// can use an approximation where we compute the constant offset of the LK metric at the cutoff point of
+	// s_deviation_expansion and use this value as a constant to add to all computations larger than this difference.
+	// As the distance grows, this constant, which is already small, becomes insignificant with regard to the difference.
+	// However, adding this constant is necessary to preserve nearest neighbor ordering near the boundary of
+	// s_deviation_expansion.
 	//TODO: when change to C++20, can make ComputeDifferenceWithDeviation constexpr and can run at compile time
 	// GeneralizedDistanceEvaluator dist_eval;
 	// dist_eval.featureAttribs.resize(1);
@@ -238,6 +244,7 @@ public:
 		{
 			if(feature_attribs.fastApproxDeviation)
 			{
+				//use a fast approximation; see the s_deviation_expansion_lk_offset definition for details
 				diff += s_deviation_expansion_lk_offset;
 			}
 			else

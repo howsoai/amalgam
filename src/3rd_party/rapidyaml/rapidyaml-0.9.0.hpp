@@ -198,10 +198,10 @@
 
 /** @file version.hpp */
 
-#define C4CORE_VERSION "0.2.5"
+#define C4CORE_VERSION "0.2.6"
 #define C4CORE_VERSION_MAJOR 0
 #define C4CORE_VERSION_MINOR 2
-#define C4CORE_VERSION_PATCH 5
+#define C4CORE_VERSION_PATCH 6
 
 // amalgamate: removed include of
 // https://github.com/biojppm/c4core/src/c4/export.hpp
@@ -21326,9 +21326,9 @@ using Parser = ParseEngine<EventHandlerTree>;
 
 /** @file version.hpp */
 
-#define RYML_VERSION "0.8.0"
+#define RYML_VERSION "0.9.0"
 #define RYML_VERSION_MAJOR 0
-#define RYML_VERSION_MINOR 8
+#define RYML_VERSION_MINOR 9
 #define RYML_VERSION_PATCH 0
 
 // amalgamate: removed include of
@@ -22928,6 +22928,9 @@ public:
 
     bool has_parent(id_type node) const { return _p(node)->m_parent != NONE; }
 
+    /** true when ancestor is parent or parent of a parent of node */
+    bool is_ancestor(id_type node, id_type ancestor) const;
+
     /** true when key and val are empty, and has no children */
     bool empty(id_type node) const { return ! has_children(node) && _p(node)->m_key.empty() && (( ! (_p(node)->m_type & VAL)) || _p(node)->m_val.empty()); }
 
@@ -23071,33 +23074,23 @@ public:
      * position in the tree's node array. */
     void reorder();
 
-    /** Resolve references (aliases <- anchors) in the tree.
-     *
-     * Dereferencing is opt-in; after parsing, Tree::resolve() has to
-     * be called explicitly for obtaining resolved references in the
-     * tree. This method will @ref ReferenceResolver::resolve()
-     * to resolve all references and substitute the anchored values in
-     * place of the reference.
-     *
-     * This method first does a full traversal of the tree to gather all
-     * anchors and references in a separate collection, then it goes through
-     * that collection to locate the names, which it does by obeying the YAML
-     * standard diktat that "an alias node refers to the most recent node in
-     * the serialization having the specified anchor"
-     *
-     * So, depending on the number of anchor/alias nodes, this is a
-     * potentially expensive operation, with a best-case linear complexity
-     * (from the initial traversal). This potential cost is the reason for
-     * requiring an explicit call.
-     *
-     * @see ReferenceResolver::resolve()
-     */
-    void resolve(ReferenceResolver *C4_RESTRICT rr);
-
-    /** Resolve references using a throw-away resolver. */
-    void resolve();
-
     /** @} */
+
+public:
+
+    /** @name anchors and references/aliases */
+    /** @{ */
+
+    /** Resolve references (aliases <- anchors), by forwarding to @ref
+     * ReferenceResolver::resolve(); refer to @ref
+     * ReferenceResolver::resolve() for further details. */
+    void resolve(ReferenceResolver *C4_RESTRICT rr, bool clear_anchors=true);
+
+    /** Resolve references (aliases <- anchors), by forwarding to @ref
+     * ReferenceResolver::resolve(); refer to @ref
+     * ReferenceResolver::resolve() for further details. This overload
+     * uses a throwaway resolver object. */
+    void resolve(bool clear_anchors=true);
 
 public:
 
@@ -23268,9 +23261,6 @@ public:
      * @return the index of the last duplicated child */
     id_type duplicate_children(Tree const* src, id_type node, id_type parent, id_type after);
 
-    void duplicate_contents(id_type node, id_type where);
-    void duplicate_contents(Tree const* src, id_type node, id_type where);
-
     /** duplicate the node's children (but not the node) in a new parent, but
      * omit repetitions where a duplicated node has the same key (in maps) or
      * value (in seqs). If one of the duplicated children has the same key
@@ -23278,6 +23268,9 @@ public:
      * that is placed closest to the end will prevail. */
     id_type duplicate_children_no_rep(id_type node, id_type parent, id_type after);
     id_type duplicate_children_no_rep(Tree const* src, id_type node, id_type parent, id_type after);
+
+    void duplicate_contents(id_type node, id_type where);
+    void duplicate_contents(Tree const* src, id_type node, id_type where);
 
 public:
 
@@ -24382,6 +24375,7 @@ public:
 
     C4_ALWAYS_INLINE bool is_root()    const RYML_NOEXCEPT { _C4RR(); return tree_->is_root(id_); } /**< Forward to @ref Tree::is_root(). Node must be readable. */
     C4_ALWAYS_INLINE bool has_parent() const RYML_NOEXCEPT { _C4RR(); return tree_->has_parent(id_); } /**< Forward to @ref Tree::has_parent()  Node must be readable. */
+    C4_ALWAYS_INLINE bool is_ancestor(ConstImpl const& ancestor) const RYML_NOEXCEPT { _C4RR(); return tree_->is_ancestor(id_, ancestor.m_id); } /**< Forward to @ref Tree::is_ancestor()  Node must be readable. */
 
     C4_ALWAYS_INLINE bool has_child(ConstImpl const& n) const RYML_NOEXCEPT { _C4RR(); return n.readable() ? tree_->has_child(id_, n.m_id) : false; } /**< Forward to @ref Tree::has_child(). Node must be readable. */
     C4_ALWAYS_INLINE bool has_child(id_type node) const RYML_NOEXCEPT { _C4RR(); return tree_->has_child(id_, node); } /**< Forward to @ref Tree::has_child(). Node must be readable. */
@@ -26148,19 +26142,6 @@ C4_SUPPRESS_WARNING_MSVC_POP
 #include "./node.hpp"
 #endif
 
-#define RYML_DEPRECATE_EMIT                                             \
-    RYML_DEPRECATED("use emit_yaml() instead. "                         \
-                    "See https://github.com/biojppm/rapidyaml/issues/120")
-#define RYML_DEPRECATE_EMITRS                                           \
-    RYML_DEPRECATED("use emitrs_yaml() instead. "                       \
-                    "See https://github.com/biojppm/rapidyaml/issues/120")
-
-#ifdef emit
-#error "emit is defined, likely from a Qt include. "                    \
-    "This will cause a compilation error. "                             \
-    "See https://github.com/biojppm/rapidyaml/issues/120"
-#endif
-
 
 C4_SUPPRESS_WARNING_GCC_CLANG_WITH_PUSH("-Wold-style-cast")
 
@@ -26962,6 +26943,21 @@ CharOwningContainer emitrs_json(ConstNodeRef const& n, EmitOptions const& opts={
 
 /** @cond dev */
 
+#define RYML_DEPRECATE_EMIT                                             \
+    RYML_DEPRECATED("use emit_yaml() instead. "                         \
+                    "See https://github.com/biojppm/rapidyaml/issues/120")
+#define RYML_DEPRECATE_EMITRS                                           \
+    RYML_DEPRECATED("use emitrs_yaml() instead. "                       \
+                    "See https://github.com/biojppm/rapidyaml/issues/120")
+
+// workaround for Qt emit which is a macro;
+// see https://github.com/biojppm/rapidyaml/issues/120.
+// emit is defined in qobjectdefs.h (as an empty define).
+#ifdef emit
+#define RYML_TMP_EMIT_
+#undef emit
+#endif
+
 RYML_DEPRECATE_EMIT inline size_t emit(Tree const& t, id_type id, FILE *f)
 {
     return emit_yaml(t, id, f);
@@ -26987,6 +26983,11 @@ RYML_DEPRECATE_EMIT inline substr emit(ConstNodeRef const& r, substr buf, bool e
 {
     return emit_yaml(r, buf, error_on_excess);
 }
+
+#ifdef RYML_TMP_EMIT_
+#define emit
+#undef RYML_TMP_EMIT_
+#endif
 
 template<class CharOwningContainer>
 RYML_DEPRECATE_EMITRS substr emitrs(Tree const& t, id_type id, CharOwningContainer * cont)
@@ -27018,6 +27019,7 @@ RYML_DEPRECATE_EMITRS CharOwningContainer emitrs(ConstNodeRef const& n)
 {
     return emitrs_yaml<CharOwningContainer>(n);
 }
+
 /** @endcond */
 
 
@@ -30990,6 +30992,7 @@ private:
         size_t num_entries;
     };
 
+    void _handle_colon();
     void _add_annotation(Annotation *C4_RESTRICT dst, csubstr str, size_t indentation, size_t line);
     void _clear_annotations(Annotation *C4_RESTRICT dst);
     bool _has_pending_annotations() const { return m_pending_tags.num_entries || m_pending_anchors.num_entries; }
@@ -31029,6 +31032,7 @@ private:
 
     bool m_was_inside_qmrk;
     bool m_doc_empty = true;
+    size_t m_prev_colon = npos;
 
     Encoding_e m_encoding = UTF8;
 
@@ -31229,13 +31233,18 @@ namespace yml {
  * @{
  */
 
-/** Reusable object to resolve references/aliases in the tree. */
+/** Reusable object to resolve references/aliases in a @ref Tree. */
 struct RYML_EXPORT ReferenceResolver
 {
     ReferenceResolver() = default;
 
     /** Resolve references: for each reference, look for a matching
      * anchor, and copy its contents to the ref node.
+     *
+     * @p tree the subject tree
+     *
+     * @p clear_anchors whether to clear existing anchors after
+     * resolving
      *
      * This method first does a full traversal of the tree to gather
      * all anchors and references in a separate collection, then it
@@ -31246,11 +31255,21 @@ struct RYML_EXPORT ReferenceResolver
      *
      * So, depending on the number of anchor/alias nodes, this is a
      * potentially expensive operation, with a best-case linear
-     * complexity (from the initial traversal).
+     * complexity (from the initial traversal). This potential cost is
+     * one of the reasons for requiring an explicit call.
      *
-     * @todo verify sanity against anchor-ref attacks (https://en.wikipedia.org/wiki/Billion_laughs_attack )
+     * The @ref Tree has an `Tree::resolve()` overload set forwarding
+     * here. Previously this operation was done there, using a
+     * discarded object; using this separate class offers opportunity
+     * for reuse of the object.
+     *
+     * @warning resolving references opens an attack vector when the
+     * data is malicious or severely malformed, as the tree can expand
+     * exponentially. See for example the [Billion Laughs
+     * Attack](https://en.wikipedia.org/wiki/Billion_laughs_attack).
+     *
      */
-    void resolve(Tree *t_);
+    void resolve(Tree *tree, bool clear_anchors=true);
 
 public:
 
@@ -31267,13 +31286,12 @@ public:
     };
 
     void reset_(Tree *t_);
+    void resolve_();
     void gather_anchors_and_refs_();
     void gather_anchors_and_refs__(id_type n);
     id_type count_anchors_and_refs_(id_type n);
 
-    id_type lookup_(RefData *C4_RESTRICT ra);
-
-public:
+    id_type lookup_(RefData const* C4_RESTRICT ra);
 
     Tree *C4_RESTRICT m_tree;
     /** We're using this stack purely as an array. */
@@ -33685,50 +33703,65 @@ id_type Tree::duplicate_children_no_rep(Tree const *src, id_type node, id_type p
     id_type prev = after;
     for(id_type i = src->first_child(node); i != NONE; i = src->next_sibling(i))
     {
+        _c4dbgpf("duplicate_no_rep: {} -> {}/{}", i, parent, prev);
+        _RYML_CB_CHECK(m_callbacks, this != src || (parent != i && !is_ancestor(parent, i)));
         if(is_seq(parent))
         {
-            prev = duplicate(i, parent, prev);
+            _c4dbgpf("duplicate_no_rep: {} is seq", parent);
+            prev = duplicate(src, i, parent, prev);
         }
         else
         {
+            _c4dbgpf("duplicate_no_rep: {} is map", parent);
             _RYML_CB_ASSERT(m_callbacks, is_map(parent));
             // does the parent already have a node with key equal to that of the current duplicate?
-            id_type rep = NONE, rep_pos = NONE;
-            for(id_type j = first_child(parent), jcount = 0; j != NONE; ++jcount, j = next_sibling(j))
+            id_type dstnode_dup = NONE, dstnode_dup_pos = NONE;
             {
-                if(key(j) == key(i))
+                csubstr srckey = src->key(i);
+                for(id_type j = first_child(parent), jcount = 0; j != NONE; ++jcount, j = next_sibling(j))
                 {
-                    rep = j;
-                    rep_pos = jcount;
-                    break;
+                    if(key(j) == srckey)
+                    {
+                        _c4dbgpf("duplicate_no_rep: found matching key '{}' src={}/{} dst={}/{}", srckey, node, i, parent, j);
+                        dstnode_dup = j;
+                        dstnode_dup_pos = jcount;
+                        break;
+                    }
                 }
             }
-            if(rep == NONE) // there is no repetition; just duplicate
+            _c4dbgpf("duplicate_no_rep: dstnode_dup={} dstnode_dup_pos={} after_pos={}", dstnode_dup, dstnode_dup_pos, after_pos);
+            if(dstnode_dup == NONE) // there is no repetition; just duplicate
             {
+                _c4dbgpf("duplicate_no_rep: no repetition, just duplicate i={} parent={} prev={}", i, parent, prev);
                 prev = duplicate(src, i, parent, prev);
             }
             else  // yes, there is a repetition
             {
-                if(after_pos != NONE && rep_pos < after_pos)
+                if(after_pos != NONE && dstnode_dup_pos <= after_pos)
                 {
-                    // rep is located before the node which will be inserted,
+                    // the dst duplicate is located before the node which will be inserted,
                     // and will be overridden by the duplicate. So replace it.
-                    remove(rep);
+                    _c4dbgpf("duplicate_no_dstnode_dup: replace {}/{} with {}/{}", parent, dstnode_dup, node, i);
+                    if(prev == dstnode_dup)
+                        prev = prev_sibling(dstnode_dup);
+                    remove(dstnode_dup);
                     prev = duplicate(src, i, parent, prev);
                 }
                 else if(prev == NONE)
                 {
-                    // first iteration with prev = after = NONE and repetition
-                    prev = rep;
+                    _c4dbgpf("duplicate_no_dstnode_dup: {}=prev <- {}", prev, dstnode_dup);
+                    // first iteration with prev = after = NONE and dstnode_dupetition
+                    prev = dstnode_dup;
                 }
-                else if(rep != prev)
+                else if(dstnode_dup != prev)
                 {
-                    // rep is located after the node which will be inserted
-                    // and overrides it. So move the rep into this node's place.
-                    move(rep, prev);
-                    prev = rep;
+                    // dstnode_dup is located after the node which will be inserted
+                    // and overrides it. So move the dstnode_dup into this node's place.
+                    _c4dbgpf("duplicate_no_dstnode_dup: move({}, {})", dstnode_dup, prev);
+                    move(dstnode_dup, prev);
+                    prev = dstnode_dup;
                 }
-            } // there's a repetition
+            } // there's a dstnode_dupetition
         }
     }
 
@@ -33815,19 +33848,19 @@ void Tree::merge_with(Tree const *src, id_type src_node, id_type dst_node)
 
 //-----------------------------------------------------------------------------
 
-void Tree::resolve()
+void Tree::resolve(bool clear_anchors)
 {
     if(m_size == 0)
         return;
     ReferenceResolver rr;
-    resolve(&rr);
+    resolve(&rr, clear_anchors);
 }
 
-void Tree::resolve(ReferenceResolver *C4_RESTRICT rr)
+void Tree::resolve(ReferenceResolver *C4_RESTRICT rr, bool clear_anchors)
 {
     if(m_size == 0)
         return;
-    rr->resolve(this);
+    rr->resolve(this, clear_anchors);
 }
 
 
@@ -33937,6 +33970,19 @@ id_type Tree::depth_asc(id_type node) const
         node = parent(node);
     }
     return depth;
+}
+
+bool Tree::is_ancestor(id_type node, id_type ancestor) const
+{
+    _RYML_CB_ASSERT(m_callbacks, node != NONE);
+    id_type p = parent(node);
+    while(p != NONE)
+    {
+        if(p == ancestor)
+            return true;
+        p = parent(p);
+    }
+    return false;
 }
 
 
@@ -34810,6 +34856,7 @@ ParseEngine<EventHandler>::ParseEngine(EventHandler *evt_handler, ParserOptions 
     , m_pending_tags()
     , m_was_inside_qmrk(false)
     , m_doc_empty(false)
+    , m_prev_colon(npos)
     , m_encoding(NOBOM)
     , m_newline_offsets()
     , m_newline_offsets_size(0)
@@ -34829,6 +34876,7 @@ ParseEngine<EventHandler>::ParseEngine(ParseEngine &&that) noexcept
     , m_pending_tags(that.m_pending_tags)
     , m_was_inside_qmrk(false)
     , m_doc_empty(false)
+    , m_prev_colon(npos)
     , m_encoding(NOBOM)
     , m_newline_offsets(that.m_newline_offsets)
     , m_newline_offsets_size(that.m_newline_offsets_size)
@@ -34848,6 +34896,7 @@ ParseEngine<EventHandler>::ParseEngine(ParseEngine const& that)
     , m_pending_tags(that.m_pending_tags)
     , m_was_inside_qmrk(false)
     , m_doc_empty(false)
+    , m_prev_colon(npos)
     , m_encoding(NOBOM)
     , m_newline_offsets()
     , m_newline_offsets_size()
@@ -34875,6 +34924,7 @@ ParseEngine<EventHandler>& ParseEngine<EventHandler>::operator=(ParseEngine &&th
     m_pending_tags = that.m_pending_tags;
     m_was_inside_qmrk = that.m_was_inside_qmrk;
     m_doc_empty = that.m_doc_empty;
+    m_prev_colon = that.m_prev_colon;
     m_encoding = that.m_encoding;
     m_newline_offsets = (that.m_newline_offsets);
     m_newline_offsets_size = (that.m_newline_offsets_size);
@@ -34898,6 +34948,7 @@ ParseEngine<EventHandler>& ParseEngine<EventHandler>::operator=(ParseEngine cons
         m_pending_tags = that.m_pending_tags;
         m_was_inside_qmrk = that.m_was_inside_qmrk;
         m_doc_empty = that.m_doc_empty;
+        m_prev_colon = that.m_prev_colon;
         m_encoding = that.m_encoding;
         if(that.m_newline_offsets_capacity > m_newline_offsets_capacity)
             _resize_locations(that.m_newline_offsets_capacity);
@@ -34921,6 +34972,7 @@ void ParseEngine<EventHandler>::_clr()
     m_pending_tags = {};
     m_was_inside_qmrk = false;
     m_doc_empty = true;
+    m_prev_colon = npos;
     m_encoding = NOBOM;
     m_newline_offsets = {};
     m_newline_offsets_size = {};
@@ -34951,6 +35003,7 @@ void ParseEngine<EventHandler>::_reset()
     m_pending_tags = {};
     m_doc_empty = true;
     m_was_inside_qmrk = false;
+    m_prev_colon = npos;
     m_encoding = NOBOM;
     if(m_options.locations())
     {
@@ -36158,9 +36211,10 @@ void ParseEngine<EventHandler>::_end2_doc()
 {
     _c4dbgp("doc: end");
     _RYML_CB_ASSERT(m_evt_handler->m_stack.m_callbacks, has_any(RDOC));
-    if(m_doc_empty)
+    if(m_doc_empty || (m_pending_tags.num_entries || m_pending_anchors.num_entries))
     {
         _c4dbgp("doc was empty; add empty val");
+        _handle_annotations_before_blck_val_scalar();
         m_evt_handler->set_val_scalar_plain_empty();
     }
     m_evt_handler->end_doc();
@@ -36170,9 +36224,10 @@ template<class EventHandler>
 void ParseEngine<EventHandler>::_end2_doc_expl()
 {
     _c4dbgp("doc: end");
-    if(m_doc_empty)
+    if(m_doc_empty || (m_pending_tags.num_entries || m_pending_anchors.num_entries))
     {
         _c4dbgp("doc: no children; add empty val");
+        _handle_annotations_before_blck_val_scalar();
         m_evt_handler->set_val_scalar_plain_empty();
     }
     m_evt_handler->end_doc_expl();
@@ -36194,6 +36249,14 @@ void ParseEngine<EventHandler>::_maybe_end_doc()
     {
         _c4dbgp("doc must be finished");
         _end2_doc();
+    }
+    else if(m_doc_empty && (m_pending_tags.num_entries || m_pending_anchors.num_entries))
+    {
+        _c4dbgp("no doc to finish, but pending annotations");
+        m_evt_handler->begin_doc();
+        _handle_annotations_before_blck_val_scalar();
+        m_evt_handler->set_val_scalar_plain_empty();
+        m_evt_handler->end_doc();
     }
 }
 
@@ -38654,6 +38717,18 @@ void ParseEngine<EventHandler>::_handle_flow_skip_whitespace()
 
 
 template<class EventHandler>
+void ParseEngine<EventHandler>::_handle_colon()
+{
+    size_t curr = m_evt_handler->m_curr->pos.line;
+    if(m_prev_colon != npos)
+    {
+        if(curr == m_prev_colon)
+            _c4err("two colons on same line");
+    }
+    m_prev_colon = curr;
+}
+
+template<class EventHandler>
 void ParseEngine<EventHandler>::_add_annotation(Annotation *C4_RESTRICT dst, csubstr str, size_t indentation, size_t line)
 {
     _c4dbgpf("store annotation[{}]: '{}' indentation={} line={}", dst->num_entries, str, indentation, line);
@@ -40242,6 +40317,7 @@ seqblck_start:
                 _c4dbgp("seqblck[RVAL]: start mapblck, set scalar as key");
                 addrem_flags(RNXT, RVAL);
                 _handle_annotations_before_start_mapblck(startline);
+                _handle_colon();
                 m_evt_handler->begin_map_val_block();
                 _handle_annotations_and_indentation_after_start_mapblck(startindent, startline);
                 csubstr maybe_filtered = _maybe_filter_key_scalar_squot(sc); // KEY!
@@ -40268,6 +40344,7 @@ seqblck_start:
                 _c4dbgp("seqblck[RVAL]: start mapblck, set scalar as key");
                 addrem_flags(RNXT, RVAL);
                 _handle_annotations_before_start_mapblck(startline);
+                _handle_colon();
                 m_evt_handler->begin_map_val_block();
                 _handle_annotations_and_indentation_after_start_mapblck(startindent, startline);
                 csubstr maybe_filtered = _maybe_filter_key_scalar_dquot(sc); // KEY!
@@ -40318,6 +40395,7 @@ seqblck_start:
                     _c4dbgp("seqblck[RVAL]: start mapblck, set scalar as key");
                     addrem_flags(RNXT, RVAL);
                     _handle_annotations_before_start_mapblck(startline);
+                    _handle_colon();
                     m_evt_handler->begin_map_val_block();
                     _handle_annotations_and_indentation_after_start_mapblck(startindent, startline);
                     csubstr maybe_filtered = _maybe_filter_key_scalar_plain(sc, m_evt_handler->m_curr->indref);  // KEY!
@@ -40348,6 +40426,7 @@ seqblck_start:
         {
             _c4dbgp("seqblck[RVAL]: start child seqflow");
             addrem_flags(RNXT, RVAL);
+            _handle_annotations_before_blck_val_scalar();
             m_evt_handler->begin_seq_val_flow();
             addrem_flags(FLOW|RVAL, BLCK|RNXT);
             _line_progressed(1);
@@ -40394,6 +40473,7 @@ seqblck_start:
             _c4dbgp("seqblck[RVAL]: start child mapblck with empty key");
             addrem_flags(RNXT, RVAL);
             _handle_annotations_before_start_mapblck(startline);
+            _handle_colon();
             m_evt_handler->begin_map_val_block();
             _handle_annotations_and_indentation_after_start_mapblck(startindent, startline);
             m_evt_handler->set_key_scalar_plain_empty();
@@ -41070,6 +41150,7 @@ mapblck_start:
                     _c4dbgp("mapblck[RVAL]: start new block map, set scalar as key");
                     _handle_annotations_before_start_mapblck(startline);
                     addrem_flags(RNXT, RVAL);
+                    _handle_colon();
                     m_evt_handler->begin_map_val_block();
                     _handle_annotations_and_indentation_after_start_mapblck(startindent, startline);
                     csubstr maybe_filtered = _maybe_filter_key_scalar_squot(sc); // KEY!
@@ -41110,6 +41191,7 @@ mapblck_start:
                     _c4dbgp("mapblck[RVAL]: start new block map, set scalar as key");
                     _handle_annotations_before_start_mapblck(startline);
                     addrem_flags(RNXT, RVAL);
+                    _handle_colon();
                     m_evt_handler->begin_map_val_block();
                     _handle_annotations_and_indentation_after_start_mapblck(startindent, startline);
                     csubstr maybe_filtered = _maybe_filter_key_scalar_dquot(sc); // KEY!
@@ -41171,6 +41253,7 @@ mapblck_start:
                     _c4dbgpf("mapblck[RVAL]: start new block map, set scalar as key {}", m_evt_handler->m_curr->indref);
                     addrem_flags(RNXT, RVAL);
                     _handle_annotations_before_start_mapblck(startline);
+                    _handle_colon();
                     m_evt_handler->begin_map_val_block();
                     _handle_annotations_and_indentation_after_start_mapblck(startindent, startline);
                     csubstr maybe_filtered = _maybe_filter_key_scalar_plain(sc, m_evt_handler->m_curr->indref); // KEY!
@@ -41346,14 +41429,27 @@ mapblck_start:
                 m_evt_handler->set_val_scalar_plain_empty();
                 m_evt_handler->add_sibling();
                 m_evt_handler->set_key_scalar_plain_empty();
-                _line_progressed(1);
-                _maybe_skip_whitespace_tokens();
-                goto mapblck_again;
+            }
+            else if(startindent > m_evt_handler->m_curr->indref)
+            {
+                _c4dbgp("mapblck[RVAL]: start val mapblck");
+                addrem_flags(RNXT, RVAL);
+                _handle_annotations_before_start_mapblck(startline);
+                _handle_colon();
+                m_evt_handler->begin_map_val_block();
+                _handle_annotations_and_indentation_after_start_mapblck(startindent, startline);
+                m_evt_handler->set_key_scalar_plain_empty();
+                _set_indentation(m_evt_handler->m_curr->line_contents.indentation);
+                // keep the child state on RVAL
+                addrem_flags(RVAL, RNXT);
             }
             else
             {
                 _c4err("parse error");
             }
+            _line_progressed(1);
+            _maybe_skip_whitespace_tokens();
+            goto mapblck_again;
         }
         else if(first == '.')
         {
@@ -41706,6 +41802,7 @@ mapblck_start:
             {
                 _c4dbgp("mapblck[QMRK]: start child seqblck (!)");
                 addrem_flags(RKCL, RKEY|QMRK);
+                _handle_annotations_before_blck_key_scalar();
                 m_evt_handler->begin_seq_key_block();
                 addrem_flags(RVAL|RSEQ, RMAP|RKCL|QMRK);
                 _set_indentation(startindent);
@@ -42067,13 +42164,17 @@ void ParseEngine<EventHandler>::_handle_unk()
         if(m_doc_empty)
         {
             _c4dbgp("it's a map with an empty key");
+            const size_t startindent = m_evt_handler->m_curr->line_contents.indentation; // save
+            const size_t startline = m_evt_handler->m_curr->pos.line; // save
             m_evt_handler->check_trailing_doc_token();
             _maybe_begin_doc();
-            _handle_annotations_before_blck_val_scalar();
+            _handle_annotations_before_start_mapblck(startline);
+            _handle_colon();
             m_evt_handler->begin_map_val_block();
+            _handle_annotations_and_indentation_after_start_mapblck(startindent, startline);
             m_evt_handler->set_key_scalar_plain_empty();
             m_doc_empty = false;
-            _save_indentation();
+            _set_indentation(startindent);
         }
         else
         {
@@ -42165,6 +42266,7 @@ void ParseEngine<EventHandler>::_handle_unk()
             {
                 _c4dbgp("runk: start new block map, set scalar as key");
                 _handle_annotations_before_start_mapblck(startline);
+                _handle_colon();
                 m_evt_handler->begin_map_val_block();
                 _handle_annotations_and_indentation_after_start_mapblck(startindent, startline);
                 csubstr maybe_filtered = _maybe_filter_key_scalar_squot(sc);
@@ -42194,6 +42296,7 @@ void ParseEngine<EventHandler>::_handle_unk()
                 _c4dbgp("runk: start new block map, set double-quoted scalar as key");
                 _handle_annotations_before_start_mapblck(startline);
                 m_evt_handler->begin_map_val_block();
+                _handle_colon();
                 _handle_annotations_and_indentation_after_start_mapblck(startindent, startline);
                 csubstr maybe_filtered = _maybe_filter_key_scalar_dquot(sc);
                 m_evt_handler->set_key_scalar_dquoted(maybe_filtered);
@@ -42262,6 +42365,7 @@ void ParseEngine<EventHandler>::_handle_unk()
             {
                 _c4dbgp("runk: start new block map, set scalar as key");
                 _handle_annotations_before_start_mapblck(startline);
+                _handle_colon();
                 m_evt_handler->begin_map_val_block();
                 _handle_annotations_and_indentation_after_start_mapblck(startindent, startline);
                 csubstr maybe_filtered = _maybe_filter_key_scalar_plain(sc, startindent);
@@ -42884,13 +42988,6 @@ void ParseEngine<EventHandler>::parse_in_place_ev(csubstr filename, substr src)
 #endif /* C4_YML_REFERENCE_RESOLVER_HPP_ */
 
 // amalgamate: removed include of
-// https://github.com/biojppm/rapidyaml/src/c4/dump.hpp
-//#include "c4/dump.hpp" // this is needed to resolve a function in the next header
-#if !defined(C4_DUMP_HPP_) && !defined(_C4_DUMP_HPP_)
-#error "amalgamate: file c4/dump.hpp must have been included at this point"
-#endif /* C4_DUMP_HPP_ */
-
-// amalgamate: removed include of
 // https://github.com/biojppm/rapidyaml/src/c4/yml/common.hpp
 //#include "c4/yml/common.hpp"
 #if !defined(C4_YML_COMMON_HPP_) && !defined(_C4_YML_COMMON_HPP_)
@@ -42947,7 +43044,7 @@ void ReferenceResolver::gather_anchors_and_refs__(id_type n)
             {
                 if(m_tree->is_val_ref(n))
                 {
-                    _c4dbgpf("node[{}]: val ref, inheriting!", n);
+                    _c4dbgpf("node[{}]: instance[{}]: val ref, inheriting! '{}'", n, m_refs.size(), m_tree->val_ref(n));
                     m_refs.push({VALREF, n, NONE, NONE, NONE, NONE});
                     //m_refs.push({KEYREF, n, NONE, NONE, NONE, NONE});
                 }
@@ -42963,7 +43060,7 @@ void ReferenceResolver::gather_anchors_and_refs__(id_type n)
                 _c4dbgpf("node[{}]: is seq!", n);
                 for(id_type ich = m_tree->first_child(n); ich != NONE; ich = m_tree->next_sibling(ich))
                 {
-                    _c4dbgpf("node[{}]: val ref, inheriting multiple: {}", n, ich);
+                    _c4dbgpf("node[{}]: instance [{}]: val ref, inheriting multiple: {} '{}'", n, m_refs.size(), ich, m_tree->val_ref(ich));
                     if(m_tree->is_container(ich))
                     {
                         detail::_report_err(m_tree->m_callbacks, "ERROR: node {} child {}: refs for << cannot be containers.'", n, ich);
@@ -42981,7 +43078,7 @@ void ReferenceResolver::gather_anchors_and_refs__(id_type n)
         }
         else if(m_tree->is_key_ref(n))
         {
-            _c4dbgpf("node[{}]: key ref: '{}'", n, m_tree->key_ref(n));
+            _c4dbgpf("node[{}]: instance[{}]: key ref: '{}', key='{}'", n, m_refs.size(), m_tree->key_ref(n), m_tree->has_key(n) ? m_tree->key(n) : csubstr{"-"});
             _RYML_CB_ASSERT(m_tree->m_callbacks, m_tree->key(n) != "<<");
             _RYML_CB_CHECK(m_tree->m_callbacks, (!m_tree->has_key(n)) || m_tree->key(n).ends_with(m_tree->key_ref(n)));
             m_refs.push({KEYREF, n, NONE, NONE, NONE, NONE});
@@ -42990,20 +43087,20 @@ void ReferenceResolver::gather_anchors_and_refs__(id_type n)
     // val ref
     if(m_tree->is_val_ref(n) && (!m_tree->has_key(n) || m_tree->key(n) != "<<"))
     {
-        _c4dbgpf("node[{}]: val ref: '{}'", n, m_tree->val_ref(n));
+        _c4dbgpf("node[{}]: instance[{}]: val ref: '{}'", n, m_refs.size(), m_tree->val_ref(n));
         RYML_CHECK((!m_tree->has_val(n)) || m_tree->val(n).ends_with(m_tree->val_ref(n)));
         m_refs.push({VALREF, n, NONE, NONE, NONE, NONE});
     }
     // anchors
     if(m_tree->has_key_anchor(n))
     {
-        _c4dbgpf("node[{}]: key anchor: '{}'", n, m_tree->key_anchor(n));
+        _c4dbgpf("node[{}]: instance[{}]: key anchor: '{}'", n, m_refs.size(), m_tree->key_anchor(n));
         RYML_CHECK(m_tree->has_key(n));
         m_refs.push({KEYANCH, n, NONE, NONE, NONE, NONE});
     }
     if(m_tree->has_val_anchor(n))
     {
-        _c4dbgpf("node[{}]: val anchor: '{}'", n, m_tree->val_anchor(n));
+        _c4dbgpf("node[{}]: instance[{}]: val anchor: '{}'", n, m_refs.size(), m_tree->val_anchor(n));
         RYML_CHECK(m_tree->has_val(n) || m_tree->is_container(n));
         m_refs.push({VALANCH, n, NONE, NONE, NONE, NONE});
     }
@@ -43041,25 +43138,38 @@ void ReferenceResolver::gather_anchors_and_refs_()
     _c4dbgp("gathering anchors and refs: finished");
 }
 
-id_type ReferenceResolver::lookup_(RefData *C4_RESTRICT ra)
+id_type ReferenceResolver::lookup_(RefData const* C4_RESTRICT ra)
 {
+    #ifdef RYML_DBG
+    id_type instance = static_cast<id_type>(ra-m_refs.m_stack);
+    id_type node = ra->node;
+    #endif
     RYML_ASSERT(ra->type.is_key_ref() || ra->type.is_val_ref());
     RYML_ASSERT(ra->type.is_key_ref() != ra->type.is_val_ref());
     csubstr refname;
+    _c4dbgpf("instance[{}:node{}]: lookup from node={}...", instance, node, ra->node);
     if(ra->type.is_val_ref())
     {
         refname = m_tree->val_ref(ra->node);
+        _c4dbgpf("instance[{}:node{}]: valref: '{}'", instance, node, refname);
     }
     else
     {
         RYML_ASSERT(ra->type.is_key_ref());
         refname = m_tree->key_ref(ra->node);
+        _c4dbgpf("instance[{}:node{}]: keyref: '{}'", instance, node, refname);
     }
     while(ra->prev_anchor != NONE)
     {
         ra = &m_refs[ra->prev_anchor];
+        _c4dbgpf("instance[{}:node{}]: lookup '{}' at [{}:node{}]: keyref='{}' valref='{}'", instance, node, refname, ra-m_refs.m_stack, ra->node,
+                 (m_tree->has_key_anchor(ra->node) ? m_tree->key_anchor(ra->node) : csubstr("~")),
+                 (m_tree->has_val_anchor(ra->node) ? m_tree->val_anchor(ra->node) : csubstr("~")));
         if(m_tree->has_anchor(ra->node, refname))
+        {
+            _c4dbgpf("instance[{}:node{}]: got it at [{}:node{}]!", instance, node, ra-m_refs.m_stack, ra->node);
             return ra->node;
+        }
     }
     detail::_report_err(m_tree->m_callbacks, "ERROR: anchor not found: '{}'", refname);
     C4_UNREACHABLE_AFTER_ERR();
@@ -43071,22 +43181,12 @@ void ReferenceResolver::reset_(Tree *t_)
     {
         m_refs.m_callbacks = t_->callbacks();
     }
-    m_refs.clear();
     m_tree = t_;
+    m_refs.clear();
 }
 
-void ReferenceResolver::resolve(Tree *t_)
+void ReferenceResolver::resolve_()
 {
-    _c4dbgp("resolving references...");
-
-    reset_(t_);
-
-    _c4dbg_tree("unresolved tree", *m_tree);
-
-    gather_anchors_and_refs_();
-    if(m_refs.empty())
-        return;
-
     /* from the specs: "an alias node refers to the most recent
      * node in the serialization having the specified anchor". So
      * we need to start looking upward from ref nodes.
@@ -43109,13 +43209,13 @@ void ReferenceResolver::resolve(Tree *t_)
     for(id_type i = 0, e = m_refs.size(); i < e; ++i)
     {
         RefData const& C4_RESTRICT refdata = m_refs[i];
-        _c4dbgpf("instance {}/{}...", i, e);
+        _c4dbgpf("instance[{}:node{}]: {}/{}...", i, refdata.node, i+1, e);
         if( ! refdata.type.is_ref())
             continue;
-        _c4dbgpf("instance {} is reference!", i);
+        _c4dbgpf("instance[{}:node{}]: is reference!", i, refdata.node);
         if(refdata.parent_ref != NONE)
         {
-            _c4dbgpf("ref {} has parent: {}", i, refdata.parent_ref);
+            _c4dbgpf("instance[{}:node{}] has parent: {}", i, refdata.node, refdata.parent_ref);
             _RYML_CB_ASSERT(m_tree->m_callbacks, m_tree->is_seq(refdata.parent_ref));
             const id_type p = m_tree->parent(refdata.parent_ref);
             const id_type after = (prev_parent_ref != refdata.parent_ref) ?
@@ -43128,23 +43228,25 @@ void ReferenceResolver::resolve(Tree *t_)
         }
         else
         {
-            _c4dbgpf("ref {} has no parent", i, refdata.parent_ref);
+            _c4dbgpf("instance[{}:node{}] has no parent", i, refdata.node, refdata.parent_ref);
             if(m_tree->has_key(refdata.node) && m_tree->key(refdata.node) == "<<")
             {
-                _c4dbgpf("ref {} is inheriting", i);
+                _c4dbgpf("instance[{}:node{}] is inheriting", i, refdata.node);
                 _RYML_CB_ASSERT(m_tree->m_callbacks, m_tree->is_keyval(refdata.node));
                 const id_type p = m_tree->parent(refdata.node);
                 const id_type after = m_tree->prev_sibling(refdata.node);
+                _c4dbgpf("instance[{}:node{}] p={} after={}", i, refdata.node, p, after);
                 m_tree->duplicate_children_no_rep(refdata.target, p, after);
                 m_tree->remove(refdata.node);
             }
             else if(refdata.type.is_key_ref())
             {
-                _c4dbgpf("ref {} is key ref", i);
+                _c4dbgpf("instance[{}:node{}] is key ref", i, refdata.node);
                 _RYML_CB_ASSERT(m_tree->m_callbacks, m_tree->is_key_ref(refdata.node));
                 _RYML_CB_ASSERT(m_tree->m_callbacks, m_tree->has_key_anchor(refdata.target) || m_tree->has_val_anchor(refdata.target));
                 if(m_tree->has_val_anchor(refdata.target) && m_tree->val_anchor(refdata.target) == m_tree->key_ref(refdata.node))
                 {
+                    _c4dbgpf("instance[{}:node{}] target.anchor==val.anchor=={}", i, refdata.node, m_tree->val_anchor(refdata.target));
                     _RYML_CB_CHECK(m_tree->m_callbacks, !m_tree->is_container(refdata.target));
                     _RYML_CB_CHECK(m_tree->m_callbacks, m_tree->has_val(refdata.target));
                     const type_bits existing_style_flags = VAL_STYLE & m_tree->_p(refdata.target)->m_type.type;
@@ -43154,6 +43256,7 @@ void ReferenceResolver::resolve(Tree *t_)
                 }
                 else
                 {
+                    _c4dbgpf("instance[{}:node{}] don't inherit container flags", i, refdata.node);
                     _RYML_CB_CHECK(m_tree->m_callbacks, m_tree->key_anchor(refdata.target) == m_tree->key_ref(refdata.node));
                     m_tree->_p(refdata.node)->m_key.scalar = m_tree->key(refdata.target);
                     // keys cannot be containers, so don't inherit container flags
@@ -43163,10 +43266,11 @@ void ReferenceResolver::resolve(Tree *t_)
             }
             else // val ref
             {
-                _c4dbgpf("ref {} is val ref", i);
+                _c4dbgpf("instance[{}:node{}] is val ref", i, refdata.node);
                 _RYML_CB_ASSERT(m_tree->m_callbacks, refdata.type.is_val_ref());
                 if(m_tree->has_key_anchor(refdata.target) && m_tree->key_anchor(refdata.target) == m_tree->val_ref(refdata.node))
                 {
+                    _c4dbgpf("instance[{}:node{}] target.anchor==key.anchor=={}", i, refdata.node, m_tree->val_anchor(refdata.target));
                     _RYML_CB_CHECK(m_tree->m_callbacks, !m_tree->is_container(refdata.target));
                     _RYML_CB_CHECK(m_tree->m_callbacks, m_tree->has_val(refdata.target));
                     // keys cannot be containers, so don't inherit container flags
@@ -43177,25 +43281,53 @@ void ReferenceResolver::resolve(Tree *t_)
                 }
                 else
                 {
+                    _c4dbgpf("instance[{}:node{}] duplicate contents", i, refdata.node);
                     m_tree->duplicate_contents(refdata.target, refdata.node);
                 }
             }
         }
+        _c4dbg_tree("after insertion", *m_tree);
     }
-    _c4dbgp("modifying tree: finished");
+}
+
+void ReferenceResolver::resolve(Tree *t_, bool clear_anchors)
+{
+    _c4dbgp("resolving references...");
+
+    reset_(t_);
+
+    _c4dbg_tree("unresolved tree", *m_tree);
+
+    gather_anchors_and_refs_();
+    if(m_refs.empty())
+        return;
+    resolve_();
+    _c4dbg_tree("resolved tree", *m_tree);
 
     // clear anchors and refs
-    _c4dbgp("clearing anchors/refs");
-    for(auto const& C4_RESTRICT ar : m_refs)
+    if(clear_anchors)
     {
-        m_tree->rem_anchor_ref(ar.node);
-        if(ar.parent_ref != NONE)
-            if(m_tree->type(ar.parent_ref) != NOTYPE)
-                m_tree->remove(ar.parent_ref);
+        _c4dbgp("clearing anchors/refs");
+        auto clear_ = [this]{
+            for(auto const& C4_RESTRICT ar : m_refs)
+            {
+                m_tree->rem_anchor_ref(ar.node);
+                if(ar.parent_ref != NONE)
+                    if(m_tree->type(ar.parent_ref) != NOTYPE)
+                        m_tree->remove(ar.parent_ref);
+            }
+        };
+        clear_();
+        // some of the elements injected during the resolution may
+        // have nested anchors; these anchors will have been newly
+        // injected during the resolution; collect again, and clear
+        // again, to ensure those are also cleared:
+        gather_anchors_and_refs_();
+        clear_();
+        _c4dbgp("clearing anchors/refs: finished");
     }
-    _c4dbgp("clearing anchors/refs: finished");
 
-    _c4dbg_tree("resolved tree", *m_tree);
+    _c4dbg_tree("final resolved tree", *m_tree);
 
     m_tree = nullptr;
     _c4dbgp("resolving references: finished");

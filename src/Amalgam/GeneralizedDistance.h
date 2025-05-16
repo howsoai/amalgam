@@ -226,9 +226,9 @@ public:
 	// dist_eval.featureAttribs[0].deviation = 1;
 	// dist_eval.InitializeParametersAndFeatureParams();
 	// double d = dist_eval.ComputeDifferenceWithDeviation(GeneralizedDistanceEvaluator::s_deviation_expansion, 0, true, true);
-	// d -= GeneralizedDistanceEvaluator::s_deviation_expansion - GeneralizedDistanceEvaluator::s_surprisal_of_laplace;
+	// d -= GeneralizedDistanceEvaluator::s_deviation_expansion;
 	// std::cout << StringManipulation::NumberToString(d) << std::endl;
-	static constexpr double s_deviation_expansion_lk_offset = 0.02695178799634146;
+	static constexpr double s_deviation_expansion_lk_offset = -1.4730482120036585;
 
 	//computes the Lukaszyk–Karmowski metric deviation component for the Minkowski distance equation given the feature difference and feature deviation
 	// and adds the deviation to diff. assumes deviation is nonnegative

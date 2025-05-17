@@ -2186,6 +2186,7 @@
 (set_entity_rand_seed "RandTest" seed)
 (print (call_entity (list "RandTest" "DeepRand") "a") "\n")
 
+;TODO 22023: update this and other permissions here
  (print "--get_entity_root_permission--\n")
  (create_entities "RootTest" (lambda (print (system_time)) ))
  (print (get_entity_root_permission "RootTest") "\n")

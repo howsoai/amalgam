@@ -289,7 +289,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED(Evalu
 	return seed_node;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_ROOT_PERMISSION(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_PERMISSIONS(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
@@ -304,16 +304,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_ROOT_PERMISSION
 	else
 		entity = EntityReadReference(curEntity);
 
+	//TODO 22023: update this using ENBISI_std_out_and_std_err, etc.
 	auto entity_permissions = asset_manager.GetEntityPermissions(entity);
 	return AllocReturn(entity_permissions.allPermissions == all_permissions.allPermissions, immediate_result);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_ROOT_PERMISSION(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_PERMISSIONS(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
+
+	//TODO 22023: update this using ENBISI_std_out_and_std_err, etc.
 
 	auto permissions = asset_manager.GetEntityPermissions(curEntity);
 	auto all_permissions = EntityPermissions::AllPermissions();

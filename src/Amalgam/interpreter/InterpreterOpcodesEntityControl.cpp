@@ -304,9 +304,27 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_PERMISSIONS(Eva
 	else
 		entity = EntityReadReference(curEntity);
 
-	//TODO 22023: update this using ENBISI_std_out_and_std_err, etc.
 	auto entity_permissions = asset_manager.GetEntityPermissions(entity);
-	return AllocReturn(entity_permissions.allPermissions == all_permissions.allPermissions, immediate_result);
+	//clear lock
+	entity = EntityReadReference();
+
+	EvaluableNodeReference retval(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
+	retval->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_std_out_and_std_err),
+		evaluableNodeManager->AllocNode(entity_permissions.individualPermissions.stdOutAndStdErr));
+	retval->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_std_in),
+		evaluableNodeManager->AllocNode(entity_permissions.individualPermissions.stdIn));
+	retval->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_load),
+		evaluableNodeManager->AllocNode(entity_permissions.individualPermissions.load));
+	retval->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_store),
+		evaluableNodeManager->AllocNode(entity_permissions.individualPermissions.store));
+	retval->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_environment),
+		evaluableNodeManager->AllocNode(entity_permissions.individualPermissions.environment));
+	retval->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_alter_performance),
+		evaluableNodeManager->AllocNode(entity_permissions.individualPermissions.alterPerformance));
+	retval->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_system),
+		evaluableNodeManager->AllocNode(entity_permissions.individualPermissions.system));
+
+	return retval;
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_PERMISSIONS(EvaluableNode *en, bool immediate_result)

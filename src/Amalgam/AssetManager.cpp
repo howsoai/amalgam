@@ -431,19 +431,12 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 	{
 		asset_params->topEntity = new_entity;
 
-		//set environment permissions to read version
-		EntityPermissions perm_env;
-		perm_env.individualPermissions.environment = true;
-		asset_manager.SetEntityPermissions(new_entity, perm_env);
-
 		status = LoadResourceViaTransactionalExecution(asset_params.get(), new_entity, calling_interpreter);
 		if(!status.loaded)
 		{
 			delete new_entity;
 			return nullptr;
 		}
-
-		asset_manager.SetEntityPermissions(new_entity, EntityPermissions());
 
 		if(persistent)
 		{
@@ -471,11 +464,6 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 	{
 		asset_params->topEntity = new_entity;
 
-		//set environment permissions to read version
-		EntityPermissions perm_env;
-		perm_env.individualPermissions.environment = true;
-		asset_manager.SetEntityPermissions(new_entity, perm_env);
-
 		EvaluableNodeReference args = EvaluableNodeReference(new_entity->evaluableNodeManager.AllocNode(ENT_ASSOC), true);
 		args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_create_new_entity), new_entity->evaluableNodeManager.AllocNode(false));
 		args->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_require_version_compatibility),
@@ -502,8 +490,6 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 
 		new_entity->evaluableNodeManager.FreeNode(scope_stack->GetOrderedChildNodesReference()[0]);
 		new_entity->evaluableNodeManager.FreeNode(scope_stack);
-
-		asset_manager.SetEntityPermissions(new_entity, EntityPermissions());
 
 		if(persistent)
 			SetEntityPersistenceForFlattenedEntity(new_entity, asset_params);
@@ -626,7 +612,8 @@ void AssetManager::CreateEntity(Entity *entity)
 	}
 }
 
-void AssetManager::SetEntityPermissions(Entity *entity, EntityPermissions permissions)
+void AssetManager::SetEntityPermissions(Entity *entity,
+	EntityPermissions permissions_to_set, EntityPermissions permission_values)
 {
 	if(entity == nullptr)
 		return;
@@ -635,10 +622,24 @@ void AssetManager::SetEntityPermissions(Entity *entity, EntityPermissions permis
 	Concurrency::WriteLock lock(entityPermissionsMutex);
 #endif
 
-	if(permissions.allPermissions != 0)
-		entityPermissions.emplace(entity, permissions);
-	else
-		entityPermissions.erase(entity);
+	auto entity_perms_entry = entityPermissions.find(entity);
+
+	//if no entry and there are active permissions, then make an entry
+	if(entity_perms_entry == end(entityPermissions))
+	{
+		if(permissions_to_set.allPermissions & permission_values.allPermissions)
+			entityPermissions.emplace(entity, permission_values);
+		return;
+	}
+
+	//there exists a record; clear the permissions being set and set any that are allowed
+	auto &entity_permissions = entity_perms_entry->second;
+	entity_permissions.allPermissions &= ~permissions_to_set.allPermissions;
+	entity_permissions.allPermissions |= permission_values.allPermissions;
+
+	//if no permissions left, erase entry
+	if(entity_permissions.allPermissions == 0)
+		entityPermissions.erase(entity_perms_entry);
 }
 
 std::pair<std::string, bool> AssetManager::ValidateVersionAgainstAmalgam(const std::string &version,
@@ -756,10 +757,10 @@ void AssetManager::DestroyPersistentEntity(Entity *entity)
 	DeepClearEntityPersistenceRecurse(entity);
 }
 
-void AssetManager::RemoveRootPermissions(Entity *entity)
+void AssetManager::RemoveAllPermissions(Entity *entity)
 {
 	for(auto contained_entity : entity->GetContainedEntities())
-		RemoveRootPermissions(contained_entity);
+		RemoveAllPermissions(contained_entity);
 
-	SetEntityPermissions(entity, EntityPermissions());
+	SetEntityPermissions(entity, EntityPermissions(), EntityPermissions());
 }

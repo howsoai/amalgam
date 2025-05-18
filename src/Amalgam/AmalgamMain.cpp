@@ -251,7 +251,7 @@ PLATFORM_MAIN_CONSOLE
 		if(!status.loaded)
 			return 1;
 
-		asset_manager.SetEntityPermissions(entity, EntityPermissions::AllPermissions());
+		asset_manager.SetEntityPermissions(entity, EntityPermissions::AllPermissions(), EntityPermissions::AllPermissions());
 
 		PrintListener *print_listener = nullptr;
 		std::vector<EntityWriteListener *> write_listeners;

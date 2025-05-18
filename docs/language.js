@@ -1328,11 +1328,11 @@ var data = [
 	},
 
 	{
-		"parameter" : "set_entity_permissions id_path entity bool|assoc permissions",
+		"parameter" : "set_entity_permissions id_path entity bool|assoc permissions [bool deep]",
 		"output" : "id_path",
 		"new value" : "new",
 		"permissions" : "entity",
-		"description" : "Sets the permissions on the entity specified by id_path.  If permissions is true, then it grants all permissions, if it is false, then it removes all.  If permissions is an assoc, it alters the permissions of the assoc keys to the boolean values of the assoc's values.  Returns the id_path of the entity.",
+		"description" : "Sets the permissions on the entity specified by id_path.  If permissions is true, then it grants all permissions, if it is false, then it removes all.  If permissions is an assoc, it alters the permissions of the assoc keys to the boolean values of the assoc's values.  The parameter deep defaults to false, but if it is true, all contained entities have their permissions updated.  Returns the id_path of the entity.",
 		"example" : "(create_entities \"RootTest\" (lambda (print (system_time)) ))\n(set_entity_permissions \"RootTest\" (true))\n(call_entity \"RootTest\")"
 	},
 

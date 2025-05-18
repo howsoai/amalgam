@@ -478,13 +478,16 @@ public:
 		Concurrency::WriteLock lock(persistentEntitiesMutex);
 	#endif
 
-		RemoveRootPermissions(entity);
+		RemoveAllPermissions(entity);
 
 		DestroyPersistentEntity(entity);
 	}
 
-	//sets the entity's root permission to permission
-	void SetEntityPermissions(Entity *entity, EntityPermissions permissions);
+	//sets the entity's permissions;
+	//any permissions in permissions_to_set will be set to the values specified by the corresponding
+	//permission_values
+	void SetEntityPermissions(Entity *entity,
+		EntityPermissions permissions_to_set, EntityPermissions permission_values);
 
 	// Checks if this entity specifically has been loaded as persistent
 	inline bool IsEntityDirectlyPersistent(Entity *entity)
@@ -627,7 +630,7 @@ private:
 	void DestroyPersistentEntity(Entity *entity);
 
 	//recursively removes root permissions
-	void RemoveRootPermissions(Entity *entity);
+	void RemoveAllPermissions(Entity *entity);
 
 	//entities that need changes stored, and the resource paths to store them
 	FastHashMap<Entity *, AssetParametersRef> persistentEntities;

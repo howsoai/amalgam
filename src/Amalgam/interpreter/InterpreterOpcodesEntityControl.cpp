@@ -330,18 +330,26 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_PERMISSIONS(Eva
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_PERMISSIONS(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
+	size_t num_params = ocn.size();
 
-	if(ocn.size() < 2)
+	if(num_params < 2)
 		return EvaluableNodeReference::Null();
+
+	//retrieve parameter to determine whether to deep set the seeds, if applicable
+	bool deep_set = true;
+	if(num_params > 2)
+		deep_set = InterpretNodeIntoBoolValue(ocn[2], true);
+
+	EvaluableNodeReference permissions = InterpretNodeForImmediateUse(ocn[1]);
+
+	//any permissions set by this entity need to be filtered by allowable permissions that it has
+	auto allowable_permissions = asset_manager.GetEntityPermissions(curEntity);
 
 	//TODO 22023: update this using ENBISI_std_out_and_std_err, etc.
 
-	auto permissions = asset_manager.GetEntityPermissions(curEntity);
 	auto all_permissions = EntityPermissions::AllPermissions();
 	if(permissions.allPermissions != all_permissions.allPermissions)
 		return EvaluableNodeReference::Null();
-
-	bool set_all_permissions = InterpretNodeIntoBoolValue(ocn[1]);
 
 	//get the id of the entity
 	auto id_node = InterpretNode(ocn[0]);

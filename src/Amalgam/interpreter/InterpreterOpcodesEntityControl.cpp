@@ -340,13 +340,66 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_PERMISSIONS(Eva
 	if(num_params > 2)
 		deep_set = InterpretNodeIntoBoolValue(ocn[2], true);
 
-	EvaluableNodeReference permissions = InterpretNodeForImmediateUse(ocn[1]);
+	EvaluableNodeReference permissions_en = InterpretNodeForImmediateUse(ocn[1]);
 
-	//any permissions set by this entity need to be filtered by allowable permissions that it has
-	auto allowable_permissions = asset_manager.GetEntityPermissions(curEntity);
+	EntityPermissions permissions_to_set;
+	EntityPermissions permission_values;
+	if(EvaluableNode::IsAssociativeArray(permissions_en))
+	{
+		for(auto [permission_type, allow_en] : permissions_en->GetMappedChildNodes())
+		{
+			bool allow = EvaluableNode::IsTrue(allow_en);
+			if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_std_out_and_std_err))
+			{
+				permissions_to_set.individualPermissions.stdOutAndStdErr = true;
+				permission_values.individualPermissions.stdOutAndStdErr = allow;
+			}
+			else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_std_in))
+			{
+				permissions_to_set.individualPermissions.stdIn = true;
+				permission_values.individualPermissions.stdIn = allow;
+			}
+			else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_load))
+			{
+				permissions_to_set.individualPermissions.load = true;
+				permission_values.individualPermissions.load = allow;
+			}
+			else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_store))
+			{
+				permissions_to_set.individualPermissions.store = true;
+				permission_values.individualPermissions.store = allow;
+			}
+			else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_environment))
+			{
+				permissions_to_set.individualPermissions.environment = true;
+				permission_values.individualPermissions.environment = allow;
+			}
+			else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_alter_performance))
+			{
+				permissions_to_set.individualPermissions.alterPerformance = true;
+				permission_values.individualPermissions.alterPerformance = allow;
+			}
+			else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_system))
+			{
+				permissions_to_set.individualPermissions.system = true;
+				permission_values.individualPermissions.system = allow;
+			}
+		}
+	}
+	else if(EvaluableNode::IsTrue(permissions_en))
+	{
+		permissions_to_set = EntityPermissions::AllPermissions();
+		permission_values = EntityPermissions::AllPermissions();
+	}
+	//else false, leave permissions empty
 
-	//TODO 22023: update this using ENBISI_std_out_and_std_err, etc.
+	//any permissions set by this entity need to be filtered by the current entity's permissions
+	auto current_entity_permissions = asset_manager.GetEntityPermissions(curEntity);
+	permissions_to_set.allPermissions &= current_entity_permissions.allPermissions;
+	permission_values.allPermissions &= current_entity_permissions.allPermissions;
 
+	//TODO 22023: finish this
+	
 	auto all_permissions = EntityPermissions::AllPermissions();
 	if(permissions.allPermissions != all_permissions.allPermissions)
 		return EvaluableNodeReference::Null();

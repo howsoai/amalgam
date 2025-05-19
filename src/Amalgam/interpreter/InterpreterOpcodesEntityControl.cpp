@@ -398,20 +398,25 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_PERMISSIONS(Eva
 	permissions_to_set.allPermissions &= current_entity_permissions.allPermissions;
 	permission_values.allPermissions &= current_entity_permissions.allPermissions;
 
-	//TODO 22023: finish this
-	
-	auto all_permissions = EntityPermissions::AllPermissions();
-	if(permissions.allPermissions != all_permissions.allPermissions)
-		return EvaluableNodeReference::Null();
-
 	//get the id of the entity
 	auto id_node = InterpretNode(ocn[0]);
 	EntityWriteReference entity = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityWriteReference>(curEntity, id_node);
 
-	if(set_all_permissions)
-		asset_manager.SetEntityPermissions(entity, EntityPermissions::AllPermissions());
+	if(entity == nullptr)
+		return EvaluableNodeReference::Null();
+
+#ifdef MULTITHREAD_SUPPORT
+	if(deep_set)
+	{
+		auto contained_entities = entity->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityWriteReference>();
+		if(contained_entities == nullptr)
+			return EvaluableNodeReference::Null();
+
+		entity->SetPermissions(permissions_to_set, permission_values, true, writeListeners, &contained_entities);
+	}
 	else
-		asset_manager.SetEntityPermissions(entity, EntityPermissions());
+#endif
+		entity->SetPermissions(permissions_to_set, permission_values, deep_set, writeListeners);
 
 	return id_node;
 }

@@ -852,6 +852,29 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, Evalu
 	}
 }
 
+void Entity::SetPermissions(EntityPermissions permissions_to_set, EntityPermissions permission_values,
+		bool deep_set_permissions, std::vector<EntityWriteListener *> *write_listeners = nullptr,
+		Entity::EntityReferenceBufferReference<EntityWriteReference> *all_contained_entities = nullptr)
+{
+	asset_manager.SetEntityPermissions(this, permissions_to_set, permission_values);
+
+	if(write_listeners != nullptr)
+	{
+		//TODO 22023: adapt this from random seeds
+		for(auto &wl : *write_listeners)
+			wl->LogSetEntityRandomSeed(this, new_state, false);
+
+		asset_manager.UpdateEntityRandomSeed(this, new_state, deep_set_seed, all_contained_entities);
+	}
+
+	if(deep_set_permissions)
+	{
+		for(auto entity : GetContainedEntities())
+			entity->SetPermissions(permissions_to_set, permission_values, true,
+				write_listeners, all_contained_entities);
+	}
+}
+
 void Entity::SetRoot(std::string &code_string, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier,
 	std::vector<EntityWriteListener *> *write_listeners)
 {

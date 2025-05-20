@@ -310,7 +310,7 @@ std::string EntityExternalInterface::EvalOnEntity(const std::string &handle, con
 	if(code == nullptr)
 		return "";
 
-	EvaluableNodeReference args;
+	EvaluableNodeReference args = EvaluableNodeReference::Null();
 	auto scope_stack = Interpreter::ConvertArgsToScopeStack(args, enm);
 
 	EvaluableNodeReference returned_value = bundle->entity->ExecuteCodeAsEntity(code, scope_stack, nullptr,

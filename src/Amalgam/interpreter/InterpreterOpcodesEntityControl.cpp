@@ -293,11 +293,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_PERMISSIONS(Eva
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
-	auto permissions = asset_manager.GetEntityPermissions(curEntity);
-	auto all_permissions = EntityPermissions::AllPermissions();
-	if(permissions.allPermissions != all_permissions.allPermissions)
-		return EvaluableNodeReference::Null();
-
 	EntityReadReference entity;
 	if(ocn.size() > 0)
 		entity = InterpretNodeIntoRelativeSourceEntityReadReference(ocn[0]);
@@ -308,23 +303,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_PERMISSIONS(Eva
 	//clear lock
 	entity = EntityReadReference();
 
-	EvaluableNodeReference retval(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
-	retval->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_std_out_and_std_err),
-		evaluableNodeManager->AllocNode(entity_permissions.individualPermissions.stdOutAndStdErr));
-	retval->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_std_in),
-		evaluableNodeManager->AllocNode(entity_permissions.individualPermissions.stdIn));
-	retval->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_load),
-		evaluableNodeManager->AllocNode(entity_permissions.individualPermissions.load));
-	retval->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_store),
-		evaluableNodeManager->AllocNode(entity_permissions.individualPermissions.store));
-	retval->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_environment),
-		evaluableNodeManager->AllocNode(entity_permissions.individualPermissions.environment));
-	retval->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_alter_performance),
-		evaluableNodeManager->AllocNode(entity_permissions.individualPermissions.alterPerformance));
-	retval->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_system),
-		evaluableNodeManager->AllocNode(entity_permissions.individualPermissions.system));
-
-	return retval;
+	return EvaluableNodeReference(entity_permissions.GetPermissionsAsEvaluableNode(evaluableNodeManager), true);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_PERMISSIONS(EvaluableNode *en, bool immediate_result)
@@ -342,56 +321,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_PERMISSIONS(Eva
 
 	EvaluableNodeReference permissions_en = InterpretNodeForImmediateUse(ocn[1]);
 
-	EntityPermissions permissions_to_set;
-	EntityPermissions permission_values;
-	if(EvaluableNode::IsAssociativeArray(permissions_en))
-	{
-		for(auto [permission_type, allow_en] : permissions_en->GetMappedChildNodes())
-		{
-			bool allow = EvaluableNode::IsTrue(allow_en);
-			if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_std_out_and_std_err))
-			{
-				permissions_to_set.individualPermissions.stdOutAndStdErr = true;
-				permission_values.individualPermissions.stdOutAndStdErr = allow;
-			}
-			else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_std_in))
-			{
-				permissions_to_set.individualPermissions.stdIn = true;
-				permission_values.individualPermissions.stdIn = allow;
-			}
-			else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_load))
-			{
-				permissions_to_set.individualPermissions.load = true;
-				permission_values.individualPermissions.load = allow;
-			}
-			else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_store))
-			{
-				permissions_to_set.individualPermissions.store = true;
-				permission_values.individualPermissions.store = allow;
-			}
-			else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_environment))
-			{
-				permissions_to_set.individualPermissions.environment = true;
-				permission_values.individualPermissions.environment = allow;
-			}
-			else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_alter_performance))
-			{
-				permissions_to_set.individualPermissions.alterPerformance = true;
-				permission_values.individualPermissions.alterPerformance = allow;
-			}
-			else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_system))
-			{
-				permissions_to_set.individualPermissions.system = true;
-				permission_values.individualPermissions.system = allow;
-			}
-		}
-	}
-	else if(EvaluableNode::IsTrue(permissions_en))
-	{
-		permissions_to_set = EntityPermissions::AllPermissions();
-		permission_values = EntityPermissions::AllPermissions();
-	}
-	//else false, leave permissions empty
+	auto [permissions_to_set, permission_values] = EntityPermissions::EvaluableNodeToPermissions(permissions_en);
 
 	//any permissions set by this entity need to be filtered by the current entity's permissions
 	auto current_entity_permissions = asset_manager.GetEntityPermissions(curEntity);

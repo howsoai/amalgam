@@ -90,6 +90,88 @@ union EntityPermissions
 		return perm;
 	}
 
+	//builds a new assoc from enm and returns it populated with
+	//the permissions
+	inline EvaluableNode *GetPermissionsAsEvaluableNode(EvaluableNodeManager *enm)
+	{
+		EvaluableNode *permissions_en = enm->AllocNode(ENT_ASSOC);
+		permissions_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_std_out_and_std_err),
+			enm->AllocNode(individualPermissions.stdOutAndStdErr));
+		permissions_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_std_in),
+			enm->AllocNode(individualPermissions.stdIn));
+		permissions_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_load),
+			enm->AllocNode(individualPermissions.load));
+		permissions_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_store),
+			enm->AllocNode(individualPermissions.store));
+		permissions_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_environment),
+			enm->AllocNode(individualPermissions.environment));
+		permissions_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_alter_performance),
+			enm->AllocNode(individualPermissions.alterPerformance));
+		permissions_en->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_system),
+			enm->AllocNode(individualPermissions.system));
+
+		return permissions_en;
+	}
+
+	//returns a pair of [permissions_to_set, permission_values] corresponding to en
+	//if en is an assoc, it will use key-value pairs to obtain the permissions and their values
+	//otherwise it will set all permissions based on whether en is true
+	static inline std::pair<EntityPermissions, EntityPermissions> EvaluableNodeToPermissions(EvaluableNode *en)
+	{
+		EntityPermissions permissions_to_set;
+		EntityPermissions permission_values;
+		if(EvaluableNode::IsAssociativeArray(en))
+		{
+			for(auto [permission_type, allow_en] : en->GetMappedChildNodesReference())
+			{
+				bool allow = EvaluableNode::IsTrue(allow_en);
+				if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_std_out_and_std_err))
+				{
+					permissions_to_set.individualPermissions.stdOutAndStdErr = true;
+					permission_values.individualPermissions.stdOutAndStdErr = allow;
+				}
+				else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_std_in))
+				{
+					permissions_to_set.individualPermissions.stdIn = true;
+					permission_values.individualPermissions.stdIn = allow;
+				}
+				else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_load))
+				{
+					permissions_to_set.individualPermissions.load = true;
+					permission_values.individualPermissions.load = allow;
+				}
+				else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_store))
+				{
+					permissions_to_set.individualPermissions.store = true;
+					permission_values.individualPermissions.store = allow;
+				}
+				else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_environment))
+				{
+					permissions_to_set.individualPermissions.environment = true;
+					permission_values.individualPermissions.environment = allow;
+				}
+				else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_alter_performance))
+				{
+					permissions_to_set.individualPermissions.alterPerformance = true;
+					permission_values.individualPermissions.alterPerformance = allow;
+				}
+				else if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_system))
+				{
+					permissions_to_set.individualPermissions.system = true;
+					permission_values.individualPermissions.system = allow;
+				}
+			}
+		}
+		else if(EvaluableNode::IsTrue(en))
+		{
+			permissions_to_set = EntityPermissions::AllPermissions();
+			permission_values = EntityPermissions::AllPermissions();
+		}
+		//else false, leave permissions empty
+
+		return std::make_pair(permissions_to_set, permission_values);
+	}
+
 	//quick way to initialize all permissions to 0
 	uint8_t allPermissions;
 	//for each permission, true if has permission
@@ -324,11 +406,6 @@ public:
 	//If the label exists, sets value_out to the value and returns true.
 	// Otherwise sets value_out to empty string and returns false
 	std::pair<StringInternPool::StringID, bool> GetValueAtLabelAsStringId(StringInternPool::StringID label_sid, bool on_self = false);
-
-	//Evaluates the specified label into a string and puts the value in value_out.
-	//If the label exists, sets value_out to the value and returns true.
-	// Otherwise sets value_out to empty string and returns false
-	std::pair<std::string, bool> GetValueAtLabelAsString(StringInternPool::StringID label_sid,  bool on_self = false);
 
 	//Evaluates the specified label into a EvaluableNodeImmediateValueWithType
 	//if destination_temp_enm is not null and code is needed, it will make a copy

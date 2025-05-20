@@ -87,6 +87,16 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::VerifyEntity(
 	return EntityExternalInterface::LoadEntityStatus(true, "", version);
 }
 
+std::string EntityExternalInterface::GetEntityPermissions(std::string &handle)
+{
+	//TODO 22023: implement this
+}
+
+void EntityExternalInterface::SetEntityPermissions(std::string &handle, std::string &json_permissions)
+{
+	//TODO 22023: implement this
+}
+
 bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &cloned_handle, std::string &path,
 	std::string file_type, bool persistent, std::string_view json_file_params,
 	std::string &write_log_filename, std::string &print_log_filename)

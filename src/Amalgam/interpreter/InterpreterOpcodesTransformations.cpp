@@ -962,8 +962,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 
 	size_t highest_k = 0;
 	size_t lowest_k = 0;
-
-	if(ocn.size() == 3)
+	if(ocn.size() > 2)
 	{
 		double k = InterpretNodeIntoNumberValue(ocn[2]);
 		if(k > 0)
@@ -972,6 +971,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 			highest_k = static_cast<size_t>(-k);
 		//else nan, leave both as zero
 	}
+
+	bool return_indices = false;
+	if(ocn.size() > 3)
+		return_indices = InterpretNodeIntoBoolValue(ocn[3]);
+	//TODO 23757: use return_indices and allow assocs, add tests and documentation
 	
 	if(ocn.size() >= 2)
 	{
@@ -1138,40 +1142,69 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 	if(ocn.size() >= 2)
 		only_unique_values = InterpretNodeIntoBoolValue(ocn[1]);
 
-	//get assoc array to look up
 	auto container = InterpretNode(ocn[0]);
 
-	//make new list containing the values
-	EvaluableNode *result = evaluableNodeManager->AllocNode(ENT_LIST);
-
-	if(container == nullptr)
-		return EvaluableNodeReference(result, true);
+	//exit early if wrong type
+	if(container == nullptr || container->IsImmediate())
+	{
+		evaluableNodeManager->FreeNodeTreeIfPossible(container);
+		return EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
+	}
 
 	if(!only_unique_values)
 	{
-		result->ReserveOrderedChildNodes(container->GetNumChildNodes());
 		if(container->IsOrderedArray())
 		{
+			//if simple result, just return immediately
+			if(container->GetType() == ENT_LIST && !container->HasMetadata())
+				return container;
+
+			if(container.uniqueUnreferencedTopNode)
+			{
+				container->ClearMetadata();
+				container->SetType(ENT_LIST, evaluableNodeManager, false);
+				return container;
+			}
+
+			auto *result = evaluableNodeManager->AllocNode(ENT_LIST);
 			auto &container_ocn = container->GetOrderedChildNodesReference();
 			result->AppendOrderedChildNodes(container_ocn);
+
+			if(container->GetNeedCycleCheck())
+				result->SetNeedCycleCheck(true);
+
+			return EvaluableNodeReference(result, false, true);
 		}
-		else if(container->IsAssociativeArray())
+		else //container->IsAssociativeArray()
 		{
+			EvaluableNode *result = evaluableNodeManager->AllocNode(ENT_LIST);
+
 			for(auto &[_, cn] : container->GetMappedChildNodesReference())
 				result->AppendOrderedChildNode(cn);
-		}
 
-		//just in case there are duplicated values, ensure cycle check is propagated
-		if(container->GetNeedCycleCheck())
-			result->GetNeedCycleCheck();
+			if(container->GetNeedCycleCheck())
+				result->SetNeedCycleCheck(true);
+
+			evaluableNodeManager->FreeNodeIfPossible(container);
+
+			return EvaluableNodeReference(result, container.unique, true);
+		}
 	}
 	else //only_unique_values
 	{
+		EvaluableNode *result = evaluableNodeManager->AllocNode(ENT_LIST);
+
 		//if noncyclic data, simple container, and sufficiently few nodes for an n^2 comparison
 		// just do the lower overhead check with more comparisons
-		if(!container->GetNeedCycleCheck() && !container->IsAssociativeArray() && container->GetNumChildNodes() < 10)
+		constexpr int max_num_for_n2_comparison = 10;
+		if(!container->GetNeedCycleCheck()
+			&& !container->IsAssociativeArray()
+			&& container->GetNumChildNodes() < max_num_for_n2_comparison)
 		{
-			auto &container_ocn = container->GetOrderedChildNodes();
+			//use {}'s to initialize to false
+			std::array<bool, max_num_for_n2_comparison> should_free{};
+
+			auto &container_ocn = container->GetOrderedChildNodesReference();
 			for(size_t i = 0; i < container_ocn.size(); i++)
 			{
 				//check everything prior
@@ -1187,6 +1220,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 
 				if(!value_exists)
 					result->AppendOrderedChildNode(container_ocn[i]);
+				else if(container.unique)
+					should_free[i] = true;
+			}
+
+			//free any that are no longer needed
+			for(size_t i = 0; i < container_ocn.size(); i++)
+			{
+				if(should_free[i])
+				{
+					EvaluableNodeReference enr(container_ocn[i], true);
+					evaluableNodeManager->FreeNodeTree(enr);
+				}
 			}
 		}
 		else //use a hash-set and look up stringified values for collisions
@@ -1194,34 +1239,47 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 			//attempt to emplace/insert the unparsed node into values_in_existence, and if successful, append the value
 			FastHashSet<std::string> values_in_existence;
 
+			bool free_unused_nodes = (container.unique && !container.GetNeedCycleCheck());
+
 			if(container->IsOrderedArray())
 			{
 				for(auto &n : container->GetOrderedChildNodesReference())
 				{
 					std::string str_value = Parser::UnparseToKeyString(n);
 					if(values_in_existence.emplace(str_value).second)
+					{
 						result->AppendOrderedChildNode(n);
+					}
+					else if(free_unused_nodes)
+					{
+						EvaluableNodeReference enr(n, true);
+						evaluableNodeManager->FreeNodeTree(enr);
+					}
 				}
 			}
-			else if(container->IsAssociativeArray())
+			else //container->IsAssociativeArray()
 			{
 				for(auto &[_, cn] : container->GetMappedChildNodesReference())
 				{
 					std::string str_value = Parser::UnparseToKeyString(cn);
 					if(values_in_existence.emplace(str_value).second)
+					{
 						result->AppendOrderedChildNode(cn);
+					}
+					else if(free_unused_nodes)
+					{
+						EvaluableNodeReference enr(cn, true);
+						evaluableNodeManager->FreeNodeTree(enr);
+					}
 				}
 			}
-
 		}
 
 		//shouldn't have duplicated values, so don't need a cycle check on the top node
+
+		evaluableNodeManager->FreeNodeIfPossible(container);
+		return EvaluableNodeReference(result, container.unique, true);
 	}
-
-	//the container itself isn't needed
-	evaluableNodeManager->FreeNodeIfPossible(container);
-
-	return EvaluableNodeReference(result, container.unique, true);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_INDEX(EvaluableNode *en, bool immediate_result)

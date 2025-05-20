@@ -375,7 +375,7 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	return retval;
 }
 
-EvaluableNodeReference Interpreter::ConvertArgsToScopeStack(EvaluableNodeReference args, EvaluableNodeManager &enm)
+EvaluableNodeReference Interpreter::ConvertArgsToScopeStack(EvaluableNodeReference &args, EvaluableNodeManager &enm)
 {
 	//ensure have arguments
 	if(args == nullptr)
@@ -389,6 +389,7 @@ EvaluableNodeReference Interpreter::ConvertArgsToScopeStack(EvaluableNodeReferen
 	else if(!args.unique)
 	{
 		args.SetReference(enm.AllocNode(args, EvaluableNodeManager::ENMM_REMOVE_ALL));
+		args.uniqueUnreferencedTopNode = true;
 	}
 	
 	EvaluableNode *scope_stack = enm.AllocNode(ENT_LIST);
@@ -397,7 +398,7 @@ EvaluableNodeReference Interpreter::ConvertArgsToScopeStack(EvaluableNodeReferen
 	scope_stack->SetNeedCycleCheck(true);
 	args->SetNeedCycleCheck(true);
 
-	return EvaluableNodeReference(scope_stack, args.unique);
+	return EvaluableNodeReference(scope_stack, args.unique, true);
 }
 
 EvaluableNode **Interpreter::GetScopeStackSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &scope_stack_index

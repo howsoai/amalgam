@@ -488,8 +488,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		EvaluableNodeReference called_entity_args = ce_enm.DeepAllocCopy(args);
 		node_stack.PopEvaluableNode();
 		evaluableNodeManager->FreeNodeTreeIfPossible(args);
+		args = called_entity_args;
 
-		scope_stack = ConvertArgsToScopeStack(called_entity_args, ce_enm);
+		scope_stack = ConvertArgsToScopeStack(args, ce_enm);
 	}
 
 	PopulatePerformanceCounters(interpreter_constraints_ptr, called_entity);
@@ -506,7 +507,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	#endif
 		);
 
-	ce_enm.FreeNode(scope_stack->GetOrderedChildNodesReference()[0]);
+	ce_enm.FreeNode(args);
 	ce_enm.FreeNode(scope_stack);
 
 #ifdef MULTITHREAD_SUPPORT
@@ -630,7 +631,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 	#endif
 		);
 
-	container->evaluableNodeManager.FreeNode(scope_stack->GetOrderedChildNodesReference()[0]);
+	container->evaluableNodeManager.FreeNode(called_entity_args);
 	container->evaluableNodeManager.FreeNode(scope_stack);
 
 #ifdef MULTITHREAD_SUPPORT

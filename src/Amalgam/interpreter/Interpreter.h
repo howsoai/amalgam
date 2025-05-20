@@ -441,11 +441,12 @@ public:
 		return std::make_pair(any_constructions, any_set);
 	}
 
-	//Makes sure that args is an active associative array is proper for context, meaning initialized assoc and a unique reference.
+	//Makes sure that args is an active associative array is proper for context, meaning initialized assoc and a unique reference,
+	// and will update the reference accordingly
 	// Will allocate a new node appropriately if it is not
 	//Then wraps the args on a list which will form the scope stack and returns that
 	//ensures that args is still a valid EvaluableNodeReference after the call
-	static EvaluableNodeReference ConvertArgsToScopeStack(EvaluableNodeReference args, EvaluableNodeManager &enm);
+	static EvaluableNodeReference ConvertArgsToScopeStack(EvaluableNodeReference &args, EvaluableNodeManager &enm);
 
 	//finds a pointer to the location of the symbol's pointer to value in the top of the context stack and returns a pointer to the location of the symbol's pointer to value,
 	// nullptr if it does not exist

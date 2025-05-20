@@ -249,7 +249,7 @@ std::string EntityExternalInterface::ExecuteEntityJSON(std::string &handle, std:
 #endif
 	);
 
-	enm.FreeNode(scope_stack->GetOrderedChildNodesReference()[0]);
+	enm.FreeNode(args);
 	enm.FreeNode(scope_stack);
 
 	auto [result, converted] = EvaluableNodeJSONTranslation::EvaluableNodeToJson(returned_value);
@@ -282,7 +282,7 @@ std::pair<std::string, std::string> EntityExternalInterface::ExecuteEntityJSONLo
 		, &enm_lock
 #endif
 	);
-	enm.FreeNode(scope_stack->GetOrderedChildNodesReference()[0]);
+	enm.FreeNode(args);
 	enm.FreeNode(scope_stack);
 
 	auto [result, converted] = EvaluableNodeJSONTranslation::EvaluableNodeToJson(returned_value);
@@ -310,7 +310,8 @@ std::string EntityExternalInterface::EvalOnEntity(const std::string &handle, con
 	if(code == nullptr)
 		return "";
 
-	auto scope_stack = Interpreter::ConvertArgsToScopeStack(EvaluableNodeReference::Null(), enm);
+	EvaluableNodeReference args = EvaluableNodeReference::Null();
+	auto scope_stack = Interpreter::ConvertArgsToScopeStack(args, enm);
 
 	EvaluableNodeReference returned_value = bundle->entity->ExecuteCodeAsEntity(code, scope_stack, nullptr,
 		&bundle->writeListeners, bundle->printListener, nullptr
@@ -319,6 +320,7 @@ std::string EntityExternalInterface::EvalOnEntity(const std::string &handle, con
 #endif
 	);
 
+	enm.FreeNode(args);
 	enm.FreeNode(scope_stack);
 	enm.FreeNodeTreeIfPossible(code);
 

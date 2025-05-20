@@ -627,7 +627,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	std::swap(memoryModificationLock, sandbox.memoryModificationLock);
 #endif
 
-	evaluableNodeManager->FreeNode(scope_stack->GetOrderedChildNodesReference()[0]);
+	if(result.unique)
+		evaluableNodeManager->FreeNodeTreeIfPossible(args);
+	else //it's possible some value is returned, can only free top node
+		evaluableNodeManager->FreeNodeIfPossible(args);
+
 	evaluableNodeManager->FreeNode(scope_stack);
 
 	//call opcodes should consume the outer return opcode if there is one

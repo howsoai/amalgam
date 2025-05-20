@@ -369,7 +369,7 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 		load_status.SetStatus(success || !asset_params->requireVersionCompatibility, error_message, version_string);
 	}
 	
-	entity->evaluableNodeManager.FreeNode(scope_stack->GetOrderedChildNodesReference()[0]);
+	entity->evaluableNodeManager.FreeNode(args);
 	entity->evaluableNodeManager.FreeNode(scope_stack);
 
 	return load_status;
@@ -500,7 +500,7 @@ Entity *AssetManager::LoadEntityFromResource(AssetParametersRef &asset_params, b
 			return nullptr;
 		}
 
-		new_entity->evaluableNodeManager.FreeNode(scope_stack->GetOrderedChildNodesReference()[0]);
+		new_entity->evaluableNodeManager.FreeNode(args);
 		new_entity->evaluableNodeManager.FreeNode(scope_stack);
 
 		asset_manager.SetEntityPermissions(new_entity, EntityPermissions());

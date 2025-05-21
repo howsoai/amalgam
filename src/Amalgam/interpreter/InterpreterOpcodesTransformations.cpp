@@ -1053,6 +1053,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 
 		//make sure it is an editable copy
 		evaluableNodeManager->EnsureNodeIsModifiable(list, true);
+		list->ClearMetadata();
+		if(list->IsAssociativeArray())
+			list->ConvertAssocToList();
 
 		CustomEvaluableNodeComparator comparator(this, function, list);
 

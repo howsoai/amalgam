@@ -971,11 +971,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 			highest_k = static_cast<size_t>(-k);
 		//else nan, leave both as zero
 	}
-
-	bool return_indices = false;
-	if(ocn.size() > 3)
-		return_indices = InterpretNodeIntoBoolValue(ocn[3]);
-	//TODO 23757: use return_indices and allow assocs, add tests and documentation
 	
 	if(ocn.size() >= 2)
 	{

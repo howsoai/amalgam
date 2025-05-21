@@ -559,7 +559,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL(EvaluableNode *en, bo
 	{
 		//can keep constant, but need the top node to be unique in case assignments are made
 		new_context = InterpretNodeForImmediateUse(ocn[1]);
-		evaluableNodeManager->EnsureNodeIsModifiable(new_context, EvaluableNodeManager::ENMM_REMOVE_ALL);
+		evaluableNodeManager->EnsureNodeIsModifiable(new_context, false, EvaluableNodeManager::ENMM_REMOVE_ALL);
 	}
 
 	PushNewScopeStack(new_context);
@@ -786,7 +786,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, boo
 	//add new context
 	auto new_context = InterpretNodeForImmediateUse(ocn[0]);
 	//can keep constant, but need the top node to be unique in case assignments are made
-	evaluableNodeManager->EnsureNodeIsModifiable(new_context, EvaluableNodeManager::ENMM_REMOVE_ALL);
+	evaluableNodeManager->EnsureNodeIsModifiable(new_context, false, EvaluableNodeManager::ENMM_REMOVE_ALL);
 	PushNewScopeStack(new_context);
 
 	//run code

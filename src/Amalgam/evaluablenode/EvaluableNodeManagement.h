@@ -485,10 +485,13 @@ public:
 
 	//ensures that the top node is modifiable -- will allocate the node if necessary,
 	// and if the result and any child nodes are all unique, then it will return an EvaluableNodeReference that is unique
-	inline void EnsureNodeIsModifiable(EvaluableNodeReference &original,
+	//if ensure_copy_if_cycles, then it will also allocate a new node if there are cycles,
+	//in case the top node is referenced by any of its node tree and it needs to ensure that structure is maintained
+	inline void EnsureNodeIsModifiable(EvaluableNodeReference &original, bool ensure_copy_if_cycles = false,
 		EvaluableNodeMetadataModifier metadata_modifier = ENMM_NO_CHANGE)
 	{
-		if(original.uniqueUnreferencedTopNode && original != nullptr)
+		if(original.uniqueUnreferencedTopNode && original != nullptr
+				&& (!ensure_copy_if_cycles || !original.GetNeedCycleCheck()) )
 			return;
 
 		EvaluableNode *copy = AllocNode(original.GetReference(), metadata_modifier);

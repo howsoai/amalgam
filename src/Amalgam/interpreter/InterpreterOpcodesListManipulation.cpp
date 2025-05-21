@@ -110,7 +110,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, bo
 			if(!list.uniqueUnreferencedTopNode)
 			{
 				//make a copy so can edit node
-				evaluableNodeManager->EnsureNodeIsModifiable(list);
+				evaluableNodeManager->EnsureNodeIsModifiable(list, true);
 				node_stack.PopEvaluableNode();
 				node_stack.PushEvaluableNode(list);
 			}
@@ -141,7 +141,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, bo
 			if(!list.uniqueUnreferencedTopNode)
 			{
 				//make a copy so can edit node
-				evaluableNodeManager->EnsureNodeIsModifiable(list);
+				evaluableNodeManager->EnsureNodeIsModifiable(list, true);
 				node_stack.PopEvaluableNode();
 				node_stack.PushEvaluableNode(list);
 			}
@@ -318,7 +318,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, b
 		if(!list.uniqueUnreferencedTopNode)
 		{
 			//make a copy so can edit node
-			evaluableNodeManager->EnsureNodeIsModifiable(list);
+			evaluableNodeManager->EnsureNodeIsModifiable(list, true);
 			node_stack.PopEvaluableNode();
 			node_stack.PushEvaluableNode(list);
 		}
@@ -349,7 +349,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, b
 		if(!list.uniqueUnreferencedTopNode)
 		{
 			//make a copy so can edit node
-			evaluableNodeManager->EnsureNodeIsModifiable(list);
+			evaluableNodeManager->EnsureNodeIsModifiable(list, true);
 			node_stack.PopEvaluableNode();
 			node_stack.PushEvaluableNode(list);
 		}

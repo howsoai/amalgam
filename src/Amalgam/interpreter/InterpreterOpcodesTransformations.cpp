@@ -409,7 +409,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_FILTER(EvaluableNode *en, 
 		EvaluableNodeReference result_list(list, list.unique, list.uniqueUnreferencedTopNode);
 
 		//need to edit the list itself, so if not unique, make at least the top node unique
-		evaluableNodeManager->EnsureNodeIsModifiable(result_list);
+		evaluableNodeManager->EnsureNodeIsModifiable(result_list, true);
 
 		if(result_list->IsAssociativeArray())
 		{
@@ -940,7 +940,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REVERSE(EvaluableNode *en,
 		return EvaluableNodeReference::Null();
 
 	//make sure it is an editable copy
-	evaluableNodeManager->EnsureNodeIsModifiable(list);
+	evaluableNodeManager->EnsureNodeIsModifiable(list, true);
 
 	auto &list_ocn = list->GetOrderedChildNodes();
 	std::reverse(begin(list_ocn), end(list_ocn));
@@ -995,7 +995,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 			return EvaluableNodeReference::Null();
 
 		//make sure it is a clean editable copy and all the data is in a list
-		evaluableNodeManager->EnsureNodeIsModifiable(list);
+		evaluableNodeManager->EnsureNodeIsModifiable(list, true);
 		list->ClearMetadata();
 		if(list->IsAssociativeArray())
 			list->ConvertAssocToList();
@@ -1057,7 +1057,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 			return EvaluableNodeReference::Null();
 
 		//make sure it is an editable copy
-		evaluableNodeManager->EnsureNodeIsModifiable(list);
+		evaluableNodeManager->EnsureNodeIsModifiable(list, true);
 
 		CustomEvaluableNodeComparator comparator(this, function, list);
 
@@ -1157,18 +1157,49 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 
 	if(!only_unique_values)
 	{
-		//if simple result, just return immediately
-		if(container->GetType() == ENT_LIST && !container->HasMetadata())
-			return container;
+		if(container->IsOrderedArray())
+		{
+			//if simple result, just return immediately
+			if(container->GetType() == ENT_LIST && !container->HasMetadata())
+				return container;
 
-		evaluableNodeManager->EnsureNodeIsModifiable(container, EvaluableNodeManager::ENMM_REMOVE_ALL);
-		container->ClearMetadata();
-		if(container->IsAssociativeArray())
-			container->ConvertAssocToList();
-		else
-			container->SetType(ENT_LIST, evaluableNodeManager, false);
+			if(container.uniqueUnreferencedTopNode && !container.GetNeedCycleCheck())
+			{
+				container->ClearMetadata();
+				container->SetType(ENT_LIST, evaluableNodeManager, false);
+				return container;
+			}
 
-		return EvaluableNodeReference(container, container.unique, true);
+			auto *result = evaluableNodeManager->AllocNode(ENT_LIST);
+			auto &container_ocn = container->GetOrderedChildNodesReference();
+			result->AppendOrderedChildNodes(container_ocn);
+
+			if(container->GetNeedCycleCheck())
+				result->SetNeedCycleCheck(true);
+
+			return EvaluableNodeReference(result, false, true);
+		}
+		else //container->IsAssociativeArray()
+		{
+			if(container.uniqueUnreferencedTopNode && !container.GetNeedCycleCheck())
+			{
+				container->ClearMetadata();
+				container->ConvertAssocToList();
+				return container;
+			}
+
+			EvaluableNode *result = evaluableNodeManager->AllocNode(ENT_LIST);
+
+			for(auto &[_, cn] : container->GetMappedChildNodesReference())
+				result->AppendOrderedChildNode(cn);
+
+			if(container->GetNeedCycleCheck())
+				result->SetNeedCycleCheck(true);
+
+			evaluableNodeManager->FreeNodeIfPossible(container);
+
+			return EvaluableNodeReference(result, container.unique, true);
+		}
 	}
 	else //only_unique_values
 	{
@@ -1369,7 +1400,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 	if(container == nullptr)
 		return EvaluableNodeReference::Null();
 	//make sure it's editable
-	evaluableNodeManager->EnsureNodeIsModifiable(container);
+	evaluableNodeManager->EnsureNodeIsModifiable(container, true);
 
 	auto node_stack = CreateOpcodeStackStateSaver(container);
 
@@ -1480,7 +1511,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, bo
 	if(container == nullptr)
 		return EvaluableNodeReference::Null();
 	//make sure it's editable
-	evaluableNodeManager->EnsureNodeIsModifiable(container);
+	evaluableNodeManager->EnsureNodeIsModifiable(container, true);
 
 	auto node_stack = CreateOpcodeStackStateSaver(container);
 

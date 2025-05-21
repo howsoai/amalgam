@@ -1163,10 +1163,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_VALUE(EvaluableNode *e
 	if(n == nullptr)
 		return EvaluableNodeReference::Null();
 
-	if(n.unique)
+	if(n.uniqueUnreferencedTopNode)
 		n->ClearMetadata();
 	else
-		evaluableNodeManager->EnsureNodeIsModifiable(n, EvaluableNodeManager::ENMM_REMOVE_ALL);
+		evaluableNodeManager->EnsureNodeIsModifiable(n, false, EvaluableNodeManager::ENMM_REMOVE_ALL);
 
 	return n;
 }

@@ -885,13 +885,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DOT_PRODUCT(EvaluableNode 
 		if(!elements1_assoc)
 		{
 			evaluableNodeManager->EnsureNodeIsModifiable(elements1);
-			elements1->ConvertOrderedListToNumberedAssoc();
+			elements1->ConvertListToNumberedAssoc();
 		}
 
 		if(!elements2_assoc)
 		{
 			evaluableNodeManager->EnsureNodeIsModifiable(elements2);
-			elements2->ConvertOrderedListToNumberedAssoc();
+			elements2->ConvertListToNumberedAssoc();
 		}
 
 		auto &mcn1 = elements1->GetMappedChildNodesReference();

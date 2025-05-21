@@ -994,8 +994,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 		if(EvaluableNode::IsNull(list))
 			return EvaluableNodeReference::Null();
 
-		//make sure it is an editable copy
+		//make sure it is a clean editable copy and all the data is in a list
 		evaluableNodeManager->EnsureNodeIsModifiable(list);
+		list->ClearMetadata();
+		if(list->IsAssociativeArray())
+			list->ConvertAssocToList();
 
 		auto &list_ocn = list->GetOrderedChildNodes();
 
@@ -1015,6 +1018,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 			}
 
 			list_ocn.erase(begin(list_ocn) + highest_k, end(list_ocn));
+			std::reverse(begin(list_ocn), end(list_ocn));
 		}
 		else if(lowest_k > 0 && lowest_k < list_ocn.size())
 		{
@@ -1177,17 +1181,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 		}
 		else //container->IsAssociativeArray()
 		{
-			EvaluableNode *result = evaluableNodeManager->AllocNode(ENT_LIST);
+			evaluableNodeManager->EnsureNodeIsModifiable(container);
+			container->ClearMetadata();
+			if(container->IsAssociativeArray())
+				container->ConvertAssocToList();
 
-			for(auto &[_, cn] : container->GetMappedChildNodesReference())
-				result->AppendOrderedChildNode(cn);
-
-			if(container->GetNeedCycleCheck())
-				result->SetNeedCycleCheck(true);
-
-			evaluableNodeManager->FreeNodeIfPossible(container);
-
-			return EvaluableNodeReference(result, container.unique, true);
+			return EvaluableNodeReference(container, container.unique, true);
 		}
 	}
 	else //only_unique_values

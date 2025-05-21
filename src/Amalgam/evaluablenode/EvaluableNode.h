@@ -403,8 +403,11 @@ public:
 		return e->GetCommentsStringId();
 	}
 
-	//Converts the node to an ENT_ASSOC where the keys are the numbers of the indices
-	void ConvertOrderedListToNumberedAssoc();
+	//converts the node to an ENT_ASSOC where the keys are the numbers of the indices
+	void ConvertListToNumberedAssoc();
+
+	//converts the node from an ENT_ASSOC to an ENT_LIST
+	void ConvertAssocToList();
 
 	//returns true if the node can be flattened,
 	// that is, contains no cycles when traversing downward and potentially

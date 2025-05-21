@@ -443,7 +443,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, 
 		if(EvaluableNode::IsAssociativeArray(new_elements))
 		{
 			if(new_list->GetType() == ENT_LIST)
-				new_list->ConvertOrderedListToNumberedAssoc();
+				new_list->ConvertListToNumberedAssoc();
 
 			auto &new_elements_mcn = new_elements->GetMappedChildNodesReference();
 			if(new_elements_mcn.size() > 0)

@@ -1157,37 +1157,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_VALUES(EvaluableNode *en, 
 
 	if(!only_unique_values)
 	{
-		if(container->IsOrderedArray())
-		{
-			//if simple result, just return immediately
-			if(container->GetType() == ENT_LIST && !container->HasMetadata())
-				return container;
+		//if simple result, just return immediately
+		if(container->GetType() == ENT_LIST && !container->HasMetadata())
+			return container;
 
-			if(container.uniqueUnreferencedTopNode)
-			{
-				container->ClearMetadata();
-				container->SetType(ENT_LIST, evaluableNodeManager, false);
-				return container;
-			}
+		evaluableNodeManager->EnsureNodeIsModifiable(container, EvaluableNodeManager::ENMM_REMOVE_ALL);
+		container->ClearMetadata();
+		if(container->IsAssociativeArray())
+			container->ConvertAssocToList();
+		else
+			container->SetType(ENT_LIST, evaluableNodeManager, false);
 
-			auto *result = evaluableNodeManager->AllocNode(ENT_LIST);
-			auto &container_ocn = container->GetOrderedChildNodesReference();
-			result->AppendOrderedChildNodes(container_ocn);
-
-			if(container->GetNeedCycleCheck())
-				result->SetNeedCycleCheck(true);
-
-			return EvaluableNodeReference(result, false, true);
-		}
-		else //container->IsAssociativeArray()
-		{
-			evaluableNodeManager->EnsureNodeIsModifiable(container);
-			container->ClearMetadata();
-			if(container->IsAssociativeArray())
-				container->ConvertAssocToList();
-
-			return EvaluableNodeReference(container, container.unique, true);
-		}
+		return EvaluableNodeReference(container, container.unique, true);
 	}
 	else //only_unique_values
 	{

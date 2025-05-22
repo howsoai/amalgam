@@ -982,6 +982,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 			function_type = function->GetType();
 	}
 
+	bool return_indices = false;
+	if(ocn.size() > 3)
+		return_indices = InterpretNodeIntoBoolValue(ocn[3]);
+
 	if(function_type == ENT_TRUE || function_type == ENT_FALSE)
 	{
 		//get list
@@ -989,22 +993,50 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 		if(EvaluableNode::IsNull(list))
 			return EvaluableNodeReference::Null();
 
-		//make sure it is a clean editable copy and all the data is in a list
-		evaluableNodeManager->EnsureNodeIsModifiable(list, true);
-		list->ClearMetadata();
-		if(list->IsAssociativeArray())
-			list->ConvertAssocToList();
+		auto comparator = EvaluableNode::IsStrictlyGreaterThan;
+		if(return_indices)
+		{
+			//TODO 23779: finish this
+			EvaluableNodeReference index_list(evaluableNodeManager->AllocNode(ENT_LIST), true);
+			if(list->IsAssociativeArray())
+			{
 
-		auto &list_ocn = list->GetOrderedChildNodes();
+			}
+			else //list->IsOrderedArray()
+			{
+				auto &value_list_ocn = list->GetOrderedChildNodesReference();
+				//for(size_t i = 0; i < )
+			}
+		}
+		else
+		{
+			//make sure it is a clean editable copy and all the data is in a list
+			evaluableNodeManager->EnsureNodeIsModifiable(list, true);
+			list->ClearMetadata();
+			if(list->IsAssociativeArray())
+				list->ConvertAssocToList();
+
+			if(function_type == ENT_TRUE)
+			{
+				if(highest_k > 0 && highest_k < list->GetOrderedChildNodesReference().size())
+					comparator = EvaluableNode::IsStrictlyGreaterThan;
+				else
+					comparator = EvaluableNode::IsStrictlyLessThan;
+			}
+			else //function_type == ENT_FALSE
+			{
+				if(highest_k > 0 && highest_k < list->GetOrderedChildNodesReference().size())
+					comparator = EvaluableNode::IsStrictlyLessThan;
+				else
+					comparator = EvaluableNode::IsStrictlyGreaterThan;
+			}
+		}
+
+		auto &list_ocn = list->GetOrderedChildNodesReference();
 
 		if(highest_k > 0 && highest_k < list_ocn.size())
 		{
-			if(function_type == ENT_TRUE)
-				std::partial_sort(begin(list_ocn), begin(list_ocn) + highest_k,
-					end(list_ocn), EvaluableNode::IsStrictlyGreaterThan);
-			else
-				std::partial_sort(begin(list_ocn), begin(list_ocn) + highest_k,
-					end(list_ocn), EvaluableNode::IsStrictlyLessThan);
+			std::partial_sort(begin(list_ocn), begin(list_ocn) + highest_k, end(list_ocn), comparator);
 
 			if(list.unique && !list->GetNeedCycleCheck())
 			{
@@ -1017,12 +1049,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 		}
 		else if(lowest_k > 0 && lowest_k < list_ocn.size())
 		{
-			if(function_type == ENT_TRUE)
-				std::partial_sort(begin(list_ocn), begin(list_ocn) + lowest_k,
-					end(list_ocn), EvaluableNode::IsStrictlyLessThan);
-			else
-				std::partial_sort(begin(list_ocn), begin(list_ocn) + lowest_k,
-					end(list_ocn), EvaluableNode::IsStrictlyGreaterThan);
+			std::partial_sort(begin(list_ocn), begin(list_ocn) + lowest_k, end(list_ocn), comparator);
 
 			if(list.unique && !list->GetNeedCycleCheck())
 			{
@@ -1034,10 +1061,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 		}
 		else
 		{
-			if(function_type == ENT_TRUE)
-				std::sort(begin(list_ocn), end(list_ocn), EvaluableNode::IsStrictlyLessThan);
-			else
-				std::sort(begin(list_ocn), end(list_ocn), EvaluableNode::IsStrictlyGreaterThan);
+			std::sort(begin(list_ocn), end(list_ocn), comparator);
 		}
 
 		return list;
@@ -1051,6 +1075,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 		if(EvaluableNode::IsNull(list))
 			return EvaluableNodeReference::Null();
 
+		//TODO 23779: add logic for return_indices, add tests, update documentation
+
 		//make sure it is an editable copy
 		evaluableNodeManager->EnsureNodeIsModifiable(list, true);
 		list->ClearMetadata();
@@ -1061,7 +1087,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 
 		//sort list; can't use the C++ sort function because it requires weak ordering and will crash otherwise
 		// the custom comparator does not guarantee this
-		std::vector<EvaluableNode *> sorted = CustomEvaluableNodeOrderedChildNodesSort(list->GetOrderedChildNodes(), comparator);
+		std::vector<EvaluableNode *> sorted = CustomEvaluableNodeOrderedChildNodesSort(
+			list->GetOrderedChildNodesReference(), comparator);
 
 		if(highest_k > 0 && highest_k < sorted.size())
 		{

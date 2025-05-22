@@ -133,8 +133,17 @@ public:
 		return ENIVT_CODE;
 	}
 
+	//TODO: use this everywhere appropriate where ResolveValue is used in SBFDS
+	inline std::pair<EvaluableNodeImmediateValueType, EvaluableNodeImmediateValue> GetValueAndType(size_t index)
+	{
+		auto value_type = GetIndexValueType(index);
+		auto value = ResolveValue(value_type, valueEntries[index]);
+		value_type = ResolveValueType(value_type);
+		return std::make_pair(value_type, value);
+	}
+
 	//returns the value type, performing any resolution for intern lookups
-	static __forceinline EvaluableNodeImmediateValueType GetResolvedValueType(EvaluableNodeImmediateValueType value_type)
+	static __forceinline EvaluableNodeImmediateValueType ResolveValueType(EvaluableNodeImmediateValueType value_type)
 	{
 		if(value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
 			return ENIVT_NUMBER;
@@ -144,7 +153,7 @@ public:
 	}
 
 	//returns the value type that represents the values stored in this column, performing the reverse of any resolution for intern lookups
-	__forceinline EvaluableNodeImmediateValueType GetUnresolvedValueType(EvaluableNodeImmediateValueType value_type)
+	__forceinline EvaluableNodeImmediateValueType UnresolveValueType(EvaluableNodeImmediateValueType value_type)
 	{
 		if(value_type == ENIVT_NUMBER && internedNumberValues.valueInterningEnabled)
 			return ENIVT_NUMBER_INDIRECTION_INDEX;
@@ -154,7 +163,7 @@ public:
 	}
 
 	//returns the value performing any intern lookup if necessary
-	__forceinline EvaluableNodeImmediateValue GetResolvedValue(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value)
+	__forceinline EvaluableNodeImmediateValue ResolveValue(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value)
 	{
 		if(value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
 			return EvaluableNodeImmediateValue(internedNumberValues.internedIndexToValue[value.indirectionIndex]);
@@ -187,10 +196,10 @@ public:
 			return;
 		}
 
-		auto old_value_type_resolved = GetResolvedValueType(old_value_type);
-		auto old_value_resolved = GetResolvedValue(old_value_type, old_value);
-		auto new_value_type_resolved = GetResolvedValueType(new_value_type);
-		auto new_value_resolved = GetResolvedValue(new_value_type, new_value);
+		auto old_value_type_resolved = ResolveValueType(old_value_type);
+		auto old_value_resolved = ResolveValue(old_value_type, old_value);
+		auto new_value_type_resolved = ResolveValueType(new_value_type);
+		auto new_value_resolved = ResolveValue(new_value_type, new_value);
 
 		//if the types are the same, some shortcuts may apply
 		//note that if the values match types and match resolved values, the old_value should be returned
@@ -418,7 +427,7 @@ public:
 		{
 			numberIndices.erase(index);
 
-			auto resolved_value = GetResolvedValue(value_type, value);
+			auto resolved_value = ResolveValue(value_type, value);
 
 			//look up value
 			auto value_entry = sortedNumberValueEntries.find(resolved_value.number);
@@ -444,7 +453,7 @@ public:
 		{
 			stringIdIndices.erase(index);
 
-			auto resolved_value = GetResolvedValue(value_type, value);
+			auto resolved_value = ResolveValue(value_type, value);
 
 			auto id_entry = stringIdValueEntries.find(resolved_value.stringID);
 			if(id_entry == end(stringIdValueEntries))
@@ -557,7 +566,7 @@ public:
 		{
 			numberIndices.insert(index);
 
-			double number_value = GetResolvedValue(value_type, value).number;
+			double number_value = ResolveValue(value_type, value).number;
 
 			auto [value_entry_iter, inserted] = sortedNumberValueEntries.try_emplace(number_value, number_value);
 			auto &value_entry = value_entry_iter->second;
@@ -592,7 +601,7 @@ public:
 		{
 			stringIdIndices.insert(index);
 
-			auto string_id = GetResolvedValue(value_type, value).stringID;
+			auto string_id = ResolveValue(value_type, value).stringID;
 
 			//try to insert the value if not already there
 			auto [inserted_id_entry, inserted] = stringIdValueEntries.emplace(string_id, nullptr);

@@ -340,7 +340,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 			auto radius_value_type = radius_column_data->GetIndexValueType(entity_index);
 			double radius = 0.0;
 			if(radius_value_type == ENIVT_NUMBER || radius_value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
-				radius = radius_column_data->GetResolvedValue(radius_value_type, GetValue(entity_index, radius_column_index)).number;
+				radius = radius_column_data->ResolveValue(radius_value_type, GetValue(entity_index, radius_column_index)).number;
 
 			if(radius == 0)
 				distances[entity_index] = -max_dist_exponentiated;
@@ -434,8 +434,8 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 		for(auto entity_index : enabled_indices)
 		{
 			auto value_type = column_data->GetIndexValueType(entity_index);
-			auto value = column_data->GetResolvedValue(value_type, GetValue(entity_index, absolute_feature_index));
-			value_type = column_data->GetResolvedValueType(value_type);
+			auto value = column_data->ResolveValue(value_type, GetValue(entity_index, absolute_feature_index));
+			value_type = column_data->ResolveValueType(value_type);
 			
 			distances[entity_index] += r_dist_eval.ComputeDistanceTerm(
 											value, value_type, query_feature_index, high_accuracy);
@@ -694,7 +694,7 @@ void SeparableBoxFilterDataStore::VerifyAllEntitiesForColumn(size_t column_index
 		assert(feature_type == ENIVT_NUMBER || feature_type == ENIVT_NUMBER_INDIRECTION_INDEX);
 		if(feature_type == ENIVT_NUMBER_INDIRECTION_INDEX && feature_value.indirectionIndex != 0)
 		{
-			auto feature_value_resolved = column_data->GetResolvedValue(feature_type, feature_value);
+			auto feature_value_resolved = column_data->ResolveValue(feature_type, feature_value);
 			assert(!FastIsNaN(feature_value_resolved.number));
 		}
 	}
@@ -717,7 +717,7 @@ void SeparableBoxFilterDataStore::VerifyAllEntitiesForColumn(size_t column_index
 		assert(feature_type == ENIVT_STRING_ID || feature_type == ENIVT_STRING_ID_INDIRECTION_INDEX);
 		if(feature_type == ENIVT_STRING_ID_INDIRECTION_INDEX && feature_value.indirectionIndex != 0)
 		{
-			auto feature_value_resolved = column_data->GetResolvedValue(feature_type, feature_value);
+			auto feature_value_resolved = column_data->ResolveValue(feature_type, feature_value);
 			assert(feature_value_resolved.stringID != string_intern_pool.NOT_A_STRING_ID);
 		}
 	}

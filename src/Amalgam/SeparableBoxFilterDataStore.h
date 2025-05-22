@@ -289,11 +289,11 @@ public:
 		entities.resize(enabled_entities.size());
 		values.resize(enabled_entities.size());
 		size_t index = 0;
-		auto value_type = column_data->GetUnresolvedValueType(ENIVT_NUMBER);
+		auto value_type = column_data->UnresolveValueType(ENIVT_NUMBER);
 		for(auto entity_index : enabled_entities)
 		{
 			entities[index] = entity_index;
-			values[index] = column_data->GetResolvedValue(value_type, GetValue(entity_index, column_index)).number;
+			values[index] = column_data->ResolveValue(value_type, GetValue(entity_index, column_index)).number;
 			index++;
 		}
 	}
@@ -318,11 +318,11 @@ public:
 		entities.resize(enabled_entities.size());
 		values.resize(enabled_entities.size());
 		size_t index = 0;
-		auto value_type = column_data->GetUnresolvedValueType(ENIVT_NUMBER);
+		auto value_type = column_data->UnresolveValueType(ENIVT_NUMBER);
 		for(auto entity_index : enabled_entities)
 		{
 			entities[index] = entity_index;
-			values[index] = column_data->GetResolvedValue(value_type, GetValue(entity_index, column_index)).number;
+			values[index] = column_data->ResolveValue(value_type, GetValue(entity_index, column_index)).number;
 			index++;
 		}
 	}
@@ -423,7 +423,7 @@ public:
 	{
 		auto column_data = columnData[column_index].get();
 		auto number_indices_ptr = &column_data->numberIndices;
-		auto value_type = column_data->GetUnresolvedValueType(ENIVT_NUMBER);
+		auto value_type = column_data->UnresolveValueType(ENIVT_NUMBER);
 
 		return [&, number_indices_ptr, column_index, column_data, value_type]
 		(Iter i, double &value)
@@ -432,7 +432,7 @@ public:
 			if(!number_indices_ptr->contains(entity_index))
 				return false;
 
-			value = column_data->GetResolvedValue(value_type, GetValue(entity_index, column_index)).number;
+			value = column_data->ResolveValue(value_type, GetValue(entity_index, column_index)).number;
 			return true;
 		};
 	}
@@ -447,7 +447,7 @@ public:
 
 		auto column_data = columnData[column_index].get();
 		auto number_indices_ptr = &column_data->numberIndices;
-		auto value_type = column_data->GetUnresolvedValueType(ENIVT_NUMBER);
+		auto value_type = column_data->UnresolveValueType(ENIVT_NUMBER);
 
 		return [&, number_indices_ptr, column_index, column_data, value_type]
 			(size_t i)
@@ -455,7 +455,7 @@ public:
 				if(!number_indices_ptr->contains(i))
 					return 1.0;
 
-				return column_data->GetResolvedValue(value_type, GetValue(i, column_index)).number;
+				return column_data->ResolveValue(value_type, GetValue(i, column_index)).number;
 			};
 	}
 
@@ -466,7 +466,7 @@ public:
 	{
 		auto column_data = columnData[column_index].get();
 		auto string_indices_ptr = &column_data->stringIdIndices;
-		auto value_type = column_data->GetUnresolvedValueType(ENIVT_STRING_ID);
+		auto value_type = column_data->UnresolveValueType(ENIVT_STRING_ID);
 
 		return [&, string_indices_ptr, column_index, column_data, value_type]
 		(Iter i, StringInternPool::StringID &value)
@@ -475,7 +475,7 @@ public:
 			if(!string_indices_ptr->contains(entity_index))
 				return false;
 
-			value = column_data->GetResolvedValue(value_type, GetValue(entity_index, column_index)).stringID;
+			value = column_data->ResolveValue(value_type, GetValue(entity_index, column_index)).stringID;
 			return true;
 		};
 	}
@@ -515,8 +515,8 @@ public:
 
 			auto value_type = column_data->GetIndexValueType(search_index);
 			//overwrite value in case of value interning
-			auto value = column_data->GetResolvedValue(value_type, GetValue(search_index, column_index));
-			value_type = column_data->GetResolvedValueType(value_type);
+			auto value = column_data->ResolveValue(value_type, GetValue(search_index, column_index));
+			value_type = column_data->ResolveValueType(value_type);
 
 			PopulateTargetValueAndLabelIndex(r_dist_eval, i, value, value_type);
 		}
@@ -629,8 +629,8 @@ protected:
 
 			//get value
 			auto other_value_type = column_data->GetIndexValueType(entity_index);
-			auto other_value = column_data->GetResolvedValue(other_value_type, GetValue(entity_index, absolute_feature_index));
-			other_value_type = column_data->GetResolvedValueType(other_value_type);
+			auto other_value = column_data->ResolveValue(other_value_type, GetValue(entity_index, absolute_feature_index));
+			other_value_type = column_data->ResolveValueType(other_value_type);
 
 			//compute term
 			double term = r_dist_eval.ComputeDistanceTerm(other_value, other_value_type, query_feature_index, high_accuracy);
@@ -842,8 +842,8 @@ protected:
 			auto &column_data = columnData[column_index];
 
 			auto other_value_type = column_data->GetIndexValueType(other_index);
-			auto other_value = column_data->GetResolvedValue(other_value_type, column_data->valueEntries[other_index]);
-			other_value_type = column_data->GetResolvedValueType(other_value_type);
+			auto other_value = column_data->ResolveValue(other_value_type, column_data->valueEntries[other_index]);
+			other_value_type = column_data->ResolveValueType(other_value_type);
 
 			dist_accum += r_dist_eval.ComputeDistanceTerm(other_value, other_value_type, i, high_accuracy);
 		}
@@ -855,7 +855,7 @@ protected:
 			auto &column_data = columnData[radius_column_index];
 			auto radius_value_type = column_data->GetIndexValueType(other_index);
 			if(radius_value_type == ENIVT_NUMBER || radius_value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
-				dist -= column_data->GetResolvedValue(radius_value_type, column_data->valueEntries[other_index]).number;
+				dist -= column_data->ResolveValue(radius_value_type, column_data->valueEntries[other_index]).number;
 		}
 
 		return dist;
@@ -1005,12 +1005,8 @@ protected:
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 			auto &column_data = columnData[feature_attribs.featureIndex];
-			auto other_value_type = column_data->GetIndexValueType(entity_index);
 
-			//resolve value
-			auto other_value = column_data->GetResolvedValue(other_value_type, GetValue(entity_index, feature_attribs.featureIndex));
-			other_value_type = column_data->GetResolvedValueType(other_value_type);
-
+			auto [other_value_type, other_value] = column_data->GetValueAndType(entity_index);
 			return r_dist_eval.ComputeDistanceTerm(other_value, other_value_type, query_feature_index, high_accuracy);
 		}
 		}

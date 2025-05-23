@@ -134,7 +134,7 @@ public:
 	}
 
 	//TODO 23792: use this everywhere appropriate where ResolveValue is used in SBFDS
-	inline std::pair<EvaluableNodeImmediateValueType, EvaluableNodeImmediateValue> GetValueAndType(size_t index)
+	inline std::pair<EvaluableNodeImmediateValueType, EvaluableNodeImmediateValue> GetIndexValueTypeAndValue(size_t index)
 	{
 		auto value_type = GetIndexValueType(index);
 		auto value = ResolveValue(value_type, valueEntries[index]);

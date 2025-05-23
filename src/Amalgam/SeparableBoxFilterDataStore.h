@@ -511,7 +511,7 @@ public:
 				continue;
 
 			size_t column_index = found->second;
-			auto [value_type, value] = columnData[column_index]->GetValueAndType(search_index);
+			auto [value_type, value] = columnData[column_index]->GetIndexValueTypeAndValue(search_index);
 
 			PopulateTargetValueAndLabelIndex(r_dist_eval, i, value, value_type);
 		}
@@ -622,15 +622,9 @@ protected:
 			if(!enabled_indices.contains(entity_index))
 				continue;
 
-			//get value
-			auto other_value_type = column_data->GetIndexValueType(entity_index);
-			auto other_value = column_data->ResolveValue(other_value_type, GetValue(entity_index, absolute_feature_index));
-			other_value_type = column_data->ResolveValueType(other_value_type);
-
-			//compute term
+			auto [other_value_type, other_value] = column_data->GetIndexValueTypeAndValue(entity_index);
 			double term = r_dist_eval.ComputeDistanceTerm(other_value, other_value_type, query_feature_index, high_accuracy);
 
-			//accumulate
 			partial_sums.Accum(entity_index, accum_location, term);
 		}
 
@@ -834,12 +828,7 @@ protected:
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[i];
 
 			size_t column_index = feature_attribs.featureIndex;
-			auto &column_data = columnData[column_index];
-
-			auto other_value_type = column_data->GetIndexValueType(other_index);
-			auto other_value = column_data->ResolveValue(other_value_type, column_data->valueEntries[other_index]);
-			other_value_type = column_data->ResolveValueType(other_value_type);
-
+			auto [other_value_type, other_value] = columnData[column_index]->GetIndexValueTypeAndValue(other_index);
 			dist_accum += r_dist_eval.ComputeDistanceTerm(other_value, other_value_type, i, high_accuracy);
 		}
 
@@ -1001,7 +990,7 @@ protected:
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 			auto &column_data = columnData[feature_attribs.featureIndex];
 
-			auto [other_value_type, other_value] = column_data->GetValueAndType(entity_index);
+			auto [other_value_type, other_value] = column_data->GetIndexValueTypeAndValue(entity_index);
 			return r_dist_eval.ComputeDistanceTerm(other_value, other_value_type, query_feature_index, high_accuracy);
 		}
 		}

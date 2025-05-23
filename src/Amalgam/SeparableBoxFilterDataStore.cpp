@@ -433,7 +433,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 		//else, there are less indices to consider than possible unique values, so save computation by just considering entities that are still valid
 		for(auto entity_index : enabled_indices)
 		{
-			auto [value_type, value] = column_data->GetValueAndType(entity_index);
+			auto [value_type, value] = column_data->GetIndexValueTypeAndValue(entity_index);
 			distances[entity_index] += r_dist_eval.ComputeDistanceTerm(
 											value, value_type, query_feature_index, high_accuracy);
 

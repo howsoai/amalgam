@@ -511,12 +511,7 @@ public:
 				continue;
 
 			size_t column_index = found->second;
-			auto &column_data = columnData[column_index];
-
-			auto value_type = column_data->GetIndexValueType(search_index);
-			//overwrite value in case of value interning
-			auto value = column_data->ResolveValue(value_type, GetValue(search_index, column_index));
-			value_type = column_data->ResolveValueType(value_type);
+			auto [value_type, value] = columnData[column_index]->GetValueAndType(search_index);
 
 			PopulateTargetValueAndLabelIndex(r_dist_eval, i, value, value_type);
 		}

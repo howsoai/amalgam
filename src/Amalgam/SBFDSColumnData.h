@@ -133,7 +133,7 @@ public:
 		return ENIVT_CODE;
 	}
 
-	//TODO: use this everywhere appropriate where ResolveValue is used in SBFDS
+	//TODO 23792: use this everywhere appropriate where ResolveValue is used in SBFDS
 	inline std::pair<EvaluableNodeImmediateValueType, EvaluableNodeImmediateValue> GetValueAndType(size_t index)
 	{
 		auto value_type = GetIndexValueType(index);

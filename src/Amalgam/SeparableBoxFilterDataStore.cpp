@@ -40,6 +40,7 @@ void SeparableBoxFilterDataStore::BuildLabel(size_t column_index, const std::vec
 #endif
 }
 
+//TODO 23792: move this to SBFDSColumnData.h
 void SeparableBoxFilterDataStore::OptimizeColumn(size_t column_index)
 {
 #ifdef SBFDS_VERIFICATION
@@ -337,10 +338,10 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 		auto &radius_column_data = columnData[radius_column_index];
 		for(auto entity_index : enabled_indices)
 		{
-			auto radius_value_type = radius_column_data->GetIndexValueType(entity_index);
 			double radius = 0.0;
-			if(radius_value_type == ENIVT_NUMBER || radius_value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
-				radius = radius_column_data->ResolveValue(radius_value_type, GetValue(entity_index, radius_column_index)).number;
+			auto [radius_value_type, radius_value] = radius_column_data->GetResolvedIndexValueTypeAndValue(entity_index);
+			if(radius_value_type == ENIVT_NUMBER)
+				radius = radius_value.number;
 
 			if(radius == 0)
 				distances[entity_index] = -max_dist_exponentiated;

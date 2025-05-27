@@ -133,7 +133,6 @@ public:
 		return ENIVT_CODE;
 	}
 
-	//TODO 23792: use this everywhere appropriate where ResolveValue is used in SBFDS
 	//returns the resolved type and value at the index
 	inline std::pair<EvaluableNodeImmediateValueType, EvaluableNodeImmediateValue> GetResolvedIndexValueTypeAndValue(size_t index)
 	{
@@ -158,16 +157,6 @@ public:
 			return ENIVT_NUMBER;
 		if(value_type == ENIVT_STRING_ID_INDIRECTION_INDEX)
 			return ENIVT_STRING_ID;
-		return value_type;
-	}
-
-	//returns the value type that represents the values stored in this column, performing the reverse of any resolution for intern lookups
-	__forceinline EvaluableNodeImmediateValueType UnresolveValueType(EvaluableNodeImmediateValueType value_type)
-	{
-		if(value_type == ENIVT_NUMBER && internedNumberValues.valueInterningEnabled)
-			return ENIVT_NUMBER_INDIRECTION_INDEX;
-		if(value_type == ENIVT_STRING_ID && internedStringIdValues.valueInterningEnabled)
-			return ENIVT_STRING_ID_INDIRECTION_INDEX;
 		return value_type;
 	}
 

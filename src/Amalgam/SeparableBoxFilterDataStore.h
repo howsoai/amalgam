@@ -289,7 +289,6 @@ public:
 		entities.resize(enabled_entities.size());
 		values.resize(enabled_entities.size());
 		size_t index = 0;
-		auto value_type = column_data->UnresolveValueType(ENIVT_NUMBER);
 		for(auto entity_index : enabled_entities)
 		{
 			entities[index] = entity_index;
@@ -318,11 +317,10 @@ public:
 		entities.resize(enabled_entities.size());
 		values.resize(enabled_entities.size());
 		size_t index = 0;
-		auto value_type = column_data->UnresolveValueType(ENIVT_NUMBER);
 		for(auto entity_index : enabled_entities)
 		{
 			entities[index] = entity_index;
-			values[index] = column_data->ResolveValue(value_type, GetValue(entity_index, column_index)).number;
+			values[index] = column_data->GetResolvedIndexValue(entity_index).number;
 			index++;
 		}
 	}
@@ -423,9 +421,8 @@ public:
 	{
 		auto column_data = columnData[column_index].get();
 		auto number_indices_ptr = &column_data->numberIndices;
-		auto value_type = column_data->UnresolveValueType(ENIVT_NUMBER);
 
-		return [&, number_indices_ptr, column_index, column_data, value_type]
+		return [&, number_indices_ptr, column_index, column_data]
 		(Iter i, double &value)
 		{
 			size_t entity_index = *i;
@@ -447,9 +444,8 @@ public:
 
 		auto column_data = columnData[column_index].get();
 		auto number_indices_ptr = &column_data->numberIndices;
-		auto value_type = column_data->UnresolveValueType(ENIVT_NUMBER);
 
-		return [&, number_indices_ptr, column_index, column_data, value_type]
+		return [&, number_indices_ptr, column_index, column_data]
 			(size_t i)
 			{
 				if(!number_indices_ptr->contains(i))
@@ -466,9 +462,8 @@ public:
 	{
 		auto column_data = columnData[column_index].get();
 		auto string_indices_ptr = &column_data->stringIdIndices;
-		auto value_type = column_data->UnresolveValueType(ENIVT_STRING_ID);
 
-		return [&, string_indices_ptr, column_index, column_data, value_type]
+		return [&, string_indices_ptr, column_index, column_data]
 		(Iter i, StringInternPool::StringID &value)
 		{
 			size_t entity_index = *i;
@@ -836,10 +831,9 @@ protected:
 
 		if(radius_column_index < columnData.size())
 		{
-			auto &column_data = columnData[radius_column_index];
-			auto radius_value_type = column_data->GetIndexValueType(other_index);
-			if(radius_value_type == ENIVT_NUMBER || radius_value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
-				dist -= column_data->ResolveValue(radius_value_type, column_data->valueEntries[other_index]).number;
+			auto [radius_value_type, radius_value] = columnData[radius_column_index]->GetResolvedIndexValueTypeAndValue(other_index);
+			if(radius_value_type == ENIVT_NUMBER)
+				dist -= radius_value.number;
 		}
 
 		return dist;

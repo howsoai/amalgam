@@ -293,7 +293,7 @@ public:
 		for(auto entity_index : enabled_entities)
 		{
 			entities[index] = entity_index;
-			values[index] = column_data->ResolveValue(value_type, GetValue(entity_index, column_index)).number;
+			values[index] = column_data->GetResolvedIndexValue(entity_index).number;
 			index++;
 		}
 	}
@@ -432,7 +432,7 @@ public:
 			if(!number_indices_ptr->contains(entity_index))
 				return false;
 
-			value = column_data->ResolveValue(value_type, GetValue(entity_index, column_index)).number;
+			value = column_data->GetResolvedIndexValue(entity_index).number;
 			return true;
 		};
 	}
@@ -455,7 +455,7 @@ public:
 				if(!number_indices_ptr->contains(i))
 					return 1.0;
 
-				return column_data->ResolveValue(value_type, GetValue(i, column_index)).number;
+				return column_data->GetResolvedIndexValue(i).number;
 			};
 	}
 
@@ -475,7 +475,7 @@ public:
 			if(!string_indices_ptr->contains(entity_index))
 				return false;
 
-			value = column_data->ResolveValue(value_type, GetValue(entity_index, column_index)).stringID;
+			value = column_data->GetResolvedIndexValue(entity_index).stringID;
 			return true;
 		};
 	}
@@ -511,7 +511,7 @@ public:
 				continue;
 
 			size_t column_index = found->second;
-			auto [value_type, value] = columnData[column_index]->GetIndexValueTypeAndValue(search_index);
+			auto [value_type, value] = columnData[column_index]->GetResolvedIndexValueTypeAndValue(search_index);
 
 			PopulateTargetValueAndLabelIndex(r_dist_eval, i, value, value_type);
 		}
@@ -622,7 +622,7 @@ protected:
 			if(!enabled_indices.contains(entity_index))
 				continue;
 
-			auto [other_value_type, other_value] = column_data->GetIndexValueTypeAndValue(entity_index);
+			auto [other_value_type, other_value] = column_data->GetResolvedIndexValueTypeAndValue(entity_index);
 			double term = r_dist_eval.ComputeDistanceTerm(other_value, other_value_type, query_feature_index, high_accuracy);
 
 			partial_sums.Accum(entity_index, accum_location, term);
@@ -828,7 +828,7 @@ protected:
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[i];
 
 			size_t column_index = feature_attribs.featureIndex;
-			auto [other_value_type, other_value] = columnData[column_index]->GetIndexValueTypeAndValue(other_index);
+			auto [other_value_type, other_value] = columnData[column_index]->GetResolvedIndexValueTypeAndValue(other_index);
 			dist_accum += r_dist_eval.ComputeDistanceTerm(other_value, other_value_type, i, high_accuracy);
 		}
 
@@ -990,7 +990,7 @@ protected:
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 			auto &column_data = columnData[feature_attribs.featureIndex];
 
-			auto [other_value_type, other_value] = column_data->GetIndexValueTypeAndValue(entity_index);
+			auto [other_value_type, other_value] = column_data->GetResolvedIndexValueTypeAndValue(entity_index);
 			return r_dist_eval.ComputeDistanceTerm(other_value, other_value_type, query_feature_index, high_accuracy);
 		}
 		}

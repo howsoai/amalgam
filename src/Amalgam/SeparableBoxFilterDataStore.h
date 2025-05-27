@@ -561,9 +561,12 @@ protected:
 		std::vector<DistanceReferencePair<size_t>> &distances_out,
 		size_t ignore_index = std::numeric_limits<size_t>::max(), RandomStream rand_stream = RandomStream());
 
-#ifdef SBFDS_VERIFICATION
 	//used for debugging to make sure all entities are valid
-	void VerifyAllEntitiesForColumn(size_t column_index);
+	void VerifyAllEntitiesForColumn(size_t column_index)
+	{
+		auto &column_data = columnData[column_index];
+		column_data->VerifyAllEntitiesForColumn(numEntities);
+	}
 
 	//used for debugging to make sure all entities are valid
 	inline void VerifyAllEntitiesForAllColumns()
@@ -571,7 +574,6 @@ protected:
 		for(size_t i = 0; i < columnData.size(); i++)
 			VerifyAllEntitiesForColumn(i);
 	}
-#endif
 
 	//deletes the index and associated data
 	//if it is the last entity and remove_last_entity is true, then it will truncate storage

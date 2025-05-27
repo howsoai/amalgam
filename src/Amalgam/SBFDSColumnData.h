@@ -1096,6 +1096,61 @@ public:
 			[](auto &value_entry_iter) -> ValueEntry & { return *(value_entry_iter.second.get()); });
 	}
 
+	//used for debugging to make sure all entities are valid
+	inline void VerifyAllEntitiesForColumn(size_t max_num_entities = std::numeric_limits<size_t>::max())
+	{
+		for(auto &value_entry : sortedNumberValueEntries)
+		{
+			//ensure all interned values are valid
+			if(internedNumberValues.valueInterningEnabled)
+			{
+				auto &interns = internedNumberValues;
+				assert(value_entry.second.valueInternIndex < interns.internedIndexToValue.size());
+				assert(!FastIsNaN(interns.internedIndexToValue[value_entry.second.valueInternIndex]));
+			}
+
+			//ensure all entity ids are not out of range
+			for(auto entity_index : value_entry.second.indicesWithValue)
+				assert(entity_index < max_num_entities);
+		}
+
+		//ensure all numbers are valid
+		for(auto entity_index : numberIndices)
+		{
+			auto &feature_value = valueEntries[entity_index];
+			auto feature_type = GetIndexValueType(entity_index);
+			assert(feature_type == ENIVT_NUMBER || feature_type == ENIVT_NUMBER_INDIRECTION_INDEX);
+			if(feature_type == ENIVT_NUMBER_INDIRECTION_INDEX && feature_value.indirectionIndex != 0)
+			{
+				auto feature_value_resolved = ResolveValue(feature_type, feature_value);
+				assert(!FastIsNaN(feature_value_resolved.number));
+			}
+		}
+
+		for(auto &[sid, value_entry] : stringIdValueEntries)
+		{
+			//ensure all interned values are valid
+			if(internedStringIdValues.valueInterningEnabled)
+			{
+				auto &interns = internedStringIdValues;
+				assert(value_entry->valueInternIndex < interns.internedIndexToValue.size());
+			}
+		}
+
+		//ensure all string ids are valid
+		for(auto entity_index : stringIdIndices)
+		{
+			auto &feature_value = valueEntries[entity_index];
+			auto feature_type = GetIndexValueType(entity_index);
+			assert(feature_type == ENIVT_STRING_ID || feature_type == ENIVT_STRING_ID_INDIRECTION_INDEX);
+			if(feature_type == ENIVT_STRING_ID_INDIRECTION_INDEX && feature_value.indirectionIndex != 0)
+			{
+				auto feature_value_resolved = ResolveValue(feature_type, feature_value);
+				assert(feature_value_resolved.stringID != string_intern_pool.NOT_A_STRING_ID);
+			}
+		}
+	}
+
 protected:
 
 	//updates longestStringLength and indexWithLongestString based on parameters

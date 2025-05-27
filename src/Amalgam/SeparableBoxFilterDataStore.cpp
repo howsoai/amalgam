@@ -664,64 +664,6 @@ template void SeparableBoxFilterDataStore::FindNearestEntities<false>(RepeatedGe
 	size_t top_k, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
 	std::vector<DistanceReferencePair<size_t>> &distances_out, size_t ignore_index, RandomStream rand_stream);
 
-#ifdef SBFDS_VERIFICATION
-void SeparableBoxFilterDataStore::VerifyAllEntitiesForColumn(size_t column_index)
-{
-	auto &column_data = columnData[column_index];
-
-	for(auto &value_entry : column_data->sortedNumberValueEntries)
-	{
-		//ensure all interned values are valid
-		if(column_data->internedNumberValues.valueInterningEnabled)
-		{
-			auto &interns = column_data->internedNumberValues;
-			assert(value_entry.second.valueInternIndex < interns.internedIndexToValue.size());
-			assert(!FastIsNaN(interns.internedIndexToValue[value_entry.second.valueInternIndex]));
-		}
-
-		//ensure all entity ids are not out of range
-		for(auto entity_index : value_entry.second.indicesWithValue)
-			assert(entity_index < numEntities);
-	}
-
-	//ensure all numbers are valid
-	for(auto entity_index : column_data->numberIndices)
-	{
-		auto &feature_value = GetValue(entity_index, column_index);
-		auto feature_type = column_data->GetIndexValueType(entity_index);
-		assert(feature_type == ENIVT_NUMBER || feature_type == ENIVT_NUMBER_INDIRECTION_INDEX);
-		if(feature_type == ENIVT_NUMBER_INDIRECTION_INDEX && feature_value.indirectionIndex != 0)
-		{
-			auto feature_value_resolved = column_data->ResolveValue(feature_type, feature_value);
-			assert(!FastIsNaN(feature_value_resolved.number));
-		}
-	}
-
-	for(auto &[sid, value_entry] : column_data->stringIdValueEntries)
-	{
-		//ensure all interned values are valid
-		if(column_data->internedStringIdValues.valueInterningEnabled)
-		{
-			auto &interns = column_data->internedStringIdValues;
-			assert(value_entry->valueInternIndex < interns.internedIndexToValue.size());
-		}
-	}
-
-	//ensure all string ids are valid
-	for(auto entity_index : column_data->stringIdIndices)
-	{
-		auto &feature_value = GetValue(entity_index, column_index);
-		auto feature_type = column_data->GetIndexValueType(entity_index);
-		assert(feature_type == ENIVT_STRING_ID || feature_type == ENIVT_STRING_ID_INDIRECTION_INDEX);
-		if(feature_type == ENIVT_STRING_ID_INDIRECTION_INDEX && feature_value.indirectionIndex != 0)
-		{
-			auto feature_value_resolved = column_data->ResolveValue(feature_type, feature_value);
-			assert(feature_value_resolved.stringID != string_intern_pool.NOT_A_STRING_ID);
-		}
-	}
-}
-#endif
-
 void SeparableBoxFilterDataStore::DeleteEntityIndexFromColumns(size_t entity_index, bool remove_last_entity)
 {
 	for(size_t i = 0; i < columnData.size(); i++)

@@ -1,6 +1,163 @@
 //project headers:
 #include "SBFDSColumnData.h"
 
+void SBFDSColumnData::InsertIndexValue(EvaluableNodeImmediateValueType value_type,
+		EvaluableNodeImmediateValue &value, size_t index)
+{
+	if(index >= valueEntries.size())
+		valueEntries.resize(index + 1);
+
+	if(value_type == ENIVT_NOT_EXIST)
+	{
+		invalidIndices.insert(index);
+
+		if(internedNumberValues.valueInterningEnabled || internedStringIdValues.valueInterningEnabled)
+			valueEntries[index] = EvaluableNodeImmediateValue(ValueEntry::NULL_INDEX);
+		else
+			valueEntries[index] = value;
+
+		return;
+	}
+
+	if(value_type == ENIVT_NULL)
+	{
+		nullIndices.insert(index);
+
+		if(internedNumberValues.valueInterningEnabled || internedStringIdValues.valueInterningEnabled)
+			valueEntries[index] = EvaluableNodeImmediateValue(ValueEntry::NULL_INDEX);
+		else
+			valueEntries[index] = value;
+
+		return;
+	}
+
+	if(value_type == ENIVT_NUMBER || value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
+	{
+		numberIndices.insert(index);
+
+		double number_value = ResolveValue(value_type, value).number;
+
+		auto [value_entry_iter, inserted] = sortedNumberValueEntries.try_emplace(number_value, number_value);
+		auto &value_entry = value_entry_iter->second;
+		if(!inserted)
+		{
+			value_entry.indicesWithValue.insert(index);
+
+			if(internedNumberValues.valueInterningEnabled)
+				valueEntries[index] = EvaluableNodeImmediateValue(value_entry.valueInternIndex);
+			else
+				valueEntries[index] = value;
+
+			return;
+		}
+
+		value_entry.indicesWithValue.insert(index);
+
+		if(internedNumberValues.valueInterningEnabled)
+		{
+			internedNumberValues.InsertValueEntry(value_entry, sortedNumberValueEntries.size());
+			valueEntries[index] = value_entry.valueInternIndex;
+		}
+		else
+		{
+			valueEntries[index] = value;
+		}
+
+		return;
+	}
+
+	if(value_type == ENIVT_STRING_ID || value_type == ENIVT_STRING_ID_INDIRECTION_INDEX)
+	{
+		stringIdIndices.insert(index);
+
+		auto string_id = ResolveValue(value_type, value).stringID;
+
+		//try to insert the value if not already there
+		auto [inserted_id_entry, inserted] = stringIdValueEntries.emplace(string_id, nullptr);
+		if(inserted)
+			inserted_id_entry->second = std::make_unique<ValueEntry>(string_id);
+
+		InsertFirstIndexIntoStringIdValueEntry(index, inserted_id_entry);
+
+		UpdateLongestString(string_id, index);
+
+		if(internedStringIdValues.valueInterningEnabled)
+			valueEntries[index] = inserted_id_entry->second->valueInternIndex;
+		else
+			valueEntries[index] = value;
+
+		return;
+	}
+
+	//value_type == ENIVT_CODE
+	codeIndices.insert(index);
+
+	//find the entities that have the corresponding size; if the size doesn't exist, create it
+	size_t code_size = EvaluableNode::GetDeepSize(value.code);
+
+	auto [size_entry, inserted] = valueCodeSizeToIndices.emplace(code_size, nullptr);
+	if(inserted)
+		size_entry->second = std::make_unique<SortedIntegerSet>();
+
+	//add the entity
+	size_entry->second->insert(index);
+
+	UpdateLargestCode(code_size, index);
+
+	valueEntries[index] = value;
+}
+
+void SBFDSColumnData::InsertNextIndexValueExceptNumbers(EvaluableNodeImmediateValueType value_type,
+		EvaluableNodeImmediateValue &value, size_t index)
+{
+	valueEntries[index] = value;
+
+	if(value_type == ENIVT_NOT_EXIST)
+	{
+		invalidIndices.insert(index);
+	}
+	else if(value_type == ENIVT_NULL)
+	{
+		nullIndices.insert(index);
+	}
+	else if(value_type == ENIVT_NUMBER)
+	{
+		numberIndices.insert(index);
+
+		auto [value_entry_iter, inserted] = sortedNumberValueEntries.try_emplace(value.number, value.number);
+		value_entry_iter->second.indicesWithValue.InsertNewLargestInteger(index);
+	}
+	else if(value_type == ENIVT_STRING_ID)
+	{
+		stringIdIndices.insert(index);
+
+		//try to insert the value if not already there, inserting an empty pointer
+		auto [id_entry, inserted] = stringIdValueEntries.emplace(value.stringID, nullptr);
+		if(inserted)
+			id_entry->second = std::make_unique<ValueEntry>(value.stringID);
+
+		id_entry->second->indicesWithValue.InsertNewLargestInteger(index);
+
+		UpdateLongestString(value.stringID, index);
+	}
+	else if(value_type == ENIVT_CODE)
+	{
+		codeIndices.insert(index);
+
+		//find the entities that have the corresponding size; if the size doesn't exist, create it
+		size_t code_size = EvaluableNode::GetDeepSize(value.code);
+
+		auto [size_entry, inserted] = valueCodeSizeToIndices.emplace(code_size, nullptr);
+		if(inserted)
+			size_entry->second = std::make_unique<SortedIntegerSet>();
+
+		//add the entity
+		size_entry->second->insert(index);
+
+		UpdateLargestCode(code_size, index);
+	}
+}
+
 void SBFDSColumnData::ChangeIndexValue(EvaluableNodeImmediateValueType new_value_type,
 		EvaluableNodeImmediateValue new_value, size_t index)
 {
@@ -343,112 +500,6 @@ void SBFDSColumnData::DeleteIndexValue(EvaluableNodeImmediateValueType value_typ
 	default: //shouldn't make it here
 		break;
 	}
-}
-
-void SBFDSColumnData::InsertIndexValue(EvaluableNodeImmediateValueType value_type,
-		EvaluableNodeImmediateValue &value, size_t index)
-{
-	if(index >= valueEntries.size())
-		valueEntries.resize(index + 1);
-
-	if(value_type == ENIVT_NOT_EXIST)
-	{
-		invalidIndices.insert(index);
-
-		if(internedNumberValues.valueInterningEnabled || internedStringIdValues.valueInterningEnabled)
-			valueEntries[index] = EvaluableNodeImmediateValue(ValueEntry::NULL_INDEX);
-		else
-			valueEntries[index] = value;
-
-		return;
-	}
-
-	if(value_type == ENIVT_NULL)
-	{
-		nullIndices.insert(index);
-
-		if(internedNumberValues.valueInterningEnabled || internedStringIdValues.valueInterningEnabled)
-			valueEntries[index] = EvaluableNodeImmediateValue(ValueEntry::NULL_INDEX);
-		else
-			valueEntries[index] = value;
-
-		return;
-	}
-
-	if(value_type == ENIVT_NUMBER || value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
-	{
-		numberIndices.insert(index);
-
-		double number_value = ResolveValue(value_type, value).number;
-
-		auto [value_entry_iter, inserted] = sortedNumberValueEntries.try_emplace(number_value, number_value);
-		auto &value_entry = value_entry_iter->second;
-		if(!inserted)
-		{
-			value_entry.indicesWithValue.insert(index);
-
-			if(internedNumberValues.valueInterningEnabled)
-				valueEntries[index] = EvaluableNodeImmediateValue(value_entry.valueInternIndex);
-			else
-				valueEntries[index] = value;
-
-			return;
-		}
-
-		value_entry.indicesWithValue.insert(index);
-
-		if(internedNumberValues.valueInterningEnabled)
-		{
-			internedNumberValues.InsertValueEntry(value_entry, sortedNumberValueEntries.size());
-			valueEntries[index] = value_entry.valueInternIndex;
-		}
-		else
-		{
-			valueEntries[index] = value;
-		}
-
-		return;
-	}
-
-	if(value_type == ENIVT_STRING_ID || value_type == ENIVT_STRING_ID_INDIRECTION_INDEX)
-	{
-		stringIdIndices.insert(index);
-
-		auto string_id = ResolveValue(value_type, value).stringID;
-
-		//try to insert the value if not already there
-		auto [inserted_id_entry, inserted] = stringIdValueEntries.emplace(string_id, nullptr);
-		if(inserted)
-			inserted_id_entry->second = std::make_unique<ValueEntry>(string_id);
-
-		InsertFirstIndexIntoStringIdValueEntry(index, inserted_id_entry);
-
-		UpdateLongestString(string_id, index);
-
-		if(internedStringIdValues.valueInterningEnabled)
-			valueEntries[index] = inserted_id_entry->second->valueInternIndex;
-		else
-			valueEntries[index] = value;
-
-		return;
-	}
-
-	//value_type == ENIVT_CODE
-	codeIndices.insert(index);
-
-	//find the entities that have the corresponding size; if the size doesn't exist, create it
-	size_t code_size = EvaluableNode::GetDeepSize(value.code);
-
-	auto [size_entry, inserted] = valueCodeSizeToIndices.emplace(code_size, nullptr);
-	if(inserted)
-		size_entry->second = std::make_unique<SortedIntegerSet>();
-
-	//add the entity
-	size_entry->second->insert(index);
-
-	UpdateLargestCode(code_size, index);
-
-	valueEntries[index] = value;
 }
 
 void SBFDSColumnData::FindAllIndicesWithinRange(EvaluableNodeImmediateValueType value_type,

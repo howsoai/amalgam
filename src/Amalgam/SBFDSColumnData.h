@@ -57,59 +57,6 @@ public:
 		indexWithLargestCode(0), largestCodeSize(0)
 	{	}
 
-	//like InsertIndexValue, but used only for building the column data from an empty column
-	//this function must be called on each index in ascending order; for example, index 2 must be called after index 1
-	void InsertNextIndexValueExceptNumbers(EvaluableNodeImmediateValueType value_type,
-		EvaluableNodeImmediateValue &value, size_t index)
-	{
-		valueEntries[index] = value;
-
-		if(value_type == ENIVT_NOT_EXIST)
-		{
-			invalidIndices.insert(index);
-		}
-		else if(value_type == ENIVT_NULL)
-		{
-			nullIndices.insert(index);
-		}
-		else if(value_type == ENIVT_NUMBER)
-		{
-			numberIndices.insert(index);
-
-			auto [value_entry_iter, inserted] = sortedNumberValueEntries.try_emplace(value.number, value.number);
-			value_entry_iter->second.indicesWithValue.InsertNewLargestInteger(index);
-		}
-		else if(value_type == ENIVT_STRING_ID)
-		{
-			stringIdIndices.insert(index);
-
-			//try to insert the value if not already there, inserting an empty pointer
-			auto [id_entry, inserted] = stringIdValueEntries.emplace(value.stringID, nullptr);
-			if(inserted)
-				id_entry->second = std::make_unique<ValueEntry>(value.stringID);
-
-			id_entry->second->indicesWithValue.InsertNewLargestInteger(index);
-
-			UpdateLongestString(value.stringID, index);
-		}
-		else if(value_type == ENIVT_CODE)
-		{
-			codeIndices.insert(index);
-
-			//find the entities that have the corresponding size; if the size doesn't exist, create it
-			size_t code_size = EvaluableNode::GetDeepSize(value.code);
-
-			auto [size_entry, inserted] = valueCodeSizeToIndices.emplace(code_size, nullptr);
-			if(inserted)
-				size_entry->second = std::make_unique<SortedIntegerSet>();
-
-			//add the entity
-			size_entry->second->insert(index);
-
-			UpdateLargestCode(code_size, index);
-		}
-	}
-
 	//returns the value type of the given index given the value
 	__forceinline EvaluableNodeImmediateValueType GetIndexValueType(size_t index)
 	{
@@ -171,12 +118,16 @@ public:
 		return value;
 	}
 
-	//moves index from being associated with key old_value to key new_value
-	void ChangeIndexValue(EvaluableNodeImmediateValueType new_value_type,
-		EvaluableNodeImmediateValue new_value, size_t index);
+	//inserts the value at id
+	//returns the value that should be used to reference the value, which may be an index
+	//depending on the state of the column data
+	void InsertIndexValue(EvaluableNodeImmediateValueType value_type,
+		EvaluableNodeImmediateValue &value, size_t index);
 
-	//deletes everything involving the value at the index
-	void DeleteIndexValue(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value, size_t index);
+	//like InsertIndexValue, but used only for building the column data from an empty column
+	//this function must be called on each index in ascending order; for example, index 2 must be called after index 1
+	void InsertNextIndexValueExceptNumbers(EvaluableNodeImmediateValueType value_type,
+		EvaluableNodeImmediateValue &value, size_t index);
 
 	//inserts a particular value based on the value_index
 	//templated to make it efficiently work regardless of the container
@@ -189,11 +140,12 @@ public:
 		internedStringIdValues.InsertValueEntry(value_entry, stringIdValueEntries.size());
 	}
 
-	//inserts the value at id
-	//returns the value that should be used to reference the value, which may be an index
-	//depending on the state of the column data
-	void InsertIndexValue(EvaluableNodeImmediateValueType value_type,
-		EvaluableNodeImmediateValue &value, size_t index);
+	//moves index from being associated with key old_value to key new_value
+	void ChangeIndexValue(EvaluableNodeImmediateValueType new_value_type,
+		EvaluableNodeImmediateValue new_value, size_t index);
+
+	//deletes everything involving the value at the index
+	void DeleteIndexValue(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value, size_t index);
 
 	//returns the number of unique values in the column
 	//if value_type is ENIVT_NULL, then it will include all types, otherwise it will only consider

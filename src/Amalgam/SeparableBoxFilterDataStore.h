@@ -6,17 +6,12 @@
 //The structure can efficiently search data when using different metric space parameters without being rebuilt.
 //----------------------------------------------------------------------------------------------------------------------------
 
-//if SBFDS_VERIFICATION is defined, then it will frequently verify integrity at cost of performance
-//if FORCE_SBFDS_VALUE_INTERNING is defined, then it will force value interning to always be on
-//if DISABLE_SBFDS_VALUE_INTERNING is defined, then it will disable all value interning
-//if FORCE_SBFDS_VALUE_INTERNING and DISABLE_SBFDS_VALUE_INTERNING, FORCE_SBFDS_VALUE_INTERNING takes precedence
-
 //project headers:
 #include "Concurrency.h"
 #include "FastMath.h"
 #include "EvaluableNode.h"
-#include "IntegerSet.h"
 #include "GeneralizedDistance.h"
+#include "IntegerSet.h"
 #include "PartialSum.h"
 #include "SBFDSColumnData.h"
 
@@ -105,56 +100,20 @@ public:
 	void BuildLabel(size_t column_index, const std::vector<Entity *> &entities);
 
 	//changes column to/from interning as would yield best performance
-	void OptimizeColumn(size_t column_index);
+	inline void OptimizeColumn(size_t column_index)
+	{
+		columnData[column_index]->Optimize();
+	}
 
 	//calls OptimizeColumn on all columns
 	inline void OptimizeAllColumns()
 	{
-		for(size_t column_index = 0; column_index < columnData.size(); column_index++)
-			OptimizeColumn(column_index);
+		for(auto &column : columnData)
+			column->Optimize();
 	}
 
 	//expand the structure by adding a new column/label/feature and populating with data from entities
-	void AddLabels(std::vector<StringInternPool::StringID> &label_sids, const std::vector<Entity *> &entities)
-	{
-		//make sure have data to add
-		if(label_sids.size() == 0 || entities.size() == 0)
-			return;
-
-		numEntities = std::max(numEntities, entities.size());
-
-		//resize the column data storage and populate column and label_id lookups
-		size_t num_columns_added = AddLabelsAsEmptyColumns(label_sids);
-
-		size_t num_columns = columnData.size();
-		size_t num_previous_columns = columnData.size() - num_columns_added;
-
-	#ifdef MULTITHREAD_SUPPORT
-		//if big enough (enough entities and/or enough columns), try to use multithreading
-		if(num_columns_added > 1 && (numEntities > 10000 || (numEntities > 200 && num_columns_added > 10)))
-		{
-			auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(num_columns_added);
-
-			auto enqueue_task_lock = Concurrency::urgentThreadPool.AcquireTaskLock();
-			for(size_t i = num_previous_columns; i < num_columns; i++)
-			{
-				Concurrency::urgentThreadPool.BatchEnqueueTask([this, &entities, i, &task_set]()
-					{
-						BuildLabel(i, entities);
-						task_set.MarkTaskCompleted();
-					}
-				);
-			}
-
-			task_set.WaitForTasks(&enqueue_task_lock);
-			return;
-		}
-		//not running concurrently
-	#endif
-
-		for(size_t i = num_previous_columns; i < num_columns; i++)
-			BuildLabel(i, entities);
-	}
+	void AddLabels(std::vector<StringInternPool::StringID> &label_sids, const std::vector<Entity *> &entities);
 
 	//returns true only if none of the entities have the label
 	inline bool IsColumnIndexRemovable(size_t column_index_to_remove)
@@ -289,11 +248,10 @@ public:
 		entities.resize(enabled_entities.size());
 		values.resize(enabled_entities.size());
 		size_t index = 0;
-		auto value_type = column_data->GetUnresolvedValueType(ENIVT_NUMBER);
 		for(auto entity_index : enabled_entities)
 		{
 			entities[index] = entity_index;
-			values[index] = column_data->GetResolvedValue(value_type, GetValue(entity_index, column_index)).number;
+			values[index] = column_data->GetResolvedIndexValue(entity_index).number;
 			index++;
 		}
 	}
@@ -318,11 +276,10 @@ public:
 		entities.resize(enabled_entities.size());
 		values.resize(enabled_entities.size());
 		size_t index = 0;
-		auto value_type = column_data->GetUnresolvedValueType(ENIVT_NUMBER);
 		for(auto entity_index : enabled_entities)
 		{
 			entities[index] = entity_index;
-			values[index] = column_data->GetResolvedValue(value_type, GetValue(entity_index, column_index)).number;
+			values[index] = column_data->GetResolvedIndexValue(entity_index).number;
 			index++;
 		}
 	}
@@ -423,16 +380,15 @@ public:
 	{
 		auto column_data = columnData[column_index].get();
 		auto number_indices_ptr = &column_data->numberIndices;
-		auto value_type = column_data->GetUnresolvedValueType(ENIVT_NUMBER);
 
-		return [&, number_indices_ptr, column_index, column_data, value_type]
+		return [&, number_indices_ptr, column_data]
 		(Iter i, double &value)
 		{
 			size_t entity_index = *i;
 			if(!number_indices_ptr->contains(entity_index))
 				return false;
 
-			value = column_data->GetResolvedValue(value_type, GetValue(entity_index, column_index)).number;
+			value = column_data->GetResolvedIndexValue(entity_index).number;
 			return true;
 		};
 	}
@@ -447,15 +403,14 @@ public:
 
 		auto column_data = columnData[column_index].get();
 		auto number_indices_ptr = &column_data->numberIndices;
-		auto value_type = column_data->GetUnresolvedValueType(ENIVT_NUMBER);
 
-		return [&, number_indices_ptr, column_index, column_data, value_type]
+		return [&, number_indices_ptr, column_data]
 			(size_t i)
 			{
 				if(!number_indices_ptr->contains(i))
 					return 1.0;
 
-				return column_data->GetResolvedValue(value_type, GetValue(i, column_index)).number;
+				return column_data->GetResolvedIndexValue(i).number;
 			};
 	}
 
@@ -466,16 +421,15 @@ public:
 	{
 		auto column_data = columnData[column_index].get();
 		auto string_indices_ptr = &column_data->stringIdIndices;
-		auto value_type = column_data->GetUnresolvedValueType(ENIVT_STRING_ID);
 
-		return [&, string_indices_ptr, column_index, column_data, value_type]
+		return [&, string_indices_ptr, column_data]
 		(Iter i, StringInternPool::StringID &value)
 		{
 			size_t entity_index = *i;
 			if(!string_indices_ptr->contains(entity_index))
 				return false;
 
-			value = column_data->GetResolvedValue(value_type, GetValue(entity_index, column_index)).stringID;
+			value = column_data->GetResolvedIndexValue(entity_index).stringID;
 			return true;
 		};
 	}
@@ -511,12 +465,7 @@ public:
 				continue;
 
 			size_t column_index = found->second;
-			auto &column_data = columnData[column_index];
-
-			auto value_type = column_data->GetIndexValueType(search_index);
-			//overwrite value in case of value interning
-			auto value = column_data->GetResolvedValue(value_type, GetValue(search_index, column_index));
-			value_type = column_data->GetResolvedValueType(value_type);
+			auto [value_type, value] = columnData[column_index]->GetResolvedIndexValueTypeAndValue(search_index);
 
 			PopulateTargetValueAndLabelIndex(r_dist_eval, i, value, value_type);
 		}
@@ -571,17 +520,19 @@ protected:
 		std::vector<DistanceReferencePair<size_t>> &distances_out,
 		size_t ignore_index = std::numeric_limits<size_t>::max(), RandomStream rand_stream = RandomStream());
 
-#ifdef SBFDS_VERIFICATION
 	//used for debugging to make sure all entities are valid
-	void VerifyAllEntitiesForColumn(size_t column_index);
+	void VerifyAllEntitiesForColumn(size_t column_index)
+	{
+		auto &column_data = columnData[column_index];
+		column_data->VerifyAllEntities(numEntities);
+	}
 
 	//used for debugging to make sure all entities are valid
 	inline void VerifyAllEntitiesForAllColumns()
 	{
-		for(size_t i = 0; i < columnData.size(); i++)
-			VerifyAllEntitiesForColumn(i);
+		for(auto &column_data : columnData)
+			column_data->VerifyAllEntities();
 	}
-#endif
 
 	//deletes the index and associated data
 	//if it is the last entity and remove_last_entity is true, then it will truncate storage
@@ -627,15 +578,9 @@ protected:
 			if(!enabled_indices.contains(entity_index))
 				continue;
 
-			//get value
-			auto other_value_type = column_data->GetIndexValueType(entity_index);
-			auto other_value = column_data->GetResolvedValue(other_value_type, GetValue(entity_index, absolute_feature_index));
-			other_value_type = column_data->GetResolvedValueType(other_value_type);
-
-			//compute term
+			auto [other_value_type, other_value] = column_data->GetResolvedIndexValueTypeAndValue(entity_index);
 			double term = r_dist_eval.ComputeDistanceTerm(other_value, other_value_type, query_feature_index, high_accuracy);
 
-			//accumulate
 			partial_sums.Accum(entity_index, accum_location, term);
 		}
 
@@ -839,12 +784,7 @@ protected:
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[i];
 
 			size_t column_index = feature_attribs.featureIndex;
-			auto &column_data = columnData[column_index];
-
-			auto other_value_type = column_data->GetIndexValueType(other_index);
-			auto other_value = column_data->GetResolvedValue(other_value_type, column_data->valueEntries[other_index]);
-			other_value_type = column_data->GetResolvedValueType(other_value_type);
-
+			auto [other_value_type, other_value] = columnData[column_index]->GetResolvedIndexValueTypeAndValue(other_index);
 			dist_accum += r_dist_eval.ComputeDistanceTerm(other_value, other_value_type, i, high_accuracy);
 		}
 
@@ -852,10 +792,9 @@ protected:
 
 		if(radius_column_index < columnData.size())
 		{
-			auto &column_data = columnData[radius_column_index];
-			auto radius_value_type = column_data->GetIndexValueType(other_index);
-			if(radius_value_type == ENIVT_NUMBER || radius_value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
-				dist -= column_data->GetResolvedValue(radius_value_type, column_data->valueEntries[other_index]).number;
+			auto [radius_value_type, radius_value] = columnData[radius_column_index]->GetResolvedIndexValueTypeAndValue(other_index);
+			if(radius_value_type == ENIVT_NUMBER)
+				dist -= radius_value.number;
 		}
 
 		return dist;
@@ -1010,12 +949,8 @@ protected:
 		{
 			auto &feature_attribs = r_dist_eval.distEvaluator->featureAttribs[query_feature_index];
 			auto &column_data = columnData[feature_attribs.featureIndex];
-			auto other_value_type = column_data->GetIndexValueType(entity_index);
 
-			//resolve value
-			auto other_value = column_data->GetResolvedValue(other_value_type, GetValue(entity_index, feature_attribs.featureIndex));
-			other_value_type = column_data->GetResolvedValueType(other_value_type);
-
+			auto [other_value_type, other_value] = column_data->GetResolvedIndexValueTypeAndValue(entity_index);
 			return r_dist_eval.ComputeDistanceTerm(other_value, other_value_type, query_feature_index, high_accuracy);
 		}
 		}

@@ -187,6 +187,7 @@ set(COMMON_SOURCE
     src/Amalgam/rand/RandomStream.cpp
     src/Amalgam/rand/RandomStream.h
     src/Amalgam/rand/WeightedDiscreteRandomStream.h
+    src/Amalgam/SBFDSColumnData.cpp
     src/Amalgam/SBFDSColumnData.h
     src/Amalgam/SeparableBoxFilterDataStore.cpp
     src/Amalgam/SeparableBoxFilterDataStore.h

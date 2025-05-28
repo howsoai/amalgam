@@ -287,7 +287,7 @@ StringInternPool::StringID EvaluableNode::ToStringIDTakingReferenceAndClearing(E
 	return string_intern_pool.CreateStringReference(str_value);
 }
 
-void EvaluableNode::ConvertOrderedListToNumberedAssoc()
+void EvaluableNode::ConvertListToNumberedAssoc()
 {
 	//don't do anything if no child nodes
 	if(!DoesEvaluableNodeTypeUseOrderedData(GetType()))
@@ -297,22 +297,42 @@ void EvaluableNode::ConvertOrderedListToNumberedAssoc()
 		return;
 	}
 
-	AssocType new_map;
+	AssocType new_mcn;
 
 	//convert ordered child nodes into index number -> value
 	auto &ocn = GetOrderedChildNodes();
-	new_map.reserve(ocn.size());
+	new_mcn.reserve(ocn.size());
 	for(size_t i = 0; i < ocn.size(); i++)
 	{
 		std::string s = NumberToString(i, true);
-		new_map.emplace(string_intern_pool.CreateStringReference(s), ocn[i]);
+		new_mcn.emplace(string_intern_pool.CreateStringReference(s), ocn[i]);
 	}
 
 	InitMappedChildNodes();
 	type = ENT_ASSOC;
 
 	//swap for efficiency
-	std::swap(GetMappedChildNodesReference(), new_map);
+	std::swap(GetMappedChildNodesReference(), new_mcn);
+}
+
+void EvaluableNode::ConvertAssocToList()
+{
+	//don't do anything if no child nodes
+	if(!IsAssociativeArray())
+		return;
+
+	std::vector<EvaluableNode *> new_ocn;
+
+	auto &mcn = GetMappedChildNodesReference();
+	new_ocn.reserve(mcn.size());
+	for(auto &[_, cn] : mcn)
+		new_ocn.push_back(cn);
+
+	InitOrderedChildNodes();
+	type = ENT_LIST;
+
+	//swap for efficiency
+	std::swap(GetOrderedChildNodesReference(), new_ocn);
 }
 
 size_t EvaluableNode::GetEstimatedNodeSizeInBytes(EvaluableNode *n)

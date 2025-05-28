@@ -590,6 +590,7 @@
     <ClCompile Include="PlatformSpecific.cpp" />
     <ClCompile Include="PrintListener.cpp" />
     <ClCompile Include="rand\RandomStream.cpp" />
+    <ClCompile Include="SBFDSColumnData.cpp" />
     <ClCompile Include="SeparableBoxFilterDataStore.cpp" />
     <ClCompile Include="string\StringManipulation.cpp" />
     <ClCompile Include="ThreadPool.cpp" />

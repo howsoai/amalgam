@@ -107,13 +107,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, bo
 	{
 		if(list->GetOrderedChildNodesReference().size() > 0)
 		{
-			if(!list.uniqueUnreferencedTopNode)
-			{
-				//make a copy so can edit node
-				evaluableNodeManager->EnsureNodeIsModifiable(list);
-				node_stack.PopEvaluableNode();
-				node_stack.PushEvaluableNode(list);
-			}
+			
+			evaluableNodeManager->EnsureNodeIsModifiable(list, true);
+			//swap on the stack in case list changed
+			node_stack.PopEvaluableNode();
+			node_stack.PushEvaluableNode(list);
 
 			auto &list_ocn = list->GetOrderedChildNodesReference();
 			//remove the first element(s)
@@ -138,13 +136,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TAIL(EvaluableNode *en, bo
 	{
 		if(list->GetMappedChildNodesReference().size() > 0)
 		{
-			if(!list.uniqueUnreferencedTopNode)
-			{
-				//make a copy so can edit node
-				evaluableNodeManager->EnsureNodeIsModifiable(list);
-				node_stack.PopEvaluableNode();
-				node_stack.PushEvaluableNode(list);
-			}
+			evaluableNodeManager->EnsureNodeIsModifiable(list, true);
+			//swap on the stack in case list changed
+			node_stack.PopEvaluableNode();
+			node_stack.PushEvaluableNode(list);
 
 			//just remove the first, because it's more efficient and the order does not matter for maps
 			size_t num_to_remove = 0;
@@ -315,13 +310,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, b
 
 	if(list->IsOrderedArray())
 	{
-		if(!list.uniqueUnreferencedTopNode)
-		{
-			//make a copy so can edit node
-			evaluableNodeManager->EnsureNodeIsModifiable(list);
-			node_stack.PopEvaluableNode();
-			node_stack.PushEvaluableNode(list);
-		}
+		evaluableNodeManager->EnsureNodeIsModifiable(list, true);
+		//swap on the stack in case list changed
+		node_stack.PopEvaluableNode();
+		node_stack.PushEvaluableNode(list);
 
 		auto &list_ocn = list->GetOrderedChildNodesReference();
 
@@ -346,13 +338,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TRUNC(EvaluableNode *en, b
 	}
 	else if(list->IsAssociativeArray())
 	{
-		if(!list.uniqueUnreferencedTopNode)
-		{
-			//make a copy so can edit node
-			evaluableNodeManager->EnsureNodeIsModifiable(list);
-			node_stack.PopEvaluableNode();
-			node_stack.PushEvaluableNode(list);
-		}
+		evaluableNodeManager->EnsureNodeIsModifiable(list, true);
+		//swap on the stack in case list changed
+		node_stack.PopEvaluableNode();
+		node_stack.PushEvaluableNode(list);
 
 		//just remove the first, because it's more efficient and the order does not matter for maps
 		size_t num_to_remove = 0;
@@ -443,7 +432,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, 
 		if(EvaluableNode::IsAssociativeArray(new_elements))
 		{
 			if(new_list->GetType() == ENT_LIST)
-				new_list->ConvertOrderedListToNumberedAssoc();
+				new_list->ConvertListToNumberedAssoc();
 
 			auto &new_elements_mcn = new_elements->GetMappedChildNodesReference();
 			if(new_elements_mcn.size() > 0)

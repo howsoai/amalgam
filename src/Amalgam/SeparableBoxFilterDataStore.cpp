@@ -177,6 +177,7 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 		return;
 	}
 
+	//truncate cache if removing the last entry, either by moving the last entity or by directly removing the last
 	bool remove_last_entity = (entity_index_to_reassign + 1 == numEntities
 		|| (entity_index_to_reassign + 1 >= numEntities && entity_index + 1 == numEntities));
 

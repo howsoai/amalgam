@@ -169,7 +169,7 @@ void SBFDSColumnData::ChangeIndexValue(EvaluableNodeImmediateValueType new_value
 	{
 		if(!invalidIndices.contains(index))
 		{
-			DeleteIndexValue(old_value_type, old_value, index);
+			DeleteIndexValue(old_value_type, old_value, index, false);
 			invalidIndices.insert(index);
 		}
 
@@ -388,13 +388,14 @@ void SBFDSColumnData::ChangeIndexValue(EvaluableNodeImmediateValueType new_value
 	}
 
 	//delete index at old value
-	DeleteIndexValue(old_value_type_resolved, old_value_resolved, index);
+	DeleteIndexValue(old_value_type_resolved, old_value_resolved, index, false);
 
 	//add index at new value bucket
 	InsertIndexValue(new_value_type_resolved, new_value_resolved, index);
 }
 
-void SBFDSColumnData::DeleteIndexValue(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value, size_t index)
+void SBFDSColumnData::DeleteIndexValue(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value,
+	size_t index, bool remove_last_entity)
 {
 	switch(value_type)
 	{
@@ -500,12 +501,17 @@ void SBFDSColumnData::DeleteIndexValue(EvaluableNodeImmediateValueType value_typ
 	default: //shouldn't make it here
 		break;
 	}
+
+	if(remove_last_entity)
+		valueEntries.pop_back();
+	else
+		valueEntries[index] = std::numeric_limits<double>::quiet_NaN();
 }
 
 void SBFDSColumnData::Optimize()
 {
 #ifdef SBFDS_VERIFICATION
-	VerifyAllEntitiesForColumn(column_index);
+	VerifyAllEntities();
 #endif
 
 	if(internedNumberValues.valueInterningEnabled)
@@ -573,7 +579,7 @@ void SBFDSColumnData::Optimize()
 	}
 
 #ifdef SBFDS_VERIFICATION
-	VerifyAllEntitiesForColumn(column_index);
+	VerifyAllEntities();
 #endif
 }
 

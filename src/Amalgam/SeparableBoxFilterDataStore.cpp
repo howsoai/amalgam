@@ -40,6 +40,48 @@ void SeparableBoxFilterDataStore::BuildLabel(size_t column_index, const std::vec
 #endif
 }
 
+void SeparableBoxFilterDataStore::AddLabels(std::vector<StringInternPool::StringID> &label_sids,
+	const std::vector<Entity *> &entities)
+{
+	//make sure have data to add
+	if(label_sids.size() == 0 || entities.size() == 0)
+		return;
+
+	numEntities = std::max(numEntities, entities.size());
+
+	//resize the column data storage and populate column and label_id lookups
+	size_t num_columns_added = AddLabelsAsEmptyColumns(label_sids);
+
+	size_t num_columns = columnData.size();
+	size_t num_previous_columns = columnData.size() - num_columns_added;
+
+#ifdef MULTITHREAD_SUPPORT
+	//if big enough (enough entities and/or enough columns), try to use multithreading
+	if(num_columns_added > 1 && (numEntities > 10000 || (numEntities > 200 && num_columns_added > 10)))
+	{
+		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(num_columns_added);
+
+		auto enqueue_task_lock = Concurrency::urgentThreadPool.AcquireTaskLock();
+		for(size_t i = num_previous_columns; i < num_columns; i++)
+		{
+			Concurrency::urgentThreadPool.BatchEnqueueTask([this, &entities, i, &task_set]()
+			{
+				BuildLabel(i, entities);
+				task_set.MarkTaskCompleted();
+			}
+			);
+		}
+
+		task_set.WaitForTasks(&enqueue_task_lock);
+		return;
+	}
+	//not running concurrently
+#endif
+
+	for(size_t i = num_previous_columns; i < num_columns; i++)
+		BuildLabel(i, entities);
+}
+
 void SeparableBoxFilterDataStore::RemoveColumnIndex(size_t column_index_to_remove)
 {
 #ifdef SBFDS_VERIFICATION
@@ -135,6 +177,9 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 		return;
 	}
 
+	bool remove_last_entity = (entity_index_to_reassign + 1 == numEntities
+		|| (entity_index_to_reassign + 1 >= numEntities && entity_index + 1 == numEntities));
+
 	//reassign index for each column
 	for(size_t column_index = 0; column_index < columnData.size(); column_index++)
 	{
@@ -147,17 +192,12 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 		columnData[column_index]->ChangeIndexValue(value_type_to_reassign, value_to_reassign, entity_index);
 
 		//remove the value where it is
-		columnData[column_index]->DeleteIndexValue(value_type_to_reassign, value_to_reassign, entity_index_to_reassign);
+		columnData[column_index]->DeleteIndexValue(value_type_to_reassign, value_to_reassign,
+			entity_index_to_reassign, remove_last_entity);
 	}
 
-	//truncate cache if removing the last entry, either by moving the last entity or by directly removing the last
-	if(entity_index_to_reassign + 1 == numEntities
-		|| (entity_index_to_reassign + 1 >= numEntities && entity_index + 1 == numEntities))
-	{
-		for(auto &column_data : columnData)
-			column_data->valueEntries.pop_back();
+	if(remove_last_entity)
 		numEntities--;
-	}
 	
 	//clean up any labels that aren't relevant
 	RemoveAnyUnusedLabels();
@@ -593,12 +633,7 @@ void SeparableBoxFilterDataStore::DeleteEntityIndexFromColumns(size_t entity_ind
 		auto &column_data = columnData[i];
 		auto &feature_value = GetValue(entity_index, i);
 		auto feature_type = column_data->GetIndexValueType(entity_index);
-		column_data->DeleteIndexValue(feature_type, feature_value, entity_index);
-
-		if(remove_last_entity)
-			column_data->valueEntries.pop_back();
-		else
-			column_data->valueEntries[entity_index] = std::numeric_limits<double>::quiet_NaN();
+		column_data->DeleteIndexValue(feature_type, feature_value, entity_index, remove_last_entity);
 	}
 
 	if(remove_last_entity)

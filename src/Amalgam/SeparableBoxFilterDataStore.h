@@ -6,11 +6,6 @@
 //The structure can efficiently search data when using different metric space parameters without being rebuilt.
 //----------------------------------------------------------------------------------------------------------------------------
 
-//if SBFDS_VERIFICATION is defined, then it will frequently verify integrity at cost of performance
-//if FORCE_SBFDS_VALUE_INTERNING is defined, then it will force value interning to always be on
-//if DISABLE_SBFDS_VALUE_INTERNING is defined, then it will disable all value interning
-//if FORCE_SBFDS_VALUE_INTERNING and DISABLE_SBFDS_VALUE_INTERNING, FORCE_SBFDS_VALUE_INTERNING takes precedence
-
 //project headers:
 #include "Concurrency.h"
 #include "FastMath.h"
@@ -118,46 +113,7 @@ public:
 	}
 
 	//expand the structure by adding a new column/label/feature and populating with data from entities
-	void AddLabels(std::vector<StringInternPool::StringID> &label_sids, const std::vector<Entity *> &entities)
-	{
-		//make sure have data to add
-		if(label_sids.size() == 0 || entities.size() == 0)
-			return;
-
-		numEntities = std::max(numEntities, entities.size());
-
-		//resize the column data storage and populate column and label_id lookups
-		size_t num_columns_added = AddLabelsAsEmptyColumns(label_sids);
-
-		size_t num_columns = columnData.size();
-		size_t num_previous_columns = columnData.size() - num_columns_added;
-
-	#ifdef MULTITHREAD_SUPPORT
-		//if big enough (enough entities and/or enough columns), try to use multithreading
-		if(num_columns_added > 1 && (numEntities > 10000 || (numEntities > 200 && num_columns_added > 10)))
-		{
-			auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(num_columns_added);
-
-			auto enqueue_task_lock = Concurrency::urgentThreadPool.AcquireTaskLock();
-			for(size_t i = num_previous_columns; i < num_columns; i++)
-			{
-				Concurrency::urgentThreadPool.BatchEnqueueTask([this, &entities, i, &task_set]()
-					{
-						BuildLabel(i, entities);
-						task_set.MarkTaskCompleted();
-					}
-				);
-			}
-
-			task_set.WaitForTasks(&enqueue_task_lock);
-			return;
-		}
-		//not running concurrently
-	#endif
-
-		for(size_t i = num_previous_columns; i < num_columns; i++)
-			BuildLabel(i, entities);
-	}
+	void AddLabels(std::vector<StringInternPool::StringID> &label_sids, const std::vector<Entity *> &entities);
 
 	//returns true only if none of the entities have the label
 	inline bool IsColumnIndexRemovable(size_t column_index_to_remove)
@@ -568,14 +524,14 @@ protected:
 	void VerifyAllEntitiesForColumn(size_t column_index)
 	{
 		auto &column_data = columnData[column_index];
-		column_data->VerifyAllEntitiesForColumn(numEntities);
+		column_data->VerifyAllEntities(numEntities);
 	}
 
 	//used for debugging to make sure all entities are valid
 	inline void VerifyAllEntitiesForAllColumns()
 	{
-		for(size_t i = 0; i < columnData.size(); i++)
-			VerifyAllEntitiesForColumn(i);
+		for(auto &column_data : columnData)
+			column_data->VerifyAllEntities();
 	}
 
 	//deletes the index and associated data

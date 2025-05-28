@@ -13,6 +13,11 @@
 #include <type_traits>
 #include <vector>
 
+//if SBFDS_VERIFICATION is defined, then it will frequently verify integrity at cost of performance
+//if FORCE_SBFDS_VALUE_INTERNING is defined, then it will force value interning to always be on
+//if DISABLE_SBFDS_VALUE_INTERNING is defined, then it will disable all value interning
+//if FORCE_SBFDS_VALUE_INTERNING and DISABLE_SBFDS_VALUE_INTERNING, FORCE_SBFDS_VALUE_INTERNING takes precedence
+
 //SBFDSColumnData class maintains a sorted linear and random access data collection
 //values with the same key are placed into the same bucket.  buckets are stored in sorted order by key
 class SBFDSColumnData
@@ -145,7 +150,9 @@ public:
 		EvaluableNodeImmediateValue new_value, size_t index);
 
 	//deletes everything involving the value at the index
-	void DeleteIndexValue(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value, size_t index);
+	//if remove_last_entity is true, then it will remove the last entry (assumes index is the last entry)
+	void DeleteIndexValue(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value,
+		size_t index, bool remove_last_entity);
 
 	//changes column to/from interning as would yield best performance
 	void Optimize();
@@ -409,7 +416,7 @@ public:
 	}
 
 	//used for debugging to make sure all entities are valid
-	inline void VerifyAllEntitiesForColumn(size_t max_num_entities = std::numeric_limits<size_t>::max())
+	inline void VerifyAllEntities(size_t max_num_entities = std::numeric_limits<size_t>::max())
 	{
 		for(auto &value_entry : sortedNumberValueEntries)
 		{

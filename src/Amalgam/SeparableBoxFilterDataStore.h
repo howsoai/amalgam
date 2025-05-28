@@ -15,8 +15,8 @@
 #include "Concurrency.h"
 #include "FastMath.h"
 #include "EvaluableNode.h"
-#include "IntegerSet.h"
 #include "GeneralizedDistance.h"
+#include "IntegerSet.h"
 #include "PartialSum.h"
 #include "SBFDSColumnData.h"
 

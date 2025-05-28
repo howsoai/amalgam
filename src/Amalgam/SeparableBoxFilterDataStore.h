@@ -404,7 +404,7 @@ public:
 		auto column_data = columnData[column_index].get();
 		auto number_indices_ptr = &column_data->numberIndices;
 
-		return [&, number_indices_ptr, column_index, column_data]
+		return [&, number_indices_ptr, column_data]
 			(size_t i)
 			{
 				if(!number_indices_ptr->contains(i))

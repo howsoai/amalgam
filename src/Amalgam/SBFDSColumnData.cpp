@@ -502,6 +502,81 @@ void SBFDSColumnData::DeleteIndexValue(EvaluableNodeImmediateValueType value_typ
 	}
 }
 
+void SBFDSColumnData::Optimize()
+{
+#ifdef SBFDS_VERIFICATION
+	VerifyAllEntitiesForColumn(column_index);
+#endif
+
+	if(internedNumberValues.valueInterningEnabled)
+	{
+		if(AreNumberValuesPreferredToInterns())
+		{
+			for(auto &value_entry : sortedNumberValueEntries)
+			{
+				double value = value_entry.first;
+				for(auto entity_index : value_entry.second.indicesWithValue)
+					valueEntries[entity_index].number = value;
+			}
+
+			for(auto entity_index : nullIndices)
+				valueEntries[entity_index].number = std::numeric_limits<double>::quiet_NaN();
+
+			ConvertNumberInternsToValues();
+		}
+	}
+	else if(AreNumberInternsPreferredToValues())
+	{
+		ConvertNumberValuesToInterns();
+
+		for(auto &value_entry : sortedNumberValueEntries)
+		{
+			size_t value_index = value_entry.second.valueInternIndex;
+			for(auto entity_index : value_entry.second.indicesWithValue)
+				valueEntries[entity_index].indirectionIndex = value_index;
+		}
+
+		for(auto entity_index : nullIndices)
+			valueEntries[entity_index].indirectionIndex = SBFDSColumnData::ValueEntry::NULL_INDEX;
+	}
+
+	if(internedStringIdValues.valueInterningEnabled)
+	{
+		if(AreStringIdValuesPreferredToInterns())
+		{
+			for(auto &[sid, value_entry] : stringIdValueEntries)
+			{
+				auto value = value_entry->value.stringID;
+				for(auto entity_index : value_entry->indicesWithValue)
+					valueEntries[entity_index].stringID = value;
+			}
+
+			for(auto entity_index : nullIndices)
+				valueEntries[entity_index].stringID = StringInternPool::NOT_A_STRING_ID;
+
+			ConvertStringIdInternsToValues();
+		}
+	}
+	else if(AreStringIdInternsPreferredToValues())
+	{
+		ConvertStringIdValuesToInterns();
+
+		for(auto &[sid, value_entry] : stringIdValueEntries)
+		{
+			size_t value_index = value_entry->valueInternIndex;
+			for(auto entity_index : value_entry->indicesWithValue)
+				valueEntries[entity_index].indirectionIndex = value_index;
+		}
+
+		for(auto entity_index : nullIndices)
+			valueEntries[entity_index].indirectionIndex = SBFDSColumnData::ValueEntry::NULL_INDEX;
+	}
+
+#ifdef SBFDS_VERIFICATION
+	VerifyAllEntitiesForColumn(column_index);
+#endif
+}
+
 void SBFDSColumnData::FindAllIndicesWithinRange(EvaluableNodeImmediateValueType value_type,
 		EvaluableNodeImmediateValue &low, EvaluableNodeImmediateValue &high, BitArrayIntegerSet &out, bool between_values)
 {

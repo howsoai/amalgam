@@ -105,13 +105,16 @@ public:
 	void BuildLabel(size_t column_index, const std::vector<Entity *> &entities);
 
 	//changes column to/from interning as would yield best performance
-	void OptimizeColumn(size_t column_index);
+	inline void OptimizeColumn(size_t column_index)
+	{
+		columnData[column_index]->Optimize();
+	}
 
 	//calls OptimizeColumn on all columns
 	inline void OptimizeAllColumns()
 	{
-		for(size_t column_index = 0; column_index < columnData.size(); column_index++)
-			OptimizeColumn(column_index);
+		for(auto &column : columnData)
+			column->Optimize();
 	}
 
 	//expand the structure by adding a new column/label/feature and populating with data from entities

@@ -147,6 +147,9 @@ public:
 	//deletes everything involving the value at the index
 	void DeleteIndexValue(EvaluableNodeImmediateValueType value_type, EvaluableNodeImmediateValue value, size_t index);
 
+	//changes column to/from interning as would yield best performance
+	void Optimize();
+
 	//returns the number of unique values in the column
 	//if value_type is ENIVT_NULL, then it will include all types, otherwise it will only consider
 	//the unique values for the type requested

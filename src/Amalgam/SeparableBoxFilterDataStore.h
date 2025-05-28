@@ -422,7 +422,7 @@ public:
 		auto column_data = columnData[column_index].get();
 		auto string_indices_ptr = &column_data->stringIdIndices;
 
-		return [&, string_indices_ptr, column_index, column_data]
+		return [&, string_indices_ptr, column_data]
 		(Iter i, StringInternPool::StringID &value)
 		{
 			size_t entity_index = *i;

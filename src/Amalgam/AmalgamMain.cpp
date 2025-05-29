@@ -27,6 +27,7 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 // Note: spaces in raw string are correct, do not replace with tabs
 std::string GetUsage()
 {
+	//TODO 22023: add permissions option to command line
 	std::stringstream usage;
 	usage
 		<< "Amalgam Interpreter (" << AMALGAM_VERSION_STRING << ") - " << GetConcurrencyTypeString() << std::endl

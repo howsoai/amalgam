@@ -250,7 +250,7 @@ void Interpreter::EmitOrLogUndefinedVariableWarningIfNeeded(StringInternPool::St
 	}
 	else if(asset_manager.warnOnUndefined)
 	{
-		EntityPermissions entity_permissions = asset_manager.GetEntityPermissions(curEntity);
+		EntityPermissions entity_permissions = curEntity->GetPermissions();
 		if(entity_permissions.individualPermissions.stdOutAndStdErr)
 			std::cerr << warning << std::endl;
 	}

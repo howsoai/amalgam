@@ -89,12 +89,41 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::VerifyEntity(
 
 std::string EntityExternalInterface::GetEntityPermissions(std::string &handle)
 {
-	//TODO 22023: implement this
+	auto bundle = FindEntityBundle(handle);
+	if(bundle == nullptr)
+		return "null";
+
+	Entity *entity = bundle->entity;
+	if(entity == nullptr)
+		return "null";
+
+	auto permissions = entity->GetPermissions();
+	auto permissions_en = permissions.GetPermissionsAsEvaluableNode(&entity->evaluableNodeManager);
+
+	auto [result, converted] = EvaluableNodeJSONTranslation::EvaluableNodeToJson(permissions_en);
+	
+	entity->evaluableNodeManager.FreeNodeTree(permissions_en);
+	if(converted)
+		return result;
+	return "null";
 }
 
 void EntityExternalInterface::SetEntityPermissions(std::string &handle, std::string &json_permissions)
 {
-	//TODO 22023: implement this
+	auto bundle = FindEntityBundle(handle);
+	if(bundle == nullptr)
+		return;
+
+	Entity *entity = bundle->entity;
+	if(entity == nullptr)
+		return;
+
+	EvaluableNode *permissions_en = EvaluableNodeJSONTranslation::JsonToEvaluableNode(
+		&entity->evaluableNodeManager, json_permissions);
+
+	auto [permissions_to_set, permission_values] = EntityPermissions::EvaluableNodeToPermissions(permissions_en);
+	entity->SetPermissions(permissions_to_set, permission_values, true);
+	entity->evaluableNodeManager.FreeNodeTree(permissions_en);
 }
 
 bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &cloned_handle, std::string &path,

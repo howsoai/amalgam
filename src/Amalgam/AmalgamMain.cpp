@@ -105,6 +105,48 @@ Options:
 	return usage.str();
 }
 
+//parses the permissions string and returns the permissions parsed
+static EntityPermissions ParsePermissionsCommandLineParam(std::string_view permissions_str)
+{
+	if(permissions_str.empty())
+		return EntityPermissions::AllPermissions();
+
+	bool add_permissions = true;
+	size_t permission_letters_start = 0;
+	if(permissions_str[0] == '+')
+	{
+		permission_letters_start++;
+	}
+	else if(permissions_str[0] == '-')
+	{
+		add_permissions = false;
+		permission_letters_start++;
+	}
+
+	//start with no permissions, but if removing permissions, then start with all
+	EntityPermissions permissions;
+	if(!add_permissions)
+		permissions = EntityPermissions::AllPermissions();
+
+	// Iterate over the permission characters in the input string
+	for(size_t i = permission_letters_start; i < permissions_str.size(); ++i)
+	{
+		switch(permissions_str[i])
+		{
+		case 'o': permissions.individualPermissions.stdOutAndStdErr		= add_permissions;	break;
+		case 'i': permissions.individualPermissions.stdIn				= add_permissions;	break;
+		case 'l': permissions.individualPermissions.load				= add_permissions;	break;
+		case 's': permissions.individualPermissions.store				= add_permissions;	break;
+		case 'e': permissions.individualPermissions.environment			= add_permissions;	break;
+		case 'a': permissions.individualPermissions.alterPerformance	= add_permissions;	break;
+		case 'x': permissions.individualPermissions.system				= add_permissions;	break;
+		default:  std::cerr << "Invalid permission character: '" << permissions_str[i] << "'" << std::endl;
+		}
+	}
+
+	return permissions;
+}
+
 //main
 PLATFORM_MAIN_CONSOLE
 {
@@ -136,6 +178,7 @@ PLATFORM_MAIN_CONSOLE
 	size_t num_threads = 0;
 #endif
 	bool debug_internal_memory = Platform_IsDebuggerPresent();
+	EntityPermissions entity_permissions = EntityPermissions::AllPermissions();
 
 	typedef std::chrono::steady_clock clk;
 	auto t = std::chrono::duration_cast<std::chrono::milliseconds>(clk::now().time_since_epoch()).count();
@@ -173,7 +216,7 @@ PLATFORM_MAIN_CONSOLE
 		else if(args[i] == "--p-labels")
 			profile_labels = true;
 		else if(args[i] == "--p-count" && i + 1 < args.size())
-			profile_count = static_cast<size_t>(std::max(std::atoi(args[++i].data()), 0));
+			profile_count = std::max<size_t>(std::atoi(args[++i].data()), 0);
 		else if(args[i] == "--p-file" && i + 1 < args.size())
 			profile_out_file = args[++i];
 		else if(args[i] == "--debug")
@@ -207,8 +250,7 @@ PLATFORM_MAIN_CONSOLE
 		}
 		else if(args[i] == "--permissions" && i + 1 < args.size())
 		{
-			std::string_view permissions_str = args[++i];
-			//TODO 22023: add permissions option to command line
+			entity_permissions = ParsePermissionsCommandLineParam(args[++i]);
 		}
 		else if(amlg_file_to_run == "")
 		{
@@ -272,7 +314,7 @@ PLATFORM_MAIN_CONSOLE
 		if(!status.loaded)
 			return 1;
 
-		asset_manager.SetEntityPermissions(entity, EntityPermissions::AllPermissions(), EntityPermissions::AllPermissions());
+		entity->SetPermissions(EntityPermissions::AllPermissions(), entity_permissions, true);
 
 		PrintListener *print_listener = nullptr;
 		std::vector<EntityWriteListener *> write_listeners;

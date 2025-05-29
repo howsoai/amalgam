@@ -242,7 +242,8 @@ public:
 				auto min_value_entry = sortedNumberValueEntries.begin();
 				double dist_to_min_entry = cycle_length - std::abs(min_value_entry->first - value);
 
-				auto &max_value_entry = --sortedNumberValueEntries.end();
+				//make a copy of the entry in case the entry is invalidated elsewhere
+				auto max_value_entry = --sortedNumberValueEntries.end();
 				double dist_to_max_entry = cycle_length - std::abs(max_value_entry->first - value);
 
 				if(dist_to_max_entry < dist_to_min_entry)

@@ -111,6 +111,8 @@ static EntityPermissions ParsePermissionsCommandLineParam(std::string_view permi
 	if(permissions_str.empty())
 		return EntityPermissions::AllPermissions();
 
+	//start with no permissions, but if removing permissions, then start with all
+	EntityPermissions permissions;
 	bool add_permissions = true;
 	size_t permission_letters_start = 0;
 	if(permissions_str[0] == '+')
@@ -119,17 +121,13 @@ static EntityPermissions ParsePermissionsCommandLineParam(std::string_view permi
 	}
 	else if(permissions_str[0] == '-')
 	{
+		permissions = EntityPermissions::AllPermissions();
 		add_permissions = false;
 		permission_letters_start++;
 	}
 
-	//start with no permissions, but if removing permissions, then start with all
-	EntityPermissions permissions;
-	if(!add_permissions)
-		permissions = EntityPermissions::AllPermissions();
-
 	// Iterate over the permission characters in the input string
-	for(size_t i = permission_letters_start; i < permissions_str.size(); ++i)
+	for(size_t i = permission_letters_start; i < permissions_str.size(); i++)
 	{
 		switch(permissions_str[i])
 		{

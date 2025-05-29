@@ -250,7 +250,7 @@ void Interpreter::EmitOrLogUndefinedVariableWarningIfNeeded(StringInternPool::St
 	}
 	else if(asset_manager.warnOnUndefined)
 	{
-		EntityPermissions entity_permissions = curEntity->GetPermissions();
+		EntityPermissions entity_permissions = asset_manager.GetEntityPermissions(curEntity);
 		if(entity_permissions.individualPermissions.stdOutAndStdErr)
 			std::cerr << warning << std::endl;
 	}
@@ -1834,6 +1834,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECRYPT(EvaluableNode *en,
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_PRINT(EvaluableNode *en, bool immediate_result)
 {
+	auto permissions = asset_manager.GetEntityPermissions(curEntity);
+	if(!permissions.individualPermissions.stdOutAndStdErr)
+		return EvaluableNodeReference::Null();
+
 	for(auto &cn : en->GetOrderedChildNodes())
 	{
 		auto cur = InterpretNodeForImmediateUse(cn);

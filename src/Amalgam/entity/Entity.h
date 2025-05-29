@@ -765,9 +765,6 @@ public:
 	//returns a random seed based on a random number consumed from the entity and seed_string parameter
 	std::string CreateRandomStreamFromStringAndRand(const std::string &seed_string);
 
-	//returns the permissions on the entity
-	EntityPermissions GetPermissions();
-
 	//sets the permissions on the entity
 	// if deep_set_permissions is true, it will recursively set all contained entities with appropriate seeds
 	// write_listeners is optional, and if specified, will log the event

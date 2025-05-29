@@ -299,7 +299,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_PERMISSIONS(Eva
 	else
 		entity = EntityReadReference(curEntity);
 
-	auto entity_permissions = curEntity->GetPermissions();
+	auto entity_permissions = asset_manager.GetEntityPermissions(entity);
 	//clear lock
 	entity = EntityReadReference();
 
@@ -324,7 +324,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_PERMISSIONS(Eva
 	auto [permissions_to_set, permission_values] = EntityPermissions::EvaluableNodeToPermissions(permissions_en);
 
 	//any permissions set by this entity need to be filtered by the current entity's permissions
-	auto current_entity_permissions = curEntity->GetPermissions();
+	auto current_entity_permissions = asset_manager.GetEntityPermissions(curEntity);
 	permissions_to_set.allPermissions &= current_entity_permissions.allPermissions;
 	permission_values.allPermissions &= current_entity_permissions.allPermissions;
 
@@ -619,7 +619,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD(EvaluableNode *en, bo
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
 
-	auto permissions = curEntity->GetPermissions();
+	auto permissions = asset_manager.GetEntityPermissions(curEntity);
 	if(!permissions.individualPermissions.load)
 		return EvaluableNodeReference::Null();
 
@@ -659,7 +659,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode 
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
 
-	auto permissions = curEntity->GetPermissions();
+	auto permissions = asset_manager.GetEntityPermissions(curEntity);
 	if(!permissions.individualPermissions.load)
 		return EvaluableNodeReference::Null();
 
@@ -740,7 +740,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE(EvaluableNode *en, b
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	auto permissions = curEntity->GetPermissions();
+	auto permissions = asset_manager.GetEntityPermissions(curEntity);
 	if(!permissions.individualPermissions.store)
 		return EvaluableNodeReference::Null();
 
@@ -784,7 +784,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STORE_ENTITY(EvaluableNode
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	auto permissions = curEntity->GetPermissions();
+	auto permissions = asset_manager.GetEntityPermissions(curEntity);
 	if(!permissions.individualPermissions.store)
 		return EvaluableNodeReference::Null();
 

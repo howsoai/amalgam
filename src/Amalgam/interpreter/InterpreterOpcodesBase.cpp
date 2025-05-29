@@ -58,7 +58,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	auto permissions = curEntity->GetPermissions();
+	auto permissions = asset_manager.GetEntityPermissions(curEntity);
 
 	std::string command = InterpretNodeIntoStringValueEmptyNull(ocn[0]);
 
@@ -302,7 +302,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RECLAIM_RESOURCES(Evaluabl
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	auto permissions = curEntity->GetPermissions();
+	auto permissions = asset_manager.GetEntityPermissions(curEntity);
 	if(!permissions.individualPermissions.alterPerformance)
 		return EvaluableNodeReference::Null();
 
@@ -2033,7 +2033,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_RAND_SEED(EvaluableNod
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM_TIME(EvaluableNode *en, bool immediate_result)
 {
-	auto permissions = curEntity->GetPermissions();
+	auto permissions = asset_manager.GetEntityPermissions(curEntity);
 	if(!permissions.individualPermissions.environment)
 		return EvaluableNodeReference::Null();
 

@@ -852,11 +852,6 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, Evalu
 	}
 }
 
-EntityPermissions Entity::GetPermissions()
-{
-	return asset_manager.GetEntityPermissions(this);
-}
-
 void Entity::SetPermissions(EntityPermissions permissions_to_set, EntityPermissions permission_values,
 		bool deep_set_permissions, std::vector<EntityWriteListener *> *write_listeners,
 		Entity::EntityReferenceBufferReference<EntityWriteReference> *all_contained_entities)

@@ -97,7 +97,7 @@ std::string EntityExternalInterface::GetEntityPermissions(std::string &handle)
 	if(entity == nullptr)
 		return "null";
 
-	auto permissions = entity->GetPermissions();
+	auto permissions = asset_manager.GetEntityPermissions(entity);
 	auto permissions_en = permissions.GetPermissionsAsEvaluableNode(&entity->evaluableNodeManager);
 
 	auto [result, converted] = EvaluableNodeJSONTranslation::EvaluableNodeToJson(permissions_en);

@@ -27,7 +27,6 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 // Note: spaces in raw string are correct, do not replace with tabs
 std::string GetUsage()
 {
-	//TODO 22023: add permissions option to command line
 	std::stringstream usage;
 	usage
 		<< "Amalgam Interpreter (" << AMALGAM_VERSION_STRING << ") - " << GetConcurrencyTypeString() << std::endl
@@ -60,6 +59,22 @@ Options:
                      --p-file is specified
 
     --p-file [file]  When used with --p-opcodes or --p-labels, writes the profile information to a file
+
+    --permissions [permissions]
+                     Sets the permission for the file being run.  By default all permissions are granted.
+                     Permissions is a string that can consist of +xyz... or -xyz..., where x, y, and z are
+                     letters that correspond to each permission.  If it starts with a +, then it assumes
+                     no permissions and adds those, if it starts with a - it assumes all permissions are set
+                     and removes those listed.  The letters for each permission are:
+                         o: std_out_and_std_err
+                         i: std_in
+                         l: load
+                         s: store
+                         e: environment
+                         a: alter_performance
+                         x: system (e[x]ecute)
+                     For example, -xe would yield all permissions but remove environment and system permissions,
+                     whereas +io would only allow console input and output
 
     --debug          When specified, begins in debugging mode
 
@@ -189,6 +204,11 @@ PLATFORM_MAIN_CONSOLE
 		{
 			//parameter for internal debugging only -- intentionally not listed in documentation
 			debug_internal_memory = true;
+		}
+		else if(args[i] == "--permissions" && i + 1 < args.size())
+		{
+			std::string_view permissions_str = args[++i];
+			//TODO 22023: add permissions option to command line
 		}
 		else if(amlg_file_to_run == "")
 		{

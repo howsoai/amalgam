@@ -4,7 +4,7 @@ var data = [
 	{
 		"parameter" : "Token params column text goes here",
 		"output" : "Output column text goes here",
-		"permissions" : "P column text", 	//optional, one of: entity, root_entity, e = entity, r = root_entity
+		"permissions" : "P column text", 	//optional, one of: std_out_and_std_err, std_in, load, store, environment, alter_performance, system
 		"new value" : "N column text", 		//optional, one of: new, conditional, partial
 		"description" : "Description column text goes here",
 		"example" : ""			//insert this everywhere but leave it blank like so
@@ -13,7 +13,7 @@ var data = [
 	{
 		"parameter" : "system string command",
 		"output" : "*",
-		"permissions" : "r",
+		"permissions" : "depends on command",
 		"new value" : "new",
 		"description" : "Executes system command specified by command.  See the system commands table for further information.",
 		"example" : "(system \"exit\")"
@@ -29,7 +29,7 @@ var data = [
 	{
 		"parameter" : "reclaim_resources [id_path entity] [bool apply_to_all_contained_entities] [bool clear_query_caches] [bool collect_garbage] [bool force_free_memory] ",
 		"output" : "*",
-		"permissions" : "r",
+		"permissions" : "alter_performance",
 		"description" : "Frees resources of the specified types on entity, which is the current entity if null, and will include all contained entities if apply_to_all_contained_entities is true, which defaults to false, though the opcode will be unable to complete if there are concurrent threads running on any of the contained entities.  The parameter clear_query_caches will remove the query caches, which will make it faster to add, remove, or edit contained entities, but the cache will be rebuilt once a query is called.  The parameter collect_garbage will perform garbage collection on the entity, and if force_free_memory is true, it will reallocate memory buffers to their current size, after garbage collection if both are specified.",
 		"example" : "(reclaim_resources (null) (true) (false) (true) (false))"
 	},
@@ -238,7 +238,6 @@ var data = [
 	{
 		"parameter" : "get_rand_seed",
 		"output" : "string",
-		"permissions" : "",
 		"new value" : "new",
 		"description" : "Evaluates to a string representing the current state of the random number generator.",
 		"example" : "(print (get_rand_seed) \"\\n\")"
@@ -247,7 +246,6 @@ var data = [
 	{
 		"parameter" : "set_rand_seed * node",
 		"output" : "string",
-		"permissions" : "",
 		"description" : "Sets the random number seed and state for the current random number stream without affecting any entity.  If node is already a string in the proper format output by get_entity_rand_seed, then it will set the random generator to that current state, picking up where the previous state left off.  If it is anything else, it uses the value as a random seed to start the genrator.",
 		"example" : " (declare (assoc cur_seed (get_rand_seed)))\n (print (rand) \"\\n\")\n (set_rand_seed cur_seed)\n (print (rand) \"\\n\")"
 	},
@@ -255,7 +253,7 @@ var data = [
 	{
 		"parameter" : "system_time",
 		"output" : "number",
-		"permissions" : "r",
+		"permissions" : "environment",
 		"description" : "Evaluates to the current system time since epoch in seconds (including fractions of seconds).",
 		"example" : "(print (system_time))"
 	},
@@ -1197,7 +1195,7 @@ var data = [
 	{
 		"parameter" : "flatten_entity id_path entity [bool include_rand_seeds] [bool parallel_create] [bool include_version]",
 		"output" : "*",
-		"permissions" : "e",
+		"permissions" : "entity",
 		"new value" : "new",
 		"description" : "Evaluates to code that, if called, would completely reproduce the entity specified by id_path, as well as all contained entities.  If include_rand_seeds is true, its default, it will include all entities' random seeds.  If parallel_create is true, then the creates will be performed with parallel markers as appropriate for each group of contained entities.  If include_version is true, it will include a comment on the top node that is the current version of the Amalgam interpreter, which can be used for validating interoperability when loading code.  The code returned accepts two parameters, create_new_entity, which defaults to true, and new_entity, which defaults to null.  If create_new_entity is true, then it will create a new entity with id_path specified by new_entity, where null will create an unnamed entity.  If create_new_entity is false, then it will overwrite the current entity's code and create all contained entities.",
 		"example" : "(create_entities \"FlattenTest\" (lambda\n  (parallel ##a (rand) )\n))\n(let (assoc fe (flatten_entity \"FlattenTest\"))\n  (print fe)\n  (print (flatten_entity (call fe)))\n  (print (difference_entities \"FlattenTest\" (call fe)))\n (call fe (assoc create_new_entity (false) new_entity \"new_entity_name\")) \n)"
@@ -1206,7 +1204,7 @@ var data = [
 	{
 		"parameter" : "mutate_entity id_path entity1 [number mutaton_rate] [id_path entity2] [assoc mutation_weights] [assoc operation_type]",
 		"output" : "id_path",
-		"permissions" : "e",
+		"permissions" : "entity",
 		"new value" : "new",
 		"description" : "Creates a mutated version of the entity specified by entity1 like mutate. Returns the id_path of a new entity created contained by the entity that ran it.  The value specified in mutation_rate, from 0.0 to 1.0 and defaulting to 0.00001, indicates the probability that any node will experience a mutation.  Uses entity2 as the optional destination via an internal call to create_contained_entity. The parameter mutation_weights is an assoc where the keys are the allowed opcode names and the values are the probabilities that each opcode would be chosen; if null or unspecified, it defaults to all opcodes each with their own default probability.  The operation_type is an assoc where the keys are mutation operations and the values are the probabilities that the operations will be performed.  The operations can consist of the strings change_type, delete, insert, swap_elements, deep_copy_elements, delete_elements, and change_label.",
 		"example" : "(create_entities\n    \"MutateEntity\"\n  (lambda (list 1 2 3 4 5 6 7 8 9 10 11 12 13 14 (assoc \"a\" 1 \"b\" 2)))\n)\n(mutate_entity \"MutateEntity\" 0.4 \"MutatedEntity\")\n(print (retrieve_entity_root \"MutatedEntity\"))"
@@ -1215,7 +1213,7 @@ var data = [
 	{
 		"parameter" : "commonality_entities id_path entity1 id_path entity2",
 		"output" : "number",
-		"permissions" : "e",
+		"permissions" : "entity",
 		"new value" : "new",
 		"description" : "Evaluates to the total count of all of the nodes referenced within entity1 and entity2 that are equivalent, including all contained entities.",
 		"example" : "(create_entities \"e1\" (lambda (assoc \"a\" 3 \"b\" 4)) )\n(create_entities \"e2\" (lambda (assoc \"c\" 3 \"b\" 4)) )\n(print (commonality_entities \"e1\" \"e2\"))"
@@ -1224,7 +1222,7 @@ var data = [
 	{
 		"parameter" : "edit_distance_entities id_path entity1 id_path entity2",
 		"output" : "number",
-		"permissions" : "e",
+		"permissions" : "entity",
 		"new value" : "new",
 		"description" : "Evaluates to the edit distance of all of the nodes referenced within entity1 and entity2 that are equivalent, including all contained entities.",
 		"example" : "(create_entities \"e1\" (lambda (assoc \"a\" 3 \"b\" 4)) )\n(create_entities \"e2\" (lambda (assoc \"c\" 3 \"b\" 4)) )\n(print (edit_distance_entities \"e1\" \"e2\"))"
@@ -1234,7 +1232,7 @@ var data = [
 	{
 		"parameter" : "intersect_entities id_path entity1 id_path entity2 [id_path entity3]",
 		"output" : "id_path",
-		"permissions" : "e",
+		"permissions" : "entity",
 		"new value" : "new",
 		"description" : "Creates an entity of whatever is common between the Entities represented by entity1 and entity2 exclusive.  Returns the id_path of a new entity created contained by the entity that ran it.  Uses entity3 as the optional destination via an internal call create_contained_entity. Any contained entities will be intersected either based on matching name or maximal similarity for nameless entities.",
 		"example" : "(create_entities \"e1\" (lambda (assoc \"a\" 3 \"b\" 4)) )\n(create_entities \"e2\" (lambda (assoc \"c\" 3 \"b\" 4)) )\n(intersect_entities \"e1\" \"e2\" \"e3\"))\n(print (retrieve_entity_root \"e3\")))"
@@ -1243,7 +1241,7 @@ var data = [
 	{
 		"parameter" : "union_entities id_path entity1 id_path entity2 [id_path entity3]",
 		"output" : "id_path",
-		"permissions" : "e",
+		"permissions" : "entity",
 		"new value" : "new",
 		"description" : "Creates an entity of whatever is inclusive when merging the Entities represented by entity1 and entity2.  Returns the id_path of a new entity created contained by the entity that ran it.  Uses entity3 as the optional destination via an internal call to create_contained_entity.  Any contained entities will be unioned either based on matching name or maximal similarity for nameless entities.",
 		"example" : "(create_entities \"e1\" (lambda (assoc \"a\" 3 \"b\" 4)) )\n(create_entities \"e2\" (lambda (assoc \"c\" 3 \"b\" 4)) )\n(union_entities \"e1\" \"e2\" \"e3\"))\n(print (retrieve_entity_root \"e3\")))"
@@ -1252,7 +1250,7 @@ var data = [
 	{
 		"parameter" : "difference_entities id_path entity1 id_path entity2",
 		"output" : "*",
-		"permissions" : "e",
+		"permissions" : "entity",
 		"new value" : "new",
 		"description" : "Finds the difference between the entities specified by entity1 and entity2 and generates code that, if evaluated passing the entity id_path as its parameter \"_\", would create a new entity into the id_path specified by its parameter \"new_entity\" (null if unspecified), which would contain the applied difference between the two entities and returns the newly created entity id_path.  Useful for finding the smallest set of what needs to be changed to apply it to a new and different entity.",
 		"example" : "(create_entities \"DiffEntity1\" (lambda (assoc \"a\" 3 \"b\" 4)) )\n(create_entities (list \"DiffEntity1\" \"DiffEntityChild1\") (lambda (assoc \"x\" 3 \"y\" 4 \"z\" 6)) )\n(create_entities (list \"DiffEntity1\" \"DiffEntityChild1\" \"DiffEntityChild2\") (lambda (assoc \"p\" 3 \"q\" 4 \"u\" 5 \"v\" 6 \"w\" 7)) )\n(create_entities (list \"DiffEntity1\" \"DiffEntityChild1\" \"DiffEntityChild2\" \"DiffEntityChild3\") (lambda (assoc \"e\" 3 \"p\" 4 \"a\" 5 \"o\" 6 \"w\" 7)) )\n(create_entities (list \"DiffEntity1\" \"OnlyIn1\") (lambda (assoc \"m\" 4)) )\n(create_entities (list \"DiffEntity1\") (lambda (assoc \"E\" 3 \"F\" 4)) )\n(create_entities (list \"DiffEntity1\") (lambda (assoc \"e\" 3 \"f\" 4 \"g\" 5 \"h\" 6)) )\n\n(create_entities \"DiffEntity2\" (lambda (assoc \"c\" 3 \"b\" 4)) )\n(create_entities (list \"DiffEntity2\" \"DiffEntityChild1\") (lambda (assoc \"x\" 3 \"y\" 4 \"z\" 5)) )\n(create_entities (list \"DiffEntity2\" \"DiffEntityChild1\" \"DiffEntityChild2\") (lambda (assoc \"p\" 3 \"q\" 4 \"u\" 5 \"v\" 6 \"w\" 7)) )\n(create_entities (list \"DiffEntity2\" \"DiffEntityChild1\" \"DiffEntityChild2\" \"DiffEntityChild3\") (lambda (assoc \"e\" 3 \"p\" 4 \"a\" 5 \"o\" 6 \"w\" 7)) )\n(create_entities (list \"DiffEntity2\" \"OnlyIn2\") (lambda (assoc \"o\" 6)) )\n(create_entities (list \"DiffEntity2\") (lambda (assoc \"E\" 3 \"F\" 4 \"G\" 5 \"H\" 6)) )\n(create_entities (list \"DiffEntity2\") (lambda (assoc \"e\" 3 \"f\" 4)) )\n\n(print (contained_entities \"DiffEntity2\"))\n\n(print (difference_entities \"DiffEntity1\" \"DiffEntity2\"))\n\n(let (assoc new_entity\n    (call (difference_entities \"DiffEntity1\" \"DiffEntity2\") (assoc _ \"DiffEntity1\")))\n  (print new_entity)\n  (print (retrieve_entity_root new_entity))\n  (print (retrieve_entity_root (list new_entity \"DiffEntityChild1\")))\n  (print (contained_entities new_entity))\n)\n\n(create_entities \"DiffContainer\" null)\n\n(create_entities (list \"DiffContainer\" \"DiffEntity1\") (lambda (assoc \"a\" 3 \"b\" 4)) )\n(create_entities (list \"DiffContainer\" \"DiffEntity1\" \"DiffEntityChild1\") (lambda (assoc \"x\" 3 \"y\" 4 \"z\" 6)) )\n(create_entities (list \"DiffContainer\" \"DiffEntity1\" \"DiffEntityChild1\" \"DiffEntityChild2\") (lambda (assoc \"p\" 3 \"q\" 4 \"u\" 5 \"v\" 6 \"w\" 7)) )\n(create_entities (list \"DiffContainer\" \"DiffEntity1\" \"DiffEntityChild1\" \"DiffEntityChild2\" \"DiffEntityChild3\") (lambda (assoc \"e\" 3 \"p\" 4 \"a\" 5 \"o\" 6 \"w\" 7)) )\n(create_entities (list \"DiffContainer\" \"DiffEntity1\" \"OnlyIn1\") (lambda (assoc \"m\" 4)) )\n(create_entities (list \"DiffContainer\" \"DiffEntity1\") (lambda (assoc \"E\" 3 \"F\" 4)) )\n(create_entities (list \"DiffContainer\" \"DiffEntity1\") (lambda (assoc \"e\" 3 \"f\" 4 \"g\" 5 \"h\" 6)) )\n\n(create_entities (list \"DiffContainer\" \"DiffEntity2\") (lambda (assoc \"c\" 3 \"b\" 4)) )\n(create_entities (list \"DiffContainer\" \"DiffEntity2\" \"DiffEntityChild1\") (lambda (assoc \"x\" 3 \"y\" 4 \"z\" 6)) )\n(create_entities (list \"DiffContainer\" \"DiffEntity2\" \"DiffEntityChild1\" \"DiffEntityChild2\") (lambda (assoc \"p\" 3 \"q\" 4 \"u\" 5 \"v\" 6 \"w\" 7)) )\n(create_entities (list \"DiffContainer\" \"DiffEntity2\" \"DiffEntityChild1\" \"DiffEntityChild2\" \"DiffEntityChild3\") (lambda (assoc \"e\" 3 \"p\" 4 \"a\" 5 \"o\" 6 \"w\" 7)) )\n(create_entities (list \"DiffContainer\" \"DiffEntity2\" \"OnlyIn2\") (lambda (assoc \"o\" 6)) )\n(create_entities (list \"DiffContainer\" \"DiffEntity2\") (lambda (assoc \"E\" 3 \"F\" 4 \"G\" 5 \"H\" 6)) )\n(create_entities (list \"DiffContainer\" \"DiffEntity2\") (lambda (assoc \"e\" 3 \"f\" 4)) )\n\n(print (difference_entities (list \"DiffContainer\" \"DiffEntity1\") (list \"DiffContainer\" \"DiffEntity2\") ))\n\n(let (assoc new_entity\n    (call (difference_entities (list \"DiffContainer\" \"DiffEntity1\") (list \"DiffContainer\" \"DiffEntity2\") )\n      (assoc _ (list \"DiffContainer\" \"DiffEntity1\") )))\n  (print new_entity)\n  (print (get_entity_code new_entity))\n  (print (get_entity_code (list new_entity \"DiffEntityChild1\")))\n  (print (contained_entities new_entity))\n)\n"
@@ -1261,7 +1259,7 @@ var data = [
 	{
 		"parameter" : "mix_entities id_path entity1 id_path entity2 [number keep_chance_entity1] [number keep_chance_entity2] [number similar_mix_chance] [number chance_mix_unnamed_children] [id_path entity3]",
 		"output" : "id_path",
-		"permissions" : "e",
+		"permissions" : "entity",
 		"new value" : "new",
 		"description" : "Performs a union operation on the entities represented by entity1 and entity2, but randomly ignores nodes from one or the other tree if not equal.  If only keep_chance_entity1 is specified, keep_chance_entity2 defaults to 1-keep_chance_entity1.  keep_chance_entity1 specifies the probability that a node from the entity represented by entity1 will be kept, and keep_chance_entity2 the probability that a node from the entity represented by entity2 will be kept.  similar_mix_chance is the additional probability that two nodes will mix if they have some commonality, which will include interpolating number values based on keep_chance_node1 and keep_chance_node2, and defaults to 0.0.  If similar_mix_chance is negative, then 1 minus the value will be anded with the commonality probability, so -1 means that it will never mix and 0 means it will only mix when sufficiently common.  chance_mix_unnamed_children represents the probability that an unnamed entity pair will be mixed versus preserved as independent chunks, where 0.2 would yield 20% of the entities mixed. Returns the id_path of a new entity created contained by the entity that ran it.  Uses entity3 as the optional destination via an internal call to create_contained_entity.   Any contained entities will be mixed either based on matching name or maximal similarity for nameless entities.",
 		"example" : "(create_entities \"e1\" (lambda (assoc \"a\" 3 \"b\" 4)) )\n(create_entities \"e2\" (lambda (assoc \"c\" 3 \"b\" 4)) )\n(mix_entities \"e1\" \"e2\" 0.5 0.5 \"e3\")"
@@ -1270,7 +1268,7 @@ var data = [
 	{
 		"parameter" : "get_entity_comments [id_path entity] [string label] [bool deep_comments]",
 		"output" : "*",
-		"permissions" : "e",
+		"permissions" : "entity",
 		"new value" : "new",
 		"description" : "Evaluates to the corresponding comments based on the parameters.  If the id_path is specified or null is specified as the id_path, then it will use the current entity.  If the label is null or empty string, it will retrieve comments for the entity root, otherwise if it is a valid label it will attempt to retrieve the comments for that label, null if the label doesn't exist.  If deep_comments is specified and the label is a declare, then it will return a list of two elements.  The first element of this list is an assoc with the keys being the parameters and the values being lists of the descriptions followed by the default value.  The second element of this list is the comment of the assoc itself, which is intended to be used to describe what is returned.  If label is empty string or null and deep_comments is true, then it will return an assoc of label to comment for each label in the entity.",
 		"example" : "(print (get_entity_comments))\n(print (get_entity_comments \"label_name\" (true))"
@@ -1279,7 +1277,7 @@ var data = [
 	{
 		"parameter" : "retrieve_entity_root [id_path entity] [bool suppress_label_escapes]",
 		"output" : "*",
-		"permissions" : "e",
+		"permissions" : "entity",
 		"new value" : "new",
 		"description" : "Evaluates to the entity's code, looking up the entity by the id_path. If suppress_label_escapes is false or omitted, will disable any labels obtained by inserting an extra # at the beginning of each.",
 		"example" : "(print (retrieve_entity_root))\n(print (retrieve_entity_root 1))"
@@ -1288,7 +1286,7 @@ var data = [
 	{
 		"parameter" : "assign_entity_roots [id_path entity_1] * root_1 [id_path entity_2] [* root_2] [...]",
 		"output" : "bool",
-		"permissions" : "e",
+		"permissions" : "entity",
 		"new value" : "new",
 		"description" : "Sets the code of the entity specified by id_path to node.  If no id_path specified, then uses the current entity, otherwise accesses a contained entity. On assigning the code to the new entity, it will enable any labels obtained by removing any extra #s from the beginning of each.  If all assignments were successful, then returns true, otherwise returns false.",
 		"example" : "(print (assign_entity_roots (list)))"
@@ -1297,7 +1295,7 @@ var data = [
 	{
 		"parameter" : "accum_entity_roots [id_path entity_1] * root_1 [id_path entity_2] [* root_2] [...]",
 		"output" : "bool",
-		"permissions" : "e",
+		"permissions" : "entity",
 		"new value" : "new",
 		"description" : "Accumulates the code of the entity specified by id_path to node. If no id_path specified, then uses the current entity, otherwise accesses a contained entity. On assigning the code to the new entity, it will enable any labels obtained by removing any extra #s from the beginning of each.  If all accumulations were successful, then returns true, otherwise returns false.",
 		"example" : "(create_entities \"AER_test\" (lambda (null ##a 1 ##b 2)))\n(accum_entity_roots \"AER_test\" (list ##c 3))\n(print (retrieve_entity_root \"AER_test\" 1))"
@@ -1306,7 +1304,7 @@ var data = [
 	{
 		"parameter" : "get_entity_rand_seed [id_path entity]",
 		"output" : "string",
-		"permissions" : "e",
+		"permissions" : "entity",
 		"new value" : "new",
 		"description" : "Evaluates to a string representing the current state of the random number generator for the entity specified by id_path used for seeding the random streams of any calls to the entity.",
 		"example" : "(create_entities \"RandTest\" (lambda\n  (null ##a (rand) )\n  ))\n(print (call_entity \"RandTest\" \"a\"))\n(print (get_entity_rand_seed \"RandTest\"))\n"
@@ -1315,33 +1313,33 @@ var data = [
 	{
 		"parameter" : "set_entity_rand_seed [id_path entity] * node [bool deep]",
 		"output" : "string",
-		"permissions" : "e",
+		"permissions" : "entity",
 		"description" : "Sets the random number seed and state for the random number generator of the specified entity, or the current entity if not specified, to the state specified by node.  If node is already a string in the proper format output by get_entity_rand_seed, then it will set the random generator to that current state, picking up where the previous state left off.  If it is anything else, it uses the value as a random seed to start the genrator.  Note that this will not affect the state of the current random number stream, only future random streams created by the entity for new calls.  The parameter deep defaults to false, but if it is true, all contained entities are recursively set with random seeds based on the specified random seed and a hash of their relative id_path path to the entity being set.",
 		"example" : "(create_entities \"RandTest\" (lambda\n  (null ##a (rand) )\n  ) )\n(create_entities (list \"RandTest\" \"DeepRand\") (lambda\n  (null ##a (rand) )\n  ) )\n(declare (assoc seed (get_entity_rand_seed \"RandTest\")))\n(print (call_entity \"RandTest\" \"a\"))\n(set_entity_rand_seed \"RandTest\" 1234)\n(print (call_entity \"RandTest\" \"a\"))"
 	},
 
 	{
-		"parameter" : "get_entity_root_permission [id_path entity]",
+		"parameter" : "get_entity_permissions [id_path entity]",
 		"output" : "bool",
 		"new value" : "new",
-		"permissions" : "r",
-		"description" : "Returns true if the entity has root permissions, false if not.  Will return null if the caller is not root.",
-		"example" : " (create_entities \"RootTest\" (lambda (print (system_time)) ))\n(print (get_entity_root_permission \"RootTest\"))"
+		"permissions" : "entity",
+		"description" : "Returns an assoc of the permissions of the specified entity, where each key is the permission and each value is either true or false.",
+		"example" : " (create_entities \"RootTest\" (lambda (print (system_time)) ))\n(print (get_entity_permissions \"RootTest\"))"
 	},
 
 	{
-		"parameter" : "set_entity_root_permission id_path entity bool permission",
+		"parameter" : "set_entity_permissions id_path entity bool|assoc permissions [bool deep]",
 		"output" : "id_path",
 		"new value" : "new",
-		"permissions" : "r",
-		"description" : "Sets the root permission on the entity specified by id_path.  If bool is true, then it grants permissions, if it is false, then it removes them.  Returns the id_path of the entity.  Can only be called by an entity with root permissions.",
-		"example" : "(create_entities \"RootTest\" (lambda (print (system_time)) ))\n(set_entity_root_permission \"RootTest\" (true))\n(call_entity \"RootTest\")"
+		"permissions" : "entity",
+		"description" : "Sets the permissions on the entity specified by id_path.  If permissions is true, then it grants all permissions, if it is false, then it removes all.  If permissions is an assoc, it alters the permissions of the assoc keys to the boolean values of the assoc's values.  The parameter deep defaults to false, but if it is true, all contained entities have their permissions updated.  Returns the id_path of the entity.",
+		"example" : "(create_entities \"RootTest\" (lambda (print (system_time)) ))\n(set_entity_permissions \"RootTest\" (true))\n(call_entity \"RootTest\")"
 	},
 
 	{
 		"parameter" : "create_entities [id_path entity_1] * node_1 [id_path entity_2] [* node_2] [...]",
 		"output" : "list of id_path",
-		"permissions" : "e",
+		"permissions" : "entity",
 		"new value" : "new",
 		"description" : "Creates a new entity with code specified by node, returning the list of id_path paths for each of the entities created.  Uses the optional entity location specified by the id_path, ignored if null or invalid.  Evaluates to a list of all of the new entities ids, null in place of each id_path if it was unable to create the id_path.  If the entity does not have permission to create the entities, it will evaluate to null.  If the id_path is ommitted, then it will create the new entity in the calling entity.  If id_path specifies an existing entity, then it will create the new entity within that existing entity.  If the last id_path in the string is not an existing entity, then it will attempt to create that entity (returning null if it cannot).  Can only be performed by an entity that contains to the destination specified by id_path. Will automatically remove a # from the beginning of each label in case the label had been disabled.  Unlike the rest of the entity creation commands, create_entities specifies the optional id_path first to make it easy to read entity definitions.  If more than 2 parameters are specified, create_entities will iterate through all of the pairs of parameters, treating them like the first two as it creates new entities.",
 		"example" : "(print (create_entities \"MyLibrary\" (lambda (+ #three 3 4)) ) )\n\n(create_entities \"EntityWithChildren\" (lambda (assoc \"a\" 3 \"b\" 4)) )\n(create_entities (list \"EntityWithChildren\" \"Child1\") (lambda (assoc \"x\" 3 \"y\" 4)) )\n(create_entities (list \"EntityWithChildren\" \"Child2\") (lambda (assoc \"p\" 3 \"q\" 4)) )\n(print (contained_entities \"EntityWithChildren\"))"
@@ -1350,7 +1348,7 @@ var data = [
 	{
 		"parameter" : "clone_entities id_path source_entity_1 [id_path destination_entity_1] [id_path source_entity_2] [id_path destination_entity_2] [...]",
 		"output" : "list of id_path",
-		"permissions" : "e",
+		"permissions" : "entity",
 		"new value" : "new",
 		"description" : "Creates a clone of source_entity_1.  If destination_entity_1 is not specified, then it clones the entity into the current entity.  If destination_entity_1 is specified, then it clones it into the location specified by destination_entity_1; if destination_entity_1 is an existing entity, then it will create it within that entity, if not, it will attempt to create it with the given id_path.  Evaluates to the id_path of the new entity.  Can only be performed by an entity that contains both source_entity_1 and the specified path of destination_entity_1. If multiple entities are specified, it will move each from the source to the destination.  Evaluates to a list of the new entity ids.",
 		"example" : "(print (create_entities \"MyLibrary\" (lambda (+ #three 3 4)) ) )\n(print (clone_entities \"MyLibrary\" \"MyNewLibrary\"))"
@@ -1359,7 +1357,7 @@ var data = [
 	{
 		"parameter" : "move_entities id_path source_entity_1 [id_path destination_entity_1] [id_path source_entity_2] [id_path destination_entity_2] [...]",
 		"output" : "list of id_path",
-		"permissions" : "e",
+		"permissions" : "entity",
 		"new value" : "new",
 		"description" : "Moves the entity from location specified by source_entity_1 to destination destination_entity_1.  If destination_entity_1 exists, it will move source_entity_1 using source_entity_1's current id_path into destination_entity_1.  If destination_entity_1 does not exist, then it will move source_entity_1 and rename it to the end of the id_path specified in destination_entity_1. Can only be performed by a containing entity relative to both ids.  If multiple entities are specified, it will move each from the source to the destination.  Evaluates to a list of the new entity ids.",
 		"example" : "(print (create_entities \"MyLibrary\" (lambda (+ #three 3 4)) ) )\n(print (move_entities \"MyLibrary\" \"MyLibrary2\"))"
@@ -1368,7 +1366,7 @@ var data = [
 	{
 		"parameter" : "destroy_entities [id_path entity_1] [id_path entity_2] [...]",
 		"output" : "bool",
-		"permissions" : "e",
+		"permissions" : "entity",
 		"new value" : "new",
 		"description" : "Destroys the entities specified by the ids entity_1, entity_2, etc. Can only be performed by containing entity.  Retruns true if all entities were successfully destroyed, false if not due to not existing in the first place or due to code being currently run in it.",
 		"example" : "(print (create_entities \"MyLibrary\" (lambda (+ #three 3 4)) ) )\n(print (contained_entities))\n(destroy_entities \"MyLibrary\")\n(print (contained_entities))"
@@ -1378,7 +1376,7 @@ var data = [
 		"parameter" : "load string resource_path [string resource_type] [assoc params]",
 		"output" : "*",
 		"new value" : "new",
-		"permissions" : "r",
+		"permissions" : "load",
 		"description" : "Loads the data specified by the resource in string.  Attempts to load the file type and parse it into appropriate data and evaluate to the corresponding code. The parameter escape_filename defaults to false, but if it is true, it will agressively escape filenames using only alphanumeric characters and the underscore, using underscore as an escape character.  If resource_type is specified and not null, it will use the resource_type specified instead of the extension of the resource_path.  File formats supported are amlg, json, yaml, csv, and caml; anything not in this list will be loaded as a binary string.  Note that loading from a non-'.amlg' extension will only ever provide lists, assocs, numbers, and strings.",
 		"example" : "(print (load \"my_directory/MyModule.amlg\"))"
 	},
@@ -1387,7 +1385,7 @@ var data = [
 		"parameter" : "load_entity string resource_path [id_path entity] [string resource_type] [bool persistent] [assoc params]",
 		"output" : "id_path",
 		"new value" : "new",
-		"permissions" : "r",
+		"permissions" : "load",
 		"description" : "Loads an entity specified by the resource in string.  Attempts to load the file type and parse it into appropriate data and store it in the entity specified by id_path, following the same id_path creation rules as create_entities, except that if no id_path is specified, it may default to a name based on the resource if available.  If persistent is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  Options for the file I/O are specified as key-value pairs in params.  See File I/O for the file types and related params.",
 		"example" : "(load_entity \"my_directory/MyModule.amlg\" \"MyModule\")"
 	},
@@ -1396,7 +1394,7 @@ var data = [
 		"parameter" : "store string resource_path * node [string resource_type] [assoc params]",
 		"output" : "bool",
 		"new value" : "new",
-		"permissions" : "r",
+		"permissions" : "store",
 		"description" : "Stores the code specified by * to the resource in string. Returns true if successful, false if not. If resource_type is specified and not null, it will use the resource_type specified instead of the extension of the resource_path.    Options for the file I/O are specified as key-value pairs in params.  See File I/O for the file types and related params.",
 		"example" : "(store \"my_directory/MyData.amlg\" (list 1 2 3))"
 	},
@@ -1405,7 +1403,7 @@ var data = [
 		"parameter" : "store_entity string resource_path id_path entity [string resource_type] [bool persistent] [assoc params]",
 		"output" : "bool",
 		"new value" : "new",
-		"permissions" : "r",
+		"permissions" : "store",
 		"description" : "Stores the entity specified by the id_path to the resource in string. Returns true if successful, false if not. If resource_type is specified and not null, it will use the resource_type specified instead of the extension of the resource_path.  If persistent is true, default is false, then any modifications to the entity or any entity contained within it will be written out to the resource, so that the memory and persistent storage are synchronized.  Options for the file I/O are specified as key-value pairs in params.  See File I/O for the file types and related params.",
 		"example" : "(store_entity \"my_directory/MyData.amlg\" \"MyData\")"
 	},
@@ -1413,7 +1411,7 @@ var data = [
 	{
 		"parameter" : "contains_entity id_path entity",
 		"output" : "bool",
-		"permissions" : "e",
+		"permissions" : "entity",
 		"new value" : "new",
 		"description" : "Returns true if the referred to entity specified by id_path exists.",
 		"example" : "(print (create_entities \"MyLibrary\" (lambda (+ #three 3 4)) ) )\n(print (contains_entity \"MyLibrary\"))\n(print (contains_entity (list \"MyLibrary\")))"
@@ -1422,7 +1420,7 @@ var data = [
 	{
 		"parameter" : "contained_entities [id_path containing_entity] [list conditions]",
 		"output" : "list of string",
-		"permissions" : "e",
+		"permissions" : "entity",
 		"new value" : "conditional",
 		"description" : "Returns a list of strings of ids of entities contained in the entity specified by id_path or current entity if id_path is ommitted.  The optional list is a conjunction of conditions that are required in order for a contained entity to be returned.  The conditions are all of the commands that begin with query_.",
 		"example" : "(create_entities (list \"TestEntity\" \"Child\")\n  (lambda (null ##TargetLabel 3))\n) \n\n (contained_entities \"TestEntity\" (list\n  (query_exists \"TargetLabel\")\n)) \n\n ; For more examples see the individual entries for each query."
@@ -1431,7 +1429,7 @@ var data = [
 	{
 		"parameter" : "compute_on_contained_entities [id_path containing_entity] [list conditions]",
 		"output" : "*",
-		"permissions" : "e",
+		"permissions" : "entity",
 		"new value" : "conditional",
 		"description" : "Performs queries like contained_entities but returns a value or set of values appropriate for the last query in conditions.  The parameter conditions is a conjunction of conditions that are required in order for the final query to be evaluated.  Each entity in the list is a query.  The conditions are all of the commands that begin with query_.  If the last query does not return anything, then it will just return the matching entities.",
 		"example" : "(create_entities (list \"TestEntity\" \"Child\")\n  (lambda (null ##TargetLabel 3))\n) \n\n (compute_on_contained_entities \"TestEntity\" (list\n  (query_exists \"TargetLabel\")\n)) \n\n ; For more examples see the individual entries for each query."
@@ -1694,7 +1692,7 @@ var data = [
 		"parameter" : "assign_to_entities [id_path entity_1] assoc variable_value_pairs_1 [id_path entity_2] [assoc variable_value_pairs_2] [...]",
 		"output" : "bool",
 		"new value" : "new",
-		"permissions" : "e",
+		"permissions" : "entity",
 		"description" : "For each index-value pair of variable_value_pairs, assigns the value to the labeled variable on the contained entity represented by the respective entity, itself if no id_path specified, while retaining the original labels. If none found, it will not cause an assignment. When the value is assigned, any labels will be cleared out and the root of the value will be assigned the comments and labels of the previous root at the label. Will perform an assignment for each of the entities referenced, returning (true) if all assignments were successful, (false) if not.",
 		"example" : "(null #asgn_test1 12)\n(assign_to_entities (assoc asgn_test1 4))\n(print (retrieve_from_entity \"asgn_test1\"))\n\n"
 	},
@@ -1703,7 +1701,7 @@ var data = [
 		"parameter" : "accum_to_entities [id_path entity_1] assoc variable_value_pairs_1 [id_path entity_2] [assoc variable_value_pairs_2] [...]",
 		"output" : "bool",
 		"new value" : "new",
-		"permissions" : "e",
+		"permissions" : "entity",
 		"description" : "For each index-value pair of assoc, retrieves the labeled variable from the respective entity, accumulates it by the corresponding value in variable_value_pairs, then assigns the value to the labeled variable on the contained entity represented by the id_path, itself if no id_path specified, while retaining the original labels. If none found, it will not cause an assignment. When the value is assigned, any labels will be cleared out and the root of the value will be assigned the comments and labels of the previous root at the label.  Accumulation is performed differently based on the type: for numeric values it adds, for strings, it concatenates, for lists it appends, and for assocs it appends based on the pair. Will perform an accum for each of the entities referenced, returning (true) if all assignments were successful, (false) if not.",
 		"example" : "(null #asgn_test1 12)\n(accum_to_entities (assoc asgn_test1 4))\n(print (retrieve_from_entity \"asgn_test1\"))\n\n"
 	},
@@ -1712,7 +1710,7 @@ var data = [
 		"parameter" : "direct_assign_to_entities [id_path entity_1] assoc variable_value_pairs_1 [id_path entity_2] [assoc variable_value_pairs_2] [...]",
 		"output" : "bool",
 		"new value" : "new",
-		"permissions" : "e",
+		"permissions" : "entity",
 		"description" : "Like assign_to_entities, except retains any/all labels, comments, etc.",
 		"example" : "(create_entities \"DRFE\" (lambda (null ##a 12)) )\n(print (direct_retrieve_from_entity \"DRFE\" \"a\"))\n(print (direct_assign_to_entities \"DRFE\" (assoc a 7)))\n(print (direct_retrieve_from_entity \"DRFE\" \"a\"))"
 	},
@@ -1721,7 +1719,7 @@ var data = [
 		"parameter" : "retrieve_from_entity [id_path entity] [string|list|assoc label_names]",
 		"output" : "*",
 		"new value" : "conditional",
-		"permissions" : "e",
+		"permissions" : "entity",
 		"description" : "If string specified, returns the value of the contained entity id_path, itself if no id_path specified, at the label specified by the string. If list specified, returns the value of the contained entity id_path, itself if no id_path specified, returns a list of the values on the stack specified by each element of the list interpreted as a string label. If assoc specified, returns the value of the contained entity id_path, itself if no id_path specified, returns an assoc with the indices of the assoc passed in with the values being the appropriate values of the label represented by each index.",
 		"example" : "(null #asgn_test1 12)\n(assign_to_entities (assoc asgn_test1 4))\n(print (retrieve_from_entity \"asgn_test1\"))\n\n(null #asgn_test2 12)\n(assign_to_entities (assoc asgn_test2 4))\n(print (retrieve_from_entity \"asgn_test2\"))\n(create_entities \"RCT\" (lambda (null ##a 12 ##b 13)) )\n(print (retrieve_from_entity \"RCT\" \"a\"))\n(print (retrieve_from_entity \"RCT\" (list \"a\" \"b\") ))\n(print (retrieve_from_entity \"RCT\" (zip (list \"a\" \"b\") null) ))\n"
 	},
@@ -1730,7 +1728,7 @@ var data = [
 		"parameter" : "direct_retrieve_from_entity [id_path entity] [string|list|assoc label_names]",
 		"output" : "*",
 		"new value" : "conditional",
-		"permissions" : "e",
+		"permissions" : "entity",
 		"description" : "Like retrieve_from_entity, except retains labels.",
 		"example" : "(create_entities \"DRFE\" (lambda (null ##a 12)) )\n(print (direct_retrieve_from_entity \"DRFE\" \"a\"))\n(print (direct_assign_to_entities \"DRFE\" (assoc a 7)))\n(print (direct_retrieve_from_entity \"DRFE\" \"a\"))"
 	},
@@ -1739,7 +1737,7 @@ var data = [
 		"parameter" : "call_entity id_path entity [string label_name] [assoc arguments] [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [number max_contained_entities] [number max_contained_entity_depth] [number max_entity_id_length] [return_warnings]",
 		"output" : "*",
 		"new value" : "conditional",
-		"permissions" : "e",
+		"permissions" : "entity",
 		"new scope" : true,
 		"description" : "Calls the contained entity specified by id_path, using the entity as the new entity context.  It will evaluate to the return value of the call, null if not found.  If string is specified, then it will call the label specified by string.  If assoc is specified, then it will pass assoc as the arguments on the scope stack.  If operation_limit is specified, it represents the number of operations that are allowed to be performed. If operation_limit is 0 or infinite, then an infinite of operations will be allotted to the entity, but only if its containing entity (the current entity) has infinite operations. The root entity has infinite computing cycles.  If max_node_allocations is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory.   If max_node_allocations is 0 or infinite, then there is no limit to the number of nodes to be allotted to the entity as long as the machine has sufficient memory, but only if the containing entity (the current entity) has unlimited memory access.  If max_opcode_execution_depth is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise max_opcode_execution_depth limits how deep nested opcodes will be called.  The parameters max_contained_entities, max_contained_entity_depth, and max_entity_id_length constrain what they describe, and are primarily useful when ensuring that an entity and all its contained entities can be stored out to the filesystem.  The execution performed will use a random number stream created from the entity's random number stream. If any performance constraints are given or return_warnings is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is an assoc mapping all warnings to their number of occurrences, and perf_constraint violation is a string denoting the constraint exceeded (or (null) if none)), unless return_warnings is false, in which case just the value will be returned.",
 		"example" : "(create_entities \"TestContainerExec\"\n  (lambda (parallel\n  ##d (print \"hello \" x)\n  )) \n)\n\n(print (call_entity \"TestContainerExec\" \"d\" (assoc x \"goodbye\")))"
@@ -1749,7 +1747,7 @@ var data = [
 		"parameter" : "call_entity_get_changes id_path entity [string label_name] [assoc arguments] [number operation_limit] [number max_node_allocations] [number max_opcode_execution_depth] [number max_contained_entities] [number max_contained_entity_depth] [number max_entity_id_length] [bool return_warnings]",
 		"output" : "list of *1 *2",
 		"new value" : "conditional",
-		"permissions" : "e",
+		"permissions" : "entity",
 		"new scope" : true,
 		"description" : "Like call_entity returning the value in *1.  However, it also returns a list of direct_assign_to_entities calls with respective data in *2, holding a log of all of the changes that have elapsed.  The log may be evaluated to apply or re-apply the changes to any id_path passed in to the log as _. If any performance constraints are given or return_warnings is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is an assoc mapping all warnings to their number of occurrences, and perf_constraint violation is a string denoting the constraint exceeded (or (null) if none)), unless return_warnings is false, in which case just the value will be returned.",
 		"example" : "(create_entities \"CEGCTest\" (lambda\n    (null ##a_assign\n    (seq \n      (create_entities \"Contained\" (lambda\n        (null ##a 4 )\n      ))\n      (print (retrieve_from_entity \"Contained\" \"a\") )\n      (assign_to_entities \"Contained\" (assoc a 6) )\n      (print (retrieve_from_entity \"Contained\" \"a\") )\n      (set_entity_rand_seed \"Contained\" \"bbbb\")\n      (destroy_entities \"Contained\")\n    )\n  )\n))\n\n(print (call_entity_get_changes \"CEGCTest\" \"a_assign\"))\n"
@@ -1761,7 +1759,7 @@ var data = [
 		"new value" : "new",
 		"new scope" : true,
 		"description" : "Attempts to call the container associated with the label that begins with a caret (^); the caret indicates that the label is allowed to be accessed by contained entities.  It will evaluate to the return value of the call, null if not found.  The call is made on the label specified by string.  If assoc is specified, then it will pass assoc as the arguments on the scope stack.  The parameter accessing_entity will automatically be set to the id of the caller, regardless of the arguments.  If operation_limit is specified, it represents the number of operations that are allowed to be performed. If operation_limit is 0 or infinite, then an infinite of operations will be allotted to the entity, but only if its containing entity (the current entity) has infinite operations. The root entity has infinite computing cycles.  If max_node_allocations is specified, it represents the maximum number of nodes that are allowed to be allocated, limiting the total memory.   If max_node_allocations is 0 or infinite, then there is no limit to the number of nodes to be allotted to the entity as long as the machine has sufficient memory, but only if the containing entity (the current entity) has unlimited memory access.  If max_opcode_execution_depth is 0 or infinite and the caller also has no limit, then there is no limit to the depth that opcodes can execute, otherwise max_opcode_execution_depth limits how deep nested opcodes will be called.  The execution performed will use a random number stream created from the entity's random number stream. If any performance constraints are given or return_warnings is true, the result will be a tuple of the form [value, warnings, performance_constraint_violation], where warnings is an assoc mapping all warnings to their number of occurrences, and perf_constraint violation is a string denoting the constraint exceeded (or (null) if none)), unless return_warnings is false, in which case just the value will be returned.",
-		"permissions" : "e",
+		"permissions" : "entity",
 		"example" : "(create_entities \"TestContainerExec\"\n  (lambda (parallel\n  ##^a 3\n  ##b (contained_entities)\n  ##c (+ x 1)\n  ##d (call_entity \"TCEc\" \"q\" (assoc x x))\n  ##x 4\n  ##y 5\n  )) \n)\n(create_entities (list \"TestContainerExec\" \"TCEc\")\n  (lambda (parallel\n  ##p 3\n  ##q (+ x (call_container \"a\"))\n  ##bar \"foo\"\n  ))\n)\n\n(print (call_entity \"TestContainerExec\" \"d\" (assoc x 4)))"
 	}
 ];

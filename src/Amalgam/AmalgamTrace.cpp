@@ -95,6 +95,18 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 				response = FAILURE_RESPONSE;
 			}
 		}
+		else if(command == "GET_ENTITY_PERMISSIONS")
+		{
+			handle = StringManipulation::RemoveFirstToken(input);
+			response = entint.GetEntityPermissions(handle);
+		}
+		else if(command == "SET_ENTITY_PERMISSIONS")
+		{
+			handle = StringManipulation::RemoveFirstToken(input);
+			json_payload = input;  // json data
+			entint.SetEntityPermissions(handle, json_payload);
+			response = SUCCESS_RESPONSE;
+		}
 		else if(command == "CLONE_ENTITY")
 		{
 			std::vector<std::string> command_tokens = StringManipulation::SplitArgString(input);

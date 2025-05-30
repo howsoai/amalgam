@@ -105,6 +105,20 @@ extern "C"
 		return ConvertLoadStatusToCStatus(status);
 	}
 
+	char *GetEntityPermissions(char *handle)
+	{
+		std::string h(handle);
+		std::string ret = entint.GetEntityPermissions(h);
+		return StringToCharPtr(ret);
+	}
+
+	void SetEntityPermissions(char *handle, char *json_permissions)
+	{
+		std::string h(handle);
+		std::string perms(json_permissions);
+		entint.SetEntityPermissions(h, perms);
+	}
+
 	bool CloneEntity(char *handle, char *clone_handle, char *path,
 		char *file_type, bool persistent, char *json_file_params, char *write_log_filename, char *print_log_filename)
 	{

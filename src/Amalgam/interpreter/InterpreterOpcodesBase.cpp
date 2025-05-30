@@ -141,12 +141,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 
 		Platform_Sleep(sleep_time_usec);
 	}
-	else if(command == "version" && permissions.individualPermissions.environment)
+	else if(command == "version")
 	{
 		std::string version_string = AMALGAM_VERSION_STRING;
 		return AllocReturn(version_string, immediate_result);
 	}
-	else if(command == "version_compatible" && permissions.individualPermissions.environment)
+	else if(command == "version_compatible")
 	{
 		if(ocn.size() < 2)
 			return EvaluableNodeReference::Null();

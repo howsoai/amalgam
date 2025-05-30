@@ -240,8 +240,8 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_ACCUM_ENTITY_ROOTS, "accum_entity_roots");
 	EmplaceNodeTypeString(ENT_GET_ENTITY_RAND_SEED, "get_entity_rand_seed");
 	EmplaceNodeTypeString(ENT_SET_ENTITY_RAND_SEED, "set_entity_rand_seed");
-	EmplaceNodeTypeString(ENT_GET_ENTITY_ROOT_PERMISSION, "get_entity_root_permission");
-	EmplaceNodeTypeString(ENT_SET_ENTITY_ROOT_PERMISSION, "set_entity_root_permission");
+	EmplaceNodeTypeString(ENT_GET_ENTITY_PERMISSIONS, "get_entity_permissions");
+	EmplaceNodeTypeString(ENT_SET_ENTITY_PERMISSIONS, "set_entity_permissions");
 
 	//entity base actions
 	EmplaceNodeTypeString(ENT_CREATE_ENTITIES, "create_entities");
@@ -360,6 +360,15 @@ void StringInternPool::InitializeStaticStrings()
 
 	//entity access parameters
 	EmplaceStaticString(ENBISI_accessing_entity, "accessing_entity");
+
+	//entity permissions
+	EmplaceStaticString(ENBISI_std_out_and_std_err, "std_out_and_std_err");
+	EmplaceStaticString(ENBISI_std_in, "std_in");
+	EmplaceStaticString(ENBISI_load, "load");
+	EmplaceStaticString(ENBISI_store, "store");
+	EmplaceStaticString(ENBISI_environment, "environment");
+	EmplaceStaticString(ENBISI_alter_performance, "alter_performance");
+	EmplaceStaticString(ENBISI_system, "system");
 
 	//distance types
 	EmplaceStaticString(ENBISI_nominal_numeric, "nominal_numeric");

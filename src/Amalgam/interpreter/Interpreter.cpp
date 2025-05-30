@@ -224,8 +224,8 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 	&Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_ACCUM_ENTITY_ROOTS,						// ENT_ACCUM_ENTITY_ROOTS
 	&Interpreter::InterpretNode_ENT_GET_ENTITY_RAND_SEED,											// ENT_GET_ENTITY_RAND_SEED
 	&Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED,											// ENT_SET_ENTITY_RAND_SEED
-	&Interpreter::InterpretNode_ENT_GET_ENTITY_ROOT_PERMISSION,										// ENT_GET_ENTITY_ROOT_PERMISSION
-	&Interpreter::InterpretNode_ENT_SET_ENTITY_ROOT_PERMISSION,										// ENT_SET_ENTITY_ROOT_PERMISSION
+	&Interpreter::InterpretNode_ENT_GET_ENTITY_PERMISSIONS,											// ENT_GET_ENTITY_PERMISSIONS
+	&Interpreter::InterpretNode_ENT_SET_ENTITY_PERMISSIONS,											// ENT_SET_ENTITY_PERMISSIONS
 
 	//entity base actions
 	&Interpreter::InterpretNode_ENT_CREATE_ENTITIES,												// ENT_CREATE_ENTITIES

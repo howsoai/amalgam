@@ -2112,8 +2112,8 @@ CompactHashMap<EvaluableNodeType, double> EvaluableNodeTreeManipulation::evaluab
 	{ENT_ACCUM_ENTITY_ROOTS,							0.01},
 	{ENT_GET_ENTITY_RAND_SEED,							0.01},
 	{ENT_SET_ENTITY_RAND_SEED,							0.01},
-	{ENT_GET_ENTITY_ROOT_PERMISSION,					0.01},
-	{ENT_SET_ENTITY_ROOT_PERMISSION,					0.01},
+	{ENT_GET_ENTITY_PERMISSIONS,						0.01},
+	{ENT_SET_ENTITY_PERMISSIONS,						0.01},
 
 	//entity base actions
 	{ENT_CREATE_ENTITIES,								0.1},

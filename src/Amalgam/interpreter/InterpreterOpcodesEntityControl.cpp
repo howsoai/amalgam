@@ -289,14 +289,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED(Evalu
 	return seed_node;
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_ROOT_PERMISSION(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_PERMISSIONS(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
-
-	auto permissions = asset_manager.GetEntityPermissions(curEntity);
-	auto all_permissions = EntityPermissions::AllPermissions();
-	if(permissions.allPermissions != all_permissions.allPermissions)
-		return EvaluableNodeReference::Null();
 
 	EntityReadReference entity;
 	if(ocn.size() > 0)
@@ -305,31 +300,53 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_ROOT_PERMISSION
 		entity = EntityReadReference(curEntity);
 
 	auto entity_permissions = asset_manager.GetEntityPermissions(entity);
-	return AllocReturn(entity_permissions.allPermissions == all_permissions.allPermissions, immediate_result);
+	//clear lock
+	entity = EntityReadReference();
+
+	return EvaluableNodeReference(entity_permissions.GetPermissionsAsEvaluableNode(evaluableNodeManager), true);
 }
 
-EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_ROOT_PERMISSION(EvaluableNode *en, bool immediate_result)
+EvaluableNodeReference Interpreter::InterpretNode_ENT_SET_ENTITY_PERMISSIONS(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
+	size_t num_params = ocn.size();
 
-	if(ocn.size() < 2)
+	if(num_params < 2)
 		return EvaluableNodeReference::Null();
 
-	auto permissions = asset_manager.GetEntityPermissions(curEntity);
-	auto all_permissions = EntityPermissions::AllPermissions();
-	if(permissions.allPermissions != all_permissions.allPermissions)
-		return EvaluableNodeReference::Null();
+	//retrieve parameter to determine whether to deep set the seeds, if applicable
+	bool deep_set = true;
+	if(num_params > 2)
+		deep_set = InterpretNodeIntoBoolValue(ocn[2], true);
 
-	bool set_all_permissions = InterpretNodeIntoBoolValue(ocn[1]);
+	EvaluableNodeReference permissions_en = InterpretNodeForImmediateUse(ocn[1]);
+
+	auto [permissions_to_set, permission_values] = EntityPermissions::EvaluableNodeToPermissions(permissions_en);
+
+	//any permissions set by this entity need to be filtered by the current entity's permissions
+	auto current_entity_permissions = asset_manager.GetEntityPermissions(curEntity);
+	permissions_to_set.allPermissions &= current_entity_permissions.allPermissions;
+	permission_values.allPermissions &= current_entity_permissions.allPermissions;
 
 	//get the id of the entity
 	auto id_node = InterpretNode(ocn[0]);
 	EntityWriteReference entity = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityWriteReference>(curEntity, id_node);
 
-	if(set_all_permissions)
-		asset_manager.SetEntityPermissions(entity, EntityPermissions::AllPermissions());
+	if(entity == nullptr)
+		return EvaluableNodeReference::Null();
+
+#ifdef MULTITHREAD_SUPPORT
+	if(deep_set)
+	{
+		auto contained_entities = entity->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityWriteReference>();
+		if(contained_entities == nullptr)
+			return EvaluableNodeReference::Null();
+
+		entity->SetPermissions(permissions_to_set, permission_values, true, writeListeners, &contained_entities);
+	}
 	else
-		asset_manager.SetEntityPermissions(entity, EntityPermissions());
+#endif
+		entity->SetPermissions(permissions_to_set, permission_values, deep_set, writeListeners);
 
 	return id_node;
 }

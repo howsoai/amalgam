@@ -2187,20 +2187,19 @@
 (set_entity_rand_seed "RandTest" seed)
 (print (call_entity (list "RandTest" "DeepRand") "a") "\n")
 
-;TODO 22023: update this and other permissions here
- (print "--get_entity_root_permission--\n")
+ (print "--get_entity_permissions--\n")
  (create_entities "RootTest" (lambda (print (system_time)) ))
- (print (get_entity_root_permission "RootTest") "\n")
+ (print (get_entity_permissions "RootTest") "\n")
 
- (print "--set_entity_root_permission--\n")
- (print (set_entity_root_permission "RootTest" 1) "\n")
+ (print "--set_entity_permissions--\n")
+ (print (set_entity_permissions "RootTest" (true)) "\n")
  (call_entity "RootTest")
  (print "\n")
- (print (get_entity_root_permission "RootTest") "\n")
- (print (set_entity_root_permission "RootTest" 0) "\n")
+ (print (get_entity_permissions "RootTest") "\n")
+ (print (set_entity_permissions "RootTest" {environment (false) }) "\n")
  (call_entity "RootTest")
  (print "\n")
- (print (get_entity_root_permission "RootTest") "\n")
+ (print (get_entity_permissions "RootTest") "\n")
 
  (print "--create_entities--\n")
  (print (create_entities "MyLibrary" (lambda (+ #three 3 4)) ) "\n")
@@ -2241,6 +2240,7 @@
  (print "load from .amlg:\n")
  
  (load_entity "amlg_code/module_test.amlg" "ModuleTest")
+ (set_entity_permissions "ModuleTest" {std_out_and_std_err (true) })
  (call_entity "ModuleTest" "hello")
  (print (flatten_entity "ModuleTest"))
 
@@ -3564,6 +3564,7 @@
 	  )
 	)
   ) )
+  (set_entity_permissions "CEGCTest" (true) )
 
  (print (call_entity_get_changes "CEGCTest" "a_assign"))
 

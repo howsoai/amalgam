@@ -112,11 +112,11 @@ extern "C"
 		return StringToCharPtr(ret);
 	}
 
-	void SetEntityPermissions(char *handle, char *json_permissions)
+	bool SetEntityPermissions(char *handle, char *json_permissions)
 	{
 		std::string h(handle);
 		std::string perms(json_permissions);
-		entint.SetEntityPermissions(h, perms);
+		return entint.SetEntityPermissions(h, perms);
 	}
 
 	bool CloneEntity(char *handle, char *clone_handle, char *path,

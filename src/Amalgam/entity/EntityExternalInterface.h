@@ -43,7 +43,7 @@ public:
 	LoadEntityStatus VerifyEntity(std::string &path);
 
 	std::string GetEntityPermissions(std::string &handle);
-	void SetEntityPermissions(std::string &handle, std::string &json_permissions);
+	bool SetEntityPermissions(std::string &handle, std::string &json_permissions);
 
 	bool CloneEntity(std::string &handle, std::string &cloned_handle, std::string &path,
 		std::string file_type, bool persistent, std::string_view json_file_params,

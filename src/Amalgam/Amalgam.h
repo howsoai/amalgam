@@ -44,7 +44,7 @@ extern "C"
 
 	//sets the entity's permissions to the object in json_permissions
 	//see the documentation for the get_entity_permissions opcode for details
-	AMALGAM_EXPORT void SetEntityPermissions(char *handle, char *json_permissions);
+	AMALGAM_EXPORT bool SetEntityPermissions(char *handle, char *json_permissions);
 
 	//clones the entity in handle to clone_handle
 	//if persistent, then path, file_type, and json_file_params represent where and how it will be stored

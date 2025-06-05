@@ -383,6 +383,36 @@ public:
 		}
 	}
 
+	//indicates that the entity's permissions have been updated
+	template<typename EntityReferenceType = EntityReadReference>
+	inline void UpdateEntityPermissions(Entity *entity,
+		EntityPermissions permissions_to_set, EntityPermissions permission_values, bool deep_set_permissions,
+		Entity::EntityReferenceBufferReference<EntityReferenceType> *all_contained_entities = nullptr)
+	{
+	#ifdef MULTITHREAD_INTERFACE
+		Concurrency::ReadLock lock(persistentEntitiesMutex);
+	#endif
+
+		//if persistent store only this entity, since only it is getting updated
+		auto pe_entry = persistentEntities.find(entity);
+		if(pe_entry != end(persistentEntities))
+		{
+			auto &asset_params = pe_entry->second;
+			//if the entity is flattened, then need to find top level container entity
+			//that is persistent and store it out with all its contained entities
+			if(asset_params->flatten)
+			{
+				if(asset_params->writeListener != nullptr)
+					asset_params->writeListener->LogSetEntityPermissions(entity,
+						permissions_to_set, permission_values, deep_set_permissions);
+			}
+			else //just update the individual entity
+			{
+				StoreEntityToResource(entity, asset_params, false, true, false, all_contained_entities);
+			}
+		}
+	}
+
 	//indicates that the entity's label_name has been updated to value
 	template<typename EntityReferenceType = EntityReadReference>
 	inline void UpdateEntityLabelValue(Entity *entity,
@@ -478,13 +508,16 @@ public:
 		Concurrency::WriteLock lock(persistentEntitiesMutex);
 	#endif
 
-		RemoveRootPermissions(entity);
+		RemoveAllPermissions(entity);
 
 		DestroyPersistentEntity(entity);
 	}
 
-	//sets the entity's root permission to permission
-	void SetEntityPermissions(Entity *entity, EntityPermissions permissions);
+	//sets the entity's permissions;
+	//any permissions in permissions_to_set will be set to the values specified by the corresponding
+	//permission_values
+	void SetEntityPermissions(Entity *entity,
+		EntityPermissions permissions_to_set, EntityPermissions permission_values);
 
 	// Checks if this entity specifically has been loaded as persistent
 	inline bool IsEntityDirectlyPersistent(Entity *entity)
@@ -627,7 +660,7 @@ private:
 	void DestroyPersistentEntity(Entity *entity);
 
 	//recursively removes root permissions
-	void RemoveRootPermissions(Entity *entity);
+	void RemoveAllPermissions(Entity *entity);
 
 	//entities that need changes stored, and the resource paths to store them
 	FastHashMap<Entity *, AssetParametersRef> persistentEntities;

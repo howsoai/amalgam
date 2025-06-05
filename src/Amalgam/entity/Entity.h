@@ -124,7 +124,7 @@ union EntityPermissions
 		{
 			for(auto [permission_type, allow_en] : en->GetMappedChildNodesReference())
 			{
-				bool allow = EvaluableNode::IsTrue(allow_en);
+				bool allow = EvaluableNode::ToBool(allow_en);
 				if(permission_type == GetStringIdFromBuiltInStringId(ENBISI_std_out_and_std_err))
 				{
 					permissions_to_set.individualPermissions.stdOutAndStdErr = true;
@@ -162,7 +162,7 @@ union EntityPermissions
 				}
 			}
 		}
-		else if(EvaluableNode::IsTrue(en))
+		else if(EvaluableNode::ToBool(en))
 		{
 			permissions_to_set = EntityPermissions::AllPermissions();
 			permission_values = EntityPermissions::AllPermissions();

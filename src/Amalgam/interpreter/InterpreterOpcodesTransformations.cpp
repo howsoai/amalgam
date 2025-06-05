@@ -958,7 +958,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 	size_t list_index = (ocn.size() == 1 ? 0 : 1);
 
 	EvaluableNodeReference function = EvaluableNodeReference::Null();
-	EvaluableNodeType function_type = ENT_TRUE;
+	EvaluableNodeType function_type = ENT_BOOL;
+	bool ascending = true;
 
 	size_t highest_k = 0;
 	size_t lowest_k = 0;
@@ -977,12 +978,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 		function = InterpretNodeForImmediateUse(ocn[0]);
 
 		if(EvaluableNode::IsNull(function))
-			function_type = ENT_TRUE;
+		{
+			function_type = ENT_BOOL;
+		}
 		else
+		{
 			function_type = function->GetType();
+			if(function_type == ENT_BOOL)
+				ascending = EvaluableNode::ToBool(function);
+		}
 	}
 
-	if(function_type == ENT_TRUE || function_type == ENT_FALSE)
+	if(function_type == ENT_BOOL)
 	{
 		//get list
 		auto list = InterpretNode(ocn[list_index]);
@@ -999,7 +1006,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 
 		if(highest_k > 0 && highest_k < list_ocn.size())
 		{
-			if(function_type == ENT_TRUE)
+			if(ascending)
 				std::partial_sort(begin(list_ocn), begin(list_ocn) + highest_k,
 					end(list_ocn), EvaluableNode::IsStrictlyGreaterThan);
 			else
@@ -1017,7 +1024,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 		}
 		else if(lowest_k > 0 && lowest_k < list_ocn.size())
 		{
-			if(function_type == ENT_TRUE)
+			if(ascending)
 				std::partial_sort(begin(list_ocn), begin(list_ocn) + lowest_k,
 					end(list_ocn), EvaluableNode::IsStrictlyLessThan);
 			else
@@ -1034,7 +1041,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 		}
 		else
 		{
-			if(function_type == ENT_TRUE)
+			if(ascending)
 				std::sort(begin(list_ocn), end(list_ocn), EvaluableNode::IsStrictlyLessThan);
 			else
 				std::sort(begin(list_ocn), end(list_ocn), EvaluableNode::IsStrictlyGreaterThan);

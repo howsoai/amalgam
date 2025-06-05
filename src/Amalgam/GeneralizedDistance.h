@@ -170,6 +170,8 @@ public:
 		//repeatedly, which is handled by a RepeatedGeneralizedDistanceEvaluator, which uses a map
 		SmallMap<double, SparseNominalDeviationValues<double, DoubleNanHashComparator>, DoubleNanHashComparator> nominalNumberSparseDeviationMatrix;
 
+		//TODO 22139: need a boolean SDM?
+
 		//distance term to use if both values being compared are unknown
 		//the difference will be NaN if unknown
 		DistanceTermWithDeviation unknownToUnknownDistanceTerm;

@@ -541,6 +541,9 @@ public:
 	//indices of entities with a bool value for this feature
 	EfficientIntegerSet boolIndices;
 
+	//for all indices that are boolean, contains the truth value of each
+	EfficientIntegerSet boolIndicesValues;
+
 	//indices of entities with a number value for this feature
 	EfficientIntegerSet numberIndices;
 

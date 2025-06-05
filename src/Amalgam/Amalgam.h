@@ -38,6 +38,14 @@ extern "C"
 	//verifies the entity specified by path. Uses LoadEntityStatus to return any errors and version
 	AMALGAM_EXPORT LoadEntityStatus VerifyEntity(char *path);
 
+	//returns a json object of the entity permissions
+	//see the documentation for the get_entity_permissions opcode for details
+	AMALGAM_EXPORT char *GetEntityPermissions(char *handle);
+
+	//sets the entity's permissions to the object in json_permissions
+	//see the documentation for the get_entity_permissions opcode for details
+	AMALGAM_EXPORT bool SetEntityPermissions(char *handle, char *json_permissions);
+
 	//clones the entity in handle to clone_handle
 	//if persistent, then path, file_type, and json_file_params represent where and how it will be stored
 	AMALGAM_EXPORT bool CloneEntity(char *handle, char *clone_handle, char *path,

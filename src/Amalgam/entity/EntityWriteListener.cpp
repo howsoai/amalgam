@@ -199,6 +199,52 @@ void EntityWriteListener::LogSetEntityRandomSeed(Entity *entity, const std::stri
 	LogNewEntry(new_set);
 }
 
+void EntityWriteListener::LogSetEntityPermissions(Entity *entity,
+		EntityPermissions permissions_to_set, EntityPermissions permission_values, bool deep_set)
+{
+#ifdef MULTITHREAD_SUPPORT
+	Concurrency::Lock lock(mutex);
+#endif
+
+	EvaluableNode *new_set = BuildNewWriteOperation(ENT_SET_ENTITY_PERMISSIONS, entity);
+
+	EvaluableNode *assoc = listenerStorage.AllocNode(ENT_ASSOC);
+	new_set->AppendOrderedChildNode(assoc);
+
+	if(permissions_to_set.individualPermissions.stdOutAndStdErr)
+		new_set->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_std_out_and_std_err),
+			listenerStorage.AllocNode(permission_values.individualPermissions.stdOutAndStdErr));
+
+	if(permissions_to_set.individualPermissions.stdIn)
+		new_set->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_std_in),
+			listenerStorage.AllocNode(permission_values.individualPermissions.stdIn));
+
+	if(permissions_to_set.individualPermissions.load)
+		new_set->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_load),
+			listenerStorage.AllocNode(permission_values.individualPermissions.load));
+
+	if(permissions_to_set.individualPermissions.store)
+		new_set->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_store),
+			listenerStorage.AllocNode(permission_values.individualPermissions.store));
+
+	if(permissions_to_set.individualPermissions.environment)
+		new_set->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_environment),
+			listenerStorage.AllocNode(permission_values.individualPermissions.environment));
+
+	if(permissions_to_set.individualPermissions.alterPerformance)
+		new_set->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_alter_performance),
+			listenerStorage.AllocNode(permission_values.individualPermissions.alterPerformance));
+
+	if(permissions_to_set.individualPermissions.system)
+		new_set->SetMappedChildNode(GetStringIdFromBuiltInStringId(ENBISI_system),
+			listenerStorage.AllocNode(permission_values.individualPermissions.system));
+
+	if(!deep_set)
+		new_set->AppendOrderedChildNode(listenerStorage.AllocNode(false));
+
+	LogNewEntry(new_set);
+}
+
 void EntityWriteListener::FlushLogFile()
 {
 #ifdef MULTITHREAD_SUPPORT

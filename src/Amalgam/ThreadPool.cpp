@@ -19,6 +19,10 @@ ThreadPool::ThreadPool(int32_t max_num_active_threads)
 
 void ThreadPool::SetMaxNumActiveThreads(int32_t new_max_num_active_threads)
 {
+	//only allow one call of this method at a time, because
+	//shutting down threads frees the thread lock
+	std::lock_guard single_call(setMaxNumActiveThreadsMutex);
+
 	std::unique_lock<std::mutex> lock(threadsMutex);
 
 	//if zero is specified, attempt to get hardware concurrency

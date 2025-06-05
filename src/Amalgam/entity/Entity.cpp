@@ -856,6 +856,29 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, Evalu
 	}
 }
 
+void Entity::SetPermissions(EntityPermissions permissions_to_set, EntityPermissions permission_values,
+		bool deep_set_permissions, std::vector<EntityWriteListener *> *write_listeners,
+		Entity::EntityReferenceBufferReference<EntityWriteReference> *all_contained_entities)
+{
+	asset_manager.SetEntityPermissions(this, permissions_to_set, permission_values);
+
+	if(write_listeners != nullptr)
+	{
+		for(auto &wl : *write_listeners)
+			wl->LogSetEntityPermissions(this, permissions_to_set, permission_values, deep_set_permissions);
+
+		asset_manager.UpdateEntityPermissions(this, permissions_to_set, permission_values,
+			deep_set_permissions, all_contained_entities);
+	}
+
+	if(deep_set_permissions)
+	{
+		for(auto entity : GetContainedEntities())
+			entity->SetPermissions(permissions_to_set, permission_values, true,
+				write_listeners, all_contained_entities);
+	}
+}
+
 void Entity::SetRoot(std::string &code_string, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier,
 	std::vector<EntityWriteListener *> *write_listeners)
 {

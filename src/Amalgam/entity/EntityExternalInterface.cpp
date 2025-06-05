@@ -61,8 +61,6 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(st
 	if(!status.loaded)
 		return status;
 
-	asset_manager.SetEntityPermissions(entity, EntityPermissions::AllPermissions());
-
 	PrintListener *pl = nullptr;
 	std::vector<EntityWriteListener *> wl;
 
@@ -87,6 +85,46 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::VerifyEntity(
 		return EntityExternalInterface::LoadEntityStatus(false, error_string, version);
 
 	return EntityExternalInterface::LoadEntityStatus(true, "", version);
+}
+
+std::string EntityExternalInterface::GetEntityPermissions(std::string &handle)
+{
+	auto bundle = FindEntityBundle(handle);
+	if(bundle == nullptr)
+		return "null";
+
+	Entity *entity = bundle->entity;
+	if(entity == nullptr)
+		return "null";
+
+	auto permissions = asset_manager.GetEntityPermissions(entity);
+	auto permissions_en = permissions.GetPermissionsAsEvaluableNode(&entity->evaluableNodeManager);
+
+	auto [result, converted] = EvaluableNodeJSONTranslation::EvaluableNodeToJson(permissions_en);
+	
+	entity->evaluableNodeManager.FreeNodeTree(permissions_en);
+	if(converted)
+		return result;
+	return "null";
+}
+
+bool EntityExternalInterface::SetEntityPermissions(std::string &handle, std::string &json_permissions)
+{
+	auto bundle = FindEntityBundle(handle);
+	if(bundle == nullptr)
+		return false;
+
+	Entity *entity = bundle->entity;
+	if(entity == nullptr)
+		return false;
+
+	EvaluableNode *permissions_en = EvaluableNodeJSONTranslation::JsonToEvaluableNode(
+		&entity->evaluableNodeManager, json_permissions);
+
+	auto [permissions_to_set, permission_values] = EntityPermissions::EvaluableNodeToPermissions(permissions_en);
+	entity->SetPermissions(permissions_to_set, permission_values, true);
+	entity->evaluableNodeManager.FreeNodeTree(permissions_en);
+	return true;
 }
 
 bool EntityExternalInterface::CloneEntity(std::string &handle, std::string &cloned_handle, std::string &path,

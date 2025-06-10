@@ -1343,7 +1343,7 @@ public:
 	//it will call func passing in the numeric value
 	template<typename NominalDistanceTermsType, typename Func>
 	__forceinline void IterateOverNominalValuesWithLessOrEqualDistanceTerms(NominalDistanceTermsType &nom_dist_terms,
-		double dist_term, size_t index, bool high_accuracy, Func func)
+		double dist_term, Func func)
 	{
 		for(auto &entry : nom_dist_terms)
 		{

@@ -70,6 +70,22 @@ public:
 	public:
 		inline SparseNominalDeviationMatrix()
 		{}
+
+		//updates smallest_deviation with any deviation smaller found in this SDM
+		inline void UpdateSmallestDeviation(double &smallest_deviation)
+		{
+			for(auto &sdm_row : *this)
+			{
+				for(auto &sdm_value : sdm_row.second)
+				{
+					if(sdm_value.second < smallest_deviation)
+						smallest_deviation = sdm_value.second;
+				}
+
+				if(sdm_row.second.defaultDeviation < smallest_deviation)
+					smallest_deviation = sdm_row.second.defaultDeviation;
+			}
+		}
 	};
 
 	class FeatureAttributes
@@ -550,32 +566,9 @@ public:
 			auto &feature_attributes = featureAttribs[index];
 			double smallest_deviation = feature_attributes.deviation;
 
-			auto &numbers_sdm = feature_attributes.nominalNumberSparseDeviationMatrix;
-			for(auto &sdm_row : numbers_sdm)
-			{
-				for(auto &sdm_value : sdm_row.second)
-				{
-					if(sdm_value.second < smallest_deviation)
-						smallest_deviation = sdm_value.second;
-				}
-
-				if(sdm_row.second.defaultDeviation < smallest_deviation)
-					smallest_deviation = sdm_row.second.defaultDeviation;
-			}
-
-			auto &strings_sdm = feature_attributes.nominalStringSparseDeviationMatrix;
-			for(auto &sdm_row : strings_sdm)
-			{
-				for(auto &sdm_value : sdm_row.second)
-				{
-					if(sdm_value.second < smallest_deviation)
-						smallest_deviation = sdm_value.second;
-				}
-
-				if(sdm_row.second.defaultDeviation < smallest_deviation)
-					smallest_deviation = sdm_row.second.defaultDeviation;
-			}
-
+			feature_attributes.nominalNumberSparseDeviationMatrix.UpdateSmallestDeviation(smallest_deviation);
+			feature_attributes.nominalStringSparseDeviationMatrix.UpdateSmallestDeviation(smallest_deviation);
+			
 			//find the probability that any other class besides the correct class was selected
 			//divide the probability among the other classes
 			double prob_class_given_nonmatch = smallest_deviation / GetNonmatchingNominalClassCount(index);

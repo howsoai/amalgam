@@ -721,13 +721,15 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 				return nonmatch_dist_term;
 
 			//if there are terms smaller than unknown_unknown_term, then need to compute any other nominal values
-			r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTermsNumeric(unknown_unknown_term, query_feature_index, high_accuracy,
+			r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTerms(
+				feature_data.nominalNumberDistanceTerms, unknown_unknown_term,
 				[this, &r_dist_eval, &enabled_indices, &column, query_feature_index](double number_value)
 				{
 					AccumulatePartialSumsForNominalNumberValueIfExists(r_dist_eval, enabled_indices, number_value, query_feature_index, *column);
 				});
 
-			r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTermsString(unknown_unknown_term, query_feature_index,
+			r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTerms(
+				feature_data.nominalStringDistanceTerms, unknown_unknown_term,
 				[this, &r_dist_eval, &enabled_indices, &column, query_feature_index](StringInternPool::StringID sid)
 				{
 					AccumulatePartialSumsForNominalStringIdValueIfExists(r_dist_eval, enabled_indices, sid, query_feature_index, *column);
@@ -783,7 +785,8 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			return nonmatch_dist_term;
 
 		//need to iterate over everything with the same distance term
-		r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTermsString(accumulated_term, query_feature_index,
+		r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTerms(
+			feature_data.nominalStringDistanceTerms, accumulated_term,
 			[this, &value, &r_dist_eval, &enabled_indices, &column, query_feature_index](StringInternPool::StringID sid)
 			{
 				//don't want to double-accumulate the exact match
@@ -809,7 +812,8 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			return nonmatch_dist_term;
 
 		//need to iterate over everything with the same distance term
-		r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTermsNumeric(accumulated_term, query_feature_index, high_accuracy,
+		r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTerms(
+			feature_data.nominalNumberDistanceTerms, accumulated_term,
 			[this, &value, &r_dist_eval, &enabled_indices, &column, query_feature_index](double number_value)
 			{
 				//don't want to double-accumulate the exact match

@@ -1341,26 +1341,11 @@ public:
 
 	//for all nominal distance term values that equal dist_term for the given high_accuracy,
 	//it will call func passing in the numeric value
-	template<typename Func>
-	__forceinline void IterateOverNominalValuesWithLessOrEqualDistanceTermsNumeric(double dist_term, size_t index, bool high_accuracy,
-		Func func)
+	template<typename NominalDistanceTermsType, typename Func>
+	__forceinline void IterateOverNominalValuesWithLessOrEqualDistanceTerms(NominalDistanceTermsType &nom_dist_terms,
+		double dist_term, size_t index, bool high_accuracy, Func func)
 	{
-		auto &feature_data = featureData[index];
-		for(auto &entry : feature_data.nominalNumberDistanceTerms)
-		{
-			if(entry.second <= dist_term)
-				func(entry.first);
-		}
-	}
-
-	//for all nominal distance term values that equal dist_term for the given high_accuracy,
-	//it will call func passing in the string id value
-	template<typename Func>
-	__forceinline void IterateOverNominalValuesWithLessOrEqualDistanceTermsString(double dist_term, size_t index,
-		Func func)
-	{
-		auto &feature_data = featureData[index];
-		for(auto &entry : feature_data.nominalStringDistanceTerms)
+		for(auto &entry : nom_dist_terms)
 		{
 			if(entry.second <= dist_term)
 				func(entry.first);

@@ -1216,7 +1216,7 @@ public:
 				for(auto &[sid, deviation] : deviations)
 				{
 					double dist_term = distEvaluator->ComputeDistanceTermNominal(target_sid,
-						sid, ENIVT_NUMBER, ENIVT_NUMBER, index);
+						sid, ENIVT_STRING_ID, ENIVT_STRING_ID, index);
 					feature_data.nominalStringDistanceTerms.emplace(sid, dist_term);
 
 					if(dist_term < smallest_dist_term)

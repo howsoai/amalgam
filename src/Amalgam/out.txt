@@ -232,11 +232,11 @@ hello world: 12 and 2
 (print "hello")
 [(null) (null) .infinity -.infinity]
 
-{a 1 c ["alpha" "beta" "gamma"] b 2}
+{a 1 b 2 c ["alpha" "beta" "gamma"]}
 {
 	a 1
-	c ["alpha" "beta" "gamma"]
 	b 2
+	c ["alpha" "beta" "gamma"]
 }
 
 (apply "6")
@@ -676,16 +676,16 @@ a
 [1 2 3 4 5 6]
 []
 {
-	a 1
 	b 2
 	c 3
+	d 4
 	e 5
 	f 6
 }
-{e 5 f 6}
+{c 3 d 4}
 {
-	b 2
 	c 3
+	d 4
 	e 5
 	f 6
 }
@@ -727,16 +727,16 @@ c
 [1 2 3 4 5 6]
 []
 {
-	a 1
 	b 2
 	c 3
+	d 4
 	e 5
 	f 6
 }
-{e 5 f 6}
+{c 3 d 4}
 {
-	b 2
 	c 3
+	d 4
 	e 5
 	f 6
 }
@@ -1090,7 +1090,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-["a" "c" "b" 4]
+["a" "b" "c" 4]
 [
 	0
 	1
@@ -1102,10 +1102,10 @@ abcdef
 	7
 ]
 [0 1 2 3]
-[0 1 2 3]
-[0 1 2 3]
+[2 0 3 1]
+[2 0 3 1]
 --values--
-[1 3 2 "d"]
+[1 2 3 "d"]
 [
 	"a"
 	1
@@ -1126,7 +1126,7 @@ abcdef
 	4
 	"d"
 ]
-[1 3 2 "d"]
+[1 2 3 "d"]
 [
 	1
 	2
@@ -1366,7 +1366,7 @@ current_index: 2
 		rmfile "del /s /q "
 		rwww 1
 		slash "\\"
-		start_time 1749576889.552396
+		start_time 1749584083.802779
 		www 1
 		x 12
 		zz 10
@@ -1412,7 +1412,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1749576889.552396
+	start_time 1749584083.802779
 	www 1
 	x 12
 	zz 10
@@ -1457,7 +1457,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1749576889.552396
+	start_time 1749584083.802779
 	www 1
 	x 12
 	zz 10
@@ -1608,11 +1608,11 @@ b
 	"b"
 ]
 
-infinity test c or d: ["c" "c" "d" "d"]
+infinity test c or d: ["d" "d" "c" "c"]
 
-{a 16 b 49 c 35}
+{a 16 b 63 c 21}
 
-[10 4 3]
+[1 4 9]
 
 --get_rand_seed--
 Ú◊c`ç`¶!öcîlˇ
@@ -1708,17 +1708,17 @@ string
 	{a 3 b 4}
 	{c "c"}
 ]
-21: [{"a":3,"b":4},{"d":null,"c":"c"}]
+21: [{"a":3,"b":4},{"c":"c","d":null}]
 22: [{"a":3,"b":4},{"c":"c","d":null}]
-23: d: 4
-a: 1
-c: 3
+23: a: 1
 b: 2
 e:
   - a
   - b
   - 
   - .inf
+c: 3
+d: 4
 
 24: a: 1
 b: 2
@@ -1731,7 +1731,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2025-06-10-13.34.49.5891330
+current date-time in epoch: 2025-06-10-15.34.43.8706070
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -1792,7 +1792,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelA #labelQ
+	labelA #labelQ #labelA
 		(lambda
 			#labelB (true)
 		)
@@ -1806,7 +1806,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelA #labelQ
+	labelA #labelQ #labelA
 		(lambda
 			#labelB (true)
 		)
@@ -2884,10 +2884,10 @@ MergeEntityChild1
 (associate "x" 3 "y" 4)
 MergeEntityChild2
 (associate "p" 3 "q" 4)
-_1651806471
-(associate "e" 3 "f" 4)
 _3130331116
 (associate "E" 3 "F" 4)
+_1651806471
+(associate "e" 3 "f" 4)
 --union_entities--
 (associate "b" 4 "a" 3 "c" 3)
 MergeEntityChild1
@@ -2905,17 +2905,6 @@ MergeEntityChild2
 	"w"
 	7
 )
-_1651806471
-(associate
-	"e"
-	3
-	"f"
-	4
-	"g"
-	5
-	"h"
-	6
-)
 _3130331116
 (associate
 	"E"
@@ -2925,6 +2914,17 @@ _3130331116
 	"G"
 	5
 	"H"
+	6
+)
+_1651806471
+(associate
+	"e"
+	3
+	"f"
+	4
+	"g"
+	5
+	"h"
 	6
 )
 (parallel
@@ -3504,8 +3504,14 @@ difference between DiffEntity2 and new_entity:
 						[]
 						(lambda
 							{
-								E 3
-								F 4
+								E (get
+										(current_value 1)
+										"E"
+									)
+								F (get
+										(current_value 1)
+										"F"
+									)
 								G 5
 								H 6
 							}
@@ -3530,7 +3536,16 @@ difference between DiffEntity2 and new_entity:
 						_
 						[]
 						(lambda
-							{e 3 f 4}
+							{
+								e (get
+										(current_value 1)
+										"e"
+									)
+								f (get
+										(current_value 1)
+										"f"
+									)
+							}
 						)
 					)
 				)
@@ -3556,7 +3571,89 @@ contained_entities new_entity: ["OnlyIn2" "_1985995361" "_2783372341" "DiffEntit
 difference between DiffContainer and DiffEntity2:
 (declare
 	{_ (null) new_entity (null)}
-	(clone_entities _ new_entity)
+	(assign
+		"new_entity"
+		(first
+			(create_entities
+				new_entity
+				(call
+					(lambda
+						(declare
+							{_ (null)}
+							(replace _)
+						)
+					)
+					{
+						_ (retrieve_entity_root _)
+					}
+				)
+			)
+		)
+	)
+	(create_entities
+		(append new_entity "_1985995361")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{
+								E (null)
+								F (null)
+								G (get
+										(current_value 1)
+										"G"
+									)
+								H (get
+										(current_value 1)
+										"H"
+									)
+							}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_1985995361")
+					)
+			}
+		)
+	)
+	(create_entities
+		(append new_entity "_2783372341")
+		(call
+			(lambda
+				(declare
+					{_ (null)}
+					(replace
+						_
+						[]
+						(lambda
+							{e (null) f (null)}
+						)
+					)
+				)
+			)
+			{
+				_ (retrieve_entity_root
+						(append _ "_2783372341")
+					)
+			}
+		)
+	)
+	(clone_entities
+		(append _ "OnlyIn2")
+		(append new_entity "OnlyIn2")
+	)
+	(clone_entities
+		(append _ "DiffEntityChild1")
+		(append new_entity "DiffEntityChild1")
+	)
+	new_entity
 )
 --mix_entities--
 (associate "b" 4 "a" 3)
@@ -3573,10 +3670,10 @@ MergeEntityChild2
 	"v"
 	6
 )
-_1651806471
-(associate "e" 3 "f" 4 "g" 5)
 _3130331116
-(associate "E" 3 "F" 4)
+(associate "E" 3 "F" 4 "G" 5)
+_1651806471
+(associate "e" 3 "f" 4)
 --get_entity_comments--
 Full test
 This is a suite of unit tests.
@@ -3663,7 +3760,7 @@ deep sets
 
 --set_entity_permissions--
 RootTest
-1749576889.708641
+1749584083.984005
 {
 	alter_performance (true)
 	environment (true)
@@ -4338,7 +4435,7 @@ test code and string distances
 ["Child2" "Child4" "Child7"]
 ["Child2" "Child4" "Child7"]
 assoc-based: ["Child2" "Child4" "Child7"]
-["Child2" "Child4" "Child7"]
+["Child2" "Child4" "Child6"]
 --contained_entities caching and permissions--
 (false)
 
@@ -4833,7 +4930,7 @@ cyclic lookup test 2:
 1036.1581794564518
 24.769501899470985
 4.3464184709105573e-45
-{_2654579573 85.49645183142354 point1 49.98680564879887 point3 49.98680564879887}
+{point1 1036.1581794564518 point2 978.5569789822398 point3 1036.1581794564518}
 distance symmetry tests
 [
 	[
@@ -5092,4 +5189,4 @@ rmdir /s /q amlg_code\persistent_tree_test_root
 del /s /q amlg_code\persist_module_test\psm.mdam
 del /s /q amlg_code\persist_module_test.mdam
 --total execution time--
-1.9490149021148682
+1.962895154953003

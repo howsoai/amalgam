@@ -52,6 +52,44 @@ public:
 		double deviation;
 	};
 
+	//contains the deviations for a given nominal value for each other nominal value
+		//if the nominal value is not found, then the attribute defaultDeviation should be used
+	template<typename NominalValueType, typename EqualComparison = std::equal_to<NominalValueType>>
+	class SparseNominalDeviationValues : public SmallMap<NominalValueType, double, EqualComparison>
+	{
+	public:
+		inline SparseNominalDeviationValues()
+			: defaultDeviation(std::numeric_limits<double>::quiet_NaN())
+		{}
+
+		double defaultDeviation;
+	};
+
+	template<typename NominalValueType, typename EqualComparison = std::equal_to<NominalValueType>>
+	class SparseNominalDeviationMatrix
+		: public SmallMap<NominalValueType, SparseNominalDeviationValues<NominalValueType, EqualComparison>, EqualComparison>
+	{
+	public:
+		inline SparseNominalDeviationMatrix()
+		{}
+
+		//updates smallest_deviation with any deviation smaller found in this SDM
+		inline void UpdateSmallestDeviation(double &smallest_deviation)
+		{
+			for(auto &sdm_row : *this)
+			{
+				for(auto &sdm_value : sdm_row.second)
+				{
+					if(sdm_value.second < smallest_deviation)
+						smallest_deviation = sdm_value.second;
+				}
+
+				if(sdm_row.second.defaultDeviation < smallest_deviation)
+					smallest_deviation = sdm_row.second.defaultDeviation;
+			}
+		}
+	};
+
 	class FeatureAttributes
 	{
 	public:
@@ -145,30 +183,18 @@ public:
 		double deviationReciprocalNegative;
 		double deviationTimesThree;
 
-		//contains the deviations for a given nominal value for each other nominal value
-		//if the nominal value is not found, then the attribute defaultDeviation should be used
-		template<typename NominalValueType, typename EqualComparison = std::equal_to<NominalValueType>>
-		class SparseNominalDeviationValues : public SmallMap<NominalValueType, double, EqualComparison>
-		{
-		public:
-			inline SparseNominalDeviationValues()
-				: defaultDeviation(std::numeric_limits<double>::quiet_NaN())
-			{	}
-
-			double defaultDeviation;
-		};
 
 		//sparse deviation matrix if the nominal is a string
 		//store as a vector of pairs instead of a map because either only one value will be looked up once,
 		//in which case there's no advantage to having a map, or many distance term values will be looked up
 		//repeatedly, which is handled by a RepeatedGeneralizedDistanceEvaluator, which uses a map
-		SmallMap<StringInternPool::StringID, SparseNominalDeviationValues<StringInternPool::StringID>> nominalStringSparseDeviationMatrix;
+		SparseNominalDeviationMatrix<StringInternPool::StringID> nominalStringSparseDeviationMatrix;
 
 		//sparse deviation matrix if the nominal is a number
 		//store as a vector of pairs instead of a map because either only one value will be looked up once,
 		//in which case there's no advantage to having a map, or many distance term values will be looked up
 		//repeatedly, which is handled by a RepeatedGeneralizedDistanceEvaluator, which uses a map
-		SmallMap<double, SparseNominalDeviationValues<double, DoubleNanHashComparator>, DoubleNanHashComparator> nominalNumberSparseDeviationMatrix;
+		SparseNominalDeviationMatrix<double, DoubleNanHashComparator> nominalNumberSparseDeviationMatrix;
 
 		//TODO 22139: need a boolean SDM?
 
@@ -416,6 +442,42 @@ public:
 			return fastPowP.FastPowNonZeroExpNonnegativeBase(d);
 	}
 
+	//computes and returns the probability of a class given a match and nonmatch
+	//given the pair of nominal values, where the nominal values need to match the same type as the sdm
+	template<typename SparseNominalDeviationMatrixType, typename NominalValueType>
+	inline std::pair<double, double> ComputeProbClassGivenMatchAndNonMatchFromSDM(SparseNominalDeviationMatrixType &sdm,
+		size_t index, NominalValueType &nominal_value_a, NominalValueType &nominal_value_b)
+	{
+		double prob_class_given_match = std::numeric_limits<double>::quiet_NaN();
+		double prob_class_given_nonmatch = std::numeric_limits<double>::quiet_NaN();
+
+		if(sdm.size() == 0)
+			return std::make_pair(prob_class_given_match, prob_class_given_nonmatch);
+
+		auto a_deviations_it = sdm.find(nominal_value_a);
+		if(a_deviations_it != std::end(sdm))
+		{
+			auto &deviations = a_deviations_it->second;
+
+			double nonmatching_classes = GetNonmatchingNominalClassCount(index,
+				std::max<size_t>(1, deviations.size()));
+
+			auto match_deviation_it = deviations.find(nominal_value_a);
+			if(match_deviation_it != end(deviations))
+				prob_class_given_match = 1 - match_deviation_it->second;
+			else //only happens if the predicted class is not found, which means everything is the same probability
+				prob_class_given_match = 1 - deviations.defaultDeviation;
+
+			auto nonmatch_deviation_it = deviations.find(nominal_value_b);
+			if(nonmatch_deviation_it != end(deviations))
+				prob_class_given_nonmatch = 1 - nonmatch_deviation_it->second;
+			else
+				prob_class_given_nonmatch = (1 - deviations.defaultDeviation) / nonmatching_classes;
+		}
+
+		return std::make_pair(prob_class_given_match, prob_class_given_nonmatch);
+	}
+
 	//returns the distance term given that it is nominal
 	__forceinline double ComputeDistanceTermNominal(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
 		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, size_t index)
@@ -440,52 +502,12 @@ public:
 
 		double prob_class_given_match = std::numeric_limits<double>::quiet_NaN();
 		double prob_class_given_nonmatch = std::numeric_limits<double>::quiet_NaN();
-		if(a_type == ENIVT_NUMBER && feature_attribs.nominalNumberSparseDeviationMatrix.size() > 0)
-		{
-			auto a_deviations_it = feature_attribs.nominalNumberSparseDeviationMatrix.find(a.number);
-			if(a_deviations_it != std::end(feature_attribs.nominalNumberSparseDeviationMatrix))
-			{
-				auto &deviations = a_deviations_it->second;
-
-				double nonmatching_classes = GetNonmatchingNominalClassCount(index,
-					std::max<size_t>(1, deviations.size()));
-
-				auto match_deviation_it = deviations.find(a.number);
-				if(match_deviation_it != end(deviations))
-					prob_class_given_match = 1 - match_deviation_it->second;
-				else //only happens if the predicted class is not found, which means everything is the same probability
-					prob_class_given_match = 1 - deviations.defaultDeviation;
-
-				auto nonmatch_deviation_it = deviations.find(b.number);
-				if(nonmatch_deviation_it != end(deviations))
-					prob_class_given_nonmatch = 1 - nonmatch_deviation_it->second;
-				else
-					prob_class_given_nonmatch = (1 - deviations.defaultDeviation) / nonmatching_classes;
-			}
-		}
-		else if(a_type == ENIVT_STRING_ID && feature_attribs.nominalStringSparseDeviationMatrix.size() > 0)
-		{
-			auto a_deviations_it = feature_attribs.nominalStringSparseDeviationMatrix.find(a.stringID);
-			if(a_deviations_it != std::end(feature_attribs.nominalStringSparseDeviationMatrix))
-			{
-				auto &deviations = a_deviations_it->second;
-
-				double nonmatching_classes = GetNonmatchingNominalClassCount(index,
-					std::max<size_t>(1, deviations.size()));
-
-				auto match_deviation_it = deviations.find(a.stringID);
-				if(match_deviation_it != end(deviations))
-					prob_class_given_match = 1 - match_deviation_it->second;
-				else //only happens if the predicted class is not found, which means everything is the same probability
-					prob_class_given_match = 1 - deviations.defaultDeviation;
-
-				auto nonmatch_deviation_it = deviations.find(b.stringID);
-				if(nonmatch_deviation_it != end(deviations))
-					prob_class_given_nonmatch = 1 - nonmatch_deviation_it->second;
-				else
-					prob_class_given_nonmatch = (1 - deviations.defaultDeviation) / nonmatching_classes;
-			}
-		}
+		if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)
+			std::tie(prob_class_given_match, prob_class_given_nonmatch) = ComputeProbClassGivenMatchAndNonMatchFromSDM(
+				feature_attribs.nominalNumberSparseDeviationMatrix, index, a.number, b.number);
+		else if(a_type == ENIVT_STRING_ID && b_type == ENIVT_STRING_ID)
+			std::tie(prob_class_given_match, prob_class_given_nonmatch) = ComputeProbClassGivenMatchAndNonMatchFromSDM(
+				feature_attribs.nominalStringSparseDeviationMatrix, index, a.stringID, b.stringID);
 
 		if(!FastIsNaN(prob_class_given_match))
 		{
@@ -548,32 +570,9 @@ public:
 			auto &feature_attributes = featureAttribs[index];
 			double smallest_deviation = feature_attributes.deviation;
 
-			auto &numbers_sdm = feature_attributes.nominalNumberSparseDeviationMatrix;
-			for(auto &sdm_row : numbers_sdm)
-			{
-				for(auto &sdm_value : sdm_row.second)
-				{
-					if(sdm_value.second < smallest_deviation)
-						smallest_deviation = sdm_value.second;
-				}
-
-				if(sdm_row.second.defaultDeviation < smallest_deviation)
-					smallest_deviation = sdm_row.second.defaultDeviation;
-			}
-
-			auto &strings_sdm = feature_attributes.nominalStringSparseDeviationMatrix;
-			for(auto &sdm_row : strings_sdm)
-			{
-				for(auto &sdm_value : sdm_row.second)
-				{
-					if(sdm_value.second < smallest_deviation)
-						smallest_deviation = sdm_value.second;
-				}
-
-				if(sdm_row.second.defaultDeviation < smallest_deviation)
-					smallest_deviation = sdm_row.second.defaultDeviation;
-			}
-
+			feature_attributes.nominalNumberSparseDeviationMatrix.UpdateSmallestDeviation(smallest_deviation);
+			feature_attributes.nominalStringSparseDeviationMatrix.UpdateSmallestDeviation(smallest_deviation);
+			
 			//find the probability that any other class besides the correct class was selected
 			//divide the probability among the other classes
 			double prob_class_given_nonmatch = smallest_deviation / GetNonmatchingNominalClassCount(index);
@@ -1143,6 +1142,70 @@ public:
 		: distEvaluator(dist_evaluator), evaluableNodeManager(enm)
 	{	}
 
+	//computes the distance terms given the sdm for feature index, of type target_type and target_value,
+	// and populates nominal_distance_terms
+	//returns true if target_value was found in the sdm
+	template<typename SparseNominalDeviationMatrixType, typename NominalValueType,
+		typename NominalDistanceTermsType>
+	inline bool ComputeAndStoreNominalDistanceTermsForSDM(SparseNominalDeviationMatrixType &sdm,
+		size_t index, EvaluableNodeImmediateValueType target_type, NominalValueType &target_value,
+		NominalDistanceTermsType &nominal_distance_terms)
+	{
+		auto deviations_for_value = sdm.find(target_value);
+		if(deviations_for_value == end(sdm))
+			return false;
+		
+		auto &deviations = deviations_for_value->second;
+
+		double nonmatching_classes = distEvaluator->GetNonmatchingNominalClassCount(index,
+			std::max<size_t>(1, deviations.size()));
+
+		double smallest_dist_term = std::numeric_limits<double>::infinity();
+		for(auto &[value, deviation] : deviations)
+		{
+			double dist_term = distEvaluator->ComputeDistanceTermNominal(target_value,
+				value, target_type, target_type, index);
+			nominal_distance_terms.emplace(value, dist_term);
+				
+			if(dist_term < smallest_dist_term)
+				smallest_dist_term = dist_term;
+		}
+
+		auto &feature_data = featureData[index];
+		double default_mismatch_deviation = deviations_for_value->second.defaultDeviation;
+		if(FastIsNaN(default_mismatch_deviation))
+		{
+			feature_data.defaultNominalMatchDistanceTerm = smallest_dist_term;
+			feature_data.defaultNominalNonMatchDistanceTerm
+				= distEvaluator->featureAttribs[index].knownToUnknownDistanceTerm.distanceTerm;
+		}
+		else
+		{
+			//find probability that the correct class was selected
+			//set it to the low value of 1 - default_devation for the row, assuming the self deviation doesn't exist
+			double prob_class_given_match = 1 - default_mismatch_deviation;
+
+			//if self_deviation exists, it should be the smallest value in the row and result in the higher probability given match
+			auto self_deviation_iter = deviations.find(target_value);
+			if(self_deviation_iter != end(deviations))
+				prob_class_given_match = 1 - self_deviation_iter->second;
+
+			//find the probability that any other class besides the correct class was selected
+			//divide the probability among the other classes
+			double prob_class_given_nonmatch = (1 - default_mismatch_deviation) / nonmatching_classes;
+
+			feature_data.defaultNominalMatchDistanceTerm
+				= distEvaluator->ComputeDistanceTermNominalMatchFromMatchProbabilities(
+					index, prob_class_given_match);
+
+			feature_data.defaultNominalNonMatchDistanceTerm
+				= distEvaluator->ComputeDistanceTermNominalNonmatchFromMatchProbabilities(
+					index, prob_class_given_match, prob_class_given_nonmatch);
+		}
+
+		return true;
+	}
+
 	//for the feature index, computes and stores the distance terms for nominal values
 	inline void ComputeAndStoreNominalDistanceTerms(size_t index)
 	{
@@ -1150,122 +1213,23 @@ public:
 		if(featureData.size() <= index)
 			featureData.resize(index + 1);
 
-		auto &feature_attributes = distEvaluator->featureAttribs[index];
 		auto &feature_data = featureData[index];
 
 		if(feature_data.targetValue.nodeType == ENIVT_NUMBER)
 		{
-			auto &sdm = feature_attributes.nominalNumberSparseDeviationMatrix;
-			auto target_value = feature_data.targetValue.nodeValue.number;
-
-			auto deviations_for_value = sdm.find(target_value);
-			if(deviations_for_value != end(sdm))
-			{
-				auto &deviations = deviations_for_value->second;
-
-				double nonmatching_classes = distEvaluator->GetNonmatchingNominalClassCount(index,
-					std::max<size_t>(1, deviations.size()));
-
-				double smallest_dist_term = std::numeric_limits<double>::infinity();
-				for(auto &[value, deviation] : deviations)
-				{
-					double dist_term = distEvaluator->ComputeDistanceTermNominal(target_value,
-						value, ENIVT_NUMBER, ENIVT_NUMBER, index);
-					feature_data.nominalNumberDistanceTerms.emplace(value, dist_term);
-
-					if(dist_term < smallest_dist_term)
-						smallest_dist_term = dist_term;
-				}
-
-				double default_mismatch_deviation = deviations_for_value->second.defaultDeviation;
-				if(FastIsNaN(default_mismatch_deviation))
-				{
-					feature_data.defaultNominalMatchDistanceTerm = smallest_dist_term;
-					feature_data.defaultNominalNonMatchDistanceTerm
-						= feature_attributes.knownToUnknownDistanceTerm.distanceTerm;
-				}
-				else
-				{
-					//find probability that the correct class was selected
-					//set it to the low value of 1 - default_devation for the row, assuming the self deviation doesn't exist
-					double prob_class_given_match = 1 - default_mismatch_deviation;
-
-					//if self_deviation exists, it should be the smallest value in the row and result in the higher probability given match
-					auto self_deviation_iter = deviations.find(target_value);
-					if(self_deviation_iter != end(deviations))
-						prob_class_given_match = 1 - self_deviation_iter->second;
-
-					//find the probability that any other class besides the correct class was selected
-					//divide the probability among the other classes
-					double prob_class_given_nonmatch = (1 - default_mismatch_deviation) / nonmatching_classes;
-
-					feature_data.defaultNominalMatchDistanceTerm
-						= distEvaluator->ComputeDistanceTermNominalMatchFromMatchProbabilities(
-							index, prob_class_given_match);
-
-					feature_data.defaultNominalNonMatchDistanceTerm
-						= distEvaluator->ComputeDistanceTermNominalNonmatchFromMatchProbabilities(
-							index, prob_class_given_match, prob_class_given_nonmatch);
-				}
+			if(ComputeAndStoreNominalDistanceTermsForSDM(
+					distEvaluator->featureAttribs[index].nominalNumberSparseDeviationMatrix,
+					index, ENIVT_NUMBER, feature_data.targetValue.nodeValue.number,
+					feature_data.nominalNumberDistanceTerms))
 				return;
-			}
 		}
 		else if(feature_data.targetValue.nodeType == ENIVT_STRING_ID)
 		{
-			auto &sdm = feature_attributes.nominalStringSparseDeviationMatrix;
-			auto target_sid = feature_data.targetValue.nodeValue.stringID;
-
-			auto deviations_for_sid = sdm.find(target_sid);
-			if(deviations_for_sid != end(sdm))
-			{
-				auto &deviations = deviations_for_sid->second;
-
-				double nonmatching_classes = distEvaluator->GetNonmatchingNominalClassCount(index,
-					std::max<size_t>(1, deviations.size()));
-
-				double smallest_dist_term = std::numeric_limits<double>::infinity();
-				for(auto &[sid, deviation] : deviations)
-				{
-					double dist_term = distEvaluator->ComputeDistanceTermNominal(target_sid,
-						sid, ENIVT_NUMBER, ENIVT_NUMBER, index);
-					feature_data.nominalStringDistanceTerms.emplace(sid, dist_term);
-
-					if(dist_term < smallest_dist_term)
-						smallest_dist_term = dist_term;
-				}
-
-				double default_mismatch_deviation = deviations_for_sid->second.defaultDeviation;
-				if(FastIsNaN(default_mismatch_deviation))
-				{
-					feature_data.defaultNominalMatchDistanceTerm = smallest_dist_term;
-					feature_data.defaultNominalNonMatchDistanceTerm
-						= feature_attributes.knownToUnknownDistanceTerm.distanceTerm;
-				}
-				else
-				{
-					//find probability that the correct class was selected
-					//set it to the low value of 1 - default_devation for the row, assuming the self deviation doesn't exist
-					double prob_class_given_match = 1 - default_mismatch_deviation;
-
-					//if self_deviation exists, it should be the smallest value in the row and result in the higher probability given match
-					auto self_deviation_iter = deviations.find(target_sid);
-					if(self_deviation_iter != end(deviations))
-						prob_class_given_match = 1 - self_deviation_iter->second;
-
-					//find the probability that any other class besides the correct class was selected
-					//divide the probability among the other classes
-					double prob_class_given_nonmatch = (1 - default_mismatch_deviation) / nonmatching_classes;
-
-					feature_data.defaultNominalMatchDistanceTerm
-						= distEvaluator->ComputeDistanceTermNominalMatchFromMatchProbabilities(
-							index, prob_class_given_match);
-
-					feature_data.defaultNominalNonMatchDistanceTerm
-						= distEvaluator->ComputeDistanceTermNominalNonmatchFromMatchProbabilities(
-							index, prob_class_given_match, prob_class_given_nonmatch);
-				}
+			if(ComputeAndStoreNominalDistanceTermsForSDM(
+					distEvaluator->featureAttribs[index].nominalStringSparseDeviationMatrix,
+					index, ENIVT_STRING_ID, feature_data.targetValue.nodeValue.stringID,
+					feature_data.nominalStringDistanceTerms))
 				return;
-			}
 		}
 
 		//made it here, so didn't find anything in the SDM.  use fallback for default nominal terms
@@ -1390,26 +1354,11 @@ public:
 
 	//for all nominal distance term values that equal dist_term for the given high_accuracy,
 	//it will call func passing in the numeric value
-	template<typename Func>
-	__forceinline void IterateOverNominalValuesWithLessOrEqualDistanceTermsNumeric(double dist_term, size_t index, bool high_accuracy,
-		Func func)
+	template<typename NominalDistanceTermsType, typename Func>
+	__forceinline void IterateOverNominalValuesWithLessOrEqualDistanceTerms(NominalDistanceTermsType &nom_dist_terms,
+		double dist_term, Func func)
 	{
-		auto &feature_data = featureData[index];
-		for(auto &entry : feature_data.nominalNumberDistanceTerms)
-		{
-			if(entry.second <= dist_term)
-				func(entry.first);
-		}
-	}
-
-	//for all nominal distance term values that equal dist_term for the given high_accuracy,
-	//it will call func passing in the string id value
-	template<typename Func>
-	__forceinline void IterateOverNominalValuesWithLessOrEqualDistanceTermsString(double dist_term, size_t index,
-		Func func)
-	{
-		auto &feature_data = featureData[index];
-		for(auto &entry : feature_data.nominalStringDistanceTerms)
+		for(auto &entry : nom_dist_terms)
 		{
 			if(entry.second <= dist_term)
 				func(entry.first);
@@ -1427,7 +1376,7 @@ public:
 			if(entry.second > compared_dist_term)
 			{
 				if(entry.second < next_smallest_dist_term)
-					next_smallest_dist_term  = entry.second;
+					next_smallest_dist_term = entry.second;
 			}
 		}
 

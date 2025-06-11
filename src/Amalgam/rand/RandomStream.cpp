@@ -6,8 +6,6 @@
 //system headers:
 #include <cstring>
 
-#define RANDOM_STATE_SIZE (sizeof(int64_t) * 2 + 1)
-
 RandomStream::RandomStream(const std::string initial_state)
 {
 	increment = 0;
@@ -17,7 +15,7 @@ RandomStream::RandomStream(const std::string initial_state)
 
 std::string RandomStream::GetState()
 {
-	char s[RANDOM_STATE_SIZE];
+	char s[randStateStringifiedSizeInBytes];
 	s[0] = static_cast<char>(255 & (state >> 56));
 	s[1] = static_cast<char>(255 & (state >> 48));
 	s[2] = static_cast<char>(255 & (state >> 40));
@@ -43,14 +41,14 @@ std::string RandomStream::GetState()
 	//this class will always ensure that the state has been initialized
 	s[16] = static_cast<uint8_t>(0xFF);
 
-	return std::string(&s[0], RANDOM_STATE_SIZE);
+	return std::string(&s[0], randStateStringifiedSizeInBytes);
 }
 
 void RandomStream::SetState(const std::string &new_state)
 {
-	uint8_t s[RANDOM_STATE_SIZE];
-	std::memset(&s[0], 0, RANDOM_STATE_SIZE);
-	std::memcpy(&s[0], new_state.c_str(), std::min(new_state.size(), RANDOM_STATE_SIZE));
+	uint8_t s[randStateStringifiedSizeInBytes];
+	std::memset(&s[0], 0, randStateStringifiedSizeInBytes);
+	std::memcpy(&s[0], new_state.c_str(), std::min(new_state.size(), randStateStringifiedSizeInBytes));
 
 	state =	  (static_cast<uint64_t>(s[0]) << 56) | (static_cast<uint64_t>(s[1]) << 48)
 			| (static_cast<uint64_t>(s[2]) << 40) | (static_cast<uint64_t>(s[3]) << 32)
@@ -70,23 +68,23 @@ void RandomStream::SetState(const std::string &new_state)
 
 std::string RandomStream::CreateOtherStreamStateViaString(const std::string &seed_string)
 {
-	char s[RANDOM_STATE_SIZE];
-	std::memset(&s[0], 0, RANDOM_STATE_SIZE);
+	char s[randStateStringifiedSizeInBytes];
+	std::memset(&s[0], 0, randStateStringifiedSizeInBytes);
 	MurmurHash3_x64_128(seed_string.c_str(), static_cast<int>(seed_string.size()), static_cast<uint32_t>(state & 0xFFFFFFFF), &s[0]);
 
 	//randomize the hash based on the current random state
 	*(reinterpret_cast<uint64_t *>(&s[0])) ^= state;
 	*(reinterpret_cast<uint64_t *>(&s[sizeof(uint64_t)])) ^= increment;
 
-	return std::string(&s[0], RANDOM_STATE_SIZE);
+	return std::string(&s[0], randStateStringifiedSizeInBytes);
 }
 
 RandomStream RandomStream::CreateOtherStreamViaString(const std::string &seed_string)
 {
 	RandomStream new_stream;
 
-	char s[RANDOM_STATE_SIZE];
-	std::memset(&s[0], 0, RANDOM_STATE_SIZE);
+	char s[randStateStringifiedSizeInBytes];
+	std::memset(&s[0], 0, randStateStringifiedSizeInBytes);
 	MurmurHash3_x64_128(seed_string.c_str(), static_cast<int>(seed_string.size()), static_cast<uint32_t>(state & 0xFFFFFFFF), &s[0]);
 
 	//randomize the hash based on the current random state

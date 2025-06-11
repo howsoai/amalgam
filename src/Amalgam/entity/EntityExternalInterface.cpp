@@ -37,9 +37,8 @@ EntityExternalInterface::LoadEntityStatus EntityExternalInterface::LoadEntity(st
 
 	if(rand_seed.empty())
 	{
-		typedef std::chrono::steady_clock clk;
-		auto t = std::chrono::duration_cast<std::chrono::milliseconds>(clk::now().time_since_epoch()).count();
-		rand_seed = std::to_string(t);
+		rand_seed.resize(RandomStream::randStateStringifiedSizeInBytes);
+		Platform_GenerateSecureRandomData(rand_seed.data(), RandomStream::randStateStringifiedSizeInBytes);
 	}
 
 	AssetManager::AssetParametersRef asset_params

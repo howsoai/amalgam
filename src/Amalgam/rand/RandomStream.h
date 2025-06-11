@@ -77,6 +77,9 @@ public:
 		return -std::log(1.0 - RandFull()) * mean;
 	}
 
+	//size of the random state as a string
+	static constexpr size_t randStateStringifiedSizeInBytes = (sizeof(int64_t) * 2 + 1);
+
 protected:
 
 	//based on the published literature, burns through the minimum number of random numbers

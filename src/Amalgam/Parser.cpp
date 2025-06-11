@@ -831,8 +831,6 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 				auto &top_node_ocn = top_node->GetOrderedChildNodesReference();
 				if(top_node_ocn.size() > 0)
 					top_node_ocn.pop_back();
-				else //no nodes included, nothing came through correctly
-					top_node = nullptr;
 			}
 			else //nothing came through correctly
 			{

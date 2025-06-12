@@ -21,7 +21,7 @@
 #include <string>
 
 //function prototypes:
-int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::string &random_seed);
+int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::string &rand_seed);
 
 //usage:
 // Note: spaces in raw string are correct, do not replace with tabs
@@ -178,11 +178,9 @@ PLATFORM_MAIN_CONSOLE
 	bool debug_internal_memory = Platform_IsDebuggerPresent();
 	EntityPermissions entity_permissions = EntityPermissions::AllPermissions();
 
-	typedef std::chrono::steady_clock clk;
-	auto t = std::chrono::duration_cast<std::chrono::milliseconds>(clk::now().time_since_epoch()).count();
-	std::string random_seed = std::to_string(t);
+	std::string rand_seed;
 	if(Platform_IsDebuggerPresent())
-		random_seed = "01234567890123456789012345";
+		rand_seed = "01234567890123456789012345";
 
 	//parameters to be passed into the code being run
 	std::string interpreter_path{args[0]};
@@ -206,7 +204,7 @@ PLATFORM_MAIN_CONSOLE
 		else if(args[i] == "-l" && i + 1 < args.size())
 			print_log_filename = args[++i];
 		else if(args[i] == "-s" && i + 1 < args.size())
-			random_seed = args[++i];
+			rand_seed = args[++i];
 		else if(args[i] == "-t" && i + 1 < args.size())
 			write_log_filename = args[++i];
 		else if(args[i] == "--p-opcodes")
@@ -286,14 +284,20 @@ PLATFORM_MAIN_CONSOLE
 	if(profile_labels)
 		Interpreter::SetLabelProfilingState(true);
 
+	if(rand_seed.empty())
+	{
+		rand_seed.resize(RandomStream::randStateStringifiedSizeInBytes);
+		Platform_GenerateSecureRandomData(rand_seed.data(), RandomStream::randStateStringifiedSizeInBytes);
+	}
+
 	if(run_trace)
 	{
-		return RunAmalgamTrace(&std::cin, &std::cout, random_seed);
+		return RunAmalgamTrace(&std::cin, &std::cout, rand_seed);
 	}
 	else if(run_tracefile)
 	{
 		std::ifstream trace_stream(tracefile);
-		int return_val = RunAmalgamTrace(&trace_stream, &std::cout, random_seed);
+		int return_val = RunAmalgamTrace(&trace_stream, &std::cout, rand_seed);
 
 		if(profile_opcodes || profile_labels)
 			PerformanceProfiler::PrintProfilingInformation(profile_out_file, profile_count);
@@ -307,7 +311,7 @@ PLATFORM_MAIN_CONSOLE
 		AssetManager::AssetParametersRef asset_params
 			= std::make_shared<AssetManager::AssetParameters>(amlg_file_to_run, "", true);
 
-		Entity *entity = asset_manager.LoadEntityFromResource(asset_params, false, random_seed, nullptr, status);
+		Entity *entity = asset_manager.LoadEntityFromResource(asset_params, false, rand_seed, nullptr, status);
 
 		if(!status.loaded)
 			return 1;

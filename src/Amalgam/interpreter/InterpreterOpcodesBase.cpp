@@ -830,7 +830,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 
 	//work on the node that is declaring the variables
 	EvaluableNode *required_vars_node = ocn[0];
-	bool any_assignments = false;
+	bool any_nonunique_assignments = false;
 	if(required_vars_node != nullptr)
 	{
 		//transform into variables if possible
@@ -873,7 +873,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 					auto [inserted, node_ptr] = scope->SetMappedChildNode(cn_id, cn, false);
 					if(inserted)
 					{
-						any_assignments = true;
+						//not unique so just set to true
+						any_nonunique_assignments = true;
 					}
 					else
 					{
@@ -899,7 +900,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 						auto [inserted, node_ptr] = scope->SetMappedChildNode(cn_id, cn, false);
 						if(inserted)
 						{
-							any_assignments = true;
+							//not unique so just set to true
+							any_nonunique_assignments = true;
 						}
 						else
 						{
@@ -917,8 +919,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 						if(scope_mcn.find(cn_id) != end(scope_mcn))
 							continue;
 
-						any_assignments = true;
-
 					#ifdef MULTITHREAD_SUPPORT
 						//unlock before interpreting
 						if(need_write_lock)
@@ -927,6 +927,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 
 						SetTopCurrentIndexInConstructionStack(cn_id);
 						EvaluableNodeReference value = InterpretNode(cn);
+
+						//mark if not unique
+						any_nonunique_assignments |= !value.unique;
 
 					#ifdef MULTITHREAD_SUPPORT
 						//relock if needed before assigning the value
@@ -949,17 +952,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 		}
 	}
 
-	if(any_assignments)
-	{
-		auto [any_constructions, initial_side_effect] = SetSideEffectsFlags();
-		if(_opcode_profiling_enabled && any_constructions)
-		{
-			std::string variable_location = asset_manager.GetEvaluableNodeSourceFromComments(en);
-			PerformanceProfiler::AccumulateTotalSideEffectMemoryWrites(variable_location);
-			if(initial_side_effect)
-				PerformanceProfiler::AccumulateInitialSideEffectMemoryWrites(variable_location);
-		}
-	}
+	if(any_nonunique_assignments)
+		SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
 
 	//used to store the result or clear if possible
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
@@ -999,14 +993,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	if(scopeStackNodes->size() < 1)
 		return EvaluableNodeReference::Null();
 
-	auto [any_constructions, initial_side_effect] = SetSideEffectsFlags();
-	if(_opcode_profiling_enabled && any_constructions)
-	{
-		std::string variable_location = asset_manager.GetEvaluableNodeSourceFromComments(en);
-		PerformanceProfiler::AccumulateTotalSideEffectMemoryWrites(variable_location);
-		if(initial_side_effect)
-			PerformanceProfiler::AccumulateInitialSideEffectMemoryWrites(variable_location);
-	}
+	SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
 
 	bool accum = (en->GetType() == ENT_ACCUM);
 

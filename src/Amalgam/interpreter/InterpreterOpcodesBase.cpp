@@ -993,6 +993,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	if(scopeStackNodes->size() < 1)
 		return EvaluableNodeReference::Null();
 
+	//TODO 23968: put this under a condition
 	SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
 
 	bool accum = (en->GetType() == ENT_ACCUM);

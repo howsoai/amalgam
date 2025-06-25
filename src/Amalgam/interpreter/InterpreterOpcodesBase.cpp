@@ -1080,6 +1080,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			}
 
 			any_nonunique_assignments |= !variable_value_node.unique;
+			//if writing to an outer scope, can't guarantee the memory at this scope can be freed
+			any_nonunique_assignments |= (destination_scope_stack_index != GetScopeStackDepth());
 
 			//assign back into the context_to_use
 			*value_destination = variable_value_node;
@@ -1135,7 +1137,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		{
 			*value_destination = new_value;
 
-			if(!new_value.unique)
+			//if writing to an outer scope, can't guarantee the memory at this scope can be freed
+			if(!new_value.unique || destination_scope_stack_index != GetScopeStackDepth())
 				SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
 		}
 
@@ -1190,6 +1193,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	//in multithreaded, if variable was not found, then may need to create it
 	if(value_destination == nullptr)
 		value_destination = GetOrCreateScopeStackSymbolLocation(variable_sid, destination_scope_stack_index);
+
+	//if writing to an outer scope, can't guarantee the memory at this scope can be freed
+	any_nonunique_assignments |= (destination_scope_stack_index != GetScopeStackDepth());
 
 	//make a copy of value_replacement because not sure where else it may be used
 	EvaluableNode *value_replacement = nullptr;

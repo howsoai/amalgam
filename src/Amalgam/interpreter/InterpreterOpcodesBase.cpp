@@ -993,8 +993,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	if(scopeStackNodes->size() < 1)
 		return EvaluableNodeReference::Null();
 
-	//TODO 23968: free previous values if layer is clear of side effects
-
 	bool accum = (en->GetType() == ENT_ACCUM);
 
 	//if only one parameter, then assume it is an assoc of variables to accum or assign

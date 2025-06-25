@@ -8,7 +8,6 @@
 #include "date/date.h"
 #include "date/tz.h"
 
-//TODO 23968: may need another instance of these for each of the date/time transform methods, since may be switching around a lot
 //thread local locales and string streams to prevent std::ostringstream or std::locale from reducing concurrency
 //by their global locks
 struct CachedLocale
@@ -21,6 +20,13 @@ struct CachedLocale
 			locale = std::locale(new_locale_name);
 		}
 		stringStream.imbue(locale);
+	}
+
+	//clears flag and contents of stringStream
+	void ResetStringStream(std::string new_value = std::string())
+	{
+		stringStream.clear();
+		stringStream.str(new_value);
 	}
 
 	std::stringstream stringStream;
@@ -238,7 +244,7 @@ double GetNumSecondsSinceEpochFromDateTimeString(const std::string &datetime_str
 	#endif
 		static CachedLocale cached_locale;
 
-	cached_locale.stringStream = std::stringstream{ datetime_str };
+	cached_locale.ResetStringStream(datetime_str);
 
 	if(!locale.empty())
 	{
@@ -313,7 +319,7 @@ std::string ConvertZonedDateTimeToString(TimepointType datetime, const std::stri
 	#endif
 		static CachedLocale cached_locale;
 
-	cached_locale.stringStream.clear();
+	cached_locale.ResetStringStream();
 	if(locale.empty())
 	{
 		try
@@ -391,7 +397,7 @@ double GetNumSecondsSinceMidnight(const std::string &time_str, std::string forma
 	#endif
 		static CachedLocale cached_locale;
 
-	cached_locale.stringStream = std::stringstream{ time_str };
+	cached_locale.ResetStringStream(time_str);
 
 	if(!locale.empty())
 	{
@@ -450,7 +456,7 @@ std::string GetTimeStringFromNumSecondsSinceMidnight(double seconds_since_midnig
 	#endif
 		static CachedLocale cached_locale;
 
-	cached_locale.stringStream.clear();
+	cached_locale.ResetStringStream();
 	if(!locale.empty())
 	{
 		//make sure it's utf-8

@@ -20,6 +20,7 @@ struct CachedLocale
 			localeName = new_locale_name;
 			locale = std::locale(new_locale_name);
 		}
+		stringStream.imbue(locale);
 	}
 
 	std::stringstream stringStream;
@@ -230,13 +231,14 @@ double GetNumSecondsSinceEpochFromDateTimeString(const std::string &datetime_str
 	bool has_time_offset = ConstrainDateTimeStringToValidFormat(format);
 
 	std::chrono::system_clock::time_point dt;
-	std::istringstream ss{ datetime_str };
 	std::string in_date_timezone = "";
 
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 	thread_local
 	#endif
 		static CachedLocale cached_locale;
+
+	cached_locale.stringStream = std::stringstream{ datetime_str };
 
 	if(!locale.empty())
 	{
@@ -246,7 +248,6 @@ double GetNumSecondsSinceEpochFromDateTimeString(const std::string &datetime_str
 		try
 		{
 			cached_locale.UpdateLocaleIfNeeded(locale);
-			ss.imbue(cached_locale.locale);
 		}
 		catch(...)
 		{
@@ -259,14 +260,14 @@ double GetNumSecondsSinceEpochFromDateTimeString(const std::string &datetime_str
 		{
 			//month and year only dates must be parsed specifically into year_month 
 			date::year_month ym;
-			ss >> date::parse(format, ym, in_date_timezone);
+			cached_locale.stringStream >> date::parse(format, ym, in_date_timezone);
 			//convert to time_point by specifying the day to be 1 for the parsed year month
 			dt = date::sys_days{ ym / 1 };
 		}
 		else
 		{
 			//parse string into dt and if there was a timezone in the string, stores that into in_date_timezone
-			ss >> date::parse(format, dt, in_date_timezone);
+			cached_locale.stringStream >> date::parse(format, dt, in_date_timezone);
 		}
 	}
 	catch(...)
@@ -385,12 +386,12 @@ std::string GetDateTimeStringFromNumSecondsSinceEpoch(double seconds_since_epoch
 //parses time_str based on format and locale and returns the number of seconds since midnight
 double GetNumSecondsSinceMidnight(const std::string &time_str, std::string format, std::string locale)
 {
-	std::istringstream ss{ time_str };
-
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 	thread_local
 	#endif
 		static CachedLocale cached_locale;
+
+	cached_locale.stringStream = std::stringstream{ time_str };
 
 	if(!locale.empty())
 	{
@@ -400,7 +401,6 @@ double GetNumSecondsSinceMidnight(const std::string &time_str, std::string forma
 		try
 		{
 			cached_locale.UpdateLocaleIfNeeded(locale);
-			ss.imbue(cached_locale.locale);
 		}
 		catch(...)
 		{
@@ -411,9 +411,9 @@ double GetNumSecondsSinceMidnight(const std::string &time_str, std::string forma
 	try
 	{
 		std::chrono::nanoseconds tp;
-		ss >> date::parse(format, tp);
+		cached_locale.stringStream >> date::parse(format, tp);
 
-		if(ss.fail())
+		if(cached_locale.stringStream.fail())
 			return 0.0;
 
 		double seconds_since_midnight = std::chrono::duration_cast<std::chrono::microseconds>(tp).count() / 1000000.0;
@@ -459,7 +459,6 @@ std::string GetTimeStringFromNumSecondsSinceMidnight(double seconds_since_midnig
 		try
 		{
 			cached_locale.UpdateLocaleIfNeeded(locale);
-			cached_locale.stringStream.imbue(cached_locale.locale);
 		}
 		catch(...)
 		{

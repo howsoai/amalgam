@@ -11,20 +11,21 @@
 //TODO 23968: may need another instance of these for each of the date/time transform methods, since may be switching around a lot
 //thread local locales and string streams to prevent std::ostringstream or std::locale from reducing concurrency
 //by their global locks
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-thread_local
-#endif
-static std::stringstream _thread_local_string_stream;
+struct CachedLocale
+{
+	void UpdateLocaleIfNeeded(std::string new_locale_name)
+	{
+		if(localeName != new_locale_name)
+		{
+			localeName = new_locale_name;
+			locale = std::locale(new_locale_name);
+		}
+	}
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-thread_local
-#endif
-static std::locale _thread_local_current_locale;
-
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-thread_local
-#endif
-static std::string _thread_local_locale_name;
+	std::stringstream stringStream;
+	std::locale locale;
+	std::string localeName;
+};
 
 std::string SetTimeZoneDatabasePath(std::string path)
 {
@@ -232,6 +233,11 @@ double GetNumSecondsSinceEpochFromDateTimeString(const std::string &datetime_str
 	std::istringstream ss{ datetime_str };
 	std::string in_date_timezone = "";
 
+	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	thread_local
+	#endif
+		static CachedLocale cached_locale;
+
 	if(!locale.empty())
 	{
 		//make sure it's utf-8
@@ -239,12 +245,8 @@ double GetNumSecondsSinceEpochFromDateTimeString(const std::string &datetime_str
 		//if the locale is valid, use it
 		try
 		{
-			if(_thread_local_locale_name != locale)
-			{
-				_thread_local_locale_name = locale;
-				_thread_local_current_locale = std::locale(locale);
-			}
-			ss.imbue(_thread_local_current_locale);
+			cached_locale.UpdateLocaleIfNeeded(locale);
+			ss.imbue(cached_locale.locale);
 		}
 		catch(...)
 		{
@@ -305,12 +307,17 @@ std::string ConvertZonedDateTimeToString(TimepointType datetime, const std::stri
 {
 	auto zoned_dt = date::make_zoned(tz, datetime);
 
-	_thread_local_string_stream.clear();
+	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	thread_local
+	#endif
+		static CachedLocale cached_locale;
+
+	cached_locale.stringStream.clear();
 	if(locale.empty())
 	{
 		try
 		{
-			_thread_local_string_stream << date::format(format, zoned_dt);
+			cached_locale.stringStream << date::format(format, zoned_dt);
 		}
 		catch(...)
 		{
@@ -324,18 +331,14 @@ std::string ConvertZonedDateTimeToString(TimepointType datetime, const std::stri
 		//if the locale is valid, use it
 		try
 		{
-			if(_thread_local_locale_name != locale)
-			{
-				_thread_local_locale_name = locale;
-				_thread_local_current_locale = std::locale(locale);
-			}
-			_thread_local_string_stream << date::format(_thread_local_current_locale, format, zoned_dt);
+			cached_locale.UpdateLocaleIfNeeded(locale);
+			cached_locale.stringStream << date::format(cached_locale.locale, format, zoned_dt);
 		}
 		catch(...)
 		{
 			try
 			{
-				_thread_local_string_stream << date::format(format, zoned_dt);
+				cached_locale.stringStream << date::format(format, zoned_dt);
 			}
 			catch(...)
 			{
@@ -344,7 +347,7 @@ std::string ConvertZonedDateTimeToString(TimepointType datetime, const std::stri
 		}
 	}
 
-	return _thread_local_string_stream.str();
+	return cached_locale.stringStream.str();
 }
 
 //format and locale are not passed by reference because both need a copy
@@ -384,6 +387,11 @@ double GetNumSecondsSinceMidnight(const std::string &time_str, std::string forma
 {
 	std::istringstream ss{ time_str };
 
+	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	thread_local
+	#endif
+		static CachedLocale cached_locale;
+
 	if(!locale.empty())
 	{
 		//make sure it's utf-8
@@ -391,12 +399,8 @@ double GetNumSecondsSinceMidnight(const std::string &time_str, std::string forma
 		//if the locale is valid, use it
 		try
 		{
-			if(_thread_local_locale_name != locale)
-			{
-				_thread_local_locale_name = locale;
-				_thread_local_current_locale = std::locale(locale);
-			}
-			ss.imbue(_thread_local_current_locale);
+			cached_locale.UpdateLocaleIfNeeded(locale);
+			ss.imbue(cached_locale.locale);
 		}
 		catch(...)
 		{
@@ -441,7 +445,12 @@ std::string GetTimeStringFromNumSecondsSinceMidnight(double seconds_since_midnig
 
 	auto tp = std::chrono::duration_cast<std::chrono::system_clock::duration>(std::chrono::duration<double>(seconds_since_midnight));
 
-	_thread_local_string_stream.clear();
+	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	thread_local
+	#endif
+		static CachedLocale cached_locale;
+
+	cached_locale.stringStream.clear();
 	if(!locale.empty())
 	{
 		//make sure it's utf-8
@@ -449,12 +458,8 @@ std::string GetTimeStringFromNumSecondsSinceMidnight(double seconds_since_midnig
 		//if the locale is valid, use it
 		try
 		{
-			if(_thread_local_locale_name != locale)
-			{
-				_thread_local_locale_name = locale;
-				_thread_local_current_locale = std::locale(locale);
-			}
-			_thread_local_string_stream.imbue(_thread_local_current_locale);
+			cached_locale.UpdateLocaleIfNeeded(locale);
+			cached_locale.stringStream.imbue(cached_locale.locale);
 		}
 		catch(...)
 		{
@@ -466,15 +471,15 @@ std::string GetTimeStringFromNumSecondsSinceMidnight(double seconds_since_midnig
 	{
 		if(has_fractional_seconds)
 		{
-			_thread_local_string_stream << date::format(format, tp);
+			cached_locale.stringStream << date::format(format, tp);
 		}
 		else
 		{
 			auto rounded_timepoint = std::chrono::floor<std::chrono::seconds>(tp);
-			_thread_local_string_stream << date::format(format, rounded_timepoint);
+			cached_locale.stringStream << date::format(format, rounded_timepoint);
 		}
 
-		return _thread_local_string_stream.str();
+		return cached_locale.stringStream.str();
 	}
 	catch(...)
 	{

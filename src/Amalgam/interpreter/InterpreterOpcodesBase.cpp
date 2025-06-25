@@ -994,6 +994,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		return EvaluableNodeReference::Null();
 
 	//TODO 23968: put this under a condition
+	//TODO 23968: free previous values if layer is clear of side effects
 	SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
 
 	bool accum = (en->GetType() == ENT_ACCUM);

@@ -672,7 +672,8 @@ public:
 	}
 
 	//frees an EvaluableNode (must be owned by this EvaluableNodeManager)
-	inline void FreeNode(EvaluableNode *en)
+	// if place_nodes_in_tlab is true, then it will update the thread local allocation buffer and place nodes in it
+	inline void FreeNode(EvaluableNode *en, bool place_nodes_in_tlab = true)
 	{
 		if(en == nullptr)
 			return;
@@ -682,7 +683,8 @@ public:
 	#endif
 
 		en->Invalidate();
-		AddNodeToTLAB(en);
+		if(place_nodes_in_tlab)
+			AddNodeToTLAB(en);
 	}
 
 	//attempts to free the node reference
@@ -710,7 +712,8 @@ public:
 	void FreeAllNodes();
 
 	//frees the entire tree in the respective ways for the corresponding permanence types allowed
-	inline void FreeNodeTree(EvaluableNode *en)
+	// if place_nodes_in_tlab is true, then it will update the thread local allocation buffer and place nodes in it
+	inline void FreeNodeTree(EvaluableNode *en, bool place_nodes_in_tlab = true)
 	{
 		if(en == nullptr)
 			return;
@@ -722,27 +725,29 @@ public:
 		if(IsEvaluableNodeTypeImmediate(en->GetType()))
 		{
 			en->Invalidate();
-			AddNodeToTLAB(en);
+			if(place_nodes_in_tlab)
+				AddNodeToTLAB(en);
 		}
 		else if(!en->GetNeedCycleCheck())
 		{
-			FreeNodeTreeRecurse(en);
+			FreeNodeTreeRecurse(en, place_nodes_in_tlab);
 		}
 		else //more costly cyclic free
 		{
-			FreeNodeTreeWithCyclesRecurse(en);
+			FreeNodeTreeWithCyclesRecurse(en, place_nodes_in_tlab);
 		}
 	}
 
 	//attempts to free the node reference
-	__forceinline void FreeNodeTreeIfPossible(EvaluableNodeReference &enr)
+	// if place_nodes_in_tlab is true, then it will update the thread local allocation buffer and place nodes in it
+	__forceinline void FreeNodeTreeIfPossible(EvaluableNodeReference &enr, bool place_nodes_in_tlab = true)
 	{
 		if(enr.IsImmediateValue())
 			enr.FreeImmediateResources();
 		else if(enr.unique)
-			FreeNodeTree(enr);
+			FreeNodeTree(enr, place_nodes_in_tlab);
 		else if(enr.uniqueUnreferencedTopNode)
-			FreeNode(enr);
+			FreeNode(enr, place_nodes_in_tlab);
 	}
 
 	//just frees the child nodes of tree, but not tree itself; assumes no cycles
@@ -945,10 +950,12 @@ protected:
 	void FreeAllNodesExceptReferencedNodes(size_t cur_first_unused_node_index);
 
 	//support for FreeNodeTree, but requires that tree not be nullptr
-	void FreeNodeTreeRecurse(EvaluableNode *tree);
+	// if place_nodes_in_tlab is true, then it will update the thread local allocation buffer and place nodes in it
+	void FreeNodeTreeRecurse(EvaluableNode *tree, bool place_nodes_in_tlab = true);
 
 	//support for FreeNodeTreeWithCycles, but requires that tree not be nullptr
-	void FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree);
+	// if place_nodes_in_tlab is true, then it will update the thread local allocation buffer and place nodes in it
+	void FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree, bool place_nodes_in_tlab = true);
 
 	//modifies the labels of n with regard to metadata_modifier
 	// assumes n is not nullptr

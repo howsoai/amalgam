@@ -359,7 +359,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 	UpdateGarbageCollectionTrigger(cur_first_unused_node_index);
 }
 
-void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree)
+void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree, bool place_nodes_in_tlab)
 {
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 	assert(tree->IsNodeValid());
@@ -371,7 +371,7 @@ void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree)
 		for(auto &[_, e] : tree->GetMappedChildNodesReference())
 		{
 			if(e != nullptr)
-				FreeNodeTreeRecurse(e);
+				FreeNodeTreeRecurse(e, place_nodes_in_tlab);
 		}
 	}
 	else
@@ -379,15 +379,16 @@ void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree)
 		for(auto &e : tree->GetOrderedChildNodes())
 		{
 			if(e != nullptr)
-				FreeNodeTreeRecurse(e);
+				FreeNodeTreeRecurse(e, place_nodes_in_tlab);
 		}
 	}
 
 	tree->Invalidate();
-	AddNodeToTLAB(tree);
+	if(place_nodes_in_tlab)
+		AddNodeToTLAB(tree);
 }
 
-void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
+void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree, bool place_nodes_in_tlab)
 {
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 	assert(tree->IsNodeValid());
@@ -399,12 +400,13 @@ void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
 		//need to invalidate before call child nodes to prevent infinite recursion loop
 		EvaluableNode::AssocType mcn = std::move(tree->GetMappedChildNodesReference());
 		tree->Invalidate();
-		AddNodeToTLAB(tree);
+		if(place_nodes_in_tlab)
+			AddNodeToTLAB(tree);
 
 		for(auto &[_, e] : mcn)
 		{
 			if(e != nullptr && !e->IsNodeDeallocated())
-				FreeNodeTreeWithCyclesRecurse(e);
+				FreeNodeTreeWithCyclesRecurse(e, place_nodes_in_tlab);
 		}
 
 		//free the references
@@ -413,7 +415,8 @@ void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
 	else if(tree->IsImmediate())
 	{
 		tree->Invalidate();
-		AddNodeToTLAB(tree);
+		if(place_nodes_in_tlab)
+			AddNodeToTLAB(tree);
 	}
 	else //ordered
 	{
@@ -421,12 +424,13 @@ void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
 		//need to invalidate before call child nodes to prevent infinite recursion loop
 		std::vector<EvaluableNode *> ocn = std::move(tree->GetOrderedChildNodesReference());
 		tree->Invalidate();
-		AddNodeToTLAB(tree);
+		if(place_nodes_in_tlab)
+			AddNodeToTLAB(tree);
 
 		for(auto &e : ocn)
 		{
 			if(e != nullptr && !e->IsNodeDeallocated())
-				FreeNodeTreeWithCyclesRecurse(e);
+				FreeNodeTreeWithCyclesRecurse(e, place_nodes_in_tlab);
 		}
 	}
 }

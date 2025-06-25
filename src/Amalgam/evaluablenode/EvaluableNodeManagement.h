@@ -9,6 +9,8 @@
 
 //if the macro PEDANTIC_GARBAGE_COLLECTION is defined, then garbage collection will be performed
 //after every opcode, to help find and debug memory issues
+//if the macro DEBUG_REPORT_TLAB_USAGE is defined, then the thread local allocation buffer storage will be
+//profiled and printed
 
 typedef int64_t ExecutionCycleCount;
 typedef int32_t ExecutionCycleCountCompactDelta;
@@ -1089,7 +1091,7 @@ protected:
 private:
 
 	//number of nodes to allocate at once for the thread local allocation buffer
-	static const int tlabBlockAllocationSize = 20;
+	static const int tlabBlockAllocationSize = 24;
 
 	//holds pointers to EvaluableNode's reserved for allocation by a specific thread
 	//during garbage collection, these buffers need to be cleared because memory may be rearranged or reassigned
@@ -1098,4 +1100,18 @@ private:
 	thread_local
 #endif
 		inline static std::vector<EvaluableNode *> threadLocalAllocationBuffer;
+
+	//debug diagnostic variables for threadLocalAllocationBuffer
+#ifdef DEBUG_REPORT_TLAB_USAGE
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	inline static Concurrency::SingleMutex tlabCountMutex;
+	inline static std::atomic<size_t> tlabSize = 0;
+	inline static std::atomic<size_t> tlabSizeCount = 0;
+	inline static std::atomic<double> rollingAveTlabSize = 0.0;
+#else
+	inline static size_t tlabSize = 0;
+	inline static size_t tlabSizeCount = 0;
+	inline static double rollingAveTlabSize = 0.0;
+#endif
+#endif
 };

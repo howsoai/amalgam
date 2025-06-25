@@ -75,7 +75,7 @@ void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t previous_num_no
 		//a large allocation goes beyond that size and so the memory keeps growing
 		//by using a fraction less than 1, it reduces the chances of a slow memory increase
 		size_t diff_from_current = (numNodesToRunGarbageCollection - cur_num_nodes);
-		size_t max_from_previous = cur_num_nodes + static_cast<size_t>(.9 * diff_from_current);
+		size_t max_from_previous = cur_num_nodes + static_cast<size_t>(.95 * diff_from_current);
 
 		numNodesToRunGarbageCollection = std::max<size_t>(max_from_previous, max_from_current);
 	}
@@ -179,8 +179,24 @@ void EvaluableNodeManager::FreeAllNodes()
 }
 
 EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
-{	
+{
+#ifdef DEBUG_REPORT_TLAB_USAGE
+	{
+	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+		Concurrency::SingleLock lock(tlabCountMutex);
+	#endif
+	
+		tlabSize += threadLocalAllocationBuffer.size();
+		tlabSizeCount++;
+	
+		rollingAveTlabSize = 0.99609375 * rollingAveTlabSize + 0.00390625 * threadLocalAllocationBuffer.size();
+		if(tlabSizeCount % 4000 == 0)
+			std::cout << "ave tlab size: " << rollingAveTlabSize << std::endl;
+	}
+#endif
+
 	EvaluableNode *tlab_node = GetNextNodeFromTLAB();
+
 	//Fast Path; get node from thread local buffer
 	if(tlab_node != nullptr)
 		return tlab_node;

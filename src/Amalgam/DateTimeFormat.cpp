@@ -10,8 +10,10 @@
 
 //thread local locales and string streams to prevent std::ostringstream or std::locale from reducing concurrency
 //by their global locks
-struct CachedLocale
+class CachedLocale
 {
+public:
+
 	void UpdateLocaleIfNeeded(std::string new_locale_name)
 	{
 		if(localeName != new_locale_name)
@@ -27,12 +29,22 @@ struct CachedLocale
 	{
 		stringStream.clear();
 		stringStream.str(new_value);
+
+		//only want to initialize this once
+		stringStream.imbue(defaultLocale);
 	}
 
 	std::stringstream stringStream;
 	std::locale locale;
+
+protected:
 	std::string localeName;
+
+	//a global default locale used to reset stringStream
+	const static std::locale defaultLocale;
 };
+
+const std::locale CachedLocale::defaultLocale;
 
 std::string SetTimeZoneDatabasePath(std::string path)
 {

@@ -1,9 +1,11 @@
 //project headers:
 #include "Interpreter.h"
 
+#include "AssetManager.h"
 #include "EntityQueries.h"
 #include "EntityQueryBuilder.h"
 #include "EvaluableNodeTreeFunctions.h"
+#include "PerformanceProfiler.h"
 #include "StringInternPool.h"
 
 //system headers:
@@ -399,6 +401,18 @@ EvaluableNodeReference Interpreter::ConvertArgsToScopeStack(EvaluableNodeReferen
 	args->SetNeedCycleCheck(true);
 
 	return EvaluableNodeReference(scope_stack, args.unique, true);
+}
+
+void Interpreter::SetSideEffectFlagsAndAccumulatePerformanceCounters(EvaluableNode *node)
+{
+	auto [any_constructions, initial_side_effect] = SetSideEffectsFlags();
+	if(_opcode_profiling_enabled && any_constructions)
+	{
+		std::string variable_location = asset_manager.GetEvaluableNodeSourceFromComments(node);
+		PerformanceProfiler::AccumulateTotalSideEffectMemoryWrites(variable_location);
+		if(initial_side_effect)
+			PerformanceProfiler::AccumulateInitialSideEffectMemoryWrites(variable_location);
+	}
 }
 
 EvaluableNode **Interpreter::GetScopeStackSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &scope_stack_index

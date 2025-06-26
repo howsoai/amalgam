@@ -2,7 +2,7 @@
 <html>
 
 <head>
-<title>Amalgam Documentation</title>
+<title>Amalgam&reg; Language Documentation</title>
 </head>
 
 <script src="language.js"></script>
@@ -62,15 +62,6 @@ function render() {
 		var example = langData[i].example;
 		var new_scope = langData[i]["new scope"];
 		var new_target_scope = langData[i]["new target scope"];
-		
-		if(permissions) {
-			if(permissions == "e") {
-				permissions = "needs entity";
-			}
-			else if(permissions == "r") {
-				permissions = "needs root permission";
-			}
-		}
 		
 		if(newval && newval == "c") 
 			newval = "conditional";
@@ -286,7 +277,7 @@ function render() {
 <body onload='render()'>
 
 <div id='return'><a href="#top"> RETURN TO TOP</a></div>
-<h1>Amalgam Language Reference</h1>
+<h1>Amalgam&reg; Language Reference</h1>
 
 <div id='search'><input type='text' id='searchbox' maxlength='30'></div>
 
@@ -347,7 +338,7 @@ function render() {
 	<p>
 	If the concurrent/parallel symbol, ||, is specified then the opcode's computations will be executed concurrently if possible.  The concurrent execution will be interpreted with regard to the specific opcode, but any function calls may be executed in any order and possibly concurrently.
 	<p>
-	Each Entity contains code/data via a root node that is executed every call to the entity.  An Entity has complete abilities to perform reads and writes to any other Entity contained within it; it is also allowed to create, destroy, access, or modify other entities. The root-most entity has permissions to call system commands and load files, and this is called root permission.  These permissions may be set on other entities by an entity with root permission.
+	Each Entity contains code/data via a root node that is executed every call to the entity.  An Entity has complete abilities to perform reads and writes to any other Entity contained within it; it is also allowed to create, destroy, access, or modify other entities.  Entities have a set of permissions which include std_out_and_std_err, std_in, load (from filesystem), store (to filesystem), environment, alter_performance, system (run system commands), and entity (create and manage contained entities).
 	<p>
 	Entities may be explicitly named and may be used as code libraries.  For example, a library named MyLibrary with function MyFunction can be called as:<br>
 	<span class='ex code'>
@@ -366,8 +357,7 @@ function render() {
 	Notation:<br>
 	<span class='sp'>[ ]</span> means optional<br>
 
-	<p>	
-	Permissions: blank = always, entity = needs entity, root permission = can only be called an entity with root permission<br>
+	<p>
 	New value: blank = it evaluates to (and potentially modifies) a reference of an existing value, new = it makes a new value and copies if applicable<br>
 	<p>
 	<div id='output'></div>

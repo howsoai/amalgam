@@ -1,9 +1,11 @@
 //project headers:
 #include "Interpreter.h"
 
+#include "AssetManager.h"
 #include "EntityQueries.h"
 #include "EntityQueryBuilder.h"
 #include "EvaluableNodeTreeFunctions.h"
+#include "PerformanceProfiler.h"
 #include "StringInternPool.h"
 
 //system headers:
@@ -224,8 +226,8 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 	&Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_ACCUM_ENTITY_ROOTS,						// ENT_ACCUM_ENTITY_ROOTS
 	&Interpreter::InterpretNode_ENT_GET_ENTITY_RAND_SEED,											// ENT_GET_ENTITY_RAND_SEED
 	&Interpreter::InterpretNode_ENT_SET_ENTITY_RAND_SEED,											// ENT_SET_ENTITY_RAND_SEED
-	&Interpreter::InterpretNode_ENT_GET_ENTITY_ROOT_PERMISSION,										// ENT_GET_ENTITY_ROOT_PERMISSION
-	&Interpreter::InterpretNode_ENT_SET_ENTITY_ROOT_PERMISSION,										// ENT_SET_ENTITY_ROOT_PERMISSION
+	&Interpreter::InterpretNode_ENT_GET_ENTITY_PERMISSIONS,											// ENT_GET_ENTITY_PERMISSIONS
+	&Interpreter::InterpretNode_ENT_SET_ENTITY_PERMISSIONS,											// ENT_SET_ENTITY_PERMISSIONS
 
 	//entity base actions
 	&Interpreter::InterpretNode_ENT_CREATE_ENTITIES,												// ENT_CREATE_ENTITIES
@@ -400,6 +402,18 @@ EvaluableNodeReference Interpreter::ConvertArgsToScopeStack(EvaluableNodeReferen
 	args->SetNeedCycleCheck(true);
 
 	return EvaluableNodeReference(scope_stack, args.unique, true);
+}
+
+void Interpreter::SetSideEffectFlagsAndAccumulatePerformanceCounters(EvaluableNode *node)
+{
+	auto [any_constructions, initial_side_effect] = SetSideEffectsFlags();
+	if(_opcode_profiling_enabled && any_constructions)
+	{
+		std::string variable_location = asset_manager.GetEvaluableNodeSourceFromComments(node);
+		PerformanceProfiler::AccumulateTotalSideEffectMemoryWrites(variable_location);
+		if(initial_side_effect)
+			PerformanceProfiler::AccumulateInitialSideEffectMemoryWrites(variable_location);
+	}
 }
 
 EvaluableNode **Interpreter::GetScopeStackSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &scope_stack_index

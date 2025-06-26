@@ -75,7 +75,7 @@ void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t previous_num_no
 		//a large allocation goes beyond that size and so the memory keeps growing
 		//by using a fraction less than 1, it reduces the chances of a slow memory increase
 		size_t diff_from_current = (numNodesToRunGarbageCollection - cur_num_nodes);
-		size_t max_from_previous = cur_num_nodes + static_cast<size_t>(.9 * diff_from_current);
+		size_t max_from_previous = cur_num_nodes + static_cast<size_t>(.95 * diff_from_current);
 
 		numNodesToRunGarbageCollection = std::max<size_t>(max_from_previous, max_from_current);
 	}
@@ -179,8 +179,25 @@ void EvaluableNodeManager::FreeAllNodes()
 }
 
 EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
-{	
+{
+#ifdef DEBUG_REPORT_TLAB_USAGE
+	{
+	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+		Concurrency::SingleLock lock(tlabCountMutex);
+	#endif
+	
+		tlabSize += threadLocalAllocationBuffer.size();
+		tlabSizeCount++;
+
+		//use an exponentially rolling average, use a small fraction of the new value (1/256th)
+		rollingAveTlabSize = 0.99609375 * rollingAveTlabSize + 0.00390625 * threadLocalAllocationBuffer.size();
+		if(tlabSizeCount % 4000 == 0)
+			std::cout << "ave tlab size: " << rollingAveTlabSize << std::endl;
+	}
+#endif
+
 	EvaluableNode *tlab_node = GetNextNodeFromTLAB();
+
 	//Fast Path; get node from thread local buffer
 	if(tlab_node != nullptr)
 		return tlab_node;
@@ -359,7 +376,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 	UpdateGarbageCollectionTrigger(cur_first_unused_node_index);
 }
 
-void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree)
+void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree, bool place_nodes_in_tlab)
 {
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 	assert(tree->IsNodeValid());
@@ -371,7 +388,7 @@ void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree)
 		for(auto &[_, e] : tree->GetMappedChildNodesReference())
 		{
 			if(e != nullptr)
-				FreeNodeTreeRecurse(e);
+				FreeNodeTreeRecurse(e, place_nodes_in_tlab);
 		}
 	}
 	else
@@ -379,15 +396,16 @@ void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree)
 		for(auto &e : tree->GetOrderedChildNodes())
 		{
 			if(e != nullptr)
-				FreeNodeTreeRecurse(e);
+				FreeNodeTreeRecurse(e, place_nodes_in_tlab);
 		}
 	}
 
 	tree->Invalidate();
-	AddNodeToTLAB(tree);
+	if(place_nodes_in_tlab)
+		AddNodeToTLAB(tree);
 }
 
-void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
+void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree, bool place_nodes_in_tlab)
 {
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 	assert(tree->IsNodeValid());
@@ -399,12 +417,13 @@ void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
 		//need to invalidate before call child nodes to prevent infinite recursion loop
 		EvaluableNode::AssocType mcn = std::move(tree->GetMappedChildNodesReference());
 		tree->Invalidate();
-		AddNodeToTLAB(tree);
+		if(place_nodes_in_tlab)
+			AddNodeToTLAB(tree);
 
 		for(auto &[_, e] : mcn)
 		{
 			if(e != nullptr && !e->IsNodeDeallocated())
-				FreeNodeTreeWithCyclesRecurse(e);
+				FreeNodeTreeWithCyclesRecurse(e, place_nodes_in_tlab);
 		}
 
 		//free the references
@@ -413,7 +432,8 @@ void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
 	else if(tree->IsImmediate())
 	{
 		tree->Invalidate();
-		AddNodeToTLAB(tree);
+		if(place_nodes_in_tlab)
+			AddNodeToTLAB(tree);
 	}
 	else //ordered
 	{
@@ -421,12 +441,13 @@ void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree)
 		//need to invalidate before call child nodes to prevent infinite recursion loop
 		std::vector<EvaluableNode *> ocn = std::move(tree->GetOrderedChildNodesReference());
 		tree->Invalidate();
-		AddNodeToTLAB(tree);
+		if(place_nodes_in_tlab)
+			AddNodeToTLAB(tree);
 
 		for(auto &e : ocn)
 		{
 			if(e != nullptr && !e->IsNodeDeallocated())
-				FreeNodeTreeWithCyclesRecurse(e);
+				FreeNodeTreeWithCyclesRecurse(e, place_nodes_in_tlab);
 		}
 	}
 }

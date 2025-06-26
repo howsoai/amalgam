@@ -815,7 +815,8 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 			if(EvaluableNode::IsOrderedArray(top_node))
 			{
 				auto &top_node_ocn = top_node->GetOrderedChildNodesReference();
-				top_node_ocn.pop_back();
+				if(top_node_ocn.size() > 0)
+					top_node_ocn.pop_back();
 			}
 			else //nothing came through correctly
 			{

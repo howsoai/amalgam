@@ -141,12 +141,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYSTEM(EvaluableNode *en, 
 
 		Platform_Sleep(sleep_time_usec);
 	}
-	else if(command == "version" && permissions.individualPermissions.environment)
+	else if(command == "version")
 	{
 		std::string version_string = AMALGAM_VERSION_STRING;
 		return AllocReturn(version_string, immediate_result);
 	}
-	else if(command == "version_compatible" && permissions.individualPermissions.environment)
+	else if(command == "version_compatible")
 	{
 		if(ocn.size() < 2)
 			return EvaluableNodeReference::Null();
@@ -830,7 +830,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 
 	//work on the node that is declaring the variables
 	EvaluableNode *required_vars_node = ocn[0];
-	bool any_assignments = false;
+	bool any_nonunique_assignments = false;
 	if(required_vars_node != nullptr)
 	{
 		//transform into variables if possible
@@ -873,7 +873,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 					auto [inserted, node_ptr] = scope->SetMappedChildNode(cn_id, cn, false);
 					if(inserted)
 					{
-						any_assignments = true;
+						//not unique so just set to true
+						any_nonunique_assignments = true;
 					}
 					else
 					{
@@ -899,7 +900,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 						auto [inserted, node_ptr] = scope->SetMappedChildNode(cn_id, cn, false);
 						if(inserted)
 						{
-							any_assignments = true;
+							//not unique so just set to true
+							any_nonunique_assignments = true;
 						}
 						else
 						{
@@ -917,8 +919,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 						if(scope_mcn.find(cn_id) != end(scope_mcn))
 							continue;
 
-						any_assignments = true;
-
 					#ifdef MULTITHREAD_SUPPORT
 						//unlock before interpreting
 						if(need_write_lock)
@@ -927,6 +927,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 
 						SetTopCurrentIndexInConstructionStack(cn_id);
 						EvaluableNodeReference value = InterpretNode(cn);
+
+						//mark if not unique
+						any_nonunique_assignments |= !value.unique;
 
 					#ifdef MULTITHREAD_SUPPORT
 						//relock if needed before assigning the value
@@ -949,17 +952,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 		}
 	}
 
-	if(any_assignments)
-	{
-		auto [any_constructions, initial_side_effect] = SetSideEffectsFlags();
-		if(_opcode_profiling_enabled && any_constructions)
-		{
-			std::string variable_location = asset_manager.GetEvaluableNodeSourceFromComments(en);
-			PerformanceProfiler::AccumulateTotalSideEffectMemoryWrites(variable_location);
-			if(initial_side_effect)
-				PerformanceProfiler::AccumulateInitialSideEffectMemoryWrites(variable_location);
-		}
-	}
+	if(any_nonunique_assignments)
+		SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
 
 	//used to store the result or clear if possible
 	EvaluableNodeReference result = EvaluableNodeReference::Null();
@@ -999,15 +993,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	if(scopeStackNodes->size() < 1)
 		return EvaluableNodeReference::Null();
 
-	auto [any_constructions, initial_side_effect] = SetSideEffectsFlags();
-	if(_opcode_profiling_enabled && any_constructions)
-	{
-		std::string variable_location = asset_manager.GetEvaluableNodeSourceFromComments(en);
-		PerformanceProfiler::AccumulateTotalSideEffectMemoryWrites(variable_location);
-		if(initial_side_effect)
-			PerformanceProfiler::AccumulateInitialSideEffectMemoryWrites(variable_location);
-	}
-
 	bool accum = (en->GetType() == ENT_ACCUM);
 
 	//if only one parameter, then assume it is an assoc of variables to accum or assign
@@ -1037,6 +1022,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			return EvaluableNodeReference::Null();
 
 		auto node_stack = CreateOpcodeStackStateSaver(assigned_vars);
+
+		bool any_nonunique_assignments = false;
 
 		//iterate over every variable being assigned
 		for(auto &[cn_id, cn] : assigned_vars->GetMappedChildNodesReference())
@@ -1092,9 +1079,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 				variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, variable_value_node, evaluableNodeManager);
 			}
 
+			any_nonunique_assignments |= !variable_value_node.unique;
+			//if writing to an outer scope, can't guarantee the memory at this scope can be freed
+			any_nonunique_assignments |= (destination_scope_stack_index != GetScopeStackDepth());
+
 			//assign back into the context_to_use
 			*value_destination = variable_value_node;
 		}
+
+		if(any_nonunique_assignments)
+			SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
 
 		return EvaluableNodeReference::Null();
 	}
@@ -1132,6 +1126,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		if(accum)
 		{
 			//values should always be copied before changing, in case the value is used elsewhere, especially in another thread
+			//because of the deep copy, do not need to call SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
 			EvaluableNodeReference value_destination_node = evaluableNodeManager->DeepAllocCopy(*value_destination);
 			EvaluableNodeReference variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, new_value, evaluableNodeManager);
 
@@ -1141,120 +1136,135 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		else
 		{
 			*value_destination = new_value;
+
+			//if writing to an outer scope, can't guarantee the memory at this scope can be freed
+			if(!new_value.unique || destination_scope_stack_index != GetScopeStackDepth())
+				SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
 		}
+
+		return EvaluableNodeReference::Null();
 	}
-	else //more than 2, need to make a copy and fill in as appropriate
+
+	//more than 2 parameters; make a deep copy and update the portions of it
+	//obtain all of the edits to make the edits transactionally at once when all are collected
+	auto node_stack = CreateOpcodeStackStateSaver();
+	auto &replacements = *node_stack.stack;
+	size_t replacements_start_index = node_stack.originalStackSize;
+
+	//keeps track of whether each address is unique so they can be freed if relevant
+	std::vector<bool> is_value_unique;
+	is_value_unique.reserve(num_params - 1);
+	//keeps track of whether all new values assigned or accumed are unique, cycle free, etc.
+	bool result_flags_need_updates = false;
+
+	bool any_nonunique_assignments = false;
+
+	//get each address/value pair to replace in result
+	for(size_t ocn_index = 1; ocn_index + 1 < num_params; ocn_index += 2)
 	{
-		//obtain all of the edits to make the edits transactionally at once when all are collected
-		auto node_stack = CreateOpcodeStackStateSaver();
-		auto &replacements = *node_stack.stack;
-		size_t replacements_start_index = node_stack.originalStackSize;
+		if(AreExecutionResourcesExhausted())
+			return EvaluableNodeReference::Null();
 
-		//keeps track of whether each address is unique so they can be freed if relevant
-		std::vector<bool> is_value_unique;
-		is_value_unique.reserve(num_params - 1);
-		//keeps track of whether all new values assigned or accumed are unique, cycle free, etc.
-		bool result_flags_need_updates = false;
+		auto address = InterpretNodeForImmediateUse(ocn[ocn_index]);
+		node_stack.PushEvaluableNode(address);
+		is_value_unique.push_back(address.unique);
 
-		//get each address/value pair to replace in result
-		for(size_t ocn_index = 1; ocn_index + 1 < num_params; ocn_index += 2)
+		auto new_value = InterpretNodeForImmediateUse(ocn[ocn_index + 1]);
+		node_stack.PushEvaluableNode(new_value);
+		is_value_unique.push_back(new_value.unique);
+	}
+	size_t num_replacements = (num_params - 1) / 2;
+
+	//retrieve the symbol
+	size_t destination_scope_stack_index = 0;
+	EvaluableNode **value_destination = nullptr;
+
+#ifdef MULTITHREAD_SUPPORT
+	//attempt to get location, but only attempt locations unique to this thread
+	value_destination = GetScopeStackSymbolLocation(variable_sid, destination_scope_stack_index, true, false);
+	//if editing a shared variable, need to see if it is in a shared region of the stack,
+	// need a write lock to the stack and variable
+	Concurrency::WriteLock write_lock;
+	if(scopeStackMutex != nullptr && value_destination == nullptr)
+		LockWithoutBlockingGarbageCollection(*scopeStackMutex, write_lock);
+#endif
+
+	//in single threaded, this will just be true
+	//in multithreaded, if variable was not found, then may need to create it
+	if(value_destination == nullptr)
+		value_destination = GetOrCreateScopeStackSymbolLocation(variable_sid, destination_scope_stack_index);
+
+	//if writing to an outer scope, can't guarantee the memory at this scope can be freed
+	any_nonunique_assignments |= (destination_scope_stack_index != GetScopeStackDepth());
+
+	//make a copy of value_replacement because not sure where else it may be used
+	EvaluableNode *value_replacement = nullptr;
+	if(*value_destination == nullptr)
+		value_replacement = evaluableNodeManager->AllocNode(ENT_NULL);
+	else
+		value_replacement = evaluableNodeManager->DeepAllocCopy(*value_destination);
+
+	//replace each in order, traversing as it goes along
+	//this is safe because it is all on a copy, and each traversal must be done one at a time as to not
+	//invalidate addresses from other traversals in case containers are expanded via reallocation of memory
+	for(size_t index = 0; index < num_replacements; index++)
+	{
+		EvaluableNodeReference address(replacements[replacements_start_index + 2 * index], is_value_unique[2 * index]);
+		EvaluableNode **copy_destination = TraverseToDestinationFromTraversalPathList(&value_replacement, address, true);
+		evaluableNodeManager->FreeNodeTreeIfPossible(address);
+
+		EvaluableNodeReference new_value(replacements[replacements_start_index + 2 * index + 1], is_value_unique[2 * index + 1]);
+		if(copy_destination == nullptr)
 		{
-			if(AreExecutionResourcesExhausted())
-				return EvaluableNodeReference::Null();
-
-			auto address = InterpretNodeForImmediateUse(ocn[ocn_index]);
-			node_stack.PushEvaluableNode(address);
-			is_value_unique.push_back(address.unique);
-
-			auto new_value = InterpretNodeForImmediateUse(ocn[ocn_index + 1]);
-			node_stack.PushEvaluableNode(new_value);
-			is_value_unique.push_back(new_value.unique);
+			evaluableNodeManager->FreeNodeTreeIfPossible(new_value);
+			continue;
 		}
-		size_t num_replacements = (num_params - 1) / 2;
 
-		//retrieve the symbol
-		size_t destination_scope_stack_index = 0;
-		EvaluableNode **value_destination = nullptr;
+		bool need_cycle_check_before = false;
+		bool is_idempotent_before = false;
+		if((*copy_destination) != nullptr)
+		{
+			need_cycle_check_before = (*copy_destination)->GetNeedCycleCheck();
+			is_idempotent_before = (*copy_destination)->GetIsIdempotent();
+		}
 
-	#ifdef MULTITHREAD_SUPPORT
-		//attempt to get location, but only attempt locations unique to this thread
-		value_destination = GetScopeStackSymbolLocation(variable_sid, destination_scope_stack_index, true, false);
-		//if editing a shared variable, need to see if it is in a shared region of the stack,
-		// need a write lock to the stack and variable
-		Concurrency::WriteLock write_lock;
-		if(scopeStackMutex != nullptr && value_destination == nullptr)
-			LockWithoutBlockingGarbageCollection(*scopeStackMutex, write_lock);
-	#endif
+		if(accum)
+		{
+			//create destination reference
+			EvaluableNodeReference value_destination_node(*copy_destination, false);
+			EvaluableNodeReference variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, new_value, evaluableNodeManager);
 
-		//in single threaded, this will just be true
-		//in multithreaded, if variable was not found, then may need to create it
-		if(value_destination == nullptr)
-			value_destination = GetOrCreateScopeStackSymbolLocation(variable_sid, destination_scope_stack_index);
-
-		//make a copy of value_replacement because not sure where else it may be used
-		EvaluableNode *value_replacement = nullptr;
-		if(*value_destination == nullptr)
-			value_replacement = evaluableNodeManager->AllocNode(ENT_NULL);
+			//assign the new accumulation
+			*copy_destination = variable_value_node;
+		}
 		else
-			value_replacement = evaluableNodeManager->DeepAllocCopy(*value_destination);
-
-		//replace each in order, traversing as it goes along
-		//this is safe because it is all on a copy, and each traversal must be done one at a time as to not
-		//invalidate addresses from other traversals in case containers are expanded via reallocation of memory
-		for(size_t index = 0; index < num_replacements; index++)
 		{
-			EvaluableNodeReference address(replacements[replacements_start_index + 2 * index], is_value_unique[2 * index]);
-			EvaluableNode **copy_destination = TraverseToDestinationFromTraversalPathList(&value_replacement, address, true);
-			evaluableNodeManager->FreeNodeTreeIfPossible(address);
+			*copy_destination = new_value;
 
-			EvaluableNodeReference new_value(replacements[replacements_start_index + 2 * index + 1], is_value_unique[2 * index + 1]);
-			if(copy_destination == nullptr)
-			{
-				evaluableNodeManager->FreeNodeTreeIfPossible(new_value);
-				continue;
-			}
-
-			bool need_cycle_check_before = false;
-			bool is_idempotent_before = false;
-			if((*copy_destination) != nullptr)
-			{
-				need_cycle_check_before = (*copy_destination)->GetNeedCycleCheck();
-				is_idempotent_before = (*copy_destination)->GetIsIdempotent();
-			}
-
-			if(accum)
-			{
-				//create destination reference
-				EvaluableNodeReference value_destination_node(*copy_destination, false);
-				EvaluableNodeReference variable_value_node = AccumulateEvaluableNodeIntoEvaluableNode(value_destination_node, new_value, evaluableNodeManager);
-
-				//assign the new accumulation
-				*copy_destination = variable_value_node;
-			}
-			else
-			{
-				*copy_destination = new_value;
-			}
-
-			bool need_cycle_check_after = false;
-			bool is_idempotent_after = false;
-			if((*copy_destination) != nullptr)
-			{
-				need_cycle_check_after = (*copy_destination)->GetNeedCycleCheck();
-				is_idempotent_after = (*copy_destination)->GetIsIdempotent();
-			}
-
-			if(!new_value.unique
-					|| need_cycle_check_before != need_cycle_check_after
-					|| is_idempotent_before != is_idempotent_after)
-				result_flags_need_updates = true;
+			any_nonunique_assignments |= !new_value.unique;
 		}
 
-		if(result_flags_need_updates)
-			EvaluableNodeManager::UpdateFlagsForNodeTree(value_replacement);
-		*value_destination = value_replacement;
+		bool need_cycle_check_after = false;
+		bool is_idempotent_after = false;
+		if((*copy_destination) != nullptr)
+		{
+			need_cycle_check_after = (*copy_destination)->GetNeedCycleCheck();
+			is_idempotent_after = (*copy_destination)->GetIsIdempotent();
+		}
+
+		if(!new_value.unique
+				|| need_cycle_check_before != need_cycle_check_after
+				|| is_idempotent_before != is_idempotent_after)
+			result_flags_need_updates = true;
 	}
 
+	if(result_flags_need_updates)
+		EvaluableNodeManager::UpdateFlagsForNodeTree(value_replacement);
+	*value_destination = value_replacement;
+
+	if(any_nonunique_assignments)
+		SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
+	
 	return EvaluableNodeReference::Null();
 }
 

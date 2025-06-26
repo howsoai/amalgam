@@ -21,7 +21,7 @@
 #include <string>
 
 //function prototypes:
-int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::string &random_seed);
+int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::string &rand_seed);
 
 //usage:
 // Note: spaces in raw string are correct, do not replace with tabs
@@ -60,6 +60,22 @@ Options:
 
     --p-file [file]  When used with --p-opcodes or --p-labels, writes the profile information to a file
 
+    --permissions [permissions]
+                     Sets the permission for the file being run.  By default all permissions are granted.
+                     Permissions is a string that can consist of +xyz... or -xyz..., where x, y, and z are
+                     letters that correspond to each permission.  If it starts with a +, then it assumes
+                     no permissions and adds those, if it starts with a - it assumes all permissions are set
+                     and removes those listed.  The letters for each permission are:
+                         o: std_out_and_std_err
+                         i: std_in
+                         l: load
+                         s: store
+                         e: environment
+                         a: alter_performance
+                         x: system (e[x]ecute)
+                     For example, -xe would yield all permissions but remove environment and system permissions,
+                     whereas +io would only allow console input and output
+
     --debug          When specified, begins in debugging mode
 
     --debug-minimal  When specified, begins in debugging mode with minimal output while stepping
@@ -87,6 +103,46 @@ Options:
 		<< std::endl;
 
 	return usage.str();
+}
+
+//parses the permissions string and returns the permissions parsed
+static EntityPermissions ParsePermissionsCommandLineParam(std::string_view permissions_str)
+{
+	if(permissions_str.empty())
+		return EntityPermissions::AllPermissions();
+
+	//start with no permissions, but if removing permissions, then start with all
+	EntityPermissions permissions;
+	bool add_permissions = true;
+	size_t permission_letters_start = 0;
+	if(permissions_str[0] == '+')
+	{
+		permission_letters_start++;
+	}
+	else if(permissions_str[0] == '-')
+	{
+		permissions = EntityPermissions::AllPermissions();
+		add_permissions = false;
+		permission_letters_start++;
+	}
+
+	// Iterate over the permission characters in the input string
+	for(size_t i = permission_letters_start; i < permissions_str.size(); i++)
+	{
+		switch(permissions_str[i])
+		{
+		case 'o': permissions.individualPermissions.stdOutAndStdErr		= add_permissions;	break;
+		case 'i': permissions.individualPermissions.stdIn				= add_permissions;	break;
+		case 'l': permissions.individualPermissions.load				= add_permissions;	break;
+		case 's': permissions.individualPermissions.store				= add_permissions;	break;
+		case 'e': permissions.individualPermissions.environment			= add_permissions;	break;
+		case 'a': permissions.individualPermissions.alterPerformance	= add_permissions;	break;
+		case 'x': permissions.individualPermissions.system				= add_permissions;	break;
+		default:  std::cerr << "Invalid permission character: '" << permissions_str[i] << "'" << std::endl;
+		}
+	}
+
+	return permissions;
 }
 
 //main
@@ -120,12 +176,11 @@ PLATFORM_MAIN_CONSOLE
 	size_t num_threads = 0;
 #endif
 	bool debug_internal_memory = Platform_IsDebuggerPresent();
+	EntityPermissions entity_permissions = EntityPermissions::AllPermissions();
 
-	typedef std::chrono::steady_clock clk;
-	auto t = std::chrono::duration_cast<std::chrono::milliseconds>(clk::now().time_since_epoch()).count();
-	std::string random_seed = std::to_string(t);
+	std::string rand_seed;
 	if(Platform_IsDebuggerPresent())
-		random_seed = "01234567890123456789012345";
+		rand_seed = "01234567890123456789012345";
 
 	//parameters to be passed into the code being run
 	std::string interpreter_path{args[0]};
@@ -149,7 +204,7 @@ PLATFORM_MAIN_CONSOLE
 		else if(args[i] == "-l" && i + 1 < args.size())
 			print_log_filename = args[++i];
 		else if(args[i] == "-s" && i + 1 < args.size())
-			random_seed = args[++i];
+			rand_seed = args[++i];
 		else if(args[i] == "-t" && i + 1 < args.size())
 			write_log_filename = args[++i];
 		else if(args[i] == "--p-opcodes")
@@ -157,7 +212,7 @@ PLATFORM_MAIN_CONSOLE
 		else if(args[i] == "--p-labels")
 			profile_labels = true;
 		else if(args[i] == "--p-count" && i + 1 < args.size())
-			profile_count = static_cast<size_t>(std::max(std::atoi(args[++i].data()), 0));
+			profile_count = std::max<size_t>(std::atoi(args[++i].data()), 0);
 		else if(args[i] == "--p-file" && i + 1 < args.size())
 			profile_out_file = args[++i];
 		else if(args[i] == "--debug")
@@ -188,6 +243,10 @@ PLATFORM_MAIN_CONSOLE
 		{
 			//parameter for internal debugging only -- intentionally not listed in documentation
 			debug_internal_memory = true;
+		}
+		else if(args[i] == "--permissions" && i + 1 < args.size())
+		{
+			entity_permissions = ParsePermissionsCommandLineParam(args[++i]);
 		}
 		else if(amlg_file_to_run == "")
 		{
@@ -225,14 +284,20 @@ PLATFORM_MAIN_CONSOLE
 	if(profile_labels)
 		Interpreter::SetLabelProfilingState(true);
 
+	if(rand_seed.empty())
+	{
+		rand_seed.resize(RandomStream::randStateStringifiedSizeInBytes);
+		Platform_GenerateSecureRandomData(rand_seed.data(), RandomStream::randStateStringifiedSizeInBytes);
+	}
+
 	if(run_trace)
 	{
-		return RunAmalgamTrace(&std::cin, &std::cout, random_seed);
+		return RunAmalgamTrace(&std::cin, &std::cout, rand_seed);
 	}
 	else if(run_tracefile)
 	{
 		std::ifstream trace_stream(tracefile);
-		int return_val = RunAmalgamTrace(&trace_stream, &std::cout, random_seed);
+		int return_val = RunAmalgamTrace(&trace_stream, &std::cout, rand_seed);
 
 		if(profile_opcodes || profile_labels)
 			PerformanceProfiler::PrintProfilingInformation(profile_out_file, profile_count);
@@ -246,12 +311,12 @@ PLATFORM_MAIN_CONSOLE
 		AssetManager::AssetParametersRef asset_params
 			= std::make_shared<AssetManager::AssetParameters>(amlg_file_to_run, "", true);
 
-		Entity *entity = asset_manager.LoadEntityFromResource(asset_params, false, random_seed, nullptr, status);
+		Entity *entity = asset_manager.LoadEntityFromResource(asset_params, false, rand_seed, nullptr, status);
 
 		if(!status.loaded)
 			return 1;
 
-		asset_manager.SetEntityPermissions(entity, EntityPermissions::AllPermissions());
+		entity->SetPermissions(EntityPermissions::AllPermissions(), entity_permissions, true);
 
 		PrintListener *print_listener = nullptr;
 		std::vector<EntityWriteListener *> write_listeners;

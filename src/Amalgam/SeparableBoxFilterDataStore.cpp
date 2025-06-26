@@ -40,81 +40,46 @@ void SeparableBoxFilterDataStore::BuildLabel(size_t column_index, const std::vec
 #endif
 }
 
-void SeparableBoxFilterDataStore::OptimizeColumn(size_t column_index)
+void SeparableBoxFilterDataStore::AddLabels(std::vector<StringInternPool::StringID> &label_sids,
+	const std::vector<Entity *> &entities)
 {
-#ifdef SBFDS_VERIFICATION
-	VerifyAllEntitiesForColumn(column_index);
+	//make sure have data to add
+	if(label_sids.size() == 0 || entities.size() == 0)
+		return;
+
+	numEntities = std::max(numEntities, entities.size());
+
+	//resize the column data storage and populate column and label_id lookups
+	size_t num_columns_added = AddLabelsAsEmptyColumns(label_sids);
+
+	size_t num_columns = columnData.size();
+	size_t num_previous_columns = columnData.size() - num_columns_added;
+
+#ifdef MULTITHREAD_SUPPORT
+	//if big enough (enough entities and/or enough columns), try to use multithreading
+	if(num_columns_added > 1 && (numEntities > 10000 || (numEntities > 200 && num_columns_added > 10)))
+	{
+		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(num_columns_added);
+
+		auto enqueue_task_lock = Concurrency::urgentThreadPool.AcquireTaskLock();
+		for(size_t i = num_previous_columns; i < num_columns; i++)
+		{
+			Concurrency::urgentThreadPool.BatchEnqueueTask([this, &entities, i, &task_set]()
+			{
+				BuildLabel(i, entities);
+				task_set.MarkTaskCompleted();
+			}
+			);
+		}
+
+		task_set.WaitForTasks(&enqueue_task_lock);
+		return;
+	}
+	//not running concurrently
 #endif
 
-	auto &column_data = columnData[column_index];
-
-	if(column_data->internedNumberValues.valueInterningEnabled)
-	{
-		if(column_data->AreNumberValuesPreferredToInterns())
-		{
-			for(auto &value_entry : column_data->sortedNumberValueEntries)
-			{
-				double value = value_entry.first;
-				for(auto entity_index : value_entry.second.indicesWithValue)
-					GetValue(entity_index, column_index).number = value;
-			}
-
-			for(auto entity_index : column_data->nullIndices)
-				GetValue(entity_index, column_index).number = std::numeric_limits<double>::quiet_NaN();
-
-			column_data->ConvertNumberInternsToValues();
-		}
-	}
-	else if(column_data->AreNumberInternsPreferredToValues())
-	{
-		column_data->ConvertNumberValuesToInterns();
-
-		for(auto &value_entry : column_data->sortedNumberValueEntries)
-		{
-			size_t value_index = value_entry.second.valueInternIndex;
-			for(auto entity_index : value_entry.second.indicesWithValue)
-				GetValue(entity_index, column_index).indirectionIndex = value_index;
-		}
-
-		for(auto entity_index : column_data->nullIndices)
-			GetValue(entity_index, column_index).indirectionIndex = SBFDSColumnData::ValueEntry::NULL_INDEX;
-	}
-
-	if(column_data->internedStringIdValues.valueInterningEnabled)
-	{
-		if(column_data->AreStringIdValuesPreferredToInterns())
-		{
-			for(auto &[sid, value_entry] : column_data->stringIdValueEntries)
-			{
-				auto value = value_entry->value.stringID;
-				for(auto entity_index : value_entry->indicesWithValue)
-					GetValue(entity_index, column_index).stringID = value;
-			}
-
-			for(auto entity_index : column_data->nullIndices)
-				GetValue(entity_index, column_index).stringID = StringInternPool::NOT_A_STRING_ID;
-
-			column_data->ConvertStringIdInternsToValues();
-		}
-	}
-	else if(column_data->AreStringIdInternsPreferredToValues())
-	{
-		column_data->ConvertStringIdValuesToInterns();
-
-		for(auto &[sid, value_entry] : column_data->stringIdValueEntries)
-		{
-			size_t value_index = value_entry->valueInternIndex;
-			for(auto entity_index : value_entry->indicesWithValue)
-				GetValue(entity_index, column_index).indirectionIndex = value_index;
-		}
-
-		for(auto entity_index : column_data->nullIndices)
-			GetValue(entity_index, column_index).indirectionIndex = SBFDSColumnData::ValueEntry::NULL_INDEX;
-	}
-
-#ifdef SBFDS_VERIFICATION
-	VerifyAllEntitiesForColumn(column_index);
-#endif
+	for(size_t i = num_previous_columns; i < num_columns; i++)
+		BuildLabel(i, entities);
 }
 
 void SeparableBoxFilterDataStore::RemoveColumnIndex(size_t column_index_to_remove)
@@ -212,6 +177,10 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 		return;
 	}
 
+	//truncate cache if removing the last entry, either by moving the last entity or by directly removing the last
+	bool remove_last_entity = (entity_index_to_reassign + 1 == numEntities
+		|| (entity_index_to_reassign + 1 >= numEntities && entity_index + 1 == numEntities));
+
 	//reassign index for each column
 	for(size_t column_index = 0; column_index < columnData.size(); column_index++)
 	{
@@ -224,17 +193,12 @@ void SeparableBoxFilterDataStore::RemoveEntity(Entity *entity, size_t entity_ind
 		columnData[column_index]->ChangeIndexValue(value_type_to_reassign, value_to_reassign, entity_index);
 
 		//remove the value where it is
-		columnData[column_index]->DeleteIndexValue(value_type_to_reassign, value_to_reassign, entity_index_to_reassign);
+		columnData[column_index]->DeleteIndexValue(value_type_to_reassign, value_to_reassign,
+			entity_index_to_reassign, remove_last_entity);
 	}
 
-	//truncate cache if removing the last entry, either by moving the last entity or by directly removing the last
-	if(entity_index_to_reassign + 1 == numEntities
-		|| (entity_index_to_reassign + 1 >= numEntities && entity_index + 1 == numEntities))
-	{
-		for(auto &column_data : columnData)
-			column_data->valueEntries.pop_back();
+	if(remove_last_entity)
 		numEntities--;
-	}
 	
 	//clean up any labels that aren't relevant
 	RemoveAnyUnusedLabels();
@@ -337,10 +301,10 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 		auto &radius_column_data = columnData[radius_column_index];
 		for(auto entity_index : enabled_indices)
 		{
-			auto radius_value_type = radius_column_data->GetIndexValueType(entity_index);
 			double radius = 0.0;
-			if(radius_value_type == ENIVT_NUMBER || radius_value_type == ENIVT_NUMBER_INDIRECTION_INDEX)
-				radius = radius_column_data->GetResolvedValue(radius_value_type, GetValue(entity_index, radius_column_index)).number;
+			auto [radius_value_type, radius_value] = radius_column_data->GetResolvedIndexValueTypeAndValue(entity_index);
+			if(radius_value_type == ENIVT_NUMBER)
+				radius = radius_value.number;
 
 			if(radius == 0)
 				distances[entity_index] = -max_dist_exponentiated;
@@ -433,10 +397,7 @@ void SeparableBoxFilterDataStore::FindEntitiesWithinDistance(GeneralizedDistance
 		//else, there are less indices to consider than possible unique values, so save computation by just considering entities that are still valid
 		for(auto entity_index : enabled_indices)
 		{
-			auto value_type = column_data->GetIndexValueType(entity_index);
-			auto value = column_data->GetResolvedValue(value_type, GetValue(entity_index, absolute_feature_index));
-			value_type = column_data->GetResolvedValueType(value_type);
-			
+			auto [value_type, value] = column_data->GetResolvedIndexValueTypeAndValue(entity_index);
 			distances[entity_index] += r_dist_eval.ComputeDistanceTerm(
 											value, value_type, query_feature_index, high_accuracy);
 
@@ -666,64 +627,6 @@ template void SeparableBoxFilterDataStore::FindNearestEntities<false>(RepeatedGe
 	size_t top_k, StringInternPool::StringID radius_label, BitArrayIntegerSet &enabled_indices,
 	std::vector<DistanceReferencePair<size_t>> &distances_out, size_t ignore_index, RandomStream rand_stream);
 
-#ifdef SBFDS_VERIFICATION
-void SeparableBoxFilterDataStore::VerifyAllEntitiesForColumn(size_t column_index)
-{
-	auto &column_data = columnData[column_index];
-
-	for(auto &value_entry : column_data->sortedNumberValueEntries)
-	{
-		//ensure all interned values are valid
-		if(column_data->internedNumberValues.valueInterningEnabled)
-		{
-			auto &interns = column_data->internedNumberValues;
-			assert(value_entry.second.valueInternIndex < interns.internedIndexToValue.size());
-			assert(!FastIsNaN(interns.internedIndexToValue[value_entry.second.valueInternIndex]));
-		}
-
-		//ensure all entity ids are not out of range
-		for(auto entity_index : value_entry.second.indicesWithValue)
-			assert(entity_index < numEntities);
-	}
-
-	//ensure all numbers are valid
-	for(auto entity_index : column_data->numberIndices)
-	{
-		auto &feature_value = GetValue(entity_index, column_index);
-		auto feature_type = column_data->GetIndexValueType(entity_index);
-		assert(feature_type == ENIVT_NUMBER || feature_type == ENIVT_NUMBER_INDIRECTION_INDEX);
-		if(feature_type == ENIVT_NUMBER_INDIRECTION_INDEX && feature_value.indirectionIndex != 0)
-		{
-			auto feature_value_resolved = column_data->GetResolvedValue(feature_type, feature_value);
-			assert(!FastIsNaN(feature_value_resolved.number));
-		}
-	}
-
-	for(auto &[sid, value_entry] : column_data->stringIdValueEntries)
-	{
-		//ensure all interned values are valid
-		if(column_data->internedStringIdValues.valueInterningEnabled)
-		{
-			auto &interns = column_data->internedStringIdValues;
-			assert(value_entry->valueInternIndex < interns.internedIndexToValue.size());
-		}
-	}
-
-	//ensure all string ids are valid
-	for(auto entity_index : column_data->stringIdIndices)
-	{
-		auto &feature_value = GetValue(entity_index, column_index);
-		auto feature_type = column_data->GetIndexValueType(entity_index);
-		assert(feature_type == ENIVT_STRING_ID || feature_type == ENIVT_STRING_ID_INDIRECTION_INDEX);
-		if(feature_type == ENIVT_STRING_ID_INDIRECTION_INDEX && feature_value.indirectionIndex != 0)
-		{
-			auto feature_value_resolved = column_data->GetResolvedValue(feature_type, feature_value);
-			assert(feature_value_resolved.stringID != string_intern_pool.NOT_A_STRING_ID);
-		}
-	}
-}
-#endif
-
 void SeparableBoxFilterDataStore::DeleteEntityIndexFromColumns(size_t entity_index, bool remove_last_entity)
 {
 	for(size_t i = 0; i < columnData.size(); i++)
@@ -731,12 +634,7 @@ void SeparableBoxFilterDataStore::DeleteEntityIndexFromColumns(size_t entity_ind
 		auto &column_data = columnData[i];
 		auto &feature_value = GetValue(entity_index, i);
 		auto feature_type = column_data->GetIndexValueType(entity_index);
-		column_data->DeleteIndexValue(feature_type, feature_value, entity_index);
-
-		if(remove_last_entity)
-			column_data->valueEntries.pop_back();
-		else
-			column_data->valueEntries[entity_index] = std::numeric_limits<double>::quiet_NaN();
+		column_data->DeleteIndexValue(feature_type, feature_value, entity_index, remove_last_entity);
 	}
 
 	if(remove_last_entity)
@@ -823,13 +721,15 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 				return nonmatch_dist_term;
 
 			//if there are terms smaller than unknown_unknown_term, then need to compute any other nominal values
-			r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTermsNumeric(unknown_unknown_term, query_feature_index, high_accuracy,
+			r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTerms(
+				feature_data.nominalNumberDistanceTerms, unknown_unknown_term,
 				[this, &r_dist_eval, &enabled_indices, &column, query_feature_index](double number_value)
 				{
 					AccumulatePartialSumsForNominalNumberValueIfExists(r_dist_eval, enabled_indices, number_value, query_feature_index, *column);
 				});
 
-			r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTermsString(unknown_unknown_term, query_feature_index,
+			r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTerms(
+				feature_data.nominalStringDistanceTerms, unknown_unknown_term,
 				[this, &r_dist_eval, &enabled_indices, &column, query_feature_index](StringInternPool::StringID sid)
 				{
 					AccumulatePartialSumsForNominalStringIdValueIfExists(r_dist_eval, enabled_indices, sid, query_feature_index, *column);
@@ -885,7 +785,8 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			return nonmatch_dist_term;
 
 		//need to iterate over everything with the same distance term
-		r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTermsString(accumulated_term, query_feature_index,
+		r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTerms(
+			feature_data.nominalStringDistanceTerms, accumulated_term,
 			[this, &value, &r_dist_eval, &enabled_indices, &column, query_feature_index](StringInternPool::StringID sid)
 			{
 				//don't want to double-accumulate the exact match
@@ -911,7 +812,8 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 			return nonmatch_dist_term;
 
 		//need to iterate over everything with the same distance term
-		r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTermsNumeric(accumulated_term, query_feature_index, high_accuracy,
+		r_dist_eval.IterateOverNominalValuesWithLessOrEqualDistanceTerms(
+			feature_data.nominalNumberDistanceTerms, accumulated_term,
 			[this, &value, &r_dist_eval, &enabled_indices, &column, query_feature_index](double number_value)
 			{
 				//don't want to double-accumulate the exact match

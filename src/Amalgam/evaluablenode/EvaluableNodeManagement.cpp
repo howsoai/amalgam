@@ -188,7 +188,8 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 	
 		tlabSize += threadLocalAllocationBuffer.size();
 		tlabSizeCount++;
-	
+
+		//use an exponentially rolling average, use a small fraction of the new value (1/256th)
 		rollingAveTlabSize = 0.99609375 * rollingAveTlabSize + 0.00390625 * threadLocalAllocationBuffer.size();
 		if(tlabSizeCount % 4000 == 0)
 			std::cout << "ave tlab size: " << rollingAveTlabSize << std::endl;

@@ -441,6 +441,9 @@ public:
 		return std::make_pair(any_constructions, any_set);
 	}
 
+	//calls SetSideEffectsFlags and updates performance counters for node if applicable
+	void SetSideEffectFlagsAndAccumulatePerformanceCounters(EvaluableNode *node);
+
 	//Makes sure that args is an active associative array is proper for context, meaning initialized assoc and a unique reference,
 	// and will update the reference accordingly
 	// Will allocate a new node appropriately if it is not

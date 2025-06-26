@@ -9,6 +9,8 @@
 
 //if the macro PEDANTIC_GARBAGE_COLLECTION is defined, then garbage collection will be performed
 //after every opcode, to help find and debug memory issues
+//if the macro DEBUG_REPORT_TLAB_USAGE is defined, then the thread local allocation buffer storage will be
+//profiled and printed
 
 typedef int64_t ExecutionCycleCount;
 typedef int32_t ExecutionCycleCountCompactDelta;
@@ -672,7 +674,8 @@ public:
 	}
 
 	//frees an EvaluableNode (must be owned by this EvaluableNodeManager)
-	inline void FreeNode(EvaluableNode *en)
+	// if place_nodes_in_tlab is true, then it will update the thread local allocation buffer and place nodes in it
+	inline void FreeNode(EvaluableNode *en, bool place_nodes_in_tlab = true)
 	{
 		if(en == nullptr)
 			return;
@@ -682,7 +685,8 @@ public:
 	#endif
 
 		en->Invalidate();
-		AddNodeToTLAB(en);
+		if(place_nodes_in_tlab)
+			AddNodeToTLAB(en);
 	}
 
 	//attempts to free the node reference
@@ -710,7 +714,8 @@ public:
 	void FreeAllNodes();
 
 	//frees the entire tree in the respective ways for the corresponding permanence types allowed
-	inline void FreeNodeTree(EvaluableNode *en)
+	// if place_nodes_in_tlab is true, then it will update the thread local allocation buffer and place nodes in it
+	inline void FreeNodeTree(EvaluableNode *en, bool place_nodes_in_tlab = true)
 	{
 		if(en == nullptr)
 			return;
@@ -722,27 +727,29 @@ public:
 		if(IsEvaluableNodeTypeImmediate(en->GetType()))
 		{
 			en->Invalidate();
-			AddNodeToTLAB(en);
+			if(place_nodes_in_tlab)
+				AddNodeToTLAB(en);
 		}
 		else if(!en->GetNeedCycleCheck())
 		{
-			FreeNodeTreeRecurse(en);
+			FreeNodeTreeRecurse(en, place_nodes_in_tlab);
 		}
 		else //more costly cyclic free
 		{
-			FreeNodeTreeWithCyclesRecurse(en);
+			FreeNodeTreeWithCyclesRecurse(en, place_nodes_in_tlab);
 		}
 	}
 
 	//attempts to free the node reference
-	__forceinline void FreeNodeTreeIfPossible(EvaluableNodeReference &enr)
+	// if place_nodes_in_tlab is true, then it will update the thread local allocation buffer and place nodes in it
+	__forceinline void FreeNodeTreeIfPossible(EvaluableNodeReference &enr, bool place_nodes_in_tlab = true)
 	{
 		if(enr.IsImmediateValue())
 			enr.FreeImmediateResources();
 		else if(enr.unique)
-			FreeNodeTree(enr);
+			FreeNodeTree(enr, place_nodes_in_tlab);
 		else if(enr.uniqueUnreferencedTopNode)
-			FreeNode(enr);
+			FreeNode(enr, place_nodes_in_tlab);
 	}
 
 	//just frees the child nodes of tree, but not tree itself; assumes no cycles
@@ -945,10 +952,12 @@ protected:
 	void FreeAllNodesExceptReferencedNodes(size_t cur_first_unused_node_index);
 
 	//support for FreeNodeTree, but requires that tree not be nullptr
-	void FreeNodeTreeRecurse(EvaluableNode *tree);
+	// if place_nodes_in_tlab is true, then it will update the thread local allocation buffer and place nodes in it
+	void FreeNodeTreeRecurse(EvaluableNode *tree, bool place_nodes_in_tlab = true);
 
 	//support for FreeNodeTreeWithCycles, but requires that tree not be nullptr
-	void FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree);
+	// if place_nodes_in_tlab is true, then it will update the thread local allocation buffer and place nodes in it
+	void FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree, bool place_nodes_in_tlab = true);
 
 	//modifies the labels of n with regard to metadata_modifier
 	// assumes n is not nullptr
@@ -1082,7 +1091,7 @@ protected:
 private:
 
 	//number of nodes to allocate at once for the thread local allocation buffer
-	static const int tlabBlockAllocationSize = 20;
+	static const int tlabBlockAllocationSize = 24;
 
 	//holds pointers to EvaluableNode's reserved for allocation by a specific thread
 	//during garbage collection, these buffers need to be cleared because memory may be rearranged or reassigned
@@ -1091,4 +1100,18 @@ private:
 	thread_local
 #endif
 		inline static std::vector<EvaluableNode *> threadLocalAllocationBuffer;
+
+	//debug diagnostic variables for threadLocalAllocationBuffer
+#ifdef DEBUG_REPORT_TLAB_USAGE
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	inline static Concurrency::SingleMutex tlabCountMutex;
+	inline static std::atomic<size_t> tlabSize = 0;
+	inline static std::atomic<size_t> tlabSizeCount = 0;
+	inline static std::atomic<double> rollingAveTlabSize = 0.0;
+#else
+	inline static size_t tlabSize = 0;
+	inline static size_t tlabSizeCount = 0;
+	inline static double rollingAveTlabSize = 0.0;
+#endif
+#endif
 };

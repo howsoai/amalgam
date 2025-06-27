@@ -87,6 +87,11 @@ extern "C"
 	AMALGAM_EXPORT void SetSBFDataStoreEnabled(bool enable_SBF_datastore);
 	AMALGAM_EXPORT bool IsSBFDataStoreEnabled();
 	AMALGAM_EXPORT size_t GetMaxNumThreads();
+
+	//changes the maximum number of threads to max_num_threads
+	//if set to 0, will use however many cores are detected
+	//if reducing the number of threads, this must be called from the main thread,
+	//otherwise it will have no effect
 	AMALGAM_EXPORT void SetMaxNumThreads(size_t max_num_threads);
 
 	//for APIs that pass strings back, that memory needs to be cleaned up by the caller

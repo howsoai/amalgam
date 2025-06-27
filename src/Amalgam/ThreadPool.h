@@ -31,12 +31,26 @@ public:
 	//destroys all the threads and waits to join them
 	~ThreadPool()
 	{
-		ShutdownAllThreads();
+		//initiate shutdown
+		{
+			std::unique_lock<std::mutex> lock(threadsMutex);
+			shutdownThreads = true;
+		}
+
+		//have threads shut themselves down
+		waitForTask.notify_all();
+		waitForActivate.notify_all();
+
+		//wait for all to shut down
+		for(std::thread &worker : threads)
+			worker.join();
 	}
 
 	//changes the maximum number of active threads
 	//if max_num_active_threads is 0, it will attempt to ascertain and
 	//use the number of cores specified by hardware
+	//only the main thread can reduce the number of threads;
+	// if called by any thread other than the main thread, it will not do anything
 	void SetMaxNumActiveThreads(int32_t new_max_num_active_threads);
 
 	//returns the current maximum number of threads that are available
@@ -166,6 +180,10 @@ public:
 	//returns true if there is at least one spare thread available
 	bool AreThreadsAvailable()
 	{
+		//don't spin up new threads if shutting down, since that could cause a deadlock
+		if(shutdownThreads)
+			return false;
+
 		//need to make sure there's at least one extra thread available to make sure that this batch of tasks can be run
 		// in case there are any interdependencies, in order to prevent deadlock
 		//need to take into account upcoming tasks, as they may consume threads
@@ -279,9 +297,6 @@ protected:
 	//adds a new thread to threads
 	// threadsMutex must be locked prior to calling
 	void AddNewThread();
-
-	//waits for all threads to complete, then shuts them down
-	void ShutdownAllThreads();
 
 	//mutex for the thread pool
 	std::mutex threadsMutex;

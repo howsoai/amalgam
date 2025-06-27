@@ -36,8 +36,21 @@ void ThreadPool::SetMaxNumActiveThreads(int32_t new_max_num_active_threads)
 	//if reducing thread count, clean up all jobs and clear out all threads
 	if(new_max_num_active_threads < maxNumActiveThreads)
 	{
+		//can't reduce number of threads if this isn't the main thread
+		if(mainThreadId != std::this_thread::get_id())
+			return;
+
+		shutdownThreads = true;
 		lock.unlock();
-		ShutdownAllThreads();
+
+		//have threads shut themselves down
+		waitForTask.notify_all();
+		waitForActivate.notify_all();
+
+		//wait for all to shut down
+		for(std::thread &worker : threads)
+			worker.join();
+
 		lock.lock();
 
 		threads.clear();
@@ -133,18 +146,4 @@ void ThreadPool::AddNewThread()
 			}
 		}
 	);
-}
-
-void ThreadPool::ShutdownAllThreads()
-{
-	//initiate shutdown
-	{
-		std::unique_lock<std::mutex> lock(threadsMutex);
-		shutdownThreads = true;
-	}
-	waitForTask.notify_all();
-	waitForActivate.notify_all();
-
-	for(std::thread &worker : threads)
-		worker.join();
 }

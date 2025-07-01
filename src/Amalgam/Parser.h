@@ -170,6 +170,24 @@ public:
 		return true;
 	}
 
+	//returns true if string id needs to be run through UnparseStringToKeyString
+	static inline bool DoesStringIdNeedUnparsingToKey(const StringInternPool::StringID sid)
+	{
+		if(sid == string_intern_pool.NOT_A_STRING_ID)
+			return true;
+
+		return DoesStringNeedUnparsingToKey(sid->string);
+	}
+
+	//returns a std::string_view representing the portion of a key that needs parsing
+	// should only be called on the sid if DoesStringIdNeedUnparsingToKey() returns true
+	static inline std::string_view GetUnparseStringFromKey(const StringInternPool::StringID sid)
+	{
+		if(sid == string_intern_pool.NOT_A_STRING_ID)
+			return std::string_view("(null)");
+		return std::string_view(&sid->string.data()[1], sid->string.size() - 1);
+	}
+
 	//string to be appended after Unparse calls when the first one is called with first_of_transactional_unparse
 	inline static const std::string transactionTermination = ")";
 

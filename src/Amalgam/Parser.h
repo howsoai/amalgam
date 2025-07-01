@@ -185,7 +185,7 @@ public:
 	{
 		if(sid == string_intern_pool.NOT_A_STRING_ID)
 			return std::string_view("(null)");
-		return std::string_view(&sid->string.data()[1], sid->string.size() - 1);
+		return std::string_view(sid->string.data() + 1, sid->string.size() - 1);
 	}
 
 	//string to be appended after Unparse calls when the first one is called with first_of_transactional_unparse

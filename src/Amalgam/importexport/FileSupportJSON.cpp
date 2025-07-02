@@ -69,7 +69,7 @@ EvaluableNode *JsonToEvaluableNodeRecurse(EvaluableNodeManager *enm, simdjson::o
 }
 
 //escapes str with json standards and appends to json_str
-inline void EscapeAndAppendStringToJsonString(const std::string &str, std::string &json_str)
+inline void EscapeAndAppendStringToJsonString(std::string_view str, std::string &json_str)
 {
 	json_str += '"';
 
@@ -151,8 +151,16 @@ bool EvaluableNodeToJsonStringRecurse(EvaluableNode *en, std::string &json_str, 
 				else
 					first_cn = false;
 
-				auto &str = string_intern_pool.GetStringFromID(cn_id);
-				EscapeAndAppendStringToJsonString(str, json_str);
+				if(Parser::DoesStringIdNeedUnparsingToKey(cn_id))
+				{
+					auto str_view = Parser::GetUnparseStringFromKey(cn_id);
+					EscapeAndAppendStringToJsonString(str_view, json_str);
+				}
+				else //just use the string directly by reference (without making a copy)
+				{
+					auto &str = string_intern_pool.GetStringFromID(cn_id);
+					EscapeAndAppendStringToJsonString(str, json_str);
+				}
 
 				json_str += ':';
 
@@ -181,8 +189,16 @@ bool EvaluableNodeToJsonStringRecurse(EvaluableNode *en, std::string &json_str, 
 				if(i > 0)
 					json_str += ',';
 
-				auto &str = string_intern_pool.GetStringFromID(key_sids[i]);
-				EscapeAndAppendStringToJsonString(str, json_str);
+				if(Parser::DoesStringIdNeedUnparsingToKey(key_sids[i]))
+				{
+					auto str_view = Parser::GetUnparseStringFromKey(key_sids[i]);
+					EscapeAndAppendStringToJsonString(str_view, json_str);
+				}
+				else //just use the string directly by reference (without making a copy)
+				{
+					auto &str = string_intern_pool.GetStringFromID(key_sids[i]);
+					EscapeAndAppendStringToJsonString(str, json_str);
+				}
 
 				json_str += ':';
 
@@ -310,7 +326,10 @@ EvaluableNode *EvaluableNodeJSONTranslation::JsonToEvaluableNode(EvaluableNodeMa
 std::pair<std::string, bool> EvaluableNodeJSONTranslation::EvaluableNodeToJson(EvaluableNode *code, bool sort_keys)
 {
 	if(code == nullptr)
-		return std::make_pair("null", true);
+	{
+		std::string s = Parser::UnparseToKeyString(nullptr);
+		return std::make_pair(s, true);
+	}
 
 	//if need cycle check, double-check
 	if(!EvaluableNode::CanNodeTreeBeFlattened(code))

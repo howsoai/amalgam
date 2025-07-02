@@ -1,36 +1,4 @@
 ﻿(seq
-    (declare (assoc
-        deviations_sdm
-            {
-                "Bit 1" [
-                            [
-                                {
-                                    0 [
-                                            {0 0.1  1 0.9}
-                                           ; 0.98
-                                        ]
-                                    1 [
-                                            {0 0.8  1 0.2}
-                                            0.95
-                                        ]
-                                }
-                                0.3  ;larger = smaller dist
-                            ]
-                        ]
-            }
-    ))
- 
-    (print
-        (generalized_distance
-            { "Bit 1" 1 "Bit 2" 1  } ; weights
-            { "Bit 1" "nominal_numeric" "Bit 2" "nominal_numeric"  }
-            (null)   ; query_feature_attributes_map
-            deviations_sdm
-            1 ;p
-            [0]
-            [3]
-            ["Bit 1"]
-            (true) ;surprisal
-        )
-    )
+;(print (assoc (null) 3 )"\n")
+(print (format (assoc (null) 3) "code" "json") "\n")
 )

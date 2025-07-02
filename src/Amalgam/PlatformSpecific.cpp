@@ -184,7 +184,7 @@ std::string Platform_RunSystemCommand(std::string command, bool &successful_run,
 
 	successful_run = true;
 
-	std::array<char, 128> buffer;
+	std::array<char, 1024> buffer;
 	std::string stdout_data;
 	while(!feof(p))
 	{

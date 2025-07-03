@@ -1209,8 +1209,12 @@ public:
 					num_identical_entities++;
 				}
 
+				//TODO 24016: remove this hack
+				computeSurprisal = false;
+				distanceWeightExponent = -1;
 				distance_contribution = TransformDistancesToExpectedValue(entity_distance_iter, end(entity_distance_pair_container));
-
+				computeSurprisal = true;
+				
 				//split the distance contribution among the identical entities
 				return distance_contribution / num_identical_entities;
 			}
@@ -1227,7 +1231,11 @@ public:
 				weight_of_identical_entities += getEntityWeightFunction(entity_distance_iter->reference);
 			}
 
+			//TODO 24016: remove this hack
+			computeSurprisal = false;
+			distanceWeightExponent = -1;
 			distance_contribution = TransformDistancesToExpectedValue(entity_distance_iter, end(entity_distance_pair_container));
+			computeSurprisal = true;
 
 			//if no cases had any weight, distance contribution is 0
 			if(FastIsNaN(distance_contribution))

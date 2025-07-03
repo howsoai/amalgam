@@ -396,6 +396,10 @@ public:
 		ValueFunction get_value, bool has_weight, WeightFunction get_weight,
 		double p_value, double center = 0.0, bool calculate_moment = false, bool absolute_value = false)
 	{
+		//deal with edge case of no values
+		if(first == last)
+			return std::numeric_limits<double>::quiet_NaN();
+
 		double mean = 0.0;
 
 		if(!has_weight)
@@ -436,19 +440,41 @@ public:
 			}
 			else if(p_value == 0.0) // geometric
 			{
-				mean = 1.0;
+				bool zero_found = false;
 				for(EntityIterator i = first; i != last; ++i)
 				{
 					double value = 0.0;
 					if(get_value(i, value))
 					{
-						mean *= (value - center);
-						num_elements++;
+						double diff = value - center;
+						//ignore nonpositive values
+						if(diff > 0.0)
+						{
+							mean += std::log(diff);
+							num_elements++;
+						}
+						else if(diff == 0.0)
+						{
+							zero_found = true;
+							break;
+						}
+						else
+						{
+							return std::numeric_limits<double>::quiet_NaN();
+						}
 					}
 				}
 
-				if(!calculate_moment)
-					mean = std::pow(mean, 1.0 / num_elements);
+				if(zero_found)
+				{
+					mean = 0.0;
+				}
+				else
+				{
+					if(!calculate_moment)
+						mean /= num_elements;
+					mean = std::exp(mean);
+				}
 			}
 			else if(p_value == -1.0) // harmonic
 			{
@@ -551,7 +577,7 @@ public:
 					}
 				}
 
-				mean = 1.0;
+				bool zero_found = false;
 				for(EntityIterator i = first; i != last; ++i)
 				{
 					double value = 0.0;
@@ -562,12 +588,35 @@ public:
 
 						//don't multiply if zero in case value is infinite
 						if(weight_value != 0.0)
-							mean *= std::pow(value - center, weight_value);
+						{
+							double diff = value - center;
+							//ignore nonpositive values
+							if(diff > 0.0)
+							{
+								mean += weight_value * std::log(diff);
+							}
+							else if(diff == 0.0)
+							{
+								zero_found = true;
+								break;
+							}
+							else
+							{
+								return std::numeric_limits<double>::quiet_NaN();
+							}
+						}
 					}
 				}
 
-				if(!calculate_moment)
-					mean = std::pow(mean, 1.0 / weights_sum);
+				if(zero_found)
+				{
+					mean = 0.0;
+				}
+				else
+				{
+					if(!calculate_moment)
+						mean = std::exp(mean);
+				}
 			}
 			else if(p_value == -1.0) // harmonic
 			{

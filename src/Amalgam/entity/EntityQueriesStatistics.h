@@ -9,6 +9,12 @@
 //system headers:
 #include <functional>
 
+//TODO 24016: uncomment only one of these at a time
+//TODO 24016: remove these and accompanying code after figuring out what is correct
+//#define DIST_CONTRIBS_HARMONIC_MEAN
+#define DIST_CONTRIBS_GEOMETRIC_MEAN
+//#define DIST_CONTRIBS_PROBABILITY_MEAN
+
 //Contains templated functions that compute statistical queries on data sets
 //If weights are used and are zero, then a zero weight will take precedence over infinite or nan values
 class EntityQueriesStatistics
@@ -1141,13 +1147,21 @@ public:
 							double weighted_value, double unweighted_value, double prob_mass, double weight)
 						{
 							total_probability += weight;
+						#ifdef DIST_CONTRIBS_PROBABILITY_MEAN
+							accumulated_value += weight * std::exp(-unweighted_value);
+						#else
 							accumulated_value += weight * unweighted_value;
+						#endif
 						});
 
 					//normalize
 					double ave = accumulated_value / total_probability;
 					if(distanceWeightExponent == 1)
+					#ifdef DIST_CONTRIBS_PROBABILITY_MEAN
+						return -std::log(ave);
+					#else
 						return ave;
+					#endif
 
 					if(distanceWeightExponent == -1)
 						return 1 / ave;
@@ -1168,15 +1182,15 @@ public:
 							double weighted_value, double unweighted_value, double prob_mass, double weight)
 						{
 							total_probability += weight;
-							if(weight == 1)
-								accumulated_value *= unweighted_value;
-							else
-								accumulated_value *= std::pow(unweighted_value, weight);
+							accumulated_value += weight * std::log(unweighted_value);
 						});
+
+					//normalize
+					double ave_log = accumulated_value / total_probability;
 
 					distanceWeightExponent = 0.0;
 
-					return std::pow(accumulated_value, 1 / total_probability);
+					return std::exp(ave_log);
 				}
 			}
 		}
@@ -1209,12 +1223,29 @@ public:
 					num_identical_entities++;
 				}
 
-				//TODO 24016: remove this hack
+				//TODO 24016: remove these hacks and update
+
+			#ifdef DIST_CONTRIBS_HARMONIC_MEAN
 				computeSurprisal = false;
 				distanceWeightExponent = -1;
 				distance_contribution = TransformDistancesToExpectedValue(entity_distance_iter, end(entity_distance_pair_container));
 				computeSurprisal = true;
-				
+			#endif
+
+			#ifdef DIST_CONTRIBS_GEOMETRIC_MEAN
+				computeSurprisal = false;
+				distanceWeightExponent = 0;
+				distance_contribution = TransformDistancesToExpectedValue(entity_distance_iter, end(entity_distance_pair_container));
+				computeSurprisal = true;
+			#endif
+
+			#ifdef DIST_CONTRIBS_PROBABILITY_MEAN
+				computeSurprisal = false;
+				distanceWeightExponent = 1;
+				distance_contribution = TransformDistancesToExpectedValue(entity_distance_iter, end(entity_distance_pair_container));
+				computeSurprisal = true;
+			#endif			
+
 				//split the distance contribution among the identical entities
 				return distance_contribution / num_identical_entities;
 			}

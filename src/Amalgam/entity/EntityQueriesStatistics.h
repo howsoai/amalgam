@@ -12,8 +12,8 @@
 //TODO 24016: uncomment only one of these at a time
 //TODO 24016: remove these and accompanying code after figuring out what is correct
 //#define DIST_CONTRIBS_HARMONIC_MEAN
-#define DIST_CONTRIBS_GEOMETRIC_MEAN
-//#define DIST_CONTRIBS_PROBABILITY_MEAN
+// #define DIST_CONTRIBS_GEOMETRIC_MEAN
+#define DIST_CONTRIBS_PROBABILITY_MEAN
 
 //Contains templated functions that compute statistical queries on data sets
 //If weights are used and are zero, then a zero weight will take precedence over infinite or nan values

@@ -12,8 +12,10 @@
 //TODO 24016: uncomment only one of these at a time
 //TODO 24016: remove these and accompanying code after figuring out what is correct
 //#define DIST_CONTRIBS_HARMONIC_MEAN
-// #define DIST_CONTRIBS_GEOMETRIC_MEAN
-#define DIST_CONTRIBS_PROBABILITY_MEAN
+#define DIST_CONTRIBS_GEOMETRIC_MEAN
+//#define DIST_CONTRIBS_PROBABILITY_MEAN
+//this can be enabled or disabled independent of the others
+#define BANDWIDTH_SELECTION_INVERSE_SURPRISAL
 
 //Contains templated functions that compute statistical queries on data sets
 //If weights are used and are zero, then a zero weight will take precedence over infinite or nan values
@@ -922,7 +924,11 @@ public:
 						entity_distance_pair_container_begin, entity_distance_pair_container_end,
 						[this](auto iter)
 						{
+						#ifdef BANDWIDTH_SELECTION_INVERSE_SURPRISAL
+							double prob = 1.0 / iter->distance;
+						#else
 							double prob = ConvertSurprisalToProbability(iter->distance);
+						#endif
 							if(!hasWeight)
 								return std::make_tuple(prob, prob, prob, prob, 1.0);
 
@@ -939,7 +945,11 @@ public:
 						[this](auto iter)
 						{
 							double surprisal = iter->distance;
+						#ifdef BANDWIDTH_SELECTION_INVERSE_SURPRISAL
+							double prob = 1.0 / surprisal;
+						#else
 							double prob = ConvertSurprisalToProbability(surprisal);
+						#endif
 							if(!hasWeight)
 								return std::make_tuple(surprisal, surprisal, prob, prob, 1.0);
 
@@ -1230,21 +1240,19 @@ public:
 				distanceWeightExponent = -1;
 				distance_contribution = TransformDistancesToExpectedValue(entity_distance_iter, end(entity_distance_pair_container));
 				computeSurprisal = true;
-			#endif
-
-			#ifdef DIST_CONTRIBS_GEOMETRIC_MEAN
+			#elif defined(DIST_CONTRIBS_GEOMETRIC_MEAN)
 				computeSurprisal = false;
 				distanceWeightExponent = 0;
 				distance_contribution = TransformDistancesToExpectedValue(entity_distance_iter, end(entity_distance_pair_container));
 				computeSurprisal = true;
-			#endif
-
-			#ifdef DIST_CONTRIBS_PROBABILITY_MEAN
+			#elif defined(DIST_CONTRIBS_PROBABILITY_MEAN)
 				computeSurprisal = false;
 				distanceWeightExponent = 1;
 				distance_contribution = TransformDistancesToExpectedValue(entity_distance_iter, end(entity_distance_pair_container));
 				computeSurprisal = true;
-			#endif			
+			#else
+				distance_contribution = TransformDistancesToExpectedValue(entity_distance_iter, end(entity_distance_pair_container));
+			#endif
 
 				//split the distance contribution among the identical entities
 				return distance_contribution / num_identical_entities;

@@ -12,10 +12,11 @@
 //TODO 24016: uncomment only one of these at a time
 //TODO 24016: remove these and accompanying code after figuring out what is correct
 //#define DIST_CONTRIBS_HARMONIC_MEAN
-#define DIST_CONTRIBS_GEOMETRIC_MEAN
+//#define DIST_CONTRIBS_GEOMETRIC_MEAN
+#define DIST_CONTRIBS_ARITHMETIC_MEAN
 //#define DIST_CONTRIBS_PROBABILITY_MEAN
 //this can be enabled or disabled independent of the others
-#define BANDWIDTH_SELECTION_INVERSE_SURPRISAL
+//#define BANDWIDTH_SELECTION_INVERSE_SURPRISAL
 
 //Contains templated functions that compute statistical queries on data sets
 //If weights are used and are zero, then a zero weight will take precedence over infinite or nan values
@@ -1245,7 +1246,8 @@ public:
 				distanceWeightExponent = 0;
 				distance_contribution = TransformDistancesToExpectedValue(entity_distance_iter, end(entity_distance_pair_container));
 				computeSurprisal = true;
-			#elif defined(DIST_CONTRIBS_PROBABILITY_MEAN)
+			#elif defined(DIST_CONTRIBS_ARITHMETIC_MEAN) || defined(DIST_CONTRIBS_PROBABILITY_MEAN)
+				//both use the same code here, but DIST_CONTRIBS_PROBABILITY_MEAN changes code elsewhere
 				computeSurprisal = false;
 				distanceWeightExponent = 1;
 				distance_contribution = TransformDistancesToExpectedValue(entity_distance_iter, end(entity_distance_pair_container));

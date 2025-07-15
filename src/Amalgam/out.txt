@@ -232,10 +232,10 @@ hello world: 12 and 2
 (print "hello")
 [(null) (null) .infinity -.infinity]
 
-{a 1 b 2 c ["alpha" "beta" "gamma"]}
+{b 2 a 1 c ["alpha" "beta" "gamma"]}
 {
-	a 1
 	b 2
+	a 1
 	c ["alpha" "beta" "gamma"]
 }
 
@@ -660,7 +660,7 @@ abcdef
 0.14384103622589045
 --first--
 4
-1
+2
 1
 0
 a
@@ -676,7 +676,7 @@ a
 [1 2 3 4 5 6]
 []
 {
-	b 2
+	a 1
 	c 3
 	d 4
 	e 5
@@ -684,9 +684,9 @@ a
 }
 {c 3 d 4}
 {
+	a 1
 	c 3
 	d 4
-	e 5
 	f 6
 }
 {
@@ -711,7 +711,7 @@ abcdef
 
 --last--
 this
-1
+2
 1
 0
 c
@@ -727,7 +727,7 @@ c
 [1 2 3 4 5 6]
 []
 {
-	b 2
+	a 1
 	c 3
 	d 4
 	e 5
@@ -735,9 +735,9 @@ c
 }
 {c 3 d 4}
 {
+	a 1
 	c 3
 	d 4
-	e 5
 	f 6
 }
 {
@@ -1090,7 +1090,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-["a" "b" "c" 4]
+["b" 4 "a" "c"]
 [
 	0
 	1
@@ -1102,10 +1102,10 @@ abcdef
 	7
 ]
 [0 1 2 3]
-[2 0 3 1]
-[2 0 3 1]
+[1 2 0 3]
+[1 2 0 3]
 --values--
-[1 2 3 "d"]
+[2 "d" 1 3]
 [
 	"a"
 	1
@@ -1126,7 +1126,7 @@ abcdef
 	4
 	"d"
 ]
-[1 2 3 "d"]
+[2 1 "d" 3]
 [
 	1
 	2
@@ -1347,7 +1347,7 @@ current_index: 2
 				8
 			]
 		accum_string "abcdef"
-		argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+		argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 		bar (declare
 				{x 6}
 				(+ x 2)
@@ -1360,13 +1360,13 @@ current_index: 2
 				A {B 2}
 				B 2
 			}
-		interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+		interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 		raaa 2
 		rmdir "rmdir /s /q "
 		rmfile "del /s /q "
 		rwww 1
 		slash "\\"
-		start_time 1749584083.802779
+		start_time 1752620865.149062
 		www 1
 		x 12
 		zz 10
@@ -1393,7 +1393,7 @@ current_index: 2
 			8
 		]
 	accum_string "abcdef"
-	argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+	argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 	bar (declare
 			{x 6}
 			(+ x 2)
@@ -1406,13 +1406,13 @@ current_index: 2
 			A {B 2}
 			B 2
 		}
-	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rmdir "rmdir /s /q "
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1749584083.802779
+	start_time 1752620865.149062
 	www 1
 	x 12
 	zz 10
@@ -1438,7 +1438,7 @@ current_index: 2
 			8
 		]
 	accum_string "abcdef"
-	argv ["C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
+	argv ["C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\src\\Amalgam\\./amlg_code/full_test.amlg"]
 	bar (declare
 			{x 6}
 			(+ x 2)
@@ -1451,13 +1451,13 @@ current_index: 2
 			A {B 2}
 			B 2
 		}
-	interpreter "C:\\Users\\ChristopherHazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
+	interpreter "C:\\Users\\Chris Hazard\\Desktop\\Howso_repos\\amalgam\\x64\\MT_Release_EXE\\Amalgam.exe"
 	raaa 2
 	rmdir "rmdir /s /q "
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1749584083.802779
+	start_time 1752620865.149062
 	www 1
 	x 12
 	zz 10
@@ -1591,14 +1591,6 @@ true
 b
 [
 	"b"
-	"b"
-	"b"
-	"a"
-	"a"
-	"b"
-	"b"
-	"a"
-	"b"
 	"a"
 	"b"
 	"b"
@@ -1606,13 +1598,21 @@ b
 	"b"
 	"b"
 	"b"
+	"b"
+	"b"
+	"b"
+	"a"
+	"a"
+	"a"
+	"b"
+	"a"
 ]
 
-infinity test c or d: ["d" "d" "c" "c"]
+infinity test c or d: ["c" "c" "d" "d"]
 
-{a 16 b 63 c 21}
+{a 35 b 44 c 21}
 
-[1 4 9]
+[1 8 4]
 
 --get_rand_seed--
 Ú◊c`ç`¶!öcîlˇ
@@ -1658,8 +1658,8 @@ infinity test c or d: ["d" "d" "c" "c"]
 string
 --set_type--
 (- 3 4)
-["a" 4 "b" 3]
-["a" 4 "b" 3]
+["b" 3 "a" 4]
+["b" 3 "a" 4]
 {a 4 b 3}
 8.7
 (parallel
@@ -1708,17 +1708,17 @@ string
 	{a 3 b 4}
 	{c "c"}
 ]
-21: [{"a":3,"b":4},{"c":"c","d":null}]
+21: [{"b":4,"a":3},{"d":null,"c":"c"}]
 22: [{"a":3,"b":4},{"c":"c","d":null}]
-23: a: 1
-b: 2
+23: b: 2
 e:
   - a
   - b
   - 
   - .inf
-c: 3
+a: 1
 d: 4
+c: 3
 
 24: a: 1
 b: 2
@@ -1731,7 +1731,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2025-06-10-15.34.43.8706070
+current date-time in epoch: 2025-07-15-19.07.45.5195420
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -1792,7 +1792,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelQ #labelA
+	labelA #labelA #labelQ
 		(lambda
 			#labelB (true)
 		)
@@ -1806,7 +1806,7 @@ domingo, jun. 07, 2020
 		)
 }
 {
-	labelA #labelQ #labelA
+	labelA #labelA #labelQ
 		(lambda
 			#labelB (true)
 		)
@@ -2280,16 +2280,6 @@ decrypted: hello
 	{_ (null)}
 	(replace
 		_
-		["g"]
-		(lambda
-			[
-				(get
-					(current_value 1)
-					0
-				)
-				4
-			]
-		)
 		[]
 		(lambda
 			{
@@ -2299,6 +2289,16 @@ decrypted: hello
 						"g"
 					)
 			}
+		)
+		["g"]
+		(lambda
+			[
+				(get
+					(current_value 1)
+					0
+				)
+				4
+			]
 		)
 	)
 )
@@ -2931,17 +2931,6 @@ _1651806471
 	##p
 	["_2325275497" "_2973704165" "_2325275497" "_2973704165"]
 )
-_2325275497
-(associate
-	"E"
-	3
-	"F"
-	4
-	"G"
-	5
-	"H"
-	6
-)
 _2973704165
 (associate
 	"e"
@@ -2951,6 +2940,17 @@ _2973704165
 	"g"
 	5
 	"h"
+	6
+)
+_2325275497
+(associate
+	"E"
+	3
+	"F"
+	4
+	"G"
+	5
+	"H"
 	6
 )
 --difference_entities--
@@ -3281,14 +3281,8 @@ _3532185687
 						[]
 						(lambda
 							{
-								E (get
-										(current_value 1)
-										"E"
-									)
-								F (get
-										(current_value 1)
-										"F"
-									)
+								E 3
+								F 4
 								G 5
 								H 6
 							}
@@ -3313,16 +3307,7 @@ _3532185687
 						_
 						[]
 						(lambda
-							{
-								e (get
-										(current_value 1)
-										"e"
-									)
-								f (get
-										(current_value 1)
-										"f"
-									)
-							}
+							{e 3 f 4}
 						)
 					)
 				)
@@ -3354,89 +3339,7 @@ contained_entities new_entity: ["DiffEntityChild1" "OnlyIn2" "_3626604918" "_382
 difference between DiffEntity2 and new_entity:
 (declare
 	{_ (null) new_entity (null)}
-	(assign
-		"new_entity"
-		(first
-			(create_entities
-				new_entity
-				(call
-					(lambda
-						(declare
-							{_ (null)}
-							(replace _)
-						)
-					)
-					{
-						_ (retrieve_entity_root _)
-					}
-				)
-			)
-		)
-	)
-	(create_entities
-		(append new_entity "_3626604918")
-		(call
-			(lambda
-				(declare
-					{_ (null)}
-					(replace
-						_
-						[]
-						(lambda
-							{
-								E (null)
-								F (null)
-								G (get
-										(current_value 1)
-										"G"
-									)
-								H (get
-										(current_value 1)
-										"H"
-									)
-							}
-						)
-					)
-				)
-			)
-			{
-				_ (retrieve_entity_root
-						(append _ "_3626604918")
-					)
-			}
-		)
-	)
-	(create_entities
-		(append new_entity "_3823131681")
-		(call
-			(lambda
-				(declare
-					{_ (null)}
-					(replace
-						_
-						[]
-						(lambda
-							{e (null) f (null)}
-						)
-					)
-				)
-			)
-			{
-				_ (retrieve_entity_root
-						(append _ "_3823131681")
-					)
-			}
-		)
-	)
-	(clone_entities
-		(append _ "DiffEntityChild1")
-		(append new_entity "DiffEntityChild1")
-	)
-	(clone_entities
-		(append _ "OnlyIn2")
-		(append new_entity "OnlyIn2")
-	)
-	new_entity
+	(clone_entities _ new_entity)
 )
 (declare
 	{_ (null) new_entity (null)}
@@ -3760,7 +3663,7 @@ deep sets
 
 --set_entity_permissions--
 RootTest
-1749584083.984005
+1752620865.829404
 {
 	alter_performance (true)
 	environment (true)
@@ -4385,7 +4288,7 @@ test code and string distances
 0.027510917030567687
 57.750901868859735
 5.020408163265306
-0.32960535729865875
+0.3296053572986587
 44.11111111111111
 2190.472222222222
 41.65478060964195
@@ -4531,37 +4434,37 @@ assoc-based: ["Child2" "Child4" "Child7"]
 --query_entity_convictions--
 case convictions:
 {
-	entity1 1.8849070781661639
-	entity2 0.6863118922121982
-	entity3 0.8222276770849821
-	entity4 1.9468118839925106
-	entity5 0.7797040417153973
+	entity1 2.1996171856209052
+	entity2 0.601493585805702
+	entity3 0.7908962141782605
+	entity4 2.72560377158286
+	entity5 0.7989979089087899
 }
 case convictions:
 {
-	entity1 0.655877894152981
-	entity2 4.719518200776451
-	entity3 3.1299148442694946
-	entity4 0.6588967213280371
-	entity5 0.7011374455603876
+	entity1 0.8722743799232602
+	entity2 1.0729469297274257
+	entity3 1.0124055244094863
+	entity4 0.8613640846227816
+	entity5 1.2938896381650802
 }
 case convictions unweighted:
 {
-	entity1 2.2695667753739017
-	entity2 0.6731896181878543
-	entity3 1.1557765434908727
-	entity4 38.384973496395396
-	entity5 0.45815851485891435
+	entity1 1.9520016308379222
+	entity2 0.6837349219999448
+	entity3 1.175288733644084
+	entity4 31.409283053152002
+	entity5 0.4667536569612719
 }
 case convictions weighted by object (with erroneously long nominal):
 {
-	TestContainerExec 0.28356810230095286
-	vert0 1.3005955468751227
-	vert1 1.3005955468751227
-	vert2 1.1369409848092722
-	vert3 1.272922458938727
-	vert4 73.971185205438
-	vert5 3.8897264529001325
+	TestContainerExec 0.2766450924219448
+	vert0 1.3382411627987802
+	vert1 1.3382411627987802
+	vert2 1.094895565163822
+	vert3 1.3041931986015314
+	vert4 98.666908381533
+	vert5 4.986547242051373
 }
 case convictions x exists before:
 {entity3 1.0000000933277426 entity4 0.9999998458521889 entity5 1.0000000608201045}
@@ -4573,47 +4476,47 @@ case convictions x exists after:
 }
 case convictions object = 1:
 {
-	vert0 0.9999999999999484
-	vert1 0.9999999999999976
-	vert2 1.0000000000000566
-	vert3 0.9999999999999976
+	vert0 1
+	vert1 1
+	vert2 1
+	vert3 1
 }
 case convictions on a subset:
 {vert0 0.5 vert3 0}
 --query_entity_group_kl_divergence--
-0.01228960638554566
+0.012758124367326575
 --query_entity_distance_contributions--
 {
-	TestContainerExec 4.721359549995793
-	vert0 0.8284271247461902
-	vert1 0.8284271247461902
-	vert2 0.8284271247461902
-	vert3 0.8284271247461902
+	TestContainerExec 4.728708045015878
+	vert0 0.8408964152537146
+	vert1 0.8408964152537146
+	vert2 0.8408964152537146
+	vert3 0.8408964152537146
 	vert4 0.7071067811865476
-	vert5 1.17157287525381
+	vert5 1.189207115002721
 }
 (these values should match the values of the subset of these keys in the previous assoc):
-{vert0 0.8284271247461902 vert1 0.8284271247461902 vert2 0.8284271247461902}
+{vert0 0.8408964152537146 vert1 0.8408964152537146 vert2 0.8408964152537146}
 {
-	vert0 0.8284271247461902
-	vert1 0.8284271247461902
-	vert2 0.8284271247461902
-	vert3 0.8284271247461902
+	vert0 0.8408964152537146
+	vert1 0.8408964152537146
+	vert2 0.8408964152537146
+	vert3 0.8408964152537146
 	vert4 0.7071067811865476
-	vert5 1.17157287525381
+	vert5 1.189207115002721
 }
 (these values should match the values of the subset of these keys in the previous assoc):
-{vert4 0.7071067811865476 vert5 1.17157287525381}
+{vert4 0.7071067811865476 vert5 1.189207115002721}
 --query_entity_kl_divergences--
 {
-	vert0 0.00018681393615961172
-	vert1 0.0003526679446349979
-	vert2 0.005341750456218763
-	vert3 0.00018681393615961172
-	vert4 0.006401917906003654
-	vert5 0.010670757326457676
+	vert0 0.00017007367098479786
+	vert1 0.0004294638907090375
+	vert2 0.004761489235341268
+	vert3 0.00017007367098479786
+	vert4 0.006474539376827369
+	vert5 0.01082532442033441
 }
-(these values should match the values of the subset of these keys in the previous assoc):{vert0 0.00018681393615961172 vert3 0}
+(these values should match the values of the subset of these keys in the previous assoc):{vert0 0.00017007367098479786 vert3 0}
 additional conviction calculations:
 case conviction:{
 	vert0 0.8000570855094574
@@ -4622,21 +4525,21 @@ case conviction:{
 	vert5 0.8000570855094727
 }
 case conviction:{
-	vert0 0.6770361498076789
-	vert1 3.8439118699400026
-	vert3 1.3354696017896601
-	vert5 0.6604923501807921
+	vert0 0.7404712601745316
+	vert1 3.175082908574476
+	vert3 1.0161930563997945
+	vert5 0.7404712601745297
 }
 cyclic feature nearest neighbors: {cyclic1 1 cyclic5 0.5}
 cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
-155: 0.1 (null
-	##deg 0
-)
 200: 0.05555555555555555 (null
 	##deg 8
 )
 190: 0.045454545454545456 (null
 	##deg 12
+)
+155: 0.1 (null
+	##deg 0
 )
 --contains_label--
 (true)
@@ -5110,14 +5013,14 @@ surprisals with dynamic selection: [
 	["vert0" "vert1" "vert2"]
 	[10.50004608159265 10.50004608159265 14.50000106908416]
 ]
-surprisal contribution: [10.5376696245683]
-surprisal contribution: [10.50004608159265]
-weighted surprisal contribution: [10.5376696245683]
-weighted surprisal contribution: [10.50004608159265]
-surprisal contribution: {testvert 10.5376696245683}
-surprisal contribution: {testvert 10.50004608159265}
-weighted surprisal contribution: {testvert 10.5376696245683}
-weighted surprisal contribution: {testvert 10.50004608159265}
+surprisal contribution: [13.11386001178129]
+surprisal contribution: [13.11386001178129]
+weighted surprisal contribution: [13.11386001178129]
+weighted surprisal contribution: [13.11386001178129]
+surprisal contribution: {testvert 13.11386001178129}
+surprisal contribution: {testvert 13.11386001178129}
+weighted surprisal contribution: {testvert 13.11386001178129}
+weighted surprisal contribution: {testvert 13.11386001178129}
 --concurrency tests--
 hello
 hello
@@ -5189,4 +5092,4 @@ rmdir /s /q amlg_code\persistent_tree_test_root
 del /s /q amlg_code\persist_module_test\psm.mdam
 del /s /q amlg_code\persist_module_test.mdam
 --total execution time--
-1.962895154953003
+1.98934006690979

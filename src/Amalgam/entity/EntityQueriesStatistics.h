@@ -9,14 +9,18 @@
 //system headers:
 #include <functional>
 
-//TODO 24016: uncomment only one of these at a time
-//TODO 24016: remove these and accompanying code after figuring out what is correct
+//these macros define the specific algorithm used for aggregation of distance contributions
+//the geometric mean has been found to be the best combination of performance and mathematical defensibility
 // #define DIST_CONTRIBS_HARMONIC_MEAN
 #define DIST_CONTRIBS_GEOMETRIC_MEAN
 // #define DIST_CONTRIBS_ARITHMETIC_MEAN
 //#define DIST_CONTRIBS_PROBABILITY_MEAN
-//this can be enabled or disabled independent of the others
-#define BANDWIDTH_SELECTION_INVERSE_SURPRISAL
+//this last one is the default if none of the above are defined
+//#define DIST_CONTRIBS_ENTROPY
+
+//the following parameter is independent of those above and if defined, will change to use inverse surprisal weighting
+// rather than converting the surprisals to probabilities
+//#define BANDWIDTH_SELECTION_INVERSE_SURPRISAL
 
 //Contains templated functions that compute statistical queries on data sets
 //If weights are used and are zero, then a zero weight will take precedence over infinite or nan values
@@ -1234,8 +1238,6 @@ public:
 					num_identical_entities++;
 				}
 
-				//TODO 24016: remove these hacks and update
-
 			#ifdef DIST_CONTRIBS_HARMONIC_MEAN
 				computeSurprisal = false;
 				distanceWeightExponent = -1;
@@ -1272,11 +1274,25 @@ public:
 				weight_of_identical_entities += getEntityWeightFunction(entity_distance_iter->reference);
 			}
 
-			//TODO 24016: remove this hack
+		#ifdef DIST_CONTRIBS_HARMONIC_MEAN
 			computeSurprisal = false;
 			distanceWeightExponent = -1;
 			distance_contribution = TransformDistancesToExpectedValue(entity_distance_iter, end(entity_distance_pair_container));
 			computeSurprisal = true;
+		#elif defined(DIST_CONTRIBS_GEOMETRIC_MEAN)
+			computeSurprisal = false;
+			distanceWeightExponent = 0;
+			distance_contribution = TransformDistancesToExpectedValue(entity_distance_iter, end(entity_distance_pair_container));
+			computeSurprisal = true;
+		#elif defined(DIST_CONTRIBS_ARITHMETIC_MEAN) || defined(DIST_CONTRIBS_PROBABILITY_MEAN)
+			//both use the same code here, but DIST_CONTRIBS_PROBABILITY_MEAN changes code elsewhere
+			computeSurprisal = false;
+			distanceWeightExponent = 1;
+			distance_contribution = TransformDistancesToExpectedValue(entity_distance_iter, end(entity_distance_pair_container));
+			computeSurprisal = true;
+		#else
+			distance_contribution = TransformDistancesToExpectedValue(entity_distance_iter, end(entity_distance_pair_container));
+		#endif
 
 			//if no cases had any weight, distance contribution is 0
 			if(FastIsNaN(distance_contribution))

@@ -133,8 +133,9 @@ public:
 			if(!IsFeatureNominal())
 				return false;
 
-			return (nominalNumberSparseDeviationMatrix.size() == 0
-				&& nominalStringSparseDeviationMatrix.size() == 0);
+			return (nominalStringSparseDeviationMatrix.size() == 0
+				&& nominalNumberSparseDeviationMatrix.size() == 0
+				&& nominalBoolSparseDeviationMatrix.size() == 0);
 		}
 
 		//returns the number of entries in the sparse deviation matrix
@@ -143,7 +144,8 @@ public:
 			if(!IsFeatureNominal())
 				return 0;
 
-			return nominalNumberSparseDeviationMatrix.size() + nominalStringSparseDeviationMatrix.size();
+			return nominalStringSparseDeviationMatrix.size() + nominalNumberSparseDeviationMatrix.size()
+				+ nominalBoolSparseDeviationMatrix.size();
 		}
 
 		//the type of comparison for each feature
@@ -196,7 +198,11 @@ public:
 		//repeatedly, which is handled by a RepeatedGeneralizedDistanceEvaluator, which uses a map
 		SparseNominalDeviationMatrix<double, DoubleNanHashComparator> nominalNumberSparseDeviationMatrix;
 
-		//TODO 22139: need a boolean SDM?
+		//sparse deviation matrix if the nominal is a bool
+		//store as a vector of pairs instead of a map because either only one value will be looked up once,
+		//in which case there's no advantage to having a map, or many distance term values will be looked up
+		//repeatedly, which is handled by a RepeatedGeneralizedDistanceEvaluator, which uses a map
+		SparseNominalDeviationMatrix<bool> nominalBoolSparseDeviationMatrix;
 
 		//distance term to use if both values being compared are unknown
 		//the difference will be NaN if unknown
@@ -502,12 +508,15 @@ public:
 
 		double prob_class_given_match = std::numeric_limits<double>::quiet_NaN();
 		double prob_class_given_nonmatch = std::numeric_limits<double>::quiet_NaN();
-		if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)
-			std::tie(prob_class_given_match, prob_class_given_nonmatch) = ComputeProbClassGivenMatchAndNonMatchFromSDM(
-				feature_attribs.nominalNumberSparseDeviationMatrix, index, a.number, b.number);
-		else if(a_type == ENIVT_STRING_ID && b_type == ENIVT_STRING_ID)
+		if(a_type == ENIVT_STRING_ID && b_type == ENIVT_STRING_ID)
 			std::tie(prob_class_given_match, prob_class_given_nonmatch) = ComputeProbClassGivenMatchAndNonMatchFromSDM(
 				feature_attribs.nominalStringSparseDeviationMatrix, index, a.stringID, b.stringID);
+		else if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)
+			std::tie(prob_class_given_match, prob_class_given_nonmatch) = ComputeProbClassGivenMatchAndNonMatchFromSDM(
+				feature_attribs.nominalNumberSparseDeviationMatrix, index, a.number, b.number);
+		else if(a_type == ENIVT_BOOL && b_type == ENIVT_BOOL)
+			std::tie(prob_class_given_match, prob_class_given_nonmatch) = ComputeProbClassGivenMatchAndNonMatchFromSDM(
+				feature_attribs.nominalStringSparseDeviationMatrix, index, a.boolValue, b.boolValue);
 
 		if(!FastIsNaN(prob_class_given_match))
 		{
@@ -570,8 +579,9 @@ public:
 			auto &feature_attributes = featureAttribs[index];
 			double smallest_deviation = feature_attributes.deviation;
 
-			feature_attributes.nominalNumberSparseDeviationMatrix.UpdateSmallestDeviation(smallest_deviation);
 			feature_attributes.nominalStringSparseDeviationMatrix.UpdateSmallestDeviation(smallest_deviation);
+			feature_attributes.nominalNumberSparseDeviationMatrix.UpdateSmallestDeviation(smallest_deviation);
+			feature_attributes.nominalBoolSparseDeviationMatrix.UpdateSmallestDeviation(smallest_deviation);
 			
 			//find the probability that any other class besides the correct class was selected
 			//divide the probability among the other classes
@@ -1215,7 +1225,15 @@ public:
 
 		auto &feature_data = featureData[index];
 
-		if(feature_data.targetValue.nodeType == ENIVT_NUMBER)
+		if(feature_data.targetValue.nodeType == ENIVT_STRING_ID)
+		{
+			if(ComputeAndStoreNominalDistanceTermsForSDM(
+				distEvaluator->featureAttribs[index].nominalStringSparseDeviationMatrix,
+				index, ENIVT_STRING_ID, feature_data.targetValue.nodeValue.stringID,
+				feature_data.nominalStringDistanceTerms))
+				return;
+		}
+		else if(feature_data.targetValue.nodeType == ENIVT_NUMBER)
 		{
 			if(ComputeAndStoreNominalDistanceTermsForSDM(
 					distEvaluator->featureAttribs[index].nominalNumberSparseDeviationMatrix,
@@ -1223,12 +1241,12 @@ public:
 					feature_data.nominalNumberDistanceTerms))
 				return;
 		}
-		else if(feature_data.targetValue.nodeType == ENIVT_STRING_ID)
+		else if(feature_data.targetValue.nodeType == ENIVT_BOOL)
 		{
 			if(ComputeAndStoreNominalDistanceTermsForSDM(
-					distEvaluator->featureAttribs[index].nominalStringSparseDeviationMatrix,
-					index, ENIVT_STRING_ID, feature_data.targetValue.nodeValue.stringID,
-					feature_data.nominalStringDistanceTerms))
+				distEvaluator->featureAttribs[index].nominalBoolSparseDeviationMatrix,
+				index, ENIVT_BOOL, feature_data.targetValue.nodeValue.boolValue,
+				feature_data.nominalBoolDistanceTerms))
 				return;
 		}
 

@@ -99,10 +99,12 @@ namespace EntityQueryBuilder
 	//populates deviation data for feature_attribs from deviation_node given that deviation_node is known to be an ENT_ASSOC
 	inline void PopulateFeatureDeviationNominalValuesMatrixData(GeneralizedDistanceEvaluator::FeatureAttributes &feature_attribs, EvaluableNode *deviation_node)
 	{
-		auto &number_sdm = feature_attribs.nominalNumberSparseDeviationMatrix;
 		auto &string_sdm = feature_attribs.nominalStringSparseDeviationMatrix;
-		number_sdm.clear();
+		auto &number_sdm = feature_attribs.nominalNumberSparseDeviationMatrix;
+		auto &bool_sdm = feature_attribs.nominalBoolSparseDeviationMatrix;
 		string_sdm.clear();
+		number_sdm.clear();
+		bool_sdm.clear();
 
 		auto &mcn = deviation_node->GetMappedChildNodesReference();
 		if(feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC)

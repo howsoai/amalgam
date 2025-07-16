@@ -9,6 +9,19 @@
 //system headers:
 #include <functional>
 
+//these macros define the specific algorithm used for aggregation of distance contributions
+//the geometric mean has been found to be the best combination of performance and mathematical defensibility
+// #define DIST_CONTRIBS_HARMONIC_MEAN
+#define DIST_CONTRIBS_GEOMETRIC_MEAN
+// #define DIST_CONTRIBS_ARITHMETIC_MEAN
+//#define DIST_CONTRIBS_PROBABILITY_MEAN
+//this last one is the default if none of the above are defined
+//#define DIST_CONTRIBS_ENTROPY
+
+//the following parameter is independent of those above and if defined, will change to use inverse surprisal weighting
+// rather than converting the surprisals to probabilities
+//#define BANDWIDTH_SELECTION_INVERSE_SURPRISAL
+
 //Contains templated functions that compute statistical queries on data sets
 //If weights are used and are zero, then a zero weight will take precedence over infinite or nan values
 class EntityQueriesStatistics
@@ -396,6 +409,10 @@ public:
 		ValueFunction get_value, bool has_weight, WeightFunction get_weight,
 		double p_value, double center = 0.0, bool calculate_moment = false, bool absolute_value = false)
 	{
+		//deal with edge case of no values
+		if(first == last)
+			return std::numeric_limits<double>::quiet_NaN();
+
 		double mean = 0.0;
 
 		if(!has_weight)
@@ -436,19 +453,41 @@ public:
 			}
 			else if(p_value == 0.0) // geometric
 			{
-				mean = 1.0;
+				bool zero_found = false;
 				for(EntityIterator i = first; i != last; ++i)
 				{
 					double value = 0.0;
 					if(get_value(i, value))
 					{
-						mean *= (value - center);
-						num_elements++;
+						double diff = value - center;
+						//ignore nonpositive values
+						if(diff > 0.0)
+						{
+							mean += std::log(diff);
+							num_elements++;
+						}
+						else if(diff == 0.0)
+						{
+							zero_found = true;
+							break;
+						}
+						else
+						{
+							return std::numeric_limits<double>::quiet_NaN();
+						}
 					}
 				}
 
-				if(!calculate_moment)
-					mean = std::pow(mean, 1.0 / num_elements);
+				if(zero_found)
+				{
+					mean = 0.0;
+				}
+				else
+				{
+					if(!calculate_moment)
+						mean /= num_elements;
+					mean = std::exp(mean);
+				}
 			}
 			else if(p_value == -1.0) // harmonic
 			{
@@ -551,7 +590,7 @@ public:
 					}
 				}
 
-				mean = 1.0;
+				bool zero_found = false;
 				for(EntityIterator i = first; i != last; ++i)
 				{
 					double value = 0.0;
@@ -562,12 +601,35 @@ public:
 
 						//don't multiply if zero in case value is infinite
 						if(weight_value != 0.0)
-							mean *= std::pow(value - center, weight_value);
+						{
+							double diff = value - center;
+							//ignore nonpositive values
+							if(diff > 0.0)
+							{
+								mean += weight_value * std::log(diff);
+							}
+							else if(diff == 0.0)
+							{
+								zero_found = true;
+								break;
+							}
+							else
+							{
+								return std::numeric_limits<double>::quiet_NaN();
+							}
+						}
 					}
 				}
 
-				if(!calculate_moment)
-					mean = std::pow(mean, 1.0 / weights_sum);
+				if(zero_found)
+				{
+					mean = 0.0;
+				}
+				else
+				{
+					if(!calculate_moment)
+						mean = std::exp(mean);
+				}
 			}
 			else if(p_value == -1.0) // harmonic
 			{
@@ -867,7 +929,11 @@ public:
 						entity_distance_pair_container_begin, entity_distance_pair_container_end,
 						[this](auto iter)
 						{
+						#ifdef BANDWIDTH_SELECTION_INVERSE_SURPRISAL
+							double prob = 1.0 / iter->distance;
+						#else
 							double prob = ConvertSurprisalToProbability(iter->distance);
+						#endif
 							if(!hasWeight)
 								return std::make_tuple(prob, prob, prob, prob, 1.0);
 
@@ -884,7 +950,11 @@ public:
 						[this](auto iter)
 						{
 							double surprisal = iter->distance;
+						#ifdef BANDWIDTH_SELECTION_INVERSE_SURPRISAL
+							double prob = 1.0 / surprisal;
+						#else
 							double prob = ConvertSurprisalToProbability(surprisal);
+						#endif
 							if(!hasWeight)
 								return std::make_tuple(surprisal, surprisal, prob, prob, 1.0);
 
@@ -1025,10 +1095,11 @@ public:
 
 		//like TransformDistances but returns the appropriate expected value
 		template<typename EntityDistancePairIterator>
-		inline double TransformDistancesToExpectedValue(
+		inline double TransformDistancesToExpectedValueForDistanceContribution(
 			EntityDistancePairIterator entity_distance_pair_container_begin,
 			EntityDistancePairIterator entity_distance_pair_container_end)
 		{
+		#if !defined(DIST_CONTRIBS_HARMONIC_MEAN) && !defined(DIST_CONTRIBS_GEOMETRIC_MEAN) && !defined(DIST_CONTRIBS_ARITHMETIC_MEAN) && !defined(DIST_CONTRIBS_PROBABILITY_MEAN)
 			if(computeSurprisal)
 			{
 				double total_entity_weight = 0.0;
@@ -1080,8 +1151,21 @@ public:
 				return accumulated_value / total_probability;
 			}
 			else //distance transform
+		#endif
 			{
-				if(distanceWeightExponent != 0.0)
+				double dwe = distanceWeightExponent;
+				if(computeSurprisal)
+				{
+				#ifdef DIST_CONTRIBS_HARMONIC_MEAN
+					dwe = -1;
+				#elif defined(DIST_CONTRIBS_GEOMETRIC_MEAN)
+					dwe = 0;
+				#elif defined(DIST_CONTRIBS_ARITHMETIC_MEAN) || defined(DIST_CONTRIBS_PROBABILITY_MEAN)
+					dwe = 1;
+				#endif
+				}
+
+				if(dwe != 0.0)
 				{
 					double total_probability = 0.0;
 					double accumulated_value = 0.0;
@@ -1092,26 +1176,31 @@ public:
 							double weighted_value, double unweighted_value, double prob_mass, double weight)
 						{
 							total_probability += weight;
+						#ifdef DIST_CONTRIBS_PROBABILITY_MEAN
+							accumulated_value += weight * std::exp(-unweighted_value);
+						#else
 							accumulated_value += weight * unweighted_value;
+						#endif
 						});
 
 					//normalize
 					double ave = accumulated_value / total_probability;
-					if(distanceWeightExponent == 1)
+					if(dwe == 1)
+					#ifdef DIST_CONTRIBS_PROBABILITY_MEAN
+						return -std::log(ave);
+					#else
 						return ave;
+					#endif
 
-					if(distanceWeightExponent == -1)
+					if(dwe == -1)
 						return 1 / ave;
 
-					return std::pow(ave, 1 / distanceWeightExponent);
+					return std::pow(ave, 1 / dwe);
 				}
-				else //distanceWeightExponent == 0.0
+				else //dwe == 0.0
 				{
 					double total_probability = 0.0;
 					double accumulated_value = 0.0;
-
-					//temporarily set to 1 to get the values back, then reset
-					distanceWeightExponent = 1.0;
 
 					TransformDistancesWithBandwidthSelectionAndResultFunction(
 						entity_distance_pair_container_begin, entity_distance_pair_container_end,
@@ -1119,15 +1208,13 @@ public:
 							double weighted_value, double unweighted_value, double prob_mass, double weight)
 						{
 							total_probability += weight;
-							if(weight == 1)
-								accumulated_value *= unweighted_value;
-							else
-								accumulated_value *= std::pow(unweighted_value, weight);
+							accumulated_value += weight * std::log(unweighted_value);
 						});
 
-					distanceWeightExponent = 0.0;
+					//normalize
+					double ave_log = accumulated_value / total_probability;
 
-					return std::pow(accumulated_value, 1 / total_probability);
+					return std::exp(ave_log);
 				}
 			}
 		}
@@ -1160,8 +1247,8 @@ public:
 					num_identical_entities++;
 				}
 
-				distance_contribution = TransformDistancesToExpectedValue(entity_distance_iter, end(entity_distance_pair_container));
-
+				distance_contribution = TransformDistancesToExpectedValueForDistanceContribution(entity_distance_iter, end(entity_distance_pair_container));
+			
 				//split the distance contribution among the identical entities
 				return distance_contribution / num_identical_entities;
 			}
@@ -1178,7 +1265,7 @@ public:
 				weight_of_identical_entities += getEntityWeightFunction(entity_distance_iter->reference);
 			}
 
-			distance_contribution = TransformDistancesToExpectedValue(entity_distance_iter, end(entity_distance_pair_container));
+			distance_contribution = TransformDistancesToExpectedValueForDistanceContribution(entity_distance_iter, end(entity_distance_pair_container));
 
 			//if no cases had any weight, distance contribution is 0
 			if(FastIsNaN(distance_contribution))

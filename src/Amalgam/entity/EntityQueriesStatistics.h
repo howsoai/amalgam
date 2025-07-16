@@ -1210,6 +1210,43 @@ public:
 			}
 		}
 
+		//like TransformDistancesToExpectedValue, but chooses the appropriate algorithm for distance contribution
+		template<typename EntityDistancePairIterator>
+		inline double TransformDistancesToExpectedValueForDistanceContribution(
+			EntityDistancePairIterator entity_distance_pair_container_begin,
+			EntityDistancePairIterator entity_distance_pair_container_end)
+		{
+			double distance_contribution = 0.0;
+			if(computeSurprisal)
+			{
+			#ifdef DIST_CONTRIBS_HARMONIC_MEAN
+				computeSurprisal = false;
+				distanceWeightExponent = -1;
+				distance_contribution = TransformDistancesToExpectedValue(entity_distance_pair_container_begin, entity_distance_pair_container_end);
+				computeSurprisal = true;
+			#elif defined(DIST_CONTRIBS_GEOMETRIC_MEAN)
+				computeSurprisal = false;
+				distanceWeightExponent = 0;
+				distance_contribution = TransformDistancesToExpectedValue(entity_distance_pair_container_begin, entity_distance_pair_container_end);
+				computeSurprisal = true;
+			#elif defined(DIST_CONTRIBS_ARITHMETIC_MEAN) || defined(DIST_CONTRIBS_PROBABILITY_MEAN)
+				//both use the same code here, but DIST_CONTRIBS_PROBABILITY_MEAN changes code elsewhere
+				computeSurprisal = false;
+				distanceWeightExponent = 1;
+				distance_contribution = TransformDistancesToExpectedValue(entity_distance_pair_container_begin, entity_distance_pair_container_end);
+				computeSurprisal = true;
+			#else
+				distance_contribution = TransformDistancesToExpectedValue(entity_distance_pair_container_begin, entity_distance_pair_container_end);
+			#endif
+			}
+			else
+			{
+				distance_contribution = TransformDistancesToExpectedValue(entity_distance_pair_container_begin, entity_distance_pair_container_end);
+			}
+
+			return distance_contribution;
+		}
+
 		//Computes the distance contribution as a type of generalized mean with special handling for distances of zero
 		// entity_distance_pair_container are the distances to its nearest entities,
 		// and entity_weight is the weight of the entity for which this distance contribution is being computed
@@ -1238,26 +1275,8 @@ public:
 					num_identical_entities++;
 				}
 
-			#ifdef DIST_CONTRIBS_HARMONIC_MEAN
-				computeSurprisal = false;
-				distanceWeightExponent = -1;
-				distance_contribution = TransformDistancesToExpectedValue(entity_distance_iter, end(entity_distance_pair_container));
-				computeSurprisal = true;
-			#elif defined(DIST_CONTRIBS_GEOMETRIC_MEAN)
-				computeSurprisal = false;
-				distanceWeightExponent = 0;
-				distance_contribution = TransformDistancesToExpectedValue(entity_distance_iter, end(entity_distance_pair_container));
-				computeSurprisal = true;
-			#elif defined(DIST_CONTRIBS_ARITHMETIC_MEAN) || defined(DIST_CONTRIBS_PROBABILITY_MEAN)
-				//both use the same code here, but DIST_CONTRIBS_PROBABILITY_MEAN changes code elsewhere
-				computeSurprisal = false;
-				distanceWeightExponent = 1;
-				distance_contribution = TransformDistancesToExpectedValue(entity_distance_iter, end(entity_distance_pair_container));
-				computeSurprisal = true;
-			#else
-				distance_contribution = TransformDistancesToExpectedValue(entity_distance_iter, end(entity_distance_pair_container));
-			#endif
-
+				distance_contribution = TransformDistancesToExpectedValueForDistanceContribution(entity_distance_iter, end(entity_distance_pair_container));
+			
 				//split the distance contribution among the identical entities
 				return distance_contribution / num_identical_entities;
 			}
@@ -1274,25 +1293,7 @@ public:
 				weight_of_identical_entities += getEntityWeightFunction(entity_distance_iter->reference);
 			}
 
-		#ifdef DIST_CONTRIBS_HARMONIC_MEAN
-			computeSurprisal = false;
-			distanceWeightExponent = -1;
-			distance_contribution = TransformDistancesToExpectedValue(entity_distance_iter, end(entity_distance_pair_container));
-			computeSurprisal = true;
-		#elif defined(DIST_CONTRIBS_GEOMETRIC_MEAN)
-			computeSurprisal = false;
-			distanceWeightExponent = 0;
-			distance_contribution = TransformDistancesToExpectedValue(entity_distance_iter, end(entity_distance_pair_container));
-			computeSurprisal = true;
-		#elif defined(DIST_CONTRIBS_ARITHMETIC_MEAN) || defined(DIST_CONTRIBS_PROBABILITY_MEAN)
-			//both use the same code here, but DIST_CONTRIBS_PROBABILITY_MEAN changes code elsewhere
-			computeSurprisal = false;
-			distanceWeightExponent = 1;
-			distance_contribution = TransformDistancesToExpectedValue(entity_distance_iter, end(entity_distance_pair_container));
-			computeSurprisal = true;
-		#else
-			distance_contribution = TransformDistancesToExpectedValue(entity_distance_iter, end(entity_distance_pair_container));
-		#endif
+			distance_contribution = TransformDistancesToExpectedValueForDistanceContribution(entity_distance_iter, end(entity_distance_pair_container));
 
 			//if no cases had any weight, distance contribution is 0
 			if(FastIsNaN(distance_contribution))

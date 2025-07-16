@@ -1095,10 +1095,11 @@ public:
 
 		//like TransformDistances but returns the appropriate expected value
 		template<typename EntityDistancePairIterator>
-		inline double TransformDistancesToExpectedValue(
+		inline double TransformDistancesToExpectedValueForDistanceContribution(
 			EntityDistancePairIterator entity_distance_pair_container_begin,
 			EntityDistancePairIterator entity_distance_pair_container_end)
 		{
+		#if !defined(DIST_CONTRIBS_HARMONIC_MEAN) && !defined(DIST_CONTRIBS_GEOMETRIC_MEAN) && !defined(DIST_CONTRIBS_ARITHMETIC_MEAN) && !defined(DIST_CONTRIBS_PROBABILITY_MEAN)
 			if(computeSurprisal)
 			{
 				double total_entity_weight = 0.0;
@@ -1150,8 +1151,21 @@ public:
 				return accumulated_value / total_probability;
 			}
 			else //distance transform
+		#endif
 			{
-				if(distanceWeightExponent != 0.0)
+				double dwe = distanceWeightExponent;
+				if(computeSurprisal)
+				{
+				#ifdef DIST_CONTRIBS_HARMONIC_MEAN
+					dwe = -1;
+				#elif defined(DIST_CONTRIBS_GEOMETRIC_MEAN)
+					dwe = 0;
+				#elif defined(DIST_CONTRIBS_ARITHMETIC_MEAN) || defined(DIST_CONTRIBS_PROBABILITY_MEAN)
+					dwe = 1;
+				#endif
+				}
+
+				if(dwe != 0.0)
 				{
 					double total_probability = 0.0;
 					double accumulated_value = 0.0;
@@ -1171,25 +1185,22 @@ public:
 
 					//normalize
 					double ave = accumulated_value / total_probability;
-					if(distanceWeightExponent == 1)
+					if(dwe == 1)
 					#ifdef DIST_CONTRIBS_PROBABILITY_MEAN
 						return -std::log(ave);
 					#else
 						return ave;
 					#endif
 
-					if(distanceWeightExponent == -1)
+					if(dwe == -1)
 						return 1 / ave;
 
-					return std::pow(ave, 1 / distanceWeightExponent);
+					return std::pow(ave, 1 / dwe);
 				}
-				else //distanceWeightExponent == 0.0
+				else //dwe == 0.0
 				{
 					double total_probability = 0.0;
 					double accumulated_value = 0.0;
-
-					//temporarily set to 1 to get the values back, then reset
-					distanceWeightExponent = 1.0;
 
 					TransformDistancesWithBandwidthSelectionAndResultFunction(
 						entity_distance_pair_container_begin, entity_distance_pair_container_end,
@@ -1203,48 +1214,9 @@ public:
 					//normalize
 					double ave_log = accumulated_value / total_probability;
 
-					distanceWeightExponent = 0.0;
-
 					return std::exp(ave_log);
 				}
 			}
-		}
-
-		//like TransformDistancesToExpectedValue, but chooses the appropriate algorithm for distance contribution
-		template<typename EntityDistancePairIterator>
-		inline double TransformDistancesToExpectedValueForDistanceContribution(
-			EntityDistancePairIterator entity_distance_pair_container_begin,
-			EntityDistancePairIterator entity_distance_pair_container_end)
-		{
-			double distance_contribution = 0.0;
-			if(computeSurprisal)
-			{
-			#ifdef DIST_CONTRIBS_HARMONIC_MEAN
-				computeSurprisal = false;
-				distanceWeightExponent = -1;
-				distance_contribution = TransformDistancesToExpectedValue(entity_distance_pair_container_begin, entity_distance_pair_container_end);
-				computeSurprisal = true;
-			#elif defined(DIST_CONTRIBS_GEOMETRIC_MEAN)
-				computeSurprisal = false;
-				distanceWeightExponent = 0;
-				distance_contribution = TransformDistancesToExpectedValue(entity_distance_pair_container_begin, entity_distance_pair_container_end);
-				computeSurprisal = true;
-			#elif defined(DIST_CONTRIBS_ARITHMETIC_MEAN) || defined(DIST_CONTRIBS_PROBABILITY_MEAN)
-				//both use the same code here, but DIST_CONTRIBS_PROBABILITY_MEAN changes code elsewhere
-				computeSurprisal = false;
-				distanceWeightExponent = 1;
-				distance_contribution = TransformDistancesToExpectedValue(entity_distance_pair_container_begin, entity_distance_pair_container_end);
-				computeSurprisal = true;
-			#else
-				distance_contribution = TransformDistancesToExpectedValue(entity_distance_pair_container_begin, entity_distance_pair_container_end);
-			#endif
-			}
-			else
-			{
-				distance_contribution = TransformDistancesToExpectedValue(entity_distance_pair_container_begin, entity_distance_pair_container_end);
-			}
-
-			return distance_contribution;
 		}
 
 		//Computes the distance contribution as a type of generalized mean with special handling for distances of zero

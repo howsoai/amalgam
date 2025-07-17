@@ -797,7 +797,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 		return r_dist_eval.ComputeDistanceTermNonNullNominalNextSmallest(nonmatch_dist_term, query_feature_index);
 	}
-	else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC)
+	else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER)
 	{
 		//initialize to zero, because if don't find an exact match, but there are distance terms of
 		//0, then need to accumulate those later
@@ -866,7 +866,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		//the next closest string will have an edit distance of 1
 		return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicNonNullRegular(1.0, query_feature_index, high_accuracy);
 	}
-	//else feature_type == FDT_CONTINUOUS_NUMERIC or FDT_CONTINUOUS_NUMERIC_CYCLIC
+	//else feature_type == FDT_CONTINUOUS_NUMBER or FDT_CONTINUOUS_NUMBER_CYCLIC
 
 	//if not a number or no numbers available, then no size
 	if(value.nodeType != ENIVT_NUMBER || column->sortedNumberValueEntries.size() == 0)
@@ -1277,7 +1277,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 
 	if(feature_attribs.IsFeatureNominal() || complex_comparison)
 	{
-		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC)
+		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER)
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMERIC;
 		else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING)
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_STRING;
@@ -1292,10 +1292,10 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 	{
 		size_t num_values_stored_as_numbers = column_data->numberIndices.size() + column_data->invalidIndices.size();
 		if(GetNumInsertedEntities() == num_values_stored_as_numbers
-				&& feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC
+				&& feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER
 				&& !column_data->internedNumberValues.valueInterningEnabled)
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC;
-		else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC)
+		else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER_CYCLIC)
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC_CYCLIC;
 		else
 			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_NUMERIC;

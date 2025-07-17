@@ -726,11 +726,11 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_system,
 
 	//distance types
-	ENBISI_nominal_numeric,
+	ENBISI_nominal_number,
 	ENBISI_nominal_string,
 	ENBISI_nominal_code,
-	ENBISI_continuous_numeric,
-	ENBISI_continuous_numeric_cyclic,
+	ENBISI_continuous_number,
+	ENBISI_continuous_number_cyclic,
 	ENBISI_continuous_string,
 	ENBISI_continuous_code,
 
@@ -738,7 +738,7 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_surprisal,
 	ENBISI_surprisal_to_prob,
 
-	//numerical precision types
+	//numeric precision types
 	ENBISI_precise,
 	ENBISI_fast,
 	ENBISI_recompute_precise,

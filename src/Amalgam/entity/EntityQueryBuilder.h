@@ -105,7 +105,7 @@ namespace EntityQueryBuilder
 		string_sdm.clear();
 
 		auto &mcn = deviation_node->GetMappedChildNodesReference();
-		if(feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC)
+		if(feature_attribs.featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER)
 		{
 			number_sdm.reserve(mcn.size());
 			for(auto &cn : mcn)
@@ -185,18 +185,18 @@ namespace EntityQueryBuilder
 			[&dist_eval](size_t i, bool found, EvaluableNode *en) {
 				if(i < dist_eval.featureAttribs.size())
 				{
-					auto feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC;
+					auto feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
 					if(found)
 					{
 						StringInternPool::StringID feature_type_id = EvaluableNode::ToStringIDIfExists(en);
-						if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_numeric))					feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC;
+						if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_number))					feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER;
 						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_string))				feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING;
 						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_nominal_code))					feature_type = GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_numeric))			feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC;
-						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_numeric_cyclic))	feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC;
+						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_number))			feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
+						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_number_cyclic))		feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER_CYCLIC;
 						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_string))			feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING;
 						else if(feature_type_id == GetStringIdFromBuiltInStringId(ENBISI_continuous_code))				feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE;
-						else																							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC;
+						else																							feature_type = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
 					}
 					dist_eval.featureAttribs[i].featureType = feature_type;
 				}
@@ -210,18 +210,18 @@ namespace EntityQueryBuilder
 					//get attributes based on feature type
 					switch(dist_eval.featureAttribs[i].featureType)
 					{
-					case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC:
+					case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER:
 					case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
 					case GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE:
 						if(found && !EvaluableNode::IsNull(en))
 							dist_eval.featureAttribs[i].typeAttributes.nominalCount = EvaluableNode::ToNumber(en);
 						break;
 
-					case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC:
+					case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER_CYCLIC:
 						if(found && !EvaluableNode::IsNull(en))
 							dist_eval.featureAttribs[i].typeAttributes.maxCyclicDifference = EvaluableNode::ToNumber(en);
 						else //can't be cyclic without a range
-							dist_eval.featureAttribs[i].featureType = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC;
+							dist_eval.featureAttribs[i].featureType = GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER;
 						break;
 
 					default:
@@ -242,7 +242,7 @@ namespace EntityQueryBuilder
 					//get deviations based on feature type
 					switch(dist_eval.featureAttribs[i].featureType)
 					{
-					case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC:
+					case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER:
 					case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
 					case GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE:
 						if(found && !EvaluableNode::IsNull(en))

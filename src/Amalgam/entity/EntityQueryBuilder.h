@@ -465,15 +465,15 @@ namespace EntityQueryBuilder
 		PopulateDistanceFeatureParameters(cur_condition->distEvaluator, num_elements, cur_condition->positionLabels,
 			weights_node, distance_types_node, attributes_node, deviations_node);
 
-		//set minkowski parameter; default to 2.0 for Euclidian distance
-		cur_condition->distEvaluator.pValue = 2.0;
+		//set minkowski parameter; default to 1.0 for L1 distance
+		cur_condition->distEvaluator.pValue = 1.0;
 		if(ocn.size() > MINKOWSKI_PARAMETER)
 		{
 			cur_condition->distEvaluator.pValue = EvaluableNode::ToNumber(ocn[MINKOWSKI_PARAMETER]);
 
 			//make sure valid value, if not, fall back to 2
 			if(FastIsNaN(cur_condition->distEvaluator.pValue) || cur_condition->distEvaluator.pValue < 0)
-				cur_condition->distEvaluator.pValue = 2;
+				cur_condition->distEvaluator.pValue = 1.0;
 		}
 		
 		//value transforms for whatever is measured as "distance"

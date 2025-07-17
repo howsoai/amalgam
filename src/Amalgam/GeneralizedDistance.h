@@ -1243,6 +1243,7 @@ public:
 		}
 		else if(feature_data.targetValue.nodeType == ENIVT_BOOL)
 		{
+			//TODO 22139: need nominalBoolDistanceTerms, or able to use symmetric match/nonmatch?
 			if(ComputeAndStoreNominalDistanceTermsForSDM(
 				distEvaluator->featureAttribs[index].nominalBoolSparseDeviationMatrix,
 				index, ENIVT_BOOL, feature_data.targetValue.nodeValue.boolValue,

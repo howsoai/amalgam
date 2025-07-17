@@ -899,10 +899,17 @@ namespace EntityQueryBuilder
 
 				if(type == ENT_QUERY_MODE || type == ENT_QUERY_VALUE_MASSES)
 				{
-					if(ocn.size() <= 2 || EvaluableNode::IsTrue(ocn[2]))
-						cur_condition->singleLabelType = ENIVT_NUMBER;
-					else
-						cur_condition->singleLabelType = ENIVT_STRING_ID;
+					cur_condition->singleLabelType = ENIVT_NUMBER;
+
+					if(ocn.size() > 2 && !EvaluableNode::IsNull(ocn[2]) && ocn[2]->GetType() == ENT_STRING)
+					{
+						auto sid = ocn[2]->GetStringIDReference();
+						auto en_type = GetEvaluableNodeTypeFromStringId(sid);
+						if(en_type == ENT_STRING)
+							cur_condition->singleLabelType = ENIVT_STRING_ID;
+						else
+							cur_condition->singleLabelType = ENIVT_NUMBER;
+					}
 				}
 
 				break;

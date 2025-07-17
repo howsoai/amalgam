@@ -1556,10 +1556,10 @@ var data = [
 	},
 
 	{
-		"parameter" : "query_mode string label_name [string weight_label_name] [bool numeric]",
+		"parameter" : "query_mode string label_name [string weight_label_name] [string type]",
 		"output" : "query",
 		"new value" : "partial",
-		"description" : "When used as a query argument, finds the statistical mode of label_name for numerical data.  If weight_label_name is specified, it will find the weighted mode.  If numeric is true, its default, then it will treat all values as numeric, otherwise it will treat them all as strings.  If numeric and no numeric mode exists, it will return (null), but if string and no string mode exists, it will return null.",
+		"description" : "When used as a query argument, finds the statistical mode of label_name for numerical data.  If weight_label_name is specified, it will find the weighted mode.  If type is \"number\", its default, then it will treat all values as numeric, otherwise if \"string\", it will treat them all as strings.  If numeric and no numeric mode exists, it will return (null), but if string and no string mode exists, it will return null.",
 		"example" : "(compute_on_contained_entities \"TestEntity\" (list\n (query_mode \"TargetLabel\")\n))"
 	},
 
@@ -1596,10 +1596,10 @@ var data = [
 	},
 
 	{
-		"parameter" : "query_value_masses string label_name [string weight_label_name] [bool numeric]",
+		"parameter" : "query_value_masses string label_name [string weight_label_name] [string type]",
 		"output" : "query",
 		"new value" : "partial",
-		"description" : "When used as a query argument, computes the counts for each value of the label and returns an assoc with the keys being the label values and the values being the counts or weights of the values.  If weight_label_name is specified, then it will accumulate that weight for each value, otherwise it will use a weight of 1 for each yielding a count.  If numeric is true, its default, then it will treat all values as numeric, otherwise it will treat them all as strings.",
+		"description" : "When used as a query argument, computes the counts for each value of the label and returns an assoc with the keys being the label values and the values being the counts or weights of the values.  If weight_label_name is specified, then it will accumulate that weight for each value, otherwise it will use a weight of 1 for each yielding a count.  If type is \"number\", its default, then it will treat all values as numeric, otherwise if \"string\", it will treat them all as strings.",
 		"example" : "(compute_on_contained_entities \"TestEntity\" (list\n (query_value_masses \"TargetLabel\")\n))"
 	},
 

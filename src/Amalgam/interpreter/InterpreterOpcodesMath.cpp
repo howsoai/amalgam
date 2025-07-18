@@ -932,7 +932,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NORMALIZE(EvaluableNode *e
 		return EvaluableNodeReference::Null();
 
 	bool all_nodes_unique = container.unique;
-	evaluableNodeManager->EnsureNodeIsModifiable(container);
+	evaluableNodeManager->EnsureNodeIsModifiable(container, false, EvaluableNodeManager::ENMM_REMOVE_ALL);
 
 	//ensure it's a list
 	if(container->IsOrderedArray())
@@ -947,9 +947,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NORMALIZE(EvaluableNode *e
 			[this](auto &pair, double new_val)
 			{
 				if(pair.second == nullptr)
+				{
 					pair.second = evaluableNodeManager->AllocNode(new_val);
+				}
 				else
+				{
 					pair.second->SetTypeViaNumberValue(new_val);
+					pair.second->ClearMetadata();
+				}
 			}
 		);
 	}
@@ -960,9 +965,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NORMALIZE(EvaluableNode *e
 			[this](auto &cn, double new_val)
 		{
 			if(cn == nullptr)
+			{
 				cn = evaluableNodeManager->AllocNode(new_val);
+			}
 			else
+			{
 				cn->SetTypeViaNumberValue(new_val);
+				cn->ClearMetadata();
+			}
 		}
 		);
 	}

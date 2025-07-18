@@ -356,7 +356,7 @@ inline void NormalizeVector(ContainerType &vec, double p)
 {
 	NormalizeVector(vec, p,
 		[](auto &v) { return v; },
-		[](auto &v, double newVal) { v = newVal; }
+		[](auto &v, double new_val) { v = new_val; }
 	);
 }
 
@@ -365,6 +365,6 @@ inline void NormalizeVectorAsMap(MapType &map, double p)
 {
 	NormalizeVector(map, p,
 		[](const auto &pair) { return pair.second; },
-		[](auto &pair, double newVal) { pair.second = newVal; }
+		[](auto &pair, double new_val) { pair.second = new_val; }
 	);
 }

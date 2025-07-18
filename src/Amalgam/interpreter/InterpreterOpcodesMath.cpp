@@ -920,7 +920,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NORMALIZE(EvaluableNode *e
 		return EvaluableNodeReference::Null();
 
 	double p_value = 1.0;
-	if(ocn.size() > 2)
+	if(ocn.size() > 1)
 	{
 		double num_value = InterpretNodeIntoNumberValue(ocn[1]);
 		if(!FastIsNaN(num_value))
@@ -933,26 +933,41 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NORMALIZE(EvaluableNode *e
 
 	bool all_nodes_unique = container.unique;
 	evaluableNodeManager->EnsureNodeIsModifiable(container);
-	container->SetType(ENT_LIST, evaluableNodeManager, false);
+
+	//ensure it's a list
+	if(container->IsOrderedArray())
+		container->SetType(ENT_LIST, evaluableNodeManager, false);
 	container->SetIsIdempotent(true);
 	container->SetNeedCycleCheck(false);
 
 	if(container->IsAssociativeArray())
 	{
-		double total = 0.0;
-		for(auto &cn : en->GetMappedChildNodesReference())
-		{
-			
-		}
+		NormalizeVector(container->GetMappedChildNodesReference(), p_value,
+			[](const auto &pair) { return EvaluableNode::ToNumber(pair.second); },
+			[this](auto &pair, double new_val)
+			{
+				if(pair.second == nullptr)
+					pair.second = evaluableNodeManager->AllocNode(new_val);
+				else
+					pair.second->SetTypeViaNumberValue(new_val);
+			}
+		);
 	}
 	else //container->IsOrderedArray()
 	{
-
+		NormalizeVector(container->GetOrderedChildNodesReference(), p_value,
+			[](const auto &cn) { return EvaluableNode::ToNumber(cn); },
+			[this](auto &cn, double new_val)
+		{
+			if(cn == nullptr)
+				cn = evaluableNodeManager->AllocNode(new_val);
+			else
+				cn->SetTypeViaNumberValue(new_val);
+		}
+		);
 	}
 
-	//TODO 24093: finish this
-
-	return EvaluableNodeReference::Null();
+	return container;
 }
 
 //builds a vector of the values in the node, using ordered or mapped child nodes as appropriate

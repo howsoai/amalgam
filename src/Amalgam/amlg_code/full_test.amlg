@@ -419,7 +419,7 @@
 
  (print "--normalize--\n")
  (print (normalize [ 0.5 0.5 0.5 0.5 ])
- (print (normalize { a 0.5 b 0.5 c 0.5 d 0.5 })
+ (print (normalize { a 0.5 b 0.5 c 0.5 d 0.5 } 2)
 
  (print "--generalized_distance--\n")
  (print " 0 " (generalized_distance (null) (null) (null) (null) 0.01 (map 10000 (range 0 200)) ) "\n")

@@ -919,13 +919,22 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NORMALIZE(EvaluableNode *e
 	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
 
-	//TODO 24093: finish this
+	double p_value = 1.0;
+	if(ocn.size() > 2)
+	{
+		double num_value = InterpretNodeIntoNumberValue(ocn[1]);
+		if(!FastIsNaN(num_value))
+			p_value = num_value;
+	}
 
 	auto container = InterpretNode(ocn[0]);
-	if(container == nullptr)
+	if(EvaluableNode::IsNull(container))
 		return EvaluableNodeReference::Null();
 
-	evaluableNodeManager->EnsureNodeIsModifiable(container, true);
+	if(!container.unique)
+		container = evaluableNodeManager->DeepAllocCopy(container);
+
+	//TODO 24093: finish this
 
 	return EvaluableNodeReference::Null();
 }

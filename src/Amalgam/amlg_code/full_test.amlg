@@ -417,6 +417,10 @@
  (print (dot_product (associate "a" 0.5 "b" 0.25 "c" 0.25) (associate "a" 4 "b" 8 "c" 8)) "\n")
  (print (dot_product (associate 0 0.5 1 0.25 2 0.25) (list 4 8 8)) "\n")
 
+ (print "--normalize--\n")
+ (print (normalize [ 0.5 0.5 0.5 0.5 ])
+ (print (normalize { a 0.5 b 0.5 c 0.5 d 0.5 })
+
  (print "--generalized_distance--\n")
  (print " 0 " (generalized_distance (null) (null) (null) (null) 0.01 (map 10000 (range 0 200)) ) "\n")
  (print " 1 " (generalized_distance (null) (null) (null) (null) 0.01 (list 1 2 3) (list 0 2 3) ) "\n")

@@ -541,6 +541,13 @@ var data = [
 		"description" : "Evaluates to the sum of all element-wise products of x1 and x2.",
 		"example" : "(print (dot_product (list 0.5 0.25 0.25) (list 4 8 8)))"
 	},
+	{
+		"parameter" : "normalize list|assoc values [number p_value]",
+		"output" : "list|assoc",
+		"new value" : "new",
+		"description" : "Evaluates to the values but with the elements normalized by p_value, representing the order of the Lp space to normalize the vector.",
+		"example" : "(print (normalize [ 0.5 0.5 0.5 0.5 ])\n(print (normalize { a 0.5 b 0.5 c 0.5 d 0.5 })"
+	},
 
 	{
 		"parameter" : "generalized_distance list|assoc|number weights list|assoc distance_types list|assoc attributes list|assoc|number deviations number p_value list|assoc|* vector1 [list|assoc|* vector2] [list value_names] [bool surprisal_space]",

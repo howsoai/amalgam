@@ -913,6 +913,23 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DOT_PRODUCT(EvaluableNode 
 	return AllocReturn(dot_product, immediate_result);
 }
 
+EvaluableNodeReference Interpreter::InterpretNode_ENT_NORMALIZE(EvaluableNode *en, bool immediate_result)
+{
+	auto &ocn = en->GetOrderedChildNodes();
+	if(ocn.size() < 1)
+		return EvaluableNodeReference::Null();
+
+	//TODO 24093: finish this
+
+	auto container = InterpretNode(ocn[0]);
+	if(container == nullptr)
+		return EvaluableNodeReference::Null();
+
+	evaluableNodeManager->EnsureNodeIsModifiable(container, true);
+
+	return EvaluableNodeReference::Null();
+}
+
 //builds a vector of the values in the node, using ordered or mapped child nodes as appropriate
 // if node is mapped child nodes, it will use id_order to order populate out and use default_value if any given id is not found
 inline void GetChildNodesAsENImmediateValueArray(EvaluableNode *node, std::vector<StringInternPool::StringID> &id_order,

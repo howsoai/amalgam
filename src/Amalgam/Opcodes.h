@@ -95,6 +95,7 @@ enum EvaluableNodeType : uint8_t
 	ENT_INDEX_MAX,
 	ENT_INDEX_MIN,
 	ENT_DOT_PRODUCT,
+	ENT_NORMALIZE,
 	ENT_GENERALIZED_DISTANCE,
 	ENT_ENTROPY,
 
@@ -388,7 +389,7 @@ constexpr OrderedChildNodeType GetOpcodeOrderedChildNodeType(EvaluableNodeType t
 	case ENT_TANH:						case ENT_ATANH:
 	case ENT_ERF:						case ENT_TGAMMA:			case ENT_LGAMMA:
 	case ENT_SQRT:						case ENT_POW:				case ENT_ABS:
-	case ENT_DOT_PRODUCT:				case ENT_GENERALIZED_DISTANCE:	case ENT_ENTROPY:
+	case ENT_DOT_PRODUCT:				case ENT_NORMALIZE:			case ENT_GENERALIZED_DISTANCE:	case ENT_ENTROPY:
 	case ENT_FIRST:						case ENT_TAIL:				case ENT_LAST:				case ENT_TRUNC:
 	case ENT_SIZE:						case ENT_RANGE:
 	case ENT_REWRITE:					case ENT_MAP:				case ENT_WEAVE:
@@ -470,7 +471,7 @@ constexpr OpcodeNewValueReturnType GetOpcodeNewValueReturnType(EvaluableNodeType
 	case ENT_SINH:	case ENT_ASINH:	case ENT_COSH:	case ENT_ACOSH:	case ENT_TANH:
 	case ENT_ATANH:	case ENT_ERF:	case ENT_TGAMMA:	case ENT_LGAMMA:	case ENT_SQRT:
 	case ENT_POW:	case ENT_ABS:	case ENT_MAX:	case ENT_INDEX_MAX: case ENT_INDEX_MIN: case ENT_MIN: case ENT_DOT_PRODUCT:
-	case ENT_GENERALIZED_DISTANCE:	case ENT_ENTROPY:
+	case ENT_NORMALIZE:	case ENT_GENERALIZED_DISTANCE:	case ENT_ENTROPY:
 	case ENT_SIZE:
 	case ENT_REWRITE:
 	case ENT_INDICES:

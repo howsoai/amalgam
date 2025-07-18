@@ -117,6 +117,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_INDEX_MIN, "index_min");
 	EmplaceNodeTypeString(ENT_GENERALIZED_DISTANCE, "generalized_distance");
 	EmplaceNodeTypeString(ENT_DOT_PRODUCT, "dot_product");
+	EmplaceNodeTypeString(ENT_NORMALIZE, "normalize");
 	EmplaceNodeTypeString(ENT_ENTROPY, "entropy");
 
 	//list manipulation

@@ -931,7 +931,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NORMALIZE(EvaluableNode *e
 	if(EvaluableNode::IsNull(container) || container->IsImmediate())
 		return EvaluableNodeReference::Null();
 
-	bool all_nodes_unique = container.unique;
+	bool allocate_child_nodes = (!container.unique);
 	evaluableNodeManager->EnsureNodeIsModifiable(container, false, EvaluableNodeManager::ENMM_REMOVE_ALL);
 
 	//ensure it's a list
@@ -944,9 +944,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NORMALIZE(EvaluableNode *e
 	{
 		NormalizeVector(container->GetMappedChildNodesReference(), p_value,
 			[](const auto &pair) { return EvaluableNode::ToNumber(pair.second); },
-			[this](auto &pair, double new_val)
+			[this, allocate_child_nodes](auto &pair, double new_val)
 			{
-				if(pair.second == nullptr)
+				if(allocate_child_nodes || pair.second == nullptr)
 				{
 					pair.second = evaluableNodeManager->AllocNode(new_val);
 				}
@@ -962,18 +962,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NORMALIZE(EvaluableNode *e
 	{
 		NormalizeVector(container->GetOrderedChildNodesReference(), p_value,
 			[](const auto &cn) { return EvaluableNode::ToNumber(cn); },
-			[this](auto &cn, double new_val)
-		{
-			if(cn == nullptr)
+			[this, allocate_child_nodes](auto &cn, double new_val)
 			{
-				cn = evaluableNodeManager->AllocNode(new_val);
+				if(allocate_child_nodes || cn == nullptr)
+				{
+					cn = evaluableNodeManager->AllocNode(new_val);
+				}
+				else
+				{
+					cn->SetTypeViaNumberValue(new_val);
+					cn->ClearMetadata();
+				}
 			}
-			else
-			{
-				cn->SetTypeViaNumberValue(new_val);
-				cn->ClearMetadata();
-			}
-		}
 		);
 	}
 

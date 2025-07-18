@@ -19,13 +19,13 @@ namespace EntityQueryBuilder
 		POSITION_LABELS,
 		POSITION,
 
+		//optional params
+		MINKOWSKI_PARAMETER,
 		WEIGHTS,
 		DISTANCE_TYPES,
 		ATTRIBUTES,
 		DEVIATIONS,
-
-		//optional params
-		MINKOWSKI_PARAMETER,
+		WEIGHTS_SELECTION_FEATURE,
 		DISTANCE_VALUE_TRANSFORM,
 		ENTITY_WEIGHT_LABEL_NAME,
 		RANDOM_SEED,
@@ -164,10 +164,12 @@ namespace EntityQueryBuilder
 	// four different attribute parameters based on its type (using num_elements if list or immediate, element_names if assoc)
 	inline void PopulateDistanceFeatureParameters(GeneralizedDistanceEvaluator &dist_eval,
 		size_t num_elements, std::vector<StringInternPool::StringID> &element_names,
-		EvaluableNode *weights_node, EvaluableNode *distance_types_node, EvaluableNode *attributes_node, EvaluableNode *deviations_node)
+		EvaluableNode *weights_node, StringInternPool::StringID weights_selection_feature,
+		EvaluableNode *distance_types_node, EvaluableNode *attributes_node, EvaluableNode *deviations_node)
 	{
 		dist_eval.featureAttribs.resize(num_elements);
 
+		//TODO 24093: account for weights_selection_feature
 		//get weights
 		EvaluableNode::ConvertChildNodesAndStoreValue(weights_node, element_names, num_elements,
 			[&dist_eval](size_t i, bool found, EvaluableNode *en) {
@@ -444,7 +446,16 @@ namespace EntityQueryBuilder
 			}
 		}
 
-		size_t num_elements = cur_condition->positionLabels.size();
+		//set minkowski parameter; default to 1.0 for L1 distance
+		cur_condition->distEvaluator.pValue = 1.0;
+		if(ocn.size() > MINKOWSKI_PARAMETER)
+		{
+			cur_condition->distEvaluator.pValue = EvaluableNode::ToNumber(ocn[MINKOWSKI_PARAMETER]);
+
+			//make sure valid value, if not, fall back to 2
+			if(FastIsNaN(cur_condition->distEvaluator.pValue) || cur_condition->distEvaluator.pValue < 0)
+				cur_condition->distEvaluator.pValue = 1.0;
+		}
 
 		EvaluableNode *weights_node = nullptr;
 		if(ocn.size() > WEIGHTS)
@@ -462,19 +473,13 @@ namespace EntityQueryBuilder
 		if(ocn.size() > DEVIATIONS)
 			deviations_node = ocn[DEVIATIONS];
 
-		PopulateDistanceFeatureParameters(cur_condition->distEvaluator, num_elements, cur_condition->positionLabels,
-			weights_node, distance_types_node, attributes_node, deviations_node);
+		StringInternPool::StringID weights_selection_feature = string_intern_pool.NOT_A_STRING_ID;
+		if(ocn.size() > WEIGHTS_SELECTION_FEATURE)
+			weights_selection_feature = EvaluableNode::ToStringIDIfExists(ocn[WEIGHTS_SELECTION_FEATURE]);
 
-		//set minkowski parameter; default to 1.0 for L1 distance
-		cur_condition->distEvaluator.pValue = 1.0;
-		if(ocn.size() > MINKOWSKI_PARAMETER)
-		{
-			cur_condition->distEvaluator.pValue = EvaluableNode::ToNumber(ocn[MINKOWSKI_PARAMETER]);
-
-			//make sure valid value, if not, fall back to 2
-			if(FastIsNaN(cur_condition->distEvaluator.pValue) || cur_condition->distEvaluator.pValue < 0)
-				cur_condition->distEvaluator.pValue = 1.0;
-		}
+		PopulateDistanceFeatureParameters(cur_condition->distEvaluator,
+			cur_condition->positionLabels.size(), cur_condition->positionLabels,
+			weights_node, weights_selection_feature, distance_types_node, attributes_node, deviations_node);
 		
 		//value transforms for whatever is measured as "distance"
 		cur_condition->distanceWeightExponent = 1.0;

@@ -1066,7 +1066,7 @@ enum EvaluableNodeImmediateValueType : uint8_t
 union EvaluableNodeImmediateValue
 {
 	constexpr EvaluableNodeImmediateValue()
-		: number(std::numeric_limits<double>::quiet_NaN())
+		: code(nullptr)
 	{	}
 
 	constexpr EvaluableNodeImmediateValue(double _number)
@@ -1174,7 +1174,7 @@ class EvaluableNodeImmediateValueWithType
 {
 public:
 	constexpr EvaluableNodeImmediateValueWithType()
-		: nodeType(ENIVT_NULL), nodeValue(std::numeric_limits<double>::quiet_NaN())
+		: nodeType(ENIVT_NULL), nodeValue(static_cast<EvaluableNode *>(nullptr))
 	{	}
 
 	__forceinline EvaluableNodeImmediateValueWithType(EvaluableNodeImmediateValue node_value,

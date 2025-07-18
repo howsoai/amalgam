@@ -19,34 +19,6 @@ public:
 	}
 };
 
-//Normalizes the vector; if any are infinity, it will equally uniformly normalize over just the infinite values
-//p is the Lebesque order, where 1 is Manhattan / probability, 2 is Euclidean, etc.
-template<typename ContainerType, typename ValueType>
-void NormalizeVectorAsMap(ContainerType &vec_map, double p = 1.0)
-{
-	double total = 0.0;
-	for(auto &[_, p] : vec)
-		total += p;
-
-	//if less than infinity, just normalize
-	if(total < std::numeric_limits<double>::infinity())
-	{
-		for(auto &[_, p] : vec)
-			p /= total;
-	}
-	else //if found one infinity, then need to normalize over just the infinities
-	{
-		for(auto &[_, p] : vec)
-		{
-			if(p != std::numeric_limits<double>::infinity())
-				p = 0.0;
-			else
-				p = 1.0;
-		}
-		NormalizeVectorAsMap<ContainerType, ValueType>(vec);
-	}
-}
-
 //Will return a random index, weighted by the values in probabilities based on the specified RandomStream
 // if normalize is true, then it will normalize the probabilities in place
 template<typename ContainerType>
@@ -79,7 +51,7 @@ template<typename ContainerType, typename ValueType>
 ValueType WeightedDiscreteRandomSampleMap(ContainerType &probabilities_map, RandomStream &rs, bool normalize = false)
 {
 	if(normalize)
-		NormalizeVectorAsMap<ContainerType, ValueType>(probabilities_map);
+		NormalizeVectorAsMap<ContainerType, ValueType>(probabilities_map, 1.0);
 
 	double r = rs.Rand();
 	ValueType selected_element = 0;

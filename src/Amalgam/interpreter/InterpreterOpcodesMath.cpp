@@ -928,11 +928,27 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NORMALIZE(EvaluableNode *e
 	}
 
 	auto container = InterpretNode(ocn[0]);
-	if(EvaluableNode::IsNull(container))
+	if(EvaluableNode::IsNull(container) || container->IsImmediate())
 		return EvaluableNodeReference::Null();
 
-	if(!container.unique)
-		container = evaluableNodeManager->DeepAllocCopy(container);
+	bool all_nodes_unique = container.unique;
+	evaluableNodeManager->EnsureNodeIsModifiable(container);
+	container->SetType(ENT_LIST, evaluableNodeManager, false);
+	container->SetIsIdempotent(true);
+	container->SetNeedCycleCheck(false);
+
+	if(container->IsAssociativeArray())
+	{
+		double total = 0.0;
+		for(auto &cn : en->GetMappedChildNodesReference())
+		{
+			
+		}
+	}
+	else //container->IsOrderedArray()
+	{
+
+	}
 
 	//TODO 24093: finish this
 

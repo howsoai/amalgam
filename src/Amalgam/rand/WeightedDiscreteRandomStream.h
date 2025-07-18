@@ -1,6 +1,7 @@
 #pragma once
 
 //project headers:
+#include "FastMath.h"
 #include "RandomStream.h"
 
 //system headers:
@@ -18,59 +19,31 @@ public:
 	}
 };
 
-//Normalizes the probabilities; if any probabilities are infinity, it will equally uniformly normalize over just the infinite values
-template<typename ContainerType>
-void NormalizeProbabilities(ContainerType &probabilities)
-{
-	//find total mass
-	double total_mass = 0.0;
-	for(auto &p : probabilities)
-		total_mass += p;
-	
-	//if less than infinity, just normalize
-	if(total_mass < std::numeric_limits<double>::infinity())
-	{
-		for(auto &p : probabilities)
-			p /= total_mass;
-	}
-	else //if found one infinity, then need to normalize over just the infinities
-	{
-		for(auto &p : probabilities)
-		{
-			if(p != std::numeric_limits<double>::infinity())
-				p = 0.0;
-			else
-				p = 1.0;
-		}
-		NormalizeProbabilities(probabilities);
-	}
-}
-
-//Normalizes the probabilities; if any probabilities are infinity, it will equally uniformly normalize over just the infinite values
+//Normalizes the vector; if any are infinity, it will equally uniformly normalize over just the infinite values
+//p is the Lebesque order, where 1 is Manhattan / probability, 2 is Euclidean, etc.
 template<typename ContainerType, typename ValueType>
-void NormalizeProbabilitiesMap(ContainerType &probabilities_map)
+void NormalizeVectorAsMap(ContainerType &vec_map, double p = 1.0)
 {
-	//find total mass
-	double total_mass = 0.0;
-	for(auto &[_, p] : probabilities_map)
-		total_mass += p;
+	double total = 0.0;
+	for(auto &[_, p] : vec)
+		total += p;
 
 	//if less than infinity, just normalize
-	if(total_mass < std::numeric_limits<double>::infinity())
+	if(total < std::numeric_limits<double>::infinity())
 	{
-		for(auto &[_, p] : probabilities_map)
-			p /= total_mass;
+		for(auto &[_, p] : vec)
+			p /= total;
 	}
 	else //if found one infinity, then need to normalize over just the infinities
 	{
-		for(auto &[_, p] : probabilities_map)
+		for(auto &[_, p] : vec)
 		{
 			if(p != std::numeric_limits<double>::infinity())
 				p = 0.0;
 			else
 				p = 1.0;
 		}
-		NormalizeProbabilitiesMap<ContainerType, ValueType>(probabilities_map);
+		NormalizeVectorAsMap<ContainerType, ValueType>(vec);
 	}
 }
 
@@ -80,7 +53,7 @@ template<typename ContainerType>
 size_t WeightedDiscreteRandomSample(ContainerType &probabilities, RandomStream &rs, bool normalize = false)
 {
 	if(normalize)
-		NormalizeProbabilities<ContainerType>(probabilities);
+		NormalizeVector<ContainerType>(probabilities, 1.0);
 
 	double r = rs.Rand();
 	size_t selected_element = 0;
@@ -106,7 +79,7 @@ template<typename ContainerType, typename ValueType>
 ValueType WeightedDiscreteRandomSampleMap(ContainerType &probabilities_map, RandomStream &rs, bool normalize = false)
 {
 	if(normalize)
-		NormalizeProbabilitiesMap<ContainerType, ValueType>(probabilities_map);
+		NormalizeVectorAsMap<ContainerType, ValueType>(probabilities_map);
 
 	double r = rs.Rand();
 	ValueType selected_element = 0;
@@ -173,7 +146,7 @@ public:
 	void InitializeAliasTable(std::vector<double> &probabilities, bool normalize)
 	{
 		if(normalize)
-			NormalizeProbabilities(probabilities);
+			NormalizeVector(probabilities, 1.0);
 
 		probabilityTable.resize(probabilities.size());
 		aliasTable.resize(probabilities.size());

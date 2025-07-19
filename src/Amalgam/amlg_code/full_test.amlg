@@ -453,34 +453,36 @@
  (print "27 " (generalized_distance (list 4 4 (null) 4) (list 2 (null) (null) 2) 2 (list 1 0 1 1 ) (list "continuous_number" "nominal_number" "nominal_number") (list (null) 5 5) (list .1 .1 .1 .1) ) "\n" )
  (print "28 " (generalized_distance (list 4 4 (null) 4) (list 2 (null) (null) 2) 2 (list 1 0 1 1 ) (list "continuous_number" "nominal_number" "nominal_number") (list (null) 5 5) ) "\n" )
  (print "29 " (generalized_distance (list 4 4 4 4 4) (list 2 (null) 2 2 2) 1 (list 1 0 1 1 1) ) "\n" )
-
- ;TODO 24093: update the remaining generalized_distance below
- ;TODO 24093: update all distance queries
-
- (print "30 " (generalized_distance (assoc x 1 y 1 z 1)
+ (print "30 " (generalized_distance
+							(list 4 4 4 )
+							(list 2 2 2 )
+							1
+							(assoc x 1 y 1 z 1)
 							(assoc y "continuous_number" x "nominal_number" z "continuous_number")
 							(assoc z 5)
 							(null)
-							1
-							(list 4 4 4 )
-							(list 2 2 2 )
+							(null)
 							(null)
 							(list "x" "y" "z") ) "\n" )
- ;should print 4
- (print "31 " (generalized_distance (list 1 1 1) (list "continuous_number" "nominal_number" "nominal_number") (list (null) 5 5) (null) 1 (list 4 4 (null)) (list 2 2 (null))) "\n")
- ;should print 4
- (print "32 " (generalized_distance (list 1 1 1 1) (list "continuous_number" "nominal_number" "nominal_number" "continuous_number")
-	(list (null) 5 5 (null)) (list (list 0 2) (null) (null) (list 0 2)) 0 (list 4 4 4 4) (list 2 2 2 (null))) "\n")
 
  ;should print 4
- (print "33 " (generalized_distance (list 1 1 1 1) (list "continuous_number" "nominal_string" "nominal_string" "continuous_number")
-	(list (null) 5 5 (null)) (list (list 0 1) (null) (null) (list 0 1)) 1 (list 4 "s" "s" 4) (list 2 "s" 2 (null))) "\n")
+ (print "31 " (generalized_distance (list 4 4 (null)) (list 2 2 (null)) 1 (list 1 1 1) (list "continuous_number" "nominal_number" "nominal_number") (list (null) 5 5)) "\n")
+ ;should print 4
+ (print "32 " (generalized_distance (list 4 4 4 4) (list 2 2 2 (null)) 0 (list 1 1 1 1) (list "continuous_number" "nominal_number" "nominal_number" "continuous_number")
+	(list (null) 5 5 (null)) (list (list 0 2) (null) (null) (list 0 2))) "\n")
+
+ ;should print 4
+ (print "33 " (generalized_distance (list 4 "s" "s" 4) (list 2 "s" 2 (null)) 1 (list 1 1 1 1) (list "continuous_number" "nominal_string" "nominal_string" "continuous_number")
+	(list (null) 5 5 (null)) (list (list 0 1) (null) (null) (list 0 1))) "\n")
  
  ;should print 2
- (print "34 " (generalized_distance (list 1 1) (list "continuous_code" "nominal_string") (list 0 5) (null) 1 (list (list 1 2 3 4 5) "s") (list (list 1 2 3) "s") ) "\n")
+ (print "34 " (generalized_distance (list (list 1 2 3 4 5) "s") (list (list 1 2 3) "s") 1 (list 1 1) (list "continuous_code" "nominal_string") (list 0 5) ) "\n")
  
  ;should print 3ish
- (print "35 " (generalized_distance (list 1 1) (list "continuous_code" "nominal_string") (list 0 5) (null) 1 (list (list 1.5 2 3 4 5) "s") (list (list 1 2 3) "s") ) "\n")
+ (print "35 " (generalized_distance (list (list 1.5 2 3 4 5) "s") (list (list 1 2 3) "s") 1 (list 1 1) (list "continuous_code" "nominal_string") (list 0 5) ) "\n")
+
+ ;TODO 24093: update the remaining generalized_distance below
+ ;TODO 24093: update all distance queries
 
  ;surprisal
  ;should both be 0

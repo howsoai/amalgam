@@ -2715,7 +2715,6 @@
    )))
 
  ;TODO 24093: update tests for query_nearest_generalized_distance
- ;TODO 24093: update tests for query_distance_contributions
  ;TODO 24093: update tests for query_entity_convictions
  ;TODO 24093: update tests for query_entity_group_kl_divergence
  ;TODO 24093: update tests for query_entity_distance_contributions
@@ -3253,7 +3252,7 @@
 (print "--query_distance_contributions--\n")
 
 (print (compute_on_contained_entities (list
-  (query_distance_contributions 2 (list "x" "y") [[1 2]] (null) (null) (null) (null) 2 -1 (null) "random seed 1234")
+  (query_distance_contributions 2 (list "x" "y") [[1 2]] 2 (null) (null) (null) (null) (null) -1 (null) "random seed 1234")
  )))
 
 (print "--query_entity_convictions--\n")
@@ -4450,19 +4449,19 @@
 	)
 
      (print "surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list
-	(query_distance_contributions 4 (list "x") [[0]] (null) (null) (null) (list 0.25) 1 "surprisal" (null) "fixed_seed" (null) "precise")
+	(query_distance_contributions 4 (list "x") [[0]] 1 (null) (null) (null) (list 0.25) (null) "surprisal" (null) "fixed_seed" (null) "precise")
   )))
 
   (print "surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list
-	(query_distance_contributions (list 0.05 1 20) (list "x") [[0]] (null) (null) (null) (list 0.25) 1 "surprisal" (null) "fixed_seed" (null) "precise")
+	(query_distance_contributions (list 0.05 1 20) (list "x") [[0]] 1 (null) (null) (null) (list 0.25) (null) "surprisal" (null) "fixed_seed" (null) "precise")
   )))
 
   (print "weighted surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list
-	(query_distance_contributions 4 (list "x") [[0]] (null) (null) (null) (list 0.25) 1 "surprisal" "weight" "fixed_seed" (null) "precise")
+	(query_distance_contributions 4 (list "x") [[0]] 1 (null) (null) (null) (list 0.25) (null) "surprisal" "weight" "fixed_seed" (null) "precise")
   )))
 
   (print "weighted surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list
-	(query_distance_contributions (list 0.05 1 20) (list "x") [[0]] (null) (null) (null) (list 0.25) 1 "surprisal" "weight" "fixed_seed" (null) "precise")
+	(query_distance_contributions (list 0.05 1 20) (list "x") [[0]] 1 (null) (null) (null) (list 0.25) (null) "surprisal" "weight" "fixed_seed" (null) "precise")
   )))
 
   (create_entities (list "SurprisalTransformContainer" "testvert") (lambda

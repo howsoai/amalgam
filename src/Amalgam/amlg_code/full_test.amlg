@@ -2714,50 +2714,48 @@
  	(query_not_among "bar" (list "not crunchy"))
    )))
 
- ;TODO 24093: update tests for query_nearest_generalized_distance
- ;TODO 24093: update documentation js file's examples
  (print "--query_nearest_generalized_distance--\n")
  (print "cascading query_not_equals: "
 	(contained_entities "TestContainerExec" (list
 		(query_not_equals "x" 0)
-		(query_nearest_generalized_distance 2 (list "y" ) (list 10) (null) (null) (null) (null) 0.5)
+		(query_nearest_generalized_distance 2 (list "y" ) (list 10) 0.5)
 	))
  )
 
   (print "cascading query_not_in_entity_list: "
 	(contained_entities "TestContainerExec" (list
 		(query_not_in_entity_list (list "Child1"))
-		(query_nearest_generalized_distance 2 (list "y" ) (list 10) (null) (null) (null) (null) 0.5)
+		(query_nearest_generalized_distance 2 (list "y" ) (list 10) 0.5)
 	))
  )
 
  (print "unweighted query: "
 	(compute_on_contained_entities "TestContainerExec" (list
-		(query_nearest_generalized_distance 5 (list "y" ) (list 0) (null) (null) (null) (null) 1 1 (null))
+		(query_nearest_generalized_distance 5 (list "y" ) (list 0) 1 (null) (null) (null) (null) (null) 1 (null))
 	))
  )
 
  (print "weighted query: "
 	(compute_on_contained_entities "TestContainerExec" (list
-		(query_nearest_generalized_distance 5 (list "y" ) (list 0) (null) (null) (null) (null) 1 1 "weight")
+		(query_nearest_generalized_distance 5 (list "y" ) (list 0) 1 (null) (null) (null) (null) (null) 1 "weight")
 	))
  )
 
  (print "weighted query list of lists: "
 	(compute_on_contained_entities "TestContainerExec" (list
-		(query_nearest_generalized_distance 5 (list "y" ) (list 0) (null) (null) (null) (null) 1 1 "weight" (null) (null) (null) (true))
+		(query_nearest_generalized_distance 5 (list "y" ) (list 0) 1 (null) (null) (null) (null) (null) 1 "weight" (null) (null) (null) (true))
 	))
  )
 
   (print "weighted query list of lists: "
 	(compute_on_contained_entities "TestContainerExec" (list
-		(query_nearest_generalized_distance 5 (list "y" ) (list 0) (null) (null) (null) (null) 1 1 (null) (null) (null) (null) "y")
+		(query_nearest_generalized_distance 5 (list "y" ) (list 0) 1 (null) (null) (null) (null) (null) 1 (null) (null) (null) (null) "y")
 	))
  )
 
  (print "weighted query list of lists with multiple values: "
 	(compute_on_contained_entities "TestContainerExec" (list
-		(query_nearest_generalized_distance 5 (list "y" ) (list 0) (null) (null) (null) (null) 1 1 (null) (null) (null) (null) (list "y" "x"))
+		(query_nearest_generalized_distance 5 (list "y" ) (list 0) 1 (null) (null) (null) (null) (null) 1 (null) (null) (null) (null) (list "y" "x"))
 	))
  )
 
@@ -2778,11 +2776,12 @@
                  10 ;k
 				 (list "a") ;context_features
                  (list 1.7) ;context_values
+				 2 ;p
                  (null) ;context_weights
                  (null) ;context_nominal_counts
                  (null) ;cyclic_feature_lengths
                  (null) ;context_deviations
-                 2
+                 (null)
 				 -1 ;dwe
 				 (null) ;entity weight
                  (rand)
@@ -2851,34 +2850,33 @@
 
   (print "1: "
 	(contained_entities "TestContainerSimilarCode" (list
-		(query_nearest_generalized_distance 2 (list "y" ) (list 1) (list 1) (list "continuous_code") (null) (null) 1 1)
+		(query_nearest_generalized_distance 2 (list "y" ) (list 1) 1 (list 1) (list "continuous_code") (null) (null) (null) 1)
 	))
   )
 
   (print "2: "
 	(contained_entities "TestContainerSimilarCode" (list
-		(query_nearest_generalized_distance 4 (list "y" ) (list (list 1 2)) (list 1) (list "continuous_code") (null) (null) 1 1)
+		(query_nearest_generalized_distance 4 (list "y" ) (list (list 1 2)) 1 (list 1) (list "continuous_code") (null) (null) (null) 1)
 	))
   )
 
   (print "3: "
 	(contained_entities "TestContainerSimilarCode" (list
-		(query_nearest_generalized_distance 4 (list "y" ) (list (list (list 1 2))) (list 1) (list "continuous_code") (null) (null) 1 1)
+		(query_nearest_generalized_distance 4 (list "y" ) (list (list (list 1 2))) 1 (list 1) (list "continuous_code") (null) (null) (null) 1)
 	))
   )
 
   (print "4: "
 	(contained_entities "TestContainerSimilarCode" (list
-		(query_nearest_generalized_distance 4 (list "x" "y" ) (list 1 (list (list 1 2))) (list 1 1) (list "continuous_number" "continuous_code") (null) (null) 1 1)
+		(query_nearest_generalized_distance 4 (list "x" "y" ) (list 1 (list (list 1 2))) 1 (list 1 1) (list "continuous_number" "continuous_code") (null) (null) (null) 1)
 	))
   )
 
    (print "5: "
 	(contained_entities "TestContainerSimilarCode" (list
-		(query_nearest_generalized_distance 3 (list "s" ) (list "s0") (list 1) (list "continuous_string") (null) (null) 1 1)
+		(query_nearest_generalized_distance 3 (list "s" ) (list "s0") 1 (list 1) (list "continuous_string") (null) (null) (null) 1)
 	))
   )
-
 
  (print "--query_max--\n")
  (print (contained_entities "TestContainerExec" (list
@@ -3060,12 +3058,12 @@
 
  (print "--query_nearest_generalized_distance--\n")
  (print (contained_entities "TestContainerExec" (list
- 	(query_nearest_generalized_distance 2 (list "x" "y") (list 0.0 0.0) (null) (null) (null) (null) 0.5 1 (null) "random seed 1234" "radius")
+ 	(query_nearest_generalized_distance 2 (list "x" "y") (list 0.0 0.0) 0.5 (null) (null) (null) (null) (null) 1 (null) "random seed 1234" "radius")
  )))
 
  (print (contained_entities "TestContainerExec" (list
  	(query_exists "x")
- 	(query_nearest_generalized_distance 2 (list "x" "y") (list 0.0 0.0) (null) (null) (null) (null) 0.5 1 (null) "random seed 1234" "radius")
+ 	(query_nearest_generalized_distance 2 (list "x" "y") (list 0.0 0.0) 0.5 (null) (null) (null) (null) (null) 1 (null) "random seed 1234" "radius")
  )))
 
  (print (contained_entities "TestContainerExec" (list
@@ -3074,31 +3072,31 @@
 
  (print (contained_entities "TestContainerExec" (list
  	(query_exists "x")
- 	(query_within_generalized_distance 60 (list "x" "y") (list 0.0 0.0) 0.5 (null) (null) (null) (null) 1 (null) "random seed 1234" "radius")
+ 	(query_within_generalized_distance 60 (list "x" "y") (list 0.0 0.0) 0.5 (null) (null) (null) (null) (null) 1 (null) "random seed 1234" "radius")
  )))
 
  (print (contained_entities "TestContainerExec" (list
- 	(query_nearest_generalized_distance 2 (list "x" "y") (list 0.0 0.0) (null) (null) (null) (null) 0.5 1 (null) "random seed 1234" "radius")
+ 	(query_nearest_generalized_distance 2 (list "x" "y") (list 0.0 0.0) 0.5 (null) (null) (null) (null) (null) 1 (null) "random seed 1234" "radius")
  )))
 
  (print (contained_entities "TestContainerExec" (list
  	(query_exists "x")
- 	(query_nearest_generalized_distance 3 (list "x" "y") (list 0.0 0.0) (null) (null) (null) (null) 0.01 1 (null) "random seed 1234" "radius")
+ 	(query_nearest_generalized_distance 3 (list "x" "y") (list 0.0 0.0) 0.01 (null) (null) (null) (null) (null) 1 (null) "random seed 1234" "radius")
  )))
 
  (print (contained_entities "TestContainerExec" (list
   (query_exists "x")
-  (query_nearest_generalized_distance 3 (list "x" "y") (list 0.0 0.0) (list 2 1) (list "nominal_number" "continuous_number_cyclic") (list 1 360) (null) 0.01 1 (null) "random seed 1234" "radius")
+  (query_nearest_generalized_distance 3 (list "x" "y") (list 0.0 0.0) 0.01 (list 2 1) (list "nominal_number" "continuous_number_cyclic") (list 1 360) (null) (null) 1 (null) "random seed 1234" "radius")
  )))
 
   (print "assoc-based: " (contained_entities "TestContainerExec" (list
   (query_exists "x")
-  (query_nearest_generalized_distance 3 (list "x" "y") (list 0.0 0.0) (associate "x" 2 "y" 1) (associate "x" "nominal_number" "y" "continuous_number_cyclic") (list 1 360) (null) 0.01 1 (null) "random seed 1234" "radius")
+  (query_nearest_generalized_distance 3 (list "x" "y") (list 0.0 0.0) 0.01 (associate "x" 2 "y" 1) (associate "x" "nominal_number" "y" "continuous_number_cyclic") (list 1 360) (null) (null) 1 (null) "random seed 1234" "radius")
  )))
 
  (print (contained_entities "TestContainerExec" (list
   (query_exists "x")
-  (query_nearest_generalized_distance 3 (list "x" "y") (list 0.0 0.0) (list 2 1) (list "nominal_number" "continuous_number") (list 1) (list 0.1 -0.2) 0.01 1 (null) "random seed 1234" "radius")
+  (query_nearest_generalized_distance 3 (list "x" "y") (list 0.0 0.0) 0.01 (list 2 1) (list "nominal_number" "continuous_number") (list 1) (list 0.1 -0.2) (null) 1 (null) "random seed 1234" "radius")
  )))
 
  (print "--contained_entities caching and permissions--\n")
@@ -3432,7 +3430,7 @@
 
  (print (compute_on_contained_entities (list
   (query_exists "is_cyclic")
-  (query_nearest_generalized_distance 2 (list "rank_c" "degree_c") (list 4 0) (null) (list "continuous_number" "continuous_number_cyclic") (list (null) 360) (null) 1 1 (null) "random seed 1234" (null))
+  (query_nearest_generalized_distance 2 (list "rank_c" "degree_c") (list 4 0) 1 (null) (list "continuous_number" "continuous_number_cyclic") (list (null) 360) (null) (null) 1 (null) "random seed 1234" (null))
  )))
 
   (create_entities "CyclicTestEntity" (null))
@@ -3465,11 +3463,12 @@
 			3  ; K
 			(list "deg")
 			(list 350)
+			1 ; p
 			(null) ; weights
 			(list "continuous_number_cyclic") ; types
 			(list 360) ; attributes
 			(null); deviations
-			1 ; p
+			(null)
 			-1 ; dwe
 			(null) ; weight
 			(rand)
@@ -3765,9 +3764,12 @@
  )
  
  (print (contained_entities "NaNTest" (list
- 		(query_nearest_generalized_distance 3 (list "label1") (list 0.0) (null) (null) (null) (null) 1)
+ 		(query_nearest_generalized_distance 3 (list "label1") 1 (list 0.0))
  	))
  )
+
+ ;TODO 24093: update tests for query_nearest_generalized_distance from here down
+ ;TODO 24093: update documentation js file's examples
 
  (print "--combo tests--\n")
  

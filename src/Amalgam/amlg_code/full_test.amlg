@@ -481,19 +481,20 @@
  ;should print 3ish
  (print "35 " (generalized_distance (list (list 1.5 2 3 4 5) "s") (list (list 1 2 3) "s") 1 (list 1 1) (list "continuous_code" "nominal_string") (list 0 5) ) "\n")
 
- ;TODO 24093: update the remaining generalized_distance below
- ;TODO 24093: update all distance queries
-
  ;surprisal
  ;should both be 0
- (print "36 " (generalized_distance (list 1 1) (list "continuous_number" "continuous_number") (null) (list 0.5 0.5) 1 (list 1 1) (list 1 1) (null) (true) ) "\n" )
- (print "37 " (generalized_distance (list 1 1) (list "nominal_number" "nominal_number") (null) (list 0.5 0.5) 1 (list 1 1) (list 1 1) (null) (true) ) "\n" )
+ (print "36 " (generalized_distance (list 1 1) (list 1 1) 1 (list 1 1) (list "continuous_number" "continuous_number") (null) (list 0.5 0.5) (null) (null) (true) ) "\n" )
+ (print "37 " (generalized_distance (list 1 1) (list 1 1) 1 (list 1 1) (list "nominal_number" "nominal_number") (null) (list 0.5 0.5) (null) (null) (true) ) "\n" )
 
  ;surprisal
- (print "38 " (generalized_distance (list 1 1) (list "continuous_number" "continuous_number") (null) (list 0.5 0.5) 1 (list 1 1) (list 2 2) (null) (true) ) "\n" )
- (print "39 " (generalized_distance (list 1 1) (list "nominal_number" "nominal_number") (list 2 2) (list 0.25 0.25) 1 (list 1 1) (list 2 2) (null) (true) ) "\n" )
+ (print "38 " (generalized_distance (list 1 1) (list 2 2) 1 (list 1 1) (list "continuous_number" "continuous_number") (null) (list 0.5 0.5) (null) (null) (true) ) "\n" )
+ (print "39 " (generalized_distance (list 1 1) (list 2 2) 1 (list 1 1) (list "nominal_number" "nominal_number") (list 2 2) (list 0.25 0.25) (null) (null) (true) ) "\n" )
 
+ ;TODO 24093: test weights_selection_feature
    (print "40 " (generalized_distance
+			    (list "b") ;vector 1
+				(list "c") ;vector 2
+				1 ;p
 				(list 1 1) ;weights
 				(list "nominal_string") ;types
 				(list 4) ;attributes
@@ -504,15 +505,16 @@
 						c (assoc a 0.996539792	b 0.996539792	c 0.006920415)
 					)
 				) ;deviations
-				1 ;p
-				(list "b") ;vector 1
-				(list "c") ;vector 2
+				(null) ;weights_selection_feature
 				(null) ;names
 				(true) ;surprisal
 				) "\n"
 	)
 
 	(print "41 " (generalized_distance
+				(list "b") ;vector 1
+				(list "a") ;vector 2
+				1 ;p
 				(list 1 1) ;weights
 				(list "nominal_string") ;types
 				(list 4) ;attributes
@@ -523,15 +525,16 @@
 						c (assoc a 0.996539792	b 0.996539792	c 0.006920415)
 					)
 				) ;deviations
-				1 ;p
-				(list "b") ;vector 1
-				(list "a") ;vector 2
+				(null) ;weights_selection_feature				
 				(null) ;names
 				(true) ;surprisal
 				) "\n"
 	)
 
 	(print "42 " (generalized_distance
+				(list "b") ;vector 1
+				(list "q") ;vector 2
+				1 ;p
 				(list 1 1) ;weights
 				(list "nominal_string") ;types
 				(list 4) ;attributes
@@ -542,30 +545,32 @@
 						c (assoc a 0.996539792	b 0.996539792	c 0.006920415)
 					)
 				) ;deviations
-				1 ;p
-				(list "b") ;vector 1
-				(list "q") ;vector 2
+				(null) ;weights_selection_feature				
 				(null) ;names
 				(true) ;surprisal
 				) "\n"
 	)
 
 	(print "43 " (generalized_distance
+				(list "q") ;vector 1
+				(list "u") ;vector 2
+				1 ;p
 				(list 1 1) ;weights
 				(list "nominal_string") ;types
 				(list 2 2) ;attributes
 				(list
 						0.2
 				) ;deviations
-				1 ;p
-				(list "q") ;vector 1
-				(list "u") ;vector 2
+				(null) ;weights_selection_feature
 				(null) ;names
 				(true) ;surprisal
 				) "\n"
 	)
 
 	(print "44 " (generalized_distance
+				(list "q") ;vector 1
+				(list "u") ;vector 2
+				1 ;p
 				(list 1 1) ;weights
 				(list "nominal_string") ;types
 				(list 4) ;attributes
@@ -578,15 +583,16 @@
 						0.2
 					)
 				) ;deviations
-				1 ;p
-				(list "q") ;vector 1
-				(list "u") ;vector 2
+				(null) ;weights_selection_feature
 				(null) ;names
 				(true) ;surprisal
 				) "\n"
 	)
 
 	(print "45 " (generalized_distance
+				(list "q") ;vector 1
+				(list "u") ;vector 2
+				1 ;p
 				(list 1 1) ;weights
 				(list "nominal_string") ;types
 				(list 4) ;attributes
@@ -602,9 +608,7 @@
 						0.2
 					)
 				) ;deviations
-				1 ;p
-				(list "q") ;vector 1
-				(list "u") ;vector 2
+				(null) ;weights_selection_feature
 				(null) ;names
 				(true) ;surprisal
 				) "\n"
@@ -2710,6 +2714,13 @@
  	(query_not_among "bar" (list "not crunchy"))
    )))
 
+ ;TODO 24093: update tests for query_within_generalized_distance
+ ;TODO 24093: update tests for query_nearest_generalized_distance
+ ;TODO 24093: update tests for query_distance_contributions
+ ;TODO 24093: update tests for query_entity_convictions
+ ;TODO 24093: update tests for query_entity_group_kl_divergence
+ ;TODO 24093: update tests for query_entity_distance_contributions
+ ;TODO 24093: update tests for query_entity_kl_divergences
  (print "--query_nearest_generalized_distance--\n")
  (print "cascading query_not_equals: "
 	(contained_entities "TestContainerExec" (list

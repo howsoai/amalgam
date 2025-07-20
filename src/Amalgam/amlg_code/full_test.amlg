@@ -2715,7 +2715,6 @@
    )))
 
  ;TODO 24093: update tests for query_nearest_generalized_distance
- ;TODO 24093: update tests for query_entity_distance_contributions
  ;TODO 24093: update tests for query_entity_kl_divergences
  ;TODO 24093: update documentation js file's examples
  (print "--query_nearest_generalized_distance--\n")
@@ -3361,21 +3360,21 @@
   (print "--query_entity_distance_contributions--\n")
 
  (print (compute_on_contained_entities (list
-  (query_entity_distance_contributions 2 (list "x" "y") (null) (null) (null) (null) (null) 2 -1 (null) "random seed 1234")
+  (query_entity_distance_contributions 2 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "random seed 1234")
  )))
 
  (print "(these values should match the values of the subset of these keys in the previous assoc):\n" (compute_on_contained_entities (list
-  (query_entity_distance_contributions 2 (list "x" "y") (list "vert0" "vert1" "vert2") (null) (null) (null) (null) 2 -1)
+  (query_entity_distance_contributions 2 (list "x" "y") (list "vert0" "vert1" "vert2") 2 (null) (null) (null) (null) (null) -1)
  )))
  
  (print (compute_on_contained_entities (list
   (query_exists "object")
-  (query_entity_distance_contributions 2 (list "x" "y") (null) (null) (null) (null) (null) 2 -1 (null) "random seed 1234")
+  (query_entity_distance_contributions 2 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "random seed 1234")
  )))
 
  (print "(these values should match the values of the subset of these keys in the previous assoc):\n" (compute_on_contained_entities (list
   (query_exists "object")
-  (query_entity_distance_contributions 2 (list "x" "y") obj2_verts (null) (null) (null) (null) 2 -1 (null) "random seed 1234")
+  (query_entity_distance_contributions 2 (list "x" "y") obj2_verts 2 (null) (null) (null) (null) (null) -1 (null) "random seed 1234")
  )))
 
  (print "--query_entity_kl_divergences--\n")
@@ -4176,11 +4175,11 @@
 
   (print "distance contributions\n")
   (print "dc: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (query_entity_distance_contributions 1 (list "x" "y") (null) (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise" (true))
+  (query_entity_distance_contributions 1 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise" (true))
  )))
 
   (print "weighted dc: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (query_entity_distance_contributions 1 (list "x" "y") (null) (null) (null) (null) (null) 2.0 -1 "weight" "fixed_seed" (null) "recompute_precise")
+  (query_entity_distance_contributions 1 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 "weight" "fixed_seed" (null) "recompute_precise")
  )))
  
  (print "removal conviction\n")
@@ -4468,19 +4467,19 @@
 	) )
 
   (print "surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list
-	(query_entity_distance_contributions 4 (list "x") (list "testvert") (null) (null) (null) (list 0.25) 1 "surprisal" (null) "fixed_seed" (null) "precise")
+	(query_entity_distance_contributions 4 (list "x") (list "testvert") 1 (null) (null) (null) (list 0.25) (null) "surprisal" (null) "fixed_seed" (null) "precise")
   )))
 
   (print "surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list
-	(query_entity_distance_contributions (list 0.05 1 20) (list "x") (list "testvert") (null) (null) (null) (list 0.25) 1 "surprisal" (null) "fixed_seed" (null) "precise")
+	(query_entity_distance_contributions (list 0.05 1 20) (list "x") (list "testvert") 1 (null) (null) (null) (list 0.25) (null) "surprisal" (null) "fixed_seed" (null) "precise")
   )))
 
   (print "weighted surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list
-	(query_entity_distance_contributions 4 (list "x") (list "testvert") (null) (null) (null) (list 0.25) 1 "surprisal" "weight" "fixed_seed" (null) "precise")
+	(query_entity_distance_contributions 4 (list "x") (list "testvert") 1 (null) (null) (null) (list 0.25) (null) "surprisal" "weight" "fixed_seed" (null) "precise")
   )))
 
   (print "weighted surprisal contribution: " (compute_on_contained_entities "SurprisalTransformContainer" (list
-	(query_entity_distance_contributions (list 0.05 1 20) (list "x") (list "testvert") (null) (null) (null) (list 0.25) 1 "surprisal" "weight" "fixed_seed" (null) "precise")
+	(query_entity_distance_contributions (list 0.05 1 20) (list "x") (list "testvert") 1 (null) (null) (null) (list 0.25) (null) "surprisal" "weight" "fixed_seed" (null) "precise")
   )))
 
  (print "--concurrency tests--\n")

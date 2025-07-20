@@ -490,6 +490,7 @@
  (print "38 " (generalized_distance (list 1 1) (list 2 2) 1 (list 1 1) (list "continuous_number" "continuous_number") (null) (list 0.5 0.5) (null) (null) (true) ) "\n" )
  (print "39 " (generalized_distance (list 1 1) (list 2 2) 1 (list 1 1) (list "nominal_number" "nominal_number") (list 2 2) (list 0.25 0.25) (null) (null) (true) ) "\n" )
 
+ ;TODO 24093: update documentation js file's examples
  ;TODO 24093: test weights_selection_feature
    (print "40 " (generalized_distance
 			    (list "b") ;vector 1
@@ -3768,9 +3769,6 @@
  	))
  )
 
- ;TODO 24093: update tests for query_nearest_generalized_distance from here down
- ;TODO 24093: update documentation js file's examples
-
  (print "--combo tests--\n")
  
  (print (call (set_type
@@ -3848,10 +3846,6 @@
             3 ;k-value
 			(list "A" "B")
             (list 9 2)
-            (null)
-            (null)
-            (null)
-            (null)
 			2 ;p-value
          )
       ))
@@ -3864,10 +3858,6 @@
 			2 ;k-value
             (list "A" "B")
             (list 9 2)
-            (null)
-            (null)
-            (null)
-            (null)
 			2 ;p-value
          )
       ))
@@ -3880,10 +3870,6 @@
 			1 ;k-value
             (list "A" "B")
             (list 9 2)
-            (null)
-            (null)
-            (null)
-            (null)
 			2 ;p-value
          )
       ))
@@ -3896,11 +3882,11 @@
             3 ;k-value
     		(list "A" "B") ;labels
             (list 9 2) ;values
+			2 ;p-value
             (null) ;weights
             (list "continuous_number" "continuous_number") ;distance types
 			(null) ;attributes
-            (list (list 0 5 6) (list 0 5 5)) ;deviations 
-    		2 ;p-value
+            (list (list 0 5 6) (list 0 5 5)) ;deviations
          )
       ))
    )
@@ -3914,32 +3900,21 @@
             3 ;k-value
 			(list "A" "B") ;labels
             (list (null) (null)) ;values
-            (null) ;weights
+			2 ;p-value
+			(null) ;weights
             (list "continuous_number" "continuous_number") ;distance types
 			(null) ;attributes
             (list (list 0 1 0) (list 0 1 0)) ;deviations
-			2 ;p-value
-         )
+		  )
       ))
    )
 
    (print "--accuracy tests--\n")
    (print (generalized_distance
-		;weights
-		(list 2.5	10	5	0.033333333	3.333333333	20)
-		;types
-		(list "nominal_number" "nominal_number" "nominal_number" "continuous_number" "nominal_number" "continuous_number")
-		;attributes
-		(list 3 100 7 (null) 10 (null))
-		;deviations
-		(list 0.4	0.1	0.2	30	0.3	0.05)
+		(list 1	2	1	100	1	50)
+		(list 1	1	1	120	1	50.1)
 		;p
 		0.5
-		(list 1	2	1	100	1	50)
-		(list 1	1	1	120	1	50.1)
-	) "\n")
-	
-	(print (generalized_distance
 		;weights
 		(list 2.5	10	5	0.033333333	3.333333333	20)
 		;types
@@ -3948,15 +3923,15 @@
 		(list 3 100 7 (null) 10 (null))
 		;deviations
 		(list 0.4	0.1	0.2	30	0.3	0.05)
+	) "\n")
+	
+	(print (generalized_distance
+		;point 1
+		(list 1	2	1	100	1	50)
+		;point 2
+		(list 1	1	1	120	1	50.1)
 		;p
 		1
-		;point 1
-		(list 1	2	1	100	1	50)
-		;point 2
-		(list 1	1	1	120	1	50.1)
-	) "\n")
-	
-	(print (generalized_distance
 		;weights
 		(list 2.5	10	5	0.033333333	3.333333333	20)
 		;types
@@ -3965,12 +3940,23 @@
 		(list 3 100 7 (null) 10 (null))
 		;deviations
 		(list 0.4	0.1	0.2	30	0.3	0.05)
-		;p
-		0
+	) "\n")
+	
+	(print (generalized_distance
 		;point 1
 		(list 1	2	1	100	1	50)
 		;point 2
 		(list 1	1	1	120	1	50.1)
+		;p
+		0
+		;weights
+		(list 2.5	10	5	0.033333333	3.333333333	20)
+		;types
+		(list "nominal_number" "nominal_number" "nominal_number" "continuous_number" "nominal_number" "continuous_number")
+		;attributes
+		(list 3 100 7 (null) 10 (null))
+		;deviations
+		(list 0.4	0.1	0.2	30	0.3	0.05)
 	) "\n")
 	
 	(create_entities "DistanceTestContainer"
@@ -4056,6 +4042,8 @@
 			(list "a" "b" "c" "d" "e" "f")
 			;center values
 			(list 1 2 1 100 1 50)
+			;p
+			0.5
 			;weights
 			(list 2.5	10	5	0.033333333	3.333333333	20)
 			;types
@@ -4064,8 +4052,7 @@
 			(list 3 100 7 (null) 10 (null))
 			;deviations
 			(list 0.4	0.1	0.2	30	0.3	0.05)
-			;p
-			0.5
+			(null)
 			;dwe
 			1
 			(null) ; weight feature
@@ -4123,11 +4110,12 @@
 			    8 ; k
                 (list "A" "B")
                 (list 4 9)
+				0.1 ; p_parameter
                 (null) ; context_weights
                 (list "nominal_number" "nominal_number") ; types
                 (list 1 1) ; attributes
                 (null) ; context_deviations
-				0.1 ; p_parameter
+				(null)
 				1 ; dwe = 1 means return computed distance to each case
 				(null) ; weight
                 (rand)
@@ -4141,11 +4129,12 @@
                 8 ; k
 				(list "B" "A")
                 (list 9 4)
+				0.1 ; p_parameter
                 (null) ; context_weights
                 (list "nominal_number" "nominal_number") ; types
                 (list 1 1) ; attributes
                 (null) ; context_deviations
-                0.1 ; p_parameter
+				(null)
 				1 ; dwe = 1 means return computed distance to each case
 				(null) ; weight
                 (rand)
@@ -4297,11 +4286,12 @@
             4 ; k
 			(list "x")
             (list 0)
+			1 ; p_parameter
             (null) ; context_weights
             (list "continuous_number") ; types
             (null) ; attributes
             (list 0.25) ; context_deviations
-            1 ; p_parameter
+            (null)
 			"surprisal_to_prob" ; distance transform
 			(null) ; weight
             (rand)
@@ -4320,11 +4310,12 @@
             4 ; k
 			(list "x")
             (list 0)
+			1 ; p_parameter
             (null) ; context_weights
             (list "continuous_number") ; types
             (null) ; attributes
             (list 0.25) ; context_deviations
-            1 ; p_parameter
+            (null)
 			"surprisal" ; distance transform
 			(null) ; weight
             (rand)
@@ -4343,11 +4334,12 @@
             4 ; k
 			(list "x")
             (list 0)
+			1 ; p_parameter
             (null) ; context_weights
             (list "continuous_number") ; types
             (null) ; attributes
             (list 0.25) ; context_deviations
-            1 ; p_parameter
+            (null)
 			"surprisal_to_prob" ; distance transform
 			"weight" ; weight
             (rand)
@@ -4366,11 +4358,12 @@
             4 ; k
 			(list "x")
             (list 0)
+			1 ; p_parameter
             (null) ; context_weights
             (list "continuous_number") ; types
             (null) ; attributes
             (list 0.25) ; context_deviations
-            1 ; p_parameter
+            (null)
 			"surprisal" ; distance transform
 			"weight" ; weight
             (rand)
@@ -4388,11 +4381,12 @@
             (list 0.01 1 20) ; k
 			(list "x")
             (list 0)
+			1 ; p_parameter
             (null) ; context_weights
             (list "continuous_number") ; types
             (null) ; attributes
             (list 0.25) ; context_deviations
-            1 ; p_parameter
+            (null)
 			"surprisal_to_prob" ; distance transform
 			(null) ; weight
             (rand)
@@ -4410,11 +4404,12 @@
             (list 0.01 1 20) ; k
 			(list "x")
             (list 0)
+			1 ; p_parameter
             (null) ; context_weights
             (list "continuous_number") ; types
             (null) ; attributes
             (list 0.25) ; context_deviations
-            1 ; p_parameter
+            (null)
 			"surprisal" ; distance transform
 			(null) ; weight
             (rand)
@@ -4432,11 +4427,12 @@
             (list 0.01 1 20 1) ; k
 			(list "x")
             (list 0)
+			1 ; p_parameter
             (null) ; context_weights
             (list "continuous_number") ; types
             (null) ; attributes
             (list 0.25) ; context_deviations
-            1 ; p_parameter
+            (null)
 			"surprisal" ; distance transform
 			(null) ; weight
             (rand)

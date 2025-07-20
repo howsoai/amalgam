@@ -2714,7 +2714,6 @@
  	(query_not_among "bar" (list "not crunchy"))
    )))
 
- ;TODO 24093: update tests for query_within_generalized_distance
  ;TODO 24093: update tests for query_nearest_generalized_distance
  ;TODO 24093: update tests for query_distance_contributions
  ;TODO 24093: update tests for query_entity_convictions
@@ -3055,12 +3054,12 @@
 
  (print "--query_within_generalized_distance--\n")
  (print (contained_entities "TestContainerExec" (list
- 	(query_within_generalized_distance 60 (list "x" "y") (list 0.0 0.0) (null) (null) (null) (null) 0.5 1 (null) "random seed 1234" "radius")
+ 	(query_within_generalized_distance 60 (list "x" "y") (list 0.0 0.0) 0.5 (null) (null) (null) (null) (null) 1 (null) "random seed 1234" "radius")
  )))
 
  (print (contained_entities "TestContainerExec" (list
  	(query_exists "x")
- 	(query_within_generalized_distance 60 (list "x" "y") (list 0.0 0.0) (null) (null) (null) (null) 0.5 1 (null) "random seed 1234" "radius")
+ 	(query_within_generalized_distance 60 (list "x" "y") (list 0.0 0.0) 0.5 (null) (null) (null) (null) (null) 1 (null) "random seed 1234" "radius")
  )))
 
  (print "--query_nearest_generalized_distance--\n")
@@ -3074,12 +3073,12 @@
  )))
 
  (print (contained_entities "TestContainerExec" (list
- 	(query_within_generalized_distance 60 (list "x" "y") (list 0.0 0.0) (null) (null) (null) (null) 0.5 1 (null) "random seed 1234" "radius")
+ 	(query_within_generalized_distance 60 (list "x" "y") (list 0.0 0.0) 0.5 (null) (null) (null) (null) (null) 1 (null) "random seed 1234" "radius")
  )))
 
  (print (contained_entities "TestContainerExec" (list
  	(query_exists "x")
- 	(query_within_generalized_distance 60 (list "x" "y") (list 0.0 0.0) (null) (null) (null) (null) 0.5 1 (null) "random seed 1234" "radius")
+ 	(query_within_generalized_distance 60 (list "x" "y") (list 0.0 0.0) 0.5 (null) (null) (null) (null) 1 (null) "random seed 1234" "radius")
  )))
 
  (print (contained_entities "TestContainerExec" (list
@@ -3240,15 +3239,15 @@
 
   (print (compute_on_contained_entities "TestContainerExec" (list
 	(query_exists "x")
- 	(query_within_generalized_distance 60 (list "x" "y") (list 0.0 0.0) (null) (null) (null) (null) 1 1 (null) "random seed 1234" "radius")
+ 	(query_within_generalized_distance 60 (list "x" "y") (list 0.0 0.0) 1 (null) (null) (null) (null) (null) 1 (null) "random seed 1234" "radius")
  )))
 
   (print (compute_on_contained_entities "TestContainerExec" (list
-  (query_within_generalized_distance 60 (list "x" "y") (list 0.0 0.0) (null) (null) (null) (null) 1 1 (null) "random seed 1234" "radius")
+  (query_within_generalized_distance 60 (list "x" "y") (list 0.0 0.0) 1 (null) (null) (null) (null) (null) 1 (null) "random seed 1234" "radius")
  )))
 
  (print (compute_on_contained_entities "TestContainerExec" (list
-    (query_within_generalized_distance 2 (list "x" "y") (list 0.0 0.0) (null) (null) (null) (null) 1 1 (null) "random seed 1234" "radius")
+    (query_within_generalized_distance 2 (list "x" "y") (list 0.0 0.0) 1 (null) (null) (null) (null) (null) 1 (null) "random seed 1234" "radius")
  )))
 
 (print "--query_distance_contributions--\n")

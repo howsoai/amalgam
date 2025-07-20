@@ -2715,7 +2715,6 @@
    )))
 
  ;TODO 24093: update tests for query_nearest_generalized_distance
- ;TODO 24093: update tests for query_entity_group_kl_divergence
  ;TODO 24093: update tests for query_entity_distance_contributions
  ;TODO 24093: update tests for query_entity_kl_divergences
  ;TODO 24093: update documentation js file's examples
@@ -3356,7 +3355,7 @@
 
  (print (compute_on_contained_entities (list
   (query_exists "object")
-  (query_entity_group_kl_divergence 2 (list "x" "y") obj2_verts (null) (null) (null) (null) 2 -1 (null) "random seed 1234")
+  (query_entity_group_kl_divergence 2 (list "x" "y") obj2_verts 2 (null) (null) (null) (null) (null) -1 (null) "random seed 1234")
  )) "\n")
 
   (print "--query_entity_distance_contributions--\n")
@@ -4207,11 +4206,11 @@
  )))
 
  (print "group kl divergence: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (query_entity_group_kl_divergence 1 (list "x" "y") (list "vert1") (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise" (true))
+  (query_entity_group_kl_divergence 1 (list "x" "y") (list "vert1") 2 (null) (null) (null) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise" (true))
  )) "\n") 
 
   (print "weighted group kl divergence: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (query_entity_group_kl_divergence 1 (list "x" "y") (list "vert1") (null) (null) (null) (null) 2.0 -1 "weight" "fixed_seed" (null) "recompute_precise" (true))
+  (query_entity_group_kl_divergence 1 (list "x" "y") (list "vert1") 2 (null) (null) (null) (null) (null) -1 "weight" "fixed_seed" (null) "recompute_precise" (true))
  )) "\n") 
 
   (print "addition conviction\n")
@@ -4237,11 +4236,11 @@
  )))
 
  (print "group kl divergence: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (query_entity_group_kl_divergence 1 (list "x" "y") (list "vert1") (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise" (false))
+  (query_entity_group_kl_divergence 1 (list "x" "y") (list "vert1") 2 (null) (null) (null) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise" (false))
  )) "\n") 
 
   (print "weighted group kl divergence: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (query_entity_group_kl_divergence 1 (list "x" "y") (list "vert1") (null) (null) (null) (null) 2.0 -1 "weight" "fixed_seed" (null) "recompute_precise" (false))
+  (query_entity_group_kl_divergence 1 (list "x" "y") (list "vert1") 2 (null) (null) (null) (null) (null) -1 "weight" "fixed_seed" (null) "recompute_precise" (false))
  )) "\n") 
 
  (print "adding a case\n")
@@ -4255,7 +4254,7 @@
  )))
  
   (print "noncyclic group kl divergence: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-   (query_entity_group_kl_divergence 1 (list "x" "y") (list "vert4") (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise")
+   (query_entity_group_kl_divergence 1 (list "x" "y") (list "vert4") 2 (null) (null) (null) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise")
  )) "\n")
 
    (print "cyclic KL: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
@@ -4267,7 +4266,7 @@
  )))
 
  (print "cyclic group kl divergence: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-   (query_entity_group_kl_divergence 1 (list "x" "y") (list "vert4") (null) (list "continuous_number_cyclic" "continuous_number") (list 3.5 (null)) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise")
+   (query_entity_group_kl_divergence 1 (list "x" "y") (list "vert4") 2 (null) (list "continuous_number_cyclic" "continuous_number") (list 3.5 (null)) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise")
  )) "\n")
 
  (print "surprisal transforms\n")

@@ -2715,7 +2715,6 @@
    )))
 
  ;TODO 24093: update tests for query_nearest_generalized_distance
- ;TODO 24093: update tests for query_entity_kl_divergences
  ;TODO 24093: update documentation js file's examples
  (print "--query_nearest_generalized_distance--\n")
  (print "cascading query_not_equals: "
@@ -3381,12 +3380,12 @@
 
  (print (compute_on_contained_entities (list
   (query_exists "object")
-  (query_entity_kl_divergences 2 (list "x" "y") (null) (null) (null) (null) (null) 2 -1 (null) "random seed 1234")
+  (query_entity_kl_divergences 2 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "random seed 1234")
  )))
 
  (print "(these values should match the values of the subset of these keys in the previous assoc):" (compute_on_contained_entities (list
   (query_exists "object")
-  (query_entity_kl_divergences 2 (list "x" "y") obj1_verts (null) (null) (null) (null) 2 -1 (null) "random seed 1234")
+  (query_entity_kl_divergences 2 (list "x" "y") obj1_verts 2 (null) (null) (null) (null) (null) -1 (null) "random seed 1234")
  )))
 
  (print "additional conviction calculations:\n" )
@@ -4185,11 +4184,11 @@
  (print "removal conviction\n")
 
  (print "kl: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (query_entity_kl_divergences  1 (list "x" "y") (null) (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise" (true))
+  (query_entity_kl_divergences  1 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise" (true))
  )))
 
  (print "weighted kl: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (query_entity_kl_divergences  1 (list "x" "y") (null) (null) (null) (null) (null) 2.0 -1 "weight" "fixed_seed" (null) "recompute_precise" (true))
+  (query_entity_kl_divergences  1 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 "weight" "fixed_seed" (null) "recompute_precise" (true))
  )))
 
   (print "convictions: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
@@ -4215,11 +4214,11 @@
   (print "addition conviction\n")
  
   (print "kl: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (query_entity_kl_divergences  1 (list "x" "y") (null) (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise" (false))
+  (query_entity_kl_divergences  1 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise" (false))
  )))
 
  (print "weighted kl: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (query_entity_kl_divergences  1 (list "x" "y") (null) (null) (null) (null) (null) 2.0 -1 "weight" "fixed_seed" (null) "recompute_precise" (false))
+  (query_entity_kl_divergences  1 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 "weight" "fixed_seed" (null) "recompute_precise" (false))
  )))
 
   (print "convictions: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
@@ -4249,7 +4248,7 @@
  ) )
  
    (print "noncyclic KL: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-   (query_entity_kl_divergences 1 (list "x" "y") (null) (null) (null) (null) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise")
+   (query_entity_kl_divergences 1 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise")
  )))
  
   (print "noncyclic group kl divergence: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
@@ -4257,7 +4256,7 @@
  )) "\n")
 
    (print "cyclic KL: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-   (query_entity_kl_divergences 1 (list "x" "y") (null) (null) (list "continuous_number_cyclic" "continuous_number") (list 3.5 (null)) (null) 2.0 -1 (null) "fixed_seed" (null) "recompute_precise")
+   (query_entity_kl_divergences 1 (list "x" "y") (null) 2 (null) (list "continuous_number_cyclic" "continuous_number") (list 3.5 (null)) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise")
  )))
 
   (print "cyclic conviction: " (compute_on_contained_entities "BoxConvictionTestContainer" (list

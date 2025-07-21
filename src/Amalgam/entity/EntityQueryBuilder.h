@@ -192,6 +192,95 @@ namespace EntityQueryBuilder
 					dist_eval.featureAttribs[i].weight = 0.0;
 			}
 		});
+
+		//TODO 24108: finish this
+		return;
+
+		//can only accumulate masses if an assoc
+		if(weights_for_feature_node == nullptr || !weights_for_feature_node->IsAssociativeArray())
+			return;
+
+		auto &weights_for_feature_node_mcn = weights_for_feature_node->GetMappedChildNodesReference();
+
+		//for all other features not directly included, accumulate to included features
+		for(auto &[sid_for_other_feature, weights_for_other_feature] : weights_matrix)
+		{
+			//skip selected feature
+			if(sid_for_other_feature == weights_selection_feature)
+				continue;
+
+			//if this feature had a nonzero weight value, then skip additional processing
+			auto entry_for_feature = weights_for_feature_node_mcn.find(sid_for_other_feature);
+			if(entry_for_feature != end(weights_for_feature_node_mcn))
+			{
+				if(EvaluableNode::ToNumber(entry_for_feature->second, 0.0) > 0.0)
+					continue;
+			}
+
+			auto node_for_feature = entry_for_feature->second;
+			if(node_for_feature == nullptr || !node_for_feature->IsAssociativeArray())
+				continue;
+			auto &node_for_feature_mcn = node_for_feature->GetMappedChildNodesReference();
+
+			//find total probability mass not already included
+			double total_mass = 0.0;
+			for(auto &[sid, weight_for_feature] : node_for_feature_mcn)
+			{
+				//the entry doesn't have nonzero mass for an active feature, then skip it
+				auto found = weights_for_feature_node_mcn.find(sid);
+				if(found == end(weights_for_feature_node_mcn))
+					continue;
+
+				if(EvaluableNode::ToNumber(found->second, 0.0) <= 0.0)
+					continue;
+
+				double weight = EvaluableNode::ToNumber(weight_for_feature, 0.0);
+				if(weight > 0)
+					total_mass += weight;
+			}
+
+			//get mass of the original excluded feature
+
+
+			//accumulate normalized probability mass of existing features
+			for(auto &[sid, weight_for_feature] : node_for_feature_mcn)
+			{
+				//the entry doesn't have nonzero mass for an active feature, then skip it
+				auto found = weights_for_feature_node_mcn.find(sid);
+				if(found == end(weights_for_feature_node_mcn))
+					continue;
+
+				if(EvaluableNode::ToNumber(found->second, 0.0) <= 0.0)
+					continue;
+
+				double weight = EvaluableNode::ToNumber(weight_for_feature, 0.0) / total_mass;
+
+
+
+			}
+		}
+
+		
+		auto &wn_mcn = weights_for_feature_node->GetMappedChildNodesReference();
+		for(size_t i = 0; i < element_names.size(); i++)
+		{
+			EvaluableNode *value_en = nullptr;
+			bool found = false;
+			auto found_node = wn_mcn.find(element_names[i]);
+			if(found_node != end(wn_mcn))
+			{
+				value_en = found_node->second;
+				found = true;
+			}
+
+			if(i < dist_eval.featureAttribs.size())
+			{
+				if(found)
+					dist_eval.featureAttribs[i].weight = EvaluableNode::ToNumber(value_en);
+				else
+					dist_eval.featureAttribs[i].weight = 1.0;
+			}
+		}
 	}
 
 	//populates the features of dist_eval based on either num_elements or element_names for each of the

@@ -719,38 +719,35 @@ public:
 	static inline void ConvertChildNodesAndStoreValue(EvaluableNode *node, std::vector<StringInternPool::StringID> &element_names,
 		size_t num_expected_elements, StoreValueFunction store_value)
 	{
-		if(node != nullptr)
+		if(node == nullptr || node->IsImmediate())
 		{
-			if(node->IsAssociativeArray())
+			//fill in with the node's value
+			for(size_t i = 0; i < num_expected_elements; i++)
+				store_value(i, true, node);
+		}
+		else if(node->IsAssociativeArray())
+		{
+			auto &mcn = node->GetMappedChildNodesReference();
+			for(size_t i = 0; i < element_names.size(); i++)
 			{
-				auto &wn_mcn = node->GetMappedChildNodesReference();
-				for(size_t i = 0; i < element_names.size(); i++)
+				EvaluableNode *value_en = nullptr;
+				bool found = false;
+				auto found_node = mcn.find(element_names[i]);
+				if(found_node != end(mcn))
 				{
-					EvaluableNode *value_en = nullptr;
-					bool found = false;
-					auto found_node = wn_mcn.find(element_names[i]);
-					if(found_node != end(wn_mcn))
-					{
-						value_en = found_node->second;
-						found = true;
-					}
-
-					store_value(i, found, value_en);
+					value_en = found_node->second;
+					found = true;
 				}
-			}
-			else if(node->IsImmediate())
-			{
-				//fill in with the node's value
-				for(size_t i = 0; i < num_expected_elements; i++)
-					store_value(i, true, node);
-			}
-			else //ordered
-			{
-				auto &node_ocn = node->GetOrderedChildNodesReference();
 
-				for(size_t i = 0; i < node_ocn.size(); i++)
-					store_value(i, true, node_ocn[i]);
+				store_value(i, found, value_en);
 			}
+		}
+		else //ordered
+		{
+			auto &node_ocn = node->GetOrderedChildNodesReference();
+
+			for(size_t i = 0; i < node_ocn.size(); i++)
+				store_value(i, true, node_ocn[i]);
 		}
 	}
 
@@ -1113,7 +1110,7 @@ enum EvaluableNodeImmediateValueType : uint8_t
 union EvaluableNodeImmediateValue
 {
 	constexpr EvaluableNodeImmediateValue()
-		: number(std::numeric_limits<double>::quiet_NaN())
+		: code(nullptr)
 	{	}
 
 	constexpr EvaluableNodeImmediateValue(double _number)
@@ -1228,7 +1225,7 @@ class EvaluableNodeImmediateValueWithType
 {
 public:
 	constexpr EvaluableNodeImmediateValueWithType()
-		: nodeType(ENIVT_NULL), nodeValue(std::numeric_limits<double>::quiet_NaN())
+		: nodeType(ENIVT_NULL), nodeValue(static_cast<EvaluableNode *>(nullptr))
 	{	}
 
 	__forceinline EvaluableNodeImmediateValueWithType(EvaluableNodeImmediateValue node_value,

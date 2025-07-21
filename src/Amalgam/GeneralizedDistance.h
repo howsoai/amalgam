@@ -24,15 +24,15 @@ public:
 		//nominal based on bool equivalence
 		FDT_NOMINAL_BOOL,
 		//nominal based on numeric equivalence
-		FDT_NOMINAL_NUMERIC,
+		FDT_NOMINAL_NUMBER,
 		//nominal based on string equivalence
 		FDT_NOMINAL_STRING,
 		//nominal based on code equivalence
 		FDT_NOMINAL_CODE,
 		//continuous without cycles, may contain nonnumeric data
-		FDT_CONTINUOUS_NUMERIC,
-		//like FDT_CONTINUOUS_NUMERIC, but has cycles
-		FDT_CONTINUOUS_NUMERIC_CYCLIC,
+		FDT_CONTINUOUS_NUMBER,
+		//like FDT_CONTINUOUS_NUMBER, but has cycles
+		FDT_CONTINUOUS_NUMBER_CYCLIC,
 		//edit distance between strings
 		FDT_CONTINUOUS_STRING,
 		//continuous measures of the number of nodes different between two sets of code
@@ -94,7 +94,7 @@ public:
 	{
 	public:
 		inline FeatureAttributes()
-			: featureType(FDT_CONTINUOUS_NUMERIC), fastApproxDeviation(false),
+			: featureType(FDT_CONTINUOUS_NUMBER), fastApproxDeviation(false),
 			featureIndex(std::numeric_limits<size_t>::max()), weight(1.0), deviation(0.0),
 			deviationReciprocal(0.0), deviationReciprocalNegative(0.0), deviationTimesThree(0.0),
 			unknownToUnknownDistanceTerm(std::numeric_limits<double>::quiet_NaN()),
@@ -112,13 +112,13 @@ public:
 		//returns true if the feature is nominal
 		__forceinline bool IsFeatureContinuous()
 		{
-			return (featureType >= GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC);
+			return (featureType >= GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER);
 		}
 
 		//returns true if the feature is cyclic
 		__forceinline bool IsFeatureCyclic()
 		{
-			return (featureType == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC);
+			return (featureType == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER_CYCLIC);
 		}
 
 		//returns true if the feature has a deviation
@@ -888,8 +888,8 @@ public:
 	__forceinline static double ComputeDifference(EvaluableNodeImmediateValue a, EvaluableNodeImmediateValue b,
 		EvaluableNodeImmediateValueType a_type, EvaluableNodeImmediateValueType b_type, GeneralizedDistanceEvaluator::FeatureDifferenceType feature_type)
 	{
-		if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC
-			|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC)
+		if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER
+			|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER_CYCLIC)
 		{
 			if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)
 				return a.number - b.number;
@@ -904,7 +904,7 @@ public:
 			return std::numeric_limits<double>::quiet_NaN();
 
 		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL
-			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC
+			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER
 			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
 			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
 		{
@@ -1123,7 +1123,7 @@ public:
 		EFDT_CONTINUOUS_UNIVERSALLY_NUMERIC,
 		//continuous without cycles, may contain nonnumeric data
 		EFDT_CONTINUOUS_NUMERIC,
-		//like FDT_CONTINUOUS_NUMERIC, but has cycles
+		//like FDT_CONTINUOUS_NUMBER, but has cycles
 		EFDT_CONTINUOUS_NUMERIC_CYCLIC,
 		//continuous or nominal numeric precomputed (cyclic or not), may contain nonnumeric data
 		EFDT_NUMERIC_INTERNED_PRECOMPUTED,

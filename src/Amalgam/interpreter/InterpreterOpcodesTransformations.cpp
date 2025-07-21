@@ -1330,7 +1330,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINS_VALUE(EvaluableNo
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	//get assoc array to look up
 	auto container = InterpretNodeForImmediateUse(ocn[0]);
 
 	if(container == nullptr)
@@ -1400,11 +1399,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_REMOVE(EvaluableNode *en, 
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	//get assoc array to look up
 	auto container = InterpretNode(ocn[0]);
 	if(container == nullptr)
 		return EvaluableNodeReference::Null();
-	//make sure it's editable
+
 	evaluableNodeManager->EnsureNodeIsModifiable(container, true);
 
 	auto node_stack = CreateOpcodeStackStateSaver(container);
@@ -1511,11 +1509,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_KEEP(EvaluableNode *en, bo
 	if(ocn.size() < 2)
 		return EvaluableNodeReference::Null();
 
-	//get assoc array to look up
 	auto container = InterpretNode(ocn[0]);
 	if(container == nullptr)
 		return EvaluableNodeReference::Null();
-	//make sure it's editable
+
 	evaluableNodeManager->EnsureNodeIsModifiable(container, true);
 
 	auto node_stack = CreateOpcodeStackStateSaver(container);

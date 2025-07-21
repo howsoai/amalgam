@@ -169,10 +169,11 @@ namespace EntityQueryBuilder
 	{
 		dist_eval.featureAttribs.resize(num_elements);
 
-		//TODO 24093: account for weights_selection_feature
-		//get weights
-		EvaluableNode::ConvertChildNodesAndStoreValue(weights_node, element_names, num_elements,
-			[&dist_eval](size_t i, bool found, EvaluableNode *en) {
+		if(weights_selection_feature == string_intern_pool.NOT_A_STRING_ID)
+		{
+			//get weights
+			EvaluableNode::ConvertChildNodesAndStoreValue(weights_node, element_names, num_elements,
+				[&dist_eval](size_t i, bool found, EvaluableNode *en) {
 				if(i < dist_eval.featureAttribs.size())
 				{
 					if(found)
@@ -181,6 +182,11 @@ namespace EntityQueryBuilder
 						dist_eval.featureAttribs[i].weight = 1.0;
 				}
 			});
+		}
+		else //use weight selection feature
+		{
+			//TODO 24093: finish this
+		}
 
 		//get type
 		EvaluableNode::ConvertChildNodesAndStoreValue(distance_types_node, element_names, num_elements,

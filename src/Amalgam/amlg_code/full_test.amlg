@@ -490,7 +490,6 @@
  (print "38 " (generalized_distance (list 1 1) (list 2 2) 1 (list 1 1) (list "continuous_number" "continuous_number") (null) (list 0.5 0.5) (null) (null) (true) ) "\n" )
  (print "39 " (generalized_distance (list 1 1) (list 2 2) 1 (list 1 1) (list "nominal_number" "nominal_number") (list 2 2) (list 0.25 0.25) (null) (null) (true) ) "\n" )
 
- ;TODO 24093: update documentation js file's examples
  ;TODO 24093: test weights_selection_feature
    (print "40 " (generalized_distance
 			    (list "b") ;vector 1

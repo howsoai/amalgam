@@ -160,6 +160,67 @@ namespace EntityQueryBuilder
 		}
 	}
 
+	//populates the weight attribute for the corresponding features in dist_eval
+	//requires that weights_node is an assoc
+	//distributes the 
+	inline void PopulateWeightsFromSelectionFeature(GeneralizedDistanceEvaluator &dist_eval, EvaluableNode *weights_node,
+		size_t num_elements, std::vector<StringInternPool::StringID> &element_names,
+		StringInternPool::StringID weights_selection_feature)
+	{
+		auto &weights_for_feature_mcn = weights_node->GetMappedChildNodesReference();
+		auto weights_for_feature_node_entry = weights_for_feature_mcn.find(weights_selection_feature);
+
+		//if entry not found, just default to 1/n
+		if(weights_for_feature_node_entry == end(weights_for_feature_mcn))
+		{
+			double even_weight = 1.0 / dist_eval.featureAttribs.size();
+			for(auto &feat : dist_eval.featureAttribs)
+				feat.weight = even_weight;
+			return;
+		}
+
+		EvaluableNode *weights_for_feature_node = weights_for_feature_node_entry->second;
+		//if not an assoc, then populate this row the normal way
+		if(weights_for_feature_node == nullptr || !weights_node->IsAssociativeArray())
+		{
+			EvaluableNode::ConvertChildNodesAndStoreValue(weights_for_feature_node, element_names, num_elements,
+				[&dist_eval](size_t i, bool found, EvaluableNode *en) {
+				if(i < dist_eval.featureAttribs.size())
+				{
+					if(found)
+						dist_eval.featureAttribs[i].weight = EvaluableNode::ToNumber(en, 0.0);
+					else
+						dist_eval.featureAttribs[i].weight = 1.0;
+				}
+			});
+			return;
+		}
+
+
+		//TODO 24093: finish this
+
+		auto &wn_mcn = weights_for_feature_node->GetMappedChildNodesReference();
+		for(size_t i = 0; i < element_names.size(); i++)
+		{
+			EvaluableNode *value_en = nullptr;
+			bool found = false;
+			auto found_node = wn_mcn.find(element_names[i]);
+			if(found_node != end(wn_mcn))
+			{
+				value_en = found_node->second;
+				found = true;
+			}
+
+			if(i < dist_eval.featureAttribs.size())
+			{
+				if(found)
+					dist_eval.featureAttribs[i].weight = EvaluableNode::ToNumber(value_en);
+				else
+					dist_eval.featureAttribs[i].weight = 1.0;
+			}
+		}
+	}
+
 	//populates the features of dist_eval based on either num_elements or element_names for each of the
 	// four different attribute parameters based on its type (using num_elements if list or immediate, element_names if assoc)
 	inline void PopulateDistanceFeatureParameters(GeneralizedDistanceEvaluator &dist_eval,
@@ -169,7 +230,12 @@ namespace EntityQueryBuilder
 	{
 		dist_eval.featureAttribs.resize(num_elements);
 
-		if(weights_selection_feature == string_intern_pool.NOT_A_STRING_ID)
+		if(weights_selection_feature != string_intern_pool.NOT_A_STRING_ID && weights_node != nullptr
+			&& weights_node->IsAssociativeArray())
+		{
+			PopulateWeightsFromSelectionFeature(dist_eval, weights_node, num_elements, element_names, weights_selection_feature);
+		}
+		else
 		{
 			//get weights
 			EvaluableNode::ConvertChildNodesAndStoreValue(weights_node, element_names, num_elements,
@@ -177,15 +243,11 @@ namespace EntityQueryBuilder
 				if(i < dist_eval.featureAttribs.size())
 				{
 					if(found)
-						dist_eval.featureAttribs[i].weight = EvaluableNode::ToNumber(en);
+						dist_eval.featureAttribs[i].weight = EvaluableNode::ToNumber(en, 1.0);
 					else
 						dist_eval.featureAttribs[i].weight = 1.0;
 				}
 			});
-		}
-		else //use weight selection feature
-		{
-			//TODO 24093: finish this
 		}
 
 		//get type

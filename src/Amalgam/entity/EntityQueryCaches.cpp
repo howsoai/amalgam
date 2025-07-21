@@ -908,7 +908,7 @@ void EntityQueryCaches::GetMatchingEntitiesViaSamplingWithReplacement(EntityQuer
 	if(update_matching_entities)
 		matching_entities.clear();
 
-	NormalizeProbabilities(probabilities);
+	NormalizeVector(probabilities, 1.0);
 
 	//if not sampling many, then brute force it
 	if(num_to_sample < 10)

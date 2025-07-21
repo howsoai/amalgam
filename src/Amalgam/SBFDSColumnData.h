@@ -191,19 +191,19 @@ public:
 	{
 		switch(feature_attribs.featureType)
 		{
-		case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMERIC:
+		case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER:
 		case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
 		case GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE:
 			return 1.0 - 1.0 / (std::max<size_t>(1, GetNumValidDataElements()) + 0.5);
 
-		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC:
+		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER:
 			if(sortedNumberValueEntries.size() <= 1)
 				return 0.0;
 
 			return sortedNumberValueEntries.rbegin()->second.value.number
 				- sortedNumberValueEntries.begin()->second.value.number;
 
-		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMERIC_CYCLIC:
+		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER_CYCLIC:
 			//maximum is the other side of the cycle
 			return feature_attribs.typeAttributes.maxCyclicDifference / 2;
 

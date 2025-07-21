@@ -913,6 +913,73 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DOT_PRODUCT(EvaluableNode 
 	return AllocReturn(dot_product, immediate_result);
 }
 
+EvaluableNodeReference Interpreter::InterpretNode_ENT_NORMALIZE(EvaluableNode *en, bool immediate_result)
+{
+	auto &ocn = en->GetOrderedChildNodes();
+	if(ocn.size() < 1)
+		return EvaluableNodeReference::Null();
+
+	double p_value = 1.0;
+	if(ocn.size() > 1)
+	{
+		double num_value = InterpretNodeIntoNumberValue(ocn[1]);
+		if(!FastIsNaN(num_value))
+			p_value = num_value;
+	}
+
+	auto container = InterpretNode(ocn[0]);
+	if(EvaluableNode::IsNull(container) || container->IsImmediate())
+		return EvaluableNodeReference::Null();
+
+	bool allocate_child_nodes = (!container.unique);
+	evaluableNodeManager->EnsureNodeIsModifiable(container, false, EvaluableNodeManager::ENMM_REMOVE_ALL);
+
+	//ensure it's a list
+	if(container->IsOrderedArray())
+		container->SetType(ENT_LIST, evaluableNodeManager, false);
+	container->SetIsIdempotent(true);
+	container->SetNeedCycleCheck(false);
+
+	if(container->IsAssociativeArray())
+	{
+		NormalizeVector(container->GetMappedChildNodesReference(), p_value,
+			[](const auto &pair) { return EvaluableNode::ToNumber(pair.second); },
+			[this, allocate_child_nodes](auto &pair, double new_val)
+			{
+				if(allocate_child_nodes || pair.second == nullptr)
+				{
+					pair.second = evaluableNodeManager->AllocNode(new_val);
+				}
+				else
+				{
+					pair.second->SetTypeViaNumberValue(new_val);
+					pair.second->ClearMetadata();
+				}
+			}
+		);
+	}
+	else //container->IsOrderedArray()
+	{
+		NormalizeVector(container->GetOrderedChildNodesReference(), p_value,
+			[](const auto &cn) { return EvaluableNode::ToNumber(cn); },
+			[this, allocate_child_nodes](auto &cn, double new_val)
+			{
+				if(allocate_child_nodes || cn == nullptr)
+				{
+					cn = evaluableNodeManager->AllocNode(new_val);
+				}
+				else
+				{
+					cn->SetTypeViaNumberValue(new_val);
+					cn->ClearMetadata();
+				}
+			}
+		);
+	}
+
+	return container;
+}
+
 //builds a vector of the values in the node, using ordered or mapped child nodes as appropriate
 // if node is mapped child nodes, it will use id_order to order populate out and use default_value if any given id is not found
 inline void GetChildNodesAsENImmediateValueArray(EvaluableNode *node, std::vector<StringInternPool::StringID> &id_order,
@@ -965,46 +1032,68 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 {
 	auto &ocn = en->GetOrderedChildNodes();
 
-	if(ocn.size() < 6)
+	if(ocn.size() < 1)
 		return EvaluableNodeReference::Null();
 
 	auto node_stack = CreateOpcodeStackStateSaver();
 
-	//get weights list if applicable
-	auto weights_node = InterpretNodeForImmediateUse(ocn[0]);
-	if(weights_node != nullptr)
-		node_stack.PushEvaluableNode(weights_node);
-
-	//get distance types if applicable
-	auto distance_types_node = InterpretNodeForImmediateUse(ocn[1]);
-	if(distance_types_node != nullptr)
-		node_stack.PushEvaluableNode(distance_types_node);
-
-	//get feature attributes if applicable
-	auto attributes_node = InterpretNodeForImmediateUse(ocn[2]);
-	if(attributes_node != nullptr)
-		node_stack.PushEvaluableNode(attributes_node);
-
-	//get deviations if applicable
-	auto deviations_node = InterpretNodeForImmediateUse(ocn[3]);
-	if(deviations_node != nullptr)
-		node_stack.PushEvaluableNode(deviations_node);
-
-	GeneralizedDistanceEvaluator dist_eval;
-	dist_eval.pValue = InterpretNodeIntoNumberValue(ocn[4]);
-
 	//get location
-	auto location_node = InterpretNodeForImmediateUse(ocn[5]);
+	auto location_node = InterpretNodeForImmediateUse(ocn[0]);
 	if(location_node != nullptr)
 		node_stack.PushEvaluableNode(location_node);
 
 	//get origin if applicable
 	EvaluableNodeReference origin_node = EvaluableNodeReference::Null();
-	if(ocn.size() > 6)
+	if(ocn.size() > 1)
 	{
-		origin_node = InterpretNodeForImmediateUse(ocn[6]);
+		origin_node = InterpretNodeForImmediateUse(ocn[1]);
 		if(origin_node != nullptr)
 			node_stack.PushEvaluableNode(origin_node);
+	}
+
+	GeneralizedDistanceEvaluator dist_eval;
+	dist_eval.pValue = 1;
+	if(ocn.size() > 2)
+	{
+		double val = InterpretNodeIntoNumberValue(ocn[2]);
+		if(!FastIsNaN(val))
+			dist_eval.pValue = val;
+	}
+
+	//get weights list if applicable
+	EvaluableNodeReference weights_node;
+	if(ocn.size() > 3)
+	{
+		weights_node = InterpretNodeForImmediateUse(ocn[3]);
+		if(weights_node != nullptr)
+			node_stack.PushEvaluableNode(weights_node);
+	}
+
+	//get distance types if applicable
+	EvaluableNodeReference distance_types_node;
+	if(ocn.size() > 4)
+	{
+		distance_types_node = InterpretNodeForImmediateUse(ocn[4]);
+		if(distance_types_node != nullptr)
+			node_stack.PushEvaluableNode(distance_types_node);
+	}
+
+	//get feature attributes if applicable
+	EvaluableNodeReference attributes_node;
+	if(ocn.size() > 5)
+	{
+		attributes_node = InterpretNodeForImmediateUse(ocn[5]);
+		if(attributes_node != nullptr)
+			node_stack.PushEvaluableNode(attributes_node);
+	}
+
+	//get deviations if applicable
+	EvaluableNodeReference deviations_node;
+	if(ocn.size() > 6)
+	{
+		deviations_node = InterpretNodeForImmediateUse(ocn[6]);
+		if(deviations_node != nullptr)
+			node_stack.PushEvaluableNode(deviations_node);
 	}
 
 	//get value_names if applicable
@@ -1028,9 +1117,20 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 		evaluableNodeManager->FreeNodeTreeIfPossible(value_names_node);
 	}
 
-	dist_eval.computeSurprisal = false;
+	EvaluableNodeReference weights_selection_feature_node;
+	StringInternPool::StringID weights_selection_feature = string_intern_pool.NOT_A_STRING_ID;
 	if(ocn.size() > 8)
-		dist_eval.computeSurprisal = InterpretNodeIntoBoolValue(ocn[8], false);
+	{
+		weights_selection_feature_node = InterpretNodeForImmediateUse(ocn[8]);
+		if(weights_selection_feature_node != nullptr)
+			node_stack.PushEvaluableNode(weights_selection_feature_node);
+
+		weights_selection_feature = EvaluableNode::ToStringIDIfExists(weights_selection_feature_node);
+	}
+
+	dist_eval.computeSurprisal = false;
+	if(ocn.size() > 9)
+		dist_eval.computeSurprisal = InterpretNodeIntoBoolValue(ocn[9], false);
 
 	//get the origin and destination
 	std::vector<EvaluableNodeImmediateValue> location;
@@ -1049,13 +1149,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(Evalu
 	origin_types.resize(num_elements, ENIVT_NUMBER);
 
 	EntityQueryBuilder::PopulateDistanceFeatureParameters(dist_eval, num_elements, value_names,
-		weights_node, distance_types_node, attributes_node, deviations_node);
+		weights_node, weights_selection_feature, distance_types_node, attributes_node, deviations_node);
 
 	//done with all values
 	evaluableNodeManager->FreeNodeTreeIfPossible(weights_node);
 	evaluableNodeManager->FreeNodeTreeIfPossible(distance_types_node);
 	evaluableNodeManager->FreeNodeTreeIfPossible(attributes_node);
 	evaluableNodeManager->FreeNodeTreeIfPossible(deviations_node);
+	evaluableNodeManager->FreeNodeTreeIfPossible(weights_selection_feature_node);
 
 	//convert unknown differences into unknown distance terms
 	for(size_t i = 0; i < num_elements; i++)

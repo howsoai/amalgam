@@ -117,6 +117,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_INDEX_MIN, "index_min");
 	EmplaceNodeTypeString(ENT_GENERALIZED_DISTANCE, "generalized_distance");
 	EmplaceNodeTypeString(ENT_DOT_PRODUCT, "dot_product");
+	EmplaceNodeTypeString(ENT_NORMALIZE, "normalize");
 	EmplaceNodeTypeString(ENT_ENTROPY, "entropy");
 
 	//list manipulation
@@ -371,11 +372,11 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_system, "system");
 
 	//distance types
-	EmplaceStaticString(ENBISI_nominal_numeric, "nominal_numeric");
+	EmplaceStaticString(ENBISI_nominal_number, "nominal_number");
 	EmplaceStaticString(ENBISI_nominal_string, "nominal_string");
 	EmplaceStaticString(ENBISI_nominal_code, "nominal_code");
-	EmplaceStaticString(ENBISI_continuous_numeric, "continuous_numeric");
-	EmplaceStaticString(ENBISI_continuous_numeric_cyclic, "continuous_numeric_cyclic");
+	EmplaceStaticString(ENBISI_continuous_number, "continuous_number");
+	EmplaceStaticString(ENBISI_continuous_number_cyclic, "continuous_number_cyclic");
 	EmplaceStaticString(ENBISI_continuous_string, "continuous_string");
 	EmplaceStaticString(ENBISI_continuous_code, "continuous_code");
 

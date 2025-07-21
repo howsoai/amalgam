@@ -167,11 +167,11 @@ namespace EntityQueryBuilder
 		size_t num_elements, std::vector<StringInternPool::StringID> &element_names,
 		StringInternPool::StringID weights_selection_feature)
 	{
-		auto &weights_for_feature_mcn = weights_node->GetMappedChildNodesReference();
-		auto weights_for_feature_node_entry = weights_for_feature_mcn.find(weights_selection_feature);
+		auto &weights_matrix = weights_node->GetMappedChildNodesReference();
+		auto weights_for_feature_node_entry = weights_matrix.find(weights_selection_feature);
 
 		//if entry not found, just default to 1/n
-		if(weights_for_feature_node_entry == end(weights_for_feature_mcn))
+		if(weights_for_feature_node_entry == end(weights_matrix))
 		{
 			double even_weight = 1.0 / dist_eval.featureAttribs.size();
 			for(auto &feat : dist_eval.featureAttribs)
@@ -180,45 +180,18 @@ namespace EntityQueryBuilder
 		}
 
 		EvaluableNode *weights_for_feature_node = weights_for_feature_node_entry->second;
-		//if not an assoc, then populate this row the normal way
-		if(weights_for_feature_node == nullptr || !weights_node->IsAssociativeArray())
-		{
-			EvaluableNode::ConvertChildNodesAndStoreValue(weights_for_feature_node, element_names, num_elements,
-				[&dist_eval](size_t i, bool found, EvaluableNode *en) {
-				if(i < dist_eval.featureAttribs.size())
-				{
-					if(found)
-						dist_eval.featureAttribs[i].weight = EvaluableNode::ToNumber(en, 0.0);
-					else
-						dist_eval.featureAttribs[i].weight = 1.0;
-				}
-			});
-			return;
-		}
 
-
-		//TODO 24093: finish this
-
-		auto &wn_mcn = weights_for_feature_node->GetMappedChildNodesReference();
-		for(size_t i = 0; i < element_names.size(); i++)
-		{
-			EvaluableNode *value_en = nullptr;
-			bool found = false;
-			auto found_node = wn_mcn.find(element_names[i]);
-			if(found_node != end(wn_mcn))
-			{
-				value_en = found_node->second;
-				found = true;
-			}
-
+		//populate weights the normal way from the particular feature's data
+		EvaluableNode::ConvertChildNodesAndStoreValue(weights_for_feature_node, element_names, num_elements,
+			[&dist_eval](size_t i, bool found, EvaluableNode *en) {
 			if(i < dist_eval.featureAttribs.size())
 			{
 				if(found)
-					dist_eval.featureAttribs[i].weight = EvaluableNode::ToNumber(value_en);
+					dist_eval.featureAttribs[i].weight = EvaluableNode::ToNumber(en, 0.0);
 				else
-					dist_eval.featureAttribs[i].weight = 1.0;
+					dist_eval.featureAttribs[i].weight = 0.0;
 			}
-		}
+		});
 	}
 
 	//populates the features of dist_eval based on either num_elements or element_names for each of the

@@ -196,3 +196,175 @@ protected:
 	int64_t absoluteIntegerExponent;
 	double fractionPartOfExponent;
 };
+
+//Normalizes the vector; if any are infinity, it will equally uniformly normalize over just the infinite values
+//p is the Lebesque order, where 1 is Manhattan / probability, 2 is Euclidean, etc.
+template<typename ContainerType, typename GetterFunc, typename SetterFunc>
+inline void NormalizeVector(ContainerType &vec, double p, GetterFunc getter, SetterFunc setter)
+{
+	//fast path for p = 1
+	if(p == 1.0)
+	{
+		double total = 0.0;
+		size_t inf_count = 0;
+		for(auto &item : vec)
+		{
+			double v = getter(item);
+			if(v == std::numeric_limits<double>::infinity())
+				inf_count++;
+			else
+				total += std::abs(v);
+		}
+
+		if(inf_count > 0)
+		{
+			for(auto &item : vec)
+			{
+				double v = getter(item);
+				if(v != std::numeric_limits<double>::infinity())
+					setter(item, 0.0);
+				else
+					setter(item, 1.0);
+			}
+			double norm = static_cast<double>(inf_count);
+			for(auto &item : vec)
+			{
+				double v = getter(item);
+				setter(item, v / norm);
+			}
+		}
+		else
+		{
+			if(total <= 0.0)
+			{
+				for(auto &item : vec)
+					setter(item, 0.0);
+			}
+			else
+			{
+				for(auto &item : vec)
+				{
+					double v = getter(item);
+					setter(item, v / total);
+				}
+			}
+		}
+		return;
+	}
+
+	//fast path for p = 2
+	if(p == 2.0)
+	{
+		double total = 0.0;
+		size_t inf_count = 0;
+		for(auto &item : vec)
+		{
+			double v = getter(item);
+			if(v == std::numeric_limits<double>::infinity())
+				inf_count++;
+			else
+				total += v * v;
+		}
+
+		if(inf_count > 0)
+		{
+			for(auto &item : vec)
+			{
+				double v = getter(item);
+				if(v != std::numeric_limits<double>::infinity())
+					setter(item, 0.0);
+				else
+					setter(item, 1.0);
+			}
+			double norm = std::sqrt(static_cast<double>(inf_count));
+			for(auto &item : vec)
+			{
+				double v = getter(item);
+				setter(item, v / norm);
+			}
+		}
+		else
+		{
+			if(total <= 0.0)
+			{
+				for(auto &item : vec)
+					setter(item, 0.0);
+			}
+			else
+			{
+				double norm = std::sqrt(total);
+				for(auto &item : vec)
+				{
+					double v = getter(item);
+					setter(item, v / norm);
+				}
+			}
+		}
+		return;
+	}
+
+	//generic path for other p values
+	double total = 0.0;
+	size_t inf_count = 0;
+	for(auto &item : vec)
+	{
+		double v = getter(item);
+		if(v == std::numeric_limits<double>::infinity())
+			inf_count++;
+		else
+			total += std::pow(std::abs(v), p);
+	}
+
+	if(inf_count > 0)
+	{
+		for(auto &item : vec)
+		{
+			double v = getter(item);
+			if(v != std::numeric_limits<double>::infinity())
+				setter(item, 0.0);
+			else
+				setter(item, 1.0);
+		}
+		double norm = std::pow(static_cast<double>(inf_count), 1.0 / p);
+		for(auto &item : vec)
+		{
+			double v = getter(item);
+			setter(item, v / norm);
+		}
+	}
+	else
+	{
+		if(total <= 0.0)
+		{
+			for(auto &item : vec)
+				setter(item, 0.0);
+		}
+		else
+		{
+			double norm = std::pow(total, 1.0 / p);
+			for(auto &item : vec)
+			{
+				double v = getter(item);
+				setter(item, v / norm);
+			}
+		}
+	}
+}
+
+template<typename ContainerType>
+inline void NormalizeVector(ContainerType &vec, double p)
+{
+	NormalizeVector(vec, p,
+		[](auto &v) { return v; },
+		[](auto &v, double new_val) { v = new_val; }
+	);
+}
+
+template<typename MapType>
+inline void NormalizeVectorAsMap(MapType &map, double p)
+{
+	NormalizeVector(map, p,
+		[](const auto &pair) { return pair.second; },
+		[](auto &pair, double new_val) { pair.second = new_val; }
+	);
+}

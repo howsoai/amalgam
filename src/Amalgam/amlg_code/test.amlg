@@ -14,7 +14,7 @@
 				(list "continuous_number") ;types
 				(null) ;attributes
 				0.5 ;deviations
-				["A2" "A3"] ;names
+				["A2" "A3" "B"] ;names
 				"sum" ;weights_selection_feature
 				(true) ;surprisal
 				) "\n"

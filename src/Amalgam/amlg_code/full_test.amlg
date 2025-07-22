@@ -504,8 +504,8 @@
 						c (assoc a 0.996539792	b 0.996539792	c 0.006920415)
 					)
 				) ;deviations
-				(null) ;weights_selection_feature
 				(null) ;names
+				(null) ;weights_selection_feature
 				(true) ;surprisal
 				) "\n"
 	)
@@ -524,8 +524,8 @@
 						c (assoc a 0.996539792	b 0.996539792	c 0.006920415)
 					)
 				) ;deviations
-				(null) ;weights_selection_feature				
 				(null) ;names
+				(null) ;weights_selection_feature
 				(true) ;surprisal
 				) "\n"
 	)
@@ -544,8 +544,8 @@
 						c (assoc a 0.996539792	b 0.996539792	c 0.006920415)
 					)
 				) ;deviations
-				(null) ;weights_selection_feature				
 				(null) ;names
+				(null) ;weights_selection_feature
 				(true) ;surprisal
 				) "\n"
 	)
@@ -560,8 +560,8 @@
 				(list
 						0.2
 				) ;deviations
-				(null) ;weights_selection_feature
 				(null) ;names
+				(null) ;weights_selection_feature
 				(true) ;surprisal
 				) "\n"
 	)
@@ -582,8 +582,8 @@
 						0.2
 					)
 				) ;deviations
-				(null) ;weights_selection_feature
 				(null) ;names
+				(null) ;weights_selection_feature
 				(true) ;surprisal
 				) "\n"
 	)
@@ -607,8 +607,8 @@
 						0.2
 					)
 				) ;deviations
-				(null) ;weights_selection_feature
 				(null) ;names
+				(null) ;weights_selection_feature
 				(true) ;surprisal
 				) "\n"
 	)

@@ -1425,20 +1425,20 @@ var data = [
 	},
 
 	{
-		"parameter" : "contained_entities [id_path containing_entity] [list conditions]",
+		"parameter" : "contained_entities [id_path containing_entity | query|list condition1] [query|list condition2] ...[ query|list conditionN]",
 		"output" : "list of string",
 		"permissions" : "entity",
 		"new value" : "conditional",
-		"description" : "Returns a list of strings of ids of entities contained in the entity specified by id_path or current entity if id_path is ommitted.  The optional list is a conjunction of conditions that are required in order for a contained entity to be returned.  The conditions are all of the commands that begin with query_.",
+		"description" : "Returns a list of strings of ids of entities contained in the entity specified by id_path or current entity if containing_entity is omitted.  The parameters of condition1 through conditionN are query conditions, and they may be any of the query opcodes or may be a list of query opcodes (beginning with query_), where each condition will be executed in order.",
 		"example" : "(create_entities (list \"TestEntity\" \"Child\")\n  (lambda (null ##TargetLabel 3))\n) \n\n (contained_entities \"TestEntity\" (list\n  (query_exists \"TargetLabel\")\n)) \n\n ; For more examples see the individual entries for each query."
 	},
 
 	{
-		"parameter" : "compute_on_contained_entities [id_path containing_entity] [list conditions]",
+		"parameter" : "compute_on_contained_entities [id_path containing_entity | query|list condition1] [query|list condition2] ...[ query|list conditionN]",
 		"output" : "*",
 		"permissions" : "entity",
 		"new value" : "conditional",
-		"description" : "Performs queries like contained_entities but returns a value or set of values appropriate for the last query in conditions.  The parameter conditions is a conjunction of conditions that are required in order for the final query to be evaluated.  Each entity in the list is a query.  The conditions are all of the commands that begin with query_.  If the last query does not return anything, then it will just return the matching entities.",
+		"description" : "Performs queries like contained_entities but returns a value or set of values appropriate for the last query in conditions.  The parameters of condition1 through conditionN are query conditions, and they may be any of the query opcodes or may be a list of query opcodes (beginning with query_), where each condition will be executed in order.  If the last query does not return anything, then it will just return the matching entities.",
 		"example" : "(create_entities (list \"TestEntity\" \"Child\")\n  (lambda (null ##TargetLabel 3))\n) \n\n (compute_on_contained_entities \"TestEntity\" (list\n  (query_exists \"TargetLabel\")\n)) \n\n ; For more examples see the individual entries for each query."
 	},
 

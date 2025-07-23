@@ -1515,13 +1515,6 @@ protected:
 	std::vector<EntityWriteListener *> *writeListeners;
 	PrintListener *printListener;
 
-	//buffer to use as for parsing and querying conditions
-	//one per thread to save memory on Interpreter objects
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	thread_local
-#endif
-		static std::vector<EntityQueryCondition> conditionsBuffer;
-
 	//the interpreter that called this one -- used for debugging
 	Interpreter *callingInterpreter;
 

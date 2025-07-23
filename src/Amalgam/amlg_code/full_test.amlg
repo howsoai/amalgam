@@ -504,8 +504,8 @@
 						c (assoc a 0.996539792	b 0.996539792	c 0.006920415)
 					)
 				) ;deviations
-				(null) ;weights_selection_feature
 				(null) ;names
+				(null) ;weights_selection_feature
 				.true ;surprisal
 				) "\n"
 	)
@@ -524,8 +524,8 @@
 						c (assoc a 0.996539792	b 0.996539792	c 0.006920415)
 					)
 				) ;deviations
-				(null) ;weights_selection_feature				
 				(null) ;names
+				(null) ;weights_selection_feature
 				.true ;surprisal
 				) "\n"
 	)
@@ -544,8 +544,8 @@
 						c (assoc a 0.996539792	b 0.996539792	c 0.006920415)
 					)
 				) ;deviations
-				(null) ;weights_selection_feature				
 				(null) ;names
+				(null) ;weights_selection_feature
 				.true ;surprisal
 				) "\n"
 	)
@@ -560,8 +560,8 @@
 				(list
 						0.2
 				) ;deviations
-				(null) ;weights_selection_feature
 				(null) ;names
+				(null) ;weights_selection_feature
 				.true ;surprisal
 				) "\n"
 	)
@@ -582,8 +582,8 @@
 						0.2
 					)
 				) ;deviations
-				(null) ;weights_selection_feature
 				(null) ;names
+				(null) ;weights_selection_feature
 				.true ;surprisal
 				) "\n"
 	)
@@ -607,8 +607,28 @@
 						0.2
 					)
 				) ;deviations
-				(null) ;weights_selection_feature
 				(null) ;names
+				(null) ;weights_selection_feature
+				.true ;surprisal
+				) "\n"
+	)
+
+	  (print "46 " (generalized_distance
+			    {A1 1 A2 1 A3 1 B 1} ;vector 1
+				{A1 2 A2 2 A3 2 B 2} ;vector 2
+				1 ;p
+				{
+					A1	{ A1 0				A2 0.372145984	A3 0.370497589	B 0.082723928	sum 0.174632499}
+					A2	{ A1 0.371518433	A2 0			A3 0.370520996	B 0.082668725	sum 0.175291846}
+					A3	{ A1 0.370319458	A2 0.370968492	A3 0			B 0.085480882	sum 0.173231167}
+					B	{ A1 0.061363751	A2 0.049512288	A3 0.05628626	B 0				sum 0.832837701}
+					sum	{ A1 0.114003407	A2 0.106173002	A3 0.100958636	B 0.678864956	sum 0}
+				} ;weights
+				(list "continuous_number") ;types
+				(null) ;attributes
+				0.5 ;deviations
+				["A2" "A3" "B"] ;names
+				"sum" ;weights_selection_feature
 				.true ;surprisal
 				) "\n"
 	)

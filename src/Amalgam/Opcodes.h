@@ -1,6 +1,7 @@
 #pragma once
 
 //project headers:
+#include "FastMath.h"
 #include "StringInternPool.h"
 
 //opcodes / commands / operations in Amalgam
@@ -564,31 +565,31 @@ constexpr OpcodeNewValueReturnType GetOpcodeNewValueReturnType(EvaluableNodeType
 	}
 }
 
-constexpr bool IsEvaluableNodeTypeValid(EvaluableNodeType t)
+__forceinline constexpr bool IsEvaluableNodeTypeValid(EvaluableNodeType t)
 {
 	return (t < NUM_VALID_ENT_OPCODES);
 }
 
 //returns true if the opcode uses an associative array as parameters. If false, then a regular kind of list
-constexpr bool DoesOpcodeUseAssocParameters(EvaluableNodeType t)
+__forceinline constexpr bool DoesOpcodeUseAssocParameters(EvaluableNodeType t)
 {
 	return GetOpcodeOrderedChildNodeType(t) == OCNT_PAIRED;
 }
 
 //returns true if t is an immediate value
-constexpr bool IsEvaluableNodeTypeImmediate(EvaluableNodeType t)
+__forceinline constexpr bool IsEvaluableNodeTypeImmediate(EvaluableNodeType t)
 {
 	return (t == ENT_BOOL || t == ENT_NUMBER || t == ENT_STRING || t == ENT_SYMBOL);
 }
 
-//returns true if t uses bool data
-constexpr bool DoesEvaluableNodeTypeUseBoolData(EvaluableNodeType t)
+//returns true if t uses string data
+__forceinline constexpr bool DoesEvaluableNodeTypeUseStringData(EvaluableNodeType t)
 {
 	return (t == ENT_BOOL);
 }
 
 //returns true if t uses number data
-constexpr bool DoesEvaluableNodeTypeUseNumberData(EvaluableNodeType t)
+__forceinline constexpr bool DoesEvaluableNodeTypeUseNumberData(EvaluableNodeType t)
 {
 	return (t == ENT_NUMBER);
 }
@@ -600,7 +601,7 @@ constexpr bool DoesEvaluableNodeTypeUseStringData(EvaluableNodeType t)
 }
 
 //returns true if t uses association data
-constexpr bool DoesEvaluableNodeTypeUseAssocData(EvaluableNodeType t)
+__forceinline constexpr bool DoesEvaluableNodeTypeUseAssocData(EvaluableNodeType t)
 {
 	return (t == ENT_ASSOC);
 }

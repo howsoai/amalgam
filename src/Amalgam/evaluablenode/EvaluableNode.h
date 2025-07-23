@@ -137,7 +137,7 @@ public:
 	//initializes to ENT_UNINITIALIZED
 	//useful to mark a node in a hold state before it's ready so it isn't counted as ENT_DEALLOCATED
 	//but also such that the fields don't need to be initialized or cleared
-	constexpr void InitializeUnallocated()
+	__forceinline constexpr void InitializeUnallocated()
 	{
 		type = ENT_UNINITIALIZED;
 	}
@@ -454,7 +454,7 @@ public:
 	}
 
 	//returns true if the node is currently deallocated
-	constexpr bool IsNodeDeallocated()
+	__forceinline constexpr bool IsNodeDeallocated()
 	{
 		return (type == ENT_DEALLOCATED);
 	}
@@ -583,49 +583,49 @@ public:
 	void AppendComments(const std::string &comments);
 
 	//returns true if the EvaluableNode is marked with preference for concurrency
-	constexpr bool GetConcurrency()
+	__forceinline constexpr bool GetConcurrency()
 	{
 		return attributes.individualAttribs.concurrent;
 	}
 
 	//sets the EvaluableNode's preference for concurrency
-	constexpr void SetConcurrency(bool concurrent)
+	__forceinline constexpr void SetConcurrency(bool concurrent)
 	{
 		attributes.individualAttribs.concurrent = concurrent;
 	}
 
 	//returns true if the EvaluableNode and all its dependents need to be checked for cycles
-	constexpr bool GetNeedCycleCheck()
+	__forceinline constexpr bool GetNeedCycleCheck()
 	{
 		return attributes.individualAttribs.needCycleCheck;
 	}
 
 	//sets the EvaluableNode's needCycleCheck flag
-	constexpr void SetNeedCycleCheck(bool need_cycle_check)
+	__forceinline constexpr void SetNeedCycleCheck(bool need_cycle_check)
 	{
 		attributes.individualAttribs.needCycleCheck = need_cycle_check;
 	}
 
 	//returns true if the EvaluableNode and all its dependents are idempotent
-	constexpr bool GetIsIdempotent()
+	__forceinline constexpr bool GetIsIdempotent()
 	{
 		return attributes.individualAttribs.isIdempotent;
 	}
 
 	//sets the EvaluableNode's idempotentcy flag
-	constexpr void SetIsIdempotent(bool is_idempotent)
+	__forceinline constexpr void SetIsIdempotent(bool is_idempotent)
 	{
 		attributes.individualAttribs.isIdempotent = is_idempotent;
 	}
 
 	//returns whether this node has been marked as known to be currently in use
-	constexpr bool GetKnownToBeInUse()
+	__forceinline constexpr bool GetKnownToBeInUse()
 	{
 		return attributes.individualAttribs.knownToBeInUse;
 	}
 
 	//sets whether this node is currently known to be in use
-	constexpr void SetKnownToBeInUse(bool in_use)
+	__forceinline constexpr void SetKnownToBeInUse(bool in_use)
 	{
 		attributes.individualAttribs.knownToBeInUse = in_use;
 	}
@@ -816,11 +816,11 @@ protected:
 public:
 
 	//returns true if value contains an extended type
-	constexpr bool HasExtendedValue()
+	__forceinline constexpr bool HasExtendedValue()
 	{	return attributes.individualAttribs.hasExtendedValue;	}
 
 	//assumes that the EvaluableNode is of type ENT_NUMBER, and returns the value by reference
-	constexpr double &GetNumberValueReference()
+	__forceinline constexpr double &GetNumberValueReference()
 	{
 		if(!HasExtendedValue())
 			return value.numberValueContainer.numberValue;
@@ -829,7 +829,7 @@ public:
 	}
 
 	//assumes that the EvaluableNode is of type that holds a string, and returns the value by reference
-	constexpr StringInternPool::StringID &GetStringIDReference()
+	__forceinline constexpr StringInternPool::StringID &GetStringIDReference()
 	{
 		if(!HasExtendedValue())
 			return value.stringValueContainer.stringID;
@@ -838,7 +838,7 @@ public:
 	}
 
 	//assumes that the EvaluableNode has ordered child nodes, and returns the value by reference
-	constexpr std::vector<EvaluableNode *> &GetOrderedChildNodesReference()
+	__forceinline constexpr std::vector<EvaluableNode *> &GetOrderedChildNodesReference()
 	{
 		if(!HasExtendedValue())
 			return value.orderedChildNodes;
@@ -847,7 +847,7 @@ public:
 	}
 
 	//assumes that the EvaluableNode is has mapped child nodes, and returns the value by reference
-	constexpr AssocType &GetMappedChildNodesReference()
+	__forceinline constexpr AssocType &GetMappedChildNodesReference()
 	{
 		if(!HasExtendedValue())
 			return value.mappedChildNodes;
@@ -863,7 +863,7 @@ public:
 
 	//returns a reference to the storage location for a single label
 	// will only return valid results if HasCompactSingleLabelStorage() is true, so that should be called first
-	constexpr StringInternPool::StringID &GetCompactSingleLabelStorage()
+	__forceinline constexpr StringInternPool::StringID &GetCompactSingleLabelStorage()
 	{
 		if(type == ENT_NUMBER)
 			return value.numberValueContainer.labelStringID;
@@ -1062,11 +1062,11 @@ enum EvaluableNodeImmediateValueType : uint8_t
 // EvaluableNodeImmediateValueType can be used to communicate which type of data is being held
 union EvaluableNodeImmediateValue
 {
-	constexpr EvaluableNodeImmediateValue()
+	__forceinline constexpr EvaluableNodeImmediateValue()
 		: code(nullptr)
 	{	}
 
-	constexpr EvaluableNodeImmediateValue(double _number)
+	__forceinline constexpr EvaluableNodeImmediateValue(double _number)
 		: number(_number)
 	{	}
 
@@ -1074,15 +1074,15 @@ union EvaluableNodeImmediateValue
 		: stringID(string_id)
 	{	}
 
-	constexpr EvaluableNodeImmediateValue(EvaluableNode *_code)
+	__forceinline constexpr EvaluableNodeImmediateValue(EvaluableNode *_code)
 		: code(_code)
 	{	}
 
-	constexpr EvaluableNodeImmediateValue(const EvaluableNodeImmediateValue &eniv)
+	__forceinline constexpr EvaluableNodeImmediateValue(const EvaluableNodeImmediateValue &eniv)
 		: code(eniv.code)
 	{	}
 
-	constexpr EvaluableNodeImmediateValue(size_t indirection_index)
+	__forceinline constexpr EvaluableNodeImmediateValue(size_t indirection_index)
 		: indirectionIndex(indirection_index)
 	{	}
 
@@ -1145,17 +1145,17 @@ union EvaluableNodeImmediateValue
 	}
 
 	//returns true if it is a null or null equivalent
-	static constexpr bool IsNull(EvaluableNodeImmediateValueType type, EvaluableNodeImmediateValue &value)
+	static __forceinline constexpr bool IsNull(EvaluableNodeImmediateValueType type, EvaluableNodeImmediateValue &value)
 	{
 		return type == ENIVT_NULL;
 	}
 
-	operator double()
+	__forceinline operator double()
 	{
 		return number;
 	}
 
-	operator StringInternPool::StringID()
+	__forceinline operator StringInternPool::StringID()
 	{
 		return stringID;
 	}
@@ -1170,7 +1170,7 @@ union EvaluableNodeImmediateValue
 class EvaluableNodeImmediateValueWithType
 {
 public:
-	constexpr EvaluableNodeImmediateValueWithType()
+	__forceinline constexpr EvaluableNodeImmediateValueWithType()
 		: nodeType(ENIVT_NULL), nodeValue(static_cast<EvaluableNode *>(nullptr))
 	{	}
 

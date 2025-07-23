@@ -261,6 +261,10 @@ namespace EntityQueryBuilder
 			double total_probability_mass_for_feature = 0.0;
 			for(size_t i = 0; i < element_names.size(); i++)
 			{
+				//don't count the selecting feature
+				if(element_names[i] == weights_selection_feature)
+					continue;
+
 				auto unused_element_entry = unused_weights_for_feature_mcn.find(element_names[i]);
 				if(unused_element_entry == end(unused_weights_for_feature_mcn))
 					continue;
@@ -272,6 +276,10 @@ namespace EntityQueryBuilder
 			//that probability mass back into the corresponding feature that will be used
 			for(size_t i = 0; i < element_names.size(); i++)
 			{
+				//don't count the selecting feature
+				if(element_names[i] == weights_selection_feature)
+					continue;
+
 				auto unused_element_entry = unused_weights_for_feature_mcn.find(element_names[i]);
 				if(unused_element_entry == end(unused_weights_for_feature_mcn))
 					continue;

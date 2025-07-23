@@ -170,8 +170,9 @@ namespace EntityQueryBuilder
 		auto &weights_matrix = weights_node->GetMappedChildNodesReference();
 		auto weights_for_feature_node_entry = weights_matrix.find(weights_selection_feature);
 
-		//if entry not found, just default to 1/n
-		if(weights_for_feature_node_entry == end(weights_matrix))
+		//if entry not found or only one feature, just default to 1/n
+		if(weights_for_feature_node_entry == end(weights_matrix)
+			|| dist_eval.featureAttribs.size() == 1)
 		{
 			double even_weight = 1.0 / dist_eval.featureAttribs.size();
 			for(auto &feat : dist_eval.featureAttribs)
@@ -180,18 +181,122 @@ namespace EntityQueryBuilder
 		}
 
 		EvaluableNode *weights_for_feature_node = weights_for_feature_node_entry->second;
+		//if not an assoc, accumulate normally
+		if(weights_for_feature_node == nullptr || !weights_for_feature_node->IsAssociativeArray())
+		{
+			//populate weights the normal way from the particular feature's data
+			EvaluableNode::ConvertChildNodesAndStoreValue(weights_node, element_names, num_elements,
+				[&dist_eval](size_t i, bool found, EvaluableNode *en) {
+				if(i < dist_eval.featureAttribs.size())
+				{
+					if(found)
+						dist_eval.featureAttribs[i].weight = EvaluableNode::ToNumber(en, 0.0);
+					else
+						dist_eval.featureAttribs[i].weight = 0.0;
+				}
+			});
+
+			return;
+		}
+
+		auto &weights_for_feature_node_mcn = weights_for_feature_node->GetMappedChildNodesReference();
+
+		//collect all weights that contribute to this feature, but leave weights_selection_feature out
+		ska::flat_hash_map<StringInternPool::StringID, double> unused_weights_by_name;
+		double total_probability_mass = 0.0;
+		for(auto &[sid, weight_node] : weights_for_feature_node_mcn)
+		{
+			if(sid != weights_selection_feature)
+			{
+				double weight = EvaluableNode::ToNumber(weight_node, 0.0);
+				if(weight > 0.0)
+				{
+					unused_weights_by_name.emplace(sid, weight);
+					total_probability_mass += weight;
+				}
+			}
+		}
 
 		//populate weights the normal way from the particular feature's data
-		EvaluableNode::ConvertChildNodesAndStoreValue(weights_for_feature_node, element_names, num_elements,
-			[&dist_eval](size_t i, bool found, EvaluableNode *en) {
-			if(i < dist_eval.featureAttribs.size())
+		//and remove used features
+		for(size_t i = 0; i < element_names.size(); i++)
+		{
+			EvaluableNode *value_en = nullptr;
+			bool found = false;
+			auto found_node = weights_for_feature_node_mcn.find(element_names[i]);
+			if(found_node != end(weights_for_feature_node_mcn))
 			{
-				if(found)
-					dist_eval.featureAttribs[i].weight = EvaluableNode::ToNumber(en, 0.0);
-				else
-					dist_eval.featureAttribs[i].weight = 0.0;
+				value_en = found_node->second;
+				found = true;
 			}
-		});
+
+			double weight = 0.0;
+			if(found)
+			{
+				weight = EvaluableNode::ToNumber(value_en, 0.0);
+				//normalize
+				weight /= total_probability_mass;
+			}
+
+			dist_eval.featureAttribs[i].weight = weight;
+			if(weight > 0.0)
+				unused_weights_by_name.erase(element_names[i]);
+		}
+
+		//compute and accumulate probability masses from unused features into their corresponding features
+		for(auto &[unused_feature_sid, unused_feature_weight] : unused_weights_by_name)
+		{
+			//normalize unused weights	
+			unused_feature_weight /= total_probability_mass;
+
+			//get the entry in the matrix
+			auto unused_weights_for_feature_entry = weights_matrix.find(unused_feature_sid);
+			if(unused_weights_for_feature_entry == end(weights_matrix))
+				continue;
+			auto unused_weights_for_feature_node = unused_weights_for_feature_entry->second;
+			if(unused_weights_for_feature_node == nullptr || !unused_weights_for_feature_node->IsAssociativeArray())
+				continue;
+			auto &unused_weights_for_feature_mcn = unused_weights_for_feature_node->GetMappedChildNodesReference();
+
+			//get total probability mass to normalize this feature
+			double total_probability_mass_for_feature = 0.0;
+			for(size_t i = 0; i < element_names.size(); i++)
+			{
+				//don't count the selecting feature
+				if(element_names[i] == weights_selection_feature)
+					continue;
+
+				auto unused_element_entry = unused_weights_for_feature_mcn.find(element_names[i]);
+				if(unused_element_entry == end(unused_weights_for_feature_mcn))
+					continue;
+
+				total_probability_mass_for_feature += EvaluableNode::ToNumber(unused_element_entry->second, 0.0);
+			}
+
+			//accumulate the normalized probability of this feature influencing the unused feature and accumulate
+			//that probability mass back into the corresponding feature that will be used
+			for(size_t i = 0; i < element_names.size(); i++)
+			{
+				//don't count the selecting feature
+				if(element_names[i] == weights_selection_feature)
+					continue;
+
+				auto unused_element_entry = unused_weights_for_feature_mcn.find(element_names[i]);
+				if(unused_element_entry == end(unused_weights_for_feature_mcn))
+					continue;
+
+				double unused_weight = EvaluableNode::ToNumber(unused_element_entry->second, 0.0);
+				dist_eval.featureAttribs[i].weight += unused_weight * (unused_feature_weight / total_probability_mass_for_feature);
+			}
+		}
+
+		//do a final normalization pass on feature weights
+		total_probability_mass = 0.0;
+		for(auto &feat : dist_eval.featureAttribs)
+			total_probability_mass += feat.weight;
+
+		for(auto &feat : dist_eval.featureAttribs)
+			feat.weight /= total_probability_mass;
 	}
 
 	//populates the features of dist_eval based on either num_elements or element_names for each of the

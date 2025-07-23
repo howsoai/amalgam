@@ -184,7 +184,7 @@ namespace EntityQueryBuilder
 		if(weights_for_feature_node == nullptr || !weights_for_feature_node->IsAssociativeArray())
 		{
 			//populate weights the normal way from the particular feature's data
-			EvaluableNode::ConvertChildNodesAndStoreValue(weights_for_feature_node, element_names, num_elements,
+			EvaluableNode::ConvertChildNodesAndStoreValue(weights_node, element_names, num_elements,
 				[&dist_eval](size_t i, bool found, EvaluableNode *en) {
 				if(i < dist_eval.featureAttribs.size())
 				{

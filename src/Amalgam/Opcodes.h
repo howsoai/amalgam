@@ -618,7 +618,7 @@ constexpr bool DoesEvaluableNodeTypeCreateScope(EvaluableNodeType t)
 		);
 }
 
-//returns true if t is a query
+//returns true if it is a query
 constexpr bool IsEvaluableNodeTypeQuery(EvaluableNodeType t)
 {
 	return (t == ENT_QUERY_SELECT || t == ENT_QUERY_IN_ENTITY_LIST || t == ENT_QUERY_NOT_IN_ENTITY_LIST

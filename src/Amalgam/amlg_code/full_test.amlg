@@ -3250,6 +3250,15 @@
   	(query_exists "q")
   )))
 
+  (print (compute_on_contained_entities "TestContainerExec"
+	(query_exists "x")
+	(null)
+	(list
+		(query_exists "y")
+	)
+	(null)
+  ))
+
   (print (compute_on_contained_entities "TestContainerExec" (list
 	(query_exists "x")
  	(query_within_generalized_distance 60 (list "x" "y") (list 0.0 0.0) 1 (null) (null) (null) (null) (null) 1 (null) "random seed 1234" "radius")

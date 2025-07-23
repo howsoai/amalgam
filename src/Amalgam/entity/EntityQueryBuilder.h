@@ -35,6 +35,16 @@ namespace EntityQueryBuilder
 		NUM_MINKOWSKI_DISTANCE_QUERY_PARAMETERS //always last - do not add after this
 	};
 
+	//returns true if it is a distance
+	constexpr static bool IsEvaluableNodeTypeDistanceQuery(EvaluableNodeType t)
+	{
+		return (t == ENT_QUERY_WITHIN_GENERALIZED_DISTANCE || t == ENT_QUERY_NEAREST_GENERALIZED_DISTANCE
+			|| t == ENT_QUERY_DISTANCE_CONTRIBUTIONS || t == ENT_QUERY_ENTITY_CONVICTIONS
+			|| t == ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE || t == ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS
+			|| t == ENT_QUERY_ENTITY_KL_DIVERGENCES
+			);
+	}
+
 	//populates deviation data for a given nominal value
 	//assumes that value_deviation_assoc is a valid pointer to an assoc
 	template<typename NominalDeviationValuesType>
@@ -446,7 +456,6 @@ namespace EntityQueryBuilder
 				}
 			});
 	}
-
 
 	//interpret evaluable node as a distance query
 	inline void BuildDistanceCondition(EvaluableNode *cn, EvaluableNodeType condition_type,

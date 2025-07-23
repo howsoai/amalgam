@@ -170,8 +170,9 @@ namespace EntityQueryBuilder
 		auto &weights_matrix = weights_node->GetMappedChildNodesReference();
 		auto weights_for_feature_node_entry = weights_matrix.find(weights_selection_feature);
 
-		//if entry not found, just default to 1/n
-		if(weights_for_feature_node_entry == end(weights_matrix))
+		//if entry not found or only one feature, just default to 1/n
+		if(weights_for_feature_node_entry == end(weights_matrix)
+			|| dist_eval.featureAttribs.size() == 1)
 		{
 			double even_weight = 1.0 / dist_eval.featureAttribs.size();
 			for(auto &feat : dist_eval.featureAttribs)

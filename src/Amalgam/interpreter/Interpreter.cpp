@@ -11,11 +11,6 @@
 //system headers:
 #include <utility>
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-thread_local
-#endif
-	std::vector<EntityQueryCondition> Interpreter::conditionsBuffer;
-
 std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter::_opcodes = {
 	
 	//built-in / system specific

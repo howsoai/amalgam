@@ -37,58 +37,110 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 
 	bool return_query_value = (en->GetType() == ENT_COMPUTE_ON_CONTAINED_ENTITIES);
 
-	//parameters to search entities for
-	EvaluableNodeReference query_params = EvaluableNodeReference::Null();
+	//buffer to use as for parsing and querying conditions
+	//one per thread to reuse memory
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	thread_local
+#endif
+		static std::vector<EntityQueryCondition> conditions;
+
+	//buffer to use as for parsing and querying conditions
+	//one per thread to reuse memory
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	thread_local
+#endif
+		static std::vector<EvaluableNodeReference> condition_nodes;
+
 	EvaluableNodeReference entity_id_path = EvaluableNodeReference::Null();
-
 	auto &ocn = en->GetOrderedChildNodes();
-	if(ocn.size() == 1)
-	{
-		query_params = InterpretNodeForImmediateUse(ocn[0]);
+	conditions.clear();
+	condition_nodes.clear();
+	auto node_stack = CreateOpcodeStackStateSaver();
 
-		//detect whether it's a query
-		bool is_query = true;
-		if(EvaluableNode::IsNull(query_params))
+	for(size_t param_index = 0; param_index < ocn.size(); param_index++)
+	{
+		EvaluableNodeReference param_node = InterpretNodeForImmediateUse(ocn[param_index]);
+
+		//see if first parameter is the entity id
+		if(param_index == 0)
 		{
-			is_query = false;
-		}
-		else if(!IsEvaluableNodeTypeQuery(query_params->GetType()))
-		{
-			if(query_params->GetType() == ENT_LIST)
-			{
-				auto &qp_ocn = query_params->GetOrderedChildNodesReference();
-				if(qp_ocn.size() == 0)
-					is_query = false;
-				else if(!EvaluableNode::IsQuery(qp_ocn[0]))
-					is_query = false;
-			}
-			else
+			//detect whether it's a query
+			bool is_query = true;
+			if(EvaluableNode::IsNull(param_node))
 			{
 				is_query = false;
 			}
+			else if(!IsEvaluableNodeTypeQuery(param_node->GetType()))
+			{
+				if(param_node->GetType() == ENT_LIST)
+				{
+					auto &qp_ocn = param_node->GetOrderedChildNodesReference();
+					if(qp_ocn.size() == 0)
+						is_query = false;
+					else if(!EvaluableNode::IsQuery(qp_ocn[0]))
+						is_query = false;
+				}
+				else
+				{
+					is_query = false;
+				}
+			}
+
+			if(!is_query)
+			{
+				std::swap(entity_id_path, param_node);
+				node_stack.PushEvaluableNode(entity_id_path);
+				continue;
+			}
 		}
 
-		if(!is_query)
-			std::swap(entity_id_path, query_params);
+		//skip nulls
+		if(EvaluableNode::IsNull(param_node))
+			continue;
+
+		if(EvaluableNode::IsQuery(param_node))
+		{
+			EvaluableNodeType type = ocn[param_index]->GetType();
+			if(EntityQueryBuilder::IsEvaluableNodeTypeDistanceQuery(type))
+				EntityQueryBuilder::BuildDistanceCondition(ocn[param_index], type, conditions, randomStream);
+			else
+				EntityQueryBuilder::BuildNonDistanceCondition(ocn[param_index], type, conditions, randomStream);
+
+			node_stack.PushEvaluableNode(param_node);
+			condition_nodes.push_back(param_node);
+		}
+		else if(param_node->GetType() == ENT_LIST)
+		{
+			for(auto cn : param_node->GetOrderedChildNodesReference())
+			{
+				EvaluableNodeType type = cn->GetType();
+				if(EntityQueryBuilder::IsEvaluableNodeTypeDistanceQuery(type))
+					EntityQueryBuilder::BuildDistanceCondition(cn, type, conditions, randomStream);
+				else
+					EntityQueryBuilder::BuildNonDistanceCondition(cn, type, conditions, randomStream);
+			}
+
+			node_stack.PushEvaluableNode(param_node);
+			condition_nodes.push_back(param_node);
+		}
+		else
+		{
+			evaluableNodeManager->FreeNodeTreeIfPossible(param_node);
+		}
 	}
-	else if(ocn.size() >= 2)
+
+	EntityReadReference source_entity = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReadReference>(curEntity, entity_id_path);
+	evaluableNodeManager->FreeNodeTreeIfPossible(entity_id_path);
+	if(source_entity == nullptr)
 	{
-		entity_id_path = InterpretNodeForImmediateUse(ocn[0]);
-		auto node_stack = CreateOpcodeStackStateSaver(entity_id_path);
-		query_params = InterpretNodeForImmediateUse(ocn[1]);
+		for(auto &cond_node : condition_nodes)
+			evaluableNodeManager->FreeNodeTreeIfPossible(cond_node);
+		return EvaluableNodeReference::Null();
 	}
 
 	//if no query, just return all contained entities
-	if(EvaluableNode::IsNull(query_params))
+	if(conditions.size() == 0)
 	{
-		//in case the null was created
-		evaluableNodeManager->FreeNodeTreeIfPossible(query_params);
-
-		EntityReadReference source_entity = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReadReference>(curEntity, entity_id_path);
-		evaluableNodeManager->FreeNodeTreeIfPossible(entity_id_path);
-		if(source_entity == nullptr)
-			return EvaluableNodeReference::Null();
-
 		auto &contained_entities = source_entity->GetContainedEntities();
 
 		//if only looking for how many entities are contained, quickly exit
@@ -112,55 +164,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 		return result;
 	}
 
-	//parse ordered child nodes into conditions
-	conditionsBuffer.clear();
-	for(auto &cn : query_params->GetOrderedChildNodes())
-	{
-		if(cn == nullptr)
-			continue;
-
-		EvaluableNodeType type = cn->GetType();
-		switch(type)
-		{
-			case ENT_QUERY_WITHIN_GENERALIZED_DISTANCE:
-			case ENT_QUERY_NEAREST_GENERALIZED_DISTANCE:
-			case ENT_QUERY_DISTANCE_CONTRIBUTIONS:
-			case ENT_QUERY_ENTITY_CONVICTIONS:
-			case ENT_QUERY_ENTITY_GROUP_KL_DIVERGENCE:
-			case ENT_QUERY_ENTITY_DISTANCE_CONTRIBUTIONS:
-			case ENT_QUERY_ENTITY_KL_DIVERGENCES:
-				EntityQueryBuilder::BuildDistanceCondition(cn, type, conditionsBuffer, randomStream);
-				break;
-
-			default:
-				EntityQueryBuilder::BuildNonDistanceCondition(cn, type, conditionsBuffer, randomStream);
-				break;
-		}
-	}
-
-	//if not a valid query, return nullptr
-	if(conditionsBuffer.size() == 0)
-	{
-		evaluableNodeManager->FreeNodeTreeIfPossible(entity_id_path);
-		evaluableNodeManager->FreeNodeTreeIfPossible(query_params);
-		return EvaluableNodeReference::Null();
-	}
-
-	EntityReadReference source_entity = TraverseToExistingEntityReferenceViaEvaluableNodeIDPath<EntityReadReference>(curEntity, entity_id_path);
-	evaluableNodeManager->FreeNodeTreeIfPossible(entity_id_path);
-	if(source_entity == nullptr)
-	{
-		evaluableNodeManager->FreeNodeTreeIfPossible(query_params);
-		return EvaluableNodeReference::Null();
-	}
-
 	//perform query
 	auto result = EntityQueryCaches::GetEntitiesMatchingQuery(source_entity,
-		conditionsBuffer, evaluableNodeManager, return_query_value, immediate_result);
+		conditions, evaluableNodeManager, return_query_value, immediate_result);
 
-	//free query_params after the query just in case query_params is the only place that a given string id exists,
-	//so the value isn't swapped out
-	evaluableNodeManager->FreeNodeTreeIfPossible(query_params);
+	for(auto &cond_node : condition_nodes)
+		evaluableNodeManager->FreeNodeTreeIfPossible(cond_node);
 	return result;
 }
 

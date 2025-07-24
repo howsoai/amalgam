@@ -422,6 +422,15 @@
  (print (normalize [ 0.5 0.5 0.5 .infinity ]))
  (print (normalize { a 1 b 1 c 1 d 1 } 2))
 
+ (print "--mode--\n")
+ ;TODO 24110: add tests
+
+ (print "--quantile--\n")
+ ;TODO 24110: add tests
+
+ (print "--generalized_mean--\n")
+ ;TODO 24110: add tests
+
  (print "--generalized_distance--\n")
  (print " 0 " (generalized_distance (map 10000 (range 0 200)) (null) 0.01) "\n")
  (print " 1 " (generalized_distance (list 1 2 3) (list 0 2 3) 0.01) "\n")

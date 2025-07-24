@@ -1028,6 +1028,73 @@ inline void GetChildNodesAsENImmediateValueArray(EvaluableNode *node, std::vecto
 	}
 }
 
+EvaluableNodeReference Interpreter::InterpretNode_ENT_MODE(EvaluableNode *en, bool immediate_result)
+{
+	auto &ocn = en->GetOrderedChildNodes();
+
+	if(ocn.size() < 1)
+		return EvaluableNodeReference::Null();
+
+	bool random_tie_breaks = false;
+	if(ocn.size() > 2)
+		random_tie_breaks = InterpretNodeIntoBoolValue(ocn[2]);
+
+	//TODO 24110: finish this and add tests
+	return EvaluableNodeReference::Null();
+}
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_QUANTILE(EvaluableNode * en, bool immediate_result)
+{
+	auto &ocn = en->GetOrderedChildNodes();
+
+	if(ocn.size() < 2)
+		return EvaluableNodeReference::Null();
+
+	double quantile = InterpretNodeIntoNumberValue(ocn[1]);
+
+	bool interpolate = true;
+	if(ocn.size() > 3)
+		interpolate = InterpretNodeIntoBoolValue(ocn[3], true);
+
+	//TODO 24110: finish this and add tests
+	return EvaluableNodeReference::Null();
+}
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(EvaluableNode *en, bool immediate_result)
+{
+	auto &ocn = en->GetOrderedChildNodes();
+
+	if(ocn.size() < 1)
+		return EvaluableNodeReference::Null();
+
+	double p = 1.0;
+	if(ocn.size() > 1)
+	{
+		p = InterpretNodeIntoNumberValue(ocn[1]);
+		if(FastIsNaN(p))
+			p = 1.0;
+	}
+
+	double center = 0.0;
+	if(ocn.size() > 3)
+	{
+		center = InterpretNodeIntoNumberValue(ocn[3]);
+		if(FastIsNaN(center))
+			center = 0.0;
+	}
+
+	bool calculate_moment = false;
+	if(ocn.size() > 4)
+		calculate_moment = InterpretNodeIntoBoolValue(ocn[4], false);
+
+	bool absolute_value = true;
+	if(ocn.size() > 5)
+		absolute_value = InterpretNodeIntoBoolValue(ocn[5], false);
+
+	//TODO 24110: finish this and add tests
+	return EvaluableNodeReference::Null();
+}
+
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();

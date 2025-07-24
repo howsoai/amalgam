@@ -553,7 +553,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		{
 			if(singleLabelType == ENIVT_NUMBER)
 			{
-				double mode = EntityQueriesStatistics::ModeNumber<size_t>(0, matching_entities.size(), get_value,
+				auto [found, mode] = EntityQueriesStatistics::ModeNumber<size_t>(0, matching_entities.size(), get_value,
 					weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight);
 				return EvaluableNodeReference(enm->AllocNode(mode), true);
 			}
@@ -568,11 +568,11 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 					return found;
 				};
 
-				auto [found, mode_id] = EntityQueriesStatistics::ModeStringId<size_t>(
+				auto [found, mode] = EntityQueriesStatistics::ModeStringId<size_t>(
 					0, matching_entities.size(), get_string_value, true, get_weight);
 
 				if(found)
-					return EvaluableNodeReference(enm->AllocNode(ENT_STRING, mode_id), true);
+					return EvaluableNodeReference(enm->AllocNode(ENT_STRING, mode), true);
 				else
 					return EvaluableNodeReference::Null();
 			}

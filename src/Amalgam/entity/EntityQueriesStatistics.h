@@ -68,76 +68,23 @@ public:
 
 		return sum;
 	}
-	//TODO 24110: merge with ModeStringID
-	//computes mode of number values, and returns mode
-	//iterates from first to last, calling get_value
-	// if has_weight, then will use get_weight to obtain the weight of each value
-	template<typename EntityIterator, typename ValueFunction, typename WeightFunction>
-	static double ModeNumber(EntityIterator first, EntityIterator last,
-		ValueFunction get_value, bool has_weight, WeightFunction get_weight)
-	{
-		FastHashMap<double, double, std::hash<double>, DoubleNanHashComparator> value_weights;
 
-		if(!has_weight)
-		{
-			for(EntityIterator i = first; i != last; ++i)
-			{
-				double value = 0.0;
-				if(get_value(i, value))
-				{
-					auto [inserted_value, inserted] = value_weights.emplace(value, 1.0);
-					if(!inserted)
-						inserted_value->second += 1.0;
-				}
-			}
-		}
-		else
-		{
-			for(EntityIterator i = first; i != last; ++i)
-			{
-				double value = 0.0;
-				if(get_value(i, value))
-				{
-					double weight_value = 1.0;
-					get_weight(i, weight_value);
-
-					auto [inserted_value, inserted] = value_weights.emplace(value, weight_value);
-					if(!inserted)
-						inserted_value->second += weight_value;
-				}
-			}
-		}
-
-		//find highest value
-		double mode = std::numeric_limits<double>::quiet_NaN();
-		double mode_weight = 0.0;
-		for(auto &[value, weight] : value_weights)
-		{
-			if(weight > mode_weight)
-			{
-				mode = value;
-				mode_weight = weight;
-			}
-		}
-
-		return mode;
-	}
-
-	//computes mode of string ids, and returns a tuple of whether a mode has been found,
+	//computes mode of number values, and returns a tuple of whether a mode has been found,
 	// and if so, the mode
 	//iterates from first to last, calling get_value
 	// if has_weight, then will use get_weight to obtain the weight of each value
-	template<typename EntityIterator, typename ValueFunction, typename WeightFunction>
-	static std::pair<bool, StringInternPool::StringID> ModeStringId(EntityIterator first, EntityIterator last,
-		ValueFunction get_value, bool has_weight, WeightFunction get_weight)
+	template<typename EntityIterator,
+		typename ValueType, typename ValueHash, typename ValueEquality, typename ValueFunction, typename WeightFunction>
+	static std::pair<bool, ValueType> Mode(EntityIterator first, EntityIterator last,
+		ValueFunction get_value, bool has_weight, WeightFunction get_weight, ValueType value_if_not_found)
 	{
-		FastHashMap<StringInternPool::StringID, double> value_weights;
+		FastHashMap<ValueType, double, ValueHash, ValueEquality> value_weights;
 
 		if(!has_weight)
 		{
 			for(EntityIterator i = first; i != last; ++i)
 			{
-				StringInternPool::StringID value = string_intern_pool.NOT_A_STRING_ID;
+				ValueType value = value_if_not_found;
 				if(get_value(i, value))
 				{
 					auto [inserted_value, inserted] = value_weights.emplace(value, 1.0);
@@ -150,12 +97,12 @@ public:
 		{
 			for(EntityIterator i = first; i != last; ++i)
 			{
-				StringInternPool::StringID value = string_intern_pool.NOT_A_STRING_ID;
+				ValueType value = value_if_not_found;
 				if(get_value(i, value))
 				{
 					double weight_value = 1.0;
 					get_weight(i, weight_value);
-					
+
 					auto [inserted_value, inserted] = value_weights.emplace(value, weight_value);
 					if(!inserted)
 						inserted_value->second += weight_value;
@@ -165,7 +112,7 @@ public:
 
 		//find highest value
 		bool mode_found = false;
-		StringInternPool::StringID mode = string_intern_pool.NOT_A_STRING_ID;
+		ValueType mode = value_if_not_found;
 		double mode_weight = 0.0;
 		for(auto &[value, weight] : value_weights)
 		{
@@ -178,6 +125,26 @@ public:
 		}
 
 		return std::make_pair(mode_found, mode);
+	}
+
+	//specialization of Mode for numbers
+	template<typename EntityIterator, typename ValueFunction, typename WeightFunction>
+	inline static std::pair<bool, double> ModeNumber(EntityIterator first, EntityIterator last,
+			ValueFunction get_value, bool has_weight, WeightFunction get_weight)
+	{
+		return Mode<EntityIterator, double,
+			std::hash<double>, DoubleNanHashComparator>(first, last,
+				get_value, has_weight, get_weight, std::numeric_limits<double>::quiet_NaN());
+	}
+
+	//specialization of Mode for StringID
+	template<typename EntityIterator, typename ValueFunction, typename WeightFunction>
+	inline static std::pair<bool, StringInternPool::StringID> ModeStringId(EntityIterator first, EntityIterator last,
+			ValueFunction get_value, bool has_weight, WeightFunction get_weight)
+	{
+		return Mode<EntityIterator, StringInternPool::StringID,
+			std::hash<StringInternPool::StringID>, std::equal_to<StringInternPool::StringID>>(first, last,
+				get_value, has_weight, get_weight, string_intern_pool.NOT_A_STRING_ID);
 	}
 
 	//computes masses (weights) of each numeric value

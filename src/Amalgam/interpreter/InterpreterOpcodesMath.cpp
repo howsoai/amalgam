@@ -1039,6 +1039,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MODE(EvaluableNode *en, bo
 	if(ocn.size() > 2)
 		random_tie_breaks = InterpretNodeIntoBoolValue(ocn[2]);
 
+	auto values = InterpretNode(ocn[0]);
+	if(EvaluableNode::IsNull(values) || values->IsImmediate())
+		return values;
+
+	EvaluableNodeReference weights = EvaluableNodeReference::Null();
+	if(ocn.size() > 1)
+	{
+		auto node_stack = CreateOpcodeStackStateSaver(values);
+		weights = InterpretNode(ocn[1]);
+	}
+
 	//TODO 24110: finish this and add tests
 	return EvaluableNodeReference::Null();
 }
@@ -1090,6 +1101,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 	bool absolute_value = true;
 	if(ocn.size() > 5)
 		absolute_value = InterpretNodeIntoBoolValue(ocn[5], false);
+
+
 
 	//TODO 24110: finish this and add tests
 	return EvaluableNodeReference::Null();

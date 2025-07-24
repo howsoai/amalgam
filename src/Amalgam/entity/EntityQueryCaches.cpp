@@ -661,7 +661,8 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 
 				case ENT_QUERY_GENERALIZED_MEAN:
 					result = EntityQueriesStatistics::GeneralizedMean(entities.begin(), entities.end(), get_value,
-						has_weight, get_weight, cond->distEvaluator.pValue, cond->center, cond->calculateMoment, cond->absoluteValue);
+						has_weight, get_weight, cond->distEvaluator.pValue, cond->center,
+						cond->calculateMoment, cond->absoluteValue);
 					break;
 
 				case ENT_QUERY_MIN_DIFFERENCE:

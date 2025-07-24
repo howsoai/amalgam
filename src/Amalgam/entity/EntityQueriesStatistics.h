@@ -68,7 +68,7 @@ public:
 
 		return sum;
 	}
-
+	//TODO 24110: merge with ModeStringID
 	//computes mode of number values, and returns mode
 	//iterates from first to last, calling get_value
 	// if has_weight, then will use get_weight to obtain the weight of each value
@@ -407,7 +407,8 @@ public:
 	template<typename EntityIterator, typename ValueFunction, typename WeightFunction>
 	static double GeneralizedMean(EntityIterator first, EntityIterator last,
 		ValueFunction get_value, bool has_weight, WeightFunction get_weight,
-		double p_value, double center = 0.0, bool calculate_moment = false, bool absolute_value = false)
+		double p_value, double center = 0.0, bool calculate_moment = false,
+		bool absolute_value = false)
 	{
 		//deal with edge case of no values
 		if(first == last)
@@ -441,6 +442,7 @@ public:
 					double value = 0.0;
 					if(get_value(i, value))
 					{
+						//don't need to worry about absolute value because squaring it will make it positive
 						double diff = value - center;
 						mean += diff * diff;
 						num_elements++;
@@ -460,6 +462,9 @@ public:
 					if(get_value(i, value))
 					{
 						double diff = value - center;
+						if(absolute_value)
+							diff = std::abs(diff);
+
 						//ignore nonpositive values
 						if(diff > 0.0)
 						{
@@ -496,7 +501,11 @@ public:
 					double value = 0.0;
 					if(get_value(i, value))
 					{
-						mean += (1.0 / (value - center));
+						double diff = value - center;
+						if(absolute_value)
+							diff = std::abs(diff);
+
+						mean += (1.0 / diff);
 						num_elements++;
 					}
 				}
@@ -512,7 +521,11 @@ public:
 					double value = 0.0;
 					if(get_value(i, value))
 					{
-						mean += std::pow(value - center, p_value);
+						double diff = value - center;
+						if(absolute_value)
+							diff = std::abs(diff);
+
+						mean += std::pow(diff, p_value);
 						num_elements++;
 					}
 				}
@@ -539,7 +552,11 @@ public:
 						//don't multiply if zero in case value is infinite
 						if(weight_value != 0.0)
 						{
-							mean += weight_value * (value - center);
+							double diff = value - center;
+							if(absolute_value)
+								diff = std::abs(diff);
+
+							mean += weight_value * diff;
 							weights_sum += weight_value;
 						}
 					}
@@ -562,6 +579,7 @@ public:
 						if(weight_value != 0.0)
 						{
 							double diff = value - center;
+							//don't need absolute value of diff because squaring will make it positive
 							mean += weight_value * diff * diff;
 							weights_sum += weight_value;
 						}
@@ -603,6 +621,9 @@ public:
 						if(weight_value != 0.0)
 						{
 							double diff = value - center;
+							if(absolute_value)
+								diff = std::abs(diff);
+
 							//ignore nonpositive values
 							if(diff > 0.0)
 							{
@@ -644,7 +665,11 @@ public:
 						//don't multiply if zero in case value is infinite
 						if(weight_value != 0.0)
 						{
-							mean += weight_value / (value - center);
+							double diff = value - center;
+							if(absolute_value)
+								diff = std::abs(diff);
+
+							mean += weight_value / diff;
 							weights_sum += weight_value;
 						}
 					}
@@ -668,7 +693,11 @@ public:
 						//don't multiply if zero in case value is infinite
 						if(weight_value != 0.0)
 						{
-							mean += weight_value * std::pow(value - center, p_value);
+							double diff = value - center;
+							if(absolute_value)
+								diff = std::abs(diff);
+
+							mean += weight_value * std::pow(diff, p_value);
 							weights_sum += weight_value;
 						}
 					}

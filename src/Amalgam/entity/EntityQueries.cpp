@@ -588,7 +588,8 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		case ENT_QUERY_GENERALIZED_MEAN:
 		{
 			double generalized_mean = EntityQueriesStatistics::GeneralizedMean<size_t>(0, matching_entities.size(), get_value,
-				weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight, distEvaluator.pValue, center, calculateMoment, absoluteValue);
+				weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight, distEvaluator.pValue, center,
+				calculateMoment, absoluteValue);
 			return EvaluableNodeReference(enm->AllocNode(generalized_mean), true);
 		}
 		case ENT_QUERY_MIN_DIFFERENCE:

@@ -100,11 +100,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 
 		if(EvaluableNode::IsQuery(param_node))
 		{
-			EvaluableNodeType type = ocn[param_index]->GetType();
+			EvaluableNodeType type = param_node->GetType();
 			if(EntityQueryBuilder::IsEvaluableNodeTypeDistanceQuery(type))
-				EntityQueryBuilder::BuildDistanceCondition(ocn[param_index], type, conditions, randomStream);
+				EntityQueryBuilder::BuildDistanceCondition(param_node, type, conditions, randomStream);
 			else
-				EntityQueryBuilder::BuildNonDistanceCondition(ocn[param_index], type, conditions, randomStream);
+				EntityQueryBuilder::BuildNonDistanceCondition(param_node, type, conditions, randomStream);
 
 			node_stack.PushEvaluableNode(param_node);
 			condition_nodes.push_back(param_node);

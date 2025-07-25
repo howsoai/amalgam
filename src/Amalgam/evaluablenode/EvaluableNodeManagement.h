@@ -332,7 +332,7 @@ public:
 		return stack->size();
 	}
 
-	////returns the corresponding element
+	//returns the corresponding element
 	__forceinline EvaluableNode *GetStackElement(size_t location)
 	{
 		return (*stack)[location];

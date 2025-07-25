@@ -199,24 +199,22 @@ public:
 	//Executes the current Entity that this Interpreter is contained by
 	// sets up all of the stack and contextual structures, then calls InterpretNode on en
 	//if scope_stack, opcode_stack, or construction_stack are nullptr, it will start with a new one
+	//if manage_stack_references is true, then it will create the references and create stacks if necessary
+	// if manage_stack_references is false, it will skip that process, avoiding locks,
+	// and assumes the caller has created references for all of the stacks
 	//note that construction_stack and construction_stack_indices should be specified together and should be the same length
 	//if immediate_result is true, then the returned value may be immediate
-#ifdef MULTITHREAD_SUPPORT
-	//if run multithreaded, then for performance reasons, it is optimal to have one of each stack per thread
+	//if multithreaded, then for performance reasons, it is optimal to have one of each stack per thread
 	// and scope_stack_write_mutex is the mutex needed to lock for writing
 	EvaluableNodeReference ExecuteNode(EvaluableNode *en,
 		EvaluableNode *scope_stack = nullptr, EvaluableNode *opcode_stack = nullptr,
 		EvaluableNode *construction_stack = nullptr,
+		bool manage_stack_references = true,
 		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices = nullptr,
+	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::ReadWriteMutex *scope_stack_write_mutex = nullptr,
+	#endif
 		bool immediate_result = false);
-#else
-	EvaluableNodeReference ExecuteNode(EvaluableNode *en,
-		EvaluableNode *scope_stack = nullptr, EvaluableNode *opcode_stack = nullptr,
-		EvaluableNode *construction_stack = nullptr,
-		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices = nullptr,
-		bool immediate_result = false);
-#endif
 
 	//changes debugging state to debugging_enabled
 	//cannot be enabled at the same time as profiling
@@ -749,7 +747,7 @@ protected:
 					EvaluableNode *opcode_stack = enm->AllocNode(begin(*parentInterpreter->opcodeStackNodes),
 						begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
 					auto result_ref = interpreter.ExecuteNode(node_to_execute,
-						scope_stack, opcode_stack, construction_stack, &csiau, GetScopeStackMutex());
+						scope_stack, opcode_stack, construction_stack, true, &csiau, GetScopeStackMutex());
 
 					if(interpreter.PopConstructionContextAndGetExecutionSideEffectFlag())
 					{
@@ -757,12 +755,10 @@ protected:
 						resultsUnique = false;
 						resultsUniqueUnreferencedTopNode = false;
 					}
-					else if(result_ref.unique) //can free newly allocated nodes
-					{
-						enm->FreeNode(construction_stack);
-						enm->FreeNode(scope_stack);
-						enm->FreeNode(opcode_stack);
-					}
+					
+					enm->FreeNode(construction_stack);
+					enm->FreeNode(scope_stack);
+					enm->FreeNode(opcode_stack);
 
 					if(result_ref.unique)
 					{
@@ -818,18 +814,16 @@ protected:
 						begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
 					std::vector<ConstructionStackIndexAndPreviousResultUniqueness> csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
 					auto result_ref = interpreter.ExecuteNode(node_to_execute, scope_stack, opcode_stack,
-						construction_stack, &csiau, GetScopeStackMutex(), immediate_results);
+						construction_stack, true, &csiau, GetScopeStackMutex(), immediate_results);
 
 					if(interpreter.DoesConstructionStackHaveExecutionSideEffects())
 					{
 						resultsSideEffect = true;
 					}
-					else if(result_ref.unique) //can free newly allocated nodes
-					{
-						enm->FreeNode(construction_stack);
-						enm->FreeNode(scope_stack);
-						enm->FreeNode(opcode_stack);
-					}
+
+					enm->FreeNode(construction_stack);
+					enm->FreeNode(scope_stack);
+					enm->FreeNode(opcode_stack);
 
 					if(result == nullptr)
 					{

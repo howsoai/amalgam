@@ -37,26 +37,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 
 	bool return_query_value = (en->GetType() == ENT_COMPUTE_ON_CONTAINED_ENTITIES);
 
-	//buffer to use as for parsing and querying conditions
-	//one per thread to reuse memory
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	thread_local
-#endif
-		static std::vector<EntityQueryCondition> conditions;
-
-	//buffer to use as for parsing and querying conditions
-	//one per thread to reuse memory
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	thread_local
-#endif
-		static std::vector<EvaluableNodeReference> condition_nodes;
-
 	EvaluableNodeReference entity_id_path = EvaluableNodeReference::Null();
 	auto &ocn = en->GetOrderedChildNodes();
-	conditions.clear();
-	condition_nodes.clear();
 	auto node_stack = CreateOpcodeStackStateSaver();
 
+	//interpret and buffer nodes for querying conditions
+	//can't use node_stack as the buffer because need to know details of whether it is freeable
+	//since the condition nodes need to be kept around until after the query
+	std::vector<EvaluableNodeReference> condition_nodes;
 	for(size_t param_index = 0; param_index < ocn.size(); param_index++)
 	{
 		EvaluableNodeReference param_node = InterpretNodeForImmediateUse(ocn[param_index]);
@@ -75,9 +63,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 				if(param_node->GetType() == ENT_LIST)
 				{
 					auto &qp_ocn = param_node->GetOrderedChildNodesReference();
+					//an empty list has the same outcome, so early skip
 					if(qp_ocn.size() == 0)
-						is_query = false;
-					else if(!EvaluableNode::IsQuery(qp_ocn[0]))
+						continue;
+
+					if(!EvaluableNode::IsQuery(qp_ocn[0]))
 						is_query = false;
 				}
 				else
@@ -88,30 +78,42 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 
 			if(!is_query)
 			{
-				std::swap(entity_id_path, param_node);
+				entity_id_path = param_node;
 				node_stack.PushEvaluableNode(entity_id_path);
 				continue;
 			}
 		}
 
-		//skip nulls
-		if(EvaluableNode::IsNull(param_node))
+		//skip nulls so don't need to check later
+		if(param_node == nullptr)
 			continue;
 
-		if(EvaluableNode::IsQuery(param_node))
-		{
-			EvaluableNodeType type = param_node->GetType();
-			if(EntityQueryBuilder::IsEvaluableNodeTypeDistanceQuery(type))
-				EntityQueryBuilder::BuildDistanceCondition(param_node, type, conditions, randomStream);
-			else
-				EntityQueryBuilder::BuildNonDistanceCondition(param_node, type, conditions, randomStream);
+		node_stack.PushEvaluableNode(param_node);
+		condition_nodes.push_back(param_node);
+	}
 
-			node_stack.PushEvaluableNode(param_node);
-			condition_nodes.push_back(param_node);
-		}
-		else if(param_node->GetType() == ENT_LIST)
+	//build conditions from condition_nodes
+	//buffer to use as for parsing and querying conditions
+	//one per thread to reuse memory
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	thread_local
+#endif
+		static std::vector<EntityQueryCondition> conditions;
+
+	conditions.clear();
+	for(auto &cond_node : condition_nodes)
+	{
+		if(EvaluableNode::IsQuery(cond_node))
 		{
-			for(auto cn : param_node->GetOrderedChildNodesReference())
+			EvaluableNodeType type = cond_node->GetType();
+			if(EntityQueryBuilder::IsEvaluableNodeTypeDistanceQuery(type))
+				EntityQueryBuilder::BuildDistanceCondition(cond_node, type, conditions, randomStream);
+			else
+				EntityQueryBuilder::BuildNonDistanceCondition(cond_node, type, conditions, randomStream);
+		}
+		else if(cond_node->GetType() == ENT_LIST)
+		{
+			for(auto cn : cond_node->GetOrderedChildNodesReference())
 			{
 				EvaluableNodeType type = cn->GetType();
 				if(EntityQueryBuilder::IsEvaluableNodeTypeDistanceQuery(type))
@@ -119,13 +121,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 				else
 					EntityQueryBuilder::BuildNonDistanceCondition(cn, type, conditions, randomStream);
 			}
-
-			node_stack.PushEvaluableNode(param_node);
-			condition_nodes.push_back(param_node);
-		}
-		else
-		{
-			evaluableNodeManager->FreeNodeTreeIfPossible(param_node);
 		}
 	}
 

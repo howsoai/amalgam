@@ -26,7 +26,7 @@ class InterpreterConstraints
 {
 public:
 	enum class ViolationType
-  	{
+	{
 		NoViolation,
 		NodeAllocation,
 		ExecutionStep,
@@ -699,7 +699,7 @@ protected:
 
 			//create space to store all of these nodes on the stack, but won't copy these over to the other interpreters
 			resultsSaver = parent_interpreter->CreateOpcodeStackStateSaver();
-			resultsSaverFirstTaskOffset = resultsSaver.GetLocationOfCurrentStackTop() + 1;
+			resultsSaverFirstTaskOffset = resultsSaver.GetIndexOfFirstElement();
 			resultsSaverCurrentTaskOffset = resultsSaverFirstTaskOffset;
 			resultsSaver.ReserveNodes(num_tasks);
 
@@ -745,19 +745,23 @@ protected:
 					interpreter.PushNewConstructionContextToStack(construction_stack->GetOrderedChildNodes(),
 						csiau, target_origin, target, current_index, current_value, EvaluableNodeReference::Null());
 
+					EvaluableNode *scope_stack = enm->AllocNode(*parentInterpreter->scopeStackNodes);
+					EvaluableNode *opcode_stack = enm->AllocNode(begin(*parentInterpreter->opcodeStackNodes),
+						begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
 					auto result_ref = interpreter.ExecuteNode(node_to_execute,
-						enm->AllocNode(*parentInterpreter->scopeStackNodes),
-						enm->AllocNode(begin(*parentInterpreter->opcodeStackNodes),
-							begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset),
-						construction_stack,
-						&csiau,
-						GetScopeStackMutex());
+						scope_stack, opcode_stack, construction_stack, &csiau, GetScopeStackMutex());
 
 					if(interpreter.PopConstructionContextAndGetExecutionSideEffectFlag())
 					{
 						resultsSideEffect = true;
 						resultsUnique = false;
 						resultsUniqueUnreferencedTopNode = false;
+					}
+					else if(result_ref.unique) //can free newly allocated nodes
+					{
+						enm->FreeNode(construction_stack);
+						enm->FreeNode(scope_stack);
+						enm->FreeNode(opcode_stack);
 					}
 
 					if(result_ref.unique)
@@ -775,7 +779,7 @@ protected:
 						resultsIdempotent = false;
 
 					result = result_ref;
-					resultsSaver.SetStackLocation(results_saver_location, result);
+					resultsSaver.SetStackElement(results_saver_location, result);
 
 					EvaluableNodeManager::ClearThreadLocalAllocationBuffer();
 					interpreter.memoryModificationLock.unlock();
@@ -808,17 +812,24 @@ protected:
 
 					interpreter.memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
 
+					EvaluableNode *construction_stack = enm->AllocNode(*parentInterpreter->constructionStackNodes);
+					EvaluableNode *scope_stack = enm->AllocNode(*parentInterpreter->scopeStackNodes);
+					EvaluableNode *opcode_stack = enm->AllocNode(begin(*parentInterpreter->opcodeStackNodes),
+						begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
 					std::vector<ConstructionStackIndexAndPreviousResultUniqueness> csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
-					auto result_ref = interpreter.ExecuteNode(node_to_execute,
-						enm->AllocNode(*parentInterpreter->scopeStackNodes),
-						enm->AllocNode(begin(*parentInterpreter->opcodeStackNodes),
-							begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset),
-						enm->AllocNode(*parentInterpreter->constructionStackNodes),
-						&csiau,
-						GetScopeStackMutex(), immediate_results);
+					auto result_ref = interpreter.ExecuteNode(node_to_execute, scope_stack, opcode_stack,
+						construction_stack, &csiau, GetScopeStackMutex(), immediate_results);
 
 					if(interpreter.DoesConstructionStackHaveExecutionSideEffects())
+					{
 						resultsSideEffect = true;
+					}
+					else if(result_ref.unique) //can free newly allocated nodes
+					{
+						enm->FreeNode(construction_stack);
+						enm->FreeNode(scope_stack);
+						enm->FreeNode(opcode_stack);
+					}
 
 					if(result == nullptr)
 					{
@@ -844,7 +855,7 @@ protected:
 
 						//only save the result if it's not immediate
 						if(!result_ref.IsImmediateValue())
-							resultsSaver.SetStackLocation(results_saver_location, *result);
+							resultsSaver.SetStackElement(results_saver_location, *result);
 					}
 
 					EvaluableNodeManager::ClearThreadLocalAllocationBuffer();

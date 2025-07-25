@@ -320,14 +320,26 @@ public:
 		stack->pop_back();
 	}
 
-	//returns the offset to the location of the current top of the stack
-	__forceinline size_t GetLocationOfCurrentStackTop()
+	//returns the offset to the first element of this state saver
+	__forceinline size_t GetIndexOfFirstElement()
 	{
-		return stack->size() - 1;
+		return originalStackSize;
+	}
+
+	//returns the offset to the last element of this state saver
+	__forceinline size_t GetIndexOfLastElement()
+	{
+		return stack->size();
+	}
+
+	//returns the corresponding element
+	__forceinline EvaluableNode *GetStackElement(size_t location)
+	{
+		return (*stack)[location];
 	}
 
 	//replaces the position of the stack with new_value
-	__forceinline void SetStackLocation(size_t location, EvaluableNode *new_value)
+	__forceinline void SetStackElement(size_t location, EvaluableNode *new_value)
 	{
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 		assert(new_value == nullptr || new_value->IsNodeValid());

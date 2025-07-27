@@ -1067,6 +1067,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_QUANTILE(EvaluableNode * e
 	if(ocn.size() > 3)
 		interpolate = InterpretNodeIntoBoolValue(ocn[3], true);
 
+	auto values = InterpretNode(ocn[0]);
+	if(EvaluableNode::IsNull(values) || values->IsImmediate())
+		return values;
+
+	EvaluableNodeReference weights = EvaluableNodeReference::Null();
+	if(ocn.size() > 2)
+	{
+		auto node_stack = CreateOpcodeStackStateSaver(values);
+		weights = InterpretNode(ocn[2]);
+	}
+
 	//TODO 24110: finish this and add tests
 	return EvaluableNodeReference::Null();
 }
@@ -1102,7 +1113,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 	if(ocn.size() > 5)
 		absolute_value = InterpretNodeIntoBoolValue(ocn[5], false);
 
+	auto values = InterpretNode(ocn[0]);
+	if(EvaluableNode::IsNull(values) || values->IsImmediate())
+		return values;
 
+	EvaluableNodeReference weights = EvaluableNodeReference::Null();
+	if(ocn.size() > 2)
+	{
+		auto node_stack = CreateOpcodeStackStateSaver(values);
+		weights = InterpretNode(ocn[2]);
+	}
 
 	//TODO 24110: finish this and add tests
 	return EvaluableNodeReference::Null();

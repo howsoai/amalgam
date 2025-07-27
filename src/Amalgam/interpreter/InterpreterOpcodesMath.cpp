@@ -1079,7 +1079,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_QUANTILE(EvaluableNode * e
 	}
 
 	//TODO 24110: finish this and add tests
-	return EvaluableNodeReference::Null();
+	double result = 0.0; //Quantile(matching_entities.begin(), matching_entities.end(), get_value,
+		//has_weight, get_weight, cond->qPercentage, EntityQueryCaches::buffers.pairDoubleVector);
+
+	return AllocReturn(result, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(EvaluableNode *en, bool immediate_result)
@@ -1125,7 +1128,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 	}
 
 	//TODO 24110: finish this and add tests
-	return EvaluableNodeReference::Null();
+	double result = 0.0; //GeneralizedMean(matching_entities.begin(), matching_entities.end(), get_value,
+						//has_weight, get_weight, cond->distEvaluator.pValue, cond->center, cond->calculateMoment, cond->absoluteValue);
+
+	return AllocReturn(result, immediate_result);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(EvaluableNode *en, bool immediate_result)

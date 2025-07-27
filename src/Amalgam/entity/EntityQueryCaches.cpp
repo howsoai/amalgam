@@ -658,12 +658,12 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				}
 
 				case ENT_QUERY_QUANTILE:
-					result = EntityQueriesStatistics::Quantile(entities.begin(), entities.end(), get_value,
+					result = Quantile(entities.begin(), entities.end(), get_value,
 						has_weight, get_weight, cond->qPercentage, EntityQueryCaches::buffers.pairDoubleVector);
 					break;
 
 				case ENT_QUERY_GENERALIZED_MEAN:
-					result = EntityQueriesStatistics::GeneralizedMean(entities.begin(), entities.end(), get_value,
+					result = GeneralizedMean(entities.begin(), entities.end(), get_value,
 						has_weight, get_weight, cond->distEvaluator.pValue, cond->center,
 						cond->calculateMoment, cond->absoluteValue);
 					break;
@@ -701,12 +701,12 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				}
 
 				case ENT_QUERY_QUANTILE:
-					result = EntityQueriesStatistics::Quantile(matching_entities.begin(), matching_entities.end(), get_value,
+					result = Quantile(matching_entities.begin(), matching_entities.end(), get_value,
 						has_weight, get_weight, cond->qPercentage, EntityQueryCaches::buffers.pairDoubleVector);
 					break;
 
 				case ENT_QUERY_GENERALIZED_MEAN:
-					result = EntityQueriesStatistics::GeneralizedMean(matching_entities.begin(), matching_entities.end(), get_value,
+					result = GeneralizedMean(matching_entities.begin(), matching_entities.end(), get_value,
 						has_weight, get_weight, cond->distEvaluator.pValue, cond->center, cond->calculateMoment, cond->absoluteValue);
 					break;
 

@@ -1192,10 +1192,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_QUANTILE(EvaluableNode * e
 
 	double quantile = InterpretNodeIntoNumberValue(ocn[1]);
 
-	bool interpolate = true;
-	if(ocn.size() > 3)
-		interpolate = InterpretNodeIntoBoolValue(ocn[3], true);
-
 	auto values = InterpretNode(ocn[0]);
 	if(EvaluableNode::IsNull(values) || values->IsImmediate())
 		return values;

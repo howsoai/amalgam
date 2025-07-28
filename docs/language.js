@@ -555,10 +555,10 @@ var data = [
 		"example" : "(print (mode [ 1 2 3 3 4 4 4 4])\n(print (mode { a 0.7 b 0.5 })\n)(print (mode [\"a\" \"b\"] {a 1 b 100}))"
 	},
 	{
-		"parameter" : "quantile list|assoc values number quantile [list|assoc weights] [bool interpolate]",
+		"parameter" : "quantile list|assoc values number quantile [list|assoc weights]",
 		"output" : "number",
 		"new value" : "new",
-		"description" : "Evaluates to the quantile of the values specified by quantile ranging from 0 to 1.  If weights is specified and both values and weights are lists, then the corresponding elements will be weighted by weights.  If weights is specified and is an assoc, then each value will be looked up in the weights.  If interpolate is true, the default, then it will interpolate the quantile, otherwise it will just return the closest value.",
+		"description" : "Evaluates to the quantile of the values specified by quantile ranging from 0 to 1.  If weights is specified and both values and weights are lists, then the corresponding elements will be weighted by weights.  If weights is specified and is an assoc, then each value will be looked up in the weights.",
 		"example" : "(print (quantile [ 1 2 3 4 5 ] 0.5)\n(print (quantile { a 1 b 2 c 3 d 4 } 0.5)\n(print (quantile [ 1 2 3 4 ] 0.5 [0.5 0.5 1 1]))"
 	},
 	{

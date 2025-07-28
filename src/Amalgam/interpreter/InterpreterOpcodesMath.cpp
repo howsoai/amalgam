@@ -1133,6 +1133,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 		return false;
 	};
 
+	//TODO 24110: finish this and add tests
 	double result = 0.0;
 	if(values->IsAssociativeArray())
 	{
@@ -1171,7 +1172,19 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 		}
 		else //weights->IsOrderedArray())
 		{
-			//TODO 24110: finish this and add tests
+			auto &weights_ocn = weights->GetOrderedChildNodesReference();
+			auto get_weight = [&weights_ocn]
+			(size_t i, double &value)
+			{
+				if(i >= weights_ocn.size())
+					return false;
+
+				value = EvaluableNode::ToNumber(weights_ocn[i]);
+				return !FastIsNaN(value);
+			};
+
+			result = GeneralizedMean(index_first, index_last, get_value,
+							   false, get_weight, p, center, calculate_moment, absolute_value);
 		}
 	}
 

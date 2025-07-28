@@ -980,54 +980,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NORMALIZE(EvaluableNode *e
 	return container;
 }
 
-//builds a vector of the values in the node, using ordered or mapped child nodes as appropriate
-// if node is mapped child nodes, it will use id_order to order populate out and use default_value if any given id is not found
-inline void GetChildNodesAsENImmediateValueArray(EvaluableNode *node, std::vector<StringInternPool::StringID> &id_order,
-	std::vector<EvaluableNodeImmediateValue> &out, std::vector<EvaluableNodeImmediateValueType> &out_types)
-{
-	if(node != nullptr)
-	{
-		if(node->IsAssociativeArray())
-		{
-			auto &wn_mcn = node->GetMappedChildNodesReference();
-			out.resize(id_order.size());
-			out_types.resize(id_order.size());
-			for(size_t i = 0; i < id_order.size(); i++)
-			{
-				auto found_node = wn_mcn.find(id_order[i]);
-				if(found_node != end(wn_mcn))
-				{
-					out_types[i] = out[i].CopyValueFromEvaluableNode(found_node->second);
-				}
-				else //not found, use default
-				{
-					out[i] = EvaluableNodeImmediateValue(0.0);
-					out_types[i] = ENIVT_NUMBER;
-				}
-			}
-		}
-		else if(node->IsImmediate())
-		{
-			//fill in with the node's value
-			EvaluableNodeImmediateValue value;
-			EvaluableNodeImmediateValueType value_type = value.CopyValueFromEvaluableNode(node);
-			out.clear();
-			out_types.clear();
-			out.resize(id_order.size(), value);
-			out_types.resize(id_order.size(), value_type);
-		}
-		else //must be ordered
-		{
-			auto &node_ocn = node->GetOrderedChildNodesReference();
-
-			out.resize(node_ocn.size());
-			out_types.resize(node_ocn.size());
-			for(size_t i = 0; i < node_ocn.size(); i++)
-				out_types[i] = out[i].CopyValueFromEvaluableNode(node_ocn[i]);
-		}
-	}
-}
-
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MODE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
@@ -1127,17 +1079,89 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 		weights = InterpretNode(ocn[2]);
 	}
 
-	auto get_weight_for_no_weights = []
-	(size_t i, double &weight_value)
-	{
-		return false;
-	};
-
-	//TODO 24110: finish this and add tests
+	//TODO 24110: genericize this and add tests
 	double result = 0.0;
 	if(values->IsAssociativeArray())
 	{
+		auto &values_mcn = values->GetMappedChildNodesReference();
 
+		auto get_value_from_values_mcn = [&values_mcn]
+		(EvaluableNode::AssocType::iterator iter, double &value)
+		{
+			value = EvaluableNode::ToNumber(iter->second);
+			return !FastIsNaN(value);
+		};
+
+		if(EvaluableNode::IsNull(weights))
+		{
+			auto get_weight = []
+			(EvaluableNode::AssocType::iterator iter, double &weight_value)
+			{
+				return false;
+			};
+			result = GeneralizedMean(begin(values_mcn), end(values_mcn), get_value_from_values_mcn,
+							   false, get_weight, p, center, calculate_moment, absolute_value);
+		}
+		else if(weights->IsAssociativeArray())
+		{
+			auto &weights_mcn = weights->GetMappedChildNodesReference();
+
+			auto get_value_from_weights_mcn = [&values_mcn]
+			(EvaluableNode::AssocType::iterator iter, double &value)
+			{
+				auto entry = values_mcn.find(iter->first);
+				if(entry == end(values_mcn))
+					return false;
+
+				value = EvaluableNode::ToNumber(entry->second);
+				return !FastIsNaN(value);
+			};
+
+			auto get_weight = []
+			(EvaluableNode::AssocType::iterator iter, double &value)
+			{
+				value = EvaluableNode::ToNumber(iter->second);
+				return true;
+			};
+
+			result = GeneralizedMean(begin(weights_mcn), end(weights_mcn), get_value_from_weights_mcn,
+							   true, get_weight, p, center, calculate_moment, absolute_value);
+
+		}
+		else //weights->IsOrderedArray())
+		{
+			auto &weights_ocn = weights->GetOrderedChildNodesReference();
+
+			auto get_value_from_weights_iter = [&values_mcn, &weights_ocn]
+			(size_t i, double &value)
+			{
+				auto key_sid = EvaluableNode::NumberToStringIDIfExists(i, true);
+				if(key_sid == string_intern_pool.NOT_A_STRING_ID)
+					return false;
+				
+				auto entry = values_mcn.find(key_sid);
+				if(entry == end(values_mcn))
+					return false;
+
+				value = EvaluableNode::ToNumber(entry->second);
+				return !FastIsNaN(value);
+			};
+
+			auto get_weight = [&weights_ocn]
+			(size_t i, double &value)
+			{
+				if(i >= weights_ocn.size())
+					return false;
+
+				value = EvaluableNode::ToNumber(weights_ocn[i]);
+				return !FastIsNaN(value);
+			};
+
+			size_t index_first = 0;
+			size_t index_last = weights_ocn.size();
+			result = GeneralizedMean(index_first, index_last, get_value_from_weights_iter,
+							   true, get_weight, p, center, calculate_moment, absolute_value);
+		}
 	}
 	else //values->IsOrderedArray())
 	{
@@ -1145,7 +1169,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 		size_t index_first = 0;
 		size_t index_last = values_ocn.size();
 
-		auto get_value = [&values_ocn]
+		auto get_value_from_values_ocn = [&values_ocn]
 		(size_t i, double &value)
 		{
 			value = EvaluableNode::ToNumber(values_ocn[i]);
@@ -1154,21 +1178,41 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 
 		if(EvaluableNode::IsNull(weights))
 		{
-			result = GeneralizedMean(index_first, index_last, get_value,
-							   false, get_weight_for_no_weights, p, center, calculate_moment, absolute_value);
+			auto get_weight = []
+			(size_t i, double &weight_value)
+			{
+				return false;
+			};
+			result = GeneralizedMean(index_first, index_last, get_value_from_values_ocn,
+							   false, get_weight, p, center, calculate_moment, absolute_value);
 		}
 		else if(weights->IsAssociativeArray())
 		{
-			/* TODO 24110: adapt this code -- consider adding value_names feature like generalized_distance
-			auto get_weight = [matching_entities, this]
-			(size_t i, double &weight_value)
-			{
-				auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsNumber(weightLabel);
-				weight_value = ret_val;
+			auto &weights_mcn = weights->GetMappedChildNodesReference();
 
-				return found;
+			auto get_value_from_weights_iter = [&values_ocn]
+			(EvaluableNode::AssocType::iterator iter, double &value)
+			{
+				double index_double = Parser::ParseNumberFromKeyStringId(iter->first);
+				if(FastIsNaN(index_double))
+					return false;
+				size_t index = static_cast<size_t>(index_double);
+				if(index >= values_ocn.size())
+					return false;
+
+				value = EvaluableNode::ToNumber(values_ocn[index]);
+				return !FastIsNaN(value);
 			};
-			*/
+
+			auto get_weight = []
+			(EvaluableNode::AssocType::iterator iter, double &value)
+			{
+				value = EvaluableNode::ToNumber(iter->second);
+				return true;
+			};
+
+			result = GeneralizedMean(begin(weights_mcn), end(weights_mcn), get_value_from_weights_iter,
+							   true, get_weight, p, center, calculate_moment, absolute_value);
 		}
 		else //weights->IsOrderedArray())
 		{
@@ -1183,12 +1227,60 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 				return !FastIsNaN(value);
 			};
 
-			result = GeneralizedMean(index_first, index_last, get_value,
-							   false, get_weight, p, center, calculate_moment, absolute_value);
+			result = GeneralizedMean(index_first, index_last, get_value_from_values_ocn,
+							   true, get_weight, p, center, calculate_moment, absolute_value);
 		}
 	}
 
 	return AllocReturn(result, immediate_result);
+}
+
+//builds a vector of the values in the node, using ordered or mapped child nodes as appropriate
+// if node is mapped child nodes, it will use id_order to order populate out and use default_value if any given id is not found
+inline void GetChildNodesAsENImmediateValueArray(EvaluableNode *node, std::vector<StringInternPool::StringID> &id_order,
+	std::vector<EvaluableNodeImmediateValue> &out, std::vector<EvaluableNodeImmediateValueType> &out_types)
+{
+	if(node != nullptr)
+	{
+		if(node->IsAssociativeArray())
+		{
+			auto &wn_mcn = node->GetMappedChildNodesReference();
+			out.resize(id_order.size());
+			out_types.resize(id_order.size());
+			for(size_t i = 0; i < id_order.size(); i++)
+			{
+				auto found_node = wn_mcn.find(id_order[i]);
+				if(found_node != end(wn_mcn))
+				{
+					out_types[i] = out[i].CopyValueFromEvaluableNode(found_node->second);
+				}
+				else //not found, use default
+				{
+					out[i] = EvaluableNodeImmediateValue(0.0);
+					out_types[i] = ENIVT_NUMBER;
+				}
+			}
+		}
+		else if(node->IsImmediate())
+		{
+			//fill in with the node's value
+			EvaluableNodeImmediateValue value;
+			EvaluableNodeImmediateValueType value_type = value.CopyValueFromEvaluableNode(node);
+			out.clear();
+			out_types.clear();
+			out.resize(id_order.size(), value);
+			out_types.resize(id_order.size(), value_type);
+		}
+		else //must be ordered
+		{
+			auto &node_ocn = node->GetOrderedChildNodesReference();
+
+			out.resize(node_ocn.size());
+			out_types.resize(node_ocn.size());
+			for(size_t i = 0; i < node_ocn.size(); i++)
+				out_types[i] = out[i].CopyValueFromEvaluableNode(node_ocn[i]);
+		}
+	}
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE(EvaluableNode *en, bool immediate_result)

@@ -226,6 +226,28 @@ std::string EvaluableNode::NumberToString(size_t value, bool key_string)
 	return StringManipulation::NumberToString(value);
 }
 
+StringInternPool::StringID EvaluableNode::NumberToStringIDIfExists(double value, bool key_string)
+{
+	std::string num_str;
+	if(key_string)
+		num_str = Parser::UnparseNumberToKeyString(value);
+	else
+		num_str = StringManipulation::NumberToString(value);
+
+	return string_intern_pool.GetIDFromString(num_str);
+}
+
+StringInternPool::StringID EvaluableNode::NumberToStringIDIfExists(size_t value, bool key_string)
+{
+	std::string num_str;
+	if(key_string)
+		num_str = Parser::UnparseNumberToKeyString(value);
+	else
+		num_str = StringManipulation::NumberToString(value);
+
+	return string_intern_pool.GetIDFromString(num_str);
+}
+
 std::string EvaluableNode::ToString(EvaluableNode *e, bool key_string)
 {
 	if(key_string)

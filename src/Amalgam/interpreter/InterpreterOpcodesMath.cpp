@@ -1127,9 +1127,53 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 		weights = InterpretNode(ocn[2]);
 	}
 
-	//TODO 24110: finish this and add tests
-	double result = 0.0; //GeneralizedMean(matching_entities.begin(), matching_entities.end(), get_value,
-						//has_weight, get_weight, cond->distEvaluator.pValue, cond->center, cond->calculateMoment, cond->absoluteValue);
+	auto get_weight_for_no_weights = []
+	(size_t i, double &weight_value)
+	{
+		return false;
+	};
+
+	double result = 0.0;
+	if(values->IsAssociativeArray())
+	{
+
+	}
+	else //values->IsOrderedArray())
+	{
+		auto &values_ocn = values->GetOrderedChildNodesReference();
+		size_t index_first = 0;
+		size_t index_last = values_ocn.size();
+
+		auto get_value = [&values_ocn]
+		(size_t i, double &value)
+		{
+			value = EvaluableNode::ToNumber(values_ocn[i]);
+			return !FastIsNaN(value);
+		};
+
+		if(EvaluableNode::IsNull(weights))
+		{
+			result = GeneralizedMean(index_first, index_last, get_value,
+							   false, get_weight_for_no_weights, p, center, calculate_moment, absolute_value);
+		}
+		else if(weights->IsAssociativeArray())
+		{
+			/* TODO 24110: adapt this code -- consider adding value_names feature like generalized_distance
+			auto get_weight = [matching_entities, this]
+			(size_t i, double &weight_value)
+			{
+				auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsNumber(weightLabel);
+				weight_value = ret_val;
+
+				return found;
+			};
+			*/
+		}
+		else //weights->IsOrderedArray())
+		{
+			//TODO 24110: finish this and add tests
+		}
+	}
 
 	return AllocReturn(result, immediate_result);
 }

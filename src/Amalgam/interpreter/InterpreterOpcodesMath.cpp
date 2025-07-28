@@ -980,6 +980,61 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NORMALIZE(EvaluableNode *e
 	return container;
 }
 
+static inline bool GetValueFromIter(EvaluableNode::AssocType::iterator iter, double &value)
+{
+	value = EvaluableNode::ToNumber(iter->second);
+	return !FastIsNaN(value);
+};
+
+static inline bool GetValueFromIndex(std::vector<EvaluableNode *> &ocn, size_t i, double &value)
+{
+	if(i >= ocn.size())
+		return false;
+
+	value = EvaluableNode::ToNumber(ocn[i]);
+	return !FastIsNaN(value);
+};
+
+static inline bool GetValueFromWeightsIter(EvaluableNode::AssocType &values_mcn,
+	EvaluableNode::AssocType::iterator iter, double &value)
+{
+	auto entry = values_mcn.find(iter->first);
+	if(entry == end(values_mcn))
+		return false;
+
+	value = EvaluableNode::ToNumber(entry->second);
+	return !FastIsNaN(value);
+};
+
+static inline bool GetValueFromWeightsIter(std::vector<EvaluableNode *> &values_ocn,
+	EvaluableNode::AssocType::iterator iter, double &value)
+{
+	double index_double = Parser::ParseNumberFromKeyStringId(iter->first);
+	if(FastIsNaN(index_double))
+		return false;
+	size_t index = static_cast<size_t>(index_double);
+	if(index >= values_ocn.size())
+		return false;
+
+	value = EvaluableNode::ToNumber(values_ocn[index]);
+	return !FastIsNaN(value);
+};
+
+static inline bool GetValueFromWeightsIndex(EvaluableNode::AssocType &values_mcn,
+	size_t index, double &value)
+{
+	auto key_sid = EvaluableNode::NumberToStringIDIfExists(index, true);
+	if(key_sid == string_intern_pool.NOT_A_STRING_ID)
+		return false;
+
+	auto entry = values_mcn.find(key_sid);
+	if(entry == end(values_mcn))
+		return false;
+
+	value = EvaluableNode::ToNumber(entry->second);
+	return !FastIsNaN(value);
+};
+
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MODE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
@@ -1037,61 +1092,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_QUANTILE(EvaluableNode * e
 	return AllocReturn(result, immediate_result);
 }
 
-static inline bool GetValueFromIter(EvaluableNode::AssocType::iterator iter, double &value)
-{
-	value = EvaluableNode::ToNumber(iter->second);
-	return !FastIsNaN(value);
-};
-
-static inline bool GetValueFromIndex(std::vector<EvaluableNode *> &ocn, size_t i, double &value)
-{
-	if(i >= ocn.size())
-		return false;
-
-	value = EvaluableNode::ToNumber(ocn[i]);
-	return !FastIsNaN(value);
-};
-
-static inline bool GetValueFromWeightsIter(EvaluableNode::AssocType &values_mcn,
-	EvaluableNode::AssocType::iterator iter, double &value)
-{
-	auto entry = values_mcn.find(iter->first);
-	if(entry == end(values_mcn))
-		return false;
-
-	value = EvaluableNode::ToNumber(entry->second);
-	return !FastIsNaN(value);
-};
-
-static inline bool GetValueFromWeightsIter(std::vector<EvaluableNode *> &values_ocn,
-	EvaluableNode::AssocType::iterator iter, double &value)
-{
-	double index_double = Parser::ParseNumberFromKeyStringId(iter->first);
-	if(FastIsNaN(index_double))
-		return false;
-	size_t index = static_cast<size_t>(index_double);
-	if(index >= values_ocn.size())
-		return false;
-
-	value = EvaluableNode::ToNumber(values_ocn[index]);
-	return !FastIsNaN(value);
-};
-
-static inline bool GetValueFromWeightsIndex(EvaluableNode::AssocType &values_mcn,
-	size_t index, double &value)
-{
-	auto key_sid = EvaluableNode::NumberToStringIDIfExists(index, true);
-	if(key_sid == string_intern_pool.NOT_A_STRING_ID)
-		return false;
-
-	auto entry = values_mcn.find(key_sid);
-	if(entry == end(values_mcn))
-		return false;
-
-	value = EvaluableNode::ToNumber(entry->second);
-	return !FastIsNaN(value);
-};
-
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
@@ -1134,7 +1134,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 		weights = InterpretNode(ocn[2]);
 	}
 
-	//TODO 24110: genericize this and add tests
 	double result = 0.0;
 	if(values->IsAssociativeArray())
 	{

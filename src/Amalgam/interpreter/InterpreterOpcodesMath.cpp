@@ -1037,6 +1037,23 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_QUANTILE(EvaluableNode * e
 	return AllocReturn(result, immediate_result);
 }
 
+//static inline bool GetValueFromValuesMcn(EvaluableNode::AssocType &values_mcn,
+
+static inline bool GetValueFromIter(EvaluableNode::AssocType::iterator iter, double &value)
+{
+	value = EvaluableNode::ToNumber(iter->second);
+	return !FastIsNaN(value);
+};
+
+static inline bool GetValueFromIndex(std::vector<EvaluableNode *> &ocn, size_t i, double &value)
+{
+	if(i >= ocn.size())
+		return false;
+
+	value = EvaluableNode::ToNumber(ocn[i]);
+	return !FastIsNaN(value);
+};
+
 EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
@@ -1085,22 +1102,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 	{
 		auto &values_mcn = values->GetMappedChildNodesReference();
 
-		auto get_value_from_values_mcn = [&values_mcn]
-		(EvaluableNode::AssocType::iterator iter, double &value)
-		{
-			value = EvaluableNode::ToNumber(iter->second);
-			return !FastIsNaN(value);
-		};
-
 		if(EvaluableNode::IsNull(weights))
 		{
-			auto get_weight = []
-			(EvaluableNode::AssocType::iterator iter, double &weight_value)
-			{
-				return false;
-			};
-			result = GeneralizedMean(begin(values_mcn), end(values_mcn), get_value_from_values_mcn,
-							   false, get_weight, p, center, calculate_moment, absolute_value);
+			result = GeneralizedMean(begin(values_mcn), end(values_mcn),
+				[&values_mcn](auto iter, auto &value) { return GetValueFromIter(iter, value);},
+				false, [](auto iter, auto &value) { return false;},
+				p, center, calculate_moment, absolute_value);
 		}
 		else if(weights->IsAssociativeArray())
 		{
@@ -1117,22 +1124,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 				return !FastIsNaN(value);
 			};
 
-			auto get_weight = []
-			(EvaluableNode::AssocType::iterator iter, double &value)
-			{
-				value = EvaluableNode::ToNumber(iter->second);
-				return true;
-			};
-
 			result = GeneralizedMean(begin(weights_mcn), end(weights_mcn), get_value_from_weights_mcn,
-							   true, get_weight, p, center, calculate_moment, absolute_value);
+				true, [](auto iter, auto &value) {	return GetValueFromIter(iter, value); },
+				p, center, calculate_moment, absolute_value);
 
 		}
 		else //weights->IsOrderedArray())
 		{
 			auto &weights_ocn = weights->GetOrderedChildNodesReference();
 
-			auto get_value_from_weights_iter = [&values_mcn, &weights_ocn]
+			auto get_value_from_weights_iter = [&values_mcn]
 			(size_t i, double &value)
 			{
 				auto key_sid = EvaluableNode::NumberToStringIDIfExists(i, true);
@@ -1147,20 +1148,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 				return !FastIsNaN(value);
 			};
 
-			auto get_weight = [&weights_ocn]
-			(size_t i, double &value)
-			{
-				if(i >= weights_ocn.size())
-					return false;
-
-				value = EvaluableNode::ToNumber(weights_ocn[i]);
-				return !FastIsNaN(value);
-			};
-
 			size_t index_first = 0;
 			size_t index_last = weights_ocn.size();
 			result = GeneralizedMean(index_first, index_last, get_value_from_weights_iter,
-							   true, get_weight, p, center, calculate_moment, absolute_value);
+				true, [&weights_ocn](auto i, auto &value) { return GetValueFromIndex(weights_ocn, i, value); },
+				p, center, calculate_moment, absolute_value);
 		}
 	}
 	else //values->IsOrderedArray())
@@ -1169,22 +1161,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 		size_t index_first = 0;
 		size_t index_last = values_ocn.size();
 
-		auto get_value_from_values_ocn = [&values_ocn]
-		(size_t i, double &value)
-		{
-			value = EvaluableNode::ToNumber(values_ocn[i]);
-			return !FastIsNaN(value);
-		};
-
 		if(EvaluableNode::IsNull(weights))
 		{
-			auto get_weight = []
-			(size_t i, double &weight_value)
-			{
-				return false;
-			};
-			result = GeneralizedMean(index_first, index_last, get_value_from_values_ocn,
-							   false, get_weight, p, center, calculate_moment, absolute_value);
+			result = GeneralizedMean(index_first, index_last,
+				[&values_ocn](auto i, auto &value) { return GetValueFromIndex(values_ocn, i, value); },
+				false, [](auto iter, auto &value) { return false;},
+				p, center, calculate_moment, absolute_value);
 		}
 		else if(weights->IsAssociativeArray())
 		{
@@ -1204,31 +1186,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 				return !FastIsNaN(value);
 			};
 
-			auto get_weight = []
-			(EvaluableNode::AssocType::iterator iter, double &value)
-			{
-				value = EvaluableNode::ToNumber(iter->second);
-				return true;
-			};
-
 			result = GeneralizedMean(begin(weights_mcn), end(weights_mcn), get_value_from_weights_iter,
-							   true, get_weight, p, center, calculate_moment, absolute_value);
+				true, [](auto iter, auto &value) {	return GetValueFromIter(iter, value); },
+				p, center, calculate_moment, absolute_value);
 		}
 		else //weights->IsOrderedArray())
 		{
 			auto &weights_ocn = weights->GetOrderedChildNodesReference();
-			auto get_weight = [&weights_ocn]
-			(size_t i, double &value)
-			{
-				if(i >= weights_ocn.size())
-					return false;
-
-				value = EvaluableNode::ToNumber(weights_ocn[i]);
-				return !FastIsNaN(value);
-			};
-
-			result = GeneralizedMean(index_first, index_last, get_value_from_values_ocn,
-							   true, get_weight, p, center, calculate_moment, absolute_value);
+			
+			result = GeneralizedMean(index_first, index_last,
+				[&values_ocn](auto i, auto &value) { return GetValueFromIndex(values_ocn, i, value); },
+				true, [&weights_ocn](auto i, auto &value) { return GetValueFromIndex(weights_ocn, i, value); },
+				p, center, calculate_moment, absolute_value);
 		}
 	}
 

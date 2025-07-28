@@ -659,7 +659,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 
 				case ENT_QUERY_QUANTILE:
 					result = Quantile(entities.begin(), entities.end(), get_value,
-						has_weight, get_weight, cond->qPercentage, EntityQueryCaches::buffers.pairDoubleVector);
+						has_weight, get_weight, cond->qPercentage, &EntityQueryCaches::buffers.pairDoubleVector);
 					break;
 
 				case ENT_QUERY_GENERALIZED_MEAN:
@@ -702,7 +702,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 
 				case ENT_QUERY_QUANTILE:
 					result = Quantile(matching_entities.begin(), matching_entities.end(), get_value,
-						has_weight, get_weight, cond->qPercentage, EntityQueryCaches::buffers.pairDoubleVector);
+						has_weight, get_weight, cond->qPercentage, &EntityQueryCaches::buffers.pairDoubleVector);
 					break;
 
 				case ENT_QUERY_GENERALIZED_MEAN:

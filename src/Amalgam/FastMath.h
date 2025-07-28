@@ -432,18 +432,24 @@ static std::pair<bool, ValueType> Mode(ValueIterator first, ValueIterator last,
 //iterates from first to last, calling get_value
 // if has_weight, then will use get_weight to obtain the weight of each value. Otherwise, weight is 1.
 //q_percentage is the quantile percentage to calculate
-//values_buffer is a temporary buffer to hold data that can be reused
+//values_buffer is a temporary buffer to hold data that can be reused if specified
 template<typename ValueIterator, typename ValueFunction, typename WeightFunction>
 static double Quantile(ValueIterator first, ValueIterator last,
 	ValueFunction get_value, bool has_weight, WeightFunction get_weight, double q_percentage,
-	std::vector<std::pair<double, double>> &values_buffer)
+	std::vector<std::pair<double, double>> *values_buffer = nullptr)
 {
 	//invalid range of quantile percentage
 	if(FastIsNaN(q_percentage) || q_percentage < 0.0 || q_percentage > 1.0)
 		return std::numeric_limits<double>::quiet_NaN();
 
-	std::vector<std::pair<double, double>> &value_weights = values_buffer;
-	value_weights.clear();
+	//reuse buffer if available, create local one if not
+	std::vector<std::pair<double, double>> *value_weights = values_buffer;
+	std::vector<std::pair<double, double>> value_weights_local_buffer;
+	if(value_weights != nullptr)
+		value_weights->clear();
+	else
+		value_weights = &value_weights_local_buffer;
+
 	double total_weight = 0.0;
 	bool eq_or_no_weights = true;
 
@@ -454,7 +460,7 @@ static double Quantile(ValueIterator first, ValueIterator last,
 			double value = 0.0;
 			if(get_value(i, value))
 			{
-				value_weights.push_back(std::make_pair(value, 1.0));
+				value_weights->push_back(std::make_pair(value, 1.0));
 				total_weight += 1.0;
 			}
 		}
@@ -472,7 +478,7 @@ static double Quantile(ValueIterator first, ValueIterator last,
 				get_weight(i, weight_value);
 				if(!FastIsNaN(weight_value))
 				{
-					value_weights.push_back(std::make_pair(value, weight_value));
+					value_weights->push_back(std::make_pair(value, weight_value));
 					total_weight += weight_value;
 
 					//check to see if weights are different
@@ -486,31 +492,31 @@ static double Quantile(ValueIterator first, ValueIterator last,
 	}
 
 	//make sure have valid values and weights
-	if(value_weights.size() == 0 || total_weight == 0.0)
+	if(value_weights->size() == 0 || total_weight == 0.0)
 		return std::numeric_limits<double>::quiet_NaN();
 
 	//sorts on .first - value, not weight
-	std::sort(std::begin(value_weights), std::end(value_weights));
+	std::sort(std::begin(*value_weights), std::end(*value_weights));
 
 	//early outs for edge cases
-	if(value_weights.size() == 1 || q_percentage == 0.0)
-		return value_weights.front().first;
+	if(value_weights->size() == 1 || q_percentage == 0.0)
+		return value_weights->front().first;
 	else if(q_percentage == 1.0)
-		return value_weights.back().first;
+		return value_weights->back().first;
 
 	//search cumulative density for target quantile
-	const double first_cdf_term = 0.5 * value_weights.front().second;
-	const double last_cdf_term = total_weight - 0.5 * value_weights.front().second - 0.5 * value_weights.back().second;
+	const double first_cdf_term = 0.5 * value_weights->front().second;
+	const double last_cdf_term = total_weight - 0.5 * value_weights->front().second - 0.5 * value_weights->back().second;
 	double accum_weight = 0.0;
 	double cdf_term_prev = 0.0;
-	for(size_t i = 0; i < value_weights.size(); ++i)
+	for(size_t i = 0; i < value_weights->size(); ++i)
 	{
-		const auto &[curr_value, curr_weight] = value_weights[i];
+		const auto &[curr_value, curr_weight] = (*value_weights)[i];
 
 		//calculate cdf term
 		double cdf_term = 0.0;
-		accum_weight += value_weights[i].second;
-		cdf_term += accum_weight - 0.5 * value_weights[i].second;
+		accum_weight += (*value_weights)[i].second;
+		cdf_term += accum_weight - 0.5 * (*value_weights)[i].second;
 
 		//there are different ways in which to shift and normalize each individual cdf term, all of which
 		// produce mathematically correct quantiles (given a quantile is an interval, not a point). To be consistent
@@ -537,12 +543,12 @@ static double Quantile(ValueIterator first, ValueIterator last,
 
 		//check for found quantile
 		if(q_percentage == cdf_term_prev)
-			return value_weights[i - 1].first;
+			return (*value_weights)[i - 1].first;
 		else if(q_percentage == cdf_term)
 			return curr_value;
 		else if(cdf_term_prev < q_percentage && q_percentage < cdf_term)
 		{
-			const auto &prev_value = value_weights[i - 1].first;
+			const auto &prev_value = (*value_weights)[i - 1].first;
 
 			//linearly interpolate
 			return prev_value + (curr_value - prev_value) * (q_percentage - cdf_term_prev) / (cdf_term - cdf_term_prev);
@@ -552,7 +558,7 @@ static double Quantile(ValueIterator first, ValueIterator last,
 	}
 
 	//if didn't find (quantile percentage larger than last cdf term), use last element
-	return value_weights.back().first;
+	return value_weights->back().first;
 }
 
 //computes the generalized mean of the values where p_value is the parameter for the generalized mean

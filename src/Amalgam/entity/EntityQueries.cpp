@@ -580,9 +580,8 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		}
 		case ENT_QUERY_QUANTILE:
 		{
-			std::vector<std::pair<double,double>> values_buffer;
 			double quantile = Quantile<size_t>(0, matching_entities.size(), get_value,
-				weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight, qPercentage, values_buffer);
+				weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight, qPercentage);
 			return EvaluableNodeReference(enm->AllocNode(quantile), true);
 		}
 		case ENT_QUERY_GENERALIZED_MEAN:

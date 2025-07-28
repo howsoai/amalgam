@@ -1085,9 +1085,68 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_QUANTILE(EvaluableNode * e
 		weights = InterpretNode(ocn[2]);
 	}
 
-	//TODO 24110: finish this and add tests
-	double result = 0.0; //Quantile(matching_entities.begin(), matching_entities.end(), get_value,
-		//has_weight, get_weight, cond->qPercentage, EntityQueryCaches::buffers.pairDoubleVector);
+	double result = 0.0;
+	if(values->IsAssociativeArray())
+	{
+		auto &values_mcn = values->GetMappedChildNodesReference();
+
+		if(EvaluableNode::IsNull(weights))
+		{
+			result = Quantile(begin(values_mcn), end(values_mcn),
+				[&values_mcn](auto iter, auto &value) { return GetValueFromIter(iter, value);},
+				false, [](auto iter, auto &value) { return false;},
+				quantile);
+		}
+		else if(weights->IsAssociativeArray())
+		{
+			auto &weights_mcn = weights->GetMappedChildNodesReference();
+
+			result = Quantile(begin(weights_mcn), end(weights_mcn),
+				[&values_mcn](auto iter, auto &value) { return GetValueFromWeightsIter(values_mcn, iter, value); },
+				true, [](auto iter, auto &value) {	return GetValueFromIter(iter, value); },
+				quantile);
+
+		}
+		else //weights->IsOrderedArray())
+		{
+			auto &weights_ocn = weights->GetOrderedChildNodesReference();
+
+			result = Quantile(size_t{ 0 }, weights_ocn.size(),
+				[&values_mcn](auto i, auto &value) { return GetValueFromWeightsIndex(values_mcn, i, value); },
+				true, [&weights_ocn](auto i, auto &value) { return GetValueFromIndex(weights_ocn, i, value); },
+				quantile);
+		}
+	}
+	else //values->IsOrderedArray())
+	{
+		auto &values_ocn = values->GetOrderedChildNodesReference();
+
+		if(EvaluableNode::IsNull(weights))
+		{
+			result = Quantile(size_t{ 0 }, values_ocn.size(),
+				[&values_ocn](auto i, auto &value) { return GetValueFromIndex(values_ocn, i, value); },
+				false, [](auto iter, auto &value) { return false;},
+				quantile);
+		}
+		else if(weights->IsAssociativeArray())
+		{
+			auto &weights_mcn = weights->GetMappedChildNodesReference();
+
+			result = Quantile(begin(weights_mcn), end(weights_mcn),
+				[&values_ocn](auto iter, auto &value) { return GetValueFromWeightsIter(values_ocn, iter, value); },
+				true, [](auto iter, auto &value) {	return GetValueFromIter(iter, value); },
+				quantile);
+		}
+		else //weights->IsOrderedArray())
+		{
+			auto &weights_ocn = weights->GetOrderedChildNodesReference();
+
+			result = Quantile(size_t{ 0 }, weights_ocn.size(),
+				[&values_ocn](auto i, auto &value) { return GetValueFromIndex(values_ocn, i, value); },
+				true, [&weights_ocn](auto i, auto &value) { return GetValueFromIndex(weights_ocn, i, value); },
+				quantile);
+		}
+	}
 
 	return AllocReturn(result, immediate_result);
 }

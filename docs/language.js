@@ -549,9 +549,9 @@ var data = [
 		"example" : "(print (normalize [ 0.5 0.5 0.5 0.5 ])\n(print (normalize { a 0.5 b 0.5 c 0.5 d 0.5 }))"
 	},
 	{
-		"parameter" : "mode list|assoc values [list|assoc weights] [bool random_tie_breaks]",
+		"parameter" : "mode list|assoc values [list|assoc weights]",
 		"output" : "*",
-		"description" : "Evaluates to mode of the values; if values is an assoc, it will return the key.  If weights is specified and both values and weights are lists, then the corresponding elements will be weighted by weights.  If weights is specified and is an assoc, then each value will be looked up in the weights.  If random_tie_breaks is true and there are ties for the most common element, then it will draw random numbers to break any ties.",
+		"description" : "Evaluates to mode of the values; if values is an assoc, it will return the key.  If weights is specified and both values and weights are lists, then the corresponding elements will be weighted by weights.  If weights is specified and is an assoc, then each value will be looked up in the weights.",
 		"example" : "(print (mode [ 1 2 3 3 4 4 4 4])\n(print (mode { a 0.7 b 0.5 })\n)(print (mode [\"a\" \"b\"] {a 1 b 100}))"
 	},
 	{

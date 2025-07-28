@@ -1,5 +1,8 @@
 #pragma once
 
+//project headers:
+#include "HashMaps.h"
+
 //system headers:
 #include <cmath>
 #include <cstdint>

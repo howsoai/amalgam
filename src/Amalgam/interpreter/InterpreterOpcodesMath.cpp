@@ -980,6 +980,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NORMALIZE(EvaluableNode *e
 	return container;
 }
 
+//set of getter methods to help ENT_MODE, ENT_QUANTILE, and ENT_GENERALIZED_DISTANCE when retrieving values and weights
 static inline bool GetValueFromIter(EvaluableNode::AssocType::iterator iter, double &value)
 {
 	value = EvaluableNode::ToNumber(iter->second);

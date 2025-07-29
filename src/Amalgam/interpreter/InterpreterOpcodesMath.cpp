@@ -1296,7 +1296,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 	if(ocn.size() > 4)
 		calculate_moment = InterpretNodeIntoBoolValue(ocn[4], false);
 
-	bool absolute_value = true;
+	bool absolute_value = false;
 	if(ocn.size() > 5)
 		absolute_value = InterpretNodeIntoBoolValue(ocn[5], false);
 

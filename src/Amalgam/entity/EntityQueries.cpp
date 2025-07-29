@@ -553,7 +553,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		{
 			if(singleLabelType == ENIVT_NUMBER)
 			{
-				double mode = EntityQueriesStatistics::ModeNumber<size_t>(0, matching_entities.size(), get_value,
+				auto [found, mode] = EntityQueriesStatistics::ModeNumber<size_t>(0, matching_entities.size(), get_value,
 					weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight);
 				return EvaluableNodeReference(enm->AllocNode(mode), true);
 			}
@@ -568,11 +568,11 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 					return found;
 				};
 
-				auto [found, mode_id] = EntityQueriesStatistics::ModeStringId<size_t>(
+				auto [found, mode] = EntityQueriesStatistics::ModeStringId<size_t>(
 					0, matching_entities.size(), get_string_value, true, get_weight);
 
 				if(found)
-					return EvaluableNodeReference(enm->AllocNode(ENT_STRING, mode_id), true);
+					return EvaluableNodeReference(enm->AllocNode(ENT_STRING, mode), true);
 				else
 					return EvaluableNodeReference::Null();
 			}
@@ -580,15 +580,15 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		}
 		case ENT_QUERY_QUANTILE:
 		{
-			std::vector<std::pair<double,double>> values_buffer;
-			double quantile = EntityQueriesStatistics::Quantile<size_t>(0, matching_entities.size(), get_value,
-				weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight, qPercentage, values_buffer);
+			double quantile = Quantile<size_t>(0, matching_entities.size(), get_value,
+				weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight, qPercentage);
 			return EvaluableNodeReference(enm->AllocNode(quantile), true);
 		}
 		case ENT_QUERY_GENERALIZED_MEAN:
 		{
-			double generalized_mean = EntityQueriesStatistics::GeneralizedMean<size_t>(0, matching_entities.size(), get_value,
-				weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight, distEvaluator.pValue, center, calculateMoment, absoluteValue);
+			double generalized_mean = GeneralizedMean<size_t>(0, matching_entities.size(), get_value,
+				weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight, distEvaluator.pValue, center,
+				calculateMoment, absoluteValue);
 			return EvaluableNodeReference(enm->AllocNode(generalized_mean), true);
 		}
 		case ENT_QUERY_MIN_DIFFERENCE:

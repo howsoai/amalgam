@@ -1193,6 +1193,9 @@ protected:
 	EvaluableNodeReference InterpretNode_ENT_INDEX_MIN(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_DOT_PRODUCT(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_NORMALIZE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_MODE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_QUANTILE(EvaluableNode *en, bool immediate_result);
+	EvaluableNodeReference InterpretNode_ENT_GENERALIZED_MEAN(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_GENERALIZED_DISTANCE(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_ENTROPY(EvaluableNode *en, bool immediate_result);
 

@@ -1988,6 +1988,9 @@ CompactHashMap<EvaluableNodeType, double> EvaluableNodeTreeManipulation::evaluab
 	{ENT_INDEX_MIN,										0.2},
 	{ENT_DOT_PRODUCT,									0.15},
 	{ENT_NORMALIZE,										0.15},
+	{ENT_MODE,											0.15},
+	{ENT_QUANTILE,										0.15},
+	{ENT_GENERALIZED_MEAN,								0.15},
 	{ENT_GENERALIZED_DISTANCE,							0.15},
 
 	//list manipulation

@@ -376,6 +376,8 @@ public:
 	//Converts a number to a string in a consistent way that should be used for anything dealing with EvaluableNode
 	static std::string NumberToString(double value, bool key_string = false);
 	static std::string NumberToString(size_t value, bool key_string = false);
+	static StringInternPool::StringID NumberToStringIDIfExists(double value, bool key_string = false);
+	static StringInternPool::StringID NumberToStringIDIfExists(size_t value, bool key_string = false);
 
 	//converts the node to a key string that can be used in assocs
 	//if key_string is true, then it will generate a string used for comparing in assoc keys

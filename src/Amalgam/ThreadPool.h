@@ -136,10 +136,11 @@ public:
 
 	//enqueues a task into the thread pool
 	//it is up to the caller to determine when the task is complete
-	inline void EnqueueTask(std::function<void()> &&function)
+	template<typename Func, typename... Args>
+	inline void EnqueueTask(Func func, Args... args)
 	{
 		std::unique_lock<std::mutex> lock(threadsMutex);
-		taskQueue.emplace(std::move(function));
+		taskQueue.emplace([=]() mutable { func(args...); });
 		lock.unlock();
 
 		waitForTask.notify_one();

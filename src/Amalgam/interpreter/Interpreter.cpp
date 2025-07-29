@@ -99,6 +99,9 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 	&Interpreter::InterpretNode_ENT_INDEX_MIN,														// ENT_INDEX_MIN
 	&Interpreter::InterpretNode_ENT_DOT_PRODUCT,													// ENT_DOT_PRODUCT
 	&Interpreter::InterpretNode_ENT_NORMALIZE,														// ENT_NORMALIZE
+	&Interpreter::InterpretNode_ENT_MODE,															// ENT_MODE,
+	&Interpreter::InterpretNode_ENT_QUANTILE,														// ENT_QUANTILE,
+	&Interpreter::InterpretNode_ENT_GENERALIZED_MEAN,												// ENT_GENERALIZED_MEAN,
 	&Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE,											// ENT_GENERALIZED_DISTANCE
 	&Interpreter::InterpretNode_ENT_ENTROPY,														// ENT_ENTROPY
 
@@ -308,19 +311,14 @@ Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 	evaluableNodeManager = enm;
 }
 
+EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
+	EvaluableNode *scope_stack, EvaluableNode *opcode_stack, EvaluableNode *construction_stack,
+	bool manage_stack_references,
+	std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices,
 #ifdef MULTITHREAD_SUPPORT
-EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
-	EvaluableNode *scope_stack, EvaluableNode *opcode_stack,
-	EvaluableNode *construction_stack,
-	std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices,
-	Concurrency::ReadWriteMutex *scope_stack_write_mutex, bool immediate_result)
-#else
-EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
-	EvaluableNode *scope_stack, EvaluableNode *opcode_stack,
-	EvaluableNode *construction_stack,
-	std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices,
-	bool immediate_result)
+	Concurrency::ReadWriteMutex *scope_stack_write_mutex,
 #endif
+	bool immediate_result)
 {
 
 #ifdef MULTITHREAD_SUPPORT
@@ -345,16 +343,12 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	}
 
 	if(opcode_stack == nullptr)
-	{
 		opcode_stack = evaluableNodeManager->AllocNode(ENT_LIST);
-		opcode_stack->SetNeedCycleCheck(true);
-	}
-
+	opcode_stack->SetNeedCycleCheck(true);
+	
 	if(construction_stack == nullptr)
-	{
 		construction_stack = evaluableNodeManager->AllocNode(ENT_LIST);
-		construction_stack->SetNeedCycleCheck(true);
-	}
+	construction_stack->SetNeedCycleCheck(true);
 
 	scopeStackNodes = &scope_stack->GetOrderedChildNodes();
 	opcodeStackNodes = &opcode_stack->GetOrderedChildNodes();
@@ -363,12 +357,13 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	if(construction_stack_indices != nullptr)
 		constructionStackIndicesAndUniqueness = *construction_stack_indices;
 	
-	//keep these references as long as the interpreter is around
-	evaluableNodeManager->KeepNodeReferences(scope_stack, opcode_stack, construction_stack);
+	if(manage_stack_references)
+		evaluableNodeManager->KeepNodeReferences(scope_stack, opcode_stack, construction_stack);
 
 	auto retval = InterpretNode(en, immediate_result);
 
-	evaluableNodeManager->FreeNodeReferences(scope_stack, opcode_stack, construction_stack);
+	if(manage_stack_references)
+		evaluableNodeManager->FreeNodeReferences(scope_stack, opcode_stack, construction_stack);
 
 	return retval;
 }

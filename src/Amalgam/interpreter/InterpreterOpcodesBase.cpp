@@ -610,6 +610,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	EvaluableNodeReference scope_stack = ConvertArgsToScopeStack(args, *evaluableNodeManager);
 	node_stack.PushEvaluableNode(scope_stack);
 
+	EvaluableNode *opcode_stack = evaluableNodeManager->AllocNode(ENT_LIST);
+	opcode_stack->SetNeedCycleCheck(true);
+	node_stack.PushEvaluableNode(opcode_stack);
+
+	EvaluableNode *construction_stack = evaluableNodeManager->AllocNode(ENT_LIST);
+	construction_stack->SetNeedCycleCheck(true);
+	node_stack.PushEvaluableNode(construction_stack);
+
 	PopulatePerformanceCounters(interpreter_constraints_ptr, nullptr);
 
 	Interpreter sandbox(evaluableNodeManager, randomStream.CreateOtherStreamViaRand(),
@@ -620,7 +628,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	std::swap(memoryModificationLock, sandbox.memoryModificationLock);
 #endif
 
-	auto result = sandbox.ExecuteNode(function, scope_stack);
+	//improve performance by managing the stacks here
+	auto result = sandbox.ExecuteNode(function, scope_stack, opcode_stack, construction_stack, false);
 
 #ifdef MULTITHREAD_SUPPORT
 	//hand lock back to this interpreter
@@ -633,6 +642,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 		evaluableNodeManager->FreeNodeIfPossible(args);
 
 	evaluableNodeManager->FreeNode(scope_stack);
+	evaluableNodeManager->FreeNode(opcode_stack);
+	evaluableNodeManager->FreeNode(construction_stack);
 
 	//call opcodes should consume the outer return opcode if there is one
 	if(result.IsNonNullNodeReference() && result->GetType() == ENT_RETURN)

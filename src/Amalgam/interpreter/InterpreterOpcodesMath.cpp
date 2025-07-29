@@ -980,6 +980,403 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NORMALIZE(EvaluableNode *e
 	return container;
 }
 
+//set of getter methods to help ENT_MODE, ENT_QUANTILE, and ENT_GENERALIZED_DISTANCE when retrieving values and weights
+static inline bool GetValueFromIter(EvaluableNode::AssocType::iterator iter, double &value)
+{
+	value = EvaluableNode::ToNumber(iter->second);
+	return !FastIsNaN(value);
+};
+
+static inline bool GetValueFromIter(EvaluableNode::AssocType::iterator iter, std::string &value)
+{
+	value = Parser::UnparseToKeyString(iter->second);
+	return true;
+};
+
+static inline bool GetValueFromIndex(std::vector<EvaluableNode *> &ocn, size_t i, double &value)
+{
+	if(i >= ocn.size())
+		return false;
+
+	value = EvaluableNode::ToNumber(ocn[i]);
+	return !FastIsNaN(value);
+};
+
+static inline bool GetValueFromIndex(std::vector<EvaluableNode *> &ocn, size_t i, std::string &value)
+{
+	if(i >= ocn.size())
+		return false;
+
+	value = Parser::UnparseToKeyString(ocn[i]);
+	return true;
+};
+
+static inline bool GetValueFromWeightsIter(EvaluableNode::AssocType &values_mcn,
+	EvaluableNode::AssocType::iterator iter, double &value)
+{
+	auto entry = values_mcn.find(iter->first);
+	if(entry == end(values_mcn))
+		return false;
+
+	value = EvaluableNode::ToNumber(entry->second);
+	return !FastIsNaN(value);
+};
+
+static inline bool GetValueFromWeightsIter(EvaluableNode::AssocType &values_mcn,
+	EvaluableNode::AssocType::iterator iter, std::string &value)
+{
+	auto entry = values_mcn.find(iter->first);
+	if(entry == end(values_mcn))
+		return false;
+
+	value = Parser::UnparseToKeyString(entry->second);
+	return true;
+};
+
+static inline bool GetValueFromWeightsIter(std::vector<EvaluableNode *> &values_ocn,
+	EvaluableNode::AssocType::iterator iter, double &value)
+{
+	double index_double = Parser::ParseNumberFromKeyStringId(iter->first);
+	if(FastIsNaN(index_double))
+		return false;
+	size_t index = static_cast<size_t>(index_double);
+	if(index >= values_ocn.size())
+		return false;
+
+	value = EvaluableNode::ToNumber(values_ocn[index]);
+	return !FastIsNaN(value);
+};
+
+static inline bool GetValueFromWeightsIter(std::vector<EvaluableNode *> &values_ocn,
+	EvaluableNode::AssocType::iterator iter, std::string &value)
+{
+	double index_double = Parser::ParseNumberFromKeyStringId(iter->first);
+	if(FastIsNaN(index_double))
+		return false;
+	size_t index = static_cast<size_t>(index_double);
+	if(index >= values_ocn.size())
+		return false;
+
+	value = Parser::UnparseToKeyString(values_ocn[index]);
+	return true;
+};
+
+static inline bool GetValueFromWeightsIndex(EvaluableNode::AssocType &values_mcn,
+	size_t index, double &value)
+{
+	auto key_sid = EvaluableNode::NumberToStringIDIfExists(index, true);
+	if(key_sid == string_intern_pool.NOT_A_STRING_ID)
+		return false;
+
+	auto entry = values_mcn.find(key_sid);
+	if(entry == end(values_mcn))
+		return false;
+
+	value = EvaluableNode::ToNumber(entry->second);
+	return !FastIsNaN(value);
+};
+
+static inline bool GetValueFromWeightsIndex(EvaluableNode::AssocType &values_mcn,
+	size_t index, std::string &value)
+{
+	auto key_sid = EvaluableNode::NumberToStringIDIfExists(index, true);
+	if(key_sid == string_intern_pool.NOT_A_STRING_ID)
+		return false;
+
+	auto entry = values_mcn.find(key_sid);
+	if(entry == end(values_mcn))
+		return false;
+
+	value = Parser::UnparseToKeyString(entry->second);
+	return true;
+};
+
+//specialization of Mode for std::string
+template<typename ValueIterator, typename ValueFunction, typename WeightFunction>
+inline static std::pair<bool, std::string> ModeString(ValueIterator first, ValueIterator last,
+		ValueFunction get_value, bool has_weight, WeightFunction get_weight)
+{
+	return Mode<ValueIterator, std::string,
+		std::hash<std::string>, std::equal_to<std::string>>(first, last,
+			get_value, has_weight, get_weight, std::string());
+}
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_MODE(EvaluableNode *en, bool immediate_result)
+{
+	auto &ocn = en->GetOrderedChildNodes();
+
+	if(ocn.size() < 1)
+		return EvaluableNodeReference::Null();
+
+	auto values = InterpretNode(ocn[0]);
+	if(EvaluableNode::IsNull(values) || values->IsImmediate())
+		return values;
+
+	EvaluableNodeReference weights = EvaluableNodeReference::Null();
+	if(ocn.size() > 1)
+	{
+		auto node_stack = CreateOpcodeStackStateSaver(values);
+		weights = InterpretNode(ocn[1]);
+	}
+
+	bool found = false;
+	std::string unparsed_result;
+	if(values->IsAssociativeArray())
+	{
+		auto &values_mcn = values->GetMappedChildNodesReference();
+
+		if(EvaluableNode::IsNull(weights))
+		{
+			std::tie(found, unparsed_result) = ModeString(begin(values_mcn), end(values_mcn),
+				[](auto iter, auto &value) { return GetValueFromIter(iter, value);},
+				false, [](auto iter, auto &value) { return false;});
+		}
+		else if(weights->IsAssociativeArray())
+		{
+			auto &weights_mcn = weights->GetMappedChildNodesReference();
+
+			std::tie(found, unparsed_result) = ModeString(begin(weights_mcn), end(weights_mcn),
+				[&values_mcn](auto iter, auto &value) { return GetValueFromWeightsIter(values_mcn, iter, value); },
+				true, [](auto iter, auto &value) {	return GetValueFromIter(iter, value); });
+
+		}
+		else //weights->IsOrderedArray())
+		{
+			auto &weights_ocn = weights->GetOrderedChildNodesReference();
+
+			std::tie(found, unparsed_result) = ModeString(size_t{ 0 }, weights_ocn.size(),
+				[&values_mcn](auto i, auto &value) { return GetValueFromWeightsIndex(values_mcn, i, value); },
+				true, [&weights_ocn](auto i, auto &value) { return GetValueFromIndex(weights_ocn, i, value); });
+		}
+	}
+	else //values->IsOrderedArray())
+	{
+		auto &values_ocn = values->GetOrderedChildNodesReference();
+
+		if(EvaluableNode::IsNull(weights))
+		{
+			std::tie(found, unparsed_result) = ModeString(size_t{ 0 }, values_ocn.size(),
+				[&values_ocn](auto i, auto &value) { return GetValueFromIndex(values_ocn, i, value); },
+				false, [](auto iter, auto &value) { return false;});
+		}
+		else if(weights->IsAssociativeArray())
+		{
+			auto &weights_mcn = weights->GetMappedChildNodesReference();
+
+			std::tie(found, unparsed_result) = ModeString(begin(weights_mcn), end(weights_mcn),
+				[&values_ocn](auto iter, auto &value) { return GetValueFromWeightsIter(values_ocn, iter, value); },
+				true, [](auto iter, auto &value) {	return GetValueFromIter(iter, value); });
+		}
+		else //weights->IsOrderedArray())
+		{
+			auto &weights_ocn = weights->GetOrderedChildNodesReference();
+
+			std::tie(found, unparsed_result) = ModeString(size_t{ 0 }, weights_ocn.size(),
+				[&values_ocn](auto i, auto &value) { return GetValueFromIndex(values_ocn, i, value); },
+				true, [&weights_ocn](auto i, auto &value) { return GetValueFromIndex(weights_ocn, i, value); });
+		}
+	}
+
+	if(!found)
+		return EvaluableNodeReference::Null();
+
+	return Parser::ParseFromKeyString(unparsed_result, evaluableNodeManager);
+}
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_QUANTILE(EvaluableNode * en, bool immediate_result)
+{
+	auto &ocn = en->GetOrderedChildNodes();
+
+	if(ocn.size() < 2)
+		return EvaluableNodeReference::Null();
+
+	double quantile = InterpretNodeIntoNumberValue(ocn[1]);
+
+	auto values = InterpretNode(ocn[0]);
+	if(EvaluableNode::IsNull(values) || values->IsImmediate())
+		return values;
+
+	EvaluableNodeReference weights = EvaluableNodeReference::Null();
+	if(ocn.size() > 2)
+	{
+		auto node_stack = CreateOpcodeStackStateSaver(values);
+		weights = InterpretNode(ocn[2]);
+	}
+
+	double result = 0.0;
+	if(values->IsAssociativeArray())
+	{
+		auto &values_mcn = values->GetMappedChildNodesReference();
+
+		if(EvaluableNode::IsNull(weights))
+		{
+			result = Quantile(begin(values_mcn), end(values_mcn),
+				[](auto iter, auto &value) { return GetValueFromIter(iter, value);},
+				false, [](auto iter, auto &value) { return false;},
+				quantile);
+		}
+		else if(weights->IsAssociativeArray())
+		{
+			auto &weights_mcn = weights->GetMappedChildNodesReference();
+
+			result = Quantile(begin(weights_mcn), end(weights_mcn),
+				[&values_mcn](auto iter, auto &value) { return GetValueFromWeightsIter(values_mcn, iter, value); },
+				true, [](auto iter, auto &value) {	return GetValueFromIter(iter, value); },
+				quantile);
+
+		}
+		else //weights->IsOrderedArray())
+		{
+			auto &weights_ocn = weights->GetOrderedChildNodesReference();
+
+			result = Quantile(size_t{ 0 }, weights_ocn.size(),
+				[&values_mcn](auto i, auto &value) { return GetValueFromWeightsIndex(values_mcn, i, value); },
+				true, [&weights_ocn](auto i, auto &value) { return GetValueFromIndex(weights_ocn, i, value); },
+				quantile);
+		}
+	}
+	else //values->IsOrderedArray())
+	{
+		auto &values_ocn = values->GetOrderedChildNodesReference();
+
+		if(EvaluableNode::IsNull(weights))
+		{
+			result = Quantile(size_t{ 0 }, values_ocn.size(),
+				[&values_ocn](auto i, auto &value) { return GetValueFromIndex(values_ocn, i, value); },
+				false, [](auto iter, auto &value) { return false;},
+				quantile);
+		}
+		else if(weights->IsAssociativeArray())
+		{
+			auto &weights_mcn = weights->GetMappedChildNodesReference();
+
+			result = Quantile(begin(weights_mcn), end(weights_mcn),
+				[&values_ocn](auto iter, auto &value) { return GetValueFromWeightsIter(values_ocn, iter, value); },
+				true, [](auto iter, auto &value) {	return GetValueFromIter(iter, value); },
+				quantile);
+		}
+		else //weights->IsOrderedArray())
+		{
+			auto &weights_ocn = weights->GetOrderedChildNodesReference();
+
+			result = Quantile(size_t{ 0 }, weights_ocn.size(),
+				[&values_ocn](auto i, auto &value) { return GetValueFromIndex(values_ocn, i, value); },
+				true, [&weights_ocn](auto i, auto &value) { return GetValueFromIndex(weights_ocn, i, value); },
+				quantile);
+		}
+	}
+
+	return AllocReturn(result, immediate_result);
+}
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(EvaluableNode *en, bool immediate_result)
+{
+	auto &ocn = en->GetOrderedChildNodes();
+
+	if(ocn.size() < 1)
+		return EvaluableNodeReference::Null();
+
+	double p = 1.0;
+	if(ocn.size() > 1)
+	{
+		p = InterpretNodeIntoNumberValue(ocn[1]);
+		if(FastIsNaN(p))
+			p = 1.0;
+	}
+
+	double center = 0.0;
+	if(ocn.size() > 3)
+	{
+		center = InterpretNodeIntoNumberValue(ocn[3]);
+		if(FastIsNaN(center))
+			center = 0.0;
+	}
+
+	bool calculate_moment = false;
+	if(ocn.size() > 4)
+		calculate_moment = InterpretNodeIntoBoolValue(ocn[4], false);
+
+	bool absolute_value = true;
+	if(ocn.size() > 5)
+		absolute_value = InterpretNodeIntoBoolValue(ocn[5], false);
+
+	auto values = InterpretNode(ocn[0]);
+	if(EvaluableNode::IsNull(values) || values->IsImmediate())
+		return values;
+
+	EvaluableNodeReference weights = EvaluableNodeReference::Null();
+	if(ocn.size() > 2)
+	{
+		auto node_stack = CreateOpcodeStackStateSaver(values);
+		weights = InterpretNode(ocn[2]);
+	}
+
+	double result = 0.0;
+	if(values->IsAssociativeArray())
+	{
+		auto &values_mcn = values->GetMappedChildNodesReference();
+
+		if(EvaluableNode::IsNull(weights))
+		{
+			result = GeneralizedMean(begin(values_mcn), end(values_mcn),
+				[](auto iter, auto &value) { return GetValueFromIter(iter, value);},
+				false, [](auto iter, auto &value) { return false;},
+				p, center, calculate_moment, absolute_value);
+		}
+		else if(weights->IsAssociativeArray())
+		{
+			auto &weights_mcn = weights->GetMappedChildNodesReference();
+
+			result = GeneralizedMean(begin(weights_mcn), end(weights_mcn),
+				[&values_mcn](auto iter, auto &value) { return GetValueFromWeightsIter(values_mcn, iter, value); },
+				true, [](auto iter, auto &value) {	return GetValueFromIter(iter, value); },
+				p, center, calculate_moment, absolute_value);
+
+		}
+		else //weights->IsOrderedArray())
+		{
+			auto &weights_ocn = weights->GetOrderedChildNodesReference();
+
+			result = GeneralizedMean(size_t{0}, weights_ocn.size(),
+				[&values_mcn](auto i, auto &value) { return GetValueFromWeightsIndex(values_mcn, i, value); },
+				true, [&weights_ocn](auto i, auto &value) { return GetValueFromIndex(weights_ocn, i, value); },
+				p, center, calculate_moment, absolute_value);
+		}
+	}
+	else //values->IsOrderedArray())
+	{
+		auto &values_ocn = values->GetOrderedChildNodesReference();
+
+		if(EvaluableNode::IsNull(weights))
+		{
+			result = GeneralizedMean(size_t{ 0 }, values_ocn.size(),
+				[&values_ocn](auto i, auto &value) { return GetValueFromIndex(values_ocn, i, value); },
+				false, [](auto iter, auto &value) { return false;},
+				p, center, calculate_moment, absolute_value);
+		}
+		else if(weights->IsAssociativeArray())
+		{
+			auto &weights_mcn = weights->GetMappedChildNodesReference();
+
+			result = GeneralizedMean(begin(weights_mcn), end(weights_mcn),
+				[&values_ocn](auto iter, auto &value) { return GetValueFromWeightsIter(values_ocn, iter, value); },
+				true, [](auto iter, auto &value) {	return GetValueFromIter(iter, value); },
+				p, center, calculate_moment, absolute_value);
+		}
+		else //weights->IsOrderedArray())
+		{
+			auto &weights_ocn = weights->GetOrderedChildNodesReference();
+			
+			result = GeneralizedMean(size_t{0}, weights_ocn.size(),
+				[&values_ocn](auto i, auto &value) { return GetValueFromIndex(values_ocn, i, value); },
+				true, [&weights_ocn](auto i, auto &value) { return GetValueFromIndex(weights_ocn, i, value); },
+				p, center, calculate_moment, absolute_value);
+		}
+	}
+
+	return AllocReturn(result, immediate_result);
+}
+
 //builds a vector of the values in the node, using ordered or mapped child nodes as appropriate
 // if node is mapped child nodes, it will use id_order to order populate out and use default_value if any given id is not found
 inline void GetChildNodesAsENImmediateValueArray(EvaluableNode *node, std::vector<StringInternPool::StringID> &id_order,

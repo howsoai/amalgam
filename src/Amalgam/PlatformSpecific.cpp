@@ -120,7 +120,7 @@ void Platform_GetFileNamesOfType(std::vector<std::string> &file_names, const std
 		std::string current_ext = entry.path().extension().string();
 
 		//remove the dot from extension for comparison
-		std::string clean_ext = (extension.front() == '.')
+		std::string clean_ext = (!extension.empty() && extension.front() == '.')
 			? extension.substr(1)
 			: extension;
 

@@ -463,7 +463,7 @@ static double Quantile(ValueIterator first, ValueIterator last,
 			double value = 0.0;
 			if(get_value(i, value))
 			{
-				value_weights->push_back(std::make_pair(value, 1.0));
+				value_weights->emplace_back(value, 1.0);
 				total_weight += 1.0;
 			}
 		}
@@ -481,7 +481,7 @@ static double Quantile(ValueIterator first, ValueIterator last,
 				get_weight(i, weight_value);
 				if(!FastIsNaN(weight_value))
 				{
-					value_weights->push_back(std::make_pair(value, weight_value));
+					value_weights->emplace_back(value, weight_value);
 					total_weight += weight_value;
 
 					//check to see if weights are different

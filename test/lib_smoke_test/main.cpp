@@ -339,16 +339,16 @@ int main(int argc, char* argv[])
 	}
 
 	SuiteResult suite(verbose);
-	suite.run("DumpVersion", DumpVersion);
-	suite.run("LoadAndEval", LoadAndEval);
-	suite.run("InitializeCounter", InitializeCounter);
-	suite.run("ExecuteEntityJsonWithValue", ExecuteEntityJsonWithValue);
-	suite.run("ExecuteEntityJsonLogged", ExecuteEntityJsonLogged);
-	suite.run("ExecuteEntityJsonLoggedUpdating", ExecuteEntityJsonLoggedUpdating);
-	suite.run("ExecuteEntityJsonLoggedRoundTrip", ExecuteEntityJsonLoggedRoundTrip);
-	suite.run("ExecuteEntityJsonLoggedTwice", ExecuteEntityJsonLoggedTwice);
-	suite.run("ExecuteCounter2", ExecuteCounter2);
-	suite.run("ExecuteCounter2Logged", ExecuteCounter2Logged);
+	suite.Run("DumpVersion", DumpVersion);
+	suite.Run("LoadAndEval", LoadAndEval);
+	suite.Run("InitializeCounter", InitializeCounter);
+	suite.Run("ExecuteEntityJsonWithValue", ExecuteEntityJsonWithValue);
+	suite.Run("ExecuteEntityJsonLogged", ExecuteEntityJsonLogged);
+	suite.Run("ExecuteEntityJsonLoggedUpdating", ExecuteEntityJsonLoggedUpdating);
+	suite.Run("ExecuteEntityJsonLoggedRoundTrip", ExecuteEntityJsonLoggedRoundTrip);
+	suite.Run("ExecuteEntityJsonLoggedTwice", ExecuteEntityJsonLoggedTwice);
+	suite.Run("ExecuteCounter2", ExecuteCounter2);
+	suite.Run("ExecuteCounter2Logged", ExecuteCounter2Logged);
 
 	return suite ? 0 : 1;
 }

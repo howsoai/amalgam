@@ -134,7 +134,8 @@ void Platform_GetFileNamesOfType(std::vector<std::string> &file_names, const std
 			//remove the dot from current extension
 			current_ext = current_ext.substr(1);
 
-			if(current_ext == clean_ext)
+			if(std::equal(begin(current_ext), end(current_ext), begin(clean_ext), end(clean_ext),
+					[](char a, char b) { return std::tolower(a) == std::tolower(b); }))
 				file_names.emplace_back(entry.path().filename().string());
 		}
 	}

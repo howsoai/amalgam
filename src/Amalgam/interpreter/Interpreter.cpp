@@ -836,7 +836,6 @@ bool Interpreter::PopulateInterpreterConstraintsFromParams(std::vector<Evaluable
 	interpreter_constraints.maxContainedEntityDepth = 0;
 	interpreter_constraints.maxEntityIdLength = 0;
 
-
 	size_t warning_override_offset = perf_constraint_param_offset + 3;
 
 	if(include_entity_constraints)

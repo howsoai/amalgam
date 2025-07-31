@@ -924,8 +924,8 @@ namespace EntityQueryBuilder
 				//since types need to match, force both to the same type
 				if(EvaluableNode::IsNumericOrNull(low_value) || EvaluableNode::IsNumericOrNull(high_value))
 				{
-					cur_condition->pairedLabels.push_back(std::make_pair(label_sid, std::make_pair(
-						EvaluableNode::ToNumber(low_value), EvaluableNode::ToNumber(high_value))));
+					cur_condition->pairedLabels.emplace_back(label_sid, std::make_pair(
+						EvaluableNode::ToNumber(low_value), EvaluableNode::ToNumber(high_value)));
 
 					cur_condition->valueTypes.push_back(ENIVT_NUMBER);
 				}
@@ -934,7 +934,7 @@ namespace EntityQueryBuilder
 					StringInternPool::StringID low_sid = EvaluableNode::ToStringIDIfExists(low_value);
 					StringInternPool::StringID high_sid = EvaluableNode::ToStringIDIfExists(high_value);
 
-					cur_condition->pairedLabels.push_back(std::make_pair(label_sid, std::make_pair(low_sid, high_sid)));
+					cur_condition->pairedLabels.emplace_back(label_sid, std::make_pair(low_sid, high_sid));
 
 					cur_condition->valueTypes.push_back(ENIVT_STRING_ID);
 				}
@@ -995,22 +995,22 @@ namespace EntityQueryBuilder
 				if(EvaluableNode::IsNumericOrNull(compare_value))
 				{
 					if(type == ENT_QUERY_LESS_OR_EQUAL_TO)
-						cur_condition->pairedLabels.push_back(std::make_pair(label_sid, std::make_pair(
-							-std::numeric_limits<double>::infinity(), EvaluableNode::ToNumber(compare_value))));
+						cur_condition->pairedLabels.emplace_back(label_sid, std::make_pair(
+							-std::numeric_limits<double>::infinity(), EvaluableNode::ToNumber(compare_value)));
 					else
-						cur_condition->pairedLabels.push_back(std::make_pair(label_sid, std::make_pair(
-							EvaluableNode::ToNumber(compare_value), std::numeric_limits<double>::infinity())));
+						cur_condition->pairedLabels.emplace_back(label_sid, std::make_pair(
+							EvaluableNode::ToNumber(compare_value), std::numeric_limits<double>::infinity()));
 
 					cur_condition->valueTypes.push_back(ENIVT_NUMBER);
 				}
 				else
 				{
 					if(type == ENT_QUERY_LESS_OR_EQUAL_TO)
-						cur_condition->pairedLabels.push_back(std::make_pair(label_sid, std::make_pair(
-							string_intern_pool.NOT_A_STRING_ID, EvaluableNode::ToStringIDIfExists(compare_value))));
+						cur_condition->pairedLabels.emplace_back(label_sid, std::make_pair(
+							string_intern_pool.NOT_A_STRING_ID, EvaluableNode::ToStringIDIfExists(compare_value)));
 					else
-						cur_condition->pairedLabels.push_back(std::make_pair(label_sid, std::make_pair(
-							EvaluableNode::ToStringIDIfExists(compare_value), string_intern_pool.NOT_A_STRING_ID)));
+						cur_condition->pairedLabels.emplace_back(label_sid, std::make_pair(
+							EvaluableNode::ToStringIDIfExists(compare_value), string_intern_pool.NOT_A_STRING_ID));
 
 					cur_condition->valueTypes.push_back(ENIVT_STRING_ID);
 				}

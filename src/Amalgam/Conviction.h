@@ -237,7 +237,7 @@ public:
 				updated_contribs_sum_out -= dist_contribs[distance_contribs_index];
 
 				//write out whatever the replacement value is for this element
-				updated_contribs_out.push_back(DistanceReferencePair<size_t>(holdout_replacement_value, distance_contribs_index));
+				updated_contribs_out.emplace_back(holdout_replacement_value, distance_contribs_index);
 				continue;
 			}
 
@@ -256,7 +256,7 @@ public:
 			updated_contribs_sum_out += distance_contribution;
 
 			//add scaled distance contribution for this element to output
-			updated_contribs_out.push_back(DistanceReferencePair<size_t>(distance_contribution, distance_contribs_index));
+			updated_contribs_out.emplace_back(distance_contribution, distance_contribs_index);
 		}
 
 		//if all the distance contributions are zero, (which can happen if all the cases have mismatching nan values and can't be compared to each other in sparse datasets)

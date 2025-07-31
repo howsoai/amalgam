@@ -125,7 +125,7 @@ static void LoadAndEval(TestResult &test_result)
 	char write_log[] = "";
 	char print_log[] = "";
 	auto status = LoadEntity(handle, file, file_type, false, json_file_params, write_log, print_log);
-	test_result.require("LoadEntity", status.loaded);
+	test_result.Require("LoadEntity", status.loaded);
 	if(test_result)
 	{
 		LoadedEntity loaded_entity(handle);
@@ -135,7 +135,7 @@ static void LoadAndEval(TestResult &test_result)
 
 		std::string amlg("(size (contained_entities))");
 		ApiString result(EvalOnEntity(handle, amlg.data()));
-		test_result.check("EvalOnEntity", result, "24");
+		test_result.Check("EvalOnEntity", result, "24");
 	}
 }
 
@@ -152,7 +152,7 @@ static std::string increment("increment");
 static void InitializeCounter(TestResult &test_result)
 {
     LoadEntityStatus status = LoadEntity(handle.data(), filename.data(), empty.data(), false, empty.data(), empty.data(), empty.data());
-	test_result.require("LoadEntity", status.loaded);
+	test_result.Require("LoadEntity", status.loaded);
 	if(test_result)
 	{
 		LoadedEntity loaded_entity(handle);
@@ -165,7 +165,7 @@ static void InitializeCounter(TestResult &test_result)
 static void ExecuteEntityJsonWithValue(TestResult &test_result)
 {
     LoadEntityStatus status = LoadEntity(handle.data(), filename.data(), empty.data(), false, empty.data(), empty.data(), empty.data());
-	test_result.require("LoadEntity", status.loaded);
+	test_result.Require("LoadEntity", status.loaded);
 	if(test_result)
 	{
 		LoadedEntity loaded_entity(handle);
@@ -179,7 +179,7 @@ static void ExecuteEntityJsonWithValue(TestResult &test_result)
 static void ExecuteEntityJsonLogged(TestResult &test_result)
 {
     LoadEntityStatus status = LoadEntity(handle.data(), filename.data(), empty.data(), false, empty.data(), empty.data(), empty.data());
-	test_result.require("LoadEntity", status.loaded);
+	test_result.Require("LoadEntity", status.loaded);
 	if(test_result)
 	{
 		LoadedEntity loaded_entity(handle);
@@ -195,7 +195,7 @@ static void ExecuteEntityJsonLogged(TestResult &test_result)
 static void ExecuteEntityJsonLoggedUpdating(TestResult &test_result)
 {
     LoadEntityStatus status = LoadEntity(handle.data(), filename.data(), empty.data(), false, empty.data(), empty.data(), empty.data());
-	test_result.require("LoadEntity", status.loaded);
+	test_result.Require("LoadEntity", status.loaded);
 	if(test_result)
 	{
 		LoadedEntity loaded_entity(handle);
@@ -215,7 +215,7 @@ static void ExecuteEntityJsonLoggedUpdating(TestResult &test_result)
 static void ExecuteEntityJsonLoggedRoundTrip(TestResult &test_result)
 {
     LoadEntityStatus status = LoadEntity(handle.data(), filename.data(), empty.data(), false, empty.data(), empty.data(), empty.data());
-	test_result.require("LoadEntity", status.loaded);
+	test_result.Require("LoadEntity", status.loaded);
 	if(test_result)
 	{
 		LoadedEntity loaded_entity(handle);
@@ -238,7 +238,7 @@ static void ExecuteEntityJsonLoggedRoundTrip(TestResult &test_result)
 static void ExecuteEntityJsonLoggedTwice(TestResult &test_result)
 {
     LoadEntityStatus status = LoadEntity(handle.data(), filename.data(), empty.data(), false, empty.data(), empty.data(), empty.data());
-	test_result.require("LoadEntity", status.loaded);
+	test_result.Require("LoadEntity", status.loaded);
 	if(test_result)
 	{
 		LoadedEntity loaded_entity(handle);
@@ -268,7 +268,7 @@ static void ExecuteEntityJsonLoggedTwice(TestResult &test_result)
 static void ExecuteCounter2(TestResult &test_result)
 {
     LoadEntityStatus status = LoadEntity(handle.data(), filename2.data(), empty.data(), false, empty.data(), empty.data(), empty.data());
-	test_result.require("LoadEntity", status.loaded);
+	test_result.Require("LoadEntity", status.loaded);
 	if(test_result)
 	{
 		LoadedEntity loaded_entity(handle);
@@ -289,7 +289,7 @@ static void ExecuteCounter2Logged(TestResult &test_result)
 	// This is actually a test for a specific case of accum_entity_roots, via
 	// ExecuteEntityJsonPtrLogged(), that needs to preserve labels.
     LoadEntityStatus status = LoadEntity(handle.data(), filename2.data(), empty.data(), false, empty.data(), empty.data(), empty.data());
-	test_result.require("LoadEntity", status.loaded);
+	test_result.Require("LoadEntity", status.loaded);
 	if(test_result)
 	{
 		LoadedEntity loaded_entity(handle);
@@ -298,7 +298,7 @@ static void ExecuteCounter2Logged(TestResult &test_result)
 		// Clone the entity, then execute "add" there.
 		// Of note this accum_entity_roots, adding a label.
 		bool cloned = CloneEntity(handle.data(), handle2.data(), empty.data(), empty.data(), false, empty.data(), empty.data(), empty.data());
-		test_result.require("CloneEntity", cloned);
+		test_result.Require("CloneEntity", cloned);
 
 		ResultWithLog result = ExecuteEntityJsonPtrLogged(handle2.data(), add.data(), empty.data());
 		ApiString json1(result.json);

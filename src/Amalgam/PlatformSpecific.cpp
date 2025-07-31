@@ -85,13 +85,27 @@ void Platform_SeparatePathFileExtension(const std::string &combined, std::string
 
 void Platform_GetFileNamesOfType(std::vector<std::string> &file_names, const std::string &path, const std::string &extension, bool get_directories)
 {
-	if(!std::filesystem::exists(path))
+	if(path.empty())
 		return;
 
-	for(const auto &entry : std::filesystem::directory_iterator(path))
+	std::error_code ec;
+	if(!std::filesystem::exists(path, ec))
+		return;
+
+	// Use directory_iterator with error code
+	for(const auto &entry : std::filesystem::directory_iterator(path, ec))
 	{
-		//check if entry matches directory/file type requirement
-		bool is_dir = entry.is_directory();
+		//something errored on iterating over the entries in the directory
+		if(ec)
+			break;
+
+		std::error_code entry_ec;
+		bool is_dir = entry.is_directory(entry_ec);
+
+		//if the directory entry failed, go on to next
+		if(entry_ec)
+			continue;
+
 		if(get_directories != is_dir)
 			continue;
 

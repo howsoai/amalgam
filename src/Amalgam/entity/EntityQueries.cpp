@@ -465,7 +465,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 			auto [value, found] = matching_entities[i]->GetValueAtLabelAsImmediateValue(singleLabel);
 
 			if(value.nodeType == singleLabelType)
-				entity_values.push_back(std::make_pair(matching_entities[i], value.nodeValue));
+				entity_values.emplace_back(matching_entities[i], value.nodeValue);
 		}
 
 		//sort entities by value
@@ -706,7 +706,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		for(size_t i = 0; i < num_to_keep && nearest_entities.Size() > 0; i++)
 		{
 			auto &dist_ent = nearest_entities.Top();
-			entity_values.push_back(DistanceReferencePair<Entity *>(dist_ent.distance, dist_ent.reference));
+			entity_values.emplace_back(dist_ent.distance, dist_ent.reference);
 
 			nearest_entities.Pop();
 		}
@@ -771,7 +771,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		std::vector<DistanceReferencePair<Entity *>> entity_values;
 		entity_values.reserve(matching_entities.size());
 		for(size_t i = 0; i < matching_entities.size(); i++)
-			entity_values.push_back(DistanceReferencePair<Entity *>(GetConditionDistanceMeasure(matching_entities[i], high_accuracy), matching_entities[i]));
+			entity_values.emplace_back(GetConditionDistanceMeasure(matching_entities[i], high_accuracy), matching_entities[i]);
 
 
 		auto weight_function = [this]

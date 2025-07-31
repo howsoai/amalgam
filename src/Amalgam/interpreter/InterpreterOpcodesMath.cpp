@@ -804,6 +804,145 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIN(EvaluableNode *en, boo
 	return EvaluableNodeReference::Null();
 }
 
+template<typename Compare>
+EvaluableNodeReference GetIndexMinMaxFromAssoc(EvaluableNodeReference interpreted_assoc,
+	EvaluableNodeManager *enm, Compare compare, double compare_limit, bool immediate_result)
+{
+	auto &mapped_child_nodes = interpreted_assoc->GetMappedChildNodesReference();
+	double candidate_value = compare_limit;
+	bool value_found = false;
+
+	std::vector<StringInternPool::StringID> max_keys;
+
+	for(auto [cur_key, cur_child] : mapped_child_nodes)
+	{
+		double cur_value = EvaluableNode::ToNumber(cur_child);
+
+		if(cur_value == candidate_value)
+		{
+			max_keys.push_back(cur_key);
+			// If all child nodes are the max/min value, we never fall into the other case.
+			// So we need to set value_found here.
+			value_found = true;
+		}
+		else if(compare(cur_value, candidate_value))
+		{
+			max_keys.clear();
+			candidate_value = cur_value;
+			max_keys.push_back(cur_key);
+			value_found = true;
+		}
+	}
+
+	if(value_found)
+	{
+		EvaluableNodeReference index_list(enm->AllocNode(ENT_LIST), false);
+		auto &index_list_ocn = index_list->GetOrderedChildNodesReference();
+		index_list_ocn.reserve(max_keys.size());
+
+		for(StringInternPool::StringID max_key : max_keys)
+		{
+			EvaluableNodeReference parsedKey = Parser::ParseFromKeyStringId(max_key, enm);
+			index_list.UpdatePropertiesBasedOnAttachedNode(parsedKey);
+			index_list_ocn.push_back(parsedKey);
+		}
+
+		return index_list;
+	}
+
+	return EvaluableNodeReference::Null();
+}
+
+template<typename Compare>
+EvaluableNodeReference GetIndexMinMaxFromList(EvaluableNode *en, EvaluableNodeManager *enm,
+	Compare compare, double compare_limit, bool immediate_result)
+{
+	bool value_found = false;
+	double result_value = compare_limit;
+	std::vector<size_t> max_indices;
+
+	auto &orderedChildNodes = en->GetOrderedChildNodesReference();
+
+	if(orderedChildNodes.size() == 0)
+		return EvaluableNodeReference::Null();
+
+	for(size_t i = 0; i < orderedChildNodes.size(); i++)
+	{
+		double cur_value = EvaluableNode::ToNumber(orderedChildNodes[i]);
+
+		if(cur_value == result_value)
+		{
+			max_indices.push_back(i);
+			// If all child nodes are the max/min value, we never fall into the other case.
+			// So we need to set value_found here.
+			value_found = true;
+		}
+		else if(compare(cur_value, result_value))
+		{
+			max_indices.clear();
+
+			value_found = true;
+			result_value = cur_value;
+			max_indices.push_back(i);
+		}
+	}
+
+	if(value_found)
+		return CreateListOfNumbersFromIteratorAndFunction(max_indices, enm,
+			[](auto val){ return static_cast<double>(val); });
+
+	return EvaluableNodeReference::Null();
+}
+
+template<typename Compare>
+EvaluableNodeReference GetIndexMinMaxFromRemainingArgList(EvaluableNode *en, Interpreter *interpreter,
+	Compare compare, double compare_limit, bool immediate_result)
+{
+	double result_value = compare_limit;
+	std::vector<size_t> max_indices;
+	bool value_found = false;
+
+	auto &orderedChildNodes = en->GetOrderedChildNodesReference();
+
+	if(orderedChildNodes.size() == 0)
+		return EvaluableNodeReference::Null();
+
+	// First node has already been interpreted and thus needs different handling
+	double candidate_zero = EvaluableNode::ToNumber(orderedChildNodes[0]);
+	if(!FastIsNaN(candidate_zero))
+	{
+		max_indices.push_back(0);
+		value_found = true;
+		result_value = candidate_zero;
+	}
+
+	for(size_t i = 1; i < orderedChildNodes.size(); i++)
+	{
+		double cur_value = interpreter->InterpretNodeIntoNumberValue(orderedChildNodes[i]);
+
+		if(cur_value == result_value)
+		{
+			max_indices.push_back(i);
+			// If all child nodes are the max/min value, we never fall into the other case.
+			// So we need to set value_found here.
+			value_found = true;
+		}
+		else if(compare(cur_value, result_value))
+		{
+			max_indices.clear();
+			result_value = cur_value;
+			max_indices.push_back(i);
+			value_found = true;
+		}
+	}
+
+	if(value_found)
+		return CreateListOfNumbersFromIteratorAndFunction(max_indices, interpreter->evaluableNodeManager,
+			[](size_t val){ return static_cast<double>(val); });
+
+	return EvaluableNodeReference::Null();
+}
+
 EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MAX(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
@@ -816,11 +955,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MAX(EvaluableNode *e
 
 	EvaluableNodeReference result;
 	if(ocn_zero != nullptr && ocn_zero->GetType() == ENT_ASSOC && ocn.size() == 1)
-		result = GetIndexMinMaxFromAssoc(ocn_zero, std::greater(), -std::numeric_limits<double>::infinity(), immediate_result);
+		result = GetIndexMinMaxFromAssoc(ocn_zero, evaluableNodeManager,
+			std::greater(), -std::numeric_limits<double>::infinity(), immediate_result);
 	else if(ocn_zero != nullptr && ocn_zero->GetType() == ENT_LIST && ocn.size() == 1)
-		result = GetIndexMinMaxFromList(ocn_zero, std::greater(), -std::numeric_limits<double>::infinity(), immediate_result);
+		result = GetIndexMinMaxFromList(ocn_zero, evaluableNodeManager,
+			std::greater(), -std::numeric_limits<double>::infinity(), immediate_result);
 	else
-		return GetIndexMinMaxFromRemainingArgList(en, std::greater(), -std::numeric_limits<double>::infinity(), immediate_result);
+		return GetIndexMinMaxFromRemainingArgList(en, this,
+			std::greater(), -std::numeric_limits<double>::infinity(), immediate_result);
 
 	evaluableNodeManager->FreeNodeTreeIfPossible(ocn_zero);
 	return result;
@@ -838,11 +980,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MIN(EvaluableNode *e
 
 	EvaluableNodeReference result;
 	if(ocn_zero != nullptr && ocn_zero->GetType() == ENT_ASSOC && ocn.size() == 1)
-		result = GetIndexMinMaxFromAssoc(ocn_zero, std::less(), std::numeric_limits<double>::infinity(), immediate_result);
+		result = GetIndexMinMaxFromAssoc(ocn_zero, evaluableNodeManager,
+			std::less(), std::numeric_limits<double>::infinity(), immediate_result);
 	else if(ocn_zero != nullptr && ocn_zero->GetType() == ENT_LIST && ocn.size() == 1)
-		result = GetIndexMinMaxFromList(ocn_zero, std::less(), std::numeric_limits<double>::infinity(), immediate_result);
+		result = GetIndexMinMaxFromList(ocn_zero, evaluableNodeManager,
+			std::less(), std::numeric_limits<double>::infinity(), immediate_result);
 	else
-		return GetIndexMinMaxFromRemainingArgList(en, std::less(), std::numeric_limits<double>::infinity(), immediate_result);
+		return GetIndexMinMaxFromRemainingArgList(en, this,
+			std::less(), std::numeric_limits<double>::infinity(), immediate_result);
 
 	evaluableNodeManager->FreeNodeTreeIfPossible(ocn_zero);
 	return result;

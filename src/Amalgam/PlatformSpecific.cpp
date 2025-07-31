@@ -4,50 +4,31 @@
 #include "Concurrency.h"
 
 //system headers:
+#include <algorithm>
 #include <array>
 #include <cfenv>
 #include <cstring>
 #include <codecvt>
 #include <cstdio>
+#include <filesystem>
+#include <string>
+#include <vector>
 
 //perform universal initialization
 class PlatformSpecificStartup
 {
 public:
-    PlatformSpecificStartup()
-    {
-	    std::feclearexcept(FE_ALL_EXCEPT);
-    }
+	PlatformSpecificStartup()
+	{
+		std::feclearexcept(FE_ALL_EXCEPT);
+	}
 };
 PlatformSpecificStartup _platform_specific_startup;
 
 #ifdef OS_WINDOWS
 
-	// TODO 15993: disable std::wstring_convert deprecation warning: no replacement in C++17 so
-	// will require rework when we move to C++20.
-	#pragma warning(disable: 4996)
-
 	#define NOMINMAX
 	#include <Windows.h>
-
-	class WindowsUtf8WStringConversion
-	{
-	public:
-		//convert UTF-8 string to wstring
-		inline std::wstring utf8_to_wstring(const std::string& str)
-		{
-			return conversion.from_bytes(str);
-		}
-
-		//convert wstring to UTF-8 string
-		inline std::string wstring_to_utf8(const std::wstring& str)
-		{
-			return conversion.to_bytes(str);
-		}
-
-	protected:
-		std::wstring_convert<std::codecvt_utf8<wchar_t>> conversion;
-	};
 
 #else
 	#include <cstdlib>
@@ -104,66 +85,45 @@ void Platform_SeparatePathFileExtension(const std::string &combined, std::string
 
 void Platform_GetFileNamesOfType(std::vector<std::string> &file_names, const std::string &path, const std::string &extension, bool get_directories)
 {
-#ifdef OS_WINDOWS
-	std::string path_with_wildcard = path + "\\*." + extension;
-
-	WindowsUtf8WStringConversion conv;
-	auto wstring = conv.utf8_to_wstring(path_with_wildcard);
-
-	//retrieve file names
-	WIN32_FIND_DATA find_data;
-	HANDLE find = FindFirstFile(wstring.c_str(), &find_data);
-	while(find != INVALID_HANDLE_VALUE)
-	{
-		//if looking for directories and it's a directory, or not looking for directories and not a directory, count it
-		if((get_directories && (find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-			|| (!get_directories && !(find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)))
-		{
-			auto utf8_string = conv.wstring_to_utf8(find_data.cFileName);
-			file_names.push_back(utf8_string);
-		}
-
-		if(!FindNextFile(find, &find_data))
-			break;
-	}
-
-	FindClose(find);
-
-#else
-	//see if using a wildcard for all extensions
-	bool check_extensions = true;
-	if(extension.size() >= 1 && extension[extension.size() - 1] == '*')
-		check_extensions = false;
-
-	DIR *dh = opendir(path.c_str());
-	if(dh == nullptr)
+	if(!std::filesystem::exists(path))
 		return;
 
-	struct dirent *ent;
-	while((ent = readdir(dh)))
+	for(const auto &entry : std::filesystem::directory_iterator(path))
 	{
-		if(check_extensions)
+		//check if entry matches directory/file type requirement
+		bool is_dir = entry.is_directory();
+		if(get_directories != is_dir)
+			continue;
+
+		//if extension is "*" or "*.*", include all files
+		if(extension == "*" || extension == "*.*")
 		{
-			char *cur_ext = strstr(ent->d_name, extension.c_str());
-			if(cur_ext == nullptr
-					|| strlen(ent->d_name) != ((intptr_t)cur_ext - (intptr_t)ent->d_name) + extension.size())
-				continue;
+			file_names.emplace_back(entry.path().filename().string());
+			continue;
 		}
 
-		//make a string of the filename (including relative path)
-		std::string full_path = path + '/' + ent->d_name;
+		//check file extension
+		std::string current_ext = entry.path().extension().string();
 
-		//check if it is a directory
-		struct stat stat_buf;
-		stat(full_path.c_str(), &stat_buf);
-		bool is_dir = S_ISDIR(stat_buf.st_mode);
-		if(get_directories == is_dir)
-			file_names.push_back(std::string(ent->d_name));
+		//remove the dot from extension for comparison
+		std::string clean_ext = (extension.front() == '.')
+			? extension.substr(1)
+			: extension;
+
+		//compare extensions (case-insensitive)
+		if(current_ext.empty() && clean_ext.empty())
+		{
+			file_names.emplace_back(entry.path().filename().string());
+		}
+		else if(!current_ext.empty())
+		{
+			//remove the dot from current extension
+			current_ext = current_ext.substr(1);
+
+			if(current_ext == clean_ext)
+				file_names.emplace_back(entry.path().filename().string());
+		}
 	}
-
-	closedir(dh);
-
-#endif
 }
 
 std::string Platform_RunSystemCommand(std::string command, bool &successful_run, int &exit_code)

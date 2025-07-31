@@ -114,10 +114,10 @@ inline void IterateOverConcurrentlyIfPossible(ContainerType &container, Function
 			{
 				thread_pool.BatchEnqueueTask(
 					[index, value, &func, &task_set]
-				{
-					func(index, value);
-					task_set.MarkTaskCompleted();
-				}
+					{
+						func(index, value);
+						task_set.MarkTaskCompleted();
+					}
 				);
 
 				index++;

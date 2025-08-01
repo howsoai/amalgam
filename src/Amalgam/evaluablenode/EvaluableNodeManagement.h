@@ -956,20 +956,36 @@ public:
 	class ThreadLocalAllocationBufferPause
 	{
 	public:
-		inline ThreadLocalAllocationBufferPause()
+		inline ThreadLocalAllocationBufferPause(std::vector<EvaluableNode *> &tlab_buffer,
+			EvaluableNodeManager *&last_enm)
 		{
-			prevLastEvaluableNodeManager = 
+			std::swap(prevTlabBuffer, tlab_buffer);
+			tlabBufferLocation = &tlab_buffer;
+			prevLastEvaluableNodeManager = last_enm;
+			lastEvaluableNodeManagerLocation = &last_enm;
 		}
 
-		__forceinline ~ThreadLocalAllocationBufferPause()
+		inline ~ThreadLocalAllocationBufferPause()
 		{
-			stack->resize(originalStackSize);
+			std::swap(prevTlabBuffer, *tlabBufferLocation);
+			(*lastEvaluableNodeManagerLocation) = prevLastEvaluableNodeManager;
 		}
 
 	protected:
-		std::vector<EvaluableNode *> *prevTlabBuffer;
+		std::vector<EvaluableNode *> prevTlabBuffer;
+		std::vector<EvaluableNode *> *tlabBufferLocation;
 		EvaluableNodeManager *prevLastEvaluableNodeManager;
+		EvaluableNodeManager **lastEvaluableNodeManagerLocation;
 	};
+
+	//TODO 24211: use this where appropriate
+	//pauses the thread allocation buffer for the duration of the lifetime of the
+	//returned object; no garbage collection or execution should occur while it is paused
+	//this is intended only for allocations for other entities
+	ThreadLocalAllocationBufferPause PauseThreadLocalAllocationBuffer()
+	{
+		return ThreadLocalAllocationBufferPause(threadLocalAllocationBuffer, lastEvaluableNodeManager);
+	}
 
 protected:
 	//allocates an EvaluableNode of the respective memory type in the appropriate way

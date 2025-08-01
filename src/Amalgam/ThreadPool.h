@@ -54,13 +54,13 @@ public:
 	void SetMaxNumActiveThreads(int32_t new_max_num_active_threads);
 
 	//returns the current maximum number of threads that are available
-	constexpr int32_t GetMaxNumActiveThreads()
+	inline int32_t GetMaxNumActiveThreads()
 	{
 		return maxNumActiveThreads;
 	}
 
 	//returns the number of threads that are performing tasks
-	constexpr int32_t GetNumActiveThreads()
+	inline int32_t GetNumActiveThreads()
 	{
 		return numActiveThreads;
 	}
@@ -136,10 +136,11 @@ public:
 
 	//enqueues a task into the thread pool
 	//it is up to the caller to determine when the task is complete
-	inline void EnqueueTask(std::function<void()> &&function)
+	template<typename Func, typename... Args>
+	inline void EnqueueTask(Func func, Args... args)
 	{
 		std::unique_lock<std::mutex> lock(threadsMutex);
-		taskQueue.emplace(std::move(function));
+		taskQueue.emplace([=]() mutable { func(args...); });
 		lock.unlock();
 
 		waitForTask.notify_one();

@@ -546,9 +546,28 @@ var data = [
 		"output" : "list|assoc",
 		"new value" : "new",
 		"description" : "Evaluates to the values but with the elements normalized by p_value, representing the order of the Lebesgue space to normalize the vector (e.g., 1 is Manhattan / probability, 2 is Euclidean).",
-		"example" : "(print (normalize [ 0.5 0.5 0.5 0.5 ])\n(print (normalize { a 0.5 b 0.5 c 0.5 d 0.5 })"
+		"example" : "(print (normalize [ 0.5 0.5 0.5 0.5 ])\n(print (normalize { a 0.5 b 0.5 c 0.5 d 0.5 }))"
 	},
-
+	{
+		"parameter" : "mode list|assoc values [list|assoc weights]",
+		"output" : "*",
+		"description" : "Evaluates to mode of the values; if values is an assoc, it will return the key.  If weights is specified and both values and weights are lists, then the corresponding elements will be weighted by weights.  If weights is specified and is an assoc, then each value will be looked up in the weights.",
+		"example" : "(print (mode [ 1 2 3 3 4 4 4 4])\n(print (mode { a 0.7 b 0.5 })\n)(print (mode [\"a\" \"b\"] {a 1 b 100}))"
+	},
+	{
+		"parameter" : "quantile list|assoc values number quantile [list|assoc weights]",
+		"output" : "number",
+		"new value" : "new",
+		"description" : "Evaluates to the quantile of the values specified by quantile ranging from 0 to 1.  If weights is specified and both values and weights are lists, then the corresponding elements will be weighted by weights.  If weights is specified and is an assoc, then each value will be looked up in the weights.",
+		"example" : "(print (quantile [ 1 2 3 4 5 ] 0.5)\n(print (quantile { a 1 b 2 c 3 d 4 } 0.5)\n(print (quantile [ 1 2 3 4 ] 0.5 [0.5 0.5 1 1]))"
+	},
+	{
+		"parameter" : "generalized_mean list|assoc values [number p] [list|assoc weights] [number center] [bool calculate_moment] [bool absolute_value]",
+		"output" : "number",
+		"new value" : "new",
+		"description" : "Evaluates to the generalized mean of the values.  If p is specified (which defaults to 1), it is the parameter that can control the type of mean from minimum (negative infinity) to harmonic mean (-1) to geometric mean (0) to arithmetic mean (1) to maximum (infinity).  If weights are specified, it normalizes and uses those to weight the corresponding values.  If center is specified, calculations will use that as central point, default is 0.0.  If calculate_moment is true, which defaults to false, results will not be raised to 1/p.  If absolute_value is true, which defaults to false, the differences will take the absolute value.  Various parameterizations of generalized_mean can be used to compute moments about the mean, especially setting the calculate_moment parameter to true and using the mean as the center.",
+		"example" : "(print (generalized_mean [ 1 2 3 4 5 ])\n(print (generalized_mean { a 0.5 b 0.5 c 0.5 d 0.5 } -1)\n(print (generalized_mean [ 1 2 3 4 5 ] 1 [0.5 0.5 1 1 1 1))"
+	},
 	{
 		"parameter" : "generalized_distance list|assoc|* vector1 [list|assoc|* vector2] [number p_value] [list|assoc|assoc of assoc|number weights] [list|assoc distance_types] [list|assoc attributes] [list|assoc|number deviations] [list value_names] [string weights_selection_feature] [bool surprisal_space]",
 		"output" : "number",
@@ -1579,10 +1598,10 @@ var data = [
 	},
 
 	{
-		"parameter" : "query_generalized_mean string label_name number p [string weight_label_name] [number center] [bool calculate_moment] [bool absolute_value]",
+		"parameter" : "query_generalized_mean string label_name [number p] [string weight_label_name] [number center] [bool calculate_moment] [bool absolute_value]",
 		"output" : "query",
 		"new value" : "partial",
-		"description": "When used as a query argument, computes the generalized mean over the label_name for numeric data, using p as the parameter to the generalized mean.  If weight_label_name is specified, it will compute a weighted mean, normalizing the values of contained by weight_label_name. If center is specified, calculations will use that as central point, default is 0.0. If calculate_moment is true, results will not be raised to 1/p for p>=1. If absolute_value is true, the first order mean (p=1) will take the absolute value.",
+		"description": "When used as a query argument, computes the generalized mean over the label_name for numeric data.  If p is specified (which defaults to 1), it is the parameter that can control the type of mean from minimum (negative infinity) to harmonic mean (-1) to geometric mean (0) to arithmetic mean (1) to maximum (infinity).  If weight_label_name is specified, it will normalize the weights and compute a weighted mean.  If center is specified, calculations will use that as central point, default is 0.0.  If calculate_moment is true, results will not be raised to 1/p.  If absolute_value is true, the differences will take the absolute value.  Various parameterizations of generalized_mean can be used to compute moments about the mean, especially setting the calculate_moment parameter to true and using the mean as the center.",
 		"example" : "(compute_on_contained_entities \"TestEntity\" (list\n (query_generalized_mean \"TargetLabel\" 0.5)\n))"
 	},
 

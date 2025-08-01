@@ -63,8 +63,8 @@ inline double GetCurTime()
 void PerformanceProfiler::StartOperation(const std::string &t, int64_t memory_use)
 {
 	double cur_time = GetCurTime();
-	instructionStackTypeAndStartTimeAndMemUse.push_back(std::make_pair(t,
-			StartTimeAndMemUse{ cur_time, memory_use, cur_time, memory_use }));
+	instructionStackTypeAndStartTimeAndMemUse.emplace_back(t,
+			StartTimeAndMemUse{ cur_time, memory_use, cur_time, memory_use });
 }
 
 void PerformanceProfiler::EndOperation(int64_t memory_use = 0)

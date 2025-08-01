@@ -235,13 +235,6 @@ public:
 			DestroyStringReference(get_string_id(r));
 	}
 
-	//destroys 2 StringReferences
-	inline void DestroyStringReferences(StringID sid_1, StringID sid_2)
-	{
-		std::array<StringID, 2> string_ids = { sid_1, sid_2 };
-		DestroyStringReferences(string_ids);
-	}
-
 	//returns the number of strings that are still allocated
 	//even when "empty" it will still return 2 since the NOT_A_STRING_ID and emptyStringId take up slots
 	inline size_t GetNumStringsInUse()

@@ -465,7 +465,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 			auto [value, found] = matching_entities[i]->GetValueAtLabelAsImmediateValue(singleLabel);
 
 			if(value.nodeType == singleLabelType)
-				entity_values.push_back(std::make_pair(matching_entities[i], value.nodeValue));
+				entity_values.emplace_back(matching_entities[i], value.nodeValue);
 		}
 
 		//sort entities by value
@@ -553,7 +553,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		{
 			if(singleLabelType == ENIVT_NUMBER)
 			{
-				double mode = EntityQueriesStatistics::ModeNumber<size_t>(0, matching_entities.size(), get_value,
+				auto [found, mode] = EntityQueriesStatistics::ModeNumber<size_t>(0, matching_entities.size(), get_value,
 					weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight);
 				return EvaluableNodeReference(enm->AllocNode(mode), true);
 			}
@@ -568,11 +568,11 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 					return found;
 				};
 
-				auto [found, mode_id] = EntityQueriesStatistics::ModeStringId<size_t>(
+				auto [found, mode] = EntityQueriesStatistics::ModeStringId<size_t>(
 					0, matching_entities.size(), get_string_value, true, get_weight);
 
 				if(found)
-					return EvaluableNodeReference(enm->AllocNode(ENT_STRING, mode_id), true);
+					return EvaluableNodeReference(enm->AllocNode(ENT_STRING, mode), true);
 				else
 					return EvaluableNodeReference::Null();
 			}
@@ -580,15 +580,15 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		}
 		case ENT_QUERY_QUANTILE:
 		{
-			std::vector<std::pair<double,double>> values_buffer;
-			double quantile = EntityQueriesStatistics::Quantile<size_t>(0, matching_entities.size(), get_value,
-				weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight, qPercentage, values_buffer);
+			double quantile = Quantile<size_t>(0, matching_entities.size(), get_value,
+				weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight, qPercentage);
 			return EvaluableNodeReference(enm->AllocNode(quantile), true);
 		}
 		case ENT_QUERY_GENERALIZED_MEAN:
 		{
-			double generalized_mean = EntityQueriesStatistics::GeneralizedMean<size_t>(0, matching_entities.size(), get_value,
-				weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight, distEvaluator.pValue, center, calculateMoment, absoluteValue);
+			double generalized_mean = GeneralizedMean<size_t>(0, matching_entities.size(), get_value,
+				weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight, distEvaluator.pValue, center,
+				calculateMoment, absoluteValue);
 			return EvaluableNodeReference(enm->AllocNode(generalized_mean), true);
 		}
 		case ENT_QUERY_MIN_DIFFERENCE:
@@ -706,7 +706,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		for(size_t i = 0; i < num_to_keep && nearest_entities.Size() > 0; i++)
 		{
 			auto &dist_ent = nearest_entities.Top();
-			entity_values.push_back(DistanceReferencePair<Entity *>(dist_ent.distance, dist_ent.reference));
+			entity_values.emplace_back(dist_ent.distance, dist_ent.reference);
 
 			nearest_entities.Pop();
 		}
@@ -771,7 +771,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		std::vector<DistanceReferencePair<Entity *>> entity_values;
 		entity_values.reserve(matching_entities.size());
 		for(size_t i = 0; i < matching_entities.size(); i++)
-			entity_values.push_back(DistanceReferencePair<Entity *>(GetConditionDistanceMeasure(matching_entities[i], high_accuracy), matching_entities[i]));
+			entity_values.emplace_back(GetConditionDistanceMeasure(matching_entities[i], high_accuracy), matching_entities[i]);
 
 
 		auto weight_function = [this]

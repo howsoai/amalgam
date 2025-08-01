@@ -804,6 +804,145 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIN(EvaluableNode *en, boo
 	return EvaluableNodeReference::Null();
 }
 
+template<typename Compare>
+EvaluableNodeReference GetIndexMinMaxFromAssoc(EvaluableNodeReference interpreted_assoc,
+	EvaluableNodeManager *enm, Compare compare, double compare_limit, bool immediate_result)
+{
+	auto &mapped_child_nodes = interpreted_assoc->GetMappedChildNodesReference();
+	double candidate_value = compare_limit;
+	bool value_found = false;
+
+	std::vector<StringInternPool::StringID> max_keys;
+
+	for(auto [cur_key, cur_child] : mapped_child_nodes)
+	{
+		double cur_value = EvaluableNode::ToNumber(cur_child);
+
+		if(cur_value == candidate_value)
+		{
+			max_keys.push_back(cur_key);
+			// If all child nodes are the max/min value, we never fall into the other case.
+			// So we need to set value_found here.
+			value_found = true;
+		}
+		else if(compare(cur_value, candidate_value))
+		{
+			max_keys.clear();
+			candidate_value = cur_value;
+			max_keys.push_back(cur_key);
+			value_found = true;
+		}
+	}
+
+	if(value_found)
+	{
+		EvaluableNodeReference index_list(enm->AllocNode(ENT_LIST), false);
+		auto &index_list_ocn = index_list->GetOrderedChildNodesReference();
+		index_list_ocn.reserve(max_keys.size());
+
+		for(StringInternPool::StringID max_key : max_keys)
+		{
+			EvaluableNodeReference parsedKey = Parser::ParseFromKeyStringId(max_key, enm);
+			index_list.UpdatePropertiesBasedOnAttachedNode(parsedKey);
+			index_list_ocn.push_back(parsedKey);
+		}
+
+		return index_list;
+	}
+
+	return EvaluableNodeReference::Null();
+}
+
+template<typename Compare>
+EvaluableNodeReference GetIndexMinMaxFromList(EvaluableNode *en, EvaluableNodeManager *enm,
+	Compare compare, double compare_limit, bool immediate_result)
+{
+	bool value_found = false;
+	double result_value = compare_limit;
+	std::vector<size_t> max_indices;
+
+	auto &orderedChildNodes = en->GetOrderedChildNodesReference();
+
+	if(orderedChildNodes.size() == 0)
+		return EvaluableNodeReference::Null();
+
+	for(size_t i = 0; i < orderedChildNodes.size(); i++)
+	{
+		double cur_value = EvaluableNode::ToNumber(orderedChildNodes[i]);
+
+		if(cur_value == result_value)
+		{
+			max_indices.push_back(i);
+			// If all child nodes are the max/min value, we never fall into the other case.
+			// So we need to set value_found here.
+			value_found = true;
+		}
+		else if(compare(cur_value, result_value))
+		{
+			max_indices.clear();
+
+			value_found = true;
+			result_value = cur_value;
+			max_indices.push_back(i);
+		}
+	}
+
+	if(value_found)
+		return CreateListOfNumbersFromIteratorAndFunction(max_indices, enm,
+			[](auto val){ return static_cast<double>(val); });
+
+	return EvaluableNodeReference::Null();
+}
+
+template<typename Compare>
+EvaluableNodeReference GetIndexMinMaxFromRemainingArgList(EvaluableNode *en, Interpreter *interpreter,
+	Compare compare, double compare_limit, bool immediate_result)
+{
+	double result_value = compare_limit;
+	std::vector<size_t> max_indices;
+	bool value_found = false;
+
+	auto &orderedChildNodes = en->GetOrderedChildNodesReference();
+
+	if(orderedChildNodes.size() == 0)
+		return EvaluableNodeReference::Null();
+
+	// First node has already been interpreted and thus needs different handling
+	double candidate_zero = EvaluableNode::ToNumber(orderedChildNodes[0]);
+	if(!FastIsNaN(candidate_zero))
+	{
+		max_indices.push_back(0);
+		value_found = true;
+		result_value = candidate_zero;
+	}
+
+	for(size_t i = 1; i < orderedChildNodes.size(); i++)
+	{
+		double cur_value = interpreter->InterpretNodeIntoNumberValue(orderedChildNodes[i]);
+
+		if(cur_value == result_value)
+		{
+			max_indices.push_back(i);
+			// If all child nodes are the max/min value, we never fall into the other case.
+			// So we need to set value_found here.
+			value_found = true;
+		}
+		else if(compare(cur_value, result_value))
+		{
+			max_indices.clear();
+			result_value = cur_value;
+			max_indices.push_back(i);
+			value_found = true;
+		}
+	}
+
+	if(value_found)
+		return CreateListOfNumbersFromIteratorAndFunction(max_indices, interpreter->evaluableNodeManager,
+			[](size_t val){ return static_cast<double>(val); });
+
+	return EvaluableNodeReference::Null();
+}
+
 EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MAX(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
@@ -816,11 +955,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MAX(EvaluableNode *e
 
 	EvaluableNodeReference result;
 	if(ocn_zero != nullptr && ocn_zero->GetType() == ENT_ASSOC && ocn.size() == 1)
-		result = GetIndexMinMaxFromAssoc(ocn_zero, std::greater(), -std::numeric_limits<double>::infinity(), immediate_result);
+		result = GetIndexMinMaxFromAssoc(ocn_zero, evaluableNodeManager,
+			std::greater(), -std::numeric_limits<double>::infinity(), immediate_result);
 	else if(ocn_zero != nullptr && ocn_zero->GetType() == ENT_LIST && ocn.size() == 1)
-		result = GetIndexMinMaxFromList(ocn_zero, std::greater(), -std::numeric_limits<double>::infinity(), immediate_result);
+		result = GetIndexMinMaxFromList(ocn_zero, evaluableNodeManager,
+			std::greater(), -std::numeric_limits<double>::infinity(), immediate_result);
 	else
-		return GetIndexMinMaxFromRemainingArgList(en, std::greater(), -std::numeric_limits<double>::infinity(), immediate_result);
+		return GetIndexMinMaxFromRemainingArgList(en, this,
+			std::greater(), -std::numeric_limits<double>::infinity(), immediate_result);
 
 	evaluableNodeManager->FreeNodeTreeIfPossible(ocn_zero);
 	return result;
@@ -838,11 +980,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_INDEX_MIN(EvaluableNode *e
 
 	EvaluableNodeReference result;
 	if(ocn_zero != nullptr && ocn_zero->GetType() == ENT_ASSOC && ocn.size() == 1)
-		result = GetIndexMinMaxFromAssoc(ocn_zero, std::less(), std::numeric_limits<double>::infinity(), immediate_result);
+		result = GetIndexMinMaxFromAssoc(ocn_zero, evaluableNodeManager,
+			std::less(), std::numeric_limits<double>::infinity(), immediate_result);
 	else if(ocn_zero != nullptr && ocn_zero->GetType() == ENT_LIST && ocn.size() == 1)
-		result = GetIndexMinMaxFromList(ocn_zero, std::less(), std::numeric_limits<double>::infinity(), immediate_result);
+		result = GetIndexMinMaxFromList(ocn_zero, evaluableNodeManager,
+			std::less(), std::numeric_limits<double>::infinity(), immediate_result);
 	else
-		return GetIndexMinMaxFromRemainingArgList(en, std::less(), std::numeric_limits<double>::infinity(), immediate_result);
+		return GetIndexMinMaxFromRemainingArgList(en, this,
+			std::less(), std::numeric_limits<double>::infinity(), immediate_result);
 
 	evaluableNodeManager->FreeNodeTreeIfPossible(ocn_zero);
 	return result;
@@ -978,6 +1123,403 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NORMALIZE(EvaluableNode *e
 	}
 
 	return container;
+}
+
+//set of getter methods to help ENT_MODE, ENT_QUANTILE, and ENT_GENERALIZED_DISTANCE when retrieving values and weights
+static inline bool GetValueFromIter(EvaluableNode::AssocType::iterator iter, double &value)
+{
+	value = EvaluableNode::ToNumber(iter->second);
+	return !FastIsNaN(value);
+};
+
+static inline bool GetValueFromIter(EvaluableNode::AssocType::iterator iter, std::string &value)
+{
+	value = Parser::UnparseToKeyString(iter->second);
+	return true;
+};
+
+static inline bool GetValueFromIndex(std::vector<EvaluableNode *> &ocn, size_t i, double &value)
+{
+	if(i >= ocn.size())
+		return false;
+
+	value = EvaluableNode::ToNumber(ocn[i]);
+	return !FastIsNaN(value);
+};
+
+static inline bool GetValueFromIndex(std::vector<EvaluableNode *> &ocn, size_t i, std::string &value)
+{
+	if(i >= ocn.size())
+		return false;
+
+	value = Parser::UnparseToKeyString(ocn[i]);
+	return true;
+};
+
+static inline bool GetValueFromWeightsIter(EvaluableNode::AssocType &values_mcn,
+	EvaluableNode::AssocType::iterator iter, double &value)
+{
+	auto entry = values_mcn.find(iter->first);
+	if(entry == end(values_mcn))
+		return false;
+
+	value = EvaluableNode::ToNumber(entry->second);
+	return !FastIsNaN(value);
+};
+
+static inline bool GetValueFromWeightsIter(EvaluableNode::AssocType &values_mcn,
+	EvaluableNode::AssocType::iterator iter, std::string &value)
+{
+	auto entry = values_mcn.find(iter->first);
+	if(entry == end(values_mcn))
+		return false;
+
+	value = Parser::UnparseToKeyString(entry->second);
+	return true;
+};
+
+static inline bool GetValueFromWeightsIter(std::vector<EvaluableNode *> &values_ocn,
+	EvaluableNode::AssocType::iterator iter, double &value)
+{
+	double index_double = Parser::ParseNumberFromKeyStringId(iter->first);
+	if(FastIsNaN(index_double))
+		return false;
+	size_t index = static_cast<size_t>(index_double);
+	if(index >= values_ocn.size())
+		return false;
+
+	value = EvaluableNode::ToNumber(values_ocn[index]);
+	return !FastIsNaN(value);
+};
+
+static inline bool GetValueFromWeightsIter(std::vector<EvaluableNode *> &values_ocn,
+	EvaluableNode::AssocType::iterator iter, std::string &value)
+{
+	double index_double = Parser::ParseNumberFromKeyStringId(iter->first);
+	if(FastIsNaN(index_double))
+		return false;
+	size_t index = static_cast<size_t>(index_double);
+	if(index >= values_ocn.size())
+		return false;
+
+	value = Parser::UnparseToKeyString(values_ocn[index]);
+	return true;
+};
+
+static inline bool GetValueFromWeightsIndex(EvaluableNode::AssocType &values_mcn,
+	size_t index, double &value)
+{
+	auto key_sid = EvaluableNode::NumberToStringIDIfExists(index, true);
+	if(key_sid == string_intern_pool.NOT_A_STRING_ID)
+		return false;
+
+	auto entry = values_mcn.find(key_sid);
+	if(entry == end(values_mcn))
+		return false;
+
+	value = EvaluableNode::ToNumber(entry->second);
+	return !FastIsNaN(value);
+};
+
+static inline bool GetValueFromWeightsIndex(EvaluableNode::AssocType &values_mcn,
+	size_t index, std::string &value)
+{
+	auto key_sid = EvaluableNode::NumberToStringIDIfExists(index, true);
+	if(key_sid == string_intern_pool.NOT_A_STRING_ID)
+		return false;
+
+	auto entry = values_mcn.find(key_sid);
+	if(entry == end(values_mcn))
+		return false;
+
+	value = Parser::UnparseToKeyString(entry->second);
+	return true;
+};
+
+//specialization of Mode for std::string
+template<typename ValueIterator, typename ValueFunction, typename WeightFunction>
+inline static std::pair<bool, std::string> ModeString(ValueIterator first, ValueIterator last,
+		ValueFunction get_value, bool has_weight, WeightFunction get_weight)
+{
+	return Mode<ValueIterator, std::string,
+		std::hash<std::string>, std::equal_to<std::string>>(first, last,
+			get_value, has_weight, get_weight, std::string());
+}
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_MODE(EvaluableNode *en, bool immediate_result)
+{
+	auto &ocn = en->GetOrderedChildNodes();
+
+	if(ocn.size() < 1)
+		return EvaluableNodeReference::Null();
+
+	auto values = InterpretNode(ocn[0]);
+	if(EvaluableNode::IsNull(values) || values->IsImmediate())
+		return values;
+
+	EvaluableNodeReference weights = EvaluableNodeReference::Null();
+	if(ocn.size() > 1)
+	{
+		auto node_stack = CreateOpcodeStackStateSaver(values);
+		weights = InterpretNode(ocn[1]);
+	}
+
+	bool found = false;
+	std::string unparsed_result;
+	if(values->IsAssociativeArray())
+	{
+		auto &values_mcn = values->GetMappedChildNodesReference();
+
+		if(EvaluableNode::IsNull(weights))
+		{
+			std::tie(found, unparsed_result) = ModeString(begin(values_mcn), end(values_mcn),
+				[](auto iter, auto &value) { return GetValueFromIter(iter, value);},
+				false, [](auto iter, auto &value) { return false;});
+		}
+		else if(weights->IsAssociativeArray())
+		{
+			auto &weights_mcn = weights->GetMappedChildNodesReference();
+
+			std::tie(found, unparsed_result) = ModeString(begin(weights_mcn), end(weights_mcn),
+				[&values_mcn](auto iter, auto &value) { return GetValueFromWeightsIter(values_mcn, iter, value); },
+				true, [](auto iter, auto &value) {	return GetValueFromIter(iter, value); });
+
+		}
+		else //weights->IsOrderedArray())
+		{
+			auto &weights_ocn = weights->GetOrderedChildNodesReference();
+
+			std::tie(found, unparsed_result) = ModeString(size_t{ 0 }, weights_ocn.size(),
+				[&values_mcn](auto i, auto &value) { return GetValueFromWeightsIndex(values_mcn, i, value); },
+				true, [&weights_ocn](auto i, auto &value) { return GetValueFromIndex(weights_ocn, i, value); });
+		}
+	}
+	else //values->IsOrderedArray())
+	{
+		auto &values_ocn = values->GetOrderedChildNodesReference();
+
+		if(EvaluableNode::IsNull(weights))
+		{
+			std::tie(found, unparsed_result) = ModeString(size_t{ 0 }, values_ocn.size(),
+				[&values_ocn](auto i, auto &value) { return GetValueFromIndex(values_ocn, i, value); },
+				false, [](auto iter, auto &value) { return false;});
+		}
+		else if(weights->IsAssociativeArray())
+		{
+			auto &weights_mcn = weights->GetMappedChildNodesReference();
+
+			std::tie(found, unparsed_result) = ModeString(begin(weights_mcn), end(weights_mcn),
+				[&values_ocn](auto iter, auto &value) { return GetValueFromWeightsIter(values_ocn, iter, value); },
+				true, [](auto iter, auto &value) {	return GetValueFromIter(iter, value); });
+		}
+		else //weights->IsOrderedArray())
+		{
+			auto &weights_ocn = weights->GetOrderedChildNodesReference();
+
+			std::tie(found, unparsed_result) = ModeString(size_t{ 0 }, weights_ocn.size(),
+				[&values_ocn](auto i, auto &value) { return GetValueFromIndex(values_ocn, i, value); },
+				true, [&weights_ocn](auto i, auto &value) { return GetValueFromIndex(weights_ocn, i, value); });
+		}
+	}
+
+	if(!found)
+		return EvaluableNodeReference::Null();
+
+	return Parser::ParseFromKeyString(unparsed_result, evaluableNodeManager);
+}
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_QUANTILE(EvaluableNode * en, bool immediate_result)
+{
+	auto &ocn = en->GetOrderedChildNodes();
+
+	if(ocn.size() < 2)
+		return EvaluableNodeReference::Null();
+
+	double quantile = InterpretNodeIntoNumberValue(ocn[1]);
+
+	auto values = InterpretNode(ocn[0]);
+	if(EvaluableNode::IsNull(values) || values->IsImmediate())
+		return values;
+
+	EvaluableNodeReference weights = EvaluableNodeReference::Null();
+	if(ocn.size() > 2)
+	{
+		auto node_stack = CreateOpcodeStackStateSaver(values);
+		weights = InterpretNode(ocn[2]);
+	}
+
+	double result = 0.0;
+	if(values->IsAssociativeArray())
+	{
+		auto &values_mcn = values->GetMappedChildNodesReference();
+
+		if(EvaluableNode::IsNull(weights))
+		{
+			result = Quantile(begin(values_mcn), end(values_mcn),
+				[](auto iter, auto &value) { return GetValueFromIter(iter, value);},
+				false, [](auto iter, auto &value) { return false;},
+				quantile);
+		}
+		else if(weights->IsAssociativeArray())
+		{
+			auto &weights_mcn = weights->GetMappedChildNodesReference();
+
+			result = Quantile(begin(weights_mcn), end(weights_mcn),
+				[&values_mcn](auto iter, auto &value) { return GetValueFromWeightsIter(values_mcn, iter, value); },
+				true, [](auto iter, auto &value) {	return GetValueFromIter(iter, value); },
+				quantile);
+
+		}
+		else //weights->IsOrderedArray())
+		{
+			auto &weights_ocn = weights->GetOrderedChildNodesReference();
+
+			result = Quantile(size_t{ 0 }, weights_ocn.size(),
+				[&values_mcn](auto i, auto &value) { return GetValueFromWeightsIndex(values_mcn, i, value); },
+				true, [&weights_ocn](auto i, auto &value) { return GetValueFromIndex(weights_ocn, i, value); },
+				quantile);
+		}
+	}
+	else //values->IsOrderedArray())
+	{
+		auto &values_ocn = values->GetOrderedChildNodesReference();
+
+		if(EvaluableNode::IsNull(weights))
+		{
+			result = Quantile(size_t{ 0 }, values_ocn.size(),
+				[&values_ocn](auto i, auto &value) { return GetValueFromIndex(values_ocn, i, value); },
+				false, [](auto iter, auto &value) { return false;},
+				quantile);
+		}
+		else if(weights->IsAssociativeArray())
+		{
+			auto &weights_mcn = weights->GetMappedChildNodesReference();
+
+			result = Quantile(begin(weights_mcn), end(weights_mcn),
+				[&values_ocn](auto iter, auto &value) { return GetValueFromWeightsIter(values_ocn, iter, value); },
+				true, [](auto iter, auto &value) {	return GetValueFromIter(iter, value); },
+				quantile);
+		}
+		else //weights->IsOrderedArray())
+		{
+			auto &weights_ocn = weights->GetOrderedChildNodesReference();
+
+			result = Quantile(size_t{ 0 }, weights_ocn.size(),
+				[&values_ocn](auto i, auto &value) { return GetValueFromIndex(values_ocn, i, value); },
+				true, [&weights_ocn](auto i, auto &value) { return GetValueFromIndex(weights_ocn, i, value); },
+				quantile);
+		}
+	}
+
+	return AllocReturn(result, immediate_result);
+}
+
+EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(EvaluableNode *en, bool immediate_result)
+{
+	auto &ocn = en->GetOrderedChildNodes();
+
+	if(ocn.size() < 1)
+		return EvaluableNodeReference::Null();
+
+	double p = 1.0;
+	if(ocn.size() > 1)
+	{
+		p = InterpretNodeIntoNumberValue(ocn[1]);
+		if(FastIsNaN(p))
+			p = 1.0;
+	}
+
+	double center = 0.0;
+	if(ocn.size() > 3)
+	{
+		center = InterpretNodeIntoNumberValue(ocn[3]);
+		if(FastIsNaN(center))
+			center = 0.0;
+	}
+
+	bool calculate_moment = false;
+	if(ocn.size() > 4)
+		calculate_moment = InterpretNodeIntoBoolValue(ocn[4], false);
+
+	bool absolute_value = false;
+	if(ocn.size() > 5)
+		absolute_value = InterpretNodeIntoBoolValue(ocn[5], false);
+
+	auto values = InterpretNode(ocn[0]);
+	if(EvaluableNode::IsNull(values) || values->IsImmediate())
+		return values;
+
+	EvaluableNodeReference weights = EvaluableNodeReference::Null();
+	if(ocn.size() > 2)
+	{
+		auto node_stack = CreateOpcodeStackStateSaver(values);
+		weights = InterpretNode(ocn[2]);
+	}
+
+	double result = 0.0;
+	if(values->IsAssociativeArray())
+	{
+		auto &values_mcn = values->GetMappedChildNodesReference();
+
+		if(EvaluableNode::IsNull(weights))
+		{
+			result = GeneralizedMean(begin(values_mcn), end(values_mcn),
+				[](auto iter, auto &value) { return GetValueFromIter(iter, value);},
+				false, [](auto iter, auto &value) { return false;},
+				p, center, calculate_moment, absolute_value);
+		}
+		else if(weights->IsAssociativeArray())
+		{
+			auto &weights_mcn = weights->GetMappedChildNodesReference();
+
+			result = GeneralizedMean(begin(weights_mcn), end(weights_mcn),
+				[&values_mcn](auto iter, auto &value) { return GetValueFromWeightsIter(values_mcn, iter, value); },
+				true, [](auto iter, auto &value) {	return GetValueFromIter(iter, value); },
+				p, center, calculate_moment, absolute_value);
+
+		}
+		else //weights->IsOrderedArray())
+		{
+			auto &weights_ocn = weights->GetOrderedChildNodesReference();
+
+			result = GeneralizedMean(size_t{0}, weights_ocn.size(),
+				[&values_mcn](auto i, auto &value) { return GetValueFromWeightsIndex(values_mcn, i, value); },
+				true, [&weights_ocn](auto i, auto &value) { return GetValueFromIndex(weights_ocn, i, value); },
+				p, center, calculate_moment, absolute_value);
+		}
+	}
+	else //values->IsOrderedArray())
+	{
+		auto &values_ocn = values->GetOrderedChildNodesReference();
+
+		if(EvaluableNode::IsNull(weights))
+		{
+			result = GeneralizedMean(size_t{ 0 }, values_ocn.size(),
+				[&values_ocn](auto i, auto &value) { return GetValueFromIndex(values_ocn, i, value); },
+				false, [](auto iter, auto &value) { return false;},
+				p, center, calculate_moment, absolute_value);
+		}
+		else if(weights->IsAssociativeArray())
+		{
+			auto &weights_mcn = weights->GetMappedChildNodesReference();
+
+			result = GeneralizedMean(begin(weights_mcn), end(weights_mcn),
+				[&values_ocn](auto iter, auto &value) { return GetValueFromWeightsIter(values_ocn, iter, value); },
+				true, [](auto iter, auto &value) {	return GetValueFromIter(iter, value); },
+				p, center, calculate_moment, absolute_value);
+		}
+		else //weights->IsOrderedArray())
+		{
+			auto &weights_ocn = weights->GetOrderedChildNodesReference();
+			
+			result = GeneralizedMean(size_t{0}, weights_ocn.size(),
+				[&values_ocn](auto i, auto &value) { return GetValueFromIndex(values_ocn, i, value); },
+				true, [&weights_ocn](auto i, auto &value) { return GetValueFromIndex(weights_ocn, i, value); },
+				p, center, calculate_moment, absolute_value);
+		}
+	}
+
+	return AllocReturn(result, immediate_result);
 }
 
 //builds a vector of the values in the node, using ordered or mapped child nodes as appropriate

@@ -99,6 +99,9 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 	&Interpreter::InterpretNode_ENT_INDEX_MIN,														// ENT_INDEX_MIN
 	&Interpreter::InterpretNode_ENT_DOT_PRODUCT,													// ENT_DOT_PRODUCT
 	&Interpreter::InterpretNode_ENT_NORMALIZE,														// ENT_NORMALIZE
+	&Interpreter::InterpretNode_ENT_MODE,															// ENT_MODE,
+	&Interpreter::InterpretNode_ENT_QUANTILE,														// ENT_QUANTILE,
+	&Interpreter::InterpretNode_ENT_GENERALIZED_MEAN,												// ENT_GENERALIZED_MEAN,
 	&Interpreter::InterpretNode_ENT_GENERALIZED_DISTANCE,											// ENT_GENERALIZED_DISTANCE
 	&Interpreter::InterpretNode_ENT_ENTROPY,														// ENT_ENTROPY
 
@@ -832,7 +835,6 @@ bool Interpreter::PopulateInterpreterConstraintsFromParams(std::vector<Evaluable
 	interpreter_constraints.constrainMaxContainedEntityDepth = false;
 	interpreter_constraints.maxContainedEntityDepth = 0;
 	interpreter_constraints.maxEntityIdLength = 0;
-
 
 	size_t warning_override_offset = perf_constraint_param_offset + 3;
 

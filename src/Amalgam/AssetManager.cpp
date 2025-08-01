@@ -83,6 +83,8 @@ AssetManager::AssetParameters::AssetParameters(std::string resource_path, std::s
 		executeOnLoad = is_entity;
 		requireVersionCompatibility = false;
 	}
+
+	UpdateResources();
 }
 
 void AssetManager::AssetParameters::SetParams(EvaluableNode::AssocType &params)

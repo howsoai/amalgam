@@ -67,7 +67,7 @@ public:
 		return successful;
 	}
 
-	void check(const std::string &action, const std::string &actual, const std::string &expected)
+	void Check(const std::string &action, const std::string &actual, const std::string &expected)
 	{
 		if(actual != expected)
 		{
@@ -76,7 +76,7 @@ public:
 		}
 	}
 
-	void require(const std::string &action, bool actual)
+	void Require(const std::string &action, bool actual)
 	{
 		if(!actual)
 		{
@@ -99,7 +99,7 @@ public:
 		return successful;
 	}
 
-	void run(const std::string &test, std::function<void(TestResult&)> f)
+	void Run(const std::string &test, std::function<void(TestResult&)> f)
 	{
 		TestResult test_result(test);
 		if(verbose)
@@ -109,13 +109,13 @@ public:
 	}
 };
 
-static void dumpVersion(TestResult &test_result)
+static void DumpVersion(TestResult &test_result)
 {
 	ApiString version(GetVersionString());
 	std::cout << static_cast<std::string>(version) << std::endl;
 }
 
-static void loadAndEval(TestResult &test_result)
+static void LoadAndEval(TestResult &test_result)
 {
 	// Load+execute+delete entity:
 	char handle[] = "1";
@@ -125,7 +125,7 @@ static void loadAndEval(TestResult &test_result)
 	char write_log[] = "";
 	char print_log[] = "";
 	auto status = LoadEntity(handle, file, file_type, false, json_file_params, write_log, print_log);
-	test_result.require("LoadEntity", status.loaded);
+	test_result.Require("LoadEntity", status.loaded);
 	if(test_result)
 	{
 		LoadedEntity loaded_entity(handle);
@@ -135,7 +135,7 @@ static void loadAndEval(TestResult &test_result)
 
 		std::string amlg("(size (contained_entities))");
 		ApiString result(EvalOnEntity(handle, amlg.data()));
-		test_result.check("EvalOnEntity", result, "24");
+		test_result.Check("EvalOnEntity", result, "24");
 	}
 }
 
@@ -149,37 +149,37 @@ static std::string add("add");
 static std::string get_value("get_value");
 static std::string increment("increment");
 
-static void initializeCounter(TestResult &test_result)
+static void InitializeCounter(TestResult &test_result)
 {
     LoadEntityStatus status = LoadEntity(handle.data(), filename.data(), empty.data(), false, empty.data(), empty.data(), empty.data());
-	test_result.require("LoadEntity", status.loaded);
+	test_result.Require("LoadEntity", status.loaded);
 	if(test_result)
 	{
 		LoadedEntity loaded_entity(handle);
 		ExecuteEntity(handle.data(), initialize.data());
 		ApiString result(ExecuteEntityJsonPtr(handle.data(), get_value.data(), empty.data()));
-		test_result.check("ExecuteEntityJsonPtr", result, "0");
+		test_result.Check("ExecuteEntityJsonPtr", result, "0");
 	}
 }
 
-static void executeEntityJsonWithValue(TestResult &test_result)
+static void ExecuteEntityJsonWithValue(TestResult &test_result)
 {
     LoadEntityStatus status = LoadEntity(handle.data(), filename.data(), empty.data(), false, empty.data(), empty.data(), empty.data());
-	test_result.require("LoadEntity", status.loaded);
+	test_result.Require("LoadEntity", status.loaded);
 	if(test_result)
 	{
 		LoadedEntity loaded_entity(handle);
 		ExecuteEntity(handle.data(), initialize.data());
 		std::string json("{\"count\":2}");
 		ApiString result(ExecuteEntityJsonPtr(handle.data(), add.data(), json.data()));
-		test_result.check("ExecuteEntityJsonPtr", result, "2");
+		test_result.Check("ExecuteEntityJsonPtr", result, "2");
 	}
 }
 
-static void executeEntityJsonLogged(TestResult &test_result)
+static void ExecuteEntityJsonLogged(TestResult &test_result)
 {
     LoadEntityStatus status = LoadEntity(handle.data(), filename.data(), empty.data(), false, empty.data(), empty.data(), empty.data());
-	test_result.require("LoadEntity", status.loaded);
+	test_result.Require("LoadEntity", status.loaded);
 	if(test_result)
 	{
 		LoadedEntity loaded_entity(handle);
@@ -187,35 +187,35 @@ static void executeEntityJsonLogged(TestResult &test_result)
 	    ResultWithLog result = ExecuteEntityJsonPtrLogged(handle.data(), increment.data(), empty.data());
 		ApiString json(result.json);
 		ApiString log(result.log);
-		test_result.check("ExecuteEntityJsonPtrLogged json", json, "1");
-		test_result.check("ExecuteEntityJsonPtrLogged log", log, "(seq (accum_to_entities {!value 1}))");
+		test_result.Check("ExecuteEntityJsonPtrLogged json", json, "1");
+		test_result.Check("ExecuteEntityJsonPtrLogged log", log, "(seq (accum_to_entities {!value 1}))");
 	}
 }
 
-static void executeEntityJsonLoggedUpdating(TestResult &test_result)
+static void ExecuteEntityJsonLoggedUpdating(TestResult &test_result)
 {
     LoadEntityStatus status = LoadEntity(handle.data(), filename.data(), empty.data(), false, empty.data(), empty.data(), empty.data());
-	test_result.require("LoadEntity", status.loaded);
+	test_result.Require("LoadEntity", status.loaded);
 	if(test_result)
 	{
 		LoadedEntity loaded_entity(handle);
 		ExecuteEntity(handle.data(), initialize.data());
 
 		ApiString one(ExecuteEntityJsonPtr(handle.data(), increment.data(), empty.data()));
-		test_result.check("ExecuteEntityJson", one, "1");
+		test_result.Check("ExecuteEntityJson", one, "1");
 
 	    ResultWithLog result = ExecuteEntityJsonPtrLogged(handle.data(), increment.data(), empty.data());
 		ApiString json(result.json);
 		ApiString log(result.log);
-		test_result.check("ExecuteEntityJsonPtrLogged json", json, "2");
-		test_result.check("ExecuteEntityJsonPtrLogged log", log, "(seq (accum_to_entities {!value 1}))");
+		test_result.Check("ExecuteEntityJsonPtrLogged json", json, "2");
+		test_result.Check("ExecuteEntityJsonPtrLogged log", log, "(seq (accum_to_entities {!value 1}))");
 	}
 }
 
-static void executeEntityJsonLoggedRoundTrip(TestResult &test_result)
+static void ExecuteEntityJsonLoggedRoundTrip(TestResult &test_result)
 {
     LoadEntityStatus status = LoadEntity(handle.data(), filename.data(), empty.data(), false, empty.data(), empty.data(), empty.data());
-	test_result.require("LoadEntity", status.loaded);
+	test_result.Require("LoadEntity", status.loaded);
 	if(test_result)
 	{
 		LoadedEntity loaded_entity(handle);
@@ -225,20 +225,20 @@ static void executeEntityJsonLoggedRoundTrip(TestResult &test_result)
 	    ResultWithLog result = ExecuteEntityJsonPtrLogged(handle.data(), increment.data(), empty.data());
 		ApiString json(result.json);
 		ApiString log(result.log);
-		test_result.check("ExecuteEntityJsonPtrLogged json", json, "1");
+		test_result.Check("ExecuteEntityJsonPtrLogged json", json, "1");
 
 		// Reset the entity and replay the log.  We should get the same result back from the state.
 		ExecuteEntity(handle.data(), initialize.data());
 		EvalOnEntity(handle.data(), result.log);
 		ApiString gotten(ExecuteEntityJsonPtr(handle.data(), get_value.data(), empty.data()));
-		test_result.check("ExecuteEntityJsonPtr get_value", gotten, "1");
+		test_result.Check("ExecuteEntityJsonPtr get_value", gotten, "1");
 	}
 }
 
-static void executeEntityJsonLoggedTwice(TestResult &test_result)
+static void ExecuteEntityJsonLoggedTwice(TestResult &test_result)
 {
     LoadEntityStatus status = LoadEntity(handle.data(), filename.data(), empty.data(), false, empty.data(), empty.data(), empty.data());
-	test_result.require("LoadEntity", status.loaded);
+	test_result.Require("LoadEntity", status.loaded);
 	if(test_result)
 	{
 		LoadedEntity loaded_entity(handle);
@@ -248,27 +248,27 @@ static void executeEntityJsonLoggedTwice(TestResult &test_result)
 	    ResultWithLog result1 = ExecuteEntityJsonPtrLogged(handle.data(), increment.data(), empty.data());
 		ApiString json1(result1.json);
 		ApiString log1(result1.log);
-		test_result.check("ExecuteEntityJsonPtrLogged json", json1, "1");
+		test_result.Check("ExecuteEntityJsonPtrLogged json", json1, "1");
 
 		// Again.
 	    ResultWithLog result2 = ExecuteEntityJsonPtrLogged(handle.data(), increment.data(), empty.data());
 		ApiString json2(result2.json);
 		ApiString log2(result2.log);
-		test_result.check("ExecuteEntityJsonPtrLogged json", json2, "2");
+		test_result.Check("ExecuteEntityJsonPtrLogged json", json2, "2");
 
 		// Reset the entity and replay both logs.  We should get the same result back from the state.
 		ExecuteEntity(handle.data(), initialize.data());
 		EvalOnEntity(handle.data(), result1.log);
 		EvalOnEntity(handle.data(), result2.log);
 		ApiString gotten(ExecuteEntityJsonPtr(handle.data(), get_value.data(), empty.data()));
-		test_result.check("ExecuteEntityJsonPtr get_value", gotten, "2");
+		test_result.Check("ExecuteEntityJsonPtr get_value", gotten, "2");
 	}
 }
 
-static void executeCounter2(TestResult &test_result)
+static void ExecuteCounter2(TestResult &test_result)
 {
     LoadEntityStatus status = LoadEntity(handle.data(), filename2.data(), empty.data(), false, empty.data(), empty.data(), empty.data());
-	test_result.require("LoadEntity", status.loaded);
+	test_result.Require("LoadEntity", status.loaded);
 	if(test_result)
 	{
 		LoadedEntity loaded_entity(handle);
@@ -276,20 +276,20 @@ static void executeCounter2(TestResult &test_result)
 
 		std::string json("{}");
 		ApiString result(ExecuteEntityJsonPtr(handle.data(), add.data(), json.data()));
-		test_result.check("ExecuteEntityJsonPtr add", result, "1");
+		test_result.Check("ExecuteEntityJsonPtr add", result, "1");
 
 		std::string json2("{\"counter\":\"y\"}");
 		ApiString result2(ExecuteEntityJsonPtr(handle.data(), get_value.data(), json2.data()));
-		test_result.check("ExecuteEntityJsonPtr get_value y", result2, "\0(null)");
+		test_result.Check("ExecuteEntityJsonPtr get_value y", result2, "\0(null)");
 	}
 }
 
-static void executeCounter2Logged(TestResult &test_result)
+static void ExecuteCounter2Logged(TestResult &test_result)
 {
 	// This is actually a test for a specific case of accum_entity_roots, via
 	// ExecuteEntityJsonPtrLogged(), that needs to preserve labels.
     LoadEntityStatus status = LoadEntity(handle.data(), filename2.data(), empty.data(), false, empty.data(), empty.data(), empty.data());
-	test_result.require("LoadEntity", status.loaded);
+	test_result.Require("LoadEntity", status.loaded);
 	if(test_result)
 	{
 		LoadedEntity loaded_entity(handle);
@@ -298,17 +298,17 @@ static void executeCounter2Logged(TestResult &test_result)
 		// Clone the entity, then execute "add" there.
 		// Of note this accum_entity_roots, adding a label.
 		bool cloned = CloneEntity(handle.data(), handle2.data(), empty.data(), empty.data(), false, empty.data(), empty.data(), empty.data());
-		test_result.require("CloneEntity", cloned);
+		test_result.Require("CloneEntity", cloned);
 
 		ResultWithLog result = ExecuteEntityJsonPtrLogged(handle2.data(), add.data(), empty.data());
 		ApiString json1(result.json);
 		ApiString log1(result.log);
-		test_result.check("ExecuteEntityJsonPtrLogged add", json1, "1");
+		test_result.Check("ExecuteEntityJsonPtrLogged add", json1, "1");
 
 		EvalOnEntity(handle.data(), result.log);
 
 		std::string json2 = ExecuteEntityJsonPtr(handle.data(), get_value.data(), empty.data());
-		test_result.check("ExecuteEntityJsonPtr get_value", json2, "1");
+		test_result.Check("ExecuteEntityJsonPtr get_value", json2, "1");
 	}
 }
 
@@ -339,16 +339,16 @@ int main(int argc, char* argv[])
 	}
 
 	SuiteResult suite(verbose);
-	suite.run("dumpVersion", dumpVersion);
-	suite.run("loadAndEval", loadAndEval);
-	suite.run("initializeCounter", initializeCounter);
-	suite.run("executeEntityJsonWithValue", executeEntityJsonWithValue);
-	suite.run("executeEntityJsonLogged", executeEntityJsonLogged);
-	suite.run("executeEntityJsonLoggedUpdating", executeEntityJsonLoggedUpdating);
-	suite.run("executeEntityJsonLoggedRoundTrip", executeEntityJsonLoggedRoundTrip);
-	suite.run("executeEntityJsonLoggedTwice", executeEntityJsonLoggedTwice);
-	suite.run("executeCounter2", executeCounter2);
-	suite.run("executeCounter2Logged", executeCounter2Logged);
+	suite.Run("DumpVersion", DumpVersion);
+	suite.Run("LoadAndEval", LoadAndEval);
+	suite.Run("InitializeCounter", InitializeCounter);
+	suite.Run("ExecuteEntityJsonWithValue", ExecuteEntityJsonWithValue);
+	suite.Run("ExecuteEntityJsonLogged", ExecuteEntityJsonLogged);
+	suite.Run("ExecuteEntityJsonLoggedUpdating", ExecuteEntityJsonLoggedUpdating);
+	suite.Run("ExecuteEntityJsonLoggedRoundTrip", ExecuteEntityJsonLoggedRoundTrip);
+	suite.Run("ExecuteEntityJsonLoggedTwice", ExecuteEntityJsonLoggedTwice);
+	suite.Run("ExecuteCounter2", ExecuteCounter2);
+	suite.Run("ExecuteCounter2Logged", ExecuteCounter2Logged);
 
 	return suite ? 0 : 1;
 }

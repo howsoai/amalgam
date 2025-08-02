@@ -956,6 +956,12 @@ public:
 	class ThreadLocalAllocationBufferPause
 	{
 	public:
+		//if initialized without params, just leave unpaused
+		inline ThreadLocalAllocationBufferPause()
+		{
+			paused = false;
+		}
+
 		inline ThreadLocalAllocationBufferPause(std::vector<EvaluableNode *> &tlab_buffer,
 			EvaluableNodeManager *&last_enm)
 		{
@@ -968,12 +974,14 @@ public:
 
 		inline ~ThreadLocalAllocationBufferPause()
 		{
-			if(paused)
-				Resume();
+			Resume();
 		}
 
 		inline void Resume()
 		{
+			if(!paused)
+				return;
+
 			std::swap(prevTlabBuffer, *tlabBufferLocation);
 			(*lastEvaluableNodeManagerLocation) = prevLastEvaluableNodeManager;
 			paused = false;
@@ -1075,9 +1083,9 @@ protected:
 		{
 			if(lastEvaluableNodeManager != this)
 				ClearThreadLocalAllocationBuffer();
+			else //TLAB is empty, set to null so nothing matches until more nodes are added
+				lastEvaluableNodeManager = nullptr;
 
-			//set to null so nothing matches until more nodes are added
-			lastEvaluableNodeManager = nullptr;
 			return nullptr;
 		}
 	}

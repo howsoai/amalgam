@@ -175,6 +175,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_AC
 			target_entity = EntityWriteReference(curEntity);
 		}
 
+		//pause if allocating to another entity
+		EvaluableNodeManager::ThreadLocalAllocationBufferPause tlab_pause;
+		if(target_entity != curEntity)
+			tlab_pause = evaluableNodeManager->PauseThreadLocalAllocationBuffer();
+
 		if(accum)
 		{
 			target_entity->AccumRoot(new_code, false, EvaluableNodeManager::ENMM_LABEL_ESCAPE_DECREMENT, writeListeners);
@@ -199,6 +204,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_AC
 					interpreterConstraints->curNumAllocatedNodesAllocatedToEntities += cur_size - prev_size;
 			}
 		}
+
+		tlab_pause.Resume();
 
 		if(target_entity != curEntity)
 		{

@@ -713,7 +713,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 
 			InitOrderedChildNodes();
 			//swap for efficiency
-			swap(GetOrderedChildNodesReference(), new_ordered);
+			std::swap(GetOrderedChildNodesReference(), new_ordered);
 		}
 		else //just set up empty ordered
 		{

@@ -186,7 +186,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 			return EvaluableNodeReference(*value_ptr, false);
 
 		Concurrency::ReadLock lock;
-		LockScopeStackWithoutBlockingGarbageCollection(lock);
+		LockScopeStackWithoutBlockingGarbageCollectionIfNeeded(lock);
 
 		//now check shared
 		value_ptr = GetScopeStackSymbolLocation(sid, scope_stack_index, false, true);

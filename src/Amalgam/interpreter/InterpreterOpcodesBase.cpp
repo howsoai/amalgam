@@ -866,9 +866,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 		{
 		#ifdef MULTITHREAD_SUPPORT
 			Concurrency::WriteLock write_lock;
-			bool need_write_lock = (scopeStackMutex != nullptr && GetScopeStackDepth() < scopeStackUniqueAccessStartingDepth);
-			if(need_write_lock)
-				LockScopeStackWithoutBlockingGarbageCollection(write_lock, required_vars);
+			LockScopeStackWithoutBlockingGarbageCollectionIfNeeded(GetScopeStackDepth(), write_lock, required_vars);
 		#endif
 
 			//get the current layer of the stack
@@ -932,7 +930,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 
 					#ifdef MULTITHREAD_SUPPORT
 						//unlock before interpreting
-						if(need_write_lock)
+						if(write_lock.owns_lock())
 							write_lock.unlock();
 					#endif
 
@@ -944,8 +942,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 
 					#ifdef MULTITHREAD_SUPPORT
 						//relock if needed before assigning the value
-						if(need_write_lock)
-							LockScopeStackWithoutBlockingGarbageCollection(write_lock, required_vars);
+						LockScopeStackWithoutBlockingGarbageCollectionIfNeeded(GetScopeStackDepth(), write_lock, required_vars);
 					#endif
 
 						scope->SetMappedChildNode(cn_id, value, false);
@@ -1061,15 +1058,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			EvaluableNode **value_destination = nullptr;
 
 		#ifdef MULTITHREAD_SUPPORT
+			//TODO 24212: change GetScopeStackSymbolLocation to obtain and maintain the lock if needed
+
 			//attempt to get location, but only attempt locations unique to this thread
 			value_destination = GetScopeStackSymbolLocation(variable_sid, destination_scope_stack_index, true, false);
 			//if editing a shared variable, need to see if it is in a shared region of the stack,
 			// need a write lock to the stack and variable
 			Concurrency::WriteLock write_lock;
-			if(scopeStackMutex != nullptr && value_destination == nullptr)
+			if(value_destination == nullptr)
 			{
-				LockScopeStackWithoutBlockingGarbageCollection(write_lock, variable_value_node);
-				if(_opcode_profiling_enabled)
+				LockScopeStackWithoutBlockingGarbageCollectionIfNeeded(destination_scope_stack_index, write_lock, variable_value_node);
+				if(_opcode_profiling_enabled && write_lock.owns_lock())
 				{
 					std::string variable_location = asset_manager.GetEvaluableNodeSourceFromComments(en);
 					variable_location += string_intern_pool.GetStringFromID(variable_sid);
@@ -1120,13 +1119,23 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		EvaluableNode **value_destination = nullptr;
 
 	#ifdef MULTITHREAD_SUPPORT
+		//TODO 24212: change GetScopeStackSymbolLocation to obtain and maintain the lock if needed
+
 		//attempt to get location, but only attempt locations unique to this thread
 		value_destination = GetScopeStackSymbolLocation(variable_sid, destination_scope_stack_index, true, false);
 		//if editing a shared variable, need to see if it is in a shared region of the stack,
 		// need a write lock to the stack and variable
 		Concurrency::WriteLock write_lock;
-		if(scopeStackMutex != nullptr && value_destination == nullptr)
-			LockScopeStackWithoutBlockingGarbageCollection(write_lock, new_value);
+		if(value_destination == nullptr)
+		{
+			LockScopeStackWithoutBlockingGarbageCollectionIfNeeded(destination_scope_stack_index, write_lock, new_value);
+			if(_opcode_profiling_enabled && write_lock.owns_lock())
+			{
+				std::string variable_location = asset_manager.GetEvaluableNodeSourceFromComments(en);
+				variable_location += string_intern_pool.GetStringFromID(variable_sid);
+				PerformanceProfiler::AccumulateLockContentionCount(variable_location);
+			}
+		}
 	#endif
 
 		//in single threaded, this will just be true
@@ -1191,13 +1200,23 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	EvaluableNode **value_destination = nullptr;
 
 #ifdef MULTITHREAD_SUPPORT
+	//TODO 24212: change GetScopeStackSymbolLocation to obtain and maintain the lock if needed
+
 	//attempt to get location, but only attempt locations unique to this thread
 	value_destination = GetScopeStackSymbolLocation(variable_sid, destination_scope_stack_index, true, false);
 	//if editing a shared variable, need to see if it is in a shared region of the stack,
 	// need a write lock to the stack and variable
 	Concurrency::WriteLock write_lock;
-	if(scopeStackMutex != nullptr && value_destination == nullptr)
-		LockScopeStackWithoutBlockingGarbageCollection(write_lock);
+	if(value_destination == nullptr)
+	{
+		LockScopeStackWithoutBlockingGarbageCollectionIfNeeded(destination_scope_stack_index, write_lock);
+		if(_opcode_profiling_enabled && write_lock.owns_lock())
+		{
+			std::string variable_location = asset_manager.GetEvaluableNodeSourceFromComments(en);
+			variable_location += string_intern_pool.GetStringFromID(variable_sid);
+			PerformanceProfiler::AccumulateLockContentionCount(variable_location);
+		}
+	}
 #endif
 
 	//in single threaded, this will just be true
@@ -1289,10 +1308,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 	auto to_lookup = InterpretNodeForImmediateUse(ocn[0]);
 
 #ifdef MULTITHREAD_SUPPORT
+	//TODO 24212: can reuse ENT_SYMBOL code instead of locking whole thing?
+
 	//accessing everything in the stack, so need exclusive access
 	Concurrency::ReadLock lock;
-	if(scopeStackMutex != nullptr)
-		LockScopeStackWithoutBlockingGarbageCollection(lock, to_lookup);
+	LockScopeStackWithoutBlockingGarbageCollectionIfNeeded(0, lock, to_lookup);
 #endif
 
 	//get the value(s)
@@ -1701,8 +1721,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STACK(EvaluableNode *en, b
 {
 #ifdef MULTITHREAD_SUPPORT
 	Concurrency::ReadLock lock;
-	if(scopeStackMutex != nullptr)
-		LockScopeStackWithoutBlockingGarbageCollection(lock);
+	LockScopeStackWithoutBlockingGarbageCollectionIfNeeded(0, lock);
 #endif
 
 	//can create this node on the stack because will be making a copy
@@ -1726,8 +1745,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ARGS(EvaluableNode *en, bo
 	{
 	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::ReadLock lock;
-		if(scopeStackMutex != nullptr && GetScopeStackDepth() < scopeStackUniqueAccessStartingDepth)
-			LockScopeStackWithoutBlockingGarbageCollection(lock);
+		LockScopeStackWithoutBlockingGarbageCollectionIfNeeded(GetScopeStackDepth(), lock);
 	#endif
 
 		//0 index is top of stack

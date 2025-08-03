@@ -196,6 +196,26 @@ public:
 	~Interpreter()
 	{	}
 
+#ifdef MULTITHREAD_SUPPORT
+
+	//controls access for a shared portions of scopeStackNodes during concurrent execution
+	class SharedScopeStackAccess
+	{
+	public:
+		//the depth of the scope stack where multiple threads may modify the same variables
+		size_t scopeStackUniqueAccessStartingDepth;
+
+		//a collapsed version of the view of the scope stack with regard to variable shadowing
+		//used for fast access to determine if locking scopeStackMutex is necessary to access
+		//the variable, or if this slice of the scope stack can be skipped over
+		//it's a unique_ptr so it can be swapped in and out without needing a lock when it needs to be updated
+		std::unique_ptr< FastHashSet<StringInternPool::StringID > > summarizedScopeSlice;
+
+		//mutex to allow only one thread to write to a scope stack symbol at once
+		Concurrency::ReadWriteMutex scopeStackMutex;
+	};
+#endif
+
 	//Executes the current Entity that this Interpreter is contained by
 	// sets up all of the stack and contextual structures, then calls InterpretNode on en
 	//if scope_stack, opcode_stack, or construction_stack are nullptr, it will start with a new one
@@ -205,14 +225,14 @@ public:
 	//note that construction_stack and construction_stack_indices should be specified together and should be the same length
 	//if immediate_result is true, then the returned value may be immediate
 	//if multithreaded, then for performance reasons, it is optimal to have one of each stack per thread
-	// and scope_stack_write_mutex is the mutex needed to lock for writing
+	// and use shared_scope_stack_access for synchronization
 	EvaluableNodeReference ExecuteNode(EvaluableNode *en,
 		EvaluableNode *scope_stack = nullptr, EvaluableNode *opcode_stack = nullptr,
 		EvaluableNode *construction_stack = nullptr,
 		bool manage_stack_references = true,
 		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices = nullptr,
 	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::ReadWriteMutex *scope_stack_write_mutex = nullptr,
+		SharedScopeStackAccess *shared_scope_stack_access = nullptr,
 	#endif
 		bool immediate_result = false);
 
@@ -708,6 +728,9 @@ protected:
 			//since each thread has a copy of the constructionStackNodes, it's possible that more than one of the threads
 			//obtains previous_results, so they must all be marked as not unique
 			parentInterpreter->RemoveUniquenessFromPreviousResultsInConstructionStack();
+
+			//TODO 24212: set up sharedScopeStackAccess and use where appropriate
+			sharedScopeStackAccess.scopeStackUniqueAccessStartingDepth = parentInterpreter->scopeStackNodes->size();
 		}
 
 		//Enqueues a concurrent task that needs a construction stack, using the relative interpreter
@@ -747,7 +770,7 @@ protected:
 					EvaluableNode *opcode_stack = enm->AllocNode(begin(*parentInterpreter->opcodeStackNodes),
 						begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
 					auto result_ref = interpreter.ExecuteNode(node_to_execute,
-						scope_stack, opcode_stack, construction_stack, true, &csiau, GetScopeStackMutex());
+						scope_stack, opcode_stack, construction_stack, true, &csiau, &sharedScopeStackAccess);
 
 					if(interpreter.PopConstructionContextAndGetExecutionSideEffectFlag())
 					{
@@ -814,7 +837,7 @@ protected:
 						begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
 					std::vector<ConstructionStackIndexAndPreviousResultUniqueness> csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
 					auto result_ref = interpreter.ExecuteNode(node_to_execute, scope_stack, opcode_stack,
-						construction_stack, true, &csiau, GetScopeStackMutex(), immediate_results);
+						construction_stack, true, &csiau, &sharedScopeStackAccess, immediate_results);
 
 					if(interpreter.DoesConstructionStackHaveExecutionSideEffects())
 					{
@@ -894,23 +917,12 @@ protected:
 			return resultsSideEffect;
 		}
 
-		//returns the relevant write mutex for the scope stack
-		constexpr Concurrency::ReadWriteMutex *GetScopeStackMutex()
-		{
-			//if there is one currently in use, use it
-			if(parentInterpreter->scopeStackMutex != nullptr)
-				return parentInterpreter->scopeStackMutex;
-
-			//start a new one
-			return &scopeStackMutex;
-		}
-
 	protected:
 		//random seed for each task, the size of numTasks
 		std::vector<RandomStream> randomSeeds;
 
-		//mutex to allow only one thread to write to a scope stack symbol at once
-		Concurrency::ReadWriteMutex scopeStackMutex;
+		//synchronization for accessing the scope stack
+		SharedScopeStackAccess sharedScopeStackAccess;
 
 		//a barrier to wait for the tasks being run
 		ThreadPool::CountableTaskSet taskSet;
@@ -961,14 +973,18 @@ protected:
 		std::vector<EvaluableNode *> &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes,
 		bool immediate_results = false);
 
-	//acquires lock of scopeStackMutex and assumes it is not nullptr,
-	// but does so in a way as to not block other threads that may be waiting on garbage collection
+	//acquires lock of scopeStackMutex if needed as determined if scope_depth_index means the variable
+	// may be accessed by other threads
+	//does so in a way as to not block other threads that may be waiting on garbage collection
 	//if en_to_preserve is not null, then it will create a stack saver for it if garbage collection is invoked
 	template<typename LockType>
-	inline void LockScopeStackWithoutBlockingGarbageCollection(
+	inline void LockScopeStackWithoutBlockingGarbageCollectionIfNeeded(size_t scope_depth_index,
 		LockType &lock, EvaluableNode *en_to_preserve = nullptr)
 	{
-		lock = LockType(*scopeStackMutex, std::defer_lock);
+		if(GetScopeStackDepth() >= sharedScopeStackAccess->scopeStackUniqueAccessStartingDepth)
+			return;
+
+		lock = LockType(sharedScopeStackAccess->scopeStackMutex, std::defer_lock);
 		//if there is lock contention, but one is blocking for garbage collection,
 		// keep checking until it can get the lock
 		if(en_to_preserve)
@@ -999,7 +1015,7 @@ protected:
 				return false;
 
 		#ifdef MULTITHREAD_SUPPORT
-			if(cur_interpreter->scopeStackUniqueAccessStartingDepth > 0)
+			if(cur_interpreter->sharedScopeStackAccess != nullptr)
 				return false;
 		#endif
 		}
@@ -1403,11 +1419,8 @@ public:
 
 protected:
 
-	//the depth of the scope stack where multiple threads may modify the same variables
-	size_t scopeStackUniqueAccessStartingDepth;
-
-	//pointer to a mutex for writing to shared variables below scopeStackUniqueAccessStartingDepth
-	Concurrency::ReadWriteMutex *scopeStackMutex;
+	//pointer to a synchronization class for accessing scopeStackNodes
+	SharedScopeStackAccess *sharedScopeStackAccess;
 
 #endif
 

@@ -317,18 +317,13 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	bool manage_stack_references,
 	std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices,
 #ifdef MULTITHREAD_SUPPORT
-	Concurrency::ReadWriteMutex *scope_stack_write_mutex,
+	SharedScopeStackAccess *shared_scope_stack_access,
 #endif
 	bool immediate_result)
 {
 
 #ifdef MULTITHREAD_SUPPORT
-	if(scope_stack == nullptr)
-		scopeStackUniqueAccessStartingDepth = 0;
-	else
-		scopeStackUniqueAccessStartingDepth = scope_stack->GetOrderedChildNodes().size();
-
-	scopeStackMutex = scope_stack_write_mutex;
+	sharedScopeStackAccess = shared_scope_stack_access;
 #endif
 
 	//use specified or create new scopeStack

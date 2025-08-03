@@ -997,6 +997,12 @@ protected:
 			//if accessing the entity or have multiple threads, can't ensure safety
 			if(cur_interpreter->curEntity == entity)
 				return false;
+
+			//TODO 21546: use a better way to determine if any entities are being executed other than this thread, figure out way to not need to write directly to data structures of an existing node (need to remove labels from language to accomplish?)
+		#ifdef MULTITHREAD_SUPPORT
+			if(cur_interpreter->scopeStackUniqueAccessStartingDepth > 0)
+				return false;
+		#endif
 		}
 
 		return true;

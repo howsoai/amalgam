@@ -738,6 +738,10 @@ public:
 	//sets the ordered child nodes and updates flags
 	void SetOrderedChildNodes(const std::vector<EvaluableNode *> &ocn,
 		bool need_cycle_check = true, bool is_idempotent = false);
+	//sets the ordered child nodes and updates flags, but can be used as an rvalue so that the memory doesn't
+	//need to be reallocated if std::move is used for the input
+	void SetOrderedChildNodes(std::vector<EvaluableNode *> &&ocn,
+		bool need_cycle_check, bool is_idempotent);
 	void ClearOrderedChildNodes();
 	void AppendOrderedChildNode(EvaluableNode *cn);
 	void AppendOrderedChildNodes(const std::vector<EvaluableNode *> &ocn_to_append);

@@ -175,6 +175,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_AC
 			target_entity = EntityWriteReference(curEntity);
 		}
 
+		//pause if allocating to another entity
+		EvaluableNodeManager::ThreadLocalAllocationBufferPause tlab_pause;
+		if(target_entity != curEntity)
+			tlab_pause = evaluableNodeManager->PauseThreadLocalAllocationBuffer();
+
 		if(accum)
 		{
 			target_entity->AccumRoot(new_code, false, EvaluableNodeManager::ENMM_LABEL_ESCAPE_DECREMENT, writeListeners);
@@ -199,6 +204,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_ENTITY_ROOTS_and_AC
 					interpreterConstraints->curNumAllocatedNodesAllocatedToEntities += cur_size - prev_size;
 			}
 		}
+
+		tlab_pause.Resume();
 
 		if(target_entity != curEntity)
 		{
@@ -395,8 +402,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CREATE_ENTITIES(EvaluableN
 		auto &new_entity_id_string = string_intern_pool.GetStringFromID(new_entity_id);
 		std::string rand_state = entity_container->CreateRandomStreamFromStringAndRand(new_entity_id_string);
 
+		//pause while allocating the new entity
+		auto tlab_pause = evaluableNodeManager->PauseThreadLocalAllocationBuffer();
+
 		//create new entity
 		Entity *new_entity = new Entity(root, rand_state, EvaluableNodeManager::ENMM_LABEL_ESCAPE_DECREMENT);
+
+		tlab_pause.Resume();
 
 		//accumulate usage
 		if(ConstrainedAllocatedNodes())
@@ -445,8 +457,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CLONE_ENTITIES(EvaluableNo
 		auto erbr = source_entity->GetAllDeeplyContainedEntityReferencesGroupedByDepth<EntityReadReference>();
 		size_t num_new_entities = erbr->size();
 
+		//pause while allocating the new entity
+		auto tlab_pause = evaluableNodeManager->PauseThreadLocalAllocationBuffer();
+
 		//create new entity
 		Entity *new_entity = new Entity(source_entity);
+
+		tlab_pause.Resume();
 
 		//clear previous locks
 		source_entity = EntityReadReference();
@@ -709,6 +726,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LOAD_ENTITY(EvaluableNode 
 	memoryModificationLock.unlock();
 #endif
 
+	//don't want to call evaluableNodeManager->PauseThreadLocalAllocationBuffer() here because loading entity may execute code
 	Entity *loaded_entity = asset_manager.LoadEntityFromResource(asset_params, persistent, random_seed, this, status);
 
 #ifdef MULTITHREAD_SUPPORT

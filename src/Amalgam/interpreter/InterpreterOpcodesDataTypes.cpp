@@ -178,6 +178,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 
 	size_t scope_stack_index = 0;
 #ifdef MULTITHREAD_SUPPORT
+	//TODO 24212: update to use improved GetScopeStackSymbolLocation
 	if(scopeStackMutex != nullptr)
 	{
 		//first check unique

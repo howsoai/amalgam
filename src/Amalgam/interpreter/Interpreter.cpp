@@ -408,6 +408,7 @@ EvaluableNode **Interpreter::GetScopeStackSymbolLocation(const StringInternPool:
 #endif
 	)
 {
+	//TODO 24212: see if can unify with GetOrCreateScopeStackSymbolLocation via boolean parameter whether to create
 #ifdef MULTITHREAD_SUPPORT
 	size_t highest_index = (include_unique_access ? scopeStackNodes->size() : scopeStackUniqueAccessStartingDepth);
 	size_t lowest_index = (include_shared_access ? 0 : scopeStackUniqueAccessStartingDepth);

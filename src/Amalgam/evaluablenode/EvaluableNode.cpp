@@ -711,7 +711,7 @@ void EvaluableNode::SetType(EvaluableNodeType new_type, EvaluableNodeManager *en
 
 			InitOrderedChildNodes();
 			//swap for efficiency
-			swap(GetOrderedChildNodesReference(), new_ordered);
+			std::swap(GetOrderedChildNodesReference(), new_ordered);
 		}
 		else //just set up empty ordered
 		{
@@ -1272,6 +1272,22 @@ void EvaluableNode::SetOrderedChildNodes(const std::vector<EvaluableNode *> &ocn
 		return;
 
 	GetOrderedChildNodesReference() = ocn;
+
+	SetNeedCycleCheck(need_cycle_check);
+
+	if(is_idempotent && (GetNumLabels() > 0 || !IsEvaluableNodeTypePotentiallyIdempotent(type)))
+		SetIsIdempotent(false);
+	else
+		SetIsIdempotent(is_idempotent);
+}
+
+void EvaluableNode::SetOrderedChildNodes(std::vector<EvaluableNode *> &&ocn,
+	bool need_cycle_check, bool is_idempotent)
+{
+	if(!IsOrderedArray())
+		return;
+
+	GetOrderedChildNodesReference() = std::move(ocn);
 
 	SetNeedCycleCheck(need_cycle_check);
 

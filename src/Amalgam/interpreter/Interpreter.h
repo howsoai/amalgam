@@ -961,11 +961,12 @@ protected:
 		std::vector<EvaluableNode *> &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes,
 		bool immediate_results = false);
 
-	//acquires lock, but does so in a way as to not block other threads that may be waiting on garbage collection
+	//acquires lock of scopeStackMutex and assumes it is not nullptr,
+	// but does so in a way as to not block other threads that may be waiting on garbage collection
 	//if en_to_preserve is not null, then it will create a stack saver for it if garbage collection is invoked
 	template<typename LockType>
-	inline void LockWithoutBlockingGarbageCollection(
-		Concurrency::ReadWriteMutex &mutex, LockType &lock, EvaluableNode *en_to_preserve = nullptr)
+	inline void LockScopeStackWithoutBlockingGarbageCollection(
+		LockType &lock, EvaluableNode *en_to_preserve = nullptr)
 	{
 		lock = LockType(*scopeStackMutex, std::defer_lock);
 		//if there is lock contention, but one is blocking for garbage collection,

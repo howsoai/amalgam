@@ -868,7 +868,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 			Concurrency::WriteLock write_lock;
 			bool need_write_lock = (scopeStackMutex != nullptr && GetScopeStackDepth() < scopeStackUniqueAccessStartingDepth);
 			if(need_write_lock)
-				LockWithoutBlockingGarbageCollection(*scopeStackMutex, write_lock, required_vars);
+				LockScopeStackWithoutBlockingGarbageCollection(write_lock, required_vars);
 		#endif
 
 			//get the current layer of the stack
@@ -945,7 +945,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 					#ifdef MULTITHREAD_SUPPORT
 						//relock if needed before assigning the value
 						if(need_write_lock)
-							LockWithoutBlockingGarbageCollection(*scopeStackMutex, write_lock, required_vars);
+							LockScopeStackWithoutBlockingGarbageCollection(write_lock, required_vars);
 					#endif
 
 						scope->SetMappedChildNode(cn_id, value, false);
@@ -1068,7 +1068,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			Concurrency::WriteLock write_lock;
 			if(scopeStackMutex != nullptr && value_destination == nullptr)
 			{
-				LockWithoutBlockingGarbageCollection(*scopeStackMutex, write_lock, variable_value_node);
+				LockScopeStackWithoutBlockingGarbageCollection(write_lock, variable_value_node);
 				if(_opcode_profiling_enabled)
 				{
 					std::string variable_location = asset_manager.GetEvaluableNodeSourceFromComments(en);
@@ -1126,7 +1126,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		// need a write lock to the stack and variable
 		Concurrency::WriteLock write_lock;
 		if(scopeStackMutex != nullptr && value_destination == nullptr)
-			LockWithoutBlockingGarbageCollection(*scopeStackMutex, write_lock, new_value);
+			LockScopeStackWithoutBlockingGarbageCollection(write_lock, new_value);
 	#endif
 
 		//in single threaded, this will just be true
@@ -1197,7 +1197,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	// need a write lock to the stack and variable
 	Concurrency::WriteLock write_lock;
 	if(scopeStackMutex != nullptr && value_destination == nullptr)
-		LockWithoutBlockingGarbageCollection(*scopeStackMutex, write_lock);
+		LockScopeStackWithoutBlockingGarbageCollection(write_lock);
 #endif
 
 	//in single threaded, this will just be true
@@ -1292,7 +1292,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 	//accessing everything in the stack, so need exclusive access
 	Concurrency::ReadLock lock;
 	if(scopeStackMutex != nullptr)
-		LockWithoutBlockingGarbageCollection(*scopeStackMutex, lock, to_lookup);
+		LockScopeStackWithoutBlockingGarbageCollection(lock, to_lookup);
 #endif
 
 	//get the value(s)
@@ -1702,7 +1702,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STACK(EvaluableNode *en, b
 #ifdef MULTITHREAD_SUPPORT
 	Concurrency::ReadLock lock;
 	if(scopeStackMutex != nullptr)
-		LockWithoutBlockingGarbageCollection(*scopeStackMutex, lock);
+		LockScopeStackWithoutBlockingGarbageCollection(lock);
 #endif
 
 	//can create this node on the stack because will be making a copy
@@ -1727,7 +1727,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ARGS(EvaluableNode *en, bo
 	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::ReadLock lock;
 		if(scopeStackMutex != nullptr && GetScopeStackDepth() < scopeStackUniqueAccessStartingDepth)
-			LockWithoutBlockingGarbageCollection(*scopeStackMutex, lock);
+			LockScopeStackWithoutBlockingGarbageCollection(lock);
 	#endif
 
 		//0 index is top of stack

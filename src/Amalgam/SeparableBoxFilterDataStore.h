@@ -373,10 +373,13 @@ public:
 		return std::max(0.0, begin(sorted_number_value_entries)->first);
 	}
 
-	//returns a function that will take in an entity index iterator and reference to a double to store the value and return true if the value is found
-	// assumes and requires column_index is a valid column (not a feature_id)
+	//returns a function that will take in an entity index iterator and reference to a
+	// double to store the value and return true if the value is found
+	//assumes and requires column_index is a valid column (not a feature_id)
+	//if column_as_weight is true, then it will return 1.0 for any entity that is not a number
 	template<typename Iter>
-	inline std::function<bool(Iter, double &)> GetNumberValueFromEntityIteratorFunction(size_t column_index, bool column_as_weight)
+	inline std::function<bool(Iter, double &)> GetNumberValueFromEntityIteratorFunction(
+		size_t column_index, bool column_as_weight)
 	{
 		//if invalid column_index, then always return 1.0
 		if(column_index >= columnData.size())
@@ -418,9 +421,9 @@ public:
 
 	//returns a function that will take in an entity index iterator and reference to a string id to store the value and return true if the value is found
 	// assumes and requires column_index is a valid column (not a feature_id)
-	//returns a key string id version of the data in the column
 	template<typename Iter>
-	inline std::function<bool(Iter, StringInternPool::StringID &)> GetValueToKeyStringIdWithReferenceFromEntityIteratorFunction(size_t column_index)
+	inline std::function<bool(Iter, StringInternPool::StringID &)>
+		GetValueToKeyStringIdWithReferenceFromEntityIteratorFunction(size_t column_index)
 	{
 		auto column_data = columnData[column_index].get();
 		auto invalid_indices_ptr = &column_data->invalidIndices;

@@ -431,6 +431,16 @@ static std::pair<bool, ValueType> Mode(ValueIterator first, ValueIterator last,
 	return std::make_pair(mode_found, mode);
 }
 
+//specialization of Mode for std::string
+template<typename ValueIterator, typename ValueFunction, typename WeightFunction>
+inline static std::pair<bool, std::string> ModeString(ValueIterator first, ValueIterator last,
+		ValueFunction get_value, bool has_weight, WeightFunction get_weight)
+{
+	return Mode<ValueIterator, std::string,
+		std::hash<std::string>, std::equal_to<std::string>>(first, last,
+			get_value, has_weight, get_weight, std::string());
+}
+
 //computes the quantile of the values
 //iterates from first to last, calling get_value
 // if has_weight, then will use get_weight to obtain the weight of each value. Otherwise, weight is 1.

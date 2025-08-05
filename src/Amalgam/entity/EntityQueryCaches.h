@@ -108,9 +108,6 @@ public:
 	//like GetMatchingEntities, but returns a string id
 	bool ComputeValueFromMatchingEntities(EntityQueryCondition *cond, BitArrayIntegerSet &matching_entities, StringInternPool::StringID &compute_result, bool is_first);
 
-	//like GetMatchingEntities, but returns a flat_hash_map of numbers to numbers
-	void ComputeValuesFromMatchingEntities(EntityQueryCondition *cond, BitArrayIntegerSet &matching_entities, FastHashMap<double, double, std::hash<double>, DoubleNanHashComparator> &compute_results, bool is_first);
-
 	//like GetMatchingEntities, but returns a flat_hash_map of string ids to numbers
 	//returns true if value was computed, false if not valid
 	void ComputeValuesFromMatchingEntities(EntityQueryCondition *cond, BitArrayIntegerSet &matching_entities, FastHashMap<StringInternPool::StringID, double> &compute_results, bool is_first);

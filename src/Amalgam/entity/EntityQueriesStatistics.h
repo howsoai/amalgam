@@ -69,26 +69,6 @@ public:
 		return sum;
 	}
 
-	//specialization of Mode for numbers
-	template<typename ValueIterator, typename ValueFunction, typename WeightFunction>
-	inline static std::pair<bool, double> ModeNumber(ValueIterator first, ValueIterator last,
-			ValueFunction get_value, bool has_weight, WeightFunction get_weight)
-	{
-		return Mode<ValueIterator, double,
-			std::hash<double>, DoubleNanHashComparator>(first, last,
-				get_value, has_weight, get_weight, std::numeric_limits<double>::quiet_NaN());
-	}
-
-	//specialization of Mode for StringID
-	template<typename ValueIterator, typename ValueFunction, typename WeightFunction>
-	inline static std::pair<bool, StringInternPool::StringID> ModeStringId(ValueIterator first, ValueIterator last,
-			ValueFunction get_value, bool has_weight, WeightFunction get_weight)
-	{
-		return Mode<ValueIterator, StringInternPool::StringID,
-			std::hash<StringInternPool::StringID>, std::equal_to<StringInternPool::StringID>>(first, last,
-				get_value, has_weight, get_weight, string_intern_pool.NOT_A_STRING_ID);
-	}
-
 	//computes masses (weights) of each numeric value
 	//iterates from first to last, calling get_value
 	// if has_weight, then will use get_weight to obtain the weight of each value

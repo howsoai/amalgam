@@ -1236,16 +1236,6 @@ static inline bool GetValueFromWeightsIndex(EvaluableNode::AssocType &values_mcn
 	return true;
 };
 
-//specialization of Mode for std::string
-template<typename ValueIterator, typename ValueFunction, typename WeightFunction>
-inline static std::pair<bool, std::string> ModeString(ValueIterator first, ValueIterator last,
-		ValueFunction get_value, bool has_weight, WeightFunction get_weight)
-{
-	return Mode<ValueIterator, std::string,
-		std::hash<std::string>, std::equal_to<std::string>>(first, last,
-			get_value, has_weight, get_weight, std::string());
-}
-
 EvaluableNodeReference Interpreter::InterpretNode_ENT_MODE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();

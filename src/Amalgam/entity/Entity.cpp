@@ -166,8 +166,26 @@ std::pair<double, bool> Entity::GetValueAtLabelAsNumber(StringInternPool::String
 	return(std::pair(EvaluableNode::ToNumber(label->second), true));
 }
 
-std::pair<StringInternPool::StringID, bool> Entity::GetValueAtLabelAsStringId(StringInternPool::StringID label_sid, bool on_self)
+std::pair<std::string, bool> Entity::GetValueAtLabelAsString(
+	StringInternPool::StringID label_sid, bool on_self, bool key_string)
 {
+	if(label_sid == string_intern_pool.NOT_A_STRING_ID)
+		return std::pair("", false);
+
+	if(!on_self && IsLabelPrivate(label_sid))
+		return std::pair("", false);
+
+	const auto &label = labelIndex.find(label_sid);
+	if(label == end(labelIndex))
+		return std::pair("", false);
+
+	return std::pair(EvaluableNode::ToString(label->second, key_string), true);
+}
+
+std::pair<StringInternPool::StringID, bool> Entity::GetValueAtLabelAsStringIdWithReference(
+	StringInternPool::StringID label_sid, bool on_self, bool key_string)
+{
+	//TODO 24214: revisit everywhere this method is used
 	if(label_sid == string_intern_pool.NOT_A_STRING_ID)
 		return std::pair(StringInternPool::NOT_A_STRING_ID, false);
 
@@ -178,7 +196,7 @@ std::pair<StringInternPool::StringID, bool> Entity::GetValueAtLabelAsStringId(St
 	if(label == end(labelIndex))
 		return std::pair(StringInternPool::NOT_A_STRING_ID, false);
 	
-	return std::pair(EvaluableNode::ToStringIDIfExists(label->second), true);
+	return std::pair(EvaluableNode::ToStringIDWithReference(label->second, key_string), true);
 }
 
 std::pair<EvaluableNodeImmediateValueWithType, bool> Entity::GetValueAtLabelAsImmediateValue(StringInternPool::StringID label_sid,

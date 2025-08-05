@@ -652,7 +652,8 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 
 				case ENT_QUERY_MODE:
 				{
-					auto [found, mode] = EntityQueriesStatistics::ModeNumber(entities.begin(), entities.end(), get_value, has_weight, get_weight);
+					auto get_key_string_value = sbfds.GetStringValueFromEntityIteratorFunction(column_index, true);
+					auto [found, mode] = ModeString(entities.begin(), entities.end(), get_key_string_value, has_weight, get_weight);
 					result = mode;
 					break;
 				}
@@ -695,7 +696,8 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 
 				case ENT_QUERY_MODE:
 				{
-					auto [found, mode] = EntityQueriesStatistics::ModeNumber(matching_entities.begin(), matching_entities.end(), get_value, has_weight, get_weight);
+					auto get_key_string_value = sbfds.GetStringValueFromEntityIteratorFunction(column_index, true);
+					auto [found, mode] = ModeString(matching_entities.begin(), matching_entities.end(), get_key_string_value, has_weight, get_weight);
 					result = mode;
 					break;
 				}
@@ -788,55 +790,6 @@ bool EntityQueryCaches::ComputeValueFromMatchingEntities(EntityQueryCondition *c
 	}
 
 	return false;
-}
-
-void EntityQueryCaches::ComputeValuesFromMatchingEntities(EntityQueryCondition *cond, BitArrayIntegerSet &matching_entities,
-	FastHashMap<double, double, std::hash<double>, DoubleNanHashComparator> &compute_results, bool is_first)
-{
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	Concurrency::ReadLock lock(mutex);
-	EnsureLabelsAreCached(cond, lock);
-#else
-	EnsureLabelsAreCached(cond);
-#endif
-	
-	switch(cond->queryType)
-	{
-		case ENT_QUERY_VALUE_MASSES:
-		{
-			size_t column_index = sbfds.GetColumnIndexFromLabelId(cond->singleLabel);
-			if(column_index == std::numeric_limits<size_t>::max())
-				return;
-
-			size_t weight_column_index = sbfds.GetColumnIndexFromLabelId(cond->weightLabel);
-			bool has_weight = false;
-			if(weight_column_index != std::numeric_limits<size_t>::max())
-				has_weight = true;
-			else //just use a valid column
-				weight_column_index = 0;
-
-			size_t num_unique_values = sbfds.GetNumUniqueValuesForColumn(column_index, ENIVT_NUMBER);
-
-			if(is_first)
-			{
-				EfficientIntegerSet &entities = sbfds.GetEntitiesWithValidNumbers(column_index);
-				auto get_value = sbfds.GetNumberValueFromEntityIteratorFunction<EfficientIntegerSet::Iterator>(column_index);
-				auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<EfficientIntegerSet::Iterator>(weight_column_index);
-				compute_results = EntityQueriesStatistics::ValueMassesNumber(entities.begin(), entities.end(),
-					num_unique_values, get_value, has_weight, get_weight);
-			}
-			else
-			{
-				auto get_value = sbfds.GetNumberValueFromEntityIteratorFunction<BitArrayIntegerSet::Iterator>(column_index);
-				auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<BitArrayIntegerSet::Iterator>(weight_column_index);
-				compute_results = EntityQueriesStatistics::ValueMassesNumber(matching_entities.begin(), matching_entities.end(),
-					num_unique_values, get_value, has_weight, get_weight);			
-			}
-			return;
-		}
-		default:
-			break;
-	}
 }
 
 void EntityQueryCaches::ComputeValuesFromMatchingEntities(EntityQueryCondition *cond, BitArrayIntegerSet &matching_entities,
@@ -1105,44 +1058,19 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 
 		case ENT_QUERY_VALUE_MASSES:
 		{
-			if(cond.singleLabelType == ENIVT_NUMBER)
-			{
-				FastHashMap<double, double, std::hash<double>, DoubleNanHashComparator> value_weights;
-				entity_caches->ComputeValuesFromMatchingEntities(&cond, matching_ents, value_weights, is_first);
+			FastHashMap<StringInternPool::StringID, double> value_weights;
+			entity_caches->ComputeValuesFromMatchingEntities(&cond, matching_ents, value_weights, is_first);
 
-				if(immediate_result)
-					return EvaluableNodeReference(static_cast<double>(value_weights.size()));
+			if(immediate_result)
+				return EvaluableNodeReference(static_cast<double>(value_weights.size()));
 
-				EvaluableNode *assoc = enm->AllocNode(ENT_ASSOC);
-				assoc->ReserveMappedChildNodes(value_weights.size());
+			EvaluableNode *assoc = enm->AllocNode(ENT_ASSOC);
+			assoc->ReserveMappedChildNodes(value_weights.size());
 
-				std::string string_value;
-				for(auto &[value, weight] : value_weights)
-				{
-					string_value = EvaluableNode::NumberToString(value, true);
-					assoc->SetMappedChildNode(string_value, enm->AllocNode(weight));
-				}
+			for(auto &[value, weight] : value_weights)
+				assoc->SetMappedChildNode(value, enm->AllocNode(weight));
 
-				return EvaluableNodeReference(assoc, true);
-			}
-			else if(cond.singleLabelType == ENIVT_STRING_ID)
-			{
-				FastHashMap<StringInternPool::StringID, double> value_weights;
-				entity_caches->ComputeValuesFromMatchingEntities(&cond, matching_ents, value_weights, is_first);
-
-				if(immediate_result)
-					return EvaluableNodeReference(static_cast<double>(value_weights.size()));
-
-				EvaluableNode *assoc = enm->AllocNode(ENT_ASSOC);
-				assoc->ReserveMappedChildNodes(value_weights.size());
-
-				for(auto &[value, weight] : value_weights)
-					assoc->SetMappedChildNode(value, enm->AllocNode(weight));
-
-				return EvaluableNodeReference(assoc, true);
-			}
-
-			break;
+			return EvaluableNodeReference(assoc, true);
 		}
 
 		case ENT_QUERY_SAMPLE:

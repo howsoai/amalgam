@@ -4,6 +4,7 @@
 #include "EntityManipulation.h"
 #include "EntityQueryCaches.h"
 #include "EvaluableNodeTreeFunctions.h"
+#include "FastMath.h"
 
 bool _enable_SBF_datastore = true;
 
@@ -96,11 +97,12 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 				}
 				else if(valueTypes[i] == ENIVT_STRING_ID)
 				{
-					auto [value, found] = e->GetValueAtLabelAsStringId(label_id);
+					auto [value, found] = e->GetValueAtLabelAsString(label_id);
 					if(!found)
 						return false;
 
-					if(StringNaturalCompare(value, range.first.stringID) <= 0 || StringNaturalCompare(range.second.stringID, value) <= 0)
+					if(StringManipulation::StringNaturalCompare(value, range.first.stringID->string) <= 0
+							|| StringManipulation::StringNaturalCompare(range.second.stringID->string, value) <= 0)
 						return false;
 				}
 			}
@@ -122,11 +124,12 @@ bool EntityQueryCondition::DoesEntityMatchCondition(Entity *e)
 				}
 				else if(valueTypes[i] == ENIVT_STRING_ID)
 				{
-					auto [value, found] = e->GetValueAtLabelAsStringId(label_id);
+					auto [value, found] = e->GetValueAtLabelAsString(label_id);
 					if(!found)
 						return false;
 
-					if(StringNaturalCompare(value, range.first.stringID) > 0 && StringNaturalCompare(range.second.stringID, value) > 0)
+					if(StringManipulation::StringNaturalCompare(value, range.first.stringID->string) > 0
+							&& StringManipulation::StringNaturalCompare(range.second.stringID->string, value) > 0)
 						return false;
 				}
 			}
@@ -551,32 +554,22 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		}
 		case ENT_QUERY_MODE:
 		{
-			if(singleLabelType == ENIVT_NUMBER)
+			auto get_key_string_value = [matching_entities, this]
+			(size_t i, std::string &value)
 			{
-				auto [found, mode] = EntityQueriesStatistics::ModeNumber<size_t>(0, matching_entities.size(), get_value,
-					weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight);
-				return EvaluableNodeReference(enm->AllocNode(mode), true);
-			}
-			else if(singleLabelType == ENIVT_STRING_ID)
-			{
-				auto get_string_value = [matching_entities, this]
-				(size_t i, StringInternPool::StringID &value)
-				{
-					auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsStringId(singleLabel, value);
-					value = ret_val;
+				auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsString(singleLabel, false, true);
+				value = std::move(ret_val);
 
-					return found;
-				};
+				return found;
+			};
 
-				auto [found, mode] = EntityQueriesStatistics::ModeStringId<size_t>(
-					0, matching_entities.size(), get_string_value, true, get_weight);
+			auto [found, mode] = ModeString(static_cast<size_t>(0), matching_entities.size(), get_string_value,
+				weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight);
 
-				if(found)
-					return EvaluableNodeReference(enm->AllocNode(ENT_STRING, mode), true);
-				else
-					return EvaluableNodeReference::Null();
-			}
-			break;
+			if(!found)
+				return EvaluableNodeReference::Null();
+
+			return Parser::ParseFromKeyString(mode, enm);
 		}
 		case ENT_QUERY_QUANTILE:
 		{
@@ -612,72 +605,34 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 		if(enm == nullptr)
 			return EvaluableNodeReference::Null();
 
-		if(singleLabelType == ENIVT_NUMBER)
+		auto get_key_string_value = [matching_entities, this]
+		(size_t i, StringInternPool::StringID &value)
 		{
-			auto get_value = [matching_entities, this]
-			(size_t i, double &value)
-			{
-				auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsNumber(singleLabel);
-				value = ret_val;
+			auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsStringIdWithReference(singleLabel, false, true);
+			value = ret_val;
 
-				return found;
-			};
+			return found;
+		};
 
-			auto get_weight = [matching_entities, this]
-			(size_t i, double &weight_value)
-			{
-				auto [ret_val, found] = matching_entities[i]->GetValueAtLabelAsNumber(weightLabel);
-				weight_value = ret_val;
-
-				return found;
-			};
-
-			auto value_weights = EntityQueriesStatistics::ValueMassesNumber<size_t>(0, matching_entities.size(), matching_entities.size(),
-																					get_value, weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight);
-			EvaluableNode *assoc = enm->AllocNode(ENT_ASSOC);
-			assoc->ReserveMappedChildNodes(value_weights.size());
-
-			std::string string_value;
-			for(auto &[value, weight] : value_weights)
-			{
-				string_value = EvaluableNode::NumberToString(value, true);
-				assoc->SetMappedChildNode(string_value, enm->AllocNode(weight));
-			}
-
-			return EvaluableNodeReference(assoc, true);
-		}
-		else if(singleLabelType == ENIVT_STRING_ID)
+		auto get_weight = [matching_entities, this]
+		(size_t i, double &weight_value)
 		{
-			auto get_value = [matching_entities, this]
-			(size_t i, StringInternPool::StringID &value)
-			{
-				auto [ret_value, found] = matching_entities[i]->GetValueAtLabelAsStringId(singleLabel);
-				value = ret_value;
-				return found;
-			};
+			auto [ret_value, found] = matching_entities[i]->GetValueAtLabelAsNumber(weightLabel);
+			if(found)
+				weight_value = ret_value;
+			return found;
+		};
 
-			auto get_weight = [matching_entities, this]
-			(size_t i, double &weight_value)
-			{
-				auto [ret_value, found] = matching_entities[i]->GetValueAtLabelAsNumber(weightLabel);
-				if(found)
-					weight_value = ret_value;
-				return found;
-			};
+		auto value_weights = EntityQueriesStatistics::ValueMassesStringId<size_t>(0, matching_entities.size(), matching_entities.size(), get_key_string_value,
+			weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight);
 
-			auto value_weights = EntityQueriesStatistics::ValueMassesStringId<size_t>(0, matching_entities.size(), matching_entities.size(), get_value,
-				weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight);
+		EvaluableNode *assoc = enm->AllocNode(ENT_ASSOC);
+		assoc->ReserveMappedChildNodes(value_weights.size());
 
-			EvaluableNode *assoc = enm->AllocNode(ENT_ASSOC);
-			assoc->ReserveMappedChildNodes(value_weights.size());
+		for(auto &[value, weight] : value_weights)
+			assoc->SetMappedChildNodeWithReferenceHandoff(value, enm->AllocNode(weight));
 
-			for(auto &[value, weight] : value_weights)
-				assoc->SetMappedChildNode(value, enm->AllocNode(weight));
-
-			return EvaluableNodeReference(assoc, true);
-		}
-
-		return EvaluableNodeReference::Null();
+		return EvaluableNodeReference(assoc, true);
 	}
 
 	case ENT_QUERY_NEAREST_GENERALIZED_DISTANCE:

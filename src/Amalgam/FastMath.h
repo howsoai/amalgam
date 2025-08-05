@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <limits>
+#include <string>
 #include <vector>
 
 #if !defined(_MSC_VER)
@@ -405,7 +406,9 @@ static std::pair<bool, ValueType> Mode(ValueIterator first, ValueIterator last,
 			if(get_value(i, value))
 			{
 				double weight_value = 1.0;
-				get_weight(i, weight_value);
+				bool has_weight = get_weight(i, weight_value);
+				if(!has_weight)
+					weight_value = 1.0;
 
 				auto [inserted_value, inserted] = value_weights.emplace(value, weight_value);
 				if(!inserted)

@@ -262,7 +262,7 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 				min_weight = sbfds.GetMinValueForColumnAsWeight(weight_column);
 			}
 
-			auto get_weight = sbfds.GetNumberValueFromEntityIndexFunction(weight_column);
+			auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<size_t>(weight_column, true);
 			EntityQueriesStatistics::DistanceTransform<size_t> distance_transform(cond->distEvaluator.computeSurprisal,
 				cond->distEvaluator.transformSurprisalToProb, cond->distanceWeightExponent,
 				cond->minToRetrieve, cond->maxToRetrieve, cond->numToRetrieveMinIncrementalProbability, cond->extraToRetrieve,
@@ -616,7 +616,6 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 		}
 
 		case ENT_QUERY_SUM:
-		case ENT_QUERY_MODE:
 		case ENT_QUERY_QUANTILE:
 		case ENT_QUERY_GENERALIZED_MEAN:
 		case ENT_QUERY_MIN_DIFFERENCE:
@@ -641,22 +640,14 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 			if(is_first)
 			{
 				EfficientIntegerSet &entities = sbfds.GetEntitiesWithValidNumbers(column_index);
-				auto get_value = sbfds.GetNumberValueFromEntityIteratorFunction<EfficientIntegerSet::Iterator>(column_index);
-				auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<EfficientIntegerSet::Iterator>(weight_column_index);
+				auto get_value = sbfds.GetNumberValueFromEntityIteratorFunction<EfficientIntegerSet::Iterator>(column_index, false);
+				auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<EfficientIntegerSet::Iterator>(weight_column_index, true);
 
 				switch(cond->queryType)
 				{
 				case ENT_QUERY_SUM:
 					result = EntityQueriesStatistics::Sum(entities.begin(), entities.end(), get_value, has_weight, get_weight);
 					break;
-
-				case ENT_QUERY_MODE:
-				{
-					auto get_key_string_value = sbfds.GetStringValueFromEntityIteratorFunction(column_index, true);
-					auto [found, mode] = ModeString(entities.begin(), entities.end(), get_key_string_value, has_weight, get_weight);
-					result = mode;
-					break;
-				}
 
 				case ENT_QUERY_QUANTILE:
 					result = Quantile(entities.begin(), entities.end(), get_value,
@@ -685,22 +676,14 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 			}
 			else
 			{
-				auto get_value = sbfds.GetNumberValueFromEntityIteratorFunction<BitArrayIntegerSet::Iterator>(column_index);
-				auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<BitArrayIntegerSet::Iterator>(weight_column_index);
+				auto get_value = sbfds.GetNumberValueFromEntityIteratorFunction<BitArrayIntegerSet::Iterator>(column_index, false);
+				auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<BitArrayIntegerSet::Iterator>(weight_column_index, true);
 
 				switch(cond->queryType)
 				{
 				case ENT_QUERY_SUM:
 					result = EntityQueriesStatistics::Sum(matching_entities.begin(), matching_entities.end(), get_value, has_weight, get_weight);
 					break;
-
-				case ENT_QUERY_MODE:
-				{
-					auto get_key_string_value = sbfds.GetStringValueFromEntityIteratorFunction(column_index, true);
-					auto [found, mode] = ModeString(matching_entities.begin(), matching_entities.end(), get_key_string_value, has_weight, get_weight);
-					result = mode;
-					break;
-				}
 
 				case ENT_QUERY_QUANTILE:
 					result = Quantile(matching_entities.begin(), matching_entities.end(), get_value,
@@ -738,8 +721,8 @@ void EntityQueryCaches::GetMatchingEntities(EntityQueryCondition *cond, BitArray
 	}
 }
 
-bool EntityQueryCaches::ComputeValueFromMatchingEntities(EntityQueryCondition *cond, BitArrayIntegerSet &matching_entities,
-	StringInternPool::StringID &compute_result, bool is_first)
+EvaluableNode *EntityQueryCaches::ComputeValueFromMatchingEntities(EntityQueryCondition *cond, BitArrayIntegerSet &matching_entities,
+	EvaluableNodeManager *enm, bool is_first)
 {
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 	Concurrency::ReadLock lock(mutex);
@@ -754,7 +737,7 @@ bool EntityQueryCaches::ComputeValueFromMatchingEntities(EntityQueryCondition *c
 	{
 		size_t column_index = sbfds.GetColumnIndexFromLabelId(cond->singleLabel);
 		if(column_index == std::numeric_limits<size_t>::max())
-			return false;
+			return nullptr;
 
 		size_t weight_column_index = sbfds.GetColumnIndexFromLabelId(cond->weightLabel);
 		bool has_weight = false;
@@ -765,31 +748,28 @@ bool EntityQueryCaches::ComputeValueFromMatchingEntities(EntityQueryCondition *c
 
 		if(is_first)
 		{
-			EfficientIntegerSet &entities = sbfds.GetEntitiesWithValidStringIds(column_index);
-			auto get_value = sbfds.GetStringIdValueFromEntityIteratorFunction<EfficientIntegerSet::Iterator>(column_index);
-			auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<EfficientIntegerSet::Iterator>(weight_column_index);
-			auto [found, mode_id] = EntityQueriesStatistics::ModeStringId(
-				entities.begin(), entities.end(), get_value, has_weight, get_weight);
-
-			compute_result = mode_id;
-			return found;
+			auto get_key_string_value = sbfds.GetValueToKeyStringFromEntityIteratorFunction<size_t>(column_index);
+			auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<size_t>(weight_column_index, true);
+			auto [found, compute_result] = ModeString<size_t>(0, sbfds.GetNumInsertedEntities(), get_key_string_value, has_weight, get_weight);
+			if(!found)
+				return nullptr;
+			return Parser::ParseFromKeyString(compute_result, enm);
 		}
 		else
 		{
-			auto get_value = sbfds.GetStringIdValueFromEntityIteratorFunction<BitArrayIntegerSet::Iterator>(column_index);
-			auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<BitArrayIntegerSet::Iterator>(weight_column_index);
-			auto [found, mode_id] = EntityQueriesStatistics::ModeStringId(
-				matching_entities.begin(), matching_entities.end(), get_value, has_weight, get_weight);
-
-			compute_result = mode_id;
-			return found;
+			auto get_key_string_value = sbfds.GetValueToKeyStringFromEntityIteratorFunction<BitArrayIntegerSet::Iterator>(column_index);
+			auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<BitArrayIntegerSet::Iterator>(weight_column_index, true);
+			auto [found, compute_result] = ModeString(matching_entities.begin(), matching_entities.end(), get_key_string_value, has_weight, get_weight);
+			if(!found)
+				return nullptr;
+			return Parser::ParseFromKeyString(compute_result, enm);
 		}
 	}
 	default:
 		break;
 	}
 
-	return false;
+	return nullptr;
 }
 
 void EntityQueryCaches::ComputeValuesFromMatchingEntities(EntityQueryCondition *cond, BitArrayIntegerSet &matching_entities,
@@ -821,16 +801,15 @@ void EntityQueryCaches::ComputeValuesFromMatchingEntities(EntityQueryCondition *
 	
 		if(is_first)
 		{
-			EfficientIntegerSet &entities = sbfds.GetEntitiesWithValidStringIds(column_index);
-			auto get_value = sbfds.GetStringIdValueFromEntityIteratorFunction<EfficientIntegerSet::Iterator>(column_index);
-			auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<EfficientIntegerSet::Iterator>(weight_column_index);
-			compute_results = EntityQueriesStatistics::ValueMassesStringId(entities.begin(), entities.end(),
+			auto get_value = sbfds.GetValueToKeyStringIdWithReferenceFromEntityIteratorFunction<size_t>(column_index);
+			auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<size_t>(weight_column_index, true);
+			compute_results = EntityQueriesStatistics::ValueMassesStringId<size_t>(0, sbfds.GetNumInsertedEntities(),
 				num_unique_values, get_value, has_weight, get_weight);
 		}
 		else
 		{
-			auto get_value = sbfds.GetStringIdValueFromEntityIteratorFunction<BitArrayIntegerSet::Iterator>(column_index);
-			auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<BitArrayIntegerSet::Iterator>(weight_column_index);
+			auto get_value = sbfds.GetValueToKeyStringIdWithReferenceFromEntityIteratorFunction<BitArrayIntegerSet::Iterator>(column_index);
+			auto get_weight = sbfds.GetNumberValueFromEntityIteratorFunction<BitArrayIntegerSet::Iterator>(weight_column_index, true);
 			compute_results = EntityQueriesStatistics::ValueMassesStringId(matching_entities.begin(), matching_entities.end(),
 				num_unique_values, get_value, has_weight, get_weight);
 		}
@@ -1034,27 +1013,7 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 		}
 
 		case ENT_QUERY_MODE:
-		{
-			if(cond.singleLabelType == ENIVT_NUMBER)
-			{
-				entity_caches->GetMatchingEntities(&cond, matching_ents, compute_results, is_first, !is_last || !return_query_value);
-
-				if(compute_results.size() > 0)
-					return enm->AllocIfNotImmediate(static_cast<double>(compute_results[0].distance), immediate_result);
-				else
-					return EvaluableNodeReference::Null();
-			}
-			else if(cond.singleLabelType == ENIVT_STRING_ID)
-			{
-				StringInternPool::StringID mode = string_intern_pool.NOT_A_STRING_ID;
-
-				if(entity_caches->ComputeValueFromMatchingEntities(&cond, matching_ents, mode, is_first))
-					return enm->AllocIfNotImmediate(mode, immediate_result);
-				else
-					return EvaluableNodeReference::Null();
-			}
-			break;
-		}
+			return EvaluableNodeReference(entity_caches->ComputeValueFromMatchingEntities(&cond, matching_ents, enm, is_first), true);
 
 		case ENT_QUERY_VALUE_MASSES:
 		{
@@ -1062,13 +1021,18 @@ EvaluableNodeReference EntityQueryCaches::GetMatchingEntitiesFromQueryCaches(Ent
 			entity_caches->ComputeValuesFromMatchingEntities(&cond, matching_ents, value_weights, is_first);
 
 			if(immediate_result)
-				return EvaluableNodeReference(static_cast<double>(value_weights.size()));
+			{
+				double num_results = static_cast<double>(value_weights.size());
+				for(auto &[value, weight] : value_weights)
+					string_intern_pool.DestroyStringReference(value);
+				return EvaluableNodeReference(num_results);
+			}
 
 			EvaluableNode *assoc = enm->AllocNode(ENT_ASSOC);
 			assoc->ReserveMappedChildNodes(value_weights.size());
 
 			for(auto &[value, weight] : value_weights)
-				assoc->SetMappedChildNode(value, enm->AllocNode(weight));
+				assoc->SetMappedChildNodeWithReferenceHandoff(value, enm->AllocNode(weight));
 
 			return EvaluableNodeReference(assoc, true);
 		}

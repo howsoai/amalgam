@@ -185,7 +185,6 @@ std::pair<std::string, bool> Entity::GetValueAtLabelAsString(
 std::pair<StringInternPool::StringID, bool> Entity::GetValueAtLabelAsStringIdWithReference(
 	StringInternPool::StringID label_sid, bool on_self, bool key_string)
 {
-	//TODO 24214: revisit everywhere this method is used
 	if(label_sid == string_intern_pool.NOT_A_STRING_ID)
 		return std::pair(StringInternPool::NOT_A_STRING_ID, false);
 

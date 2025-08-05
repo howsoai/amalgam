@@ -106,7 +106,7 @@ public:
 	void GetMatchingEntities(EntityQueryCondition *cond, BitArrayIntegerSet &matching_entities, std::vector<DistanceReferencePair<size_t>> &compute_results, bool is_first, bool update_matching_entities);
 
 	//like GetMatchingEntities, but returns a string id
-	bool ComputeValueFromMatchingEntities(EntityQueryCondition *cond, BitArrayIntegerSet &matching_entities, StringInternPool::StringID &compute_result, bool is_first);
+	EvaluableNode *ComputeValueFromMatchingEntities(EntityQueryCondition *cond, BitArrayIntegerSet &matching_entities, EvaluableNodeManager *enm, bool is_first);
 
 	//like GetMatchingEntities, but returns a flat_hash_map of string ids to numbers
 	//returns true if value was computed, false if not valid

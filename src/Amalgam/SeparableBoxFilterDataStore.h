@@ -376,61 +376,104 @@ public:
 	//returns a function that will take in an entity index iterator and reference to a double to store the value and return true if the value is found
 	// assumes and requires column_index is a valid column (not a feature_id)
 	template<typename Iter>
-	inline std::function<bool(Iter, double &)> GetNumberValueFromEntityIteratorFunction(size_t column_index)
+	inline std::function<bool(Iter, double &)> GetNumberValueFromEntityIteratorFunction(size_t column_index, bool column_as_weight)
 	{
+		//if invalid column_index, then always return 1.0
+		if(column_index >= columnData.size())
+		{
+			if(column_as_weight)
+				return [](Iter i, double &value) { value = 1.0;	return true; };
+			else
+				return [](Iter i, double &value) { value = 1.0;	return false; };
+		}
+
 		auto column_data = columnData[column_index].get();
 		auto number_indices_ptr = &column_data->numberIndices;
 
-		return [&, number_indices_ptr, column_data]
+		size_t cur_num_entities = numEntities;
+		return [&, number_indices_ptr, column_data, column_as_weight, cur_num_entities]
 		(Iter i, double &value)
 		{
-			size_t entity_index = *i;
-			if(!number_indices_ptr->contains(entity_index))
+			size_t entity_index;
+			if constexpr(std::is_same<size_t, Iter>::value)
+				entity_index = i;
+			else
+				entity_index = *i;
+
+			if(entity_index >= cur_num_entities
+				|| !number_indices_ptr->contains(entity_index))
+			{
+				if(column_as_weight)
+				{
+					value = 1.0;
+					return true;
+				}
 				return false;
+			}
 
 			value = column_data->GetResolvedIndexValue(entity_index).number;
 			return true;
 		};
 	}
 
-	//returns a function that will take in an entity index and reference to a double to store the value and return true if the value is found
+	//returns a function that will take in an entity index iterator and reference to a string id to store the value and return true if the value is found
 	// assumes and requires column_index is a valid column (not a feature_id)
-	inline std::function<double(size_t)> GetNumberValueFromEntityIndexFunction(size_t column_index)
+	//returns a key string id version of the data in the column
+	template<typename Iter>
+	inline std::function<bool(Iter, StringInternPool::StringID &)> GetValueToKeyStringIdWithReferenceFromEntityIteratorFunction(size_t column_index)
 	{
-		//if invalid column_index, then always return 1.0
-		if(column_index >= columnData.size())
-			return [](size_t i) { return 1.0; };
-
 		auto column_data = columnData[column_index].get();
-		auto number_indices_ptr = &column_data->numberIndices;
+		auto invalid_indices_ptr = &column_data->invalidIndices;
 
-		return [&, number_indices_ptr, column_data]
-			(size_t i)
-			{
-				if(!number_indices_ptr->contains(i))
-					return 1.0;
+		size_t cur_num_entities = numEntities;
+		return [&, invalid_indices_ptr, column_data, cur_num_entities]
+		(Iter i, StringInternPool::StringID &value)
+		{
+			size_t entity_index;
+			if constexpr(std::is_same<size_t, Iter>::value)
+				entity_index = i;
+			else
+				entity_index = *i;
 
-				return column_data->GetResolvedIndexValue(i).number;
-			};
+			if(entity_index >= cur_num_entities
+					|| invalid_indices_ptr->contains(entity_index))
+				return false;
+
+			auto immediate_value = column_data->GetResolvedIndexValue(entity_index);
+			EvaluableNodeImmediateValueWithType enit(immediate_value, column_data->GetIndexValueType(entity_index));
+			value = enit.GetValueAsStringIDWithReference(true);
+			return true;
+		};
 	}
 
 	//returns a function that will take in an entity index iterator and reference to a string id to store the value and return true if the value is found
 	// assumes and requires column_index is a valid column (not a feature_id)
+	//returns a key string version of the data in the column
 	template<typename Iter>
-	inline std::function<bool(Iter, StringInternPool::StringID &)> GetStringIdValueFromEntityIteratorFunction(size_t column_index)
+	inline std::function<bool(Iter, std::string &)> GetValueToKeyStringFromEntityIteratorFunction(size_t column_index)
 	{
 		auto column_data = columnData[column_index].get();
-		auto string_indices_ptr = &column_data->stringIdIndices;
+		auto invalid_indices_ptr = &column_data->invalidIndices;
 
-		return [&, string_indices_ptr, column_data]
-		(Iter i, StringInternPool::StringID &value)
+		size_t cur_num_entities = numEntities;
+		return [&, invalid_indices_ptr, column_data, cur_num_entities]
+		(Iter i, std::string &value)
 		{
-			size_t entity_index = *i;
-			if(!string_indices_ptr->contains(entity_index))
+			size_t entity_index;
+			if constexpr(std::is_same<size_t, Iter>::value)
+				entity_index = i;
+			else
+				entity_index = *i;
+
+			if(entity_index >= cur_num_entities
+					|| invalid_indices_ptr->contains(entity_index))
 				return false;
 
-			value = column_data->GetResolvedIndexValue(entity_index).stringID;
-			return true;
+			auto immediate_value = column_data->GetResolvedIndexValue(entity_index);
+			EvaluableNodeImmediateValueWithType enit(immediate_value, column_data->GetIndexValueType(entity_index));
+			bool valid = true;
+			std::tie(valid, value) = enit.GetValueAsString(true);
+			return valid;
 		};
 	}
 

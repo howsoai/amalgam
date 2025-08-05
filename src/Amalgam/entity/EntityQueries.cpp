@@ -563,7 +563,7 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 				return found;
 			};
 
-			auto [found, mode] = ModeString(static_cast<size_t>(0), matching_entities.size(), get_string_value,
+			auto [found, mode] = ModeString(static_cast<size_t>(0), matching_entities.size(), get_key_string_value,
 				weightLabel != StringInternPool::NOT_A_STRING_ID, get_weight);
 
 			if(!found)
@@ -681,12 +681,13 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 				it.distance = GetConditionDistanceMeasure(it.reference, true);
 		}
 
-		auto weight_function = [this](Entity *e)
+		auto weight_function = [this](Entity *e, double &weight)
 							   {
-								 	auto [weight, found] = e->GetValueAtLabelAsNumber(weightLabel);
-									if(found)
-										return weight;
-									return 1.0;
+									bool found = false;
+								 	std::tie(weight, found) = e->GetValueAtLabelAsNumber(weightLabel);
+									if(!found)
+										weight = 1.0;
+									return true;
 							   }; 
 
 		//transform distances as appropriate
@@ -730,12 +731,13 @@ EvaluableNodeReference EntityQueryCondition::GetMatchingEntities(Entity *contain
 
 
 		auto weight_function = [this]
-							   (Entity *e)
+							   (Entity *e, double &weight)
 							   {
-									auto [weight, found] = e->GetValueAtLabelAsNumber(weightLabel);
-									if(found)
-										return weight;
-									return 1.0;
+									bool found = false;
+									std::tie(weight, found) = e->GetValueAtLabelAsNumber(weightLabel);
+									if(!found)
+										weight = 1.0;
+									return true;
 							   };
 
 		//transform distances as appropriate

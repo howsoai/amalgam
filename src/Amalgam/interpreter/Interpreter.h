@@ -202,6 +202,22 @@ public:
 	class SharedScopeStackAccess
 	{
 	public:
+		//populates summarizedScopeSlice with all scopes from scope_stack_start to scope_stack_end
+		template<typename Iter>
+		void UpdateScopeStack(Iter scope_stack_start, Iter scope_stack_end)
+		{
+			auto new_scope_slice = std::make_unique(FastHashSet<StringInternPool::StringID>)();
+
+			for(auto it = scope_stack_start; it != scope_stack_end; ++it)
+			{
+				EvaluableNode *n = *it;
+				for(auto [var_sid, var_node] : n->GetMappedChildNodesReference())
+					new_scope_slice->emplace(var_sid);
+			}
+
+			summarizedScopeSlice.swap(new_scope_slice);
+		}
+
 		//the depth of the scope stack where multiple threads may modify the same variables
 		size_t scopeStackUniqueAccessStartingDepth;
 
@@ -209,7 +225,7 @@ public:
 		//used for fast access to determine if locking scopeStackMutex is necessary to access
 		//the variable, or if this slice of the scope stack can be skipped over
 		//it's a unique_ptr so it can be swapped in and out without needing a lock when it needs to be updated
-		std::unique_ptr< FastHashSet<StringInternPool::StringID > > summarizedScopeSlice;
+		std::unique_ptr< FastHashSet<StringInternPool::StringID> > summarizedScopeSlice;
 
 		//mutex to allow only one thread to write to a scope stack symbol at once
 		Concurrency::ReadWriteMutex scopeStackMutex;

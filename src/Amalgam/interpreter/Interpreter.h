@@ -471,30 +471,33 @@ public:
 
 	//finds a pointer to the location of the symbol's pointer to value in the top of the context stack and returns a pointer to the location of the symbol's pointer to value,
 	// nullptr if it does not exist
-	// also sets scope_stack_index to the level in the scope stack that it was found
-	//if include_unique_access is true, then it will cover the top of the stack to scopeStackUniqueAccessStartingDepth
-	//if include_shared_access is true, then it will cover the bottom of the stack from scopeStackUniqueAccessStartingDepth to 0
-	EvaluableNode **GetScopeStackSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &scope_stack_index
+	//if create_if_nonexistent is true, then it will create an entry for the symbol at the top of the stack
+	//if multithreaded, then lock should be specified, and the lock type should be a write lock if a write operation is being specified (including create_if_nonexistent)
+	template<typename LockType>
+	EvaluableNode **GetScopeStackSymbolLocation(StringInternPool::StringID symbol_sid, bool create_if_nonexistent
 #ifdef MULTITHREAD_SUPPORT
-		, bool include_unique_access = true, bool include_shared_access = true
+		, LockType &lock
 #endif
-	);
+	)
+	{
+		//TODO 24212: implement this and combine GetScopeStackSymbolLocation and GetOrCreateScopeStackSymbolLocation in Interpreter.cpp
+		return nullptr;
+	}
 
 	//like the other type of GetScopeStackSymbolLocation, but returns the EvaluableNode pointer instead of a pointer-to-a-pointer
 	__forceinline std::pair<EvaluableNode *, bool> GetScopeStackSymbol(const StringInternPool::StringID symbol_sid)
 	{
-		//TODO 24212: rewrite this method
-		size_t scope_stack_index = 0;
-		EvaluableNode **en_ptr = GetScopeStackSymbolLocation(symbol_sid, scope_stack_index);
+	#ifdef MULTITHREAD_SUPPORT
+		Concurrency::WriteLock write_lock;
+		EvaluableNode **en_ptr = GetScopeStackSymbolLocation(symbol_sid, false, write_lock);
+	#else
+		EvaluableNode **en_ptr = GetScopeStackSymbolLocation(symbol_sid, false);
+	#endif
 		if(en_ptr == nullptr)
 			return std::make_pair(nullptr, false);
 
 		return std::make_pair(*en_ptr, true);
 	}
-
-	//finds a pointer to the location of the symbol's pointer to value or creates the symbol in the top of the context stack and returns a pointer to the location of the symbol's pointer to value
-	// also sets scope_stack_index to the level in the scope stack that it was found
-	EvaluableNode **GetOrCreateScopeStackSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &scope_stack_index);
 
 	//returns the current scope stack index
 	__forceinline size_t GetScopeStackDepth()

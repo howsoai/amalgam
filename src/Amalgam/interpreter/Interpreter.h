@@ -453,8 +453,9 @@ public:
 			any_set = true;
 		}
 
-		//indicate scope stack is not freeable
-		std::fill(begin(scopeStackFreeable), end(scopeStackFreeable), false);
+		//indicate scope stack is not freeable if the top is still freeable
+		if(scopeStackFreeable.size() > 0 && scopeStackFreeable.back())
+			std::fill(begin(scopeStackFreeable), end(scopeStackFreeable), false);
 
 		return std::make_pair(any_constructions, any_set);
 	}
@@ -471,17 +472,18 @@ public:
 
 	//finds a pointer to the location of the symbol's pointer to value in the top of the context stack and returns a pointer to the location of the symbol's pointer to value,
 	// nullptr if it does not exist
+	//additionally returns a bool which is true if the symbol location is at the top of the stack
 	//if create_if_nonexistent is true, then it will create an entry for the symbol at the top of the stack
 	//if multithreaded, then lock should be specified, and the lock type should be a write lock if a write operation is being specified (including create_if_nonexistent)
 	template<typename LockType>
-	EvaluableNode **GetScopeStackSymbolLocation(StringInternPool::StringID symbol_sid, bool create_if_nonexistent
+	std::pair<EvaluableNode **, bool> GetScopeStackSymbolLocation(StringInternPool::StringID symbol_sid, bool create_if_nonexistent
 #ifdef MULTITHREAD_SUPPORT
 		, LockType &lock
 #endif
 	)
 	{
 		//TODO 24212: implement this and combine GetScopeStackSymbolLocation and GetOrCreateScopeStackSymbolLocation in Interpreter.cpp
-		return nullptr;
+		return std::make_pair(nullptr, false);
 	}
 
 	//like the other type of GetScopeStackSymbolLocation, but returns the EvaluableNode pointer instead of a pointer-to-a-pointer
@@ -489,9 +491,9 @@ public:
 	{
 	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::WriteLock write_lock;
-		EvaluableNode **en_ptr = GetScopeStackSymbolLocation(symbol_sid, false, write_lock);
+		auto [en_ptr, top_of_stack] = GetScopeStackSymbolLocation(symbol_sid, false, write_lock);
 	#else
-		EvaluableNode **en_ptr = GetScopeStackSymbolLocation(symbol_sid, false);
+		auto [en_ptr, top_of_stack] = GetScopeStackSymbolLocation(symbol_sid, false);
 	#endif
 		if(en_ptr == nullptr)
 			return std::make_pair(nullptr, false);

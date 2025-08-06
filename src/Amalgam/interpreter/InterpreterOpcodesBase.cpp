@@ -1053,34 +1053,20 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 				}
 			}
 
-			//retrieve the symbol
-			size_t destination_scope_stack_index = 0;
-			EvaluableNode **value_destination = nullptr;
-
+			//retrieve the symbol location
 		#ifdef MULTITHREAD_SUPPORT
-			//TODO 24212: change GetScopeStackSymbolLocation to obtain and maintain the lock if needed
-
-			//attempt to get location, but only attempt locations unique to this thread
-			value_destination = GetScopeStackSymbolLocation(variable_sid, destination_scope_stack_index, true, false);
-			//if editing a shared variable, need to see if it is in a shared region of the stack,
-			// need a write lock to the stack and variable
 			Concurrency::WriteLock write_lock;
-			if(value_destination == nullptr)
-			{
-				LockScopeStackWithoutBlockingGarbageCollectionIfNeeded(destination_scope_stack_index, write_lock, variable_value_node);
-				if(_opcode_profiling_enabled && write_lock.owns_lock())
-				{
-					std::string variable_location = asset_manager.GetEvaluableNodeSourceFromComments(en);
-					variable_location += string_intern_pool.GetStringFromID(variable_sid);
-					PerformanceProfiler::AccumulateLockContentionCount(variable_location);
-				}
-			}
-		#endif
+			auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(variable_sid, true, write_lock);
 
-			//in single threaded, this will just be true
-			//in multithreaded, if variable was not found, then may need to create it
-			if(value_destination == nullptr)
-				value_destination = GetOrCreateScopeStackSymbolLocation(variable_sid, destination_scope_stack_index);
+			if(_opcode_profiling_enabled && write_lock.owns_lock())
+			{
+				std::string variable_location = asset_manager.GetEvaluableNodeSourceFromComments(en);
+				variable_location += string_intern_pool.GetStringFromID(variable_sid);
+				PerformanceProfiler::AccumulateLockContentionCount(variable_location);
+			}
+		#else
+			auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(symbol_sid, false);
+		#endif
 
 			if(accum)
 			{
@@ -1091,7 +1077,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 			any_nonunique_assignments |= !variable_value_node.unique;
 			//if writing to an outer scope, can't guarantee the memory at this scope can be freed
-			any_nonunique_assignments |= (destination_scope_stack_index != GetScopeStackDepth());
+			any_nonunique_assignments |= !top_of_stack;
 
 			//assign back into the context_to_use
 			*value_destination = variable_value_node;
@@ -1114,34 +1100,20 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	{
 		auto new_value = InterpretNodeForImmediateUse(ocn[1]);
 
-		//retrieve the symbol
-		size_t destination_scope_stack_index = 0;
-		EvaluableNode **value_destination = nullptr;
-
+		//retrieve the symbol location
 	#ifdef MULTITHREAD_SUPPORT
-		//TODO 24212: change GetScopeStackSymbolLocation to obtain and maintain the lock if needed
-
-		//attempt to get location, but only attempt locations unique to this thread
-		value_destination = GetScopeStackSymbolLocation(variable_sid, destination_scope_stack_index, true, false);
-		//if editing a shared variable, need to see if it is in a shared region of the stack,
-		// need a write lock to the stack and variable
 		Concurrency::WriteLock write_lock;
-		if(value_destination == nullptr)
-		{
-			LockScopeStackWithoutBlockingGarbageCollectionIfNeeded(destination_scope_stack_index, write_lock, new_value);
-			if(_opcode_profiling_enabled && write_lock.owns_lock())
-			{
-				std::string variable_location = asset_manager.GetEvaluableNodeSourceFromComments(en);
-				variable_location += string_intern_pool.GetStringFromID(variable_sid);
-				PerformanceProfiler::AccumulateLockContentionCount(variable_location);
-			}
-		}
-	#endif
+		auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(variable_sid, true, write_lock);
 
-		//in single threaded, this will just be true
-		//in multithreaded, if variable was not found, then may need to create it
-		if(value_destination == nullptr)
-			value_destination = GetOrCreateScopeStackSymbolLocation(variable_sid, destination_scope_stack_index);
+		if(_opcode_profiling_enabled && write_lock.owns_lock())
+		{
+			std::string variable_location = asset_manager.GetEvaluableNodeSourceFromComments(en);
+			variable_location += string_intern_pool.GetStringFromID(variable_sid);
+			PerformanceProfiler::AccumulateLockContentionCount(variable_location);
+		}
+	#else
+		auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(symbol_sid, false);
+	#endif
 
 		if(accum)
 		{
@@ -1158,7 +1130,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			*value_destination = new_value;
 
 			//if writing to an outer scope, can't guarantee the memory at this scope can be freed
-			if(!new_value.unique || destination_scope_stack_index != GetScopeStackDepth())
+			if(!new_value.unique || !top_of_stack)
 				SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
 		}
 
@@ -1195,37 +1167,23 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	}
 	size_t num_replacements = (num_params - 1) / 2;
 
-	//retrieve the symbol
-	size_t destination_scope_stack_index = 0;
-	EvaluableNode **value_destination = nullptr;
-
+	//retrieve the symbol location
 #ifdef MULTITHREAD_SUPPORT
-	//TODO 24212: change GetScopeStackSymbolLocation to obtain and maintain the lock if needed
-
-	//attempt to get location, but only attempt locations unique to this thread
-	value_destination = GetScopeStackSymbolLocation(variable_sid, destination_scope_stack_index, true, false);
-	//if editing a shared variable, need to see if it is in a shared region of the stack,
-	// need a write lock to the stack and variable
 	Concurrency::WriteLock write_lock;
-	if(value_destination == nullptr)
+	auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(variable_sid, true, write_lock);
+
+	if(_opcode_profiling_enabled && write_lock.owns_lock())
 	{
-		LockScopeStackWithoutBlockingGarbageCollectionIfNeeded(destination_scope_stack_index, write_lock);
-		if(_opcode_profiling_enabled && write_lock.owns_lock())
-		{
-			std::string variable_location = asset_manager.GetEvaluableNodeSourceFromComments(en);
-			variable_location += string_intern_pool.GetStringFromID(variable_sid);
-			PerformanceProfiler::AccumulateLockContentionCount(variable_location);
-		}
+		std::string variable_location = asset_manager.GetEvaluableNodeSourceFromComments(en);
+		variable_location += string_intern_pool.GetStringFromID(variable_sid);
+		PerformanceProfiler::AccumulateLockContentionCount(variable_location);
 	}
+#else
+	auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(symbol_sid, false);
 #endif
 
-	//in single threaded, this will just be true
-	//in multithreaded, if variable was not found, then may need to create it
-	if(value_destination == nullptr)
-		value_destination = GetOrCreateScopeStackSymbolLocation(variable_sid, destination_scope_stack_index);
-
 	//if writing to an outer scope, can't guarantee the memory at this scope can be freed
-	any_nonunique_assignments |= (destination_scope_stack_index != GetScopeStackDepth());
+	any_nonunique_assignments |= !top_of_stack;
 
 	//make a copy of value_replacement because not sure where else it may be used
 	EvaluableNode *value_replacement = nullptr;

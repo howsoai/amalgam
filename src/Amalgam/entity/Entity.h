@@ -397,20 +397,27 @@ public:
 		return (cur_value_it != end(labelIndex));
 	}
 
-	//Evaluates the specified label into a bool and puts the value in value_out.
+	//Evaluates the specified label into a number returns the value
 	//If the label exists, sets value_out to the value and returns true.
 	// Otherwise sets value_out to false and returns false
 	std::pair<bool, bool> GetValueAtLabelAsBool(StringInternPool::StringID label_sid, bool on_self = false);
 
-	//Evaluates the specified label into a number and puts the value in value_out.
+	//Evaluates the specified label into a number returns the value
 	//If the label exists, sets value_out to the value and returns true.
 	// Otherwise sets value_out to NaN and returns false
 	std::pair<double, bool> GetValueAtLabelAsNumber(StringInternPool::StringID label_sid, bool on_self = false);
 
-	//Evaluates the specified label into a string and puts the value in value_out.
+	//Evaluates the specified label into a string and returns the value
 	//If the label exists, sets value_out to the value and returns true.
 	// Otherwise sets value_out to empty string and returns false
-	std::pair<StringInternPool::StringID, bool> GetValueAtLabelAsStringId(StringInternPool::StringID label_sid, bool on_self = false);
+	//if key_string is true, then it will generate a string used for comparing in assoc keys
+	std::pair<std::string, bool> GetValueAtLabelAsString(StringInternPool::StringID label_sid, bool on_self = false, bool key_string = false);
+
+	//Evaluates the specified label into a string and returns the value
+	//If the label exists, sets value_out to the value and returns true.
+	// Otherwise sets value_out to empty string and returns false
+	//if key_string is true, then it will generate a string used for comparing in assoc keys
+	std::pair<StringInternPool::StringID, bool> GetValueAtLabelAsStringIdWithReference(StringInternPool::StringID label_sid, bool on_self = false, bool key_string = false);
 
 	//Evaluates the specified label into a EvaluableNodeImmediateValueWithType
 	//if destination_temp_enm is not null and code is needed, it will make a copy

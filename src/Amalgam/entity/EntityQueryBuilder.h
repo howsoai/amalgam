@@ -1063,21 +1063,6 @@ namespace EntityQueryBuilder
 				if(ocn.size() >= 2)
 					cur_condition->weightLabel = EvaluableNode::ToStringIDIfExists(ocn[1]);
 
-				if(type == ENT_QUERY_MODE || type == ENT_QUERY_VALUE_MASSES)
-				{
-					cur_condition->singleLabelType = ENIVT_NUMBER;
-
-					if(ocn.size() > 2 && !EvaluableNode::IsNull(ocn[2]) && ocn[2]->GetType() == ENT_STRING)
-					{
-						auto sid = ocn[2]->GetStringIDReference();
-						auto en_type = GetEvaluableNodeTypeFromStringId(sid);
-						if(en_type == ENT_STRING)
-							cur_condition->singleLabelType = ENIVT_STRING_ID;
-						else
-							cur_condition->singleLabelType = ENIVT_NUMBER;
-					}
-				}
-
 				break;
 			}
 

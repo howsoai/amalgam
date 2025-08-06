@@ -995,7 +995,6 @@ public:
 		bool paused;
 	};
 
-	//TODO 24211: use this where appropriate
 	//pauses the thread allocation buffer for the duration of the lifetime of the
 	//returned object; no garbage collection or execution should occur while it is paused
 	//this is intended only for allocations for other entities

@@ -69,26 +69,6 @@ public:
 		return sum;
 	}
 
-	//specialization of Mode for numbers
-	template<typename ValueIterator, typename ValueFunction, typename WeightFunction>
-	inline static std::pair<bool, double> ModeNumber(ValueIterator first, ValueIterator last,
-			ValueFunction get_value, bool has_weight, WeightFunction get_weight)
-	{
-		return Mode<ValueIterator, double,
-			std::hash<double>, DoubleNanHashComparator>(first, last,
-				get_value, has_weight, get_weight, std::numeric_limits<double>::quiet_NaN());
-	}
-
-	//specialization of Mode for StringID
-	template<typename ValueIterator, typename ValueFunction, typename WeightFunction>
-	inline static std::pair<bool, StringInternPool::StringID> ModeStringId(ValueIterator first, ValueIterator last,
-			ValueFunction get_value, bool has_weight, WeightFunction get_weight)
-	{
-		return Mode<ValueIterator, StringInternPool::StringID,
-			std::hash<StringInternPool::StringID>, std::equal_to<StringInternPool::StringID>>(first, last,
-				get_value, has_weight, get_weight, string_intern_pool.NOT_A_STRING_ID);
-	}
-
 	//computes masses (weights) of each numeric value
 	//iterates from first to last, calling get_value
 	// if has_weight, then will use get_weight to obtain the weight of each value
@@ -150,12 +130,15 @@ public:
 		{
 			for(EntityIterator i = first; i != last; ++i)
 			{
-				StringInternPool::StringID value;
+				StringInternPool::StringID value = string_intern_pool.NOT_A_STRING_ID;
 				if(get_value(i, value))
 				{
 					auto [inserted_value, inserted] = value_masses.emplace(value, 1.0);
 					if(!inserted)
+					{
 						inserted_value->second += 1.0;
+						string_intern_pool.DestroyStringReference(value);
+					}
 				}
 			}
 		}
@@ -163,7 +146,7 @@ public:
 		{
 			for(EntityIterator i = first; i != last; ++i)
 			{
-				StringInternPool::StringID value;
+				StringInternPool::StringID value = string_intern_pool.NOT_A_STRING_ID;
 				if(get_value(i, value))
 				{
 					double weight_value = 1.0;
@@ -171,7 +154,10 @@ public:
 
 					auto [inserted_value, inserted] = value_masses.emplace(value, weight_value);
 					if(!inserted)
+					{
 						inserted_value->second += weight_value;
+						string_intern_pool.DestroyStringReference(value);
+					}
 				}
 			}
 		}
@@ -285,7 +271,7 @@ public:
 			size_t min_to_retrieve, size_t max_to_retrieve,
 			double num_to_retrieve_min_increment_prob,
 			size_t extra_to_retrieve,
-			bool has_weight, double min_weight, std::function<double(EntityReference)> get_weight)
+			bool has_weight, double min_weight, std::function<bool (EntityReference, double &)> get_weight)
 		{
 			distanceWeightExponent = distance_weight_exponent;
 			computeSurprisal = compute_surprisal;
@@ -432,7 +418,8 @@ public:
 							if(!hasWeight)
 								return std::make_tuple(prob, prob, prob, prob, 1.0);
 
-							double weight = getEntityWeightFunction(iter->reference);
+							double weight = 0.0;
+							getEntityWeightFunction(iter->reference, weight);
 							double weighted_prob = prob * weight;
 
 							return std::make_tuple(weighted_prob, prob, prob, weighted_prob, weight);
@@ -453,8 +440,8 @@ public:
 							if(!hasWeight)
 								return std::make_tuple(surprisal, surprisal, prob, prob, 1.0);
 
-							double weight = getEntityWeightFunction(iter->reference);
-
+							double weight = 0.0;
+							getEntityWeightFunction(iter->reference, weight);
 							return std::make_tuple(surprisal, surprisal, prob, prob * weight, weight);
 						}, result_func);
 				}
@@ -471,7 +458,8 @@ public:
 							if(!hasWeight)
 								return std::make_tuple(prob, prob, prob, prob, 1.0);
 
-							double weight = getEntityWeightFunction(iter->reference);
+							double weight = 0.0;
+							getEntityWeightFunction(iter->reference, weight);
 							double weighted_prob = prob * weight;
 
 							return std::make_tuple(weighted_prob, prob, prob, weighted_prob, weight);
@@ -489,8 +477,8 @@ public:
 						if(!hasWeight)
 							return std::make_tuple(iter->distance, iter->distance, prob, prob, 1.0);
 
-						double weight = getEntityWeightFunction(iter->reference);
-
+						double weight = 0.0;
+						getEntityWeightFunction(iter->reference, weight);
 						return std::make_tuple(iter->distance, iter->distance, prob, weight * prob, weight);
 					}, result_func);
 				}
@@ -503,8 +491,8 @@ public:
 							if(!hasWeight)
 								return std::make_tuple(1.0, 1.0, 1.0, 1.0, 1.0);
 
-							double weight = getEntityWeightFunction(iter->reference);
-
+							double weight = 0.0;
+							getEntityWeightFunction(iter->reference, weight);
 							return std::make_tuple(weight, 1.0, 1.0, weight, weight);
 						}, result_func);
 				}
@@ -522,8 +510,8 @@ public:
 							if(!hasWeight)
 								return std::make_tuple(iter->distance, iter->distance, prob, prob, 1.0);
 
-							double weight = getEntityWeightFunction(iter->reference);
-
+							double weight = 0.0;
+							getEntityWeightFunction(iter->reference, weight);
 							return std::make_tuple(iter->distance, iter->distance, prob, weight * prob, weight);
 						}, result_func);
 				}
@@ -539,7 +527,8 @@ public:
 							if(!hasWeight)
 								return std::make_tuple(iter->distance, iter->distance, prob, prob, 1.0);
 
-							double weight = getEntityWeightFunction(iter->reference);
+							double weight = 0.0;
+							getEntityWeightFunction(iter->reference, weight);
 							double weighted_prob = prob * weight;
 
 							return std::make_tuple(weighted_prob, prob, prob, weighted_prob, weight);
@@ -757,7 +746,9 @@ public:
 				if(entity_distance_iter->distance != 0.0)
 					break;
 
-				weight_of_identical_entities += getEntityWeightFunction(entity_distance_iter->reference);
+				double weight = 0.0;
+				getEntityWeightFunction(entity_distance_iter->reference, weight);
+				weight_of_identical_entities += weight;
 			}
 
 			distance_contribution = TransformDistancesToExpectedValueForDistanceContribution(entity_distance_iter, end(entity_distance_pair_container));
@@ -774,7 +765,7 @@ public:
 		}
 
 		//return the entity weight for the entity reference if it exists, 1.0 if it does not
-		std::function<double(EntityReference)> getEntityWeightFunction;
+		std::function<bool(EntityReference, double &)> getEntityWeightFunction;
 
 protected:
 

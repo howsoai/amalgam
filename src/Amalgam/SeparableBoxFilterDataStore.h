@@ -442,9 +442,8 @@ public:
 					|| invalid_indices_ptr->contains(entity_index))
 				return false;
 
-			auto immediate_value = column_data->GetResolvedIndexValue(entity_index);
-			EvaluableNodeImmediateValueWithType enit(immediate_value, column_data->GetIndexValueType(entity_index));
-			value = enit.GetValueAsStringIDWithReference(true);
+			auto immediate_value = column_data->GetResolvedIndexValueWithType(entity_index);
+			value = immediate_value.GetValueAsStringIDWithReference(true);
 			return true;
 		};
 	}
@@ -472,10 +471,9 @@ public:
 					|| invalid_indices_ptr->contains(entity_index))
 				return false;
 
-			auto immediate_value = column_data->GetResolvedIndexValue(entity_index);
-			EvaluableNodeImmediateValueWithType enit(immediate_value, column_data->GetIndexValueType(entity_index));
+			auto immediate_value = column_data->GetResolvedIndexValueWithType(entity_index);
 			bool valid = true;
-			std::tie(valid, value) = enit.GetValueAsString(true);
+			std::tie(valid, value) = immediate_value.GetValueAsString(true);
 			return valid;
 		};
 	}

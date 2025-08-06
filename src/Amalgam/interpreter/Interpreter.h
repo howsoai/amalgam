@@ -481,14 +481,15 @@ public:
 	);
 
 	//like the other type of GetScopeStackSymbolLocation, but returns the EvaluableNode pointer instead of a pointer-to-a-pointer
-	__forceinline EvaluableNode *GetScopeStackSymbol(const StringInternPool::StringID symbol_sid)
+	__forceinline std::pair<EvaluableNode *, bool> GetScopeStackSymbol(const StringInternPool::StringID symbol_sid)
 	{
+		//TODO 24212: rewrite this method
 		size_t scope_stack_index = 0;
 		EvaluableNode **en_ptr = GetScopeStackSymbolLocation(symbol_sid, scope_stack_index);
 		if(en_ptr == nullptr)
-			return nullptr;
+			return std::make_pair(nullptr, false);
 
-		return *en_ptr;
+		return std::make_pair(*en_ptr, true);
 	}
 
 	//finds a pointer to the location of the symbol's pointer to value or creates the symbol in the top of the context stack and returns a pointer to the location of the symbol's pointer to value

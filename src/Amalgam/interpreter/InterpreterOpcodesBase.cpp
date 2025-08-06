@@ -1307,14 +1307,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 
 	auto to_lookup = InterpretNodeForImmediateUse(ocn[0]);
 
-#ifdef MULTITHREAD_SUPPORT
-	//TODO 24212: can reuse ENT_SYMBOL code instead of locking whole thing?
-
-	//accessing everything in the stack, so need exclusive access
-	Concurrency::ReadLock lock;
-	LockScopeStackWithoutBlockingGarbageCollectionIfNeeded(0, lock, to_lookup);
-#endif
-
 	//get the value(s)
 	if(EvaluableNode::IsNull(to_lookup) || IsEvaluableNodeTypeImmediate(to_lookup->GetType()))
 	{

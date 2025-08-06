@@ -99,7 +99,8 @@ public:
 		knnCache->GetKnn(entity_reference, numNearestNeighbors, true,
 			buffers.neighbors, additional_holdout_reference);
 
-		double entity_weight = distanceTransform->getEntityWeightFunction(entity_reference);
+		double entity_weight = 0.0;
+		distanceTransform->getEntityWeightFunction(entity_reference, entity_weight);
 		return distanceTransform->ComputeDistanceContribution(buffers.neighbors, entity_weight);
 	}
 
@@ -110,7 +111,8 @@ public:
 		buffers.neighbors.clear();
 		knnCache->GetKnn(entity_reference, numNearestNeighbors, true, buffers.neighbors, included_entities);
 
-		double entity_weight = distanceTransform->getEntityWeightFunction(entity_reference);
+		double entity_weight = 0.0;
+		distanceTransform->getEntityWeightFunction(entity_reference, entity_weight);
 		return distanceTransform->ComputeDistanceContribution(buffers.neighbors, entity_weight);
 	}
 
@@ -150,7 +152,8 @@ public:
 			{
 				knnCache->GetKnnWithoutCache(entity, numNearestNeighbors, true, buffers.neighbors);
 
-				double entity_weight = distanceTransform->getEntityWeightFunction(entity);
+				double entity_weight = 0.0;
+				distanceTransform->getEntityWeightFunction(entity, entity_weight);
 				contribs_out[index] = distanceTransform->ComputeDistanceContribution(buffers.neighbors, entity_weight);
 			}
 		#ifdef MULTITHREAD_SUPPORT

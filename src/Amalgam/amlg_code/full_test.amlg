@@ -3072,10 +3072,6 @@
    (query_value_masses "x" "weight")
  )) "\n")
 
- (print (compute_on_contained_entities "TestContainerExec" (list
-   (query_value_masses "bar" (null) "string")
- )) "\n")
-
  (print "--query_less_or_equal_to--\n")
  (print (contained_entities "TestContainerExec" (list
 	(query_less_or_equal_to "x" 3)

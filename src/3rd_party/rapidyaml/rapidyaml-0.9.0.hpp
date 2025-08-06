@@ -21407,7 +21407,7 @@ RYML_EXPORT int version_patch();
 #endif /* C4_YML_EXPORT_HPP_ */
 
 
-#if defined(C4_MSVC) || defined(C4_MINGW)
+#if defined(C4_MSVC) || defined(C4_MINGW) || defined(_WIN32)
 //included above:
 //#include <malloc.h>
 #else

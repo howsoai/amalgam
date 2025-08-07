@@ -763,7 +763,7 @@ protected:
 			size_t scope_stack_start = 0;
 			if(parentInterpreter->callingInterpreter != nullptr
 					&& parentInterpreter->callingInterpreter->curEntity == parentInterpreter->curEntity)
-				scope_stack_start = parentInterpreter->callingInterpreter->sharedScopeStackAccess->scopeStackUniqueAccessStartingDepth;
+				scope_stack_start = parentInterpreter->callingInterpreter->sharedScopeStackAccess->scopeStackUniqueAccessEndingDepth;
 
 			parentInterpreter->sharedScopeStackAccess->UpdateSummarizedScopeStack(
 				*parentInterpreter->scopeStackNodes, scope_stack_start);

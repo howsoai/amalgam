@@ -503,6 +503,12 @@ public:
 #endif
 	)
 	{
+		auto sssa = sharedScopeStackAccess.get();
+		if(sssa != nullptr)
+		{
+
+		}
+
 		//TODO 24212: implement this and combine GetScopeStackSymbolLocation and GetOrCreateScopeStackSymbolLocation in Interpreter.cpp
 		return std::make_pair(nullptr, false);
 	}
@@ -511,7 +517,7 @@ public:
 	__forceinline std::pair<EvaluableNode *, bool> GetScopeStackSymbol(const StringInternPool::StringID symbol_sid)
 	{
 	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::WriteLock write_lock;
+		Concurrency::ReadLock write_lock;
 		auto [en_ptr, top_of_stack] = GetScopeStackSymbolLocation(symbol_sid, false, write_lock);
 	#else
 		auto [en_ptr, top_of_stack] = GetScopeStackSymbolLocation(symbol_sid, false);

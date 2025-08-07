@@ -503,14 +503,70 @@ public:
 #endif
 	)
 	{
-		auto sssa = sharedScopeStackAccess.get();
-		if(sssa != nullptr)
-		{
+		size_t lower_stack_limit = 0;
 
+		//TODO 24212: finish this
+	#ifdef MULTITHREAD_SUPPORT
+		//if sharedScopeStackAccess is empty, then it's at the top of the stack; traverse down until next
+		auto sssa = sharedScopeStackAccess.get();
+		if(sssa == nullptr)
+		{
+			if(callingInterpreter != nullptr)
+			{
+				auto calling_interpreter_sssa = callingInterpreter->sharedScopeStackAccess.get();
+				if(calling_interpreter_sssa != nullptr)
+					lower_stack_limit = calling_interpreter_sssa->scopeStackUniqueAccessEndingDepth;
+			}
+		}
+		else
+		{
+			if(sssa->summarizedScopeSlice != nullptr
+					&& sssa->summarizedScopeSlice->find(symbol_sid) != end(sssa->summarizedScopeSlice))
+			{
+				//variable exists in this scope slice, lock and pass through to find below
+				lock.lock();
+			}
+			else if(callingInterpreter != nullptr)
+			{
+				return callingInterpreter->GetScopeStackSymbolLocation(symbol_sid, create_if_nonexistent, lock);
+			}
+			else if(create_if_nonexistent)
+			{
+				//didn't find it anywhere, so default it to the current top of the stack and create it
+				lock.lock();
+				size_t scope_stack_index = scopeStackNodes->size() - 1;
+				EvaluableNode *context_to_use = (*scopeStackNodes)[scope_stack_index];
+				return std::make_pair(context_to_use->GetOrCreateMappedChildNode(symbol_sid), true);
+			}
+		}
+	#endif
+
+		//find appropriate context for symbol by walking up the stack
+		for(size_t scope_stack_index = scopeStackNodes->size(); lower_stack_limit > 0; scope_stack_index--)
+		{
+			EvaluableNode *cur_context = (*scopeStackNodes)[scope_stack_index - 1];
+
+			//see if this level of the stack contains the symbol
+			auto &mcn = cur_context->GetMappedChildNodesReference();
+			auto found = mcn.find(symbol_sid);
+			if(found != end(mcn))
+			{
+				//subtract one here to match the subtraction above
+				scope_stack_index--;
+
+				return std::make_pair(&found->second, true);
+			}
 		}
 
-		//TODO 24212: implement this and combine GetScopeStackSymbolLocation and GetOrCreateScopeStackSymbolLocation in Interpreter.cpp
-		return std::make_pair(nullptr, false);
+		//TODO 24212: traverse to the next layer, if find something, return
+
+		if(!create_if_nonexistent)
+			return std::make_pair(nullptr, false);
+
+		//didn't find it anywhere, so default it to the current top of the stack and create it
+		size_t scope_stack_index = scopeStackNodes->size() - 1;
+		EvaluableNode *context_to_use = (*scopeStackNodes)[scope_stack_index];
+		return std::make_pair(context_to_use->GetOrCreateMappedChildNode(symbol_sid), true);
 	}
 
 	//like the other type of GetScopeStackSymbolLocation, but returns the EvaluableNode pointer instead of a pointer-to-a-pointer

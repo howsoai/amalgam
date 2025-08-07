@@ -402,67 +402,6 @@ void Interpreter::SetSideEffectFlagsAndAccumulatePerformanceCounters(EvaluableNo
 	}
 }
 
-EvaluableNode **Interpreter::GetScopeStackSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &scope_stack_index
-#ifdef MULTITHREAD_SUPPORT
-	, bool include_unique_access, bool include_shared_access
-#endif
-	)
-{
-	//TODO 24212: see if can unify with GetOrCreateScopeStackSymbolLocation via boolean parameter whether to create
-#ifdef MULTITHREAD_SUPPORT
-	size_t highest_index = (include_unique_access ? scopeStackNodes->size() : scopeStackUniqueAccessStartingDepth);
-	size_t lowest_index = (include_shared_access ? 0 : scopeStackUniqueAccessStartingDepth);
-#else
-	size_t highest_index = scopeStackNodes->size();
-	size_t lowest_index = 0;
-#endif
-	//find symbol by walking up the stack; each layer must be an assoc
-	for(scope_stack_index = highest_index; scope_stack_index > lowest_index; scope_stack_index--)
-	{
-		EvaluableNode *cur_context = (*scopeStackNodes)[scope_stack_index - 1];
-
-		//see if this level of the stack contains the symbol
-		auto &mcn = cur_context->GetMappedChildNodesReference();
-		auto found = mcn.find(symbol_sid);
-		if(found != end(mcn))
-		{
-			//subtract one here to match the subtraction above
-			scope_stack_index--;
-
-			return &found->second;
-		}
-	}
-
-	//didn't find it anywhere, so default it to the current top of the stack
-	scope_stack_index = scopeStackNodes->size() - 1;
-	return nullptr;
-}
-
-EvaluableNode **Interpreter::GetOrCreateScopeStackSymbolLocation(const StringInternPool::StringID symbol_sid, size_t &scope_stack_index)
-{
-	//find appropriate context for symbol by walking up the stack
-	for(scope_stack_index = scopeStackNodes->size(); scope_stack_index > 0; scope_stack_index--)
-	{
-		EvaluableNode *cur_context = (*scopeStackNodes)[scope_stack_index - 1];
-
-		//see if this level of the stack contains the symbol
-		auto &mcn = cur_context->GetMappedChildNodesReference();
-		auto found = mcn.find(symbol_sid);
-		if(found != end(mcn))
-		{
-			//subtract one here to match the subtraction above
-			scope_stack_index--;
-
-			return &found->second;
-		}
-	}
-
-	//didn't find it anywhere, so default it to the current top of the stack and create it
-	scope_stack_index = scopeStackNodes->size() - 1;
-	EvaluableNode *context_to_use = (*scopeStackNodes)[scope_stack_index];
-	return context_to_use->GetOrCreateMappedChildNode(symbol_sid);
-}
-
 EvaluableNodeReference Interpreter::InterpretNode(EvaluableNode *en, bool immediate_result)
 {
 	if(EvaluableNode::IsNull(en))

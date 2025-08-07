@@ -203,14 +203,16 @@ public:
 	{
 	public:
 		//populates summarizedScopeSlice with all scopes from scope_stack_start to scope_stack_end
-		template<typename Iter>
-		void UpdateScopeStack(Iter scope_stack_start, Iter scope_stack_end)
+		void UpdateSummarizedScopeStack(std::vector<EvaluableNode *> &scope_stack, size_t scope_stack_start)
 		{
-			auto new_scope_slice = std::make_unique(FastHashSet<StringInternPool::StringID>)();
+			auto new_scope_slice = std::make_unique<FastHashSet<StringInternPool::StringID>>();
 
-			for(auto it = scope_stack_start; it != scope_stack_end; ++it)
+			scopeStackUniqueAccessStartingDepth = scope_stack_start;
+			scopeStackUniqueAccessEndingDepth = scope_stack.size();
+
+			for(size_t i = scopeStackUniqueAccessStartingDepth; i < scopeStackUniqueAccessEndingDepth; i++)
 			{
-				EvaluableNode *n = *it;
+				EvaluableNode *n = scope_stack[i];
 				for(auto [var_sid, var_node] : n->GetMappedChildNodesReference())
 					new_scope_slice->emplace(var_sid);
 			}
@@ -218,8 +220,11 @@ public:
 			summarizedScopeSlice.swap(new_scope_slice);
 		}
 
-		//the depth of the scope stack where multiple threads may modify the same variables
+		//the starting depth of the scope stack where multiple threads need to lock scopeStackMutex to modify
 		size_t scopeStackUniqueAccessStartingDepth;
+
+		//the depth of the scope stack where multiple threads may modify the same variables without locking scopeStackMutex
+		size_t scopeStackUniqueAccessEndingDepth;
 
 		//a collapsed version of the view of the scope stack with regard to variable shadowing
 		//used for fast access to determine if locking scopeStackMutex is necessary to access
@@ -751,8 +756,17 @@ protected:
 			//obtains previous_results, so they must all be marked as not unique
 			parentInterpreter->RemoveUniquenessFromPreviousResultsInConstructionStack();
 
-			//TODO 24212: set up sharedScopeStackAccess and use where appropriate
-			sharedScopeStackAccess.scopeStackUniqueAccessStartingDepth = parentInterpreter->scopeStackNodes->size();
+			//construct new shared scope stack access
+			parentInterpreter->sharedScopeStackAccess = std::make_unique<SharedScopeStackAccess>();
+
+			//if there's a calling interpreter from the same entity
+			size_t scope_stack_start = 0;
+			if(parentInterpreter->callingInterpreter != nullptr
+					&& parentInterpreter->callingInterpreter->curEntity == parentInterpreter->curEntity)
+				scope_stack_start = parentInterpreter->callingInterpreter->sharedScopeStackAccess->scopeStackUniqueAccessStartingDepth;
+
+			parentInterpreter->sharedScopeStackAccess->UpdateSummarizedScopeStack(
+				*parentInterpreter->scopeStackNodes, scope_stack_start);
 		}
 
 		//Enqueues a concurrent task that needs a construction stack, using the relative interpreter
@@ -913,6 +927,8 @@ protected:
 			taskSet.WaitForTasks(taskEnqueueLock);
 			parentInterpreter->memoryModificationLock.lock();
 
+			parentInterpreter->sharedScopeStackAccess.reset();
+
 			//propagate side effects back up
 			if(resultsSideEffect)
 				parentInterpreter->SetSideEffectsFlags();
@@ -942,9 +958,6 @@ protected:
 	protected:
 		//random seed for each task, the size of numTasks
 		std::vector<RandomStream> randomSeeds;
-
-		//synchronization for accessing the scope stack
-		SharedScopeStackAccess sharedScopeStackAccess;
 
 		//a barrier to wait for the tasks being run
 		ThreadPool::CountableTaskSet taskSet;
@@ -1441,8 +1454,9 @@ public:
 
 protected:
 
-	//pointer to a synchronization class for accessing scopeStackNodes
-	SharedScopeStackAccess *sharedScopeStackAccess;
+	//unique pointer to a synchronization class for accessing scopeStackNodes
+	//only initialized if spawn at least one interpreter that shares the stack
+	std::unique_ptr<SharedScopeStackAccess> sharedScopeStackAccess;
 
 #endif
 

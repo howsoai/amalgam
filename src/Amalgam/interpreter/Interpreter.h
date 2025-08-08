@@ -507,7 +507,6 @@ public:
 		size_t stack_start = 0;
 		size_t stack_end = scopeStackNodes->size();
 
-		//TODO 24212: need to handle locks better
 	#ifdef MULTITHREAD_SUPPORT
 		//if sharedScopeStackAccess is empty, then it's at the top of the stack; traverse down until next
 		auto sssa = sharedScopeStackAccess.get();
@@ -530,7 +529,7 @@ public:
 					&& sssa->summarizedScopeSlice->find(symbol_sid) != end(sssa->summarizedScopeSlice))
 			{
 				//variable exists in this scope slice, lock and pass through to find below
-				lock.lock();
+				lock = Lock(sssa->scopeStackMutex);
 			}
 		}
 	#endif
@@ -555,13 +554,26 @@ public:
 
 		if(stack_start > 0 && callingInterpreter != nullptr)
 		{
+		#ifdef MULTITHREAD_SUPPORT
+			lock.unlock();
 			auto [node_ptr, top_of_stack] = callingInterpreter->GetScopeStackSymbolLocation(symbol_sid, create_if_nonexistent, lock);
+		#else
+			auto [node_ptr, top_of_stack] = callingInterpreter->GetScopeStackSymbolLocation(symbol_sid, create_if_nonexistent);
+		#endif
+
 			if(node_ptr != nullptr)
 				return std::make_pair(node_ptr, top_of_stack);
 		}
 
-		if(!create_if_nonexistent)
+		//if not creating or if creating and not at top of stack, just return
+		if(!create_if_nonexistent || stack_end != scopeStackNodes->size())
 			return std::make_pair(nullptr, false);
+
+	#ifdef MULTITHREAD_SUPPORT
+		//lock if need a lock
+		if(sssa != nullptr)
+			lock = Lock(sssa->scopeStackMutex);
+	#endif
 
 		//didn't find it anywhere, so default it to the current top of the stack and create it
 		size_t scope_stack_index = scopeStackNodes->size() - 1;

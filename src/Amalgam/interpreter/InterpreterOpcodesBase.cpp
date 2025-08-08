@@ -1065,7 +1065,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 				PerformanceProfiler::AccumulateLockContentionCount(variable_location);
 			}
 		#else
-			auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(symbol_sid, false);
+			auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(variable_sid, true);
 		#endif
 
 			if(accum)
@@ -1112,7 +1112,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			PerformanceProfiler::AccumulateLockContentionCount(variable_location);
 		}
 	#else
-		auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(symbol_sid, false);
+		auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(variable_sid, true);
 	#endif
 
 		if(accum)
@@ -1179,7 +1179,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		PerformanceProfiler::AccumulateLockContentionCount(variable_location);
 	}
 #else
-	auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(symbol_sid, false);
+	auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(variable_sid, true);
 #endif
 
 	//if writing to an outer scope, can't guarantee the memory at this scope can be freed

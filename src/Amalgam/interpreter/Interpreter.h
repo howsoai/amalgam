@@ -497,7 +497,7 @@ public:
 	//additionally returns a bool which is true if the symbol location is at the top of the stack
 	//if create_if_nonexistent is true, then it will create an entry for the symbol at the top of the stack
 	//if multithreaded, then lock should be specified, and the lock type should be a write lock if a write operation is being specified (including create_if_nonexistent)
-	template<typename LockType>
+	template<typename LockType = void>
 	std::pair<EvaluableNode **, bool> GetScopeStackSymbolLocation(StringInternPool::StringID symbol_sid, bool create_if_nonexistent
 #ifdef MULTITHREAD_SUPPORT
 		, LockType &lock
@@ -526,16 +526,17 @@ public:
 			stack_end = sssa->scopeStackUniqueAccessEndingDepth;
 
 			if(sssa->summarizedScopeSlice != nullptr
-					&& sssa->summarizedScopeSlice->find(symbol_sid) != end(sssa->summarizedScopeSlice))
+					&& sssa->summarizedScopeSlice->find(symbol_sid) != end(*sssa->summarizedScopeSlice))
 			{
+				//TODO 24212: update all locks in this method to use the inner part of LockScopeStackWithoutBlockingGarbageCollectionIfNeeded
 				//variable exists in this scope slice, lock and pass through to find below
-				lock = Lock(sssa->scopeStackMutex);
+				lock = LockType(sssa->scopeStackMutex);
 			}
 		}
 	#endif
 
 		//find appropriate context for symbol by walking up the stack
-		for(size_t scope_stack_index = stack_end; stack_start > 0; scope_stack_index--)
+		for(size_t scope_stack_index = stack_end; scope_stack_index > 0; scope_stack_index--)
 		{
 			EvaluableNode *cur_context = (*scopeStackNodes)[scope_stack_index - 1];
 
@@ -552,18 +553,16 @@ public:
 			}
 		}
 
+	#ifdef MULTITHREAD_SUPPORT
 		if(stack_start > 0 && callingInterpreter != nullptr)
 		{
-		#ifdef MULTITHREAD_SUPPORT
 			lock.unlock();
 			auto [node_ptr, top_of_stack] = callingInterpreter->GetScopeStackSymbolLocation(symbol_sid, create_if_nonexistent, lock);
-		#else
-			auto [node_ptr, top_of_stack] = callingInterpreter->GetScopeStackSymbolLocation(symbol_sid, create_if_nonexistent);
-		#endif
-
+		
 			if(node_ptr != nullptr)
 				return std::make_pair(node_ptr, top_of_stack);
 		}
+	#endif
 
 		//if not creating or if creating and not at top of stack, just return
 		if(!create_if_nonexistent || stack_end != scopeStackNodes->size())
@@ -572,7 +571,7 @@ public:
 	#ifdef MULTITHREAD_SUPPORT
 		//lock if need a lock
 		if(sssa != nullptr)
-			lock = Lock(sssa->scopeStackMutex);
+			lock = LockType(sssa->scopeStackMutex);
 	#endif
 
 		//didn't find it anywhere, so default it to the current top of the stack and create it
@@ -585,15 +584,15 @@ public:
 	__forceinline std::pair<EvaluableNode *, bool> GetScopeStackSymbol(const StringInternPool::StringID symbol_sid)
 	{
 	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::ReadLock write_lock;
-		auto [en_ptr, top_of_stack] = GetScopeStackSymbolLocation(symbol_sid, false, write_lock);
+		Concurrency::ReadLock read_lock;
+		auto [en_ptr, top_of_stack] = GetScopeStackSymbolLocation<LockType>(symbol_sid, false, read_lock);
 	#else
-		auto [en_ptr, top_of_stack] = GetScopeStackSymbolLocation(symbol_sid, false);
+		auto [node_ptr, top_of_stack] = GetScopeStackSymbolLocation(symbol_sid, false);
 	#endif
-		if(en_ptr == nullptr)
+		if(node_ptr == nullptr)
 			return std::make_pair(nullptr, false);
 
-		return std::make_pair(*en_ptr, true);
+		return std::make_pair(*node_ptr, true);
 	}
 
 	//returns the current scope stack index

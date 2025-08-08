@@ -203,12 +203,13 @@ public:
 	{
 	public:
 		//populates summarizedScopeSlice with all scopes from scope_stack_start to scope_stack_end
-		void UpdateSummarizedScopeStack(std::vector<EvaluableNode *> &scope_stack, size_t scope_stack_start)
+		void UpdateSummarizedScopeStack(std::vector<EvaluableNode *> &scope_stack,
+			size_t scope_stack_start, size_t scope_stack_end)
 		{
 			auto new_scope_slice = std::make_unique<FastHashSet<StringInternPool::StringID>>();
 
 			scopeStackUniqueAccessStartingDepth = scope_stack_start;
-			scopeStackUniqueAccessEndingDepth = scope_stack.size();
+			scopeStackUniqueAccessEndingDepth = scope_stack_end;
 
 			for(size_t i = scopeStackUniqueAccessStartingDepth; i < scopeStackUniqueAccessEndingDepth; i++)
 			{
@@ -491,8 +492,8 @@ public:
 	//ensures that args is still a valid EvaluableNodeReference after the call
 	static EvaluableNodeReference ConvertArgsToScopeStack(EvaluableNodeReference &args, EvaluableNodeManager &enm);
 
-	//finds a pointer to the location of the symbol's pointer to value in the top of the context stack and returns a pointer to the location of the symbol's pointer to value,
-	// nullptr if it does not exist
+	//finds a pointer to the location of the symbol's pointer to value in the top of the context stack and returns a
+	// pointer to the location of the symbol's pointer to value, nullptr if it does not exist
 	//additionally returns a bool which is true if the symbol location is at the top of the stack
 	//if create_if_nonexistent is true, then it will create an entry for the symbol at the top of the stack
 	//if multithreaded, then lock should be specified, and the lock type should be a write lock if a write operation is being specified (including create_if_nonexistent)
@@ -503,46 +504,39 @@ public:
 #endif
 	)
 	{
-		size_t lower_stack_limit = 0;
+		size_t stack_start = 0;
+		size_t stack_end = scopeStackNodes->size();
 
-		//TODO 24212: finish this
+		//TODO 24212: need to handle locks better
 	#ifdef MULTITHREAD_SUPPORT
 		//if sharedScopeStackAccess is empty, then it's at the top of the stack; traverse down until next
 		auto sssa = sharedScopeStackAccess.get();
 		if(sssa == nullptr)
 		{
+			//no shared resources at this layer; only need stack_start if there is a callingInterpreter
 			if(callingInterpreter != nullptr)
 			{
 				auto calling_interpreter_sssa = callingInterpreter->sharedScopeStackAccess.get();
 				if(calling_interpreter_sssa != nullptr)
-					lower_stack_limit = calling_interpreter_sssa->scopeStackUniqueAccessEndingDepth;
+					stack_start = calling_interpreter_sssa->scopeStackUniqueAccessEndingDepth;
 			}
 		}
 		else
 		{
+			stack_start = sssa->scopeStackUniqueAccessStartingDepth;
+			stack_end = sssa->scopeStackUniqueAccessEndingDepth;
+
 			if(sssa->summarizedScopeSlice != nullptr
 					&& sssa->summarizedScopeSlice->find(symbol_sid) != end(sssa->summarizedScopeSlice))
 			{
 				//variable exists in this scope slice, lock and pass through to find below
 				lock.lock();
 			}
-			else if(callingInterpreter != nullptr)
-			{
-				return callingInterpreter->GetScopeStackSymbolLocation(symbol_sid, create_if_nonexistent, lock);
-			}
-			else if(create_if_nonexistent)
-			{
-				//didn't find it anywhere, so default it to the current top of the stack and create it
-				lock.lock();
-				size_t scope_stack_index = scopeStackNodes->size() - 1;
-				EvaluableNode *context_to_use = (*scopeStackNodes)[scope_stack_index];
-				return std::make_pair(context_to_use->GetOrCreateMappedChildNode(symbol_sid), true);
-			}
 		}
 	#endif
 
 		//find appropriate context for symbol by walking up the stack
-		for(size_t scope_stack_index = scopeStackNodes->size(); lower_stack_limit > 0; scope_stack_index--)
+		for(size_t scope_stack_index = stack_end; stack_start > 0; scope_stack_index--)
 		{
 			EvaluableNode *cur_context = (*scopeStackNodes)[scope_stack_index - 1];
 
@@ -554,11 +548,17 @@ public:
 				//subtract one here to match the subtraction above
 				scope_stack_index--;
 
-				return std::make_pair(&found->second, true);
+				//return the location and whether top of stack
+				return std::make_pair(&found->second, scope_stack_index == scopeStackNodes->size());
 			}
 		}
 
-		//TODO 24212: traverse to the next layer, if find something, return
+		if(stack_start > 0 && callingInterpreter != nullptr)
+		{
+			auto [node_ptr, top_of_stack] = callingInterpreter->GetScopeStackSymbolLocation(symbol_sid, create_if_nonexistent, lock);
+			if(node_ptr != nullptr)
+				return std::make_pair(node_ptr, top_of_stack);
+		}
 
 		if(!create_if_nonexistent)
 			return std::make_pair(nullptr, false);
@@ -828,7 +828,7 @@ protected:
 				scope_stack_start = parentInterpreter->callingInterpreter->sharedScopeStackAccess->scopeStackUniqueAccessEndingDepth;
 
 			parentInterpreter->sharedScopeStackAccess->UpdateSummarizedScopeStack(
-				*parentInterpreter->scopeStackNodes, scope_stack_start);
+				*parentInterpreter->scopeStackNodes, scope_stack_start, parentInterpreter->scopeStackNodes->size());
 		}
 
 		//Enqueues a concurrent task that needs a construction stack, using the relative interpreter

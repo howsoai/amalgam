@@ -866,7 +866,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 		{
 		#ifdef MULTITHREAD_SUPPORT
 			Concurrency::WriteLock write_lock;
-			LockScopeStackWithoutBlockingGarbageCollectionIfNeeded(GetScopeStackDepth(), write_lock, required_vars);
+			LockScopeStackTopWithoutBlockingGarbageCollectionIfNeeded(GetScopeStackDepth(), write_lock, required_vars);
 		#endif
 
 			//get the current layer of the stack
@@ -942,7 +942,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 
 					#ifdef MULTITHREAD_SUPPORT
 						//relock if needed before assigning the value
-						LockScopeStackWithoutBlockingGarbageCollectionIfNeeded(GetScopeStackDepth(), write_lock, required_vars);
+						LockScopeStackTopWithoutBlockingGarbageCollectionIfNeeded(GetScopeStackDepth(), write_lock, required_vars);
 					#endif
 
 						scope->SetMappedChildNode(cn_id, value, false);
@@ -1672,7 +1672,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STACK(EvaluableNode *en, b
 {
 #ifdef MULTITHREAD_SUPPORT
 	Concurrency::ReadLock lock;
-	LockScopeStackWithoutBlockingGarbageCollectionIfNeeded(0, lock);
+	//TODO 24212: need to lock entire stack before copying; can change method to use write locks only and break inner part out
+	LockScopeStackTopWithoutBlockingGarbageCollectionIfNeeded(0, lock);
 #endif
 
 	//can create this node on the stack because will be making a copy
@@ -1696,7 +1697,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ARGS(EvaluableNode *en, bo
 	{
 	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::ReadLock lock;
-		LockScopeStackWithoutBlockingGarbageCollectionIfNeeded(GetScopeStackDepth(), lock);
+		LockScopeStackTopWithoutBlockingGarbageCollectionIfNeeded(GetScopeStackDepth(), lock);
 	#endif
 
 		//0 index is top of stack

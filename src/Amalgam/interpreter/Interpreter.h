@@ -528,7 +528,7 @@ public:
 			if(sssa->summarizedScopeSlice != nullptr
 					&& sssa->summarizedScopeSlice->find(symbol_sid) != end(*sssa->summarizedScopeSlice))
 			{
-				//TODO 24212: update all locks in this method to use the inner part of LockScopeStackWithoutBlockingGarbageCollectionIfNeeded
+				//TODO 24212: update all locks in this method to use the inner part of LockScopeStackTopWithoutBlockingGarbageCollectionIfNeeded
 				//variable exists in this scope slice, lock and pass through to find below
 				lock = LockType(sssa->scopeStackMutex);
 			}
@@ -1086,10 +1086,12 @@ protected:
 	//does so in a way as to not block other threads that may be waiting on garbage collection
 	//if en_to_preserve is not null, then it will create a stack saver for it if garbage collection is invoked
 	template<typename LockType>
-	inline void LockScopeStackWithoutBlockingGarbageCollectionIfNeeded(size_t scope_depth_index,
+	inline void LockScopeStackTopWithoutBlockingGarbageCollectionIfNeeded(size_t scope_depth_index,
 		LockType &lock, EvaluableNode *en_to_preserve = nullptr)
 	{
-		if(GetScopeStackDepth() >= sharedScopeStackAccess->scopeStackUniqueAccessStartingDepth)
+		//if no sharedScopeStackAccess or beyond top, don't need to lock
+		if(sharedScopeStackAccess == nullptr
+				|| GetScopeStackDepth() >= sharedScopeStackAccess->scopeStackUniqueAccessEndingDepth)
 			return;
 
 		lock = LockType(sharedScopeStackAccess->scopeStackMutex, std::defer_lock);

@@ -623,6 +623,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 	Interpreter sandbox(evaluableNodeManager, randomStream.CreateOtherStreamViaRand(),
 		writeListeners, printListener, interpreter_constraints_ptr, nullptr, this);
 
+	//TODO 24212: fix issue where call_sandbox is accessing calling interpreter's stack in GetScopeStackSymbolLocation
 #ifdef MULTITHREAD_SUPPORT
 	// everything at this point is referenced on stacks; allow the sandbox to trigger a garbage collect without this interpreter blocking
 	std::swap(memoryModificationLock, sandbox.memoryModificationLock);

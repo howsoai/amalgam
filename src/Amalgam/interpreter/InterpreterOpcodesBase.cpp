@@ -895,8 +895,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 				}
 
 			#ifdef MULTITHREAD_SUPPORT
-				//TODO 24212: any new variables created in the rest of this need to call sharedScopeStackAccess->UpdateSummarizedScopeStack if sharedScopeStackAccess is not nullptr
-				if(sharedScopeStackAccess != nullptr)
+				//update any new variables; any_nonunique_assignments will be set if any new variables are inserted
+				if(any_nonunique_assignments && sharedScopeStackAccess != nullptr)
 					sharedScopeStackAccess->UpdateSummarizedScopeStack(*scopeStackNodes);
 			#endif
 			}
@@ -951,7 +951,13 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 						LockScopeStackTop(GetScopeStackDepth(), write_lock, required_vars);
 					#endif
 
-						scope->SetMappedChildNode(cn_id, value, false);
+						auto [inserted, location] = scope->SetMappedChildNode(cn_id, value, false);
+
+					#ifdef MULTITHREAD_SUPPORT
+						//if new variable inserted, update the stack
+						if(inserted && sharedScopeStackAccess != nullptr)
+							sharedScopeStackAccess->UpdateSummarizedScopeStack(*scopeStackNodes);
+					#endif
 					}
 				}
 				if(PopConstructionContextAndGetExecutionSideEffectFlag())
@@ -1009,8 +1015,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 	bool accum = (en->GetType() == ENT_ACCUM);
 
-	//TODO 24212: any new variables created need to call sharedScopeStackAccess->UpdateSummarizedScopeStack if sharedScopeStackAccess is not nullptr
-
 	//if only one parameter, then assume it is an assoc of variables to accum or assign
 	if(num_params == 1)
 	{
@@ -1044,15 +1048,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		//iterate over every variable being assigned
 		for(auto &[cn_id, cn] : assigned_vars->GetMappedChildNodesReference())
 		{
-			StringInternPool::StringID variable_sid = cn_id;
-			if(variable_sid == StringInternPool::NOT_A_STRING_ID)
+			if(cn_id == StringInternPool::NOT_A_STRING_ID)
 				continue;
 
 			//evaluate the value
 			EvaluableNodeReference variable_value_node(cn, assigned_vars.unique);
 			if(need_to_interpret && cn != nullptr && !cn->GetIsIdempotent())
 			{
-				PushNewConstructionContext(assigned_vars, assigned_vars, EvaluableNodeImmediateValueWithType(variable_sid), nullptr);
+				PushNewConstructionContext(assigned_vars, assigned_vars, EvaluableNodeImmediateValueWithType(cn_id), nullptr);
 				variable_value_node = InterpretNode(cn);
 				if(PopConstructionContextAndGetExecutionSideEffectFlag())
 				{
@@ -1064,16 +1067,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			//retrieve the symbol location
 		#ifdef MULTITHREAD_SUPPORT
 			Concurrency::WriteLock write_lock;
-			auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(variable_sid, true, write_lock);
+			auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(cn_id, true, write_lock);
 
 			if(_opcode_profiling_enabled && write_lock.owns_lock())
 			{
 				std::string variable_location = asset_manager.GetEvaluableNodeSourceFromComments(en);
-				variable_location += string_intern_pool.GetStringFromID(variable_sid);
+				variable_location += string_intern_pool.GetStringFromID(cn_id);
 				PerformanceProfiler::AccumulateLockContentionCount(variable_location);
 			}
 		#else
-			auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(variable_sid, true);
+			auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(cn_id, true);
 		#endif
 
 			if(accum)

@@ -202,29 +202,36 @@ public:
 	class SharedScopeStackAccess
 	{
 	public:
-		//populates summarizedScopeSlice with all scopes from scope_stack_start to scope_stack_end
-		void UpdateSummarizedScopeStack(std::vector<EvaluableNode *> &scope_stack,
-			size_t scope_stack_start, size_t scope_stack_end)
+		//updates summarizedScopeSlice based on scopeStackUniqueAccessStartingDepth and scopeStackUniqueAccessEndingDepth
+		inline void UpdateSummarizedScopeStack(std::vector<EvaluableNode *> &scope_stack)
 		{
 			auto new_scope_slice = std::make_unique<FastHashSet<StringInternPool::StringID>>();
-
-			scopeStackUniqueAccessStartingDepth = scope_stack_start;
-			scopeStackUniqueAccessEndingDepth = scope_stack_end;
-
 			for(size_t i = scopeStackUniqueAccessStartingDepth; i < scopeStackUniqueAccessEndingDepth; i++)
 			{
 				EvaluableNode *n = scope_stack[i];
-				for(auto [var_sid, var_node] : n->GetMappedChildNodesReference())
+				for(auto &[var_sid, var_node] : n->GetMappedChildNodesReference())
 					new_scope_slice->emplace(var_sid);
 			}
 
 			summarizedScopeSlice.swap(new_scope_slice);
 		}
 
-		//variant that leaves scopeStackUniqueAccessStartingDepth and scopeStackUniqueAccessEndingDepth
-		inline void UpdateSummarizedScopeStack(std::vector<EvaluableNode *> &scope_stack)
+		//populates summarizedScopeSlice with all scopes from scope_stack_start to scope_stack_end
+		inline void UpdateSummarizedScopeStack(std::vector<EvaluableNode *> &scope_stack,
+			size_t scope_stack_start, size_t scope_stack_end)
 		{
-			UpdateSummarizedScopeStack(scope_stack, scopeStackUniqueAccessStartingDepth, scopeStackUniqueAccessEndingDepth);
+			scopeStackUniqueAccessStartingDepth = scope_stack_start;
+			scopeStackUniqueAccessEndingDepth = scope_stack_end;
+			UpdateSummarizedScopeStack(scope_stack);
+		}
+
+		//inserts sid into summarizedScopeSlice
+		inline void InsertIdIntoSummarizedScopeStack(std::vector<EvaluableNode *> &scope_stack,
+			StringInternPool::StringID sid)
+		{
+			auto new_scope_slice = std::make_unique<FastHashSet<StringInternPool::StringID>>(*summarizedScopeSlice);
+			new_scope_slice->emplace(sid);
+			summarizedScopeSlice.swap(new_scope_slice);
 		}
 
 		//the starting depth of the scope stack where multiple threads need to lock scopeStackMutex to modify
@@ -576,7 +583,10 @@ public:
 		//didn't find it anywhere, so default it to the current top of the stack and create it
 		size_t scope_stack_index = scopeStackNodes->size() - 1;
 		EvaluableNode *context_to_use = (*scopeStackNodes)[scope_stack_index];
-		return std::make_pair(context_to_use->GetOrCreateMappedChildNode(symbol_sid), true);
+		auto new_location = context_to_use->GetOrCreateMappedChildNode(symbol_sid);
+		if(sssa != nullptr)
+			sssa->InsertIdIntoSummarizedScopeStack(*scopeStackNodes, symbol_sid);
+		return std::make_pair(new_location, true);
 	}
 
 	//like the other type of GetScopeStackSymbolLocation, but returns the EvaluableNode pointer instead of a pointer-to-a-pointer

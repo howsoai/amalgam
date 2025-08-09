@@ -839,8 +839,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 	if(ocn_size == 0)
 		return EvaluableNodeReference::Null();
 
-	//TODO 24212: any new variables created need to call sharedScopeStackAccess->UpdateSummarizedScopeStack if sharedScopeStackAccess is not nullptr
-
 	//work on the node that is declaring the variables
 	EvaluableNode *required_vars_node = ocn[0];
 	bool any_nonunique_assignments = false;
@@ -895,6 +893,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 							evaluableNodeManager->FreeNodeTree(cn);
 					}
 				}
+
+			#ifdef MULTITHREAD_SUPPORT
+				//TODO 24212: any new variables created in the rest of this need to call sharedScopeStackAccess->UpdateSummarizedScopeStack if sharedScopeStackAccess is not nullptr
+				if(sharedScopeStackAccess != nullptr)
+					sharedScopeStackAccess->UpdateSummarizedScopeStack(*scopeStackNodes);
+			#endif
 			}
 			else //need_to_interpret
 			{

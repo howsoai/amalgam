@@ -221,6 +221,12 @@ public:
 			summarizedScopeSlice.swap(new_scope_slice);
 		}
 
+		//variant that leaves scopeStackUniqueAccessStartingDepth and scopeStackUniqueAccessEndingDepth
+		inline void UpdateSummarizedScopeStack(std::vector<EvaluableNode *> &scope_stack)
+		{
+			UpdateSummarizedScopeStack(scope_stack, scopeStackUniqueAccessStartingDepth, scopeStackUniqueAccessEndingDepth);
+		}
+
 		//the starting depth of the scope stack where multiple threads need to lock scopeStackMutex to modify
 		size_t scopeStackUniqueAccessStartingDepth;
 

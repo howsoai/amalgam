@@ -316,16 +316,8 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	EvaluableNode *scope_stack, EvaluableNode *opcode_stack, EvaluableNode *construction_stack,
 	bool manage_stack_references,
 	std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices,
-#ifdef MULTITHREAD_SUPPORT
-	SharedScopeStackAccess *shared_scope_stack_access,
-#endif
 	bool immediate_result)
 {
-
-#ifdef MULTITHREAD_SUPPORT
-	sharedScopeStackAccess = shared_scope_stack_access;
-#endif
-
 	//use specified or create new scopeStack
 	if(scope_stack == nullptr)
 	{

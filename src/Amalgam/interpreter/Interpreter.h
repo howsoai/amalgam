@@ -246,16 +246,11 @@ public:
 	// and assumes the caller has created references for all of the stacks
 	//note that construction_stack and construction_stack_indices should be specified together and should be the same length
 	//if immediate_result is true, then the returned value may be immediate
-	//if multithreaded, then for performance reasons, it is optimal to have one of each stack per thread
-	// and use shared_scope_stack_access for synchronization
 	EvaluableNodeReference ExecuteNode(EvaluableNode *en,
 		EvaluableNode *scope_stack = nullptr, EvaluableNode *opcode_stack = nullptr,
 		EvaluableNode *construction_stack = nullptr,
 		bool manage_stack_references = true,
 		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices = nullptr,
-	#ifdef MULTITHREAD_SUPPORT
-		SharedScopeStackAccess *shared_scope_stack_access = nullptr,
-	#endif
 		bool immediate_result = false);
 
 	//changes debugging state to debugging_enabled
@@ -528,9 +523,7 @@ public:
 			if(sssa->summarizedScopeSlice != nullptr
 					&& sssa->summarizedScopeSlice->find(symbol_sid) != end(*sssa->summarizedScopeSlice))
 			{
-				//TODO 24212: update all locks in this method to use the inner part of LockScopeStackTopWithoutBlockingGarbageCollectionIfNeeded
-				//variable exists in this scope slice, lock and pass through to find below
-				lock = LockType(sssa->scopeStackMutex);
+				LockithoutBlockingGarbageCollectionIfNeeded(lock, sssa->scopeStackMutex);
 			}
 		}
 	#endif
@@ -571,7 +564,7 @@ public:
 	#ifdef MULTITHREAD_SUPPORT
 		//lock if need a lock
 		if(sssa != nullptr)
-			lock = LockType(sssa->scopeStackMutex);
+			LockithoutBlockingGarbageCollectionIfNeeded(lock, sssa->scopeStackMutex);
 	#endif
 
 		//didn't find it anywhere, so default it to the current top of the stack and create it
@@ -585,7 +578,7 @@ public:
 	{
 	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::ReadLock read_lock;
-		auto [en_ptr, top_of_stack] = GetScopeStackSymbolLocation<LockType>(symbol_sid, false, read_lock);
+		auto [node_ptr, top_of_stack] = GetScopeStackSymbolLocation(symbol_sid, false, read_lock);
 	#else
 		auto [node_ptr, top_of_stack] = GetScopeStackSymbolLocation(symbol_sid, false);
 	#endif
@@ -879,7 +872,7 @@ protected:
 					EvaluableNode *opcode_stack = enm->AllocNode(begin(*parentInterpreter->opcodeStackNodes),
 						begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
 					auto result_ref = interpreter.ExecuteNode(node_to_execute,
-						scope_stack, opcode_stack, construction_stack, true, &csiau, &sharedScopeStackAccess);
+						scope_stack, opcode_stack, construction_stack, true, &csiau);
 
 					if(interpreter.PopConstructionContextAndGetExecutionSideEffectFlag())
 					{
@@ -946,7 +939,7 @@ protected:
 						begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
 					std::vector<ConstructionStackIndexAndPreviousResultUniqueness> csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
 					auto result_ref = interpreter.ExecuteNode(node_to_execute, scope_stack, opcode_stack,
-						construction_stack, true, &csiau, &sharedScopeStackAccess, immediate_results);
+						construction_stack, true, &csiau, immediate_results);
 
 					if(interpreter.DoesConstructionStackHaveExecutionSideEffects())
 					{
@@ -1081,26 +1074,20 @@ protected:
 		std::vector<EvaluableNode *> &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes,
 		bool immediate_results = false);
 
-	//acquires lock of scopeStackMutex if needed as determined if scope_depth_index means the variable
-	// may be accessed by other threads
-	//does so in a way as to not block other threads that may be waiting on garbage collection
+	//acquires lock of mutex in a way as to not block other threads that may be waiting on garbage collection
 	//if en_to_preserve is not null, then it will create a stack saver for it if garbage collection is invoked
-	template<typename LockType>
-	inline void LockScopeStackTopWithoutBlockingGarbageCollectionIfNeeded(size_t scope_depth_index,
-		LockType &lock, EvaluableNode *en_to_preserve = nullptr)
+	template<typename LockType, typename MutexType>
+	__forceinline void LockithoutBlockingGarbageCollectionIfNeeded(LockType &lock, MutexType &mutex,
+		EvaluableNode *en_to_preserve = nullptr)
 	{
-		//if no sharedScopeStackAccess or beyond top, don't need to lock
-		if(sharedScopeStackAccess == nullptr
-				|| GetScopeStackDepth() >= sharedScopeStackAccess->scopeStackUniqueAccessEndingDepth)
-			return;
-
-		lock = LockType(sharedScopeStackAccess->scopeStackMutex, std::defer_lock);
+		lock = LockType(mutex, std::defer_lock);
 		//if there is lock contention, but one is blocking for garbage collection,
 		// keep checking until it can get the lock
 		if(en_to_preserve)
 		{
 			while(!lock.try_lock())
 			{
+				//lock within the while loop to save time in case it was able to lock on the first try
 				auto node_stack = CreateOpcodeStackStateSaver(en_to_preserve);
 				CollectGarbage();
 			}
@@ -1110,6 +1097,22 @@ protected:
 			while(!lock.try_lock())
 				CollectGarbage();
 		}
+	}
+
+	//acquires lock of scopeStackMutex if needed as determined if scope_depth_index means the variable
+	// may be accessed by other threads
+	//does so in a way as to not block other threads that may be waiting on garbage collection
+	//if en_to_preserve is not null, then it will create a stack saver for it if garbage collection is invoked
+	template<typename LockType>
+	inline void LockScopeStackTop(size_t scope_depth_index,
+		LockType &lock, EvaluableNode *en_to_preserve = nullptr)
+	{
+		//if no sharedScopeStackAccess or beyond top, don't need to lock
+		if(sharedScopeStackAccess == nullptr
+				|| GetScopeStackDepth() >= sharedScopeStackAccess->scopeStackUniqueAccessEndingDepth)
+			return;
+
+		LockithoutBlockingGarbageCollectionIfNeeded(lock, sharedScopeStackAccess->scopeStackMutex, en_to_preserve);
 	}
 
 #endif

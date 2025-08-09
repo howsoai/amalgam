@@ -629,7 +629,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 #endif
 
 	//improve performance by managing the stacks here
-	auto result = sandbox.ExecuteNode(function, scope_stack, opcode_stack, construction_stack, false);
+	auto result = sandbox.ExecuteNode(function, scope_stack, opcode_stack, construction_stack, false, nullptr, immediate_result);
 
 #ifdef MULTITHREAD_SUPPORT
 	//hand lock back to this interpreter
@@ -866,7 +866,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 		{
 		#ifdef MULTITHREAD_SUPPORT
 			Concurrency::WriteLock write_lock;
-			LockScopeStackTopWithoutBlockingGarbageCollectionIfNeeded(GetScopeStackDepth(), write_lock, required_vars);
+			LockScopeStackTop(GetScopeStackDepth(), write_lock, required_vars);
 		#endif
 
 			//get the current layer of the stack
@@ -942,7 +942,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 
 					#ifdef MULTITHREAD_SUPPORT
 						//relock if needed before assigning the value
-						LockScopeStackTopWithoutBlockingGarbageCollectionIfNeeded(GetScopeStackDepth(), write_lock, required_vars);
+						LockScopeStackTop(GetScopeStackDepth(), write_lock, required_vars);
 					#endif
 
 						scope->SetMappedChildNode(cn_id, value, false);
@@ -1673,7 +1673,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_STACK(EvaluableNode *en, b
 #ifdef MULTITHREAD_SUPPORT
 	Concurrency::ReadLock lock;
 	//TODO 24212: need to lock entire stack before copying; can change method to use write locks only and break inner part out
-	LockScopeStackTopWithoutBlockingGarbageCollectionIfNeeded(0, lock);
+	LockScopeStackTop(0, lock);
 #endif
 
 	//can create this node on the stack because will be making a copy
@@ -1697,7 +1697,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ARGS(EvaluableNode *en, bo
 	{
 	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::ReadLock lock;
-		LockScopeStackTopWithoutBlockingGarbageCollectionIfNeeded(GetScopeStackDepth(), lock);
+		LockScopeStackTop(GetScopeStackDepth(), lock);
 	#endif
 
 		//0 index is top of stack

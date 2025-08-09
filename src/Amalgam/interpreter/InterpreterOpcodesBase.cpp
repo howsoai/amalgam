@@ -839,6 +839,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 	if(ocn_size == 0)
 		return EvaluableNodeReference::Null();
 
+	//TODO 24212: any new variables created need to call sharedScopeStackAccess->UpdateSummarizedScopeStack if sharedScopeStackAccess is not nullptr
+
 	//work on the node that is declaring the variables
 	EvaluableNode *required_vars_node = ocn[0];
 	bool any_nonunique_assignments = false;
@@ -1002,6 +1004,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		return EvaluableNodeReference::Null();
 
 	bool accum = (en->GetType() == ENT_ACCUM);
+
+	//TODO 24212: any new variables created need to call sharedScopeStackAccess->UpdateSummarizedScopeStack if sharedScopeStackAccess is not nullptr
 
 	//if only one parameter, then assume it is an assoc of variables to accum or assign
 	if(num_params == 1)

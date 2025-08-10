@@ -629,7 +629,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 #endif
 
 	//improve performance by managing the stacks here
-	auto result = sandbox.ExecuteNode(function, scope_stack, opcode_stack, construction_stack, false);
+	auto result = sandbox.ExecuteNode(function, scope_stack, opcode_stack, construction_stack, false,
+		nullptr,
+	#ifdef MULTITHREAD_SUPPORT
+		nullptr,
+	#endif
+		immediate_result);
 
 #ifdef MULTITHREAD_SUPPORT
 	//hand lock back to this interpreter
@@ -832,6 +837,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, boo
 	return result;
 }
 
+#ifdef MULTITHREAD_SUPPORT
+static inline void RecordStackLockForProfiling(EvaluableNode *en, StringInternPool::StringID variable_sid)
+{
+	if(Interpreter::_opcode_profiling_enabled)
+	{
+		std::string variable_location = asset_manager.GetEvaluableNodeSourceFromComments(en);
+		variable_location += string_intern_pool.GetStringFromID(variable_sid);
+		PerformanceProfiler::AccumulateLockContentionCount(variable_location);
+	}
+}
+#endif
+
 EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en, bool immediate_result)
 {
 	auto &ocn = en->GetOrderedChildNodes();
@@ -868,7 +885,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 			Concurrency::WriteLock write_lock;
 			bool need_write_lock = (scopeStackMutex != nullptr && GetScopeStackDepth() < scopeStackUniqueAccessStartingDepth);
 			if(need_write_lock)
+			{
 				LockScopeStackWithoutBlockingGarbageCollection(write_lock, required_vars);
+				RecordStackLockForProfiling(en, string_intern_pool.NOT_A_STRING_ID);
+			}
 		#endif
 
 			//get the current layer of the stack
@@ -1069,12 +1089,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			if(scopeStackMutex != nullptr && value_destination == nullptr)
 			{
 				LockScopeStackWithoutBlockingGarbageCollection(write_lock, variable_value_node);
-				if(_opcode_profiling_enabled)
-				{
-					std::string variable_location = asset_manager.GetEvaluableNodeSourceFromComments(en);
-					variable_location += string_intern_pool.GetStringFromID(variable_sid);
-					PerformanceProfiler::AccumulateLockContentionCount(variable_location);
-				}
+				RecordStackLockForProfiling(en, variable_sid);
 			}
 		#endif
 
@@ -1126,7 +1141,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		// need a write lock to the stack and variable
 		Concurrency::WriteLock write_lock;
 		if(scopeStackMutex != nullptr && value_destination == nullptr)
+		{
 			LockScopeStackWithoutBlockingGarbageCollection(write_lock, new_value);
+			RecordStackLockForProfiling(en, variable_sid);
+		}
 	#endif
 
 		//in single threaded, this will just be true
@@ -1197,7 +1215,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	// need a write lock to the stack and variable
 	Concurrency::WriteLock write_lock;
 	if(scopeStackMutex != nullptr && value_destination == nullptr)
+	{
 		LockScopeStackWithoutBlockingGarbageCollection(write_lock);
+		RecordStackLockForProfiling(en, variable_sid);
+	}
 #endif
 
 	//in single threaded, this will just be true

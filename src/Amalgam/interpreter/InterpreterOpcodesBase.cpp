@@ -837,6 +837,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_LET(EvaluableNode *en, boo
 	return result;
 }
 
+#ifdef MULTITHREAD_SUPPORT
 static inline void RecordStackLockForProfiling(EvaluableNode *en, StringInternPool::StringID variable_sid)
 {
 	if(Interpreter::_opcode_profiling_enabled)
@@ -846,6 +847,7 @@ static inline void RecordStackLockForProfiling(EvaluableNode *en, StringInternPo
 		PerformanceProfiler::AccumulateLockContentionCount(variable_location);
 	}
 }
+#endif
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en, bool immediate_result)
 {

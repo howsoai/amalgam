@@ -310,13 +310,16 @@ Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 	constructionStackNodes = nullptr;
 
 	evaluableNodeManager = enm;
+#ifdef MULTITHREAD_SUPPORT
+	scopeStackUniqueAccessStartingDepth = 0;
+#endif
 }
 
 EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	EvaluableNode *scope_stack, EvaluableNode *opcode_stack, EvaluableNode *construction_stack,
 	bool manage_stack_references,
 	std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices,
-	bool immediate_result)
+	bool immediate_result, bool own_scope_stack)
 {
 	//use specified or create new scopeStack
 	if(scope_stack == nullptr)
@@ -341,6 +344,11 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	scopeStackNodes = &scope_stack->GetOrderedChildNodes();
 	opcodeStackNodes = &opcode_stack->GetOrderedChildNodes();
 	constructionStackNodes = &construction_stack->GetOrderedChildNodes();
+
+#ifdef MULTITHREAD_SUPPORT
+	if(!own_scope_stack)
+		scopeStackUniqueAccessStartingDepth = scopeStackNodes->size();
+#endif
 
 	if(construction_stack_indices != nullptr)
 		constructionStackIndicesAndUniqueness = *construction_stack_indices;

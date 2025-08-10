@@ -202,11 +202,12 @@ public:
 	class SharedScopeStackAccess
 	{
 	public:
-		//updates summarizedScopeSlice based on scopeStackUniqueAccessStartingDepth and scopeStackUniqueAccessEndingDepth
-		inline void UpdateSummarizedScopeStack(std::vector<EvaluableNode *> &scope_stack)
+		//updates summarizedScopeSlice based on scope_stack_start and scopeStackUniqueAccessEndingDepth
+		inline void UpdateSummarizedScopeStack(std::vector<EvaluableNode *> &scope_stack,
+			size_t scope_stack_start)
 		{
 			auto new_scope_slice = std::make_unique<FastHashSet<StringInternPool::StringID>>();
-			for(size_t i = scopeStackUniqueAccessStartingDepth; i < scopeStackUniqueAccessEndingDepth; i++)
+			for(size_t i = scope_stack_start; i < scopeStackUniqueAccessEndingDepth; i++)
 			{
 				EvaluableNode *n = scope_stack[i];
 				for(auto &[var_sid, var_node] : n->GetMappedChildNodesReference())
@@ -220,9 +221,8 @@ public:
 		inline void UpdateSummarizedScopeStack(std::vector<EvaluableNode *> &scope_stack,
 			size_t scope_stack_start, size_t scope_stack_end)
 		{
-			scopeStackUniqueAccessStartingDepth = scope_stack_start;
 			scopeStackUniqueAccessEndingDepth = scope_stack_end;
-			UpdateSummarizedScopeStack(scope_stack);
+			UpdateSummarizedScopeStack(scope_stack, scope_stack_start);
 		}
 
 		//inserts sid into summarizedScopeSlice
@@ -233,9 +233,6 @@ public:
 			new_scope_slice->emplace(sid);
 			summarizedScopeSlice.swap(new_scope_slice);
 		}
-
-		//the starting depth of the scope stack where multiple threads need to lock scopeStackMutex to modify
-		size_t scopeStackUniqueAccessStartingDepth;
 
 		//the depth of the scope stack where multiple threads may modify the same variables without locking scopeStackMutex
 		size_t scopeStackUniqueAccessEndingDepth;
@@ -259,12 +256,14 @@ public:
 	// and assumes the caller has created references for all of the stacks
 	//note that construction_stack and construction_stack_indices should be specified together and should be the same length
 	//if immediate_result is true, then the returned value may be immediate
+	//if own_scope_stack is true and scope_stack is not nullptr, then it will assume it owns the whole scope stack
+	//and will not synchronize access to it
 	EvaluableNodeReference ExecuteNode(EvaluableNode *en,
 		EvaluableNode *scope_stack = nullptr, EvaluableNode *opcode_stack = nullptr,
 		EvaluableNode *construction_stack = nullptr,
 		bool manage_stack_references = true,
 		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices = nullptr,
-		bool immediate_result = false);
+		bool immediate_result = false, bool own_scope_stack = true);
 
 	//changes debugging state to debugging_enabled
 	//cannot be enabled at the same time as profiling
@@ -513,7 +512,6 @@ public:
 #endif
 	)
 	{
-		size_t stack_start = 0;
 		size_t stack_end = scopeStackNodes->size();
 
 	#ifdef MULTITHREAD_SUPPORT
@@ -523,19 +521,8 @@ public:
 
 		//if sharedScopeStackAccess is empty, then it's at the top of the stack; traverse down until next
 		auto sssa = sharedScopeStackAccess.get();
-		if(sssa == nullptr)
+		if(sssa != nullptr)
 		{
-			//no shared resources at this layer; only need stack_start if there is a callingInterpreter
-			if(callingInterpreter != nullptr)
-			{
-				auto calling_interpreter_sssa = callingInterpreter->sharedScopeStackAccess.get();
-				if(calling_interpreter_sssa != nullptr)
-					stack_start = calling_interpreter_sssa->scopeStackUniqueAccessEndingDepth;
-			}
-		}
-		else
-		{
-			stack_start = sssa->scopeStackUniqueAccessStartingDepth;
 			stack_end = sssa->scopeStackUniqueAccessEndingDepth;
 
 			if(sssa->summarizedScopeSlice != nullptr
@@ -544,6 +531,10 @@ public:
 				locking_interpreter->LockithoutBlockingGarbageCollectionIfNeeded(lock, sssa->scopeStackMutex);
 			}
 		}
+
+		size_t stack_start = scopeStackUniqueAccessStartingDepth;
+	#else
+		size_t stack_start = 0;
 	#endif
 
 		//find appropriate context for symbol by walking up the stack
@@ -565,7 +556,7 @@ public:
 		}
 
 	#ifdef MULTITHREAD_SUPPORT
-		if(stack_start > 0 && callingInterpreter != nullptr)
+		if(scopeStackUniqueAccessStartingDepth > 0 && callingInterpreter != nullptr)
 		{
 			if(lock.owns_lock())
 				lock.unlock();
@@ -591,8 +582,10 @@ public:
 		size_t scope_stack_index = scopeStackNodes->size() - 1;
 		EvaluableNode *context_to_use = (*scopeStackNodes)[scope_stack_index];
 		auto new_location = context_to_use->GetOrCreateMappedChildNode(symbol_sid);
+	#ifdef MULTITHREAD_SUPPORT
 		if(sssa != nullptr)
 			sssa->InsertIdIntoSummarizedScopeStack(*scopeStackNodes, symbol_sid);
+	#endif
 		return std::make_pair(new_location, true);
 	}
 
@@ -895,7 +888,7 @@ protected:
 					EvaluableNode *opcode_stack = enm->AllocNode(begin(*parentInterpreter->opcodeStackNodes),
 						begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
 					auto result_ref = interpreter.ExecuteNode(node_to_execute,
-						scope_stack, opcode_stack, construction_stack, true, &csiau);
+						scope_stack, opcode_stack, construction_stack, true, &csiau, false, false);
 
 					if(interpreter.PopConstructionContextAndGetExecutionSideEffectFlag())
 					{
@@ -962,7 +955,7 @@ protected:
 						begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
 					std::vector<ConstructionStackIndexAndPreviousResultUniqueness> csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
 					auto result_ref = interpreter.ExecuteNode(node_to_execute, scope_stack, opcode_stack,
-						construction_stack, true, &csiau, immediate_results);
+						construction_stack, true, &csiau, immediate_results, false);
 
 					if(interpreter.DoesConstructionStackHaveExecutionSideEffects())
 					{
@@ -1554,6 +1547,10 @@ public:
 	Concurrency::ReadLock memoryModificationLock;
 
 protected:
+
+	//the starting depth of the scope stack where multiple threads need to lock sharedScopeStackAccess->scopeStackMutex to modify
+	//if 0, then the whole stack is owned by this interpreter
+	size_t scopeStackUniqueAccessStartingDepth;
 
 	//unique pointer to a synchronization class for accessing scopeStackNodes
 	//only initialized if spawn at least one interpreter that shares the stack

@@ -630,7 +630,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 #endif
 
 	//improve performance by managing the stacks here
-	auto result = sandbox.ExecuteNode(function, scope_stack, opcode_stack, construction_stack, false, nullptr, immediate_result);
+	auto result = sandbox.ExecuteNode(function, scope_stack, opcode_stack, construction_stack,
+		false, nullptr, immediate_result);
 
 #ifdef MULTITHREAD_SUPPORT
 	//hand lock back to this interpreter
@@ -898,7 +899,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 			#ifdef MULTITHREAD_SUPPORT
 				//update any new variables; any_nonunique_assignments will be set if any new variables are inserted
 				if(any_nonunique_assignments && sharedScopeStackAccess != nullptr)
-					sharedScopeStackAccess->UpdateSummarizedScopeStack(*scopeStackNodes);
+					sharedScopeStackAccess->UpdateSummarizedScopeStack(*scopeStackNodes, scopeStackUniqueAccessStartingDepth);
 			#endif
 			}
 			else //need_to_interpret
@@ -957,7 +958,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 					#ifdef MULTITHREAD_SUPPORT
 						//if new variable inserted, update the stack
 						if(inserted && sharedScopeStackAccess != nullptr)
-							sharedScopeStackAccess->UpdateSummarizedScopeStack(*scopeStackNodes);
+							sharedScopeStackAccess->UpdateSummarizedScopeStack(*scopeStackNodes, scopeStackUniqueAccessStartingDepth);
 					#endif
 					}
 				}

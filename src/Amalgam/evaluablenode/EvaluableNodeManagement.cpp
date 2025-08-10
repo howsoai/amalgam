@@ -633,11 +633,7 @@ std::pair<EvaluableNode *, bool> EvaluableNodeManager::DeepAllocCopy(EvaluableNo
 
 EvaluableNode *EvaluableNodeManager::NonCycleDeepAllocCopy(EvaluableNode *tree, EvaluableNodeMetadataModifier metadata_modifier)
 {
-	EvaluableNode *copy = nullptr;
-	#pragma omp critical
-	{
-		copy = AllocNode(tree, metadata_modifier);
-	}
+	EvaluableNode *copy = AllocNode(tree, metadata_modifier);
 
 	if(copy->IsAssociativeArray())
 	{

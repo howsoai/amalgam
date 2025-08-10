@@ -595,11 +595,11 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 		switch(iocnt)
 		{
 		case OCNT_UNORDERED:
-			generalized_node->SetOrderedChildNodes(mm->MergeUnorderedSets(*tree1_ordered_childs, *tree2_ordered_childs));
+			generalized_node->SetOrderedChildNodes(std::move(mm->MergeUnorderedSets(*tree1_ordered_childs, *tree2_ordered_childs)));
 			break;
 
 		case OCNT_ORDERED:
-			generalized_node->SetOrderedChildNodes(mm->MergeSequences(*tree1_ordered_childs, *tree2_ordered_childs));
+			generalized_node->SetOrderedChildNodes(std::move(mm->MergeSequences(*tree1_ordered_childs, *tree2_ordered_childs)));
 			break;
 
 		case OCNT_ONE_POSITION_THEN_ORDERED:
@@ -642,11 +642,11 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 		}
 
 		case OCNT_PAIRED:
-			generalized_node->SetOrderedChildNodes(mm->MergeUnorderedSetsOfPairs(*tree1_ordered_childs, *tree2_ordered_childs));
+			generalized_node->SetOrderedChildNodes(std::move(mm->MergeUnorderedSetsOfPairs(*tree1_ordered_childs, *tree2_ordered_childs)));
 			break;
 
 		case OCNT_POSITION:
-			generalized_node->SetOrderedChildNodes(mm->MergePositions(*tree1_ordered_childs, *tree2_ordered_childs));
+			generalized_node->SetOrderedChildNodes(std::move(mm->MergePositions(*tree1_ordered_childs, *tree2_ordered_childs)));
 			break;
 
 		default:

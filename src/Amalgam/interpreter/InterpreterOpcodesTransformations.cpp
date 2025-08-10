@@ -1080,7 +1080,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SORT(EvaluableNode *en, bo
 			sorted.erase(begin(sorted) + lowest_k, end(sorted));
 		}
 
-		list->SetOrderedChildNodes(sorted, list->GetNeedCycleCheck(), list->GetIsIdempotent());
+		list->SetOrderedChildNodes(std::move(sorted), list->GetNeedCycleCheck(), list->GetIsIdempotent());
 
 		if(comparator.DidAnyComparisonHaveExecutionSideEffects())
 		{

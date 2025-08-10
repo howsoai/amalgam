@@ -95,6 +95,15 @@ public:
 		return std::make_pair(value_type, value);
 	}
 
+	//returns the resolved value with type
+	inline EvaluableNodeImmediateValueWithType GetResolvedIndexValueWithType(size_t index)
+	{
+		auto value_type = GetIndexValueType(index);
+		auto value = ResolveValue(value_type, valueEntries[index]);
+		value_type = ResolveValueType(value_type);
+		return EvaluableNodeImmediateValueWithType(value, value_type);
+	}
+
 	//returns the resolved value at the index
 	inline EvaluableNodeImmediateValue GetResolvedIndexValue(size_t index)
 	{

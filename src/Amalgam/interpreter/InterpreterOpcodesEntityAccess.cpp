@@ -115,6 +115,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 		{
 			for(auto cn : cond_node->GetOrderedChildNodesReference())
 			{
+				if(!EvaluableNode::IsQuery(cn))
+					continue;
+
 				EvaluableNodeType type = cn->GetType();
 				if(EntityQueryBuilder::IsEvaluableNodeTypeDistanceQuery(type))
 					EntityQueryBuilder::BuildDistanceCondition(cn, type, conditions, randomStream);
@@ -272,9 +275,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 
 		bool copy_entity = IsEntitySafeForModification(target_entity);
 
+		//pause if allocating to another entity
+		EvaluableNodeManager::ThreadLocalAllocationBufferPause tlab_pause;
+		if(target_entity != curEntity)
+			tlab_pause = evaluableNodeManager->PauseThreadLocalAllocationBuffer();
+
 		auto [any_success, all_success] = target_entity->SetValuesAtLabels(
 										assigned_vars, accum_assignment, direct, writeListeners,
 										(ConstrainedAllocatedNodes() ? &num_new_nodes_allocated : nullptr), target_entity == curEntity, copy_entity);
+
+		tlab_pause.Resume();
 
 		if(any_success)
 		{

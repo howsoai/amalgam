@@ -1425,12 +1425,14 @@ protected:
 	// can be swapped with _opcodes
 	static std::array<OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> _profile_opcodes;
 
+public:
 	//set to true if opcode profiling is enabled
 	static bool _opcode_profiling_enabled;
 
 	//set to true if label profiling is enabled
 	static bool _label_profiling_enabled;
 
+protected:
 	//number of items in each level of the constructionStack
 	static constexpr int64_t constructionStackOffsetStride = 4;
 

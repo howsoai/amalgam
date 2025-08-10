@@ -149,7 +149,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_NOT(EvaluableNode *en, boo
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	auto cur = InterpretNodeForImmediateUse(ocn[0], immediate_result);
+	auto cur = InterpretNodeForImmediateUse(ocn[0], true);
 	if(cur.IsImmediateValue())
 	{
 		bool is_true = cur.GetValue().GetValueAsBoolean();

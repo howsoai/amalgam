@@ -115,6 +115,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CONTAINED_ENTITIES_and_COM
 		{
 			for(auto cn : cond_node->GetOrderedChildNodesReference())
 			{
+				if(!EvaluableNode::IsQuery(cn))
+					continue;
+
 				EvaluableNodeType type = cn->GetType();
 				if(EntityQueryBuilder::IsEvaluableNodeTypeDistanceQuery(type))
 					EntityQueryBuilder::BuildDistanceCondition(cn, type, conditions, randomStream);

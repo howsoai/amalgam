@@ -391,9 +391,9 @@ void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree, bool place_n
 				FreeNodeTreeRecurse(e, place_nodes_in_tlab);
 		}
 	}
-	else
+	else if(!tree->IsImmediate())
 	{
-		for(auto &e : tree->GetOrderedChildNodes())
+		for(auto &e : tree->GetOrderedChildNodesReference())
 		{
 			if(e != nullptr)
 				FreeNodeTreeRecurse(e, place_nodes_in_tlab);

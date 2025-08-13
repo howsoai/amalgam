@@ -949,19 +949,19 @@ protected:
 	{
 		//take care of all setup and cleanup outside of the union
 		// default to numberValueContainer constructor to allow constexpr
-		inline EvaluableNodeValue() { }
-		inline ~EvaluableNodeValue() { }
+		__forceinline  EvaluableNodeValue() { }
+		__forceinline  ~EvaluableNodeValue() { }
 
-		inline void ConstructOrderedChildNodes()
+		__forceinline void ConstructOrderedChildNodes()
 		{	new (&orderedChildNodes) std::vector<EvaluableNode *>;	}
 
-		inline void DestructOrderedChildNodes()
+		__forceinline void DestructOrderedChildNodes()
 		{	orderedChildNodes.~vector();	}
 
-		inline void ConstructMappedChildNodes()
+		__forceinline void ConstructMappedChildNodes()
 		{	new (&mappedChildNodes) AssocType;	}
 
-		inline void DestructMappedChildNodes()
+		__forceinline void DestructMappedChildNodes()
 		{
 			string_intern_pool.DestroyStringReferences(mappedChildNodes, [](auto n) { return n.first; });
 			mappedChildNodes.~AssocType();

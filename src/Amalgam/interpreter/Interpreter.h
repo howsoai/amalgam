@@ -489,6 +489,16 @@ public:
 		return std::make_pair(new_location, true);
 	}
 
+	//like the other type of GetScopeStackSymbolLocation, but returns the EvaluableNode pointer instead of a pointer-to-a-pointer
+	__forceinline std::pair<EvaluableNode *, bool> GetScopeStackSymbol(const StringInternPool::StringID symbol_sid)
+	{
+		auto [node_ptr, top_of_stack] = GetScopeStackSymbolLocation(symbol_sid, false);
+		if(node_ptr == nullptr)
+			return std::make_pair(nullptr, false);
+
+		return std::make_pair(*node_ptr, true);
+	}
+
 #ifdef MULTITHREAD_SUPPORT
 	//finds a pointer to the location of the symbol's pointer to value in the top of the context stack and returns a
 	// pointer to the location of the symbol's pointer to value, nullptr if it does not exist
@@ -496,7 +506,7 @@ public:
 	//if create_if_nonexistent is true, then it will create an entry for the symbol at the top of the stack
 	//if multithreaded, then lock should be specified, and the lock type should be a write lock if a write operation is being specified (including create_if_nonexistent)
 	// and the locking_interpreter should be specified
-	std::pair<EvaluableNode **, bool> GetScopeStackSymbolLocation(StringInternPool::StringID symbol_sid,
+	std::pair<EvaluableNode **, bool> GetScopeStackSymbolLocationWithLock(StringInternPool::StringID symbol_sid,
 		bool create_if_nonexistent, Concurrency::SingleLock &lock)
 	{
 		//TODO 24212: finish this, stop if bottomOfScopeStack is true
@@ -541,7 +551,7 @@ public:
 		{
 			if(lock.owns_lock())
 				lock.unlock();
-			auto [node_ptr, top_of_stack] = callingInterpreter->GetScopeStackSymbolLocation(symbol_sid,
+			auto [node_ptr, top_of_stack] = callingInterpreter->GetScopeStackSymbolLocationWithLock(symbol_sid,
 				create_if_nonexistent, lock, locking_interpreter);
 		
 			if(node_ptr != nullptr)

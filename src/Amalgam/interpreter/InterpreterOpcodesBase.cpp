@@ -1075,7 +1075,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			//retrieve the symbol location
 		#ifdef MULTITHREAD_SUPPORT
 			Concurrency::SingleLock write_lock;
-			auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(variable_sid, true, write_lock);
+			auto [value_destination, top_of_stack] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
 			if(write_lock.owns_lock())
 				RecordStackLockForProfiling(en, variable_sid);
 		#else
@@ -1117,7 +1117,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		//retrieve the symbol location
 	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::SingleLock write_lock;
-		auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(variable_sid, true, write_lock);
+		auto [value_destination, top_of_stack] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
 		if(write_lock.owns_lock())
 			RecordStackLockForProfiling(en, variable_sid);
 	#else
@@ -1179,7 +1179,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	//retrieve the symbol location
 #ifdef MULTITHREAD_SUPPORT
 	Concurrency::SingleLock write_lock;
-	auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(variable_sid, true, write_lock);
+	auto [value_destination, top_of_stack] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
 	if(write_lock.owns_lock())
 		RecordStackLockForProfiling(en, variable_sid);
 #else

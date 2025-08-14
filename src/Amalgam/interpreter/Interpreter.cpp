@@ -367,6 +367,21 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	return retval;
 }
 
+EvaluableNode *Interpreter::GetScopeStackGivenDepth(size_t depth)
+{
+	size_t ss_size = scopeStackNodes->size();
+	if(ss_size > depth)
+		return (*scopeStackNodes)[ss_size - (depth + 1)];
+
+#ifdef MULTITHREAD_SUPPORT
+	//need to search further down the stack if appropriate
+	if(!bottomOfScopeStack && callingInterpreter != nullptr)
+		return callingInterpreter->GetScopeStackGivenDepth(depth - ss_size);
+#endif
+
+	return nullptr;
+}
+
 EvaluableNodeReference Interpreter::ConvertArgsToScopeStack(EvaluableNodeReference &args, EvaluableNodeManager &enm)
 {
 	//ensure have arguments

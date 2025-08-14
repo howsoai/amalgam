@@ -1694,16 +1694,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ARGS(EvaluableNode *en, bo
 		depth = static_cast<size_t>(value);
 	}
 
-	//make sure have a large enough stack
-	if(scopeStackNodes->size() > depth)
-	{
-		//0 index is top of stack
-		EvaluableNode *args = (*scopeStackNodes)[scopeStackNodes->size() - (depth + 1)];
-		//need to make a copy because when the scope stack is popped, it will be freed
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(args), false);
-	}
-	else
+	EvaluableNode *arg_node = GetScopeStackGivenDepth(depth);
+	if(arg_node == nullptr)
 		return EvaluableNodeReference::Null();
+
+	return EvaluableNodeReference(evaluableNodeManager->AllocNode(arg_node), false, true);
 }
 
 //given an assoc of StringID -> value representing the probability weight of each, and a random stream, it randomly selects from the assoc

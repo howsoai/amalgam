@@ -1093,12 +1093,8 @@ protected:
 			if(cur_interpreter->curEntity == entity)
 				return false;
 
-		//TODO 24212: need to revisit this, check whether any nodes are reserved
-
-		#ifdef MULTITHREAD_SUPPORT
-			if(cur_interpreter->scopeStackUniqueAccessStartingDepth > 0)
+			if(entity->evaluableNodeManager.IsAnyNodeReferencedOtherThanRoot())
 				return false;
-		#endif
 		}
 
 		return true;

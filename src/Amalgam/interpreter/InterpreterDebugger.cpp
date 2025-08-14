@@ -496,13 +496,9 @@ EvaluableNodeReference Interpreter::InterpretNode_DEBUG(EvaluableNode *en, bool 
 				EvaluableNode *node = nullptr;
 				bool value_exists = true;
 
-				size_t scope_stack_index = 0;
-				EvaluableNode **en_ptr = GetScopeStackSymbolLocation(sid, scope_stack_index);
-				if(en_ptr != nullptr)
-				{
-					node = *en_ptr;
-				}
-				else
+				bool found = false;
+				std::tie(node, found) = GetScopeStackSymbol(sid);
+				if(!found)
 				{
 					if(curEntity == nullptr)
 					{

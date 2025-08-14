@@ -629,12 +629,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 #endif
 
 	//improve performance by managing the stacks here
-	auto result = sandbox.ExecuteNode(function, scope_stack, opcode_stack, construction_stack, false,
-		nullptr,
-	#ifdef MULTITHREAD_SUPPORT
-		nullptr,
-	#endif
-		immediate_result);
+	auto result = sandbox.ExecuteNode(function, scope_stack, opcode_stack, construction_stack,
+		false, nullptr, immediate_result);
 
 #ifdef MULTITHREAD_SUPPORT
 	//hand lock back to this interpreter
@@ -1076,7 +1072,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 				}
 			}
 
-			//retrieve the symbol
+			//retrieve the symbol location
+			//TODO 24212: update below with auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(cn_id, true, write_lock);
 			size_t destination_scope_stack_index = 0;
 			EvaluableNode **value_destination = nullptr;
 
@@ -1107,7 +1104,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 			any_nonunique_assignments |= !variable_value_node.unique;
 			//if writing to an outer scope, can't guarantee the memory at this scope can be freed
-			any_nonunique_assignments |= (destination_scope_stack_index != GetScopeStackDepth());
+			any_nonunique_assignments |= !top_of_stack;
 
 			//assign back into the context_to_use
 			*value_destination = variable_value_node;
@@ -1130,7 +1127,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	{
 		auto new_value = InterpretNodeForImmediateUse(ocn[1]);
 
-		//retrieve the symbol
+		//retrieve the symbol location
+		//TODO 24212: update below with auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(cn_id, true, write_lock);
 		size_t destination_scope_stack_index = 0;
 		EvaluableNode **value_destination = nullptr;
 
@@ -1167,7 +1165,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			*value_destination = new_value;
 
 			//if writing to an outer scope, can't guarantee the memory at this scope can be freed
-			if(!new_value.unique || destination_scope_stack_index != GetScopeStackDepth())
+			if(!new_value.unique || !top_of_stack)
 				SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
 		}
 
@@ -1204,7 +1202,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	}
 	size_t num_replacements = (num_params - 1) / 2;
 
-	//retrieve the symbol
+	//retrieve the symbol location
+	//TODO 24212: update below with auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(cn_id, true, write_lock);
 	size_t destination_scope_stack_index = 0;
 	EvaluableNode **value_destination = nullptr;
 
@@ -1227,7 +1226,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		value_destination = GetOrCreateScopeStackSymbolLocation(variable_sid, destination_scope_stack_index);
 
 	//if writing to an outer scope, can't guarantee the memory at this scope can be freed
-	any_nonunique_assignments |= (destination_scope_stack_index != GetScopeStackDepth());
+	any_nonunique_assignments |= !top_of_stack;
 
 	//make a copy of value_replacement because not sure where else it may be used
 	EvaluableNode *value_replacement = nullptr;
@@ -1309,18 +1308,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 
 	auto to_lookup = InterpretNodeForImmediateUse(ocn[0]);
 
-#ifdef MULTITHREAD_SUPPORT
-	//accessing everything in the stack, so need exclusive access
-	Concurrency::ReadLock lock;
-	if(scopeStackMutex != nullptr)
-		LockScopeStackWithoutBlockingGarbageCollection(lock, to_lookup);
-#endif
-
 	//get the value(s)
 	if(EvaluableNode::IsNull(to_lookup) || IsEvaluableNodeTypeImmediate(to_lookup->GetType()))
 	{
 		StringInternPool::StringID symbol_name_sid = EvaluableNode::ToStringIDIfExists(to_lookup, true);
-		EvaluableNode* symbol_value = GetScopeStackSymbol(symbol_name_sid);
+		auto [symbol_value, found] = GetScopeStackSymbol(symbol_name_sid);
 		evaluableNodeManager->FreeNodeTreeIfPossible(to_lookup);
 		return EvaluableNodeReference(symbol_value, false);
 	}
@@ -1336,7 +1328,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 			EvaluableNodeReference cnr(cn, to_lookup.unique);
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);
 
-			cn = GetScopeStackSymbol(cn_id);
+			bool found = false;
+			std::tie(cn, found) = GetScopeStackSymbol(cn_id);
 		}
 
 		return EvaluableNodeReference(to_lookup, false);
@@ -1355,7 +1348,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 				continue;
 			}
 
-			EvaluableNode *symbol_value = GetScopeStackSymbol(symbol_name_sid);
+			auto [symbol_value, found] = GetScopeStackSymbol(symbol_name_sid);
 			//if there are values passed in, free them to be clobbered
 			EvaluableNodeReference cnr(cn, to_lookup.unique);
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);
@@ -1720,11 +1713,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OPCODE_STACK(EvaluableNode
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_STACK(EvaluableNode *en, bool immediate_result)
 {
-#ifdef MULTITHREAD_SUPPORT
-	Concurrency::ReadLock lock;
-	if(scopeStackMutex != nullptr)
-		LockScopeStackWithoutBlockingGarbageCollection(lock);
-#endif
+	//TODO 24212: need to lock stack parts before copying; can change method to use write locks only and break inner part out
 
 	//can create this node on the stack because will be making a copy
 	EvaluableNode stack_top_holder(ENT_LIST);
@@ -1745,12 +1734,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ARGS(EvaluableNode *en, bo
 	//make sure have a large enough stack
 	if(scopeStackNodes->size() > depth)
 	{
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::ReadLock lock;
-		if(scopeStackMutex != nullptr && GetScopeStackDepth() < scopeStackUniqueAccessStartingDepth)
-			LockScopeStackWithoutBlockingGarbageCollection(lock);
-	#endif
-
 		//0 index is top of stack
 		EvaluableNode *args = (*scopeStackNodes)[scopeStackNodes->size() - (depth + 1)];
 		//need to make a copy because when the scope stack is popped, it will be freed

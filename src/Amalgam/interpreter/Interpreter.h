@@ -476,6 +476,9 @@ public:
 		}
 	#endif
 
+		if(!create_if_nonexistent)
+			return std::make_pair(nullptr, false);
+
 		//didn't find it anywhere, so default it to the current top of the stack and create it
 		size_t scope_stack_index = scopeStackNodes->size() - 1;
 		EvaluableNode *context_to_use = (*scopeStackNodes)[scope_stack_index];

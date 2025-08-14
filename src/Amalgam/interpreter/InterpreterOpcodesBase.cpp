@@ -1073,27 +1073,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			}
 
 			//retrieve the symbol location
-			//TODO 24212: update below with auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(cn_id, true, write_lock);
-			size_t destination_scope_stack_index = 0;
-			EvaluableNode **value_destination = nullptr;
-
 		#ifdef MULTITHREAD_SUPPORT
-			//attempt to get location, but only attempt locations unique to this thread
-			value_destination = GetScopeStackSymbolLocation(variable_sid, destination_scope_stack_index, true, false);
-			//if editing a shared variable, need to see if it is in a shared region of the stack,
-			// need a write lock to the stack and variable
-			Concurrency::WriteLock write_lock;
-			if(scopeStackMutex != nullptr && value_destination == nullptr)
-			{
-				LockScopeStackWithoutBlockingGarbageCollection(write_lock, variable_value_node);
+			Concurrency::SingleLock write_lock;
+			auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(variable_sid, true, write_lock);
+			if(write_lock.owns_lock())
 				RecordStackLockForProfiling(en, variable_sid);
-			}
+		#else
+			auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(variable_sid, true);
 		#endif
-
-			//in single threaded, this will just be true
-			//in multithreaded, if variable was not found, then may need to create it
-			if(value_destination == nullptr)
-				value_destination = GetOrCreateScopeStackSymbolLocation(variable_sid, destination_scope_stack_index);
 
 			if(accum)
 			{
@@ -1128,27 +1115,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 		auto new_value = InterpretNodeForImmediateUse(ocn[1]);
 
 		//retrieve the symbol location
-		//TODO 24212: update below with auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(cn_id, true, write_lock);
-		size_t destination_scope_stack_index = 0;
-		EvaluableNode **value_destination = nullptr;
-
 	#ifdef MULTITHREAD_SUPPORT
-		//attempt to get location, but only attempt locations unique to this thread
-		value_destination = GetScopeStackSymbolLocation(variable_sid, destination_scope_stack_index, true, false);
-		//if editing a shared variable, need to see if it is in a shared region of the stack,
-		// need a write lock to the stack and variable
-		Concurrency::WriteLock write_lock;
-		if(scopeStackMutex != nullptr && value_destination == nullptr)
-		{
-			LockScopeStackWithoutBlockingGarbageCollection(write_lock, new_value);
+		Concurrency::SingleLock write_lock;
+		auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(variable_sid, true, write_lock);
+		if(write_lock.owns_lock())
 			RecordStackLockForProfiling(en, variable_sid);
-		}
+	#else
+		auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(variable_sid, true);
 	#endif
-
-		//in single threaded, this will just be true
-		//in multithreaded, if variable was not found, then may need to create it
-		if(value_destination == nullptr)
-			value_destination = GetOrCreateScopeStackSymbolLocation(variable_sid, destination_scope_stack_index);
 
 		if(accum)
 		{
@@ -1203,27 +1177,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	size_t num_replacements = (num_params - 1) / 2;
 
 	//retrieve the symbol location
-	//TODO 24212: update below with auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(cn_id, true, write_lock);
-	size_t destination_scope_stack_index = 0;
-	EvaluableNode **value_destination = nullptr;
-
 #ifdef MULTITHREAD_SUPPORT
-	//attempt to get location, but only attempt locations unique to this thread
-	value_destination = GetScopeStackSymbolLocation(variable_sid, destination_scope_stack_index, true, false);
-	//if editing a shared variable, need to see if it is in a shared region of the stack,
-	// need a write lock to the stack and variable
-	Concurrency::WriteLock write_lock;
-	if(scopeStackMutex != nullptr && value_destination == nullptr)
-	{
-		LockScopeStackWithoutBlockingGarbageCollection(write_lock);
+	Concurrency::SingleLock write_lock;
+	auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(variable_sid, true, write_lock);
+	if(write_lock.owns_lock())
 		RecordStackLockForProfiling(en, variable_sid);
-	}
+#else
+	auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(variable_sid, true);
 #endif
-
-	//in single threaded, this will just be true
-	//in multithreaded, if variable was not found, then may need to create it
-	if(value_destination == nullptr)
-		value_destination = GetOrCreateScopeStackSymbolLocation(variable_sid, destination_scope_stack_index);
 
 	//if writing to an outer scope, can't guarantee the memory at this scope can be freed
 	any_nonunique_assignments |= !top_of_stack;

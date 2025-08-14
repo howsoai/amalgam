@@ -530,16 +530,29 @@ public:
 				return std::make_pair(value_destination, false);
 		}
 
-		LockScopeStackTop(lock);
-
-		//TODO 24212: if need lock, need to make a copy of assoc before inserting and swap out
-		//TODO 24212: also need logic to determine if callingInterpreter has top of scope stack
+		Interpreter *interp_with_scope = LockScopeStackTop(lock);
+		std::vector<EvaluableNode *> *scope_stack_nodes = (interp_with_scope == nullptr ?
+			scopeStackNodes : interp_with_scope->scopeStackNodes);
 
 		//didn't find it anywhere, so default it to the current top of the stack and create it
 		size_t scope_stack_index = scopeStackNodes->size() - 1;
-		EvaluableNode *context_to_use = (*scopeStackNodes)[scope_stack_index];
-		auto new_location = context_to_use->GetOrCreateMappedChildNode(symbol_sid);
-		return std::make_pair(new_location, true);
+
+		if(lock.owns_lock())
+		{
+			//since all modern processors treat word writes as essentially atomic,
+			// though with no guarantees with regard to latency, we can use this behavior to not require
+			// locks for reading threads; assign this after updating the new context_to_use
+			EvaluableNode *context_to_use = evaluableNodeManager->AllocNode((*scopeStackNodes)[scope_stack_index]);
+			auto new_location = context_to_use->GetOrCreateMappedChildNode(symbol_sid);
+			(*scopeStackNodes)[scope_stack_index] = context_to_use;
+			return std::make_pair(new_location, true);
+		}
+		else
+		{
+			EvaluableNode *context_to_use = (*scopeStackNodes)[scope_stack_index];
+			auto new_location = context_to_use->GetOrCreateMappedChildNode(symbol_sid);
+			return std::make_pair(new_location, true);
+		}
 	}
 #endif
 
@@ -1067,13 +1080,8 @@ protected:
 	// may be accessed by other threads
 	//does so in a way as to not block other threads that may be waiting on garbage collection
 	//if en_to_preserve is not null, then it will create a stack saver for it if garbage collection is invoked
-	inline void LockScopeStackTop(Concurrency::SingleLock &lock, EvaluableNode *en_to_preserve = nullptr)
-	{
-		if(scopeStackNodes->size() == 0 && callingInterpreter != nullptr)
-			callingInterpreter->LockScopeStackWithoutBlockingGarbageCollection(lock, en_to_preserve);
-		else if(scopeStackMutex.get() != nullptr)
-			LockScopeStackWithoutBlockingGarbageCollection(lock, en_to_preserve);
-	}
+	//returns the interpreter that was locked (if any)
+	Interpreter *LockScopeStackTop(Concurrency::SingleLock &lock, EvaluableNode *en_to_preserve = nullptr);
 
 #endif
 
@@ -1095,7 +1103,7 @@ protected:
 	}
 
 	//if true, no limit on how much memory can utilize
-	constexpr bool ConstrainedAllocatedNodes()
+	__forceinline bool ConstrainedAllocatedNodes()
 	{
 		return (interpreterConstraints != nullptr && interpreterConstraints->ConstrainedAllocatedNodes());
 	}

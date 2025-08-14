@@ -310,13 +310,14 @@ Interpreter::Interpreter(EvaluableNodeManager *enm, RandomStream rand_stream,
 	constructionStackNodes = nullptr;
 
 	evaluableNodeManager = enm;
+	bottomOfScopeStack = true;
 }
 
 EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	EvaluableNode *scope_stack, EvaluableNode *opcode_stack, EvaluableNode *construction_stack,
 	bool manage_stack_references,
 	std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices,
-	bool immediate_result, bool own_scope_stack)
+	bool immediate_result, bool new_scope_stack)
 {
 	//use specified or create new scopeStack
 	if(scope_stack == nullptr)
@@ -342,7 +343,8 @@ EvaluableNodeReference Interpreter::ExecuteNode(EvaluableNode *en,
 	opcodeStackNodes = &opcode_stack->GetOrderedChildNodes();
 	constructionStackNodes = &construction_stack->GetOrderedChildNodes();
 
-	//TODO 24212: store own_scope_stack
+	bottomOfScopeStack = new_scope_stack;
+
 	if(construction_stack_indices != nullptr)
 		constructionStackIndicesAndUniqueness = *construction_stack_indices;
 	

@@ -204,14 +204,13 @@ public:
 	// and assumes the caller has created references for all of the stacks
 	//note that construction_stack and construction_stack_indices should be specified together and should be the same length
 	//if immediate_result is true, then the returned value may be immediate
-	//if own_scope_stack is true and scope_stack is not nullptr, then it will assume it owns the whole scope stack
-	//and will not synchronize access to it
+	//if new_scope_stack is true, it will mark that it is the bottom of the scope stack
 	EvaluableNodeReference ExecuteNode(EvaluableNode *en,
 		EvaluableNode *scope_stack = nullptr, EvaluableNode *opcode_stack = nullptr,
 		EvaluableNode *construction_stack = nullptr,
 		bool manage_stack_references = true,
 		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices = nullptr,
-		bool immediate_result = false, bool own_scope_stack = true);
+		bool immediate_result = false, bool new_scope_stack = true);
 
 	//changes debugging state to debugging_enabled
 	//cannot be enabled at the same time as profiling
@@ -451,42 +450,11 @@ public:
 	// pointer to the location of the symbol's pointer to value, nullptr if it does not exist
 	//additionally returns a bool which is true if the symbol location is at the top of the stack
 	//if create_if_nonexistent is true, then it will create an entry for the symbol at the top of the stack
-	//if multithreaded, then lock should be specified, and the lock type should be a write lock if a write operation is being specified (including create_if_nonexistent)
-	// and the locking_interpreter should be specified
-	template<typename LockType = void>
-	std::pair<EvaluableNode **, bool> GetScopeStackSymbolLocation(StringInternPool::StringID symbol_sid, bool create_if_nonexistent
-#ifdef MULTITHREAD_SUPPORT
-		, LockType &lock, Interpreter *locking_interpreter = nullptr
-#endif
-	)
+	std::pair<EvaluableNode **, bool> GetScopeStackSymbolLocation(StringInternPool::StringID symbol_sid,
+		bool create_if_nonexistent)
 	{
-		size_t stack_end = scopeStackNodes->size();
-
-	#ifdef MULTITHREAD_SUPPORT
-		//ensure the first interpreter called is always the one used for garbage collection synchronization
-		if(locking_interpreter == nullptr)
-			locking_interpreter = this;
-
-		//if sharedScopeStackAccess is empty, then it's at the top of the stack; traverse down until next
-		auto sssa = sharedScopeStackAccess.get();
-		if(sssa != nullptr)
-		{
-			stack_end = sssa->scopeStackUniqueAccessEndingDepth;
-
-			if(sssa->summarizedScopeSlice != nullptr
-					&& sssa->summarizedScopeSlice->find(symbol_sid) != end(*sssa->summarizedScopeSlice))
-			{
-				locking_interpreter->LockithoutBlockingGarbageCollectionIfNeeded(lock, sssa->scopeStackMutex);
-			}
-		}
-
-		size_t stack_start = scopeStackUniqueAccessStartingDepth;
-	#else
-		size_t stack_start = 0;
-	#endif
-
 		//find appropriate context for symbol by walking up the stack
-		for(size_t scope_stack_index = stack_end; scope_stack_index > stack_start; scope_stack_index--)
+		for(size_t scope_stack_index = scopeStackNodes->size(); scope_stack_index > 0; scope_stack_index--)
 		{
 			EvaluableNode *cur_context = (*scopeStackNodes)[scope_stack_index - 1];
 
@@ -504,6 +472,71 @@ public:
 		}
 
 	#ifdef MULTITHREAD_SUPPORT
+		//need to search further down the stack if appropriate
+		if(!bottomOfScopeStack && callingInterpreter != nullptr)
+		{
+			auto [value_destination, top_of_stack] = callingInterpreter->GetScopeStackSymbolLocation(
+				symbol_sid, false);
+			if(value_destination != nullptr)
+				return std::make_pair(value_destination, false);
+		}
+	#endif
+
+		//didn't find it anywhere, so default it to the current top of the stack and create it
+		size_t scope_stack_index = scopeStackNodes->size() - 1;
+		EvaluableNode *context_to_use = (*scopeStackNodes)[scope_stack_index];
+		auto new_location = context_to_use->GetOrCreateMappedChildNode(symbol_sid);
+		return std::make_pair(new_location, true);
+	}
+
+#ifdef MULTITHREAD_SUPPORT
+	//finds a pointer to the location of the symbol's pointer to value in the top of the context stack and returns a
+	// pointer to the location of the symbol's pointer to value, nullptr if it does not exist
+	//additionally returns a bool which is true if the symbol location is at the top of the stack
+	//if create_if_nonexistent is true, then it will create an entry for the symbol at the top of the stack
+	//if multithreaded, then lock should be specified, and the lock type should be a write lock if a write operation is being specified (including create_if_nonexistent)
+	// and the locking_interpreter should be specified
+	std::pair<EvaluableNode **, bool> GetScopeStackSymbolLocation(StringInternPool::StringID symbol_sid,
+		bool create_if_nonexistent, Concurrency::SingleLock &lock)
+	{
+		//TODO 24212: finish this, stop if bottomOfScopeStack is true
+		size_t stack_end = scopeStackNodes->size();
+
+		//ensure the first interpreter called is always the one used for garbage collection synchronization
+		if(locking_interpreter == nullptr)
+			locking_interpreter = this;
+
+		//if sharedScopeStackAccess is empty, then it's at the top of the stack; traverse down until next
+		auto sssa = sharedScopeStackAccess.get();
+		if(sssa != nullptr)
+		{
+			stack_end = sssa->scopeStackUniqueAccessEndingDepth;
+
+			if(sssa->summarizedScopeSlice != nullptr
+					&& sssa->summarizedScopeSlice->find(symbol_sid) != end(*sssa->summarizedScopeSlice))
+			{
+				locking_interpreter->LockithoutBlockingGarbageCollectionIfNeeded(lock, sssa->scopeStackMutex);
+			}
+		}
+
+		//find appropriate context for symbol by walking up the stack
+		for(size_t scope_stack_index = stack_end; scope_stack_index > 0; scope_stack_index--)
+		{
+			EvaluableNode *cur_context = (*scopeStackNodes)[scope_stack_index - 1];
+
+			//see if this level of the stack contains the symbol
+			auto &mcn = cur_context->GetMappedChildNodesReference();
+			auto found = mcn.find(symbol_sid);
+			if(found != end(mcn))
+			{
+				//subtract one here to match the subtraction above
+				scope_stack_index--;
+
+				//return the location and whether top of stack
+				return std::make_pair(&found->second, scope_stack_index == scopeStackNodes->size());
+			}
+		}
+
 		if(scopeStackUniqueAccessStartingDepth > 0 && callingInterpreter != nullptr)
 		{
 			if(lock.owns_lock())
@@ -514,43 +547,26 @@ public:
 			if(node_ptr != nullptr)
 				return std::make_pair(node_ptr, top_of_stack);
 		}
-	#endif
 
 		//if not creating or if creating and not at top of stack, just return
 		if(!create_if_nonexistent || stack_end != scopeStackNodes->size())
 			return std::make_pair(nullptr, false);
 
-	#ifdef MULTITHREAD_SUPPORT
+		//TODO 24212: if need lock, need to make a copy of assoc before inserting and swap out
 		//lock if need a lock
 		if(sssa != nullptr)
 			locking_interpreter->LockithoutBlockingGarbageCollectionIfNeeded(lock, sssa->scopeStackMutex);
-	#endif
 
 		//didn't find it anywhere, so default it to the current top of the stack and create it
 		size_t scope_stack_index = scopeStackNodes->size() - 1;
 		EvaluableNode *context_to_use = (*scopeStackNodes)[scope_stack_index];
 		auto new_location = context_to_use->GetOrCreateMappedChildNode(symbol_sid);
-	#ifdef MULTITHREAD_SUPPORT
 		if(sssa != nullptr)
 			sssa->InsertIdIntoSummarizedScopeStack(*scopeStackNodes, symbol_sid);
-	#endif
+
 		return std::make_pair(new_location, true);
 	}
-
-	//like the other type of GetScopeStackSymbolLocation, but returns the EvaluableNode pointer instead of a pointer-to-a-pointer
-	__forceinline std::pair<EvaluableNode *, bool> GetScopeStackSymbol(const StringInternPool::StringID symbol_sid)
-	{
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::ReadLock read_lock;
-		auto [node_ptr, top_of_stack] = GetScopeStackSymbolLocation(symbol_sid, false, read_lock);
-	#else
-		auto [node_ptr, top_of_stack] = GetScopeStackSymbolLocation(symbol_sid, false);
-	#endif
-		if(node_ptr == nullptr)
-			return std::make_pair(nullptr, false);
-
-		return std::make_pair(*node_ptr, true);
-	}
+#endif
 
 	//returns the current scope stack index
 	__forceinline size_t GetScopeStackDepth()
@@ -785,6 +801,9 @@ protected:
 			//since each thread has a copy of the constructionStackNodes, it's possible that more than one of the threads
 			//obtains previous_results, so they must all be marked as not unique
 			parentInterpreter->RemoveUniquenessFromPreviousResultsInConstructionStack();
+
+			//need to create a mutex for all interpreters that will be called
+			parentInterpreter->scopeStackMutex = std::make_unique<Concurrency::SingleMutex>();
 		}
 
 		//Enqueues a concurrent task that needs a construction stack, using the relative interpreter
@@ -820,11 +839,10 @@ protected:
 					interpreter.PushNewConstructionContextToStack(construction_stack->GetOrderedChildNodes(),
 						csiau, target_origin, target, current_index, current_value, EvaluableNodeReference::Null());
 
-					EvaluableNode *scope_stack = enm->AllocNode(*parentInterpreter->scopeStackNodes);
 					EvaluableNode *opcode_stack = enm->AllocNode(begin(*parentInterpreter->opcodeStackNodes),
 						begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
 					auto result_ref = interpreter.ExecuteNode(node_to_execute,
-						scope_stack, opcode_stack, construction_stack, true, &csiau, false, false);
+						nullptr, opcode_stack, construction_stack, true, &csiau, false, false);
 
 					if(interpreter.PopConstructionContextAndGetExecutionSideEffectFlag())
 					{
@@ -834,7 +852,6 @@ protected:
 					}
 					
 					enm->FreeNode(construction_stack);
-					enm->FreeNode(scope_stack);
 					enm->FreeNode(opcode_stack);
 
 					if(result_ref.unique)
@@ -886,11 +903,10 @@ protected:
 					interpreter.memoryModificationLock = Concurrency::ReadLock(enm->memoryModificationMutex);
 
 					EvaluableNode *construction_stack = enm->AllocNode(*parentInterpreter->constructionStackNodes);
-					EvaluableNode *scope_stack = enm->AllocNode(*parentInterpreter->scopeStackNodes);
 					EvaluableNode *opcode_stack = enm->AllocNode(begin(*parentInterpreter->opcodeStackNodes),
 						begin(*parentInterpreter->opcodeStackNodes) + resultsSaverFirstTaskOffset);
 					std::vector<ConstructionStackIndexAndPreviousResultUniqueness> csiau(parentInterpreter->constructionStackIndicesAndUniqueness);
-					auto result_ref = interpreter.ExecuteNode(node_to_execute, scope_stack, opcode_stack,
+					auto result_ref = interpreter.ExecuteNode(node_to_execute, nullptr, opcode_stack,
 						construction_stack, true, &csiau, immediate_results, false);
 
 					if(interpreter.DoesConstructionStackHaveExecutionSideEffects())
@@ -899,7 +915,6 @@ protected:
 					}
 
 					enm->FreeNode(construction_stack);
-					enm->FreeNode(scope_stack);
 					enm->FreeNode(opcode_stack);
 
 					if(result == nullptr)
@@ -944,6 +959,9 @@ protected:
 			parentInterpreter->memoryModificationLock.unlock();
 			taskSet.WaitForTasks(taskEnqueueLock);
 			parentInterpreter->memoryModificationLock.lock();
+
+			//release scope stack mutex
+			parentInterpreter->scopeStackMutex.reset();
 
 			//propagate side effects back up
 			if(resultsSideEffect)
@@ -1499,6 +1517,9 @@ protected:
 
 	//if the scope stack is shared, then this will be allocated and not nullptr
 	std::unique_ptr<Concurrency::SingleMutex> scopeStackMutex;
+
+	//if true, then callingInterpreter uses a different scope stack
+	bool bottomOfScopeStack;
 
 #endif
 

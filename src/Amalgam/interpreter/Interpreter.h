@@ -210,7 +210,11 @@ public:
 		EvaluableNode *construction_stack = nullptr,
 		bool manage_stack_references = true,
 		std::vector<ConstructionStackIndexAndPreviousResultUniqueness> *construction_stack_indices = nullptr,
-		bool immediate_result = false, bool new_scope_stack = true);
+		bool immediate_result = false
+	#ifdef MULTITHREAD_SUPPORT
+		, bool new_scope_stack = true
+	#endif
+	);
 
 	//changes debugging state to debugging_enabled
 	//cannot be enabled at the same time as profiling

@@ -450,25 +450,15 @@ public:
 	// pointer to the location of the symbol's pointer to value, nullptr if it does not exist
 	//additionally returns a bool which is true if the symbol location is at the top of the stack
 	//if create_if_nonexistent is true, then it will create an entry for the symbol at the top of the stack
-	std::pair<EvaluableNode **, bool> GetScopeStackSymbolLocation(StringInternPool::StringID symbol_sid,
+	inline std::pair<EvaluableNode **, bool> GetScopeStackSymbolLocation(StringInternPool::StringID symbol_sid,
 		bool create_if_nonexistent)
 	{
 		//find appropriate context for symbol by walking up the stack
-		for(size_t scope_stack_index = scopeStackNodes->size(); scope_stack_index > 0; scope_stack_index--)
+		for(auto it = rbegin(*scopeStackNodes); it != rend(*scopeStackNodes); ++it)
 		{
-			EvaluableNode *cur_context = (*scopeStackNodes)[scope_stack_index - 1];
-
-			//see if this level of the stack contains the symbol
-			auto &mcn = cur_context->GetMappedChildNodesReference();
-			auto found = mcn.find(symbol_sid);
-			if(found != end(mcn))
-			{
-				//subtract one here to match the subtraction above
-				scope_stack_index--;
-
-				//return the location and whether top of stack
-				return std::make_pair(&found->second, scope_stack_index == scopeStackNodes->size());
-			}
+			auto &mcn = (*it)->GetMappedChildNodesReference();
+			if(auto found = mcn.find(symbol_sid); found != end(mcn))
+				return std::make_pair(&found->second, it == rbegin(*scopeStackNodes));
 		}
 
 	#ifdef MULTITHREAD_SUPPORT
@@ -509,71 +499,46 @@ public:
 	std::pair<EvaluableNode **, bool> GetScopeStackSymbolLocationWithLock(StringInternPool::StringID symbol_sid,
 		bool create_if_nonexistent, Concurrency::SingleLock &lock)
 	{
-		//TODO 24212: finish this, stop if bottomOfScopeStack is true
-		size_t stack_end = scopeStackNodes->size();
-
-		//ensure the first interpreter called is always the one used for garbage collection synchronization
-		if(locking_interpreter == nullptr)
-			locking_interpreter = this;
-
-		//if sharedScopeStackAccess is empty, then it's at the top of the stack; traverse down until next
-		auto sssa = sharedScopeStackAccess.get();
-		if(sssa != nullptr)
-		{
-			stack_end = sssa->scopeStackUniqueAccessEndingDepth;
-
-			if(sssa->summarizedScopeSlice != nullptr
-					&& sssa->summarizedScopeSlice->find(symbol_sid) != end(*sssa->summarizedScopeSlice))
-			{
-				locking_interpreter->LockithoutBlockingGarbageCollectionIfNeeded(lock, sssa->scopeStackMutex);
-			}
-		}
-
 		//find appropriate context for symbol by walking up the stack
-		for(size_t scope_stack_index = stack_end; scope_stack_index > 0; scope_stack_index--)
+		//acquire lock if found
+		for(size_t scope_stack_index = scopeStackNodes->size(); scope_stack_index > 0; scope_stack_index--)
 		{
 			EvaluableNode *cur_context = (*scopeStackNodes)[scope_stack_index - 1];
-
-			//see if this level of the stack contains the symbol
 			auto &mcn = cur_context->GetMappedChildNodesReference();
-			auto found = mcn.find(symbol_sid);
-			if(found != end(mcn))
+			if(auto found = mcn.find(symbol_sid); found != end(mcn))
 			{
-				//subtract one here to match the subtraction above
-				scope_stack_index--;
+				if(scopeStackMutex != nullptr)
+				{
+					LockScopeStackWithoutBlockingGarbageCollection(lock);
 
-				//return the location and whether top of stack
+					//need to refetch after lock in case object has changed
+					cur_context = (*scopeStackNodes)[scope_stack_index - 1];
+					mcn = cur_context->GetMappedChildNodesReference();
+					found = mcn.find(symbol_sid);
+				}
+
 				return std::make_pair(&found->second, scope_stack_index == scopeStackNodes->size());
 			}
 		}
 
-		if(scopeStackUniqueAccessStartingDepth > 0 && callingInterpreter != nullptr)
+		//need to search further down the stack if appropriate
+		if(!bottomOfScopeStack && callingInterpreter != nullptr)
 		{
-			if(lock.owns_lock())
-				lock.unlock();
-			auto [node_ptr, top_of_stack] = callingInterpreter->GetScopeStackSymbolLocationWithLock(symbol_sid,
-				create_if_nonexistent, lock, locking_interpreter);
-		
-			if(node_ptr != nullptr)
-				return std::make_pair(node_ptr, top_of_stack);
+			auto [value_destination, top_of_stack] = callingInterpreter->GetScopeStackSymbolLocationWithLock(
+				symbol_sid, false, lock);
+			if(value_destination != nullptr)
+				return std::make_pair(value_destination, false);
 		}
 
-		//if not creating or if creating and not at top of stack, just return
-		if(!create_if_nonexistent || stack_end != scopeStackNodes->size())
-			return std::make_pair(nullptr, false);
+		LockScopeStackTop(lock);
 
 		//TODO 24212: if need lock, need to make a copy of assoc before inserting and swap out
-		//lock if need a lock
-		if(sssa != nullptr)
-			locking_interpreter->LockithoutBlockingGarbageCollectionIfNeeded(lock, sssa->scopeStackMutex);
+		//TODO 24212: also need logic to determine if callingInterpreter has top of scope stack
 
 		//didn't find it anywhere, so default it to the current top of the stack and create it
 		size_t scope_stack_index = scopeStackNodes->size() - 1;
 		EvaluableNode *context_to_use = (*scopeStackNodes)[scope_stack_index];
 		auto new_location = context_to_use->GetOrCreateMappedChildNode(symbol_sid);
-		if(sssa != nullptr)
-			sssa->InsertIdIntoSummarizedScopeStack(*scopeStackNodes, symbol_sid);
-
 		return std::make_pair(new_location, true);
 	}
 #endif

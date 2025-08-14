@@ -1023,15 +1023,20 @@ bool Interpreter::InterpretEvaluableNodesConcurrently(EvaluableNode *parent_node
 	return true;
 }
 
-Interpreter *Interpreter::LockScopeStackTop(Concurrency::SingleLock &lock, EvaluableNode *en_to_preserve)
+Interpreter *Interpreter::LockScopeStackTop(Concurrency::SingleLock &lock, EvaluableNode *en_to_preserve,
+	Interpreter *executing_interpreter)
 {
 	if(scopeStackNodes->size() == 0 && callingInterpreter != nullptr)
 	{
-		return callingInterpreter->LockScopeStackTop(lock, en_to_preserve);
+		return callingInterpreter->LockScopeStackTop(lock, en_to_preserve,
+			executing_interpreter == nullptr ? this : executing_interpreter);
 	}
 	else if(scopeStackMutex.get() != nullptr)
 	{
-		LockScopeStackWithoutBlockingGarbageCollection(lock, en_to_preserve);
+		if(executing_interpreter != nullptr)
+			executing_interpreter->LockMutexWithoutBlockingGarbageCollection(lock, *scopeStackMutex, en_to_preserve);
+		else
+			LockMutexWithoutBlockingGarbageCollection(lock, *scopeStackMutex, en_to_preserve);
 		return this;
 	}
 

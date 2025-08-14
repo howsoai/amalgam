@@ -961,7 +961,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 					#ifdef MULTITHREAD_SUPPORT
 						//relock if needed before assigning the value
 						if(need_write_lock)
-							LockScopeStackWithoutBlockingGarbageCollection(write_lock, required_vars);
+							LockScopeStackTop(write_lock, required_vars);
 					#endif
 
 						scope->SetMappedChildNode(cn_id, value, false);

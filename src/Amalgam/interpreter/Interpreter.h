@@ -501,10 +501,9 @@ public:
 	// pointer to the location of the symbol's pointer to value, nullptr if it does not exist
 	//additionally returns a bool which is true if the symbol location is at the top of the stack
 	//if create_if_nonexistent is true, then it will create an entry for the symbol at the top of the stack
-	//if multithreaded, then lock should be specified, and the lock type should be a write lock if a write operation is being specified (including create_if_nonexistent)
-	// and the locking_interpreter should be specified
+	//executing_interpreter is the interpreter that will be used for garbage collection if needed
 	std::pair<EvaluableNode **, bool> GetScopeStackSymbolLocationWithLock(StringInternPool::StringID symbol_sid,
-		bool create_if_nonexistent, Concurrency::SingleLock &lock)
+		bool create_if_nonexistent, Concurrency::SingleLock &lock, Interpreter *executing_interpreter = nullptr)
 	{
 		//find appropriate context for symbol by walking up the stack
 		//acquire lock if found
@@ -516,7 +515,10 @@ public:
 			{
 				if(scopeStackMutex != nullptr)
 				{
-					LockScopeStackWithoutBlockingGarbageCollection(lock);
+					if(executing_interpreter != nullptr)
+						executing_interpreter->LockMutexWithoutBlockingGarbageCollection(lock, *scopeStackMutex);
+					else
+						LockMutexWithoutBlockingGarbageCollection(lock, *scopeStackMutex);
 
 					//need to refetch after lock in case object has changed
 					cur_context = (*scopeStackNodes)[scope_stack_index - 1];
@@ -532,12 +534,12 @@ public:
 		if(!bottomOfScopeStack && callingInterpreter != nullptr)
 		{
 			auto [value_destination, top_of_stack] = callingInterpreter->GetScopeStackSymbolLocationWithLock(
-				symbol_sid, false, lock);
+				symbol_sid, false, lock, executing_interpreter == nullptr ? this : executing_interpreter);
 			if(value_destination != nullptr)
 				return std::make_pair(value_destination, false);
 		}
 
-		Interpreter *interp_with_scope = LockScopeStackTop(lock);
+		Interpreter *interp_with_scope = LockScopeStackTop(lock, nullptr, executing_interpreter);
 		std::vector<EvaluableNode *> *scope_stack_nodes = (interp_with_scope == nullptr ?
 			scopeStackNodes : interp_with_scope->scopeStackNodes);
 
@@ -1061,10 +1063,11 @@ protected:
 	//acquires lock of scopeStackMutex and assumes it is not nullptr,
 	// but does so in a way as to not block other threads that may be waiting on garbage collection
 	//if en_to_preserve is not null, then it will create a stack saver for it if garbage collection is invoked
-	inline void LockScopeStackWithoutBlockingGarbageCollection(
-		Concurrency::SingleLock &lock, EvaluableNode *en_to_preserve = nullptr)
+	template<typename LockType, typename MutexType>
+	inline void LockMutexWithoutBlockingGarbageCollection(
+		LockType &lock, MutexType &mutex, EvaluableNode *en_to_preserve = nullptr)
 	{
-		lock = Concurrency::SingleLock(*scopeStackMutex, std::defer_lock);
+		lock = LockType(mutex, std::defer_lock);
 		//if there is lock contention, but one is blocking for garbage collection,
 		// keep checking until it can get the lock
 		if(en_to_preserve)
@@ -1088,7 +1091,8 @@ protected:
 	//does so in a way as to not block other threads that may be waiting on garbage collection
 	//if en_to_preserve is not null, then it will create a stack saver for it if garbage collection is invoked
 	//returns the interpreter that was locked (if any)
-	Interpreter *LockScopeStackTop(Concurrency::SingleLock &lock, EvaluableNode *en_to_preserve = nullptr);
+	Interpreter *LockScopeStackTop(Concurrency::SingleLock &lock, EvaluableNode *en_to_preserve = nullptr,
+		Interpreter *executing_interpreter = nullptr);
 
 #endif
 

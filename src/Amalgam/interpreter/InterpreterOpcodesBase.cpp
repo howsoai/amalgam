@@ -878,11 +878,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 		if(required_vars != nullptr && required_vars->IsAssociativeArray())
 		{
 		#ifdef MULTITHREAD_SUPPORT
-			Concurrency::WriteLock write_lock;
-			bool need_write_lock = (scopeStackMutex != nullptr && GetScopeStackDepth() < scopeStackUniqueAccessStartingDepth);
+			Concurrency::SingleLock write_lock;
+			bool need_write_lock = HasSharedScopeStackTop();
 			if(need_write_lock)
 			{
-				LockScopeStackWithoutBlockingGarbageCollection(write_lock, required_vars);
+				LockScopeStackTop(write_lock, required_vars);
 				RecordStackLockForProfiling(en, string_intern_pool.NOT_A_STRING_ID);
 			}
 		#endif

@@ -971,24 +971,9 @@ protected:
 			return resultsSideEffect;
 		}
 
-		//returns the relevant write mutex for the scope stack
-		constexpr Concurrency::ReadWriteMutex *GetScopeStackMutex()
-		{
-			//if there is one currently in use, use it
-			if(parentInterpreter->scopeStackMutex != nullptr)
-				return parentInterpreter->scopeStackMutex;
-
-			//start a new one
-			return &scopeStackMutex;
-		}
-
 	protected:
 		//random seed for each task, the size of numTasks
 		std::vector<RandomStream> randomSeeds;
-
-		//mutex to allow only one thread to write to a scope stack symbol at once
-		//reads are done lock-free
-		Concurrency::SingleMutex scopeStackMutex;
 
 		//a barrier to wait for the tasks being run
 		ThreadPool::CountableTaskSet taskSet;
@@ -1039,14 +1024,34 @@ protected:
 		std::vector<EvaluableNode *> &nodes, std::vector<EvaluableNodeReference> &interpreted_nodes,
 		bool immediate_results = false);
 
+	//returns true if this Interpreter shares the stack with others
+	inline bool HasSharedScopeStackTop()
+	{
+		//if this interpreter has a mutex, then it's shared
+		if(scopeStackMutex.get() != nullptr)
+			return false;
+
+		//if doesn't own any scope stack of its own, then it's shared
+		//and callingInterpreter will have it
+		return scopeStackNodes->size() == 0;
+	}
+
+	//returns the relevant write mutex for the scope stack
+	inline bool HasSharedScopeStackWithCallingInterpreter()
+	{
+		if(callingInterpreter == nullptr)
+			return false;
+
+		return callingInterpreter->scopeStackMutex.get() != nullptr;
+	}
+
 	//acquires lock of scopeStackMutex and assumes it is not nullptr,
 	// but does so in a way as to not block other threads that may be waiting on garbage collection
 	//if en_to_preserve is not null, then it will create a stack saver for it if garbage collection is invoked
-	template<typename LockType>
 	inline void LockScopeStackWithoutBlockingGarbageCollection(
-		LockType &lock, EvaluableNode *en_to_preserve = nullptr)
+		Concurrency::SingleLock &lock, EvaluableNode *en_to_preserve = nullptr)
 	{
-		lock = LockType(*scopeStackMutex, std::defer_lock);
+		lock = Concurrency::SingleLock(*scopeStackMutex, std::defer_lock);
 		//if there is lock contention, but one is blocking for garbage collection,
 		// keep checking until it can get the lock
 		if(en_to_preserve)
@@ -1069,16 +1074,12 @@ protected:
 	// may be accessed by other threads
 	//does so in a way as to not block other threads that may be waiting on garbage collection
 	//if en_to_preserve is not null, then it will create a stack saver for it if garbage collection is invoked
-	template<typename LockType>
-	inline void LockScopeStackTop(size_t scope_depth_index,
-		LockType &lock, EvaluableNode *en_to_preserve = nullptr)
+	inline void LockScopeStackTop(Concurrency::SingleLock &lock, EvaluableNode *en_to_preserve = nullptr)
 	{
-		//if no sharedScopeStackAccess or beyond top, don't need to lock
-		if(sharedScopeStackAccess == nullptr
-				|| GetScopeStackDepth() >= sharedScopeStackAccess->scopeStackUniqueAccessEndingDepth)
-			return;
-
-		LockithoutBlockingGarbageCollectionIfNeeded(lock, sharedScopeStackAccess->scopeStackMutex, en_to_preserve);
+		if(scopeStackNodes->size() == 0 && callingInterpreter != nullptr)
+			callingInterpreter->LockScopeStackWithoutBlockingGarbageCollection(lock, en_to_preserve);
+		else if(scopeStackMutex.get() != nullptr)
+			LockScopeStackWithoutBlockingGarbageCollection(lock, en_to_preserve);
 	}
 
 #endif
@@ -1496,8 +1497,8 @@ public:
 
 protected:
 
-	//TODO 24212: is this needed here?
-	Concurrency::SingleMutex scopeStackMutex;
+	//if the scope stack is shared, then this will be allocated and not nullptr
+	std::unique_ptr<Concurrency::SingleMutex> scopeStackMutex;
 
 #endif
 

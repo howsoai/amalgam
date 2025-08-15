@@ -176,20 +176,20 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 	if(sid == StringInternPool::NOT_A_STRING_ID)
 		return EvaluableNodeReference::Null();
 
-	auto [value, found] = GetScopeStackSymbol(sid);
+	auto [symbol_value, found] = GetScopeStackSymbol(sid);
 	if(found)
-		return EvaluableNodeReference(value, false);
+		return EvaluableNodeReference(symbol_value, false);
 
 	// if didn't find it in the stack, try it in the labels
 	EntityReadReference cur_entity_ref(curEntity);
 	if(cur_entity_ref != nullptr)
 	{
-		std::tie(value, found) = cur_entity_ref->GetValueAtLabel(sid, nullptr, true, true);
+		auto [label_value, label_found] = cur_entity_ref->GetValueAtLabel(sid, nullptr, true, true);
 
-		if(!found)
+		if(!label_found)
 			EmitOrLogUndefinedVariableWarningIfNeeded(sid, en);
 
-		return value;
+		return label_value;
 	}
 
 	EmitOrLogUndefinedVariableWarningIfNeeded(sid, en);

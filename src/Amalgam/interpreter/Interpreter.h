@@ -550,21 +550,21 @@ public:
 			scopeStackNodes : interp_with_scope->scopeStackNodes);
 
 		//didn't find it anywhere, so default it to the current top of the stack and create it
-		size_t scope_stack_index = scopeStackNodes->size() - 1;
+		size_t scope_stack_index = scope_stack_nodes->size() - 1;
 
 		if(lock.owns_lock())
 		{
 			//since all modern processors treat word writes as essentially atomic,
 			// though with no guarantees with regard to latency, we can use this behavior to not require
 			// locks for reading threads; assign this after updating the new context_to_use
-			EvaluableNode *context_to_use = evaluableNodeManager->AllocNode((*scopeStackNodes)[scope_stack_index]);
+			EvaluableNode *context_to_use = evaluableNodeManager->AllocNode((*scope_stack_nodes)[scope_stack_index]);
 			auto new_location = context_to_use->GetOrCreateMappedChildNode(symbol_sid);
-			(*scopeStackNodes)[scope_stack_index] = context_to_use;
+			(*scope_stack_nodes)[scope_stack_index] = context_to_use;
 			return std::make_pair(new_location, true);
 		}
 		else
 		{
-			EvaluableNode *context_to_use = (*scopeStackNodes)[scope_stack_index];
+			EvaluableNode *context_to_use = (*scope_stack_nodes)[scope_stack_index];
 			auto new_location = context_to_use->GetOrCreateMappedChildNode(symbol_sid);
 			return std::make_pair(new_location, true);
 		}

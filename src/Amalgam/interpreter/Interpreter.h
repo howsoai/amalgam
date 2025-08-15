@@ -287,6 +287,9 @@ public:
 	//returns the node from scopeStackNodes given the depth, nullptr if it doesn't exist
 	EvaluableNode *GetScopeStackGivenDepth(size_t depth);
 
+	//returns a copy of the scope stack
+	EvaluableNode *MakeCopyOfScopeStack();
+
 	//pushes a new construction context on the stack, which is assumed to not be nullptr
 	//the stack is indexed via the constructionStackOffset* constants
 	//target_origin is the original node of target useful for keeping track of the reference

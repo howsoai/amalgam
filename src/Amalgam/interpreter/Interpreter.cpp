@@ -382,6 +382,32 @@ EvaluableNode *Interpreter::GetScopeStackGivenDepth(size_t depth)
 	return nullptr;
 }
 
+EvaluableNode *Interpreter::MakeCopyOfScopeStack()
+{
+	EvaluableNode stack_top_holder(ENT_LIST);
+	stack_top_holder.SetOrderedChildNodes(*scopeStackNodes);
+	EvaluableNodeReference copied_stack = evaluableNodeManager->DeepAllocCopy(&stack_top_holder);
+
+#ifdef MULTITHREAD_SUPPORT
+	//copy the rest of the stack if there is more
+	if(!bottomOfScopeStack)
+	{
+		auto &stack_nodes_ocn = copied_stack->GetOrderedChildNodesReference();
+		for(Interpreter *interp = callingInterpreter; interp != nullptr; interp = interp->callingInterpreter)
+		{
+			stack_nodes_ocn.insert(begin(stack_nodes_ocn), scopeStackNodes->size(), nullptr);
+			for(size_t i = 0; i < scopeStackNodes->size(); i++)
+				stack_nodes_ocn[i] = evaluableNodeManager->DeepAllocCopy((*scopeStackNodes)[i]);
+
+			if(interp->bottomOfScopeStack)
+				break;
+		}
+	}
+#endif
+
+	return copied_stack;
+}
+
 EvaluableNodeReference Interpreter::ConvertArgsToScopeStack(EvaluableNodeReference &args, EvaluableNodeManager &enm)
 {
 	//ensure have arguments

@@ -1674,14 +1674,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OPCODE_STACK(EvaluableNode
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_STACK(EvaluableNode *en, bool immediate_result)
 {
-	//can create this node on the stack because will be making a copy
-	EvaluableNode stack_top_holder(ENT_LIST);
-	stack_top_holder.SetOrderedChildNodes(*scopeStackNodes);
-	EvaluableNodeReference copied_stack = evaluableNodeManager->DeepAllocCopy(&stack_top_holder);
-
-	//TODO 24212: need to lock stack parts and append under stack
-
-	return copied_stack;
+	//make a copy in case anything is changed in the future
+	return EvaluableNodeReference(MakeCopyOfScopeStack(), true);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ARGS(EvaluableNode *en, bool immediate_result)

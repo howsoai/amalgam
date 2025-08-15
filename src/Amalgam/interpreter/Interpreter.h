@@ -542,6 +542,9 @@ public:
 				return std::make_pair(value_destination, false);
 		}
 
+		if(!create_if_nonexistent)
+			return std::make_pair(nullptr, false);
+
 		Interpreter *interp_with_scope = LockScopeStackTop(lock, nullptr, executing_interpreter);
 		std::vector<EvaluableNode *> *scope_stack_nodes = (interp_with_scope == nullptr ?
 			scopeStackNodes : interp_with_scope->scopeStackNodes);

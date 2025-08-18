@@ -172,45 +172,20 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 	if(sid == StringInternPool::NOT_A_STRING_ID)
 		return EvaluableNodeReference::Null();
 
-	size_t scope_stack_index = 0;
-#ifdef MULTITHREAD_SUPPORT
-	if(scopeStackMutex != nullptr)
-	{
-		//first check unique
-		EvaluableNode **value_ptr = GetScopeStackSymbolLocation(sid, scope_stack_index, true, false);
-		if(value_ptr != nullptr)
-			return EvaluableNodeReference(*value_ptr, false);
-
-		Concurrency::ReadLock lock;
-		LockScopeStackWithoutBlockingGarbageCollection(lock);
-
-		//now check shared
-		value_ptr = GetScopeStackSymbolLocation(sid, scope_stack_index, false, true);
-		if(value_ptr != nullptr)
-			return EvaluableNodeReference(*value_ptr, false);
-	}
-	else //no multithreading currently happening
-#endif
-	{
-#ifdef MULTITHREAD_SUPPORT
-		EvaluableNode **value_ptr = GetScopeStackSymbolLocation(sid, scope_stack_index, true, true);
-#else
-		EvaluableNode **value_ptr = GetScopeStackSymbolLocation(sid, scope_stack_index);
-#endif
-		if(value_ptr != nullptr)
-			return EvaluableNodeReference(*value_ptr, false);
-	}
+	auto [symbol_value, found] = GetScopeStackSymbol(sid);
+	if(found)
+		return EvaluableNodeReference(symbol_value, false);
 
 	// if didn't find it in the stack, try it in the labels
 	EntityReadReference cur_entity_ref(curEntity);
 	if(cur_entity_ref != nullptr)
 	{
-		auto [value, found] = cur_entity_ref->GetValueAtLabel(sid, nullptr, true, true);
+		auto [label_value, label_found] = cur_entity_ref->GetValueAtLabel(sid, nullptr, true, true);
 
-		if(!found)
+		if(!label_found)
 			EmitOrLogUndefinedVariableWarningIfNeeded(sid, en);
 
-		return value;
+		return label_value;
 	}
 
 	EmitOrLogUndefinedVariableWarningIfNeeded(sid, en);

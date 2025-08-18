@@ -920,7 +920,7 @@ public:
 		return (num_nodes_currently_referenced > 0);
 	}
 
-	//Returns all nodes still in use.  For debugging purposes
+	//returns all nodes still in use.  For debugging purposes
 	std::vector<EvaluableNode *> GetUsedNodes()
 	{	return std::vector<EvaluableNode *>(begin(nodes), begin(nodes) + firstUnusedNodeIndex);	}
 

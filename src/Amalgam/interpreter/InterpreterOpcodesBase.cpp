@@ -629,12 +629,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 #endif
 
 	//improve performance by managing the stacks here
-	auto result = sandbox.ExecuteNode(function, scope_stack, opcode_stack, construction_stack, false,
-		nullptr,
-	#ifdef MULTITHREAD_SUPPORT
-		nullptr,
-	#endif
-		immediate_result);
+	auto result = sandbox.ExecuteNode(function, scope_stack, opcode_stack, construction_stack,
+		false, nullptr, immediate_result);
 
 #ifdef MULTITHREAD_SUPPORT
 	//hand lock back to this interpreter
@@ -882,11 +878,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 		if(required_vars != nullptr && required_vars->IsAssociativeArray())
 		{
 		#ifdef MULTITHREAD_SUPPORT
-			Concurrency::WriteLock write_lock;
-			bool need_write_lock = (scopeStackMutex != nullptr && GetScopeStackDepth() < scopeStackUniqueAccessStartingDepth);
+			Concurrency::SingleLock write_lock;
+			bool need_write_lock = HasSharedScopeStackTop();
 			if(need_write_lock)
 			{
-				LockScopeStackWithoutBlockingGarbageCollection(write_lock, required_vars);
+				LockScopeStackTop(write_lock, required_vars);
 				RecordStackLockForProfiling(en, string_intern_pool.NOT_A_STRING_ID);
 			}
 		#endif
@@ -965,7 +961,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 					#ifdef MULTITHREAD_SUPPORT
 						//relock if needed before assigning the value
 						if(need_write_lock)
-							LockScopeStackWithoutBlockingGarbageCollection(write_lock, required_vars);
+							LockScopeStackTop(write_lock, required_vars);
 					#endif
 
 						scope->SetMappedChildNode(cn_id, value, false);
@@ -1076,27 +1072,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 				}
 			}
 
-			//retrieve the symbol
-			size_t destination_scope_stack_index = 0;
-			EvaluableNode **value_destination = nullptr;
-
+			//retrieve the symbol location
 		#ifdef MULTITHREAD_SUPPORT
-			//attempt to get location, but only attempt locations unique to this thread
-			value_destination = GetScopeStackSymbolLocation(variable_sid, destination_scope_stack_index, true, false);
-			//if editing a shared variable, need to see if it is in a shared region of the stack,
-			// need a write lock to the stack and variable
-			Concurrency::WriteLock write_lock;
-			if(scopeStackMutex != nullptr && value_destination == nullptr)
-			{
-				LockScopeStackWithoutBlockingGarbageCollection(write_lock, variable_value_node);
+			Concurrency::SingleLock write_lock;
+			auto [value_destination, top_of_stack] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
+			if(write_lock.owns_lock())
 				RecordStackLockForProfiling(en, variable_sid);
-			}
+		#else
+			auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(variable_sid, true);
 		#endif
-
-			//in single threaded, this will just be true
-			//in multithreaded, if variable was not found, then may need to create it
-			if(value_destination == nullptr)
-				value_destination = GetOrCreateScopeStackSymbolLocation(variable_sid, destination_scope_stack_index);
 
 			if(accum)
 			{
@@ -1107,7 +1091,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 			any_nonunique_assignments |= !variable_value_node.unique;
 			//if writing to an outer scope, can't guarantee the memory at this scope can be freed
-			any_nonunique_assignments |= (destination_scope_stack_index != GetScopeStackDepth());
+			any_nonunique_assignments |= !top_of_stack;
 
 			//assign back into the context_to_use
 			*value_destination = variable_value_node;
@@ -1130,27 +1114,15 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	{
 		auto new_value = InterpretNodeForImmediateUse(ocn[1]);
 
-		//retrieve the symbol
-		size_t destination_scope_stack_index = 0;
-		EvaluableNode **value_destination = nullptr;
-
+		//retrieve the symbol location
 	#ifdef MULTITHREAD_SUPPORT
-		//attempt to get location, but only attempt locations unique to this thread
-		value_destination = GetScopeStackSymbolLocation(variable_sid, destination_scope_stack_index, true, false);
-		//if editing a shared variable, need to see if it is in a shared region of the stack,
-		// need a write lock to the stack and variable
-		Concurrency::WriteLock write_lock;
-		if(scopeStackMutex != nullptr && value_destination == nullptr)
-		{
-			LockScopeStackWithoutBlockingGarbageCollection(write_lock, new_value);
+		Concurrency::SingleLock write_lock;
+		auto [value_destination, top_of_stack] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
+		if(write_lock.owns_lock())
 			RecordStackLockForProfiling(en, variable_sid);
-		}
+	#else
+		auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(variable_sid, true);
 	#endif
-
-		//in single threaded, this will just be true
-		//in multithreaded, if variable was not found, then may need to create it
-		if(value_destination == nullptr)
-			value_destination = GetOrCreateScopeStackSymbolLocation(variable_sid, destination_scope_stack_index);
 
 		if(accum)
 		{
@@ -1167,7 +1139,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			*value_destination = new_value;
 
 			//if writing to an outer scope, can't guarantee the memory at this scope can be freed
-			if(!new_value.unique || destination_scope_stack_index != GetScopeStackDepth())
+			if(!new_value.unique || !top_of_stack)
 				SetSideEffectFlagsAndAccumulatePerformanceCounters(en);
 		}
 
@@ -1204,30 +1176,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 	}
 	size_t num_replacements = (num_params - 1) / 2;
 
-	//retrieve the symbol
-	size_t destination_scope_stack_index = 0;
-	EvaluableNode **value_destination = nullptr;
-
+	//retrieve the symbol location
 #ifdef MULTITHREAD_SUPPORT
-	//attempt to get location, but only attempt locations unique to this thread
-	value_destination = GetScopeStackSymbolLocation(variable_sid, destination_scope_stack_index, true, false);
-	//if editing a shared variable, need to see if it is in a shared region of the stack,
-	// need a write lock to the stack and variable
-	Concurrency::WriteLock write_lock;
-	if(scopeStackMutex != nullptr && value_destination == nullptr)
-	{
-		LockScopeStackWithoutBlockingGarbageCollection(write_lock);
+	Concurrency::SingleLock write_lock;
+	auto [value_destination, top_of_stack] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
+	if(write_lock.owns_lock())
 		RecordStackLockForProfiling(en, variable_sid);
-	}
+#else
+	auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(variable_sid, true);
 #endif
 
-	//in single threaded, this will just be true
-	//in multithreaded, if variable was not found, then may need to create it
-	if(value_destination == nullptr)
-		value_destination = GetOrCreateScopeStackSymbolLocation(variable_sid, destination_scope_stack_index);
-
 	//if writing to an outer scope, can't guarantee the memory at this scope can be freed
-	any_nonunique_assignments |= (destination_scope_stack_index != GetScopeStackDepth());
+	any_nonunique_assignments |= !top_of_stack;
 
 	//make a copy of value_replacement because not sure where else it may be used
 	EvaluableNode *value_replacement = nullptr;
@@ -1309,18 +1269,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 
 	auto to_lookup = InterpretNodeForImmediateUse(ocn[0]);
 
-#ifdef MULTITHREAD_SUPPORT
-	//accessing everything in the stack, so need exclusive access
-	Concurrency::ReadLock lock;
-	if(scopeStackMutex != nullptr)
-		LockScopeStackWithoutBlockingGarbageCollection(lock, to_lookup);
-#endif
-
 	//get the value(s)
 	if(EvaluableNode::IsNull(to_lookup) || IsEvaluableNodeTypeImmediate(to_lookup->GetType()))
 	{
 		StringInternPool::StringID symbol_name_sid = EvaluableNode::ToStringIDIfExists(to_lookup, true);
-		EvaluableNode* symbol_value = GetScopeStackSymbol(symbol_name_sid);
+		auto [symbol_value, found] = GetScopeStackSymbol(symbol_name_sid);
 		evaluableNodeManager->FreeNodeTreeIfPossible(to_lookup);
 		return EvaluableNodeReference(symbol_value, false);
 	}
@@ -1336,7 +1289,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 			EvaluableNodeReference cnr(cn, to_lookup.unique);
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);
 
-			cn = GetScopeStackSymbol(cn_id);
+			bool found = false;
+			std::tie(cn, found) = GetScopeStackSymbol(cn_id);
 		}
 
 		return EvaluableNodeReference(to_lookup, false);
@@ -1355,7 +1309,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RETRIEVE(EvaluableNode *en
 				continue;
 			}
 
-			EvaluableNode *symbol_value = GetScopeStackSymbol(symbol_name_sid);
+			auto [symbol_value, found] = GetScopeStackSymbol(symbol_name_sid);
 			//if there are values passed in, free them to be clobbered
 			EvaluableNodeReference cnr(cn, to_lookup.unique);
 			evaluableNodeManager->FreeNodeTreeIfPossible(cnr);
@@ -1720,16 +1674,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_OPCODE_STACK(EvaluableNode
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_STACK(EvaluableNode *en, bool immediate_result)
 {
-#ifdef MULTITHREAD_SUPPORT
-	Concurrency::ReadLock lock;
-	if(scopeStackMutex != nullptr)
-		LockScopeStackWithoutBlockingGarbageCollection(lock);
-#endif
-
-	//can create this node on the stack because will be making a copy
-	EvaluableNode stack_top_holder(ENT_LIST);
-	stack_top_holder.SetOrderedChildNodes(*scopeStackNodes);
-	return evaluableNodeManager->DeepAllocCopy(&stack_top_holder);
+	//make a copy in case anything is changed in the future
+	return EvaluableNodeReference(MakeCopyOfScopeStack(), true);
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_ARGS(EvaluableNode *en, bool immediate_result)
@@ -1742,22 +1688,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ARGS(EvaluableNode *en, bo
 		depth = static_cast<size_t>(value);
 	}
 
-	//make sure have a large enough stack
-	if(scopeStackNodes->size() > depth)
-	{
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::ReadLock lock;
-		if(scopeStackMutex != nullptr && GetScopeStackDepth() < scopeStackUniqueAccessStartingDepth)
-			LockScopeStackWithoutBlockingGarbageCollection(lock);
-	#endif
-
-		//0 index is top of stack
-		EvaluableNode *args = (*scopeStackNodes)[scopeStackNodes->size() - (depth + 1)];
-		//need to make a copy because when the scope stack is popped, it will be freed
-		return EvaluableNodeReference(evaluableNodeManager->AllocNode(args), false);
-	}
-	else
+	EvaluableNode *arg_node = GetScopeStackGivenDepth(depth);
+	if(arg_node == nullptr)
 		return EvaluableNodeReference::Null();
+
+	return EvaluableNodeReference(evaluableNodeManager->AllocNode(arg_node), false, true);
 }
 
 //given an assoc of StringID -> value representing the probability weight of each, and a random stream, it randomly selects from the assoc

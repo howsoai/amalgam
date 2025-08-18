@@ -271,8 +271,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 			continue;
 		}
 
-		//need to make a copy if it's not safe for modification in case any other threads try to read from it
-		bool copy_entity = !IsEntitySafeForModification(target_entity);
+		size_t num_new_nodes_allocated = 0;
+
+		//TODO 21546: change this from false to the following line once entity writes can be modifed lock-free
+		// IsEntitySafeForModification(target_entity);
+		bool copy_entity = false;
 
 		//pause if allocating to another entity
 		EvaluableNodeManager::ThreadLocalAllocationBufferPause tlab_pause;

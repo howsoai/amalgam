@@ -394,8 +394,8 @@ void StringInternPool::InitializeStaticStrings()
 
 	//format opcode types
 	EmplaceStaticString(ENBISI_code, "code");
-	EmplaceStaticString(ENBISI_Base16, "Base16");
-	EmplaceStaticString(ENBISI_Base64, "Base64");
+	EmplaceStaticString(ENBISI_base16, "base16");
+	EmplaceStaticString(ENBISI_base64, "base64");
 	EmplaceStaticString(ENBISI_int8, "int8");
 	EmplaceStaticString(ENBISI_uint8, "uint8");
 	EmplaceStaticString(ENBISI_int16, "int16");
@@ -404,18 +404,28 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_uint32, "uint32");
 	EmplaceStaticString(ENBISI_int64, "int64");
 	EmplaceStaticString(ENBISI_uint64, "uint64");
-	EmplaceStaticString(ENBISI_float, "float");
-	EmplaceStaticString(ENBISI_double, "double");
-	EmplaceStaticString(ENBISI_INT8, "INT8");
-	EmplaceStaticString(ENBISI_UINT8, "UINT8");
-	EmplaceStaticString(ENBISI_INT16, "INT16");
-	EmplaceStaticString(ENBISI_UINT16, "UINT16");
-	EmplaceStaticString(ENBISI_INT32, "INT32");
-	EmplaceStaticString(ENBISI_UINT32, "UINT32");
-	EmplaceStaticString(ENBISI_INT64, "INT64");
-	EmplaceStaticString(ENBISI_UINT64, "UINT64");
-	EmplaceStaticString(ENBISI_FLOAT, "FLOAT");
-	EmplaceStaticString(ENBISI_DOUBLE, "DOUBLE");
+	EmplaceStaticString(ENBISI_float32, "float32");
+	EmplaceStaticString(ENBISI_float64, "float64");
+	EmplaceStaticString(ENBISI_gt_int8, ">int8");
+	EmplaceStaticString(ENBISI_gt_uint8, ">uint8");
+	EmplaceStaticString(ENBISI_gt_int16, ">int16");
+	EmplaceStaticString(ENBISI_gt_uint16, ">uint16");
+	EmplaceStaticString(ENBISI_gt_int32, ">int32");
+	EmplaceStaticString(ENBISI_gt_uint32, ">uint32");
+	EmplaceStaticString(ENBISI_gt_int64, ">int64");
+	EmplaceStaticString(ENBISI_gt_uint64, ">uint64");
+	EmplaceStaticString(ENBISI_gt_float32, ">float32");
+	EmplaceStaticString(ENBISI_gt_float64, ">float64");
+	EmplaceStaticString(ENBISI_lt_int8, "<int8");
+	EmplaceStaticString(ENBISI_lt_uint8, "<uint8");
+	EmplaceStaticString(ENBISI_lt_int16, "<int16");
+	EmplaceStaticString(ENBISI_lt_uint16, "<uint16");
+	EmplaceStaticString(ENBISI_lt_int32, "<int32");
+	EmplaceStaticString(ENBISI_lt_uint32, "<uint32");
+	EmplaceStaticString(ENBISI_lt_int64, "<int64");
+	EmplaceStaticString(ENBISI_lt_uint64, "<uint64");
+	EmplaceStaticString(ENBISI_lt_float32, "<float32");
+	EmplaceStaticString(ENBISI_lt_float64, "<float64");
 	EmplaceStaticString(ENBISI_json, "json");
 	EmplaceStaticString(ENBISI_yaml, "yaml");
 

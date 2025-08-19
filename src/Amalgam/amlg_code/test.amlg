@@ -1,63 +1,9 @@
 ﻿(seq
 
-(create_entities "TestContainerExec"
-	(lambda (parallel
-    ##^a 3
-	##b (contained_entities)
-	##c (+ x 1)
-	##d (call_entity "Child5" "q" (assoc x x))
-	##!e 12
-	##x 4
-	##y 5
-	))
- )
- (create_entities (list "TestContainerExec" "Child1")
-	(lambda (parallel
-	##x 3
-	##y 4
-	##!e 7
-	##weight 0.45
-	##weight_eq 1
-	))
- )
- (create_entities (list "TestContainerExec" "Child2")
-	(lambda (parallel
-	##x -1
-	##y -1
-	##weight 0.45
-	##weight_eq 1
-	))
- )
- (create_entities (list "TestContainerExec" "Child3")
-	(lambda (parallel
-	##x 100
-	##y 100
-	##weight 0.02
-	##weight_eq 1
-	))
- )
- (create_entities (list "TestContainerExec" "Child4")
-	(lambda (parallel
-	##x 100
-	##y 100
-	##radius 400
-	##weight 0.02
-	##weight_eq 1
-	))
- )
-
-;  (print "--query_mode--\n")
-;  (print (compute_on_contained_entities "TestContainerExec" (list
-;   (query_mode "x")
-;  )) "\n")
-
-   (print (compute_on_contained_entities "TestContainerExec" (list
-   (query_value_masses "x")
- )) "\n")
-
-; (print (compute_on_contained_entities "TestContainerExec" (list
-;   (query_value_masses "x" "weight")
-; )) "\n")
-
-
+ (print "2: " (format (format -100 "number" "float64") "float64" "number") "\n")
+ (print "3: " (format (format -100 "number" "float32") "float32" "number") "\n")
+ (print "4: " (format (format 100 "number" "uint32") "uint32" "number") "\n")
+ (print "5: " (format (format 123456789 "number" ">uint32") "<uint32" "number") "\n")
+ (print "6: " (format (format 123456789 "number" ">uint32") ">uint32" "number") "\n")
+ (print "7: " (format (format 14294967296 "number" "uint64") "uint64" "number") "\n")
  )

@@ -1937,11 +1937,12 @@
  (print (mix "abcdexyz" "abcomxyz" 0.5 0.5) "\n")
  (print (mix "abcdexyz" "abcomxyz" 0.5 0.5) "\n")
 
- (print "--mix_labels--\n")
- (print (mix_labels
- 				(lambda (list 1 #mixtest1 2 #mixtest2 (associate "a" 3 "b" 4) (lambda (if #mixtest3 true 1 (parallel (get_entity_comments) #mixtest4 1))) (list 5 6)) )
- 				(lambda (list 1 #mixtest1 5 #mixtest2 3 (associate "a" 3 "b" 4) (lambda (if #mixtest3 false 1 (parallel (get_entity_comments) #mixtest4 (lambda (print (list 2 9))) ))) ) )
- 			0.5))
+ ;max depth of 1
+ (print (mix
+	{a [0 1] b [1 2] c [2 3] d [3 4] e [4 5] f [5 6]}
+	{a [0 1] b [1 2] w [2 3] x [3 4] y [4 5] z [5 6]}
+	0.5 0.5 (null) 1
+ ))
 
  (print "--total_entity_size--\n")
 
@@ -2139,7 +2140,7 @@
  )
 
  (print "--mix_entities--\n")
- (mix_entities "MergeEntity1" "MergeEntity2" 0.5 0.5 0.5 0.2 "MixedEntities")
+ (mix_entities "MergeEntity1" "MergeEntity2" 0.5 0.5 0.5 0.2 (null) "MixedEntities")
  (print (retrieve_entity_root "MixedEntities"))
  (map
    (lambda (seq

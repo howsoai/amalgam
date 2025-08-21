@@ -244,6 +244,14 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX(EvaluableNode *en, boo
 			similar_mix_chance = new_value;
 	}
 
+	size_t max_depth = std::numeric_limits<size_t>::max();
+	if(ocn.size() > 5)
+	{
+		double new_value = InterpretNodeIntoNumberValue(ocn[5]);
+		if(new_value > 0 && new_value < max_depth)
+			max_depth = static_cast<size_t>(new_value);
+	}
+
 	auto n1 = InterpretNodeForImmediateUse(ocn[0]);
 	auto node_stack = CreateOpcodeStackStateSaver(n1);
 
@@ -257,52 +265,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX(EvaluableNode *en, boo
 	evaluableNodeManager->FreeNodeTreeIfPossible(n2);
 
 	return EvaluableNodeReference(result, true);
-}
-
-EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_LABELS(EvaluableNode *en, bool immediate_result)
-{
-	auto &ocn = en->GetOrderedChildNodes();
-
-	if(ocn.size() < 2)
-		return EvaluableNodeReference::Null();
-
-	double blend2 = 0.5; //default to half
-	if(ocn.size() > 2)
-	{
-		double new_value = InterpretNodeIntoNumberValue(ocn[2]);
-		if(!FastIsNaN(new_value))
-			blend2 = new_value;
-	}
-
-	double blend1 = 1.0 - blend2; //default to the remainder
-	if(ocn.size() > 3)
-	{
-		double new_value = InterpretNodeIntoNumberValue(ocn[3]);
-		if(!FastIsNaN(new_value))
-			blend1 = new_value;
-
-		//if have a third parameter, then use the fractions in order (so need to swap)
-		std::swap(blend1, blend2);
-	}
-
-	//clamp both blend values to be nonnegative
-	blend1 = std::max(0.0, blend1);
-	blend2 = std::max(0.0, blend2);
-
-	//stop if have nothing
-	if(blend1 == 0.0 && blend2 == 0.0)
-		return EvaluableNodeReference::Null();
-
-	auto n1 = InterpretNodeForImmediateUse(ocn[0]);
-	auto node_stack = CreateOpcodeStackStateSaver(n1);
-
-	auto n2 = InterpretNodeForImmediateUse(ocn[1]);
-	node_stack.PushEvaluableNode(n2);
-
-	EvaluableNode *result = EvaluableNodeTreeManipulation::MixTreesByCommonLabels(this, evaluableNodeManager, n1, n2, randomStream, blend1, blend2);
-	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
-
-	return EvaluableNodeReference(result, (n1.unique && n2.unique));
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_TOTAL_ENTITY_SIZE(EvaluableNode *en, bool immediate_result)
@@ -656,10 +618,18 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode
 			similar_mix_chance = new_value;
 	}
 
-	double fraction_unnamed_entities_to_mix = 0.2;
+	size_t max_depth = std::numeric_limits<size_t>::max();
 	if(ocn.size() > 5)
 	{
 		double new_value = InterpretNodeIntoNumberValue(ocn[5]);
+		if(new_value > 0 && new_value < max_depth)
+			max_depth = static_cast<size_t>(new_value);
+	}
+
+	double fraction_unnamed_entities_to_mix = 0.2;
+	if(ocn.size() > 6)
+	{
+		double new_value = InterpretNodeIntoNumberValue(ocn[6]);
 		if(!FastIsNaN(new_value))
 			fraction_unnamed_entities_to_mix = new_value;
 	}

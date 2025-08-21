@@ -1416,7 +1416,6 @@ protected:
 	EvaluableNodeReference InterpretNode_ENT_UNION(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_DIFFERENCE(EvaluableNode *en, bool immediate_result);
 	EvaluableNodeReference InterpretNode_ENT_MIX(EvaluableNode *en, bool immediate_result);
-	EvaluableNodeReference InterpretNode_ENT_MIX_LABELS(EvaluableNode *en, bool immediate_result);
 
 	//entity merging
 	EvaluableNodeReference InterpretNode_ENT_TOTAL_ENTITY_SIZE(EvaluableNode *en, bool immediate_result);

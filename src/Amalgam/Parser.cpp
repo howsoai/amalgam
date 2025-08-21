@@ -1330,7 +1330,8 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 	case ENT_TARGET:
 	{
 		//first parameter is the number of steps to crawl up in the parent tree
-		size_t target_steps_up = 1;
+		size_t target_steps = 1;
+		bool step_up = true;
 		if(path->GetOrderedChildNodes().size() > 0)
 		{
 			double step_value = EvaluableNode::ToNumber(path->GetOrderedChildNodes()[0]);
@@ -1339,20 +1340,36 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 			//within the data -- in actual runtime, 0 is allowed for target because other things can point to it,
 			//but not during parsing
 			if(step_value >= 1)
-				target_steps_up = static_cast<size_t>(step_value);
+			{
+				target_steps = static_cast<size_t>(step_value);
+			}
+			else if(step_value <= -1)
+			{
+				target_steps = static_cast<size_t>(-step_value);
+				step_up = false;
+			}
 			else
+			{
 				return nullptr;
+			}
 		}
 
 		//crawl up parse tree
 		EvaluableNode *result = path;
-		for(size_t i = 0; i < target_steps_up && result != nullptr; i++)
+		if(step_up)
 		{
-			auto found = parentNodes.find(result);
-			if(found != end(parentNodes))
-				result = found->second;
-			else
-				result = nullptr;
+			for(size_t i = 0; i < target_steps && result != nullptr; i++)
+			{
+				auto found = parentNodes.find(result);
+				if(found != end(parentNodes))
+					result = found->second;
+				else
+					result = nullptr;
+			}
+		}
+		else
+		{
+			//TODO 24297: finish this -- use infinity?  or -1? or add a bool and if true start from top of stack.  update target opcode behavior too
 		}
 
 		return result;

@@ -1,9 +1,13 @@
 ﻿(seq
+;(print
+;	(list (assoc "a" 1)
+;		@(get (target 2) 0) 1
+;	)
+; )
 
- (print "2: " (format (format -100 "number" "float64") "float64" "number") "\n")
- (print "3: " (format (format -100 "number" "float32") "float32" "number") "\n")
- (print "4: " (format (format 100 "number" "uint32") "uint32" "number") "\n")
- (print "5: " (format (format 123456789 "number" ">uint32") "<uint32" "number") "\n")
- (print "6: " (format (format 123456789 "number" ">uint32") ">uint32" "number") "\n")
- (print "7: " (format (format 14294967296 "number" "uint64") "uint64" "number") "\n")
+ (print
+	(list
+		@(get (target 0) 0)
+	)
+ )
  )

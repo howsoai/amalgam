@@ -213,6 +213,7 @@ public:
 		double fractionAInsteadOfB;
 		double similarMixChance;
 		size_t maxMixDepth;
+		size_t curMixDepth;
 	};
 
 	//functionality to merge sequences of strings (e.g., for comments)

@@ -64,7 +64,8 @@ Entity *EntityManipulation::EntitiesMergeForDifferenceMethod::MergeValues(Entity
 //////////////////////////////
 
 EntityManipulation::EntitiesMixMethod::EntitiesMixMethod(Interpreter *_interpreter,
-	double fraction_a, double fraction_b, double similar_mix_chance, double fraction_entities_to_mix)
+	double fraction_a, double fraction_b, double similar_mix_chance, size_t max_mix_depth,
+	double fraction_entities_to_mix)
 	: EntitiesMergeMethod(_interpreter, true)
 {
 	interpreter = _interpreter;
@@ -87,6 +88,8 @@ EntityManipulation::EntitiesMixMethod::EntitiesMixMethod(Interpreter *_interpret
 		similarMixChance = 0.0;
 	else
 		similarMixChance = std::min(1.0, std::max(-1.0, similar_mix_chance));
+
+	maxMixDepth = max_mix_depth;
 
 	if(FastIsNaN(fraction_entities_to_mix))
 		fractionEntitiesToMix = 0.0;
@@ -130,7 +133,7 @@ Entity *EntityManipulation::EntitiesMixMethod::MergeValues(Entity *a, Entity *b,
 	EvaluableNodeReference code_b = (b != nullptr ? b->GetRoot() : EvaluableNodeReference::Null());
 
 	EvaluableNodeTreeManipulation::NodesMixMethod mm(interpreter->randomStream.CreateOtherStreamViaRand(),
-		&merged_entity->evaluableNodeManager, fractionA, fractionB, similarMixChance);
+		&merged_entity->evaluableNodeManager, fractionA, fractionB, similarMixChance, maxMixDepth);
 
 	EvaluableNode *result = mm.MergeValues(code_a, code_b);
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
@@ -415,9 +418,11 @@ EvaluableNodeReference EntityManipulation::DifferenceEntities(Interpreter *inter
 }
 
 Entity *EntityManipulation::MixEntities(Interpreter *interpreter, Entity *entity1, Entity *entity2,
-	double fractionA, double fractionB, double similar_mix_chance, double fraction_entities_to_mix)
+	double fractionA, double fractionB, double similar_mix_chance, size_t max_mix_depth,
+	double fraction_entities_to_mix)
 {
-	EntitiesMixMethod mm(interpreter, fractionA, fractionB, similar_mix_chance, fraction_entities_to_mix);
+	EntitiesMixMethod mm(interpreter, fractionA, fractionB, similar_mix_chance, max_mix_depth,
+		fraction_entities_to_mix);
 	return mm.MergeValues(entity1, entity2, true);
 }
 

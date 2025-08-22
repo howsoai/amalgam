@@ -244,12 +244,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX(EvaluableNode *en, boo
 			similar_mix_chance = new_value;
 	}
 
-	size_t max_depth = std::numeric_limits<size_t>::max();
+	size_t max_mix_depth = std::numeric_limits<size_t>::max();
 	if(ocn.size() > 5)
 	{
 		double new_value = InterpretNodeIntoNumberValue(ocn[5]);
-		if(new_value > 0 && new_value < max_depth)
-			max_depth = static_cast<size_t>(new_value);
+		if(new_value > 0 && new_value < max_mix_depth)
+			max_mix_depth = static_cast<size_t>(new_value);
 	}
 
 	auto n1 = InterpretNodeForImmediateUse(ocn[0]);
@@ -258,7 +258,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX(EvaluableNode *en, boo
 	auto n2 = InterpretNodeForImmediateUse(ocn[1]);
 
 	EvaluableNode *result = EvaluableNodeTreeManipulation::MixTrees(randomStream.CreateOtherStreamViaRand(),
-		evaluableNodeManager, n1, n2, blend1, blend2, similar_mix_chance);
+		evaluableNodeManager, n1, n2, blend1, blend2, similar_mix_chance, max_mix_depth);
 	EvaluableNodeManager::UpdateFlagsForNodeTree(result);
 
 	evaluableNodeManager->FreeNodeTreeIfPossible(n1);
@@ -644,7 +644,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode
 
 	//create new entity by merging
 	Entity *new_entity = EntityManipulation::MixEntities(this, source_entity_1, source_entity_2,
-		blend1, blend2, similar_mix_chance, fraction_unnamed_entities_to_mix);
+		blend1, blend2, similar_mix_chance, max_depth, fraction_unnamed_entities_to_mix);
 
 	//no longer need entity references
 	erbr.Clear();

@@ -1369,7 +1369,8 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 		}
 		else
 		{
-			//TODO 24297: finish this -- use infinity?  or -1? or add a bool and if true start from top of stack.  update target opcode behavior too
+			//TODO 24297: finish this: allow true/false to yield the same as infinity/zero, add second param to grab variable (like a get outside).  update target opcode behavior.
+			//TODO 24297: make automatically use (target (true) ...) based on whether going up to top node and to reduce get's, in order to make storage smaller
 		}
 
 		return result;

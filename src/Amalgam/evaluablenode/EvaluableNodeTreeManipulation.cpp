@@ -34,8 +34,8 @@ EvaluableNodeTreeManipulation::NodesMixMethod::NodesMixMethod(RandomStream rando
 	else
 		similarMixChance = std::min(1.0, std::max(-1.0, similar_mix_chance));
 
-	//TODO 24297: figure out how to limit merging by maxMixDepth
 	maxMixDepth = max_mix_depth;
+	curMixDepth = 0;
 }
 
 //returns a mix of a and b based on their fractions
@@ -87,37 +87,80 @@ EvaluableNode *EvaluableNodeTreeManipulation::NodesMixMethod::MergeValues(Evalua
 	if(a == nullptr && b == nullptr)
 		return nullptr;
 
-	if(AreMergeable(a, b) || must_merge)
-	{
-		EvaluableNode *merged = MergeTrees(this, a, b);
+	EvaluableNode *merged = nullptr;
+	curMixDepth++;
 
-		//if the original and merged, check to see if mergeable of same type, and if so, interpolate
-		if(merged != nullptr && a != nullptr && b != nullptr)
+	if(curMixDepth < maxMixDepth || maxMixDepth == std::numeric_limits<size_t>::max())
+	{
+		if(AreMergeable(a, b) || must_merge)
 		{
-			if(merged->IsNumericOrNull() && a->IsNumericOrNull() && b->IsNumericOrNull())
+			merged = MergeTrees(this, a, b);
+
+			//if the original and merged, check to see if mergeable of same type, and if so, interpolate
+			if(merged != nullptr && a != nullptr && b != nullptr)
 			{
-				double a_value = a->GetNumberValue();
-				double b_value = b->GetNumberValue();
-				double mixed_value = MixNumberValues(a_value, b_value, fractionA, fractionB);
-				merged->SetTypeViaNumberValue(mixed_value);
-			}
-			else if(merged->GetType() == ENT_STRING && a->GetType() == ENT_STRING && b->GetType() == ENT_STRING)
-			{
-				auto a_value = a->GetStringIDReference();
-				auto b_value = b->GetStringIDReference();
-				auto mixed_value = MixStringValues(a_value, b_value,
-					randomStream.CreateOtherStreamViaRand(), fractionA, fractionB);
-				merged->SetStringIDWithReferenceHandoff(mixed_value);
+				if(merged->IsNumericOrNull() && a->IsNumericOrNull() && b->IsNumericOrNull())
+				{
+					double a_value = a->GetNumberValue();
+					double b_value = b->GetNumberValue();
+					double mixed_value = MixNumberValues(a_value, b_value, fractionA, fractionB);
+					merged->SetTypeViaNumberValue(mixed_value);
+				}
+				else if(merged->GetType() == ENT_STRING && a->GetType() == ENT_STRING && b->GetType() == ENT_STRING)
+				{
+					auto a_value = a->GetStringIDReference();
+					auto b_value = b->GetStringIDReference();
+					auto mixed_value = MixStringValues(a_value, b_value,
+						randomStream.CreateOtherStreamViaRand(), fractionA, fractionB);
+					merged->SetStringIDWithReferenceHandoff(mixed_value);
+				}
 			}
 		}
 
-		return merged;
+		if(KeepNonMergeableAInsteadOfB())
+			merged = MergeTrees(this, a, nullptr);
+		else
+			merged = MergeTrees(this, nullptr, b);
+	}
+	else //select one and copy instead of merging
+	{
+		//TODO 24297: test this, doesn't seem to be working yet
+		if(KeepNonMergeableAInsteadOfB())
+		{
+			if(a != nullptr)
+			{
+				auto find_tree_a = references.find(a);
+				if(find_tree_a != end(references))
+				{
+					merged = find_tree_a->second;
+				}
+				else
+				{
+					merged = enm->DeepAllocCopy(a);
+					references[a] = merged;
+				}
+			}
+		}
+		else
+		{
+			if(b != nullptr)
+			{
+				auto find_tree_b = references.find(b);
+				if(find_tree_b != end(references))
+				{
+					merged = find_tree_b->second;
+				}
+				else
+				{
+					merged = enm->DeepAllocCopy(b);
+					references[b] = merged;
+				}
+			}
+		}
 	}
 
-	if(KeepNonMergeableAInsteadOfB())
-		return MergeTrees(this, a, nullptr);
-	else
-		return MergeTrees(this, nullptr, b);
+	curMixDepth--;
+	return merged;
 }
 
 bool EvaluableNodeTreeManipulation::NodesMixMethod::AreMergeable(EvaluableNode *a, EvaluableNode *b)

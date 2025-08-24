@@ -90,7 +90,7 @@ EvaluableNode *EvaluableNodeTreeManipulation::NodesMixMethod::MergeValues(Evalua
 	EvaluableNode *merged = nullptr;
 	curMixDepth++;
 
-	if(curMixDepth < maxMixDepth || maxMixDepth == std::numeric_limits<size_t>::max())
+	if(curMixDepth <= maxMixDepth || maxMixDepth == std::numeric_limits<size_t>::max())
 	{
 		if(AreMergeable(a, b) || must_merge)
 		{
@@ -116,15 +116,13 @@ EvaluableNode *EvaluableNodeTreeManipulation::NodesMixMethod::MergeValues(Evalua
 				}
 			}
 		}
-
-		if(KeepNonMergeableAInsteadOfB())
+		else if(KeepNonMergeableAInsteadOfB())
 			merged = MergeTrees(this, a, nullptr);
 		else
 			merged = MergeTrees(this, nullptr, b);
 	}
 	else //select one and copy instead of merging
 	{
-		//TODO 24297: test this, doesn't seem to be working yet
 		if(KeepNonMergeableAInsteadOfB())
 		{
 			if(a != nullptr)

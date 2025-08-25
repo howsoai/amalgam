@@ -178,7 +178,7 @@ var data = [
 	},
 
 	{
-		"parameter" : "target [number stack_distance]",
+		"parameter" : "target [number stack_distance|bool top_of_stack] [* key]",
 		"output" : "*",
 		"description" : "Evaluates to the current node that is being iterated over, or the base code of a set or replace that is being created.  If stack_distance is specified, it climbs back up the target stack that many levels.  Useful for seralizing graph data structures or looking up data during iteration.",
 		"example" : ";prints the list of what has been created before its return value is included in the list\n(list 1 2 3 (print (target)) 4)\n (let (assoc moveref (list 0 (list 7 8) (get (target 0) 1) ) )\n  (assign (assoc moveref (set moveref 1 1)))\n  (print moveref)\n)"

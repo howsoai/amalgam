@@ -1529,16 +1529,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET(EvaluableNode *en, 
 
 	if(ocn.size() > 1)
 	{
-		//if there's a second parameter, try to look up the key
-		auto key = InterpretNodeIntoStringIDValueIfExists(ocn[1], true);
-
-		EvaluableNode *constr_node = (*constructionStackNodes)[offset];
-		auto &constr_node_mcn = constr_node->GetMappedChildNodesReference();
-		auto target_value = constr_node_mcn.find(key);
-		if(target_value == end(constr_node_mcn))
+		//if there's a second parameter, try to look up the walk path
+		EvaluableNode **target = InterpretNodeIntoDestination(&(*constructionStackNodes)[offset], ocn[1], false);
+		if(target == nullptr)
 			return EvaluableNodeReference::Null();
 
-		return EvaluableNodeReference(target_value->second, false);
+		return EvaluableNodeReference(*target, false);
 	}
 
 	return EvaluableNodeReference( (*constructionStackNodes)[offset], false);

@@ -1118,6 +1118,10 @@
 
  (print "--target--\n")
  (list 1 2 3 (print (target)) 4)
+ (print (list 0 1 2 3 (+ (target 0 1)) 4) "\n")
+ (print (list 0 1 2 3 (list 0 1 2 3 (+ (target 1 1)) 4)) "\n")
+ (print { a 0 b 1 c 2 d 3 e (list 0 1 2 3 (+ (target 1 "a")) 4)} "\n")
+ (print { a 0 b 1 c 2 d 3 e (list (list 0 1 2 3 (+ (target (true) "a")) 4))} "\n")
 
  (print "--current_index--\n")
  (list 1 2 3 (print (current_index) "\n") 4)
@@ -1939,7 +1943,7 @@
 
  ;max depth of 1
  (print (mix
-	{a [0 1] b [1 2] c [2 3] d [3 4] e [4 5] f [5 6]}
+	{a [0 1] b [1 2] c [2 3]}
 	{a [0 1] b [1 2] w [2 3] x [3 4] y [4 5] z [5 6]}
 	0.5 0.5 (null) 1
  ))

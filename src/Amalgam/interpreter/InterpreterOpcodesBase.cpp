@@ -1509,12 +1509,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET(EvaluableNode *en, 
 				else if(!FastIsNaN(value_number)) //null/nan should leave depth as 0, any negative value is an error
 					return EvaluableNodeReference::Null();
 			}
-			else if(node_type == ENT_TRUE)
+			else if(node_type == ENT_BOOL && result->GetBoolValueReference())
 			{
 				//select the top of the stack
 				depth = constructionStackIndicesAndUniqueness.size() - 1;
 			}
-			else if(node_type != ENT_FALSE)
+			else if(node_type != ENT_BOOL)
 			{
 				return EvaluableNodeReference::Null();
 			}

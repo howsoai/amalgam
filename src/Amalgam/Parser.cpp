@@ -336,7 +336,7 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 	//can't shortcut to use top node when accumulating a transaction or it may get assigned
 	// to the incorrect node
 	if(!upd.transaction && lowest_common_node == upd.topNode)
-		target->AppendOrderedChildNode(enm.AllocNode(ENT_TRUE));
+		target->AppendOrderedChildNode(enm.AllocNode(true));
 	else //need to include the get (below) in the depth, so add 1
 		target->AppendOrderedChildNode(enm.AllocNode(static_cast<double>(a_ancestor_depth + 1)));
 
@@ -1393,7 +1393,7 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 				result = found->second;
 			}
 		}
-		else if(step_node_type == ENT_TRUE)
+		else if(step_node_type == ENT_BOOL && result->GetBoolValueReference())
 		{
 			//climb up to the top
 			while(true)
@@ -1405,7 +1405,7 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 				result = found->second;
 			}
 		}
-		else if(step_node_type != ENT_FALSE)
+		else if(step_node_type != ENT_BOOL)
 		{
 			return nullptr;
 		}

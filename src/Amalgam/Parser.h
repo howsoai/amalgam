@@ -209,9 +209,8 @@ protected:
 		//parentNodes contains each reference as the key and the parent as the value
 		EvaluableNode::ReferenceAssocType parentNodes;
 
-		//if transactional unparsing, then this will be the top node
-		//if not, it will be nullptr
-		EvaluableNode *topNodeIfTransactionUnparsing;
+		//top node of what is being unparsed
+		EvaluableNode *topNode;
 
 		//if true, then the tree is cycle free and don't need to keep track of potential circular references
 		bool cycleFree;
@@ -224,6 +223,9 @@ protected:
 
 		//if true, then it will perform a sort on all unordered nodes
 		bool sortKeys;
+
+		//if true, then transaction unparsing
+		bool transaction;
 	};
 
 	//Returns code that will get from location a to b.

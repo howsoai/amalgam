@@ -205,7 +205,6 @@ std::array<Interpreter::OpcodeFunction, ENT_NOT_A_BUILT_IN_TYPE + 1> Interpreter
 	&Interpreter::InterpretNode_ENT_UNION,															// ENT_UNION
 	&Interpreter::InterpretNode_ENT_DIFFERENCE,														// ENT_DIFFERENCE
 	&Interpreter::InterpretNode_ENT_MIX,															// ENT_MIX
-	&Interpreter::InterpretNode_ENT_MIX_LABELS,														// ENT_MIX_LABELS
 
 	//entity merging
 	&Interpreter::InterpretNode_ENT_TOTAL_ENTITY_SIZE,												// ENT_TOTAL_ENTITY_SIZE

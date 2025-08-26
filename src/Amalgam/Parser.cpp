@@ -1025,6 +1025,8 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 		{
 			upd.preevaluationNeeded = true;
 
+			//TODO 24297: check if referencing top node, if so, use shorthand (target (true) ...)
+
 			EvaluableNodeManager enm;
 			EvaluableNode *code_to_print = GetCodeForPathToSharedNodeFromParentAToParentB(upd,
 				enm, tree, parent, dest_node_with_parent->second);
@@ -1306,6 +1308,7 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 		if(index_node == nullptr)
 			return nullptr;
 
+		//TODO 24297: move into traverse walk path method, use for ENT_TARGET below
 		if(index_node->IsOrderedArray())
 		{
 			//travers the nodes over each index to find the location
@@ -1330,47 +1333,59 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 	case ENT_TARGET:
 	{
 		//first parameter is the number of steps to crawl up in the parent tree
-		size_t target_steps = 1;
-		bool step_up = true;
-		if(path->GetOrderedChildNodes().size() > 0)
+		auto &path_ocn = path->GetOrderedChildNodesReference();
+		if(path_ocn.size() == 0)
+			return path;
+
+		EvaluableNode *step_node = path->GetOrderedChildNodes()[0];
+		if(EvaluableNode::IsNull(step_node))
+			return path;
+
+		//find the appropriate result
+		EvaluableNode *result = path;
+
+		auto step_node_type = step_node->GetType();
+		if(step_node_type == ENT_NUMBER)
 		{
-			double step_value = EvaluableNode::ToNumber(path->GetOrderedChildNodes()[0]);
+			double step_value = EvaluableNode::ToNumber(step_node);
 
 			//zero is not allowed here because that means it would attempt to replace itself with itself
 			//within the data -- in actual runtime, 0 is allowed for target because other things can point to it,
 			//but not during parsing
-			if(step_value >= 1)
-			{
-				target_steps = static_cast<size_t>(step_value);
-			}
-			else if(step_value <= -1)
-			{
-				target_steps = static_cast<size_t>(-step_value);
-				step_up = false;
-			}
-			else
-			{
+			if(step_value < 1)
 				return nullptr;
-			}
-		}
 
-		//crawl up parse tree
-		EvaluableNode *result = path;
-		if(step_up)
-		{
-			for(size_t i = 0; i < target_steps && result != nullptr; i++)
+			//crawl up parse tree
+			size_t target_steps = static_cast<size_t>(step_value);
+			for(size_t i = 0; i < target_steps; i++)
 			{
 				auto found = parentNodes.find(result);
-				if(found != end(parentNodes))
-					result = found->second;
-				else
-					result = nullptr;
+				if(found == end(parentNodes))
+					return nullptr;
+
+				result = found->second;
 			}
 		}
-		else
+		else if(step_node_type == ENT_TRUE)
 		{
-			//TODO 24297: finish this: allow true/false to yield the same as infinity/zero, add second param to grab variable (like a get outside).  update target opcode behavior.
-			//TODO 24297: make automatically use (target (true) ...) based on whether going up to top node and to reduce get's, in order to make storage smaller
+			//climb up to the top
+			while(true)
+			{
+				auto found = parentNodes.find(result);
+				if(found == end(parentNodes))
+					break;
+
+				result = found->second;
+			}
+		}
+		else if(step_node_type != ENT_FALSE)
+		{
+			return nullptr;
+		}
+
+		if(path_ocn.size() > 1)
+		{
+			//TODO 24297: finish this: add second param to grab variable (like a get outside).
 		}
 
 		return result;

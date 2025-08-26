@@ -233,7 +233,7 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 	if(shared_node == nullptr || a_parent == nullptr || b_parent == nullptr)
 		return nullptr;
 
-	//find all parent nodes of a to find collision with parent node of b, along with depth counts
+	//find all parent nodes of shared_node to find where b_parent links up, along with depth counts
 	EvaluableNode::ReferenceCountType a_parent_nodes;
 	size_t a_ancestor_depth = 1;
 	while(a_parent != nullptr && a_parent_nodes.emplace(a_parent, a_ancestor_depth++).second == true)
@@ -245,19 +245,19 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 	EvaluableNode::ReferenceSetType b_nodes_visited;
 	//ids to traverse along the path
 	std::vector<EvaluableNode *> b_path_nodes;
-	//the current node from path b
-	EvaluableNode *b = shared_node;
+	//the current node from path lowest_common_node
+	EvaluableNode *lowest_common_node = shared_node;
 	while(b_nodes_visited.insert(b_parent).second == true) //make sure not visited yet
 	{
 		//stop if found common parent node
-		if(auto a_entry = a_parent_nodes.find(b); a_entry != end(a_parent_nodes))
+		if(auto a_entry = a_parent_nodes.find(lowest_common_node); a_entry != end(a_parent_nodes))
 		{
 			a_ancestor_depth = a_entry->second;
 			break;
 		}
 
 		//could not find a common ancestor, so error out
-		if(b == nullptr)
+		if(lowest_common_node == nullptr)
 		{
 		#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 			assert(false);
@@ -275,7 +275,7 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 				//look up which key corresponds to the value
 				for(auto &[s_id, s] : bp_mcn)
 				{
-					if(s == b)
+					if(s == lowest_common_node)
 					{
 						key_id = s_id;
 						break;
@@ -294,7 +294,7 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 				for(auto &key_sid : key_sids)
 				{
 					auto k = bp_mcn.find(key_sid);
-					if(k->second == b)
+					if(k->second == lowest_common_node)
 					{
 						key_id = k->first;
 						break;
@@ -307,7 +307,7 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 		else if(b_parent->IsOrderedArray())
 		{
 			auto &bp_ocn = b_parent->GetOrderedChildNodesReference();
-			const auto &found = std::find(begin(bp_ocn), end(bp_ocn), b);
+			const auto &found = std::find(begin(bp_ocn), end(bp_ocn), lowest_common_node);
 			auto index = std::distance(begin(bp_ocn), found);
 			b_path_nodes.insert(begin(b_path_nodes), enm.AllocNode(static_cast<double>(index)));
 		}
@@ -319,28 +319,30 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 			return nullptr;
 		}
 
-		b = b_parent;
-		b_parent = upd.parentNodes[b];
+		lowest_common_node = b_parent;
+		b_parent = upd.parentNodes[lowest_common_node];
 	}
 
 	//build code to get the reference
 	EvaluableNode *target = enm.AllocNode(ENT_TARGET);
-	//need to include the get (below) in the depth, so add 1
-	target->AppendOrderedChildNode(enm.AllocNode(static_cast<double>(a_ancestor_depth + 1)));
 
 	EvaluableNode *indices = nullptr;
-	if(b_path_nodes.size() == 0)
-		return target;
-	else if(b_path_nodes.size() == 1)
+	if(b_path_nodes.size() == 1)
 		indices = b_path_nodes[0];
 	else
 		indices = enm.AllocNode(b_path_nodes, false, true);
 
-	EvaluableNode *get = enm.AllocNode(ENT_GET);
-	get->AppendOrderedChildNode(target);
-	get->AppendOrderedChildNode(indices);
+	//can't shortcut to use top node when accumulating a transaction or it may get assigned
+	// to the incorrect node
+	if(!upd.transaction && lowest_common_node == upd.topNode)
+		target->AppendOrderedChildNode(enm.AllocNode(ENT_TRUE));
+	else //need to include the get (below) in the depth, so add 1
+		target->AppendOrderedChildNode(enm.AllocNode(static_cast<double>(a_ancestor_depth + 1)));
 
-	return get;
+	if(b_path_nodes.size() > 0)
+		target->AppendOrderedChildNode(indices);
+
+	return target;
 }
 
 void Parser::SkipWhitespaceAndAccumulateAttributes(EvaluableNode *target)
@@ -1026,10 +1028,6 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 		if(!inserted)
 		{
 			upd.preevaluationNeeded = true;
-
-			//TODO 24297: check if referencing topNode, if so, use shorthand (target (true) ...)
-			//TODO 24297: update GetCodeForPathToSharedNodeFromParentAToParentB to emit target-based walk paths
-			//TODO 24297: test @(target... with various forms
 
 			EvaluableNodeManager enm;
 			EvaluableNode *code_to_print = GetCodeForPathToSharedNodeFromParentAToParentB(upd,

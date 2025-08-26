@@ -116,7 +116,6 @@ hello world: 12 and 2
 	min 0.4
 	mix 0.2
 	mix_entities 0.02
-	mix_labels 0.2
 	mod 0.2
 	mode 0.15
 	move_entities 0.15
@@ -236,11 +235,11 @@ hello world: 12 and 2
 (print "hello")
 [(null) (null) .infinity -.infinity]
 
-{b 2 c ["alpha" "beta" "gamma"] a 1}
+{c ["alpha" "beta" "gamma"] a 1 b 2}
 {
-	b 2
 	c ["alpha" "beta" "gamma"]
 	a 1
+	b 2
 }
 
 (apply "6")
@@ -703,7 +702,7 @@ abcdef
 0.14384103622589045
 --first--
 4
-2
+1
 1
 0
 a
@@ -720,16 +719,16 @@ a
 []
 {
 	a 1
-	c 3
+	b 2
 	d 4
 	e 5
 	f 6
 }
-{a 1 f 6}
+{d 4 e 5}
 {
-	a 1
-	c 3
+	b 2
 	d 4
+	e 5
 	f 6
 }
 {
@@ -754,7 +753,7 @@ abcdef
 
 --last--
 this
-2
+1
 1
 0
 c
@@ -771,16 +770,16 @@ c
 []
 {
 	a 1
-	c 3
+	b 2
 	d 4
 	e 5
 	f 6
 }
-{a 1 f 6}
+{d 4 e 5}
 {
-	a 1
-	c 3
+	b 2
 	d 4
+	e 5
 	f 6
 }
 {
@@ -973,7 +972,7 @@ abcdef
 
 [2 (null) 4 (null) 6 (null)]
 
-["a" 2 @(get (target 2) 0) 4 @(get (target 2) 0) 6]
+["a" 2 @(target (true) 0) 4 @(target (true) 0) 6]
 
 [
 	1
@@ -1133,7 +1132,7 @@ abcdef
 [1 3]
 [9 5]
 --indices--
-["b" "c" "a" 4]
+["c" "a" 4 "b"]
 [
 	0
 	1
@@ -1145,10 +1144,10 @@ abcdef
 	7
 ]
 [0 1 2 3]
-[3 0 1 2]
-[3 0 1 2]
+[1 0 3 2]
+[1 0 3 2]
 --values--
-[2 3 1 "d"]
+[3 1 "d" 2]
 [
 	"a"
 	1
@@ -1169,7 +1168,7 @@ abcdef
 	4
 	"d"
 ]
-["d" 2 1 3]
+[3 1 "d" 2]
 [
 	1
 	2
@@ -1265,18 +1264,9 @@ abcdef
 }
 {
 	a 3
-	b @(get
-			(target 2)
-			"a"
-		)
-	c @(get
-			(target 2)
-			"a"
-		)
-	d @(get
-			(target 2)
-			"a"
-		)
+	b @(target (true) "a")
+	c @(target (true) "a")
+	d @(target (true) "a")
 }
 {
 	a 4
@@ -1293,14 +1283,8 @@ abcdef
 {
 	a 2
 	b 1
-	c @(get
-			(target 2)
-			"b"
-		)
-	d @(get
-			(target 2)
-			"b"
-		)
+	c @(target (true) "b")
+	d @(target (true) "b")
 }
 --unzip--
 [1 2]
@@ -1322,9 +1306,9 @@ list
 assoc
 [
 	4
+	[4]
 	"4"
 	{4 4}
-	[4]
 ]
 --set--
 {
@@ -1338,6 +1322,34 @@ assoc
 {a 3 b 2}
 --target--
 [1 2 3 (null) (null)]
+[0 1 2 3 1 4]
+
+[
+	0
+	1
+	2
+	3
+	[0 1 2 3 1 4]
+]
+
+{
+	a 0
+	b 1
+	c 2
+	d 3
+	e [0 1 2 3 0 4]
+}
+
+{
+	a 0
+	b 1
+	c 2
+	d 3
+	e [
+			[0 1 2 3 0 4]
+		]
+}
+
 --current_index--
 3
 (null)
@@ -1409,7 +1421,7 @@ current_index: 2
 		rmfile "del /s /q "
 		rwww 1
 		slash "\\"
-		start_time 1755627038.100432
+		start_time 1756223494.010877
 		www 1
 		x 12
 		zz 10
@@ -1455,7 +1467,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1755627038.100432
+	start_time 1756223494.010877
 	www 1
 	x 12
 	zz 10
@@ -1500,7 +1512,7 @@ current_index: 2
 	rmfile "del /s /q "
 	rwww 1
 	slash "\\"
-	start_time 1755627038.100432
+	start_time 1756223494.010877
 	www 1
 	x 12
 	zz 10
@@ -1634,28 +1646,28 @@ true
 b
 [
 	"b"
-	"a"
-	"b"
-	"b"
-	"b"
-	"b"
-	"b"
-	"b"
-	"b"
 	"b"
 	"b"
 	"a"
 	"a"
+	"b"
+	"b"
 	"a"
 	"b"
 	"a"
+	"b"
+	"b"
+	"b"
+	"b"
+	"b"
+	"b"
 ]
 
-infinity test c or d: ["c" "c" "d" "d"]
+infinity test c or d: ["d" "d" "c" "c"]
 
-{a 21 b 44 c 35}
+{a 35 b 49 c 16}
 
-[2 6 5]
+[10 8 5]
 
 --get_rand_seed--
 ò×c``¦!šc”lÿ
@@ -1701,8 +1713,8 @@ infinity test c or d: ["c" "c" "d" "d"]
 string
 --set_type--
 (- 3 4)
-["b" 3 "a" 4]
-["b" 3 "a" 4]
+["a" 4 "b" 3]
+["a" 4 "b" 3]
 {a 4 b 3}
 8.7
 (parallel
@@ -1751,17 +1763,17 @@ string
 	{a 3 b 4}
 	{c "c"}
 ]
-21: [{"b":4,"a":3},{"d":null,"c":"c"}]
+21: [{"a":3,"b":4},{"c":"c","d":null}]
 22: [{"a":3,"b":4},{"c":"c","d":null}]
-23: b: 2
+23: c: 3
+a: 1
+b: 2
+d: 4
 e:
   - a
   - b
   - 
   - .inf
-d: 4
-c: 3
-a: 1
 
 24: a: 1
 b: 2
@@ -1774,7 +1786,7 @@ e:
   - .inf
 
 25: {a 1}
-current date-time in epoch: 2025-08-19-14.10.38.1803740
+current date-time in epoch: 2025-08-26-11.51.34.0486510
 2020-06-07 00:22:59
 1391230800
 1391230800
@@ -1820,17 +1832,14 @@ domingo, jun. 07, 2020
 		(print
 			"hello world: "
 			(*
-				@(get
-					(target 4)
-					"label-number-22"
-				)
+				@(target (true) "label-number-22")
 				4
 			)
 			#label23 " and "
 			(* 1 2)
 		)
-	label23 @(get
-			(target 2)
+	label23 @(target
+			(true)
 			["label21" 2]
 		)
 }
@@ -1839,28 +1848,22 @@ domingo, jun. 07, 2020
 		(lambda
 			#labelB (true)
 		)
-	labelB @(get
-			(target 2)
+	labelB @(target
+			(true)
 			["labelA" 0]
 		)
-	labelQ @(get
-			(target 2)
-			"labelA"
-		)
+	labelQ @(target (true) "labelA")
 }
 {
 	labelA #labelQ #labelA
 		(lambda
 			#labelB (true)
 		)
-	labelB @(get
-			(target 2)
+	labelB @(target
+			(true)
 			["labelA" 0]
 		)
-	labelQ @(get
-			(target 2)
-			"labelA"
-		)
+	labelQ @(target (true) "labelA")
 }
 --set_labels--
 #labelD #labelE (true)
@@ -2052,21 +2055,22 @@ decrypted: hello
 --total_size--
 10
 --mutate--
-(associate (ceil) (exp) "b" (total_size))
+[]
 [
-	1
+	(+)
 	2
 	3
 	4
-	(associate)
+	(associate "alpha" 5 "beta" 6)
 	(associate
-		(+)
+		"nest"
 		(associate
 			"count"
-			[7 8]
+			[7 (*) 9]
 		)
-		"end"
-		[10 11 12]
+		(+)
+		[(-) 11 12]
+		(+)
 	)
 ]
 --commonality--
@@ -2307,16 +2311,6 @@ decrypted: hello
 	{_ (null)}
 	(replace
 		_
-		[]
-		(lambda
-			{
-				a 2
-				g (get
-						(current_value 1)
-						"g"
-					)
-			}
-		)
 		["g"]
 		(lambda
 			[
@@ -2326,6 +2320,16 @@ decrypted: hello
 				)
 				4
 			]
+		)
+		[]
+		(lambda
+			{
+				a 2
+				g (get
+						(current_value 1)
+						"g"
+					)
+			}
 		)
 	)
 )
@@ -2502,11 +2506,12 @@ decrypted: hello
 ]
 --mix--
 [
-	2
-	3
+	1
+	3.5
 	5.5
 	7.5
-	9.5
+	10
+	9
 	11.5
 	13.5
 ]
@@ -2521,8 +2526,7 @@ decrypted: hello
 	5.5
 	7.5
 	9.5
-	12
-	11
+	11.5
 	13.5
 ]
 [
@@ -2534,34 +2538,35 @@ decrypted: hello
 		(if
 			true
 			1
-			(parallel
-				(get_entity_comments)
-				1
-				(lambda (null))
-			)
+			(parallel (get_entity_comments))
 		)
 	)
-	[5]
+	[5 6]
 ]
 [
 	1
 	5
 	2.5
-	(associate "a" 3 "b" 4)
+	{a 3}
 	(lambda
 		(if
 			true
 			1
 			(seq
 				(get_entity_comments)
-				(lambda (null))
+				(lambda
+					(print
+						[2 9]
+					)
+				)
 				1
 			)
 		)
 	)
-	[5 6]
+	[6]
 ]
 [
+	(true)
 	2
 	3.5
 	5.5
@@ -2573,37 +2578,27 @@ decrypted: hello
 [
 	(true)
 	2
-	4
-	6
+	3
+	5
+	10
+	9
 	12
-	11
 	14
 ]
 1
+1
 2.5
 2.5
-2.5
-abceomxyz
-abcomxyz
-abcomxyz
---mix_labels--
-[
-	1
-	#mixtest1 2
-	#mixtest2
-	(associate "a" 3 "b" 4)
-	(lambda
-		(if
-			#mixtest3 true
-			1
-			(parallel
-				(get_entity_comments)
-				#mixtest4 1
-			)
-		)
-	)
-	[5 6]
-]
+abcxyz
+abcemxyz
+abcdexyz
+{
+	a [0 1]
+	b [1 2]
+	c (null)
+	x [3 4]
+	z [5 6]
+}
 --total_entity_size--
 79
 87
@@ -2848,58 +2843,27 @@ flatten restore with parallel
 	(clone_entities _ new_entity)
 )
 --mutate_entity--
-[
-	(remove)
-	(call)
-	3
-	4
-	5
-	3.1361731518222147
-	(associate "a" 1 "b" 2)
-	8
-	(not)
-	(assign)
-	{}
-	12
-	13
-]
+[]
 
 [
-	##a 1.2058533781494885
-	(call_entity)
+	(retrieve_from_entity)
+	(query_select)
 	3
-	4
-	(sin)
+	(map)
+	(-)
 	6
-	(asin)
-	(get)
+	7
+	8
 	9
-	[]
+	(reverse)
 	11
-	(tan)
+	(>)
 	13
 	14
-	(associate)
+	(associate (null) (get) b (tgamma))
 ]
 
-[
-	1
-	2
-	3
-	(-)
-	(+)
-	6
-	(+)
-	8
-	(-)
-	(*)
-	11
-	(*)
-	13
-	14
-	(associate (*) (+) "b" (+) (-))
-]
-
+5
 --commonality_entities--
 73.3678794503212
 --edit_distance_entities--
@@ -2910,10 +2874,10 @@ MergeEntityChild2
 (associate "p" 3 "q" 4)
 MergeEntityChild1
 (associate "x" 3 "y" 4)
-_3130331116
-(associate "E" 3 "F" 4)
 _1651806471
 (associate "e" 3 "f" 4)
+_3130331116
+(associate "E" 3 "F" 4)
 --union_entities--
 (associate "b" 4 "a" 3 "c" 3)
 MergeEntityChild2
@@ -2931,17 +2895,6 @@ MergeEntityChild2
 )
 MergeEntityChild1
 (associate "x" 3 "y" 4 "z" 5)
-_3130331116
-(associate
-	"E"
-	3
-	"F"
-	4
-	"G"
-	5
-	"H"
-	6
-)
 _1651806471
 (associate
 	"e"
@@ -2951,6 +2904,17 @@ _1651806471
 	"g"
 	5
 	"h"
+	6
+)
+_3130331116
+(associate
+	"E"
+	3
+	"F"
+	4
+	"G"
+	5
+	"H"
 	6
 )
 (parallel
@@ -3307,14 +3271,8 @@ _3532185687
 						[]
 						(lambda
 							{
-								E (get
-										(current_value 1)
-										"E"
-									)
-								F (get
-										(current_value 1)
-										"F"
-									)
+								E 3
+								F 4
 								G 5
 								H 6
 							}
@@ -3339,16 +3297,7 @@ _3532185687
 						_
 						[]
 						(lambda
-							{
-								e (get
-										(current_value 1)
-										"e"
-									)
-								f (get
-										(current_value 1)
-										"f"
-									)
-							}
+							{e 3 f 4}
 						)
 					)
 				)
@@ -3380,89 +3329,7 @@ contained_entities new_entity: ["DiffEntityChild1" "OnlyIn2" "_3626604918" "_382
 difference between DiffEntity2 and new_entity:
 (declare
 	{_ (null) new_entity (null)}
-	(assign
-		"new_entity"
-		(first
-			(create_entities
-				new_entity
-				(call
-					(lambda
-						(declare
-							{_ (null)}
-							(replace _)
-						)
-					)
-					{
-						_ (retrieve_entity_root _)
-					}
-				)
-			)
-		)
-	)
-	(create_entities
-		(append new_entity "_3626604918")
-		(call
-			(lambda
-				(declare
-					{_ (null)}
-					(replace
-						_
-						[]
-						(lambda
-							{
-								E (null)
-								F (null)
-								G (get
-										(current_value 1)
-										"G"
-									)
-								H (get
-										(current_value 1)
-										"H"
-									)
-							}
-						)
-					)
-				)
-			)
-			{
-				_ (retrieve_entity_root
-						(append _ "_3626604918")
-					)
-			}
-		)
-	)
-	(create_entities
-		(append new_entity "_3823131681")
-		(call
-			(lambda
-				(declare
-					{_ (null)}
-					(replace
-						_
-						[]
-						(lambda
-							{e (null) f (null)}
-						)
-					)
-				)
-			)
-			{
-				_ (retrieve_entity_root
-						(append _ "_3823131681")
-					)
-			}
-		)
-	)
-	(clone_entities
-		(append _ "DiffEntityChild1")
-		(append new_entity "DiffEntityChild1")
-	)
-	(clone_entities
-		(append _ "OnlyIn2")
-		(append new_entity "OnlyIn2")
-	)
-	new_entity
+	(clone_entities _ new_entity)
 )
 (declare
 	{_ (null) new_entity (null)}
@@ -3682,7 +3549,7 @@ difference between DiffContainer and DiffEntity2:
 	new_entity
 )
 --mix_entities--
-(associate "b" 4 "a" 3 "c" 3)
+(associate "c" 3 "b" 4)
 MergeEntityChild2
 (associate
 	"p"
@@ -3697,11 +3564,20 @@ MergeEntityChild2
 	7
 )
 MergeEntityChild1
-(associate "x" 3 "y" 4)
-_3130331116
-(associate "E" 3 "F" 4)
+(associate "x" 3 "y" 4 "z" 5)
 _1651806471
-(associate "e" 3 "f" 4 "h" 6)
+(associate "e" 3 "f" 4)
+_3130331116
+(associate
+	"E"
+	3
+	"F"
+	4
+	"G"
+	5
+	"H"
+	6
+)
 --get_entity_comments--
 Full test
 This is a suite of unit tests.
@@ -3788,7 +3664,7 @@ deep sets
 
 --set_entity_permissions--
 RootTest
-1755627038.521195
+1756223494.157719
 {
 	alter_performance (true)
 	environment (true)
@@ -4222,71 +4098,71 @@ store to .json normally
 ["Child1" "Child5"]
 ["Child3" "Child4"]
 ["Child6" "Child7"]
-["Child4" "Child5" "Child6" "Child7"]
-["Child1" "Child2" "Child6" "Child7"]
+["Child3" "Child4" "Child6" "Child7"]
+["Child1" "Child3" "Child5" "Child7"]
 ["Child4" "Child6"]
 --query_sample--
 ["Child5"]
-["Child6" "Child2"]
+["Child3" "Child1"]
 ["Child4"]
 ["Child4"]
 with weights
-["Child2"]
 ["Child1"]
+["Child2"]
 [
-	"Child1"
-	"Child1"
-	"Child1"
-	"Child2"
-	"Child6"
-	"Child1"
-	"Child4"
-	"Child2"
-	"Child1"
-	"Child2"
-	"Child1"
-	"Child1"
-	"Child1"
-	"Child1"
 	"Child1"
 	"Child3"
+	"Child2"
+	"Child2"
+	"Child2"
+	"Child2"
 	"Child1"
 	"Child2"
+	"Child2"
+	"Child2"
+	"Child2"
+	"Child1"
+	"Child2"
+	"Child1"
+	"Child2"
+	"Child2"
+	"Child2"
+	"Child1"
 	"Child2"
 	"Child1"
 ]
 [
-	"Child2"
 	"Child1"
-	"Child4"
-	"Child1"
-	"Child1"
-	"Child2"
-	"Child1"
-	"Child7"
-	"Child1"
-	"Child2"
 	"Child2"
 	"Child1"
 	"Child2"
 	"Child1"
+	"Child2"
+	"Child2"
+	"Child2"
+	"Child1"
+	"Child1"
+	"Child1"
+	"Child1"
+	"Child5"
+	"Child5"
+	"Child2"
 	"Child1"
 	"Child2"
 	"Child2"
-	"Child1"
 	"Child1"
 	"Child2"
 ]
 [
 	"Child2"
 	"Child2"
+	"Child3"
 	"Child2"
 	"Child2"
 	"Child2"
 	"Child2"
 	"Child2"
 	"Child2"
-	"Child7"
 	"Child2"
 ]
 ["Child2"]
@@ -4334,14 +4210,14 @@ cascading query_not_in_entity_list: ["Child6" "Child7"]
 unweighted query: {
 	Child1 4
 	Child2 1
-	Child3 100
+	Child4 100
 	Child6 2
 	Child7 10
 }
 weighted query: {
 	Child1 4
 	Child2 1
-	Child4 100
+	Child3 100
 	Child6 2
 	Child7 10
 }
@@ -4350,12 +4226,12 @@ weighted query list of lists: [
 	[1 2 4 10 100]
 ]
 weighted query list of lists: [
-	["Child2" "Child6" "Child1" "Child7" "Child3"]
+	["Child2" "Child6" "Child1" "Child7" "Child4"]
 	[1 2 4 10 100]
 	[-1 2 4 10 100]
 ]
 weighted query list of lists with multiple values: [
-	["Child2" "Child6" "Child1" "Child7" "Child3"]
+	["Child2" "Child6" "Child1" "Child7" "Child4"]
 	[1 2 4 10 100]
 	[-1 2 4 10 100]
 	[-1 1 3 0 100]
@@ -4663,11 +4539,11 @@ case conviction:{
 }
 cyclic feature nearest neighbors: {cyclic1 1 cyclic5 0.5}
 cyclic test expected: 155, 200, 190 ...  deg values of 0 8 and 12:
-200: 0.05555555555555555 (null
-	##deg 8
-)
 155: 0.1 (null
 	##deg 0
+)
+200: 0.05555555555555555 (null
+	##deg 8
 )
 190: 0.045454545454545456 (null
 	##deg 12
@@ -4818,33 +4694,59 @@ execution limits tests
 (null)
 [
 	{a 1}
-	@(get
-		(target 2)
-		0
-	)
+	@(target (true) 0)
 	1
 ]
 [
 	{a 1}
-	@(get
-		(target 2)
-		0
-	)
+	@(target (true) 0)
 	1
 ]
-3
 [
-	{a 3}
-	@(get
-		(target 2)
-		[0 "a"]
-	)
+	{a 1}
+	@(target (true) 0)
+	1
 ]
+[
+	{a 1}
+	{
+		b @(target (true) 0)
+	}
+	1
+]
+[(null)]
+[0 1 2 3 1 4]
+
+[
+	0
+	1
+	2
+	3
+	[0 1 2 3 1 4]
+]
+
+{
+	a 0
+	b 1
+	c 2
+	d 3
+	e [0 1 2 3 0 4]
+}
+
+{
+	a 0
+	b 1
+	c 2
+	d 3
+	e [
+			[0 1 2 3 0 4]
+		]
+}
 
 [
 	{a 3}
-	@(get
-		(target 2)
+	@(target
+		(true)
 		[0 "a"]
 	)
 ]
@@ -4858,8 +4760,8 @@ entity cyclic test:
 					##label_target
 					[
 						{a 3}
-						@(get
-							(target 2)
+						@(target
+							2
 							[0 "a"]
 						)
 					]
@@ -4888,8 +4790,8 @@ entity cyclic test:
 					##label_target
 					[
 						{a 3}
-						@(get
-							(target 2)
+						@(target
+							2
 							[0 "a"]
 						)
 					]
@@ -4915,7 +4817,7 @@ cyclic lookup test:
 			auto_derive_on_train {series_id_features "id"}
 		}
 	pointer [
-			[@(get (target 4) ["original" "auto_derive_on_train" "series_id_features"])]
+			[@(target (true) ["original" "auto_derive_on_train" "series_id_features"])]
 		]
 }
 cyclic lookup test 2:
@@ -4927,7 +4829,7 @@ cyclic lookup test 2:
 		}
 	".f3_rate_1" {
 			auto_derive_on_train {
-					ordered_by_features [@(get (target 5) [".f1_rate_1" "auto_derive_on_train" "ordered_by_features" 0])]
+					ordered_by_features [@(target (true) [".f1_rate_1" "auto_derive_on_train" "ordered_by_features" 0])]
 				}
 		}
 }
@@ -4948,16 +4850,13 @@ cyclic lookup test 2:
 	#A 10
 	#duped
 	["b"]
-	@(get
-		(target 2)
-		1
-	)
+	@(target (true) 1)
 )
 
 ["hello" "!"]
 {a1 1.4142135623730951 a2 2 a3 1.4142135623730951}
 {a1 1.4142135623730951 a3 1.4142135623730951}
-{a3 1.4142135623730951}
+{a1 1.4142135623730951}
 {a1 5.0990195135927845 a2 2 a3 5.0990195135927845}
 {a1 1 a3 1 a4 0}
 --accuracy tests--
@@ -4969,13 +4868,13 @@ distance symmetry tests
 [
 	[
 		"B"
-		"I"
-		"F"
 		"A"
-		"D"
+		"F"
 		"C"
-		"H"
+		"D"
+		"I"
 		"G"
+		"E"
 	]
 	[
 		0
@@ -4991,13 +4890,13 @@ distance symmetry tests
 [
 	[
 		"B"
-		"F"
-		"A"
 		"C"
+		"F"
 		"D"
 		"I"
+		"A"
+		"J"
 		"E"
-		"H"
 	]
 	[
 		0
@@ -5223,4 +5122,4 @@ rmdir /s /q amlg_code\persistent_tree_test_root
 del /s /q amlg_code\persist_module_test\psm.mdam
 del /s /q amlg_code\persist_module_test.mdam
 --total execution time--
-2.2860820293426514
+1.6079881191253662

@@ -1,19 +1,29 @@
 ﻿(seq
-;(print
-;	(list (assoc "a" 1)
-;		@(get (target 2) 0) 1
-;	)
-; )
+ (print
+	[
+		{ "a" 1}
+		@(get (target 2) 0)
+		1
+	]
+ )
 
-; (print
-;	(list
-;		@(get (target 0) 0)
-;	)
-; )
+ (print
+	[
+		{ "a" 1}
+		{ b @(get (target 3) 0)}
+		1
+	]
+ )
 
-(print (list 0 1 2 3 (+ (target 0 1)) 4) "\n")
-(print (list 0 1 2 3 (list 0 1 2 3 (+ (target 1 1)) 4)) "\n")
-(print { a 0 b 1 c 2 d 3 e (list 0 1 2 3 (+ (target 1 "a")) 4)} "\n")
-(print { a 0 b 1 c 2 d 3 e (list (list 0 1 2 3 (+ (target (true) "a")) 4))} "\n")
+ (print
+	[
+		@(get (target 0) 0)
+	]
+ )
+
+ (print [ 0 1 2 3 (+ (target 0 1)) 4] "\n")
+ (print [ 0 1 2 3 [ 0 1 2 3 (+ (target 1 1)) 4]] "\n")
+ (print { a 0 b 1 c 2 d 3 e [ 0 1 2 3 (+ (target 1 "a")) 4]} "\n")
+ (print { a 0 b 1 c 2 d 3 e [ [ 0 1 2 3 (+ (target (true) "a")) 4]]} "\n")
 
  )

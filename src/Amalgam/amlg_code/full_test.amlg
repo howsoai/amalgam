@@ -2144,7 +2144,7 @@
  )
 
  (print "--mix_entities--\n")
- (mix_entities "MergeEntity1" "MergeEntity2" 0.5 0.5 0.5 0.2 (null) "MixedEntities")
+ (mix_entities "MergeEntity1" "MergeEntity2" 0.5 0.5 (null) 0.2 "MixedEntities")
  (print (retrieve_entity_root "MixedEntities"))
  (map
    (lambda (seq
@@ -3670,20 +3670,32 @@
 	)
  )
 
- (print (get
- 			(list
- 				{"a" 3}
- 				@(get (target 2) [0 "a"])
- 			)
- 		1)
- 	"\n")
- 
  (print
- 		(list
- 			{"a" 3}
- 			@(get (target 2) [0 "a"])
- 		)
- "\n")
+	[
+		{ "a" 1}
+		@(get (target 2) 0)
+		1
+	]
+ )
+
+ (print
+	[
+		{ "a" 1}
+		{ b @(get (target 3) 0)}
+		1
+	]
+ )
+
+ (print
+	[
+		@(get (target 0) 0)
+	]
+ )
+
+ (print [ 0 1 2 3 (+ (target 0 1)) 4] "\n")
+ (print [ 0 1 2 3 [ 0 1 2 3 (+ (target 1 1)) 4]] "\n")
+ (print { a 0 b 1 c 2 d 3 e [ 0 1 2 3 (+ (target 1 "a")) 4]} "\n")
+ (print { a 0 b 1 c 2 d 3 e [ [ 0 1 2 3 (+ (target (true) "a")) 4]]} "\n")
  
  (print
  		(list

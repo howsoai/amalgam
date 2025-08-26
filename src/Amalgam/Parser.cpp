@@ -140,13 +140,14 @@ std::string Parser::Unparse(EvaluableNode *tree,
 	bool first_of_transactional_unparse, size_t starting_indendation)
 {
 	UnparseData upd;
-	upd.topNodeIfTransactionUnparsing = (first_of_transactional_unparse ? tree : nullptr);
+	upd.topNode = tree;
 	//if the top node needs cycle checks, then need to check all nodes in case there are
 	// multiple ways to get to one
 	upd.cycleFree = (tree == nullptr || !tree->GetNeedCycleCheck());
 	upd.preevaluationNeeded = false;
 	upd.emitAttributes = emit_attributes;
 	upd.sortKeys = sort_keys;
+	upd.transaction = first_of_transactional_unparse;
 	Unparse(upd, tree, nullptr, expanded_whitespace, starting_indendation, starting_indendation > 0);
 	return upd.result;
 }
@@ -1007,7 +1008,8 @@ void Parser::AppendAssocKeyValuePair(UnparseData &upd, StringInternPool::StringI
 	Unparse(upd, n, parent, expanded_whitespace, indentation_depth + 1, false);
 }
 
-void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *parent, bool expanded_whitespace, size_t indentation_depth, bool need_initial_indent)
+void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *parent, bool expanded_whitespace,
+	size_t indentation_depth, bool need_initial_indent)
 {
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 	assert(!(upd.cycleFree && tree != nullptr && tree->GetNeedCycleCheck()));
@@ -1025,7 +1027,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 		{
 			upd.preevaluationNeeded = true;
 
-			//TODO 24297: check if referencing top node, if so, use shorthand (target (true) ...)
+			//TODO 24297: check if referencing topNode, if so, use shorthand (target (true) ...)
 			//TODO 24297: test @(target... with various forms
 
 			EvaluableNodeManager enm;
@@ -1224,7 +1226,12 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 			}
 		}
 
-		if(tree != upd.topNodeIfTransactionUnparsing)
+		if(upd.transaction && tree == upd.topNode)
+		{
+			//end of opening transactional; emit a space to ensure things don't get improperly joined
+			upd.result.push_back(' ');
+		}
+		else //close off node
 		{
 			//add closing parenthesis
 			if(expanded_whitespace)
@@ -1255,10 +1262,6 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 				else
 					upd.result.push_back(')');
 			}
-		}
-		else //end of opening transactional; emit a space to ensure things don't get improperly joined
-		{
-			upd.result.push_back(' ');
 		}
 	}
 }

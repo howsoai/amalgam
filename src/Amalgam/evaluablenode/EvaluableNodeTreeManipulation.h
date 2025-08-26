@@ -172,7 +172,7 @@ public:
 	{
 	public:
 		NodesMixMethod(RandomStream random_stream, EvaluableNodeManager *_enm,
-			double fraction_a, double fraction_b, double similar_mix_chance);
+			double fraction_a, double fraction_b, double similar_mix_chance, size_t max_mix_depth);
 
 		virtual EvaluableNode *MergeValues(EvaluableNode *a, EvaluableNode *b, bool must_merge = false);
 
@@ -212,6 +212,8 @@ public:
 		double fractionAOrB;
 		double fractionAInsteadOfB;
 		double similarMixChance;
+		size_t maxMixDepth;
+		size_t curMixDepth;
 	};
 
 	//functionality to merge sequences of strings (e.g., for comments)
@@ -324,10 +326,7 @@ public:
 	static EvaluableNode *UnionTrees(EvaluableNodeManager *enm, EvaluableNode *tree1, EvaluableNode *tree2);
 
 	static EvaluableNode *MixTrees(RandomStream random_stream, EvaluableNodeManager *enm, EvaluableNode *tree1, EvaluableNode *tree2,
-		double fraction_a, double fraction_b, double similar_mix_chance);
-
-	static EvaluableNode *MixTreesByCommonLabels(Interpreter *interpreter, EvaluableNodeManager *enm,
-		EvaluableNodeReference tree1, EvaluableNodeReference tree2, RandomStream &rs, double fraction_a, double fraction_b);
+		double fraction_a, double fraction_b, double similar_mix_chance, size_t max_mix_depth);
 
 	static std::string MixStrings(const std::string &a, const std::string &b, RandomStream random_stream, double fraction_a, double fraction_b);
 

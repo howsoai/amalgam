@@ -1303,7 +1303,7 @@ static EvaluableNode *GetNodeFromNodeAndWalkPath(EvaluableNode *node, EvaluableN
 
 	if(walk_path != nullptr && walk_path->IsOrderedArray())
 	{
-		//travers the nodes over each index to find the location
+		//traverse the nodes over each index to find the location
 		auto &walk_path_ocn = walk_path->GetOrderedChildNodesReference();
 		for(auto &index_node : walk_path_ocn)
 		{

@@ -654,8 +654,8 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MIX_ENTITIES(EvaluableNode
 	//get destination if applicable
 	EntityWriteReference destination_entity_parent;
 	StringRef new_entity_id;
-	if(ocn.size() > 6)
-		std::tie(destination_entity_parent, new_entity_id) = InterpretNodeIntoDestinationEntity(ocn[6]);
+	if(ocn.size() > 7)
+		std::tie(destination_entity_parent, new_entity_id) = InterpretNodeIntoDestinationEntity(ocn[7]);
 	else
 		destination_entity_parent = EntityWriteReference(curEntity);
 

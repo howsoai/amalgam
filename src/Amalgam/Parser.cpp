@@ -1028,6 +1028,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 			upd.preevaluationNeeded = true;
 
 			//TODO 24297: check if referencing topNode, if so, use shorthand (target (true) ...)
+			//TODO 24297: update GetCodeForPathToSharedNodeFromParentAToParentB to emit target-based walk paths
 			//TODO 24297: test @(target... with various forms
 
 			EvaluableNodeManager enm;

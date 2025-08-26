@@ -2144,7 +2144,7 @@
  )
 
  (print "--mix_entities--\n")
- (mix_entities "MergeEntity1" "MergeEntity2" 0.5 0.5 (null) 0.2 "MixedEntities")
+ (mix_entities "MergeEntity1" "MergeEntity2" 0.5 0.5 0.5 (null) 0.2 "MixedEntities")
  (print (retrieve_entity_root "MixedEntities"))
  (map
    (lambda (seq

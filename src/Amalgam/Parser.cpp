@@ -326,11 +326,12 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 	//build code to get the reference
 	EvaluableNode *target = enm.AllocNode(ENT_TARGET);
 
-	EvaluableNode *indices = nullptr;
+	//walk_path can either be an individual index or a list of indices to traverse
+	EvaluableNode *walk_path = nullptr;
 	if(b_path_nodes.size() == 1)
-		indices = b_path_nodes[0];
+		walk_path = b_path_nodes[0];
 	else
-		indices = enm.AllocNode(b_path_nodes, false, true);
+		walk_path = enm.AllocNode(b_path_nodes, false, true);
 
 	//can't shortcut to use top node when accumulating a transaction or it may get assigned
 	// to the incorrect node
@@ -340,7 +341,7 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 		target->AppendOrderedChildNode(enm.AllocNode(static_cast<double>(a_ancestor_depth + 1)));
 
 	if(b_path_nodes.size() > 0)
-		target->AppendOrderedChildNode(indices);
+		target->AppendOrderedChildNode(walk_path);
 
 	return target;
 }

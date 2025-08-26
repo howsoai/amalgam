@@ -1026,6 +1026,7 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 			upd.preevaluationNeeded = true;
 
 			//TODO 24297: check if referencing top node, if so, use shorthand (target (true) ...)
+			//TODO 24297: test @(target... with various forms
 
 			EvaluableNodeManager enm;
 			EvaluableNode *code_to_print = GetCodeForPathToSharedNodeFromParentAToParentB(upd,
@@ -1278,6 +1279,10 @@ static EvaluableNode *GetNodeRelativeToIndex(EvaluableNode *node, EvaluableNode 
 		return nullptr;
 	}
 
+	//null is only a valid lookup for associative arrays
+	if(EvaluableNode::IsNull(index_node))
+		return nullptr;
+
 	//otherwise treat the index as a number for a list
 	size_t index = static_cast<size_t>(EvaluableNode::ToNumber(index_node));
 	if(index < node->GetOrderedChildNodes().size())
@@ -1285,6 +1290,34 @@ static EvaluableNode *GetNodeRelativeToIndex(EvaluableNode *node, EvaluableNode 
 
 	//didn't find anything
 	return nullptr;
+}
+
+//given a node, traverses the node via the walk path and returns that child, nullptr if invalid
+static EvaluableNode *GetNodeFromNodeAndWalkPath(EvaluableNode *node, EvaluableNode *walk_path)
+{
+	if(node == nullptr)
+		return nullptr;
+
+	if(walk_path != nullptr && walk_path->IsOrderedArray())
+	{
+		//travers the nodes over each index to find the location
+		auto &walk_path_ocn = walk_path->GetOrderedChildNodesReference();
+		for(auto &index_node : walk_path_ocn)
+		{
+			node = GetNodeRelativeToIndex(node, index_node);
+			if(node == nullptr)
+				break;
+		}
+
+		return node;
+	}
+	else //immediate
+	{
+		return GetNodeRelativeToIndex(node, walk_path);
+	}
+
+	return nullptr;
+
 }
 
 EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
@@ -1301,33 +1334,10 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 		if(path->GetOrderedChildNodes().size() < 2)
 			return nullptr;
 
-		EvaluableNode *result = GetNodeFromRelativeCodePath(path->GetOrderedChildNodes()[0]);
-		if(result == nullptr)
-			return result;
-		EvaluableNode *index_node = path->GetOrderedChildNodes()[1];
-		if(index_node == nullptr)
-			return nullptr;
-
-		//TODO 24297: move into traverse walk path method, use for ENT_TARGET below
-		if(index_node->IsOrderedArray())
-		{
-			//travers the nodes over each index to find the location
-			auto &index_ocn = index_node->GetOrderedChildNodesReference();
-			for(auto &index_node_element : index_ocn)
-			{
-				result = GetNodeRelativeToIndex(result, index_node_element);
-				if(result == nullptr)
-					break;
-			}
-
-			return result;
-		}
-		else //immediate
-		{
-			return GetNodeRelativeToIndex(result, index_node);
-		}
-
-		return nullptr;
+		auto &path_ocn = path->GetOrderedChildNodesReference();
+		EvaluableNode *result = GetNodeFromRelativeCodePath(path_ocn[0]);
+		EvaluableNode *walk_path = path_ocn[1];
+		return GetNodeFromNodeAndWalkPath(result, walk_path);
 	}
 
 	case ENT_TARGET:
@@ -1384,9 +1394,7 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 		}
 
 		if(path_ocn.size() > 1)
-		{
-			//TODO 24297: finish this: add second param to grab variable (like a get outside).
-		}
+			return GetNodeFromNodeAndWalkPath(result, path_ocn[1]);
 
 		return result;
 	}

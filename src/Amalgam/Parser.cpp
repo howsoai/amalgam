@@ -140,13 +140,14 @@ std::string Parser::Unparse(EvaluableNode *tree,
 	bool first_of_transactional_unparse, size_t starting_indendation)
 {
 	UnparseData upd;
-	upd.topNodeIfTransactionUnparsing = (first_of_transactional_unparse ? tree : nullptr);
+	upd.topNode = tree;
 	//if the top node needs cycle checks, then need to check all nodes in case there are
 	// multiple ways to get to one
 	upd.cycleFree = (tree == nullptr || !tree->GetNeedCycleCheck());
 	upd.preevaluationNeeded = false;
 	upd.emitAttributes = emit_attributes;
 	upd.sortKeys = sort_keys;
+	upd.transaction = first_of_transactional_unparse;
 	Unparse(upd, tree, nullptr, expanded_whitespace, starting_indendation, starting_indendation > 0);
 	return upd.result;
 }
@@ -232,7 +233,7 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 	if(shared_node == nullptr || a_parent == nullptr || b_parent == nullptr)
 		return nullptr;
 
-	//find all parent nodes of a to find collision with parent node of b, along with depth counts
+	//find all parent nodes of shared_node to find where b_parent links up, along with depth counts
 	EvaluableNode::ReferenceCountType a_parent_nodes;
 	size_t a_ancestor_depth = 1;
 	while(a_parent != nullptr && a_parent_nodes.emplace(a_parent, a_ancestor_depth++).second == true)
@@ -244,19 +245,19 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 	EvaluableNode::ReferenceSetType b_nodes_visited;
 	//ids to traverse along the path
 	std::vector<EvaluableNode *> b_path_nodes;
-	//the current node from path b
-	EvaluableNode *b = shared_node;
+	//the current node from path lowest_common_node
+	EvaluableNode *lowest_common_node = shared_node;
 	while(b_nodes_visited.insert(b_parent).second == true) //make sure not visited yet
 	{
 		//stop if found common parent node
-		if(auto a_entry = a_parent_nodes.find(b); a_entry != end(a_parent_nodes))
+		if(auto a_entry = a_parent_nodes.find(lowest_common_node); a_entry != end(a_parent_nodes))
 		{
 			a_ancestor_depth = a_entry->second;
 			break;
 		}
 
 		//could not find a common ancestor, so error out
-		if(b == nullptr)
+		if(lowest_common_node == nullptr)
 		{
 		#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 			assert(false);
@@ -274,7 +275,7 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 				//look up which key corresponds to the value
 				for(auto &[s_id, s] : bp_mcn)
 				{
-					if(s == b)
+					if(s == lowest_common_node)
 					{
 						key_id = s_id;
 						break;
@@ -293,7 +294,7 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 				for(auto &key_sid : key_sids)
 				{
 					auto k = bp_mcn.find(key_sid);
-					if(k->second == b)
+					if(k->second == lowest_common_node)
 					{
 						key_id = k->first;
 						break;
@@ -306,7 +307,7 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 		else if(b_parent->IsOrderedArray())
 		{
 			auto &bp_ocn = b_parent->GetOrderedChildNodesReference();
-			const auto &found = std::find(begin(bp_ocn), end(bp_ocn), b);
+			const auto &found = std::find(begin(bp_ocn), end(bp_ocn), lowest_common_node);
 			auto index = std::distance(begin(bp_ocn), found);
 			b_path_nodes.insert(begin(b_path_nodes), enm.AllocNode(static_cast<double>(index)));
 		}
@@ -318,28 +319,31 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 			return nullptr;
 		}
 
-		b = b_parent;
-		b_parent = upd.parentNodes[b];
+		lowest_common_node = b_parent;
+		b_parent = upd.parentNodes[lowest_common_node];
 	}
 
 	//build code to get the reference
 	EvaluableNode *target = enm.AllocNode(ENT_TARGET);
-	//need to include the get (below) in the depth, so add 1
-	target->AppendOrderedChildNode(enm.AllocNode(static_cast<double>(a_ancestor_depth + 1)));
 
-	EvaluableNode *indices = nullptr;
-	if(b_path_nodes.size() == 0)
-		return target;
-	else if(b_path_nodes.size() == 1)
-		indices = b_path_nodes[0];
+	//walk_path can either be an individual index or a list of indices to traverse
+	EvaluableNode *walk_path = nullptr;
+	if(b_path_nodes.size() == 1)
+		walk_path = b_path_nodes[0];
 	else
-		indices = enm.AllocNode(b_path_nodes, false, true);
+		walk_path = enm.AllocNode(b_path_nodes, false, true);
 
-	EvaluableNode *get = enm.AllocNode(ENT_GET);
-	get->AppendOrderedChildNode(target);
-	get->AppendOrderedChildNode(indices);
+	//can't shortcut to use top node when accumulating a transaction or it may get assigned
+	// to the incorrect node
+	if(!upd.transaction && lowest_common_node == upd.topNode)
+		target->AppendOrderedChildNode(enm.AllocNode(ENT_TRUE));
+	else //need to include the get (below) in the depth, so add 1
+		target->AppendOrderedChildNode(enm.AllocNode(static_cast<double>(a_ancestor_depth + 1)));
 
-	return get;
+	if(b_path_nodes.size() > 0)
+		target->AppendOrderedChildNode(walk_path);
+
+	return target;
 }
 
 void Parser::SkipWhitespaceAndAccumulateAttributes(EvaluableNode *target)
@@ -1021,7 +1025,8 @@ void Parser::AppendAssocKeyValuePair(UnparseData &upd, StringInternPool::StringI
 	Unparse(upd, n, parent, expanded_whitespace, indentation_depth + 1, false);
 }
 
-void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *parent, bool expanded_whitespace, size_t indentation_depth, bool need_initial_indent)
+void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *parent, bool expanded_whitespace,
+	size_t indentation_depth, bool need_initial_indent)
 {
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 	assert(!(upd.cycleFree && tree != nullptr && tree->GetNeedCycleCheck()));
@@ -1235,7 +1240,12 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 			}
 		}
 
-		if(tree != upd.topNodeIfTransactionUnparsing)
+		if(upd.transaction && tree == upd.topNode)
+		{
+			//end of opening transactional; emit a space to ensure things don't get improperly joined
+			upd.result.push_back(' ');
+		}
+		else //close off node
 		{
 			//add closing parenthesis
 			if(expanded_whitespace)
@@ -1267,10 +1277,6 @@ void Parser::Unparse(UnparseData &upd, EvaluableNode *tree, EvaluableNode *paren
 					upd.result.push_back(')');
 			}
 		}
-		else //end of opening transactional; emit a space to ensure things don't get improperly joined
-		{
-			upd.result.push_back(' ');
-		}
 	}
 }
 
@@ -1290,6 +1296,10 @@ static EvaluableNode *GetNodeRelativeToIndex(EvaluableNode *node, EvaluableNode 
 		return nullptr;
 	}
 
+	//null is only a valid lookup for associative arrays
+	if(EvaluableNode::IsNull(index_node))
+		return nullptr;
+
 	//otherwise treat the index as a number for a list
 	size_t index = static_cast<size_t>(EvaluableNode::ToNumber(index_node));
 	if(index < node->GetOrderedChildNodes().size())
@@ -1297,6 +1307,34 @@ static EvaluableNode *GetNodeRelativeToIndex(EvaluableNode *node, EvaluableNode 
 
 	//didn't find anything
 	return nullptr;
+}
+
+//given a node, traverses the node via the walk path and returns that child, nullptr if invalid
+static EvaluableNode *GetNodeFromNodeAndWalkPath(EvaluableNode *node, EvaluableNode *walk_path)
+{
+	if(node == nullptr)
+		return nullptr;
+
+	if(walk_path != nullptr && walk_path->IsOrderedArray())
+	{
+		//traverse the nodes over each index to find the location
+		auto &walk_path_ocn = walk_path->GetOrderedChildNodesReference();
+		for(auto &index_node : walk_path_ocn)
+		{
+			node = GetNodeRelativeToIndex(node, index_node);
+			if(node == nullptr)
+				break;
+		}
+
+		return node;
+	}
+	else //immediate
+	{
+		return GetNodeRelativeToIndex(node, walk_path);
+	}
+
+	return nullptr;
+
 }
 
 EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
@@ -1313,61 +1351,67 @@ EvaluableNode *Parser::GetNodeFromRelativeCodePath(EvaluableNode *path)
 		if(path->GetOrderedChildNodes().size() < 2)
 			return nullptr;
 
-		EvaluableNode *result = GetNodeFromRelativeCodePath(path->GetOrderedChildNodes()[0]);
-		if(result == nullptr)
-			return result;
-		EvaluableNode *index_node = path->GetOrderedChildNodes()[1];
-		if(index_node == nullptr)
-			return nullptr;
-
-		if(index_node->IsOrderedArray())
-		{
-			//travers the nodes over each index to find the location
-			auto &index_ocn = index_node->GetOrderedChildNodesReference();
-			for(auto &index_node_element : index_ocn)
-			{
-				result = GetNodeRelativeToIndex(result, index_node_element);
-				if(result == nullptr)
-					break;
-			}
-
-			return result;
-		}
-		else //immediate
-		{
-			return GetNodeRelativeToIndex(result, index_node);
-		}
-
-		return nullptr;
+		auto &path_ocn = path->GetOrderedChildNodesReference();
+		EvaluableNode *result = GetNodeFromRelativeCodePath(path_ocn[0]);
+		EvaluableNode *walk_path = path_ocn[1];
+		return GetNodeFromNodeAndWalkPath(result, walk_path);
 	}
 
 	case ENT_TARGET:
 	{
 		//first parameter is the number of steps to crawl up in the parent tree
-		size_t target_steps_up = 1;
-		if(path->GetOrderedChildNodes().size() > 0)
+		auto &path_ocn = path->GetOrderedChildNodesReference();
+		if(path_ocn.size() == 0)
+			return path;
+
+		EvaluableNode *step_node = path->GetOrderedChildNodes()[0];
+		if(EvaluableNode::IsNull(step_node))
+			return path;
+
+		//find the appropriate result
+		EvaluableNode *result = path;
+
+		auto step_node_type = step_node->GetType();
+		if(step_node_type == ENT_NUMBER)
 		{
-			double step_value = EvaluableNode::ToNumber(path->GetOrderedChildNodes()[0]);
+			double step_value = EvaluableNode::ToNumber(step_node);
 
 			//zero is not allowed here because that means it would attempt to replace itself with itself
 			//within the data -- in actual runtime, 0 is allowed for target because other things can point to it,
 			//but not during parsing
-			if(step_value >= 1)
-				target_steps_up = static_cast<size_t>(step_value);
-			else
+			if(step_value < 1)
 				return nullptr;
+
+			//crawl up parse tree
+			size_t target_steps = static_cast<size_t>(step_value);
+			for(size_t i = 0; i < target_steps; i++)
+			{
+				auto found = parentNodes.find(result);
+				if(found == end(parentNodes))
+					return nullptr;
+
+				result = found->second;
+			}
+		}
+		else if(step_node_type == ENT_TRUE)
+		{
+			//climb up to the top
+			while(true)
+			{
+				auto found = parentNodes.find(result);
+				if(found == end(parentNodes))
+					break;
+
+				result = found->second;
+			}
+		}
+		else if(step_node_type != ENT_FALSE)
+		{
+			return nullptr;
 		}
 
-		//crawl up parse tree
-		EvaluableNode *result = path;
-		for(size_t i = 0; i < target_steps_up && result != nullptr; i++)
-		{
-			auto found = parentNodes.find(result);
-			if(found != end(parentNodes))
-				result = found->second;
-			else
-				result = nullptr;
-		}
+		if(path_ocn.size() > 1)
+			return GetNodeFromNodeAndWalkPath(result, path_ocn[1]);
 
 		return result;
 	}

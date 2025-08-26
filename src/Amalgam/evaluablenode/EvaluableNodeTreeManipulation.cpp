@@ -10,7 +10,7 @@
 #include <cmath>
 
 EvaluableNodeTreeManipulation::NodesMixMethod::NodesMixMethod(RandomStream random_stream, EvaluableNodeManager *_enm,
-	double fraction_a, double fraction_b, double similar_mix_chance) : NodesMergeMethod(_enm, true, false)
+	double fraction_a, double fraction_b, double similar_mix_chance, size_t max_mix_depth) : NodesMergeMethod(_enm, true, false)
 {
 	randomStream = random_stream;
 
@@ -33,6 +33,9 @@ EvaluableNodeTreeManipulation::NodesMixMethod::NodesMixMethod(RandomStream rando
 		similarMixChance = 0.0;
 	else
 		similarMixChance = std::min(1.0, std::max(-1.0, similar_mix_chance));
+
+	maxMixDepth = max_mix_depth;
+	curMixDepth = 0;
 }
 
 //returns a mix of a and b based on their fractions
@@ -84,37 +87,78 @@ EvaluableNode *EvaluableNodeTreeManipulation::NodesMixMethod::MergeValues(Evalua
 	if(a == nullptr && b == nullptr)
 		return nullptr;
 
-	if(AreMergeable(a, b) || must_merge)
-	{
-		EvaluableNode *merged = MergeTrees(this, a, b);
+	EvaluableNode *merged = nullptr;
+	curMixDepth++;
 
-		//if the original and merged, check to see if mergeable of same type, and if so, interpolate
-		if(merged != nullptr && a != nullptr && b != nullptr)
+	if(curMixDepth <= maxMixDepth || maxMixDepth == std::numeric_limits<size_t>::max())
+	{
+		if(AreMergeable(a, b) || must_merge)
 		{
-			if(merged->IsNumericOrNull() && a->IsNumericOrNull() && b->IsNumericOrNull())
+			merged = MergeTrees(this, a, b);
+
+			//if the original and merged, check to see if mergeable of same type, and if so, interpolate
+			if(merged != nullptr && a != nullptr && b != nullptr)
 			{
-				double a_value = a->GetNumberValue();
-				double b_value = b->GetNumberValue();
-				double mixed_value = MixNumberValues(a_value, b_value, fractionA, fractionB);
-				merged->SetTypeViaNumberValue(mixed_value);
-			}
-			else if(merged->GetType() == ENT_STRING && a->GetType() == ENT_STRING && b->GetType() == ENT_STRING)
-			{
-				auto a_value = a->GetStringIDReference();
-				auto b_value = b->GetStringIDReference();
-				auto mixed_value = MixStringValues(a_value, b_value,
-					randomStream.CreateOtherStreamViaRand(), fractionA, fractionB);
-				merged->SetStringIDWithReferenceHandoff(mixed_value);
+				if(merged->IsNumericOrNull() && a->IsNumericOrNull() && b->IsNumericOrNull())
+				{
+					double a_value = a->GetNumberValue();
+					double b_value = b->GetNumberValue();
+					double mixed_value = MixNumberValues(a_value, b_value, fractionA, fractionB);
+					merged->SetTypeViaNumberValue(mixed_value);
+				}
+				else if(merged->GetType() == ENT_STRING && a->GetType() == ENT_STRING && b->GetType() == ENT_STRING)
+				{
+					auto a_value = a->GetStringIDReference();
+					auto b_value = b->GetStringIDReference();
+					auto mixed_value = MixStringValues(a_value, b_value,
+						randomStream.CreateOtherStreamViaRand(), fractionA, fractionB);
+					merged->SetStringIDWithReferenceHandoff(mixed_value);
+				}
 			}
 		}
-
-		return merged;
+		else if(KeepNonMergeableAInsteadOfB())
+			merged = MergeTrees(this, a, nullptr);
+		else
+			merged = MergeTrees(this, nullptr, b);
+	}
+	else //select one and copy instead of merging
+	{
+		if(KeepNonMergeableAInsteadOfB())
+		{
+			if(a != nullptr)
+			{
+				auto find_tree_a = references.find(a);
+				if(find_tree_a != end(references))
+				{
+					merged = find_tree_a->second;
+				}
+				else
+				{
+					merged = enm->DeepAllocCopy(a);
+					references[a] = merged;
+				}
+			}
+		}
+		else
+		{
+			if(b != nullptr)
+			{
+				auto find_tree_b = references.find(b);
+				if(find_tree_b != end(references))
+				{
+					merged = find_tree_b->second;
+				}
+				else
+				{
+					merged = enm->DeepAllocCopy(b);
+					references[b] = merged;
+				}
+			}
+		}
 	}
 
-	if(KeepNonMergeableAInsteadOfB())
-		return MergeTrees(this, a, nullptr);
-	else
-		return MergeTrees(this, nullptr, b);
+	curMixDepth--;
+	return merged;
 }
 
 bool EvaluableNodeTreeManipulation::NodesMixMethod::AreMergeable(EvaluableNode *a, EvaluableNode *b)
@@ -207,80 +251,10 @@ EvaluableNode *EvaluableNodeTreeManipulation::UnionTrees(EvaluableNodeManager *e
 }
 
 EvaluableNode *EvaluableNodeTreeManipulation::MixTrees(RandomStream random_stream, EvaluableNodeManager *enm, EvaluableNode *tree1, EvaluableNode *tree2,
-	double fraction_a, double fraction_b, double similar_mix_chance)
+	double fraction_a, double fraction_b, double similar_mix_chance, size_t max_mix_depth)
 {
-	NodesMixMethod mm(random_stream, enm, fraction_a, fraction_b, similar_mix_chance);
+	NodesMixMethod mm(random_stream, enm, fraction_a, fraction_b, similar_mix_chance, max_mix_depth);
 	return mm.MergeValues(tree1, tree2);
-}
-
-EvaluableNode *EvaluableNodeTreeManipulation::MixTreesByCommonLabels(Interpreter *interpreter, EvaluableNodeManager *enm,
-	EvaluableNodeReference tree1, EvaluableNodeReference tree2, RandomStream &rs, double fraction_a, double fraction_b)
-{
-	//can't merge anything into an empty tree
-	if(tree1 == nullptr)
-		return nullptr;
-
-	EvaluableNodeReference result_tree = enm->DeepAllocCopy(tree1);
-
-	//if nothing to merge into the first tree, then just return unmodified copy
-	if(tree2 == nullptr)
-		return result_tree;
-
-	auto [index1, _1] = RetrieveLabelIndexesFromTree(tree1);
-	auto [index2, _2] = RetrieveLabelIndexesFromTree(tree2);
-
-	//normalize fraction to be less than 1
-	double total_fraction = fraction_a + fraction_b;
-	if(total_fraction > 1.0)
-	{
-		fraction_a /= total_fraction;
-		fraction_b /= total_fraction;
-	}
-
-	//get only labels that are in both trees
-
-	//get list of labels from both
-	CompactHashSet<StringInternPool::StringID> common_labels(index1.size() + index2.size());
-	for(auto &[node_id, _] : index1)
-		common_labels.insert(node_id);
-	for(auto &[node_id, _] : index2)
-		common_labels.insert(node_id);
-
-	//get number of labels from each
-	std::vector<StringInternPool::StringID> all_labels(begin(common_labels), end(common_labels));
-	size_t num_from_2 = static_cast<size_t>(fraction_b * all_labels.size());
-	size_t num_to_remove = static_cast<size_t>((1.0 - fraction_a - fraction_b) * all_labels.size());
-
-	//remove labels from the first that are not used
-	for(size_t i = 0; i < num_to_remove; i++)
-	{
-		//take a random string
-		size_t index_to_remove = rs.RandSize(all_labels.size());
-		StringInternPool::StringID label_id = all_labels[index_to_remove];
-		all_labels.erase(begin(all_labels) + index_to_remove);
-
-		//remove its label. Reuse enm for temporary since used it to create the new tree
-		ReplaceLabelInTree(result_tree, label_id, nullptr);
-	}
-
-	//replace labels from the second
-	for(size_t i = 0; i < num_from_2; i++)
-	{
-		//take a random string
-		size_t index_to_remove = rs.RandSize(all_labels.size());
-		StringInternPool::StringID label_id = all_labels[index_to_remove];
-		all_labels.erase(begin(all_labels) + index_to_remove);
-
-		//replace with something from the other tree. Reuse enm for temporary since used it to create the new tree
-		const auto replacement_index = index2.find(label_id);
-		if(replacement_index != end(index2))
-		{
-			EvaluableNode *replacement = enm->DeepAllocCopy(replacement_index->second);
-			ReplaceLabelInTree(result_tree, label_id, replacement);
-		}
-	}
-
-	return result_tree;
 }
 
 std::string EvaluableNodeTreeManipulation::MixStrings(const std::string &a, const std::string &b,
@@ -2098,7 +2072,6 @@ CompactHashMap<EvaluableNodeType, double> EvaluableNodeTreeManipulation::evaluab
 	{ENT_UNION,											0.2},
 	{ENT_DIFFERENCE,									0.2},
 	{ENT_MIX,											0.2},
-	{ENT_MIX_LABELS,									0.2},
 
 	//entity merging
 	{ENT_TOTAL_ENTITY_SIZE,								0.02},

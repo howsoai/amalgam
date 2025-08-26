@@ -1484,11 +1484,41 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET(EvaluableNode *en, 
 	size_t depth = 0;
 	if(ocn.size() > 0)
 	{
-		double value = InterpretNodeIntoNumberValue(ocn[0]);
-		if(value >= 0)
-			depth = static_cast<size_t>(value);
-		else if(!FastIsNaN(value)) //null/nan should leave depth as 0, any negative value is an error
-			return EvaluableNodeReference::Null();
+		auto result = InterpretNodeForImmediateUse(ocn[0], true);
+		if(result.IsImmediateValue())
+		{
+			double value_number = result.GetValue().GetValueAsNumber();
+
+			if(value_number >= 0)
+				depth = static_cast<size_t>(value_number);
+			else if(!FastIsNaN(value_number)) //null/nan should leave depth as 0, any negative value is an error
+				return EvaluableNodeReference::Null();
+		}
+		else
+		{
+			auto node_type = ENT_NULL;
+			EvaluableNode *result_node = result.GetReference();
+			if(result_node != nullptr)
+				node_type = result_node->GetType();
+
+			if(node_type == ENT_NUMBER)
+			{
+				double value_number = result->GetNumberValueReference();
+				if(value_number >= 0)
+					depth = static_cast<size_t>(value_number);
+				else if(!FastIsNaN(value_number)) //null/nan should leave depth as 0, any negative value is an error
+					return EvaluableNodeReference::Null();
+			}
+			else if(node_type == ENT_TRUE)
+			{
+				//select the top of the stack
+				depth = constructionStackIndicesAndUniqueness.size() - 1;
+			}
+			else if(node_type != ENT_FALSE)
+			{
+				return EvaluableNodeReference::Null();
+			}
+		}
 	}
 
 	//make sure have a large enough stack
@@ -1496,6 +1526,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_TARGET(EvaluableNode *en, 
 		return EvaluableNodeReference::Null();
 
 	size_t offset = constructionStackNodes->size() - (constructionStackOffsetStride * depth) + constructionStackOffsetTarget;
+
+	if(ocn.size() > 1)
+	{
+		//if there's a second parameter, try to look up the walk path
+		EvaluableNode **target = InterpretNodeIntoDestination(&(*constructionStackNodes)[offset], ocn[1], false);
+		if(target == nullptr)
+			return EvaluableNodeReference::Null();
+
+		return EvaluableNodeReference(*target, false);
+	}
+
 	return EvaluableNodeReference( (*constructionStackNodes)[offset], false);
 }
 

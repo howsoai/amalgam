@@ -78,7 +78,8 @@ public:
 	{
 	public:
 		EntitiesMixMethod(Interpreter *_interpreter,
-			double fraction_a, double fraction_b, double similar_mix_chance, double fraction_entities_to_mix);
+			double fraction_a, double fraction_b, double similar_mix_chance, size_t max_mix_depth,
+			double fraction_entities_to_mix);
 
 		virtual Entity *MergeValues(Entity *a, Entity *b, bool must_merge);
 
@@ -103,6 +104,7 @@ public:
 		double fractionAOrB;
 		double fractionAInsteadOfB;
 		double similarMixChance;
+		size_t maxMixDepth;
 		double fractionEntitiesToMix;
 	};
 
@@ -115,7 +117,8 @@ public:
 	static EvaluableNodeReference DifferenceEntities(Interpreter *interpreter, Entity *entity1, Entity *entity2);
 
 	static Entity *MixEntities(Interpreter *interpreter, Entity *entity1, Entity *entity2,
-		double fractionA, double fractionB, double similar_mix_chance, double fraction_entities_to_mix);
+		double fractionA, double fractionB, double similar_mix_chance, size_t max_mix_depth,
+		double fraction_entities_to_mix);
 
 	//Computes the total number of nodes in both trees that are equal
 	static MergeMetricResults<Entity *> NumberOfSharedNodes(Entity *entity1, Entity *entity2);

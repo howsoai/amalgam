@@ -563,10 +563,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		interpreterConstraints->AccruePerformanceCounters(interpreter_constraints_ptr);
 
 	if(interpreter_constraints_ptr != nullptr && interpreter_constraints_ptr->constraintsExceeded)
-			return BundleResultWithWarningsIfNeeded(EvaluableNodeReference::Null(), interpreter_constraints_ptr);
+		return BundleResultWithWarningsIfNeeded(EvaluableNodeReference::Null(), interpreter_constraints_ptr);
 
 	return BundleResultWithWarningsIfNeeded(result, interpreter_constraints_ptr);
-
 }
 
 EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNode *en, bool immediate_result)

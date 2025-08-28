@@ -597,6 +597,10 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_SANDBOXED(EvaluableNo
 
 	if(PopulateInterpreterConstraintsFromParams(ocn, 2, interpreter_constraints))
 		interpreter_constraints_ptr = &interpreter_constraints;
+
+	//need to return a more complex data structure, can't return immediate
+	if(interpreter_constraints_ptr != nullptr && interpreter_constraints_ptr->collectWarnings)
+		immediate_result = false;
 	
 	if(_label_profiling_enabled && function->GetNumLabels() > 0)
 		PerformanceProfiler::StartOperation(function->GetLabel(0), evaluableNodeManager->GetNumberOfUsedNodes());

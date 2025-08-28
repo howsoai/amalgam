@@ -832,19 +832,19 @@ public:
 			nr.FreeNodeReference(en);
 	}
 
-	//removes the node from nodes referenced
-	//if called within multithreading, GetNodeReferenceUpdateLock() needs to be called
-	//to obtain a lock around all calls to this method
-	template<typename NodeType>
-	void FreeNodeReferences(std::vector<NodeType> &nodes)
+	//a combo of KeepNodeReferences and FreeNodeReferences but for one node
+	void ExchangeNodeReference(EvaluableNode *node_reference_to_keep, EvaluableNode *node_reference_to_free)
 	{
+		if(node_reference_to_keep == node_reference_to_free)
+			return;
+
 		NodesReferenced &nr = GetNodesReferenced();
 	#ifdef MULTITHREAD_SUPPORT
 		Concurrency::Lock lock(nr.mutex);
 	#endif
 
-		for(EvaluableNode *en : nodes)
-			nr.FreeNodeReference(en);
+		nr.FreeNodeReference(node_reference_to_free);
+		nr.KeepNodeReference(node_reference_to_keep);
 	}
 
 	//returns the number of nodes currently being used that have not been freed yet
@@ -864,51 +864,8 @@ public:
 		return nr.nodesReferenced.size();
 	}
 
-	//returns the root node, implicitly defined as the first node in memory
-	// note that this means there should be at least one node allocated and SetRootNode called before this function is called
-	inline EvaluableNode *GetRootNode()
-	{
-	#ifdef MULTITHREAD_SUPPORT
-		Concurrency::ReadLock lock(managerAttributesMutex);
-	#endif
-
-		if(firstUnusedNodeIndex == 0)
-			return nullptr;
-
-		return nodes[0];
-	}
-
-	//sets the root node, implicitly defined as the first node in memory, to new_root
-	// note that new_root MUST have been allocated by this EvaluableNodeManager
-	//ensures that the new root node is kept and the old is released
-	//if new_root is nullptr, then it allocates its own ENT_NULL node
-	inline void SetRootNode(EvaluableNode *new_root)
-	{
-		if(new_root == nullptr)
-			new_root = AllocNode(ENT_NULL);
-
-	#ifdef MULTITHREAD_SUPPORT
-		//use WriteLock to be safe
-		Concurrency::WriteLock lock(managerAttributesMutex);
-	#endif
-
-		//iteratively search forward; this will be fast for newly created entities but potentially slow for those that are not
-		// however, this should be rarely called on those entities since it's basically clearing them out, so it should not generally be a performance issue
-		auto location = std::find(begin(nodes), begin(nodes) + firstUnusedNodeIndex, new_root);
-
-		if(location == end(nodes))
-		{
-			assert(false);
-			return;
-		}
-
-		//put the new root in the proper place
-		std::swap(*begin(nodes), *location);
-	}
-
-	//returns true if any node is referenced other than root, which is an indication if there are
-	// any interpreters operating on the nodes managed by this instance
-	inline bool IsAnyNodeReferencedOtherThanRoot()
+	//returns true if any interpreters are operating on the nodes managed by this instance
+	inline bool AreAnyInterpretersRunning()
 	{
 		NodesReferenced &nr = GetNodesReferenced();
 
@@ -916,8 +873,9 @@ public:
 		Concurrency::Lock lock(nr.mutex);
 	#endif
 
+		//interpreters use 3 nodes, so if more than one is referenced, there's an interpreter
 		size_t num_nodes_currently_referenced = nr.nodesReferenced.size();
-		return (num_nodes_currently_referenced > 0);
+		return (num_nodes_currently_referenced > 1);
 	}
 
 	//returns all nodes still in use.  For debugging purposes

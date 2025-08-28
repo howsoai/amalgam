@@ -307,7 +307,7 @@ public:
 
 		EvaluableNode *node_to_execute = nullptr;
 		if(label_sid == string_intern_pool.NOT_A_STRING_ID)	//if not specified, then use root
-			node_to_execute = evaluableNodeManager.GetRootNode();
+			node_to_execute = rootNode;
 		else //get code at label
 		{
 			const auto &label = labelIndex.find(label_sid);
@@ -351,17 +351,24 @@ public:
 	//Returns the code for the Entity in string form
 	inline std::string GetCodeAsString()
 	{
-		return Parser::Unparse(evaluableNodeManager.GetRootNode());
+		return Parser::Unparse(rootNode);
 	}
 
-	//Returns the root of the entity
+	//returns the root of the entity
 	// if destination_temp_enm is specified, then it will perform a copy using that EvaluableNodeManager using metadata_modifier
-	EvaluableNodeReference GetRoot(EvaluableNodeManager *destination_temp_enm = nullptr, EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE);
+	EvaluableNodeReference GetRoot(EvaluableNodeManager *destination_temp_enm = nullptr,
+		EvaluableNodeManager::EvaluableNodeMetadataModifier metadata_modifier = EvaluableNodeManager::ENMM_NO_CHANGE)
+	{
+		if(destination_temp_enm == nullptr)
+			return EvaluableNodeReference(rootNode, false);
+
+		return destination_temp_enm->DeepAllocCopy(rootNode, metadata_modifier);
+	}
 
 	//Returns the number of nodes in the entity
 	inline size_t GetSizeInNodes()
 	{
-		return EvaluableNode::GetDeepSize(evaluableNodeManager.GetRootNode());
+		return EvaluableNode::GetDeepSize(rootNode);
 	}
 
 	//Returns the number of nodes in the entity and all contained entities
@@ -818,7 +825,7 @@ public:
 	__forceinline void CollectGarbageWithEntityWriteReference()
 	{
 		if(evaluableNodeManager.RecommendGarbageCollection()
-				&& !evaluableNodeManager.IsAnyNodeReferencedOtherThanRoot())
+				&& !evaluableNodeManager.AreAnyInterpretersRunning())
 			evaluableNodeManager.CollectGarbage();
 	}
 #else
@@ -1023,6 +1030,9 @@ protected:
 
 	//current list of all labels and where they are in the code
 	EvaluableNode::AssocType labelIndex;
+
+	//root of the entity
+	EvaluableNode *rootNode;
 
 	//if true, then the entity has contained entities and will use the relationships reference of entityRelationships
 	//note this is located after labelIndex because labelIndex is of a size that does not align tightly

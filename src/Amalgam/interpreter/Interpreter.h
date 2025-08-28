@@ -1115,7 +1115,7 @@ protected:
 			if(cur_interpreter->curEntity == entity)
 				return false;
 
-			if(entity->evaluableNodeManager.IsAnyNodeReferencedOtherThanRoot())
+			if(entity->evaluableNodeManager.AreAnyInterpretersRunning())
 				return false;
 		}
 

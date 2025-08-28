@@ -1210,7 +1210,6 @@ protected:
 	//creates a tuple with result, a list of all warnings, and constraint violations. Otherwise, it returns result.
 	EvaluableNodeReference BundleResultWithWarningsIfNeeded(EvaluableNodeReference result, InterpreterConstraints *interpreter_constraints);
 
-
 	//Creates a warning string for the undefined symbol represented by not_found_variable_sid.
 	//If interpreterConstraints is not null, and collect Warnings is true, this warning will be added to warnings.
 	//Otherwise, if asset_manager.warnOnUndefined is true, and curEntity has permission to write to stderr,

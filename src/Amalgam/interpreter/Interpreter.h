@@ -475,10 +475,11 @@ public:
 		//need to search further down the stack if appropriate
 		if(!bottomOfScopeStack && callingInterpreter != nullptr)
 		{
+			bool top_is_next_stack = (scopeStackNodes->size() == 0);
 			auto [value_destination, top_of_stack] = callingInterpreter->GetScopeStackSymbolLocation(
-				symbol_sid, false);
+				symbol_sid, top_is_next_stack && create_if_nonexistent);
 			if(value_destination != nullptr)
-				return std::make_pair(value_destination, false);
+				return std::make_pair(value_destination, top_is_next_stack && top_of_stack);
 		}
 	#endif
 
@@ -513,7 +514,8 @@ public:
 	{
 		//find appropriate context for symbol by walking up the stack
 		//acquire lock if found
-		for(size_t scope_stack_index = scopeStackNodes->size(); scope_stack_index > 0; scope_stack_index--)
+		size_t cur_scope_stack_size = scopeStackNodes->size();
+		for(size_t scope_stack_index = cur_scope_stack_size; scope_stack_index > 0; scope_stack_index--)
 		{
 			EvaluableNode *cur_context = (*scopeStackNodes)[scope_stack_index - 1];
 			auto &mcn = cur_context->GetMappedChildNodesReference();
@@ -532,25 +534,25 @@ public:
 					found = mcn.find(symbol_sid);
 				}
 
-				return std::make_pair(&found->second, scope_stack_index == scopeStackNodes->size());
+				return std::make_pair(&found->second, scope_stack_index == cur_scope_stack_size);
 			}
 		}
 
 		//need to search further down the stack if appropriate
 		if(!bottomOfScopeStack && callingInterpreter != nullptr)
 		{
+			bool top_is_next_stack = (cur_scope_stack_size == 0);
 			auto [value_destination, top_of_stack] = callingInterpreter->GetScopeStackSymbolLocationWithLock(
-				symbol_sid, false, lock, executing_interpreter == nullptr ? this : executing_interpreter);
+				symbol_sid, top_is_next_stack && create_if_nonexistent, lock, executing_interpreter == nullptr ? this : executing_interpreter);
 			if(value_destination != nullptr)
-				return std::make_pair(value_destination, false);
+				return std::make_pair(value_destination, top_is_next_stack && top_of_stack);
 		}
 
 		if(!create_if_nonexistent)
 			return std::make_pair(nullptr, false);
 
 		Interpreter *interp_with_scope = LockScopeStackTop(lock, nullptr, executing_interpreter);
-		std::vector<EvaluableNode *> *scope_stack_nodes = (interp_with_scope == nullptr ?
-			scopeStackNodes : interp_with_scope->scopeStackNodes);
+		std::vector<EvaluableNode *> *scope_stack_nodes = interp_with_scope->scopeStackNodes;
 
 		//didn't find it anywhere, so default it to the current top of the stack and create it
 		size_t scope_stack_index = scope_stack_nodes->size() - 1;
@@ -1060,15 +1062,6 @@ protected:
 		return scopeStackNodes->size() == 0;
 	}
 
-	//returns the relevant write mutex for the scope stack
-	inline bool HasSharedScopeStackWithCallingInterpreter()
-	{
-		if(callingInterpreter == nullptr)
-			return false;
-
-		return callingInterpreter->scopeStackMutex.get() != nullptr;
-	}
-
 	//acquires lock of scopeStackMutex and assumes it is not nullptr,
 	// but does so in a way as to not block other threads that may be waiting on garbage collection
 	//if en_to_preserve is not null, then it will create a stack saver for it if garbage collection is invoked
@@ -1099,7 +1092,7 @@ protected:
 	// may be accessed by other threads
 	//does so in a way as to not block other threads that may be waiting on garbage collection
 	//if en_to_preserve is not null, then it will create a stack saver for it if garbage collection is invoked
-	//returns the interpreter that was locked (if any)
+	//returns the interpreter that owns the top of the scope stack
 	Interpreter *LockScopeStackTop(Concurrency::SingleLock &lock, EvaluableNode *en_to_preserve = nullptr,
 		Interpreter *executing_interpreter = nullptr);
 

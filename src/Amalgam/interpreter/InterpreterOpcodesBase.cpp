@@ -1078,10 +1078,16 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 			//retrieve the symbol location
 		#ifdef MULTITHREAD_SUPPORT
+			//need to save variable_value_node because GetScopeStackSymbolLocationWithLock
+			// may collect garbage while waiting for the lock
+			node_stack.PushEvaluableNode(variable_value_node);
+
 			Concurrency::SingleLock write_lock;
 			auto [value_destination, top_of_stack] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
 			if(write_lock.owns_lock())
 				RecordStackLockForProfiling(en, variable_sid);
+
+			node_stack.PopEvaluableNode();
 		#else
 			auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(variable_sid, true);
 		#endif
@@ -1120,10 +1126,17 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 		//retrieve the symbol location
 	#ifdef MULTITHREAD_SUPPORT
+		//need to save variable_value_node because GetScopeStackSymbolLocationWithLock
+		// may collect garbage while waiting for the lock
+		//use a scope here to make it automatically destruct
+		auto node_stack = CreateOpcodeStackStateSaver(new_value);
+
 		Concurrency::SingleLock write_lock;
 		auto [value_destination, top_of_stack] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
 		if(write_lock.owns_lock())
 			RecordStackLockForProfiling(en, variable_sid);
+
+		node_stack.PopEvaluableNode();
 	#else
 		auto [value_destination, top_of_stack] = GetScopeStackSymbolLocation(variable_sid, true);
 	#endif
@@ -1182,6 +1195,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 
 	//retrieve the symbol location
 #ifdef MULTITHREAD_SUPPORT
+	//node_stack already has everything saved in case garbage collection is called in GetScopeStackSymbolLocationWithLock
 	Concurrency::SingleLock write_lock;
 	auto [value_destination, top_of_stack] = GetScopeStackSymbolLocationWithLock(variable_sid, true, write_lock);
 	if(write_lock.owns_lock())

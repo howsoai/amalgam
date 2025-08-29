@@ -160,16 +160,18 @@ jobs:
           if-no-files-found: error
 
   build-macos:
-    runs-on: macos-13
     strategy:
       matrix:
-        preset:
+        include:
           - arch: amd64
             type: release
             platform: macos
+            os: macos-13   # Intel runner
           - arch: arm64
             type: release
             platform: macos
+            os: macos-14   # Apple Silicon runner
+    runs-on: ${{ matrix.os }}
     permissions:
       contents: write
 
@@ -182,55 +184,53 @@ jobs:
 
       - name: Set build preset
         run: |
-          PRESET=$(echo ${{ matrix.preset.arch }}-${{ matrix.preset.type }}-${{ matrix.preset.platform }})
-          echo "PRESET=$(echo $PRESET)" >> $GITHUB_ENV
+          PRESET="${{ matrix.arch }}-${{ matrix.type }}-${{ matrix.platform }}"
+          echo "PRESET=$PRESET" >> "$GITHUB_ENV"
           echo "Build preset: $PRESET"
 
       - name: Install build dependencies
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+          HOMEBREW_NO_INSTALL_CLEANUP: "1"
+          HOMEBREW_NO_ANALYTICS: "1"
         run: |
-          echo "Python version: $(python --version)"
-          echo "Brew version: $(brew --version)"
-          echo "Brew python installs: $(brew list | grep python)"
-          if [ "${{ matrix.preset.arch }}" = "arm64" ]; then
-            brew unlink python@3.12
-            brew link --force --overwrite python@3.12
-
-            brew cleanup -s
-            rm -rf `brew --cache`
-            brew fetch --force --bottle-tag=arm64_ventura libomp
-            brew install `brew --cache --bottle-tag=arm64_ventura libomp` || brew link --overwrite python@3.12
-          else
-            brew install libomp
-          fi
-          brew list --versions libomp
-          brew install ninja
+          set -euxo pipefail
+          BREW="$(command -v brew)"
+          echo "uname -m: $(uname -m)"
+          echo "brew: ${BREW}"
+          echo "brew version: $(${BREW} --version | head -n1)"
+          echo "brew prefix: $(${BREW} --prefix)"
+          eval "$(${BREW} shellenv)"
+          ${BREW} list libomp >/dev/null 2>&1 || ${BREW} install libomp
+          ${BREW} list ninja  >/dev/null 2>&1 || ${BREW} install ninja
+          ${BREW} list --versions libomp
 
       - name: CMake Configure
-        run: AMALGAM_BUILD_VERSION=${{ inputs.version }} cmake --preset $PRESET
+        run: AMALGAM_BUILD_VERSION=${{ inputs.version }} cmake --preset "$PRESET"
 
       - name: CMake Build
-        run: cmake --build --preset $PRESET -- --quiet
+        run: cmake --build --preset "$PRESET" -- --quiet
 
       - name: CMake Test
-        run: cmake --build --preset $PRESET --target test
+        run: cmake --build --preset "$PRESET" --target test
 
       - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-${{ matrix.preset.type }}-${{ matrix.preset.platform }}-${{ matrix.preset.arch }}
+          name: test-results-${{ matrix.type }}-${{ matrix.platform }}-${{ matrix.arch }}
           path: ./out/test/*
 
       - name: CMake Install
-        run: cmake --build --preset $PRESET --target install
+        run: cmake --build --preset "$PRESET" --target install
 
       - name: CMake Package
-        run: cmake --build --preset $PRESET --target package
+        run: cmake --build --preset "$PRESET" --target package
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: amalgam-${{ inputs.version }}-${{ matrix.preset.type }}-darwin-${{ matrix.preset.arch }}
+          name: amalgam-${{ inputs.version }}-${{ matrix.type }}-darwin-${{ matrix.arch }}
           path: ./out/package/amalgam-*.tar.gz
           if-no-files-found: error
 

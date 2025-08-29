@@ -523,6 +523,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SIZE(EvaluableNode *en, bo
 		else if(value.nodeType == ENIVT_CODE && value.nodeValue.code != nullptr)
 			size = static_cast<double>(value.nodeValue.code->GetNumChildNodes());
 
+		evaluableNodeManager->FreeNodeTreeIfPossible(n);
 		return AllocReturn(size, immediate_result);
 	}
 	else if(n != nullptr)

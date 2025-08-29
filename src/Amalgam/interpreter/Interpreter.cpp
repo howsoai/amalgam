@@ -1080,7 +1080,7 @@ Interpreter *Interpreter::LockScopeStackTop(Concurrency::SingleLock &lock, Evalu
 		return this;
 	}
 
-	return nullptr;
+	return this;
 }
 
 #endif

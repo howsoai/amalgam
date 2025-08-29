@@ -187,23 +187,34 @@ jobs:
           echo "Build preset: $PRESET"
 
       - name: Install build dependencies
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: "1"
+          HOMEBREW_NO_INSTALL_CLEANUP: "1"
+          HOMEBREW_NO_ANALYTICS: "1"
         run: |
-          echo "Python version: $(python --version)"
-          echo "Brew version: $(brew --version)"
-          echo "Brew python installs: $(brew list | grep python)"
-          if [ "${{ matrix.preset.arch }}" = "arm64" ]; then
-            brew unlink python@3.12
-            brew link --force --overwrite python@3.12
+          set -euxo pipefail
 
-            brew cleanup -s
-            rm -rf `brew --cache`
-            brew fetch --force --bottle-tag=arm64_ventura libomp
-            brew install `brew --cache --bottle-tag=arm64_ventura libomp` || brew link --overwrite python@3.12
+          # Pick the correct Homebrew for the runner arch
+          if [ "${{ matrix.preset.arch }}" = "arm64" ]; then
+            BREW="/opt/homebrew/bin/brew"
           else
-            brew install libomp
+            BREW="/usr/local/bin/brew"
           fi
-          brew list --versions libomp
-          brew install ninja
+
+          # Ensure brew is on PATH/shell env (avoids Rosetta confusion)
+          eval "$($BREW shellenv)"
+
+          echo "Python version: $(python3 --version || true)"
+          echo "Brew path: $BREW"
+          echo "Brew version: $($BREW --version | head -n1)"
+          echo "Brew prefix: $($BREW --prefix)"
+
+          # Do NOT unlink/link python; Actions' setup-python manages Python
+          # Just install what we need, idempotently
+          $BREW list libomp >/dev/null 2>&1 || $BREW install libomp
+          $BREW list ninja  >/dev/null 2>&1 || $BREW install ninja
+
+          $BREW list --versions libomp
 
       - name: CMake Configure
         run: AMALGAM_BUILD_VERSION=${{ inputs.version }} cmake --preset $PRESET

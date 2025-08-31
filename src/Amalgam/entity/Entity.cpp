@@ -123,7 +123,8 @@ Entity::~Entity()
 	}
 
 	string_intern_pool.DestroyStringReference(idStringId);
-	string_intern_pool.DestroyStringReferences(labelIndex, [](auto l) { return l.first; });
+	//TODO 24298: remove next line
+	string_intern_pool.DestroyStringReferences(GetLabelIndex(), [](auto l) { return l.first; });
 }
 
 std::pair<EvaluableNodeReference, bool> Entity::GetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNodeManager *destination_temp_enm, bool direct_get, bool on_self, bool batch_call)
@@ -134,9 +135,10 @@ std::pair<EvaluableNodeReference, bool> Entity::GetValueAtLabel(StringInternPool
 	if(!on_self && IsLabelPrivate(label_sid))
 		return std::pair(EvaluableNodeReference::Null(), true);
 
-	const auto &label = labelIndex.find(label_sid);
+	auto label_index = GetLabelIndex();
+	const auto &label = label_index.find(label_sid);
 
-	if(label == end(labelIndex))
+	if(label == end(label_index))
 		return std::pair(EvaluableNodeReference::Null(), false);
 
 	if(label->second == nullptr)
@@ -161,8 +163,9 @@ std::pair<double, bool> Entity::GetValueAtLabelAsNumber(StringInternPool::String
 	if(!on_self && IsLabelPrivate(label_sid))
 		return std::pair(value_if_not_found, false);
 
-	const auto &label = labelIndex.find(label_sid);
-	if(label == end(labelIndex))
+	auto &label_index = GetLabelIndex();
+	const auto &label = label_index.find(label_sid);
+	if(label == end(label_index))
 		return std::pair(value_if_not_found, false);
 
 	return(std::pair(EvaluableNode::ToNumber(label->second), true));
@@ -177,8 +180,9 @@ std::pair<std::string, bool> Entity::GetValueAtLabelAsString(
 	if(!on_self && IsLabelPrivate(label_sid))
 		return std::pair("", false);
 
-	const auto &label = labelIndex.find(label_sid);
-	if(label == end(labelIndex))
+	auto &label_index = GetLabelIndex();
+	const auto &label = label_index.find(label_sid);
+	if(label == end(label_index))
 		return std::pair("", false);
 
 	return std::pair(EvaluableNode::ToString(label->second, key_string), true);
@@ -193,8 +197,9 @@ std::pair<StringInternPool::StringID, bool> Entity::GetValueAtLabelAsStringIdWit
 	if(!on_self && IsLabelPrivate(label_sid))
 		return std::pair(StringInternPool::NOT_A_STRING_ID, false);
 
-	const auto &label = labelIndex.find(label_sid);
-	if(label == end(labelIndex))
+	auto &label_index = GetLabelIndex();
+	const auto &label = label_index.find(label_sid);
+	if(label == end(label_index))
 		return std::pair(StringInternPool::NOT_A_STRING_ID, false);
 	
 	return std::pair(EvaluableNode::ToStringIDWithReference(label->second, key_string), true);
@@ -206,8 +211,9 @@ std::pair<EvaluableNodeImmediateValueWithType, bool> Entity::GetValueAtLabelAsIm
 	if(!on_self && IsLabelPrivate(label_sid))
 		return std::pair(EvaluableNodeImmediateValueWithType(std::numeric_limits<double>::quiet_NaN(), ENIVT_NOT_EXIST), false);
 
-	const auto &label = labelIndex.find(label_sid);
-	if(label == end(labelIndex))
+	auto &label_index = GetLabelIndex();
+	const auto &label = label_index.find(label_sid);
+	if(label == end(label_index))
 		return std::pair(EvaluableNodeImmediateValueWithType(std::numeric_limits<double>::quiet_NaN(), ENIVT_NOT_EXIST), false);
 
 	EvaluableNodeImmediateValueWithType retval;
@@ -231,10 +237,11 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 		new_value.uniqueUnreferencedTopNode = false;
 	}
 
-	auto current_node = labelIndex.find(label_sid);
+	auto &label_index = GetLabelIndex();
+	auto current_node = label_index.find(label_sid);
 
 	//if the label is not in the system, then can't do anything
-	if(current_node == end(labelIndex))
+	if(current_node == end(label_index))
 		return false;
 
 	EvaluableNode *destination = current_node->second;
@@ -291,8 +298,9 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 		new_value.unique = false;
 		new_value.uniqueUnreferencedTopNode = false;
 
+		//TODO 24298: need to change this
 		//update the index
-		labelIndex[label_sid] = new_value;
+		label_index[label_sid] = new_value;
 
 		//need to replace label in case there are any collapses of labels if multiple labels set
 		EvaluableNode *prev_root = rootNode;
@@ -514,10 +522,11 @@ bool Entity::RebuildLabelIndex()
 
 	//update references (create new ones before destroying old ones so they do not need to be recreated)
 	string_intern_pool.CreateStringReferences(new_labels, [](auto l) { return l.first; } );
-	string_intern_pool.DestroyStringReferences(labelIndex, [](auto l) { return l.first; });
+	string_intern_pool.DestroyStringReferences(GetLabelIndex(), [](auto l) { return l.first; });
 
+	//TODO 24298: need to change this
 	//let the destructor of new_labels deallocate the old labelIndex
-	std::swap(labelIndex, new_labels);
+	std::swap(GetLabelIndex(), new_labels);
 	return !collision_free;
 }
 
@@ -943,7 +952,8 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 	//attempt to insert the new labels as long as there's no collision
 	for(auto &[label, value] : new_labels)
 	{
-		auto [new_entry, inserted] = labelIndex.emplace(label, value);
+		//TODO 24298: need to handle this differently
+		auto [new_entry, inserted] = GetLabelIndex().emplace(label, value);
 		if(inserted)
 			string_intern_pool.CreateStringReference(label);
 		else
@@ -972,7 +982,8 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 			auto [new_label_index, collision_free] = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTreeAndNormalize(
 				new_root);
 
-			std::swap(labelIndex, new_label_index);
+			//TODO 24298: need to handle this differently
+			std::swap(GetLabelIndex(), new_label_index);
 		}
 		else //RetrieveLabelIndexesFromTreeAndNormalize will update flags, but if no collisions, still need to check
 		{

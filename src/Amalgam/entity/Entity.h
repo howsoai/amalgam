@@ -310,9 +310,10 @@ public:
 			node_to_execute = rootNode;
 		else //get code at label
 		{
-			const auto &label = labelIndex.find(label_sid);
+			auto &label_index = GetLabelIndex();
+			const auto &label = label_index.find(label_sid);
 
-			if(label != end(labelIndex))
+			if(label != end(label_index))
 				node_to_execute = label->second;
 		}
 
@@ -400,8 +401,9 @@ public:
 	//Returns true if the label specified by label_sid exists
 	bool DoesLabelExist(StringInternPool::StringID label_sid)
 	{
-		auto cur_value_it = labelIndex.find(label_sid);
-		return (cur_value_it != end(labelIndex));
+		auto &label_index = GetLabelIndex();
+		auto cur_value_it = label_index.find(label_sid);
+		return (cur_value_it != end(label_index));
 	}
 
 	//Evaluates the specified label into a number returns the value
@@ -433,7 +435,7 @@ public:
 		EvaluableNodeManager *destination_temp_enm = nullptr,
 		bool direct_get = false, bool on_self = false)
 	{
-		for(auto &[label_id, _] : labelIndex)
+		for(auto &[label_id, _] : GetLabelIndex())
 		{
 			EvaluableNode *node = GetValueAtLabel(label_id, destination_temp_enm, direct_get, on_self, true).first;
 			if(node != nullptr)
@@ -1027,6 +1029,11 @@ protected:
 	//mutex for operations that may edit or modify the entity's properties and attributes
 	Concurrency::ReadWriteMutex mutex;
 #endif
+
+	inline EvaluableNode::AssocType &GetLabelIndex()
+	{
+		return labelIndex;
+	}
 
 	//current list of all labels and where they are in the code
 	EvaluableNode::AssocType labelIndex;

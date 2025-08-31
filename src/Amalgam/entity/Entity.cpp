@@ -135,7 +135,7 @@ std::pair<EvaluableNodeReference, bool> Entity::GetValueAtLabel(StringInternPool
 	if(!on_self && IsLabelPrivate(label_sid))
 		return std::pair(EvaluableNodeReference::Null(), true);
 
-	auto label_index = GetLabelIndex();
+	auto &label_index = GetLabelIndex();
 	const auto &label = label_index.find(label_sid);
 
 	if(label == end(label_index))

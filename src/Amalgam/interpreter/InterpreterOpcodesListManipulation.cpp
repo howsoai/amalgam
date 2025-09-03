@@ -416,23 +416,44 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, 
 	if(ocn.size() == 0)
 		return EvaluableNodeReference::Null();
 
-	EvaluableNodeReference new_list(evaluableNodeManager->AllocNode(ENT_LIST), true);
-	auto node_stack = CreateOpcodeStackStateSaver(new_list);
-
-	size_t new_list_cur_index = 0;
+	//pull the first element and reuse its memory if possible;
+	//this can drastically reduce memory and improve efficiency for flows that recurse on append
 	bool first_append = true;
-	for(auto &param : ocn)
+	EvaluableNodeReference new_list = InterpretNode(ocn[0]);
+	if(new_list != nullptr
+		&& (new_list->GetType() == ENT_LIST || new_list->GetType() == ENT_ASSOC))
+	{
+		evaluableNodeManager->EnsureNodeIsModifiable(new_list, true);
+	}
+	else
+	{
+		//put the immediate value in a list
+		EvaluableNodeReference new_container(evaluableNodeManager->AllocNode(ENT_LIST), true);
+		new_container->AppendOrderedChildNode(new_list);
+		new_container.UpdatePropertiesBasedOnAttachedNode(new_list, true);
+		first_append = false;
+
+		new_list = new_container;
+	}
+
+	//iterate over the remaining elements
+	auto node_stack = CreateOpcodeStackStateSaver(new_list);
+	size_t new_list_cur_index = 0;
+	for(size_t param_index = 1; param_index < ocn.size(); param_index++)
 	{
 		if(AreExecutionResourcesExhausted())
 			return EvaluableNodeReference::Null();
 
 		//get evaluated parameter
-		auto new_elements = InterpretNode(param);
+		auto new_elements = InterpretNode(ocn[param_index]);
 
 		if(EvaluableNode::IsAssociativeArray(new_elements))
 		{
 			if(new_list->GetType() == ENT_LIST)
+			{
 				new_list->ConvertListToNumberedAssoc();
+				new_list_cur_index = new_list->GetNumChildNodes();
+			}
 
 			auto &new_elements_mcn = new_elements->GetMappedChildNodesReference();
 			if(new_elements_mcn.size() > 0)

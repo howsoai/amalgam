@@ -731,7 +731,6 @@ void EvaluableNodeManager::NonCycleModifyLabelsForNodeTree(EvaluableNode *tree, 
 void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in_use)
 {
 	NodesReferenced &nr = GetNodesReferenced();
-	EvaluableNode *root_node = nodes[0];
 
 #ifdef MULTITHREAD_SUPPORT
 	//because code cannot be executed when in garbage collection due to other locks,
@@ -739,30 +738,11 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 
 	size_t reference_count = nr.nodesReferenced.size();
 	//heuristic to ensure there's enough to do to warrant the overhead of using multiple threads
-	if(Concurrency::GetMaxNumThreads() > 1 && reference_count > 0
-		&& (estimated_nodes_in_use / (reference_count + 1)) >= 10000)
+	if(Concurrency::GetMaxNumThreads() > 1 && reference_count > 1
+		&& (estimated_nodes_in_use / reference_count) >= 10000)
 	{
 		//allocate all the tasks assuming they will happen, but mark when they can be skipped
-		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(1 + nr.nodesReferenced.size());
-
-		//start processing root node first, as there's a good chance it will be the largest
-		if(root_node != nullptr && !root_node->GetKnownToBeInUseAtomic())
-		{
-			//don't enqueue in batch, as threads racing ahead of others will reduce memory
-			//contention
-			Concurrency::urgentThreadPool.EnqueueTask(
-				[root_node, &task_set]
-				{
-					MarkAllReferencedNodesInUseConcurrent(root_node);
-					task_set.MarkTaskCompleted();
-				}
-			);
-		}
-		else //autocompleted
-		{
-			task_set.MarkTaskCompletedBeforeWaitForTasks();
-		}
-
+		auto task_set = Concurrency::urgentThreadPool.CreateCountableTaskSet(nr.nodesReferenced.size());
 		for(auto &[enr, _] : nr.nodesReferenced)
 		{
 			//some compilers are pedantic about the types passed into the lambda, so make a copy
@@ -790,10 +770,6 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(size_t estimated_nodes_in
 		return;
 	}
 #endif
-
-	//check for null or insertion before calling recursion to minimize number of branches (slight performance improvement)
-	if(root_node != nullptr && !root_node->GetKnownToBeInUse())
-		MarkAllReferencedNodesInUse(root_node);
 
 	for(auto &[t, _] : nr.nodesReferenced)
 	{

@@ -276,26 +276,42 @@ std::pair<EvaluableNode::LabelsAssocType, bool> EvaluableNodeTreeManipulation::R
 	if(en == nullptr)
 		return std::make_pair(index, true);
 
+	bool unmodified = true;
+
 	//if no collision, return
 	EvaluableNode::ReferenceSetType checked;
-	if(CollectLabelIndexesFromTree(en, index, en->GetNeedCycleCheck() ? &checked : nullptr))
-		return std::make_pair(index, true);
-
-	//keep replacing until don't need to replace anymore
-	EvaluableNode *to_replace = nullptr;
-	while(true)
+	if(!CollectLabelIndexesFromTree(en, index, en->GetNeedCycleCheck() ? &checked : nullptr))
 	{
-		index.clear();
-		checked.clear();
+		//keep replacing until don't need to replace anymore
+		EvaluableNode *to_replace = nullptr;
+		while(true)
+		{
+			index.clear();
+			checked.clear();
 
-		if(CollectLabelIndexesFromTreeAndMakeLabelNormalizationPass(en, index, checked, to_replace))
-			break;
+			if(CollectLabelIndexesFromTreeAndMakeLabelNormalizationPass(en, index, checked, to_replace))
+				break;
+		}
+
+		//things have been replaced, so anything might need to be updated
+		EvaluableNodeManager::UpdateFlagsForNodeTree(en);
+
+		unmodified = false;
 	}
 
-	//things have been replaced, so anything might need to be updated
-	EvaluableNodeManager::UpdateFlagsForNodeTree(en);
+	//TODO 24298: finish this
+	//if it has labels and it's not an assoc, need to coerce it into one
+	if(!en->IsAssociativeArray() && index.size() > 0)
+	{
 
-	return std::make_pair(index, false);
+		unmodified = false;
+	}
+	else //assoc array, ensure all labels are in the assoc
+	{
+
+	}
+
+	return std::make_pair(index, unmodified);
 }
 
 void EvaluableNodeTreeManipulation::ReplaceLabelInTreeRecurse(EvaluableNode *&tree, StringInternPool::StringID label_id,

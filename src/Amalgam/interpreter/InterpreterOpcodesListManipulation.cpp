@@ -420,11 +420,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, 
 	//this can drastically reduce memory and improve efficiency for flows that recurse on append
 	bool first_append = true;
 	EvaluableNodeReference new_list = InterpretNode(ocn[0]);
-	if(new_list == nullptr)
+	if(new_list != nullptr
+		&& (new_list->GetType() == ENT_LIST || new_list->GetType() == ENT_ASSOC))
 	{
-		new_list = EvaluableNodeReference(evaluableNodeManager->AllocNode(ENT_LIST), true);
+		evaluableNodeManager->EnsureNodeIsModifiable(new_list, true);
 	}
-	else if(new_list->IsImmediate())
+	else
 	{
 		//put the immediate value in a list
 		EvaluableNodeReference new_container(evaluableNodeManager->AllocNode(ENT_LIST), true);
@@ -433,11 +434,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_APPEND(EvaluableNode *en, 
 		first_append = false;
 
 		new_list = new_container;
-	}
-	else if(auto type = new_list->GetType(); type != ENT_LIST && type != ENT_ASSOC)
-	{
-		evaluableNodeManager->EnsureNodeIsModifiable(new_list, true);
-		new_list->SetType(ENT_LIST, evaluableNodeManager, false);
 	}
 
 	//iterate over the remaining elements

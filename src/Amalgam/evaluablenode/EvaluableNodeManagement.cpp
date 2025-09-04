@@ -7,10 +7,6 @@
 #include <vector>
 #include <utility>
 
-#ifdef MULTITHREAD_SUPPORT
-Concurrency::ReadWriteMutex EvaluableNodeManager::memoryModificationMutex;
-#endif
-
 const double EvaluableNodeManager::allocExpansionFactor = 1.5;
 
 EvaluableNodeManager::~EvaluableNodeManager()

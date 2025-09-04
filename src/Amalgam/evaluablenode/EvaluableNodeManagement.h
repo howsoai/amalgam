@@ -1123,7 +1123,7 @@ public:
 	// so that the memory can be traversed
 	//note that this is a global lock because nodes may be mixed among more than one
 	// EvaluableNodeManager and so garbage collection should not happening while memory is being modified
-	static Concurrency::ReadWriteMutex memoryModificationMutex;
+	inline static Concurrency::ReadWriteMutex memoryModificationMutex;
 
 protected:
 

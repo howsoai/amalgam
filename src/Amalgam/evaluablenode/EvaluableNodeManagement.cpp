@@ -300,11 +300,11 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 							return;
 					}
 				}
-			}
-		);
+			});
 
 		//organize nodes above lowest_known_unused_index that are unused
 		//don't need to check nodes if they are nullptr because if it has been used, it won't be nullptr
+		//first make pass without extra logic
 		while(first_unused_node_index_temp < lowest_known_unused_index)
 		{
 			//nodes can't be nullptr below firstUnusedNodeIndex
@@ -329,6 +329,28 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 			}
 		}
 
+		//repeat the loop but know that there's at least one node that is used,
+		//so lowest_known_unused_index does not need to be checked if zero
+		while(first_unused_node_index_temp < lowest_known_unused_index)
+		{
+			//nodes can't be nullptr below firstUnusedNodeIndex
+			auto &cur_node_ptr = nodes[first_unused_node_index_temp];
+
+			//if the node has been found on this iteration, then clear it as counted so it's clean for next garbage collection
+			if(cur_node_ptr->GetKnownToBeInUse())
+			{
+				cur_node_ptr->SetKnownToBeInUse(false);
+				first_unused_node_index_temp++;
+			}
+			else //collect the node
+			{
+				//put the node up at the top where unused memory resides
+				// and reduce lowest_known_unused_index after the swap occurs so the other thread doesn't get misaligned
+				std::swap(cur_node_ptr, nodes[lowest_known_unused_index - 1]);
+				--lowest_known_unused_index;
+			}
+		}
+
 		all_nodes_finished = true;
 
 		completed_node_cleanup.wait();
@@ -344,6 +366,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 	size_t lowest_known_unused_index = cur_first_unused_node_index;
 	//organize nodes above lowest_known_unused_index that are unused
 	//don't need to check nodes if they are nullptr because if it has been used, it won't be nullptr
+	//first make pass without extra logic
 	while(first_unused_node_index_temp < lowest_known_unused_index)
 	{
 		//nodes can't be nullptr below firstUnusedNodeIndex
@@ -364,6 +387,30 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 			//see if out of things to free; if so exit early
 			if(lowest_known_unused_index == 0)
 				break;
+
+			//put the node up at the top where unused memory resides and reduce lowest_known_unused_index
+			std::swap(cur_node_ptr, nodes[--lowest_known_unused_index]);
+		}
+	}
+
+	//repeat the loop but know that there's at least one node that is used,
+	//so lowest_known_unused_index does not need to be checked if zero
+	while(first_unused_node_index_temp < lowest_known_unused_index)
+	{
+		//nodes can't be nullptr below firstUnusedNodeIndex
+		auto &cur_node_ptr = nodes[first_unused_node_index_temp];
+
+		//if the node has been found on this iteration, then clear it as counted so it's clean for next garbage collection
+		if(cur_node_ptr->GetKnownToBeInUse())
+		{
+			cur_node_ptr->SetKnownToBeInUse(false);
+			first_unused_node_index_temp++;
+		}
+		else //collect the node
+		{
+			//free any extra memory used, since this node is no longer needed
+			if(!cur_node_ptr->IsNodeDeallocated())
+				cur_node_ptr->Invalidate();
 
 			//put the node up at the top where unused memory resides and reduce lowest_known_unused_index
 			std::swap(cur_node_ptr, nodes[--lowest_known_unused_index]);
@@ -917,9 +964,9 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(EvaluableNode *tree)
 		node_stack.pop_back();
 
 		auto type = node->GetType();
-		if(DoesEvaluableNodeTypeUseOrderedData(type))
+		if(DoesEvaluableNodeTypeUseAssocData(type))
 		{
-			for(auto &cn : node->GetOrderedChildNodesReference())
+			for(auto &[_, cn] : node->GetMappedChildNodesReference())
 			{
 				if(cn != nullptr && !cn->GetKnownToBeInUse())
 				{
@@ -928,9 +975,9 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(EvaluableNode *tree)
 				}
 			}
 		}
-		else if(DoesEvaluableNodeTypeUseAssocData(type))
+		else if(!IsEvaluableNodeTypeImmediate(type))
 		{
-			for(auto &[_, cn] : node->GetMappedChildNodesReference())
+			for(auto &cn : node->GetOrderedChildNodesReference())
 			{
 				if(cn != nullptr && !cn->GetKnownToBeInUse())
 				{
@@ -964,9 +1011,9 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUseConcurrent(EvaluableNode *
 		node_stack.pop_back();
 
 		auto type = node->GetType();
-		if(DoesEvaluableNodeTypeUseOrderedData(type))
+		if(DoesEvaluableNodeTypeUseAssocData(type))
 		{
-			for(auto &cn : node->GetOrderedChildNodesReference())
+			for(auto &[_, cn] : node->GetMappedChildNodesReference())
 			{
 				if(cn != nullptr && !cn->GetKnownToBeInUseAtomic())
 				{
@@ -975,9 +1022,9 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUseConcurrent(EvaluableNode *
 				}
 			}
 		}
-		else if(DoesEvaluableNodeTypeUseAssocData(type))
+		else if(!IsEvaluableNodeTypeImmediate(type))
 		{
-			for(auto &[_, cn] : node->GetMappedChildNodesReference())
+			for(auto &cn : node->GetOrderedChildNodesReference())
 			{
 				if(cn != nullptr && !cn->GetKnownToBeInUseAtomic())
 				{

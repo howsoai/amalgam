@@ -497,7 +497,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 		//copy arguments to called_entity, free args from this entity
 		EvaluableNodeReference called_entity_args = ce_enm.DeepAllocCopy(args);
 		node_stack.PopEvaluableNode();
-		//don't put freed nodes in tlab, because that will increase memory churn
+		//don't put freed nodes in local allocation buffer, because that will increase memory churn
 		evaluableNodeManager->FreeNodeTreeIfPossible(args, false);
 		args = called_entity_args;
 
@@ -533,7 +533,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_ENTITY_and_CALL_ENTIT
 	if(called_entity != curEntity)
 	{
 		EvaluableNodeReference copied_result = evaluableNodeManager->DeepAllocCopy(result);
-		//don't put freed nodes in tlab, because that will increase memory churn
+		//don't put freed nodes in local allocation buffer, because that will increase memory churn
 		ce_enm.FreeNodeTreeIfPossible(result, false);
 		result = copied_result;
 	}
@@ -615,7 +615,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 
 	//copy arguments to container, free args from this entity
 	EvaluableNodeReference called_entity_args = container->evaluableNodeManager.DeepAllocCopy(args);
-	//don't put freed nodes in tlab, because that will increase memory churn
+	//don't put freed nodes in local allocation buffer, because that will increase memory churn
 	evaluableNodeManager->FreeNodeTreeIfPossible(args, false);
 
 	EvaluableNodeReference scope_stack = ConvertArgsToScopeStack(called_entity_args, container->evaluableNodeManager);
@@ -652,7 +652,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_CALL_CONTAINER(EvaluableNo
 		result = RemoveTopConcludeOrReturnNode(result, &container->evaluableNodeManager);
 
 	EvaluableNodeReference copied_result = evaluableNodeManager->DeepAllocCopy(result);
-	//don't put freed nodes in tlab, because that will increase memory churn
+	//don't put freed nodes in local allocation buffer, because that will increase memory churn
 	container->evaluableNodeManager.FreeNodeTreeIfPossible(result, false);
 
 	if(_label_profiling_enabled)

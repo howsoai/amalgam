@@ -180,40 +180,40 @@ void EvaluableNodeManager::FreeAllNodes()
 
 EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 {
-#ifdef DEBUG_REPORT_TLAB_USAGE
+#ifdef DEBUG_REPORT_LAB_USAGE
 	{
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-		Concurrency::SingleLock lock(tlabCountMutex);
+		Concurrency::SingleLock lock(labCountMutex);
 	#endif
 	
-		tlabSize += threadLocalAllocationBuffer.size();
-		tlabSizeCount++;
+		labSize += localAllocationBuffer.size();
+		labSizeCount++;
 
 		//use an exponentially rolling average, use a small fraction of the new value (1/256th)
-		rollingAveTlabSize = 0.99609375 * rollingAveTlabSize + 0.00390625 * threadLocalAllocationBuffer.size();
-		if(tlabSizeCount % 4000 == 0)
-			std::cout << "ave tlab size: " << rollingAveTlabSize << std::endl;
+		rollingAveLABSize = 0.99609375 * rollingAveLABSize + 0.00390625 * localAllocationBuffer.size();
+		if(labSizeCount % 4000 == 0)
+			std::cout << "ave local allocation buffer size: " << rollingAveLABSize << std::endl;
 	}
 #endif
 
-	EvaluableNode *tlab_node = GetNextNodeFromTLAB();
+	EvaluableNode *lab_node = GetNextNodeFromLocalAllocationBuffer();
 
 	//Fast Path; get node from thread local buffer
-	if(tlab_node != nullptr)
-		return tlab_node;
+	if(lab_node != nullptr)
+		return lab_node;
 
-	//attempt to allocate enough nodes to refill thread local allocation buffer
+	//attempt to allocate enough nodes to refill local allocation buffer
 #ifdef MULTITHREAD_SUPPORT
 	//slow path allocation; attempt to allocate using an atomic without write locking
 	Concurrency::ReadLock read_lock(managerAttributesMutex);
 
-	size_t first_index_to_allocate = firstUnusedNodeIndex.fetch_add(tlabBlockAllocationSize);
+	size_t first_index_to_allocate = firstUnusedNodeIndex.fetch_add(labBlockAllocationSize);
 #else
 	size_t first_index_to_allocate = firstUnusedNodeIndex;
-	firstUnusedNodeIndex += tlabBlockAllocationSize;
+	firstUnusedNodeIndex += labBlockAllocationSize;
 #endif
 
-	size_t last_index_to_allocate = first_index_to_allocate + tlabBlockAllocationSize;
+	size_t last_index_to_allocate = first_index_to_allocate + labBlockAllocationSize;
 
 	if(last_index_to_allocate < nodes.size())
 	{
@@ -222,13 +222,13 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 			if(nodes[i] == nullptr)
 				nodes[i] = new EvaluableNode(ENT_DEALLOCATED);
 
-			AddNodeToTLAB(nodes[i]);
+			AddNodeToLocalAllocationBuffer(nodes[i]);
 		}
 
 	#ifdef MULTITHREAD_SUPPORT
 		read_lock.unlock();
 	#endif
-		return GetNextNodeFromTLAB();
+		return GetNextNodeFromLocalAllocationBuffer();
 	}
 
 #ifdef MULTITHREAD_SUPPORT
@@ -243,25 +243,25 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 	{
 		//ran out, so need another node; push a bunch on the heap so don't need to reallocate as often and slow down garbage collection
 		 //preallocate additional resources, making sure to at least add one block
-		size_t new_num_nodes = static_cast<size_t>(allocExpansionFactor * num_nodes) + tlabBlockAllocationSize;
+		size_t new_num_nodes = static_cast<size_t>(allocExpansionFactor * num_nodes) + labBlockAllocationSize;
 
 		//fill new EvaluableNode slots with nullptr
 		nodes.resize(new_num_nodes, nullptr);
 	}
 
-	//transfer nodes already allocated by this call into thread local allocation buffer
+	//transfer nodes already allocated by this call into local allocation buffer
 	for(size_t i = first_index_to_allocate; i < last_index_to_allocate; i++)
 	{
 		if(nodes[i] == nullptr)
 			nodes[i] = new EvaluableNode(ENT_DEALLOCATED);
 
-		AddNodeToTLAB(nodes[i]);
+		AddNodeToLocalAllocationBuffer(nodes[i]);
 	}
 
 #ifdef MULTITHREAD_SUPPORT
 	write_lock.unlock();
 #endif
-	return GetNextNodeFromTLAB();
+	return GetNextNodeFromLocalAllocationBuffer();
 }
 
 void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_unused_node_index)
@@ -300,11 +300,11 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 							return;
 					}
 				}
-			}
-		);
+			});
 
 		//organize nodes above lowest_known_unused_index that are unused
 		//don't need to check nodes if they are nullptr because if it has been used, it won't be nullptr
+		//first make pass without extra logic
 		while(first_unused_node_index_temp < lowest_known_unused_index)
 		{
 			//nodes can't be nullptr below firstUnusedNodeIndex
@@ -329,6 +329,28 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 			}
 		}
 
+		//repeat the loop but know that there's at least one node that is used,
+		//so lowest_known_unused_index does not need to be checked if zero
+		while(first_unused_node_index_temp < lowest_known_unused_index)
+		{
+			//nodes can't be nullptr below firstUnusedNodeIndex
+			auto &cur_node_ptr = nodes[first_unused_node_index_temp];
+
+			//if the node has been found on this iteration, then clear it as counted so it's clean for next garbage collection
+			if(cur_node_ptr->GetKnownToBeInUse())
+			{
+				cur_node_ptr->SetKnownToBeInUse(false);
+				first_unused_node_index_temp++;
+			}
+			else //collect the node
+			{
+				//put the node up at the top where unused memory resides
+				// and reduce lowest_known_unused_index after the swap occurs so the other thread doesn't get misaligned
+				std::swap(cur_node_ptr, nodes[lowest_known_unused_index - 1]);
+				--lowest_known_unused_index;
+			}
+		}
+
 		all_nodes_finished = true;
 
 		completed_node_cleanup.wait();
@@ -344,6 +366,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 	size_t lowest_known_unused_index = cur_first_unused_node_index;
 	//organize nodes above lowest_known_unused_index that are unused
 	//don't need to check nodes if they are nullptr because if it has been used, it won't be nullptr
+	//first make pass without extra logic
 	while(first_unused_node_index_temp < lowest_known_unused_index)
 	{
 		//nodes can't be nullptr below firstUnusedNodeIndex
@@ -370,13 +393,37 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 		}
 	}
 
+	//repeat the loop but know that there's at least one node that is used,
+	//so lowest_known_unused_index does not need to be checked if zero
+	while(first_unused_node_index_temp < lowest_known_unused_index)
+	{
+		//nodes can't be nullptr below firstUnusedNodeIndex
+		auto &cur_node_ptr = nodes[first_unused_node_index_temp];
+
+		//if the node has been found on this iteration, then clear it as counted so it's clean for next garbage collection
+		if(cur_node_ptr->GetKnownToBeInUse())
+		{
+			cur_node_ptr->SetKnownToBeInUse(false);
+			first_unused_node_index_temp++;
+		}
+		else //collect the node
+		{
+			//free any extra memory used, since this node is no longer needed
+			if(!cur_node_ptr->IsNodeDeallocated())
+				cur_node_ptr->Invalidate();
+
+			//put the node up at the top where unused memory resides and reduce lowest_known_unused_index
+			std::swap(cur_node_ptr, nodes[--lowest_known_unused_index]);
+		}
+	}
+
 	//assign back to the atomic variable
 	firstUnusedNodeIndex = first_unused_node_index_temp;
 
 	UpdateGarbageCollectionTrigger(cur_first_unused_node_index);
 }
 
-void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree, bool place_nodes_in_tlab)
+void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree, bool place_nodes_in_lab)
 {
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 	assert(tree->IsNodeValid());
@@ -388,7 +435,7 @@ void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree, bool place_n
 		for(auto &[_, e] : tree->GetMappedChildNodesReference())
 		{
 			if(e != nullptr)
-				FreeNodeTreeRecurse(e, place_nodes_in_tlab);
+				FreeNodeTreeRecurse(e, place_nodes_in_lab);
 		}
 	}
 	else if(!tree->IsImmediate())
@@ -396,16 +443,16 @@ void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree, bool place_n
 		for(auto &e : tree->GetOrderedChildNodesReference())
 		{
 			if(e != nullptr)
-				FreeNodeTreeRecurse(e, place_nodes_in_tlab);
+				FreeNodeTreeRecurse(e, place_nodes_in_lab);
 		}
 	}
 
 	tree->Invalidate();
-	if(place_nodes_in_tlab)
-		AddNodeToTLAB(tree);
+	if(place_nodes_in_lab)
+		AddNodeToLocalAllocationBuffer(tree);
 }
 
-void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree, bool place_nodes_in_tlab)
+void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree, bool place_nodes_in_lab)
 {
 #ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 	assert(tree->IsNodeValid());
@@ -417,13 +464,13 @@ void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree, bo
 		//need to invalidate before call child nodes to prevent infinite recursion loop
 		EvaluableNode::AssocType mcn = std::move(tree->GetMappedChildNodesReference());
 		tree->Invalidate();
-		if(place_nodes_in_tlab)
-			AddNodeToTLAB(tree);
+		if(place_nodes_in_lab)
+			AddNodeToLocalAllocationBuffer(tree);
 
 		for(auto &[_, e] : mcn)
 		{
 			if(e != nullptr && !e->IsNodeDeallocated())
-				FreeNodeTreeWithCyclesRecurse(e, place_nodes_in_tlab);
+				FreeNodeTreeWithCyclesRecurse(e, place_nodes_in_lab);
 		}
 
 		//free the references
@@ -432,8 +479,8 @@ void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree, bo
 	else if(tree->IsImmediate())
 	{
 		tree->Invalidate();
-		if(place_nodes_in_tlab)
-			AddNodeToTLAB(tree);
+		if(place_nodes_in_lab)
+			AddNodeToLocalAllocationBuffer(tree);
 	}
 	else //ordered
 	{
@@ -441,13 +488,13 @@ void EvaluableNodeManager::FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree, bo
 		//need to invalidate before call child nodes to prevent infinite recursion loop
 		std::vector<EvaluableNode *> ocn = std::move(tree->GetOrderedChildNodesReference());
 		tree->Invalidate();
-		if(place_nodes_in_tlab)
-			AddNodeToTLAB(tree);
+		if(place_nodes_in_lab)
+			AddNodeToLocalAllocationBuffer(tree);
 
 		for(auto &e : ocn)
 		{
 			if(e != nullptr && !e->IsNodeDeallocated())
-				FreeNodeTreeWithCyclesRecurse(e, place_nodes_in_tlab);
+				FreeNodeTreeWithCyclesRecurse(e, place_nodes_in_lab);
 		}
 	}
 }
@@ -905,7 +952,7 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 void EvaluableNodeManager::MarkAllReferencedNodesInUse(EvaluableNode *tree)
 {
 	tree->SetKnownToBeInUse(true);
-	auto &node_stack = threadLocalAllocationBuffer;
+	auto &node_stack = localAllocationBuffer;
 	node_stack.push_back(tree);
 
 	while(!node_stack.empty())
@@ -917,9 +964,9 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(EvaluableNode *tree)
 		node_stack.pop_back();
 
 		auto type = node->GetType();
-		if(DoesEvaluableNodeTypeUseOrderedData(type))
+		if(DoesEvaluableNodeTypeUseAssocData(type))
 		{
-			for(auto &cn : node->GetOrderedChildNodesReference())
+			for(auto &[_, cn] : node->GetMappedChildNodesReference())
 			{
 				if(cn != nullptr && !cn->GetKnownToBeInUse())
 				{
@@ -928,9 +975,9 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUse(EvaluableNode *tree)
 				}
 			}
 		}
-		else if(DoesEvaluableNodeTypeUseAssocData(type))
+		else if(!IsEvaluableNodeTypeImmediate(type))
 		{
-			for(auto &[_, cn] : node->GetMappedChildNodesReference())
+			for(auto &cn : node->GetOrderedChildNodesReference())
 			{
 				if(cn != nullptr && !cn->GetKnownToBeInUse())
 				{
@@ -950,9 +997,9 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUseConcurrent(EvaluableNode *
 #endif
 
 	tree->SetKnownToBeInUseAtomic(true);
-	//because marking occurs during garbage collection and threadLocalAllocationBuffer
+	//because marking occurs during garbage collection and localAllocationBuffer
 	// is cleared, can reuse that buffer as the local stack to eliminate the overhead of recursion
-	auto &node_stack = threadLocalAllocationBuffer;
+	auto &node_stack = localAllocationBuffer;
 	node_stack.push_back(tree);
 
 	while(!node_stack.empty())
@@ -964,9 +1011,9 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUseConcurrent(EvaluableNode *
 		node_stack.pop_back();
 
 		auto type = node->GetType();
-		if(DoesEvaluableNodeTypeUseOrderedData(type))
+		if(DoesEvaluableNodeTypeUseAssocData(type))
 		{
-			for(auto &cn : node->GetOrderedChildNodesReference())
+			for(auto &[_, cn] : node->GetMappedChildNodesReference())
 			{
 				if(cn != nullptr && !cn->GetKnownToBeInUseAtomic())
 				{
@@ -975,9 +1022,9 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUseConcurrent(EvaluableNode *
 				}
 			}
 		}
-		else if(DoesEvaluableNodeTypeUseAssocData(type))
+		else if(!IsEvaluableNodeTypeImmediate(type))
 		{
-			for(auto &[_, cn] : node->GetMappedChildNodesReference())
+			for(auto &cn : node->GetOrderedChildNodesReference())
 			{
 				if(cn != nullptr && !cn->GetKnownToBeInUseAtomic())
 				{

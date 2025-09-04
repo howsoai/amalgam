@@ -9,7 +9,7 @@
 
 //if the macro PEDANTIC_GARBAGE_COLLECTION is defined, then garbage collection will be performed
 //after every opcode, to help find and debug memory issues
-//if the macro DEBUG_REPORT_TLAB_USAGE is defined, then the thread local allocation buffer storage will be
+//if the macro DEBUG_REPORT_LAB_USAGE is defined, then the local allocation buffer storage will be
 //profiled and printed
 
 typedef int64_t ExecutionCycleCount;
@@ -686,8 +686,8 @@ public:
 	}
 
 	//frees an EvaluableNode (must be owned by this EvaluableNodeManager)
-	// if place_nodes_in_tlab is true, then it will update the thread local allocation buffer and place nodes in it
-	inline void FreeNode(EvaluableNode *en, bool place_nodes_in_tlab = true)
+	// if place_nodes_in_lab is true, then it will update the local allocation buffer and place nodes in it
+	inline void FreeNode(EvaluableNode *en, bool place_nodes_in_lab = true)
 	{
 		if(en == nullptr)
 			return;
@@ -697,8 +697,8 @@ public:
 	#endif
 
 		en->Invalidate();
-		if(place_nodes_in_tlab)
-			AddNodeToTLAB(en);
+		if(place_nodes_in_lab)
+			AddNodeToLocalAllocationBuffer(en);
 	}
 
 	//attempts to free the node reference
@@ -718,7 +718,7 @@ public:
 			&& enr != nullptr && !enr->GetNeedCycleCheck())
 		{
 			enr->Invalidate();
-			AddNodeToTLAB(enr);
+			AddNodeToLocalAllocationBuffer(enr);
 		}
 	}
 
@@ -726,8 +726,8 @@ public:
 	void FreeAllNodes();
 
 	//frees the entire tree in the respective ways for the corresponding permanence types allowed
-	// if place_nodes_in_tlab is true, then it will update the thread local allocation buffer and place nodes in it
-	inline void FreeNodeTree(EvaluableNode *en, bool place_nodes_in_tlab = true)
+	// if place_nodes_in_lab is true, then it will update the local allocation buffer and place nodes in it
+	inline void FreeNodeTree(EvaluableNode *en, bool place_nodes_in_lab = true)
 	{
 		if(en == nullptr)
 			return;
@@ -739,29 +739,29 @@ public:
 		if(IsEvaluableNodeTypeImmediate(en->GetType()))
 		{
 			en->Invalidate();
-			if(place_nodes_in_tlab)
-				AddNodeToTLAB(en);
+			if(place_nodes_in_lab)
+				AddNodeToLocalAllocationBuffer(en);
 		}
 		else if(!en->GetNeedCycleCheck())
 		{
-			FreeNodeTreeRecurse(en, place_nodes_in_tlab);
+			FreeNodeTreeRecurse(en, place_nodes_in_lab);
 		}
 		else //more costly cyclic free
 		{
-			FreeNodeTreeWithCyclesRecurse(en, place_nodes_in_tlab);
+			FreeNodeTreeWithCyclesRecurse(en, place_nodes_in_lab);
 		}
 	}
 
 	//attempts to free the node reference
-	// if place_nodes_in_tlab is true, then it will update the thread local allocation buffer and place nodes in it
-	__forceinline void FreeNodeTreeIfPossible(EvaluableNodeReference &enr, bool place_nodes_in_tlab = true)
+	// if place_nodes_in_lab is true, then it will update the local allocation buffer and place nodes in it
+	__forceinline void FreeNodeTreeIfPossible(EvaluableNodeReference &enr, bool place_nodes_in_lab = true)
 	{
 		if(enr.IsImmediateValue())
 			enr.FreeImmediateResources();
 		else if(enr.unique)
-			FreeNodeTree(enr, place_nodes_in_tlab);
+			FreeNodeTree(enr, place_nodes_in_lab);
 		else if(enr.uniqueUnreferencedTopNode)
-			FreeNode(enr, place_nodes_in_tlab);
+			FreeNode(enr, place_nodes_in_lab);
 	}
 
 	//just frees the child nodes of tree, but not tree itself; assumes no cycles
@@ -943,7 +943,7 @@ public:
 	//when numNodesToRunGarbageCollection are allocated, then it is time to run garbage collection
 	size_t numNodesToRunGarbageCollection;
 
-	// Remove all EvaluableNodes from the thread local allocation buffer, leaving it empty.
+	// Remove all EvaluableNodes from the local allocation buffer, leaving it empty.
 	inline static void ClearThreadLocalAllocationBuffer()
 	{
 		localAllocationBuffer.clear();
@@ -962,11 +962,11 @@ public:
 			paused = false;
 		}
 
-		inline ThreadLocalAllocationBufferPause(std::vector<EvaluableNode *> &tlab_buffer,
+		inline ThreadLocalAllocationBufferPause(std::vector<EvaluableNode *> &lab_buffer,
 			EvaluableNodeManager *&last_enm)
 		{
-			std::swap(prevTlabBuffer, tlab_buffer);
-			tlabBufferLocation = &tlab_buffer;
+			std::swap(prevLocalAllocationBuffer, lab_buffer);
+			localAllocationBufferLocation = &lab_buffer;
 			prevLastEvaluableNodeManager = last_enm;
 			lastEvaluableNodeManagerLocation = &last_enm;
 			paused = true;
@@ -982,14 +982,14 @@ public:
 			if(!paused)
 				return;
 
-			std::swap(prevTlabBuffer, *tlabBufferLocation);
+			std::swap(prevLocalAllocationBuffer, *localAllocationBufferLocation);
 			(*lastEvaluableNodeManagerLocation) = prevLastEvaluableNodeManager;
 			paused = false;
 		}
 
 	protected:
-		std::vector<EvaluableNode *> prevTlabBuffer;
-		std::vector<EvaluableNode *> *tlabBufferLocation;
+		std::vector<EvaluableNode *> prevLocalAllocationBuffer;
+		std::vector<EvaluableNode *> *localAllocationBufferLocation;
 		EvaluableNodeManager *prevLastEvaluableNodeManager;
 		EvaluableNodeManager **lastEvaluableNodeManagerLocation;
 		bool paused;
@@ -1016,12 +1016,12 @@ protected:
 	void FreeAllNodesExceptReferencedNodes(size_t cur_first_unused_node_index);
 
 	//support for FreeNodeTree, but requires that tree not be nullptr
-	// if place_nodes_in_tlab is true, then it will update the thread local allocation buffer and place nodes in it
-	void FreeNodeTreeRecurse(EvaluableNode *tree, bool place_nodes_in_tlab = true);
+	// if place_nodes_in_lab is true, then it will update the local allocation buffer and place nodes in it
+	void FreeNodeTreeRecurse(EvaluableNode *tree, bool place_nodes_in_lab = true);
 
 	//support for FreeNodeTreeWithCycles, but requires that tree not be nullptr
-	// if place_nodes_in_tlab is true, then it will update the thread local allocation buffer and place nodes in it
-	void FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree, bool place_nodes_in_tlab = true);
+	// if place_nodes_in_lab is true, then it will update the local allocation buffer and place nodes in it
+	void FreeNodeTreeWithCyclesRecurse(EvaluableNode *tree, bool place_nodes_in_lab = true);
 
 	//modifies the labels of n with regard to metadata_modifier
 	// assumes n is not nullptr
@@ -1068,9 +1068,9 @@ protected:
 		EvaluableNode *en, EvaluableNode::ReferenceSetType &checked,
 		FastHashSet<EvaluableNode *> *existing_nodes, bool check_cycle_flag_consistency);
 
-	// Get a pointer to the next available node from the thread local allocation buffer.
+	// Get a pointer to the next available node from the local allocation buffer.
 	// If the buffer is empty, returns null.
-	inline EvaluableNode *GetNextNodeFromTLAB()
+	inline EvaluableNode *GetNextNodeFromLocalAllocationBuffer()
 	{
 		if(localAllocationBuffer.size() > 0 && this == lastEvaluableNodeManager)
 		{
@@ -1082,18 +1082,18 @@ protected:
 		{
 			if(lastEvaluableNodeManager != this)
 				ClearThreadLocalAllocationBuffer();
-			else //TLAB is empty, set to null so nothing matches until more nodes are added
+			else //local allocation buffer is empty, set to null so nothing matches until more nodes are added
 				lastEvaluableNodeManager = nullptr;
 
 			return nullptr;
 		}
 	}
 
-	// Adds a node to the thread local allocation buffer.
+	// Adds a node to the local allocation buffer.
 	// If this is accessed by a different EvaluableNode manager than
 	// the last time it was called on this thread, it will clear the buffer
 	// before adding the node.
-	inline void AddNodeToTLAB(EvaluableNode *en)
+	inline void AddNodeToLocalAllocationBuffer(EvaluableNode *en)
 	{
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 		assert(en->IsNodeDeallocated());
@@ -1147,13 +1147,13 @@ protected:
 	thread_local
 #endif
 	// Keeps track of the the last EvaluableNodeManager that accessed 
-	// the thread local allocation buffer for a each thread.
-	// A given thread local allocation buffer should only have nodes associated with one manager.
+	// the local allocation buffer for a each thread.
+	// A given local allocation buffer should only have nodes associated with one manager.
 	// If a different manager accesses the buffer, it is cleared to maintain this invariant.
 	static inline EvaluableNodeManager *lastEvaluableNodeManager;
 
-	//number of nodes to allocate at once for the thread local allocation buffer
-	static const int tlabBlockAllocationSize = 24;
+	//number of nodes to allocate at once for the local allocation buffer
+	static const int labBlockAllocationSize = 24;
 
 	//holds pointers to EvaluableNode's reserved for allocation by a specific thread
 	//during garbage collection, these buffers need to be cleared because memory may be rearranged or reassigned
@@ -1164,16 +1164,16 @@ protected:
 		inline static std::vector<EvaluableNode *> localAllocationBuffer;
 
 	//debug diagnostic variables for localAllocationBuffer
-#ifdef DEBUG_REPORT_TLAB_USAGE
+#ifdef DEBUG_REPORT_LAB_USAGE
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	inline static Concurrency::SingleMutex tlabCountMutex;
-	inline static std::atomic<size_t> tlabSize = 0;
-	inline static std::atomic<size_t> tlabSizeCount = 0;
-	inline static std::atomic<double> rollingAveTlabSize = 0.0;
+	inline static Concurrency::SingleMutex labCountMutex;
+	inline static std::atomic<size_t> labSize = 0;
+	inline static std::atomic<size_t> labSizeCount = 0;
+	inline static std::atomic<double> rollingAveLABSize = 0.0;
 #else
-	inline static size_t tlabSize = 0;
-	inline static size_t tlabSizeCount = 0;
-	inline static double rollingAveTlabSize = 0.0;
+	inline static size_t labSize = 0;
+	inline static size_t labSizeCount = 0;
+	inline static double rollingAveLABSize = 0.0;
 #endif
 #endif
 };

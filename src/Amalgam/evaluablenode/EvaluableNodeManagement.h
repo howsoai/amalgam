@@ -944,7 +944,7 @@ public:
 	size_t numNodesToRunGarbageCollection;
 
 	// Remove all EvaluableNodes from the local allocation buffer, leaving it empty.
-	inline static void ClearThreadLocalAllocationBuffer()
+	inline static void ClearLocalAllocationBuffer()
 	{
 		localAllocationBuffer.clear();
 		//set to null so nothing matches until more nodes are added
@@ -953,16 +953,16 @@ public:
 
 	//Uses an EvaluableNode as a stack which may already have elements in it
 	// upon destruction it restores the stack back to the state it was when constructed
-	class ThreadLocalAllocationBufferPause
+	class LocalAllocationBufferPause
 	{
 	public:
 		//if initialized without params, just leave unpaused
-		inline ThreadLocalAllocationBufferPause()
+		inline LocalAllocationBufferPause()
 		{
 			paused = false;
 		}
 
-		inline ThreadLocalAllocationBufferPause(std::vector<EvaluableNode *> &lab_buffer,
+		inline LocalAllocationBufferPause(std::vector<EvaluableNode *> &lab_buffer,
 			EvaluableNodeManager *&last_enm)
 		{
 			std::swap(prevLocalAllocationBuffer, lab_buffer);
@@ -972,7 +972,7 @@ public:
 			paused = true;
 		}
 
-		inline ~ThreadLocalAllocationBufferPause()
+		inline ~LocalAllocationBufferPause()
 		{
 			Resume();
 		}
@@ -998,9 +998,9 @@ public:
 	//pauses the thread allocation buffer for the duration of the lifetime of the
 	//returned object; no garbage collection or execution should occur while it is paused
 	//this is intended only for allocations for other entities
-	inline ThreadLocalAllocationBufferPause PauseThreadLocalAllocationBuffer()
+	inline LocalAllocationBufferPause PauseLocalAllocationBuffer()
 	{
-		return ThreadLocalAllocationBufferPause(localAllocationBuffer, lastEvaluableNodeManager);
+		return LocalAllocationBufferPause(localAllocationBuffer, lastEvaluableNodeManager);
 	}
 
 protected:
@@ -1081,7 +1081,7 @@ protected:
 		else
 		{
 			if(lastEvaluableNodeManager != this)
-				ClearThreadLocalAllocationBuffer();
+				ClearLocalAllocationBuffer();
 			else //local allocation buffer is empty, set to null so nothing matches until more nodes are added
 				lastEvaluableNodeManager = nullptr;
 

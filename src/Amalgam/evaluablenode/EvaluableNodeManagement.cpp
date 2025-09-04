@@ -16,7 +16,7 @@ const double EvaluableNodeManager::allocExpansionFactor = 1.5;
 EvaluableNodeManager::~EvaluableNodeManager()
 {
 	if(lastEvaluableNodeManager == this)
-		ClearThreadLocalAllocationBuffer();
+		ClearLocalAllocationBuffer();
 
 #ifdef MULTITHREAD_SUPPORT
 	Concurrency::WriteLock lock(managerAttributesMutex);
@@ -93,7 +93,7 @@ void EvaluableNodeManager::CollectGarbage()
 		PerformanceProfiler::StartOperation(collect_garbage_string, GetNumberOfUsedNodes());
 	}
 
-	ClearThreadLocalAllocationBuffer();
+	ClearLocalAllocationBuffer();
 
 	MarkAllReferencedNodesInUse(firstUnusedNodeIndex);
 
@@ -112,7 +112,7 @@ void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadL
 		PerformanceProfiler::StartOperation(collect_garbage_string, GetNumberOfUsedNodes());
 	}
 
-	ClearThreadLocalAllocationBuffer();
+	ClearLocalAllocationBuffer();
 	
 	//free lock so can attempt to enter write lock to collect garbage
 	if(memory_modification_lock != nullptr)
@@ -175,7 +175,7 @@ void EvaluableNodeManager::FreeAllNodes()
 	
 	UpdateGarbageCollectionTrigger(original_num_nodes);
 
-	ClearThreadLocalAllocationBuffer();
+	ClearLocalAllocationBuffer();
 }
 
 EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()

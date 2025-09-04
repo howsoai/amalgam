@@ -946,7 +946,7 @@ public:
 	// Remove all EvaluableNodes from the thread local allocation buffer, leaving it empty.
 	inline static void ClearThreadLocalAllocationBuffer()
 	{
-		threadLocalAllocationBuffer.clear();
+		localAllocationBuffer.clear();
 		//set to null so nothing matches until more nodes are added
 		lastEvaluableNodeManager = nullptr;
 	}
@@ -1000,7 +1000,7 @@ public:
 	//this is intended only for allocations for other entities
 	inline ThreadLocalAllocationBufferPause PauseThreadLocalAllocationBuffer()
 	{
-		return ThreadLocalAllocationBufferPause(threadLocalAllocationBuffer, lastEvaluableNodeManager);
+		return ThreadLocalAllocationBufferPause(localAllocationBuffer, lastEvaluableNodeManager);
 	}
 
 protected:
@@ -1072,10 +1072,10 @@ protected:
 	// If the buffer is empty, returns null.
 	inline EvaluableNode *GetNextNodeFromTLAB()
 	{
-		if(threadLocalAllocationBuffer.size() > 0 && this == lastEvaluableNodeManager)
+		if(localAllocationBuffer.size() > 0 && this == lastEvaluableNodeManager)
 		{
-			EvaluableNode *node = threadLocalAllocationBuffer.back();
-			threadLocalAllocationBuffer.pop_back();
+			EvaluableNode *node = localAllocationBuffer.back();
+			localAllocationBuffer.pop_back();
 			return node;
 		}
 		else
@@ -1101,11 +1101,11 @@ protected:
 
 		if(this != lastEvaluableNodeManager)
 		{
-			threadLocalAllocationBuffer.clear();
+			localAllocationBuffer.clear();
 			lastEvaluableNodeManager = this;
 		}
 
-		threadLocalAllocationBuffer.push_back(en);
+		localAllocationBuffer.push_back(en);
 	}
 
 #ifdef MULTITHREAD_SUPPORT
@@ -1161,9 +1161,9 @@ protected:
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 	thread_local
 #endif
-		inline static std::vector<EvaluableNode *> threadLocalAllocationBuffer;
+		inline static std::vector<EvaluableNode *> localAllocationBuffer;
 
-	//debug diagnostic variables for threadLocalAllocationBuffer
+	//debug diagnostic variables for localAllocationBuffer
 #ifdef DEBUG_REPORT_TLAB_USAGE
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 	inline static Concurrency::SingleMutex tlabCountMutex;

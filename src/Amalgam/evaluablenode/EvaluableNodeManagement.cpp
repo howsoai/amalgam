@@ -186,11 +186,11 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 		Concurrency::SingleLock lock(tlabCountMutex);
 	#endif
 	
-		tlabSize += threadLocalAllocationBuffer.size();
+		tlabSize += localAllocationBuffer.size();
 		tlabSizeCount++;
 
 		//use an exponentially rolling average, use a small fraction of the new value (1/256th)
-		rollingAveTlabSize = 0.99609375 * rollingAveTlabSize + 0.00390625 * threadLocalAllocationBuffer.size();
+		rollingAveTlabSize = 0.99609375 * rollingAveTlabSize + 0.00390625 * localAllocationBuffer.size();
 		if(tlabSizeCount % 4000 == 0)
 			std::cout << "ave tlab size: " << rollingAveTlabSize << std::endl;
 	}
@@ -952,7 +952,7 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 void EvaluableNodeManager::MarkAllReferencedNodesInUse(EvaluableNode *tree)
 {
 	tree->SetKnownToBeInUse(true);
-	auto &node_stack = threadLocalAllocationBuffer;
+	auto &node_stack = localAllocationBuffer;
 	node_stack.push_back(tree);
 
 	while(!node_stack.empty())
@@ -997,9 +997,9 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUseConcurrent(EvaluableNode *
 #endif
 
 	tree->SetKnownToBeInUseAtomic(true);
-	//because marking occurs during garbage collection and threadLocalAllocationBuffer
+	//because marking occurs during garbage collection and localAllocationBuffer
 	// is cleared, can reuse that buffer as the local stack to eliminate the overhead of recursion
-	auto &node_stack = threadLocalAllocationBuffer;
+	auto &node_stack = localAllocationBuffer;
 	node_stack.push_back(tree);
 
 	while(!node_stack.empty())

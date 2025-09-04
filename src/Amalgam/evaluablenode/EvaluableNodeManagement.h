@@ -425,11 +425,10 @@ public:
 		}
 
 		//removes all EvaluableNodes from the local allocation buffer, leaving it empty
-		//if only_clear_if_current_enm is not nullptr, it will only clear if lastEvaluableNodeManager
-		// is the same as only_clear_if_current_enm
-		inline void Clear(EvaluableNodeManager *only_clear_if_current_enm = nullptr)
+		//it will only clear if lastEvaluableNodeManager is the same as only_clear_if_current_enm
+		inline void Clear(EvaluableNodeManager *only_clear_if_current_enm)
 		{
-			if(only_clear_if_current_enm != nullptr && only_clear_if_current_enm != lastEvaluableNodeManager)
+			if(only_clear_if_current_enm != lastEvaluableNodeManager)
 				return;
 
 			buffer.clear();
@@ -447,13 +446,10 @@ public:
 				buffer.pop_back();
 				return node;
 			}
-			else
+			else //local allocation buffer is empty or irrelevant, clear so nothing matches until more nodes are added
 			{
-				if(lastEvaluableNodeManager != cur_enm)
-					Clear();
-				else //local allocation buffer is empty, set to null so nothing matches until more nodes are added
-					lastEvaluableNodeManager = nullptr;
-
+				buffer.clear();
+				lastEvaluableNodeManager = nullptr;
 				return nullptr;
 			}
 		}
@@ -1216,11 +1212,17 @@ protected:
 	//number of nodes to allocate at once for the local allocation buffer
 	static const int labBlockAllocationSize = 24;
 
-	//local memory pool
+	//local memory pool for allocations
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 	thread_local
 #endif
 		inline static LocalAllocationBuffer localAllocationBuffer;
+
+	//local memory pool for garbage collection
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	thread_local
+	#endif
+		inline static std::vector<EvaluableNode *> nodeMarkBuffer;
 
 	//debug diagnostic variables for localAllocationBuffer
 #ifdef DEBUG_REPORT_LAB_USAGE

@@ -89,7 +89,15 @@ void EvaluableNodeManager::CollectGarbage()
 	}
 
 	//clear regardless of what's in the buffer
-	localAllocationBuffer.Clear();
+	localAllocationBuffer.Clear(this);
+	//clear all threads' local allocation buffers that are using this enm
+#ifdef MULTITHREAD_SUPPORT
+	localAllocationBuffer.IterateFunctionOverRegisteredLabs(
+		[this](LocalAllocationBuffer *lab)
+		{
+			lab->Clear(this);
+		});
+#endif
 
 	MarkAllReferencedNodesInUse(firstUnusedNodeIndex);
 
@@ -110,7 +118,7 @@ void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadL
 
 	//clear regardless of what's in the buffer
 	// the clear by the thread that gets selected for GC below will catch and clear any threads that have gone inactive
-	localAllocationBuffer.Clear();
+	localAllocationBuffer.Clear(this);
 	
 	//free lock so can attempt to enter write lock to collect garbage
 	if(memory_modification_lock != nullptr)
@@ -191,11 +199,11 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 		Concurrency::SingleLock lock(labCountMutex);
 	#endif
 	
-		labSize += localAllocationBuffer.size();
+		labSize += localAllocationBuffer.buffer.size();
 		labSizeCount++;
 
 		//use an exponentially rolling average, use a small fraction of the new value (1/256th)
-		rollingAveLABSize = 0.99609375 * rollingAveLABSize + 0.00390625 * localAllocationBuffer.size();
+		rollingAveLABSize = 0.99609375 * rollingAveLABSize + 0.00390625 * localAllocationBuffer.buffer.size();
 		if(labSizeCount % 4000 == 0)
 			std::cout << "ave local allocation buffer size: " << rollingAveLABSize << std::endl;
 	}
@@ -957,7 +965,7 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 void EvaluableNodeManager::MarkAllReferencedNodesInUse(EvaluableNode *tree)
 {
 	tree->SetKnownToBeInUse(true);
-	auto &node_stack = localAllocationBuffer.buffer;
+	auto &node_stack = nodeMarkBuffer;
 	node_stack.push_back(tree);
 
 	while(!node_stack.empty())
@@ -1002,9 +1010,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUseConcurrent(EvaluableNode *
 #endif
 
 	tree->SetKnownToBeInUseAtomic(true);
-	//because marking occurs during garbage collection and localAllocationBuffer
-	// is cleared, can reuse that buffer as the local stack to eliminate the overhead of recursion
-	auto &node_stack = localAllocationBuffer.buffer;
+	auto &node_stack = nodeMarkBuffer;
 	node_stack.push_back(tree);
 
 	while(!node_stack.empty())

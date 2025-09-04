@@ -311,11 +311,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 			#endif
 			}
 		}
-		//clear write lock as soon as possible
+		//clear write lock as soon as possible, but pull out pointer first to compare for gc
+		Entity *target_entity_raw_ptr = target_entity;
 		target_entity = EntityWriteReference();
 
 		//if assigning to a different entity, it can be cleared
-		if(target_entity != curEntity)
+		if(target_entity_raw_ptr != curEntity)
 		{
 			node_stack.PopEvaluableNode();
 			evaluableNodeManager->FreeNodeTreeIfPossible(assigned_vars);

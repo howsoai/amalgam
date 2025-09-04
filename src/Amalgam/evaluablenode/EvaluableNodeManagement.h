@@ -425,8 +425,13 @@ public:
 		}
 
 		//removes all EvaluableNodes from the local allocation buffer, leaving it empty
-		inline void Clear()
+		//if only_clear_if_current_enm is not nullptr, it will only clear if lastEvaluableNodeManager
+		// is the same as only_clear_if_current_enm
+		inline void Clear(EvaluableNodeManager *only_clear_if_current_enm = nullptr)
 		{
+			if(only_clear_if_current_enm != nullptr && only_clear_if_current_enm != lastEvaluableNodeManager)
+				return;
+
 			buffer.clear();
 			//set to null so nothing matches until more nodes are added
 			lastEvaluableNodeManager = nullptr;
@@ -468,12 +473,13 @@ public:
 		}
 
 	#ifdef MULTITHREAD_SUPPORT
+		//calls func on all registered local allocation buffers for each thread
 		template<typename Func>
 		inline void IterateFunctionOverRegisteredLabs(Func func)
 		{
 			Concurrency::Lock lock(registryMutex);
 			for(auto lab : LocalAllocationBuffer::registry)
-				func(lab->localAllocationBuffer);
+				func(lab);
 		}
 	#endif
 
@@ -487,8 +493,12 @@ public:
 		std::vector<EvaluableNode *> buffer;
 
 	protected:
+
+	#ifdef MULTITHREAD_SUPPORT
+		//registry that keeps track of all local allocation buffers
 		static inline std::vector<LocalAllocationBuffer *> registry;
 		static inline Concurrency::SingleMutex registryMutex;
+	#endif
 	};
 
 	EvaluableNodeManager() :
@@ -1035,12 +1045,6 @@ public:
 
 	//when numNodesToRunGarbageCollection are allocated, then it is time to run garbage collection
 	size_t numNodesToRunGarbageCollection;
-
-	// Remove all EvaluableNodes from the local allocation buffer, leaving it empty.
-	inline static void ClearLocalAllocationBuffer()
-	{
-		localAllocationBuffer.Clear();
-	}
 
 	//Uses an EvaluableNode as a stack which may already have elements in it
 	// upon destruction it restores the stack back to the state it was when constructed

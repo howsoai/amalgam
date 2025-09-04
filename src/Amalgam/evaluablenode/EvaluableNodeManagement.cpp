@@ -11,7 +11,7 @@ const double EvaluableNodeManager::allocExpansionFactor = 1.5;
 
 EvaluableNodeManager::~EvaluableNodeManager()
 {
-	if(lastEvaluableNodeManager == this)
+	if(localAllocationBuffer.lastEvaluableNodeManager == this)
 		ClearLocalAllocationBuffer();
 
 #ifdef MULTITHREAD_SUPPORT
@@ -948,7 +948,7 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 void EvaluableNodeManager::MarkAllReferencedNodesInUse(EvaluableNode *tree)
 {
 	tree->SetKnownToBeInUse(true);
-	auto &node_stack = localAllocationBuffer;
+	auto &node_stack = localAllocationBuffer.buffer;
 	node_stack.push_back(tree);
 
 	while(!node_stack.empty())
@@ -995,7 +995,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUseConcurrent(EvaluableNode *
 	tree->SetKnownToBeInUseAtomic(true);
 	//because marking occurs during garbage collection and localAllocationBuffer
 	// is cleared, can reuse that buffer as the local stack to eliminate the overhead of recursion
-	auto &node_stack = localAllocationBuffer;
+	auto &node_stack = localAllocationBuffer.buffer;
 	node_stack.push_back(tree);
 
 	while(!node_stack.empty())

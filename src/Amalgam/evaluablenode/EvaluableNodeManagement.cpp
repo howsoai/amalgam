@@ -20,8 +20,10 @@ EvaluableNodeManager::~EvaluableNodeManager()
 	{
 		lab->Clear(this);
 	});
+#else
+	localAllocationBuffer.Clear(this);
 #endif
-
+	
 	for(auto &n : nodes)
 		delete n;
 }

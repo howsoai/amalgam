@@ -1050,7 +1050,7 @@ public:
 	public:
 		//if initialized without params, just leave unpaused
 		inline LocalAllocationBufferPause()
-			: localAllocationBuffer(nullptr), lastEvaluableNodeManagerLocation(nullptr),
+			: localAllocationBufferLocation(nullptr), lastEvaluableNodeManagerLocation(nullptr),
 			paused(false), prevLastEvaluableNodeManager(nullptr)
 		{	}
 

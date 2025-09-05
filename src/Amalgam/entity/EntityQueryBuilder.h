@@ -1034,6 +1034,8 @@ namespace EntityQueryBuilder
 
 			case ENT_QUERY_MIN_DIFFERENCE:
 				cur_condition->singleLabel = label_sid;
+				//weightLabel is used in common paths, so make sure it is initialized
+				cur_condition->weightLabel = string_intern_pool.NOT_A_STRING_ID;
 
 				cur_condition->maxDistance = std::numeric_limits<double>::quiet_NaN();
 				if(ocn.size() >= 2)
@@ -1046,6 +1048,8 @@ namespace EntityQueryBuilder
 
 			case ENT_QUERY_MAX_DIFFERENCE:
 				cur_condition->singleLabel = label_sid;
+				//weightLabel is used in common paths, so make sure it is initialized
+				cur_condition->weightLabel = string_intern_pool.NOT_A_STRING_ID;
 				
 				cur_condition->maxDistance = std::numeric_limits<double>::quiet_NaN();
 				if(ocn.size() >= 2)

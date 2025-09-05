@@ -425,10 +425,11 @@ public:
 		}
 
 		//removes all EvaluableNodes from the local allocation buffer, leaving it empty
-		//it will only clear if lastEvaluableNodeManager is the same as only_clear_if_current_enm
-		inline void Clear(EvaluableNodeManager *only_clear_if_current_enm)
+		//it will clear if only_clear_if_current_enm is nullptr or if
+		// lastEvaluableNodeManager is the same as only_clear_if_current_enm
+		inline void Clear(EvaluableNodeManager *only_clear_if_current_enm = nullptr)
 		{
-			if(only_clear_if_current_enm != lastEvaluableNodeManager)
+			if(only_clear_if_current_enm != nullptr && only_clear_if_current_enm != lastEvaluableNodeManager)
 				return;
 
 			buffer.clear();

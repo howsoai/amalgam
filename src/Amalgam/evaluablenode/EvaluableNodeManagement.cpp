@@ -89,7 +89,7 @@ void EvaluableNodeManager::CollectGarbage()
 	}
 
 	//clear regardless of what's in the buffer
-	localAllocationBuffer.Clear(this);
+	localAllocationBuffer.Clear();
 	//clear all threads' local allocation buffers that are using this enm
 #ifdef MULTITHREAD_SUPPORT
 	localAllocationBuffer.IterateFunctionOverRegisteredLabs(
@@ -118,7 +118,7 @@ void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadL
 
 	//clear regardless of what's in the buffer
 	// the clear by the thread that gets selected for GC below will catch and clear any threads that have gone inactive
-	localAllocationBuffer.Clear(this);
+	localAllocationBuffer.Clear();
 	
 	//free lock so can attempt to enter write lock to collect garbage
 	if(memory_modification_lock != nullptr)

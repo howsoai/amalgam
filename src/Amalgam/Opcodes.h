@@ -1,7 +1,6 @@
 #pragma once
 
 //project headers:
-#include "FastMath.h"
 #include "StringInternPool.h"
 
 //opcodes / commands / operations in Amalgam

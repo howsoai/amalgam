@@ -472,7 +472,7 @@ public:
 	#ifdef MULTITHREAD_SUPPORT
 		//calls func on all registered local allocation buffers for each thread
 		template<typename Func>
-		inline void IterateFunctionOverRegisteredLabs(Func func)
+		static inline void IterateFunctionOverRegisteredLabs(Func func)
 		{
 			Concurrency::Lock lock(registryMutex);
 			for(auto lab : LocalAllocationBuffer::registry)

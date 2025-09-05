@@ -11,10 +11,15 @@ const double EvaluableNodeManager::allocExpansionFactor = 1.5;
 
 EvaluableNodeManager::~EvaluableNodeManager()
 {
-	localAllocationBuffer.Clear(this);
-
 #ifdef MULTITHREAD_SUPPORT
 	Concurrency::WriteLock lock(managerAttributesMutex);
+
+	//clear from any threads
+	LocalAllocationBuffer::IterateFunctionOverRegisteredLabs(
+		[this](LocalAllocationBuffer *lab)
+	{
+		lab->Clear(this);
+	});
 #endif
 
 	for(auto &n : nodes)
@@ -92,7 +97,7 @@ void EvaluableNodeManager::CollectGarbage()
 	localAllocationBuffer.Clear();
 	//clear all threads' local allocation buffers that are using this enm
 #ifdef MULTITHREAD_SUPPORT
-	localAllocationBuffer.IterateFunctionOverRegisteredLabs(
+	LocalAllocationBuffer::IterateFunctionOverRegisteredLabs(
 		[this](LocalAllocationBuffer *lab)
 		{
 			lab->Clear(this);
@@ -138,7 +143,7 @@ void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadL
 		if(RecommendGarbageCollection())
 		{
 			//clear all threads' local allocation buffers that are using this enm
-			localAllocationBuffer.IterateFunctionOverRegisteredLabs(
+			LocalAllocationBuffer::IterateFunctionOverRegisteredLabs(
 				[this](LocalAllocationBuffer *lab)
 				{
 					lab->Clear(this);

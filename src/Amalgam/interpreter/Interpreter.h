@@ -790,6 +790,7 @@ protected:
 			resultsUniqueUnreferencedTopNode = true;
 			resultsNeedCycleCheck = false;
 			resultsIdempotent = true;
+			resultsSideEffect = false;
 
 			parentInterpreter = parent_interpreter;
 			numTasks = num_tasks;
@@ -915,9 +916,7 @@ protected:
 						construction_stack, true, &csiau, immediate_results, false);
 
 					if(interpreter.DoesConstructionStackHaveExecutionSideEffects())
-					{
 						resultsSideEffect = true;
-					}
 
 					enm->FreeNode(construction_stack);
 					enm->FreeNode(opcode_stack);

@@ -1056,6 +1056,7 @@ public:
 
 		inline LocalAllocationBufferPause(LocalAllocationBuffer &lab)
 		{
+			prevLocalAllocationBuffer.clear();
 			std::swap(prevLocalAllocationBuffer, lab.buffer);
 			localAllocationBufferLocation = &lab.buffer;
 			prevLastEvaluableNodeManager = lab.lastEvaluableNodeManager;
@@ -1079,11 +1080,22 @@ public:
 		}
 
 	protected:
-		std::vector<EvaluableNode *> prevLocalAllocationBuffer;
+		//current pointers
 		std::vector<EvaluableNode *> *localAllocationBufferLocation;
-		EvaluableNodeManager *prevLastEvaluableNodeManager;
 		EvaluableNodeManager **lastEvaluableNodeManagerLocation;
+
+		//true if paused
 		bool paused;
+
+		//used to store the previous value for pausing
+		EvaluableNodeManager *prevLastEvaluableNodeManager;
+
+		//stores previous buffer
+		//one per thread to reduce memory churn
+	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+		thread_local
+	#endif
+		static inline std::vector<EvaluableNode *> prevLocalAllocationBuffer;
 	};
 
 	//pauses the thread allocation buffer for the duration of the lifetime of the

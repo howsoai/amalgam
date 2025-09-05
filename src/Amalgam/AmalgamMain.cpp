@@ -25,7 +25,7 @@ int32_t RunAmalgamTrace(std::istream *in_stream, std::ostream *out_stream, std::
 
 //usage:
 // Note: spaces in raw string are correct, do not replace with tabs
-std::string GetUsage()
+static std::string GetUsage()
 {
 	std::stringstream usage;
 	usage

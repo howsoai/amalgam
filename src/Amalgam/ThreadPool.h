@@ -83,35 +83,37 @@ public:
 	//this is intended to be called before waiting for other threads to complete their tasks
 	inline void ChangeCurrentThreadStateFromActiveToWaiting()
 	{
-		std::unique_lock<std::mutex> lock(threadsMutex);
-
-		size_t task_queue_size = taskQueue.size();
-		int32_t num_threads_needed = maxNumActiveThreads;
-		//if less than the number of active threads, then small enough to safely cast to the smaller type
-		if(task_queue_size < static_cast<size_t>(maxNumActiveThreads))
-			num_threads_needed = static_cast<int32_t>(task_queue_size);
-
-		//compute and compare the current thread pool size to that which is needed
-		int32_t cur_thread_pool_size = static_cast<int32_t>(threads.size());
-		int32_t needed_thread_pool_size = (numReservedThreads + numThreadsToTransitionToReserved) + num_threads_needed;
-		if(cur_thread_pool_size < needed_thread_pool_size)
+		//new scope for the lock
 		{
-			//if there are reserved threads, use them, otherwise create a new thread
-			if(numReservedThreads > 0)
+			std::unique_lock<std::mutex> lock(threadsMutex);
+
+			size_t task_queue_size = taskQueue.size();
+			int32_t num_threads_needed = maxNumActiveThreads;
+			//if less than the number of active threads, then small enough to safely cast to the smaller type
+			if(task_queue_size < static_cast<size_t>(maxNumActiveThreads))
+				num_threads_needed = static_cast<int32_t>(task_queue_size);
+
+			//compute and compare the current thread pool size to that which is needed
+			int32_t cur_thread_pool_size = static_cast<int32_t>(threads.size());
+			int32_t needed_thread_pool_size = (numReservedThreads + numThreadsToTransitionToReserved) + num_threads_needed;
+			if(cur_thread_pool_size < needed_thread_pool_size)
 			{
-				numThreadsToTransitionToReserved--;
+				//if there are reserved threads, use them, otherwise create a new thread
+				if(numReservedThreads > 0)
+				{
+					numThreadsToTransitionToReserved--;
+				}
+				else
+				{
+					for(; cur_thread_pool_size < needed_thread_pool_size; cur_thread_pool_size++)
+						AddNewThread();
+				}
 			}
-			else
-			{
-				for(; cur_thread_pool_size < needed_thread_pool_size; cur_thread_pool_size++)
-					AddNewThread();
-			}
+
+			numActiveThreads--;
 		}
 
-		numActiveThreads--;
-
 		//awaken another thread
-		lock.unlock();
 		waitForTask.notify_one();
 	}
 
@@ -120,18 +122,23 @@ public:
 	//this is intended to be called after other threads, which were being waited on, have completed their tasks
 	inline void ChangeCurrentThreadStateFromWaitingToActive()
 	{
-		std::unique_lock<std::mutex> lock(threadsMutex);
-		numActiveThreads++;
-
-		//if there are currently more active threads than allowed,
-		//transition another active one to reserved
-		if(numActiveThreads > maxNumActiveThreads)
+		bool notify = false;
+		//new scope for lock
 		{
-			numThreadsToTransitionToReserved++;
+			std::unique_lock<std::mutex> lock(threadsMutex);
+			numActiveThreads++;
 
-			lock.unlock();
-			waitForTask.notify_one();
+			//if there are currently more active threads than allowed,
+			//transition another active one to reserved
+			if(numActiveThreads > maxNumActiveThreads)
+			{
+				numThreadsToTransitionToReserved++;
+				notify = true;
+			}
 		}
+
+		if(notify)
+			waitForTask.notify_one();
 	}
 
 	//enqueues a task into the thread pool
@@ -139,10 +146,11 @@ public:
 	template<typename Func, typename... Args>
 	inline void EnqueueTask(Func func, Args... args)
 	{
-		std::unique_lock<std::mutex> lock(threadsMutex);
-		taskQueue.emplace([=]() mutable { func(args...); });
-		lock.unlock();
-
+		//new scope for the lock
+		{
+			std::unique_lock<std::mutex> lock(threadsMutex);
+			taskQueue.emplace([=]() mutable { func(args...); });
+		}
 		waitForTask.notify_one();
 	}
 

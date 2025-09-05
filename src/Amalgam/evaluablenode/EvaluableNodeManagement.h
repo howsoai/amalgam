@@ -1050,9 +1050,9 @@ public:
 	public:
 		//if initialized without params, just leave unpaused
 		inline LocalAllocationBufferPause()
-		{
-			paused = false;
-		}
+			: localAllocationBuffer(nullptr), lastEvaluableNodeManagerLocation(nullptr),
+			paused(false), prevLastEvaluableNodeManager(nullptr)
+		{	}
 
 		inline LocalAllocationBufferPause(LocalAllocationBuffer &lab)
 		{
@@ -1095,7 +1095,7 @@ public:
 	#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 		thread_local
 	#endif
-		static inline std::vector<EvaluableNode *> prevLocalAllocationBuffer;
+			static inline std::vector<EvaluableNode *> prevLocalAllocationBuffer;
 	};
 
 	//pauses the thread allocation buffer for the duration of the lifetime of the

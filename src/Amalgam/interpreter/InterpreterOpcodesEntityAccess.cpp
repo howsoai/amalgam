@@ -278,9 +278,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 		bool copy_entity = false;
 
 		//pause if allocating to another entity
-		EvaluableNodeManager::ThreadLocalAllocationBufferPause tlab_pause;
+		EvaluableNodeManager::LocalAllocationBufferPause lab_pause;
 		if(target_entity != curEntity)
-			tlab_pause = evaluableNodeManager->PauseThreadLocalAllocationBuffer();
+			lab_pause = evaluableNodeManager->PauseLocalAllocationBuffer();
 
 		size_t num_new_nodes_allocated = 0;
 		auto [any_success, all_success] = target_entity->SetValuesAtLabels(
@@ -288,7 +288,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 										(ConstrainedAllocatedNodes() ? &num_new_nodes_allocated : nullptr),
 										target_entity == curEntity, copy_entity);
 
-		tlab_pause.Resume();
+		lab_pause.Resume();
 
 		if(any_success)
 		{
@@ -313,11 +313,12 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 			#endif
 			}
 		}
-		//clear write lock as soon as possible
+		//clear write lock as soon as possible, but pull out pointer first to compare for gc
+		Entity *target_entity_raw_ptr = target_entity;
 		target_entity = EntityWriteReference();
 
 		//if assigning to a different entity, it can be cleared
-		if(target_entity != curEntity)
+		if(target_entity_raw_ptr != curEntity)
 		{
 			node_stack.PopEvaluableNode();
 			evaluableNodeManager->FreeNodeTreeIfPossible(assigned_vars);

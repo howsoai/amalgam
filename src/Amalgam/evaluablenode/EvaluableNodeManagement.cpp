@@ -7,16 +7,11 @@
 #include <vector>
 #include <utility>
 
-#ifdef MULTITHREAD_SUPPORT
-Concurrency::ReadWriteMutex EvaluableNodeManager::memoryModificationMutex;
-#endif
-
 const double EvaluableNodeManager::allocExpansionFactor = 1.5;
 
 EvaluableNodeManager::~EvaluableNodeManager()
 {
-	if(lastEvaluableNodeManager == this)
-		ClearThreadLocalAllocationBuffer();
+	localAllocationBuffer.Clear(this);
 
 #ifdef MULTITHREAD_SUPPORT
 	Concurrency::WriteLock lock(managerAttributesMutex);
@@ -93,7 +88,16 @@ void EvaluableNodeManager::CollectGarbage()
 		PerformanceProfiler::StartOperation(collect_garbage_string, GetNumberOfUsedNodes());
 	}
 
-	ClearThreadLocalAllocationBuffer();
+	//clear regardless of what's in the buffer
+	localAllocationBuffer.Clear(this);
+	//clear all threads' local allocation buffers that are using this enm
+#ifdef MULTITHREAD_SUPPORT
+	localAllocationBuffer.IterateFunctionOverRegisteredLabs(
+		[this](LocalAllocationBuffer *lab)
+		{
+			lab->Clear(this);
+		});
+#endif
 
 	MarkAllReferencedNodesInUse(firstUnusedNodeIndex);
 
@@ -112,7 +116,9 @@ void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadL
 		PerformanceProfiler::StartOperation(collect_garbage_string, GetNumberOfUsedNodes());
 	}
 
-	ClearThreadLocalAllocationBuffer();
+	//clear regardless of what's in the buffer
+	// the clear by the thread that gets selected for GC below will catch and clear any threads that have gone inactive
+	localAllocationBuffer.Clear(this);
 	
 	//free lock so can attempt to enter write lock to collect garbage
 	if(memory_modification_lock != nullptr)
@@ -131,6 +137,13 @@ void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadL
 	{
 		if(RecommendGarbageCollection())
 		{
+			//clear all threads' local allocation buffers that are using this enm
+			localAllocationBuffer.IterateFunctionOverRegisteredLabs(
+				[this](LocalAllocationBuffer *lab)
+				{
+					lab->Clear(this);
+				});
+
 			size_t cur_first_unused_node_index = firstUnusedNodeIndex;
 			//clear firstUnusedNodeIndex to signal to other threads that they won't need to do garbage collection
 			firstUnusedNodeIndex = 0;
@@ -175,7 +188,7 @@ void EvaluableNodeManager::FreeAllNodes()
 	
 	UpdateGarbageCollectionTrigger(original_num_nodes);
 
-	ClearThreadLocalAllocationBuffer();
+	localAllocationBuffer.Clear(this);
 }
 
 EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
@@ -186,11 +199,11 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 		Concurrency::SingleLock lock(labCountMutex);
 	#endif
 	
-		labSize += localAllocationBuffer.size();
+		labSize += localAllocationBuffer.buffer.size();
 		labSizeCount++;
 
 		//use an exponentially rolling average, use a small fraction of the new value (1/256th)
-		rollingAveLABSize = 0.99609375 * rollingAveLABSize + 0.00390625 * localAllocationBuffer.size();
+		rollingAveLABSize = 0.99609375 * rollingAveLABSize + 0.00390625 * localAllocationBuffer.buffer.size();
 		if(labSizeCount % 4000 == 0)
 			std::cout << "ave local allocation buffer size: " << rollingAveLABSize << std::endl;
 	}
@@ -952,7 +965,7 @@ std::pair<bool, bool> EvaluableNodeManager::UpdateFlagsForNodeTreeRecurse(Evalua
 void EvaluableNodeManager::MarkAllReferencedNodesInUse(EvaluableNode *tree)
 {
 	tree->SetKnownToBeInUse(true);
-	auto &node_stack = localAllocationBuffer;
+	auto &node_stack = nodeMarkBuffer;
 	node_stack.push_back(tree);
 
 	while(!node_stack.empty())
@@ -997,9 +1010,7 @@ void EvaluableNodeManager::MarkAllReferencedNodesInUseConcurrent(EvaluableNode *
 #endif
 
 	tree->SetKnownToBeInUseAtomic(true);
-	//because marking occurs during garbage collection and localAllocationBuffer
-	// is cleared, can reuse that buffer as the local stack to eliminate the overhead of recursion
-	auto &node_stack = localAllocationBuffer;
+	auto &node_stack = nodeMarkBuffer;
 	node_stack.push_back(tree);
 
 	while(!node_stack.empty())

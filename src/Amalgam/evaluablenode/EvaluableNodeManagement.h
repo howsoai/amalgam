@@ -398,6 +398,105 @@ public:
 		EvaluableNode::ReferenceCountType nodesReferenced;
 	};
 
+	//holds pointers to EvaluableNode's reserved for allocation by a specific thread
+	//during garbage collection, these buffers need to be cleared because memory may be rearranged or reassigned
+	//this also means that garbage collection processes may reuse this buffer as long as it is cleared
+	class LocalAllocationBuffer
+	{
+	public:
+		LocalAllocationBuffer()
+			: lastEvaluableNodeManager(nullptr)
+		{
+		#ifdef MULTITHREAD_SUPPORT
+			Concurrency::Lock lock(registryMutex);
+			registry.push_back(this);
+		#endif
+		}
+
+		~LocalAllocationBuffer()
+		{
+		#ifdef MULTITHREAD_SUPPORT
+			Concurrency::Lock lock(registryMutex);
+
+			auto it = std::find(registry.begin(), registry.end(), this);
+			if(it != registry.end())
+				registry.erase(it);
+		#endif
+		}
+
+		//removes all EvaluableNodes from the local allocation buffer, leaving it empty
+		//it will only clear if lastEvaluableNodeManager is the same as only_clear_if_current_enm
+		inline void Clear(EvaluableNodeManager *only_clear_if_current_enm)
+		{
+			if(only_clear_if_current_enm != lastEvaluableNodeManager)
+				return;
+
+			buffer.clear();
+			//set to null so nothing matches until more nodes are added
+			lastEvaluableNodeManager = nullptr;
+		}
+
+		//gets a pointer to the next available node from the local allocation buffer
+		//nullptr if it cannot
+		inline EvaluableNode *GetNode(EvaluableNodeManager *cur_enm)
+		{
+			if(buffer.size() > 0 && cur_enm == lastEvaluableNodeManager)
+			{
+				EvaluableNode *node = buffer.back();
+				buffer.pop_back();
+				return node;
+			}
+			else //local allocation buffer is empty or irrelevant, clear so nothing matches until more nodes are added
+			{
+				buffer.clear();
+				lastEvaluableNodeManager = nullptr;
+				return nullptr;
+			}
+		}
+
+		//adds a node to the local allocation buffer
+		//if this is accessed by a different EvaluableNode manager than the last time it was called on this thread,
+		// it will clear the buffer before adding the node
+		inline void AddNode(EvaluableNode *en, EvaluableNodeManager *cur_enm)
+		{
+			if(cur_enm != lastEvaluableNodeManager)
+			{
+				buffer.clear();
+				lastEvaluableNodeManager = cur_enm;
+			}
+
+			buffer.push_back(en);
+		}
+
+	#ifdef MULTITHREAD_SUPPORT
+		//calls func on all registered local allocation buffers for each thread
+		template<typename Func>
+		inline void IterateFunctionOverRegisteredLabs(Func func)
+		{
+			Concurrency::Lock lock(registryMutex);
+			for(auto lab : LocalAllocationBuffer::registry)
+				func(lab);
+		}
+	#endif
+
+		// Keeps track of the the last EvaluableNodeManager that accessed 
+		// the local allocation buffer for a each thread.
+		// A given local allocation buffer should only have nodes associated with one manager.
+		// If a different manager accesses the buffer, it is cleared to maintain this invariant.
+		EvaluableNodeManager *lastEvaluableNodeManager;
+
+		//the buffer itself
+		std::vector<EvaluableNode *> buffer;
+
+	protected:
+
+	#ifdef MULTITHREAD_SUPPORT
+		//registry that keeps track of all local allocation buffers
+		static inline std::vector<LocalAllocationBuffer *> registry;
+		static inline Concurrency::SingleMutex registryMutex;
+	#endif
+	};
+
 	EvaluableNodeManager() :
 		numNodesToRunGarbageCollection(200), firstUnusedNodeIndex(0)
 	{	}
@@ -901,36 +1000,27 @@ public:
 	//when numNodesToRunGarbageCollection are allocated, then it is time to run garbage collection
 	size_t numNodesToRunGarbageCollection;
 
-	// Remove all EvaluableNodes from the local allocation buffer, leaving it empty.
-	inline static void ClearThreadLocalAllocationBuffer()
-	{
-		localAllocationBuffer.clear();
-		//set to null so nothing matches until more nodes are added
-		lastEvaluableNodeManager = nullptr;
-	}
-
 	//Uses an EvaluableNode as a stack which may already have elements in it
 	// upon destruction it restores the stack back to the state it was when constructed
-	class ThreadLocalAllocationBufferPause
+	class LocalAllocationBufferPause
 	{
 	public:
 		//if initialized without params, just leave unpaused
-		inline ThreadLocalAllocationBufferPause()
+		inline LocalAllocationBufferPause()
 		{
 			paused = false;
 		}
 
-		inline ThreadLocalAllocationBufferPause(std::vector<EvaluableNode *> &lab_buffer,
-			EvaluableNodeManager *&last_enm)
+		inline LocalAllocationBufferPause(LocalAllocationBuffer &lab)
 		{
-			std::swap(prevLocalAllocationBuffer, lab_buffer);
-			localAllocationBufferLocation = &lab_buffer;
-			prevLastEvaluableNodeManager = last_enm;
-			lastEvaluableNodeManagerLocation = &last_enm;
+			std::swap(prevLocalAllocationBuffer, lab.buffer);
+			localAllocationBufferLocation = &lab.buffer;
+			prevLastEvaluableNodeManager = lab.lastEvaluableNodeManager;
+			lastEvaluableNodeManagerLocation = &lab.lastEvaluableNodeManager;
 			paused = true;
 		}
 
-		inline ~ThreadLocalAllocationBufferPause()
+		inline ~LocalAllocationBufferPause()
 		{
 			Resume();
 		}
@@ -956,9 +1046,9 @@ public:
 	//pauses the thread allocation buffer for the duration of the lifetime of the
 	//returned object; no garbage collection or execution should occur while it is paused
 	//this is intended only for allocations for other entities
-	inline ThreadLocalAllocationBufferPause PauseThreadLocalAllocationBuffer()
+	inline LocalAllocationBufferPause PauseLocalAllocationBuffer()
 	{
-		return ThreadLocalAllocationBufferPause(localAllocationBuffer, lastEvaluableNodeManager);
+		return LocalAllocationBufferPause(localAllocationBuffer);
 	}
 
 protected:
@@ -1026,44 +1116,20 @@ protected:
 		EvaluableNode *en, EvaluableNode::ReferenceSetType &checked,
 		FastHashSet<EvaluableNode *> *existing_nodes, bool check_cycle_flag_consistency);
 
-	// Get a pointer to the next available node from the local allocation buffer.
-	// If the buffer is empty, returns null.
+	//gets a pointer to the next available node from the local allocation buffer
+	//nullptr if it cannot
 	inline EvaluableNode *GetNextNodeFromLocalAllocationBuffer()
 	{
-		if(localAllocationBuffer.size() > 0 && this == lastEvaluableNodeManager)
-		{
-			EvaluableNode *node = localAllocationBuffer.back();
-			localAllocationBuffer.pop_back();
-			return node;
-		}
-		else
-		{
-			if(lastEvaluableNodeManager != this)
-				ClearThreadLocalAllocationBuffer();
-			else //local allocation buffer is empty, set to null so nothing matches until more nodes are added
-				lastEvaluableNodeManager = nullptr;
-
-			return nullptr;
-		}
+		return localAllocationBuffer.GetNode(this);
 	}
 
-	// Adds a node to the local allocation buffer.
-	// If this is accessed by a different EvaluableNode manager than
-	// the last time it was called on this thread, it will clear the buffer
-	// before adding the node.
+	//adds en to the local allocation buffer
 	inline void AddNodeToLocalAllocationBuffer(EvaluableNode *en)
 	{
 	#ifdef AMALGAM_FAST_MEMORY_INTEGRITY
 		assert(en->IsNodeDeallocated());
 	#endif
-
-		if(this != lastEvaluableNodeManager)
-		{
-			localAllocationBuffer.clear();
-			lastEvaluableNodeManager = this;
-		}
-
-		localAllocationBuffer.push_back(en);
+		localAllocationBuffer.AddNode(en, this);
 	}
 
 #ifdef MULTITHREAD_SUPPORT
@@ -1081,7 +1147,7 @@ public:
 	// so that the memory can be traversed
 	//note that this is a global lock because nodes may be mixed among more than one
 	// EvaluableNodeManager and so garbage collection should not happening while memory is being modified
-	static Concurrency::ReadWriteMutex memoryModificationMutex;
+	inline static Concurrency::ReadWriteMutex memoryModificationMutex;
 
 protected:
 
@@ -1101,25 +1167,20 @@ protected:
 	//extra space to allocate when allocating
 	static const double allocExpansionFactor;
 
-#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
-	thread_local
-#endif
-	// Keeps track of the the last EvaluableNodeManager that accessed 
-	// the local allocation buffer for a each thread.
-	// A given local allocation buffer should only have nodes associated with one manager.
-	// If a different manager accesses the buffer, it is cleared to maintain this invariant.
-	static inline EvaluableNodeManager *lastEvaluableNodeManager;
-
 	//number of nodes to allocate at once for the local allocation buffer
 	static const int labBlockAllocationSize = 24;
 
-	//holds pointers to EvaluableNode's reserved for allocation by a specific thread
-	//during garbage collection, these buffers need to be cleared because memory may be rearranged or reassigned
-	//this also means that garbage collection processes may reuse this buffer as long as it is cleared
+	//local memory pool for allocations
 #if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
 	thread_local
 #endif
-		inline static std::vector<EvaluableNode *> localAllocationBuffer;
+		inline static LocalAllocationBuffer localAllocationBuffer;
+
+	//local memory pool for garbage collection
+#if defined(MULTITHREAD_SUPPORT) || defined(MULTITHREAD_INTERFACE)
+	thread_local
+	#endif
+		inline static std::vector<EvaluableNode *> nodeMarkBuffer;
 
 	//debug diagnostic variables for localAllocationBuffer
 #ifdef DEBUG_REPORT_LAB_USAGE

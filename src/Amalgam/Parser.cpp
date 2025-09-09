@@ -337,8 +337,8 @@ EvaluableNode *Parser::GetCodeForPathToSharedNodeFromParentAToParentB(UnparseDat
 	// to the incorrect node
 	if(!upd.transaction && lowest_common_node == upd.topNode)
 		target->AppendOrderedChildNode(enm.AllocNode(true));
-	else //need to include the get (below) in the depth, so add 1
-		target->AppendOrderedChildNode(enm.AllocNode(static_cast<double>(a_ancestor_depth + 1)));
+	else
+		target->AppendOrderedChildNode(enm.AllocNode(static_cast<double>(a_ancestor_depth)));
 
 	if(b_path_nodes.size() > 0)
 		target->AppendOrderedChildNode(walk_path);

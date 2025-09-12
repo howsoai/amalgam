@@ -296,7 +296,7 @@ void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t nodes_used_befo
 	//store packed value: threshold | state | sticky
 	next_threshold &= ~meta_mask;
 	numNodesToRunGarbageCollection = (next_threshold
-		| (static_cast<size_t>(next_state) & state_mask)
+		| (next_state & state_mask)
 		| (next_sticky ? sticky_mask : 0) );
 }
 

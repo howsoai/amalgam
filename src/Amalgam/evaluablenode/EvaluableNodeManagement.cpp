@@ -77,8 +77,6 @@ void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t nodes_used_befo
 	//heuristic values
 	//minimum useful GC delta
 	constexpr size_t min_increment = 20000;
-	//amount of memory change as regular churn that shouldn't affect state
-	constexpr size_t churn_margin = 5000;
 	//extra wiggle room around boundary between state transitions
 	constexpr size_t trigger_hysteresis_threshold = 5000;
 	//small jitter to avoid state cycles
@@ -138,7 +136,7 @@ void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t nodes_used_befo
 
 	//compute desired growth, requiring both absolute and relative growth to accept raises
 	size_t rel_target = static_cast<size_t>(cur_used * rel_frac);
-	size_t desired_growth = std::max(min_increment, std::max(rel_target, churn_margin));
+	size_t desired_growth = std::max(min_increment, rel_target);
 
 	//determine initial value of next_threshold
 	//because the threshold is rounded down due to any possible encoded state,
@@ -208,8 +206,7 @@ void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t nodes_used_befo
 		next_threshold = static_cast<size_t>(static_cast<int64_t>(next_threshold) + jitter_adj);
 
 	//ensure threshold has hysteresis is above cur_used
-	if(next_threshold < cur_used + trigger_hysteresis_threshold)
-		next_threshold = cur_used + trigger_hysteresis_threshold;
+	next_threshold = std::max(next_threshold, cur_used + trigger_hysteresis_threshold);
 
 	//use softened state transitions via magnitude + persistence checks via sticky bit
 	size_t next_state = state;
@@ -233,23 +230,29 @@ void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t nodes_used_befo
 		if(state == STABLE)
 		{
 			if(significant_vs_prev || significant_vs_stored)
+			{
 				next_state = ONCE_INCREASING;
+				next_sticky = true;
+			}
 		}
 		else if(state == ONCE_INCREASING)
 		{
 			if(significant_vs_prev || (next_threshold >= prev_threshold_base + 2 * min_increment))
+			{
 				next_state = ESCALATING;
+				next_sticky = true;
+			}
 			else
+			{
 				next_state = ONCE_INCREASING;
+				next_sticky = false;
+			}
 		}
 		else //keep escalating
 		{
 			next_state = ESCALATING;
-		}
-
-		//TODO: move this into only places where there's a promotion
-		//when we promote, set sticky to prevent immediate demotion for one cycle
-		next_sticky = true;
+			next_sticky = false;
+		}		
 	}
 	else if(decreased_significant)
 	{
@@ -266,14 +269,7 @@ void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t nodes_used_befo
 			next_state = STABLE;
 			next_sticky = false;
 		}
-		else if(sticky)
-		{
-			//if sticky was set, clear now (one-cycle guard)
-			next_sticky = false;
-			//keep state same but with less stickiness
-			next_state = state;
-		}
-		else //stable but not sticky, remain in state
+		else //stable, remain in state, but no longer sticky
 		{
 			next_state = state;
 			next_sticky = false;

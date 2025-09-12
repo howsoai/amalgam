@@ -124,12 +124,12 @@ void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t nodes_used_befo
 		break;
 	case ESCALATING: //multiple successive increases observed; apply strong backoff (bigger growth, larger hysteresis)
 		rel_frac = 0.40;
-		growth_mult = 2.0;
+		growth_mult = 1.8;
 		backoff_fraction = 0.30;
 		break;
 	case RECENT_DROP: //recent significant drop in usage; permit quicker shrink of threshold
 		rel_frac = 0.12;
-		growth_mult = 0.9; //shrink
+		growth_mult = 0.8; //shrink
 		backoff_fraction = 0.10;
 		break;
 	}

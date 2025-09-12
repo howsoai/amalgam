@@ -119,17 +119,17 @@ void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t nodes_used_befo
 		break;
 	case ONCE_INCREASING: //increased recently; apply moderate conservative backoff
 		rel_frac = 0.22;
-		growth_mult = 1.4;
+		growth_mult = 1.6;
 		backoff_fraction = 0.18;
 		break;
 	case ESCALATING: //multiple successive increases observed; apply strong backoff (bigger growth, larger hysteresis)
 		rel_frac = 0.40;
-		growth_mult = 1.8;
+		growth_mult = 2.0;
 		backoff_fraction = 0.30;
 		break;
 	case RECENT_DROP: //recent significant drop in usage; permit quicker shrink of threshold
 		rel_frac = 0.12;
-		growth_mult = 0.8; //shrink
+		growth_mult = 0.7; //shrink
 		backoff_fraction = 0.10;
 		break;
 	}
@@ -158,12 +158,7 @@ void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t nodes_used_befo
 		size_t backoff = static_cast<size_t>(prev_threshold_base * backoff_fraction);
 		backoff = std::max(backoff, min_increment);
 
-		size_t candidate = cur_used + std::max(keep_headroom, backoff);
-
-		//don't reduce the memory too hard, keep enough space to keep compute efficient
-		size_t max_from_current = 4 * cur_used + 1;
-
-		next_threshold = std::max(candidate, max_from_current);
+		next_threshold = cur_used + std::max(keep_headroom, backoff);
 	}
 	else //prev_threshold_base <= cur_used
 	{
@@ -175,7 +170,7 @@ void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t nodes_used_befo
 		size_t candidate = cur_used + candidate_growth;
 
 		//cap runaway growth relative to current total; allow > cur_total but bounded
-		size_t cap = std::max(cur_total * 4, prev_threshold_base + min_increment * 32);
+		size_t cap = std::max(cur_total * 3, prev_threshold_base + min_increment * 32);
 		candidate = std::min(candidate, cap);
 
 		//require candidate to exceed prev_threshold_base by at least min_increment
@@ -186,7 +181,7 @@ void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t nodes_used_befo
 		if(significant_vs_stored || significant_vs_prev)
 			next_threshold = candidate;
 		else //avoid reacting to small churn
-			next_threshold = prev_threshold_base;
+			next_threshold = cur_used + min_increment;
 	}
 
 	//add small deterministic jitter to prevent cyclic behavior

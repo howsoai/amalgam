@@ -64,27 +64,244 @@ EvaluableNode *EvaluableNodeManager::AllocNode(EvaluableNode *original, Evaluabl
 	return n;
 }
 
-void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t previous_num_nodes)
+void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t nodes_used_before_gc)
 {
-	//assume at least a factor larger than the base memory usage for the entity
-	//add 1 for good measure and to make sure the smallest size isn't zero
-	size_t max_from_current = 3 * GetNumberOfUsedNodes() + 1;
+	//the garbage collection trigger uses the 3 least significant bits of numNodesToRunGarbageCollection
+	// to create a state machine to operate in a PID-like manner
+	// this detects whether the memory seems to be quickly, is stable, or is decreasing
+	// and updates accordingly.  It also has an inertia to the state to reduce oscillations
+	//By using the least significant bits, it prevents needing of another field and increasing
+	// memory when there are many entities.  Additionally, the least significant bits
+	// have no effect on using numNodesToRunGarbageCollection for comparison
 
-	size_t cur_num_nodes = GetNumberOfUsedNodes();
-	if(numNodesToRunGarbageCollection > cur_num_nodes)
-	{
-		//scale down the number of nodes previously allocated, because there is always a chance that
-		//a large allocation goes beyond that size and so the memory keeps growing
-		//by using a fraction less than 1, it reduces the chances of a slow memory increase
-		size_t diff_from_current = (numNodesToRunGarbageCollection - cur_num_nodes);
-		size_t max_from_previous = cur_num_nodes + static_cast<size_t>(.95 * diff_from_current);
+	//heuristic values
+	//minimum useful GC delta
+	constexpr size_t min_increment = 20000;
+	//amount of memory change as regular churn that shouldn't affect state
+	constexpr size_t churn_margin = 5000;
+	//extra wiggle room around boundary between state transitions
+	constexpr size_t trigger_hysteresis_threshold = 5000;
+	//small jitter to avoid state cycles
+	constexpr double jitter_frac = 0.01;
 
-		numNodesToRunGarbageCollection = std::max<size_t>(max_from_previous, max_from_current);
-	}
-	else
+	//least significant bit layout:
+	// bits 0-1: state
+	// bit 2: sticky_demote, one-cycle stickiness
+	// bits 63-3: threshold
+	constexpr size_t state_mask = 0x3ULL;
+	constexpr size_t sticky_mask = 0x4ULL;
+	constexpr size_t meta_mask = (state_mask | sticky_mask);
+
+	//get current state information
+	size_t cur_used = GetNumberOfUsedNodes();
+	size_t cur_total = nodes.size();
+
+	enum GCState : size_t
 	{
-		numNodesToRunGarbageCollection = max_from_current;
+		STABLE = 0,
+		ONCE_INCREASING = 1,
+		ESCALATING = 2,
+		RECENT_DROP = 3
+	};
+
+	GCState state = static_cast<GCState>(numNodesToRunGarbageCollection & state_mask);
+	bool sticky = ((numNodesToRunGarbageCollection & sticky_mask) != 0);
+	size_t prev_threshold_base = (numNodesToRunGarbageCollection & ~meta_mask);
+
+	//per-state adjustments
+	double rel_frac = 0.18;
+	double growth_mult = 1.0;
+	double backoff_fraction = 0.12;
+	switch(state)
+	{
+	case STABLE: //no recent unusual growth; normal growth/backoff
+		rel_frac = 0.18;
+		growth_mult = 1.0;
+		backoff_fraction = 0.12;
+		break;
+	case ONCE_INCREASING: //increased recently; apply moderate conservative backoff
+		rel_frac = 0.22;
+		growth_mult = 1.4;
+		backoff_fraction = 0.18;
+		break;
+	case ESCALATING: //multiple successive increases observed; apply strong backoff (bigger growth, larger hysteresis)
+		rel_frac = 0.40;
+		growth_mult = 2.0;
+		backoff_fraction = 0.30;
+		break;
+	case RECENT_DROP: //recent significant drop in usage; permit quicker shrink of threshold
+		rel_frac = 0.12;
+		growth_mult = 0.9; //shrink
+		backoff_fraction = 0.10;
+		break;
 	}
+
+	//compute desired growth, requiring both absolute and relative growth to accept raises
+	size_t rel_target = static_cast<size_t>(cur_used * rel_frac);
+	size_t desired_growth = std::max(min_increment, std::max(rel_target, churn_margin));
+
+	//determine initial value of next_threshold
+	//because the threshold is rounded down due to any possible encoded state,
+	// there is already some implicit but desired fuzziness in this check
+	size_t next_threshold = 0;
+	if(prev_threshold_base > cur_used)
+	{
+		//have headroom, shrink conservatively
+		size_t headroom = prev_threshold_base - cur_used;
+
+		//keep a fraction of previous headroom; RECENT_DROP allows more aggressive shrink
+		double keep_fraction = (state == RECENT_DROP) ? 0.25 : 0.6;
+		size_t keep_headroom = static_cast<size_t>(headroom * keep_fraction);
+
+		//ensure at least min_increment headroom remains
+		keep_headroom = std::max(keep_headroom, min_increment);
+
+		//compute safety backoff based on stored threshold to avoid dropping too far
+		size_t backoff = static_cast<size_t>(prev_threshold_base * backoff_fraction);
+		backoff = std::max(backoff, min_increment);
+
+		size_t candidate = cur_used + std::max(keep_headroom, backoff);
+
+		//don't reduce the memory too hard, keep enough space to keep compute efficient
+		size_t max_from_current = 4 * cur_used + 1;
+
+		next_threshold = std::max(candidate, max_from_current);
+	}
+	else //prev_threshold_base <= cur_used
+	{
+		//passed or hit previous threshold; candidate increase must be significant absolutely and relatively
+		//use growth_mult (state) to require heavier increases when escalating.
+		double candidate_growth_u64 = desired_growth * growth_mult;
+		size_t candidate_growth = static_cast<size_t>(std::min(
+			static_cast<double>(std::numeric_limits<size_t>::max() - 1), candidate_growth_u64));
+		size_t candidate = cur_used + candidate_growth;
+
+		//cap runaway growth relative to current total; allow > cur_total but bounded
+		size_t cap = std::max(cur_total * 4, prev_threshold_base + min_increment * 32);
+		candidate = std::min(candidate, cap);
+
+		//require candidate to exceed prev_threshold_base by at least min_increment
+		// or show persistent trend since nodes_used_before_gc (magnitude-based promotion)
+		bool significant_vs_stored = (candidate >= prev_threshold_base + min_increment);
+		bool significant_vs_prev = (cur_used >= nodes_used_before_gc + min_increment);
+
+		if(significant_vs_stored || significant_vs_prev)
+			next_threshold = candidate;
+		else //avoid reacting to small churn
+			next_threshold = prev_threshold_base;
+	}
+
+	//add small deterministic jitter to prevent cyclic behavior
+	//simple XOR-based cheap pseudo-jitter using cur_used & nodes_used_before_gc as seed
+	uint64_t seed = static_cast<uint64_t>(cur_used) ^ (static_cast<uint64_t>(nodes_used_before_gc) << 7);
+	//cheap xorshift32
+	uint32_t x = static_cast<uint32_t>((seed >> 16) ^ (seed & 0xFFFF));
+	x ^= x << 13;
+	x ^= x >> 17;
+	x ^= x << 5;
+	//generate jitter in the range [-0.5,0.5)
+	double jitter = (static_cast<int32_t>(x & 0xFFFF) / static_cast<double>(0x10000)) - 0.5;
+	//apply jitter adjustment
+	int64_t jitter_adj = static_cast<int64_t>(jitter * (next_threshold * jitter_frac));
+	//avoid underflow before applying
+	if(! (jitter_adj < 0 && static_cast<size_t>(-jitter_adj) >= next_threshold))
+		next_threshold = static_cast<size_t>(static_cast<int64_t>(next_threshold) + jitter_adj);
+
+	//ensure threshold has hysteresis is above cur_used
+	if(next_threshold < cur_used + trigger_hysteresis_threshold)
+		next_threshold = cur_used + trigger_hysteresis_threshold;
+
+	//use softened state transitions via magnitude + persistence checks via sticky bit
+	size_t next_state = state;
+	bool next_sticky = sticky;
+
+	//determine whether the decrease is significant
+	bool decreased_significant = false;
+	if(prev_threshold_base > 0)
+	{
+		size_t drop = (prev_threshold_base > next_threshold) ? (prev_threshold_base - next_threshold) : 0;
+		decreased_significant = (drop >= std::max(min_increment, prev_threshold_base / 10));
+	}
+
+	//if increased
+	if(next_threshold > prev_threshold_base)
+	{
+		//promote only on significant increase or sustained increase vs nodes_used_before_gc
+		bool significant_vs_prev = (cur_used >= nodes_used_before_gc + min_increment);
+		bool significant_vs_stored = (next_threshold >= prev_threshold_base + min_increment);
+
+		if(state == STABLE)
+		{
+			if(significant_vs_prev || significant_vs_stored)
+				next_state = ONCE_INCREASING;
+		}
+		else if(state == ONCE_INCREASING)
+		{
+			if(significant_vs_prev || (next_threshold >= prev_threshold_base + 2 * min_increment))
+				next_state = ESCALATING;
+			else
+				next_state = ONCE_INCREASING;
+		}
+		else //keep escalating
+		{
+			next_state = ESCALATING;
+		}
+
+		//TODO: move this into only places where there's a promotion
+		//when we promote, set sticky to prevent immediate demotion for one cycle
+		next_sticky = true;
+	}
+	else if(decreased_significant)
+	{
+		//allow faster shrink next time
+		next_state = RECENT_DROP;
+		//keep sticky to allow one gentle cycle of shrink
+		next_sticky = true;
+	}
+	else //didn't increase and didn't decrease significantly
+	{
+		//not a big change: possibly demote RECENT_DROP to STABLE, or release sticky after one quiet cycle
+		if(state == RECENT_DROP)
+		{
+			next_state = STABLE;
+			next_sticky = false;
+		}
+		else if(sticky)
+		{
+			//if sticky was set, clear now (one-cycle guard)
+			next_sticky = false;
+			//keep state same but with less stickiness
+			next_state = state;
+		}
+		else //stable but not sticky, remain in state
+		{
+			next_state = state;
+			next_sticky = false;
+		}
+	}
+
+	//demote from ESCALATING to ONCE_INCREASED if usage fell moderately
+	if(state == ESCALATING && next_state == ESCALATING)
+	{
+		//if fell ~16% via divide by 6
+		bool fell_moderately = (cur_used + min_increment * 2 < prev_threshold_base)
+			|| (cur_used <= prev_threshold_base - (prev_threshold_base / 6));
+
+		if(fell_moderately)
+		{
+			next_state = ONCE_INCREASING;
+			next_sticky = true;
+		}
+	}
+
+	//ensure next_threshold >= cur_used + min_increment to ensure GC does something
+	next_threshold = std::max(next_threshold, cur_used + min_increment);
+
+	//store packed value: threshold | state | sticky
+	next_threshold &= ~meta_mask;
+	numNodesToRunGarbageCollection = (next_threshold
+		| (static_cast<size_t>(next_state) & state_mask)
+		| (next_sticky ? sticky_mask : 0) );
 }
 
 void EvaluableNodeManager::CollectGarbage()

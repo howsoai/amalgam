@@ -747,7 +747,7 @@ public:
 	}
 
 	//updates the memory threshold when garbage collection will be next called
-	void UpdateGarbageCollectionTrigger(size_t previous_num_nodes = 0);
+	void UpdateGarbageCollectionTrigger(size_t nodes_used_before_gc = 0);
 
 	//changes the garbage collection trigger so that the next call to RecommendGarbageCollection will be true
 	inline void UpdateGarbageCollectionTriggerForImmediateCollection()

@@ -994,7 +994,7 @@ public:
 
 		//iteratively search forward; this will be fast for newly created entities but potentially slow for those that are not
 		// however, this should be rarely called on those entities since it's basically clearing them out, so it should not generally be a performance issue
-		auto location = std::find(begin(nodes), begin(nodes) + firstUnusedNodeIndex, new_root);
+		auto location = std::find(begin(nodes), begin(nodes) + firstUnusedNodeIndex + 1, new_root);
 
 		if(location == end(nodes))
 		{

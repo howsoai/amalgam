@@ -1,29 +1,465 @@
 ﻿(seq
- (print
-	[
-		{ "a" 1}
-		@(get (target 2) 0)
-		1
-	]
- )
 
- (print
-	[
-		{ "a" 1}
-		{ b @(get (target 3) 0)}
-		1
-	]
- )
+	(declare (assoc
+		features (range 0 784)
+		total_num_samples 150000
+		batch_size 30
+	))
 
- (print
-	[
-		@(get (target 0) 0)
-	]
- )
+	(declare (assoc
+		feature_residuals_lists
+			(map
+				(lambda
+					(map
+						(lambda (if (< (rand) 0.5) (rand)) )
+						(range 1 total_num_samples)
+					)
+				)
+				features
+			)
+	))
 
- (print [ 0 1 2 3 (+ (target 0 1)) 4] "\n")
- (print [ 0 1 2 3 [ 0 1 2 3 (+ (target 1 1)) 4]] "\n")
- (print { a 0 b 1 c 2 d 3 e [ 0 1 2 3 (+ (target 1 "a")) 4]} "\n")
- (print { a 0 b 1 c 2 d 3 e [ [ 0 1 2 3 (+ (target (true) "a")) 4]]} "\n")
+	(null
+		;helper method to compute MDA matrix given a list of features and the corresponding feature_residuals_lists
+		#!ComputeMDAMatrix
+		||(map
+			(lambda (let
+				(assoc
+					;feature whose mda is being measured
+					feature (current_value 1)
+					feature_index (+ (current_index 1) feature_index_offset)
+				)
+				(declare (assoc
+					; keep only indices of cases where feature was used in query and its residual is null
+					case_indices_with_feature
+						(filter
+							(lambda (= (null) (get feature_residuals_lists [feature_index (current_value 1)])) )
+							all_sample_indices
+						)
 
- )
+					;keep only indices of cases where feature was not used in query and has a residual value
+					case_indices_without_feature
+						(filter
+							(lambda (!= (null) (get feature_residuals_lists [feature_index (current_value 1)])) )
+							all_sample_indices
+						)
+
+				))
+
+				(map
+					(lambda (let
+						(assoc
+							;feature being predicted
+							mda_feature (current_value 1)
+							mda_feature_index (current_index 1)
+						)
+						;a feature should not have mda computed for itself
+						(if (= mda_feature feature) (conclude 0) )
+
+						(-
+							;avg_without_residuals
+							(generalized_mean (unzip (get feature_residuals_lists mda_feature_index) case_indices_without_feature) )
+							;average with residuals
+							(generalized_mean (unzip (get feature_residuals_lists mda_feature_index) case_indices_with_feature) )
+						)
+					))
+					features
+				)
+			))
+			row_features
+		)
+
+		;helper method to compute MDA matrix via batches of features at a time to limit memory consumption during computation
+		#!ComputeMDAMatrixInBatches
+		(declare
+			(assoc
+				num_batches (ceil (/ (size features) batch_size))
+				start 0
+				end (- batch_size 1)
+				last (- (size features) 1)
+				partial_mda_matrix (null)
+				all_sample_indices (range 0 (- total_num_samples 1))
+			)
+
+			(while (< (current_index) 2) ;;; num_batches )
+
+				;memory cleanup
+				;(reclaim_resources (null) (false) (false) (true) (false))
+
+				(assign (assoc
+					partial_mda_matrix
+						(call !ComputeMDAMatrix (assoc
+							row_features (unzip features (range start end))
+							features features
+							feature_index_offset start
+						))
+				))
+
+				(print (current_index) " ")
+				(accum (assoc
+					start batch_size
+					end batch_size
+				))
+				(if (> end last) (assign (assoc end last)) )
+
+				(if (= 0 (current_index))
+					partial_mda_matrix
+					(append (previous_result) partial_mda_matrix)
+				)
+			)
+		)
+	)
+
+	(declare (assoc time (system_time) ))
+
+	(print "batches: ")
+	(declare (assoc
+		mda_matrix (call !ComputeMDAMatrixInBatches)
+	))
+
+	(print
+		"\n"
+		"time: " (- (system_time) time) "\n"
+		(size mda_matrix) "x" (size (first mda_matrix)) "\n"
+	)
+
+
+)
+
+
+
+	; (declare (assoc
+	; 	feature_mda_map
+	; 		{
+	; 			"A1" {  "A1" 0   "A2" .81 "B" .09 "sum" .10}
+	; 			"A2" {  "A1" .81 "A2"   0 "B" .09 "sum" .10}
+	; 			"B" {   "A1" .25 "A2" .25 "B"   0 "sum" .50}
+	; 			"sum" { "A1" .20 "A2" .20 "B" .60 "sum"   0}
+	; 		}
+	; 	action_feature "sum"
+	; 	context_features ["A1" "B"]
+	; ))
+
+	; (declare (assoc
+	; 	feature_weights (get feature_mda_map action_feature)
+
+	; ))
+
+	; (print
+	; 	"weights for predicting " action_feature " using " (unparse context_features) ":\n"
+	; 	(map
+	; 			(lambda
+	; 				(+ (first (current_value)) (or (last (current_value)) 0)  )
+	; 			)
+	; 			(keep feature_weights context_features)
+	; 			;add up all the values for each feature, resulting in one assoc of feature weights to distribute
+	; 			(reduce
+	; 				(lambda
+	; 					(map
+	; 						(lambda (+ (first (current_value)) (last (current_value))))
+	; 						(previous_result)
+	; 						(current_value)
+	; 					)
+	; 				)
+	; 				;list of normalized weight assocs, i.e. if 'A' is responsible for 30% of weight to predict 'target' but isn't in the context
+	; 				;while 'B' has 25% ,'C' has 50% and 'target' has 25% to predict 'A',  ignoring 'target', we normalize B's 25% and C's 50%,
+	; 				;to distribute the original 30%  as { "B" 0.1 "C" 0.2}.  This outputs a list of such assocs that are added up in the lambda above.
+	; 				(map
+	; 					(lambda (let
+	; 						(assoc
+	; 							removed_weight_map
+	; 								(keep
+	; 									(get feature_mda_map (current_value 1))
+	; 									context_features
+	; 								)
+	; 							remove_feature_weight (get feature_mda_map [action_feature (current_value 2)] )
+	; 						)
+	; 						(declare (assoc total (apply "+" (values removed_weight_map)) ))
+
+	; 						;normalized weights for the remaining context features multipled by the feature weight amount they are contributing
+	; 						(map (lambda (* (/ (current_value) total) remove_feature_weight)) removed_weight_map)
+	; 					))
+
+	; 					(indices (remove feature_weights (append context_features action_feature)))
+	; 				)
+	; 			)
+	; 		)
+
+
+
+
+	; 		"\nRedistributed via Amalgam: \n"
+
+	; 		;SHOULD be: 16.2 because:
+	; 		;A2's A + B is .81 + .09 = .9,  .81/.9 is 90% to A  and .09/.9 is 10% to B
+	; 		;A1 gets 90% of A2's weight, thus A: 0.1 + .18 = .38
+	; 		;B gets 10% of A2's weight, thus B: 0.6 + .02 = .62
+	; 		; 10 * .38 + 20 * .62 = 3.8 + 12.4 = 16.2
+
+	; 		(generalized_distance
+	; 		    {A1 0 B 0} ;vector 1
+	; 			{A1 10 B 20} ;vector 2
+	; 			1 ;p
+	; 			feature_mda_map
+	; 			(list "continuous_number") ;types
+	; 			(null) ;attributes
+	; 			(null) ;deviations
+	; 			["A1" "B"] ;names
+	; 			"sum" ;weights_selection_feature
+	; 			(false)
+	; 		)
+
+	; 		"\n"
+	; )
+
+	)
+
+
+; 	(map
+; 		(lambda
+; 			(create_entities (concat "case" (+ 1 (current_index)))
+; 				(zip_labels ["A" "B" "C" "D" "E"] (current_value))
+; 			)
+; 		)
+; 		[
+; 			[1 	  1		1	 1	 	1]
+; 			[1.1  1.2 	1 	 1 		2]
+; 			[1.5  1 	1.3  1.3	1]
+; 			[1.4  1.1 	1.1	 1.2	1]
+; 			[2 	  3 	2 	 2 		0]
+; 		]
+; 	)
+
+
+
+; 	(declare (assoc
+; 		feat_attr
+; 			{
+; 				A "continuous_numeric"
+; 				B "continuous_numeric"
+; 				C "continuous_numeric"
+; 				D "continuous_numeric"
+; 				E "nominal_numeric"
+; 			}
+; 	))
+
+; 	(print
+; 		(compute_on_contained_entities [
+; 			(query_nearest_generalized_distance
+; 				4
+; 				["A" "B" "C" "D" "E"]
+; 				[1 1 1 1 1]
+; 				(null) ;feature_weights
+; 				feat_attr
+; 				(null )
+; 				{"A" .1 "B" .1 "C" .1 "D" .1 "E" .1}
+; 				1 ;p
+; 				"surprisal"
+; 				(null) ;(if valid_weight_feature weight_feature (null))
+; 				(rand)
+; 				(null) ;radius
+; 				!numericalPrecision
+; 			)
+; 		])
+; 	)
+
+
+
+; 	(zip
+; 		;if key has collision, accumulate the value (weight)
+; 		(lambda (+ (current_value 1) (current_value)))
+; 		candidate_case_values
+; 		candidate_case_weights
+; 	)
+
+; (print
+
+; 	(reduce
+; 		(lambda
+; 			(map
+; 				(lambda (+ (first (current_value)) (last (current_value))))
+; 				(previous_result)
+; 				(current_value)
+; 			)
+; 		)
+; 		[
+; 			{ a .1 b 2 c 10}
+; 		;	{ a .1 b 2 c 10}
+; 		;{ a .2 b 4 c 40}
+; 		]
+; 	)
+
+; )
+
+)
+
+
+
+
+
+
+
+
+
+
+	; (assoc
+	; 	path ["a" "b" ]
+	; 	mda 50
+	; 	residual 50
+	; )
+
+	; (null
+	; #label
+	; 	(declare
+	; 		(assoc blah (notvalid [5 1]) )
+	; 		(print blah)
+	; 	)
+	; )
+
+
+	; ;(print (retrieve_entity_root))
+	; (assign_to_entities (null) (assoc
+	; 	label
+	; 		(rewrite
+	; 			(lambda
+	; 				(seq
+	; 					(if (= "apply" (get_type_string (current_value)))
+	; 						;overwrite "notvalid" with "+"
+	; 						(if (= "notvalid" (first (current_value)))
+	; 							(set (current_value) 0 "+")
+
+	; 							(current_value)
+	; 						)
+
+	; 						(current_value)
+	; 					)
+	; 				)
+	; 			)
+	; 			label
+	; 		)
+	; ))
+
+	; (print label)
+
+	; (store "research/datasets/dep3.csv"
+	; 	(append
+	; 		[["a" "b" "c" "target"]]
+	; 		(range
+	; 			(lambda (let
+	; 				(assoc
+	; 					a (rand 1000)
+	; 					b (rand 1000)
+	; 					c (rand 1000)
+	; 				)
+
+	; 				(declare (assoc
+	; 					target
+	; 						;(if (> (rand) 0.01)
+	; 							(+ a b c)
+
+	; 						;	(rand 3000)
+	; 						;)
+	; 				))
+	; 				[a b c target]
+	; 			))
+	; 			1 5000 1
+	; 		)
+	; 	)
+	; )
+
+
+
+	;old flag method
+	; {
+	; 	0 3282
+	; 	1 16189
+	; 	2 32177
+	; 	3 32175
+	; 	4 16177
+	; }
+
+	;probabilities method
+	; {
+	; 	0 8918
+	; 	1 10972
+	; 	2 14768
+	; 	3 21561
+	; 	4 43781
+	; }
+
+	; (print
+	; 	enabled_features_probability_map
+	; 	(zip
+	; 		(lambda (+ (current_value 1) (current_value)))
+	; 		(range
+	; 			; (lambda
+	; 			; 	(size
+	; 			; 		(rand
+	; 			; 			features
+	; 			; 			(rand enabled_features_probability_map)
+	; 			; 			;(rand (range 0 (- num_features 1)))
+	; 			; 			(true)
+	; 			; 		)
+	; 			; 	)
+	; 			; )
+
+	; 			(lambda (let
+	; 				(assoc
+	; 					remaining_feature_flags (list)
+	; 					all_flags_set (true)
+	; 				)
+	; 				(while all_flags_set
+	; 					(assign (assoc remaining_feature_flags (map (lambda (< (rand) 0.5)) features) ))
+	; 					(assign (assoc all_flags_set (apply "and" remaining_feature_flags) ))
+	; 				)
+
+	; 				(size (filter (lambda (get remaining_feature_flags (current_index))) features))
+	; 			))
+	; 			;1 35677 1
+	; 			1 10 1
+	; 		)
+	; 		1
+	; 	)
+	; )
+
+	(declare (assoc time (system_time)))
+
+	; (range
+	; 	(lambda (let
+	; 		(assoc
+	; 			y (null)
+	; 		)
+	; 		(declare (assoc x (zip (range 1 10)) ))
+	; 	))
+	; 	1 2000000 1
+	; )
+
+	(print "time: " (- (system_time) time) "\n")
+
+
+)
+
+	; (print
+	; "time: "
+	; 	(format
+	; 		31600
+	; 		"number"
+	; 		"time:%H:%M:%S %p"
+
+	; 	)
+	; )
+
+
+	; (accum_entity_roots (list
+	; 	(set_labels
+	; 		(lambda "A" ) (list "labelA" "labelB")
+	; 	)
+	; 	(set_labels
+	; 		(lambda "B" ) (list "keep_result_warnings")
+	; 	)
+	; 	(set_labels
+	; 		(lambda "C" ) (list "keep_result_errors")
+	; 	)
+	; ))
+)
+

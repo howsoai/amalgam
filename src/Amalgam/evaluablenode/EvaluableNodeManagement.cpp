@@ -64,235 +64,45 @@ EvaluableNode *EvaluableNodeManager::AllocNode(EvaluableNode *original, Evaluabl
 	return n;
 }
 
-void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t nodes_used_before_gc)
+void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t nodes_before_gc,
+	size_t nodes_allocated_since_last_gc)
 {
-	//the garbage collection trigger uses the 3 least significant bits of numNodesToRunGarbageCollection
-	// to create a state machine to operate in a PID-like manner
-	// this detects whether the memory seems to be quickly, is stable, or is decreasing
-	// and updates accordingly.  It also has an inertia to the state to reduce oscillations
-	//By using the least significant bits, it prevents needing of another field and increasing
-	// memory when there are many entities.  Additionally, the least significant bits
-	// have no effect on using numNodesToRunGarbageCollection for comparison
+	size_t nodes_after_gc = GetNumberOfUsedNodes();
 
-	//heuristic values
-	//minimum useful GC delta
-	constexpr size_t min_increment = 20000;
-	//extra wiggle room around boundary between state transitions
-	constexpr size_t trigger_hysteresis_threshold = 5000;
-	//small jitter to avoid state cycles
-	constexpr double jitter_frac = 0.01;
+	const double min_growth = 1.10;
+	const double max_growth = 2.00;
+	const double alloc_influence = 0.25;
+	const double smooth_factor = 0.25;
 
-	//least significant bit layout:
-	// bits 0-1: state
-	// bit 2: sticky_demote, one-cycle stickiness
-	// bits 63-3: threshold
-	constexpr size_t state_mask = 0x3ULL;
-	constexpr size_t sticky_mask = 0x4ULL;
-	constexpr size_t meta_mask = (state_mask | sticky_mask);
+	double A = static_cast<double>(std::max<size_t>(nodes_after_gc, 1));
+	double B = static_cast<double>(std::max<size_t>(nodes_before_gc, 1));
+	double D = static_cast<double>(nodes_allocated_since_last_gc);
 
-	//get current state information
-	size_t cur_used = GetNumberOfUsedNodes();
-	size_t cur_total = nodes.size();
+	//reclaimed fraction r = (B - A) / B in [0,1], clamp just in case
+	double reclaimed = B - A;
+	double r = reclaimed <= 0.0 ? 0.0 : std::min(1.0, reclaimed / B);
 
-	enum GCState : size_t
-	{
-		STABLE = 0,
-		ONCE_INCREASING = 1,
-		ESCALATING = 2,
-		RECENT_DROP = 3
-	};
+	//base growth factor mapped from r
+	double f = min_growth + (max_growth - min_growth) * r;
 
-	GCState state = static_cast<GCState>(numNodesToRunGarbageCollection & state_mask);
-	bool sticky = ((numNodesToRunGarbageCollection & sticky_mask) != 0);
-	size_t prev_threshold_base = (numNodesToRunGarbageCollection & ~meta_mask);
+	//bias factor from allocation pressure: more recent allocations => larger headroom
+	double alloc_ratio = D / (A + 1.0); // A+1 to avoid divide by zero
+	double alloc_bias = 1.0 + alloc_influence * alloc_ratio;
+	f *= alloc_bias;
 
-	//per-state adjustments
-	double rel_frac = 0.18;
-	double growth_mult = 1.0;
-	double backoff_fraction = 0.12;
-	switch(state)
-	{
-	case STABLE: //no recent unusual growth; normal growth/backoff
-		rel_frac = 0.18;
-		growth_mult = 1.0;
-		backoff_fraction = 0.12;
-		break;
-	case ONCE_INCREASING: //increased recently; apply moderate conservative backoff
-		rel_frac = 0.22;
-		growth_mult = 1.6;
-		backoff_fraction = 0.18;
-		break;
-	case ESCALATING: //multiple successive increases observed; apply strong backoff (bigger growth, larger hysteresis)
-		rel_frac = 0.40;
-		growth_mult = 2.0;
-		backoff_fraction = 0.30;
-		break;
-	case RECENT_DROP: //recent significant drop in usage; permit quicker shrink of threshold
-		rel_frac = 0.12;
-		growth_mult = 0.7; //shrink
-		backoff_fraction = 0.10;
-		break;
-	}
+	//candidate trigger based on live after GC
+	double candidate_d = std::ceil(f * A);
 
-	//compute desired growth, requiring both absolute and relative growth to accept raises
-	size_t rel_target = static_cast<size_t>(cur_used * rel_frac);
-	size_t desired_growth = std::max(min_increment, rel_target);
+	//enforce at least one node above current live
+	size_t min_allowed = nodes_after_gc + 1;
+	size_t candidate = static_cast<size_t>(std::max(candidate_d, static_cast<double>(min_allowed)));
 
-	//determine initial value of next_threshold
-	//because the threshold is rounded down due to any possible encoded state,
-	// there is already some implicit but desired fuzziness in this check
-	size_t next_threshold = 0;
-	if(prev_threshold_base > cur_used)
-	{
-		//have headroom, shrink conservatively
-		size_t headroom = prev_threshold_base - cur_used;
+	//exponential smoothing relative to the previous trigger to avoid big swings
+	double prev = static_cast<double>(std::max(numNodesToRunGarbageCollection, min_allowed));
+	double smoothed_d = (1.0 - smooth_factor) * prev + smooth_factor * static_cast<double>(candidate);
+	size_t smoothed = static_cast<size_t>(std::max(std::ceil(smoothed_d), static_cast<double>(min_allowed)));
 
-		//keep a fraction of previous headroom; RECENT_DROP allows more aggressive shrink
-		double keep_fraction = (state == RECENT_DROP) ? 0.25 : 0.6;
-		size_t keep_headroom = static_cast<size_t>(headroom * keep_fraction);
-
-		//ensure at least min_increment headroom remains
-		keep_headroom = std::max(keep_headroom, min_increment);
-
-		//compute safety backoff based on stored threshold to avoid dropping too far
-		size_t backoff = static_cast<size_t>(prev_threshold_base * backoff_fraction);
-		backoff = std::max(backoff, min_increment);
-
-		next_threshold = cur_used + std::max(keep_headroom, backoff);
-	}
-	else //prev_threshold_base <= cur_used
-	{
-		//passed or hit previous threshold; candidate increase must be significant absolutely and relatively
-		//use growth_mult (state) to require heavier increases when escalating.
-		double candidate_growth_u64 = desired_growth * growth_mult;
-		size_t candidate_growth = static_cast<size_t>(std::min(
-			static_cast<double>(std::numeric_limits<size_t>::max() - 1), candidate_growth_u64));
-		size_t candidate = cur_used + candidate_growth;
-
-		//cap runaway growth relative to current total; allow > cur_total but bounded
-		size_t cap = std::max(cur_total * 3, prev_threshold_base + min_increment * 32);
-		candidate = std::min(candidate, cap);
-
-		//require candidate to exceed prev_threshold_base by at least min_increment
-		// or show persistent trend since nodes_used_before_gc (magnitude-based promotion)
-		bool significant_vs_stored = (candidate >= prev_threshold_base + min_increment);
-		bool significant_vs_prev = (cur_used >= nodes_used_before_gc + min_increment);
-
-		if(significant_vs_stored || significant_vs_prev)
-			next_threshold = candidate;
-		else //avoid reacting to small churn
-			next_threshold = cur_used + min_increment;
-	}
-
-	//add small deterministic jitter to prevent cyclic behavior
-	//simple XOR-based cheap pseudo-jitter using cur_used & nodes_used_before_gc as seed
-	uint64_t seed = static_cast<uint64_t>(cur_used) ^ (static_cast<uint64_t>(nodes_used_before_gc) << 7);
-	//cheap xorshift32
-	uint32_t x = static_cast<uint32_t>((seed >> 16) ^ (seed & 0xFFFF));
-	x ^= x << 13;
-	x ^= x >> 17;
-	x ^= x << 5;
-	//generate jitter in the range [-0.5,0.5)
-	double jitter = (static_cast<int32_t>(x & 0xFFFF) / static_cast<double>(0x10000)) - 0.5;
-	//apply jitter adjustment
-	int64_t jitter_adj = static_cast<int64_t>(jitter * (next_threshold * jitter_frac));
-	//avoid underflow before applying
-	if(! (jitter_adj < 0 && static_cast<size_t>(-jitter_adj) >= next_threshold))
-		next_threshold = static_cast<size_t>(static_cast<int64_t>(next_threshold) + jitter_adj);
-
-	//ensure threshold has hysteresis is above cur_used
-	next_threshold = std::max(next_threshold, cur_used + trigger_hysteresis_threshold);
-
-	//use softened state transitions via magnitude + persistence checks via sticky bit
-	size_t next_state = state;
-	bool next_sticky = sticky;
-
-	//determine whether the decrease is significant
-	bool decreased_significant = false;
-	if(prev_threshold_base > 0)
-	{
-		size_t drop = (prev_threshold_base > next_threshold) ? (prev_threshold_base - next_threshold) : 0;
-		decreased_significant = (drop >= std::max(min_increment, prev_threshold_base / 10));
-	}
-
-	//if increased
-	if(next_threshold > prev_threshold_base)
-	{
-		//promote only on significant increase or sustained increase vs nodes_used_before_gc
-		bool significant_vs_prev = (cur_used >= nodes_used_before_gc + min_increment);
-		bool significant_vs_stored = (next_threshold >= prev_threshold_base + min_increment);
-
-		if(state == STABLE)
-		{
-			if(significant_vs_prev || significant_vs_stored)
-			{
-				next_state = ONCE_INCREASING;
-				next_sticky = true;
-			}
-		}
-		else if(state == ONCE_INCREASING)
-		{
-			if(significant_vs_prev || (next_threshold >= prev_threshold_base + 2 * min_increment))
-			{
-				next_state = ESCALATING;
-				next_sticky = true;
-			}
-			else
-			{
-				next_state = ONCE_INCREASING;
-				next_sticky = false;
-			}
-		}
-		else //keep escalating
-		{
-			next_state = ESCALATING;
-			next_sticky = false;
-		}		
-	}
-	else if(decreased_significant)
-	{
-		//allow faster shrink next time
-		next_state = RECENT_DROP;
-		//keep sticky to allow one gentle cycle of shrink
-		next_sticky = true;
-	}
-	else //didn't increase and didn't decrease significantly
-	{
-		//not a big change: possibly demote RECENT_DROP to STABLE, or release sticky after one quiet cycle
-		if(state == RECENT_DROP)
-		{
-			next_state = STABLE;
-			next_sticky = false;
-		}
-		else //stable, remain in state, but no longer sticky
-		{
-			next_state = state;
-			next_sticky = false;
-		}
-	}
-
-	//demote from ESCALATING to ONCE_INCREASED if usage fell moderately
-	if(state == ESCALATING && next_state == ESCALATING)
-	{
-		//if fell ~16% via divide by 6
-		bool fell_moderately = (cur_used + min_increment * 2 < prev_threshold_base)
-			|| (cur_used <= prev_threshold_base - (prev_threshold_base / 6));
-
-		if(fell_moderately)
-		{
-			next_state = ONCE_INCREASING;
-			next_sticky = true;
-		}
-	}
-
-	//ensure next_threshold >= cur_used + min_increment to ensure GC does something
-	next_threshold = std::max(next_threshold, cur_used + min_increment);
-
-	//store packed value: threshold | state | sticky
-	next_threshold &= ~meta_mask;
-	numNodesToRunGarbageCollection = (next_threshold
-		| (next_state & state_mask)
-		| (next_sticky ? sticky_mask : 0) );
+	numNodesToRunGarbageCollection = smoothed;
 }
 
 void EvaluableNodeManager::CollectGarbage()
@@ -304,19 +114,19 @@ void EvaluableNodeManager::CollectGarbage()
 	}
 
 	//clear regardless of what's in the buffer
-	localAllocationBuffer.Clear();
+	size_t total_allocations = localAllocationBuffer.Clear();
 	//clear all threads' local allocation buffers that are using this enm
 #ifdef MULTITHREAD_SUPPORT
 	LocalAllocationBuffer::IterateFunctionOverRegisteredLabs(
-		[this](LocalAllocationBuffer *lab)
+		[this, &total_allocations](LocalAllocationBuffer *lab)
 		{
-			lab->Clear(this);
+			total_allocations += lab->Clear(this);
 		});
 #endif
 
 	MarkAllReferencedNodesInUse(firstUnusedNodeIndex);
 
-	FreeAllNodesExceptReferencedNodes(firstUnusedNodeIndex);
+	FreeAllNodesExceptReferencedNodes(firstUnusedNodeIndex, total_allocations);
 
 	if(PerformanceProfiler::IsProfilingEnabled())
 		PerformanceProfiler::EndOperation(GetNumberOfUsedNodes());
@@ -333,7 +143,8 @@ void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadL
 
 	//clear regardless of what's in the buffer
 	// the clear by the thread that gets selected for GC below will catch and clear any threads that have gone inactive
-	localAllocationBuffer.Clear();
+	std::atomic<size_t> total_allocations = localAllocationBuffer.Clear();
+	//TODO 24451: figure out how to accumulate total_allocations; may need structure around memory_modification_lock
 	
 	//free lock so can attempt to enter write lock to collect garbage
 	if(memory_modification_lock != nullptr)
@@ -492,7 +303,8 @@ EvaluableNode *EvaluableNodeManager::AllocUninitializedNode()
 	return GetNextNodeFromLocalAllocationBuffer();
 }
 
-void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_unused_node_index)
+void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_unused_node_index,
+	size_t num_nodes_allocated_since_last_gc)
 {
 	//create a temporary variable for multithreading as to not use the atomic variable to slow things down
 	size_t first_unused_node_index_temp = 0;
@@ -586,7 +398,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 		//assign back to the atomic variable
 		firstUnusedNodeIndex = first_unused_node_index_temp;
 
-		UpdateGarbageCollectionTrigger(cur_first_unused_node_index);
+		UpdateGarbageCollectionTrigger(cur_first_unused_node_index, num_nodes_allocated_since_last_gc);
 		return;
 	}
 #endif
@@ -648,7 +460,7 @@ void EvaluableNodeManager::FreeAllNodesExceptReferencedNodes(size_t cur_first_un
 	//assign back to the atomic variable
 	firstUnusedNodeIndex = first_unused_node_index_temp;
 
-	UpdateGarbageCollectionTrigger(cur_first_unused_node_index);
+	UpdateGarbageCollectionTrigger(cur_first_unused_node_index, num_nodes_allocated_since_last_gc);
 }
 
 void EvaluableNodeManager::FreeNodeTreeRecurse(EvaluableNode *tree, bool place_nodes_in_lab)

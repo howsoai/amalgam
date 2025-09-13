@@ -405,7 +405,7 @@ public:
 	{
 	public:
 		LocalAllocationBuffer()
-			: lastEvaluableNodeManager(nullptr)
+			: lastEvaluableNodeManager(nullptr), numNodesAllocated(0)
 		{
 		#ifdef MULTITHREAD_SUPPORT
 			Concurrency::Lock lock(registryMutex);
@@ -427,14 +427,18 @@ public:
 		//removes all EvaluableNodes from the local allocation buffer, leaving it empty
 		//it will clear if only_clear_if_current_enm is nullptr or if
 		// lastEvaluableNodeManager is the same as only_clear_if_current_enm
-		inline void Clear(EvaluableNodeManager *only_clear_if_current_enm = nullptr)
+		//returns the number of allocations since the last Clear
+		inline size_t Clear(EvaluableNodeManager *only_clear_if_current_enm = nullptr)
 		{
 			if(only_clear_if_current_enm != nullptr && only_clear_if_current_enm != lastEvaluableNodeManager)
-				return;
+				return 0;
 
 			buffer.clear();
 			//set to null so nothing matches until more nodes are added
 			lastEvaluableNodeManager = nullptr;
+			size_t prev_num_nodes_allocated = numNodesAllocated;
+			numNodesAllocated = 0;
+			return prev_num_nodes_allocated;
 		}
 
 		//gets a pointer to the next available node from the local allocation buffer
@@ -449,6 +453,9 @@ public:
 			}
 			else //local allocation buffer is empty or irrelevant, clear so nothing matches until more nodes are added
 			{
+				//need to allocate from the EvaluableNodeManager
+				numNodesAllocated++;
+
 				buffer.clear();
 				lastEvaluableNodeManager = nullptr;
 				return nullptr;
@@ -485,6 +492,9 @@ public:
 		// A given local allocation buffer should only have nodes associated with one manager.
 		// If a different manager accesses the buffer, it is cleared to maintain this invariant.
 		EvaluableNodeManager *lastEvaluableNodeManager;
+
+		//keeps track of the number of nodes allocated for garbage collection purposes
+		size_t numNodesAllocated;
 
 		//the buffer itself
 		std::vector<EvaluableNode *> buffer;
@@ -747,7 +757,7 @@ public:
 	}
 
 	//updates the memory threshold when garbage collection will be next called
-	void UpdateGarbageCollectionTrigger(size_t nodes_used_before_gc = 0);
+	void UpdateGarbageCollectionTrigger(size_t nodes_before_gc = 0, size_t nodes_allocated_since_last_gc = 0);
 
 	//changes the garbage collection trigger so that the next call to RecommendGarbageCollection will be true
 	inline void UpdateGarbageCollectionTriggerForImmediateCollection()
@@ -1114,9 +1124,10 @@ protected:
 	//frees everything except those nodes referenced by nodesCurrentlyReferenced
 	//cur_first_unused_node_index represents the first unused index and will set firstUnusedNodeIndex
 	//to the reduced value
+	//num_nodes_allocated_since_last_gc is the number of nodes allocated since the last garbage collection
 	//note that this method does not read from firstUnusedNodeIndex, as it may be cleared to indicate threads
 	//to stop spinlocks
-	void FreeAllNodesExceptReferencedNodes(size_t cur_first_unused_node_index);
+	void FreeAllNodesExceptReferencedNodes(size_t cur_first_unused_node_index, size_t num_nodes_allocated_since_last_gc);
 
 	//support for FreeNodeTree, but requires that tree not be nullptr
 	// if place_nodes_in_lab is true, then it will update the local allocation buffer and place nodes in it

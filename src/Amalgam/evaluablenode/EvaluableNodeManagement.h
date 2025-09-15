@@ -428,7 +428,7 @@ public:
 		//it will clear if only_clear_if_current_enm is nullptr or if
 		// lastEvaluableNodeManager is the same as only_clear_if_current_enm
 		//returns the number of allocations since the last Clear
-		inline size_t Clear(EvaluableNodeManager *only_clear_if_current_enm = nullptr)
+		inline int64_t Clear(EvaluableNodeManager *only_clear_if_current_enm = nullptr)
 		{
 			if(only_clear_if_current_enm != nullptr && only_clear_if_current_enm != lastEvaluableNodeManager)
 				return 0;
@@ -445,6 +445,7 @@ public:
 		//nullptr if it cannot
 		inline EvaluableNode *GetNode(EvaluableNodeManager *cur_enm)
 		{
+			numNodesAllocated++;
 			if(buffer.size() > 0 && cur_enm == lastEvaluableNodeManager)
 			{
 				EvaluableNode *node = buffer.back();
@@ -454,8 +455,6 @@ public:
 			else //local allocation buffer is empty or irrelevant, clear so nothing matches until more nodes are added
 			{
 				//need to allocate from the EvaluableNodeManager
-				numNodesAllocated++;
-
 				buffer.clear();
 				lastEvaluableNodeManager = nullptr;
 				return nullptr;
@@ -494,7 +493,7 @@ public:
 		EvaluableNodeManager *lastEvaluableNodeManager;
 
 		//keeps track of the number of nodes allocated for garbage collection purposes
-		size_t numNodesAllocated;
+		int64_t numNodesAllocated;
 
 		//the buffer itself
 		std::vector<EvaluableNode *> buffer;

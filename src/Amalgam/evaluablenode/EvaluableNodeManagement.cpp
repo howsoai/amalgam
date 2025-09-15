@@ -68,41 +68,27 @@ void EvaluableNodeManager::UpdateGarbageCollectionTrigger(size_t nodes_before_gc
 	size_t nodes_allocated_since_last_gc)
 {
 	size_t nodes_after_gc = GetNumberOfUsedNodes();
+	size_t prev_gc_trigger_nodes = numNodesToRunGarbageCollection;
 
-	const double min_growth = 1.10;
-	const double max_growth = 2.00;
-	const double alloc_influence = 0.25;
-	const double smooth_factor = 0.25;
+	int64_t nodes_freed_by_gc = static_cast<int64_t>(nodes_before_gc) - static_cast<int64_t>(nodes_after_gc);
+	nodes_freed_by_gc = std::max<int64_t>(0, nodes_freed_by_gc);
 
-	double A = static_cast<double>(std::max<size_t>(nodes_after_gc, 1));
-	double B = static_cast<double>(std::max<size_t>(nodes_before_gc, 1));
-	double D = static_cast<double>(nodes_allocated_since_last_gc);
+	//assume at least a factor larger than the base memory usage for the entity
+	//add 1 for good measure and to make sure the smallest size isn't zero
+	size_t max_from_current = 3 * nodes_after_gc + 100;
 
-	//reclaimed fraction r = (B - A) / B in [0,1], clamp just in case
-	double reclaimed = B - A;
-	double r = reclaimed <= 0.0 ? 0.0 : std::min(1.0, reclaimed / B);
+	//if allocating a lot, reduce max_from_current since garbage collection will be a smaller percent of total compute
+	if(nodes_allocated_since_last_gc > 5 * nodes_after_gc)
+		max_from_current = 2 * nodes_after_gc + 100;
 
-	//base growth factor mapped from r
-	double f = min_growth + (max_growth - min_growth) * r;
+	//smooth allocation out
+	numNodesToRunGarbageCollection = (max_from_current + numNodesToRunGarbageCollection) / 2;
 
-	//bias factor from allocation pressure: more recent allocations => larger headroom
-	double alloc_ratio = D / (A + 1.0); // A+1 to avoid divide by zero
-	double alloc_bias = 1.0 + alloc_influence * alloc_ratio;
-	f *= alloc_bias;
+	//ensure a minimum size
+	numNodesToRunGarbageCollection = std::max<size_t>(numNodesToRunGarbageCollection, 200);
 
-	//candidate trigger based on live after GC
-	double candidate_d = std::ceil(f * A);
-
-	//enforce at least one node above current live
-	size_t min_allowed = nodes_after_gc + 1;
-	size_t candidate = static_cast<size_t>(std::max(candidate_d, static_cast<double>(min_allowed)));
-
-	//exponential smoothing relative to the previous trigger to avoid big swings
-	double prev = static_cast<double>(std::max(numNodesToRunGarbageCollection, min_allowed));
-	double smoothed_d = (1.0 - smooth_factor) * prev + smooth_factor * static_cast<double>(candidate);
-	size_t smoothed = static_cast<size_t>(std::max(std::ceil(smoothed_d), static_cast<double>(min_allowed)));
-
-	numNodesToRunGarbageCollection = smoothed;
+	//if(prev_gc_trigger_nodes > 200)
+	//	std::cout << "after_gc: " << nodes_after_gc << "  prev_gc_trigger: " << prev_gc_trigger_nodes << "  freed_by_gc: " << nodes_freed_by_gc << "  nodes_allocated_since_last_gc: " << nodes_allocated_since_last_gc << "  new trigger: " << numNodesToRunGarbageCollection << std::endl;
 }
 
 void EvaluableNodeManager::CollectGarbage()
@@ -113,8 +99,7 @@ void EvaluableNodeManager::CollectGarbage()
 		PerformanceProfiler::StartOperation(collect_garbage_string, GetNumberOfUsedNodes());
 	}
 
-	//clear regardless of what's in the buffer
-	size_t total_allocations = localAllocationBuffer.Clear();
+	size_t total_allocations = 0;
 	//clear all threads' local allocation buffers that are using this enm
 #ifdef MULTITHREAD_SUPPORT
 	LocalAllocationBuffer::IterateFunctionOverRegisteredLabs(
@@ -123,6 +108,9 @@ void EvaluableNodeManager::CollectGarbage()
 			total_allocations += lab->Clear(this);
 		});
 #endif
+
+	//clear whatever's in the buffer, just in case there's anything left
+	localAllocationBuffer.Clear();
 
 	MarkAllReferencedNodesInUse(firstUnusedNodeIndex);
 
@@ -186,6 +174,9 @@ void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadL
 
 	if(memory_modification_lock != nullptr)
 		memory_modification_lock->lock();
+
+	//clear whatever's in the buffer, just in case there's anything left
+	localAllocationBuffer.Clear();
 
 	if(PerformanceProfiler::IsProfilingEnabled())
 		PerformanceProfiler::EndOperation(GetNumberOfUsedNodes());

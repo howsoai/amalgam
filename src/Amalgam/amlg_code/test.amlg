@@ -19,6 +19,8 @@
 			)
 	))
 
+	(print "feature_residuals_lists size: " (total_size feature_residuals_lists) "\n")
+
 	(null
 		;helper method to compute MDA matrix given a list of features and the corresponding feature_residuals_lists
 		#!ComputeMDAMatrix
@@ -100,6 +102,9 @@
 					start batch_size
 					end batch_size
 				))
+
+				(print "partial_mda_matrix size: " (total_size partial_mda_matrix) "\n")
+
 				(if (> end last) (assign (assoc end last)) )
 
 				(if (= 0 (current_index))

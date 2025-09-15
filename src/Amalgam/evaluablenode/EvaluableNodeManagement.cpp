@@ -141,11 +141,6 @@ void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadL
 		PerformanceProfiler::StartOperation(collect_garbage_string, GetNumberOfUsedNodes());
 	}
 
-	//clear regardless of what's in the buffer
-	// the clear by the thread that gets selected for GC below will catch and clear any threads that have gone inactive
-	std::atomic<size_t> total_allocations = localAllocationBuffer.Clear();
-	//TODO 24451: figure out how to accumulate total_allocations; may need structure around memory_modification_lock
-	
 	//free lock so can attempt to enter write lock to collect garbage
 	if(memory_modification_lock != nullptr)
 		memory_modification_lock->unlock();
@@ -164,10 +159,11 @@ void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadL
 		if(RecommendGarbageCollection())
 		{
 			//clear all threads' local allocation buffers that are using this enm
+			size_t total_allocations = 0;
 			LocalAllocationBuffer::IterateFunctionOverRegisteredLabs(
-				[this](LocalAllocationBuffer *lab)
+				[this, &total_allocations](LocalAllocationBuffer *lab)
 				{
-					lab->Clear(this);
+					total_allocations += lab->Clear(this);
 				});
 
 			size_t cur_first_unused_node_index = firstUnusedNodeIndex;
@@ -181,7 +177,7 @@ void EvaluableNodeManager::CollectGarbageWithConcurrentAccess(Concurrency::ReadL
 
 			MarkAllReferencedNodesInUse(cur_first_unused_node_index);
 
-			FreeAllNodesExceptReferencedNodes(cur_first_unused_node_index);
+			FreeAllNodesExceptReferencedNodes(cur_first_unused_node_index, total_allocations);
 		}
 
 		//free the unique lock and reacquire the shared lock

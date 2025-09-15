@@ -1312,6 +1312,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_MODE(EvaluableNode *en, bo
 		}
 	}
 
+	evaluableNodeManager->FreeNodeTreeIfPossible(weights);
+	evaluableNodeManager->FreeNodeTreeIfPossible(values);
+
 	if(!found)
 		return EvaluableNodeReference::Null();
 
@@ -1400,6 +1403,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_QUANTILE(EvaluableNode * e
 				quantile);
 		}
 	}
+
+	evaluableNodeManager->FreeNodeTreeIfPossible(weights);
+	evaluableNodeManager->FreeNodeTreeIfPossible(values);
 
 	return AllocReturn(result, immediate_result);
 }
@@ -1508,6 +1514,9 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GENERALIZED_MEAN(Evaluable
 				p, center, calculate_moment, absolute_value);
 		}
 	}
+
+	evaluableNodeManager->FreeNodeTreeIfPossible(weights);
+	evaluableNodeManager->FreeNodeTreeIfPossible(values);
 
 	return AllocReturn(result, immediate_result);
 }

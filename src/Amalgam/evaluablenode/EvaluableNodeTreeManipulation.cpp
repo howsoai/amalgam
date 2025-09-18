@@ -546,19 +546,18 @@ EvaluableNode *EvaluableNodeTreeManipulation::MergeTrees(NodesMergeMethod *mm, E
 	//if the generalized_node is assoc and at least one is an assoc,
 	// make sure are initialized (or initialize) and merge
 	if( generalized_node->IsAssociativeArray() &&
-		( (tree1 != nullptr && tree1->IsAssociativeArray())
-		 || (tree2 != nullptr && tree2->IsAssociativeArray())) )
+		(EvaluableNode::IsAssociativeArray(tree1) || EvaluableNode::IsAssociativeArray(tree2)) )
 	{
 		//get or convert the nodes to an assoc for tree1
 		EvaluableNode::AssocType tree1_conversion_assoc;
 		auto *tree1_mapped_childs = &tree1_conversion_assoc;
-		if(tree1 != nullptr && tree1->IsAssociativeArray())
+		if(EvaluableNode::IsAssociativeArray(tree1))
 			tree1_mapped_childs = &tree1->GetMappedChildNodesReference();
 
 		//get or convert the nodes to an assoc for tree2
 		EvaluableNode::AssocType tree2_conversion_assoc;
 		auto *tree2_mapped_childs = &tree2_conversion_assoc;
-		if(tree2 != nullptr && tree2->IsAssociativeArray())
+		if(EvaluableNode::IsAssociativeArray(tree2))
 			tree2_mapped_childs = &tree2->GetMappedChildNodesReference();
 
 		EvaluableNode::AssocType merged = mm->MergeMaps(*tree1_mapped_childs, *tree2_mapped_childs);

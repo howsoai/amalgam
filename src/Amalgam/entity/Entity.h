@@ -289,7 +289,8 @@ public:
 #endif
 	);
 
-	//executes the entity on label_name (if empty string, then evaluates root node)
+	//executes the entity on label_name,
+	// if NOT_A_STRING_ID, then attempts to find corresponding label name or executes the root node
 	// returns the result from the execution
 	// if on_self is true, then it will be allowed to access private labels
 	//see ExecuteCodeAsEntity for further parameter details
@@ -306,8 +307,12 @@ public:
 			return EvaluableNodeReference::Null();
 
 		EvaluableNode *node_to_execute = nullptr;
-		if(label_sid == string_intern_pool.NOT_A_STRING_ID)	//if not specified, then use root
+		//if label is not specified, then check type to see if it has keys
+		if(label_sid == string_intern_pool.NOT_A_STRING_ID
+			&& !EvaluableNode::IsAssociativeArray(rootNode))
+		{
 			node_to_execute = rootNode;
+		}
 		else //get code at label
 		{
 			auto &label_index = GetLabelIndex();

@@ -843,10 +843,15 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, Evalu
 		rootNode = code_copy;
 	}
 
-	evaluableNodeManager.ExchangeNodeReference(rootNode, cur_root);
+	//ensure the top node is an assoc
+	if(!EvaluableNode::IsAssociativeArray(rootNode))
+	{
+		EvaluableNode *new_root = evaluableNodeManager.AllocNode(ENT_ASSOC);
+		new_root->SetMappedChildNode(string_intern_pool.NOT_A_STRING_ID, rootNode);
+		rootNode = new_root;
+	}
 
-	if(entity_previously_empty)
-		evaluableNodeManager.UpdateGarbageCollectionTrigger();
+	evaluableNodeManager.ExchangeNodeReference(rootNode, cur_root);
 
 #ifdef AMALGAM_MEMORY_INTEGRITY
 	VerifyEvaluableNodeIntegrity();
@@ -857,6 +862,9 @@ void Entity::SetRoot(EvaluableNode *_code, bool allocated_with_entity_enm, Evalu
 #ifdef AMALGAM_MEMORY_INTEGRITY
 	VerifyEvaluableNodeIntegrity();
 #endif
+
+	if(entity_previously_empty)
+		evaluableNodeManager.UpdateGarbageCollectionTrigger();
 
 	EntityQueryCaches *container_caches = GetContainerQueryCaches();
 	if(container_caches != nullptr)
@@ -945,6 +953,7 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 		asset_manager.UpdateEntityRoot(this);
 	}
 
+	//TODO 24298: if accum_code is not an assoc, accum into the value of the null key
 	//accum, but can't treat as unique in case any other thread is accessing the data
 	EvaluableNodeReference new_root = AccumulateEvaluableNodeIntoEvaluableNode(
 		EvaluableNodeReference(prev_root, false), accum_code, &evaluableNodeManager);

@@ -299,18 +299,6 @@ std::pair<EvaluableNode::LabelsAssocType, bool> EvaluableNodeTreeManipulation::R
 		unmodified = false;
 	}
 
-	//TODO 24298: finish this
-	//if it has labels and it's not an assoc, need to coerce it into one
-	if(!en->IsAssociativeArray() && index.size() > 0)
-	{
-
-		unmodified = false;
-	}
-	else //assoc array, ensure all labels are in the assoc
-	{
-
-	}
-
 	return std::make_pair(index, unmodified);
 }
 

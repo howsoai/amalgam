@@ -1037,7 +1037,12 @@ protected:
 
 	inline EvaluableNode::AssocType &GetLabelIndex()
 	{
-		return labelIndex;
+		//TODO 24298: remove this
+		static EvaluableNode::AssocType emptyMappedChildNodes;
+		if(!EvaluableNode::IsAssociativeArray(rootNode))
+			return emptyMappedChildNodes;
+
+		return rootNode->GetMappedChildNodesReference();
 	}
 
 	//current list of all labels and where they are in the code

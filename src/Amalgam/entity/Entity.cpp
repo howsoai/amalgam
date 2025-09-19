@@ -123,8 +123,6 @@ Entity::~Entity()
 	}
 
 	string_intern_pool.DestroyStringReference(idStringId);
-	//TODO 24298: remove next line
-	string_intern_pool.DestroyStringReferences(GetLabelIndex(), [](auto l) { return l.first; });
 }
 
 std::pair<EvaluableNodeReference, bool> Entity::GetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNodeManager *destination_temp_enm, bool direct_get, bool on_self, bool batch_call)
@@ -298,9 +296,9 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 		new_value.unique = false;
 		new_value.uniqueUnreferencedTopNode = false;
 
-		//TODO 24298: need to change this
-		//update the index
-		label_index[label_sid] = new_value;
+		//TODO 24298: remove this
+		assert(EvaluableNode::IsAssociativeArray(rootNode));
+		rootNode->SetMappedChildNode(label_sid, new_value);
 
 		//need to replace label in case there are any collapses of labels if multiple labels set
 		EvaluableNode *prev_root = rootNode;
@@ -520,13 +518,11 @@ bool Entity::RebuildLabelIndex()
 {
 	auto [new_labels, collision_free] = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTreeAndNormalize(rootNode);
 
-	//update references (create new ones before destroying old ones so they do not need to be recreated)
-	string_intern_pool.CreateStringReferences(new_labels, [](auto l) { return l.first; } );
-	string_intern_pool.DestroyStringReferences(GetLabelIndex(), [](auto l) { return l.first; });
+	//TODO 24298: remove this
+	assert(EvaluableNode::IsAssociativeArray(rootNode));
 
-	//TODO 24298: need to change this
+	rootNode->SetMappedChildNodes(new_labels, false);
 	//let the destructor of new_labels deallocate the old labelIndex
-	std::swap(GetLabelIndex(), new_labels);
 	return !collision_free;
 }
 
@@ -953,26 +949,40 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 		asset_manager.UpdateEntityRoot(this);
 	}
 
-	//TODO 24298: if accum_code is not an assoc, accum into the value of the null key
-	//accum, but can't treat as unique in case any other thread is accessing the data
-	EvaluableNodeReference new_root = AccumulateEvaluableNodeIntoEvaluableNode(
-		EvaluableNodeReference(prev_root, false), accum_code, &evaluableNodeManager);
+	assert(EvaluableNode::IsAssociativeArray(prev_root));
+
+	auto &prev_root_mcn = prev_root->GetMappedChildNodesReference();
+	auto orig_root_core = prev_root_mcn.find(string_intern_pool.NOT_A_STRING_ID);
+	EvaluableNodeReference new_root;
+	if(orig_root_core == end(prev_root_mcn))
+	{
+		//accum, but can't treat as unique in case any other thread is accessing the data
+		new_root = AccumulateEvaluableNodeIntoEvaluableNode(
+			EvaluableNodeReference(prev_root, false), accum_code, &evaluableNodeManager);
+	}
+	else //found an existing root with an assoc over it
+	{
+		//accum, but can't treat as unique in case any other thread is accessing the data
+		EvaluableNodeReference new_root_core = AccumulateEvaluableNodeIntoEvaluableNode(
+			EvaluableNodeReference(orig_root_core->second, false), accum_code, &evaluableNodeManager);
+
+		//copy the new root and overwrite the core
+		new_root = EvaluableNodeReference(evaluableNodeManager.AllocNode(prev_root), false, true);
+		new_root->SetMappedChildNode(string_intern_pool.NOT_A_STRING_ID, new_root_core);
+	}
 
 	//attempt to insert the new labels as long as there's no collision
 	for(auto &[label, value] : new_labels)
 	{
-		//TODO 24298: need to handle this differently
-		auto [new_entry, inserted] = GetLabelIndex().emplace(label, value);
-		if(inserted)
-			string_intern_pool.CreateStringReference(label);
-		else
+		auto [inserted, cur_value] = new_root->SetMappedChildNode(label, value);
+		if(!inserted)
 			no_label_collisions = false;
 	}
 
 	EntityQueryCaches *container_caches = GetContainerQueryCaches();
 
 	//can do a much more straightforward update if there are no label collisions and the root has no labels
-	if(no_label_collisions && new_root->GetNumLabels() == 0)
+	if(no_label_collisions)
 	{
 		if(node_flags_need_update)
 			EvaluableNodeManager::UpdateFlagsForNodeTree(new_root);
@@ -985,20 +995,9 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 	}
 	else //either collisions or root node has at least one new label
 	{
-		if(!no_label_collisions)
-		{
-			//all new labels have already been inserted
-			auto [new_label_index, collision_free] = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTreeAndNormalize(
-				new_root);
-
-			//TODO 24298: need to handle this differently
-			std::swap(GetLabelIndex(), new_label_index);
-		}
-		else //RetrieveLabelIndexesFromTreeAndNormalize will update flags, but if no collisions, still need to check
-		{
-			if(node_flags_need_update)
-				EvaluableNodeManager::UpdateFlagsForNodeTree(new_root);
-		}
+		//all new labels have already been inserted
+		auto [new_label_index, collision_free] = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTreeAndNormalize(
+			new_root);
 
 		rootNode = new_root;
 		evaluableNodeManager.ExchangeNodeReference(rootNode, prev_root);

@@ -521,7 +521,21 @@ bool Entity::RebuildLabelIndex()
 	//TODO 24298: remove this
 	assert(EvaluableNode::IsAssociativeArray(rootNode));
 
-	rootNode->SetMappedChildNodes(new_labels, false);
+	//set each value individually to append
+	bool any_inserted = false;
+	for(auto [key, value] : new_labels)
+	{
+		auto [inserted, new_value] = rootNode->SetMappedChildNode(key, value, true);
+		if(inserted)
+			any_inserted = true;
+	}
+
+	if(any_inserted)
+	{
+		rootNode->SetNeedCycleCheck(true);
+		rootNode->SetIsIdempotent(false);
+	}
+
 	//let the destructor of new_labels deallocate the old labelIndex
 	return !collision_free;
 }

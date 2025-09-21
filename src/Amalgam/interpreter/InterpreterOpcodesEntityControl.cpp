@@ -36,7 +36,21 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_GET_ENTITY_COMMENTS(Evalua
 	if(label_sid == StringInternPool::NOT_A_STRING_ID)
 	{
 		if(!deep_comments)
-			return AllocReturn(EvaluableNode::GetCommentsStringId(target_entity->GetRoot()), immediate_result);
+		{
+			EvaluableNode *root = target_entity->GetRoot();
+			auto entity_description_sid = EvaluableNode::GetCommentsStringId(root);
+			//if the top node doesn't have a description, try to obtain from the node with the null key
+			if(entity_description_sid == string_intern_pool.NOT_A_STRING_ID)
+			{
+				//TODO 24298: remove this
+				assert(EvaluableNode::IsAssociativeArray(root));
+
+				EvaluableNode **null_code = root->GetMappedChildNode(string_intern_pool.NOT_A_STRING_ID);
+				if(null_code != nullptr)
+					entity_description_sid = EvaluableNode::GetCommentsStringId(*null_code);
+			}
+			return AllocReturn(entity_description_sid, immediate_result);
+		}
 
 		EvaluableNodeReference retval(evaluableNodeManager->AllocNode(ENT_ASSOC), true);
 

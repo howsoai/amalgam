@@ -256,25 +256,19 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 	//TODO 24298: streamline this to just set label index
 	if(!direct_set)
 	{
-		if(new_value == nullptr || new_value->GetNumChildNodes() == 0)
+		//remove all labels and allocate if needed
+		if(new_value.unique)
 		{
-			//if simple copy value, then just do it
-			destination->CopyValueFrom(new_value);
+			EvaluableNodeManager::ModifyLabelsForNodeTree(new_value, EvaluableNodeManager::ENMM_REMOVE_ALL);
 		}
-		else //need to copy child nodes
+		else
 		{
-			//remove all labels and allocate if needed
-			if(new_value.unique)
-				EvaluableNodeManager::ModifyLabelsForNodeTree(new_value, EvaluableNodeManager::ENMM_REMOVE_ALL);
-			else
-				new_value = evaluableNodeManager.DeepAllocCopy(new_value, EvaluableNodeManager::ENMM_REMOVE_ALL);
+			new_value = evaluableNodeManager.DeepAllocCopy(new_value, EvaluableNodeManager::ENMM_REMOVE_ALL);
+			new_value.unique = false;
+			new_value.uniqueUnreferencedTopNode = false;
+		}
 
-			//copy over the existing node, but don't update labels, etc.
-			destination->CopyValueFrom(new_value);
-		}
-		//the value is being used in the entity, so no longer unique if it was before
-		//however, the top node may still be unique, so leave it alone
-		new_value.unique = false;
+		rootNode->SetMappedChildNode(label_sid, new_value);
 	}
 	else //direct set
 	{
@@ -284,21 +278,21 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 		if(new_value != nullptr)
 		{
 			if(new_value.unique)
+			{
 				EvaluableNodeManager::ModifyLabelsForNodeTree(new_value, EvaluableNodeManager::ENMM_LABEL_ESCAPE_DECREMENT);
+			}
 			else
+			{
 				new_value = evaluableNodeManager.DeepAllocCopy(new_value, EvaluableNodeManager::ENMM_LABEL_ESCAPE_DECREMENT);
+				new_value.unique = false;
+				new_value.uniqueUnreferencedTopNode = false;
+			}
 		}
 		else
 		{
-			new_value = EvaluableNodeReference(evaluableNodeManager.AllocNode(ENT_NULL), true);
+			new_value = EvaluableNodeReference(evaluableNodeManager.AllocNode(ENT_NULL), false);
 		}
-		//the value is being used in the entity, so no longer unique if it was before
-		//the top node was placed in the entity so it is no longer unique
-		new_value.unique = false;
-		new_value.uniqueUnreferencedTopNode = false;
 
-		//TODO 24298: remove this
-		assert(EvaluableNode::IsAssociativeArray(rootNode));
 		rootNode->SetMappedChildNode(label_sid, new_value);
 
 		//need to replace label in case there are any collapses of labels if multiple labels set

@@ -273,11 +273,6 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 
 		size_t num_new_nodes_allocated = 0;
 
-		//TODO 24298: attempt to just not copy at all and set top level
-		//TODO 21546: change this from false to the following line once entity writes can be modifed lock-free
-		// IsEntitySafeForModification(target_entity);
-		bool copy_entity = false;
-
 		//pause if allocating to another entity
 		EvaluableNodeManager::LocalAllocationBufferPause lab_pause;
 		if(target_entity != curEntity)
@@ -285,7 +280,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_TO_ENTITIES_and_DIR
 
 		auto [any_success, all_success] = target_entity->SetValuesAtLabels(
 										assigned_vars, accum_assignment, direct, writeListeners,
-										(ConstrainedAllocatedNodes() ? &num_new_nodes_allocated : nullptr), target_entity == curEntity, copy_entity);
+										(ConstrainedAllocatedNodes() ? &num_new_nodes_allocated : nullptr), target_entity == curEntity, false);
 
 		lab_pause.Resume();
 

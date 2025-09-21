@@ -253,6 +253,7 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 	bool dest_prev_value_idempotent = destination->GetIsIdempotent();
 	bool root_rebuilt = false;
 
+	//TODO 24298: streamline this to just set label index
 	if(!direct_set)
 	{
 		if(new_value == nullptr || new_value->GetNumChildNodes() == 0)

@@ -276,6 +276,12 @@ std::pair<EvaluableNode::LabelsAssocType, bool> EvaluableNodeTreeManipulation::R
 	if(en == nullptr)
 		return std::make_pair(index, true);
 
+	//insert all label indices into index
+	//TODO 24298: remove this
+	assert(EvaluableNode::IsAssociativeArray(en));
+	for(auto [key, value] : en->GetMappedChildNodesReference())
+		index.emplace(key, value);
+
 	bool unmodified = true;
 
 	//if no collision, return

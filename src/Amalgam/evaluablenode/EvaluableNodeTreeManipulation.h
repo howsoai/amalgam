@@ -473,16 +473,6 @@ public:
 	// if the labels needed to be renormalized due to a collision and the node tree was modified
 	static std::pair<EvaluableNode::LabelsAssocType, bool> RetrieveLabelIndexesFromTreeAndNormalize(EvaluableNode *en);
 
-	//Directly replaces all occurrences of code under label in tree (including potentially the root node) with replacement.
-	// replacement should be allocated by the appropriate allocator and may be modified if necessary
-	// for combining labels, etc.
-	static inline void ReplaceLabelInTree(EvaluableNode *&tree, StringInternPool::StringID label_id, EvaluableNode *replacement)
-	{
-		EvaluableNode::ReferenceSetType checked;
-		ReplaceLabelInTreeRecurse(tree, label_id, replacement, checked);
-		EvaluableNodeManager::UpdateFlagsForNodeTree(tree);
-	}
-
 	//If the nodes, n1 and n2 can be generalized, then returns a new (allocated) node that is preferable to use (usually the more specific one)
 	// If the nodes are not equivalent, then returns null
 	// Only extra data (labels, comments, etc.) that is common to both is kept, unless KeepAllNonMergeableValues is true.  Then everything from both is kept. If 
@@ -537,10 +527,6 @@ protected:
 	// and the tree needs to be updated with regard to cycle checks
 	static bool CollectLabelIndexesFromTreeAndMakeLabelNormalizationPass(EvaluableNode *tree, EvaluableNode::LabelsAssocType &index,
 		EvaluableNode::ReferenceSetType &checked, EvaluableNode *&replace_tree_by);
-
-	//recursive helper function for ReplaceLabelInTree
-	static void ReplaceLabelInTreeRecurse(EvaluableNode *&tree, StringInternPool::StringID label_id,
-		EvaluableNode *replacement, EvaluableNode::ReferenceSetType &checked);
 
 	//Evaluates commonality metric between the two nodes passed in, including labels.  1.0 if identical, 0.0 if completely different, and some value between if similar
 	// If require_exact_matches is true, then it will only return 1.0 or 0.0

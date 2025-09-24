@@ -253,7 +253,6 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 	bool dest_prev_value_idempotent = destination->GetIsIdempotent();
 	bool root_rebuilt = false;
 
-	//TODO 24298: streamline this to just set label index
 	if(!direct_set)
 	{
 		//remove all labels and allocate if needed
@@ -294,13 +293,6 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 		}
 
 		rootNode->SetMappedChildNode(label_sid, new_value);
-
-		//need to replace label in case there are any collapses of labels if multiple labels set
-		EvaluableNode *prev_root = rootNode;
-
-		EvaluableNodeTreeManipulation::ReplaceLabelInTree(prev_root, label_sid, new_value);
-		rootNode = prev_root;
-		evaluableNodeManager.ExchangeNodeReference(rootNode, prev_root);
 
 		if(!batch_call)
 			root_rebuilt = RebuildLabelIndex();

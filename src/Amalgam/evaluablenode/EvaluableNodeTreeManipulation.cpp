@@ -308,54 +308,6 @@ std::pair<EvaluableNode::LabelsAssocType, bool> EvaluableNodeTreeManipulation::R
 	return std::make_pair(index, unmodified);
 }
 
-void EvaluableNodeTreeManipulation::ReplaceLabelInTreeRecurse(EvaluableNode *&tree, StringInternPool::StringID label_id,
-	EvaluableNode *replacement, EvaluableNode::ReferenceSetType &checked)
-{
-	//validate input
-	if(tree == nullptr || label_id == StringInternPool::NOT_A_STRING_ID)
-		return;
-
-	//try to insert. if fails, then it has already been inserted, so ignore
-	if(checked.insert(tree).second == false)
-		return;
-
-	size_t num_node_labels = tree->GetNumLabels();
-	if(num_node_labels > 0)
-	{
-		//see if this node either has multiple labels or is a match; if so, need to replace it
-		if(num_node_labels > 1 || tree->GetLabelStringId(0) == label_id)
-		{
-			//get the labels in case we'll need to merge them
-			const auto &tree_node_label_sids = tree->GetLabelsStringIds();
-			if(std::find(begin(tree_node_label_sids), end(tree_node_label_sids), label_id) != end(tree_node_label_sids))
-			{
-				EvaluableNode *result = replacement;
-				if(result != nullptr)
-				{
-					//copy over relevant labels to the new node
-					std::vector<StringInternPool::StringID> new_labels;
-					if(replacement != nullptr)
-						new_labels = replacement->GetLabelsStringIds();
-
-					result->SetLabelsStringIds(UnionStringIDVectors(tree_node_label_sids, new_labels));
-				}
-
-				//don't free anything, because it could be referred to by other locations
-				tree = result;
-				return;
-			}
-		}
-	}
-
-	//update all ordered child nodes
-	for(auto &cn : tree->GetOrderedChildNodes())
-		ReplaceLabelInTreeRecurse(cn, label_id, replacement, checked);
-
-	//update all mapped child nodes
-	for(auto &[_, cn] : tree->GetMappedChildNodes())
-		ReplaceLabelInTreeRecurse(cn, label_id, replacement, checked);
-}
-
 EvaluableNode *EvaluableNodeTreeManipulation::CreateGeneralizedNode(NodesMergeMethod *mm, EvaluableNode *n1, EvaluableNode *n2)
 {
 	if(n1 == nullptr && n2 == nullptr)

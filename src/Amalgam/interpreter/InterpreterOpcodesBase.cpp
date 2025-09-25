@@ -879,7 +879,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_DECLARE(EvaluableNode *en,
 			required_vars = InterpretNode(required_vars_node);
 		}
 
-		if(required_vars != nullptr && required_vars->IsAssociativeArray())
+		if(EvaluableNode::IsAssociativeArray(required_vars))
 		{
 		#ifdef MULTITHREAD_SUPPORT
 			Concurrency::SingleLock write_lock;
@@ -1049,7 +1049,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_ASSIGN_and_ACCUM(Evaluable
 			assigned_vars = InterpretNode(assigned_vars_node);
 		}
 
-		if(assigned_vars == nullptr || !assigned_vars->IsAssociativeArray())
+		if(!EvaluableNode::IsAssociativeArray(assigned_vars))
 			return EvaluableNodeReference::Null();
 
 		auto node_stack = CreateOpcodeStackStateSaver(assigned_vars);
@@ -2002,7 +2002,7 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_RAND(EvaluableNode *en, bo
 
 	//get information to determine which mechanism to use to generate
 	size_t num_weighted_values = 0;
-	if(param != nullptr && param->IsAssociativeArray())
+	if(EvaluableNode::IsAssociativeArray(param))
 		num_weighted_values = param->GetMappedChildNodesReference().size();
 
 	if(num_weighted_values > 0

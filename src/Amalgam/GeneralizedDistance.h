@@ -1514,7 +1514,7 @@ public:
 
 		//used to store distance terms for the respective targetValue for the sparse deviation matrix
 		FastHashMap<StringInternPool::StringID, double> nominalStringDistanceTerms;
-		FastHashMap<double, double> nominalNumberDistanceTerms;
+		FastHashMap<double, double, std::hash<double>, DoubleNanHashComparator> nominalNumberDistanceTerms;
 	};
 
 	//for each feature, precomputed distance terms for each interned value looked up by intern index

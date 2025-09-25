@@ -336,7 +336,7 @@ EntityExternalInterface::LoadEntityStatus AssetManager::LoadResourceViaTransacti
 		for(auto &w : assoc_warnings)
 			std::cerr << w << std::endl;
 
-		if(!EvaluableNode::IsNull(assoc_node) && assoc_node->IsAssociativeArray())
+		if(EvaluableNode::IsAssociativeArray(assoc_node))
 		{
 			if(first_node_type == ENT_LET)
 			{

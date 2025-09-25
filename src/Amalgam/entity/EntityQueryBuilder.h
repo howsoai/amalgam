@@ -195,7 +195,7 @@ namespace EntityQueryBuilder
 
 		EvaluableNode *weights_for_feature_node = weights_for_feature_node_entry->second;
 		//if not an assoc, accumulate normally
-		if(weights_for_feature_node == nullptr || !weights_for_feature_node->IsAssociativeArray())
+		if(!EvaluableNode::IsAssociativeArray(weights_for_feature_node))
 		{
 			//populate weights the normal way from the particular feature's data
 			EvaluableNode::ConvertChildNodesAndStoreValue(weights_node, element_names, num_elements,
@@ -267,7 +267,7 @@ namespace EntityQueryBuilder
 			if(unused_weights_for_feature_entry == end(weights_matrix))
 				continue;
 			auto unused_weights_for_feature_node = unused_weights_for_feature_entry->second;
-			if(unused_weights_for_feature_node == nullptr || !unused_weights_for_feature_node->IsAssociativeArray())
+			if(!EvaluableNode::IsAssociativeArray(unused_weights_for_feature_node))
 				continue;
 			auto &unused_weights_for_feature_mcn = unused_weights_for_feature_node->GetMappedChildNodesReference();
 
@@ -321,8 +321,7 @@ namespace EntityQueryBuilder
 	{
 		dist_eval.featureAttribs.resize(num_elements);
 
-		if(weights_selection_feature != string_intern_pool.NOT_A_STRING_ID && weights_node != nullptr
-			&& weights_node->IsAssociativeArray())
+		if(weights_selection_feature != string_intern_pool.NOT_A_STRING_ID && EvaluableNode::IsAssociativeArray(weights_node))
 		{
 			PopulateWeightsFromSelectionFeature(dist_eval, weights_node, num_elements, element_names, weights_selection_feature);
 		}

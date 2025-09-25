@@ -695,7 +695,7 @@ EvaluableNode *Parser::ParseCode(bool parsing_assoc_key)
 			charOffsetStartOfLastCompletedCode = pos;
 
 		EvaluableNode *key_node = nullptr;
-		if(cur_node != nullptr && cur_node->IsAssociativeArray())
+		if(EvaluableNode::IsAssociativeArray(cur_node))
 		{
 			key_node = ParseCode(true);
 			//if end of assoc

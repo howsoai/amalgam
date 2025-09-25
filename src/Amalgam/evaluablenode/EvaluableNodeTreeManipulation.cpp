@@ -295,7 +295,6 @@ std::pair<EvaluableNode::LabelsAssocType, bool> EvaluableNodeTreeManipulation::R
 			index.clear();
 			checked.clear();
 
-			//TODO 24298: figure out how to make this not go in an infinite loop
 			//insert all label indices into index
 			for(auto [key, value] : en->GetMappedChildNodesReference())
 				index.emplace(key, value);
@@ -1102,8 +1101,8 @@ bool EvaluableNodeTreeManipulation::CollectLabelIndexesFromTreeAndMakeLabelNorma
 		//attempt to put the label in the index
 		const auto &[inserted_value, inserted] = index.emplace(label_sid, tree);
 		
-		//if label already exists
-		if(!inserted)
+		//if label already exists and it doesn't match
+		if(!inserted && tree != inserted_value->second)
 		{
 			replace_tree_by = inserted_value->second;
 

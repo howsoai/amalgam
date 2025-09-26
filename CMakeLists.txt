@@ -96,7 +96,6 @@ set(COMMON_SOURCE
     src/3rd_party/date/tz.cpp
     src/3rd_party/date/tz.h
     src/3rd_party/date/tz_private.h
-    src/3rd_party/fast_log/src/exp_table.h
     src/3rd_party/murmurhash3/MurmurHash3.cpp
     src/3rd_party/murmurhash3/MurmurHash3.h
     src/3rd_party/simdjson/simdjson.cpp
@@ -145,7 +144,6 @@ set(COMMON_SOURCE
     src/Amalgam/evaluablenode/EvaluableNodeTreeFunctions.h
     src/Amalgam/evaluablenode/EvaluableNodeTreeManipulation.cpp
     src/Amalgam/evaluablenode/EvaluableNodeTreeManipulation.h
-    src/Amalgam/FastEMath.h
     src/Amalgam/FastMath.h
     src/Amalgam/FilenameEscapeProcessor.h
     src/Amalgam/GeneralizedDistance.h

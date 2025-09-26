@@ -7,6 +7,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
 #include <limits>
 #include <string>
 #include <vector>
@@ -14,8 +15,6 @@
 #if !defined(_MSC_VER)
 #define __forceinline __attribute__((always_inline)) inline
 #endif
-
-#include "FastEMath.h"
 
 //On some platforms, std::isnan creates a costly function call.  This is correct and at least as fast or faster.
 template<typename T>

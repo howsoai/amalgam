@@ -1543,7 +1543,7 @@ public:
 
 		//used to store distance terms for the respective targetValue for the sparse deviation matrix
 		FastHashMap<StringInternPool::StringID, double> nominalStringDistanceTerms;
-		FastHashMap<double, double> nominalNumberDistanceTerms;
+		FastHashMap<double, double, std::hash<double>, DoubleNanHashComparator> nominalNumberDistanceTerms;
 		//TODO 22139: need boolean SDM?
 	};
 

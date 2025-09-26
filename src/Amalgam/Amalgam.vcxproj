@@ -600,7 +600,6 @@
     <ClInclude Include="..\3rd_party\date\ios.h" />
     <ClInclude Include="..\3rd_party\date\tz.h" />
     <ClInclude Include="..\3rd_party\date\tz_private.h" />
-    <ClInclude Include="..\3rd_party\fast_log\src\exp_table.h" />
     <ClInclude Include="..\3rd_party\murmurhash3\MurmurHash3.h" />
     <ClInclude Include="..\3rd_party\simdjson\simdjson.h" />
     <ClInclude Include="..\3rd_party\skarupke_maps\bytell_hash_map.hpp" />
@@ -629,7 +628,6 @@
     <ClInclude Include="evaluablenode\EvaluableNodeTreeDifference.h" />
     <ClInclude Include="evaluablenode\EvaluableNodeTreeFunctions.h" />
     <ClInclude Include="evaluablenode\EvaluableNodeTreeManipulation.h" />
-    <ClInclude Include="FastEMath.h" />
     <ClInclude Include="FastMath.h" />
     <ClInclude Include="FilenameEscapeProcessor.h" />
     <ClInclude Include="GeneralizedDistance.h" />

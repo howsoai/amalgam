@@ -293,9 +293,6 @@
     <ClInclude Include="evaluablenode\EvaluableNodeTreeManipulation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FastEMath.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="HashMaps.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -336,9 +333,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\3rd_party\tweetnacl\tweetnacl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\3rd_party\fast_log\src\exp_table.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="importexport\FileSupportYAML.h">

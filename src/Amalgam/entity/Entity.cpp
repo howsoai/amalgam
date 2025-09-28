@@ -267,7 +267,13 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 			new_value.uniqueUnreferencedTopNode = false;
 		}
 
+		if(new_value == nullptr)
+			new_value = EvaluableNodeReference(evaluableNodeManager.AllocNode(ENT_NULL), false);
+
 		rootNode->SetMappedChildNode(label_sid, new_value);
+
+		auto labels = destination->GetLabelsStringIds();
+		new_value->SetLabelsStringIds(labels);
 	}
 	else //direct set
 	{
@@ -292,7 +298,13 @@ bool Entity::SetValueAtLabel(StringInternPool::StringID label_sid, EvaluableNode
 			new_value = EvaluableNodeReference(evaluableNodeManager.AllocNode(ENT_NULL), false);
 		}
 
+		if(new_value == nullptr)
+			new_value = EvaluableNodeReference(evaluableNodeManager.AllocNode(ENT_NULL), false);
+
 		rootNode->SetMappedChildNode(label_sid, new_value);
+
+		auto labels = destination->GetLabelsStringIds();
+		new_value->SetLabelsStringIds(labels);
 
 		if(!batch_call)
 			root_rebuilt = RebuildLabelIndex();

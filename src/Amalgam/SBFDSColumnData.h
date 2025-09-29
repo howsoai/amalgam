@@ -200,7 +200,6 @@ public:
 	{
 		switch(feature_attribs.featureType)
 		{
-		case GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL:
 		case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER:
 		case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
 		case GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE:

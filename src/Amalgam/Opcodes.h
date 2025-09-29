@@ -587,7 +587,7 @@ __forceinline constexpr bool IsEvaluableNodeTypeImmediate(EvaluableNodeType t)
 }
 
 //returns true if t uses string data
-__forceinline constexpr bool DoesEvaluableNodeTypeUseStringData(EvaluableNodeType t)
+__forceinline constexpr bool DoesEvaluableNodeTypeUseBoolData(EvaluableNodeType t)
 {
 	return (t == ENT_BOOL);
 }
@@ -737,10 +737,7 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_system,
 
 	//distance types
-	ENBISI_nominal_bool,
-	ENBISI_nominal_number,
-	ENBISI_nominal_string,
-	ENBISI_nominal_code,
+	ENBISI_nominal,
 	ENBISI_continuous_number,
 	ENBISI_continuous_number_cyclic,
 	ENBISI_continuous_string,

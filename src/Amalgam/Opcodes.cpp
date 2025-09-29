@@ -375,10 +375,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_system, "system");
 
 	//distance types
-	EmplaceStaticString(ENBISI_nominal_bool, "nominal_bool");
-	EmplaceStaticString(ENBISI_nominal_number, "nominal_number");
-	EmplaceStaticString(ENBISI_nominal_string, "nominal_string");
-	EmplaceStaticString(ENBISI_nominal_code, "nominal_code");
+	EmplaceStaticString(ENBISI_nominal, "nominal");
 	EmplaceStaticString(ENBISI_continuous_number, "continuous_number");
 	EmplaceStaticString(ENBISI_continuous_number_cyclic, "continuous_number_cyclic");
 	EmplaceStaticString(ENBISI_continuous_string, "continuous_string");

@@ -982,11 +982,6 @@ protected:
 					query_feature_index);
 		}
 
-		case RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_BOOL:
-		{
-			//TODO 22139: implement this
-		}
-
 		default:
 			//RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING
 			//or RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE

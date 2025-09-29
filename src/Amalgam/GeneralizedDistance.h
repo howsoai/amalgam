@@ -21,8 +21,6 @@ public:
 	// align at 32-bits in order to play nice with data alignment where it is used
 	enum FeatureDifferenceType : uint32_t
 	{
-		//nominal based on bool equivalence
-		FDT_NOMINAL_BOOL,
 		//nominal based on numeric equivalence
 		FDT_NOMINAL_NUMBER,
 		//nominal based on string equivalence
@@ -134,8 +132,7 @@ public:
 				return false;
 
 			return (nominalStringSparseDeviationMatrix.size() == 0
-				&& nominalNumberSparseDeviationMatrix.size() == 0
-				&& nominalBoolSparseDeviationMatrix.size() == 0);
+				&& nominalNumberSparseDeviationMatrix.size() == 0);
 		}
 
 		//returns the number of entries in the sparse deviation matrix
@@ -144,8 +141,7 @@ public:
 			if(!IsFeatureNominal())
 				return 0;
 
-			return nominalStringSparseDeviationMatrix.size() + nominalNumberSparseDeviationMatrix.size()
-				+ nominalBoolSparseDeviationMatrix.size();
+			return nominalStringSparseDeviationMatrix.size() + nominalNumberSparseDeviationMatrix.size();
 		}
 
 		//the type of comparison for each feature
@@ -186,7 +182,7 @@ public:
 		double deviationTimesThree;
 
 
-		//sparse deviation matrix if the nominal is a string
+		//sparse deviation matrix if the nominal is a string or general code
 		//store as a vector of pairs instead of a map because either only one value will be looked up once,
 		//in which case there's no advantage to having a map, or many distance term values will be looked up
 		//repeatedly, which is handled by a RepeatedGeneralizedDistanceEvaluator, which uses a map
@@ -197,12 +193,6 @@ public:
 		//in which case there's no advantage to having a map, or many distance term values will be looked up
 		//repeatedly, which is handled by a RepeatedGeneralizedDistanceEvaluator, which uses a map
 		SparseNominalDeviationMatrix<double, DoubleNanHashComparator> nominalNumberSparseDeviationMatrix;
-
-		//sparse deviation matrix if the nominal is a bool
-		//store as a vector of pairs instead of a map because either only one value will be looked up once,
-		//in which case there's no advantage to having a map, or many distance term values will be looked up
-		//repeatedly, which is handled by a RepeatedGeneralizedDistanceEvaluator, which uses a map
-		SparseNominalDeviationMatrix<bool> nominalBoolSparseDeviationMatrix;
 
 		//distance term to use if both values being compared are unknown
 		//the difference will be NaN if unknown
@@ -514,9 +504,6 @@ public:
 		else if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)
 			std::tie(prob_class_given_match, prob_class_given_nonmatch) = ComputeProbClassGivenMatchAndNonMatchFromSDM(
 				feature_attribs.nominalNumberSparseDeviationMatrix, index, a.number, b.number);
-		else if(a_type == ENIVT_BOOL && b_type == ENIVT_BOOL)
-			std::tie(prob_class_given_match, prob_class_given_nonmatch) = ComputeProbClassGivenMatchAndNonMatchFromSDM(
-				feature_attribs.nominalStringSparseDeviationMatrix, index, a.boolValue, b.boolValue);
 
 		if(!FastIsNaN(prob_class_given_match))
 		{
@@ -581,7 +568,6 @@ public:
 
 			feature_attributes.nominalStringSparseDeviationMatrix.UpdateSmallestDeviation(smallest_deviation);
 			feature_attributes.nominalNumberSparseDeviationMatrix.UpdateSmallestDeviation(smallest_deviation);
-			feature_attributes.nominalBoolSparseDeviationMatrix.UpdateSmallestDeviation(smallest_deviation);
 			
 			//find the probability that any other class besides the correct class was selected
 			//divide the probability among the other classes
@@ -903,8 +889,7 @@ public:
 		if(a_type == ENIVT_NULL || b_type == ENIVT_NULL)
 			return std::numeric_limits<double>::quiet_NaN();
 
-		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL
-			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER
+		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER
 			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
 			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
 		{
@@ -1129,8 +1114,6 @@ public:
 		EFDT_NUMERIC_INTERNED_PRECOMPUTED,
 		//continuous or nominal string precomputed, may contain nonnumeric data
 		EFDT_STRING_INTERNED_PRECOMPUTED,
-		//nominal compared to a bool value where nominals may not be symmetric
-		EFDT_NOMINAL_BOOL,
 		//nominal compared to a string value where nominals may not be symmetric
 		EFDT_NOMINAL_STRING,
 		//nominal compared to a number value where nominals may not be symmetric
@@ -1241,6 +1224,7 @@ public:
 					feature_data.nominalNumberDistanceTerms))
 				return;
 		}
+		//TODO 22139: need a fallback for code here?
 		else if(feature_data.targetValue.nodeType == ENIVT_BOOL)
 		{
 			//TODO 22139: need nominalBoolDistanceTerms, or able to use symmetric match/nonmatch?
@@ -1544,7 +1528,6 @@ public:
 		//used to store distance terms for the respective targetValue for the sparse deviation matrix
 		FastHashMap<StringInternPool::StringID, double> nominalStringDistanceTerms;
 		FastHashMap<double, double, std::hash<double>, DoubleNanHashComparator> nominalNumberDistanceTerms;
-		//TODO 22139: need boolean SDM?
 	};
 
 	//for each feature, precomputed distance terms for each interned value looked up by intern index

@@ -180,11 +180,11 @@ EvaluableNodeReference Interpreter::InterpretNode_ENT_SYMBOL(EvaluableNode *en, 
 	if(found)
 		return EvaluableNodeReference(symbol_value, false);
 
-	// if didn't find it in the stack, try it in the labels
-	EntityReadReference cur_entity_ref(curEntity);
-	if(cur_entity_ref != nullptr)
+	//if didn't find it in the stack, try it in the labels
+	//don't need to lock the entity since it's already executing on it
+	if(curEntity != nullptr)
 	{
-		auto [label_value, label_found] = cur_entity_ref->GetValueAtLabel(sid, nullptr, true, true);
+		auto [label_value, label_found] = curEntity->GetValueAtLabel(sid, nullptr, true, true);
 
 		if(!label_found)
 			EmitOrLogUndefinedVariableWarningIfNeeded(sid, en);

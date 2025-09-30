@@ -1102,7 +1102,7 @@ enum EvaluableNodeImmediateValueType : uint8_t
 {
 	ENIVT_NOT_EXIST,			//there is nothing to even hold the data
 	ENIVT_NULL,					//no data being held
-	//TODO 22139: implement this value
+	//TODO 22139: implement this value everywhere appropriate -- search for all of ENIVT_NUMBER, ENIVT_STRING_ID, etc.
 	ENIVT_BOOL,					//bool
 	ENIVT_NUMBER,				//number
 	ENIVT_STRING_ID,			//stringID

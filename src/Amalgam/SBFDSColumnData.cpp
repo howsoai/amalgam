@@ -1,6 +1,8 @@
 //project headers:
 #include "SBFDSColumnData.h"
 
+//TODO 22139: implement ENIVT_BOOL from here down
+
 void SBFDSColumnData::InsertIndexValue(EvaluableNodeImmediateValueType value_type,
 		EvaluableNodeImmediateValue &value, size_t index)
 {

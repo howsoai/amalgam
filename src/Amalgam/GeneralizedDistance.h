@@ -21,12 +21,8 @@ public:
 	// align at 32-bits in order to play nice with data alignment where it is used
 	enum FeatureDifferenceType : uint32_t
 	{
-		//nominal based on numeric equivalence
-		FDT_NOMINAL_NUMBER,
-		//nominal based on string equivalence
-		FDT_NOMINAL_STRING,
-		//nominal based on code equivalence
-		FDT_NOMINAL_CODE,
+		//nominal comparisons
+		FDT_NOMINAL,
 		//continuous without cycles, may contain nonnumeric data
 		FDT_CONTINUOUS_NUMBER,
 		//like FDT_CONTINUOUS_NUMBER, but has cycles
@@ -104,7 +100,7 @@ public:
 		//returns true if the feature is nominal
 		__forceinline bool IsFeatureNominal()
 		{
-			return (featureType <= GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE);
+			return (featureType == GeneralizedDistanceEvaluator::FDT_NOMINAL);
 		}
 
 		//returns true if the feature is nominal
@@ -889,9 +885,7 @@ public:
 		if(a_type == ENIVT_NULL || b_type == ENIVT_NULL)
 			return std::numeric_limits<double>::quiet_NaN();
 
-		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER
-			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
-			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
+		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL)
 		{
 			if(a_type == ENIVT_BOOL && b_type == ENIVT_BOOL)
 				return (a.boolValue == b.boolValue ? 0.0 : 1.0);

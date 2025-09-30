@@ -200,9 +200,7 @@ public:
 	{
 		switch(feature_attribs.featureType)
 		{
-		case GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER:
-		case GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING:
-		case GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE:
+		case GeneralizedDistanceEvaluator::FDT_NOMINAL:
 			return 1.0 - 1.0 / (std::max<size_t>(1, GetNumValidDataElements()) + 0.5);
 
 		case GeneralizedDistanceEvaluator::FDT_CONTINUOUS_NUMBER:

@@ -669,6 +669,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 	size_t absolute_feature_index = feature_attribs.featureIndex;
 	auto &column = columnData[absolute_feature_index];
 	auto feature_type = feature_attribs.featureType;
+	auto &effective_feature_type = r_dist_eval.featureData[query_feature_index].effectiveFeatureType;
 	auto &value = feature_data.targetValue;
 
 	//need to accumulate values for nulls if the value is a null
@@ -770,7 +771,8 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		feature_data.SetPrecomputedRemainingIdenticalDistanceTerm(nonmatch_dist_term);
 		return nonmatch_dist_term;
 	}
-	else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING)
+	//TODO 22139: unify all of these *FDT_ values below, perhaps base on feature_type to accumulate properly
+	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::FDT_NOMINAL_STRING)
 	{
 		//initialize to zero, because if don't find an exact match, but there are distance terms of
 		//0, then need to accumulate those later
@@ -797,7 +799,7 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 		return r_dist_eval.ComputeDistanceTermNonNullNominalNextSmallest(nonmatch_dist_term, query_feature_index);
 	}
-	else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER)
+	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER)
 	{
 		//initialize to zero, because if don't find an exact match, but there are distance terms of
 		//0, then need to accumulate those later
@@ -824,12 +826,12 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 
 		return r_dist_eval.ComputeDistanceTermNonNullNominalNextSmallest(nonmatch_dist_term, query_feature_index);
 	}
-	else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL)
+	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::FDT_NOMINAL_BOOL)
 	{
 		//TODO 22139: finish this
 	}
-	else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE
-		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
+	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::FDT_NOMINAL_CODE
+		|| effective_feature_type == RepeatedGeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
 	{
 		//compute partial sums for all code of matching size
 		size_t code_size = 1;
@@ -844,18 +846,18 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 				query_feature_index, absolute_feature_index, high_accuracy);
 		}
 
-		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
+		if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
 		{
 			double nonmatch_dist_term = r_dist_eval.ComputeDistanceTermNominalNonNullSmallestNonmatch(query_feature_index);
 			return nonmatch_dist_term;
 		}
-		else //GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE
+		else //RepeatedGeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE
 		{
 			//next most similar code must be at least a distance of 1 edit away
 			return r_dist_eval.distEvaluator->ComputeDistanceTermContinuousNonCyclicNonNullRegular(1.0, query_feature_index, high_accuracy);
 		}
 	}
-	else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING)
+	else if(effective_feature_type == RepeatedGeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING)
 	{
 		if(value.nodeType == ENIVT_STRING_ID)
 		{
@@ -1245,8 +1247,7 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 	if(feature_attribs.IsFeatureNominal())
 		r_dist_eval.ComputeAndStoreNominalDistanceTerms(query_feature_index);
 
-	bool complex_comparison = (feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE
-		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING
+	bool complex_comparison = (feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING
 		|| feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE);
 
 	//consider computing interned values if appropriate
@@ -1279,19 +1280,20 @@ void SeparableBoxFilterDataStore::PopulateTargetValueAndLabelIndex(RepeatedGener
 		}
 	}
 
-	if(feature_attribs.IsFeatureNominal() || complex_comparison)
+	if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL)
 	{
-		if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_NUMBER)
-			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMERIC;
-		else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING)
-			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_STRING;
-		//TODO 22139: remove nominal_*, change input to be only "nominal" for the query and internally bifurcate into string vs numeric based on input type, and if null, infer from whichever sdm is populated
-		else if(feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
-			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_CODE;
-		else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING)
-			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING;
-		else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
-			effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE;
+		//TODO 22139: add logic here to determine which to use, and will need to populate based on bool, or based on SDM values
+		effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_NUMERIC;
+		effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_STRING;
+		effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_NOMINAL_CODE;
+	}
+	else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_STRING)
+	{
+		effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_STRING;
+	}
+	else if(feature_type == GeneralizedDistanceEvaluator::FDT_CONTINUOUS_CODE)
+	{
+		effective_feature_type = RepeatedGeneralizedDistanceEvaluator::EFDT_CONTINUOUS_CODE;
 	}
 	else // feature_type is some form of continuous numeric
 	{

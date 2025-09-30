@@ -694,8 +694,9 @@ enum EvaluableNodeBuiltInStringId
 	ENBISI_empty_null,
 	ENBISI_empty_list,
 	ENBISI_empty_assoc,
-	ENBISI_empty_true,
-	ENBISI_empty_false,
+	ENBISI_null_key,
+	ENBISI_true_key,
+	ENBISI_false_key,
 
 	//config file parameters
 	ENBISI_rand_seed,

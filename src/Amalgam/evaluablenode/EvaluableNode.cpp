@@ -2094,6 +2094,8 @@ StringInternPool::StringID EvaluableNodeImmediateValueWithType::GetValueAsString
 	if(nodeType == ENIVT_STRING_ID)
 		return nodeValue.stringID;
 
+	//TODO 22139: add lookup for ENIVT_BOOL based on key_string
+
 	if(nodeType == ENIVT_CODE && nodeValue.code != nullptr && nodeValue.code->GetType() == ENT_STRING)
 		return nodeValue.code->GetStringIDReference();
 

@@ -333,8 +333,9 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_empty_null, "(null)");
 	EmplaceStaticString(ENBISI_empty_list, "(list)");
 	EmplaceStaticString(ENBISI_empty_assoc, "(assoc)");
-	EmplaceStaticString(ENBISI_empty_true, "(true)");
-	EmplaceStaticString(ENBISI_empty_false, "(false)");
+	EmplaceStaticString(ENBISI_null_key, std::string("\0" "(null)", 7));
+	EmplaceStaticString(ENBISI_true_key, std::string("\0" ".true", 6));
+	EmplaceStaticString(ENBISI_false_key, std::string("\0" ".false", 7));
 
 	//config file parameters
 	EmplaceStaticString(ENBISI_rand_seed, "rand_seed");

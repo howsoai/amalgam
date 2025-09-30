@@ -751,6 +751,10 @@ double SeparableBoxFilterDataStore::PopulatePartialSumsWithSimilarFeatureValue(R
 		{
 			AccumulatePartialSumsForNominalStringIdValueIfExists(r_dist_eval, enabled_indices, value.nodeValue.stringID, query_feature_index, *column);
 		}
+		else if(value.nodeType == ENIVT_BOOL)
+		{
+			//TODO 22139: implement this
+		}
 		else if(value.nodeType == ENIVT_CODE)
 		{
 			//compute partial sums for all code of matching size

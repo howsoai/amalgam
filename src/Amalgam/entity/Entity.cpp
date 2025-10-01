@@ -932,6 +932,11 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 		accum_code = evaluableNodeManager.DeepAllocCopy(accum_code, metadata_modifier);
 
 	auto [new_labels, no_label_collisions] = EvaluableNodeTreeManipulation::RetrieveLabelIndexesFromTree(accum_code);
+	if(EvaluableNode::IsAssociativeArray(accum_code))
+	{
+		for(auto &[label, value] : accum_code->GetMappedChildNodesReference())
+			new_labels.emplace(label, value);
+	}
 
 	EvaluableNode *prev_root = rootNode;
 

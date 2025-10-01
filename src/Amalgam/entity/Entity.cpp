@@ -965,24 +965,9 @@ void Entity::AccumRoot(EvaluableNodeReference accum_code, bool allocated_with_en
 	assert(EvaluableNode::IsAssociativeArray(prev_root));
 
 	auto &prev_root_mcn = prev_root->GetMappedChildNodesReference();
-	auto orig_root_core = prev_root_mcn.find(string_intern_pool.NOT_A_STRING_ID);
-	EvaluableNodeReference new_root;
-	if(orig_root_core == end(prev_root_mcn))
-	{
-		//accum, but can't treat as unique in case any other thread is accessing the data
-		new_root = AccumulateEvaluableNodeIntoEvaluableNode(
-			EvaluableNodeReference(prev_root, false), accum_code, &evaluableNodeManager);
-	}
-	else //found an existing root with an assoc over it
-	{
-		//accum, but can't treat as unique in case any other thread is accessing the data
-		EvaluableNodeReference new_root_core = AccumulateEvaluableNodeIntoEvaluableNode(
-			EvaluableNodeReference(orig_root_core->second, false), accum_code, &evaluableNodeManager);
-
-		//copy the new root and overwrite the core
-		new_root = EvaluableNodeReference(evaluableNodeManager.AllocNode(prev_root), false, true);
-		new_root->SetMappedChildNode(string_intern_pool.NOT_A_STRING_ID, new_root_core);
-	}
+	//accum, but can't treat as unique in case any other thread is accessing the data
+	EvaluableNodeReference new_root = AccumulateEvaluableNodeIntoEvaluableNode(
+		EvaluableNodeReference(prev_root, false), accum_code, &evaluableNodeManager);
 
 	//attempt to insert the new labels as long as there's no collision
 	for(auto &[label, value] : new_labels)

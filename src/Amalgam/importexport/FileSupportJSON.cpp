@@ -222,14 +222,9 @@ bool EvaluableNodeToJsonStringRecurse(EvaluableNode *en, std::string &json_str, 
 			json_str += "null";
 			return true;
 		}
-		else if(node_type == ENT_TRUE)
+		else if(node_type == ENT_BOOL)
 		{
-			json_str += "true";
-			return true;
-		}
-		else if(node_type == ENT_FALSE)
-		{
-			json_str += "false";
+			json_str += (en->GetBoolValueReference() ? "true" : "false");
 			return true;
 		}
 		else if(node_type != ENT_LIST)

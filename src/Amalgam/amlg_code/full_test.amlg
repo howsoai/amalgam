@@ -33,15 +33,15 @@
  (print (parse (unparse (list (sqrt -1) (null) .infinity -.infinity))) "\n")
 
  (print (unparse (associate "a" 1 "b" 2 "c" (list "alpha" "beta" "gamma"))) "\n")
- (print (unparse (associate "a" 1 "b" 2 "c" (list "alpha" "beta" "gamma")) (true)) "\n")
+ (print (unparse (associate "a" 1 "b" 2 "c" (list "alpha" "beta" "gamma")) .true) "\n")
 
  (print (parse "(6)") "\n")
  (print (parse "(notakeyword)") "\n")
 
- (print (parse "(seq (+ 1 2) (+ " (true) ))
- (print (parse "(seq (+ 1 2) (+ " (false) (true)))
- (print (parse "(seq (+ 1 2) (+ " (true) (true)))
- (print (parse "(seq (+ 1 2) (+ (a ) 3) " (true) (true)))
+ (print (parse "(seq (+ 1 2) (+ " .true ))
+ (print (parse "(seq (+ 1 2) (+ " .false .true))
+ (print (parse "(seq (+ 1 2) (+ " .true .true))
+ (print (parse "(seq (+ 1 2) (+ (a ) 3) " .true .true))
 
  (print "--if--\n")
  (if 1 (print "if 1\n"))
@@ -64,7 +64,7 @@
  (print foo)
  (print (call foo (assoc x 3)) "\n")
 
- (print (lambda (lambda (+ 1 2)) (true) ))
+ (print (lambda (lambda (+ 1 2)) .true ))
 
  (print "--call_sandboxed--\n")
  (print (call_sandboxed (lambda (+ y 4)) (assoc y 3)) "\n")
@@ -79,7 +79,7 @@
  (print (call_sandboxed (lambda (+ (+ y 4) 4)) (assoc y 3) (null) (null) 3) "\n")
  (print (call_sandboxed (lambda (+ (+ y 4) 4)) (assoc y 3) (null) (null) 1) "\n")
 
- (print (call_sandboxed (lambda (+ (+ y 4) 4)) (null) (null) (null) 1 (false)) "\n")
+ (print (call_sandboxed (lambda (+ (+ y 4) 4)) (null) (null) (null) 1 .false) "\n")
 
  (print (call_sandboxed (lambda (+ x y)) (assoc) 10000) "\n")
 
@@ -134,7 +134,7 @@
    (declare
       (assoc)
       (while 1
-         (if (true) (conclude))
+         (if .true (conclude))
       )
       (print 4)
    )
@@ -267,18 +267,18 @@
  (print (get_digits 1.5 1.5 .infinity 0))
  (print (get_digits 3.75 1.5 .infinity -7))
 
- (print (get_digits 1234567.8 10 0 4 (false)))
- (print (get_digits 1234567.8 10 4 8 (false)))
- (print (get_digits 1.2345678e100 10 0 4 (false)))
- (print (get_digits 1.2345678e100 10 4 8 (false)))
+ (print (get_digits 1234567.8 10 0 4 .false))
+ (print (get_digits 1234567.8 10 4 8 .false))
+ (print (get_digits 1.2345678e100 10 0 4 .false))
+ (print (get_digits 1.2345678e100 10 4 8 .false))
 
  ;should print empty list for these
- (print (get_digits 0 2.714 1 3 (false)))
- (print (get_digits 0 2.714 1 3 (true)))
- (print (get_digits 0 10 0 10 (false)))
+ (print (get_digits 0 2.714 1 3 .false))
+ (print (get_digits 0 2.714 1 3 .true))
+ (print (get_digits 0 10 0 10 .false))
 
  ;4 followed by zeros
- (print (get_digits 0.4 10 0 10 (false)))
+ (print (get_digits 0.4 10 0 10 .false))
 
  (print "--set_digits--\n")
 
@@ -291,16 +291,16 @@
  (print (set_digits 1234567.8 10 (list 5 5 5) 10) "\n")
  (print (set_digits 1.5 1.5 (list 1 0 0) 2 0) "\n")
  
- (print (set_digits 1234567.8 10 (list 5 5 5 5 5) 0 4 (false)) "\n")
- (print (set_digits 1234567.8 10 (list 5 5 5 5 5) 4 8 (false)) "\n")
- (print (set_digits 1.2345678e100 10 (list 5 5 5 5 5) 0 4 (false)) "\n")
- (print (set_digits 1.2345678e100 10 (list 5 5 5 5 5) 4 8 (false)) "\n")
- (print (set_digits 1.2345678e100 10 (list 5 (null) 5 (null) 5) 4 8 (false)) "\n")
+ (print (set_digits 1234567.8 10 (list 5 5 5 5 5) 0 4 .false) "\n")
+ (print (set_digits 1234567.8 10 (list 5 5 5 5 5) 4 8 .false) "\n")
+ (print (set_digits 1.2345678e100 10 (list 5 5 5 5 5) 0 4 .false) "\n")
+ (print (set_digits 1.2345678e100 10 (list 5 5 5 5 5) 4 8 .false) "\n")
+ (print (set_digits 1.2345678e100 10 (list 5 (null) 5 (null) 5) 4 8 .false) "\n")
  
  ;these should all print (list 1 0 1)
- (print (get_digits (set_digits 1234567.8 10 (list 1 0 1 0) 2 5 (false)) 10 2 5 (false)))
- (print (get_digits (set_digits 1234567.8 2 (list 1 0 1 0) 2 5 (false)) 2 2 5 (false)))
- (print (get_digits (set_digits 1234567.8 3.1 (list 1 0 1 0) 2 5 (false)) 3.1 2 5 (false)))
+ (print (get_digits (set_digits 1234567.8 10 (list 1 0 1 0) 2 5 .false) 10 2 5 .false))
+ (print (get_digits (set_digits 1234567.8 2 (list 1 0 1 0) 2 5 .false) 2 2 5 .false))
+ (print (get_digits (set_digits 1234567.8 3.1 (list 1 0 1 0) 2 5 .false) 3.1 2 5 .false))
 
  (print "--floor--\n")
  (print (floor 1.5) "\n")
@@ -514,12 +514,12 @@
 
  ;surprisal
  ;should both be 0
- (print "36 " (generalized_distance (list 1 1) (list 1 1) 1 (list 1 1) (list "continuous_number" "continuous_number") (null) (list 0.5 0.5) (null) (null) (true) ) "\n" )
- (print "37 " (generalized_distance (list 1 1) (list 1 1) 1 (list 1 1) (list "nominal_number" "nominal_number") (null) (list 0.5 0.5) (null) (null) (true) ) "\n" )
+ (print "36 " (generalized_distance (list 1 1) (list 1 1) 1 (list 1 1) (list "continuous_number" "continuous_number") (null) (list 0.5 0.5) (null) (null) .true ) "\n" )
+ (print "37 " (generalized_distance (list 1 1) (list 1 1) 1 (list 1 1) (list "nominal_number" "nominal_number") (null) (list 0.5 0.5) (null) (null) .true ) "\n" )
 
  ;surprisal
- (print "38 " (generalized_distance (list 1 1) (list 2 2) 1 (list 1 1) (list "continuous_number" "continuous_number") (null) (list 0.5 0.5) (null) (null) (true) ) "\n" )
- (print "39 " (generalized_distance (list 1 1) (list 2 2) 1 (list 1 1) (list "nominal_number" "nominal_number") (list 2 2) (list 0.25 0.25) (null) (null) (true) ) "\n" )
+ (print "38 " (generalized_distance (list 1 1) (list 2 2) 1 (list 1 1) (list "continuous_number" "continuous_number") (null) (list 0.5 0.5) (null) (null) .true ) "\n" )
+ (print "39 " (generalized_distance (list 1 1) (list 2 2) 1 (list 1 1) (list "nominal_number" "nominal_number") (list 2 2) (list 0.25 0.25) (null) (null) .true ) "\n" )
 
    (print "40 " (generalized_distance
 			    (list "b") ;vector 1
@@ -537,7 +537,7 @@
 				) ;deviations
 				(null) ;names
 				(null) ;weights_selection_feature
-				(true) ;surprisal
+				.true ;surprisal
 				) "\n"
 	)
 
@@ -557,7 +557,7 @@
 				) ;deviations
 				(null) ;names
 				(null) ;weights_selection_feature
-				(true) ;surprisal
+				.true ;surprisal
 				) "\n"
 	)
 
@@ -577,7 +577,7 @@
 				) ;deviations
 				(null) ;names
 				(null) ;weights_selection_feature
-				(true) ;surprisal
+				.true ;surprisal
 				) "\n"
 	)
 
@@ -593,7 +593,7 @@
 				) ;deviations
 				(null) ;names
 				(null) ;weights_selection_feature
-				(true) ;surprisal
+				.true ;surprisal
 				) "\n"
 	)
 
@@ -615,7 +615,7 @@
 				) ;deviations
 				(null) ;names
 				(null) ;weights_selection_feature
-				(true) ;surprisal
+				.true ;surprisal
 				) "\n"
 	)
 
@@ -640,7 +640,7 @@
 				) ;deviations
 				(null) ;names
 				(null) ;weights_selection_feature
-				(true) ;surprisal
+				.true ;surprisal
 				) "\n"
 	)
 
@@ -660,7 +660,7 @@
 				0.5 ;deviations
 				["A2" "A3" "B"] ;names
 				"sum" ;weights_selection_feature
-				(true) ;surprisal
+				.true ;surprisal
 				) "\n"
 	)
 
@@ -1009,10 +1009,10 @@
  (print (values (associate "a" 1 "b" 2 "c" 3 4 "d")))
  (print (values (list "a" 1 "b" 2 "c" 3 4 "d")))
 
- (print (values (list "a" 1 "b" 2 "c" 3 4 "d" 1 2 3 4 "a" "b" "c") (true)))
- (print (values (associate "a" 1 "b" 2 "c" 3 4 "d" "e" 1) (true)))
+ (print (values (list "a" 1 "b" 2 "c" 3 4 "d" 1 2 3 4 "a" "b" "c") .true))
+ (print (values (associate "a" 1 "b" 2 "c" 3 4 "d" "e" 1) .true))
 
- (print (values (append (range 1 20) (range 1 20)) (true)))
+ (print (values (append (range 1 20) (range 1 20)) .true))
 
  (print "--contains_index--\n")
  (print (contains_index (associate "a" 1 "b" 2 "c" 3 4 "d") "c") "\n")
@@ -1121,7 +1121,7 @@
  (print (list 0 1 2 3 (+ (target 0 1)) 4) "\n")
  (print (list 0 1 2 3 (list 0 1 2 3 (+ (target 1 1)) 4)) "\n")
  (print { a 0 b 1 c 2 d 3 e (list 0 1 2 3 (+ (target 1 "a")) 4)} "\n")
- (print { a 0 b 1 c 2 d 3 e (list (list 0 1 2 3 (+ (target (true) "a")) 4))} "\n")
+ (print { a 0 b 1 c 2 d 3 e (list (list 0 1 2 3 (+ (target .true "a")) 4))} "\n")
 
  (print "--current_index--\n")
  (list 1 2 3 (print (current_index) "\n") 4)
@@ -1143,7 +1143,7 @@
 		3
 
 		(seq
-			(print (previous_result 0 (true)) "\n")
+			(print (previous_result 0 .true) "\n")
 			(print (previous_result 0) "\n")
 			(print (previous_result 0) "\n")
 		)
@@ -1153,7 +1153,7 @@
  (print "--opcode_stack--\n")
  (print (size (opcode_stack)) "\n")
  (print (seq (seq (opcode_stack 2))) "\n")
- (print (seq (seq (opcode_stack -1 (true)))) "\n")
+ (print (seq (seq (opcode_stack -1 .true))) "\n")
 
  (print "--stack--\n")
  (print (stack))
@@ -1245,7 +1245,7 @@
  (print (rand (range 0 10)) "\n")
  (print (rand (range 0 10) 0) "\n")
  (print (rand (range 0 10) 1) "\n")
- (print (rand (range 0 10) 10 (true)) "\n")
+ (print (rand (range 0 10) 10 .true) "\n")
 
  (print (rand 50 4) "\n")
 
@@ -1269,7 +1269,7 @@
 			)
 		)
 		3
-		(true)
+		.true
 	)
  "\n")
 
@@ -1287,10 +1287,12 @@
  (print (rand) "\n")
 
 
- (print "--true--\n")
- (print (true) "\n")
+ (print "--bool--\n")
+ (print .true "\n")
+ (print .false "\n")
 
- (print "--false--\n")
+ ;legacy values
+ (print (true) "\n")
  (print (false) "\n")
 
  (print "--null--\n")
@@ -1367,9 +1369,9 @@
  (print "19: " (format "TWFueSBoYW5kcyBtYWtlIGxpZ2h0IHdvcmsuLi4=" "base64" "string") "\n")
  (print "20: " (format "[{\"a\" : 3, \"b\" : 4}, {\"c\" : \"c\"}]" "json" "code"))
  (print "21: " (format (list (assoc a 3 b 4) (assoc c "c" d (null))) "code" "json") "\n")
- (print "22: " (format (list (assoc a 3 b 4) (assoc c "c" d (null))) "code" "json" (null) (assoc sort_keys (true)) ) "\n")
+ (print "22: " (format (list (assoc a 3 b 4) (assoc c "c" d (null))) "code" "json" (null) (assoc sort_keys .true) ) "\n")
  (print "23: " (format (assoc "a" 1 "b" 2 "c" 3 "d" 4 "e" (list "a" "b" (null) .infinity)) "code" "yaml") "\n")
- (print "24: " (format (assoc "a" 1 "b" 2 "c" 3 "d" 4 "e" (list "a" "b" (null) .infinity)) "code" "yaml" (null) (assoc "sort_keys" (true))) "\n")
+ (print "24: " (format (assoc "a" 1 "b" 2 "c" 3 "d" 4 "e" (list "a" "b" (null) .infinity)) "code" "yaml" (null) (assoc "sort_keys" .true)) "\n")
  (print "25: " (format "a: 1" "yaml" "code"))
 
  ;current date
@@ -1448,7 +1450,7 @@
  (print "--get_labels--\n")
   (print (get_labels
   ( #labelA lambda #labelB
-   (true))))
+   .true)))
 
   (print "--get_all_labels--\n")
   (print (get_all_labels
@@ -1474,13 +1476,13 @@
  (print (get_comments
    ;this is a comment
   (lambda ;comment too
-   (true))) "\n")
+   .true)) "\n")
 
  (print "--set_comments--\n")
  (print (set_comments
    ;this is a comment
   (lambda ;comment too
-   (true)) "new comment"))
+   .true) "new comment"))
 
  (print "--get_concurrency--\n")
  (print (get_concurrency
@@ -1494,7 +1496,7 @@
  (print (get_concurrency
 			(set_concurrency
 				(lambda (print "hello"))
-				(true)
+				.true
 			)
  ) "\n")
 
@@ -1502,7 +1504,7 @@
 
  (print (set_concurrency
 				(lambda (print "hello"))
-				(true)
+				.true
  ) "\n")
 
  (print (set_concurrency
@@ -1510,20 +1512,20 @@
 					;complex test
 					#somelabel (assoc a "hello" b 4)
 				)
-				(true)
+				.true
  ) "\n")
 
  (print "--get_value--\n")
  (print (get_value
    ;this is a comment
   (lambda ;comment too
-   #withalabel (true))))
+   #withalabel .true)))
 
  (print "--set_value--\n")
  (print (set_value
    ;this is a comment
   (lambda ;comment too
-   (true)) 3) "\n")
+   .true) 3) "\n")
 
  (print "--explode--\n")
  (print (explode "abcdefgﬗꭖϡ"))
@@ -1609,7 +1611,7 @@
  (print "--print--\n")
  (print (list 0 1 10 12 100 120 122 1000 1000.123 10000 100000 .1 .01 .001 .0001 .00001 .0000123456789 1.2345e-149) )
  (print (list -0 -1 -10 -12 -100 -120 -122 -1000 -1000.123 -10000 -100000 -.1 -.01 -.001 -.0001 -.00001 -.0000123456789 -1.2345e-149) )
- (print .infinity "\n" (true) "\n" (false) "\n")
+ (print .infinity "\n" .true "\n" .false "\n")
 
  (print "--total_size--\n")
  (print (total_size (list 1 2 3 (associate "a" 3 "b" 4) (list 5 6))) "\n")
@@ -1646,10 +1648,10 @@
  (print (commonality .infinity .infinity) "\n")
  (print (commonality .infinity -.infinity) "\n")
  (print (commonality "hello" "hello") "\n")
- (print (commonality "hello" "hello" (true)) "\n")
+ (print (commonality "hello" "hello" .true) "\n")
  (print (commonality "hello" "el") "\n")
- (print (commonality "hello" "el" (true)) "\n")
- (print (commonality "el" "hello" (true)) "\n")
+ (print (commonality "hello" "el" .true) "\n")
+ (print (commonality "el" "hello" .true) "\n")
 
  (print (commonality
 		(lambda
@@ -1658,7 +1660,7 @@
 		(lambda
 			(if x
 				(assoc a 1 b 2 c 3)
-				(false)
+				.false
 			)
 		)
 	) "\n")
@@ -1688,10 +1690,10 @@
  					) "\n")
 
  (print (edit_distance "hello" "hello") "\n")
- (print (edit_distance "hello" "hello" (true)) "\n")
+ (print (edit_distance "hello" "hello" .true) "\n")
  (print (edit_distance "hello" "el") "\n")
- (print (edit_distance "hello" "el" (true)) "\n")
- (print (edit_distance "el" "hello" (true)) "\n")
+ (print (edit_distance "hello" "el" .true) "\n")
+ (print (edit_distance "el" "hello" .true) "\n")
 
  (print (edit_distance
 			(list 1 2 3)
@@ -1923,12 +1925,12 @@
  			0.8 0.8 1.0))
 
  (print (mix
-				(lambda (list (true) 3 5 7 9 11 13))
+				(lambda (list .true 3 5 7 9 11 13))
 				(lambda (list 2 4 6 8 10 12 14))
  			0.5 0.5 1.0))
 
  (print (mix
-				(lambda (list (true) 3 5 7 9 11 13))
+				(lambda (list .true 3 5 7 9 11 13))
 				(lambda (list 2 4 6 8 10 12 14))
  			0.5 0.5 -1))
 
@@ -1994,14 +1996,14 @@
  )
 
  (print "flatten restore without seeds test\n")
- (let (assoc fe (flatten_entity "FlattenTest" (false)))
+ (let (assoc fe (flatten_entity "FlattenTest" .false))
    (print fe)
    (print (flatten_entity (call fe)))
    (print (difference_entities "FlattenTest" (call fe)))
  )
 
  (print "flatten restore with parallel\n")
- (let (assoc fe (flatten_entity "FlattenTest" (true) (true)))
+ (let (assoc fe (flatten_entity "FlattenTest" .true .true))
    (print fe)
    (print (flatten_entity (call fe)))
    (print (difference_entities "FlattenTest" (call fe)))
@@ -2194,10 +2196,10 @@
 							"description"
 							(current_value 1)
 							"parameters"
-							(get_entity_comments (null) (current_index 1) (true))
+							(get_entity_comments (null) (current_index 1) .true)
 						)
 					)
-					(get_entity_comments (null) (null) (true))
+					(get_entity_comments (null) (null) .true)
 				)
 	
 	
@@ -2210,15 +2212,15 @@
  ))
 
  (print (get_entity_comments "descriptive_entity") "\n")
- (print (get_entity_comments "descriptive_entity" (null) (true)))
- (print (get_entity_comments "descriptive_entity" "foo" (true)))
+ (print (get_entity_comments "descriptive_entity" (null) .true))
+ (print (get_entity_comments "descriptive_entity" "foo" .true))
 
  (print (call_entity "descriptive_entity" "get_api"))
 
  (print "--retrieve_entity_root--\n")
  (create_entities "SetGetCodeTest" (lambda (list 1 2 ##three 3)))
  (print (retrieve_entity_root "SetGetCodeTest"))
- (print (retrieve_entity_root "SetGetCodeTest" (true)))
+ (print (retrieve_entity_root "SetGetCodeTest" .true))
  (print (retrieve_entity_root (list (null) (null) "SetGetCodeTest" (null))  ))
 
  (print "--assign_entity_roots--\n")
@@ -2248,7 +2250,7 @@
  							) )
 (assign (assoc seed (get_entity_rand_seed "RandTest")))
 (print (call_entity "RandTest" "a") "\n")
-(set_entity_rand_seed "RandTest" seed (false))
+(set_entity_rand_seed "RandTest" seed .false)
 (print (call_entity "RandTest" "a") "\n")
 
 (print "deep sets\n")
@@ -2262,11 +2264,11 @@
  (print (get_entity_permissions "RootTest") "\n")
 
  (print "--set_entity_permissions--\n")
- (print (set_entity_permissions "RootTest" (true)) "\n")
+ (print (set_entity_permissions "RootTest" .true) "\n")
  (call_entity "RootTest")
  (print "\n")
  (print (get_entity_permissions "RootTest") "\n")
- (print (set_entity_permissions "RootTest" {environment (false) }) "\n")
+ (print (set_entity_permissions "RootTest" {environment .false }) "\n")
  (call_entity "RootTest")
  (print "\n")
  (print (get_entity_permissions "RootTest") "\n")
@@ -2310,12 +2312,12 @@
  (print "load from .amlg:\n")
  
  (load_entity "amlg_code/module_test.amlg" "ModuleTest")
- (set_entity_permissions "ModuleTest" {std_out_and_std_err (true) })
+ (set_entity_permissions "ModuleTest" {std_out_and_std_err .true })
  (call_entity "ModuleTest" "hello")
  (print (flatten_entity "ModuleTest"))
 
  (print "persistent loads\n")
- (load_entity "amlg_code/persist_module_test.amlg" "PersistModuleTest" (null) (true))
+ (load_entity "amlg_code/persist_module_test.amlg" "PersistModuleTest" (null) .true)
  (assign_to_entities "PersistModuleTest" (assoc a 8))
  (assign_to_entities (list "PersistModuleTest" "psm") (assoc a 5))
  (create_entities (list "PersistModuleTest" "NewModule") (lambda (associate "a" 1 "b" 2)) )
@@ -2334,13 +2336,13 @@
  (create_entities (list "pt" "child" "doublechild2") (list 10 11))
  (store_entity "amlg_code/test_output/pt.amlg" "pt")
  (destroy_entities "pt")
- (load_entity "amlg_code/test_output/pt.amlg" "ptl" (null) (true))
+ (load_entity "amlg_code/test_output/pt.amlg" "ptl" (null) .true)
  (destroy_entities (list "ptl" "child"))
 
  ; persistent grandchild test
- (print "Load Root:\n" (load_entity "amlg_code/persistent_tree_test_root.amlg" "PersistTreeRoot" (null) (true)) "\n")
+ (print "Load Root:\n" (load_entity "amlg_code/persistent_tree_test_root.amlg" "PersistTreeRoot" (null) .true) "\n")
  (print "Load Inter:\n" (load_entity "amlg_code/persistent_tree_test_inter.amlg" (list "PersistTreeRoot" "PersistTreeInter")) "\n")
- (print "Load Leaf:\n" (load_entity "amlg_code/persistent_tree_test_leaf.amlg" (list "PersistTreeRoot" "PersistTreeInter" "PersistTreeLeaf")  (null) (true)) "\n")
+ (print "Load Leaf:\n" (load_entity "amlg_code/persistent_tree_test_leaf.amlg" (list "PersistTreeRoot" "PersistTreeInter" "PersistTreeLeaf")  (null) .true) "\n")
  (print "Root contained:\n" (contained_entities "PersistTreeRoot") "\n")
  (print "Root b:\n" (retrieve_from_entity "PersistTreeRoot" "b") "\n")
  (print "Inter contained:\n" (contained_entities (list "PersistTreeRoot" "PersistTreeInter")) "\n")
@@ -2385,12 +2387,12 @@
  (create_entities (list "persist_transactions" "child") (list 5 6 7))
  (create_entities (list "persist_transactions" "child" "doublechild1") (lambda (list ##eight 8 ##nine 9)))
  (create_entities (list "persist_transactions" "child" "doublechild3") (list 12 13))
- (store_entity "amlg_code/test_output/persist_transactions.amlg" "persist_transactions" (null) (true) {flatten (true) transactional (true)})
+ (store_entity "amlg_code/test_output/persist_transactions.amlg" "persist_transactions" (null) .true {flatten .true transactional .true})
  (create_entities (list "persist_transactions" "child" "doublechild2") (list 10 11))
  (destroy_entities (list "persist_transactions" "child" "doublechild3"))
  (assign_to_entities (list "persist_transactions" "child" "doublechild1") {eight 88})
  
- (load_entity "amlg_code/test_output/persist_transactions.amlg" "persist_transactions_copy" (null) (false) {execute_on_load (true) transactional (true) require_version_compatibility (true)})
+ (load_entity "amlg_code/test_output/persist_transactions.amlg" "persist_transactions_copy" (null) .false {execute_on_load .true transactional .true require_version_compatibility .true})
  (print (difference_entities "persist_transactions_copy" "persist_transactions") "\n")
  (destroy_entities "persist_transactions_copy" "persist_transactions")
 
@@ -2400,12 +2402,12 @@
  (create_entities (list "persist_transactions" "child") (list 5 6 7))
  (create_entities (list "persist_transactions" "child" "doublechild1") (lambda (list ##eight 8 ##nine 9)))
  (create_entities (list "persist_transactions" "child" "doublechild3") (list 12 13))
- (store_entity "amlg_code/test_output/persist_transactions.caml" "persist_transactions" (null) (true) {flatten (true) transactional (true)})
+ (store_entity "amlg_code/test_output/persist_transactions.caml" "persist_transactions" (null) .true {flatten .true transactional .true})
  (create_entities (list "persist_transactions" "child" "doublechild2") (list 10 11))
  (destroy_entities (list "persist_transactions" "child" "doublechild3"))
  (assign_to_entities (list "persist_transactions" "child" "doublechild1") {eight 88})
  
- (load_entity "amlg_code/test_output/persist_transactions.caml" "persist_transactions_copy" (null) (false) {execute_on_load (true) transactional (true) require_version_compatibility (true)})
+ (load_entity "amlg_code/test_output/persist_transactions.caml" "persist_transactions_copy" (null) .false {execute_on_load .true transactional .true require_version_compatibility .true})
  (print (difference_entities "persist_transactions_copy" "persist_transactions") "\n")
  (destroy_entities "persist_transactions_copy" "persist_transactions")
 
@@ -2423,8 +2425,8 @@
 
  (print "contained entities in quackers before file: " (contained_entities "quackerz?") "\n")
 
- (store_entity "amlg_code/test_output/!quackerz.amlg" "quackerz?" (null) (false) (assoc escape_filename (true)) )
- (load_entity "amlg_code/test_output/!quackerz.amlg" "read-back quackers" (null) (false) (assoc escape_filename (true)) )
+ (store_entity "amlg_code/test_output/!quackerz.amlg" "quackerz?" (null) .false (assoc escape_filename .true) )
+ (load_entity "amlg_code/test_output/!quackerz.amlg" "read-back quackers" (null) .false (assoc escape_filename .true) )
 
  (print "contained entity in quackers2 loaded back from file: " (contained_entities "read-back quackers") "\n")
 
@@ -2445,10 +2447,10 @@
  (print "--store_entity--\n")
  (print "store to .amlg:\n")
  (assign_to_entities "ModuleTest" (assoc a 2))
- (print (unparse (retrieve_from_entity "ModuleTest" "a") (true) (true)))
+ (print (unparse (retrieve_from_entity "ModuleTest" "a") .true .true))
  (store_entity "amlg_code/test_output/module_test2.amlg" "ModuleTest")
  (load_entity "amlg_code/test_output/module_test2.amlg" "ModuleTest2")
- (print (unparse (retrieve_from_entity "ModuleTest" "a") (true) (true)))
+ (print (unparse (retrieve_from_entity "ModuleTest" "a") .true .true))
  (assign_to_entities "ModuleTest" (assoc a 1))
  (store_entity "amlg_code/test_output/module_test2.amlg" "ModuleTest")
 
@@ -2456,8 +2458,8 @@
  (load_entity "amlg_code/test_output/module_test_c.caml" "ModuleTestDecompressed")
  (print "Compression difference: " (difference_entities "ModuleTest" "ModuleTestDecompressed") "\n")
 
-  (store_entity "amlg_code/test_output/module_test_c.amlg" "ModuleTest" (null) (false) {flatten (true) transactional (true) })
- (load_entity "amlg_code/test_output/module_test_c.amlg" "ModuleTestTransactionLoaded"  (null) (false) {transactional (true) execute_on_load (true)})
+  (store_entity "amlg_code/test_output/module_test_c.amlg" "ModuleTest" (null) .false {flatten .true transactional .true })
+ (load_entity "amlg_code/test_output/module_test_c.amlg" "ModuleTestTransactionLoaded"  (null) .false {transactional .true execute_on_load .true})
  (print "Compression difference: " (difference_entities "ModuleTest" "ModuleTestTransactionLoaded") "\n")
 
  (print "store to .json in amlg format\n")
@@ -2798,7 +2800,7 @@
 
  (print "weighted query list of lists: "
 	(compute_on_contained_entities "TestContainerExec" (list
-		(query_nearest_generalized_distance 5 (list "y" ) (list 0) 1 (null) (null) (null) (null) (null) 1 "weight" (null) (null) (null) (true))
+		(query_nearest_generalized_distance 5 (list "y" ) (list 0) 1 (null) (null) (null) (null) (null) 1 "weight" (null) (null) (null) .true)
 	))
  )
 
@@ -2842,7 +2844,7 @@
                  (rand)
                  (null)
                  "precise"
-                 (true)
+                 .true
              )
          )
      )
@@ -3027,19 +3029,19 @@
   )) "\n")
 
   (print (compute_on_contained_entities "TestContainerExec" (list
-   (query_generalized_mean "x" 1 (null) mean (true) (true))
+   (query_generalized_mean "x" 1 (null) mean .true .true)
   )) "\n")
 
   (print (compute_on_contained_entities "TestContainerExec" (list
-   (query_generalized_mean "x" 2 (null) mean (true))
+   (query_generalized_mean "x" 2 (null) mean .true)
   )) "\n")
 
   (print (compute_on_contained_entities "TestContainerExec" (list
-   (query_generalized_mean "x" 3 (null) mean (false))
+   (query_generalized_mean "x" 3 (null) mean .false)
   )) "\n")
 
   (print (compute_on_contained_entities "TestContainerExec" (list
-   (query_generalized_mean "x" 4 (null) mean (true))
+   (query_generalized_mean "x" 4 (null) mean .true)
   )) "\n")
 
  (print "--query_min_difference--\n")
@@ -3052,11 +3054,11 @@
  )) "\n")
 
  (print (compute_on_contained_entities "TestContainerExec" (list
-  (query_min_difference "weight" (null) (false))
+  (query_min_difference "weight" (null) .false)
  )) "\n")
 
  (print (compute_on_contained_entities "TestContainerExec" (list
-   (query_min_difference "weight" .3 (true))
+   (query_min_difference "weight" .3 .true)
  )) "\n")
 
  (print "--query_max_difference--\n")
@@ -3552,14 +3554,14 @@
  (print a2e)
 
  (assign_to_entities (assoc label3 " or "))
- (print (unparse (retrieve_from_entity "label3") (true) (true)))
- (print (unparse (retrieve_from_entity "MyNewLibrary" "three") (true) (true)))
- (print (unparse (assign_to_entities "MyNewLibrary" (associate "three" 5)) (true) (true)))
- (print (unparse (retrieve_from_entity "MyNewLibrary" "three") (true) (true)))
+ (print (unparse (retrieve_from_entity "label3") .true .true))
+ (print (unparse (retrieve_from_entity "MyNewLibrary" "three") .true .true))
+ (print (unparse (assign_to_entities "MyNewLibrary" (associate "three" 5)) .true .true))
+ (print (unparse (retrieve_from_entity "MyNewLibrary" "three") .true .true))
 
  (print (unparse (lambda (parallel #asgn_test 12) ) ) "\n")
- (print (unparse (assign_to_entities (assoc "asgn_test" 4)) (true) (true)))
- (print (unparse (retrieve_from_entity "asgn_test") (true) (true)))
+ (print (unparse (assign_to_entities (assoc "asgn_test" 4)) .true .true))
+ (print (unparse (retrieve_from_entity "asgn_test") .true .true))
 
  (create_entities "MultipleSetTest" (lambda (parallel ##a 1 ##b 2 ##c 3)))
  (assign_to_entities "MultipleSetTest" (assoc a 2 b 3 c 4) "MyNewLibrary" (assoc "three" 12))
@@ -3568,9 +3570,9 @@
 
  (print "--direct_assign_to_entities--\n")
  (create_entities "DRFE" (lambda (parallel ##a 12)) )
- (print (unparse (direct_retrieve_from_entity "DRFE" "a") (true) (true)))
- (print (unparse (direct_assign_to_entities "DRFE" (assoc a 7)) (true) (true)))
- (print (unparse (direct_retrieve_from_entity "DRFE" "a") (true) (true)))
+ (print (unparse (direct_retrieve_from_entity "DRFE" "a") .true .true))
+ (print (unparse (direct_assign_to_entities "DRFE" (assoc a 7)) .true .true))
+ (print (unparse (direct_retrieve_from_entity "DRFE" "a") .true .true))
 
  (print "--accum_to_entities--\n")
 
@@ -3584,37 +3586,37 @@
 
  (print "--retrieve_from_entity--\n")
  (assign_to_entities (assoc label3 " and "))
- (print (unparse (retrieve_from_entity "label3") (true) (true)))
- (print (unparse (retrieve_from_entity "MyNewLibrary" "three") (true) (true)))
+ (print (unparse (retrieve_from_entity "label3") .true .true))
+ (print (unparse (retrieve_from_entity "MyNewLibrary" "three") .true .true))
 
  (create_entities "RCT" (lambda (parallel ##a 12 ##b 13)) )
- (print (unparse (retrieve_from_entity "RCT" "a") (true) (true)))
- (print (unparse (retrieve_from_entity "RCT" (list "a" "b") ) (true) (true)))
- (print (unparse (retrieve_from_entity "RCT" (zip (list "a" "b") null) ) (true) (true)))
+ (print (unparse (retrieve_from_entity "RCT" "a") .true .true))
+ (print (unparse (retrieve_from_entity "RCT" (list "a" "b") ) .true .true))
+ (print (unparse (retrieve_from_entity "RCT" (zip (list "a" "b") null) ) .true .true))
 
  (print "--direct_retrieve_from_entity--\n")
- (print (unparse (retrieve_from_entity "DRFE" "a") (true) (true)))
- (print (unparse (direct_retrieve_from_entity "DRFE" "a") (true) (true)))
+ (print (unparse (retrieve_from_entity "DRFE" "a") .true .true))
+ (print (unparse (direct_retrieve_from_entity "DRFE" "a") .true .true))
 
  (print "--call_entity--\n")
  (print (contained_entities "TestContainerExec"))
 
- (print (unparse (retrieve_entity_root "TestContainerExec") (true) (true)))
- (print (unparse (call_entity "TestContainerExec" "^a") (true) (true)))
- (print (unparse (call_entity "TestContainerExec" "b") (true) (true)))
- (print (unparse (call_entity "TestContainerExec" "c" (assoc x 5)) (true) (true)))
+ (print (unparse (retrieve_entity_root "TestContainerExec") .true .true))
+ (print (unparse (call_entity "TestContainerExec" "^a") .true .true))
+ (print (unparse (call_entity "TestContainerExec" "b") .true .true))
+ (print (unparse (call_entity "TestContainerExec" "c" (assoc x 5)) .true .true))
 
   (print "execution limits tests\n")
   (create_entities "ExecLimitsTest" (lambda
 	(null
 	#copy_entity
-		(while (true)
+		(while .true
 			(clone_entities (null) (null))
 		)
 
 	#load
 		(while
-			(true)
+			.true
 		)
 	))
  )
@@ -3630,9 +3632,9 @@
 		  (create_entities "Contained" (lambda
  								(null ##a 4 ##b 6 )
  								) )
-		  (print (unparse (retrieve_from_entity "Contained" "a") (true) (true)))
+		  (print (unparse (retrieve_from_entity "Contained" "a") .true .true))
 		  (assign_to_entities "Contained" (assoc a 6 b 10) )
-		  (print (unparse (retrieve_from_entity "Contained" "a") (true) (true)))
+		  (print (unparse (retrieve_from_entity "Contained" "a") .true .true))
 		  (set_entity_rand_seed "Contained" "bbbb")
 		  (accum_to_entities "Contained" (assoc b 12) )
 		  (accum_entity_roots "Contained" (list (set_labels 14 (list "a"))))
@@ -3640,7 +3642,7 @@
 	  )
 	)
   ) )
-  (set_entity_permissions "CEGCTest" (true) )
+  (set_entity_permissions "CEGCTest" .true )
 
  (print (call_entity_get_changes "CEGCTest" "a_assign"))
 
@@ -3648,7 +3650,7 @@
  (print (call_entity "TestContainerExec" "d" (assoc x 5)) "\n")
  (print (call_entity "TestContainerExec" "d" (assoc x 5) 30 30) "\n")
  (print (call_entity "TestContainerExec" "d" (assoc x 5) 1 1) "\n")
- (print (call_entity "TestContainerExec" "d" (assoc x 5) 1 1 1 1 1 (false)) "\n")
+ (print (call_entity "TestContainerExec" "d" (assoc x 5) 1 1 1 1 1 .false) "\n")
 
  (print "--circular, repeated, and preevaluated references--\n")
 
@@ -3695,7 +3697,7 @@
  (print [ 0 1 2 3 (+ (target 0 1)) 4] "\n")
  (print [ 0 1 2 3 [ 0 1 2 3 (+ (target 1 1)) 4]] "\n")
  (print { a 0 b 1 c 2 d 3 e [ 0 1 2 3 (+ (target 1 "a")) 4]} "\n")
- (print { a 0 b 1 c 2 d 3 e [ [ 0 1 2 3 (+ (target (true) "a")) 4]]} "\n")
+ (print { a 0 b 1 c 2 d 3 e [ [ 0 1 2 3 (+ (target .true "a")) 4]]} "\n")
  
  (print
  		(list
@@ -3781,7 +3783,7 @@
 
 (print "--reclaim_resources--\n")
 
-(reclaim_resources (null) (true) (true) (true) (true) )
+(reclaim_resources (null) .true .true .true .true )
 
  (print "--null equality tests--\n")
 
@@ -4192,7 +4194,7 @@
                 (rand)
 				(null)
 				"precise"
-				(true)
+				.true
             )
         ))
         (compute_on_contained_entities "DistanceSymmetryContainer" (list
@@ -4211,7 +4213,7 @@
                 (rand)
 				(null)
 				"precise"
-				(true)
+				.true
             )
         ))
     )
@@ -4236,7 +4238,7 @@
 
   (print "distance contributions\n")
   (print "dc: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (query_entity_distance_contributions 1 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise" (true))
+  (query_entity_distance_contributions 1 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise" .true)
  )))
 
   (print "weighted dc: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
@@ -4246,61 +4248,61 @@
  (print "removal conviction\n")
 
  (print "kl: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (query_entity_kl_divergences  1 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise" (true))
+  (query_entity_kl_divergences  1 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise" .true)
  )))
 
  (print "weighted kl: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (query_entity_kl_divergences  1 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 "weight" "fixed_seed" (null) "recompute_precise" (true))
+  (query_entity_kl_divergences  1 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 "weight" "fixed_seed" (null) "recompute_precise" .true)
  )))
 
   (print "convictions: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (query_entity_convictions 1 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise" (true))
+  (query_entity_convictions 1 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise" .true)
  )))
 
  (print "further parameterized convictions: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (query_entity_convictions 1 (list "x" "y") (list "vert0" "vert1" "vert2" "vert3") 2 (null) (null) (null) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise" (true))
+  (query_entity_convictions 1 (list "x" "y") (list "vert0" "vert1" "vert2" "vert3") 2 (null) (null) (null) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise" .true)
  )))
 
   (print "weighted convictions: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (query_entity_convictions 1 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 "weight" "fixed_seed" (null) "recompute_precise" (true))
+  (query_entity_convictions 1 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 "weight" "fixed_seed" (null) "recompute_precise" .true)
  )))
 
  (print "group kl divergence: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (query_entity_group_kl_divergence 1 (list "x" "y") (list "vert1") 2 (null) (null) (null) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise" (true))
+  (query_entity_group_kl_divergence 1 (list "x" "y") (list "vert1") 2 (null) (null) (null) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise" .true)
  )) "\n") 
 
   (print "weighted group kl divergence: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (query_entity_group_kl_divergence 1 (list "x" "y") (list "vert1") 2 (null) (null) (null) (null) (null) -1 "weight" "fixed_seed" (null) "recompute_precise" (true))
+  (query_entity_group_kl_divergence 1 (list "x" "y") (list "vert1") 2 (null) (null) (null) (null) (null) -1 "weight" "fixed_seed" (null) "recompute_precise" .true)
  )) "\n") 
 
   (print "addition conviction\n")
  
   (print "kl: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (query_entity_kl_divergences  1 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise" (false))
+  (query_entity_kl_divergences  1 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise" .false)
  )))
 
  (print "weighted kl: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (query_entity_kl_divergences  1 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 "weight" "fixed_seed" (null) "recompute_precise" (false))
+  (query_entity_kl_divergences  1 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 "weight" "fixed_seed" (null) "recompute_precise" .false)
  )))
 
   (print "convictions: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (query_entity_convictions 1 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise" (false))
+  (query_entity_convictions 1 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise" .false)
  )))
 
  (print "further parameterized convictions: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (query_entity_convictions 1 (list "x" "y") (list "vert0" "vert1" "vert2" "vert3") 2 (null) (null) (null) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise" (false))
+  (query_entity_convictions 1 (list "x" "y") (list "vert0" "vert1" "vert2" "vert3") 2 (null) (null) (null) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise" .false)
  )))
 
   (print "weighted convictions: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (query_entity_convictions 1 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 "weight" "fixed_seed" (null) "recompute_precise" (false))
+  (query_entity_convictions 1 (list "x" "y") (null) 2 (null) (null) (null) (null) (null) -1 "weight" "fixed_seed" (null) "recompute_precise" .false)
  )))
 
  (print "group kl divergence: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (query_entity_group_kl_divergence 1 (list "x" "y") (list "vert1") 2 (null) (null) (null) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise" (false))
+  (query_entity_group_kl_divergence 1 (list "x" "y") (list "vert1") 2 (null) (null) (null) (null) (null) -1 (null) "fixed_seed" (null) "recompute_precise" .false)
  )) "\n") 
 
   (print "weighted group kl divergence: " (compute_on_contained_entities "BoxConvictionTestContainer" (list
-  (query_entity_group_kl_divergence 1 (list "x" "y") (list "vert1") 2 (null) (null) (null) (null) (null) -1 "weight" "fixed_seed" (null) "recompute_precise" (false))
+  (query_entity_group_kl_divergence 1 (list "x" "y") (list "vert1") 2 (null) (null) (null) (null) (null) -1 "weight" "fixed_seed" (null) "recompute_precise" .false)
  )) "\n") 
 
  (print "adding a case\n")
@@ -4368,7 +4370,7 @@
             (rand)
 			(null)
 			"precise"
-			(true)
+			.true
         )
     ))
   "\n" )
@@ -4392,7 +4394,7 @@
             (rand)
 			(null)
 			"precise"
-			(true)
+			.true
         )
     ))
   "\n" )
@@ -4416,7 +4418,7 @@
             (rand)
 			(null)
 			"precise"
-			(true)
+			.true
         )
     ))
   "\n" )
@@ -4440,7 +4442,7 @@
             (rand)
 			(null)
 			"precise"
-			(true)
+			.true
         )
     ))
   "\n" )
@@ -4463,7 +4465,7 @@
             (rand)
 			(null)
 			"precise"
-			(true)
+			.true
         )
     ))
 	)
@@ -4486,7 +4488,7 @@
             (rand)
 			(null)
 			"precise"
-			(true)
+			.true
         )
     ))
 	)
@@ -4509,7 +4511,7 @@
             (rand)
 			(null)
 			"precise"
-			(true)
+			.true
         )
     ))
 	)
@@ -4560,9 +4562,9 @@
  (print "mod : " ||(mod 7 3) "\n")
  (print "max : " ||(max 1 2 3 4 5 6 7 8 9 10) "\n")
  (print "min : " ||(min 1 2 3 4 5 6 7 8 9 10) "\n")
- (print "and : " ||(and (true) (true) (true) (true)) "\n")
- (print "or : " ||(or (false) (false) (true) (false)) "\n")
- (print "xor : " ||(xor (true) (false)) "\n")
+ (print "and : " ||(and .true .true .true .true) "\n")
+ (print "or : " ||(or .false .false .true .false) "\n")
+ (print "xor : " ||(xor .true .false) "\n")
  (print "= : " ||(= 1 1 1 2) "\n")
  (print "!= : " ||(!= 1 1 1 2) "\n")
  (print "< : " ||(< 1 1 1 2) "\n")

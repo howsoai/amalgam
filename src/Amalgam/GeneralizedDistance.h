@@ -880,6 +880,9 @@ public:
 			if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)
 				return a.number - b.number;
 
+			if(a_type == ENIVT_BOOL && b_type == ENIVT_BOOL)
+				return (a.boolValue == b.boolValue ? 0.0 : 1.0);
+
 			if(a_type == ENIVT_STRING_ID && b_type == ENIVT_STRING_ID)
 				return (a.stringID == b.stringID ? 0.0 : 1.0);
 
@@ -893,6 +896,9 @@ public:
 			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_STRING
 			|| feature_type == GeneralizedDistanceEvaluator::FDT_NOMINAL_CODE)
 		{
+			if(a_type == ENIVT_BOOL && b_type == ENIVT_BOOL)
+				return (a.boolValue == b.boolValue ? 0.0 : 1.0);
+
 			if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)
 				return (a.number == b.number ? 0.0 : 1.0);
 

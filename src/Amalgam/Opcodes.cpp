@@ -170,8 +170,6 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_TYPE_NEQUALS, "!~");
 
 	//built-in constants and variables
-	EmplaceNodeTypeString(ENT_TRUE, "true");
-	EmplaceNodeTypeString(ENT_FALSE, "false");
 	EmplaceNodeTypeString(ENT_NULL, "null");
 
 	//data types
@@ -179,6 +177,7 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceNodeTypeString(ENT_ASSOC, "assoc");
 
 	//immediates - no associated keywords
+	EmplaceNodeTypeString(ENT_BOOL, "bool");
 	EmplaceNodeTypeString(ENT_NUMBER, "number");
 	EmplaceNodeTypeString(ENT_STRING, "string");
 	EmplaceNodeTypeString(ENT_SYMBOL, "symbol");
@@ -305,6 +304,8 @@ void StringInternPool::InitializeStaticStrings()
 	//end opcodes
 
 	//built-in common values
+	EmplaceStaticString(ENBISI_true, ".true");
+	EmplaceStaticString(ENBISI_false, ".false");
 	EmplaceStaticString(ENBISI_infinity, ".infinity");
 	EmplaceStaticString(ENBISI_neg_infinity, "-.infinity");
 	EmplaceStaticString(ENBISI_zero, "0");
@@ -332,8 +333,9 @@ void StringInternPool::InitializeStaticStrings()
 	EmplaceStaticString(ENBISI_empty_null, "(null)");
 	EmplaceStaticString(ENBISI_empty_list, "(list)");
 	EmplaceStaticString(ENBISI_empty_assoc, "(assoc)");
-	EmplaceStaticString(ENBISI_empty_true, "(true)");
-	EmplaceStaticString(ENBISI_empty_false, "(false)");
+	EmplaceStaticString(ENBISI_null_key, std::string("\0" "(null)", 7));
+	EmplaceStaticString(ENBISI_true_key, std::string("\0" ".true", 6));
+	EmplaceStaticString(ENBISI_false_key, std::string("\0" ".false", 7));
 
 	//config file parameters
 	EmplaceStaticString(ENBISI_rand_seed, "rand_seed");

@@ -929,6 +929,9 @@ public:
 		if(a_type == ENIVT_NUMBER && b_type == ENIVT_NUMBER)
 			return 1.0 - EvaluableNodeTreeManipulation::CommonalityBetweenNumbers(a.number, b.number);
 
+		if(a_type == ENIVT_BOOL && b_type == ENIVT_BOOL)
+			return (a.boolValue == b.boolValue ? 0.0 : 1.0);
+
 		if(a_type == ENIVT_STRING_ID && b_type == ENIVT_STRING_ID)
 			return (a.stringID == b.stringID ? 0.0 : 1.0);
 

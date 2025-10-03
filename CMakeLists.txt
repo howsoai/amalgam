@@ -100,7 +100,7 @@ set(COMMON_SOURCE
     src/3rd_party/murmurhash3/MurmurHash3.h
     src/3rd_party/simdjson/simdjson.cpp
     src/3rd_party/simdjson/simdjson.h
-    src/3rd_party/rapidyaml/rapidyaml-0.9.0.hpp
+    src/3rd_party/rapidyaml/rapidyaml-0.10.0.hpp
     src/3rd_party/skarupke_maps/bytell_hash_map.hpp
     src/3rd_party/skarupke_maps/flat_hash_map.hpp
     src/3rd_party/swiftdtoa/SwiftDtoa.cpp

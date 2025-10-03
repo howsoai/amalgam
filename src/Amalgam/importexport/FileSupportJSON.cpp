@@ -63,6 +63,9 @@ EvaluableNode *JsonToEvaluableNodeRecurse(EvaluableNodeManager *enm, simdjson::o
 
 	case simdjson::ondemand::json_type::null:
 		return nullptr;
+
+	case simdjson::ondemand::json_type::unknown:
+		return nullptr;
 	}
 
 	return nullptr;
